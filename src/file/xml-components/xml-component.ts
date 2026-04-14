@@ -91,15 +91,23 @@ export abstract class XmlComponent extends BaseXmlComponent {
         // eslint-disable-next-line functional/immutable-data
         context.stack.push(this);
 
-        // Recursively prepare all children for serialization
-        const children = this.root
-            .map((comp) => {
-                if (comp instanceof BaseXmlComponent) {
-                    return comp.prepForXml(context);
+        // Recursively prepare all children for serialization.
+        // Using a for-loop with push avoids the intermediate arrays created by
+        // map() + filter(), reducing GC pressure on large documents.
+        // eslint-disable-next-line functional/prefer-readonly-type
+        const children: (BaseXmlComponent | string | undefined)[] = [];
+        for (const comp of this.root) {
+            if (comp instanceof BaseXmlComponent) {
+                const prepared = comp.prepForXml(context);
+                if (prepared !== undefined) {
+                    // eslint-disable-next-line functional/immutable-data
+                    children.push(prepared);
                 }
-                return comp;
-            })
-            .filter((comp) => comp !== undefined); // Exclude undefined
+            } else {
+                // eslint-disable-next-line functional/immutable-data
+                children.push(comp);
+            }
+        }
 
         // Pop this component from the stack
         // eslint-disable-next-line functional/immutable-data
