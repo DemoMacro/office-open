@@ -1,11 +1,28 @@
 // Page numbers - Start from 0 on a new section
 
 import * as fs from "fs";
-import { AlignmentType, Document, Header, Packer, PageBreak, PageNumber, PageNumberSeparator, Paragraph, TextRun } from "docx";
+
+import {
+    AlignmentType,
+    Document,
+    Header,
+    Packer,
+    PageBreak,
+    PageNumber,
+    PageNumberSeparator,
+    Paragraph,
+    TextRun,
+} from "docx";
 
 const doc = new Document({
     sections: [
         {
+            children: [
+                new Paragraph({
+                    children: [new TextRun("First Page"), new PageBreak()],
+                }),
+                new Paragraph("Second Page"),
+            ],
             headers: {
                 default: new Header({
                     children: [
@@ -34,22 +51,14 @@ const doc = new Document({
                     ],
                 }),
             },
-            children: [
-                new Paragraph({
-                    children: [new TextRun("First Page"), new PageBreak()],
-                }),
-                new Paragraph("Second Page"),
-            ],
         },
         {
-            properties: {
-                page: {
-                    pageNumbers: {
-                        start: 1,
-                        separator: PageNumberSeparator.EM_DASH,
-                    },
-                },
-            },
+            children: [
+                new Paragraph({
+                    children: [new TextRun("Third Page"), new PageBreak()],
+                }),
+                new Paragraph("Fourth Page"),
+            ],
             headers: {
                 default: new Header({
                     children: [
@@ -78,12 +87,14 @@ const doc = new Document({
                     ],
                 }),
             },
-            children: [
-                new Paragraph({
-                    children: [new TextRun("Third Page"), new PageBreak()],
-                }),
-                new Paragraph("Fourth Page"),
-            ],
+            properties: {
+                page: {
+                    pageNumbers: {
+                        separator: PageNumberSeparator.EM_DASH,
+                        start: 1,
+                    },
+                },
+            },
         },
     ],
 });

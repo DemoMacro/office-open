@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { Settings } from "./settings";
 
@@ -40,9 +39,9 @@ describe("Settings", () => {
             expect(compat["w:compat"]).to.deep.include({
                 "w:compatSetting": {
                     _attr: {
-                        "w:val": 15,
-                        "w:uri": "http://schemas.microsoft.com/office/word",
                         "w:name": "compatibilityMode",
+                        "w:uri": "http://schemas.microsoft.com/office/word",
+                        "w:val": 15,
                     },
                 },
             });

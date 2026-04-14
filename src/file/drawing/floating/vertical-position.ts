@@ -8,10 +8,12 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 import { createAlign } from "./align";
-import { type IVerticalPositionOptions, VerticalPositionRelativeFrom } from "./floating-position";
+import { VerticalPositionRelativeFrom } from "./floating-position";
+import type { IVerticalPositionOptions } from "./floating-position";
 import { createPositionOffset } from "./position-offset";
 
 /**
@@ -51,14 +53,20 @@ import { createPositionOffset } from "./position-offset";
  * });
  * ```
  */
-export const createVerticalPosition = ({ relative, align, offset }: IVerticalPositionOptions): XmlComponent =>
+export const createVerticalPosition = ({
+    relative,
+    align,
+    offset,
+}: IVerticalPositionOptions): XmlComponent =>
     new BuilderElement<{
         /** Vertical Position Relative Base */
         readonly relativeFrom: (typeof VerticalPositionRelativeFrom)[keyof typeof VerticalPositionRelativeFrom];
     }>({
-        name: "wp:positionV",
         attributes: {
-            relativeFrom: { key: "relativeFrom", value: relative ?? VerticalPositionRelativeFrom.PAGE },
+            relativeFrom: {
+                key: "relativeFrom",
+                value: relative ?? VerticalPositionRelativeFrom.PAGE,
+            },
         },
         children: [
             (() => {
@@ -67,8 +75,11 @@ export const createVerticalPosition = ({ relative, align, offset }: IVerticalPos
                 } else if (offset !== undefined) {
                     return createPositionOffset(offset);
                 } else {
-                    throw new Error("There is no configuration provided for floating position (Align or offset)");
+                    throw new Error(
+                        "There is no configuration provided for floating position (Align or offset)",
+                    );
                 }
             })(),
         ],
+        name: "wp:positionV",
     });

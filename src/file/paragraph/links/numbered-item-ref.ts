@@ -31,18 +31,18 @@ export enum NumberedItemReferenceFormat {
     FULL_CONTEXT = "full_context",
 }
 
-export type INumberedItemReferenceOptions = {
+export interface INumberedItemReferenceOptions {
     /**
      * \h option - Creates a hyperlink to the bookmarked paragraph.
      * @default true
      */
     readonly hyperlink?: boolean;
     /**
-     * which switch to use for the reference format
+     * Which switch to use for the reference format
      * @default NumberedItemReferenceFormat.FULL_CONTEXT
      */
     readonly referenceFormat?: NumberedItemReferenceFormat;
-};
+}
 
 type Switch = "\\h" | "\\r" | "\\n" | "\\w";
 
@@ -78,10 +78,14 @@ export class NumberedItemReference extends SimpleField {
         cachedValue?: string,
         options: INumberedItemReferenceOptions = {},
     ) {
-        const { hyperlink = true, referenceFormat = NumberedItemReferenceFormat.FULL_CONTEXT } = options;
+        const { hyperlink = true, referenceFormat = NumberedItemReferenceFormat.FULL_CONTEXT } =
+            options;
         const baseInstruction = `REF ${bookmarkId}`;
 
-        const switches: readonly Switch[] = [...(hyperlink ? (["\\h"] as const) : []), ...[SWITCH_MAP[referenceFormat]].filter((a) => !!a)];
+        const switches: readonly Switch[] = [
+            ...(hyperlink ? ["\\h" as Switch] : []),
+            ...[SWITCH_MAP[referenceFormat]].filter((a): a is Switch => Boolean(a)),
+        ];
 
         const instruction = `${baseInstruction} ${switches.join(" ")}`;
 

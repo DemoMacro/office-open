@@ -1,13 +1,17 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { InsertedTextRun } from "./inserted-text-run";
 
 describe("InsertedTextRun", () => {
     describe("#constructor", () => {
         it("should create a inserted text run", () => {
-            const insertedTextRun = new InsertedTextRun({ text: "some text", id: 0, date: "123", author: "Author" });
+            const insertedTextRun = new InsertedTextRun({
+                author: "Author",
+                date: "123",
+                id: 0,
+                text: "some text",
+            });
             const tree = new Formatter().format(insertedTextRun);
             expect(tree).to.deep.equal({
                 "w:ins": [

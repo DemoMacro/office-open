@@ -1,4 +1,5 @@
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * # Absolute Position Offset
@@ -11,7 +12,6 @@ import { BuilderElement, type XmlComponent } from "@file/xml-components";
  */
 export const createPositionOffset = (offsetValue: number): XmlComponent =>
     new BuilderElement({
-        name: "wp:posOffset",
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         children: [offsetValue.toString() as any],
+        name: "wp:posOffset",
     });

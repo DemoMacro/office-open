@@ -7,7 +7,8 @@
  *
  * @module
  */
-import { BuilderElement, OnOffElement, type XmlComponent, createStringElement } from "@file/xml-components";
+import { BuilderElement, OnOffElement, createStringElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Options for a font relationship (embedded font).
@@ -18,14 +19,14 @@ import { BuilderElement, OnOffElement, type XmlComponent, createStringElement } 
  * @property fontKey - Embedded Font Obfuscation Key (GUID)
  * @property subsetted - Whether the embedded font is subsetted
  */
-export type IFontRelationshipOptions = {
+export interface IFontRelationshipOptions {
     /** Relationship to Part */
     readonly id: string;
     /** Embedded Font Obfuscation Key (GUID) */
     readonly fontKey?: string;
     /** Whether the embedded font is subsetted */
     readonly subsetted?: boolean;
-};
+}
 
 /**
  * Character set constants for font definitions.
@@ -35,24 +36,24 @@ export type IFontRelationshipOptions = {
  */
 export const CharacterSet = {
     ANSI: "00",
-    DEFAULT: "01",
-    SYMBOL: "02",
-    MAC: "4D",
-    JIS: "80",
-    HANGUL: "81",
-    JOHAB: "82",
-    GB_2312: "86",
-    CHINESEBIG5: "88",
-    GREEK: "A1",
-    TURKISH: "A2",
-    VIETNAMESE: "A3",
-    HEBREW: "B1",
     ARABIC: "B2",
     BALTIC: "BA",
-    RUSSIAN: "CC",
-    THAI: "DE",
+    CHINESEBIG5: "88",
+    DEFAULT: "01",
     EASTEUROPE: "EE",
+    GB_2312: "86",
+    GREEK: "A1",
+    HANGUL: "81",
+    HEBREW: "B1",
+    JIS: "80",
+    JOHAB: "82",
+    MAC: "4D",
     OEM: "FF",
+    RUSSIAN: "CC",
+    SYMBOL: "02",
+    THAI: "DE",
+    TURKISH: "A2",
+    VIETNAMESE: "A3",
 } as const;
 
 /**
@@ -73,7 +74,7 @@ export const CharacterSet = {
  * @property embedItalic - Embedded italic font relationship
  * @property embedBoldItalic - Embedded bold-italic font relationship
  */
-export type FontOptions = {
+export interface FontOptions {
     /** Font name (required) */
     readonly name: string;
     /** Alternative font name */
@@ -111,19 +112,22 @@ export type FontOptions = {
     readonly embedItalic?: IFontRelationshipOptions;
     /** Embedded bold-italic font relationship */
     readonly embedBoldItalic?: IFontRelationshipOptions;
-};
+}
 
 /**
  * Creates a font relationship element for embedding fonts.
  */
-const createFontRelationship = ({ id, fontKey, subsetted }: IFontRelationshipOptions, name: string): XmlComponent =>
+const createFontRelationship = (
+    { id, fontKey, subsetted }: IFontRelationshipOptions,
+    name: string,
+): XmlComponent =>
     new BuilderElement({
-        name,
         attributes: {
             id: { key: "r:id", value: id },
             ...(fontKey ? { fontKey: { key: "w:fontKey", value: `{${fontKey}}` } } : {}),
         },
-        children: [...(subsetted ? [new OnOffElement("w:subsetted", subsetted)] : [])],
+        children: subsetted ? [new OnOffElement("w:subsetted", subsetted)] : [],
+        name,
     });
 
 /**
@@ -179,7 +183,6 @@ export const createFont = ({
     embedBoldItalic,
 }: FontOptions): XmlComponent =>
     new BuilderElement({
-        name: "w:font",
         attributes: {
             name: { key: "w:name", value: name },
         },
@@ -199,15 +202,15 @@ export const createFont = ({
             ...(sig
                 ? [
                       new BuilderElement({
-                          name: "w:sig",
                           attributes: {
+                              csb0: { key: "w:csb0", value: sig.csb0 },
+                              csb1: { key: "w:csb1", value: sig.csb1 },
                               usb0: { key: "w:usb0", value: sig.usb0 },
                               usb1: { key: "w:usb1", value: sig.usb1 },
                               usb2: { key: "w:usb2", value: sig.usb2 },
                               usb3: { key: "w:usb3", value: sig.usb3 },
-                              csb0: { key: "w:csb0", value: sig.csb0 },
-                              csb1: { key: "w:csb1", value: sig.csb1 },
                           },
+                          name: "w:sig",
                       }),
                   ]
                 : []),
@@ -218,6 +221,9 @@ export const createFont = ({
             // http://www.datypic.com/sc/ooxml/e-w_embedItalic-1.html
             ...(embedItalic ? [createFontRelationship(embedItalic, "w:embedItalic")] : []),
             // http://www.datypic.com/sc/ooxml/e-w_embedBoldItalic-1.html
-            ...(embedBoldItalic ? [createFontRelationship(embedBoldItalic, "w:embedBoldItalic")] : []),
+            ...(embedBoldItalic
+                ? [createFontRelationship(embedBoldItalic, "w:embedBoldItalic")]
+                : []),
         ],
+        name: "w:font",
     });

@@ -11,7 +11,8 @@ import type { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-prop
 import type { IContext, IXmlableObject } from "@file/xml-components";
 import { hashedId } from "@util/convenience-functions";
 
-import { Drawing, type IFloating } from "../../drawing";
+import { Drawing } from "../../drawing";
+import type { IFloating } from "../../drawing";
 import type { OutlineOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
 import type { SolidFillOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
 import type { IMediaTransformation } from "../../media";
@@ -21,27 +22,27 @@ import { Run } from "../run";
 /**
  * Core options for image configuration.
  */
-type CoreImageOptions = {
+interface CoreImageOptions {
     readonly transformation: IMediaTransformation;
     readonly floating?: IFloating;
     readonly altText?: DocPropertiesOptions;
     readonly outline?: OutlineOptions;
     readonly solidFill?: SolidFillOptions;
-};
+}
 
-type RegularImageOptions = {
+interface RegularImageOptions {
     readonly type: "jpg" | "png" | "gif" | "bmp";
     readonly data: Buffer | string | Uint8Array | ArrayBuffer;
-};
+}
 
-type SvgMediaOptions = {
+interface SvgMediaOptions {
     readonly type: "svg";
     readonly data: Buffer | string | Uint8Array | ArrayBuffer;
     /**
      * Required in case the Word processor does not support SVG.
      */
     readonly fallback: RegularImageOptions;
-};
+}
 
 /**
  * Options for creating an ImageRun.
@@ -58,30 +59,38 @@ const convertDataURIToBinary = (dataURI: string): Uint8Array => {
 
     const base64IndexWithOffset = base64Index === -1 ? 0 : base64Index + BASE64_MARKER.length;
 
-    return new Uint8Array(
-        atob(dataURI.substring(base64IndexWithOffset))
-            .split("")
-            .map((c) => c.charCodeAt(0)),
-    );
+    const binaryString = atob(dataURI.substring(base64IndexWithOffset));
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes;
 };
 
-export const standardizeData = (data: string | Buffer | Uint8Array | ArrayBuffer): Buffer | Uint8Array | ArrayBuffer =>
+export const standardizeData = (
+    data: string | Buffer | Uint8Array | ArrayBuffer,
+): Buffer | Uint8Array | ArrayBuffer =>
     typeof data === "string" ? convertDataURIToBinary(data) : data;
 
-const createImageData = (options: IImageOptions, key: string): Pick<IMediaData, "data" | "fileName" | "transformation"> => ({
+const createImageData = (
+    options: IImageOptions,
+    key: string,
+): Pick<IMediaData, "data" | "fileName" | "transformation"> => ({
     data: standardizeData(options.data),
     fileName: key,
     transformation: {
-        pixels: {
-            x: Math.round(options.transformation.width),
-            y: Math.round(options.transformation.height),
-        },
         emus: {
             x: Math.round(options.transformation.width * 9525),
             y: Math.round(options.transformation.height * 9525),
         },
         flip: options.transformation.flip,
-        rotation: options.transformation.rotation ? options.transformation.rotation * 60000 : undefined,
+        pixels: {
+            x: Math.round(options.transformation.width),
+            y: Math.round(options.transformation.height),
+        },
+        rotation: options.transformation.rotation
+            ? options.transformation.rotation * 60_000
+            : undefined,
     },
 });
 
@@ -137,8 +146,8 @@ export class ImageRun extends Run {
                       ...createImageData(options, key),
                   };
         const drawing = new Drawing(this.imageData, {
-            floating: options.floating,
             docProperties: options.altText,
+            floating: options.floating,
             outline: options.outline,
         });
 

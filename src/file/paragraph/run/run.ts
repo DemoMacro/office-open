@@ -34,10 +34,11 @@ import type {
 } from "./empty-children";
 import { createBegin, createEnd, createSeparate } from "./field";
 import { CurrentSection, NumberOfPages, NumberOfPagesSection, Page } from "./page-number";
-import { type IParagraphRunPropertiesOptions, type IRunPropertiesOptions, RunProperties } from "./properties";
+import { RunProperties } from "./properties";
+import type { IParagraphRunPropertiesOptions, IRunPropertiesOptions } from "./properties";
 import { Text } from "./run-components/text";
 
-type IRunOptionsBase = {
+interface IRunOptionsBase {
     // <xsd:choice>
     //     <xsd:element name="br" type="CT_Br" />
     //     <xsd:element name="t" type="CT_Text" />
@@ -77,6 +78,7 @@ type IRunOptionsBase = {
         | FieldInstruction
         | (typeof PageNumber)[keyof typeof PageNumber]
         | FootnoteReferenceRun
+        | string
         | AnnotationReference
         | CarriageReturn
         | ContinuationSeparator
@@ -95,11 +97,10 @@ type IRunOptionsBase = {
         | YearLong
         | YearShort
         | XmlComponent
-        | string
     )[];
     readonly break?: number;
     readonly text?: string;
-};
+}
 
 /**
  * Options for creating a Run element.
@@ -184,33 +185,38 @@ export class Run extends XmlComponent {
             for (const child of options.children) {
                 if (typeof child === "string") {
                     switch (child) {
-                        case PageNumber.CURRENT:
+                        case PageNumber.CURRENT: {
                             this.root.push(createBegin());
                             this.root.push(new Page());
                             this.root.push(createSeparate());
                             this.root.push(createEnd());
                             break;
-                        case PageNumber.TOTAL_PAGES:
+                        }
+                        case PageNumber.TOTAL_PAGES: {
                             this.root.push(createBegin());
                             this.root.push(new NumberOfPages());
                             this.root.push(createSeparate());
                             this.root.push(createEnd());
                             break;
-                        case PageNumber.TOTAL_PAGES_IN_SECTION:
+                        }
+                        case PageNumber.TOTAL_PAGES_IN_SECTION: {
                             this.root.push(createBegin());
                             this.root.push(new NumberOfPagesSection());
                             this.root.push(createSeparate());
                             this.root.push(createEnd());
                             break;
-                        case PageNumber.CURRENT_SECTION:
+                        }
+                        case PageNumber.CURRENT_SECTION: {
                             this.root.push(createBegin());
                             this.root.push(new CurrentSection());
                             this.root.push(createSeparate());
                             this.root.push(createEnd());
                             break;
-                        default:
+                        }
+                        default: {
                             this.root.push(new Text(child));
                             break;
+                        }
                     }
                     continue;
                 }

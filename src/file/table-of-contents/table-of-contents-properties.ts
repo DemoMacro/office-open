@@ -39,7 +39,7 @@ export class StyleLevel {
  * - https://www.ecma-international.org/publications/standards/Ecma-376.htm (Part 1, Page 1251)
  * - http://officeopenxml.com/WPtableOfContents.php
  */
-export type ITableOfContentsOptions = {
+export interface ITableOfContentsOptions {
     /**
      * \a option - Includes captioned items, but omits caption labels and numbers.
      * The identifier designated by text in this switch's field-argument corresponds to the caption label.
@@ -142,4 +142,4 @@ export type ITableOfContentsOptions = {
      * \z Hides tab leader and page numbers in web page view (§17.18.102).
      */
     readonly hideTabAndPageNumbersInWebView?: boolean;
-};
+}

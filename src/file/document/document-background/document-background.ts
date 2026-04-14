@@ -60,7 +60,7 @@ export class DocumentBackgroundAttributes extends XmlAttributeComponent<{
  *
  * @see {@link DocumentBackground}
  */
-export type IDocumentBackgroundOptions = {
+export interface IDocumentBackgroundOptions {
     /** Background color in hex format (e.g., "FF0000" for red) */
     readonly color?: string;
     /** Theme color name (e.g., "accent1", "dark1") */
@@ -69,7 +69,7 @@ export type IDocumentBackgroundOptions = {
     readonly themeShade?: string;
     /** Theme tint value (lightens the theme color) */
     readonly themeTint?: string;
-};
+}
 
 /**
  * Represents a document background in a WordprocessingML document.
@@ -110,8 +110,12 @@ export class DocumentBackground extends XmlComponent {
             new DocumentBackgroundAttributes({
                 color: options.color === undefined ? undefined : hexColorValue(options.color),
                 themeColor: options.themeColor,
-                themeShade: options.themeShade === undefined ? undefined : uCharHexNumber(options.themeShade),
-                themeTint: options.themeTint === undefined ? undefined : uCharHexNumber(options.themeTint),
+                themeShade:
+                    options.themeShade === undefined
+                        ? undefined
+                        : uCharHexNumber(options.themeShade),
+                themeTint:
+                    options.themeTint === undefined ? undefined : uCharHexNumber(options.themeTint),
             }),
         );
     }

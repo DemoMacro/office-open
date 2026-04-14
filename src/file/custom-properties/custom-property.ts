@@ -17,12 +17,12 @@ import { CustomPropertyAttributes } from "./custom-property-attributes";
  * @property name - The property name
  * @property value - The property value (as string)
  */
-export type ICustomPropertyOptions = {
+export interface ICustomPropertyOptions {
     /** The property name */
     readonly name: string;
     /** The property value (as string) */
     readonly value: string;
-};
+}
 
 /**
  * Represents a single custom document property.
@@ -58,8 +58,8 @@ export class CustomProperty extends XmlComponent {
         this.root.push(
             new CustomPropertyAttributes({
                 formatId: "{D5CDD505-2E9C-101B-9397-08002B2CF9AE}",
-                pid: id.toString(),
                 name: properties.name,
+                pid: id.toString(),
             }),
         );
         this.root.push(new CustomPropertyValue(properties.value));

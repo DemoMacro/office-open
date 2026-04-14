@@ -1,6 +1,7 @@
 // Add custom borders and no-borders to the table itself
 
 import * as fs from "fs";
+
 import {
     BorderStyle,
     Document,
@@ -21,25 +22,25 @@ const table = new Table({
             children: [
                 new TableCell({
                     borders: {
-                        top: {
-                            style: BorderStyle.DASH_SMALL_GAP,
-                            size: 1,
-                            color: "ff0000",
-                        },
                         bottom: {
-                            style: BorderStyle.DASH_SMALL_GAP,
-                            size: 1,
                             color: "ff0000",
+                            size: 1,
+                            style: BorderStyle.DASH_SMALL_GAP,
                         },
                         left: {
-                            style: BorderStyle.DASH_SMALL_GAP,
-                            size: 1,
                             color: "ff0000",
+                            size: 1,
+                            style: BorderStyle.DASH_SMALL_GAP,
                         },
                         right: {
-                            style: BorderStyle.DASH_SMALL_GAP,
-                            size: 1,
                             color: "ff0000",
+                            size: 1,
+                            style: BorderStyle.DASH_SMALL_GAP,
+                        },
+                        top: {
+                            color: "ff0000",
+                            size: 1,
+                            style: BorderStyle.DASH_SMALL_GAP,
                         },
                     },
                     children: [new Paragraph("Hello")],
@@ -63,36 +64,36 @@ const table = new Table({
 });
 
 // Using the no-border convenience object. It is the same as writing this manually:
-// const borders = {
-//     top: {
-//         style: BorderStyle.NONE,
-//         size: 0,
-//         color: "auto",
+// Const borders = {
+//     Top: {
+//         Style: BorderStyle.NONE,
+//         Size: 0,
+//         Color: "auto",
 //     },
-//     bottom: {
-//         style: BorderStyle.NONE,
-//         size: 0,
-//         color: "auto",
+//     Bottom: {
+//         Style: BorderStyle.NONE,
+//         Size: 0,
+//         Color: "auto",
 //     },
-//     left: {
-//         style: BorderStyle.NONE,
-//         size: 0,
-//         color: "auto",
+//     Left: {
+//         Style: BorderStyle.NONE,
+//         Size: 0,
+//         Color: "auto",
 //     },
-//     right: {
-//         style: BorderStyle.NONE,
-//         size: 0,
-//         color: "auto",
+//     Right: {
+//         Style: BorderStyle.NONE,
+//         Size: 0,
+//         Color: "auto",
 //     },
-//     insideHorizontal: {
-//         style: BorderStyle.NONE,
-//         size: 0,
-//         color: "auto",
+//     InsideHorizontal: {
+//         Style: BorderStyle.NONE,
+//         Size: 0,
+//         Color: "auto",
 //     },
-//     insideVertical: {
-//         style: BorderStyle.NONE,
-//         size: 0,
-//         color: "auto",
+//     InsideVertical: {
+//         Style: BorderStyle.NONE,
+//         Size: 0,
+//         Color: "auto",
 //     },
 // };
 const noBorderTable = new Table({
@@ -123,8 +124,8 @@ const noBorderTable = new Table({
                 new TableCell({
                     children: [
                         new Paragraph({
-                            text: "Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah",
                             heading: HeadingLevel.HEADING_1,
+                            text: "Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah",
                         }),
                     ],
                 }),

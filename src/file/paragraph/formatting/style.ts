@@ -5,7 +5,8 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Built-in heading level styles.
@@ -62,8 +63,8 @@ export const HeadingLevel = {
  */
 export const createParagraphStyle = (styleId: string): XmlComponent =>
     new BuilderElement<{ readonly val: string }>({
-        name: "w:pStyle",
         attributes: {
             val: { key: "w:val", value: styleId },
         },
+        name: "w:pStyle",
     });

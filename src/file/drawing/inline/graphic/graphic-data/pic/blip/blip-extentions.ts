@@ -9,7 +9,8 @@
  * @module
  */
 import type { IMediaData } from "@file/media";
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Creates an SVG blip element for embedding SVG images.
@@ -23,7 +24,6 @@ import { BuilderElement, type XmlComponent } from "@file/xml-components";
  */
 const createSvgBlip = (mediaData: IMediaData): XmlComponent =>
     new BuilderElement({
-        name: "asvg:svgBlip",
         attributes: {
             asvg: {
                 key: "xmlns:asvg",
@@ -34,6 +34,7 @@ const createSvgBlip = (mediaData: IMediaData): XmlComponent =>
                 value: `rId{${mediaData.fileName}}`,
             },
         },
+        name: "asvg:svgBlip",
     });
 
 /**
@@ -48,7 +49,6 @@ const createSvgBlip = (mediaData: IMediaData): XmlComponent =>
  */
 const createExtention = (mediaData: IMediaData): XmlComponent =>
     new BuilderElement({
-        name: "a:ext",
         attributes: {
             uri: {
                 key: "uri",
@@ -56,6 +56,7 @@ const createExtention = (mediaData: IMediaData): XmlComponent =>
             },
         },
         children: [createSvgBlip(mediaData)],
+        name: "a:ext",
     });
 
 /**
@@ -78,6 +79,6 @@ const createExtention = (mediaData: IMediaData): XmlComponent =>
  */
 export const createExtentionList = (mediaData: IMediaData): XmlComponent =>
     new BuilderElement({
-        name: "a:extLst",
         children: [createExtention(mediaData)],
+        name: "a:extLst",
     });

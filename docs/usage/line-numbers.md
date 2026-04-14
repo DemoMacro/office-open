@@ -128,9 +128,13 @@ const doc = new Document({
                     heading: HeadingLevel.HEADING_2,
                     suppressLineNumbers: true, // Don't number section headers
                 }),
-                new Paragraph("1. Party B shall provide consulting services as requested by Party A."),
+                new Paragraph(
+                    "1. Party B shall provide consulting services as requested by Party A.",
+                ),
                 new Paragraph("2. Payment shall be made within 30 days of invoice receipt."),
-                new Paragraph("3. This agreement may be terminated by either party with 30 days notice."),
+                new Paragraph(
+                    "3. This agreement may be terminated by either party with 30 days notice.",
+                ),
             ],
         },
     ],

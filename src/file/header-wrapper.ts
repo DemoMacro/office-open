@@ -25,10 +25,10 @@ import type { Table } from "./table";
  * @property header - The HeaderWrapper instance containing the header content
  * @property type - The header type (default, first page, even pages)
  */
-export type IDocumentHeader = {
+export interface IDocumentHeader {
     readonly header: HeaderWrapper;
     readonly type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType];
-};
+}
 
 /**
  * Wrapper for document headers.

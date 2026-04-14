@@ -1,52 +1,12 @@
 // Simple example to add text to a document
 
 import * as fs from "fs";
+
 import { Document, Packer, Paragraph } from "docx";
 
 const doc = new Document({
-    styles: {
-        default: {
-            document: {
-                run: {
-                    color: "ff0000",
-                    language: {
-                        value: "es-ES",
-                    },
-                },
-            },
-        },
-        paragraphStyles: [
-            {
-                id: "frenchNormal",
-                name: "French Normal",
-                basedOn: "Normal",
-                next: "Normal",
-                run: {
-                    color: "999999",
-                    italics: true,
-                    language: {
-                        value: "fr-FR",
-                    },
-                },
-            },
-            {
-                id: "koreanNormal",
-                name: "Korean Normal",
-                basedOn: "Normal",
-                next: "Normal",
-                run: {
-                    color: "0000ff",
-                    bold: true,
-                    language: {
-                        value: "ko-KR",
-                    },
-                },
-            },
-        ],
-    },
     sections: [
         {
-            properties: {},
             children: [
                 new Paragraph({
                     text: "Yo vivo en Granada, una ciudad pequeña que tiene monumentos muy importantes como la Alhambra. Aquí la comida es deliciosa y son famosos el gazpacho, el rebujito y el salmorejo.",
@@ -60,8 +20,49 @@ const doc = new Document({
                     style: "koreanNormal",
                 }),
             ],
+            properties: {},
         },
     ],
+    styles: {
+        default: {
+            document: {
+                run: {
+                    color: "ff0000",
+                    language: {
+                        value: "es-ES",
+                    },
+                },
+            },
+        },
+        paragraphStyles: [
+            {
+                basedOn: "Normal",
+                id: "frenchNormal",
+                name: "French Normal",
+                next: "Normal",
+                run: {
+                    color: "999999",
+                    italics: true,
+                    language: {
+                        value: "fr-FR",
+                    },
+                },
+            },
+            {
+                basedOn: "Normal",
+                id: "koreanNormal",
+                name: "Korean Normal",
+                next: "Normal",
+                run: {
+                    bold: true,
+                    color: "0000ff",
+                    language: {
+                        value: "ko-KR",
+                    },
+                },
+            },
+        ],
+    },
 });
 
 Packer.toBuffer(doc).then((buffer) => {

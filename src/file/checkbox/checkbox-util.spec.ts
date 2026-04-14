@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { CheckBoxUtil } from ".";
 
@@ -44,12 +43,12 @@ describe("CheckBoxUtil", () => {
             const checkBoxUtil = new CheckBoxUtil({
                 checked: true,
                 checkedState: {
-                    value: "2713",
                     font: "Segoe UI Symbol",
+                    value: "2713",
                 },
                 uncheckedState: {
-                    value: "2705",
                     font: "Segoe UI Symbol",
+                    value: "2705",
                 },
             });
 

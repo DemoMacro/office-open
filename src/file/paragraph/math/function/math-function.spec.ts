@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { MathRun } from "../math-run";
 import { MathFunction } from "./math-function";
@@ -9,8 +8,8 @@ describe("MathFunction", () => {
     describe("#constructor()", () => {
         it("should create a MathFunction with correct root key", () => {
             const mathFunction = new MathFunction({
-                name: [new MathRun("sin")],
                 children: [new MathRun("60")],
+                name: [new MathRun("sin")],
             });
 
             const tree = new Formatter().format(mathFunction);

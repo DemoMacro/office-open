@@ -1,6 +1,7 @@
 // Example of how you would create a table and add data to it
 
 import * as fs from "fs";
+
 import { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType } from "docx";
 
 const table = new Table({
@@ -9,36 +10,36 @@ const table = new Table({
         new TableRow({
             children: [
                 new TableCell({
+                    children: [new Paragraph("Hello")],
                     width: {
                         size: 3505,
                         type: WidthType.DXA,
                     },
-                    children: [new Paragraph("Hello")],
                 }),
                 new TableCell({
+                    children: [],
                     width: {
                         size: 5505,
                         type: WidthType.DXA,
                     },
-                    children: [],
                 }),
             ],
         }),
         new TableRow({
             children: [
                 new TableCell({
+                    children: [],
                     width: {
                         size: 3505,
                         type: WidthType.DXA,
                     },
-                    children: [],
                 }),
                 new TableCell({
+                    children: [new Paragraph("World")],
                     width: {
                         size: 5505,
                         type: WidthType.DXA,
                     },
-                    children: [new Paragraph("World")],
                 }),
             ],
         }),
@@ -51,36 +52,36 @@ const table2 = new Table({
         new TableRow({
             children: [
                 new TableCell({
+                    children: [new Paragraph("Hello")],
                     width: {
                         size: 4505,
                         type: WidthType.DXA,
                     },
-                    children: [new Paragraph("Hello")],
                 }),
                 new TableCell({
+                    children: [],
                     width: {
                         size: 4505,
                         type: WidthType.DXA,
                     },
-                    children: [],
                 }),
             ],
         }),
         new TableRow({
             children: [
                 new TableCell({
+                    children: [],
                     width: {
                         size: 4505,
                         type: WidthType.DXA,
                     },
-                    children: [],
                 }),
                 new TableCell({
+                    children: [new Paragraph("World")],
                     width: {
                         size: 4505,
                         type: WidthType.DXA,
                     },
-                    children: [new Paragraph("World")],
                 }),
             ],
         }),

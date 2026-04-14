@@ -8,7 +8,8 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Creates an outline level element for a paragraph.
@@ -35,8 +36,8 @@ import { BuilderElement, type XmlComponent } from "@file/xml-components";
  */
 export const createOutlineLevel = (level: number): XmlComponent =>
     new BuilderElement<{ readonly val: number }>({
-        name: "w:outlineLvl",
         attributes: {
             val: { key: "w:val", value: level },
         },
+        name: "w:outlineLvl",
     });

@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { NumberedItemReference, NumberedItemReferenceFormat } from "./numbered-item-ref";
 
@@ -12,7 +11,7 @@ describe("NumberedItemReference", () => {
             expect(tree).to.deep.equal({
                 "w:fldSimple": {
                     _attr: {
-                        "w:instr": "REF some_bookmark \\h \\w",
+                        "w:instr": String.raw`REF some_bookmark \h \w`,
                     },
                 },
             });
@@ -25,7 +24,7 @@ describe("NumberedItemReference", () => {
                 "w:fldSimple": [
                     {
                         _attr: {
-                            "w:instr": "REF some_bookmark \\w",
+                            "w:instr": String.raw`REF some_bookmark \w`,
                         },
                     },
                     {
@@ -47,13 +46,15 @@ describe("NumberedItemReference", () => {
         });
 
         it("should create a numbered item ref with referenceFormat option", () => {
-            const ref = new NumberedItemReference("some_bookmark", "1", { referenceFormat: NumberedItemReferenceFormat.RELATIVE });
+            const ref = new NumberedItemReference("some_bookmark", "1", {
+                referenceFormat: NumberedItemReferenceFormat.RELATIVE,
+            });
             const tree = new Formatter().format(ref);
             expect(tree).to.deep.equal({
                 "w:fldSimple": [
                     {
                         _attr: {
-                            "w:instr": "REF some_bookmark \\h \\r",
+                            "w:instr": String.raw`REF some_bookmark \h \r`,
                         },
                     },
                     {
@@ -75,13 +76,15 @@ describe("NumberedItemReference", () => {
         });
 
         it("should be possible to use the none referenceFormat option", () => {
-            const ref = new NumberedItemReference("some_bookmark", "1", { referenceFormat: NumberedItemReferenceFormat.NONE });
+            const ref = new NumberedItemReference("some_bookmark", "1", {
+                referenceFormat: NumberedItemReferenceFormat.NONE,
+            });
             const tree = new Formatter().format(ref);
             expect(tree).to.deep.equal({
                 "w:fldSimple": [
                     {
                         _attr: {
-                            "w:instr": "REF some_bookmark \\h",
+                            "w:instr": String.raw`REF some_bookmark \h`,
                         },
                     },
                     {
@@ -103,13 +106,15 @@ describe("NumberedItemReference", () => {
         });
 
         it("should be possible to use the NO_CONTEXT referenceFormat option", () => {
-            const ref = new NumberedItemReference("some_bookmark", "1", { referenceFormat: NumberedItemReferenceFormat.NO_CONTEXT });
+            const ref = new NumberedItemReference("some_bookmark", "1", {
+                referenceFormat: NumberedItemReferenceFormat.NO_CONTEXT,
+            });
             const tree = new Formatter().format(ref);
             expect(tree).to.deep.equal({
                 "w:fldSimple": [
                     {
                         _attr: {
-                            "w:instr": "REF some_bookmark \\h \\n",
+                            "w:instr": String.raw`REF some_bookmark \h \n`,
                         },
                     },
                     {

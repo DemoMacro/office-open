@@ -7,7 +7,8 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Specifies the type of section break.
@@ -42,9 +43,9 @@ export const SectionType = {
     ODD_PAGE: "oddPage",
 } as const;
 
-type ISectionTypeAttributes = {
+interface ISectionTypeAttributes {
     readonly val: (typeof SectionType)[keyof typeof SectionType];
-};
+}
 
 /**
  * Creates section type (type) for a document section.
@@ -70,10 +71,12 @@ type ISectionTypeAttributes = {
  * createSectionType(SectionType.ODD_PAGE);
  * ```
  */
-export const createSectionType = (value: (typeof SectionType)[keyof typeof SectionType]): XmlComponent =>
+export const createSectionType = (
+    value: (typeof SectionType)[keyof typeof SectionType],
+): XmlComponent =>
     new BuilderElement<ISectionTypeAttributes>({
-        name: "w:type",
         attributes: {
             val: { key: "w:val", value: value },
         },
+        name: "w:type",
     });

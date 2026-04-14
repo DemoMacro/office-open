@@ -1,62 +1,13 @@
 // Example of a continuous header
 
 import * as fs from "fs";
+
 import { Document, Footer, Header, Packer, Paragraph, SectionType, TextRun } from "docx";
 
 const doc = new Document({
     creator: "Creator",
-    title: "Title",
     sections: [
         {
-            properties: { titlePage: true },
-            headers: {
-                first: new Header({
-                    children: [
-                        new Paragraph({
-                            children: [
-                                new TextRun({
-                                    text: "HEADER PAGE ONE",
-                                }),
-                            ],
-                        }),
-                    ],
-                }),
-                default: new Header({
-                    children: [
-                        new Paragraph({
-                            children: [
-                                new TextRun({
-                                    text: "HEADER PAGE TWO AND FOLLOWING PAGES",
-                                }),
-                            ],
-                        }),
-                    ],
-                }),
-            },
-            footers: {
-                first: new Footer({
-                    children: [
-                        new Paragraph({
-                            children: [
-                                new TextRun({
-                                    text: "FOOTER PAGE ONE",
-                                }),
-                            ],
-                        }),
-                    ],
-                }),
-                default: new Footer({
-                    children: [
-                        new Paragraph({
-                            children: [
-                                new TextRun({
-                                    text: "FOOTER PAGE TWO AND FOLLOWING PAGES",
-                                }),
-                            ],
-                        }),
-                    ],
-                }),
-            },
             children: [
                 new Paragraph({
                     children: [
@@ -97,11 +48,57 @@ const doc = new Document({
                     ],
                 }),
             ],
+            footers: {
+                default: new Footer({
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: "FOOTER PAGE TWO AND FOLLOWING PAGES",
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+                first: new Footer({
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: "FOOTER PAGE ONE",
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            },
+            headers: {
+                default: new Header({
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: "HEADER PAGE TWO AND FOLLOWING PAGES",
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+                first: new Header({
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: "HEADER PAGE ONE",
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            },
+            properties: { titlePage: true },
         },
         {
-            properties: {
-                type: SectionType.CONTINUOUS,
-            },
             children: [
                 new Paragraph({
                     children: [
@@ -139,8 +136,12 @@ const doc = new Document({
                     ],
                 }),
             ],
+            properties: {
+                type: SectionType.CONTINUOUS,
+            },
         },
     ],
+    title: "Title",
 });
 
 Packer.toBuffer(doc).then((buffer) => {

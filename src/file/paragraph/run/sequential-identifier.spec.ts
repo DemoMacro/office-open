@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { SequentialIdentifier } from "./sequential-identifier";
 
@@ -19,8 +18,8 @@ const DEFAULT_SEQ = {
         {
             "w:fldChar": {
                 _attr: {
-                    "w:fldCharType": "begin",
                     "w:dirty": true,
+                    "w:fldCharType": "begin",
                 },
             },
         },

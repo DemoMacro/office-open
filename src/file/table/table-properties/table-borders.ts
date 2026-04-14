@@ -7,7 +7,8 @@
  *
  * @module
  */
-import { BorderStyle, type IBorderOptions, createBorderElement } from "@file/border";
+import { BorderStyle, createBorderElement } from "@file/border";
+import type { IBorderOptions } from "@file/border";
 import { XmlComponent } from "@file/xml-components";
 
 /**
@@ -16,25 +17,25 @@ import { XmlComponent } from "@file/xml-components";
  * Borders can be applied to the outside edges (top, bottom, left, right)
  * and inside lines (insideHorizontal, insideVertical) of the table.
  */
-export type ITableBordersOptions = {
+export interface ITableBordersOptions {
     readonly top?: IBorderOptions;
     readonly bottom?: IBorderOptions;
     readonly left?: IBorderOptions;
     readonly right?: IBorderOptions;
     readonly insideHorizontal?: IBorderOptions;
     readonly insideVertical?: IBorderOptions;
-};
+}
 
 const NONE_BORDER: IBorderOptions = {
-    style: BorderStyle.NONE,
-    size: 0,
     color: "auto",
+    size: 0,
+    style: BorderStyle.NONE,
 };
 
 const DEFAULT_BORDER: IBorderOptions = {
-    style: BorderStyle.SINGLE,
-    size: 4,
     color: "auto",
+    size: 4,
+    style: BorderStyle.SINGLE,
 };
 
 /**
@@ -59,12 +60,12 @@ const DEFAULT_BORDER: IBorderOptions = {
  */
 export class TableBorders extends XmlComponent {
     public static readonly NONE: ITableBordersOptions = {
-        top: NONE_BORDER,
         bottom: NONE_BORDER,
-        left: NONE_BORDER,
-        right: NONE_BORDER,
         insideHorizontal: NONE_BORDER,
         insideVertical: NONE_BORDER,
+        left: NONE_BORDER,
+        right: NONE_BORDER,
+        top: NONE_BORDER,
     };
 
     public constructor(options: ITableBordersOptions) {
@@ -74,7 +75,9 @@ export class TableBorders extends XmlComponent {
         this.root.push(createBorderElement("w:left", options.left ?? DEFAULT_BORDER));
         this.root.push(createBorderElement("w:bottom", options.bottom ?? DEFAULT_BORDER));
         this.root.push(createBorderElement("w:right", options.right ?? DEFAULT_BORDER));
-        this.root.push(createBorderElement("w:insideH", options.insideHorizontal ?? DEFAULT_BORDER));
+        this.root.push(
+            createBorderElement("w:insideH", options.insideHorizontal ?? DEFAULT_BORDER),
+        );
         this.root.push(createBorderElement("w:insideV", options.insideVertical ?? DEFAULT_BORDER));
     }
 }

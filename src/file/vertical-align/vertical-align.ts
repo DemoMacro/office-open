@@ -21,7 +21,8 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Enumeration for table-cell vertical alignment. Only `top`, `center`, `bottom`
@@ -30,9 +31,9 @@ import { BuilderElement, type XmlComponent } from "@file/xml-components";
  * @publicApi
  */
 export const VerticalAlignTable = {
-    TOP: "top",
-    CENTER: "center",
     BOTTOM: "bottom",
+    CENTER: "center",
+    TOP: "top",
 } as const;
 
 /**
@@ -69,10 +70,14 @@ export type SectionVerticalAlign = (typeof VerticalAlignSection)[keyof typeof Ve
  * createVerticalAlign(VerticalAlignTable.CENTER);
  * ```
  */
-export const createVerticalAlign = (value: (typeof VerticalAlign)[keyof typeof VerticalAlign]): XmlComponent =>
-    new BuilderElement<{ readonly verticalAlign: (typeof VerticalAlign)[keyof typeof VerticalAlign] }>({
-        name: "w:vAlign",
+export const createVerticalAlign = (
+    value: (typeof VerticalAlign)[keyof typeof VerticalAlign],
+): XmlComponent =>
+    new BuilderElement<{
+        readonly verticalAlign: (typeof VerticalAlign)[keyof typeof VerticalAlign];
+    }>({
         attributes: {
             verticalAlign: { key: "w:val", value },
         },
+        name: "w:vAlign",
     });

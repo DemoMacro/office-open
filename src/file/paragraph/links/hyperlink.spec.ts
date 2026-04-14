@@ -1,6 +1,5 @@
-import { beforeEach, describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { beforeEach, describe, expect, it } from "vite-plus/test";
 
 import { TextRun } from "../run";
 import { ConcreteHyperlink, ExternalHyperlink, InternalHyperlink } from "./hyperlink";
@@ -12,8 +11,8 @@ describe("ConcreteHyperlink", () => {
         hyperlink = new ConcreteHyperlink(
             [
                 new TextRun({
-                    text: "https://example.com",
                     style: "Hyperlink",
+                    text: "https://example.com",
                 }),
             ],
             "superid",
@@ -27,14 +26,19 @@ describe("ConcreteHyperlink", () => {
                 "w:hyperlink": [
                     {
                         _attr: {
-                            "w:history": 1,
                             "r:id": "rIdsuperid",
+                            "w:history": 1,
                         },
                     },
                     {
                         "w:r": [
                             { "w:rPr": [{ "w:rStyle": { _attr: { "w:val": "Hyperlink" } } }] },
-                            { "w:t": [{ _attr: { "xml:space": "preserve" } }, "https://example.com"] },
+                            {
+                                "w:t": [
+                                    { _attr: { "xml:space": "preserve" } },
+                                    "https://example.com",
+                                ],
+                            },
                         ],
                     },
                 ],
@@ -46,8 +50,8 @@ describe("ConcreteHyperlink", () => {
                 hyperlink = new ConcreteHyperlink(
                     [
                         new TextRun({
-                            text: "Anchor Text",
                             style: "Hyperlink",
+                            text: "Anchor Text",
                         }),
                     ],
                     "superid2",
@@ -61,8 +65,8 @@ describe("ConcreteHyperlink", () => {
                     "w:hyperlink": [
                         {
                             _attr: {
-                                "w:history": 1,
                                 "w:anchor": "anchor",
+                                "w:history": 1,
                             },
                         },
                         {
@@ -95,8 +99,8 @@ describe("InternalHyperlink", () => {
     describe("#constructor()", () => {
         it("should create", () => {
             const internalHyperlink = new InternalHyperlink({
-                children: [new TextRun("test")],
                 anchor: "test-id",
+                children: [new TextRun("test")],
             });
 
             const tree = new Formatter().format(internalHyperlink);

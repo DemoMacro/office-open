@@ -11,7 +11,8 @@ import { XmlComponent } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 
 import type { ParagraphChild } from "../paragraph";
-import { HyperlinkAttributes, type IHyperlinkAttributesProperties } from "./hyperlink-attributes";
+import { HyperlinkAttributes } from "./hyperlink-attributes";
+import type { IHyperlinkAttributesProperties } from "./hyperlink-attributes";
 
 /**
  * Hyperlink type enumeration.
@@ -33,12 +34,12 @@ export const HyperlinkType = {
  * @property children - Array of paragraph children (usually TextRun elements) that form the hyperlink text
  * @property anchor - Name of the bookmark to link to within the document
  */
-export type IInternalHyperlinkOptions = {
+export interface IInternalHyperlinkOptions {
     /** Array of paragraph children that form the hyperlink text */
     readonly children: readonly ParagraphChild[];
     /** Name of the bookmark to link to within the document */
     readonly anchor: string;
-};
+}
 
 /**
  * Options for creating an external hyperlink.
@@ -46,12 +47,12 @@ export type IInternalHyperlinkOptions = {
  * @property children - Array of paragraph children (usually TextRun elements) that form the hyperlink text
  * @property link - URL to link to outside the document
  */
-export type IExternalHyperlinkOptions = {
+export interface IExternalHyperlinkOptions {
     /** Array of paragraph children that form the hyperlink text */
     readonly children: readonly ParagraphChild[];
     /** URL to link to outside the document */
     readonly link: string;
-};
+}
 
 /**
  * Represents a concrete hyperlink in a WordprocessingML document.
@@ -79,14 +80,18 @@ export type IExternalHyperlinkOptions = {
 export class ConcreteHyperlink extends XmlComponent {
     public readonly linkId: string;
 
-    public constructor(children: readonly ParagraphChild[], relationshipId: string, anchor?: string) {
+    public constructor(
+        children: readonly ParagraphChild[],
+        relationshipId: string,
+        anchor?: string,
+    ) {
         super("w:hyperlink");
 
         this.linkId = relationshipId;
 
         const props: IHyperlinkAttributesProperties = {
-            history: 1,
             anchor: anchor ? anchor : undefined,
+            history: 1,
             id: !anchor ? `rId${this.linkId}` : undefined,
         };
 

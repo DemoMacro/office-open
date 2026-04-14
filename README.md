@@ -26,22 +26,22 @@
 
 Here are examples of `docx` being used with basic `HTML/JS` in a browser environment:
 
--   https://codepen.io/dolanmiu/pen/RwNeObg
--   https://jsfiddle.net/dolanmiu/onadx1gu/
+- https://codepen.io/dolanmiu/pen/RwNeObg
+- https://jsfiddle.net/dolanmiu/onadx1gu/
 
 Here are examples of `docx` working in `Angular`:
 
--   https://stackblitz.com/edit/angular-docx
--   https://stackblitz.com/edit/angular-wmd6k3
+- https://stackblitz.com/edit/angular-docx
+- https://stackblitz.com/edit/angular-wmd6k3
 
 Here are examples of `docx` working in `React`:
 
--   https://stackblitz.com/edit/react-docx
--   https://stackblitz.com/edit/react-docx-images (adding images to Word Document)
+- https://stackblitz.com/edit/react-docx
+- https://stackblitz.com/edit/react-docx-images (adding images to Word Document)
 
 Here is an example of `docx` working in `Vue.js`:
 
--   https://stackblitz.com/edit/vuejs-docx
+- https://stackblitz.com/edit/vuejs-docx
 
 ## Node
 
@@ -49,15 +49,15 @@ Press `endpoint` on the `RunKit` website:
 
 ![RunKit Instructions](https://user-images.githubusercontent.com/2917613/38582539-f84311b6-3d07-11e8-90db-5885ae02c3c4.png)
 
--   https://runkit.com/dolanmiu/docx-demo1 - Simple paragraph and text
--   https://runkit.com/dolanmiu/docx-demo2 - Advanced Paragraphs and text
--   https://runkit.com/dolanmiu/docx-demo3 - Bullet points
--   https://runkit.com/dolanmiu/docx-demo4 - Simple table
--   https://runkit.com/dolanmiu/docx-demo5 - Images
--   https://runkit.com/dolanmiu/docx-demo6 - Margins
--   https://runkit.com/dolanmiu/docx-demo7 - Landscape
--   https://runkit.com/dolanmiu/docx-demo8 - Header and Footer
--   https://runkit.com/dolanmiu/docx-demo10 - **My CV generated with docx**
+- https://runkit.com/dolanmiu/docx-demo1 - Simple paragraph and text
+- https://runkit.com/dolanmiu/docx-demo2 - Advanced Paragraphs and text
+- https://runkit.com/dolanmiu/docx-demo3 - Bullet points
+- https://runkit.com/dolanmiu/docx-demo4 - Simple table
+- https://runkit.com/dolanmiu/docx-demo5 - Images
+- https://runkit.com/dolanmiu/docx-demo6 - Margins
+- https://runkit.com/dolanmiu/docx-demo7 - Landscape
+- https://runkit.com/dolanmiu/docx-demo8 - Header and Footer
+- https://runkit.com/dolanmiu/docx-demo10 - **My CV generated with docx**
 
 More [here](https://github.com/dolanmiu/docx/tree/master/demo)
 
@@ -120,5 +120,5 @@ Made with 💖
 [patreon-url]: https://www.patreon.com/dolanmiu
 [browserstack-image]: https://user-images.githubusercontent.com/2917613/54233552-128e9d00-4505-11e9-88fb-025a4e04007c.png
 [browserstack-url]: https://www.browserstack.com
-[docxjs-editor-image]: https://img.shields.io/badge/Docx.js%20Editor-2b579a.svg?style=flat&amp;logo=javascript&amp;logoColor=white
+[docxjs-editor-image]: https://img.shields.io/badge/Docx.js%20Editor-2b579a.svg?style=flat&logo=javascript&logoColor=white
 [docxjs-editor-url]: https://docxjs-editor.vercel.app/

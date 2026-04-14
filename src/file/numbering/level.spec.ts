@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { AlignmentType } from "..";
 import { Level, LevelFormat, LevelSuffix } from "./level";
@@ -11,13 +10,13 @@ describe("Level", () => {
             expect(
                 () =>
                     new Level({
-                        level: 10,
-                        format: LevelFormat.BULLET,
-                        text: "test",
                         alignment: AlignmentType.BOTH,
+                        format: LevelFormat.BULLET,
+                        level: 10,
                         start: 3,
-                        style: { run: {}, paragraph: {} },
+                        style: { paragraph: {}, run: {} },
                         suffix: LevelSuffix.SPACE,
+                        text: "test",
                     }),
             ).to.throw();
         });
@@ -26,8 +25,8 @@ describe("Level", () => {
     describe("isLegalNumberingStyle", () => {
         it("should work", () => {
             const concreteNumbering = new Level({
-                level: 9,
                 isLegalNumberingStyle: true,
+                level: 9,
             });
             const tree = new Formatter().format(concreteNumbering);
             expect(tree).to.deep.equal({

@@ -1,16 +1,18 @@
 // Patch a document with patches
 
 import * as fs from "fs";
-import { IPatch, patchDocument, PatchType, TextRun } from "docx";
+
+import type { IPatch } from "docx";
+import { patchDocument, PatchType, TextRun } from "docx";
 
 export const font = "Trebuchet MS";
-export const getPatches = (fields: { [key: string]: string }) => {
-    const patches: { [key: string]: IPatch } = {};
+export const getPatches = (fields: Record<string, string>) => {
+    const patches: Record<string, IPatch> = {};
 
     for (const field in fields) {
         patches[field] = {
+            children: [new TextRun({ font, text: fields[field] })],
             type: PatchType.PARAGRAPH,
-            children: [new TextRun({ text: fields[field], font })],
         };
     }
 
@@ -18,15 +20,15 @@ export const getPatches = (fields: { [key: string]: string }) => {
 };
 
 const patches = getPatches({
-    name: "Mr",
-    table_heading_1: "John",
     item_1: "Doe",
+    name: "Mr",
     paragraph_replace: "Lorem ipsum paragraph",
+    table_heading_1: "John",
 });
 
 patchDocument({
-    outputType: "nodebuffer",
     data: fs.readFileSync("demo/assets/simple-template.docx"),
+    outputType: "nodebuffer",
     patches,
 }).then((doc) => {
     fs.writeFileSync("My Document.docx", doc);

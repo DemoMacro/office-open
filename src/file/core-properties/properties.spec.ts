@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { CoreProperties } from "./properties";
 
@@ -13,7 +12,8 @@ describe("Properties", () => {
             expect(tree["cp:coreProperties"]).to.be.an.instanceof(Array);
             expect(tree["cp:coreProperties"][0]).to.deep.equal({
                 _attr: {
-                    "xmlns:cp": "http://schemas.openxmlformats.org/package/2006/metadata/core-properties",
+                    "xmlns:cp":
+                        "http://schemas.openxmlformats.org/package/2006/metadata/core-properties",
                     "xmlns:dc": "http://purl.org/dc/elements/1.1/",
                     "xmlns:dcmitype": "http://purl.org/dc/dcmitype/",
                     "xmlns:dcterms": "http://purl.org/dc/terms/",
@@ -32,19 +32,18 @@ describe("Properties", () => {
 
         it("should create properties with all the attributes given", () => {
             const properties = new CoreProperties({
-                title: "test document",
-                subject: "test subject",
                 creator: "me",
-                keywords: "test docx",
                 description: "testing document",
+                keywords: "test docx",
                 lastModifiedBy: "the author",
                 revision: 123,
+                subject: "test subject",
+                title: "test document",
             });
             const tree = new Formatter().format(properties);
             expect(Object.keys(tree)).to.deep.equal(["cp:coreProperties"]);
             expect(tree["cp:coreProperties"]).to.be.an.instanceof(Array);
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const key = (obj: Readonly<Record<string, any>>) => Object.keys(obj)[0];
             expect(tree["cp:coreProperties"].map(key)).to.include.members([
                 "_attr",

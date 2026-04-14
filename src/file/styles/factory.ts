@@ -1,3 +1,4 @@
+import { DocumentAttributes } from "../document/document-attributes";
 /**
  * Factory module for creating default document styles.
  *
@@ -7,7 +8,8 @@
  *
  * @module
  */
-import { DocumentDefaults, type IDocumentDefaultsOptions } from "./defaults";
+import { DocumentDefaults } from "./defaults";
+import type { IDocumentDefaultsOptions } from "./defaults";
 import {
     EndnoteReferenceStyle,
     EndnoteText,
@@ -22,14 +24,12 @@ import {
     Heading5Style,
     Heading6Style,
     HyperlinkStyle,
-    type IBaseCharacterStyleOptions,
-    type IBaseParagraphStyleOptions,
     ListParagraph,
     StrongStyle,
     TitleStyle,
 } from "./style";
+import type { IBaseCharacterStyleOptions, IBaseParagraphStyleOptions } from "./style";
 import type { IStylesOptions } from "./styles";
-import { DocumentAttributes } from "../document/document-attributes";
 
 /**
  * Options for configuring default document styles.
@@ -51,7 +51,7 @@ import { DocumentAttributes } from "../document/document-attributes";
  * @property footnoteText - Footnote text paragraph style options
  * @property footnoteTextChar - Footnote text character style options
  */
-export type IDefaultStylesOptions = {
+export interface IDefaultStylesOptions {
     /** Document-wide default formatting */
     readonly document?: IDocumentDefaultsOptions;
     /** Title paragraph style options */
@@ -83,7 +83,7 @@ export type IDefaultStylesOptions = {
     readonly endnoteReference?: IBaseCharacterStyleOptions;
     readonly endnoteText?: IBaseParagraphStyleOptions;
     readonly endnoteTextChar?: IBaseCharacterStyleOptions;
-};
+}
 
 /**
  * Factory for creating default document styles.
@@ -107,9 +107,11 @@ export type IDefaultStylesOptions = {
  */
 export class DefaultStylesFactory {
     public newInstance(options: IDefaultStylesOptions = {}): IStylesOptions {
-        const documentAttributes = new DocumentAttributes(["mc", "r", "w", "w14", "w15"], "w14 w15");
+        const documentAttributes = new DocumentAttributes(
+            ["mc", "r", "w", "w14", "w15"],
+            "w14 w15",
+        );
         return {
-            initialStyles: documentAttributes,
             importedStyles: [
                 new DocumentDefaults(options.document ?? {}),
                 new TitleStyle({
@@ -173,6 +175,7 @@ export class DefaultStylesFactory {
                 new EndnoteText(options.endnoteText || {}),
                 new EndnoteTextChar(options.endnoteTextChar || {}),
             ],
+            initialStyles: documentAttributes,
         };
     }
 }

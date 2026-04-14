@@ -7,11 +7,13 @@
  * @module
  */
 import { FileChild } from "@file/file-child";
-import { type IParagraphOptions, ParagraphProperties } from "@file/paragraph";
+import { ParagraphProperties } from "@file/paragraph";
+import type { IParagraphOptions } from "@file/paragraph";
 import { uniqueId } from "@util/convenience-functions";
 
 import { createPictElement } from "./pict-element/pict-element";
-import { type VmlShapeStyle, createShape } from "./shape/shape";
+import { createShape } from "./shape/shape";
+import type { VmlShapeStyle } from "./shape/shape";
 
 /**
  * Options for creating a Textbox.

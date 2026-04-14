@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import {
     dateTimeValue,
@@ -62,7 +62,7 @@ describe("values", () => {
         it("should throw on invalid values", () => {
             expect(() => shortHexNumber("11")).to.throw();
             expect(() => shortHexNumber("112233")).to.throw();
-            /* cspell:disable-next-line */
+            /* Cspell:disable-next-line */
             expect(() => shortHexNumber("FFFG")).to.throw();
         });
     });
@@ -167,7 +167,9 @@ describe("values", () => {
 
     describe("dateTimeValue", () => {
         it("should allow valid values", () => {
-            expect(dateTimeValue(new Date())).to.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:.\d+)?Z/);
+            expect(dateTimeValue(new Date())).to.match(
+                /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:.\d+)?Z/,
+            );
         });
     });
 });

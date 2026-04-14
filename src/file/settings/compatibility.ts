@@ -92,7 +92,7 @@ import { createCompatibilitySetting } from "./compatibility-setting/compatibilit
  *
  * @see {@link Compatibility}
  */
-export type ICompatibilityOptions = {
+export interface ICompatibilityOptions {
     /** Word compatibility mode version (e.g., 15 for Word 2013+) */
     readonly version?: number;
     /** Use Simplified Rules For Table Border Conflicts */
@@ -225,7 +225,7 @@ export type ICompatibilityOptions = {
     readonly useAnsiKerningPairs?: boolean;
     /** Use Cached Paragraph Information for Column Balancing */
     readonly cachedColumnBalance?: boolean;
-};
+}
 
 /**
  * Represents compatibility settings in a WordprocessingML document.
@@ -275,7 +275,12 @@ export class Compatibility extends XmlComponent {
         }
 
         if (options.useSingleBorderforContiguousCells) {
-            this.root.push(new OnOffElement("w:useSingleBorderforContiguousCells", options.useSingleBorderforContiguousCells));
+            this.root.push(
+                new OnOffElement(
+                    "w:useSingleBorderforContiguousCells",
+                    options.useSingleBorderforContiguousCells,
+                ),
+            );
         }
 
         if (options.wordPerfectJustification) {
@@ -299,7 +304,12 @@ export class Compatibility extends XmlComponent {
         }
 
         if (options.balanceSingleByteDoubleByteWidth) {
-            this.root.push(new OnOffElement("w:balanceSingleByteDoubleByteWidth", options.balanceSingleByteDoubleByteWidth));
+            this.root.push(
+                new OnOffElement(
+                    "w:balanceSingleByteDoubleByteWidth",
+                    options.balanceSingleByteDoubleByteWidth,
+                ),
+            );
         }
 
         if (options.noExtraLineSpacing) {
@@ -307,7 +317,9 @@ export class Compatibility extends XmlComponent {
         }
 
         if (options.doNotLeaveBackslashAlone) {
-            this.root.push(new OnOffElement("w:doNotLeaveBackslashAlone", options.doNotLeaveBackslashAlone));
+            this.root.push(
+                new OnOffElement("w:doNotLeaveBackslashAlone", options.doNotLeaveBackslashAlone),
+            );
         }
 
         if (options.underlineTrailingSpaces) {
@@ -315,11 +327,15 @@ export class Compatibility extends XmlComponent {
         }
 
         if (options.doNotExpandShiftReturn) {
-            this.root.push(new OnOffElement("w:doNotExpandShiftReturn", options.doNotExpandShiftReturn));
+            this.root.push(
+                new OnOffElement("w:doNotExpandShiftReturn", options.doNotExpandShiftReturn),
+            );
         }
 
         if (options.spacingInWholePoints) {
-            this.root.push(new OnOffElement("w:spacingInWholePoints", options.spacingInWholePoints));
+            this.root.push(
+                new OnOffElement("w:spacingInWholePoints", options.spacingInWholePoints),
+            );
         }
 
         if (options.lineWrapLikeWord6) {
@@ -327,7 +343,9 @@ export class Compatibility extends XmlComponent {
         }
 
         if (options.printBodyTextBeforeHeader) {
-            this.root.push(new OnOffElement("w:printBodyTextBeforeHeader", options.printBodyTextBeforeHeader));
+            this.root.push(
+                new OnOffElement("w:printBodyTextBeforeHeader", options.printBodyTextBeforeHeader),
+            );
         }
 
         if (options.printColorsBlack) {
@@ -347,7 +365,9 @@ export class Compatibility extends XmlComponent {
         }
 
         if (options.suppressBottomSpacing) {
-            this.root.push(new OnOffElement("w:suppressBottomSpacing", options.suppressBottomSpacing));
+            this.root.push(
+                new OnOffElement("w:suppressBottomSpacing", options.suppressBottomSpacing),
+            );
         }
 
         if (options.suppressTopSpacing) {
@@ -355,19 +375,30 @@ export class Compatibility extends XmlComponent {
         }
 
         if (options.suppressSpacingAtTopOfPage) {
-            this.root.push(new OnOffElement("w:suppressSpacingAtTopOfPage", options.suppressSpacingAtTopOfPage));
+            this.root.push(
+                new OnOffElement(
+                    "w:suppressSpacingAtTopOfPage",
+                    options.suppressSpacingAtTopOfPage,
+                ),
+            );
         }
 
         if (options.suppressTopSpacingWP) {
-            this.root.push(new OnOffElement("w:suppressTopSpacingWP", options.suppressTopSpacingWP));
+            this.root.push(
+                new OnOffElement("w:suppressTopSpacingWP", options.suppressTopSpacingWP),
+            );
         }
 
         if (options.suppressSpBfAfterPgBrk) {
-            this.root.push(new OnOffElement("w:suppressSpBfAfterPgBrk", options.suppressSpBfAfterPgBrk));
+            this.root.push(
+                new OnOffElement("w:suppressSpBfAfterPgBrk", options.suppressSpBfAfterPgBrk),
+            );
         }
 
         if (options.swapBordersFacingPages) {
-            this.root.push(new OnOffElement("w:swapBordersFacingPages", options.swapBordersFacingPages));
+            this.root.push(
+                new OnOffElement("w:swapBordersFacingPages", options.swapBordersFacingPages),
+            );
         }
 
         if (options.convertMailMergeEsc) {
@@ -375,7 +406,12 @@ export class Compatibility extends XmlComponent {
         }
 
         if (options.truncateFontHeightsLikeWP6) {
-            this.root.push(new OnOffElement("w:truncateFontHeightsLikeWP6", options.truncateFontHeightsLikeWP6));
+            this.root.push(
+                new OnOffElement(
+                    "w:truncateFontHeightsLikeWP6",
+                    options.truncateFontHeightsLikeWP6,
+                ),
+            );
         }
 
         if (options.macWordSmallCaps) {
@@ -387,7 +423,12 @@ export class Compatibility extends XmlComponent {
         }
 
         if (options.doNotSuppressParagraphBorders) {
-            this.root.push(new OnOffElement("w:doNotSuppressParagraphBorders", options.doNotSuppressParagraphBorders));
+            this.root.push(
+                new OnOffElement(
+                    "w:doNotSuppressParagraphBorders",
+                    options.doNotSuppressParagraphBorders,
+                ),
+            );
         }
 
         if (options.wrapTrailSpaces) {
@@ -395,7 +436,9 @@ export class Compatibility extends XmlComponent {
         }
 
         if (options.footnoteLayoutLikeWW8) {
-            this.root.push(new OnOffElement("w:footnoteLayoutLikeWW8", options.footnoteLayoutLikeWW8));
+            this.root.push(
+                new OnOffElement("w:footnoteLayoutLikeWW8", options.footnoteLayoutLikeWW8),
+            );
         }
 
         if (options.shapeLayoutLikeWW8) {
@@ -407,11 +450,15 @@ export class Compatibility extends XmlComponent {
         }
 
         if (options.forgetLastTabAlignment) {
-            this.root.push(new OnOffElement("w:forgetLastTabAlignment", options.forgetLastTabAlignment));
+            this.root.push(
+                new OnOffElement("w:forgetLastTabAlignment", options.forgetLastTabAlignment),
+            );
         }
 
         if (options.adjustLineHeightInTable) {
-            this.root.push(new OnOffElement("w:adjustLineHeightInTable", options.adjustLineHeightInTable));
+            this.root.push(
+                new OnOffElement("w:adjustLineHeightInTable", options.adjustLineHeightInTable),
+            );
         }
 
         if (options.autoSpaceLikeWord95) {
@@ -423,7 +470,12 @@ export class Compatibility extends XmlComponent {
         }
 
         if (options.doNotUseHTMLParagraphAutoSpacing) {
-            this.root.push(new OnOffElement("w:doNotUseHTMLParagraphAutoSpacing", options.doNotUseHTMLParagraphAutoSpacing));
+            this.root.push(
+                new OnOffElement(
+                    "w:doNotUseHTMLParagraphAutoSpacing",
+                    options.doNotUseHTMLParagraphAutoSpacing,
+                ),
+            );
         }
 
         if (options.layoutRawTableWidth) {
@@ -431,23 +483,36 @@ export class Compatibility extends XmlComponent {
         }
 
         if (options.layoutTableRowsApart) {
-            this.root.push(new OnOffElement("w:layoutTableRowsApart", options.layoutTableRowsApart));
+            this.root.push(
+                new OnOffElement("w:layoutTableRowsApart", options.layoutTableRowsApart),
+            );
         }
 
         if (options.useWord97LineBreakRules) {
-            this.root.push(new OnOffElement("w:useWord97LineBreakRules", options.useWord97LineBreakRules));
+            this.root.push(
+                new OnOffElement("w:useWord97LineBreakRules", options.useWord97LineBreakRules),
+            );
         }
 
         if (options.doNotBreakWrappedTables) {
-            this.root.push(new OnOffElement("w:doNotBreakWrappedTables", options.doNotBreakWrappedTables));
+            this.root.push(
+                new OnOffElement("w:doNotBreakWrappedTables", options.doNotBreakWrappedTables),
+            );
         }
 
         if (options.doNotSnapToGridInCell) {
-            this.root.push(new OnOffElement("w:doNotSnapToGridInCell", options.doNotSnapToGridInCell));
+            this.root.push(
+                new OnOffElement("w:doNotSnapToGridInCell", options.doNotSnapToGridInCell),
+            );
         }
 
         if (options.selectFieldWithFirstOrLastCharacter) {
-            this.root.push(new OnOffElement("w:selectFldWithFirstOrLastChar", options.selectFieldWithFirstOrLastCharacter));
+            this.root.push(
+                new OnOffElement(
+                    "w:selectFldWithFirstOrLastChar",
+                    options.selectFieldWithFirstOrLastCharacter,
+                ),
+            );
         }
 
         if (options.applyBreakingRules) {
@@ -455,15 +520,27 @@ export class Compatibility extends XmlComponent {
         }
 
         if (options.doNotWrapTextWithPunctuation) {
-            this.root.push(new OnOffElement("w:doNotWrapTextWithPunct", options.doNotWrapTextWithPunctuation));
+            this.root.push(
+                new OnOffElement("w:doNotWrapTextWithPunct", options.doNotWrapTextWithPunctuation),
+            );
         }
 
         if (options.doNotUseEastAsianBreakRules) {
-            this.root.push(new OnOffElement("w:doNotUseEastAsianBreakRules", options.doNotUseEastAsianBreakRules));
+            this.root.push(
+                new OnOffElement(
+                    "w:doNotUseEastAsianBreakRules",
+                    options.doNotUseEastAsianBreakRules,
+                ),
+            );
         }
 
         if (options.useWord2002TableStyleRules) {
-            this.root.push(new OnOffElement("w:useWord2002TableStyleRules", options.useWord2002TableStyleRules));
+            this.root.push(
+                new OnOffElement(
+                    "w:useWord2002TableStyleRules",
+                    options.useWord2002TableStyleRules,
+                ),
+            );
         }
 
         if (options.growAutofit) {
@@ -475,55 +552,105 @@ export class Compatibility extends XmlComponent {
         }
 
         if (options.useNormalStyleForList) {
-            this.root.push(new OnOffElement("w:useNormalStyleForList", options.useNormalStyleForList));
+            this.root.push(
+                new OnOffElement("w:useNormalStyleForList", options.useNormalStyleForList),
+            );
         }
 
         if (options.doNotUseIndentAsNumberingTabStop) {
-            this.root.push(new OnOffElement("w:doNotUseIndentAsNumberingTabStop", options.doNotUseIndentAsNumberingTabStop));
+            this.root.push(
+                new OnOffElement(
+                    "w:doNotUseIndentAsNumberingTabStop",
+                    options.doNotUseIndentAsNumberingTabStop,
+                ),
+            );
         }
 
         if (options.useAlternateEastAsianLineBreakRules) {
-            this.root.push(new OnOffElement("w:useAltKinsokuLineBreakRules", options.useAlternateEastAsianLineBreakRules));
+            this.root.push(
+                new OnOffElement(
+                    "w:useAltKinsokuLineBreakRules",
+                    options.useAlternateEastAsianLineBreakRules,
+                ),
+            );
         }
 
         if (options.allowSpaceOfSameStyleInTable) {
-            this.root.push(new OnOffElement("w:allowSpaceOfSameStyleInTable", options.allowSpaceOfSameStyleInTable));
+            this.root.push(
+                new OnOffElement(
+                    "w:allowSpaceOfSameStyleInTable",
+                    options.allowSpaceOfSameStyleInTable,
+                ),
+            );
         }
 
         if (options.doNotSuppressIndentation) {
-            this.root.push(new OnOffElement("w:doNotSuppressIndentation", options.doNotSuppressIndentation));
+            this.root.push(
+                new OnOffElement("w:doNotSuppressIndentation", options.doNotSuppressIndentation),
+            );
         }
 
         if (options.doNotAutofitConstrainedTables) {
-            this.root.push(new OnOffElement("w:doNotAutofitConstrainedTables", options.doNotAutofitConstrainedTables));
+            this.root.push(
+                new OnOffElement(
+                    "w:doNotAutofitConstrainedTables",
+                    options.doNotAutofitConstrainedTables,
+                ),
+            );
         }
 
         if (options.autofitToFirstFixedWidthCell) {
-            this.root.push(new OnOffElement("w:autofitToFirstFixedWidthCell", options.autofitToFirstFixedWidthCell));
+            this.root.push(
+                new OnOffElement(
+                    "w:autofitToFirstFixedWidthCell",
+                    options.autofitToFirstFixedWidthCell,
+                ),
+            );
         }
 
         if (options.underlineTabInNumberingList) {
-            this.root.push(new OnOffElement("w:underlineTabInNumList", options.underlineTabInNumberingList));
+            this.root.push(
+                new OnOffElement("w:underlineTabInNumList", options.underlineTabInNumberingList),
+            );
         }
 
         if (options.displayHangulFixedWidth) {
-            this.root.push(new OnOffElement("w:displayHangulFixedWidth", options.displayHangulFixedWidth));
+            this.root.push(
+                new OnOffElement("w:displayHangulFixedWidth", options.displayHangulFixedWidth),
+            );
         }
 
         if (options.splitPgBreakAndParaMark) {
-            this.root.push(new OnOffElement("w:splitPgBreakAndParaMark", options.splitPgBreakAndParaMark));
+            this.root.push(
+                new OnOffElement("w:splitPgBreakAndParaMark", options.splitPgBreakAndParaMark),
+            );
         }
 
         if (options.doNotVerticallyAlignCellWithSp) {
-            this.root.push(new OnOffElement("w:doNotVertAlignCellWithSp", options.doNotVerticallyAlignCellWithSp));
+            this.root.push(
+                new OnOffElement(
+                    "w:doNotVertAlignCellWithSp",
+                    options.doNotVerticallyAlignCellWithSp,
+                ),
+            );
         }
 
         if (options.doNotBreakConstrainedForcedTable) {
-            this.root.push(new OnOffElement("w:doNotBreakConstrainedForcedTable", options.doNotBreakConstrainedForcedTable));
+            this.root.push(
+                new OnOffElement(
+                    "w:doNotBreakConstrainedForcedTable",
+                    options.doNotBreakConstrainedForcedTable,
+                ),
+            );
         }
 
         if (options.ignoreVerticalAlignmentInTextboxes) {
-            this.root.push(new OnOffElement("w:doNotVertAlignInTxbx", options.ignoreVerticalAlignmentInTextboxes));
+            this.root.push(
+                new OnOffElement(
+                    "w:doNotVertAlignInTxbx",
+                    options.ignoreVerticalAlignmentInTextboxes,
+                ),
+            );
         }
 
         if (options.useAnsiKerningPairs) {

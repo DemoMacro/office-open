@@ -1,21 +1,19 @@
 // Example on how to add hyperlinks to websites
 
 import * as fs from "fs";
-import { Document, ExternalHyperlink, Footer, FootnoteReferenceRun, ImageRun, Packer, Paragraph, TextRun } from "docx";
+
+import {
+    Document,
+    ExternalHyperlink,
+    Footer,
+    FootnoteReferenceRun,
+    ImageRun,
+    Packer,
+    Paragraph,
+    TextRun,
+} from "docx";
 
 const doc = new Document({
-    styles: {
-        default: {
-            hyperlink: {
-                run: {
-                    color: "FF0000",
-                    underline: {
-                        color: "0000FF",
-                    },
-                },
-            },
-        },
-    },
     footnotes: {
         1: {
             children: [
@@ -25,8 +23,8 @@ const doc = new Document({
                         new ExternalHyperlink({
                             children: [
                                 new TextRun({
-                                    text: "Footnotes external hyperlink",
                                     style: "Hyperlink",
+                                    text: "Footnotes external hyperlink",
                                 }),
                             ],
                             link: "http://www.example.com",
@@ -38,46 +36,6 @@ const doc = new Document({
     },
     sections: [
         {
-            footers: {
-                default: new Footer({
-                    children: [
-                        new Paragraph({
-                            children: [
-                                new TextRun("Click here for the "),
-                                new ExternalHyperlink({
-                                    children: [
-                                        new TextRun({
-                                            text: "Footer external hyperlink",
-                                            style: "Hyperlink",
-                                        }),
-                                    ],
-                                    link: "http://www.example.com",
-                                }),
-                            ],
-                        }),
-                    ],
-                }),
-            },
-            headers: {
-                default: new Footer({
-                    children: [
-                        new Paragraph({
-                            children: [
-                                new TextRun("Click here for the "),
-                                new ExternalHyperlink({
-                                    children: [
-                                        new TextRun({
-                                            text: "Header external hyperlink",
-                                            style: "Hyperlink",
-                                        }),
-                                    ],
-                                    link: "http://www.google.com",
-                                }),
-                            ],
-                        }),
-                    ],
-                }),
-            },
             children: [
                 new Paragraph({
                     children: [
@@ -154,8 +112,60 @@ const doc = new Document({
                     ],
                 }),
             ],
+            footers: {
+                default: new Footer({
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new TextRun("Click here for the "),
+                                new ExternalHyperlink({
+                                    children: [
+                                        new TextRun({
+                                            text: "Footer external hyperlink",
+                                            style: "Hyperlink",
+                                        }),
+                                    ],
+                                    link: "http://www.example.com",
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            },
+            headers: {
+                default: new Footer({
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new TextRun("Click here for the "),
+                                new ExternalHyperlink({
+                                    children: [
+                                        new TextRun({
+                                            text: "Header external hyperlink",
+                                            style: "Hyperlink",
+                                        }),
+                                    ],
+                                    link: "http://www.google.com",
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            },
         },
     ],
+    styles: {
+        default: {
+            hyperlink: {
+                run: {
+                    color: "FF0000",
+                    underline: {
+                        color: "0000FF",
+                    },
+                },
+            },
+        },
+    },
 });
 
 Packer.toBuffer(doc).then((buffer) => {

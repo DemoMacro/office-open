@@ -5,7 +5,8 @@
  *
  * @module
  */
-import { type IRunOptions, Run } from "./run";
+import { Run } from "./run";
+import type { IRunOptions } from "./run";
 import { Symbol } from "./run-components/symbol";
 
 /**

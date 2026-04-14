@@ -20,22 +20,22 @@ export class EndnotesAttributes extends XmlAttributeComponent<{
     readonly Ignorable?: string;
 }> {
     protected readonly xmlKeys = {
-        wpc: "xmlns:wpc",
+        Ignorable: "mc:Ignorable",
+        m: "xmlns:m",
         mc: "xmlns:mc",
         o: "xmlns:o",
         r: "xmlns:r",
-        m: "xmlns:m",
         v: "xmlns:v",
-        wp14: "xmlns:wp14",
-        wp: "xmlns:wp",
-        w10: "xmlns:w10",
         w: "xmlns:w",
+        w10: "xmlns:w10",
         w14: "xmlns:w14",
         w15: "xmlns:w15",
+        wne: "xmlns:wne",
+        wp: "xmlns:wp",
+        wp14: "xmlns:wp14",
+        wpc: "xmlns:wpc",
         wpg: "xmlns:wpg",
         wpi: "xmlns:wpi",
-        wne: "xmlns:wne",
         wps: "xmlns:wps",
-        Ignorable: "mc:Ignorable",
     };
 }

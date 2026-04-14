@@ -14,8 +14,10 @@ import { XmlComponent } from "@file/xml-components";
 
 import { Form } from "./form";
 import { createNoFill } from "./outline/no-fill";
-import { type OutlineOptions, createOutline } from "./outline/outline";
-import { type SolidFillOptions, createSolidFill } from "./outline/solid-fill";
+import { createOutline } from "./outline/outline";
+import type { OutlineOptions } from "./outline/outline";
+import { createSolidFill } from "./outline/solid-fill";
+import type { SolidFillOptions } from "./outline/solid-fill";
 import { PresetGeometry } from "./preset-geometry/preset-geometry";
 import { ShapePropertiesAttributes } from "./shape-properties-attributes";
 

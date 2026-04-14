@@ -14,12 +14,12 @@ import { XmlComponent } from "@file/xml-components";
  * @property value - Hexadecimal character code for the symbol (e.g., "2612" for ☒)
  * @property font - Font family to use for rendering the symbol
  */
-export type ICheckboxSymbolProperties = {
+export interface ICheckboxSymbolProperties {
     /** Hexadecimal character code for the symbol (e.g., "2612" for ☒). */
     readonly value?: string;
     /** Font family to use for rendering the symbol. */
     readonly font?: string;
-};
+}
 
 /**
  * Options for configuring a checkbox control.
@@ -29,7 +29,7 @@ export type ICheckboxSymbolProperties = {
  * @property checkedState - Symbol properties for the checked state
  * @property uncheckedState - Symbol properties for the unchecked state
  */
-export type ICheckboxSymbolOptions = {
+export interface ICheckboxSymbolOptions {
     /** Display name for the checkbox control. */
     readonly alias?: string;
     /** Whether the checkbox is initially checked. */
@@ -38,7 +38,7 @@ export type ICheckboxSymbolOptions = {
     readonly checkedState?: ICheckboxSymbolProperties;
     /** Symbol properties for the unchecked state. */
     readonly uncheckedState?: ICheckboxSymbolProperties;
-};
+}
 
 /**
  * Represents the checkbox element within a structured document tag.
@@ -86,11 +86,15 @@ export class CheckBoxUtil extends XmlComponent {
         let font: string;
         this.root.push(new CheckBoxSymbolElement("w14:checked", value));
 
-        symbol = options?.checkedState?.value ? options?.checkedState?.value : this.DEFAULT_CHECKED_SYMBOL;
+        symbol = options?.checkedState?.value
+            ? options?.checkedState?.value
+            : this.DEFAULT_CHECKED_SYMBOL;
         font = options?.checkedState?.font ? options?.checkedState?.font : this.DEFAULT_FONT;
         this.root.push(new CheckBoxSymbolElement("w14:checkedState", symbol, font));
 
-        symbol = options?.uncheckedState?.value ? options?.uncheckedState?.value : this.DEFAULT_UNCHECKED_SYMBOL;
+        symbol = options?.uncheckedState?.value
+            ? options?.uncheckedState?.value
+            : this.DEFAULT_UNCHECKED_SYMBOL;
         font = options?.uncheckedState?.font ? options?.uncheckedState?.font : this.DEFAULT_FONT;
         this.root.push(new CheckBoxSymbolElement("w14:uncheckedState", symbol, font));
     }

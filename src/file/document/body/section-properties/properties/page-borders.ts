@@ -7,7 +7,8 @@
  *
  * @module
  */
-import { type IBorderOptions, createBorderElement } from "@file/border";
+import { createBorderElement } from "@file/border";
+import type { IBorderOptions } from "@file/border";
 import { IgnoreIfEmptyXmlComponent, XmlAttributeComponent } from "@file/xml-components";
 
 /**
@@ -86,14 +87,14 @@ export const PageBorderZOrder = {
  * @property offsetFrom - Whether border is positioned relative to page or text
  * @property zOrder - Whether border appears in front or behind page contents
  */
-export type IPageBorderAttributes = {
+export interface IPageBorderAttributes {
     /** Which pages display the border */
     readonly display?: (typeof PageBorderDisplay)[keyof typeof PageBorderDisplay];
     /** Whether border is positioned relative to page or text (default: text) */
     readonly offsetFrom?: (typeof PageBorderOffsetFrom)[keyof typeof PageBorderOffsetFrom];
     /** Whether border appears in front or behind page contents (default: front) */
     readonly zOrder?: (typeof PageBorderZOrder)[keyof typeof PageBorderZOrder];
-};
+}
 
 /**
  * Options for configuring page borders.
@@ -104,7 +105,7 @@ export type IPageBorderAttributes = {
  * @property pageBorderBottom - Bottom border styling
  * @property pageBorderLeft - Left border styling
  */
-export type IPageBordersOptions = {
+export interface IPageBordersOptions {
     /** General page border attributes (display, offset, z-order) */
     readonly pageBorders?: IPageBorderAttributes;
     /** Top border styling */
@@ -115,7 +116,7 @@ export type IPageBordersOptions = {
     readonly pageBorderBottom?: IBorderOptions;
     /** Left border styling */
     readonly pageBorderLeft?: IBorderOptions;
-};
+}
 
 class PageBordersAttributes extends XmlAttributeComponent<IPageBorderAttributes> {
     protected readonly xmlKeys = {

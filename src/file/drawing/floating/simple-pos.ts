@@ -1,5 +1,6 @@
 // http://officeopenxml.com/drwPicFloating-position.php
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * # Simple Positioning Coordinates

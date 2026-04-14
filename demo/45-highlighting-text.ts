@@ -1,11 +1,13 @@
 // Highlighting text
 
 import * as fs from "fs";
+
 import { AlignmentType, Document, Header, Packer, Paragraph, TextRun } from "docx";
 
 const doc = new Document({
     sections: [
         {
+            children: [],
             headers: {
                 default: new Header({
                     children: [
@@ -13,21 +15,20 @@ const doc = new Document({
                             alignment: AlignmentType.RIGHT,
                             children: [
                                 new TextRun({
-                                    text: "Hello World",
-                                    color: "FF0000",
                                     bold: true,
-                                    size: 24,
+                                    color: "FF0000",
                                     font: {
                                         name: "Garamond",
                                     },
                                     highlight: "yellow",
+                                    size: 24,
+                                    text: "Hello World",
                                 }),
                             ],
                         }),
                     ],
                 }),
             },
-            children: [],
         },
     ],
 });

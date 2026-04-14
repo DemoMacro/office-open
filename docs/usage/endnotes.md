@@ -13,8 +13,15 @@ import { Document, EndnoteReferenceRun, Paragraph, TextRun } from "docx";
 
 const doc = new Document({
     endnotes: {
-        1: { children: [new Paragraph("This is the first endnote with some detailed explanation.")] },
-        2: { children: [new Paragraph("Second endnote"), new Paragraph("With multiple paragraphs for more complex content.")] },
+        1: {
+            children: [new Paragraph("This is the first endnote with some detailed explanation.")],
+        },
+        2: {
+            children: [
+                new Paragraph("Second endnote"),
+                new Paragraph("With multiple paragraphs for more complex content."),
+            ],
+        },
         3: { children: [new Paragraph("Third endnote referencing important source material.")] },
         4: { children: [new Paragraph("Fourth endnote from a different section.")] },
     },
@@ -36,7 +43,9 @@ const doc = new Document({
                         new TextRun("Endnotes appear at the end of the document, "),
                         new TextRun("unlike footnotes which appear at the bottom of each page"),
                         new EndnoteReferenceRun(3),
-                        new TextRun(". This makes them ideal for academic papers and formal documents."),
+                        new TextRun(
+                            ". This makes them ideal for academic papers and formal documents.",
+                        ),
                     ],
                 }),
             ],
@@ -48,7 +57,9 @@ const doc = new Document({
                         new TextRun("This is content from a different section "),
                         new TextRun("with its own endnote reference"),
                         new EndnoteReferenceRun(4),
-                        new TextRun(". Endnotes from all sections appear together at the document end."),
+                        new TextRun(
+                            ". Endnotes from all sections appear together at the document end.",
+                        ),
                     ],
                 }),
             ],

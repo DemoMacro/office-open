@@ -1,7 +1,6 @@
-import { beforeEach, describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
 import { BorderStyle } from "@file/border";
+import { beforeEach, describe, expect, it } from "vite-plus/test";
 
 import { Border, ThematicBreak } from "./border";
 
@@ -9,35 +8,35 @@ describe("Border", () => {
     describe("#constructor", () => {
         it("should create", () => {
             const border = new Border({
-                top: {
+                between: {
                     color: "FF0000",
-                    space: 1,
+                    size: 10,
+                    space: 9,
                     style: BorderStyle.WAVE,
-                    size: 2,
                 },
                 bottom: {
                     color: "FF0000",
+                    size: 4,
                     space: 3,
                     style: BorderStyle.WAVE,
-                    size: 4,
                 },
                 left: {
                     color: "FF0000",
+                    size: 6,
                     space: 5,
                     style: BorderStyle.WAVE,
-                    size: 6,
                 },
                 right: {
                     color: "FF0000",
+                    size: 8,
                     space: 7,
                     style: BorderStyle.WAVE,
-                    size: 8,
                 },
-                between: {
+                top: {
                     color: "FF0000",
-                    space: 9,
+                    size: 2,
+                    space: 1,
                     style: BorderStyle.WAVE,
-                    size: 10,
                 },
             });
 

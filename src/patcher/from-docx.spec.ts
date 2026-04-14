@@ -1,14 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
 import { ExternalHyperlink, ImageRun, Paragraph, TextRun } from "@file/paragraph";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 vi.mock("fflate", () => ({
+    strFromU8: vi.fn().mockImplementation((data: Uint8Array) => new TextDecoder().decode(data)),
     unzipSync: vi.fn(),
     zipSync: vi.fn().mockReturnValue(new Uint8Array(0)),
-    strFromU8: vi.fn().mockImplementation((data: Uint8Array) => new TextDecoder().decode(data)),
 }));
 
-// eslint-disable-next-line import/order
 import { unzipSync } from "fflate";
 
 import { PatchType, patchDocument } from "./from-docx";
@@ -211,7 +209,9 @@ const MOCK_XML = `
  * Uses Object.fromEntries to avoid @typescript-eslint/naming-convention
  * violations on OOXML file paths like "word/document.xml".
  */
-const createMockUnzipped = (entries: readonly (readonly [string, string | Uint8Array])[]): Record<string, Uint8Array> =>
+const createMockUnzipped = (
+    entries: readonly (readonly [string, string | Uint8Array])[],
+): Record<string, Uint8Array> =>
     Object.fromEntries(
         entries.map(([key, value]): readonly [string, Uint8Array] => [
             key,
@@ -226,7 +226,10 @@ describe("from-docx", () => {
                 vi.mocked(unzipSync).mockImplementation(() =>
                     createMockUnzipped([
                         ["word/document.xml", MOCK_XML],
-                        ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`],
+                        [
+                            "[Content_Types].xml",
+                            `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
+                        ],
                     ]),
                 );
             });
@@ -237,15 +240,20 @@ describe("from-docx", () => {
 
             it("should patch the document", async () => {
                 const output = await patchDocument({
-                    outputType: "uint8array",
                     data: Buffer.from(""),
+                    outputType: "uint8array",
                     patches: {
-                        name: {
+                        image_test: {
+                            children: [
+                                new ImageRun({
+                                    data: Buffer.from(""),
+                                    transformation: { height: 100, width: 100 },
+                                    type: "png",
+                                }),
+                            ],
                             type: PatchType.PARAGRAPH,
-                            children: [new TextRun("Sir. "), new TextRun("John Doe"), new TextRun("(The Conqueror)")],
                         },
                         item_1: {
-                            type: PatchType.PARAGRAPH,
                             children: [
                                 new TextRun("#657"),
                                 new ExternalHyperlink({
@@ -257,10 +265,17 @@ describe("from-docx", () => {
                                     link: "https://www.bbc.co.uk/news",
                                 }),
                             ],
+                            type: PatchType.PARAGRAPH,
                         },
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
+                        name: {
+                            children: [
+                                new TextRun("Sir. "),
+                                new TextRun("John Doe"),
+                                new TextRun("(The Conqueror)"),
+                            ],
+                            type: PatchType.PARAGRAPH,
+                        },
                         paragraph_replace: {
-                            type: PatchType.DOCUMENT,
                             children: [
                                 new Paragraph({
                                     children: [
@@ -274,24 +289,14 @@ describe("from-docx", () => {
                                             link: "https://www.google.co.uk",
                                         }),
                                         new ImageRun({
-                                            type: "png",
                                             data: Buffer.from(""),
-                                            transformation: { width: 100, height: 100 },
+                                            transformation: { height: 100, width: 100 },
+                                            type: "png",
                                         }),
                                     ],
                                 }),
                             ],
-                        },
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
-                        image_test: {
-                            type: PatchType.PARAGRAPH,
-                            children: [
-                                new ImageRun({
-                                    type: "png",
-                                    data: Buffer.from(""),
-                                    transformation: { width: 100, height: 100 },
-                                }),
-                            ],
+                            type: PatchType.DOCUMENT,
                         },
                     },
                 });
@@ -300,8 +305,8 @@ describe("from-docx", () => {
 
             it("should patch the document", async () => {
                 const output = await patchDocument({
-                    outputType: "uint8array",
                     data: Buffer.from(""),
+                    outputType: "uint8array",
                     patches: {},
                 });
                 expect(output).to.not.be.undefined;
@@ -315,8 +320,8 @@ describe("from-docx", () => {
                     ]),
                 );
                 const output = await patchDocument({
-                    outputType: "uint8array",
                     data: Buffer.from(""),
+                    outputType: "uint8array",
                     patches: {},
                 });
                 expect(output).to.not.be.undefined;
@@ -324,16 +329,20 @@ describe("from-docx", () => {
 
             it("should patch the document", async () => {
                 const output = await patchDocument({
-                    outputType: "uint8array",
                     data: Buffer.from(""),
-                    placeholderDelimiters: { start: "{{", end: "}}" },
+                    outputType: "uint8array",
                     patches: {
-                        name: {
+                        image_test: {
+                            children: [
+                                new ImageRun({
+                                    data: Buffer.from(""),
+                                    transformation: { height: 100, width: 100 },
+                                    type: "png",
+                                }),
+                            ],
                             type: PatchType.PARAGRAPH,
-                            children: [new TextRun("Sir. "), new TextRun("John Doe"), new TextRun("(The Conqueror)")],
                         },
                         item_1: {
-                            type: PatchType.PARAGRAPH,
                             children: [
                                 new TextRun("#657"),
                                 new ExternalHyperlink({
@@ -345,10 +354,17 @@ describe("from-docx", () => {
                                     link: "https://www.bbc.co.uk/news",
                                 }),
                             ],
+                            type: PatchType.PARAGRAPH,
                         },
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
+                        name: {
+                            children: [
+                                new TextRun("Sir. "),
+                                new TextRun("John Doe"),
+                                new TextRun("(The Conqueror)"),
+                            ],
+                            type: PatchType.PARAGRAPH,
+                        },
                         paragraph_replace: {
-                            type: PatchType.DOCUMENT,
                             children: [
                                 new Paragraph({
                                     children: [
@@ -362,34 +378,25 @@ describe("from-docx", () => {
                                             link: "https://www.google.co.uk",
                                         }),
                                         new ImageRun({
-                                            type: "png",
                                             data: Buffer.from(""),
-                                            transformation: { width: 100, height: 100 },
+                                            transformation: { height: 100, width: 100 },
+                                            type: "png",
                                         }),
                                     ],
                                 }),
                             ],
-                        },
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
-                        image_test: {
-                            type: PatchType.PARAGRAPH,
-                            children: [
-                                new ImageRun({
-                                    type: "png",
-                                    data: Buffer.from(""),
-                                    transformation: { width: 100, height: 100 },
-                                }),
-                            ],
+                            type: PatchType.DOCUMENT,
                         },
                     },
+                    placeholderDelimiters: { end: "}}", start: "{{" },
                 });
                 expect(output).to.not.be.undefined;
             });
 
             it("should patch the document", async () => {
                 const output = await patchDocument({
-                    outputType: "uint8array",
                     data: Buffer.from(""),
+                    outputType: "uint8array",
                     patches: {},
                 });
                 expect(output).to.not.be.undefined;
@@ -398,10 +405,10 @@ describe("from-docx", () => {
             it("throws error with empty delimiters", async () => {
                 await expect(() =>
                     patchDocument({
-                        outputType: "uint8array",
                         data: Buffer.from(""),
+                        outputType: "uint8array",
                         patches: {},
-                        placeholderDelimiters: { start: "", end: "" },
+                        placeholderDelimiters: { end: "", start: "" },
                     }),
                 ).rejects.toThrow();
             });
@@ -409,10 +416,10 @@ describe("from-docx", () => {
             it("throws error with whitespace-only delimiters", async () => {
                 await expect(() =>
                     patchDocument({
-                        outputType: "uint8array",
                         data: Buffer.from(""),
+                        outputType: "uint8array",
                         patches: {},
-                        placeholderDelimiters: { start: " ", end: " " },
+                        placeholderDelimiters: { end: " ", start: " " },
                     }),
                 ).rejects.toThrowError();
             });
@@ -423,8 +430,14 @@ describe("from-docx", () => {
                 vi.mocked(unzipSync).mockImplementation(() =>
                     createMockUnzipped([
                         ["word/document.xml", MOCK_XML],
-                        ["word/_rels/document.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`],
-                        ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`],
+                        [
+                            "word/_rels/document.xml.rels",
+                            `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
+                        ],
+                        [
+                            "[Content_Types].xml",
+                            `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
+                        ],
                     ]),
                 );
             });
@@ -435,17 +448,15 @@ describe("from-docx", () => {
 
             it("should use the relationships file rather than create one", async () => {
                 const output = await patchDocument({
-                    outputType: "uint8array",
                     data: Buffer.from(""),
+                    outputType: "uint8array",
                     patches: {
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         image_test: {
-                            type: PatchType.PARAGRAPH,
                             children: [
                                 new ImageRun({
-                                    type: "png",
                                     data: Buffer.from(""),
-                                    transformation: { width: 100, height: 100 },
+                                    transformation: { height: 100, width: 100 },
+                                    type: "png",
                                 }),
                                 new ExternalHyperlink({
                                     children: [
@@ -456,6 +467,7 @@ describe("from-docx", () => {
                                     link: "https://www.google.co.uk",
                                 }),
                             ],
+                            type: PatchType.PARAGRAPH,
                         },
                     },
                 });
@@ -468,7 +480,10 @@ describe("from-docx", () => {
                 vi.mocked(unzipSync).mockImplementation(() =>
                     createMockUnzipped([
                         ["word/document.xml", MOCK_XML],
-                        ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`],
+                        [
+                            "[Content_Types].xml",
+                            `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
+                        ],
                     ]),
                 );
             });
@@ -479,12 +494,10 @@ describe("from-docx", () => {
 
             it("should create a relationships file for hyperlink only patches", async () => {
                 const output = await patchDocument({
-                    outputType: "uint8array",
                     data: Buffer.from(""),
+                    outputType: "uint8array",
                     patches: {
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         image_test: {
-                            type: PatchType.PARAGRAPH,
                             children: [
                                 new ExternalHyperlink({
                                     children: [
@@ -495,6 +508,7 @@ describe("from-docx", () => {
                                     link: "https://www.google.co.uk",
                                 }),
                             ],
+                            type: PatchType.PARAGRAPH,
                         },
                     },
                 });
@@ -518,7 +532,10 @@ describe("from-docx", () => {
                 vi.mocked(unzipSync).mockImplementation(() =>
                     createMockUnzipped([
                         ["word/document.xml", MOCK_XML_NO_ATTRS],
-                        ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`],
+                        [
+                            "[Content_Types].xml",
+                            `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
+                        ],
                     ]),
                 );
             });
@@ -529,12 +546,12 @@ describe("from-docx", () => {
 
             it("should patch a document whose w:document element has no attributes", async () => {
                 const output = await patchDocument({
-                    outputType: "uint8array",
                     data: Buffer.from(""),
+                    outputType: "uint8array",
                     patches: {
                         name: {
-                            type: PatchType.PARAGRAPH,
                             children: [new TextRun("World")],
+                            type: PatchType.PARAGRAPH,
                         },
                     },
                 });
@@ -545,9 +562,7 @@ describe("from-docx", () => {
         describe("document.xml", () => {
             beforeEach(() => {
                 vi.mocked(unzipSync).mockImplementation(() =>
-                    createMockUnzipped([
-                        ["word/document.xml", MOCK_XML],
-                    ]),
+                    createMockUnzipped([["word/document.xml", MOCK_XML]]),
                 );
             });
 
@@ -558,19 +573,18 @@ describe("from-docx", () => {
             it("should throw an error if the content types is not found", () =>
                 expect(
                     patchDocument({
-                        outputType: "uint8array",
                         data: Buffer.from(""),
+                        outputType: "uint8array",
                         patches: {
-                            // eslint-disable-next-line @typescript-eslint/naming-convention
                             image_test: {
-                                type: PatchType.PARAGRAPH,
                                 children: [
                                     new ImageRun({
-                                        type: "png",
                                         data: Buffer.from(""),
-                                        transformation: { width: 100, height: 100 },
+                                        transformation: { height: 100, width: 100 },
+                                        type: "png",
                                     }),
                                 ],
+                                type: PatchType.PARAGRAPH,
                             },
                         },
                     }),
@@ -594,19 +608,18 @@ describe("from-docx", () => {
             it("should throw an error if the content types is not found", () =>
                 expect(
                     patchDocument({
-                        outputType: "uint8array",
                         data: Buffer.from(""),
+                        outputType: "uint8array",
                         patches: {
-                            // eslint-disable-next-line @typescript-eslint/naming-convention
                             image_test: {
-                                type: PatchType.PARAGRAPH,
                                 children: [
                                     new ImageRun({
-                                        type: "png",
                                         data: Buffer.from(""),
-                                        transformation: { width: 100, height: 100 },
+                                        transformation: { height: 100, width: 100 },
+                                        type: "png",
                                     }),
                                 ],
+                                type: PatchType.PARAGRAPH,
                             },
                         },
                     }),
@@ -618,7 +631,10 @@ describe("from-docx", () => {
                 vi.mocked(unzipSync).mockImplementation(() =>
                     createMockUnzipped([
                         ["word/document.xml", MOCK_XML],
-                        ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`],
+                        [
+                            "[Content_Types].xml",
+                            `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
+                        ],
                     ]),
                 );
             });
@@ -629,10 +645,10 @@ describe("from-docx", () => {
 
             it("should export to nodebuffer", async () => {
                 const output = await patchDocument({
-                    outputType: "nodebuffer",
                     data: Buffer.from(""),
+                    outputType: "nodebuffer",
                     patches: {
-                        name: { type: PatchType.PARAGRAPH, children: [new TextRun("World")] },
+                        name: { children: [new TextRun("World")], type: PatchType.PARAGRAPH },
                     },
                 });
                 expect(Buffer.isBuffer(output)).toBe(true);
@@ -640,10 +656,10 @@ describe("from-docx", () => {
 
             it("should export to blob", async () => {
                 const output = await patchDocument({
-                    outputType: "blob",
                     data: Buffer.from(""),
+                    outputType: "blob",
                     patches: {
-                        name: { type: PatchType.PARAGRAPH, children: [new TextRun("World")] },
+                        name: { children: [new TextRun("World")], type: PatchType.PARAGRAPH },
                     },
                 });
                 expect(output).toBeInstanceOf(Blob);
@@ -651,10 +667,10 @@ describe("from-docx", () => {
 
             it("should export to arraybuffer", async () => {
                 const output = await patchDocument({
-                    outputType: "arraybuffer",
                     data: Buffer.from(""),
+                    outputType: "arraybuffer",
                     patches: {
-                        name: { type: PatchType.PARAGRAPH, children: [new TextRun("World")] },
+                        name: { children: [new TextRun("World")], type: PatchType.PARAGRAPH },
                     },
                 });
                 expect(output).toBeInstanceOf(ArrayBuffer);
@@ -662,10 +678,10 @@ describe("from-docx", () => {
 
             it("should export to base64", async () => {
                 const output = await patchDocument({
-                    outputType: "base64",
                     data: Buffer.from(""),
+                    outputType: "base64",
                     patches: {
-                        name: { type: PatchType.PARAGRAPH, children: [new TextRun("World")] },
+                        name: { children: [new TextRun("World")], type: PatchType.PARAGRAPH },
                     },
                 });
                 expect(typeof output).toBe("string");
@@ -673,10 +689,10 @@ describe("from-docx", () => {
 
             it("should export to string", async () => {
                 const output = await patchDocument({
-                    outputType: "string",
                     data: Buffer.from(""),
+                    outputType: "string",
                     patches: {
-                        name: { type: PatchType.PARAGRAPH, children: [new TextRun("World")] },
+                        name: { children: [new TextRun("World")], type: PatchType.PARAGRAPH },
                     },
                 });
                 expect(typeof output).toBe("string");
@@ -684,10 +700,10 @@ describe("from-docx", () => {
 
             it("should export to binarystring", async () => {
                 const output = await patchDocument({
-                    outputType: "binarystring",
                     data: Buffer.from(""),
+                    outputType: "binarystring",
                     patches: {
-                        name: { type: PatchType.PARAGRAPH, children: [new TextRun("World")] },
+                        name: { children: [new TextRun("World")], type: PatchType.PARAGRAPH },
                     },
                 });
                 expect(typeof output).toBe("string");
@@ -695,10 +711,10 @@ describe("from-docx", () => {
 
             it("should export to array", async () => {
                 const output = await patchDocument({
-                    outputType: "array",
                     data: Buffer.from(""),
+                    outputType: "array",
                     patches: {
-                        name: { type: PatchType.PARAGRAPH, children: [new TextRun("World")] },
+                        name: { children: [new TextRun("World")], type: PatchType.PARAGRAPH },
                     },
                 });
                 expect(Array.isArray(output)).toBe(true);

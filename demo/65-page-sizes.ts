@@ -2,33 +2,34 @@
 // Reference from https://papersizes.io/a/a3
 
 import * as fs from "fs";
-import { convertMillimetersToTwip, Document, Packer, PageOrientation, Paragraph } from "docx";
+
+import { Document, Packer, PageOrientation, Paragraph, convertMillimetersToTwip } from "docx";
 
 const doc = new Document({
     sections: [
         {
+            children: [new Paragraph("Hello World")],
             properties: {
                 page: {
                     size: {
-                        orientation: PageOrientation.LANDSCAPE,
                         height: convertMillimetersToTwip(210),
+                        orientation: PageOrientation.LANDSCAPE,
                         width: convertMillimetersToTwip(148),
                     },
                 },
             },
-            children: [new Paragraph("Hello World")],
         },
         {
+            children: [new Paragraph("Hello World")],
             properties: {
                 page: {
                     size: {
-                        orientation: PageOrientation.PORTRAIT,
                         height: convertMillimetersToTwip(420),
+                        orientation: PageOrientation.PORTRAIT,
                         width: convertMillimetersToTwip(297),
                     },
                 },
             },
-            children: [new Paragraph("Hello World")],
         },
     ],
 });

@@ -6,7 +6,8 @@
  * @module
  */
 import type { ParagraphChild } from "@file/paragraph";
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Creates a textbox content element containing block-level content.
@@ -32,8 +33,12 @@ import { BuilderElement, type XmlComponent } from "@file/xml-components";
  * });
  * ```
  */
-export const createTextboxContent = ({ children = [] }: { readonly children?: readonly ParagraphChild[] }): XmlComponent =>
+export const createTextboxContent = ({
+    children = [],
+}: {
+    readonly children?: readonly ParagraphChild[];
+}): XmlComponent =>
     new BuilderElement<{ readonly style?: string }>({
-        name: "w:txbxContent",
         children: children as readonly XmlComponent[],
+        name: "w:txbxContent",
     });

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { findRunElementIndexWithToken, splitRunElement } from "./paragraph-split-inject";
 
@@ -7,12 +7,8 @@ describe("paragraph-split-inject", () => {
         it("should find the index of a run element with a token", () => {
             const output = findRunElementIndexWithToken(
                 {
-                    name: "w:p",
-                    type: "element",
                     elements: [
                         {
-                            name: "w:r",
-                            type: "element",
                             elements: [
                                 {
                                     name: "w:t",
@@ -25,8 +21,12 @@ describe("paragraph-split-inject", () => {
                                     ],
                                 },
                             ],
+                            name: "w:r",
+                            type: "element",
                         },
                     ],
+                    name: "w:p",
+                    type: "element",
                 },
                 "hello",
             );
@@ -49,14 +49,14 @@ describe("paragraph-split-inject", () => {
             expect(() =>
                 findRunElementIndexWithToken(
                     {
-                        name: "w:p",
-                        type: "element",
                         elements: [
                             {
                                 name: "w:r",
                                 type: "element",
                             },
                         ],
+                        name: "w:p",
+                        type: "element",
                     },
                     "hello",
                 ),
@@ -67,20 +67,20 @@ describe("paragraph-split-inject", () => {
             expect(() =>
                 findRunElementIndexWithToken(
                     {
-                        name: "w:p",
-                        type: "element",
                         elements: [
                             {
-                                name: "w:r",
-                                type: "element",
                                 elements: [
                                     {
                                         name: "w:t",
                                         type: "element",
                                     },
                                 ],
+                                name: "w:r",
+                                type: "element",
                             },
                         ],
+                        name: "w:p",
+                        type: "element",
                     },
                     "hello",
                 ),
@@ -91,20 +91,20 @@ describe("paragraph-split-inject", () => {
             expect(() =>
                 findRunElementIndexWithToken(
                     {
-                        name: "w:p",
-                        type: "element",
                         elements: [
                             {
-                                name: "w:r",
-                                type: "element",
                                 elements: [
                                     {
                                         name: "w:t",
                                         type: "element",
                                     },
                                 ],
+                                name: "w:r",
+                                type: "element",
                             },
                         ],
+                        name: "w:p",
+                        type: "element",
                     },
                     "hello",
                 ),
@@ -115,12 +115,8 @@ describe("paragraph-split-inject", () => {
             expect(() =>
                 findRunElementIndexWithToken(
                     {
-                        name: "w:p",
-                        type: "element",
                         elements: [
                             {
-                                name: "w:r",
-                                type: "element",
                                 elements: [
                                     {
                                         name: "w:t",
@@ -132,8 +128,12 @@ describe("paragraph-split-inject", () => {
                                         ],
                                     },
                                 ],
+                                name: "w:r",
+                                type: "element",
                             },
                         ],
+                        name: "w:p",
+                        type: "element",
                     },
                     "hello",
                 ),
@@ -145,24 +145,24 @@ describe("paragraph-split-inject", () => {
         it("should split a run element", () => {
             const output = splitRunElement(
                 {
-                    name: "w:r",
-                    type: "element",
                     elements: [
                         {
-                            name: "w:t",
-                            type: "element",
                             elements: [
                                 {
                                     type: "text",
                                     text: "hello*world",
                                 },
                             ],
+                            name: "w:t",
+                            type: "element",
                         },
                         {
                             name: "w:x",
                             type: "element",
                         },
                     ],
+                    name: "w:r",
+                    type: "element",
                 },
                 "*",
             );
@@ -216,20 +216,20 @@ describe("paragraph-split-inject", () => {
         it("should try to split even if elements is empty for text", () => {
             const output = splitRunElement(
                 {
-                    name: "w:r",
-                    type: "element",
                     elements: [
                         {
                             name: "w:t",
                             type: "element",
                         },
                     ],
+                    name: "w:r",
+                    type: "element",
                 },
                 "*",
             );
 
             // When the token is not found in the text, splitIndex remains -1
-            // so left gets nothing and right gets all elements
+            // So left gets nothing and right gets all elements
             expect(output).to.deep.equal({
                 left: {
                     elements: [],
@@ -279,30 +279,30 @@ describe("paragraph-split-inject", () => {
         it("should put all content on the right when token is not found", () => {
             const output = splitRunElement(
                 {
-                    name: "w:r",
-                    type: "element",
                     elements: [
                         {
-                            name: "w:t",
-                            type: "element",
                             elements: [
                                 {
                                     type: "text",
                                     text: "hello world",
                                 },
                             ],
+                            name: "w:t",
+                            type: "element",
                         },
                         {
                             name: "w:x",
                             type: "element",
                         },
                     ],
+                    name: "w:r",
+                    type: "element",
                 },
                 "*",
             );
 
             // When the token is not found, splitIndex remains -1
-            // so left gets nothing and right gets all elements
+            // So left gets nothing and right gets all elements
             expect(output).to.deep.equal({
                 left: {
                     elements: [],
@@ -338,59 +338,97 @@ describe("paragraph-split-inject", () => {
         it("should create an empty end element if it is at the end", () => {
             const output = splitRunElement(
                 {
-                    type: "element",
-                    name: "w:r",
                     elements: [
                         {
-                            type: "element",
-                            name: "w:rPr",
                             elements: [
-                                { type: "element", name: "w:rFonts", attributes: { "w:eastAsia": "Times New Roman" } },
+                                {
+                                    type: "element",
+                                    name: "w:rFonts",
+                                    attributes: { "w:eastAsia": "Times New Roman" },
+                                },
                                 { type: "element", name: "w:kern", attributes: { "w:val": "0" } },
                                 { type: "element", name: "w:sz", attributes: { "w:val": "20" } },
                                 {
                                     type: "element",
                                     name: "w:lang",
-                                    attributes: { "w:val": "en-US", "w:eastAsia": "en-US", "w:bidi": "ar-SA" },
+                                    attributes: {
+                                        "w:val": "en-US",
+                                        "w:eastAsia": "en-US",
+                                        "w:bidi": "ar-SA",
+                                    },
                                 },
                             ],
+                            name: "w:rPr",
+                            type: "element",
                         },
-                        { type: "element", name: "w:t", elements: [], attributes: { "xml:space": "preserve" } },
-                        { type: "element", name: "w:br" },
-                        { type: "element", name: "w:t", elements: [{ type: "text", text: "ɵ" }] },
+                        {
+                            attributes: { "xml:space": "preserve" },
+                            elements: [],
+                            name: "w:t",
+                            type: "element",
+                        },
+                        { name: "w:br", type: "element" },
+                        { elements: [{ type: "text", text: "ɵ" }], name: "w:t", type: "element" },
                     ],
+                    name: "w:r",
+                    type: "element",
                 },
                 "ɵ",
             );
 
             expect(output).to.deep.equal({
                 left: {
-                    type: "element",
-                    name: "w:r",
                     elements: [
                         {
-                            type: "element",
-                            name: "w:rPr",
                             elements: [
-                                { type: "element", name: "w:rFonts", attributes: { "w:eastAsia": "Times New Roman" } },
+                                {
+                                    type: "element",
+                                    name: "w:rFonts",
+                                    attributes: { "w:eastAsia": "Times New Roman" },
+                                },
                                 { type: "element", name: "w:kern", attributes: { "w:val": "0" } },
                                 { type: "element", name: "w:sz", attributes: { "w:val": "20" } },
                                 {
                                     type: "element",
                                     name: "w:lang",
-                                    attributes: { "w:val": "en-US", "w:eastAsia": "en-US", "w:bidi": "ar-SA" },
+                                    attributes: {
+                                        "w:val": "en-US",
+                                        "w:eastAsia": "en-US",
+                                        "w:bidi": "ar-SA",
+                                    },
                                 },
                             ],
+                            name: "w:rPr",
+                            type: "element",
                         },
-                        { type: "element", name: "w:t", elements: [], attributes: { "xml:space": "preserve" } },
-                        { type: "element", name: "w:br" },
-                        { type: "element", name: "w:t", elements: [], attributes: { "xml:space": "preserve" } },
+                        {
+                            attributes: { "xml:space": "preserve" },
+                            elements: [],
+                            name: "w:t",
+                            type: "element",
+                        },
+                        { name: "w:br", type: "element" },
+                        {
+                            attributes: { "xml:space": "preserve" },
+                            elements: [],
+                            name: "w:t",
+                            type: "element",
+                        },
                     ],
+                    name: "w:r",
+                    type: "element",
                 },
                 right: {
-                    type: "element",
+                    elements: [
+                        {
+                            attributes: { "xml:space": "preserve" },
+                            elements: [],
+                            name: "w:t",
+                            type: "element",
+                        },
+                    ],
                     name: "w:r",
-                    elements: [{ type: "element", name: "w:t", elements: [], attributes: { "xml:space": "preserve" } }],
+                    type: "element",
                 },
             });
         });

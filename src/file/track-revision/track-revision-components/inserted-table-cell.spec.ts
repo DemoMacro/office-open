@@ -1,13 +1,12 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { InsertedTableCell } from "./inserted-table-cell";
 
 describe("InsertedTableCell", () => {
     describe("#constructor", () => {
         it("should create the insertion for table cell", () => {
-            const insertion = new InsertedTableCell({ id: 0, date: "123", author: "Author" });
+            const insertion = new InsertedTableCell({ author: "Author", date: "123", id: 0 });
             const tree = new Formatter().format(insertion);
             expect(tree).to.deep.equal({
                 "w:cellIns": {

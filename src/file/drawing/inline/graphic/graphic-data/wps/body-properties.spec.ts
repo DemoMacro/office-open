@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { VerticalAnchor, createBodyProperties } from "./body-properties";
 
@@ -20,10 +19,10 @@ describe("BodyProperties", () => {
             const tree = new Formatter().format(
                 createBodyProperties({
                     margins: {
-                        top: 100,
                         bottom: 200,
                         left: 300,
                         right: 400,
+                        top: 100,
                     },
                 }),
             );
@@ -31,10 +30,10 @@ describe("BodyProperties", () => {
             expect(tree).to.deep.equal({
                 "wps:bodyPr": {
                     _attr: {
-                        tIns: 100,
                         bIns: 200,
                         lIns: 300,
                         rIns: 400,
+                        tIns: 100,
                     },
                 },
             });
@@ -79,13 +78,13 @@ describe("BodyProperties", () => {
             const tree = new Formatter().format(
                 createBodyProperties({
                     margins: {
-                        top: 10,
                         bottom: 20,
                         left: 30,
                         right: 40,
+                        top: 10,
                     },
-                    verticalAnchor: VerticalAnchor.BOTTOM,
                     noAutoFit: true,
+                    verticalAnchor: VerticalAnchor.BOTTOM,
                 }),
             );
 
@@ -93,11 +92,11 @@ describe("BodyProperties", () => {
                 "wps:bodyPr": [
                     {
                         _attr: {
-                            tIns: 10,
+                            anchor: "b",
                             bIns: 20,
                             lIns: 30,
                             rIns: 40,
-                            anchor: "b",
+                            tIns: 10,
                         },
                     },
                     {

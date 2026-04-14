@@ -10,7 +10,8 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Paragraph justification (alignment) types.
@@ -92,10 +93,12 @@ export const AlignmentType = {
  * });
  * ```
  */
-export const createAlignment = (type: (typeof AlignmentType)[keyof typeof AlignmentType]): XmlComponent =>
+export const createAlignment = (
+    type: (typeof AlignmentType)[keyof typeof AlignmentType],
+): XmlComponent =>
     new BuilderElement<{ readonly val: (typeof AlignmentType)[keyof typeof AlignmentType] }>({
-        name: "w:jc",
         attributes: {
             val: { key: "w:val", value: type },
         },
+        name: "w:jc",
     });

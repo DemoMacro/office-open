@@ -1,6 +1,7 @@
 // Scaling images
 
 import * as fs from "fs";
+
 import { Document, ImageRun, Packer, Paragraph } from "docx";
 
 const doc = new Document({
@@ -13,8 +14,8 @@ const doc = new Document({
                         new ImageRun({
                             data: fs.readFileSync("./demo/images/pizza.gif"),
                             transformation: {
-                                width: 50,
                                 height: 50,
+                                width: 50,
                             },
                         }),
                     ],
@@ -24,8 +25,8 @@ const doc = new Document({
                         new ImageRun({
                             data: fs.readFileSync("./demo/images/pizza.gif"),
                             transformation: {
-                                width: 100,
                                 height: 100,
+                                width: 100,
                             },
                         }),
                     ],
@@ -35,8 +36,8 @@ const doc = new Document({
                         new ImageRun({
                             data: fs.readFileSync("./demo/images/pizza.gif"),
                             transformation: {
-                                width: 250,
                                 height: 250,
+                                width: 250,
                             },
                         }),
                     ],
@@ -46,8 +47,8 @@ const doc = new Document({
                         new ImageRun({
                             data: fs.readFileSync("./demo/images/pizza.gif"),
                             transformation: {
-                                width: 400,
                                 height: 400,
+                                width: 400,
                             },
                         }),
                     ],

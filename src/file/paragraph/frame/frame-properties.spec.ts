@@ -1,24 +1,23 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
 import { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared";
+import { describe, expect, it } from "vite-plus/test";
 
 import { FrameAnchorType, createFrameProperties } from "./frame-properties";
 
 describe("createFrameProperties", () => {
     it("should create", () => {
         const currentFrameProperties = createFrameProperties({
-            type: "absolute",
-            position: {
-                x: 1000,
-                y: 3000,
-            },
-            width: 4000,
-            height: 1000,
             anchor: {
                 horizontal: FrameAnchorType.MARGIN,
                 vertical: FrameAnchorType.MARGIN,
             },
+            height: 1000,
+            position: {
+                x: 1000,
+                y: 3000,
+            },
+            type: "absolute",
+            width: 4000,
         });
 
         const tree = new Formatter().format(currentFrameProperties);
@@ -38,21 +37,21 @@ describe("createFrameProperties", () => {
 
     it("should create with the space attribute", () => {
         const currentFrameProperties = createFrameProperties({
-            type: "absolute",
-            position: {
-                x: 1000,
-                y: 3000,
-            },
-            width: 4000,
-            height: 1000,
             anchor: {
                 horizontal: FrameAnchorType.MARGIN,
                 vertical: FrameAnchorType.MARGIN,
+            },
+            height: 1000,
+            position: {
+                x: 1000,
+                y: 3000,
             },
             space: {
                 horizontal: 100,
                 vertical: 200,
             },
+            type: "absolute",
+            width: 4000,
         });
 
         const tree = new Formatter().format(currentFrameProperties);
@@ -61,12 +60,12 @@ describe("createFrameProperties", () => {
                 _attr: {
                     "w:h": 1000,
                     "w:hAnchor": "margin",
+                    "w:hSpace": 100,
                     "w:vAnchor": "margin",
+                    "w:vSpace": 200,
                     "w:w": 4000,
                     "w:x": 1000,
                     "w:y": 3000,
-                    "w:hSpace": 100,
-                    "w:vSpace": 200,
                 },
             },
         });
@@ -74,21 +73,21 @@ describe("createFrameProperties", () => {
 
     it("should create without x and y", () => {
         const currentFrameProperties = createFrameProperties({
-            type: "alignment",
-            width: 4000,
-            height: 1000,
-            anchor: {
-                horizontal: FrameAnchorType.MARGIN,
-                vertical: FrameAnchorType.MARGIN,
-            },
             alignment: {
                 x: HorizontalPositionAlign.CENTER,
                 y: VerticalPositionAlign.TOP,
             },
+            anchor: {
+                horizontal: FrameAnchorType.MARGIN,
+                vertical: FrameAnchorType.MARGIN,
+            },
+            height: 1000,
             space: {
                 horizontal: 100,
                 vertical: 200,
             },
+            type: "alignment",
+            width: 4000,
         });
 
         const tree = new Formatter().format(currentFrameProperties);
@@ -97,12 +96,12 @@ describe("createFrameProperties", () => {
                 _attr: {
                     "w:h": 1000,
                     "w:hAnchor": "margin",
+                    "w:hSpace": 100,
                     "w:vAnchor": "margin",
+                    "w:vSpace": 200,
                     "w:w": 4000,
                     "w:xAlign": "center",
                     "w:yAlign": "top",
-                    "w:hSpace": 100,
-                    "w:vSpace": 200,
                 },
             },
         });
@@ -110,21 +109,21 @@ describe("createFrameProperties", () => {
 
     it("should create without alignments", () => {
         const currentFrameProperties = createFrameProperties({
-            type: "absolute",
-            position: {
-                x: 1000,
-                y: 3000,
-            },
-            width: 4000,
-            height: 1000,
             anchor: {
                 horizontal: FrameAnchorType.MARGIN,
                 vertical: FrameAnchorType.MARGIN,
+            },
+            height: 1000,
+            position: {
+                x: 1000,
+                y: 3000,
             },
             space: {
                 horizontal: 100,
                 vertical: 200,
             },
+            type: "absolute",
+            width: 4000,
         });
 
         const tree = new Formatter().format(currentFrameProperties);
@@ -133,12 +132,12 @@ describe("createFrameProperties", () => {
                 _attr: {
                     "w:h": 1000,
                     "w:hAnchor": "margin",
+                    "w:hSpace": 100,
                     "w:vAnchor": "margin",
+                    "w:vSpace": 200,
                     "w:w": 4000,
                     "w:x": 1000,
                     "w:y": 3000,
-                    "w:hSpace": 100,
-                    "w:vSpace": 200,
                 },
             },
         });

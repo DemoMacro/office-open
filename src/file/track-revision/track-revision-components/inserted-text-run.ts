@@ -7,8 +7,10 @@
  */
 import { XmlComponent } from "@file/xml-components";
 
-import { type IRunOptions, TextRun } from "../../index";
-import { ChangeAttributes, type IChangedAttributesProperties } from "../track-revision";
+import { TextRun } from "../../index";
+import type { IRunOptions } from "../../index";
+import { ChangeAttributes } from "../track-revision";
+import type { IChangedAttributesProperties } from "../track-revision";
 
 /**
  * Options for creating an inserted text run.
@@ -65,9 +67,9 @@ export class InsertedTextRun extends XmlComponent {
         super("w:ins");
         this.root.push(
             new ChangeAttributes({
-                id: options.id,
                 author: options.author,
                 date: options.date,
+                id: options.id,
             }),
         );
         this.addChildElement(new TextRun(options as IRunOptions));

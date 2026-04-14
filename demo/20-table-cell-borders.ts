@@ -1,6 +1,7 @@
 // Add custom borders to table cell
 
 import * as fs from "fs";
+
 import { BorderStyle, Document, Packer, Paragraph, Table, TableCell, TableRow } from "docx";
 
 const doc = new Document({
@@ -31,29 +32,29 @@ const doc = new Document({
                                     children: [],
                                 }),
                                 new TableCell({
-                                    children: [new Paragraph("Hello")],
                                     borders: {
-                                        top: {
-                                            style: BorderStyle.DASH_DOT_STROKED,
-                                            size: 3,
-                                            color: "FF0000",
-                                        },
                                         bottom: {
-                                            style: BorderStyle.DOUBLE,
-                                            size: 3,
                                             color: "0000FF",
+                                            size: 3,
+                                            style: BorderStyle.DOUBLE,
                                         },
                                         left: {
-                                            style: BorderStyle.DASH_DOT_STROKED,
-                                            size: 3,
                                             color: "00FF00",
+                                            size: 3,
+                                            style: BorderStyle.DASH_DOT_STROKED,
                                         },
                                         right: {
-                                            style: BorderStyle.DASH_DOT_STROKED,
-                                            size: 3,
                                             color: "#ff8000",
+                                            size: 3,
+                                            style: BorderStyle.DASH_DOT_STROKED,
+                                        },
+                                        top: {
+                                            color: "FF0000",
+                                            size: 3,
+                                            style: BorderStyle.DASH_DOT_STROKED,
                                         },
                                     },
+                                    children: [new Paragraph("Hello")],
                                 }),
                                 new TableCell({
                                     children: [],

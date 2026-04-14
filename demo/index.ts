@@ -1,14 +1,15 @@
 /* eslint-disable no-console */
 import fs from "fs";
 import path from "path";
-import inquirer from "inquirer";
-import { $ } from "execa";
 
-export type Answers = {
+import { $ } from "execa";
+import inquirer from "inquirer";
+
+export interface Answers {
     readonly type: "list" | "number";
     readonly demoNumber?: number;
     readonly demoFile?: number;
-};
+}
 
 const dir = "./demo";
 const fileNames = fs.readdirSync(dir);
@@ -20,7 +21,9 @@ const getFileNumber = (file: string): number => {
     return Number(firstPart);
 };
 
-const demoFiles = keys.filter((file) => !isNaN(getFileNumber(file))).sort((a, b) => getFileNumber(a) - getFileNumber(b));
+const demoFiles = keys
+    .filter((file) => !isNaN(getFileNumber(file)))
+    .toSorted((a, b) => getFileNumber(a) - getFileNumber(b));
 
 const firstArg = process.argv[2];
 const firstArgNumber = Number.parseInt(firstArg, 10);
@@ -30,24 +33,24 @@ if (firstArg && !isNaN(firstArgNumber)) {
 } else {
     const answers = await inquirer.prompt<Answers>([
         {
-            type: "list",
-            name: "type",
-            message: "Select demo from a list or via number",
             choices: ["list", "number"],
+            message: "Select demo from a list or via number",
+            name: "type",
+            type: "list",
         },
         {
-            type: "list",
-            name: "demoFile",
-            message: "What demo do you wish to run?",
             choices: demoFiles,
             filter: (input) => parseInt(input.split("-")[0], 10),
+            message: "What demo do you wish to run?",
+            name: "demoFile",
+            type: "list",
             when: (a) => a.type === "list",
         },
         {
-            type: "number",
-            name: "demoNumber",
-            message: "What demo do you wish to run? (Enter a number)",
             default: 1,
+            message: "What demo do you wish to run? (Enter a number)",
+            name: "demoNumber",
+            type: "number",
             when: (a) => a.type === "number",
         },
     ]);

@@ -10,22 +10,33 @@
  *
  * @module
  */
-import { ChangeAttributes, type IChangedAttributesProperties } from "@file/track-revision/track-revision";
-import { type IContext, type IXmlableObject, IgnoreIfEmptyXmlComponent, OnOffElement, XmlComponent } from "@file/xml-components";
+import { ChangeAttributes } from "@file/track-revision/track-revision";
+import type { IChangedAttributesProperties } from "@file/track-revision/track-revision";
+import { IgnoreIfEmptyXmlComponent, OnOffElement, XmlComponent } from "@file/xml-components";
+import type { IContext, IXmlableObject } from "@file/xml-components";
 
-import { type IParagraphRunOptions, ParagraphRunProperties } from ".";
+import { ParagraphRunProperties } from ".";
+import type { IParagraphRunOptions } from ".";
 import { FontWrapper } from "../fonts/font-wrapper";
-import { type IShadingAttributesProperties, createShading } from "../shading";
-import { type AlignmentType, createAlignment } from "./formatting/alignment";
-import { Border, type IBordersOptions, ThematicBreak } from "./formatting/border";
+import { createShading } from "../shading";
+import type { IShadingAttributesProperties } from "../shading";
+import { createAlignment } from "./formatting/alignment";
+import type { AlignmentType } from "./formatting/alignment";
+import { Border, ThematicBreak } from "./formatting/border";
+import type { IBordersOptions } from "./formatting/border";
 import { PageBreakBefore } from "./formatting/break";
-import { type IIndentAttributesProperties, createIndent } from "./formatting/indent";
-import { type ISpacingProperties, createSpacing } from "./formatting/spacing";
-import { type HeadingLevel, createParagraphStyle } from "./formatting/style";
-import { type TabStopDefinition, TabStopType, createTabStop } from "./formatting/tab-stop";
+import { createIndent } from "./formatting/indent";
+import type { IIndentAttributesProperties } from "./formatting/indent";
+import { createSpacing } from "./formatting/spacing";
+import type { ISpacingProperties } from "./formatting/spacing";
+import { createParagraphStyle } from "./formatting/style";
+import type { HeadingLevel } from "./formatting/style";
+import { TabStopType, createTabStop } from "./formatting/tab-stop";
+import type { TabStopDefinition } from "./formatting/tab-stop";
 import { NumberProperties } from "./formatting/unordered-list";
 import { createWordWrap } from "./formatting/word-wrap";
-import { type IFrameOptions, createFrameProperties } from "./frame/frame-properties";
+import { createFrameProperties } from "./frame/frame-properties";
+import type { IFrameOptions } from "./frame/frame-properties";
 import { createOutlineLevel } from "./links";
 
 /**
@@ -33,7 +44,7 @@ import { createOutlineLevel } from "./links";
  *
  * These properties are used when defining paragraph styles within numbering level definitions.
  */
-export type ILevelParagraphStylePropertiesOptions = {
+export interface ILevelParagraphStylePropertiesOptions {
     /** Paragraph text alignment (left, right, center, justified, etc.) */
     readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
     /** Whether to display a horizontal line (thematic break) below the paragraph */
@@ -58,7 +69,7 @@ export type ILevelParagraphStylePropertiesOptions = {
     readonly keepLines?: boolean;
     /** Outline level for table of contents and document outline (0-9) */
     readonly outlineLevel?: number;
-};
+}
 
 /**
  * Paragraph style properties options.
@@ -126,7 +137,8 @@ export type IParagraphPropertiesOptionsBase = {
     readonly run?: IParagraphRunOptions;
 } & IParagraphStylePropertiesOptions;
 
-export type IParagraphPropertiesChangeOptions = IChangedAttributesProperties & IParagraphPropertiesOptionsBase;
+export type IParagraphPropertiesChangeOptions = IChangedAttributesProperties &
+    IParagraphPropertiesOptionsBase;
 
 /**
  * Options for configuring paragraph properties.
@@ -246,8 +258,10 @@ export type IParagraphPropertiesOptions = {
  * ```
  */
 export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
-    // eslint-disable-next-line functional/prefer-readonly-type
-    private readonly numberingReferences: { readonly reference: string; readonly instance: number }[] = [];
+    private readonly numberingReferences: {
+        readonly reference: string;
+        readonly instance: number;
+    }[] = [];
 
     public constructor(options?: IParagraphPropertiesOptions) {
         super("w:pPr", options?.includeIfEmpty);
@@ -302,11 +316,16 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.numbering) {
             this.numberingReferences.push({
-                reference: options.numbering.reference,
                 instance: options.numbering.instance ?? 0,
+                reference: options.numbering.reference,
             });
 
-            this.push(new NumberProperties(`${options.numbering.reference}-${options.numbering.instance ?? 0}`, options.numbering.level));
+            this.push(
+                new NumberProperties(
+                    `${options.numbering.reference}-${options.numbering.instance ?? 0}`,
+                    options.numbering.level,
+                ),
+            );
         } else if (options.numbering === false) {
             this.push(new NumberProperties(0, 0));
         }
@@ -336,9 +355,13 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
          * Ensure there is only one w:tabs tag with multiple w:tab
          */
         const tabDefinitions: readonly TabStopDefinition[] = [
-            ...(options.rightTabStop !== undefined ? [{ type: TabStopType.RIGHT, position: options.rightTabStop }] : []),
+            ...(options.rightTabStop !== undefined
+                ? [{ position: options.rightTabStop, type: TabStopType.RIGHT }]
+                : []),
             ...(options.tabStops ? options.tabStops : []),
-            ...(options.leftTabStop !== undefined ? [{ type: TabStopType.LEFT, position: options.leftTabStop }] : []),
+            ...(options.leftTabStop !== undefined
+                ? [{ position: options.leftTabStop, type: TabStopType.LEFT }]
+                : []),
         ];
 
         if (tabDefinitions.length > 0) {
@@ -410,7 +433,10 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
     public prepForXml(context: IContext): IXmlableObject | undefined {
         if (!(context.viewWrapper instanceof FontWrapper)) {
             for (const reference of this.numberingReferences) {
-                context.file.Numbering.createConcreteNumberingInstance(reference.reference, reference.instance);
+                context.file.Numbering.createConcreteNumberingInstance(
+                    reference.reference,
+                    reference.instance,
+                );
             }
         }
 
@@ -423,12 +449,12 @@ export class ParagraphPropertiesChange extends XmlComponent {
         super("w:pPrChange");
         this.root.push(
             new ChangeAttributes({
-                id: options.id,
                 author: options.author,
                 date: options.date,
+                id: options.id,
             }),
         );
-        // pPr is required (minOccurs="1") even if empty
+        // PPr is required (minOccurs="1") even if empty
         this.root.push(new ParagraphProperties({ ...options, includeIfEmpty: true }));
     }
 }

@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { createInline } from "./inline";
 
@@ -8,37 +7,37 @@ describe("Inline", () => {
     it("should create with default effect extent", () => {
         const tree = new Formatter().format(
             createInline({
+                docProperties: {
+                    description: "test",
+                    name: "test",
+                    title: "test",
+                },
                 mediaData: {
-                    type: "png",
-                    fileName: "test.png",
                     data: Buffer.from(""),
+                    fileName: "test.png",
                     transformation: {
-                        pixels: {
-                            x: 0,
-                            y: 0,
-                        },
                         emus: {
                             x: 0,
                             y: 0,
                         },
+                        pixels: {
+                            x: 0,
+                            y: 0,
+                        },
                     },
+                    type: "png",
                 },
+                outline: { solidFillType: "rgb", type: "solidFill", value: "FFFFFF" },
                 transform: {
-                    pixels: {
-                        x: 100,
-                        y: 100,
-                    },
                     emus: {
                         x: 100,
                         y: 100,
                     },
+                    pixels: {
+                        x: 100,
+                        y: 100,
+                    },
                 },
-                docProperties: {
-                    name: "test",
-                    description: "test",
-                    title: "test",
-                },
-                outline: { type: "solidFill", solidFillType: "rgb", value: "FFFFFF" },
             }),
         );
 
@@ -47,10 +46,10 @@ describe("Inline", () => {
                 {
                     "wp:effectExtent": {
                         _attr: {
-                            b: 19050,
-                            l: 19050,
-                            r: 19050,
-                            t: 19050,
+                            b: 19_050,
+                            l: 19_050,
+                            r: 19_050,
+                            t: 19_050,
                         },
                     },
                 },

@@ -10,7 +10,8 @@
  * @module
  */
 import type { ParagraphChild } from "@file/paragraph";
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 import type { LengthUnit } from "../types";
 import { createVmlTextbox } from "../vml-textbox/vml-texbox";
@@ -29,21 +30,21 @@ const styleToKeyMap: Record<keyof VmlShapeStyle, string> = {
     marginLeft: "margin-left",
     marginRight: "margin-right",
     marginTop: "margin-top",
+    position: "position",
     positionHorizontal: "mso-position-horizontal",
     positionHorizontalRelative: "mso-position-horizontal-relative",
     positionVertical: "mso-position-vertical",
     positionVerticalRelative: "mso-position-vertical-relative",
+    rotation: "rotation",
+    top: "top",
+    visibility: "visibility",
+    width: "width",
     wrapDistanceBottom: "mso-wrap-distance-bottom",
     wrapDistanceLeft: "mso-wrap-distance-left",
     wrapDistanceRight: "mso-wrap-distance-right",
     wrapDistanceTop: "mso-wrap-distance-top",
     wrapEdited: "mso-wrap-edited",
     wrapStyle: "mso-wrap-style",
-    position: "position",
-    rotation: "rotation",
-    top: "top",
-    visibility: "visibility",
-    width: "width",
     zIndex: "z-index",
 };
 
@@ -54,7 +55,7 @@ const styleToKeyMap: Record<keyof VmlShapeStyle, string> = {
  * and configuring VML shapes in WordprocessingML documents. These properties control
  * the shape's appearance, layout, and interaction with surrounding text.
  */
-export type VmlShapeStyle = {
+export interface VmlShapeStyle {
     /** Specifies that the orientation of a shape is flipped. Default is no value. */
     readonly flip?: "x" | "y" | "xy" | "yx";
     /** Specifies the height of the containing block of the shape. Default is 0. It is specified in CSS units or, for elements in a group, in the coordinate system of the parent element. */
@@ -101,7 +102,7 @@ export type VmlShapeStyle = {
     readonly width: LengthUnit;
     /** Specifies the display order of overlapping shapes. Default is 0. This property shall not be used for shapes anchored inline. */
     readonly zIndex?: "auto" | number;
-};
+}
 
 /**
  * Formats VmlShapeStyle object into a CSS-style string for VML shape attributes.
@@ -125,7 +126,7 @@ const formatShapeStyle = (style?: VmlShapeStyle): string | undefined =>
  * @property type - VML shape type identifier (default: "#_x0000_t202" for text rectangle)
  * @property style - Styling properties for the shape
  */
-type ShapeOptions = {
+interface ShapeOptions {
     /** Unique identifier for the shape */
     readonly id: string;
     /** Array of paragraph children to include in the shape's textbox */
@@ -134,7 +135,7 @@ type ShapeOptions = {
     readonly type?: string;
     /** Styling properties for the shape */
     readonly style?: VmlShapeStyle;
-};
+}
 
 /**
  * Creates a VML shape element with textbox content.
@@ -180,26 +181,31 @@ type ShapeOptions = {
  * });
  * ```
  */
-export const createShape = ({ id, children, type = SHAPE_TYPE, style }: ShapeOptions): XmlComponent =>
+export const createShape = ({
+    id,
+    children,
+    type = SHAPE_TYPE,
+    style,
+}: ShapeOptions): XmlComponent =>
     new BuilderElement<
         Pick<ShapeOptions, "id" | "type"> & {
             readonly style?: string;
         }
     >({
-        name: "v:shape",
         attributes: {
             id: {
                 key: "id",
                 value: id,
             },
-            type: {
-                key: "type",
-                value: type,
-            },
             style: {
                 key: "style",
                 value: formatShapeStyle(style),
             },
+            type: {
+                key: "type",
+                value: type,
+            },
         },
-        children: [createVmlTextbox({ style: "mso-fit-shape-to-text:t;", children })],
+        children: [createVmlTextbox({ children, style: "mso-fit-shape-to-text:t;" })],
+        name: "v:shape",
     });

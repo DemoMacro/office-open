@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
-// cspell:words CESU
+import { describe, expect, it } from "vite-plus/test";
+// Cspell:words CESU
 
 import {
     abstractNumUniqueNumericIdGen,
@@ -19,7 +18,7 @@ import {
 describe("Utility", () => {
     describe("#convertMillimetersToTwip", () => {
         it("should convert millimeters to TWIP", () => {
-            expect(convertMillimetersToTwip(1000)).to.equal(56692);
+            expect(convertMillimetersToTwip(1000)).to.equal(56_692);
         });
     });
 
@@ -106,13 +105,13 @@ describe("Utility", () => {
         it("should encode ASCII strings correctly", () => {
             const result = encodeUtf8("hello");
             expect(result).to.have.lengthOf(5);
-            expect(Array.from(result)).to.deep.equal([0x68, 0x65, 0x6c, 0x6c, 0x6f]);
+            expect([...result]).to.deep.equal([0x68, 0x65, 0x6c, 0x6c, 0x6f]);
         });
 
         it("should encode multi-byte characters correctly", () => {
             // "é" is U+00E9, encoded as C3 A9 in UTF-8
             const result = encodeUtf8("é");
-            expect(Array.from(result)).to.deep.equal([0xc3, 0xa9]);
+            expect([...result]).to.deep.equal([0xc3, 0xa9]);
         });
 
         it("should encode emoji (surrogate pairs) correctly as 4-byte UTF-8", () => {
@@ -122,7 +121,7 @@ describe("Utility", () => {
 
             // Verify it's 4 bytes (proper UTF-8), not 6 bytes (CESU-8)
             expect(result).to.have.lengthOf(4);
-            expect(Array.from(result)).to.deep.equal([0xf0, 0x9f, 0x98, 0x80]);
+            expect([...result]).to.deep.equal([0xf0, 0x9f, 0x98, 0x80]);
         });
 
         it("should encode Material Design Icons (high code points) correctly", () => {
@@ -132,7 +131,7 @@ describe("Utility", () => {
 
             // Verify it's 4 bytes (proper UTF-8), not 6 bytes (CESU-8)
             expect(result).to.have.lengthOf(4);
-            expect(Array.from(result)).to.deep.equal([0xf3, 0xb0, 0x88, 0x99]);
+            expect([...result]).to.deep.equal([0xf3, 0xb0, 0x88, 0x99]);
         });
 
         it("should encode mixed content with astral characters correctly", () => {

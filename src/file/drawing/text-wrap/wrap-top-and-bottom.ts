@@ -8,14 +8,15 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 import type { IMargins } from "../floating";
 
-type IWrapTopAndBottomAttributes = {
+interface IWrapTopAndBottomAttributes {
     readonly distT?: number;
     readonly distB?: number;
-};
+}
 
 /**
  * Creates top-and-bottom text wrapping for a floating drawing.
@@ -38,14 +39,14 @@ type IWrapTopAndBottomAttributes = {
  */
 export const createWrapTopAndBottom = (
     margins: IMargins = {
-        top: 0,
         bottom: 0,
+        top: 0,
     },
 ): XmlComponent =>
     new BuilderElement<IWrapTopAndBottomAttributes>({
-        name: "wp:wrapTopAndBottom",
         attributes: {
-            distT: { key: "distT", value: margins.top },
             distB: { key: "distB", value: margins.bottom },
+            distT: { key: "distT", value: margins.top },
         },
+        name: "wp:wrapTopAndBottom",
     });

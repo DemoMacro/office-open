@@ -10,7 +10,8 @@
  */
 import type { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared/alignment";
 import type { HeightRule } from "@file/table";
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Drop cap types for paragraph frames.
@@ -74,7 +75,7 @@ export const FrameWrap = {
  * @property space - Spacing between frame and surrounding text
  * @property rule - Height rule determining how frame height is calculated
  */
-type IBaseFrameOptions = {
+interface IBaseFrameOptions {
     /** Lock the anchor position to prevent it from moving */
     readonly anchorLock?: boolean;
     /** Drop cap effect type */
@@ -103,7 +104,7 @@ type IBaseFrameOptions = {
     };
     /** Height rule determining how frame height is calculated */
     readonly rule?: (typeof HeightRule)[keyof typeof HeightRule];
-};
+}
 
 /**
  * Options for frames positioned using absolute X/Y coordinates.
@@ -180,7 +181,7 @@ export type IFrameOptions = IXYFrameOptions | IAlignmentFrameOptions;
  * @property alignmentX - Horizontal alignment (for alignment-based positioning)
  * @property alignmentY - Vertical alignment (for alignment-based positioning)
  */
-type FramePropertiesAttributes = {
+interface FramePropertiesAttributes {
     /** Lock the anchor position */
     readonly anchorLock?: boolean;
     /** Drop cap effect type */
@@ -211,7 +212,7 @@ type FramePropertiesAttributes = {
     readonly alignmentX?: (typeof HorizontalPositionAlign)[keyof typeof HorizontalPositionAlign];
     /** Vertical alignment (for alignment-based positioning) */
     readonly alignmentY?: (typeof VerticalPositionAlign)[keyof typeof VerticalPositionAlign];
-};
+}
 
 /**
  * Creates a frame properties XML component for paragraph text frames.
@@ -281,39 +282,46 @@ type FramePropertiesAttributes = {
  */
 export const createFrameProperties = (options: IFrameOptions): XmlComponent =>
     new BuilderElement<FramePropertiesAttributes>({
-        name: "w:framePr",
         attributes: {
-            anchorLock: {
-                key: "w:anchorLock",
-                value: options.anchorLock,
+            alignmentX: {
+                key: "w:xAlign",
+                value: (options as IAlignmentFrameOptions).alignment
+                    ? (options as IAlignmentFrameOptions).alignment.x
+                    : undefined,
             },
-            dropCap: {
-                key: "w:dropCap",
-                value: options.dropCap,
-            },
-            width: {
-                key: "w:w",
-                value: options.width,
-            },
-            height: {
-                key: "w:h",
-                value: options.height,
-            },
-            x: {
-                key: "w:x",
-                value: (options as IXYFrameOptions).position ? (options as IXYFrameOptions).position.x : undefined,
-            },
-            y: {
-                key: "w:y",
-                value: (options as IXYFrameOptions).position ? (options as IXYFrameOptions).position.y : undefined,
+            alignmentY: {
+                key: "w:yAlign",
+                value: (options as IAlignmentFrameOptions).alignment
+                    ? (options as IAlignmentFrameOptions).alignment.y
+                    : undefined,
             },
             anchorHorizontal: {
                 key: "w:hAnchor",
                 value: options.anchor.horizontal,
             },
+            anchorLock: {
+                key: "w:anchorLock",
+                value: options.anchorLock,
+            },
             anchorVertical: {
                 key: "w:vAnchor",
                 value: options.anchor.vertical,
+            },
+            dropCap: {
+                key: "w:dropCap",
+                value: options.dropCap,
+            },
+            height: {
+                key: "w:h",
+                value: options.height,
+            },
+            lines: {
+                key: "w:lines",
+                value: options.lines,
+            },
+            rule: {
+                key: "w:hRule",
+                value: options.rule,
             },
             spaceHorizontal: {
                 key: "w:hSpace",
@@ -323,25 +331,26 @@ export const createFrameProperties = (options: IFrameOptions): XmlComponent =>
                 key: "w:vSpace",
                 value: options.space?.vertical,
             },
-            rule: {
-                key: "w:hRule",
-                value: options.rule,
-            },
-            alignmentX: {
-                key: "w:xAlign",
-                value: (options as IAlignmentFrameOptions).alignment ? (options as IAlignmentFrameOptions).alignment.x : undefined,
-            },
-            alignmentY: {
-                key: "w:yAlign",
-                value: (options as IAlignmentFrameOptions).alignment ? (options as IAlignmentFrameOptions).alignment.y : undefined,
-            },
-            lines: {
-                key: "w:lines",
-                value: options.lines,
+            width: {
+                key: "w:w",
+                value: options.width,
             },
             wrap: {
                 key: "w:wrap",
                 value: options.wrap,
             },
+            x: {
+                key: "w:x",
+                value: (options as IXYFrameOptions).position
+                    ? (options as IXYFrameOptions).position.x
+                    : undefined,
+            },
+            y: {
+                key: "w:y",
+                value: (options as IXYFrameOptions).position
+                    ? (options as IXYFrameOptions).position.y
+                    : undefined,
+            },
         },
+        name: "w:framePr",
     });

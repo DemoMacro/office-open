@@ -13,7 +13,7 @@ export class GraphicFrameLockAttributes extends XmlAttributeComponent<{
     readonly noChangeAspect?: number;
 }> {
     protected readonly xmlKeys = {
-        xmlns: "xmlns:a",
         noChangeAspect: "noChangeAspect",
+        xmlns: "xmlns:a",
     };
 }

@@ -1,4 +1,5 @@
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 import { decimalNumber } from "@util/values";
 
 /**
@@ -42,7 +43,7 @@ export const DocumentGridType = {
     SNAP_TO_CHARS: "snapToChars",
 } as const;
 
-export type IDocGridAttributesProperties = {
+export interface IDocGridAttributesProperties {
     /**
      * Specifies the type of the current document grid, which defines the grid behavior.
      *
@@ -86,7 +87,7 @@ export type IDocGridAttributesProperties = {
      * The possible values for this attribute are defined by the `ST_DecimalNumber` simple type (§2.18.16).
      */
     readonly charSpace?: number;
-};
+}
 
 /**
  * This element specifies the settings for the document grid, which enables precise layout of full-width East Asian language characters within a document by specifying the desired number of characters per line and lines per page for all East Asian text content in this section.
@@ -102,12 +103,19 @@ export type IDocGridAttributesProperties = {
  * ```
  * @returns
  */
-export const createDocumentGrid = ({ type, linePitch, charSpace }: IDocGridAttributesProperties): XmlComponent =>
+export const createDocumentGrid = ({
+    type,
+    linePitch,
+    charSpace,
+}: IDocGridAttributesProperties): XmlComponent =>
     new BuilderElement<IDocGridAttributesProperties>({
-        name: "w:docGrid",
         attributes: {
-            type: { key: "w:type", value: type },
+            charSpace: {
+                key: "w:charSpace",
+                value: charSpace ? decimalNumber(charSpace) : undefined,
+            },
             linePitch: { key: "w:linePitch", value: decimalNumber(linePitch) },
-            charSpace: { key: "w:charSpace", value: charSpace ? decimalNumber(charSpace) : undefined },
+            type: { key: "w:type", value: type },
         },
+        name: "w:docGrid",
     });

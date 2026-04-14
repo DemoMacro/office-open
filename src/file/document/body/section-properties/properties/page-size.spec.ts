@@ -1,25 +1,36 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { PageOrientation, createPageSize } from "./page-size";
 
 describe("PageSize", () => {
     describe("#constructor()", () => {
         it("should create page size with portrait", () => {
-            const properties = createPageSize({ width: 100, height: 200, orientation: PageOrientation.PORTRAIT });
+            const properties = createPageSize({
+                height: 200,
+                orientation: PageOrientation.PORTRAIT,
+                width: 100,
+            });
             const tree = new Formatter().format(properties);
 
             expect(Object.keys(tree)).to.deep.equal(["w:pgSz"]);
-            expect(tree["w:pgSz"]).to.deep.equal({ _attr: { "w:h": 200, "w:w": 100, "w:orient": "portrait" } });
+            expect(tree["w:pgSz"]).to.deep.equal({
+                _attr: { "w:h": 200, "w:orient": "portrait", "w:w": 100 },
+            });
         });
 
         it("should create page size with horizontal and invert the lengths", () => {
-            const properties = createPageSize({ width: 100, height: 200, orientation: PageOrientation.LANDSCAPE });
+            const properties = createPageSize({
+                height: 200,
+                orientation: PageOrientation.LANDSCAPE,
+                width: 100,
+            });
             const tree = new Formatter().format(properties);
 
             expect(Object.keys(tree)).to.deep.equal(["w:pgSz"]);
-            expect(tree["w:pgSz"]).to.deep.equal({ _attr: { "w:h": 100, "w:w": 200, "w:orient": "landscape" } });
+            expect(tree["w:pgSz"]).to.deep.equal({
+                _attr: { "w:h": 100, "w:orient": "landscape", "w:w": 200 },
+            });
         });
     });
 });

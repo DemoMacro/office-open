@@ -1,11 +1,13 @@
+import type {
+    RelationshipType,
+    TargetModeType,
+} from "@file/relationships/relationship/relationship";
 /**
  * Relationship manager for OOXML .rels file management.
  *
  * @module
  */
 import type { Element } from "xml-js";
-
-import type { RelationshipType, TargetModeType } from "@file/relationships/relationship/relationship";
 
 import { getFirstLevelElements } from "./util";
 
@@ -76,13 +78,12 @@ export const appendRelationship = (
     targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType],
 ): readonly Element[] => {
     const relationshipElements = getFirstLevelElements(relationships, "Relationships");
-    // eslint-disable-next-line functional/immutable-data
     relationshipElements.push({
         attributes: {
             Id: `rId${id}`,
-            Type: type,
             Target: target,
             TargetMode: targetMode,
+            Type: type,
         },
         name: "Relationship",
         type: "element",

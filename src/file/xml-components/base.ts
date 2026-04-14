@@ -20,15 +20,14 @@ import type { IXmlableObject } from "./xmlable-object";
  * @property viewWrapper - Access to document relationships and other document parts
  * @property stack - Current traversal stack of components (mutable for performance)
  */
-export type IContext = {
+export interface IContext {
     /** The root File object being serialized. */
     readonly file: File;
     /** Access to document relationships and other document parts. */
     readonly viewWrapper: IViewWrapper;
     /** Current traversal stack of components (mutable for performance). */
-    // eslint-disable-next-line functional/prefer-readonly-type
     readonly stack: IXmlableObject[];
-};
+}
 
 /**
  * Abstract base class for all XML components in the library.

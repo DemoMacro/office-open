@@ -7,9 +7,11 @@
  *
  * @module
  */
-import { type IRunStylePropertiesOptions, RunProperties } from "@file/paragraph/run/properties";
+import { RunProperties } from "@file/paragraph/run/properties";
+import type { IRunStylePropertiesOptions } from "@file/paragraph/run/properties";
 
-import { type IStyleOptions, Style } from "./style";
+import { Style } from "./style";
+import type { IStyleOptions } from "./style";
 
 /**
  * Base options for character style configuration.
@@ -70,7 +72,7 @@ export class StyleForCharacter extends Style {
 
     public constructor(options: ICharacterStyleOptions) {
         super(
-            { type: "character", styleId: options.id },
+            { styleId: options.id, type: "character" },
             {
                 uiPriority: 99,
                 unhideWhenUsed: true,

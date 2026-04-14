@@ -7,8 +7,10 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
-import { type PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
+import { twipsMeasureValue } from "@util/values";
+import type { PositiveUniversalMeasure } from "@util/values";
 
 /**
  * Height rules for table rows.
@@ -66,9 +68,9 @@ export const createTableRowHeight = (
         readonly value: number | string;
         readonly rule: (typeof HeightRule)[keyof typeof HeightRule];
     }>({
-        name: "w:trHeight",
         attributes: {
-            value: { key: "w:val", value: twipsMeasureValue(value) },
             rule: { key: "w:hRule", value: rule },
+            value: { key: "w:val", value: twipsMeasureValue(value) },
         },
+        name: "w:trHeight",
     });

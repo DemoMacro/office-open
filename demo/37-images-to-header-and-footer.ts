@@ -1,11 +1,13 @@
 // Add images to header and footer
 
 import * as fs from "fs";
+
 import { Document, Header, ImageRun, Packer, Paragraph } from "docx";
 
 const doc = new Document({
     sections: [
         {
+            children: [new Paragraph("Hello World")],
             headers: {
                 default: new Header({
                     children: [
@@ -14,8 +16,8 @@ const doc = new Document({
                                 new ImageRun({
                                     data: fs.readFileSync("./demo/images/image1.jpeg"),
                                     transformation: {
-                                        width: 100,
                                         height: 100,
+                                        width: 100,
                                     },
                                 }),
                             ],
@@ -25,8 +27,8 @@ const doc = new Document({
                                 new ImageRun({
                                     data: fs.readFileSync("./demo/images/pizza.gif"),
                                     transformation: {
-                                        width: 100,
                                         height: 100,
+                                        width: 100,
                                     },
                                 }),
                             ],
@@ -36,8 +38,8 @@ const doc = new Document({
                                 new ImageRun({
                                     data: fs.readFileSync("./demo/images/image1.jpeg"),
                                     transformation: {
-                                        width: 100,
                                         height: 100,
+                                        width: 100,
                                     },
                                 }),
                             ],
@@ -45,7 +47,6 @@ const doc = new Document({
                     ],
                 }),
             },
-            children: [new Paragraph("Hello World")],
         },
     ],
 });

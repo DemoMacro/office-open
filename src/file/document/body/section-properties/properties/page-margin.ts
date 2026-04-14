@@ -7,8 +7,10 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
-import { type PositiveUniversalMeasure, type UniversalMeasure, signedTwipsMeasureValue, twipsMeasureValue } from "@util/values";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
+import { signedTwipsMeasureValue, twipsMeasureValue } from "@util/values";
+import type { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
 
 /**
  * Options for configuring page margins.
@@ -23,7 +25,7 @@ import { type PositiveUniversalMeasure, type UniversalMeasure, signedTwipsMeasur
  * @property footer - Footer margin (distance from bottom of page to footer)
  * @property gutter - Gutter margin for binding
  */
-export type IPageMarginAttributes = {
+export interface IPageMarginAttributes {
     /** Top margin in twips or universal measure */
     readonly top?: number | UniversalMeasure;
     /** Right margin in twips or universal measure */
@@ -38,7 +40,7 @@ export type IPageMarginAttributes = {
     readonly footer?: number | PositiveUniversalMeasure;
     /** Gutter margin for binding in twips or universal measure */
     readonly gutter?: number | PositiveUniversalMeasure;
-};
+}
 
 /**
  * Creates page margins (pgMar) for a document section.
@@ -77,14 +79,14 @@ export const createPageMargin = (
     gutter: number | PositiveUniversalMeasure,
 ): XmlComponent =>
     new BuilderElement<IPageMarginAttributes>({
-        name: "w:pgMar",
         attributes: {
-            top: { key: "w:top", value: signedTwipsMeasureValue(top) },
-            right: { key: "w:right", value: twipsMeasureValue(right) },
             bottom: { key: "w:bottom", value: signedTwipsMeasureValue(bottom) },
-            left: { key: "w:left", value: twipsMeasureValue(left) },
-            header: { key: "w:header", value: twipsMeasureValue(header) },
             footer: { key: "w:footer", value: twipsMeasureValue(footer) },
             gutter: { key: "w:gutter", value: twipsMeasureValue(gutter) },
+            header: { key: "w:header", value: twipsMeasureValue(header) },
+            left: { key: "w:left", value: twipsMeasureValue(left) },
+            right: { key: "w:right", value: twipsMeasureValue(right) },
+            top: { key: "w:top", value: signedTwipsMeasureValue(top) },
         },
+        name: "w:pgMar",
     });

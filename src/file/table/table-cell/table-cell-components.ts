@@ -8,8 +8,13 @@
  *
  * @module
  */
-import { type IBorderOptions, createBorderElement } from "@file/border";
-import { IgnoreIfEmptyXmlComponent, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { createBorderElement } from "@file/border";
+import type { IBorderOptions } from "@file/border";
+import {
+    IgnoreIfEmptyXmlComponent,
+    XmlAttributeComponent,
+    XmlComponent,
+} from "@file/xml-components";
 import { decimalNumber } from "@util/values";
 
 /**
@@ -20,7 +25,7 @@ import { decimalNumber } from "@util/values";
  *
  * @see {@link TableCellBorders}
  */
-export type ITableCellBorders = {
+export interface ITableCellBorders {
     /** Border for the top edge of the cell */
     readonly top?: IBorderOptions;
     /** Border for the start edge (left in LTR, right in RTL) */
@@ -33,7 +38,7 @@ export type ITableCellBorders = {
     readonly end?: IBorderOptions;
     /** Border for the right edge of the cell */
     readonly right?: IBorderOptions;
-};
+}
 
 /**
  * Represents table cell borders (tcBorders) in a WordprocessingML document.

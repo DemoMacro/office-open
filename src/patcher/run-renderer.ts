@@ -15,22 +15,22 @@ import type { ElementWrapper } from "./traverser";
  * @property index - Position index of the paragraph among siblings
  * @property pathToParagraph - Path indices from root to this paragraph
  */
-export type IRenderedParagraphNode = {
+export interface IRenderedParagraphNode {
     readonly text: string;
     readonly runs: readonly IRenderedRunNode[];
     readonly index: number;
     readonly pathToParagraph: readonly number[];
-};
+}
 
 /**
  * Character position range within a paragraph.
  */
-type StartAndEnd = {
+interface StartAndEnd {
     /** Starting character index */
     readonly start: number;
     /** Ending character index */
     readonly end: number;
-};
+}
 
 /**
  * Text fragment within a run element.
@@ -82,10 +82,10 @@ export const renderParagraphNode = (node: ElementWrapper): IRenderedParagraphNod
 
     if (!node.element.elements) {
         return {
-            text: "",
-            runs: [],
             index: -1,
             pathToParagraph: [],
+            runs: [],
+            text: "",
         };
     }
 
@@ -100,26 +100,30 @@ export const renderParagraphNode = (node: ElementWrapper): IRenderedParagraphNod
 
             return renderedRunNode;
         })
-        .filter((e) => !!e);
+        .filter((e) => Boolean(e));
 
     const text = runs.reduce((acc, curr) => acc + curr.text, "");
 
     return {
-        text,
-        runs,
         index: node.index,
         pathToParagraph: buildNodePath(node),
+        runs,
+        text,
     };
 };
 
-const renderRunNode = (node: Element, index: number, currentRunStringIndex: number): IRenderedRunNode => {
+const renderRunNode = (
+    node: Element,
+    index: number,
+    currentRunStringIndex: number,
+): IRenderedRunNode => {
     if (!node.elements) {
         return {
-            text: "",
-            parts: [],
-            index: -1,
-            start: currentRunStringIndex,
             end: currentRunStringIndex,
+            index: -1,
+            parts: [],
+            start: currentRunStringIndex,
+            text: "",
         };
     }
 
@@ -128,29 +132,30 @@ const renderRunNode = (node: Element, index: number, currentRunStringIndex: numb
     const parts = node.elements
         .map((element, i: number) =>
             element.name === "w:t" && element.elements && element.elements.length > 0
-                ? {
-                      text: element.elements[0].text?.toString() ?? "",
-                      index: i,
-                      start: currentTextStringIndex,
-                      end: (() => {
-                          // Side effect
-                          currentTextStringIndex += (element.elements[0].text?.toString() ?? "").length - 1;
-                          return currentTextStringIndex;
-                      })(),
-                  }
+                ? (() => {
+                      const partStart = currentTextStringIndex;
+                      currentTextStringIndex +=
+                          (element.elements[0].text?.toString() ?? "").length - 1;
+                      return {
+                          end: currentTextStringIndex,
+                          index: i,
+                          start: partStart,
+                          text: element.elements[0].text?.toString() ?? "",
+                      };
+                  })()
                 : undefined,
         )
-        .filter((e) => !!e)
+        .filter((e) => Boolean(e))
         .map((e) => e as IParts);
 
     const text = parts.reduce((acc, curr) => acc + curr.text, "");
 
     return {
-        text,
-        parts,
-        index,
-        start: currentRunStringIndex,
         end: currentTextStringIndex,
+        index,
+        parts,
+        start: currentRunStringIndex,
+        text,
     };
 };
 

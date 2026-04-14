@@ -17,10 +17,10 @@ import type { MathComponent } from "./math-component";
  *
  * @see {@link Math}
  */
-export type IMathOptions = {
+export interface IMathOptions {
     /** Array of math components (fractions, radicals, runs, etc.) */
     readonly children: readonly MathComponent[];
-};
+}
 
 /**
  * Represents a mathematical equation in a WordprocessingML document.

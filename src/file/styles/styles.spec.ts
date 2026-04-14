@@ -1,8 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
 import { EMPTY_OBJECT } from "@file/xml-components";
+import { describe, expect, it } from "vite-plus/test";
 
 import { Styles } from "./styles";
 
@@ -19,7 +17,7 @@ describe("Styles", () => {
             const tree = new Formatter().format(styles)["w:styles"].filter((x: any) => !x._attr);
             expect(tree).to.deep.equal([
                 {
-                    "w:style": { _attr: { "w:type": "paragraph", "w:styleId": "pStyleId" } },
+                    "w:style": { _attr: { "w:styleId": "pStyleId", "w:type": "paragraph" } },
                 },
             ]);
         });
@@ -37,7 +35,7 @@ describe("Styles", () => {
             expect(tree).to.deep.equal([
                 {
                     "w:style": [
-                        { _attr: { "w:type": "paragraph", "w:styleId": "pStyleId" } },
+                        { _attr: { "w:styleId": "pStyleId", "w:type": "paragraph" } },
                         { "w:name": { _attr: { "w:val": "Paragraph Style" } } },
                     ],
                 },
@@ -58,7 +56,7 @@ describe("Styles", () => {
             expect(tree).to.deep.equal([
                 {
                     "w:style": [
-                        { _attr: { "w:type": "character", "w:styleId": "pStyleId" } },
+                        { _attr: { "w:styleId": "pStyleId", "w:type": "character" } },
                         {
                             "w:uiPriority": {
                                 _attr: {
@@ -87,7 +85,7 @@ describe("Styles", () => {
             expect(tree).to.deep.equal([
                 {
                     "w:style": [
-                        { _attr: { "w:type": "character", "w:styleId": "pStyleId" } },
+                        { _attr: { "w:styleId": "pStyleId", "w:type": "character" } },
                         { "w:name": { _attr: { "w:val": "Character Style" } } },
                         {
                             "w:uiPriority": {

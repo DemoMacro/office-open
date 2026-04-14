@@ -1,7 +1,6 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
 import { EMPTY_OBJECT } from "@file/xml-components";
+import { describe, expect, it } from "vite-plus/test";
 
 import { TableGrid, createGridCol } from "./grid";
 
@@ -38,7 +37,7 @@ describe("TableGrid", () => {
         });
 
         it("creates with revision", () => {
-            const grid = new TableGrid([1234, 321, 123], { id: 1, columnWidths: [1234, 123, 321] });
+            const grid = new TableGrid([1234, 321, 123], { columnWidths: [1234, 123, 321], id: 1 });
             const tree = new Formatter().format(grid);
             expect(tree).to.deep.equal({
                 "w:tblGrid": [

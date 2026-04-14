@@ -22,11 +22,12 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
-type IVerticalAlignAttributes = {
+interface IVerticalAlignAttributes {
     readonly val: string;
-};
+}
 
 /**
  * Creates a vertical alignment run element.
@@ -34,10 +35,10 @@ type IVerticalAlignAttributes = {
  */
 const createVerticalAlignRun = (type: string): XmlComponent =>
     new BuilderElement<IVerticalAlignAttributes>({
-        name: "w:vertAlign",
         attributes: {
             val: { key: "w:val", value: type },
         },
+        name: "w:vertAlign",
     });
 
 /**

@@ -1,8 +1,10 @@
 // http://officeopenxml.com/drwPicInline.php
 import type { IExtendedMediaData, IMediaDataTransformation } from "@file/media";
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
-import { DocProperties, type DocPropertiesOptions } from "./../doc-properties/doc-properties";
+import { DocProperties } from "./../doc-properties/doc-properties";
+import type { DocPropertiesOptions } from "./../doc-properties/doc-properties";
 import { createEffectExtent } from "./../effect-extent/effect-extent";
 import { createExtent } from "./../extent/extent";
 import { createGraphicFrameProperties } from "./../graphic-frame/graphic-frame-properties";
@@ -13,13 +15,13 @@ import type { SolidFillOptions } from "./graphic/graphic-data/pic/shape-properti
 /**
  * Options for creating an inline drawing element.
  */
-type InlineOptions = {
+interface InlineOptions {
     readonly mediaData: IExtendedMediaData;
     readonly transform: IMediaDataTransformation;
     readonly docProperties?: DocPropertiesOptions;
     readonly outline?: OutlineOptions;
     readonly solidFill?: SolidFillOptions;
-};
+}
 
 // <xsd:complexType name="CT_Inline">
 //     <xsd:sequence>
@@ -27,7 +29,7 @@ type InlineOptions = {
 //         <xsd:element name="effectExtent" type="CT_EffectExtent" minOccurs="0"/>
 //         <xsd:element name="docPr" type="a:CT_NonVisualDrawingProps" minOccurs="1" maxOccurs="1"/>
 //         <xsd:element name="cNvGraphicFramePr" type="a:CT_NonVisualGraphicFrameProperties"
-//             minOccurs="0" maxOccurs="1"/>
+//             MinOccurs="0" maxOccurs="1"/>
 //         <xsd:element ref="a:graphic" minOccurs="1" maxOccurs="1"/>
 //     </xsd:sequence>
 //     <xsd:attribute name="distT" type="ST_WrapDistance" use="optional"/>
@@ -35,14 +37,15 @@ type InlineOptions = {
 //     <xsd:attribute name="distL" type="ST_WrapDistance" use="optional"/>
 //     <xsd:attribute name="distR" type="ST_WrapDistance" use="optional"/>
 // </xsd:complexType>
-export const createInline = ({ mediaData, transform, docProperties, outline, solidFill }: InlineOptions): XmlComponent =>
+export const createInline = ({
+    mediaData,
+    transform,
+    docProperties,
+    outline,
+    solidFill,
+}: InlineOptions): XmlComponent =>
     new BuilderElement({
-        name: "wp:inline",
         attributes: {
-            distanceTop: {
-                key: "distT",
-                value: 0,
-            },
             distanceBottom: {
                 key: "distB",
                 value: 0,
@@ -55,21 +58,26 @@ export const createInline = ({ mediaData, transform, docProperties, outline, sol
                 key: "distR",
                 value: 0,
             },
+            distanceTop: {
+                key: "distT",
+                value: 0,
+            },
         },
         children: [
             createExtent({ x: transform.emus.x, y: transform.emus.y }),
             createEffectExtent(
                 outline
                     ? {
-                          top: (outline.width ?? 9525) * 2,
-                          right: (outline.width ?? 9525) * 2,
                           bottom: (outline.width ?? 9525) * 2,
                           left: (outline.width ?? 9525) * 2,
+                          right: (outline.width ?? 9525) * 2,
+                          top: (outline.width ?? 9525) * 2,
                       }
-                    : { top: 0, right: 0, bottom: 0, left: 0 },
+                    : { bottom: 0, left: 0, right: 0, top: 0 },
             ),
             new DocProperties(docProperties),
             createGraphicFrameProperties(),
-            new Graphic({ mediaData, transform, outline, solidFill }),
+            new Graphic({ mediaData, outline, solidFill, transform }),
         ],
+        name: "wp:inline",
     });

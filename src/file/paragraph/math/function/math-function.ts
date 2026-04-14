@@ -19,12 +19,12 @@ import { MathFunctionProperties } from "./math-function-properties";
  *
  * @see {@link MathFunction}
  */
-export type IMathFunctionOptions = {
+export interface IMathFunctionOptions {
     /** The function argument (e.g., the expression inside sin(...)) */
     readonly children: readonly MathComponent[];
     /** The function name (e.g., "sin", "cos", "log") */
     readonly name: readonly MathComponent[];
-};
+}
 
 /**
  * Represents a mathematical function in a math equation.

@@ -40,7 +40,7 @@ import { XmlAttributeComponent } from "@file/xml-components";
  * @property w16cid - WordprocessingML CID namespace (Word 2016+)
  * @property w16se - WordprocessingML SymEx namespace (Word 2015+)
  */
-export type IHeaderAttributesProperties = {
+export interface IHeaderAttributesProperties {
     readonly wpc?: string;
     readonly mc?: string;
     readonly o?: string;
@@ -74,7 +74,7 @@ export type IHeaderAttributesProperties = {
     readonly cx8?: string;
     readonly w16cid: string;
     readonly w16se: string;
-};
+}
 
 /**
  * Component for managing XML namespace attributes on header elements.
@@ -92,28 +92,7 @@ export type IHeaderAttributesProperties = {
  */
 export class HeaderAttributes extends XmlAttributeComponent<IHeaderAttributesProperties> {
     protected readonly xmlKeys = {
-        wpc: "xmlns:wpc",
-        mc: "xmlns:mc",
-        o: "xmlns:o",
-        r: "xmlns:r",
-        m: "xmlns:m",
-        v: "xmlns:v",
-        wp14: "xmlns:wp14",
-        wp: "xmlns:wp",
-        w10: "xmlns:w10",
-        w: "xmlns:w",
-        w14: "xmlns:w14",
-        w15: "xmlns:w15",
-        wpg: "xmlns:wpg",
-        wpi: "xmlns:wpi",
-        wne: "xmlns:wne",
-        wps: "xmlns:wps",
         cp: "xmlns:cp",
-        dc: "xmlns:dc",
-        dcterms: "xmlns:dcterms",
-        dcmitype: "xmlns:dcmitype",
-        xsi: "xmlns:xsi",
-        type: "xsi:type",
         cx: "xmlns:cx",
         cx1: "xmlns:cx1",
         cx2: "xmlns:cx2",
@@ -123,7 +102,28 @@ export class HeaderAttributes extends XmlAttributeComponent<IHeaderAttributesPro
         cx6: "xmlns:cx6",
         cx7: "xmlns:cx7",
         cx8: "xmlns:cx8",
+        dc: "xmlns:dc",
+        dcmitype: "xmlns:dcmitype",
+        dcterms: "xmlns:dcterms",
+        m: "xmlns:m",
+        mc: "xmlns:mc",
+        o: "xmlns:o",
+        r: "xmlns:r",
+        type: "xsi:type",
+        v: "xmlns:v",
+        w: "xmlns:w",
+        w10: "xmlns:w10",
+        w14: "xmlns:w14",
+        w15: "xmlns:w15",
         w16cid: "xmlns:w16cid",
         w16se: "xmlns:w16se",
+        wne: "xmlns:wne",
+        wp: "xmlns:wp",
+        wp14: "xmlns:wp14",
+        wpc: "xmlns:wpc",
+        wpg: "xmlns:wpg",
+        wpi: "xmlns:wpi",
+        wps: "xmlns:wps",
+        xsi: "xmlns:xsi",
     };
 }

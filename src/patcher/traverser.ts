@@ -5,7 +5,8 @@
  */
 import type { Element } from "xml-js";
 
-import { type IRenderedParagraphNode, renderParagraphNode } from "./run-renderer";
+import { renderParagraphNode } from "./run-renderer";
+import type { IRenderedParagraphNode } from "./run-renderer";
 
 /**
  * Wrapper for XML elements that tracks position in the document tree.
@@ -14,11 +15,11 @@ import { type IRenderedParagraphNode, renderParagraphNode } from "./run-renderer
  * @property index - Position index among siblings
  * @property parent - Parent element wrapper (undefined for root)
  */
-export type ElementWrapper = {
+export interface ElementWrapper {
     readonly element: Element;
     readonly index: number;
     readonly parent: ElementWrapper | undefined;
-};
+}
 
 const elementsToWrapper = (wrapper: ElementWrapper): readonly ElementWrapper[] =>
     wrapper.element.elements?.map((e, i) => ({
@@ -46,7 +47,6 @@ const elementsToWrapper = (wrapper: ElementWrapper): readonly ElementWrapper[] =
 export const traverse = (node: Element): readonly IRenderedParagraphNode[] => {
     let renderedParagraphs: readonly IRenderedParagraphNode[] = [];
 
-    // eslint-disable-next-line functional/prefer-readonly-type
     const queue: ElementWrapper[] = [
         ...elementsToWrapper({
             element: node,
@@ -57,13 +57,11 @@ export const traverse = (node: Element): readonly IRenderedParagraphNode[] => {
 
     let currentNode: ElementWrapper | undefined;
     while (queue.length > 0) {
-        // eslint-disable-next-line functional/immutable-data
         currentNode = queue.shift()!; // This is safe because we check the length of the queue
 
         if (currentNode.element.name === "w:p") {
             renderedParagraphs = [...renderedParagraphs, renderParagraphNode(currentNode)];
         }
-        // eslint-disable-next-line functional/immutable-data
         queue.push(...elementsToWrapper(currentNode));
     }
 
@@ -87,5 +85,7 @@ export const traverse = (node: Element): readonly IRenderedParagraphNode[] => {
  * // Returns all paragraphs containing "{{name}}"
  * ```
  */
-export const findLocationOfText = (node: Element, text: string): readonly IRenderedParagraphNode[] =>
-    traverse(node).filter((p) => p.text.includes(text));
+export const findLocationOfText = (
+    node: Element,
+    text: string,
+): readonly IRenderedParagraphNode[] => traverse(node).filter((p) => p.text.includes(text));

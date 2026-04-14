@@ -9,23 +9,27 @@
  */
 import { XmlComponent } from "@file/xml-components";
 
-import { createMathSubSuperScriptProperties } from "./math-sub-super-script-function-properties";
 import type { MathComponent } from "../../math-component";
-import { createMathBase, createMathSubScriptElement, createMathSuperScriptElement } from "../../n-ary";
+import {
+    createMathBase,
+    createMathSubScriptElement,
+    createMathSuperScriptElement,
+} from "../../n-ary";
+import { createMathSubSuperScriptProperties } from "./math-sub-super-script-function-properties";
 
 /**
  * Options for creating a MathSubSuperScript.
  *
  * @see {@link MathSubSuperScript}
  */
-export type IMathSubSuperScriptOptions = {
+export interface IMathSubSuperScriptOptions {
     /** The base expression */
     readonly children: readonly MathComponent[];
     /** The subscript expression */
     readonly subScript: readonly MathComponent[];
     /** The superscript expression */
     readonly superScript: readonly MathComponent[];
-};
+}
 
 /**
  * Represents a combined subscript and superscript expression in a math equation.

@@ -1,70 +1,71 @@
 // Patch a document with patches
 
 import * as fs from "fs";
-import { patchDocument, PatchType, TextRun } from "docx";
+
+import { PatchType, TextRun, patchDocument } from "docx";
 
 patchDocument({
-    outputType: "nodebuffer",
     data: fs.readFileSync("demo/assets/field-trip.docx"),
+    outputType: "nodebuffer",
     patches: {
-        todays_date: {
-            type: PatchType.PARAGRAPH,
-            children: [new TextRun({ text: new Date().toLocaleDateString() })],
-        },
-
-        school_name: {
-            type: PatchType.PARAGRAPH,
-            children: [new TextRun({ text: "test" })],
-        },
-
         address: {
-            type: PatchType.PARAGRAPH,
             children: [new TextRun({ text: "blah blah" })],
+            type: PatchType.PARAGRAPH,
         },
 
         city: {
-            type: PatchType.PARAGRAPH,
             children: [new TextRun({ text: "test" })],
-        },
-
-        state: {
             type: PatchType.PARAGRAPH,
-            children: [new TextRun({ text: "test" })],
-        },
-
-        zip: {
-            type: PatchType.PARAGRAPH,
-            children: [new TextRun({ text: "test" })],
-        },
-
-        phone: {
-            type: PatchType.PARAGRAPH,
-            children: [new TextRun({ text: "test" })],
-        },
-
-        first_name: {
-            type: PatchType.PARAGRAPH,
-            children: [new TextRun({ text: "test" })],
-        },
-
-        last_name: {
-            type: PatchType.PARAGRAPH,
-            children: [new TextRun({ text: "test" })],
         },
 
         email_address: {
-            type: PatchType.PARAGRAPH,
             children: [new TextRun({ text: "test" })],
+            type: PatchType.PARAGRAPH,
+        },
+
+        first_name: {
+            children: [new TextRun({ text: "test" })],
+            type: PatchType.PARAGRAPH,
         },
 
         ft_dates: {
-            type: PatchType.PARAGRAPH,
             children: [new TextRun({ text: "test" })],
+            type: PatchType.PARAGRAPH,
         },
 
         grade: {
-            type: PatchType.PARAGRAPH,
             children: [new TextRun({ text: "test" })],
+            type: PatchType.PARAGRAPH,
+        },
+
+        last_name: {
+            children: [new TextRun({ text: "test" })],
+            type: PatchType.PARAGRAPH,
+        },
+
+        phone: {
+            children: [new TextRun({ text: "test" })],
+            type: PatchType.PARAGRAPH,
+        },
+
+        school_name: {
+            children: [new TextRun({ text: "test" })],
+            type: PatchType.PARAGRAPH,
+        },
+
+        state: {
+            children: [new TextRun({ text: "test" })],
+            type: PatchType.PARAGRAPH,
+        },
+
+        todays_date: {
+            children: [new TextRun({ text: new Date().toLocaleDateString() })],
+            type: PatchType.PARAGRAPH,
+        },
+
+        zip: {
+            children: [new TextRun({ text: "test" })],
+            type: PatchType.PARAGRAPH,
         },
     },
 }).then((doc) => {

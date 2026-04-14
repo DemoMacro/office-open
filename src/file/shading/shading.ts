@@ -26,7 +26,8 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 import { hexColorValue } from "@util/values";
 
 /**
@@ -36,11 +37,11 @@ import { hexColorValue } from "@util/values";
  * @property color - Pattern color in hex format
  * @property type - Shading pattern type
  */
-export type IShadingAttributesProperties = {
+export interface IShadingAttributesProperties {
     readonly fill?: string;
     readonly color?: string;
     readonly type?: (typeof ShadingType)[keyof typeof ShadingType];
-};
+}
 
 /**
  * Creates a shading element for a WordprocessingML document.
@@ -52,12 +53,15 @@ export type IShadingAttributesProperties = {
  */
 export const createShading = ({ fill, color, type }: IShadingAttributesProperties): XmlComponent =>
     new BuilderElement<IShadingAttributesProperties>({
-        name: "w:shd",
         attributes: {
+            color: {
+                key: "w:color",
+                value: color === undefined ? undefined : hexColorValue(color),
+            },
             fill: { key: "w:fill", value: fill === undefined ? undefined : hexColorValue(fill) },
-            color: { key: "w:color", value: color === undefined ? undefined : hexColorValue(color) },
             type: { key: "w:val", value: type },
         },
+        name: "w:shd",
     });
 
 /**
@@ -94,7 +98,6 @@ export const ShadingType = {
     HORIZONTAL_CROSS: "horzCross",
     HORIZONTAL_STRIPE: "horzStripe",
     NIL: "nil",
-    PERCENT_5: "pct5",
     PERCENT_10: "pct10",
     PERCENT_12: "pct12",
     PERCENT_15: "pct15",
@@ -105,6 +108,7 @@ export const ShadingType = {
     PERCENT_37: "pct37",
     PERCENT_40: "pct40",
     PERCENT_45: "pct45",
+    PERCENT_5: "pct5",
     PERCENT_50: "pct50",
     PERCENT_55: "pct55",
     PERCENT_60: "pct60",

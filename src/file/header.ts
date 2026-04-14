@@ -17,10 +17,10 @@ import type { Table } from "./table";
  * @see {@link Header}
  * @see {@link Footer}
  */
-export type IHeaderOptions = {
+export interface IHeaderOptions {
     /** The content elements (paragraphs and tables) for the header/footer */
     readonly children: readonly (Paragraph | Table)[];
-};
+}
 
 /**
  * Represents a document header.

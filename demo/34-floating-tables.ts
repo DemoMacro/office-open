@@ -1,6 +1,7 @@
 // Example of how you would create a table with float positions
 
 import * as fs from "fs";
+
 import {
     Document,
     OverlapType,
@@ -17,6 +18,18 @@ import {
 } from "docx";
 
 const table = new Table({
+    float: {
+        bottomFromText: 30,
+        horizontalAnchor: TableAnchorType.MARGIN,
+        leftFromText: 1000,
+        overlap: OverlapType.NEVER,
+        relativeHorizontalPosition: RelativeHorizontalPosition.RIGHT,
+        relativeVerticalPosition: RelativeVerticalPosition.BOTTOM,
+        rightFromText: 2000,
+        topFromText: 1500,
+        verticalAnchor: TableAnchorType.MARGIN,
+    },
+    layout: TableLayoutType.FIXED,
     rows: [
         new TableRow({
             children: [
@@ -37,22 +50,10 @@ const table = new Table({
             ],
         }),
     ],
-    float: {
-        horizontalAnchor: TableAnchorType.MARGIN,
-        verticalAnchor: TableAnchorType.MARGIN,
-        relativeHorizontalPosition: RelativeHorizontalPosition.RIGHT,
-        relativeVerticalPosition: RelativeVerticalPosition.BOTTOM,
-        overlap: OverlapType.NEVER,
-        leftFromText: 1000,
-        rightFromText: 2000,
-        topFromText: 1500,
-        bottomFromText: 30,
-    },
     width: {
         size: 4535,
         type: WidthType.DXA,
     },
-    layout: TableLayoutType.FIXED,
 });
 
 const doc = new Document({

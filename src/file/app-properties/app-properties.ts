@@ -50,8 +50,8 @@ export class AppProperties extends XmlComponent {
 
         this.root.push(
             new AppPropertiesAttributes({
-                xmlns: "http://schemas.openxmlformats.org/officeDocument/2006/extended-properties",
                 vt: "http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes",
+                xmlns: "http://schemas.openxmlformats.org/officeDocument/2006/extended-properties",
             }),
         );
     }

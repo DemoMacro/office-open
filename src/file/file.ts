@@ -8,17 +8,21 @@
  */
 import { AppProperties } from "./app-properties/app-properties";
 import { ContentTypes } from "./content-types/content-types";
-import { CoreProperties, type IPropertiesOptions } from "./core-properties";
+import { CoreProperties } from "./core-properties";
+import type { IPropertiesOptions } from "./core-properties";
 import { CustomProperties } from "./custom-properties";
-import { HeaderFooterReferenceType, type ISectionPropertiesOptions } from "./document/body/section-properties";
 import { DocumentWrapper } from "./document-wrapper";
+import { HeaderFooterReferenceType } from "./document/body/section-properties";
+import type { ISectionPropertiesOptions } from "./document/body/section-properties";
 import { EndnotesWrapper } from "./endnotes-wrapper";
 import type { FileChild } from "./file-child";
 import { FontWrapper } from "./fonts/font-wrapper";
-import { FooterWrapper, type IDocumentFooter } from "./footer-wrapper";
+import { FooterWrapper } from "./footer-wrapper";
+import type { IDocumentFooter } from "./footer-wrapper";
 import { FootnotesWrapper } from "./footnotes-wrapper";
 import type { Footer, Header } from "./header";
-import { HeaderWrapper, type IDocumentHeader } from "./header-wrapper";
+import { HeaderWrapper } from "./header-wrapper";
+import type { IDocumentHeader } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
 import { Comments } from "./paragraph/run/comment-run";
@@ -44,7 +48,7 @@ import { DefaultStylesFactory } from "./styles/factory";
  * @property properties - Section properties such as page size, margins, and orientation
  * @property children - Array of content elements (paragraphs, tables, etc.) for this section
  */
-export type ISectionOptions = {
+export interface ISectionOptions {
     /** Optional header definitions for the section. */
     readonly headers?: {
         /** Default header for all pages (when first/even not specified). */
@@ -67,7 +71,7 @@ export type ISectionOptions = {
     readonly properties?: ISectionPropertiesOptions;
     /** Array of content elements (paragraphs, tables, etc.) for this section. */
     readonly children: readonly FileChild[];
-};
+}
 
 /**
  * Represents a Word document file.
@@ -144,13 +148,10 @@ export type ISectionOptions = {
  * ```
  */
 export class File {
-    // eslint-disable-next-line functional/prefer-readonly-type
     private currentRelationshipId: number = 1;
 
     private readonly documentWrapper: DocumentWrapper;
-    // eslint-disable-next-line functional/prefer-readonly-type
     private readonly headers: IDocumentHeader[] = [];
-    // eslint-disable-next-line functional/prefer-readonly-type
     private readonly footers: IDocumentFooter[] = [];
     private readonly coreProperties: CoreProperties;
     private readonly numbering: Numbering;
@@ -170,8 +171,8 @@ export class File {
         this.coreProperties = new CoreProperties({
             ...options,
             creator: options.creator ?? "Un-named",
-            revision: options.revision ?? 1,
             lastModifiedBy: options.lastModifiedBy ?? "Un-named",
+            revision: options.revision ?? 1,
         });
 
         this.numbering = new Numbering(options.numbering ? options.numbering : { config: [] });
@@ -185,18 +186,18 @@ export class File {
         this.contentTypes = new ContentTypes();
         this.documentWrapper = new DocumentWrapper({ background: options.background });
         this.settings = new Settings({
-            compatibilityModeVersion: options.compatabilityModeVersion,
             compatibility: options.compatibility,
-            evenAndOddHeaders: options.evenAndOddHeaderAndFooters ? true : false,
-            trackRevisions: options.features?.trackRevisions,
-            updateFields: options.features?.updateFields,
+            compatibilityModeVersion: options.compatabilityModeVersion,
             defaultTabStop: options.defaultTabStop,
+            evenAndOddHeaders: options.evenAndOddHeaderAndFooters ? true : false,
             hyphenation: {
                 autoHyphenation: options.hyphenation?.autoHyphenation,
-                hyphenationZone: options.hyphenation?.hyphenationZone,
                 consecutiveHyphenLimit: options.hyphenation?.consecutiveHyphenLimit,
                 doNotHyphenateCaps: options.hyphenation?.doNotHyphenateCaps,
+                hyphenationZone: options.hyphenation?.hyphenationZone,
             },
+            trackRevisions: options.features?.trackRevisions,
+            updateFields: options.features?.updateFields,
         });
 
         this.media = new Media();
@@ -208,7 +209,10 @@ export class File {
             const externalStyles = externalFactory.newInstance(options.externalStyles);
             this.styles = new Styles({
                 ...externalStyles,
-                importedStyles: [...defaultStyles.importedStyles!, ...externalStyles.importedStyles!],
+                importedStyles: [
+                    ...defaultStyles.importedStyles!,
+                    ...externalStyles.importedStyles!,
+                ],
             });
         } else if (options.styles) {
             const stylesFactory = new DefaultStylesFactory();
@@ -229,34 +233,43 @@ export class File {
         }
 
         if (options.footnotes) {
-            // eslint-disable-next-line guard-for-in
             for (const key in options.footnotes) {
-                this.footnotesWrapper.View.createFootNote(parseFloat(key), options.footnotes[key].children);
+                this.footnotesWrapper.View.createFootNote(
+                    parseFloat(key),
+                    options.footnotes[key].children,
+                );
             }
         }
 
         if (options.endnotes) {
-            // eslint-disable-next-line guard-for-in
             for (const key in options.endnotes) {
-                this.endnotesWrapper.View.createEndnote(parseFloat(key), options.endnotes[key].children);
+                this.endnotesWrapper.View.createEndnote(
+                    parseFloat(key),
+                    options.endnotes[key].children,
+                );
             }
         }
 
         this.fontWrapper = new FontWrapper(options.fonts ?? []);
     }
 
-    private addSection({ headers = {}, footers = {}, children, properties }: ISectionOptions): void {
+    private addSection({
+        headers = {},
+        footers = {},
+        children,
+        properties,
+    }: ISectionOptions): void {
         this.documentWrapper.View.Body.addSection({
             ...properties,
-            headerWrapperGroup: {
-                default: headers.default ? this.createHeader(headers.default) : undefined,
-                first: headers.first ? this.createHeader(headers.first) : undefined,
-                even: headers.even ? this.createHeader(headers.even) : undefined,
-            },
             footerWrapperGroup: {
                 default: footers.default ? this.createFooter(footers.default) : undefined,
-                first: footers.first ? this.createFooter(footers.first) : undefined,
                 even: footers.even ? this.createFooter(footers.even) : undefined,
+                first: footers.first ? this.createFooter(footers.first) : undefined,
+            },
+            headerWrapperGroup: {
+                default: headers.default ? this.createHeader(headers.default) : undefined,
+                even: headers.even ? this.createHeader(headers.even) : undefined,
+                first: headers.first ? this.createHeader(headers.first) : undefined,
             },
         });
 
@@ -266,7 +279,6 @@ export class File {
     }
 
     private createHeader(header: Header): HeaderWrapper {
-        // eslint-disable-next-line functional/immutable-data
         const wrapper = new HeaderWrapper(this.media, this.currentRelationshipId++);
 
         for (const child of header.options.children) {
@@ -278,7 +290,6 @@ export class File {
     }
 
     private createFooter(footer: Footer): FooterWrapper {
-        // eslint-disable-next-line functional/immutable-data
         const wrapper = new FooterWrapper(this.media, this.currentRelationshipId++);
 
         for (const child of footer.options.children) {
@@ -293,7 +304,6 @@ export class File {
         header: HeaderWrapper,
         type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType] = HeaderFooterReferenceType.DEFAULT,
     ): void {
-        // eslint-disable-next-line functional/immutable-data
         this.headers.push({ header, type });
         this.documentWrapper.Relationships.addRelationship(
             header.View.ReferenceId,
@@ -307,7 +317,6 @@ export class File {
         footer: FooterWrapper,
         type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType] = HeaderFooterReferenceType.DEFAULT,
     ): void {
-        // eslint-disable-next-line functional/immutable-data
         this.footers.push({ footer, type });
         this.documentWrapper.Relationships.addRelationship(
             footer.View.ReferenceId,
@@ -340,37 +349,31 @@ export class File {
         );
 
         this.documentWrapper.Relationships.addRelationship(
-            // eslint-disable-next-line functional/immutable-data
             this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles",
             "styles.xml",
         );
         this.documentWrapper.Relationships.addRelationship(
-            // eslint-disable-next-line functional/immutable-data
             this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering",
             "numbering.xml",
         );
         this.documentWrapper.Relationships.addRelationship(
-            // eslint-disable-next-line functional/immutable-data
             this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes",
             "footnotes.xml",
         );
         this.documentWrapper.Relationships.addRelationship(
-            // eslint-disable-next-line functional/immutable-data
             this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes",
             "endnotes.xml",
         );
         this.documentWrapper.Relationships.addRelationship(
-            // eslint-disable-next-line functional/immutable-data
             this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings",
             "settings.xml",
         );
         this.documentWrapper.Relationships.addRelationship(
-            // eslint-disable-next-line functional/immutable-data
             this.currentRelationshipId++,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
             "comments.xml",

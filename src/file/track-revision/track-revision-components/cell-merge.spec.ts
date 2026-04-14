@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { CellMerge, VerticalMergeRevisionType } from "./cell-merge";
 
@@ -9,9 +8,9 @@ describe("CellMerge", () => {
         it("creates with vMerge attribute", () => {
             const tree = new Formatter().format(
                 new CellMerge({
-                    id: 1,
-                    date: "123",
                     author: "Firstname Lastname",
+                    date: "123",
+                    id: 1,
                     verticalMerge: VerticalMergeRevisionType.CONTINUE,
                 }),
             );
@@ -30,9 +29,9 @@ describe("CellMerge", () => {
         it("creates with vMergeOrig attribute", () => {
             const tree = new Formatter().format(
                 new CellMerge({
-                    id: 1,
-                    date: "123",
                     author: "Firstname Lastname",
+                    date: "123",
+                    id: 1,
                     verticalMergeOriginal: VerticalMergeRevisionType.RESTART,
                 }),
             );

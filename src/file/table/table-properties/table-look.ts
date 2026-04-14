@@ -22,7 +22,8 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Options for configuring table look conditional formatting.
@@ -43,7 +44,7 @@ import { BuilderElement, type XmlComponent } from "@file/xml-components";
  * };
  * ```
  */
-export type ITableLookOptions = {
+export interface ITableLookOptions {
     /**
      * Apply first row conditional formatting.
      * When true, the first row of the table uses the special formatting
@@ -85,7 +86,7 @@ export type ITableLookOptions = {
      * When false or undefined, vertical banding is enabled if defined in the table style.
      */
     readonly noVBand?: boolean;
-};
+}
 
 /**
  * Creates a table look element for conditional formatting settings.
@@ -109,15 +110,22 @@ export type ITableLookOptions = {
  * });
  * ```
  */
-export const createTableLook = ({ firstRow, lastRow, firstColumn, lastColumn, noHBand, noVBand }: ITableLookOptions): XmlComponent =>
+export const createTableLook = ({
+    firstRow,
+    lastRow,
+    firstColumn,
+    lastColumn,
+    noHBand,
+    noVBand,
+}: ITableLookOptions): XmlComponent =>
     new BuilderElement<ITableLookOptions>({
-        name: "w:tblLook",
         attributes: {
-            firstRow: { key: "w:firstRow", value: firstRow },
-            lastRow: { key: "w:lastRow", value: lastRow },
             firstColumn: { key: "w:firstColumn", value: firstColumn },
+            firstRow: { key: "w:firstRow", value: firstRow },
             lastColumn: { key: "w:lastColumn", value: lastColumn },
+            lastRow: { key: "w:lastRow", value: lastRow },
             noHBand: { key: "w:noHBand", value: noHBand },
             noVBand: { key: "w:noVBand", value: noVBand },
         },
+        name: "w:tblLook",
     });

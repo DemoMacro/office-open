@@ -1,6 +1,7 @@
 // Text Frame (Text Box) example
 
 import * as fs from "fs";
+
 import {
     AlignmentType,
     BorderStyle,
@@ -17,46 +18,84 @@ import {
 const doc = new Document({
     sections: [
         {
-            properties: {},
             children: [
                 new Paragraph({
+                    border: {
+                        bottom: {
+                            color: "auto",
+                            size: 6,
+                            space: 1,
+                            style: BorderStyle.SINGLE,
+                        },
+                        left: {
+                            color: "auto",
+                            size: 6,
+                            space: 1,
+                            style: BorderStyle.SINGLE,
+                        },
+                        right: {
+                            color: "auto",
+                            size: 6,
+                            space: 1,
+                            style: BorderStyle.SINGLE,
+                        },
+                        top: {
+                            color: "auto",
+                            size: 6,
+                            space: 1,
+                            style: BorderStyle.SINGLE,
+                        },
+                    },
+                    children: [
+                        new TextRun("Hello World"),
+                        new TextRun({
+                            text: "Foo Bar",
+                            bold: true,
+                        }),
+                        new TextRun({
+                            children: [new Tab(), "Github is the best"],
+                            bold: true,
+                        }),
+                    ],
                     frame: {
-                        type: "absolute",
+                        anchor: {
+                            horizontal: FrameAnchorType.MARGIN,
+                            vertical: FrameAnchorType.MARGIN,
+                        },
+                        height: 1000,
                         position: {
                             x: 1000,
                             y: 3000,
                         },
+                        type: "absolute",
                         width: 4000,
-                        height: 1000,
-                        anchor: {
-                            horizontal: FrameAnchorType.MARGIN,
-                            vertical: FrameAnchorType.MARGIN,
-                        },
                     },
+                }),
+                new Paragraph({
                     border: {
-                        top: {
-                            color: "auto",
-                            space: 1,
-                            style: BorderStyle.SINGLE,
-                            size: 6,
-                        },
                         bottom: {
                             color: "auto",
+                            size: 6,
                             space: 1,
                             style: BorderStyle.SINGLE,
-                            size: 6,
                         },
                         left: {
                             color: "auto",
+                            size: 6,
                             space: 1,
                             style: BorderStyle.SINGLE,
-                            size: 6,
                         },
                         right: {
                             color: "auto",
+                            size: 6,
                             space: 1,
                             style: BorderStyle.SINGLE,
+                        },
+                        top: {
+                            color: "auto",
                             size: 6,
+                            space: 1,
+                            style: BorderStyle.SINGLE,
                         },
                     },
                     children: [
@@ -70,100 +109,48 @@ const doc = new Document({
                             bold: true,
                         }),
                     ],
-                }),
-                new Paragraph({
                     frame: {
-                        type: "alignment",
-                        width: 4000,
-                        height: 1000,
-                        anchor: {
-                            horizontal: FrameAnchorType.MARGIN,
-                            vertical: FrameAnchorType.MARGIN,
-                        },
                         alignment: {
                             x: HorizontalPositionAlign.CENTER,
                             y: VerticalPositionAlign.TOP,
                         },
-                    },
-                    border: {
-                        top: {
-                            color: "auto",
-                            space: 1,
-                            style: BorderStyle.SINGLE,
-                            size: 6,
-                        },
-                        bottom: {
-                            color: "auto",
-                            space: 1,
-                            style: BorderStyle.SINGLE,
-                            size: 6,
-                        },
-                        left: {
-                            color: "auto",
-                            space: 1,
-                            style: BorderStyle.SINGLE,
-                            size: 6,
-                        },
-                        right: {
-                            color: "auto",
-                            space: 1,
-                            style: BorderStyle.SINGLE,
-                            size: 6,
-                        },
-                    },
-                    children: [
-                        new TextRun("Hello World"),
-                        new TextRun({
-                            text: "Foo Bar",
-                            bold: true,
-                        }),
-                        new TextRun({
-                            children: [new Tab(), "Github is the best"],
-                            bold: true,
-                        }),
-                    ],
-                }),
-                new Paragraph({
-                    frame: {
-                        type: "alignment",
-                        width: 4000,
-                        height: 1000,
                         anchor: {
                             horizontal: FrameAnchorType.MARGIN,
                             vertical: FrameAnchorType.MARGIN,
                         },
-                        alignment: {
-                            x: HorizontalPositionAlign.CENTER,
-                            y: VerticalPositionAlign.BOTTOM,
-                        },
+                        height: 1000,
+                        type: "alignment",
+                        width: 4000,
                     },
+                }),
+                new Paragraph({
+                    alignment: AlignmentType.RIGHT,
                     border: {
-                        top: {
-                            color: "auto",
-                            space: 1,
-                            style: BorderStyle.SINGLE,
-                            size: 6,
-                        },
                         bottom: {
                             color: "auto",
+                            size: 6,
                             space: 1,
                             style: BorderStyle.SINGLE,
-                            size: 6,
                         },
                         left: {
                             color: "auto",
+                            size: 6,
                             space: 1,
                             style: BorderStyle.SINGLE,
-                            size: 6,
                         },
                         right: {
                             color: "auto",
+                            size: 6,
                             space: 1,
                             style: BorderStyle.SINGLE,
+                        },
+                        top: {
+                            color: "auto",
                             size: 6,
+                            space: 1,
+                            style: BorderStyle.SINGLE,
                         },
                     },
-                    alignment: AlignmentType.RIGHT,
                     children: [
                         new TextRun("Hello World"),
                         new TextRun({
@@ -175,8 +162,22 @@ const doc = new Document({
                             bold: true,
                         }),
                     ],
+                    frame: {
+                        alignment: {
+                            x: HorizontalPositionAlign.CENTER,
+                            y: VerticalPositionAlign.BOTTOM,
+                        },
+                        anchor: {
+                            horizontal: FrameAnchorType.MARGIN,
+                            vertical: FrameAnchorType.MARGIN,
+                        },
+                        height: 1000,
+                        type: "alignment",
+                        width: 4000,
+                    },
                 }),
             ],
+            properties: {},
         },
     ],
 });

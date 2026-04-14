@@ -1,11 +1,11 @@
 // Simple example to add check boxes to a document
 import * as fs from "fs";
-import { Document, Packer, Paragraph, TextRun, CheckBox } from "docx";
+
+import { CheckBox, Document, Packer, Paragraph, TextRun } from "docx";
 
 const doc = new Document({
     sections: [
         {
-            properties: {},
             children: [
                 new Paragraph({
                     children: [
@@ -17,24 +17,28 @@ const doc = new Document({
                         new TextRun({ break: 1 }),
                         new CheckBox({ checked: true, checkedState: { value: "2611" } }),
                         new TextRun({ break: 1 }),
-                        new CheckBox({ checked: true, checkedState: { value: "2611", font: "MS Gothic" } }),
-                        new TextRun({ break: 1 }),
                         new CheckBox({
                             checked: true,
-                            checkedState: { value: "2611", font: "MS Gothic" },
-                            uncheckedState: { value: "2610", font: "MS Gothic" },
+                            checkedState: { font: "MS Gothic", value: "2611" },
                         }),
                         new TextRun({ break: 1 }),
                         new CheckBox({
                             checked: true,
-                            checkedState: { value: "2611", font: "MS Gothic" },
-                            uncheckedState: { value: "2610", font: "MS Gothic" },
+                            checkedState: { font: "MS Gothic", value: "2611" },
+                            uncheckedState: { font: "MS Gothic", value: "2610" },
                         }),
-                        new TextRun({ text: "Are you ok?", break: 1 }),
-                        new CheckBox({ checked: true, alias: "Are you ok?" }),
+                        new TextRun({ break: 1 }),
+                        new CheckBox({
+                            checked: true,
+                            checkedState: { font: "MS Gothic", value: "2611" },
+                            uncheckedState: { font: "MS Gothic", value: "2610" },
+                        }),
+                        new TextRun({ break: 1, text: "Are you ok?" }),
+                        new CheckBox({ alias: "Are you ok?", checked: true }),
                     ],
                 }),
             ],
+            properties: {},
         },
     ],
 });

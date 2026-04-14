@@ -1,13 +1,13 @@
+import { Formatter } from "@export/formatter";
+import { Text } from "@file/paragraph/run/run-components/text";
 /**
  * Utility functions for XML manipulation in document patching.
  *
  * @module
  */
 import xml from "xml";
-import { type Element, xml2js } from "xml-js";
-
-import { Formatter } from "@export/formatter";
-import { Text } from "@file/paragraph/run/run-components/text";
+import { xml2js } from "xml-js";
+import type { Element } from "xml-js";
 
 const formatter = new Formatter();
 
@@ -27,7 +27,10 @@ const formatter = new Formatter();
  * ```
  */
 export const toJson = (xmlData: string): Element => {
-    const xmlObj = xml2js(xmlData, { compact: false, captureSpacesBetweenElements: true }) as Element;
+    const xmlObj = xml2js(xmlData, {
+        captureSpacesBetweenElements: true,
+        compact: false,
+    }) as Element;
     return xmlObj;
 };
 
@@ -47,7 +50,6 @@ export const toJson = (xmlData: string): Element => {
  * // Returns XML elements for <w:t>Hello World</w:t>
  * ```
  */
-// eslint-disable-next-line functional/prefer-readonly-type
 export const createTextElementContents = (text: string): Element[] => {
     const textJson = toJson(xml(formatter.format(new Text({ text }))));
 
@@ -93,6 +95,5 @@ export const patchSpaceAttribute = (element: Element): Element => ({
  * // Returns array of Relationship elements
  * ```
  */
-// eslint-disable-next-line functional/prefer-readonly-type
 export const getFirstLevelElements = (relationships: Element, id: string): Element[] =>
     relationships.elements?.filter((e) => e.name === id)[0].elements ?? [];

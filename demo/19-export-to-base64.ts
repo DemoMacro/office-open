@@ -1,6 +1,7 @@
 // Export to base64 string - Useful in a browser environment.
 
 import * as fs from "fs";
+
 import { Document, Packer, Paragraph, Tab, TextRun } from "docx";
 
 const doc = new Document({
@@ -11,12 +12,12 @@ const doc = new Document({
                     children: [
                         new TextRun("Hello World"),
                         new TextRun({
-                            text: "Foo",
                             bold: true,
+                            text: "Foo",
                         }),
                         new TextRun({
-                            children: [new Tab(), "Bar"],
                             bold: true,
+                            children: [new Tab(), "Bar"],
                         }),
                     ],
                 }),

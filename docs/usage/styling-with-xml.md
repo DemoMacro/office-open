@@ -41,7 +41,9 @@ You can use paragraphs, `heading1()`, `heading2()` etc and it will be styled acc
 ```ts
 doc.createParagraph("Cool Heading Text").heading1();
 
-const paragraph = new docx.Paragraph('This is a custom named style from the template "Cool New Style"');
+const paragraph = new docx.Paragraph(
+    'This is a custom named style from the template "Cool New Style"',
+);
 paragraph.style("Cool New Style");
 doc.add(paragraph);
 

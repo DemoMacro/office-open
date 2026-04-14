@@ -2,18 +2,24 @@ import type { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-prop
 import type { IContext, IXmlableObject } from "@file/xml-components";
 
 import { Run } from ".";
+import { Drawing } from "../../drawing";
+import type { IFloating } from "../../drawing";
+import type {
+    IGroupChildMediaData,
+    IMediaData,
+    IMediaTransformation,
+    WpgMediaData,
+} from "../../media";
 import { createTransformation } from "./wps-shape-run";
-import { Drawing, type IFloating } from "../../drawing";
-import type { IGroupChildMediaData, IMediaData, IMediaTransformation, WpgMediaData } from "../../media";
 
 export * from "@file/drawing/inline/graphic/graphic-data/wps/body-properties";
 
-type CoreGroupOptions = {
+interface CoreGroupOptions {
     readonly children: readonly IGroupChildMediaData[];
     readonly transformation: IMediaTransformation;
     readonly floating?: IFloating;
     readonly altText?: DocPropertiesOptions;
-};
+}
 
 /**
  * @publicApi
@@ -31,16 +37,18 @@ export class WpgGroupRun extends Run {
         super({});
 
         this.wpgGroupData = {
-            type: options.type,
-            transformation: createTransformation(options.transformation),
             children: options.children,
+            transformation: createTransformation(options.transformation),
+            type: options.type,
         };
         const drawing = new Drawing(this.wpgGroupData, {
-            floating: options.floating,
             docProperties: options.altText,
+            floating: options.floating,
         });
 
-        this.mediaDatas = options.children.filter((child) => child.type !== "wps").map((child) => child as IMediaData);
+        this.mediaDatas = options.children
+            .filter((child) => child.type !== "wps")
+            .map((child) => child as IMediaData);
 
         this.root.push(drawing);
     }

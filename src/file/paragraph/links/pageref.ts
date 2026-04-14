@@ -18,7 +18,7 @@ import { PageReferenceFieldInstruction } from "./pageref-field-instruction";
  *
  * @see {@link PageReference}
  */
-export type IPageReferenceOptions = {
+export interface IPageReferenceOptions {
     /**
      * \h option - Creates a hyperlink to the bookmarked paragraph.
      */
@@ -31,7 +31,7 @@ export type IPageReferenceOptions = {
      *  bookmark, the string "on page #" is used.
      */
     readonly useRelativePosition?: boolean;
-};
+}
 
 /**
  * Represents a page reference (PAGEREF) field.
@@ -59,7 +59,11 @@ export type IPageReferenceOptions = {
 export class PageReference extends Run {
     public constructor(bookmarkId: string, options: IPageReferenceOptions = {}) {
         super({
-            children: [createBegin(true), new PageReferenceFieldInstruction(bookmarkId, options), createEnd()],
+            children: [
+                createBegin(true),
+                new PageReferenceFieldInstruction(bookmarkId, options),
+                createEnd(),
+            ],
         });
     }
 }

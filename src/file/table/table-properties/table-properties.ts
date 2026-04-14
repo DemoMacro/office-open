@@ -43,20 +43,35 @@
  *
  * @module
  */
-import { ChangeAttributes, type IChangedAttributesProperties } from "@file/track-revision/track-revision";
-import { IgnoreIfEmptyXmlComponent, OnOffElement, StringValueElement, XmlComponent } from "@file/xml-components";
+import { ChangeAttributes } from "@file/track-revision/track-revision";
+import type { IChangedAttributesProperties } from "@file/track-revision/track-revision";
+import {
+    IgnoreIfEmptyXmlComponent,
+    OnOffElement,
+    StringValueElement,
+    XmlComponent,
+} from "@file/xml-components";
 
-import { type AlignmentType, createAlignment } from "../../paragraph";
-import { type IShadingAttributesProperties, createShading } from "../../shading";
-import { type ITableWidthProperties, createTableWidthElement } from "../table-width";
-import { type ITableBordersOptions, TableBorders } from "./table-borders";
-import { type ITableCellMarginOptions, createTableCellMargin } from "./table-cell-margin";
-import { type ITableFloatOptions, createTableFloatProperties } from "./table-float-properties";
-import { type TableLayoutType, createTableLayout } from "./table-layout";
-import { type ITableCellSpacingProperties, createTableCellSpacing } from "../table-cell-spacing";
-import { type ITableLookOptions, createTableLook } from "./table-look";
+import { createAlignment } from "../../paragraph";
+import type { AlignmentType } from "../../paragraph";
+import { createShading } from "../../shading";
+import type { IShadingAttributesProperties } from "../../shading";
+import { createTableCellSpacing } from "../table-cell-spacing";
+import type { ITableCellSpacingProperties } from "../table-cell-spacing";
+import { createTableWidthElement } from "../table-width";
+import type { ITableWidthProperties } from "../table-width";
+import { TableBorders } from "./table-borders";
+import type { ITableBordersOptions } from "./table-borders";
+import { createTableCellMargin } from "./table-cell-margin";
+import type { ITableCellMarginOptions } from "./table-cell-margin";
+import { createTableFloatProperties } from "./table-float-properties";
+import type { ITableFloatOptions } from "./table-float-properties";
+import { createTableLayout } from "./table-layout";
+import type { TableLayoutType } from "./table-layout";
+import { createTableLook } from "./table-look";
+import type { ITableLookOptions } from "./table-look";
 
-export type ITablePropertiesOptionsBase = {
+export interface ITablePropertiesOptionsBase {
     readonly width?: ITableWidthProperties;
     readonly indent?: ITableWidthProperties;
     readonly layout?: (typeof TableLayoutType)[keyof typeof TableLayoutType];
@@ -69,7 +84,7 @@ export type ITablePropertiesOptionsBase = {
     readonly visuallyRightToLeft?: boolean;
     readonly tableLook?: ITableLookOptions;
     readonly cellSpacing?: ITableCellSpacingProperties;
-};
+}
 
 export type ITablePropertiesChangeOptions = ITablePropertiesOptions & IChangedAttributesProperties;
 
@@ -157,12 +172,12 @@ class TablePropertiesChange extends XmlComponent {
         super("w:tblPrChange");
         this.root.push(
             new ChangeAttributes({
-                id: options.id,
                 author: options.author,
                 date: options.date,
+                id: options.id,
             }),
         );
-        // tblPr is required even if empty (minOccurs="0" is missing)
+        // TblPr is required even if empty (minOccurs="0" is missing)
         this.root.push(new TableProperties({ ...options, includeIfEmpty: true }));
     }
 }

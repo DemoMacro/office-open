@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { WidthType } from "../table-width";
 import { createCellMargin, createTableCellMargin } from "./table-cell-margin";
@@ -19,7 +18,9 @@ describe("TableCellMargin", () => {
             });
 
             const tree = new Formatter().format(cellMargin!);
-            expect(tree).to.deep.equal({ "w:tblCellMar": [{ "w:top": { _attr: { "w:type": "dxa", "w:w": 1234 } } }] });
+            expect(tree).to.deep.equal({
+                "w:tblCellMar": [{ "w:top": { _attr: { "w:type": "dxa", "w:w": 1234 } } }],
+            });
         });
 
         it("should add a table cell top margin using default width type", () => {
@@ -28,16 +29,20 @@ describe("TableCellMargin", () => {
             });
 
             const tree = new Formatter().format(cellMargin!);
-            expect(tree).to.deep.equal({ "w:tblCellMar": [{ "w:top": { _attr: { "w:type": "dxa", "w:w": 1234 } } }] });
+            expect(tree).to.deep.equal({
+                "w:tblCellMar": [{ "w:top": { _attr: { "w:type": "dxa", "w:w": 1234 } } }],
+            });
         });
 
         it("should add a table cell left margin", () => {
             const cellMargin = createTableCellMargin({
-                marginUnitType: WidthType.DXA,
                 left: 1234,
+                marginUnitType: WidthType.DXA,
             });
             const tree = new Formatter().format(cellMargin!);
-            expect(tree).to.deep.equal({ "w:tblCellMar": [{ "w:left": { _attr: { "w:type": "dxa", "w:w": 1234 } } }] });
+            expect(tree).to.deep.equal({
+                "w:tblCellMar": [{ "w:left": { _attr: { "w:type": "dxa", "w:w": 1234 } } }],
+            });
         });
 
         it("should add a table cell left margin using default width type", () => {
@@ -45,17 +50,21 @@ describe("TableCellMargin", () => {
                 left: 1234,
             });
             const tree = new Formatter().format(cellMargin!);
-            expect(tree).to.deep.equal({ "w:tblCellMar": [{ "w:left": { _attr: { "w:type": "dxa", "w:w": 1234 } } }] });
+            expect(tree).to.deep.equal({
+                "w:tblCellMar": [{ "w:left": { _attr: { "w:type": "dxa", "w:w": 1234 } } }],
+            });
         });
 
         it("should add a table cell bottom margin", () => {
             const cellMargin = createTableCellMargin({
-                marginUnitType: WidthType.DXA,
                 bottom: 1234,
+                marginUnitType: WidthType.DXA,
             });
 
             const tree = new Formatter().format(cellMargin!);
-            expect(tree).to.deep.equal({ "w:tblCellMar": [{ "w:bottom": { _attr: { "w:type": "dxa", "w:w": 1234 } } }] });
+            expect(tree).to.deep.equal({
+                "w:tblCellMar": [{ "w:bottom": { _attr: { "w:type": "dxa", "w:w": 1234 } } }],
+            });
         });
 
         it("should add a table cell bottom margin using default width type", () => {
@@ -64,7 +73,9 @@ describe("TableCellMargin", () => {
             });
 
             const tree = new Formatter().format(cellMargin!);
-            expect(tree).to.deep.equal({ "w:tblCellMar": [{ "w:bottom": { _attr: { "w:type": "dxa", "w:w": 1234 } } }] });
+            expect(tree).to.deep.equal({
+                "w:tblCellMar": [{ "w:bottom": { _attr: { "w:type": "dxa", "w:w": 1234 } } }],
+            });
         });
 
         it("should add a table cell right margin", () => {
@@ -74,7 +85,9 @@ describe("TableCellMargin", () => {
             });
 
             const tree = new Formatter().format(cellMargin!);
-            expect(tree).to.deep.equal({ "w:tblCellMar": [{ "w:right": { _attr: { "w:type": "dxa", "w:w": 1234 } } }] });
+            expect(tree).to.deep.equal({
+                "w:tblCellMar": [{ "w:right": { _attr: { "w:type": "dxa", "w:w": 1234 } } }],
+            });
         });
 
         it("should add a table cell right margin using default width type", () => {
@@ -83,7 +96,9 @@ describe("TableCellMargin", () => {
             });
 
             const tree = new Formatter().format(cellMargin!);
-            expect(tree).to.deep.equal({ "w:tblCellMar": [{ "w:right": { _attr: { "w:type": "dxa", "w:w": 1234 } } }] });
+            expect(tree).to.deep.equal({
+                "w:tblCellMar": [{ "w:right": { _attr: { "w:type": "dxa", "w:w": 1234 } } }],
+            });
         });
     });
 
@@ -95,8 +110,8 @@ describe("TableCellMargin", () => {
 
         it("should create cell-level margin element with tcMar tag", () => {
             const cellMargin = createCellMargin({
-                top: 100,
                 bottom: 100,
+                top: 100,
             });
 
             const tree = new Formatter().format(cellMargin!);
@@ -110,10 +125,10 @@ describe("TableCellMargin", () => {
 
         it("should support all margin positions", () => {
             const cellMargin = createCellMargin({
-                top: 50,
-                left: 100,
                 bottom: 50,
+                left: 100,
                 right: 100,
+                top: 50,
             });
 
             const tree = new Formatter().format(cellMargin!);
@@ -129,8 +144,8 @@ describe("TableCellMargin", () => {
 
         it("should support custom width type", () => {
             const cellMargin = createCellMargin({
-                marginUnitType: WidthType.PERCENTAGE,
                 left: 5,
+                marginUnitType: WidthType.PERCENTAGE,
             });
 
             const tree = new Formatter().format(cellMargin!);

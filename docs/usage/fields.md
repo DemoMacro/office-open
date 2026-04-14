@@ -31,7 +31,10 @@ Fields can contain a cached value that gives the word processor a text to show w
 
 ```ts
 const paragraph = new Paragraph({
-    children: [new TextRun("This document was created by: "), new SimpleField("AUTHOR", "Richard Brodie")],
+    children: [
+        new TextRun("This document was created by: "),
+        new SimpleField("AUTHOR", "Richard Brodie"),
+    ],
 });
 ```
 
@@ -60,7 +63,11 @@ A convenience class was added to add these mail merge fields to the document eas
 
 ```ts
 const paragraph = new Paragraph({
-    children: [new TextRun("Your score was "), new SimpleMailMergeField("Score"), new TextRun(" of 100 points")],
+    children: [
+        new TextRun("Your score was "),
+        new SimpleMailMergeField("Score"),
+        new TextRun(" of 100 points"),
+    ],
 });
 ```
 
@@ -68,7 +75,11 @@ This code is equivalent to:
 
 ```ts
 const paragraph = new Paragraph({
-    children: [new TextRun("Your score was "), new SimpleField("MERGEFIELD Score", "«Score»"), new TextRun(" of 100 points")],
+    children: [
+        new TextRun("Your score was "),
+        new SimpleField("MERGEFIELD Score", "«Score»"),
+        new TextRun(" of 100 points"),
+    ],
 });
 ```
 

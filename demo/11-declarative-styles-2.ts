@@ -1,21 +1,22 @@
 // Setting styles with JavaScript configuration
 
 import * as fs from "fs";
+
 import {
     AlignmentType,
-    convertInchesToTwip,
     Document,
     Footer,
     HeadingLevel,
     ImageRun,
+    LevelFormat,
     Packer,
     Paragraph,
+    TabStopPosition,
     Table,
     TableCell,
     TableRow,
-    TabStopPosition,
     UnderlineType,
-    LevelFormat,
+    convertInchesToTwip,
 } from "docx";
 
 const table = new Table({
@@ -55,7 +56,6 @@ const doc = new Document({
     numbering: {
         config: [
             {
-                reference: "ref1",
                 levels: [
                     {
                         level: 0,
@@ -64,160 +64,12 @@ const doc = new Document({
                         start: 50,
                     },
                 ],
-            },
-        ],
-    },
-    styles: {
-        default: {
-            heading1: {
-                run: {
-                    font: "Calibri",
-                    size: 52,
-                    bold: true,
-                    color: "000000",
-                    underline: {
-                        type: UnderlineType.SINGLE,
-                        color: "000000",
-                    },
-                },
-                paragraph: {
-                    alignment: AlignmentType.CENTER,
-                    spacing: { line: 340 },
-                },
-            },
-            heading2: {
-                run: {
-                    font: "Calibri",
-                    size: 26,
-                    bold: true,
-                },
-                paragraph: {
-                    spacing: { line: 340 },
-                },
-            },
-            heading3: {
-                run: {
-                    font: "Calibri",
-                    size: 26,
-                    bold: true,
-                },
-                paragraph: {
-                    spacing: { line: 276 },
-                },
-            },
-            heading4: {
-                run: {
-                    font: "Calibri",
-                    size: 26,
-                    bold: true,
-                },
-                paragraph: {
-                    alignment: AlignmentType.JUSTIFIED,
-                },
-            },
-        },
-        paragraphStyles: [
-            {
-                id: "normalPara",
-                name: "Normal Para",
-                basedOn: "Normal",
-                next: "Normal",
-                quickFormat: true,
-                run: {
-                    font: "Calibri",
-                    size: 26,
-                    bold: true,
-                },
-                paragraph: {
-                    spacing: { line: 276, before: 20 * 72 * 0.1, after: 20 * 72 * 0.05 },
-                    rightTabStop: TabStopPosition.MAX,
-                    leftTabStop: 453.543307087,
-                },
-            },
-            {
-                id: "normalPara2",
-                name: "Normal Para2",
-                basedOn: "Normal",
-                next: "Normal",
-                quickFormat: true,
-                run: {
-                    font: "Calibri",
-                    size: 26,
-                },
-                paragraph: {
-                    alignment: AlignmentType.JUSTIFIED,
-                    spacing: { line: 276, before: 20 * 72 * 0.1, after: 20 * 72 * 0.05 },
-                },
-            },
-            {
-                id: "aside",
-                name: "Aside",
-                basedOn: "Normal",
-                next: "Normal",
-                run: {
-                    color: "999999",
-                    italics: true,
-                },
-                paragraph: {
-                    spacing: { line: 276 },
-                    indent: { left: convertInchesToTwip(0.5) },
-                },
-            },
-            {
-                id: "wellSpaced",
-                name: "Well Spaced",
-                basedOn: "Normal",
-                paragraph: {
-                    spacing: { line: 276, before: 20 * 72 * 0.1, after: 20 * 72 * 0.05 },
-                },
-            },
-            {
-                id: "numberedPara",
-                name: "Numbered Para",
-                basedOn: "Normal",
-                next: "Normal",
-                quickFormat: true,
-                run: {
-                    font: "Calibri",
-                    size: 26,
-                    bold: true,
-                },
-                paragraph: {
-                    spacing: { line: 276, before: 20 * 72 * 0.1, after: 20 * 72 * 0.05 },
-                    rightTabStop: TabStopPosition.MAX,
-                    leftTabStop: 453.543307087,
-                    numbering: {
-                        reference: "ref1",
-                        instance: 0,
-                        level: 0,
-                    },
-                },
+                reference: "ref1",
             },
         ],
     },
     sections: [
         {
-            properties: {
-                page: {
-                    margin: {
-                        top: 700,
-                        right: 700,
-                        bottom: 700,
-                        left: 700,
-                    },
-                },
-            },
-            footers: {
-                default: new Footer({
-                    children: [
-                        new Paragraph({
-                            text: "1",
-                            style: "normalPara",
-                            alignment: AlignmentType.RIGHT,
-                        }),
-                    ],
-                }),
-            },
             children: [
                 new Paragraph({
                     children: [
@@ -307,8 +159,157 @@ const doc = new Document({
                     style: "numberedPara",
                 }),
             ],
+            footers: {
+                default: new Footer({
+                    children: [
+                        new Paragraph({
+                            text: "1",
+                            style: "normalPara",
+                            alignment: AlignmentType.RIGHT,
+                        }),
+                    ],
+                }),
+            },
+            properties: {
+                page: {
+                    margin: {
+                        bottom: 700,
+                        left: 700,
+                        right: 700,
+                        top: 700,
+                    },
+                },
+            },
         },
     ],
+    styles: {
+        default: {
+            heading1: {
+                paragraph: {
+                    alignment: AlignmentType.CENTER,
+                    spacing: { line: 340 },
+                },
+                run: {
+                    bold: true,
+                    color: "000000",
+                    font: "Calibri",
+                    size: 52,
+                    underline: {
+                        color: "000000",
+                        type: UnderlineType.SINGLE,
+                    },
+                },
+            },
+            heading2: {
+                paragraph: {
+                    spacing: { line: 340 },
+                },
+                run: {
+                    bold: true,
+                    font: "Calibri",
+                    size: 26,
+                },
+            },
+            heading3: {
+                paragraph: {
+                    spacing: { line: 276 },
+                },
+                run: {
+                    bold: true,
+                    font: "Calibri",
+                    size: 26,
+                },
+            },
+            heading4: {
+                paragraph: {
+                    alignment: AlignmentType.JUSTIFIED,
+                },
+                run: {
+                    bold: true,
+                    font: "Calibri",
+                    size: 26,
+                },
+            },
+        },
+        paragraphStyles: [
+            {
+                basedOn: "Normal",
+                id: "normalPara",
+                name: "Normal Para",
+                next: "Normal",
+                paragraph: {
+                    leftTabStop: 453.543_307_087,
+                    rightTabStop: TabStopPosition.MAX,
+                    spacing: { after: 20 * 72 * 0.05, before: 20 * 72 * 0.1, line: 276 },
+                },
+                quickFormat: true,
+                run: {
+                    bold: true,
+                    font: "Calibri",
+                    size: 26,
+                },
+            },
+            {
+                basedOn: "Normal",
+                id: "normalPara2",
+                name: "Normal Para2",
+                next: "Normal",
+                paragraph: {
+                    alignment: AlignmentType.JUSTIFIED,
+                    spacing: { after: 20 * 72 * 0.05, before: 20 * 72 * 0.1, line: 276 },
+                },
+                quickFormat: true,
+                run: {
+                    font: "Calibri",
+                    size: 26,
+                },
+            },
+            {
+                basedOn: "Normal",
+                id: "aside",
+                name: "Aside",
+                next: "Normal",
+                paragraph: {
+                    indent: { left: convertInchesToTwip(0.5) },
+                    spacing: { line: 276 },
+                },
+                run: {
+                    color: "999999",
+                    italics: true,
+                },
+            },
+            {
+                basedOn: "Normal",
+                id: "wellSpaced",
+                name: "Well Spaced",
+                paragraph: {
+                    spacing: { after: 20 * 72 * 0.05, before: 20 * 72 * 0.1, line: 276 },
+                },
+            },
+            {
+                basedOn: "Normal",
+                id: "numberedPara",
+                name: "Numbered Para",
+                next: "Normal",
+                paragraph: {
+                    leftTabStop: 453.543_307_087,
+                    numbering: {
+                        instance: 0,
+                        level: 0,
+                        reference: "ref1",
+                    },
+                    rightTabStop: TabStopPosition.MAX,
+                    spacing: { after: 20 * 72 * 0.05, before: 20 * 72 * 0.1, line: 276 },
+                },
+                quickFormat: true,
+                run: {
+                    bold: true,
+                    font: "Calibri",
+                    size: 26,
+                },
+            },
+        ],
+    },
 });
 
 Packer.toBuffer(doc).then((buffer) => {

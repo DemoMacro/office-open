@@ -1,8 +1,9 @@
-// Example of using tableLook to control conditional table formatting
-import { Document, Packer, Paragraph, Table, TableCell, TableRow, TextRun, WidthType } from "docx";
 import * as fs from "fs";
 
-const styles = fs.readFileSync("./demo/assets/custom-styles.xml", "utf-8");
+// Example of using tableLook to control conditional table formatting
+import { Document, Packer, Paragraph, Table, TableCell, TableRow, TextRun, WidthType } from "docx";
+
+const styles = fs.readFileSync("./demo/assets/custom-styles.xml", "utf8");
 
 const doc = new Document({
     externalStyles: styles,
@@ -10,7 +11,9 @@ const doc = new Document({
         {
             children: [
                 new Paragraph({
-                    children: [new TextRun({ text: "Table 1: Table Look Default Values", bold: true })],
+                    children: [
+                        new TextRun({ bold: true, text: "Table 1: Table Look Default Values" }),
+                    ],
                 }),
                 new Paragraph({ text: "" }),
                 new Table({
@@ -44,27 +47,24 @@ const doc = new Document({
                             ],
                         }),
                     ],
+                    style: "MyCustomTableStyle",
                     width: {
                         size: 100,
                         type: WidthType.PERCENTAGE,
                     },
-                    style: "MyCustomTableStyle",
                 }),
                 new Paragraph({ text: "" }),
                 new Paragraph({ text: "" }),
                 new Paragraph({
-                    children: [new TextRun({ text: "Table 2: Table Look All Look Values Enabled", bold: true })],
+                    children: [
+                        new TextRun({
+                            bold: true,
+                            text: "Table 2: Table Look All Look Values Enabled",
+                        }),
+                    ],
                 }),
                 new Paragraph({ text: "" }),
                 new Table({
-                    tableLook: {
-                        firstRow: true,
-                        lastRow: true,
-                        firstColumn: true,
-                        lastColumn: true,
-                        noHBand: false,
-                        noVBand: false,
-                    },
                     rows: [
                         new TableRow({
                             children: [
@@ -95,11 +95,19 @@ const doc = new Document({
                             ],
                         }),
                     ],
+                    style: "MyCustomTableStyle",
+                    tableLook: {
+                        firstColumn: true,
+                        firstRow: true,
+                        lastColumn: true,
+                        lastRow: true,
+                        noHBand: false,
+                        noVBand: false,
+                    },
                     width: {
                         size: 100,
                         type: WidthType.PERCENTAGE,
                     },
-                    style: "MyCustomTableStyle",
                 }),
             ],
         },

@@ -165,7 +165,15 @@ new Footer({
 Headers and footers can contain numbered or bulleted lists:
 
 ```ts
-import { AlignmentType, convertInchesToTwip, Document, Footer, LevelFormat, Packer, Paragraph } from "docx";
+import {
+    AlignmentType,
+    convertInchesToTwip,
+    Document,
+    Footer,
+    LevelFormat,
+    Packer,
+    Paragraph,
+} from "docx";
 
 const doc = new Document({
     numbering: {
@@ -180,7 +188,10 @@ const doc = new Document({
                         alignment: AlignmentType.START,
                         style: {
                             paragraph: {
-                                indent: { left: convertInchesToTwip(0.5), hanging: convertInchesToTwip(0.18) },
+                                indent: {
+                                    left: convertInchesToTwip(0.5),
+                                    hanging: convertInchesToTwip(0.18),
+                                },
                             },
                         },
                     },
@@ -296,7 +307,16 @@ const header = new Header({
 Create complex header layouts with tables:
 
 ```ts
-import { AlignmentType, BorderStyle, Header, Paragraph, Table, TableCell, TableRow, WidthType } from "docx";
+import {
+    AlignmentType,
+    BorderStyle,
+    Header,
+    Paragraph,
+    Table,
+    TableCell,
+    TableRow,
+    WidthType,
+} from "docx";
 
 // Helper to create invisible borders for layout tables
 const noBorders = {
@@ -375,7 +395,17 @@ const doc = new Document({
 Professional document with company header:
 
 ```ts
-import { AlignmentType, Document, Footer, Header, ImageRun, PageNumber, Packer, Paragraph, TextRun } from "docx";
+import {
+    AlignmentType,
+    Document,
+    Footer,
+    Header,
+    ImageRun,
+    PageNumber,
+    Packer,
+    Paragraph,
+    TextRun,
+} from "docx";
 import * as fs from "fs";
 
 const doc = new Document({
@@ -402,7 +432,10 @@ const doc = new Document({
                 default: new Header({
                     children: [
                         new Paragraph({
-                            children: [new TextRun({ text: "Company Name", bold: true }), new TextRun(" | Confidential")],
+                            children: [
+                                new TextRun({ text: "Company Name", bold: true }),
+                                new TextRun(" | Confidential"),
+                            ],
                         }),
                     ],
                 }),

@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { CustomProperties } from "./custom-properties";
 
@@ -13,7 +12,8 @@ describe("CustomProperties", () => {
                 Properties: {
                     _attr: {
                         xmlns: "http://schemas.openxmlformats.org/officeDocument/2006/custom-properties",
-                        "xmlns:vt": "http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes",
+                        "xmlns:vt":
+                            "http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes",
                     },
                 },
             });
@@ -30,7 +30,8 @@ describe("CustomProperties", () => {
                     {
                         _attr: {
                             xmlns: "http://schemas.openxmlformats.org/officeDocument/2006/custom-properties",
-                            "xmlns:vt": "http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes",
+                            "xmlns:vt":
+                                "http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes",
                         },
                     },
                     {
@@ -38,8 +39,8 @@ describe("CustomProperties", () => {
                             {
                                 _attr: {
                                     fmtid: "{D5CDD505-2E9C-101B-9397-08002B2CF9AE}",
-                                    pid: "2",
                                     name: "Address",
+                                    pid: "2",
                                 },
                             },
                             {
@@ -52,8 +53,8 @@ describe("CustomProperties", () => {
                             {
                                 _attr: {
                                     fmtid: "{D5CDD505-2E9C-101B-9397-08002B2CF9AE}",
-                                    pid: "3",
                                     name: "Author",
+                                    pid: "3",
                                 },
                             },
                             {

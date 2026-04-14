@@ -1,23 +1,24 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
 import { AlignmentType } from "@file/paragraph";
 import { ShadingType } from "@file/shading";
+import { describe, expect, it } from "vite-plus/test";
 
+import { CellSpacingType } from "../table-cell-spacing";
 import { WidthType } from "../table-width";
 import { TableLayoutType } from "./table-layout";
 import { TableProperties } from "./table-properties";
-import { CellSpacingType } from "../table-cell-spacing";
 
 describe("TableProperties", () => {
     describe("#constructor", () => {
         it("creates an initially empty property object", () => {
             const tp = new TableProperties({});
             // The TableProperties is ignorable if there are no attributes,
-            // which results in prepForXml returning undefined, which causes
-            // the formatter to throw an error if that is the only object it
-            // has been asked to format.
-            expect(() => new Formatter().format(tp)).to.throw("XMLComponent did not format correctly");
+            // Which results in prepForXml returning undefined, which causes
+            // The formatter to throw an error if that is the only object it
+            // Has been asked to format.
+            expect(() => new Formatter().format(tp)).to.throw(
+                "XMLComponent did not format correctly",
+            );
         });
 
         it("should add a table style property", () => {
@@ -96,8 +97,8 @@ describe("TableProperties", () => {
         it("should add a table cell spacing property", () => {
             const tp = new TableProperties({
                 cellSpacing: {
-                    value: 1234,
                     type: CellSpacingType.DXA,
+                    value: 1234,
                 },
             });
             const tree = new Formatter().format(tp);
@@ -109,9 +110,9 @@ describe("TableProperties", () => {
         it("should add a revision property", () => {
             const tp = new TableProperties({
                 revision: {
-                    id: 1,
                     author: "Firstname Lastname",
                     date: "123",
+                    id: 1,
                 },
             });
             const tree = new Formatter().format(tp);
@@ -141,7 +142,9 @@ describe("TableProperties", () => {
             const tp = new TableProperties({
                 cellMargin: {},
             });
-            expect(() => new Formatter().format(tp)).to.throw("XMLComponent did not format correctly");
+            expect(() => new Formatter().format(tp)).to.throw(
+                "XMLComponent did not format correctly",
+            );
         });
 
         it("adds a table cell top margin", () => {
@@ -154,21 +157,25 @@ describe("TableProperties", () => {
 
             const tree = new Formatter().format(tp);
             expect(tree).to.deep.equal({
-                "w:tblPr": [{ "w:tblCellMar": [{ "w:top": { _attr: { "w:type": "dxa", "w:w": 1234 } } }] }],
+                "w:tblPr": [
+                    { "w:tblCellMar": [{ "w:top": { _attr: { "w:type": "dxa", "w:w": 1234 } } }] },
+                ],
             });
         });
 
         it("adds a table cell left margin", () => {
             const tp = new TableProperties({
                 cellMargin: {
-                    marginUnitType: WidthType.DXA,
                     left: 1234,
+                    marginUnitType: WidthType.DXA,
                 },
             });
 
             const tree = new Formatter().format(tp);
             expect(tree).to.deep.equal({
-                "w:tblPr": [{ "w:tblCellMar": [{ "w:left": { _attr: { "w:type": "dxa", "w:w": 1234 } } }] }],
+                "w:tblPr": [
+                    { "w:tblCellMar": [{ "w:left": { _attr: { "w:type": "dxa", "w:w": 1234 } } }] },
+                ],
             });
         });
     });
@@ -177,9 +184,9 @@ describe("TableProperties", () => {
         it("sets the shading of the table", () => {
             const tp = new TableProperties({
                 shading: {
+                    color: "auto",
                     fill: "b79c2f",
                     type: ShadingType.REVERSE_DIAGONAL_STRIPE,
-                    color: "auto",
                 },
             });
 
@@ -240,8 +247,8 @@ describe("TableProperties", () => {
         it("adds table look with first row and first column enabled", () => {
             const tp = new TableProperties({
                 tableLook: {
-                    firstRow: true,
                     firstColumn: true,
+                    firstRow: true,
                     noVBand: true,
                 },
             });
@@ -251,8 +258,8 @@ describe("TableProperties", () => {
                     {
                         "w:tblLook": {
                             _attr: {
-                                "w:firstRow": true,
                                 "w:firstColumn": true,
+                                "w:firstRow": true,
                                 "w:noVBand": true,
                             },
                         },
@@ -264,10 +271,10 @@ describe("TableProperties", () => {
         it("adds table look with all attributes", () => {
             const tp = new TableProperties({
                 tableLook: {
-                    firstRow: true,
-                    lastRow: false,
                     firstColumn: true,
+                    firstRow: true,
                     lastColumn: false,
+                    lastRow: false,
                     noHBand: false,
                     noVBand: true,
                 },
@@ -278,10 +285,10 @@ describe("TableProperties", () => {
                     {
                         "w:tblLook": {
                             _attr: {
-                                "w:firstRow": true,
-                                "w:lastRow": false,
                                 "w:firstColumn": true,
+                                "w:firstRow": true,
                                 "w:lastColumn": false,
+                                "w:lastRow": false,
                                 "w:noHBand": false,
                                 "w:noVBand": true,
                             },

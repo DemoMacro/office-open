@@ -26,7 +26,8 @@ import { customAlphabet, nanoid } from "nanoid/non-secure";
  *
  * @publicApi
  */
-export const convertMillimetersToTwip = (millimeters: number): number => Math.floor((millimeters / 25.4) * 72 * 20);
+export const convertMillimetersToTwip = (millimeters: number): number =>
+    Math.floor((millimeters / 25.4) * 72 * 20);
 
 /**
  * Converts inches to TWIP (twentieths of a point).
@@ -100,7 +101,8 @@ export const abstractNumUniqueNumericIdGen = (): UniqueNumericIdCreator => uniqu
  * const id = idGen(); // Returns 2 (1 is reserved)
  * ```
  */
-export const concreteNumUniqueNumericIdGen = (): UniqueNumericIdCreator => uniqueNumericIdCreator(1);
+export const concreteNumUniqueNumericIdGen = (): UniqueNumericIdCreator =>
+    uniqueNumericIdCreator(1);
 
 /**
  * Creates a unique numeric ID generator for document properties.
@@ -113,7 +115,8 @@ export const concreteNumUniqueNumericIdGen = (): UniqueNumericIdCreator => uniqu
  * const id = idGen(); // Returns 1
  * ```
  */
-export const docPropertiesUniqueNumericIdGen = (): UniqueNumericIdCreator => uniqueNumericIdCreator();
+export const docPropertiesUniqueNumericIdGen = (): UniqueNumericIdCreator =>
+    uniqueNumericIdCreator();
 
 /**
  * Creates a unique numeric ID generator for bookmarks.
@@ -192,7 +195,8 @@ export const uniqueUuid = (): string =>
  *
  * The copy via `new Uint8Array()` ensures the returned array uses the
  * current module's Uint8Array constructor, avoiding cross-realm issues
- * in test environments (jsdom) where TextEncoder returns a different
+ * in test environments (happy-dom) where TextEncoder returns a different
  * realm's Uint8Array.
  */
-export const encodeUtf8 = (str: string): Uint8Array => new Uint8Array(new TextEncoder().encode(str));
+export const encodeUtf8 = (str: string): Uint8Array =>
+    new Uint8Array(new TextEncoder().encode(str));

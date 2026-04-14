@@ -1,15 +1,23 @@
 // Simple example to add comments to a document
 
 import * as fs from "fs";
-import { Document, Packer, Paragraph, TextRun, CommentRangeStart, CommentRangeEnd, CommentReference, ImageRun } from "docx";
+
+import {
+    CommentRangeEnd,
+    CommentRangeStart,
+    CommentReference,
+    Document,
+    ImageRun,
+    Packer,
+    Paragraph,
+    TextRun,
+} from "docx";
 
 const doc = new Document({
     comments: {
         children: [
             {
-                id: 0,
                 author: "Ray Chen",
-                date: new Date(),
                 children: [
                     new Paragraph({
                         children: [
@@ -21,29 +29,29 @@ const doc = new Document({
                     new Paragraph({
                         children: [
                             new ImageRun({
-                                type: "jpg",
                                 data: fs.readFileSync("./demo/images/cat.jpg"),
                                 transformation: {
-                                    width: 100,
                                     height: 100,
+                                    width: 100,
                                 },
+                                type: "jpg",
                             }),
                             new TextRun({
                                 text: "comment text content",
                             }),
-                            new TextRun({ text: "", break: 1 }),
+                            new TextRun({ break: 1, text: "" }),
                             new TextRun({
-                                text: "More text here",
                                 bold: true,
+                                text: "More text here",
                             }),
                         ],
                     }),
                 ],
+                date: new Date(),
+                id: 0,
             },
             {
-                id: 1,
                 author: "Bob Ross",
-                date: new Date(),
                 children: [
                     new Paragraph({
                         children: [
@@ -60,11 +68,11 @@ const doc = new Document({
                         ],
                     }),
                 ],
+                date: new Date(),
+                id: 1,
             },
             {
-                id: 2,
                 author: "John Doe",
-                date: new Date(),
                 children: [
                     new Paragraph({
                         children: [
@@ -74,11 +82,11 @@ const doc = new Document({
                         ],
                     }),
                 ],
+                date: new Date(),
+                id: 2,
             },
             {
-                id: 3,
                 author: "Beatriz",
-                date: new Date(),
                 children: [
                     new Paragraph({
                         children: [
@@ -88,25 +96,26 @@ const doc = new Document({
                         ],
                     }),
                 ],
+                date: new Date(),
+                id: 3,
             },
         ],
     },
     sections: [
         {
-            properties: {},
             children: [
                 new Paragraph({
                     children: [
                         new TextRun("Hello World"),
                         new CommentRangeStart(0),
                         new TextRun({
-                            text: "Foo Bar",
                             bold: true,
+                            text: "Foo Bar",
                         }),
                         new CommentRangeEnd(0),
                         new TextRun({
-                            children: [new CommentReference(0)],
                             bold: true,
+                            children: [new CommentReference(0)],
                         }),
                     ],
                 }),
@@ -116,27 +125,28 @@ const doc = new Document({
                         new CommentRangeStart(2),
                         new CommentRangeStart(3),
                         new TextRun({
-                            text: "Some text which need commenting",
                             bold: true,
+                            text: "Some text which need commenting",
                         }),
                         new CommentRangeEnd(1),
                         new TextRun({
-                            children: [new CommentReference(1)],
                             bold: true,
+                            children: [new CommentReference(1)],
                         }),
                         new CommentRangeEnd(2),
                         new TextRun({
-                            children: [new CommentReference(2)],
                             bold: true,
+                            children: [new CommentReference(2)],
                         }),
                         new CommentRangeEnd(3),
                         new TextRun({
-                            children: [new CommentReference(3)],
                             bold: true,
+                            children: [new CommentReference(3)],
                         }),
                     ],
                 }),
             ],
+            properties: {},
         },
     ],
 });

@@ -1,24 +1,26 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { AlignmentType, Paragraph } from "../paragraph";
 import { Table } from "./table";
 import { TableCell } from "./table-cell";
-import { RelativeHorizontalPosition, RelativeVerticalPosition, TableAnchorType } from "./table-properties";
+import {
+    RelativeHorizontalPosition,
+    RelativeVerticalPosition,
+    TableAnchorType,
+} from "./table-properties";
 import { TableLayoutType } from "./table-properties/table-layout";
 import { TableRow } from "./table-row";
 import { WidthType } from "./table-width";
 
 const BORDERS = {
     "w:tblBorders": [
-        { "w:top": { _attr: { "w:val": "single", "w:sz": 4, "w:color": "auto" } } },
-        { "w:left": { _attr: { "w:val": "single", "w:sz": 4, "w:color": "auto" } } },
-        { "w:bottom": { _attr: { "w:val": "single", "w:sz": 4, "w:color": "auto" } } },
-        { "w:right": { _attr: { "w:val": "single", "w:sz": 4, "w:color": "auto" } } },
-        { "w:insideH": { _attr: { "w:val": "single", "w:sz": 4, "w:color": "auto" } } },
-        { "w:insideV": { _attr: { "w:val": "single", "w:sz": 4, "w:color": "auto" } } },
+        { "w:top": { _attr: { "w:color": "auto", "w:sz": 4, "w:val": "single" } } },
+        { "w:left": { _attr: { "w:color": "auto", "w:sz": 4, "w:val": "single" } } },
+        { "w:bottom": { _attr: { "w:color": "auto", "w:sz": 4, "w:val": "single" } } },
+        { "w:right": { _attr: { "w:color": "auto", "w:sz": 4, "w:val": "single" } } },
+        { "w:insideH": { _attr: { "w:color": "auto", "w:sz": 4, "w:val": "single" } } },
+        { "w:insideV": { _attr: { "w:color": "auto", "w:sz": 4, "w:val": "single" } } },
     ],
 };
 
@@ -31,7 +33,7 @@ const WIDTHS = {
     },
 };
 
-// const f = {
+// Const f = {
 //     "w:tbl": [
 //         {
 //             "w:tblPr": [
@@ -141,7 +143,10 @@ describe("Table", () => {
                 "w:tbl": [
                     { "w:tblPr": [WIDTHS, BORDERS] },
                     {
-                        "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 100 } } }, { "w:gridCol": { _attr: { "w:w": 100 } } }],
+                        "w:tblGrid": [
+                            { "w:gridCol": { _attr: { "w:w": 100 } } },
+                            { "w:gridCol": { _attr: { "w:w": 100 } } },
+                        ],
                     },
                     { "w:tr": [cell, cell] },
                     { "w:tr": [cell, cell] },
@@ -182,24 +187,39 @@ describe("Table", () => {
                 ],
             });
             const tree = new Formatter().format(table);
-            const cellP = { "w:p": [{ "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "hello"] }] }] };
+            const cellP = {
+                "w:p": [{ "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "hello"] }] }],
+            };
             expect(tree).to.deep.equal({
                 "w:tbl": [
                     { "w:tblPr": [WIDTHS, BORDERS] },
                     {
-                        "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 100 } } }, { "w:gridCol": { _attr: { "w:w": 100 } } }],
+                        "w:tblGrid": [
+                            { "w:gridCol": { _attr: { "w:w": 100 } } },
+                            { "w:gridCol": { _attr: { "w:w": 100 } } },
+                        ],
                     },
                     {
                         "w:tr": [
                             {
-                                "w:tc": [{ "w:tcPr": [{ "w:gridSpan": { _attr: { "w:val": 2 } } }] }, cellP],
+                                "w:tc": [
+                                    { "w:tcPr": [{ "w:gridSpan": { _attr: { "w:val": 2 } } }] },
+                                    cellP,
+                                ],
                             },
                         ],
                     },
                     {
                         "w:tr": [
                             {
-                                "w:tc": [{ "w:tcPr": [{ "w:vMerge": { _attr: { "w:val": "restart" } } }] }, cellP],
+                                "w:tc": [
+                                    {
+                                        "w:tcPr": [
+                                            { "w:vMerge": { _attr: { "w:val": "restart" } } },
+                                        ],
+                                    },
+                                    cellP,
+                                ],
                             },
                             { "w:tc": [cellP] },
                         ],
@@ -207,7 +227,14 @@ describe("Table", () => {
                     {
                         "w:tr": [
                             {
-                                "w:tc": [{ "w:tcPr": [{ "w:vMerge": { _attr: { "w:val": "continue" } } }] }, { "w:p": {} }],
+                                "w:tc": [
+                                    {
+                                        "w:tcPr": [
+                                            { "w:vMerge": { _attr: { "w:val": "continue" } } },
+                                        ],
+                                    },
+                                    { "w:p": {} },
+                                ],
                             },
                             { "w:tc": [cellP] },
                         ],
@@ -218,6 +245,7 @@ describe("Table", () => {
 
         it("sets the table to fixed width layout", () => {
             const table = new Table({
+                layout: TableLayoutType.FIXED,
                 rows: [
                     new TableRow({
                         children: [
@@ -227,7 +255,6 @@ describe("Table", () => {
                         ],
                     }),
                 ],
-                layout: TableLayoutType.FIXED,
             });
             const tree = new Formatter().format(table);
             expect(tree).to.have.property("w:tbl").which.is.an("array").with.has.length.at.least(1);
@@ -238,6 +265,7 @@ describe("Table", () => {
 
         it("should center the table", () => {
             const table = new Table({
+                alignment: AlignmentType.CENTER,
                 rows: [
                     new TableRow({
                         children: [
@@ -247,7 +275,6 @@ describe("Table", () => {
                         ],
                     }),
                 ],
-                alignment: AlignmentType.CENTER,
             });
             const tree = new Formatter().format(table);
             expect(tree).to.have.property("w:tbl").which.is.an("array").with.has.length.at.least(1);
@@ -258,6 +285,7 @@ describe("Table", () => {
 
         it("should set the table to provided 100% width", () => {
             const table = new Table({
+                layout: TableLayoutType.FIXED,
                 rows: [
                     new TableRow({
                         children: [
@@ -271,7 +299,6 @@ describe("Table", () => {
                     size: 100,
                     type: WidthType.PERCENTAGE,
                 },
-                layout: TableLayoutType.FIXED,
             });
             const tree = new Formatter().format(table);
             expect(tree).to.have.property("w:tbl").which.is.an("array").with.has.length.at.least(1);
@@ -293,6 +320,7 @@ describe("Table", () => {
 
         it("should set the table to provided 1000 DXA", () => {
             const table = new Table({
+                layout: TableLayoutType.FIXED,
                 rows: [
                     new TableRow({
                         children: [
@@ -306,7 +334,6 @@ describe("Table", () => {
                     size: 1000,
                     type: WidthType.DXA,
                 },
-                layout: TableLayoutType.FIXED,
             });
             const tree = new Formatter().format(table);
             expect(tree).to.have.property("w:tbl").which.is.an("array").with.has.length.at.least(1);
@@ -328,6 +355,13 @@ describe("Table", () => {
 
         it("creates a table with properties revision", () => {
             const run = new Table({
+                alignment: AlignmentType.CENTER,
+                revision: {
+                    alignment: AlignmentType.RIGHT,
+                    author: "Firstname Lastname",
+                    date: "123",
+                    id: 1,
+                },
                 rows: [
                     new TableRow({
                         children: [
@@ -337,13 +371,6 @@ describe("Table", () => {
                         ],
                     }),
                 ],
-                alignment: AlignmentType.CENTER,
-                revision: {
-                    id: 1,
-                    author: "Firstname Lastname",
-                    date: "123",
-                    alignment: AlignmentType.RIGHT,
-                },
             });
             const tree = new Formatter().format(run);
             expect(tree["w:tbl"][0]).to.deep.equal({
@@ -379,6 +406,9 @@ describe("Table", () => {
 
         it("creates a table with grid revision", () => {
             const run = new Table({
+                alignment: AlignmentType.CENTER,
+                columnWidths: [1234, 321, 123],
+                columnWidthsRevision: { columnWidths: [1234, 123, 321], id: 1 },
                 rows: [
                     new TableRow({
                         children: [
@@ -394,9 +424,6 @@ describe("Table", () => {
                         ],
                     }),
                 ],
-                alignment: AlignmentType.CENTER,
-                columnWidths: [1234, 321, 123],
-                columnWidthsRevision: { id: 1, columnWidths: [1234, 123, 321] },
             });
             const tree = new Formatter().format(run);
             const tableGrid = tree["w:tbl"].find((x: any) => x["w:tblGrid"]);
@@ -467,70 +494,70 @@ describe("Table", () => {
                 });
             });
 
-            // it("inserts a paragraph at the end of the cell even if it has a child table", () => {
-            //     const table = new Table({
-            //         rows: [
-            //             new TableRow({
-            //                 children: [
-            //                     new TableCell({
-            //                         children: [new Paragraph("hello")],
+            // It("inserts a paragraph at the end of the cell even if it has a child table", () => {
+            //     Const table = new Table({
+            //         Rows: [
+            //             New TableRow({
+            //                 Children: [
+            //                     New TableCell({
+            //                         Children: [new Paragraph("hello")],
             //                     }),
             //                 ],
             //             }),
             //         ],
             //     });
-            //     table.getCell(0, 0).add(
-            //         new Table({
-            //             rows: [
-            //                 new TableRow({
-            //                     children: [
-            //                         new TableCell({
-            //                             children: [new Paragraph("hello")],
+            //     Table.getCell(0, 0).add(
+            //         New Table({
+            //             Rows: [
+            //                 New TableRow({
+            //                     Children: [
+            //                         New TableCell({
+            //                             Children: [new Paragraph("hello")],
             //                         }),
             //                     ],
             //                 }),
             //             ],
             //         }),
             //     );
-            //     const tree = new Formatter().format(table);
-            //     expect(tree)
+            //     Const tree = new Formatter().format(table);
+            //     Expect(tree)
             //         .to.have.property("w:tbl")
             //         .which.is.an("array");
-            //     const row = tree["w:tbl"].find((x) => x["w:tr"]);
-            //     expect(row).not.to.be.undefined;
-            //     expect(row["w:tr"])
+            //     Const row = tree["w:tbl"].find((x) => x["w:tr"]);
+            //     Expect(row).not.to.be.undefined;
+            //     Expect(row["w:tr"])
             //         .to.be.an("array")
             //         .which.has.length.at.least(1);
-            //     const cell = row["w:tr"].find((x) => x["w:tc"]);
-            //     expect(cell).not.to.be.undefined;
-            //     expect(cell["w:tc"][cell["w:tc"].length - 1]).to.deep.equal({
+            //     Const cell = row["w:tr"].find((x) => x["w:tc"]);
+            //     Expect(cell).not.to.be.undefined;
+            //     Expect(cell["w:tc"][cell["w:tc"].length - 1]).to.deep.equal({
             //         "w:p": EMPTY_OBJECT,
             //     });
             // });
 
-            // it("does not insert a paragraph if it already ends with one", () => {
-            //     const table = new Table({
-            //         rows: [
-            //             new TableRow({
-            //                 children: [
-            //                     new TableCell({
-            //                         children: [new Paragraph("hello")],
+            // It("does not insert a paragraph if it already ends with one", () => {
+            //     Const table = new Table({
+            //         Rows: [
+            //             New TableRow({
+            //                 Children: [
+            //                     New TableCell({
+            //                         Children: [new Paragraph("hello")],
             //                     }),
             //                 ],
             //             }),
             //         ],
             //     });
-            //     table.getCell(0, 0).add(new Paragraph("Hello"));
-            //     const tree = new Formatter().format(table);
-            //     expect(tree)
+            //     Table.getCell(0, 0).add(new Paragraph("Hello"));
+            //     Const tree = new Formatter().format(table);
+            //     Expect(tree)
             //         .to.have.property("w:tbl")
             //         .which.is.an("array");
-            //     const row = tree["w:tbl"].find((x) => x["w:tr"]);
-            //     expect(row).not.to.be.undefined;
-            //     expect(row["w:tr"])
+            //     Const row = tree["w:tbl"].find((x) => x["w:tr"]);
+            //     Expect(row).not.to.be.undefined;
+            //     Expect(row["w:tr"])
             //         .to.be.an("array")
             //         .which.has.length.at.least(1);
-            //     expect(row["w:tr"].find((x) => x["w:tc"])).to.deep.equal({
+            //     Expect(row["w:tr"].find((x) => x["w:tc"])).to.deep.equal({
             //         "w:tc": [
             //             {
             //                 "w:p": [{ "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "Hello"] }] }],
@@ -544,6 +571,18 @@ describe("Table", () => {
     describe("#float", () => {
         it("sets the table float properties", () => {
             const table = new Table({
+                float: {
+                    absoluteHorizontalPosition: 10,
+                    absoluteVerticalPosition: 20,
+                    bottomFromText: 30,
+                    horizontalAnchor: TableAnchorType.MARGIN,
+                    leftFromText: 50,
+                    relativeHorizontalPosition: RelativeHorizontalPosition.CENTER,
+                    relativeVerticalPosition: RelativeVerticalPosition.BOTTOM,
+                    rightFromText: 60,
+                    topFromText: 40,
+                    verticalAnchor: TableAnchorType.PAGE,
+                },
                 rows: [
                     new TableRow({
                         children: [
@@ -553,18 +592,6 @@ describe("Table", () => {
                         ],
                     }),
                 ],
-                float: {
-                    horizontalAnchor: TableAnchorType.MARGIN,
-                    verticalAnchor: TableAnchorType.PAGE,
-                    absoluteHorizontalPosition: 10,
-                    relativeHorizontalPosition: RelativeHorizontalPosition.CENTER,
-                    absoluteVerticalPosition: 20,
-                    relativeVerticalPosition: RelativeVerticalPosition.BOTTOM,
-                    bottomFromText: 30,
-                    topFromText: 40,
-                    leftFromText: 50,
-                    rightFromText: 60,
-                },
             });
             const tree = new Formatter().format(table);
             expect(tree).to.have.property("w:tbl").which.is.an("array").with.has.length.at.least(1);
@@ -573,16 +600,16 @@ describe("Table", () => {
                     {
                         "w:tblpPr": {
                             _attr: {
+                                "w:bottomFromText": 30,
                                 "w:horzAnchor": "margin",
-                                "w:vertAnchor": "page",
+                                "w:leftFromText": 50,
+                                "w:rightFromText": 60,
                                 "w:tblpX": 10,
                                 "w:tblpXSpec": "center",
                                 "w:tblpY": 20,
                                 "w:tblpYSpec": "bottom",
-                                "w:bottomFromText": 30,
                                 "w:topFromText": 40,
-                                "w:leftFromText": 50,
-                                "w:rightFromText": 60,
+                                "w:vertAnchor": "page",
                             },
                         },
                     },

@@ -1,8 +1,7 @@
-import { describe, expect, it, vi } from "vitest";
-
 import { Formatter } from "@export/formatter";
 import type { IViewWrapper } from "@file/document-wrapper";
 import type { File } from "@file/file";
+import { describe, expect, it, vi } from "vite-plus/test";
 
 import { ImageRun } from "./image-run";
 
@@ -10,22 +9,22 @@ describe("ImageRun", () => {
     describe("#constructor()", () => {
         it("should create with Buffer", () => {
             const currentImageRun = new ImageRun({
-                type: "png",
                 data: Buffer.from(""),
-                transformation: {
-                    width: 200,
-                    height: 200,
-                    rotation: 45,
-                },
                 floating: {
-                    zIndex: 10,
                     horizontalPosition: {
-                        offset: 1014400,
+                        offset: 1_014_400,
                     },
                     verticalPosition: {
-                        offset: 1014400,
+                        offset: 1_014_400,
                     },
+                    zIndex: 10,
                 },
+                transformation: {
+                    height: 200,
+                    rotation: 45,
+                    width: 200,
+                },
+                type: "png",
             });
 
             const tree = new Formatter().format(currentImageRun, {
@@ -34,8 +33,8 @@ describe("ImageRun", () => {
                         addImage: vi.fn(),
                     },
                 } as unknown as File,
-                viewWrapper: {} as unknown as IViewWrapper,
                 stack: [],
+                viewWrapper: {} as unknown as IViewWrapper,
             });
             expect(tree).to.deep.equal({
                 "w:r": [
@@ -92,8 +91,8 @@ describe("ImageRun", () => {
                                     {
                                         "wp:extent": {
                                             _attr: {
-                                                cx: 1905000,
-                                                cy: 1905000,
+                                                cx: 1_905_000,
+                                                cy: 1_905_000,
                                             },
                                         },
                                     },
@@ -126,7 +125,8 @@ describe("ImageRun", () => {
                                                 "a:graphicFrameLocks": {
                                                     _attr: {
                                                         noChangeAspect: 1,
-                                                        "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+                                                        "xmlns:a":
+                                                            "http://schemas.openxmlformats.org/drawingml/2006/main",
                                                     },
                                                 },
                                             },
@@ -136,7 +136,8 @@ describe("ImageRun", () => {
                                         "a:graphic": [
                                             {
                                                 _attr: {
-                                                    "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+                                                    "xmlns:a":
+                                                        "http://schemas.openxmlformats.org/drawingml/2006/main",
                                                 },
                                             },
                                             {
@@ -150,7 +151,8 @@ describe("ImageRun", () => {
                                                         "pic:pic": [
                                                             {
                                                                 _attr: {
-                                                                    "xmlns:pic": "http://schemas.openxmlformats.org/drawingml/2006/picture",
+                                                                    "xmlns:pic":
+                                                                        "http://schemas.openxmlformats.org/drawingml/2006/picture",
                                                                 },
                                                             },
                                                             {
@@ -212,7 +214,7 @@ describe("ImageRun", () => {
                                                                         "a:xfrm": [
                                                                             {
                                                                                 _attr: {
-                                                                                    rot: 2700000,
+                                                                                    rot: 2_700_000,
                                                                                 },
                                                                             },
                                                                             {
@@ -226,8 +228,8 @@ describe("ImageRun", () => {
                                                                             {
                                                                                 "a:ext": {
                                                                                     _attr: {
-                                                                                        cx: 1905000,
-                                                                                        cy: 1905000,
+                                                                                        cx: 1_905_000,
+                                                                                        cy: 1_905_000,
                                                                                     },
                                                                                 },
                                                                             },
@@ -263,22 +265,22 @@ describe("ImageRun", () => {
 
         it("should create with string", () => {
             const currentImageRun = new ImageRun({
-                type: "png",
                 data: "",
-                transformation: {
-                    width: 200,
-                    height: 200,
-                    rotation: 45,
-                },
                 floating: {
-                    zIndex: 10,
                     horizontalPosition: {
-                        offset: 1014400,
+                        offset: 1_014_400,
                     },
                     verticalPosition: {
-                        offset: 1014400,
+                        offset: 1_014_400,
                     },
+                    zIndex: 10,
                 },
+                transformation: {
+                    height: 200,
+                    rotation: 45,
+                    width: 200,
+                },
+                type: "png",
             });
 
             const tree = new Formatter().format(currentImageRun, {
@@ -287,8 +289,8 @@ describe("ImageRun", () => {
                         addImage: vi.fn(),
                     },
                 } as unknown as File,
-                viewWrapper: {} as unknown as IViewWrapper,
                 stack: [],
+                viewWrapper: {} as unknown as IViewWrapper,
             });
             expect(tree).to.deep.equal({
                 "w:r": [
@@ -345,8 +347,8 @@ describe("ImageRun", () => {
                                     {
                                         "wp:extent": {
                                             _attr: {
-                                                cx: 1905000,
-                                                cy: 1905000,
+                                                cx: 1_905_000,
+                                                cy: 1_905_000,
                                             },
                                         },
                                     },
@@ -379,7 +381,8 @@ describe("ImageRun", () => {
                                                 "a:graphicFrameLocks": {
                                                     _attr: {
                                                         noChangeAspect: 1,
-                                                        "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+                                                        "xmlns:a":
+                                                            "http://schemas.openxmlformats.org/drawingml/2006/main",
                                                     },
                                                 },
                                             },
@@ -389,7 +392,8 @@ describe("ImageRun", () => {
                                         "a:graphic": [
                                             {
                                                 _attr: {
-                                                    "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+                                                    "xmlns:a":
+                                                        "http://schemas.openxmlformats.org/drawingml/2006/main",
                                                 },
                                             },
                                             {
@@ -403,7 +407,8 @@ describe("ImageRun", () => {
                                                         "pic:pic": [
                                                             {
                                                                 _attr: {
-                                                                    "xmlns:pic": "http://schemas.openxmlformats.org/drawingml/2006/picture",
+                                                                    "xmlns:pic":
+                                                                        "http://schemas.openxmlformats.org/drawingml/2006/picture",
                                                                 },
                                                             },
                                                             {
@@ -465,7 +470,7 @@ describe("ImageRun", () => {
                                                                         "a:xfrm": [
                                                                             {
                                                                                 _attr: {
-                                                                                    rot: 2700000,
+                                                                                    rot: 2_700_000,
                                                                                 },
                                                                             },
                                                                             {
@@ -479,8 +484,8 @@ describe("ImageRun", () => {
                                                                             {
                                                                                 "a:ext": {
                                                                                     _attr: {
-                                                                                        cx: 1905000,
-                                                                                        cy: 1905000,
+                                                                                        cx: 1_905_000,
+                                                                                        cy: 1_905_000,
                                                                                     },
                                                                                 },
                                                                             },
@@ -518,22 +523,22 @@ describe("ImageRun", () => {
             vi.spyOn(global, "atob").mockReturnValue("atob result");
 
             const currentImageRun = new ImageRun({
-                type: "png",
                 data: "",
-                transformation: {
-                    width: 200,
-                    height: 200,
-                    rotation: 45,
-                },
                 floating: {
-                    zIndex: 10,
                     horizontalPosition: {
-                        offset: 1014400,
+                        offset: 1_014_400,
                     },
                     verticalPosition: {
-                        offset: 1014400,
+                        offset: 1_014_400,
                     },
+                    zIndex: 10,
                 },
+                transformation: {
+                    height: 200,
+                    rotation: 45,
+                    width: 200,
+                },
+                type: "png",
             });
 
             const tree = new Formatter().format(currentImageRun, {
@@ -542,8 +547,8 @@ describe("ImageRun", () => {
                         addImage: vi.fn(),
                     },
                 } as unknown as File,
-                viewWrapper: {} as unknown as IViewWrapper,
                 stack: [],
+                viewWrapper: {} as unknown as IViewWrapper,
             });
 
             expect(tree).to.deep.equal({
@@ -601,8 +606,8 @@ describe("ImageRun", () => {
                                     {
                                         "wp:extent": {
                                             _attr: {
-                                                cx: 1905000,
-                                                cy: 1905000,
+                                                cx: 1_905_000,
+                                                cy: 1_905_000,
                                             },
                                         },
                                     },
@@ -635,7 +640,8 @@ describe("ImageRun", () => {
                                                 "a:graphicFrameLocks": {
                                                     _attr: {
                                                         noChangeAspect: 1,
-                                                        "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+                                                        "xmlns:a":
+                                                            "http://schemas.openxmlformats.org/drawingml/2006/main",
                                                     },
                                                 },
                                             },
@@ -645,7 +651,8 @@ describe("ImageRun", () => {
                                         "a:graphic": [
                                             {
                                                 _attr: {
-                                                    "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+                                                    "xmlns:a":
+                                                        "http://schemas.openxmlformats.org/drawingml/2006/main",
                                                 },
                                             },
                                             {
@@ -659,7 +666,8 @@ describe("ImageRun", () => {
                                                         "pic:pic": [
                                                             {
                                                                 _attr: {
-                                                                    "xmlns:pic": "http://schemas.openxmlformats.org/drawingml/2006/picture",
+                                                                    "xmlns:pic":
+                                                                        "http://schemas.openxmlformats.org/drawingml/2006/picture",
                                                                 },
                                                             },
                                                             {
@@ -721,7 +729,7 @@ describe("ImageRun", () => {
                                                                         "a:xfrm": [
                                                                             {
                                                                                 _attr: {
-                                                                                    rot: 2700000,
+                                                                                    rot: 2_700_000,
                                                                                 },
                                                                             },
                                                                             {
@@ -735,8 +743,8 @@ describe("ImageRun", () => {
                                                                             {
                                                                                 "a:ext": {
                                                                                     _attr: {
-                                                                                        cx: 1905000,
-                                                                                        cy: 1905000,
+                                                                                        cx: 1_905_000,
+                                                                                        cy: 1_905_000,
                                                                                     },
                                                                                 },
                                                                             },
@@ -774,22 +782,22 @@ describe("ImageRun", () => {
             vi.spyOn(global, "atob").mockReturnValue("atob result");
 
             const currentImageRun = new ImageRun({
-                type: "png",
                 data: "",
-                transformation: {
-                    width: 200,
-                    height: 200,
-                    rotation: 45,
-                },
                 floating: {
-                    zIndex: 10,
                     horizontalPosition: {
-                        offset: 1014400,
+                        offset: 1_014_400,
                     },
                     verticalPosition: {
-                        offset: 1014400,
+                        offset: 1_014_400,
                     },
+                    zIndex: 10,
                 },
+                transformation: {
+                    height: 200,
+                    rotation: 45,
+                    width: 200,
+                },
+                type: "png",
             });
 
             const tree = new Formatter().format(currentImageRun, {
@@ -798,8 +806,8 @@ describe("ImageRun", () => {
                         addImage: vi.fn(),
                     },
                 } as unknown as File,
-                viewWrapper: {} as unknown as IViewWrapper,
                 stack: [],
+                viewWrapper: {} as unknown as IViewWrapper,
             });
 
             expect(tree).to.deep.equal({
@@ -857,8 +865,8 @@ describe("ImageRun", () => {
                                     {
                                         "wp:extent": {
                                             _attr: {
-                                                cx: 1905000,
-                                                cy: 1905000,
+                                                cx: 1_905_000,
+                                                cy: 1_905_000,
                                             },
                                         },
                                     },
@@ -891,7 +899,8 @@ describe("ImageRun", () => {
                                                 "a:graphicFrameLocks": {
                                                     _attr: {
                                                         noChangeAspect: 1,
-                                                        "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+                                                        "xmlns:a":
+                                                            "http://schemas.openxmlformats.org/drawingml/2006/main",
                                                     },
                                                 },
                                             },
@@ -901,7 +910,8 @@ describe("ImageRun", () => {
                                         "a:graphic": [
                                             {
                                                 _attr: {
-                                                    "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+                                                    "xmlns:a":
+                                                        "http://schemas.openxmlformats.org/drawingml/2006/main",
                                                 },
                                             },
                                             {
@@ -915,7 +925,8 @@ describe("ImageRun", () => {
                                                         "pic:pic": [
                                                             {
                                                                 _attr: {
-                                                                    "xmlns:pic": "http://schemas.openxmlformats.org/drawingml/2006/picture",
+                                                                    "xmlns:pic":
+                                                                        "http://schemas.openxmlformats.org/drawingml/2006/picture",
                                                                 },
                                                             },
                                                             {
@@ -977,7 +988,7 @@ describe("ImageRun", () => {
                                                                         "a:xfrm": [
                                                                             {
                                                                                 _attr: {
-                                                                                    rot: 2700000,
+                                                                                    rot: 2_700_000,
                                                                                 },
                                                                             },
                                                                             {
@@ -991,8 +1002,8 @@ describe("ImageRun", () => {
                                                                             {
                                                                                 "a:ext": {
                                                                                     _attr: {
-                                                                                        cx: 1905000,
-                                                                                        cy: 1905000,
+                                                                                        cx: 1_905_000,
+                                                                                        cy: 1_905_000,
                                                                                     },
                                                                                 },
                                                                             },
@@ -1030,13 +1041,13 @@ describe("ImageRun", () => {
             const spy = vi.spyOn(global, "atob").mockReturnValue("atob result");
 
             new ImageRun({
-                type: "png",
                 data: ";base64,",
                 transformation: {
-                    width: 200,
                     height: 200,
                     rotation: 45,
+                    width: 200,
                 },
+                type: "png",
             });
 
             expect(spy).toBeCalledWith("");
@@ -1044,16 +1055,16 @@ describe("ImageRun", () => {
 
         it("should work with svgs", () => {
             const currentImageRun = new ImageRun({
-                type: "svg",
                 data: Buffer.from(""),
-                transformation: {
-                    width: 200,
-                    height: 200,
-                },
                 fallback: {
-                    type: "png",
                     data: Buffer.from(""),
+                    type: "png",
                 },
+                transformation: {
+                    height: 200,
+                    width: 200,
+                },
+                type: "svg",
             });
 
             const tree = new Formatter().format(currentImageRun, {
@@ -1062,8 +1073,8 @@ describe("ImageRun", () => {
                         addImage: vi.fn(),
                     },
                 } as unknown as File,
-                viewWrapper: {} as unknown as IViewWrapper,
                 stack: [],
+                viewWrapper: {} as unknown as IViewWrapper,
             });
 
             expect(tree).toStrictEqual({
@@ -1079,40 +1090,45 @@ describe("ImageRun", () => {
                                                     {
                                                         "pic:pic": expect.arrayContaining([
                                                             {
-                                                                "pic:blipFill": expect.arrayContaining([
-                                                                    {
-                                                                        "a:blip": [
-                                                                            {
-                                                                                _attr: {
-                                                                                    cstate: "none",
-                                                                                    "r:embed":
-                                                                                        "rId{da39a3ee5e6b4b0d3255bfef95601890afd80709.png}",
-                                                                                },
-                                                                            },
-                                                                            {
-                                                                                "a:extLst": [
-                                                                                    {
-                                                                                        "a:ext": [
-                                                                                            {
-                                                                                                _attr: {
-                                                                                                    uri: "{96DAC541-7B7A-43D3-8B79-37D633B846F1}",
-                                                                                                },
-                                                                                            },
-                                                                                            {
-                                                                                                "asvg:svgBlip": {
-                                                                                                    _attr: expect.objectContaining({
-                                                                                                        "r:embed":
-                                                                                                            "rId{da39a3ee5e6b4b0d3255bfef95601890afd80709.svg}",
-                                                                                                    }),
-                                                                                                },
-                                                                                            },
-                                                                                        ],
+                                                                "pic:blipFill":
+                                                                    expect.arrayContaining([
+                                                                        {
+                                                                            "a:blip": [
+                                                                                {
+                                                                                    _attr: {
+                                                                                        cstate: "none",
+                                                                                        "r:embed":
+                                                                                            "rId{da39a3ee5e6b4b0d3255bfef95601890afd80709.png}",
                                                                                     },
-                                                                                ],
-                                                                            },
-                                                                        ],
-                                                                    },
-                                                                ]),
+                                                                                },
+                                                                                {
+                                                                                    "a:extLst": [
+                                                                                        {
+                                                                                            "a:ext":
+                                                                                                [
+                                                                                                    {
+                                                                                                        _attr: {
+                                                                                                            uri: "{96DAC541-7B7A-43D3-8B79-37D633B846F1}",
+                                                                                                        },
+                                                                                                    },
+                                                                                                    {
+                                                                                                        "asvg:svgBlip":
+                                                                                                            {
+                                                                                                                _attr: expect.objectContaining(
+                                                                                                                    {
+                                                                                                                        "r:embed":
+                                                                                                                            "rId{da39a3ee5e6b4b0d3255bfef95601890afd80709.svg}",
+                                                                                                                    },
+                                                                                                                ),
+                                                                                                            },
+                                                                                                    },
+                                                                                                ],
+                                                                                        },
+                                                                                    ],
+                                                                                },
+                                                                            ],
+                                                                        },
+                                                                    ]),
                                                             },
                                                         ]),
                                                     },
@@ -1130,23 +1146,23 @@ describe("ImageRun", () => {
 
         it("using same data twice should use same media key", () => {
             const imageRunStringData = new ImageRun({
-                type: "png",
                 data: "DATA",
                 transformation: {
-                    width: 100,
                     height: 100,
                     rotation: 42,
+                    width: 100,
                 },
+                type: "png",
             });
 
             const imageRunBufferData = new ImageRun({
-                type: "png",
                 data: Buffer.from("DATA"),
                 transformation: {
-                    width: 200,
                     height: 200,
                     rotation: 45,
+                    width: 200,
                 },
+                type: "png",
             });
 
             const addImageSpy = vi.fn();
@@ -1156,8 +1172,8 @@ describe("ImageRun", () => {
                         addImage: addImageSpy,
                     },
                 } as unknown as File,
-                viewWrapper: {} as unknown as IViewWrapper,
                 stack: [],
+                viewWrapper: {} as unknown as IViewWrapper,
             };
 
             new Formatter().format(imageRunStringData, context);

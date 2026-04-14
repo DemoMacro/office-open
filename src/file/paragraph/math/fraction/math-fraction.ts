@@ -18,12 +18,12 @@ import { MathNumerator } from "./math-numerator";
  *
  * @see {@link MathFraction}
  */
-export type IMathFractionOptions = {
+export interface IMathFractionOptions {
     /** Math components for the numerator (top) of the fraction */
     readonly numerator: readonly MathComponent[];
     /** Math components for the denominator (bottom) of the fraction */
     readonly denominator: readonly MathComponent[];
-};
+}
 
 /**
  * Represents a fraction in a math equation.

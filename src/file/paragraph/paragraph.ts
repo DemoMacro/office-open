@@ -14,19 +14,27 @@ import type { CheckBox } from "../checkbox";
 import { TargetModeType } from "../relationships/relationship/relationship";
 import type { DeletedTextRun, InsertedTextRun } from "../track-revision";
 import type { ColumnBreak, PageBreak } from "./formatting/break";
-import { Bookmark, ConcreteHyperlink, ExternalHyperlink, type InternalHyperlink } from "./links";
+import { Bookmark, ConcreteHyperlink, ExternalHyperlink } from "./links";
+import type { InternalHyperlink } from "./links";
 import type { Math } from "./math";
-import { type IParagraphPropertiesOptions, ParagraphProperties } from "./properties";
-import {
-    type ImageRun,
-    type Run,
-    type SequentialIdentifier,
-    type SimpleField,
-    type SimpleMailMergeField,
-    type SymbolRun,
-    TextRun,
+import { ParagraphProperties } from "./properties";
+import type { IParagraphPropertiesOptions } from "./properties";
+import { TextRun } from "./run";
+import type {
+    ImageRun,
+    Run,
+    SequentialIdentifier,
+    SimpleField,
+    SimpleMailMergeField,
+    SymbolRun,
 } from "./run";
-import type { Comment, CommentRangeEnd, CommentRangeStart, CommentReference, Comments } from "./run/comment-run";
+import type {
+    Comment,
+    CommentRangeEnd,
+    CommentRangeStart,
+    CommentReference,
+    Comments,
+} from "./run/comment-run";
 
 /**
  * The types of children that can be contained within a Paragraph element.
@@ -147,7 +155,10 @@ export class Paragraph extends FileChild {
         for (const element of this.root) {
             if (element instanceof ExternalHyperlink) {
                 const index = this.root.indexOf(element);
-                const concreteHyperlink = new ConcreteHyperlink(element.options.children, uniqueId());
+                const concreteHyperlink = new ConcreteHyperlink(
+                    element.options.children,
+                    uniqueId(),
+                );
                 context.viewWrapper.Relationships.addRelationship(
                     concreteHyperlink.linkId,
                     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",

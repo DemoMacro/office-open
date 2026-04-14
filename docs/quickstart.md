@@ -105,7 +105,10 @@ import { Table, TableRow, TableCell } from "docx";
 new Table({
     rows: [
         new TableRow({
-            children: [new TableCell({ children: [new Paragraph("Cell 1")] }), new TableCell({ children: [new Paragraph("Cell 2")] })],
+            children: [
+                new TableCell({ children: [new Paragraph("Cell 1")] }),
+                new TableCell({ children: [new Paragraph("Cell 2")] }),
+            ],
         }),
     ],
 });

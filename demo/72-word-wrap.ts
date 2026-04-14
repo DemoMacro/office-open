@@ -1,6 +1,7 @@
 // Example on how to preserve word wrap text. Works with all languages.
 
 import * as fs from "fs";
+
 import { Document, Packer, Paragraph, TextRun } from "docx";
 
 const doc = new Document({
@@ -8,16 +9,15 @@ const doc = new Document({
         {
             children: [
                 new Paragraph({
-                    wordWrap: true,
                     children: [
                         new TextRun("我今天遛狗去公园"),
                         new TextRun({
                             text: "456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345",
                         }),
                     ],
+                    wordWrap: true,
                 }),
                 new Paragraph({
-                    wordWrap: true,
                     children: [
                         new TextRun(
                             "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua",
@@ -26,6 +26,7 @@ const doc = new Document({
                             text: "456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345",
                         }),
                     ],
+                    wordWrap: true,
                 }),
                 new Paragraph({
                     children: [

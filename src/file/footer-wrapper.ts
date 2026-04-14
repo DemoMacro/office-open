@@ -25,10 +25,10 @@ import type { Table } from "./table";
  * @property footer - The FooterWrapper instance containing the footer content
  * @property type - The footer type (default, first page, even pages)
  */
-export type IDocumentFooter = {
+export interface IDocumentFooter {
     readonly footer: FooterWrapper;
     readonly type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType];
-};
+}
 
 /**
  * Wrapper for document footers.

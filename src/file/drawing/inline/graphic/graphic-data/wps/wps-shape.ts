@@ -1,19 +1,22 @@
 import type { IMediaDataTransformation } from "@file/media";
 import type { Paragraph } from "@file/paragraph";
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
-import { type IBodyPropertiesOptions, createBodyProperties } from "./body-properties";
-import { type INonVisualShapePropertiesOptions, createNonVisualShapeProperties } from "./non-visual-shape-properties";
-import { createWpsTextBox } from "./wps-text-box";
 import type { OutlineOptions } from "../pic/shape-properties/outline/outline";
 import type { SolidFillOptions } from "../pic/shape-properties/outline/solid-fill";
 import { ShapeProperties } from "../pic/shape-properties/shape-properties";
+import { createBodyProperties } from "./body-properties";
+import type { IBodyPropertiesOptions } from "./body-properties";
+import { createNonVisualShapeProperties } from "./non-visual-shape-properties";
+import type { INonVisualShapePropertiesOptions } from "./non-visual-shape-properties";
+import { createWpsTextBox } from "./wps-text-box";
 
-export type WpsShapeCoreOptions = {
+export interface WpsShapeCoreOptions {
     readonly children: readonly Paragraph[];
     readonly nonVisualProperties?: INonVisualShapePropertiesOptions;
     readonly bodyProperties?: IBodyPropertiesOptions;
-};
+}
 
 export type WpsShapeOptions = WpsShapeCoreOptions & {
     readonly transformation: IMediaDataTransformation;
@@ -23,16 +26,16 @@ export type WpsShapeOptions = WpsShapeCoreOptions & {
 
 export const createWpsShape = (options: WpsShapeOptions): XmlComponent =>
     new BuilderElement({
-        name: "wps:wsp",
         children: [
             createNonVisualShapeProperties(options.nonVisualProperties),
             new ShapeProperties({
                 element: "wps",
-                transform: options.transformation,
                 outline: options.outline,
                 solidFill: options.solidFill,
+                transform: options.transformation,
             }),
             createWpsTextBox(options.children),
             createBodyProperties(options.bodyProperties),
         ],
+        name: "wps:wsp",
     });

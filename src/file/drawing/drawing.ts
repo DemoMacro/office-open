@@ -13,24 +13,24 @@ import type { SolidFillOptions } from "./inline/graphic/graphic-data/pic/shape-p
  *
  * Specifies the margins around a drawing element.
  */
-export type IDistance = {
+export interface IDistance {
     readonly distT?: number;
     readonly distB?: number;
     readonly distL?: number;
     readonly distR?: number;
-};
+}
 
 /**
  * Options for configuring a drawing element.
  *
  * @see {@link Drawing}
  */
-export type IDrawingOptions = {
+export interface IDrawingOptions {
     readonly floating?: IFloating;
     readonly docProperties?: DocPropertiesOptions;
     readonly outline?: OutlineOptions;
     readonly solidFill?: SolidFillOptions;
-};
+}
 
 /**
  * Represents a drawing element in a WordprocessingML document.
@@ -57,15 +57,21 @@ export class Drawing extends XmlComponent {
         if (!drawingOptions.floating) {
             this.root.push(
                 createInline({
-                    mediaData: imageData,
-                    transform: imageData.transformation,
                     docProperties: drawingOptions.docProperties,
+                    mediaData: imageData,
                     outline: drawingOptions.outline,
                     solidFill: drawingOptions.solidFill,
+                    transform: imageData.transformation,
                 }),
             );
         } else {
-            this.root.push(new Anchor({ mediaData: imageData, transform: imageData.transformation, drawingOptions }));
+            this.root.push(
+                new Anchor({
+                    drawingOptions,
+                    mediaData: imageData,
+                    transform: imageData.transformation,
+                }),
+            );
         }
     }
 }

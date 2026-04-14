@@ -8,22 +8,24 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
-import { type PositiveUniversalMeasure, type UniversalMeasure, signedTwipsMeasureValue, twipsMeasureValue } from "@util/values";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
+import { signedTwipsMeasureValue, twipsMeasureValue } from "@util/values";
+import type { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
 
 /**
  * Properties for configuring paragraph indentation.
  *
  * Values can be specified as numbers (in twips) or as universal measures (e.g., "1in", "2.5cm").
  */
-export type IIndentAttributesProperties = {
+export interface IIndentAttributesProperties {
     readonly start?: number | UniversalMeasure;
     readonly end?: number | UniversalMeasure;
     readonly left?: number | UniversalMeasure;
     readonly right?: number | UniversalMeasure;
     readonly hanging?: number | PositiveUniversalMeasure;
     readonly firstLine?: number | PositiveUniversalMeasure;
-};
+}
 
 /**
  * Creates paragraph indentation element for a WordprocessingML document.
@@ -50,15 +52,40 @@ export type IIndentAttributesProperties = {
  * </xsd:complexType>
  * ```
  */
-export const createIndent = ({ start, end, left, right, hanging, firstLine }: IIndentAttributesProperties): XmlComponent =>
+export const createIndent = ({
+    start,
+    end,
+    left,
+    right,
+    hanging,
+    firstLine,
+}: IIndentAttributesProperties): XmlComponent =>
     new BuilderElement<IIndentAttributesProperties>({
-        name: "w:ind",
         attributes: {
-            start: { key: "w:start", value: start === undefined ? undefined : signedTwipsMeasureValue(start) },
-            end: { key: "w:end", value: end === undefined ? undefined : signedTwipsMeasureValue(end) },
-            left: { key: "w:left", value: left === undefined ? undefined : signedTwipsMeasureValue(left) },
-            right: { key: "w:right", value: right === undefined ? undefined : signedTwipsMeasureValue(right) },
-            hanging: { key: "w:hanging", value: hanging === undefined ? undefined : twipsMeasureValue(hanging) },
-            firstLine: { key: "w:firstLine", value: firstLine === undefined ? undefined : twipsMeasureValue(firstLine) },
+            end: {
+                key: "w:end",
+                value: end === undefined ? undefined : signedTwipsMeasureValue(end),
+            },
+            firstLine: {
+                key: "w:firstLine",
+                value: firstLine === undefined ? undefined : twipsMeasureValue(firstLine),
+            },
+            hanging: {
+                key: "w:hanging",
+                value: hanging === undefined ? undefined : twipsMeasureValue(hanging),
+            },
+            left: {
+                key: "w:left",
+                value: left === undefined ? undefined : signedTwipsMeasureValue(left),
+            },
+            right: {
+                key: "w:right",
+                value: right === undefined ? undefined : signedTwipsMeasureValue(right),
+            },
+            start: {
+                key: "w:start",
+                value: start === undefined ? undefined : signedTwipsMeasureValue(start),
+            },
         },
+        name: "w:ind",
     });

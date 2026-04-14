@@ -20,7 +20,7 @@ const BreakType = {
     COLUMN: "column",
     /** Page break - text continues at the beginning of the next page */
     PAGE: "page",
-    // textWrapping breaks are the default and already exposed via the "Run" class
+    // TextWrapping breaks are the default and already exposed via the "Run" class
 } as const;
 
 /**

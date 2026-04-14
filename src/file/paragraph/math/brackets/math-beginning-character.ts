@@ -7,15 +7,16 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Options for creating a beginning character element.
  */
-type MathBeginningCharacterOptions = {
+interface MathBeginningCharacterOptions {
     /** The opening bracket character */
     readonly character: string;
-};
+}
 
 /**
  * Creates a beginning character element for bracket delimiters.
@@ -32,10 +33,12 @@ type MathBeginningCharacterOptions = {
  * </xsd:complexType>
  * ```
  */
-export const createMathBeginningCharacter = ({ character }: MathBeginningCharacterOptions): XmlComponent =>
+export const createMathBeginningCharacter = ({
+    character,
+}: MathBeginningCharacterOptions): XmlComponent =>
     new BuilderElement<MathBeginningCharacterOptions>({
-        name: "m:begChr",
         attributes: {
             character: { key: "m:val", value: character },
         },
+        name: "m:begChr",
     });

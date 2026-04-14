@@ -8,9 +8,15 @@
  *
  * @module
  */
-import { NumberValueElement, OnOffElement, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import {
+    NumberValueElement,
+    OnOffElement,
+    XmlAttributeComponent,
+    XmlComponent,
+} from "@file/xml-components";
 
-import { Compatibility, type ICompatibilityOptions } from "./compatibility";
+import { Compatibility } from "./compatibility";
+import type { ICompatibilityOptions } from "./compatibility";
 
 /**
  * Attributes for the settings element with XML namespace declarations.
@@ -41,23 +47,23 @@ export class SettingsAttributes extends XmlAttributeComponent<{
     readonly Ignorable?: string;
 }> {
     protected readonly xmlKeys = {
-        wpc: "xmlns:wpc",
+        Ignorable: "mc:Ignorable",
+        m: "xmlns:m",
         mc: "xmlns:mc",
         o: "xmlns:o",
         r: "xmlns:r",
-        m: "xmlns:m",
         v: "xmlns:v",
-        wp14: "xmlns:wp14",
-        wp: "xmlns:wp",
-        w10: "xmlns:w10",
         w: "xmlns:w",
+        w10: "xmlns:w10",
         w14: "xmlns:w14",
         w15: "xmlns:w15",
+        wne: "xmlns:wne",
+        wp: "xmlns:wp",
+        wp14: "xmlns:wp14",
+        wpc: "xmlns:wpc",
         wpg: "xmlns:wpg",
         wpi: "xmlns:wpi",
-        wne: "xmlns:wne",
         wps: "xmlns:wps",
-        Ignorable: "mc:Ignorable",
     };
 }
 
@@ -85,7 +91,7 @@ export class SettingsAttributes extends XmlAttributeComponent<{
 //   <xsd:element name="hideSpellingErrors" type="CT_OnOff" minOccurs="0"/>
 //   <xsd:element name="hideGrammaticalErrors" type="CT_OnOff" minOccurs="0"/>
 //   <xsd:element name="activeWritingStyle" type="CT_WritingStyle" minOccurs="0"
-//     maxOccurs="unbounded"/>
+//     MaxOccurs="unbounded"/>
 //   <xsd:element name="proofState" type="CT_Proof" minOccurs="0"/>
 //   <xsd:element name="formsDesign" type="CT_OnOff" minOccurs="0"/>
 //   <xsd:element name="attachedTemplate" type="CT_Rel" minOccurs="0"/>
@@ -170,7 +176,7 @@ export class SettingsAttributes extends XmlAttributeComponent<{
  *
  * @see {@link Settings}
  */
-export type ISettingsOptions = {
+export interface ISettingsOptions {
     /** @deprecated Use compatibility.version instead */
     readonly compatibilityModeVersion?: number;
     /** Enable different headers/footers for even and odd pages */
@@ -185,14 +191,14 @@ export type ISettingsOptions = {
     readonly defaultTabStop?: number;
     /** Hyphenation settings */
     readonly hyphenation?: IHyphenationOptions;
-};
+}
 
 /**
  * Options for automatic hyphenation settings.
  *
  * @see {@link Settings}
  */
-export type IHyphenationOptions = {
+export interface IHyphenationOptions {
     /** Specifies whether the application automatically hyphenates words as they are typed in the document. */
     readonly autoHyphenation?: boolean;
     /** Specifies the minimum number of characters at the beginning of a word before a hyphen can be inserted. */
@@ -201,7 +207,7 @@ export type IHyphenationOptions = {
     readonly consecutiveHyphenLimit?: number;
     /** Specifies whether to hyphenate words in all capital letters. */
     readonly doNotHyphenateCaps?: boolean;
-};
+}
 
 /**
  * Represents document settings in a WordprocessingML document.
@@ -254,23 +260,23 @@ export class Settings extends XmlComponent {
         super("w:settings");
         this.root.push(
             new SettingsAttributes({
-                wpc: "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
+                Ignorable: "w14 w15 wp14",
+                m: "http://schemas.openxmlformats.org/officeDocument/2006/math",
                 mc: "http://schemas.openxmlformats.org/markup-compatibility/2006",
                 o: "urn:schemas-microsoft-com:office:office",
                 r: "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
-                m: "http://schemas.openxmlformats.org/officeDocument/2006/math",
                 v: "urn:schemas-microsoft-com:vml",
-                wp14: "http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing",
-                wp: "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing",
-                w10: "urn:schemas-microsoft-com:office:word",
                 w: "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
+                w10: "urn:schemas-microsoft-com:office:word",
                 w14: "http://schemas.microsoft.com/office/word/2010/wordml",
                 w15: "http://schemas.microsoft.com/office/word/2012/wordml",
+                wne: "http://schemas.microsoft.com/office/word/2006/wordml",
+                wp: "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing",
+                wp14: "http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing",
+                wpc: "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
                 wpg: "http://schemas.microsoft.com/office/word/2010/wordprocessingGroup",
                 wpi: "http://schemas.microsoft.com/office/word/2010/wordprocessingInk",
-                wne: "http://schemas.microsoft.com/office/word/2006/wordml",
                 wps: "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
-                Ignorable: "w14 w15 wp14",
             }),
         );
 
@@ -300,27 +306,38 @@ export class Settings extends XmlComponent {
 
         // https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_autoHyphenation_topic_ID0EFUMX.html
         if (options.hyphenation?.autoHyphenation !== undefined) {
-            this.root.push(new OnOffElement("w:autoHyphenation", options.hyphenation.autoHyphenation));
+            this.root.push(
+                new OnOffElement("w:autoHyphenation", options.hyphenation.autoHyphenation),
+            );
         }
 
         // https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_hyphenationZone_topic_ID0ERI3X.html
         if (options.hyphenation?.hyphenationZone !== undefined) {
-            this.root.push(new NumberValueElement("w:hyphenationZone", options.hyphenation.hyphenationZone));
+            this.root.push(
+                new NumberValueElement("w:hyphenationZone", options.hyphenation.hyphenationZone),
+            );
         }
 
         // https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_consecutiveHyphenLim_topic_ID0EQ6RX.html
         if (options.hyphenation?.consecutiveHyphenLimit !== undefined) {
-            this.root.push(new NumberValueElement("w:consecutiveHyphenLimit", options.hyphenation.consecutiveHyphenLimit));
+            this.root.push(
+                new NumberValueElement(
+                    "w:consecutiveHyphenLimit",
+                    options.hyphenation.consecutiveHyphenLimit,
+                ),
+            );
         }
 
         // https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_doNotHyphenateCaps_topic_ID0EW4XX.html
         if (options.hyphenation?.doNotHyphenateCaps !== undefined) {
-            this.root.push(new OnOffElement("w:doNotHyphenateCaps", options.hyphenation.doNotHyphenateCaps));
+            this.root.push(
+                new OnOffElement("w:doNotHyphenateCaps", options.hyphenation.doNotHyphenateCaps),
+            );
         }
 
         this.root.push(
             new Compatibility({
-                ...(options.compatibility ?? {}),
+                ...options.compatibility,
                 version: options.compatibility?.version ?? options.compatibilityModeVersion ?? 15,
             }),
         );

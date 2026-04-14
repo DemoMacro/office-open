@@ -1,3 +1,17 @@
+import { ImageReplacer } from "@export/packer/image-replacer";
+import { DocumentAttributeNamespaces } from "@file/document";
+import type { IViewWrapper } from "@file/document-wrapper";
+import type { File } from "@file/file";
+import type { FileChild } from "@file/file-child";
+import { Media } from "@file/media";
+import type { IMediaData } from "@file/media";
+import { ConcreteHyperlink, ExternalHyperlink } from "@file/paragraph";
+import type { ParagraphChild } from "@file/paragraph";
+import { TargetModeType } from "@file/relationships/relationship/relationship";
+import type { IContext } from "@file/xml-components";
+import { uniqueId } from "@util/convenience-functions";
+import { convertOutput } from "@util/output-type";
+import type { OutputByType, OutputType } from "@util/output-type";
 /**
  * Document patching module for modifying existing .docx files.
  *
@@ -8,19 +22,8 @@
  */
 import { strFromU8, unzipSync, zipSync } from "fflate";
 import { textToUint8Array, toUint8Array } from "undio";
-import { type Element, js2xml } from "xml-js";
-
-import { ImageReplacer } from "@export/packer/image-replacer";
-import { DocumentAttributeNamespaces } from "@file/document";
-import type { IViewWrapper } from "@file/document-wrapper";
-import type { File } from "@file/file";
-import type { FileChild } from "@file/file-child";
-import { type IMediaData, Media } from "@file/media";
-import { ConcreteHyperlink, ExternalHyperlink, type ParagraphChild } from "@file/paragraph";
-import { TargetModeType } from "@file/relationships/relationship/relationship";
-import type { IContext } from "@file/xml-components";
-import { uniqueId } from "@util/convenience-functions";
-import { type OutputByType, type OutputType, convertOutput } from "@util/output-type";
+import { js2xml } from "xml-js";
+import type { Element } from "xml-js";
 
 import { appendContentType } from "./content-types-manager";
 import { appendRelationship, getNextRelationshipIndex } from "./relationship-manager";
@@ -33,8 +36,7 @@ import { toJson } from "./util";
  * The patcher can accept documents in various formats including buffers,
  * arrays, and streams.
  */
-// eslint-disable-next-line functional/prefer-readonly-type
-export type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob | NodeJS.ReadableStream;
+export type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob;
 
 /**
  * Patch type enumeration.
@@ -56,44 +58,44 @@ export const PatchType = {
  * Replaces placeholder text with inline content (runs, hyperlinks, etc.)
  * while preserving the surrounding paragraph structure.
  */
-type ParagraphPatch = {
+interface ParagraphPatch {
     /** Indicates this is a paragraph-level patch */
     readonly type: typeof PatchType.PARAGRAPH;
     /** Content to insert (runs, hyperlinks, images, etc.) */
     readonly children: readonly ParagraphChild[];
-};
+}
 
 /**
  * Patch definition for document-level replacement.
  *
  * Replaces placeholder text with block-level content (entire paragraphs, tables, etc.).
  */
-type FilePatch = {
+interface FilePatch {
     /** Indicates this is a document-level patch */
     readonly type: typeof PatchType.DOCUMENT;
     /** Content to insert (paragraphs, tables, etc.) */
     readonly children: readonly FileChild[];
-};
+}
 
 /**
  * Internal type for tracking image relationships that need to be added.
  */
-type IImageRelationshipAddition = {
+interface IImageRelationshipAddition {
     /** XML file path where the image is used */
     readonly key: string;
     /** Media data for the images */
     readonly mediaDatas: readonly IMediaData[];
-};
+}
 
 /**
  * Internal type for tracking hyperlink relationships that need to be added.
  */
-type IHyperlinkRelationshipAddition = {
+interface IHyperlinkRelationshipAddition {
     /** XML file path where the hyperlink is used */
     readonly key: string;
     /** Hyperlink relationship details */
     readonly hyperlink: { readonly id: string; readonly link: string };
-};
+}
 
 /**
  * Union type representing all patch types.
@@ -115,7 +117,7 @@ export type PatchDocumentOutputType = OutputType;
  * @property placeholderDelimiters - Custom delimiter characters for placeholders
  * @property recursive - Whether to search for multiple occurrences of placeholders
  */
-export type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocumentOutputType> = {
+export interface PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocumentOutputType> {
     /** Output format type */
     readonly outputType: T;
     /** Input document data */
@@ -131,7 +133,7 @@ export type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocume
     }>;
     /** Search for multiple occurrences after patching (default: true) */
     readonly recursive?: boolean;
-};
+}
 
 const imageReplacer = new ImageReplacer();
 const UTF16LE = new Uint8Array([0xff, 0xfe]);
@@ -189,12 +191,11 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     data,
     patches,
     keepOriginalStyles,
-    placeholderDelimiters = { start: "{{", end: "}}" } as const,
+    placeholderDelimiters = { end: "}}", start: "{{" } as const,
     /**
      * Search for occurrences over patched document
      */
     recursive = true,
-// eslint-disable-next-line require-await
 }: PatchDocumentOptions<T>): Promise<OutputByType[T]> => {
     const zipContent = unzipSync(toUint8Array(data));
     const contexts = new Map<string, IContext>();
@@ -204,9 +205,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
 
     const map = new Map<string, Element>();
 
-    // eslint-disable-next-line functional/prefer-readonly-type
     const imageRelationshipAdditions: IImageRelationshipAddition[] = [];
-    // eslint-disable-next-line functional/prefer-readonly-type
     const hyperlinkRelationshipAdditions: IHyperlinkRelationshipAddition[] = [];
     let hasMedia = false;
 
@@ -215,13 +214,11 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     for (const [key, value] of Object.entries(zipContent)) {
         const startBytes = value.slice(0, 2);
         if (compareByteArrays(startBytes, UTF16LE) || compareByteArrays(startBytes, UTF16BE)) {
-            // eslint-disable-next-line functional/immutable-data
             binaryContentMap.set(key, value);
             continue;
         }
 
         if (!key.endsWith(".xml") && !key.endsWith(".rels")) {
-            // eslint-disable-next-line functional/immutable-data
             binaryContentMap.set(key, value);
             continue;
         }
@@ -232,20 +229,20 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
             const document = json.elements?.find((i) => i.name === "w:document");
             if (document && document.attributes) {
                 // We could check all namespaces from Document, but we'll instead
-                // check only those that may be used by our element types.
+                // Check only those that may be used by our element types.
 
                 for (const ns of ["mc", "wp", "r", "w15", "m"] as const) {
-                    // eslint-disable-next-line functional/immutable-data
                     document.attributes[`xmlns:${ns}`] = DocumentAttributeNamespaces[ns];
                 }
-                // eslint-disable-next-line functional/immutable-data
-                document.attributes["mc:Ignorable"] = `${document.attributes["mc:Ignorable"] || ""} w15`.trim();
+                document.attributes["mc:Ignorable"] =
+                    `${document.attributes["mc:Ignorable"] || ""} w15`.trim();
             }
         }
 
         if (key.startsWith("word/") && !key.endsWith(".xml.rels")) {
             const context: IContext = {
                 file,
+                stack: [],
                 viewWrapper: {
                     Relationships: {
                         addRelationship: (
@@ -254,20 +251,17 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                             target: string,
                             __: (typeof TargetModeType)[keyof typeof TargetModeType],
                         ) => {
-                            // eslint-disable-next-line functional/immutable-data
                             hyperlinkRelationshipAdditions.push({
-                                key,
                                 hyperlink: {
                                     id: linkId,
                                     link: target,
                                 },
+                                key,
                             });
                         },
                     },
                 } as unknown as IViewWrapper,
-                stack: [],
             };
-            // eslint-disable-next-line functional/immutable-data
             contexts.set(key, context);
 
             if (!placeholderDelimiters?.start.trim() || !placeholderDelimiters?.end.trim()) {
@@ -286,31 +280,32 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                 // https://github.com/dolanmiu/docx/issues/2267
                 while (true) {
                     const { didFindOccurrence } = replacer({
+                        context,
                         json,
+                        keepOriginalStyles,
                         patch: {
                             ...patchValue,
                             children: patchValue.children.map((element) => {
                                 // We need to replace external hyperlinks with concrete hyperlinks
                                 if (element instanceof ExternalHyperlink) {
-                                    const concreteHyperlink = new ConcreteHyperlink(element.options.children, uniqueId());
-                                    // eslint-disable-next-line functional/immutable-data
+                                    const concreteHyperlink = new ConcreteHyperlink(
+                                        element.options.children,
+                                        uniqueId(),
+                                    );
                                     hyperlinkRelationshipAdditions.push({
-                                        key,
                                         hyperlink: {
                                             id: concreteHyperlink.linkId,
                                             link: element.options.link,
                                         },
+                                        key,
                                     });
                                     return concreteHyperlink;
                                 } else {
                                     return element;
                                 }
                             }),
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         } as any,
                         patchText,
-                        context,
-                        keepOriginalStyles,
                     });
                     // What the reason doing that? Once document is patched - it search over patched json again, that takes too long if patched document has big and deep structure.
                     if (!recursive || !didFindOccurrence) {
@@ -322,7 +317,6 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
             const mediaDatas = imageReplacer.getMediaData(JSON.stringify(json), context.file.Media);
             if (mediaDatas.length > 0) {
                 hasMedia = true;
-                // eslint-disable-next-line functional/immutable-data
                 imageRelationshipAdditions.push({
                     key,
                     mediaDatas,
@@ -330,20 +324,16 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
             }
         }
 
-        // eslint-disable-next-line functional/immutable-data
         map.set(key, json);
     }
 
     for (const { key, mediaDatas } of imageRelationshipAdditions) {
-        // eslint-disable-next-line functional/immutable-data
         const relationshipKey = `word/_rels/${key.split("/").pop()}.rels`;
         const relationshipsJson = map.get(relationshipKey) ?? createRelationshipFile();
-        // eslint-disable-next-line functional/immutable-data
         map.set(relationshipKey, relationshipsJson);
 
         const index = getNextRelationshipIndex(relationshipsJson);
         const newJson = imageReplacer.replace(JSON.stringify(map.get(key)), mediaDatas, index);
-        // eslint-disable-next-line functional/immutable-data
         map.set(key, JSON.parse(newJson) as Element);
 
         for (let i = 0; i < mediaDatas.length; i++) {
@@ -358,11 +348,9 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     }
 
     for (const { key, hyperlink } of hyperlinkRelationshipAdditions) {
-        // eslint-disable-next-line functional/immutable-data
         const relationshipKey = `word/_rels/${key.split("/").pop()}.rels`;
 
         const relationshipsJson = map.get(relationshipKey) ?? createRelationshipFile();
-        // eslint-disable-next-line functional/immutable-data
         map.set(relationshipKey, relationshipsJson);
 
         appendRelationship(
@@ -393,18 +381,16 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
 
     for (const [key, value] of map) {
         const output = toXml(value);
-        // eslint-disable-next-line functional/immutable-data
         files[key] = textToUint8Array(output);
     }
 
     for (const [key, value] of binaryContentMap) {
-        // eslint-disable-next-line functional/immutable-data
         files[key] = value;
     }
 
-    for (const { data: stream, fileName } of file.Media.Array) {
-        // eslint-disable-next-line functional/immutable-data
-        files[`word/media/${fileName}`] = stream;
+    for (const { data: mediaData, fileName } of file.Media.Array) {
+        files[`word/media/${fileName}`] =
+            mediaData instanceof Uint8Array ? mediaData : new Uint8Array(mediaData);
     }
 
     const zipped = zipSync(files, { level: 6 });
@@ -419,7 +405,7 @@ const toXml = (jsonObj: Element): string => {
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;")
-                .replace(/'/g, "&apos;"), // cspell:words apos
+                .replace(/'/g, "&apos;"), // Cspell:words apos
     });
     return output;
 };
@@ -427,19 +413,19 @@ const toXml = (jsonObj: Element): string => {
 const createRelationshipFile = (): Element => ({
     declaration: {
         attributes: {
-            version: "1.0",
-            encoding: "UTF-8",
+            encoding: "utf8",
             standalone: "yes",
+            version: "1.0",
         },
     },
     elements: [
         {
-            type: "element",
-            name: "Relationships",
             attributes: {
                 xmlns: "http://schemas.openxmlformats.org/package/2006/relationships",
             },
             elements: [],
+            name: "Relationships",
+            type: "element",
         },
     ],
 });

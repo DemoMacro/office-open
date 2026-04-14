@@ -7,7 +7,7 @@
  * @module
  */
 
-/* v8 ignore start */
+/* V8 ignore start */
 // Simply type definitions. Can ignore testing and coverage
 
 /**
@@ -28,11 +28,10 @@
  * const doc: OutputByType["blob"] = await packer.toBlob(document);
  * ```
  */
-export type OutputByType = {
+export interface OutputByType {
     /** Base64-encoded string representation */
     readonly base64: string;
     /** UTF-8 string representation */
-    // eslint-disable-next-line id-denylist
     readonly string: string;
     /** Text string representation */
     readonly text: string;
@@ -48,7 +47,7 @@ export type OutputByType = {
     readonly blob: Blob;
     /** Node.js Buffer representation */
     readonly nodebuffer: Buffer;
-};
+}
 
 /**
  * Valid output type identifiers.
@@ -72,29 +71,48 @@ export type OutputType = keyof OutputByType;
  */
 export const convertOutput = <T extends OutputType>(data: Uint8Array, type: T): OutputByType[T] => {
     switch (type) {
-        case "nodebuffer":
+        case "nodebuffer": {
             return Buffer.from(data) as OutputByType[T];
-        case "blob":
-            return new Blob([data], {
-                type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            }) as OutputByType[T];
-        case "arraybuffer":
-            return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as OutputByType[T];
-        case "uint8array":
+        }
+        case "blob": {
+            return new Blob(
+                [
+                    (data.buffer as ArrayBuffer).slice(
+                        data.byteOffset,
+                        data.byteOffset + data.byteLength,
+                    ),
+                ],
+                {
+                    type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                },
+            ) as OutputByType[T];
+        }
+        case "arraybuffer": {
+            return data.buffer.slice(
+                data.byteOffset,
+                data.byteOffset + data.byteLength,
+            ) as OutputByType[T];
+        }
+        case "uint8array": {
             return data as OutputByType[T];
-        case "base64":
+        }
+        case "base64": {
             return Buffer.from(data).toString("base64") as OutputByType[T];
+        }
         case "string":
-        case "text":
+        case "text": {
             return Buffer.from(data).toString("binary") as OutputByType[T];
-        case "binarystring":
+        }
+        case "binarystring": {
             return Buffer.from(data).toString("binary") as OutputByType[T];
-        case "array":
-            return Array.from(data) as OutputByType[T];
-        /* v8 ignore next */
-        default:
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        }
+        case "array": {
+            return [...data] as unknown as OutputByType[T];
+        }
+        /* V8 ignore next */
+        default: {
             return data as any;
+        }
     }
 };
-/* v8 ignore stop */
+/* V8 ignore stop */

@@ -8,14 +8,15 @@
 import { FileChild } from "@file/file-child";
 
 import type { AlignmentType } from "../paragraph";
-import { type ITableGridChangeOptions, TableGrid } from "./grid";
+import { TableGrid } from "./grid";
+import type { ITableGridChangeOptions } from "./grid";
 import { TableCell, VerticalMergeType } from "./table-cell";
 import type { ITableCellSpacingProperties } from "./table-cell-spacing";
-import {
-    type ITableBordersOptions,
-    type ITableFloatOptions,
-    type ITablePropertiesChangeOptions,
-    TableProperties,
+import { TableProperties } from "./table-properties";
+import type {
+    ITableBordersOptions,
+    ITableFloatOptions,
+    ITablePropertiesChangeOptions,
 } from "./table-properties";
 import type { ITableCellMarginOptions } from "./table-properties/table-cell-margin";
 import type { TableLayoutType } from "./table-properties/table-layout";
@@ -37,7 +38,7 @@ import type { ITableWidthProperties } from "./table-width";
  *
  * @see {@link Table}
  */
-export type ITableOptions = {
+export interface ITableOptions {
     readonly rows: readonly TableRow[];
     readonly width?: ITableWidthProperties;
     readonly columnWidths?: readonly number[];
@@ -53,7 +54,7 @@ export type ITableOptions = {
     readonly tableLook?: ITableLookOptions;
     readonly cellSpacing?: ITableCellSpacingProperties;
     readonly revision?: ITablePropertiesChangeOptions;
-};
+}
 
 /**
  * Represents a table in a WordprocessingML document.
@@ -95,7 +96,6 @@ export class Table extends FileChild {
     public constructor({
         rows,
         width,
-        // eslint-disable-next-line functional/immutable-data
         columnWidths = Array<number>(Math.max(...rows.map((row) => row.CellCount))).fill(100),
         columnWidthsRevision,
         margins,
@@ -114,18 +114,18 @@ export class Table extends FileChild {
 
         this.root.push(
             new TableProperties({
-                borders: borders ?? {},
-                width: width ?? { size: 100 },
-                indent,
-                float,
-                layout,
-                style,
                 alignment,
+                borders: borders ?? {},
                 cellMargin: margins,
-                visuallyRightToLeft,
-                tableLook,
                 cellSpacing,
+                float,
+                indent,
+                layout,
                 revision,
+                style,
+                tableLook,
+                visuallyRightToLeft,
+                width: width ?? { size: 100 },
             }),
         );
 
@@ -137,7 +137,7 @@ export class Table extends FileChild {
 
         rows.forEach((row, rowIndex) => {
             if (rowIndex === rows.length - 1) {
-                // don't process the end row
+                // Don't process the end row
                 return;
             }
             let columnIndex = 0;
@@ -146,11 +146,11 @@ export class Table extends FileChild {
                 // Row Span of 1 will crash word as it will add RESTART and not a corresponding CONTINUE
                 if (cell.options.rowSpan && cell.options.rowSpan > 1) {
                     const continueCell = new TableCell({
-                        // the inserted CONTINUE cell has rowSpan, and will be handled when process the next row
-                        rowSpan: cell.options.rowSpan - 1,
-                        columnSpan: cell.options.columnSpan,
+                        // The inserted CONTINUE cell has rowSpan, and will be handled when process the next row
                         borders: cell.options.borders,
                         children: [],
+                        columnSpan: cell.options.columnSpan,
+                        rowSpan: cell.options.rowSpan - 1,
                         verticalMerge: VerticalMergeType.CONTINUE,
                     });
                     rows[rowIndex + 1].addCellToColumnIndex(continueCell, columnIndex);

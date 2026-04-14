@@ -9,21 +9,21 @@
  */
 import { XmlComponent } from "@file/xml-components";
 
-import { createMathSubScriptProperties } from "./math-sub-script-function-properties";
 import type { MathComponent } from "../../math-component";
 import { createMathBase, createMathSubScriptElement } from "../../n-ary";
+import { createMathSubScriptProperties } from "./math-sub-script-function-properties";
 
 /**
  * Options for creating a MathSubScript.
  *
  * @see {@link MathSubScript}
  */
-export type IMathSubScriptOptions = {
+export interface IMathSubScriptOptions {
     /** The base expression */
     readonly children: readonly MathComponent[];
     /** The subscript expression */
     readonly subScript: readonly MathComponent[];
-};
+}
 
 /**
  * Represents a subscript expression in a math equation.

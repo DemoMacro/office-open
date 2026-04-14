@@ -28,13 +28,16 @@ export class Formatter {
      * @returns A serializable XML object structure
      * @throws Error if the component cannot be formatted correctly
      */
-    public format(input: BaseXmlComponent, context: IContext = { stack: [] } as unknown as IContext): IXmlableObject {
+    public format(
+        input: BaseXmlComponent,
+        context: IContext = { stack: [] } as unknown as IContext,
+    ): IXmlableObject {
         const output = input.prepForXml(context);
 
         if (output) {
             return output;
         } else {
-            throw Error("XMLComponent did not format correctly");
+            throw new Error("XMLComponent did not format correctly");
         }
     }
 }

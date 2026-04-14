@@ -9,21 +9,21 @@
  */
 import { XmlComponent } from "@file/xml-components";
 
-import { createMathSuperScriptProperties } from "./math-super-script-function-properties";
 import type { MathComponent } from "../../math-component";
 import { createMathBase, createMathSuperScriptElement } from "../../n-ary";
+import { createMathSuperScriptProperties } from "./math-super-script-function-properties";
 
 /**
  * Options for creating a MathSuperScript.
  *
  * @see {@link MathSuperScript}
  */
-export type IMathSuperScriptOptions = {
+export interface IMathSuperScriptOptions {
     /** The base expression */
     readonly children: readonly MathComponent[];
     /** The superscript (exponent) expression */
     readonly superScript: readonly MathComponent[];
-};
+}
 
 /**
  * Represents a superscript expression in a math equation.

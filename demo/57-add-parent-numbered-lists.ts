@@ -1,7 +1,16 @@
 // Numbered lists - Add parent number in sub number
 
 import * as fs from "fs";
-import { AlignmentType, convertInchesToTwip, Document, HeadingLevel, LevelFormat, Packer, Paragraph } from "docx";
+
+import {
+    AlignmentType,
+    Document,
+    HeadingLevel,
+    LevelFormat,
+    Packer,
+    Paragraph,
+    convertInchesToTwip,
+} from "docx";
 
 const doc = new Document({
     numbering: {
@@ -9,31 +18,34 @@ const doc = new Document({
             {
                 levels: [
                     {
-                        level: 0,
-                        format: LevelFormat.DECIMAL,
-                        text: "%1",
                         alignment: AlignmentType.START,
+                        format: LevelFormat.DECIMAL,
+                        level: 0,
                         style: {
                             paragraph: {
-                                indent: { left: convertInchesToTwip(0.5), hanging: 260 },
+                                indent: { hanging: 260, left: convertInchesToTwip(0.5) },
                             },
                         },
+                        text: "%1",
                     },
                     {
-                        level: 1,
-                        format: LevelFormat.DECIMAL,
-                        text: "%1.%2",
                         alignment: AlignmentType.START,
+                        format: LevelFormat.DECIMAL,
+                        level: 1,
                         style: {
                             paragraph: {
-                                indent: { left: 1.25 * convertInchesToTwip(0.5), hanging: 1.25 * 260 },
+                                indent: {
+                                    hanging: 1.25 * 260,
+                                    left: 1.25 * convertInchesToTwip(0.5),
+                                },
                             },
                             run: {
                                 bold: true,
-                                size: 18,
                                 font: "Times New Roman",
+                                size: 18,
                             },
                         },
+                        text: "%1.%2",
                     },
                 ],
                 reference: "my-number-numbering-reference",
@@ -44,40 +56,40 @@ const doc = new Document({
         {
             children: [
                 new Paragraph({
-                    text: "How to make cake",
                     heading: HeadingLevel.HEADING_1,
+                    text: "How to make cake",
                 }),
                 new Paragraph({
+                    numbering: {
+                        level: 0,
+                        reference: "my-number-numbering-reference",
+                    },
                     text: "Step 1 - Add sugar",
-                    numbering: {
-                        reference: "my-number-numbering-reference",
-                        level: 0,
-                    },
                 }),
                 new Paragraph({
+                    numbering: {
+                        level: 0,
+                        reference: "my-number-numbering-reference",
+                    },
                     text: "Step 2 - Add wheat",
-                    numbering: {
-                        reference: "my-number-numbering-reference",
-                        level: 0,
-                    },
                 }),
                 new Paragraph({
-                    text: "Step 2a - Stir the wheat in a circle",
                     numbering: {
-                        reference: "my-number-numbering-reference",
                         level: 1,
-                    },
-                }),
-                new Paragraph({
-                    text: "Step 3 - Put in oven",
-                    numbering: {
                         reference: "my-number-numbering-reference",
-                        level: 0,
                     },
+                    text: "Step 2a - Stir the wheat in a circle",
                 }),
                 new Paragraph({
-                    text: "How to make cake",
+                    numbering: {
+                        level: 0,
+                        reference: "my-number-numbering-reference",
+                    },
+                    text: "Step 3 - Put in oven",
+                }),
+                new Paragraph({
                     heading: HeadingLevel.HEADING_1,
+                    text: "How to make cake",
                 }),
             ],
         },

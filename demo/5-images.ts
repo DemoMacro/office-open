@@ -1,8 +1,8 @@
 // Example of how to add images to the document - You can use Buffers, UInt8Arrays or Base64 strings
 
 import * as fs from "fs";
+
 import {
-    convertMillimetersToTwip,
     Document,
     HorizontalPositionAlign,
     HorizontalPositionRelativeFrom,
@@ -11,6 +11,7 @@ import {
     Paragraph,
     VerticalPositionAlign,
     VerticalPositionRelativeFrom,
+    convertMillimetersToTwip,
 } from "docx";
 
 const doc = new Document({
@@ -21,148 +22,148 @@ const doc = new Document({
                 new Paragraph({
                     children: [
                         new ImageRun({
-                            type: "jpg",
-                            data: fs.readFileSync("./demo/images/image1.jpeg"),
-                            transformation: {
-                                width: 100,
-                                height: 100,
-                            },
                             altText: {
-                                title: "This is an ultimate title",
                                 description: "This is an ultimate image",
                                 name: "My Ultimate Image",
+                                title: "This is an ultimate title",
                             },
+                            data: fs.readFileSync("./demo/images/image1.jpeg"),
+                            transformation: {
+                                height: 100,
+                                width: 100,
+                            },
+                            type: "jpg",
                         }),
                     ],
                 }),
                 new Paragraph({
                     children: [
                         new ImageRun({
-                            type: "png",
                             data: fs.readFileSync("./demo/images/dog.png").toString("base64"),
-                            transformation: {
-                                width: 100,
-                                height: 100,
-                            },
                             outline: {
-                                type: "solidFill",
                                 solidFillType: "rgb",
+                                type: "solidFill",
                                 value: "FF0000",
                             },
+                            transformation: {
+                                height: 100,
+                                width: 100,
+                            },
+                            type: "png",
                         }),
                     ],
                 }),
                 new Paragraph({
                     children: [
                         new ImageRun({
-                            type: "jpg",
                             data: fs.readFileSync("./demo/images/cat.jpg"),
-                            transformation: {
-                                width: 100,
-                                height: 100,
-                                flip: {
-                                    vertical: true,
-                                },
-                            },
                             outline: {
-                                type: "solidFill",
                                 solidFillType: "rgb",
+                                type: "solidFill",
                                 value: "0000FF",
                                 width: convertMillimetersToTwip(600),
                             },
+                            transformation: {
+                                flip: {
+                                    vertical: true,
+                                },
+                                height: 100,
+                                width: 100,
+                            },
+                            type: "jpg",
                         }),
                     ],
                 }),
                 new Paragraph({
                     children: [
                         new ImageRun({
-                            type: "bmp",
                             data: fs.readFileSync("./demo/images/parrots.bmp"),
                             transformation: {
-                                width: 150,
-                                height: 150,
                                 flip: {
                                     horizontal: true,
                                 },
+                                height: 150,
                                 rotation: 225,
+                                width: 150,
                             },
+                            type: "bmp",
                         }),
                     ],
                 }),
                 new Paragraph({
                     children: [
                         new ImageRun({
-                            type: "gif",
                             data: fs.readFileSync("./demo/images/pizza.gif"),
                             transformation: {
-                                width: 200,
-                                height: 200,
                                 flip: {
                                     horizontal: true,
                                     vertical: true,
                                 },
+                                height: 200,
+                                width: 200,
                             },
+                            type: "gif",
                         }),
                     ],
                 }),
                 new Paragraph({
                     children: [
                         new ImageRun({
-                            type: "gif",
                             data: fs.readFileSync("./demo/images/pizza.gif"),
+                            floating: {
+                                horizontalPosition: {
+                                    offset: 1_014_400,
+                                },
+                                verticalPosition: {
+                                    offset: 1_014_400,
+                                },
+                                zIndex: 10,
+                            },
                             transformation: {
-                                width: 200,
                                 height: 200,
                                 rotation: 45,
+                                width: 200,
                             },
-                            floating: {
-                                zIndex: 10,
-                                horizontalPosition: {
-                                    offset: 1014400,
-                                },
-                                verticalPosition: {
-                                    offset: 1014400,
-                                },
-                            },
+                            type: "gif",
                         }),
                     ],
                 }),
                 new Paragraph({
                     children: [
                         new ImageRun({
-                            type: "jpg",
                             data: fs.readFileSync("./demo/images/cat.jpg"),
-                            transformation: {
-                                width: 200,
-                                height: 200,
-                            },
                             floating: {
-                                zIndex: 5,
                                 horizontalPosition: {
-                                    relative: HorizontalPositionRelativeFrom.PAGE,
                                     align: HorizontalPositionAlign.RIGHT,
+                                    relative: HorizontalPositionRelativeFrom.PAGE,
                                 },
                                 verticalPosition: {
-                                    relative: VerticalPositionRelativeFrom.PAGE,
                                     align: VerticalPositionAlign.BOTTOM,
+                                    relative: VerticalPositionRelativeFrom.PAGE,
                                 },
+                                zIndex: 5,
                             },
+                            transformation: {
+                                height: 200,
+                                width: 200,
+                            },
+                            type: "jpg",
                         }),
                     ],
                 }),
                 new Paragraph({
                     children: [
                         new ImageRun({
-                            type: "svg",
                             data: fs.readFileSync("./demo/images/linux-svg.svg"),
-                            transformation: {
-                                width: 200,
-                                height: 200,
-                            },
                             fallback: {
-                                type: "png",
                                 data: fs.readFileSync("./demo/images/linux-png.png"),
+                                type: "png",
                             },
+                            transformation: {
+                                height: 200,
+                                width: 200,
+                            },
+                            type: "svg",
                         }),
                     ],
                 }),

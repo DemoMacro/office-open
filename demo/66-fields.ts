@@ -1,20 +1,20 @@
 // Use fields to include dynamic text
 
 import * as fs from "fs";
+
 import { Bookmark, Document, Packer, Paragraph, SimpleField, TextRun } from "docx";
 
 const doc = new Document({
     creator: "Me",
     sections: [
         {
-            properties: {},
             children: [
                 new Paragraph({
                     children: [
                         new TextRun("This document is called "),
                         new SimpleField("FILENAME", "My Document.docx"),
                         new TextRun(", was created on "),
-                        new SimpleField('CREATEDATE  \\@ "d MMMM yyyy"'),
+                        new SimpleField(String.raw`CREATEDATE  \@ "d MMMM yyyy"`),
                         new TextRun(" by "),
                         new SimpleField("AUTHOR"),
                     ],
@@ -25,8 +25,8 @@ const doc = new Document({
                         new SimpleField("NUMWORDS", "34"),
                         new TextRun(" words and if you'd print it "),
                         new Bookmark({
-                            id: "TimesPrinted",
                             children: [new TextRun("42")],
+                            id: "TimesPrinted",
                         }),
                         new TextRun(" times two-sided, you would need "),
                         new SimpleField("=INT((TimesPrinted+1)/2)"),
@@ -34,6 +34,7 @@ const doc = new Document({
                     ],
                 }),
             ],
+            properties: {},
         },
     ],
 });

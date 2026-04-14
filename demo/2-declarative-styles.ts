@@ -1,118 +1,25 @@
 // Example on how to customize the look at feel using Styles
 
 import * as fs from "fs";
-import { AlignmentType, convertInchesToTwip, Document, HeadingLevel, LevelFormat, Packer, Paragraph, TextRun, UnderlineType } from "docx";
+
+import {
+    AlignmentType,
+    Document,
+    HeadingLevel,
+    LevelFormat,
+    Packer,
+    Paragraph,
+    TextRun,
+    UnderlineType,
+    convertInchesToTwip,
+} from "docx";
 
 const doc = new Document({
     creator: "Clippy",
-    title: "Sample Document",
     description: "A brief example of using docx",
-    styles: {
-        default: {
-            heading1: {
-                run: {
-                    size: 28,
-                    bold: true,
-                    italics: true,
-                    color: "FF0000",
-                },
-                paragraph: {
-                    spacing: {
-                        after: 120,
-                    },
-                },
-            },
-            heading2: {
-                run: {
-                    size: 26,
-                    bold: true,
-                    underline: {
-                        type: UnderlineType.DOUBLE,
-                        color: "FF0000",
-                    },
-                },
-                paragraph: {
-                    spacing: {
-                        before: 240,
-                        after: 120,
-                    },
-                },
-            },
-            listParagraph: {
-                run: {
-                    color: "#FF0000",
-                },
-            },
-            document: {
-                run: {
-                    size: "11pt",
-                    font: "Calibri",
-                },
-                paragraph: {
-                    alignment: AlignmentType.RIGHT,
-                },
-            },
-        },
-        paragraphStyles: [
-            {
-                id: "aside",
-                name: "Aside",
-                basedOn: "Normal",
-                next: "Normal",
-                run: {
-                    color: "999999",
-                    italics: true,
-                },
-                paragraph: {
-                    indent: {
-                        left: convertInchesToTwip(0.5),
-                    },
-                    spacing: {
-                        line: 276,
-                    },
-                },
-            },
-            {
-                id: "wellSpaced",
-                name: "Well Spaced",
-                basedOn: "Normal",
-                quickFormat: true,
-                paragraph: {
-                    spacing: { line: 276, before: 20 * 72 * 0.1, after: 20 * 72 * 0.05 },
-                },
-            },
-            {
-                id: "strikeUnderline",
-                name: "Strike Underline",
-                basedOn: "Normal",
-                quickFormat: true,
-                run: {
-                    strike: true,
-                    underline: {
-                        type: UnderlineType.SINGLE,
-                    },
-                },
-            },
-        ],
-        characterStyles: [
-            {
-                id: "strikeUnderlineCharacter",
-                name: "Strike Underline",
-                basedOn: "Normal",
-                quickFormat: true,
-                run: {
-                    strike: true,
-                    underline: {
-                        type: UnderlineType.SINGLE,
-                    },
-                },
-            },
-        ],
-    },
     numbering: {
         config: [
             {
-                reference: "my-crazy-numbering",
                 levels: [
                     {
                         level: 0,
@@ -121,6 +28,7 @@ const doc = new Document({
                         alignment: AlignmentType.LEFT,
                     },
                 ],
+                reference: "my-crazy-numbering",
             },
         ],
     },
@@ -128,59 +36,59 @@ const doc = new Document({
         {
             children: [
                 new Paragraph({
-                    text: "Test heading1, bold and italicized",
                     heading: HeadingLevel.HEADING_1,
+                    text: "Test heading1, bold and italicized",
                 }),
                 new Paragraph("Some simple content"),
                 new Paragraph({
-                    text: "Test heading2 with double red underline",
                     heading: HeadingLevel.HEADING_2,
+                    text: "Test heading2 with double red underline",
                 }),
                 new Paragraph({
-                    text: "Option1",
                     numbering: {
-                        reference: "my-crazy-numbering",
                         level: 0,
+                        reference: "my-crazy-numbering",
                     },
                     style: "aside",
+                    text: "Option1",
                 }),
                 new Paragraph({
+                    numbering: {
+                        level: 0,
+                        reference: "my-crazy-numbering",
+                    },
                     text: "Option5 -- override 2 to 5",
-                    numbering: {
-                        reference: "my-crazy-numbering",
-                        level: 0,
-                    },
                 }),
                 new Paragraph({
-                    text: "Option3",
                     numbering: {
-                        reference: "my-crazy-numbering",
                         level: 0,
+                        reference: "my-crazy-numbering",
                     },
+                    text: "Option3",
                 }),
                 new Paragraph({
                     children: [
                         new TextRun({
-                            text: "Some monospaced content",
                             font: {
                                 name: "Monospace",
                             },
+                            text: "Some monospaced content",
                         }),
                     ],
                 }),
                 new Paragraph({
-                    text: "An aside, in light gray italics and indented",
                     style: "aside",
+                    text: "An aside, in light gray italics and indented",
                 }),
                 new Paragraph({
-                    text: "This is normal, but well-spaced text",
                     style: "wellSpaced",
+                    text: "This is normal, but well-spaced text",
                 }),
                 new Paragraph({
                     children: [
                         new TextRun({
-                            text: "This is a bold run,",
                             bold: true,
+                            text: "This is a bold run,",
                         }),
                         new TextRun(" switching to normal "),
                         new TextRun({
@@ -188,8 +96,8 @@ const doc = new Document({
                             underline: {},
                         }),
                         new TextRun({
-                            text: "and then emphasis-mark ",
                             emphasisMark: {},
+                            text: "and then emphasis-mark ",
                         }),
                         new TextRun({
                             text: "and back to normal.",
@@ -199,13 +107,12 @@ const doc = new Document({
                             vanish: true,
                         }),
                         new TextRun({
-                            text: "This text will be VERY invisible! Word processors cannot override this!",
                             specVanish: true,
+                            text: "This text will be VERY invisible! Word processors cannot override this!",
                         }),
                     ],
                 }),
                 new Paragraph({
-                    style: "Strong",
                     children: [
                         new TextRun({
                             text: "Strong Style",
@@ -214,9 +121,9 @@ const doc = new Document({
                             text: " - Very strong.",
                         }),
                     ],
+                    style: "Strong",
                 }),
                 new Paragraph({
-                    style: "strikeUnderline",
                     children: [
                         new TextRun({
                             text: "Underline and Strike",
@@ -231,6 +138,7 @@ const doc = new Document({
                             text: "Strike and Underline",
                         }),
                     ],
+                    style: "strikeUnderline",
                 }),
                 new Paragraph({
                     children: [
@@ -251,16 +159,119 @@ const doc = new Document({
                     ],
                 }),
                 new Paragraph({
-                    scale: 200,
                     children: [
                         new TextRun({
                             text: "Scaled paragraph",
                         }),
                     ],
+                    scale: 200,
                 }),
             ],
         },
     ],
+    styles: {
+        characterStyles: [
+            {
+                basedOn: "Normal",
+                id: "strikeUnderlineCharacter",
+                name: "Strike Underline",
+                quickFormat: true,
+                run: {
+                    strike: true,
+                    underline: {
+                        type: UnderlineType.SINGLE,
+                    },
+                },
+            },
+        ],
+        default: {
+            document: {
+                paragraph: {
+                    alignment: AlignmentType.RIGHT,
+                },
+                run: {
+                    font: "Calibri",
+                    size: "11pt",
+                },
+            },
+            heading1: {
+                paragraph: {
+                    spacing: {
+                        after: 120,
+                    },
+                },
+                run: {
+                    bold: true,
+                    color: "FF0000",
+                    italics: true,
+                    size: 28,
+                },
+            },
+            heading2: {
+                paragraph: {
+                    spacing: {
+                        after: 120,
+                        before: 240,
+                    },
+                },
+                run: {
+                    bold: true,
+                    size: 26,
+                    underline: {
+                        color: "FF0000",
+                        type: UnderlineType.DOUBLE,
+                    },
+                },
+            },
+            listParagraph: {
+                run: {
+                    color: "#FF0000",
+                },
+            },
+        },
+        paragraphStyles: [
+            {
+                basedOn: "Normal",
+                id: "aside",
+                name: "Aside",
+                next: "Normal",
+                paragraph: {
+                    indent: {
+                        left: convertInchesToTwip(0.5),
+                    },
+                    spacing: {
+                        line: 276,
+                    },
+                },
+                run: {
+                    color: "999999",
+                    italics: true,
+                },
+            },
+            {
+                basedOn: "Normal",
+                id: "wellSpaced",
+                name: "Well Spaced",
+                paragraph: {
+                    spacing: { after: 20 * 72 * 0.05, before: 20 * 72 * 0.1, line: 276 },
+                },
+                quickFormat: true,
+            },
+            {
+                basedOn: "Normal",
+                id: "strikeUnderline",
+                name: "Strike Underline",
+                quickFormat: true,
+                run: {
+                    strike: true,
+                    underline: {
+                        type: UnderlineType.SINGLE,
+                    },
+                },
+            },
+        ],
+    },
+    title: "Sample Document",
 });
 
 Packer.toBuffer(doc).then((buffer) => {

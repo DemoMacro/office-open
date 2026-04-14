@@ -29,12 +29,13 @@
  * @module
  */
 import { BuilderElement, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
-import { type PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
+import { twipsMeasureValue } from "@util/values";
+import type { PositiveUniversalMeasure } from "@util/values";
 
-export type ITableGridChangeOptions = {
+export interface ITableGridChangeOptions {
     readonly id: number;
     readonly columnWidths: readonly number[] | readonly PositiveUniversalMeasure[];
-};
+}
 
 /**
  * Creates a single column in the table grid.
@@ -43,13 +44,13 @@ export type ITableGridChangeOptions = {
  */
 export const createGridCol = (width?: number | PositiveUniversalMeasure): XmlComponent =>
     new BuilderElement<{ readonly width?: number | PositiveUniversalMeasure }>({
-        name: "w:gridCol",
         attributes:
             width !== undefined
                 ? {
                       width: { key: "w:w", value: twipsMeasureValue(width) },
                   }
                 : undefined,
+        name: "w:gridCol",
     });
 
 /**
@@ -60,7 +61,10 @@ export const createGridCol = (width?: number | PositiveUniversalMeasure): XmlCom
  * Reference: http://officeopenxml.com/WPtableGrid.php
  */
 export class TableGrid extends XmlComponent {
-    public constructor(widths: readonly number[] | readonly PositiveUniversalMeasure[], revision?: ITableGridChangeOptions) {
+    public constructor(
+        widths: readonly number[] | readonly PositiveUniversalMeasure[],
+        revision?: ITableGridChangeOptions,
+    ) {
         super("w:tblGrid");
         for (const width of widths) {
             this.root.push(createGridCol(width));

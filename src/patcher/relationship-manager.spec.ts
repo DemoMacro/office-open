@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { TargetModeType } from "@file/relationships/relationship/relationship";
+import { describe, expect, it } from "vite-plus/test";
 
 import { appendRelationship, getNextRelationshipIndex } from "./relationship-manager";
 
@@ -10,12 +9,12 @@ describe("relationship-manager", () => {
             const output = getNextRelationshipIndex({
                 elements: [
                     {
-                        type: "element",
-                        name: "Relationships",
                         elements: [
-                            { type: "element", attributes: { Id: "rId1" }, name: "Relationship" },
-                            { type: "element", attributes: { Id: "rId1" }, name: "Relationship" },
+                            { attributes: { Id: "rId1" }, name: "Relationship", type: "element" },
+                            { attributes: { Id: "rId1" }, name: "Relationship", type: "element" },
                         ],
+                        name: "Relationships",
+                        type: "element",
                     },
                 ],
             });
@@ -26,9 +25,9 @@ describe("relationship-manager", () => {
             const output = getNextRelationshipIndex({
                 elements: [
                     {
-                        type: "element",
+                        elements: [{ name: "Relationship", type: "element" }],
                         name: "Relationships",
-                        elements: [{ type: "element", name: "Relationship" }],
+                        type: "element",
                     },
                 ],
             });
@@ -39,9 +38,9 @@ describe("relationship-manager", () => {
             const output = getNextRelationshipIndex({
                 elements: [
                     {
-                        type: "element",
-                        name: "Relationships",
                         elements: [],
+                        name: "Relationships",
+                        type: "element",
                     },
                 ],
             });
@@ -55,12 +54,20 @@ describe("relationship-manager", () => {
                 {
                     elements: [
                         {
-                            type: "element",
-                            name: "Relationships",
                             elements: [
-                                { type: "element", attributes: { Id: "rId1" }, name: "Relationship" },
-                                { type: "element", attributes: { Id: "rId1" }, name: "Relationship" },
+                                {
+                                    attributes: { Id: "rId1" },
+                                    name: "Relationship",
+                                    type: "element",
+                                },
+                                {
+                                    attributes: { Id: "rId1" },
+                                    name: "Relationship",
+                                    type: "element",
+                                },
                             ],
+                            name: "Relationships",
+                            type: "element",
                         },
                     ],
                 },
@@ -70,14 +77,14 @@ describe("relationship-manager", () => {
                 TargetModeType.EXTERNAL,
             );
             expect(output).to.deep.equal([
-                { type: "element", attributes: { Id: "rId1" }, name: "Relationship" },
-                { type: "element", attributes: { Id: "rId1" }, name: "Relationship" },
+                { attributes: { Id: "rId1" }, name: "Relationship", type: "element" },
+                { attributes: { Id: "rId1" }, name: "Relationship", type: "element" },
                 {
                     attributes: {
                         Id: "rId1",
-                        Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-                        TargetMode: TargetModeType.EXTERNAL,
                         Target: "test",
+                        TargetMode: TargetModeType.EXTERNAL,
+                        Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
                     },
                     name: "Relationship",
                     type: "element",

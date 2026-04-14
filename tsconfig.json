@@ -5,6 +5,7 @@
         "module": "ESNext",
         "lib": ["ESNext", "DOM", "DOM.Iterable"],
         "skipLibCheck": true,
+        "types": ["node"],
 
         /* Bundler mode */
         "moduleResolution": "bundler",
@@ -24,16 +25,15 @@
         "sourceMap": true,
         "removeComments": true,
         "preserveConstEnums": true,
-        "outDir": "./build",
         "rootDir": "./src",
         "declaration": true,
         "esModuleInterop": true,
-        "baseUrl": "./src",
         "paths": {
-            "@util/*": ["./util/*"],
-            "@export/*": ["./export/*"],
-            "@file/*": ["./file/*"],
-            "@shared": ["./shared/index.ts"]
+            "@util/*": ["./src/util/*"],
+            "@export/*": ["./src/export/*"],
+            "@file/*": ["./src/file/*"],
+            "@shared": ["./src/shared/index.ts"],
+            "tests/*": ["./src/tests/*"]
         }
     },
     "include": ["src"]

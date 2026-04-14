@@ -9,7 +9,8 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Field character types that delimit field regions.
@@ -22,10 +23,10 @@ const FieldCharacterType = {
     SEPARATE: "separate",
 } as const;
 
-type IFieldCharAttributes = {
+interface IFieldCharAttributes {
     readonly type: (typeof FieldCharacterType)[keyof typeof FieldCharacterType];
     readonly dirty?: boolean;
-};
+}
 
 /**
  * Creates a field character element.
@@ -45,13 +46,16 @@ type IFieldCharAttributes = {
  * ```
  * @internal
  */
-const createFieldChar = (type: (typeof FieldCharacterType)[keyof typeof FieldCharacterType], dirty?: boolean): XmlComponent =>
+const createFieldChar = (
+    type: (typeof FieldCharacterType)[keyof typeof FieldCharacterType],
+    dirty?: boolean,
+): XmlComponent =>
     new BuilderElement<IFieldCharAttributes>({
-        name: "w:fldChar",
         attributes: {
-            type: { key: "w:fldCharType", value: type },
             dirty: { key: "w:dirty", value: dirty },
+            type: { key: "w:fldCharType", value: type },
         },
+        name: "w:fldChar",
     });
 
 /**
@@ -60,7 +64,8 @@ const createFieldChar = (type: (typeof FieldCharacterType)[keyof typeof FieldCha
  * The Begin element marks the start of a field. A field consists of a begin character,
  * field instructions, an optional separate character, field result, and an end character.
  */
-export const createBegin = (dirty?: boolean): XmlComponent => createFieldChar(FieldCharacterType.BEGIN, dirty);
+export const createBegin = (dirty?: boolean): XmlComponent =>
+    createFieldChar(FieldCharacterType.BEGIN, dirty);
 
 /**
  * Creates the separator between field code and field result in a complex field.
@@ -68,7 +73,8 @@ export const createBegin = (dirty?: boolean): XmlComponent => createFieldChar(Fi
  * The Separate element divides the field code (instructions) from the field result
  * (the computed value).
  */
-export const createSeparate = (dirty?: boolean): XmlComponent => createFieldChar(FieldCharacterType.SEPARATE, dirty);
+export const createSeparate = (dirty?: boolean): XmlComponent =>
+    createFieldChar(FieldCharacterType.SEPARATE, dirty);
 
 /**
  * Creates the end of a complex field.
@@ -76,4 +82,5 @@ export const createSeparate = (dirty?: boolean): XmlComponent => createFieldChar
  * The End element marks the end of a field. Every field that begins with a Begin
  * element must be terminated with an End element.
  */
-export const createEnd = (dirty?: boolean): XmlComponent => createFieldChar(FieldCharacterType.END, dirty);
+export const createEnd = (dirty?: boolean): XmlComponent =>
+    createFieldChar(FieldCharacterType.END, dirty);

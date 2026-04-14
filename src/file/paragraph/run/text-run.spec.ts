@@ -1,7 +1,6 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
 import { FootnoteReferenceRun } from "@file/footnotes/footnote/run/reference-run";
+import { describe, expect, it } from "vite-plus/test";
 
 import { TextRun } from "./text-run";
 
@@ -38,7 +37,11 @@ describe("TextRun", () => {
                     { "w:t": [{ _attr: { "xml:space": "preserve" } }, "test"] },
                     {
                         "w:r": [
-                            { "w:rPr": [{ "w:rStyle": { _attr: { "w:val": "FootnoteReference" } } }] },
+                            {
+                                "w:rPr": [
+                                    { "w:rStyle": { _attr: { "w:val": "FootnoteReference" } } },
+                                ],
+                            },
                             { "w:footnoteReference": { _attr: { "w:id": 1 } } },
                         ],
                     },

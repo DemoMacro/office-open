@@ -8,7 +8,8 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Line spacing rule types.
@@ -40,7 +41,7 @@ export const LineRuleType = {
  * @property beforeAutoSpacing - Use automatic spacing before the paragraph
  * @property afterAutoSpacing - Use automatic spacing after the paragraph
  */
-export type ISpacingProperties = {
+export interface ISpacingProperties {
     /** Spacing after the paragraph in twips */
     readonly after?: number;
     /** Spacing before the paragraph in twips */
@@ -53,7 +54,7 @@ export type ISpacingProperties = {
     readonly beforeAutoSpacing?: boolean;
     /** Use automatic spacing after the paragraph */
     readonly afterAutoSpacing?: boolean;
-};
+}
 
 /**
  * Creates paragraph spacing element for a WordprocessingML document.
@@ -89,15 +90,22 @@ export type ISpacingProperties = {
  * });
  * ```
  */
-export const createSpacing = ({ after, before, line, lineRule, beforeAutoSpacing, afterAutoSpacing }: ISpacingProperties): XmlComponent =>
+export const createSpacing = ({
+    after,
+    before,
+    line,
+    lineRule,
+    beforeAutoSpacing,
+    afterAutoSpacing,
+}: ISpacingProperties): XmlComponent =>
     new BuilderElement<ISpacingProperties>({
-        name: "w:spacing",
         attributes: {
             after: { key: "w:after", value: after },
+            afterAutoSpacing: { key: "w:afterAutospacing", value: afterAutoSpacing },
             before: { key: "w:before", value: before },
+            beforeAutoSpacing: { key: "w:beforeAutospacing", value: beforeAutoSpacing },
             line: { key: "w:line", value: line },
             lineRule: { key: "w:lineRule", value: lineRule },
-            beforeAutoSpacing: { key: "w:beforeAutospacing", value: beforeAutoSpacing },
-            afterAutoSpacing: { key: "w:afterAutospacing", value: afterAutoSpacing },
         },
+        name: "w:spacing",
     });

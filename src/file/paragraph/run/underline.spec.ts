@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { UnderlineType, createUnderline } from "./underline";
 
@@ -29,7 +28,7 @@ describe("createUnderline", () => {
         const underline = createUnderline(UnderlineType.DOUBLE, "FF00CC");
         const tree = new Formatter().format(underline);
         expect(tree).to.deep.equal({
-            "w:u": { _attr: { "w:val": "double", "w:color": "FF00CC" } },
+            "w:u": { _attr: { "w:color": "FF00CC", "w:val": "double" } },
         });
     });
 });

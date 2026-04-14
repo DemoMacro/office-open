@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { replaceTokenInParagraphElement } from "./paragraph-token-replacer";
 
@@ -6,11 +6,10 @@ describe("paragraph-token-replacer", () => {
     describe("replaceTokenInParagraphElement", () => {
         it("should replace token in paragraph", () => {
             const output = replaceTokenInParagraphElement({
+                originalText: "hello",
                 paragraphElement: {
-                    name: "w:p",
                     elements: [
                         {
-                            name: "w:r",
                             elements: [
                                 {
                                     name: "w:t",
@@ -22,8 +21,10 @@ describe("paragraph-token-replacer", () => {
                                     ],
                                 },
                             ],
+                            name: "w:r",
                         },
                     ],
+                    name: "w:p",
                 },
                 renderedParagraph: {
                     index: 0,
@@ -46,7 +47,6 @@ describe("paragraph-token-replacer", () => {
                     ],
                     text: "hello",
                 },
-                originalText: "hello",
                 replacementText: "world",
             });
 
@@ -73,24 +73,28 @@ describe("paragraph-token-replacer", () => {
 
         it("should handle case where it cannot find any text to replace", () => {
             const output = replaceTokenInParagraphElement({
+                originalText: "{{name}}",
                 paragraphElement: {
-                    name: "w:p",
                     attributes: {
                         "w14:paraId": "2499FE9F",
                         "w14:textId": "27B4FBC2",
+                        "w:rsidP": "007B52ED",
                         "w:rsidR": "00B51233",
                         "w:rsidRDefault": "007B52ED",
-                        "w:rsidP": "007B52ED",
                     },
                     elements: [
                         {
-                            type: "element",
+                            elements: [
+                                {
+                                    type: "element",
+                                    name: "w:pStyle",
+                                    attributes: { "w:val": "Title" },
+                                },
+                            ],
                             name: "w:pPr",
-                            elements: [{ type: "element", name: "w:pStyle", attributes: { "w:val": "Title" } }],
+                            type: "element",
                         },
                         {
-                            type: "element",
-                            name: "w:r",
                             elements: [
                                 {
                                     type: "element",
@@ -99,10 +103,10 @@ describe("paragraph-token-replacer", () => {
                                     elements: [{ type: "text", text: "Hello " }],
                                 },
                             ],
+                            name: "w:r",
+                            type: "element",
                         },
                         {
-                            type: "element",
-                            name: "w:r",
                             attributes: { "w:rsidR": "007F116B" },
                             elements: [
                                 {
@@ -112,25 +116,51 @@ describe("paragraph-token-replacer", () => {
                                     elements: [{ type: "text", text: "{{name}} " }],
                                 },
                             ],
+                            name: "w:r",
+                            type: "element",
                         },
                         {
-                            type: "element",
+                            elements: [
+                                {
+                                    type: "element",
+                                    name: "w:t",
+                                    elements: [{ type: "text", text: "World" }],
+                                },
+                            ],
                             name: "w:r",
-                            elements: [{ type: "element", name: "w:t", elements: [{ type: "text", text: "World" }] }],
+                            type: "element",
                         },
                     ],
+                    name: "w:p",
                 },
                 renderedParagraph: {
-                    text: "Hello {{name}} World",
-                    runs: [
-                        { text: "Hello ", parts: [{ text: "Hello ", index: 0, start: 0, end: 5 }], index: 1, start: 0, end: 5 },
-                        { text: "{{name}} ", parts: [{ text: "{{name}} ", index: 0, start: 6, end: 14 }], index: 2, start: 6, end: 14 },
-                        { text: "World", parts: [{ text: "World", index: 0, start: 15, end: 19 }], index: 3, start: 15, end: 19 },
-                    ],
                     index: 0,
                     pathToParagraph: [0, 1, 0, 0],
+                    runs: [
+                        {
+                            end: 5,
+                            index: 1,
+                            parts: [{ text: "Hello ", index: 0, start: 0, end: 5 }],
+                            start: 0,
+                            text: "Hello ",
+                        },
+                        {
+                            end: 14,
+                            index: 2,
+                            parts: [{ text: "{{name}} ", index: 0, start: 6, end: 14 }],
+                            start: 6,
+                            text: "{{name}} ",
+                        },
+                        {
+                            end: 19,
+                            index: 3,
+                            parts: [{ text: "World", index: 0, start: 15, end: 19 }],
+                            start: 15,
+                            text: "World",
+                        },
+                    ],
+                    text: "Hello {{name}} World",
                 },
-                originalText: "{{name}}",
                 replacementText: "John",
             });
 
@@ -223,28 +253,29 @@ describe("paragraph-token-replacer", () => {
 
         it("should skip part when partToReplace is empty", () => {
             const output = replaceTokenInParagraphElement({
+                originalText: "hello",
                 paragraphElement: {
-                    name: "w:p",
                     elements: [
                         {
-                            name: "w:r",
                             elements: [
                                 {
                                     name: "w:t",
                                     elements: [{ type: "text", text: "" }],
                                 },
                             ],
+                            name: "w:r",
                         },
                         {
-                            name: "w:r",
                             elements: [
                                 {
                                     name: "w:t",
                                     elements: [{ type: "text", text: "hello" }],
                                 },
                             ],
+                            name: "w:r",
                         },
                     ],
+                    name: "w:p",
                 },
                 renderedParagraph: {
                     index: 0,
@@ -281,7 +312,6 @@ describe("paragraph-token-replacer", () => {
                     ],
                     text: "hello",
                 },
-                originalText: "hello",
                 replacementText: "world",
             });
 
@@ -311,29 +341,29 @@ describe("paragraph-token-replacer", () => {
         });
 
         // Try to fill rest of test coverage
-        // it("should replace token in paragraph", () => {
-        //     const output = replaceTokenInParagraphElement({
-        //         paragraphElement: {
-        //             name: "w:p",
-        //             elements: [
+        // It("should replace token in paragraph", () => {
+        //     Const output = replaceTokenInParagraphElement({
+        //         ParagraphElement: {
+        //             Name: "w:p",
+        //             Elements: [
         //                 {
-        //                     name: "w:r",
-        //                     elements: [
+        //                     Name: "w:r",
+        //                     Elements: [
         //                         {
-        //                             name: "w:t",
-        //                             elements: [
+        //                             Name: "w:t",
+        //                             Elements: [
         //                                 {
-        //                                     type: "text",
-        //                                     text: "test ",
+        //                                     Type: "text",
+        //                                     Text: "test ",
         //                                 },
         //                             ],
         //                         },
         //                         {
-        //                             name: "w:t",
-        //                             elements: [
+        //                             Name: "w:t",
+        //                             Elements: [
         //                                 {
-        //                                     type: "text",
-        //                                     text: " hello ",
+        //                                     Type: "text",
+        //                                     Text: " hello ",
         //                                 },
         //                             ],
         //                         },
@@ -341,63 +371,63 @@ describe("paragraph-token-replacer", () => {
         //                 },
         //             ],
         //         },
-        //         renderedParagraph: {
-        //             index: 0,
-        //             path: [0],
-        //             runs: [
+        //         RenderedParagraph: {
+        //             Index: 0,
+        //             Path: [0],
+        //             Runs: [
         //                 {
-        //                     end: 4,
-        //                     index: 0,
-        //                     parts: [
+        //                     End: 4,
+        //                     Index: 0,
+        //                     Parts: [
         //                         {
-        //                             end: 4,
-        //                             index: 0,
-        //                             start: 0,
-        //                             text: "test ",
+        //                             End: 4,
+        //                             Index: 0,
+        //                             Start: 0,
+        //                             Text: "test ",
         //                         },
         //                     ],
-        //                     start: 0,
-        //                     text: "test ",
+        //                     Start: 0,
+        //                     Text: "test ",
         //                 },
         //                 {
-        //                     end: 10,
-        //                     index: 0,
-        //                     parts: [
+        //                     End: 10,
+        //                     Index: 0,
+        //                     Parts: [
         //                         {
-        //                             end: 10,
-        //                             index: 0,
-        //                             start: 5,
-        //                             text: "hello ",
+        //                             End: 10,
+        //                             Index: 0,
+        //                             Start: 5,
+        //                             Text: "hello ",
         //                         },
         //                     ],
-        //                     start: 5,
-        //                     text: "hello ",
+        //                     Start: 5,
+        //                     Text: "hello ",
         //                 },
         //             ],
-        //             text: "test hello ",
+        //             Text: "test hello ",
         //         },
-        //         originalText: "hello",
-        //         replacementText: "world",
+        //         OriginalText: "hello",
+        //         ReplacementText: "world",
         //     });
 
-        //     expect(output).to.deep.equal({
-        //         elements: [
+        //     Expect(output).to.deep.equal({
+        //         Elements: [
         //             {
-        //                 elements: [
+        //                 Elements: [
         //                     {
-        //                         elements: [
+        //                         Elements: [
         //                             {
-        //                                 text: "test world ",
-        //                                 type: "text",
+        //                                 Text: "test world ",
+        //                                 Type: "text",
         //                             },
         //                         ],
-        //                         name: "w:t",
+        //                         Name: "w:t",
         //                     },
         //                 ],
-        //                 name: "w:r",
+        //                 Name: "w:r",
         //             },
         //         ],
-        //         name: "w:p",
+        //         Name: "w:p",
         //     });
         // });
     });

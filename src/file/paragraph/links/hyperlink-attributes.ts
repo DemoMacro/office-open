@@ -16,14 +16,14 @@ import { XmlAttributeComponent } from "@file/xml-components";
  * @property anchor - Bookmark name for internal hyperlinks
  * @property history - Whether to add this link to the document's history
  */
-export type IHyperlinkAttributesProperties = {
+export interface IHyperlinkAttributesProperties {
     /** Relationship ID for external hyperlinks */
     readonly id?: string;
     /** Bookmark name for internal hyperlinks */
     readonly anchor?: string;
     /** Whether to add this link to the document's history (1 for true, 0 for false) */
     readonly history: number;
-};
+}
 
 /**
  * Attributes for the hyperlink element.
@@ -43,8 +43,8 @@ export type IHyperlinkAttributesProperties = {
  */
 export class HyperlinkAttributes extends XmlAttributeComponent<IHyperlinkAttributesProperties> {
     protected readonly xmlKeys = {
-        id: "r:id",
-        history: "w:history",
         anchor: "w:anchor",
+        history: "w:history",
+        id: "r:id",
     };
 }

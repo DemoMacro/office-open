@@ -1,13 +1,12 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
 import { Paragraph } from "@file/paragraph";
 import { HeightRule } from "@file/table/table-row/table-row-height";
 import { EMPTY_OBJECT } from "@file/xml-components";
+import { describe, expect, it } from "vite-plus/test";
 
 import { TableCell } from "../table-cell";
-import { TableRow } from "./table-row";
 import { CellSpacingType } from "../table-cell-spacing";
+import { TableRow } from "./table-row";
 
 describe("TableRow", () => {
     describe("#constructor", () => {
@@ -45,8 +44,8 @@ describe("TableRow", () => {
 
         it("should create with cant split", () => {
             const tableRow = new TableRow({
-                children: [],
                 cantSplit: true,
+                children: [],
             });
             const tree = new Formatter().format(tableRow);
             expect(tree).to.deep.equal({
@@ -85,9 +84,9 @@ describe("TableRow", () => {
             const tableRow = new TableRow({
                 children: [],
                 insertion: {
-                    id: 1,
                     author: "Firstname Lastname",
                     date: "123",
+                    id: 1,
                 },
             });
             const tree = new Formatter().format(tableRow);
@@ -114,9 +113,9 @@ describe("TableRow", () => {
             const tableRow = new TableRow({
                 children: [],
                 deletion: {
-                    id: 1,
                     author: "Firstname Lastname",
                     date: "123",
+                    id: 1,
                 },
             });
             const tree = new Formatter().format(tableRow);
@@ -141,32 +140,32 @@ describe("TableRow", () => {
 
         it("should create with properties revision", () => {
             const run = new TableRow({
-                children: [],
                 cantSplit: false,
-                tableHeader: false,
-                height: {
-                    value: 200,
-                    rule: HeightRule.EXACT,
-                },
                 cellSpacing: {
-                    value: 100,
                     type: CellSpacingType.DXA,
+                    value: 100,
+                },
+                children: [],
+                height: {
+                    rule: HeightRule.EXACT,
+                    value: 200,
                 },
                 revision: {
-                    id: 1,
                     author: "Firstname Lastname",
-                    date: "123",
                     cantSplit: true,
-                    tableHeader: true,
-                    height: {
-                        value: 100,
-                        rule: HeightRule.EXACT,
-                    },
                     cellSpacing: {
-                        value: 60,
                         type: CellSpacingType.DXA,
+                        value: 60,
                     },
+                    date: "123",
+                    height: {
+                        rule: HeightRule.EXACT,
+                        value: 100,
+                    },
+                    id: 1,
+                    tableHeader: true,
                 },
+                tableHeader: false,
             });
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
@@ -250,8 +249,8 @@ describe("TableRow", () => {
             const tableRow = new TableRow({
                 children: [],
                 height: {
-                    value: 100,
                     rule: HeightRule.EXACT,
+                    value: 100,
                 },
             });
             const tree = new Formatter().format(tableRow);
@@ -363,8 +362,12 @@ describe("TableRow", () => {
             expect(tableRow.rootIndexToColumnIndex(3)).to.equal(4);
             expect(tableRow.rootIndexToColumnIndex(4)).to.equal(5);
 
-            expect(() => tableRow.rootIndexToColumnIndex(0)).to.throw(`cell 'rootIndex' should between 1 to 4`);
-            expect(() => tableRow.rootIndexToColumnIndex(5)).to.throw(`cell 'rootIndex' should between 1 to 4`);
+            expect(() => tableRow.rootIndexToColumnIndex(0)).to.throw(
+                `cell 'rootIndex' should between 1 to 4`,
+            );
+            expect(() => tableRow.rootIndexToColumnIndex(5)).to.throw(
+                `cell 'rootIndex' should between 1 to 4`,
+            );
         });
     });
 
@@ -400,8 +403,12 @@ describe("TableRow", () => {
             expect(tableRow.columnIndexToRootIndex(6)).to.equal(4);
             expect(tableRow.columnIndexToRootIndex(7)).to.equal(4);
 
-            expect(() => tableRow.columnIndexToRootIndex(-1)).to.throw(`cell 'columnIndex' should not less than zero`);
-            expect(() => tableRow.columnIndexToRootIndex(8)).to.throw(`cell 'columnIndex' should not great than 7`);
+            expect(() => tableRow.columnIndexToRootIndex(-1)).to.throw(
+                `cell 'columnIndex' should not less than zero`,
+            );
+            expect(() => tableRow.columnIndexToRootIndex(8)).to.throw(
+                `cell 'columnIndex' should not great than 7`,
+            );
         });
 
         it("should allow end new cell index", () => {
@@ -425,7 +432,7 @@ describe("TableRow", () => {
             });
 
             expect(tableRow.columnIndexToRootIndex(8, true)).to.equal(5);
-            // for column 10, just place the new cell at the end of row
+            // For column 10, just place the new cell at the end of row
             expect(tableRow.columnIndexToRootIndex(10, true)).to.equal(5);
         });
     });

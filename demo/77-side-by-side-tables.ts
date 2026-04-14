@@ -1,7 +1,17 @@
 // Exporting the document as a stream
 
 import * as fs from "fs";
-import { Document, Packer, Paragraph, Table, TableBorders, TableCell, TableRow, WidthType } from "docx";
+
+import {
+    Document,
+    Packer,
+    Paragraph,
+    Table,
+    TableBorders,
+    TableCell,
+    TableRow,
+    WidthType,
+} from "docx";
 
 const table1 = new Table({
     columnWidths: [3505, 5505],
@@ -9,36 +19,36 @@ const table1 = new Table({
         new TableRow({
             children: [
                 new TableCell({
+                    children: [new Paragraph("Hello")],
                     width: {
                         size: 3505,
                         type: WidthType.DXA,
                     },
-                    children: [new Paragraph("Hello")],
                 }),
                 new TableCell({
+                    children: [],
                     width: {
                         size: 5505,
                         type: WidthType.DXA,
                     },
-                    children: [],
                 }),
             ],
         }),
         new TableRow({
             children: [
                 new TableCell({
+                    children: [],
                     width: {
                         size: 3505,
                         type: WidthType.DXA,
                     },
-                    children: [],
                 }),
                 new TableCell({
+                    children: [new Paragraph("World")],
                     width: {
                         size: 5505,
                         type: WidthType.DXA,
                     },
-                    children: [new Paragraph("World")],
                 }),
             ],
         }),
@@ -51,36 +61,36 @@ const table2 = new Table({
         new TableRow({
             children: [
                 new TableCell({
+                    children: [new Paragraph("Foo")],
                     width: {
                         size: 3505,
                         type: WidthType.DXA,
                     },
-                    children: [new Paragraph("Foo")],
                 }),
                 new TableCell({
+                    children: [],
                     width: {
                         size: 5505,
                         type: WidthType.DXA,
                     },
-                    children: [],
                 }),
             ],
         }),
         new TableRow({
             children: [
                 new TableCell({
+                    children: [],
                     width: {
                         size: 3505,
                         type: WidthType.DXA,
                     },
-                    children: [],
                 }),
                 new TableCell({
+                    children: [new Paragraph("Bar")],
                     width: {
                         size: 5505,
                         type: WidthType.DXA,
                     },
-                    children: [new Paragraph("Bar")],
                 }),
             ],
         }),
@@ -106,8 +116,8 @@ const noBorderTable = new Table({
 const doc = new Document({
     sections: [
         {
-            properties: {},
             children: [noBorderTable],
+            properties: {},
         },
     ],
 });

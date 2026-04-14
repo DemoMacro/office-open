@@ -11,8 +11,10 @@
 import { LineRuleType } from "@file/paragraph";
 import { UnderlineType } from "@file/paragraph/run/underline";
 
-import { type IBaseCharacterStyleOptions, StyleForCharacter } from "./character-style";
-import { type IBaseParagraphStyleOptions, type IParagraphStyleOptions, StyleForParagraph } from "./paragraph-style";
+import { StyleForCharacter } from "./character-style";
+import type { IBaseCharacterStyleOptions } from "./character-style";
+import { StyleForParagraph } from "./paragraph-style";
+import type { IBaseParagraphStyleOptions, IParagraphStyleOptions } from "./paragraph-style";
 
 /**
  * Base class for heading styles.
@@ -183,9 +185,9 @@ export class StrongStyle extends HeadingStyle {
 export class ListParagraph extends StyleForParagraph {
     public constructor(options: IBaseParagraphStyleOptions) {
         super({
+            basedOn: "Normal",
             id: "ListParagraph",
             name: "List Paragraph",
-            basedOn: "Normal",
             quickFormat: true,
             ...options,
         });
@@ -200,13 +202,10 @@ export class ListParagraph extends StyleForParagraph {
 export class FootnoteText extends StyleForParagraph {
     public constructor(options: IBaseParagraphStyleOptions) {
         super({
-            id: "FootnoteText",
-            name: "footnote text",
-            link: "FootnoteTextChar",
             basedOn: "Normal",
-            uiPriority: 99,
-            semiHidden: true,
-            unhideWhenUsed: true,
+            id: "FootnoteText",
+            link: "FootnoteTextChar",
+            name: "footnote text",
             paragraph: {
                 spacing: {
                     after: 0,
@@ -217,6 +216,9 @@ export class FootnoteText extends StyleForParagraph {
             run: {
                 size: 20,
             },
+            semiHidden: true,
+            uiPriority: 99,
+            unhideWhenUsed: true,
             ...options,
         });
     }
@@ -230,13 +232,13 @@ export class FootnoteText extends StyleForParagraph {
 export class FootnoteReferenceStyle extends StyleForCharacter {
     public constructor(options: IBaseCharacterStyleOptions) {
         super({
+            basedOn: "DefaultParagraphFont",
             id: "FootnoteReference",
             name: "footnote reference",
-            basedOn: "DefaultParagraphFont",
-            semiHidden: true,
             run: {
                 superScript: true,
             },
+            semiHidden: true,
             ...options,
         });
     }
@@ -250,14 +252,14 @@ export class FootnoteReferenceStyle extends StyleForCharacter {
 export class FootnoteTextChar extends StyleForCharacter {
     public constructor(options: IBaseCharacterStyleOptions) {
         super({
-            id: "FootnoteTextChar",
-            name: "Footnote Text Char",
             basedOn: "DefaultParagraphFont",
+            id: "FootnoteTextChar",
             link: "FootnoteText",
-            semiHidden: true,
+            name: "Footnote Text Char",
             run: {
                 size: 20,
             },
+            semiHidden: true,
             ...options,
         });
     }
@@ -271,13 +273,10 @@ export class FootnoteTextChar extends StyleForCharacter {
 export class EndnoteText extends StyleForParagraph {
     public constructor(options: IBaseParagraphStyleOptions) {
         super({
-            id: "EndnoteText",
-            name: "endnote text",
-            link: "EndnoteTextChar",
             basedOn: "Normal",
-            uiPriority: 99,
-            semiHidden: true,
-            unhideWhenUsed: true,
+            id: "EndnoteText",
+            link: "EndnoteTextChar",
+            name: "endnote text",
             paragraph: {
                 spacing: {
                     after: 0,
@@ -288,6 +287,9 @@ export class EndnoteText extends StyleForParagraph {
             run: {
                 size: 20,
             },
+            semiHidden: true,
+            uiPriority: 99,
+            unhideWhenUsed: true,
             ...options,
         });
     }
@@ -301,13 +303,13 @@ export class EndnoteText extends StyleForParagraph {
 export class EndnoteReferenceStyle extends StyleForCharacter {
     public constructor(options: IBaseCharacterStyleOptions) {
         super({
+            basedOn: "DefaultParagraphFont",
             id: "EndnoteReference",
             name: "endnote reference",
-            basedOn: "DefaultParagraphFont",
-            semiHidden: true,
             run: {
                 superScript: true,
             },
+            semiHidden: true,
             ...options,
         });
     }
@@ -321,14 +323,14 @@ export class EndnoteReferenceStyle extends StyleForCharacter {
 export class EndnoteTextChar extends StyleForCharacter {
     public constructor(options: IBaseCharacterStyleOptions) {
         super({
-            id: "EndnoteTextChar",
-            name: "Endnote Text Char",
             basedOn: "DefaultParagraphFont",
+            id: "EndnoteTextChar",
             link: "EndnoteText",
-            semiHidden: true,
+            name: "Endnote Text Char",
             run: {
                 size: 20,
             },
+            semiHidden: true,
             ...options,
         });
     }
@@ -342,9 +344,9 @@ export class EndnoteTextChar extends StyleForCharacter {
 export class HyperlinkStyle extends StyleForCharacter {
     public constructor(options: IBaseCharacterStyleOptions) {
         super({
+            basedOn: "DefaultParagraphFont",
             id: "Hyperlink",
             name: "Hyperlink",
-            basedOn: "DefaultParagraphFont",
             run: {
                 color: "0563C1",
                 underline: {

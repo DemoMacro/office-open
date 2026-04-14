@@ -1,14 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { findLocationOfText } from "./traverser";
 
 const MOCK_JSON = {
     elements: [
         {
-            type: "element",
-            name: "w:document",
             attributes: {
-                "xmlns:wpc": "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
+                "xmlns:aink": "http://schemas.microsoft.com/office/drawing/2016/ink",
+                "xmlns:am3d": "http://schemas.microsoft.com/office/drawing/2017/model3d",
                 "xmlns:cx": "http://schemas.microsoft.com/office/drawing/2014/chartex",
                 "xmlns:cx1": "http://schemas.microsoft.com/office/drawing/2015/9/8/chartex",
                 "xmlns:cx2": "http://schemas.microsoft.com/office/drawing/2015/10/21/chartex",
@@ -18,34 +17,33 @@ const MOCK_JSON = {
                 "xmlns:cx6": "http://schemas.microsoft.com/office/drawing/2016/5/12/chartex",
                 "xmlns:cx7": "http://schemas.microsoft.com/office/drawing/2016/5/13/chartex",
                 "xmlns:cx8": "http://schemas.microsoft.com/office/drawing/2016/5/14/chartex",
+                "xmlns:m": "http://schemas.openxmlformats.org/officeDocument/2006/math",
                 "xmlns:mc": "http://schemas.openxmlformats.org/markup-compatibility/2006",
-                "xmlns:aink": "http://schemas.microsoft.com/office/drawing/2016/ink",
-                "xmlns:am3d": "http://schemas.microsoft.com/office/drawing/2017/model3d",
                 "xmlns:o": "urn:schemas-microsoft-com:office:office",
                 "xmlns:oel": "http://schemas.microsoft.com/office/2019/extlst",
                 "xmlns:r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
-                "xmlns:m": "http://schemas.openxmlformats.org/officeDocument/2006/math",
                 "xmlns:v": "urn:schemas-microsoft-com:vml",
-                "xmlns:wp14": "http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing",
-                "xmlns:wp": "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing",
-                "xmlns:w10": "urn:schemas-microsoft-com:office:word",
                 "xmlns:w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
+                "xmlns:w10": "urn:schemas-microsoft-com:office:word",
                 "xmlns:w14": "http://schemas.microsoft.com/office/word/2010/wordml",
                 "xmlns:w15": "http://schemas.microsoft.com/office/word/2012/wordml",
+                "xmlns:w16": "http://schemas.microsoft.com/office/word/2018/wordml",
                 "xmlns:w16cex": "http://schemas.microsoft.com/office/word/2018/wordml/cex",
                 "xmlns:w16cid": "http://schemas.microsoft.com/office/word/2016/wordml/cid",
-                "xmlns:w16": "http://schemas.microsoft.com/office/word/2018/wordml",
-                "xmlns:w16sdtdh": "http://schemas.microsoft.com/office/word/2020/wordml/sdtdatahash",
+                "xmlns:w16sdtdh":
+                    "http://schemas.microsoft.com/office/word/2020/wordml/sdtdatahash",
                 "xmlns:w16se": "http://schemas.microsoft.com/office/word/2015/wordml/symex",
+                "xmlns:wne": "http://schemas.microsoft.com/office/word/2006/wordml",
+                "xmlns:wp":
+                    "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing",
+                "xmlns:wp14": "http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing",
+                "xmlns:wpc": "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
                 "xmlns:wpg": "http://schemas.microsoft.com/office/word/2010/wordprocessingGroup",
                 "xmlns:wpi": "http://schemas.microsoft.com/office/word/2010/wordprocessingInk",
-                "xmlns:wne": "http://schemas.microsoft.com/office/word/2006/wordml",
                 "xmlns:wps": "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
             },
             elements: [
                 {
-                    type: "element",
-                    name: "w:body",
                     elements: [
                         {
                             type: "element",
@@ -61,12 +59,24 @@ const MOCK_JSON = {
                                 {
                                     type: "element",
                                     name: "w:pPr",
-                                    elements: [{ type: "element", name: "w:pStyle", attributes: { "w:val": "Title" } }],
+                                    elements: [
+                                        {
+                                            type: "element",
+                                            name: "w:pStyle",
+                                            attributes: { "w:val": "Title" },
+                                        },
+                                    ],
                                 },
                                 {
                                     type: "element",
                                     name: "w:r",
-                                    elements: [{ type: "element", name: "w:t", elements: [{ type: "text", text: "Hello World" }] }],
+                                    elements: [
+                                        {
+                                            type: "element",
+                                            name: "w:t",
+                                            elements: [{ type: "text", text: "Hello World" }],
+                                        },
+                                    ],
                                 },
                             ],
                         },
@@ -93,7 +103,13 @@ const MOCK_JSON = {
                                 {
                                     type: "element",
                                     name: "w:r",
-                                    elements: [{ type: "element", name: "w:t", elements: [{ type: "text", text: "Hello {{name}}," }] }],
+                                    elements: [
+                                        {
+                                            type: "element",
+                                            name: "w:t",
+                                            elements: [{ type: "text", text: "Hello {{name}}," }],
+                                        },
+                                    ],
                                 },
                                 {
                                     type: "element",
@@ -134,7 +150,13 @@ const MOCK_JSON = {
                                     type: "element",
                                     name: "w:r",
                                     elements: [
-                                        { type: "element", name: "w:t", elements: [{ type: "text", text: "{{paragraph_replace}}" }] },
+                                        {
+                                            type: "element",
+                                            name: "w:t",
+                                            elements: [
+                                                { type: "text", text: "{{paragraph_replace}}" },
+                                            ],
+                                        },
                                     ],
                                 },
                             ],
@@ -150,12 +172,20 @@ const MOCK_JSON = {
                                         {
                                             type: "element",
                                             name: "w:rPr",
-                                            elements: [{ type: "element", name: "w:b", attributes: { "w:val": "1" } }],
+                                            elements: [
+                                                {
+                                                    type: "element",
+                                                    name: "w:b",
+                                                    attributes: { "w:val": "1" },
+                                                },
+                                            ],
                                         },
                                         {
                                             type: "element",
                                             name: "w:t",
-                                            elements: [{ type: "text", text: "What a {{bold}} text!" }],
+                                            elements: [
+                                                { type: "text", text: "What a {{bold}} text!" },
+                                            ],
                                         },
                                     ],
                                 },
@@ -184,7 +214,13 @@ const MOCK_JSON = {
                                 {
                                     type: "element",
                                     name: "w:r",
-                                    elements: [{ type: "element", name: "w:t", elements: [{ type: "text", text: "{{table}}" }] }],
+                                    elements: [
+                                        {
+                                            type: "element",
+                                            name: "w:t",
+                                            elements: [{ type: "text", text: "{{table}}" }],
+                                        },
+                                    ],
                                 },
                             ],
                         },
@@ -206,8 +242,16 @@ const MOCK_JSON = {
                                     type: "element",
                                     name: "w:tblPr",
                                     elements: [
-                                        { type: "element", name: "w:tblStyle", attributes: { "w:val": "TableGrid" } },
-                                        { type: "element", name: "w:tblW", attributes: { "w:w": "0", "w:type": "auto" } },
+                                        {
+                                            type: "element",
+                                            name: "w:tblStyle",
+                                            attributes: { "w:val": "TableGrid" },
+                                        },
+                                        {
+                                            type: "element",
+                                            name: "w:tblW",
+                                            attributes: { "w:w": "0", "w:type": "auto" },
+                                        },
                                         {
                                             type: "element",
                                             name: "w:tblLook",
@@ -227,9 +271,21 @@ const MOCK_JSON = {
                                     type: "element",
                                     name: "w:tblGrid",
                                     elements: [
-                                        { type: "element", name: "w:gridCol", attributes: { "w:w": "3003" } },
-                                        { type: "element", name: "w:gridCol", attributes: { "w:w": "3003" } },
-                                        { type: "element", name: "w:gridCol", attributes: { "w:w": "3004" } },
+                                        {
+                                            type: "element",
+                                            name: "w:gridCol",
+                                            attributes: { "w:w": "3003" },
+                                        },
+                                        {
+                                            type: "element",
+                                            name: "w:gridCol",
+                                            attributes: { "w:w": "3003" },
+                                        },
+                                        {
+                                            type: "element",
+                                            name: "w:gridCol",
+                                            attributes: { "w:w": "3004" },
+                                        },
                                     ],
                                 },
                                 {
@@ -250,7 +306,14 @@ const MOCK_JSON = {
                                                     type: "element",
                                                     name: "w:tcPr",
                                                     elements: [
-                                                        { type: "element", name: "w:tcW", attributes: { "w:w": "3003", "w:type": "dxa" } },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:tcW",
+                                                            attributes: {
+                                                                "w:w": "3003",
+                                                                "w:type": "dxa",
+                                                            },
+                                                        },
                                                     ],
                                                 },
                                                 {
@@ -270,7 +333,12 @@ const MOCK_JSON = {
                                                                 {
                                                                     type: "element",
                                                                     name: "w:t",
-                                                                    elements: [{ type: "text", text: "{{table_heading_1}}" }],
+                                                                    elements: [
+                                                                        {
+                                                                            type: "text",
+                                                                            text: "{{table_heading_1}}",
+                                                                        },
+                                                                    ],
                                                                 },
                                                             ],
                                                         },
@@ -286,7 +354,14 @@ const MOCK_JSON = {
                                                     type: "element",
                                                     name: "w:tcPr",
                                                     elements: [
-                                                        { type: "element", name: "w:tcW", attributes: { "w:w": "3003", "w:type": "dxa" } },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:tcW",
+                                                            attributes: {
+                                                                "w:w": "3003",
+                                                                "w:type": "dxa",
+                                                            },
+                                                        },
                                                     ],
                                                 },
                                                 {
@@ -309,7 +384,14 @@ const MOCK_JSON = {
                                                     type: "element",
                                                     name: "w:tcPr",
                                                     elements: [
-                                                        { type: "element", name: "w:tcW", attributes: { "w:w": "3004", "w:type": "dxa" } },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:tcW",
+                                                            attributes: {
+                                                                "w:w": "3004",
+                                                                "w:type": "dxa",
+                                                            },
+                                                        },
                                                     ],
                                                 },
                                                 {
@@ -344,7 +426,14 @@ const MOCK_JSON = {
                                                     type: "element",
                                                     name: "w:tcPr",
                                                     elements: [
-                                                        { type: "element", name: "w:tcW", attributes: { "w:w": "3003", "w:type": "dxa" } },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:tcW",
+                                                            attributes: {
+                                                                "w:w": "3003",
+                                                                "w:type": "dxa",
+                                                            },
+                                                        },
                                                     ],
                                                 },
                                                 {
@@ -364,7 +453,12 @@ const MOCK_JSON = {
                                                                 {
                                                                     type: "element",
                                                                     name: "w:t",
-                                                                    elements: [{ type: "text", text: "Item: {{item_1}}" }],
+                                                                    elements: [
+                                                                        {
+                                                                            type: "text",
+                                                                            text: "Item: {{item_1}}",
+                                                                        },
+                                                                    ],
                                                                 },
                                                             ],
                                                         },
@@ -380,7 +474,14 @@ const MOCK_JSON = {
                                                     type: "element",
                                                     name: "w:tcPr",
                                                     elements: [
-                                                        { type: "element", name: "w:tcW", attributes: { "w:w": "3003", "w:type": "dxa" } },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:tcW",
+                                                            attributes: {
+                                                                "w:w": "3003",
+                                                                "w:type": "dxa",
+                                                            },
+                                                        },
                                                     ],
                                                 },
                                                 {
@@ -403,7 +504,14 @@ const MOCK_JSON = {
                                                     type: "element",
                                                     name: "w:tcPr",
                                                     elements: [
-                                                        { type: "element", name: "w:tcW", attributes: { "w:w": "3004", "w:type": "dxa" } },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:tcW",
+                                                            attributes: {
+                                                                "w:w": "3004",
+                                                                "w:type": "dxa",
+                                                            },
+                                                        },
                                                     ],
                                                 },
                                                 {
@@ -438,7 +546,14 @@ const MOCK_JSON = {
                                                     type: "element",
                                                     name: "w:tcPr",
                                                     elements: [
-                                                        { type: "element", name: "w:tcW", attributes: { "w:w": "3003", "w:type": "dxa" } },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:tcW",
+                                                            attributes: {
+                                                                "w:w": "3003",
+                                                                "w:type": "dxa",
+                                                            },
+                                                        },
                                                     ],
                                                 },
                                                 {
@@ -461,7 +576,14 @@ const MOCK_JSON = {
                                                     type: "element",
                                                     name: "w:tcPr",
                                                     elements: [
-                                                        { type: "element", name: "w:tcW", attributes: { "w:w": "3003", "w:type": "dxa" } },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:tcW",
+                                                            attributes: {
+                                                                "w:w": "3003",
+                                                                "w:type": "dxa",
+                                                            },
+                                                        },
                                                     ],
                                                 },
                                                 {
@@ -484,7 +606,14 @@ const MOCK_JSON = {
                                                     type: "element",
                                                     name: "w:tcPr",
                                                     elements: [
-                                                        { type: "element", name: "w:tcW", attributes: { "w:w": "3004", "w:type": "dxa" } },
+                                                        {
+                                                            type: "element",
+                                                            name: "w:tcW",
+                                                            attributes: {
+                                                                "w:w": "3004",
+                                                                "w:type": "dxa",
+                                                            },
+                                                        },
                                                     ],
                                                 },
                                                 {
@@ -526,7 +655,13 @@ const MOCK_JSON = {
                                 {
                                     type: "element",
                                     name: "w:r",
-                                    elements: [{ type: "element", name: "w:t", elements: [{ type: "text", text: "{{image_test}}" }] }],
+                                    elements: [
+                                        {
+                                            type: "element",
+                                            name: "w:t",
+                                            elements: [{ type: "text", text: "{{image_test}}" }],
+                                        },
+                                    ],
                                 },
                             ],
                         },
@@ -553,7 +688,13 @@ const MOCK_JSON = {
                                 {
                                     type: "element",
                                     name: "w:r",
-                                    elements: [{ type: "element", name: "w:t", elements: [{ type: "text", text: "Thank you" }] }],
+                                    elements: [
+                                        {
+                                            type: "element",
+                                            name: "w:t",
+                                            elements: [{ type: "text", text: "Thank you" }],
+                                        },
+                                    ],
                                 },
                             ],
                         },
@@ -570,18 +711,13 @@ const MOCK_JSON = {
                                 {
                                     type: "element",
                                     name: "w:pPr",
-                                    elements: [{ type: "element", name: "w:pStyle", attributes: { "w:val": "Header" } }],
-                                },
-                                {
-                                    type: "element",
-                                    name: "w:r",
-                                    elements: [{ type: "element", name: "w:t", elements: [{ type: "text", text: "This is a {{head" }] }],
-                                },
-                                {
-                                    type: "element",
-                                    name: "w:r",
-                                    attributes: { "w:rsidR": "004A3A99" },
-                                    elements: [{ type: "element", name: "w:t", elements: [{ type: "text", text: "er" }] }],
+                                    elements: [
+                                        {
+                                            type: "element",
+                                            name: "w:pStyle",
+                                            attributes: { "w:val": "Header" },
+                                        },
+                                    ],
                                 },
                                 {
                                     type: "element",
@@ -590,7 +726,35 @@ const MOCK_JSON = {
                                         {
                                             type: "element",
                                             name: "w:t",
-                                            elements: [{ type: "text", text: "_adjective}} don’t you think?" }],
+                                            elements: [{ type: "text", text: "This is a {{head" }],
+                                        },
+                                    ],
+                                },
+                                {
+                                    type: "element",
+                                    name: "w:r",
+                                    attributes: { "w:rsidR": "004A3A99" },
+                                    elements: [
+                                        {
+                                            type: "element",
+                                            name: "w:t",
+                                            elements: [{ type: "text", text: "er" }],
+                                        },
+                                    ],
+                                },
+                                {
+                                    type: "element",
+                                    name: "w:r",
+                                    elements: [
+                                        {
+                                            type: "element",
+                                            name: "w:t",
+                                            elements: [
+                                                {
+                                                    type: "text",
+                                                    text: "_adjective}} don’t you think?",
+                                                },
+                                            ],
                                         },
                                     ],
                                 },
@@ -601,9 +765,21 @@ const MOCK_JSON = {
                             name: "w:sectPr",
                             attributes: { "w:rsidR": "007B52ED", "w:rsidSect": "0072043F" },
                             elements: [
-                                { type: "element", name: "w:headerReference", attributes: { "w:type": "default", "r:id": "rId6" } },
-                                { type: "element", name: "w:footerReference", attributes: { "w:type": "default", "r:id": "rId7" } },
-                                { type: "element", name: "w:pgSz", attributes: { "w:w": "11900", "w:h": "16840" } },
+                                {
+                                    type: "element",
+                                    name: "w:headerReference",
+                                    attributes: { "w:type": "default", "r:id": "rId6" },
+                                },
+                                {
+                                    type: "element",
+                                    name: "w:footerReference",
+                                    attributes: { "w:type": "default", "r:id": "rId7" },
+                                },
+                                {
+                                    type: "element",
+                                    name: "w:pgSz",
+                                    attributes: { "w:w": "11900", "w:h": "16840" },
+                                },
                                 {
                                     type: "element",
                                     name: "w:pgMar",
@@ -617,13 +793,25 @@ const MOCK_JSON = {
                                         "w:gutter": "0",
                                     },
                                 },
-                                { type: "element", name: "w:cols", attributes: { "w:space": "708" } },
-                                { type: "element", name: "w:docGrid", attributes: { "w:linePitch": "360" } },
+                                {
+                                    type: "element",
+                                    name: "w:cols",
+                                    attributes: { "w:space": "708" },
+                                },
+                                {
+                                    type: "element",
+                                    name: "w:docGrid",
+                                    attributes: { "w:linePitch": "360" },
+                                },
                             ],
                         },
                     ],
+                    name: "w:body",
+                    type: "element",
                 },
             ],
+            name: "w:document",
+            type: "element",
         },
     ],
 };
@@ -662,18 +850,18 @@ describe("traverser", () => {
 
             expect(output).to.deep.equal([
                 {
-                    text: "What a {{bold}} text!",
-                    runs: [
-                        {
-                            text: "What a {{bold}} text!",
-                            parts: [{ text: "What a {{bold}} text!", index: 1, start: 0, end: 20 }],
-                            index: 0,
-                            start: 0,
-                            end: 20,
-                        },
-                    ],
                     index: 5,
                     pathToParagraph: [0, 0, 0, 5],
+                    runs: [
+                        {
+                            end: 20,
+                            index: 0,
+                            parts: [{ text: "What a {{bold}} text!", index: 1, start: 0, end: 20 }],
+                            start: 0,
+                            text: "What a {{bold}} text!",
+                        },
+                    ],
+                    text: "What a {{bold}} text!",
                 },
             ]);
         });
@@ -683,18 +871,18 @@ describe("traverser", () => {
 
             expect(output).to.deep.equal([
                 {
-                    text: "What a {{bold}} text!",
-                    runs: [
-                        {
-                            text: "What a {{bold}} text!",
-                            parts: [{ text: "What a {{bold}} text!", index: 1, start: 0, end: 20 }],
-                            index: 0,
-                            start: 0,
-                            end: 20,
-                        },
-                    ],
                     index: 5,
                     pathToParagraph: [0, 0, 0, 5],
+                    runs: [
+                        {
+                            end: 20,
+                            index: 0,
+                            parts: [{ text: "What a {{bold}} text!", index: 1, start: 0, end: 20 }],
+                            start: 0,
+                            text: "What a {{bold}} text!",
+                        },
+                    ],
+                    text: "What a {{bold}} text!",
                 },
             ]);
         });
@@ -704,26 +892,39 @@ describe("traverser", () => {
 
             expect(output).to.deep.equal([
                 {
-                    text: "This is a {{header_adjective}} don’t you think?",
-                    runs: [
-                        {
-                            text: "This is a {{head",
-                            parts: [{ text: "This is a {{head", index: 0, start: 0, end: 15 }],
-                            index: 1,
-                            start: 0,
-                            end: 15,
-                        },
-                        { text: "er", parts: [{ text: "er", index: 0, start: 16, end: 17 }], index: 2, start: 16, end: 17 },
-                        {
-                            text: "_adjective}} don’t you think?",
-                            parts: [{ text: "_adjective}} don’t you think?", index: 0, start: 18, end: 46 }],
-                            index: 3,
-                            start: 18,
-                            end: 46,
-                        },
-                    ],
                     index: 14,
                     pathToParagraph: [0, 0, 0, 14],
+                    runs: [
+                        {
+                            end: 15,
+                            index: 1,
+                            parts: [{ text: "This is a {{head", index: 0, start: 0, end: 15 }],
+                            start: 0,
+                            text: "This is a {{head",
+                        },
+                        {
+                            end: 17,
+                            index: 2,
+                            parts: [{ text: "er", index: 0, start: 16, end: 17 }],
+                            start: 16,
+                            text: "er",
+                        },
+                        {
+                            end: 46,
+                            index: 3,
+                            parts: [
+                                {
+                                    text: "_adjective}} don’t you think?",
+                                    index: 0,
+                                    start: 18,
+                                    end: 46,
+                                },
+                            ],
+                            start: 18,
+                            text: "_adjective}} don’t you think?",
+                        },
+                    ],
+                    text: "This is a {{header_adjective}} don’t you think?",
                 },
             ]);
         });

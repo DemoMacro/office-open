@@ -60,7 +60,11 @@ patchDocument(fs.readFileSync("My Document.docx"), {
     patches: {
         my_patch: {
             type: PatchType.PARAGRAPH,
-            children: [new TextRun("Sir. "), new TextRun("John Doe"), new TextRun("(The Conqueror)")],
+            children: [
+                new TextRun("Sir. "),
+                new TextRun("John Doe"),
+                new TextRun("(The Conqueror)"),
+            ],
         },
         my_second_patch: {
             type: PatchType.DOCUMENT,

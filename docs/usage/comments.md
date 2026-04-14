@@ -17,7 +17,15 @@ To add comments in `docx`:
 Add a comment to a range of text:
 
 ```ts
-import { Comment, CommentRangeEnd, CommentRangeStart, CommentReference, Document, Paragraph, TextRun } from "docx";
+import {
+    Comment,
+    CommentRangeEnd,
+    CommentRangeStart,
+    CommentReference,
+    Document,
+    Paragraph,
+    TextRun,
+} from "docx";
 
 const doc = new Document({
     comments: {
@@ -156,7 +164,10 @@ new Comment({
     author: "Reviewer",
     children: [
         new Paragraph({
-            children: [new TextRun({ text: "Important: ", bold: true }), new TextRun("Please verify the figures in this section.")],
+            children: [
+                new TextRun({ text: "Important: ", bold: true }),
+                new TextRun("Please verify the figures in this section."),
+            ],
         }),
         new Paragraph("See page 12 of the source document."),
     ],
@@ -168,7 +179,17 @@ new Comment({
 Document with review comments:
 
 ```ts
-import { Comment, CommentRangeEnd, CommentRangeStart, CommentReference, Document, HeadingLevel, Packer, Paragraph, TextRun } from "docx";
+import {
+    Comment,
+    CommentRangeEnd,
+    CommentRangeStart,
+    CommentReference,
+    Document,
+    HeadingLevel,
+    Packer,
+    Paragraph,
+    TextRun,
+} from "docx";
 import * as fs from "fs";
 
 const doc = new Document({
@@ -186,7 +207,10 @@ const doc = new Document({
                 date: new Date(),
                 children: [
                     new Paragraph({
-                        children: [new TextRun({ text: "Verified ", bold: true }), new TextRun("- Source: Annual Report 2023")],
+                        children: [
+                            new TextRun({ text: "Verified ", bold: true }),
+                            new TextRun("- Source: Annual Report 2023"),
+                        ],
                     }),
                 ],
             }),

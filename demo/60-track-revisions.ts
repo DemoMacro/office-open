@@ -1,6 +1,7 @@
 // Track Revisions aka. "Track Changes"
 
 import * as fs from "fs";
+
 import {
     AlignmentType,
     DeletedTextRun,
@@ -36,21 +37,24 @@ const paragraph = new Paragraph({
             text: "on how to ",
         }),
         new InsertedTextRun({
-            text: "mark a text as an insertion ",
-            id: 0,
             author: "Firstname Lastname",
             date: "2020-10-06T09:00:00Z",
+            id: 0,
+            text: "mark a text as an insertion ",
         }),
         new DeletedTextRun({
-            text: "or a deletion.",
-            id: 1,
             author: "Firstname Lastname",
             date: "2020-10-06T09:00:00Z",
+            id: 1,
+            text: "or a deletion.",
         }),
     ],
 });
 
 const doc = new Document({
+    features: {
+        trackRevisions: true,
+    },
     footnotes: {
         1: {
             children: [
@@ -58,28 +62,24 @@ const doc = new Document({
                     children: [
                         new TextRun("This is a footnote"),
                         new DeletedTextRun({
-                            text: " with some extra text which was deleted",
-                            id: 0,
                             author: "Firstname Lastname",
                             date: "2020-10-06T09:05:00Z",
+                            id: 0,
+                            text: " with some extra text which was deleted",
                         }),
                         new InsertedTextRun({
-                            text: " and new content",
-                            id: 1,
                             author: "Firstname Lastname",
                             date: "2020-10-06T09:05:00Z",
+                            id: 1,
+                            text: " and new content",
                         }),
                     ],
                 }),
             ],
         },
     },
-    features: {
-        trackRevisions: true,
-    },
     sections: [
         {
-            properties: {},
             children: [
                 paragraph,
                 new Paragraph({
@@ -112,7 +112,11 @@ const doc = new Document({
                         }),
                         new TextRun({
                             bold: true,
-                            children: [new Tab(), "use Inserted and Deleted TextRuns.", new FootnoteReferenceRun(1)],
+                            children: [
+                                new Tab(),
+                                "use Inserted and Deleted TextRuns.",
+                                new FootnoteReferenceRun(1),
+                            ],
                         }),
                         new TextRun({
                             bold: true,
@@ -155,6 +159,7 @@ const doc = new Document({
                     ],
                 }),
             },
+            properties: {},
         },
     ],
 });

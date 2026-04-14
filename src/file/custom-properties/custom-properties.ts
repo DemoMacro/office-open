@@ -7,10 +7,12 @@
  *
  * @module
  */
-import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
+import type { IContext, IXmlableObject } from "@file/xml-components";
 
 import { CustomPropertiesAttributes } from "./custom-properties-attributes";
-import { CustomProperty, type ICustomPropertyOptions } from "./custom-property";
+import { CustomProperty } from "./custom-property";
+import type { ICustomPropertyOptions } from "./custom-property";
 
 /**
  * Represents the collection of custom document properties.
@@ -38,9 +40,7 @@ import { CustomProperty, type ICustomPropertyOptions } from "./custom-property";
  * ```
  */
 export class CustomProperties extends XmlComponent {
-    // eslint-disable-next-line functional/prefer-readonly-type
     private nextId: number;
-    // eslint-disable-next-line functional/prefer-readonly-type
     private readonly properties: CustomProperty[] = [];
 
     public constructor(properties: readonly ICustomPropertyOptions[]) {
@@ -48,8 +48,8 @@ export class CustomProperties extends XmlComponent {
 
         this.root.push(
             new CustomPropertiesAttributes({
-                xmlns: "http://schemas.openxmlformats.org/officeDocument/2006/custom-properties",
                 vt: "http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes",
+                xmlns: "http://schemas.openxmlformats.org/officeDocument/2006/custom-properties",
             }),
         );
 
@@ -68,7 +68,6 @@ export class CustomProperties extends XmlComponent {
     }
 
     public addCustomProperty(property: ICustomPropertyOptions): void {
-        // eslint-disable-next-line functional/immutable-data
         this.properties.push(new CustomProperty(this.nextId++, property));
     }
 }

@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { LatentStyleException } from "./exceptions";
 
@@ -9,9 +8,9 @@ describe("LatentStyleException", () => {
         it("should create", () => {
             const currentLatentStyleException = new LatentStyleException({
                 name: "test-name",
-                uiPriority: "test-uiPriority",
                 qFormat: "test-qFormat",
                 semiHidden: "test-semiHidden",
+                uiPriority: "test-uiPriority",
                 unhideWhenUsed: "test-unhideWhenUsed",
             });
 

@@ -51,8 +51,8 @@ export class PicLocks extends XmlComponent {
         super("a:picLocks");
         this.root.push(
             new PicLocksAttributes({
-                noChangeAspect: 1,
                 noChangeArrowheads: 1,
+                noChangeAspect: 1,
             }),
         );
     }

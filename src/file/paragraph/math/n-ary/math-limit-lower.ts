@@ -18,12 +18,12 @@ import { MathLimit } from "./math-limit";
  *
  * @see {@link MathLimitLower}
  */
-export type IMathLimitLowerOptions = {
+export interface IMathLimitLowerOptions {
     /** The base expression */
     readonly children: readonly MathComponent[];
     /** The limit expression that appears below the base */
     readonly limit: readonly MathComponent[];
-};
+}
 
 /**
  * Represents a lower limit structure in a math equation.

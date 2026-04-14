@@ -1,7 +1,6 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
 import { Paragraph, TextRun } from "@file/paragraph";
+import { describe, expect, it } from "vite-plus/test";
 
 import { Endnotes } from "./endnotes";
 
@@ -46,7 +45,6 @@ describe("Endnotes", () => {
 
             // Find the endnote with id 42
             const createdEndnote = endnoteElements.find(
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (el: any) => el["w:endnote"]?.[0]?.["_attr"]?.["w:id"] === 42,
             );
             expect(createdEndnote).to.not.be.undefined;

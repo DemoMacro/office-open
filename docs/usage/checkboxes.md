@@ -118,7 +118,10 @@ const doc = new Document({
             children: tasks.map(
                 (task) =>
                     new Paragraph({
-                        children: [new CheckBox({ checked: task.done }), new TextRun(` ${task.text}`)],
+                        children: [
+                            new CheckBox({ checked: task.done }),
+                            new TextRun(` ${task.text}`),
+                        ],
                     }),
             ),
         },

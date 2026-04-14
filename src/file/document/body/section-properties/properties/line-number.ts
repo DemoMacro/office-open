@@ -1,5 +1,7 @@
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
-import { type PositiveUniversalMeasure, decimalNumber, twipsMeasureValue } from "@util/values";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
+import { decimalNumber, twipsMeasureValue } from "@util/values";
+import type { PositiveUniversalMeasure } from "@util/values";
 
 /**
  * This simple type specifies when the line numbering in the parent section shall be reset to its restart value. The line numbering increments for each line (even if the line number itself is not displayed) until it reaches the restart point specified by this element.
@@ -41,7 +43,7 @@ export const LineNumberRestartFormat = {
     CONTINUOUS: "continuous",
 } as const;
 
-export type ILineNumberAttributes = {
+export interface ILineNumberAttributes {
     /**
      * Specifies the line number increments to be displayed in the current document.
      *
@@ -105,7 +107,7 @@ export type ILineNumberAttributes = {
      * The possible values for this attribute are defined by the ST_TwipsMeasure simple type (§2.18.105).
      */
     readonly distance?: number | PositiveUniversalMeasure;
-};
+}
 
 /**
  * This element specifies the settings for line numbering to be displayed before each column of text in this section in the document.
@@ -125,16 +127,27 @@ export type ILineNumberAttributes = {
  * </xsd:complexType>
  * ```
  */
-export const createLineNumberType = ({ countBy, start, restart, distance }: ILineNumberAttributes): XmlComponent =>
+export const createLineNumberType = ({
+    countBy,
+    start,
+    restart,
+    distance,
+}: ILineNumberAttributes): XmlComponent =>
     new BuilderElement<ILineNumberAttributes>({
-        name: "w:lnNumType",
         attributes: {
-            countBy: { key: "w:countBy", value: countBy === undefined ? undefined : decimalNumber(countBy) },
-            start: { key: "w:start", value: start === undefined ? undefined : decimalNumber(start) },
-            restart: { key: "w:restart", value: restart },
+            countBy: {
+                key: "w:countBy",
+                value: countBy === undefined ? undefined : decimalNumber(countBy),
+            },
             distance: {
                 key: "w:distance",
                 value: distance === undefined ? undefined : twipsMeasureValue(distance),
             },
+            restart: { key: "w:restart", value: restart },
+            start: {
+                key: "w:start",
+                value: start === undefined ? undefined : decimalNumber(start),
+            },
         },
+        name: "w:lnNumType",
     });

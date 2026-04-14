@@ -198,7 +198,17 @@ Invoice template:
 
 ```ts
 import * as fs from "fs";
-import { ExternalHyperlink, ImageRun, Paragraph, patchDocument, PatchType, Table, TableCell, TableRow, TextRun } from "docx";
+import {
+    ExternalHyperlink,
+    ImageRun,
+    Paragraph,
+    patchDocument,
+    PatchType,
+    Table,
+    TableCell,
+    TableRow,
+    TextRun,
+} from "docx";
 
 // Invoice data
 const invoice = {
@@ -245,8 +255,12 @@ patchDocument({
                                 new TableRow({
                                     children: [
                                         new TableCell({ children: [new Paragraph(item.name)] }),
-                                        new TableCell({ children: [new Paragraph(String(item.qty))] }),
-                                        new TableCell({ children: [new Paragraph(`$${item.price.toFixed(2)}`)] }),
+                                        new TableCell({
+                                            children: [new Paragraph(String(item.qty))],
+                                        }),
+                                        new TableCell({
+                                            children: [new Paragraph(`$${item.price.toFixed(2)}`)],
+                                        }),
                                     ],
                                 }),
                         ),

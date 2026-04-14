@@ -8,12 +8,13 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Attributes for extent.
  */
-type ExtentAttributes = {
+interface ExtentAttributes {
     /**
      * ## Extent Length
      *
@@ -47,7 +48,7 @@ type ExtentAttributes = {
      * The possible values for this attribute are defined by the `ST_PositiveCoordinate` simple type (§5.1.12.42).
      */
     readonly y?: number;
-};
+}
 
 /**
  * Creates an extent element for inline drawings.
@@ -76,9 +77,9 @@ type ExtentAttributes = {
  */
 export const createExtent = ({ x, y }: ExtentAttributes): XmlComponent =>
     new BuilderElement<ExtentAttributes>({
-        name: "wp:extent",
         attributes: {
             x: { key: "cx", value: x },
             y: { key: "cy", value: y },
         },
+        name: "wp:extent",
     });

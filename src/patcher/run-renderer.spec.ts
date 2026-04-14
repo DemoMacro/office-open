@@ -1,11 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { renderParagraphNode } from "./run-renderer";
 
 describe("run-renderer", () => {
     describe("renderParagraphNode", () => {
         it("should return a rendered paragraph node if theres no elements", () => {
-            const output = renderParagraphNode({ element: { name: "w:p" }, index: 0, parent: undefined });
+            const output = renderParagraphNode({
+                element: { name: "w:p" },
+                index: 0,
+                parent: undefined,
+            });
             expect(output).to.deep.equal({
                 index: -1,
                 pathToParagraph: [],
@@ -17,10 +21,8 @@ describe("run-renderer", () => {
         it("should return a rendered paragraph node if there are elements", () => {
             const output = renderParagraphNode({
                 element: {
-                    name: "w:p",
                     elements: [
                         {
-                            name: "w:r",
                             elements: [
                                 {
                                     name: "w:t",
@@ -32,8 +34,10 @@ describe("run-renderer", () => {
                                     ],
                                 },
                             ],
+                            name: "w:r",
                         },
                     ],
+                    name: "w:p",
                 },
                 index: 0,
                 parent: undefined,
@@ -62,18 +66,20 @@ describe("run-renderer", () => {
         });
 
         it("should throw an error if the element is not a paragraph", () => {
-            expect(() => renderParagraphNode({ element: { name: "w:r" }, index: 0, parent: undefined })).to.throw();
+            expect(() =>
+                renderParagraphNode({ element: { name: "w:r" }, index: 0, parent: undefined }),
+            ).to.throw();
         });
 
         it("should return blank defaults if run is empty", () => {
             const output = renderParagraphNode({
                 element: {
-                    name: "w:p",
                     elements: [
                         {
                             name: "w:r",
                         },
                     ],
+                    name: "w:p",
                 },
                 index: 0,
                 parent: undefined,
@@ -97,23 +103,23 @@ describe("run-renderer", () => {
         it("should handle w:t elements with undefined text", () => {
             const output = renderParagraphNode({
                 element: {
-                    name: "w:p",
                     elements: [
                         {
-                            name: "w:r",
                             elements: [
                                 {
                                     name: "w:t",
                                     elements: [
                                         {
                                             type: "text",
-                                            // text is undefined
+                                            // Text is undefined
                                         },
                                     ],
                                 },
                             ],
+                            name: "w:r",
                         },
                     ],
+                    name: "w:p",
                 },
                 index: 0,
                 parent: undefined,

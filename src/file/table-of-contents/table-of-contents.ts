@@ -9,7 +9,8 @@
  * @module
  */
 import { FileChild } from "@file/file-child";
-import { InternalHyperlink, Paragraph, type TabStopDefinition } from "@file/paragraph";
+import { InternalHyperlink, Paragraph } from "@file/paragraph";
+import type { TabStopDefinition } from "@file/paragraph";
 import { Run, Tab } from "@file/paragraph/run";
 import { createBegin, createEnd, createSeparate } from "@file/paragraph/run/field";
 import { Text } from "@file/paragraph/run/run-components/text";
@@ -20,12 +21,12 @@ import { StructuredDocumentTagContent } from "./sdt-content";
 import { StructuredDocumentTagProperties } from "./sdt-properties";
 import type { ITableOfContentsOptions } from "./table-of-contents-properties";
 
-type ToCEntry = {
+interface ToCEntry {
     readonly title: string;
     readonly level: number;
     readonly page?: number;
     readonly href?: string;
-};
+}
 
 /**
  * Represents a Table of Contents in a WordprocessingML document.
@@ -82,7 +83,11 @@ export class TableOfContents extends FileChild {
 
         const beginParagraphMandatoryChildren = [
             new Run({
-                children: [createBegin(beginDirty), new FieldInstruction(properties), createSeparate()],
+                children: [
+                    createBegin(beginDirty),
+                    new FieldInstruction(properties),
+                    createSeparate(),
+                ],
             }),
         ];
 
@@ -98,7 +103,9 @@ export class TableOfContents extends FileChild {
             const { stylesWithLevels } = properties;
             const cachedParagraphs = cachedEntries.map((entry, i) => {
                 const contentChild = this.buildCachedContentParagraphChild(entry, properties);
-                const style = stylesWithLevels?.find((s) => s.level === entry.level)?.styleName ?? `TOC${entry.level}`;
+                const style =
+                    stylesWithLevels?.find((s) => s.level === entry.level)?.styleName ??
+                    `TOC${entry.level}`;
                 const children =
                     i === 0
                         ? [...beginParagraphMandatoryChildren, contentChild]
@@ -107,9 +114,9 @@ export class TableOfContents extends FileChild {
                           : [contentChild];
 
                 return new Paragraph({
+                    children,
                     style,
                     tabStops: this.getTabStopsForLevel(entry.level),
-                    children,
                 });
             });
 
@@ -147,18 +154,21 @@ export class TableOfContents extends FileChild {
         this.root.push(content);
     }
 
-    private getTabStopsForLevel(level: number, pageWidth: number = 9025): readonly TabStopDefinition[] {
+    private getTabStopsForLevel(
+        level: number,
+        pageWidth: number = 9025,
+    ): readonly TabStopDefinition[] {
         const levelSpace = 240;
         const levelPosition = pageWidth + 1 - (level - 1) * levelSpace; // TODO: should be equal to page width + 1 - level margin
         return [
             {
-                type: "clear",
                 position: levelPosition,
+                type: "clear",
             },
             {
-                type: "right",
-                position: pageWidth,
                 leader: "dot",
+                position: pageWidth,
+                type: "right",
             },
         ];
     }
@@ -166,7 +176,6 @@ export class TableOfContents extends FileChild {
     private buildCachedContentRun(entry: ToCEntry, properties?: ITableOfContentsOptions): Run {
         return new Run({
             // TODO: The IndexLink style might always need to be set regardless of the hyperlink property. This needs to be verified.
-            style: properties?.hyperlink && entry.href !== undefined ? "IndexLink" : undefined,
             children: [
                 new Text({
                     text: entry.title,
@@ -176,10 +185,14 @@ export class TableOfContents extends FileChild {
                     text: entry.page?.toString() ?? "",
                 }),
             ],
+            style: properties?.hyperlink && entry.href !== undefined ? "IndexLink" : undefined,
         });
     }
 
-    private buildCachedContentParagraphChild(entry: ToCEntry, properties?: ITableOfContentsOptions): Run | InternalHyperlink {
+    private buildCachedContentParagraphChild(
+        entry: ToCEntry,
+        properties?: ITableOfContentsOptions,
+    ): Run | InternalHyperlink {
         const run = this.buildCachedContentRun(entry, properties);
         if (properties?.hyperlink && entry.href !== undefined) {
             return new InternalHyperlink({

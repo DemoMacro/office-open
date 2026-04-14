@@ -20,12 +20,12 @@ import { BookmarkEndAttributes, BookmarkStartAttributes } from "./bookmark-attri
  * @property id - The bookmark name used for reference
  * @property children - Array of paragraph children contained within the bookmark range
  */
-export type IBookmarkOptions = {
+export interface IBookmarkOptions {
     /** The bookmark name used for reference */
     readonly id: string;
     /** Array of paragraph children contained within the bookmark range */
     readonly children: readonly ParagraphChild[];
-};
+}
 
 /**
  * Represents a bookmark in a WordprocessingML document.
@@ -114,8 +114,8 @@ export class BookmarkStart extends XmlComponent {
         super("w:bookmarkStart");
 
         const attributes = new BookmarkStartAttributes({
-            name: id,
             id: linkId,
+            name: id,
         });
         this.root.push(attributes);
     }

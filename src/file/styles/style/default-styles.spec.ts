@@ -1,7 +1,6 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
 import { EMPTY_OBJECT } from "@file/xml-components";
+import { describe, expect, it } from "vite-plus/test";
 
 import * as defaultStyles from "./default-styles";
 
@@ -14,7 +13,7 @@ describe("Default Styles", () => {
         const tree = new Formatter().format(style);
         expect(tree).to.deep.equal({
             "w:style": [
-                { _attr: { "w:type": "paragraph", "w:styleId": "Heading1" } },
+                { _attr: { "w:styleId": "Heading1", "w:type": "paragraph" } },
                 { "w:name": { _attr: { "w:val": "Heading 1" } } },
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
                 { "w:next": { _attr: { "w:val": "Normal" } } },
@@ -28,7 +27,7 @@ describe("Default Styles", () => {
         const tree = new Formatter().format(style);
         expect(tree).to.deep.equal({
             "w:style": [
-                { _attr: { "w:type": "paragraph", "w:styleId": "Title" } },
+                { _attr: { "w:styleId": "Title", "w:type": "paragraph" } },
                 { "w:name": { _attr: { "w:val": "Title" } } },
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
                 { "w:next": { _attr: { "w:val": "Normal" } } },
@@ -42,7 +41,7 @@ describe("Default Styles", () => {
         const tree = new Formatter().format(style);
         expect(tree).to.deep.equal({
             "w:style": [
-                { _attr: { "w:type": "paragraph", "w:styleId": "Heading1" } },
+                { _attr: { "w:styleId": "Heading1", "w:type": "paragraph" } },
                 { "w:name": { _attr: { "w:val": "Heading 1" } } },
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
                 { "w:next": { _attr: { "w:val": "Normal" } } },
@@ -56,7 +55,7 @@ describe("Default Styles", () => {
         const tree = new Formatter().format(style);
         expect(tree).to.deep.equal({
             "w:style": [
-                { _attr: { "w:type": "paragraph", "w:styleId": "Heading2" } },
+                { _attr: { "w:styleId": "Heading2", "w:type": "paragraph" } },
                 { "w:name": { _attr: { "w:val": "Heading 2" } } },
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
                 { "w:next": { _attr: { "w:val": "Normal" } } },
@@ -70,7 +69,7 @@ describe("Default Styles", () => {
         const tree = new Formatter().format(style);
         expect(tree).to.deep.equal({
             "w:style": [
-                { _attr: { "w:type": "paragraph", "w:styleId": "Heading3" } },
+                { _attr: { "w:styleId": "Heading3", "w:type": "paragraph" } },
                 { "w:name": { _attr: { "w:val": "Heading 3" } } },
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
                 { "w:next": { _attr: { "w:val": "Normal" } } },
@@ -84,7 +83,7 @@ describe("Default Styles", () => {
         const tree = new Formatter().format(style);
         expect(tree).to.deep.equal({
             "w:style": [
-                { _attr: { "w:type": "paragraph", "w:styleId": "Heading4" } },
+                { _attr: { "w:styleId": "Heading4", "w:type": "paragraph" } },
                 { "w:name": { _attr: { "w:val": "Heading 4" } } },
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
                 { "w:next": { _attr: { "w:val": "Normal" } } },
@@ -98,7 +97,7 @@ describe("Default Styles", () => {
         const tree = new Formatter().format(style);
         expect(tree).to.deep.equal({
             "w:style": [
-                { _attr: { "w:type": "paragraph", "w:styleId": "Heading5" } },
+                { _attr: { "w:styleId": "Heading5", "w:type": "paragraph" } },
                 { "w:name": { _attr: { "w:val": "Heading 5" } } },
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
                 { "w:next": { _attr: { "w:val": "Normal" } } },
@@ -112,7 +111,7 @@ describe("Default Styles", () => {
         const tree = new Formatter().format(style);
         expect(tree).to.deep.equal({
             "w:style": [
-                { _attr: { "w:type": "paragraph", "w:styleId": "Heading6" } },
+                { _attr: { "w:styleId": "Heading6", "w:type": "paragraph" } },
                 { "w:name": { _attr: { "w:val": "Heading 6" } } },
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
                 { "w:next": { _attr: { "w:val": "Normal" } } },
@@ -126,7 +125,7 @@ describe("Default Styles", () => {
         const tree = new Formatter().format(style);
         expect(tree).to.deep.equal({
             "w:style": [
-                { _attr: { "w:type": "paragraph", "w:styleId": "Strong" } },
+                { _attr: { "w:styleId": "Strong", "w:type": "paragraph" } },
                 { "w:name": { _attr: { "w:val": "Strong" } } },
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
                 { "w:next": { _attr: { "w:val": "Normal" } } },
@@ -140,7 +139,7 @@ describe("Default Styles", () => {
         const tree = new Formatter().format(style);
         expect(tree).to.deep.equal({
             "w:style": [
-                { _attr: { "w:type": "paragraph", "w:styleId": "ListParagraph" } },
+                { _attr: { "w:styleId": "ListParagraph", "w:type": "paragraph" } },
                 { "w:name": { _attr: { "w:val": "List Paragraph" } } },
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
                 { "w:qFormat": EMPTY_OBJECT },
@@ -153,7 +152,7 @@ describe("Default Styles", () => {
         const tree = new Formatter().format(style);
         expect(tree).to.deep.equal({
             "w:style": [
-                { _attr: { "w:type": "paragraph", "w:styleId": "FootnoteText" } },
+                { _attr: { "w:styleId": "FootnoteText", "w:type": "paragraph" } },
                 { "w:name": { _attr: { "w:val": "footnote text" } } },
                 { "w:basedOn": { _attr: { "w:val": "Normal" } } },
                 { "w:link": { _attr: { "w:val": "FootnoteTextChar" } } },
@@ -210,7 +209,7 @@ describe("Default Styles", () => {
         const tree = new Formatter().format(style);
         expect(tree).to.deep.equal({
             "w:style": [
-                { _attr: { "w:type": "character", "w:styleId": "FootnoteReference" } },
+                { _attr: { "w:styleId": "FootnoteReference", "w:type": "character" } },
                 { "w:name": { _attr: { "w:val": "footnote reference" } } },
                 { "w:basedOn": { _attr: { "w:val": "DefaultParagraphFont" } } },
                 {
@@ -246,7 +245,7 @@ describe("Default Styles", () => {
         const tree = new Formatter().format(style);
         expect(tree).to.deep.equal({
             "w:style": [
-                { _attr: { "w:type": "character", "w:styleId": "FootnoteTextChar" } },
+                { _attr: { "w:styleId": "FootnoteTextChar", "w:type": "character" } },
                 { "w:name": { _attr: { "w:val": "Footnote Text Char" } } },
                 { "w:basedOn": { _attr: { "w:val": "DefaultParagraphFont" } } },
                 { "w:link": { _attr: { "w:val": "FootnoteText" } } },
@@ -290,7 +289,7 @@ describe("Default Styles", () => {
         const tree = new Formatter().format(style);
         expect(tree).to.deep.equal({
             "w:style": [
-                { _attr: { "w:type": "character", "w:styleId": "Hyperlink" } },
+                { _attr: { "w:styleId": "Hyperlink", "w:type": "character" } },
                 { "w:name": { _attr: { "w:val": "Hyperlink" } } },
                 { "w:basedOn": { _attr: { "w:val": "DefaultParagraphFont" } } },
                 {
@@ -331,7 +330,7 @@ describe("Default Styles", () => {
         const tree = new Formatter().format(style);
         expect(tree).to.deep.equal({
             "w:style": [
-                { _attr: { "w:type": "character", "w:styleId": "Hyperlink" } },
+                { _attr: { "w:styleId": "Hyperlink", "w:type": "character" } },
                 { "w:name": { _attr: { "w:val": "Hyperlink" } } },
                 { "w:basedOn": { _attr: { "w:val": "DefaultParagraphFont" } } },
                 {

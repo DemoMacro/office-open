@@ -62,11 +62,14 @@ export const replaceTokenInParagraphElement = ({
     for (const run of renderedParagraph.runs) {
         for (const { text, index, start, end } of run.parts) {
             switch (replaceMode) {
-                case ReplaceMode.START:
+                case ReplaceMode.START: {
                     if (startIndex >= start && startIndex <= end) {
                         const offsetStartIndex = startIndex - start;
                         const offsetEndIndex = Math.min(endIndex, end) - start;
-                        const partToReplace = run.text.substring(offsetStartIndex, offsetEndIndex + 1);
+                        const partToReplace = run.text.substring(
+                            offsetStartIndex,
+                            offsetEndIndex + 1,
+                        );
                         // We use a token to split the text if the replacement is within the same run
                         // If not, we just add text to the middle of the run later
                         if (partToReplace === "") {
@@ -74,27 +77,39 @@ export const replaceTokenInParagraphElement = ({
                         }
 
                         const firstPart = text.replace(partToReplace, replacementText);
-                        patchTextElement(paragraphElement.elements![run.index].elements![index], firstPart);
+                        patchTextElement(
+                            paragraphElement.elements![run.index].elements![index],
+                            firstPart,
+                        );
                         replaceMode = ReplaceMode.MIDDLE;
                         continue;
-                        /* c8 ignore next 2 */
+                        /* C8 ignore next 2 */
                     }
                     break;
-                case ReplaceMode.MIDDLE:
+                }
+                case ReplaceMode.MIDDLE: {
                     if (endIndex <= end) {
                         const lastPart = text.substring(endIndex - start + 1);
-                        patchTextElement(paragraphElement.elements![run.index].elements![index], lastPart);
-                        const currentElement = paragraphElement.elements![run.index].elements![index];
+                        patchTextElement(
+                            paragraphElement.elements![run.index].elements![index],
+                            lastPart,
+                        );
+                        const currentElement =
+                            paragraphElement.elements![run.index].elements![index];
                         // We need to add xml:space="preserve" to the last element to preserve the whitespace
                         // Otherwise, the text will be merged with the next element
-                        // eslint-disable-next-line functional/immutable-data
-                        paragraphElement.elements![run.index].elements![index] = patchSpaceAttribute(currentElement);
+                        paragraphElement.elements![run.index].elements![index] =
+                            patchSpaceAttribute(currentElement);
                         replaceMode = ReplaceMode.END;
                     } else {
-                        patchTextElement(paragraphElement.elements![run.index].elements![index], "");
+                        patchTextElement(
+                            paragraphElement.elements![run.index].elements![index],
+                            "",
+                        );
                     }
                     break;
-                /* c8 ignore next */
+                }
+                /* C8 ignore next */
                 default:
             }
         }
@@ -104,7 +119,6 @@ export const replaceTokenInParagraphElement = ({
 };
 
 const patchTextElement = (element: Element, text: string): Element => {
-    // eslint-disable-next-line functional/immutable-data
     element.elements = createTextElementContents(text);
 
     return element;

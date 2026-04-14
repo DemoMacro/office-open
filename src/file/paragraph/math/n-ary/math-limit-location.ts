@@ -7,15 +7,16 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Options for creating a limit location element.
  */
-type MathLimitLocationOptions = {
+interface MathLimitLocationOptions {
     /** Location: "undOvr" (under/over) or "subSup" (subscript/superscript). Defaults to "undOvr". */
     readonly value?: string;
-};
+}
 
 /**
  * Creates a limit location element for n-ary operators.
@@ -35,8 +36,8 @@ type MathLimitLocationOptions = {
  */
 export const createMathLimitLocation = ({ value }: MathLimitLocationOptions): XmlComponent =>
     new BuilderElement<Required<MathLimitLocationOptions>>({
-        name: "m:limLoc",
         attributes: {
             value: { key: "m:val", value: value || "undOvr" },
         },
+        name: "m:limLoc",
     });

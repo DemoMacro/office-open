@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { Paragraph } from "../paragraph";
 import { Header } from "./header";
@@ -26,7 +25,8 @@ describe("Header", () => {
                     "xmlns:m": "http://schemas.openxmlformats.org/officeDocument/2006/math",
                     "xmlns:mc": "http://schemas.openxmlformats.org/markup-compatibility/2006",
                     "xmlns:o": "urn:schemas-microsoft-com:office:office",
-                    "xmlns:r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+                    "xmlns:r":
+                        "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
                     "xmlns:v": "urn:schemas-microsoft-com:vml",
                     "xmlns:w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
                     "xmlns:w10": "urn:schemas-microsoft-com:office:word",
@@ -35,12 +35,17 @@ describe("Header", () => {
                     "xmlns:w16cid": "http://schemas.microsoft.com/office/word/2016/wordml/cid",
                     "xmlns:w16se": "http://schemas.microsoft.com/office/word/2015/wordml/symex",
                     "xmlns:wne": "http://schemas.microsoft.com/office/word/2006/wordml",
-                    "xmlns:wp": "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing",
-                    "xmlns:wp14": "http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing",
-                    "xmlns:wpc": "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
-                    "xmlns:wpg": "http://schemas.microsoft.com/office/word/2010/wordprocessingGroup",
+                    "xmlns:wp":
+                        "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing",
+                    "xmlns:wp14":
+                        "http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing",
+                    "xmlns:wpc":
+                        "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
+                    "xmlns:wpg":
+                        "http://schemas.microsoft.com/office/word/2010/wordprocessingGroup",
                     "xmlns:wpi": "http://schemas.microsoft.com/office/word/2010/wordprocessingInk",
-                    "xmlns:wps": "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
+                    "xmlns:wps":
+                        "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
                 },
             },
         });

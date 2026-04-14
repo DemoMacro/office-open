@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import {
     OverlapType,
@@ -14,16 +13,16 @@ describe("Table Float Properties", () => {
     describe("#createTableFloatProperties", () => {
         it("should construct a TableFloatProperties with all options", () => {
             const properties = createTableFloatProperties({
-                horizontalAnchor: TableAnchorType.MARGIN,
-                verticalAnchor: TableAnchorType.PAGE,
                 absoluteHorizontalPosition: 10,
-                relativeHorizontalPosition: RelativeHorizontalPosition.CENTER,
                 absoluteVerticalPosition: 20,
-                relativeVerticalPosition: RelativeVerticalPosition.BOTTOM,
                 bottomFromText: 30,
-                topFromText: 40,
+                horizontalAnchor: TableAnchorType.MARGIN,
                 leftFromText: 50,
+                relativeHorizontalPosition: RelativeHorizontalPosition.CENTER,
+                relativeVerticalPosition: RelativeVerticalPosition.BOTTOM,
                 rightFromText: 60,
+                topFromText: 40,
+                verticalAnchor: TableAnchorType.PAGE,
             });
             const tree = new Formatter().format(properties);
             expect(tree).to.deep.equal(DEFAULT_TFP);
@@ -56,16 +55,16 @@ describe("Table Float Properties", () => {
 const DEFAULT_TFP = {
     "w:tblpPr": {
         _attr: {
+            "w:bottomFromText": 30,
             "w:horzAnchor": "margin",
-            "w:vertAnchor": "page",
+            "w:leftFromText": 50,
+            "w:rightFromText": 60,
             "w:tblpX": 10,
             "w:tblpXSpec": "center",
             "w:tblpY": 20,
             "w:tblpYSpec": "bottom",
-            "w:bottomFromText": 30,
             "w:topFromText": 40,
-            "w:leftFromText": 50,
-            "w:rightFromText": 60,
+            "w:vertAnchor": "page",
         },
     },
 };

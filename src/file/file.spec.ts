@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { sectionMarginDefaults, sectionPageSizeDefaults } from "./document";
 import { File } from "./file";
@@ -19,71 +18,91 @@ describe("File", () => {
             const doc = new File({
                 sections: [
                     {
-                        headers: {
-                            default: new Header(),
-                        },
+                        children: [],
                         footers: {
                             default: new Footer(),
                         },
-                        children: [],
+                        headers: {
+                            default: new Header(),
+                        },
                     },
                 ],
             });
 
             const tree = new Formatter().format(doc.Document.View.Body);
 
-            expect(tree["w:body"][0]["w:sectPr"][0]["w:headerReference"]._attr["w:type"]).to.equal("default");
-            expect(tree["w:body"][0]["w:sectPr"][1]["w:footerReference"]._attr["w:type"]).to.equal("default");
+            expect(tree["w:body"][0]["w:sectPr"][0]["w:headerReference"]._attr["w:type"]).to.equal(
+                "default",
+            );
+            expect(tree["w:body"][0]["w:sectPr"][1]["w:footerReference"]._attr["w:type"]).to.equal(
+                "default",
+            );
         });
 
         it("should create with first headers and footers", () => {
             const doc = new File({
                 sections: [
                     {
-                        headers: {
-                            first: new Header(),
-                        },
+                        children: [],
                         footers: {
                             first: new Footer(),
                         },
-                        children: [],
+                        headers: {
+                            first: new Header(),
+                        },
                     },
                 ],
             });
 
             const tree = new Formatter().format(doc.Document.View.Body);
-            expect(tree["w:body"][0]["w:sectPr"][0]["w:headerReference"]._attr["w:type"]).to.equal("first");
-            expect(tree["w:body"][0]["w:sectPr"][1]["w:footerReference"]._attr["w:type"]).to.equal("first");
+            expect(tree["w:body"][0]["w:sectPr"][0]["w:headerReference"]._attr["w:type"]).to.equal(
+                "first",
+            );
+            expect(tree["w:body"][0]["w:sectPr"][1]["w:footerReference"]._attr["w:type"]).to.equal(
+                "first",
+            );
         });
 
         it("should create with correct headers", () => {
             const doc = new File({
                 sections: [
                     {
-                        headers: {
-                            default: new Header(),
-                            first: new Header(),
-                            even: new Header(),
-                        },
+                        children: [],
                         footers: {
                             default: new Footer(),
-                            first: new Footer(),
                             even: new Footer(),
+                            first: new Footer(),
                         },
-                        children: [],
+                        headers: {
+                            default: new Header(),
+                            even: new Header(),
+                            first: new Header(),
+                        },
                     },
                 ],
             });
 
             const tree = new Formatter().format(doc.Document.View.Body);
 
-            expect(tree["w:body"][0]["w:sectPr"][0]["w:headerReference"]._attr["w:type"]).to.equal("default");
-            expect(tree["w:body"][0]["w:sectPr"][1]["w:headerReference"]._attr["w:type"]).to.equal("first");
-            expect(tree["w:body"][0]["w:sectPr"][2]["w:headerReference"]._attr["w:type"]).to.equal("even");
+            expect(tree["w:body"][0]["w:sectPr"][0]["w:headerReference"]._attr["w:type"]).to.equal(
+                "default",
+            );
+            expect(tree["w:body"][0]["w:sectPr"][1]["w:headerReference"]._attr["w:type"]).to.equal(
+                "first",
+            );
+            expect(tree["w:body"][0]["w:sectPr"][2]["w:headerReference"]._attr["w:type"]).to.equal(
+                "even",
+            );
 
-            expect(tree["w:body"][0]["w:sectPr"][3]["w:footerReference"]._attr["w:type"]).to.equal("default");
-            expect(tree["w:body"][0]["w:sectPr"][4]["w:footerReference"]._attr["w:type"]).to.equal("first");
-            expect(tree["w:body"][0]["w:sectPr"][5]["w:footerReference"]._attr["w:type"]).to.equal("even");
+            expect(tree["w:body"][0]["w:sectPr"][3]["w:footerReference"]._attr["w:type"]).to.equal(
+                "default",
+            );
+            expect(tree["w:body"][0]["w:sectPr"][4]["w:footerReference"]._attr["w:type"]).to.equal(
+                "first",
+            );
+            expect(tree["w:body"][0]["w:sectPr"][5]["w:footerReference"]._attr["w:type"]).to.equal(
+                "even",
+            );
         });
 
         it("should add child", () => {
@@ -184,21 +203,30 @@ describe("File", () => {
                         _attr: {
                             "mc:Ignorable": "w14 w15 wp14",
                             "xmlns:m": "http://schemas.openxmlformats.org/officeDocument/2006/math",
-                            "xmlns:mc": "http://schemas.openxmlformats.org/markup-compatibility/2006",
+                            "xmlns:mc":
+                                "http://schemas.openxmlformats.org/markup-compatibility/2006",
                             "xmlns:o": "urn:schemas-microsoft-com:office:office",
-                            "xmlns:r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+                            "xmlns:r":
+                                "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
                             "xmlns:v": "urn:schemas-microsoft-com:vml",
-                            "xmlns:w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
+                            "xmlns:w":
+                                "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
                             "xmlns:w10": "urn:schemas-microsoft-com:office:word",
                             "xmlns:w14": "http://schemas.microsoft.com/office/word/2010/wordml",
                             "xmlns:w15": "http://schemas.microsoft.com/office/word/2012/wordml",
                             "xmlns:wne": "http://schemas.microsoft.com/office/word/2006/wordml",
-                            "xmlns:wp": "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing",
-                            "xmlns:wp14": "http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing",
-                            "xmlns:wpc": "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
-                            "xmlns:wpg": "http://schemas.microsoft.com/office/word/2010/wordprocessingGroup",
-                            "xmlns:wpi": "http://schemas.microsoft.com/office/word/2010/wordprocessingInk",
-                            "xmlns:wps": "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
+                            "xmlns:wp":
+                                "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing",
+                            "xmlns:wp14":
+                                "http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing",
+                            "xmlns:wpc":
+                                "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
+                            "xmlns:wpg":
+                                "http://schemas.microsoft.com/office/word/2010/wordprocessingGroup",
+                            "xmlns:wpi":
+                                "http://schemas.microsoft.com/office/word/2010/wordprocessingInk",
+                            "xmlns:wps":
+                                "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
                         },
                     },
                     {
@@ -376,10 +404,10 @@ describe("File", () => {
 
     it("should create default run and paragraph property document defaults", () => {
         const doc = new File({
+            sections: [],
             styles: {
                 default: {},
             },
-            sections: [],
         });
 
         const tree = new Formatter().format(doc.Styles);
@@ -454,7 +482,6 @@ describe("File", () => {
     describe("#externalStyles", () => {
         it("should work with external styles", () => {
             const doc = new File({
-                sections: [],
                 externalStyles: `
                     <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
                     <w:styles xmlns:mc="first" xmlns:r="second">
@@ -493,6 +520,7 @@ describe("File", () => {
                             </w:pPr>
                         </w:style>
                     </w:styles>`,
+                sections: [],
             });
 
             expect(doc.Styles).to.not.be.undefined;
@@ -500,7 +528,6 @@ describe("File", () => {
 
         it("should merge external styles with default styles when both are provided", () => {
             const doc = new File({
-                sections: [],
                 externalStyles: `
                     <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
                     <w:styles xmlns:mc="first" xmlns:r="second">
@@ -508,6 +535,7 @@ describe("File", () => {
                             <w:name w:val="heading 1"/>
                         </w:style>
                     </w:styles>`,
+                sections: [],
                 styles: {
                     default: {
                         heading1: {
@@ -526,10 +554,10 @@ describe("File", () => {
     describe("#features", () => {
         it("should work with updateFields", () => {
             const doc = new File({
-                sections: [],
                 features: {
                     updateFields: true,
                 },
+                sections: [],
             });
 
             expect(doc.Styles).to.not.be.undefined;
@@ -537,10 +565,10 @@ describe("File", () => {
 
         it("should work with trackRevisions", () => {
             const doc = new File({
-                sections: [],
                 features: {
                     trackRevisions: true,
                 },
+                sections: [],
             });
 
             expect(doc.Styles).to.not.be.undefined;
@@ -550,10 +578,10 @@ describe("File", () => {
     describe("#hyphenation", () => {
         it("should work with autoHyphenation", () => {
             const doc = new File({
-                sections: [],
                 hyphenation: {
                     autoHyphenation: true,
                 },
+                sections: [],
             });
 
             expect(doc.Styles).to.not.be.undefined;

@@ -6,15 +6,16 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Options for scheme color.
  */
-type SchemeColorOptions = {
+interface SchemeColorOptions {
     /** Scheme color value */
     readonly value: (typeof SchemeColor)[keyof typeof SchemeColor];
-};
+}
 
 // <xsd:simpleType name="ST_SchemeColorVal">
 //     <xsd:restriction base="xsd:string">
@@ -38,7 +39,7 @@ type SchemeColorOptions = {
 //     </xsd:restriction>
 // </xsd:simpleType>
 
-// cspell:ignore folHlink, phClr, hlink
+// Cspell:ignore folHlink, phClr, hlink
 
 /**
  * Scheme color values for theme-based colors.
@@ -112,11 +113,11 @@ export const SchemeColor = {
  */
 export const createSchemeColor = (options: SchemeColorOptions): XmlComponent =>
     new BuilderElement<SchemeColorOptions>({
-        name: "a:schemeClr",
         attributes: {
             value: {
                 key: "val",
                 value: options.value,
             },
         },
+        name: "a:schemeClr",
     });

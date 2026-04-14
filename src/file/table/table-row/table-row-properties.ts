@@ -48,14 +48,17 @@
  * @module
  */
 import { DeletedTableRow, InsertedTableRow } from "@file/track-revision";
-import { ChangeAttributes, type IChangedAttributesProperties } from "@file/track-revision/track-revision";
+import { ChangeAttributes } from "@file/track-revision/track-revision";
+import type { IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { IgnoreIfEmptyXmlComponent, OnOffElement, XmlComponent } from "@file/xml-components";
 import type { PositiveUniversalMeasure } from "@util/values";
 
-import { type HeightRule, createTableRowHeight } from "./table-row-height";
-import { type ITableCellSpacingProperties, createTableCellSpacing } from "../table-cell-spacing";
+import { createTableCellSpacing } from "../table-cell-spacing";
+import type { ITableCellSpacingProperties } from "../table-cell-spacing";
+import { createTableRowHeight } from "./table-row-height";
+import type { HeightRule } from "./table-row-height";
 
-export type ITableRowPropertiesOptionsBase = {
+export interface ITableRowPropertiesOptionsBase {
     /** Whether the row can be split across pages (cantSplit) */
     readonly cantSplit?: boolean;
     /** Whether the row should be repeated as a header row on each page (tblHeader) */
@@ -69,7 +72,7 @@ export type ITableRowPropertiesOptionsBase = {
     };
     /** Spacing between cells in the row (tblCellSpacing) */
     readonly cellSpacing?: ITableCellSpacingProperties;
-};
+}
 
 /**
  * Options for configuring table row properties.
@@ -83,7 +86,8 @@ export type ITableRowPropertiesOptions = ITableRowPropertiesOptionsBase & {
     readonly includeIfEmpty?: boolean;
 };
 
-export type ITableRowPropertiesChangeOptions = ITableRowPropertiesOptionsBase & IChangedAttributesProperties;
+export type ITableRowPropertiesChangeOptions = ITableRowPropertiesOptionsBase &
+    IChangedAttributesProperties;
 
 /**
  * Represents table row properties (trPr) in a WordprocessingML document.
@@ -144,12 +148,12 @@ export class TableRowPropertiesChange extends XmlComponent {
         super("w:trPrChange");
         this.root.push(
             new ChangeAttributes({
-                id: options.id,
                 author: options.author,
                 date: options.date,
+                id: options.id,
             }),
         );
-        // trPr is required (minOccurs="1") even if empty
+        // TrPr is required (minOccurs="1") even if empty
         this.root.push(new TableRowProperties({ ...options, includeIfEmpty: true }));
     }
 }

@@ -11,7 +11,8 @@ import { StructuredDocumentTagContent } from "@file/table-of-contents/sdt-conten
 import { StructuredDocumentTagProperties } from "@file/table-of-contents/sdt-properties";
 import { XmlComponent } from "@file/xml-components";
 
-import { CheckBoxUtil, type ICheckboxSymbolOptions } from "./checkbox-util";
+import { CheckBoxUtil } from "./checkbox-util";
+import type { ICheckboxSymbolOptions } from "./checkbox-util";
 
 /**
  * Represents an interactive checkbox in a WordprocessingML document.
@@ -55,7 +56,7 @@ import { CheckBoxUtil, type ICheckboxSymbolOptions } from "./checkbox-util";
  * ```
  */
 export class CheckBox extends XmlComponent {
-    // default values per Microsoft
+    // Default values per Microsoft
     private readonly DEFAULT_UNCHECKED_SYMBOL: string = "2610";
     private readonly DEFAULT_CHECKED_SYMBOL: string = "2612";
     private readonly DEFAULT_FONT: string = "MS Gothic";

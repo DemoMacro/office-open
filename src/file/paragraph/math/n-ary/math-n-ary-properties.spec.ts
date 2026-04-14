@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { createMathNAryProperties } from "./math-n-ary-properties";
 
@@ -9,8 +8,8 @@ describe("createMathNAryProperties", () => {
         it("should create a MathNAryProperties with correct root key", () => {
             const mathNAryProperties = createMathNAryProperties({
                 accent: "∑",
-                hasSuperScript: true,
                 hasSubScript: true,
+                hasSuperScript: true,
             });
 
             const tree = new Formatter().format(mathNAryProperties);
@@ -37,8 +36,8 @@ describe("createMathNAryProperties", () => {
         it("should add super-script hide attributes", () => {
             const mathNAryProperties = createMathNAryProperties({
                 accent: "∑",
-                hasSuperScript: false,
                 hasSubScript: true,
+                hasSuperScript: false,
             });
 
             const tree = new Formatter().format(mathNAryProperties);
@@ -72,8 +71,8 @@ describe("createMathNAryProperties", () => {
         it("should add sub-script hide attributes", () => {
             const mathNAryProperties = createMathNAryProperties({
                 accent: "∑",
-                hasSuperScript: true,
                 hasSubScript: false,
+                hasSuperScript: true,
             });
 
             const tree = new Formatter().format(mathNAryProperties);
@@ -107,8 +106,8 @@ describe("createMathNAryProperties", () => {
         it("should add both super-script and sub-script hide attributes", () => {
             const mathNAryProperties = createMathNAryProperties({
                 accent: "∑",
-                hasSuperScript: false,
                 hasSubScript: false,
+                hasSuperScript: false,
             });
 
             const tree = new Formatter().format(mathNAryProperties);

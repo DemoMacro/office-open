@@ -1,15 +1,19 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
 import { FootnoteReferenceRun } from "@file/footnotes";
 import { PageNumber } from "@file/paragraph";
+import { describe, expect, it } from "vite-plus/test";
 
 import { DeletedTextRun } from "./deleted-text-run";
 
 describe("DeletedTextRun", () => {
     describe("#constructor", () => {
         it("should create a deleted text run", () => {
-            const deletedTextRun = new DeletedTextRun({ text: "some text", id: 0, date: "123", author: "Author" });
+            const deletedTextRun = new DeletedTextRun({
+                author: "Author",
+                date: "123",
+                id: 0,
+                text: "some text",
+            });
             const tree = new Formatter().format(deletedTextRun);
             expect(tree).to.deep.equal({
                 "w:del": [
@@ -41,7 +45,13 @@ describe("DeletedTextRun", () => {
 
     describe("#constructor with formatting", () => {
         it("should create a deleted text run", () => {
-            const deletedTextRun = new DeletedTextRun({ text: "some text", bold: true, id: 0, date: "123", author: "Author" });
+            const deletedTextRun = new DeletedTextRun({
+                author: "Author",
+                bold: true,
+                date: "123",
+                id: 0,
+                text: "some text",
+            });
             const tree = new Formatter().format(deletedTextRun);
             expect(tree).to.deep.equal({
                 "w:del": [
@@ -83,7 +93,7 @@ describe("DeletedTextRun", () => {
 
     describe("#constructor without children or text", () => {
         it("should create a deleted text run with no text content", () => {
-            const deletedTextRun = new DeletedTextRun({ id: 0, date: "123", author: "Author" });
+            const deletedTextRun = new DeletedTextRun({ author: "Author", date: "123", id: 0 });
             const tree = new Formatter().format(deletedTextRun);
             expect(tree).to.deep.equal({
                 "w:del": [
@@ -105,11 +115,11 @@ describe("DeletedTextRun", () => {
     describe("#break()", () => {
         it("should add a break", () => {
             const deletedTextRun = new DeletedTextRun({
+                author: "Author",
                 break: 1,
                 children: ["some text"],
-                id: 0,
                 date: "123",
-                author: "Author",
+                id: 0,
             });
             const tree = new Formatter().format(deletedTextRun);
             expect(tree).to.deep.equal({
@@ -146,10 +156,10 @@ describe("DeletedTextRun", () => {
     describe("page numbering", () => {
         it("should be able to delete the total pages", () => {
             const deletedTextRun = new DeletedTextRun({
-                children: [" to ", PageNumber.TOTAL_PAGES],
-                id: 0,
-                date: "123",
                 author: "Author",
+                children: [" to ", PageNumber.TOTAL_PAGES],
+                date: "123",
+                id: 0,
             });
             const tree = new Formatter().format(deletedTextRun);
             expect(tree).to.deep.equal({
@@ -212,10 +222,10 @@ describe("DeletedTextRun", () => {
 
         it("should be able to delete the total pages in section", () => {
             const deletedTextRun = new DeletedTextRun({
-                children: [" to ", PageNumber.TOTAL_PAGES_IN_SECTION],
-                id: 0,
-                date: "123",
                 author: "Author",
+                children: [" to ", PageNumber.TOTAL_PAGES_IN_SECTION],
+                date: "123",
+                id: 0,
             });
             const tree = new Formatter().format(deletedTextRun);
             expect(tree).to.deep.equal({
@@ -278,10 +288,10 @@ describe("DeletedTextRun", () => {
 
         it("should be able to delete the current page", () => {
             const deletedTextRun = new DeletedTextRun({
-                children: [" to ", PageNumber.CURRENT],
-                id: 0,
-                date: "123",
                 author: "Author",
+                children: [" to ", PageNumber.CURRENT],
+                date: "123",
+                id: 0,
             });
             const tree = new Formatter().format(deletedTextRun);
             expect(tree).to.deep.equal({
@@ -346,10 +356,10 @@ describe("DeletedTextRun", () => {
     describe("footnote references", () => {
         it("should add a valid footnote reference", () => {
             const deletedTextRun = new DeletedTextRun({
-                children: ["some text", new FootnoteReferenceRun(1)],
-                id: 0,
-                date: "123",
                 author: "Author",
+                children: ["some text", new FootnoteReferenceRun(1)],
+                date: "123",
+                id: 0,
             });
             const tree = new Formatter().format(deletedTextRun);
             expect(tree).to.deep.equal({
@@ -375,7 +385,15 @@ describe("DeletedTextRun", () => {
                             },
                             {
                                 "w:r": [
-                                    { "w:rPr": [{ "w:rStyle": { _attr: { "w:val": "FootnoteReference" } } }] },
+                                    {
+                                        "w:rPr": [
+                                            {
+                                                "w:rStyle": {
+                                                    _attr: { "w:val": "FootnoteReference" },
+                                                },
+                                            },
+                                        ],
+                                    },
                                     { "w:footnoteReference": { _attr: { "w:id": 1 } } },
                                 ],
                             },

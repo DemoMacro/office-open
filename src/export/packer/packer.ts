@@ -1,15 +1,15 @@
+import type { File } from "@file/file";
+import { convertOutput } from "@util/output-type";
+import type { OutputByType, OutputType } from "@util/output-type";
 /**
  * Packer module for exporting documents to various output formats.
  *
  * @module
  */
 import { zipSync } from "fflate";
-import { Readable } from "stream";
 
-import type { File } from "@file/file";
-import { type OutputByType, type OutputType, convertOutput } from "@util/output-type";
-
-import { Compiler, type IXmlifyedFile } from "./next-compiler";
+import { Compiler } from "./next-compiler";
+import type { IXmlifyedFile } from "./next-compiler";
 
 /**
  * Prettify options for formatting XML output.
@@ -39,7 +39,7 @@ const convertPrettifyType = (
  * Exports documents to various output formats.
  *
  * The Packer class provides static methods to convert a File object into different
- * output formats such as Buffer, Blob, string, or stream. It handles the compilation
+ * output formats such as Buffer, Blob, or string. It handles the compilation
  * of the document structure into OOXML format and compression into a .docx ZIP archive.
  *
  * @publicApi
@@ -66,7 +66,6 @@ export class Packer {
      * @param overrides - Optional array of file overrides for custom XML content
      * @returns A promise resolving to the exported document in the specified format
      */
-    // eslint-disable-next-line require-await
     public static async pack<T extends OutputType>(
         file: File,
         type: T,
@@ -156,28 +155,6 @@ export class Packer {
         overrides: readonly IXmlifyedFile[] = [],
     ): Promise<ArrayBuffer> {
         return Packer.pack(file, "arraybuffer", prettify, overrides);
-    }
-
-    /**
-     * Exports a document to a Node.js Readable stream.
-     *
-     * @param file - The document to export
-     * @param prettify - Whether to prettify the XML output
-     * @param overrides - Optional array of file overrides
-     * @returns A readable stream containing the document data
-     */
-    public static toStream(
-        file: File,
-        prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
-        overrides: readonly IXmlifyedFile[] = [],
-    ): Readable {
-        const files = this.compiler.compile(file, convertPrettifyType(prettify), overrides);
-        const zipped = zipSync(files, { level: 6 });
-
-        const stream = new Readable();
-        stream.push(zipped);
-        stream.push(null);
-        return stream;
     }
 
     private static readonly compiler = new Compiler();

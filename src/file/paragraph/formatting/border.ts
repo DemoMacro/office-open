@@ -7,7 +7,8 @@
  *
  * @module
  */
-import { BorderStyle, type IBorderOptions, createBorderElement } from "@file/border";
+import { BorderStyle, createBorderElement } from "@file/border";
+import type { IBorderOptions } from "@file/border";
 import { IgnoreIfEmptyXmlComponent, XmlComponent } from "@file/xml-components";
 
 /**
@@ -21,7 +22,7 @@ import { IgnoreIfEmptyXmlComponent, XmlComponent } from "@file/xml-components";
  * @property right - Border for the right edge of the paragraph
  * @property between - Border between consecutive paragraphs with the same border settings
  */
-export type IBordersOptions = {
+export interface IBordersOptions {
     /** Border for the top edge of the paragraph */
     readonly top?: IBorderOptions;
     /** Border for the bottom edge of the paragraph */
@@ -32,7 +33,7 @@ export type IBordersOptions = {
     readonly right?: IBorderOptions;
     /** Border between consecutive paragraphs with the same border settings */
     readonly between?: IBorderOptions;
-};
+}
 
 /**
  * Represents paragraph borders in a WordprocessingML document.
@@ -121,9 +122,9 @@ export class ThematicBreak extends XmlComponent {
         super("w:pBdr");
         const bottom = createBorderElement("w:bottom", {
             color: "auto",
+            size: 6,
             space: 1,
             style: BorderStyle.SINGLE,
-            size: 6,
         });
         this.root.push(bottom);
     }

@@ -1,3 +1,5 @@
+import { Formatter } from "@export/formatter";
+import type { IContext, XmlComponent } from "@file/xml-components";
 /**
  * Replacer module for performing placeholder substitution in XML structures.
  *
@@ -6,10 +8,8 @@
 import xml from "xml";
 import type { Element } from "xml-js";
 
-import { Formatter } from "@export/formatter";
-import type { IContext, XmlComponent } from "@file/xml-components";
-
-import { type IPatch, PatchType } from "./from-docx";
+import { PatchType } from "./from-docx";
+import type { IPatch } from "./from-docx";
 import { findRunElementIndexWithToken, splitRunElement } from "./paragraph-split-inject";
 import { replaceTokenInParagraphElement } from "./paragraph-token-replacer";
 import { findLocationOfText } from "./traverser";
@@ -25,10 +25,10 @@ const SPLIT_TOKEN = "ɵ";
  * @property element - The modified XML element
  * @property didFindOccurrence - Whether a placeholder occurrence was found and replaced
  */
-type IReplacerResult = {
+interface IReplacerResult {
     readonly element: Element;
     readonly didFindOccurrence: boolean;
-};
+}
 
 /**
  * Replaces placeholder text in XML with new content from a patch.
@@ -60,27 +60,34 @@ export const replacer = ({
     const renderedParagraphs = findLocationOfText(json, patchText);
 
     if (renderedParagraphs.length === 0) {
-        return { element: json, didFindOccurrence: false };
+        return { didFindOccurrence: false, element: json };
     }
 
     for (const renderedParagraph of renderedParagraphs) {
-        const textJson = patch.children.map((c) => toJson(xml(formatter.format(c as XmlComponent, context)))).map((c) => c.elements![0]);
+        const textJson = patch.children
+            .map((c) => toJson(xml(formatter.format(c as XmlComponent, context))))
+            .map((c) => c.elements![0]);
 
         switch (patch.type) {
             case PatchType.DOCUMENT: {
-                const parentElement = goToParentElementFromPath(json, renderedParagraph.pathToParagraph);
+                const parentElement = goToParentElementFromPath(
+                    json,
+                    renderedParagraph.pathToParagraph,
+                );
                 const elementIndex = getLastElementIndexFromPath(renderedParagraph.pathToParagraph);
-                // eslint-disable-next-line functional/immutable-data
                 parentElement.elements!.splice(elementIndex, 1, ...textJson);
                 break;
             }
             case PatchType.PARAGRAPH:
             default: {
-                const paragraphElement = goToElementFromPath(json, renderedParagraph.pathToParagraph);
+                const paragraphElement = goToElementFromPath(
+                    json,
+                    renderedParagraph.pathToParagraph,
+                );
                 replaceTokenInParagraphElement({
+                    originalText: patchText,
                     paragraphElement,
                     renderedParagraph,
-                    originalText: patchText,
                     replacementText: SPLIT_TOKEN,
                 });
 
@@ -108,14 +115,19 @@ export const replacer = ({
                     };
                 }
 
-                // eslint-disable-next-line functional/immutable-data
-                paragraphElement.elements!.splice(index, 1, left, ...newRunElements, patchedRightElement);
+                paragraphElement.elements!.splice(
+                    index,
+                    1,
+                    left,
+                    ...newRunElements,
+                    patchedRightElement,
+                );
                 break;
             }
         }
     }
 
-    return { element: json, didFindOccurrence: true };
+    return { didFindOccurrence: true, element: json };
 };
 
 const goToElementFromPath = (json: Element, path: readonly number[]): Element => {
@@ -134,6 +146,6 @@ const goToElementFromPath = (json: Element, path: readonly number[]): Element =>
 };
 
 const goToParentElementFromPath = (json: Element, path: readonly number[]): Element =>
-    goToElementFromPath(json, path.slice(0, path.length - 1));
+    goToElementFromPath(json, path.slice(0, -1));
 
 const getLastElementIndexFromPath = (path: readonly number[]): number => path[path.length - 1];

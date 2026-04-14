@@ -8,17 +8,18 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 import type { MathComponent } from "../math-component";
 
 /**
  * Options for creating a math base element.
  */
-type MathBaseOptions = {
+interface MathBaseOptions {
     /** The content of the base */
     readonly children: readonly MathComponent[];
-};
+}
 
 /**
  * Creates a math base element.
@@ -41,6 +42,6 @@ type MathBaseOptions = {
  */
 export const createMathBase = ({ children }: MathBaseOptions): XmlComponent =>
     new BuilderElement({
-        name: "m:e",
         children,
+        name: "m:e",
     });

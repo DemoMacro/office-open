@@ -10,13 +10,19 @@
  * @module
  */
 import { AlignmentType } from "@file/paragraph";
-import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
-import { abstractNumUniqueNumericIdGen, concreteNumUniqueNumericIdGen, convertInchesToTwip } from "@util/convenience-functions";
+import { XmlComponent } from "@file/xml-components";
+import type { IContext, IXmlableObject } from "@file/xml-components";
+import {
+    abstractNumUniqueNumericIdGen,
+    concreteNumUniqueNumericIdGen,
+    convertInchesToTwip,
+} from "@util/convenience-functions";
 
-import { AbstractNumbering } from "./abstract-numbering";
-import { type ILevelsOptions, LevelFormat } from "./level";
-import { ConcreteNumbering } from "./num";
 import { DocumentAttributes } from "../document/document-attributes";
+import { AbstractNumbering } from "./abstract-numbering";
+import { LevelFormat } from "./level";
+import type { ILevelsOptions } from "./level";
+import { ConcreteNumbering } from "./num";
 
 /**
  * Options for configuring numbering definitions.
@@ -25,7 +31,7 @@ import { DocumentAttributes } from "../document/document-attributes";
  *
  * @see {@link Numbering}
  */
-export type INumberingOptions = {
+export interface INumberingOptions {
     /** Array of numbering configurations, each with levels and a reference name. */
     readonly config: readonly {
         /** Array of level definitions for this numbering configuration. */
@@ -33,7 +39,7 @@ export type INumberingOptions = {
         /** Unique reference name for this numbering configuration. */
         readonly reference: string;
     }[];
-};
+}
 
 /**
  * Represents the numbering definitions in a WordprocessingML document.
@@ -99,7 +105,6 @@ export type INumberingOptions = {
 export class Numbering extends XmlComponent {
     private readonly abstractNumberingMap = new Map<string, AbstractNumbering>();
     private readonly concreteNumberingMap = new Map<string, ConcreteNumbering>();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private readonly referenceConfigMap = new Map<string, Record<string, any>>();
     private readonly abstractNumUniqueNumericId = abstractNumUniqueNumericIdGen();
     private readonly concreteNumUniqueNumericId = concreteNumUniqueNumericIdGen();
@@ -116,137 +121,159 @@ export class Numbering extends XmlComponent {
         super("w:numbering");
         this.root.push(
             new DocumentAttributes(
-                ["wpc", "mc", "o", "r", "m", "v", "wp14", "wp", "w10", "w", "w14", "w15", "wpg", "wpi", "wne", "wps"],
+                [
+                    "wpc",
+                    "mc",
+                    "o",
+                    "r",
+                    "m",
+                    "v",
+                    "wp14",
+                    "wp",
+                    "w10",
+                    "w",
+                    "w14",
+                    "w15",
+                    "wpg",
+                    "wpi",
+                    "wne",
+                    "wps",
+                ],
                 "w14 w15 wp14",
             ),
         );
 
         const abstractNumbering = new AbstractNumbering(this.abstractNumUniqueNumericId(), [
             {
+                alignment: AlignmentType.LEFT,
+                format: LevelFormat.BULLET,
                 level: 0,
-                format: LevelFormat.BULLET,
-                text: "\u25CF",
-                alignment: AlignmentType.LEFT,
                 style: {
                     paragraph: {
-                        indent: { left: convertInchesToTwip(0.5), hanging: convertInchesToTwip(0.25) },
+                        indent: {
+                            hanging: convertInchesToTwip(0.25),
+                            left: convertInchesToTwip(0.5),
+                        },
                     },
                 },
+                text: "\u25CF",
             },
             {
+                alignment: AlignmentType.LEFT,
+                format: LevelFormat.BULLET,
                 level: 1,
-                format: LevelFormat.BULLET,
-                text: "\u25CB",
-                alignment: AlignmentType.LEFT,
                 style: {
                     paragraph: {
-                        indent: { left: convertInchesToTwip(1), hanging: convertInchesToTwip(0.25) },
+                        indent: {
+                            hanging: convertInchesToTwip(0.25),
+                            left: convertInchesToTwip(1),
+                        },
                     },
                 },
+                text: "\u25CB",
             },
             {
+                alignment: AlignmentType.LEFT,
+                format: LevelFormat.BULLET,
                 level: 2,
-                format: LevelFormat.BULLET,
-                text: "\u25A0",
-                alignment: AlignmentType.LEFT,
                 style: {
                     paragraph: {
-                        indent: { left: 2160, hanging: convertInchesToTwip(0.25) },
+                        indent: { hanging: convertInchesToTwip(0.25), left: 2160 },
                     },
                 },
+                text: "\u25A0",
             },
             {
+                alignment: AlignmentType.LEFT,
+                format: LevelFormat.BULLET,
                 level: 3,
-                format: LevelFormat.BULLET,
-                text: "\u25CF",
-                alignment: AlignmentType.LEFT,
                 style: {
                     paragraph: {
-                        indent: { left: 2880, hanging: convertInchesToTwip(0.25) },
+                        indent: { hanging: convertInchesToTwip(0.25), left: 2880 },
                     },
                 },
+                text: "\u25CF",
             },
             {
+                alignment: AlignmentType.LEFT,
+                format: LevelFormat.BULLET,
                 level: 4,
-                format: LevelFormat.BULLET,
+                style: {
+                    paragraph: {
+                        indent: { hanging: convertInchesToTwip(0.25), left: 3600 },
+                    },
+                },
                 text: "\u25CB",
-                alignment: AlignmentType.LEFT,
-                style: {
-                    paragraph: {
-                        indent: { left: 3600, hanging: convertInchesToTwip(0.25) },
-                    },
-                },
             },
             {
+                alignment: AlignmentType.LEFT,
+                format: LevelFormat.BULLET,
                 level: 5,
-                format: LevelFormat.BULLET,
+                style: {
+                    paragraph: {
+                        indent: { hanging: convertInchesToTwip(0.25), left: 4320 },
+                    },
+                },
                 text: "\u25A0",
-                alignment: AlignmentType.LEFT,
-                style: {
-                    paragraph: {
-                        indent: { left: 4320, hanging: convertInchesToTwip(0.25) },
-                    },
-                },
             },
             {
+                alignment: AlignmentType.LEFT,
+                format: LevelFormat.BULLET,
                 level: 6,
-                format: LevelFormat.BULLET,
-                text: "\u25CF",
-                alignment: AlignmentType.LEFT,
                 style: {
                     paragraph: {
-                        indent: { left: 5040, hanging: convertInchesToTwip(0.25) },
+                        indent: { hanging: convertInchesToTwip(0.25), left: 5040 },
                     },
                 },
+                text: "\u25CF",
             },
             {
+                alignment: AlignmentType.LEFT,
+                format: LevelFormat.BULLET,
                 level: 7,
-                format: LevelFormat.BULLET,
-                text: "\u25CF",
-                alignment: AlignmentType.LEFT,
                 style: {
                     paragraph: {
-                        indent: { left: 5760, hanging: convertInchesToTwip(0.25) },
+                        indent: { hanging: convertInchesToTwip(0.25), left: 5760 },
                     },
                 },
+                text: "\u25CF",
             },
             {
-                level: 8,
-                format: LevelFormat.BULLET,
-                text: "\u25CF",
                 alignment: AlignmentType.LEFT,
+                format: LevelFormat.BULLET,
+                level: 8,
                 style: {
                     paragraph: {
-                        indent: { left: 6480, hanging: convertInchesToTwip(0.25) },
+                        indent: { hanging: convertInchesToTwip(0.25), left: 6480 },
                     },
                 },
+                text: "\u25CF",
             },
         ]);
 
-        // eslint-disable-next-line functional/immutable-data
         this.concreteNumberingMap.set(
             "default-bullet-numbering",
             new ConcreteNumbering({
-                numId: 1,
                 abstractNumId: abstractNumbering.id,
-                reference: "default-bullet-numbering",
                 instance: 0,
+                numId: 1,
                 overrideLevels: [
                     {
                         num: 0,
                         start: 1,
                     },
                 ],
+                reference: "default-bullet-numbering",
             }),
         );
 
-        // eslint-disable-next-line functional/immutable-data
         this.abstractNumberingMap.set("default-bullet-numbering", abstractNumbering);
 
         for (const con of options.config) {
-            // eslint-disable-next-line functional/immutable-data
-            this.abstractNumberingMap.set(con.reference, new AbstractNumbering(this.abstractNumUniqueNumericId(), con.levels));
-            // eslint-disable-next-line functional/immutable-data
+            this.abstractNumberingMap.set(
+                con.reference,
+                new AbstractNumbering(this.abstractNumUniqueNumericId(), con.levels),
+            );
             this.referenceConfigMap.set(con.reference, con.levels);
         }
     }
@@ -297,10 +324,9 @@ export class Numbering extends XmlComponent {
         const firstLevelStartNumber = referenceConfigLevels && referenceConfigLevels[0].start;
 
         const concreteNumberingSettings = {
-            numId: this.concreteNumUniqueNumericId(),
             abstractNumId: abstractNumbering.id,
-            reference,
             instance,
+            numId: this.concreteNumUniqueNumericId(),
             overrideLevels: [
                 typeof firstLevelStartNumber === "number" && Number.isInteger(firstLevelStartNumber)
                     ? {
@@ -312,10 +338,13 @@ export class Numbering extends XmlComponent {
                           start: 1,
                       },
             ],
+            reference,
         };
 
-        // eslint-disable-next-line functional/immutable-data
-        this.concreteNumberingMap.set(fullReference, new ConcreteNumbering(concreteNumberingSettings));
+        this.concreteNumberingMap.set(
+            fullReference,
+            new ConcreteNumbering(concreteNumberingSettings),
+        );
     }
 
     /**
@@ -324,7 +353,7 @@ export class Numbering extends XmlComponent {
      * @returns An array of all concrete numbering instances
      */
     public get ConcreteNumbering(): readonly ConcreteNumbering[] {
-        return Array.from(this.concreteNumberingMap.values());
+        return [...this.concreteNumberingMap.values()];
     }
 
     /**
@@ -332,8 +361,7 @@ export class Numbering extends XmlComponent {
      *
      * @returns An array of all numbering reference configurations
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public get ReferenceConfig(): readonly Record<string, any>[] {
-        return Array.from(this.referenceConfigMap.values());
+        return [...this.referenceConfigMap.values()];
     }
 }

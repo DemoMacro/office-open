@@ -167,43 +167,43 @@ export const VerticalPositionRelativeFrom = {
 /**
  * Options for horizontal positioning of a floating drawing.
  */
-export type IHorizontalPositionOptions = {
+export interface IHorizontalPositionOptions {
     /** The base from which horizontal position is calculated */
     readonly relative?: (typeof HorizontalPositionRelativeFrom)[keyof typeof HorizontalPositionRelativeFrom];
     /** Alignment relative to the horizontal base */
     readonly align?: (typeof HorizontalPositionAlign)[keyof typeof HorizontalPositionAlign];
     /** Offset in EMUs from the horizontal base */
     readonly offset?: number;
-};
+}
 
 /**
  * Options for vertical positioning of a floating drawing.
  */
-export type IVerticalPositionOptions = {
+export interface IVerticalPositionOptions {
     /** The base from which vertical position is calculated */
     readonly relative?: (typeof VerticalPositionRelativeFrom)[keyof typeof VerticalPositionRelativeFrom];
     /** Alignment relative to the vertical base */
     readonly align?: (typeof VerticalPositionAlign)[keyof typeof VerticalPositionAlign];
     /** Offset in EMUs from the vertical base */
     readonly offset?: number;
-};
+}
 
 /**
  * Margin distances around a floating drawing in EMUs.
  */
-export type IMargins = {
+export interface IMargins {
     readonly left?: number;
     readonly bottom?: number;
     readonly top?: number;
     readonly right?: number;
-};
+}
 
 /**
  * Configuration options for a floating/anchored drawing.
  *
  * @see {@link Anchor}
  */
-export type IFloating = {
+export interface IFloating {
     readonly horizontalPosition: IHorizontalPositionOptions;
     readonly verticalPosition: IVerticalPositionOptions;
     readonly allowOverlap?: boolean;
@@ -213,4 +213,4 @@ export type IFloating = {
     readonly margins?: IMargins;
     readonly wrap?: ITextWrapping;
     readonly zIndex?: number;
-};
+}

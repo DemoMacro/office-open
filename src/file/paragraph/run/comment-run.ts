@@ -22,7 +22,7 @@ import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
  * @property author - Name of the comment author
  * @property date - Date and time the comment was created
  */
-export type ICommentOptions = {
+export interface ICommentOptions {
     /** Unique identifier for the comment */
     readonly id: number;
     /** Content of the comment (typically paragraphs) */
@@ -33,17 +33,17 @@ export type ICommentOptions = {
     readonly author?: string;
     /** Date and time the comment was created */
     readonly date?: Date;
-};
+}
 
 /**
  * Options for creating a comments container.
  *
  * @property children - Array of comment definitions
  */
-export type ICommentsOptions = {
+export interface ICommentsOptions {
     /** Array of comment definitions */
     readonly children: readonly ICommentOptions[];
-};
+}
 
 /**
  * @internal
@@ -54,7 +54,12 @@ class CommentAttributes extends XmlAttributeComponent<{
     readonly author?: string;
     readonly date?: string;
 }> {
-    protected readonly xmlKeys = { id: "w:id", initials: "w:initials", author: "w:author", date: "w:date" };
+    protected readonly xmlKeys = {
+        author: "w:author",
+        date: "w:date",
+        id: "w:id",
+        initials: "w:initials",
+    };
 }
 
 /**
@@ -101,6 +106,8 @@ class RootCommentsAttributes extends XmlAttributeComponent<{
     readonly "xmlns:wps"?: string;
 }> {
     protected readonly xmlKeys = {
+        "xmlns:aink": "xmlns:aink",
+        "xmlns:am3d": "xmlns:am3d",
         "xmlns:cx": "xmlns:cx",
         "xmlns:cx1": "xmlns:cx1",
         "xmlns:cx2": "xmlns:cx2",
@@ -110,27 +117,25 @@ class RootCommentsAttributes extends XmlAttributeComponent<{
         "xmlns:cx6": "xmlns:cx6",
         "xmlns:cx7": "xmlns:cx7",
         "xmlns:cx8": "xmlns:cx8",
+        "xmlns:m": "xmlns:m",
         "xmlns:mc": "xmlns:mc",
-        "xmlns:aink": "xmlns:aink",
-        "xmlns:am3d": "xmlns:am3d",
         "xmlns:o": "xmlns:o",
         "xmlns:r": "xmlns:r",
-        "xmlns:m": "xmlns:m",
         "xmlns:v": "xmlns:v",
-        "xmlns:wp14": "xmlns:wp14",
-        "xmlns:wp": "xmlns:wp",
-        "xmlns:w10": "xmlns:w10",
         "xmlns:w": "xmlns:w",
+        "xmlns:w10": "xmlns:w10",
         "xmlns:w14": "xmlns:w14",
         "xmlns:w15": "xmlns:w15",
+        "xmlns:w16": "xmlns:w16",
         "xmlns:w16cex": "xmlns:w16cex",
         "xmlns:w16cid": "xmlns:w16cid",
-        "xmlns:w16": "xmlns:w16",
         "xmlns:w16sdtdh": "xmlns:w16sdtdh",
         "xmlns:w16se": "xmlns:w16se",
+        "xmlns:wne": "xmlns:wne",
+        "xmlns:wp": "xmlns:wp",
+        "xmlns:wp14": "xmlns:wp14",
         "xmlns:wpg": "xmlns:wpg",
         "xmlns:wpi": "xmlns:wpi",
-        "xmlns:wne": "xmlns:wne",
         "xmlns:wps": "xmlns:wps",
     };
 }
@@ -264,10 +269,10 @@ export class Comment extends XmlComponent {
 
         this.root.push(
             new CommentAttributes({
-                id,
-                initials,
                 author,
                 date: date.toISOString(),
+                id,
+                initials,
             }),
         );
 
@@ -321,6 +326,8 @@ export class Comments extends XmlComponent {
 
         this.root.push(
             new RootCommentsAttributes({
+                "xmlns:aink": "http://schemas.microsoft.com/office/drawing/2016/ink",
+                "xmlns:am3d": "http://schemas.microsoft.com/office/drawing/2017/model3d",
                 "xmlns:cx": "http://schemas.microsoft.com/office/drawing/2014/chartex",
                 "xmlns:cx1": "http://schemas.microsoft.com/office/drawing/2015/9/8/chartex",
                 "xmlns:cx2": "http://schemas.microsoft.com/office/drawing/2015/10/21/chartex",
@@ -330,27 +337,27 @@ export class Comments extends XmlComponent {
                 "xmlns:cx6": "http://schemas.microsoft.com/office/drawing/2016/5/12/chartex",
                 "xmlns:cx7": "http://schemas.microsoft.com/office/drawing/2016/5/13/chartex",
                 "xmlns:cx8": "http://schemas.microsoft.com/office/drawing/2016/5/14/chartex",
+                "xmlns:m": "http://schemas.openxmlformats.org/officeDocument/2006/math",
                 "xmlns:mc": "http://schemas.openxmlformats.org/markup-compatibility/2006",
-                "xmlns:aink": "http://schemas.microsoft.com/office/drawing/2016/ink",
-                "xmlns:am3d": "http://schemas.microsoft.com/office/drawing/2017/model3d",
                 "xmlns:o": "urn:schemas-microsoft-com:office:office",
                 "xmlns:r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
-                "xmlns:m": "http://schemas.openxmlformats.org/officeDocument/2006/math",
                 "xmlns:v": "urn:schemas-microsoft-com:vml",
-                "xmlns:wp14": "http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing",
-                "xmlns:wp": "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing",
-                "xmlns:w10": "urn:schemas-microsoft-com:office:word",
                 "xmlns:w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
+                "xmlns:w10": "urn:schemas-microsoft-com:office:word",
                 "xmlns:w14": "http://schemas.microsoft.com/office/word/2010/wordml",
                 "xmlns:w15": "http://schemas.microsoft.com/office/word/2012/wordml",
+                "xmlns:w16": "http://schemas.microsoft.com/office/word/2018/wordml",
                 "xmlns:w16cex": "http://schemas.microsoft.com/office/word/2018/wordml/cex",
                 "xmlns:w16cid": "http://schemas.microsoft.com/office/word/2016/wordml/cid",
-                "xmlns:w16": "http://schemas.microsoft.com/office/word/2018/wordml",
-                "xmlns:w16sdtdh": "http://schemas.microsoft.com/office/word/2020/wordml/sdtdatahash",
+                "xmlns:w16sdtdh":
+                    "http://schemas.microsoft.com/office/word/2020/wordml/sdtdatahash",
                 "xmlns:w16se": "http://schemas.microsoft.com/office/word/2015/wordml/symex",
+                "xmlns:wne": "http://schemas.microsoft.com/office/word/2006/wordml",
+                "xmlns:wp":
+                    "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing",
+                "xmlns:wp14": "http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing",
                 "xmlns:wpg": "http://schemas.microsoft.com/office/word/2010/wordprocessingGroup",
                 "xmlns:wpi": "http://schemas.microsoft.com/office/word/2010/wordprocessingInk",
-                "xmlns:wne": "http://schemas.microsoft.com/office/word/2006/wordml",
                 "xmlns:wps": "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
             }),
         );

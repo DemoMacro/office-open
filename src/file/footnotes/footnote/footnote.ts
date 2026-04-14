@@ -37,14 +37,14 @@ export const FootnoteType = {
  *
  * @see {@link Footnote}
  */
-export type IFootnoteOptions = {
+export interface IFootnoteOptions {
     /** Unique numeric identifier for this footnote */
     readonly id: number;
     /** Type of footnote (separator or continuation separator) */
     readonly type?: (typeof FootnoteType)[keyof typeof FootnoteType];
     /** Paragraph content of the footnote */
     readonly children: readonly Paragraph[];
-};
+}
 
 /**
  * Represents a footnote in a WordprocessingML document.
@@ -85,8 +85,8 @@ export class Footnote extends XmlComponent {
         super("w:footnote");
         this.root.push(
             new FootnoteAttributes({
-                type: options.type,
                 id: options.id,
+                type: options.type,
             }),
         );
 

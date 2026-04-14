@@ -1,3 +1,5 @@
+import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import type { IXmlableObject } from "@file/xml-components";
 /**
  * Imported XML Component module for handling external XML content.
  *
@@ -7,9 +9,8 @@
  *
  * @module
  */
-import { type Element as XmlElement, xml2js } from "xml-js";
-
-import { type IXmlableObject, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { xml2js } from "xml-js";
+import type { Element as XmlElement } from "xml-js";
 
 import type { IContext } from "./base";
 
@@ -29,13 +30,16 @@ import type { IContext } from "./base";
  * const component = convertToXmlComponent(xmlElement);
  * ```
  */
-export const convertToXmlComponent = (element: XmlElement): ImportedXmlComponent | string | undefined => {
+export const convertToXmlComponent = (
+    element: XmlElement,
+): ImportedXmlComponent | string | undefined => {
     switch (element.type) {
         case undefined:
-        case "element":
-            // eslint-disable-next-line no-case-declarations
-            const xmlComponent = new ImportedXmlComponent(element.name as string, element.attributes);
-            // eslint-disable-next-line no-case-declarations
+        case "element": {
+            const xmlComponent = new ImportedXmlComponent(
+                element.name as string,
+                element.attributes,
+            );
             const childElements = element.elements || [];
             for (const childElm of childElements) {
                 const child = convertToXmlComponent(childElm);
@@ -44,11 +48,14 @@ export const convertToXmlComponent = (element: XmlElement): ImportedXmlComponent
                 }
             }
             return xmlComponent;
-        case "text":
+        }
+        case "text": {
             return element.text as string;
-        default:
+        }
+        default: {
             return undefined;
-        /* c8 ignore next 2 */
+        }
+        /* C8 ignore next 2 */
     }
 };
 
@@ -56,9 +63,8 @@ export const convertToXmlComponent = (element: XmlElement): ImportedXmlComponent
  * Internal attribute component for imported XML elements.
  * @internal
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 class ImportedXmlComponentAttributes extends XmlAttributeComponent<any> {
-    // noop
+    // Noop
 }
 
 /**
@@ -108,7 +114,6 @@ export class ImportedXmlComponent extends XmlComponent {
      * @param rootKey - The XML element name
      * @param _attr - Optional attributes for the root element
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public constructor(rootKey: string, _attr?: any) {
         super(rootKey);
         if (_attr) {
@@ -146,7 +151,6 @@ export class ImportedRootElementAttributes extends XmlComponent {
      *
      * @param _attr - The attributes object to pass through
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public constructor(private readonly _attr: any) {
         super("");
     }

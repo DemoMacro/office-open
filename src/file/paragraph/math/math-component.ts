@@ -6,7 +6,12 @@
  *
  * @module
  */
-import type { MathAngledBrackets, MathCurlyBrackets, MathRoundBrackets, MathSquareBrackets } from "./brackets";
+import type {
+    MathAngledBrackets,
+    MathCurlyBrackets,
+    MathRoundBrackets,
+    MathSquareBrackets,
+} from "./brackets";
 import type { MathFraction } from "./fraction";
 import type { MathFunction } from "./function";
 import type { MathRun } from "./math-run";

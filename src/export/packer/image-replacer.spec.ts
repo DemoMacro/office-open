@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import type { Media } from "@file/media";
+import { describe, expect, it } from "vite-plus/test";
 
 import { ImageReplacer } from "./image-replacer";
 
@@ -12,19 +11,19 @@ describe("ImageReplacer", () => {
                 "test {test-image.png} test",
                 [
                     {
-                        type: "png",
                         data: Buffer.from(""),
                         fileName: "test-image.png",
                         transformation: {
-                            pixels: {
-                                x: 100,
-                                y: 100,
-                            },
                             emus: {
                                 x: 100,
                                 y: 100,
                             },
+                            pixels: {
+                                x: 100,
+                                y: 100,
+                            },
                         },
+                        type: "png",
                     },
                 ],
                 0,
@@ -40,18 +39,18 @@ describe("ImageReplacer", () => {
             const result = imageReplacer.getMediaData("test {test-image} test", {
                 Array: [
                     {
-                        stream: Buffer.from(""),
-                        fileName: "test-image",
                         dimensions: {
-                            pixels: {
-                                x: 100,
-                                y: 100,
-                            },
                             emus: {
                                 x: 100,
                                 y: 100,
                             },
+                            pixels: {
+                                x: 100,
+                                y: 100,
+                            },
                         },
+                        fileName: "test-image",
+                        stream: Buffer.from(""),
                     },
                 ],
             } as unknown as Media);

@@ -64,7 +64,7 @@ export class Graphic extends XmlComponent {
             }),
         );
 
-        this.data = new GraphicData({ mediaData, transform, outline, solidFill });
+        this.data = new GraphicData({ mediaData, outline, solidFill, transform });
 
         this.root.push(this.data);
     }

@@ -7,13 +7,19 @@
  */
 import { XmlComponent } from "@file/xml-components";
 
-import { DeletedNumberOfPages, DeletedNumberOfPagesSection, DeletedPage } from "./deleted-page-number";
-import { DeletedText } from "./deleted-text";
 import { createBreak } from "../../paragraph/run/break";
 import { createBegin, createEnd, createSeparate } from "../../paragraph/run/field";
 import { RunProperties } from "../../paragraph/run/properties";
-import { type IRunOptions, PageNumber } from "../../paragraph/run/run";
-import { ChangeAttributes, type IChangedAttributesProperties } from "../track-revision";
+import { PageNumber } from "../../paragraph/run/run";
+import type { IRunOptions } from "../../paragraph/run/run";
+import { ChangeAttributes } from "../track-revision";
+import type { IChangedAttributesProperties } from "../track-revision";
+import {
+    DeletedNumberOfPages,
+    DeletedNumberOfPagesSection,
+    DeletedPage,
+} from "./deleted-page-number";
+import { DeletedText } from "./deleted-text";
 
 /**
  * Options for creating a deleted text run.
@@ -81,9 +87,9 @@ export class DeletedTextRun extends XmlComponent {
         super("w:del");
         this.root.push(
             new ChangeAttributes({
-                id: options.id,
                 author: options.author,
                 date: options.date,
+                id: options.id,
             }),
         );
         this.deletedTextRunWrapper = new DeletedTextRunWrapper(options);
@@ -109,27 +115,31 @@ class DeletedTextRunWrapper extends XmlComponent {
             for (const child of options.children) {
                 if (typeof child === "string") {
                     switch (child) {
-                        case PageNumber.CURRENT:
+                        case PageNumber.CURRENT: {
                             this.root.push(createBegin());
                             this.root.push(new DeletedPage());
                             this.root.push(createSeparate());
                             this.root.push(createEnd());
                             break;
-                        case PageNumber.TOTAL_PAGES:
+                        }
+                        case PageNumber.TOTAL_PAGES: {
                             this.root.push(createBegin());
                             this.root.push(new DeletedNumberOfPages());
                             this.root.push(createSeparate());
                             this.root.push(createEnd());
                             break;
-                        case PageNumber.TOTAL_PAGES_IN_SECTION:
+                        }
+                        case PageNumber.TOTAL_PAGES_IN_SECTION: {
                             this.root.push(createBegin());
                             this.root.push(new DeletedNumberOfPagesSection());
                             this.root.push(createSeparate());
                             this.root.push(createEnd());
                             break;
-                        default:
+                        }
+                        default: {
                             this.root.push(new DeletedText(child));
                             break;
+                        }
                     }
                     continue;
                 }

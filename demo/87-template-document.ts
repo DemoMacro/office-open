@@ -1,15 +1,16 @@
 // Patch a document with patches
 
 import * as fs from "fs";
-import { patchDocument, PatchType, TextRun } from "docx";
+
+import { PatchType, TextRun, patchDocument } from "docx";
 
 patchDocument({
-    outputType: "nodebuffer",
     data: fs.readFileSync("demo/assets/simple-template-2.docx"),
+    outputType: "nodebuffer",
     patches: {
         name: {
-            type: PatchType.PARAGRAPH,
             children: [new TextRun("Max")],
+            type: PatchType.PARAGRAPH,
         },
     },
 }).then((doc) => {

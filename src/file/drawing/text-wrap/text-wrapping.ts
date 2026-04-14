@@ -46,8 +46,8 @@ export const TextWrappingSide = {
 /**
  * Options for configuring text wrapping around a drawing.
  */
-export type ITextWrapping = {
+export interface ITextWrapping {
     readonly type: (typeof TextWrappingType)[keyof typeof TextWrappingType];
     readonly side?: (typeof TextWrappingSide)[keyof typeof TextWrappingSide];
     readonly margins?: IDistance;
-};
+}

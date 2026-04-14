@@ -225,7 +225,16 @@ new WpsShapeRun({
 A floating callout box with background fill, outline, and centered text:
 
 ```ts
-import { AlignmentType, Document, Packer, Paragraph, SchemeColor, TextRun, VerticalAnchor, WpsShapeRun } from "docx";
+import {
+    AlignmentType,
+    Document,
+    Packer,
+    Paragraph,
+    SchemeColor,
+    TextRun,
+    VerticalAnchor,
+    WpsShapeRun,
+} from "docx";
 import * as fs from "fs";
 
 const doc = new Document({

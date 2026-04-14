@@ -1,7 +1,6 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
 import { HorizontalPositionAlign } from "@file/shared/alignment";
+import { describe, expect, it } from "vite-plus/test";
 
 import { HorizontalPositionRelativeFrom } from "./floating-position";
 import { createHorizontalPosition } from "./horizontal-position";
@@ -11,8 +10,8 @@ describe("HorizontalPosition", () => {
         it("should create a element with position align", () => {
             const tree = new Formatter().format(
                 createHorizontalPosition({
-                    relative: HorizontalPositionRelativeFrom.MARGIN,
                     align: HorizontalPositionAlign.CENTER,
+                    relative: HorizontalPositionRelativeFrom.MARGIN,
                 }),
             );
             expect(tree).to.deep.equal({
@@ -32,8 +31,8 @@ describe("HorizontalPosition", () => {
         it("should create a element with offset", () => {
             const tree = new Formatter().format(
                 createHorizontalPosition({
-                    relative: HorizontalPositionRelativeFrom.MARGIN,
                     offset: 40,
+                    relative: HorizontalPositionRelativeFrom.MARGIN,
                 }),
             );
             expect(tree).to.deep.equal({

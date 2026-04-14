@@ -8,7 +8,8 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Options for language settings.
@@ -29,14 +30,14 @@ import { BuilderElement, type XmlComponent } from "@file/xml-components";
  * @property eastAsia - Language for East Asian text (e.g., "ja-JP", "zh-CN")
  * @property bidirectional - Language for bidirectional text (e.g., "ar-SA", "he-IL")
  */
-export type ILanguageOptions = {
+export interface ILanguageOptions {
     /** Language for Latin and complex script text (RFC 1766 format, e.g., "en-US") */
     readonly value?: string;
     /** Language for East Asian text (RFC 1766 format, e.g., "ja-JP") */
     readonly eastAsia?: string;
     /** Language for bidirectional text (RFC 1766 format, e.g., "ar-SA") */
     readonly bidirectional?: string;
-};
+}
 
 /**
  * Creates a language component for run properties.
@@ -68,19 +69,19 @@ export const createLanguageComponent = (options: ILanguageOptions): XmlComponent
         readonly eastAsia?: string;
         readonly bidirectional?: string;
     }>({
-        name: "w:lang",
         attributes: {
-            value: {
-                key: "w:val",
-                value: options.value,
+            bidirectional: {
+                key: "w:bidi",
+                value: options.bidirectional,
             },
             eastAsia: {
                 key: "w:eastAsia",
                 value: options.eastAsia,
             },
-            bidirectional: {
-                key: "w:bidi",
-                value: options.bidirectional,
+            value: {
+                key: "w:val",
+                value: options.value,
             },
         },
+        name: "w:lang",
     });

@@ -7,8 +7,10 @@
  *
  * @module
  */
-import { type AttributeData, type AttributePayload, Attributes, NextAttributeComponent, XmlComponent } from "@file/xml-components";
-import { type PositiveUniversalMeasure, hpsMeasureValue } from "@util/values";
+import { Attributes, NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import type { AttributePayload } from "@file/xml-components";
+import { hpsMeasureValue } from "@util/values";
+import type { PositiveUniversalMeasure } from "@util/values";
 
 /**
  * XML element representing a boolean on/off value (CT_OnOff).
@@ -158,10 +160,10 @@ export class StringValueElement extends XmlComponent {
  */
 export const createStringElement = (name: string, value: string): XmlComponent =>
     new BuilderElement({
-        name,
         attributes: {
             value: { key: "w:val", value },
         },
+        name,
     });
 
 /**
@@ -269,8 +271,7 @@ export class StringContainer extends XmlComponent {
  * });
  * ```
  */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export class BuilderElement<T extends AttributeData = {}> extends XmlComponent {
+export class BuilderElement<T = {}> extends XmlComponent {
     /**
      * Creates a BuilderElement with the specified configuration.
      *
