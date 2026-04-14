@@ -1,5 +1,10 @@
-import JSZip from "jszip";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+vi.mock("fflate", () => ({
+    unzipSync: vi.fn(),
+    strFromU8: vi.fn().mockImplementation((data: Uint8Array) => new TextDecoder().decode(data)),
+}));
+// eslint-disable-next-line import/order
+import { unzipSync } from "fflate";
 
 import { patchDetector } from "./patch-detector";
 
@@ -68,9 +73,9 @@ const MOCK_XML = `
             </w:r>
         </w:p>
         <w:p w14:paraId="7AD7975D" w14:textId="77777777" w:rsidR="00EF161F"
-            w:rsidRDefault="00EF161F" />
+            w:rsidRDefault="007B52ED" />
         <w:p w14:paraId="3BD6D75A" w14:textId="19AE3121" w:rsidR="00EF161F"
-            w:rsidRDefault="00EF161F">
+            w:rsidRDefault="007B52ED">
             <w:r>
                 <w:t>{{table}}</w:t>
             </w:r>
@@ -337,18 +342,23 @@ const MOCK_XML_2 = `
 `;
 // cspell:enable
 
+const createMockUnzipped = (entries: readonly (readonly [string, string | Uint8Array])[]): Record<string, Uint8Array> =>
+    Object.fromEntries(
+        entries.map(([key, value]): readonly [string, Uint8Array] => [
+            key,
+            typeof value === "string" ? new TextEncoder().encode(value) : value,
+        ]),
+    );
+
 describe("patch-detector", () => {
     describe("patchDetector", () => {
         describe("document.xml and [Content_Types].xml", () => {
             beforeEach(() => {
-                vi.spyOn(JSZip, "loadAsync").mockReturnValue(
-                    new Promise<JSZip>((resolve) => {
-                        const zip = new JSZip();
-
-                        zip.file("word/document.xml", MOCK_XML);
-                        zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
-                        resolve(zip);
-                    }),
+                vi.mocked(unzipSync).mockImplementation(() =>
+                    createMockUnzipped([
+                        ["word/document.xml", MOCK_XML],
+                        ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`],
+                    ]),
                 );
             });
 
@@ -368,14 +378,11 @@ describe("patch-detector", () => {
     describe("patchDetector", () => {
         describe("document.xml and [Content_Types].xml", () => {
             beforeEach(() => {
-                vi.spyOn(JSZip, "loadAsync").mockReturnValue(
-                    new Promise<JSZip>((resolve) => {
-                        const zip = new JSZip();
-
-                        zip.file("word/document.xml", MOCK_XML_2);
-                        zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
-                        resolve(zip);
-                    }),
+                vi.mocked(unzipSync).mockImplementation(() =>
+                    createMockUnzipped([
+                        ["word/document.xml", MOCK_XML_2],
+                        ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`],
+                    ]),
                 );
             });
 
@@ -390,18 +397,28 @@ describe("patch-detector", () => {
                 expect(output).toMatchObject(["school_name", "address"]);
             });
         });
-    });
 
-    describe("with JSZip instance", () => {
-        it("should accept a JSZip instance directly", async () => {
-            const zip = new JSZip();
-            zip.file("word/document.xml", MOCK_XML);
-            zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
-
-            const output = await patchDetector({
-                data: zip,
+        describe("non-XML files should be skipped", () => {
+            beforeEach(() => {
+                vi.mocked(unzipSync).mockImplementation(() =>
+                    createMockUnzipped([
+                        ["word/document.xml", MOCK_XML],
+                        ["word/styles.bin", new TextEncoder().encode("binary content")],
+                        ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`],
+                    ]),
+                );
             });
-            expect(output).toMatchObject(["name", "paragraph_replace", "table", "image_test", "table_heading_1", "item_1"]);
+
+            afterEach(() => {
+                vi.restoreAllMocks();
+            });
+
+            it("should skip non-XML files when scanning for placeholders", async () => {
+                const output = await patchDetector({
+                    data: Buffer.from(""),
+                });
+                expect(output).toMatchObject(["name", "paragraph_replace", "table", "image_test", "table_heading_1", "item_1"]);
+            });
         });
     });
 });

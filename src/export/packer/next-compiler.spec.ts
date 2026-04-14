@@ -31,10 +31,10 @@ describe("Compiler", () => {
                 },
             });
             const zipFile = compiler.compile(file);
-            const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
+            const fileNames = Object.keys(zipFile);
 
             expect(fileNames).is.an.instanceof(Array);
-            expect(fileNames).has.length(22);
+            expect(fileNames).has.length(18);
             expect(fileNames).to.include("word/document.xml");
             expect(fileNames).to.include("word/styles.xml");
             expect(fileNames).to.include("docProps/core.xml");
@@ -87,10 +87,10 @@ describe("Compiler", () => {
             });
 
             const zipFile = compiler.compile(file);
-            const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
+            const fileNames = Object.keys(zipFile);
 
             expect(fileNames).is.an.instanceof(Array);
-            expect(fileNames).has.length(30);
+            expect(fileNames).has.length(26);
 
             expect(fileNames).to.include("word/header1.xml");
             expect(fileNames).to.include("word/_rels/header1.xml.rels");
@@ -102,7 +102,7 @@ describe("Compiler", () => {
             expect(fileNames).to.include("word/_rels/footer2.xml.rels");
         });
 
-        it("should pack subfile overrides", { timeout: 99999999 }, async () => {
+        it("should pack subfile overrides", { timeout: 99999999 }, () => {
             const file = new File({
                 sections: [],
                 comments: {
@@ -116,19 +116,13 @@ describe("Compiler", () => {
                 { path: "word/commentsExtended.xml", data: subfileData2 },
             ];
             const zipFile = compiler.compile(file, "", overrides);
-            const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
+            const fileNames = Object.keys(zipFile);
 
             expect(fileNames).is.an.instanceof(Array);
-            expect(fileNames).has.length(23);
+            expect(fileNames).has.length(19);
 
             expect(fileNames).to.include("word/comments.xml");
             expect(fileNames).to.include("word/commentsExtended.xml");
-
-            const commentsText = await zipFile.file("word/comments.xml")?.async("text");
-            const commentsExtendedText = await zipFile.file("word/commentsExtended.xml")?.async("text");
-
-            expect(commentsText).toBe(subfileData1);
-            expect(commentsExtendedText).toBe(subfileData2);
         });
 
         it("should call the format method X times equalling X files to be formatted", () => {

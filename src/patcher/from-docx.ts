@@ -6,7 +6,8 @@
  *
  * @module
  */
-import JSZip from "jszip";
+import { strFromU8, unzipSync, zipSync } from "fflate";
+import { textToUint8Array, toUint8Array } from "undio";
 import { type Element, js2xml } from "xml-js";
 
 import { ImageReplacer } from "@export/packer/image-replacer";
@@ -18,8 +19,8 @@ import { type IMediaData, Media } from "@file/media";
 import { ConcreteHyperlink, ExternalHyperlink, type ParagraphChild } from "@file/paragraph";
 import { TargetModeType } from "@file/relationships/relationship/relationship";
 import type { IContext } from "@file/xml-components";
-import { encodeUtf8, uniqueId } from "@util/convenience-functions";
-import type { OutputByType, OutputType } from "@util/output-type";
+import { uniqueId } from "@util/convenience-functions";
+import { type OutputByType, type OutputType, convertOutput } from "@util/output-type";
 
 import { appendContentType } from "./content-types-manager";
 import { appendRelationship, getNextRelationshipIndex } from "./relationship-manager";
@@ -33,7 +34,7 @@ import { toJson } from "./util";
  * arrays, and streams.
  */
 // eslint-disable-next-line functional/prefer-readonly-type
-export type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob | NodeJS.ReadableStream | JSZip;
+export type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob | NodeJS.ReadableStream;
 
 /**
  * Patch type enumeration.
@@ -193,8 +194,9 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
      * Search for occurrences over patched document
      */
     recursive = true,
+// eslint-disable-next-line require-await
 }: PatchDocumentOptions<T>): Promise<OutputByType[T]> => {
-    const zipContent = data instanceof JSZip ? data : await JSZip.loadAsync(data);
+    const zipContent = unzipSync(toUint8Array(data));
     const contexts = new Map<string, IContext>();
     const file = {
         Media: new Media(),
@@ -210,22 +212,21 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
 
     const binaryContentMap = new Map<string, Uint8Array>();
 
-    for (const [key, value] of Object.entries(zipContent.files)) {
-        const binaryValue = await value.async("uint8array");
-        const startBytes = binaryValue.slice(0, 2);
+    for (const [key, value] of Object.entries(zipContent)) {
+        const startBytes = value.slice(0, 2);
         if (compareByteArrays(startBytes, UTF16LE) || compareByteArrays(startBytes, UTF16BE)) {
             // eslint-disable-next-line functional/immutable-data
-            binaryContentMap.set(key, binaryValue);
+            binaryContentMap.set(key, value);
             continue;
         }
 
         if (!key.endsWith(".xml") && !key.endsWith(".rels")) {
             // eslint-disable-next-line functional/immutable-data
-            binaryContentMap.set(key, binaryValue);
+            binaryContentMap.set(key, value);
             continue;
         }
 
-        const json = toJson(await value.async("text"));
+        const json = toJson(strFromU8(value));
 
         if (key === "word/document.xml") {
             const document = json.elements?.find((i) => i.name === "w:document");
@@ -388,27 +389,26 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
         appendContentType(contentTypesJson, "image/svg+xml", "svg");
     }
 
-    const zip = new JSZip();
+    const files: Record<string, Uint8Array> = {};
 
     for (const [key, value] of map) {
         const output = toXml(value);
-
-        zip.file(key, encodeUtf8(output));
+        // eslint-disable-next-line functional/immutable-data
+        files[key] = textToUint8Array(output);
     }
 
     for (const [key, value] of binaryContentMap) {
-        zip.file(key, value);
+        // eslint-disable-next-line functional/immutable-data
+        files[key] = value;
     }
 
     for (const { data: stream, fileName } of file.Media.Array) {
-        zip.file(`word/media/${fileName}`, stream);
+        // eslint-disable-next-line functional/immutable-data
+        files[`word/media/${fileName}`] = stream;
     }
 
-    return zip.generateAsync({
-        type: outputType,
-        mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        compression: "DEFLATE",
-    });
+    const zipped = zipSync(files, { level: 6 });
+    return convertOutput(zipped, outputType);
 };
 
 const toXml = (jsonObj: Element): string => {

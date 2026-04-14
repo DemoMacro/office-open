@@ -151,9 +151,7 @@ describe("Packer", () => {
     describe("#toBlob()", () => {
         it("should create a standard docx file", async () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            vi.spyOn((Packer as any).compiler, "compile").mockReturnValue({
-                generateAsync: () => vi.fn(),
-            });
+            vi.spyOn((Packer as any).compiler, "compile").mockReturnValue({});
             const str = await Packer.toBlob(file);
 
             assert.isDefined(str);
@@ -178,9 +176,7 @@ describe("Packer", () => {
     describe("#toArrayBuffer()", () => {
         it("should create a standard docx file", async () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            vi.spyOn((Packer as any).compiler, "compile").mockReturnValue({
-                generateAsync: () => vi.fn(),
-            });
+            vi.spyOn((Packer as any).compiler, "compile").mockReturnValue({});
             const str = await Packer.toArrayBuffer(file);
 
             assert.isDefined(str);
@@ -204,22 +200,23 @@ describe("Packer", () => {
 
     describe("#toStream()", () => {
         it("should create a standard docx file", async () => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            vi.spyOn((Packer as any).compiler, "compile").mockReturnValue({
-                generateAsync: () => Promise.resolve(vi.fn()),
-            });
             const stream = Packer.toStream(file);
 
+            const chunks: readonly Buffer[] = [];
             const p = new Promise<void>((resolve, reject) => {
-                stream.on("error", () => {
-                    reject(new Error());
+                stream.on("data", (chunk) => {
+                    chunks.push(chunk);
                 });
-
                 stream.on("end", () => {
                     resolve();
                 });
+                stream.on("error", (err) => {
+                    reject(err);
+                });
             });
             await p;
+
+            expect(chunks.length).toBeGreaterThan(0);
         });
 
         it("should handle exception if it throws any", () => {
@@ -237,6 +234,36 @@ describe("Packer", () => {
 
         afterEach(() => {
             vi.resetAllMocks();
+        });
+    });
+
+    describe("output types", () => {
+        it("should export to uint8array", async () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            vi.spyOn((Packer as any).compiler, "compile").mockReturnValue({});
+
+            const result = await Packer.pack(file, "uint8array");
+            expect(result).toBeInstanceOf(Uint8Array);
+        });
+
+        it("should export to binarystring", async () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            vi.spyOn((Packer as any).compiler, "compile").mockReturnValue({});
+
+            const result = await Packer.pack(file, "binarystring");
+            expect(typeof result).toBe("string");
+        });
+
+        it("should export to array", async () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            vi.spyOn((Packer as any).compiler, "compile").mockReturnValue({});
+
+            const result = await Packer.pack(file, "array");
+            expect(Array.isArray(result)).toBe(true);
+        });
+
+        afterEach(() => {
+            vi.restoreAllMocks();
         });
     });
 });
