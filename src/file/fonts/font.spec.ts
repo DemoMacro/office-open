@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { createFont } from "./font";
 
@@ -8,16 +7,16 @@ describe("font", () => {
     it("should work", () => {
         const tree = new Formatter().format(
             createFont({
-                name: "Times New Roman",
                 altName: "Times New Roman",
-                family: "roman",
                 charset: "00",
+                embedRegular: {
+                    fontKey: "00000000-0000-0000-0000-000000000000",
+                    id: "rId0",
+                },
+                family: "roman",
+                name: "Times New Roman",
                 panose1: "02020603050405020304",
                 pitch: "variable",
-                embedRegular: {
-                    id: "rId0",
-                    fontKey: "00000000-0000-0000-0000-000000000000",
-                },
             }),
         );
 
@@ -78,11 +77,11 @@ describe("font", () => {
     it("should work for embedBold", () => {
         const tree = new Formatter().format(
             createFont({
-                name: "Times New Roman",
                 embedBold: {
-                    id: "rId0",
                     fontKey: "00000000-0000-0000-0000-000000000000",
+                    id: "rId0",
                 },
+                name: "Times New Roman",
             }),
         );
 
@@ -103,11 +102,11 @@ describe("font", () => {
     it("should work for embedBoldItalic", () => {
         const tree = new Formatter().format(
             createFont({
-                name: "Times New Roman",
                 embedBoldItalic: {
-                    id: "rId0",
                     fontKey: "00000000-0000-0000-0000-000000000000",
+                    id: "rId0",
                 },
+                name: "Times New Roman",
             }),
         );
 
@@ -128,11 +127,11 @@ describe("font", () => {
     it("should work for embedItalic", () => {
         const tree = new Formatter().format(
             createFont({
-                name: "Times New Roman",
                 embedItalic: {
-                    id: "rId0",
                     fontKey: "00000000-0000-0000-0000-000000000000",
+                    id: "rId0",
                 },
+                name: "Times New Roman",
             }),
         );
 
@@ -153,12 +152,12 @@ describe("font", () => {
     it("should work for notTrueType", () => {
         const tree = new Formatter().format(
             createFont({
-                name: "Times New Roman",
                 embedRegular: {
-                    id: "rId0",
                     fontKey: "00000000-0000-0000-0000-000000000000",
+                    id: "rId0",
                     subsetted: true,
                 },
+                name: "Times New Roman",
             }),
         );
 
@@ -201,10 +200,10 @@ describe("font", () => {
     it("should work without fontKey", () => {
         const tree = new Formatter().format(
             createFont({
-                name: "Times New Roman",
                 embedItalic: {
                     id: "rId0",
                 },
+                name: "Times New Roman",
             }),
         );
 

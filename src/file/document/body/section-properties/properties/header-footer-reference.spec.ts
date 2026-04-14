@@ -1,14 +1,17 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
-import { HeaderFooterReferenceType, HeaderFooterType, createHeaderFooterReference } from "./header-footer-reference";
+import {
+    HeaderFooterReferenceType,
+    HeaderFooterType,
+    createHeaderFooterReference,
+} from "./header-footer-reference";
 
 describe("createHeaderFooterReference", () => {
     it("should create footer reference", () => {
         const footer = createHeaderFooterReference(HeaderFooterType.FOOTER, {
-            type: HeaderFooterReferenceType.DEFAULT,
             id: 1,
+            type: HeaderFooterReferenceType.DEFAULT,
         });
 
         const tree = new Formatter().format(footer);
@@ -24,8 +27,8 @@ describe("createHeaderFooterReference", () => {
 
     it("should create header reference", () => {
         const header = createHeaderFooterReference(HeaderFooterType.HEADER, {
-            type: HeaderFooterReferenceType.DEFAULT,
             id: 1,
+            type: HeaderFooterReferenceType.DEFAULT,
         });
 
         const tree = new Formatter().format(header);

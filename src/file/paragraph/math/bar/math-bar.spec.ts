@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { MathRun } from "../math-run";
 import { createMathBar } from "./math-bar";
@@ -8,7 +7,7 @@ import { createMathBar } from "./math-bar";
 describe("MathBar", () => {
     describe("#constructor()", () => {
         it("should create a MathBar with correct root key", () => {
-            const mathBar = createMathBar({ type: "top", children: [new MathRun("text")] });
+            const mathBar = createMathBar({ children: [new MathRun("text")], type: "top" });
             const tree = new Formatter().format(mathBar);
 
             expect(tree).to.deep.equal({

@@ -7,8 +7,10 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
-import { type Percentage, type UniversalMeasure, measurementOrPercentValue } from "@util/values";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
+import { measurementOrPercentValue } from "@util/values";
+import type { Percentage, UniversalMeasure } from "@util/values";
 
 /**
  * Width type values for tables and cells.
@@ -49,10 +51,10 @@ export const WidthType = {
  * </xsd:complexType>
  * ```
  */
-export type ITableWidthProperties = {
+export interface ITableWidthProperties {
     readonly size: number | Percentage | UniversalMeasure;
     readonly type?: (typeof WidthType)[keyof typeof WidthType];
-};
+}
 
 /**
  * Creates a table width element in a WordprocessingML document.
@@ -67,17 +69,20 @@ export type ITableWidthProperties = {
  * createTableWidthElement("w:tcW", { size: 50, type: WidthType.PERCENTAGE });
  * ```
  */
-export const createTableWidthElement = (name: string, { type = WidthType.AUTO, size }: ITableWidthProperties): XmlComponent => {
+export const createTableWidthElement = (
+    name: string,
+    { type = WidthType.AUTO, size }: ITableWidthProperties,
+): XmlComponent => {
     let tableWidthValue = size;
     if (type === WidthType.PERCENTAGE && typeof size === "number") {
         tableWidthValue = `${size}%`;
     }
 
     return new BuilderElement<ITableWidthProperties>({
-        name,
         attributes: {
-            type: { key: "w:type", value: type },
             size: { key: "w:w", value: measurementOrPercentValue(tableWidthValue) },
+            type: { key: "w:type", value: type },
         },
+        name,
     });
 };

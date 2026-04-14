@@ -10,7 +10,8 @@
  */
 import { createHyperlinkClick } from "@file/drawing/doc-properties/doc-properties-children";
 import { ConcreteHyperlink } from "@file/paragraph";
-import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
+import type { IContext, IXmlableObject } from "@file/xml-components";
 
 import { NonVisualPropertiesAttributes } from "./non-visual-properties-attributes";
 
@@ -49,9 +50,9 @@ export class NonVisualProperties extends XmlComponent {
 
         this.root.push(
             new NonVisualPropertiesAttributes({
+                descr: "",
                 id: 0,
                 name: "",
-                descr: "",
             }),
         );
     }

@@ -6,9 +6,11 @@
  * @module
  */
 import { Paragraph, ParagraphProperties } from "@file/paragraph";
-import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
+import type { IContext, IXmlableObject } from "@file/xml-components";
 
-import { type ISectionPropertiesOptions, SectionProperties } from "./section-properties/section-properties";
+import { SectionProperties } from "./section-properties/section-properties";
+import type { ISectionPropertiesOptions } from "./section-properties/section-properties";
 
 /**
  * Represents the document body in a WordprocessingML document.
@@ -53,7 +55,6 @@ import { type ISectionPropertiesOptions, SectionProperties } from "./section-pro
  * ```
  */
 export class Body extends XmlComponent {
-    // eslint-disable-next-line functional/prefer-readonly-type
     private readonly sections: SectionProperties[] = [];
 
     public constructor() {

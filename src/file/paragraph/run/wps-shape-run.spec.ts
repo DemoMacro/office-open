@@ -1,9 +1,8 @@
-import { describe, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
 import type { IViewWrapper } from "@file/document-wrapper";
 import type { File } from "@file/file";
 import { Paragraph } from "@file/index";
+import { describe, it } from "vite-plus/test";
 
 import { WpsShapeRun } from "./wps-shape-run";
 
@@ -11,40 +10,39 @@ describe("WpsShapeRun", () => {
     describe("#constructor()", () => {
         it("should create with Buffer", () => {
             const currentShapeRun = new WpsShapeRun({
-                type: "wps",
                 children: [new Paragraph("Test Paragraph")],
-                transformation: {
-                    width: 200,
-                    height: 200,
-                    rotation: 45,
+                floating: {
+                    horizontalPosition: {
+                        offset: 1_014_400,
+                    },
+                    verticalPosition: {
+                        offset: 1_014_400,
+                    },
+                    zIndex: 10,
                 },
                 solidFill: {
                     type: "rgb",
                     value: "FF0000",
                 },
-                floating: {
-                    zIndex: 10,
-                    horizontalPosition: {
-                        offset: 1014400,
-                    },
-                    verticalPosition: {
-                        offset: 1014400,
-                    },
+                transformation: {
+                    height: 200,
+                    rotation: 45,
+                    width: 200,
                 },
+                type: "wps",
             });
 
             const tree = new Formatter().format(currentShapeRun, {
                 file: {
                     Media: {},
                 } as unknown as File,
-                viewWrapper: {} as unknown as IViewWrapper,
                 stack: [],
+                viewWrapper: {} as unknown as IViewWrapper,
             });
 
-            // eslint-disable-next-line no-console
             console.log(JSON.stringify(tree, null, 2));
 
-            // expect(tree).to.deep.equal({
+            // Expect(tree).to.deep.equal({
             //     "w:r": [
             //         {
             //             "w:drawing": [
@@ -52,23 +50,23 @@ describe("WpsShapeRun", () => {
             //                     "wp:anchor": [
             //                         {
             //                             _attr: {
-            //                                 allowOverlap: "1",
-            //                                 behindDoc: "0",
-            //                                 distB: 0,
-            //                                 distL: 0,
-            //                                 distR: 0,
-            //                                 distT: 0,
-            //                                 layoutInCell: "1",
-            //                                 locked: "0",
-            //                                 relativeHeight: 10,
-            //                                 simplePos: "0",
+            //                                 AllowOverlap: "1",
+            //                                 BehindDoc: "0",
+            //                                 DistB: 0,
+            //                                 DistL: 0,
+            //                                 DistR: 0,
+            //                                 DistT: 0,
+            //                                 LayoutInCell: "1",
+            //                                 Locked: "0",
+            //                                 RelativeHeight: 10,
+            //                                 SimplePos: "0",
             //                             },
             //                         },
             //                         {
             //                             "wp:simplePos": {
             //                                 _attr: {
-            //                                     x: 0,
-            //                                     y: 0,
+            //                                     X: 0,
+            //                                     Y: 0,
             //                                 },
             //                             },
             //                         },
@@ -76,7 +74,7 @@ describe("WpsShapeRun", () => {
             //                             "wp:positionH": [
             //                                 {
             //                                     _attr: {
-            //                                         relativeFrom: "page",
+            //                                         RelativeFrom: "page",
             //                                     },
             //                                 },
             //                                 {
@@ -88,7 +86,7 @@ describe("WpsShapeRun", () => {
             //                             "wp:positionV": [
             //                                 {
             //                                     _attr: {
-            //                                         relativeFrom: "page",
+            //                                         RelativeFrom: "page",
             //                                     },
             //                                 },
             //                                 {
@@ -99,18 +97,18 @@ describe("WpsShapeRun", () => {
             //                         {
             //                             "wp:extent": {
             //                                 _attr: {
-            //                                     cx: 1905000,
-            //                                     cy: 1905000,
+            //                                     Cx: 1905000,
+            //                                     Cy: 1905000,
             //                                 },
             //                             },
             //                         },
             //                         {
             //                             "wp:effectExtent": {
             //                                 _attr: {
-            //                                     b: 0,
-            //                                     l: 0,
-            //                                     r: 0,
-            //                                     t: 0,
+            //                                     B: 0,
+            //                                     L: 0,
+            //                                     R: 0,
+            //                                     T: 0,
             //                                 },
             //                             },
             //                         },
@@ -120,10 +118,10 @@ describe("WpsShapeRun", () => {
             //                         {
             //                             "wp:docPr": {
             //                                 _attr: {
-            //                                     descr: "",
-            //                                     id: 1,
-            //                                     name: "",
-            //                                     title: "",
+            //                                     Descr: "",
+            //                                     Id: 1,
+            //                                     Name: "",
+            //                                     Title: "",
             //                                 },
             //                             },
             //                         },
@@ -132,7 +130,7 @@ describe("WpsShapeRun", () => {
             //                                 {
             //                                     "a:graphicFrameLocks": {
             //                                         _attr: {
-            //                                             noChangeAspect: 1,
+            //                                             NoChangeAspect: 1,
             //                                             "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
             //                                         },
             //                                     },
@@ -150,7 +148,7 @@ describe("WpsShapeRun", () => {
             //                                     "a:graphicData": [
             //                                         {
             //                                             _attr: {
-            //                                                 uri: "http://schemas.openxmlformats.org/drawingml/2006/picture",
+            //                                                 Uri: "http://schemas.openxmlformats.org/drawingml/2006/picture",
             //                                             },
             //                                         },
             //                                         {
@@ -165,9 +163,9 @@ describe("WpsShapeRun", () => {
             //                                                         {
             //                                                             "pic:cNvPr": {
             //                                                                 _attr: {
-            //                                                                     descr: "",
-            //                                                                     id: 0,
-            //                                                                     name: "",
+            //                                                                     Descr: "",
+            //                                                                     Id: 0,
+            //                                                                     Name: "",
             //                                                                 },
             //                                                             },
             //                                                         },
@@ -176,8 +174,8 @@ describe("WpsShapeRun", () => {
             //                                                                 {
             //                                                                     "a:picLocks": {
             //                                                                         _attr: {
-            //                                                                             noChangeArrowheads: 1,
-            //                                                                             noChangeAspect: 1,
+            //                                                                             NoChangeArrowheads: 1,
+            //                                                                             NoChangeAspect: 1,
             //                                                                         },
             //                                                                     },
             //                                                                 },
@@ -190,7 +188,7 @@ describe("WpsShapeRun", () => {
             //                                                         {
             //                                                             "a:blip": {
             //                                                                 _attr: {
-            //                                                                     cstate: "none",
+            //                                                                     Cstate: "none",
             //                                                                     "r:embed":
             //                                                                         "rId{da39a3ee5e6b4b0d3255bfef95601890afd80709.png}",
             //                                                                 },
@@ -212,29 +210,29 @@ describe("WpsShapeRun", () => {
             //                                                     "pic:spPr": [
             //                                                         {
             //                                                             _attr: {
-            //                                                                 bwMode: "auto",
+            //                                                                 BwMode: "auto",
             //                                                             },
             //                                                         },
             //                                                         {
             //                                                             "a:xfrm": [
             //                                                                 {
             //                                                                     _attr: {
-            //                                                                         rot: 2700000,
+            //                                                                         Rot: 2700000,
             //                                                                     },
             //                                                                 },
             //                                                                 {
             //                                                                     "a:off": {
             //                                                                         _attr: {
-            //                                                                             x: 0,
-            //                                                                             y: 0,
+            //                                                                             X: 0,
+            //                                                                             Y: 0,
             //                                                                         },
             //                                                                     },
             //                                                                 },
             //                                                                 {
             //                                                                     "a:ext": {
             //                                                                         _attr: {
-            //                                                                             cx: 1905000,
-            //                                                                             cy: 1905000,
+            //                                                                             Cx: 1905000,
+            //                                                                             Cy: 1905000,
             //                                                                         },
             //                                                                     },
             //                                                                 },
@@ -244,7 +242,7 @@ describe("WpsShapeRun", () => {
             //                                                             "a:prstGeom": [
             //                                                                 {
             //                                                                     _attr: {
-            //                                                                         prst: "rect",
+            //                                                                         Prst: "rect",
             //                                                                     },
             //                                                                 },
             //                                                                 {

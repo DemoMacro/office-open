@@ -8,12 +8,19 @@
  *
  * @module
  */
-import { Attributes, NumberValueElement, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import {
+    Attributes,
+    NumberValueElement,
+    XmlAttributeComponent,
+    XmlComponent,
+} from "@file/xml-components";
 import { decimalNumber } from "@util/values";
 
 import { AlignmentType } from "../paragraph/formatting";
-import { type ILevelParagraphStylePropertiesOptions, ParagraphProperties } from "../paragraph/properties";
-import { type IRunStylePropertiesOptions, RunProperties } from "../paragraph/run/properties";
+import { ParagraphProperties } from "../paragraph/properties";
+import type { ILevelParagraphStylePropertiesOptions } from "../paragraph/properties";
+import { RunProperties } from "../paragraph/run/properties";
+import type { IRunStylePropertiesOptions } from "../paragraph/run/properties";
 
 /**
  * Number format types for list levels.
@@ -37,7 +44,6 @@ import { type IRunStylePropertiesOptions, RunProperties } from "../paragraph/run
  *
  * @publicApi
  */
-/* eslint-disable @typescript-eslint/naming-convention */
 export const LevelFormat = {
     /** Decimal numbering (1, 2, 3...). */
     DECIMAL: "decimal",
@@ -167,8 +173,6 @@ export const LevelFormat = {
     CUSTOM: "custom",
 } as const;
 
-/* eslint-enable */
-
 /**
  * Attributes for numbering levels.
  */
@@ -271,7 +275,7 @@ export const LevelSuffix = {
  * @property isLegalNumberingStyle - Use legal numbering style
  * @property style - Run and paragraph style properties
  */
-export type ILevelsOptions = {
+export interface ILevelsOptions {
     /** Level index (0-8). */
     readonly level: number;
     /** Number format type (decimal, roman, letter, bullet, etc.). */
@@ -293,7 +297,7 @@ export type ILevelsOptions = {
         /** Paragraph style properties for the level. */
         readonly paragraph?: ILevelParagraphStylePropertiesOptions;
     };
-};
+}
 
 /**
  * Suffix specification for a level.

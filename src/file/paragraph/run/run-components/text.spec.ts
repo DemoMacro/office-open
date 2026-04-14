@@ -1,7 +1,6 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
 import { SpaceType } from "@file/shared";
+import { describe, expect, it } from "vite-plus/test";
 
 import { Text } from "./text";
 
@@ -17,8 +16,8 @@ describe("Text", () => {
 
         it("adds the passed in text to the component with options", () => {
             const t = new Text({
-                text: " this is\n text",
                 space: SpaceType.PRESERVE,
+                text: " this is\n text",
             });
             const f = new Formatter().format(t);
             expect(f).to.deep.equal({

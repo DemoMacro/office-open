@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { SchemeColor } from "./scheme-color";
 import { createSolidFill } from "./solid-fill";
@@ -22,7 +21,9 @@ describe("createSolidFill", () => {
     });
 
     it("should create of scheme", () => {
-        const tree = new Formatter().format(createSolidFill({ type: "scheme", value: SchemeColor.TX1 }));
+        const tree = new Formatter().format(
+            createSolidFill({ type: "scheme", value: SchemeColor.TX1 }),
+        );
         expect(tree).to.deep.equal({
             "a:solidFill": [
                 {

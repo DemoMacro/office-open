@@ -7,7 +7,8 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Creates a subscript hide element for n-ary operators.
@@ -26,8 +27,8 @@ import { BuilderElement, type XmlComponent } from "@file/xml-components";
  */
 export const createMathSubScriptHide = (): XmlComponent =>
     new BuilderElement<{ readonly hide: number }>({
-        name: "m:subHide",
         attributes: {
             hide: { key: "m:val", value: 1 },
         },
+        name: "m:subHide",
     });

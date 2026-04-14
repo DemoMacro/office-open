@@ -7,7 +7,8 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 import { createMathBeginningCharacter } from "./math-beginning-character";
 import { createMathEndingCharacter } from "./math-ending-char";
@@ -15,7 +16,7 @@ import { createMathEndingCharacter } from "./math-ending-char";
 /**
  * Options for creating math bracket properties.
  */
-type MathBracketPropertiesOptions = {
+interface MathBracketPropertiesOptions {
     /** Optional custom characters for bracket delimiters */
     readonly characters?: {
         /** The opening/beginning bracket character */
@@ -23,7 +24,7 @@ type MathBracketPropertiesOptions = {
         /** The closing/ending bracket character */
         readonly endingCharacter: string;
     };
-};
+}
 
 /**
  * Creates bracket properties for math delimiter objects.
@@ -47,13 +48,15 @@ type MathBracketPropertiesOptions = {
  * </xsd:complexType>
  * ```
  */
-export const createMathBracketProperties = ({ characters }: MathBracketPropertiesOptions): XmlComponent =>
+export const createMathBracketProperties = ({
+    characters,
+}: MathBracketPropertiesOptions): XmlComponent =>
     new BuilderElement({
-        name: "m:dPr",
-        children: !!characters
+        children: characters
             ? [
                   createMathBeginningCharacter({ character: characters.beginningCharacter }),
                   createMathEndingCharacter({ character: characters.endingCharacter }),
               ]
             : [],
+        name: "m:dPr",
     });

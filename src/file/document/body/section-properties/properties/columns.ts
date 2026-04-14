@@ -7,8 +7,10 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
-import { type PositiveUniversalMeasure, decimalNumber, twipsMeasureValue } from "@util/values";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
+import { decimalNumber, twipsMeasureValue } from "@util/values";
+import type { PositiveUniversalMeasure } from "@util/values";
 
 import type { Column } from "./column";
 
@@ -21,7 +23,7 @@ import type { Column } from "./column";
  * @property equalWidth - Whether all columns have equal width
  * @property children - Individual column definitions (used when equalWidth is false)
  */
-export type IColumnsAttributes = {
+export interface IColumnsAttributes {
     /** Spacing between columns in twips (default: 720) */
     readonly space?: number | PositiveUniversalMeasure;
     /** Number of columns (default: 1) */
@@ -32,7 +34,7 @@ export type IColumnsAttributes = {
     readonly equalWidth?: boolean;
     /** Individual column definitions (used when equalWidth is false, max: 45) */
     readonly children?: readonly Column[];
-};
+}
 
 /**
  * Creates column layout settings (cols) for a document section.
@@ -75,14 +77,23 @@ export type IColumnsAttributes = {
  * });
  * ```
  */
-export const createColumns = ({ space, count, separate, equalWidth, children }: IColumnsAttributes): XmlComponent =>
+export const createColumns = ({
+    space,
+    count,
+    separate,
+    equalWidth,
+    children,
+}: IColumnsAttributes): XmlComponent =>
     new BuilderElement<Omit<IColumnsAttributes, "children">>({
-        name: "w:cols",
         attributes: {
-            space: { key: "w:space", value: space === undefined ? undefined : twipsMeasureValue(space) },
             count: { key: "w:num", value: count === undefined ? undefined : decimalNumber(count) },
-            separate: { key: "w:sep", value: separate },
             equalWidth: { key: "w:equalWidth", value: equalWidth },
+            separate: { key: "w:sep", value: separate },
+            space: {
+                key: "w:space",
+                value: space === undefined ? undefined : twipsMeasureValue(space),
+            },
         },
         children: !equalWidth && children ? children : undefined,
+        name: "w:cols",
     });

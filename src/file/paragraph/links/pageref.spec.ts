@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { PageReference } from "./pageref";
 
@@ -41,7 +40,10 @@ describe("PageReference", () => {
         });
 
         it("should construct a pageref with all the options", () => {
-            const pageReference = new PageReference("some_bookmark", { hyperlink: true, useRelativePosition: true });
+            const pageReference = new PageReference("some_bookmark", {
+                hyperlink: true,
+                useRelativePosition: true,
+            });
             const tree = new Formatter().format(pageReference);
             expect(tree).to.be.deep.equal({
                 "w:r": [
@@ -60,7 +62,7 @@ describe("PageReference", () => {
                                     "xml:space": "preserve",
                                 },
                             },
-                            "PAGEREF some_bookmark \\h \\p",
+                            String.raw`PAGEREF some_bookmark \h \p`,
                         ],
                     },
                     {

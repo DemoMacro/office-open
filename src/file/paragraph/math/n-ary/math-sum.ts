@@ -20,14 +20,14 @@ import { createMathSuperScriptElement } from "./math-super-script";
  *
  * @see {@link MathSum}
  */
-export type IMathSumOptions = {
+export interface IMathSumOptions {
     /** The expression being summed */
     readonly children: readonly MathComponent[];
     /** Optional lower bound (subscript) of the sum */
     readonly subScript?: readonly MathComponent[];
     /** Optional upper bound (superscript) of the sum */
     readonly superScript?: readonly MathComponent[];
-};
+}
 
 /**
  * Represents a summation (Σ) expression in a math equation.
@@ -67,16 +67,16 @@ export class MathSum extends XmlComponent {
         this.root.push(
             createMathNAryProperties({
                 accent: "∑",
-                hasSuperScript: !!options.superScript,
-                hasSubScript: !!options.subScript,
+                hasSubScript: Boolean(options.subScript),
+                hasSuperScript: Boolean(options.superScript),
             }),
         );
 
-        if (!!options.subScript) {
+        if (options.subScript) {
             this.root.push(createMathSubScriptElement({ children: options.subScript }));
         }
 
-        if (!!options.superScript) {
+        if (options.superScript) {
             this.root.push(createMathSuperScriptElement({ children: options.superScript }));
         }
 

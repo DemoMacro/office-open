@@ -47,7 +47,10 @@ app.get("/download", async (req, res) => {
     });
     const buffer = await Packer.toBuffer(doc);
 
-    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+    res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    );
     res.setHeader("Content-Disposition", "attachment; filename=document.docx");
     res.send(buffer);
 });

@@ -8,7 +8,8 @@
 import { XmlComponent } from "@file/xml-components";
 
 import { TableCell } from "../table-cell";
-import { type ITableRowPropertiesOptions, TableRowProperties } from "./table-row-properties";
+import { TableRowProperties } from "./table-row-properties";
+import type { ITableRowPropertiesOptions } from "./table-row-properties";
 
 /**
  * Options for creating a TableRow element.
@@ -84,7 +85,7 @@ export class TableRow extends XmlComponent {
     }
 
     public rootIndexToColumnIndex(rootIndex: number): number {
-        // convert the root index to the virtual column index
+        // Convert the root index to the virtual column index
         if (rootIndex < 1 || rootIndex >= this.root.length) {
             throw new Error(`cell 'rootIndex' should between 1 to ${this.root.length - 1}`);
         }
@@ -98,7 +99,7 @@ export class TableRow extends XmlComponent {
     }
 
     public columnIndexToRootIndex(columnIndex: number, allowEndNewCell: boolean = false): number {
-        // convert the virtual column index to the root index
+        // Convert the virtual column index to the root index
         // `allowEndNewCell` for get index to inert new cell
         if (columnIndex < 0) {
             throw new Error(`cell 'columnIndex' should not less than zero`);
@@ -109,7 +110,7 @@ export class TableRow extends XmlComponent {
         while (colIdx <= columnIndex) {
             if (rootIdx >= this.root.length) {
                 if (allowEndNewCell) {
-                    // for inserting verticalMerge CONTINUE cell at end of row
+                    // For inserting verticalMerge CONTINUE cell at end of row
                     return this.root.length;
                 } else {
                     throw new Error(`cell 'columnIndex' should not great than ${colIdx - 1}`);

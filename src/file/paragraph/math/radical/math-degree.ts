@@ -36,7 +36,7 @@ export class MathDegree extends XmlComponent {
     public constructor(children?: readonly MathComponent[]) {
         super("m:deg");
 
-        if (!!children) {
+        if (children) {
             for (const child of children) {
                 this.root.push(child);
             }

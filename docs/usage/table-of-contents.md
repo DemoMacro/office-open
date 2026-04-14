@@ -138,7 +138,10 @@ You can provide placeholder content that will be displayed until the TOC is upda
 new TableOfContents("Summary", {
     hyperlink: true,
     headingStyleRange: "1-5",
-    contentChildren: [new Paragraph({ text: "Chapter 1..........1" }), new Paragraph({ text: "Chapter 2..........5" })],
+    contentChildren: [
+        new Paragraph({ text: "Chapter 1..........1" }),
+        new Paragraph({ text: "Chapter 2..........5" }),
+    ],
 });
 ```
 

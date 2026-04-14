@@ -192,7 +192,15 @@ page: {
 Combining multiple layout options:
 
 ```ts
-import { BorderStyle, Document, PageBorderDisplay, PageOrientation, Paragraph, convertInchesToTwip, convertMillimetersToTwip } from "docx";
+import {
+    BorderStyle,
+    Document,
+    PageBorderDisplay,
+    PageOrientation,
+    Paragraph,
+    convertInchesToTwip,
+    convertMillimetersToTwip,
+} from "docx";
 
 const doc = new Document({
     sections: [

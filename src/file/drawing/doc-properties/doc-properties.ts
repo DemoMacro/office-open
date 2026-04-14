@@ -9,7 +9,8 @@
  * @module
  */
 import { ConcreteHyperlink } from "@file/paragraph";
-import { type IContext, type IXmlableObject, NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import type { IContext, IXmlableObject } from "@file/xml-components";
 import { docPropertiesUniqueNumericIdGen } from "@util/convenience-functions";
 
 import { createHyperlinkClick } from "./doc-properties-children";
@@ -31,7 +32,7 @@ import { createHyperlinkClick } from "./doc-properties-children";
  *
  * @see {@link DocProperties}
  */
-export type DocPropertiesOptions = {
+export interface DocPropertiesOptions {
     /** Name of the drawing element (used for identification) */
     readonly name: string;
     /** Description/alt text for accessibility */
@@ -39,7 +40,7 @@ export type DocPropertiesOptions = {
     /** Title of the drawing element */
     readonly title?: string;
     readonly id?: string;
-};
+}
 
 /**
  * Represents non-visual drawing properties in a WordprocessingML document.
@@ -67,10 +68,19 @@ export type DocPropertiesOptions = {
 export class DocProperties extends XmlComponent {
     private readonly docPropertiesUniqueNumericId = docPropertiesUniqueNumericIdGen();
 
-    public constructor({ name, description, title, id }: DocPropertiesOptions = { name: "", description: "", title: "" }) {
+    public constructor(
+        { name, description, title, id }: DocPropertiesOptions = {
+            description: "",
+            name: "",
+            title: "",
+        },
+    ) {
         super("wp:docPr");
 
-        const attributes: Record<string, { readonly key: string; readonly value: string | number }> = {
+        const attributes: Record<
+            string,
+            { readonly key: string; readonly value: string | number }
+        > = {
             id: {
                 key: "id",
                 value: id ?? this.docPropertiesUniqueNumericId(),

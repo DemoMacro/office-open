@@ -8,25 +8,30 @@
  *
  * @module
  */
-import { CellMerge, DeletedTableCell, type ICellMergeAttributes, InsertedTableCell } from "@file/track-revision";
-import { ChangeAttributes, type IChangedAttributesProperties } from "@file/track-revision/track-revision";
-import { type TableVerticalAlign, createVerticalAlign } from "@file/vertical-align";
+import { CellMerge, DeletedTableCell, InsertedTableCell } from "@file/track-revision";
+import type { ICellMergeAttributes } from "@file/track-revision";
+import { ChangeAttributes } from "@file/track-revision/track-revision";
+import type { IChangedAttributesProperties } from "@file/track-revision/track-revision";
+import { createVerticalAlign } from "@file/vertical-align";
+import type { TableVerticalAlign } from "@file/vertical-align";
 import { IgnoreIfEmptyXmlComponent, XmlComponent } from "@file/xml-components";
 
-import { type IShadingAttributesProperties, createShading } from "../../shading";
-import { type ITableCellMarginOptions, createCellMargin } from "../table-properties/table-cell-margin";
-import { type ITableWidthProperties, createTableWidthElement } from "../table-width";
+import { createShading } from "../../shading";
+import type { IShadingAttributesProperties } from "../../shading";
+import { createCellMargin } from "../table-properties/table-cell-margin";
+import type { ITableCellMarginOptions } from "../table-properties/table-cell-margin";
+import { createTableWidthElement } from "../table-width";
+import type { ITableWidthProperties } from "../table-width";
 import {
     GridSpan,
-    type ITableCellBorders,
     TDirection,
     TableCellBorders,
-    type TextDirection,
     VerticalMerge,
     VerticalMergeType,
 } from "./table-cell-components";
+import type { ITableCellBorders, TextDirection } from "./table-cell-components";
 
-export type ITableCellPropertiesOptionsBase = {
+export interface ITableCellPropertiesOptionsBase {
     /** Shading (background color/pattern) for the cell */
     readonly shading?: IShadingAttributesProperties;
     /** Cell margins (padding) for the cell content */
@@ -48,7 +53,7 @@ export type ITableCellPropertiesOptionsBase = {
     readonly insertion?: IChangedAttributesProperties;
     readonly deletion?: IChangedAttributesProperties;
     readonly cellMerge?: ICellMergeAttributes;
-};
+}
 
 /**
  * Options for configuring table cell properties.
@@ -60,7 +65,8 @@ export type ITableCellPropertiesOptions = {
     readonly includeIfEmpty?: boolean;
 } & ITableCellPropertiesOptionsBase;
 
-export type ITableCellPropertiesChangeOptions = ITableCellPropertiesOptionsBase & IChangedAttributesProperties;
+export type ITableCellPropertiesChangeOptions = ITableCellPropertiesOptionsBase &
+    IChangedAttributesProperties;
 
 /**
  * Represents table cell properties (tcPr) in a WordprocessingML document.
@@ -156,7 +162,7 @@ export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
         if (options.verticalMerge) {
             this.root.push(new VerticalMerge(options.verticalMerge));
         } else if (options.rowSpan && options.rowSpan > 1) {
-            // if cell already have a `verticalMerge`, don't handle `rowSpan`
+            // If cell already have a `verticalMerge`, don't handle `rowSpan`
             this.root.push(new VerticalMerge(VerticalMergeType.RESTART));
         }
 
@@ -206,12 +212,12 @@ export class TableCellPropertiesChange extends XmlComponent {
         super("w:tcPrChange");
         this.root.push(
             new ChangeAttributes({
-                id: options.id,
                 author: options.author,
                 date: options.date,
+                id: options.id,
             }),
         );
-        // tcPr is required (minOccurs="1") even if empty
+        // TcPr is required (minOccurs="1") even if empty
         this.root.push(new TableCellProperties({ ...options, includeIfEmpty: true }));
     }
 }

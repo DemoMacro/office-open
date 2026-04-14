@@ -6,30 +6,32 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 import { createSolidRgbColor } from "./rgb-color";
-import { type SchemeColor, createSchemeColor } from "./scheme-color";
+import { createSchemeColor } from "./scheme-color";
+import type { SchemeColor } from "./scheme-color";
 
 /**
  * RGB color options for solid fill.
  */
-export type RgbColorOptions = {
+export interface RgbColorOptions {
     /** RGB color type */
     readonly type: "rgb";
     /** Hex color value (e.g., "FF0000" for red) */
     readonly value: string;
-};
+}
 
 /**
  * Scheme color options for solid fill.
  */
-export type SchemeColorOptions = {
+export interface SchemeColorOptions {
     /** Scheme color type */
     readonly type: "scheme";
     /** Scheme color value */
     readonly value: (typeof SchemeColor)[keyof typeof SchemeColor];
-};
+}
 
 /**
  * Union type for solid fill options.
@@ -68,6 +70,8 @@ export type SolidFillOptions = RgbColorOptions | SchemeColorOptions;
  */
 export const createSolidFill = (options: SolidFillOptions): XmlComponent =>
     new BuilderElement({
+        children: [
+            options.type === "rgb" ? createSolidRgbColor(options) : createSchemeColor(options),
+        ],
         name: "a:solidFill",
-        children: [options.type === "rgb" ? createSolidRgbColor(options) : createSchemeColor(options)],
     });

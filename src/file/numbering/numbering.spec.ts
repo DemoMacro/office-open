@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { Numbering } from "./numbering";
 
@@ -13,11 +12,12 @@ describe("Numbering", () => {
 
             const tree = new Formatter().format(numbering);
             expect(Object.keys(tree)).to.deep.equal(["w:numbering"]);
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const abstractNums: readonly any[] = tree["w:numbering"].filter((el: any) => el["w:abstractNum"]);
+            const abstractNums: readonly any[] = tree["w:numbering"].filter(
+                (el: any) => el["w:abstractNum"],
+            );
             expect(abstractNums).to.have.lengthOf(1);
             expect(abstractNums[0]["w:abstractNum"]).to.deep.include.members([
-                { _attr: { "w:abstractNumId": 1, "w15:restartNumberingAfterBreak": 0 } },
+                { _attr: { "w15:restartNumberingAfterBreak": 0, "w:abstractNumId": 1 } },
                 { "w:multiLevelType": { _attr: { "w:val": "hybridMultilevel" } } },
             ]);
 
@@ -25,9 +25,16 @@ describe("Numbering", () => {
                 .filter((el) => el["w:lvl"])
                 .forEach((el, ix) => {
                     expect(Object.keys(el)).to.have.lengthOf(1);
-                    expect(Object.keys(el["w:lvl"])).to.deep.equal(["_attr", "w:start", "w:lvlJc", "w:numFmt", "w:pPr", "w:rPr"]);
+                    expect(Object.keys(el["w:lvl"])).to.deep.equal([
+                        "_attr",
+                        "w:start",
+                        "w:lvlJc",
+                        "w:numFmt",
+                        "w:pPr",
+                        "w:rPr",
+                    ]);
                     expect(el["w:lvl"]).to.have.deep.members([
-                        { _attr: { "w:ilvl": ix, "w15:tentative": 1 } },
+                        { _attr: { "w15:tentative": 1, "w:ilvl": ix } },
                         { "w:start": [{ _attr: { "w:val": 1 } }] },
                         { "w:lvlJc": [{ _attr: { "w:val": "left" } }] },
                         { "w:numFmt": [{ _attr: { "w:val": "bullet" } }] },
@@ -46,12 +53,12 @@ describe("Numbering", () => {
                 const numbering = new Numbering({
                     config: [
                         {
-                            reference: "test-reference",
                             levels: [
                                 {
                                     level: 0,
                                 },
                             ],
+                            reference: "test-reference",
                         },
                     ],
                 });
@@ -66,12 +73,12 @@ describe("Numbering", () => {
                 const numbering = new Numbering({
                     config: [
                         {
-                            reference: "test-reference",
                             levels: [
                                 {
                                     level: 0,
                                 },
                             ],
+                            reference: "test-reference",
                         },
                     ],
                 });
@@ -86,12 +93,12 @@ describe("Numbering", () => {
                 const numbering = new Numbering({
                     config: [
                         {
-                            reference: "test-reference",
                             levels: [
                                 {
                                     level: 0,
                                 },
                             ],
+                            reference: "test-reference",
                         },
                     ],
                 });
@@ -109,13 +116,13 @@ describe("Numbering", () => {
                 const numbering = new Numbering({
                     config: [
                         {
-                            reference: "test-reference",
                             levels: [
                                 {
                                     level: 0,
                                     start: 10,
                                 },
                             ],
+                            reference: "test-reference",
                         },
                     ],
                 });

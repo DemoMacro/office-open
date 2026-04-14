@@ -7,7 +7,8 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 import { hexColorValue } from "@util/values";
 
 /**
@@ -84,10 +85,10 @@ export const UnderlineType = {
     NONE: "none",
 } as const;
 
-type IUnderlineAttributes = {
+interface IUnderlineAttributes {
     readonly val: (typeof UnderlineType)[keyof typeof UnderlineType];
     readonly color?: string;
-};
+}
 
 /**
  * Creates underline formatting for a run in a WordprocessingML document.
@@ -125,9 +126,12 @@ export const createUnderline = (
     color?: string,
 ): XmlComponent =>
     new BuilderElement<IUnderlineAttributes>({
-        name: "w:u",
         attributes: {
+            color: {
+                key: "w:color",
+                value: color === undefined ? undefined : hexColorValue(color),
+            },
             val: { key: "w:val", value: underlineType },
-            color: { key: "w:color", value: color === undefined ? undefined : hexColorValue(color) },
         },
+        name: "w:u",
     });

@@ -1,10 +1,9 @@
-import { describe, expect, it, vi } from "vitest";
-
 import { Formatter } from "@export/formatter";
 import type { IViewWrapper } from "@file/document-wrapper";
 import type { File } from "@file/file";
 import { Paragraph } from "@file/index";
 import type { IMediaData } from "@file/media";
+import { describe, expect, it, vi } from "vite-plus/test";
 
 import { WpgGroupRun } from "./wpg-group-run";
 
@@ -12,22 +11,22 @@ describe("WpgGroupRun", () => {
     describe("#constructor()", () => {
         it("should create a WpgGroupRun with image children", () => {
             const imageChild: IMediaData = {
-                type: "png",
-                fileName: "test-image.png",
                 data: Buffer.from(""),
+                fileName: "test-image.png",
                 transformation: {
+                    emus: { x: 952_500, y: 952_500 },
                     pixels: { x: 100, y: 100 },
-                    emus: { x: 952500, y: 952500 },
                 },
+                type: "png",
             };
 
             const run = new WpgGroupRun({
-                type: "wpg",
                 children: [imageChild],
                 transformation: {
-                    width: 200,
                     height: 200,
+                    width: 200,
                 },
+                type: "wpg",
             });
 
             const addImageMock = vi.fn();
@@ -37,8 +36,8 @@ describe("WpgGroupRun", () => {
                         addImage: addImageMock,
                     },
                 } as unknown as File,
-                viewWrapper: {} as unknown as IViewWrapper,
                 stack: [],
+                viewWrapper: {} as unknown as IViewWrapper,
             });
 
             expect(tree).toBeDefined();
@@ -47,31 +46,31 @@ describe("WpgGroupRun", () => {
 
         it("should create a WpgGroupRun with wps shape children", () => {
             const run = new WpgGroupRun({
-                type: "wpg",
                 children: [
                     {
-                        type: "wps",
-                        transformation: {
-                            pixels: { x: 100, y: 100 },
-                            emus: { x: 952500, y: 952500 },
-                        },
                         data: {
                             children: [new Paragraph("Shape text")],
                         },
+                        transformation: {
+                            emus: { x: 952_500, y: 952_500 },
+                            pixels: { x: 100, y: 100 },
+                        },
+                        type: "wps",
                     },
                 ],
                 transformation: {
-                    width: 300,
                     height: 300,
+                    width: 300,
                 },
+                type: "wpg",
             });
 
             const tree = new Formatter().format(run, {
                 file: {
                     Media: {},
                 } as unknown as File,
-                viewWrapper: {} as unknown as IViewWrapper,
                 stack: [],
+                viewWrapper: {} as unknown as IViewWrapper,
             });
 
             expect(tree).toBeDefined();
@@ -80,34 +79,34 @@ describe("WpgGroupRun", () => {
 
         it("should create a WpgGroupRun with mixed children", () => {
             const imageChild: IMediaData = {
-                type: "png",
-                fileName: "mixed-image.png",
                 data: Buffer.from(""),
+                fileName: "mixed-image.png",
                 transformation: {
+                    emus: { x: 1_428_750, y: 1_428_750 },
                     pixels: { x: 150, y: 150 },
-                    emus: { x: 1428750, y: 1428750 },
                 },
+                type: "png",
             };
 
             const run = new WpgGroupRun({
-                type: "wpg",
                 children: [
                     imageChild,
                     {
-                        type: "wps",
-                        transformation: {
-                            pixels: { x: 100, y: 100 },
-                            emus: { x: 952500, y: 952500 },
-                        },
                         data: {
                             children: [new Paragraph("Text in shape")],
                         },
+                        transformation: {
+                            emus: { x: 952_500, y: 952_500 },
+                            pixels: { x: 100, y: 100 },
+                        },
+                        type: "wps",
                     },
                 ],
                 transformation: {
-                    width: 400,
                     height: 400,
+                    width: 400,
                 },
+                type: "wpg",
             });
 
             const addImageMock = vi.fn();
@@ -117,8 +116,8 @@ describe("WpgGroupRun", () => {
                         addImage: addImageMock,
                     },
                 } as unknown as File,
-                viewWrapper: {} as unknown as IViewWrapper,
                 stack: [],
+                viewWrapper: {} as unknown as IViewWrapper,
             });
 
             expect(tree).toBeDefined();
@@ -127,57 +126,59 @@ describe("WpgGroupRun", () => {
 
         it("should support floating positioning", () => {
             const run = new WpgGroupRun({
-                type: "wpg",
                 children: [],
-                transformation: {
-                    width: 200,
-                    height: 200,
-                },
                 floating: {
-                    zIndex: 5,
                     horizontalPosition: {
-                        offset: 1014400,
+                        offset: 1_014_400,
                     },
                     verticalPosition: {
-                        offset: 1014400,
+                        offset: 1_014_400,
                     },
+                    zIndex: 5,
                 },
+                transformation: {
+                    height: 200,
+                    width: 200,
+                },
+                type: "wpg",
             });
 
             const tree = new Formatter().format(run, {
                 file: {
                     Media: {},
                 } as unknown as File,
-                viewWrapper: {} as unknown as IViewWrapper,
                 stack: [],
+                viewWrapper: {} as unknown as IViewWrapper,
             });
 
             expect(tree).toBeDefined();
             expect(tree).toHaveProperty("w:r");
 
             const drawing = (tree as Record<string, readonly unknown[]>)["w:r"];
-            const drawingElement = drawing.find((el) => typeof el === "object" && el !== null && "w:drawing" in el);
+            const drawingElement = drawing.find(
+                (el) => typeof el === "object" && el !== null && "w:drawing" in el,
+            );
             expect(drawingElement).toBeDefined();
         });
 
         it("should support transformation with offset and rotation", () => {
             const run = new WpgGroupRun({
-                type: "wpg",
                 children: [],
                 transformation: {
-                    width: 200,
                     height: 100,
                     offset: { left: 10, top: 20 },
                     rotation: 90,
+                    width: 200,
                 },
+                type: "wpg",
             });
 
             const tree = new Formatter().format(run, {
                 file: {
                     Media: {},
                 } as unknown as File,
-                viewWrapper: {} as unknown as IViewWrapper,
                 stack: [],
+                viewWrapper: {} as unknown as IViewWrapper,
             });
 
             expect(tree).toBeDefined();
@@ -186,25 +187,25 @@ describe("WpgGroupRun", () => {
 
         it("should support altText option", () => {
             const run = new WpgGroupRun({
-                type: "wpg",
-                children: [],
-                transformation: {
-                    width: 200,
-                    height: 200,
-                },
                 altText: {
-                    title: "Group Title",
                     description: "Group Description",
                     name: "Group Name",
+                    title: "Group Title",
                 },
+                children: [],
+                transformation: {
+                    height: 200,
+                    width: 200,
+                },
+                type: "wpg",
             });
 
             const tree = new Formatter().format(run, {
                 file: {
                     Media: {},
                 } as unknown as File,
-                viewWrapper: {} as unknown as IViewWrapper,
                 stack: [],
+                viewWrapper: {} as unknown as IViewWrapper,
             });
 
             expect(tree).toBeDefined();
@@ -215,22 +216,22 @@ describe("WpgGroupRun", () => {
     describe("#prepForXml()", () => {
         it("should add image children to context.file.Media", () => {
             const imageChild: IMediaData = {
-                type: "png",
-                fileName: "test.png",
                 data: Buffer.from("image-data"),
+                fileName: "test.png",
                 transformation: {
+                    emus: { x: 952_500, y: 952_500 },
                     pixels: { x: 100, y: 100 },
-                    emus: { x: 952500, y: 952500 },
                 },
+                type: "png",
             };
 
             const run = new WpgGroupRun({
-                type: "wpg",
                 children: [imageChild],
                 transformation: {
-                    width: 200,
                     height: 200,
+                    width: 200,
                 },
+                type: "wpg",
             });
 
             const addImageMock = vi.fn();
@@ -240,8 +241,8 @@ describe("WpgGroupRun", () => {
                         addImage: addImageMock,
                     },
                 } as unknown as File,
-                viewWrapper: {} as unknown as IViewWrapper,
                 stack: [],
+                viewWrapper: {} as unknown as IViewWrapper,
             });
 
             expect(addImageMock).toHaveBeenCalledWith("test.png", imageChild);
@@ -249,23 +250,23 @@ describe("WpgGroupRun", () => {
 
         it("should not call addImage for wps children", () => {
             const run = new WpgGroupRun({
-                type: "wpg",
                 children: [
                     {
-                        type: "wps",
-                        transformation: {
-                            pixels: { x: 100, y: 100 },
-                            emus: { x: 952500, y: 952500 },
-                        },
                         data: {
                             children: [new Paragraph("Test")],
                         },
+                        transformation: {
+                            emus: { x: 952_500, y: 952_500 },
+                            pixels: { x: 100, y: 100 },
+                        },
+                        type: "wps",
                     },
                 ],
                 transformation: {
-                    width: 200,
                     height: 200,
+                    width: 200,
                 },
+                type: "wpg",
             });
 
             const addImageMock = vi.fn();
@@ -275,8 +276,8 @@ describe("WpgGroupRun", () => {
                         addImage: addImageMock,
                     },
                 } as unknown as File,
-                viewWrapper: {} as unknown as IViewWrapper,
                 stack: [],
+                viewWrapper: {} as unknown as IViewWrapper,
             });
 
             expect(addImageMock).not.toHaveBeenCalled();
@@ -284,31 +285,31 @@ describe("WpgGroupRun", () => {
 
         it("should add SVG fallback image to media", () => {
             const svgChild: IMediaData = {
-                type: "svg",
-                fileName: "test.svg",
                 data: Buffer.from("svg-data"),
-                transformation: {
-                    pixels: { x: 100, y: 100 },
-                    emus: { x: 952500, y: 952500 },
-                },
                 fallback: {
-                    type: "png",
-                    fileName: "test-fallback.png",
                     data: Buffer.from("fallback-data"),
+                    fileName: "test-fallback.png",
                     transformation: {
+                        emus: { x: 952_500, y: 952_500 },
                         pixels: { x: 100, y: 100 },
-                        emus: { x: 952500, y: 952500 },
                     },
+                    type: "png",
                 },
+                fileName: "test.svg",
+                transformation: {
+                    emus: { x: 952_500, y: 952_500 },
+                    pixels: { x: 100, y: 100 },
+                },
+                type: "svg",
             };
 
             const run = new WpgGroupRun({
-                type: "wpg",
                 children: [svgChild],
                 transformation: {
-                    width: 200,
                     height: 200,
+                    width: 200,
                 },
+                type: "wpg",
             });
 
             const addImageMock = vi.fn();
@@ -318,8 +319,8 @@ describe("WpgGroupRun", () => {
                         addImage: addImageMock,
                     },
                 } as unknown as File,
-                viewWrapper: {} as unknown as IViewWrapper,
                 stack: [],
+                viewWrapper: {} as unknown as IViewWrapper,
             });
 
             expect(addImageMock).toHaveBeenCalledTimes(2);
@@ -329,32 +330,32 @@ describe("WpgGroupRun", () => {
 
         it("should add multiple image children to media", () => {
             const imageChild1: IMediaData = {
-                type: "png",
-                fileName: "image1.png",
                 data: Buffer.from("data1"),
+                fileName: "image1.png",
                 transformation: {
+                    emus: { x: 952_500, y: 952_500 },
                     pixels: { x: 100, y: 100 },
-                    emus: { x: 952500, y: 952500 },
                 },
+                type: "png",
             };
 
             const imageChild2: IMediaData = {
-                type: "jpg",
-                fileName: "image2.jpg",
                 data: Buffer.from("data2"),
+                fileName: "image2.jpg",
                 transformation: {
+                    emus: { x: 1_905_000, y: 1_905_000 },
                     pixels: { x: 200, y: 200 },
-                    emus: { x: 1905000, y: 1905000 },
                 },
+                type: "jpg",
             };
 
             const run = new WpgGroupRun({
-                type: "wpg",
                 children: [imageChild1, imageChild2],
                 transformation: {
-                    width: 400,
                     height: 400,
+                    width: 400,
                 },
+                type: "wpg",
             });
 
             const addImageMock = vi.fn();
@@ -364,8 +365,8 @@ describe("WpgGroupRun", () => {
                         addImage: addImageMock,
                     },
                 } as unknown as File,
-                viewWrapper: {} as unknown as IViewWrapper,
                 stack: [],
+                viewWrapper: {} as unknown as IViewWrapper,
             });
 
             expect(addImageMock).toHaveBeenCalledTimes(2);
@@ -375,34 +376,34 @@ describe("WpgGroupRun", () => {
 
         it("should only add non-wps children to media when mixed", () => {
             const imageChild: IMediaData = {
-                type: "png",
-                fileName: "image.png",
                 data: Buffer.from("data"),
+                fileName: "image.png",
                 transformation: {
+                    emus: { x: 952_500, y: 952_500 },
                     pixels: { x: 100, y: 100 },
-                    emus: { x: 952500, y: 952500 },
                 },
+                type: "png",
             };
 
             const run = new WpgGroupRun({
-                type: "wpg",
                 children: [
                     imageChild,
                     {
-                        type: "wps",
-                        transformation: {
-                            pixels: { x: 100, y: 100 },
-                            emus: { x: 952500, y: 952500 },
-                        },
                         data: {
                             children: [new Paragraph("Text")],
                         },
+                        transformation: {
+                            emus: { x: 952_500, y: 952_500 },
+                            pixels: { x: 100, y: 100 },
+                        },
+                        type: "wps",
                     },
                 ],
                 transformation: {
-                    width: 400,
                     height: 400,
+                    width: 400,
                 },
+                type: "wpg",
             });
 
             const addImageMock = vi.fn();
@@ -412,8 +413,8 @@ describe("WpgGroupRun", () => {
                         addImage: addImageMock,
                     },
                 } as unknown as File,
-                viewWrapper: {} as unknown as IViewWrapper,
                 stack: [],
+                viewWrapper: {} as unknown as IViewWrapper,
             });
 
             expect(addImageMock).toHaveBeenCalledTimes(1);

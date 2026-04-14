@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { Compatibility } from "./compatibility";
 
@@ -44,7 +43,9 @@ describe("Compatibility", () => {
             });
 
             const tree = new Formatter().format(compatibility);
-            expect(tree).to.deep.equal({ "w:compat": [{ "w:useSingleBorderforContiguousCells": {} }] });
+            expect(tree).to.deep.equal({
+                "w:compat": [{ "w:useSingleBorderforContiguousCells": {} }],
+            });
         });
     });
 
@@ -110,7 +111,9 @@ describe("Compatibility", () => {
             });
 
             const tree = new Formatter().format(compatibility);
-            expect(tree).to.deep.equal({ "w:compat": [{ "w:balanceSingleByteDoubleByteWidth": {} }] });
+            expect(tree).to.deep.equal({
+                "w:compat": [{ "w:balanceSingleByteDoubleByteWidth": {} }],
+            });
         });
     });
 
@@ -451,7 +454,9 @@ describe("Compatibility", () => {
             });
 
             const tree = new Formatter().format(compatibility);
-            expect(tree).to.deep.equal({ "w:compat": [{ "w:doNotUseHTMLParagraphAutoSpacing": {} }] });
+            expect(tree).to.deep.equal({
+                "w:compat": [{ "w:doNotUseHTMLParagraphAutoSpacing": {} }],
+            });
         });
     });
 
@@ -605,7 +610,9 @@ describe("Compatibility", () => {
             });
 
             const tree = new Formatter().format(compatibility);
-            expect(tree).to.deep.equal({ "w:compat": [{ "w:doNotUseIndentAsNumberingTabStop": {} }] });
+            expect(tree).to.deep.equal({
+                "w:compat": [{ "w:doNotUseIndentAsNumberingTabStop": {} }],
+            });
         });
     });
 
@@ -715,7 +722,9 @@ describe("Compatibility", () => {
             });
 
             const tree = new Formatter().format(compatibility);
-            expect(tree).to.deep.equal({ "w:compat": [{ "w:doNotBreakConstrainedForcedTable": {} }] });
+            expect(tree).to.deep.equal({
+                "w:compat": [{ "w:doNotBreakConstrainedForcedTable": {} }],
+            });
         });
     });
 

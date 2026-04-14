@@ -72,7 +72,17 @@ This creates dynamic text like "See Chapter 1 on page 5" that updates automatica
 Here's a full example with a table of contents linking to bookmarked sections:
 
 ```ts
-import { Bookmark, Document, HeadingLevel, InternalHyperlink, Packer, PageBreak, PageReference, Paragraph, TextRun } from "docx";
+import {
+    Bookmark,
+    Document,
+    HeadingLevel,
+    InternalHyperlink,
+    Packer,
+    PageBreak,
+    PageReference,
+    Paragraph,
+    TextRun,
+} from "docx";
 
 const doc = new Document({
     sections: [

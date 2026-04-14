@@ -1,9 +1,8 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-
 import { File } from "@file/file";
 import { Footer, Header } from "@file/header";
 import { ImageRun, Paragraph } from "@file/paragraph";
 import * as convenienceFunctions from "@util/convenience-functions";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { Compiler } from "./next-compiler";
 
@@ -23,12 +22,12 @@ describe("Compiler", () => {
     });
 
     describe("#compile()", () => {
-        it("should pack all the content", { timeout: 99999999 }, () => {
+        it("should pack all the content", { timeout: 99_999_999 }, () => {
             const file = new File({
-                sections: [],
                 comments: {
                     children: [],
                 },
+                sections: [],
             });
             const zipFile = compiler.compile(file);
             const fileNames = Object.keys(zipFile);
@@ -54,34 +53,34 @@ describe("Compiler", () => {
             expect(fileNames).to.include("_rels/.rels");
         });
 
-        it("should pack all additional headers and footers", { timeout: 99999999 }, () => {
+        it("should pack all additional headers and footers", { timeout: 99_999_999 }, () => {
             const file = new File({
                 sections: [
                     {
-                        headers: {
-                            default: new Header({
-                                children: [new Paragraph("test")],
-                            }),
-                        },
+                        children: [],
                         footers: {
                             default: new Footer({
                                 children: [new Paragraph("test")],
                             }),
                         },
-                        children: [],
+                        headers: {
+                            default: new Header({
+                                children: [new Paragraph("test")],
+                            }),
+                        },
                     },
                     {
-                        headers: {
-                            default: new Header({
-                                children: [new Paragraph("test")],
-                            }),
-                        },
+                        children: [],
                         footers: {
                             default: new Footer({
                                 children: [new Paragraph("test")],
                             }),
                         },
-                        children: [],
+                        headers: {
+                            default: new Header({
+                                children: [new Paragraph("test")],
+                            }),
+                        },
                     },
                 ],
             });
@@ -102,18 +101,18 @@ describe("Compiler", () => {
             expect(fileNames).to.include("word/_rels/footer2.xml.rels");
         });
 
-        it("should pack subfile overrides", { timeout: 99999999 }, () => {
+        it("should pack subfile overrides", { timeout: 99_999_999 }, () => {
             const file = new File({
-                sections: [],
                 comments: {
                     children: [],
                 },
+                sections: [],
             });
             const subfileData1 = "comments";
             const subfileData2 = "commentsExtended";
             const overrides = [
-                { path: "word/comments.xml", data: subfileData1 },
-                { path: "word/commentsExtended.xml", data: subfileData2 },
+                { data: subfileData1, path: "word/comments.xml" },
+                { data: subfileData2, path: "word/commentsExtended.xml" },
             ];
             const zipFile = compiler.compile(file, "", overrides);
             const fileNames = Object.keys(zipFile);
@@ -132,8 +131,8 @@ describe("Compiler", () => {
             const file = new File({
                 sections: [
                     {
-                        properties: {},
                         children: [paragraph],
+                        properties: {},
                     },
                 ],
             });
@@ -148,91 +147,91 @@ describe("Compiler", () => {
             const file = new File({
                 sections: [
                     {
-                        headers: {
-                            default: new Header({
-                                children: [new Paragraph("test")],
+                        children: [
+                            new Paragraph({
+                                children: [
+                                    new ImageRun({
+                                        data: Buffer.from("", "base64"),
+                                        transformation: {
+                                            height: 100,
+                                            width: 100,
+                                        },
+                                        type: "png",
+                                    }),
+                                    new ImageRun({
+                                        data: Buffer.from("", "base64"),
+                                        fallback: {
+                                            data: Buffer.from("", "base64"),
+                                            type: "png",
+                                        },
+                                        transformation: {
+                                            height: 100,
+                                            width: 100,
+                                        },
+                                        type: "svg",
+                                    }),
+                                ],
                             }),
-                        },
+                        ],
                         footers: {
                             default: new Footer({
                                 children: [new Paragraph("test")],
                             }),
                         },
-                        children: [
-                            new Paragraph({
-                                children: [
-                                    new ImageRun({
-                                        type: "png",
-                                        data: Buffer.from("", "base64"),
-                                        transformation: {
-                                            width: 100,
-                                            height: 100,
-                                        },
-                                    }),
-                                    new ImageRun({
-                                        type: "svg",
-                                        data: Buffer.from("", "base64"),
-                                        transformation: {
-                                            width: 100,
-                                            height: 100,
-                                        },
-                                        fallback: {
-                                            type: "png",
-                                            data: Buffer.from("", "base64"),
-                                        },
-                                    }),
-                                ],
+                        headers: {
+                            default: new Header({
+                                children: [new Paragraph("test")],
                             }),
-                        ],
+                        },
                     },
                 ],
             });
 
             vi.spyOn(compiler["imageReplacer"], "getMediaData").mockReturnValue([
                 {
-                    type: "png",
                     data: Buffer.from(""),
                     fileName: "test",
                     transformation: {
-                        pixels: {
-                            x: 100,
-                            y: 100,
-                        },
                         emus: {
                             x: 100,
                             y: 100,
                         },
+                        pixels: {
+                            x: 100,
+                            y: 100,
+                        },
                     },
+                    type: "png",
                 },
                 {
-                    type: "svg",
                     data: Buffer.from(""),
-                    fileName: "test",
-                    transformation: {
-                        pixels: {
-                            x: 100,
-                            y: 100,
-                        },
-                        emus: {
-                            x: 100,
-                            y: 100,
-                        },
-                    },
                     fallback: {
-                        type: "png",
                         data: Buffer.from(""),
                         fileName: "test",
                         transformation: {
-                            pixels: {
-                                x: 100,
-                                y: 100,
-                            },
                             emus: {
                                 x: 100,
                                 y: 100,
                             },
+                            pixels: {
+                                x: 100,
+                                y: 100,
+                            },
+                        },
+                        type: "png",
+                    },
+                    fileName: "test",
+                    transformation: {
+                        emus: {
+                            x: 100,
+                            y: 100,
+                        },
+                        pixels: {
+                            x: 100,
+                            y: 100,
                         },
                     },
+                    type: "svg",
                 },
             ]);
 
@@ -241,8 +240,8 @@ describe("Compiler", () => {
 
         it("should work with fonts", () => {
             const file = new File({
+                fonts: [{ data: Buffer.from(""), name: "Pacifico" }],
                 sections: [],
-                fonts: [{ name: "Pacifico", data: Buffer.from("") }],
             });
 
             compiler.compile(file);

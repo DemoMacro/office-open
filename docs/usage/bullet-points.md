@@ -201,7 +201,10 @@ Apply text formatting to bullet items:
 ```ts
 new Paragraph({
     bullet: { level: 0 },
-    children: [new TextRun({ text: "Important: ", bold: true }), new TextRun("This item requires attention")],
+    children: [
+        new TextRun({ text: "Important: ", bold: true }),
+        new TextRun("This item requires attention"),
+    ],
 });
 ```
 

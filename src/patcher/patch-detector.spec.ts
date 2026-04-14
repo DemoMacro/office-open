@@ -1,9 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 vi.mock("fflate", () => ({
-    unzipSync: vi.fn(),
     strFromU8: vi.fn().mockImplementation((data: Uint8Array) => new TextDecoder().decode(data)),
+    unzipSync: vi.fn(),
 }));
-// eslint-disable-next-line import/order
 import { unzipSync } from "fflate";
 
 import { patchDetector } from "./patch-detector";
@@ -201,7 +200,7 @@ const MOCK_XML = `
 </w:document>
 `;
 
-// cspell:disable
+// Cspell:disable
 const MOCK_XML_2 = `
 <w:body>
     <w:tbl>
@@ -340,9 +339,11 @@ const MOCK_XML_2 = `
     </w:tbl>
 </w:body>
 `;
-// cspell:enable
+// Cspell:enable
 
-const createMockUnzipped = (entries: readonly (readonly [string, string | Uint8Array])[]): Record<string, Uint8Array> =>
+const createMockUnzipped = (
+    entries: readonly (readonly [string, string | Uint8Array])[],
+): Record<string, Uint8Array> =>
     Object.fromEntries(
         entries.map(([key, value]): readonly [string, Uint8Array] => [
             key,
@@ -357,7 +358,10 @@ describe("patch-detector", () => {
                 vi.mocked(unzipSync).mockImplementation(() =>
                     createMockUnzipped([
                         ["word/document.xml", MOCK_XML],
-                        ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`],
+                        [
+                            "[Content_Types].xml",
+                            `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
+                        ],
                     ]),
                 );
             });
@@ -370,7 +374,14 @@ describe("patch-detector", () => {
                 const output = await patchDetector({
                     data: Buffer.from(""),
                 });
-                expect(output).toMatchObject(["name", "paragraph_replace", "table", "image_test", "table_heading_1", "item_1"]);
+                expect(output).toMatchObject([
+                    "name",
+                    "paragraph_replace",
+                    "table",
+                    "image_test",
+                    "table_heading_1",
+                    "item_1",
+                ]);
             });
         });
     });
@@ -381,7 +392,10 @@ describe("patch-detector", () => {
                 vi.mocked(unzipSync).mockImplementation(() =>
                     createMockUnzipped([
                         ["word/document.xml", MOCK_XML_2],
-                        ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`],
+                        [
+                            "[Content_Types].xml",
+                            `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
+                        ],
                     ]),
                 );
             });
@@ -404,7 +418,10 @@ describe("patch-detector", () => {
                     createMockUnzipped([
                         ["word/document.xml", MOCK_XML],
                         ["word/styles.bin", new TextEncoder().encode("binary content")],
-                        ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`],
+                        [
+                            "[Content_Types].xml",
+                            `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
+                        ],
                     ]),
                 );
             });
@@ -417,7 +434,14 @@ describe("patch-detector", () => {
                 const output = await patchDetector({
                     data: Buffer.from(""),
                 });
-                expect(output).toMatchObject(["name", "paragraph_replace", "table", "image_test", "table_heading_1", "item_1"]);
+                expect(output).toMatchObject([
+                    "name",
+                    "paragraph_replace",
+                    "table",
+                    "image_test",
+                    "table_heading_1",
+                    "item_1",
+                ]);
             });
         });
     });

@@ -9,7 +9,8 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Options for font attributes across different character sets.
@@ -20,7 +21,7 @@ import { BuilderElement, type XmlComponent } from "@file/xml-components";
  * @property hAnsi - Font for high ANSI characters (0x80-0xFF)
  * @property hint - Hint for font selection algorithm
  */
-export type IFontAttributesProperties = {
+export interface IFontAttributesProperties {
     /** Font for ASCII characters (0x00-0x7F) */
     readonly ascii?: string;
     /** Font for complex script characters */
@@ -31,7 +32,7 @@ export type IFontAttributesProperties = {
     readonly hAnsi?: string;
     /** Hint for font selection algorithm */
     readonly hint?: string;
-};
+}
 
 /**
  * Creates font settings for a run in a WordprocessingML document.
@@ -71,11 +72,13 @@ export type IFontAttributesProperties = {
  * });
  * ```
  */
-export const createRunFonts = (nameOrAttrs: string | IFontAttributesProperties, hint?: string): XmlComponent => {
+export const createRunFonts = (
+    nameOrAttrs: string | IFontAttributesProperties,
+    hint?: string,
+): XmlComponent => {
     if (typeof nameOrAttrs === "string") {
         const name = nameOrAttrs;
         return new BuilderElement<IFontAttributesProperties>({
-            name: "w:rFonts",
             attributes: {
                 ascii: { key: "w:ascii", value: name },
                 cs: { key: "w:cs", value: name },
@@ -83,12 +86,12 @@ export const createRunFonts = (nameOrAttrs: string | IFontAttributesProperties, 
                 hAnsi: { key: "w:hAnsi", value: name },
                 hint: { key: "w:hint", value: hint },
             },
+            name: "w:rFonts",
         });
     }
 
     const attrs = nameOrAttrs;
     return new BuilderElement<IFontAttributesProperties>({
-        name: "w:rFonts",
         attributes: {
             ascii: { key: "w:ascii", value: attrs.ascii },
             cs: { key: "w:cs", value: attrs.cs },
@@ -96,5 +99,6 @@ export const createRunFonts = (nameOrAttrs: string | IFontAttributesProperties, 
             hAnsi: { key: "w:hAnsi", value: attrs.hAnsi },
             hint: { key: "w:hint", value: attrs.hint },
         },
+        name: "w:rFonts",
     });
 };

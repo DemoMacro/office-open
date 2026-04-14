@@ -6,7 +6,8 @@
  *
  * @module
  */
-import { BaseXmlComponent, type IContext } from "./base";
+import { BaseXmlComponent } from "./base";
+import type { IContext } from "./base";
 import type { IXmlAttribute, IXmlableObject } from "./xmlable-object";
 
 /**
@@ -28,7 +29,9 @@ export type AttributeData = Record<string, boolean | number | string>;
  * This type is used by NextAttributeComponent to provide more explicit
  * control over attribute name mapping.
  */
-export type AttributePayload<T> = { readonly [P in keyof T]: { readonly key: string; readonly value: T[P] } };
+export type AttributePayload<T> = {
+    readonly [P in keyof T]: { readonly key: string; readonly value: T[P] };
+};
 
 /**
  * Base class for creating XML attributes with automatic name mapping.
@@ -47,8 +50,9 @@ export type AttributePayload<T> = { readonly [P in keyof T]: { readonly key: str
  * // Generates: _attr: { "w:sz": 24 }
  * ```
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export abstract class XmlAttributeComponent<T extends Record<string, any>> extends BaseXmlComponent {
+export abstract class XmlAttributeComponent<
+    T extends Record<string, any>,
+> extends BaseXmlComponent {
     /** Optional mapping from property names to XML attribute names. */
     protected readonly xmlKeys?: AttributeMap<T>;
 
@@ -75,7 +79,6 @@ export abstract class XmlAttributeComponent<T extends Record<string, any>> exten
         Object.entries(this.root).forEach(([key, value]) => {
             if (value !== undefined) {
                 const newKey = (this.xmlKeys && this.xmlKeys[key]) || key;
-                // eslint-disable-next-line functional/immutable-data
                 attrs[newKey] = value;
             }
         });
@@ -99,7 +102,7 @@ export abstract class XmlAttributeComponent<T extends Record<string, any>> exten
  * // Generates: _attr: { "w:sz": 24, "w:b": true }
  * ```
  */
-export class NextAttributeComponent<T extends AttributeData> extends BaseXmlComponent {
+export class NextAttributeComponent<T> extends BaseXmlComponent {
     /**
      * Creates a new NextAttributeComponent.
      *
@@ -119,7 +122,12 @@ export class NextAttributeComponent<T extends AttributeData> extends BaseXmlComp
      * @returns Object with _attr key containing the attributes
      */
     public prepForXml(_: IContext): IXmlableObject {
-        const attrs = Object.values<{ readonly key: string; readonly value: string | boolean | number }>(this.root)
+        const attrs = (
+            Object.values(this.root) as readonly {
+                readonly key: string;
+                readonly value: string | boolean | number;
+            }[]
+        )
             .filter(({ value }) => value !== undefined)
             .reduce((acc, { key, value }) => ({ ...acc, [key]: value }), {} as IXmlAttribute);
         return { _attr: attrs };

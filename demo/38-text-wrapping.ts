@@ -1,7 +1,8 @@
 // Example of how to "wrap" text around an image
 
 import * as fs from "fs";
-// import { Document, Packer, Paragraph } from "docx";
+
+// Import { Document, Packer, Paragraph } from "docx";
 import { Document, ImageRun, Packer, Paragraph, TextWrappingSide, TextWrappingType } from "docx";
 
 const doc = new Document({
@@ -21,25 +22,25 @@ const doc = new Document({
                     children: [
                         new ImageRun({
                             data: fs.readFileSync("./demo/images/pizza.gif"),
-                            transformation: {
-                                width: 200,
-                                height: 200,
-                            },
                             floating: {
                                 horizontalPosition: {
-                                    offset: 2014400,
-                                },
-                                verticalPosition: {
-                                    offset: 2014400,
-                                },
-                                wrap: {
-                                    type: TextWrappingType.SQUARE,
-                                    side: TextWrappingSide.BOTH_SIDES,
+                                    offset: 2_014_400,
                                 },
                                 margins: {
-                                    top: 201440,
-                                    bottom: 201440,
+                                    bottom: 201_440,
+                                    top: 201_440,
                                 },
+                                verticalPosition: {
+                                    offset: 2_014_400,
+                                },
+                                wrap: {
+                                    side: TextWrappingSide.BOTH_SIDES,
+                                    type: TextWrappingType.SQUARE,
+                                },
+                            },
+                            transformation: {
+                                height: 200,
+                                width: 200,
                             },
                         }),
                     ],

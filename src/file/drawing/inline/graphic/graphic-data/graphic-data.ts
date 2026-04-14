@@ -1,5 +1,10 @@
 import { createWpsShape } from "@file/drawing/inline/graphic/graphic-data/wps/wps-shape";
-import type { IExtendedMediaData, IMediaData, IMediaDataTransformation, WpgMediaData } from "@file/media";
+import type {
+    IExtendedMediaData,
+    IMediaData,
+    IMediaDataTransformation,
+    WpgMediaData,
+} from "@file/media";
 import { XmlComponent } from "@file/xml-components";
 
 import { GraphicDataAttributes } from "./graphic-data-attribute";
@@ -37,7 +42,7 @@ import { createWpgGroup } from "./wpg/wpg-group";
  * ```
  */
 export class GraphicData extends XmlComponent {
-    // private readonly pic: Pic;
+    // Private readonly pic: Pic;
 
     public constructor({
         mediaData,
@@ -58,7 +63,12 @@ export class GraphicData extends XmlComponent {
                     uri: "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
                 }),
             );
-            const wps = createWpsShape({ ...mediaData.data, transformation: transform, outline, solidFill });
+            const wps = createWpsShape({
+                ...mediaData.data,
+                outline,
+                solidFill,
+                transformation: transform,
+            });
             this.root.push(wps);
         } else if (mediaData.type === "wpg") {
             this.root.push(
@@ -68,19 +78,22 @@ export class GraphicData extends XmlComponent {
             );
             const md = mediaData as WpgMediaData;
             const children = md.children.map((child) => {
-                // eslint-disable-next-line unicorn/prefer-ternary
                 if (child.type === "wps") {
                     return createWpsShape({
                         ...child.data,
-                        transformation: child.transformation,
                         outline: child.outline,
                         solidFill: child.solidFill,
+                        transformation: child.transformation,
                     });
                 } else {
-                    return new Pic({ mediaData: child, transform: child.transformation, outline: child.outline });
+                    return new Pic({
+                        mediaData: child,
+                        outline: child.outline,
+                        transform: child.transformation,
+                    });
                 }
             });
-            // const wps = new WpsShape({ ...mediaData.data, transformation: transform, outline, solidFill });
+            // Const wps = new WpsShape({ ...mediaData.data, transformation: transform, outline, solidFill });
             const wpg = createWpgGroup({ children, transformation: transform });
             this.root.push(wpg);
         } else {
@@ -90,16 +103,16 @@ export class GraphicData extends XmlComponent {
                 }),
             );
             const md = mediaData as IMediaData;
-            const pic = new Pic({ mediaData: md, transform, outline });
+            const pic = new Pic({ mediaData: md, outline, transform });
             this.root.push(pic);
         }
 
-        // if (mediaData.type !== "wps") {
-        //     const pic = new Pic({ mediaData, transform, outline });
-        //     this.root.push(pic);
+        // If (mediaData.type !== "wps") {
+        //     Const pic = new Pic({ mediaData, transform, outline });
+        //     This.root.push(pic);
         // } else {
-        //     const wps = new WpsShape({ ...mediaData.data, transformation: transform, outline, solidFill });
-        //     this.root.push(wps);
+        //     Const wps = new WpsShape({ ...mediaData.data, transformation: transform, outline, solidFill });
+        //     This.root.push(wps);
         // }
     }
 }

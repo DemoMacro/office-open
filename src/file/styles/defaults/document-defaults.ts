@@ -18,12 +18,12 @@ import { RunPropertiesDefaults } from "./run-properties";
  * @property paragraph - Default paragraph properties applied to all paragraphs
  * @property run - Default run properties applied to all text runs
  */
-export type IDocumentDefaultsOptions = {
+export interface IDocumentDefaultsOptions {
     /** Default paragraph properties applied to all paragraphs */
     readonly paragraph?: IParagraphStylePropertiesOptions;
     /** Default run properties applied to all text runs */
     readonly run?: IRunStylePropertiesOptions;
-};
+}
 
 /**
  * Represents document-wide default formatting in a WordprocessingML document.

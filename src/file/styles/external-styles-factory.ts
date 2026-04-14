@@ -1,3 +1,5 @@
+import { ImportedRootElementAttributes, convertToXmlComponent } from "@file/xml-components";
+import type { ImportedXmlComponent } from "@file/xml-components";
 /**
  * External styles factory module for WordprocessingML documents.
  *
@@ -7,9 +9,8 @@
  *
  * @module
  */
-import { type Element as XMLElement, xml2js } from "xml-js";
-
-import { ImportedRootElementAttributes, type ImportedXmlComponent, convertToXmlComponent } from "@file/xml-components";
+import { xml2js } from "xml-js";
+import type { Element as XMLElement } from "xml-js";
 
 import type { IStylesOptions } from "./styles";
 
@@ -69,8 +70,10 @@ export class ExternalStylesFactory {
         const stylesElements = stylesXmlElement.elements || [];
 
         return {
+            importedStyles: stylesElements.map(
+                (childElm) => convertToXmlComponent(childElm) as ImportedXmlComponent,
+            ),
             initialStyles: new ImportedRootElementAttributes(stylesXmlElement.attributes),
-            importedStyles: stylesElements.map((childElm) => convertToXmlComponent(childElm) as ImportedXmlComponent),
         };
     }
 }

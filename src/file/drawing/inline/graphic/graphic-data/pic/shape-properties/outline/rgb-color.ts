@@ -5,15 +5,16 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Options for RGB color.
  */
-type SolidRgbColorOptions = {
+interface SolidRgbColorOptions {
     /** Hex color value (e.g., "FF0000" for red) */
     readonly value: string;
-};
+}
 
 // <xsd:complexType name="CT_SRgbColor">
 //     <xsd:sequence>
@@ -45,11 +46,11 @@ type SolidRgbColorOptions = {
  */
 export const createSolidRgbColor = (options: SolidRgbColorOptions): XmlComponent =>
     new BuilderElement<SolidRgbColorOptions>({
-        name: "a:srgbClr",
         attributes: {
             value: {
                 key: "val",
                 value: options.value,
             },
         },
+        name: "a:srgbClr",
     });

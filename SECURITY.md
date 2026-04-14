@@ -15,9 +15,9 @@ We encourage responsible disclosure of security vulnerabilities. If you believe 
 
 Please include the following information in your report:
 
-* A description of the vulnerability
-* Steps to reproduce the vulnerability
-* Impact of the vulnerability
+- A description of the vulnerability
+- Steps to reproduce the vulnerability
+- Impact of the vulnerability
 
 We will investigate all reported vulnerabilities and take appropriate action.
 

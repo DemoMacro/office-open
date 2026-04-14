@@ -1,6 +1,7 @@
 // Creates two paragraphs, one with a border and one without
 
 import * as fs from "fs";
+
 import { BorderStyle, Document, Packer, Paragraph, TextRun } from "docx";
 
 const doc = new Document({
@@ -9,32 +10,32 @@ const doc = new Document({
             children: [
                 new Paragraph("No border!"),
                 new Paragraph({
-                    text: "I have borders on my top and bottom sides!",
                     border: {
-                        top: {
-                            color: "auto",
-                            space: 1,
-                            style: BorderStyle.SINGLE,
-                            size: 6,
-                        },
                         bottom: {
                             color: "auto",
+                            size: 6,
                             space: 1,
                             style: BorderStyle.SINGLE,
+                        },
+                        top: {
+                            color: "auto",
                             size: 6,
+                            space: 1,
+                            style: BorderStyle.SINGLE,
                         },
                     },
+                    text: "I have borders on my top and bottom sides!",
                 }),
                 new Paragraph({
-                    text: "",
                     border: {
                         top: {
                             color: "auto",
+                            size: 6,
                             space: 1,
                             style: BorderStyle.SINGLE,
-                            size: 6,
                         },
                     },
+                    text: "",
                 }),
                 new Paragraph({
                     children: [
@@ -42,13 +43,13 @@ const doc = new Document({
                             text: "This will ",
                         }),
                         new TextRun({
-                            text: "have a border.",
                             border: {
                                 color: "auto",
+                                size: 6,
                                 space: 1,
                                 style: BorderStyle.SINGLE,
-                                size: 6,
                             },
+                            text: "have a border.",
                         }),
                         new TextRun({
                             text: " This will not.",

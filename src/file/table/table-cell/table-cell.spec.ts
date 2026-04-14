@@ -1,9 +1,8 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
 import { BorderStyle } from "@file/border";
 import { ShadingType } from "@file/shading";
 import { VerticalAlignTable } from "@file/vertical-align";
+import { describe, expect, it } from "vite-plus/test";
 
 import { WidthType } from "../table-width";
 import { TableCell } from "./table-cell";
@@ -21,9 +20,9 @@ describe("TableCellBorders", () => {
         it("should add top border", () => {
             const tb = new TableCellBorders({
                 top: {
-                    style: BorderStyle.DOTTED,
-                    size: 1,
                     color: "FF00FF",
+                    size: 1,
+                    style: BorderStyle.DOTTED,
                 },
             });
 
@@ -46,9 +45,9 @@ describe("TableCellBorders", () => {
         it("should add start(left) border", () => {
             const tb = new TableCellBorders({
                 start: {
-                    style: BorderStyle.SINGLE,
-                    size: 2,
                     color: "FF00FF",
+                    size: 2,
+                    style: BorderStyle.SINGLE,
                 },
             });
 
@@ -71,9 +70,9 @@ describe("TableCellBorders", () => {
         it("should add bottom border", () => {
             const tb = new TableCellBorders({
                 bottom: {
-                    style: BorderStyle.DOUBLE,
-                    size: 1,
                     color: "FF00FF",
+                    size: 1,
+                    style: BorderStyle.DOUBLE,
                 },
             });
 
@@ -96,9 +95,9 @@ describe("TableCellBorders", () => {
         it("should add end(right) border", () => {
             const tb = new TableCellBorders({
                 end: {
-                    style: BorderStyle.THICK,
-                    size: 3,
                     color: "FF0000",
+                    size: 3,
+                    style: BorderStyle.THICK,
                 },
             });
 
@@ -121,9 +120,9 @@ describe("TableCellBorders", () => {
         it("should add left border", () => {
             const tb = new TableCellBorders({
                 left: {
-                    style: BorderStyle.THICK,
-                    size: 3,
                     color: "FF00FF",
+                    size: 3,
+                    style: BorderStyle.THICK,
                 },
             });
 
@@ -146,9 +145,9 @@ describe("TableCellBorders", () => {
         it("should add right border", () => {
             const tb = new TableCellBorders({
                 right: {
-                    style: BorderStyle.THICK,
-                    size: 3,
                     color: "FF00FF",
+                    size: 3,
+                    style: BorderStyle.THICK,
                 },
             });
 
@@ -170,35 +169,35 @@ describe("TableCellBorders", () => {
 
         it("should add multiple borders", () => {
             const tb = new TableCellBorders({
-                top: {
-                    style: BorderStyle.DOTTED,
-                    size: 1,
+                bottom: {
                     color: "FF00FF",
+                    size: 1,
+                    style: BorderStyle.DOUBLE,
                 },
                 end: {
-                    style: BorderStyle.THICK,
+                    color: "FF00FF",
                     size: 3,
-                    color: "FF00FF",
-                },
-                bottom: {
-                    style: BorderStyle.DOUBLE,
-                    size: 1,
-                    color: "FF00FF",
-                },
-                start: {
-                    style: BorderStyle.SINGLE,
-                    size: 2,
-                    color: "FF00FF",
+                    style: BorderStyle.THICK,
                 },
                 left: {
-                    style: BorderStyle.SINGLE,
-                    size: 2,
                     color: "FF00FF",
+                    size: 2,
+                    style: BorderStyle.SINGLE,
                 },
                 right: {
-                    style: BorderStyle.SINGLE,
-                    size: 2,
                     color: "FF00FF",
+                    size: 2,
+                    style: BorderStyle.SINGLE,
+                },
+                start: {
+                    color: "FF00FF",
+                    size: 2,
+                    style: BorderStyle.SINGLE,
+                },
+                top: {
+                    color: "FF00FF",
+                    size: 1,
+                    style: BorderStyle.DOTTED,
                 },
             });
 
@@ -371,10 +370,10 @@ describe("TableCell", () => {
             const cell = new TableCell({
                 children: [],
                 margins: {
-                    top: 1,
-                    left: 1,
                     bottom: 1,
+                    left: 1,
                     right: 1,
+                    top: 1,
                 },
             });
 
@@ -433,8 +432,8 @@ describe("TableCell", () => {
             const cell = new TableCell({
                 children: [],
                 shading: {
-                    fill: "FF0000",
                     color: "0000ff",
+                    fill: "FF0000",
                     type: ShadingType.PERCENT_10,
                 },
             });
@@ -566,29 +565,29 @@ describe("TableCell", () => {
 
             it("should create with borders", () => {
                 const cell = new TableCell({
-                    children: [],
                     borders: {
-                        top: {
-                            style: BorderStyle.DASH_DOT_STROKED,
-                            size: 3,
-                            color: "FF0000",
-                        },
                         bottom: {
-                            style: BorderStyle.DOUBLE,
-                            size: 3,
                             color: "0000ff",
+                            size: 3,
+                            style: BorderStyle.DOUBLE,
                         },
                         left: {
-                            style: BorderStyle.DASH_DOT_STROKED,
-                            size: 3,
                             color: "00ff00",
+                            size: 3,
+                            style: BorderStyle.DASH_DOT_STROKED,
                         },
                         right: {
-                            style: BorderStyle.DASH_DOT_STROKED,
-                            size: 3,
                             color: "#ff8000",
+                            size: 3,
+                            style: BorderStyle.DASH_DOT_STROKED,
+                        },
+                        top: {
+                            color: "FF0000",
+                            size: 3,
+                            style: BorderStyle.DASH_DOT_STROKED,
                         },
                     },
+                    children: [],
                 });
 
                 const tree = new Formatter().format(cell);
@@ -651,9 +650,9 @@ describe("TableCell", () => {
             const tableCell = new TableCell({
                 children: [],
                 insertion: {
-                    id: 1,
                     author: "Firstname Lastname",
                     date: "123",
+                    id: 1,
                 },
             });
             const tree = new Formatter().format(tableCell);
@@ -683,9 +682,9 @@ describe("TableCell", () => {
             const tableCell = new TableCell({
                 children: [],
                 deletion: {
-                    id: 1,
                     author: "Firstname Lastname",
                     date: "123",
+                    id: 1,
                 },
             });
             const tree = new Formatter().format(tableCell);
@@ -713,13 +712,13 @@ describe("TableCell", () => {
 
         it("should create with cell merge revision", () => {
             const tableCell = new TableCell({
-                children: [],
                 cellMerge: {
-                    id: 1,
                     author: "Firstname Lastname",
                     date: "123",
+                    id: 1,
                     verticalMerge: "cont",
                 },
+                children: [],
             });
             const tree = new Formatter().format(tableCell);
             expect(tree).to.deep.equal({
@@ -748,15 +747,15 @@ describe("TableCell", () => {
         it("should create with properties revision", () => {
             const run = new TableCell({
                 children: [],
-                verticalAlign: VerticalAlignTable.CENTER,
-                textDirection: TextDirection.BOTTOM_TO_TOP_LEFT_TO_RIGHT,
                 revision: {
-                    id: 1,
                     author: "Firstname Lastname",
                     date: "123",
-                    verticalAlign: VerticalAlignTable.TOP,
+                    id: 1,
                     textDirection: TextDirection.LEFT_TO_RIGHT_TOP_TO_BOTTOM,
+                    verticalAlign: VerticalAlignTable.TOP,
                 },
+                textDirection: TextDirection.BOTTOM_TO_TOP_LEFT_TO_RIGHT,
+                verticalAlign: VerticalAlignTable.CENTER,
             });
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({

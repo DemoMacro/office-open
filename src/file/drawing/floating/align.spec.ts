@@ -1,7 +1,6 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
 import { VerticalPositionAlign } from "@file/shared/alignment";
+import { describe, expect, it } from "vite-plus/test";
 
 import { createAlign } from "./align";
 

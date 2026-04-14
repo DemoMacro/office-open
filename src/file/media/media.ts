@@ -13,7 +13,7 @@ import type { IMediaData } from "./data";
  *
  * Specifies how an image should be transformed when displayed in the document.
  */
-export type IMediaTransformation = {
+export interface IMediaTransformation {
     readonly offset?: {
         readonly top?: number;
         readonly left?: number;
@@ -30,7 +30,7 @@ export type IMediaTransformation = {
     };
     /** Optional rotation angle in degrees */
     readonly rotation?: number;
-};
+}
 
 /**
  * Manages embedded media (images) in a document.
@@ -55,7 +55,6 @@ export type IMediaTransformation = {
  * ```
  */
 export class Media {
-    // eslint-disable-next-line functional/prefer-readonly-type
     private readonly map: Map<string, IMediaData>;
 
     public constructor() {
@@ -69,7 +68,6 @@ export class Media {
      * @param mediaData - Complete image data including file name, transformation, and raw data
      */
     public addImage(key: string, mediaData: IMediaData): void {
-        // eslint-disable-next-line functional/immutable-data
         this.map.set(key, mediaData);
     }
 
@@ -79,6 +77,6 @@ export class Media {
      * @returns Read-only array of all media data in the collection
      */
     public get Array(): readonly IMediaData[] {
-        return Array.from(this.map.values());
+        return [...this.map.values()];
     }
 }

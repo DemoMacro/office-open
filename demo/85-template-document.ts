@@ -1,12 +1,12 @@
 // Patch a document with patches
 
 import * as fs from "fs";
+
 import {
     ExternalHyperlink,
     HeadingLevel,
     ImageRun,
     Paragraph,
-    patchDocument,
     PatchType,
     Table,
     TableCell,
@@ -14,22 +14,43 @@ import {
     TextDirection,
     TextRun,
     VerticalAlignTable,
+    patchDocument,
 } from "docx";
 
 patchDocument({
-    outputType: "nodebuffer",
     data: fs.readFileSync("demo/assets/simple-template.docx"),
+    outputType: "nodebuffer",
     patches: {
-        name: {
+        footer_text: {
+            children: [
+                new TextRun("replaced just as"),
+                new TextRun(" well"),
+                new ExternalHyperlink({
+                    children: [
+                        new TextRun({
+                            text: "BBC News Link",
+                        }),
+                    ],
+                    link: "https://www.bbc.co.uk/news",
+                }),
+            ],
             type: PatchType.PARAGRAPH,
-            children: [new TextRun("Sir. "), new TextRun("John Doe"), new TextRun("(The Conqueror)")],
         },
-        table_heading_1: {
+        header_adjective: {
+            children: [new TextRun("Delightful Header")],
             type: PatchType.PARAGRAPH,
-            children: [new TextRun("Heading wow!")],
+        },
+        image_test: {
+            children: [
+                new ImageRun({
+                    data: fs.readFileSync("./demo/images/image1.jpeg"),
+                    transformation: { height: 100, width: 100 },
+                    type: "jpg",
+                }),
+            ],
+            type: PatchType.PARAGRAPH,
         },
         item_1: {
-            type: PatchType.PARAGRAPH,
             children: [
                 new TextRun("#657"),
                 new ExternalHyperlink({
@@ -41,9 +62,17 @@ patchDocument({
                     link: "https://www.bbc.co.uk/news",
                 }),
             ],
+            type: PatchType.PARAGRAPH,
+        },
+        name: {
+            children: [
+                new TextRun("Sir. "),
+                new TextRun("John Doe"),
+                new TextRun("(The Conqueror)"),
+            ],
+            type: PatchType.PARAGRAPH,
         },
         paragraph_replace: {
-            type: PatchType.DOCUMENT,
             children: [
                 new Paragraph("Lorem ipsum paragraph"),
                 new Paragraph("Another paragraph"),
@@ -59,45 +88,16 @@ patchDocument({
                             link: "https://www.google.co.uk",
                         }),
                         new ImageRun({
-                            type: "png",
                             data: fs.readFileSync("./demo/images/dog.png"),
-                            transformation: { width: 100, height: 100 },
+                            transformation: { height: 100, width: 100 },
+                            type: "png",
                         }),
                     ],
                 }),
             ],
-        },
-        header_adjective: {
-            type: PatchType.PARAGRAPH,
-            children: [new TextRun("Delightful Header")],
-        },
-        footer_text: {
-            type: PatchType.PARAGRAPH,
-            children: [
-                new TextRun("replaced just as"),
-                new TextRun(" well"),
-                new ExternalHyperlink({
-                    children: [
-                        new TextRun({
-                            text: "BBC News Link",
-                        }),
-                    ],
-                    link: "https://www.bbc.co.uk/news",
-                }),
-            ],
-        },
-        image_test: {
-            type: PatchType.PARAGRAPH,
-            children: [
-                new ImageRun({
-                    type: "jpg",
-                    data: fs.readFileSync("./demo/images/image1.jpeg"),
-                    transformation: { width: 100, height: 100 },
-                }),
-            ],
+            type: PatchType.DOCUMENT,
         },
         table: {
-            type: PatchType.DOCUMENT,
             children: [
                 new Table({
                     rows: [
@@ -112,11 +112,17 @@ patchDocument({
                                     verticalAlign: VerticalAlignTable.CENTER,
                                 }),
                                 new TableCell({
-                                    children: [new Paragraph({ text: "bottom to top" }), new Paragraph({})],
+                                    children: [
+                                        new Paragraph({ text: "bottom to top" }),
+                                        new Paragraph({}),
+                                    ],
                                     textDirection: TextDirection.BOTTOM_TO_TOP_LEFT_TO_RIGHT,
                                 }),
                                 new TableCell({
-                                    children: [new Paragraph({ text: "top to bottom" }), new Paragraph({})],
+                                    children: [
+                                        new Paragraph({ text: "top to bottom" }),
+                                        new Paragraph({}),
+                                    ],
                                     textDirection: TextDirection.TOP_TO_BOTTOM_RIGHT_TO_LEFT,
                                 }),
                             ],
@@ -126,8 +132,8 @@ patchDocument({
                                 new TableCell({
                                     children: [
                                         new Paragraph({
-                                            text: "Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah",
                                             heading: HeadingLevel.HEADING_1,
+                                            text: "Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah",
                                         }),
                                     ],
                                 }),
@@ -160,6 +166,11 @@ patchDocument({
                     ],
                 }),
             ],
+            type: PatchType.DOCUMENT,
+        },
+        table_heading_1: {
+            children: [new TextRun("Heading wow!")],
+            type: PatchType.PARAGRAPH,
         },
     },
 }).then((doc) => {

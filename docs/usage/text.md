@@ -8,7 +8,10 @@ You can add multiple `text runs` in `Paragraphs`. This is the most verbose way o
 import { Paragraph, TextRun } from "docx";
 
 const paragraph = new Paragraph({
-    children: [new TextRun("My awesome text here for my university dissertation"), new TextRun("Foo Bar")],
+    children: [
+        new TextRun("My awesome text here for my university dissertation"),
+        new TextRun("Foo Bar"),
+    ],
 });
 ```
 

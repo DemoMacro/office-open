@@ -1,6 +1,5 @@
-import { assert, beforeEach, describe, expect, it } from "vitest";
-
 import { Utility } from "tests/utility";
+import { assert, beforeEach, describe, expect, it } from "vite-plus/test";
 
 import { TextRun } from "../run";
 import { Bookmark } from "./bookmark";
@@ -10,8 +9,8 @@ describe("Bookmark", () => {
 
     beforeEach(() => {
         bookmark = new Bookmark({
-            id: "anchor",
             children: [new TextRun("Internal Link")],
+            id: "anchor",
         });
     });
 
@@ -31,7 +30,10 @@ describe("Bookmark", () => {
 
     it("should create a bookmark with the correct attributes on the text element", () => {
         const newJson = Utility.jsonify(bookmark);
-        assert.equal(JSON.stringify(newJson.children[0].root[1].root[1]), JSON.stringify("Internal Link"));
+        assert.equal(
+            JSON.stringify(newJson.children[0].root[1].root[1]),
+            JSON.stringify("Internal Link"),
+        );
     });
 
     it("should create a bookmark with the correct attributes on the bookmark end element", () => {

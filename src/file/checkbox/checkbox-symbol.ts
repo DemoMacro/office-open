@@ -23,8 +23,8 @@ class CheckboxSymbolAttributes extends XmlAttributeComponent<{
     readonly symbolfont?: string;
 }> {
     protected readonly xmlKeys = {
-        val: "w14:val",
         symbolfont: "w14:font",
+        val: "w14:val",
     };
 }
 
@@ -58,7 +58,9 @@ export class CheckBoxSymbolElement extends XmlComponent {
     public constructor(name: string, val: string, font?: string) {
         super(name);
         if (font) {
-            this.root.push(new CheckboxSymbolAttributes({ val: shortHexNumber(val), symbolfont: font }));
+            this.root.push(
+                new CheckboxSymbolAttributes({ symbolfont: font, val: shortHexNumber(val) }),
+            );
         } else {
             this.root.push(new CheckboxSymbolAttributes({ val }));
         }

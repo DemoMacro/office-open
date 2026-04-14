@@ -2,10 +2,10 @@
 // Also includes an example on how to center tables
 
 import * as fs from "fs";
+
 import {
     AlignmentType,
     BorderStyle,
-    convertInchesToTwip,
     Document,
     HeadingLevel,
     Packer,
@@ -15,6 +15,7 @@ import {
     TableCell,
     TableRow,
     WidthType,
+    convertInchesToTwip,
 } from "docx";
 
 const table = new Table({
@@ -42,18 +43,19 @@ const table = new Table({
 
 const table2 = new Table({
     alignment: AlignmentType.CENTER,
+    columnWidths: [convertInchesToTwip(0.69), convertInchesToTwip(0.69), convertInchesToTwip(0.69)],
     rows: [
         new TableRow({
             children: [
                 new TableCell({
                     children: [new Paragraph("World")],
+                    columnSpan: 3,
                     margins: {
-                        top: convertInchesToTwip(0.69),
                         bottom: convertInchesToTwip(0.69),
                         left: convertInchesToTwip(0.69),
                         right: convertInchesToTwip(0.69),
+                        top: convertInchesToTwip(0.69),
                     },
-                    columnSpan: 3,
                 }),
             ],
         }),
@@ -75,11 +77,16 @@ const table2 = new Table({
         size: 100,
         type: WidthType.AUTO,
     },
-    columnWidths: [convertInchesToTwip(0.69), convertInchesToTwip(0.69), convertInchesToTwip(0.69)],
 });
 
 const table3 = new Table({
     alignment: AlignmentType.CENTER,
+    margins: {
+        bottom: convertInchesToTwip(0.27),
+        left: convertInchesToTwip(0.27),
+        right: convertInchesToTwip(0.27),
+        top: convertInchesToTwip(0.27),
+    },
     rows: [
         new TableRow({
             children: [
@@ -97,33 +104,33 @@ const table3 = new Table({
                 new TableCell({
                     children: [new Paragraph("Bar1")],
                     shading: {
+                        color: "auto",
                         fill: "b79c2f",
                         type: ShadingType.REVERSE_DIAGONAL_STRIPE,
-                        color: "auto",
                     },
                 }),
                 new TableCell({
                     children: [new Paragraph("Bar2")],
                     shading: {
+                        color: "auto",
                         fill: "42c5f4",
                         type: ShadingType.PERCENT_95,
-                        color: "auto",
                     },
                 }),
                 new TableCell({
                     children: [new Paragraph("Bar3")],
                     shading: {
+                        color: "e2df0b",
                         fill: "880aa8",
                         type: ShadingType.PERCENT_10,
-                        color: "e2df0b",
                     },
                 }),
                 new TableCell({
                     children: [new Paragraph("Bar4")],
                     shading: {
+                        color: "auto",
                         fill: "FF0000",
                         type: ShadingType.CLEAR,
-                        color: "auto",
                     },
                 }),
             ],
@@ -132,12 +139,6 @@ const table3 = new Table({
     width: {
         size: convertInchesToTwip(4.86),
         type: WidthType.DXA,
-    },
-    margins: {
-        top: convertInchesToTwip(0.27),
-        bottom: convertInchesToTwip(0.27),
-        right: convertInchesToTwip(0.27),
-        left: convertInchesToTwip(0.27),
     },
 });
 
@@ -221,25 +222,25 @@ const table5 = new Table({
 });
 
 const borders = {
-    top: {
-        style: BorderStyle.DASH_SMALL_GAP,
-        size: 1,
-        color: "FF0000",
-    },
     bottom: {
-        style: BorderStyle.DASH_SMALL_GAP,
-        size: 1,
         color: "FF0000",
+        size: 1,
+        style: BorderStyle.DASH_SMALL_GAP,
     },
     left: {
-        style: BorderStyle.DASH_SMALL_GAP,
-        size: 1,
         color: "FF0000",
+        size: 1,
+        style: BorderStyle.DASH_SMALL_GAP,
     },
     right: {
-        style: BorderStyle.DASH_SMALL_GAP,
-        size: 1,
         color: "FF0000",
+        size: 1,
+        style: BorderStyle.DASH_SMALL_GAP,
+    },
+    top: {
+        color: "FF0000",
+        size: 1,
+        style: BorderStyle.DASH_SMALL_GAP,
     },
 };
 
@@ -349,7 +350,7 @@ const table8 = new Table({
                 new TableCell({ children: [new Paragraph("1,1")] }),
                 new TableCell({ children: [new Paragraph("1,2")] }),
                 new TableCell({ children: [new Paragraph("1,3")] }),
-                new TableCell({ children: [new Paragraph("1,4")], rowSpan: 4, borders }),
+                new TableCell({ borders, children: [new Paragraph("1,4")], rowSpan: 4 }),
             ],
         }),
         new TableRow({
@@ -380,13 +381,13 @@ const doc = new Document({
             children: [
                 table,
                 new Paragraph({
-                    text: "Another table",
                     heading: HeadingLevel.HEADING_2,
+                    text: "Another table",
                 }),
                 table2,
                 new Paragraph({
-                    text: "Another table",
                     heading: HeadingLevel.HEADING_2,
+                    text: "Another table",
                 }),
                 table3,
                 new Paragraph("Merging columns 1"),

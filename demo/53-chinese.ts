@@ -6,46 +6,16 @@
 // Note that if the OS have not install `KaiTi` font, this demo doesn't work.
 
 import * as fs from "fs";
+
 import { Document, HeadingLevel, Packer, Paragraph, TextRun } from "docx";
 
 const doc = new Document({
-    styles: {
-        default: {
-            document: {
-                run: {
-                    font: {
-                        ascii: "minorHAnsi",
-                        eastAsia: "minorEastAsia",
-                        cs: "minorBidi",
-                        hAnsi: "minorHAnsi",
-                    },
-                },
-            },
-        },
-        paragraphStyles: [
-            {
-                id: "Normal",
-                name: "Normal",
-                basedOn: "Normal",
-                next: "Normal",
-                quickFormat: true,
-                run: {
-                    font: {
-                        ascii: "minorHAnsi", // Can also use minorHAnsi
-                        eastAsia: "minorEastAsia", // Can also use minorEastAsia
-                        cs: "minorBidi",
-                        hAnsi: "minorHAnsi",
-                    },
-                },
-            },
-        ],
-    },
     sections: [
         {
             children: [
                 new Paragraph({
-                    text: "中文和英文 Chinese and English",
                     heading: HeadingLevel.HEADING_1,
+                    text: "中文和英文 Chinese and English",
                 }),
                 new Paragraph({
                     text: "中文和英文 Chinese and English",
@@ -53,8 +23,8 @@ const doc = new Document({
                 new Paragraph({
                     children: [
                         new TextRun({
-                            text: "中文和英文 Chinese and English",
-                            font: { eastAsia: "SimSun" }, // set eastAsia to "SimSun".
+                            font: { eastAsia: "SimSun" },
+                            text: "中文和英文 Chinese and English", // Set eastAsia to "SimSun".
                             // The ascii characters will use the default font ("Times") specified in paragraphStyles
                         }),
                     ],
@@ -83,6 +53,37 @@ const doc = new Document({
             ],
         },
     ],
+    styles: {
+        default: {
+            document: {
+                run: {
+                    font: {
+                        ascii: "minorHAnsi",
+                        cs: "minorBidi",
+                        eastAsia: "minorEastAsia",
+                        hAnsi: "minorHAnsi",
+                    },
+                },
+            },
+        },
+        paragraphStyles: [
+            {
+                basedOn: "Normal",
+                id: "Normal",
+                name: "Normal",
+                next: "Normal",
+                quickFormat: true,
+                run: {
+                    font: {
+                        ascii: "minorHAnsi", // Can also use minorHAnsi
+                        eastAsia: "minorEastAsia", // Can also use minorEastAsia
+                        cs: "minorBidi",
+                        hAnsi: "minorHAnsi",
+                    },
+                },
+            },
+        ],
+    },
 });
 
 Packer.toBuffer(doc).then((buffer) => {

@@ -1,3 +1,6 @@
+import type { File } from "@file/file";
+import { obfuscate } from "@file/fonts/obfuscate-ttf-to-odttf";
+import { encodeUtf8 } from "@util/convenience-functions";
 /**
  * Compiler module for converting File objects into OOXML ZIP archives.
  *
@@ -6,10 +9,6 @@
 import type { Zippable } from "fflate";
 import { toUint8Array } from "undio";
 import xml from "xml";
-
-import type { File } from "@file/file";
-import { obfuscate } from "@file/fonts/obfuscate-ttf-to-odttf";
-import { encodeUtf8 } from "@util/convenience-functions";
 
 import { Formatter } from "../formatter";
 import { ImageReplacer } from "./image-replacer";
@@ -22,10 +21,10 @@ import type { PrettifyType } from "./packer";
  * @property data - The XML content as a string
  * @property path - The file path within the ZIP archive (e.g., "word/document.xml")
  */
-export type IXmlifyedFile = {
+export interface IXmlifyedFile {
     readonly data: string;
     readonly path: string;
-};
+}
 
 /**
  * Complete mapping of all XML files in an OOXML document package.
@@ -33,7 +32,7 @@ export type IXmlifyedFile = {
  * This type represents the full structure of a .docx file, including the main
  * document, styles, relationships, headers, footers, and metadata files.
  */
-type IXmlifyedFileMapping = {
+interface IXmlifyedFileMapping {
     /** Main document content (word/document.xml) */
     readonly Document: IXmlifyedFile;
     /** Style definitions (word/styles.xml) */
@@ -78,7 +77,7 @@ type IXmlifyedFileMapping = {
     readonly FontTable?: IXmlifyedFile;
     /** Font table relationships (word/_rels/fontTable.xml.rels) */
     readonly FontTableRelationships?: IXmlifyedFile;
-};
+}
 
 /**
  * Compiles File objects into OOXML-compliant ZIP file data.
@@ -137,49 +136,56 @@ export class Compiler {
 
         // Cache format() results to avoid duplicate formatting of Header/Footer views.
         // HeaderRelationships/FooterRelationships runs before Headers/Footers in the map,
-        // so we cache the formatted View data there and reuse it later.
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        // So we cache the formatted View data there and reuse it later.
         const headerFormattedViews = new Map<number, string>();
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const footerFormattedViews = new Map<number, string>();
 
-        const xmlifiedFileMapping = this.xmlifyFile(file, prettifyXml, headerFormattedViews, footerFormattedViews);
-        const map = new Map<string, IXmlifyedFile | readonly IXmlifyedFile[]>(Object.entries(xmlifiedFileMapping));
+        const xmlifiedFileMapping = this.xmlifyFile(
+            file,
+            headerFormattedViews,
+            footerFormattedViews,
+            prettifyXml,
+        );
+        const map = new Map<string, IXmlifyedFile | readonly IXmlifyedFile[]>(
+            Object.entries(xmlifiedFileMapping),
+        );
 
         for (const [, obj] of map) {
             if (Array.isArray(obj)) {
                 for (const subFile of obj as readonly IXmlifyedFile[]) {
-                    // eslint-disable-next-line functional/immutable-data
                     files[subFile.path] = encodeUtf8(subFile.data);
                 }
             } else {
-                // eslint-disable-next-line functional/immutable-data
                 files[(obj as IXmlifyedFile).path] = encodeUtf8((obj as IXmlifyedFile).data);
             }
         }
 
         for (const subFile of overrides) {
-            // eslint-disable-next-line functional/immutable-data
             files[subFile.path] = encodeUtf8(subFile.data);
         }
 
         // Media files: use STORE (level 0) for already-compressed formats
         for (const mediaData of file.Media.Array) {
             if (mediaData.type !== "svg") {
-                // eslint-disable-next-line functional/immutable-data
-                files[`word/media/${mediaData.fileName}`] = [toUint8Array(mediaData.data), { level: 0 }];
+                files[`word/media/${mediaData.fileName}`] = [
+                    toUint8Array(mediaData.data),
+                    { level: 0 },
+                ];
             } else {
-                // eslint-disable-next-line functional/immutable-data
-                files[`word/media/${mediaData.fileName}`] = [toUint8Array(mediaData.data), { level: 0 }];
-                // eslint-disable-next-line functional/immutable-data
-                files[`word/media/${mediaData.fallback.fileName}`] = [toUint8Array(mediaData.fallback.data), { level: 0 }];
+                files[`word/media/${mediaData.fileName}`] = [
+                    toUint8Array(mediaData.data),
+                    { level: 0 },
+                ];
+                files[`word/media/${mediaData.fallback.fileName}`] = [
+                    toUint8Array(mediaData.fallback.data),
+                    { level: 0 },
+                ];
             }
         }
 
         // Font files: use higher compression for binary font data
         for (const { data: buffer, name, fontKey } of file.FontTable.fontOptionsWithKey) {
             const [nameWithoutExtension] = name.split(".");
-            // eslint-disable-next-line functional/immutable-data
             files[`word/fonts/${nameWithoutExtension}.odttf`] = obfuscate(buffer, fontKey);
         }
 
@@ -188,59 +194,59 @@ export class Compiler {
 
     private xmlifyFile(
         file: File,
+        headerFormattedViews: Map<number, string>,
+        footerFormattedViews: Map<number, string>,
         prettify?: (typeof PrettifyType)[keyof typeof PrettifyType],
-        headerFormattedViews?: ReadonlyMap<number, string>,
-        footerFormattedViews?: ReadonlyMap<number, string>,
     ): IXmlifyedFileMapping {
         const documentRelationshipCount = file.Document.Relationships.RelationshipCount + 1;
 
         const documentXmlData = xml(
             this.formatter.format(file.Document.View, {
-                viewWrapper: file.Document,
                 file,
                 stack: [],
+                viewWrapper: file.Document,
             }),
             {
-                indent: prettify,
                 declaration: {
+                    encoding: "utf8",
                     standalone: "yes",
-                    encoding: "UTF-8",
                 },
+                indent: prettify,
             },
         );
 
         const commentRelationshipCount = file.Comments.Relationships.RelationshipCount + 1;
         const commentXmlData = xml(
             this.formatter.format(file.Comments, {
-                viewWrapper: {
-                    View: file.Comments,
-                    Relationships: file.Comments.Relationships,
-                },
                 file,
                 stack: [],
+                viewWrapper: {
+                    Relationships: file.Comments.Relationships,
+                    View: file.Comments,
+                },
             }),
             {
-                indent: prettify,
                 declaration: {
+                    encoding: "utf8",
                     standalone: "yes",
-                    encoding: "UTF-8",
                 },
+                indent: prettify,
             },
         );
 
         const footnoteRelationshipCount = file.FootNotes.Relationships.RelationshipCount + 1;
         const footnoteXmlData = xml(
             this.formatter.format(file.FootNotes.View, {
-                viewWrapper: file.FootNotes,
                 file,
                 stack: [],
+                viewWrapper: file.FootNotes,
             }),
             {
-                indent: prettify,
                 declaration: {
+                    encoding: "utf8",
                     standalone: "yes",
-                    encoding: "UTF-8",
                 },
+                indent: prettify,
             },
         );
 
@@ -249,6 +255,384 @@ export class Compiler {
         const footnoteMediaDatas = this.imageReplacer.getMediaData(footnoteXmlData, file.Media);
 
         return {
+            AppProperties: {
+                data: xml(
+                    this.formatter.format(file.AppProperties, {
+                        file,
+                        stack: [],
+                        viewWrapper: file.Document,
+                    }),
+                    {
+                        declaration: {
+                            encoding: "utf8",
+                            standalone: "yes",
+                        },
+                        indent: prettify,
+                    },
+                ),
+                path: "docProps/app.xml",
+            },
+            Comments: {
+                data: (() => {
+                    const xmlData = this.imageReplacer.replace(
+                        commentXmlData,
+                        commentMediaDatas,
+                        commentRelationshipCount,
+                    );
+                    const referenedXmlData = this.numberingReplacer.replace(
+                        xmlData,
+                        file.Numbering.ConcreteNumbering,
+                    );
+                    return referenedXmlData;
+                })(),
+                path: "word/comments.xml",
+            },
+            CommentsRelationships: {
+                data: (() => {
+                    commentMediaDatas.forEach((mediaData, i) => {
+                        file.Comments.Relationships.addRelationship(
+                            commentRelationshipCount + i,
+                            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+                            `media/${mediaData.fileName}`,
+                        );
+                    });
+                    return xml(
+                        this.formatter.format(file.Comments.Relationships, {
+                            file,
+                            stack: [],
+                            viewWrapper: {
+                                Relationships: file.Comments.Relationships,
+                                View: file.Comments,
+                            },
+                        }),
+                        {
+                            declaration: {
+                                encoding: "utf8",
+                            },
+                            indent: prettify,
+                        },
+                    );
+                })(),
+                path: "word/_rels/comments.xml.rels",
+            },
+            ContentTypes: {
+                data: xml(
+                    this.formatter.format(file.ContentTypes, {
+                        file,
+                        stack: [],
+                        viewWrapper: file.Document,
+                    }),
+                    {
+                        declaration: {
+                            encoding: "utf8",
+                        },
+                        indent: prettify,
+                    },
+                ),
+                path: "[Content_Types].xml",
+            },
+            CustomProperties: {
+                data: xml(
+                    this.formatter.format(file.CustomProperties, {
+                        file,
+                        stack: [],
+                        viewWrapper: file.Document,
+                    }),
+                    {
+                        declaration: {
+                            encoding: "utf8",
+                            standalone: "yes",
+                        },
+                        indent: prettify,
+                    },
+                ),
+                path: "docProps/custom.xml",
+            },
+            Document: {
+                data: (() => {
+                    const xmlData = this.imageReplacer.replace(
+                        documentXmlData,
+                        documentMediaDatas,
+                        documentRelationshipCount,
+                    );
+                    const referenedXmlData = this.numberingReplacer.replace(
+                        xmlData,
+                        file.Numbering.ConcreteNumbering,
+                    );
+                    return referenedXmlData;
+                })(),
+                path: "word/document.xml",
+            },
+            Endnotes: {
+                data: xml(
+                    this.formatter.format(file.Endnotes.View, {
+                        file,
+                        stack: [],
+                        viewWrapper: file.Endnotes,
+                    }),
+                    {
+                        declaration: {
+                            encoding: "utf8",
+                        },
+                        indent: prettify,
+                    },
+                ),
+                path: "word/endnotes.xml",
+            },
+            EndnotesRelationships: {
+                data: xml(
+                    this.formatter.format(file.Endnotes.Relationships, {
+                        file,
+                        stack: [],
+                        viewWrapper: file.Endnotes,
+                    }),
+                    {
+                        declaration: {
+                            encoding: "utf8",
+                        },
+                        indent: prettify,
+                    },
+                ),
+                path: "word/_rels/endnotes.xml.rels",
+            },
+            FileRelationships: {
+                data: xml(
+                    this.formatter.format(file.FileRelationships, {
+                        file,
+                        stack: [],
+                        viewWrapper: file.Document,
+                    }),
+                    {
+                        declaration: {
+                            encoding: "utf8",
+                        },
+                        indent: prettify,
+                    },
+                ),
+                path: "_rels/.rels",
+            },
+            FontTable: {
+                data: xml(
+                    this.formatter.format(file.FontTable.View, {
+                        file,
+                        stack: [],
+                        viewWrapper: file.Document,
+                    }),
+                    {
+                        declaration: {
+                            encoding: "utf8",
+                            standalone: "yes",
+                        },
+                        indent: prettify,
+                    },
+                ),
+                path: "word/fontTable.xml",
+            },
+            FontTableRelationships: {
+                data: (() =>
+                    xml(
+                        this.formatter.format(file.FontTable.Relationships, {
+                            file,
+                            stack: [],
+                            viewWrapper: file.Document,
+                        }),
+                        {
+                            declaration: {
+                                encoding: "utf8",
+                            },
+                            indent: prettify,
+                        },
+                    ))(),
+                path: "word/_rels/fontTable.xml.rels",
+            },
+            FootNotes: {
+                data: (() => {
+                    const xmlData = this.imageReplacer.replace(
+                        footnoteXmlData,
+                        footnoteMediaDatas,
+                        footnoteRelationshipCount,
+                    );
+                    const referenedXmlData = this.numberingReplacer.replace(
+                        xmlData,
+                        file.Numbering.ConcreteNumbering,
+                    );
+                    return referenedXmlData;
+                })(),
+                path: "word/footnotes.xml",
+            },
+            FootNotesRelationships: {
+                data: (() => {
+                    footnoteMediaDatas.forEach((mediaData, i) => {
+                        file.FootNotes.Relationships.addRelationship(
+                            footnoteRelationshipCount + i,
+                            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+                            `media/${mediaData.fileName}`,
+                        );
+                    });
+                    return xml(
+                        this.formatter.format(file.FootNotes.Relationships, {
+                            file,
+                            stack: [],
+                            viewWrapper: file.FootNotes,
+                        }),
+                        {
+                            declaration: {
+                                encoding: "utf8",
+                            },
+                            indent: prettify,
+                        },
+                    );
+                })(),
+                path: "word/_rels/footnotes.xml.rels",
+            },
+            FooterRelationships: file.Footers.map((footerWrapper, index) => {
+                const formatted = this.formatter.format(footerWrapper.View, {
+                    file,
+                    stack: [],
+                    viewWrapper: footerWrapper,
+                });
+                const xmlData = xml(formatted, {
+                    declaration: {
+                        encoding: "utf8",
+                    },
+                    indent: prettify,
+                });
+                // Cache for reuse in Footers section
+                footerFormattedViews.set(index, xmlData);
+                const mediaDatas = this.imageReplacer.getMediaData(xmlData, file.Media);
+
+                mediaDatas.forEach((mediaData, i) => {
+                    footerWrapper.Relationships.addRelationship(
+                        i,
+                        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+                        `media/${mediaData.fileName}`,
+                    );
+                });
+
+                return {
+                    data: xml(
+                        this.formatter.format(footerWrapper.Relationships, {
+                            file,
+                            stack: [],
+                            viewWrapper: footerWrapper,
+                        }),
+                        {
+                            declaration: {
+                                encoding: "utf8",
+                            },
+                            indent: prettify,
+                        },
+                    ),
+                    path: `word/_rels/footer${index + 1}.xml.rels`,
+                };
+            }),
+            Footers: file.Footers.map((_footerWrapper, index) => {
+                const tempXmlData = footerFormattedViews.get(index)!;
+                const mediaDatas = this.imageReplacer.getMediaData(tempXmlData, file.Media);
+                // TODO: 0 needs to be changed when headers get relationships of their own
+                const xmlData = this.imageReplacer.replace(tempXmlData, mediaDatas, 0);
+
+                const referenedXmlData = this.numberingReplacer.replace(
+                    xmlData,
+                    file.Numbering.ConcreteNumbering,
+                );
+
+                return {
+                    data: referenedXmlData,
+                    path: `word/footer${index + 1}.xml`,
+                };
+            }),
+            HeaderRelationships: file.Headers.map((headerWrapper, index) => {
+                const formatted = this.formatter.format(headerWrapper.View, {
+                    file,
+                    stack: [],
+                    viewWrapper: headerWrapper,
+                });
+                const xmlData = xml(formatted, {
+                    declaration: {
+                        encoding: "utf8",
+                    },
+                    indent: prettify,
+                });
+                // Cache for reuse in Headers section
+                headerFormattedViews.set(index, xmlData);
+                const mediaDatas = this.imageReplacer.getMediaData(xmlData, file.Media);
+
+                mediaDatas.forEach((mediaData, i) => {
+                    headerWrapper.Relationships.addRelationship(
+                        i,
+                        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+                        `media/${mediaData.fileName}`,
+                    );
+                });
+
+                return {
+                    data: xml(
+                        this.formatter.format(headerWrapper.Relationships, {
+                            file,
+                            stack: [],
+                            viewWrapper: headerWrapper,
+                        }),
+                        {
+                            declaration: {
+                                encoding: "utf8",
+                            },
+                            indent: prettify,
+                        },
+                    ),
+                    path: `word/_rels/header${index + 1}.xml.rels`,
+                };
+            }),
+            Headers: file.Headers.map((_headerWrapper, index) => {
+                const tempXmlData = headerFormattedViews.get(index)!;
+                const mediaDatas = this.imageReplacer.getMediaData(tempXmlData, file.Media);
+                // TODO: 0 needs to be changed when headers get relationships of their own
+                const xmlData = this.imageReplacer.replace(tempXmlData, mediaDatas, 0);
+
+                const referenedXmlData = this.numberingReplacer.replace(
+                    xmlData,
+                    file.Numbering.ConcreteNumbering,
+                );
+
+                return {
+                    data: referenedXmlData,
+                    path: `word/header${index + 1}.xml`,
+                };
+            }),
+            Numbering: {
+                data: xml(
+                    this.formatter.format(file.Numbering, {
+                        file,
+                        stack: [],
+                        viewWrapper: file.Document,
+                    }),
+                    {
+                        declaration: {
+                            encoding: "utf8",
+                            standalone: "yes",
+                        },
+                        indent: prettify,
+                    },
+                ),
+                path: "word/numbering.xml",
+            },
+            Properties: {
+                data: xml(
+                    this.formatter.format(file.CoreProperties, {
+                        file,
+                        stack: [],
+                        viewWrapper: file.Document,
+                    }),
+                    {
+                        declaration: {
+                            encoding: "utf8",
+                            standalone: "yes",
+                        },
+                        indent: prettify,
+                    },
+                ),
+                path: "docProps/core.xml",
+            },
             Relationships: {
                 data: (() => {
                     documentMediaDatas.forEach((mediaData, i) => {
@@ -267,410 +651,60 @@ export class Compiler {
 
                     return xml(
                         this.formatter.format(file.Document.Relationships, {
-                            viewWrapper: file.Document,
                             file,
                             stack: [],
+                            viewWrapper: file.Document,
                         }),
                         {
-                            indent: prettify,
                             declaration: {
-                                encoding: "UTF-8",
+                                encoding: "utf8",
                             },
+                            indent: prettify,
                         },
                     );
                 })(),
                 path: "word/_rels/document.xml.rels",
             },
-            Document: {
-                data: (() => {
-                    const xmlData = this.imageReplacer.replace(documentXmlData, documentMediaDatas, documentRelationshipCount);
-                    const referenedXmlData = this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
-                    return referenedXmlData;
-                })(),
-                path: "word/document.xml",
+            Settings: {
+                data: xml(
+                    this.formatter.format(file.Settings, {
+                        file,
+                        stack: [],
+                        viewWrapper: file.Document,
+                    }),
+                    {
+                        declaration: {
+                            encoding: "utf8",
+                            standalone: "yes",
+                        },
+                        indent: prettify,
+                    },
+                ),
+                path: "word/settings.xml",
             },
             Styles: {
                 data: (() => {
                     const xmlStyles = xml(
                         this.formatter.format(file.Styles, {
-                            viewWrapper: file.Document,
                             file,
                             stack: [],
+                            viewWrapper: file.Document,
                         }),
                         {
-                            indent: prettify,
                             declaration: {
+                                encoding: "utf8",
                                 standalone: "yes",
-                                encoding: "UTF-8",
                             },
+                            indent: prettify,
                         },
                     );
-                    const referencedXmlStyles = this.numberingReplacer.replace(xmlStyles, file.Numbering.ConcreteNumbering);
+                    const referencedXmlStyles = this.numberingReplacer.replace(
+                        xmlStyles,
+                        file.Numbering.ConcreteNumbering,
+                    );
                     return referencedXmlStyles;
                 })(),
                 path: "word/styles.xml",
-            },
-            Properties: {
-                data: xml(
-                    this.formatter.format(file.CoreProperties, {
-                        viewWrapper: file.Document,
-                        file,
-                        stack: [],
-                    }),
-                    {
-                        indent: prettify,
-                        declaration: {
-                            standalone: "yes",
-                            encoding: "UTF-8",
-                        },
-                    },
-                ),
-                path: "docProps/core.xml",
-            },
-            Numbering: {
-                data: xml(
-                    this.formatter.format(file.Numbering, {
-                        viewWrapper: file.Document,
-                        file,
-                        stack: [],
-                    }),
-                    {
-                        indent: prettify,
-                        declaration: {
-                            standalone: "yes",
-                            encoding: "UTF-8",
-                        },
-                    },
-                ),
-                path: "word/numbering.xml",
-            },
-            FileRelationships: {
-                data: xml(
-                    this.formatter.format(file.FileRelationships, {
-                        viewWrapper: file.Document,
-                        file,
-                        stack: [],
-                    }),
-                    {
-                        indent: prettify,
-                        declaration: {
-                            encoding: "UTF-8",
-                        },
-                    },
-                ),
-                path: "_rels/.rels",
-            },
-            HeaderRelationships: file.Headers.map((headerWrapper, index) => {
-                const formatted = this.formatter.format(headerWrapper.View, {
-                    viewWrapper: headerWrapper,
-                    file,
-                    stack: [],
-                });
-                const xmlData = xml(formatted, {
-                    indent: prettify,
-                    declaration: {
-                        encoding: "UTF-8",
-                    },
-                });
-                // Cache for reuse in Headers section
-                // eslint-disable-next-line functional/immutable-data
-                headerFormattedViews.set(index, xmlData);
-                const mediaDatas = this.imageReplacer.getMediaData(xmlData, file.Media);
-
-                mediaDatas.forEach((mediaData, i) => {
-                    headerWrapper.Relationships.addRelationship(
-                        i,
-                        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-                        `media/${mediaData.fileName}`,
-                    );
-                });
-
-                return {
-                    data: xml(
-                        this.formatter.format(headerWrapper.Relationships, {
-                            viewWrapper: headerWrapper,
-                            file,
-                            stack: [],
-                        }),
-                        {
-                            indent: prettify,
-                            declaration: {
-                                encoding: "UTF-8",
-                            },
-                        },
-                    ),
-                    path: `word/_rels/header${index + 1}.xml.rels`,
-                };
-            }),
-            FooterRelationships: file.Footers.map((footerWrapper, index) => {
-                const formatted = this.formatter.format(footerWrapper.View, {
-                    viewWrapper: footerWrapper,
-                    file,
-                    stack: [],
-                });
-                const xmlData = xml(formatted, {
-                    indent: prettify,
-                    declaration: {
-                        encoding: "UTF-8",
-                    },
-                });
-                // Cache for reuse in Footers section
-                // eslint-disable-next-line functional/immutable-data
-                footerFormattedViews.set(index, xmlData);
-                const mediaDatas = this.imageReplacer.getMediaData(xmlData, file.Media);
-
-                mediaDatas.forEach((mediaData, i) => {
-                    footerWrapper.Relationships.addRelationship(
-                        i,
-                        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-                        `media/${mediaData.fileName}`,
-                    );
-                });
-
-                return {
-                    data: xml(
-                        this.formatter.format(footerWrapper.Relationships, {
-                            viewWrapper: footerWrapper,
-                            file,
-                            stack: [],
-                        }),
-                        {
-                            indent: prettify,
-                            declaration: {
-                                encoding: "UTF-8",
-                            },
-                        },
-                    ),
-                    path: `word/_rels/footer${index + 1}.xml.rels`,
-                };
-            }),
-            Headers: file.Headers.map((_headerWrapper, index) => {
-                const tempXmlData = headerFormattedViews.get(index)!;
-                const mediaDatas = this.imageReplacer.getMediaData(tempXmlData, file.Media);
-                // TODO: 0 needs to be changed when headers get relationships of their own
-                const xmlData = this.imageReplacer.replace(tempXmlData, mediaDatas, 0);
-
-                const referenedXmlData = this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
-
-                return {
-                    data: referenedXmlData,
-                    path: `word/header${index + 1}.xml`,
-                };
-            }),
-            Footers: file.Footers.map((_footerWrapper, index) => {
-                const tempXmlData = footerFormattedViews.get(index)!;
-                const mediaDatas = this.imageReplacer.getMediaData(tempXmlData, file.Media);
-                // TODO: 0 needs to be changed when headers get relationships of their own
-                const xmlData = this.imageReplacer.replace(tempXmlData, mediaDatas, 0);
-
-                const referenedXmlData = this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
-
-                return {
-                    data: referenedXmlData,
-                    path: `word/footer${index + 1}.xml`,
-                };
-            }),
-            ContentTypes: {
-                data: xml(
-                    this.formatter.format(file.ContentTypes, {
-                        viewWrapper: file.Document,
-                        file,
-                        stack: [],
-                    }),
-                    {
-                        indent: prettify,
-                        declaration: {
-                            encoding: "UTF-8",
-                        },
-                    },
-                ),
-                path: "[Content_Types].xml",
-            },
-            CustomProperties: {
-                data: xml(
-                    this.formatter.format(file.CustomProperties, {
-                        viewWrapper: file.Document,
-                        file,
-                        stack: [],
-                    }),
-                    {
-                        indent: prettify,
-                        declaration: {
-                            standalone: "yes",
-                            encoding: "UTF-8",
-                        },
-                    },
-                ),
-                path: "docProps/custom.xml",
-            },
-            AppProperties: {
-                data: xml(
-                    this.formatter.format(file.AppProperties, {
-                        viewWrapper: file.Document,
-                        file,
-                        stack: [],
-                    }),
-                    {
-                        indent: prettify,
-                        declaration: {
-                            standalone: "yes",
-                            encoding: "UTF-8",
-                        },
-                    },
-                ),
-                path: "docProps/app.xml",
-            },
-            FootNotes: {
-                data: (() => {
-                    const xmlData = this.imageReplacer.replace(footnoteXmlData, footnoteMediaDatas, footnoteRelationshipCount);
-                    const referenedXmlData = this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
-                    return referenedXmlData;
-                })(),
-                path: "word/footnotes.xml",
-            },
-            FootNotesRelationships: {
-                data: (() => {
-                    footnoteMediaDatas.forEach((mediaData, i) => {
-                        file.FootNotes.Relationships.addRelationship(
-                            footnoteRelationshipCount + i,
-                            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-                            `media/${mediaData.fileName}`,
-                        );
-                    });
-                    return xml(
-                        this.formatter.format(file.FootNotes.Relationships, {
-                            viewWrapper: file.FootNotes,
-                            file,
-                            stack: [],
-                        }),
-                        {
-                            indent: prettify,
-                            declaration: {
-                                encoding: "UTF-8",
-                            },
-                        },
-                    );
-                })(),
-                path: "word/_rels/footnotes.xml.rels",
-            },
-            Endnotes: {
-                data: xml(
-                    this.formatter.format(file.Endnotes.View, {
-                        viewWrapper: file.Endnotes,
-                        file,
-                        stack: [],
-                    }),
-                    {
-                        indent: prettify,
-                        declaration: {
-                            encoding: "UTF-8",
-                        },
-                    },
-                ),
-                path: "word/endnotes.xml",
-            },
-            EndnotesRelationships: {
-                data: xml(
-                    this.formatter.format(file.Endnotes.Relationships, {
-                        viewWrapper: file.Endnotes,
-                        file,
-                        stack: [],
-                    }),
-                    {
-                        indent: prettify,
-                        declaration: {
-                            encoding: "UTF-8",
-                        },
-                    },
-                ),
-                path: "word/_rels/endnotes.xml.rels",
-            },
-            Settings: {
-                data: xml(
-                    this.formatter.format(file.Settings, {
-                        viewWrapper: file.Document,
-                        file,
-                        stack: [],
-                    }),
-                    {
-                        indent: prettify,
-                        declaration: {
-                            standalone: "yes",
-                            encoding: "UTF-8",
-                        },
-                    },
-                ),
-                path: "word/settings.xml",
-            },
-            Comments: {
-                data: (() => {
-                    const xmlData = this.imageReplacer.replace(commentXmlData, commentMediaDatas, commentRelationshipCount);
-                    const referenedXmlData = this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
-                    return referenedXmlData;
-                })(),
-                path: "word/comments.xml",
-            },
-            CommentsRelationships: {
-                data: (() => {
-                    commentMediaDatas.forEach((mediaData, i) => {
-                        file.Comments.Relationships.addRelationship(
-                            commentRelationshipCount + i,
-                            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-                            `media/${mediaData.fileName}`,
-                        );
-                    });
-                    return xml(
-                        this.formatter.format(file.Comments.Relationships, {
-                            viewWrapper: {
-                                View: file.Comments,
-                                Relationships: file.Comments.Relationships,
-                            },
-                            file,
-                            stack: [],
-                        }),
-                        {
-                            indent: prettify,
-                            declaration: {
-                                encoding: "UTF-8",
-                            },
-                        },
-                    );
-                })(),
-                path: "word/_rels/comments.xml.rels",
-            },
-            FontTable: {
-                data: xml(
-                    this.formatter.format(file.FontTable.View, {
-                        viewWrapper: file.Document,
-                        file,
-                        stack: [],
-                    }),
-                    {
-                        indent: prettify,
-                        declaration: {
-                            standalone: "yes",
-                            encoding: "UTF-8",
-                        },
-                    },
-                ),
-                path: "word/fontTable.xml",
-            },
-            FontTableRelationships: {
-                data: (() =>
-                    xml(
-                        this.formatter.format(file.FontTable.Relationships, {
-                            viewWrapper: file.Document,
-                            file,
-                            stack: [],
-                        }),
-                        {
-                            indent: prettify,
-                            declaration: {
-                                encoding: "UTF-8",
-                            },
-                        },
-                    ))(),
-                path: "word/_rels/fontTable.xml.rels",
             },
         };
     }

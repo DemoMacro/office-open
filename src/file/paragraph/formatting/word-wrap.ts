@@ -9,7 +9,8 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Creates word wrap settings element for a WordprocessingML document.
@@ -19,8 +20,8 @@ import { BuilderElement, type XmlComponent } from "@file/xml-components";
  */
 export const createWordWrap = (): XmlComponent =>
     new BuilderElement<{ readonly val: 0 }>({
-        name: "w:wordWrap",
         attributes: {
             val: { key: "w:val", value: 0 },
         },
+        name: "w:wordWrap",
     });

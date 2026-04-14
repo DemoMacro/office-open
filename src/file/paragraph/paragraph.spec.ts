@@ -1,15 +1,22 @@
-import { afterEach, assert, beforeEach, describe, expect, it, vi } from "vitest";
-
 import { Formatter } from "@export/formatter";
 import { BorderStyle } from "@file/border";
 import { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared";
 import { EMPTY_OBJECT } from "@file/xml-components";
 import * as convenienceFunctions from "@util/convenience-functions";
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
-import { DocumentWrapper, type IViewWrapper } from "../document-wrapper";
+import { DocumentWrapper } from "../document-wrapper";
+import type { IViewWrapper } from "../document-wrapper";
 import type { File } from "../file";
 import { ShadingType } from "../shading";
-import { AlignmentType, HeadingLevel, LeaderType, PageBreak, TabStopPosition, TabStopType } from "./formatting";
+import {
+    AlignmentType,
+    HeadingLevel,
+    LeaderType,
+    PageBreak,
+    TabStopPosition,
+    TabStopType,
+} from "./formatting";
 import { FrameAnchorType } from "./frame";
 import { Bookmark, ExternalHyperlink } from "./links";
 import { Paragraph } from "./paragraph";
@@ -275,8 +282,8 @@ describe("Paragraph", () => {
             const paragraph = new Paragraph({
                 tabStops: [
                     {
-                        type: TabStopType.RIGHT,
                         position: TabStopPosition.MAX,
+                        type: TabStopType.RIGHT,
                     },
                 ],
             });
@@ -309,9 +316,9 @@ describe("Paragraph", () => {
             const paragraph = new Paragraph({
                 tabStops: [
                     {
-                        type: TabStopType.LEFT,
-                        position: 100,
                         leader: LeaderType.HYPHEN,
+                        position: 100,
+                        type: TabStopType.LEFT,
                     },
                 ],
             });
@@ -325,9 +332,9 @@ describe("Paragraph", () => {
                                     {
                                         "w:tab": {
                                             _attr: {
+                                                "w:leader": "hyphen",
                                                 "w:pos": 100,
                                                 "w:val": "left",
-                                                "w:leader": "hyphen",
                                             },
                                         },
                                     },
@@ -345,9 +352,9 @@ describe("Paragraph", () => {
             const paragraph = new Paragraph({
                 tabStops: [
                     {
-                        type: TabStopType.RIGHT,
-                        position: 100,
                         leader: LeaderType.DOT,
+                        position: 100,
+                        type: TabStopType.RIGHT,
                     },
                 ],
             });
@@ -361,9 +368,9 @@ describe("Paragraph", () => {
                                     {
                                         "w:tab": {
                                             _attr: {
+                                                "w:leader": "dot",
                                                 "w:pos": 100,
                                                 "w:val": "right",
-                                                "w:leader": "dot",
                                             },
                                         },
                                     },
@@ -381,9 +388,9 @@ describe("Paragraph", () => {
             const paragraph = new Paragraph({
                 tabStops: [
                     {
-                        type: TabStopType.CENTER,
-                        position: 100,
                         leader: LeaderType.MIDDLE_DOT,
+                        position: 100,
+                        type: TabStopType.CENTER,
                     },
                 ],
             });
@@ -397,9 +404,9 @@ describe("Paragraph", () => {
                                     {
                                         "w:tab": {
                                             _attr: {
+                                                "w:leader": "middleDot",
                                                 "w:pos": 100,
                                                 "w:val": "center",
-                                                "w:leader": "middleDot",
                                             },
                                         },
                                     },
@@ -456,10 +463,10 @@ describe("Paragraph", () => {
                                     {
                                         "w:bottom": {
                                             _attr: {
-                                                "w:val": "single",
                                                 "w:color": "auto",
                                                 "w:space": 1,
                                                 "w:sz": 6,
+                                                "w:val": "single",
                                             },
                                         },
                                     },
@@ -478,15 +485,15 @@ describe("Paragraph", () => {
                 border: {
                     left: {
                         color: "auto",
+                        size: 6,
                         space: 1,
                         style: BorderStyle.SINGLE,
-                        size: 6,
                     },
                     right: {
                         color: "auto",
+                        size: 6,
                         space: 1,
                         style: BorderStyle.SINGLE,
-                        size: 6,
                     },
                 },
             });
@@ -571,7 +578,10 @@ describe("Paragraph", () => {
             });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.have.property("w:p").which.is.an("array").which.has.length.at.least(1);
-            expect(tree["w:p"][0]).to.have.property("w:pPr").which.is.an("array").which.has.length.at.least(1);
+            expect(tree["w:p"][0])
+                .to.have.property("w:pPr")
+                .which.is.an("array")
+                .which.has.length.at.least(1);
             expect(tree["w:p"][0]["w:pPr"][0]).to.deep.equal({
                 "w:pStyle": { _attr: { "w:val": "ListParagraph" } },
             });
@@ -585,7 +595,10 @@ describe("Paragraph", () => {
             });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.have.property("w:p").which.is.an("array").which.has.length.at.least(1);
-            expect(tree["w:p"][0]).to.have.property("w:pPr").which.is.an("array").which.has.length.at.least(1);
+            expect(tree["w:p"][0])
+                .to.have.property("w:pPr")
+                .which.is.an("array")
+                .which.has.length.at.least(1);
             expect(tree["w:p"][0]["w:pPr"][0]).to.deep.equal({
                 "w:pStyle": { _attr: { "w:val": "ListParagraph" } },
             });
@@ -599,9 +612,15 @@ describe("Paragraph", () => {
             });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.have.property("w:p").which.is.an("array").which.has.length.at.least(1);
-            expect(tree["w:p"][0]).to.have.property("w:pPr").which.is.an("array").which.has.length.at.least(2);
+            expect(tree["w:p"][0])
+                .to.have.property("w:pPr")
+                .which.is.an("array")
+                .which.has.length.at.least(2);
             expect(tree["w:p"][0]["w:pPr"][1]).to.deep.equal({
-                "w:numPr": [{ "w:ilvl": { _attr: { "w:val": 1 } } }, { "w:numId": { _attr: { "w:val": 1 } } }],
+                "w:numPr": [
+                    { "w:ilvl": { _attr: { "w:val": 1 } } },
+                    { "w:numId": { _attr: { "w:val": 1 } } },
+                ],
             });
         });
     });
@@ -613,20 +632,23 @@ describe("Paragraph", () => {
                     createConcreteNumberingInstance: (_: string, __: number) => undefined,
                 },
             } as unknown as File,
-            viewWrapper: new DocumentWrapper({ background: {} }),
             stack: [],
+            viewWrapper: new DocumentWrapper({ background: {} }),
         });
 
         it("should add list paragraph style to JSON", () => {
             const paragraph = new Paragraph({
                 numbering: {
-                    reference: "test id",
                     level: 0,
+                    reference: "test id",
                 },
             });
             const tree = new Formatter().format(paragraph, createNumberingContext());
             expect(tree).to.have.property("w:p").which.is.an("array").which.has.length.at.least(1);
-            expect(tree["w:p"][0]).to.have.property("w:pPr").which.is.an("array").which.has.length.at.least(1);
+            expect(tree["w:p"][0])
+                .to.have.property("w:pPr")
+                .which.is.an("array")
+                .which.has.length.at.least(1);
             expect(tree["w:p"][0]["w:pPr"][0]).to.deep.equal({
                 "w:pStyle": { _attr: { "w:val": "ListParagraph" } },
             });
@@ -635,14 +657,17 @@ describe("Paragraph", () => {
         it("should add a style to the list paragraph when provided", () => {
             const paragraph = new Paragraph({
                 numbering: {
-                    reference: "test id",
                     level: 0,
+                    reference: "test id",
                 },
                 style: "myFancyStyle",
             });
             const tree = new Formatter().format(paragraph, createNumberingContext());
             expect(tree).to.have.property("w:p").which.is.an("array").which.has.length.at.least(1);
-            expect(tree["w:p"][0]).to.have.property("w:pPr").which.is.an("array").which.has.length.at.least(1);
+            expect(tree["w:p"][0])
+                .to.have.property("w:pPr")
+                .which.is.an("array")
+                .which.has.length.at.least(1);
             expect(tree["w:p"][0]["w:pPr"][0]).to.deep.equal({
                 "w:pStyle": { _attr: { "w:val": "myFancyStyle" } },
             });
@@ -651,23 +676,26 @@ describe("Paragraph", () => {
         it("should not add ListParagraph style to a list when using custom numbering", () => {
             const paragraph = new Paragraph({
                 numbering: {
-                    reference: "test id",
-                    level: 0,
                     custom: true,
+                    level: 0,
+                    reference: "test id",
                 },
             });
             const tree = new Formatter().format(paragraph, createNumberingContext());
             expect(tree).to.have.property("w:p").which.is.an("array").which.has.length.at.least(1);
-            expect(tree["w:p"][0]).to.have.property("w:pPr").which.is.an("array").which.has.length.at.least(1);
+            expect(tree["w:p"][0])
+                .to.have.property("w:pPr")
+                .which.is.an("array")
+                .which.has.length.at.least(1);
             expect(tree["w:p"][0]["w:pPr"][0]).to.not.have.property("w:pStyle");
         });
 
         it("it should add numbered properties", () => {
             const paragraph = new Paragraph({
                 numbering: {
-                    reference: "test id",
-                    level: 0,
                     instance: 4,
+                    level: 0,
+                    reference: "test id",
                 },
             });
             const tree = new Formatter().format(paragraph, createNumberingContext());
@@ -677,7 +705,10 @@ describe("Paragraph", () => {
                         "w:pPr": [
                             { "w:pStyle": { _attr: { "w:val": "ListParagraph" } } },
                             {
-                                "w:numPr": [{ "w:ilvl": { _attr: { "w:val": 0 } } }, { "w:numId": { _attr: { "w:val": "{test id-4}" } } }],
+                                "w:numPr": [
+                                    { "w:ilvl": { _attr: { "w:val": 0 } } },
+                                    { "w:numId": { _attr: { "w:val": "{test id-4}" } } },
+                                ],
                             },
                         ],
                     },
@@ -688,9 +719,9 @@ describe("Paragraph", () => {
         it("should not add ListParagraph style when custom is true", () => {
             const paragraph = new Paragraph({
                 numbering: {
-                    reference: "test id",
-                    level: 0,
                     custom: true,
+                    level: 0,
+                    reference: "test id",
                 },
             });
             const tree = new Formatter().format(paragraph, createNumberingContext());
@@ -699,7 +730,10 @@ describe("Paragraph", () => {
                     {
                         "w:pPr": [
                             {
-                                "w:numPr": [{ "w:ilvl": { _attr: { "w:val": 0 } } }, { "w:numId": { _attr: { "w:val": "{test id-0}" } } }],
+                                "w:numPr": [
+                                    { "w:ilvl": { _attr: { "w:val": 0 } } },
+                                    { "w:numId": { _attr: { "w:val": "{test id-0}" } } },
+                                ],
                             },
                         ],
                     },
@@ -712,8 +746,8 @@ describe("Paragraph", () => {
         const paragraph = new Paragraph({
             children: [
                 new Bookmark({
-                    id: "test-id",
                     children: [new TextRun("test")],
+                    id: "test-id",
                 }),
             ],
         });
@@ -869,9 +903,9 @@ describe("Paragraph", () => {
         it("should set shading to the given value", () => {
             const paragraph = new Paragraph({
                 shading: {
-                    type: ShadingType.REVERSE_DIAGONAL_STRIPE,
                     color: "00FFFF",
                     fill: "FF0000",
+                    type: ShadingType.REVERSE_DIAGONAL_STRIPE,
                 },
             });
             const tree = new Formatter().format(paragraph);
@@ -899,17 +933,17 @@ describe("Paragraph", () => {
         it("should set frame attribute", () => {
             const paragraph = new Paragraph({
                 frame: {
-                    type: "alignment",
-                    width: 4000,
-                    height: 1000,
-                    anchor: {
-                        horizontal: FrameAnchorType.MARGIN,
-                        vertical: FrameAnchorType.MARGIN,
-                    },
                     alignment: {
                         x: HorizontalPositionAlign.CENTER,
                         y: VerticalPositionAlign.TOP,
                     },
+                    anchor: {
+                        horizontal: FrameAnchorType.MARGIN,
+                        vertical: FrameAnchorType.MARGIN,
+                    },
+                    height: 1000,
+                    type: "alignment",
+                    width: 4000,
                 },
             });
             const tree = new Formatter().format(paragraph);
@@ -948,16 +982,15 @@ describe("Paragraph", () => {
             });
             const viewWrapperMock = {
                 Relationships: {
-                    // eslint-disable-next-line @typescript-eslint/no-empty-function
                     addRelationship: () => {},
                 },
             } as unknown as IViewWrapper;
 
             const file = {} as unknown as File;
             paragraph.prepForXml({
-                viewWrapper: viewWrapperMock,
                 file: file,
                 stack: [],
+                viewWrapper: viewWrapperMock,
             });
             const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
@@ -994,14 +1027,14 @@ describe("Paragraph", () => {
     describe("#revision", () => {
         it("should create paragraph with revision properties", () => {
             const paragraph = new Paragraph({
-                heading: HeadingLevel.HEADING_1,
                 alignment: AlignmentType.RIGHT,
+                heading: HeadingLevel.HEADING_1,
                 revision: {
-                    id: 1,
+                    alignment: AlignmentType.LEFT,
                     author: "Firstname Lastename",
                     date: "123",
                     heading: HeadingLevel.HEADING_2,
-                    alignment: AlignmentType.LEFT,
+                    id: 1,
                 },
             });
             const tree = new Formatter().format(paragraph);

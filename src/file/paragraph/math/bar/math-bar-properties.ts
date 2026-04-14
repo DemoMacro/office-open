@@ -7,7 +7,8 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 import { createMathBarPos } from "./math-bar-pos";
 
@@ -31,6 +32,6 @@ import { createMathBarPos } from "./math-bar-pos";
  */
 export const createMathBarProperties = ({ type }: { readonly type: string }): XmlComponent =>
     new BuilderElement({
-        name: "m:barPr",
         children: [createMathBarPos({ val: type })],
+        name: "m:barPr",
     });

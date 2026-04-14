@@ -1,4 +1,5 @@
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Supported relationship type URIs.
@@ -36,12 +37,12 @@ export const TargetModeType = {
     EXTERNAL: "External",
 } as const;
 
-type IRelationshipAttributes = {
+interface IRelationshipAttributes {
     readonly id: string;
     readonly type: RelationshipType;
     readonly target: string;
     readonly targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType];
-};
+}
 
 /**
  * Creates a single relationship between parts in an OPC package.
@@ -66,11 +67,11 @@ export const createRelationship = (
     targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType],
 ): XmlComponent =>
     new BuilderElement<IRelationshipAttributes>({
-        name: "Relationship",
         attributes: {
             id: { key: "Id", value: id },
-            type: { key: "Type", value: type },
             target: { key: "Target", value: target },
             targetMode: { key: "TargetMode", value: targetMode },
+            type: { key: "Type", value: type },
         },
+        name: "Relationship",
     });

@@ -15,9 +15,9 @@ import { toJson } from "./util";
  *
  * @property data - The document template to scan for placeholders
  */
-type PatchDetectorOptions = {
+interface PatchDetectorOptions {
     readonly data: InputDataType;
-};
+}
 
 /**
  * Detects all placeholders present in a document template.
@@ -44,7 +44,6 @@ type PatchDetectorOptions = {
  * });
  * ```
  */
-// eslint-disable-next-line require-await
 export const patchDetector = async ({ data }: PatchDetectorOptions): Promise<readonly string[]> => {
     const zipContent = unzipSync(toUint8Array(data));
     const patches = new Set<string>();
@@ -55,11 +54,12 @@ export const patchDetector = async ({ data }: PatchDetectorOptions): Promise<rea
         }
         if (key.startsWith("word/") && !key.endsWith(".xml.rels")) {
             const json = toJson(strFromU8(value));
-            // eslint-disable-next-line functional/immutable-data
-            traverse(json).forEach((p) => findPatchKeys(p.text).forEach((patch) => patches.add(patch)));
+            traverse(json).forEach((p) =>
+                findPatchKeys(p.text).forEach((patch) => patches.add(patch)),
+            );
         }
     }
-    return Array.from(patches);
+    return [...patches];
 };
 
 /**

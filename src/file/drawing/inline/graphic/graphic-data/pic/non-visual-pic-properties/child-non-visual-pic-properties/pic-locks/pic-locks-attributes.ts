@@ -23,7 +23,7 @@ export class PicLocksAttributes extends XmlAttributeComponent<{
     readonly noChangeArrowheads?: number;
 }> {
     protected readonly xmlKeys = {
-        noChangeAspect: "noChangeAspect",
         noChangeArrowheads: "noChangeArrowheads",
+        noChangeAspect: "noChangeAspect",
     };
 }

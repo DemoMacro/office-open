@@ -1,34 +1,19 @@
 // Simple example to add text to a document
 
 import * as fs from "fs";
-import { AlignmentType, convertMillimetersToTwip, Document, Packer, Paragraph, TextRun } from "docx";
+
+import {
+    AlignmentType,
+    Document,
+    Packer,
+    Paragraph,
+    TextRun,
+    convertMillimetersToTwip,
+} from "docx";
 
 const doc = new Document({
-    styles: {
-        paragraphStyles: [
-            {
-                id: "test",
-                name: "Test",
-                basedOn: "Normal",
-                next: "Normal",
-                paragraph: {
-                    indent: { left: convertMillimetersToTwip(6.4) },
-                },
-            },
-        ],
-    },
     sections: [
         {
-            properties: {
-                page: {
-                    margin: {
-                        top: 0,
-                        right: convertMillimetersToTwip(24),
-                        bottom: convertMillimetersToTwip(24),
-                        left: convertMillimetersToTwip(24),
-                    },
-                },
-            },
             children: [
                 new Paragraph({
                     alignment: AlignmentType.THAI_DISTRIBUTE,
@@ -40,8 +25,31 @@ const doc = new Document({
                     ],
                 }),
             ],
+            properties: {
+                page: {
+                    margin: {
+                        bottom: convertMillimetersToTwip(24),
+                        left: convertMillimetersToTwip(24),
+                        right: convertMillimetersToTwip(24),
+                        top: 0,
+                    },
+                },
+            },
         },
     ],
+    styles: {
+        paragraphStyles: [
+            {
+                basedOn: "Normal",
+                id: "test",
+                name: "Test",
+                next: "Normal",
+                paragraph: {
+                    indent: { left: convertMillimetersToTwip(6.4) },
+                },
+            },
+        ],
+    },
 });
 
 Packer.toBuffer(doc).then((buffer) => {

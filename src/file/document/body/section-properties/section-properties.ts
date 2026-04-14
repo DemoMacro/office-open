@@ -43,20 +43,35 @@
  */
 import type { FooterWrapper } from "@file/footer-wrapper";
 import type { HeaderWrapper } from "@file/header-wrapper";
-import { ChangeAttributes, type IChangedAttributesProperties } from "@file/track-revision/track-revision";
-import { type SectionVerticalAlign, createVerticalAlign } from "@file/vertical-align";
+import { ChangeAttributes } from "@file/track-revision/track-revision";
+import type { IChangedAttributesProperties } from "@file/track-revision/track-revision";
+import { createVerticalAlign } from "@file/vertical-align";
+import type { SectionVerticalAlign } from "@file/vertical-align";
 import { OnOffElement, XmlComponent } from "@file/xml-components";
 
-import { type IColumnsAttributes, createColumns } from "./properties/columns";
-import { type IDocGridAttributesProperties, createDocumentGrid } from "./properties/doc-grid";
-import { HeaderFooterReferenceType, HeaderFooterType, createHeaderFooterReference } from "./properties/header-footer-reference";
-import { type ILineNumberAttributes, createLineNumberType } from "./properties/line-number";
-import { type IPageBordersOptions, PageBorders } from "./properties/page-borders";
-import { type IPageMarginAttributes, createPageMargin } from "./properties/page-margin";
-import { type IPageNumberTypeAttributes, createPageNumberType } from "./properties/page-number";
-import { type IPageSizeAttributes, PageOrientation, createPageSize } from "./properties/page-size";
-import { PageTextDirection, type PageTextDirectionType } from "./properties/page-text-direction";
-import { type SectionType, createSectionType } from "./properties/section-type";
+import { createColumns } from "./properties/columns";
+import type { IColumnsAttributes } from "./properties/columns";
+import { createDocumentGrid } from "./properties/doc-grid";
+import type { IDocGridAttributesProperties } from "./properties/doc-grid";
+import {
+    HeaderFooterReferenceType,
+    HeaderFooterType,
+    createHeaderFooterReference,
+} from "./properties/header-footer-reference";
+import { createLineNumberType } from "./properties/line-number";
+import type { ILineNumberAttributes } from "./properties/line-number";
+import { PageBorders } from "./properties/page-borders";
+import type { IPageBordersOptions } from "./properties/page-borders";
+import { createPageMargin } from "./properties/page-margin";
+import type { IPageMarginAttributes } from "./properties/page-margin";
+import { createPageNumberType } from "./properties/page-number";
+import type { IPageNumberTypeAttributes } from "./properties/page-number";
+import { PageOrientation, createPageSize } from "./properties/page-size";
+import type { IPageSizeAttributes } from "./properties/page-size";
+import { PageTextDirection } from "./properties/page-text-direction";
+import type { PageTextDirectionType } from "./properties/page-text-direction";
+import { createSectionType } from "./properties/section-type";
+import type { SectionType } from "./properties/section-type";
 
 /**
  * Header/footer group for specifying different headers/footers
@@ -66,16 +81,16 @@ import { type SectionType, createSectionType } from "./properties/section-type";
  * @property first - Header/footer for first page (requires titlePage setting)
  * @property even - Header/footer for even pages (requires evenAndOddHeaders setting)
  */
-export type IHeaderFooterGroup<T> = {
+export interface IHeaderFooterGroup<T> {
     /** Header/footer for default pages (odd pages when even headers are used) */
     readonly default?: T;
     /** Header/footer for first page (requires titlePage setting) */
     readonly first?: T;
     /** Header/footer for even pages (requires evenAndOddHeaders setting) */
     readonly even?: T;
-};
+}
 
-export type ISectionPropertiesOptionsBase = {
+export interface ISectionPropertiesOptionsBase {
     /** Page-level settings including size, margins, borders, and text direction */
     readonly page?: {
         /** Page size and orientation */
@@ -105,9 +120,10 @@ export type ISectionPropertiesOptionsBase = {
     readonly column?: IColumnsAttributes;
     /** Section break type (next page, continuous, even page, odd page) */
     readonly type?: (typeof SectionType)[keyof typeof SectionType];
-};
+}
 
-export type ISectionPropertiesChangeOptions = IChangedAttributesProperties & ISectionPropertiesOptionsBase;
+export type ISectionPropertiesChangeOptions = IChangedAttributesProperties &
+    ISectionPropertiesOptionsBase;
 
 /**
  * Options for configuring section properties.
@@ -173,9 +189,9 @@ export const sectionMarginDefaults = {
  */
 export const sectionPageSizeDefaults = {
     /** Page width: 11906 twips (8.27 inches, 210mm) */
-    WIDTH: 11906,
+    WIDTH: 11_906,
     /** Page height: 16838 twips (11.69 inches, 297mm) */
-    HEIGHT: 16838,
+    HEIGHT: 16_838,
     /** Page orientation: portrait */
     ORIENTATION: PageOrientation.PORTRAIT,
 };
@@ -269,7 +285,7 @@ export class SectionProperties extends XmlComponent {
             this.root.push(createSectionType(type));
         }
 
-        this.root.push(createPageSize({ width, height, orientation }));
+        this.root.push(createPageSize({ height, orientation, width }));
         this.root.push(createPageMargin(top, right, bottom, left, header, footer, gutter));
 
         if (borders) {
@@ -302,7 +318,7 @@ export class SectionProperties extends XmlComponent {
             this.root.push(new SectionPropertiesChange(revision));
         }
 
-        this.root.push(createDocumentGrid({ linePitch, charSpace, type: gridType }));
+        this.root.push(createDocumentGrid({ charSpace, linePitch, type: gridType }));
     }
 
     private addHeaderFooterGroup(
@@ -312,8 +328,8 @@ export class SectionProperties extends XmlComponent {
         if (group.default) {
             this.root.push(
                 createHeaderFooterReference(type, {
-                    type: HeaderFooterReferenceType.DEFAULT,
                     id: group.default.View.ReferenceId,
+                    type: HeaderFooterReferenceType.DEFAULT,
                 }),
             );
         }
@@ -321,8 +337,8 @@ export class SectionProperties extends XmlComponent {
         if (group.first) {
             this.root.push(
                 createHeaderFooterReference(type, {
-                    type: HeaderFooterReferenceType.FIRST,
                     id: group.first.View.ReferenceId,
+                    type: HeaderFooterReferenceType.FIRST,
                 }),
             );
         }
@@ -330,8 +346,8 @@ export class SectionProperties extends XmlComponent {
         if (group.even) {
             this.root.push(
                 createHeaderFooterReference(type, {
-                    type: HeaderFooterReferenceType.EVEN,
                     id: group.even.View.ReferenceId,
+                    type: HeaderFooterReferenceType.EVEN,
                 }),
             );
         }
@@ -343,9 +359,9 @@ export class SectionPropertiesChange extends XmlComponent {
         super("w:sectPrChange");
         this.root.push(
             new ChangeAttributes({
-                id: options.id,
                 author: options.author,
                 date: options.date,
+                id: options.id,
             }),
         );
         this.root.push(new SectionProperties(options));

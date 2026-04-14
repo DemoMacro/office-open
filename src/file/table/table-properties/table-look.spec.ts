@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { createTableLook } from "./table-look";
 
@@ -106,16 +105,16 @@ describe("TableLook", () => {
 
         it("should create table look with multiple attributes", () => {
             const tableLook = createTableLook({
-                firstRow: true,
                 firstColumn: true,
+                firstRow: true,
                 noVBand: true,
             });
             const tree = new Formatter().format(tableLook);
             expect(tree).to.deep.equal({
                 "w:tblLook": {
                     _attr: {
-                        "w:firstRow": true,
                         "w:firstColumn": true,
+                        "w:firstRow": true,
                         "w:noVBand": true,
                     },
                 },
@@ -124,10 +123,10 @@ describe("TableLook", () => {
 
         it("should create table look with all attributes", () => {
             const tableLook = createTableLook({
-                firstRow: true,
-                lastRow: false,
                 firstColumn: true,
+                firstRow: true,
                 lastColumn: false,
+                lastRow: false,
                 noHBand: false,
                 noVBand: true,
             });
@@ -135,10 +134,10 @@ describe("TableLook", () => {
             expect(tree).to.deep.equal({
                 "w:tblLook": {
                     _attr: {
-                        "w:firstRow": true,
-                        "w:lastRow": false,
                         "w:firstColumn": true,
+                        "w:firstRow": true,
                         "w:lastColumn": false,
+                        "w:lastRow": false,
                         "w:noHBand": false,
                         "w:noVBand": true,
                     },

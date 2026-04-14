@@ -7,10 +7,12 @@
  *
  * @module
  */
-import { type IParagraphStylePropertiesOptions, type IRunStylePropertiesOptions, ParagraphProperties } from "@file/paragraph";
+import { ParagraphProperties } from "@file/paragraph";
+import type { IParagraphStylePropertiesOptions, IRunStylePropertiesOptions } from "@file/paragraph";
 import { RunProperties } from "@file/paragraph/run/properties";
 
-import { type IStyleOptions, Style } from "./style";
+import { Style } from "./style";
+import type { IStyleOptions } from "./style";
 
 /**
  * Base options for paragraph style configuration.
@@ -81,7 +83,7 @@ export class StyleForParagraph extends Style {
     private readonly runProperties: RunProperties;
 
     public constructor(options: IParagraphStyleOptions) {
-        super({ type: "paragraph", styleId: options.id }, options);
+        super({ styleId: options.id, type: "paragraph" }, options);
 
         this.paragraphProperties = new ParagraphProperties(options.paragraph);
         this.runProperties = new RunProperties(options.run);

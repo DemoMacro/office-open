@@ -36,7 +36,9 @@ export const findRunElementIndexWithToken = (paragraphElement: Element, token: s
     for (let i = 0; i < (paragraphElement.elements ?? []).length; i++) {
         const element = paragraphElement.elements![i];
         if (element.type === "element" && element.name === "w:r") {
-            const textElement = (element.elements ?? []).filter((e) => e.type === "element" && e.name === "w:t");
+            const textElement = (element.elements ?? []).filter(
+                (e) => e.type === "element" && e.name === "w:t",
+            );
 
             for (const text of textElement) {
                 if (!text.elements?.[0]) {
@@ -53,7 +55,7 @@ export const findRunElementIndexWithToken = (paragraphElement: Element, token: s
     throw new TokenNotFoundError(token);
 };
 
-// cspell:words Helloɵworld
+// Cspell:words Helloɵworld
 
 /**
  * Splits a run element at a token position into left and right parts.
@@ -72,7 +74,10 @@ export const findRunElementIndexWithToken = (paragraphElement: Element, token: s
  * // If run contains "Helloɵworld", left contains "Hello" and right contains "world"
  * ```
  */
-export const splitRunElement = (runElement: Element, token: string): { readonly left: Element; readonly right: Element } => {
+export const splitRunElement = (
+    runElement: Element,
+    token: string,
+): { readonly left: Element; readonly right: Element } => {
     let splitIndex = -1;
 
     const splitElements =

@@ -101,14 +101,14 @@ export const PositionalTabLeader = {
  * @property relativeTo - What the tab position is relative to
  * @property leader - Character used to fill space before the tab
  */
-export type PositionalTabOptions = {
+export interface PositionalTabOptions {
     /** How text is aligned at the tab stop */
     readonly alignment: (typeof PositionalTabAlignment)[keyof typeof PositionalTabAlignment];
     /** What the tab position is relative to */
     readonly relativeTo: (typeof PositionalTabRelativeTo)[keyof typeof PositionalTabRelativeTo];
     /** Character used to fill space before the tab */
     readonly leader: (typeof PositionalTabLeader)[keyof typeof PositionalTabLeader];
-};
+}
 
 class PositionalTabAttributes extends XmlAttributeComponent<{
     readonly alignment: string;
@@ -117,8 +117,8 @@ class PositionalTabAttributes extends XmlAttributeComponent<{
 }> {
     protected readonly xmlKeys = {
         alignment: "w:alignment",
-        relativeTo: "w:relativeTo",
         leader: "w:leader",
+        relativeTo: "w:relativeTo",
     };
 }
 
@@ -159,8 +159,8 @@ export class PositionalTab extends XmlComponent {
         this.root.push(
             new PositionalTabAttributes({
                 alignment: options.alignment,
-                relativeTo: options.relativeTo,
                 leader: options.leader,
+                relativeTo: options.relativeTo,
             }),
         );
     }

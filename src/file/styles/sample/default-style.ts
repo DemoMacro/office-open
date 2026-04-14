@@ -27,21 +27,17 @@ const createLsdException = (
     qFormat?: number,
     semiHidden?: number,
     unhideWhenUsed?: number,
-): readonly object[] => {
-    "use strict";
-
-    return [
-        {
-            _attr: {
-                "w:name": name,
-                "w:uiPriority": uiPriority,
-                "w:qFormat": qFormat,
-                "w:semiHidden": semiHidden,
-                "w:unhideWhenUsed": unhideWhenUsed,
-            },
+): readonly object[] => [
+    {
+        _attr: {
+            "w:name": name,
+            "w:qFormat": qFormat,
+            "w:semiHidden": semiHidden,
+            "w:uiPriority": uiPriority,
+            "w:unhideWhenUsed": unhideWhenUsed,
         },
-    ];
-};
+    },
+];
 
 /**
  * Generates default style definitions in legacy XML format.
@@ -59,18 +55,18 @@ const createLsdException = (
  * const styles = DefaultStyle();
  * ```
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const DefaultStyle = (): Record<string, any> => {
     const style = {
         "w:styles": [
             {
                 _attr: {
+                    "mc:Ignorable": "w14 w15",
                     "xmlns:mc": "http://schemas.openxmlformats.org/markup-compatibility/2006",
-                    "xmlns:r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+                    "xmlns:r":
+                        "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
                     "xmlns:w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
                     "xmlns:w14": "http://schemas.microsoft.com/office/word/2010/wordml",
                     "xmlns:w15": "http://schemas.microsoft.com/office/word/2012/wordml",
-                    "mc:Ignorable": "w14 w15",
                 },
             },
             {
@@ -84,9 +80,9 @@ export const DefaultStyle = (): Record<string, any> => {
                                             {
                                                 _attr: {
                                                     "w:asciiTheme": "minorHAnsi",
+                                                    "w:cstheme": "minorBidi",
                                                     "w:eastAsiaTheme": "minorHAnsi",
                                                     "w:hAnsiTheme": "minorHAnsi",
-                                                    "w:cstheme": "minorBidi",
                                                 },
                                             },
                                         ],
@@ -113,9 +109,9 @@ export const DefaultStyle = (): Record<string, any> => {
                                         "w:lang": [
                                             {
                                                 _attr: {
-                                                    "w:val": "en-GB",
-                                                    "w:eastAsia": "en-US",
                                                     "w:bidi": "ar-SA",
+                                                    "w:eastAsia": "en-US",
+                                                    "w:val": "en-GB",
                                                 },
                                             },
                                         ],
@@ -149,12 +145,12 @@ export const DefaultStyle = (): Record<string, any> => {
                 "w:latentStyles": [
                     {
                         _attr: {
-                            "w:defLockedState": "0",
-                            "w:defUIPriority": "99",
-                            "w:defSemiHidden": "0",
-                            "w:defUnhideWhenUsed": "0",
-                            "w:defQFormat": "0",
                             "w:count": "371",
+                            "w:defLockedState": "0",
+                            "w:defQFormat": "0",
+                            "w:defSemiHidden": "0",
+                            "w:defUIPriority": "99",
+                            "w:defUnhideWhenUsed": "0",
                         },
                     },
                     {
@@ -242,10 +238,22 @@ export const DefaultStyle = (): Record<string, any> => {
                         "w:lsdException": createLsdException("toc 9", 39, undefined, 1, 1),
                     },
                     {
-                        "w:lsdException": createLsdException("Normal Indent", undefined, undefined, 1, 1),
+                        "w:lsdException": createLsdException(
+                            "Normal Indent",
+                            undefined,
+                            undefined,
+                            1,
+                            1,
+                        ),
                     },
                     {
-                        "w:lsdException": createLsdException("footnote text", undefined, undefined, 1, 1),
+                        "w:lsdException": createLsdException(
+                            "footnote text",
+                            undefined,
+                            undefined,
+                            1,
+                            1,
+                        ),
                     },
                 ],
             },

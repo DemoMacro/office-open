@@ -7,15 +7,16 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Options for creating a bar position element.
  */
-type MathBarPosOptions = {
+interface MathBarPosOptions {
     /** Position value: "top" for overline, "bot" for underline */
     readonly val: string;
-};
+}
 
 /**
  * Creates a position element for bar structures.
@@ -34,8 +35,8 @@ type MathBarPosOptions = {
  */
 export const createMathBarPos = ({ val }: MathBarPosOptions): XmlComponent =>
     new BuilderElement<MathBarPosOptions>({
-        name: "m:pos",
         attributes: {
             val: { key: "w:val", value: val },
         },
+        name: "m:pos",
     });

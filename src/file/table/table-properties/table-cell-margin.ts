@@ -23,7 +23,8 @@
  * @module
  */
 import { WidthType, createTableWidthElement } from "@file/table";
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Options for configuring table cell margins.
@@ -49,7 +50,7 @@ import { BuilderElement, type XmlComponent } from "@file/xml-components";
  * };
  * ```
  */
-export type ITableCellMarginOptions = {
+export interface ITableCellMarginOptions {
     /**
      * The unit type for margin values.
      * Defaults to DXA (twentieths of a point) if not specified.
@@ -81,7 +82,7 @@ export type ITableCellMarginOptions = {
      * Value is in units specified by `marginUnitType`.
      */
     readonly right?: number;
-};
+}
 
 /**
  * Builds an array of margin child elements based on the provided options.
@@ -103,8 +104,11 @@ const buildMarginChildren = ({
             { name: "w:right", size: right },
         ] as const
     )
-        .filter((entry): entry is { readonly name: typeof entry.name; readonly size: number } => entry.size !== undefined)
-        .map(({ name, size }) => createTableWidthElement(name, { type: marginUnitType, size }));
+        .filter(
+            (entry): entry is { readonly name: typeof entry.name; readonly size: number } =>
+                entry.size !== undefined,
+        )
+        .map(({ name, size }) => createTableWidthElement(name, { size, type: marginUnitType }));
 
 /**
  * Creates a table-level cell margin element (tblCellMar).
@@ -132,7 +136,9 @@ const buildMarginChildren = ({
  * });
  * ```
  */
-export const createTableCellMargin = (options: ITableCellMarginOptions): XmlComponent | undefined => {
+export const createTableCellMargin = (
+    options: ITableCellMarginOptions,
+): XmlComponent | undefined => {
     const children = buildMarginChildren(options);
 
     if (children.length === 0) {
@@ -140,8 +146,8 @@ export const createTableCellMargin = (options: ITableCellMarginOptions): XmlComp
     }
 
     return new BuilderElement({
-        name: "w:tblCellMar",
         children,
+        name: "w:tblCellMar",
     });
 };
 
@@ -178,7 +184,7 @@ export const createCellMargin = (options: ITableCellMarginOptions): XmlComponent
     }
 
     return new BuilderElement({
-        name: "w:tcMar",
         children,
+        name: "w:tcMar",
     });
 };

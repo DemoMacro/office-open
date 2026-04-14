@@ -1,27 +1,28 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { DocumentWrapper } from "../document-wrapper";
 import type { File } from "../file";
+import { FontWrapper } from "../fonts/font-wrapper";
 import { AlignmentType } from "./formatting";
 import { ParagraphProperties } from "./properties";
-import { FontWrapper } from "../fonts/font-wrapper";
 
 describe("ParagraphProperties", () => {
     describe("#constructor()", () => {
         it("creates an initially empty property object", () => {
             const properties = new ParagraphProperties();
 
-            expect(() => new Formatter().format(properties)).to.throw("XMLComponent did not format correctly");
+            expect(() => new Formatter().format(properties)).to.throw(
+                "XMLComponent did not format correctly",
+            );
         });
 
         it("should create with numbering", () => {
             const properties = new ParagraphProperties({
                 numbering: {
-                    reference: "test-reference",
-                    level: 0,
                     instance: 0,
+                    level: 0,
+                    reference: "test-reference",
                 },
             });
             const tree = new Formatter().format(properties, {
@@ -30,8 +31,8 @@ describe("ParagraphProperties", () => {
                         createConcreteNumberingInstance: (_: string, __: number) => undefined,
                     },
                 } as File,
-                viewWrapper: new DocumentWrapper({ background: {} }),
                 stack: [],
+                viewWrapper: new DocumentWrapper({ background: {} }),
             });
 
             expect(tree).to.deep.equal({
@@ -239,7 +240,7 @@ describe("ParagraphProperties", () => {
         it("should create with the run property insertion", () => {
             const properties = new ParagraphProperties({
                 run: {
-                    insertion: { id: 1, author: "Firstname Lastname", date: "123" },
+                    insertion: { author: "Firstname Lastname", date: "123", id: 1 },
                 },
             });
             const tree = new Formatter().format(properties);
@@ -266,7 +267,7 @@ describe("ParagraphProperties", () => {
         it("should create with the run property deletion", () => {
             const properties = new ParagraphProperties({
                 run: {
-                    deletion: { id: 1, author: "Firstname Lastname", date: "123" },
+                    deletion: { author: "Firstname Lastname", date: "123", id: 1 },
                 },
             });
             const tree = new Formatter().format(properties);
@@ -293,15 +294,15 @@ describe("ParagraphProperties", () => {
         it("should skip numbering instance creation when viewWrapper is FontWrapper", () => {
             const properties = new ParagraphProperties({
                 numbering: {
-                    reference: "test-reference",
-                    level: 0,
                     instance: 0,
+                    level: 0,
+                    reference: "test-reference",
                 },
             });
             const tree = new Formatter().format(properties, {
                 file: {} as File,
-                viewWrapper: new FontWrapper([]),
                 stack: [],
+                viewWrapper: new FontWrapper([]),
             });
 
             expect(tree).to.deep.equal({
@@ -339,10 +340,10 @@ describe("ParagraphProperties", () => {
             const properties = new ParagraphProperties({
                 alignment: AlignmentType.CENTER,
                 revision: {
-                    id: 1,
+                    alignment: AlignmentType.LEFT,
                     author: "Firstname Lastname",
                     date: "123",
-                    alignment: AlignmentType.LEFT,
+                    id: 1,
                 },
             });
             const tree = new Formatter().format(properties);

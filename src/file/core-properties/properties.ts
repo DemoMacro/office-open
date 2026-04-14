@@ -48,7 +48,7 @@ import type { IStylesOptions } from "../styles";
  * @property fonts - Font configurations
  * @property hyphenation - Hyphenation settings
  */
-export type IPropertiesOptions = {
+export interface IPropertiesOptions {
     readonly sections: readonly ISectionOptions[];
     readonly title?: string;
     readonly subject?: string;
@@ -89,7 +89,7 @@ export type IPropertiesOptions = {
     readonly defaultTabStop?: number;
     readonly fonts?: readonly FontOptions[];
     readonly hyphenation?: IHyphenationOptions;
-};
+}
 
 /**
  * Represents the core properties of a WordprocessingML document.

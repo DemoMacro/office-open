@@ -1,5 +1,7 @@
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
-import { type PositiveUniversalMeasure, twipsMeasureValue } from "@util/values";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
+import { twipsMeasureValue } from "@util/values";
+import type { PositiveUniversalMeasure } from "@util/values";
 
 /**
  * This simple type specifies the orientation of all pages in the parent section. This information is used to determine the actual paper size to use when printing the file.
@@ -34,7 +36,7 @@ export const PageOrientation = {
     LANDSCAPE: "landscape",
 } as const;
 
-export type IPageSizeAttributes = {
+export interface IPageSizeAttributes {
     /**
      * ## Page Width
      *
@@ -101,7 +103,7 @@ export type IPageSizeAttributes = {
      * The possible values for this attribute are defined by the `ST_DecimalNumber` simple type (§2.18.16).
      */
     readonly code?: number;
-};
+}
 
 /**
  * This element specifies the properties (size and orientation) for all pages in the current section.
@@ -119,16 +121,27 @@ export type IPageSizeAttributes = {
  * </xsd:complexType>
  * ```
  */
-export const createPageSize = ({ width, height, orientation, code }: IPageSizeAttributes): XmlComponent => {
+export const createPageSize = ({
+    width,
+    height,
+    orientation,
+    code,
+}: IPageSizeAttributes): XmlComponent => {
     const widthTwips = twipsMeasureValue(width);
     const heightTwips = twipsMeasureValue(height);
     return new BuilderElement<IPageSizeAttributes>({
-        name: "w:pgSz",
         attributes: {
-            width: { key: "w:w", value: orientation === PageOrientation.LANDSCAPE ? heightTwips : widthTwips },
-            height: { key: "w:h", value: orientation === PageOrientation.LANDSCAPE ? widthTwips : heightTwips },
-            orientation: { key: "w:orient", value: orientation },
             code: { key: "w:code", value: code },
+            height: {
+                key: "w:h",
+                value: orientation === PageOrientation.LANDSCAPE ? widthTwips : heightTwips,
+            },
+            orientation: { key: "w:orient", value: orientation },
+            width: {
+                key: "w:w",
+                value: orientation === PageOrientation.LANDSCAPE ? heightTwips : widthTwips,
+            },
         },
+        name: "w:pgSz",
     });
 };

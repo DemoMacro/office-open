@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { createOutline } from "./outline";
 import { SchemeColor } from "./scheme-color";
@@ -21,7 +20,9 @@ describe("createOutline", () => {
     });
 
     it("should create solid rgb fill", () => {
-        const tree = new Formatter().format(createOutline({ type: "solidFill", solidFillType: "rgb", value: "FFFFFF" }));
+        const tree = new Formatter().format(
+            createOutline({ solidFillType: "rgb", type: "solidFill", value: "FFFFFF" }),
+        );
         expect(tree).to.deep.equal({
             "a:ln": [
                 {
@@ -43,7 +44,13 @@ describe("createOutline", () => {
     });
 
     it("should create solid scheme fill", () => {
-        const tree = new Formatter().format(createOutline({ type: "solidFill", solidFillType: "scheme", value: SchemeColor.ACCENT1 }));
+        const tree = new Formatter().format(
+            createOutline({
+                solidFillType: "scheme",
+                type: "solidFill",
+                value: SchemeColor.ACCENT1,
+            }),
+        );
         expect(tree).to.deep.equal({
             "a:ln": [
                 {

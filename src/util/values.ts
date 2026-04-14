@@ -236,7 +236,9 @@ export const universalMeasureValue = (val: UniversalMeasure): UniversalMeasure =
  * const invalid = positiveUniversalMeasureValue("-5mm"); // Throws Error
  * ```
  */
-export const positiveUniversalMeasureValue = (val: PositiveUniversalMeasure): PositiveUniversalMeasure => {
+export const positiveUniversalMeasureValue = (
+    val: PositiveUniversalMeasure,
+): PositiveUniversalMeasure => {
     const value = universalMeasureValue(val);
     if (parseFloat(value) < 0) {
         throw new Error(`Invalid value '${value}' specified. Expected a positive number.`);
@@ -290,7 +292,9 @@ export const hexColorValue = (val: string): string => {
  * const measure2 = signedTwipsMeasureValue(1440); // 1 inch in TWIP
  * ```
  */
-export const signedTwipsMeasureValue = (val: UniversalMeasure | number): UniversalMeasure | number =>
+export const signedTwipsMeasureValue = (
+    val: UniversalMeasure | number,
+): UniversalMeasure | number =>
     typeof val === "string" ? universalMeasureValue(val) : decimalNumber(val);
 
 /**
@@ -348,7 +352,9 @@ export const signedHpsMeasureValue = (val: UniversalMeasure | number): string | 
  * const width2 = twipsMeasureValue(1440); // 1 inch in TWIP
  * ```
  */
-export const twipsMeasureValue = (val: PositiveUniversalMeasure | number): PositiveUniversalMeasure | number =>
+export const twipsMeasureValue = (
+    val: PositiveUniversalMeasure | number,
+): PositiveUniversalMeasure | number =>
     typeof val === "string" ? positiveUniversalMeasureValue(val) : unsignedDecimalNumber(val);
 
 /**
@@ -384,7 +390,9 @@ export const percentageValue = (val: Percentage): Percentage => {
  * const measure3 = measurementOrPercentValue("10mm"); // Universal measure
  * ```
  */
-export const measurementOrPercentValue = (val: number | Percentage | UniversalMeasure): number | UniversalMeasure | Percentage => {
+export const measurementOrPercentValue = (
+    val: number | Percentage | UniversalMeasure,
+): number | UniversalMeasure | Percentage => {
     if (typeof val === "number") {
         return decimalNumber(val);
     }
@@ -426,7 +434,7 @@ export const eighthPointMeasureValue = unsignedDecimalNumber;
  */
 export const pointMeasureValue = unsignedDecimalNumber;
 
-// cspell:words CCYY
+// Cspell:words CCYY
 /**
  * Converts a JavaScript Date object to an ISO 8601 date-time string.
  *

@@ -1,7 +1,6 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
 import { Paragraph, TextRun } from "@file/paragraph";
+import { describe, expect, it } from "vite-plus/test";
 
 import { Endnote, EndnoteType } from "./endnote";
 
@@ -9,20 +8,22 @@ describe("Endnote", () => {
     describe("#constructor", () => {
         it("should create an endnote with an endnote type", () => {
             const endnote = new Endnote({
+                children: [],
                 id: 1,
                 type: EndnoteType.SEPARATOR,
-                children: [],
             });
             const tree = new Formatter().format(endnote);
 
             expect(Object.keys(tree)).to.deep.equal(["w:endnote"]);
-            expect(tree["w:endnote"]).to.deep.equal({ _attr: { "w:type": "separator", "w:id": 1 } });
+            expect(tree["w:endnote"]).to.deep.equal({
+                _attr: { "w:id": 1, "w:type": "separator" },
+            });
         });
 
         it("should create a endnote without a endnote type", () => {
             const endnote = new Endnote({
-                id: 1,
                 children: [],
+                id: 1,
             });
             const tree = new Formatter().format(endnote);
 
@@ -32,8 +33,8 @@ describe("Endnote", () => {
 
         it("should append endnote ref run on the first endnote paragraph", () => {
             const endnote = new Endnote({
-                id: 1,
                 children: [new Paragraph({ children: [new TextRun("test-endnote")] })],
+                id: 1,
             });
             const tree = new Formatter().format(endnote);
 
@@ -86,11 +87,11 @@ describe("Endnote", () => {
 
         it("should add multiple paragraphs", () => {
             const endnote = new Endnote({
-                id: 1,
                 children: [
                     new Paragraph({ children: [new TextRun("test-endnote")] }),
                     new Paragraph({ children: [new TextRun("test-endnote-2")] }),
                 ],
+                id: 1,
             });
             const tree = new Formatter().format(endnote);
 

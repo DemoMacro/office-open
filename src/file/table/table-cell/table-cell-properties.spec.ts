@@ -1,8 +1,7 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
 import { BorderStyle } from "@file/border";
 import { VerticalAlignTable } from "@file/vertical-align";
+import { describe, expect, it } from "vite-plus/test";
 
 import { WidthType } from "../table-width";
 import { VerticalMergeType } from "./table-cell-components";
@@ -13,10 +12,12 @@ describe("TableCellProperties", () => {
         it("creates an initially empty property object", () => {
             const properties = new TableCellProperties({});
             // The TableCellProperties is ignorable if there are no attributes,
-            // which results in prepForXml returning undefined, which causes
-            // the formatter to throw an error if that is the only object it
-            // has been asked to format.
-            expect(() => new Formatter().format(properties)).to.throw("XMLComponent did not format correctly");
+            // Which results in prepForXml returning undefined, which causes
+            // The formatter to throw an error if that is the only object it
+            // Has been asked to format.
+            expect(() => new Formatter().format(properties)).to.throw(
+                "XMLComponent did not format correctly",
+            );
         });
 
         it("adds grid span", () => {
@@ -26,15 +27,23 @@ describe("TableCellProperties", () => {
         });
 
         it("adds vertical merge", () => {
-            const properties = new TableCellProperties({ verticalMerge: VerticalMergeType.CONTINUE });
+            const properties = new TableCellProperties({
+                verticalMerge: VerticalMergeType.CONTINUE,
+            });
             const tree = new Formatter().format(properties);
-            expect(tree).to.deep.equal({ "w:tcPr": [{ "w:vMerge": { _attr: { "w:val": "continue" } } }] });
+            expect(tree).to.deep.equal({
+                "w:tcPr": [{ "w:vMerge": { _attr: { "w:val": "continue" } } }],
+            });
         });
 
         it("sets vertical align", () => {
-            const properties = new TableCellProperties({ verticalAlign: VerticalAlignTable.BOTTOM });
+            const properties = new TableCellProperties({
+                verticalAlign: VerticalAlignTable.BOTTOM,
+            });
             const tree = new Formatter().format(properties);
-            expect(tree).to.deep.equal({ "w:tcPr": [{ "w:vAlign": { _attr: { "w:val": "bottom" } } }] });
+            expect(tree).to.deep.equal({
+                "w:tcPr": [{ "w:vAlign": { _attr: { "w:val": "bottom" } } }],
+            });
         });
 
         it("should set width", () => {
@@ -45,7 +54,9 @@ describe("TableCellProperties", () => {
                 },
             });
             const tree = new Formatter().format(properties);
-            expect(tree).to.deep.equal({ "w:tcPr": [{ "w:tcW": { _attr: { "w:type": "dxa", "w:w": 1 } } }] });
+            expect(tree).to.deep.equal({
+                "w:tcPr": [{ "w:tcW": { _attr: { "w:type": "dxa", "w:w": 1 } } }],
+            });
         });
 
         it("should set width using default of AUTO", () => {
@@ -55,27 +66,31 @@ describe("TableCellProperties", () => {
                 },
             });
             const tree = new Formatter().format(properties);
-            expect(tree).to.deep.equal({ "w:tcPr": [{ "w:tcW": { _attr: { "w:type": "auto", "w:w": 1 } } }] });
+            expect(tree).to.deep.equal({
+                "w:tcPr": [{ "w:tcW": { _attr: { "w:type": "auto", "w:w": 1 } } }],
+            });
         });
 
         it("sets shading", () => {
             const properties = new TableCellProperties({
                 shading: {
-                    fill: "ffffff",
                     color: "000000",
+                    fill: "ffffff",
                 },
             });
             const tree = new Formatter().format(properties);
-            expect(tree).to.deep.equal({ "w:tcPr": [{ "w:shd": { _attr: { "w:fill": "ffffff", "w:color": "000000" } } }] });
+            expect(tree).to.deep.equal({
+                "w:tcPr": [{ "w:shd": { _attr: { "w:color": "000000", "w:fill": "ffffff" } } }],
+            });
         });
 
         it("should set the TableCellBorders", () => {
             const properties = new TableCellProperties({
                 borders: {
                     top: {
-                        style: BorderStyle.DASH_DOT_STROKED,
                         color: "ff0000",
                         size: 3,
+                        style: BorderStyle.DASH_DOT_STROKED,
                     },
                 },
             });
@@ -83,18 +98,24 @@ describe("TableCellProperties", () => {
             const tree = new Formatter().format(properties);
 
             expect(tree["w:tcPr"][0]).to.deep.equal({
-                "w:tcBorders": [{ "w:top": { _attr: { "w:val": "dashDotStroked", "w:sz": 3, "w:color": "ff0000" } } }],
+                "w:tcBorders": [
+                    {
+                        "w:top": {
+                            _attr: { "w:color": "ff0000", "w:sz": 3, "w:val": "dashDotStroked" },
+                        },
+                    },
+                ],
             });
         });
 
         it("should set the margins", () => {
             const properties = new TableCellProperties({
                 margins: {
-                    marginUnitType: WidthType.DXA,
-                    top: 5,
-                    left: 10,
                     bottom: 15,
+                    left: 10,
+                    marginUnitType: WidthType.DXA,
                     right: 20,
+                    top: 5,
                 },
             });
 
@@ -114,33 +135,65 @@ describe("TableCellProperties", () => {
             const properties = new TableCellProperties({
                 margins: {},
             });
-            expect(() => new Formatter().format(properties)).to.throw("XMLComponent did not format correctly");
+            expect(() => new Formatter().format(properties)).to.throw(
+                "XMLComponent did not format correctly",
+            );
         });
 
         it("sets cellIns to track cell insertion", () => {
-            const cellProperties = new TableCellProperties({ insertion: { id: 1, author: "Firstname Lastname", date: "123" } });
+            const cellProperties = new TableCellProperties({
+                insertion: { author: "Firstname Lastname", date: "123", id: 1 },
+            });
             const tree = new Formatter().format(cellProperties);
             expect(tree).to.deep.equal({
-                "w:tcPr": [{ "w:cellIns": { _attr: { "w:id": 1, "w:author": "Firstname Lastname", "w:date": "123" } } }],
+                "w:tcPr": [
+                    {
+                        "w:cellIns": {
+                            _attr: { "w:author": "Firstname Lastname", "w:date": "123", "w:id": 1 },
+                        },
+                    },
+                ],
             });
         });
 
         it("sets cellDel to track cell deletion", () => {
-            const cellProperties = new TableCellProperties({ deletion: { id: 1, author: "Firstname Lastname", date: "123" } });
+            const cellProperties = new TableCellProperties({
+                deletion: { author: "Firstname Lastname", date: "123", id: 1 },
+            });
             const tree = new Formatter().format(cellProperties);
             expect(tree).to.deep.equal({
-                "w:tcPr": [{ "w:cellDel": { _attr: { "w:id": 1, "w:author": "Firstname Lastname", "w:date": "123" } } }],
+                "w:tcPr": [
+                    {
+                        "w:cellDel": {
+                            _attr: { "w:author": "Firstname Lastname", "w:date": "123", "w:id": 1 },
+                        },
+                    },
+                ],
             });
         });
 
         it("sets cellMerge to track vertical merge revision", () => {
             const cellProperties = new TableCellProperties({
-                cellMerge: { id: 1, author: "Firstname Lastname", date: "123", verticalMerge: "rest" },
+                cellMerge: {
+                    author: "Firstname Lastname",
+                    date: "123",
+                    id: 1,
+                    verticalMerge: "rest",
+                },
             });
             const tree = new Formatter().format(cellProperties);
             expect(tree).to.deep.equal({
                 "w:tcPr": [
-                    { "w:cellMerge": { _attr: { "w:id": 1, "w:author": "Firstname Lastname", "w:date": "123", "w:vMerge": "rest" } } },
+                    {
+                        "w:cellMerge": {
+                            _attr: {
+                                "w:author": "Firstname Lastname",
+                                "w:date": "123",
+                                "w:id": 1,
+                                "w:vMerge": "rest",
+                            },
+                        },
+                    },
                 ],
             });
         });
@@ -148,9 +201,9 @@ describe("TableCellProperties", () => {
         it("should add a revision property", () => {
             const cellProperties = new TableCellProperties({
                 revision: {
-                    id: 1,
                     author: "Firstname Lastname",
                     date: "123",
+                    id: 1,
                 },
             });
             const tree = new Formatter().format(cellProperties);

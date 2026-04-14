@@ -1,6 +1,7 @@
 // Page break before example
 
 import * as fs from "fs";
+
 import { Document, Packer, Paragraph } from "docx";
 
 const doc = new Document({
@@ -9,8 +10,8 @@ const doc = new Document({
             children: [
                 new Paragraph("Hello World"),
                 new Paragraph({
-                    text: "Hello World on another page",
                     pageBreakBefore: true,
+                    text: "Hello World on another page",
                 }),
             ],
         },

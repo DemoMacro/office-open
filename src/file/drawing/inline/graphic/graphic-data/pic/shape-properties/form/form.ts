@@ -31,8 +31,8 @@ export class FormAttributes extends XmlAttributeComponent<{
     readonly rotation?: number;
 }> {
     protected readonly xmlKeys = {
-        flipVertical: "flipV",
         flipHorizontal: "flipH",
+        flipVertical: "flipV",
         rotation: "rot",
     };
 }
@@ -76,8 +76,8 @@ export class Form extends XmlComponent {
 
         this.root.push(
             new FormAttributes({
-                flipVertical: options.flip?.vertical,
                 flipHorizontal: options.flip?.horizontal,
+                flipVertical: options.flip?.vertical,
                 rotation: options.rotation,
             }),
         );

@@ -1,26 +1,27 @@
 // Simple example apply positional tabs to a document
 
 import * as fs from "fs";
+
 import {
     Document,
     Packer,
     Paragraph,
     PositionalTab,
-    TextRun,
     PositionalTabAlignment,
-    PositionalTabRelativeTo,
     PositionalTabLeader,
+    PositionalTabRelativeTo,
+    TextRun,
 } from "docx";
 
 const doc = new Document({
     sections: [
         {
-            properties: {},
             children: [
                 new Paragraph({
                     children: [
                         new TextRun("Full name"),
                         new TextRun({
+                            bold: true,
                             children: [
                                 new PositionalTab({
                                     alignment: PositionalTabAlignment.RIGHT,
@@ -29,7 +30,6 @@ const doc = new Document({
                                 }),
                                 "John Doe",
                             ],
-                            bold: true,
                         }),
                     ],
                 }),
@@ -37,6 +37,7 @@ const doc = new Document({
                     children: [
                         new TextRun("Hello World"),
                         new TextRun({
+                            bold: true,
                             children: [
                                 new PositionalTab({
                                     alignment: PositionalTabAlignment.CENTER,
@@ -45,11 +46,11 @@ const doc = new Document({
                                 }),
                                 "Foo bar",
                             ],
-                            bold: true,
                         }),
                     ],
                 }),
             ],
+            properties: {},
         },
     ],
 });

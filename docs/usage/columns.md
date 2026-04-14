@@ -102,7 +102,11 @@ const doc = new Document({
             },
             children: [
                 new Paragraph({
-                    children: [new TextRun("This text is in column 1."), new ColumnBreak(), new TextRun("This text is in column 2.")],
+                    children: [
+                        new TextRun("This text is in column 1."),
+                        new ColumnBreak(),
+                        new TextRun("This text is in column 2."),
+                    ],
                 }),
             ],
         },
@@ -194,7 +198,10 @@ const doc = new Document({
                     children: [new ColumnBreak()],
                 }),
                 new Paragraph({
-                    children: [new TextRun("Second column content starts here. "), new TextRun("This appears in the right column.")],
+                    children: [
+                        new TextRun("Second column content starts here. "),
+                        new TextRun("This appears in the right column."),
+                    ],
                 }),
             ],
         },

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 
 import { HeaderWrapper } from "./header-wrapper";
 import { Media } from "./media";
@@ -40,7 +40,6 @@ describe("HeaderWrapper", () => {
         it("should call the underlying header's addChildElement", () => {
             const file = new HeaderWrapper(new Media(), 1);
             const spy = vi.spyOn(file.View, "addChildElement");
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             file.addChildElement({} as any);
 
             expect(spy).toBeCalled();

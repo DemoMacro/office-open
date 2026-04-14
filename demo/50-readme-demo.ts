@@ -1,7 +1,18 @@
 // The demo on the README.md
 
 import * as fs from "fs";
-import { Document, HeadingLevel, ImageRun, Packer, Paragraph, Table, TableCell, TableRow, VerticalAlignTable } from "docx";
+
+import {
+    Document,
+    HeadingLevel,
+    ImageRun,
+    Packer,
+    Paragraph,
+    Table,
+    TableCell,
+    TableRow,
+    VerticalAlignTable,
+} from "docx";
 
 const table = new Table({
     rows: [
@@ -13,11 +24,11 @@ const table = new Table({
                             children: [
                                 new ImageRun({
                                     data: fs.readFileSync("./demo/images/image1.jpeg"),
-                                    type: "jpg",
                                     transformation: {
-                                        width: 100,
                                         height: 100,
+                                        width: 100,
                                     },
+                                    type: "jpg",
                                 }),
                             ],
                         }),
@@ -27,8 +38,8 @@ const table = new Table({
                 new TableCell({
                     children: [
                         new Paragraph({
-                            text: "Hello",
                             heading: HeadingLevel.HEADING_1,
+                            text: "Hello",
                         }),
                     ],
                     verticalAlign: VerticalAlignTable.CENTER,
@@ -40,8 +51,8 @@ const table = new Table({
                 new TableCell({
                     children: [
                         new Paragraph({
-                            text: "World",
                             heading: HeadingLevel.HEADING_1,
+                            text: "World",
                         }),
                     ],
                 }),
@@ -51,11 +62,11 @@ const table = new Table({
                             children: [
                                 new ImageRun({
                                     data: fs.readFileSync("./demo/images/image1.jpeg"),
-                                    type: "jpg",
                                     transformation: {
-                                        width: 100,
                                         height: 100,
+                                        width: 100,
                                     },
+                                    type: "jpg",
                                 }),
                             ],
                         }),
@@ -71,19 +82,19 @@ const doc = new Document({
         {
             children: [
                 new Paragraph({
-                    text: "Hello World",
                     heading: HeadingLevel.HEADING_1,
+                    text: "Hello World",
                 }),
                 table,
                 new Paragraph({
                     children: [
                         new ImageRun({
                             data: fs.readFileSync("./demo/images/pizza.gif"),
-                            type: "gif",
                             transformation: {
-                                width: 100,
                                 height: 100,
+                                width: 100,
                             },
+                            type: "gif",
                         }),
                     ],
                 }),

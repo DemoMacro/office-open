@@ -12,7 +12,8 @@ import type { Table } from "../table";
 import type { TableOfContents } from "../table-of-contents";
 import { Body } from "./body";
 import { DocumentAttributes } from "./document-attributes";
-import { DocumentBackground, type IDocumentBackgroundOptions } from "./document-background";
+import { DocumentBackground } from "./document-background";
+import type { IDocumentBackgroundOptions } from "./document-background";
 
 /**
  * Options for creating a Document element.
@@ -21,10 +22,10 @@ import { DocumentBackground, type IDocumentBackgroundOptions } from "./document-
  *
  * @see {@link Document}
  */
-export type IDocumentOptions = {
+export interface IDocumentOptions {
     /** Optional background settings for the document */
     readonly background?: IDocumentBackgroundOptions;
-};
+}
 
 /**
  * Represents the main document element in a WordprocessingML document.

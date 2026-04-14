@@ -20,7 +20,11 @@ This method is useful for adding different [text](usage/text.md) with different 
 
 ```ts
 const paragraph = new Paragraph({
-    children: [new TextRun("Lorem Ipsum Foo Bar"), new TextRun("Hello World"), new SymbolRun("F071")],
+    children: [
+        new TextRun("Lorem Ipsum Foo Bar"),
+        new TextRun("Hello World"),
+        new SymbolRun("F071"),
+    ],
 });
 ```
 

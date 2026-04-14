@@ -7,7 +7,12 @@
  *
  * @module
  */
-import { OnOffElement, StringValueElement, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import {
+    OnOffElement,
+    StringValueElement,
+    XmlAttributeComponent,
+    XmlComponent,
+} from "@file/xml-components";
 
 import { Name, UiPriority } from "./components";
 
@@ -50,7 +55,7 @@ import { Name, UiPriority } from "./components";
  * @property default - Whether this is the default style for its type
  * @property customStyle - Whether this is a custom user-defined style
  */
-export type IStyleAttributes = {
+export interface IStyleAttributes {
     /** Type of style (paragraph, character, table, numbering) */
     readonly type?: string;
     /** Unique identifier for the style */
@@ -59,7 +64,7 @@ export type IStyleAttributes = {
     readonly default?: boolean;
     /** Whether this is a custom user-defined style */
     readonly customStyle?: string;
-};
+}
 
 /**
  * Options for configuring a style.
@@ -73,7 +78,7 @@ export type IStyleAttributes = {
  * @property unhideWhenUsed - Whether the style should unhide when used
  * @property quickFormat - Whether the style appears in the quick format gallery
  */
-export type IStyleOptions = {
+export interface IStyleOptions {
     /** Display name of the style */
     readonly name?: string;
     /**
@@ -96,7 +101,7 @@ export type IStyleOptions = {
     readonly unhideWhenUsed?: boolean;
     /** Whether the style appears in the quick format gallery */
     readonly quickFormat?: boolean;
-};
+}
 
 /**
  * Represents style attributes for XML serialization.
@@ -105,10 +110,10 @@ export type IStyleOptions = {
  */
 class StyleAttributes extends XmlAttributeComponent<IStyleAttributes> {
     protected readonly xmlKeys = {
-        type: "w:type",
-        styleId: "w:styleId",
-        default: "w:default",
         customStyle: "w:customStyle",
+        default: "w:default",
+        styleId: "w:styleId",
+        type: "w:type",
     };
 }
 

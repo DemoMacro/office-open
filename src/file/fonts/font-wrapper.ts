@@ -12,7 +12,8 @@ import { Relationships } from "@file/relationships";
 import type { XmlComponent } from "@file/xml-components";
 import { uniqueUuid } from "@util/convenience-functions";
 
-import { type FontOptions, createFontTable } from "./font-table";
+import { createFontTable } from "./font-table";
+import type { FontOptions } from "./font-table";
 
 /**
  * Font options extended with a unique font key.

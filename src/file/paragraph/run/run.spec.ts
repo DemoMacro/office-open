@@ -1,8 +1,7 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
 import { BorderStyle } from "@file/border";
 import { ShadingType } from "@file/shading";
+import { describe, expect, it } from "vite-plus/test";
 
 import { EmphasisMarkType } from "./emphasis-mark";
 import { HighlightColor, TextEffect } from "./properties";
@@ -82,13 +81,15 @@ describe("Run", () => {
         it("should set the style type and color if given", () => {
             const run = new Run({
                 underline: {
-                    type: UnderlineType.DOUBLE,
                     color: "990011",
+                    type: UnderlineType.DOUBLE,
                 },
             });
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
-                "w:r": [{ "w:rPr": [{ "w:u": { _attr: { "w:val": "double", "w:color": "990011" } } }] }],
+                "w:r": [
+                    { "w:rPr": [{ "w:u": { _attr: { "w:color": "990011", "w:val": "double" } } }] },
+                ],
             });
         });
     });
@@ -242,16 +243,26 @@ describe("Run", () => {
         it("it should add shadow to the properties", () => {
             const run = new Run({
                 shading: {
-                    type: ShadingType.PERCENT_10,
-                    fill: "00FFFF",
                     color: "FF0000",
+                    fill: "00FFFF",
+                    type: ShadingType.PERCENT_10,
                 },
             });
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
                 "w:r": [
                     {
-                        "w:rPr": [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
+                        "w:rPr": [
+                            {
+                                "w:shd": {
+                                    _attr: {
+                                        "w:color": "FF0000",
+                                        "w:fill": "00FFFF",
+                                        "w:val": "pct10",
+                                    },
+                                },
+                            },
+                        ],
                     },
                 ],
             });
@@ -361,7 +372,10 @@ describe("Run", () => {
             expect(tree).to.deep.equal({
                 "w:r": [
                     {
-                        "w:rPr": [{ "w:sz": { _attr: { "w:val": 24 } } }, { "w:szCs": { _attr: { "w:val": 24 } } }],
+                        "w:rPr": [
+                            { "w:sz": { _attr: { "w:val": 24 } } },
+                            { "w:szCs": { _attr: { "w:val": 24 } } },
+                        ],
                     },
                 ],
             });
@@ -468,10 +482,10 @@ describe("Run", () => {
                 bold: true,
                 italics: true,
                 revision: {
-                    id: 0,
                     author: "Firstname Lastname",
-                    date: "123",
                     bold: false,
+                    date: "123",
+                    id: 0,
                     italics: true,
                 },
             });
@@ -527,9 +541,9 @@ describe("Run", () => {
             const run = new Run({
                 border: {
                     color: "auto",
+                    size: 6,
                     space: 1,
                     style: BorderStyle.SINGLE,
-                    size: 6,
                 },
             });
             const tree = new Formatter().format(run);
@@ -619,9 +633,9 @@ describe("Run", () => {
             it("should correctly set the language", () => {
                 const run = new Run({
                     language: {
-                        value: "en-US",
-                        eastAsia: "zh-CN",
                         bidirectional: "ar-SA",
+                        eastAsia: "zh-CN",
+                        value: "en-US",
                     },
                 });
                 const tree = new Formatter().format(run);
@@ -632,9 +646,9 @@ describe("Run", () => {
                                 {
                                     "w:lang": {
                                         _attr: {
-                                            "w:val": "en-US",
-                                            "w:eastAsia": "zh-CN",
                                             "w:bidi": "ar-SA",
+                                            "w:eastAsia": "zh-CN",
+                                            "w:val": "en-US",
                                         },
                                     },
                                 },

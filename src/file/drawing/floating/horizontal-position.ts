@@ -8,10 +8,12 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 import { createAlign } from "./align";
-import { HorizontalPositionRelativeFrom, type IHorizontalPositionOptions } from "./floating-position";
+import { HorizontalPositionRelativeFrom } from "./floating-position";
+import type { IHorizontalPositionOptions } from "./floating-position";
 import { createPositionOffset } from "./position-offset";
 
 /**
@@ -51,14 +53,20 @@ import { createPositionOffset } from "./position-offset";
  * });
  * ```
  */
-export const createHorizontalPosition = ({ relative, align, offset }: IHorizontalPositionOptions): XmlComponent =>
+export const createHorizontalPosition = ({
+    relative,
+    align,
+    offset,
+}: IHorizontalPositionOptions): XmlComponent =>
     new BuilderElement<{
         /** Horizontal Position Relative Base */
         readonly relativeFrom: (typeof HorizontalPositionRelativeFrom)[keyof typeof HorizontalPositionRelativeFrom];
     }>({
-        name: "wp:positionH",
         attributes: {
-            relativeFrom: { key: "relativeFrom", value: relative ?? HorizontalPositionRelativeFrom.PAGE },
+            relativeFrom: {
+                key: "relativeFrom",
+                value: relative ?? HorizontalPositionRelativeFrom.PAGE,
+            },
         },
         children: [
             (() => {
@@ -67,8 +75,11 @@ export const createHorizontalPosition = ({ relative, align, offset }: IHorizonta
                 } else if (offset !== undefined) {
                     return createPositionOffset(offset);
                 } else {
-                    throw new Error("There is no configuration provided for floating position (Align or offset)");
+                    throw new Error(
+                        "There is no configuration provided for floating position (Align or offset)",
+                    );
                 }
             })(),
         ],
+        name: "wp:positionH",
     });

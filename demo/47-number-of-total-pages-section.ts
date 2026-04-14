@@ -1,11 +1,24 @@
 // Multiple sections with total number of pages in each section
 
 import * as fs from "fs";
-import { AlignmentType, Document, Footer, Header, Packer, PageBreak, PageNumber, NumberFormat, Paragraph, TextRun } from "docx";
+
+import {
+    AlignmentType,
+    Document,
+    Footer,
+    Header,
+    NumberFormat,
+    Packer,
+    PageBreak,
+    PageNumber,
+    Paragraph,
+    TextRun,
+} from "docx";
 
 const header = new Header({
     children: [
         new Paragraph({
+            alignment: AlignmentType.CENTER,
             children: [
                 new TextRun("Header on another page"),
                 new TextRun({
@@ -15,7 +28,6 @@ const header = new Header({
                     children: [" to ", PageNumber.TOTAL_PAGES_IN_SECTION],
                 }),
             ],
-            alignment: AlignmentType.CENTER,
         }),
     ],
 });
@@ -27,46 +39,56 @@ const footer = new Footer({
 const doc = new Document({
     sections: [
         {
-            properties: {
-                page: {
-                    pageNumbers: {
-                        start: 1,
-                        formatType: NumberFormat.DECIMAL,
-                    },
-                },
+            children: [
+                new Paragraph({
+                    children: [
+                        new TextRun("Section 1"),
+                        new PageBreak(),
+                        new TextRun("Section 1"),
+                        new PageBreak(),
+                    ],
+                }),
+            ],
+            footers: {
+                default: footer,
             },
             headers: {
                 default: header,
             },
-            footers: {
-                default: footer,
+            properties: {
+                page: {
+                    pageNumbers: {
+                        formatType: NumberFormat.DECIMAL,
+                        start: 1,
+                    },
+                },
             },
-            children: [
-                new Paragraph({
-                    children: [new TextRun("Section 1"), new PageBreak(), new TextRun("Section 1"), new PageBreak()],
-                }),
-            ],
         },
         {
-            properties: {
-                page: {
-                    pageNumbers: {
-                        start: 1,
-                        formatType: NumberFormat.DECIMAL,
-                    },
-                },
+            children: [
+                new Paragraph({
+                    children: [
+                        new TextRun("Section 2"),
+                        new PageBreak(),
+                        new TextRun("Section 2"),
+                        new PageBreak(),
+                    ],
+                }),
+            ],
+            footers: {
+                default: footer,
             },
             headers: {
                 default: header,
             },
-            footers: {
-                default: footer,
+            properties: {
+                page: {
+                    pageNumbers: {
+                        formatType: NumberFormat.DECIMAL,
+                        start: 1,
+                    },
+                },
             },
-            children: [
-                new Paragraph({
-                    children: [new TextRun("Section 2"), new PageBreak(), new TextRun("Section 2"), new PageBreak()],
-                }),
-            ],
         },
     ],
 });

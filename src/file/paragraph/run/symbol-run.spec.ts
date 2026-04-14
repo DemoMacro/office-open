@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { EmphasisMarkType } from "./emphasis-mark";
 import { SymbolRun } from "./symbol-run";
@@ -36,20 +35,20 @@ describe("SymbolRun", () => {
 
         it("should add other standard run properties", () => {
             run = new SymbolRun({
-                char: "F071",
-                symbolfont: "Arial",
-                italics: true,
                 bold: true,
+                char: "F071",
+                color: "00FF00",
+                emphasisMark: {
+                    type: EmphasisMarkType.DOT,
+                },
+                highlight: "yellow",
+                italics: true,
+                size: 40,
+                symbolfont: "Arial",
                 underline: {
                     color: "ff0000",
                     type: UnderlineType.DOUBLE,
                 },
-                emphasisMark: {
-                    type: EmphasisMarkType.DOT,
-                },
-                color: "00FF00",
-                size: 40,
-                highlight: "yellow",
             });
 
             const f = new Formatter().format(run);
@@ -66,7 +65,7 @@ describe("SymbolRun", () => {
                             { "w:szCs": { _attr: { "w:val": 40 } } },
                             { "w:highlight": { _attr: { "w:val": "yellow" } } },
                             { "w:highlightCs": { _attr: { "w:val": "yellow" } } },
-                            { "w:u": { _attr: { "w:val": "double", "w:color": "ff0000" } } },
+                            { "w:u": { _attr: { "w:color": "ff0000", "w:val": "double" } } },
                             { "w:em": { _attr: { "w:val": "dot" } } },
                         ],
                     },

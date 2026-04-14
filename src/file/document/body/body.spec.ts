@@ -1,6 +1,5 @@
-import { beforeEach, describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { beforeEach, describe, expect, it } from "vite-plus/test";
 
 import { Body } from "./body";
 import { sectionMarginDefaults } from "./section-properties";
@@ -17,8 +16,8 @@ describe("Body", () => {
             body.addSection({
                 page: {
                     size: {
-                        width: 10000,
-                        height: 10000,
+                        height: 10_000,
+                        width: 10_000,
                     },
                 },
             });
@@ -29,17 +28,21 @@ describe("Body", () => {
                 "w:body": [
                     {
                         "w:sectPr": [
-                            { "w:pgSz": { _attr: { "w:w": 10000, "w:h": 10000, "w:orient": "portrait" } } },
+                            {
+                                "w:pgSz": {
+                                    _attr: { "w:h": 10_000, "w:orient": "portrait", "w:w": 10_000 },
+                                },
+                            },
                             {
                                 "w:pgMar": {
                                     _attr: {
-                                        "w:top": sectionMarginDefaults.TOP,
-                                        "w:right": sectionMarginDefaults.RIGHT,
                                         "w:bottom": sectionMarginDefaults.BOTTOM,
-                                        "w:left": sectionMarginDefaults.LEFT,
-                                        "w:header": sectionMarginDefaults.HEADER,
                                         "w:footer": sectionMarginDefaults.FOOTER,
                                         "w:gutter": sectionMarginDefaults.GUTTER,
+                                        "w:header": sectionMarginDefaults.HEADER,
+                                        "w:left": sectionMarginDefaults.LEFT,
+                                        "w:right": sectionMarginDefaults.RIGHT,
+                                        "w:top": sectionMarginDefaults.TOP,
                                     },
                                 },
                             },

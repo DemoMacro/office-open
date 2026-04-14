@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { BuilderElement, StringEnumValueElement } from "./simple-elements";
 
@@ -19,13 +18,13 @@ describe("BuilderElement", () => {
 
         it("should create a simple BuilderElement with attributes", () => {
             const element = new BuilderElement<{ readonly testAttr: string }>({
-                name: "test",
                 attributes: {
                     testAttr: {
                         key: "w:testAttr",
                         value: "test",
                     },
                 },
+                name: "test",
             });
 
             const tree = new Formatter().format(element);

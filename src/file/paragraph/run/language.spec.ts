@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { createLanguageComponent } from "./language";
 
@@ -9,9 +8,9 @@ describe("Language", () => {
         it("should create a language component", () => {
             const tree = new Formatter().format(
                 createLanguageComponent({
-                    value: "en-US",
-                    eastAsia: "zh-CN",
                     bidirectional: "ar-SA",
+                    eastAsia: "zh-CN",
+                    value: "en-US",
                 }),
             );
 

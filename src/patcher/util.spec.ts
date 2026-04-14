@@ -1,6 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
-import { createTextElementContents, getFirstLevelElements, patchSpaceAttribute, toJson } from "./util";
+import {
+    createTextElementContents,
+    getFirstLevelElements,
+    patchSpaceAttribute,
+    toJson,
+} from "./util";
 
 describe("util", () => {
     describe("toJson", () => {
@@ -13,19 +18,19 @@ describe("util", () => {
     describe("createTextElementContents", () => {
         it("should return an array of elements", () => {
             const output = createTextElementContents("hello");
-            expect(output).to.deep.equal([{ type: "text", text: "hello" }]);
+            expect(output).to.deep.equal([{ text: "hello", type: "text" }]);
         });
     });
 
     describe("patchSpaceAttribute", () => {
         it("should return an element with the xml:space attribute", () => {
-            const output = patchSpaceAttribute({ type: "element", name: "xml" });
+            const output = patchSpaceAttribute({ name: "xml", type: "element" });
             expect(output).to.deep.equal({
-                type: "element",
-                name: "xml",
                 attributes: {
                     "xml:space": "preserve",
                 },
+                name: "xml",
+                type: "element",
             });
         });
     });
@@ -33,7 +38,7 @@ describe("util", () => {
     describe("getFirstLevelElements", () => {
         it("should return an empty array if no elements are found", () => {
             const elements = getFirstLevelElements(
-                { elements: [{ type: "element", name: "Relationships", elements: [] }] },
+                { elements: [{ elements: [], name: "Relationships", type: "element" }] },
                 "Relationships",
             );
             expect(elements).to.deep.equal([]);
@@ -41,10 +46,18 @@ describe("util", () => {
 
         it("should return an array if elements are found", () => {
             const elements = getFirstLevelElements(
-                { elements: [{ type: "element", name: "Relationships", elements: [{ type: "element", name: "Relationship" }] }] },
+                {
+                    elements: [
+                        {
+                            elements: [{ name: "Relationship", type: "element" }],
+                            name: "Relationships",
+                            type: "element",
+                        },
+                    ],
+                },
                 "Relationships",
             );
-            expect(elements).to.deep.equal([{ type: "element", name: "Relationship" }]);
+            expect(elements).to.deep.equal([{ name: "Relationship", type: "element" }]);
         });
     });
 });

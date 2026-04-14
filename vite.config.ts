@@ -1,80 +1,46 @@
-import { resolve } from "path";
-import dts from "vite-plugin-dts";
-import { nodePolyfills } from "vite-plugin-node-polyfills";
-import tsconfigPaths from "vite-tsconfig-paths";
-import { configDefaults, defineConfig } from "vitest/config";
-import { copyFileSync } from "node:fs";
+import { fileURLToPath, URL } from "node:url";
+
+import { configDefaults, defineConfig } from "vite-plus";
 
 export default defineConfig({
-    plugins: [
-        tsconfigPaths(),
-        dts({
-            rollupTypes: true,
-            afterBuild: () => {
-                // https://github.com/dolanmiu/docx/pull/2883
-                // To pass publint - `npx publint@latest`
-                copyFileSync("dist/index.d.ts", "dist/index.d.cts");
-            },
-        }),
-        nodePolyfills({
-            exclude: [],
-            globals: {
-                Buffer: false,
-            },
-            protocolImports: true,
-        }),
-    ],
     resolve: {
         alias: {
-            "@util/": `${resolve(__dirname, "src/util")}/`,
-            "@export/": `${resolve(__dirname, "src/export")}/`,
-            "@file/": `${resolve(__dirname, "src/file")}/`,
-            "@shared": `${resolve(__dirname, "src/shared")}`,
+            "@export": fileURLToPath(new URL("./src/export", import.meta.url)),
+            "@file": fileURLToPath(new URL("./src/file", import.meta.url)),
+            "@shared": fileURLToPath(new URL("./src/shared/index.ts", import.meta.url)),
+            "@util": fileURLToPath(new URL("./src/util", import.meta.url)),
+            tests: fileURLToPath(new URL("./src/tests", import.meta.url)),
         },
     },
-    build: {
-        minify: false,
+    pack: {
+        entry: ["src/index.ts"],
+        format: ["esm", "cjs", "iife", "umd"],
+        globalName: "docx",
         target: "es2015",
-        lib: {
-            entry: [resolve(__dirname, "src/index.ts")],
-            name: "docx",
-            fileName: (d) => {
-                if (d === "umd") {
-                    return "index.umd.cjs";
-                }
-
-                if (d === "cjs") {
-                    return "index.cjs";
-                }
-
-                if (d === "es") {
-                    return "index.mjs";
-                }
-
-                if (d === "iife") {
-                    return "index.iife.js";
-                }
-
-                return "unknown";
-            },
-            formats: ["iife", "es", "cjs", "umd"],
+    },
+    fmt: {
+        sortImports: {
+            type: "natural",
         },
-        outDir: resolve(__dirname, "dist"),
-        commonjsOptions: {
-            include: [/node_modules/],
+        sortPackageJson: true,
+        sortTailwindcss: {},
+    },
+    lint: {
+        ignorePatterns: ["**/demo/**", "**/scripts/**", "**/dist/**", "**/coverage/**"],
+        options: {
+            typeAware: true,
+            typeCheck: true,
         },
+        rules: {
+            "no-redundant-type-constituents": "off",
+            "no-unused-expressions": "off",
+        },
+    },
+    staged: {
+        "*": "vp check --fix",
     },
     test: {
-        environment: "happy-dom",
         coverage: {
-            provider: "v8",
-            reporter: ["text", "json", "html"],
-            thresholds: {
-                statements: 100,
-                branches: 99.68,
-                functions: 100,
-                lines: 100,
-            },
             exclude: [
                 ...configDefaults.exclude,
                 "**/dist/**",
@@ -86,8 +52,23 @@ export default defineConfig({
                 "**/src/util/output-type.ts",
                 "**/*.spec.ts",
             ],
+            provider: "v8",
+            reporter: ["text", "json", "html"],
+            thresholds: {
+                branches: 99.68,
+                functions: 100,
+                lines: 100,
+                statements: 100,
+            },
         },
+        environment: "happy-dom",
+        exclude: [
+            ...configDefaults.exclude,
+            "**/build/**",
+            "**/demo/**",
+            "**/docs/**",
+            "**/scripts/**",
+        ],
         include: ["**/src/**/*.spec.ts", "**/packages/**/*.spec.ts"],
-        exclude: [...configDefaults.exclude, "**/build/**", "**/demo/**", "**/docs/**", "**/scripts/**"],
     },
 });

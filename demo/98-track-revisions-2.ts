@@ -1,22 +1,23 @@
 // Track Revisions for paragraph properties, section properties, tables
-// docs/usage/change-tracking.md
+// Docs/usage/change-tracking.md
 
 import * as fs from "fs";
+
 import {
+    AlignmentType,
     BorderStyle,
+    DeletedTextRun,
     Document,
     HeightRule,
+    InsertedTextRun,
     Packer,
     Paragraph,
     Table,
     TableCell,
-    AlignmentType,
     TableRow,
     TextRun,
     VerticalAlignTable,
     WidthType,
-    DeletedTextRun,
-    InsertedTextRun,
 } from "docx";
 
 const REVISION_DATE = "2020-10-06T09:00:00Z";
@@ -28,29 +29,33 @@ const doc = new Document({
     },
     sections: [
         {
-            properties: {},
             children: [
                 // Paragraph properties revision
                 new Paragraph({
                     alignment: AlignmentType.CENTER,
-                    heading: "Heading1",
-                    revision: {
-                        id: 10,
-                        author: REVISION_AUTHOR,
-                        date: REVISION_DATE,
-                        alignment: AlignmentType.LEFT,
-                    },
                     children: [
                         new TextRun({
                             text: "Paragraph properties revision",
                             bold: true,
                         }),
                     ],
+                    heading: "Heading1",
+                    revision: {
+                        alignment: AlignmentType.LEFT,
+                        author: REVISION_AUTHOR,
+                        date: REVISION_DATE,
+                        id: 10,
+                    },
                 }),
                 new Paragraph({ text: "" }),
 
                 new Paragraph({
-                    children: [new TextRun({ text: "Table 1: Inserted and Deleted Table Row", bold: true })],
+                    children: [
+                        new TextRun({
+                            bold: true,
+                            text: "Table 1: Inserted and Deleted Table Row",
+                        }),
+                    ],
                 }),
                 new Table({
                     columnWidths: [2000, 2000],
@@ -70,9 +75,9 @@ const doc = new Document({
                                             children: [new TextRun("Inserted row cell")],
                                             run: {
                                                 insertion: {
-                                                    id: 0,
                                                     author: REVISION_AUTHOR,
                                                     date: REVISION_DATE,
+                                                    id: 0,
                                                 },
                                             },
                                         }),
@@ -84,9 +89,9 @@ const doc = new Document({
                                             children: [new TextRun("Inserted row cell")],
                                             run: {
                                                 insertion: {
-                                                    id: 0,
                                                     author: REVISION_AUTHOR,
                                                     date: REVISION_DATE,
+                                                    id: 0,
                                                 },
                                             },
                                         }),
@@ -94,9 +99,9 @@ const doc = new Document({
                                 }),
                             ],
                             insertion: {
-                                id: 0,
                                 author: REVISION_AUTHOR,
                                 date: REVISION_DATE,
+                                id: 0,
                             },
                         }),
                         new TableRow({
@@ -107,9 +112,9 @@ const doc = new Document({
                                             children: [new TextRun("Deleted row cell")],
                                             run: {
                                                 deletion: {
-                                                    id: 1,
                                                     author: REVISION_AUTHOR,
                                                     date: REVISION_DATE,
+                                                    id: 1,
                                                 },
                                             },
                                         }),
@@ -121,9 +126,9 @@ const doc = new Document({
                                             children: [new TextRun("Deleted row cell")],
                                             run: {
                                                 deletion: {
-                                                    id: 1,
                                                     author: REVISION_AUTHOR,
                                                     date: REVISION_DATE,
+                                                    id: 1,
                                                 },
                                             },
                                         }),
@@ -131,9 +136,9 @@ const doc = new Document({
                                 }),
                             ],
                             deletion: {
-                                id: 1,
                                 author: REVISION_AUTHOR,
                                 date: REVISION_DATE,
+                                id: 1,
                             },
                         }),
                     ],
@@ -141,7 +146,9 @@ const doc = new Document({
                 new Paragraph({ text: "" }),
 
                 new Paragraph({
-                    children: [new TextRun({ text: "Table 2: Inserted  Table Column", bold: true })],
+                    children: [
+                        new TextRun({ bold: true, text: "Table 2: Inserted  Table Column" }),
+                    ],
                 }),
                 new Table({
                     columnWidths: [2000, 2000],
@@ -154,25 +161,25 @@ const doc = new Document({
                                         new Paragraph({
                                             children: [
                                                 new InsertedTextRun({
-                                                    text: "Inserted cell",
-                                                    id: 2,
                                                     author: REVISION_AUTHOR,
                                                     date: REVISION_DATE,
+                                                    id: 2,
+                                                    text: "Inserted cell",
                                                 }),
                                             ],
                                             run: {
                                                 insertion: {
-                                                    id: 2,
                                                     author: REVISION_AUTHOR,
                                                     date: REVISION_DATE,
+                                                    id: 2,
                                                 },
                                             },
                                         }),
                                     ],
                                     insertion: {
-                                        id: 2,
                                         author: REVISION_AUTHOR,
                                         date: REVISION_DATE,
+                                        id: 2,
                                     },
                                 }),
                                 new TableCell({ children: [new Paragraph("Cell")] }),
@@ -185,25 +192,25 @@ const doc = new Document({
                                         new Paragraph({
                                             children: [
                                                 new InsertedTextRun({
-                                                    text: "Inserted cell",
-                                                    id: 2,
                                                     author: REVISION_AUTHOR,
                                                     date: REVISION_DATE,
+                                                    id: 2,
+                                                    text: "Inserted cell",
                                                 }),
                                             ],
                                             run: {
                                                 insertion: {
-                                                    id: 2,
                                                     author: REVISION_AUTHOR,
                                                     date: REVISION_DATE,
+                                                    id: 2,
                                                 },
                                             },
                                         }),
                                     ],
                                     insertion: {
-                                        id: 2,
                                         author: REVISION_AUTHOR,
                                         date: REVISION_DATE,
+                                        id: 2,
                                     },
                                 }),
                                 new TableCell({ children: [new Paragraph("Cell")] }),
@@ -214,7 +221,7 @@ const doc = new Document({
                 new Paragraph({ text: "" }),
 
                 new Paragraph({
-                    children: [new TextRun({ text: "Table 3: Deleted Table Column", bold: true })],
+                    children: [new TextRun({ bold: true, text: "Table 3: Deleted Table Column" })],
                 }),
                 new Table({
                     columnWidths: [2000, 2000],
@@ -228,25 +235,25 @@ const doc = new Document({
                                         new Paragraph({
                                             children: [
                                                 new DeletedTextRun({
-                                                    text: "Deleted cell",
-                                                    id: 3,
                                                     author: REVISION_AUTHOR,
                                                     date: REVISION_DATE,
+                                                    id: 3,
+                                                    text: "Deleted cell",
                                                 }),
                                             ],
                                             run: {
                                                 deletion: {
-                                                    id: 3,
                                                     author: REVISION_AUTHOR,
                                                     date: REVISION_DATE,
+                                                    id: 3,
                                                 },
                                             },
                                         }),
                                     ],
                                     deletion: {
-                                        id: 3,
                                         author: REVISION_AUTHOR,
                                         date: REVISION_DATE,
+                                        id: 3,
                                     },
                                 }),
                             ],
@@ -259,25 +266,25 @@ const doc = new Document({
                                         new Paragraph({
                                             children: [
                                                 new DeletedTextRun({
-                                                    text: "Deleted cell",
-                                                    id: 3,
                                                     author: REVISION_AUTHOR,
                                                     date: REVISION_DATE,
+                                                    id: 3,
+                                                    text: "Deleted cell",
                                                 }),
                                             ],
                                             run: {
                                                 deletion: {
-                                                    id: 3,
                                                     author: REVISION_AUTHOR,
                                                     date: REVISION_DATE,
+                                                    id: 3,
                                                 },
                                             },
                                         }),
                                     ],
                                     deletion: {
-                                        id: 3,
                                         author: REVISION_AUTHOR,
                                         date: REVISION_DATE,
+                                        id: 3,
                                     },
                                 }),
                             ],
@@ -287,13 +294,14 @@ const doc = new Document({
                 new Paragraph({ text: "" }),
 
                 new Paragraph({
-                    children: [new TextRun({ text: "Table 3: cell properties revision", bold: true })],
+                    children: [
+                        new TextRun({ bold: true, text: "Table 3: cell properties revision" }),
+                    ],
                 }),
                 new Table({
                     columnWidths: [2000, 2000],
                     rows: [
                         new TableRow({
-                            height: { value: 600, rule: HeightRule.EXACT },
                             children: [
                                 new TableCell({
                                     width: { size: 4000, type: WidthType.DXA },
@@ -326,28 +334,29 @@ const doc = new Document({
                                     children: [new Paragraph("Cell 2")],
                                 }),
                             ],
+                            height: { rule: HeightRule.EXACT, value: 600 },
                         }),
                         new TableRow({
                             children: [
                                 new TableCell({
-                                    width: { size: 4000, type: WidthType.DXA },
+                                    children: [new Paragraph("Cell 3")],
                                     revision: {
-                                        width: { size: 2000, type: WidthType.DXA },
-                                        id: 4,
                                         author: REVISION_AUTHOR,
                                         date: REVISION_DATE,
+                                        id: 4,
+                                        width: { size: 2000, type: WidthType.DXA },
                                     },
-                                    children: [new Paragraph("Cell 3")],
+                                    width: { size: 4000, type: WidthType.DXA },
                                 }),
                                 new TableCell({
-                                    width: { size: 2000, type: WidthType.DXA },
+                                    children: [new Paragraph("Cell 4")],
                                     revision: {
-                                        width: { size: 2000, type: WidthType.DXA },
-                                        id: 4,
                                         author: REVISION_AUTHOR,
                                         date: REVISION_DATE,
+                                        id: 4,
+                                        width: { size: 2000, type: WidthType.DXA },
                                     },
-                                    children: [new Paragraph("Cell 4")],
+                                    width: { size: 2000, type: WidthType.DXA },
                                 }),
                             ],
                         }),
@@ -356,7 +365,9 @@ const doc = new Document({
                 new Paragraph({ text: "" }),
 
                 new Paragraph({
-                    children: [new TextRun({ text: "Table 4: row properties revision", bold: true })],
+                    children: [
+                        new TextRun({ bold: true, text: "Table 4: row properties revision" }),
+                    ],
                 }),
                 new Table({
                     columnWidths: [2000, 2000],
@@ -364,19 +375,19 @@ const doc = new Document({
                     rows: [
                         new TableRow({
                             cantSplit: true,
-                            tableHeader: true,
-                            height: { value: 600, rule: HeightRule.EXACT },
-                            revision: {
-                                id: 5,
-                                author: REVISION_AUTHOR,
-                                date: REVISION_DATE,
-                                tableHeader: false,
-                                cantSplit: false,
-                            },
                             children: [
                                 new TableCell({ children: [new Paragraph("Cell 1")] }),
                                 new TableCell({ children: [new Paragraph("Cell 2")] }),
                             ],
+                            height: { rule: HeightRule.EXACT, value: 600 },
+                            revision: {
+                                author: REVISION_AUTHOR,
+                                cantSplit: false,
+                                date: REVISION_DATE,
+                                id: 5,
+                                tableHeader: false,
+                            },
+                            tableHeader: true,
                         }),
                         new TableRow({
                             children: [
@@ -389,56 +400,56 @@ const doc = new Document({
                 new Paragraph({ text: "" }),
 
                 new Table({
-                    columnWidths: [2000, 2000],
                     borders: {
-                        top: {
-                            style: BorderStyle.DASHED,
-                            size: 5,
-                            color: "FF0000",
-                        },
                         bottom: {
-                            style: BorderStyle.DASHED,
-                            size: 5,
                             color: "FF0000",
+                            size: 5,
+                            style: BorderStyle.DASHED,
                         },
                         left: {
-                            style: BorderStyle.DASHED,
-                            size: 5,
                             color: "FF0000",
+                            size: 5,
+                            style: BorderStyle.DASHED,
                         },
                         right: {
-                            style: BorderStyle.DASHED,
-                            size: 5,
                             color: "FF0000",
+                            size: 5,
+                            style: BorderStyle.DASHED,
+                        },
+                        top: {
+                            color: "FF0000",
+                            size: 5,
+                            style: BorderStyle.DASHED,
                         },
                     },
+                    columnWidths: [2000, 2000],
                     layout: "fixed",
                     revision: {
-                        id: 6,
                         author: REVISION_AUTHOR,
-                        date: REVISION_DATE,
                         borders: {
-                            top: {
-                                style: BorderStyle.DOTTED,
-                                size: 3,
-                                color: "00FF00",
-                            },
                             bottom: {
-                                style: BorderStyle.DOTTED,
-                                size: 3,
                                 color: "00FF00",
+                                size: 3,
+                                style: BorderStyle.DOTTED,
                             },
                             left: {
-                                style: BorderStyle.DOTTED,
-                                size: 3,
                                 color: "00FF00",
+                                size: 3,
+                                style: BorderStyle.DOTTED,
                             },
                             right: {
-                                style: BorderStyle.DOTTED,
-                                size: 3,
                                 color: "00FF00",
+                                size: 3,
+                                style: BorderStyle.DOTTED,
+                            },
+                            top: {
+                                color: "00FF00",
+                                size: 3,
+                                style: BorderStyle.DOTTED,
                             },
                         },
+                        date: REVISION_DATE,
+                        id: 6,
                     },
                     rows: [
                         new TableRow({
@@ -457,37 +468,40 @@ const doc = new Document({
                 }),
                 new Paragraph({ text: "" }),
             ],
+            properties: {},
         },
         // Section properties revision
         {
+            children: [
+                new Paragraph({ text: "Paragraph in different section with revision properties" }),
+            ],
             properties: {
                 page: {
-                    size: {
-                        height: 11909,
-                        width: 16834,
-                    },
                     margin: {
                         bottom: 2440,
-                        top: 2440,
                         left: 2440,
                         right: 2440,
+                        top: 2440,
+                    },
+                    size: {
+                        height: 11_909,
+                        width: 16_834,
                     },
                 },
                 revision: {
-                    id: 20,
                     author: REVISION_AUTHOR,
                     date: REVISION_DATE,
+                    id: 20,
                     page: {
                         margin: {
                             bottom: 1440,
-                            top: 1440,
                             left: 1440,
                             right: 1440,
+                            top: 1440,
                         },
                     },
                 },
             },
-            children: [new Paragraph({ text: "Paragraph in different section with revision properties" })],
         },
     ],
 });

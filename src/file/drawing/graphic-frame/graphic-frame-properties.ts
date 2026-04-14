@@ -1,4 +1,5 @@
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 import { GraphicFrameLocks } from "./graphic-frame-locks/graphic-frame-locks";
 
@@ -23,6 +24,6 @@ import { GraphicFrameLocks } from "./graphic-frame-locks/graphic-frame-locks";
  */
 export const createGraphicFrameProperties = (): XmlComponent =>
     new BuilderElement({
-        name: "wp:cNvGraphicFramePr",
         children: [new GraphicFrameLocks()],
+        name: "wp:cNvGraphicFramePr",
     });

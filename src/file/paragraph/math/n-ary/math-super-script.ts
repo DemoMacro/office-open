@@ -7,17 +7,18 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 import type { MathComponent } from "../math-component";
 
 /**
  * Options for creating a superscript element.
  */
-type MathSuperScriptElementOptions = {
+interface MathSuperScriptElementOptions {
     /** The content of the superscript */
     readonly children: readonly MathComponent[];
-};
+}
 
 /**
  * Creates a superscript element for math structures.
@@ -38,8 +39,10 @@ type MathSuperScriptElementOptions = {
  * </xsd:complexType>
  * ```
  */
-export const createMathSuperScriptElement = ({ children }: MathSuperScriptElementOptions): XmlComponent =>
+export const createMathSuperScriptElement = ({
+    children,
+}: MathSuperScriptElementOptions): XmlComponent =>
     new BuilderElement({
-        name: "m:sup",
         children,
+        name: "m:sup",
     });

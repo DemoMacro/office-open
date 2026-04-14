@@ -5,17 +5,18 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Options for creating a picture element.
  *
  * @property shape - The VML shape to be contained within the picture element
  */
-export type IPictElement = {
+export interface IPictElement {
     /** The VML shape to be contained within the picture element */
     readonly shape: XmlComponent;
-};
+}
 
 /**
  * Creates a picture element containing a VML shape.
@@ -54,6 +55,6 @@ export type IPictElement = {
  */
 export const createPictElement = ({ shape }: IPictElement): XmlComponent =>
     new BuilderElement<{ readonly style?: string }>({
-        name: "w:pict",
         children: [shape],
+        name: "w:pict",
     });

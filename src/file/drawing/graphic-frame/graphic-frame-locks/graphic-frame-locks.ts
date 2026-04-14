@@ -37,8 +37,8 @@ export class GraphicFrameLocks extends XmlComponent {
 
         this.root.push(
             new GraphicFrameLockAttributes({
-                xmlns: "http://schemas.openxmlformats.org/drawingml/2006/main",
                 noChangeAspect: 1,
+                xmlns: "http://schemas.openxmlformats.org/drawingml/2006/main",
             }),
         );
     }

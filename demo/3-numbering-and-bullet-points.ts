@@ -1,293 +1,319 @@
 // Numbering and bullet points example
 
 import * as fs from "fs";
-import { AlignmentType, convertInchesToTwip, Document, Footer, Header, HeadingLevel, LevelFormat, Packer, Paragraph } from "docx";
+
+import {
+    AlignmentType,
+    Document,
+    Footer,
+    Header,
+    HeadingLevel,
+    LevelFormat,
+    Packer,
+    Paragraph,
+    convertInchesToTwip,
+} from "docx";
 
 const doc = new Document({
     numbering: {
         config: [
             {
-                reference: "my-crazy-numbering",
                 levels: [
                     {
-                        level: 0,
+                        alignment: AlignmentType.START,
                         format: LevelFormat.UPPER_ROMAN,
+                        level: 0,
+                        style: {
+                            paragraph: {
+                                indent: {
+                                    hanging: convertInchesToTwip(0.18),
+                                    left: convertInchesToTwip(0.5),
+                                },
+                            },
+                        },
                         text: "%1",
-                        alignment: AlignmentType.START,
-                        style: {
-                            paragraph: {
-                                indent: { left: convertInchesToTwip(0.5), hanging: convertInchesToTwip(0.18) },
-                            },
-                        },
                     },
                     {
-                        level: 1,
+                        alignment: AlignmentType.START,
                         format: LevelFormat.DECIMAL,
+                        level: 1,
+                        style: {
+                            paragraph: {
+                                indent: {
+                                    hanging: convertInchesToTwip(0.68),
+                                    left: convertInchesToTwip(1),
+                                },
+                            },
+                        },
                         text: "%2.",
-                        alignment: AlignmentType.START,
-                        style: {
-                            paragraph: {
-                                indent: { left: convertInchesToTwip(1), hanging: convertInchesToTwip(0.68) },
-                            },
-                        },
                     },
                     {
-                        level: 2,
+                        alignment: AlignmentType.START,
                         format: LevelFormat.LOWER_LETTER,
-                        text: "%3)",
-                        alignment: AlignmentType.START,
+                        level: 2,
                         style: {
                             paragraph: {
-                                indent: { left: convertInchesToTwip(1.5), hanging: convertInchesToTwip(1.18) },
+                                indent: {
+                                    hanging: convertInchesToTwip(1.18),
+                                    left: convertInchesToTwip(1.5),
+                                },
                             },
                         },
+                        text: "%3)",
                     },
                     {
-                        level: 3,
-                        format: LevelFormat.UPPER_LETTER,
-                        text: "%4)",
                         alignment: AlignmentType.START,
+                        format: LevelFormat.UPPER_LETTER,
+                        level: 3,
                         style: {
                             paragraph: {
-                                indent: { left: 2880, hanging: 2420 },
+                                indent: { hanging: 2420, left: 2880 },
                             },
                         },
+                        text: "%4)",
                     },
                 ],
+                reference: "my-crazy-numbering",
             },
             {
-                reference: "my-unique-bullet-points",
                 levels: [
                     {
+                        alignment: AlignmentType.LEFT,
+                        format: LevelFormat.BULLET,
                         level: 0,
-                        format: LevelFormat.BULLET,
+                        style: {
+                            paragraph: {
+                                indent: {
+                                    hanging: convertInchesToTwip(0.25),
+                                    left: convertInchesToTwip(0.5),
+                                },
+                            },
+                        },
                         text: "\u1F60",
-                        alignment: AlignmentType.LEFT,
-                        style: {
-                            paragraph: {
-                                indent: { left: convertInchesToTwip(0.5), hanging: convertInchesToTwip(0.25) },
-                            },
-                        },
                     },
                     {
+                        alignment: AlignmentType.LEFT,
+                        format: LevelFormat.BULLET,
                         level: 1,
-                        format: LevelFormat.BULLET,
+                        style: {
+                            paragraph: {
+                                indent: {
+                                    hanging: convertInchesToTwip(0.25),
+                                    left: convertInchesToTwip(1),
+                                },
+                            },
+                        },
                         text: "\u00A5",
-                        alignment: AlignmentType.LEFT,
-                        style: {
-                            paragraph: {
-                                indent: { left: convertInchesToTwip(1), hanging: convertInchesToTwip(0.25) },
-                            },
-                        },
                     },
                     {
+                        alignment: AlignmentType.LEFT,
+                        format: LevelFormat.BULLET,
                         level: 2,
-                        format: LevelFormat.BULLET,
+                        style: {
+                            paragraph: {
+                                indent: { hanging: convertInchesToTwip(0.25), left: 2160 },
+                            },
+                        },
                         text: "\u273F",
-                        alignment: AlignmentType.LEFT,
-                        style: {
-                            paragraph: {
-                                indent: { left: 2160, hanging: convertInchesToTwip(0.25) },
-                            },
-                        },
                     },
                     {
+                        alignment: AlignmentType.LEFT,
+                        format: LevelFormat.BULLET,
                         level: 3,
-                        format: LevelFormat.BULLET,
-                        text: "\u267A",
-                        alignment: AlignmentType.LEFT,
                         style: {
                             paragraph: {
-                                indent: { left: 2880, hanging: convertInchesToTwip(0.25) },
+                                indent: { hanging: convertInchesToTwip(0.25), left: 2880 },
                             },
                         },
+                        text: "\u267A",
                     },
                     {
-                        level: 4,
-                        format: LevelFormat.BULLET,
-                        text: "\u2603",
                         alignment: AlignmentType.LEFT,
+                        format: LevelFormat.BULLET,
+                        level: 4,
                         style: {
                             paragraph: {
-                                indent: { left: 3600, hanging: convertInchesToTwip(0.25) },
+                                indent: { hanging: convertInchesToTwip(0.25), left: 3600 },
                             },
                         },
+                        text: "\u2603",
                     },
                 ],
+                reference: "my-unique-bullet-points",
             },
         ],
     },
     sections: [
         {
-            headers: {
-                default: new Header({
-                    children: [
-                        new Paragraph({
-                            text: "Hey you",
-                            numbering: {
-                                reference: "my-crazy-numbering",
-                                level: 0,
-                            },
-                        }),
-                        new Paragraph({
-                            text: "What's up fam",
-                            numbering: {
-                                reference: "my-crazy-numbering",
-                                level: 1,
-                            },
-                        }),
-                    ],
+            children: [
+                new Paragraph({
+                    numbering: {
+                        level: 0,
+                        reference: "my-crazy-numbering",
+                    },
+                    text: "Hey you",
                 }),
-            },
+                new Paragraph({
+                    numbering: {
+                        level: 1,
+                        reference: "my-crazy-numbering",
+                    },
+                    text: "What's up fam",
+                }),
+                new Paragraph({
+                    numbering: {
+                        level: 1,
+                        reference: "my-crazy-numbering",
+                    },
+                    text: "Hello World 2",
+                }),
+                new Paragraph({
+                    numbering: {
+                        level: 2,
+                        reference: "my-crazy-numbering",
+                    },
+                    text: "Yeah boi",
+                }),
+                new Paragraph({
+                    bullet: {
+                        level: 0,
+                    },
+                    text: "Hey you",
+                }),
+                new Paragraph({
+                    bullet: {
+                        level: 1,
+                    },
+                    text: "What's up fam",
+                }),
+                new Paragraph({
+                    bullet: {
+                        level: 2,
+                    },
+                    text: "Hello World 2",
+                }),
+                new Paragraph({
+                    bullet: {
+                        level: 3,
+                    },
+                    text: "Yeah boi",
+                }),
+                new Paragraph({
+                    numbering: {
+                        level: 3,
+                        reference: "my-crazy-numbering",
+                    },
+                    text: "101 MSXFM",
+                }),
+                new Paragraph({
+                    numbering: {
+                        level: 1,
+                        reference: "my-crazy-numbering",
+                    },
+                    text: "back to level 1",
+                }),
+                new Paragraph({
+                    numbering: {
+                        level: 0,
+                        reference: "my-crazy-numbering",
+                    },
+                    text: "back to level 0",
+                }),
+
+                new Paragraph({
+                    heading: HeadingLevel.HEADING_1,
+                    text: "Custom Bullet points",
+                }),
+                new Paragraph({
+                    numbering: {
+                        level: 0,
+                        reference: "my-unique-bullet-points",
+                    },
+                    text: "What's up fam",
+                }),
+                new Paragraph({
+                    numbering: {
+                        level: 0,
+                        reference: "my-unique-bullet-points",
+                    },
+                    text: "Hey you",
+                }),
+                new Paragraph({
+                    numbering: {
+                        level: 1,
+                        reference: "my-unique-bullet-points",
+                    },
+                    text: "What's up fam",
+                }),
+                new Paragraph({
+                    numbering: {
+                        level: 2,
+                        reference: "my-unique-bullet-points",
+                    },
+                    text: "Hello World 2",
+                }),
+                new Paragraph({
+                    numbering: {
+                        level: 3,
+                        reference: "my-unique-bullet-points",
+                    },
+                    text: "Yeah boi",
+                }),
+                new Paragraph({
+                    numbering: {
+                        level: 4,
+                        reference: "my-unique-bullet-points",
+                    },
+                    text: "my Awesome numbering",
+                }),
+                new Paragraph({
+                    numbering: {
+                        level: 1,
+                        reference: "my-unique-bullet-points",
+                    },
+                    text: "Back to level 1",
+                }),
+            ],
             footers: {
                 default: new Footer({
                     children: [
                         new Paragraph({
-                            text: "Hey you",
                             numbering: {
-                                reference: "my-crazy-numbering",
                                 level: 0,
+                                reference: "my-crazy-numbering",
                             },
+                            text: "Hey you",
                         }),
                         new Paragraph({
-                            text: "What's up fam",
                             numbering: {
-                                reference: "my-crazy-numbering",
                                 level: 1,
+                                reference: "my-crazy-numbering",
                             },
+                            text: "What's up fam",
                         }),
                     ],
                 }),
             },
-            children: [
-                new Paragraph({
-                    text: "Hey you",
-                    numbering: {
-                        reference: "my-crazy-numbering",
-                        level: 0,
-                    },
+            headers: {
+                default: new Header({
+                    children: [
+                        new Paragraph({
+                            numbering: {
+                                level: 0,
+                                reference: "my-crazy-numbering",
+                            },
+                            text: "Hey you",
+                        }),
+                        new Paragraph({
+                            numbering: {
+                                level: 1,
+                                reference: "my-crazy-numbering",
+                            },
+                            text: "What's up fam",
+                        }),
+                    ],
                 }),
-                new Paragraph({
-                    text: "What's up fam",
-                    numbering: {
-                        reference: "my-crazy-numbering",
-                        level: 1,
-                    },
-                }),
-                new Paragraph({
-                    text: "Hello World 2",
-                    numbering: {
-                        reference: "my-crazy-numbering",
-                        level: 1,
-                    },
-                }),
-                new Paragraph({
-                    text: "Yeah boi",
-                    numbering: {
-                        reference: "my-crazy-numbering",
-                        level: 2,
-                    },
-                }),
-                new Paragraph({
-                    text: "Hey you",
-                    bullet: {
-                        level: 0,
-                    },
-                }),
-                new Paragraph({
-                    text: "What's up fam",
-                    bullet: {
-                        level: 1,
-                    },
-                }),
-                new Paragraph({
-                    text: "Hello World 2",
-                    bullet: {
-                        level: 2,
-                    },
-                }),
-                new Paragraph({
-                    text: "Yeah boi",
-                    bullet: {
-                        level: 3,
-                    },
-                }),
-                new Paragraph({
-                    text: "101 MSXFM",
-                    numbering: {
-                        reference: "my-crazy-numbering",
-                        level: 3,
-                    },
-                }),
-                new Paragraph({
-                    text: "back to level 1",
-                    numbering: {
-                        reference: "my-crazy-numbering",
-                        level: 1,
-                    },
-                }),
-                new Paragraph({
-                    text: "back to level 0",
-                    numbering: {
-                        reference: "my-crazy-numbering",
-                        level: 0,
-                    },
-                }),
-
-                new Paragraph({
-                    text: "Custom Bullet points",
-                    heading: HeadingLevel.HEADING_1,
-                }),
-                new Paragraph({
-                    text: "What's up fam",
-                    numbering: {
-                        reference: "my-unique-bullet-points",
-                        level: 0,
-                    },
-                }),
-                new Paragraph({
-                    text: "Hey you",
-                    numbering: {
-                        reference: "my-unique-bullet-points",
-                        level: 0,
-                    },
-                }),
-                new Paragraph({
-                    text: "What's up fam",
-                    numbering: {
-                        reference: "my-unique-bullet-points",
-                        level: 1,
-                    },
-                }),
-                new Paragraph({
-                    text: "Hello World 2",
-                    numbering: {
-                        reference: "my-unique-bullet-points",
-                        level: 2,
-                    },
-                }),
-                new Paragraph({
-                    text: "Yeah boi",
-                    numbering: {
-                        reference: "my-unique-bullet-points",
-                        level: 3,
-                    },
-                }),
-                new Paragraph({
-                    text: "my Awesome numbering",
-                    numbering: {
-                        reference: "my-unique-bullet-points",
-                        level: 4,
-                    },
-                }),
-                new Paragraph({
-                    text: "Back to level 1",
-                    numbering: {
-                        reference: "my-unique-bullet-points",
-                        level: 1,
-                    },
-                }),
-            ],
+            },
         },
     ],
 });

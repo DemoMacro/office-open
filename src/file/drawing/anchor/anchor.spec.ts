@@ -1,7 +1,6 @@
-import { assert, describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
 import { Utility } from "tests/utility";
+import { assert, describe, expect, it } from "vite-plus/test";
 
 import type { IDrawingOptions } from "../drawing";
 import { TextWrappingType } from "../text-wrap";
@@ -9,32 +8,32 @@ import { Anchor } from "./anchor";
 
 const createAnchor = (drawingOptions: IDrawingOptions): Anchor =>
     new Anchor({
+        drawingOptions,
         mediaData: {
-            type: "png",
-            fileName: "test.png",
             data: Buffer.from(""),
+            fileName: "test.png",
             transformation: {
-                pixels: {
-                    x: 0,
-                    y: 0,
-                },
                 emus: {
                     x: 0,
                     y: 0,
                 },
+                pixels: {
+                    x: 0,
+                    y: 0,
+                },
             },
+            type: "png",
         },
         transform: {
-            pixels: {
-                x: 100,
-                y: 100,
-            },
             emus: {
                 x: 100 * 9525,
                 y: 100 * 9525,
             },
+            pixels: {
+                x: 100,
+                y: 100,
+            },
         },
-        drawingOptions,
     });
 
 describe("Anchor", () => {
@@ -44,10 +43,10 @@ describe("Anchor", () => {
         it("should create a Drawing with correct root key", () => {
             anchor = createAnchor({
                 floating: {
-                    verticalPosition: {
+                    horizontalPosition: {
                         offset: 0,
                     },
-                    horizontalPosition: {
+                    verticalPosition: {
                         offset: 0,
                     },
                 },
@@ -60,10 +59,10 @@ describe("Anchor", () => {
         it("should create a Drawing with all default options", () => {
             anchor = createAnchor({
                 floating: {
-                    verticalPosition: {
+                    horizontalPosition: {
                         offset: 0,
                     },
-                    horizontalPosition: {
+                    verticalPosition: {
                         offset: 0,
                     },
                 },
@@ -73,16 +72,16 @@ describe("Anchor", () => {
 
             const anchorAttributes = newJson.root[0].root;
             assert.include(anchorAttributes, {
-                distT: 0,
+                allowOverlap: "1",
+                behindDoc: "0",
                 distB: 0,
                 distL: 0,
                 distR: 0,
-                simplePos: "0",
-                allowOverlap: "1",
-                behindDoc: "0",
-                locked: "0",
+                distT: 0,
                 layoutInCell: "1",
-                relativeHeight: 952500,
+                locked: "0",
+                relativeHeight: 952_500,
+                simplePos: "0",
             });
 
             // 1: simple pos
@@ -130,10 +129,10 @@ describe("Anchor", () => {
         it("should create a Drawing with square text wrapping", () => {
             anchor = createAnchor({
                 floating: {
-                    verticalPosition: {
+                    horizontalPosition: {
                         offset: 0,
                     },
-                    horizontalPosition: {
+                    verticalPosition: {
                         offset: 0,
                     },
                     wrap: {
@@ -152,10 +151,10 @@ describe("Anchor", () => {
         it("should create a Drawing with no text wrapping", () => {
             anchor = createAnchor({
                 floating: {
-                    verticalPosition: {
+                    horizontalPosition: {
                         offset: 0,
                     },
-                    horizontalPosition: {
+                    verticalPosition: {
                         offset: 0,
                     },
                     wrap: {
@@ -194,10 +193,10 @@ describe("Anchor", () => {
         it("should create a Drawing with tight text wrapping", () => {
             anchor = createAnchor({
                 floating: {
-                    verticalPosition: {
+                    horizontalPosition: {
                         offset: 0,
                     },
-                    horizontalPosition: {
+                    verticalPosition: {
                         offset: 0,
                     },
                     wrap: {
@@ -215,62 +214,62 @@ describe("Anchor", () => {
         it("should create a Drawing with a margin", () => {
             anchor = createAnchor({
                 floating: {
-                    verticalPosition: {
-                        offset: 0,
-                    },
                     horizontalPosition: {
                         offset: 0,
                     },
                     margins: {
-                        top: 10,
-                        left: 10,
                         bottom: 10,
+                        left: 10,
                         right: 10,
+                        top: 10,
+                    },
+                    verticalPosition: {
+                        offset: 0,
                     },
                 },
             });
             const newJson = Utility.jsonify(anchor);
             const anchorAttributes = newJson.root[0].root;
             assert.include(anchorAttributes, {
-                distT: 10,
                 distB: 10,
                 distL: 10,
                 distR: 10,
+                distT: 10,
             });
         });
 
         it("should create a Drawing with a default margin", () => {
             anchor = createAnchor({
                 floating: {
-                    verticalPosition: {
-                        offset: 0,
-                    },
                     horizontalPosition: {
                         offset: 0,
                     },
                     margins: {},
+                    verticalPosition: {
+                        offset: 0,
+                    },
                 },
             });
             const newJson = Utility.jsonify(anchor);
             const anchorAttributes = newJson.root[0].root;
             assert.include(anchorAttributes, {
-                distT: 0,
                 distB: 0,
                 distL: 0,
                 distR: 0,
+                distT: 0,
             });
         });
 
         it("should create a Drawing with allowOverlap being false", () => {
             anchor = createAnchor({
                 floating: {
-                    verticalPosition: {
-                        offset: 0,
-                    },
+                    allowOverlap: false,
                     horizontalPosition: {
                         offset: 0,
                     },
-                    allowOverlap: false,
+                    verticalPosition: {
+                        offset: 0,
+                    },
                 },
             });
             const newJson = Utility.jsonify(anchor);
@@ -283,13 +282,13 @@ describe("Anchor", () => {
         it("should create a Drawing with behindDocument being true", () => {
             anchor = createAnchor({
                 floating: {
-                    verticalPosition: {
-                        offset: 0,
-                    },
+                    behindDocument: true,
                     horizontalPosition: {
                         offset: 0,
                     },
-                    behindDocument: true,
+                    verticalPosition: {
+                        offset: 0,
+                    },
                 },
             });
             const newJson = Utility.jsonify(anchor);
@@ -302,13 +301,13 @@ describe("Anchor", () => {
         it("should create a Drawing with locked being true", () => {
             anchor = createAnchor({
                 floating: {
-                    verticalPosition: {
-                        offset: 0,
-                    },
                     horizontalPosition: {
                         offset: 0,
                     },
                     lockAnchor: true,
+                    verticalPosition: {
+                        offset: 0,
+                    },
                 },
             });
             const newJson = Utility.jsonify(anchor);
@@ -321,13 +320,13 @@ describe("Anchor", () => {
         it("should create a Drawing with locked being false", () => {
             anchor = createAnchor({
                 floating: {
-                    verticalPosition: {
-                        offset: 0,
-                    },
                     horizontalPosition: {
                         offset: 0,
                     },
                     layoutInCell: false,
+                    verticalPosition: {
+                        offset: 0,
+                    },
                 },
             });
             const newJson = Utility.jsonify(anchor);
@@ -340,10 +339,10 @@ describe("Anchor", () => {
         it("should create a Drawing with a certain z-index", () => {
             anchor = createAnchor({
                 floating: {
-                    verticalPosition: {
+                    horizontalPosition: {
                         offset: 0,
                     },
-                    horizontalPosition: {
+                    verticalPosition: {
                         offset: 0,
                     },
                     zIndex: 120,
@@ -359,19 +358,19 @@ describe("Anchor", () => {
 
         it("should create a Drawing with doc properties", () => {
             anchor = createAnchor({
+                docProperties: {
+                    description: "test",
+                    name: "test",
+                    title: "test",
+                },
                 floating: {
-                    verticalPosition: {
-                        offset: 0,
-                    },
                     horizontalPosition: {
                         offset: 0,
                     },
+                    verticalPosition: {
+                        offset: 0,
+                    },
                     zIndex: 120,
-                },
-                docProperties: {
-                    name: "test",
-                    description: "test",
-                    title: "test",
                 },
             });
             const tree = new Formatter().format(anchor);
@@ -426,8 +425,8 @@ describe("Anchor", () => {
                     {
                         "wp:extent": {
                             _attr: {
-                                cx: 952500,
-                                cy: 952500,
+                                cx: 952_500,
+                                cy: 952_500,
                             },
                         },
                     },
@@ -460,7 +459,8 @@ describe("Anchor", () => {
                                 "a:graphicFrameLocks": {
                                     _attr: {
                                         noChangeAspect: 1,
-                                        "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+                                        "xmlns:a":
+                                            "http://schemas.openxmlformats.org/drawingml/2006/main",
                                     },
                                 },
                             },
@@ -470,7 +470,8 @@ describe("Anchor", () => {
                         "a:graphic": [
                             {
                                 _attr: {
-                                    "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+                                    "xmlns:a":
+                                        "http://schemas.openxmlformats.org/drawingml/2006/main",
                                 },
                             },
                             {
@@ -484,7 +485,8 @@ describe("Anchor", () => {
                                         "pic:pic": [
                                             {
                                                 _attr: {
-                                                    "xmlns:pic": "http://schemas.openxmlformats.org/drawingml/2006/picture",
+                                                    "xmlns:pic":
+                                                        "http://schemas.openxmlformats.org/drawingml/2006/picture",
                                                 },
                                             },
                                             {
@@ -557,8 +559,8 @@ describe("Anchor", () => {
                                                             {
                                                                 "a:ext": {
                                                                     _attr: {
-                                                                        cx: 952500,
-                                                                        cy: 952500,
+                                                                        cx: 952_500,
+                                                                        cy: 952_500,
                                                                     },
                                                                 },
                                                             },

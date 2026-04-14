@@ -1,6 +1,7 @@
 // This demo shows right to left for special languages
 
 import * as fs from "fs";
+
 import { Document, Packer, Paragraph, Table, TableCell, TableRow, TextRun } from "docx";
 
 const doc = new Document({
@@ -11,8 +12,8 @@ const doc = new Document({
                     bidirectional: true,
                     children: [
                         new TextRun({
-                            text: "שלום עולם",
                             rightToLeft: true,
+                            text: "שלום עולם",
                         }),
                     ],
                 }),
@@ -20,9 +21,9 @@ const doc = new Document({
                     bidirectional: true,
                     children: [
                         new TextRun({
-                            text: "שלום עולם",
                             bold: true,
                             rightToLeft: true,
+                            text: "שלום עולם",
                         }),
                     ],
                 }),
@@ -30,14 +31,13 @@ const doc = new Document({
                     bidirectional: true,
                     children: [
                         new TextRun({
-                            text: "שלום עולם",
                             italics: true,
                             rightToLeft: true,
+                            text: "שלום עולם",
                         }),
                     ],
                 }),
                 new Table({
-                    visuallyRightToLeft: true,
                     rows: [
                         new TableRow({
                             children: [
@@ -60,6 +60,7 @@ const doc = new Document({
                             ],
                         }),
                     ],
+                    visuallyRightToLeft: true,
                 }),
             ],
         },

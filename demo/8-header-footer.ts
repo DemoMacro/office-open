@@ -1,65 +1,78 @@
 // Add text to header and footer
 
 import * as fs from "fs";
-import { AlignmentType, convertInchesToTwip, Document, Footer, Header, LevelFormat, Packer, Paragraph } from "docx";
+
+import {
+    AlignmentType,
+    Document,
+    Footer,
+    Header,
+    LevelFormat,
+    Packer,
+    Paragraph,
+    convertInchesToTwip,
+} from "docx";
 
 const doc = new Document({
     numbering: {
         config: [
             {
-                reference: "footer-numbering",
                 levels: [
                     {
-                        level: 0,
-                        format: LevelFormat.DECIMAL,
-                        text: "%1.",
                         alignment: AlignmentType.START,
+                        format: LevelFormat.DECIMAL,
+                        level: 0,
                         style: {
                             paragraph: {
-                                indent: { left: convertInchesToTwip(0.5), hanging: convertInchesToTwip(0.18) },
+                                indent: {
+                                    hanging: convertInchesToTwip(0.18),
+                                    left: convertInchesToTwip(0.5),
+                                },
                             },
                         },
+                        text: "%1.",
                     },
                 ],
+                reference: "footer-numbering",
             },
         ],
     },
     sections: [
         {
-            headers: {
-                default: new Header({
-                    children: [new Paragraph("Header text")],
-                }),
-            },
+            children: [new Paragraph("Hello World")],
             footers: {
                 default: new Footer({
                     children: [
                         new Paragraph("This footer contains a numbered list:"),
                         new Paragraph({
+                            numbering: {
+                                level: 0,
+                                reference: "footer-numbering",
+                            },
                             text: "First item in the list",
-                            numbering: {
-                                reference: "footer-numbering",
-                                level: 0,
-                            },
                         }),
                         new Paragraph({
+                            numbering: {
+                                level: 0,
+                                reference: "footer-numbering",
+                            },
                             text: "Second item in the list",
-                            numbering: {
-                                reference: "footer-numbering",
-                                level: 0,
-                            },
                         }),
                         new Paragraph({
-                            text: "Third item in the list",
                             numbering: {
-                                reference: "footer-numbering",
                                 level: 0,
+                                reference: "footer-numbering",
                             },
+                            text: "Third item in the list",
                         }),
                     ],
                 }),
             },
-            children: [new Paragraph("Hello World")],
+            headers: {
+                default: new Header({
+                    children: [new Paragraph("Header text")],
+                }),
+            },
         },
     ],
 });

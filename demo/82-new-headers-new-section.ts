@@ -1,39 +1,13 @@
 // Example of using headers and footers in a new section
 
 import * as fs from "fs";
+
 import { Document, Footer, Header, Packer, Paragraph, TextRun } from "docx";
 
 const doc = new Document({
     creator: "Creator",
-    title: "Title",
     sections: [
         {
-            headers: {
-                default: new Header({
-                    children: [
-                        new Paragraph({
-                            children: [
-                                new TextRun({
-                                    text: "HEADER PAGE ONE",
-                                }),
-                            ],
-                        }),
-                    ],
-                }),
-            },
-            footers: {
-                default: new Footer({
-                    children: [
-                        new Paragraph({
-                            children: [
-                                new TextRun({
-                                    text: "FOOTER PAGE ONE",
-                                }),
-                            ],
-                        }),
-                    ],
-                }),
-            },
             children: [
                 new Paragraph({
                     children: [
@@ -74,34 +48,34 @@ const doc = new Document({
                     ],
                 }),
             ],
-        },
-        {
-            headers: {
-                default: new Header({
-                    children: [
-                        new Paragraph({
-                            children: [
-                                new TextRun({
-                                    text: "HEADER PAGE TWO AND FOLLOWING PAGES",
-                                }),
-                            ],
-                        }),
-                    ],
-                }),
-            },
             footers: {
                 default: new Footer({
                     children: [
                         new Paragraph({
                             children: [
                                 new TextRun({
-                                    text: "FOOTER PAGE TWO AND FOLLOWING PAGES",
+                                    text: "FOOTER PAGE ONE",
                                 }),
                             ],
                         }),
                     ],
                 }),
             },
+            headers: {
+                default: new Header({
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: "HEADER PAGE ONE",
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            },
+        },
+        {
             children: [
                 new Paragraph({
                     children: [
@@ -139,8 +113,35 @@ const doc = new Document({
                     ],
                 }),
             ],
+            footers: {
+                default: new Footer({
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: "FOOTER PAGE TWO AND FOLLOWING PAGES",
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            },
+            headers: {
+                default: new Header({
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: "HEADER PAGE TWO AND FOLLOWING PAGES",
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            },
         },
     ],
+    title: "Title",
 });
 
 Packer.toBuffer(doc).then((buffer) => {

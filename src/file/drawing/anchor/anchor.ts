@@ -3,9 +3,16 @@ import type { IExtendedMediaData, IMediaDataTransformation } from "@file/media";
 import { XmlComponent } from "@file/xml-components";
 
 import type { IDrawingOptions } from "../drawing";
-import { type IFloating, createHorizontalPosition, createSimplePos, createVerticalPosition } from "../floating";
+import { createHorizontalPosition, createSimplePos, createVerticalPosition } from "../floating";
+import type { IFloating } from "../floating";
 import { Graphic } from "../inline/graphic";
-import { TextWrappingType, createWrapNone, createWrapSquare, createWrapTight, createWrapTopAndBottom } from "../text-wrap";
+import {
+    TextWrappingType,
+    createWrapNone,
+    createWrapSquare,
+    createWrapTight,
+    createWrapTopAndBottom,
+} from "../text-wrap";
 import { DocProperties } from "./../doc-properties/doc-properties";
 import { createEffectExtent } from "./../effect-extent/effect-extent";
 import { createExtent } from "./../extent/extent";
@@ -22,7 +29,7 @@ import { AnchorAttributes } from "./anchor-attributes";
 //         <xsd:group ref="EG_WrapType"/>
 //         <xsd:element name="docPr" type="a:CT_NonVisualDrawingProps" minOccurs="1" maxOccurs="1"/>
 //         <xsd:element name="cNvGraphicFramePr" type="a:CT_NonVisualGraphicFrameProperties"
-//             minOccurs="0" maxOccurs="1"/>
+//             MinOccurs="0" maxOccurs="1"/>
 //         <xsd:element ref="a:graphic" minOccurs="1" maxOccurs="1"/>
 //     </xsd:sequence>
 //     <xsd:attribute name="distT" type="ST_WrapDistance" use="optional"/>
@@ -88,10 +95,10 @@ export class Anchor extends XmlComponent {
         const floating: IFloating = {
             allowOverlap: true,
             behindDocument: false,
-            lockAnchor: false,
-            layoutInCell: true,
-            verticalPosition: {},
             horizontalPosition: {},
+            layoutInCell: true,
+            lockAnchor: false,
+            verticalPosition: {},
             ...drawingOptions.floating,
         };
 
@@ -101,7 +108,7 @@ export class Anchor extends XmlComponent {
                 distB: floating.margins ? floating.margins.bottom || 0 : 0,
                 distL: floating.margins ? floating.margins.left || 0 : 0,
                 distR: floating.margins ? floating.margins.right || 0 : 0,
-                simplePos: "0", // note: word doesn't fully support - so we use 0
+                simplePos: "0", // Note: word doesn't fully support - so we use 0
                 allowOverlap: floating.allowOverlap === true ? "1" : "0",
                 behindDoc: floating.behindDocument === true ? "1" : "0",
                 locked: floating.lockAnchor === true ? "1" : "0",
@@ -114,22 +121,31 @@ export class Anchor extends XmlComponent {
         this.root.push(createHorizontalPosition(floating.horizontalPosition));
         this.root.push(createVerticalPosition(floating.verticalPosition));
         this.root.push(createExtent({ x: transform.emus.x, y: transform.emus.y }));
-        this.root.push(createEffectExtent({ top: 0, right: 0, bottom: 0, left: 0 }));
+        this.root.push(createEffectExtent({ bottom: 0, left: 0, right: 0, top: 0 }));
 
         if (drawingOptions.floating !== undefined && drawingOptions.floating.wrap !== undefined) {
             switch (drawingOptions.floating.wrap.type) {
-                case TextWrappingType.SQUARE:
-                    this.root.push(createWrapSquare(drawingOptions.floating.wrap, drawingOptions.floating.margins));
+                case TextWrappingType.SQUARE: {
+                    this.root.push(
+                        createWrapSquare(
+                            drawingOptions.floating.wrap,
+                            drawingOptions.floating.margins,
+                        ),
+                    );
                     break;
-                case TextWrappingType.TIGHT:
+                }
+                case TextWrappingType.TIGHT: {
                     this.root.push(createWrapTight(drawingOptions.floating.margins));
                     break;
-                case TextWrappingType.TOP_AND_BOTTOM:
+                }
+                case TextWrappingType.TOP_AND_BOTTOM: {
                     this.root.push(createWrapTopAndBottom(drawingOptions.floating.margins));
                     break;
+                }
                 case TextWrappingType.NONE:
-                default:
+                default: {
                     this.root.push(createWrapNone());
+                }
             }
         } else {
             this.root.push(createWrapNone());
@@ -137,6 +153,13 @@ export class Anchor extends XmlComponent {
 
         this.root.push(new DocProperties(drawingOptions.docProperties));
         this.root.push(createGraphicFrameProperties());
-        this.root.push(new Graphic({ mediaData, transform, outline: drawingOptions.outline, solidFill: drawingOptions.solidFill }));
+        this.root.push(
+            new Graphic({
+                mediaData,
+                outline: drawingOptions.outline,
+                solidFill: drawingOptions.solidFill,
+                transform,
+            }),
+        );
     }
 }

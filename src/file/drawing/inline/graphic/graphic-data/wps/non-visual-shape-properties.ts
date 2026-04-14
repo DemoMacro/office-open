@@ -1,13 +1,16 @@
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
-export type INonVisualShapePropertiesOptions = {
+export interface INonVisualShapePropertiesOptions {
     readonly txBox: string;
-};
+}
 
-export const createNonVisualShapeProperties = (options: INonVisualShapePropertiesOptions = { txBox: "1" }): XmlComponent =>
+export const createNonVisualShapeProperties = (
+    options: INonVisualShapePropertiesOptions = { txBox: "1" },
+): XmlComponent =>
     new BuilderElement<{ readonly txBox: string }>({
-        name: "wps:cNvSpPr",
         attributes: {
             txBox: { key: "txBox", value: options.txBox },
         },
+        name: "wps:cNvSpPr",
     });

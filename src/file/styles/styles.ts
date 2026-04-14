@@ -8,7 +8,8 @@
  * @module
  */
 import type { IDefaultStylesOptions } from "@file/styles/factory";
-import { type BaseXmlComponent, type ImportedXmlComponent, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
+import type { BaseXmlComponent, ImportedXmlComponent } from "@file/xml-components";
 
 import { StyleForCharacter, StyleForParagraph } from "./style";
 import type { ICharacterStyleOptions } from "./style/character-style";
@@ -25,7 +26,7 @@ import type { IParagraphStyleOptions } from "./style/paragraph-style";
  *
  * @see {@link Styles}
  */
-export type IStylesOptions = {
+export interface IStylesOptions {
     /** Default styles for document, headings, and common elements */
     readonly default?: IDefaultStylesOptions;
     /** Initial base XML component for styles root element */
@@ -35,8 +36,13 @@ export type IStylesOptions = {
     /** Array of custom character style definitions */
     readonly characterStyles?: readonly ICharacterStyleOptions[];
     /** Array of styles imported from external sources */
-    readonly importedStyles?: readonly (XmlComponent | StyleForParagraph | StyleForCharacter | ImportedXmlComponent)[];
-};
+    readonly importedStyles?: readonly (
+        | XmlComponent
+        | StyleForParagraph
+        | StyleForCharacter
+        | ImportedXmlComponent
+    )[];
+}
 
 /**
  * Represents the styles definitions in a WordprocessingML document.

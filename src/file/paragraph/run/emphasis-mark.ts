@@ -8,7 +8,8 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Emphasis mark types.
@@ -36,9 +37,9 @@ export const EmphasisMarkType = {
     DOT: "dot",
 } as const;
 
-type IEmphasisMarkAttributes = {
+interface IEmphasisMarkAttributes {
     readonly val: (typeof EmphasisMarkType)[keyof typeof EmphasisMarkType];
-};
+}
 
 /**
  * Creates an emphasis mark element for a WordprocessingML document.
@@ -68,10 +69,10 @@ export const createEmphasisMark = (
     emphasisMarkType: (typeof EmphasisMarkType)[keyof typeof EmphasisMarkType] = EmphasisMarkType.DOT,
 ): XmlComponent =>
     new BuilderElement<IEmphasisMarkAttributes>({
-        name: "w:em",
         attributes: {
             val: { key: "w:val", value: emphasisMarkType },
         },
+        name: "w:em",
     });
 
 /**

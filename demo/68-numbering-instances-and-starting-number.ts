@@ -1,29 +1,30 @@
 import * as fs from "fs";
-import { Document, Packer, Paragraph, LevelFormat } from "docx";
+
+import { Document, LevelFormat, Packer, Paragraph } from "docx";
 
 const doc = new Document({
     numbering: {
         config: [
             {
-                reference: "ref1",
                 levels: [
                     {
-                        level: 0,
                         format: LevelFormat.DECIMAL,
-                        text: "%1",
+                        level: 0,
                         start: 10,
+                        text: "%1",
                     },
                 ],
+                reference: "ref1",
             },
             {
-                reference: "ref2",
                 levels: [
                     {
-                        level: 0,
                         format: LevelFormat.DECIMAL,
+                        level: 0,
                         text: "%1",
                     },
                 ],
+                reference: "ref2",
             },
         ],
     },
@@ -31,52 +32,52 @@ const doc = new Document({
         {
             children: [
                 new Paragraph({
-                    text: "REF1 - inst:0 - lvl:0",
                     numbering: {
-                        reference: "ref1",
                         instance: 0,
                         level: 0,
+                        reference: "ref1",
                     },
+                    text: "REF1 - inst:0 - lvl:0",
                 }),
                 new Paragraph({
-                    text: "REF1 - inst:0 - lvl:0",
                     numbering: {
-                        reference: "ref1",
                         instance: 0,
                         level: 0,
-                    },
-                }),
-                new Paragraph({
-                    text: "REF1 - inst:1 - lvl:0",
-                    numbering: {
                         reference: "ref1",
-                        instance: 1,
-                        level: 0,
                     },
+                    text: "REF1 - inst:0 - lvl:0",
                 }),
                 new Paragraph({
-                    text: "REF1 - inst:1 - lvl:0",
                     numbering: {
+                        instance: 1,
+                        level: 0,
                         reference: "ref1",
-                        instance: 1,
-                        level: 0,
                     },
+                    text: "REF1 - inst:1 - lvl:0",
                 }),
                 new Paragraph({
-                    text: "REF2 - inst:0 - lvl:0",
                     numbering: {
-                        reference: "ref2",
                         instance: 1,
                         level: 0,
+                        reference: "ref1",
                     },
+                    text: "REF1 - inst:1 - lvl:0",
                 }),
                 new Paragraph({
-                    text: "REF2 - inst:0 - lvl:0",
                     numbering: {
-                        reference: "ref2",
                         instance: 1,
                         level: 0,
+                        reference: "ref2",
                     },
+                    text: "REF2 - inst:0 - lvl:0",
+                }),
+                new Paragraph({
+                    numbering: {
+                        instance: 1,
+                        level: 0,
+                        reference: "ref2",
+                    },
+                    text: "REF2 - inst:0 - lvl:0",
                 }),
             ],
         },

@@ -23,9 +23,9 @@ export type ICellMergeAttributes = IChangedAttributesProperties & {
 
 export class CellMergeAttributes extends XmlAttributeComponent<ICellMergeAttributes> {
     protected readonly xmlKeys = {
-        id: "w:id",
         author: "w:author",
         date: "w:date",
+        id: "w:id",
         verticalMerge: "w:vMerge",
         verticalMergeOriginal: "w:vMergeOrig",
     };

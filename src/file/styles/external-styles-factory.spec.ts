@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vite-plus/test";
 
 import { ExternalStylesFactory } from "./external-styles-factory";
 
@@ -48,7 +48,6 @@ describe("External styles factory", () => {
 
     describe("#parse", () => {
         it("should parse w:styles attributes", () => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const importedStyle = new ExternalStylesFactory().newInstance(externalStyles) as any;
 
             expect(importedStyle.initialStyles._attr).to.deep.equal({
@@ -58,7 +57,6 @@ describe("External styles factory", () => {
         });
 
         it("should parse other child elements of w:styles", () => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const importedStyle = new ExternalStylesFactory().newInstance(externalStyles) as any;
             const importedStyles = importedStyle.importedStyles!;
 
@@ -142,13 +140,17 @@ describe("External styles factory", () => {
         });
 
         it("should throw when style element isn't found", () => {
-            expect(() => new ExternalStylesFactory().newInstance(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><foo/>`)).to.throw(
-                "can not find styles element",
-            );
+            expect(() =>
+                new ExternalStylesFactory().newInstance(
+                    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><foo/>`,
+                ),
+            ).to.throw("can not find styles element");
 
-            expect(() => new ExternalStylesFactory().newInstance(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`)).to.throw(
-                "can not find styles element",
-            );
+            expect(() =>
+                new ExternalStylesFactory().newInstance(
+                    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
+                ),
+            ).to.throw("can not find styles element");
         });
 
         it("should handle w:styles with no child elements", () => {
@@ -156,14 +158,12 @@ describe("External styles factory", () => {
             <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
             <w:styles xmlns:mc="first" xmlns:r="second">
             </w:styles>`;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const importedStyle = new ExternalStylesFactory().newInstance(emptyStyles) as any;
 
             expect(importedStyle.importedStyles).to.deep.equal([]);
         });
 
         it("should parse styles elements", () => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const importedStyle = new ExternalStylesFactory().newInstance(externalStyles) as any;
             const importedStyles = importedStyle.importedStyles!;
 

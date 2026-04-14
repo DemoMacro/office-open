@@ -7,17 +7,18 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 import type { MathComponent } from "../math-component";
 
 /**
  * Options for creating a subscript element.
  */
-type MathSubScriptElementOptions = {
+interface MathSubScriptElementOptions {
     /** The content of the subscript */
     readonly children: readonly MathComponent[];
-};
+}
 
 /**
  * Creates a subscript element for math structures.
@@ -38,8 +39,10 @@ type MathSubScriptElementOptions = {
  * </xsd:complexType>
  * ```
  */
-export const createMathSubScriptElement = ({ children }: MathSubScriptElementOptions): XmlComponent =>
+export const createMathSubScriptElement = ({
+    children,
+}: MathSubScriptElementOptions): XmlComponent =>
     new BuilderElement({
-        name: "m:sub",
         children,
+        name: "m:sub",
     });

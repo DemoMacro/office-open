@@ -21,16 +21,20 @@ const doc = new Document({
                 new Paragraph({
                     children: [
                         new WpsShapeRun({
-                            type: "wps",
                             children: [
                                 new Paragraph({
-                                    children: [new TextRun("This is a basic WPS text box with just width and height.")],
+                                    children: [
+                                        new TextRun(
+                                            "This is a basic WPS text box with just width and height.",
+                                        ),
+                                    ],
                                 }),
                             ],
                             transformation: {
-                                width: 4000000,
-                                height: 800000,
+                                height: 800_000,
+                                width: 4_000_000,
                             },
+                            type: "wps",
                         }),
                     ],
                 }),
@@ -41,32 +45,32 @@ const doc = new Document({
                 new Paragraph({
                     children: [
                         new WpsShapeRun({
-                            type: "wps",
                             children: [
                                 new Paragraph({
                                     children: [
                                         new TextRun({
-                                            text: "Styled text box with a light blue background and dark blue border.",
                                             bold: true,
                                             color: "1F3864",
+                                            text: "Styled text box with a light blue background and dark blue border.",
                                         }),
                                     ],
                                 }),
                             ],
-                            transformation: {
-                                width: 4000000,
-                                height: 800000,
+                            outline: {
+                                solidFillType: "rgb",
+                                type: "solidFill",
+                                value: "2E74B5",
+                                width: 25_400,
                             },
                             solidFill: {
                                 type: "rgb",
                                 value: "D6E4F0",
                             },
-                            outline: {
-                                type: "solidFill",
-                                solidFillType: "rgb",
-                                value: "2E74B5",
-                                width: 25400,
+                            transformation: {
+                                height: 800_000,
+                                width: 4_000_000,
                             },
+                            type: "wps",
                         }),
                     ],
                 }),
@@ -77,23 +81,23 @@ const doc = new Document({
                 new Paragraph({
                     children: [
                         new WpsShapeRun({
-                            type: "wps",
                             children: [
                                 new Paragraph({
                                     children: [new TextRun("This text box is rotated 15 degrees.")],
                                 }),
                             ],
-                            transformation: {
-                                width: 3000000,
-                                height: 600000,
-                                rotation: 15,
-                            },
                             outline: {
-                                type: "solidFill",
                                 solidFillType: "rgb",
+                                type: "solidFill",
                                 value: "FF0000",
-                                width: 12700,
+                                width: 12_700,
                             },
+                            transformation: {
+                                height: 600_000,
+                                rotation: 15,
+                                width: 3_000_000,
+                            },
+                            type: "wps",
                         }),
                     ],
                 }),
@@ -105,32 +109,36 @@ const doc = new Document({
                 new Paragraph({
                     children: [
                         new WpsShapeRun({
-                            type: "wps",
                             children: [
                                 new Paragraph({
-                                    children: [new TextRun("Floating text box positioned at a specific offset on the page.")],
+                                    children: [
+                                        new TextRun(
+                                            "Floating text box positioned at a specific offset on the page.",
+                                        ),
+                                    ],
                                 }),
                             ],
-                            transformation: {
-                                width: 3500000,
-                                height: 700000,
-                            },
-                            outline: {
-                                type: "solidFill",
-                                solidFillType: "rgb",
-                                value: "70AD47",
-                                width: 19050,
-                            },
                             floating: {
                                 horizontalPosition: {
+                                    offset: 3_500_000,
                                     relative: HorizontalPositionRelativeFrom.PAGE,
-                                    offset: 3500000,
                                 },
                                 verticalPosition: {
+                                    offset: 100_000,
                                     relative: VerticalPositionRelativeFrom.PARAGRAPH,
-                                    offset: 100000,
                                 },
                             },
+                            outline: {
+                                solidFillType: "rgb",
+                                type: "solidFill",
+                                value: "70AD47",
+                                width: 19_050,
+                            },
+                            transformation: {
+                                height: 700_000,
+                                width: 3_500_000,
+                            },
+                            type: "wps",
                         }),
                     ],
                 }),
@@ -143,35 +151,39 @@ const doc = new Document({
                 new Paragraph({
                     children: [
                         new WpsShapeRun({
-                            type: "wps",
+                            bodyProperties: {
+                                margins: {
+                                    bottom: 72_000,
+                                    left: 144_000,
+                                    right: 144_000,
+                                    top: 72_000,
+                                },
+                                verticalAnchor: VerticalAnchor.CENTER,
+                            },
                             children: [
                                 new Paragraph({
-                                    children: [new TextRun("Vertically centered text with custom margins.")],
+                                    children: [
+                                        new TextRun(
+                                            "Vertically centered text with custom margins.",
+                                        ),
+                                    ],
                                 }),
                             ],
-                            transformation: {
-                                width: 4000000,
-                                height: 1200000,
+                            outline: {
+                                solidFillType: "rgb",
+                                type: "solidFill",
+                                value: "BF8F00",
+                                width: 19_050,
                             },
                             solidFill: {
                                 type: "rgb",
                                 value: "FFF2CC",
                             },
-                            outline: {
-                                type: "solidFill",
-                                solidFillType: "rgb",
-                                value: "BF8F00",
-                                width: 19050,
+                            transformation: {
+                                height: 1_200_000,
+                                width: 4_000_000,
                             },
-                            bodyProperties: {
-                                verticalAnchor: VerticalAnchor.CENTER,
-                                margins: {
-                                    top: 72000,
-                                    bottom: 72000,
-                                    left: 144000,
-                                    right: 144000,
-                                },
-                            },
+                            type: "wps",
                         }),
                     ],
                 }),

@@ -7,15 +7,16 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Options for creating an ending character element.
  */
-type MathEndingCharacterOptions = {
+interface MathEndingCharacterOptions {
     /** The closing bracket character */
     readonly character: string;
-};
+}
 
 /**
  * Creates an ending character element for bracket delimiters.
@@ -32,10 +33,12 @@ type MathEndingCharacterOptions = {
  * </xsd:complexType>
  * ```
  */
-export const createMathEndingCharacter = ({ character }: MathEndingCharacterOptions): XmlComponent =>
+export const createMathEndingCharacter = ({
+    character,
+}: MathEndingCharacterOptions): XmlComponent =>
     new BuilderElement<MathEndingCharacterOptions>({
-        name: "m:endChr",
         attributes: {
             character: { key: "m:val", value: character },
         },
+        name: "m:endChr",
     });

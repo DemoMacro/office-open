@@ -10,7 +10,8 @@
  */
 import type { XmlComponent } from "@file/xml-components";
 
-import { type CharacterSet, createFont } from "./font";
+import { createFont } from "./font";
+import type { CharacterSet } from "./font";
 
 /**
  * Creates a regular embedded font with default settings.
@@ -48,20 +49,20 @@ export const createRegularFont = ({
     readonly characterSet?: (typeof CharacterSet)[keyof typeof CharacterSet];
 }): XmlComponent =>
     createFont({
+        charset: characterSet,
+        embedRegular: {
+            fontKey,
+            id: `rId${index}`,
+        },
+        family: "auto",
         name,
+        pitch: "variable",
         sig: {
+            csb0: "000001FF",
+            csb1: "00000000",
             usb0: "E0002AFF",
             usb1: "C000247B",
             usb2: "00000009",
             usb3: "00000000",
-            csb0: "000001FF",
-            csb1: "00000000",
-        },
-        charset: characterSet,
-        family: "auto",
-        pitch: "variable",
-        embedRegular: {
-            fontKey,
-            id: `rId${index}`,
         },
     });

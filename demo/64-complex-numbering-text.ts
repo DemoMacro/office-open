@@ -1,30 +1,31 @@
 // Numbered lists - With complex number text
 
 import * as fs from "fs";
-import { Document, Packer, Paragraph, LevelFormat } from "docx";
+
+import { Document, LevelFormat, Packer, Paragraph } from "docx";
 
 const doc = new Document({
     numbering: {
         config: [
             {
-                reference: "ref1",
                 levels: [
                     {
-                        level: 0,
                         format: LevelFormat.DECIMAL,
+                        level: 0,
                         text: "%1",
                     },
                     {
-                        level: 1,
                         format: LevelFormat.DECIMAL,
+                        level: 1,
                         text: "%1.%2",
                     },
                     {
-                        level: 2,
                         format: LevelFormat.DECIMAL,
+                        level: 2,
                         text: "%1.%2.%3",
                     },
                 ],
+                reference: "ref1",
             },
         ],
     },
@@ -32,73 +33,73 @@ const doc = new Document({
         {
             children: [
                 new Paragraph({
-                    text: "REF1 - lvl:0",
                     numbering: {
-                        reference: "ref1",
                         level: 0,
+                        reference: "ref1",
                     },
+                    text: "REF1 - lvl:0",
                 }),
                 new Paragraph({
-                    text: "REF1 - lvl:1",
                     numbering: {
-                        reference: "ref1",
                         level: 1,
+                        reference: "ref1",
                     },
+                    text: "REF1 - lvl:1",
                 }),
                 new Paragraph({
-                    text: "REF1  - lvl:2",
                     numbering: {
-                        reference: "ref1",
                         level: 2,
+                        reference: "ref1",
                     },
+                    text: "REF1  - lvl:2",
                 }),
                 new Paragraph({
-                    text: "REF1 - lvl:0",
                     numbering: {
-                        reference: "ref1",
                         level: 0,
+                        reference: "ref1",
                     },
+                    text: "REF1 - lvl:0",
                 }),
                 new Paragraph({
-                    text: "REF1 - lvl:0",
                     numbering: {
-                        reference: "ref1",
                         level: 0,
+                        reference: "ref1",
                     },
+                    text: "REF1 - lvl:0",
                 }),
                 new Paragraph({
-                    text: "REF1 - lvl:0",
                     numbering: {
-                        reference: "ref1",
                         level: 0,
+                        reference: "ref1",
                     },
+                    text: "REF1 - lvl:0",
                 }),
                 new Paragraph({
                     text: "Random text",
                 }),
                 new Paragraph({
-                    text: "REF1 - inst:1 - lvl:0",
                     numbering: {
-                        reference: "ref1",
                         instance: 1,
                         level: 0,
+                        reference: "ref1",
                     },
+                    text: "REF1 - inst:1 - lvl:0",
                 }),
                 new Paragraph({
-                    text: "REF1 - inst:0 - lvl:0",
                     numbering: {
-                        reference: "ref1",
                         instance: 0,
                         level: 0,
+                        reference: "ref1",
                     },
+                    text: "REF1 - inst:0 - lvl:0",
                 }),
                 new Paragraph({
-                    text: "REF1 - inst:0 - lvl:0",
                     numbering: {
-                        reference: "ref1",
                         instance: 0,
                         level: 0,
+                        reference: "ref1",
                     },
+                    text: "REF1 - inst:0 - lvl:0",
                 }),
             ],
         },

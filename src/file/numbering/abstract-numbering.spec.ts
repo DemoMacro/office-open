@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { AlignmentType, EmphasisMarkType, TabStopPosition } from "../paragraph";
 import { HighlightColor } from "../paragraph/run/properties";
@@ -19,10 +18,10 @@ describe("AbstractNumbering", () => {
         it("creates a level with the given characteristics", () => {
             const abstractNumbering = new AbstractNumbering(1, [
                 {
-                    level: 3,
-                    format: LevelFormat.LOWER_LETTER,
-                    text: "%1)",
                     alignment: AlignmentType.END,
+                    format: LevelFormat.LOWER_LETTER,
+                    level: 3,
+                    text: "%1)",
                 },
             ]);
             const tree = new Formatter().format(abstractNumbering);
@@ -86,8 +85,8 @@ describe("AbstractNumbering", () => {
         it("uses 'start' as the default alignment", () => {
             const abstractNumbering = new AbstractNumbering(1, [
                 {
-                    level: 3,
                     format: LevelFormat.LOWER_LETTER,
+                    level: 3,
                     text: "%1)",
                 },
             ]);
@@ -152,11 +151,11 @@ describe("AbstractNumbering", () => {
         it("has suffix", () => {
             const abstractNumbering = new AbstractNumbering(1, [
                 {
-                    level: 3,
-                    format: LevelFormat.LOWER_LETTER,
-                    text: "%1)",
                     alignment: AlignmentType.END,
+                    format: LevelFormat.LOWER_LETTER,
+                    level: 3,
                     suffix: LevelSuffix.SPACE,
+                    text: "%1)",
                 },
             ]);
             const tree = new Formatter().format(abstractNumbering);
@@ -222,21 +221,21 @@ describe("AbstractNumbering", () => {
                     },
                 ],
             });
-            // expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:suff": { _attr: { "w:val": "space" } } });
+            // Expect(tree["w:abstractNum"][2]["w:lvl"]).to.include({ "w:suff": { _attr: { "w:val": "space" } } });
         });
 
         describe("formatting methods: paragraph properties", () => {
             it("#indent", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
-                        level: 0,
                         format: LevelFormat.LOWER_ROMAN,
-                        text: "%0.",
+                        level: 0,
                         style: {
                             paragraph: {
                                 indent: { left: 720 },
                             },
                         },
+                        text: "%0.",
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
@@ -311,14 +310,14 @@ describe("AbstractNumbering", () => {
             it("#spacing", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
-                        level: 0,
                         format: LevelFormat.LOWER_ROMAN,
-                        text: "%0.",
+                        level: 0,
                         style: {
                             paragraph: {
-                                spacing: { before: 50, after: 150 },
+                                spacing: { after: 150, before: 50 },
                             },
                         },
+                        text: "%0.",
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
@@ -394,14 +393,14 @@ describe("AbstractNumbering", () => {
             it("#center", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
-                        level: 0,
                         format: LevelFormat.LOWER_ROMAN,
-                        text: "%0.",
+                        level: 0,
                         style: {
                             paragraph: {
                                 alignment: AlignmentType.CENTER,
                             },
                         },
+                        text: "%0.",
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
@@ -476,14 +475,14 @@ describe("AbstractNumbering", () => {
             it("#left", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
-                        level: 0,
                         format: LevelFormat.LOWER_ROMAN,
-                        text: "%0.",
+                        level: 0,
                         style: {
                             paragraph: {
                                 alignment: AlignmentType.LEFT,
                             },
                         },
+                        text: "%0.",
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
@@ -558,14 +557,14 @@ describe("AbstractNumbering", () => {
             it("#right", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
-                        level: 0,
                         format: LevelFormat.LOWER_ROMAN,
-                        text: "%0.",
+                        level: 0,
                         style: {
                             paragraph: {
                                 alignment: AlignmentType.RIGHT,
                             },
                         },
+                        text: "%0.",
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
@@ -640,14 +639,14 @@ describe("AbstractNumbering", () => {
             it("#justified", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
-                        level: 0,
                         format: LevelFormat.LOWER_ROMAN,
-                        text: "%0.",
+                        level: 0,
                         style: {
                             paragraph: {
                                 alignment: AlignmentType.JUSTIFIED,
                             },
                         },
+                        text: "%0.",
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
@@ -722,14 +721,14 @@ describe("AbstractNumbering", () => {
             it("#thematicBreak", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
-                        level: 0,
                         format: LevelFormat.LOWER_ROMAN,
-                        text: "%0.",
+                        level: 0,
                         style: {
                             paragraph: {
                                 thematicBreak: true,
                             },
                         },
+                        text: "%0.",
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
@@ -811,14 +810,14 @@ describe("AbstractNumbering", () => {
             it("#leftTabStop", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
-                        level: 0,
                         format: LevelFormat.LOWER_ROMAN,
-                        text: "%0.",
+                        level: 0,
                         style: {
                             paragraph: {
                                 leftTabStop: 1200,
                             },
                         },
+                        text: "%0.",
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
@@ -898,14 +897,14 @@ describe("AbstractNumbering", () => {
             it("#maxRightTabStop", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
-                        level: 0,
                         format: LevelFormat.LOWER_ROMAN,
-                        text: "%0.",
+                        level: 0,
                         style: {
                             paragraph: {
                                 rightTabStop: TabStopPosition.MAX,
                             },
                         },
+                        text: "%0.",
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
@@ -985,14 +984,14 @@ describe("AbstractNumbering", () => {
             it("#keepLines", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
-                        level: 0,
                         format: LevelFormat.LOWER_ROMAN,
-                        text: "%0.",
+                        level: 0,
                         style: {
                             paragraph: {
                                 keepLines: true,
                             },
                         },
+                        text: "%0.",
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
@@ -1063,14 +1062,14 @@ describe("AbstractNumbering", () => {
             it("#keepNext", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
-                        level: 0,
                         format: LevelFormat.LOWER_ROMAN,
-                        text: "%0.",
+                        level: 0,
                         style: {
                             paragraph: {
                                 keepNext: true,
                             },
                         },
+                        text: "%0.",
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
@@ -1142,35 +1141,44 @@ describe("AbstractNumbering", () => {
         describe("formatting methods: run properties", () => {
             const sizeTests = [
                 {
+                    expected: [
+                        { "w:sz": { _attr: { "w:val": 24 } } },
+                        { "w:szCs": { _attr: { "w:val": 24 } } },
+                    ],
                     size: 24,
-                    expected: [{ "w:sz": { _attr: { "w:val": 24 } } }, { "w:szCs": { _attr: { "w:val": 24 } } }],
                 },
                 {
+                    expected: [
+                        { "w:sz": { _attr: { "w:val": 24 } } },
+                        { "w:szCs": { _attr: { "w:val": 24 } } },
+                    ],
                     size: 24,
                     sizeComplexScript: true,
-                    expected: [{ "w:sz": { _attr: { "w:val": 24 } } }, { "w:szCs": { _attr: { "w:val": 24 } } }],
                 },
                 {
+                    expected: [{ "w:sz": { _attr: { "w:val": 24 } } }],
                     size: 24,
                     sizeComplexScript: false,
-                    expected: [{ "w:sz": { _attr: { "w:val": 24 } } }],
                 },
                 {
+                    expected: [
+                        { "w:sz": { _attr: { "w:val": 24 } } },
+                        { "w:szCs": { _attr: { "w:val": 26 } } },
+                    ],
                     size: 24,
                     sizeComplexScript: 26,
-                    expected: [{ "w:sz": { _attr: { "w:val": 24 } } }, { "w:szCs": { _attr: { "w:val": 26 } } }],
                 },
             ];
             sizeTests.forEach(({ size, sizeComplexScript, expected }) => {
                 it(`#size ${size} cs ${sizeComplexScript}`, () => {
                     const abstractNumbering = new AbstractNumbering(1, [
                         {
-                            level: 0,
                             format: LevelFormat.LOWER_ROMAN,
-                            text: "%0.",
+                            level: 0,
                             style: {
                                 run: { size, sizeComplexScript },
                             },
+                            text: "%0.",
                         },
                     ]);
                     const tree = new Formatter().format(abstractNumbering);
@@ -1238,14 +1246,14 @@ describe("AbstractNumbering", () => {
             it("#smallCaps", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
-                        level: 0,
                         format: LevelFormat.LOWER_ROMAN,
-                        text: "%0.",
+                        level: 0,
                         style: {
                             run: {
                                 smallCaps: true,
                             },
                         },
+                        text: "%0.",
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
@@ -1316,14 +1324,14 @@ describe("AbstractNumbering", () => {
             it("#allCaps", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
-                        level: 0,
                         format: LevelFormat.LOWER_ROMAN,
-                        text: "%0.",
+                        level: 0,
                         style: {
                             run: {
                                 allCaps: true,
                             },
                         },
+                        text: "%0.",
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
@@ -1394,14 +1402,14 @@ describe("AbstractNumbering", () => {
             it("#strike", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
-                        level: 0,
                         format: LevelFormat.LOWER_ROMAN,
-                        text: "%0.",
+                        level: 0,
                         style: {
                             run: {
                                 strike: true,
                             },
                         },
+                        text: "%0.",
                     },
                 ]);
 
@@ -1473,14 +1481,14 @@ describe("AbstractNumbering", () => {
             it("#doubleStrike", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
-                        level: 0,
                         format: LevelFormat.LOWER_ROMAN,
-                        text: "%0.",
+                        level: 0,
                         style: {
                             run: {
                                 doubleStrike: true,
                             },
                         },
+                        text: "%0.",
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
@@ -1551,14 +1559,14 @@ describe("AbstractNumbering", () => {
             it("#subScript", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
-                        level: 0,
                         format: LevelFormat.LOWER_ROMAN,
-                        text: "%0.",
+                        level: 0,
                         style: {
                             run: {
                                 subScript: true,
                             },
                         },
+                        text: "%0.",
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
@@ -1608,7 +1616,9 @@ describe("AbstractNumbering", () => {
                                     },
                                 },
                                 {
-                                    "w:rPr": [{ "w:vertAlign": { _attr: { "w:val": "subscript" } } }],
+                                    "w:rPr": [
+                                        { "w:vertAlign": { _attr: { "w:val": "subscript" } } },
+                                    ],
                                 },
                                 {
                                     _attr: {
@@ -1625,14 +1635,14 @@ describe("AbstractNumbering", () => {
             it("#superScript", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
-                        level: 0,
                         format: LevelFormat.LOWER_ROMAN,
-                        text: "%0.",
+                        level: 0,
                         style: {
                             run: {
                                 superScript: true,
                             },
                         },
+                        text: "%0.",
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
@@ -1682,7 +1692,9 @@ describe("AbstractNumbering", () => {
                                     },
                                 },
                                 {
-                                    "w:rPr": [{ "w:vertAlign": { _attr: { "w:val": "superscript" } } }],
+                                    "w:rPr": [
+                                        { "w:vertAlign": { _attr: { "w:val": "superscript" } } },
+                                    ],
                                 },
                                 {
                                     _attr: {
@@ -1699,14 +1711,14 @@ describe("AbstractNumbering", () => {
             it("#font by name", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
-                        level: 0,
                         format: LevelFormat.LOWER_ROMAN,
-                        text: "%0.",
+                        level: 0,
                         style: {
                             run: {
                                 font: "Times",
                             },
                         },
+                        text: "%0.",
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
@@ -1784,9 +1796,8 @@ describe("AbstractNumbering", () => {
             it("#font for ascii and eastAsia", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
-                        level: 0,
                         format: LevelFormat.LOWER_ROMAN,
-                        text: "%0.",
+                        level: 0,
                         style: {
                             run: {
                                 font: {
@@ -1795,6 +1806,7 @@ describe("AbstractNumbering", () => {
                                 },
                             },
                         },
+                        text: "%0.",
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);
@@ -1887,12 +1899,12 @@ describe("AbstractNumbering", () => {
                 it(`#bold ${bold} cs ${boldComplexScript}`, () => {
                     const abstractNumbering = new AbstractNumbering(1, [
                         {
-                            level: 0,
                             format: LevelFormat.LOWER_ROMAN,
-                            text: "%0.",
+                            level: 0,
                             style: {
                                 run: { bold, boldComplexScript },
                             },
+                            text: "%0.",
                         },
                     ]);
                     const tree = new Formatter().format(abstractNumbering);
@@ -1959,30 +1971,30 @@ describe("AbstractNumbering", () => {
 
             const italicsTests = [
                 {
-                    italics: true,
                     expected: [{ "w:i": {} }, { "w:iCs": {} }],
+                    italics: true,
                 },
                 {
+                    expected: [{ "w:i": {} }, { "w:iCs": {} }],
                     italics: true,
                     italicsComplexScript: true,
-                    expected: [{ "w:i": {} }, { "w:iCs": {} }],
                 },
                 {
+                    expected: [{ "w:i": {} }],
                     italics: true,
                     italicsComplexScript: false,
-                    expected: [{ "w:i": {} }],
                 },
             ];
             italicsTests.forEach(({ italics, italicsComplexScript, expected }) => {
                 it(`#italics ${italics} cs ${italicsComplexScript}`, () => {
                     const abstractNumbering = new AbstractNumbering(1, [
                         {
-                            level: 0,
                             format: LevelFormat.LOWER_ROMAN,
-                            text: "%0.",
+                            level: 0,
                             style: {
                                 run: { italics, italicsComplexScript },
                             },
+                            text: "%0.",
                         },
                     ]);
                     const tree = new Formatter().format(abstractNumbering);
@@ -2049,35 +2061,44 @@ describe("AbstractNumbering", () => {
 
             const highlightTests = [
                 {
+                    expected: [
+                        { "w:highlight": { _attr: { "w:val": "yellow" } } },
+                        { "w:highlightCs": { _attr: { "w:val": "yellow" } } },
+                    ],
                     highlight: HighlightColor.YELLOW,
-                    expected: [{ "w:highlight": { _attr: { "w:val": "yellow" } } }, { "w:highlightCs": { _attr: { "w:val": "yellow" } } }],
                 },
                 {
+                    expected: [
+                        { "w:highlight": { _attr: { "w:val": "yellow" } } },
+                        { "w:highlightCs": { _attr: { "w:val": "yellow" } } },
+                    ],
                     highlight: HighlightColor.YELLOW,
                     highlightComplexScript: true,
-                    expected: [{ "w:highlight": { _attr: { "w:val": "yellow" } } }, { "w:highlightCs": { _attr: { "w:val": "yellow" } } }],
                 },
                 {
+                    expected: [{ "w:highlight": { _attr: { "w:val": "yellow" } } }],
                     highlight: HighlightColor.YELLOW,
                     highlightComplexScript: false,
-                    expected: [{ "w:highlight": { _attr: { "w:val": "yellow" } } }],
                 },
                 {
+                    expected: [
+                        { "w:highlight": { _attr: { "w:val": "yellow" } } },
+                        { "w:highlightCs": { _attr: { "w:val": "550099" } } },
+                    ],
                     highlight: HighlightColor.YELLOW,
                     highlightComplexScript: "550099",
-                    expected: [{ "w:highlight": { _attr: { "w:val": "yellow" } } }, { "w:highlightCs": { _attr: { "w:val": "550099" } } }],
                 },
             ];
             highlightTests.forEach(({ highlight, highlightComplexScript, expected }) => {
                 it(`#highlight ${highlight} cs ${highlightComplexScript}`, () => {
                     const abstractNumbering = new AbstractNumbering(1, [
                         {
-                            level: 0,
                             format: LevelFormat.LOWER_ROMAN,
-                            text: "%0.",
+                            level: 0,
                             style: {
                                 run: { highlight, highlightComplexScript },
                             },
+                            text: "%0.",
                         },
                     ]);
                     const tree = new Formatter().format(abstractNumbering);
@@ -2144,32 +2165,52 @@ describe("AbstractNumbering", () => {
 
             const shadingTests = [
                 {
+                    expected: [
+                        {
+                            "w:shd": {
+                                _attr: {
+                                    "w:color": "0000FF",
+                                    "w:fill": "006622",
+                                    "w:val": "diagStripe",
+                                },
+                            },
+                        },
+                    ],
                     shading: {
-                        type: ShadingType.DIAGONAL_STRIPE,
-                        fill: "006622",
                         color: "0000FF",
+                        fill: "006622",
+                        type: ShadingType.DIAGONAL_STRIPE,
                     },
-                    expected: [{ "w:shd": { _attr: { "w:val": "diagStripe", "w:fill": "006622", "w:color": "0000FF" } } }],
                 },
                 {
+                    expected: [
+                        {
+                            "w:shd": {
+                                _attr: {
+                                    "w:color": "FF0000",
+                                    "w:fill": "00FFFF",
+                                    "w:val": "pct10",
+                                },
+                            },
+                        },
+                    ],
                     shading: {
-                        type: ShadingType.PERCENT_10,
-                        fill: "00FFFF",
                         color: "FF0000",
+                        fill: "00FFFF",
+                        type: ShadingType.PERCENT_10,
                     },
-                    expected: [{ "w:shd": { _attr: { "w:val": "pct10", "w:fill": "00FFFF", "w:color": "FF0000" } } }],
                 },
             ];
             shadingTests.forEach(({ shading, expected }) => {
                 it("#shade correctly", () => {
                     const abstractNumbering = new AbstractNumbering(1, [
                         {
-                            level: 0,
                             format: LevelFormat.LOWER_ROMAN,
-                            text: "%0.",
+                            level: 0,
                             style: {
                                 run: { shading },
                             },
+                            text: "%0.",
                         },
                     ]);
                     const tree = new Formatter().format(abstractNumbering);
@@ -2238,14 +2279,14 @@ describe("AbstractNumbering", () => {
                 it("should set underline to 'single' if no arguments are given", () => {
                     const abstractNumbering = new AbstractNumbering(1, [
                         {
-                            level: 0,
                             format: LevelFormat.LOWER_ROMAN,
-                            text: "%0.",
+                            level: 0,
                             style: {
                                 run: {
                                     underline: {},
                                 },
                             },
+                            text: "%0.",
                         },
                     ]);
                     const tree = new Formatter().format(abstractNumbering);
@@ -2312,9 +2353,8 @@ describe("AbstractNumbering", () => {
                 it("should set the style if given", () => {
                     const abstractNumbering = new AbstractNumbering(1, [
                         {
-                            level: 0,
                             format: LevelFormat.LOWER_ROMAN,
-                            text: "%0.",
+                            level: 0,
                             style: {
                                 run: {
                                     underline: {
@@ -2322,6 +2362,7 @@ describe("AbstractNumbering", () => {
                                     },
                                 },
                             },
+                            text: "%0.",
                         },
                     ]);
                     const tree = new Formatter().format(abstractNumbering);
@@ -2388,17 +2429,17 @@ describe("AbstractNumbering", () => {
                 it("should set the style and color if given", () => {
                     const abstractNumbering = new AbstractNumbering(1, [
                         {
-                            level: 0,
                             format: LevelFormat.LOWER_ROMAN,
-                            text: "%0.",
+                            level: 0,
                             style: {
                                 run: {
                                     underline: {
-                                        type: UnderlineType.DOUBLE,
                                         color: "005599",
+                                        type: UnderlineType.DOUBLE,
                                     },
                                 },
                             },
+                            text: "%0.",
                         },
                     ]);
                     const tree = new Formatter().format(abstractNumbering);
@@ -2448,7 +2489,16 @@ describe("AbstractNumbering", () => {
                                         },
                                     },
                                     {
-                                        "w:rPr": [{ "w:u": { _attr: { "w:val": "double", "w:color": "005599" } } }],
+                                        "w:rPr": [
+                                            {
+                                                "w:u": {
+                                                    _attr: {
+                                                        "w:color": "005599",
+                                                        "w:val": "double",
+                                                    },
+                                                },
+                                            },
+                                        ],
                                     },
                                     {
                                         _attr: {
@@ -2467,14 +2517,14 @@ describe("AbstractNumbering", () => {
                 it("should set emphasisMark to 'dot' if no arguments are given", () => {
                     const abstractNumbering = new AbstractNumbering(1, [
                         {
-                            level: 0,
                             format: LevelFormat.LOWER_ROMAN,
-                            text: "%0.",
+                            level: 0,
                             style: {
                                 run: {
                                     emphasisMark: {},
                                 },
                             },
+                            text: "%0.",
                         },
                     ]);
                     const tree = new Formatter().format(abstractNumbering);
@@ -2541,9 +2591,8 @@ describe("AbstractNumbering", () => {
                 it("should set the style if given", () => {
                     const abstractNumbering = new AbstractNumbering(1, [
                         {
-                            level: 0,
                             format: LevelFormat.LOWER_ROMAN,
-                            text: "%0.",
+                            level: 0,
                             style: {
                                 run: {
                                     emphasisMark: {
@@ -2551,6 +2600,7 @@ describe("AbstractNumbering", () => {
                                     },
                                 },
                             },
+                            text: "%0.",
                         },
                     ]);
                     const tree = new Formatter().format(abstractNumbering);
@@ -2618,14 +2668,14 @@ describe("AbstractNumbering", () => {
             it("#color", () => {
                 const abstractNumbering = new AbstractNumbering(1, [
                     {
-                        level: 0,
                         format: LevelFormat.LOWER_ROMAN,
-                        text: "%0.",
+                        level: 0,
                         style: {
                             run: {
                                 color: "123456",
                             },
                         },
+                        text: "%0.",
                     },
                 ]);
                 const tree = new Formatter().format(abstractNumbering);

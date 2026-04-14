@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { createRunFonts } from "./run-fonts";
 
@@ -8,7 +7,14 @@ describe("createRunFonts", () => {
     it("uses the font name for both ascii and hAnsi", () => {
         const tree = new Formatter().format(createRunFonts("Times"));
         expect(tree).to.deep.equal({
-            "w:rFonts": { _attr: { "w:ascii": "Times", "w:cs": "Times", "w:eastAsia": "Times", "w:hAnsi": "Times" } },
+            "w:rFonts": {
+                _attr: {
+                    "w:ascii": "Times",
+                    "w:cs": "Times",
+                    "w:eastAsia": "Times",
+                    "w:hAnsi": "Times",
+                },
+            },
         });
     });
 
@@ -16,7 +22,13 @@ describe("createRunFonts", () => {
         const tree = new Formatter().format(createRunFonts("Times", "default"));
         expect(tree).to.deep.equal({
             "w:rFonts": {
-                _attr: { "w:ascii": "Times", "w:cs": "Times", "w:eastAsia": "Times", "w:hAnsi": "Times", "w:hint": "default" },
+                _attr: {
+                    "w:ascii": "Times",
+                    "w:cs": "Times",
+                    "w:eastAsia": "Times",
+                    "w:hAnsi": "Times",
+                    "w:hint": "default",
+                },
             },
         });
     });

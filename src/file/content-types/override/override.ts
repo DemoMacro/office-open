@@ -1,9 +1,10 @@
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
-type IOverrideAttributes = {
+interface IOverrideAttributes {
     readonly contentType: string;
     readonly partName?: string;
-};
+}
 
 /**
  * Creates a content type override for a specific part.
@@ -29,9 +30,9 @@ type IOverrideAttributes = {
  */
 export const createOverride = (contentType: string, partName?: string): XmlComponent =>
     new BuilderElement<IOverrideAttributes>({
-        name: "Override",
         attributes: {
             contentType: { key: "ContentType", value: contentType },
             partName: { key: "PartName", value: partName },
         },
+        name: "Override",
     });

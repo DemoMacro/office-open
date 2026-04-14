@@ -20,14 +20,14 @@ import { createMathSuperScriptElement } from "./math-super-script";
  *
  * @see {@link MathIntegral}
  */
-export type IMathIntegralOptions = {
+export interface IMathIntegralOptions {
     /** The integrand expression */
     readonly children: readonly MathComponent[];
     /** Optional lower bound of integration */
     readonly subScript?: readonly MathComponent[];
     /** Optional upper bound of integration */
     readonly superScript?: readonly MathComponent[];
-};
+}
 
 /**
  * Represents an integral (∫) expression in a math equation.
@@ -67,17 +67,17 @@ export class MathIntegral extends XmlComponent {
         this.root.push(
             createMathNAryProperties({
                 accent: "",
-                hasSuperScript: !!options.superScript,
-                hasSubScript: !!options.subScript,
+                hasSubScript: Boolean(options.subScript),
+                hasSuperScript: Boolean(options.superScript),
                 limitLocationVal: "subSup",
             }),
         );
 
-        if (!!options.subScript) {
+        if (options.subScript) {
             this.root.push(createMathSubScriptElement({ children: options.subScript }));
         }
 
-        if (!!options.superScript) {
+        if (options.superScript) {
             this.root.push(createMathSuperScriptElement({ children: options.superScript }));
         }
 

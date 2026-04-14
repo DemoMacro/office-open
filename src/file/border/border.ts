@@ -28,7 +28,8 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 import { eighthPointMeasureValue, hexColorValue, pointMeasureValue } from "@util/values";
 
 /**
@@ -39,7 +40,7 @@ import { eighthPointMeasureValue, hexColorValue, pointMeasureValue } from "@util
  * @property size - Border thickness in eighths of a point (1/8 pt)
  * @property space - Spacing offset from the content in points
  */
-export type IBorderOptions = {
+export interface IBorderOptions {
     readonly style: (typeof BorderStyle)[keyof typeof BorderStyle];
     /** Border color, in hex (eg 'FF00AA') */
     readonly color?: string;
@@ -47,7 +48,7 @@ export type IBorderOptions = {
     readonly size?: number;
     /** Spacing offset. Values are specified in pt */
     readonly space?: number;
-};
+}
 
 /**
  * Creates a border element for a WordprocessingML document.
@@ -67,15 +68,27 @@ export type IBorderOptions = {
  * });
  * ```
  */
-export const createBorderElement = (elementName: string, { color, size, space, style }: IBorderOptions): XmlComponent =>
+export const createBorderElement = (
+    elementName: string,
+    { color, size, space, style }: IBorderOptions,
+): XmlComponent =>
     new BuilderElement<IBorderOptions>({
-        name: elementName,
         attributes: {
+            color: {
+                key: "w:color",
+                value: color === undefined ? undefined : hexColorValue(color),
+            },
+            size: {
+                key: "w:sz",
+                value: size === undefined ? undefined : eighthPointMeasureValue(size),
+            },
+            space: {
+                key: "w:space",
+                value: space === undefined ? undefined : pointMeasureValue(space),
+            },
             style: { key: "w:val", value: style },
-            color: { key: "w:color", value: color === undefined ? undefined : hexColorValue(color) },
-            size: { key: "w:sz", value: size === undefined ? undefined : eighthPointMeasureValue(size) },
-            space: { key: "w:space", value: space === undefined ? undefined : pointMeasureValue(space) },
         },
+        name: elementName,
     });
 
 /**
@@ -123,58 +136,58 @@ export const createBorderElement = (elementName: string, { color, size, space, s
  * @publicApi
  */
 export const BorderStyle = {
-    /** a single line */
+    /** A single line */
     SINGLE: "single",
-    /** a line with a series of alternating thin and thick strokes */
+    /** A line with a series of alternating thin and thick strokes */
     DASH_DOT_STROKED: "dashDotStroked",
-    /** a dashed line */
+    /** A dashed line */
     DASHED: "dashed",
-    /** a dashed line with small gaps */
+    /** A dashed line with small gaps */
     DASH_SMALL_GAP: "dashSmallGap",
-    /** a line with alternating dots and dashes */
+    /** A line with alternating dots and dashes */
     DOT_DASH: "dotDash",
-    /** a line with a repeating dot - dot - dash sequence */
+    /** A line with a repeating dot - dot - dash sequence */
     DOT_DOT_DASH: "dotDotDash",
-    /** a dotted line */
+    /** A dotted line */
     DOTTED: "dotted",
-    /** a double line */
+    /** A double line */
     DOUBLE: "double",
-    /** a double wavy line */
+    /** A double wavy line */
     DOUBLE_WAVE: "doubleWave",
-    /** an inset set of lines */
+    /** An inset set of lines */
     INSET: "inset",
-    /** no border */
+    /** No border */
     NIL: "nil",
-    /** no border */
+    /** No border */
     NONE: "none",
-    /** an outset set of lines */
+    /** An outset set of lines */
     OUTSET: "outset",
-    /** a single line */
+    /** A single line */
     THICK: "thick",
-    /** a thick line contained within a thin line with a large-sized intermediate gap */
+    /** A thick line contained within a thin line with a large-sized intermediate gap */
     THICK_THIN_LARGE_GAP: "thickThinLargeGap",
-    /** a thick line contained within a thin line with a medium-sized intermediate gap */
+    /** A thick line contained within a thin line with a medium-sized intermediate gap */
     THICK_THIN_MEDIUM_GAP: "thickThinMediumGap",
-    /** a thick line contained within a thin line with a small intermediate gap */
+    /** A thick line contained within a thin line with a small intermediate gap */
     THICK_THIN_SMALL_GAP: "thickThinSmallGap",
-    /** a thin line contained within a thick line with a large-sized intermediate gap */
+    /** A thin line contained within a thick line with a large-sized intermediate gap */
     THIN_THICK_LARGE_GAP: "thinThickLargeGap",
-    /** a thick line contained within a thin line with a medium-sized intermediate gap */
+    /** A thick line contained within a thin line with a medium-sized intermediate gap */
     THIN_THICK_MEDIUM_GAP: "thinThickMediumGap",
-    /** a thick line contained within a thin line with a small intermediate gap */
+    /** A thick line contained within a thin line with a small intermediate gap */
     THIN_THICK_SMALL_GAP: "thinThickSmallGap",
-    /** a thin-thick-thin line with a large gap */
+    /** A thin-thick-thin line with a large gap */
     THIN_THICK_THIN_LARGE_GAP: "thinThickThinLargeGap",
-    /** a thin-thick-thin line with a medium gap */
+    /** A thin-thick-thin line with a medium gap */
     THIN_THICK_THIN_MEDIUM_GAP: "thinThickThinMediumGap",
-    /** a thin-thick-thin line with a small gap */
+    /** A thin-thick-thin line with a small gap */
     THIN_THICK_THIN_SMALL_GAP: "thinThickThinSmallGap",
-    /** a three-staged gradient line, getting darker towards the paragraph */
+    /** A three-staged gradient line, getting darker towards the paragraph */
     THREE_D_EMBOSS: "threeDEmboss",
-    /** a three-staged gradient like, getting darker away from the paragraph */
+    /** A three-staged gradient like, getting darker away from the paragraph */
     THREE_D_ENGRAVE: "threeDEngrave",
-    /** a triple line */
+    /** A triple line */
     TRIPLE: "triple",
-    /** a wavy line */
+    /** A wavy line */
     WAVE: "wave",
 } as const;

@@ -1,6 +1,5 @@
-import { beforeEach, describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { beforeEach, describe, expect, it } from "vite-plus/test";
 
 import { ColumnBreak, PageBreak, PageBreakBefore } from "./break";
 

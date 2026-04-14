@@ -10,23 +10,27 @@
  */
 import { BuilderElement } from "@file/xml-components";
 
-import { createMathPreSubSuperScriptProperties } from "./math-pre-sub-super-script-function-properties";
 import type { MathComponent } from "../../math-component";
-import { createMathBase, createMathSubScriptElement, createMathSuperScriptElement } from "../../n-ary";
+import {
+    createMathBase,
+    createMathSubScriptElement,
+    createMathSuperScriptElement,
+} from "../../n-ary";
+import { createMathPreSubSuperScriptProperties } from "./math-pre-sub-super-script-function-properties";
 
 /**
  * Options for creating a MathPreSubSuperScript.
  *
  * @see {@link MathPreSubSuperScript}
  */
-export type IMathPreSubSuperScriptOptions = {
+export interface IMathPreSubSuperScriptOptions {
     /** The base expression */
     readonly children: readonly MathComponent[];
     /** The pre-subscript expression (appears lower-left of base) */
     readonly subScript: readonly MathComponent[];
     /** The pre-superscript expression (appears upper-left of base) */
     readonly superScript: readonly MathComponent[];
-};
+}
 
 /**
  * Represents a pre-subscript and pre-superscript expression in a math equation.
@@ -63,13 +67,13 @@ export type IMathPreSubSuperScriptOptions = {
 export class MathPreSubSuperScript extends BuilderElement {
     public constructor({ children, subScript, superScript }: IMathPreSubSuperScriptOptions) {
         super({
-            name: "m:sPre",
             children: [
                 createMathPreSubSuperScriptProperties(),
                 createMathBase({ children: children }),
                 createMathSubScriptElement({ children: subScript }),
                 createMathSuperScriptElement({ children: superScript }),
             ],
+            name: "m:sPre",
         });
     }
 }

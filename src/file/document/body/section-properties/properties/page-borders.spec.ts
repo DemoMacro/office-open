@@ -1,7 +1,6 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
 import { BorderStyle } from "@file/border";
+import { describe, expect, it } from "vite-plus/test";
 
 import { PageBorderDisplay, PageBorderZOrder, PageBorders } from "./page-borders";
 
@@ -38,36 +37,38 @@ describe("PageBorders", () => {
 
         it("should create page borders with full configuration", () => {
             const properties = new PageBorders({
+                pageBorderBottom: {
+                    color: "556677",
+                    size: 30,
+                    style: BorderStyle.SINGLE,
+                },
+                pageBorderLeft: {
+                    color: "889900",
+                    size: 40,
+                    style: BorderStyle.DOTTED,
+                },
+                pageBorderRight: {
+                    color: "223344",
+                    size: 20,
+                    style: BorderStyle.DOUBLE,
+                },
+                pageBorderTop: {
+                    color: "001122",
+                    size: 10,
+                    style: BorderStyle.DOUBLE_WAVE,
+                },
                 pageBorders: {
                     display: PageBorderDisplay.FIRST_PAGE,
                     zOrder: PageBorderZOrder.BACK,
-                },
-                pageBorderTop: {
-                    style: BorderStyle.DOUBLE_WAVE,
-                    size: 10,
-                    color: "001122",
-                },
-                pageBorderRight: {
-                    style: BorderStyle.DOUBLE,
-                    size: 20,
-                    color: "223344",
-                },
-                pageBorderBottom: {
-                    style: BorderStyle.SINGLE,
-                    size: 30,
-                    color: "556677",
-                },
-                pageBorderLeft: {
-                    style: BorderStyle.DOTTED,
-                    size: 40,
-                    color: "889900",
                 },
             });
             const tree = new Formatter().format(properties);
 
             expect(Object.keys(tree)).to.deep.equal(["w:pgBorders"]);
             expect(tree["w:pgBorders"]).to.be.an.instanceof(Array);
-            expect(tree["w:pgBorders"][0]).to.deep.equal({ _attr: { "w:display": "firstPage", "w:zOrder": "back" } });
+            expect(tree["w:pgBorders"][0]).to.deep.equal({
+                _attr: { "w:display": "firstPage", "w:zOrder": "back" },
+            });
             expect(tree["w:pgBorders"][1]).to.deep.equal({
                 "w:top": {
                     _attr: { "w:color": "001122", "w:sz": 10, "w:val": "doubleWave" },

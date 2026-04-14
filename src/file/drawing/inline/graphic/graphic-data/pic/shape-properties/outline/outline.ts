@@ -8,7 +8,8 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 import { createNoFill } from "./no-fill";
 import type { SchemeColor } from "./scheme-color";
@@ -98,7 +99,7 @@ export const PenAlignment = {
 /**
  * Attributes for configuring outline properties.
  */
-export type OutlineAttributes = {
+export interface OutlineAttributes {
     /** Line width in EMUs (English Metric Units) */
     readonly width?: number;
     /** Line cap style */
@@ -107,39 +108,39 @@ export type OutlineAttributes = {
     readonly compoundLine?: keyof typeof CompoundLine;
     /** Pen alignment */
     readonly align?: keyof typeof PenAlignment;
-};
+}
 
 /**
  * No fill option for outline.
  */
-type OutlineNoFill = {
+interface OutlineNoFill {
     /** No fill type */
     readonly type: "noFill";
-};
+}
 
 /**
  * RGB solid fill for outline.
  */
-type OutlineRgbSolidFill = {
+interface OutlineRgbSolidFill {
     /** Solid fill type */
     readonly type: "solidFill";
     /** RGB color type */
     readonly solidFillType: "rgb";
     /** Hex color value (e.g., "FF0000" for red) */
     readonly value: string;
-};
+}
 
 /**
  * Scheme-based solid fill for outline.
  */
-type OutlineSchemeSolidFill = {
+interface OutlineSchemeSolidFill {
     /** Solid fill type */
     readonly type: "solidFill";
     /** Scheme color type */
     readonly solidFillType: "scheme";
     /** Scheme color value */
     readonly value: (typeof SchemeColor)[keyof typeof SchemeColor];
-};
+}
 
 /**
  * Union type for solid fill options.
@@ -203,11 +204,10 @@ export type OutlineOptions = OutlineAttributes & OutlineFillProperties;
  */
 export const createOutline = (options: OutlineOptions): XmlComponent =>
     new BuilderElement<OutlineAttributes>({
-        name: "a:ln",
         attributes: {
-            width: {
-                key: "w",
-                value: options.width,
+            align: {
+                key: "algn",
+                value: options.align,
             },
             cap: {
                 key: "cap",
@@ -217,9 +217,9 @@ export const createOutline = (options: OutlineOptions): XmlComponent =>
                 key: "cmpd",
                 value: options.compoundLine,
             },
-            align: {
-                key: "algn",
-                value: options.align,
+            width: {
+                key: "w",
+                value: options.width,
             },
         },
         children: [
@@ -235,4 +235,5 @@ export const createOutline = (options: OutlineOptions): XmlComponent =>
                         value: options.value,
                     }),
         ],
+        name: "a:ln",
     });

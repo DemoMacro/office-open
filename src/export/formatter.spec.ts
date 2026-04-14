@@ -1,9 +1,8 @@
-import { assert, beforeEach, describe, expect, it, vi } from "vitest";
-
 import { Formatter } from "@export/formatter";
 import { CoreProperties } from "@file/core-properties";
 import { Paragraph, TextRun } from "@file/paragraph";
 import { Attributes } from "@file/xml-components";
+import { assert, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 describe("Formatter", () => {
     let formatter: Formatter;
@@ -30,8 +29,8 @@ describe("Formatter", () => {
             const paragraph = new Paragraph({
                 children: [
                     new TextRun({
-                        text: "test",
                         bold: true,
+                        text: "test",
                     }),
                 ],
             });
@@ -99,8 +98,8 @@ describe("Formatter", () => {
 
         it("should format Properties object correctly", () => {
             const properties = new CoreProperties({
-                title: "test document",
                 creator: "Dolan",
+                title: "test document",
             });
             const newJson = formatter.format(properties);
             assert.isDefined(newJson["cp:coreProperties"]);

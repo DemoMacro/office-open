@@ -7,15 +7,16 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Options for creating an accent character element.
  */
-type MathAccentCharacterOptions = {
+interface MathAccentCharacterOptions {
     /** The n-ary operator character (e.g., "∑", "∫", "∏") */
     readonly accent: string;
-};
+}
 
 /**
  * Creates an accent character element for n-ary operators.
@@ -34,8 +35,8 @@ type MathAccentCharacterOptions = {
  */
 export const createMathAccentCharacter = ({ accent }: MathAccentCharacterOptions): XmlComponent =>
     new BuilderElement<MathAccentCharacterOptions>({
-        name: "m:chr",
         attributes: {
             accent: { key: "m:val", value: accent },
         },
+        name: "m:chr",
     });

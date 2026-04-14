@@ -42,12 +42,12 @@ class NumAttributes extends XmlAttributeComponent<{
  * @property num - The level number to override (0-8)
  * @property start - The starting number for this level
  */
-type IOverrideLevel = {
+interface IOverrideLevel {
     /** The level number to override (0-8). */
     readonly num: number;
     /** The starting number for this level. */
     readonly start?: number;
-};
+}
 
 /**
  * Options for creating a concrete numbering instance.
@@ -58,7 +58,7 @@ type IOverrideLevel = {
  * @property instance - Instance number for tracking multiple uses
  * @property overrideLevels - Array of level overrides to customize specific levels
  */
-export type IConcreteNumberingOptions = {
+export interface IConcreteNumberingOptions {
     /** Unique identifier for this numbering instance. */
     readonly numId: number;
     /** ID of the abstract numbering definition to reference. */
@@ -69,7 +69,7 @@ export type IConcreteNumberingOptions = {
     readonly instance: number;
     /** Array of level overrides to customize specific levels. */
     readonly overrideLevels?: readonly IOverrideLevel[];
-};
+}
 
 /**
  * Represents a concrete numbering instance in a WordprocessingML document.

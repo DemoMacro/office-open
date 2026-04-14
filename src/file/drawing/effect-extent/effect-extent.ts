@@ -8,12 +8,13 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Attributes for effect extent.
  */
-export type EffectExtentAttributes = {
+export interface EffectExtentAttributes {
     /**
      * ## Additional Extent on Top Edge
      *
@@ -38,7 +39,7 @@ export type EffectExtentAttributes = {
      * Specifies the additional length, in EMUs, which shall be added to the left edge of the DrawingML object to determine its actual left edge including effects.
      */
     readonly left: number;
-};
+}
 
 /**
  * Creates an effect extent element.
@@ -73,18 +74,14 @@ export type EffectExtentAttributes = {
  * });
  * ```
  */
-export const createEffectExtent = ({ top, right, bottom, left }: EffectExtentAttributes): XmlComponent =>
+export const createEffectExtent = ({
+    top,
+    right,
+    bottom,
+    left,
+}: EffectExtentAttributes): XmlComponent =>
     new BuilderElement<EffectExtentAttributes>({
-        name: "wp:effectExtent",
         attributes: {
-            top: {
-                key: "t",
-                value: top,
-            },
-            right: {
-                key: "r",
-                value: right,
-            },
             bottom: {
                 key: "b",
                 value: bottom,
@@ -93,5 +90,14 @@ export const createEffectExtent = ({ top, right, bottom, left }: EffectExtentAtt
                 key: "l",
                 value: left,
             },
+            right: {
+                key: "r",
+                value: right,
+            },
+            top: {
+                key: "t",
+                value: top,
+            },
         },
+        name: "wp:effectExtent",
     });

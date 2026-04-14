@@ -1,6 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
 import * as convenienceFunctions from "@util/convenience-functions";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { Media } from "./media";
 
@@ -18,24 +17,24 @@ describe("Media", () => {
             const media = new Media();
 
             media.addImage("test2.png", {
-                type: "png",
                 data: Buffer.from(""),
                 fileName: "test.png",
                 transformation: {
-                    pixels: {
-                        x: Math.round(100),
-                        y: Math.round(100),
-                    },
-                    flip: {
-                        vertical: true,
-                        horizontal: true,
-                    },
                     emus: {
                         x: Math.round(1 * 9525),
                         y: Math.round(1 * 9525),
                     },
+                    flip: {
+                        horizontal: true,
+                        vertical: true,
+                    },
+                    pixels: {
+                        x: Math.round(100),
+                        y: Math.round(100),
+                    },
                     rotation: 90,
                 },
+                type: "png",
             });
 
             const array = media.Array;
@@ -45,17 +44,17 @@ describe("Media", () => {
             const image = array[0];
             expect(image.fileName).to.equal("test.png");
             expect(image.transformation).to.deep.equal({
-                pixels: {
-                    x: 100,
-                    y: 100,
-                },
-                flip: {
-                    vertical: true,
-                    horizontal: true,
-                },
                 emus: {
                     x: 9525,
                     y: 9525,
+                },
+                flip: {
+                    horizontal: true,
+                    vertical: true,
+                },
+                pixels: {
+                    x: 100,
+                    y: 100,
                 },
                 rotation: 90,
             });

@@ -12,7 +12,8 @@
 //         <element name="extLst" type="CT_OfficeArtExtensionList" minOccurs="0" maxOccurs="1" />
 //     </sequence>
 
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 // <xsd:complexType name="CT_Hyperlink">
 //     <xsd:group ref="EG_PContent" minOccurs="0" maxOccurs="unbounded" />
@@ -50,7 +51,6 @@ import { BuilderElement, type XmlComponent } from "@file/xml-components";
  */
 export const createHyperlinkClick = (linkId: string, hasXmlNs: boolean): XmlComponent =>
     new BuilderElement({
-        name: "a:hlinkClick",
         attributes: {
             ...(hasXmlNs
                 ? {
@@ -65,6 +65,7 @@ export const createHyperlinkClick = (linkId: string, hasXmlNs: boolean): XmlComp
                 value: `rId${linkId}`,
             },
         },
+        name: "a:hlinkClick",
     });
 
 /**
@@ -91,7 +92,6 @@ export const createHyperlinkClick = (linkId: string, hasXmlNs: boolean): XmlComp
  */
 export const createHyperlinkHover = (linkId: string, hasXmlNs: boolean): XmlComponent =>
     new BuilderElement({
-        name: "a:hlinkHover",
         attributes: {
             ...(hasXmlNs
                 ? {
@@ -106,4 +106,5 @@ export const createHyperlinkHover = (linkId: string, hasXmlNs: boolean): XmlComp
                 value: `rId${linkId}`,
             },
         },
+        name: "a:hlinkHover",
     });

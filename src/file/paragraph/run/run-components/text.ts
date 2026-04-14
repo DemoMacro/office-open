@@ -21,12 +21,12 @@ import { TextAttributes } from "../text-attributes";
 /**
  * Options for creating a Text element.
  */
-type ITextOptions = {
+interface ITextOptions {
     /** How whitespace should be handled */
     readonly space?: (typeof SpaceType)[keyof typeof SpaceType];
     /** The text content */
     readonly text?: string;
-};
+}
 
 /**
  * Represents a text element within a run.
@@ -54,7 +54,7 @@ export class Text extends XmlComponent {
             this.root.push(options);
         } else {
             this.root.push(new TextAttributes({ space: options.space ?? SpaceType.DEFAULT }));
-            this.root.push(options.text);
+            this.root.push(options.text ?? "");
         }
     }
 }

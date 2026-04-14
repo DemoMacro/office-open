@@ -7,7 +7,8 @@
  *
  * @module
  */
-import { BaseXmlComponent, type IContext } from "./base";
+import { BaseXmlComponent } from "./base";
+import type { IContext } from "./base";
 import type { IXmlableObject } from "./xmlable-object";
 
 /**
@@ -49,8 +50,7 @@ export abstract class XmlComponent extends BaseXmlComponent {
      * This array forms the content of the XML element. It can contain other
      * XmlComponents, string values (text nodes), or attribute components.
      */
-    // eslint-disable-next-line functional/prefer-readonly-type, @typescript-eslint/no-explicit-any
-    protected root: (BaseXmlComponent | string | any)[];
+    protected root: (BaseXmlComponent | IXmlableObject | string)[];
 
     /**
      * Creates a new XmlComponent.
@@ -88,39 +88,41 @@ export abstract class XmlComponent extends BaseXmlComponent {
     public prepForXml(context: IContext): IXmlableObject | undefined {
         // Push this component onto the stack for context-aware processing
         // Mutating the stack is required for performance reasons
-        // eslint-disable-next-line functional/immutable-data
         context.stack.push(this);
 
         // Recursively prepare all children for serialization.
         // Using a for-loop with push avoids the intermediate arrays created by
-        // map() + filter(), reducing GC pressure on large documents.
-        // eslint-disable-next-line functional/prefer-readonly-type
-        const children: (BaseXmlComponent | string | undefined)[] = [];
+        // Map() + filter(), reducing GC pressure on large documents.
+        const children: (BaseXmlComponent | IXmlableObject | string | undefined)[] = [];
         for (const comp of this.root) {
             if (comp instanceof BaseXmlComponent) {
                 const prepared = comp.prepForXml(context);
                 if (prepared !== undefined) {
-                    // eslint-disable-next-line functional/immutable-data
                     children.push(prepared);
                 }
             } else {
-                // eslint-disable-next-line functional/immutable-data
                 children.push(comp);
             }
         }
 
         // Pop this component from the stack
-        // eslint-disable-next-line functional/immutable-data
         context.stack.pop();
 
         // Optimization: If we only have a single IXmlableObject in our children array
-        // and it represents attributes, use the object itself as our children to
-        // avoid an unneeded XML close element (generates <element attr="val"/> instead
-        // of <element><attr val="val"/></element>).
+        // And it represents attributes, use the object itself as our children to
+        // Avoid an unneeded XML close element (generates <element attr="val"/> instead
+        // Of <element><attr val="val"/></element>).
         // Additionally, if the array is empty, use an empty object to generate
-        // a self-closing XML element.
+        // A self-closing XML element.
         return {
-            [this.rootKey]: children.length ? (children.length === 1 && children[0]?._attr ? children[0] : children) : EMPTY_OBJECT,
+            [this.rootKey]: children.length
+                ? children.length === 1 &&
+                  children[0] &&
+                  typeof children[0] === "object" &&
+                  "_attr" in children[0]
+                    ? children[0]
+                    : children
+                : EMPTY_OBJECT,
         };
     }
 
@@ -185,8 +187,11 @@ export abstract class IgnoreIfEmptyXmlComponent extends XmlComponent {
             return result;
         }
         // Ignore the object if its falsey or is an empty object (would produce
-        // an empty XML element if allowed to be included in the output).
-        if (result && (typeof result[this.rootKey] !== "object" || Object.keys(result[this.rootKey]).length)) {
+        // An empty XML element if allowed to be included in the output).
+        if (
+            result &&
+            (typeof result[this.rootKey] !== "object" || Object.keys(result[this.rootKey]).length)
+        ) {
             return result;
         }
 

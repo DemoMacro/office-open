@@ -100,7 +100,16 @@ const doc = new Document({
 Footnotes support numbered and bulleted lists:
 
 ```ts
-import { AlignmentType, convertInchesToTwip, Document, FootnoteReferenceRun, LevelFormat, Packer, Paragraph, TextRun } from "docx";
+import {
+    AlignmentType,
+    convertInchesToTwip,
+    Document,
+    FootnoteReferenceRun,
+    LevelFormat,
+    Packer,
+    Paragraph,
+    TextRun,
+} from "docx";
 
 const doc = new Document({
     numbering: {
@@ -115,7 +124,10 @@ const doc = new Document({
                         alignment: AlignmentType.START,
                         style: {
                             paragraph: {
-                                indent: { left: convertInchesToTwip(0.5), hanging: convertInchesToTwip(0.18) },
+                                indent: {
+                                    left: convertInchesToTwip(0.5),
+                                    hanging: convertInchesToTwip(0.18),
+                                },
                             },
                         },
                     },

@@ -8,8 +8,10 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
-import { type PositiveUniversalMeasure, type UniversalMeasure, signedTwipsMeasureValue, twipsMeasureValue } from "@util/values";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
+import { signedTwipsMeasureValue, twipsMeasureValue } from "@util/values";
+import type { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
 
 /**
  * Anchor types for floating table positioning.
@@ -37,11 +39,11 @@ export const RelativeHorizontalPosition = {
  * Relative vertical position values for floating tables.
  */
 export const RelativeVerticalPosition = {
-    CENTER: "center",
-    INSIDE: "inside",
     BOTTOM: "bottom",
-    OUTSIDE: "outside",
+    CENTER: "center",
     INLINE: "inline",
+    INSIDE: "inside",
+    OUTSIDE: "outside",
     TOP: "top",
 } as const;
 
@@ -63,8 +65,8 @@ export const OverlapType = {
     OVERLAP: "overlap",
 } as const;
 
-export type ITableFloatOptions = {
-    /* cSpell:disable */
+export interface ITableFloatOptions {
+    /* CSpell:disable */
     /**
      * Specifies the horizontal anchor or the base object from which the horizontal positioning in the
      * tblpX or tblpXSpec attribute should be determined.
@@ -73,7 +75,7 @@ export type ITableFloatOptions = {
      * text - relative to the vertical edge of the text margin for the column in which the anchor paragraph is located
      * If omitted, the value is assumed to be page.
      */
-    /* cSpell:enable */
+    /* CSpell:enable */
     readonly horizontalAnchor?: (typeof TableAnchorType)[keyof typeof TableAnchorType];
 
     /**
@@ -152,19 +154,21 @@ export type ITableFloatOptions = {
      */
     readonly rightFromText?: number | PositiveUniversalMeasure;
     readonly overlap?: (typeof OverlapType)[keyof typeof OverlapType];
-};
+}
 
 /**
  * Creates a table overlap element.
  *
  * @internal
  */
-const createOverlapElement = (overlap: (typeof OverlapType)[keyof typeof OverlapType]): XmlComponent =>
+const createOverlapElement = (
+    overlap: (typeof OverlapType)[keyof typeof OverlapType],
+): XmlComponent =>
     new BuilderElement<{ readonly val: (typeof OverlapType)[keyof typeof OverlapType] }>({
-        name: "w:tblOverlap",
         attributes: {
             val: { key: "w:val", value: overlap },
         },
+        name: "w:tblOverlap",
     });
 
 /**
@@ -215,35 +219,32 @@ export const createTableFloatProperties = ({
     overlap,
 }: ITableFloatOptions): XmlComponent =>
     new BuilderElement<Omit<ITableFloatOptions, "overlap">>({
-        name: "w:tblpPr",
         attributes: {
-            leftFromText: {
-                key: "w:leftFromText",
-                value: leftFromText === undefined ? undefined : twipsMeasureValue(leftFromText),
+            absoluteHorizontalPosition: {
+                key: "w:tblpX",
+                value:
+                    absoluteHorizontalPosition === undefined
+                        ? undefined
+                        : signedTwipsMeasureValue(absoluteHorizontalPosition),
             },
-            rightFromText: {
-                key: "w:rightFromText",
-                value: rightFromText === undefined ? undefined : twipsMeasureValue(rightFromText),
-            },
-            topFromText: {
-                key: "w:topFromText",
-                value: topFromText === undefined ? undefined : twipsMeasureValue(topFromText),
+            absoluteVerticalPosition: {
+                key: "w:tblpY",
+                value:
+                    absoluteVerticalPosition === undefined
+                        ? undefined
+                        : signedTwipsMeasureValue(absoluteVerticalPosition),
             },
             bottomFromText: {
                 key: "w:bottomFromText",
                 value: bottomFromText === undefined ? undefined : twipsMeasureValue(bottomFromText),
             },
-            absoluteHorizontalPosition: {
-                key: "w:tblpX",
-                value: absoluteHorizontalPosition === undefined ? undefined : signedTwipsMeasureValue(absoluteHorizontalPosition),
-            },
-            absoluteVerticalPosition: {
-                key: "w:tblpY",
-                value: absoluteVerticalPosition === undefined ? undefined : signedTwipsMeasureValue(absoluteVerticalPosition),
-            },
             horizontalAnchor: {
                 key: "w:horzAnchor",
                 value: horizontalAnchor,
+            },
+            leftFromText: {
+                key: "w:leftFromText",
+                value: leftFromText === undefined ? undefined : twipsMeasureValue(leftFromText),
             },
             relativeHorizontalPosition: {
                 key: "w:tblpXSpec",
@@ -253,10 +254,19 @@ export const createTableFloatProperties = ({
                 key: "w:tblpYSpec",
                 value: relativeVerticalPosition,
             },
+            rightFromText: {
+                key: "w:rightFromText",
+                value: rightFromText === undefined ? undefined : twipsMeasureValue(rightFromText),
+            },
+            topFromText: {
+                key: "w:topFromText",
+                value: topFromText === undefined ? undefined : twipsMeasureValue(topFromText),
+            },
             verticalAnchor: {
                 key: "w:vertAnchor",
                 value: verticalAnchor,
             },
         },
         children: overlap ? [createOverlapElement(overlap)] : undefined,
+        name: "w:tblpPr",
     });

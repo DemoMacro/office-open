@@ -22,7 +22,7 @@ export class AppPropertiesAttributes extends XmlAttributeComponent<{
     readonly vt: string;
 }> {
     protected readonly xmlKeys = {
-        xmlns: "xmlns",
         vt: "xmlns:vt",
+        xmlns: "xmlns",
     };
 }

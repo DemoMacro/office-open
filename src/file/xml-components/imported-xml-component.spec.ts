@@ -1,10 +1,14 @@
-import { beforeEach, describe, expect, it } from "vitest";
-import { type Element, xml2js } from "xml-js";
-
 import { EMPTY_OBJECT } from "@file/xml-components";
+import { beforeEach, describe, expect, it } from "vite-plus/test";
+import { xml2js } from "xml-js";
+import type { Element } from "xml-js";
 
 import type { IContext } from "./base";
-import { ImportedRootElementAttributes, ImportedXmlComponent, convertToXmlComponent } from "./imported-xml-component";
+import {
+    ImportedRootElementAttributes,
+    ImportedXmlComponent,
+    convertToXmlComponent,
+} from "./imported-xml-component";
 
 const xmlString = `
         <w:p w:one="value 1" w:two="value 2">
@@ -23,25 +27,25 @@ const xmlString = `
 const convertedXmlElement = {
     root: [
         {
-            rootKey: "w:p",
             root: [
-                { rootKey: "_attr", root: { "w:one": "value 1", "w:two": "value 2" } },
-                { rootKey: "w:rPr", root: [{ rootKey: "w:noProof", root: ["some value"] }] },
+                { root: { "w:one": "value 1", "w:two": "value 2" }, rootKey: "_attr" },
+                { root: [{ rootKey: "w:noProof", root: ["some value"] }], rootKey: "w:rPr" },
                 {
-                    rootKey: "w:r",
                     root: [
                         { rootKey: "_attr", root: { active: "true" } },
                         { rootKey: "w:t", root: ["Text 1"] },
                     ],
+                    rootKey: "w:r",
                 },
                 {
-                    rootKey: "w:r",
                     root: [
                         { rootKey: "_attr", root: { active: "true" } },
                         { rootKey: "w:t", root: ["Text 2"] },
                     ],
+                    rootKey: "w:r",
                 },
             ],
+            rootKey: "w:p",
         },
     ],
 };
@@ -51,8 +55,8 @@ describe("ImportedXmlComponent", () => {
 
     beforeEach(() => {
         const attributes = {
-            someAttr: "1",
             otherAttr: "2",
+            someAttr: "1",
         };
         importedXmlComponent = new ImportedXmlComponent("w:test", attributes);
 
@@ -66,8 +70,8 @@ describe("ImportedXmlComponent", () => {
                 "w:test": [
                     {
                         _attr: {
-                            someAttr: "1",
                             otherAttr: "2",
+                            someAttr: "1",
                         },
                     },
                     {
@@ -98,13 +102,13 @@ describe("ImportedXmlComponent", () => {
 
         it("should skip child elements that return undefined", () => {
             const xmlObj: Element = {
-                type: "element",
-                name: "w:p",
                 elements: [
-                    { type: "text", text: "hello" },
-                    { type: "comment", comment: "a comment" } as unknown as Element,
-                    { type: "element", name: "w:r", elements: [] },
+                    { text: "hello", type: "text" },
+                    { comment: "a comment", type: "comment" } as unknown as Element,
+                    { elements: [], name: "w:r", type: "element" },
                 ],
+                name: "w:p",
+                type: "element",
             };
             const converted = convertToXmlComponent(xmlObj);
             expect(converted).not.to.equal(undefined);

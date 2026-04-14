@@ -5,7 +5,8 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Table layout algorithm types.
@@ -48,10 +49,12 @@ export const TableLayoutType = {
  * createTableLayout(TableLayoutType.FIXED);
  * ```
  */
-export const createTableLayout = (type: (typeof TableLayoutType)[keyof typeof TableLayoutType]): XmlComponent =>
+export const createTableLayout = (
+    type: (typeof TableLayoutType)[keyof typeof TableLayoutType],
+): XmlComponent =>
     new BuilderElement<{ readonly type: (typeof TableLayoutType)[keyof typeof TableLayoutType] }>({
-        name: "w:tblLayout",
         attributes: {
             type: { key: "w:type", value: type },
         },
+        name: "w:tblLayout",
     });

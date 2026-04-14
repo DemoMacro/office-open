@@ -8,8 +8,10 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
-import { type Percentage, type UniversalMeasure, measurementOrPercentValue } from "@util/values";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
+import { measurementOrPercentValue } from "@util/values";
+import type { Percentage, UniversalMeasure } from "@util/values";
 
 /**
  * Cell spacing measurement types.
@@ -36,12 +38,12 @@ export const CellSpacingType = {
  *
  * @see {@link createTableCellSpacing}
  */
-export type ITableCellSpacingProperties = {
+export interface ITableCellSpacingProperties {
     /** The spacing value (in twips, percentage, or universal measure) */
     readonly value: number | Percentage | UniversalMeasure;
     /** The type of measurement (defaults to DXA/twips) */
     readonly type?: (typeof CellSpacingType)[keyof typeof CellSpacingType];
-};
+}
 
 /**
  * Creates table cell spacing in a WordprocessingML document.
@@ -63,11 +65,14 @@ export type ITableCellSpacingProperties = {
  * createTableCellSpacing({ value: 100, type: CellSpacingType.DXA });
  * ```
  */
-export const createTableCellSpacing = ({ type = CellSpacingType.DXA, value }: ITableCellSpacingProperties): XmlComponent =>
+export const createTableCellSpacing = ({
+    type = CellSpacingType.DXA,
+    value,
+}: ITableCellSpacingProperties): XmlComponent =>
     new BuilderElement<ITableCellSpacingProperties>({
-        name: "w:tblCellSpacing",
         attributes: {
             type: { key: "w:type", value: type },
             value: { key: "w:w", value: measurementOrPercentValue(value) },
         },
+        name: "w:tblCellSpacing",
     });

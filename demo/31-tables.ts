@@ -1,7 +1,18 @@
 // Example of how you would create a table and add data to it
 
 import * as fs from "fs";
-import { Document, HeadingLevel, Packer, Paragraph, Table, TableCell, TableRow, VerticalAlignTable, TextDirection } from "docx";
+
+import {
+    Document,
+    HeadingLevel,
+    Packer,
+    Paragraph,
+    Table,
+    TableCell,
+    TableRow,
+    TextDirection,
+    VerticalAlignTable,
+} from "docx";
 
 const doc = new Document({
     sections: [
@@ -20,11 +31,17 @@ const doc = new Document({
                                     verticalAlign: VerticalAlignTable.CENTER,
                                 }),
                                 new TableCell({
-                                    children: [new Paragraph({ text: "bottom to top" }), new Paragraph({})],
+                                    children: [
+                                        new Paragraph({ text: "bottom to top" }),
+                                        new Paragraph({}),
+                                    ],
                                     textDirection: TextDirection.BOTTOM_TO_TOP_LEFT_TO_RIGHT,
                                 }),
                                 new TableCell({
-                                    children: [new Paragraph({ text: "top to bottom" }), new Paragraph({})],
+                                    children: [
+                                        new Paragraph({ text: "top to bottom" }),
+                                        new Paragraph({}),
+                                    ],
                                     textDirection: TextDirection.TOP_TO_BOTTOM_RIGHT_TO_LEFT,
                                 }),
                             ],
@@ -34,8 +51,8 @@ const doc = new Document({
                                 new TableCell({
                                     children: [
                                         new Paragraph({
-                                            text: "Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah",
                                             heading: HeadingLevel.HEADING_1,
+                                            text: "Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah",
                                         }),
                                     ],
                                 }),

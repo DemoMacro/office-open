@@ -1,5 +1,6 @@
 import type { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared/alignment";
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * # Relative Horizontal/Vertical Alignment
@@ -17,7 +18,6 @@ export const createAlign = (
         | (typeof VerticalPositionAlign)[keyof typeof VerticalPositionAlign],
 ): XmlComponent =>
     new BuilderElement({
-        name: "wp:align",
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         children: [value as any],
+        name: "wp:align",
     });

@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { SimpleField, SimpleMailMergeField } from "./simple-field";
 
@@ -16,7 +15,11 @@ describe("SimpleField", () => {
             expect(tree).to.deep.equal({
                 "w:fldSimple": [
                     { _attr: { "w:instr": "FILENAME" } },
-                    { "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "ExampleDoc.docx"] }] },
+                    {
+                        "w:r": [
+                            { "w:t": [{ _attr: { "xml:space": "preserve" } }, "ExampleDoc.docx"] },
+                        ],
+                    },
                 ],
             });
         });

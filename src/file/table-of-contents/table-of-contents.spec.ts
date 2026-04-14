@@ -1,7 +1,6 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
 import { Paragraph } from "@file/paragraph";
+import { describe, expect, it } from "vite-plus/test";
 
 import { TableOfContents } from "./table-of-contents";
 import { StyleLevel } from "./table-of-contents-properties";
@@ -19,21 +18,21 @@ describe("Table of Contents", () => {
 
             const props = {
                 captionLabel: "A",
-                entriesFromBookmark: "B",
                 captionLabelIncludingNumbers: "C",
-                sequenceAndPageNumbersSeparator: "D",
-                tcFieldIdentifier: "F",
-                hyperlink: true,
-                tcFieldLevelRange: "L",
-                pageNumbersEntryLevelsRange: "N",
-                headingStyleRange: "O",
+                entriesFromBookmark: "B",
                 entryAndPageNumberSeparator: "P",
-                seqFieldIdentifierForPrefix: "S",
-                stylesWithLevels: styles,
-                useAppliedParagraphOutlineLevel: true,
-                preserveTabInEntries: true,
-                preserveNewLineInEntries: true,
+                headingStyleRange: "O",
                 hideTabAndPageNumbersInWebView: true,
+                hyperlink: true,
+                pageNumbersEntryLevelsRange: "N",
+                preserveNewLineInEntries: true,
+                preserveTabInEntries: true,
+                seqFieldIdentifierForPrefix: "S",
+                sequenceAndPageNumbersSeparator: "D",
+                stylesWithLevels: styles,
+                tcFieldIdentifier: "F",
+                tcFieldLevelRange: "L",
+                useAppliedParagraphOutlineLevel: true,
             };
 
             const toc = new TableOfContents("Summary", props);
@@ -53,9 +52,9 @@ describe("Table of Contents", () => {
         describe("cached entries", () => {
             it("should construct a TOC with cached content", () => {
                 const cachedEntries = [
-                    { title: "Introduction", level: 1, page: 1 },
-                    { title: "Getting Started", level: 2, page: 3 },
-                    { title: "Advanced Topics", level: 2, page: 10 },
+                    { level: 1, page: 1, title: "Introduction" },
+                    { level: 2, page: 3, title: "Getting Started" },
+                    { level: 2, page: 10, title: "Advanced Topics" },
                 ];
 
                 const toc = new TableOfContents("Table of Contents", { cachedEntries });
@@ -78,17 +77,17 @@ describe("Table of Contents", () => {
                                             {
                                                 "w:tab": {
                                                     _attr: {
-                                                        "w:val": "clear",
                                                         "w:pos": 9026,
+                                                        "w:val": "clear",
                                                     },
                                                 },
                                             },
                                             {
                                                 "w:tab": {
                                                     _attr: {
-                                                        "w:val": "right",
-                                                        "w:pos": 9025,
                                                         "w:leader": "dot",
+                                                        "w:pos": 9025,
+                                                        "w:val": "right",
                                                     },
                                                 },
                                             },
@@ -101,8 +100,8 @@ describe("Table of Contents", () => {
                                     {
                                         "w:fldChar": {
                                             _attr: {
-                                                "w:fldCharType": "begin",
                                                 "w:dirty": true,
+                                                "w:fldCharType": "begin",
                                             },
                                         },
                                     },
@@ -170,17 +169,17 @@ describe("Table of Contents", () => {
                                             {
                                                 "w:tab": {
                                                     _attr: {
-                                                        "w:val": "clear",
                                                         "w:pos": 8786,
+                                                        "w:val": "clear",
                                                     },
                                                 },
                                             },
                                             {
                                                 "w:tab": {
                                                     _attr: {
-                                                        "w:val": "right",
-                                                        "w:pos": 9025,
                                                         "w:leader": "dot",
+                                                        "w:pos": 9025,
+                                                        "w:val": "right",
                                                     },
                                                 },
                                             },
@@ -233,17 +232,17 @@ describe("Table of Contents", () => {
                                             {
                                                 "w:tab": {
                                                     _attr: {
-                                                        "w:val": "clear",
                                                         "w:pos": 8786,
+                                                        "w:val": "clear",
                                                     },
                                                 },
                                             },
                                             {
                                                 "w:tab": {
                                                     _attr: {
-                                                        "w:val": "right",
-                                                        "w:pos": 9025,
                                                         "w:leader": "dot",
+                                                        "w:pos": 9025,
+                                                        "w:val": "right",
                                                     },
                                                 },
                                             },
@@ -316,8 +315,8 @@ describe("Table of Contents", () => {
 
             it("should apply stylesWithLevels to cached entries based on their level", () => {
                 const cachedEntries = [
-                    { title: "Chapter 1", level: 1, page: 1 },
-                    { title: "Section 1.1", level: 2, page: 2 },
+                    { level: 1, page: 1, title: "Chapter 1" },
+                    { level: 2, page: 2, title: "Section 1.1" },
                 ];
 
                 const stylesWithLevels = [new StyleLevel("MyStyle", 1)];
@@ -329,18 +328,20 @@ describe("Table of Contents", () => {
                 const tree = new Formatter().format(toc);
 
                 // First entry should have style MyStyle (level 1)
-                const firstEntryStyle = tree["w:sdt"][1]["w:sdtContent"][0]["w:p"][0]["w:pPr"][0]["w:pStyle"];
+                const firstEntryStyle =
+                    tree["w:sdt"][1]["w:sdtContent"][0]["w:p"][0]["w:pPr"][0]["w:pStyle"];
                 expect(firstEntryStyle._attr["w:val"]).to.equal("MyStyle");
 
                 // Second entry should have style TOC2 (level 2, no custom style)
-                const secondEntryStyle = tree["w:sdt"][1]["w:sdtContent"][1]["w:p"][0]["w:pPr"][0]["w:pStyle"];
+                const secondEntryStyle =
+                    tree["w:sdt"][1]["w:sdtContent"][1]["w:p"][0]["w:pPr"][0]["w:pStyle"];
                 expect(secondEntryStyle._attr["w:val"]).to.equal("TOC2");
             });
 
             it("should construct a TOC with cached content and hyperlinks", () => {
                 const cachedEntries = [
-                    { title: "Introduction", level: 1, page: 1, href: "_Toc001" },
-                    { title: "Summary", level: 1, page: 5, href: "_Toc002" },
+                    { href: "_Toc001", level: 1, page: 1, title: "Introduction" },
+                    { href: "_Toc002", level: 1, page: 5, title: "Summary" },
                 ];
 
                 const toc = new TableOfContents("Table of Contents", {
@@ -380,17 +381,17 @@ describe("Table of Contents", () => {
                                                         {
                                                             "w:tab": {
                                                                 _attr: {
-                                                                    "w:val": "clear",
                                                                     "w:pos": 9026,
+                                                                    "w:val": "clear",
                                                                 },
                                                             },
                                                         },
                                                         {
                                                             "w:tab": {
                                                                 _attr: {
-                                                                    "w:val": "right",
-                                                                    "w:pos": 9025,
                                                                     "w:leader": "dot",
+                                                                    "w:pos": 9025,
+                                                                    "w:val": "right",
                                                                 },
                                                             },
                                                         },
@@ -403,8 +404,8 @@ describe("Table of Contents", () => {
                                                 {
                                                     "w:fldChar": {
                                                         _attr: {
-                                                            "w:fldCharType": "begin",
                                                             "w:dirty": true,
+                                                            "w:fldCharType": "begin",
                                                         },
                                                     },
                                                 },
@@ -415,7 +416,7 @@ describe("Table of Contents", () => {
                                                                 "xml:space": "preserve",
                                                             },
                                                         },
-                                                        "TOC \\h",
+                                                        String.raw`TOC \h`,
                                                     ],
                                                 },
                                                 {
@@ -493,17 +494,17 @@ describe("Table of Contents", () => {
                                                         {
                                                             "w:tab": {
                                                                 _attr: {
-                                                                    "w:val": "clear",
                                                                     "w:pos": 9026,
+                                                                    "w:val": "clear",
                                                                 },
                                                             },
                                                         },
                                                         {
                                                             "w:tab": {
                                                                 _attr: {
-                                                                    "w:val": "right",
-                                                                    "w:pos": 9025,
                                                                     "w:leader": "dot",
+                                                                    "w:pos": 9025,
+                                                                    "w:val": "right",
                                                                 },
                                                             },
                                                         },
@@ -582,8 +583,8 @@ describe("Table of Contents", () => {
 
             it("should not wrap in hyperlink when entry has no href even with hyperlink option", () => {
                 const cachedEntries = [
-                    { title: "No Link Entry", level: 1, page: 1 },
-                    { title: "Link Entry", level: 2, page: 3, href: "_Toc123" },
+                    { level: 1, page: 1, title: "No Link Entry" },
+                    { href: "_Toc123", level: 2, page: 3, title: "Link Entry" },
                 ];
 
                 const toc = new TableOfContents("Table of Contents", {
@@ -601,14 +602,15 @@ describe("Table of Contents", () => {
                 // Second entry (has href) should be wrapped in a hyperlink
                 const secondParagraph = tree["w:sdt"][1]["w:sdtContent"][1]["w:p"];
                 // Find the hyperlink element (skip pPr)
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const hyperlinkChild = secondParagraph.find((el: any) => el["w:hyperlink"] !== undefined);
+                const hyperlinkChild = secondParagraph.find(
+                    (el: any) => el["w:hyperlink"] !== undefined,
+                );
                 expect(hyperlinkChild).to.not.be.undefined;
                 expect(hyperlinkChild["w:hyperlink"][0]._attr["w:anchor"]).to.equal("_Toc123");
             });
 
             it("should render empty string for page number when page is undefined", () => {
-                const cachedEntries = [{ title: "No Page", level: 1 }];
+                const cachedEntries = [{ level: 1, title: "No Page" }];
 
                 const toc = new TableOfContents("Table of Contents", { cachedEntries });
                 const tree = new Formatter().format(toc);
@@ -616,43 +618,49 @@ describe("Table of Contents", () => {
                 const firstParagraph = tree["w:sdt"][1]["w:sdtContent"][0]["w:p"];
                 // Find the run with text content (skip the begin/instrText/separate run)
                 const contentRun = firstParagraph.find(
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    (el: any) => el["w:r"] && el["w:r"].some((child: any) => child["w:tab"] !== undefined),
+                    (el: any) =>
+                        el["w:r"] && el["w:r"].some((child: any) => child["w:tab"] !== undefined),
                 );
                 expect(contentRun).to.not.be.undefined;
                 // The page number text should be ""
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const pageText = contentRun["w:r"].find((child: any) => child["w:t"] && child["w:t"][1] === "");
+                const pageText = contentRun["w:r"].find(
+                    (child: any) => child["w:t"] && child["w:t"][1] === "",
+                );
                 expect(pageText).to.not.be.undefined;
             });
 
             it("should construct a TOC with beginDirty set to false", () => {
-                const cachedEntries = [{ title: "Entry", level: 1, page: 1 }];
+                const cachedEntries = [{ level: 1, page: 1, title: "Entry" }];
 
                 const toc = new TableOfContents("Table of Contents", {
-                    cachedEntries,
                     beginDirty: false,
+                    cachedEntries,
                 });
                 const tree = new Formatter().format(toc);
 
                 const firstParagraph = tree["w:sdt"][1]["w:sdtContent"][0]["w:p"];
                 // Find the begin fldChar run
                 const beginRun = firstParagraph.find(
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    (el: any) => el["w:r"] && el["w:r"].some((child: any) => child["w:fldChar"]?._attr?.["w:fldCharType"] === "begin"),
+                    (el: any) =>
+                        el["w:r"] &&
+                        el["w:r"].some(
+                            (child: any) =>
+                                child["w:fldChar"]?._attr?.["w:fldCharType"] === "begin",
+                        ),
                 );
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const fldChar = beginRun["w:r"].find((child: any) => child["w:fldChar"]?._attr?.["w:fldCharType"] === "begin");
+                const fldChar = beginRun["w:r"].find(
+                    (child: any) => child["w:fldChar"]?._attr?.["w:fldCharType"] === "begin",
+                );
                 expect(fldChar["w:fldChar"]._attr["w:dirty"]).to.equal(false);
             });
 
             it("should fill in an end paragraph if only one cached entry is provided", () => {
-                const cachedEntries = [{ title: "Only Entry", level: 1, page: 1 }];
+                const cachedEntries = [{ level: 1, page: 1, title: "Only Entry" }];
                 const toc = new TableOfContents("Table of Contents", { cachedEntries });
                 const tree = new Formatter().format(toc);
 
                 const expectedParagraphs = [
-                    // cached entry paragraph
+                    // Cached entry paragraph
                     {
                         "w:p": [
                             {
@@ -669,17 +677,17 @@ describe("Table of Contents", () => {
                                             {
                                                 "w:tab": {
                                                     _attr: {
-                                                        "w:val": "clear",
                                                         "w:pos": 9026,
+                                                        "w:val": "clear",
                                                     },
                                                 },
                                             },
                                             {
                                                 "w:tab": {
                                                     _attr: {
-                                                        "w:val": "right",
-                                                        "w:pos": 9025,
                                                         "w:leader": "dot",
+                                                        "w:pos": 9025,
+                                                        "w:val": "right",
                                                     },
                                                 },
                                             },
@@ -692,8 +700,8 @@ describe("Table of Contents", () => {
                                     {
                                         "w:fldChar": {
                                             _attr: {
-                                                "w:fldCharType": "begin",
                                                 "w:dirty": true,
+                                                "w:fldCharType": "begin",
                                             },
                                         },
                                     },
@@ -810,8 +818,8 @@ const DEFAULT_TOC = {
                                 {
                                     "w:fldChar": {
                                         _attr: {
-                                            "w:fldCharType": "begin",
                                             "w:dirty": true,
+                                            "w:fldCharType": "begin",
                                         },
                                     },
                                 },
@@ -878,8 +886,8 @@ const COMPLETE_TOC = {
                                 {
                                     "w:fldChar": {
                                         _attr: {
-                                            "w:fldCharType": "begin",
                                             "w:dirty": true,
+                                            "w:fldCharType": "begin",
                                         },
                                     },
                                 },
@@ -890,7 +898,7 @@ const COMPLETE_TOC = {
                                                 "xml:space": "preserve",
                                             },
                                         },
-                                        'TOC \\a "A" \\b "B" \\c "C" \\d "D" \\f "F" \\h \\l "L" \\n "N" \\o "O" \\p "P" \\s "S" \\t "SL,1,SL,2" \\u \\w \\x \\z',
+                                        String.raw`TOC \a "A" \b "B" \c "C" \d "D" \f "F" \h \l "L" \n "N" \o "O" \p "P" \s "S" \t "SL,1,SL,2" \u \w \x \z`,
                                     ],
                                 },
                                 {
@@ -946,8 +954,8 @@ const TOC_WITH_CHILDREN = {
                                 {
                                     "w:fldChar": {
                                         _attr: {
-                                            "w:fldCharType": "begin",
                                             "w:dirty": true,
+                                            "w:fldCharType": "begin",
                                         },
                                     },
                                 },

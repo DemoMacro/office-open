@@ -9,19 +9,20 @@
  * @module
  */
 import type { IMediaData } from "@file/media";
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 import { createExtentionList } from "./blip-extentions";
 
 /**
  * Attributes for a blip element.
  */
-type BlipAttributes = {
+interface BlipAttributes {
     /** Relationship ID of the embedded image */
     readonly embed: string;
     /** Compression state of the image */
     readonly cstate: string;
-};
+}
 
 /**
  * Creates a blip element for an image.
@@ -68,16 +69,16 @@ type BlipAttributes = {
  */
 export const createBlip = (mediaData: IMediaData): XmlComponent =>
     new BuilderElement<BlipAttributes>({
-        name: "a:blip",
         attributes: {
-            embed: {
-                key: "r:embed",
-                value: `rId{${mediaData.type === "svg" ? mediaData.fallback.fileName : mediaData.fileName}}`,
-            },
             cstate: {
                 key: "cstate",
                 value: "none",
             },
+            embed: {
+                key: "r:embed",
+                value: `rId{${mediaData.type === "svg" ? mediaData.fallback.fileName : mediaData.fileName}}`,
+            },
         },
         children: mediaData.type === "svg" ? [createExtentionList(mediaData)] : [],
+        name: "a:blip",
     });

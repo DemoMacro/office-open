@@ -24,7 +24,11 @@ import { getFirstLevelElements } from "./util";
  * appendContentType(contentTypesElement, "image/jpeg", "jpg");
  * ```
  */
-export const appendContentType = (element: Element, contentType: string, extension: string): void => {
+export const appendContentType = (
+    element: Element,
+    contentType: string,
+    extension: string,
+): void => {
     const relationshipElements = getFirstLevelElements(element, "Types");
 
     const exist = relationshipElements.some(
@@ -38,7 +42,6 @@ export const appendContentType = (element: Element, contentType: string, extensi
         return;
     }
 
-    // eslint-disable-next-line functional/immutable-data
     relationshipElements.push({
         attributes: {
             ContentType: contentType,

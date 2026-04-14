@@ -8,7 +8,8 @@
  * @module
  */
 import type { NumberFormat } from "@file/shared/number-format";
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 import { decimalNumber } from "@util/values";
 
 /**
@@ -49,14 +50,14 @@ export const PageNumberSeparator = {
  * @property formatType - Number format (decimal, roman, letter, etc.)
  * @property separator - Separator between chapter and page number
  */
-export type IPageNumberTypeAttributes = {
+export interface IPageNumberTypeAttributes {
     /** Starting page number for the section */
     readonly start?: number;
     /** Number format (decimal, roman, letter, etc., default: decimal) */
     readonly formatType?: (typeof NumberFormat)[keyof typeof NumberFormat];
     /** Separator between chapter and page number (default: hyphen) */
     readonly separator?: (typeof PageNumberSeparator)[keyof typeof PageNumberSeparator];
-};
+}
 
 /**
  * Creates page numbering settings (pgNumType) for a document section.
@@ -85,12 +86,19 @@ export type IPageNumberTypeAttributes = {
  * });
  * ```
  */
-export const createPageNumberType = ({ start, formatType, separator }: IPageNumberTypeAttributes): XmlComponent =>
+export const createPageNumberType = ({
+    start,
+    formatType,
+    separator,
+}: IPageNumberTypeAttributes): XmlComponent =>
     new BuilderElement<IPageNumberTypeAttributes>({
-        name: "w:pgNumType",
         attributes: {
-            start: { key: "w:start", value: start === undefined ? undefined : decimalNumber(start) },
             formatType: { key: "w:fmt", value: formatType },
             separator: { key: "w:chapSep", value: separator },
+            start: {
+                key: "w:start",
+                value: start === undefined ? undefined : decimalNumber(start),
+            },
         },
+        name: "w:pgNumType",
     });

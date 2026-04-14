@@ -281,7 +281,7 @@ Please write a test of every file you make and suffix it with `.spec.ts`.
 Here is a template of a test:
 
 ```ts
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 describe("ClassName", () => {
     afterEach(() => {

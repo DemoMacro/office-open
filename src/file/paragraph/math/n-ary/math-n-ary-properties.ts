@@ -7,7 +7,8 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 import { createMathAccentCharacter } from "./math-accent-character";
 import { createMathLimitLocation } from "./math-limit-location";
@@ -17,7 +18,7 @@ import { createMathSuperScriptHide } from "./math-super-script-hide";
 /**
  * Options for creating n-ary properties.
  */
-type MathNAryPropertiesOptions = {
+interface MathNAryPropertiesOptions {
     /** The n-ary operator character (e.g., "∑" for sum, "∫" for integral) */
     readonly accent: string;
     /** Whether the n-ary has a superscript (upper limit) */
@@ -26,7 +27,7 @@ type MathNAryPropertiesOptions = {
     readonly hasSubScript: boolean;
     /** Location of limits: "undOvr" (under/over) or "subSup" (subscript/superscript) */
     readonly limitLocationVal?: string;
-};
+}
 
 /**
  * Creates properties for n-ary operator structures.
@@ -57,11 +58,11 @@ export const createMathNAryProperties = ({
     limitLocationVal,
 }: MathNAryPropertiesOptions): XmlComponent =>
     new BuilderElement({
-        name: "m:naryPr",
         children: [
-            ...(!!accent ? [createMathAccentCharacter({ accent })] : []),
+            ...(accent ? [createMathAccentCharacter({ accent })] : []),
             createMathLimitLocation({ value: limitLocationVal }),
             ...(!hasSuperScript ? [createMathSuperScriptHide()] : []),
             ...(!hasSubScript ? [createMathSubScriptHide()] : []),
         ],
+        name: "m:naryPr",
     });

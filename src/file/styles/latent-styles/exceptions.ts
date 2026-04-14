@@ -9,7 +9,7 @@ import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
  * @property semiHidden - Whether the style is semi-hidden in the UI
  * @property unhideWhenUsed - Whether the style should unhide when used
  */
-export type ILatentStyleExceptionAttributesProperties = {
+export interface ILatentStyleExceptionAttributesProperties {
     /** The name of the style for this exception */
     readonly name?: string;
     /** UI priority for displaying the style */
@@ -20,7 +20,7 @@ export type ILatentStyleExceptionAttributesProperties = {
     readonly semiHidden?: string;
     /** Whether the style should unhide when used */
     readonly unhideWhenUsed?: string;
-};
+}
 
 /**
  * Represents attributes for a latent style exception.
@@ -30,9 +30,9 @@ export type ILatentStyleExceptionAttributesProperties = {
 export class LatentStyleExceptionAttributes extends XmlAttributeComponent<ILatentStyleExceptionAttributesProperties> {
     protected readonly xmlKeys = {
         name: "w:name",
-        uiPriority: "w:uiPriority",
         qFormat: "w:qFormat",
         semiHidden: "w:semiHidden",
+        uiPriority: "w:uiPriority",
         unhideWhenUsed: "w:unhideWhenUsed",
     };
 }

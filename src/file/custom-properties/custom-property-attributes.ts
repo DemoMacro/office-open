@@ -26,7 +26,7 @@ export class CustomPropertyAttributes extends XmlAttributeComponent<{
 }> {
     protected readonly xmlKeys = {
         formatId: "fmtid",
-        pid: "pid",
         name: "name",
+        pid: "pid",
     };
 }

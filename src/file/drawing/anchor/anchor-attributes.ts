@@ -39,12 +39,12 @@ export type IAnchorAttributes = {
  */
 export class AnchorAttributes extends XmlAttributeComponent<IAnchorAttributes> {
     protected readonly xmlKeys = {
-        distT: "distT",
+        allowOverlap: "allowOverlap",
+        behindDoc: "behindDoc",
         distB: "distB",
         distL: "distL",
         distR: "distR",
-        allowOverlap: "allowOverlap",
-        behindDoc: "behindDoc",
+        distT: "distT",
         layoutInCell: "layoutInCell",
         locked: "locked",
         relativeHeight: "relativeHeight",

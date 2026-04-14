@@ -7,7 +7,8 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 import type { MathComponent } from "../math-component";
 import { createMathBase } from "../n-ary";
@@ -16,12 +17,12 @@ import { createMathBarProperties } from "./math-bar-properties";
 /**
  * Options for creating a math bar element.
  */
-type MathBarOptions = {
+interface MathBarOptions {
     /** Position of the bar: "top" for overline, "bot" for underline */
     readonly type: "top" | "bot";
     /** Content under/over the bar */
     readonly children: readonly MathComponent[];
-};
+}
 
 /**
  * Creates a math bar (overline or underline) element.
@@ -43,6 +44,6 @@ type MathBarOptions = {
  */
 export const createMathBar = ({ type, children }: MathBarOptions): XmlComponent =>
     new BuilderElement({
-        name: "m:bar",
         children: [createMathBarProperties({ type }), createMathBase({ children })],
+        name: "m:bar",
     });

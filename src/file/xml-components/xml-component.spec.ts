@@ -1,8 +1,8 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
-import { Attributes, type BaseXmlComponent, XmlComponent } from "./";
+import { Attributes, XmlComponent } from "./";
+import type { BaseXmlComponent } from "./";
 
 class TestComponent extends XmlComponent {
     public push(el: BaseXmlComponent): void {

@@ -7,7 +7,8 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 /**
  * Definition for a single tab stop.
@@ -18,14 +19,14 @@ import { BuilderElement, type XmlComponent } from "@file/xml-components";
  *
  * @see {@link TabStop}
  */
-export type TabStopDefinition = {
+export interface TabStopDefinition {
     /** The type of tab stop alignment */
     readonly type: (typeof TabStopType)[keyof typeof TabStopType];
     /** The position of the tab stop in twips */
     readonly position: number | (typeof TabStopPosition)[keyof typeof TabStopPosition];
     /** Optional leader character to fill space before the tab */
     readonly leader?: (typeof LeaderType)[keyof typeof LeaderType];
-};
+}
 
 /**
  * Tab stop alignment types.
@@ -105,12 +106,12 @@ export const createTabStopItem = ({ type, position, leader }: TabStopDefinition)
         readonly pos: string | number;
         readonly leader?: (typeof LeaderType)[keyof typeof LeaderType];
     }>({
-        name: "w:tab",
         attributes: {
-            val: { key: "w:val", value: type },
-            pos: { key: "w:pos", value: position },
             leader: { key: "w:leader", value: leader },
+            pos: { key: "w:pos", value: position },
+            val: { key: "w:val", value: type },
         },
+        name: "w:tab",
     });
 
 /**
@@ -143,6 +144,6 @@ export const createTabStopItem = ({ type, position, leader }: TabStopDefinition)
  */
 export const createTabStop = (tabDefinitions: readonly TabStopDefinition[]): XmlComponent =>
     new BuilderElement({
-        name: "w:tabs",
         children: tabDefinitions.map((tabDefinition) => createTabStopItem(tabDefinition)),
+        name: "w:tabs",
     });

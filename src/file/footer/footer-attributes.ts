@@ -29,7 +29,7 @@ import { XmlAttributeComponent } from "@file/xml-components";
  * @property xsi - XML Schema Instance namespace
  * @property type - XSI type attribute
  */
-export type IFooterAttributesProperties = {
+export interface IFooterAttributesProperties {
     readonly wpc?: string;
     readonly mc?: string;
     readonly o?: string;
@@ -52,7 +52,7 @@ export type IFooterAttributesProperties = {
     readonly dcmitype?: string;
     readonly xsi?: string;
     readonly type?: string;
-};
+}
 
 /**
  * Component for managing XML namespace attributes on footer elements.
@@ -70,27 +70,27 @@ export type IFooterAttributesProperties = {
  */
 export class FooterAttributes extends XmlAttributeComponent<IFooterAttributesProperties> {
     protected readonly xmlKeys = {
-        wpc: "xmlns:wpc",
+        cp: "xmlns:cp",
+        dc: "xmlns:dc",
+        dcmitype: "xmlns:dcmitype",
+        dcterms: "xmlns:dcterms",
+        m: "xmlns:m",
         mc: "xmlns:mc",
         o: "xmlns:o",
         r: "xmlns:r",
-        m: "xmlns:m",
+        type: "xsi:type",
         v: "xmlns:v",
-        wp14: "xmlns:wp14",
-        wp: "xmlns:wp",
-        w10: "xmlns:w10",
         w: "xmlns:w",
+        w10: "xmlns:w10",
         w14: "xmlns:w14",
         w15: "xmlns:w15",
+        wne: "xmlns:wne",
+        wp: "xmlns:wp",
+        wp14: "xmlns:wp14",
+        wpc: "xmlns:wpc",
         wpg: "xmlns:wpg",
         wpi: "xmlns:wpi",
-        wne: "xmlns:wne",
         wps: "xmlns:wps",
-        cp: "xmlns:cp",
-        dc: "xmlns:dc",
-        dcterms: "xmlns:dcterms",
-        dcmitype: "xmlns:dcmitype",
         xsi: "xmlns:xsi",
-        type: "xsi:type",
     };
 }

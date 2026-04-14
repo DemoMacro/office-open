@@ -9,9 +9,12 @@
  *
  * @module
  */
-import { type IBorderOptions, createBorderElement } from "@file/border";
-import { type IShadingAttributesProperties, createShading } from "@file/shading";
-import { ChangeAttributes, type IChangedAttributesProperties } from "@file/track-revision/track-revision";
+import { createBorderElement } from "@file/border";
+import type { IBorderOptions } from "@file/border";
+import { createShading } from "@file/shading";
+import type { IShadingAttributesProperties } from "@file/shading";
+import { ChangeAttributes } from "@file/track-revision/track-revision";
+import type { IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { DeletionTrackChange } from "@file/track-revision/track-revision-components/deletion-track-change";
 import { InsertionTrackChange } from "@file/track-revision/track-revision-components/insertion-track-change";
 import {
@@ -24,17 +27,21 @@ import {
 } from "@file/xml-components";
 import type { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
 
-import { type EmphasisMarkType, createEmphasisMark } from "./emphasis-mark";
+import { createEmphasisMark } from "./emphasis-mark";
+import type { EmphasisMarkType } from "./emphasis-mark";
 import { CharacterSpacing, Color, Highlight, HighlightComplexScript } from "./formatting";
-import { type ILanguageOptions, createLanguageComponent } from "./language";
-import { type IFontAttributesProperties, createRunFonts } from "./run-fonts";
+import { createLanguageComponent } from "./language";
+import type { ILanguageOptions } from "./language";
+import { createRunFonts } from "./run-fonts";
+import type { IFontAttributesProperties } from "./run-fonts";
 import { createSubScript, createSuperScript } from "./script";
-import { type UnderlineType, createUnderline } from "./underline";
+import { createUnderline } from "./underline";
+import type { UnderlineType } from "./underline";
 
-type IFontOptions = {
+interface IFontOptions {
     readonly name: string;
     readonly hint?: string;
-};
+}
 
 /**
  * Text animation effect types.
@@ -155,7 +162,7 @@ export const HighlightColor = {
  *
  * Reference: http://officeopenxml.com/WPtextFormatting.php
  */
-export type IRunStylePropertiesOptions = {
+export interface IRunStylePropertiesOptions {
     readonly noProof?: boolean;
     readonly bold?: boolean;
     readonly boldComplexScript?: boolean;
@@ -196,7 +203,7 @@ export type IRunStylePropertiesOptions = {
     readonly specVanish?: boolean;
     readonly scale?: number;
     readonly math?: boolean;
-};
+}
 
 /**
  * Options for configuring run properties.
@@ -268,7 +275,10 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
             this.push(new OnOffElement("w:b", options.bold));
         }
 
-        if ((options.boldComplexScript === undefined && options.bold !== undefined) || options.boldComplexScript) {
+        if (
+            (options.boldComplexScript === undefined && options.bold !== undefined) ||
+            options.boldComplexScript
+        ) {
             this.push(new OnOffElement("w:bCs", options.boldComplexScript ?? options.bold));
         }
 
@@ -276,7 +286,10 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
             this.push(new OnOffElement("w:i", options.italics));
         }
 
-        if ((options.italicsComplexScript === undefined && options.italics !== undefined) || options.italicsComplexScript) {
+        if (
+            (options.italicsComplexScript === undefined && options.italics !== undefined) ||
+            options.italicsComplexScript
+        ) {
             this.push(new OnOffElement("w:iCs", options.italicsComplexScript ?? options.italics));
         }
 
@@ -341,7 +354,9 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
             this.push(new HpsMeasureElement("w:sz", options.size));
         }
         const szCs =
-            options.sizeComplexScript === undefined || options.sizeComplexScript === true ? options.size : options.sizeComplexScript;
+            options.sizeComplexScript === undefined || options.sizeComplexScript === true
+                ? options.size
+                : options.sizeComplexScript;
         if (szCs) {
             this.push(new HpsMeasureElement("w:szCs", szCs));
         }
@@ -437,9 +452,9 @@ export class RunPropertiesChange extends XmlComponent {
         super("w:rPrChange");
         this.root.push(
             new ChangeAttributes({
-                id: options.id,
                 author: options.author,
                 date: options.date,
+                id: options.id,
             }),
         );
         this.addChildElement(new RunProperties(options as IRunPropertiesOptions));

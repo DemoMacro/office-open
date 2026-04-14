@@ -1,6 +1,7 @@
 // Simple example to add text to a document
 
 import * as fs from "fs";
+
 import {
     Document,
     Math,
@@ -8,6 +9,9 @@ import {
     MathCurlyBrackets,
     MathFraction,
     MathFunction,
+    MathIntegral,
+    MathLimitLower,
+    MathLimitUpper,
     MathPreSubSuperScript,
     MathRadical,
     MathRoundBrackets,
@@ -16,19 +20,15 @@ import {
     MathSubScript,
     MathSubSuperScript,
     MathSum,
-    MathIntegral,
     MathSuperScript,
     Packer,
     Paragraph,
     TextRun,
-    MathLimitLower,
-    MathLimitUpper,
 } from "docx";
 
 const doc = new Document({
     sections: [
         {
-            properties: {},
             children: [
                 new Paragraph({
                     children: [
@@ -36,14 +36,14 @@ const doc = new Document({
                             children: [
                                 new MathRun("2+2"),
                                 new MathFraction({
-                                    numerator: [new MathRun("hi")],
                                     denominator: [new MathRun("2")],
+                                    numerator: [new MathRun("hi")],
                                 }),
                             ],
                         }),
                         new TextRun({
-                            text: "Foo Bar",
                             bold: true,
+                            text: "Foo Bar",
                         }),
                     ],
                 }),
@@ -52,13 +52,13 @@ const doc = new Document({
                         new Math({
                             children: [
                                 new MathFraction({
+                                    denominator: [new MathRun("2")],
                                     numerator: [
                                         new MathRun("1"),
                                         new MathRadical({
                                             children: [new MathRun("2")],
                                         }),
                                     ],
-                                    denominator: [new MathRun("2")],
                                 }),
                             ],
                         }),
@@ -169,8 +169,8 @@ const doc = new Document({
                             children: [
                                 new MathSubSuperScript({
                                     children: [new MathRun("test")],
-                                    superScript: [new MathRun("hello")],
                                     subScript: [new MathRun("world")],
+                                    superScript: [new MathRun("hello")],
                                 }),
                             ],
                         }),
@@ -182,8 +182,8 @@ const doc = new Document({
                             children: [
                                 new MathPreSubSuperScript({
                                     children: [new MathRun("test")],
-                                    superScript: [new MathRun("hello")],
                                     subScript: [new MathRun("world")],
+                                    superScript: [new MathRun("hello")],
                                 }),
                             ],
                         }),
@@ -196,8 +196,8 @@ const doc = new Document({
                                 new MathSubScript({
                                     children: [
                                         new MathFraction({
-                                            numerator: [new MathRun("1")],
                                             denominator: [new MathRun("2")],
+                                            numerator: [new MathRun("1")],
                                         }),
                                     ],
                                     subScript: [new MathRun("4")],
@@ -215,8 +215,8 @@ const doc = new Document({
                                         new MathRadical({
                                             children: [
                                                 new MathFraction({
-                                                    numerator: [new MathRun("1")],
                                                     denominator: [new MathRun("2")],
+                                                    numerator: [new MathRun("1")],
                                                 }),
                                             ],
                                             degree: [new MathRun("4")],
@@ -244,18 +244,18 @@ const doc = new Document({
                         new Math({
                             children: [
                                 new MathFunction({
+                                    children: [new MathRun("100")],
                                     name: [
                                         new MathSuperScript({
                                             children: [new MathRun("cos")],
                                             superScript: [new MathRun("-1")],
                                         }),
                                     ],
-                                    children: [new MathRun("100")],
                                 }),
                                 new MathRun("×"),
                                 new MathFunction({
-                                    name: [new MathRun("sin")],
                                     children: [new MathRun("360")],
+                                    name: [new MathRun("sin")],
                                 }),
                                 new MathRun("= x"),
                             ],
@@ -269,32 +269,32 @@ const doc = new Document({
                                 new MathRoundBrackets({
                                     children: [
                                         new MathFraction({
-                                            numerator: [new MathRun("1")],
                                             denominator: [new MathRun("2")],
+                                            numerator: [new MathRun("1")],
                                         }),
                                     ],
                                 }),
                                 new MathSquareBrackets({
                                     children: [
                                         new MathFraction({
-                                            numerator: [new MathRun("1")],
                                             denominator: [new MathRun("2")],
+                                            numerator: [new MathRun("1")],
                                         }),
                                     ],
                                 }),
                                 new MathCurlyBrackets({
                                     children: [
                                         new MathFraction({
-                                            numerator: [new MathRun("1")],
                                             denominator: [new MathRun("2")],
+                                            numerator: [new MathRun("1")],
                                         }),
                                     ],
                                 }),
                                 new MathAngledBrackets({
                                     children: [
                                         new MathFraction({
-                                            numerator: [new MathRun("1")],
                                             denominator: [new MathRun("2")],
+                                            numerator: [new MathRun("1")],
                                         }),
                                     ],
                                 }),
@@ -307,12 +307,12 @@ const doc = new Document({
                         new Math({
                             children: [
                                 new MathFraction({
+                                    denominator: [new MathRun("2a")],
                                     numerator: [
                                         new MathRadical({
                                             children: [new MathRun("4")],
                                         }),
                                     ],
-                                    denominator: [new MathRun("2a")],
                                 }),
                             ],
                         }),
@@ -336,6 +336,7 @@ const doc = new Document({
                     ],
                 }),
             ],
+            properties: {},
         },
     ],
 });

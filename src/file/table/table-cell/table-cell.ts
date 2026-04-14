@@ -6,10 +6,12 @@
  * @module
  */
 import { Paragraph } from "@file/paragraph";
-import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
+import type { IContext, IXmlableObject } from "@file/xml-components";
 
 import type { Table } from "../table";
-import { type ITableCellPropertiesOptions, TableCellProperties } from "./table-cell-properties";
+import { TableCellProperties } from "./table-cell-properties";
+import type { ITableCellPropertiesOptions } from "./table-cell-properties";
 
 /**
  * Options for creating a TableCell element.

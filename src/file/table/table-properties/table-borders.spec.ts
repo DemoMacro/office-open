@@ -1,7 +1,6 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
 import { BorderStyle } from "@file/border";
+import { describe, expect, it } from "vite-plus/test";
 
 import { TableBorders } from "./table-borders";
 
@@ -77,9 +76,9 @@ describe("TableBorders", () => {
             it("should add a table cell top border", () => {
                 const tableBorders = new TableBorders({
                     top: {
-                        style: BorderStyle.DOUBLE,
-                        size: 1,
                         color: "FF0000",
+                        size: 1,
+                        style: BorderStyle.DOUBLE,
                     },
                 });
 
@@ -149,9 +148,9 @@ describe("TableBorders", () => {
             it("should add a table cell left border", () => {
                 const tableBorders = new TableBorders({
                     left: {
-                        style: BorderStyle.DOUBLE,
-                        size: 1,
                         color: "ff0000",
+                        size: 1,
+                        style: BorderStyle.DOUBLE,
                     },
                 });
                 const tree = new Formatter().format(tableBorders);
@@ -221,9 +220,9 @@ describe("TableBorders", () => {
             it("should add a table cell bottom border", () => {
                 const tableBorders = new TableBorders({
                     bottom: {
-                        style: BorderStyle.DOUBLE,
-                        size: 1,
                         color: "ff0000",
+                        size: 1,
+                        style: BorderStyle.DOUBLE,
                     },
                 });
                 const tree = new Formatter().format(tableBorders);
@@ -293,9 +292,9 @@ describe("TableBorders", () => {
             it("should add a table cell right border", () => {
                 const tableBorders = new TableBorders({
                     right: {
-                        style: BorderStyle.DOUBLE,
-                        size: 1,
                         color: "ff0000",
+                        size: 1,
+                        style: BorderStyle.DOUBLE,
                     },
                 });
                 const tree = new Formatter().format(tableBorders);
@@ -365,9 +364,9 @@ describe("TableBorders", () => {
             it("should add a table cell inside horizontal border", () => {
                 const tableBorders = new TableBorders({
                     insideHorizontal: {
-                        style: BorderStyle.DOUBLE,
-                        size: 1,
                         color: "ff0000",
+                        size: 1,
+                        style: BorderStyle.DOUBLE,
                     },
                 });
                 const tree = new Formatter().format(tableBorders);
@@ -437,9 +436,9 @@ describe("TableBorders", () => {
             it("should add a table cell inside horizontal border", () => {
                 const tableBorders = new TableBorders({
                     insideVertical: {
-                        style: BorderStyle.DOUBLE,
-                        size: 1,
                         color: "ff0000",
+                        size: 1,
+                        style: BorderStyle.DOUBLE,
                     },
                 });
                 const tree = new Formatter().format(tableBorders);

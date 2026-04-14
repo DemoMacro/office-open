@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
 import { Formatter } from "@export/formatter";
+import { describe, expect, it } from "vite-plus/test";
 
 import { Form } from "./form/form";
 
@@ -9,11 +8,11 @@ describe("Form", () => {
         it("should create", () => {
             const tree = new Formatter().format(
                 new Form({
-                    pixels: {
+                    emus: {
                         x: 100,
                         y: 100,
                     },
-                    emus: {
+                    pixels: {
                         x: 100,
                         y: 100,
                     },
@@ -48,17 +47,17 @@ describe("Form", () => {
         it("should create with flip", () => {
             const tree = new Formatter().format(
                 new Form({
-                    pixels: {
-                        x: 100,
-                        y: 100,
-                    },
                     emus: {
                         x: 100,
                         y: 100,
                     },
                     flip: {
-                        vertical: true,
                         horizontal: true,
+                        vertical: true,
+                    },
+                    pixels: {
+                        x: 100,
+                        y: 100,
                     },
                 }),
             );
