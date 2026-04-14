@@ -134,7 +134,16 @@ export class Compiler {
         overrides: readonly IXmlifyedFile[] = [],
     ): Zippable {
         const files: Zippable = {};
-        const xmlifiedFileMapping = this.xmlifyFile(file, prettifyXml);
+
+        // Cache format() results to avoid duplicate formatting of Header/Footer views.
+        // HeaderRelationships/FooterRelationships runs before Headers/Footers in the map,
+        // so we cache the formatted View data there and reuse it later.
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const headerFormattedViews = new Map<number, string>();
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const footerFormattedViews = new Map<number, string>();
+
+        const xmlifiedFileMapping = this.xmlifyFile(file, prettifyXml, headerFormattedViews, footerFormattedViews);
         const map = new Map<string, IXmlifyedFile | readonly IXmlifyedFile[]>(Object.entries(xmlifiedFileMapping));
 
         for (const [, obj] of map) {
@@ -177,7 +186,12 @@ export class Compiler {
         return files;
     }
 
-    private xmlifyFile(file: File, prettify?: (typeof PrettifyType)[keyof typeof PrettifyType]): IXmlifyedFileMapping {
+    private xmlifyFile(
+        file: File,
+        prettify?: (typeof PrettifyType)[keyof typeof PrettifyType],
+        headerFormattedViews?: ReadonlyMap<number, string>,
+        footerFormattedViews?: ReadonlyMap<number, string>,
+    ): IXmlifyedFileMapping {
         const documentRelationshipCount = file.Document.Relationships.RelationshipCount + 1;
 
         const documentXmlData = xml(
@@ -347,19 +361,20 @@ export class Compiler {
                 path: "_rels/.rels",
             },
             HeaderRelationships: file.Headers.map((headerWrapper, index) => {
-                const xmlData = xml(
-                    this.formatter.format(headerWrapper.View, {
-                        viewWrapper: headerWrapper,
-                        file,
-                        stack: [],
-                    }),
-                    {
-                        indent: prettify,
-                        declaration: {
-                            encoding: "UTF-8",
-                        },
+                const formatted = this.formatter.format(headerWrapper.View, {
+                    viewWrapper: headerWrapper,
+                    file,
+                    stack: [],
+                });
+                const xmlData = xml(formatted, {
+                    indent: prettify,
+                    declaration: {
+                        encoding: "UTF-8",
                     },
-                );
+                });
+                // Cache for reuse in Headers section
+                // eslint-disable-next-line functional/immutable-data
+                headerFormattedViews.set(index, xmlData);
                 const mediaDatas = this.imageReplacer.getMediaData(xmlData, file.Media);
 
                 mediaDatas.forEach((mediaData, i) => {
@@ -388,19 +403,20 @@ export class Compiler {
                 };
             }),
             FooterRelationships: file.Footers.map((footerWrapper, index) => {
-                const xmlData = xml(
-                    this.formatter.format(footerWrapper.View, {
-                        viewWrapper: footerWrapper,
-                        file,
-                        stack: [],
-                    }),
-                    {
-                        indent: prettify,
-                        declaration: {
-                            encoding: "UTF-8",
-                        },
+                const formatted = this.formatter.format(footerWrapper.View, {
+                    viewWrapper: footerWrapper,
+                    file,
+                    stack: [],
+                });
+                const xmlData = xml(formatted, {
+                    indent: prettify,
+                    declaration: {
+                        encoding: "UTF-8",
                     },
-                );
+                });
+                // Cache for reuse in Footers section
+                // eslint-disable-next-line functional/immutable-data
+                footerFormattedViews.set(index, xmlData);
                 const mediaDatas = this.imageReplacer.getMediaData(xmlData, file.Media);
 
                 mediaDatas.forEach((mediaData, i) => {
@@ -428,20 +444,8 @@ export class Compiler {
                     path: `word/_rels/footer${index + 1}.xml.rels`,
                 };
             }),
-            Headers: file.Headers.map((headerWrapper, index) => {
-                const tempXmlData = xml(
-                    this.formatter.format(headerWrapper.View, {
-                        viewWrapper: headerWrapper,
-                        file,
-                        stack: [],
-                    }),
-                    {
-                        indent: prettify,
-                        declaration: {
-                            encoding: "UTF-8",
-                        },
-                    },
-                );
+            Headers: file.Headers.map((_headerWrapper, index) => {
+                const tempXmlData = headerFormattedViews.get(index)!;
                 const mediaDatas = this.imageReplacer.getMediaData(tempXmlData, file.Media);
                 // TODO: 0 needs to be changed when headers get relationships of their own
                 const xmlData = this.imageReplacer.replace(tempXmlData, mediaDatas, 0);
@@ -453,20 +457,8 @@ export class Compiler {
                     path: `word/header${index + 1}.xml`,
                 };
             }),
-            Footers: file.Footers.map((footerWrapper, index) => {
-                const tempXmlData = xml(
-                    this.formatter.format(footerWrapper.View, {
-                        viewWrapper: footerWrapper,
-                        file,
-                        stack: [],
-                    }),
-                    {
-                        indent: prettify,
-                        declaration: {
-                            encoding: "UTF-8",
-                        },
-                    },
-                );
+            Footers: file.Footers.map((_footerWrapper, index) => {
+                const tempXmlData = footerFormattedViews.get(index)!;
                 const mediaDatas = this.imageReplacer.getMediaData(tempXmlData, file.Media);
                 // TODO: 0 needs to be changed when headers get relationships of their own
                 const xmlData = this.imageReplacer.replace(tempXmlData, mediaDatas, 0);
