@@ -2,7 +2,7 @@
  * Output type definitions for document generation.
  *
  * This module defines the various output formats supported when generating
- * .docx files. These types correspond to JSZip's output formats.
+ * .docx files. These types correspond to fflate's output formats.
  *
  * @module
  */
@@ -14,7 +14,7 @@
  * Maps output type names to their corresponding TypeScript types.
  *
  * This type is used to provide type-safe document generation where the output
- * format determines the return type. Based on JSZip's output types.
+ * format determines the return type. Based on fflate's output types.
  *
  * @example
  * ```typescript
@@ -63,4 +63,38 @@ export type OutputByType = {
  * ```
  */
 export type OutputType = keyof OutputByType;
+
+/**
+ * Converts a Uint8Array to the specified output type.
+ *
+ * This is used by both the Packer and patchDocument to convert fflate's
+ * raw Uint8Array output into the user's requested format.
+ */
+export const convertOutput = <T extends OutputType>(data: Uint8Array, type: T): OutputByType[T] => {
+    switch (type) {
+        case "nodebuffer":
+            return Buffer.from(data) as OutputByType[T];
+        case "blob":
+            return new Blob([data], {
+                type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            }) as OutputByType[T];
+        case "arraybuffer":
+            return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as OutputByType[T];
+        case "uint8array":
+            return data as OutputByType[T];
+        case "base64":
+            return Buffer.from(data).toString("base64") as OutputByType[T];
+        case "string":
+        case "text":
+            return Buffer.from(data).toString("binary") as OutputByType[T];
+        case "binarystring":
+            return Buffer.from(data).toString("binary") as OutputByType[T];
+        case "array":
+            return Array.from(data) as OutputByType[T];
+        /* v8 ignore next */
+        default:
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return data as any;
+    }
+};
 /* v8 ignore stop */

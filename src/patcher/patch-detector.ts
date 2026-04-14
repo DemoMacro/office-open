@@ -3,7 +3,8 @@
  *
  * @module
  */
-import JSZip from "jszip";
+import { strFromU8, unzipSync } from "fflate";
+import { toUint8Array } from "undio";
 
 import type { InputDataType } from "./from-docx";
 import { traverse } from "./traverser";
@@ -43,16 +44,17 @@ type PatchDetectorOptions = {
  * });
  * ```
  */
+// eslint-disable-next-line require-await
 export const patchDetector = async ({ data }: PatchDetectorOptions): Promise<readonly string[]> => {
-    const zipContent = data instanceof JSZip ? data : await JSZip.loadAsync(data);
+    const zipContent = unzipSync(toUint8Array(data));
     const patches = new Set<string>();
 
-    for (const [key, value] of Object.entries(zipContent.files)) {
+    for (const [key, value] of Object.entries(zipContent)) {
         if (!key.endsWith(".xml") && !key.endsWith(".rels")) {
             continue;
         }
         if (key.startsWith("word/") && !key.endsWith(".xml.rels")) {
-            const json = toJson(await value.async("text"));
+            const json = toJson(strFromU8(value));
             // eslint-disable-next-line functional/immutable-data
             traverse(json).forEach((p) => findPatchKeys(p.text).forEach((patch) => patches.add(patch)));
         }

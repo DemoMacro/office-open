@@ -1,7 +1,15 @@
-import JSZip from "jszip";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ExternalHyperlink, ImageRun, Paragraph, TextRun } from "@file/paragraph";
+
+vi.mock("fflate", () => ({
+    unzipSync: vi.fn(),
+    zipSync: vi.fn().mockReturnValue(new Uint8Array(0)),
+    strFromU8: vi.fn().mockImplementation((data: Uint8Array) => new TextDecoder().decode(data)),
+}));
+
+// eslint-disable-next-line import/order
+import { unzipSync } from "fflate";
 
 import { PatchType, patchDocument } from "./from-docx";
 
@@ -70,9 +78,9 @@ const MOCK_XML = `
             </w:r>
         </w:p>
         <w:p w14:paraId="7AD7975D" w14:textId="77777777" w:rsidR="00EF161F"
-            w:rsidRDefault="00EF161F" />
+            w:rsidRDefault="007B52ED" />
         <w:p w14:paraId="3BD6D75A" w14:textId="19AE3121" w:rsidR="00EF161F"
-            w:rsidRDefault="00EF161F">
+            w:rsidRDefault="007B52ED">
             <w:r>
                 <w:t>{{table}}</w:t>
             </w:r>
@@ -198,15 +206,29 @@ const MOCK_XML = `
 </w:document>
 `;
 
+/**
+ * Creates a mock Unzipped object that mimics fflate's unzipSync output.
+ * Uses Object.fromEntries to avoid @typescript-eslint/naming-convention
+ * violations on OOXML file paths like "word/document.xml".
+ */
+const createMockUnzipped = (entries: readonly (readonly [string, string | Uint8Array])[]): Record<string, Uint8Array> =>
+    Object.fromEntries(
+        entries.map(([key, value]): readonly [string, Uint8Array] => [
+            key,
+            typeof value === "string" ? new TextEncoder().encode(value) : value,
+        ]),
+    );
+
 describe("from-docx", () => {
     describe("patchDocument", () => {
         describe("document.xml and [Content_Types].xml", () => {
             beforeEach(() => {
-                const zip = new JSZip();
-
-                zip.file("word/document.xml", MOCK_XML);
-                zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
-                vi.spyOn(JSZip, "loadAsync").mockResolvedValue(zip);
+                vi.mocked(unzipSync).mockImplementation(() =>
+                    createMockUnzipped([
+                        ["word/document.xml", MOCK_XML],
+                        ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`],
+                    ]),
+                );
             });
 
             afterEach(() => {
@@ -285,27 +307,16 @@ describe("from-docx", () => {
                 expect(output).to.not.be.undefined;
             });
 
-            it("should work with the raw JSZip type", async () => {
-                const zip = new JSZip();
-
-                zip.file("word/document.xml", MOCK_XML);
-                zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
-                const output = await patchDocument({
-                    outputType: "uint8array",
-                    data: zip,
-                    patches: {},
-                });
-                expect(output).to.not.be.undefined;
-            });
-
             it("should skiup UTF-16 types", async () => {
-                const zip = new JSZip();
-
-                zip.file("word/document.xml", MOCK_XML);
-                zip.file("[Content_Types].xml", Buffer.from([0xff, 0xfe]));
+                vi.mocked(unzipSync).mockImplementation(() =>
+                    createMockUnzipped([
+                        ["word/document.xml", MOCK_XML],
+                        ["[Content_Types].xml", Buffer.from([0xff, 0xfe])],
+                    ]),
+                );
                 const output = await patchDocument({
                     outputType: "uint8array",
-                    data: zip,
+                    data: Buffer.from(""),
                     patches: {},
                 });
                 expect(output).to.not.be.undefined;
@@ -409,15 +420,12 @@ describe("from-docx", () => {
 
         describe("document.xml and [Content_Types].xml with relationships", () => {
             beforeEach(() => {
-                vi.spyOn(JSZip, "loadAsync").mockReturnValue(
-                    new Promise<JSZip>((resolve) => {
-                        const zip = new JSZip();
-
-                        zip.file("word/document.xml", MOCK_XML);
-                        zip.file("word/_rels/document.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
-                        zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
-                        resolve(zip);
-                    }),
+                vi.mocked(unzipSync).mockImplementation(() =>
+                    createMockUnzipped([
+                        ["word/document.xml", MOCK_XML],
+                        ["word/_rels/document.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`],
+                        ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`],
+                    ]),
                 );
             });
 
@@ -457,14 +465,11 @@ describe("from-docx", () => {
 
         describe("document.xml and [Content_Types].xml without relationships file", () => {
             beforeEach(() => {
-                vi.spyOn(JSZip, "loadAsync").mockReturnValue(
-                    new Promise<JSZip>((resolve) => {
-                        const zip = new JSZip();
-
-                        zip.file("word/document.xml", MOCK_XML);
-                        zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
-                        resolve(zip);
-                    }),
+                vi.mocked(unzipSync).mockImplementation(() =>
+                    createMockUnzipped([
+                        ["word/document.xml", MOCK_XML],
+                        ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`],
+                    ]),
                 );
             });
 
@@ -510,10 +515,12 @@ describe("from-docx", () => {
 </w:document>`;
 
             beforeEach(() => {
-                const zip = new JSZip();
-                zip.file("word/document.xml", MOCK_XML_NO_ATTRS);
-                zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
-                vi.spyOn(JSZip, "loadAsync").mockResolvedValue(zip);
+                vi.mocked(unzipSync).mockImplementation(() =>
+                    createMockUnzipped([
+                        ["word/document.xml", MOCK_XML_NO_ATTRS],
+                        ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`],
+                    ]),
+                );
             });
 
             afterEach(() => {
@@ -537,13 +544,10 @@ describe("from-docx", () => {
 
         describe("document.xml", () => {
             beforeEach(() => {
-                vi.spyOn(JSZip, "loadAsync").mockReturnValue(
-                    new Promise<JSZip>((resolve) => {
-                        const zip = new JSZip();
-
-                        zip.file("word/document.xml", MOCK_XML);
-                        resolve(zip);
-                    }),
+                vi.mocked(unzipSync).mockImplementation(() =>
+                    createMockUnzipped([
+                        ["word/document.xml", MOCK_XML],
+                    ]),
                 );
             });
 
@@ -575,15 +579,11 @@ describe("from-docx", () => {
 
         describe("Images", () => {
             beforeEach(() => {
-                vi.spyOn(JSZip, "loadAsync").mockReturnValue(
-                    new Promise<JSZip>((resolve) => {
-                        const zip = new JSZip();
-
-                        zip.file("word/document.xml", MOCK_XML);
-                        zip.file("word/document.bmp", "");
-
-                        resolve(zip);
-                    }),
+                vi.mocked(unzipSync).mockImplementation(() =>
+                    createMockUnzipped([
+                        ["word/document.xml", MOCK_XML],
+                        ["word/document.bmp", ""],
+                    ]),
                 );
             });
 
@@ -611,6 +611,98 @@ describe("from-docx", () => {
                         },
                     }),
                 ).rejects.toThrowError());
+        });
+
+        describe("output types", () => {
+            beforeEach(() => {
+                vi.mocked(unzipSync).mockImplementation(() =>
+                    createMockUnzipped([
+                        ["word/document.xml", MOCK_XML],
+                        ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`],
+                    ]),
+                );
+            });
+
+            afterEach(() => {
+                vi.restoreAllMocks();
+            });
+
+            it("should export to nodebuffer", async () => {
+                const output = await patchDocument({
+                    outputType: "nodebuffer",
+                    data: Buffer.from(""),
+                    patches: {
+                        name: { type: PatchType.PARAGRAPH, children: [new TextRun("World")] },
+                    },
+                });
+                expect(Buffer.isBuffer(output)).toBe(true);
+            });
+
+            it("should export to blob", async () => {
+                const output = await patchDocument({
+                    outputType: "blob",
+                    data: Buffer.from(""),
+                    patches: {
+                        name: { type: PatchType.PARAGRAPH, children: [new TextRun("World")] },
+                    },
+                });
+                expect(output).toBeInstanceOf(Blob);
+            });
+
+            it("should export to arraybuffer", async () => {
+                const output = await patchDocument({
+                    outputType: "arraybuffer",
+                    data: Buffer.from(""),
+                    patches: {
+                        name: { type: PatchType.PARAGRAPH, children: [new TextRun("World")] },
+                    },
+                });
+                expect(output).toBeInstanceOf(ArrayBuffer);
+            });
+
+            it("should export to base64", async () => {
+                const output = await patchDocument({
+                    outputType: "base64",
+                    data: Buffer.from(""),
+                    patches: {
+                        name: { type: PatchType.PARAGRAPH, children: [new TextRun("World")] },
+                    },
+                });
+                expect(typeof output).toBe("string");
+            });
+
+            it("should export to string", async () => {
+                const output = await patchDocument({
+                    outputType: "string",
+                    data: Buffer.from(""),
+                    patches: {
+                        name: { type: PatchType.PARAGRAPH, children: [new TextRun("World")] },
+                    },
+                });
+                expect(typeof output).toBe("string");
+            });
+
+            it("should export to binarystring", async () => {
+                const output = await patchDocument({
+                    outputType: "binarystring",
+                    data: Buffer.from(""),
+                    patches: {
+                        name: { type: PatchType.PARAGRAPH, children: [new TextRun("World")] },
+                    },
+                });
+                expect(typeof output).toBe("string");
+            });
+
+            it("should export to array", async () => {
+                const output = await patchDocument({
+                    outputType: "array",
+                    data: Buffer.from(""),
+                    patches: {
+                        name: { type: PatchType.PARAGRAPH, children: [new TextRun("World")] },
+                    },
+                });
+                expect(Array.isArray(output)).toBe(true);
+            });
         });
     });
 });

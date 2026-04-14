@@ -3,10 +3,11 @@
  *
  * @module
  */
-import { Stream } from "stream";
+import { zipSync } from "fflate";
+import { Readable } from "stream";
 
 import type { File } from "@file/file";
-import type { OutputByType, OutputType } from "@util/output-type";
+import { type OutputByType, type OutputType, convertOutput } from "@util/output-type";
 
 import { Compiler, type IXmlifyedFile } from "./next-compiler";
 
@@ -72,12 +73,9 @@ export class Packer {
         prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
         overrides: readonly IXmlifyedFile[] = [],
     ): Promise<OutputByType[T]> {
-        const zip = this.compiler.compile(file, convertPrettifyType(prettify), overrides);
-        return zip.generateAsync({
-            type,
-            mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            compression: "DEFLATE",
-        });
+        const files = this.compiler.compile(file, convertPrettifyType(prettify), overrides);
+        const zipped = zipSync(files, { level: 6 });
+        return convertOutput(zipped, type);
     }
 
     /**
@@ -161,7 +159,7 @@ export class Packer {
     }
 
     /**
-     * Exports a document to a Node.js Stream.
+     * Exports a document to a Node.js Readable stream.
      *
      * @param file - The document to export
      * @param prettify - Whether to prettify the XML output
@@ -172,19 +170,13 @@ export class Packer {
         file: File,
         prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
         overrides: readonly IXmlifyedFile[] = [],
-    ): Stream {
-        const stream = new Stream();
-        const zip = this.compiler.compile(file, convertPrettifyType(prettify), overrides);
+    ): Readable {
+        const files = this.compiler.compile(file, convertPrettifyType(prettify), overrides);
+        const zipped = zipSync(files, { level: 6 });
 
-        zip.generateAsync({
-            type: "nodebuffer",
-            mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            compression: "DEFLATE",
-        }).then((z) => {
-            stream.emit("data", z);
-            stream.emit("end");
-        });
-
+        const stream = new Readable();
+        stream.push(zipped);
+        stream.push(null);
         return stream;
     }
 

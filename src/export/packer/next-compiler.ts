@@ -3,7 +3,8 @@
  *
  * @module
  */
-import JSZip from "jszip";
+import type { Zippable } from "fflate";
+import { toUint8Array } from "undio";
 import xml from "xml";
 
 import type { File } from "@file/file";
@@ -80,7 +81,7 @@ type IXmlifyedFileMapping = {
 };
 
 /**
- * Compiles File objects into OOXML-compliant ZIP archives.
+ * Compiles File objects into OOXML-compliant ZIP file data.
  *
  * The Compiler is responsible for converting the internal document representation
  * into the complete set of XML files required for a .docx document, managing
@@ -89,9 +90,10 @@ type IXmlifyedFileMapping = {
  * @example
  * ```typescript
  * const compiler = new Compiler();
- * const zip = compiler.compile(file, PrettifyType.WITH_2_BLANKS);
+ * const files = compiler.compile(file, PrettifyType.WITH_2_BLANKS);
  * ```
  */
+
 export class Compiler {
     private readonly formatter: Formatter;
     private readonly imageReplacer: ImageReplacer;
@@ -109,58 +111,70 @@ export class Compiler {
     }
 
     /**
-     * Compiles a File object into a JSZip archive containing the complete OOXML package.
+     * Compiles a File object into a flat file map suitable for fflate zipSync.
      *
      * This method orchestrates the entire compilation process:
      * - Converts all document components to XML
      * - Manages image and numbering placeholder replacements
      * - Creates relationship files
      * - Packages fonts and media files
-     * - Assembles everything into a ZIP archive
+     *
+     * Media files (images, SVGs) use level 0 (STORE) to avoid redundant
+     * compression on already-compressed formats. XML files use the default
+     * DEFLATE compression set by the caller via zipSync options.
      *
      * @param file - The document to compile
      * @param prettifyXml - Optional XML formatting style
      * @param overrides - Optional custom XML file overrides
-     * @returns A JSZip instance containing the complete .docx package
+     * @returns A Zippable object mapping file paths to their content
      */
     public compile(
         file: File,
         prettifyXml?: (typeof PrettifyType)[keyof typeof PrettifyType],
         overrides: readonly IXmlifyedFile[] = [],
-    ): JSZip {
-        const zip = new JSZip();
+    ): Zippable {
+        const files: Zippable = {};
         const xmlifiedFileMapping = this.xmlifyFile(file, prettifyXml);
         const map = new Map<string, IXmlifyedFile | readonly IXmlifyedFile[]>(Object.entries(xmlifiedFileMapping));
 
         for (const [, obj] of map) {
             if (Array.isArray(obj)) {
                 for (const subFile of obj as readonly IXmlifyedFile[]) {
-                    zip.file(subFile.path, encodeUtf8(subFile.data));
+                    // eslint-disable-next-line functional/immutable-data
+                    files[subFile.path] = encodeUtf8(subFile.data);
                 }
             } else {
-                zip.file((obj as IXmlifyedFile).path, encodeUtf8((obj as IXmlifyedFile).data));
+                // eslint-disable-next-line functional/immutable-data
+                files[(obj as IXmlifyedFile).path] = encodeUtf8((obj as IXmlifyedFile).data);
             }
         }
 
         for (const subFile of overrides) {
-            zip.file(subFile.path, encodeUtf8(subFile.data));
+            // eslint-disable-next-line functional/immutable-data
+            files[subFile.path] = encodeUtf8(subFile.data);
         }
 
-        for (const data of file.Media.Array) {
-            if (data.type !== "svg") {
-                zip.file(`word/media/${data.fileName}`, data.data);
+        // Media files: use STORE (level 0) for already-compressed formats
+        for (const mediaData of file.Media.Array) {
+            if (mediaData.type !== "svg") {
+                // eslint-disable-next-line functional/immutable-data
+                files[`word/media/${mediaData.fileName}`] = [toUint8Array(mediaData.data), { level: 0 }];
             } else {
-                zip.file(`word/media/${data.fileName}`, data.data);
-                zip.file(`word/media/${data.fallback.fileName}`, data.fallback.data);
+                // eslint-disable-next-line functional/immutable-data
+                files[`word/media/${mediaData.fileName}`] = [toUint8Array(mediaData.data), { level: 0 }];
+                // eslint-disable-next-line functional/immutable-data
+                files[`word/media/${mediaData.fallback.fileName}`] = [toUint8Array(mediaData.fallback.data), { level: 0 }];
             }
         }
 
+        // Font files: use higher compression for binary font data
         for (const { data: buffer, name, fontKey } of file.FontTable.fontOptionsWithKey) {
             const [nameWithoutExtension] = name.split(".");
-            zip.file(`word/fonts/${nameWithoutExtension}.odttf`, obfuscate(buffer, fontKey));
+            // eslint-disable-next-line functional/immutable-data
+            files[`word/fonts/${nameWithoutExtension}.odttf`] = obfuscate(buffer, fontKey);
         }
 
-        return zip;
+        return files;
     }
 
     private xmlifyFile(file: File, prettify?: (typeof PrettifyType)[keyof typeof PrettifyType]): IXmlifyedFileMapping {
