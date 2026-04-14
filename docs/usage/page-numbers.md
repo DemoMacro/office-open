@@ -71,6 +71,6 @@ new Paragraph({
 
 Adding page numbers to Header and Footer
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/39-page-numbers.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/39-page-numbers.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/39-page-numbers.ts_
+_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/39-page-numbers.ts_

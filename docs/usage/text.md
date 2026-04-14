@@ -5,7 +5,7 @@
 You can add multiple `text runs` in `Paragraphs`. This is the most verbose way of writing a `Paragraph` but it is also the most flexible:
 
 ```ts
-import { Paragraph, TextRun } from "docx";
+import { Paragraph, TextRun } from "docx-plus";
 
 const paragraph = new Paragraph({
     children: [
@@ -100,7 +100,7 @@ const text = new TextRun({
 });
 ```
 
-See [demo/45-highlighting-text.ts](https://github.com/dolanmiu/docx/blob/master/demo/45-highlighting-text.ts) for highlighting examples, and [demo/46-shading-text.ts](https://github.com/dolanmiu/docx/blob/master/demo/46-shading-text.ts) for shading examples.
+See [demo/45-highlighting-text.ts](https://github.com/DemoMacro/docx-plus/blob/master/demo/45-highlighting-text.ts) for highlighting examples, and [demo/46-shading-text.ts](https://github.com/DemoMacro/docx-plus/blob/master/demo/46-shading-text.ts) for shading examples.
 
 ### Strike through
 

@@ -23,7 +23,7 @@ Use `WpsShapeRun` when you need fills, outlines, rotation, or precise positionin
 A `WpsShapeRun` is added as a child of a `Paragraph`, similar to `ImageRun`:
 
 ```ts
-import { Document, Paragraph, TextRun, WpsShapeRun } from "docx";
+import { Document, Paragraph, TextRun, WpsShapeRun } from "docx-plus";
 
 const doc = new Document({
     sections: [
@@ -133,7 +133,7 @@ new WpsShapeRun({
 Use theme colors instead of hardcoded values:
 
 ```ts
-import { SchemeColor } from "docx";
+import { SchemeColor } from "docx-plus";
 
 new WpsShapeRun({
     type: "wps",
@@ -193,7 +193,7 @@ outline: {
 Configure text layout inside the text box:
 
 ```ts
-import { VerticalAnchor } from "docx";
+import { VerticalAnchor } from "docx-plus";
 
 new WpsShapeRun({
     type: "wps",
@@ -234,7 +234,7 @@ import {
     TextRun,
     VerticalAnchor,
     WpsShapeRun,
-} from "docx";
+} from "docx-plus";
 import * as fs from "fs";
 
 const doc = new Document({

@@ -18,7 +18,7 @@ import {
     TextRun,
     VerticalAlignTable,
     WidthType,
-} from "docx";
+} from "docx-plus";
 
 const REVISION_DATE = "2020-10-06T09:00:00Z";
 const REVISION_AUTHOR = "Firstname Lastname";

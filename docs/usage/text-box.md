@@ -11,7 +11,7 @@ Similar to `Text Frames`, but the difference being that it is `VML` `Shape` base
 Create a text box with basic content:
 
 ```ts
-import { Document, Paragraph, TextRun, Textbox } from "docx";
+import { Document, Paragraph, TextRun, Textbox } from "docx-plus";
 
 const doc = new Document({
     sections: [
@@ -144,7 +144,15 @@ new Textbox({
 Sidebar callout box:
 
 ```ts
-import { AlignmentType, Document, HeadingLevel, Packer, Paragraph, TextRun, Textbox } from "docx";
+import {
+    AlignmentType,
+    Document,
+    HeadingLevel,
+    Packer,
+    Paragraph,
+    TextRun,
+    Textbox,
+} from "docx-plus";
 import * as fs from "fs";
 
 const doc = new Document({
@@ -203,6 +211,6 @@ For most use cases, **Text Frames** are recommended. See [Text Frames](usage/tex
 
 ## Demo
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/94-texbox.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/94-texbox.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/94-texbox.ts_
+_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/94-texbox.ts_

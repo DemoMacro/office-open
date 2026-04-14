@@ -6,7 +6,7 @@ runs:
     steps:
         - name: Extract Word Document
           shell: bash
-          run: npm run extract
+          run: pnpm run extract
         - name: Validate XML
           uses: ChristophWurst/xmllint-action@v1
           with:

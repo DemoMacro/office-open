@@ -250,7 +250,7 @@ const doc = new Document({
 **Solution:** Embed the font:
 
 ```ts
-import { CharacterSet, Document } from "docx";
+import { CharacterSet, Document } from "docx-plus";
 
 const doc = new Document({
     fonts: [
@@ -329,7 +329,7 @@ sections: [
 **Solution:**
 
 ```ts
-import { PageNumber, NumberFormat } from "docx";
+import { PageNumber, NumberFormat } from "docx-plus";
 
 new Paragraph({
     children: [
@@ -409,8 +409,8 @@ new Paragraph({
 
 If you can't find a solution here:
 
-1. Check the [Demo files](https://github.com/dolanmiu/docx/tree/master/demo) for working examples
-2. Search [GitHub Issues](https://github.com/dolanmiu/docx/issues) for similar problems
+1. Check the [Demo files](https://github.com/DemoMacro/docx-plus/tree/master/demo) for working examples
+2. Search [GitHub Issues](https://github.com/DemoMacro/docx-plus/issues) for similar problems
 3. Open a new issue with:
     - docx version number
     - Node.js version

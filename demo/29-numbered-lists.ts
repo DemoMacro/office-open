@@ -11,7 +11,7 @@ import {
     Packer,
     Paragraph,
     convertInchesToTwip,
-} from "docx";
+} from "docx-plus";
 
 const doc = new Document({
     numbering: {

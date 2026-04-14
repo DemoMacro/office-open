@@ -7,7 +7,7 @@
 
 import * as fs from "fs";
 
-import { Document, HeadingLevel, Packer, Paragraph, TextRun } from "docx";
+import { Document, HeadingLevel, Packer, Paragraph, TextRun } from "docx-plus";
 
 const doc = new Document({
     sections: [

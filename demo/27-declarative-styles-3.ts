@@ -9,7 +9,7 @@ import {
     Paragraph,
     UnderlineType,
     convertInchesToTwip,
-} from "docx";
+} from "docx-plus";
 
 const doc = new Document({
     sections: [

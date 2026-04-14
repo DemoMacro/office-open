@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { Document, Paragraph, TextRun, Packer } from "docx";
+ * import { Document, Paragraph, TextRun, Packer } from "docx-plus";
  *
  * // Create a document
  * const doc = new Document({

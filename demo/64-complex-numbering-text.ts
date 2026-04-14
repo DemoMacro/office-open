@@ -2,7 +2,7 @@
 
 import * as fs from "fs";
 
-import { Document, LevelFormat, Packer, Paragraph } from "docx";
+import { Document, LevelFormat, Packer, Paragraph } from "docx-plus";
 
 const doc = new Document({
     numbering: {

@@ -2,8 +2,15 @@
 
 import * as fs from "fs";
 
-// Import { Document, Packer, Paragraph } from "docx";
-import { Document, ImageRun, Packer, Paragraph, TextWrappingSide, TextWrappingType } from "docx";
+// Import { Document, Packer, Paragraph } from "docx-plus";
+import {
+    Document,
+    ImageRun,
+    Packer,
+    Paragraph,
+    TextWrappingSide,
+    TextWrappingType,
+} from "docx-plus";
 
 const doc = new Document({
     sections: [

@@ -11,7 +11,7 @@ More info: https://en.wikipedia.org/wiki/Twip
 ### Convert Inches to Twip
 
 ```ts
-import { convertInchesToTwip } from "docx";
+import { convertInchesToTwip } from "docx-plus";
 
 convertInchesToTwip(1); // returns 1440
 convertInchesToTwip(0.5); // returns 720
@@ -21,7 +21,7 @@ convertInchesToTwip(2); // returns 2880
 ### Convert Millimeters to Twip
 
 ```ts
-import { convertMillimetersToTwip } from "docx";
+import { convertMillimetersToTwip } from "docx-plus";
 
 convertMillimetersToTwip(25.4); // returns 1440 (1 inch = 25.4mm)
 convertMillimetersToTwip(50); // returns 2834
@@ -33,7 +33,7 @@ convertMillimetersToTwip(10); // returns 567
 ### Setting Page Margins
 
 ```ts
-import { Document, convertInchesToTwip } from "docx";
+import { Document, convertInchesToTwip } from "docx-plus";
 
 const doc = new Document({
     sections: [
@@ -59,7 +59,7 @@ const doc = new Document({
 ### Setting Page Size
 
 ```ts
-import { Document, convertMillimetersToTwip, PageOrientation } from "docx";
+import { Document, convertMillimetersToTwip, PageOrientation } from "docx-plus";
 
 // A4 paper size
 const doc = new Document({
@@ -85,7 +85,7 @@ const doc = new Document({
 ### Column Spacing
 
 ```ts
-import { Document, convertMillimetersToTwip } from "docx";
+import { Document, convertMillimetersToTwip } from "docx-plus";
 
 const doc = new Document({
     sections: [
@@ -107,7 +107,7 @@ const doc = new Document({
 ### Table Cell Width
 
 ```ts
-import { Table, TableCell, TableRow, WidthType, convertInchesToTwip } from "docx";
+import { Table, TableCell, TableRow, WidthType, convertInchesToTwip } from "docx-plus";
 
 new Table({
     rows: [

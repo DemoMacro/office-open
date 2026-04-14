@@ -2,7 +2,15 @@
 
 import * as fs from "fs";
 
-import { Bookmark, File, HeadingLevel, Packer, Paragraph, StyleLevel, TableOfContents } from "docx";
+import {
+    Bookmark,
+    File,
+    HeadingLevel,
+    Packer,
+    Paragraph,
+    StyleLevel,
+    TableOfContents,
+} from "docx-plus";
 
 // WordprocessingML docs for TableOfContents can be found here:
 // http://officeopenxml.com/WPtableOfContents.php

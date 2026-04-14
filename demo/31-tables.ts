@@ -12,7 +12,7 @@ import {
     TableRow,
     TextDirection,
     VerticalAlignTable,
-} from "docx";
+} from "docx-plus";
 
 const doc = new Document({
     sections: [

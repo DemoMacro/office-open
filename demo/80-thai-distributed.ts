@@ -9,7 +9,7 @@ import {
     Paragraph,
     TextRun,
     convertMillimetersToTwip,
-} from "docx";
+} from "docx-plus";
 
 const doc = new Document({
     sections: [

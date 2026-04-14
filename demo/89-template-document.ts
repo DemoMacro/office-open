@@ -2,8 +2,8 @@
 
 import * as fs from "fs";
 
-import type { IPatch } from "docx";
-import { patchDocument, PatchType, TextRun } from "docx";
+import type { IPatch } from "docx-plus";
+import { patchDocument, PatchType, TextRun } from "docx-plus";
 
 export const font = "Trebuchet MS";
 export const getPatches = (fields: Record<string, string>) => {

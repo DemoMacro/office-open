@@ -9,7 +9,7 @@ You can create `Paragraphs` in the following ways:
 ### Shorthand
 
 ```ts
-import { Paragraph } from "docx";
+import { Paragraph } from "docx-plus";
 
 const paragraph = new Paragraph("Short hand Hello World");
 ```
@@ -191,7 +191,7 @@ Adding spacing between paragraphs
 | line     | `number`       | Optional |                                        |
 | lineRule | `LineRuleType` | Optional | `AT_LEAST`, `EXACTLY`, `EXACT`, `AUTO` |
 
-Note: The `lineRule` property has different values depending on the version of Word you are using. The `EXACTLY` value is only available in Word 2016 and above. Use `EXACT` for greater support, including LibreOffice etc. Read this issue for more information: https://github.com/dolanmiu/docx/issues/1773.
+Note: The `lineRule` property has different values depending on the version of Word you are using. The `EXACTLY` value is only available in Word 2016 and above. Use `EXACT` for greater support, including LibreOffice etc. Read this issue for more information: https://github.com/DemoMacro/docx-plus/issues/1773.
 
 **Example:**
 
@@ -225,7 +225,7 @@ To create styles, please refer to the [styling documentation](usage/styling-with
 ### Headings and titles
 
 ```ts
-import { HeadingLevel, Paragraph } from "docx";
+import { HeadingLevel, Paragraph } from "docx-plus";
 
 const paragraph = new Paragraph({
     text: "Hello World",
@@ -305,7 +305,7 @@ const paragraph = new Paragraph({
 
 ![Page Break Before in Word](https://user-images.githubusercontent.com/34742290/40176503-df3a8398-59db-11e8-8b9c-d719f13aa8b4.png)
 
-Example: https://github.com/dolanmiu/docx/blob/master/demo/15-page-break-before.ts
+Example: https://github.com/DemoMacro/docx-plus/blob/master/demo/15-page-break-before.ts
 
 ## Page break control
 

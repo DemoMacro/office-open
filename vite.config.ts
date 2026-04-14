@@ -7,7 +7,6 @@ export default defineConfig({
         alias: {
             "@export": fileURLToPath(new URL("./src/export", import.meta.url)),
             "@file": fileURLToPath(new URL("./src/file", import.meta.url)),
-            "@shared": fileURLToPath(new URL("./src/shared/index.ts", import.meta.url)),
             "@util": fileURLToPath(new URL("./src/util", import.meta.url)),
             tests: fileURLToPath(new URL("./src/tests", import.meta.url)),
         },
@@ -15,7 +14,7 @@ export default defineConfig({
     pack: {
         entry: ["src/index.ts"],
         format: ["esm", "cjs", "iife", "umd"],
-        globalName: "docx",
+        globalName: "docxPlus",
         target: "es2015",
     },
     fmt: {

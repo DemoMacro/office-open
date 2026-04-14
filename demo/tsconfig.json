@@ -3,7 +3,7 @@
     "compilerOptions": {
         "rootDir": "./",
         "paths": {
-            "docx": ["../build"]
+            "docx-plus": ["../build"]
         }
     },
     "include": ["../demo"]

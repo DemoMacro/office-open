@@ -147,6 +147,6 @@ new TableOfContents("Summary", {
 
 ## Examples
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/28-table-of-contents.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/28-table-of-contents.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/28-table-of-contents.ts_
+_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/28-table-of-contents.ts_

@@ -12,7 +12,7 @@ import {
     TabStopPosition,
     TabStopType,
     TextRun,
-} from "docx";
+} from "docx-plus";
 
 const PHONE_NUMBER = "07534563401";
 const PROFILE_URL = "https://www.linkedin.com/in/dolan1";

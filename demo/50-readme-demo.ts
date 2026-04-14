@@ -12,7 +12,7 @@ import {
     TableCell,
     TableRow,
     VerticalAlignTable,
-} from "docx";
+} from "docx-plus";
 
 const table = new Table({
     rows: [

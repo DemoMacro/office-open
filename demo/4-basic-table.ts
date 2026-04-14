@@ -2,7 +2,7 @@
 
 import * as fs from "fs";
 
-import { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType } from "docx";
+import { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType } from "docx-plus";
 
 const table = new Table({
     columnWidths: [3505, 5505],

@@ -17,7 +17,7 @@ import {
     TableRow,
     UnderlineType,
     convertInchesToTwip,
-} from "docx";
+} from "docx-plus";
 
 const table = new Table({
     rows: [

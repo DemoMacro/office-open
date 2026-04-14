@@ -11,7 +11,7 @@ import {
     VerticalAnchor,
     VerticalPositionRelativeFrom,
     WpsShapeRun,
-} from "docx";
+} from "docx-plus";
 
 const doc = new Document({
     sections: [

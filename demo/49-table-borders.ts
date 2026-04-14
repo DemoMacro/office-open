@@ -14,7 +14,7 @@ import {
     TableRow,
     TextDirection,
     VerticalAlignTable,
-} from "docx";
+} from "docx-plus";
 
 const table = new Table({
     rows: [
