@@ -5,7 +5,7 @@
 
 import * as fs from "fs";
 
-import { Document, Packer } from "docx";
+import { Document, Packer } from "docx-plus";
 
 const doc = new Document(
     // Standard properties

@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <title>docx - Generate .docx documents with JavaScript</title>
+        <title>docx-plus - Generate .docx documents with JavaScript</title>
         <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
         <meta name="description" content="Generate .docx documents with JavaScript" />
         <meta
@@ -19,21 +19,14 @@
 
     <body>
         <div id="app"></div>
-        <script src="//cdn.jsdelivr.net/npm/docsify-plugin-carbon@1/index.min.js"></script>
         <script>
             window.$docsify = {
-                name: "docx",
-                repo: "https://github.com/dolanmiu/docx",
+                name: "docx-plus",
+                repo: "https://github.com/DemoMacro/docx-plus",
                 loadSidebar: true,
                 subMaxLevel: 2,
                 search: "auto",
                 coverpage: true,
-                plugins: [
-                    // Change to your Carbon property ID
-                    // cSpell:disable
-                    DocsifyCarbon.create("CEAIP237", "docx"),
-                    // cSpell:enable
-                ],
             };
         </script>
         <script src="//unpkg.com/docsify/lib/docsify.min.js"></script>

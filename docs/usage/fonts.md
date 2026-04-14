@@ -8,7 +8,7 @@ Embed a font by providing the font data in the `Document` constructor:
 
 ```ts
 import * as fs from "fs";
-import { CharacterSet, Document, Paragraph, TextRun } from "docx";
+import { CharacterSet, Document, Paragraph, TextRun } from "docx-plus";
 
 const fontData = fs.readFileSync("./fonts/MyCustomFont.ttf");
 
@@ -180,7 +180,7 @@ new Paragraph({
 In browsers, convert your font file to a base64 string or ArrayBuffer:
 
 ```ts
-import { CharacterSet, Document, Packer, Paragraph, TextRun } from "docx";
+import { CharacterSet, Document, Packer, Paragraph, TextRun } from "docx-plus";
 import { saveAs } from "file-saver";
 
 // Fetch the font file and convert to ArrayBuffer
@@ -228,12 +228,12 @@ Packer.toBlob(doc).then((blob) => {
 
 ### Embedding Custom Fonts
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/91-custom-fonts.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/91-custom-fonts.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/91-custom-fonts.ts_
+_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/91-custom-fonts.ts_
 
 ### Declarative Custom Fonts
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/92-declarative-custom-fonts.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/92-declarative-custom-fonts.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/92-declarative-custom-fonts.ts_
+_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/92-declarative-custom-fonts.ts_

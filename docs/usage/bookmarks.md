@@ -9,7 +9,7 @@ Bookmarks allow you to create anchors within a document that can be referenced b
 A bookmark is an anchor point in your document with a unique identifier. Create one using the `Bookmark` component:
 
 ```ts
-import { Bookmark, Paragraph, TextRun, HeadingLevel } from "docx";
+import { Bookmark, Paragraph, TextRun, HeadingLevel } from "docx-plus";
 
 const bookmarkedHeading = new Paragraph({
     heading: HeadingLevel.HEADING_1,
@@ -34,7 +34,7 @@ const bookmarkedHeading = new Paragraph({
 Use `InternalHyperlink` to create clickable links that navigate to bookmarks:
 
 ```ts
-import { InternalHyperlink, Paragraph, TextRun } from "docx";
+import { InternalHyperlink, Paragraph, TextRun } from "docx-plus";
 
 const linkToChapter = new Paragraph({
     children: [
@@ -58,7 +58,7 @@ const linkToChapter = new Paragraph({
 Get the page number where a bookmark appears using `PageReference`:
 
 ```ts
-import { PageReference, Paragraph, TextRun } from "docx";
+import { PageReference, Paragraph, TextRun } from "docx-plus";
 
 const pageRef = new Paragraph({
     children: [new TextRun("See Chapter 1 on page "), new PageReference("chapter1")],
@@ -82,7 +82,7 @@ import {
     PageReference,
     Paragraph,
     TextRun,
-} from "docx";
+} from "docx-plus";
 
 const doc = new Document({
     sections: [
@@ -154,7 +154,7 @@ const doc = new Document({
 Bookmarks and internal hyperlinks work in headers and footers too:
 
 ```ts
-import { Footer, InternalHyperlink, Paragraph, TextRun } from "docx";
+import { Footer, InternalHyperlink, Paragraph, TextRun } from "docx-plus";
 
 const footer = new Footer({
     children: [
@@ -193,6 +193,6 @@ new InternalHyperlink({
 
 ## Demo
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/21-bookmarks.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/21-bookmarks.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/21-bookmarks.ts_
+_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/21-bookmarks.ts_

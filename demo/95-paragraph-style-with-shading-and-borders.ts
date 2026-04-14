@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { BorderStyle, Document, Packer, Paragraph, TextRun } from "docx";
+import { BorderStyle, Document, Packer, Paragraph, TextRun } from "docx-plus";
 
 const doc = new Document({
     sections: [

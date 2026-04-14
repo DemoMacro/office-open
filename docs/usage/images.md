@@ -317,22 +317,22 @@ const image = new ImageRun({
 
 Importing Images from file system path
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/5-images.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/5-images.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/5-images.ts_
+_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/5-images.ts_
 
 ### Add images to header and footer
 
 Example showing how to add image to headers and footers
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/9-images-in-header-and-footer.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/9-images-in-header-and-footer.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/9-images-in-header-and-footer.ts_
+_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/9-images-in-header-and-footer.ts_
 
 ### Floating images
 
 Example showing how to float images on top of text and optimally give a `margin`
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/38-text-wrapping.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/38-text-wrapping.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/38-text-wrapping.ts_
+_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/38-text-wrapping.ts_

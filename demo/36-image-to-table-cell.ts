@@ -2,7 +2,16 @@
 
 import * as fs from "fs";
 
-import { Document, Header, ImageRun, Packer, Paragraph, Table, TableCell, TableRow } from "docx";
+import {
+    Document,
+    Header,
+    ImageRun,
+    Packer,
+    Paragraph,
+    Table,
+    TableCell,
+    TableRow,
+} from "docx-plus";
 
 const table = new Table({
     rows: [

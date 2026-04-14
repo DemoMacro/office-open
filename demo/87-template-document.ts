@@ -2,7 +2,7 @@
 
 import * as fs from "fs";
 
-import { PatchType, TextRun, patchDocument } from "docx";
+import { PatchType, TextRun, patchDocument } from "docx-plus";
 
 patchDocument({
     data: fs.readFileSync("demo/assets/simple-template-2.docx"),

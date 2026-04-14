@@ -25,7 +25,7 @@ import {
     Document,
     Paragraph,
     TextRun,
-} from "docx";
+} from "docx-plus";
 
 const doc = new Document({
     comments: {
@@ -189,7 +189,7 @@ import {
     Packer,
     Paragraph,
     TextRun,
-} from "docx";
+} from "docx-plus";
 import * as fs from "fs";
 
 const doc = new Document({
@@ -250,6 +250,6 @@ Packer.toBuffer(doc).then((buffer) => {
 
 ## Demo
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/73-comments.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/73-comments.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/73-comments.ts_
+_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/73-comments.ts_

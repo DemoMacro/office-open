@@ -15,7 +15,7 @@ import {
     TextRun,
     VerticalAlignTable,
     patchDocument,
-} from "docx";
+} from "docx-plus";
 
 patchDocument({
     data: fs.readFileSync("demo/assets/simple-template.docx"),

@@ -9,7 +9,7 @@ Line numbers are useful for legal documents, code listings, scripts, and any doc
 Add line numbers to a section:
 
 ```ts
-import { Document, LineNumberRestartFormat, Paragraph } from "docx";
+import { Document, LineNumberRestartFormat, Paragraph } from "docx-plus";
 
 const doc = new Document({
     sections: [
@@ -40,7 +40,7 @@ const doc = new Document({
 Control when line numbers restart:
 
 ```ts
-import { LineNumberRestartFormat } from "docx";
+import { LineNumberRestartFormat } from "docx-plus";
 
 // Continuous - numbers continue throughout document
 lineNumbers: {
@@ -103,7 +103,7 @@ This is useful for headings, titles, or any content that shouldn't be numbered.
 Legal document with line numbers:
 
 ```ts
-import { Document, HeadingLevel, LineNumberRestartFormat, Packer, Paragraph } from "docx";
+import { Document, HeadingLevel, LineNumberRestartFormat, Packer, Paragraph } from "docx-plus";
 
 const doc = new Document({
     sections: [
@@ -144,7 +144,7 @@ const doc = new Document({
 ## Multiple Sections with Different Settings
 
 ```ts
-import { Document, LineNumberRestartFormat, Paragraph, SectionType } from "docx";
+import { Document, LineNumberRestartFormat, Paragraph, SectionType } from "docx-plus";
 
 const doc = new Document({
     sections: [
@@ -171,12 +171,12 @@ const doc = new Document({
 
 ### Basic Line Numbers
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/40-line-numbers.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/40-line-numbers.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/40-line-numbers.ts_
+_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/40-line-numbers.ts_
 
 ### Line Number Suppression
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/70-line-numbers-suppression.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/70-line-numbers-suppression.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/70-line-numbers-suppression.ts_
+_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/70-line-numbers-suppression.ts_

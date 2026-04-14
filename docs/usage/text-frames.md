@@ -70,6 +70,6 @@ new Paragraph({
 
 ## Demo
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/61-text-frame.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/61-text-frame.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/61-text-frame.ts_
+_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/61-text-frame.ts_

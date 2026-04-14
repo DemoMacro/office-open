@@ -9,7 +9,7 @@ Endnotes allow you to add references that appear at the end of the document. The
 ## Example
 
 ```ts
-import { Document, EndnoteReferenceRun, Paragraph, TextRun } from "docx";
+import { Document, EndnoteReferenceRun, Paragraph, TextRun } from "docx-plus";
 
 const doc = new Document({
     endnotes: {
@@ -94,4 +94,4 @@ Insert `EndnoteReferenceRun` in paragraphs to create reference markers:
 
 ## Demo
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/97-endnotes.ts_
+_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/97-endnotes.ts_

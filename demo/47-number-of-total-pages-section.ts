@@ -13,7 +13,7 @@ import {
     PageNumber,
     Paragraph,
     TextRun,
-} from "docx";
+} from "docx-plus";
 
 const header = new Header({
     children: [

@@ -9,7 +9,7 @@ Footnotes allow you to add references that appear at the bottom of each page. Th
 ## Example
 
 ```ts
-import { Document, FootnoteReferenceRun, Paragraph, TextRun } from "docx";
+import { Document, FootnoteReferenceRun, Paragraph, TextRun } from "docx-plus";
 
 const doc = new Document({
     footnotes: {
@@ -60,7 +60,7 @@ Insert `FootnoteReferenceRun` in paragraphs to create reference markers:
 Footnotes can contain images using `ImageRun`:
 
 ```ts
-import { Document, FootnoteReferenceRun, ImageRun, Packer, Paragraph, TextRun } from "docx";
+import { Document, FootnoteReferenceRun, ImageRun, Packer, Paragraph, TextRun } from "docx-plus";
 import * as fs from "fs";
 
 const doc = new Document({
@@ -109,7 +109,7 @@ import {
     Packer,
     Paragraph,
     TextRun,
-} from "docx";
+} from "docx-plus";
 
 const doc = new Document({
     numbering: {
@@ -170,6 +170,6 @@ const doc = new Document({
 
 ## Demo
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/17-footnotes.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/17-footnotes.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/17-footnotes.ts_
+_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/17-footnotes.ts_

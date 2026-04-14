@@ -14,7 +14,7 @@ import {
     TextRun,
     VerticalAlignTable,
     WidthType,
-} from "docx";
+} from "docx-plus";
 
 interface StockPrice {
     readonly date: Date;

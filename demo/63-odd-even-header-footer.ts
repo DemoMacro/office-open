@@ -2,7 +2,7 @@
 
 import * as fs from "fs";
 
-import { Document, Footer, Header, Packer, PageBreak, Paragraph, TextRun } from "docx";
+import { Document, Footer, Header, Packer, PageBreak, Paragraph, TextRun } from "docx-plus";
 
 const doc = new Document({
     evenAndOddHeaderAndFooters: true,

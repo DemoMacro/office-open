@@ -11,7 +11,7 @@ Checkboxes allow you to add interactive checkbox controls to your Word documents
 Create a simple checkbox:
 
 ```ts
-import { CheckBox, Document, Paragraph, TextRun } from "docx";
+import { CheckBox, Document, Paragraph, TextRun } from "docx-plus";
 
 const doc = new Document({
     sections: [
@@ -103,7 +103,7 @@ new Paragraph({
 Create a complete checklist:
 
 ```ts
-import { CheckBox, Document, Paragraph, TextRun } from "docx";
+import { CheckBox, Document, Paragraph, TextRun } from "docx-plus";
 
 const tasks = [
     { text: "Review documentation", done: true },
@@ -132,7 +132,7 @@ const doc = new Document({
 ## Form with Multiple Checkboxes
 
 ```ts
-import { CheckBox, Document, HeadingLevel, Paragraph, TextRun } from "docx";
+import { CheckBox, Document, HeadingLevel, Paragraph, TextRun } from "docx-plus";
 
 const doc = new Document({
     sections: [
@@ -166,6 +166,6 @@ const doc = new Document({
 
 ## Demo
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/90-check-boxes.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/90-check-boxes.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/90-check-boxes.ts_
+_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/90-check-boxes.ts_

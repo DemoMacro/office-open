@@ -2,7 +2,7 @@
 
 import * as fs from "fs";
 
-import { Document, EndnoteReferenceRun, Packer, Paragraph, TextRun } from "docx";
+import { Document, EndnoteReferenceRun, Packer, Paragraph, TextRun } from "docx-plus";
 
 const doc = new Document({
     endnotes: {

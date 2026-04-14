@@ -85,6 +85,6 @@ const paragraph = new Paragraph({
 
 ## Demo
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/66-fields.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/66-fields.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/66-fields.ts_
+_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/66-fields.ts_

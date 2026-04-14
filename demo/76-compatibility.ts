@@ -2,7 +2,7 @@
 
 import * as fs from "fs";
 
-import { Document, Packer, Paragraph, TextRun } from "docx";
+import { Document, Packer, Paragraph, TextRun } from "docx-plus";
 
 const doc = new Document({
     compatibility: {

@@ -1,7 +1,16 @@
 import * as fs from "fs";
 
 // Example of using tableLook to control conditional table formatting
-import { Document, Packer, Paragraph, Table, TableCell, TableRow, TextRun, WidthType } from "docx";
+import {
+    Document,
+    Packer,
+    Paragraph,
+    Table,
+    TableCell,
+    TableRow,
+    TextRun,
+    WidthType,
+} from "docx-plus";
 
 const styles = fs.readFileSync("./demo/assets/custom-styles.xml", "utf8");
 

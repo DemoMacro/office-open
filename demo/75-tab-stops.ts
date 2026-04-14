@@ -10,7 +10,7 @@ import {
     TabStopPosition,
     TabStopType,
     TextRun,
-} from "docx";
+} from "docx-plus";
 
 const columnWidth = TabStopPosition.MAX / 4;
 const receiptTabStops = [

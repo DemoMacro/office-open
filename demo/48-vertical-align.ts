@@ -2,7 +2,7 @@
 
 import * as fs from "fs";
 
-import { Document, Packer, Paragraph, Tab, TextRun, VerticalAlignSection } from "docx";
+import { Document, Packer, Paragraph, Tab, TextRun, VerticalAlignSection } from "docx-plus";
 
 const doc = new Document({
     sections: [

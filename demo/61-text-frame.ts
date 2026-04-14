@@ -13,7 +13,7 @@ import {
     Tab,
     TextRun,
     VerticalPositionAlign,
-} from "docx";
+} from "docx-plus";
 
 const doc = new Document({
     sections: [

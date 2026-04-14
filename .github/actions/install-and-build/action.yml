@@ -6,7 +6,7 @@ runs:
     steps:
         - name: Install Dependencies
           shell: bash
-          run: npm ci --force
+          run: pnpm install
         - name: Build
           shell: bash
-          run: npm run build
+          run: pnpm run build

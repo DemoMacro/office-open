@@ -2,7 +2,7 @@
 
 import * as fs from "fs";
 
-import { Document, Packer, Paragraph, Table, TableCell, TableRow, TextRun } from "docx";
+import { Document, Packer, Paragraph, Table, TableCell, TableRow, TextRun } from "docx-plus";
 
 const doc = new Document({
     sections: [

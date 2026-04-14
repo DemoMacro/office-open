@@ -3,7 +3,7 @@
 
 import * as fs from "fs";
 
-import { Document, Packer, PageOrientation, Paragraph, convertMillimetersToTwip } from "docx";
+import { Document, Packer, PageOrientation, Paragraph, convertMillimetersToTwip } from "docx-plus";
 
 const doc = new Document({
     sections: [

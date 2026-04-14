@@ -15,7 +15,7 @@ import {
     TableLayoutType,
     TableRow,
     WidthType,
-} from "docx";
+} from "docx-plus";
 
 const table = new Table({
     float: {

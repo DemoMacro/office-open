@@ -2,7 +2,7 @@
 
 import * as fs from "fs";
 
-import { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType } from "docx";
+import { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType } from "docx-plus";
 
 const styles = fs.readFileSync("./demo/assets/custom-styles.xml", "utf8");
 

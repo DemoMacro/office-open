@@ -32,7 +32,6 @@
             "@util/*": ["./src/util/*"],
             "@export/*": ["./src/export/*"],
             "@file/*": ["./src/file/*"],
-            "@shared": ["./src/shared/index.ts"],
             "tests/*": ["./src/tests/*"]
         }
     },

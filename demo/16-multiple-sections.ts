@@ -12,7 +12,7 @@ import {
     PageOrientation,
     Paragraph,
     TextRun,
-} from "docx";
+} from "docx-plus";
 
 const doc = new Document({
     sections: [

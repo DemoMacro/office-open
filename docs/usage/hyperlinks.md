@@ -79,7 +79,7 @@ const paragraph = new Paragraph({
                     style: "Hyperlink",
                 }),
             ],
-            link: "https://docx.js.org",
+            link: "https://docx-plus.js.org",
         }),
     ],
 });
@@ -91,9 +91,9 @@ const paragraph = new Paragraph({
 
 ## Demo
 
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/35-hyperlinks.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/35-hyperlinks.ts ":include")
 
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/35-hyperlinks.ts_
+_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/35-hyperlinks.ts_
 
 ## Styling hyperlinks
 
@@ -118,6 +118,6 @@ const styledLink = new ExternalHyperlink({
             style: "Hyperlink",
         }),
     ],
-    link: "https://docx.js.org",
+    link: "https://docx-plus.js.org",
 });
 ```

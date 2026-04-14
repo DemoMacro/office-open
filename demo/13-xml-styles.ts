@@ -2,7 +2,7 @@
 
 import * as fs from "fs";
 
-import { Document, HeadingLevel, Packer, Paragraph } from "docx";
+import { Document, HeadingLevel, Packer, Paragraph } from "docx-plus";
 
 const styles = fs.readFileSync("./demo/assets/custom-styles.xml", "utf8");
 const doc = new Document({
