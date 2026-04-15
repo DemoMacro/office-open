@@ -1037,11 +1037,9 @@ describe("ImageRun", () => {
             });
         });
 
-        it("should strip base64 marker", () => {
-            const spy = vi.spyOn(global, "atob").mockReturnValue("atob result");
-
-            new ImageRun({
-                data: ";base64,",
+        it("should handle base64 data URI string", () => {
+            const currentImageRun = new ImageRun({
+                data: "data:image/png;base64,iVBORw0KGgo=",
                 transformation: {
                     height: 200,
                     rotation: 45,
@@ -1050,7 +1048,16 @@ describe("ImageRun", () => {
                 type: "png",
             });
 
-            expect(spy).toBeCalledWith("");
+            const tree = new Formatter().format(currentImageRun, {
+                file: {
+                    Media: {
+                        addImage: vi.fn(),
+                    },
+                } as unknown as File,
+                stack: [],
+                viewWrapper: {} as unknown as IViewWrapper,
+            });
+            expect(tree).toBeDefined();
         });
 
         it("should work with svgs", () => {

@@ -4,7 +4,7 @@ import * as fs from "fs";
 
 import { PatchType, TextRun, patchDocument } from "docx-plus";
 
-patchDocument({
+const doc = await patchDocument({
     data: fs.readFileSync("demo/assets/simple-template-2.docx"),
     outputType: "nodebuffer",
     patches: {
@@ -13,6 +13,5 @@ patchDocument({
             type: PatchType.PARAGRAPH,
         },
     },
-}).then((doc) => {
-    fs.writeFileSync("My Document.docx", doc);
 });
+fs.writeFileSync("My Document.docx", doc);

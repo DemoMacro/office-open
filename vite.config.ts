@@ -25,7 +25,7 @@ export default defineConfig({
         sortTailwindcss: {},
     },
     lint: {
-        ignorePatterns: ["**/demo/**", "**/scripts/**", "**/dist/**", "**/coverage/**"],
+        ignorePatterns: ["**/scripts/**", "**/dist/**", "**/coverage/**"],
         options: {
             typeAware: true,
             typeCheck: true,

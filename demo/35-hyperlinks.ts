@@ -61,6 +61,7 @@ const doc = new Document({
                                         width: 100,
                                         height: 100,
                                     },
+                                    type: "jpg",
                                 }),
                             ],
                             link: "http://www.google.com",
@@ -168,6 +169,5 @@ const doc = new Document({
     },
 });
 
-Packer.toBuffer(doc).then((buffer) => {
-    fs.writeFileSync("My Document.docx", buffer);
-});
+const buffer = await Packer.toBuffer(doc);
+fs.writeFileSync("My Document.docx", buffer);

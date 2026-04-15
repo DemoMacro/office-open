@@ -162,6 +162,5 @@ const doc = new Document({
     sections: [{ children: [table, new Paragraph("Hello"), noBorderTable] }],
 });
 
-Packer.toBuffer(doc).then((buffer) => {
-    fs.writeFileSync("My Document.docx", buffer);
-});
+const buffer = await Packer.toBuffer(doc);
+fs.writeFileSync("My Document.docx", buffer);

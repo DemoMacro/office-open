@@ -88,6 +88,5 @@ const doc = new Document({
     title: "Sample Document",
 });
 
-Packer.toBuffer(doc).then((buffer) => {
-    fs.writeFileSync("My Document.docx", buffer);
-});
+const buffer = await Packer.toBuffer(doc);
+fs.writeFileSync("My Document.docx", buffer);

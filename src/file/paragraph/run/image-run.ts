@@ -10,6 +10,8 @@
 import type { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 import { hashedId } from "@util/convenience-functions";
+import type { DataType } from "undio";
+import { toUint8Array } from "undio";
 
 import { Drawing } from "../../drawing";
 import type { IFloating } from "../../drawing";
@@ -32,12 +34,12 @@ interface CoreImageOptions {
 
 interface RegularImageOptions {
     readonly type: "jpg" | "png" | "gif" | "bmp";
-    readonly data: Buffer | string | Uint8Array | ArrayBuffer;
+    readonly data: DataType;
 }
 
 interface SvgMediaOptions {
     readonly type: "svg";
-    readonly data: Buffer | string | Uint8Array | ArrayBuffer;
+    readonly data: DataType;
     /**
      * Required in case the Word processor does not support SVG.
      */
@@ -51,46 +53,24 @@ interface SvgMediaOptions {
  */
 export type IImageOptions = (RegularImageOptions | SvgMediaOptions) & CoreImageOptions;
 
-const convertDataURIToBinary = (dataURI: string): Uint8Array => {
-    // https://gist.github.com/borismus/1032746
-    // https://github.com/mafintosh/base64-to-uint8array
-    const BASE64_MARKER = ";base64,";
-    const base64Index = dataURI.indexOf(BASE64_MARKER);
-
-    const base64IndexWithOffset = base64Index === -1 ? 0 : base64Index + BASE64_MARKER.length;
-
-    const binaryString = atob(dataURI.substring(base64IndexWithOffset));
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-    }
-    return bytes;
-};
-
-export const standardizeData = (
-    data: string | Buffer | Uint8Array | ArrayBuffer,
-): Buffer | Uint8Array | ArrayBuffer =>
-    typeof data === "string" ? convertDataURIToBinary(data) : data;
-
 const createImageData = (
-    options: IImageOptions,
+    data: Uint8Array,
+    transformation: IMediaTransformation,
     key: string,
 ): Pick<IMediaData, "data" | "fileName" | "transformation"> => ({
-    data: standardizeData(options.data),
+    data,
     fileName: key,
     transformation: {
         emus: {
-            x: Math.round(options.transformation.width * 9525),
-            y: Math.round(options.transformation.height * 9525),
+            x: Math.round(transformation.width * 9525),
+            y: Math.round(transformation.height * 9525),
         },
-        flip: options.transformation.flip,
+        flip: transformation.flip,
         pixels: {
-            x: Math.round(options.transformation.width),
-            y: Math.round(options.transformation.height),
+            x: Math.round(transformation.width),
+            y: Math.round(transformation.height),
         },
-        rotation: options.transformation.rotation
-            ? options.transformation.rotation * 60_000
-            : undefined,
+        rotation: transformation.rotation ? transformation.rotation * 60_000 : undefined,
     },
 });
 
@@ -122,29 +102,30 @@ export class ImageRun extends Run {
     public constructor(options: IImageOptions) {
         super({});
 
-        const hash = hashedId(options.data);
+        const rawData = toUint8Array(options.data) as Uint8Array;
+        const hash = hashedId(rawData);
         const key = `${hash}.${options.type}`;
 
-        this.imageData =
-            options.type === "svg"
-                ? {
-                      type: options.type,
-                      ...createImageData(options, key),
-                      fallback: {
-                          type: options.fallback.type,
-                          ...createImageData(
-                              {
-                                  ...options.fallback,
-                                  transformation: options.transformation,
-                              },
-                              `${hashedId(options.fallback.data)}.${options.fallback.type}`,
-                          ),
-                      },
-                  }
-                : {
-                      type: options.type,
-                      ...createImageData(options, key),
-                  };
+        if (options.type === "svg") {
+            const fallbackData = toUint8Array(options.fallback.data) as Uint8Array;
+            this.imageData = {
+                type: options.type,
+                ...createImageData(rawData, options.transformation, key),
+                fallback: {
+                    type: options.fallback.type,
+                    ...createImageData(
+                        fallbackData,
+                        options.transformation,
+                        `${hashedId(fallbackData)}.${options.fallback.type}`,
+                    ),
+                },
+            };
+        } else {
+            this.imageData = {
+                type: options.type,
+                ...createImageData(rawData, options.transformation, key),
+            };
+        }
         const drawing = new Drawing(this.imageData, {
             docProperties: options.altText,
             floating: options.floating,

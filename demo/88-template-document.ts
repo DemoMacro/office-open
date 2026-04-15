@@ -26,10 +26,9 @@ const patches = getPatches({
     table_heading_1: "John",
 });
 
-patchDocument({
+const doc = await patchDocument({
     data: fs.readFileSync("demo/assets/simple-template.docx"),
     outputType: "nodebuffer",
     patches,
-}).then((doc) => {
-    fs.writeFileSync("My Document.docx", doc);
 });
+fs.writeFileSync("My Document.docx", doc);

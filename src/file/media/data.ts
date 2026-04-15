@@ -45,8 +45,8 @@ interface CoreMediaData {
     readonly fileName: string;
     /** Transformation settings for display */
     readonly transformation: IMediaDataTransformation;
-    /** Raw image data as Buffer, Uint8Array, or ArrayBuffer */
-    readonly data: Buffer | Uint8Array | ArrayBuffer;
+    /** Raw image data */
+    readonly data: Uint8Array;
 }
 
 /**
