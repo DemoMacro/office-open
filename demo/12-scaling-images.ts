@@ -17,6 +17,7 @@ const doc = new Document({
                                 height: 50,
                                 width: 50,
                             },
+                            type: "gif",
                         }),
                     ],
                 }),
@@ -28,6 +29,7 @@ const doc = new Document({
                                 height: 100,
                                 width: 100,
                             },
+                            type: "gif",
                         }),
                     ],
                 }),
@@ -39,6 +41,7 @@ const doc = new Document({
                                 height: 250,
                                 width: 250,
                             },
+                            type: "gif",
                         }),
                     ],
                 }),
@@ -50,6 +53,7 @@ const doc = new Document({
                                 height: 400,
                                 width: 400,
                             },
+                            type: "gif",
                         }),
                     ],
                 }),
@@ -58,6 +62,5 @@ const doc = new Document({
     ],
 });
 
-Packer.toBuffer(doc).then((buffer) => {
-    fs.writeFileSync("My Document.docx", buffer);
-});
+const buffer = await Packer.toBuffer(doc);
+fs.writeFileSync("My Document.docx", buffer);

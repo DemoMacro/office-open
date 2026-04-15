@@ -425,6 +425,5 @@ const documentCreator = new DocumentCreator();
 
 const doc = documentCreator.create([experiences, education, skills, achievements]);
 
-Packer.toBuffer(doc).then((buffer) => {
-    fs.writeFileSync("My Document.docx", buffer);
-});
+const buffer = await Packer.toBuffer(doc);
+fs.writeFileSync("My Document.docx", buffer);

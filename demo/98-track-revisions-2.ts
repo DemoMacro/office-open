@@ -506,7 +506,8 @@ const doc = new Document({
     ],
 });
 
-Packer.toBuffer(doc).then((buffer) => {
+const buffer = await Packer.toBuffer(doc);
+{
     fs.writeFileSync("98-track-revisions-2.docx", buffer);
     console.log("Document created successfully at 98-track-revisions-2.docx");
-});
+}

@@ -24,11 +24,10 @@ const patches = getPatches({
     salutation: "Mr.",
 });
 
-patchDocument({
+const doc = await patchDocument({
     data: fs.readFileSync("demo/assets/simple-template-3.docx"),
     keepOriginalStyles: true,
     outputType: "nodebuffer",
     patches,
-}).then((doc) => {
-    fs.writeFileSync("My Document.docx", doc);
 });
+fs.writeFileSync("My Document.docx", doc);

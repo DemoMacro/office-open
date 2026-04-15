@@ -123,7 +123,6 @@ const doc = new Document({
     ],
 });
 
-Packer.toBuffer(doc).then((buffer) => {
-    fs.writeFileSync("97-table-look.docx", buffer);
-    console.log("Document created successfully at 97-table-look.docx");
-});
+const buffer = await Packer.toBuffer(doc);
+fs.writeFileSync("97-table-look.docx", buffer);
+console.log("Document created successfully at 97-table-look.docx");

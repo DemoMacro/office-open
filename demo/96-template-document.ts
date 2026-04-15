@@ -17,7 +17,7 @@ import {
     patchDocument,
 } from "docx-plus";
 
-patchDocument({
+const doc = await patchDocument({
     data: fs.readFileSync("demo/assets/simple-template-4.docx"),
     outputType: "nodebuffer",
     patches: {
@@ -174,6 +174,5 @@ patchDocument({
         },
     },
     placeholderDelimiters: { end: ">>", start: "<<" },
-}).then((doc) => {
-    fs.writeFileSync("My Document.docx", doc);
 });
+fs.writeFileSync("My Document.docx", doc);
