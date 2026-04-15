@@ -71,7 +71,7 @@
     },
     "devDependencies": {
         "@types/node": "25.2.3",
-        "@types/xml": "1.0.8",
+        "@types/xml": "1.0.11",
         "@vitest/coverage-v8": "4.0.18",
         "cspell": "9.0.0",
         "docsify-cli": "4.3.0",
