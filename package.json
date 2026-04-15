@@ -80,7 +80,7 @@
         "inquirer": "13.2.2",
         "pre-commit": "1.2.2",
         "tsx": "4.7.0",
-        "typedoc": "0.28.2",
+        "typedoc": "0.28.19",
         "typescript": "5.9.3",
         "unzipper": "0.12.3",
         "vite-plus": "0.1.16"
