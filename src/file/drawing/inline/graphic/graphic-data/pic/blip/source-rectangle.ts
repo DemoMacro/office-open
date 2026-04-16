@@ -3,19 +3,36 @@
  *
  * This module defines the portion of an image to use when filling a shape.
  *
- * Reference: http://officeopenxml.com/drwPic.php
+ * Reference: ISO/IEC 29500-4, dml-main.xsd, CT_RelativeRect
  *
  * @module
  */
-import { XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
 
 /**
- * Represents a source rectangle for blip fills.
+ * Options for source rectangle cropping.
+ *
+ * Each value is a percentage (0-100000) of the image dimension to crop.
+ * The values represent the inset from each edge.
+ */
+export interface SourceRectangleOptions {
+    /** Left inset percentage (0-100000) */
+    readonly l?: number;
+    /** Top inset percentage (0-100000) */
+    readonly t?: number;
+    /** Right inset percentage (0-100000) */
+    readonly r?: number;
+    /** Bottom inset percentage (0-100000) */
+    readonly b?: number;
+}
+
+/**
+ * Creates a source rectangle element for blip fill cropping.
  *
  * This element specifies a portion of the blip (image) to use as the fill.
- * When not specified with attributes, it indicates the entire blip should be used.
+ * When no options are provided, the entire blip is used.
  *
- * Reference: http://officeopenxml.com/drwPic.php
+ * Reference: ISO/IEC 29500-4, dml-main.xsd, CT_RelativeRect
  *
  * ## XSD Schema
  * ```xml
@@ -29,11 +46,32 @@ import { XmlComponent } from "@file/xml-components";
  *
  * @example
  * ```typescript
- * const srcRect = new SourceRectangle();
+ * // Crop 10% from left and right
+ * createSourceRectangle({ l: 10000, r: 10000 });
  * ```
  */
-export class SourceRectangle extends XmlComponent {
-    public constructor() {
-        super("a:srcRect");
+export const createSourceRectangle = (options?: SourceRectangleOptions) => {
+    if (!options) {
+        return new BuilderElement({ name: "a:srcRect" });
     }
-}
+
+    const attributes: Record<string, { readonly key: string; readonly value: number }> = {};
+
+    if (options.l !== undefined) {
+        attributes.l = { key: "l", value: options.l };
+    }
+    if (options.t !== undefined) {
+        attributes.t = { key: "t", value: options.t };
+    }
+    if (options.r !== undefined) {
+        attributes.r = { key: "r", value: options.r };
+    }
+    if (options.b !== undefined) {
+        attributes.b = { key: "b", value: options.b };
+    }
+
+    return new BuilderElement({
+        attributes: attributes as never,
+        name: "a:srcRect",
+    });
+};

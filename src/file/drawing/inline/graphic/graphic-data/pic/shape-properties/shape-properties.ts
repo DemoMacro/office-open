@@ -2,7 +2,8 @@
  * Shape properties for DrawingML pictures.
  *
  * This module provides the shape properties element which defines visual
- * characteristics of a picture including transformation, geometry, fill, and outline.
+ * characteristics of a picture including transformation, geometry, fill, outline,
+ * effects, and 3D properties.
  *
  * Reference: ISO/IEC 29500-4, dml-main.xsd, CT_ShapeProperties
  *
@@ -11,6 +12,8 @@
 import type { IMediaDataTransformation } from "@file/media";
 import { XmlComponent } from "@file/xml-components";
 
+import { createEffectList } from "./effects/effect-list";
+import type { EffectListOptions } from "./effects/effect-list";
 import { createGradientFill } from "./fill/gradient-fill";
 import type { IGradientFillOptions } from "./fill/gradient-fill";
 import { Form } from "./form";
@@ -21,13 +24,15 @@ import { createSolidFill } from "./outline/solid-fill";
 import type { SolidFillOptions } from "./outline/solid-fill";
 import { PresetGeometry } from "./preset-geometry/preset-geometry";
 import { ShapePropertiesAttributes } from "./shape-properties-attributes";
+import { createShape3D } from "./three-d/shape-3d";
+import type { Shape3DOptions } from "./three-d/shape-3d";
 
 /**
  * Represents shape properties for a DrawingML picture.
  *
  * This element defines the visual formatting of a picture, including
  * its transform (size, position, rotation, flip), geometry preset,
- * fill, and outline properties.
+ * fill, outline, effects, and 3D properties.
  *
  * ## XSD Schema
  * ```xml
@@ -38,6 +43,9 @@ import { ShapePropertiesAttributes } from "./shape-properties-attributes";
  *     <xsd:group ref="EG_FillProperties" minOccurs="0"/>
  *     <xsd:element name="ln" type="CT_LineProperties" minOccurs="0"/>
  *     <xsd:group ref="EG_EffectProperties" minOccurs="0"/>
+ *     <xsd:element name="scene3d" type="CT_Scene3D" minOccurs="0"/>
+ *     <xsd:element name="sp3d" type="CT_Shape3D" minOccurs="0"/>
+ *     <xsd:element name="extLst" type="CT_OfficeArtExtensionList" minOccurs="0"/>
  *   </xsd:sequence>
  *   <xsd:attribute name="bwMode" type="ST_BlackWhiteMode" use="optional"/>
  * </xsd:complexType>
@@ -48,7 +56,9 @@ import { ShapePropertiesAttributes } from "./shape-properties-attributes";
  * const shapeProps = new ShapeProperties({
  *   element: "pic",
  *   transform: { emus: { x: 914400, y: 914400 } },
- *   solidFill: { color: { value: "FF0000" } },
+ *   effects: {
+ *     glow: { rad: 50800, color: { value: "FF0000" } },
+ *   },
  * });
  * ```
  */
@@ -57,9 +67,11 @@ export class ShapeProperties extends XmlComponent {
 
     public constructor({
         element,
+        effects,
         gradientFill,
         noFill,
         outline,
+        shape3d,
         solidFill,
         transform,
     }: {
@@ -68,6 +80,8 @@ export class ShapeProperties extends XmlComponent {
         readonly solidFill?: SolidFillOptions;
         readonly gradientFill?: IGradientFillOptions;
         readonly noFill?: boolean;
+        readonly effects?: EffectListOptions;
+        readonly shape3d?: Shape3DOptions;
         readonly transform: IMediaDataTransformation;
     }) {
         super(`${element}:spPr`);
@@ -96,6 +110,14 @@ export class ShapeProperties extends XmlComponent {
 
         if (outline) {
             this.root.push(createOutline(outline));
+        }
+
+        if (effects) {
+            this.root.push(createEffectList(effects));
+        }
+
+        if (shape3d) {
+            this.root.push(createShape3D(shape3d));
         }
     }
 }

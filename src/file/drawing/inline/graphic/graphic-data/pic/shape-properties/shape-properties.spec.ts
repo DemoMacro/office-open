@@ -131,4 +131,49 @@ describe("ShapeProperties", () => {
             },
         ]);
     });
+
+    it("should create with effects", () => {
+        const props = new ShapeProperties({
+            element: "pic",
+            transform: TRANSFORM,
+            effects: {
+                glow: { rad: 50800, color: { value: "FF0000" } },
+            },
+        });
+        const tree = new Formatter().format(props);
+        expect(tree["pic:spPr"]).to.include.deep.members([
+            {
+                "a:effectLst": [
+                    {
+                        "a:glow": [
+                            { _attr: { rad: 50800 } },
+                            { "a:srgbClr": { _attr: { val: "FF0000" } } },
+                        ],
+                    },
+                ],
+            },
+        ]);
+    });
+
+    it("should create with 3D shape properties", () => {
+        const props = new ShapeProperties({
+            element: "pic",
+            transform: TRANSFORM,
+            shape3d: {
+                z: 76200,
+                prstMaterial: "METAL",
+            },
+        });
+        const tree = new Formatter().format(props);
+        expect(tree["pic:spPr"]).to.include.deep.members([
+            {
+                "a:sp3d": {
+                    _attr: {
+                        prstMaterial: "metal",
+                        z: 76200,
+                    },
+                },
+            },
+        ]);
+    });
 });

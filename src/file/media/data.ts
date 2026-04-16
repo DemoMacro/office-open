@@ -1,5 +1,11 @@
+import type { SourceRectangleOptions } from "@file/drawing/inline/graphic/graphic-data/pic/blip/source-rectangle";
+import type { EffectListOptions } from "@file/drawing/inline/graphic/graphic-data/pic/shape-properties/effects/effect-list";
 import type { OutlineOptions } from "@file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
 import type { SolidFillOptions } from "@file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
+import type {
+    IChildExtent,
+    IChildOffset,
+} from "@file/drawing/inline/graphic/graphic-data/wpg/wpg-group";
 import type { WpsShapeCoreOptions } from "@file/drawing/inline/graphic/graphic-data/wps";
 
 export interface IMediaDataTransformation {
@@ -47,6 +53,8 @@ interface CoreMediaData {
     readonly transformation: IMediaDataTransformation;
     /** Raw image data */
     readonly data: Uint8Array;
+    /** Source rectangle for image cropping */
+    readonly srcRect?: SourceRectangleOptions;
 }
 
 /**
@@ -87,6 +95,14 @@ export interface WpgMediaData {
     readonly type: "wpg";
     readonly transformation: IMediaDataTransformation;
     readonly children: readonly IGroupChildMediaData[];
+    /** Child coordinate offset */
+    readonly chOff?: IChildOffset;
+    /** Child coordinate extent */
+    readonly chExt?: IChildExtent;
+    /** Group fill */
+    readonly solidFill?: SolidFillOptions;
+    /** Group effects */
+    readonly effects?: EffectListOptions;
 }
 
 export type IExtendedMediaData = IMediaData | WpsMediaData | WpgMediaData;
