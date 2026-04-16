@@ -86,6 +86,40 @@ Insert `EndnoteReferenceRun` in paragraphs to create reference markers:
 - Automatically styled as superscript
 - References the corresponding endnote content
 
+## Section Endnote Properties
+
+Control endnote placement and numbering per section using `endnotePr` in section properties:
+
+```ts
+const doc = new Document({
+    endnotes: { 1: { children: [new Paragraph("My endnote")] } },
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [new TextRun("Text"), new EndnoteReferenceRun(1)],
+                }),
+            ],
+            properties: {
+                endnotePr: {
+                    pos: "docEnd",
+                    numRestart: "eachSect",
+                },
+            },
+        },
+    ],
+});
+```
+
+### Options
+
+| Property   | Type     | Notes    | Description                                |
+| ---------- | -------- | -------- | ------------------------------------------ |
+| pos        | `string` | Optional | `"sectEnd"`, `"docEnd"`                    |
+| numRestart | `string` | Optional | `"continuous"`, `"eachSect"`, `"eachPage"` |
+| numStart   | `number` | Optional | Starting number for endnotes               |
+| formatType | `string` | Optional | Number format (decimal, upperRoman, etc.)  |
+
 ## Options
 
 | Property | Type                                        | Notes    | Description                                   |

@@ -311,6 +311,27 @@ const image = new ImageRun({
 | title       | `string` | Required | `My awesome title of my image`       |
 | description | `string` | Required | `My awesome description of my image` |
 
+## Image Cropping
+
+Crop an image by specifying insets as percentages (0-100000, where 100000 = 100%). Each value represents the inset from that edge:
+
+```ts
+const image = new ImageRun({
+    type: "png",
+    data: fs.readFileSync("./demo/images/cat.jpg"),
+    transformation: {
+        width: 200,
+        height: 200,
+    },
+    srcRect: {
+        l: 10000, // 10% from left
+        t: 10000, // 10% from top
+        r: 10000, // 10% from right
+        b: 10000, // 10% from bottom
+    },
+});
+```
+
 ## Examples
 
 ### Add image to the document

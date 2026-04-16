@@ -56,7 +56,11 @@ const doc = new Document({
 | transformation | `IMediaTransformation`   | Required | Size, position, rotation, and flip         |
 | floating       | `IFloating`              | Optional | Floating position (anchor mode)            |
 | solidFill      | `SolidFillOptions`       | Optional | Background fill color                      |
+| gradientFill   | `GradientFillOptions`    | Optional | Background gradient fill                   |
+| noFill         | `boolean`                | Optional | Remove background fill                     |
 | outline        | `OutlineOptions`         | Optional | Border / outline styling                   |
+| effects        | `EffectListOptions`      | Optional | Visual effects (glow, shadow, reflection)  |
+| shape3d        | `Shape3DOptions`         | Optional | 3D shape properties (bevel, material)      |
 | bodyProperties | `IBodyPropertiesOptions` | Optional | Internal margins, vertical anchor, autofit |
 | altText        | `DocPropertiesOptions`   | Optional | Accessibility text (title, description)    |
 
@@ -161,10 +165,9 @@ new WpsShapeRun({
     transformation: { width: 200, height: 100 },
     outline: {
         type: "solidFill",
-        solidFillType: "rgb",
-        value: "0000FF",
+        color: { value: "0000FF" },
         width: 9525, // width in EMUs (9525 = 1px)
-        cap: "ROUND",
+        cap: "round",
     },
 });
 ```
@@ -179,14 +182,13 @@ outline: {
 
 ### Outline Options
 
-| Property      | Type                                                                    | Notes                  | Description        |
-| ------------- | ----------------------------------------------------------------------- | ---------------------- | ------------------ |
-| type          | `"solidFill"` \| `"noFill"`                                             | Required               | Fill type          |
-| solidFillType | `"rgb"` \| `"scheme"`                                                   | Required for solidFill | Color type         |
-| value         | `string` \| `SchemeColor`                                               | Required for solidFill | Color value        |
-| width         | `number`                                                                | Optional               | Line width in EMUs |
-| cap           | `"ROUND"` \| `"SQUARE"` \| `"FLAT"`                                     | Optional               | Line cap style     |
-| compoundLine  | `"SINGLE"` \| `"DOUBLE"` \| `"THICK_THIN"` \| `"THIN_THICK"` \| `"TRI"` | Optional               | Line pattern       |
+| Property     | Type                                                                  | Notes                  | Description        |
+| ------------ | --------------------------------------------------------------------- | ---------------------- | ------------------ |
+| type         | `"solidFill"` \| `"noFill"`                                           | Required               | Fill type          |
+| color        | `SolidFillOptions`                                                    | Required for solidFill | Color value        |
+| width        | `number`                                                              | Optional               | Line width in EMUs |
+| cap          | `"round"` \| `"square"` \| `"flat"`                                   | Optional               | Line cap style     |
+| compoundLine | `"single"` \| `"double"` \| `"thickThin"` \| `"thinThick"` \| `"tri"` | Optional               | Line pattern       |
 
 ## Body Properties
 
@@ -219,6 +221,100 @@ new WpsShapeRun({
 | noAutoFit      | `boolean`                                    | Optional | Disable auto-fit text to shape |
 
 `VerticalAnchor` values: `TOP`, `CENTER`, `BOTTOM`.
+
+## Gradient Fill
+
+Use `gradientFill` for a gradient background instead of a solid color:
+
+```ts
+new WpsShapeRun({
+    type: "wps",
+    children: [new Paragraph("Gradient background")],
+    transformation: { width: 300, height: 100 },
+    gradientFill: {
+        stops: [
+            { position: 0, color: { value: "FF0000" } },
+            { position: 100000, color: { value: "0000FF" } },
+        ],
+        shade: { angle: 5400000 }, // 90 degrees
+    },
+});
+```
+
+Use `shade: { angle: number }` for linear gradients, or `shade: { path: "shape" | "circle" | "rect" }` for radial gradients.
+
+### Options
+
+| Property        | Type      | Notes    | Description                                                 |
+| --------------- | --------- | -------- | ----------------------------------------------------------- |
+| stops           | `array`   | Required | Color stops with positions (0-100000)                       |
+| shade           | `object`  | Optional | `{ angle: number }` (linear) or `{ path: string }` (radial) |
+| rotateWithShape | `boolean` | Optional | Whether gradient rotates with shape                         |
+
+## Effects
+
+Apply visual effects using the `effects` property:
+
+```ts
+new WpsShapeRun({
+    type: "wps",
+    children: [new Paragraph("With glow effect")],
+    transformation: { width: 200, height: 100 },
+    solidFill: { value: "2F5496" },
+    effects: {
+        glow: { rad: 50800, color: { value: "FF0000" } },
+        outerShdw: {
+            blurRad: 50800,
+            dist: 38100,
+            dir: 5400000,
+            color: { value: "000000" },
+        },
+    },
+});
+```
+
+### Options
+
+| Property   | Type               | Notes    | Description                                                                  |
+| ---------- | ------------------ | -------- | ---------------------------------------------------------------------------- |
+| blur       | `object`           | Optional | `{ rad?, grow? }`                                                            |
+| glow       | `object`           | Optional | `{ rad?, color }`                                                            |
+| innerShdw  | `object`           | Optional | `{ blurRad?, dist?, dir?, color }`                                           |
+| outerShdw  | `object`           | Optional | `{ blurRad?, dist?, dir?, sx?, sy?, kx?, ky?, algn?, rotWithShape?, color }` |
+| prstShdw   | `object`           | Optional | `{ prst, dist?, dir?, color }`                                               |
+| reflection | `object` \| `true` | Optional | Reflection effect or `true` for defaults                                     |
+| softEdge   | `number`           | Optional | Soft edge radius in EMUs                                                     |
+
+## 3D Shape Properties
+
+Add 3D effects using the `shape3d` property:
+
+```ts
+new WpsShapeRun({
+    type: "wps",
+    children: [new Paragraph("3D shape")],
+    transformation: { width: 200, height: 100 },
+    solidFill: { value: "2F5496" },
+    shape3d: {
+        bevelT: { w: 76200, h: 76200, prst: "circle" },
+        extrusionH: 76200,
+        prstMaterial: "plastic",
+    },
+});
+```
+
+### Options
+
+| Property     | Type     | Notes    | Description                                                                                                                |
+| ------------ | -------- | -------- | -------------------------------------------------------------------------------------------------------------------------- |
+| bevelT       | `object` | Optional | Top bevel (`w`, `h`, `prst`)                                                                                               |
+| bevelB       | `object` | Optional | Bottom bevel                                                                                                               |
+| extrusionClr | `object` | Optional | Extrusion color                                                                                                            |
+| contourClr   | `object` | Optional | Contour color                                                                                                              |
+| z            | `number` | Optional | Depth in EMUs                                                                                                              |
+| extrusionH   | `number` | Optional | Extrusion height in EMUs                                                                                                   |
+| contourW     | `number` | Optional | Contour width in EMUs                                                                                                      |
+| prstMaterial | `string` | Optional | `"matte"`, `"plastic"`, `"metal"`, `"warmMatte"`, `"powder"`, `"dkEdge"`, `"softEdge"`, `"clear"`, `"flat"`, `"softmetal"` |
 
 ## Complete Example
 
@@ -273,13 +369,11 @@ const doc = new Document({
                                 height: 150,
                             },
                             solidFill: {
-                                type: "rgb",
                                 value: "2F5496",
                             },
                             outline: {
                                 type: "solidFill",
-                                solidFillType: "rgb",
-                                value: "1F3864",
+                                color: { value: "1F3864" },
                                 width: 19050,
                             },
                             bodyProperties: {

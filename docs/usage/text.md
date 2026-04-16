@@ -197,3 +197,58 @@ const text = new TextRun({
     break: 2,
 });
 ```
+
+## East Asian Layout
+
+East Asian typography settings for runs, including character combination, vertical text, and compression.
+
+### Combined Characters
+
+Display multiple characters inside a single character space with brackets:
+
+```ts
+// Combined characters with round brackets
+const text = new TextRun({
+    eastAsianLayout: {
+        combine: true,
+        combineBrackets: "round",
+        id: 1,
+    },
+    text: "国民",
+});
+
+// Combined characters with square brackets
+const text = new TextRun({
+    eastAsianLayout: {
+        combine: true,
+        combineBrackets: "square",
+        id: 2,
+    },
+    text: "日本語",
+});
+```
+
+### Vertical Text
+
+Render text vertically (for East Asian vertical writing modes):
+
+```ts
+const text = new TextRun({
+    eastAsianLayout: {
+        vert: true,
+    },
+    text: "縦書き",
+});
+```
+
+`eastAsianLayout` supports the following properties: `id`, `combine`, `combineBrackets` (`"none"`, `"round"`, `"square"`, `"angle"`, `"curly"`), `vert`, and `vertCompress`.
+
+#### Options
+
+| Property        | Type      | Notes    | Description                                           |
+| --------------- | --------- | -------- | ----------------------------------------------------- |
+| id              | `number`  | Optional | Combined character ID                                 |
+| combine         | `boolean` | Optional | Enable character combination                          |
+| combineBrackets | `string`  | Optional | `"none"`, `"round"`, `"square"`, `"angle"`, `"curly"` |
+| vert            | `boolean` | Optional | Render text vertically                                |
+| vertCompress    | `boolean` | Optional | Compress characters in vertical text                  |
