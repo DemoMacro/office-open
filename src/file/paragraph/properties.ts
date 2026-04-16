@@ -12,7 +12,12 @@
  */
 import { ChangeAttributes } from "@file/track-revision/track-revision";
 import type { IChangedAttributesProperties } from "@file/track-revision/track-revision";
-import { IgnoreIfEmptyXmlComponent, OnOffElement, XmlComponent } from "@file/xml-components";
+import {
+    BuilderElement,
+    IgnoreIfEmptyXmlComponent,
+    OnOffElement,
+    XmlComponent,
+} from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 
 import { ParagraphRunProperties } from ".";
@@ -38,6 +43,46 @@ import { createWordWrap } from "./formatting/word-wrap";
 import { createFrameProperties } from "./frame/frame-properties";
 import type { IFrameOptions } from "./frame/frame-properties";
 import { createOutlineLevel } from "./links";
+
+/**
+ * Vertical text alignment types for paragraphs.
+ *
+ * Specifies the vertical alignment of text within the paragraph.
+ *
+ * @publicApi
+ */
+export const TextAlignmentType = {
+    /** Align text to the top */
+    TOP: "top",
+    /** Align text to the center */
+    CENTER: "center",
+    /** Align text to the baseline */
+    BASELINE: "baseline",
+    /** Align text to the bottom */
+    BOTTOM: "bottom",
+    /** Automatically determine vertical alignment */
+    AUTO: "auto",
+} as const;
+
+/**
+ * Textbox tight wrap types for paragraphs.
+ *
+ * Specifies how tightly text wraps around a textbox.
+ *
+ * @publicApi
+ */
+export const TextboxTightWrapType = {
+    /** No tight wrapping */
+    NONE: "none",
+    /** Tight wrap on all lines */
+    ALL_LINES: "allLines",
+    /** Tight wrap on first and last lines */
+    FIRST_AND_LAST_LINE: "firstAndLastLine",
+    /** Tight wrap on first line only */
+    FIRST_LINE_ONLY: "firstLineOnly",
+    /** Tight wrap on last line only */
+    LAST_LINE_ONLY: "lastLineOnly",
+} as const;
 
 /**
  * Paragraph style properties for numbering levels.
@@ -135,6 +180,24 @@ export type IParagraphPropertiesOptionsBase = {
      * Reference: ECMA-376, 3rd Edition (June, 2011), Fundamentals and Markup Language Reference § 17.3.1.29.
      */
     readonly run?: IParagraphRunOptions;
+    /** Whether to disable automatic hyphenation for this paragraph */
+    readonly suppressAutoHyphens?: boolean;
+    /** Whether to automatically adjust right indent for document grid */
+    readonly adjustRightInd?: boolean;
+    /** Whether to snap the current paragraph to the document grid */
+    readonly snapToGrid?: boolean;
+    /** Whether to swap left and right indent positions on odd pages for mirrored layouts */
+    readonly mirrorIndents?: boolean;
+    /** Whether to use Kinsoku forbidden character overflow rules */
+    readonly kinsoku?: boolean;
+    /** Whether to compress punctuation at the start of a line */
+    readonly topLinePunct?: boolean;
+    /** Whether to automatically add space between East Asian and Latin text */
+    readonly autoSpaceDE?: boolean;
+    /** Vertical text alignment within the paragraph */
+    readonly textAlignment?: (typeof TextAlignmentType)[keyof typeof TextAlignmentType];
+    /** Textbox tight wrap setting */
+    readonly textboxTightWrap?: (typeof TextboxTightWrapType)[keyof typeof TextboxTightWrapType];
 } & IParagraphStylePropertiesOptions;
 
 export type IParagraphPropertiesChangeOptions = IChangedAttributesProperties &
@@ -401,6 +464,56 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.autoSpaceEastAsianText !== undefined) {
             this.push(new OnOffElement("w:autoSpaceDN", options.autoSpaceEastAsianText));
+        }
+
+        if (options.suppressAutoHyphens !== undefined) {
+            this.push(new OnOffElement("w:suppressAutoHyphens", options.suppressAutoHyphens));
+        }
+
+        if (options.adjustRightInd !== undefined) {
+            this.push(new OnOffElement("w:adjustRightInd", options.adjustRightInd));
+        }
+
+        if (options.snapToGrid !== undefined) {
+            this.push(new OnOffElement("w:snapToGrid", options.snapToGrid));
+        }
+
+        if (options.mirrorIndents !== undefined) {
+            this.push(new OnOffElement("w:mirrorIndents", options.mirrorIndents));
+        }
+
+        if (options.kinsoku !== undefined) {
+            this.push(new OnOffElement("w:kinsoku", options.kinsoku));
+        }
+
+        if (options.topLinePunct !== undefined) {
+            this.push(new OnOffElement("w:topLinePunct", options.topLinePunct));
+        }
+
+        if (options.autoSpaceDE !== undefined) {
+            this.push(new OnOffElement("w:autoSpaceDE", options.autoSpaceDE));
+        }
+
+        if (options.textAlignment !== undefined) {
+            this.push(
+                new BuilderElement<{ readonly val: string }>({
+                    attributes: {
+                        val: { key: "w:val", value: options.textAlignment },
+                    },
+                    name: "w:textAlignment",
+                }),
+            );
+        }
+
+        if (options.textboxTightWrap !== undefined) {
+            this.push(
+                new BuilderElement<{ readonly val: string }>({
+                    attributes: {
+                        val: { key: "w:val", value: options.textboxTightWrap },
+                    },
+                    name: "w:textboxTightWrap",
+                }),
+            );
         }
 
         if (options.run) {

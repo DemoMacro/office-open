@@ -47,7 +47,8 @@ import { ChangeAttributes } from "@file/track-revision/track-revision";
 import type { IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { createVerticalAlign } from "@file/vertical-align";
 import type { SectionVerticalAlign } from "@file/vertical-align";
-import { OnOffElement, XmlComponent } from "@file/xml-components";
+import { BuilderElement, OnOffElement, XmlComponent } from "@file/xml-components";
+import { decimalNumber } from "@util/values";
 
 import { createColumns } from "./properties/columns";
 import type { IColumnsAttributes } from "./properties/columns";
@@ -120,6 +121,19 @@ export interface ISectionPropertiesOptionsBase {
     readonly column?: IColumnsAttributes;
     /** Section break type (next page, continuous, even page, odd page) */
     readonly type?: (typeof SectionType)[keyof typeof SectionType];
+    /** Whether to suppress endnotes in this section */
+    readonly noEndnote?: boolean;
+    /** Whether text direction is right-to-left for this section */
+    readonly bidi?: boolean;
+    /** Whether gutter is on the right side for right-to-left sections */
+    readonly rtlGutter?: boolean;
+    /** Paper source settings for the section */
+    readonly paperSrc?: {
+        /** Paper tray for the first page */
+        readonly first?: number;
+        /** Paper tray for subsequent pages */
+        readonly other?: number;
+    };
 }
 
 export type ISectionPropertiesChangeOptions = IChangedAttributesProperties &
@@ -275,6 +289,10 @@ export class SectionProperties extends XmlComponent {
         column,
         type,
         revision,
+        noEndnote,
+        bidi,
+        rtlGutter,
+        paperSrc,
     }: ISectionPropertiesOptions = {}) {
         super("w:sectPr");
 
@@ -316,6 +334,42 @@ export class SectionProperties extends XmlComponent {
 
         if (revision) {
             this.root.push(new SectionPropertiesChange(revision));
+        }
+
+        if (noEndnote !== undefined) {
+            this.root.push(new OnOffElement("w:noEndnote", noEndnote));
+        }
+
+        if (bidi !== undefined) {
+            this.root.push(new OnOffElement("w:bidi", bidi));
+        }
+
+        if (rtlGutter !== undefined) {
+            this.root.push(new OnOffElement("w:rtlGutter", rtlGutter));
+        }
+
+        if (paperSrc) {
+            this.root.push(
+                new BuilderElement<{ readonly first?: number; readonly other?: number }>({
+                    attributes: {
+                        first: {
+                            key: "w:first",
+                            value:
+                                paperSrc.first === undefined
+                                    ? undefined
+                                    : decimalNumber(paperSrc.first),
+                        },
+                        other: {
+                            key: "w:other",
+                            value:
+                                paperSrc.other === undefined
+                                    ? undefined
+                                    : decimalNumber(paperSrc.other),
+                        },
+                    },
+                    name: "w:paperSrc",
+                }),
+            );
         }
 
         this.root.push(createDocumentGrid({ charSpace, linePitch, type: gridType }));

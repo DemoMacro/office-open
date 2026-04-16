@@ -57,6 +57,8 @@ export interface IPageNumberTypeAttributes {
     readonly formatType?: (typeof NumberFormat)[keyof typeof NumberFormat];
     /** Separator between chapter and page number (default: hyphen) */
     readonly separator?: (typeof PageNumberSeparator)[keyof typeof PageNumberSeparator];
+    /** Heading style ID for chapter numbering */
+    readonly chapStyle?: number;
 }
 
 /**
@@ -90,9 +92,14 @@ export const createPageNumberType = ({
     start,
     formatType,
     separator,
+    chapStyle,
 }: IPageNumberTypeAttributes): XmlComponent =>
     new BuilderElement<IPageNumberTypeAttributes>({
         attributes: {
+            chapStyle: {
+                key: "w:chapStyle",
+                value: chapStyle === undefined ? undefined : decimalNumber(chapStyle),
+            },
             formatType: { key: "w:fmt", value: formatType },
             separator: { key: "w:chapSep", value: separator },
             start: {
