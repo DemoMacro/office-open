@@ -1,21 +1,11 @@
-<p align="center">
-    <img src="./logo/logo-animate.svg" width="100%" height="300" alt="docx-plus">
-</p>
-
-<p align="center">
-    Easily generate and modify .docx files with JS/TS. Works for Node and on the Browser.
-</p>
-
----
+# docx-plus
 
 [![NPM version][npm-image]][npm-url]
 [![Downloads per month][downloads-image]][downloads-url]
 [![GitHub Action Workflow Status][github-actions-workflow-image]][github-actions-workflow-url]
-[![Known Vulnerabilities][snky-image]][snky-url]
 [![PRs Welcome][pr-image]][pr-url]
-[codecov][codecov-image][codecov-url]
 
-# docx-plus
+Easily generate and modify .docx files with JS/TS. Works for Node and on the Browser.
 
 **docx-plus** is an enhanced fork of [docx](https://github.com/dolanmiu/docx) — a TypeScript/JavaScript library for generating and modifying Word documents (.docx) programmatically with a declarative API.
 
@@ -27,6 +17,7 @@
 | Data conversion     | Manual env detection (`Buffer.from` etc.) | **undio** (universal `toUint8Array`) |
 | `Packer.toStream()` | Removed (pseudo-streaming)                | **Restored** with real streaming ZIP |
 | Test environment    | jsdom                                     | happy-dom                            |
+| OOXML compliance    | ECMA-376 (legacy)                         | **ISO/IEC 29500-4** (latest)         |
 
 ## Installation
 
@@ -88,9 +79,5 @@ Contributions are welcome! Please feel free to submit pull requests.
 [downloads-url]: https://npmjs.org/package/docx-plus
 [github-actions-workflow-image]: https://github.com/DemoMacro/docx-plus/workflows/Default/badge.svg?branch=main
 [github-actions-workflow-url]: https://github.com/DemoMacro/docx-plus/actions
-[snky-image]: https://snyk.io/test/github/DemoMacro/docx-plus/badge.svg
-[snky-url]: https://snyk.io/test/github/DemoMacro/docx-plus
 [pr-image]: https://img.shields.io/badge/PRs-welcome-brightgreen.svg
 [pr-url]: http://makeapullrequest.com
-[codecov-image]: https://codecov.io/gh/DemoMacro/docx-plus/branch/main/graph/badge.svg
-[codecov-url]: https://codecov.io/gh/DemoMacro/docx-plus
