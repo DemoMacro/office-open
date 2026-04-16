@@ -1,8 +1,10 @@
 import { Formatter } from "@export/formatter";
 import { BorderStyle } from "@file/border";
 import { ShadingType } from "@file/shading";
+import { ThemeColor } from "@util/values";
 import { describe, expect, it } from "vite-plus/test";
 
+import { CombineBracketsType } from "./east-asian-layout";
 import { EmphasisMarkType } from "./emphasis-mark";
 import { HighlightColor, TextEffect } from "./properties";
 import { PageNumber, Run } from "./run";
@@ -763,6 +765,119 @@ describe("Run", () => {
                             "w:rPr": [
                                 {
                                     "w:snapToGrid": {},
+                                },
+                            ],
+                        },
+                    ],
+                });
+            });
+        });
+
+        describe("#outline", () => {
+            it("should correctly set the outline", () => {
+                const run = new Run({
+                    outline: true,
+                });
+                const tree = new Formatter().format(run);
+                expect(tree).to.deep.equal({
+                    "w:r": [{ "w:rPr": [{ "w:outline": {} }] }],
+                });
+            });
+        });
+
+        describe("#shadow", () => {
+            it("should correctly set the shadow", () => {
+                const run = new Run({
+                    shadow: true,
+                });
+                const tree = new Formatter().format(run);
+                expect(tree).to.deep.equal({
+                    "w:r": [{ "w:rPr": [{ "w:shadow": {} }] }],
+                });
+            });
+        });
+
+        describe("#webHidden", () => {
+            it("should correctly set the webHidden", () => {
+                const run = new Run({
+                    webHidden: true,
+                });
+                const tree = new Formatter().format(run);
+                expect(tree).to.deep.equal({
+                    "w:r": [{ "w:rPr": [{ "w:webHidden": {} }] }],
+                });
+            });
+        });
+
+        describe("#fitText", () => {
+            it("should correctly set the fitText", () => {
+                const run = new Run({
+                    fitText: 100,
+                });
+                const tree = new Formatter().format(run);
+                expect(tree).to.deep.equal({
+                    "w:r": [{ "w:rPr": [{ "w:fitText": { _attr: { "w:val": 100 } } }] }],
+                });
+            });
+        });
+
+        describe("#complexScript", () => {
+            it("should correctly set the complexScript", () => {
+                const run = new Run({
+                    complexScript: true,
+                });
+                const tree = new Formatter().format(run);
+                expect(tree).to.deep.equal({
+                    "w:r": [{ "w:rPr": [{ "w:cs": {} }] }],
+                });
+            });
+        });
+
+        describe("#eastAsianLayout", () => {
+            it("should correctly set the eastAsianLayout with combine", () => {
+                const run = new Run({
+                    eastAsianLayout: {
+                        combine: true,
+                        combineBrackets: CombineBracketsType.SQUARE,
+                    },
+                });
+                const tree = new Formatter().format(run);
+                expect(tree).to.deep.equal({
+                    "w:r": [
+                        {
+                            "w:rPr": [
+                                {
+                                    "w:eastAsianLayout": {
+                                        _attr: {
+                                            "w:combine": true,
+                                            "w:combineBrackets": "square",
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                });
+            });
+        });
+
+        describe("#color with theme", () => {
+            it("should set theme color on run", () => {
+                const run = new Run({
+                    color: { themeColor: ThemeColor.ACCENT1, themeTint: "99" },
+                });
+                const tree = new Formatter().format(run);
+                expect(tree).to.deep.equal({
+                    "w:r": [
+                        {
+                            "w:rPr": [
+                                {
+                                    "w:color": {
+                                        _attr: {
+                                            "w:themeColor": "accent1",
+                                            "w:themeTint": "99",
+                                        },
+                                    },
                                 },
                             ],
                         },
