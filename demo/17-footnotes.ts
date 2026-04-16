@@ -111,6 +111,12 @@ const doc = new Document({
                     children: [new TextRun("Hello World"), new FootnoteReferenceRun(3)],
                 }),
             ],
+            properties: {
+                footnotePr: {
+                    numRestart: "eachSect",
+                    pos: "beneathText",
+                },
+            },
         },
         {
             children: [
@@ -130,6 +136,12 @@ const doc = new Document({
                     children: [new TextRun("Hello World Again"), new FootnoteReferenceRun(6)],
                 }),
             ],
+            properties: {
+                footnotePr: {
+                    numRestart: "continuous",
+                    pos: "sectEnd",
+                },
+            },
         },
     ],
 });

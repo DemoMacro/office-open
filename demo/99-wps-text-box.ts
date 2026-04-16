@@ -57,15 +57,11 @@ const doc = new Document({
                                 }),
                             ],
                             outline: {
-                                solidFillType: "rgb",
+                                color: { value: "2E74B5" },
                                 type: "solidFill",
-                                value: "2E74B5",
                                 width: 25_400,
                             },
-                            solidFill: {
-                                type: "rgb",
-                                value: "D6E4F0",
-                            },
+                            solidFill: { value: "D6E4F0" },
                             transformation: {
                                 height: 800_000,
                                 width: 4_000_000,
@@ -87,9 +83,8 @@ const doc = new Document({
                                 }),
                             ],
                             outline: {
-                                solidFillType: "rgb",
+                                color: { value: "FF0000" },
                                 type: "solidFill",
-                                value: "FF0000",
                                 width: 12_700,
                             },
                             transformation: {
@@ -129,9 +124,8 @@ const doc = new Document({
                                 },
                             },
                             outline: {
-                                solidFillType: "rgb",
+                                color: { value: "70AD47" },
                                 type: "solidFill",
-                                value: "70AD47",
                                 width: 19_050,
                             },
                             transformation: {
@@ -170,15 +164,11 @@ const doc = new Document({
                                 }),
                             ],
                             outline: {
-                                solidFillType: "rgb",
+                                color: { value: "BF8F00" },
                                 type: "solidFill",
-                                value: "BF8F00",
                                 width: 19_050,
                             },
-                            solidFill: {
-                                type: "rgb",
-                                value: "FFF2CC",
-                            },
+                            solidFill: { value: "FFF2CC" },
                             transformation: {
                                 height: 1_200_000,
                                 width: 4_000_000,

@@ -41,9 +41,8 @@ const doc = new Document({
                         new ImageRun({
                             data: fs.readFileSync("./demo/images/dog.png").toString("base64"),
                             outline: {
-                                solidFillType: "rgb",
+                                color: { value: "FF0000" },
                                 type: "solidFill",
-                                value: "FF0000",
                             },
                             transformation: {
                                 height: 100,
@@ -58,9 +57,8 @@ const doc = new Document({
                         new ImageRun({
                             data: fs.readFileSync("./demo/images/cat.jpg"),
                             outline: {
-                                solidFillType: "rgb",
+                                color: { value: "0000FF" },
                                 type: "solidFill",
-                                value: "0000FF",
                                 width: convertMillimetersToTwip(600),
                             },
                             transformation: {

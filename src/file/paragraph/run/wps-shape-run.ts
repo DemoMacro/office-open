@@ -3,8 +3,6 @@ import type { WpsShapeCoreOptions } from "@file/drawing/inline/graphic/graphic-d
 
 import { Drawing } from "../../drawing";
 import type { IFloating } from "../../drawing";
-import type { OutlineOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
-import type { SolidFillOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
 import type { IMediaDataTransformation, IMediaTransformation, WpsMediaData } from "../../media";
 import { Run } from "../run";
 
@@ -14,8 +12,6 @@ interface CoreShapeOptions {
     readonly transformation: IMediaTransformation;
     readonly floating?: IFloating;
     readonly altText?: DocPropertiesOptions;
-    readonly outline?: OutlineOptions;
-    readonly solidFill?: SolidFillOptions;
 }
 
 /**

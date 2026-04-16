@@ -55,13 +55,47 @@ const doc = new Document({
                 }),
             ],
             properties: {
+                endnotePr: {
+                    numRestart: "eachSect",
+                    pos: "docEnd",
+                },
                 page: {
                     margin: {
-                        top: 1440, // 1 inch
-                        right: 1440,
                         bottom: 1440,
                         left: 1440,
+                        right: 1440,
+                        top: 1440, // 1 inch
                     },
+                },
+            },
+        },
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            bold: true,
+                            size: 24,
+                            text: "Second Section",
+                        }),
+                    ],
+                    spacing: { after: 200 },
+                }),
+                new Paragraph({
+                    children: [
+                        new TextRun("This is content from a different section "),
+                        new TextRun("with its own endnote reference"),
+                        new EndnoteReferenceRun(4),
+                        new TextRun(
+                            ". Endnotes from all sections appear together at the document end.",
+                        ),
+                    ],
+                }),
+            ],
+            properties: {
+                endnotePr: {
+                    numRestart: "continuous",
+                    pos: "sectEnd",
                 },
             },
         },

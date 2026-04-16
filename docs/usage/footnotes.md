@@ -162,6 +162,40 @@ const doc = new Document({
 });
 ```
 
+## Section Footnote Properties
+
+Control footnote placement and numbering per section using `footnotePr` in section properties:
+
+```ts
+const doc = new Document({
+    footnotes: { 1: { children: [new Paragraph("My footnote")] } },
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [new TextRun("Text"), new FootnoteReferenceRun(1)],
+                }),
+            ],
+            properties: {
+                footnotePr: {
+                    pos: "beneathText",
+                    numRestart: "eachSect",
+                },
+            },
+        },
+    ],
+});
+```
+
+### Options
+
+| Property   | Type     | Notes    | Description                                              |
+| ---------- | -------- | -------- | -------------------------------------------------------- |
+| pos        | `string` | Optional | `"pageBottom"`, `"beneathText"`, `"sectEnd"`, `"docEnd"` |
+| numRestart | `string` | Optional | `"continuous"`, `"eachSect"`, `"eachPage"`               |
+| numStart   | `number` | Optional | Starting number for footnotes                            |
+| formatType | `string` | Optional | Number format (decimal, upperRoman, etc.)                |
+
 ## Options
 
 | Property  | Type                                        | Notes    | Description                                    |
