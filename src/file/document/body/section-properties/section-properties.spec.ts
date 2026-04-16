@@ -263,6 +263,24 @@ describe("SectionProperties", () => {
             expect(pgNumType).to.deep.equal({ "w:pgNumType": { _attr: {} } });
         });
 
+        it("should create section properties with page number chapStyle", () => {
+            const properties = new SectionProperties({
+                page: {
+                    pageNumbers: {
+                        chapStyle: 1,
+                        start: 10,
+                    },
+                },
+            });
+            const tree = new Formatter().format(properties);
+            const pgNumType = tree["w:sectPr"].find(
+                (item: any) => item["w:pgNumType"] !== undefined,
+            );
+            expect(pgNumType).to.deep.equal({
+                "w:pgNumType": { _attr: { "w:chapStyle": 1, "w:start": 10 } },
+            });
+        });
+
         it("should create section properties with section type", () => {
             const properties = new SectionProperties({
                 type: SectionType.CONTINUOUS,
@@ -378,6 +396,24 @@ describe("SectionProperties", () => {
             const paperSrc = tree["w:sectPr"].find((item: any) => item["w:paperSrc"] !== undefined);
             expect(paperSrc).to.deep.equal({
                 "w:paperSrc": { _attr: { "w:first": 1, "w:other": 2 } },
+            });
+        });
+
+        it("should create section properties with paperSrc first only", () => {
+            const properties = new SectionProperties({ paperSrc: { first: 1 } });
+            const tree = new Formatter().format(properties);
+            const paperSrc = tree["w:sectPr"].find((item: any) => item["w:paperSrc"] !== undefined);
+            expect(paperSrc).to.deep.equal({
+                "w:paperSrc": { _attr: { "w:first": 1 } },
+            });
+        });
+
+        it("should create section properties with paperSrc other only", () => {
+            const properties = new SectionProperties({ paperSrc: { other: 2 } });
+            const tree = new Formatter().format(properties);
+            const paperSrc = tree["w:sectPr"].find((item: any) => item["w:paperSrc"] !== undefined);
+            expect(paperSrc).to.deep.equal({
+                "w:paperSrc": { _attr: { "w:other": 2 } },
             });
         });
 

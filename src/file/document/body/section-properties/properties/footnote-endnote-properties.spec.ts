@@ -60,6 +60,15 @@ describe("createFootnoteProperties", () => {
             "w:footnotePr": [{ "w:numFmt": { _attr: { "w:format": "- %1 -" } } }],
         });
     });
+
+    it("should create with format only (no pos)", () => {
+        const tree = new Formatter().format(
+            createFootnoteProperties({ formatType: NumberFormat.DECIMAL }),
+        );
+        expect(tree).to.deep.equal({
+            "w:footnotePr": [{ "w:numFmt": { _attr: { "w:fmt": "decimal" } } }],
+        });
+    });
 });
 
 describe("createEndnoteProperties", () => {
@@ -103,6 +112,15 @@ describe("createEndnoteProperties", () => {
                 { "w:numStart": { _attr: { "w:val": 1 } } },
                 { "w:numRestart": { _attr: { "w:val": "continuous" } } },
             ],
+        });
+    });
+
+    it("should create with format only (no pos)", () => {
+        const tree = new Formatter().format(
+            createEndnoteProperties({ formatType: NumberFormat.UPPER_ROMAN }),
+        );
+        expect(tree).to.deep.equal({
+            "w:endnotePr": [{ "w:numFmt": { _attr: { "w:fmt": "upperRoman" } } }],
         });
     });
 });
