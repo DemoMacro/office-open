@@ -5,7 +5,7 @@ import { DocumentWrapper } from "../document-wrapper";
 import type { File } from "../file";
 import { FontWrapper } from "../fonts/font-wrapper";
 import { AlignmentType } from "./formatting";
-import { ParagraphProperties } from "./properties";
+import { ParagraphProperties, TextAlignmentType, TextboxTightWrapType } from "./properties";
 
 describe("ParagraphProperties", () => {
     describe("#constructor()", () => {
@@ -379,6 +379,80 @@ describe("ParagraphProperties", () => {
                         ],
                     },
                 ],
+            });
+        });
+
+        it("should create with suppressAutoHyphens", () => {
+            const properties = new ParagraphProperties({ suppressAutoHyphens: true });
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal({
+                "w:pPr": [{ "w:suppressAutoHyphens": {} }],
+            });
+        });
+
+        it("should create with adjustRightInd", () => {
+            const properties = new ParagraphProperties({ adjustRightInd: true });
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal({
+                "w:pPr": [{ "w:adjustRightInd": {} }],
+            });
+        });
+
+        it("should create with snapToGrid", () => {
+            const properties = new ParagraphProperties({ snapToGrid: true });
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal({
+                "w:pPr": [{ "w:snapToGrid": {} }],
+            });
+        });
+
+        it("should create with mirrorIndents", () => {
+            const properties = new ParagraphProperties({ mirrorIndents: true });
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal({
+                "w:pPr": [{ "w:mirrorIndents": {} }],
+            });
+        });
+
+        it("should create with kinsoku", () => {
+            const properties = new ParagraphProperties({ kinsoku: false });
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal({
+                "w:pPr": [{ "w:kinsoku": { _attr: { "w:val": false } } }],
+            });
+        });
+
+        it("should create with topLinePunct", () => {
+            const properties = new ParagraphProperties({ topLinePunct: true });
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal({
+                "w:pPr": [{ "w:topLinePunct": {} }],
+            });
+        });
+
+        it("should create with autoSpaceDE", () => {
+            const properties = new ParagraphProperties({ autoSpaceDE: true });
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal({
+                "w:pPr": [{ "w:autoSpaceDE": {} }],
+            });
+        });
+
+        it("should create with textAlignment", () => {
+            const properties = new ParagraphProperties({ textAlignment: TextAlignmentType.CENTER });
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal({
+                "w:pPr": [{ "w:textAlignment": { _attr: { "w:val": "center" } } }],
+            });
+        });
+
+        it("should create with textboxTightWrap", () => {
+            const properties = new ParagraphProperties({
+                textboxTightWrap: TextboxTightWrapType.ALL_LINES,
+            });
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal({
+                "w:pPr": [{ "w:textboxTightWrap": { _attr: { "w:val": "allLines" } } }],
             });
         });
     });

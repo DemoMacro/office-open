@@ -341,5 +341,43 @@ describe("SectionProperties", () => {
                 "w:textDirection": { _attr: { "w:val": "lrTb" } },
             });
         });
+
+        it("should create section properties with noEndnote", () => {
+            const properties = new SectionProperties({ noEndnote: true });
+            const tree = new Formatter().format(properties);
+            const noEndnote = tree["w:sectPr"].find(
+                (item: any) => item["w:noEndnote"] !== undefined,
+            );
+            expect(noEndnote).to.deep.equal({ "w:noEndnote": {} });
+        });
+
+        it("should create section properties with bidi", () => {
+            const properties = new SectionProperties({ bidi: true });
+            const tree = new Formatter().format(properties);
+            const bidi = tree["w:sectPr"].find(
+                (item: any) => item["w:bidi"] !== undefined,
+            );
+            expect(bidi).to.deep.equal({ "w:bidi": {} });
+        });
+
+        it("should create section properties with rtlGutter", () => {
+            const properties = new SectionProperties({ rtlGutter: true });
+            const tree = new Formatter().format(properties);
+            const rtlGutter = tree["w:sectPr"].find(
+                (item: any) => item["w:rtlGutter"] !== undefined,
+            );
+            expect(rtlGutter).to.deep.equal({ "w:rtlGutter": {} });
+        });
+
+        it("should create section properties with paperSrc", () => {
+            const properties = new SectionProperties({ paperSrc: { first: 1, other: 2 } });
+            const tree = new Formatter().format(properties);
+            const paperSrc = tree["w:sectPr"].find(
+                (item: any) => item["w:paperSrc"] !== undefined,
+            );
+            expect(paperSrc).to.deep.equal({
+                "w:paperSrc": { _attr: { "w:first": 1, "w:other": 2 } },
+            });
+        });
     });
 });
