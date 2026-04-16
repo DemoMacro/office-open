@@ -4,7 +4,7 @@
  * This module defines how an image (blip) fills a picture shape,
  * including stretching and cropping options.
  *
- * Reference: http://officeopenxml.com/drwPic.php
+ * Reference: ISO/IEC 29500-4, dml-main.xsd, CT_BlipFillProperties
  *
  * @module
  */
@@ -12,16 +12,16 @@ import type { IMediaData } from "@file/media";
 import { XmlComponent } from "@file/xml-components";
 
 import { createBlip } from "./blip";
-import { SourceRectangle } from "./source-rectangle";
+import { createSourceRectangle } from "./source-rectangle";
 import { Stretch } from "./stretch";
 
 /**
  * Represents a blip fill for pictures in DrawingML.
  *
  * This element specifies the type of fill used for a picture. It contains the blip (image)
- * reference, an optional source rectangle, and the fill mode (typically stretch).
+ * reference, an optional source rectangle for cropping, and the fill mode (typically stretch).
  *
- * Reference: http://officeopenxml.com/drwPic.php
+ * Reference: ISO/IEC 29500-4, dml-main.xsd, CT_BlipFillProperties
  *
  * ## XSD Schema
  * ```xml
@@ -39,6 +39,7 @@ import { Stretch } from "./stretch";
  * @example
  * ```typescript
  * const blipFill = new BlipFill(mediaData);
+ * // If mediaData.srcRect is set, cropping is applied
  * ```
  */
 export class BlipFill extends XmlComponent {
@@ -46,7 +47,7 @@ export class BlipFill extends XmlComponent {
         super("pic:blipFill");
 
         this.root.push(createBlip(mediaData));
-        this.root.push(new SourceRectangle());
+        this.root.push(createSourceRectangle(mediaData.srcRect));
         this.root.push(new Stretch());
     }
 }

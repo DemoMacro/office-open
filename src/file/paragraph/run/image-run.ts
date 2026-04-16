@@ -15,6 +15,7 @@ import { toUint8Array } from "undio";
 
 import { Drawing } from "../../drawing";
 import type { IFloating } from "../../drawing";
+import type { SourceRectangleOptions } from "../../drawing/inline/graphic/graphic-data/pic/blip/source-rectangle";
 import type { OutlineOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
 import type { SolidFillOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
 import type { IMediaTransformation } from "../../media";
@@ -30,6 +31,7 @@ interface CoreImageOptions {
     readonly altText?: DocPropertiesOptions;
     readonly outline?: OutlineOptions;
     readonly solidFill?: SolidFillOptions;
+    readonly srcRect?: SourceRectangleOptions;
 }
 
 interface RegularImageOptions {
@@ -57,9 +59,11 @@ const createImageData = (
     data: Uint8Array,
     transformation: IMediaTransformation,
     key: string,
-): Pick<IMediaData, "data" | "fileName" | "transformation"> => ({
+    srcRect?: SourceRectangleOptions,
+): Pick<IMediaData, "data" | "fileName" | "transformation" | "srcRect"> => ({
     data,
     fileName: key,
+    srcRect,
     transformation: {
         emus: {
             x: Math.round(transformation.width * 9525),
@@ -110,7 +114,7 @@ export class ImageRun extends Run {
             const fallbackData = toUint8Array(options.fallback.data) as Uint8Array;
             this.imageData = {
                 type: options.type,
-                ...createImageData(rawData, options.transformation, key),
+                ...createImageData(rawData, options.transformation, key, options.srcRect),
                 fallback: {
                     type: options.fallback.type,
                     ...createImageData(
@@ -123,7 +127,7 @@ export class ImageRun extends Run {
         } else {
             this.imageData = {
                 type: options.type,
-                ...createImageData(rawData, options.transformation, key),
+                ...createImageData(rawData, options.transformation, key, options.srcRect),
             };
         }
         const drawing = new Drawing(this.imageData, {
