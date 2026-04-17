@@ -413,7 +413,7 @@ const toXml = (jsonObj: Element): string => {
 const createRelationshipFile = (): Element => ({
     declaration: {
         attributes: {
-            encoding: "utf8",
+            encoding: "UTF-8",
             standalone: "yes",
             version: "1.0",
         },
