@@ -10,7 +10,7 @@ import type {
     IMediaTransformation,
     WpgMediaData,
 } from "../../media";
-import { createTransformation } from "./wps-shape-run";
+import { createTransformation } from "../../media";
 
 export * from "@file/drawing/inline/graphic/graphic-data/wps/body-properties";
 

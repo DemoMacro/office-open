@@ -19,6 +19,7 @@ import type { SourceRectangleOptions } from "../../drawing/inline/graphic/graphi
 import type { OutlineOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
 import type { SolidFillOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
 import type { IMediaTransformation } from "../../media";
+import { createTransformation } from "../../media";
 import type { IMediaData } from "../../media/data";
 import { Run } from "../run";
 
@@ -64,18 +65,7 @@ const createImageData = (
     data,
     fileName: key,
     srcRect,
-    transformation: {
-        emus: {
-            x: Math.round(transformation.width * 9525),
-            y: Math.round(transformation.height * 9525),
-        },
-        flip: transformation.flip,
-        pixels: {
-            x: Math.round(transformation.width),
-            y: Math.round(transformation.height),
-        },
-        rotation: transformation.rotation ? transformation.rotation * 60_000 : undefined,
-    },
+    transformation: createTransformation(transformation),
 });
 
 /**
