@@ -6,6 +6,7 @@
  *
  * @module
  */
+import type { IMediaDataTransformation } from "./data";
 import type { IMediaData } from "./data";
 
 /**
@@ -31,6 +32,36 @@ export interface IMediaTransformation {
     /** Optional rotation angle in degrees */
     readonly rotation?: number;
 }
+
+/**
+ * Converts user-facing transformation options (pixels) to internal
+ * transformation data (pixels + EMUs).
+ *
+ * @param options - User-facing transformation in pixels
+ * @returns Internal transformation data with both pixel and EMU values
+ */
+export const createTransformation = (options: IMediaTransformation): IMediaDataTransformation => ({
+    emus: {
+        x: Math.round(options.width * 9525),
+        y: Math.round(options.height * 9525),
+    },
+    flip: options.flip,
+    offset: {
+        emus: {
+            x: Math.round((options.offset?.left ?? 0) * 9525),
+            y: Math.round((options.offset?.top ?? 0) * 9525),
+        },
+        pixels: {
+            x: Math.round(options.offset?.left ?? 0),
+            y: Math.round(options.offset?.top ?? 0),
+        },
+    },
+    pixels: {
+        x: Math.round(options.width),
+        y: Math.round(options.height),
+    },
+    rotation: options.rotation ? options.rotation * 60_000 : undefined,
+});
 
 /**
  * Manages embedded media (images) in a document.

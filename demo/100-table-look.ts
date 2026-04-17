@@ -124,5 +124,4 @@ const doc = new Document({
 });
 
 const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("97-table-look.docx", buffer);
-console.log("Document created successfully at 97-table-look.docx");
+fs.writeFileSync("My Document.docx", buffer);
