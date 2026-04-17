@@ -202,7 +202,7 @@ export class Compiler {
             }),
             {
                 declaration: {
-                    encoding: "utf8",
+                    encoding: "UTF-8",
                     standalone: "yes",
                 },
                 indent: prettify,
@@ -221,7 +221,7 @@ export class Compiler {
             }),
             {
                 declaration: {
-                    encoding: "utf8",
+                    encoding: "UTF-8",
                     standalone: "yes",
                 },
                 indent: prettify,
@@ -237,7 +237,7 @@ export class Compiler {
             }),
             {
                 declaration: {
-                    encoding: "utf8",
+                    encoding: "UTF-8",
                     standalone: "yes",
                 },
                 indent: prettify,
@@ -258,7 +258,7 @@ export class Compiler {
                     }),
                     {
                         declaration: {
-                            encoding: "utf8",
+                            encoding: "UTF-8",
                             standalone: "yes",
                         },
                         indent: prettify,
@@ -301,7 +301,7 @@ export class Compiler {
                         }),
                         {
                             declaration: {
-                                encoding: "utf8",
+                                encoding: "UTF-8",
                             },
                             indent: prettify,
                         },
@@ -318,7 +318,7 @@ export class Compiler {
                     }),
                     {
                         declaration: {
-                            encoding: "utf8",
+                            encoding: "UTF-8",
                         },
                         indent: prettify,
                     },
@@ -334,7 +334,7 @@ export class Compiler {
                     }),
                     {
                         declaration: {
-                            encoding: "utf8",
+                            encoding: "UTF-8",
                             standalone: "yes",
                         },
                         indent: prettify,
@@ -366,7 +366,7 @@ export class Compiler {
                     }),
                     {
                         declaration: {
-                            encoding: "utf8",
+                            encoding: "UTF-8",
                         },
                         indent: prettify,
                     },
@@ -382,7 +382,7 @@ export class Compiler {
                     }),
                     {
                         declaration: {
-                            encoding: "utf8",
+                            encoding: "UTF-8",
                         },
                         indent: prettify,
                     },
@@ -398,7 +398,7 @@ export class Compiler {
                     }),
                     {
                         declaration: {
-                            encoding: "utf8",
+                            encoding: "UTF-8",
                         },
                         indent: prettify,
                     },
@@ -414,7 +414,7 @@ export class Compiler {
                     }),
                     {
                         declaration: {
-                            encoding: "utf8",
+                            encoding: "UTF-8",
                             standalone: "yes",
                         },
                         indent: prettify,
@@ -432,7 +432,7 @@ export class Compiler {
                         }),
                         {
                             declaration: {
-                                encoding: "utf8",
+                                encoding: "UTF-8",
                             },
                             indent: prettify,
                         },
@@ -471,7 +471,7 @@ export class Compiler {
                         }),
                         {
                             declaration: {
-                                encoding: "utf8",
+                                encoding: "UTF-8",
                             },
                             indent: prettify,
                         },
@@ -487,7 +487,7 @@ export class Compiler {
                 });
                 const xmlData = xml(formatted, {
                     declaration: {
-                        encoding: "utf8",
+                        encoding: "UTF-8",
                     },
                     indent: prettify,
                 });
@@ -512,7 +512,7 @@ export class Compiler {
                         }),
                         {
                             declaration: {
-                                encoding: "utf8",
+                                encoding: "UTF-8",
                             },
                             indent: prettify,
                         },
@@ -544,7 +544,7 @@ export class Compiler {
                 });
                 const xmlData = xml(formatted, {
                     declaration: {
-                        encoding: "utf8",
+                        encoding: "UTF-8",
                     },
                     indent: prettify,
                 });
@@ -569,7 +569,7 @@ export class Compiler {
                         }),
                         {
                             declaration: {
-                                encoding: "utf8",
+                                encoding: "UTF-8",
                             },
                             indent: prettify,
                         },
@@ -602,7 +602,7 @@ export class Compiler {
                     }),
                     {
                         declaration: {
-                            encoding: "utf8",
+                            encoding: "UTF-8",
                             standalone: "yes",
                         },
                         indent: prettify,
@@ -619,7 +619,7 @@ export class Compiler {
                     }),
                     {
                         declaration: {
-                            encoding: "utf8",
+                            encoding: "UTF-8",
                             standalone: "yes",
                         },
                         indent: prettify,
@@ -651,7 +651,7 @@ export class Compiler {
                         }),
                         {
                             declaration: {
-                                encoding: "utf8",
+                                encoding: "UTF-8",
                             },
                             indent: prettify,
                         },
@@ -668,7 +668,7 @@ export class Compiler {
                     }),
                     {
                         declaration: {
-                            encoding: "utf8",
+                            encoding: "UTF-8",
                             standalone: "yes",
                         },
                         indent: prettify,
@@ -686,7 +686,7 @@ export class Compiler {
                         }),
                         {
                             declaration: {
-                                encoding: "utf8",
+                                encoding: "UTF-8",
                                 standalone: "yes",
                             },
                             indent: prettify,
