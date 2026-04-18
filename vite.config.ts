@@ -17,6 +17,11 @@ export default defineConfig({
         format: ["esm", "cjs", "iife", "umd"],
         globalName: "docx",
         plugins: [nodePolyfills()],
+        shims: true,
+        deps: {
+            alwaysBundle: ["xml", "xml-js"],
+            onlyBundle: false,
+        },
     },
     fmt: {
         sortImports: {
