@@ -13,6 +13,7 @@ import { BuilderElement } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
 
 import { createBlip } from "./blip";
+import type { BlipEffectsOptions } from "./blip-effects";
 import { createSourceRectangle } from "./source-rectangle";
 import { Stretch } from "./stretch";
 
@@ -24,6 +25,8 @@ export interface BlipFillOptions {
     readonly dpi?: number;
     /** Whether the fill rotates with the shape */
     readonly rotWithShape?: boolean;
+    /** Image adjustment effects (brightness, contrast, grayscale, etc.) */
+    readonly blipEffects?: BlipEffectsOptions;
 }
 
 /**
@@ -56,7 +59,7 @@ export interface BlipFillOptions {
 export const createBlipFill = (mediaData: IMediaData, options?: BlipFillOptions): XmlComponent => {
     const children: XmlComponent[] = [];
 
-    children.push(createBlip(mediaData));
+    children.push(createBlip(mediaData, options?.blipEffects));
     children.push(createSourceRectangle(mediaData.srcRect));
     children.push(new Stretch());
 

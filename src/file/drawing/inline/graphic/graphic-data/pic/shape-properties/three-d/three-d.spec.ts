@@ -73,8 +73,8 @@ describe("3D Shape Properties", () => {
                 createShape3D({
                     bevelT: { w: 76200, h: 76200, prst: "CIRCLE" },
                     bevelB: { w: 50800, h: 50800, prst: "ANGLE" },
-                    extrusionClr: { value: "FF0000" },
-                    contourClr: { value: "0000FF" },
+                    extrusionColor: { value: "FF0000" },
+                    contourColor: { value: "0000FF" },
                     contourW: 25400,
                 }),
             );

@@ -155,6 +155,7 @@ export class Anchor extends XmlComponent {
         this.root.push(createGraphicFrameProperties());
         this.root.push(
             new Graphic({
+                blipEffects: drawingOptions.blipEffects,
                 effects: drawingOptions.effects,
                 mediaData,
                 outline: drawingOptions.outline,

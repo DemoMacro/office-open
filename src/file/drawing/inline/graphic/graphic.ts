@@ -2,6 +2,7 @@ import type { IExtendedMediaData, IMediaDataTransformation } from "@file/media";
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 import { GraphicData } from "./graphic-data";
+import type { BlipEffectsOptions } from "./graphic-data/pic/blip/blip-effects";
 import type { EffectListOptions } from "./graphic-data/pic/shape-properties/effects/effect-list";
 import type { OutlineOptions } from "./graphic-data/pic/shape-properties/outline/outline";
 import type { SolidFillOptions } from "./graphic-data/pic/shape-properties/outline/solid-fill";
@@ -53,12 +54,14 @@ export class Graphic extends XmlComponent {
         outline,
         solidFill,
         effects,
+        blipEffects,
     }: {
         readonly mediaData: IExtendedMediaData;
         readonly transform: IMediaDataTransformation;
         readonly outline?: OutlineOptions;
         readonly solidFill?: SolidFillOptions;
         readonly effects?: EffectListOptions;
+        readonly blipEffects?: BlipEffectsOptions;
     }) {
         super("a:graphic");
         this.root.push(
@@ -67,7 +70,14 @@ export class Graphic extends XmlComponent {
             }),
         );
 
-        this.data = new GraphicData({ effects, mediaData, outline, solidFill, transform });
+        this.data = new GraphicData({
+            blipEffects,
+            effects,
+            mediaData,
+            outline,
+            solidFill,
+            transform,
+        });
 
         this.root.push(this.data);
     }

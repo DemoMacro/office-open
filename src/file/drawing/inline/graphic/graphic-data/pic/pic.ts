@@ -12,6 +12,7 @@
 import type { IMediaData, IMediaDataTransformation } from "@file/media";
 import { XmlComponent } from "@file/xml-components";
 
+import type { BlipEffectsOptions } from "./blip/blip-effects";
 import { createBlipFill } from "./blip/blip-fill";
 import { NonVisualPicProperties } from "./non-visual-pic-properties/non-visual-pic-properties";
 import { PicAttributes } from "./pic-attributes";
@@ -55,12 +56,14 @@ export class Pic extends XmlComponent {
         outline,
         solidFill,
         effects,
+        blipEffects,
     }: {
         readonly mediaData: IMediaData;
         readonly transform: IMediaDataTransformation;
         readonly outline?: OutlineOptions;
         readonly solidFill?: SolidFillOptions;
         readonly effects?: EffectListOptions;
+        readonly blipEffects?: BlipEffectsOptions;
     }) {
         super("pic:pic");
 
@@ -71,7 +74,7 @@ export class Pic extends XmlComponent {
         );
 
         this.root.push(new NonVisualPicProperties());
-        this.root.push(createBlipFill(mediaData));
+        this.root.push(createBlipFill(mediaData, { blipEffects }));
         this.root.push(
             new ShapeProperties({ element: "pic", effects, outline, solidFill, transform }),
         );

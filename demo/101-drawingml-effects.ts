@@ -84,7 +84,7 @@ const doc = new Document({
                                 }),
                             ],
                             effects: {
-                                outerShdw: {
+                                outerShadow: {
                                     blurRad: 50800,
                                     color: { value: "000000" },
                                     dist: 38100,
@@ -348,7 +348,7 @@ const doc = new Document({
                             ],
                             shape3d: {
                                 bevelT: { prst: "CIRCLE", w: 76200, h: 76200 },
-                                extrusionClr: { value: "2F5496" },
+                                extrusionColor: { value: "2F5496" },
                                 prstMaterial: "PLASTIC",
                                 z: 76200,
                             },
@@ -390,7 +390,7 @@ const doc = new Document({
                                 }),
                             ],
                             effects: {
-                                outerShdw: {
+                                outerShadow: {
                                     blurRad: 40000,
                                     color: { value: "000000" },
                                     dist: 30000,

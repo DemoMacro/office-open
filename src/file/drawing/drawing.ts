@@ -5,6 +5,7 @@ import { Anchor } from "./anchor";
 import type { DocPropertiesOptions } from "./doc-properties/doc-properties";
 import type { IFloating } from "./floating";
 import { createInline } from "./inline";
+import type { BlipEffectsOptions } from "./inline/graphic/graphic-data/pic/blip/blip-effects";
 import type { EffectListOptions } from "./inline/graphic/graphic-data/pic/shape-properties/effects/effect-list";
 import type { OutlineOptions } from "./inline/graphic/graphic-data/pic/shape-properties/outline/outline";
 import type { SolidFillOptions } from "./inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
@@ -32,6 +33,7 @@ export interface IDrawingOptions {
     readonly outline?: OutlineOptions;
     readonly solidFill?: SolidFillOptions;
     readonly effects?: EffectListOptions;
+    readonly blipEffects?: BlipEffectsOptions;
 }
 
 /**
@@ -59,6 +61,7 @@ export class Drawing extends XmlComponent {
         if (!drawingOptions.floating) {
             this.root.push(
                 createInline({
+                    blipEffects: drawingOptions.blipEffects,
                     docProperties: drawingOptions.docProperties,
                     effects: drawingOptions.effects,
                     mediaData: imageData,

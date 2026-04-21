@@ -4,9 +4,9 @@ import { describe, expect, it } from "vite-plus/test";
 import { createEffectList } from "./effect-list";
 import { BlendMode } from "./fill-overlay";
 import { createGlowEffect } from "./glow";
-import { createInnerShadowEffect } from "./inner-shdw";
-import { createOuterShadowEffect } from "./outer-shdw";
-import { createPresetShadowEffect } from "./prst-shdw";
+import { createInnerShadowEffect } from "./inner-shadow";
+import { createOuterShadowEffect } from "./outer-shadow";
+import { createPresetShadowEffect } from "./preset-shadow";
 import { createReflectionEffect } from "./reflection";
 import { createSoftEdgeEffect } from "./soft-edge";
 
@@ -340,7 +340,7 @@ describe("Effects", () => {
         it("should create effect list with inner shadow", () => {
             const tree = new Formatter().format(
                 createEffectList({
-                    innerShdw: {
+                    innerShadow: {
                         blurRad: 50800,
                         dist: 38100,
                         dir: 2700000,
@@ -373,7 +373,7 @@ describe("Effects", () => {
         it("should create effect list with preset shadow", () => {
             const tree = new Formatter().format(
                 createEffectList({
-                    prstShdw: {
+                    presetShadow: {
                         prst: "SHDW5",
                         dist: 38100,
                         dir: 5400000,
@@ -428,7 +428,7 @@ describe("Effects", () => {
         it("should create effect list with multiple effects in XSD order", () => {
             const tree = new Formatter().format(
                 createEffectList({
-                    outerShdw: {
+                    outerShadow: {
                         blurRad: 76200,
                         dist: 38100,
                         dir: 5400000,
