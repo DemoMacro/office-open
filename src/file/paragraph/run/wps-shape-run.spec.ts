@@ -39,8 +39,6 @@ describe("WpsShapeRun", () => {
                 viewWrapper: {} as unknown as IViewWrapper,
             });
 
-            console.log(JSON.stringify(tree, null, 2));
-
             // Expect(tree).to.deep.equal({
             //     "w:r": [
             //         {
