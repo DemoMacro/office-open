@@ -1,3 +1,4 @@
+import type { HyperlinkOptions } from "@file/drawing/doc-properties/doc-properties";
 import { createWpsShape } from "@file/drawing/inline/graphic/graphic-data/wps/wps-shape";
 import type {
     IExtendedMediaData,
@@ -10,6 +11,7 @@ import { XmlComponent } from "@file/xml-components";
 import { GraphicDataAttributes } from "./graphic-data-attribute";
 import { Pic } from "./pic";
 import type { BlipEffectsOptions } from "./pic/blip/blip-effects";
+import type { TileOptions } from "./pic/blip/tile";
 import type { EffectListOptions } from "./pic/shape-properties/effects/effect-list";
 import type { OutlineOptions } from "./pic/shape-properties/outline/outline";
 import type { SolidFillOptions } from "./pic/shape-properties/outline/solid-fill";
@@ -53,6 +55,8 @@ export class GraphicData extends XmlComponent {
         solidFill,
         effects,
         blipEffects,
+        tile,
+        hyperlink,
     }: {
         readonly mediaData: IExtendedMediaData;
         readonly transform: IMediaDataTransformation;
@@ -60,6 +64,8 @@ export class GraphicData extends XmlComponent {
         readonly solidFill?: SolidFillOptions;
         readonly effects?: EffectListOptions;
         readonly blipEffects?: BlipEffectsOptions;
+        readonly tile?: TileOptions;
+        readonly hyperlink?: HyperlinkOptions;
     }) {
         super("a:graphicData");
 
@@ -119,9 +125,11 @@ export class GraphicData extends XmlComponent {
             const pic = new Pic({
                 blipEffects,
                 effects,
+                hyperlink,
                 mediaData: md,
                 outline,
                 solidFill,
+                tile,
                 transform,
             });
             this.root.push(pic);
