@@ -15,6 +15,7 @@ import { toUint8Array } from "undio";
 
 import { Drawing } from "../../drawing";
 import type { IFloating } from "../../drawing";
+import type { BlipEffectsOptions } from "../../drawing/inline/graphic/graphic-data/pic/blip/blip-effects";
 import type { SourceRectangleOptions } from "../../drawing/inline/graphic/graphic-data/pic/blip/source-rectangle";
 import type { EffectListOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/effects/effect-list";
 import type { OutlineOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
@@ -34,6 +35,7 @@ interface CoreImageOptions {
     readonly outline?: OutlineOptions;
     readonly solidFill?: SolidFillOptions;
     readonly effects?: EffectListOptions;
+    readonly blipEffects?: BlipEffectsOptions;
     readonly srcRect?: SourceRectangleOptions;
 }
 
@@ -123,6 +125,7 @@ export class ImageRun extends Run {
             };
         }
         const drawing = new Drawing(this.imageData, {
+            blipEffects: options.blipEffects,
             docProperties: options.altText,
             floating: options.floating,
             outline: options.outline,

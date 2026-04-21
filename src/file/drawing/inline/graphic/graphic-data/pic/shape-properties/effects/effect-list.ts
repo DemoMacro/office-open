@@ -12,12 +12,12 @@ import type { FillOverlayEffectOptions } from "./fill-overlay";
 import { createFillOverlayEffect } from "./fill-overlay";
 import type { GlowEffectOptions } from "./glow";
 import { createGlowEffect } from "./glow";
-import type { InnerShadowEffectOptions } from "./inner-shdw";
-import { createInnerShadowEffect } from "./inner-shdw";
-import type { OuterShadowEffectOptions } from "./outer-shdw";
-import { createOuterShadowEffect } from "./outer-shdw";
-import type { PresetShadowEffectOptions } from "./prst-shdw";
-import { createPresetShadowEffect } from "./prst-shdw";
+import type { InnerShadowEffectOptions } from "./inner-shadow";
+import { createInnerShadowEffect } from "./inner-shadow";
+import type { OuterShadowEffectOptions } from "./outer-shadow";
+import { createOuterShadowEffect } from "./outer-shadow";
+import type { PresetShadowEffectOptions } from "./preset-shadow";
+import { createPresetShadowEffect } from "./preset-shadow";
 import type { ReflectionEffectOptions } from "./reflection";
 import { createReflectionEffect } from "./reflection";
 import { createSoftEdgeEffect } from "./soft-edge";
@@ -46,11 +46,11 @@ export interface EffectListOptions {
     /** Glow effect */
     readonly glow?: GlowEffectOptions;
     /** Inner shadow effect */
-    readonly innerShdw?: InnerShadowEffectOptions;
+    readonly innerShadow?: InnerShadowEffectOptions;
     /** Outer shadow effect */
-    readonly outerShdw?: OuterShadowEffectOptions;
+    readonly outerShadow?: OuterShadowEffectOptions;
     /** Preset shadow effect */
-    readonly prstShdw?: PresetShadowEffectOptions;
+    readonly presetShadow?: PresetShadowEffectOptions;
     /** Reflection effect (pass object for attributes, or true for defaults) */
     readonly reflection?: ReflectionEffectOptions | true;
     /** Soft edge radius in EMUs */
@@ -124,14 +124,14 @@ export const createEffectList = (options: EffectListOptions): XmlComponent => {
     if (options.glow) {
         children.push(createGlowEffect(options.glow));
     }
-    if (options.innerShdw) {
-        children.push(createInnerShadowEffect(options.innerShdw));
+    if (options.innerShadow) {
+        children.push(createInnerShadowEffect(options.innerShadow));
     }
-    if (options.outerShdw) {
-        children.push(createOuterShadowEffect(options.outerShdw));
+    if (options.outerShadow) {
+        children.push(createOuterShadowEffect(options.outerShadow));
     }
-    if (options.prstShdw) {
-        children.push(createPresetShadowEffect(options.prstShdw));
+    if (options.presetShadow) {
+        children.push(createPresetShadowEffect(options.presetShadow));
     }
     if (options.reflection) {
         children.push(

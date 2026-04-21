@@ -12,6 +12,8 @@ import type { IMediaData } from "@file/media";
 import { BuilderElement } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
 
+import { createBlipEffects } from "./blip-effects";
+import type { BlipEffectsOptions } from "./blip-effects";
 import { createExtentionList } from "./blip-extentions";
 
 /**
@@ -67,8 +69,21 @@ interface BlipAttributes {
  * @param mediaData - The media data containing the image information
  * @returns An XML component representing the blip element
  */
-export const createBlip = (mediaData: IMediaData): XmlComponent =>
-    new BuilderElement<BlipAttributes>({
+export const createBlip = (
+    mediaData: IMediaData,
+    blipEffects?: BlipEffectsOptions,
+): XmlComponent => {
+    const children: XmlComponent[] = [];
+
+    if (blipEffects) {
+        children.push(...createBlipEffects(blipEffects));
+    }
+
+    if (mediaData.type === "svg") {
+        children.push(createExtentionList(mediaData));
+    }
+
+    return new BuilderElement<BlipAttributes>({
         attributes: {
             cstate: {
                 key: "cstate",
@@ -79,6 +94,7 @@ export const createBlip = (mediaData: IMediaData): XmlComponent =>
                 value: `rId{${mediaData.type === "svg" ? mediaData.fallback.fileName : mediaData.fileName}}`,
             },
         },
-        children: mediaData.type === "svg" ? [createExtentionList(mediaData)] : [],
+        children,
         name: "a:blip",
     });
+};

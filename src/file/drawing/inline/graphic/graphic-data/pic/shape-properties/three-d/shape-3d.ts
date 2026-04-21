@@ -45,9 +45,9 @@ export interface Shape3DOptions {
     /** Bottom bevel options */
     readonly bevelB?: BevelOptions;
     /** Extrusion color (CT_Color / EG_ColorChoice) */
-    readonly extrusionClr?: SolidFillOptions;
+    readonly extrusionColor?: SolidFillOptions;
     /** Contour color (CT_Color / EG_ColorChoice) */
-    readonly contourClr?: SolidFillOptions;
+    readonly contourColor?: SolidFillOptions;
     /** Depth in EMUs (default 0) */
     readonly z?: number;
     /** Extrusion height in EMUs (default 0) */
@@ -86,18 +86,18 @@ export const createShape3D = (options: Shape3DOptions): XmlComponent => {
     if (options.bevelB) {
         children.push(createBottomBevel(options.bevelB));
     }
-    if (options.extrusionClr) {
+    if (options.extrusionColor) {
         children.push(
             new BuilderElement({
-                children: [createColorElement(options.extrusionClr)],
+                children: [createColorElement(options.extrusionColor)],
                 name: "a:extrusionClr",
             }),
         );
     }
-    if (options.contourClr) {
+    if (options.contourColor) {
         children.push(
             new BuilderElement({
-                children: [createColorElement(options.contourClr)],
+                children: [createColorElement(options.contourColor)],
                 name: "a:contourClr",
             }),
         );
