@@ -9,11 +9,22 @@
  * @module
  */
 import type { IMediaData } from "@file/media";
-import { XmlComponent } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
 
 import { createBlip } from "./blip";
 import { createSourceRectangle } from "./source-rectangle";
 import { Stretch } from "./stretch";
+
+/**
+ * Options for blip fill properties.
+ */
+export interface BlipFillOptions {
+    /** DPI of the image */
+    readonly dpi?: number;
+    /** Whether the fill rotates with the shape */
+    readonly rotWithShape?: boolean;
+}
 
 /**
  * Represents a blip fill for pictures in DrawingML.
@@ -42,12 +53,28 @@ import { Stretch } from "./stretch";
  * // If mediaData.srcRect is set, cropping is applied
  * ```
  */
-export class BlipFill extends XmlComponent {
-    public constructor(mediaData: IMediaData) {
-        super("pic:blipFill");
+export const createBlipFill = (mediaData: IMediaData, options?: BlipFillOptions): XmlComponent => {
+    const children: XmlComponent[] = [];
 
-        this.root.push(createBlip(mediaData));
-        this.root.push(createSourceRectangle(mediaData.srcRect));
-        this.root.push(new Stretch());
+    children.push(createBlip(mediaData));
+    children.push(createSourceRectangle(mediaData.srcRect));
+    children.push(new Stretch());
+
+    const attributes: Record<string, { readonly key: string; readonly value: number }> = {};
+
+    if (options?.dpi !== undefined) {
+        attributes.dpi = { key: "dpi", value: options.dpi };
     }
-}
+    if (options?.rotWithShape !== undefined) {
+        attributes.rotWithShape = {
+            key: "rotWithShape",
+            value: options.rotWithShape ? 1 : 0,
+        };
+    }
+
+    return new BuilderElement({
+        attributes: Object.keys(attributes).length > 0 ? (attributes as never) : undefined,
+        children,
+        name: "pic:blipFill",
+    });
+};

@@ -16,6 +16,7 @@ import { toUint8Array } from "undio";
 import { Drawing } from "../../drawing";
 import type { IFloating } from "../../drawing";
 import type { SourceRectangleOptions } from "../../drawing/inline/graphic/graphic-data/pic/blip/source-rectangle";
+import type { EffectListOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/effects/effect-list";
 import type { OutlineOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
 import type { SolidFillOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
 import type { IMediaTransformation } from "../../media";
@@ -32,6 +33,7 @@ interface CoreImageOptions {
     readonly altText?: DocPropertiesOptions;
     readonly outline?: OutlineOptions;
     readonly solidFill?: SolidFillOptions;
+    readonly effects?: EffectListOptions;
     readonly srcRect?: SourceRectangleOptions;
 }
 
@@ -124,6 +126,8 @@ export class ImageRun extends Run {
             docProperties: options.altText,
             floating: options.floating,
             outline: options.outline,
+            solidFill: options.solidFill,
+            effects: options.effects,
         });
 
         this.root.push(drawing);

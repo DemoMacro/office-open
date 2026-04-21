@@ -59,7 +59,7 @@ describe("VerticalPosition", () => {
                         },
                     },
                     {
-                        "wp:align": ["TOP"],
+                        "wp:align": ["top"],
                     },
                 ],
             });

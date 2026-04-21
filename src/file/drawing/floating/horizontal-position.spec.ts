@@ -59,7 +59,7 @@ describe("HorizontalPosition", () => {
                         },
                     },
                     {
-                        "wp:align": ["LEFT"],
+                        "wp:align": ["left"],
                     },
                 ],
             });

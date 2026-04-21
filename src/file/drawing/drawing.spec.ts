@@ -125,6 +125,11 @@ describe("Drawing", () => {
                                                             {
                                                                 "pic:cNvPicPr": [
                                                                     {
+                                                                        _attr: {
+                                                                            preferRelativeResize: true,
+                                                                        },
+                                                                    },
+                                                                    {
                                                                         "a:picLocks": {
                                                                             _attr: {
                                                                                 noChangeArrowheads: 1,
@@ -356,6 +361,11 @@ describe("Drawing", () => {
                                                             },
                                                             {
                                                                 "pic:cNvPicPr": [
+                                                                    {
+                                                                        _attr: {
+                                                                            preferRelativeResize: true,
+                                                                        },
+                                                                    },
                                                                     {
                                                                         "a:picLocks": {
                                                                             _attr: {
@@ -610,6 +620,11 @@ describe("Drawing", () => {
                                                             },
                                                             {
                                                                 "pic:cNvPicPr": [
+                                                                    {
+                                                                        _attr: {
+                                                                            preferRelativeResize: true,
+                                                                        },
+                                                                    },
                                                                     {
                                                                         "a:picLocks": {
                                                                             _attr: {

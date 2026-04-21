@@ -12,7 +12,7 @@ import { BuilderElement } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
 
 import { createAlign } from "./align";
-import { VerticalPositionRelativeFrom } from "./floating-position";
+import { VerticalPositionAlign, VerticalPositionRelativeFrom } from "./floating-position";
 import type { IVerticalPositionOptions } from "./floating-position";
 import { createPositionOffset } from "./position-offset";
 
@@ -76,7 +76,7 @@ export const createVerticalPosition = ({
                 if (offset !== undefined) {
                     return createPositionOffset(offset);
                 }
-                return createAlign("TOP" as const);
+                return createAlign(VerticalPositionAlign.TOP);
             })(),
         ],
         name: "wp:positionV",

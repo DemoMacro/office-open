@@ -5,6 +5,7 @@ import { Anchor } from "./anchor";
 import type { DocPropertiesOptions } from "./doc-properties/doc-properties";
 import type { IFloating } from "./floating";
 import { createInline } from "./inline";
+import type { EffectListOptions } from "./inline/graphic/graphic-data/pic/shape-properties/effects/effect-list";
 import type { OutlineOptions } from "./inline/graphic/graphic-data/pic/shape-properties/outline/outline";
 import type { SolidFillOptions } from "./inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
 
@@ -30,6 +31,7 @@ export interface IDrawingOptions {
     readonly docProperties?: DocPropertiesOptions;
     readonly outline?: OutlineOptions;
     readonly solidFill?: SolidFillOptions;
+    readonly effects?: EffectListOptions;
 }
 
 /**
@@ -58,6 +60,7 @@ export class Drawing extends XmlComponent {
             this.root.push(
                 createInline({
                     docProperties: drawingOptions.docProperties,
+                    effects: drawingOptions.effects,
                     mediaData: imageData,
                     outline: drawingOptions.outline,
                     solidFill: drawingOptions.solidFill,

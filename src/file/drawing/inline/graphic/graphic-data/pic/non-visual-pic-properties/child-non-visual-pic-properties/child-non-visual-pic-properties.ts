@@ -10,6 +10,7 @@
  */
 import { XmlComponent } from "@file/xml-components";
 
+import { ChildNonVisualPropertiesAttributes } from "./child-non-visual-pic-properties-attributes";
 import { PicLocks } from "./pic-locks/pic-locks";
 
 /**
@@ -41,6 +42,7 @@ export class ChildNonVisualProperties extends XmlComponent {
     public constructor() {
         super("pic:cNvPicPr");
 
+        this.root.push(new ChildNonVisualPropertiesAttributes({ preferRelativeResize: true }));
         this.root.push(new PicLocks());
     }
 }

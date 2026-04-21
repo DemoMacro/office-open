@@ -9,6 +9,7 @@ import { XmlComponent } from "@file/xml-components";
 
 import { GraphicDataAttributes } from "./graphic-data-attribute";
 import { Pic } from "./pic";
+import type { EffectListOptions } from "./pic/shape-properties/effects/effect-list";
 import type { OutlineOptions } from "./pic/shape-properties/outline/outline";
 import type { SolidFillOptions } from "./pic/shape-properties/outline/solid-fill";
 import { createWpgGroup } from "./wpg/wpg-group";
@@ -49,11 +50,13 @@ export class GraphicData extends XmlComponent {
         transform,
         outline,
         solidFill,
+        effects,
     }: {
         readonly mediaData: IExtendedMediaData;
         readonly transform: IMediaDataTransformation;
         readonly outline?: OutlineOptions;
         readonly solidFill?: SolidFillOptions;
+        readonly effects?: EffectListOptions;
     }) {
         super("a:graphicData");
 
@@ -110,7 +113,7 @@ export class GraphicData extends XmlComponent {
                 }),
             );
             const md = mediaData as IMediaData;
-            const pic = new Pic({ mediaData: md, outline, transform });
+            const pic = new Pic({ effects, mediaData: md, outline, solidFill, transform });
             this.root.push(pic);
         }
 

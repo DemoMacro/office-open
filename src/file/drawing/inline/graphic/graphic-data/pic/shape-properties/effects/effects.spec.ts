@@ -2,6 +2,7 @@ import { Formatter } from "@export/formatter";
 import { describe, expect, it } from "vite-plus/test";
 
 import { createEffectList } from "./effect-list";
+import { BlendMode } from "./fill-overlay";
 import { createGlowEffect } from "./glow";
 import { createInnerShadowEffect } from "./inner-shdw";
 import { createOuterShadowEffect } from "./outer-shdw";
@@ -480,6 +481,44 @@ describe("Effects", () => {
                                 stA: 40000,
                             },
                         },
+                    },
+                ],
+            });
+        });
+
+        it("should create effect list with fillOverlay between blur and glow", () => {
+            const tree = new Formatter().format(
+                createEffectList({
+                    blur: {},
+                    fillOverlay: { blend: BlendMode.MULTIPLY, color: { value: "FF0000" } },
+                    glow: { color: { value: "00FF00" } },
+                }),
+            );
+            expect(tree).to.deep.equal({
+                "a:effectLst": [
+                    { "a:blur": {} },
+                    {
+                        "a:fillOverlay": [
+                            { _attr: { blend: "mult" } },
+                            {
+                                "a:solidFill": [
+                                    {
+                                        "a:srgbClr": {
+                                            _attr: { val: "FF0000" },
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        "a:glow": [
+                            {
+                                "a:srgbClr": {
+                                    _attr: { val: "00FF00" },
+                                },
+                            },
+                        ],
                     },
                 ],
             });

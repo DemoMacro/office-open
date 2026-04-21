@@ -9,6 +9,7 @@
  * @module
  */
 import type { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared/alignment";
+export { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared/alignment";
 
 import type { ITextWrapping } from "../text-wrap";
 

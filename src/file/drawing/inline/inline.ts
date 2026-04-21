@@ -9,6 +9,7 @@ import { createEffectExtent } from "./../effect-extent/effect-extent";
 import { createExtent } from "./../extent/extent";
 import { createGraphicFrameProperties } from "./../graphic-frame/graphic-frame-properties";
 import { Graphic } from "./../inline/graphic";
+import type { EffectListOptions } from "./graphic/graphic-data/pic/shape-properties/effects/effect-list";
 import type { OutlineOptions } from "./graphic/graphic-data/pic/shape-properties/outline/outline";
 import type { SolidFillOptions } from "./graphic/graphic-data/pic/shape-properties/outline/solid-fill";
 
@@ -21,6 +22,7 @@ interface InlineOptions {
     readonly docProperties?: DocPropertiesOptions;
     readonly outline?: OutlineOptions;
     readonly solidFill?: SolidFillOptions;
+    readonly effects?: EffectListOptions;
 }
 
 // <xsd:complexType name="CT_Inline">
@@ -43,6 +45,7 @@ export const createInline = ({
     docProperties,
     outline,
     solidFill,
+    effects,
 }: InlineOptions): XmlComponent =>
     new BuilderElement({
         attributes: {
@@ -77,7 +80,7 @@ export const createInline = ({
             ),
             new DocProperties(docProperties),
             createGraphicFrameProperties(),
-            new Graphic({ mediaData, outline, solidFill, transform }),
+            new Graphic({ effects, mediaData, outline, solidFill, transform }),
         ],
         name: "wp:inline",
     });

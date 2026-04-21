@@ -12,7 +12,7 @@ import { BuilderElement } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
 
 import { createAlign } from "./align";
-import { HorizontalPositionRelativeFrom } from "./floating-position";
+import { HorizontalPositionAlign, HorizontalPositionRelativeFrom } from "./floating-position";
 import type { IHorizontalPositionOptions } from "./floating-position";
 import { createPositionOffset } from "./position-offset";
 
@@ -76,7 +76,7 @@ export const createHorizontalPosition = ({
                 if (offset !== undefined) {
                     return createPositionOffset(offset);
                 }
-                return createAlign("LEFT" as const);
+                return createAlign(HorizontalPositionAlign.LEFT);
             })(),
         ],
         name: "wp:positionH",

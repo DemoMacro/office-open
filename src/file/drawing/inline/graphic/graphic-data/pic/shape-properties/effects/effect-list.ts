@@ -8,6 +8,8 @@
 import { BuilderElement } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
 
+import type { FillOverlayEffectOptions } from "./fill-overlay";
+import { createFillOverlayEffect } from "./fill-overlay";
 import type { GlowEffectOptions } from "./glow";
 import { createGlowEffect } from "./glow";
 import type { InnerShadowEffectOptions } from "./inner-shdw";
@@ -39,6 +41,8 @@ export interface BlurEffectOptions {
 export interface EffectListOptions {
     /** Blur effect */
     readonly blur?: BlurEffectOptions;
+    /** Fill overlay effect */
+    readonly fillOverlay?: FillOverlayEffectOptions;
     /** Glow effect */
     readonly glow?: GlowEffectOptions;
     /** Inner shadow effect */
@@ -113,6 +117,9 @@ export const createEffectList = (options: EffectListOptions): XmlComponent => {
 
     if (options.blur) {
         children.push(createBlurEffect(options.blur));
+    }
+    if (options.fillOverlay) {
+        children.push(createFillOverlayEffect(options.fillOverlay));
     }
     if (options.glow) {
         children.push(createGlowEffect(options.glow));
