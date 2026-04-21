@@ -157,9 +157,11 @@ export class Anchor extends XmlComponent {
             new Graphic({
                 blipEffects: drawingOptions.blipEffects,
                 effects: drawingOptions.effects,
+                hyperlink: drawingOptions.docProperties?.hyperlink,
                 mediaData,
                 outline: drawingOptions.outline,
                 solidFill: drawingOptions.solidFill,
+                tile: drawingOptions.tile,
                 transform,
             }),
         );

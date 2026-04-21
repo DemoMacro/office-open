@@ -17,6 +17,7 @@ import { Drawing } from "../../drawing";
 import type { IFloating } from "../../drawing";
 import type { BlipEffectsOptions } from "../../drawing/inline/graphic/graphic-data/pic/blip/blip-effects";
 import type { SourceRectangleOptions } from "../../drawing/inline/graphic/graphic-data/pic/blip/source-rectangle";
+import type { TileOptions } from "../../drawing/inline/graphic/graphic-data/pic/blip/tile";
 import type { EffectListOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/effects/effect-list";
 import type { OutlineOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
 import type { SolidFillOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
@@ -37,6 +38,7 @@ interface CoreImageOptions {
     readonly effects?: EffectListOptions;
     readonly blipEffects?: BlipEffectsOptions;
     readonly srcRect?: SourceRectangleOptions;
+    readonly tile?: TileOptions;
 }
 
 interface RegularImageOptions {
@@ -131,6 +133,7 @@ export class ImageRun extends Run {
             outline: options.outline,
             solidFill: options.solidFill,
             effects: options.effects,
+            tile: options.tile,
         });
 
         this.root.push(drawing);

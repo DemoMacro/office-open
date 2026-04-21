@@ -10,6 +10,7 @@ import { createExtent } from "./../extent/extent";
 import { createGraphicFrameProperties } from "./../graphic-frame/graphic-frame-properties";
 import { Graphic } from "./../inline/graphic";
 import type { BlipEffectsOptions } from "./graphic/graphic-data/pic/blip/blip-effects";
+import type { TileOptions } from "./graphic/graphic-data/pic/blip/tile";
 import type { EffectListOptions } from "./graphic/graphic-data/pic/shape-properties/effects/effect-list";
 import type { OutlineOptions } from "./graphic/graphic-data/pic/shape-properties/outline/outline";
 import type { SolidFillOptions } from "./graphic/graphic-data/pic/shape-properties/outline/solid-fill";
@@ -25,6 +26,7 @@ interface InlineOptions {
     readonly solidFill?: SolidFillOptions;
     readonly effects?: EffectListOptions;
     readonly blipEffects?: BlipEffectsOptions;
+    readonly tile?: TileOptions;
 }
 
 // <xsd:complexType name="CT_Inline">
@@ -49,6 +51,7 @@ export const createInline = ({
     solidFill,
     effects,
     blipEffects,
+    tile,
 }: InlineOptions): XmlComponent =>
     new BuilderElement({
         attributes: {
@@ -83,7 +86,16 @@ export const createInline = ({
             ),
             new DocProperties(docProperties),
             createGraphicFrameProperties(),
-            new Graphic({ blipEffects, effects, mediaData, outline, solidFill, transform }),
+            new Graphic({
+                blipEffects,
+                effects,
+                hyperlink: docProperties?.hyperlink,
+                mediaData,
+                outline,
+                solidFill,
+                tile,
+                transform,
+            }),
         ],
         name: "wp:inline",
     });

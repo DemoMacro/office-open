@@ -16,6 +16,8 @@ import { createBlip } from "./blip";
 import type { BlipEffectsOptions } from "./blip-effects";
 import { createSourceRectangle } from "./source-rectangle";
 import { Stretch } from "./stretch";
+import { createTileInfo } from "./tile";
+import type { TileOptions } from "./tile";
 
 /**
  * Options for blip fill properties.
@@ -27,6 +29,8 @@ export interface BlipFillOptions {
     readonly rotWithShape?: boolean;
     /** Image adjustment effects (brightness, contrast, grayscale, etc.) */
     readonly blipEffects?: BlipEffectsOptions;
+    /** Tile fill mode (if omitted, defaults to stretch) */
+    readonly tile?: TileOptions;
 }
 
 /**
@@ -61,7 +65,12 @@ export const createBlipFill = (mediaData: IMediaData, options?: BlipFillOptions)
 
     children.push(createBlip(mediaData, options?.blipEffects));
     children.push(createSourceRectangle(mediaData.srcRect));
-    children.push(new Stretch());
+
+    if (options?.tile) {
+        children.push(createTileInfo(options.tile));
+    } else {
+        children.push(new Stretch());
+    }
 
     const attributes: Record<string, { readonly key: string; readonly value: number }> = {};
 

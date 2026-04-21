@@ -6,6 +6,7 @@ import type { DocPropertiesOptions } from "./doc-properties/doc-properties";
 import type { IFloating } from "./floating";
 import { createInline } from "./inline";
 import type { BlipEffectsOptions } from "./inline/graphic/graphic-data/pic/blip/blip-effects";
+import type { TileOptions } from "./inline/graphic/graphic-data/pic/blip/tile";
 import type { EffectListOptions } from "./inline/graphic/graphic-data/pic/shape-properties/effects/effect-list";
 import type { OutlineOptions } from "./inline/graphic/graphic-data/pic/shape-properties/outline/outline";
 import type { SolidFillOptions } from "./inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
@@ -34,6 +35,7 @@ export interface IDrawingOptions {
     readonly solidFill?: SolidFillOptions;
     readonly effects?: EffectListOptions;
     readonly blipEffects?: BlipEffectsOptions;
+    readonly tile?: TileOptions;
 }
 
 /**
@@ -67,6 +69,7 @@ export class Drawing extends XmlComponent {
                     mediaData: imageData,
                     outline: drawingOptions.outline,
                     solidFill: drawingOptions.solidFill,
+                    tile: drawingOptions.tile,
                     transform: imageData.transformation,
                 }),
             );
