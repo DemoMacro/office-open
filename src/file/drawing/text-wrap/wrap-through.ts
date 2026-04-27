@@ -52,22 +52,22 @@ const createWrapPolygon = (cx: number, cy: number): XmlComponent =>
             }),
             new BuilderElement({
                 attributes: {
+                    x: { key: "x", value: 0 },
+                    y: { key: "y", value: -cy },
+                },
+                name: "wp:lineTo",
+            }),
+            new BuilderElement({
+                attributes: {
+                    x: { key: "x", value: cx },
+                    y: { key: "y", value: -cy },
+                },
+                name: "wp:lineTo",
+            }),
+            new BuilderElement({
+                attributes: {
                     x: { key: "x", value: cx },
                     y: { key: "y", value: 0 },
-                },
-                name: "wp:lineTo",
-            }),
-            new BuilderElement({
-                attributes: {
-                    x: { key: "x", value: cx },
-                    y: { key: "y", value: cy },
-                },
-                name: "wp:lineTo",
-            }),
-            new BuilderElement({
-                attributes: {
-                    x: { key: "x", value: 0 },
-                    y: { key: "y", value: cy },
                 },
                 name: "wp:lineTo",
             }),
