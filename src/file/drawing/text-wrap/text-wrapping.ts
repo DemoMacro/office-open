@@ -21,6 +21,7 @@ export const TextWrappingType = {
     SQUARE: 1,
     TIGHT: 2,
     TOP_AND_BOTTOM: 3,
+    THROUGH: 4,
 } as const;
 
 /**

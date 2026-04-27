@@ -1,8 +1,8 @@
 /**
- * Wrap Tight module for DrawingML text wrapping.
+ * Wrap Through module for DrawingML text wrapping.
  *
- * This module provides tight text wrapping for floating drawings
- * where text wraps closely around the image shape.
+ * This module provides "through" text wrapping for floating drawings
+ * where text wraps through the image contours, filling any concave areas.
  *
  * Reference: http://officeopenxml.com/drwPicFloating-textWrap.php
  *
@@ -15,7 +15,7 @@ import type { IMargins } from "../floating";
 import { TextWrappingSide } from "./text-wrapping";
 import type { ITextWrapping } from "./text-wrapping";
 
-interface IWrapTightAttributes {
+interface IWrapThroughAttributes {
     readonly wrapText: (typeof TextWrappingSide)[keyof typeof TextWrappingSide];
     readonly distL?: number;
     readonly distR?: number;
@@ -83,17 +83,17 @@ const createWrapPolygon = (cx: number, cy: number): XmlComponent =>
     });
 
 /**
- * Creates tight text wrapping for a floating drawing.
+ * Creates "through" text wrapping for a floating drawing.
  *
- * WrapTight causes text to wrap closely around the contours
- * of the drawing rather than its rectangular bounding box.
+ * WrapThrough is similar to WrapTight but allows text to wrap through
+ * the concave portions of the drawing shape (e.g., the inside of the letter "O").
  * A default rectangular wrap polygon matching the image extent is generated.
  *
  * Reference: http://officeopenxml.com/drwPicFloating-textWrap.php
  *
  * ## XSD Schema
  * ```xml
- * <xsd:complexType name="CT_WrapTight">
+ * <xsd:complexType name="CT_WrapThrough">
  *   <xsd:sequence>
  *     <xsd:element name="wrapPolygon" type="CT_WrapPath" minOccurs="1" maxOccurs="1"/>
  *   </xsd:sequence>
@@ -103,7 +103,7 @@ const createWrapPolygon = (cx: number, cy: number): XmlComponent =>
  * </xsd:complexType>
  * ```
  */
-export const createWrapTight = (
+export const createWrapThrough = (
     textWrapping: ITextWrapping,
     margins: IMargins = {
         bottom: 0,
@@ -113,12 +113,12 @@ export const createWrapTight = (
     },
     extent: { x: number; y: number },
 ): XmlComponent =>
-    new BuilderElement<IWrapTightAttributes>({
+    new BuilderElement<IWrapThroughAttributes>({
         attributes: {
             distL: { key: "distL", value: margins.left },
             distR: { key: "distR", value: margins.right },
             wrapText: { key: "wrapText", value: textWrapping.side || TextWrappingSide.BOTH_SIDES },
         },
         children: [createWrapPolygon(extent.x, extent.y)],
-        name: "wp:wrapTight",
+        name: "wp:wrapThrough",
     });
