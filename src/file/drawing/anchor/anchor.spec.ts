@@ -3,7 +3,7 @@ import { Utility } from "tests/utility";
 import { assert, describe, expect, it } from "vite-plus/test";
 
 import type { IDrawingOptions } from "../drawing";
-import { TextWrappingType } from "../text-wrap";
+import { TextWrappingSide, TextWrappingType } from "../text-wrap";
 import { Anchor } from "./anchor";
 
 const createAnchor = (drawingOptions: IDrawingOptions): Anchor =>
@@ -209,6 +209,28 @@ describe("Anchor", () => {
 
             const textWrap = newJson.root[6];
             assert.equal(textWrap.rootKey, "wp:wrapTopAndBottom");
+        });
+
+        it("should create a Drawing with through text wrapping", () => {
+            anchor = createAnchor({
+                floating: {
+                    horizontalPosition: {
+                        offset: 0,
+                    },
+                    verticalPosition: {
+                        offset: 0,
+                    },
+                    wrap: {
+                        side: TextWrappingSide.BOTH_SIDES,
+                        type: TextWrappingType.THROUGH,
+                    },
+                },
+            });
+            const newJson = Utility.jsonify(anchor);
+            assert.equal(newJson.root.length, 10);
+
+            const textWrap = newJson.root[6];
+            assert.equal(textWrap.rootKey, "wp:wrapThrough");
         });
 
         it("should create a Drawing with a margin", () => {

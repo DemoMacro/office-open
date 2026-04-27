@@ -11,6 +11,7 @@ import {
     createWrapNone,
     createWrapSquare,
     createWrapTight,
+    createWrapThrough,
     createWrapTopAndBottom,
 } from "../text-wrap";
 import { DocProperties } from "./../doc-properties/doc-properties";
@@ -135,7 +136,23 @@ export class Anchor extends XmlComponent {
                     break;
                 }
                 case TextWrappingType.TIGHT: {
-                    this.root.push(createWrapTight(drawingOptions.floating.margins));
+                    this.root.push(
+                        createWrapTight(
+                            drawingOptions.floating.wrap,
+                            drawingOptions.floating.margins,
+                            { x: transform.emus.x, y: transform.emus.y },
+                        ),
+                    );
+                    break;
+                }
+                case TextWrappingType.THROUGH: {
+                    this.root.push(
+                        createWrapThrough(
+                            drawingOptions.floating.wrap,
+                            drawingOptions.floating.margins,
+                            { x: transform.emus.x, y: transform.emus.y },
+                        ),
+                    );
                     break;
                 }
                 case TextWrappingType.TOP_AND_BOTTOM: {
