@@ -92,8 +92,16 @@ export const TextboxTightWrapType = {
 export interface LevelParagraphStylePropertiesOptions {
     /** Paragraph text alignment (left, right, center, justified, etc.) */
     readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
+    /** Whether to render text right-to-left for bidirectional languages */
+    readonly bidirectional?: boolean;
+    /** Whether to insert a page break before this paragraph */
+    readonly pageBreakBefore?: boolean;
+    /** Custom tab stop positions and alignments */
+    readonly tabStops?: readonly TabStopDefinition[];
     /** Whether to display a horizontal line (thematic break) below the paragraph */
     readonly thematicBreak?: boolean;
+    /** Whether to prevent single lines at top/bottom of page (widow/orphan control), defaults to true */
+    readonly widowControl?: boolean;
     /** Whether to ignore spacing before/after when adjacent paragraphs have the same style */
     readonly contextualSpacing?: boolean;
     /** Position in twips for a right-aligned tab stop */
@@ -112,6 +120,41 @@ export interface LevelParagraphStylePropertiesOptions {
      * Specifies that all lines of the paragraph are to be kept on a single page when possible.
      */
     readonly keepLines?: boolean;
+    /** Frame properties for positioning the paragraph */
+    readonly frame?: IFrameOptions;
+    /** Whether to suppress line numbers for this paragraph */
+    readonly suppressLineNumbers?: boolean;
+    /** Whether to allow word wrapping */
+    readonly wordWrap?: boolean;
+    /** Whether to allow punctuation to extend beyond text margins */
+    readonly overflowPunctuation?: boolean;
+    /**
+     * This element specifies whether inter-character spacing shall automatically be adjusted between regions of numbers and regions of East Asian text in the current paragraph. These regions shall be determined by the Unicode character values of the text content within the paragraph.
+     * This only works in Microsoft Word. It is not part of the ECMA-376 OOXML standard.
+     */
+    readonly autoSpaceEastAsianText?: boolean;
+    /** Whether to prevent text frames from overlapping */
+    readonly suppressOverlap?: boolean;
+    /** Whether to disable automatic hyphenation for this paragraph */
+    readonly suppressAutoHyphens?: boolean;
+    /** Whether to automatically adjust right indent for document grid */
+    readonly adjustRightInd?: boolean;
+    /** Whether to snap the current paragraph to the document grid */
+    readonly snapToGrid?: boolean;
+    /** Whether to swap left and right indent positions on odd pages for mirrored layouts */
+    readonly mirrorIndents?: boolean;
+    /** Whether to use Kinsoku forbidden character overflow rules */
+    readonly kinsoku?: boolean;
+    /** Whether to compress punctuation at the start of a line */
+    readonly topLinePunct?: boolean;
+    /** Whether to automatically add space between East Asian and Latin text */
+    readonly autoSpaceDE?: boolean;
+    /** Vertical text alignment within the paragraph */
+    readonly textAlignment?: (typeof TextAlignmentType)[keyof typeof TextAlignmentType];
+    /** Textbox tight wrap setting */
+    readonly textboxTightWrap?: (typeof TextboxTightWrapType)[keyof typeof TextboxTightWrapType];
+    /** Text direction for the paragraph (lr, rl, tb, tbV, rlV, lrV) */
+    readonly textDirection?: "lr" | "rl" | "tb" | "tbV" | "rlV" | "lrV";
     /** Outline level for table of contents and document outline (0-9) */
     readonly outlineLevel?: number;
 }
@@ -145,12 +188,6 @@ export type IParagraphStylePropertiesOptions = {
 export type IParagraphPropertiesOptionsBase = {
     /** Heading level (Heading1, Heading2, etc.) - applies predefined heading style */
     readonly heading?: (typeof HeadingLevel)[keyof typeof HeadingLevel];
-    /** Whether to render text right-to-left for bidirectional languages */
-    readonly bidirectional?: boolean;
-    /** Whether to insert a page break before this paragraph */
-    readonly pageBreakBefore?: boolean;
-    /** Custom tab stop positions and alignments */
-    readonly tabStops?: readonly TabStopDefinition[];
     /** Style ID to apply to this paragraph */
     readonly style?: string;
     /** Bullet list configuration */
@@ -158,46 +195,11 @@ export type IParagraphPropertiesOptionsBase = {
         /** Indentation level for the bullet (0-8) */
         readonly level: number;
     };
-    /** Whether to prevent single lines at top/bottom of page (widow/orphan control) */
-    readonly widowControl?: boolean;
-    /** Frame properties for positioning the paragraph */
-    readonly frame?: IFrameOptions;
-    /** Whether to suppress line numbers for this paragraph */
-    readonly suppressLineNumbers?: boolean;
-    /** Whether to allow word wrapping */
-    readonly wordWrap?: boolean;
-    /** Whether to allow punctuation to extend beyond text margins */
-    readonly overflowPunctuation?: boolean;
-    /** Character scaling percentage (e.g., 200 for 200%) */
-    readonly scale?: number;
-    /**
-     * This element specifies whether inter-character spacing shall automatically be adjusted between regions of numbers and regions of East Asian text in the current paragraph. These regions shall be determined by the Unicode character values of the text content within the paragraph.
-     * This only works in Microsoft Word. It is not part of the ECMA-376 OOXML standard.
-     */
-    readonly autoSpaceEastAsianText?: boolean;
     /**
      * Run properties to apply to all runs in the paragraph.
      * Reference: ECMA-376, 3rd Edition (June, 2011), Fundamentals and Markup Language Reference § 17.3.1.29.
      */
     readonly run?: IParagraphRunOptions;
-    /** Whether to disable automatic hyphenation for this paragraph */
-    readonly suppressAutoHyphens?: boolean;
-    /** Whether to automatically adjust right indent for document grid */
-    readonly adjustRightInd?: boolean;
-    /** Whether to snap the current paragraph to the document grid */
-    readonly snapToGrid?: boolean;
-    /** Whether to swap left and right indent positions on odd pages for mirrored layouts */
-    readonly mirrorIndents?: boolean;
-    /** Whether to use Kinsoku forbidden character overflow rules */
-    readonly kinsoku?: boolean;
-    /** Whether to compress punctuation at the start of a line */
-    readonly topLinePunct?: boolean;
-    /** Whether to automatically add space between East Asian and Latin text */
-    readonly autoSpaceDE?: boolean;
-    /** Vertical text alignment within the paragraph */
-    readonly textAlignment?: (typeof TextAlignmentType)[keyof typeof TextAlignmentType];
-    /** Textbox tight wrap setting */
-    readonly textboxTightWrap?: (typeof TextboxTightWrapType)[keyof typeof TextboxTightWrapType];
 } & IParagraphStylePropertiesOptions;
 
 export type IParagraphPropertiesChangeOptions = IChangedAttributesProperties &
@@ -514,6 +516,21 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
                     name: "w:textboxTightWrap",
                 }),
             );
+        }
+
+        if (options.textDirection !== undefined) {
+            this.push(
+                new BuilderElement<{ readonly val: string }>({
+                    attributes: {
+                        val: { key: "w:val", value: options.textDirection },
+                    },
+                    name: "w:textDirection",
+                }),
+            );
+        }
+
+        if (options.suppressOverlap !== undefined) {
+            this.push(new OnOffElement("w:suppressOverlap", options.suppressOverlap));
         }
 
         if (options.run) {
