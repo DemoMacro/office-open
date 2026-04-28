@@ -919,5 +919,82 @@ describe("ParagraphStyle", () => {
                 ],
             });
         });
+
+        describe("paragraph properties in style", () => {
+            it("should set widowControl in paragraph style", () => {
+                const style = new StyleForParagraph({
+                    id: "myStyleId",
+                    paragraph: { widowControl: false },
+                });
+                const tree = new Formatter().format(style);
+                expect(tree["w:style"]).to.deep.include({
+                    "w:pPr": [{ "w:widowControl": { _attr: { "w:val": false } } }],
+                });
+            });
+
+            it("should set suppressLineNumbers in paragraph style", () => {
+                const style = new StyleForParagraph({
+                    id: "myStyleId",
+                    paragraph: { suppressLineNumbers: true },
+                });
+                const tree = new Formatter().format(style);
+                expect(tree["w:style"]).to.deep.include({
+                    "w:pPr": [{ "w:suppressLineNumbers": {} }],
+                });
+            });
+
+            it("should set textDirection in paragraph style", () => {
+                const style = new StyleForParagraph({
+                    id: "myStyleId",
+                    paragraph: { textDirection: "rl" },
+                });
+                const tree = new Formatter().format(style);
+                expect(tree["w:style"]).to.deep.include({
+                    "w:pPr": [{ "w:textDirection": { _attr: { "w:val": "rl" } } }],
+                });
+            });
+
+            it("should set suppressOverlap in paragraph style", () => {
+                const style = new StyleForParagraph({
+                    id: "myStyleId",
+                    paragraph: { suppressOverlap: true },
+                });
+                const tree = new Formatter().format(style);
+                expect(tree["w:style"]).to.deep.include({
+                    "w:pPr": [{ "w:suppressOverlap": {} }],
+                });
+            });
+
+            it("should set multiple paragraph properties in style", () => {
+                const style = new StyleForParagraph({
+                    id: "Normal",
+                    name: "Normal",
+                    paragraph: {
+                        indent: { firstLineChars: 200 },
+                        widowControl: false,
+                        suppressLineNumbers: true,
+                        snapToGrid: false,
+                    },
+                });
+                const tree = new Formatter().format(style);
+                const pPr = tree["w:style"].find(
+                    (el: Record<string, unknown>) => "w:pPr" in el,
+                );
+                expect(pPr).to.exist;
+                const pPrContent = pPr["w:pPr"];
+                expect(pPrContent).to.deep.include({
+                    "w:ind": { _attr: { "w:firstLineChars": 200 } },
+                });
+                expect(pPrContent).to.deep.include({
+                    "w:widowControl": { _attr: { "w:val": false } },
+                });
+                expect(pPrContent).to.deep.include({
+                    "w:suppressLineNumbers": {},
+                });
+                expect(pPrContent).to.deep.include({
+                    "w:snapToGrid": { _attr: { "w:val": false } },
+                });
+            });
+        });
     });
 });

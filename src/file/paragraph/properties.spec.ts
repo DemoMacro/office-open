@@ -455,5 +455,25 @@ describe("ParagraphProperties", () => {
                 "w:pPr": [{ "w:textboxTightWrap": { _attr: { "w:val": "allLines" } } }],
             });
         });
+
+        it("should create with textDirection", () => {
+            const properties = new ParagraphProperties({
+                textDirection: "tb",
+            });
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal({
+                "w:pPr": [{ "w:textDirection": { _attr: { "w:val": "tb" } } }],
+            });
+        });
+
+        it("should create with suppressOverlap", () => {
+            const properties = new ParagraphProperties({
+                suppressOverlap: true,
+            });
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal({
+                "w:pPr": [{ "w:suppressOverlap": {} }],
+            });
+        });
     });
 });
