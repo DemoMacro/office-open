@@ -11,6 +11,8 @@
 import { BuilderElement } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
 
+import { createLineEnd } from "./line-end";
+import type { LineEndOptions } from "./line-end";
 import { createNoFill } from "./no-fill";
 import { createSolidFill } from "./solid-fill";
 import type { SolidFillOptions } from "./solid-fill";
@@ -159,6 +161,10 @@ export interface OutlineAttributes {
     readonly join?: keyof typeof LineJoin;
     /** Miter limit (only when join is MITER) */
     readonly miterLimit?: number;
+    /** Line start arrow/head */
+    readonly headEnd?: LineEndOptions;
+    /** Line end arrow/tail */
+    readonly tailEnd?: LineEndOptions;
 }
 
 /**
@@ -266,6 +272,14 @@ export const createOutline = (options: OutlineOptions): XmlComponent => {
                 }),
             );
         }
+    }
+
+    // Line end markers (arrows)
+    if (options.headEnd) {
+        children.push(createLineEnd("a:headEnd", options.headEnd));
+    }
+    if (options.tailEnd) {
+        children.push(createLineEnd("a:tailEnd", options.tailEnd));
     }
 
     return new BuilderElement<OutlineAttributes>({
