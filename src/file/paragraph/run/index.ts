@@ -18,3 +18,4 @@ export * from "./simple-field";
 export * from "./comment-run";
 export * from "./empty-children";
 export * from "./positional-tab";
+export * from "./ruby";
