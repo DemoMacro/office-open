@@ -15,6 +15,8 @@ import {
 } from "@file/xml-components";
 
 import { Name, UiPriority } from "./components";
+import type { TableStyleOverrideOptions } from "./table-style-override";
+import { createTableStyleOverride } from "./table-style-override";
 
 // <xsd:complexType name="CT_Style">
 //     <xsd:sequence>
@@ -101,6 +103,13 @@ export interface IStyleOptions {
     readonly unhideWhenUsed?: boolean;
     /** Whether the style appears in the quick format gallery */
     readonly quickFormat?: boolean;
+    /**
+     * Table style overrides for specific table regions.
+     *
+     * Each override applies formatting to a specific region (first row,
+     * last column, banding, etc.) within a table style.
+     */
+    readonly tableStyleOverrides?: readonly TableStyleOverrideOptions[];
 }
 
 /**
@@ -199,6 +208,12 @@ export class Style extends XmlComponent {
 
         if (options.quickFormat !== undefined) {
             this.root.push(new OnOffElement("w:qFormat", options.quickFormat));
+        }
+
+        if (options.tableStyleOverrides) {
+            for (const override of options.tableStyleOverrides) {
+                this.root.push(createTableStyleOverride(override));
+            }
         }
     }
 }
