@@ -17,6 +17,8 @@ import { createPresetColor, PresetColor } from "./preset-color";
 import type { PresetColorOptions } from "./preset-color";
 import { createRgbColor } from "./rgb-color";
 import type { RgbColorOptions } from "./rgb-color";
+import { createScRgbColor } from "./sc-rgb-color";
+import type { ScRgbColorOptions } from "./sc-rgb-color";
 import { createSchemeColor, SchemeColor } from "./scheme-color";
 import type { SchemeColorOptions } from "./scheme-color";
 import { createSystemColor, SystemColor } from "./system-color";
@@ -29,6 +31,7 @@ import type { SystemColorOptions } from "./system-color";
  * RGB, scheme, HSL, system, and preset colors.
  */
 export type SolidFillOptions =
+    | ScRgbColorOptions
     | RgbColorOptions
     | SchemeColorOptions
     | HslColorOptions
@@ -45,6 +48,9 @@ const SCHEME_COLOR_VALUES: ReadonlySet<string> = new Set(Object.values(SchemeCol
 export const createColorElement = (color: SolidFillOptions): XmlComponent => {
     if ("hue" in color && "sat" in color && "lum" in color) {
         return createHslColor(color);
+    }
+    if ("r" in color && "g" in color && "b" in color) {
+        return createScRgbColor(color);
     }
     // At this point, color is guaranteed to have a string value property
     const colorValue = (color as { readonly value: string }).value;
