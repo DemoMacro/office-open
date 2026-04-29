@@ -141,4 +141,66 @@ describe("createOutline", () => {
             "a:ln": { _attr: { w: 12700 } },
         });
     });
+
+    it("should create outline with custom dash pattern", () => {
+        const tree = new Formatter().format(
+            createOutline({
+                type: "solidFill",
+                color: { value: "000000" },
+                customDash: [{ d: "500%", sp: "200%" }],
+            }),
+        );
+        expect(tree).to.deep.equal({
+            "a:ln": [
+                { _attr: {} },
+                { "a:solidFill": [{ "a:srgbClr": { _attr: { val: "000000" } } }] },
+                {
+                    "a:custDash": [
+                        {
+                            "a:ds": { _attr: { d: "500%", sp: "200%" } },
+                        },
+                    ],
+                },
+            ],
+        });
+    });
+
+    it("should create outline with multiple custom dash stops", () => {
+        const tree = new Formatter().format(
+            createOutline({
+                customDash: [
+                    { d: "500%", sp: "200%" },
+                    { d: "100%", sp: "200%" },
+                ],
+            }),
+        );
+        expect(tree).to.deep.equal({
+            "a:ln": [
+                { _attr: {} },
+                {
+                    "a:custDash": [
+                        { "a:ds": { _attr: { d: "500%", sp: "200%" } } },
+                        { "a:ds": { _attr: { d: "100%", sp: "200%" } } },
+                    ],
+                },
+            ],
+        });
+    });
+
+    it("should prefer customDash over dash when both specified", () => {
+        const tree = new Formatter().format(
+            createOutline({
+                customDash: [{ d: "300%", sp: "100%" }],
+                dash: "DASH",
+            }),
+        );
+        expect(tree).to.deep.equal({
+            "a:ln": [
+                { _attr: {} },
+                {
+                    "a:custDash": [{ "a:ds": { _attr: { d: "300%", sp: "100%" } } }],
+                },
+            ],
+        });
+    });
 });
