@@ -5,6 +5,7 @@ import type { XmlComponent } from "@file/xml-components";
 
 import type { EffectListOptions } from "../pic/shape-properties/effects/effect-list";
 import type { GradientFillOptions } from "../pic/shape-properties/fill/gradient-fill";
+import type { PatternFillOptions } from "../pic/shape-properties/fill/pattern-fill";
 import type { OutlineOptions } from "../pic/shape-properties/outline/outline";
 import type { SolidFillOptions } from "../pic/shape-properties/outline/solid-fill";
 import { ShapeProperties } from "../pic/shape-properties/shape-properties";
@@ -22,6 +23,7 @@ export interface WpsShapeCoreOptions {
     readonly outline?: OutlineOptions;
     readonly solidFill?: SolidFillOptions;
     readonly gradientFill?: GradientFillOptions;
+    readonly patternFill?: PatternFillOptions;
     readonly noFill?: boolean;
     readonly effects?: EffectListOptions;
     readonly shape3d?: Shape3DOptions;
@@ -41,6 +43,7 @@ export const createWpsShape = (options: WpsShapeOptions): XmlComponent =>
                 gradientFill: options.gradientFill,
                 noFill: options.noFill,
                 outline: options.outline,
+                patternFill: options.patternFill,
                 shape3d: options.shape3d,
                 solidFill: options.solidFill,
                 transform: options.transformation,
