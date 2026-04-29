@@ -32,6 +32,7 @@ export * from "./shared";
 export * from "./border";
 export * from "./vertical-align";
 export * from "./checkbox";
+export * from "./sdt";
 export * from "./fonts";
 export * from "./textbox";
 export { type IPropertiesOptions } from "./core-properties";
