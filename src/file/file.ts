@@ -7,6 +7,7 @@
  * @module
  */
 import { AppProperties } from "./app-properties/app-properties";
+import { Bibliography } from "./bibliography";
 import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties } from "./core-properties";
 import type { IPropertiesOptions } from "./core-properties";
@@ -165,6 +166,7 @@ export class File {
     private readonly appProperties: AppProperties;
     private readonly styles: Styles;
     private readonly comments: Comments;
+    private readonly bibliography: Bibliography | undefined;
     private readonly fontWrapper: FontWrapper;
 
     public constructor(options: IPropertiesOptions) {
@@ -178,6 +180,9 @@ export class File {
         this.numbering = new Numbering(options.numbering ? options.numbering : { config: [] });
 
         this.comments = new Comments(options.comments ?? { children: [] });
+        this.bibliography = options.bibliography
+            ? new Bibliography(options.bibliography)
+            : undefined;
         this.fileRelationships = new Relationships();
         this.customProperties = new CustomProperties(options.customProperties ?? []);
         this.appProperties = new AppProperties();
@@ -379,6 +384,11 @@ export class File {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
             "comments.xml",
         );
+        this.documentWrapper.Relationships.addRelationship(
+            this.currentRelationshipId++,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/bibliography",
+            "bibliography.xml",
+        );
     }
 
     public get Document(): DocumentWrapper {
@@ -439,6 +449,10 @@ export class File {
 
     public get Comments(): Comments {
         return this.comments;
+    }
+
+    public get Bibliography(): Bibliography | undefined {
+        return this.bibliography;
     }
 
     public get FontTable(): FontWrapper {

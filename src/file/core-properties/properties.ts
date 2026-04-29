@@ -1,3 +1,4 @@
+import type { IBibliographyOptions } from "@file/bibliography";
 /**
  * Core Properties module for WordprocessingML documents.
  *
@@ -37,6 +38,7 @@ import type { IStylesOptions } from "../styles";
  * @property styles - Document styles configuration
  * @property numbering - Numbering configuration
  * @property comments - Document comments configuration
+ * @property bibliography - Document bibliography sources
  * @property footnotes - Document footnotes
  * @property background - Document background settings
  * @property features - Document features like track changes
@@ -61,6 +63,7 @@ export interface IPropertiesOptions {
     readonly styles?: IStylesOptions;
     readonly numbering?: INumberingOptions;
     readonly comments?: ICommentsOptions;
+    readonly bibliography?: IBibliographyOptions;
     readonly footnotes?: Readonly<
         Record<
             string,

@@ -121,6 +121,12 @@ export class ContentTypes extends XmlComponent {
         );
         this.root.push(
             createOverride(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.bibliography+xml",
+                "/word/bibliography.xml",
+            ),
+        );
+        this.root.push(
+            createOverride(
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml",
                 "/word/fontTable.xml",
             ),
