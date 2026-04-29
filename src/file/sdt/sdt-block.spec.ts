@@ -1,4 +1,5 @@
 import { Formatter } from "@export/formatter";
+import type { FileChild } from "@file/file-child";
 import { BuilderElement } from "@file/xml-components";
 import { describe, expect, it } from "vite-plus/test";
 
@@ -69,5 +70,12 @@ describe("StructuredDocumentTagBlock", () => {
         expect(tree).to.deep.equal({
             "w:sdt": [{ "w:sdtPr": [{ "w:text": { _attr: { "w:multiLine": false } } }] }],
         });
+    });
+
+    it("should be assignable to FileChild (block-level element)", () => {
+        const sdt: FileChild = new StructuredDocumentTagBlock({
+            properties: { richText: true },
+        });
+        expect(sdt.fileChild).to.be.a("symbol");
     });
 });
