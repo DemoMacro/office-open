@@ -203,4 +203,163 @@ describe("createGradientFill", () => {
             ],
         });
     });
+
+    it("should create gradient with flip attribute", () => {
+        const tree = new Formatter().format(
+            createGradientFill({
+                stops: [
+                    { position: 0, color: { value: "FF0000" } },
+                    { position: 100000, color: { value: "0000FF" } },
+                ],
+                flip: "X",
+            }),
+        );
+        expect(tree).to.deep.equal({
+            "a:gradFill": [
+                { _attr: { flip: "x" } },
+                {
+                    "a:gsLst": [
+                        {
+                            "a:gs": [
+                                { _attr: { pos: 0 } },
+                                { "a:srgbClr": { _attr: { val: "FF0000" } } },
+                            ],
+                        },
+                        {
+                            "a:gs": [
+                                { _attr: { pos: 100000 } },
+                                { "a:srgbClr": { _attr: { val: "0000FF" } } },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        });
+    });
+
+    it("should create gradient with tileRect", () => {
+        const tree = new Formatter().format(
+            createGradientFill({
+                stops: [
+                    { position: 0, color: { value: "FF0000" } },
+                    { position: 100000, color: { value: "0000FF" } },
+                ],
+                tileRect: { left: "10%", top: "20%", right: "30%", bottom: "40%" },
+            }),
+        );
+        expect(tree).to.deep.equal({
+            "a:gradFill": [
+                { _attr: {} },
+                {
+                    "a:gsLst": [
+                        {
+                            "a:gs": [
+                                { _attr: { pos: 0 } },
+                                { "a:srgbClr": { _attr: { val: "FF0000" } } },
+                            ],
+                        },
+                        {
+                            "a:gs": [
+                                { _attr: { pos: 100000 } },
+                                { "a:srgbClr": { _attr: { val: "0000FF" } } },
+                            ],
+                        },
+                    ],
+                },
+                {
+                    "a:tileRect": {
+                        _attr: { l: "10%", t: "20%", r: "30%", b: "40%" },
+                    },
+                },
+            ],
+        });
+    });
+
+    it("should create path gradient with fillToRect", () => {
+        const tree = new Formatter().format(
+            createGradientFill({
+                stops: [
+                    { position: 0, color: { value: "FF0000" } },
+                    { position: 100000, color: { value: "0000FF" } },
+                ],
+                shade: {
+                    path: "RECT",
+                    fillToRect: { left: "25%", top: "25%", right: "75%", bottom: "75%" },
+                },
+            }),
+        );
+        expect(tree).to.deep.equal({
+            "a:gradFill": [
+                { _attr: {} },
+                {
+                    "a:gsLst": [
+                        {
+                            "a:gs": [
+                                { _attr: { pos: 0 } },
+                                { "a:srgbClr": { _attr: { val: "FF0000" } } },
+                            ],
+                        },
+                        {
+                            "a:gs": [
+                                { _attr: { pos: 100000 } },
+                                { "a:srgbClr": { _attr: { val: "0000FF" } } },
+                            ],
+                        },
+                    ],
+                },
+                {
+                    "a:path": [
+                        { _attr: { path: "rect" } },
+                        {
+                            "a:fillToRect": {
+                                _attr: { l: "25%", t: "25%", r: "75%", b: "75%" },
+                            },
+                        },
+                    ],
+                },
+            ],
+        });
+    });
+
+    it("should create gradient with all advanced options", () => {
+        const tree = new Formatter().format(
+            createGradientFill({
+                stops: [
+                    { position: 0, color: { value: "FF0000" } },
+                    { position: 100000, color: { value: "0000FF" } },
+                ],
+                shade: { angle: 5400000 },
+                flip: "XY",
+                tileRect: { left: "5%", top: "5%", right: "95%", bottom: "95%" },
+                rotateWithShape: false,
+            }),
+        );
+        expect(tree).to.deep.equal({
+            "a:gradFill": [
+                { _attr: { flip: "xy", rotWithShape: false } },
+                {
+                    "a:gsLst": [
+                        {
+                            "a:gs": [
+                                { _attr: { pos: 0 } },
+                                { "a:srgbClr": { _attr: { val: "FF0000" } } },
+                            ],
+                        },
+                        {
+                            "a:gs": [
+                                { _attr: { pos: 100000 } },
+                                { "a:srgbClr": { _attr: { val: "0000FF" } } },
+                            ],
+                        },
+                    ],
+                },
+                { "a:lin": { _attr: { ang: 5400000 } } },
+                {
+                    "a:tileRect": {
+                        _attr: { l: "5%", t: "5%", r: "95%", b: "95%" },
+                    },
+                },
+            ],
+        });
+    });
 });
