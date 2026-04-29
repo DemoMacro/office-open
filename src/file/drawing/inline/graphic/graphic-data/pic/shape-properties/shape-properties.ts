@@ -30,6 +30,8 @@ import type { SolidFillOptions } from "./outline/solid-fill";
 import { PresetGeometry } from "./preset-geometry/preset-geometry";
 import type { PresetGeometryOptions } from "./preset-geometry/preset-geometry";
 import { ShapePropertiesAttributes } from "./shape-properties-attributes";
+import { createScene3D } from "./three-d/scene-3d";
+import type { Scene3DOptions } from "./three-d/scene-3d";
 import { createShape3D } from "./three-d/shape-3d";
 import type { Shape3DOptions } from "./three-d/shape-3d";
 
@@ -81,6 +83,7 @@ export class ShapeProperties extends XmlComponent {
         outline,
         patternFill,
         presetGeometry,
+        scene3d,
         shape3d,
         solidFill,
         transform,
@@ -96,6 +99,7 @@ export class ShapeProperties extends XmlComponent {
         /** Custom geometry (mutually exclusive with presetGeometry). */
         readonly customGeometry?: CustomGeometryOptions;
         readonly effects?: EffectListOptions;
+        readonly scene3d?: Scene3DOptions;
         readonly shape3d?: Shape3DOptions;
         readonly transform: IMediaDataTransformation;
     }) {
@@ -136,6 +140,10 @@ export class ShapeProperties extends XmlComponent {
 
         if (effects) {
             this.root.push(createEffectList(effects));
+        }
+
+        if (scene3d) {
+            this.root.push(createScene3D(scene3d));
         }
 
         if (shape3d) {
