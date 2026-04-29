@@ -5,6 +5,7 @@
  */
 export * from "./alignment";
 export * from "./border";
+export * from "./cnf-style";
 export * from "./indent";
 export * from "./break";
 export * from "./spacing";
