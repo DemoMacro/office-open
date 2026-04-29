@@ -262,14 +262,20 @@ export interface SdtPropertiesOptions {
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-/** Creates a list item element (w:listItem). */
-const createListItem = (item: SdtListItem): XmlComponentType => {
+/** Creates a list item element (w:listItem).
+ *
+ * Note: Word requires `w:value` on every listItem inside w:dropDownList,
+ * even though the XSD marks it as optional. When value is not provided,
+ * it defaults to displayText.
+ */
+const createListItem = (item: SdtListItem, forceValue?: boolean): XmlComponentType => {
     const attrs: Record<string, { readonly key: string; readonly value: string }> = {};
     if (item.displayText !== undefined) {
         attrs.displayText = { key: "w:displayText", value: item.displayText };
     }
-    if (item.value !== undefined) {
-        attrs.value = { key: "w:value", value: item.value };
+    const value = item.value ?? (forceValue ? item.displayText : undefined);
+    if (value !== undefined) {
+        attrs.value = { key: "w:value", value };
     }
     return new BuilderElement({ name: "w:listItem", attributes: attrs });
 };
@@ -282,7 +288,7 @@ const createListType = (
     const children: XmlComponentType[] = [];
     if (options.items) {
         for (const item of options.items) {
-            children.push(createListItem(item));
+            children.push(createListItem(item, name === "w:dropDownList"));
         }
     }
     const attrs: Record<string, { readonly key: string; readonly value: string }> = {};
@@ -497,14 +503,17 @@ export class StructuredDocumentTagProperties extends XmlComponent {
         } else if (options.richText) {
             this.root.push(new BuilderElement({ name: "w:richText" }));
         } else if (options.text !== undefined) {
-            const textChildren: XmlComponentType[] = [];
+            const textAttrs: Record<
+                string,
+                { readonly key: string; readonly value: string | boolean }
+            > = {};
             if (options.text.multiLine !== undefined) {
-                textChildren.push(new OnOffElement("w:multiLine", options.text.multiLine));
+                textAttrs.multiLine = { key: "w:multiLine", value: options.text.multiLine };
             }
             this.root.push(
                 new BuilderElement({
                     name: "w:text",
-                    children: textChildren.length > 0 ? textChildren : undefined,
+                    attributes: Object.keys(textAttrs).length > 0 ? textAttrs : undefined,
                 }),
             );
         } else if (options.citation) {

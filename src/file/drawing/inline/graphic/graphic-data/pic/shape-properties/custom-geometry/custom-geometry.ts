@@ -80,7 +80,7 @@ const createAdjPoint = (name: string, point: AdjPoint): XmlComponent =>
         name,
         children: [
             new BuilderElement<{ readonly x: string; readonly y: string }>({
-                name: "a:pos",
+                name: "a:pt",
                 attributes: {
                     x: { key: "x", value: point.x },
                     y: { key: "y", value: point.y },
@@ -165,7 +165,7 @@ const createPathCommand = (cmd: PathCommand): XmlComponent => {
                 children: cmd.points.map(
                     (pt) =>
                         new BuilderElement<{ readonly x: string; readonly y: string }>({
-                            name: "a:pos",
+                            name: "a:pt",
                             attributes: {
                                 x: { key: "x", value: pt.x },
                                 y: { key: "y", value: pt.y },
@@ -179,7 +179,7 @@ const createPathCommand = (cmd: PathCommand): XmlComponent => {
                 children: cmd.points.map(
                     (pt) =>
                         new BuilderElement<{ readonly x: string; readonly y: string }>({
-                            name: "a:pos",
+                            name: "a:pt",
                             attributes: {
                                 x: { key: "x", value: pt.x },
                                 y: { key: "y", value: pt.y },

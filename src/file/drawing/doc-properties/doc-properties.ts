@@ -81,8 +81,14 @@ const HYPERLINK_RELATIONSHIP_TYPE =
  * </xsd:complexType>
  * ```
  */
+let globalDocPropertiesIdGen = docPropertiesUniqueNumericIdGen();
+
+/** Reset the global doc properties ID generator (for testing). */
+export const resetDocPropertiesIdGen = (): void => {
+    globalDocPropertiesIdGen = docPropertiesUniqueNumericIdGen();
+};
+
 export class DocProperties extends XmlComponent {
-    private readonly docPropertiesUniqueNumericId = docPropertiesUniqueNumericIdGen();
     private readonly hyperlink?: HyperlinkOptions;
 
     public constructor(
@@ -102,7 +108,7 @@ export class DocProperties extends XmlComponent {
         > = {
             id: {
                 key: "id",
-                value: id ?? this.docPropertiesUniqueNumericId(),
+                value: id ?? globalDocPropertiesIdGen(),
             },
             name: {
                 key: "name",
