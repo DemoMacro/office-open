@@ -124,7 +124,7 @@ const doc = new Document({
                                 date: {
                                     dateFormat: "yyyy-MM-dd",
                                     languageId: "en-US",
-                                    fullDate: "2026-04-29",
+                                    fullDate: "2026-04-29T00:00:00",
                                 },
                             },
                             children: [new TextRun("2026-04-29")],

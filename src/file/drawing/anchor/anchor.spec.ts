@@ -1,7 +1,8 @@
 import { Formatter } from "@export/formatter";
 import { Utility } from "tests/utility";
-import { assert, describe, expect, it } from "vite-plus/test";
+import { assert, beforeEach, describe, expect, it } from "vite-plus/test";
 
+import { resetDocPropertiesIdGen } from "../doc-properties/doc-properties";
 import type { IDrawingOptions } from "../drawing";
 import { TextWrappingSide, TextWrappingType } from "../text-wrap";
 import { Anchor } from "./anchor";
@@ -38,6 +39,10 @@ const createAnchor = (drawingOptions: IDrawingOptions): Anchor =>
 
 describe("Anchor", () => {
     let anchor: Anchor;
+
+    beforeEach(() => {
+        resetDocPropertiesIdGen();
+    });
 
     describe("#constructor()", () => {
         it("should create a Drawing with correct root key", () => {

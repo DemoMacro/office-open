@@ -58,7 +58,7 @@ const doc = new Document({
                     children: [
                         new TextRun({
                             bold: true,
-                            text: "2. Perspective Camera + Warm Light",
+                            text: "2. Perspective Camera + Morning Light",
                             size: 28,
                         }),
                     ],
@@ -85,7 +85,7 @@ const doc = new Document({
                                     preset: "perspectiveFront",
                                     zoom: "120000",
                                 },
-                                lightRig: { direction: "t", rig: "warm" },
+                                lightRig: { direction: "t", rig: "morning" },
                             },
                             shape3d: {
                                 bevelB: { prst: "CIRCLE", w: 50800, h: 25400 },

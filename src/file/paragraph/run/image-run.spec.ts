@@ -1,11 +1,16 @@
 import { Formatter } from "@export/formatter";
 import type { IViewWrapper } from "@file/document-wrapper";
 import type { File } from "@file/file";
-import { describe, expect, it, vi } from "vite-plus/test";
+import { resetDocPropertiesIdGen } from "@file/drawing/doc-properties/doc-properties";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { ImageRun } from "./image-run";
 
 describe("ImageRun", () => {
+    beforeEach(() => {
+        resetDocPropertiesIdGen();
+    });
+
     describe("#constructor()", () => {
         it("should create with Buffer", () => {
             const currentImageRun = new ImageRun({

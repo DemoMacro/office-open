@@ -30,7 +30,7 @@ describe("StructuredDocumentTagRun", () => {
         expect(tree).to.deep.equal({
             "w:sdt": [
                 {
-                    "w:sdtPr": [{ "w:text": [{ "w:multiLine": {} }] }],
+                    "w:sdtPr": [{ "w:text": { _attr: { "w:multiLine": true } } }],
                 },
             ],
         });
@@ -93,8 +93,8 @@ describe("StructuredDocumentTagRun", () => {
                     "w:sdtPr": [
                         {
                             "w:dropDownList": [
-                                { "w:listItem": { _attr: { "w:displayText": "Yes" } } },
-                                { "w:listItem": { _attr: { "w:displayText": "No" } } },
+                                { "w:listItem": { _attr: { "w:displayText": "Yes", "w:value": "Yes" } } },
+                                { "w:listItem": { _attr: { "w:displayText": "No", "w:value": "No" } } },
                             ],
                         },
                     ],

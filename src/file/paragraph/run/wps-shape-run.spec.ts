@@ -1,12 +1,17 @@
 import { Formatter } from "@export/formatter";
 import type { IViewWrapper } from "@file/document-wrapper";
+import { resetDocPropertiesIdGen } from "@file/drawing/doc-properties/doc-properties";
 import type { File } from "@file/file";
 import { Paragraph } from "@file/index";
-import { describe, expect, it } from "vite-plus/test";
+import { beforeEach, describe, expect, it } from "vite-plus/test";
 
 import { WpsShapeRun } from "./wps-shape-run";
 
 describe("WpsShapeRun", () => {
+    beforeEach(() => {
+        resetDocPropertiesIdGen();
+    });
+
     describe("#constructor()", () => {
         it("should create with Buffer", () => {
             const currentShapeRun = new WpsShapeRun({
@@ -219,7 +224,7 @@ describe("WpsShapeRun", () => {
                                                             {
                                                                 "wps:txbx": [
                                                                     {
-                                                                        "w:txbxContent": [
+                                                                        "wps:txbxContent": [
                                                                             {
                                                                                 "w:p": [
                                                                                     {

@@ -25,11 +25,11 @@ describe("createCustomGeometry", () => {
                     "a:pathLst": [
                         {
                             "a:path": [
-                                { "a:moveTo": [{ "a:pos": { _attr: { x: "0", y: "0" } } }] },
-                                { "a:lnTo": [{ "a:pos": { _attr: { x: "10000000", y: "0" } } }] },
+                                { "a:moveTo": [{ "a:pt": { _attr: { x: "0", y: "0" } } }] },
+                                { "a:lnTo": [{ "a:pt": { _attr: { x: "10000000", y: "0" } } }] },
                                 {
                                     "a:lnTo": [
-                                        { "a:pos": { _attr: { x: "5000000", y: "10000000" } } },
+                                        { "a:pt": { _attr: { x: "5000000", y: "10000000" } } },
                                     ],
                                 },
                                 { "a:close": {} },
@@ -106,7 +106,7 @@ describe("createCustomGeometry", () => {
                     "a:pathLst": [
                         {
                             "a:path": [
-                                { "a:moveTo": [{ "a:pos": { _attr: { x: "0", y: "0" } } }] },
+                                { "a:moveTo": [{ "a:pt": { _attr: { x: "0", y: "0" } } }] },
                                 {
                                     "a:arcTo": {
                                         _attr: {
@@ -152,11 +152,11 @@ describe("createCustomGeometry", () => {
                     "a:pathLst": [
                         {
                             "a:path": [
-                                { "a:moveTo": [{ "a:pos": { _attr: { x: "0", y: "0" } } }] },
+                                { "a:moveTo": [{ "a:pt": { _attr: { x: "0", y: "0" } } }] },
                                 {
                                     "a:quadBezTo": [
-                                        { "a:pos": { _attr: { x: "5000000", y: "-2000000" } } },
-                                        { "a:pos": { _attr: { x: "10000000", y: "0" } } },
+                                        { "a:pt": { _attr: { x: "5000000", y: "-2000000" } } },
+                                        { "a:pt": { _attr: { x: "10000000", y: "0" } } },
                                     ],
                                 },
                                 { "a:close": {} },
@@ -195,12 +195,12 @@ describe("createCustomGeometry", () => {
                     "a:pathLst": [
                         {
                             "a:path": [
-                                { "a:moveTo": [{ "a:pos": { _attr: { x: "0", y: "0" } } }] },
+                                { "a:moveTo": [{ "a:pt": { _attr: { x: "0", y: "0" } } }] },
                                 {
                                     "a:cubicBezTo": [
-                                        { "a:pos": { _attr: { x: "2000000", y: "-2000000" } } },
-                                        { "a:pos": { _attr: { x: "8000000", y: "-2000000" } } },
-                                        { "a:pos": { _attr: { x: "10000000", y: "0" } } },
+                                        { "a:pt": { _attr: { x: "2000000", y: "-2000000" } } },
+                                        { "a:pt": { _attr: { x: "8000000", y: "-2000000" } } },
+                                        { "a:pt": { _attr: { x: "10000000", y: "0" } } },
                                     ],
                                 },
                                 { "a:close": {} },
@@ -376,18 +376,18 @@ describe("createCustomGeometry", () => {
                         {
                             "a:path": [
                                 { _attr: { w: 10000000, h: 10000000 } },
-                                { "a:moveTo": [{ "a:pos": { _attr: { x: "0", y: "0" } } }] },
-                                { "a:lnTo": [{ "a:pos": { _attr: { x: "10000000", y: "0" } } }] },
+                                { "a:moveTo": [{ "a:pt": { _attr: { x: "0", y: "0" } } }] },
+                                { "a:lnTo": [{ "a:pt": { _attr: { x: "10000000", y: "0" } } }] },
                                 { "a:close": {} },
                             ],
                         },
                         {
                             "a:path": [
                                 { _attr: { w: 10000000, h: 10000000 } },
-                                { "a:moveTo": [{ "a:pos": { _attr: { x: "0", y: "10000000" } } }] },
+                                { "a:moveTo": [{ "a:pt": { _attr: { x: "0", y: "10000000" } } }] },
                                 {
                                     "a:lnTo": [
-                                        { "a:pos": { _attr: { x: "10000000", y: "10000000" } } },
+                                        { "a:pt": { _attr: { x: "10000000", y: "10000000" } } },
                                     ],
                                 },
                                 { "a:close": {} },
@@ -467,8 +467,8 @@ describe("createCustomGeometry", () => {
                     "a:pathLst": [
                         {
                             "a:path": [
-                                { "a:moveTo": [{ "a:pos": { _attr: { x: "w2", y: "0" } } }] },
-                                { "a:lnTo": [{ "a:pos": { _attr: { x: "10000000", y: "h2" } } }] },
+                                { "a:moveTo": [{ "a:pt": { _attr: { x: "w2", y: "0" } } }] },
+                                { "a:lnTo": [{ "a:pt": { _attr: { x: "10000000", y: "h2" } } }] },
                                 { "a:close": {} },
                             ],
                         },
