@@ -203,4 +203,75 @@ describe("createOutline", () => {
             ],
         });
     });
+
+    it("should create outline with gradient fill", () => {
+        const tree = new Formatter().format(
+            createOutline({
+                type: "gradFill",
+                gradientFill: {
+                    stops: [
+                        { position: 0, color: { value: "FF0000" } },
+                        { position: 100000, color: { value: "0000FF" } },
+                    ],
+                    shade: { angle: 5400000 },
+                },
+            }),
+        );
+        expect(tree).to.deep.equal({
+            "a:ln": [
+                { _attr: {} },
+                {
+                    "a:gradFill": [
+                        { _attr: {} },
+                        {
+                            "a:gsLst": [
+                                {
+                                    "a:gs": [
+                                        { _attr: { pos: 0 } },
+                                        { "a:srgbClr": { _attr: { val: "FF0000" } } },
+                                    ],
+                                },
+                                {
+                                    "a:gs": [
+                                        { _attr: { pos: 100000 } },
+                                        { "a:srgbClr": { _attr: { val: "0000FF" } } },
+                                    ],
+                                },
+                            ],
+                        },
+                        { "a:lin": { _attr: { ang: 5400000 } } },
+                    ],
+                },
+            ],
+        });
+    });
+
+    it("should create outline with pattern fill", () => {
+        const tree = new Formatter().format(
+            createOutline({
+                type: "pattFill",
+                patternFill: {
+                    pattern: "dkDnDiag",
+                    foregroundColor: { value: "FF0000" },
+                    backgroundColor: { value: "0000FF" },
+                },
+            }),
+        );
+        expect(tree).to.deep.equal({
+            "a:ln": [
+                { _attr: {} },
+                {
+                    "a:pattFill": [
+                        { _attr: { prst: "dkDnDiag" } },
+                        {
+                            "a:fgClr": [{ "a:srgbClr": { _attr: { val: "FF0000" } } }],
+                        },
+                        {
+                            "a:bgClr": [{ "a:srgbClr": { _attr: { val: "0000FF" } } }],
+                        },
+                    ],
+                },
+            ],
+        });
+    });
 });

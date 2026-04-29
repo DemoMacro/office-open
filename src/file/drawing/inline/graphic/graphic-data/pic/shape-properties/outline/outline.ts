@@ -11,6 +11,10 @@
 import { BuilderElement } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
 
+import { createGradientFill } from "../fill/gradient-fill";
+import type { GradientFillOptions } from "../fill/gradient-fill";
+import { createPatternFill } from "../fill/pattern-fill";
+import type { PatternFillOptions } from "../fill/pattern-fill";
 import { createCustomDash } from "./custom-dash";
 import type { DashStop } from "./custom-dash";
 import { createLineEnd } from "./line-end";
@@ -180,15 +184,20 @@ export interface OutlineAttributes {
 }
 
 /**
- * Fill properties for outline.
+ * Fill properties for outline (EG_LineFillProperties).
  *
- * Both `type` and `color` are optional — OOXML allows `a:ln` without any fill child.
+ * Supports noFill, solidFill, gradFill, and pattFill per XSD.
+ * blipFill and grpFill are not applicable to lines.
  */
 export interface OutlineFillProperties {
     /** Fill type */
-    readonly type?: "noFill" | "solidFill";
+    readonly type?: "noFill" | "solidFill" | "gradFill" | "pattFill";
     /** Color definition (required when type is "solidFill") */
     readonly color?: SolidFillOptions;
+    /** Gradient fill options (required when type is "gradFill") */
+    readonly gradientFill?: GradientFillOptions;
+    /** Pattern fill options (required when type is "pattFill") */
+    readonly patternFill?: PatternFillOptions;
 }
 
 /**
@@ -209,6 +218,12 @@ const createOutlineFill = (options: OutlineOptions): XmlComponent | null => {
     }
     if (options.type === "solidFill" && options.color) {
         return createSolidFill(options.color);
+    }
+    if (options.type === "gradFill" && options.gradientFill) {
+        return createGradientFill(options.gradientFill);
+    }
+    if (options.type === "pattFill" && options.patternFill) {
+        return createPatternFill(options.patternFill);
     }
     return null;
 };
