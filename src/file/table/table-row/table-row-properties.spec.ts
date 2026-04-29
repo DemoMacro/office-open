@@ -151,9 +151,7 @@ describe("TableRowProperties", () => {
             });
             const tree = new Formatter().format(rowProperties);
             expect(tree).to.deep.equal({
-                "w:trPr": [
-                    { "w:cnfStyle": { _attr: { "w:val": "1000000000000010" } } },
-                ],
+                "w:trPr": [{ "w:cnfStyle": { _attr: { "w:val": "1000000000000010" } } }],
             });
         });
 

@@ -113,6 +113,61 @@ const table3 = new Table({
     ],
 });
 
+// Table with new properties: row cnfStyle, gridBefore/gridAfter, rowAlignment,
+// cell noWrap, fitText, horizontalMerge, headers
+const table4 = new Table({
+    styleRowBandSize: 3,
+    styleColBandSize: 2,
+    caption: "Sales Report",
+    description: "Quarterly sales data",
+    rows: [
+        new TableRow({
+            cnfStyle: { val: "1000000000000010" },
+            gridBefore: 1,
+            gridAfter: 0,
+            rowAlignment: "center" as const,
+            children: [
+                new TableCell({
+                    children: [new Paragraph("Header A")],
+                    noWrap: true,
+                    fitText: true,
+                }),
+                new TableCell({
+                    children: [new Paragraph("Header B")],
+                    noWrap: true,
+                    fitText: true,
+                }),
+            ],
+        }),
+        new TableRow({
+            widthBefore: { size: 100, type: WidthType.DXA },
+            widthAfter: { size: 100, type: WidthType.DXA },
+            children: [
+                new TableCell({
+                    children: [new Paragraph("Cell with long text that should not wrap")],
+                    noWrap: true,
+                }),
+                new TableCell({
+                    children: [new Paragraph("Normal cell")],
+                    horizontalMerge: "continue",
+                }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph("Restart merge")],
+                    horizontalMerge: "restart",
+                }),
+                new TableCell({
+                    children: [new Paragraph("Continued")],
+                    horizontalMerge: "continue",
+                }),
+            ],
+        }),
+    ],
+});
+
 const doc = new Document({
     sections: [
         {
@@ -123,6 +178,10 @@ const doc = new Document({
                 table2,
                 new Paragraph({ text: "Table without setting widths" }),
                 table3,
+                new Paragraph({
+                    text: "Table with new properties (cnfStyle, gridBefore/After, noWrap, fitText, horizontalMerge, caption, description)",
+                }),
+                table4,
             ],
         },
     ],

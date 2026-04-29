@@ -43,7 +43,7 @@ describe("StructuredDocumentTagBlock", () => {
         );
         expect(tree).to.deep.equal({
             "w:sdt": [
-                { "w:sdtPr": [{ "w:text": {} }] },
+                { "w:sdtPr": [{ "w:text": { _attr: { "w:multiLine": false } } }] },
                 {
                     "w:sdtContent": [
                         {
@@ -67,7 +67,7 @@ describe("StructuredDocumentTagBlock", () => {
             }),
         );
         expect(tree).to.deep.equal({
-            "w:sdt": [{ "w:sdtPr": [{ "w:text": {} }] }],
+            "w:sdt": [{ "w:sdtPr": [{ "w:text": { _attr: { "w:multiLine": false } } }] }],
         });
     });
 });

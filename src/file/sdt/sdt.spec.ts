@@ -15,7 +15,10 @@ describe("StructuredDocumentTagRun", () => {
         expect(tree).to.deep.equal({
             "w:sdt": [
                 {
-                    "w:sdtPr": [{ "w:alias": { _attr: { "w:val": "Name" } } }, { "w:text": {} }],
+                    "w:sdtPr": [
+                        { "w:alias": { _attr: { "w:val": "Name" } } },
+                        { "w:text": { _attr: { "w:multiLine": false } } },
+                    ],
                 },
             ],
         });
@@ -93,8 +96,16 @@ describe("StructuredDocumentTagRun", () => {
                     "w:sdtPr": [
                         {
                             "w:dropDownList": [
-                                { "w:listItem": { _attr: { "w:displayText": "Yes", "w:value": "Yes" } } },
-                                { "w:listItem": { _attr: { "w:displayText": "No", "w:value": "No" } } },
+                                {
+                                    "w:listItem": {
+                                        _attr: { "w:displayText": "Yes", "w:value": "Yes" },
+                                    },
+                                },
+                                {
+                                    "w:listItem": {
+                                        _attr: { "w:displayText": "No", "w:value": "No" },
+                                    },
+                                },
                             ],
                         },
                     ],
@@ -191,7 +202,7 @@ describe("StructuredDocumentTagRun", () => {
                         { "w:showingPlcHdr": {} },
                         { "w:label": { _attr: { "w:val": 1 } } },
                         { "w:tabIndex": { _attr: { "w:val": 5 } } },
-                        { "w:text": {} },
+                        { "w:text": { _attr: { "w:multiLine": false } } },
                     ],
                 },
             ],
@@ -224,7 +235,7 @@ describe("StructuredDocumentTagRun", () => {
                                 },
                             },
                         },
-                        { "w:text": {} },
+                        { "w:text": { _attr: { "w:multiLine": false } } },
                     ],
                 },
             ],
@@ -298,7 +309,7 @@ describe("StructuredDocumentTagRun", () => {
         );
         expect(tree).to.deep.equal({
             "w:sdt": [
-                { "w:sdtPr": [{ "w:text": {} }] },
+                { "w:sdtPr": [{ "w:text": { _attr: { "w:multiLine": false } } }] },
                 {
                     "w:sdtContent": [{ "w:r": [{ "w:t": {} }] }],
                 },
@@ -351,7 +362,8 @@ describe("StructuredDocumentTagRun", () => {
                     "w:sdtPr": [
                         { "w:alias": { _attr: { "w:val": "Title" } } },
                         { "w:placeholder": [{ "w:p": [{ "w:r": [{ "w:t": {} }] }] }] },
-                        { "w:text": {} },
+                        { "w:showingPlcHdr": {} },
+                        { "w:text": { _attr: { "w:multiLine": false } } },
                     ],
                 },
             ],

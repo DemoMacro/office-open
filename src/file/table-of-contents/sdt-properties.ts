@@ -472,8 +472,12 @@ export class StructuredDocumentTagProperties extends XmlComponent {
         if (options.temporary !== undefined) {
             this.root.push(new OnOffElement("w:temporary", options.temporary));
         }
-        if (options.showingPlaceholder !== undefined) {
-            this.root.push(new OnOffElement("w:showingPlcHdr", options.showingPlaceholder));
+        // When placeholder has content, showingPlcHdr must be true for Word to render correctly
+        const effectiveShowingPlcHdr =
+            options.showingPlaceholder ??
+            (options.placeholder !== undefined && options.placeholder.length > 0);
+        if (options.showingPlaceholder !== undefined || effectiveShowingPlcHdr) {
+            this.root.push(new OnOffElement("w:showingPlcHdr", effectiveShowingPlcHdr));
         }
         if (options.dataBinding) {
             this.root.push(createDataBinding(options.dataBinding));
@@ -519,11 +523,15 @@ export class StructuredDocumentTagProperties extends XmlComponent {
             > = {};
             if (options.text.multiLine !== undefined) {
                 textAttrs.multiLine = { key: "w:multiLine", value: options.text.multiLine };
+            } else {
+                // Word requires at least one attribute on w:text when showingPlcHdr is true;
+                // explicitly emit the default to avoid generating an empty <w:text/> element
+                textAttrs.multiLine = { key: "w:multiLine", value: false };
             }
             this.root.push(
                 new BuilderElement({
                     name: "w:text",
-                    attributes: Object.keys(textAttrs).length > 0 ? textAttrs : undefined,
+                    attributes: textAttrs,
                 }),
             );
         } else if (options.citation) {
