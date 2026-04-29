@@ -11,6 +11,8 @@ import { XmlComponent } from "@file/xml-components";
 
 import type { MathComponent } from "../math-component";
 import { MathDenominator } from "./math-denominator";
+import { createMathFractionProperties } from "./math-fraction-properties";
+import type { MathFractionPropertiesOptions } from "./math-fraction-properties";
 import { MathNumerator } from "./math-numerator";
 
 /**
@@ -23,6 +25,8 @@ export interface IMathFractionOptions {
     readonly numerator: readonly MathComponent[];
     /** Math components for the denominator (bottom) of the fraction */
     readonly denominator: readonly MathComponent[];
+    /** Fraction type (bar, skewed, linear, or no bar) */
+    readonly fractionType?: MathFractionPropertiesOptions["fractionType"];
 }
 
 /**
@@ -57,6 +61,9 @@ export class MathFraction extends XmlComponent {
     public constructor(options: IMathFractionOptions) {
         super("m:f");
 
+        if (options.fractionType) {
+            this.root.push(createMathFractionProperties({ fractionType: options.fractionType }));
+        }
         this.root.push(new MathNumerator(options.numerator));
         this.root.push(new MathDenominator(options.denominator));
     }
