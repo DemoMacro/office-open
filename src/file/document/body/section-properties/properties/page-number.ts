@@ -40,7 +40,7 @@ export const PageNumberSeparator = {
     /** Em dash separator (—) */
     EM_DASH: "emDash",
     /** En dash separator (–) */
-    EN_DASH: "endash",
+    EN_DASH: "enDash",
 } as const;
 
 /**
