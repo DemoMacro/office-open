@@ -35,4 +35,5 @@ export * from "./checkbox";
 export * from "./sdt";
 export * from "./fonts";
 export * from "./textbox";
+export * from "./bibliography";
 export { type IPropertiesOptions } from "./core-properties";

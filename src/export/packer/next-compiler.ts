@@ -76,6 +76,8 @@ interface IXmlifyedFileMapping {
     readonly FontTable?: IXmlifyedFile;
     /** Font table relationships (word/_rels/fontTable.xml.rels) */
     readonly FontTableRelationships?: IXmlifyedFile;
+    /** Bibliography content (word/bibliography.xml) */
+    readonly Bibliography?: IXmlifyedFile;
 }
 
 /**
@@ -700,6 +702,30 @@ export class Compiler {
                 })(),
                 path: "word/styles.xml",
             },
+            ...(file.Bibliography
+                ? {
+                      Bibliography: {
+                          data: xml(
+                              this.formatter.format(file.Bibliography, {
+                                  file,
+                                  stack: [],
+                                  viewWrapper: {
+                                      Relationships: file.Bibliography.Relationships,
+                                      View: file.Bibliography,
+                                  },
+                              }),
+                              {
+                                  declaration: {
+                                      encoding: "UTF-8",
+                                      standalone: "yes",
+                                  },
+                                  indent: prettify,
+                              },
+                          ),
+                          path: "word/bibliography.xml",
+                      },
+                  }
+                : {}),
         };
     }
 }
