@@ -46,6 +46,7 @@
 import { ChangeAttributes } from "@file/track-revision/track-revision";
 import type { IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import {
+    BuilderElement,
     IgnoreIfEmptyXmlComponent,
     OnOffElement,
     StringValueElement,
@@ -84,6 +85,14 @@ export interface ITablePropertiesOptionsBase {
     readonly visuallyRightToLeft?: boolean;
     readonly tableLook?: ITableLookOptions;
     readonly cellSpacing?: ITableCellSpacingProperties;
+    /** Number of rows in each band for table style (tblStyleRowBandSize) */
+    readonly styleRowBandSize?: number;
+    /** Number of columns in each band for table style (tblStyleColBandSize) */
+    readonly styleColBandSize?: number;
+    /** Table caption for accessibility (tblCaption) */
+    readonly caption?: string;
+    /** Table description for accessibility (tblDescription) */
+    readonly description?: string;
 }
 
 export type ITablePropertiesChangeOptions = ITablePropertiesOptions & IChangedAttributesProperties;
@@ -120,6 +129,24 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.visuallyRightToLeft !== undefined) {
             this.root.push(new OnOffElement("w:bidiVisual", options.visuallyRightToLeft));
+        }
+
+        if (options.styleRowBandSize !== undefined) {
+            this.root.push(
+                new BuilderElement<{ readonly val: number }>({
+                    name: "w:tblStyleRowBandSize",
+                    attributes: { val: { key: "w:val", value: options.styleRowBandSize } },
+                }),
+            );
+        }
+
+        if (options.styleColBandSize !== undefined) {
+            this.root.push(
+                new BuilderElement<{ readonly val: number }>({
+                    name: "w:tblStyleColBandSize",
+                    attributes: { val: { key: "w:val", value: options.styleColBandSize } },
+                }),
+            );
         }
 
         if (options.width) {
@@ -159,6 +186,14 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.cellSpacing) {
             this.root.push(createTableCellSpacing(options.cellSpacing));
+        }
+
+        if (options.caption !== undefined) {
+            this.root.push(new StringValueElement("w:tblCaption", options.caption));
+        }
+
+        if (options.description !== undefined) {
+            this.root.push(new StringValueElement("w:tblDescription", options.description));
         }
 
         if (options.revision) {
