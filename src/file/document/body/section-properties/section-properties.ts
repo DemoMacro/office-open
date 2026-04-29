@@ -148,6 +148,8 @@ export interface ISectionPropertiesOptionsBase {
     readonly footnotePr?: FootnotePropertiesOptions;
     /** Endnote properties for the section */
     readonly endnotePr?: EndnotePropertiesOptions;
+    /** Printer settings reference ID */
+    readonly printerSettingsId?: string;
 }
 
 export type ISectionPropertiesChangeOptions = IChangedAttributesProperties &
@@ -310,6 +312,7 @@ export class SectionProperties extends XmlComponent {
         paperSrc,
         footnotePr,
         endnotePr,
+        printerSettingsId,
     }: ISectionPropertiesOptions = {}) {
         super("w:sectPr");
 
@@ -399,6 +402,15 @@ export class SectionProperties extends XmlComponent {
 
         if (endnotePr) {
             this.root.push(createEndnoteProperties(endnotePr));
+        }
+
+        if (printerSettingsId !== undefined) {
+            this.root.push(
+                new BuilderElement({
+                    attributes: { id: { key: "r:id", value: printerSettingsId } },
+                    name: "w:printerSettings",
+                }),
+            );
         }
 
         this.root.push(createDocumentGrid({ charSpace, linePitch, type: gridType }));
