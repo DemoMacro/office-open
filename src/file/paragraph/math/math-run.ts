@@ -9,7 +9,20 @@
  */
 import { XmlComponent } from "@file/xml-components";
 
+import { createMathRunProperties, type MathRunPropertiesOptions } from "./math-run-properties";
 import { MathText } from "./math-text";
+
+/**
+ * Options for creating a math run.
+ *
+ * @see {@link MathRun}
+ */
+export interface MathRunOptions {
+    /** The text content */
+    readonly text: string;
+    /** Optional run properties */
+    readonly properties?: MathRunPropertiesOptions;
+}
 
 /**
  * Represents a run of text within a math equation.
@@ -37,13 +50,23 @@ import { MathText } from "./math-text";
  *
  * @example
  * ```typescript
+ * // Simple text
  * new MathRun("x + y");
+ *
+ * // With properties
+ * new MathRun({ text: "x", properties: { script: "fraktur", style: "b" } });
  * ```
  */
 export class MathRun extends XmlComponent {
-    public constructor(text: string) {
+    public constructor(textOrOptions: string | MathRunOptions) {
         super("m:r");
 
-        this.root.push(new MathText(text));
+        const options = typeof textOrOptions === "string" ? { text: textOrOptions } : textOrOptions;
+
+        if (options.properties) {
+            this.root.push(createMathRunProperties(options.properties));
+        }
+
+        this.root.push(new MathText(options.text));
     }
 }

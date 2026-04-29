@@ -13,4 +13,6 @@ export * from "./math-integral";
 export * from "./math-super-script";
 export * from "./math-limit";
 export * from "./math-limit-upper";
+export * from "./math-limit-upper-properties";
 export * from "./math-limit-lower";
+export * from "./math-limit-low-properties";

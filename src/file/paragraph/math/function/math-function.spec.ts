@@ -16,6 +16,42 @@ describe("MathFunction", () => {
             expect(tree).to.deep.equal({
                 "m:func": [
                     {
+                        "m:fName": [
+                            {
+                                "m:r": [
+                                    {
+                                        "m:t": ["sin"],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        "m:e": [
+                            {
+                                "m:r": [
+                                    {
+                                        "m:t": ["60"],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("should create a MathFunction with properties", () => {
+            const mathFunction = new MathFunction({
+                properties: {},
+                children: [new MathRun("60")],
+                name: [new MathRun("sin")],
+            });
+
+            const tree = new Formatter().format(mathFunction);
+            expect(tree).to.deep.equal({
+                "m:func": [
+                    {
                         "m:funcPr": {},
                     },
                     {

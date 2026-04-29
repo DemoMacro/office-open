@@ -1,9 +1,9 @@
 /**
- * Math Function Properties module for Office MathML.
+ * Math Upper Limit Properties module for Office MathML.
  *
- * This module provides properties for function structures in math equations.
+ * This module provides properties for upper limit structures (CT_LimUppPr).
  *
- * Reference: http://www.datypic.com/sc/ooxml/e-m_funcPr-1.html
+ * Reference: http://www.datypic.com/sc/ooxml/e-m_limUppPr-1.html
  *
  * @module
  */
@@ -16,34 +16,33 @@ import {
 } from "../math-control-properties";
 
 /**
- * Options for math function properties.
+ * Options for math upper limit properties.
  *
- * @see {@link createMathFunctionProperties}
+ * @see {@link createMathLimitUpperProperties}
  */
-export interface MathFunctionPropertiesOptions {
+export interface MathLimitUpperPropertiesOptions {
     /** Control properties (tracking changes) */
     readonly controlProperties?: MathControlPropertiesOptions;
 }
 
 /**
- * Creates properties for a math function structure (m:funcPr).
+ * Creates properties for an upper limit structure (m:limUppPr).
  *
- * This element specifies properties for the function object,
- * such as function name alignment and spacing.
+ * This element specifies properties for the upper limit object.
  *
- * Reference: http://www.datypic.com/sc/ooxml/e-m_funcPr-1.html
+ * Reference: http://www.datypic.com/sc/ooxml/e-m_limUppPr-1.html
  *
  * ## XSD Schema
  * ```xml
- * <xsd:complexType name="CT_FuncPr">
+ * <xsd:complexType name="CT_LimUppPr">
  *   <xsd:sequence>
  *     <xsd:element name="ctrlPr" type="CT_CtrlPr" minOccurs="0"/>
  *   </xsd:sequence>
  * </xsd:complexType>
  * ```
  */
-export const createMathFunctionProperties = (
-    options?: MathFunctionPropertiesOptions,
+export const createMathLimitUpperProperties = (
+    options?: MathLimitUpperPropertiesOptions,
 ): XmlComponent => {
     const children: XmlComponent[] = [];
 
@@ -53,6 +52,6 @@ export const createMathFunctionProperties = (
 
     return new BuilderElement({
         children,
-        name: "m:funcPr",
+        name: "m:limUppPr",
     });
 };
