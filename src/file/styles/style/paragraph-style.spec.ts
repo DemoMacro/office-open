@@ -977,9 +977,7 @@ describe("ParagraphStyle", () => {
                     },
                 });
                 const tree = new Formatter().format(style);
-                const pPr = tree["w:style"].find(
-                    (el: Record<string, unknown>) => "w:pPr" in el,
-                );
+                const pPr = tree["w:style"].find((el: Record<string, unknown>) => "w:pPr" in el);
                 expect(pPr).to.exist;
                 const pPrContent = pPr["w:pPr"];
                 expect(pPrContent).to.deep.include({

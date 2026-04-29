@@ -4,13 +4,13 @@ import type { XmlComponent } from "@file/xml-components";
 
 import { createEffectList } from "../pic/shape-properties/effects/effect-list";
 import type { EffectListOptions } from "../pic/shape-properties/effects/effect-list";
+import { createPatternFill } from "../pic/shape-properties/fill/pattern-fill";
+import type { PatternFillOptions } from "../pic/shape-properties/fill/pattern-fill";
 import { Extents } from "../pic/shape-properties/form/extents/extents";
 import { Offset } from "../pic/shape-properties/form/offset/off";
 import { createNoFill } from "../pic/shape-properties/outline/no-fill";
 import { createSolidFill } from "../pic/shape-properties/outline/solid-fill";
 import type { SolidFillOptions } from "../pic/shape-properties/outline/solid-fill";
-import { createPatternFill } from "../pic/shape-properties/fill/pattern-fill";
-import type { PatternFillOptions } from "../pic/shape-properties/fill/pattern-fill";
 
 export type GroupChild = XmlComponent;
 
