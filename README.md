@@ -46,13 +46,13 @@ Easily generate and modify .docx files with JS/TS. Works for Node and on the Bro
 | Math advanced           | Basic math only                                                            | **Complete** (box, borderBox, eqArr, groupChr, matrix, phant, accent, fraction, nAry, func, delim, bar, limLow, limUpp, sPre, sSub, sSup)         |
 | Group Shape             | Basic (transform only)                                                     | **Enhanced** (fill, effects, `chOff`/`chExt` child coordinates)                                                                                   |
 | Test environment        | jsdom                                                                      | happy-dom                                                                                                                                         |
-| OOXML compliance        | ECMA-376 (legacy)                                                          | **ISO/IEC 29500-4** (latest) — comprehensive WordprocessingML, DrawingML, and Shared Math coverage; see scope notes below                    |
+| OOXML compliance        | ECMA-376 (legacy)                                                          | **ISO/IEC 29500-4** (latest) — comprehensive WordprocessingML, DrawingML, and Shared Math coverage; see scope notes below                         |
 
 ## OOXML Coverage
 
 **docx-plus** provides comprehensive coverage of the WordprocessingML, DrawingML, and Shared Math specifications within ISO/IEC 29500-4. This includes:
 
-- **WordprocessingML**: paragraphs, runs, tables (full row/cell/table properties), sections, headers/footers, footnotes/endnotes, table of contents, numbering/lists, styles, bookmarks, hyperlinks, SDT content controls, form fields, track changes, math equations, ruby annotations, and more
+- **WordprocessingML**: paragraphs, runs, tables (full row/cell/table properties), sections, headers/footers, footnotes/endnotes, table of contents, numbering/lists, styles, bookmarks, hyperlinks, SDT content controls, form fields, track changes, comments, bibliography sources, math equations, ruby annotations, and more
 - **DrawingML**: shapes, images, text bodies, colors (all 6 color types + 29 transforms), fills (solid, gradient, pattern, group), outlines, effects (28 types with recursive containers), 3D scenes, custom geometry, and image adjustments
 - **Shared Math**: all equation structures (fraction, radical, n-ary, integrals, matrices, accents, delimiters, etc.)
 
@@ -60,8 +60,8 @@ Easily generate and modify .docx files with JS/TS. Works for Node and on the Bro
 
 - **SmartArt** (`dgm:`) — graphical diagram engine
 - **Charts** (`c:`) — native OOXML charting (typically handled by charting libraries)
-- **Comments** — document annotations
-- **Bibliography** — citation management
+- **Mail Merge** — field codes are supported, but external data source connections are not
+- **Cover Pages** — `docPartObj` SDT is supported, but Building Blocks part references require template files
 
 ## Installation
 
