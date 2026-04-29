@@ -14,7 +14,7 @@ import { ChangeAttributes } from "@file/track-revision/track-revision";
 import type { IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { createVerticalAlign } from "@file/vertical-align";
 import type { TableVerticalAlign } from "@file/vertical-align";
-import { IgnoreIfEmptyXmlComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, IgnoreIfEmptyXmlComponent, OnOffElement, XmlComponent } from "@file/xml-components";
 
 import { createShading } from "../../shading";
 import type { IShadingAttributesProperties } from "../../shading";
@@ -22,6 +22,7 @@ import { createCellMargin } from "../table-properties/table-cell-margin";
 import type { ITableCellMarginOptions } from "../table-properties/table-cell-margin";
 import { createTableWidthElement } from "../table-width";
 import type { ITableWidthProperties } from "../table-width";
+import type { CnfStyleOptions } from "../table-row/table-row-properties";
 import {
     GridSpan,
     TDirection,
@@ -32,6 +33,8 @@ import {
 import type { ITableCellBorders, TextDirection } from "./table-cell-components";
 
 export interface ITableCellPropertiesOptionsBase {
+    /** Conditional formatting style (cnfStyle) */
+    readonly cnfStyle?: CnfStyleOptions;
     /** Shading (background color/pattern) for the cell */
     readonly shading?: IShadingAttributesProperties;
     /** Cell margins (padding) for the cell content */
@@ -50,6 +53,16 @@ export interface ITableCellPropertiesOptionsBase {
     readonly rowSpan?: number;
     /** Border settings for the cell edges */
     readonly borders?: ITableCellBorders;
+    /** Horizontal merge setting (hMerge) */
+    readonly horizontalMerge?: "continue" | "restart";
+    /** Whether the cell content does not wrap (noWrap) */
+    readonly noWrap?: boolean;
+    /** Whether text is auto-fit to cell width (tcFitText) */
+    readonly fitText?: boolean;
+    /** Whether the cell end mark is hidden (hideMark) */
+    readonly hideMark?: boolean;
+    /** Header cells associated with this cell (headers) */
+    readonly headers?: string[];
     readonly insertion?: IChangedAttributesProperties;
     readonly deletion?: IChangedAttributesProperties;
     readonly cellMerge?: ICellMergeAttributes;
@@ -151,6 +164,16 @@ export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
     public constructor(options: ITableCellPropertiesOptions) {
         super("w:tcPr", options.includeIfEmpty);
 
+        if (options.cnfStyle !== undefined) {
+            const attrs: Record<string, { readonly key: string; readonly value: string | boolean }> = {
+                val: { key: "w:val", value: options.cnfStyle.val },
+            };
+            if (options.cnfStyle.changed !== undefined) {
+                attrs.changed = { key: "w:changed", value: options.cnfStyle.changed };
+            }
+            this.root.push(new BuilderElement({ name: "w:cnfStyle", attributes: attrs }));
+        }
+
         if (options.width) {
             this.root.push(createTableWidthElement("w:tcW", options.width));
         }
@@ -187,6 +210,42 @@ export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.verticalAlign) {
             this.root.push(createVerticalAlign(options.verticalAlign));
+        }
+
+        if (options.horizontalMerge !== undefined) {
+            const attrs: Record<string, { readonly key: string; readonly value: string }> = {};
+            if (options.horizontalMerge === "restart") {
+                attrs.val = { key: "w:val", value: "restart" };
+            }
+            this.root.push(
+                new BuilderElement({
+                    name: "w:hMerge",
+                    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
+                }),
+            );
+        }
+
+        if (options.noWrap !== undefined) {
+            this.root.push(new OnOffElement("w:noWrap", options.noWrap));
+        }
+
+        if (options.fitText !== undefined) {
+            this.root.push(new OnOffElement("w:tcFitText", options.fitText));
+        }
+
+        if (options.hideMark !== undefined) {
+            this.root.push(new OnOffElement("w:hideMark", options.hideMark));
+        }
+
+        if (options.headers !== undefined) {
+            const children = options.headers.map(
+                (h) =>
+                    new BuilderElement<{ readonly val: string }>({
+                        name: "w:header",
+                        attributes: { val: { key: "w:val", value: h } },
+                    }),
+            );
+            this.root.push(new BuilderElement({ name: "w:headers", children }));
         }
 
         if (options.insertion) {

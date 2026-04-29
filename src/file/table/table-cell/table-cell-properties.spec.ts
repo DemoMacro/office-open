@@ -226,5 +226,76 @@ describe("TableCellProperties", () => {
                 ],
             });
         });
+
+        it("adds cnfStyle with val", () => {
+            const properties = new TableCellProperties({
+                cnfStyle: { val: "1000000000000010" },
+            });
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal({
+                "w:tcPr": [{ "w:cnfStyle": { _attr: { "w:val": "1000000000000010" } } }],
+            });
+        });
+
+        it("adds horizontal merge continue (hMerge without val)", () => {
+            const properties = new TableCellProperties({
+                horizontalMerge: "continue",
+            });
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal({
+                "w:tcPr": [{ "w:hMerge": {} }],
+            });
+        });
+
+        it("adds horizontal merge restart (hMerge with val=restart)", () => {
+            const properties = new TableCellProperties({
+                horizontalMerge: "restart",
+            });
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal({
+                "w:tcPr": [{ "w:hMerge": { _attr: { "w:val": "restart" } } }],
+            });
+        });
+
+        it("adds noWrap", () => {
+            const properties = new TableCellProperties({ noWrap: true });
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal({
+                "w:tcPr": [{ "w:noWrap": {} }],
+            });
+        });
+
+        it("adds tcFitText", () => {
+            const properties = new TableCellProperties({ fitText: true });
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal({
+                "w:tcPr": [{ "w:tcFitText": {} }],
+            });
+        });
+
+        it("adds hideMark", () => {
+            const properties = new TableCellProperties({ hideMark: true });
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal({
+                "w:tcPr": [{ "w:hideMark": {} }],
+            });
+        });
+
+        it("adds headers", () => {
+            const properties = new TableCellProperties({
+                headers: ["a1", "b2"],
+            });
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal({
+                "w:tcPr": [
+                    {
+                        "w:headers": [
+                            { "w:header": { _attr: { "w:val": "a1" } } },
+                            { "w:header": { _attr: { "w:val": "b2" } } },
+                        ],
+                    },
+                ],
+            });
+        });
     });
 });
