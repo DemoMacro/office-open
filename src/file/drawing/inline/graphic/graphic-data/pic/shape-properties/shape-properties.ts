@@ -26,6 +26,7 @@ import type { OutlineOptions } from "./outline/outline";
 import { createSolidFill } from "./outline/solid-fill";
 import type { SolidFillOptions } from "./outline/solid-fill";
 import { PresetGeometry } from "./preset-geometry/preset-geometry";
+import type { PresetGeometryOptions } from "./preset-geometry/preset-geometry";
 import { ShapePropertiesAttributes } from "./shape-properties-attributes";
 import { createShape3D } from "./three-d/shape-3d";
 import type { Shape3DOptions } from "./three-d/shape-3d";
@@ -76,6 +77,7 @@ export class ShapeProperties extends XmlComponent {
         noFill,
         outline,
         patternFill,
+        presetGeometry,
         shape3d,
         solidFill,
         transform,
@@ -87,6 +89,7 @@ export class ShapeProperties extends XmlComponent {
         readonly patternFill?: PatternFillOptions;
         readonly groupFill?: boolean;
         readonly noFill?: boolean;
+        readonly presetGeometry?: PresetGeometryOptions;
         readonly effects?: EffectListOptions;
         readonly shape3d?: Shape3DOptions;
         readonly transform: IMediaDataTransformation;
@@ -102,7 +105,7 @@ export class ShapeProperties extends XmlComponent {
         this.form = new Form(transform);
 
         this.root.push(this.form);
-        this.root.push(new PresetGeometry());
+        this.root.push(new PresetGeometry(presetGeometry));
 
         if (noFill) {
             this.root.push(createNoFill());
