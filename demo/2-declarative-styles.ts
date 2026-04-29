@@ -164,7 +164,6 @@ const doc = new Document({
                             text: "Scaled paragraph",
                         }),
                     ],
-                    scale: 200,
                 }),
             ],
         },

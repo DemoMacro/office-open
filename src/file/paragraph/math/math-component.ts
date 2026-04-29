@@ -6,16 +6,22 @@
  *
  * @module
  */
+import type { MathBorderBox } from "./border-box";
+import type { MathBox } from "./box";
 import type {
     MathAngledBrackets,
     MathCurlyBrackets,
     MathRoundBrackets,
     MathSquareBrackets,
 } from "./brackets";
+import type { MathEqArr } from "./eq-arr";
 import type { MathFraction } from "./fraction";
 import type { MathFunction } from "./function";
+import type { MathGroupChr } from "./group-chr";
 import type { MathRun } from "./math-run";
+import type { MathMatrix } from "./matrix";
 import type { MathIntegral, MathSum } from "./n-ary";
+import type { MathPhant } from "./phant";
 import type { MathRadical } from "./radical";
 import type { MathSubScript, MathSubSuperScript, MathSuperScript } from "./script";
 
@@ -23,7 +29,8 @@ import type { MathSubScript, MathSubSuperScript, MathSuperScript } from "./scrip
  * Union type of all valid math components.
  *
  * MathComponent represents any element that can appear within a Math equation,
- * including runs, fractions, radicals, integrals, sums, scripts, and brackets.
+ * including runs, fractions, radicals, integrals, sums, scripts, brackets,
+ * boxes, matrices, and more.
  */
 export type MathComponent =
     | MathRun
@@ -38,7 +45,13 @@ export type MathComponent =
     | MathRoundBrackets
     | MathCurlyBrackets
     | MathAngledBrackets
-    | MathSquareBrackets;
+    | MathSquareBrackets
+    | MathBox
+    | MathBorderBox
+    | MathEqArr
+    | MathGroupChr
+    | MathMatrix
+    | MathPhant;
 
 // Needed because of: https://github.com/s-panferov/awesome-typescript-loader/issues/432
 /**
