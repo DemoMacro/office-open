@@ -24,7 +24,9 @@ export interface IIndentAttributesProperties {
     readonly end?: number | UniversalMeasure;
     readonly endChars?: number;
     readonly left?: number | UniversalMeasure;
+    readonly leftChars?: number;
     readonly right?: number | UniversalMeasure;
+    readonly rightChars?: number;
     readonly hanging?: number | PositiveUniversalMeasure;
     readonly hangingChars?: number;
     readonly firstLine?: number | PositiveUniversalMeasure;
@@ -62,7 +64,9 @@ export const createIndent = ({
     end,
     endChars,
     left,
+    leftChars,
     right,
+    rightChars,
     hanging,
     hangingChars,
     firstLine,
@@ -98,9 +102,17 @@ export const createIndent = ({
                 key: "w:left",
                 value: left === undefined ? undefined : signedTwipsMeasureValue(left),
             },
+            leftChars: {
+                key: "w:leftChars",
+                value: leftChars === undefined ? undefined : decimalNumber(leftChars),
+            },
             right: {
                 key: "w:right",
                 value: right === undefined ? undefined : signedTwipsMeasureValue(right),
+            },
+            rightChars: {
+                key: "w:rightChars",
+                value: rightChars === undefined ? undefined : decimalNumber(rightChars),
             },
             start: {
                 key: "w:start",
