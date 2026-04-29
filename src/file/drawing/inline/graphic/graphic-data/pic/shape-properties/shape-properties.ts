@@ -12,6 +12,8 @@
 import type { IMediaDataTransformation } from "@file/media";
 import { XmlComponent } from "@file/xml-components";
 
+import { createCustomGeometry } from "./custom-geometry/custom-geometry";
+import type { CustomGeometryOptions } from "./custom-geometry/custom-geometry";
 import { createEffectList } from "./effects/effect-list";
 import type { EffectListOptions } from "./effects/effect-list";
 import { createGradientFill } from "./fill/gradient-fill";
@@ -71,6 +73,7 @@ export class ShapeProperties extends XmlComponent {
 
     public constructor({
         element,
+        customGeometry,
         effects,
         gradientFill,
         groupFill,
@@ -90,6 +93,8 @@ export class ShapeProperties extends XmlComponent {
         readonly groupFill?: boolean;
         readonly noFill?: boolean;
         readonly presetGeometry?: PresetGeometryOptions;
+        /** Custom geometry (mutually exclusive with presetGeometry). */
+        readonly customGeometry?: CustomGeometryOptions;
         readonly effects?: EffectListOptions;
         readonly shape3d?: Shape3DOptions;
         readonly transform: IMediaDataTransformation;
@@ -105,7 +110,13 @@ export class ShapeProperties extends XmlComponent {
         this.form = new Form(transform);
 
         this.root.push(this.form);
-        this.root.push(new PresetGeometry(presetGeometry));
+
+        // EG_Geometry: custGeom and prstGeom are mutually exclusive
+        if (customGeometry) {
+            this.root.push(createCustomGeometry(customGeometry));
+        } else {
+            this.root.push(new PresetGeometry(presetGeometry));
+        }
 
         if (noFill) {
             this.root.push(createNoFill());
