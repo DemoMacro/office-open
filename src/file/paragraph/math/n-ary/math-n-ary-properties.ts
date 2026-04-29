@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { BuilderElement } from "@file/xml-components";
+import { BuilderElement, OnOffElement } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
 
 import { createMathAccentCharacter } from "./math-accent-character";
@@ -17,8 +17,10 @@ import { createMathSuperScriptHide } from "./math-super-script-hide";
 
 /**
  * Options for creating n-ary properties.
+ *
+ * @see {@link createMathNAryProperties}
  */
-interface MathNAryPropertiesOptions {
+export interface MathNAryPropertiesOptions {
     /** The n-ary operator character (e.g., "∑" for sum, "∫" for integral) */
     readonly accent: string;
     /** Whether the n-ary has a superscript (upper limit) */
@@ -27,6 +29,8 @@ interface MathNAryPropertiesOptions {
     readonly hasSubScript: boolean;
     /** Location of limits: "undOvr" (under/over) or "subSup" (subscript/superscript) */
     readonly limitLocationVal?: string;
+    /** Whether the operator grows to match its content */
+    readonly grow?: boolean;
 }
 
 /**
@@ -56,13 +60,26 @@ export const createMathNAryProperties = ({
     hasSuperScript,
     hasSubScript,
     limitLocationVal,
-}: MathNAryPropertiesOptions): XmlComponent =>
-    new BuilderElement({
-        children: [
-            ...(accent ? [createMathAccentCharacter({ accent })] : []),
-            createMathLimitLocation({ value: limitLocationVal }),
-            ...(!hasSuperScript ? [createMathSuperScriptHide()] : []),
-            ...(!hasSubScript ? [createMathSubScriptHide()] : []),
-        ],
+    grow,
+}: MathNAryPropertiesOptions): XmlComponent => {
+    const children: XmlComponent[] = [];
+
+    if (accent) {
+        children.push(createMathAccentCharacter({ accent }));
+    }
+    children.push(createMathLimitLocation({ value: limitLocationVal }));
+    if (grow !== undefined) {
+        children.push(new OnOffElement("m:grow", grow));
+    }
+    if (!hasSuperScript) {
+        children.push(createMathSuperScriptHide());
+    }
+    if (!hasSubScript) {
+        children.push(createMathSubScriptHide());
+    }
+
+    return new BuilderElement({
+        children,
         name: "m:naryPr",
     });
+};

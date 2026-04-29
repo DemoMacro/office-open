@@ -7,8 +7,18 @@
  *
  * @module
  */
-import { BuilderElement } from "@file/xml-components";
+import { BuilderElement, OnOffElement } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
+
+/**
+ * Options for math sub-super-script properties.
+ *
+ * @see {@link createMathSubSuperScriptProperties}
+ */
+export interface MathSubSuperScriptPropertiesOptions {
+    /** Align scripts to the same vertical position */
+    readonly alignScripts?: boolean;
+}
 
 /**
  * Creates properties for a combined subscript and superscript structure.
@@ -21,13 +31,23 @@ import type { XmlComponent } from "@file/xml-components";
  * ```xml
  * <xsd:complexType name="CT_SSubSupPr">
  *   <xsd:sequence>
- *     <xsd:element name="alignScripts" type="CT_OnOff" minOccurs="0"/>
+ *     <xsd:element name="alnScr" type="CT_OnOff" minOccurs="0"/>
  *     <xsd:element name="ctrlPr" type="CT_CtrlPr" minOccurs="0"/>
  *   </xsd:sequence>
  * </xsd:complexType>
  * ```
  */
-export const createMathSubSuperScriptProperties = (): XmlComponent =>
-    new BuilderElement({
+export const createMathSubSuperScriptProperties = (
+    options?: MathSubSuperScriptPropertiesOptions,
+): XmlComponent => {
+    const children: XmlComponent[] = [];
+
+    if (options?.alignScripts !== undefined) {
+        children.push(new OnOffElement("m:alnScr", options.alignScripts));
+    }
+
+    return new BuilderElement({
+        children,
         name: "m:sSubSupPr",
     });
+};

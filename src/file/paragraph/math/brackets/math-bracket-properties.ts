@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { BuilderElement } from "@file/xml-components";
+import { BuilderElement, OnOffElement } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
 
 import { createMathBeginningCharacter } from "./math-beginning-character";
@@ -15,8 +15,10 @@ import { createMathEndingCharacter } from "./math-ending-char";
 
 /**
  * Options for creating math bracket properties.
+ *
+ * @see {@link createMathBracketProperties}
  */
-interface MathBracketPropertiesOptions {
+export interface MathBracketPropertiesOptions {
     /** Optional custom characters for bracket delimiters */
     readonly characters?: {
         /** The opening/beginning bracket character */
@@ -24,6 +26,12 @@ interface MathBracketPropertiesOptions {
         /** The closing/ending bracket character */
         readonly endingCharacter: string;
     };
+    /** Separator character for multiple arguments */
+    readonly separatorCharacter?: string;
+    /** Whether the delimiters grow to match their content */
+    readonly grow?: boolean;
+    /** Delimiter shape: "centered" or "match" */
+    readonly shape?: "centered" | "match";
 }
 
 /**
@@ -50,13 +58,40 @@ interface MathBracketPropertiesOptions {
  */
 export const createMathBracketProperties = ({
     characters,
-}: MathBracketPropertiesOptions): XmlComponent =>
-    new BuilderElement({
-        children: characters
-            ? [
-                  createMathBeginningCharacter({ character: characters.beginningCharacter }),
-                  createMathEndingCharacter({ character: characters.endingCharacter }),
-              ]
-            : [],
+    separatorCharacter,
+    grow,
+    shape,
+}: MathBracketPropertiesOptions): XmlComponent => {
+    const children: XmlComponent[] = [];
+
+    if (characters) {
+        children.push(createMathBeginningCharacter({ character: characters.beginningCharacter }));
+    }
+    if (separatorCharacter !== undefined) {
+        children.push(
+            new BuilderElement({
+                attributes: { val: { key: "m:val", value: separatorCharacter } },
+                name: "m:sepChr",
+            }),
+        );
+    }
+    if (characters) {
+        children.push(createMathEndingCharacter({ character: characters.endingCharacter }));
+    }
+    if (grow !== undefined) {
+        children.push(new OnOffElement("m:grow", grow));
+    }
+    if (shape !== undefined) {
+        children.push(
+            new BuilderElement({
+                attributes: { val: { key: "m:val", value: shape } },
+                name: "m:shp",
+            }),
+        );
+    }
+
+    return new BuilderElement({
+        children,
         name: "m:dPr",
     });
+};

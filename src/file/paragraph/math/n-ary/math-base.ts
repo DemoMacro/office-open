@@ -16,7 +16,7 @@ import type { MathComponent } from "../math-component";
 /**
  * Options for creating a math base element.
  */
-interface MathBaseOptions {
+export interface MathBaseOptions {
     /** The content of the base */
     readonly children: readonly MathComponent[];
 }

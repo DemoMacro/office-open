@@ -20,7 +20,7 @@ import type { MathFunction } from "./function";
 import type { MathGroupChr } from "./group-chr";
 import type { MathRun } from "./math-run";
 import type { MathMatrix } from "./matrix";
-import type { MathIntegral, MathSum } from "./n-ary";
+import type { MathIntegral, MathLimitLower, MathLimitUpper, MathSum } from "./n-ary";
 import type { MathPhant } from "./phant";
 import type { MathRadical } from "./radical";
 import type { MathSubScript, MathSubSuperScript, MathSuperScript } from "./script";
@@ -50,6 +50,8 @@ export type MathComponent =
     | MathBorderBox
     | MathEqArr
     | MathGroupChr
+    | MathLimitLower
+    | MathLimitUpper
     | MathMatrix
     | MathPhant;
 

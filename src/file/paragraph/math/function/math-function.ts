@@ -12,7 +12,10 @@ import { XmlComponent } from "@file/xml-components";
 import type { MathComponent } from "../math-component";
 import { createMathBase } from "../n-ary";
 import { MathFunctionName } from "./math-function-name";
-import { MathFunctionProperties } from "./math-function-properties";
+import {
+    createMathFunctionProperties,
+    type MathFunctionPropertiesOptions,
+} from "./math-function-properties";
 
 /**
  * Options for creating a MathFunction.
@@ -20,6 +23,8 @@ import { MathFunctionProperties } from "./math-function-properties";
  * @see {@link MathFunction}
  */
 export interface IMathFunctionOptions {
+    /** Properties for the function structure */
+    readonly properties?: MathFunctionPropertiesOptions;
     /** The function argument (e.g., the expression inside sin(...)) */
     readonly children: readonly MathComponent[];
     /** The function name (e.g., "sin", "cos", "log") */
@@ -60,7 +65,10 @@ export class MathFunction extends XmlComponent {
     public constructor(options: IMathFunctionOptions) {
         super("m:func");
 
-        this.root.push(new MathFunctionProperties());
+        if (options.properties) {
+            this.root.push(createMathFunctionProperties(options.properties));
+        }
+
         this.root.push(new MathFunctionName(options.name));
         this.root.push(createMathBase({ children: options.children }));
     }

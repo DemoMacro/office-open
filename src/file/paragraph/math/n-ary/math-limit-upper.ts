@@ -12,6 +12,10 @@ import { XmlComponent } from "@file/xml-components";
 import type { MathComponent } from "../math-component";
 import { createMathBase } from "./math-base";
 import { MathLimit } from "./math-limit";
+import {
+    createMathLimitUpperProperties,
+    type MathLimitUpperPropertiesOptions,
+} from "./math-limit-upper-properties";
 
 /**
  * Options for creating a MathLimitUpper.
@@ -19,6 +23,8 @@ import { MathLimit } from "./math-limit";
  * @see {@link MathLimitUpper}
  */
 export interface IMathLimitUpperOptions {
+    /** Properties for the upper limit structure */
+    readonly properties?: MathLimitUpperPropertiesOptions;
     /** The base expression */
     readonly children: readonly MathComponent[];
     /** The limit expression that appears above the base */
@@ -58,6 +64,10 @@ export interface IMathLimitUpperOptions {
 export class MathLimitUpper extends XmlComponent {
     public constructor(options: IMathLimitUpperOptions) {
         super("m:limUpp");
+
+        if (options.properties) {
+            this.root.push(createMathLimitUpperProperties(options.properties));
+        }
 
         this.root.push(createMathBase({ children: options.children }));
         this.root.push(new MathLimit(options.limit));
