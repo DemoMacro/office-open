@@ -12,6 +12,7 @@
  *
  * @module
  */
+import { FileChild } from "@file/file-child";
 import { XmlComponent } from "@file/xml-components";
 
 import {
@@ -114,7 +115,7 @@ export interface ISdtBlockOptions {
  * });
  * ```
  */
-export class StructuredDocumentTagBlock extends XmlComponent {
+export class StructuredDocumentTagBlock extends FileChild {
     public constructor(options: ISdtBlockOptions) {
         super("w:sdt");
         this.root.push(new StructuredDocumentTagProperties(options.properties));

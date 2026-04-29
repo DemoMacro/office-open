@@ -1,7 +1,14 @@
 // Demo: Structured Document Tags (SDT) - content controls
 import * as fs from "fs";
 
-import { Document, Packer, Paragraph, StructuredDocumentTagRun, TextRun } from "docx-plus";
+import {
+    Document,
+    Packer,
+    Paragraph,
+    StructuredDocumentTagBlock,
+    StructuredDocumentTagRun,
+    TextRun,
+} from "docx-plus";
 
 const doc = new Document({
     sections: [
@@ -128,6 +135,37 @@ const doc = new Document({
                                 },
                             },
                             children: [new TextRun("2026-04-29")],
+                        }),
+                    ],
+                }),
+
+                new Paragraph({ children: [new TextRun("")] }),
+
+                // Block-level SDT (section child)
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            bold: true,
+                            text: "6. Block-level SDT (section child)",
+                            size: 28,
+                        }),
+                    ],
+                    spacing: { after: 200 },
+                }),
+                new StructuredDocumentTagBlock({
+                    properties: {
+                        richText: true,
+                        alias: "BlockContent",
+                        tag: "block-content",
+                    },
+                    children: [
+                        new Paragraph({
+                            children: [new TextRun("This is a block-level content control.")],
+                        }),
+                        new Paragraph({
+                            children: [
+                                new TextRun("It can contain multiple paragraphs and tables."),
+                            ],
                         }),
                     ],
                 }),
