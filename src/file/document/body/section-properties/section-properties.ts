@@ -131,6 +131,8 @@ export interface ISectionPropertiesOptionsBase {
     readonly type?: (typeof SectionType)[keyof typeof SectionType];
     /** Whether to suppress endnotes in this section */
     readonly noEndnote?: boolean;
+    /** Whether form protection is enabled for this section */
+    readonly formProtection?: boolean;
     /** Whether text direction is right-to-left for this section */
     readonly bidi?: boolean;
     /** Whether gutter is on the right side for right-to-left sections */
@@ -302,6 +304,7 @@ export class SectionProperties extends XmlComponent {
         type,
         revision,
         noEndnote,
+        formProtection,
         bidi,
         rtlGutter,
         paperSrc,
@@ -352,6 +355,10 @@ export class SectionProperties extends XmlComponent {
 
         if (noEndnote !== undefined) {
             this.root.push(new OnOffElement("w:noEndnote", noEndnote));
+        }
+
+        if (formProtection !== undefined) {
+            this.root.push(new OnOffElement("w:formProt", formProtection));
         }
 
         if (bidi !== undefined) {
