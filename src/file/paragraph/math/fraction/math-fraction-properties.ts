@@ -59,7 +59,9 @@ export interface MathFractionPropertiesOptions {
  * </xsd:complexType>
  * ```
  */
-export const createMathFractionProperties = (options: MathFractionPropertiesOptions): XmlComponent => {
+export const createMathFractionProperties = (
+    options: MathFractionPropertiesOptions,
+): XmlComponent => {
     const children: XmlComponent[] = [];
 
     if (options.fractionType) {

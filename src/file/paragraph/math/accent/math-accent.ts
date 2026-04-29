@@ -53,7 +53,10 @@ export interface MathAccentOptions {
  * createMathAccent({ accentCharacter: "\u0307", children: [new MathRun("x")] });
  * ```
  */
-export const createMathAccent = ({ accentCharacter, children }: MathAccentOptions): XmlComponent => {
+export const createMathAccent = ({
+    accentCharacter,
+    children,
+}: MathAccentOptions): XmlComponent => {
     const accentProps = accentCharacter ? [createMathAccentProperties({ accentCharacter })] : [];
     return new BuilderElement({
         children: [...accentProps, createMathBase({ children })],
