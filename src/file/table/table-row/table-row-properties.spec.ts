@@ -1,8 +1,10 @@
 import { Formatter } from "@export/formatter";
+import { AlignmentType } from "@file/paragraph";
 import { HeightRule } from "@file/table/table-row/table-row-height";
 import { describe, expect, it } from "vite-plus/test";
 
 import { CellSpacingType } from "../table-cell-spacing";
+import { WidthType } from "../table-width";
 import { TableRowProperties } from "./table-row-properties";
 
 describe("TableRowProperties", () => {
@@ -140,6 +142,90 @@ describe("TableRowProperties", () => {
                         ],
                     },
                 ],
+            });
+        });
+
+        it("adds cnfStyle with val", () => {
+            const rowProperties = new TableRowProperties({
+                cnfStyle: { val: "1000000000000010" },
+            });
+            const tree = new Formatter().format(rowProperties);
+            expect(tree).to.deep.equal({
+                "w:trPr": [
+                    { "w:cnfStyle": { _attr: { "w:val": "1000000000000010" } } },
+                ],
+            });
+        });
+
+        it("adds cnfStyle with val and changed", () => {
+            const rowProperties = new TableRowProperties({
+                cnfStyle: { val: "1000000000000010", changed: true },
+            });
+            const tree = new Formatter().format(rowProperties);
+            expect(tree).to.deep.equal({
+                "w:trPr": [
+                    { "w:cnfStyle": { _attr: { "w:val": "1000000000000010", "w:changed": true } } },
+                ],
+            });
+        });
+
+        it("adds divId", () => {
+            const rowProperties = new TableRowProperties({ divId: 123 });
+            const tree = new Formatter().format(rowProperties);
+            expect(tree).to.deep.equal({
+                "w:trPr": [{ "w:divId": { _attr: { "w:val": 123 } } }],
+            });
+        });
+
+        it("adds gridBefore", () => {
+            const rowProperties = new TableRowProperties({ gridBefore: 2 });
+            const tree = new Formatter().format(rowProperties);
+            expect(tree).to.deep.equal({
+                "w:trPr": [{ "w:gridBefore": { _attr: { "w:val": 2 } } }],
+            });
+        });
+
+        it("adds gridAfter", () => {
+            const rowProperties = new TableRowProperties({ gridAfter: 1 });
+            const tree = new Formatter().format(rowProperties);
+            expect(tree).to.deep.equal({
+                "w:trPr": [{ "w:gridAfter": { _attr: { "w:val": 1 } } }],
+            });
+        });
+
+        it("adds wBefore", () => {
+            const rowProperties = new TableRowProperties({
+                widthBefore: { size: 200, type: WidthType.DXA },
+            });
+            const tree = new Formatter().format(rowProperties);
+            expect(tree).to.deep.equal({
+                "w:trPr": [{ "w:wBefore": { _attr: { "w:type": "dxa", "w:w": 200 } } }],
+            });
+        });
+
+        it("adds wAfter", () => {
+            const rowProperties = new TableRowProperties({
+                widthAfter: { size: 300, type: WidthType.DXA },
+            });
+            const tree = new Formatter().format(rowProperties);
+            expect(tree).to.deep.equal({
+                "w:trPr": [{ "w:wAfter": { _attr: { "w:type": "dxa", "w:w": 300 } } }],
+            });
+        });
+
+        it("adds row alignment (jc)", () => {
+            const rowProperties = new TableRowProperties({ rowAlignment: AlignmentType.CENTER });
+            const tree = new Formatter().format(rowProperties);
+            expect(tree).to.deep.equal({
+                "w:trPr": [{ "w:jc": { _attr: { "w:val": "center" } } }],
+            });
+        });
+
+        it("adds hidden", () => {
+            const rowProperties = new TableRowProperties({ hidden: true });
+            const tree = new Formatter().format(rowProperties);
+            expect(tree).to.deep.equal({
+                "w:trPr": [{ "w:hidden": {} }],
             });
         });
     });
