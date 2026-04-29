@@ -50,7 +50,12 @@
 import { DeletedTableRow, InsertedTableRow } from "@file/track-revision";
 import { ChangeAttributes } from "@file/track-revision/track-revision";
 import type { IChangedAttributesProperties } from "@file/track-revision/track-revision";
-import { BuilderElement, IgnoreIfEmptyXmlComponent, OnOffElement, XmlComponent } from "@file/xml-components";
+import {
+    BuilderElement,
+    IgnoreIfEmptyXmlComponent,
+    OnOffElement,
+    XmlComponent,
+} from "@file/xml-components";
 import type { PositiveUniversalMeasure } from "@util/values";
 
 import { createAlignment } from "../../paragraph";
@@ -58,7 +63,7 @@ import type { AlignmentType } from "../../paragraph";
 import { createTableCellSpacing } from "../table-cell-spacing";
 import type { ITableCellSpacingProperties } from "../table-cell-spacing";
 import { createTableWidthElement } from "../table-width";
-import type { ITableWidthProperties, WidthType } from "../table-width";
+import type { ITableWidthProperties } from "../table-width";
 import { createTableRowHeight } from "./table-row-height";
 import type { HeightRule } from "./table-row-height";
 
@@ -152,7 +157,10 @@ export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
         super("w:trPr", options.includeIfEmpty);
 
         if (options.cnfStyle !== undefined) {
-            const attrs: Record<string, { readonly key: string; readonly value: string | boolean }> = {
+            const attrs: Record<
+                string,
+                { readonly key: string; readonly value: string | boolean }
+            > = {
                 val: { key: "w:val", value: options.cnfStyle.val },
             };
             if (options.cnfStyle.changed !== undefined) {

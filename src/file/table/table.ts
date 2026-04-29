@@ -53,6 +53,10 @@ export interface ITableOptions {
     readonly visuallyRightToLeft?: boolean;
     readonly tableLook?: ITableLookOptions;
     readonly cellSpacing?: ITableCellSpacingProperties;
+    readonly styleRowBandSize?: number;
+    readonly styleColBandSize?: number;
+    readonly caption?: string;
+    readonly description?: string;
     readonly revision?: ITablePropertiesChangeOptions;
 }
 
@@ -108,6 +112,10 @@ export class Table extends FileChild {
         visuallyRightToLeft,
         tableLook,
         cellSpacing,
+        styleRowBandSize,
+        styleColBandSize,
+        caption,
+        description,
         revision,
     }: ITableOptions) {
         super("w:tbl");
@@ -116,13 +124,17 @@ export class Table extends FileChild {
             new TableProperties({
                 alignment,
                 borders: borders ?? {},
+                caption,
                 cellMargin: margins,
                 cellSpacing,
+                description,
                 float,
                 indent,
                 layout,
                 revision,
                 style,
+                styleColBandSize,
+                styleRowBandSize,
                 tableLook,
                 visuallyRightToLeft,
                 width: width ?? { size: 100 },

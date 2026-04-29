@@ -14,15 +14,20 @@ import { ChangeAttributes } from "@file/track-revision/track-revision";
 import type { IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { createVerticalAlign } from "@file/vertical-align";
 import type { TableVerticalAlign } from "@file/vertical-align";
-import { BuilderElement, IgnoreIfEmptyXmlComponent, OnOffElement, XmlComponent } from "@file/xml-components";
+import {
+    BuilderElement,
+    IgnoreIfEmptyXmlComponent,
+    OnOffElement,
+    XmlComponent,
+} from "@file/xml-components";
 
 import { createShading } from "../../shading";
 import type { IShadingAttributesProperties } from "../../shading";
 import { createCellMargin } from "../table-properties/table-cell-margin";
 import type { ITableCellMarginOptions } from "../table-properties/table-cell-margin";
+import type { CnfStyleOptions } from "../table-row/table-row-properties";
 import { createTableWidthElement } from "../table-width";
 import type { ITableWidthProperties } from "../table-width";
-import type { CnfStyleOptions } from "../table-row/table-row-properties";
 import {
     GridSpan,
     TDirection,
@@ -165,7 +170,10 @@ export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
         super("w:tcPr", options.includeIfEmpty);
 
         if (options.cnfStyle !== undefined) {
-            const attrs: Record<string, { readonly key: string; readonly value: string | boolean }> = {
+            const attrs: Record<
+                string,
+                { readonly key: string; readonly value: string | boolean }
+            > = {
                 val: { key: "w:val", value: options.cnfStyle.val },
             };
             if (options.cnfStyle.changed !== undefined) {

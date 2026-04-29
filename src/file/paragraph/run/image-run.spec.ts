@@ -1,7 +1,7 @@
 import { Formatter } from "@export/formatter";
 import type { IViewWrapper } from "@file/document-wrapper";
-import type { File } from "@file/file";
 import { resetDocPropertiesIdGen } from "@file/drawing/doc-properties/doc-properties";
+import type { File } from "@file/file";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { ImageRun } from "./image-run";
