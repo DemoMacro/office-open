@@ -12,6 +12,7 @@ import { uniqueId } from "@util/convenience-functions";
 
 import type { CheckBox } from "../checkbox";
 import { TargetModeType } from "../relationships/relationship/relationship";
+import type { StructuredDocumentTagRun } from "../sdt";
 import type { DeletedTextRun, InsertedTextRun } from "../track-revision";
 import type { ColumnBreak, PageBreak } from "./formatting/break";
 import { Bookmark, ConcreteHyperlink, ExternalHyperlink } from "./links";
@@ -62,7 +63,8 @@ export type ParagraphChild =
     | CommentRangeStart
     | CommentRangeEnd
     | CommentReference
-    | CheckBox;
+    | CheckBox
+    | StructuredDocumentTagRun;
 
 /**
  * Options for creating a Paragraph element.

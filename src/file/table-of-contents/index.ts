@@ -10,3 +10,5 @@
  */
 export * from "./table-of-contents";
 export * from "./table-of-contents-properties";
+export * from "./sdt-properties";
+export * from "./sdt-content";
