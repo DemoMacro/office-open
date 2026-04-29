@@ -16,6 +16,7 @@ import { createEffectList } from "./effects/effect-list";
 import type { EffectListOptions } from "./effects/effect-list";
 import { createGradientFill } from "./fill/gradient-fill";
 import type { GradientFillOptions } from "./fill/gradient-fill";
+import { createGroupFill } from "./fill/group-fill";
 import { createPatternFill } from "./fill/pattern-fill";
 import type { PatternFillOptions } from "./fill/pattern-fill";
 import { Form } from "./form";
@@ -71,6 +72,7 @@ export class ShapeProperties extends XmlComponent {
         element,
         effects,
         gradientFill,
+        groupFill,
         noFill,
         outline,
         patternFill,
@@ -83,6 +85,7 @@ export class ShapeProperties extends XmlComponent {
         readonly solidFill?: SolidFillOptions;
         readonly gradientFill?: GradientFillOptions;
         readonly patternFill?: PatternFillOptions;
+        readonly groupFill?: boolean;
         readonly noFill?: boolean;
         readonly effects?: EffectListOptions;
         readonly shape3d?: Shape3DOptions;
@@ -109,6 +112,8 @@ export class ShapeProperties extends XmlComponent {
             this.root.push(createGradientFill(gradientFill));
         } else if (patternFill) {
             this.root.push(createPatternFill(patternFill));
+        } else if (groupFill) {
+            this.root.push(createGroupFill());
         }
 
         if (outline) {
