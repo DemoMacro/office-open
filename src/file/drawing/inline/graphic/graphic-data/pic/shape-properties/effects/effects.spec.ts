@@ -490,7 +490,7 @@ describe("Effects", () => {
             const tree = new Formatter().format(
                 createEffectList({
                     blur: {},
-                    fillOverlay: { blend: BlendMode.MULTIPLY, color: { value: "FF0000" } },
+                    fillOverlay: { blend: BlendMode.MULTIPLY, solidFill: { value: "FF0000" } },
                     glow: { color: { value: "00FF00" } },
                 }),
             );
