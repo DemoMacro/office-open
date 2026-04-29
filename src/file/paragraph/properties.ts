@@ -30,6 +30,8 @@ import type { AlignmentType } from "./formatting/alignment";
 import { Border, ThematicBreak } from "./formatting/border";
 import type { IBordersOptions } from "./formatting/border";
 import { PageBreakBefore } from "./formatting/break";
+import { createCnfStyle } from "./formatting/cnf-style";
+import type { ICnfStyleOptions } from "./formatting/cnf-style";
 import { createIndent } from "./formatting/indent";
 import type { IIndentAttributesProperties } from "./formatting/indent";
 import { createSpacing } from "./formatting/spacing";
@@ -159,6 +161,8 @@ export interface LevelParagraphStylePropertiesOptions {
     readonly outlineLevel?: number;
     /** HTML div ID reference */
     readonly divId?: number;
+    /** Conditional formatting style for table rows/cells */
+    readonly cnfStyle?: ICnfStyleOptions;
 }
 
 /**
@@ -464,6 +468,10 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.divId !== undefined) {
             this.push(createDivId(options.divId));
+        }
+
+        if (options.cnfStyle !== undefined) {
+            this.push(createCnfStyle(options.cnfStyle));
         }
 
         if (options.suppressLineNumbers !== undefined) {
