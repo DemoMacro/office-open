@@ -36,6 +36,32 @@ export const PathShadeType = {
 } as const;
 
 /**
+ * Tile flip mode for gradient fill.
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:simpleType name="ST_TileFlipMode">
+ *   <xsd:restriction base="xsd:string">
+ *     <xsd:enumeration value="none"/>
+ *     <xsd:enumeration value="x"/>
+ *     <xsd:enumeration value="y"/>
+ *     <xsd:enumeration value="xy"/>
+ *   </xsd:restriction>
+ * </xsd:simpleType>
+ * ```
+ */
+export const TileFlipMode = {
+    /** No flip */
+    NONE: "none",
+    /** Flip horizontally */
+    X: "x",
+    /** Flip vertically */
+    Y: "y",
+    /** Flip both horizontally and vertically */
+    XY: "xy",
+} as const;
+
+/**
  * Options for linear gradient shading.
  */
 export interface LinearShadeOptions {
@@ -46,11 +72,41 @@ export interface LinearShadeOptions {
 }
 
 /**
+ * Relative rectangle (CT_RelativeRect) with percentage offsets.
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_RelativeRect">
+ *   <xsd:attribute name="l" type="ST_Percentage" default="0%"/>
+ *   <xsd:attribute name="t" type="ST_Percentage" default="0%"/>
+ *   <xsd:attribute name="r" type="ST_Percentage" default="0%"/>
+ *   <xsd:attribute name="b" type="ST_Percentage" default="0%"/>
+ * </xsd:complexType>
+ * ```
+ */
+export interface RelativeRect {
+    /** Left offset percentage (e.g., "0%") */
+    readonly left?: string;
+    /** Top offset percentage (e.g., "0%") */
+    readonly top?: string;
+    /** Right offset percentage (e.g., "0%") */
+    readonly right?: string;
+    /** Bottom offset percentage (e.g., "0%") */
+    readonly bottom?: string;
+}
+
+/**
  * Options for path (radial) gradient shading.
  */
 export interface PathShadeOptions {
     /** Path type */
     readonly path?: keyof typeof PathShadeType;
+    /**
+     * Fill-to rectangle for path gradient.
+     *
+     * Defines the rectangle to which the gradient fills.
+     */
+    readonly fillToRect?: RelativeRect;
 }
 
 /**
@@ -79,6 +135,18 @@ export interface GradientFillOptions {
     readonly stops: readonly IGradientStop[];
     /** Shade type (linear or path) */
     readonly shade?: GradientShadeOptions;
+    /**
+     * Tile flip mode.
+     *
+     * Controls how the gradient is flipped when tiled.
+     */
+    readonly flip?: keyof typeof TileFlipMode;
+    /**
+     * Tile rectangle for gradient tiling.
+     *
+     * Defines the rectangle used for gradient tiling.
+     */
+    readonly tileRect?: RelativeRect;
     /** Whether gradient rotates with the shape */
     readonly rotateWithShape?: boolean;
 }
@@ -102,6 +170,25 @@ export const createGradientStop = (stop: IGradientStop): XmlComponent =>
     });
 
 /**
+ * Creates a relative rect element.
+ */
+const createRelativeRect = (name: string, rect?: RelativeRect): XmlComponent =>
+    new BuilderElement<{
+        readonly l?: string;
+        readonly t?: string;
+        readonly r?: string;
+        readonly b?: string;
+    }>({
+        attributes: {
+            l: { key: "l", value: rect?.left },
+            t: { key: "t", value: rect?.top },
+            r: { key: "r", value: rect?.right },
+            b: { key: "b", value: rect?.bottom },
+        },
+        name,
+    });
+
+/**
  * Creates the shade element (a:lin or a:path).
  */
 const createShadeElement = (shade: GradientShadeOptions): XmlComponent => {
@@ -115,6 +202,12 @@ const createShadeElement = (shade: GradientShadeOptions): XmlComponent => {
         });
     }
     const pathShade = shade as PathShadeOptions;
+    const children: XmlComponent[] = [];
+
+    if (pathShade.fillToRect) {
+        children.push(createRelativeRect("a:fillToRect", pathShade.fillToRect));
+    }
+
     return new BuilderElement<{ readonly path?: string }>({
         attributes: {
             path: {
@@ -122,6 +215,7 @@ const createShadeElement = (shade: GradientShadeOptions): XmlComponent => {
                 value: pathShade.path ? PathShadeType[pathShade.path] : undefined,
             },
         },
+        children,
         name: "a:path",
     });
 };
@@ -163,15 +257,25 @@ export const createGradientFill = (options: GradientFillOptions): XmlComponent =
         }),
     );
 
-    // Shade properties
+    // Shade properties (a:lin or a:path)
     if (options.shade) {
         children.push(createShadeElement(options.shade));
     }
 
+    // Tile rectangle
+    if (options.tileRect) {
+        children.push(createRelativeRect("a:tileRect", options.tileRect));
+    }
+
     return new BuilderElement<{
+        readonly flip?: string;
         readonly rotWithShape?: boolean;
     }>({
         attributes: {
+            flip: {
+                key: "flip",
+                value: options.flip ? TileFlipMode[options.flip] : undefined,
+            },
             rotWithShape: { key: "rotWithShape", value: options.rotateWithShape },
         },
         children,
