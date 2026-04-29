@@ -42,7 +42,7 @@ import { NumberProperties } from "./formatting/unordered-list";
 import { createWordWrap } from "./formatting/word-wrap";
 import { createFrameProperties } from "./frame/frame-properties";
 import type { IFrameOptions } from "./frame/frame-properties";
-import { createOutlineLevel } from "./links";
+import { createDivId, createOutlineLevel } from "./links";
 
 /**
  * Vertical text alignment types for paragraphs.
@@ -157,6 +157,8 @@ export interface LevelParagraphStylePropertiesOptions {
     readonly textDirection?: "lr" | "rl" | "tb" | "tbV" | "rlV" | "lrV";
     /** Outline level for table of contents and document outline (0-9) */
     readonly outlineLevel?: number;
+    /** HTML div ID reference */
+    readonly divId?: number;
 }
 
 /**
@@ -458,6 +460,10 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.outlineLevel !== undefined) {
             this.push(createOutlineLevel(options.outlineLevel));
+        }
+
+        if (options.divId !== undefined) {
+            this.push(createDivId(options.divId));
         }
 
         if (options.suppressLineNumbers !== undefined) {
