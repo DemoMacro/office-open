@@ -320,6 +320,43 @@ describe("StructuredDocumentTagRun", () => {
             ],
         });
     });
+
+    it("should create an SDT with placeholder containing block-level content", () => {
+        const tree = new Formatter().format(
+            new StructuredDocumentTagRun({
+                properties: {
+                    alias: "Title",
+                    placeholder: [
+                        new BuilderElement({
+                            name: "w:p",
+                            children: [
+                                new BuilderElement({
+                                    name: "w:r",
+                                    children: [
+                                        new BuilderElement({
+                                            name: "w:t",
+                                        }),
+                                    ],
+                                }),
+                            ],
+                        }),
+                    ],
+                    text: {},
+                },
+            }),
+        );
+        expect(tree).to.deep.equal({
+            "w:sdt": [
+                {
+                    "w:sdtPr": [
+                        { "w:alias": { _attr: { "w:val": "Title" } } },
+                        { "w:placeholder": [{ "w:p": [{ "w:r": [{ "w:t": {} }] }] }] },
+                        { "w:text": {} },
+                    ],
+                },
+            ],
+        });
+    });
 });
 
 describe("StructuredDocumentTagProperties backward compatibility", () => {

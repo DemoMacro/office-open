@@ -215,6 +215,8 @@ export interface SdtPropertiesOptions {
     readonly temporary?: boolean;
     /** Whether the placeholder text is currently shown */
     readonly showingPlaceholder?: boolean;
+    /** Placeholder content (block-level content: paragraphs, tables, etc.) */
+    readonly placeholder?: XmlComponentType[];
     /** Data binding to custom XML */
     readonly dataBinding?: SdtDataBindingOptions;
     /** Numeric label */
@@ -456,6 +458,14 @@ export class StructuredDocumentTagProperties extends XmlComponent {
                 new BuilderElement<{ readonly val: string }>({
                     name: "w:lock",
                     attributes: { val: { key: "w:val", value: options.lock } },
+                }),
+            );
+        }
+        if (options.placeholder !== undefined) {
+            this.root.push(
+                new BuilderElement({
+                    name: "w:placeholder",
+                    children: options.placeholder.length > 0 ? options.placeholder : undefined,
                 }),
             );
         }

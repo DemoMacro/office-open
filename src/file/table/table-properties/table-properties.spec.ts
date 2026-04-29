@@ -298,4 +298,36 @@ describe("TableProperties", () => {
             });
         });
     });
+
+    it("adds tblStyleRowBandSize", () => {
+        const tp = new TableProperties({ styleRowBandSize: 3 });
+        const tree = new Formatter().format(tp);
+        expect(tree).to.deep.equal({
+            "w:tblPr": [{ "w:tblStyleRowBandSize": { _attr: { "w:val": 3 } } }],
+        });
+    });
+
+    it("adds tblStyleColBandSize", () => {
+        const tp = new TableProperties({ styleColBandSize: 2 });
+        const tree = new Formatter().format(tp);
+        expect(tree).to.deep.equal({
+            "w:tblPr": [{ "w:tblStyleColBandSize": { _attr: { "w:val": 2 } } }],
+        });
+    });
+
+    it("adds tblCaption", () => {
+        const tp = new TableProperties({ caption: "Sales Report" });
+        const tree = new Formatter().format(tp);
+        expect(tree).to.deep.equal({
+            "w:tblPr": [{ "w:tblCaption": { _attr: { "w:val": "Sales Report" } } }],
+        });
+    });
+
+    it("adds tblDescription", () => {
+        const tp = new TableProperties({ description: "Quarterly sales data" });
+        const tree = new Formatter().format(tp);
+        expect(tree).to.deep.equal({
+            "w:tblPr": [{ "w:tblDescription": { _attr: { "w:val": "Quarterly sales data" } } }],
+        });
+    });
 });
