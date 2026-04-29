@@ -11,6 +11,8 @@
 import { BuilderElement } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
 
+import { createCustomDash } from "./custom-dash";
+import type { DashStop } from "./custom-dash";
 import { createLineEnd } from "./line-end";
 import type { LineEndOptions } from "./line-end";
 import { createNoFill } from "./no-fill";
@@ -155,8 +157,18 @@ export interface OutlineAttributes {
     readonly compoundLine?: keyof typeof CompoundLine;
     /** Pen alignment */
     readonly align?: keyof typeof PenAlignment;
-    /** Preset dash style */
+    /**
+     * Preset dash style.
+     *
+     * Mutually exclusive with `customDash` — only one can be specified.
+     */
     readonly dash?: keyof typeof PresetDash;
+    /**
+     * Custom dash pattern (list of dash/space stops).
+     *
+     * Mutually exclusive with `dash` — only one can be specified.
+     */
+    readonly customDash?: readonly DashStop[];
     /** Line join style */
     readonly join?: keyof typeof LineJoin;
     /** Miter limit (only when join is MITER) */
@@ -242,8 +254,10 @@ export const createOutline = (options: OutlineOptions): XmlComponent => {
         children.push(fill);
     }
 
-    // Dash
-    if (options.dash !== undefined) {
+    // Dash (prstDash and custDash are mutually exclusive per XSD choice)
+    if (options.customDash !== undefined) {
+        children.push(createCustomDash(options.customDash));
+    } else if (options.dash !== undefined) {
         children.push(
             new BuilderElement<{ readonly val: string }>({
                 attributes: {
