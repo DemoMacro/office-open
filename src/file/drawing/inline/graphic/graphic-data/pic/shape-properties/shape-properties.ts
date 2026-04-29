@@ -14,6 +14,8 @@ import { XmlComponent } from "@file/xml-components";
 
 import { createCustomGeometry } from "./custom-geometry/custom-geometry";
 import type { CustomGeometryOptions } from "./custom-geometry/custom-geometry";
+import { createEffectDag } from "./effects/effect-dag";
+import type { EffectDagOptions } from "./effects/effect-dag";
 import { createEffectList } from "./effects/effect-list";
 import type { EffectListOptions } from "./effects/effect-list";
 import { createGradientFill } from "./fill/gradient-fill";
@@ -76,6 +78,7 @@ export class ShapeProperties extends XmlComponent {
     public constructor({
         element,
         customGeometry,
+        effectDag,
         effects,
         gradientFill,
         groupFill,
@@ -98,6 +101,8 @@ export class ShapeProperties extends XmlComponent {
         readonly presetGeometry?: PresetGeometryOptions;
         /** Custom geometry (mutually exclusive with presetGeometry). */
         readonly customGeometry?: CustomGeometryOptions;
+        /** Effect DAG container (mutually exclusive with effects). */
+        readonly effectDag?: EffectDagOptions;
         readonly effects?: EffectListOptions;
         readonly scene3d?: Scene3DOptions;
         readonly shape3d?: Shape3DOptions;
@@ -138,7 +143,10 @@ export class ShapeProperties extends XmlComponent {
             this.root.push(createOutline(outline));
         }
 
-        if (effects) {
+        // EG_EffectProperties: effectDag and effectLst are mutually exclusive
+        if (effectDag) {
+            this.root.push(createEffectDag(effectDag));
+        } else if (effects) {
             this.root.push(createEffectList(effects));
         }
 
