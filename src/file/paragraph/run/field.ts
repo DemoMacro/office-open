@@ -12,6 +12,9 @@
 import { BuilderElement } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
 
+import type { FormFieldOptions } from "./form-field";
+import { createFormFieldData } from "./form-field";
+
 /**
  * Field character types that delimit field regions.
  *
@@ -49,23 +52,51 @@ interface IFieldCharAttributes {
 const createFieldChar = (
     type: (typeof FieldCharacterType)[keyof typeof FieldCharacterType],
     dirty?: boolean,
-): XmlComponent =>
-    new BuilderElement<IFieldCharAttributes>({
+    ffData?: XmlComponent,
+): XmlComponent => {
+    const children: XmlComponent[] = [];
+    if (ffData) {
+        children.push(ffData);
+    }
+    return new BuilderElement<IFieldCharAttributes>({
         attributes: {
             dirty: { key: "w:dirty", value: dirty },
             type: { key: "w:fldCharType", value: type },
         },
+        children: children.length > 0 ? children : undefined,
         name: "w:fldChar",
     });
+};
 
 /**
  * Creates the beginning of a complex field.
  *
  * The Begin element marks the start of a field. A field consists of a begin character,
  * field instructions, an optional separate character, field result, and an end character.
+ *
+ * For form fields, pass `formField` to embed `w:ffData` within the begin `w:fldChar`.
+ *
+ * @param dirty - Whether the field should be recalculated
+ * @param formField - Optional form field data to embed in the begin character
+ *
+ * @example
+ * ```typescript
+ * // Simple field begin
+ * createBegin();
+ *
+ * // Form field (checkbox)
+ * createBegin(false, {
+ *   name: "Check1",
+ *   checkBox: { checked: true, sizeAuto: true },
+ * });
+ * ```
  */
-export const createBegin = (dirty?: boolean): XmlComponent =>
-    createFieldChar(FieldCharacterType.BEGIN, dirty);
+export const createBegin = (dirty?: boolean, formField?: FormFieldOptions): XmlComponent =>
+    createFieldChar(
+        FieldCharacterType.BEGIN,
+        dirty,
+        formField ? createFormFieldData(formField) : undefined,
+    );
 
 /**
  * Creates the separator between field code and field result in a complex field.
