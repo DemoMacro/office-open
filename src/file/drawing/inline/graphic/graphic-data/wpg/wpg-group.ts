@@ -9,6 +9,8 @@ import { Offset } from "../pic/shape-properties/form/offset/off";
 import { createNoFill } from "../pic/shape-properties/outline/no-fill";
 import { createSolidFill } from "../pic/shape-properties/outline/solid-fill";
 import type { SolidFillOptions } from "../pic/shape-properties/outline/solid-fill";
+import { createPatternFill } from "../pic/shape-properties/fill/pattern-fill";
+import type { PatternFillOptions } from "../pic/shape-properties/fill/pattern-fill";
 
 export type GroupChild = XmlComponent;
 
@@ -40,6 +42,8 @@ export type WpgGroupOptions = WpgGroupCoreOptions & {
     readonly chExt?: IChildExtent;
     /** Group fill */
     readonly solidFill?: SolidFillOptions;
+    /** Group pattern fill */
+    readonly patternFill?: PatternFillOptions;
     /** Group no fill */
     readonly noFill?: boolean;
     /** Group effects */
@@ -136,6 +140,8 @@ const createGroupProperties = (options: WpgGroupOptions): XmlComponent => {
         children.push(createNoFill());
     } else if (options.solidFill) {
         children.push(createSolidFill(options.solidFill));
+    } else if (options.patternFill) {
+        children.push(createPatternFill(options.patternFill));
     }
 
     if (options.effects) {
