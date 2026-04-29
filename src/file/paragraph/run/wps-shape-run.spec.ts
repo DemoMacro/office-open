@@ -244,9 +244,7 @@ describe("WpsShapeRun", () => {
                                                                 ],
                                                             },
                                                             {
-                                                                "wps:bodyPr": {
-                                                                    _attr: {},
-                                                                },
+                                                                "wps:bodyPr": {},
                                                             },
                                                         ],
                                                     },
