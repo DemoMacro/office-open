@@ -8,6 +8,7 @@
  */
 import { AppProperties } from "./app-properties/app-properties";
 import { Bibliography } from "./bibliography";
+import { ChartCollection } from "./chart/chart-collection";
 import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties } from "./core-properties";
 import type { IPropertiesOptions } from "./core-properties";
@@ -29,6 +30,7 @@ import { Numbering } from "./numbering";
 import { Comments } from "./paragraph/run/comment-run";
 import { Relationships } from "./relationships";
 import { Settings } from "./settings";
+import { SmartArtCollection } from "./smartart/smartart-collection";
 import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
 import { DefaultStylesFactory } from "./styles/factory";
@@ -157,6 +159,8 @@ export class File {
     private readonly coreProperties: CoreProperties;
     private readonly numbering: Numbering;
     private readonly media: Media;
+    private readonly charts: ChartCollection;
+    private readonly smartArts: SmartArtCollection;
     private readonly fileRelationships: Relationships;
     private readonly footnotesWrapper: FootnotesWrapper;
     private readonly endnotesWrapper: EndnotesWrapper;
@@ -207,6 +211,8 @@ export class File {
         });
 
         this.media = new Media();
+        this.charts = new ChartCollection();
+        this.smartArts = new SmartArtCollection();
 
         if (options.externalStyles !== undefined) {
             const defaultFactory = new DefaultStylesFactory();
@@ -409,6 +415,14 @@ export class File {
 
     public get Media(): Media {
         return this.media;
+    }
+
+    public get Charts(): ChartCollection {
+        return this.charts;
+    }
+
+    public get SmartArts(): SmartArtCollection {
+        return this.smartArts;
     }
 
     public get FileRelationships(): Relationships {

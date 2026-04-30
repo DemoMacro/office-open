@@ -36,4 +36,6 @@ export * from "./sdt";
 export * from "./fonts";
 export * from "./textbox";
 export * from "./bibliography";
+export * from "./chart";
+export * from "./smartart";
 export { type IPropertiesOptions } from "./core-properties";

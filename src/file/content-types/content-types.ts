@@ -160,4 +160,74 @@ export class ContentTypes extends XmlComponent {
             ),
         );
     }
+
+    /**
+     * Registers a chart part in the content types.
+     *
+     * @param index - Chart index number (e.g., 1 for charts/chart1.xml)
+     */
+    public addChart(index: number): void {
+        this.root.push(
+            createOverride(
+                "application/vnd.openxmlformats-officedocument.drawingml.chart+xml",
+                `/word/charts/chart${index}.xml`,
+            ),
+        );
+    }
+
+    /**
+     * Registers a diagram data part in the content types.
+     *
+     * @param index - Diagram data index number
+     */
+    public addDiagramData(index: number): void {
+        this.root.push(
+            createOverride(
+                "application/vnd.openxmlformats-officedocument.drawingml.diagramData+xml",
+                `/word/diagrams/data${index}.xml`,
+            ),
+        );
+    }
+
+    /**
+     * Registers a diagram layout part in the content types.
+     *
+     * @param index - Diagram layout index number
+     */
+    public addDiagramLayout(index: number): void {
+        this.root.push(
+            createOverride(
+                "application/vnd.openxmlformats-officedocument.drawingml.diagramLayout+xml",
+                `/word/diagrams/layout${index}.xml`,
+            ),
+        );
+    }
+
+    /**
+     * Registers a diagram style part in the content types.
+     *
+     * @param index - Diagram style index number
+     */
+    public addDiagramStyle(index: number): void {
+        this.root.push(
+            createOverride(
+                "application/vnd.openxmlformats-officedocument.drawingml.diagramStyle+xml",
+                `/word/diagrams/quickStyle${index}.xml`,
+            ),
+        );
+    }
+
+    /**
+     * Registers a diagram colors part in the content types.
+     *
+     * @param index - Diagram colors index number
+     */
+    public addDiagramColors(index: number): void {
+        this.root.push(
+            createOverride(
+                "application/vnd.openxmlformats-officedocument.drawingml.diagramColors+xml",
+                `/word/diagrams/colors${index}.xml`,
+            ),
+        );
+    }
 }

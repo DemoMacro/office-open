@@ -7,7 +7,12 @@
  *
  * @module
  */
-import { Attributes, NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import {
+    Attributes,
+    BaseXmlComponent,
+    NextAttributeComponent,
+    XmlComponent,
+} from "@file/xml-components";
 import type { AttributePayload } from "@file/xml-components";
 import { hpsMeasureValue } from "@util/values";
 import type { PositiveUniversalMeasure } from "@util/values";
@@ -302,4 +307,49 @@ export class BuilderElement<T = {}> extends XmlComponent {
             this.root.push(...children);
         }
     }
+}
+
+/**
+ * Creates a NextAttributeComponent with explicit XML attribute keys.
+ *
+ * This is the correct way to add non-w: namespace attributes (c:, a:, dgm:, r:)
+ * to XmlComponent elements. Unlike XmlAttributeComponent which maps through xmlKeys,
+ * this function takes explicit XML attribute names directly.
+ *
+ * @param attrs - Object with full XML attribute names (e.g., "c:val", "dgm:modelId")
+ * @returns A NextAttributeComponent that produces correct _attr XML
+ *
+ * @example
+ * ```typescript
+ * // Push directly into root for attributes on the element itself:
+ * this.root.push(chartAttr({ "c:idx": 0 }));
+ *
+ * // Wrap in a named element for child elements with attributes:
+ * this.root.push(wrapEl("c:barDir", chartAttr({ "c:val": "col" })));
+ * ```
+ */
+export const chartAttr = (attrs: Record<string, string | number | boolean>): BaseXmlComponent =>
+    new NextAttributeComponent(
+        Object.fromEntries(Object.entries(attrs).map(([key, value]) => [key, { key, value }])),
+    );
+
+/**
+ * Wraps a component in a named XmlComponent element.
+ *
+ * Used with chartAttr to create child elements with attributes:
+ * wrapEl("c:barDir", chartAttr({ "c:val": "col" }))
+ * produces <c:barDir c:val="col"/>
+ *
+ * @param elementName - The XML element name
+ * @param child - The child component (typically a NextAttributeComponent from chartAttr)
+ * @returns An XmlComponent with the given name wrapping the child
+ */
+export function wrapEl(elementName: string, child: BaseXmlComponent): XmlComponent {
+    const el = new (class extends XmlComponent {
+        public constructor(name: string) {
+            super(name);
+        }
+    })(elementName);
+    el["root"].push(child);
+    return el;
 }

@@ -105,7 +105,30 @@ export interface WpgMediaData {
     readonly effects?: EffectListOptions;
 }
 
-export type IExtendedMediaData = IMediaData | WpsMediaData | WpgMediaData;
+/**
+ * Chart media data — references a chart part via placeholder.
+ */
+export interface ChartMediaData {
+    readonly type: "chart";
+    readonly transformation: IMediaDataTransformation;
+    readonly chartKey: string;
+}
+
+/**
+ * SmartArt media data — references a diagram data part via placeholder.
+ */
+export interface SmartArtMediaData {
+    readonly type: "smartart";
+    readonly transformation: IMediaDataTransformation;
+    readonly smartArtKey: string;
+}
+
+export type IExtendedMediaData =
+    | IMediaData
+    | WpsMediaData
+    | WpgMediaData
+    | ChartMediaData
+    | SmartArtMediaData;
 
 export type IMediaData = (RegularMediaData | SvgMediaData) & CoreMediaData;
 
