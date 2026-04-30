@@ -10,9 +10,12 @@ import { textToUint8Array, toUint8Array } from "undio";
 import xml from "xml";
 
 import { Formatter } from "../formatter";
+import { ChartReplacer } from "./chart-replacer";
 import { ImageReplacer } from "./image-replacer";
 import { NumberingReplacer } from "./numbering-replacer";
 import type { PrettifyType } from "./packer";
+import { SmartArtReplacer } from "./smartart-replacer";
+import { DEFAULT_COLORS_XML, DEFAULT_LAYOUT_XML, DEFAULT_STYLE_XML } from "@file/smartart/built-in-definitions";
 
 /**
  * Represents a serialized XML file with its path in the OOXML package.
@@ -78,6 +81,16 @@ interface IXmlifyedFileMapping {
     readonly FontTableRelationships?: IXmlifyedFile;
     /** Bibliography content (word/bibliography.xml) */
     readonly Bibliography?: IXmlifyedFile;
+    /** Chart XML parts (word/charts/chart{n}.xml) */
+    readonly Charts?: readonly IXmlifyedFile[];
+    /** Diagram data XML parts (word/diagrams/data{n}.xml) */
+    readonly DiagramData?: readonly IXmlifyedFile[];
+    /** Diagram layout XML parts (word/diagrams/layout{n}.xml) */
+    readonly DiagramLayout?: readonly IXmlifyedFile[];
+    /** Diagram style XML parts (word/diagrams/quickStyle{n}.xml) */
+    readonly DiagramStyle?: readonly IXmlifyedFile[];
+    /** Diagram colors XML parts (word/diagrams/colors{n}.xml) */
+    readonly DiagramColors?: readonly IXmlifyedFile[];
 }
 
 /**
@@ -98,6 +111,8 @@ export class Compiler {
     private readonly formatter: Formatter;
     private readonly imageReplacer: ImageReplacer;
     private readonly numberingReplacer: NumberingReplacer;
+    private readonly chartReplacer: ChartReplacer;
+    private readonly smartArtReplacer: SmartArtReplacer;
 
     /**
      * Creates a new Compiler instance.
@@ -108,6 +123,8 @@ export class Compiler {
         this.formatter = new Formatter();
         this.imageReplacer = new ImageReplacer();
         this.numberingReplacer = new NumberingReplacer();
+        this.chartReplacer = new ChartReplacer();
+        this.smartArtReplacer = new SmartArtReplacer();
     }
 
     /**
@@ -312,19 +329,31 @@ export class Compiler {
                 path: "word/_rels/comments.xml.rels",
             },
             ContentTypes: {
-                data: xml(
-                    this.formatter.format(file.ContentTypes, {
-                        file,
-                        stack: [],
-                        viewWrapper: file.Document,
-                    }),
-                    {
-                        declaration: {
-                            encoding: "UTF-8",
+                data: (() => {
+                    // Register chart and diagram content types BEFORE serialization
+                    file.Charts.Array.forEach((_, i) => {
+                        file.ContentTypes.addChart(i + 1);
+                    });
+                    file.SmartArts.Array.forEach((_, i) => {
+                        file.ContentTypes.addDiagramData(i + 1);
+                        file.ContentTypes.addDiagramLayout(i + 1);
+                        file.ContentTypes.addDiagramStyle(i + 1);
+                        file.ContentTypes.addDiagramColors(i + 1);
+                    });
+                    return xml(
+                        this.formatter.format(file.ContentTypes, {
+                            file,
+                            stack: [],
+                            viewWrapper: file.Document,
+                        }),
+                        {
+                            declaration: {
+                                encoding: "UTF-8",
+                            },
+                            indent: prettify,
                         },
-                        indent: prettify,
-                    },
-                ),
+                    );
+                })(),
                 path: "[Content_Types].xml",
             },
             CustomProperties: {
@@ -346,10 +375,24 @@ export class Compiler {
             },
             Document: {
                 data: (() => {
-                    const xmlData = this.imageReplacer.replace(
+                    let xmlData = this.imageReplacer.replace(
                         documentXmlData,
                         documentMediaDatas,
                         documentRelationshipCount,
+                    );
+                    xmlData = this.chartReplacer.replace(
+                        xmlData,
+                        file.Charts,
+                        documentRelationshipCount,
+                    );
+                    const smartArtDataOffset =
+                        documentRelationshipCount +
+                        documentMediaDatas.length +
+                        file.Charts.Array.length;
+                    xmlData = this.smartArtReplacer.replace(
+                        xmlData,
+                        file.SmartArts,
+                        smartArtDataOffset,
                     );
                     const referenedXmlData = this.numberingReplacer.replace(
                         xmlData,
@@ -639,6 +682,31 @@ export class Compiler {
                         );
                     });
 
+                    // Chart relationships
+                    const chartOffset = documentRelationshipCount + documentMediaDatas.length;
+                    file.Charts.Array.forEach((_chartData, i) => {
+                        file.Document.Relationships.addRelationship(
+                            chartOffset + i,
+                            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart",
+                            `charts/chart${i + 1}.xml`,
+                        );
+                    });
+
+                    // SmartArt relationships (data + layout/style/color internal)
+                    this.smartArtReplacer.addRelationships(
+                        file.SmartArts,
+                        (id, type, target, targetMode) => {
+                            file.Document.Relationships.addRelationship(
+                                id,
+                                type,
+                                target,
+                                targetMode as any,
+                            );
+                        },
+                        documentRelationshipCount,
+                        documentMediaDatas.length + file.Charts.Array.length,
+                    );
+
                     file.Document.Relationships.addRelationship(
                         file.Document.Relationships.RelationshipCount + 1,
                         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/fontTable",
@@ -724,6 +792,75 @@ export class Compiler {
                           ),
                           path: "word/bibliography.xml",
                       },
+                  }
+                : {}),
+            ...(file.Charts.Array.length > 0
+                ? {
+                      Charts: file.Charts.Array.flatMap((chartData, i) => [
+                          {
+                              data: xml(
+                                  this.formatter.format(chartData.chartSpace, {
+                                      file,
+                                      stack: [],
+                                      viewWrapper: file.Document,
+                                  }),
+                                  {
+                                      declaration: {
+                                          encoding: "UTF-8",
+                                          standalone: "yes",
+                                      },
+                                      indent: prettify,
+                                  },
+                              ),
+                              path: `word/charts/chart${i + 1}.xml`,
+                          },
+                          {
+                              data: xml(
+                                  {
+                                      Relationships: {
+                                          _attr: {
+                                              xmlns: "http://schemas.openxmlformats.org/package/2006/relationships",
+                                          },
+                                      },
+                                  },
+                                  { declaration: { encoding: "UTF-8", standalone: "yes" } },
+                              ),
+                              path: `word/charts/_rels/chart${i + 1}.xml.rels`,
+                          },
+                      ]),
+                  }
+                : {}),
+            ...(file.SmartArts.Array.length > 0
+                ? {
+                      DiagramData: file.SmartArts.Array.map((smartArtData, i) => ({
+                          data: xml(
+                              this.formatter.format(smartArtData.dataModel, {
+                                  file,
+                                  stack: [],
+                                  viewWrapper: file.Document,
+                              }),
+                              {
+                                  declaration: {
+                                      encoding: "UTF-8",
+                                      standalone: "yes",
+                                  },
+                                  indent: prettify,
+                              },
+                          ),
+                          path: `word/diagrams/data${i + 1}.xml`,
+                      })),
+                      DiagramLayout: file.SmartArts.Array.map((_smartArtData, i) => ({
+                          data: DEFAULT_LAYOUT_XML,
+                          path: `word/diagrams/layout${i + 1}.xml`,
+                      })),
+                      DiagramStyle: file.SmartArts.Array.map((_smartArtData, i) => ({
+                          data: DEFAULT_STYLE_XML,
+                          path: `word/diagrams/quickStyle${i + 1}.xml`,
+                      })),
+                      DiagramColors: file.SmartArts.Array.map((_smartArtData, i) => ({
+                          data: DEFAULT_COLORS_XML,
+                          path: `word/diagrams/colors${i + 1}.xml`,
+                      })),
                   }
                 : {}),
         };

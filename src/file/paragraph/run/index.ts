@@ -8,6 +8,8 @@ export * from "./properties";
 export * from "./text-run";
 export * from "./symbol-run";
 export * from "./image-run";
+export * from "./chart-run";
+export * from "./smartart-run";
 export * from "./wps-shape-run";
 export * from "./wpg-group-run";
 export * from "./run-fonts";

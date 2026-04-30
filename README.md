@@ -53,13 +53,11 @@ Easily generate and modify .docx files with JS/TS. Works for Node and on the Bro
 **docx-plus** provides comprehensive coverage of the WordprocessingML, DrawingML, and Shared Math specifications within ISO/IEC 29500-4. This includes:
 
 - **WordprocessingML**: paragraphs, runs, tables (full row/cell/table properties), sections, headers/footers, footnotes/endnotes, table of contents, numbering/lists, styles, bookmarks, hyperlinks, SDT content controls, form fields, track changes, comments, bibliography sources, math equations, ruby annotations, and more
-- **DrawingML**: shapes, images, text bodies, colors (all 6 color types + 29 transforms), fills (solid, gradient, pattern, group), outlines, effects (28 types with recursive containers), 3D scenes, custom geometry, and image adjustments
+- **DrawingML**: shapes, images, text bodies, colors (all 6 color types + 29 transforms), fills (solid, gradient, pattern, group), outlines, effects (28 types with recursive containers), 3D scenes, custom geometry, image adjustments, **charts** (bar, column, line, pie, area, scatter), and **SmartArt** diagrams (process, hierarchy, cycle, pyramid, list)
 - **Shared Math**: all equation structures (fraction, radical, n-ary, integrals, matrices, accents, delimiters, etc.)
 
 **Not in scope** (separate OOXML domains with their own dedicated specifications):
 
-- **SmartArt** (`dgm:`) — graphical diagram engine
-- **Charts** (`c:`) — native OOXML charting (typically handled by charting libraries)
 - **Mail Merge** — field codes are supported, but external data source connections are not
 - **Cover Pages** — `docPartObj` SDT is supported, but Building Blocks part references require template files
 
