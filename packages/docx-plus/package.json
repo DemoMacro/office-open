@@ -1,0 +1,54 @@
+{
+    "name": "docx-plus",
+    "version": "0.2.0",
+    "description": "Easily generate .docx files with JS/TS with a nice declarative API. Works for Node and on the Browser.",
+    "keywords": [
+        "clippy",
+        "create",
+        "creator",
+        "doc",
+        "document",
+        "docx",
+        "docx-plus",
+        "generate",
+        "office",
+        "officegen",
+        "word"
+    ],
+    "homepage": "https://github.com/DemoMacro/office-open#readme",
+    "bugs": {
+        "url": "https://github.com/DemoMacro/office-open/issues"
+    },
+    "license": "MIT",
+    "author": {
+        "name": "Demo Macro",
+        "email": "abc@imst.xyz",
+        "url": "https://imst.xyz/"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/DemoMacro/office-open.git"
+    },
+    "files": [
+        "dist"
+    ],
+    "type": "module",
+    "main": "dist/index.cjs",
+    "module": "dist/index.mjs",
+    "types": "dist/index.d.mts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.mts",
+            "import": "./dist/index.mjs",
+            "require": "./dist/index.cjs"
+        }
+    },
+    "scripts": {
+        "dev": "basis build --stub",
+        "build": "basis build",
+        "prepack": "pnpm build"
+    },
+    "dependencies": {
+        "@office-open/docx": "workspace:*"
+    }
+}

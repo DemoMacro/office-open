@@ -1,0 +1,44 @@
+{
+    "name": "@office-open/core",
+    "version": "0.0.0",
+    "private": true,
+    "description": "Shared OOXML infrastructure: XmlComponent, Formatter, Packer, DrawingML, Chart",
+    "keywords": [
+        "core",
+        "office-open",
+        "ooxml",
+        "shared",
+        "xml"
+    ],
+    "homepage": "https://github.com/DemoMacro/office-open#readme",
+    "bugs": {
+        "url": "https://github.com/DemoMacro/office-open/issues"
+    },
+    "license": "MIT",
+    "author": {
+        "name": "Demo Macro",
+        "email": "abc@imst.xyz",
+        "url": "https://imst.xyz/"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/DemoMacro/office-open.git"
+    },
+    "files": [
+        "dist"
+    ],
+    "type": "module",
+    "main": "dist/index.mjs",
+    "types": "dist/index.d.mts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.mts",
+            "import": "./dist/index.mjs"
+        }
+    },
+    "scripts": {
+        "dev": "basis build --stub",
+        "build": "basis build",
+        "prepack": "pnpm build"
+    }
+}

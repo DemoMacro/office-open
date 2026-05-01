@@ -2,37 +2,42 @@ You are a senior TypeScript developer
 
 ## Project
 
-TypeScript library for generating .docx files. Declarative API, works in Node.js and browsers.
+**office-open** is a monorepo for generating Office Open XML documents (.docx, .pptx, .xlsx) with JS/TS.
+
+## Structure
+
+- `packages/docx` - @office-open/docx (main DOCX package)
+- `packages/docx-plus` - docx-plus (compat re-export)
+- `packages/core` - @office-open/core (shared infrastructure, WIP)
+- `packages/xml` - @office-open/xml (WIP)
+- `packages/pptx` - @office-open/pptx (WIP)
+- `packages/xlsx` - @office-open/xlsx (WIP)
 
 ## OOXML Specification
 
-The `ooxml-schemas/` directory contains the official ISO-IEC29500 OOXML XSD schemas. These are the **golden source of truth** for all OOXML element names, attributes, and structure. Always consult these schemas when implementing or modifying XML generation.
+The `ooxml-schemas/` directory contains the official ISO-IEC29500 OOXML XSD schemas. These are the **golden source of truth** for all OOXML element names, attributes, and structure.
 
 Key schemas:
 
-- `wml.xsd` - WordprocessingML (main document structure)
+- `wml.xsd` - WordprocessingML (documents)
+- `pml.xsd` - PresentationML (presentations)
+- `sml.xsd` - SpreadsheetML (spreadsheets)
 - `dml-main.xsd` - DrawingML (images, shapes)
 - `shared-math.xsd` - Math equations
 
 ## Code Style
 
 - TypeScript with strict mode
-- Path aliases: `@file/`, `@export/`, `@util/`
-- Functional style preferred (see eslint-plugin-functional)
+- Path aliases in packages/docx: `@file/`, `@export/`, `@util/`
 - Classes extend `XmlComponent` for XML elements
 
-## Testing
+## Build & Test
 
-Uses **Vitest**. Tests are co-located with source files as `*.spec.ts`.
-
-**Requirements:**
-
-- Test the XML output structure, not just that code runs
-- Cover edge cases and option combinations
-- Use descriptive test names that explain expected behavior
+- **Packaging**: `basis build`
+- **Testing**: `vp test run --coverage` (Vitest via vite-plus)
 
 ## Running Demos
 
 ```bash
-npm run run-ts -- ./demo/<demo-file>.ts
+pnpm run-ts -- ./packages/docx/demo/<demo-file>.ts
 ```

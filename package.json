@@ -1,23 +1,20 @@
 {
-    "name": "docx-plus",
-    "version": "0.1.7",
-    "description": "Easily generate .docx files with JS/TS with a nice declarative API. Works for Node and on the Browser.",
+    "name": "@office-open/monorepo",
+    "version": "0.0.0",
+    "private": true,
+    "description": "Office Open XML monorepo - generate .docx, .pptx, .xlsx files with JS/TS",
     "keywords": [
-        "clippy",
-        "create",
-        "creator",
-        "doc",
-        "document",
         "docx",
-        "docx-plus",
-        "generate",
         "office",
-        "officegen",
-        "word"
+        "office-open",
+        "ooxml",
+        "pptx",
+        "typescript",
+        "xlsx"
     ],
-    "homepage": "https://github.com/DemoMacro/docx-plus#readme",
+    "homepage": "https://github.com/DemoMacro/office-open#readme",
     "bugs": {
-        "url": "https://github.com/DemoMacro/docx-plus/issues"
+        "url": "https://github.com/DemoMacro/office-open/issues"
     },
     "license": "MIT",
     "author": {
@@ -27,68 +24,32 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/DemoMacro/docx-plus.git"
+        "url": "git+https://github.com/DemoMacro/office-open.git"
     },
-    "files": [
-        "dist"
-    ],
     "type": "module",
-    "main": "dist/index.umd.js",
-    "module": "./dist/index.mjs",
-    "types": "./dist/index.d.mts",
-    "exports": {
-        ".": {
-            "import": {
-                "types": "./dist/index.d.mts",
-                "default": "./dist/index.mjs"
-            },
-            "require": {
-                "types": "./dist/index.d.cts",
-                "default": "./dist/index.cjs"
-            }
-        }
-    },
     "scripts": {
-        "build": "vp pack",
-        "test": "vp test run --coverage",
-        "prepublishOnly": "pnpm run build --omit=dev",
+        "dev": "pnpm --filter \"./packages/**\" -r dev",
+        "build": "pnpm --filter \"./packages/**\" -r build",
         "check": "vp check --fix",
-        "predemo": "pnpm run build",
-        "demo": "tsx ./demo/index.ts",
-        "typedoc": "typedoc src/index.ts --tsconfig tsconfig.typedoc.json",
-        "cspell": "cspell \"{src,demo,docs,scripts}/**/*.{ts,scss,html,md}\" && cspell \"./*.*\"",
-        "serve.docs": "cd docs && docsify serve",
-        "extract": "tsx scripts/extract-document.ts",
-        "run-ts": "tsx"
-    },
-    "dependencies": {
-        "fflate": "0.8.2",
-        "hash.js": "1.1.7",
-        "nanoid": "5.1.9",
-        "undio": "0.2.0",
-        "xml": "1.0.1",
-        "xml-js": "1.6.11"
+        "bump": "pnpm --filter \"./packages/**\" -r exec basis version",
+        "prerelease": "pnpm --filter \"./packages/**\" -r exec basis version --prerelease",
+        "publish": "pnpm --filter \"./packages/**\" -r exec basis publish",
+        "postinstall": "pnpm dev && basis git setup",
+        "test": "pnpm --filter @office-open/docx test",
+        "test:ci": "pnpm --filter @office-open/docx test:ci",
+        "cspell": "cspell \"{packages/**,scripts,docs}/**/*.{ts,scss,html,md}\" && cspell \"./*.*\"",
+        "typedoc": "pnpm --filter @office-open/docx typedoc",
+        "demo": "pnpm --filter @office-open/docx demo",
+        "extract": "pnpm --filter @office-open/docx extract",
+        "run-ts": "pnpm --filter @office-open/docx run-ts",
+        "serve.docs": "cd docs && docsify serve"
     },
     "devDependencies": {
+        "@funish/basis": "0.2.17",
         "@rolldown/plugin-node-polyfills": "1.0.3",
         "@types/node": "25.6.0",
-        "@types/xml": "1.0.11",
         "@vitest/coverage-v8": "4.1.4",
-        "cspell": "10.0.0",
-        "docsify-cli": "4.4.4",
-        "execa": "9.6.1",
         "happy-dom": "20.9.0",
-        "inquirer": "13.4.1",
-        "pre-commit": "1.2.2",
-        "tsx": "4.21.0",
-        "typedoc": "0.28.19",
-        "typescript": "6.0.2",
         "vite-plus": "0.1.18"
-    },
-    "pre-commit": [
-        "check"
-    ],
-    "engines": {
-        "node": ">=10"
     }
 }

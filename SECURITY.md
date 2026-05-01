@@ -7,11 +7,11 @@ currently being supported with security updates.
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 9.0.x   | :white_check_mark: |
+| 0.1.x   | :white_check_mark: |
 
 ## Reporting a Vulnerability
 
-We encourage responsible disclosure of security vulnerabilities. If you believe you have found a security vulnerability in this project, please report it via the [Security Tab](https://github.com/DemoMacro/docx-plus/security/advisories)
+We encourage responsible disclosure of security vulnerabilities. If you believe you have found a security vulnerability in this project, please report it via the [Security Tab](https://github.com/DemoMacro/office-open/security/advisories)
 
 Please include the following information in your report:
 
