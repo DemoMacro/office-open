@@ -63,7 +63,7 @@
         "@rolldown/plugin-node-polyfills": "1.0.3",
         "docx": "^9.6.1",
         "execa": "9.6.1",
-        "inquirer": "13.4.1",
+        "inquirer": "13.4.2",
         "tsx": "4.21.0",
         "typedoc": "0.28.19"
     }
