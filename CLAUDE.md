@@ -2,19 +2,37 @@ You are a senior TypeScript developer.
 
 ## Project
 
-TypeScript library for generating .docx files. Declarative API, works in Node.js and browsers.
+**office-open** is a monorepo for generating Office Open XML documents (.docx, .pptx, .xlsx) with JS/TS. Declarative API, works in Node.js and browsers.
+
+## Structure
+
+- `packages/core` - @office-open/core (TODO: shared XML components, formatter, packer)
+- `packages/xml` - @office-open/xml (TODO: replacing xml + xml-js)
+- `packages/docx` - @office-open/docx (main DOCX package)
+- `packages/docx-plus` - docx-plus (compat re-export of @office-open/docx)
+- `packages/xlsx` - @office-open/xlsx (TODO)
+- `packages/pptx` - @office-open/pptx (TODO)
+- `ooxml-schemas/` - ISO-IEC29500 OOXML XSD schemas
+
+## Build & Test
+
+- **Packaging**: `basis build` (per package) or `pnpm build` (all packages)
+- **Testing**: `vp test run --coverage` (vite-plus test runner in packages/docx)
+- **Lint**: `vp check --fix` (in packages/docx)
 
 ## OOXML Specification
 
 `ooxml-schemas/` contains official ISO-IEC29500 OOXML XSD schemas - the **golden source of truth**. Always reference these when implementing XML elements.
 
 - `wml.xsd` - WordprocessingML (documents)
+- `pml.xsd` - PresentationML (presentations)
+- `sml.xsd` - SpreadsheetML (spreadsheets)
 - `dml-main.xsd` - DrawingML (images/shapes)
 - `shared-math.xsd` - Math
 
 ## Code Conventions
 
-- Path aliases: `@file/`, `@export/`, `@util/`
+- Path aliases in packages/docx: `@file/`, `@export/`, `@util/`
 - Classes extend `XmlComponent` for XML elements
 - Use `Formatter` to convert components to XML tree
 
@@ -68,5 +86,5 @@ Only use XSD abbreviations when the abbreviation IS the standard English term (e
 ## Running Demos
 
 ```bash
-pnpm run run-ts -- ./demo/<demo-file>.ts
+pnpm run-ts -- ./packages/docx/demo/<demo-file>.ts
 ```

@@ -1,0 +1,71 @@
+{
+    "name": "@office-open/docx",
+    "version": "0.2.0",
+    "description": "Easily generate .docx files with JS/TS with a nice declarative API. Works for Node and on the Browser.",
+    "keywords": [
+        "clippy",
+        "create",
+        "creator",
+        "doc",
+        "document",
+        "docx",
+        "generate",
+        "office",
+        "officegen",
+        "word"
+    ],
+    "homepage": "https://github.com/DemoMacro/office-open#readme",
+    "bugs": {
+        "url": "https://github.com/DemoMacro/office-open/issues"
+    },
+    "license": "MIT",
+    "author": {
+        "name": "Demo Macro",
+        "email": "abc@imst.xyz",
+        "url": "https://imst.xyz/"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/DemoMacro/office-open.git"
+    },
+    "files": [
+        "dist"
+    ],
+    "type": "module",
+    "main": "dist/index.mjs",
+    "types": "dist/index.d.mts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.mts",
+            "import": "./dist/index.mjs"
+        }
+    },
+    "scripts": {
+        "dev": "basis build --stub",
+        "build": "basis build",
+        "prepack": "pnpm build",
+        "test": "vp test run --coverage",
+        "test:ci": "vp test run --coverage",
+        "demo": "tsx ./demo/index.ts",
+        "typedoc": "typedoc src/index.ts --tsconfig tsconfig.typedoc.json",
+        "extract": "tsx scripts/extract-document.ts",
+        "demos": "tsx scripts/run-all-demos.ts",
+        "run-ts": "tsx"
+    },
+    "dependencies": {
+        "fflate": "0.8.2",
+        "hash.js": "1.1.7",
+        "nanoid": "5.1.9",
+        "undio": "0.2.0",
+        "xml": "1.0.1",
+        "xml-js": "1.6.11"
+    },
+    "devDependencies": {
+        "@rolldown/plugin-node-polyfills": "1.0.3",
+        "@types/xml": "1.0.11",
+        "execa": "9.6.1",
+        "inquirer": "13.4.1",
+        "tsx": "4.21.0",
+        "typedoc": "0.28.19"
+    }
+}

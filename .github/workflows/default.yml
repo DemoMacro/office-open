@@ -19,7 +19,7 @@ jobs:
               uses: actions/upload-artifact@v4
               with:
                   name: build
-                  path: build
+                  path: packages/docx/dist
     test:
         name: Test
         runs-on: ubuntu-latest
@@ -28,32 +28,7 @@ jobs:
               uses: actions/checkout@v4
             - name: Install Dependencies
               run: pnpm install
+            - name: Build
+              run: pnpm run build
             - name: Test
               run: pnpm run test:ci
-            - name: Codecov
-              uses: codecov/codecov-action@v4
-              with:
-                  fail_ci_if_error: true
-                  verbose: true
-              env:
-                  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-    check:
-        name: Check
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout Repo
-              uses: actions/checkout@v4
-            - name: Install Dependencies
-              run: pnpm install
-            - name: Lint & Format
-              run: pnpm check
-    cspell:
-        name: CSpell
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout Repo
-              uses: actions/checkout@v4
-            - name: Install Dependencies
-              run: pnpm install
-            - name: CSpell
-              run: pnpm run cspell

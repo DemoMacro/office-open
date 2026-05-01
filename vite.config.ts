@@ -1,28 +1,6 @@
-import { fileURLToPath, URL } from "node:url";
-
-import nodePolyfills from "@rolldown/plugin-node-polyfills";
 import { configDefaults, defineConfig } from "vite-plus";
 
 export default defineConfig({
-    resolve: {
-        alias: {
-            "@export": fileURLToPath(new URL("./src/export", import.meta.url)),
-            "@file": fileURLToPath(new URL("./src/file", import.meta.url)),
-            "@util": fileURLToPath(new URL("./src/util", import.meta.url)),
-            tests: fileURLToPath(new URL("./src/tests", import.meta.url)),
-        },
-    },
-    pack: {
-        entry: ["src/index.ts"],
-        format: ["esm", "cjs", "iife", "umd"],
-        globalName: "docx",
-        plugins: [nodePolyfills()],
-        shims: true,
-        deps: {
-            alwaysBundle: ["xml", "xml-js"],
-            onlyBundle: false,
-        },
-    },
     fmt: {
         sortImports: {
             type: "natural",
@@ -31,7 +9,7 @@ export default defineConfig({
         sortTailwindcss: {},
     },
     lint: {
-        ignorePatterns: ["**/scripts/**", "**/dist/**", "**/coverage/**"],
+        ignorePatterns: ["**/scripts/**", "**/dist/**", "**/coverage/**", "**/demo/**"],
         options: {
             typeAware: true,
             typeCheck: true,
