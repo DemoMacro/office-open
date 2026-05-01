@@ -5,8 +5,8 @@ import type { IContext, XmlComponent } from "@file/xml-components";
  *
  * @module
  */
-import xml from "xml";
-import type { Element } from "xml-js";
+import { xml } from "@office-open/xml";
+import type { Element } from "@office-open/xml";
 
 import { PatchType } from "./from-docx";
 import type { IPatch } from "./from-docx";

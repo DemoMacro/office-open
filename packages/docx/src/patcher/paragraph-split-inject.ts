@@ -3,7 +3,7 @@
  *
  * @module
  */
-import type { Element } from "xml-js";
+import type { Element } from "@office-open/xml";
 
 import { createTextElementContents, patchSpaceAttribute } from "./util";
 

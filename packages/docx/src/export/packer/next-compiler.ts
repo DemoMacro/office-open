@@ -5,6 +5,7 @@ import {
     DEFAULT_LAYOUT_XML,
     DEFAULT_STYLE_XML,
 } from "@file/smartart/built-in-definitions";
+import { xml } from "@office-open/xml";
 /**
  * Compiler module for converting File objects into OOXML ZIP archives.
  *
@@ -12,7 +13,6 @@ import {
  */
 import type { Zippable } from "fflate";
 import { textToUint8Array, toUint8Array } from "undio";
-import xml from "xml";
 
 import { Formatter } from "../formatter";
 import { ChartReplacer } from "./chart-replacer";

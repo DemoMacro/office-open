@@ -1,7 +1,7 @@
 import { EMPTY_OBJECT } from "@file/xml-components";
+import { xml2js } from "@office-open/xml";
+import type { Element } from "@office-open/xml";
 import { beforeEach, describe, expect, it } from "vite-plus/test";
-import { xml2js } from "xml-js";
-import type { Element } from "xml-js";
 
 import type { IContext } from "./base";
 import {

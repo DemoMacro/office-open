@@ -3,7 +3,7 @@
  *
  * @module
  */
-import type { Element } from "xml-js";
+import type { Element } from "@office-open/xml";
 
 import type { ElementWrapper } from "./traverser";
 
@@ -134,8 +134,7 @@ const renderRunNode = (
             element.name === "w:t" && element.elements && element.elements.length > 0
                 ? (() => {
                       const partStart = currentTextStringIndex;
-                      currentTextStringIndex +=
-                          (element.elements[0].text?.toString() ?? "").length;
+                      currentTextStringIndex += (element.elements[0].text?.toString() ?? "").length;
                       return {
                           end: currentTextStringIndex - 1,
                           index: i,

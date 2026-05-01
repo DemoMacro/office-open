@@ -9,6 +9,8 @@ import { ConcreteHyperlink, ExternalHyperlink } from "@file/paragraph";
 import type { ParagraphChild } from "@file/paragraph";
 import { TargetModeType } from "@file/relationships/relationship/relationship";
 import type { IContext } from "@file/xml-components";
+import { js2xml } from "@office-open/xml";
+import type { Element } from "@office-open/xml";
 import { uniqueId } from "@util/convenience-functions";
 import { convertOutput } from "@util/output-type";
 import type { OutputByType, OutputType } from "@util/output-type";
@@ -22,8 +24,6 @@ import type { OutputByType, OutputType } from "@util/output-type";
  */
 import { strFromU8, unzipSync, zipSync } from "fflate";
 import { textToUint8Array, toUint8Array } from "undio";
-import { js2xml } from "xml-js";
-import type { Element } from "xml-js";
 
 import { appendContentType } from "./content-types-manager";
 import { appendRelationship, getNextRelationshipIndex } from "./relationship-manager";

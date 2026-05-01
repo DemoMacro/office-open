@@ -53,16 +53,15 @@
         "run-ts": "tsx"
     },
     "dependencies": {
+        "@office-open/xml": "workspace:*",
         "fflate": "0.8.2",
         "hash.js": "1.1.7",
         "nanoid": "5.1.9",
-        "undio": "0.2.0",
-        "xml": "1.0.1",
-        "xml-js": "1.6.11"
+        "undio": "0.2.0"
     },
     "devDependencies": {
         "@rolldown/plugin-node-polyfills": "1.0.3",
-        "@types/xml": "1.0.11",
+        "docx": "^9.6.1",
         "execa": "9.6.1",
         "inquirer": "13.4.1",
         "tsx": "4.21.0",
