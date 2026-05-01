@@ -1,7 +1,6 @@
 {
     "name": "@office-open/xml",
-    "version": "0.0.0",
-    "private": true,
+    "version": "0.1.0",
     "description": "XML parsing and serialization, replacing xml + xml-js",
     "keywords": [
         "office-open",
@@ -40,5 +39,10 @@
         "dev": "basis build --stub",
         "build": "basis build",
         "prepack": "pnpm build"
+    },
+    "devDependencies": {
+        "@types/xml": "1.0.11",
+        "xml": "1.0.1",
+        "xml-js": "1.6.11"
     }
 }

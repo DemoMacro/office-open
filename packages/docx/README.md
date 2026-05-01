@@ -74,6 +74,17 @@ writeFileSync("My Document.docx", buffer);
 
 Check the [demo folder](./demo) for 100+ working examples covering every feature.
 
+## Benchmark
+
+Performance comparison against original `docx` (9.6.1) package:
+
+| Scenario                                                | @office-open/docx |     docx |   Speedup |
+| ------------------------------------------------------- | ----------------: | -------: | --------: |
+| Simple document (2 paragraphs)                          |          7,672 hz | 4,334 hz | **1.77x** |
+| Styled paragraphs (20 paragraphs)                       |          6,301 hz | 4,157 hz | **1.52x** |
+| Table (10x5 cells)                                      |          3,854 hz | 2,595 hz | **1.49x** |
+| Full featured (header/footer/headings/table/paragraphs) |          2,745 hz | 2,366 hz | **1.16x** |
+
 ## License
 
 - [MIT](LICENSE) &copy; [Demo Macro](https://imst.xyz/)

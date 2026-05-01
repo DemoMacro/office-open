@@ -7,7 +7,7 @@ import type {
  *
  * @module
  */
-import type { Element } from "xml-js";
+import type { Element } from "@office-open/xml";
 
 import { getFirstLevelElements } from "./util";
 

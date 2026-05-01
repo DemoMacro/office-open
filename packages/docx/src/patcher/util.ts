@@ -5,9 +5,8 @@ import { Text } from "@file/paragraph/run/run-components/text";
  *
  * @module
  */
-import xml from "xml";
-import { xml2js } from "xml-js";
-import type { Element } from "xml-js";
+import { xml, xml2js } from "@office-open/xml";
+import type { Element } from "@office-open/xml";
 
 const formatter = new Formatter();
 

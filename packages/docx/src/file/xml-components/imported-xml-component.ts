@@ -9,8 +9,8 @@ import type { IXmlableObject } from "@file/xml-components";
  *
  * @module
  */
-import { xml2js } from "xml-js";
-import type { Element as XmlElement } from "xml-js";
+import { xml2js } from "@office-open/xml";
+import type { Element as XmlElement } from "@office-open/xml";
 
 import type { IContext } from "./base";
 

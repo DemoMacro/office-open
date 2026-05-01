@@ -3,7 +3,7 @@
  *
  * @module
  */
-import type { Element } from "xml-js";
+import type { Element } from "@office-open/xml";
 
 import type { IRenderedParagraphNode } from "./run-renderer";
 import { createTextElementContents, patchSpaceAttribute } from "./util";
@@ -66,10 +66,7 @@ export const replaceTokenInParagraphElement = ({
                     if (startIndex >= start && startIndex <= end) {
                         const offsetStartIndex = startIndex - start;
                         const offsetEndIndex = Math.min(endIndex, end) - start;
-                        const partToReplace = text.substring(
-                            offsetStartIndex,
-                            offsetEndIndex + 1,
-                        );
+                        const partToReplace = text.substring(offsetStartIndex, offsetEndIndex + 1);
                         // We use a token to split the text if the replacement is within the same run
                         // If not, we just add text to the middle of the run later
                         if (partToReplace === "") {

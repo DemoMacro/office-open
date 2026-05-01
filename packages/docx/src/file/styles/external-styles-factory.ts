@@ -9,8 +9,8 @@ import type { ImportedXmlComponent } from "@file/xml-components";
  *
  * @module
  */
-import { xml2js } from "xml-js";
-import type { Element as XMLElement } from "xml-js";
+import { xml2js } from "@office-open/xml";
+import type { Element as XMLElement } from "@office-open/xml";
 
 import type { IStylesOptions } from "./styles";
 
