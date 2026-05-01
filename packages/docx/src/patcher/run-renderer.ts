@@ -135,9 +135,9 @@ const renderRunNode = (
                 ? (() => {
                       const partStart = currentTextStringIndex;
                       currentTextStringIndex +=
-                          (element.elements[0].text?.toString() ?? "").length - 1;
+                          (element.elements[0].text?.toString() ?? "").length;
                       return {
-                          end: currentTextStringIndex,
+                          end: currentTextStringIndex - 1,
                           index: i,
                           start: partStart,
                           text: element.elements[0].text?.toString() ?? "",
@@ -151,7 +151,7 @@ const renderRunNode = (
     const text = parts.reduce((acc, curr) => acc + curr.text, "");
 
     return {
-        end: currentTextStringIndex,
+        end: currentTextStringIndex - 1,
         index,
         parts,
         start: currentRunStringIndex,

@@ -8,6 +8,7 @@ export default defineBuildConfig({
             entry: ["src/index"],
             plugins: [nodePolyfills()],
             shims: true,
+            external: ["stream"],
             deps: {
                 alwaysBundle: ["xml", "xml-js"],
                 onlyBundle: false,
