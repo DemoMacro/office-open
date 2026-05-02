@@ -165,17 +165,25 @@ describe("ContentTypes", () => {
                 Override: {
                     _attr: {
                         ContentType:
-                            "application/vnd.openxmlformats-officedocument.wordprocessingml.bibliography+xml",
-                        PartName: "/word/bibliography.xml",
+                            "application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml",
+                        PartName: "/word/fontTable.xml",
                     },
                 },
             });
+        });
+    });
+
+    describe("#addBibliography()", () => {
+        it("should add bibliography content type", () => {
+            contentTypes.addBibliography();
+            const tree = new Formatter().format(contentTypes);
+
             expect(tree["Types"][26]).to.deep.equal({
                 Override: {
                     _attr: {
                         ContentType:
-                            "application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml",
-                        PartName: "/word/fontTable.xml",
+                            "application/vnd.openxmlformats-officedocument.wordprocessingml.bibliography+xml",
+                        PartName: "/word/bibliography.xml",
                     },
                 },
             });
@@ -188,7 +196,7 @@ describe("ContentTypes", () => {
             contentTypes.addFooter(102);
             const tree = new Formatter().format(contentTypes);
 
-            expect(tree["Types"][27]).to.deep.equal({
+            expect(tree["Types"][26]).to.deep.equal({
                 Override: {
                     _attr: {
                         ContentType:
@@ -198,7 +206,7 @@ describe("ContentTypes", () => {
                 },
             });
 
-            expect(tree["Types"][28]).to.deep.equal({
+            expect(tree["Types"][27]).to.deep.equal({
                 Override: {
                     _attr: {
                         ContentType:
@@ -216,7 +224,7 @@ describe("ContentTypes", () => {
             contentTypes.addHeader(202);
             const tree = new Formatter().format(contentTypes);
 
-            expect(tree["Types"][27]).to.deep.equal({
+            expect(tree["Types"][26]).to.deep.equal({
                 Override: {
                     _attr: {
                         ContentType:
@@ -226,7 +234,7 @@ describe("ContentTypes", () => {
                 },
             });
 
-            expect(tree["Types"][28]).to.deep.equal({
+            expect(tree["Types"][27]).to.deep.equal({
                 Override: {
                     _attr: {
                         ContentType:

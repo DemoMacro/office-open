@@ -6,7 +6,12 @@ import {
     Packer,
     Paragraph,
     StructuredDocumentTagBlock,
+    StructuredDocumentTagCell,
+    StructuredDocumentTagRow,
     StructuredDocumentTagRun,
+    Table,
+    TableCell,
+    TableRow,
     TextRun,
 } from "docx-plus";
 
@@ -171,6 +176,92 @@ const doc = new Document({
                 }),
 
                 new Paragraph({ children: [new TextRun("")] }),
+
+                // Cell-level SDT (wrapped table cell)
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            bold: true,
+                            text: "7. Cell-level SDT (wrapped table cell)",
+                            size: 28,
+                        }),
+                    ],
+                    spacing: { after: 200 },
+                }),
+                new Table({
+                    columnWidths: [3000, 3000],
+                    rows: [
+                        new TableRow({
+                            children: [
+                                new TableCell({
+                                    children: [new Paragraph("Normal cell")],
+                                }),
+                                new StructuredDocumentTagCell({
+                                    properties: {
+                                        alias: "Controlled Cell",
+                                        tag: "cell-sdt",
+                                    },
+                                    children: [
+                                        new TableCell({
+                                            children: [
+                                                new Paragraph(
+                                                    "This cell is wrapped in a content control.",
+                                                ),
+                                            ],
+                                        }),
+                                    ],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+
+                new Paragraph({ children: [new TextRun("")] }),
+
+                // Row-level SDT (wrapped table row)
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            bold: true,
+                            text: "8. Row-level SDT (wrapped table row)",
+                            size: 28,
+                        }),
+                    ],
+                    spacing: { after: 200 },
+                }),
+                new Table({
+                    columnWidths: [3000, 3000],
+                    rows: [
+                        new TableRow({
+                            children: [
+                                new TableCell({
+                                    children: [new Paragraph("Normal row - cell 1")],
+                                }),
+                                new TableCell({
+                                    children: [new Paragraph("Normal row - cell 2")],
+                                }),
+                            ],
+                        }),
+                        new StructuredDocumentTagRow({
+                            properties: {
+                                alias: "Controlled Row",
+                                tag: "row-sdt",
+                            },
+                            children: [
+                                new TableRow({
+                                    children: [
+                                        new TableCell({
+                                            children: [new Paragraph("Controlled row - cell 1")],
+                                        }),
+                                        new TableCell({
+                                            children: [new Paragraph("Controlled row - cell 2")],
+                                        }),
+                                    ],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
             ],
         },
     ],

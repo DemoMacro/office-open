@@ -33,6 +33,8 @@ export * from "./border";
 export * from "./vertical-align";
 export * from "./checkbox";
 export * from "./sdt";
+export * from "./permissions";
+export * from "./alt-chunk";
 export * from "./fonts";
 export * from "./textbox";
 export * from "./bibliography";

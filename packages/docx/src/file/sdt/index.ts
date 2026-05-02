@@ -4,3 +4,5 @@
  * @module
  */
 export * from "./sdt";
+export * from "./sdt-cell";
+export * from "./sdt-row";

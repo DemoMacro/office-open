@@ -1,3 +1,4 @@
+import { AltChunkCollection } from "./alt-chunk/alt-chunk-collection";
 /**
  * File module for WordprocessingML documents.
  *
@@ -161,6 +162,7 @@ export class File {
     private readonly media: Media;
     private readonly charts: ChartCollection;
     private readonly smartArts: SmartArtCollection;
+    private readonly altChunks: AltChunkCollection;
     private readonly fileRelationships: Relationships;
     private readonly footnotesWrapper: FootnotesWrapper;
     private readonly endnotesWrapper: EndnotesWrapper;
@@ -208,11 +210,13 @@ export class File {
             },
             trackRevisions: options.features?.trackRevisions,
             updateFields: options.features?.updateFields,
+            documentProtection: options.features?.documentProtection,
         });
 
         this.media = new Media();
         this.charts = new ChartCollection();
         this.smartArts = new SmartArtCollection();
+        this.altChunks = new AltChunkCollection();
 
         if (options.externalStyles !== undefined) {
             const defaultFactory = new DefaultStylesFactory();
@@ -239,6 +243,10 @@ export class File {
         }
 
         this.addDefaultRelationships();
+
+        if (this.bibliography) {
+            this.contentTypes.addBibliography();
+        }
 
         for (const section of options.sections) {
             this.addSection(section);
@@ -390,11 +398,13 @@ export class File {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
             "comments.xml",
         );
-        this.documentWrapper.Relationships.addRelationship(
-            this.currentRelationshipId++,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/bibliography",
-            "bibliography.xml",
-        );
+        if (this.bibliography) {
+            this.documentWrapper.Relationships.addRelationship(
+                this.currentRelationshipId++,
+                "http://schemas.openxmlformats.org/officeDocument/2006/relationships/bibliography",
+                "bibliography.xml",
+            );
+        }
     }
 
     public get Document(): DocumentWrapper {
@@ -423,6 +433,10 @@ export class File {
 
     public get SmartArts(): SmartArtCollection {
         return this.smartArts;
+    }
+
+    public get AltChunks(): AltChunkCollection {
+        return this.altChunks;
     }
 
     public get FileRelationships(): Relationships {

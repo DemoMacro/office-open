@@ -7,6 +7,7 @@
  */
 import { XmlComponent } from "@file/xml-components";
 
+import type { StructuredDocumentTagRow } from "../../sdt";
 import { TableCell } from "../table-cell";
 import { TableRowProperties } from "./table-row-properties";
 import type { ITableRowPropertiesOptions } from "./table-row-properties";
@@ -18,7 +19,7 @@ import type { ITableRowPropertiesOptions } from "./table-row-properties";
  */
 export type ITableRowOptions = {
     /** Array of TableCell elements that make up the row */
-    readonly children: readonly TableCell[];
+    readonly children: readonly (TableCell | StructuredDocumentTagRow)[];
 } & ITableRowPropertiesOptions;
 
 /**
@@ -85,40 +86,34 @@ export class TableRow extends XmlComponent {
     }
 
     public rootIndexToColumnIndex(rootIndex: number): number {
-        // Convert the root index to the virtual column index
         if (rootIndex < 1 || rootIndex >= this.root.length) {
             throw new Error(`cell 'rootIndex' should between 1 to ${this.root.length - 1}`);
         }
         let colIdx = 0;
-        // Offset because properties is also in root.
         for (let rootIdx = 1; rootIdx < rootIndex; rootIdx++) {
-            const cell = this.root[rootIdx] as TableCell;
-            colIdx += cell.options.columnSpan || 1;
+            const cell = this.root[rootIdx];
+            colIdx += cell instanceof TableCell ? cell.options.columnSpan || 1 : 1;
         }
         return colIdx;
     }
 
     public columnIndexToRootIndex(columnIndex: number, allowEndNewCell: boolean = false): number {
-        // Convert the virtual column index to the root index
-        // `allowEndNewCell` for get index to inert new cell
         if (columnIndex < 0) {
             throw new Error(`cell 'columnIndex' should not less than zero`);
         }
         let colIdx = 0;
-        // Offset because properties is also in root.
         let rootIdx = 1;
         while (colIdx <= columnIndex) {
             if (rootIdx >= this.root.length) {
                 if (allowEndNewCell) {
-                    // For inserting verticalMerge CONTINUE cell at end of row
                     return this.root.length;
                 } else {
                     throw new Error(`cell 'columnIndex' should not great than ${colIdx - 1}`);
                 }
             }
-            const cell = this.root[rootIdx] as TableCell;
+            const cell = this.root[rootIdx];
             rootIdx += 1;
-            colIdx += (cell && cell.options.columnSpan) || 1;
+            colIdx += cell instanceof TableCell ? cell.options.columnSpan || 1 : 1;
         }
         return rootIdx - 1;
     }

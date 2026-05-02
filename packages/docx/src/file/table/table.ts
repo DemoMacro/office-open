@@ -8,6 +8,7 @@
 import { FileChild } from "@file/file-child";
 
 import type { AlignmentType } from "../paragraph";
+import type { StructuredDocumentTagRow } from "../sdt";
 import { TableGrid } from "./grid";
 import type { ITableGridChangeOptions } from "./grid";
 import { TableCell, VerticalMergeType } from "./table-cell";
@@ -39,7 +40,7 @@ import type { ITableWidthProperties } from "./table-width";
  * @see {@link Table}
  */
 export interface ITableOptions {
-    readonly rows: readonly TableRow[];
+    readonly rows: readonly (TableRow | StructuredDocumentTagRow)[];
     readonly width?: ITableWidthProperties;
     readonly columnWidths?: readonly number[];
     readonly columnWidthsRevision?: ITableGridChangeOptions;
