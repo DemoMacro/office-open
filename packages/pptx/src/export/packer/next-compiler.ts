@@ -7,6 +7,7 @@ import { xml } from "@office-open/xml";
 import type { Zippable } from "fflate";
 
 import { ChartReplacer } from "./chart-replacer";
+import { HyperlinkReplacer } from "./hyperlink-replacer";
 import { ImageReplacer } from "./image-replacer";
 
 export interface IXmlifyedFile {
@@ -22,6 +23,7 @@ export class Compiler {
     private readonly formatter = new Formatter();
     private readonly imageReplacer = new ImageReplacer();
     private readonly chartReplacer = new ChartReplacer();
+    private readonly hyperlinkReplacer = new HyperlinkReplacer();
 
     public compile(
         file: File,
@@ -208,6 +210,36 @@ export class Compiler {
                         slideChartOffset + ci,
                         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart",
                         `../charts/chart${globalIndex + 1}.xml`,
+                    );
+                });
+            }
+
+            // Hyperlink placeholder replacement
+            const hlinkPlaceholderRegex = /\{hlink:([^}]+)\}/g;
+            const slideHlinkKeys: string[] = [];
+            let hlinkMatch: RegExpExecArray | null;
+            while ((hlinkMatch = hlinkPlaceholderRegex.exec(replacedSlideXml)) !== null) {
+                if (!slideHlinkKeys.includes(hlinkMatch[1])) {
+                    slideHlinkKeys.push(hlinkMatch[1]);
+                }
+            }
+
+            if (slideHlinkKeys.length > 0) {
+                const slideHlinks = file.Hyperlinks.Array.filter((h) => slideHlinkKeys.includes(h.key));
+                const hlinkOffset = slideWrapper.Relationships.RelationshipCount + 1;
+
+                replacedSlideXml = this.hyperlinkReplacer.replace(
+                    replacedSlideXml,
+                    slideHlinks,
+                    hlinkOffset,
+                );
+
+                slideHlinks.forEach((hlink, hi) => {
+                    slideWrapper.Relationships.addRelationship(
+                        hlinkOffset + hi,
+                        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+                        hlink.url,
+                        "External",
                     );
                 });
             }

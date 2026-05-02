@@ -3,6 +3,7 @@ import { Background } from "@file/background/background";
 import { ChartCollection } from "@file/chart/chart-collection";
 import { ContentTypes } from "@file/content-types/content-types";
 import { CoreProperties, type ICorePropertiesOptions } from "@file/core-properties/properties";
+import { HyperlinkCollection } from "@file/hyperlink-collection";
 import { Media } from "@file/media/media";
 import { NotesSlide } from "@file/notes/notes-slide";
 import { PresentationProperties } from "@file/presentation-properties";
@@ -36,6 +37,7 @@ export class File {
     private readonly fileRelationships: Relationships;
     private readonly media: Media;
     private readonly charts: ChartCollection;
+    private readonly hyperlinks: HyperlinkCollection;
     private readonly presentationWrapper: PresentationWrapper;
     private readonly theme: DefaultTheme;
     private readonly tableStyles: TableStyles;
@@ -61,6 +63,7 @@ export class File {
         this.contentTypes = new ContentTypes();
         this.media = new Media();
         this.charts = new ChartCollection();
+        this.hyperlinks = new HyperlinkCollection();
         this.notesSlides = [];
 
         // Package-level relationships (_rels/.rels)
@@ -207,6 +210,10 @@ export class File {
 
     public get Charts(): ChartCollection {
         return this.charts;
+    }
+
+    public get Hyperlinks(): HyperlinkCollection {
+        return this.hyperlinks;
     }
 
     public get PresentationWrapper(): PresentationWrapper {

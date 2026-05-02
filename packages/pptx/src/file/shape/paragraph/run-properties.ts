@@ -1,5 +1,13 @@
 import type { ShapeFill } from "@file/drawingml/shape-properties";
 import { BuilderElement, NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import type { IContext, IXmlableObject } from "@file/xml-components";
+
+let nextHyperlinkId = 1;
+
+export interface IHyperlinkOptions {
+    readonly url: string;
+    readonly tooltip?: string;
+}
 
 export interface IRunPropertiesOptions {
     readonly fontSize?: number;
@@ -9,12 +17,17 @@ export interface IRunPropertiesOptions {
     readonly font?: string;
     readonly lang?: string;
     readonly fill?: ShapeFill;
+    readonly hyperlink?: IHyperlinkOptions;
 }
 
 /**
  * a:rPr — Run properties (font, size, color, etc.).
  */
 export class RunProperties extends XmlComponent {
+    private readonly hyperlinkKey?: string;
+    private readonly hyperlinkUrl?: string;
+    private readonly hyperlinkTooltip?: string;
+
     public static hasProperties(options: IRunPropertiesOptions): boolean {
         return !!(
             options.fontSize ||
@@ -23,7 +36,8 @@ export class RunProperties extends XmlComponent {
             options.underline ||
             options.font ||
             options.lang ||
-            options.fill
+            options.fill ||
+            options.hyperlink
         );
     }
 
@@ -60,5 +74,28 @@ export class RunProperties extends XmlComponent {
         if (options.fill) {
             this.root.push(options.fill);
         }
+
+        if (options.hyperlink) {
+            const key = `hlink_${nextHyperlinkId++}`;
+            this.hyperlinkKey = key;
+            this.hyperlinkUrl = options.hyperlink.url;
+            this.hyperlinkTooltip = options.hyperlink.tooltip;
+
+            const hlinkAttrs: Record<string, { readonly key: string; readonly value: string }> = {
+                rId: { key: "r:id", value: `{hlink:${key}}` },
+            };
+            if (options.hyperlink.tooltip) {
+                hlinkAttrs.tooltip = { key: "tooltip", value: options.hyperlink.tooltip };
+            }
+            this.root.push(new BuilderElement({ name: "a:hlinkClick", attributes: hlinkAttrs }));
+        }
+    }
+
+    public prepForXml(context: IContext): IXmlableObject | undefined {
+        if (this.hyperlinkKey) {
+            const file = context.fileData as { Hyperlinks?: { addHyperlink(key: string, url: string, tooltip?: string): void } };
+            file?.Hyperlinks?.addHyperlink(this.hyperlinkKey, this.hyperlinkUrl!, this.hyperlinkTooltip);
+        }
+        return super.prepForXml(context);
     }
 }
