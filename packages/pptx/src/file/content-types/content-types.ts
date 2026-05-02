@@ -41,6 +41,9 @@ export class ContentTypes extends XmlComponent {
             createDefault("application/vnd.openxmlformats-package.relationships+xml", "rels"),
         );
         this.root.push(createDefault("application/xml", "xml"));
+        this.root.push(createDefault("image/png", "png"));
+        this.root.push(createDefault("image/jpeg", "jpeg"));
+        this.root.push(createDefault("video/mp4", "mp4"));
 
         // Static overrides
         this.root.push(createOverride(PPTX_MAIN, "/ppt/presentation.xml"));

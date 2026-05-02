@@ -111,20 +111,27 @@ export class Compiler {
             path: "ppt/slideLayouts/_rels/slideLayout1.xml.rels",
         };
 
-        // Notes Master
-        mapping["NotesMaster"] = {
-            data: xml(this.formatter.format(new DefaultNotesMaster(), context), {
-                declaration,
-                indent,
-            }),
-            path: "ppt/notesMasters/notesMaster1.xml",
-        };
-        mapping["NotesMasterRelationships"] = {
-            data: xml(this.formatter.format(file.NotesMasterRelationships, context), {
-                declaration: false,
-            }),
-            path: "ppt/notesMasters/_rels/notesMaster1.xml.rels",
-        };
+        // Notes Master — only when notes slides exist
+        if (file.NotesSlides.length > 0) {
+            file.PresentationWrapper.Relationships.addRelationship(
+                file.PresentationWrapper.Relationships.RelationshipCount + 1,
+                "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster",
+                "notesMasters/notesMaster1.xml",
+            );
+            mapping["NotesMaster"] = {
+                data: xml(this.formatter.format(new DefaultNotesMaster(), context), {
+                    declaration,
+                    indent,
+                }),
+                path: "ppt/notesMasters/notesMaster1.xml",
+            };
+            mapping["NotesMasterRelationships"] = {
+                data: xml(this.formatter.format(file.NotesMasterRelationships, context), {
+                    declaration: false,
+                }),
+                path: "ppt/notesMasters/_rels/notesMaster1.xml.rels",
+            };
+        }
 
         // Presentation + its relationships
         const presentationXml = xml(this.formatter.format(file.PresentationWrapper.View, context), {
@@ -134,9 +141,10 @@ export class Compiler {
         let currentImageCount = 0;
 
         const mediaData = this.imageReplacer.getMediaData(presentationXml, file.Media);
-        mediaData.forEach((image) => {
+        const presImageOffset = file.PresentationWrapper.Relationships.RelationshipCount + 1;
+        mediaData.forEach((image, idx) => {
             file.PresentationWrapper.Relationships.addRelationship(
-                file.PresentationWrapper.Relationships.RelationshipCount + 1,
+                presImageOffset + idx,
                 "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
                 `../media/${image.fileName}`,
             );
@@ -145,7 +153,7 @@ export class Compiler {
         const replacedPresentationXml = this.imageReplacer.replace(
             presentationXml,
             mediaData,
-            currentImageCount,
+            presImageOffset,
         );
         currentImageCount += mediaData.length;
 
@@ -170,9 +178,10 @@ export class Compiler {
             });
 
             const slideMediaData = this.imageReplacer.getMediaData(slideXml, file.Media);
-            slideMediaData.forEach((image) => {
+            const slideImageOffset = slideWrapper.Relationships.RelationshipCount + 1;
+            slideMediaData.forEach((image, idx) => {
                 slideWrapper.Relationships.addRelationship(
-                    slideWrapper.Relationships.RelationshipCount + 1,
+                    slideImageOffset + idx,
                     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
                     `../media/${image.fileName}`,
                 );
@@ -181,7 +190,7 @@ export class Compiler {
             let replacedSlideXml = this.imageReplacer.replace(
                 slideXml,
                 slideMediaData,
-                currentImageCount,
+                slideImageOffset,
             );
             currentImageCount += slideMediaData.length;
 
@@ -248,20 +257,38 @@ export class Compiler {
 
             // Media (video/audio) placeholder replacement
             const slideMediaRefs = this.mediaReplacer.getMediaRefs(replacedSlideXml, file.Media);
-            if (slideMediaRefs.length > 0) {
-                const mediaOffset = slideWrapper.Relationships.RelationshipCount + 1;
+            const slideVideoRefs = this.mediaReplacer.getVideoRefs(replacedSlideXml, file.Media);
+            const slideAllMediaRefs = [...slideMediaRefs, ...slideVideoRefs];
 
-                replacedSlideXml = this.mediaReplacer.replace(
+            if (slideAllMediaRefs.length > 0) {
+                const mediaOffset = slideWrapper.Relationships.RelationshipCount + 1;
+                const videoOffset = mediaOffset + slideMediaRefs.length;
+
+                replacedSlideXml = this.mediaReplacer.replaceMedia(
                     replacedSlideXml,
                     slideMediaRefs,
                     mediaOffset,
                 );
 
+                replacedSlideXml = this.mediaReplacer.replaceVideo(
+                    replacedSlideXml,
+                    slideVideoRefs,
+                    videoOffset,
+                );
+
                 slideMediaRefs.forEach((media, mi) => {
                     slideWrapper.Relationships.addRelationship(
                         mediaOffset + mi,
-                        "http://schemas.microsoft.com/office/powerpoint/2010/relationships/media",
+                        "http://schemas.microsoft.com/office/2007/relationships/media",
                         `../media/${media.fileName}`,
+                    );
+                });
+
+                slideVideoRefs.forEach((video, vi) => {
+                    slideWrapper.Relationships.addRelationship(
+                        videoOffset + vi,
+                        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/video",
+                        `../media/${video.fileName}`,
                     );
                 });
             }

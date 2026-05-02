@@ -1,22 +1,17 @@
 import * as fs from "fs";
+import { fileURLToPath } from "url";
+import * as path from "path";
 
-import { Presentation, Packer, Shape, SolidFill, Paragraph, Run, VideoFrame, AudioFrame } from "../src";
+import { Presentation, Packer, Shape, SolidFill, Paragraph, Run, VideoFrame } from "../src";
 
-// Minimal MP4 file (1x1 pixel, 0.1s) for testing
-const minimalMp4 = new Uint8Array([
-    0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6F, 0x6D,
-    0x00, 0x00, 0x02, 0x00, 0x69, 0x73, 0x6F, 0x6D, 0x69, 0x73, 0x6F, 0x32,
-    0x61, 0x76, 0x63, 0x31, 0x6D, 0x70, 0x34, 0x31, 0x00, 0x00, 0x00, 0x00,
-]);
-
-// Minimal WAV file (44-byte header + silence) for testing
-const minimalWav = new Uint8Array(44);
-minimalWav.set([0x52, 0x49, 0x46, 0x46], 0); // "RIFF"
-minimalWav.set([0x57, 0x41, 0x56, 0x45], 8); // "WAVE"
-minimalWav.set([0x66, 0x6D, 0x74, 0x20], 12); // "fmt "
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const videoPath = path.join(__dirname, "assets/test-video.mp4");
+const videoData = new Uint8Array(fs.readFileSync(videoPath));
+const posterPath = path.join(__dirname, "assets/test-poster.png");
+const posterData = new Uint8Array(fs.readFileSync(posterPath));
 
 const pres = new Presentation({
-    title: "Media Demo",
+    title: "Video Demo",
     creator: "Demo",
     slides: [
         {
@@ -30,64 +25,39 @@ const pres = new Presentation({
                         new Paragraph({
                             properties: { alignment: "ctr", bulletNone: true },
                             children: [
-                                new Run({ text: "Video & Audio Demo", fontSize: 32, bold: true }),
-                            ],
-                        }),
-                    ],
-                }),
-                new Shape({
-                    x: 50,
-                    y: 90,
-                    width: 500,
-                    height: 30,
-                    paragraphs: [
-                        new Paragraph({
-                            properties: { bulletNone: true },
-                            children: [
-                                new Run({
-                                    text: "Video frame (MP4) — placeholder below",
-                                    fontSize: 16,
-                                    fill: new SolidFill("666666"),
-                                }),
+                                new Run({ text: "Video Embedding Demo", fontSize: 32, bold: true }),
                             ],
                         }),
                     ],
                 }),
                 new VideoFrame({
                     x: 50,
-                    y: 130,
+                    y: 100,
                     width: 480,
                     height: 270,
-                    data: minimalMp4,
+                    data: videoData,
                     type: "mp4",
-                    name: "Sample Video",
+                    name: "Big Buck Bunny",
+                    poster: posterData,
+                    posterType: "png",
                 }),
                 new Shape({
                     x: 50,
-                    y: 420,
+                    y: 390,
                     width: 500,
-                    height: 30,
+                    height: 40,
                     paragraphs: [
                         new Paragraph({
                             properties: { bulletNone: true },
                             children: [
                                 new Run({
-                                    text: "Audio frame (WAV) — placeholder below",
-                                    fontSize: 16,
+                                    text: "Video: Big Buck Bunny (360p, 10s, ~1MB MP4)",
+                                    fontSize: 14,
                                     fill: new SolidFill("666666"),
                                 }),
                             ],
                         }),
                     ],
-                }),
-                new AudioFrame({
-                    x: 50,
-                    y: 460,
-                    width: 48,
-                    height: 48,
-                    data: minimalWav,
-                    type: "wav",
-                    name: "Sample Audio",
                 }),
             ],
         },
