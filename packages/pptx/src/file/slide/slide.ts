@@ -2,6 +2,8 @@ import type { Background } from "@file/background/background";
 import { BuilderElement, NextAttributeComponent, XmlComponent } from "@file/xml-components";
 import type { ITransitionOptions } from "@file/transition/transition";
 import { Transition } from "@file/transition/transition";
+import { SlideTiming } from "@file/animation/timing";
+import { Shape } from "@file/shape/shape";
 
 import { CommonSlideData } from "./common-slide-data";
 
@@ -12,6 +14,19 @@ class ColorMapOverride extends BuilderElement<{}> {
             children: [new BuilderElement({ name: "a:masterClrMapping" })],
         });
     }
+}
+
+function collectAnimations(children: readonly XmlComponent[]): Array<{ readonly spid: number; readonly options: import("@file/animation/types").IAnimationOptions }> {
+    const entries: Array<{ readonly spid: number; readonly options: import("@file/animation/types").IAnimationOptions }> = [];
+    for (const child of children) {
+        if (child instanceof Shape) {
+            const anim = child.Animation;
+            if (anim) {
+                entries.push({ spid: child.ShapeId, options: anim });
+            }
+        }
+    }
+    return entries;
 }
 
 /**
@@ -44,6 +59,11 @@ export class Slide extends XmlComponent {
         this.root.push(new ColorMapOverride());
         if (transition) {
             this.root.push(new Transition(transition));
+        }
+
+        const animations = collectAnimations(children);
+        if (animations.length > 0) {
+            this.root.push(new SlideTiming(animations));
         }
     }
 }
