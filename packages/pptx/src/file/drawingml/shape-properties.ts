@@ -1,20 +1,23 @@
 import { XmlComponent as Xc } from "@file/xml-components";
 
+import { GradientFill } from "./gradient-fill";
 import { NoFill } from "./no-fill";
+import { Outline } from "./outline";
 import { PresetGeometry } from "./preset-geometry";
 import { SolidFill } from "./solid-fill";
 import type { ITransform2DOptions } from "./transform-2d";
 import { Transform2D } from "./transform-2d";
 
-export type ShapeFill = SolidFill | NoFill;
+export type ShapeFill = SolidFill | NoFill | GradientFill;
 
 export interface IShapePropertiesOptions extends ITransform2DOptions {
     readonly geometry?: string;
     readonly fill?: ShapeFill;
+    readonly outline?: Outline;
 }
 
 /**
- * p:spPr — Shape properties (transform, geometry, fill).
+ * p:spPr — Shape properties (transform, geometry, fill, outline).
  * Uses p: prefix in PresentationML context, though type is a:CT_ShapeProperties.
  */
 export class ShapeProperties extends Xc {
@@ -40,6 +43,10 @@ export class ShapeProperties extends Xc {
             this.root.push(options.fill);
         } else {
             this.root.push(new NoFill());
+        }
+
+        if (options.outline) {
+            this.root.push(options.outline);
         }
     }
 }

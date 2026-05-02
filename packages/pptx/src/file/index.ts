@@ -14,6 +14,13 @@ export {
 export { EndParagraphRunProperties } from "./shape/paragraph/end-paragraph-run";
 export { SolidFill } from "./drawingml/solid-fill";
 export { NoFill } from "./drawingml/no-fill";
+export {
+    GradientFill,
+    type GradientFillOptions,
+    type GradientStopOptions,
+} from "./drawingml/gradient-fill";
+export { Outline, type OutlineOptions } from "./drawingml/outline";
+export { BlipFill } from "./drawingml/blip-fill";
 export { Transform2D, type ITransform2DOptions } from "./drawingml/transform-2d";
 export { PresetGeometry } from "./drawingml/preset-geometry";
 export {
@@ -23,6 +30,7 @@ export {
 } from "./drawingml/shape-properties";
 export { NonVisualDrawingProperties } from "./drawingml/non-visual-drawing-props";
 export { NonVisualShapeProperties } from "./drawingml/non-visual-shape-props";
+export { NonVisualPictureProperties } from "./drawingml/non-visual-picture-props";
 export { GroupShapeProperties } from "./drawingml/group-shape-properties";
 export { Media } from "./media/media";
 export { createTransformation, type IMediaTransformation } from "./media/media";
@@ -42,3 +50,5 @@ export { DefaultSlideMaster } from "./slide-master/slide-master";
 export { DefaultSlideLayout } from "./slide-layout/slide-layout";
 export { DefaultNotesMaster } from "./notes-master/notes-master";
 export { PresentationWrapper, type IViewWrapper } from "./presentation/presentation-wrapper";
+export { Picture, type IPictureOptions } from "./picture/picture";
+export { Background, type IBackgroundOptions } from "./background/background";

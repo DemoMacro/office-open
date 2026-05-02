@@ -1,4 +1,5 @@
 import { AppProperties } from "@file/app-properties/app-properties";
+import { Background } from "@file/background/background";
 import { ContentTypes } from "@file/content-types/content-types";
 import { CoreProperties, type ICorePropertiesOptions } from "@file/core-properties/properties";
 import { Media } from "@file/media/media";
@@ -13,6 +14,7 @@ import { pixelsToEmus } from "@util/types";
 
 export interface ISlideOptions {
     readonly children?: readonly XmlComponent[];
+    readonly background?: Background;
 }
 
 export interface IPresentationOptions extends ICorePropertiesOptions {
@@ -69,7 +71,7 @@ export class File {
         this.slides = [];
         this.slideWrappers = [];
         for (let i = 0; i < slides.length; i++) {
-            const slide = new Slide(slides[i].children ?? []);
+            const slide = new Slide(slides[i].children ?? [], slides[i].background);
             this.slides.push(slide);
             const slideRels = new Relationships();
             slideRels.addRelationship(
