@@ -1,16 +1,22 @@
-import { BuilderElement, NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import {
+    BuilderElement,
+    IgnoreIfEmptyXmlComponent,
+    NextAttributeComponent,
+} from "@file/xml-components";
 
 export interface IParagraphPropertiesOptions {
     readonly alignment?: "l" | "ctr" | "r" | "just";
     readonly indentLevel?: number;
     readonly marginBottom?: number;
     readonly marginTop?: number;
+    readonly bulletNone?: boolean;
 }
 
 /**
  * a:pPr — Paragraph properties (alignment, indent, spacing).
+ * Omitted from output when completely empty.
  */
-export class ParagraphProperties extends XmlComponent {
+export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
     public constructor(options: IParagraphPropertiesOptions = {}) {
         super("a:pPr");
 
@@ -53,10 +59,12 @@ export class ParagraphProperties extends XmlComponent {
             );
         }
 
-        this.root.push(
-            new BuilderElement({
-                name: "a:buNone",
-            }),
-        );
+        if (options.bulletNone !== false) {
+            this.root.push(
+                new BuilderElement({
+                    name: "a:buNone",
+                }),
+            );
+        }
     }
 }

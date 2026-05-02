@@ -41,7 +41,8 @@
         "build": "basis build",
         "prepack": "pnpm build",
         "test": "vp test run --coverage",
-        "check": "vp check --fix"
+        "check": "vp check --fix",
+        "run-ts": "tsx --tsconfig demo/tsconfig.json"
     },
     "dependencies": {
         "@office-open/core": "workspace:*",

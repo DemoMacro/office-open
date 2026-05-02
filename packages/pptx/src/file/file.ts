@@ -3,12 +3,15 @@ import { Background } from "@file/background/background";
 import { ContentTypes } from "@file/content-types/content-types";
 import { CoreProperties, type ICorePropertiesOptions } from "@file/core-properties/properties";
 import { Media } from "@file/media/media";
+import { PresentationProperties } from "@file/presentation-properties";
 import { PresentationWrapper } from "@file/presentation/presentation-wrapper";
 import { Relationships } from "@file/relationships/relationships";
 import { DefaultSlideLayout } from "@file/slide-layout/slide-layout";
 import { DefaultSlideMaster } from "@file/slide-master/slide-master";
 import { Slide } from "@file/slide/slide";
+import { TableStyles } from "@file/table-styles";
 import { DefaultTheme } from "@file/theme/theme";
+import { ViewProperties } from "@file/view-properties";
 import type { XmlComponent } from "@file/xml-components";
 import { pixelsToEmus } from "@util/types";
 
@@ -31,6 +34,9 @@ export class File {
     private readonly media: Media;
     private readonly presentationWrapper: PresentationWrapper;
     private readonly theme: DefaultTheme;
+    private readonly tableStyles: TableStyles;
+    private readonly presProps: PresentationProperties;
+    private readonly viewProps: ViewProperties;
     private readonly slideMaster: DefaultSlideMaster;
     private readonly slideLayout: DefaultSlideLayout;
     private readonly slideMasterRelationships: Relationships;
@@ -96,21 +102,43 @@ export class File {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster",
             "slideMasters/slideMaster1.xml",
         );
-        this.presentationWrapper.Relationships.addRelationship(
-            2,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
-            "theme/theme1.xml",
-        );
         for (let i = 0; i < slides.length; i++) {
             this.presentationWrapper.Relationships.addRelationship(
-                i + 3,
+                i + 2,
                 "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide",
                 `slides/slide${i + 1}.xml`,
             );
         }
 
+        const nextRId = slides.length + 2;
+        this.presentationWrapper.Relationships.addRelationship(
+            nextRId,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/presProps",
+            "presProps.xml",
+        );
+        this.presentationWrapper.Relationships.addRelationship(
+            nextRId + 1,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/viewProps",
+            "viewProps.xml",
+        );
+        this.presentationWrapper.Relationships.addRelationship(
+            nextRId + 2,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
+            "theme/theme1.xml",
+        );
+        this.presentationWrapper.Relationships.addRelationship(
+            nextRId + 3,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles",
+            "tableStyles.xml",
+        );
+
         // Theme
         this.theme = new DefaultTheme();
+
+        // Table styles (required when presentation contains tables)
+        this.tableStyles = new TableStyles();
+        this.presProps = new PresentationProperties();
+        this.viewProps = new ViewProperties();
 
         // Slide Master
         this.slideMaster = new DefaultSlideMaster();
@@ -162,6 +190,18 @@ export class File {
 
     public get Theme(): DefaultTheme {
         return this.theme;
+    }
+
+    public get TableStyles(): TableStyles {
+        return this.tableStyles;
+    }
+
+    public get PresProps(): PresentationProperties {
+        return this.presProps;
+    }
+
+    public get ViewProps(): ViewProperties {
+        return this.viewProps;
     }
 
     public get SlideMaster(): DefaultSlideMaster {

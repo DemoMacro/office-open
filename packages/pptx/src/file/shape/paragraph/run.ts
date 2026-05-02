@@ -14,7 +14,9 @@ export interface IRunOptions extends IRunPropertiesOptions {
 export class Run extends XmlComponent {
     public constructor(options: IRunOptions = {}) {
         super("a:r");
-        this.root.push(new RunProperties(options));
+        if (RunProperties.hasProperties(options)) {
+            this.root.push(new RunProperties(options));
+        }
         if (options.text) {
             this.root.push(new Text(options.text));
         }

@@ -63,6 +63,24 @@ export class Compiler {
             path: "ppt/theme/theme1.xml",
         };
 
+        // Table styles
+        mapping["TableStyles"] = {
+            data: xml(this.formatter.format(file.TableStyles, context), { declaration, indent }),
+            path: "ppt/tableStyles.xml",
+        };
+
+        // Presentation properties
+        mapping["PresProps"] = {
+            data: xml(this.formatter.format(file.PresProps, context), { declaration, indent }),
+            path: "ppt/presProps.xml",
+        };
+
+        // View properties
+        mapping["ViewProps"] = {
+            data: xml(this.formatter.format(file.ViewProps, context), { declaration, indent }),
+            path: "ppt/viewProps.xml",
+        };
+
         // Slide Master
         mapping["SlideMaster"] = {
             data: xml(this.formatter.format(file.SlideMaster, context), { declaration, indent }),
