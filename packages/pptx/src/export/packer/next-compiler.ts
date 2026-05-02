@@ -1,9 +1,11 @@
 import { Formatter } from "@export/formatter";
+import type { ChartCollection } from "@file/chart/chart-collection";
 import type { File } from "@file/file";
 import type { IContext } from "@file/xml-components";
 import { xml } from "@office-open/xml";
 import type { Zippable } from "fflate";
 
+import { ChartReplacer } from "./chart-replacer";
 import { ImageReplacer } from "./image-replacer";
 
 export interface IXmlifyedFile {
@@ -18,6 +20,7 @@ export interface IXmlifyedFileMapping {
 export class Compiler {
     private readonly formatter = new Formatter();
     private readonly imageReplacer = new ImageReplacer();
+    private readonly chartReplacer = new ChartReplacer();
 
     public compile(
         file: File,
@@ -42,12 +45,6 @@ export class Compiler {
                     indent,
                 }),
                 path: "docProps/core.xml",
-            },
-            ContentTypes: {
-                data: xml(this.formatter.format(file.ContentTypes, context), {
-                    declaration: false,
-                }),
-                path: "[Content_Types].xml",
             },
             FileRelationships: {
                 data: xml(this.formatter.format(file.FileRelationships, context), {
@@ -144,7 +141,7 @@ export class Compiler {
             path: "ppt/_rels/presentation.xml.rels",
         };
 
-        // Slides
+        // Slides — format BEFORE ContentTypes so ChartFrame.prepForXml() populates Charts
         for (let i = 0; i < file.Slides.length; i++) {
             const slideWrapper = file.SlideWrappers[i];
             const slideXml = xml(this.formatter.format(slideWrapper.View, context), {
@@ -161,12 +158,43 @@ export class Compiler {
                 );
             });
 
-            const replacedSlideXml = this.imageReplacer.replace(
+            let replacedSlideXml = this.imageReplacer.replace(
                 slideXml,
                 slideMediaData,
                 currentImageCount,
             );
             currentImageCount += slideMediaData.length;
+
+            // Chart placeholder replacement — only for charts present in this slide
+            const chartPlaceholderRegex = /\{chart:([^}]+)\}/g;
+            const slideChartKeys: string[] = [];
+            let match: RegExpExecArray | null;
+            const slideXmlForCharts = replacedSlideXml;
+            while ((match = chartPlaceholderRegex.exec(slideXmlForCharts)) !== null) {
+                if (!slideChartKeys.includes(match[1])) {
+                    slideChartKeys.push(match[1]);
+                }
+            }
+
+            if (slideChartKeys.length > 0) {
+                const slideChartOffset = slideWrapper.Relationships.RelationshipCount + 1;
+                const slideCharts = file.Charts.Array.filter((c) => slideChartKeys.includes(c.key));
+
+                replacedSlideXml = this.chartReplacer.replace(
+                    replacedSlideXml,
+                    { Array: slideCharts } as unknown as ChartCollection,
+                    slideChartOffset,
+                );
+
+                slideCharts.forEach((chartData, ci) => {
+                    const globalIndex = file.Charts.Array.indexOf(chartData);
+                    slideWrapper.Relationships.addRelationship(
+                        slideChartOffset + ci,
+                        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart",
+                        `../charts/chart${globalIndex + 1}.xml`,
+                    );
+                });
+            }
 
             mapping[`Slide${i}`] = {
                 data: replacedSlideXml,
@@ -181,6 +209,17 @@ export class Compiler {
             };
         }
 
+        // ContentTypes — AFTER slides so Charts.Array is populated
+        file.Charts.Array.forEach((_, i) => {
+            file.ContentTypes.addChart(i + 1);
+        });
+        mapping["ContentTypes"] = {
+            data: xml(this.formatter.format(file.ContentTypes, context), {
+                declaration: false,
+            }),
+            path: "[Content_Types].xml",
+        };
+
         // Convert mapping to Zippable
         const files: Zippable = {};
         for (const key of Object.keys(mapping)) {
@@ -194,6 +233,29 @@ export class Compiler {
                 override.data instanceof Uint8Array
                     ? override.data
                     : textToUint8Array(override.data);
+        }
+
+        // Add chart parts
+        for (let i = 0; i < file.Charts.Array.length; i++) {
+            const chartData = file.Charts.Array[i];
+            files[`ppt/charts/chart${i + 1}.xml`] = textToUint8Array(
+                xml(this.formatter.format(chartData.chartSpace, context), {
+                    declaration,
+                    indent,
+                }),
+            );
+            files[`ppt/charts/_rels/chart${i + 1}.xml.rels`] = textToUint8Array(
+                xml(
+                    {
+                        Relationships: {
+                            _attr: {
+                                xmlns: "http://schemas.openxmlformats.org/package/2006/relationships",
+                            },
+                        },
+                    },
+                    { declaration: { encoding: "UTF-8", standalone: "yes" } },
+                ),
+            );
         }
 
         // Add media files (STORE compression)
