@@ -204,7 +204,10 @@ export class DocumentBackground extends XmlComponent {
                                     key: "r:id",
                                     value: `rId{${this.imageData.fileName}}`,
                                 },
-                                title: { key: "o:title", value: this.imageData.fileName.split(".")[0] },
+                                title: {
+                                    key: "o:title",
+                                    value: this.imageData.fileName.split(".")[0],
+                                },
                                 recolor: { key: "recolor", value: "t" },
                                 type: { key: "type", value: "frame" },
                             },

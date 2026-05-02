@@ -216,7 +216,8 @@ export class File {
             view: options.view,
             zoom: options.zoom,
             writeProtection: options.writeProtection,
-            displayBackgroundShape: options.displayBackgroundShape ?? (options.background?.image ? true : undefined),
+            displayBackgroundShape:
+                options.displayBackgroundShape ?? (options.background?.image ? true : undefined),
             embedTrueTypeFonts: options.embedTrueTypeFonts,
             embedSystemFonts: options.embedSystemFonts,
             saveSubsetFonts: options.saveSubsetFonts,
