@@ -3,7 +3,7 @@ import { XmlComponent as Xc } from "@file/xml-components";
 import { EffectList, type IEffectsOptions } from "./effects";
 import { GradientFill } from "./gradient-fill";
 import { NoFill } from "./no-fill";
-import { Outline } from "./outline";
+import { Outline, type OutlineOptions } from "./outline";
 import { PresetGeometry } from "./preset-geometry";
 import { SolidFill } from "./solid-fill";
 import type { ITransform2DOptions } from "./transform-2d";
@@ -14,7 +14,7 @@ export type ShapeFill = SolidFill | NoFill | GradientFill;
 export interface IShapePropertiesOptions extends ITransform2DOptions {
     readonly geometry?: string;
     readonly fill?: ShapeFill;
-    readonly outline?: Outline;
+    readonly outline?: OutlineOptions;
     readonly effects?: IEffectsOptions;
 }
 
@@ -50,7 +50,7 @@ export class ShapeProperties extends Xc {
         }
 
         if (options.outline) {
-            this.root.push(options.outline);
+            this.root.push(new Outline(options.outline));
         }
 
         if (options.effects) {

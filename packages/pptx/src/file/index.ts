@@ -38,6 +38,8 @@ export { GroupShape, type IGroupShapeOptions } from "./shape/group-shape";
 export { Media } from "./media/media";
 export { createTransformation, type IMediaTransformation } from "./media/media";
 export type { IMediaData, IMediaDataTransformation } from "./media/data";
+export { VideoFrame, type IVideoFrameOptions, type VideoType, type PosterType } from "./media/video-frame";
+export { AudioFrame, type IAudioFrameOptions, type AudioType } from "./media/audio-frame";
 export { CoreProperties, type ICorePropertiesOptions } from "./core-properties/properties";
 export { AppProperties } from "./app-properties/app-properties";
 export { ContentTypes } from "./content-types/content-types";

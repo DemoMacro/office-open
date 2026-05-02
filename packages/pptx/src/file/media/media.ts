@@ -44,6 +44,10 @@ export class Media {
         this.map.set(key, mediaData);
     }
 
+    public addMedia(key: string, mediaData: IMediaData): void {
+        this.map.set(key, mediaData);
+    }
+
     public get Array(): readonly IMediaData[] {
         return [...this.map.values()];
     }

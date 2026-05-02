@@ -29,4 +29,12 @@ interface SvgMediaData {
     readonly fallback: RegularMediaData & CoreMediaData;
 }
 
-export type IMediaData = (RegularMediaData | SvgMediaData) & CoreMediaData;
+interface VideoMediaData {
+    readonly type: "mp4" | "mov" | "wmv" | "avi";
+}
+
+interface AudioMediaData {
+    readonly type: "mp3" | "wav" | "wma" | "aac";
+}
+
+export type IMediaData = (RegularMediaData | SvgMediaData | VideoMediaData | AudioMediaData) & CoreMediaData;
