@@ -1,5 +1,7 @@
 import type { Background } from "@file/background/background";
 import { BuilderElement, NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import type { ITransitionOptions } from "@file/transition/transition";
+import { Transition } from "@file/transition/transition";
 
 import { CommonSlideData } from "./common-slide-data";
 
@@ -16,7 +18,11 @@ class ColorMapOverride extends BuilderElement<{}> {
  * p:sld — A slide in a presentation.
  */
 export class Slide extends XmlComponent {
-    public constructor(children: readonly XmlComponent[], background?: Background) {
+    public constructor(
+        children: readonly XmlComponent[],
+        background?: Background,
+        transition?: ITransitionOptions,
+    ) {
         super("p:sld");
         this.root.push(
             new NextAttributeComponent({
@@ -36,5 +42,8 @@ export class Slide extends XmlComponent {
         );
         this.root.push(new CommonSlideData(children, background));
         this.root.push(new ColorMapOverride());
+        if (transition) {
+            this.root.push(new Transition(transition));
+        }
     }
 }
