@@ -10,6 +10,11 @@ export interface IParagraphPropertiesOptions {
     readonly marginBottom?: number;
     readonly marginTop?: number;
     readonly bulletNone?: boolean;
+    readonly lineSpacing?: number;
+    readonly lineSpacingPoints?: number;
+    readonly marginIndent?: number;
+    readonly marginRight?: number;
+    readonly defTabSize?: number;
 }
 
 /**
@@ -27,8 +32,42 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
         if (options.alignment) attrs.algn = { key: "algn", value: options.alignment };
         if (options.indentLevel !== undefined)
             attrs.lvl = { key: "lvl", value: options.indentLevel };
+        if (options.marginIndent !== undefined)
+            attrs.marL = { key: "marL", value: options.marginIndent };
+        if (options.marginRight !== undefined)
+            attrs.marR = { key: "marR", value: options.marginRight };
+        if (options.defTabSize !== undefined)
+            attrs.defTabSz = { key: "defTabSz", value: options.defTabSize };
         if (Object.keys(attrs).length > 0) {
             this.root.push(new NextAttributeComponent(attrs));
+        }
+
+        if (options.lineSpacing !== undefined) {
+            this.root.push(
+                new BuilderElement({
+                    name: "a:lnSpc",
+                    children: [
+                        new BuilderElement({
+                            name: "a:spcPct",
+                            attributes: { val: { key: "val", value: options.lineSpacing * 1000 } },
+                        }),
+                    ],
+                }),
+            );
+        }
+
+        if (options.lineSpacingPoints !== undefined) {
+            this.root.push(
+                new BuilderElement({
+                    name: "a:lnSpc",
+                    children: [
+                        new BuilderElement({
+                            name: "a:spcPts",
+                            attributes: { val: { key: "val", value: options.lineSpacingPoints * 100 } },
+                        }),
+                    ],
+                }),
+            );
         }
 
         if (options.marginBottom !== undefined || options.marginTop !== undefined) {
