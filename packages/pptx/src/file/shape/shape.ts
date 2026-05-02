@@ -4,6 +4,7 @@ import { ShapeProperties } from "@file/drawingml/shape-properties";
 import type { IShapePropertiesOptions } from "@file/drawingml/shape-properties";
 import { BuilderElement, XmlComponent as Xc } from "@file/xml-components";
 import { pixelsToEmus } from "@util/types";
+import type { IAnimationOptions } from "@file/animation/types";
 
 import { Paragraph } from "./paragraph/paragraph";
 import { Run } from "./paragraph/run";
@@ -24,6 +25,7 @@ export interface IShapeOptions {
     readonly rotation?: number;
     readonly text?: string;
     readonly paragraphs?: ITextBodyOptions["paragraphs"];
+    readonly animation?: IAnimationOptions;
 }
 
 /**
@@ -33,11 +35,15 @@ export interface IShapeOptions {
  */
 export class Shape extends Xc {
     private static nextId = 2;
+    private readonly shapeId: number;
+    private readonly animationOptions?: IAnimationOptions;
 
     public constructor(options: IShapeOptions = {}) {
         super("p:sp");
 
         const id = options.id ?? Shape.nextId++;
+        this.shapeId = id;
+        this.animationOptions = options.animation;
         const name = options.name ?? `Shape ${id}`;
 
         this.root.push(
@@ -80,5 +86,13 @@ export class Shape extends Xc {
                     : undefined),
         };
         this.root.push(new TextBody(textBodyOptions));
+    }
+
+    public get ShapeId(): number {
+        return this.shapeId;
+    }
+
+    public get Animation(): IAnimationOptions | undefined {
+        return this.animationOptions;
     }
 }
