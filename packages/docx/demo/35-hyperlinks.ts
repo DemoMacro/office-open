@@ -112,6 +112,36 @@ const doc = new Document({
                         }),
                     ],
                 }),
+                new Paragraph({
+                    children: [
+                        new TextRun("Tooltip example: "),
+                        new ExternalHyperlink({
+                            children: [
+                                new TextRun({
+                                    text: "Hover for tooltip",
+                                    style: "Hyperlink",
+                                }),
+                            ],
+                            link: "http://www.example.com",
+                            tooltip: "This is a tooltip shown on hover",
+                        }),
+                    ],
+                }),
+                new Paragraph({
+                    children: [
+                        new TextRun("Target frame example: "),
+                        new ExternalHyperlink({
+                            children: [
+                                new TextRun({
+                                    text: "Open in new window",
+                                    style: "Hyperlink",
+                                }),
+                            ],
+                            link: "http://www.example.com",
+                            tgtFrame: "_blank",
+                        }),
+                    ],
+                }),
             ],
             footers: {
                 default: new Footer({

@@ -8,3 +8,4 @@ export * from "./table-float-properties";
 export * from "./table-layout";
 export * from "./table-borders";
 export * from "./table-look";
+export * from "./table-property-exceptions";

@@ -39,6 +39,8 @@ export interface IInternalHyperlinkOptions {
     readonly children: readonly ParagraphChild[];
     /** Name of the bookmark to link to within the document */
     readonly anchor: string;
+    /** Screen tip text shown when hovering over the hyperlink */
+    readonly tooltip?: string;
 }
 
 /**
@@ -46,12 +48,18 @@ export interface IInternalHyperlinkOptions {
  *
  * @property children - Array of paragraph children (usually TextRun elements) that form the hyperlink text
  * @property link - URL to link to outside the document
+ * @property tooltip - Screen tip text shown when hovering over the hyperlink
+ * @property tgtFrame - Target frame for the hyperlink (e.g., "_blank", "_self")
  */
 export interface IExternalHyperlinkOptions {
     /** Array of paragraph children that form the hyperlink text */
     readonly children: readonly ParagraphChild[];
     /** URL to link to outside the document */
     readonly link: string;
+    /** Screen tip text shown when hovering over the hyperlink */
+    readonly tooltip?: string;
+    /** Target frame for the hyperlink (e.g., "_blank", "_self") */
+    readonly tgtFrame?: string;
 }
 
 /**
@@ -84,6 +92,8 @@ export class ConcreteHyperlink extends XmlComponent {
         children: readonly ParagraphChild[],
         relationshipId: string,
         anchor?: string,
+        tooltip?: string,
+        tgtFrame?: string,
     ) {
         super("w:hyperlink");
 
@@ -93,6 +103,8 @@ export class ConcreteHyperlink extends XmlComponent {
             anchor: anchor ? anchor : undefined,
             history: 1,
             id: !anchor ? `rId${this.linkId}` : undefined,
+            tooltip,
+            tgtFrame,
         };
 
         const attributes = new HyperlinkAttributes(props);
@@ -141,7 +153,7 @@ export class ConcreteHyperlink extends XmlComponent {
  */
 export class InternalHyperlink extends ConcreteHyperlink {
     public constructor(options: IInternalHyperlinkOptions) {
-        super(options.children, uniqueId(), options.anchor);
+        super(options.children, uniqueId(), options.anchor, options.tooltip);
     }
 }
 

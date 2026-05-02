@@ -95,6 +95,27 @@ export interface IPropertiesOptions {
     readonly hyphenation?: IHyphenationOptions;
     /** Controls whether punctuation is compressed at line ends */
     readonly characterSpacingControl?: "compressPunctuation" | "doNotCompress";
+    /** Default document view mode */
+    readonly view?: "none" | "print" | "outline" | "masterPages" | "normal" | "web";
+    /** Default zoom level (percentage) and type */
+    readonly zoom?: {
+        readonly percent?: number;
+        readonly val?: "none" | "fullPage" | "bestFit" | "textFit";
+    };
+    /** Write protection recommendation (not enforcement) */
+    readonly writeProtection?: import("@file/settings/settings").IWriteProtectionOptions;
+    /** Whether to display the background shape in print layout */
+    readonly displayBackgroundShape?: boolean;
+    /** Whether to embed TrueType fonts in the document */
+    readonly embedTrueTypeFonts?: boolean;
+    /** Whether to embed system fonts in the document */
+    readonly embedSystemFonts?: boolean;
+    /** Whether to save only a subset of the embedded fonts */
+    readonly saveSubsetFonts?: boolean;
+    /** Document variables (key-value pairs stored in the document) */
+    readonly docVars?: readonly { readonly name: string; readonly val: string }[];
+    /** Theme color scheme remapping */
+    readonly colorSchemeMapping?: import("@file/settings/settings").ISettingsOptions["colorSchemeMapping"];
 }
 
 /**

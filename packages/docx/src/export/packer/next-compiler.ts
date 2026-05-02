@@ -97,6 +97,8 @@ interface IXmlifyedFileMapping {
     readonly DiagramColors?: readonly IXmlifyedFile[];
     /** AltChunk parts (word/afchunks/afchunk{n}.{ext}) */
     readonly AltChunks?: readonly IXmlifyedFile[];
+    /** SubDoc parts (word/subdocs/subdoc{n}.docx) */
+    readonly SubDocs?: readonly IXmlifyedFile[];
 }
 
 /**
@@ -907,6 +909,14 @@ export class Compiler {
                       AltChunks: file.AltChunks.Array.map((altChunkData) => ({
                           data: altChunkData.data,
                           path: `word/${altChunkData.path}`,
+                      })),
+                  }
+                : {}),
+            ...(file.SubDocs.Array.length > 0
+                ? {
+                      SubDocs: file.SubDocs.Array.map((subDocData) => ({
+                          data: subDocData.data,
+                          path: `word/${subDocData.path}`,
                       })),
                   }
                 : {}),

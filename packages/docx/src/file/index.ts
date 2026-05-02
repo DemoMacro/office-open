@@ -35,6 +35,7 @@ export * from "./checkbox";
 export * from "./sdt";
 export * from "./permissions";
 export * from "./alt-chunk";
+export * from "./sub-doc";
 export * from "./fonts";
 export * from "./textbox";
 export * from "./bibliography";
