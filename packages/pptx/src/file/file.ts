@@ -16,6 +16,7 @@ import { TableStyles } from "@file/table-styles";
 import { DefaultTheme } from "@file/theme/theme";
 import { ViewProperties } from "@file/view-properties";
 import type { ITransitionOptions } from "@file/transition/transition";
+import type { IHeaderFooterOptions } from "@file/header-footer/header-footer";
 import type { XmlComponent } from "@file/xml-components";
 import { pixelsToEmus } from "@util/types";
 
@@ -24,6 +25,7 @@ export interface ISlideOptions {
     readonly background?: Background;
     readonly notes?: string;
     readonly transition?: ITransitionOptions;
+    readonly headerFooter?: IHeaderFooterOptions;
 }
 
 export interface IPresentationOptions extends ICorePropertiesOptions {
@@ -90,7 +92,12 @@ export class File {
         this.slides = [];
         this.slideWrappers = [];
         for (let i = 0; i < slides.length; i++) {
-            const slide = new Slide(slides[i].children ?? [], slides[i].background, slides[i].transition);
+            const slide = new Slide(
+                slides[i].children ?? [],
+                slides[i].background,
+                slides[i].transition,
+                slides[i].headerFooter,
+            );
             this.slides.push(slide);
             const slideRels = new Relationships();
             slideRels.addRelationship(

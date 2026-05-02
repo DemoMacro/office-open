@@ -53,6 +53,7 @@ export { DefaultSlideMaster } from "./slide-master/slide-master";
 export { DefaultSlideLayout } from "./slide-layout/slide-layout";
 export { DefaultNotesMaster } from "./notes-master/notes-master";
 export { NotesSlide, type INotesSlideOptions } from "./notes/notes-slide";
+export { HeaderFooter, type IHeaderFooterOptions } from "./header-footer/header-footer";
 export { PresentationWrapper, type IViewWrapper } from "./presentation/presentation-wrapper";
 export { Picture, type IPictureOptions } from "./picture/picture";
 export { Background, type IBackgroundOptions } from "./background/background";
