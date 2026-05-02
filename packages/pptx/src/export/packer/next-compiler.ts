@@ -1,3 +1,4 @@
+import { DefaultNotesMaster } from "@file/notes-master/notes-master";
 import { Formatter } from "@export/formatter";
 import type { ChartCollection } from "@file/chart/chart-collection";
 import type { File } from "@file/file";
@@ -104,6 +105,21 @@ export class Compiler {
                 declaration: false,
             }),
             path: "ppt/slideLayouts/_rels/slideLayout1.xml.rels",
+        };
+
+        // Notes Master
+        mapping["NotesMaster"] = {
+            data: xml(this.formatter.format(new DefaultNotesMaster(), context), {
+                declaration,
+                indent,
+            }),
+            path: "ppt/notesMasters/notesMaster1.xml",
+        };
+        mapping["NotesMasterRelationships"] = {
+            data: xml(this.formatter.format(file.NotesMasterRelationships, context), {
+                declaration: false,
+            }),
+            path: "ppt/notesMasters/_rels/notesMaster1.xml.rels",
         };
 
         // Presentation + its relationships
@@ -245,6 +261,29 @@ export class Compiler {
                 }),
             );
             files[`ppt/charts/_rels/chart${i + 1}.xml.rels`] = textToUint8Array(
+                xml(
+                    {
+                        Relationships: {
+                            _attr: {
+                                xmlns: "http://schemas.openxmlformats.org/package/2006/relationships",
+                            },
+                        },
+                    },
+                    { declaration: { encoding: "UTF-8", standalone: "yes" } },
+                ),
+            );
+        }
+
+        // Add notes slides
+        for (let i = 0; i < file.NotesSlides.length; i++) {
+            const notesSlide = file.NotesSlides[i];
+            files[`ppt/notesSlides/notesSlide${i + 1}.xml`] = textToUint8Array(
+                xml(this.formatter.format(notesSlide, context), {
+                    declaration,
+                    indent,
+                }),
+            );
+            files[`ppt/notesSlides/_rels/notesSlide${i + 1}.xml.rels`] = textToUint8Array(
                 xml(
                     {
                         Relationships: {
