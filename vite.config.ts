@@ -9,7 +9,7 @@ export default defineConfig({
         sortTailwindcss: {},
     },
     lint: {
-        ignorePatterns: ["**/scripts/**", "**/dist/**", "**/coverage/**", "**/demo/**"],
+        ignorePatterns: ["**/scripts/**", "**/dist/**", "**/coverage/**"],
         options: {
             typeAware: true,
             typeCheck: true,

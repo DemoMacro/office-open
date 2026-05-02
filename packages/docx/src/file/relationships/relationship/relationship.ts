@@ -31,7 +31,8 @@ export type RelationshipType =
     | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramData"
     | "http://schemas.microsoft.com/office/2007/relationships/diagramLayout"
     | "http://schemas.microsoft.com/office/2007/relationships/diagramStyle"
-    | "http://schemas.microsoft.com/office/2007/relationships/diagramColors";
+    | "http://schemas.microsoft.com/office/2007/relationships/diagramColors"
+    | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/aFChunk";
 
 /**
  * Target mode types for relationships.

@@ -8,10 +8,8 @@ export default defineBuildConfig({
             entry: ["src/index"],
             plugins: [nodePolyfills()],
             shims: true,
-            external: ["stream"],
             deps: {
-                alwaysBundle: ["@office-open/xml", "@office-open/core"],
-                onlyBundle: false,
+                neverBundle: ["stream"],
             },
         },
     ],

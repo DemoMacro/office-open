@@ -9,6 +9,7 @@ import { Paragraph } from "@file/paragraph";
 import { XmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 
+import type { StructuredDocumentTagCell } from "../../sdt";
 import type { Table } from "../table";
 import { TableCellProperties } from "./table-cell-properties";
 import type { ITableCellPropertiesOptions } from "./table-cell-properties";
@@ -20,7 +21,7 @@ import type { ITableCellPropertiesOptions } from "./table-cell-properties";
  */
 export type ITableCellOptions = {
     /** Array of Paragraph or nested Table elements that make up the cell content */
-    readonly children: readonly (Paragraph | Table)[];
+    readonly children: readonly (Paragraph | Table | StructuredDocumentTagCell)[];
 } & ITableCellPropertiesOptions;
 
 /**

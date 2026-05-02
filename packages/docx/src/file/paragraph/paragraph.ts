@@ -10,13 +10,26 @@ import type { FootnoteReferenceRun } from "@file/footnotes";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 
+import type { AltChunk } from "../alt-chunk";
 import type { CheckBox } from "../checkbox";
+import type { PermEnd, PermStart } from "../permissions";
 import { TargetModeType } from "../relationships/relationship/relationship";
 import type { StructuredDocumentTagRun } from "../sdt";
-import type { DeletedTextRun, InsertedTextRun } from "../track-revision";
+import type {
+    DeletedTextRun,
+    InsertedTextRun,
+    MovedFromTextRun,
+    MovedToTextRun,
+} from "../track-revision";
 import type { ColumnBreak, PageBreak } from "./formatting/break";
 import { Bookmark, ConcreteHyperlink, ExternalHyperlink } from "./links";
 import type { InternalHyperlink } from "./links";
+import type {
+    MoveFromRangeEnd,
+    MoveFromRangeStart,
+    MoveToRangeEnd,
+    MoveToRangeStart,
+} from "./links/move-bookmark";
 import type { Math } from "./math";
 import { ParagraphProperties } from "./properties";
 import type { IParagraphPropertiesOptions } from "./properties";
@@ -64,7 +77,16 @@ export type ParagraphChild =
     | CommentRangeEnd
     | CommentReference
     | CheckBox
-    | StructuredDocumentTagRun;
+    | StructuredDocumentTagRun
+    | MoveFromRangeStart
+    | MoveFromRangeEnd
+    | MoveToRangeStart
+    | MoveToRangeEnd
+    | MovedFromTextRun
+    | MovedToTextRun
+    | PermStart
+    | PermEnd
+    | AltChunk;
 
 /**
  * Options for creating a Paragraph element.

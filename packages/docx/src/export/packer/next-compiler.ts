@@ -28,7 +28,7 @@ import { SmartArtReplacer } from "./smartart-replacer";
  * @property path - The file path within the ZIP archive (e.g., "word/document.xml")
  */
 export interface IXmlifyedFile {
-    readonly data: string;
+    readonly data: string | Uint8Array;
     readonly path: string;
 }
 
@@ -95,6 +95,8 @@ interface IXmlifyedFileMapping {
     readonly DiagramStyle?: readonly IXmlifyedFile[];
     /** Diagram colors XML parts (word/diagrams/colors{n}.xml) */
     readonly DiagramColors?: readonly IXmlifyedFile[];
+    /** AltChunk parts (word/afchunks/afchunk{n}.{ext}) */
+    readonly AltChunks?: readonly IXmlifyedFile[];
 }
 
 /**
@@ -175,15 +177,23 @@ export class Compiler {
         for (const [, obj] of map) {
             if (Array.isArray(obj)) {
                 for (const subFile of obj as readonly IXmlifyedFile[]) {
-                    files[subFile.path] = textToUint8Array(subFile.data);
+                    files[subFile.path] =
+                        typeof subFile.data === "string"
+                            ? textToUint8Array(subFile.data)
+                            : subFile.data;
                 }
             } else {
-                files[(obj as IXmlifyedFile).path] = textToUint8Array((obj as IXmlifyedFile).data);
+                const fileObj = obj as IXmlifyedFile;
+                files[fileObj.path] =
+                    typeof fileObj.data === "string"
+                        ? textToUint8Array(fileObj.data)
+                        : fileObj.data;
             }
         }
 
         for (const subFile of overrides) {
-            files[subFile.path] = textToUint8Array(subFile.data);
+            files[subFile.path] =
+                typeof subFile.data === "string" ? textToUint8Array(subFile.data) : subFile.data;
         }
 
         // Media files: use STORE (level 0) for already-compressed formats
@@ -889,6 +899,14 @@ export class Compiler {
                       DiagramColors: file.SmartArts.Array.map((_smartArtData, i) => ({
                           data: DEFAULT_COLORS_XML,
                           path: `word/diagrams/colors${i + 1}.xml`,
+                      })),
+                  }
+                : {}),
+            ...(file.AltChunks.Array.length > 0
+                ? {
+                      AltChunks: file.AltChunks.Array.map((altChunkData) => ({
+                          data: altChunkData.data,
+                          path: `word/${altChunkData.path}`,
                       })),
                   }
                 : {}),

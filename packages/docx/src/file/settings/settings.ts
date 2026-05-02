@@ -194,6 +194,28 @@ export interface ISettingsOptions {
     readonly hyphenation?: IHyphenationOptions;
     /** Controls whether punctuation is compressed at line ends */
     readonly characterSpacingControl?: "compressPunctuation" | "doNotCompress";
+    /** Document protection settings */
+    readonly documentProtection?: IDocumentProtectionOptions;
+}
+
+/**
+ * Options for document protection (restrict editing).
+ *
+ * Reference: ISO/IEC 29500-4, wml.xsd, CT_DocProtect
+ */
+export interface IDocumentProtectionOptions {
+    /** Type of editing restriction */
+    readonly edit?: "none" | "readOnly" | "comments" | "trackedChanges" | "forms";
+    /** Whether formatting is restricted */
+    readonly formatting?: boolean;
+    /** Password hash (SHA-512 base64) */
+    readonly hashValue?: string;
+    /** Password salt (base64) */
+    readonly saltValue?: string;
+    /** Password spin count */
+    readonly spinCount?: number;
+    /** Password algorithm name */
+    readonly algorithmName?: string;
 }
 
 /**
@@ -288,6 +310,11 @@ export class Settings extends XmlComponent {
             this.root.push(new OnOffElement("w:trackRevisions", options.trackRevisions));
         }
 
+        // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_documentProtection_topic_ID0EKCBA.html
+        if (options.documentProtection !== undefined) {
+            this.root.push(new DocumentProtection(options.documentProtection));
+        }
+
         // http://officeopenxml.com/WPSectionFooterReference.php
         // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_evenAndOddHeaders_topic_ID0ET1WU.html
         if (options.evenAndOddHeaders !== undefined) {
@@ -355,6 +382,57 @@ export class Settings extends XmlComponent {
                     options.compatibility?.overrideTableStyleFontSizeAndJustification ?? true,
                 enableOpenTypeFeatures: options.compatibility?.enableOpenTypeFeatures ?? true,
                 doNotFlipMirrorIndents: options.compatibility?.doNotFlipMirrorIndents ?? true,
+            }),
+        );
+    }
+}
+
+/**
+ * Attributes for the documentProtection element.
+ *
+ * @internal
+ */
+class DocumentProtectionAttributes extends XmlAttributeComponent<{
+    readonly edit?: string;
+    readonly enforcement?: string;
+    readonly formatting?: string;
+    readonly algorithmName?: string;
+    readonly hashValue?: string;
+    readonly saltValue?: string;
+    readonly spinCount?: number;
+}> {
+    protected readonly xmlKeys = {
+        edit: "w:edit",
+        enforcement: "w:enforcement",
+        formatting: "w:formatting",
+        algorithmName: "w:algorithmName",
+        hashValue: "w:hashValue",
+        saltValue: "w:saltValue",
+        spinCount: "w:spinCount",
+    };
+}
+
+/**
+ * Represents document protection settings (CT_DocProtect).
+ *
+ * Restricts the types of editing allowed in the document.
+ * Requires `enforcement: true` to take effect.
+ *
+ * Reference: ISO/IEC 29500-4, wml.xsd, CT_DocProtect
+ */
+class DocumentProtection extends XmlComponent {
+    public constructor(options: IDocumentProtectionOptions) {
+        super("w:documentProtection");
+        this.root.push(
+            new DocumentProtectionAttributes({
+                enforcement: "1",
+                edit: options.edit,
+                formatting:
+                    options.formatting !== undefined ? (options.formatting ? "1" : "0") : undefined,
+                algorithmName: options.algorithmName,
+                hashValue: options.hashValue,
+                saltValue: options.saltValue,
+                spinCount: options.spinCount,
             }),
         );
     }

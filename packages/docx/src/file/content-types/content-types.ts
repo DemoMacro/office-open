@@ -121,14 +121,20 @@ export class ContentTypes extends XmlComponent {
         );
         this.root.push(
             createOverride(
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.bibliography+xml",
-                "/word/bibliography.xml",
-            ),
-        );
-        this.root.push(
-            createOverride(
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml",
                 "/word/fontTable.xml",
+            ),
+        );
+    }
+
+    /**
+     * Registers a bibliography part in the content types.
+     */
+    public addBibliography(): void {
+        this.root.push(
+            createOverride(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.bibliography+xml",
+                "/word/bibliography.xml",
             ),
         );
     }
@@ -229,5 +235,16 @@ export class ContentTypes extends XmlComponent {
                 `/word/diagrams/colors${index}.xml`,
             ),
         );
+    }
+
+    /**
+     * Registers an alternative format chunk part in the content types.
+     *
+     * @param path - Part path (e.g., "word/afchunks/afchunk1.html")
+     * @param contentType - MIME content type
+     * @param extension - File extension for the default entry
+     */
+    public addAltChunk(path: string, contentType: string, _extension: string): void {
+        this.root.push(createOverride(contentType, path));
     }
 }

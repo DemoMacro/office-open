@@ -84,6 +84,7 @@ export interface IPropertiesOptions {
     readonly features?: {
         readonly trackRevisions?: boolean;
         readonly updateFields?: boolean;
+        readonly documentProtection?: import("@file/settings/settings").IDocumentProtectionOptions;
     };
     readonly compatabilityModeVersion?: number;
     readonly compatibility?: ICompatibilityOptions;
