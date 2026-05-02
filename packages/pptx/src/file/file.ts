@@ -1,5 +1,6 @@
 import { AppProperties } from "@file/app-properties/app-properties";
 import { Background } from "@file/background/background";
+import { ChartCollection } from "@file/chart/chart-collection";
 import { ContentTypes } from "@file/content-types/content-types";
 import { CoreProperties, type ICorePropertiesOptions } from "@file/core-properties/properties";
 import { Media } from "@file/media/media";
@@ -32,6 +33,7 @@ export class File {
     private readonly contentTypes: ContentTypes;
     private readonly fileRelationships: Relationships;
     private readonly media: Media;
+    private readonly charts: ChartCollection;
     private readonly presentationWrapper: PresentationWrapper;
     private readonly theme: DefaultTheme;
     private readonly tableStyles: TableStyles;
@@ -54,6 +56,7 @@ export class File {
         this.appProperties = new AppProperties();
         this.contentTypes = new ContentTypes();
         this.media = new Media();
+        this.charts = new ChartCollection();
 
         // Package-level relationships (_rels/.rels)
         this.fileRelationships = new Relationships();
@@ -182,6 +185,10 @@ export class File {
 
     public get Media(): Media {
         return this.media;
+    }
+
+    public get Charts(): ChartCollection {
+        return this.charts;
     }
 
     public get PresentationWrapper(): PresentationWrapper {

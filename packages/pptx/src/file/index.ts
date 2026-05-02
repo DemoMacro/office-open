@@ -58,3 +58,7 @@ export { TableRow, type ITableRowOptions } from "./table/table-row";
 export { TableCell, type ITableCellOptions } from "./table/table-cell";
 export { TableProperties } from "./table/table-properties";
 export { TableCellProperties, type ICellBorderOptions } from "./table/table-cell-properties";
+export { ChartFrame, type IChartFrameOptions } from "./chart/chart-frame";
+export { ChartCollection, type IChartData } from "./chart/chart-collection";
+export { ChartSpace, type IChartSpaceOptions, type IChartSeriesData } from "./chart/chart-space";
+export type { ChartType } from "./chart/chart-types/create-chart-type";
