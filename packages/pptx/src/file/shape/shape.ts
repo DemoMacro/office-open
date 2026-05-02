@@ -1,5 +1,5 @@
 import { NonVisualShapeProperties } from "@file/drawingml/non-visual-shape-props";
-import { Outline } from "@file/drawingml/outline";
+import { Outline, type OutlineOptions } from "@file/drawingml/outline";
 import { ShapeProperties } from "@file/drawingml/shape-properties";
 import type { IShapePropertiesOptions } from "@file/drawingml/shape-properties";
 import type { IEffectsOptions } from "@file/drawingml/effects";
@@ -21,7 +21,7 @@ export interface IShapeOptions {
     readonly height?: number;
     readonly geometry?: string;
     readonly fill?: IShapePropertiesOptions["fill"];
-    readonly outline?: Outline;
+    readonly outline?: OutlineOptions;
     readonly effects?: IEffectsOptions;
     readonly flipH?: boolean;
     readonly rotation?: number;

@@ -9,6 +9,7 @@ import type { Zippable } from "fflate";
 import { ChartReplacer } from "./chart-replacer";
 import { HyperlinkReplacer } from "./hyperlink-replacer";
 import { ImageReplacer } from "./image-replacer";
+import { MediaReplacer } from "./media-replacer";
 
 export interface IXmlifyedFile {
     readonly data: string | Uint8Array;
@@ -24,6 +25,7 @@ export class Compiler {
     private readonly imageReplacer = new ImageReplacer();
     private readonly chartReplacer = new ChartReplacer();
     private readonly hyperlinkReplacer = new HyperlinkReplacer();
+    private readonly mediaReplacer = new MediaReplacer();
 
     public compile(
         file: File,
@@ -240,6 +242,26 @@ export class Compiler {
                         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
                         hlink.url,
                         "External",
+                    );
+                });
+            }
+
+            // Media (video/audio) placeholder replacement
+            const slideMediaRefs = this.mediaReplacer.getMediaRefs(replacedSlideXml, file.Media);
+            if (slideMediaRefs.length > 0) {
+                const mediaOffset = slideWrapper.Relationships.RelationshipCount + 1;
+
+                replacedSlideXml = this.mediaReplacer.replace(
+                    replacedSlideXml,
+                    slideMediaRefs,
+                    mediaOffset,
+                );
+
+                slideMediaRefs.forEach((media, mi) => {
+                    slideWrapper.Relationships.addRelationship(
+                        mediaOffset + mi,
+                        "http://schemas.microsoft.com/office/powerpoint/2010/relationships/media",
+                        `../media/${media.fileName}`,
                     );
                 });
             }
