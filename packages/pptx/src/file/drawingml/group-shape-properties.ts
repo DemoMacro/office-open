@@ -1,46 +1,13 @@
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
+
+import { GroupTransform2D, type IGroupTransform2DOptions } from "./group-transform-2d";
 
 /**
- * p:grpSpPr — Group shape properties (transform for shape tree).
- * Uses p: prefix in PresentationML context, though type is a:CT_GroupShapeProperties.
+ * p:grpSpPr — Group shape properties with CT_GroupTransform2D.
  */
 export class GroupShapeProperties extends XmlComponent {
-    public constructor() {
+    public constructor(options?: IGroupTransform2DOptions) {
         super("p:grpSpPr");
-        this.root.push(
-            new BuilderElement({
-                name: "a:xfrm",
-                children: [
-                    new BuilderElement({
-                        name: "a:off",
-                        attributes: {
-                            x: { key: "x", value: 0 },
-                            y: { key: "y", value: 0 },
-                        },
-                    }),
-                    new BuilderElement({
-                        name: "a:ext",
-                        attributes: {
-                            cx: { key: "cx", value: 0 },
-                            cy: { key: "cy", value: 0 },
-                        },
-                    }),
-                    new BuilderElement({
-                        name: "a:chOff",
-                        attributes: {
-                            x: { key: "x", value: 0 },
-                            y: { key: "y", value: 0 },
-                        },
-                    }),
-                    new BuilderElement({
-                        name: "a:chExt",
-                        attributes: {
-                            cx: { key: "cx", value: 0 },
-                            cy: { key: "cy", value: 0 },
-                        },
-                    }),
-                ],
-            }),
-        );
+        this.root.push(new GroupTransform2D(options ?? {}));
     }
 }
