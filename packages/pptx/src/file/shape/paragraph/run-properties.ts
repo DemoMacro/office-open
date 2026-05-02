@@ -18,6 +18,12 @@ export interface IRunPropertiesOptions {
     readonly lang?: string;
     readonly fill?: ShapeFill;
     readonly hyperlink?: IHyperlinkOptions;
+    readonly strike?: "sngStrike" | "dblStrike" | "noStrike";
+    readonly baseline?: number;
+    readonly spacing?: number;
+    readonly capitalization?: "none" | "all" | "small";
+    readonly shadow?: boolean;
+    readonly outline?: boolean;
 }
 
 /**
@@ -37,7 +43,13 @@ export class RunProperties extends XmlComponent {
             options.font ||
             options.lang ||
             options.fill ||
-            options.hyperlink
+            options.hyperlink ||
+            options.strike ||
+            options.baseline !== undefined ||
+            options.spacing !== undefined ||
+            options.capitalization ||
+            options.shadow !== undefined ||
+            options.outline !== undefined
         );
     }
 
@@ -53,6 +65,9 @@ export class RunProperties extends XmlComponent {
         if (options.italic !== undefined) attrs.i = { key: "i", value: options.italic };
         if (options.underline) attrs.u = { key: "u", value: options.underline };
         if (options.lang) attrs.lang = { key: "lang", value: options.lang };
+        if (options.strike) attrs.strike = { key: "strike", value: options.strike };
+        if (options.baseline !== undefined) attrs.baseline = { key: "baseline", value: options.baseline };
+        if (options.capitalization) attrs.cap = { key: "cap", value: options.capitalization };
 
         this.root.push(new NextAttributeComponent(attrs));
 
@@ -73,6 +88,15 @@ export class RunProperties extends XmlComponent {
 
         if (options.fill) {
             this.root.push(options.fill);
+        }
+
+        if (options.spacing !== undefined) {
+            this.root.push(
+                new BuilderElement({
+                    name: "a:spacing",
+                    attributes: { val: { key: "val", value: options.spacing } },
+                }),
+            );
         }
 
         if (options.hyperlink) {
