@@ -26,7 +26,7 @@ describe("createMathBoxProperties", () => {
     it("should create box properties with diff", () => {
         const tree = new Formatter().format(createMathBoxProperties({ diff: false }));
         expect(tree).to.deep.equal({
-            "m:boxPr": [{ "m:diff": { _attr: { "w:val": false } } }],
+            "m:boxPr": [{ "m:diff": { _attr: { "m:val": false } } }],
         });
     });
 

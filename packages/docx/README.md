@@ -4,7 +4,7 @@
 ![npm downloads](https://img.shields.io/npm/dw/@office-open/docx)
 ![npm license](https://img.shields.io/npm/l/@office-open/docx)
 
-> Generate .docx files with a nice declarative API. Works for Node.js and on the Browser.
+> Easily generate .docx files with JS/TS with a nice declarative API. Works for Node and on the Browser.
 
 ## Features
 
@@ -80,10 +80,10 @@ Performance comparison against original `docx` (9.6.1) package:
 
 | Scenario                                                | @office-open/docx |     docx |   Speedup |
 | ------------------------------------------------------- | ----------------: | -------: | --------: |
-| Simple document (2 paragraphs)                          |          7,672 hz | 4,334 hz | **1.77x** |
-| Styled paragraphs (20 paragraphs)                       |          6,301 hz | 4,157 hz | **1.52x** |
-| Table (10x5 cells)                                      |          3,854 hz | 2,595 hz | **1.49x** |
-| Full featured (header/footer/headings/table/paragraphs) |          2,745 hz | 2,366 hz | **1.16x** |
+| Simple document (2 paragraphs)                          |         10,519 hz | 6,128 hz | **1.72x** |
+| Styled paragraphs (20 paragraphs)                       |          8,157 hz | 4,785 hz | **1.70x** |
+| Table (10x5 cells)                                      |          4,621 hz | 3,302 hz | **1.40x** |
+| Full featured (header/footer/headings/table/paragraphs) |          3,875 hz | 2,810 hz | **1.38x** |
 
 ## License
 

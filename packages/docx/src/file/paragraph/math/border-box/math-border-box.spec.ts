@@ -35,7 +35,7 @@ describe("MathBorderBox", () => {
                     {
                         "m:borderBoxPr": [
                             { "m:hideTop": {} },
-                            { "m:hideBot": { _attr: { "w:val": false } } },
+                            { "m:hideBot": { _attr: { "m:val": false } } },
                         ],
                     },
                     {
@@ -60,8 +60,8 @@ describe("MathBorderBox", () => {
                 "m:borderBoxPr": [
                     { "m:strikeH": {} },
                     { "m:strikeV": {} },
-                    { "m:strikeBLTR": { _attr: { "w:val": false } } },
-                    { "m:strikeTLBR": { _attr: { "w:val": false } } },
+                    { "m:strikeBLTR": { _attr: { "m:val": false } } },
+                    { "m:strikeTLBR": { _attr: { "m:val": false } } },
                 ],
             });
         });

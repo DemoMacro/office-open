@@ -1,14 +1,14 @@
 import { EMPTY_OBJECT } from "@file/xml-components";
+import {
+    ImportedRootElementAttributes,
+    ImportedXmlComponent,
+    convertToXmlComponent,
+} from "@office-open/core";
 import { xml2js } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { beforeEach, describe, expect, it } from "vite-plus/test";
 
 import type { IContext } from "./base";
-import {
-    ImportedRootElementAttributes,
-    ImportedXmlComponent,
-    convertToXmlComponent,
-} from "./imported-xml-component";
 
 const xmlString = `
         <w:p w:one="value 1" w:two="value 2">
@@ -26,28 +26,24 @@ const xmlString = `
 
 const convertedXmlElement = {
     root: [
+        { root: { "w:one": "value 1", "w:two": "value 2" }, rootKey: "_attr" },
+        { root: [{ rootKey: "w:noProof", root: ["some value"] }], rootKey: "w:rPr" },
         {
             root: [
-                { root: { "w:one": "value 1", "w:two": "value 2" }, rootKey: "_attr" },
-                { root: [{ rootKey: "w:noProof", root: ["some value"] }], rootKey: "w:rPr" },
-                {
-                    root: [
-                        { rootKey: "_attr", root: { active: "true" } },
-                        { rootKey: "w:t", root: ["Text 1"] },
-                    ],
-                    rootKey: "w:r",
-                },
-                {
-                    root: [
-                        { rootKey: "_attr", root: { active: "true" } },
-                        { rootKey: "w:t", root: ["Text 2"] },
-                    ],
-                    rootKey: "w:r",
-                },
+                { rootKey: "_attr", root: { active: "true" } },
+                { rootKey: "w:t", root: ["Text 1"] },
             ],
-            rootKey: "w:p",
+            rootKey: "w:r",
+        },
+        {
+            root: [
+                { rootKey: "_attr", root: { active: "true" } },
+                { rootKey: "w:t", root: ["Text 2"] },
+            ],
+            rootKey: "w:r",
         },
     ],
+    rootKey: "w:p",
 };
 
 describe("ImportedXmlComponent", () => {
@@ -90,7 +86,8 @@ describe("ImportedXmlComponent", () => {
     describe("convertToXmlComponent", () => {
         it("should convert to xml component", () => {
             const xmlObj = xml2js(xmlString, { compact: false }) as Element;
-            const converted = convertToXmlComponent(xmlObj);
+            const root = xmlObj.elements?.[0] ?? xmlObj;
+            const converted = convertToXmlComponent(root as Element);
             expect(JSON.parse(JSON.stringify(converted))).to.deep.equal(convertedXmlElement);
         });
 

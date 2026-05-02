@@ -5,7 +5,7 @@
 ![npm license](https://img.shields.io/npm/l/@office-open/xml)
 ![zero dependencies](https://img.shields.io/badge/dependencies-0-green)
 
-> XML parsing and serialization for Office Open XML. Zero dependencies, drop-in replacement for `xml` + `xml-js`.
+> XML parsing and serialization for Office Open XML. Zero dependencies, drop-in replacement for xml + xml-js.
 
 ## Features
 
@@ -13,7 +13,7 @@
 - **xml() Serialization** - Drop-in replacement for the `xml` package
 - **xml2js() Parsing** - Drop-in replacement for `xml-js` XML parsing
 - **js2xml() Stringifying** - Drop-in replacement for `xml-js` JS-to-XML conversion
-- **toElement() Direct Convert** - Direct conversion from xml object format to xml-js Element, 16-33x faster than the xml→xml2js bridge
+- **toElement() Direct Convert** - Direct conversion from xml object format to xml-js Element, 10-19x faster than the xml→xml2js bridge
 - **Complete Type Definitions** - Full type compatibility with `xml` and `xml-js`, import without changes
 - **OOXML Optimized** - Implements all options needed for Office Open XML document generation
 
@@ -103,31 +103,31 @@ Performance comparison against original `xml` (1.0.1) and `xml-js` (1.6.11) pack
 
 | Scenario                | @office-open/xml |        xml |   Speedup |
 | ----------------------- | ---------------: | ---------: | --------: |
-| Simple element          |     4,103,029 hz | 734,685 hz | **5.58x** |
-| Nested element          |       940,333 hz | 321,791 hz | **2.92x** |
-| Nested with declaration |       800,517 hz | 262,125 hz | **3.05x** |
+| Simple element          |     4,023,269 hz | 742,728 hz | **5.42x** |
+| Nested element          |     1,030,612 hz | 322,801 hz | **3.19x** |
+| Nested with declaration |       963,725 hz | 276,547 hz | **3.49x** |
 
 ### Parsing (xml2js)
 
 | Scenario           | @office-open/xml |    xml-js |    Speedup |
 | ------------------ | ---------------: | --------: | ---------: |
-| Simple XML         |     1,002,659 hz | 83,057 hz | **12.07x** |
-| Complex OOXML      |       357,081 hz | 48,687 hz |  **7.34x** |
-| With captureSpaces |       361,555 hz | 44,868 hz |  **8.06x** |
+| Simple XML         |     1,147,347 hz | 95,579 hz | **12.00x** |
+| Complex OOXML      |       401,553 hz | 52,327 hz |  **7.67x** |
+| With captureSpaces |       387,082 hz | 52,317 hz |  **7.40x** |
 
 ### Stringifying (js2xml)
 
 | Scenario       | @office-open/xml |     xml-js |   Speedup |
 | -------------- | ---------------: | ---------: | --------: |
-| Simple element |       780,070 hz | 161,521 hz | **4.83x** |
-| Complex OOXML  |       276,878 hz | 106,527 hz | **2.60x** |
+| Simple element |       778,368 hz | 197,520 hz | **3.94x** |
+| Complex OOXML  |       344,376 hz | 127,493 hz | **2.70x** |
 
 ### Direct Conversion (toElement vs bridge)
 
 | Scenario |   toElement() | xml() + xml2js() bridge |    Speedup |
 | -------- | ------------: | ----------------------: | ---------: |
-| Simple   | 14,119,071 hz |              853,290 hz | **16.55x** |
-| Nested   |  3,745,934 hz |              422,217 hz |  **8.87x** |
+| Simple   | 14,953,390 hz |              803,917 hz | **18.61x** |
+| Nested   |  4,530,626 hz |              466,126 hz |  **9.72x** |
 
 ## Bundle Size
 

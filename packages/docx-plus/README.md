@@ -4,7 +4,7 @@
 ![npm downloads](https://img.shields.io/npm/dw/docx-plus)
 ![npm license](https://img.shields.io/npm/l/docx-plus)
 
-Easily generate and modify .docx files with JS/TS. Works for Node.js and on the Browser.
+> Easily generate .docx files with JS/TS with a nice declarative API. Works for Node and on the Browser.
 
 **docx-plus** is an enhanced fork of [docx](https://github.com/dolanmiu/docx) by Dolan Miu — a TypeScript/JavaScript library for generating and modifying Word documents (.docx) programmatically with a declarative API. We extend our sincere gratitude to the original author and all contributors for their foundational work.
 

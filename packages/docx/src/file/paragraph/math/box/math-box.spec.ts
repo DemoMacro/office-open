@@ -33,7 +33,7 @@ describe("MathBox", () => {
             expect(tree).to.deep.equal({
                 "m:box": [
                     {
-                        "m:boxPr": [{ "m:opEmu": {} }, { "m:diff": { _attr: { "w:val": false } } }],
+                        "m:boxPr": [{ "m:opEmu": {} }, { "m:diff": { _attr: { "m:val": false } } }],
                     },
                     {
                         "m:e": [

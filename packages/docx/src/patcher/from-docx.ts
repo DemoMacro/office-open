@@ -241,6 +241,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
 
         if (key.startsWith("word/") && !key.endsWith(".xml.rels")) {
             const context: IContext = {
+                fileData: file,
                 file,
                 stack: [],
                 viewWrapper: {

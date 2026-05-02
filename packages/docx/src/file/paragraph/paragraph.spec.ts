@@ -632,6 +632,11 @@ describe("Paragraph", () => {
                     createConcreteNumberingInstance: (_: string, __: number) => undefined,
                 },
             } as unknown as File,
+            fileData: {
+                Numbering: {
+                    createConcreteNumberingInstance: (_: string, __: number) => undefined,
+                },
+            } as unknown as File,
             stack: [],
             viewWrapper: new DocumentWrapper({ background: {} }),
         });

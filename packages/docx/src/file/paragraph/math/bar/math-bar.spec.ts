@@ -17,7 +17,7 @@ describe("MathBar", () => {
                             {
                                 "m:pos": {
                                     _attr: {
-                                        "w:val": "top",
+                                        "m:val": "top",
                                     },
                                 },
                             },
