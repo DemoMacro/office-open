@@ -9,6 +9,8 @@ import { XmlComponent } from "@file/xml-components";
 
 import type { StructuredDocumentTagRow } from "../../sdt";
 import { TableCell } from "../table-cell";
+import { TablePropertyExceptions } from "../table-properties/table-property-exceptions";
+import type { ITablePropertyExOptions } from "../table-properties/table-property-exceptions";
 import { TableRowProperties } from "./table-row-properties";
 import type { ITableRowPropertiesOptions } from "./table-row-properties";
 
@@ -20,6 +22,8 @@ import type { ITableRowPropertiesOptions } from "./table-row-properties";
 export type ITableRowOptions = {
     /** Array of TableCell elements that make up the row */
     readonly children: readonly (TableCell | StructuredDocumentTagRow)[];
+    /** Table property exceptions for this row (override table-level properties) */
+    readonly propertyExceptions?: ITablePropertyExOptions;
 } & ITableRowPropertiesOptions;
 
 /**
@@ -60,6 +64,11 @@ export type ITableRowOptions = {
 export class TableRow extends XmlComponent {
     public constructor(private readonly options: ITableRowOptions) {
         super("w:tr");
+
+        if (options.propertyExceptions) {
+            this.root.push(new TablePropertyExceptions(options.propertyExceptions));
+        }
+
         this.root.push(new TableRowProperties(options));
 
         for (const child of options.children) {

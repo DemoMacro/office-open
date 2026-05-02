@@ -247,4 +247,16 @@ export class ContentTypes extends XmlComponent {
     public addAltChunk(path: string, contentType: string, _extension: string): void {
         this.root.push(createOverride(contentType, path));
     }
+
+    /**
+     * Registers a sub-document part in the content types.
+     */
+    public addSubDoc(path: string): void {
+        this.root.push(
+            createOverride(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml",
+                path,
+            ),
+        );
+    }
 }

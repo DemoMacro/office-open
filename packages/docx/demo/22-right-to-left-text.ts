@@ -2,7 +2,17 @@
 
 import * as fs from "fs";
 
-import { Document, Packer, Paragraph, Table, TableCell, TableRow, TextRun } from "docx-plus";
+import {
+    Bdo,
+    Dir,
+    Document,
+    Packer,
+    Paragraph,
+    Table,
+    TableCell,
+    TableRow,
+    TextRun,
+} from "docx-plus";
 
 const doc = new Document({
     sections: [
@@ -34,6 +44,38 @@ const doc = new Document({
                             italics: true,
                             rightToLeft: true,
                             text: "שלום עולם",
+                        }),
+                    ],
+                }),
+                // Bidirectional override: embed LTR text inside RTL paragraph
+                new Paragraph({
+                    bidirectional: true,
+                    children: [
+                        new TextRun({
+                            rightToLeft: true,
+                            text: "مرحبا ",
+                        }),
+                        new Dir({
+                            val: "ltr",
+                            children: [new TextRun("Hello World")],
+                        }),
+                        new TextRun({
+                            rightToLeft: true,
+                            text: " مرحبا",
+                        }),
+                    ],
+                }),
+                // BDO: strong bidirectional override
+                new Paragraph({
+                    bidirectional: true,
+                    children: [
+                        new TextRun({
+                            rightToLeft: true,
+                            text: "نص عربي ",
+                        }),
+                        new Bdo({
+                            val: "ltr",
+                            children: [new TextRun("Forced LTR: 123")],
                         }),
                     ],
                 }),

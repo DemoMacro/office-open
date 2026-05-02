@@ -10,3 +10,4 @@ export * from "./div-id";
 export * from "./numbered-item-ref";
 export * from "./outline-level";
 export * from "./pageref";
+export * from "./bidi";

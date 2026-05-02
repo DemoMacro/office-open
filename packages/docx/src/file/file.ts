@@ -35,6 +35,7 @@ import { SmartArtCollection } from "./smartart/smartart-collection";
 import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
 import { DefaultStylesFactory } from "./styles/factory";
+import { SubDocCollection } from "./sub-doc/sub-doc-collection";
 
 /**
  * Options for a document section.
@@ -163,6 +164,7 @@ export class File {
     private readonly charts: ChartCollection;
     private readonly smartArts: SmartArtCollection;
     private readonly altChunks: AltChunkCollection;
+    private readonly subDocs: SubDocCollection;
     private readonly fileRelationships: Relationships;
     private readonly footnotesWrapper: FootnotesWrapper;
     private readonly endnotesWrapper: EndnotesWrapper;
@@ -211,12 +213,22 @@ export class File {
             trackRevisions: options.features?.trackRevisions,
             updateFields: options.features?.updateFields,
             documentProtection: options.features?.documentProtection,
+            view: options.view,
+            zoom: options.zoom,
+            writeProtection: options.writeProtection,
+            displayBackgroundShape: options.displayBackgroundShape ?? (options.background?.image ? true : undefined),
+            embedTrueTypeFonts: options.embedTrueTypeFonts,
+            embedSystemFonts: options.embedSystemFonts,
+            saveSubsetFonts: options.saveSubsetFonts,
+            docVars: options.docVars,
+            colorSchemeMapping: options.colorSchemeMapping,
         });
 
         this.media = new Media();
         this.charts = new ChartCollection();
         this.smartArts = new SmartArtCollection();
         this.altChunks = new AltChunkCollection();
+        this.subDocs = new SubDocCollection();
 
         if (options.externalStyles !== undefined) {
             const defaultFactory = new DefaultStylesFactory();
@@ -437,6 +449,10 @@ export class File {
 
     public get AltChunks(): AltChunkCollection {
         return this.altChunks;
+    }
+
+    public get SubDocs(): SubDocCollection {
+        return this.subDocs;
     }
 
     public get FileRelationships(): Relationships {

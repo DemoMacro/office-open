@@ -9,6 +9,7 @@
  * @module
  */
 import {
+    BuilderElement,
     NumberValueElement,
     OnOffElement,
     StringValueElement,
@@ -196,6 +197,40 @@ export interface ISettingsOptions {
     readonly characterSpacingControl?: "compressPunctuation" | "doNotCompress";
     /** Document protection settings */
     readonly documentProtection?: IDocumentProtectionOptions;
+    /** Default document view mode */
+    readonly view?: "none" | "print" | "outline" | "masterPages" | "normal" | "web";
+    /** Default zoom level (percentage) and type */
+    readonly zoom?: {
+        readonly percent?: number;
+        readonly val?: "none" | "fullPage" | "bestFit" | "textFit";
+    };
+    /** Write protection recommendation (not enforcement) */
+    readonly writeProtection?: IWriteProtectionOptions;
+    /** Whether to display the background shape in print layout */
+    readonly displayBackgroundShape?: boolean;
+    /** Whether to embed TrueType fonts in the document */
+    readonly embedTrueTypeFonts?: boolean;
+    /** Whether to embed system fonts in the document */
+    readonly embedSystemFonts?: boolean;
+    /** Whether to save only a subset of the embedded fonts */
+    readonly saveSubsetFonts?: boolean;
+    /** Document variables (key-value pairs stored in the document) */
+    readonly docVars?: readonly { readonly name: string; readonly val: string }[];
+    /** Theme color scheme remapping */
+    readonly colorSchemeMapping?: {
+        readonly bg1?: string;
+        readonly t1?: string;
+        readonly bg2?: string;
+        readonly t2?: string;
+        readonly accent1?: string;
+        readonly accent2?: string;
+        readonly accent3?: string;
+        readonly accent4?: string;
+        readonly accent5?: string;
+        readonly accent6?: string;
+        readonly hyperlink?: string;
+        readonly followedHyperlink?: string;
+    };
 }
 
 /**
@@ -216,6 +251,24 @@ export interface IDocumentProtectionOptions {
     readonly spinCount?: number;
     /** Password algorithm name */
     readonly algorithmName?: string;
+}
+
+/**
+ * Options for write protection (read-only recommendation, not enforcement).
+ *
+ * Reference: ISO/IEC 29500-4, wml.xsd, CT_WriteProtection
+ */
+export interface IWriteProtectionOptions {
+    /** Cryptographic hash of the password */
+    readonly hashValue?: string;
+    /** Salt value for the hash (base64) */
+    readonly saltValue?: string;
+    /** Password spin count */
+    readonly spinCount?: number;
+    /** Password algorithm name */
+    readonly algorithmName?: string;
+    /** Whether write protection is recommended (default true when options provided) */
+    readonly recommended?: boolean;
 }
 
 /**
@@ -315,6 +368,59 @@ export class Settings extends XmlComponent {
             this.root.push(new DocumentProtection(options.documentProtection));
         }
 
+        if (options.view !== undefined) {
+            this.root.push(new View(options.view));
+        }
+
+        if (options.zoom !== undefined) {
+            this.root.push(
+                new Zoom({
+                    val: options.zoom.val,
+                    percent: options.zoom.percent ?? 100,
+                }),
+            );
+        }
+
+        if (options.writeProtection !== undefined) {
+            this.root.push(new WriteProtection(options.writeProtection));
+        }
+
+        if (options.displayBackgroundShape !== undefined) {
+            this.root.push(
+                new OnOffElement("w:displayBackgroundShape", options.displayBackgroundShape),
+            );
+        }
+
+        if (options.embedTrueTypeFonts !== undefined) {
+            this.root.push(new OnOffElement("w:embedTrueTypeFonts", options.embedTrueTypeFonts));
+        }
+
+        if (options.embedSystemFonts !== undefined) {
+            this.root.push(new OnOffElement("w:embedSystemFonts", options.embedSystemFonts));
+        }
+
+        if (options.saveSubsetFonts !== undefined) {
+            this.root.push(new OnOffElement("w:saveSubsetFonts", options.saveSubsetFonts));
+        }
+
+        if (options.docVars !== undefined && options.docVars.length > 0) {
+            this.root.push(
+                new BuilderElement({
+                    name: "w:docVars",
+                    children: options.docVars.map(
+                        (v) =>
+                            new BuilderElement({
+                                name: "w:docVar",
+                                attributes: [
+                                    { key: "w:name", value: v.name },
+                                    { key: "w:val", value: v.val },
+                                ],
+                            }),
+                    ),
+                }),
+            );
+        }
+
         // http://officeopenxml.com/WPSectionFooterReference.php
         // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_evenAndOddHeaders_topic_ID0ET1WU.html
         if (options.evenAndOddHeaders !== undefined) {
@@ -365,6 +471,10 @@ export class Settings extends XmlComponent {
                 options.characterSpacingControl ?? "compressPunctuation",
             ),
         );
+
+        if (options.colorSchemeMapping !== undefined) {
+            this.root.push(new ColorSchemeMapping(options.colorSchemeMapping));
+        }
 
         this.root.push(
             new Compatibility({
@@ -435,5 +545,116 @@ class DocumentProtection extends XmlComponent {
                 spinCount: options.spinCount,
             }),
         );
+    }
+}
+
+class ViewAttributes extends XmlAttributeComponent<{ readonly val: string }> {
+    protected readonly xmlKeys = { val: "w:val" };
+}
+
+class View extends XmlComponent {
+    public constructor(val: string) {
+        super("w:view");
+        this.root.push(new ViewAttributes({ val }));
+    }
+}
+
+class ZoomAttributes extends XmlAttributeComponent<{
+    readonly val?: string;
+    readonly percent?: number;
+}> {
+    protected readonly xmlKeys = { val: "w:val", percent: "w:percent" };
+}
+
+class Zoom extends XmlComponent {
+    public constructor(options: { val?: string; percent: number }) {
+        super("w:zoom");
+        this.root.push(new ZoomAttributes(options));
+    }
+}
+
+class WriteProtectionAttributes extends XmlAttributeComponent<{
+    readonly recommended?: string;
+    readonly hashValue?: string;
+    readonly saltValue?: string;
+    readonly spinCount?: number;
+    readonly algorithmName?: string;
+}> {
+    protected readonly xmlKeys = {
+        recommended: "w:recommended",
+        hashValue: "w:hashValue",
+        saltValue: "w:saltValue",
+        spinCount: "w:spinCount",
+        algorithmName: "w:algorithmName",
+    };
+}
+
+class WriteProtection extends XmlComponent {
+    public constructor(options: IWriteProtectionOptions) {
+        super("w:writeProtection");
+        this.root.push(
+            new WriteProtectionAttributes({
+                recommended:
+                    options.recommended !== undefined
+                        ? options.recommended
+                            ? "1"
+                            : "0"
+                        : undefined,
+                hashValue: options.hashValue,
+                saltValue: options.saltValue,
+                spinCount: options.spinCount,
+                algorithmName: options.algorithmName,
+            }),
+        );
+    }
+}
+
+class ColorSchemeMappingAttributes extends XmlAttributeComponent<{
+    readonly bg1?: string;
+    readonly t1?: string;
+    readonly bg2?: string;
+    readonly t2?: string;
+    readonly accent1?: string;
+    readonly accent2?: string;
+    readonly accent3?: string;
+    readonly accent4?: string;
+    readonly accent5?: string;
+    readonly accent6?: string;
+    readonly hyperlink?: string;
+    readonly followedHyperlink?: string;
+}> {
+    protected readonly xmlKeys = {
+        bg1: "w:bg1",
+        t1: "w:t1",
+        bg2: "w:bg2",
+        t2: "w:t2",
+        accent1: "w:accent1",
+        accent2: "w:accent2",
+        accent3: "w:accent3",
+        accent4: "w:accent4",
+        accent5: "w:accent5",
+        accent6: "w:accent6",
+        hyperlink: "w:hyperlink",
+        followedHyperlink: "w:followedHyperlink",
+    };
+}
+
+class ColorSchemeMapping extends XmlComponent {
+    public constructor(options: {
+        readonly bg1?: string;
+        readonly t1?: string;
+        readonly bg2?: string;
+        readonly t2?: string;
+        readonly accent1?: string;
+        readonly accent2?: string;
+        readonly accent3?: string;
+        readonly accent4?: string;
+        readonly accent5?: string;
+        readonly accent6?: string;
+        readonly hyperlink?: string;
+        readonly followedHyperlink?: string;
+    }) {
+        super("w:clrSchemeMapping");
+        this.root.push(new ColorSchemeMappingAttributes(options));
     }
 }

@@ -15,6 +15,7 @@ import type { CheckBox } from "../checkbox";
 import type { PermEnd, PermStart } from "../permissions";
 import { TargetModeType } from "../relationships/relationship/relationship";
 import type { StructuredDocumentTagRun } from "../sdt";
+import type { SubDoc } from "../sub-doc";
 import type {
     DeletedTextRun,
     InsertedTextRun,
@@ -24,6 +25,7 @@ import type {
 import type { ColumnBreak, PageBreak } from "./formatting/break";
 import { Bookmark, ConcreteHyperlink, ExternalHyperlink } from "./links";
 import type { InternalHyperlink } from "./links";
+import type { Dir, Bdo } from "./links/bidi";
 import type {
     MoveFromRangeEnd,
     MoveFromRangeStart,
@@ -86,7 +88,10 @@ export type ParagraphChild =
     | MovedToTextRun
     | PermStart
     | PermEnd
-    | AltChunk;
+    | Dir
+    | Bdo
+    | AltChunk
+    | SubDoc;
 
 /**
  * Options for creating a Paragraph element.
