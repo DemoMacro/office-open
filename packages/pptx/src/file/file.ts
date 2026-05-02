@@ -4,6 +4,7 @@ import { ChartCollection } from "@file/chart/chart-collection";
 import { ContentTypes } from "@file/content-types/content-types";
 import { CoreProperties, type ICorePropertiesOptions } from "@file/core-properties/properties";
 import { Media } from "@file/media/media";
+import { NotesSlide } from "@file/notes/notes-slide";
 import { PresentationProperties } from "@file/presentation-properties";
 import { PresentationWrapper } from "@file/presentation/presentation-wrapper";
 import { Relationships } from "@file/relationships/relationships";
@@ -19,6 +20,7 @@ import { pixelsToEmus } from "@util/types";
 export interface ISlideOptions {
     readonly children?: readonly XmlComponent[];
     readonly background?: Background;
+    readonly notes?: string;
 }
 
 export interface IPresentationOptions extends ICorePropertiesOptions {
@@ -43,7 +45,9 @@ export class File {
     private readonly slideLayout: DefaultSlideLayout;
     private readonly slideMasterRelationships: Relationships;
     private readonly slideLayoutRelationships: Relationships;
+    private readonly notesMasterRelationships: Relationships;
     private readonly slides: Slide[];
+    private readonly notesSlides: NotesSlide[];
     private readonly slideWrappers: Array<{
         readonly View: Slide;
         readonly Relationships: Relationships;
@@ -57,6 +61,7 @@ export class File {
         this.contentTypes = new ContentTypes();
         this.media = new Media();
         this.charts = new ChartCollection();
+        this.notesSlides = [];
 
         // Package-level relationships (_rels/.rels)
         this.fileRelationships = new Relationships();
@@ -90,6 +95,11 @@ export class File {
             );
             this.slideWrappers.push({ View: slide, Relationships: slideRels });
             this.contentTypes.addSlide(i + 1);
+
+            if (slides[i].notes) {
+                this.notesSlides.push(new NotesSlide({ text: slides[i].notes }));
+                this.contentTypes.addNotesSlide(i + 1);
+            }
         }
 
         // Presentation wrapper with slide ID list
@@ -134,6 +144,11 @@ export class File {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles",
             "tableStyles.xml",
         );
+        this.presentationWrapper.Relationships.addRelationship(
+            nextRId + 4,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster",
+            "notesMasters/notesMaster1.xml",
+        );
 
         // Theme
         this.theme = new DefaultTheme();
@@ -165,6 +180,9 @@ export class File {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster",
             "../slideMasters/slideMaster1.xml",
         );
+
+        // Notes Master
+        this.notesMasterRelationships = new Relationships();
     }
 
     public get CoreProperties(): CoreProperties {
@@ -236,5 +254,13 @@ export class File {
         readonly Relationships: Relationships;
     }> {
         return this.slideWrappers;
+    }
+
+    public get NotesSlides(): readonly NotesSlide[] {
+        return this.notesSlides;
+    }
+
+    public get NotesMasterRelationships(): Relationships {
+        return this.notesMasterRelationships;
     }
 }

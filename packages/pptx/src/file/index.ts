@@ -51,6 +51,7 @@ export { DefaultTheme } from "./theme/theme";
 export { DefaultSlideMaster } from "./slide-master/slide-master";
 export { DefaultSlideLayout } from "./slide-layout/slide-layout";
 export { DefaultNotesMaster } from "./notes-master/notes-master";
+export { NotesSlide, type INotesSlideOptions } from "./notes/notes-slide";
 export { PresentationWrapper, type IViewWrapper } from "./presentation/presentation-wrapper";
 export { Picture, type IPictureOptions } from "./picture/picture";
 export { Background, type IBackgroundOptions } from "./background/background";
