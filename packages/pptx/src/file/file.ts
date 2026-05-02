@@ -156,11 +156,6 @@ export class File {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles",
             "tableStyles.xml",
         );
-        this.presentationWrapper.Relationships.addRelationship(
-            nextRId + 4,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster",
-            "notesMasters/notesMaster1.xml",
-        );
 
         // Theme
         this.theme = new DefaultTheme();

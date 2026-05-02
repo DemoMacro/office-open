@@ -6,7 +6,6 @@ import { BuilderElement, type IContext, XmlComponent } from "@file/xml-component
 import { pixelsToEmus } from "@util/types";
 
 const MEDIA_EXT_URI = "{CF1602FD-DB20-4165-A070-5F299619DA56}";
-const P14_NS = "http://schemas.microsoft.com/office/powerpoint/2010/main";
 
 export type AudioType = "mp3" | "wav" | "wma" | "aac";
 
@@ -82,8 +81,8 @@ export class AudioFrame extends XmlComponent {
                                                 name: "p14:media",
                                                 attributes: {
                                                     "r:embed": { key: "r:embed", value: `{media:${mediaFileName}}` },
+                                                    "xmlns:p14": { key: "xmlns:p14", value: "http://schemas.microsoft.com/office/powerpoint/2010/main" },
                                                 },
-                                                namespaces: { p14: P14_NS },
                                             }),
                                         ],
                                     }),
