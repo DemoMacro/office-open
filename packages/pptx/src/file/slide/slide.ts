@@ -3,6 +3,8 @@ import { BuilderElement, NextAttributeComponent, XmlComponent } from "@file/xml-
 import type { ITransitionOptions } from "@file/transition/transition";
 import { Transition } from "@file/transition/transition";
 import { SlideTiming } from "@file/animation/timing";
+import type { IHeaderFooterOptions } from "@file/header-footer/header-footer";
+import { HeaderFooter } from "@file/header-footer/header-footer";
 import { Shape } from "@file/shape/shape";
 
 import { CommonSlideData } from "./common-slide-data";
@@ -37,6 +39,7 @@ export class Slide extends XmlComponent {
         children: readonly XmlComponent[],
         background?: Background,
         transition?: ITransitionOptions,
+        headerFooter?: IHeaderFooterOptions,
     ) {
         super("p:sld");
         this.root.push(
@@ -59,6 +62,10 @@ export class Slide extends XmlComponent {
         this.root.push(new ColorMapOverride());
         if (transition) {
             this.root.push(new Transition(transition));
+        }
+
+        if (headerFooter) {
+            this.root.push(new HeaderFooter(headerFooter));
         }
 
         const animations = collectAnimations(children);
