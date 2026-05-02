@@ -1,7 +1,6 @@
 import { Formatter } from "@export/formatter";
+import { BuilderElement, StringEnumValueElement } from "@office-open/core";
 import { describe, expect, it } from "vite-plus/test";
-
-import { BuilderElement, StringEnumValueElement } from "./simple-elements";
 
 describe("BuilderElement", () => {
     describe("#constructor()", () => {

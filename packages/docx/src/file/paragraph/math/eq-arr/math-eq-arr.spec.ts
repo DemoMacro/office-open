@@ -40,7 +40,7 @@ describe("MathEqArr", () => {
             const tree = new Formatter().format(eqArr);
 
             expect(tree["m:eqArr"][0]).to.deep.equal({
-                "m:eqArrPr": [{ "m:maxDist": {} }, { "m:objDist": { _attr: { "w:val": false } } }],
+                "m:eqArrPr": [{ "m:maxDist": {} }, { "m:objDist": { _attr: { "m:val": false } } }],
             });
         });
     });

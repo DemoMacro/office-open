@@ -36,7 +36,7 @@ interface MathBarPosOptions {
 export const createMathBarPos = ({ val }: MathBarPosOptions): XmlComponent =>
     new BuilderElement<MathBarPosOptions>({
         attributes: {
-            val: { key: "w:val", value: val },
+            val: { key: "m:val", value: val },
         },
         name: "m:pos",
     });

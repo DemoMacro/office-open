@@ -35,8 +35,8 @@ describe("MathPhant", () => {
                     {
                         "m:phantPr": [
                             { "m:show": {} },
-                            { "m:zeroWid": { _attr: { "w:val": false } } },
-                            { "m:transp": { _attr: { "w:val": false } } },
+                            { "m:zeroWid": { _attr: { "m:val": false } } },
+                            { "m:transp": { _attr: { "m:val": false } } },
                         ],
                     },
                     {

@@ -9,7 +9,7 @@ Office Open XML monorepo - generate .docx, .pptx, .xlsx files with JS/TS.
 
 ## Packages
 
-- **[@office-open/core](./packages/core/README.md)** - Shared OOXML infrastructure (WIP)
+- **[@office-open/core](./packages/core/README.md)** - Shared OOXML infrastructure
 - **[@office-open/xml](./packages/xml/README.md)** - XML parsing/serialization (WIP)
 - **[@office-open/docx](./packages/docx/README.md)** - Generate .docx files with a declarative API
 - **[@office-open/xlsx](./packages/xlsx/README.md)** - Generate .xlsx files (WIP)

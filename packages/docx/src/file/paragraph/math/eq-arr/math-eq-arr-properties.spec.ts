@@ -26,7 +26,7 @@ describe("createMathEqArrProperties", () => {
     it("should create eq arr properties with objDist", () => {
         const tree = new Formatter().format(createMathEqArrProperties({ objDist: false }));
         expect(tree).to.deep.equal({
-            "m:eqArrPr": [{ "m:objDist": { _attr: { "w:val": false } } }],
+            "m:eqArrPr": [{ "m:objDist": { _attr: { "m:val": false } } }],
         });
     });
 

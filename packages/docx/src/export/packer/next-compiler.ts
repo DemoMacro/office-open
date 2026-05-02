@@ -219,6 +219,7 @@ export class Compiler {
 
         const documentXmlData = xml(
             this.formatter.format(file.Document.View, {
+                fileData: file,
                 file,
                 stack: [],
                 viewWrapper: file.Document,
@@ -235,6 +236,7 @@ export class Compiler {
         const commentRelationshipCount = file.Comments.Relationships.RelationshipCount + 1;
         const commentXmlData = xml(
             this.formatter.format(file.Comments, {
+                fileData: file,
                 file,
                 stack: [],
                 viewWrapper: {
@@ -254,6 +256,7 @@ export class Compiler {
         const footnoteRelationshipCount = file.FootNotes.Relationships.RelationshipCount + 1;
         const footnoteXmlData = xml(
             this.formatter.format(file.FootNotes.View, {
+                fileData: file,
                 file,
                 stack: [],
                 viewWrapper: file.FootNotes,
@@ -275,6 +278,7 @@ export class Compiler {
             AppProperties: {
                 data: xml(
                     this.formatter.format(file.AppProperties, {
+                        fileData: file,
                         file,
                         stack: [],
                         viewWrapper: file.Document,
@@ -315,6 +319,7 @@ export class Compiler {
                     });
                     return xml(
                         this.formatter.format(file.Comments.Relationships, {
+                            fileData: file,
                             file,
                             stack: [],
                             viewWrapper: {
@@ -346,6 +351,7 @@ export class Compiler {
                     });
                     return xml(
                         this.formatter.format(file.ContentTypes, {
+                            fileData: file,
                             file,
                             stack: [],
                             viewWrapper: file.Document,
@@ -363,6 +369,7 @@ export class Compiler {
             CustomProperties: {
                 data: xml(
                     this.formatter.format(file.CustomProperties, {
+                        fileData: file,
                         file,
                         stack: [],
                         viewWrapper: file.Document,
@@ -409,6 +416,7 @@ export class Compiler {
             Endnotes: {
                 data: xml(
                     this.formatter.format(file.Endnotes.View, {
+                        fileData: file,
                         file,
                         stack: [],
                         viewWrapper: file.Endnotes,
@@ -425,6 +433,7 @@ export class Compiler {
             EndnotesRelationships: {
                 data: xml(
                     this.formatter.format(file.Endnotes.Relationships, {
+                        fileData: file,
                         file,
                         stack: [],
                         viewWrapper: file.Endnotes,
@@ -441,6 +450,7 @@ export class Compiler {
             FileRelationships: {
                 data: xml(
                     this.formatter.format(file.FileRelationships, {
+                        fileData: file,
                         file,
                         stack: [],
                         viewWrapper: file.Document,
@@ -457,6 +467,7 @@ export class Compiler {
             FontTable: {
                 data: xml(
                     this.formatter.format(file.FontTable.View, {
+                        fileData: file,
                         file,
                         stack: [],
                         viewWrapper: file.Document,
@@ -475,6 +486,7 @@ export class Compiler {
                 data: (() =>
                     xml(
                         this.formatter.format(file.FontTable.Relationships, {
+                            fileData: file,
                             file,
                             stack: [],
                             viewWrapper: file.Document,
@@ -514,6 +526,7 @@ export class Compiler {
                     });
                     return xml(
                         this.formatter.format(file.FootNotes.Relationships, {
+                            fileData: file,
                             file,
                             stack: [],
                             viewWrapper: file.FootNotes,
@@ -530,6 +543,7 @@ export class Compiler {
             },
             FooterRelationships: file.Footers.map((footerWrapper, index) => {
                 const formatted = this.formatter.format(footerWrapper.View, {
+                    fileData: file,
                     file,
                     stack: [],
                     viewWrapper: footerWrapper,
@@ -555,6 +569,7 @@ export class Compiler {
                 return {
                     data: xml(
                         this.formatter.format(footerWrapper.Relationships, {
+                            fileData: file,
                             file,
                             stack: [],
                             viewWrapper: footerWrapper,
@@ -587,6 +602,7 @@ export class Compiler {
             }),
             HeaderRelationships: file.Headers.map((headerWrapper, index) => {
                 const formatted = this.formatter.format(headerWrapper.View, {
+                    fileData: file,
                     file,
                     stack: [],
                     viewWrapper: headerWrapper,
@@ -612,6 +628,7 @@ export class Compiler {
                 return {
                     data: xml(
                         this.formatter.format(headerWrapper.Relationships, {
+                            fileData: file,
                             file,
                             stack: [],
                             viewWrapper: headerWrapper,
@@ -645,6 +662,7 @@ export class Compiler {
             Numbering: {
                 data: xml(
                     this.formatter.format(file.Numbering, {
+                        fileData: file,
                         file,
                         stack: [],
                         viewWrapper: file.Document,
@@ -662,6 +680,7 @@ export class Compiler {
             Properties: {
                 data: xml(
                     this.formatter.format(file.CoreProperties, {
+                        fileData: file,
                         file,
                         stack: [],
                         viewWrapper: file.Document,
@@ -719,6 +738,7 @@ export class Compiler {
 
                     return xml(
                         this.formatter.format(file.Document.Relationships, {
+                            fileData: file,
                             file,
                             stack: [],
                             viewWrapper: file.Document,
@@ -736,6 +756,7 @@ export class Compiler {
             Settings: {
                 data: xml(
                     this.formatter.format(file.Settings, {
+                        fileData: file,
                         file,
                         stack: [],
                         viewWrapper: file.Document,
@@ -754,6 +775,7 @@ export class Compiler {
                 data: (() => {
                     const xmlStyles = xml(
                         this.formatter.format(file.Styles, {
+                            fileData: file,
                             file,
                             stack: [],
                             viewWrapper: file.Document,
@@ -779,6 +801,7 @@ export class Compiler {
                       Bibliography: {
                           data: xml(
                               this.formatter.format(file.Bibliography, {
+                                  fileData: file,
                                   file,
                                   stack: [],
                                   viewWrapper: {
@@ -804,6 +827,7 @@ export class Compiler {
                           {
                               data: xml(
                                   this.formatter.format(chartData.chartSpace, {
+                                      fileData: file,
                                       file,
                                       stack: [],
                                       viewWrapper: file.Document,
@@ -839,6 +863,7 @@ export class Compiler {
                       DiagramData: file.SmartArts.Array.map((smartArtData, i) => ({
                           data: xml(
                               this.formatter.format(smartArtData.dataModel, {
+                                  fileData: file,
                                   file,
                                   stack: [],
                                   viewWrapper: file.Document,

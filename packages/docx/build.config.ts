@@ -10,7 +10,7 @@ export default defineBuildConfig({
             shims: true,
             external: ["stream"],
             deps: {
-                alwaysBundle: ["@office-open/xml"],
+                alwaysBundle: ["@office-open/xml", "@office-open/core"],
                 onlyBundle: false,
             },
         },

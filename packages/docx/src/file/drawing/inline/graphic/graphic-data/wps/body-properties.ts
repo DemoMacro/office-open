@@ -10,7 +10,7 @@
  */
 import { BuilderElement } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
-import { OnOffElement } from "@file/xml-components/simple-elements";
+import { OnOffElement } from "@file/xml-components";
 
 import type { Scene3DOptions } from "../pic/shape-properties/three-d/scene-3d";
 import { createScene3D } from "../pic/shape-properties/three-d/scene-3d";

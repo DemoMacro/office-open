@@ -6,7 +6,7 @@
  *
  * @module
  */
-import { XmlAttributeComponent } from "./default-attributes";
+import { XmlAttributeComponent } from "@office-open/core";
 
 /**
  * Common XML attributes used across WordprocessingML elements.
