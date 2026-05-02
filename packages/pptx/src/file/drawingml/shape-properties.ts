@@ -1,5 +1,6 @@
 import { XmlComponent as Xc } from "@file/xml-components";
 
+import { EffectList, type IEffectsOptions } from "./effects";
 import { GradientFill } from "./gradient-fill";
 import { NoFill } from "./no-fill";
 import { Outline } from "./outline";
@@ -14,10 +15,11 @@ export interface IShapePropertiesOptions extends ITransform2DOptions {
     readonly geometry?: string;
     readonly fill?: ShapeFill;
     readonly outline?: Outline;
+    readonly effects?: IEffectsOptions;
 }
 
 /**
- * p:spPr — Shape properties (transform, geometry, fill, outline).
+ * p:spPr — Shape properties (transform, geometry, fill, outline, effects).
  * Uses p: prefix in PresentationML context, though type is a:CT_ShapeProperties.
  */
 export class ShapeProperties extends Xc {
@@ -37,6 +39,8 @@ export class ShapeProperties extends Xc {
 
         if (options.geometry) {
             this.root.push(new PresetGeometry(options.geometry));
+        } else {
+            this.root.push(new PresetGeometry("rect"));
         }
 
         if (options.fill) {
@@ -47,6 +51,10 @@ export class ShapeProperties extends Xc {
 
         if (options.outline) {
             this.root.push(options.outline);
+        }
+
+        if (options.effects) {
+            this.root.push(new EffectList(options.effects));
         }
     }
 }

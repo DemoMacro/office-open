@@ -2,6 +2,7 @@ import { NonVisualShapeProperties } from "@file/drawingml/non-visual-shape-props
 import { Outline } from "@file/drawingml/outline";
 import { ShapeProperties } from "@file/drawingml/shape-properties";
 import type { IShapePropertiesOptions } from "@file/drawingml/shape-properties";
+import type { IEffectsOptions } from "@file/drawingml/effects";
 import { BuilderElement, XmlComponent as Xc } from "@file/xml-components";
 import { pixelsToEmus } from "@util/types";
 import type { IAnimationOptions } from "@file/animation/types";
@@ -21,6 +22,7 @@ export interface IShapeOptions {
     readonly geometry?: string;
     readonly fill?: IShapePropertiesOptions["fill"];
     readonly outline?: Outline;
+    readonly effects?: IEffectsOptions;
     readonly flipH?: boolean;
     readonly rotation?: number;
     readonly text?: string;
@@ -73,6 +75,7 @@ export class Shape extends Xc {
             geometry: options.geometry,
             fill: options.fill,
             outline: options.outline,
+            effects: options.effects,
             flipH: options.flipH,
             rotation: options.rotation,
         };

@@ -28,6 +28,7 @@ export {
     type IShapePropertiesOptions,
     type ShapeFill,
 } from "./drawingml/shape-properties";
+export { EffectList, type IEffectsOptions, type IShadowOptions, type IGlowOptions, type IReflectionOptions, type ISoftEdgeOptions } from "./drawingml/effects";
 export { NonVisualDrawingProperties } from "./drawingml/non-visual-drawing-props";
 export { NonVisualShapeProperties } from "./drawingml/non-visual-shape-props";
 export { NonVisualPictureProperties } from "./drawingml/non-visual-picture-props";
