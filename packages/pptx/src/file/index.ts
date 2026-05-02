@@ -6,7 +6,7 @@ export { TextBody, type ITextBodyOptions } from "./shape/text-body";
 export { Paragraph, type IParagraphOptions } from "./shape/paragraph/paragraph";
 export { Run, type IRunOptions } from "./shape/paragraph/run";
 export { Text } from "./shape/paragraph/text";
-export { RunProperties, type IRunPropertiesOptions } from "./shape/paragraph/run-properties";
+export { RunProperties, type IRunPropertiesOptions, type IHyperlinkOptions } from "./shape/paragraph/run-properties";
 export {
     ParagraphProperties,
     type IParagraphPropertiesOptions,
