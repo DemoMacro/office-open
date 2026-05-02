@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Presentation, Shape, Packer, SolidFill } from "../dist/index.mjs";
+import { Presentation, Shape, Packer, SolidFill } from "../src";
 
 const pres = new Presentation({
     title: "My Presentation",

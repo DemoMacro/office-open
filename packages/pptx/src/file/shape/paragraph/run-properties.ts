@@ -15,6 +15,18 @@ export interface IRunPropertiesOptions {
  * a:rPr — Run properties (font, size, color, etc.).
  */
 export class RunProperties extends XmlComponent {
+    public static hasProperties(options: IRunPropertiesOptions): boolean {
+        return !!(
+            options.fontSize ||
+            options.bold !== undefined ||
+            options.italic !== undefined ||
+            options.underline ||
+            options.font ||
+            options.lang ||
+            options.fill
+        );
+    }
+
     public constructor(options: IRunPropertiesOptions = {}) {
         super("a:rPr");
 
@@ -26,7 +38,6 @@ export class RunProperties extends XmlComponent {
         if (options.bold !== undefined) attrs.b = { key: "b", value: options.bold };
         if (options.italic !== undefined) attrs.i = { key: "i", value: options.italic };
         if (options.underline) attrs.u = { key: "u", value: options.underline };
-        attrs.dirty = { key: "dirty", value: true };
         if (options.lang) attrs.lang = { key: "lang", value: options.lang };
 
         this.root.push(new NextAttributeComponent(attrs));

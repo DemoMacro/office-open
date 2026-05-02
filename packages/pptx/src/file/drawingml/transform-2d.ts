@@ -10,11 +10,11 @@ export interface ITransform2DOptions {
 }
 
 /**
- * a:xfrm — 2D transform for shapes (position + size in EMUs).
+ * a:xfrm / p:xfrm — 2D transform for shapes and graphic frames (position + size in EMUs).
  */
 export class Transform2D extends XmlComponent {
-    public constructor(options: ITransform2DOptions) {
-        super("a:xfrm");
+    public constructor(options: ITransform2DOptions, prefix: "a" | "p" = "a") {
+        super(`${prefix}:xfrm`);
 
         const attrs: Record<
             string,

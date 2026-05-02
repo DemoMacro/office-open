@@ -53,7 +53,7 @@ export class Presentation extends XmlComponent {
                             name: "p:sldId",
                             attributes: {
                                 id: { key: "id", value: 256 + i },
-                                rId: { key: "r:id", value: `rId${i + 3}` },
+                                rId: { key: "r:id", value: `rId${i + 2}` },
                             },
                         }),
                 ),
@@ -66,6 +66,14 @@ export class Presentation extends XmlComponent {
                 attributes: {
                     cx: { key: "cx", value: options.slideWidth ?? 9144000 },
                     cy: { key: "cy", value: options.slideHeight ?? 6858000 },
+                    type: {
+                        key: "type",
+                        value:
+                            (options.slideWidth ?? 9144000) === 9144000 &&
+                            (options.slideHeight ?? 6858000) === 6858000
+                                ? "screen4x3"
+                                : undefined,
+                    },
                 },
             }),
         );
@@ -79,5 +87,75 @@ export class Presentation extends XmlComponent {
                 },
             }),
         );
+
+        this.root.push(this.createDefaultTextStyle());
+    }
+
+    private createDefaultTextStyle(): BuilderElement {
+        const defaultRunProps = (sz: number): BuilderElement =>
+            new BuilderElement({
+                name: "a:defRPr",
+                attributes: {
+                    sz: { key: "sz", value: sz * 100 },
+                    kern: { key: "kern", value: 1200 },
+                },
+                children: [
+                    new BuilderElement({
+                        name: "a:solidFill",
+                        children: [
+                            new BuilderElement({
+                                name: "a:schemeClr",
+                                attributes: { val: { key: "val", value: "tx1" } },
+                            }),
+                        ],
+                    }),
+                    new BuilderElement({
+                        name: "a:latin",
+                        attributes: { typeface: { key: "typeface", value: "+mn-lt" } },
+                    }),
+                    new BuilderElement({
+                        name: "a:ea",
+                        attributes: { typeface: { key: "typeface", value: "+mn-ea" } },
+                    }),
+                    new BuilderElement({
+                        name: "a:cs",
+                        attributes: { typeface: { key: "typeface", value: "+mn-cs" } },
+                    }),
+                ],
+            });
+
+        const createLevel = (marL: number): BuilderElement =>
+            new BuilderElement({
+                name: `a:lvl${Math.floor(marL / 457200 + 1)}pPr`,
+                attributes: {
+                    marL: { key: "marL", value: marL },
+                    algn: { key: "algn", value: "l" },
+                    defTabSz: { key: "defTabSz", value: 914400 },
+                    rtl: { key: "rtl", value: 0 },
+                    eaLnBrk: { key: "eaLnBrk", value: 1 },
+                    latinLnBrk: { key: "latinLnBrk", value: 0 },
+                    hangingPunct: { key: "hangingPunct", value: 1 },
+                },
+                children: [defaultRunProps(18)],
+            });
+
+        return new BuilderElement({
+            name: "p:defaultTextStyle",
+            children: [
+                new BuilderElement({
+                    name: "a:defPPr",
+                    children: [new BuilderElement({ name: "a:defRPr" })],
+                }),
+                createLevel(0),
+                createLevel(457200),
+                createLevel(914400),
+                createLevel(1371600),
+                createLevel(1828800),
+                createLevel(2286000),
+                createLevel(2743200),
+                createLevel(3200400),
+                createLevel(3657600),
+            ],
+        });
     }
 }

@@ -19,6 +19,12 @@ const PPTX_SLIDE_LAYOUT =
 const PPTX_THEME = "application/vnd.openxmlformats-officedocument.theme+xml";
 const PPTX_NOTES = "application/vnd.openxmlformats-officedocument.presentationml.notesSlide+xml";
 const PPTX_CHART = "application/vnd.openxmlformats-officedocument.drawingml.chart+xml";
+const PPTX_PRES_PROPS =
+    "application/vnd.openxmlformats-officedocument.presentationml.presProps+xml";
+const PPTX_VIEW_PROPS =
+    "application/vnd.openxmlformats-officedocument.presentationml.viewProps+xml";
+const PPTX_TABLE_STYLES =
+    "application/vnd.openxmlformats-officedocument.presentationml.tableStyles+xml";
 
 export class ContentTypes extends XmlComponent {
     public constructor() {
@@ -31,17 +37,6 @@ export class ContentTypes extends XmlComponent {
         );
 
         // Default content types by extension
-        this.root.push(createDefault("image/png", "png"));
-        this.root.push(createDefault("image/jpeg", "jpeg"));
-        this.root.push(createDefault("image/jpeg", "jpg"));
-        this.root.push(createDefault("image/bmp", "bmp"));
-        this.root.push(createDefault("image/gif", "gif"));
-        this.root.push(createDefault("image/tiff", "tif"));
-        this.root.push(createDefault("image/tiff", "tiff"));
-        this.root.push(createDefault("image/x-emf", "emf"));
-        this.root.push(createDefault("image/x-wmf", "wmf"));
-        this.root.push(createDefault("image/x-icon", "ico"));
-        this.root.push(createDefault("image/svg+xml", "svg"));
         this.root.push(
             createDefault("application/vnd.openxmlformats-package.relationships+xml", "rels"),
         );
@@ -64,6 +59,9 @@ export class ContentTypes extends XmlComponent {
         this.root.push(createOverride(PPTX_THEME, "/ppt/theme/theme1.xml"));
         this.root.push(createOverride(PPTX_SLIDE_MASTER, "/ppt/slideMasters/slideMaster1.xml"));
         this.root.push(createOverride(PPTX_SLIDE_LAYOUT, "/ppt/slideLayouts/slideLayout1.xml"));
+        this.root.push(createOverride(PPTX_PRES_PROPS, "/ppt/presProps.xml"));
+        this.root.push(createOverride(PPTX_VIEW_PROPS, "/ppt/viewProps.xml"));
+        this.root.push(createOverride(PPTX_TABLE_STYLES, "/ppt/tableStyles.xml"));
     }
 
     public addSlide(index: number): void {

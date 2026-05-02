@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Background, GradientFill, Outline, Presentation, Packer, Shape, SolidFill } from "../dist/index.mjs";
+import { Background, GradientFill, Outline, Presentation, Packer, Shape, SolidFill } from "../src";
 
 const pres = new Presentation({
     title: "Phase 2 Demo",
