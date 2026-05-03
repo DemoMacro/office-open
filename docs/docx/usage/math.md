@@ -25,9 +25,7 @@ new Math({
 
 This will produce:
 
-<p align="center">
-    <img alt="clippy the assistant" src="images/math-example.png" width="200">
-</p>
+$$2 + \frac{hi}{2}$$
 
 ## Math Components
 

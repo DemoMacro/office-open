@@ -1,10 +1,6 @@
 # @office-open/pptx
 
-![npm version](https://img.shields.io/npm/v/@office-open/pptx)
-![npm downloads](https://img.shields.io/npm/dw/@office-open/pptx)
-![npm license](https://img.shields.io/npm/l/@office-open/pptx)
-
-> Easily generate .pptx files with JS/TS with a declarative API. Works for Node and on the Browser.
+> Generate .pptx files with JS/TS with a declarative API.
 
 ## Features
 
@@ -28,17 +24,13 @@
 ## Installation
 
 ```bash
-# Install with npm
-$ npm install @office-open/pptx
-
-# Install with pnpm
-$ pnpm add @office-open/pptx
+npm install @office-open/pptx
 ```
 
 ## Quick Start
 
 ```typescript
-import { Presentation, Shape, SolidFill, Paragraph, Run, Packer } from "@office-open/pptx";
+import { Presentation, Shape, Packer, Paragraph, Run } from "@office-open/pptx";
 import { writeFileSync } from "node:fs";
 
 const pres = new Presentation({
@@ -46,17 +38,12 @@ const pres = new Presentation({
         {
             children: [
                 new Shape({
-                    textBody: new TextBody({
-                        paragraphs: [
-                            new Paragraph({
-                                children: [new Run({ text: "Hello World", fontSize: 32 })],
-                            }),
-                        ],
-                    }),
-                    properties: {
-                        fill: new SolidFill("4472C4"),
-                        transform: { x: 100, y: 100, width: 600, height: 400 },
-                    },
+                    text: "Hello World",
+                    fill: "4472C4",
+                    x: 100,
+                    y: 100,
+                    width: 600,
+                    height: 400,
                 }),
             ],
         },

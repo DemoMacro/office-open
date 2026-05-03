@@ -1,6 +1,6 @@
 {
     "name": "@office-open/core",
-    "version": "0.1.0",
+    "version": "0.3.0",
     "description": "Shared OOXML infrastructure: XmlComponent, value validators, unit converters",
     "keywords": [
         "core",

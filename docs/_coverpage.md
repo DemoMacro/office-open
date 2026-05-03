@@ -1,10 +1,6 @@
-<img src="images/logo-animate.svg" alt="docx logo" style="width:200px;"/>
+# office-open
 
-> Easily generate and modify .docx files with JS/TS. Works for Node and on the Browser. :100:
-
-- Simple, declarative API
-- 80+ usage examples
-- Battle tested, mature, 100% coverage (yes, every line is tested)
+> Generate Office Open XML documents (.docx, .pptx) with JS/TS
 
 [GitHub](https://github.com/DemoMacro/office-open)
-[Get Started](#Welcome)
+[Get Started](docx/README.md)
