@@ -4,7 +4,13 @@ import type { BuildConfig } from "@funish/build/config";
 export default defineBuildConfig({
     entries: [
         {
-            entry: ["src/index.ts", "src/values.ts", "src/smartart/index.ts", "src/chart/index.ts"],
+            entry: [
+                "src/index.ts",
+                "src/values.ts",
+                "src/smartart/index.ts",
+                "src/chart/index.ts",
+                "src/drawingml/index.ts",
+            ],
             deps: {
                 alwaysBundle: ["@office-open/xml"],
                 onlyBundle: false,

@@ -5,22 +5,5 @@
  *
  * @module
  */
-import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
 
-/**
- * Creates a no-fill element.
- *
- * Specifies that the outline or shape should have no fill applied.
- *
- * ## XSD Schema
- * ```xml
- * <xsd:element name="noFill" type="CT_Empty"/>
- * ```
- *
- * @example
- * ```typescript
- * const noFill = createNoFill();
- * ```
- */
-export const createNoFill = (): XmlComponent => new BuilderElement({ name: "a:noFill" });
+export { createNoFill } from "@office-open/core/drawingml";

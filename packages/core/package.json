@@ -45,6 +45,10 @@
         "./chart": {
             "types": "./dist/chart/index.d.mts",
             "import": "./dist/chart/index.mjs"
+        },
+        "./drawingml": {
+            "types": "./dist/drawingml/index.d.mts",
+            "import": "./dist/drawingml/index.mjs"
         }
     },
     "scripts": {
