@@ -16,7 +16,7 @@ const pres = new Presentation({
                     height: 50,
                     paragraphs: [
                         new Paragraph({
-                            properties: { alignment: "ctr", bulletNone: true },
+                            properties: { alignment: "CENTER", bulletNone: true },
                             children: [
                                 new Run({
                                     text: "Rich Text Formatting",
@@ -42,13 +42,13 @@ const pres = new Presentation({
                                 new Run({ text: " | " }),
                                 new Run({ text: "Italic", italic: true, fontSize: 18 }),
                                 new Run({ text: " | " }),
-                                new Run({ text: "Underline", underline: "sng", fontSize: 18 }),
+                                new Run({ text: "Underline", underline: "SINGLE", fontSize: 18 }),
                                 new Run({ text: " | " }),
                                 new Run({
                                     text: "Bold+Italic+Underline",
                                     bold: true,
                                     italic: true,
-                                    underline: "dbl",
+                                    underline: "DOUBLE",
                                     fontSize: 18,
                                 }),
                             ],
@@ -67,13 +67,13 @@ const pres = new Presentation({
                             children: [
                                 new Run({
                                     text: "Single Strike",
-                                    strike: "sngStrike",
+                                    strike: "SINGLE",
                                     fontSize: 18,
                                 }),
                                 new Run({ text: " | " }),
                                 new Run({
                                     text: "Double Strike",
-                                    strike: "dblStrike",
+                                    strike: "DOUBLE",
                                     fontSize: 18,
                                 }),
                             ],
@@ -131,12 +131,12 @@ const pres = new Presentation({
                                 new Run({
                                     text: "    ALL CAPS",
                                     fontSize: 18,
-                                    capitalization: "all",
+                                    capitalization: "ALL",
                                 }),
                                 new Run({
                                     text: "    Small Caps",
                                     fontSize: 18,
-                                    capitalization: "small",
+                                    capitalization: "SMALL",
                                 }),
                             ],
                         }),
@@ -189,19 +189,19 @@ const pres = new Presentation({
                     outline: { color: "999999", width: 1 },
                     paragraphs: [
                         new Paragraph({
-                            properties: { alignment: "l", bulletNone: true },
+                            properties: { alignment: "LEFT", bulletNone: true },
                             children: [new Run({ text: "Left aligned text", fontSize: 16 })],
                         }),
                         new Paragraph({
-                            properties: { alignment: "ctr", bulletNone: true },
+                            properties: { alignment: "CENTER", bulletNone: true },
                             children: [new Run({ text: "Center aligned text", fontSize: 16 })],
                         }),
                         new Paragraph({
-                            properties: { alignment: "r", bulletNone: true },
+                            properties: { alignment: "RIGHT", bulletNone: true },
                             children: [new Run({ text: "Right aligned text", fontSize: 16 })],
                         }),
                         new Paragraph({
-                            properties: { alignment: "just", bulletNone: true },
+                            properties: { alignment: "JUSTIFY", bulletNone: true },
                             children: [
                                 new Run({
                                     text: "Justified text that is long enough to wrap to multiple lines to demonstrate the justification effect clearly",

@@ -128,34 +128,6 @@ export interface ILineShapeOptions {
 
 export type ArrowheadType = "triangle" | "stealth" | "diamond" | "oval" | "open" | "none";
 
-const ARROWHEAD_MAP: Record<string, string> = {
-    triangle: "triangle",
-    stealth: "stealth",
-    diamond: "diamond",
-    oval: "oval",
-    open: "arrow",
-};
-
-function buildArrowheadElement(
-    tagName: string,
-    type: ArrowheadType,
-    width?: string,
-    length?: string,
-): BuilderElement<{}> | null {
-    if (type === "none") return null;
-
-    const attrs: Record<string, { readonly key: string; readonly value: string | number }> = {
-        type: { key: "type", value: ARROWHEAD_MAP[type] ?? "triangle" },
-    };
-    if (width !== undefined) attrs.w = { key: "w", value: width };
-    if (length !== undefined) attrs.ln = { key: "len", value: length };
-
-    return new BuilderElement({
-        name: tagName,
-        attributes: attrs,
-    });
-}
-
 /**
  * p:cxnSp — A connector shape on a slide (line with optional arrowheads).
  */
@@ -234,28 +206,23 @@ export class ConnectorShape extends Xc {
         if (options.fill !== undefined) {
             spPrChildren.push(buildFill(options.fill));
         }
-        if (options.outline) {
-            spPrChildren.push(createOutlineCompat(options.outline));
-        }
 
-        // Arrowheads
-        if (options.beginArrowhead) {
-            const el = buildArrowheadElement(
-                "a:tailEnd",
-                options.beginArrowhead,
-                options.arrowheadWidth,
-                options.arrowheadLength,
+        // Arrowheads + outline: headEnd/tailEnd must be inside a:ln per XSD
+        const hasArrowheads = options.beginArrowhead || options.endArrowhead;
+        if (options.outline || hasArrowheads) {
+            spPrChildren.push(
+                createOutlineCompat(
+                    options.outline ?? {},
+                    hasArrowheads
+                        ? {
+                              beginType: options.beginArrowhead,
+                              endType: options.endArrowhead,
+                              width: options.arrowheadWidth,
+                              length: options.arrowheadLength,
+                          }
+                        : undefined,
+                ),
             );
-            if (el) spPrChildren.push(el);
-        }
-        if (options.endArrowhead) {
-            const el = buildArrowheadElement(
-                "a:headEnd",
-                options.endArrowhead,
-                options.arrowheadWidth,
-                options.arrowheadLength,
-            );
-            if (el) spPrChildren.push(el);
         }
 
         this.root.push(

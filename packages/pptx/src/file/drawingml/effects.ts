@@ -2,6 +2,18 @@ import { BuilderElement, XmlComponent } from "@file/xml-components";
 
 export type EffectType = "outerShadow" | "innerShadow" | "glow" | "reflection" | "softEdge";
 
+export const ReflectionAlignment = {
+    TOP_LEFT: "tl",
+    TOP: "t",
+    TOP_RIGHT: "tr",
+    LEFT: "l",
+    CENTER: "ctr",
+    RIGHT: "r",
+    BOTTOM_LEFT: "bl",
+    BOTTOM: "b",
+    BOTTOM_RIGHT: "br",
+} as const;
+
 export interface IShadowOptions {
     readonly blur?: number;
     readonly dist?: number;
@@ -21,11 +33,17 @@ export interface IReflectionOptions {
     readonly blurRadius?: number;
     readonly dist?: number;
     readonly direction?: number;
-    readonly fadeStart?: number;
-    readonly fadeEnd?: number;
-    readonly blurRect?: string;
-    readonly stRect?: string;
-    readonly rotation?: number;
+    readonly startAlpha?: number;
+    readonly startPosition?: number;
+    readonly endAlpha?: number;
+    readonly endPosition?: number;
+    readonly fadeDirection?: number;
+    readonly scaleX?: number;
+    readonly scaleY?: number;
+    readonly skewX?: number;
+    readonly skewY?: number;
+    readonly alignment?: keyof typeof ReflectionAlignment;
+    readonly rotateWithShape?: boolean;
 }
 
 export interface ISoftEdgeOptions {
@@ -151,16 +169,26 @@ function buildReflectionElement(options: IReflectionOptions): XmlComponent {
     const attrs: Record<string, { readonly key: string; readonly value: string | number }> = {};
     if (options.blurRadius !== undefined)
         attrs.blurRad = { key: "blurRad", value: options.blurRadius };
+    if (options.startAlpha !== undefined)
+        attrs.stA = { key: "stA", value: options.startAlpha * 1000 };
+    if (options.startPosition !== undefined)
+        attrs.stPos = { key: "stPos", value: options.startPosition * 1000 };
+    if (options.endAlpha !== undefined)
+        attrs.endA = { key: "endA", value: options.endAlpha * 1000 };
+    if (options.endPosition !== undefined)
+        attrs.endPos = { key: "endPos", value: options.endPosition * 1000 };
     if (options.dist !== undefined) attrs.dist = { key: "dist", value: options.dist };
     if (options.direction !== undefined) attrs.dir = { key: "dir", value: options.direction };
-    if (options.fadeStart !== undefined)
-        attrs.fadeStart = { key: "fadeStart", value: options.fadeStart * 1000 };
-    if (options.fadeEnd !== undefined)
-        attrs.fadeEnd = { key: "fadeEnd", value: options.fadeEnd * 1000 };
-    if (options.blurRect !== undefined)
-        attrs.blurRect = { key: "blurRect", value: options.blurRect };
-    if (options.stRect !== undefined) attrs.stRect = { key: "stRect", value: options.stRect };
-    if (options.rotation !== undefined) attrs.rot = { key: "rot", value: options.rotation };
+    if (options.fadeDirection !== undefined)
+        attrs.fadeDir = { key: "fadeDir", value: options.fadeDirection * 60000 };
+    if (options.scaleX !== undefined) attrs.sx = { key: "sx", value: options.scaleX * 1000 };
+    if (options.scaleY !== undefined) attrs.sy = { key: "sy", value: options.scaleY * 1000 };
+    if (options.skewX !== undefined) attrs.kx = { key: "kx", value: options.skewX * 60000 };
+    if (options.skewY !== undefined) attrs.ky = { key: "ky", value: options.skewY * 60000 };
+    if (options.alignment !== undefined)
+        attrs.algn = { key: "algn", value: ReflectionAlignment[options.alignment] };
+    if (options.rotateWithShape !== undefined)
+        attrs.rotWithShape = { key: "rotWithShape", value: options.rotateWithShape ? 1 : 0 };
 
     return new BuilderElement({ name: "a:reflection", attributes: attrs });
 }
@@ -175,19 +203,20 @@ function buildSoftEdgeElement(options: ISoftEdgeOptions): XmlComponent {
 
 /**
  * a:effectLst — Visual effects for a shape (shadow, glow, reflection, etc.).
+ * XSD order: blur → fillOverlay → glow → innerShdw → outerShdw → prstShdw → reflection → softEdge
  */
 export class EffectList extends XmlComponent {
     public constructor(options: IEffectsOptions) {
         super("a:effectLst");
 
-        if (options.outerShadow) {
-            this.root.push(buildShadowElement("outerShdw", options.outerShadow));
+        if (options.glow) {
+            this.root.push(buildGlowElement(options.glow));
         }
         if (options.innerShadow) {
             this.root.push(buildShadowElement("innerShdw", options.innerShadow));
         }
-        if (options.glow) {
-            this.root.push(buildGlowElement(options.glow));
+        if (options.outerShadow) {
+            this.root.push(buildShadowElement("outerShdw", options.outerShadow));
         }
         if (options.reflection) {
             this.root.push(buildReflectionElement(options.reflection));
@@ -204,22 +233,25 @@ export class EffectList extends XmlComponent {
 export function buildScene3D(options: IEffectsOptions): XmlComponent | null {
     if (!options.rotation3D && !options.lighting) return null;
 
-    const rotAttrs: Record<string, { readonly key: string; readonly value: number }> = {};
-    if (options.rotation3D?.x !== undefined)
-        rotAttrs.lat = { key: "lat", value: options.rotation3D.x * 60000 };
-    if (options.rotation3D?.y !== undefined)
-        rotAttrs.lon = { key: "lon", value: options.rotation3D.y * 60000 };
-    if (options.rotation3D?.z !== undefined)
-        rotAttrs.rev = { key: "rev", value: options.rotation3D.z * 60000 };
+    const rotAttrs: Record<string, { readonly key: string; readonly value: number }> = {
+        lat: { key: "lat", value: (options.rotation3D?.x ?? 0) * 60000 },
+        lon: { key: "lon", value: (options.rotation3D?.y ?? 0) * 60000 },
+        rev: { key: "rev", value: (options.rotation3D?.z ?? 0) * 60000 },
+    };
+
+    const cameraAttrs: Record<string, { readonly key: string; readonly value: string | number }> = {
+        prst: {
+            key: "prst",
+            value: options.rotation3D?.perspective ? "legacyPerspectiveFront" : "orthographicFront",
+        },
+    };
+    if (options.rotation3D?.perspective) {
+        cameraAttrs.fov = { key: "fov", value: options.rotation3D.perspective };
+    }
 
     const camera = new BuilderElement({
         name: "a:camera",
-        attributes: {
-            prst: {
-                key: "prst",
-                value: options.rotation3D?.perspective ? "perspective" : "orthographicFront",
-            },
-        },
+        attributes: cameraAttrs,
         children: options.rotation3D
             ? [new BuilderElement({ name: "a:rot", attributes: rotAttrs })]
             : undefined,
@@ -232,7 +264,14 @@ export function buildScene3D(options: IEffectsOptions): XmlComponent | null {
             dir: { key: "dir", value: "t" },
         },
         children: [
-            new BuilderElement({ name: "a:rot", attributes: { rev: { key: "rev", value: 0 } } }),
+            new BuilderElement({
+                name: "a:rot",
+                attributes: {
+                    lat: { key: "lat", value: 0 },
+                    lon: { key: "lon", value: 0 },
+                    rev: { key: "rev", value: 0 },
+                },
+            }),
         ],
     });
 
@@ -244,21 +283,13 @@ export function buildScene3D(options: IEffectsOptions): XmlComponent | null {
 
 /**
  * a:sp3d — 3D shape properties (extrusion, bevel, material).
+ * XSD: extrusionH/prstMaterial/contourW/z are attributes; children are bevelT → bevelB → extrusionClr → contourClr → extLst
  */
 export function buildShape3D(options: IEffectsOptions): XmlComponent | null {
     if (!options.extrusionH && !options.bevelTop && !options.bevelBottom && !options.material)
         return null;
 
     const children: BuilderElement<{}>[] = [];
-
-    if (options.extrusionH !== undefined) {
-        children.push(
-            new BuilderElement({
-                name: "a:extrusionH",
-                attributes: { val: { key: "val", value: options.extrusionH } },
-            }),
-        );
-    }
 
     if (options.bevelTop) {
         children.push(buildBevelElement("a:bevelT", options.bevelTop));
@@ -267,17 +298,14 @@ export function buildShape3D(options: IEffectsOptions): XmlComponent | null {
         children.push(buildBevelElement("a:bevelB", options.bevelBottom));
     }
 
-    if (options.material) {
-        children.push(
-            new BuilderElement({
-                name: "a:prstMaterial",
-                attributes: { prst: { key: "prst", value: options.material } },
-            }),
-        );
-    }
+    const attrs: Record<string, { readonly key: string; readonly value: string | number }> = {};
+    if (options.extrusionH !== undefined)
+        attrs.extrusionH = { key: "extrusionH", value: options.extrusionH };
+    if (options.material) attrs.prstMaterial = { key: "prstMaterial", value: options.material };
 
     return new BuilderElement({
         name: "a:sp3d",
+        attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
         children: children.length > 0 ? children : undefined,
     });
 }

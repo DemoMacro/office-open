@@ -1,10 +1,16 @@
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { BuilderElement, NextAttributeComponent, XmlComponent } from "@file/xml-components";
 
 import type { FillOptions } from "../drawingml/fill";
 import { Paragraph } from "../shape/paragraph/paragraph";
 import { Run } from "../shape/paragraph/run";
 import { TableCellProperties } from "./table-cell-properties";
 import type { ICellBorderOptions } from "./table-cell-properties";
+
+export const VerticalAlignment = {
+    TOP: "t",
+    CENTER: "ctr",
+    BOTTOM: "b",
+} as const;
 
 export interface ITableCellOptions {
     readonly text?: string;
@@ -18,7 +24,7 @@ export interface ITableCellOptions {
     };
     readonly columnSpan?: number;
     readonly rowSpan?: number;
-    readonly verticalAlign?: "t" | "ctr" | "b";
+    readonly verticalAlign?: keyof typeof VerticalAlignment;
     readonly margins?: {
         readonly top?: number;
         readonly bottom?: number;
@@ -31,10 +37,27 @@ export interface ITableCellOptions {
  * a:tc — Table cell with text body and properties.
  *
  * Uses a:txBody (DrawingML context), not p:txBody.
+ * gridSpan and rowSpan are attributes on a:tc, not children of a:tcPr.
  */
 export class TableCell extends XmlComponent {
     public constructor(options: ITableCellOptions = {}) {
         super("a:tc");
+
+        // gridSpan and rowSpan are attributes of a:tc per XSD
+        if (options.columnSpan !== undefined && options.columnSpan > 1) {
+            this.root.push(
+                new NextAttributeComponent({
+                    gridSpan: { key: "gridSpan", value: options.columnSpan },
+                }),
+            );
+        }
+        if (options.rowSpan !== undefined && options.rowSpan > 1) {
+            this.root.push(
+                new NextAttributeComponent({
+                    rowSpan: { key: "rowSpan", value: options.rowSpan },
+                }),
+            );
+        }
 
         // a:txBody (DrawingML namespace, not p:txBody)
         if (options.children) {
@@ -60,9 +83,9 @@ export class TableCell extends XmlComponent {
             new TableCellProperties({
                 fill: options.fill,
                 borders: options.borders,
-                columnSpan: options.columnSpan,
-                rowSpan: options.rowSpan,
-                verticalAlign: options.verticalAlign,
+                verticalAlign: options.verticalAlign
+                    ? VerticalAlignment[options.verticalAlign]
+                    : undefined,
             }),
         );
     }

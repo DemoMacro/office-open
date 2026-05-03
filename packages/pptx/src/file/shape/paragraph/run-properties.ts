@@ -5,6 +5,24 @@ import type { IContext, IXmlableObject } from "@file/xml-components";
 
 let nextHyperlinkId = 1;
 
+export const UnderlineStyle = {
+    SINGLE: "sng",
+    DOUBLE: "dbl",
+    NONE: "none",
+} as const;
+
+export const StrikeStyle = {
+    SINGLE: "sngStrike",
+    DOUBLE: "dblStrike",
+    NONE: "noStrike",
+} as const;
+
+export const TextCapitalization = {
+    NONE: "none",
+    ALL: "all",
+    SMALL: "small",
+} as const;
+
 export interface IHyperlinkOptions {
     readonly url: string;
     readonly tooltip?: string;
@@ -14,15 +32,15 @@ export interface IRunPropertiesOptions {
     readonly fontSize?: number;
     readonly bold?: boolean;
     readonly italic?: boolean;
-    readonly underline?: "sng" | "dbl" | "none";
+    readonly underline?: keyof typeof UnderlineStyle;
     readonly font?: string;
     readonly lang?: string;
     readonly fill?: FillOptions;
     readonly hyperlink?: IHyperlinkOptions;
-    readonly strike?: "sngStrike" | "dblStrike" | "noStrike";
+    readonly strike?: keyof typeof StrikeStyle;
     readonly baseline?: number;
     readonly spacing?: number;
-    readonly capitalization?: "none" | "all" | "small";
+    readonly capitalization?: keyof typeof TextCapitalization;
     readonly shadow?: boolean;
     readonly outline?: boolean;
     readonly rightToLeft?: boolean;
@@ -70,14 +88,14 @@ export class RunProperties extends XmlComponent {
         if (options.fontSize) attrs.sz = { key: "sz", value: options.fontSize * 100 };
         if (options.bold !== undefined) attrs.b = { key: "b", value: options.bold };
         if (options.italic !== undefined) attrs.i = { key: "i", value: options.italic };
-        if (options.underline) attrs.u = { key: "u", value: options.underline };
+        if (options.underline) attrs.u = { key: "u", value: UnderlineStyle[options.underline] };
         if (options.lang) attrs.lang = { key: "lang", value: options.lang };
-        if (options.strike) attrs.strike = { key: "strike", value: options.strike };
+        if (options.strike) attrs.strike = { key: "strike", value: StrikeStyle[options.strike] };
         if (options.baseline !== undefined)
             attrs.baseline = { key: "baseline", value: options.baseline };
-        if (options.capitalization) attrs.cap = { key: "cap", value: options.capitalization };
-        if (options.rightToLeft !== undefined)
-            attrs.rtl = { key: "rtl", value: options.rightToLeft };
+        if (options.capitalization)
+            attrs.cap = { key: "cap", value: TextCapitalization[options.capitalization] };
+        if (options.spacing !== undefined) attrs.spc = { key: "spc", value: options.spacing };
         if (options.noProof !== undefined)
             attrs.noProof = { key: "noProof", value: options.noProof };
         if (options.dirty !== undefined) attrs.dirty = { key: "dirty", value: options.dirty };
@@ -103,15 +121,6 @@ export class RunProperties extends XmlComponent {
             this.root.push(buildFill(options.fill));
         }
 
-        if (options.spacing !== undefined) {
-            this.root.push(
-                new BuilderElement({
-                    name: "a:spacing",
-                    attributes: { val: { key: "val", value: options.spacing } },
-                }),
-            );
-        }
-
         if (options.hyperlink) {
             const key = `hlink_${nextHyperlinkId++}`;
             this.hyperlinkKey = key;
@@ -125,6 +134,15 @@ export class RunProperties extends XmlComponent {
                 hlinkAttrs.tooltip = { key: "tooltip", value: options.hyperlink.tooltip };
             }
             this.root.push(new BuilderElement({ name: "a:hlinkClick", attributes: hlinkAttrs }));
+        }
+
+        if (options.rightToLeft !== undefined) {
+            this.root.push(
+                new BuilderElement({
+                    name: "a:rtl",
+                    attributes: { val: { key: "val", value: options.rightToLeft ? 1 : 0 } },
+                }),
+            );
         }
     }
 

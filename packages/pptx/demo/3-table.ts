@@ -98,17 +98,17 @@ const pres = new Presentation({
                             cells: [
                                 {
                                     text: "Top",
-                                    verticalAlign: "t",
+                                    verticalAlign: "TOP",
                                     fill: "E8F0FE",
                                 },
                                 {
                                     text: "Center",
-                                    verticalAlign: "ctr",
+                                    verticalAlign: "CENTER",
                                     fill: "E8F0FE",
                                 },
                                 {
                                     text: "Bottom",
-                                    verticalAlign: "b",
+                                    verticalAlign: "BOTTOM",
                                     fill: "E8F0FE",
                                 },
                             ],

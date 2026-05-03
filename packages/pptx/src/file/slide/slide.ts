@@ -1,7 +1,6 @@
 import { SlideTiming } from "@file/animation/timing";
 import type { Background } from "@file/background/background";
 import type { IHeaderFooterOptions } from "@file/header-footer/header-footer";
-import { HeaderFooter } from "@file/header-footer/header-footer";
 import { Shape } from "@file/shape/shape";
 import type { ITransitionOptions } from "@file/transition/transition";
 import { Transition } from "@file/transition/transition";
@@ -41,6 +40,8 @@ function collectAnimations(children: readonly XmlComponent[]): Array<{
  * p:sld — A slide in a presentation.
  */
 export class Slide extends XmlComponent {
+    public readonly HeaderFooter?: IHeaderFooterOptions;
+
     public constructor(
         children: readonly XmlComponent[],
         background?: Background,
@@ -48,6 +49,7 @@ export class Slide extends XmlComponent {
         headerFooter?: IHeaderFooterOptions,
     ) {
         super("p:sld");
+        this.HeaderFooter = headerFooter;
         this.root.push(
             new NextAttributeComponent({
                 "xmlns:a": {
@@ -68,10 +70,6 @@ export class Slide extends XmlComponent {
         this.root.push(new ColorMapOverride());
         if (transition) {
             this.root.push(new Transition(transition));
-        }
-
-        if (headerFooter) {
-            this.root.push(new HeaderFooter(headerFooter));
         }
 
         const animations = collectAnimations(children);

@@ -1,6 +1,9 @@
+import type { IHeaderFooterOptions } from "@file/header-footer/header-footer";
 import { ImportedXmlComponent } from "@file/xml-components";
 
-const SLIDE_MASTER_XML = `<p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+function buildSlideMasterXml(headerFooter?: IHeaderFooterOptions): string {
+    const hfXml = headerFooter ? `<p:hf dt="0" hdr="0" ftr="0" sldNum="0"/>` : "";
+    return `<p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
   <p:cSld>
     <p:bg>
       <p:bgRef idx="1001">
@@ -27,7 +30,7 @@ const SLIDE_MASTER_XML = `<p:sldMaster xmlns:a="http://schemas.openxmlformats.or
   <p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>
   <p:sldLayoutIdLst>
     <p:sldLayoutId id="2147483649" r:id="rId1"/>
-  </p:sldLayoutIdLst>
+  </p:sldLayoutIdLst>${hfXml}
   <p:txStyles>
     <p:titleStyle>
       <a:lvl1pPr algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
@@ -182,7 +185,7 @@ const SLIDE_MASTER_XML = `<p:sldMaster xmlns:a="http://schemas.openxmlformats.or
           <a:latin typeface="+mn-lt"/><a:ea typeface="+mn-ea"/><a:cs typeface="+mn-cs"/>
         </a:defRPr>
       </a:lvl8pPr>
-      <a:lvl9pPr marL="3657600" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
+      <a:lvl9pPr marL="3657600" indent="-228600" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">
         <a:defRPr sz="1800" kern="1200">
           <a:solidFill><a:schemeClr val="tx1"/></a:solidFill>
           <a:latin typeface="+mn-lt"/><a:ea typeface="+mn-ea"/><a:cs typeface="+mn-cs"/>
@@ -191,15 +194,26 @@ const SLIDE_MASTER_XML = `<p:sldMaster xmlns:a="http://schemas.openxmlformats.or
     </p:otherStyle>
   </p:txStyles>
 </p:sldMaster>`;
+}
 
 export class DefaultSlideMaster extends ImportedXmlComponent {
-    private static instance = ImportedXmlComponent.fromXmlString(SLIDE_MASTER_XML);
+    private static cache = new Map<string, ImportedXmlComponent>();
+    private readonly headerFooter?: IHeaderFooterOptions;
 
-    public constructor() {
+    public constructor(headerFooter?: IHeaderFooterOptions) {
         super("p:sldMaster");
+        this.headerFooter = headerFooter;
+        const key = headerFooter ? JSON.stringify(headerFooter) : "";
+        if (!DefaultSlideMaster.cache.has(key)) {
+            DefaultSlideMaster.cache.set(
+                key,
+                ImportedXmlComponent.fromXmlString(buildSlideMasterXml(headerFooter)),
+            );
+        }
     }
 
     public prepForXml() {
-        return DefaultSlideMaster.instance.prepForXml({ stack: [] });
+        const key = this.headerFooter ? JSON.stringify(this.headerFooter) : "";
+        return DefaultSlideMaster.cache.get(key)!.prepForXml({ stack: [] });
     }
 }

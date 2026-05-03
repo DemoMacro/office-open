@@ -112,10 +112,7 @@ const doc = new Document({
                         }),
                         new TextRun({
                             bold: true,
-                            children: [
-                                new Tab(),
-                                "use Inserted and Deleted TextRuns.",
-                            ],
+                            children: [new Tab(), "use Inserted and Deleted TextRuns."],
                         }),
                         new FootnoteReferenceRun(1),
                         new TextRun({
