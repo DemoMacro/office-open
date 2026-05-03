@@ -118,7 +118,7 @@ export const createMathProperties = (options: MathPropertiesOptions): XmlCompone
     if (options.mathFont !== undefined) {
         children.push(
             new BuilderElement({
-                attributes: { val: { key: "val", value: options.mathFont } },
+                attributes: { val: { key: "m:val", value: options.mathFont } },
                 name: "m:mathFont",
             }),
         );
@@ -126,7 +126,7 @@ export const createMathProperties = (options: MathPropertiesOptions): XmlCompone
     if (options.breakBin !== undefined) {
         children.push(
             new BuilderElement({
-                attributes: { val: { key: "val", value: options.breakBin } },
+                attributes: { val: { key: "m:val", value: options.breakBin } },
                 name: "m:brkBin",
             }),
         );
@@ -134,7 +134,7 @@ export const createMathProperties = (options: MathPropertiesOptions): XmlCompone
     if (options.breakBinSub !== undefined) {
         children.push(
             new BuilderElement({
-                attributes: { val: { key: "val", value: options.breakBinSub } },
+                attributes: { val: { key: "m:val", value: options.breakBinSub } },
                 name: "m:brkBinSub",
             }),
         );
@@ -148,7 +148,7 @@ export const createMathProperties = (options: MathPropertiesOptions): XmlCompone
     if (options.leftMargin !== undefined) {
         children.push(
             new BuilderElement({
-                attributes: { val: { key: "val", value: options.leftMargin.toString() } },
+                attributes: { val: { key: "m:val", value: options.leftMargin.toString() } },
                 name: "m:lMargin",
             }),
         );
@@ -156,7 +156,7 @@ export const createMathProperties = (options: MathPropertiesOptions): XmlCompone
     if (options.rightMargin !== undefined) {
         children.push(
             new BuilderElement({
-                attributes: { val: { key: "val", value: options.rightMargin.toString() } },
+                attributes: { val: { key: "m:val", value: options.rightMargin.toString() } },
                 name: "m:rMargin",
             }),
         );
@@ -164,7 +164,7 @@ export const createMathProperties = (options: MathPropertiesOptions): XmlCompone
     if (options.defaultJustification !== undefined) {
         children.push(
             new BuilderElement({
-                attributes: { val: { key: "val", value: options.defaultJustification } },
+                attributes: { val: { key: "m:val", value: options.defaultJustification } },
                 name: "m:defJc",
             }),
         );
@@ -172,7 +172,7 @@ export const createMathProperties = (options: MathPropertiesOptions): XmlCompone
     if (options.preSpacing !== undefined) {
         children.push(
             new BuilderElement({
-                attributes: { val: { key: "val", value: options.preSpacing.toString() } },
+                attributes: { val: { key: "m:val", value: options.preSpacing.toString() } },
                 name: "m:preSp",
             }),
         );
@@ -180,7 +180,7 @@ export const createMathProperties = (options: MathPropertiesOptions): XmlCompone
     if (options.postSpacing !== undefined) {
         children.push(
             new BuilderElement({
-                attributes: { val: { key: "val", value: options.postSpacing.toString() } },
+                attributes: { val: { key: "m:val", value: options.postSpacing.toString() } },
                 name: "m:postSp",
             }),
         );
@@ -188,7 +188,7 @@ export const createMathProperties = (options: MathPropertiesOptions): XmlCompone
     if (options.interSpacing !== undefined) {
         children.push(
             new BuilderElement({
-                attributes: { val: { key: "val", value: options.interSpacing.toString() } },
+                attributes: { val: { key: "m:val", value: options.interSpacing.toString() } },
                 name: "m:interSp",
             }),
         );
@@ -196,7 +196,7 @@ export const createMathProperties = (options: MathPropertiesOptions): XmlCompone
     if (options.intraSpacing !== undefined) {
         children.push(
             new BuilderElement({
-                attributes: { val: { key: "val", value: options.intraSpacing.toString() } },
+                attributes: { val: { key: "m:val", value: options.intraSpacing.toString() } },
                 name: "m:intraSp",
             }),
         );
@@ -204,7 +204,7 @@ export const createMathProperties = (options: MathPropertiesOptions): XmlCompone
     if (options.wrapIndent !== undefined) {
         children.push(
             new BuilderElement({
-                attributes: { val: { key: "val", value: options.wrapIndent.toString() } },
+                attributes: { val: { key: "m:val", value: options.wrapIndent.toString() } },
                 name: "m:wrapIndent",
             }),
         );
@@ -215,7 +215,7 @@ export const createMathProperties = (options: MathPropertiesOptions): XmlCompone
     if (options.integralLimitLocation !== undefined) {
         children.push(
             new BuilderElement({
-                attributes: { val: { key: "val", value: options.integralLimitLocation } },
+                attributes: { val: { key: "m:val", value: options.integralLimitLocation } },
                 name: "m:intLim",
             }),
         );
@@ -223,7 +223,7 @@ export const createMathProperties = (options: MathPropertiesOptions): XmlCompone
     if (options.naryLimitLocation !== undefined) {
         children.push(
             new BuilderElement({
-                attributes: { val: { key: "val", value: options.naryLimitLocation } },
+                attributes: { val: { key: "m:val", value: options.naryLimitLocation } },
                 name: "m:naryLim",
             }),
         );

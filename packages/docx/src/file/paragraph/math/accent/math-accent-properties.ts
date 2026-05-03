@@ -50,7 +50,7 @@ export const createMathAccentProperties = (options: MathAccentPropertiesOptions)
         children: [
             new BuilderElement<{ readonly val: string }>({
                 attributes: {
-                    val: { key: "val", value: options.accentCharacter },
+                    val: { key: "m:val", value: options.accentCharacter },
                 },
                 name: "m:chr",
             }),

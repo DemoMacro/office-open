@@ -12,7 +12,7 @@ import {
     TextRun,
 } from "@office-open/docx";
 
-const columnWidth = TabStopPosition.MAX / 4;
+const columnWidth = Math.floor(TabStopPosition.MAX / 4);
 const receiptTabStops = [
     // No need to define first left tab column
     // The right aligned tab column position should point to the end of column

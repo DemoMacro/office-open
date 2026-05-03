@@ -68,7 +68,7 @@ export const createMathFractionProperties = (
         children.push(
             new BuilderElement<{ readonly val: string }>({
                 attributes: {
-                    val: { key: "val", value: FractionType[options.fractionType] },
+                    val: { key: "m:val", value: FractionType[options.fractionType] },
                 },
                 name: "m:type",
             }),

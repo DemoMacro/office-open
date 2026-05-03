@@ -216,7 +216,6 @@ export const createTableFloatProperties = ({
     topFromText,
     leftFromText,
     rightFromText,
-    overlap,
 }: ITableFloatOptions): XmlComponent =>
     new BuilderElement<Omit<ITableFloatOptions, "overlap">>({
         attributes: {
@@ -267,6 +266,9 @@ export const createTableFloatProperties = ({
                 value: verticalAnchor,
             },
         },
-        children: overlap ? [createOverlapElement(overlap)] : undefined,
         name: "w:tblpPr",
     });
+
+export const createTableOverlap = (
+    overlap: (typeof OverlapType)[keyof typeof OverlapType],
+): XmlComponent => createOverlapElement(overlap);
