@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Background, GradientFill, Outline, Presentation, Packer, Shape, SolidFill } from "../src";
+import { Background, GradientFill, Presentation, Packer, Shape, SolidFill } from "../src";
 
 const pres = new Presentation({
     title: "Phase 2 Demo",
@@ -17,7 +17,7 @@ const pres = new Presentation({
                     text: "With Outline",
                     geometry: "roundRect",
                     fill: new SolidFill("FFFFFF"),
-                    outline: new Outline({ width: 25400, color: "4472C4", dashStyle: "dash" }),
+                    outline: { width: 25400, color: "4472C4", dashStyle: "dash" },
                 }),
                 new Shape({
                     x: 500,
@@ -53,7 +53,7 @@ const pres = new Presentation({
                     height: 200,
                     text: "On Gradient BG",
                     fill: new SolidFill("FFFFFF"),
-                    outline: new Outline({ width: 12700, color: "FFC000" }),
+                    outline: { width: 12700, color: "FFC000" },
                 }),
             ],
         },

@@ -18,7 +18,12 @@ const pres = new Presentation({
                         new Paragraph({
                             properties: { alignment: "ctr", bulletNone: true },
                             children: [
-                                new Run({ text: "Rich Text Formatting", fontSize: 36, bold: true, font: "Calibri" }),
+                                new Run({
+                                    text: "Rich Text Formatting",
+                                    fontSize: 36,
+                                    bold: true,
+                                    font: "Calibri",
+                                }),
                             ],
                         }),
                     ],
@@ -39,7 +44,13 @@ const pres = new Presentation({
                                 new Run({ text: " | " }),
                                 new Run({ text: "Underline", underline: "sng", fontSize: 18 }),
                                 new Run({ text: " | " }),
-                                new Run({ text: "Bold+Italic+Underline", bold: true, italic: true, underline: "dbl", fontSize: 18 }),
+                                new Run({
+                                    text: "Bold+Italic+Underline",
+                                    bold: true,
+                                    italic: true,
+                                    underline: "dbl",
+                                    fontSize: 18,
+                                }),
                             ],
                         }),
                     ],
@@ -54,9 +65,17 @@ const pres = new Presentation({
                         new Paragraph({
                             properties: { bulletNone: true },
                             children: [
-                                new Run({ text: "Single Strike", strike: "sngStrike", fontSize: 18 }),
+                                new Run({
+                                    text: "Single Strike",
+                                    strike: "sngStrike",
+                                    fontSize: 18,
+                                }),
                                 new Run({ text: " | " }),
-                                new Run({ text: "Double Strike", strike: "dblStrike", fontSize: 18 }),
+                                new Run({
+                                    text: "Double Strike",
+                                    strike: "dblStrike",
+                                    fontSize: 18,
+                                }),
                             ],
                         }),
                     ],
@@ -109,8 +128,16 @@ const pres = new Presentation({
                             properties: { bulletNone: true },
                             children: [
                                 new Run({ text: "Normal text", fontSize: 18 }),
-                                new Run({ text: "    ALL CAPS", fontSize: 18, capitalization: "all" }),
-                                new Run({ text: "    Small Caps", fontSize: 18, capitalization: "small" }),
+                                new Run({
+                                    text: "    ALL CAPS",
+                                    fontSize: 18,
+                                    capitalization: "all",
+                                }),
+                                new Run({
+                                    text: "    Small Caps",
+                                    fontSize: 18,
+                                    capitalization: "small",
+                                }),
                             ],
                         }),
                     ],
@@ -126,13 +153,29 @@ const pres = new Presentation({
                         new Paragraph({
                             properties: { bulletNone: true },
                             children: [
-                                new Run({ text: "Red", fontSize: 20, fill: new SolidFill("FF0000") }),
+                                new Run({
+                                    text: "Red",
+                                    fontSize: 20,
+                                    fill: new SolidFill("FF0000"),
+                                }),
                                 new Run({ text: " | " }),
-                                new Run({ text: "Green", fontSize: 20, fill: new SolidFill("00FF00") }),
+                                new Run({
+                                    text: "Green",
+                                    fontSize: 20,
+                                    fill: new SolidFill("00FF00"),
+                                }),
                                 new Run({ text: " | " }),
-                                new Run({ text: "Blue", fontSize: 20, fill: new SolidFill("4472C4") }),
+                                new Run({
+                                    text: "Blue",
+                                    fontSize: 20,
+                                    fill: new SolidFill("4472C4"),
+                                }),
                                 new Run({ text: " | " }),
-                                new Run({ text: "Yellow", fontSize: 20, fill: new SolidFill("FFC000") }),
+                                new Run({
+                                    text: "Yellow",
+                                    fontSize: 20,
+                                    fill: new SolidFill("FFC000"),
+                                }),
                             ],
                         }),
                     ],
@@ -159,13 +202,21 @@ const pres = new Presentation({
                         }),
                         new Paragraph({
                             properties: { alignment: "just", bulletNone: true },
-                            children: [new Run({ text: "Justified text that is long enough to wrap to multiple lines to demonstrate the justification effect clearly", fontSize: 16 })],
+                            children: [
+                                new Run({
+                                    text: "Justified text that is long enough to wrap to multiple lines to demonstrate the justification effect clearly",
+                                    fontSize: 16,
+                                }),
+                            ],
                         }),
                     ],
                 }),
                 // Bullet & numbering
                 new Shape({
-                    x: 50, y: 710, width: 280, height: 200,
+                    x: 50,
+                    y: 710,
+                    width: 280,
+                    height: 200,
                     outline: { color: "4472C4", width: 1 },
                     paragraphs: [
                         new Paragraph({
@@ -187,7 +238,10 @@ const pres = new Presentation({
                     ],
                 }),
                 new Shape({
-                    x: 360, y: 710, width: 280, height: 200,
+                    x: 360,
+                    y: 710,
+                    width: 280,
+                    height: 200,
                     outline: { color: "ED7D31", width: 1 },
                     paragraphs: [
                         new Paragraph({
@@ -214,23 +268,34 @@ const pres = new Presentation({
                 }),
                 // RTL, NoProof, Shadow, Outline
                 new Shape({
-                    x: 660, y: 710, width: 280, height: 200,
+                    x: 660,
+                    y: 710,
+                    width: 280,
+                    height: 200,
                     outline: { color: "70AD47", width: 1 },
                     paragraphs: [
                         new Paragraph({
                             children: [new Run({ text: "Normal text", fontSize: 16 })],
                         }),
                         new Paragraph({
-                            children: [new Run({ text: "Right-to-Left", rightToLeft: true, fontSize: 16 })],
+                            children: [
+                                new Run({ text: "Right-to-Left", rightToLeft: true, fontSize: 16 }),
+                            ],
                         }),
                         new Paragraph({
-                            children: [new Run({ text: "No proof text", noProof: true, fontSize: 16 })],
+                            children: [
+                                new Run({ text: "No proof text", noProof: true, fontSize: 16 }),
+                            ],
                         }),
                         new Paragraph({
-                            children: [new Run({ text: "Shadow text", shadow: true, fontSize: 16 })],
+                            children: [
+                                new Run({ text: "Shadow text", shadow: true, fontSize: 16 }),
+                            ],
                         }),
                         new Paragraph({
-                            children: [new Run({ text: "Outline text", outline: true, fontSize: 16 })],
+                            children: [
+                                new Run({ text: "Outline text", outline: true, fontSize: 16 }),
+                            ],
                         }),
                     ],
                 }),

@@ -72,10 +72,13 @@ export class RunProperties extends XmlComponent {
         if (options.underline) attrs.u = { key: "u", value: options.underline };
         if (options.lang) attrs.lang = { key: "lang", value: options.lang };
         if (options.strike) attrs.strike = { key: "strike", value: options.strike };
-        if (options.baseline !== undefined) attrs.baseline = { key: "baseline", value: options.baseline };
+        if (options.baseline !== undefined)
+            attrs.baseline = { key: "baseline", value: options.baseline };
         if (options.capitalization) attrs.cap = { key: "cap", value: options.capitalization };
-        if (options.rightToLeft !== undefined) attrs.rtl = { key: "rtl", value: options.rightToLeft };
-        if (options.noProof !== undefined) attrs.noProof = { key: "noProof", value: options.noProof };
+        if (options.rightToLeft !== undefined)
+            attrs.rtl = { key: "rtl", value: options.rightToLeft };
+        if (options.noProof !== undefined)
+            attrs.noProof = { key: "noProof", value: options.noProof };
         if (options.dirty !== undefined) attrs.dirty = { key: "dirty", value: options.dirty };
 
         this.root.push(new NextAttributeComponent(attrs));
@@ -126,8 +129,14 @@ export class RunProperties extends XmlComponent {
 
     public prepForXml(context: IContext): IXmlableObject | undefined {
         if (this.hyperlinkKey) {
-            const file = context.fileData as { Hyperlinks?: { addHyperlink(key: string, url: string, tooltip?: string): void } };
-            file?.Hyperlinks?.addHyperlink(this.hyperlinkKey, this.hyperlinkUrl!, this.hyperlinkTooltip);
+            const file = context.fileData as {
+                Hyperlinks?: { addHyperlink(key: string, url: string, tooltip?: string): void };
+            };
+            file?.Hyperlinks?.addHyperlink(
+                this.hyperlinkKey,
+                this.hyperlinkUrl!,
+                this.hyperlinkTooltip,
+            );
         }
         return super.prepForXml(context);
     }

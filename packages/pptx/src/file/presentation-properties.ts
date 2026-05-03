@@ -1,10 +1,17 @@
-import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, NextAttributeComponent, XmlComponent } from "@file/xml-components";
+
+export interface IShowOptions {
+    readonly loop?: boolean;
+    readonly kiosk?: boolean;
+    readonly showNarration?: boolean;
+    readonly useTimings?: boolean;
+}
 
 /**
  * p:presentationPr — Presentation properties.
  */
 export class PresentationProperties extends XmlComponent {
-    public constructor() {
+    public constructor(showOptions?: IShowOptions) {
         super("p:presentationPr");
         this.root.push(
             new NextAttributeComponent({
@@ -22,5 +29,22 @@ export class PresentationProperties extends XmlComponent {
                 },
             }),
         );
+
+        if (showOptions) {
+            const attrs: Record<string, { readonly key: string; readonly value: number }> = {};
+            if (showOptions.loop) attrs.loop = { key: "loop", value: 1 };
+            if (showOptions.kiosk) attrs.kiosk = { key: "kiosk", value: 1 };
+            if (showOptions.showNarration === false)
+                attrs.showNarration = { key: "showNarration", value: 0 };
+            if (showOptions.useTimings) attrs.useTimings = { key: "useTimings", value: 1 };
+
+            this.root.push(
+                new BuilderElement({
+                    name: "p:showPr",
+                    children: [new BuilderElement({ name: "p:present" })],
+                    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
+                }),
+            );
+        }
     }
 }

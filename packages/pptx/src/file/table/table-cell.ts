@@ -40,12 +40,15 @@ export class TableCell extends XmlComponent {
             this.root.push(new CellTextBody(options.children, options.margins));
         } else if (options.text !== undefined) {
             this.root.push(
-                new CellTextBody([
-                    new Paragraph({
-                        properties: { bulletNone: false },
-                        children: [new Run({ text: options.text })],
-                    }),
-                ], options.margins),
+                new CellTextBody(
+                    [
+                        new Paragraph({
+                            properties: { bulletNone: false },
+                            children: [new Run({ text: options.text })],
+                        }),
+                    ],
+                    options.margins,
+                ),
             );
         } else {
             this.root.push(new CellTextBody(undefined, options.margins));
@@ -69,15 +72,29 @@ export class TableCell extends XmlComponent {
  * Differs from shape TextBody (p:txBody) and omits a:buNone.
  */
 class CellTextBody extends XmlComponent {
-    public constructor(paragraphs?: readonly XmlComponent[], margins?: { readonly top?: number; readonly bottom?: number; readonly left?: number; readonly right?: number }) {
+    public constructor(
+        paragraphs?: readonly XmlComponent[],
+        margins?: {
+            readonly top?: number;
+            readonly bottom?: number;
+            readonly left?: number;
+            readonly right?: number;
+        },
+    ) {
         super("a:txBody");
 
         const bodyPrAttrs: Record<string, { readonly key: string; readonly value: number }> = {};
         if (margins?.top !== undefined) bodyPrAttrs.tIns = { key: "tIns", value: margins.top };
-        if (margins?.bottom !== undefined) bodyPrAttrs.bIns = { key: "bIns", value: margins.bottom };
+        if (margins?.bottom !== undefined)
+            bodyPrAttrs.bIns = { key: "bIns", value: margins.bottom };
         if (margins?.left !== undefined) bodyPrAttrs.lIns = { key: "lIns", value: margins.left };
         if (margins?.right !== undefined) bodyPrAttrs.rIns = { key: "rIns", value: margins.right };
-        this.root.push(new BuilderElement({ name: "a:bodyPr", attributes: Object.keys(bodyPrAttrs).length > 0 ? bodyPrAttrs : undefined }));
+        this.root.push(
+            new BuilderElement({
+                name: "a:bodyPr",
+                attributes: Object.keys(bodyPrAttrs).length > 0 ? bodyPrAttrs : undefined,
+            }),
+        );
         this.root.push(new BuilderElement({ name: "a:lstStyle" }));
 
         if (paragraphs) {

@@ -3,9 +3,9 @@ import { Background } from "@file/background/background";
 import { ChartCollection } from "@file/chart/chart-collection";
 import { ContentTypes } from "@file/content-types/content-types";
 import { CoreProperties, type ICorePropertiesOptions } from "@file/core-properties/properties";
+import type { IHeaderFooterOptions } from "@file/header-footer/header-footer";
 import { HyperlinkCollection } from "@file/hyperlink-collection";
 import { Media } from "@file/media/media";
-import { SmartArtCollection } from "@file/smartart/smartart-collection";
 import { NotesSlide } from "@file/notes/notes-slide";
 import { PresentationProperties } from "@file/presentation-properties";
 import { PresentationWrapper } from "@file/presentation/presentation-wrapper";
@@ -13,11 +13,11 @@ import { Relationships } from "@file/relationships/relationships";
 import { DefaultSlideLayout } from "@file/slide-layout/slide-layout";
 import { DefaultSlideMaster } from "@file/slide-master/slide-master";
 import { Slide } from "@file/slide/slide";
+import { SmartArtCollection } from "@file/smartart/smartart-collection";
 import { TableStyles } from "@file/table-styles";
 import { DefaultTheme } from "@file/theme/theme";
-import { ViewProperties } from "@file/view-properties";
 import type { ITransitionOptions } from "@file/transition/transition";
-import type { IHeaderFooterOptions } from "@file/header-footer/header-footer";
+import { ViewProperties } from "@file/view-properties";
 import type { XmlComponent } from "@file/xml-components";
 import { pixelsToEmus } from "@util/types";
 
@@ -29,10 +29,18 @@ export interface ISlideOptions {
     readonly headerFooter?: IHeaderFooterOptions;
 }
 
+export interface IShowOptions {
+    readonly loop?: boolean;
+    readonly kiosk?: boolean;
+    readonly showNarration?: boolean;
+    readonly useTimings?: boolean;
+}
+
 export interface IPresentationOptions extends ICorePropertiesOptions {
     readonly slideWidth?: number;
     readonly slideHeight?: number;
     readonly slides?: readonly ISlideOptions[];
+    readonly show?: IShowOptions;
 }
 
 export class File {
@@ -165,7 +173,7 @@ export class File {
 
         // Table styles (required when presentation contains tables)
         this.tableStyles = new TableStyles();
-        this.presProps = new PresentationProperties();
+        this.presProps = new PresentationProperties(options.show);
         this.viewProps = new ViewProperties();
 
         // Slide Master

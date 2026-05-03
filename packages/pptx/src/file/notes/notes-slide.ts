@@ -72,7 +72,10 @@ class SlideImagePlaceholder extends XmlComponent {
                 children: [
                     new BuilderElement({
                         name: "p:cNvPr",
-                        attributes: { id: { key: "id", value: 2 }, name: { key: "name", value: "Slide Image Placeholder 1" } },
+                        attributes: {
+                            id: { key: "id", value: 2 },
+                            name: { key: "name", value: "Slide Image Placeholder 1" },
+                        },
                     }),
                     new BuilderElement({ name: "p:cNvSpPr" }),
                     new BuilderElement({
@@ -96,11 +99,17 @@ class SlideImagePlaceholder extends XmlComponent {
                         children: [
                             new BuilderElement({
                                 name: "a:off",
-                                attributes: { x: { key: "x", value: 685800 }, y: { key: "y", value: 1600200 } },
+                                attributes: {
+                                    x: { key: "x", value: 685800 },
+                                    y: { key: "y", value: 1600200 },
+                                },
                             }),
                             new BuilderElement({
                                 name: "a:ext",
-                                attributes: { cx: { key: "cx", value: 5486400 }, cy: { key: "cy", value: 3086100 } },
+                                attributes: {
+                                    cx: { key: "cx", value: 5486400 },
+                                    cy: { key: "cy", value: 3086100 },
+                                },
                             }),
                         ],
                     }),
@@ -119,7 +128,10 @@ class NotesBodyPlaceholder extends XmlComponent {
                 children: [
                     new BuilderElement({
                         name: "p:cNvPr",
-                        attributes: { id: { key: "id", value: 3 }, name: { key: "name", value: "Notes Placeholder 1" } },
+                        attributes: {
+                            id: { key: "id", value: 3 },
+                            name: { key: "name", value: "Notes Placeholder 1" },
+                        },
                     }),
                     new BuilderElement({ name: "p:cNvSpPr" }),
                     new BuilderElement({
@@ -146,11 +158,17 @@ class NotesBodyPlaceholder extends XmlComponent {
                         children: [
                             new BuilderElement({
                                 name: "a:off",
-                                attributes: { x: { key: "x", value: 685800 }, y: { key: "y", value: 4800600 } },
+                                attributes: {
+                                    x: { key: "x", value: 685800 },
+                                    y: { key: "y", value: 4800600 },
+                                },
                             }),
                             new BuilderElement({
                                 name: "a:ext",
-                                attributes: { cx: { key: "cx", value: 5486400 }, cy: { key: "cy", value: 3600450 } },
+                                attributes: {
+                                    cx: { key: "cx", value: 5486400 },
+                                    cy: { key: "cy", value: 3600450 },
+                                },
                             }),
                         ],
                     }),

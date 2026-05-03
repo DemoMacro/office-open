@@ -1,4 +1,4 @@
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { BuilderElement, StringContainer, XmlComponent } from "@file/xml-components";
 
 import type { IAnimationOptions, AnimationType } from "./types";
 
@@ -53,7 +53,12 @@ const DIRECTION_FILTER: Record<string, Record<string, string>> = {
     randomBars: { horizontal: "horizontal", vertical: "vertical" },
     cover: { left: "left", right: "right", up: "top", down: "bottom" },
     push: { left: "left", right: "right", up: "top", down: "bottom" },
-    strips: { left: "fromBottomLeft", right: "fromTopRight", up: "fromBottomRight", down: "fromTopLeft" },
+    strips: {
+        left: "fromBottomLeft",
+        right: "fromTopRight",
+        up: "fromBottomRight",
+        down: "fromTopLeft",
+    },
     wheel: {},
 };
 
@@ -105,7 +110,9 @@ export class SlideTiming extends XmlComponent {
             const effectCtnId2 = id++;
 
             const presetId = PRESET_IDS[options.type];
-            const presetSubtype = options.direction ? DIRECTION_SUBTYPES[options.direction] ?? 0 : 0;
+            const presetSubtype = options.direction
+                ? (DIRECTION_SUBTYPES[options.direction] ?? 0)
+                : 0;
 
             // Build the animation effect children
             const effectChildren: XmlComponent[] = [];
@@ -131,7 +138,9 @@ export class SlideTiming extends XmlComponent {
                                             children: [
                                                 new BuilderElement({
                                                     name: "p:cond",
-                                                    attributes: { delay: { key: "delay", value: "0" } },
+                                                    attributes: {
+                                                        delay: { key: "delay", value: "0" },
+                                                    },
                                                 }),
                                             ],
                                         }),
@@ -149,10 +158,7 @@ export class SlideTiming extends XmlComponent {
                                 new BuilderElement({
                                     name: "p:attrNameLst",
                                     children: [
-                                        new BuilderElement({
-                                            name: "p:attrName",
-                                            children: ["style.visibility"],
-                                        }),
+                                        new StringContainer("p:attrName", "style.visibility"),
                                     ],
                                 }),
                             ],
@@ -174,7 +180,8 @@ export class SlideTiming extends XmlComponent {
             if (options.type !== "appear") {
                 const filterBase = FILTER_MAP[options.type];
                 const dirMap = DIRECTION_FILTER[options.type];
-                const dirFilter = options.direction && dirMap ? dirMap[options.direction] : undefined;
+                const dirFilter =
+                    options.direction && dirMap ? dirMap[options.direction] : undefined;
 
                 let filter = filterBase;
                 if (options.type === "wheel") {
@@ -201,7 +208,10 @@ export class SlideTiming extends XmlComponent {
                                         name: "p:cTn",
                                         attributes: {
                                             id: { key: "id", value: effectCtnId2 },
-                                            dur: { key: "dur", value: String(options.duration ?? 500) },
+                                            dur: {
+                                                key: "dur",
+                                                value: String(options.duration ?? 500),
+                                            },
                                             fill: { key: "fill", value: "hold" },
                                         },
                                     }),
@@ -320,8 +330,14 @@ export class SlideTiming extends XmlComponent {
                                                         name: "p:cTn",
                                                         attributes: {
                                                             id: { key: "id", value: seqCtnId },
-                                                            dur: { key: "dur", value: "indefinite" },
-                                                            nodeType: { key: "nodeType", value: "mainSeq" },
+                                                            dur: {
+                                                                key: "dur",
+                                                                value: "indefinite",
+                                                            },
+                                                            nodeType: {
+                                                                key: "nodeType",
+                                                                value: "mainSeq",
+                                                            },
                                                         },
                                                         children: [
                                                             new BuilderElement({
@@ -336,14 +352,22 @@ export class SlideTiming extends XmlComponent {
                                                             new BuilderElement({
                                                                 name: "p:cond",
                                                                 attributes: {
-                                                                    evt: { key: "evt", value: "onPrev" },
-                                                                    delay: { key: "delay", value: "0" },
+                                                                    evt: {
+                                                                        key: "evt",
+                                                                        value: "onPrev",
+                                                                    },
+                                                                    delay: {
+                                                                        key: "delay",
+                                                                        value: "0",
+                                                                    },
                                                                 },
                                                                 children: [
                                                                     new BuilderElement({
                                                                         name: "p:tgtEl",
                                                                         children: [
-                                                                            new BuilderElement({ name: "p:sldTgt" }),
+                                                                            new BuilderElement({
+                                                                                name: "p:sldTgt",
+                                                                            }),
                                                                         ],
                                                                     }),
                                                                 ],
@@ -356,14 +380,22 @@ export class SlideTiming extends XmlComponent {
                                                             new BuilderElement({
                                                                 name: "p:cond",
                                                                 attributes: {
-                                                                    evt: { key: "evt", value: "onNext" },
-                                                                    delay: { key: "delay", value: "0" },
+                                                                    evt: {
+                                                                        key: "evt",
+                                                                        value: "onNext",
+                                                                    },
+                                                                    delay: {
+                                                                        key: "delay",
+                                                                        value: "0",
+                                                                    },
                                                                 },
                                                                 children: [
                                                                     new BuilderElement({
                                                                         name: "p:tgtEl",
                                                                         children: [
-                                                                            new BuilderElement({ name: "p:sldTgt" }),
+                                                                            new BuilderElement({
+                                                                                name: "p:sldTgt",
+                                                                            }),
                                                                         ],
                                                                     }),
                                                                 ],

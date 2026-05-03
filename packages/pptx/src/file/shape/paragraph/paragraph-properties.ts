@@ -86,7 +86,9 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
                     children: [
                         new BuilderElement({
                             name: "a:spcPts",
-                            attributes: { val: { key: "val", value: options.lineSpacingPoints * 100 } },
+                            attributes: {
+                                val: { key: "val", value: options.lineSpacingPoints * 100 },
+                            },
                         }),
                     ],
                 }),

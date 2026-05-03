@@ -1,11 +1,11 @@
-import type { Background } from "@file/background/background";
-import { BuilderElement, NextAttributeComponent, XmlComponent } from "@file/xml-components";
-import type { ITransitionOptions } from "@file/transition/transition";
-import { Transition } from "@file/transition/transition";
 import { SlideTiming } from "@file/animation/timing";
+import type { Background } from "@file/background/background";
 import type { IHeaderFooterOptions } from "@file/header-footer/header-footer";
 import { HeaderFooter } from "@file/header-footer/header-footer";
 import { Shape } from "@file/shape/shape";
+import type { ITransitionOptions } from "@file/transition/transition";
+import { Transition } from "@file/transition/transition";
+import { BuilderElement, NextAttributeComponent, XmlComponent } from "@file/xml-components";
 
 import { CommonSlideData } from "./common-slide-data";
 
@@ -18,8 +18,14 @@ class ColorMapOverride extends BuilderElement<{}> {
     }
 }
 
-function collectAnimations(children: readonly XmlComponent[]): Array<{ readonly spid: number; readonly options: import("@file/animation/types").IAnimationOptions }> {
-    const entries: Array<{ readonly spid: number; readonly options: import("@file/animation/types").IAnimationOptions }> = [];
+function collectAnimations(children: readonly XmlComponent[]): Array<{
+    readonly spid: number;
+    readonly options: import("@file/animation/types").IAnimationOptions;
+}> {
+    const entries: Array<{
+        readonly spid: number;
+        readonly options: import("@file/animation/types").IAnimationOptions;
+    }> = [];
     for (const child of children) {
         if (child instanceof Shape) {
             const anim = child.Animation;

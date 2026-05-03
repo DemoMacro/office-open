@@ -109,27 +109,71 @@ function createLegend(): XmlComponent {
 
 function createNoFillSpPr(): XmlComponent {
     const spPr = new (class extends XmlComponent {
-        public constructor() { super("c:spPr"); }
+        public constructor() {
+            super("c:spPr");
+        }
     })();
-    spPr["root"].push(new (class extends XmlComponent { public constructor() { super("a:noFill"); } })());
-    spPr["root"].push(new (class extends XmlComponent { public constructor() { super("a:ln"); this.root.push(new (class extends XmlComponent { public constructor() { super("a:noFill"); } })()); } })());
+    spPr["root"].push(
+        new (class extends XmlComponent {
+            public constructor() {
+                super("a:noFill");
+            }
+        })(),
+    );
+    spPr["root"].push(
+        new (class extends XmlComponent {
+            public constructor() {
+                super("a:ln");
+                this.root.push(
+                    new (class extends XmlComponent {
+                        public constructor() {
+                            super("a:noFill");
+                        }
+                    })(),
+                );
+            }
+        })(),
+    );
     spPr["root"].push(new BuilderElement({ name: "a:effectLst" }));
     return spPr;
 }
 
 function createChartSpPr(): XmlComponent {
     const spPr = new (class extends XmlComponent {
-        public constructor() { super("c:spPr"); }
+        public constructor() {
+            super("c:spPr");
+        }
     })();
-    spPr["root"].push(new (class extends XmlComponent { public constructor() { super("a:noFill"); } })());
-    spPr["root"].push(new (class extends XmlComponent { public constructor() { super("a:ln"); this.root.push(new (class extends XmlComponent { public constructor() { super("a:noFill"); } })()); } })());
+    spPr["root"].push(
+        new (class extends XmlComponent {
+            public constructor() {
+                super("a:noFill");
+            }
+        })(),
+    );
+    spPr["root"].push(
+        new (class extends XmlComponent {
+            public constructor() {
+                super("a:ln");
+                this.root.push(
+                    new (class extends XmlComponent {
+                        public constructor() {
+                            super("a:noFill");
+                        }
+                    })(),
+                );
+            }
+        })(),
+    );
     spPr["root"].push(new BuilderElement({ name: "a:effectLst" }));
     return spPr;
 }
 
 function createChartTxPr(): XmlComponent {
     const txPr = new (class extends XmlComponent {
-        public constructor() { super("c:txPr"); }
+        public constructor() {
+            super("c:txPr");
+        }
     })();
     txPr["root"].push(new BuilderElement({ name: "a:bodyPr" }));
     txPr["root"].push(new BuilderElement({ name: "a:lstStyle" }));
@@ -139,7 +183,9 @@ function createChartTxPr(): XmlComponent {
 
 function createTxPr(): XmlComponent {
     const txPr = new (class extends XmlComponent {
-        public constructor() { super("c:txPr"); }
+        public constructor() {
+            super("c:txPr");
+        }
     })();
     txPr["root"].push(createBodyPr());
     txPr["root"].push(new BuilderElement({ name: "a:lstStyle" }));
@@ -164,10 +210,14 @@ function createBodyPr(): XmlComponent {
 
 function createTextParagraph(): XmlComponent {
     const p = new (class extends XmlComponent {
-        public constructor() { super("a:p"); }
+        public constructor() {
+            super("a:p");
+        }
     })();
     const pPr = new (class extends XmlComponent {
-        public constructor() { super("a:pPr"); }
+        public constructor() {
+            super("a:pPr");
+        }
     })();
     pPr["root"].push(new BuilderElement({ name: "a:defRPr" }));
     p["root"].push(pPr);

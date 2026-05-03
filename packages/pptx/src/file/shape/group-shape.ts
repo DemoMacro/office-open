@@ -1,7 +1,7 @@
-import { GroupTransform2D, type IGroupTransform2DOptions } from "@file/drawingml/group-transform-2d";
 import { GroupShapeProperties } from "@file/drawingml/group-shape-properties";
+import type { IGroupTransform2DOptions } from "@file/drawingml/group-transform-2d";
 import { GroupShapeNonVisualProperties } from "@file/shape-tree/group-shape-non-visual";
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 import { pixelsToEmus } from "@util/types";
 
 export interface IGroupShapeOptions {

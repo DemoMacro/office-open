@@ -27,15 +27,23 @@ export class TextBody extends XmlComponent {
     public constructor(options: ITextBodyOptions = {}) {
         super("p:txBody");
 
-        const bodyPrAttrs: Record<string, { readonly key: string; readonly value: string | number }> = {};
+        const bodyPrAttrs: Record<
+            string,
+            { readonly key: string; readonly value: string | number }
+        > = {};
         if (options.vertical) bodyPrAttrs.vert = { key: "vert", value: options.vertical };
         if (options.anchor) bodyPrAttrs.anchor = { key: "anchor", value: options.anchor };
         if (options.wrap) bodyPrAttrs.wrap = { key: "wrap", value: options.wrap };
-        if (options.margins?.top !== undefined) bodyPrAttrs.tIns = { key: "tIns", value: options.margins.top };
-        if (options.margins?.bottom !== undefined) bodyPrAttrs.bIns = { key: "bIns", value: options.margins.bottom };
-        if (options.margins?.left !== undefined) bodyPrAttrs.lIns = { key: "lIns", value: options.margins.left };
-        if (options.margins?.right !== undefined) bodyPrAttrs.rIns = { key: "rIns", value: options.margins.right };
-        if (options.columns !== undefined) bodyPrAttrs.numCol = { key: "numCol", value: options.columns };
+        if (options.margins?.top !== undefined)
+            bodyPrAttrs.tIns = { key: "tIns", value: options.margins.top };
+        if (options.margins?.bottom !== undefined)
+            bodyPrAttrs.bIns = { key: "bIns", value: options.margins.bottom };
+        if (options.margins?.left !== undefined)
+            bodyPrAttrs.lIns = { key: "lIns", value: options.margins.left };
+        if (options.margins?.right !== undefined)
+            bodyPrAttrs.rIns = { key: "rIns", value: options.margins.right };
+        if (options.columns !== undefined)
+            bodyPrAttrs.numCol = { key: "numCol", value: options.columns };
 
         const bodyPrChildren: BuilderElement<{}>[] = [];
 

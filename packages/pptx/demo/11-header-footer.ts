@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Presentation, Packer, Shape, SolidFill, Paragraph, Run } from "../src";
+import { Presentation, Packer, Shape, SolidFill } from "../src";
 
 const pres = new Presentation({
     title: "Header Footer Demo",
@@ -13,15 +13,11 @@ const pres = new Presentation({
                     y: 30,
                     width: 500,
                     height: 60,
-                    text: "Slide 1",
+                    text: "Slide 1 - Default footer",
                     fill: new SolidFill("4472C4"),
                 }),
             ],
-            headerFooter: {
-                slideNumber: true,
-                dateTime: true,
-                footer: "Confidential",
-            },
+            headerFooter: { slideNumber: true, dateTime: true, footer: "Confidential" },
         },
         {
             children: [
@@ -30,14 +26,11 @@ const pres = new Presentation({
                     y: 30,
                     width: 500,
                     height: 60,
-                    text: "Slide 2 - No Footer",
+                    text: "Slide 2 - No date",
                     fill: new SolidFill("ED7D31"),
                 }),
             ],
-            headerFooter: {
-                slideNumber: true,
-                dateTime: false,
-            },
+            headerFooter: { slideNumber: true, dateTime: false, footer: "My Presentation" },
         },
         {
             children: [
@@ -46,14 +39,11 @@ const pres = new Presentation({
                     y: 30,
                     width: 500,
                     height: 60,
-                    text: "Slide 3 - Custom Footer",
+                    text: "Slide 3 - Only slide number",
                     fill: new SolidFill("70AD47"),
                 }),
             ],
-            headerFooter: {
-                slideNumber: true,
-                footer: "My Presentation",
-            },
+            headerFooter: { slideNumber: true, dateTime: false, footer: false },
         },
         {
             children: [
@@ -62,15 +52,11 @@ const pres = new Presentation({
                     y: 30,
                     width: 500,
                     height: 60,
-                    text: "Slide 4 - No Header/Footer",
+                    text: "Slide 4 - No header/footer",
                     fill: new SolidFill("FFC000"),
                 }),
             ],
-            headerFooter: {
-                slideNumber: false,
-                dateTime: false,
-                footer: undefined,
-            },
+            headerFooter: { slideNumber: false, dateTime: false, footer: false },
         },
     ],
 });

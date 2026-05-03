@@ -30,11 +30,11 @@ function extractMp4FirstFrame(data: Uint8Array): Uint8Array | null {
 
     // Check for embedded JPEG poster (some MP4 files have this in moov/udta/meta)
     for (let i = 0; i < bytes.length - 1; i++) {
-        if (bytes[i] === 0xFF && bytes[i + 1] === 0xD8) {
+        if (bytes[i] === 0xff && bytes[i + 1] === 0xd8) {
             // Found JPEG SOI marker — find EOI
             let end = -1;
             for (let j = i + 2; j < bytes.length - 1; j++) {
-                if (bytes[j] === 0xFF && bytes[j + 1] === 0xD9) {
+                if (bytes[j] === 0xff && bytes[j + 1] === 0xd9) {
                     end = j + 2;
                     break;
                 }
@@ -78,13 +78,13 @@ function generatePlaceholderPoster(): Uint8Array {
                 dx <= triSize * 0.5 - (Math.abs(dy) / triSize) * triSize;
 
             if (inTriangle) {
-                rawData[px] = 255;     // R
+                rawData[px] = 255; // R
                 rawData[px + 1] = 255; // G
                 rawData[px + 2] = 255; // B
             } else {
-                rawData[px] = 51;      // R  (#333333)
-                rawData[px + 1] = 51;  // G
-                rawData[px + 2] = 51;  // B
+                rawData[px] = 51; // R  (#333333)
+                rawData[px + 1] = 51; // G
+                rawData[px + 2] = 51; // B
             }
         }
     }
@@ -92,12 +92,12 @@ function generatePlaceholderPoster(): Uint8Array {
     const compressed = zlib.deflateSync(rawData);
 
     function crc32(buf: Buffer): number {
-        let crc = 0xFFFFFFFF;
+        let crc = 0xffffffff;
         for (let i = 0; i < buf.length; i++) {
             crc ^= buf[i];
-            for (let j = 0; j < 8; j++) crc = (crc >>> 1) ^ (crc & 1 ? 0xEDB88320 : 0);
+            for (let j = 0; j < 8; j++) crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0);
         }
-        return (crc ^ 0xFFFFFFFF) >>> 0;
+        return (crc ^ 0xffffffff) >>> 0;
     }
 
     function makeChunk(type: string, data: Buffer): Buffer {
@@ -112,8 +112,8 @@ function generatePlaceholderPoster(): Uint8Array {
     const ihdr = Buffer.alloc(13);
     ihdr.writeUInt32BE(width, 0);
     ihdr.writeUInt32BE(height, 4);
-    ihdr[8] = 8;  // bit depth
-    ihdr[9] = 2;  // RGB
+    ihdr[8] = 8; // bit depth
+    ihdr[9] = 2; // RGB
 
     return Buffer.concat([
         Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
@@ -200,8 +200,14 @@ export class VideoFrame extends XmlComponent {
                             new BuilderElement({
                                 name: "p14:media",
                                 attributes: {
-                                    "r:embed": { key: "r:embed", value: `{media:${mediaFileName}}` },
-                                    "xmlns:p14": { key: "xmlns:p14", value: "http://schemas.microsoft.com/office/powerpoint/2010/main" },
+                                    "r:embed": {
+                                        key: "r:embed",
+                                        value: `{media:${mediaFileName}}`,
+                                    },
+                                    "xmlns:p14": {
+                                        key: "xmlns:p14",
+                                        value: "http://schemas.microsoft.com/office/powerpoint/2010/main",
+                                    },
                                 },
                             }),
                         ],
@@ -227,7 +233,9 @@ export class VideoFrame extends XmlComponent {
                         children: [
                             new BuilderElement({
                                 name: "a:picLocks",
-                                attributes: { noChangeAspect: { key: "noChangeAspect", value: "1" } },
+                                attributes: {
+                                    noChangeAspect: { key: "noChangeAspect", value: "1" },
+                                },
                             }),
                         ],
                     }),

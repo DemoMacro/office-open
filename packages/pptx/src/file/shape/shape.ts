@@ -1,11 +1,11 @@
+import type { IAnimationOptions } from "@file/animation/types";
+import type { IEffectsOptions } from "@file/drawingml/effects";
 import { NonVisualShapeProperties } from "@file/drawingml/non-visual-shape-props";
-import { Outline, type OutlineOptions } from "@file/drawingml/outline";
+import type { OutlineOptions } from "@file/drawingml/outline";
 import { ShapeProperties } from "@file/drawingml/shape-properties";
 import type { IShapePropertiesOptions } from "@file/drawingml/shape-properties";
-import type { IEffectsOptions } from "@file/drawingml/effects";
 import { BuilderElement, XmlComponent as Xc } from "@file/xml-components";
 import { pixelsToEmus } from "@util/types";
-import type { IAnimationOptions } from "@file/animation/types";
 
 import { Paragraph } from "./paragraph/paragraph";
 import { Run } from "./paragraph/run";
@@ -35,6 +35,8 @@ export interface IShapeOptions {
     readonly textColumns?: ITextBodyOptions["columns"];
     readonly textColumnSpacing?: ITextBodyOptions["columnSpacing"];
     readonly animation?: IAnimationOptions;
+    readonly placeholder?: "title" | "body" | "subTitle" | "sldNum" | "dt" | "ftr" | "hdr" | "obj";
+    readonly placeholderIndex?: number;
 }
 
 /**
@@ -69,6 +71,9 @@ export class Shape extends Xc {
                     new NonVisualShapeProperties(),
                     new BuilderElement({
                         name: "p:nvPr",
+                        children: options.placeholder
+                            ? [buildPlaceholder(options.placeholder, options.placeholderIndex)]
+                            : undefined,
                     }),
                 ],
             }),
@@ -112,4 +117,12 @@ export class Shape extends Xc {
     public get Animation(): IAnimationOptions | undefined {
         return this.animationOptions;
     }
+}
+
+function buildPlaceholder(type: string, index?: number): BuilderElement<{}> {
+    const attrs: Record<string, { readonly key: string; readonly value: string | number }> = {
+        type: { key: "type", value: type },
+    };
+    if (index !== undefined) attrs.idx = { key: "idx", value: index };
+    return new BuilderElement({ name: "p:ph", attributes: attrs });
 }

@@ -1,5 +1,11 @@
 import { Transform2D } from "@file/drawingml/transform-2d";
-import { BuilderElement, NextAttributeComponent, type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
+import {
+    BuilderElement,
+    NextAttributeComponent,
+    type IContext,
+    type IXmlableObject,
+    XmlComponent,
+} from "@file/xml-components";
 import { pixelsToEmus } from "@util/types";
 
 import type { SmartArtCollection } from "./smartart-collection";

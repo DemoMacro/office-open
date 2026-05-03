@@ -1,6 +1,6 @@
 import * as fs from "fs";
-import { fileURLToPath } from "url";
 import * as path from "path";
+import { fileURLToPath } from "url";
 
 import { Presentation, Packer, Shape, SolidFill, Paragraph, Run, VideoFrame } from "../src";
 

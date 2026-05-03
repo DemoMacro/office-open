@@ -57,7 +57,10 @@ export class Transition extends XmlComponent {
     public constructor(options: ITransitionOptions = {}) {
         super("p:transition");
 
-        const attrs: Record<string, { readonly key: string; readonly value: string | number | boolean }> = {};
+        const attrs: Record<
+            string,
+            { readonly key: string; readonly value: string | number | boolean }
+        > = {};
         if (options.speed) attrs.spd = { key: "spd", value: options.speed };
         if (options.advanceOnClick !== undefined)
             attrs.advClick = { key: "advClick", value: options.advanceOnClick ? 1 : 0 };
@@ -97,28 +100,34 @@ export class Transition extends XmlComponent {
 
         // Side direction transitions: push, wipe
         if (SIDE_DIR_TYPES.has(type)) {
-            const elementAttrs: Record<string, { readonly key: string; readonly value: string }> = {};
+            const elementAttrs: Record<string, { readonly key: string; readonly value: string }> =
+                {};
             if (dir) elementAttrs.dir = { key: "dir", value: dir };
             return new BuilderElement({ name: `p:${type}`, attributes: elementAttrs });
         }
 
         // Eight direction transitions: cover, pull
         if (EIGHT_DIR_TYPES.has(type)) {
-            const elementAttrs: Record<string, { readonly key: string; readonly value: string }> = {};
+            const elementAttrs: Record<string, { readonly key: string; readonly value: string }> =
+                {};
             if (dir) elementAttrs.dir = { key: "dir", value: dir };
             return new BuilderElement({ name: `p:${type}`, attributes: elementAttrs });
         }
 
         // Corner direction: strips
         if (type === "strips") {
-            const elementAttrs: Record<string, { readonly key: string; readonly value: string }> = {};
+            const elementAttrs: Record<string, { readonly key: string; readonly value: string }> =
+                {};
             if (dir) elementAttrs.dir = { key: "dir", value: dir };
             return new BuilderElement({ name: "p:strips", attributes: elementAttrs });
         }
 
         // Fade / Cut: thruBlk
         if (type === "fade" || type === "cut") {
-            const elementAttrs: Record<string, { readonly key: string; readonly value: string | number | boolean }> = {};
+            const elementAttrs: Record<
+                string,
+                { readonly key: string; readonly value: string | number | boolean }
+            > = {};
             if (thruBlk !== undefined)
                 elementAttrs.thruBlk = { key: "thruBlk", value: thruBlk ? 1 : 0 };
             return new BuilderElement({ name: `p:${type}`, attributes: elementAttrs });
@@ -126,7 +135,10 @@ export class Transition extends XmlComponent {
 
         // Split: orient + dir
         if (type === "split") {
-            const elementAttrs: Record<string, { readonly key: string; readonly value: string | number | boolean }> = {
+            const elementAttrs: Record<
+                string,
+                { readonly key: string; readonly value: string | number | boolean }
+            > = {
                 orient: { key: "orient", value: orient ?? "horz" },
                 dir: { key: "dir", value: dir ?? "out" },
             };
@@ -135,7 +147,10 @@ export class Transition extends XmlComponent {
 
         // Wheel: spokes
         if (type === "wheel") {
-            const elementAttrs: Record<string, { readonly key: string; readonly value: string | number }> = {
+            const elementAttrs: Record<
+                string,
+                { readonly key: string; readonly value: string | number }
+            > = {
                 spokes: { key: "spokes", value: spokes ?? 4 },
             };
             return new BuilderElement({ name: "p:wheel", attributes: elementAttrs });
@@ -143,7 +158,8 @@ export class Transition extends XmlComponent {
 
         // Zoom: dir (in/out)
         if (type === "zoom") {
-            const elementAttrs: Record<string, { readonly key: string; readonly value: string }> = {};
+            const elementAttrs: Record<string, { readonly key: string; readonly value: string }> =
+                {};
             if (dir) elementAttrs.dir = { key: "dir", value: dir };
             return new BuilderElement({ name: "p:zoom", attributes: elementAttrs });
         }

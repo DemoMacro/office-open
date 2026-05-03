@@ -6,12 +6,17 @@ export { TextBody, type ITextBodyOptions } from "./shape/text-body";
 export { Paragraph, type IParagraphOptions } from "./shape/paragraph/paragraph";
 export { Run, type IRunOptions } from "./shape/paragraph/run";
 export { Text } from "./shape/paragraph/text";
-export { RunProperties, type IRunPropertiesOptions, type IHyperlinkOptions } from "./shape/paragraph/run-properties";
+export {
+    RunProperties,
+    type IRunPropertiesOptions,
+    type IHyperlinkOptions,
+} from "./shape/paragraph/run-properties";
 export {
     ParagraphProperties,
     type IParagraphPropertiesOptions,
 } from "./shape/paragraph/paragraph-properties";
 export { EndParagraphRunProperties } from "./shape/paragraph/end-paragraph-run";
+export { Field, SlideNumberField, DateTimeField } from "./shape/paragraph/field";
 export { SolidFill } from "./drawingml/solid-fill";
 export { NoFill } from "./drawingml/no-fill";
 export {
@@ -28,7 +33,14 @@ export {
     type IShapePropertiesOptions,
     type ShapeFill,
 } from "./drawingml/shape-properties";
-export { EffectList, type IEffectsOptions, type IShadowOptions, type IGlowOptions, type IReflectionOptions, type ISoftEdgeOptions } from "./drawingml/effects";
+export {
+    EffectList,
+    type IEffectsOptions,
+    type IShadowOptions,
+    type IGlowOptions,
+    type IReflectionOptions,
+    type ISoftEdgeOptions,
+} from "./drawingml/effects";
 export { NonVisualDrawingProperties } from "./drawingml/non-visual-drawing-props";
 export { NonVisualShapeProperties } from "./drawingml/non-visual-shape-props";
 export { NonVisualPictureProperties } from "./drawingml/non-visual-picture-props";
@@ -40,7 +52,12 @@ export { ConnectorShape, type IConnectorShapeOptions } from "./shape/line-shape"
 export { Media } from "./media/media";
 export { createTransformation, type IMediaTransformation } from "./media/media";
 export type { IMediaData, IMediaDataTransformation } from "./media/data";
-export { VideoFrame, type IVideoFrameOptions, type VideoType, type PosterType } from "./media/video-frame";
+export {
+    VideoFrame,
+    type IVideoFrameOptions,
+    type VideoType,
+    type PosterType,
+} from "./media/video-frame";
 export { AudioFrame, type IAudioFrameOptions, type AudioType } from "./media/audio-frame";
 export { CoreProperties, type ICorePropertiesOptions } from "./core-properties/properties";
 export { AppProperties } from "./app-properties/app-properties";
@@ -73,4 +90,9 @@ export { ChartSpace, type IChartSpaceOptions, type IChartSeriesData } from "./ch
 export type { ChartType } from "./chart/chart-types/create-chart-type";
 export { SmartArtFrame, type ISmartArtFrameOptions, type ITreeNode } from "./smartart";
 export { Transition, type ITransitionOptions, type TransitionType } from "./transition/transition";
-export { type AnimationType, type AnimationTrigger, type AnimationDirection, type IAnimationOptions } from "./animation/types";
+export {
+    type AnimationType,
+    type AnimationTrigger,
+    type AnimationDirection,
+    type IAnimationOptions,
+} from "./animation/types";

@@ -30,9 +30,7 @@ export class ValAx extends XmlComponent {
         this.root.push(new Scaling());
         this.root.push(wrapEl("c:delete", chartAttr({ val: 0 })));
         this.root.push(wrapEl("c:axPos", chartAttr({ val: "l" })));
-        this.root.push(
-            wrapEl("c:numFmt", chartAttr({ formatCode: "General", sourceLinked: 1 })),
-        );
+        this.root.push(wrapEl("c:numFmt", chartAttr({ formatCode: "General", sourceLinked: 1 })));
         this.root.push(wrapEl("c:crossAx", chartAttr({ val: crossAx })));
         this.root.push(wrapEl("c:crosses", chartAttr({ val: "autoZero" })));
         this.root.push(new BuilderElement({ name: "c:spPr" }));

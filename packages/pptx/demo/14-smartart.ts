@@ -8,14 +8,22 @@ const pres = new Presentation({
         {
             children: [
                 new Shape({
-                    x: 50, y: 30, width: 500, height: 50,
-                    paragraphs: [new Paragraph({
-                        properties: { alignment: "ctr", bulletNone: true },
-                        children: [new Run({ text: "List Layouts", fontSize: 32, bold: true })],
-                    })],
+                    x: 50,
+                    y: 30,
+                    width: 500,
+                    height: 50,
+                    paragraphs: [
+                        new Paragraph({
+                            properties: { alignment: "ctr", bulletNone: true },
+                            children: [new Run({ text: "List Layouts", fontSize: 32, bold: true })],
+                        }),
+                    ],
                 }),
                 new SmartArtFrame({
-                    x: 50, y: 120, width: 400, height: 300,
+                    x: 50,
+                    y: 120,
+                    width: 400,
+                    height: 300,
                     nodes: [
                         { text: "Item A", children: [{ text: "Sub A1" }, { text: "Sub A2" }] },
                         { text: "Item B", children: [{ text: "Sub B1" }] },
@@ -26,12 +34,11 @@ const pres = new Presentation({
                     color: "accent1_2",
                 }),
                 new SmartArtFrame({
-                    x: 480, y: 120, width: 400, height: 300,
-                    nodes: [
-                        { text: "Step 1" },
-                        { text: "Step 2" },
-                        { text: "Step 3" },
-                    ],
+                    x: 480,
+                    y: 120,
+                    width: 400,
+                    height: 300,
+                    nodes: [{ text: "Step 1" }, { text: "Step 2" }, { text: "Step 3" }],
                     layout: "list1",
                     style: "simple2",
                     color: "accent2_2",
@@ -43,14 +50,24 @@ const pres = new Presentation({
         {
             children: [
                 new Shape({
-                    x: 50, y: 30, width: 500, height: 50,
-                    paragraphs: [new Paragraph({
-                        properties: { alignment: "ctr", bulletNone: true },
-                        children: [new Run({ text: "Process Layouts", fontSize: 32, bold: true })],
-                    })],
+                    x: 50,
+                    y: 30,
+                    width: 500,
+                    height: 50,
+                    paragraphs: [
+                        new Paragraph({
+                            properties: { alignment: "ctr", bulletNone: true },
+                            children: [
+                                new Run({ text: "Process Layouts", fontSize: 32, bold: true }),
+                            ],
+                        }),
+                    ],
                 }),
                 new SmartArtFrame({
-                    x: 50, y: 120, width: 850, height: 300,
+                    x: 50,
+                    y: 120,
+                    width: 850,
+                    height: 300,
                     nodes: [
                         { text: "Plan" },
                         { text: "Design" },
@@ -67,7 +84,10 @@ const pres = new Presentation({
         {
             children: [
                 new SmartArtFrame({
-                    x: 50, y: 50, width: 850, height: 350,
+                    x: 50,
+                    y: 50,
+                    width: 850,
+                    height: 350,
                     nodes: [
                         { text: "Phase 1" },
                         { text: "Phase 2" },
@@ -83,7 +103,10 @@ const pres = new Presentation({
         {
             children: [
                 new SmartArtFrame({
-                    x: 50, y: 50, width: 850, height: 350,
+                    x: 50,
+                    y: 50,
+                    width: 850,
+                    height: 350,
                     nodes: [
                         { text: "Start" },
                         { text: "Process" },
@@ -101,14 +124,24 @@ const pres = new Presentation({
         {
             children: [
                 new Shape({
-                    x: 50, y: 30, width: 500, height: 50,
-                    paragraphs: [new Paragraph({
-                        properties: { alignment: "ctr", bulletNone: true },
-                        children: [new Run({ text: "Cycle Layouts", fontSize: 32, bold: true })],
-                    })],
+                    x: 50,
+                    y: 30,
+                    width: 500,
+                    height: 50,
+                    paragraphs: [
+                        new Paragraph({
+                            properties: { alignment: "ctr", bulletNone: true },
+                            children: [
+                                new Run({ text: "Cycle Layouts", fontSize: 32, bold: true }),
+                            ],
+                        }),
+                    ],
                 }),
                 new SmartArtFrame({
-                    x: 50, y: 120, width: 400, height: 350,
+                    x: 50,
+                    y: 120,
+                    width: 400,
+                    height: 350,
                     nodes: [
                         { text: "Research" },
                         { text: "Design" },
@@ -120,7 +153,10 @@ const pres = new Presentation({
                     color: "colorful1",
                 }),
                 new SmartArtFrame({
-                    x: 480, y: 120, width: 400, height: 350,
+                    x: 480,
+                    y: 120,
+                    width: 400,
+                    height: 350,
                     nodes: [
                         { text: "Plan" },
                         { text: "Do" },
@@ -139,20 +175,36 @@ const pres = new Presentation({
         {
             children: [
                 new Shape({
-                    x: 50, y: 30, width: 500, height: 50,
-                    paragraphs: [new Paragraph({
-                        properties: { alignment: "ctr", bulletNone: true },
-                        children: [new Run({ text: "Hierarchy Layouts", fontSize: 32, bold: true })],
-                    })],
+                    x: 50,
+                    y: 30,
+                    width: 500,
+                    height: 50,
+                    paragraphs: [
+                        new Paragraph({
+                            properties: { alignment: "ctr", bulletNone: true },
+                            children: [
+                                new Run({ text: "Hierarchy Layouts", fontSize: 32, bold: true }),
+                            ],
+                        }),
+                    ],
                 }),
                 new SmartArtFrame({
-                    x: 50, y: 120, width: 600, height: 400,
+                    x: 50,
+                    y: 120,
+                    width: 600,
+                    height: 400,
                     nodes: [
                         {
                             text: "CEO",
                             children: [
-                                { text: "VP Engineering", children: [{ text: "Frontend" }, { text: "Backend" }] },
-                                { text: "VP Marketing", children: [{ text: "Brand" }, { text: "Growth" }] },
+                                {
+                                    text: "VP Engineering",
+                                    children: [{ text: "Frontend" }, { text: "Backend" }],
+                                },
+                                {
+                                    text: "VP Marketing",
+                                    children: [{ text: "Brand" }, { text: "Growth" }],
+                                },
                             ],
                         },
                     ],
@@ -165,12 +217,18 @@ const pres = new Presentation({
         {
             children: [
                 new SmartArtFrame({
-                    x: 50, y: 50, width: 600, height: 400,
+                    x: 50,
+                    y: 50,
+                    width: 600,
+                    height: 400,
                     nodes: [
                         {
                             text: "Root",
                             children: [
-                                { text: "Branch A", children: [{ text: "Leaf A1" }, { text: "Leaf A2" }] },
+                                {
+                                    text: "Branch A",
+                                    children: [{ text: "Leaf A1" }, { text: "Leaf A2" }],
+                                },
                                 { text: "Branch B", children: [{ text: "Leaf B1" }] },
                                 { text: "Branch C" },
                             ],
@@ -187,25 +245,38 @@ const pres = new Presentation({
         {
             children: [
                 new Shape({
-                    x: 50, y: 30, width: 500, height: 50,
-                    paragraphs: [new Paragraph({
-                        properties: { alignment: "ctr", bulletNone: true },
-                        children: [new Run({ text: "Relationship / Other Layouts", fontSize: 32, bold: true })],
-                    })],
+                    x: 50,
+                    y: 30,
+                    width: 500,
+                    height: 50,
+                    paragraphs: [
+                        new Paragraph({
+                            properties: { alignment: "ctr", bulletNone: true },
+                            children: [
+                                new Run({
+                                    text: "Relationship / Other Layouts",
+                                    fontSize: 32,
+                                    bold: true,
+                                }),
+                            ],
+                        }),
+                    ],
                 }),
                 new SmartArtFrame({
-                    x: 50, y: 120, width: 400, height: 350,
-                    nodes: [
-                        { text: "Set A" },
-                        { text: "Set B" },
-                        { text: "Set C" },
-                    ],
+                    x: 50,
+                    y: 120,
+                    width: 400,
+                    height: 350,
+                    nodes: [{ text: "Set A" }, { text: "Set B" }, { text: "Set C" }],
                     layout: "venn1",
                     style: "burnt1",
                     color: "accent6_2",
                 }),
                 new SmartArtFrame({
-                    x: 480, y: 120, width: 400, height: 350,
+                    x: 480,
+                    y: 120,
+                    width: 400,
+                    height: 350,
                     nodes: [
                         { text: "Leads" },
                         { text: "Prospects" },
@@ -224,14 +295,24 @@ const pres = new Presentation({
         {
             children: [
                 new Shape({
-                    x: 50, y: 30, width: 500, height: 50,
-                    paragraphs: [new Paragraph({
-                        properties: { alignment: "ctr", bulletNone: true },
-                        children: [new Run({ text: "Pyramid Layouts", fontSize: 32, bold: true })],
-                    })],
+                    x: 50,
+                    y: 30,
+                    width: 500,
+                    height: 50,
+                    paragraphs: [
+                        new Paragraph({
+                            properties: { alignment: "ctr", bulletNone: true },
+                            children: [
+                                new Run({ text: "Pyramid Layouts", fontSize: 32, bold: true }),
+                            ],
+                        }),
+                    ],
                 }),
                 new SmartArtFrame({
-                    x: 50, y: 120, width: 400, height: 350,
+                    x: 50,
+                    y: 120,
+                    width: 400,
+                    height: 350,
                     nodes: [
                         { text: "Vision" },
                         { text: "Strategy" },
@@ -243,13 +324,11 @@ const pres = new Presentation({
                     color: "accent2_2",
                 }),
                 new SmartArtFrame({
-                    x: 480, y: 120, width: 400, height: 350,
-                    nodes: [
-                        { text: "All" },
-                        { text: "Most" },
-                        { text: "Some" },
-                        { text: "Few" },
-                    ],
+                    x: 480,
+                    y: 120,
+                    width: 400,
+                    height: 350,
+                    nodes: [{ text: "All" }, { text: "Most" }, { text: "Some" }, { text: "Few" }],
                     layout: "pyramid2",
                     style: "cartoon2",
                     color: "colorful4",
@@ -261,14 +340,28 @@ const pres = new Presentation({
         {
             children: [
                 new Shape({
-                    x: 50, y: 30, width: 500, height: 50,
-                    paragraphs: [new Paragraph({
-                        properties: { alignment: "ctr", bulletNone: true },
-                        children: [new Run({ text: "Matrix / Radial / Other Layouts", fontSize: 32, bold: true })],
-                    })],
+                    x: 50,
+                    y: 30,
+                    width: 500,
+                    height: 50,
+                    paragraphs: [
+                        new Paragraph({
+                            properties: { alignment: "ctr", bulletNone: true },
+                            children: [
+                                new Run({
+                                    text: "Matrix / Radial / Other Layouts",
+                                    fontSize: 32,
+                                    bold: true,
+                                }),
+                            ],
+                        }),
+                    ],
                 }),
                 new SmartArtFrame({
-                    x: 50, y: 120, width: 400, height: 350,
+                    x: 50,
+                    y: 120,
+                    width: 400,
+                    height: 350,
                     nodes: [
                         { text: "Q1: Plan" },
                         { text: "Q2: Execute" },
@@ -280,7 +373,10 @@ const pres = new Presentation({
                     color: "primary1",
                 }),
                 new SmartArtFrame({
-                    x: 480, y: 120, width: 400, height: 350,
+                    x: 480,
+                    y: 120,
+                    width: 400,
+                    height: 350,
                     nodes: [
                         { text: "Core" },
                         { text: "Team" },
@@ -296,18 +392,20 @@ const pres = new Presentation({
         {
             children: [
                 new SmartArtFrame({
-                    x: 50, y: 50, width: 400, height: 350,
-                    nodes: [
-                        { text: "Input" },
-                        { text: "Process" },
-                        { text: "Output" },
-                    ],
+                    x: 50,
+                    y: 50,
+                    width: 400,
+                    height: 350,
+                    nodes: [{ text: "Input" }, { text: "Process" }, { text: "Output" }],
                     layout: "balance1",
                     style: "powdery2",
                     color: "primary2",
                 }),
                 new SmartArtFrame({
-                    x: 480, y: 50, width: 400, height: 350,
+                    x: 480,
+                    y: 50,
+                    width: 400,
+                    height: 350,
                     nodes: [
                         { text: "Part A" },
                         { text: "Part B" },

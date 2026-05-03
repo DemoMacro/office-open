@@ -1,8 +1,13 @@
-import { DEFAULT_DRAWING_XML, getColorXml, getLayoutXml, getStyleXml } from "@file/smartart/built-in-definitions";
-import { DefaultNotesMaster } from "@file/notes-master/notes-master";
 import { Formatter } from "@export/formatter";
 import type { ChartCollection } from "@file/chart/chart-collection";
 import type { File } from "@file/file";
+import { DefaultNotesMaster } from "@file/notes-master/notes-master";
+import {
+    DEFAULT_DRAWING_XML,
+    getColorXml,
+    getLayoutXml,
+    getStyleXml,
+} from "@file/smartart/built-in-definitions";
 import type { IContext } from "@file/xml-components";
 import { xml } from "@office-open/xml";
 import type { Zippable } from "fflate";
@@ -246,13 +251,17 @@ export class Compiler {
 
                 replacedSlideXml = this.smartArtReplacer.replace(
                     replacedSlideXml,
-                    { Array: slideSmartArts } as unknown as import("@file/smartart/smartart-collection").SmartArtCollection,
+                    {
+                        Array: slideSmartArts,
+                    } as unknown as import("@file/smartart/smartart-collection").SmartArtCollection,
                     saOffset,
                 );
 
                 const saGlobalStart = file.SmartArts.Array.indexOf(slideSmartArts[0]);
                 this.smartArtReplacer.addRelationships(
-                    { Array: slideSmartArts } as unknown as import("@file/smartart/smartart-collection").SmartArtCollection,
+                    {
+                        Array: slideSmartArts,
+                    } as unknown as import("@file/smartart/smartart-collection").SmartArtCollection,
                     (id, type, target) => {
                         slideWrapper.Relationships.addRelationship(id, type, target);
                     },
@@ -272,7 +281,9 @@ export class Compiler {
             }
 
             if (slideHlinkKeys.length > 0) {
-                const slideHlinks = file.Hyperlinks.Array.filter((h) => slideHlinkKeys.includes(h.key));
+                const slideHlinks = file.Hyperlinks.Array.filter((h) =>
+                    slideHlinkKeys.includes(h.key),
+                );
                 const hlinkOffset = slideWrapper.Relationships.RelationshipCount + 1;
 
                 replacedSlideXml = this.hyperlinkReplacer.replace(
@@ -407,9 +418,15 @@ export class Compiler {
                     indent,
                 }),
             );
-            files[`ppt/diagrams/layout${i + 1}.xml`] = textToUint8Array(getLayoutXml(smartArtData.layout));
-            files[`ppt/diagrams/quickStyle${i + 1}.xml`] = textToUint8Array(getStyleXml(smartArtData.style));
-            files[`ppt/diagrams/colors${i + 1}.xml`] = textToUint8Array(getColorXml(smartArtData.color));
+            files[`ppt/diagrams/layout${i + 1}.xml`] = textToUint8Array(
+                getLayoutXml(smartArtData.layout),
+            );
+            files[`ppt/diagrams/quickStyle${i + 1}.xml`] = textToUint8Array(
+                getStyleXml(smartArtData.style),
+            );
+            files[`ppt/diagrams/colors${i + 1}.xml`] = textToUint8Array(
+                getColorXml(smartArtData.color),
+            );
             files[`ppt/diagrams/drawing${i + 1}.xml`] = textToUint8Array(DEFAULT_DRAWING_XML);
         }
 
