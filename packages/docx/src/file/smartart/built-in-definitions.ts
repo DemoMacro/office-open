@@ -12,13 +12,13 @@ export {
     COLOR_CATEGORIES,
     LAYOUT_CATEGORIES,
     STYLE_CATEGORIES,
-} from "@office-open/core/smartart/categories";
+} from "@office-open/core/smartart";
 
 import {
     LAYOUT_CATEGORIES,
     STYLE_CATEGORIES,
     COLOR_CATEGORIES,
-} from "@office-open/core/smartart/categories";
+} from "@office-open/core/smartart";
 
 // ---------------------------------------------------------------------------
 // Layout XML — full for "default", stubs for everything else

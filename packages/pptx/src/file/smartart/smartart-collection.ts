@@ -1,4 +1,1 @@
-export {
-    SmartArtCollection,
-    type ISmartArtData,
-} from "@office-open/core/smartart/smartart-collection";
+export { SmartArtCollection, type ISmartArtData } from "@office-open/core/smartart";

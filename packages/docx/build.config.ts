@@ -5,7 +5,7 @@ import nodePolyfills from "@rolldown/plugin-node-polyfills";
 export default defineBuildConfig({
     entries: [
         {
-            entry: ["src/index"],
+            entry: ["src/index.ts"],
             plugins: [nodePolyfills()],
             shims: true,
             deps: {

@@ -1,2 +1,2 @@
-export type { ITreeNode } from "@office-open/core/smartart/tree-to-model";
-export { createDataModel } from "@office-open/core/smartart/tree-to-model";
+export type { ITreeNode } from "@office-open/core/smartart";
+export { createDataModel } from "@office-open/core/smartart";

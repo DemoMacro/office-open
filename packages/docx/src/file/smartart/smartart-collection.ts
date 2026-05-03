@@ -1,4 +1,4 @@
 export {
     SmartArtCollection,
     type ISmartArtData,
-} from "@office-open/core/smartart/smartart-collection";
+} from "@office-open/core/smartart";
