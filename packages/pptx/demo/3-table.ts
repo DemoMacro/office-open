@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Background, Presentation, Packer, Shape, SolidFill, TableFrame } from "../src";
+import { Background, Presentation, Packer, Shape, SolidFill, NoFill, TableFrame } from "../src";
 
 const pres = new Presentation({
     title: "Phase 3 Demo",
@@ -74,6 +74,36 @@ const pres = new Presentation({
                         },
                     ],
                     columnWidths: [2500000, 2500000],
+                }),
+            ],
+        },
+        {
+            children: [
+                new Shape({
+                    x: 50, y: 30, width: 600, height: 50,
+                    text: "Vertical Align & Cell Margins",
+                    fill: new SolidFill("4472C4"),
+                }),
+                new TableFrame({
+                    x: 50, y: 120, width: 600, height: 250,
+                    rows: [
+                        {
+                            height: 700000,
+                            cells: [
+                                { text: "Top", verticalAlign: "t", fill: new SolidFill("E8F0FE") },
+                                { text: "Center", verticalAlign: "ctr", fill: new SolidFill("E8F0FE") },
+                                { text: "Bottom", verticalAlign: "b", fill: new SolidFill("E8F0FE") },
+                            ],
+                        },
+                        {
+                            height: 500000,
+                            cells: [
+                                { text: "Default" },
+                                { text: "Wide L/R", margins: { left: 300000, right: 300000 } },
+                                { text: "Wide T/B", margins: { top: 80000, bottom: 80000 } },
+                            ],
+                        },
+                    ],
                 }),
             ],
         },

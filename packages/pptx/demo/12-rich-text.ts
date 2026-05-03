@@ -163,6 +163,77 @@ const pres = new Presentation({
                         }),
                     ],
                 }),
+                // Bullet & numbering
+                new Shape({
+                    x: 50, y: 710, width: 280, height: 200,
+                    outline: { color: "4472C4", width: 1 },
+                    paragraphs: [
+                        new Paragraph({
+                            properties: { bullet: { type: "char", char: "●" } },
+                            children: [new Run({ text: "Bullet Point 1" })],
+                        }),
+                        new Paragraph({
+                            properties: { bullet: { type: "char", char: "●", color: "4472C4" } },
+                            children: [new Run({ text: "Blue Bullet 2" })],
+                        }),
+                        new Paragraph({
+                            properties: { bullet: { type: "char", char: "■", size: 75 } },
+                            children: [new Run({ text: "Small Square 3" })],
+                        }),
+                        new Paragraph({
+                            properties: { bullet: { type: "char", char: "➢" } },
+                            children: [new Run({ text: "Arrow Bullet 4" })],
+                        }),
+                    ],
+                }),
+                new Shape({
+                    x: 360, y: 710, width: 280, height: 200,
+                    outline: { color: "ED7D31", width: 1 },
+                    paragraphs: [
+                        new Paragraph({
+                            properties: { bullet: { type: "autoNum", format: "arabicPeriod" } },
+                            children: [new Run({ text: "First item" })],
+                        }),
+                        new Paragraph({
+                            properties: { bullet: { type: "autoNum", format: "arabicPeriod" } },
+                            children: [new Run({ text: "Second item" })],
+                        }),
+                        new Paragraph({
+                            properties: { bullet: { type: "autoNum", format: "arabicPeriod" } },
+                            children: [new Run({ text: "Third item" })],
+                        }),
+                        new Paragraph({
+                            properties: { bullet: { type: "autoNum", format: "alphaLcParenBoth" } },
+                            children: [new Run({ text: "Sub-item a" })],
+                        }),
+                        new Paragraph({
+                            properties: { bullet: { type: "autoNum", format: "alphaLcParenBoth" } },
+                            children: [new Run({ text: "Sub-item b" })],
+                        }),
+                    ],
+                }),
+                // RTL, NoProof, Shadow, Outline
+                new Shape({
+                    x: 660, y: 710, width: 280, height: 200,
+                    outline: { color: "70AD47", width: 1 },
+                    paragraphs: [
+                        new Paragraph({
+                            children: [new Run({ text: "Normal text", fontSize: 16 })],
+                        }),
+                        new Paragraph({
+                            children: [new Run({ text: "Right-to-Left", rightToLeft: true, fontSize: 16 })],
+                        }),
+                        new Paragraph({
+                            children: [new Run({ text: "No proof text", noProof: true, fontSize: 16 })],
+                        }),
+                        new Paragraph({
+                            children: [new Run({ text: "Shadow text", shadow: true, fontSize: 16 })],
+                        }),
+                        new Paragraph({
+                            children: [new Run({ text: "Outline text", outline: true, fontSize: 16 })],
+                        }),
+                    ],
+                }),
                 // Line spacing demo
                 new Shape({
                     x: 50,
