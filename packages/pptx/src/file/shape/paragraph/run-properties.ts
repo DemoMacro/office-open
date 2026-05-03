@@ -24,6 +24,9 @@ export interface IRunPropertiesOptions {
     readonly capitalization?: "none" | "all" | "small";
     readonly shadow?: boolean;
     readonly outline?: boolean;
+    readonly rightToLeft?: boolean;
+    readonly noProof?: boolean;
+    readonly dirty?: boolean;
 }
 
 /**
@@ -49,7 +52,10 @@ export class RunProperties extends XmlComponent {
             options.spacing !== undefined ||
             options.capitalization ||
             options.shadow !== undefined ||
-            options.outline !== undefined
+            options.outline !== undefined ||
+            options.rightToLeft !== undefined ||
+            options.noProof !== undefined ||
+            options.dirty !== undefined
         );
     }
 
@@ -68,6 +74,9 @@ export class RunProperties extends XmlComponent {
         if (options.strike) attrs.strike = { key: "strike", value: options.strike };
         if (options.baseline !== undefined) attrs.baseline = { key: "baseline", value: options.baseline };
         if (options.capitalization) attrs.cap = { key: "cap", value: options.capitalization };
+        if (options.rightToLeft !== undefined) attrs.rtl = { key: "rtl", value: options.rightToLeft };
+        if (options.noProof !== undefined) attrs.noProof = { key: "noProof", value: options.noProof };
+        if (options.dirty !== undefined) attrs.dirty = { key: "dirty", value: options.dirty };
 
         this.root.push(new NextAttributeComponent(attrs));
 

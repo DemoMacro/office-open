@@ -20,8 +20,18 @@ export class TableCellProperties extends XmlComponent {
         };
         readonly columnSpan?: number;
         readonly rowSpan?: number;
+        readonly verticalAlign?: "t" | "ctr" | "b";
     }) {
         super("a:tcPr");
+
+        if (options?.verticalAlign) {
+            this.root.push(
+                new BuilderElement({
+                    name: "a:anchor",
+                    attributes: { val: { key: "val", value: options.verticalAlign } },
+                }),
+            );
+        }
 
         if (options?.columnSpan !== undefined && options.columnSpan > 1) {
             this.root.push(

@@ -27,6 +27,13 @@ export interface IShapeOptions {
     readonly rotation?: number;
     readonly text?: string;
     readonly paragraphs?: ITextBodyOptions["paragraphs"];
+    readonly textVertical?: ITextBodyOptions["vertical"];
+    readonly textAnchor?: ITextBodyOptions["anchor"];
+    readonly textAutoFit?: ITextBodyOptions["autoFit"];
+    readonly textWrap?: ITextBodyOptions["wrap"];
+    readonly textMargins?: ITextBodyOptions["margins"];
+    readonly textColumns?: ITextBodyOptions["columns"];
+    readonly textColumnSpacing?: ITextBodyOptions["columnSpacing"];
     readonly animation?: IAnimationOptions;
 }
 
@@ -87,6 +94,13 @@ export class Shape extends Xc {
                 (options.text
                     ? [new Paragraph({ children: [new Run({ text: options.text })] })]
                     : undefined),
+            vertical: options.textVertical,
+            anchor: options.textAnchor,
+            autoFit: options.textAutoFit,
+            wrap: options.textWrap,
+            margins: options.textMargins,
+            columns: options.textColumns,
+            columnSpacing: options.textColumnSpacing,
         };
         this.root.push(new TextBody(textBodyOptions));
     }

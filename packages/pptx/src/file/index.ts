@@ -35,6 +35,8 @@ export { NonVisualPictureProperties } from "./drawingml/non-visual-picture-props
 export { GroupShapeProperties } from "./drawingml/group-shape-properties";
 export { GroupTransform2D, type IGroupTransform2DOptions } from "./drawingml/group-transform-2d";
 export { GroupShape, type IGroupShapeOptions } from "./shape/group-shape";
+export { LineShape, type ILineShapeOptions } from "./shape/line-shape";
+export { ConnectorShape, type IConnectorShapeOptions } from "./shape/line-shape";
 export { Media } from "./media/media";
 export { createTransformation, type IMediaTransformation } from "./media/media";
 export type { IMediaData, IMediaDataTransformation } from "./media/data";
