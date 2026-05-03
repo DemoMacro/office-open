@@ -42,33 +42,9 @@
             "types": "./dist/smartart/index.d.mts",
             "import": "./dist/smartart/index.mjs"
         },
-        "./smartart/categories": {
-            "types": "./dist/smartart/categories.d.mts",
-            "import": "./dist/smartart/categories.mjs"
-        },
-        "./smartart/smartart-collection": {
-            "types": "./dist/smartart/smartart-collection.d.mts",
-            "import": "./dist/smartart/smartart-collection.mjs"
-        },
-        "./smartart/tree-to-model": {
-            "types": "./dist/smartart/tree-to-model.d.mts",
-            "import": "./dist/smartart/tree-to-model.mjs"
-        },
-        "./smartart/data-model": {
-            "types": "./dist/smartart/data-model/index.d.mts",
-            "import": "./dist/smartart/data-model/index.mjs"
-        },
-        "./smartart/data-model/connection": {
-            "types": "./dist/smartart/data-model/connection.d.mts",
-            "import": "./dist/smartart/data-model/connection.mjs"
-        },
-        "./smartart/data-model/data-model": {
-            "types": "./dist/smartart/data-model/data-model.d.mts",
-            "import": "./dist/smartart/data-model/data-model.mjs"
-        },
-        "./smartart/data-model/point": {
-            "types": "./dist/smartart/data-model/point.d.mts",
-            "import": "./dist/smartart/data-model/point.mjs"
+        "./chart": {
+            "types": "./dist/chart/index.d.mts",
+            "import": "./dist/chart/index.mjs"
         }
     },
     "scripts": {
