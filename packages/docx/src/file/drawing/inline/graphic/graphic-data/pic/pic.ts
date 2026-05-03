@@ -12,10 +12,11 @@
 import type { HyperlinkOptions } from "@file/drawing/doc-properties/doc-properties";
 import type { IMediaData, IMediaDataTransformation } from "@file/media";
 import { XmlComponent } from "@file/xml-components";
+import type { TileOptions } from "@office-open/core/drawingml";
 
+import type { BlipOptions } from "./blip/blip";
 import type { BlipEffectsOptions } from "./blip/blip-effects";
 import { createBlipFill } from "./blip/blip-fill";
-import type { TileOptions } from "./blip/tile";
 import { NonVisualPicProperties } from "./non-visual-pic-properties/non-visual-pic-properties";
 import { PicAttributes } from "./pic-attributes";
 import type { EffectListOptions } from "./shape-properties/effects/effect-list";
@@ -80,7 +81,14 @@ export class Pic extends XmlComponent {
         );
 
         this.root.push(new NonVisualPicProperties(hyperlink));
-        this.root.push(createBlipFill(mediaData, { blipEffects, tile }));
+        const blipOptions: BlipOptions = {
+            referenceId: mediaData.fileName,
+            type: mediaData.type,
+            fallbackFileName: "fallback" in mediaData ? mediaData.fallback.fileName : undefined,
+        };
+        this.root.push(
+            createBlipFill(blipOptions, { blipEffects, tile, srcRect: mediaData.srcRect }),
+        );
         this.root.push(
             new ShapeProperties({ element: "pic", effects, outline, solidFill, transform }),
         );

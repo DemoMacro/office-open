@@ -173,16 +173,6 @@ function buildSoftEdgeElement(options: ISoftEdgeOptions): XmlComponent {
     });
 }
 
-function buildBevelElement(name: string, options: IBevelOptions): BuilderElement<{}> {
-    const attrs: Record<string, { readonly key: string; readonly value: number }> = {};
-    if (options.width !== undefined) attrs.w = { key: "w", value: options.width * 12700 };
-    if (options.height !== undefined) attrs.h = { key: "h", value: options.height * 12700 };
-    return new BuilderElement({
-        name,
-        attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
-    });
-}
-
 /**
  * a:effectLst — Visual effects for a shape (shadow, glow, reflection, etc.).
  */
@@ -289,5 +279,15 @@ export function buildShape3D(options: IEffectsOptions): XmlComponent | null {
     return new BuilderElement({
         name: "a:sp3d",
         children: children.length > 0 ? children : undefined,
+    });
+}
+
+function buildBevelElement(name: string, options: IBevelOptions): BuilderElement<{}> {
+    const attrs: Record<string, { readonly key: string; readonly value: number }> = {};
+    if (options.width !== undefined) attrs.w = { key: "w", value: options.width * 12700 };
+    if (options.height !== undefined) attrs.h = { key: "h", value: options.height * 12700 };
+    return new BuilderElement({
+        name,
+        attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
     });
 }

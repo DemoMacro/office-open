@@ -1,53 +1,36 @@
-import { BuilderElement, NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { createOutline, PresetDash } from "@office-open/core/drawingml";
+import type { OutlineOptions as CoreOutlineOptions } from "@office-open/core/drawingml";
 
+/**
+ * PPTX-specific outline options (backward-compatible API).
+ */
 export interface OutlineOptions {
     readonly width?: number;
     readonly color?: string;
     readonly dashStyle?: "solid" | "dash" | "dashDot" | "lgDash" | "sysDot" | "sysDash";
 }
 
+export type { CoreOutlineOptions as OutlineOptionsCore };
+
+const DASH_STYLE_MAP: Record<string, keyof typeof PresetDash> = {
+    solid: "SOLID",
+    dash: "DASH",
+    dashDot: "DASH_DOT",
+    lgDash: "LG_DASH",
+    sysDot: "SYS_DOT",
+    sysDash: "SYS_DASH",
+};
+
 /**
- * a:ln — Line/outline properties for shapes.
+ * Creates an outline element using pptx's simplified API.
  */
-export class Outline extends XmlComponent {
-    public constructor(options: OutlineOptions = {}) {
-        super("a:ln");
-
-        if (options.width !== undefined) {
-            this.root.push(
-                new NextAttributeComponent({
-                    w: { key: "w", value: options.width },
-                }),
-            );
-        }
-
-        if (options.color) {
-            this.root.push(
-                new BuilderElement({
-                    name: "a:solidFill",
-                    children: [
-                        new BuilderElement({
-                            name: "a:srgbClr",
-                            attributes: {
-                                val: { key: "val", value: options.color.replace("#", "") },
-                            },
-                        }),
-                    ],
-                }),
-            );
-        } else {
-            this.root.push(new BuilderElement({ name: "a:noFill" }));
-        }
-
-        if (options.dashStyle) {
-            this.root.push(
-                new BuilderElement({
-                    name: "a:prstDash",
-                    attributes: {
-                        val: { key: "val", value: options.dashStyle },
-                    },
-                }),
-            );
-        }
-    }
-}
+export const createOutlineCompat = (options: OutlineOptions = {}) =>
+    createOutline({
+        width: options.width,
+        ...(options.color
+            ? { type: "solidFill" as const, color: { value: options.color.replace("#", "") } }
+            : { type: "noFill" as const }),
+        ...(options.dashStyle && {
+            dash: DASH_STYLE_MAP[options.dashStyle] ?? "SOLID",
+        }),
+    } satisfies CoreOutlineOptions);
