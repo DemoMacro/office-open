@@ -1,5 +1,8 @@
 import { BuilderElement, XmlComponent } from "@file/xml-components";
 
+import { buildFill } from "../drawingml/fill";
+import type { FillOptions } from "../drawingml/fill";
+
 export interface ICellBorderOptions {
     readonly width?: number;
     readonly color?: string;
@@ -11,7 +14,7 @@ export interface ICellBorderOptions {
  */
 export class TableCellProperties extends XmlComponent {
     public constructor(options?: {
-        readonly fill?: XmlComponent;
+        readonly fill?: FillOptions;
         readonly borders?: {
             readonly top?: ICellBorderOptions;
             readonly bottom?: ICellBorderOptions;
@@ -66,8 +69,8 @@ export class TableCellProperties extends XmlComponent {
             }
         }
 
-        if (options?.fill) {
-            this.root.push(options.fill);
+        if (options?.fill !== undefined) {
+            this.root.push(buildFill(options.fill));
         }
     }
 }

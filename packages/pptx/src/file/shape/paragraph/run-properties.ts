@@ -1,4 +1,5 @@
-import type { ShapeFill } from "@file/drawingml/shape-properties";
+import type { FillOptions } from "@file/drawingml/fill";
+import { buildFill } from "@file/drawingml/fill";
 import { BuilderElement, NextAttributeComponent, XmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 
@@ -16,7 +17,7 @@ export interface IRunPropertiesOptions {
     readonly underline?: "sng" | "dbl" | "none";
     readonly font?: string;
     readonly lang?: string;
-    readonly fill?: ShapeFill;
+    readonly fill?: FillOptions;
     readonly hyperlink?: IHyperlinkOptions;
     readonly strike?: "sngStrike" | "dblStrike" | "noStrike";
     readonly baseline?: number;
@@ -98,8 +99,8 @@ export class RunProperties extends XmlComponent {
             );
         }
 
-        if (options.fill) {
-            this.root.push(options.fill);
+        if (options.fill !== undefined) {
+            this.root.push(buildFill(options.fill));
         }
 
         if (options.spacing !== undefined) {

@@ -1,20 +1,13 @@
 import * as fs from "fs";
 
-import {
-    Background,
-    GradientFill,
-    Presentation,
-    Packer,
-    Shape,
-    SolidFill,
-} from "@office-open/pptx";
+import { Background, Presentation, Packer, Shape } from "@office-open/pptx";
 
 const pres = new Presentation({
     title: "Phase 2 Demo",
     creator: "Demo",
     slides: [
         {
-            background: new Background({ fill: new SolidFill("F2F2F2") }),
+            background: new Background({ fill: "F2F2F2" }),
             children: [
                 new Shape({
                     x: 50,
@@ -23,7 +16,7 @@ const pres = new Presentation({
                     height: 100,
                     text: "With Outline",
                     geometry: "roundRect",
-                    fill: new SolidFill("FFFFFF"),
+                    fill: "FFFFFF",
                     outline: { width: 25400, color: "4472C4", dashStyle: "dash" },
                 }),
                 new Shape({
@@ -32,25 +25,27 @@ const pres = new Presentation({
                     width: 400,
                     height: 100,
                     text: "Gradient Fill",
-                    fill: new GradientFill({
+                    fill: {
+                        type: "gradient",
                         angle: 0,
                         stops: [
                             { position: 0, color: "4472C4" },
-                            { position: 100000, color: "ED7D31" },
+                            { position: 100, color: "ED7D31" },
                         ],
-                    }),
+                    },
                 }),
             ],
         },
         {
             background: new Background({
-                fill: new GradientFill({
+                fill: {
+                    type: "gradient",
                     angle: 270,
                     stops: [
                         { position: 0, color: "1a1a2e" },
-                        { position: 100000, color: "16213e" },
+                        { position: 100, color: "16213e" },
                     ],
-                }),
+                },
             }),
             children: [
                 new Shape({
@@ -59,7 +54,7 @@ const pres = new Presentation({
                     width: 300,
                     height: 200,
                     text: "On Gradient BG",
-                    fill: new SolidFill("FFFFFF"),
+                    fill: "FFFFFF",
                     outline: { width: 12700, color: "FFC000" },
                 }),
             ],

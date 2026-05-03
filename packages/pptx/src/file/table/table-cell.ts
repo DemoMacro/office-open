@@ -1,5 +1,6 @@
 import { BuilderElement, XmlComponent } from "@file/xml-components";
 
+import type { FillOptions } from "../drawingml/fill";
 import { Paragraph } from "../shape/paragraph/paragraph";
 import { Run } from "../shape/paragraph/run";
 import { TableCellProperties } from "./table-cell-properties";
@@ -8,7 +9,7 @@ import type { ICellBorderOptions } from "./table-cell-properties";
 export interface ITableCellOptions {
     readonly text?: string;
     readonly children?: readonly XmlComponent[];
-    readonly fill?: XmlComponent;
+    readonly fill?: FillOptions;
     readonly borders?: {
         readonly top?: ICellBorderOptions;
         readonly bottom?: ICellBorderOptions;

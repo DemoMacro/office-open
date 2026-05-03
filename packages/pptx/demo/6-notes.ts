@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Presentation, Packer, Shape, SolidFill } from "@office-open/pptx";
+import { Presentation, Packer, Shape } from "@office-open/pptx";
 
 const pres = new Presentation({
     title: "Notes Demo",
@@ -14,7 +14,7 @@ const pres = new Presentation({
                     width: 400,
                     height: 60,
                     text: "Slide 1 - Introduction",
-                    fill: new SolidFill("4472C4"),
+                    fill: "4472C4",
                 }),
                 new Shape({
                     x: 50,
@@ -22,7 +22,7 @@ const pres = new Presentation({
                     width: 600,
                     height: 300,
                     text: "Welcome to the presentation!",
-                    fill: new SolidFill("D9E2F3"),
+                    fill: "D9E2F3",
                 }),
             ],
             notes: "These are the speaker notes for the introduction slide. Remember to greet the audience.",
@@ -35,7 +35,7 @@ const pres = new Presentation({
                     width: 400,
                     height: 60,
                     text: "Slide 2 - Key Points",
-                    fill: new SolidFill("ED7D31"),
+                    fill: "ED7D31",
                 }),
                 new Shape({
                     x: 50,
@@ -43,7 +43,7 @@ const pres = new Presentation({
                     width: 600,
                     height: 300,
                     text: "Point 1: Architecture\nPoint 2: Implementation\nPoint 3: Testing",
-                    fill: new SolidFill("FBE5D6"),
+                    fill: "FBE5D6",
                 }),
             ],
             notes: "Key talking points:\n- Architecture follows SOLID principles\n- Implementation uses OOXML spec\n- Testing covers all chart types",
@@ -56,7 +56,7 @@ const pres = new Presentation({
                     width: 400,
                     height: 60,
                     text: "Slide 3 - No Notes",
-                    fill: new SolidFill("70AD47"),
+                    fill: "70AD47",
                 }),
             ],
         },

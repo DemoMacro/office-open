@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Background, GroupShape, Presentation, Packer, Shape, SolidFill } from "@office-open/pptx";
+import { Background, GroupShape, Presentation, Packer, Shape } from "@office-open/pptx";
 
 const pres = new Presentation({
     title: "Group Shape Demo",
@@ -14,7 +14,7 @@ const pres = new Presentation({
                     width: 400,
                     height: 60,
                     text: "Group Shape Demo",
-                    fill: new SolidFill("4472C4"),
+                    fill: "4472C4",
                 }),
                 new GroupShape({
                     x: 50,
@@ -28,7 +28,7 @@ const pres = new Presentation({
                             width: 140,
                             height: 90,
                             text: "Shape A",
-                            fill: new SolidFill("ED7D31"),
+                            fill: "ED7D31",
                         }),
                         new Shape({
                             x: 160,
@@ -36,7 +36,7 @@ const pres = new Presentation({
                             width: 140,
                             height: 90,
                             text: "Shape B",
-                            fill: new SolidFill("70AD47"),
+                            fill: "70AD47",
                         }),
                         new Shape({
                             x: 0,
@@ -44,7 +44,7 @@ const pres = new Presentation({
                             width: 300,
                             height: 90,
                             text: "Shape C (wide)",
-                            fill: new SolidFill("5B9BD5"),
+                            fill: "5B9BD5",
                         }),
                     ],
                 }),
@@ -60,7 +60,7 @@ const pres = new Presentation({
                             y: 0,
                             width: 250,
                             height: 200,
-                            fill: new SolidFill("FFC000"),
+                            fill: "FFC000",
                         }),
                         new Shape({
                             x: 25,
@@ -68,14 +68,14 @@ const pres = new Presentation({
                             width: 200,
                             height: 150,
                             text: "Rotated Group",
-                            fill: new SolidFill("FFFFFF"),
+                            fill: "FFFFFF",
                         }),
                     ],
                 }),
             ],
         },
         {
-            background: new Background({ fill: new SolidFill("F2F2F2") }),
+            background: new Background({ fill: "F2F2F2" }),
             children: [
                 new Shape({
                     x: 50,
@@ -83,7 +83,7 @@ const pres = new Presentation({
                     width: 400,
                     height: 60,
                     text: "Nested Groups",
-                    fill: new SolidFill("7030A0"),
+                    fill: "7030A0",
                 }),
                 new GroupShape({
                     x: 50,
@@ -103,7 +103,7 @@ const pres = new Presentation({
                                     width: 130,
                                     height: 160,
                                     text: "Inner A",
-                                    fill: new SolidFill("4472C4"),
+                                    fill: "4472C4",
                                 }),
                                 new Shape({
                                     x: 150,
@@ -111,7 +111,7 @@ const pres = new Presentation({
                                     width: 130,
                                     height: 160,
                                     text: "Inner B",
-                                    fill: new SolidFill("ED7D31"),
+                                    fill: "ED7D31",
                                 }),
                             ],
                         }),
@@ -127,7 +127,7 @@ const pres = new Presentation({
                                     width: 300,
                                     height: 160,
                                     text: "Right Top",
-                                    fill: new SolidFill("70AD47"),
+                                    fill: "70AD47",
                                 }),
                                 new Shape({
                                     x: 0,
@@ -135,7 +135,7 @@ const pres = new Presentation({
                                     width: 140,
                                     height: 170,
                                     text: "RT Bot L",
-                                    fill: new SolidFill("FFC000"),
+                                    fill: "FFC000",
                                 }),
                                 new Shape({
                                     x: 160,
@@ -143,7 +143,7 @@ const pres = new Presentation({
                                     width: 140,
                                     height: 170,
                                     text: "RT Bot R",
-                                    fill: new SolidFill("5B9BD5"),
+                                    fill: "5B9BD5",
                                 }),
                             ],
                         }),

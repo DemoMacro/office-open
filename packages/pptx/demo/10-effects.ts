@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Presentation, Packer, Shape, SolidFill } from "@office-open/pptx";
+import { Presentation, Packer, Shape } from "@office-open/pptx";
 
 const pres = new Presentation({
     title: "Effects Demo",
@@ -14,7 +14,7 @@ const pres = new Presentation({
                     width: 500,
                     height: 60,
                     text: "Shape Effects Demo",
-                    fill: new SolidFill("4472C4"),
+                    fill: "4472C4",
                 }),
                 new Shape({
                     x: 50,
@@ -22,7 +22,7 @@ const pres = new Presentation({
                     width: 200,
                     height: 120,
                     text: "Outer Shadow",
-                    fill: new SolidFill("ED7D31"),
+                    fill: "ED7D31",
                     effects: {
                         outerShadow: {
                             blur: 50800,
@@ -39,7 +39,7 @@ const pres = new Presentation({
                     width: 200,
                     height: 120,
                     text: "Glow",
-                    fill: new SolidFill("70AD47"),
+                    fill: "70AD47",
                     effects: {
                         glow: { radius: 152400, color: "92D050", alpha: 60 },
                     },
@@ -50,7 +50,7 @@ const pres = new Presentation({
                     width: 200,
                     height: 120,
                     text: "Reflection",
-                    fill: new SolidFill("FFC000"),
+                    fill: "FFC000",
                     effects: {
                         reflection: {
                             blurRadius: 6350,
@@ -67,7 +67,7 @@ const pres = new Presentation({
                     width: 200,
                     height: 120,
                     text: "Inner Shadow",
-                    fill: new SolidFill("5B9BD5"),
+                    fill: "5B9BD5",
                     effects: {
                         innerShadow: {
                             blur: 40000,
@@ -84,7 +84,7 @@ const pres = new Presentation({
                     width: 200,
                     height: 120,
                     text: "Soft Edge",
-                    fill: new SolidFill("BF8F00"),
+                    fill: "BF8F00",
                     effects: {
                         softEdge: { radius: 50800 },
                     },
@@ -95,7 +95,7 @@ const pres = new Presentation({
                     width: 200,
                     height: 120,
                     text: "Shadow + Glow",
-                    fill: new SolidFill("7030A0"),
+                    fill: "7030A0",
                     effects: {
                         outerShadow: {
                             blur: 40000,
@@ -118,7 +118,7 @@ const pres = new Presentation({
                     width: 500,
                     height: 50,
                     text: "3D Rotation & Extrusion",
-                    fill: new SolidFill("4472C4"),
+                    fill: "4472C4",
                 }),
                 new Shape({
                     x: 50,
@@ -126,7 +126,7 @@ const pres = new Presentation({
                     width: 200,
                     height: 200,
                     text: "X=30 Y=0",
-                    fill: new SolidFill("4472C4"),
+                    fill: "4472C4",
                     effects: { rotation3D: { x: 30 } },
                 }),
                 new Shape({
@@ -135,7 +135,7 @@ const pres = new Presentation({
                     width: 200,
                     height: 200,
                     text: "X=0 Y=45",
-                    fill: new SolidFill("ED7D31"),
+                    fill: "ED7D31",
                     effects: { rotation3D: { y: 45 } },
                 }),
                 new Shape({
@@ -144,7 +144,7 @@ const pres = new Presentation({
                     width: 200,
                     height: 200,
                     text: "X=20 Y=30 Z=10",
-                    fill: new SolidFill("70AD47"),
+                    fill: "70AD47",
                     effects: { rotation3D: { x: 20, y: 30, z: 10, perspective: 500 } },
                 }),
                 new Shape({
@@ -153,7 +153,7 @@ const pres = new Presentation({
                     width: 200,
                     height: 150,
                     text: "Extruded",
-                    fill: new SolidFill("FFC000"),
+                    fill: "FFC000",
                     effects: {
                         rotation3D: { x: 25, y: 15 },
                         extrusionH: 50000,
@@ -166,7 +166,7 @@ const pres = new Presentation({
                     width: 200,
                     height: 150,
                     text: "Bevel Top",
-                    fill: new SolidFill("7030A0"),
+                    fill: "7030A0",
                     effects: {
                         rotation3D: { x: 20 },
                         bevelTop: { width: 8, height: 8 },

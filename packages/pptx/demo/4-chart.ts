@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Background, ChartFrame, Presentation, Packer, Shape, SolidFill } from "@office-open/pptx";
+import { Background, ChartFrame, Presentation, Packer, Shape } from "@office-open/pptx";
 
 const pres = new Presentation({
     title: "Phase 4 Demo - Charts",
@@ -14,7 +14,7 @@ const pres = new Presentation({
                     width: 400,
                     height: 60,
                     text: "Column Chart",
-                    fill: new SolidFill("4472C4"),
+                    fill: "4472C4",
                 }),
                 new ChartFrame({
                     x: 50,
@@ -34,7 +34,7 @@ const pres = new Presentation({
             ],
         },
         {
-            background: new Background({ fill: new SolidFill("F5F5F5") }),
+            background: new Background({ fill: "F5F5F5" }),
             children: [
                 new Shape({
                     x: 50,
@@ -42,7 +42,7 @@ const pres = new Presentation({
                     width: 400,
                     height: 60,
                     text: "Pie Chart",
-                    fill: new SolidFill("ED7D31"),
+                    fill: "ED7D31",
                 }),
                 new ChartFrame({
                     x: 100,
@@ -64,7 +64,7 @@ const pres = new Presentation({
                     width: 400,
                     height: 60,
                     text: "Line Chart",
-                    fill: new SolidFill("70AD47"),
+                    fill: "70AD47",
                 }),
                 new ChartFrame({
                     x: 50,

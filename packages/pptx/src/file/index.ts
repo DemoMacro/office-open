@@ -17,22 +17,52 @@ export {
 } from "./shape/paragraph/paragraph-properties";
 export { EndParagraphRunProperties } from "./shape/paragraph/end-paragraph-run";
 export { Field, SlideNumberField, DateTimeField } from "./shape/paragraph/field";
-export { SolidFill } from "./drawingml/solid-fill";
-export { NoFill } from "./drawingml/no-fill";
+
+// DrawingML — re-exports from core
 export {
-    GradientFill,
-    type GradientFillOptions,
-    type GradientStopOptions,
-} from "./drawingml/gradient-fill";
-export { Outline, type OutlineOptions } from "./drawingml/outline";
+    createOutline,
+    type OutlineOptions as CoreOutlineOptions,
+} from "@office-open/core/drawingml";
+export {
+    createGradientFill,
+    createGradientStop,
+    type GradientFillOptions as CoreGradientFillOptions,
+    type IGradientStop,
+    PathShadeType,
+    TileFlipMode,
+} from "@office-open/core/drawingml";
+export {
+    LineCap,
+    CompoundLine,
+    PenAlignment,
+    PresetDash,
+    LineJoin,
+} from "@office-open/core/drawingml";
+export { createScene3D, type Scene3DOptions } from "@office-open/core/drawingml";
+export {
+    createShape3D,
+    type Shape3DOptions,
+    PresetMaterialType,
+} from "@office-open/core/drawingml";
+export {
+    createBevel,
+    createBottomBevel,
+    type BevelOptions,
+    BevelPresetType,
+} from "@office-open/core/drawingml";
+export { createEffectList, type EffectListOptions } from "@office-open/core/drawingml";
+export { createColorElement } from "@office-open/core/drawingml";
+export { createColorTransforms, type ColorTransformOptions } from "@office-open/core/drawingml";
+
+// DrawingML — fill API
+export { buildFill, type FillOptions, type GradientStopOptions } from "./drawingml/fill";
+export { createOutlineCompat, type OutlineOptions } from "./drawingml/outline";
+
+// DrawingML — local implementations (pptx-specific)
 export { BlipFill } from "./drawingml/blip-fill";
 export { Transform2D, type ITransform2DOptions } from "./drawingml/transform-2d";
 export { PresetGeometry } from "./drawingml/preset-geometry";
-export {
-    ShapeProperties,
-    type IShapePropertiesOptions,
-    type ShapeFill,
-} from "./drawingml/shape-properties";
+export { ShapeProperties, type IShapePropertiesOptions } from "./drawingml/shape-properties";
 export {
     EffectList,
     type IEffectsOptions,
@@ -46,6 +76,7 @@ export { NonVisualShapeProperties } from "./drawingml/non-visual-shape-props";
 export { NonVisualPictureProperties } from "./drawingml/non-visual-picture-props";
 export { GroupShapeProperties } from "./drawingml/group-shape-properties";
 export { GroupTransform2D, type IGroupTransform2DOptions } from "./drawingml/group-transform-2d";
+
 export { GroupShape, type IGroupShapeOptions } from "./shape/group-shape";
 export { LineShape, type ILineShapeOptions } from "./shape/line-shape";
 export { ConnectorShape, type IConnectorShapeOptions } from "./shape/line-shape";

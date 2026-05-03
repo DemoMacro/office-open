@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Background, Presentation, Packer, Shape, SolidFill, TableFrame } from "@office-open/pptx";
+import { Background, Presentation, Packer, Shape, TableFrame } from "@office-open/pptx";
 
 const pres = new Presentation({
     title: "Phase 3 Demo",
@@ -14,7 +14,7 @@ const pres = new Presentation({
                     width: 400,
                     height: 60,
                     text: "Table Demo",
-                    fill: new SolidFill("4472C4"),
+                    fill: "4472C4",
                 }),
                 new TableFrame({
                     x: 50,
@@ -26,7 +26,7 @@ const pres = new Presentation({
                             cells: [
                                 {
                                     text: "Name",
-                                    fill: new SolidFill("4472C4"),
+                                    fill: "4472C4",
                                 },
                                 { text: "Age" },
                                 { text: "City" },
@@ -49,7 +49,7 @@ const pres = new Presentation({
             ],
         },
         {
-            background: new Background({ fill: new SolidFill("F5F5F5") }),
+            background: new Background({ fill: "F5F5F5" }),
             children: [
                 new TableFrame({
                     x: 100,
@@ -61,9 +61,9 @@ const pres = new Presentation({
                             cells: [
                                 {
                                     text: "Header 1",
-                                    fill: new SolidFill("ED7D31"),
+                                    fill: "ED7D31",
                                 },
-                                { text: "Header 2", fill: new SolidFill("ED7D31") },
+                                { text: "Header 2", fill: "ED7D31" },
                             ],
                         },
                         {
@@ -85,7 +85,7 @@ const pres = new Presentation({
                     width: 600,
                     height: 50,
                     text: "Vertical Align & Cell Margins",
-                    fill: new SolidFill("4472C4"),
+                    fill: "4472C4",
                 }),
                 new TableFrame({
                     x: 50,
@@ -96,16 +96,20 @@ const pres = new Presentation({
                         {
                             height: 700000,
                             cells: [
-                                { text: "Top", verticalAlign: "t", fill: new SolidFill("E8F0FE") },
+                                {
+                                    text: "Top",
+                                    verticalAlign: "t",
+                                    fill: "E8F0FE",
+                                },
                                 {
                                     text: "Center",
                                     verticalAlign: "ctr",
-                                    fill: new SolidFill("E8F0FE"),
+                                    fill: "E8F0FE",
                                 },
                                 {
                                     text: "Bottom",
                                     verticalAlign: "b",
-                                    fill: new SolidFill("E8F0FE"),
+                                    fill: "E8F0FE",
                                 },
                             ],
                         },
@@ -130,7 +134,7 @@ const pres = new Presentation({
                     width: 600,
                     height: 50,
                     text: "Merged Cells",
-                    fill: new SolidFill("4472C4"),
+                    fill: "4472C4",
                 }),
                 new TableFrame({
                     x: 50,
@@ -140,7 +144,11 @@ const pres = new Presentation({
                     rows: [
                         {
                             cells: [
-                                { text: "A", columnSpan: 2, fill: new SolidFill("E8F0FE") },
+                                {
+                                    text: "A",
+                                    columnSpan: 2,
+                                    fill: "E8F0FE",
+                                },
                                 { text: "C" },
                             ],
                         },
@@ -149,7 +157,11 @@ const pres = new Presentation({
                         },
                         {
                             cells: [
-                                { text: "Merged", rowSpan: 2, fill: new SolidFill("FFF2CC") },
+                                {
+                                    text: "Merged",
+                                    rowSpan: 2,
+                                    fill: "FFF2CC",
+                                },
                                 { text: "H" },
                                 { text: "I" },
                             ],

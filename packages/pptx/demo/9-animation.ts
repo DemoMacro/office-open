@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Presentation, Packer, Shape, SolidFill } from "@office-open/pptx";
+import { Presentation, Packer, Shape } from "@office-open/pptx";
 
 const pres = new Presentation({
     title: "Animation Demo",
@@ -14,7 +14,7 @@ const pres = new Presentation({
                     width: 500,
                     height: 60,
                     text: "Shape Animations Demo",
-                    fill: new SolidFill("4472C4"),
+                    fill: "4472C4",
                     animation: { type: "fade", duration: 800 },
                 }),
                 new Shape({
@@ -23,7 +23,7 @@ const pres = new Presentation({
                     width: 300,
                     height: 100,
                     text: "Appear",
-                    fill: new SolidFill("ED7D31"),
+                    fill: "ED7D31",
                     animation: { type: "appear" },
                 }),
                 new Shape({
@@ -32,7 +32,7 @@ const pres = new Presentation({
                     width: 300,
                     height: 100,
                     text: "Fly In (from left)",
-                    fill: new SolidFill("70AD47"),
+                    fill: "70AD47",
                     animation: { type: "fly", direction: "left", duration: 600 },
                 }),
                 new Shape({
@@ -41,7 +41,7 @@ const pres = new Presentation({
                     width: 300,
                     height: 100,
                     text: "Wipe (down)",
-                    fill: new SolidFill("FFC000"),
+                    fill: "FFC000",
                     animation: { type: "wipe", direction: "down" },
                 }),
                 new Shape({
@@ -50,7 +50,7 @@ const pres = new Presentation({
                     width: 300,
                     height: 100,
                     text: "Dissolve",
-                    fill: new SolidFill("5B9BD5"),
+                    fill: "5B9BD5",
                     animation: { type: "dissolve", duration: 1000 },
                 }),
                 new Shape({
@@ -59,7 +59,7 @@ const pres = new Presentation({
                     width: 300,
                     height: 100,
                     text: "Zoom In",
-                    fill: new SolidFill("BF8F00"),
+                    fill: "BF8F00",
                     animation: { type: "zoom" },
                 }),
                 new Shape({
@@ -68,7 +68,7 @@ const pres = new Presentation({
                     width: 300,
                     height: 100,
                     text: "Split (horizontal)",
-                    fill: new SolidFill("7030A0"),
+                    fill: "7030A0",
                     animation: { type: "split", direction: "horizontal" },
                 }),
             ],

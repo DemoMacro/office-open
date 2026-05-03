@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Presentation, Shape, Packer, SolidFill, Paragraph, Run } from "@office-open/pptx";
+import { Presentation, Shape, Packer, Paragraph, Run } from "@office-open/pptx";
 
 const pres = new Presentation({
     title: "My Presentation",
@@ -16,7 +16,7 @@ const pres = new Presentation({
                     height: 200,
                     text: "Hello World",
                     geometry: "rect",
-                    fill: new SolidFill("4472C4"),
+                    fill: "4472C4",
                 }),
                 new Shape({
                     x: 200,
@@ -49,7 +49,7 @@ const pres = new Presentation({
                     width: 600,
                     height: 50,
                     text: "Vertical Text",
-                    fill: new SolidFill("4472C4"),
+                    fill: "4472C4",
                 }),
                 new Shape({
                     x: 50,
@@ -108,7 +108,7 @@ const pres = new Presentation({
                     width: 600,
                     height: 50,
                     text: "Text Anchor & Auto-Fit",
-                    fill: new SolidFill("4472C4"),
+                    fill: "4472C4",
                 }),
                 // Top anchor
                 new Shape({
@@ -171,7 +171,7 @@ const pres = new Presentation({
                     width: 600,
                     height: 50,
                     text: "Text Margins & Columns",
-                    fill: new SolidFill("4472C4"),
+                    fill: "4472C4",
                 }),
                 // Default margins
                 new Shape({
