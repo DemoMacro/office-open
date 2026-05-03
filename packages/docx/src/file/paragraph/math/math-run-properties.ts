@@ -96,7 +96,7 @@ export const createMathRunProperties = (options: MathRunPropertiesOptions): XmlC
         if (options.script !== undefined) {
             children.push(
                 new BuilderElement({
-                    attributes: { val: { key: "val", value: options.script } },
+                    attributes: { val: { key: "m:val", value: options.script } },
                     name: "m:scr",
                 }),
             );
@@ -104,7 +104,7 @@ export const createMathRunProperties = (options: MathRunPropertiesOptions): XmlC
         if (options.style !== undefined) {
             children.push(
                 new BuilderElement({
-                    attributes: { val: { key: "val", value: options.style } },
+                    attributes: { val: { key: "m:val", value: options.style } },
                     name: "m:sty",
                 }),
             );

@@ -319,6 +319,14 @@ export class SectionProperties extends XmlComponent {
         this.addHeaderFooterGroup(HeaderFooterType.HEADER, headerWrapperGroup);
         this.addHeaderFooterGroup(HeaderFooterType.FOOTER, footerWrapperGroup);
 
+        if (footnotePr) {
+            this.root.push(createFootnoteProperties(footnotePr));
+        }
+
+        if (endnotePr) {
+            this.root.push(createEndnoteProperties(endnotePr));
+        }
+
         if (type) {
             this.root.push(createSectionType(type));
         }
@@ -350,10 +358,6 @@ export class SectionProperties extends XmlComponent {
 
         if (textDirection) {
             this.root.push(new PageTextDirection(textDirection));
-        }
-
-        if (revision) {
-            this.root.push(new SectionPropertiesChange(revision));
         }
 
         if (noEndnote !== undefined) {
@@ -396,14 +400,6 @@ export class SectionProperties extends XmlComponent {
             );
         }
 
-        if (footnotePr) {
-            this.root.push(createFootnoteProperties(footnotePr));
-        }
-
-        if (endnotePr) {
-            this.root.push(createEndnoteProperties(endnotePr));
-        }
-
         if (printerSettingsId !== undefined) {
             this.root.push(
                 new BuilderElement({
@@ -414,6 +410,10 @@ export class SectionProperties extends XmlComponent {
         }
 
         this.root.push(createDocumentGrid({ charSpace, linePitch, type: gridType }));
+
+        if (revision) {
+            this.root.push(new SectionPropertiesChange(revision));
+        }
     }
 
     private addHeaderFooterGroup(

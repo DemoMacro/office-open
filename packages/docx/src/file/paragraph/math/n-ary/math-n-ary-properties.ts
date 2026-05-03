@@ -71,11 +71,11 @@ export const createMathNAryProperties = ({
     if (grow !== undefined) {
         children.push(new OnOffElement("m:grow", grow));
     }
-    if (!hasSuperScript) {
-        children.push(createMathSuperScriptHide());
-    }
     if (!hasSubScript) {
         children.push(createMathSubScriptHide());
+    }
+    if (!hasSuperScript) {
+        children.push(createMathSuperScriptHide());
     }
 
     return new BuilderElement({

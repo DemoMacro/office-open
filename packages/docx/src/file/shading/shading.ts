@@ -100,7 +100,7 @@ export const createShading = ({
                 key: "w:themeTint",
                 value: themeTint === undefined ? undefined : uCharHexNumber(themeTint),
             },
-            type: { key: "w:val", value: type },
+            type: { key: "w:val", value: type ?? "clear" },
         },
         name: "w:shd",
     });

@@ -130,7 +130,7 @@ const table4 = new Table({
     description: "Quarterly sales data",
     rows: [
         new TableRow({
-            cnfStyle: { val: "1000000000000010" },
+            cnfStyle: { val: "000000000010" },
             gridBefore: 1,
             gridAfter: 0,
             rowAlignment: "center" as const,

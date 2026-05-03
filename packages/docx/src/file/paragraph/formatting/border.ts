@@ -75,12 +75,12 @@ export class Border extends IgnoreIfEmptyXmlComponent {
             this.root.push(createBorderElement("w:top", options.top));
         }
 
-        if (options.bottom) {
-            this.root.push(createBorderElement("w:bottom", options.bottom));
-        }
-
         if (options.left) {
             this.root.push(createBorderElement("w:left", options.left));
+        }
+
+        if (options.bottom) {
+            this.root.push(createBorderElement("w:bottom", options.bottom));
         }
 
         if (options.right) {
