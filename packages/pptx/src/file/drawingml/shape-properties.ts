@@ -1,7 +1,13 @@
-import { BuilderElement, XmlComponent as Xc } from "@file/xml-components";
+import type { File } from "@file/file";
+import {
+    BuilderElement,
+    type IContext,
+    type IXmlableObject,
+    XmlComponent as Xc,
+} from "@file/xml-components";
 
 import { EffectList, buildScene3D, buildShape3D, type IEffectsOptions } from "./effects";
-import { buildFill } from "./fill";
+import { buildFill, extractBlipFillMedia } from "./fill";
 import type { FillOptions } from "./fill";
 import { createOutlineCompat } from "./outline";
 import type { OutlineOptions } from "./outline";
@@ -28,8 +34,12 @@ export interface IShapePropertiesOptions extends ITransform2DOptions {
  * Uses p: prefix in PresentationML context, though type is a:CT_ShapeProperties.
  */
 export class ShapeProperties extends Xc {
+    private readonly fillOptions?: FillOptions;
+
     public constructor(options: IShapePropertiesOptions) {
         super("p:spPr");
+
+        this.fillOptions = options.fill;
 
         if (
             options.x !== undefined ||
@@ -81,5 +91,18 @@ export class ShapeProperties extends Xc {
             });
             this.root.push(new BuilderElement({ name: "a:cxnLst", children: cxns }));
         }
+    }
+
+    public override prepForXml(context: IContext<File>): IXmlableObject | undefined {
+        const media = this.fillOptions ? extractBlipFillMedia(this.fillOptions) : undefined;
+        if (media) {
+            context.fileData?.Media.addImage(media.fileName, {
+                data: media.data,
+                fileName: media.fileName,
+                type: media.type as "png",
+                transformation: { pixels: { x: 0, y: 0 }, emus: { x: 0, y: 0 } },
+            });
+        }
+        return super.prepForXml(context);
     }
 }

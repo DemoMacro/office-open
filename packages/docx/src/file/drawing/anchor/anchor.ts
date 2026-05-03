@@ -177,7 +177,7 @@ export class Anchor extends XmlComponent {
                 hyperlink: drawingOptions.docProperties?.hyperlink,
                 mediaData,
                 outline: drawingOptions.outline,
-                solidFill: drawingOptions.solidFill,
+                fill: drawingOptions.fill,
                 tile: drawingOptions.tile,
                 transform,
             }),

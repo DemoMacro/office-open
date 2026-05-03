@@ -96,7 +96,7 @@ const doc = new Document({
                                 type: "solidFill",
                                 width: 12_700,
                             },
-                            solidFill: { value: "D9E2F3" },
+                            fill: "D9E2F3",
                             transformation: {
                                 height: 80,
                                 width: 300,
@@ -141,7 +141,7 @@ const doc = new Document({
                                 type: "solidFill",
                                 width: 12_700,
                             },
-                            solidFill: { value: "0070C0" },
+                            fill: "0070C0",
                             transformation: {
                                 height: 80,
                                 width: 300,
@@ -185,7 +185,7 @@ const doc = new Document({
                                 type: "solidFill",
                                 width: 12_700,
                             },
-                            solidFill: { value: "F4B183" },
+                            fill: "F4B183",
                             transformation: {
                                 height: 80,
                                 width: 300,
@@ -222,13 +222,16 @@ const doc = new Document({
                                     ],
                                 }),
                             ],
-                            gradientFill: {
-                                shade: { angle: 5400000 },
-                                stops: [
-                                    { color: { value: "002060" }, position: 0 },
-                                    { color: { value: "0070C0" }, position: 50000 },
-                                    { color: { value: "00B0F0" }, position: 100000 },
-                                ],
+                            fill: {
+                                type: "gradient",
+                                options: {
+                                    shade: { angle: 5400000 },
+                                    stops: [
+                                        { color: { value: "002060" }, position: 0 },
+                                        { color: { value: "0070C0" }, position: 50000 },
+                                        { color: { value: "00B0F0" }, position: 100000 },
+                                    ],
+                                },
                             },
                             outline: {
                                 color: { value: "002060" },
@@ -270,12 +273,15 @@ const doc = new Document({
                                     ],
                                 }),
                             ],
-                            gradientFill: {
-                                shade: { path: "CIRCLE" },
-                                stops: [
-                                    { color: { value: "FFFFFF" }, position: 0 },
-                                    { color: { value: "4472C4" }, position: 100000 },
-                                ],
+                            fill: {
+                                type: "gradient",
+                                options: {
+                                    shade: { path: "CIRCLE" },
+                                    stops: [
+                                        { color: { value: "FFFFFF" }, position: 0 },
+                                        { color: { value: "4472C4" }, position: 100000 },
+                                    ],
+                                },
                             },
                             outline: {
                                 color: { value: "2F5496" },
@@ -315,7 +321,7 @@ const doc = new Document({
                             effects: {
                                 softEdge: 50800,
                             },
-                            solidFill: { value: "70AD47" },
+                            fill: "70AD47",
                             transformation: {
                                 height: 80,
                                 width: 300,
@@ -352,7 +358,7 @@ const doc = new Document({
                                 prstMaterial: "PLASTIC",
                                 z: 76200,
                             },
-                            solidFill: { value: "4472C4" },
+                            fill: "4472C4",
                             transformation: {
                                 height: 120,
                                 width: 300,
@@ -403,13 +409,16 @@ const doc = new Document({
                                     stA: 30000,
                                 },
                             },
-                            gradientFill: {
-                                shade: { angle: 2700000 },
-                                stops: [
-                                    { color: { value: "1F4E79" }, position: 0 },
-                                    { color: { value: "2E75B6" }, position: 50000 },
-                                    { color: { value: "9DC3E6" }, position: 100000 },
-                                ],
+                            fill: {
+                                type: "gradient",
+                                options: {
+                                    shade: { angle: 2700000 },
+                                    stops: [
+                                        { color: { value: "1F4E79" }, position: 0 },
+                                        { color: { value: "2E75B6" }, position: 50000 },
+                                        { color: { value: "9DC3E6" }, position: 100000 },
+                                    ],
+                                },
                             },
                             outline: {
                                 color: { value: "1F4E79" },
@@ -452,7 +461,7 @@ const doc = new Document({
                                 type: "solidFill",
                                 width: 25_400,
                             },
-                            solidFill: { value: "FFF2CC" },
+                            fill: "FFF2CC",
                             transformation: {
                                 height: 80,
                                 width: 300,

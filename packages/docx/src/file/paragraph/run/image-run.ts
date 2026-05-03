@@ -9,6 +9,7 @@
  */
 import type { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
 import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { FillOptions } from "@office-open/core/drawingml";
 import { hashedId } from "@util/convenience-functions";
 import type { DataType } from "undio";
 import { toUint8Array } from "undio";
@@ -20,7 +21,6 @@ import type { SourceRectangleOptions } from "../../drawing/inline/graphic/graphi
 import type { TileOptions } from "../../drawing/inline/graphic/graphic-data/pic/blip/tile";
 import type { EffectListOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/effects/effect-list";
 import type { OutlineOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
-import type { SolidFillOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
 import type { IMediaTransformation } from "../../media";
 import { createTransformation } from "../../media";
 import type { IMediaData } from "../../media/data";
@@ -34,7 +34,7 @@ interface CoreImageOptions {
     readonly floating?: IFloating;
     readonly altText?: DocPropertiesOptions;
     readonly outline?: OutlineOptions;
-    readonly solidFill?: SolidFillOptions;
+    readonly fill?: FillOptions;
     readonly effects?: EffectListOptions;
     readonly blipEffects?: BlipEffectsOptions;
     readonly srcRect?: SourceRectangleOptions;
@@ -131,7 +131,7 @@ export class ImageRun extends Run {
             docProperties: options.altText,
             floating: options.floating,
             outline: options.outline,
-            solidFill: options.solidFill,
+            fill: options.fill,
             effects: options.effects,
             tile: options.tile,
         });

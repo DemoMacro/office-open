@@ -55,7 +55,14 @@ export { createColorElement } from "@office-open/core/drawingml";
 export { createColorTransforms, type ColorTransformOptions } from "@office-open/core/drawingml";
 
 // DrawingML — fill API
-export { buildFill, type FillOptions, type GradientStopOptions } from "./drawingml/fill";
+export {
+    buildFill,
+    extractBlipFillMedia,
+    type BlipFillConfigOptions,
+    type BlipFillMediaData,
+    type FillOptions,
+    type GradientStopOptions,
+} from "./drawingml/fill";
 export { createOutlineCompat, type OutlineOptions } from "./drawingml/outline";
 
 // DrawingML — local implementations (pptx-specific)

@@ -9,6 +9,7 @@ import type {
     WpgMediaData,
 } from "@file/media";
 import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import type { FillOptions } from "@office-open/core/drawingml";
 
 import { GraphicDataAttributes } from "./graphic-data-attribute";
 import { Pic } from "./pic";
@@ -16,7 +17,6 @@ import type { BlipEffectsOptions } from "./pic/blip/blip-effects";
 import type { TileOptions } from "./pic/blip/tile";
 import type { EffectListOptions } from "./pic/shape-properties/effects/effect-list";
 import type { OutlineOptions } from "./pic/shape-properties/outline/outline";
-import type { SolidFillOptions } from "./pic/shape-properties/outline/solid-fill";
 import { createWpgGroup } from "./wpg/wpg-group";
 
 /**
@@ -54,7 +54,7 @@ export class GraphicData extends XmlComponent {
         mediaData,
         transform,
         outline,
-        solidFill,
+        fill,
         effects,
         blipEffects,
         tile,
@@ -63,7 +63,7 @@ export class GraphicData extends XmlComponent {
         readonly mediaData: IExtendedMediaData;
         readonly transform: IMediaDataTransformation;
         readonly outline?: OutlineOptions;
-        readonly solidFill?: SolidFillOptions;
+        readonly fill?: FillOptions;
         readonly effects?: EffectListOptions;
         readonly blipEffects?: BlipEffectsOptions;
         readonly tile?: TileOptions;
@@ -80,7 +80,7 @@ export class GraphicData extends XmlComponent {
             const wps = createWpsShape({
                 ...mediaData.data,
                 outline,
-                solidFill,
+                fill,
                 transformation: transform,
             });
             this.root.push(wps);
@@ -96,7 +96,7 @@ export class GraphicData extends XmlComponent {
                     return createWpsShape({
                         ...child.data,
                         outline: child.outline,
-                        solidFill: child.solidFill,
+                        fill: child.fill,
                         transformation: child.transformation,
                     });
                 } else {
@@ -113,7 +113,7 @@ export class GraphicData extends XmlComponent {
                 transformation: transform,
                 chOff: md.chOff,
                 chExt: md.chExt,
-                solidFill: md.solidFill,
+                fill: md.fill,
                 effects: md.effects,
             });
             this.root.push(wpg);
@@ -185,7 +185,7 @@ export class GraphicData extends XmlComponent {
                 hyperlink,
                 mediaData: md,
                 outline,
-                solidFill,
+                fill,
                 tile,
                 transform,
             });

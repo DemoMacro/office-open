@@ -43,7 +43,7 @@ const doc = new Document({
                                     },
                                 ],
                             },
-                            solidFill: { value: "4472C4" },
+                            fill: "4472C4",
                             transformation: { height: 150, width: 200 },
                             type: "wps",
                         }),
@@ -92,7 +92,7 @@ const doc = new Document({
                                 type: "solidFill",
                                 width: 12700,
                             },
-                            solidFill: { value: "F4B183" },
+                            fill: "F4B183",
                             transformation: { height: 150, width: 200 },
                             type: "wps",
                         }),
@@ -135,12 +135,15 @@ const doc = new Document({
                                     },
                                 ],
                             },
-                            gradientFill: {
-                                shade: { angle: 5400000 },
-                                stops: [
-                                    { color: { value: "002060" }, position: 0 },
-                                    { color: { value: "00B0F0" }, position: 100000 },
-                                ],
+                            fill: {
+                                type: "gradient",
+                                options: {
+                                    shade: { angle: 5400000 },
+                                    stops: [
+                                        { color: { value: "002060" }, position: 0 },
+                                        { color: { value: "00B0F0" }, position: 100000 },
+                                    ],
+                                },
                             },
                             outline: {
                                 color: { value: "002060" },

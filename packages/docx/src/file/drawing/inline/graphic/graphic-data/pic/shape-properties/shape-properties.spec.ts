@@ -13,7 +13,7 @@ describe("ShapeProperties", () => {
         const props = new ShapeProperties({
             element: "pic",
             transform: TRANSFORM,
-            noFill: true,
+            fill: { type: "none" },
         });
         const tree = new Formatter().format(props);
         expect(tree["pic:spPr"]).to.include.deep.members([{ "a:noFill": {} }]);
@@ -23,7 +23,7 @@ describe("ShapeProperties", () => {
         const props = new ShapeProperties({
             element: "pic",
             transform: TRANSFORM,
-            solidFill: { value: "FF0000" },
+            fill: "FF0000",
         });
         const tree = new Formatter().format(props);
         expect(tree["pic:spPr"]).to.include.deep.members([
@@ -35,12 +35,15 @@ describe("ShapeProperties", () => {
         const props = new ShapeProperties({
             element: "pic",
             transform: TRANSFORM,
-            gradientFill: {
-                stops: [
-                    { position: 0, color: { value: "FF0000" } },
-                    { position: 100000, color: { value: "0000FF" } },
-                ],
-                shade: { angle: 5400000 },
+            fill: {
+                type: "gradient",
+                options: {
+                    stops: [
+                        { position: 0, color: { value: "FF0000" } },
+                        { position: 100000, color: { value: "0000FF" } },
+                    ],
+                    shade: { angle: 5400000 },
+                },
             },
         });
         const tree = new Formatter().format(props);
@@ -91,11 +94,14 @@ describe("ShapeProperties", () => {
         const props = new ShapeProperties({
             element: "pic",
             transform: TRANSFORM,
-            gradientFill: {
-                stops: [
-                    { position: 0, color: { value: "FFFFFF" } },
-                    { position: 100000, color: { value: "000000" } },
-                ],
+            fill: {
+                type: "gradient",
+                options: {
+                    stops: [
+                        { position: 0, color: { value: "FFFFFF" } },
+                        { position: 100000, color: { value: "000000" } },
+                    ],
+                },
             },
             outline: { type: "solidFill", color: { value: "000000" } },
         });

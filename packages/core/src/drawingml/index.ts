@@ -17,6 +17,14 @@ export { createColorTransforms } from "./color/color-transform";
 export type { ColorTransformOptions } from "./color/color-transform";
 
 // Fill
+export {
+    buildFill,
+    extractBlipFillMedia,
+    type BlipFillConfigOptions,
+    type BlipFillMediaData,
+    type FillOptions,
+    type GradientStopOptions,
+} from "./fill/fill-options";
 export { createNoFill } from "./fill/no-fill";
 export { createGradientFill, createGradientStop } from "./fill/gradient-fill";
 export type {

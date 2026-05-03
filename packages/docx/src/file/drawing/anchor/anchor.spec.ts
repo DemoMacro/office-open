@@ -552,7 +552,7 @@ describe("Anchor", () => {
                                                         "a:blip": {
                                                             _attr: {
                                                                 cstate: "none",
-                                                                "r:embed": "rId{test.png}",
+                                                                "r:embed": "{test.png}",
                                                             },
                                                         },
                                                     },

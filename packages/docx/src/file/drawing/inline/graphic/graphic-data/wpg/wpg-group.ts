@@ -1,16 +1,12 @@
 import type { IMediaDataTransformation } from "@file/media";
 import { BuilderElement } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
+import { buildFill, type FillOptions } from "@office-open/core/drawingml";
 
 import { createEffectList } from "../pic/shape-properties/effects/effect-list";
 import type { EffectListOptions } from "../pic/shape-properties/effects/effect-list";
-import { createPatternFill } from "../pic/shape-properties/fill/pattern-fill";
-import type { PatternFillOptions } from "../pic/shape-properties/fill/pattern-fill";
 import { Extents } from "../pic/shape-properties/form/extents/extents";
 import { Offset } from "../pic/shape-properties/form/offset/off";
-import { createNoFill } from "../pic/shape-properties/outline/no-fill";
-import { createSolidFill } from "../pic/shape-properties/outline/solid-fill";
-import type { SolidFillOptions } from "../pic/shape-properties/outline/solid-fill";
 
 export type GroupChild = XmlComponent;
 
@@ -41,11 +37,7 @@ export type WpgGroupOptions = WpgGroupCoreOptions & {
     /** Child coordinate extent (chExt) */
     readonly chExt?: IChildExtent;
     /** Group fill */
-    readonly solidFill?: SolidFillOptions;
-    /** Group pattern fill */
-    readonly patternFill?: PatternFillOptions;
-    /** Group no fill */
-    readonly noFill?: boolean;
+    readonly fill?: FillOptions;
     /** Group effects */
     readonly effects?: EffectListOptions;
 };
@@ -136,12 +128,8 @@ const createGroupProperties = (options: WpgGroupOptions): XmlComponent => {
         createGroupForm(options.transformation, options.chOff, options.chExt),
     ];
 
-    if (options.noFill) {
-        children.push(createNoFill());
-    } else if (options.solidFill) {
-        children.push(createSolidFill(options.solidFill));
-    } else if (options.patternFill) {
-        children.push(createPatternFill(options.patternFill));
+    if (options.fill !== undefined) {
+        children.push(buildFill(options.fill));
     }
 
     if (options.effects) {

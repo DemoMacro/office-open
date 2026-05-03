@@ -12,7 +12,7 @@
 import type { HyperlinkOptions } from "@file/drawing/doc-properties/doc-properties";
 import type { IMediaData, IMediaDataTransformation } from "@file/media";
 import { XmlComponent } from "@file/xml-components";
-import type { TileOptions } from "@office-open/core/drawingml";
+import type { FillOptions, TileOptions } from "@office-open/core/drawingml";
 
 import type { BlipOptions } from "./blip/blip";
 import type { BlipEffectsOptions } from "./blip/blip-effects";
@@ -21,7 +21,6 @@ import { NonVisualPicProperties } from "./non-visual-pic-properties/non-visual-p
 import { PicAttributes } from "./pic-attributes";
 import type { EffectListOptions } from "./shape-properties/effects/effect-list";
 import type { OutlineOptions } from "./shape-properties/outline/outline";
-import type { SolidFillOptions } from "./shape-properties/outline/solid-fill";
 import { ShapeProperties } from "./shape-properties/shape-properties";
 
 /**
@@ -57,7 +56,7 @@ export class Pic extends XmlComponent {
         mediaData,
         transform,
         outline,
-        solidFill,
+        fill,
         effects,
         blipEffects,
         tile,
@@ -66,7 +65,7 @@ export class Pic extends XmlComponent {
         readonly mediaData: IMediaData;
         readonly transform: IMediaDataTransformation;
         readonly outline?: OutlineOptions;
-        readonly solidFill?: SolidFillOptions;
+        readonly fill?: FillOptions;
         readonly effects?: EffectListOptions;
         readonly blipEffects?: BlipEffectsOptions;
         readonly tile?: TileOptions;
@@ -89,8 +88,6 @@ export class Pic extends XmlComponent {
         this.root.push(
             createBlipFill(blipOptions, { blipEffects, tile, srcRect: mediaData.srcRect }),
         );
-        this.root.push(
-            new ShapeProperties({ element: "pic", effects, outline, solidFill, transform }),
-        );
+        this.root.push(new ShapeProperties({ element: "pic", effects, fill, outline, transform }));
     }
 }

@@ -2,6 +2,7 @@
 import type { IExtendedMediaData, IMediaDataTransformation } from "@file/media";
 import { BuilderElement } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
+import type { FillOptions } from "@office-open/core/drawingml";
 
 import { DocProperties } from "./../doc-properties/doc-properties";
 import type { DocPropertiesOptions } from "./../doc-properties/doc-properties";
@@ -13,7 +14,6 @@ import type { BlipEffectsOptions } from "./graphic/graphic-data/pic/blip/blip-ef
 import type { TileOptions } from "./graphic/graphic-data/pic/blip/tile";
 import type { EffectListOptions } from "./graphic/graphic-data/pic/shape-properties/effects/effect-list";
 import type { OutlineOptions } from "./graphic/graphic-data/pic/shape-properties/outline/outline";
-import type { SolidFillOptions } from "./graphic/graphic-data/pic/shape-properties/outline/solid-fill";
 
 /**
  * Options for creating an inline drawing element.
@@ -23,7 +23,7 @@ interface InlineOptions {
     readonly transform: IMediaDataTransformation;
     readonly docProperties?: DocPropertiesOptions;
     readonly outline?: OutlineOptions;
-    readonly solidFill?: SolidFillOptions;
+    readonly fill?: FillOptions;
     readonly effects?: EffectListOptions;
     readonly blipEffects?: BlipEffectsOptions;
     readonly tile?: TileOptions;
@@ -48,7 +48,7 @@ export const createInline = ({
     transform,
     docProperties,
     outline,
-    solidFill,
+    fill,
     effects,
     blipEffects,
     tile,
@@ -92,7 +92,7 @@ export const createInline = ({
                 hyperlink: docProperties?.hyperlink,
                 mediaData,
                 outline,
-                solidFill,
+                fill,
                 tile,
                 transform,
             }),

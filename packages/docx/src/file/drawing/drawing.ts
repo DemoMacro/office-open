@@ -1,5 +1,6 @@
 import type { IExtendedMediaData } from "@file/media";
 import { XmlComponent } from "@file/xml-components";
+import type { FillOptions } from "@office-open/core/drawingml";
 
 import { Anchor } from "./anchor";
 import type { DocPropertiesOptions } from "./doc-properties/doc-properties";
@@ -9,7 +10,6 @@ import type { BlipEffectsOptions } from "./inline/graphic/graphic-data/pic/blip/
 import type { TileOptions } from "./inline/graphic/graphic-data/pic/blip/tile";
 import type { EffectListOptions } from "./inline/graphic/graphic-data/pic/shape-properties/effects/effect-list";
 import type { OutlineOptions } from "./inline/graphic/graphic-data/pic/shape-properties/outline/outline";
-import type { SolidFillOptions } from "./inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
 
 /**
  * Distance options for drawing elements.
@@ -32,7 +32,7 @@ export interface IDrawingOptions {
     readonly floating?: IFloating;
     readonly docProperties?: DocPropertiesOptions;
     readonly outline?: OutlineOptions;
-    readonly solidFill?: SolidFillOptions;
+    readonly fill?: FillOptions;
     readonly effects?: EffectListOptions;
     readonly blipEffects?: BlipEffectsOptions;
     readonly tile?: TileOptions;
@@ -68,7 +68,7 @@ export class Drawing extends XmlComponent {
                     effects: drawingOptions.effects,
                     mediaData: imageData,
                     outline: drawingOptions.outline,
-                    solidFill: drawingOptions.solidFill,
+                    fill: drawingOptions.fill,
                     tile: drawingOptions.tile,
                     transform: imageData.transformation,
                 }),

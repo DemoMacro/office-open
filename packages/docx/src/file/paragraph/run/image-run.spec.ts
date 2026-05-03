@@ -197,7 +197,7 @@ describe("ImageRun", () => {
                                                                             _attr: {
                                                                                 cstate: "none",
                                                                                 "r:embed":
-                                                                                    "rId{da39a3ee5e6b4b0d3255bfef95601890afd80709.png}",
+                                                                                    "{da39a3ee5e6b4b0d3255bfef95601890afd80709.png}",
                                                                             },
                                                                         },
                                                                     },
@@ -458,7 +458,7 @@ describe("ImageRun", () => {
                                                                             _attr: {
                                                                                 cstate: "none",
                                                                                 "r:embed":
-                                                                                    "rId{da39a3ee5e6b4b0d3255bfef95601890afd80709.png}",
+                                                                                    "{da39a3ee5e6b4b0d3255bfef95601890afd80709.png}",
                                                                             },
                                                                         },
                                                                     },
@@ -722,7 +722,7 @@ describe("ImageRun", () => {
                                                                             _attr: {
                                                                                 cstate: "none",
                                                                                 "r:embed":
-                                                                                    "rId{da39a3ee5e6b4b0d3255bfef95601890afd80709.png}",
+                                                                                    "{da39a3ee5e6b4b0d3255bfef95601890afd80709.png}",
                                                                             },
                                                                         },
                                                                     },
@@ -986,7 +986,7 @@ describe("ImageRun", () => {
                                                                             _attr: {
                                                                                 cstate: "none",
                                                                                 "r:embed":
-                                                                                    "rId{da39a3ee5e6b4b0d3255bfef95601890afd80709.png}",
+                                                                                    "{da39a3ee5e6b4b0d3255bfef95601890afd80709.png}",
                                                                             },
                                                                         },
                                                                     },
@@ -1130,7 +1130,7 @@ describe("ImageRun", () => {
                                                                                     _attr: {
                                                                                         cstate: "none",
                                                                                         "r:embed":
-                                                                                            "rId{da39a3ee5e6b4b0d3255bfef95601890afd80709.png}",
+                                                                                            "{da39a3ee5e6b4b0d3255bfef95601890afd80709.png}",
                                                                                     },
                                                                                 },
                                                                                 {
@@ -1149,7 +1149,7 @@ describe("ImageRun", () => {
                                                                                                                 _attr: expect.objectContaining(
                                                                                                                     {
                                                                                                                         "r:embed":
-                                                                                                                            "rId{da39a3ee5e6b4b0d3255bfef95601890afd80709.svg}",
+                                                                                                                            "{da39a3ee5e6b4b0d3255bfef95601890afd80709.svg}",
                                                                                                                     },
                                                                                                                 ),
                                                                                                             },

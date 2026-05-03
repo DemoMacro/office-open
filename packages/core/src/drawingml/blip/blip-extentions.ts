@@ -30,7 +30,7 @@ const createSvgBlip = (svgReferenceId: string): XmlComponent =>
             },
             embed: {
                 key: "r:embed",
-                value: `rId{${svgReferenceId}}`,
+                value: `{${svgReferenceId}}`,
             },
         },
         name: "asvg:svgBlip",
