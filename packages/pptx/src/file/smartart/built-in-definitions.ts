@@ -3,7 +3,7 @@
  *
  * Provides XML generators for layoutDef, styleDef, and colorsDef stubs.
  * The "default" layout uses a full embedded XML; all others use minimal stubs
- * that carry only the uniqueId — PowerPoint/Word resolves these to built-in definitions.
+ * that carry only the uniqueId — PowerPoint resolves these to its built-in definitions.
  *
  * @module
  */
@@ -126,7 +126,7 @@ export function getColorXml(colorId: string): string {
         "</dgm:colorsDef>";
 }
 
-/** Minimal drawing cache for SmartArt (PowerPoint/WPS auto-regenerates this on open) */
+/** Minimal drawing cache for PPTX SmartArt (PowerPoint auto-regenerates this on open) */
 export const DEFAULT_DRAWING_XML =
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<dsp:drawing xmlns:dgm="http://schemas.openxmlformats.org/drawingml/2006/diagram" xmlns:dsp="http://schemas.microsoft.com/office/drawing/2008/diagram" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +

@@ -5,6 +5,7 @@ import { ContentTypes } from "@file/content-types/content-types";
 import { CoreProperties, type ICorePropertiesOptions } from "@file/core-properties/properties";
 import { HyperlinkCollection } from "@file/hyperlink-collection";
 import { Media } from "@file/media/media";
+import { SmartArtCollection } from "@file/smartart/smartart-collection";
 import { NotesSlide } from "@file/notes/notes-slide";
 import { PresentationProperties } from "@file/presentation-properties";
 import { PresentationWrapper } from "@file/presentation/presentation-wrapper";
@@ -41,6 +42,7 @@ export class File {
     private readonly fileRelationships: Relationships;
     private readonly media: Media;
     private readonly charts: ChartCollection;
+    private readonly smartArts: SmartArtCollection;
     private readonly hyperlinks: HyperlinkCollection;
     private readonly presentationWrapper: PresentationWrapper;
     private readonly theme: DefaultTheme;
@@ -67,6 +69,7 @@ export class File {
         this.contentTypes = new ContentTypes();
         this.media = new Media();
         this.charts = new ChartCollection();
+        this.smartArts = new SmartArtCollection();
         this.hyperlinks = new HyperlinkCollection();
         this.notesSlides = [];
 
@@ -214,6 +217,10 @@ export class File {
 
     public get Charts(): ChartCollection {
         return this.charts;
+    }
+
+    public get SmartArts(): SmartArtCollection {
+        return this.smartArts;
     }
 
     public get Hyperlinks(): HyperlinkCollection {

@@ -91,7 +91,7 @@ export class ContentTypes extends XmlComponent {
     public addDiagramLayout(index: number): void {
         this.root.push(
             createOverride(
-                "http://schemas.microsoft.com/office/2007/relationships/diagramLayout",
+                "application/vnd.openxmlformats-officedocument.drawingml.diagramLayout+xml",
                 `/ppt/diagrams/layout${index}.xml`,
             ),
         );
@@ -100,7 +100,7 @@ export class ContentTypes extends XmlComponent {
     public addDiagramStyle(index: number): void {
         this.root.push(
             createOverride(
-                "http://schemas.microsoft.com/office/2007/relationships/diagramStyle",
+                "application/vnd.openxmlformats-officedocument.drawingml.diagramStyle+xml",
                 `/ppt/diagrams/quickStyle${index}.xml`,
             ),
         );
@@ -109,8 +109,17 @@ export class ContentTypes extends XmlComponent {
     public addDiagramColors(index: number): void {
         this.root.push(
             createOverride(
-                "http://schemas.microsoft.com/office/2007/relationships/diagramColors",
+                "application/vnd.openxmlformats-officedocument.drawingml.diagramColors+xml",
                 `/ppt/diagrams/colors${index}.xml`,
+            ),
+        );
+    }
+
+    public addDiagramDrawing(index: number): void {
+        this.root.push(
+            createOverride(
+                "application/vnd.ms-office.drawingml.diagramDrawing+xml",
+                `/ppt/diagrams/drawing${index}.xml`,
             ),
         );
     }

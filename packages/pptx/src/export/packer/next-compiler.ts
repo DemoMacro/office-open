@@ -1,3 +1,4 @@
+import { DEFAULT_DRAWING_XML, getColorXml, getLayoutXml, getStyleXml } from "@file/smartart/built-in-definitions";
 import { DefaultNotesMaster } from "@file/notes-master/notes-master";
 import { Formatter } from "@export/formatter";
 import type { ChartCollection } from "@file/chart/chart-collection";
@@ -10,6 +11,7 @@ import { ChartReplacer } from "./chart-replacer";
 import { HyperlinkReplacer } from "./hyperlink-replacer";
 import { ImageReplacer } from "./image-replacer";
 import { MediaReplacer } from "./media-replacer";
+import { SmartArtReplacer } from "./smartart-replacer";
 
 export interface IXmlifyedFile {
     readonly data: string | Uint8Array;
@@ -26,6 +28,7 @@ export class Compiler {
     private readonly chartReplacer = new ChartReplacer();
     private readonly hyperlinkReplacer = new HyperlinkReplacer();
     private readonly mediaReplacer = new MediaReplacer();
+    private readonly smartArtReplacer = new SmartArtReplacer();
 
     public compile(
         file: File,
@@ -225,6 +228,39 @@ export class Compiler {
                 });
             }
 
+            // SmartArt placeholder replacement
+            const slideSmartArtKeys: string[] = [];
+            const smartArtRegex = /\{smartart:([^}]+)\}/g;
+            let saMatch: RegExpExecArray | null;
+            while ((saMatch = smartArtRegex.exec(replacedSlideXml)) !== null) {
+                if (!slideSmartArtKeys.includes(saMatch[1])) {
+                    slideSmartArtKeys.push(saMatch[1]);
+                }
+            }
+
+            if (slideSmartArtKeys.length > 0) {
+                const slideSmartArts = file.SmartArts.Array.filter((s) =>
+                    slideSmartArtKeys.includes(s.key),
+                );
+                const saOffset = slideWrapper.Relationships.RelationshipCount + 1;
+
+                replacedSlideXml = this.smartArtReplacer.replace(
+                    replacedSlideXml,
+                    { Array: slideSmartArts } as unknown as import("@file/smartart/smartart-collection").SmartArtCollection,
+                    saOffset,
+                );
+
+                const saGlobalStart = file.SmartArts.Array.indexOf(slideSmartArts[0]);
+                this.smartArtReplacer.addRelationships(
+                    { Array: slideSmartArts } as unknown as import("@file/smartart/smartart-collection").SmartArtCollection,
+                    (id, type, target) => {
+                        slideWrapper.Relationships.addRelationship(id, type, target);
+                    },
+                    saOffset,
+                    saGlobalStart,
+                );
+            }
+
             // Hyperlink placeholder replacement
             const hlinkPlaceholderRegex = /\{hlink:([^}]+)\}/g;
             const slideHlinkKeys: string[] = [];
@@ -310,6 +346,13 @@ export class Compiler {
         file.Charts.Array.forEach((_, i) => {
             file.ContentTypes.addChart(i + 1);
         });
+        file.SmartArts.Array.forEach((_, i) => {
+            file.ContentTypes.addDiagramData(i + 1);
+            file.ContentTypes.addDiagramLayout(i + 1);
+            file.ContentTypes.addDiagramStyle(i + 1);
+            file.ContentTypes.addDiagramColors(i + 1);
+            file.ContentTypes.addDiagramDrawing(i + 1);
+        });
         mapping["ContentTypes"] = {
             data: xml(this.formatter.format(file.ContentTypes, context), {
                 declaration: false,
@@ -353,6 +396,21 @@ export class Compiler {
                     { declaration: { encoding: "UTF-8", standalone: "yes" } },
                 ),
             );
+        }
+
+        // Add SmartArt diagram parts
+        for (let i = 0; i < file.SmartArts.Array.length; i++) {
+            const smartArtData = file.SmartArts.Array[i];
+            files[`ppt/diagrams/data${i + 1}.xml`] = textToUint8Array(
+                xml(this.formatter.format(smartArtData.dataModel, context), {
+                    declaration,
+                    indent,
+                }),
+            );
+            files[`ppt/diagrams/layout${i + 1}.xml`] = textToUint8Array(getLayoutXml(smartArtData.layout));
+            files[`ppt/diagrams/quickStyle${i + 1}.xml`] = textToUint8Array(getStyleXml(smartArtData.style));
+            files[`ppt/diagrams/colors${i + 1}.xml`] = textToUint8Array(getColorXml(smartArtData.color));
+            files[`ppt/diagrams/drawing${i + 1}.xml`] = textToUint8Array(DEFAULT_DRAWING_XML);
         }
 
         // Add notes slides

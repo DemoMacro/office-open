@@ -41,6 +41,12 @@ export interface ISmartArtOptions {
     readonly floating?: IFloating;
     /** Alternative text for accessibility */
     readonly altText?: DocPropertiesOptions;
+    /** Layout ID (e.g. "default", "process1", "hierarchy1") */
+    readonly layout?: string;
+    /** Quick style ID (e.g. "simple1", "moderate1") */
+    readonly style?: string;
+    /** Color transform ID (e.g. "accent1_2", "colorful1") */
+    readonly color?: string;
 }
 
 /**
@@ -91,11 +97,18 @@ export class SmartArtRun extends Run {
     }
 
     public prepForXml(context: IContext): IXmlableObject | undefined {
-        const dataModel = createDataModel(this.smartArtOptions.data.nodes);
+        const layoutId = this.smartArtOptions.layout ?? "default";
+        const styleId = this.smartArtOptions.style ?? "simple1";
+        const colorId = this.smartArtOptions.color ?? "accent1_2";
+
+        const dataModel = createDataModel(this.smartArtOptions.data.nodes, layoutId, styleId, colorId);
 
         const smartArtData: ISmartArtData = {
             dataModel,
             key: this.smartArtKey,
+            layout: layoutId,
+            style: styleId,
+            color: colorId,
         };
 
         context.file.SmartArts.addSmartArt(this.smartArtKey, smartArtData);

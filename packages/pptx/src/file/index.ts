@@ -69,5 +69,6 @@ export { ChartFrame, type IChartFrameOptions } from "./chart/chart-frame";
 export { ChartCollection, type IChartData } from "./chart/chart-collection";
 export { ChartSpace, type IChartSpaceOptions, type IChartSeriesData } from "./chart/chart-space";
 export type { ChartType } from "./chart/chart-types/create-chart-type";
+export { SmartArtFrame, type ISmartArtFrameOptions, type ITreeNode } from "./smartart";
 export { Transition, type ITransitionOptions, type TransitionType } from "./transition/transition";
 export { type AnimationType, type AnimationTrigger, type AnimationDirection, type IAnimationOptions } from "./animation/types";

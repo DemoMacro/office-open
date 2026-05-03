@@ -17,10 +17,6 @@ export interface ITreeNode {
     readonly children?: readonly ITreeNode[];
 }
 
-interface IFlatResult {
-    readonly points: XmlComponent[];
-    readonly connections: Connection[];
-}
 
 function createDocPoint(layout: string, style: string, color: string): XmlComponent {
     const pt = new (class extends XmlComponent {
@@ -74,58 +70,6 @@ class EmptyElement extends XmlComponent {
 function uuid(): string {
     return `{${crypto.randomUUID().toUpperCase()}}`;
 }
-
-/**
- * Converts a tree of nodes into flat points and connections.
- */
-const treeToModel = (nodes: readonly ITreeNode[]): IFlatResult => {
-    const points: XmlComponent[] = [];
-    const connections: Connection[] = [];
-
-    points.push(new (class extends XmlComponent {
-        public constructor() {
-            super("dgm:pt");
-        }
-    })());
-    points[0]["root"].push(chartAttr({ modelId: 0, type: "doc" }));
-    points[0]["root"].push(new EmptyElement("dgm:spPr"));
-    points[0]["root"].push(createEmptyTextBody());
-
-    for (let i = 0; i < nodes.length; i++) {
-        const walk = (node: ITreeNode, parentUuid: string, srcOrd: number): void => {
-            const nodeUuid = uuid();
-            const parTransUuid = uuid();
-            const sibTransUuid = uuid();
-            const cxnUuid = uuid();
-
-            points.push(new TransPoint(parTransUuid, "parTrans", cxnUuid));
-            points.push(new TransPoint(sibTransUuid, "sibTrans", cxnUuid));
-            points.push(new Point(nodeUuid, node.text));
-
-            connections.push(
-                new Connection(
-                    parTransUuid,
-                    parentUuid,
-                    nodeUuid,
-                    undefined,
-                    srcOrd,
-                    0,
-                    parTransUuid,
-                    sibTransUuid,
-                ),
-            );
-
-            if (node.children) {
-                for (let j = 0; j < node.children.length; j++) {
-                    walk(node.children[j], nodeUuid, j);
-                }
-            }
-        };
-        walk(nodes[i], "0", i);
-    }
-
-    return { connections, points };
-};
 
 /**
  * Creates a DataModel from tree nodes with layout/style/color settings.

@@ -1,9 +1,10 @@
 import type { File } from "@file/file";
 import { obfuscate } from "@file/fonts/obfuscate-ttf-to-odttf";
 import {
-    DEFAULT_COLORS_XML,
-    DEFAULT_LAYOUT_XML,
-    DEFAULT_STYLE_XML,
+    DEFAULT_DRAWING_XML,
+    getColorXml,
+    getLayoutXml,
+    getStyleXml,
 } from "@file/smartart/built-in-definitions";
 import { xml } from "@office-open/xml";
 /**
@@ -95,6 +96,8 @@ interface IXmlifyedFileMapping {
     readonly DiagramStyle?: readonly IXmlifyedFile[];
     /** Diagram colors XML parts (word/diagrams/colors{n}.xml) */
     readonly DiagramColors?: readonly IXmlifyedFile[];
+    /** Diagram drawing XML parts (word/diagrams/drawing{n}.xml) */
+    readonly DiagramDrawing?: readonly IXmlifyedFile[];
     /** AltChunk parts (word/afchunks/afchunk{n}.{ext}) */
     readonly AltChunks?: readonly IXmlifyedFile[];
     /** SubDoc parts (word/subdocs/subdoc{n}.docx) */
@@ -360,6 +363,7 @@ export class Compiler {
                         file.ContentTypes.addDiagramLayout(i + 1);
                         file.ContentTypes.addDiagramStyle(i + 1);
                         file.ContentTypes.addDiagramColors(i + 1);
+                        file.ContentTypes.addDiagramDrawing(i + 1);
                     });
                     return xml(
                         this.formatter.format(file.ContentTypes, {
@@ -890,17 +894,21 @@ export class Compiler {
                           ),
                           path: `word/diagrams/data${i + 1}.xml`,
                       })),
-                      DiagramLayout: file.SmartArts.Array.map((_smartArtData, i) => ({
-                          data: DEFAULT_LAYOUT_XML,
+                      DiagramLayout: file.SmartArts.Array.map((smartArtData, i) => ({
+                          data: getLayoutXml(smartArtData.layout),
                           path: `word/diagrams/layout${i + 1}.xml`,
                       })),
-                      DiagramStyle: file.SmartArts.Array.map((_smartArtData, i) => ({
-                          data: DEFAULT_STYLE_XML,
+                      DiagramStyle: file.SmartArts.Array.map((smartArtData, i) => ({
+                          data: getStyleXml(smartArtData.style),
                           path: `word/diagrams/quickStyle${i + 1}.xml`,
                       })),
-                      DiagramColors: file.SmartArts.Array.map((_smartArtData, i) => ({
-                          data: DEFAULT_COLORS_XML,
+                      DiagramColors: file.SmartArts.Array.map((smartArtData, i) => ({
+                          data: getColorXml(smartArtData.color),
                           path: `word/diagrams/colors${i + 1}.xml`,
+                      })),
+                      DiagramDrawing: file.SmartArts.Array.map((_, i) => ({
+                          data: DEFAULT_DRAWING_XML,
+                          path: `word/diagrams/drawing${i + 1}.xml`,
                       })),
                   }
                 : {}),
