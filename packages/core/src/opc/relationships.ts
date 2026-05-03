@@ -9,9 +9,13 @@ export type RelationshipType =
     | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink"
     | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart"
     | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramData"
+    | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramLayout"
+    | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramQuickStyle"
+    | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramColors"
     | "http://schemas.microsoft.com/office/2007/relationships/diagramLayout"
     | "http://schemas.microsoft.com/office/2007/relationships/diagramStyle"
     | "http://schemas.microsoft.com/office/2007/relationships/diagramColors"
+    | "http://schemas.microsoft.com/office/2007/relationships/diagramDrawing"
     // WordprocessingML specific
     | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings"
     | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles"
@@ -35,7 +39,10 @@ export type RelationshipType =
     | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide"
     | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/presProps"
     | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/viewProps"
-    | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles";
+    | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles"
+    | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster"
+    | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/video"
+    | "http://schemas.microsoft.com/office/2007/relationships/media";
 
 export const TargetModeType = {
     EXTERNAL: "External",

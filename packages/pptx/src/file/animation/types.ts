@@ -16,13 +16,7 @@ export type AnimationType =
 
 export type AnimationTrigger = "onClick" | "withPrevious" | "afterPrevious";
 
-export type AnimationDirection =
-    | "left"
-    | "right"
-    | "up"
-    | "down"
-    | "horizontal"
-    | "vertical";
+export type AnimationDirection = "left" | "right" | "up" | "down" | "horizontal" | "vertical";
 
 export interface IAnimationOptions {
     readonly type: AnimationType;

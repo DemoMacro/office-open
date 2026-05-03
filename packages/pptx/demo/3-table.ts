@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Background, Presentation, Packer, Shape, SolidFill, NoFill, TableFrame } from "../src";
+import { Background, Presentation, Packer, Shape, SolidFill, TableFrame } from "../src";
 
 const pres = new Presentation({
     title: "Phase 3 Demo",
@@ -80,19 +80,33 @@ const pres = new Presentation({
         {
             children: [
                 new Shape({
-                    x: 50, y: 30, width: 600, height: 50,
+                    x: 50,
+                    y: 30,
+                    width: 600,
+                    height: 50,
                     text: "Vertical Align & Cell Margins",
                     fill: new SolidFill("4472C4"),
                 }),
                 new TableFrame({
-                    x: 50, y: 120, width: 600, height: 250,
+                    x: 50,
+                    y: 120,
+                    width: 600,
+                    height: 250,
                     rows: [
                         {
                             height: 700000,
                             cells: [
                                 { text: "Top", verticalAlign: "t", fill: new SolidFill("E8F0FE") },
-                                { text: "Center", verticalAlign: "ctr", fill: new SolidFill("E8F0FE") },
-                                { text: "Bottom", verticalAlign: "b", fill: new SolidFill("E8F0FE") },
+                                {
+                                    text: "Center",
+                                    verticalAlign: "ctr",
+                                    fill: new SolidFill("E8F0FE"),
+                                },
+                                {
+                                    text: "Bottom",
+                                    verticalAlign: "b",
+                                    fill: new SolidFill("E8F0FE"),
+                                },
                             ],
                         },
                         {
@@ -102,6 +116,46 @@ const pres = new Presentation({
                                 { text: "Wide L/R", margins: { left: 300000, right: 300000 } },
                                 { text: "Wide T/B", margins: { top: 80000, bottom: 80000 } },
                             ],
+                        },
+                    ],
+                }),
+            ],
+        },
+        // Slide 4: Merged cells
+        {
+            children: [
+                new Shape({
+                    x: 50,
+                    y: 30,
+                    width: 600,
+                    height: 50,
+                    text: "Merged Cells",
+                    fill: new SolidFill("4472C4"),
+                }),
+                new TableFrame({
+                    x: 50,
+                    y: 120,
+                    width: 600,
+                    height: 200,
+                    rows: [
+                        {
+                            cells: [
+                                { text: "A", columnSpan: 2, fill: new SolidFill("E8F0FE") },
+                                { text: "C" },
+                            ],
+                        },
+                        {
+                            cells: [{ text: "D" }, { text: "E" }, { text: "F" }],
+                        },
+                        {
+                            cells: [
+                                { text: "Merged", rowSpan: 2, fill: new SolidFill("FFF2CC") },
+                                { text: "H" },
+                                { text: "I" },
+                            ],
+                        },
+                        {
+                            cells: [{ text: "K" }, { text: "L" }],
                         },
                     ],
                 }),

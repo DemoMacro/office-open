@@ -6,17 +6,15 @@
 import { XmlComponent } from "@file/xml-components";
 import { chartAttr } from "@file/xml-components";
 
+import { COLOR_CATEGORIES, LAYOUT_CATEGORIES, STYLE_CATEGORIES } from "./built-in-definitions";
 import { Connection } from "./data-model/connection";
 import { DataModel } from "./data-model/data-model";
 import { Point, TransPoint } from "./data-model/point";
-
-import { COLOR_CATEGORIES, LAYOUT_CATEGORIES, STYLE_CATEGORIES } from "./built-in-definitions";
 
 export interface ITreeNode {
     readonly text: string;
     readonly children?: readonly ITreeNode[];
 }
-
 
 function createDocPoint(layout: string, style: string, color: string): XmlComponent {
     const pt = new (class extends XmlComponent {

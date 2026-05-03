@@ -43,10 +43,15 @@ export class LineShape extends Xc {
         const offX = Math.min(x1, x2);
         const offY = Math.min(y1, y2);
 
-        const xfrmAttrs: Record<string, { readonly key: string; readonly value: string | number }> | undefined =
+        const xfrmAttrs:
+            | Record<string, { readonly key: string; readonly value: string | number }>
+            | undefined =
             x1 > x2 || y1 > y2
                 ? (() => {
-                      const a: Record<string, { readonly key: string; readonly value: string | number }> = {};
+                      const a: Record<
+                          string,
+                          { readonly key: string; readonly value: string | number }
+                      > = {};
                       if (x1 > x2) a.flipH = { key: "flipH", value: 1 };
                       if (y1 > y2) a.flipV = { key: "flipV", value: 1 };
                       return a;
@@ -63,7 +68,10 @@ export class LineShape extends Xc {
                     }),
                     new BuilderElement({
                         name: "a:ext",
-                        attributes: { cx: { key: "cx", value: Math.abs(x2 - x1) }, cy: { key: "cy", value: Math.abs(y2 - y1) } },
+                        attributes: {
+                            cx: { key: "cx", value: Math.abs(x2 - x1) },
+                            cy: { key: "cy", value: Math.abs(y2 - y1) },
+                        },
                     }),
                 ],
                 attributes: xfrmAttrs,
@@ -89,7 +97,10 @@ export class LineShape extends Xc {
             new BuilderElement({
                 name: "p:txBody",
                 children: [
-                    new BuilderElement({ name: "a:bodyPr", attributes: { wrap: { key: "wrap", value: "square" } } }),
+                    new BuilderElement({
+                        name: "a:bodyPr",
+                        attributes: { wrap: { key: "wrap", value: "square" } },
+                    }),
                     new BuilderElement({ name: "a:lstStyle" }),
                     new BuilderElement({ name: "a:p" }),
                 ],
@@ -123,7 +134,12 @@ const ARROWHEAD_MAP: Record<string, string> = {
     open: "arrow",
 };
 
-function buildArrowheadElement(tagName: string, type: ArrowheadType, width?: string, length?: string): BuilderElement<{}> | null {
+function buildArrowheadElement(
+    tagName: string,
+    type: ArrowheadType,
+    width?: string,
+    length?: string,
+): BuilderElement<{}> | null {
     if (type === "none") return null;
 
     const attrs: Record<string, { readonly key: string; readonly value: string | number }> = {
@@ -177,10 +193,15 @@ export class ConnectorShape extends Xc {
         const offX = Math.min(x1, x2);
         const offY = Math.min(y1, y2);
 
-        const xfrmAttrs: Record<string, { readonly key: string; readonly value: string | number }> | undefined =
+        const xfrmAttrs:
+            | Record<string, { readonly key: string; readonly value: string | number }>
+            | undefined =
             x1 > x2 || y1 > y2
                 ? (() => {
-                      const a: Record<string, { readonly key: string; readonly value: string | number }> = {};
+                      const a: Record<
+                          string,
+                          { readonly key: string; readonly value: string | number }
+                      > = {};
                       if (x1 > x2) a.flipH = { key: "flipH", value: 1 };
                       if (y1 > y2) a.flipV = { key: "flipV", value: 1 };
                       return a;
@@ -197,7 +218,10 @@ export class ConnectorShape extends Xc {
                     }),
                     new BuilderElement({
                         name: "a:ext",
-                        attributes: { cx: { key: "cx", value: Math.abs(x2 - x1) }, cy: { key: "cy", value: Math.abs(y2 - y1) } },
+                        attributes: {
+                            cx: { key: "cx", value: Math.abs(x2 - x1) },
+                            cy: { key: "cy", value: Math.abs(y2 - y1) },
+                        },
                     }),
                 ],
                 attributes: xfrmAttrs,
@@ -214,11 +238,21 @@ export class ConnectorShape extends Xc {
 
         // Arrowheads
         if (options.beginArrowhead) {
-            const el = buildArrowheadElement("a:tailEnd", options.beginArrowhead, options.arrowheadWidth, options.arrowheadLength);
+            const el = buildArrowheadElement(
+                "a:tailEnd",
+                options.beginArrowhead,
+                options.arrowheadWidth,
+                options.arrowheadLength,
+            );
             if (el) spPrChildren.push(el);
         }
         if (options.endArrowhead) {
-            const el = buildArrowheadElement("a:headEnd", options.endArrowhead, options.arrowheadWidth, options.arrowheadLength);
+            const el = buildArrowheadElement(
+                "a:headEnd",
+                options.endArrowhead,
+                options.arrowheadWidth,
+                options.arrowheadLength,
+            );
             if (el) spPrChildren.push(el);
         }
 

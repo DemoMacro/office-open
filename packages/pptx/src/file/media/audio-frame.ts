@@ -63,7 +63,9 @@ export class AudioFrame extends XmlComponent {
                         children: [
                             new BuilderElement({
                                 name: "a:picLocks",
-                                attributes: { noChangeAspect: { key: "noChangeAspect", value: "1" } },
+                                attributes: {
+                                    noChangeAspect: { key: "noChangeAspect", value: "1" },
+                                },
                             }),
                         ],
                     }),
@@ -80,8 +82,14 @@ export class AudioFrame extends XmlComponent {
                                             new BuilderElement({
                                                 name: "p14:media",
                                                 attributes: {
-                                                    "r:embed": { key: "r:embed", value: `{media:${mediaFileName}}` },
-                                                    "xmlns:p14": { key: "xmlns:p14", value: "http://schemas.microsoft.com/office/powerpoint/2010/main" },
+                                                    "r:embed": {
+                                                        key: "r:embed",
+                                                        value: `{media:${mediaFileName}}`,
+                                                    },
+                                                    "xmlns:p14": {
+                                                        key: "xmlns:p14",
+                                                        value: "http://schemas.microsoft.com/office/powerpoint/2010/main",
+                                                    },
                                                 },
                                             }),
                                         ],

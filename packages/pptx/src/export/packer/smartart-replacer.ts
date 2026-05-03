@@ -1,4 +1,5 @@
 import type { SmartArtCollection } from "@file/smartart/smartart-collection";
+import type { RelationshipType } from "@office-open/core";
 
 export class SmartArtReplacer {
     public replace(xmlData: string, smartArts: SmartArtCollection, dataOffset: number): string {
@@ -34,7 +35,7 @@ export class SmartArtReplacer {
 
     public addRelationships(
         smartArts: SmartArtCollection,
-        addRelationship: (id: number, type: string, target: string) => void,
+        addRelationship: (id: number, type: RelationshipType, target: string) => void,
         baseOffset: number,
         globalStartIndex: number,
     ): void {

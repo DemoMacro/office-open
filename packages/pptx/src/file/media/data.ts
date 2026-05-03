@@ -37,4 +37,5 @@ interface AudioMediaData {
     readonly type: "mp3" | "wav" | "wma" | "aac";
 }
 
-export type IMediaData = (RegularMediaData | SvgMediaData | VideoMediaData | AudioMediaData) & CoreMediaData;
+export type IMediaData = (RegularMediaData | SvgMediaData | VideoMediaData | AudioMediaData) &
+    CoreMediaData;

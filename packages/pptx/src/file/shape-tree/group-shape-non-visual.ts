@@ -10,7 +10,10 @@ export class GroupShapeNonVisualProperties extends BuilderElement<{}> {
             children: [
                 new BuilderElement({
                     name: "p:cNvPr",
-                    attributes: { id: { key: "id", value: id }, name: { key: "name", value: name } },
+                    attributes: {
+                        id: { key: "id", value: id },
+                        name: { key: "name", value: name },
+                    },
                 }),
                 new BuilderElement({ name: "p:cNvGrpSpPr" }),
                 new BuilderElement({ name: "p:nvPr" }),

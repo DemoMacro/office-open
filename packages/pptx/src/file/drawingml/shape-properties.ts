@@ -1,6 +1,6 @@
-import { XmlComponent as Xc } from "@file/xml-components";
+import { BuilderElement, XmlComponent as Xc } from "@file/xml-components";
 
-import { EffectList, type IEffectsOptions } from "./effects";
+import { EffectList, buildScene3D, buildShape3D, type IEffectsOptions } from "./effects";
 import { GradientFill } from "./gradient-fill";
 import { NoFill } from "./no-fill";
 import { Outline, type OutlineOptions } from "./outline";
@@ -11,11 +11,18 @@ import { Transform2D } from "./transform-2d";
 
 export type ShapeFill = SolidFill | NoFill | GradientFill;
 
+export interface IConnectionSiteOptions {
+    readonly x: number;
+    readonly y: number;
+    readonly angle?: number;
+}
+
 export interface IShapePropertiesOptions extends ITransform2DOptions {
     readonly geometry?: string;
     readonly fill?: ShapeFill;
     readonly outline?: OutlineOptions;
     readonly effects?: IEffectsOptions;
+    readonly connectionSites?: readonly IConnectionSiteOptions[];
 }
 
 /**
@@ -55,6 +62,26 @@ export class ShapeProperties extends Xc {
 
         if (options.effects) {
             this.root.push(new EffectList(options.effects));
+
+            const scene3d = buildScene3D(options.effects);
+            if (scene3d) this.root.push(scene3d);
+
+            const shape3d = buildShape3D(options.effects);
+            if (shape3d) this.root.push(shape3d);
+        }
+
+        if (options.connectionSites && options.connectionSites.length > 0) {
+            const cxns = options.connectionSites.map((site) => {
+                const attrs: Record<
+                    string,
+                    { readonly key: string; readonly value: string | number }
+                > = {
+                    pos: { key: "pos", value: `${site.x} ${site.y}` },
+                };
+                if (site.angle !== undefined) attrs.ang = { key: "ang", value: site.angle };
+                return new BuilderElement({ name: "a:cxn", attributes: attrs });
+            });
+            this.root.push(new BuilderElement({ name: "a:cxnLst", children: cxns }));
         }
     }
 }

@@ -29,7 +29,10 @@ const pres = new Presentation({
                                 }),
                                 new Run({
                                     text: "Google",
-                                    hyperlink: { url: "https://www.google.com", tooltip: "Go to Google" },
+                                    hyperlink: {
+                                        url: "https://www.google.com",
+                                        tooltip: "Go to Google",
+                                    },
                                     bold: true,
                                 }),
                                 new Run({
