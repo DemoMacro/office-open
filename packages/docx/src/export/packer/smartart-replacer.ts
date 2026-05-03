@@ -104,6 +104,14 @@ export class SmartArtReplacer {
                 "http://schemas.microsoft.com/office/2007/relationships/diagramColors",
                 `diagrams/colors${i + 1}.xml`,
             );
+
+            // Drawing cache relationship (internal)
+            const drOffset = csOffset + smartArtCount;
+            addRelationship(
+                drOffset + i,
+                "http://schemas.microsoft.com/office/2007/relationships/diagramDrawing",
+                `diagrams/drawing${i + 1}.xml`,
+            );
         });
     }
 }

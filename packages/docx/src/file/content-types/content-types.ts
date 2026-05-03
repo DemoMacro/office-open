@@ -237,6 +237,15 @@ export class ContentTypes extends XmlComponent {
         );
     }
 
+    public addDiagramDrawing(index: number): void {
+        this.root.push(
+            createOverride(
+                "application/vnd.ms-office.drawingml.diagramDrawing+xml",
+                `/word/diagrams/drawing${index}.xml`,
+            ),
+        );
+    }
+
     /**
      * Registers an alternative format chunk part in the content types.
      *
