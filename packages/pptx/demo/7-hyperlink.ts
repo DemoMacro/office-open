@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Presentation, Packer, Shape, SolidFill, Run, Paragraph } from "@office-open/pptx";
+import { Presentation, Packer, Shape, Run, Paragraph } from "@office-open/pptx";
 
 const pres = new Presentation({
     title: "Hyperlink Demo",
@@ -14,7 +14,7 @@ const pres = new Presentation({
                     width: 400,
                     height: 60,
                     text: "Hyperlinks in PPTX",
-                    fill: new SolidFill("4472C4"),
+                    fill: "4472C4",
                 }),
                 new Shape({
                     x: 50,
@@ -61,7 +61,7 @@ const pres = new Presentation({
                             ],
                         }),
                     ],
-                    fill: new SolidFill("F2F2F2"),
+                    fill: "F2F2F2",
                 }),
             ],
         },

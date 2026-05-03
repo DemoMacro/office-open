@@ -1,9 +1,9 @@
-import { NoFill } from "@file/drawingml/no-fill";
-import type { ShapeFill } from "@file/drawingml/shape-properties";
+import type { FillOptions } from "@file/drawingml/fill";
+import { buildFill } from "@file/drawingml/fill";
 import { XmlComponent } from "@file/xml-components";
 
 export interface IBackgroundOptions {
-    readonly fill?: ShapeFill;
+    readonly fill?: FillOptions;
 }
 
 /**
@@ -17,8 +17,8 @@ export class Background extends XmlComponent {
 }
 
 class BackgroundProperties extends XmlComponent {
-    public constructor(fill?: ShapeFill) {
+    public constructor(fill?: FillOptions) {
         super("p:bgPr");
-        this.root.push(fill ?? new NoFill());
+        this.root.push(fill !== undefined ? buildFill(fill) : buildFill({ type: "none" }));
     }
 }

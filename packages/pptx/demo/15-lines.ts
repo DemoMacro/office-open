@@ -1,13 +1,6 @@
 import * as fs from "fs";
 
-import {
-    Presentation,
-    Packer,
-    Shape,
-    SolidFill,
-    LineShape,
-    ConnectorShape,
-} from "@office-open/pptx";
+import { Presentation, Packer, Shape, LineShape, ConnectorShape } from "@office-open/pptx";
 
 const pres = new Presentation({
     title: "Lines & Connectors Demo",
@@ -22,7 +15,7 @@ const pres = new Presentation({
                     width: 400,
                     height: 50,
                     text: "Lines & Connectors",
-                    fill: new SolidFill("4472C4"),
+                    fill: "4472C4",
                 }),
                 // Horizontal line
                 new LineShape({
@@ -67,7 +60,7 @@ const pres = new Presentation({
                     width: 400,
                     height: 50,
                     text: "Connectors with Arrowheads",
-                    fill: new SolidFill("4472C4"),
+                    fill: "4472C4",
                 }),
                 // Left-to-right arrow
                 new ConnectorShape({

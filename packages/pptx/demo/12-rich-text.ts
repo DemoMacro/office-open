@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Presentation, Packer, Shape, SolidFill, Paragraph, Run } from "@office-open/pptx";
+import { Presentation, Packer, Shape, Paragraph, Run } from "@office-open/pptx";
 
 const pres = new Presentation({
     title: "Rich Text Demo",
@@ -148,7 +148,7 @@ const pres = new Presentation({
                     y: 350,
                     width: 600,
                     height: 40,
-                    fill: new SolidFill("333333"),
+                    fill: "333333",
                     paragraphs: [
                         new Paragraph({
                             properties: { bulletNone: true },
@@ -156,25 +156,25 @@ const pres = new Presentation({
                                 new Run({
                                     text: "Red",
                                     fontSize: 20,
-                                    fill: new SolidFill("FF0000"),
+                                    fill: "FF0000",
                                 }),
                                 new Run({ text: " | " }),
                                 new Run({
                                     text: "Green",
                                     fontSize: 20,
-                                    fill: new SolidFill("00FF00"),
+                                    fill: "00FF00",
                                 }),
                                 new Run({ text: " | " }),
                                 new Run({
                                     text: "Blue",
                                     fontSize: 20,
-                                    fill: new SolidFill("4472C4"),
+                                    fill: "4472C4",
                                 }),
                                 new Run({ text: " | " }),
                                 new Run({
                                     text: "Yellow",
                                     fontSize: 20,
-                                    fill: new SolidFill("FFC000"),
+                                    fill: "FFC000",
                                 }),
                             ],
                         }),

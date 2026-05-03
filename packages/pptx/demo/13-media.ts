@@ -2,15 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
 
-import {
-    Presentation,
-    Packer,
-    Shape,
-    SolidFill,
-    Paragraph,
-    Run,
-    VideoFrame,
-} from "@office-open/pptx";
+import { Presentation, Packer, Shape, Paragraph, Run, VideoFrame } from "@office-open/pptx";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const videoPath = path.join(__dirname, "assets/test-video.mp4");
@@ -61,7 +53,7 @@ const pres = new Presentation({
                                 new Run({
                                     text: "Video: Big Buck Bunny (360p, 10s, ~1MB MP4)",
                                     fontSize: 14,
-                                    fill: new SolidFill("666666"),
+                                    fill: "666666",
                                 }),
                             ],
                         }),

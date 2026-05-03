@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Presentation, Packer, Shape, SolidFill } from "@office-open/pptx";
+import { Presentation, Packer, Shape } from "@office-open/pptx";
 
 const pres = new Presentation({
     title: "Header Footer Demo",
@@ -14,7 +14,7 @@ const pres = new Presentation({
                     width: 500,
                     height: 60,
                     text: "Slide 1 - Default footer",
-                    fill: new SolidFill("4472C4"),
+                    fill: "4472C4",
                 }),
             ],
             headerFooter: { slideNumber: true, dateTime: true, footer: "Confidential" },
@@ -27,7 +27,7 @@ const pres = new Presentation({
                     width: 500,
                     height: 60,
                     text: "Slide 2 - No date",
-                    fill: new SolidFill("ED7D31"),
+                    fill: "ED7D31",
                 }),
             ],
             headerFooter: { slideNumber: true, dateTime: false, footer: "My Presentation" },
@@ -40,7 +40,7 @@ const pres = new Presentation({
                     width: 500,
                     height: 60,
                     text: "Slide 3 - Only slide number",
-                    fill: new SolidFill("70AD47"),
+                    fill: "70AD47",
                 }),
             ],
             headerFooter: { slideNumber: true, dateTime: false, footer: false },
@@ -53,7 +53,7 @@ const pres = new Presentation({
                     width: 500,
                     height: 60,
                     text: "Slide 4 - No header/footer",
-                    fill: new SolidFill("FFC000"),
+                    fill: "FFC000",
                 }),
             ],
             headerFooter: { slideNumber: false, dateTime: false, footer: false },

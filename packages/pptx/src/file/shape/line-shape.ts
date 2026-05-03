@@ -1,5 +1,7 @@
+import type { FillOptions } from "@file/drawingml/fill";
+import { buildFill } from "@file/drawingml/fill";
 import { NonVisualShapeProperties } from "@file/drawingml/non-visual-shape-props";
-import { Outline, type OutlineOptions } from "@file/drawingml/outline";
+import { createOutlineCompat, type OutlineOptions } from "@file/drawingml/outline";
 import { PresetGeometry } from "@file/drawingml/preset-geometry";
 import { BuilderElement, XmlComponent as Xc } from "@file/xml-components";
 import { pixelsToEmus } from "@util/types";
@@ -79,11 +81,11 @@ export class LineShape extends Xc {
             new PresetGeometry("line"),
         ];
 
-        if (options.fill) {
-            spPrChildren.push(options.fill);
+        if (options.fill !== undefined) {
+            spPrChildren.push(buildFill(options.fill));
         }
         if (options.outline) {
-            spPrChildren.push(new Outline(options.outline));
+            spPrChildren.push(createOutlineCompat(options.outline));
         }
 
         this.root.push(
@@ -120,7 +122,7 @@ export interface ILineShapeOptions {
     readonly y1?: number;
     readonly x2?: number;
     readonly y2?: number;
-    readonly fill?: Xc;
+    readonly fill?: FillOptions;
     readonly outline?: OutlineOptions;
 }
 
@@ -229,11 +231,11 @@ export class ConnectorShape extends Xc {
             new PresetGeometry("line"),
         ];
 
-        if (options.fill) {
-            spPrChildren.push(options.fill);
+        if (options.fill !== undefined) {
+            spPrChildren.push(buildFill(options.fill));
         }
         if (options.outline) {
-            spPrChildren.push(new Outline(options.outline));
+            spPrChildren.push(createOutlineCompat(options.outline));
         }
 
         // Arrowheads
@@ -276,7 +278,7 @@ export interface IConnectorShapeOptions {
     readonly y1?: number;
     readonly x2?: number;
     readonly y2?: number;
-    readonly fill?: Xc;
+    readonly fill?: FillOptions;
     readonly outline?: OutlineOptions;
     readonly beginArrowhead?: ArrowheadType;
     readonly endArrowhead?: ArrowheadType;
