@@ -1,3 +1,1 @@
-export * from "./connection";
-export * from "./data-model";
-export * from "./point";
+export * from "@office-open/core/smartart/data-model";

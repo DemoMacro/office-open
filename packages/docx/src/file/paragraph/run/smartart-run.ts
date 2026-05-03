@@ -101,7 +101,12 @@ export class SmartArtRun extends Run {
         const styleId = this.smartArtOptions.style ?? "simple1";
         const colorId = this.smartArtOptions.color ?? "accent1_2";
 
-        const dataModel = createDataModel(this.smartArtOptions.data.nodes, layoutId, styleId, colorId);
+        const dataModel = createDataModel(
+            this.smartArtOptions.data.nodes,
+            layoutId,
+            styleId,
+            colorId,
+        );
 
         const smartArtData: ISmartArtData = {
             dataModel,

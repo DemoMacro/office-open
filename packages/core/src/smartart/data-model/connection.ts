@@ -1,13 +1,7 @@
-/**
- * dgm:cxn — SmartArt data model connection (edge).
- *
- * @module
- */
-import { XmlComponent } from "@file/xml-components";
-import { chartAttr } from "@file/xml-components";
+import { XmlComponent, chartAttr } from "../../xml-components";
 
 /**
- * CT_Cxn — a single connection in the data model.
+ * dgm:cxn — SmartArt data model connection (edge).
  */
 export class Connection extends XmlComponent {
     public constructor(

@@ -1,13 +1,7 @@
-/**
- * dgm:pt — SmartArt data model point (node).
- *
- * @module
- */
-import { XmlComponent } from "@file/xml-components";
-import { chartAttr } from "@file/xml-components";
+import { XmlComponent, chartAttr } from "../../xml-components";
 
 /**
- * CT_Pt — a regular node point in the data model.
+ * dgm:pt — SmartArt data model point (node).
  */
 export class Point extends XmlComponent {
     public constructor(modelId: string, text: string, type: string = "node") {
