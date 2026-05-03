@@ -14,7 +14,7 @@ import {
     Packer,
     Paragraph,
     TextRun,
-} from "docx-plus";
+} from "@office-open/docx";
 
 const REVISION_AUTHOR = "Firstname Lastname";
 const REVISION_DATE = "2026-05-02T10:00:00Z";

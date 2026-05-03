@@ -1,7 +1,7 @@
 // DrawingML Advanced Features - image cropping, effects, 3D, gradient fill, enhanced outline
 import * as fs from "fs";
 
-import { Document, ImageRun, Packer, Paragraph, TextRun, WpsShapeRun } from "docx-plus";
+import { Document, ImageRun, Packer, Paragraph, TextRun, WpsShapeRun } from "@office-open/docx";
 
 const doc = new Document({
     sections: [

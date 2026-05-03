@@ -1,7 +1,7 @@
 // Image effects (shadow, glow, reflection, fillOverlay) applied via ImageRun
 import * as fs from "fs";
 
-import { Document, ImageRun, Packer, Paragraph, TextRun } from "docx-plus";
+import { Document, ImageRun, Packer, Paragraph, TextRun } from "@office-open/docx";
 
 const doc = new Document({
     sections: [

@@ -2,7 +2,7 @@
 
 import * as fs from "fs";
 
-import { AlignmentType, Document, Packer, Paragraph, TextRun } from "docx-plus";
+import { AlignmentType, Document, Packer, Paragraph, TextRun } from "@office-open/docx";
 
 const doc = new Document({
     sections: [

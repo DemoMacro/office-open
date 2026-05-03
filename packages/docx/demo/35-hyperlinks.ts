@@ -11,7 +11,7 @@ import {
     Packer,
     Paragraph,
     TextRun,
-} from "docx-plus";
+} from "@office-open/docx";
 
 const doc = new Document({
     footnotes: {

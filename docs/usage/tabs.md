@@ -185,10 +185,10 @@ new Paragraph({
 
 ## Demos
 
-[Tab Stops Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/75-tab-stops.ts ":include")
+[Tab Stops Example](https://raw.githubusercontent.com/DemoMacro/office-open/main/packages/docx/demo/75-tab-stops.ts ":include")
 
-_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/75-tab-stops.ts_
+_Source: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/75-tab-stops.ts_
 
-[Positional Tabs Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/84-positional-tabs.ts ":include")
+[Positional Tabs Example](https://raw.githubusercontent.com/DemoMacro/office-open/main/packages/docx/demo/84-positional-tabs.ts ":include")
 
-_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/84-positional-tabs.ts_
+_Source: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/84-positional-tabs.ts_

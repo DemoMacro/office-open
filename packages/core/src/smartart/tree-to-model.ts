@@ -1,5 +1,4 @@
 import { XmlComponent, chartAttr } from "../xml-components";
-
 import { COLOR_CATEGORIES, LAYOUT_CATEGORIES, STYLE_CATEGORIES } from "./categories";
 import { Connection } from "./data-model/connection";
 import { DataModel } from "./data-model/data-model";

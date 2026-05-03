@@ -1,7 +1,7 @@
 // Demo: SmartArt - all layout types with various styles and colors
 import * as fs from "fs";
 
-import { Document, Packer, Paragraph, TextRun, SmartArtRun } from "docx-plus";
+import { Document, Packer, Paragraph, TextRun, SmartArtRun } from "@office-open/docx";
 
 const heading = (text: string) =>
     new Paragraph({

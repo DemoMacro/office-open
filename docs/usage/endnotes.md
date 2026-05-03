@@ -9,7 +9,7 @@ Endnotes allow you to add references that appear at the end of the document. The
 ## Example
 
 ```ts
-import { Document, EndnoteReferenceRun, Paragraph, TextRun } from "docx-plus";
+import { Document, EndnoteReferenceRun, Paragraph, TextRun } from "@office-open/docx";
 
 const doc = new Document({
     endnotes: {
@@ -128,4 +128,4 @@ const doc = new Document({
 
 ## Demo
 
-_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/97-endnotes.ts_
+_Source: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/97-endnotes.ts_

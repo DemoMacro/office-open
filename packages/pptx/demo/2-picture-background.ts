@@ -1,6 +1,13 @@
 import * as fs from "fs";
 
-import { Background, GradientFill, Presentation, Packer, Shape, SolidFill } from "../src";
+import {
+    Background,
+    GradientFill,
+    Presentation,
+    Packer,
+    Shape,
+    SolidFill,
+} from "@office-open/pptx";
 
 const pres = new Presentation({
     title: "Phase 2 Demo",

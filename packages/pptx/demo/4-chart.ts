@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Background, ChartFrame, Presentation, Packer, Shape, SolidFill } from "../src";
+import { Background, ChartFrame, Presentation, Packer, Shape, SolidFill } from "@office-open/pptx";
 
 const pres = new Presentation({
     title: "Phase 4 Demo - Charts",

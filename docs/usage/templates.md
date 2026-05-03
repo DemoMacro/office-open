@@ -33,7 +33,7 @@ Best regards,
 
 ```ts
 import * as fs from "fs";
-import { patchDocument, PatchType, TextRun } from "docx-plus";
+import { patchDocument, PatchType, TextRun } from "@office-open/docx";
 
 patchDocument({
     outputType: "nodebuffer",
@@ -99,7 +99,7 @@ my_patch: {
 ### Images
 
 ```ts
-import { ImageRun, PatchType } from "docx-plus";
+import { ImageRun, PatchType } from "@office-open/docx";
 
 image_placeholder: {
     type: PatchType.PARAGRAPH,
@@ -116,7 +116,7 @@ image_placeholder: {
 ### Hyperlinks
 
 ```ts
-import { ExternalHyperlink, PatchType, TextRun } from "docx-plus";
+import { ExternalHyperlink, PatchType, TextRun } from "@office-open/docx";
 
 link_placeholder: {
     type: PatchType.PARAGRAPH,
@@ -137,7 +137,7 @@ link_placeholder: {
 ### Tables
 
 ```ts
-import { Paragraph, PatchType, Table, TableCell, TableRow } from "docx-plus";
+import { Paragraph, PatchType, Table, TableCell, TableRow } from "@office-open/docx";
 
 table_placeholder: {
     type: PatchType.DOCUMENT,
@@ -208,7 +208,7 @@ import {
     TableCell,
     TableRow,
     TextRun,
-} from "docx-plus";
+} from "@office-open/docx";
 
 // Invoice data
 const invoice = {
@@ -292,6 +292,6 @@ patchDocument({
 
 ## Demo
 
-[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/85-template-document.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/office-open/main/packages/docx/demo/85-template-document.ts ":include")
 
-_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/85-template-document.ts_
+_Source: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/85-template-document.ts_

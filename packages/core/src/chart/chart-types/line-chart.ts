@@ -1,5 +1,4 @@
 import { EmptyElement, XmlComponent, chartAttr, wrapEl } from "../../xml-components";
-
 import type { IChartSeriesData } from "../create-chart-type";
 import { createStrRef, createNumRef } from "../series/series-data";
 

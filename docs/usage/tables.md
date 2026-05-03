@@ -379,66 +379,66 @@ const table = new Table({
 
 #### Example
 
-[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/100-table-look.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/office-open/main/packages/docx/demo/100-table-look.ts ":include")
 
-_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/100-table-look.ts_
+_Source: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/100-table-look.ts_
 
 ## Examples
 
-[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/4-basic-table.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/office-open/main/packages/docx/demo/4-basic-table.ts ":include")
 
-_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/4-basic-table.ts_
+_Source: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/4-basic-table.ts_
 
 ### Custom borders
 
 Example showing how to add colorful borders to tables
 
-[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/20-table-cell-borders.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/office-open/main/packages/docx/demo/20-table-cell-borders.ts ":include")
 
-_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/20-table-cell-borders.ts_
+_Source: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/20-table-cell-borders.ts_
 
 ### Adding images
 
 Example showing how to add images to tables
 
-[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/24-images-to-table-cell.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/office-open/main/packages/docx/demo/24-images-to-table-cell.ts ":include")
 
-_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/24-images-to-table-cell.ts_
+_Source: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/24-images-to-table-cell.ts_
 
-[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/36-image-to-table-cell.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/office-open/main/packages/docx/demo/36-image-to-table-cell.ts ":include")
 
-_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/36-image-to-table-cell.ts_
+_Source: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/36-image-to-table-cell.ts_
 
 ### Alignment of text in a cell
 
 Example showing how align text in a table cell
 
-[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/31-tables.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/office-open/main/packages/docx/demo/31-tables.ts ":include")
 
-_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/31-tables.ts_
+_Source: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/31-tables.ts_
 
 ### Shading
 
 Example showing merging of columns and rows and shading
 
-[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/32-merge-and-shade-table-cells.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/office-open/main/packages/docx/demo/32-merge-and-shade-table-cells.ts ":include")
 
-_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/32-merge-and-shade-table-cells.ts_
+_Source: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/32-merge-and-shade-table-cells.ts_
 
-[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/41-merge-table-cells-2.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/office-open/main/packages/docx/demo/41-merge-table-cells-2.ts ":include")
 
-_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/41-merge-table-cells-2.ts_
+_Source: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/41-merge-table-cells-2.ts_
 
 ### Merging columns
 
 Example showing merging of columns and rows
 
-[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/43-images-to-table-cell-2.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/office-open/main/packages/docx/demo/43-images-to-table-cell-2.ts ":include")
 
-_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/43-images-to-table-cell-2.ts_
+_Source: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/43-images-to-table-cell-2.ts_
 
 ### Floating tables
 
-[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/34-floating-tables.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/office-open/main/packages/docx/demo/34-floating-tables.ts ":include")
 
-_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/34-floating-tables.ts_
+_Source: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/34-floating-tables.ts_

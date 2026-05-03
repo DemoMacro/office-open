@@ -1,3 +1,5 @@
+import { convertPixelsToEmu } from "@office-open/core";
+
 /**
  * Media module for WordprocessingML documents.
  *
@@ -8,7 +10,6 @@
  */
 import type { IMediaDataTransformation } from "./data";
 import type { IMediaData } from "./data";
-import { convertPixelsToEmu } from "@office-open/core";
 
 /**
  * Transformation options for media display.

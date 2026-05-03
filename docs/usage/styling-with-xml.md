@@ -50,4 +50,4 @@ doc.add(paragraph);
 doc.createParagraph("Some normal text");
 ```
 
-Example: https://github.com/DemoMacro/docx-plus/blob/master/demo/13-xml-styles.ts
+Example: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/13-xml-styles.ts

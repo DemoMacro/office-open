@@ -2,7 +2,15 @@
 
 import * as fs from "fs";
 
-import { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType } from "docx-plus";
+import {
+    Document,
+    Packer,
+    Paragraph,
+    Table,
+    TableCell,
+    TableRow,
+    WidthType,
+} from "@office-open/docx";
 
 const table = new Table({
     columnWidths: [3505, 5505],

@@ -6,7 +6,8 @@
         "paths": {
             "@util/*": ["../src/util/*"],
             "@export/*": ["../src/export/*"],
-            "@file/*": ["../src/file/*"]
+            "@file/*": ["../src/file/*"],
+            "@office-open/pptx": ["../src/index.ts"]
         }
     },
     "include": ["**/*.ts"]

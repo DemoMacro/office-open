@@ -1,5 +1,4 @@
 import { XmlComponent, chartAttr } from "../../xml-components";
-
 import { Connection } from "./connection";
 
 /**

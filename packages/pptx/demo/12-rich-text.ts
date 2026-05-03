@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Presentation, Packer, Shape, SolidFill, Paragraph, Run } from "../src";
+import { Presentation, Packer, Shape, SolidFill, Paragraph, Run } from "@office-open/pptx";
 
 const pres = new Presentation({
     title: "Rich Text Demo",

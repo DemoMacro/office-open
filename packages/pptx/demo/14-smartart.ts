@@ -1,4 +1,4 @@
-import { Presentation, Packer, Shape, Paragraph, Run, SmartArtFrame } from "../src";
+import { Presentation, Packer, Shape, Paragraph, Run, SmartArtFrame } from "@office-open/pptx";
 
 const pres = new Presentation({
     title: "SmartArt Demo",

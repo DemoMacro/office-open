@@ -31,17 +31,11 @@
         "dev": "pnpm --filter \"./packages/**\" -r dev",
         "build": "pnpm --filter \"./packages/**\" -r build",
         "check": "vp check --fix",
+        "test": "pnpm --filter \"./packages/**\" -r test",
         "bump": "pnpm --filter \"./packages/**\" -r exec basis version",
         "prerelease": "pnpm --filter \"./packages/**\" -r exec basis version --prerelease",
         "publish": "pnpm --filter \"./packages/**\" -r exec basis publish",
         "postinstall": "pnpm dev && basis git setup",
-        "test": "pnpm --filter @office-open/docx test",
-        "test:ci": "pnpm --filter @office-open/docx test:ci",
-        "cspell": "cspell \"{packages/**,scripts,docs}/**/*.{ts,scss,html,md}\" && cspell \"./*.*\"",
-        "typedoc": "pnpm --filter @office-open/docx typedoc",
-        "demo": "pnpm --filter @office-open/docx demo",
-        "extract": "pnpm --filter @office-open/docx extract",
-        "run-ts": "pnpm --filter @office-open/docx run-ts",
         "serve.docs": "cd docs && docsify serve"
     },
     "devDependencies": {

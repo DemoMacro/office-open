@@ -12,7 +12,7 @@ import {
     TextRun,
     UnderlineType,
     convertInchesToTwip,
-} from "docx-plus";
+} from "@office-open/docx";
 
 const doc = new Document({
     creator: "Clippy",

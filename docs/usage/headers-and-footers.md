@@ -7,7 +7,7 @@ Every section has headers and footers that appear on each page within that secti
 ## Basic Headers and Footers
 
 ```ts
-import { Document, Footer, Header, Paragraph } from "docx-plus";
+import { Document, Footer, Header, Paragraph } from "@office-open/docx";
 
 const doc = new Document({
     sections: [
@@ -111,7 +111,7 @@ const doc = new Document({
 Add page numbers using the `PageNumber` class:
 
 ```ts
-import { AlignmentType, Footer, PageNumber, Paragraph, TextRun } from "docx-plus";
+import { AlignmentType, Footer, PageNumber, Paragraph, TextRun } from "@office-open/docx";
 
 const footer = new Footer({
     children: [
@@ -173,7 +173,7 @@ import {
     LevelFormat,
     Packer,
     Paragraph,
-} from "docx-plus";
+} from "@office-open/docx";
 
 const doc = new Document({
     numbering: {
@@ -226,7 +226,7 @@ const doc = new Document({
 Add logos or images:
 
 ```ts
-import { Header, ImageRun, Paragraph } from "docx-plus";
+import { Header, ImageRun, Paragraph } from "@office-open/docx";
 
 const header = new Header({
     children: [
@@ -316,7 +316,7 @@ import {
     TableCell,
     TableRow,
     WidthType,
-} from "docx-plus";
+} from "@office-open/docx";
 
 // Helper to create invisible borders for layout tables
 const noBorders = {
@@ -405,7 +405,7 @@ import {
     Packer,
     Paragraph,
     TextRun,
-} from "docx-plus";
+} from "@office-open/docx";
 import * as fs from "fs";
 
 const doc = new Document({
@@ -472,24 +472,24 @@ Packer.toBuffer(doc).then((buffer) => {
 
 ### Basic Header and Footer
 
-[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/8-header-footer.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/office-open/main/packages/docx/demo/8-header-footer.ts ":include")
 
-_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/8-header-footer.ts_
+_Source: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/8-header-footer.ts_
 
 ### Odd/Even Headers and Footers
 
-[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/63-odd-even-header-footer.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/office-open/main/packages/docx/demo/63-odd-even-header-footer.ts ":include")
 
-_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/63-odd-even-header-footer.ts_
+_Source: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/63-odd-even-header-footer.ts_
 
 ### Header and Footer Margins
 
-[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/59-header-footer-margins.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/office-open/main/packages/docx/demo/59-header-footer-margins.ts ":include")
 
-_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/59-header-footer-margins.ts_
+_Source: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/59-header-footer-margins.ts_
 
 ### Images in Header and Footer
 
-[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/9-images-in-header-and-footer.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/office-open/main/packages/docx/demo/9-images-in-header-and-footer.ts ":include")
 
-_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/9-images-in-header-and-footer.ts_
+_Source: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/9-images-in-header-and-footer.ts_

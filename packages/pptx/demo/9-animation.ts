@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Presentation, Packer, Shape, SolidFill } from "../src";
+import { Presentation, Packer, Shape, SolidFill } from "@office-open/pptx";
 
 const pres = new Presentation({
     title: "Animation Demo",

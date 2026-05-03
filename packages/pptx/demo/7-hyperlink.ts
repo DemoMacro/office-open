@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Presentation, Packer, Shape, SolidFill, Run, Paragraph } from "../src";
+import { Presentation, Packer, Shape, SolidFill, Run, Paragraph } from "@office-open/pptx";
 
 const pres = new Presentation({
     title: "Hyperlink Demo",

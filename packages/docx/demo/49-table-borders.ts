@@ -14,7 +14,7 @@ import {
     TableRow,
     TextDirection,
     VerticalAlignTable,
-} from "docx-plus";
+} from "@office-open/docx";
 
 const table = new Table({
     rows: [

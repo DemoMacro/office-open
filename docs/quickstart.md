@@ -1,10 +1,10 @@
 # Quickstart Guide
 
-Get up and running with docx-plus in under 5 minutes.
+Get up and running with @office-open/docx in under 5 minutes.
 
 **In this guide:**
 
-- Install docx-plus
+- Install @office-open/docx
 - Create your first document
 - Add text, tables, and images
 - Export in multiple formats
@@ -12,7 +12,7 @@ Get up and running with docx-plus in under 5 minutes.
 ## Installation
 
 ```terminal
-npm install --save docx-plus
+npm install @office-open/docx
 ```
 
 ## Your First Document
@@ -20,7 +20,7 @@ npm install --save docx-plus
 Create a "Hello World" document in just a few lines:
 
 ```ts
-import { Document, Packer, Paragraph, TextRun } from "docx-plus";
+import { Document, Packer, Paragraph, TextRun } from "@office-open/docx";
 import * as fs from "fs";
 
 const doc = new Document({
@@ -68,7 +68,7 @@ See the [Text guide](usage/text.md) for all formatting options.
 ### Headings
 
 ```ts
-import { HeadingLevel } from "docx-plus";
+import { HeadingLevel } from "@office-open/docx";
 
 new Paragraph({
     text: "My Heading",
@@ -100,7 +100,7 @@ See the [Bullet Points guide](usage/bullet-points.md) for more options.
 ### Tables
 
 ```ts
-import { Table, TableRow, TableCell } from "docx-plus";
+import { Table, TableRow, TableCell } from "@office-open/docx";
 
 new Table({
     rows: [
@@ -119,7 +119,7 @@ See the [Tables guide](usage/tables.md) for advanced table features.
 ### Images
 
 ```ts
-import { ImageRun } from "docx-plus";
+import { ImageRun } from "@office-open/docx";
 
 new Paragraph({
     children: [
@@ -189,4 +189,4 @@ Now that you've created your first document, explore these guides:
 - **[Headers & Footers](usage/headers-and-footers.md)** - Page headers and footers
 - **[Styling](usage/styling-with-js.md)** - Reusable styles
 
-?> Check out the [demo folder](https://github.com/DemoMacro/docx-plus/tree/master/demo) for 90+ working examples covering every feature.
+?> Check out the [demo folder](https://github.com/DemoMacro/office-open/tree/main/packages/docx/demo) for 90+ working examples covering every feature.

@@ -6,19 +6,19 @@ You are a senior TypeScript developer.
 
 ## Structure
 
-- `packages/core` - @office-open/core (TODO: shared XML components, formatter, packer)
-- `packages/xml` - @office-open/xml (TODO: replacing xml + xml-js)
+- `packages/core` - @office-open/core (shared XML components, formatter, chart/smartart, unit converters)
+- `packages/xml` - @office-open/xml (XML parsing/serialization, replacing xml + xml-js)
 - `packages/docx` - @office-open/docx (main DOCX package)
 - `packages/docx-plus` - docx-plus (compat re-export of @office-open/docx)
 - `packages/xlsx` - @office-open/xlsx (TODO)
-- `packages/pptx` - @office-open/pptx (TODO)
+- `packages/pptx` - @office-open/pptx (PPTX generation package)
 - `ooxml-schemas/` - ISO-IEC29500 OOXML XSD schemas
 
 ## Build & Test
 
 - **Packaging**: `basis build` (per package) or `pnpm build` (all packages)
-- **Testing**: `vp test run --coverage` (vite-plus test runner in packages/docx)
-- **Lint**: `vp check --fix` (in packages/docx)
+- **Testing**: `vp test run` (vite-plus test runner, per package)
+- **Lint**: `pnpm check` (from root, runs vp check across all packages)
 
 ## OOXML Specification
 
@@ -86,5 +86,9 @@ Only use XSD abbreviations when the abbreviation IS the standard English term (e
 ## Running Demos
 
 ```bash
-pnpm run-ts -- ./packages/docx/demo/<demo-file>.ts
+# Docx demos (run from packages/docx)
+cd packages/docx && pnpm run-ts demo/<demo-file>.ts
+
+# PPTX demos (run from packages/pptx)
+cd packages/pptx && pnpm run-ts demo/<demo-file>.ts
 ```

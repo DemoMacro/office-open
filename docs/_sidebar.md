@@ -3,10 +3,10 @@
     - [Quickstart Guide](quickstart.md)
 
 - Examples
-    - [Demos](https://github.com/DemoMacro/docx-plus/tree/master/demo)
+    - [Demos](https://github.com/DemoMacro/office-open/tree/main/packages/docx/demo)
 
 - API
-    - [Documentation](https://docx-plus.js.org/api/)
+    - [Documentation](https://demo-macro.github.io/office-open/)
 
 - Core Concepts
     - [Document](usage/document.md)

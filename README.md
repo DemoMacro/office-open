@@ -13,7 +13,7 @@ Office Open XML monorepo - generate .docx, .pptx, .xlsx files with JS/TS.
 - **[@office-open/xml](./packages/xml/README.md)** - XML parsing/serialization (WIP)
 - **[@office-open/docx](./packages/docx/README.md)** - Generate .docx files with a declarative API
 - **[@office-open/xlsx](./packages/xlsx/README.md)** - Generate .xlsx files (WIP)
-- **[@office-open/pptx](./packages/pptx/README.md)** - Generate .pptx files (WIP)
+- **[@office-open/pptx](./packages/pptx/README.md)** - Generate .pptx files with a declarative API
 
 ## Quick Start
 
@@ -45,6 +45,46 @@ const doc = new Document({
 
 const buffer = await Packer.toBuffer(doc);
 writeFileSync("document.docx", buffer);
+```
+
+### PPTX Generation
+
+```bash
+# Install with npm
+$ npm install @office-open/pptx
+
+# Install with pnpm
+$ pnpm add @office-open/pptx
+```
+
+```typescript
+import { Presentation, Shape, SolidFill, Paragraph, Run, Packer } from "@office-open/pptx";
+import { writeFileSync } from "node:fs";
+
+const pres = new Presentation({
+    slides: [
+        {
+            children: [
+                new Shape({
+                    textBody: new TextBody({
+                        paragraphs: [
+                            new Paragraph({
+                                children: [new Run({ text: "Hello World", fontSize: 32 })],
+                            }),
+                        ],
+                    }),
+                    properties: {
+                        fill: new SolidFill("4472C4"),
+                        transform: { x: 100, y: 100, width: 600, height: 400 },
+                    },
+                }),
+            ],
+        },
+    ],
+});
+
+const buffer = await Packer.toBuffer(pres);
+writeFileSync("presentation.pptx", buffer);
 ```
 
 ## Development

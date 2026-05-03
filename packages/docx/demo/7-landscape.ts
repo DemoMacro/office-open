@@ -2,7 +2,7 @@
 
 import * as fs from "fs";
 
-import { Document, Packer, PageOrientation, Paragraph } from "docx-plus";
+import { Document, Packer, PageOrientation, Paragraph } from "@office-open/docx";
 
 const doc = new Document({
     sections: [

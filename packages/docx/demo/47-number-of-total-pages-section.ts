@@ -13,7 +13,7 @@ import {
     PageNumber,
     Paragraph,
     TextRun,
-} from "docx-plus";
+} from "@office-open/docx";
 
 const header = new Header({
     children: [

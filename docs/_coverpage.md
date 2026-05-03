@@ -6,5 +6,5 @@
 - 80+ usage examples
 - Battle tested, mature, 100% coverage (yes, every line is tested)
 
-[GitHub](https://github.com/DemoMacro/docx-plus)
+[GitHub](https://github.com/DemoMacro/office-open)
 [Get Started](#Welcome)

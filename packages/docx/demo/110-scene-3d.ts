@@ -1,7 +1,7 @@
 // Demo: 3D scene (CT_Scene3D) - DrawingML
 import * as fs from "fs";
 
-import { Document, Packer, Paragraph, TextRun, WpsShapeRun } from "docx-plus";
+import { Document, Packer, Paragraph, TextRun, WpsShapeRun } from "@office-open/docx";
 
 const doc = new Document({
     sections: [
