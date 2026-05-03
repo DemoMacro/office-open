@@ -23,7 +23,7 @@ const pres = new Presentation({
                     height: 50,
                     paragraphs: [
                         new Paragraph({
-                            properties: { alignment: "ctr", bulletNone: true },
+                            properties: { alignment: "CENTER", bulletNone: true },
                             children: [
                                 new Run({ text: "Video Embedding Demo", fontSize: 32, bold: true }),
                             ],

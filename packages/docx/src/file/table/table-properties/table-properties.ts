@@ -66,7 +66,7 @@ import type { ITableBordersOptions } from "./table-borders";
 import { createTableCellMargin } from "./table-cell-margin";
 import type { ITableCellMarginOptions } from "./table-cell-margin";
 import { createTableFloatProperties, createTableOverlap } from "./table-float-properties";
-import type { ITableFloatOptions, OverlapType } from "./table-float-properties";
+import type { ITableFloatOptions } from "./table-float-properties";
 import { createTableLayout } from "./table-layout";
 import type { TableLayoutType } from "./table-layout";
 import { createTableLook } from "./table-look";

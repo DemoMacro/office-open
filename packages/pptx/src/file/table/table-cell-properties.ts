@@ -1,4 +1,4 @@
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { BuilderElement, NextAttributeComponent, XmlComponent } from "@file/xml-components";
 
 import { buildFill } from "../drawingml/fill";
 import type { FillOptions } from "../drawingml/fill";
@@ -11,6 +11,8 @@ export interface ICellBorderOptions {
 
 /**
  * a:tcPr — Table cell properties (borders + fill).
+ * XSD order: lnL → lnR → lnT → lnB → lnTlToBr → lnBlToTr → cell3D → EG_FillProperties → headers → extLst
+ * anchor is an attribute, not a child element.
  */
 export class TableCellProperties extends XmlComponent {
     public constructor(options?: {
@@ -21,35 +23,14 @@ export class TableCellProperties extends XmlComponent {
             readonly left?: ICellBorderOptions;
             readonly right?: ICellBorderOptions;
         };
-        readonly columnSpan?: number;
-        readonly rowSpan?: number;
         readonly verticalAlign?: "t" | "ctr" | "b";
     }) {
         super("a:tcPr");
 
         if (options?.verticalAlign) {
             this.root.push(
-                new BuilderElement({
-                    name: "a:anchor",
-                    attributes: { val: { key: "val", value: options.verticalAlign } },
-                }),
-            );
-        }
-
-        if (options?.columnSpan !== undefined && options.columnSpan > 1) {
-            this.root.push(
-                new BuilderElement({
-                    name: "a:gridSpan",
-                    attributes: { val: { key: "val", value: options.columnSpan } },
-                }),
-            );
-        }
-
-        if (options?.rowSpan !== undefined && options.rowSpan > 1) {
-            this.root.push(
-                new BuilderElement({
-                    name: "a:rowSpan",
-                    attributes: { val: { key: "val", value: options.rowSpan } },
+                new NextAttributeComponent({
+                    anchor: { key: "anchor", value: options.verticalAlign },
                 }),
             );
         }

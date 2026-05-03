@@ -4,6 +4,13 @@ import {
     NextAttributeComponent,
 } from "@file/xml-components";
 
+export const TextAlignment = {
+    LEFT: "l",
+    CENTER: "ctr",
+    RIGHT: "r",
+    JUSTIFY: "just",
+} as const;
+
 export type BulletCharOptions = {
     readonly type: "char";
     readonly char?: string;
@@ -26,7 +33,7 @@ export type BulletNoneOption = {
 export type BulletOptions = BulletCharOptions | BulletAutoNumOptions | BulletNoneOption;
 
 export interface IParagraphPropertiesOptions {
-    readonly alignment?: "l" | "ctr" | "r" | "just";
+    readonly alignment?: keyof typeof TextAlignment;
     readonly indentLevel?: number;
     readonly marginBottom?: number;
     readonly marginTop?: number;
@@ -52,7 +59,8 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
             string,
             { readonly key: string; readonly value: string | number | undefined }
         > = {};
-        if (options.alignment) attrs.algn = { key: "algn", value: options.alignment };
+        if (options.alignment)
+            attrs.algn = { key: "algn", value: TextAlignment[options.alignment] };
         if (options.indentLevel !== undefined)
             attrs.lvl = { key: "lvl", value: options.indentLevel };
         if (options.marginIndent !== undefined)
@@ -124,79 +132,80 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.bullet) {
-            this.root.push(buildBulletElement(options.bullet));
+            this.pushBulletElements(options.bullet);
         } else if (options.bulletNone !== false) {
             this.root.push(new BuilderElement({ name: "a:buNone" }));
         }
     }
-}
 
-function buildBulletElement(options: BulletOptions): BuilderElement<{}> {
-    if (options.type === "none") {
-        return new BuilderElement({ name: "a:buNone" });
-    }
-
-    const children: BuilderElement<{}>[] = [];
-
-    // Bullet color
-    if (options.color) {
-        children.push(
-            new BuilderElement({
-                name: "a:buClr",
-                children: [
-                    new BuilderElement({
-                        name: "a:srgbClr",
-                        attributes: { val: { key: "val", value: options.color.replace("#", "") } },
-                    }),
-                ],
-            }),
-        );
-    }
-
-    // Bullet size
-    if (options.size !== undefined) {
-        children.push(
-            new BuilderElement({
-                name: "a:buSzPct",
-                attributes: { val: { key: "val", value: options.size * 1000 } },
-            }),
-        );
-    }
-
-    // Bullet font
-    children.push(
-        new BuilderElement({
-            name: "a:buFont",
-            attributes: {
-                typeface: { key: "typeface", value: "Arial" },
-                panose: { key: "panose", value: "020B0604020202020204" },
-                pitchFamily: { key: "pitchFamily", value: "34" },
-                charset: { key: "charset", value: "0" },
-            },
-        }),
-    );
-
-    if (options.type === "char") {
-        children.push(
-            new BuilderElement({
-                name: "a:buChar",
-                attributes: { char: { key: "char", value: options.char ?? "•" } },
-            }),
-        );
-    } else if (options.type === "autoNum") {
-        const attrs: Record<string, { readonly key: string; readonly value: string | number }> = {
-            type: { key: "type", value: options.format ?? "arabicPeriod" },
-        };
-        if (options.startAt !== undefined) {
-            attrs.startAt = { key: "startAt", value: options.startAt };
+    private pushBulletElements(options: BulletOptions) {
+        if (options.type === "none") {
+            this.root.push(new BuilderElement({ name: "a:buNone" }));
+            return;
         }
-        children.push(
+
+        // buClr (EG_TextBulletColor)
+        if (options.color) {
+            this.root.push(
+                new BuilderElement({
+                    name: "a:buClr",
+                    children: [
+                        new BuilderElement({
+                            name: "a:srgbClr",
+                            attributes: {
+                                val: { key: "val", value: options.color.replace("#", "") },
+                            },
+                        }),
+                    ],
+                }),
+            );
+        }
+
+        // buSzPct (EG_TextBulletSize) — val is a percentage string like "75%"
+        if (options.size !== undefined) {
+            this.root.push(
+                new BuilderElement({
+                    name: "a:buSzPct",
+                    attributes: { val: { key: "val", value: `${options.size}%` } },
+                }),
+            );
+        }
+
+        // buFont (EG_TextBulletTypeface)
+        this.root.push(
             new BuilderElement({
-                name: "a:buAutoNum",
-                attributes: attrs,
+                name: "a:buFont",
+                attributes: {
+                    typeface: { key: "typeface", value: "Arial" },
+                    panose: { key: "panose", value: "020B0604020202020204" },
+                    pitchFamily: { key: "pitchFamily", value: "34" },
+                    charset: { key: "charset", value: "0" },
+                },
             }),
         );
-    }
 
-    return new BuilderElement({ name: "a:buPpt", children });
+        // buChar or buAutoNum (EG_TextBullet)
+        if (options.type === "char") {
+            this.root.push(
+                new BuilderElement({
+                    name: "a:buChar",
+                    attributes: { char: { key: "char", value: options.char ?? "•" } },
+                }),
+            );
+        } else if (options.type === "autoNum") {
+            const attrs: Record<string, { readonly key: string; readonly value: string | number }> =
+                {
+                    type: { key: "type", value: options.format ?? "arabicPeriod" },
+                };
+            if (options.startAt !== undefined) {
+                attrs.startAt = { key: "startAt", value: options.startAt };
+            }
+            this.root.push(
+                new BuilderElement({
+                    name: "a:buAutoNum",
+                    attributes: attrs,
+                }),
+            );
+        }
+    }
 }

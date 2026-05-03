@@ -1,12 +1,13 @@
 import { BuilderElement, XmlComponent } from "@file/xml-components";
 
+import { VerticalAlignment } from "../table/table-cell";
 import { Paragraph } from "./paragraph/paragraph";
 import { Run } from "./paragraph/run";
 
 export interface ITextBodyOptions {
     readonly paragraphs?: readonly (Paragraph | string)[];
     readonly vertical?: "vert" | "vert270" | "horz" | "wordArtVert";
-    readonly anchor?: "t" | "ctr" | "b";
+    readonly anchor?: keyof typeof VerticalAlignment;
     readonly autoFit?: "normal" | "shape" | "none";
     readonly wrap?: "square" | "none";
     readonly margins?: {
@@ -32,7 +33,8 @@ export class TextBody extends XmlComponent {
             { readonly key: string; readonly value: string | number }
         > = {};
         if (options.vertical) bodyPrAttrs.vert = { key: "vert", value: options.vertical };
-        if (options.anchor) bodyPrAttrs.anchor = { key: "anchor", value: options.anchor };
+        if (options.anchor)
+            bodyPrAttrs.anchor = { key: "anchor", value: VerticalAlignment[options.anchor] };
         if (options.wrap) bodyPrAttrs.wrap = { key: "wrap", value: options.wrap };
         if (options.margins?.top !== undefined)
             bodyPrAttrs.tIns = { key: "tIns", value: options.margins.top };
@@ -44,6 +46,8 @@ export class TextBody extends XmlComponent {
             bodyPrAttrs.rIns = { key: "rIns", value: options.margins.right };
         if (options.columns !== undefined)
             bodyPrAttrs.numCol = { key: "numCol", value: options.columns };
+        if (options.columnSpacing !== undefined)
+            bodyPrAttrs.spcCol = { key: "spcCol", value: options.columnSpacing * 100 };
 
         const bodyPrChildren: BuilderElement<{}>[] = [];
 
@@ -53,15 +57,6 @@ export class TextBody extends XmlComponent {
             bodyPrChildren.push(new BuilderElement({ name: "a:spAutoFit" }));
         } else if (options.autoFit === "none") {
             bodyPrChildren.push(new BuilderElement({ name: "a:noAutofit" }));
-        }
-
-        if (options.columnSpacing !== undefined) {
-            bodyPrChildren.push(
-                new BuilderElement({
-                    name: "a:spcCol",
-                    attributes: { spcPts: { key: "spcPts", value: options.columnSpacing * 100 } },
-                }),
-            );
         }
 
         this.root.push(

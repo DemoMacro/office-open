@@ -8,11 +8,15 @@ export { Run, type IRunOptions } from "./shape/paragraph/run";
 export { Text } from "./shape/paragraph/text";
 export {
     RunProperties,
+    UnderlineStyle,
+    StrikeStyle,
+    TextCapitalization,
     type IRunPropertiesOptions,
     type IHyperlinkOptions,
 } from "./shape/paragraph/run-properties";
 export {
     ParagraphProperties,
+    TextAlignment,
     type IParagraphPropertiesOptions,
 } from "./shape/paragraph/paragraph-properties";
 export { EndParagraphRunProperties } from "./shape/paragraph/end-paragraph-run";
@@ -72,6 +76,7 @@ export { PresetGeometry } from "./drawingml/preset-geometry";
 export { ShapeProperties, type IShapePropertiesOptions } from "./drawingml/shape-properties";
 export {
     EffectList,
+    ReflectionAlignment,
     type IEffectsOptions,
     type IShadowOptions,
     type IGlowOptions,
@@ -119,7 +124,7 @@ export { Background, type IBackgroundOptions } from "./background/background";
 export { TableFrame, type ITableFrameOptions } from "./table/table-frame";
 export { Table, type ITableOptions } from "./table/table";
 export { TableRow, type ITableRowOptions } from "./table/table-row";
-export { TableCell, type ITableCellOptions } from "./table/table-cell";
+export { TableCell, VerticalAlignment, type ITableCellOptions } from "./table/table-cell";
 export { TableProperties } from "./table/table-properties";
 export { TableCellProperties, type ICellBorderOptions } from "./table/table-cell-properties";
 export { ChartFrame, type IChartFrameOptions } from "./chart/chart-frame";

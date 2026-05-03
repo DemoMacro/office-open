@@ -176,8 +176,9 @@ export class File {
         this.presProps = new PresentationProperties(options.show);
         this.viewProps = new ViewProperties();
 
-        // Slide Master
-        this.slideMaster = new DefaultSlideMaster();
+        // Slide Master — pass headerFooter from first slide that defines it
+        const slideHeaderFooter = slides.find((s) => s.headerFooter)?.headerFooter;
+        this.slideMaster = new DefaultSlideMaster(slideHeaderFooter);
         this.slideMasterRelationships = new Relationships();
         this.slideMasterRelationships.addRelationship(
             1,
