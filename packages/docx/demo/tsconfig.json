@@ -8,7 +8,6 @@
             "@export/*": ["../src/export/*"],
             "@file/*": ["../src/file/*"],
             "tests/*": ["../src/tests/*"],
-            "docx-plus": ["../src/index.ts"],
             "@office-open/docx": ["../src/index.ts"]
         }
     },

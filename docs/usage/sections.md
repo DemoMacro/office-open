@@ -67,7 +67,7 @@ Setting the section type determines how the contents of the section will be plac
 | `NEXT_COLUMN` | Start in the next column                       |
 
 ```ts
-import { SectionType } from "docx-plus";
+import { SectionType } from "@office-open/docx";
 
 const doc = new Document({
     sections: [
@@ -121,7 +121,7 @@ const doc = new Document({
 ### Portrait and Landscape Mix
 
 ```ts
-import { PageOrientation, convertMillimetersToTwip } from "docx-plus";
+import { PageOrientation, convertMillimetersToTwip } from "@office-open/docx";
 
 const doc = new Document({
     sections: [
@@ -206,12 +206,12 @@ const doc = new Document({
 
 ### Multiple Sections
 
-[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/16-multiple-sections.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/office-open/main/packages/docx/demo/16-multiple-sections.ts ":include")
 
-_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/16-multiple-sections.ts_
+_Source: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/16-multiple-sections.ts_
 
 ### Section Types
 
-[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/58-section-types.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/office-open/main/packages/docx/demo/58-section-types.ts ":include")
 
-_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/58-section-types.ts_
+_Source: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/58-section-types.ts_

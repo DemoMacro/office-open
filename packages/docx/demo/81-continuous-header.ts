@@ -2,7 +2,15 @@
 
 import * as fs from "fs";
 
-import { Document, Footer, Header, Packer, Paragraph, SectionType, TextRun } from "docx-plus";
+import {
+    Document,
+    Footer,
+    Header,
+    Packer,
+    Paragraph,
+    SectionType,
+    TextRun,
+} from "@office-open/docx";
 
 const doc = new Document({
     creator: "Creator",

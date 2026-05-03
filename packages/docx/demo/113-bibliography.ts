@@ -1,7 +1,13 @@
 // Demo: Bibliography - citation management
 import * as fs from "fs";
 
-import { Document, Packer, Paragraph, TextRun, StructuredDocumentTagBlock } from "docx-plus";
+import {
+    Document,
+    Packer,
+    Paragraph,
+    TextRun,
+    StructuredDocumentTagBlock,
+} from "@office-open/docx";
 
 const doc = new Document({
     bibliography: {

@@ -2,7 +2,7 @@
 
 import * as fs from "fs";
 
-import { Document, Footer, Header, Packer, Paragraph } from "docx-plus";
+import { Document, Footer, Header, Packer, Paragraph } from "@office-open/docx";
 
 const doc = new Document({
     sections: [

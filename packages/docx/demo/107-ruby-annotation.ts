@@ -1,7 +1,7 @@
 // Demo: Ruby annotation (CT_Ruby) - East Asian pronunciation guides
 import * as fs from "fs";
 
-import { createRuby, Document, Packer, Paragraph, TextRun } from "docx-plus";
+import { createRuby, Document, Packer, Paragraph, TextRun } from "@office-open/docx";
 
 const doc = new Document({
     sections: [

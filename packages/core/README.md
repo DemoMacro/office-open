@@ -4,13 +4,15 @@
 ![npm downloads](https://img.shields.io/npm/dw/@office-open/core)
 ![npm license](https://img.shields.io/npm/l/@office-open/core)
 
-> Shared OOXML infrastructure: XmlComponent, value validators, unit converters.
+> Shared OOXML infrastructure: XmlComponent, value validators, unit converters, chart types, and SmartArt definitions.
 
 ## Features
 
 - **XmlComponent Framework** - Base classes for building OOXML element trees with dynamic namespace support
 - **Value Validators** - Runtime validation for OOXML spec types (ST_HexColor, ST_OnOff, ST_DecimalNumber, etc.)
-- **Unit Converters** - Millimeter/inch to TWIP conversion
+- **Unit Converters** - TWIP and EMU conversions (mm/in/pt/px)
+- **Chart Components** - Shared chart types (bar, line, pie, area, scatter) and chart collection for DOCX/PPTX
+- **SmartArt Components** - Data model, tree-to-model converter, collection, and built-in layout/style/color definitions
 - **ID Generators** - Sequential numeric IDs, nanoid, SHA-1 hash, UUID v4
 - **OOXML Compliance** - All types verified against ISO/IEC 29500-4 XSD schemas
 
@@ -59,6 +61,9 @@ decimalNumber(10.7); // → 10
 
 // Unit converters
 convertMillimetersToTwip(25.4); // → 1440 (1 inch)
+convertPixelsToEmu(100); // → 952500
+convertInchesToEmu(1); // → 914400
+convertPointsToEmu(12); // → 152400
 
 // ID generators
 const gen = uniqueNumericIdCreator();
@@ -80,10 +85,12 @@ gen(); // → 1, 2, 3, ...
 
 ## Exports
 
-| Path                       | Contents                                            |
-| -------------------------- | --------------------------------------------------- |
-| `@office-open/core`        | XmlComponent, validators, converters, ID generators |
-| `@office-open/core/values` | Validators + ThemeColor/ThemeFont only              |
+| Path                         | Contents                                            |
+| ---------------------------- | --------------------------------------------------- |
+| `@office-open/core`          | XmlComponent, validators, converters, ID generators |
+| `@office-open/core/values`   | Validators + ThemeColor/ThemeFont only              |
+| `@office-open/core/chart`    | Chart types, series data, chart collection, title   |
+| `@office-open/core/smartart` | SmartArt data model, tree-to-model, definitions     |
 
 ## Benchmark
 

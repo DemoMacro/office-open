@@ -4,7 +4,15 @@
 
 import * as fs from "fs";
 
-import { Document, EditGroupType, Packer, Paragraph, PermEnd, PermStart, TextRun } from "docx-plus";
+import {
+    Document,
+    EditGroupType,
+    Packer,
+    Paragraph,
+    PermEnd,
+    PermStart,
+    TextRun,
+} from "@office-open/docx";
 
 const doc = new Document({
     features: {

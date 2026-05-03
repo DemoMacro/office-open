@@ -1,7 +1,7 @@
 import * as fs from "fs";
 
 // Simple example to add textbox to a document
-import { Document, Packer, Paragraph, TextRun, Textbox } from "docx-plus";
+import { Document, Packer, Paragraph, TextRun, Textbox } from "@office-open/docx";
 
 const doc = new Document({
     sections: [

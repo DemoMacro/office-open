@@ -10,7 +10,7 @@ import {
     Packer,
     Paragraph,
     convertInchesToTwip,
-} from "docx-plus";
+} from "@office-open/docx";
 
 const doc = new Document({
     numbering: {

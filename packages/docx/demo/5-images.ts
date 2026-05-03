@@ -12,7 +12,7 @@ import {
     VerticalPositionAlign,
     VerticalPositionRelativeFrom,
     convertMillimetersToTwip,
-} from "docx-plus";
+} from "@office-open/docx";
 
 const doc = new Document({
     sections: [

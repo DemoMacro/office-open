@@ -47,6 +47,6 @@ export const createChartType = (options: IChartTypeOptions) => {
                 series: options.series,
             });
         default:
-            throw new Error(`Chart type "${(options as never).type}" is not supported`);
+            throw new Error(`Unsupported chart type: ${(options as IChartTypeOptions).type}`);
     }
 };

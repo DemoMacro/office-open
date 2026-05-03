@@ -9,7 +9,7 @@ Create multi-column layouts like newspapers or newsletters by configuring column
 Create equal-width columns:
 
 ```ts
-import { Document, Paragraph } from "docx-plus";
+import { Document, Paragraph } from "@office-open/docx";
 
 const doc = new Document({
     sections: [
@@ -55,7 +55,7 @@ properties: {
 Create columns with custom widths:
 
 ```ts
-import { Column, Document, Paragraph } from "docx-plus";
+import { Column, Document, Paragraph } from "@office-open/docx";
 
 const doc = new Document({
     sections: [
@@ -89,7 +89,7 @@ const doc = new Document({
 Force content to the next column using `ColumnBreak`:
 
 ```ts
-import { ColumnBreak, Document, Paragraph, TextRun } from "docx-plus";
+import { ColumnBreak, Document, Paragraph, TextRun } from "@office-open/docx";
 
 const doc = new Document({
     sections: [
@@ -130,7 +130,7 @@ properties: {
 Use multiple sections to mix column layouts:
 
 ```ts
-import { Document, Paragraph, SectionType } from "docx-plus";
+import { Document, Paragraph, SectionType } from "@office-open/docx";
 
 const doc = new Document({
     sections: [
@@ -165,7 +165,7 @@ const doc = new Document({
 Newsletter-style layout with unequal columns:
 
 ```ts
-import { Column, ColumnBreak, Document, HeadingLevel, Paragraph, TextRun } from "docx-plus";
+import { Column, ColumnBreak, Document, HeadingLevel, Paragraph, TextRun } from "@office-open/docx";
 
 const doc = new Document({
     sections: [
@@ -213,18 +213,18 @@ const doc = new Document({
 
 ### Multiple Columns
 
-[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/44-multiple-columns.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/office-open/main/packages/docx/demo/44-multiple-columns.ts ":include")
 
-_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/44-multiple-columns.ts_
+_Source: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/44-multiple-columns.ts_
 
 ### Column Break
 
-[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/67-column-break.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/office-open/main/packages/docx/demo/67-column-break.ts ":include")
 
-_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/67-column-break.ts_
+_Source: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/67-column-break.ts_
 
 ### Different Width Columns
 
-[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/69-different-width-columns.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/office-open/main/packages/docx/demo/69-different-width-columns.ts ":include")
 
-_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/69-different-width-columns.ts_
+_Source: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/69-different-width-columns.ts_

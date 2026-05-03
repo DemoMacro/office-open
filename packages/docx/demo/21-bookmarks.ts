@@ -13,7 +13,7 @@ import {
     PageReference,
     Paragraph,
     TextRun,
-} from "docx-plus";
+} from "@office-open/docx";
 
 const LOREM_IPSUM =
     /* Cspell:disable-next-line */

@@ -2,7 +2,7 @@
 
 import * as fs from "fs";
 
-import { ColumnBreak, Document, Packer, Paragraph, TextRun } from "docx-plus";
+import { ColumnBreak, Document, Packer, Paragraph, TextRun } from "@office-open/docx";
 
 const doc = new Document({
     sections: [

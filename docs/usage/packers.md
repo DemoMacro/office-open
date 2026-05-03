@@ -84,10 +84,10 @@ Packer.pack(doc, "string").then((string) => {
 
 ## Demos
 
-[Export to Base64 Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/19-export-to-base64.ts ":include")
+[Export to Base64 Example](https://raw.githubusercontent.com/DemoMacro/office-open/main/packages/docx/demo/19-export-to-base64.ts ":include")
 
-_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/19-export-to-base64.ts_
+_Source: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/19-export-to-base64.ts_
 
-[Node.js Stream Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/74-nodejs-stream.ts ":include")
+[Node.js Stream Example](https://raw.githubusercontent.com/DemoMacro/office-open/main/packages/docx/demo/74-nodejs-stream.ts ":include")
 
-_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/74-nodejs-stream.ts_
+_Source: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/74-nodejs-stream.ts_

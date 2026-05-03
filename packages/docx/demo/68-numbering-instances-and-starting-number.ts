@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Document, LevelFormat, Packer, Paragraph } from "docx-plus";
+import { Document, LevelFormat, Packer, Paragraph } from "@office-open/docx";
 
 const doc = new Document({
     numbering: {

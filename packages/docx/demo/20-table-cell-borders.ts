@@ -2,7 +2,15 @@
 
 import * as fs from "fs";
 
-import { BorderStyle, Document, Packer, Paragraph, Table, TableCell, TableRow } from "docx-plus";
+import {
+    BorderStyle,
+    Document,
+    Packer,
+    Paragraph,
+    Table,
+    TableCell,
+    TableRow,
+} from "@office-open/docx";
 
 const doc = new Document({
     sections: [

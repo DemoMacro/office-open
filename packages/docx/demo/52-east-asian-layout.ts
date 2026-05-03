@@ -1,7 +1,7 @@
 // East Asian layout - Need to use an East Asian font
 import * as fs from "fs";
 
-import { Document, HeadingLevel, Packer, Paragraph, TextRun } from "docx-plus";
+import { Document, HeadingLevel, Packer, Paragraph, TextRun } from "@office-open/docx";
 
 const doc = new Document({
     sections: [

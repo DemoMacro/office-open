@@ -1,6 +1,13 @@
 import * as fs from "fs";
 
-import { Presentation, Packer, Shape, SolidFill, LineShape, ConnectorShape } from "../src";
+import {
+    Presentation,
+    Packer,
+    Shape,
+    SolidFill,
+    LineShape,
+    ConnectorShape,
+} from "@office-open/pptx";
 
 const pres = new Presentation({
     title: "Lines & Connectors Demo",

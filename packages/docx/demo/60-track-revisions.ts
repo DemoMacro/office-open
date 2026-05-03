@@ -15,7 +15,7 @@ import {
     ShadingType,
     Tab,
     TextRun,
-} from "docx-plus";
+} from "@office-open/docx";
 
 /*
     For reference, see

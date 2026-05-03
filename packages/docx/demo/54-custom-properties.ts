@@ -5,7 +5,7 @@
 
 import * as fs from "fs";
 
-import { Document, Packer } from "docx-plus";
+import { Document, Packer } from "@office-open/docx";
 
 const doc = new Document(
     // Standard properties

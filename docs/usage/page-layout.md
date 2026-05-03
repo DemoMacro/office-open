@@ -9,7 +9,7 @@ Page layout options control the physical appearance of your document pages, incl
 Set custom page dimensions:
 
 ```ts
-import { Document, PageOrientation, Paragraph, convertMillimetersToTwip } from "docx-plus";
+import { Document, PageOrientation, Paragraph, convertMillimetersToTwip } from "@office-open/docx";
 
 const doc = new Document({
     sections: [
@@ -43,7 +43,7 @@ const doc = new Document({
 Set portrait or landscape orientation:
 
 ```ts
-import { Document, PageOrientation, Paragraph, convertMillimetersToTwip } from "docx-plus";
+import { Document, PageOrientation, Paragraph, convertMillimetersToTwip } from "@office-open/docx";
 
 // Landscape A4
 // Note: For landscape, swap width and height values so the larger dimension becomes the width
@@ -72,7 +72,7 @@ const doc = new Document({
 Set margins for the page:
 
 ```ts
-import { Document, Paragraph, convertInchesToTwip } from "docx-plus";
+import { Document, Paragraph, convertInchesToTwip } from "@office-open/docx";
 
 const doc = new Document({
     sections: [
@@ -116,7 +116,7 @@ import {
     PageBorderDisplay,
     PageBorderOffsetFrom,
     Paragraph,
-} from "docx-plus";
+} from "@office-open/docx";
 
 // Note: Border size is measured in 1/8 points (so size: 8 = 1pt, size: 16 = 2pt)
 const doc = new Document({
@@ -179,7 +179,7 @@ Common border styles include:
 Control when and how borders appear:
 
 ```ts
-import { PageBorderDisplay, PageBorderOffsetFrom, PageBorderZOrder } from "docx-plus";
+import { PageBorderDisplay, PageBorderOffsetFrom, PageBorderZOrder } from "@office-open/docx";
 
 page: {
     borders: {
@@ -206,7 +206,7 @@ import {
     Paragraph,
     convertInchesToTwip,
     convertMillimetersToTwip,
-} from "docx-plus";
+} from "@office-open/docx";
 
 const doc = new Document({
     sections: [
@@ -261,18 +261,18 @@ const doc = new Document({
 
 ### Page Borders
 
-[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/71-page-borders-2.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/office-open/main/packages/docx/demo/71-page-borders-2.ts ":include")
 
-_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/71-page-borders-2.ts_
+_Source: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/71-page-borders-2.ts_
 
 ### Page Sizes
 
-[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/65-page-sizes.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/office-open/main/packages/docx/demo/65-page-sizes.ts ":include")
 
-_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/65-page-sizes.ts_
+_Source: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/65-page-sizes.ts_
 
 ### Landscape Orientation
 
-[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/7-landscape.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/office-open/main/packages/docx/demo/7-landscape.ts ":include")
 
-_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/7-landscape.ts_
+_Source: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/7-landscape.ts_

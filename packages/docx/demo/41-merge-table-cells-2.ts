@@ -2,7 +2,7 @@
 
 import * as fs from "fs";
 
-import { Document, Packer, Paragraph, Table, TableCell, TableRow } from "docx-plus";
+import { Document, Packer, Paragraph, Table, TableCell, TableRow } from "@office-open/docx";
 
 const table = new Table({
     rows: [

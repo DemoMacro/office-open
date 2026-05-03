@@ -2,7 +2,7 @@
 
 import * as fs from "fs";
 
-import { Document, Packer, Paragraph, Tab, TextRun } from "docx-plus";
+import { Document, Packer, Paragraph, Tab, TextRun } from "@office-open/docx";
 
 const font = fs.readFileSync("./demo/assets/Pacifico.ttf");
 

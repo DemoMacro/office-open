@@ -1,7 +1,7 @@
 // Demo: Chart - bar/column chart with multiple series
 import * as fs from "fs";
 
-import { Document, Packer, Paragraph, TextRun, ChartRun } from "docx-plus";
+import { Document, Packer, Paragraph, TextRun, ChartRun } from "@office-open/docx";
 
 const doc = new Document({
     sections: [

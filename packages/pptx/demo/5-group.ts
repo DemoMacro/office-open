@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Background, GroupShape, Presentation, Packer, Shape, SolidFill } from "../src";
+import { Background, GroupShape, Presentation, Packer, Shape, SolidFill } from "@office-open/pptx";
 
 const pres = new Presentation({
     title: "Group Shape Demo",

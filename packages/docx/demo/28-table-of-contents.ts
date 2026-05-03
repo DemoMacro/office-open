@@ -10,7 +10,7 @@ import {
     Paragraph,
     StyleLevel,
     TableOfContents,
-} from "docx-plus";
+} from "@office-open/docx";
 
 // WordprocessingML docs for TableOfContents can be found here:
 // http://officeopenxml.com/WPtableOfContents.php

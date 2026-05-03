@@ -5,7 +5,7 @@
 You can add multiple `symbol runs` in `Paragraphs` along with [text runs](usage/text.md) using the Paragraph's `children` property.
 
 ```ts
-import { Paragraph, TextRun, SymbolRun } from "docx-plus";
+import { Paragraph, TextRun, SymbolRun } from "@office-open/docx";
 
 const paragraph = new Paragraph({
     children: [new TextRun("This is a checkbox: "), new SymbolRun("F071")],

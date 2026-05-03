@@ -16,7 +16,7 @@ import {
     TableRow,
     WidthType,
     convertInchesToTwip,
-} from "docx-plus";
+} from "@office-open/docx";
 
 const table = new Table({
     rows: [

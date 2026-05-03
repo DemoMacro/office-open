@@ -11,7 +11,7 @@ import {
     TableCell,
     TableRow,
     WidthType,
-} from "docx-plus";
+} from "@office-open/docx";
 
 const table1 = new Table({
     columnWidths: [3505, 5505],

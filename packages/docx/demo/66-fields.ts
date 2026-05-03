@@ -2,7 +2,7 @@
 
 import * as fs from "fs";
 
-import { Bookmark, Document, Packer, Paragraph, SimpleField, TextRun } from "docx-plus";
+import { Bookmark, Document, Packer, Paragraph, SimpleField, TextRun } from "@office-open/docx";
 
 const doc = new Document({
     creator: "Me",

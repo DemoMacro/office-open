@@ -3,7 +3,7 @@
 
 import * as fs from "fs";
 
-// Import { Document, Packer, Paragraph } from "docx-plus";
+// Import { Document, Packer, Paragraph } from "@office-open/docx";
 import {
     Document,
     ImageRun,
@@ -11,7 +11,7 @@ import {
     Paragraph,
     TextWrappingSide,
     TextWrappingType,
-} from "docx-plus";
+} from "@office-open/docx";
 
 const imageData = fs.readFileSync("./demo/images/pizza.gif");
 

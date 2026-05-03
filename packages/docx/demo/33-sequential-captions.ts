@@ -2,7 +2,7 @@
 
 import * as fs from "fs";
 
-import { Document, Packer, Paragraph, SequentialIdentifier, TextRun } from "docx-plus";
+import { Document, Packer, Paragraph, SequentialIdentifier, TextRun } from "@office-open/docx";
 
 const doc = new Document({
     sections: [

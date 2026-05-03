@@ -10,7 +10,7 @@ import {
     TableRow,
     TextRun,
     WidthType,
-} from "docx-plus";
+} from "@office-open/docx";
 
 const styles = fs.readFileSync("./demo/assets/custom-styles.xml", "utf8");
 

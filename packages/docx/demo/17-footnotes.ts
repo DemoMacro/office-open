@@ -12,7 +12,7 @@ import {
     Paragraph,
     TextRun,
     convertInchesToTwip,
-} from "docx-plus";
+} from "@office-open/docx";
 
 const doc = new Document({
     footnotes: {

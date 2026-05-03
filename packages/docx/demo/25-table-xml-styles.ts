@@ -2,7 +2,15 @@
 
 import * as fs from "fs";
 
-import { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType } from "docx-plus";
+import {
+    Document,
+    Packer,
+    Paragraph,
+    Table,
+    TableCell,
+    TableRow,
+    WidthType,
+} from "@office-open/docx";
 
 const styles = fs.readFileSync("./demo/assets/custom-styles.xml", "utf8");
 

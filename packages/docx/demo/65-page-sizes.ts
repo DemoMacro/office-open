@@ -3,7 +3,13 @@
 
 import * as fs from "fs";
 
-import { Document, Packer, PageOrientation, Paragraph, convertMillimetersToTwip } from "docx-plus";
+import {
+    Document,
+    Packer,
+    PageOrientation,
+    Paragraph,
+    convertMillimetersToTwip,
+} from "@office-open/docx";
 
 const doc = new Document({
     sections: [

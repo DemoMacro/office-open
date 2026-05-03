@@ -2,7 +2,7 @@
 
 import * as fs from "fs";
 
-import { Column, Document, Packer, Paragraph } from "docx-plus";
+import { Column, Document, Packer, Paragraph } from "@office-open/docx";
 
 const doc = new Document({
     sections: [

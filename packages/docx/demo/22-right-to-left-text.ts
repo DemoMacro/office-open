@@ -12,7 +12,7 @@ import {
     TableCell,
     TableRow,
     TextRun,
-} from "docx-plus";
+} from "@office-open/docx";
 
 const doc = new Document({
     sections: [

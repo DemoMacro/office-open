@@ -11,7 +11,7 @@ Similar to `Text Frames`, but the difference being that it is `VML` `Shape` base
 Create a text box with basic content:
 
 ```ts
-import { Document, Paragraph, TextRun, Textbox } from "docx-plus";
+import { Document, Paragraph, TextRun, Textbox } from "@office-open/docx";
 
 const doc = new Document({
     sections: [
@@ -152,7 +152,7 @@ import {
     Paragraph,
     TextRun,
     Textbox,
-} from "docx-plus";
+} from "@office-open/docx";
 import * as fs from "fs";
 
 const doc = new Document({
@@ -211,6 +211,6 @@ For most use cases, **Text Frames** are recommended. See [Text Frames](usage/tex
 
 ## Demo
 
-[Example](https://raw.githubusercontent.com/DemoMacro/docx-plus/main/demo/94-texbox.ts ":include")
+[Example](https://raw.githubusercontent.com/DemoMacro/office-open/main/packages/docx/demo/94-texbox.ts ":include")
 
-_Source: https://github.com/DemoMacro/docx-plus/blob/master/demo/94-texbox.ts_
+_Source: https://github.com/DemoMacro/office-open/blob/main/packages/docx/demo/94-texbox.ts_
