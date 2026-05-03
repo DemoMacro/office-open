@@ -2,14 +2,12 @@ import type { IMediaDataTransformation } from "@file/media";
 import type { Paragraph } from "@file/paragraph";
 import { BuilderElement } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
+import type { FillOptions } from "@office-open/core/drawingml";
 
 import type { CustomGeometryOptions } from "../pic/shape-properties/custom-geometry/custom-geometry";
 import type { EffectDagOptions } from "../pic/shape-properties/effects/effect-dag";
 import type { EffectListOptions } from "../pic/shape-properties/effects/effect-list";
-import type { GradientFillOptions } from "../pic/shape-properties/fill/gradient-fill";
-import type { PatternFillOptions } from "../pic/shape-properties/fill/pattern-fill";
 import type { OutlineOptions } from "../pic/shape-properties/outline/outline";
-import type { SolidFillOptions } from "../pic/shape-properties/outline/solid-fill";
 import { ShapeProperties } from "../pic/shape-properties/shape-properties";
 import type { Scene3DOptions } from "../pic/shape-properties/three-d/scene-3d";
 import type { Shape3DOptions } from "../pic/shape-properties/three-d/shape-3d";
@@ -24,10 +22,7 @@ export interface WpsShapeCoreOptions {
     readonly nonVisualProperties?: INonVisualShapePropertiesOptions;
     readonly bodyProperties?: IBodyPropertiesOptions;
     readonly outline?: OutlineOptions;
-    readonly solidFill?: SolidFillOptions;
-    readonly gradientFill?: GradientFillOptions;
-    readonly patternFill?: PatternFillOptions;
-    readonly noFill?: boolean;
+    readonly fill?: FillOptions;
     readonly customGeometry?: CustomGeometryOptions;
     readonly effectDag?: EffectDagOptions;
     readonly effects?: EffectListOptions;
@@ -48,13 +43,10 @@ export const createWpsShape = (options: WpsShapeOptions): XmlComponent =>
                 customGeometry: options.customGeometry,
                 effectDag: options.effectDag,
                 effects: options.effects,
-                gradientFill: options.gradientFill,
-                noFill: options.noFill,
+                fill: options.fill,
                 outline: options.outline,
-                patternFill: options.patternFill,
                 scene3d: options.scene3d,
                 shape3d: options.shape3d,
-                solidFill: options.solidFill,
                 transform: options.transformation,
             }),
             createWpsTextBox(options.children),

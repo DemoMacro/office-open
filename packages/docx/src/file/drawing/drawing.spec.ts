@@ -152,7 +152,7 @@ describe("Drawing", () => {
                                                                 "a:blip": {
                                                                     _attr: {
                                                                         cstate: "none",
-                                                                        "r:embed": "rId{test.jpg}",
+                                                                        "r:embed": "{test.jpg}",
                                                                     },
                                                                 },
                                                             },
@@ -389,7 +389,7 @@ describe("Drawing", () => {
                                                                 "a:blip": {
                                                                     _attr: {
                                                                         cstate: "none",
-                                                                        "r:embed": "rId{test.jpg}",
+                                                                        "r:embed": "{test.jpg}",
                                                                     },
                                                                 },
                                                             },
@@ -648,7 +648,7 @@ describe("Drawing", () => {
                                                                 "a:blip": {
                                                                     _attr: {
                                                                         cstate: "none",
-                                                                        "r:embed": "rId{test.jpg}",
+                                                                        "r:embed": "{test.jpg}",
                                                                     },
                                                                 },
                                                             },

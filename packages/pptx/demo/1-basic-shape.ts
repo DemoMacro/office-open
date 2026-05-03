@@ -1,6 +1,10 @@
 import * as fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
 import { Presentation, Shape, Packer, Paragraph, Run } from "@office-open/pptx";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const pres = new Presentation({
     title: "My Presentation",
@@ -232,6 +236,48 @@ const pres = new Presentation({
                             ],
                         }),
                     ],
+                }),
+            ],
+        },
+        // Slide 6: Blip fill (image) + gradient path (radial)
+        {
+            children: [
+                new Shape({
+                    x: 50,
+                    y: 50,
+                    width: 600,
+                    height: 50,
+                    text: "Blip Fill & Gradient Path",
+                    fill: "4472C4",
+                }),
+                new Shape({
+                    x: 50,
+                    y: 120,
+                    width: 400,
+                    height: 200,
+                    text: "Image Fill",
+                    fill: {
+                        type: "blip",
+                        data: new Uint8Array(
+                            fs.readFileSync(path.resolve(__dirname, "assets/test-poster.png")),
+                        ),
+                        imageType: "png",
+                    },
+                }),
+                new Shape({
+                    x: 480,
+                    y: 120,
+                    width: 300,
+                    height: 200,
+                    text: "Radial Gradient",
+                    fill: {
+                        type: "gradient",
+                        path: "circle",
+                        stops: [
+                            { position: 0, color: "FFFFFF" },
+                            { position: 100, color: "4472C4" },
+                        ],
+                    },
                 }),
             ],
         },

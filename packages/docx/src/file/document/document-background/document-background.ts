@@ -202,7 +202,7 @@ export class DocumentBackground extends XmlComponent {
                             attributes: {
                                 id: {
                                     key: "r:id",
-                                    value: `rId{${this.imageData.fileName}}`,
+                                    value: `{${this.imageData.fileName}}`,
                                 },
                                 title: {
                                     key: "o:title",

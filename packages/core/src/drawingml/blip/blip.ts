@@ -18,7 +18,7 @@ import { createExtentionList } from "./blip-extentions";
  * Options for creating a blip element.
  */
 export interface BlipOptions {
-    /** Relationship ID of the embedded image (the value after "rId{...}") */
+    /** File name used as placeholder; the packer's ImageReplacer replaces `{referenceId}` with `rId{N}` */
     readonly referenceId: string;
     /** Image type for SVG detection */
     readonly type?: "svg" | string;
@@ -95,7 +95,7 @@ export const createBlip = (
             },
             embed: {
                 key: "r:embed",
-                value: `rId{${options.type === "svg" && options.fallbackFileName ? options.fallbackFileName : options.referenceId}}`,
+                value: `{${options.type === "svg" && options.fallbackFileName ? options.fallbackFileName : options.referenceId}}`,
             },
         },
         children,

@@ -29,7 +29,7 @@ describe("ImageReplacer", () => {
                 0,
             );
 
-            expect(result).to.equal("test 0 test");
+            expect(result).to.equal("test rId0 test");
         });
     });
 

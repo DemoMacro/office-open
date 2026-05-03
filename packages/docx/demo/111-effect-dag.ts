@@ -47,7 +47,7 @@ const doc = new Document({
                                     dist: 38100,
                                 },
                             },
-                            solidFill: { value: "0070C0" },
+                            fill: "0070C0",
                             transformation: { height: 80, width: 300 },
                             type: "wps",
                         }),
@@ -74,7 +74,7 @@ const doc = new Document({
                                 luminance: { bright: 20000, contrast: -10000 },
                                 tint: { hue: 2700000, amt: 30000 },
                             },
-                            solidFill: { value: "4472C4" },
+                            fill: "4472C4",
                             transformation: { height: 80, width: 300 },
                             type: "wps",
                         }),
@@ -120,12 +120,15 @@ const doc = new Document({
                                     dist: 25400,
                                 },
                             },
-                            gradientFill: {
-                                shade: { angle: 5400000 },
-                                stops: [
-                                    { color: { value: "1F4E79" }, position: 0 },
-                                    { color: { value: "2E75B6" }, position: 100000 },
-                                ],
+                            fill: {
+                                type: "gradient",
+                                options: {
+                                    shade: { angle: 5400000 },
+                                    stops: [
+                                        { color: { value: "1F4E79" }, position: 0 },
+                                        { color: { value: "2E75B6" }, position: 100000 },
+                                    ],
+                                },
                             },
                             transformation: { height: 80, width: 300 },
                             type: "wps",
@@ -174,7 +177,7 @@ const doc = new Document({
                                 type: "solidFill",
                                 width: 25400,
                             },
-                            solidFill: { value: "F4B183" },
+                            fill: "F4B183",
                             transformation: { height: 80, width: 300 },
                             type: "wps",
                         }),

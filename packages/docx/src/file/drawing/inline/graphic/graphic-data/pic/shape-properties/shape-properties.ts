@@ -10,7 +10,9 @@
  * @module
  */
 import type { IMediaDataTransformation } from "@file/media";
+import type { IContext, IXmlableObject } from "@file/xml-components";
 import { XmlComponent } from "@file/xml-components";
+import { buildFill, extractBlipFillMedia, type FillOptions } from "@office-open/core/drawingml";
 
 import { createCustomGeometry } from "./custom-geometry/custom-geometry";
 import type { CustomGeometryOptions } from "./custom-geometry/custom-geometry";
@@ -18,17 +20,9 @@ import { createEffectDag } from "./effects/effect-dag";
 import type { EffectDagOptions } from "./effects/effect-dag";
 import { createEffectList } from "./effects/effect-list";
 import type { EffectListOptions } from "./effects/effect-list";
-import { createGradientFill } from "./fill/gradient-fill";
-import type { GradientFillOptions } from "./fill/gradient-fill";
-import { createGroupFill } from "./fill/group-fill";
-import { createPatternFill } from "./fill/pattern-fill";
-import type { PatternFillOptions } from "./fill/pattern-fill";
 import { Form } from "./form";
-import { createNoFill } from "./outline/no-fill";
 import { createOutline } from "./outline/outline";
 import type { OutlineOptions } from "./outline/outline";
-import { createSolidFill } from "./outline/solid-fill";
-import type { SolidFillOptions } from "./outline/solid-fill";
 import { PresetGeometry } from "./preset-geometry/preset-geometry";
 import type { PresetGeometryOptions } from "./preset-geometry/preset-geometry";
 import { ShapePropertiesAttributes } from "./shape-properties-attributes";
@@ -74,30 +68,23 @@ import type { Shape3DOptions } from "./three-d/shape-3d";
  */
 export class ShapeProperties extends XmlComponent {
     private readonly form: Form;
+    private readonly fillOptions?: FillOptions;
 
     public constructor({
         element,
         customGeometry,
         effectDag,
         effects,
-        gradientFill,
-        groupFill,
-        noFill,
+        fill,
         outline,
-        patternFill,
         presetGeometry,
         scene3d,
         shape3d,
-        solidFill,
         transform,
     }: {
         readonly element: string;
         readonly outline?: OutlineOptions;
-        readonly solidFill?: SolidFillOptions;
-        readonly gradientFill?: GradientFillOptions;
-        readonly patternFill?: PatternFillOptions;
-        readonly groupFill?: boolean;
-        readonly noFill?: boolean;
+        readonly fill?: FillOptions;
         readonly presetGeometry?: PresetGeometryOptions;
         /** Custom geometry (mutually exclusive with presetGeometry). */
         readonly customGeometry?: CustomGeometryOptions;
@@ -109,6 +96,8 @@ export class ShapeProperties extends XmlComponent {
         readonly transform: IMediaDataTransformation;
     }) {
         super(`${element}:spPr`);
+
+        this.fillOptions = fill;
 
         this.root.push(
             new ShapePropertiesAttributes({
@@ -127,16 +116,8 @@ export class ShapeProperties extends XmlComponent {
             this.root.push(new PresetGeometry(presetGeometry));
         }
 
-        if (noFill) {
-            this.root.push(createNoFill());
-        } else if (solidFill) {
-            this.root.push(createSolidFill(solidFill));
-        } else if (gradientFill) {
-            this.root.push(createGradientFill(gradientFill));
-        } else if (patternFill) {
-            this.root.push(createPatternFill(patternFill));
-        } else if (groupFill) {
-            this.root.push(createGroupFill());
+        if (fill !== undefined) {
+            this.root.push(buildFill(fill));
         }
 
         if (outline) {
@@ -157,5 +138,18 @@ export class ShapeProperties extends XmlComponent {
         if (shape3d) {
             this.root.push(createShape3D(shape3d));
         }
+    }
+
+    public override prepForXml(context: IContext): IXmlableObject | undefined {
+        const media = this.fillOptions ? extractBlipFillMedia(this.fillOptions) : undefined;
+        if (media) {
+            context.file.Media.addImage(media.fileName, {
+                data: media.data,
+                fileName: media.fileName,
+                type: media.type as "png",
+                transformation: { pixels: { x: 0, y: 0 }, emus: { x: 0, y: 0 } },
+            });
+        }
+        return super.prepForXml(context);
     }
 }

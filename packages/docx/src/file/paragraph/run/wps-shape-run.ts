@@ -38,7 +38,7 @@ export class WpsShapeRun extends Run {
             docProperties: options.altText,
             floating: options.floating,
             outline: options.outline,
-            solidFill: options.solidFill,
+            fill: options.fill,
         });
 
         this.root.push(drawing);

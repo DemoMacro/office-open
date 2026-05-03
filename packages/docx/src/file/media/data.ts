@@ -1,12 +1,12 @@
 import type { SourceRectangleOptions } from "@file/drawing/inline/graphic/graphic-data/pic/blip/source-rectangle";
 import type { EffectListOptions } from "@file/drawing/inline/graphic/graphic-data/pic/shape-properties/effects/effect-list";
 import type { OutlineOptions } from "@file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
-import type { SolidFillOptions } from "@file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill";
 import type {
     IChildExtent,
     IChildOffset,
 } from "@file/drawing/inline/graphic/graphic-data/wpg/wpg-group";
 import type { WpsShapeCoreOptions } from "@file/drawing/inline/graphic/graphic-data/wps";
+import type { FillOptions } from "@office-open/core/drawingml";
 
 export interface IMediaDataTransformation {
     readonly offset?: {
@@ -86,7 +86,7 @@ export interface WpsMediaData {
 
 export interface WpgCommonMediaData {
     readonly outline?: OutlineOptions;
-    readonly solidFill?: SolidFillOptions;
+    readonly fill?: FillOptions;
 }
 
 export type IGroupChildMediaData = (WpsMediaData | IMediaData) & WpgCommonMediaData;
@@ -100,7 +100,7 @@ export interface WpgMediaData {
     /** Child coordinate extent */
     readonly chExt?: IChildExtent;
     /** Group fill */
-    readonly solidFill?: SolidFillOptions;
+    readonly fill?: FillOptions;
     /** Group effects */
     readonly effects?: EffectListOptions;
 }

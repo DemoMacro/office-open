@@ -25,9 +25,7 @@ describe("WpsShapeRun", () => {
                     },
                     zIndex: 10,
                 },
-                solidFill: {
-                    value: "FF0000",
-                },
+                fill: "FF0000",
                 transformation: {
                     height: 200,
                     rotation: 45,

@@ -61,7 +61,7 @@ const doc = new Document({
                                 type: "solidFill",
                                 width: 25_400,
                             },
-                            solidFill: { value: "D6E4F0" },
+                            fill: "D6E4F0",
                             transformation: {
                                 height: 80,
                                 width: 400,
@@ -168,10 +168,90 @@ const doc = new Document({
                                 type: "solidFill",
                                 width: 19_050,
                             },
-                            solidFill: { value: "FFF2CC" },
+                            fill: "FFF2CC",
                             transformation: {
                                 height: 120,
                                 width: 400,
+                            },
+                            type: "wps",
+                        }),
+                    ],
+                }),
+
+                new Paragraph({ children: [new TextRun("")] }),
+
+                // 6. Image fill (blipFill)
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            bold: true,
+                            text: "6. Image Fill (blipFill)",
+                            size: 28,
+                        }),
+                    ],
+                    spacing: { after: 200 },
+                }),
+                new Paragraph({
+                    children: [
+                        new WpsShapeRun({
+                            children: [
+                                new Paragraph({
+                                    children: [new TextRun("Dog photo as shape fill")],
+                                }),
+                            ],
+                            fill: {
+                                type: "blip",
+                                data: new Uint8Array(fs.readFileSync("./demo/images/dog.png")),
+                                imageType: "png",
+                            },
+                            transformation: {
+                                height: 150,
+                                width: 300,
+                            },
+                            type: "wps",
+                        }),
+                    ],
+                }),
+
+                new Paragraph({ children: [new TextRun("")] }),
+
+                // 7. Radial gradient fill (path)
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            bold: true,
+                            text: "7. Radial Gradient (path)",
+                            size: 28,
+                        }),
+                    ],
+                    spacing: { after: 200 },
+                }),
+                new Paragraph({
+                    children: [
+                        new WpsShapeRun({
+                            children: [
+                                new Paragraph({
+                                    alignment: "center",
+                                    children: [
+                                        new TextRun({
+                                            bold: true,
+                                            color: "FFFFFF",
+                                            text: "Radial",
+                                        }),
+                                    ],
+                                }),
+                            ],
+                            fill: {
+                                type: "gradient",
+                                path: "circle",
+                                stops: [
+                                    { position: 0, color: "ED7D31" },
+                                    { position: 100, color: "C00000" },
+                                ],
+                            },
+                            transformation: {
+                                height: 100,
+                                width: 300,
                             },
                             type: "wps",
                         }),

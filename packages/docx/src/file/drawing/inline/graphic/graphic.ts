@@ -1,13 +1,13 @@
 import type { HyperlinkOptions } from "@file/drawing/doc-properties/doc-properties";
 import type { IExtendedMediaData, IMediaDataTransformation } from "@file/media";
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import type { FillOptions } from "@office-open/core/drawingml";
 
 import { GraphicData } from "./graphic-data";
 import type { BlipEffectsOptions } from "./graphic-data/pic/blip/blip-effects";
 import type { TileOptions } from "./graphic-data/pic/blip/tile";
 import type { EffectListOptions } from "./graphic-data/pic/shape-properties/effects/effect-list";
 import type { OutlineOptions } from "./graphic-data/pic/shape-properties/outline/outline";
-import type { SolidFillOptions } from "./graphic-data/pic/shape-properties/outline/solid-fill";
 
 /**
  * Attributes for the graphic element.
@@ -54,7 +54,7 @@ export class Graphic extends XmlComponent {
         mediaData,
         transform,
         outline,
-        solidFill,
+        fill,
         effects,
         blipEffects,
         tile,
@@ -63,7 +63,7 @@ export class Graphic extends XmlComponent {
         readonly mediaData: IExtendedMediaData;
         readonly transform: IMediaDataTransformation;
         readonly outline?: OutlineOptions;
-        readonly solidFill?: SolidFillOptions;
+        readonly fill?: FillOptions;
         readonly effects?: EffectListOptions;
         readonly blipEffects?: BlipEffectsOptions;
         readonly tile?: TileOptions;
@@ -82,7 +82,7 @@ export class Graphic extends XmlComponent {
             hyperlink,
             mediaData,
             outline,
-            solidFill,
+            fill,
             tile,
             transform,
         });

@@ -52,7 +52,7 @@ describe("WpgGroup", () => {
             createWpgGroup({
                 children: [],
                 transformation: TRANSFORM,
-                solidFill: { value: "FF0000" },
+                fill: "FF0000",
             }),
         );
         const grpSpPr = tree["wpg:wgp"][1]["wpg:grpSpPr"];
@@ -66,7 +66,7 @@ describe("WpgGroup", () => {
             createWpgGroup({
                 children: [],
                 transformation: TRANSFORM,
-                noFill: true,
+                fill: { type: "none" },
             }),
         );
         const grpSpPr = tree["wpg:wgp"][1]["wpg:grpSpPr"];
