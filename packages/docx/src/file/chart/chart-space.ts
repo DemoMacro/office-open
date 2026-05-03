@@ -4,7 +4,7 @@
  * @module
  */
 import { EmptyElement, XmlComponent } from "@file/xml-components";
-import { chartAttr } from "@file/xml-components";
+import { chartAttr, wrapEl } from "@file/xml-components";
 
 import { CatAx, ValAx } from "./axes";
 import { createChartType } from "./chart-types/create-chart-type";
@@ -100,9 +100,9 @@ function createLegend(): XmlComponent {
             super("c:legend");
         }
     })();
-    legend["root"].push(new EmptyElement("c:legendPos"));
+    legend["root"].push(wrapEl("c:legendPos", chartAttr({ val: "b" })));
     legend["root"].push(new EmptyElement("c:layout"));
-    legend["root"].push(new EmptyElement("c:overlay"));
+    legend["root"].push(wrapEl("c:overlay", chartAttr({ val: 0 })));
     return legend;
 }
 
