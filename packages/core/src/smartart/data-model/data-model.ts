@@ -1,10 +1,4 @@
-/**
- * dgm:dataModel — SmartArt data model root element.
- *
- * @module
- */
-import { XmlComponent } from "@file/xml-components";
-import { chartAttr } from "@file/xml-components";
+import { XmlComponent, chartAttr } from "../../xml-components";
 
 import { Connection } from "./connection";
 
@@ -47,9 +41,6 @@ export class DataModel extends XmlComponent {
     }
 }
 
-/**
- * Helper for empty self-closing XML elements.
- */
 class EmptyElement extends XmlComponent {
     public constructor(tag: string) {
         super(tag);

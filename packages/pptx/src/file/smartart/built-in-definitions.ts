@@ -8,105 +8,17 @@
  * @module
  */
 
-// ---------------------------------------------------------------------------
-// Category mappings (ID → OOXML category)
-// ---------------------------------------------------------------------------
+export {
+    COLOR_CATEGORIES,
+    LAYOUT_CATEGORIES,
+    STYLE_CATEGORIES,
+} from "@office-open/core/smartart/categories";
 
-/** Layout ID → category type */
-export const LAYOUT_CATEGORIES: Record<string, string> = {
-    default: "list",
-    list1: "list",
-    list2: "list",
-    vList2: "list",
-    hList1: "list",
-    pList1: "list",
-    process1: "process",
-    process2: "process",
-    process3: "process",
-    process4: "process",
-    chevron1: "process",
-    chevron2: "process",
-    arrow1: "process",
-    arrow2: "process",
-    cycle1: "cycle",
-    cycle2: "cycle",
-    cycle3: "cycle",
-    cycle4: "cycle",
-    cycle5: "cycle",
-    hierarchy1: "hier",
-    hierarchy2: "hier",
-    hierarchy3: "hier",
-    hierarchy4: "hier",
-    orgChart1: "hier",
-    pyramid1: "pyramid",
-    pyramid2: "pyramid",
-    pyramid3: "pyramid",
-    matrix1: "matrix",
-    matrix2: "matrix",
-    matrix3: "matrix",
-    radial1: "rel",
-    radial2: "rel",
-    radial3: "rel",
-    venn1: "rel",
-    funnel1: "rel",
-    balance1: "rel",
-    gear1: "rel",
-    constOrg1: "rel",
-    oppId1: "rel",
-};
-
-/** Style ID → category type */
-export const STYLE_CATEGORIES: Record<string, string> = {
-    simple1: "simple",
-    simple2: "simple",
-    simple3: "simple",
-    simple4: "simple",
-    simple5: "simple",
-    moderate1: "moderate",
-    moderate2: "moderate",
-    moderate3: "moderate",
-    moderate4: "moderate",
-    polished1: "polished",
-    polished2: "polished",
-    polished3: "polished",
-    polished4: "polished",
-    professional1: "professional",
-    professional2: "professional",
-    professional3: "professional",
-    professional4: "professional",
-    cartoon1: "cartoon",
-    cartoon2: "cartoon",
-    cartoon3: "cartoon",
-    cartoon4: "cartoon",
-    powdery1: "powdery",
-    powdery2: "powdery",
-    powdery3: "powdery",
-    powdery4: "powdery",
-    burnt1: "burnt",
-    burnt2: "burnt",
-    burnt3: "burnt",
-    burnt4: "burnt",
-};
-
-/** Color ID → category type */
-export const COLOR_CATEGORIES: Record<string, string> = {
-    accent1_2: "accent1",
-    accent2_2: "accent2",
-    accent3_2: "accent3",
-    accent4_2: "accent4",
-    accent5_2: "accent5",
-    accent6_2: "accent6",
-    colorful1: "colorful",
-    colorful2: "colorful",
-    colorful3: "colorful",
-    colorful4: "colorful",
-    dark1: "dark",
-    dark2: "dark",
-    primary1: "primary",
-    primary2: "primary",
-    gray1: "gray",
-    gray2: "gray",
-};
+import {
+    LAYOUT_CATEGORIES,
+    STYLE_CATEGORIES,
+    COLOR_CATEGORIES,
+} from "@office-open/core/smartart/categories";
 
 // ---------------------------------------------------------------------------
 // Layout XML — full for "default", stubs for everything else
