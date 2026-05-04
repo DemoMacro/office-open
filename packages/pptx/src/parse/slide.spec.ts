@@ -3,6 +3,8 @@ import { describe, expect, it } from "vite-plus/test";
 
 import type { PptxParseContext } from "./context";
 import { parseSlide } from "./slide";
+import type { ShapeJson } from "./types";
+import { isRaw } from "./types";
 
 const mockCtx: PptxParseContext = {
     zip: new Map(),
@@ -42,7 +44,8 @@ describe("parseSlide", () => {
         };
         const result = parseSlide(slideXml, mockCtx, "ppt/slides/slide1.xml");
         expect(result.children).toHaveLength(1);
-        expect(result.children[0].$type).toBe("shape");
+        const first = result.children[0];
+        expect(!isRaw(first) && (first as ShapeJson).$type).toBe("shape");
     });
 
     it("should parse slide background", () => {

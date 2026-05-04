@@ -3,7 +3,8 @@ import { describe, expect, it } from "vite-plus/test";
 
 import type { DocxParseContext } from "./context";
 import { parseRun } from "./run";
-import type { TextRunJson } from "./types";
+import type { TextRunJson, PageBreakJson, TabJson } from "./types";
+import { isRaw } from "./types";
 
 const mockCtx: DocxParseContext = {
     zip: new Map(),
@@ -23,7 +24,7 @@ describe("parseRun", () => {
             elements: [{ name: "w:t", text: "Hello" }],
         };
         const result = parseRun(run, mockCtx);
-        expect(result?.$type).toBe("textRun");
+        expect(result && !isRaw(result) && result.$type).toBe("textRun");
         expect(asTextRun(result).text).toBe("Hello");
     });
 
@@ -139,7 +140,7 @@ describe("parseRun", () => {
             elements: [{ name: "w:br", attributes: { "w:type": "page" } }],
         };
         const result = parseRun(run, mockCtx);
-        expect(result?.$type).toBe("pageBreak");
+        expect(result && !isRaw(result) && (result as PageBreakJson).$type).toBe("pageBreak");
     });
 
     it("should parse tab", () => {
@@ -147,7 +148,7 @@ describe("parseRun", () => {
             elements: [{ name: "w:tab" }],
         };
         const result = parseRun(run, mockCtx);
-        expect(result?.$type).toBe("tab");
+        expect(result && !isRaw(result) && (result as TabJson).$type).toBe("tab");
     });
 
     it("should return undefined for empty run without properties", () => {

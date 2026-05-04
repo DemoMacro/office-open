@@ -3,6 +3,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import type { DocxParseContext } from "./context";
 import { parseTable } from "./table";
+import type { ParagraphJson } from "./types";
 
 const mockCtx: DocxParseContext = {
     zip: new Map(),
@@ -55,8 +56,8 @@ describe("parseTable", () => {
         expect(result.$type).toBe("table");
         expect(result.rows).toHaveLength(1);
         expect(result.rows[0].cells).toHaveLength(2);
-        expect(result.rows[0].cells[0].children![0].text).toBe("Cell 1");
-        expect(result.rows[0].cells[1].children![0].text).toBe("Cell 2");
+        expect((result.rows[0].cells[0].children![0] as ParagraphJson).text).toBe("Cell 1");
+        expect((result.rows[0].cells[1].children![0] as ParagraphJson).text).toBe("Cell 2");
     });
 
     it("should parse table width", () => {

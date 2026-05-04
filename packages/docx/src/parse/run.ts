@@ -1,4 +1,4 @@
-import { findChild, findDeep, attr, attrNum, textOf } from "@office-open/xml";
+import { findChild, findDeep, attr, attrNum, textOf, colorAttr } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import type { DocxParseContext } from "./context";
@@ -12,10 +12,16 @@ export function parseRun(run: Element, ctx: DocxParseContext): ParagraphChildJso
     const br = findChild(run, "w:br");
     if (br) {
         const brType = attr(br, "w:type");
-        if (brType === "page") {
+        if (brType === "page" || brType === undefined) {
             return { $type: "pageBreak" };
         }
-        // Other breaks (line, column) — treat as text with break marker
+        if (brType === "column") {
+            return { $type: "columnBreak" };
+        }
+        if (brType === "line" || brType === "textWrapping") {
+            return { $type: "lineBreak" };
+        }
+        // section break handled at paragraph level
     }
 
     // Check for drawing (image)
@@ -40,8 +46,11 @@ export function parseRun(run: Element, ctx: DocxParseContext): ParagraphChildJso
 
     // Check for footnote/endnote reference
     const footnoteRef = findChild(run, "w:footnoteReference");
-    if (footnoteRef) {
-        return undefined; // Skip for MVP
+    const endnoteRef = findChild(run, "w:endnoteReference");
+    if (footnoteRef || endnoteRef) {
+        // Preserve as raw for round-trip
+        const refEl = footnoteRef ?? endnoteRef!;
+        return { $raw: true, element: refEl } as ParagraphChildJson;
     }
 
     // Extract text
@@ -52,9 +61,10 @@ export function parseRun(run: Element, ctx: DocxParseContext): ParagraphChildJso
 
     if (!text && !rPr) return undefined;
 
-    const result: ParagraphChildJson = {
+    const result: any = {
         $type: "textRun",
         text,
+        ...(delText && !t && { deletedText: true }),
     };
 
     // Parse run properties
@@ -62,7 +72,7 @@ export function parseRun(run: Element, ctx: DocxParseContext): ParagraphChildJso
         parseRunProperties(rPr, result);
     }
 
-    return result;
+    return result as ParagraphChildJson;
 }
 
 function parseRunProperties(rPr: Element, out: Record<string, unknown>): void {
@@ -80,11 +90,25 @@ function parseRunProperties(rPr: Element, out: Record<string, unknown>): void {
         out.italics = val !== "0" && val !== "false";
     }
 
+    // Bold complex script
+    const bCs = findChild(rPr, "w:bCs");
+    if (bCs) {
+        const val = attr(bCs, "w:val");
+        if (val !== "0" && val !== "false") out.boldCs = true;
+    }
+
+    // Italic complex script
+    const iCs = findChild(rPr, "w:iCs");
+    if (iCs) {
+        const val = attr(iCs, "w:val");
+        if (val !== "0" && val !== "false") out.italicCs = true;
+    }
+
     // Underline
     const u = findChild(rPr, "w:u");
     if (u) {
         const val = attr(u, "w:val");
-        const color = attr(u, "w:color");
+        const color = colorAttr(u, "w:color");
         if (val && val !== "none" && val !== "false") {
             out.underline = { type: val };
             if (color) (out.underline as Record<string, unknown>).color = color;
@@ -134,18 +158,40 @@ function parseRunProperties(rPr: Element, out: Record<string, unknown>): void {
         if (val !== undefined) out.size = val;
     }
 
+    // Complex script font size
+    const szCs = findChild(rPr, "w:szCs");
+    if (szCs) {
+        const val = attrNum(szCs, "w:val");
+        if (val !== undefined) out.sizeCs = val;
+    }
+
     // Color
-    const color = findChild(rPr, "w:color");
-    if (color) {
-        const val = attr(color, "w:val");
+    const colorEl = findChild(rPr, "w:color");
+    if (colorEl) {
+        const val = colorAttr(colorEl, "w:val");
         if (val && val !== "auto") out.color = val;
     }
 
-    // Font family
+    // Font family (complete)
     const rFonts = findChild(rPr, "w:rFonts");
     if (rFonts) {
         const ascii = attr(rFonts, "w:ascii");
-        if (ascii) out.font = ascii;
+        const hAnsi = attr(rFonts, "w:hAnsi");
+        const eastAsia = attr(rFonts, "w:eastAsia");
+        const cs = attr(rFonts, "w:cs");
+        const hint = attr(rFonts, "w:hint");
+
+        if (hAnsi || eastAsia || cs || hint) {
+            out.font = {
+                ...(ascii && { ascii }),
+                ...(hAnsi && { hAnsi }),
+                ...(eastAsia && { eastAsia }),
+                ...(cs && { cs }),
+                ...(hint && hint !== "default" && { hint }),
+            };
+        } else if (ascii) {
+            out.font = ascii;
+        }
     }
 
     // Highlight
@@ -173,8 +219,9 @@ function parseRunProperties(rPr: Element, out: Record<string, unknown>): void {
     const shd = findChild(rPr, "w:shd");
     if (shd) {
         const fill = attr(shd, "w:fill");
+        const val = attr(shd, "w:val");
         if (fill && fill !== "auto") {
-            out.shading = { fill };
+            out.shading = { fill, ...(val && val !== "clear" && { type: val }) };
         }
     }
 
@@ -231,6 +278,13 @@ function parseRunProperties(rPr: Element, out: Record<string, unknown>): void {
     const noProof = findChild(rPr, "w:noProof");
     if (noProof) {
         out.noProof = true;
+    }
+
+    // Language
+    const lang = findChild(rPr, "w:lang");
+    if (lang) {
+        const val = attr(lang, "w:val");
+        if (val) out.lang = val;
     }
 
     // Math

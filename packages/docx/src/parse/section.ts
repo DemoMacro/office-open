@@ -1,4 +1,4 @@
-import { findChild, children, attr, attrNum } from "@office-open/xml";
+import { findChild, children, attr, attrNum, colorAttr } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import type { SectionJson } from "./types";
@@ -142,9 +142,9 @@ export function parseSectionProperties(sectPr: Element): SectionJson["properties
         for (const border of pgBorders.elements ?? []) {
             if (border.name?.startsWith("w:")) {
                 const borderName = border.name?.replace("w:", "") ?? "";
-                const val = attr(border, "w:val");
+                const val = String(attr(border, "w:val") ?? "");
                 const sz = attrNum(border, "w:sz");
-                const color = attr(border, "w:color");
+                const color = colorAttr(border, "w:color");
                 if (val && val !== "none" && val !== "nil") {
                     const borderDef: Record<string, unknown> = { style: val };
                     if (sz !== undefined) borderDef.size = sz;

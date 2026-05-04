@@ -3,3 +3,4 @@ export * from "./file";
 export * from "./export";
 export * from "./util";
 export * from "./parse/document";
+export * from "./parse/convert";

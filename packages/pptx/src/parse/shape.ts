@@ -192,6 +192,27 @@ export function parsePptxTable(
     const tbl = findDeep(graphicFrame, "a:tbl")[0];
     if (!tbl) return undefined;
 
+    // Table properties (a:tblPr)
+    const tblPr = findChild(tbl, "a:tblPr");
+    if (tblPr) {
+        const bandRow = attr(tblPr, "bandRow");
+        const bandCol = attr(tblPr, "bandCol");
+        const firstRow = attr(tblPr, "firstRow");
+        const firstCol = attr(tblPr, "firstCol");
+        const lastRow = attr(tblPr, "lastRow");
+        const lastCol = attr(tblPr, "lastCol");
+        if (bandRow || bandCol || firstRow || firstCol || lastRow || lastCol) {
+            result.tableStyle = {
+                ...(bandRow === "1" && { bandRow: true }),
+                ...(bandCol === "1" && { bandCol: true }),
+                ...(firstRow === "1" && { firstRow: true }),
+                ...(firstCol === "1" && { firstCol: true }),
+                ...(lastRow === "1" && { lastRow: true }),
+                ...(lastCol === "1" && { lastCol: true }),
+            };
+        }
+    }
+
     // Parse rows
     for (const tr of tbl.elements ?? []) {
         if (tr.name !== "a:tr") continue;
@@ -252,6 +273,38 @@ export function parsePptxTable(
                 // Width
                 const tcW = attrNum(tcPr, "w");
                 if (tcW !== undefined) cell.width = tcW;
+
+                // Cell borders
+                const tcBorders = findChild(tcPr, "a:tcBorders");
+                if (tcBorders) {
+                    const borders: Record<string, unknown> = {};
+                    for (const border of tcBorders.elements ?? []) {
+                        if (border.name?.startsWith("a:")) {
+                            const borderName = border.name.replace("a:", "");
+                            const w = attrNum(border, "w");
+                            if (w !== undefined) {
+                                const borderDef: Record<string, unknown> = { width: w };
+                                // Extract color from a:solidFill/a:srgbClr/@val
+                                const solidFill = findChild(border, "a:solidFill");
+                                if (solidFill) {
+                                    const srgbClr = findChild(solidFill, "a:srgbClr");
+                                    if (srgbClr) {
+                                        const color = attr(srgbClr, "val");
+                                        if (color) borderDef.color = color;
+                                    }
+                                }
+                                // Extract dashStyle from a:prstDash/@val
+                                const prstDash = findChild(border, "a:prstDash");
+                                if (prstDash) {
+                                    const dashVal = attr(prstDash, "val");
+                                    if (dashVal) borderDef.dashStyle = dashVal;
+                                }
+                                borders[borderName] = borderDef;
+                            }
+                        }
+                    }
+                    if (Object.keys(borders).length > 0) cell.borders = borders;
+                }
             }
 
             // Text body

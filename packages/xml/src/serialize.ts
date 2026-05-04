@@ -82,6 +82,11 @@ function resolve(data: Record<string, any>, indent: string, depth: number): Reso
                     attributes.push(`${key}="${escapeXml(String(values._attr[key]))}"`);
                 }
             }
+            if (values._attributes) {
+                for (const key of Object.keys(values._attributes)) {
+                    attributes.push(`${key}="${escapeXml(String(values._attributes[key]))}"`);
+                }
+            }
             if (values._cdata) {
                 const escaped = String(values._cdata).replace(/\]\]>/g, "]]]]><![CDATA[>");
                 content.push(`<![CDATA[${escaped}]]>`);
@@ -94,6 +99,12 @@ function resolve(data: Record<string, any>, indent: string, depth: number): Reso
                     if (value && typeof value === "object" && "_attr" in value) {
                         for (const key of Object.keys(value._attr)) {
                             attributes.push(`${key}="${escapeXml(String(value._attr[key]))}"`);
+                        }
+                    } else if (value && typeof value === "object" && "_attributes" in value) {
+                        for (const key of Object.keys(value._attributes)) {
+                            attributes.push(
+                                `${key}="${escapeXml(String(value._attributes[key]))}"`,
+                            );
                         }
                     } else if (value && typeof value === "object") {
                         content.push(resolve(value, indent, depth + 1));

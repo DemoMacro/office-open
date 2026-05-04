@@ -1,21 +1,37 @@
+import type { RawElement, MixedChildren } from "@office-open/core";
+import { isRaw } from "@office-open/core";
+import type { Element } from "@office-open/xml";
+
+export type { RawElement, MixedChildren };
+export { isRaw };
+
 export type FileChildJson =
     | ParagraphJson
     | TableJson
     | ImageRunJson
     | ExternalHyperlinkJson
-    | PageBreakJson;
+    | PageBreakJson
+    | SdtJson
+    | MathJson
+    | RawElement;
 
 export type ParagraphChildJson =
     | TextRunJson
     | ImageRunJson
     | ExternalHyperlinkJson
     | PageBreakJson
+    | LineBreakJson
+    | ColumnBreakJson
     | TabJson
-    | BookmarkJson;
+    | BookmarkJson
+    | SdtRunJson
+    | MathJson
+    | FieldJson
+    | RawElement;
 
 export interface ParagraphJson {
-    $type: "paragraph";
-    children?: ParagraphChildJson[];
+    $type?: "paragraph";
+    children?: MixedChildren<ParagraphChildJson>;
     text?: string;
     alignment?: string;
     spacing?: {
@@ -34,12 +50,7 @@ export interface ParagraphJson {
     style?: string;
     bullet?: { level: number };
     numbering?: { reference: string; level: number; instance?: number };
-    border?: {
-        top?: Record<string, unknown>;
-        bottom?: Record<string, unknown>;
-        left?: Record<string, unknown>;
-        right?: Record<string, unknown>;
-    };
+    border?: Record<string, unknown>;
     shading?: { fill?: string; type?: string };
     thematicBreak?: boolean;
     pageBreakBefore?: boolean;
@@ -47,13 +58,17 @@ export interface ParagraphJson {
     keepLines?: boolean;
     widowControl?: boolean;
     outlineLevel?: number;
+    tabs?: Array<{ pos: number; align?: string; leader?: string }>;
+    suppressLineNumbers?: boolean;
+    contextualSpacing?: boolean;
+    mirrorIndents?: boolean;
     run?: Record<string, unknown>;
-    [key: string]: unknown;
 }
 
 export interface TextRunJson {
-    $type: "textRun";
+    $type?: "textRun";
     text?: string;
+    deletedText?: boolean;
     bold?: boolean;
     italics?: boolean;
     underline?: { type?: string; color?: string };
@@ -64,9 +79,12 @@ export interface TextRunJson {
     subScript?: boolean;
     superScript?: boolean;
     size?: number;
+    sizeCs?: number;
     sizeComplexScript?: boolean | number;
     color?: string;
-    font?: string;
+    font?:
+        | string
+        | { ascii?: string; hAnsi?: string; eastAsia?: string; cs?: string; hint?: string };
     highlight?: string;
     characterSpacing?: number;
     rightToLeft?: boolean;
@@ -81,11 +99,13 @@ export interface TextRunJson {
     noProof?: boolean;
     effect?: string;
     math?: boolean;
-    [key: string]: unknown;
+    boldCs?: boolean;
+    italicCs?: boolean;
+    lang?: string;
 }
 
 export interface ImageRunJson {
-    $type: "imageRun";
+    $type?: "imageRun";
     type: string;
     data: string;
     transformation?: {
@@ -94,70 +114,101 @@ export interface ImageRunJson {
     };
     floating?: Record<string, unknown>;
     altText?: { name?: string; description?: string };
-    [key: string]: unknown;
 }
 
 export interface ExternalHyperlinkJson {
-    $type: "externalHyperlink";
+    $type?: "externalHyperlink";
     link: string;
-    children?: ParagraphChildJson[];
+    children?: MixedChildren<ParagraphChildJson>;
     tooltip?: string;
-    [key: string]: unknown;
 }
 
 export interface PageBreakJson {
-    $type: "pageBreak";
+    $type?: "pageBreak";
+}
+
+export interface LineBreakJson {
+    $type?: "lineBreak";
+}
+
+export interface ColumnBreakJson {
+    $type?: "columnBreak";
 }
 
 export interface TabJson {
-    $type: "tab";
+    $type?: "tab";
 }
 
 export interface BookmarkJson {
-    $type: "bookmark";
-    [key: string]: unknown;
+    $type?: "bookmark";
+    name?: string;
+    element?: Element;
+}
+
+export interface SdtJson {
+    $type?: "sdt";
+    sdtPr?: Element;
+    content?: MixedChildren<FileChildJson>;
+    element?: Element;
+}
+
+export interface SdtRunJson {
+    $type?: "sdtRun";
+    sdtPr?: Element;
+    content?: MixedChildren<ParagraphChildJson>;
+    element?: Element;
+}
+
+export interface MathJson {
+    $type?: "math";
+    element: Element;
+}
+
+export interface FieldJson {
+    $type?: "field";
+    instruction?: string;
+    locked?: boolean;
+    dirty?: boolean;
+    children?: MixedChildren<ParagraphChildJson>;
 }
 
 export interface TableJson {
-    $type: "table";
+    $type?: "table";
     rows: TableRowJson[];
     width?: { size?: number; type?: string };
     columnWidths?: number[];
     style?: string;
     alignment?: string;
     borders?: Record<string, unknown>;
-    [key: string]: unknown;
+    cellMargins?: Record<string, unknown>;
+    indentation?: Record<string, unknown>;
+    layout?: string;
 }
 
 export interface TableRowJson {
     cells: TableCellJson[];
-    [key: string]: unknown;
+    height?: { value: number; rule?: string };
+    isHeader?: boolean;
 }
 
 export interface TableCellJson {
-    children: ParagraphJson[];
+    children: MixedChildren<ParagraphJson>;
     width?: { size?: number; type?: string };
     shading?: { fill?: string };
     verticalAlign?: string;
     borders?: Record<string, unknown>;
     columnSpan?: number;
     rowSpan?: number;
-    [key: string]: unknown;
+    noWrap?: boolean;
+    textDirection?: string;
+    margins?: Record<string, unknown>;
 }
 
 export interface SectionJson {
     properties?: Record<string, unknown>;
     children: FileChildJson[];
-    headers?: {
-        default?: { children: ParagraphJson[] };
-        first?: { children: ParagraphJson[] };
-        even?: { children: ParagraphJson[] };
-    };
-    footers?: {
-        default?: { children: ParagraphJson[] };
-        first?: { children: ParagraphJson[] };
-        even?: { children: ParagraphJson[] };
-    };
+    headers?: Record<string, { children: FileChildJson[] }>;
+    footers?: Record<string, { children: FileChildJson[] }>;
 }
 
 export interface DocxDocumentJson {
@@ -169,5 +220,23 @@ export interface DocxDocumentJson {
     description?: string;
     lastModifiedBy?: string;
     revision?: string;
-    [key: string]: unknown;
+    numbering?: import("./numbering").ParsedNumberingConfig[];
+    $parts?: Record<string, Element>;
+    footnotes?: FootnoteEntry[];
+    endnotes?: FootnoteEntry[];
+    comments?: CommentEntry[];
+}
+
+export interface FootnoteEntry {
+    id: string;
+    type?: "separator" | "continuationSeparator" | "normal";
+    children?: MixedChildren<FileChildJson>;
+}
+
+export interface CommentEntry {
+    id: string;
+    author?: string;
+    date?: string;
+    initials?: string;
+    children?: MixedChildren<FileChildJson>;
 }

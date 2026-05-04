@@ -1,6 +1,6 @@
-import { xml2js, attr } from "@office-open/xml";
+import { xml2js, js2xml, attr } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
-import { unzipSync, strFromU8 } from "fflate";
+import { unzipSync, strFromU8, zipSync, strToU8 } from "fflate";
 
 const XML_PARSE_OPTIONS = {
     nativeTypeAttributes: true,
@@ -46,6 +46,53 @@ export function readBinaryFromZip(
     path: string,
 ): Uint8Array | undefined {
     return zip.get(path);
+}
+
+/**
+ * Parse all XML files in the zip into Element trees.
+ * Skips media files, binary files, and the main document/presentation file.
+ */
+export function readAllXmlParts(
+    zip: Map<string, Uint8Array>,
+    options?: { skipPaths?: string[] },
+): Record<string, Element> {
+    const parts: Record<string, Element> = {};
+    const skip = new Set(options?.skipPaths ?? []);
+
+    for (const path of zip.keys()) {
+        if (skip.has(path)) continue;
+        // Skip media, binary, and non-XML files
+        if (
+            path.startsWith("word/media/") ||
+            path.startsWith("ppt/media/") ||
+            path.startsWith("xl/media/") ||
+            path.endsWith(".png") ||
+            path.endsWith(".jpg") ||
+            path.endsWith(".jpeg") ||
+            path.endsWith(".gif") ||
+            path.endsWith(".bmp") ||
+            path.endsWith(".tif") ||
+            path.endsWith(".tiff") ||
+            path.endsWith(".emf") ||
+            path.endsWith(".wmf") ||
+            path.endsWith(".svg") ||
+            path.endsWith(".wav") ||
+            path.endsWith(".mp3") ||
+            path.endsWith(".mp4") ||
+            path.endsWith(".avi") ||
+            path.endsWith(".wmv") ||
+            path.endsWith(".thmx") ||
+            path.endsWith(".bin")
+        ) {
+            continue;
+        }
+        const el = readXmlFromZip(zip, path);
+        if (el) {
+            parts[path] = el;
+        }
+    }
+
+    return parts;
 }
 
 /**
@@ -122,4 +169,25 @@ export function findRel(rels: Relationship[], id: string): Relationship | undefi
 
 export function findRelsByType(rels: Relationship[], typeSubstring: string): Relationship[] {
     return rels.filter((r) => r.type.includes(typeSubstring));
+}
+
+// ── Zip writing ──
+
+/**
+ * Zip a map of path → Uint8Array/string into a ZIP buffer.
+ * XML strings are auto-encoded to UTF-8 bytes.
+ */
+export function zipToBuffer(files: Map<string, Uint8Array | string>): Uint8Array {
+    const entries: Record<string, Uint8Array> = {};
+    for (const [path, data] of files) {
+        entries[path] = typeof data === "string" ? strToU8(data) : data;
+    }
+    return zipSync(entries);
+}
+
+/**
+ * Serialize an Element tree to an XML string.
+ */
+export function elementToXml(el: Element): string {
+    return js2xml(el);
 }

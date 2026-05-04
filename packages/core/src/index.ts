@@ -13,3 +13,5 @@ export * from "./formatter";
 export * from "./smartart";
 export * from "./archive";
 export * from "./core-properties";
+export * from "./parser";
+export * from "./raw-passthrough";

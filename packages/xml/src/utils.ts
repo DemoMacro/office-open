@@ -96,6 +96,23 @@ export function attrBool(element: Element | undefined, name: string): boolean | 
 }
 
 /**
+ * Get a hex color attribute, handling nativeTypeValue coercion.
+ * nativeTypeAttributes converts "000000" → 0 (number); this recovers
+ * the original 6-digit hex string by zero-padding numeric values.
+ */
+export function colorAttr(element: Element | undefined, name: string): string | undefined {
+    const raw = element?.attributes?.[name];
+    if (raw === undefined || raw === "") return undefined;
+    if (typeof raw === "boolean") return undefined;
+    if (typeof raw === "number") {
+        return String(raw).padStart(6, "0");
+    }
+    if (raw === "auto") return "auto";
+    if (/^[0-9A-Fa-f]{6}$/.test(raw)) return raw;
+    return raw;
+}
+
+/**
  * Check if an element has a specific child element.
  */
 export function hasChild(parent: Element | undefined, name: string): boolean {

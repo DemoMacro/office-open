@@ -68,7 +68,8 @@ export function buildRunProperties(
     if (options.lang) attrs.lang = options.lang;
     if (options.strike) attrs.strike = StrikeStyle[options.strike];
     if (options.baseline !== undefined) attrs.baseline = options.baseline;
-    if (options.capitalization) attrs.cap = TextCapitalization[options.capitalization];
+    if (options.capitalization)
+        attrs.cap = TextCapitalization[options.capitalization] ?? options.capitalization;
     if (options.spacing !== undefined) attrs.spc = options.spacing;
     if (options.noProof !== undefined) attrs.noProof = options.noProof;
     if (options.dirty !== undefined) attrs.dirty = options.dirty;

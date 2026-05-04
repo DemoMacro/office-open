@@ -1,3 +1,11 @@
+import type { RawElement, MixedChildren } from "@office-open/core";
+import { isRaw } from "@office-open/core";
+import type { FillOptions } from "@office-open/core/drawingml";
+import type { Element } from "@office-open/xml";
+
+export type { RawElement, MixedChildren };
+export { isRaw };
+
 export interface PptxDocumentJson {
     slides: SlideJson[];
     slideWidth?: number;
@@ -8,20 +16,26 @@ export interface PptxDocumentJson {
     keywords?: string;
     description?: string;
     lastModifiedBy?: string;
+    $parts?: Record<string, Element>;
 }
 
 export interface SlideJson {
     children: SlideChildJson[];
     background?: string | Record<string, unknown>;
-    notes?: string;
+    notes?: string | ParagraphJson[];
     transition?: Record<string, unknown>;
-    [key: string]: unknown;
 }
 
-export type SlideChildJson = ShapeJson | PictureJson | ConnectorShapeJson | TableJson;
+export type SlideChildJson =
+    | ShapeJson
+    | PictureJson
+    | ConnectorShapeJson
+    | TableJson
+    | GroupShapeJson
+    | RawElement;
 
 export interface ShapeJson {
-    $type: "shape";
+    $type?: "shape";
     id?: number;
     name?: string;
     x?: number;
@@ -29,9 +43,9 @@ export interface ShapeJson {
     width?: number;
     height?: number;
     geometry?: string;
-    fill?: Record<string, unknown>;
-    outline?: Record<string, unknown>;
-    effects?: Record<string, unknown>;
+    fill?: FillOptions;
+    outline?: ParsedOutlineOptions;
+    effects?: ParsedEffectsOptions;
     flipH?: boolean;
     flipV?: boolean;
     rotation?: number;
@@ -42,11 +56,10 @@ export interface ShapeJson {
     textAutoFit?: string;
     placeholder?: string;
     placeholderIndex?: number;
-    [key: string]: unknown;
 }
 
 export interface PictureJson {
-    $type: "picture";
+    $type?: "picture";
     id?: number;
     name?: string;
     x?: number;
@@ -55,33 +68,45 @@ export interface PictureJson {
     height?: number;
     data?: string;
     type?: string;
-    outline?: Record<string, unknown>;
-    effects?: Record<string, unknown>;
+    outline?: ParsedOutlineOptions;
+    effects?: ParsedEffectsOptions;
     rotation?: number;
     flipH?: boolean;
     flipV?: boolean;
-    [key: string]: unknown;
 }
 
 export interface ConnectorShapeJson {
-    $type: "connectorShape";
+    $type?: "connectorShape";
     id?: number;
     name?: string;
     x?: number;
     y?: number;
     width?: number;
     height?: number;
-    outline?: Record<string, unknown>;
+    outline?: ParsedOutlineOptions;
     style?: string;
     beginX?: number;
     beginY?: number;
     endX?: number;
     endY?: number;
-    [key: string]: unknown;
+}
+
+export interface GroupShapeJson {
+    $type?: "groupShape";
+    id?: number;
+    name?: string;
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
+    rotation?: number;
+    flipH?: boolean;
+    flipV?: boolean;
+    children?: SlideChildJson[];
 }
 
 export interface TableJson {
-    $type: "table";
+    $type?: "table";
     id?: number;
     name?: string;
     x?: number;
@@ -89,25 +114,23 @@ export interface TableJson {
     width?: number;
     height?: number;
     rows: TableRowJson[];
-    [key: string]: unknown;
+    tableStyle?: Record<string, unknown>;
 }
 
 export interface TableRowJson {
     cells: TableCellJson[];
     height?: number;
-    [key: string]: unknown;
 }
 
 export interface TableCellJson {
     paragraphs?: ParagraphJson[];
     columnSpan?: number;
     rowSpan?: number;
-    fill?: Record<string, unknown>;
+    fill?: FillOptions;
     borders?: Record<string, unknown>;
     verticalAlign?: string;
     margins?: Record<string, unknown>;
     width?: number;
-    [key: string]: unknown;
 }
 
 export interface ParagraphJson {
@@ -118,7 +141,6 @@ export interface ParagraphJson {
     spacing?: { before?: number; after?: number; line?: number };
     bullet?: { type?: string; level?: number };
     numbering?: { type?: string; level?: number };
-    [key: string]: unknown;
 }
 
 export interface RunJson {
@@ -129,7 +151,7 @@ export interface RunJson {
     underline?: string;
     font?: string;
     lang?: string;
-    fill?: Record<string, unknown>;
+    fill?: FillOptions;
     hyperlink?: { url: string; tooltip?: string };
     strike?: string;
     baseline?: number;
@@ -139,5 +161,51 @@ export interface RunJson {
     outline?: boolean;
     rightToLeft?: boolean;
     noProof?: boolean;
-    [key: string]: unknown;
+}
+
+// Parser-specific typed interfaces (differ from constructor OutlineOptions/IEffectsOptions)
+
+export interface ParsedOutlineOptions {
+    width?: number;
+    cap?: string;
+    compound?: string;
+    alignment?: string;
+    color?: string;
+    dashStyle?: string;
+    round?: boolean;
+    bevel?: boolean;
+    headEnd?: { type?: string; width?: number; length?: number };
+    tailEnd?: { type?: string; width?: number; length?: number };
+    join?: string;
+}
+
+export interface ParsedEffectsOptions {
+    outerShadow?: ParsedShadowOptions;
+    innerShadow?: ParsedShadowOptions;
+    glow?: ParsedGlowOptions;
+    reflection?: ParsedReflectionOptions;
+}
+
+export interface ParsedShadowOptions {
+    blurRadius?: number;
+    distance?: number;
+    direction?: number;
+    alignment?: string;
+    rotateWithShape?: boolean;
+    color?: string;
+}
+
+export interface ParsedGlowOptions {
+    radius?: number;
+    color?: string;
+}
+
+export interface ParsedReflectionOptions {
+    blurRadius?: number;
+    distance?: number;
+    direction?: number;
+    fadeDirection?: number;
+    startAlpha?: number;
+    endAlpha?: number;
+    rotateWithShape?: boolean;
 }
