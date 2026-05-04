@@ -5,7 +5,11 @@
 ## Installation
 
 ```bash
+# npm
 npm install @office-open/pptx
+
+# pnpm
+pnpm add @office-open/pptx
 ```
 
 ## Quick Start

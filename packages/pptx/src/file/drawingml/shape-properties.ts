@@ -1,10 +1,6 @@
 import type { File } from "@file/file";
-import {
-    BuilderElement,
-    type IContext,
-    type IXmlableObject,
-    XmlComponent as Xc,
-} from "@file/xml-components";
+import { BaseXmlComponent } from "@file/xml-components";
+import type { IContext, IXmlableObject } from "@file/xml-components";
 
 import { EffectList, buildScene3D, buildShape3D, type IEffectsOptions } from "./effects";
 import { buildFill, extractBlipFillMedia } from "./fill";
@@ -12,7 +8,6 @@ import type { FillOptions } from "./fill";
 import { createOutlineCompat } from "./outline";
 import type { OutlineOptions } from "./outline";
 import { PresetGeometry } from "./preset-geometry";
-import type { ITransform2DOptions } from "./transform-2d";
 import { Transform2D } from "./transform-2d";
 
 export interface IConnectionSiteOptions {
@@ -21,7 +16,13 @@ export interface IConnectionSiteOptions {
     readonly angle?: number;
 }
 
-export interface IShapePropertiesOptions extends ITransform2DOptions {
+export interface IShapePropertiesOptions {
+    readonly x?: number;
+    readonly y?: number;
+    readonly width?: number;
+    readonly height?: number;
+    readonly flipH?: boolean;
+    readonly rotation?: number;
     readonly geometry?: string;
     readonly fill?: FillOptions;
     readonly outline?: OutlineOptions;
@@ -31,70 +32,39 @@ export interface IShapePropertiesOptions extends ITransform2DOptions {
 
 /**
  * p:spPr — Shape properties (transform, geometry, fill, outline, effects).
- * Uses p: prefix in PresentationML context, though type is a:CT_ShapeProperties.
+ * Lazy: stores options, builds XML object directly in prepForXml.
  */
-export class ShapeProperties extends Xc {
-    private readonly fillOptions?: FillOptions;
+export class ShapeProperties extends BaseXmlComponent {
+    private readonly options: IShapePropertiesOptions;
 
     public constructor(options: IShapePropertiesOptions) {
         super("p:spPr");
-
-        this.fillOptions = options.fill;
-
-        if (
-            options.x !== undefined ||
-            options.y !== undefined ||
-            options.width !== undefined ||
-            options.height !== undefined ||
-            options.flipH !== undefined ||
-            options.rotation !== undefined
-        ) {
-            this.root.push(new Transform2D(options));
-        }
-
-        if (options.geometry) {
-            this.root.push(new PresetGeometry(options.geometry));
-        } else {
-            this.root.push(new PresetGeometry("rect"));
-        }
-
-        if (options.fill !== undefined) {
-            this.root.push(buildFill(options.fill));
-        } else {
-            this.root.push(buildFill({ type: "none" }));
-        }
-
-        if (options.outline) {
-            this.root.push(createOutlineCompat(options.outline));
-        }
-
-        if (options.effects) {
-            this.root.push(new EffectList(options.effects));
-
-            const scene3d = buildScene3D(options.effects);
-            if (scene3d) this.root.push(scene3d);
-
-            const shape3d = buildShape3D(options.effects);
-            if (shape3d) this.root.push(shape3d);
-        }
-
-        if (options.connectionSites && options.connectionSites.length > 0) {
-            const cxns = options.connectionSites.map((site) => {
-                const attrs: Record<
-                    string,
-                    { readonly key: string; readonly value: string | number }
-                > = {
-                    pos: { key: "pos", value: `${site.x} ${site.y}` },
-                };
-                if (site.angle !== undefined) attrs.ang = { key: "ang", value: site.angle };
-                return new BuilderElement({ name: "a:cxn", attributes: attrs });
-            });
-            this.root.push(new BuilderElement({ name: "a:cxnLst", children: cxns }));
-        }
+        this.options = options;
     }
 
-    public override prepForXml(context: IContext<File>): IXmlableObject | undefined {
-        const media = this.fillOptions ? extractBlipFillMedia(this.fillOptions) : undefined;
+    public prepForXml(context: IContext<File>): IXmlableObject | undefined {
+        const opts = this.options;
+        const children: IXmlableObject[] = [];
+
+        // Transform2D
+        if (
+            opts.x !== undefined ||
+            opts.y !== undefined ||
+            opts.width !== undefined ||
+            opts.height !== undefined ||
+            opts.flipH !== undefined ||
+            opts.rotation !== undefined
+        ) {
+            const xfrmObj = new Transform2D(opts).prepForXml(context);
+            if (xfrmObj) children.push(xfrmObj);
+        }
+
+        // PresetGeometry
+        const geomObj = new PresetGeometry(opts.geometry ?? "rect").prepForXml(context);
+        if (geomObj) children.push(geomObj);
+
+        // Fill (register blipFill media — B-level side effect)
+        const media = opts.fill ? extractBlipFillMedia(opts.fill) : undefined;
         if (media) {
             context.fileData?.Media.addImage(media.fileName, {
                 data: media.data,
@@ -103,6 +73,46 @@ export class ShapeProperties extends Xc {
                 transformation: { pixels: { x: 0, y: 0 }, emus: { x: 0, y: 0 } },
             });
         }
-        return super.prepForXml(context);
+
+        const fillComponent = buildFill(opts.fill !== undefined ? opts.fill : { type: "none" });
+        const fillObj = fillComponent.prepForXml(context);
+        if (fillObj) children.push(fillObj);
+
+        // Outline
+        if (opts.outline) {
+            const outlineObj = createOutlineCompat(opts.outline).prepForXml(context);
+            if (outlineObj) children.push(outlineObj);
+        }
+
+        // Effects
+        if (opts.effects) {
+            const effectObj = new EffectList(opts.effects).prepForXml(context);
+            if (effectObj) children.push(effectObj);
+
+            const scene3d = buildScene3D(opts.effects);
+            if (scene3d) {
+                const sceneObj = scene3d.prepForXml(context);
+                if (sceneObj) children.push(sceneObj);
+            }
+
+            const shape3d = buildShape3D(opts.effects);
+            if (shape3d) {
+                const shapeObj = shape3d.prepForXml(context);
+                if (shapeObj) children.push(shapeObj);
+            }
+        }
+
+        // Connection sites
+        if (opts.connectionSites && opts.connectionSites.length > 0) {
+            const cxnChildren: IXmlableObject[] = [];
+            for (const site of opts.connectionSites) {
+                const siteAttrs: Record<string, string | number> = { pos: `${site.x} ${site.y}` };
+                if (site.angle !== undefined) siteAttrs.ang = site.angle;
+                cxnChildren.push({ "a:cxn": { _attr: siteAttrs } });
+            }
+            children.push({ "a:cxnLst": cxnChildren });
+        }
+
+        return { "p:spPr": children };
     }
 }

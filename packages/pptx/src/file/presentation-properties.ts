@@ -1,4 +1,4 @@
-import { BuilderElement, NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { ImportedXmlComponent } from "@file/xml-components";
 
 export interface IShowOptions {
     readonly loop?: boolean;
@@ -7,44 +7,36 @@ export interface IShowOptions {
     readonly useTimings?: boolean;
 }
 
-/**
- * p:presentationPr — Presentation properties.
- */
-export class PresentationProperties extends XmlComponent {
+function buildPresPropsXml(showOptions?: IShowOptions): string {
+    const showPrXml = showOptions
+        ? `<p:showPr${[
+              showOptions.loop ? ' loop="1"' : "",
+              showOptions.kiosk ? ' kiosk="1"' : "",
+              showOptions.showNarration === false ? ' showNarration="0"' : "",
+              showOptions.useTimings ? ' useTimings="1"' : "",
+          ].join("")}><p:present/></p:showPr>`
+        : "";
+    return `<p:presentationPr xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">${showPrXml}</p:presentationPr>`;
+}
+
+export class PresentationProperties extends ImportedXmlComponent {
+    private static cache = new Map<string, ImportedXmlComponent>();
+
     public constructor(showOptions?: IShowOptions) {
         super("p:presentationPr");
-        this.root.push(
-            new NextAttributeComponent({
-                "xmlns:a": {
-                    key: "xmlns:a",
-                    value: "http://schemas.openxmlformats.org/drawingml/2006/main",
-                },
-                "xmlns:r": {
-                    key: "xmlns:r",
-                    value: "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
-                },
-                "xmlns:p": {
-                    key: "xmlns:p",
-                    value: "http://schemas.openxmlformats.org/presentationml/2006/main",
-                },
-            }),
-        );
-
-        if (showOptions) {
-            const attrs: Record<string, { readonly key: string; readonly value: number }> = {};
-            if (showOptions.loop) attrs.loop = { key: "loop", value: 1 };
-            if (showOptions.kiosk) attrs.kiosk = { key: "kiosk", value: 1 };
-            if (showOptions.showNarration === false)
-                attrs.showNarration = { key: "showNarration", value: 0 };
-            if (showOptions.useTimings) attrs.useTimings = { key: "useTimings", value: 1 };
-
-            this.root.push(
-                new BuilderElement({
-                    name: "p:showPr",
-                    children: [new BuilderElement({ name: "p:present" })],
-                    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
-                }),
+        const key = showOptions ? JSON.stringify(showOptions) : "";
+        if (!PresentationProperties.cache.has(key)) {
+            PresentationProperties.cache.set(
+                key,
+                ImportedXmlComponent.fromXmlString(buildPresPropsXml(showOptions)),
             );
         }
     }
+
+    public prepForXml() {
+        const key = this.showOptions ? JSON.stringify(this.showOptions) : "";
+        return PresentationProperties.cache.get(key)!.prepForXml({ stack: [] });
+    }
+
+    private readonly showOptions?: IShowOptions;
 }

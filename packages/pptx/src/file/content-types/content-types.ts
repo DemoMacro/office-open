@@ -3,11 +3,8 @@
  *
  * @module
  */
-import { XmlComponent } from "@file/xml-components";
-
-import { ContentTypeAttributes } from "./content-types-attributes";
-import { createDefault } from "./default/default";
-import { createOverride } from "./override/override";
+import { BaseXmlComponent } from "@file/xml-components";
+import type { IContext, IXmlableObject } from "@file/xml-components";
 
 const PPTX_MAIN =
     "application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml";
@@ -26,101 +23,139 @@ const PPTX_VIEW_PROPS =
 const PPTX_TABLE_STYLES =
     "application/vnd.openxmlformats-officedocument.presentationml.tableStyles+xml";
 
-export class ContentTypes extends XmlComponent {
+type EntryType = "Default" | "Override";
+
+interface ContentEntry {
+    readonly type: EntryType;
+    readonly contentType: string;
+    readonly key: string;
+}
+
+const STATIC_ENTRIES: readonly ContentEntry[] = [
+    {
+        type: "Default",
+        contentType: "application/vnd.openxmlformats-package.relationships+xml",
+        key: "rels",
+    },
+    { type: "Default", contentType: "application/xml", key: "xml" },
+    { type: "Default", contentType: "image/png", key: "png" },
+    { type: "Default", contentType: "image/jpeg", key: "jpeg" },
+    { type: "Default", contentType: "video/mp4", key: "mp4" },
+    { type: "Override", contentType: PPTX_MAIN, key: "/ppt/presentation.xml" },
+    {
+        type: "Override",
+        contentType: "application/vnd.openxmlformats-package.core-properties+xml",
+        key: "/docProps/core.xml",
+    },
+    {
+        type: "Override",
+        contentType: "application/vnd.openxmlformats-officedocument.extended-properties+xml",
+        key: "/docProps/app.xml",
+    },
+    { type: "Override", contentType: PPTX_THEME, key: "/ppt/theme/theme1.xml" },
+    { type: "Override", contentType: PPTX_SLIDE_MASTER, key: "/ppt/slideMasters/slideMaster1.xml" },
+    { type: "Override", contentType: PPTX_SLIDE_LAYOUT, key: "/ppt/slideLayouts/slideLayout1.xml" },
+    { type: "Override", contentType: PPTX_PRES_PROPS, key: "/ppt/presProps.xml" },
+    { type: "Override", contentType: PPTX_VIEW_PROPS, key: "/ppt/viewProps.xml" },
+    { type: "Override", contentType: PPTX_TABLE_STYLES, key: "/ppt/tableStyles.xml" },
+];
+
+const STATIC_CHILDREN: IXmlableObject[] = [
+    { _attr: { xmlns: "http://schemas.openxmlformats.org/package/2006/content-types" } },
+    ...STATIC_ENTRIES.map((e) => {
+        if (e.type === "Default") {
+            return { Default: { _attr: { ContentType: e.contentType, Extension: e.key } } };
+        }
+        return { Override: { _attr: { ContentType: e.contentType, PartName: e.key } } };
+    }),
+];
+
+export class ContentTypes extends BaseXmlComponent {
+    private readonly dynamicEntries: ContentEntry[] = [];
+
     public constructor() {
         super("Types");
-
-        this.root.push(
-            new ContentTypeAttributes({
-                xmlns: "http://schemas.openxmlformats.org/package/2006/content-types",
-            }),
-        );
-
-        // Default content types by extension
-        this.root.push(
-            createDefault("application/vnd.openxmlformats-package.relationships+xml", "rels"),
-        );
-        this.root.push(createDefault("application/xml", "xml"));
-        this.root.push(createDefault("image/png", "png"));
-        this.root.push(createDefault("image/jpeg", "jpeg"));
-        this.root.push(createDefault("video/mp4", "mp4"));
-
-        // Static overrides
-        this.root.push(createOverride(PPTX_MAIN, "/ppt/presentation.xml"));
-        this.root.push(
-            createOverride(
-                "application/vnd.openxmlformats-package.core-properties+xml",
-                "/docProps/core.xml",
-            ),
-        );
-        this.root.push(
-            createOverride(
-                "application/vnd.openxmlformats-officedocument.extended-properties+xml",
-                "/docProps/app.xml",
-            ),
-        );
-        this.root.push(createOverride(PPTX_THEME, "/ppt/theme/theme1.xml"));
-        this.root.push(createOverride(PPTX_SLIDE_MASTER, "/ppt/slideMasters/slideMaster1.xml"));
-        this.root.push(createOverride(PPTX_SLIDE_LAYOUT, "/ppt/slideLayouts/slideLayout1.xml"));
-        this.root.push(createOverride(PPTX_PRES_PROPS, "/ppt/presProps.xml"));
-        this.root.push(createOverride(PPTX_VIEW_PROPS, "/ppt/viewProps.xml"));
-        this.root.push(createOverride(PPTX_TABLE_STYLES, "/ppt/tableStyles.xml"));
     }
 
     public addSlide(index: number): void {
-        this.root.push(createOverride(PPTX_SLIDE, `/ppt/slides/slide${index}.xml`));
+        this.dynamicEntries.push({
+            type: "Override",
+            contentType: PPTX_SLIDE,
+            key: `/ppt/slides/slide${index}.xml`,
+        });
     }
 
     public addNotesSlide(index: number): void {
-        this.root.push(createOverride(PPTX_NOTES, `/ppt/notesSlides/notesSlide${index}.xml`));
+        this.dynamicEntries.push({
+            type: "Override",
+            contentType: PPTX_NOTES,
+            key: `/ppt/notesSlides/notesSlide${index}.xml`,
+        });
     }
 
     public addChart(index: number): void {
-        this.root.push(createOverride(PPTX_CHART, `/ppt/charts/chart${index}.xml`));
+        this.dynamicEntries.push({
+            type: "Override",
+            contentType: PPTX_CHART,
+            key: `/ppt/charts/chart${index}.xml`,
+        });
     }
 
     public addDiagramData(index: number): void {
-        this.root.push(
-            createOverride(
-                "application/vnd.openxmlformats-officedocument.drawingml.diagramData+xml",
-                `/ppt/diagrams/data${index}.xml`,
-            ),
-        );
+        this.dynamicEntries.push({
+            type: "Override",
+            contentType: "application/vnd.openxmlformats-officedocument.drawingml.diagramData+xml",
+            key: `/ppt/diagrams/data${index}.xml`,
+        });
     }
 
     public addDiagramLayout(index: number): void {
-        this.root.push(
-            createOverride(
+        this.dynamicEntries.push({
+            type: "Override",
+            contentType:
                 "application/vnd.openxmlformats-officedocument.drawingml.diagramLayout+xml",
-                `/ppt/diagrams/layout${index}.xml`,
-            ),
-        );
+            key: `/ppt/diagrams/layout${index}.xml`,
+        });
     }
 
     public addDiagramStyle(index: number): void {
-        this.root.push(
-            createOverride(
-                "application/vnd.openxmlformats-officedocument.drawingml.diagramStyle+xml",
-                `/ppt/diagrams/quickStyle${index}.xml`,
-            ),
-        );
+        this.dynamicEntries.push({
+            type: "Override",
+            contentType: "application/vnd.openxmlformats-officedocument.drawingml.diagramStyle+xml",
+            key: `/ppt/diagrams/quickStyle${index}.xml`,
+        });
     }
 
     public addDiagramColors(index: number): void {
-        this.root.push(
-            createOverride(
+        this.dynamicEntries.push({
+            type: "Override",
+            contentType:
                 "application/vnd.openxmlformats-officedocument.drawingml.diagramColors+xml",
-                `/ppt/diagrams/colors${index}.xml`,
-            ),
-        );
+            key: `/ppt/diagrams/colors${index}.xml`,
+        });
     }
 
     public addDiagramDrawing(index: number): void {
-        this.root.push(
-            createOverride(
-                "application/vnd.ms-office.drawingml.diagramDrawing+xml",
-                `/ppt/diagrams/drawing${index}.xml`,
-            ),
-        );
+        this.dynamicEntries.push({
+            type: "Override",
+            contentType: "application/vnd.ms-office.drawingml.diagramDrawing+xml",
+            key: `/ppt/diagrams/drawing${index}.xml`,
+        });
+    }
+
+    public override prepForXml(_context: IContext): IXmlableObject {
+        const children = [...STATIC_CHILDREN];
+        for (const e of this.dynamicEntries) {
+            if (e.type === "Default") {
+                children.push({
+                    Default: { _attr: { ContentType: e.contentType, Extension: e.key } },
+                });
+            } else {
+                children.push({
+                    Override: { _attr: { ContentType: e.contentType, PartName: e.key } },
+                });
+            }
+        }
+        return { Types: children };
     }
 }

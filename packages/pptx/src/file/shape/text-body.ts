@@ -1,4 +1,5 @@
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
+import type { IContext, IXmlableObject } from "@file/xml-components";
 
 import { VerticalAlignment } from "../table/table-cell";
 import { Paragraph } from "./paragraph/paragraph";
@@ -21,66 +22,71 @@ export interface ITextBodyOptions {
 }
 
 /**
+ * Pure function: builds a:bodyPr content.
+ */
+function buildBodyPr(options: ITextBodyOptions): IXmlableObject {
+    const bodyPrChildren: IXmlableObject[] = [];
+
+    if (options.autoFit === "normal") bodyPrChildren.push({ "a:normAutofit": {} });
+    else if (options.autoFit === "shape") bodyPrChildren.push({ "a:spAutoFit": {} });
+    else if (options.autoFit === "none") bodyPrChildren.push({ "a:noAutofit": {} });
+
+    const bodyPrContent: IXmlableObject[] = [];
+
+    const attrs: Record<string, string | number> = {};
+    if (options.vertical) attrs.vert = options.vertical;
+    if (options.anchor) attrs.anchor = VerticalAlignment[options.anchor];
+    if (options.wrap) attrs.wrap = options.wrap;
+    if (options.margins?.top !== undefined) attrs.tIns = options.margins.top;
+    if (options.margins?.bottom !== undefined) attrs.bIns = options.margins.bottom;
+    if (options.margins?.left !== undefined) attrs.lIns = options.margins.left;
+    if (options.margins?.right !== undefined) attrs.rIns = options.margins.right;
+    if (options.columns !== undefined) attrs.numCol = options.columns;
+    if (options.columnSpacing !== undefined) attrs.spcCol = options.columnSpacing * 100;
+    if (Object.keys(attrs).length > 0) bodyPrContent.push({ _attr: attrs });
+
+    bodyPrContent.push(...bodyPrChildren);
+
+    return {
+        "a:bodyPr":
+            bodyPrContent.length === 1 && "_attr" in bodyPrContent[0]
+                ? bodyPrContent[0]
+                : bodyPrContent.length > 0
+                  ? bodyPrContent
+                  : {},
+    };
+}
+
+/**
  * p:txBody — Text body within a shape.
- * Uses p: prefix in PresentationML context, though type is a:CT_TextBody.
+ * Lazy: stores options, builds XML object in prepForXml.
  */
 export class TextBody extends XmlComponent {
+    private readonly options: ITextBodyOptions;
+
     public constructor(options: ITextBodyOptions = {}) {
         super("p:txBody");
+        this.options = options;
+    }
 
-        const bodyPrAttrs: Record<
-            string,
-            { readonly key: string; readonly value: string | number }
-        > = {};
-        if (options.vertical) bodyPrAttrs.vert = { key: "vert", value: options.vertical };
-        if (options.anchor)
-            bodyPrAttrs.anchor = { key: "anchor", value: VerticalAlignment[options.anchor] };
-        if (options.wrap) bodyPrAttrs.wrap = { key: "wrap", value: options.wrap };
-        if (options.margins?.top !== undefined)
-            bodyPrAttrs.tIns = { key: "tIns", value: options.margins.top };
-        if (options.margins?.bottom !== undefined)
-            bodyPrAttrs.bIns = { key: "bIns", value: options.margins.bottom };
-        if (options.margins?.left !== undefined)
-            bodyPrAttrs.lIns = { key: "lIns", value: options.margins.left };
-        if (options.margins?.right !== undefined)
-            bodyPrAttrs.rIns = { key: "rIns", value: options.margins.right };
-        if (options.columns !== undefined)
-            bodyPrAttrs.numCol = { key: "numCol", value: options.columns };
-        if (options.columnSpacing !== undefined)
-            bodyPrAttrs.spcCol = { key: "spcCol", value: options.columnSpacing * 100 };
+    public prepForXml(context: IContext): IXmlableObject | undefined {
+        const children: IXmlableObject[] = [];
 
-        const bodyPrChildren: BuilderElement<{}>[] = [];
+        children.push(buildBodyPr(this.options));
+        children.push({ "a:lstStyle": {} });
 
-        if (options.autoFit === "normal") {
-            bodyPrChildren.push(new BuilderElement({ name: "a:normAutofit" }));
-        } else if (options.autoFit === "shape") {
-            bodyPrChildren.push(new BuilderElement({ name: "a:spAutoFit" }));
-        } else if (options.autoFit === "none") {
-            bodyPrChildren.push(new BuilderElement({ name: "a:noAutofit" }));
-        }
-
-        this.root.push(
-            new BuilderElement({
-                name: "a:bodyPr",
-                attributes: Object.keys(bodyPrAttrs).length > 0 ? bodyPrAttrs : undefined,
-                children: bodyPrChildren.length > 0 ? bodyPrChildren : undefined,
-            }),
-        );
-
-        this.root.push(
-            new BuilderElement({
-                name: "a:lstStyle",
-            }),
-        );
-
-        if (options.paragraphs) {
-            for (const p of options.paragraphs) {
-                this.root.push(
-                    typeof p === "string" ? new Paragraph({ children: [new Run({ text: p })] }) : p,
-                );
+        if (this.options.paragraphs) {
+            for (const p of this.options.paragraphs) {
+                const para =
+                    typeof p === "string" ? new Paragraph({ children: [new Run({ text: p })] }) : p;
+                const obj = para.prepForXml(context);
+                if (obj) children.push(obj);
             }
         } else {
-            this.root.push(new Paragraph());
+            const obj = new Paragraph().prepForXml(context);
+            if (obj) children.push(obj);
         }
+
+        return { "p:txBody": children };
     }
 }

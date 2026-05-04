@@ -1,4 +1,5 @@
-import { XmlComponent } from "@file/xml-components";
+import { BaseXmlComponent } from "@file/xml-components";
+import type { IContext, IXmlableObject } from "@file/xml-components";
 
 import type { ICellBorderOptions } from "./table-cell-properties";
 import { TableGrid } from "./table-grid";
@@ -26,34 +27,48 @@ export interface ITableOptions {
 
 /**
  * a:tbl — DrawingML table element.
+ * Lazy: stores options, builds IXmlableObject in prepForXml.
  */
-export class Table extends XmlComponent {
+export class Table extends BaseXmlComponent {
+    private readonly options: ITableOptions;
+
     public constructor(options: ITableOptions) {
         super("a:tbl");
+        this.options = options;
+    }
 
-        this.root.push(
-            new TableProperties({
-                firstRow: options.firstRow,
-                lastRow: options.lastRow,
-                bandRow: options.bandRow,
-                firstCol: options.firstCol,
-                lastCol: options.lastCol,
-                bandCol: options.bandCol,
-            }),
-        );
+    public override prepForXml(context: IContext): IXmlableObject {
+        const opts = this.options;
+        const children: IXmlableObject[] = [];
 
-        // Column grid
-        if (options.columnWidths && options.columnWidths.length > 0) {
-            this.root.push(new TableGrid([...options.columnWidths]));
-        } else {
-            // Default: equal widths based on first row cell count
-            const colCount = options.rows[0]?.cells.length ?? 1;
-            this.root.push(new TableGrid(Array.from({ length: colCount }, () => 0)));
+        // a:tblPr
+        const tblPr = new TableProperties({
+            firstRow: opts.firstRow,
+            lastRow: opts.lastRow,
+            bandRow: opts.bandRow,
+            firstCol: opts.firstCol,
+            lastCol: opts.lastCol,
+            bandCol: opts.bandCol,
+        });
+        const tblPrObj = tblPr.prepForXml(context);
+        if (tblPrObj) children.push(tblPrObj);
+
+        // a:tblGrid
+        const colWidths =
+            opts.columnWidths && opts.columnWidths.length > 0
+                ? [...opts.columnWidths]
+                : Array.from({ length: opts.rows[0]?.cells.length ?? 1 }, () => 0);
+        const grid = new TableGrid(colWidths);
+        const gridObj = grid.prepForXml(context);
+        if (gridObj) children.push(gridObj);
+
+        // a:tr rows
+        for (const row of opts.rows) {
+            const tr = new TableRow(row);
+            const trObj = tr.prepForXml(context);
+            if (trObj) children.push(trObj);
         }
 
-        // Rows
-        for (const row of options.rows) {
-            this.root.push(new TableRow(row));
-        }
+        return { "a:tbl": children };
     }
 }

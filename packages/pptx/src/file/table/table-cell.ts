@@ -1,10 +1,10 @@
-import { BuilderElement, NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BaseXmlComponent } from "@file/xml-components";
+import type { IContext, IXmlableObject } from "@file/xml-components";
 
 import type { FillOptions } from "../drawingml/fill";
 import { Paragraph } from "../shape/paragraph/paragraph";
 import { Run } from "../shape/paragraph/run";
-import { TableCellProperties } from "./table-cell-properties";
-import type { ICellBorderOptions } from "./table-cell-properties";
+import { TableCellProperties, type ICellBorderOptions } from "./table-cell-properties";
 
 export const VerticalAlignment = {
     TOP: "t",
@@ -14,7 +14,7 @@ export const VerticalAlignment = {
 
 export interface ITableCellOptions {
     readonly text?: string;
-    readonly children?: readonly XmlComponent[];
+    readonly children?: readonly BaseXmlComponent[];
     readonly fill?: FillOptions;
     readonly borders?: {
         readonly top?: ICellBorderOptions;
@@ -35,98 +35,70 @@ export interface ITableCellOptions {
 
 /**
  * a:tc — Table cell with text body and properties.
- *
- * Uses a:txBody (DrawingML context), not p:txBody.
- * gridSpan and rowSpan are attributes on a:tc, not children of a:tcPr.
+ * Lazy: stores options, builds IXmlableObject in prepForXml.
  */
-export class TableCell extends XmlComponent {
+export class TableCell extends BaseXmlComponent {
+    private readonly options: ITableCellOptions;
+    private readonly paragraphs?: readonly BaseXmlComponent[];
+
     public constructor(options: ITableCellOptions = {}) {
         super("a:tc");
-
-        // gridSpan and rowSpan are attributes of a:tc per XSD
-        if (options.columnSpan !== undefined && options.columnSpan > 1) {
-            this.root.push(
-                new NextAttributeComponent({
-                    gridSpan: { key: "gridSpan", value: options.columnSpan },
-                }),
-            );
-        }
-        if (options.rowSpan !== undefined && options.rowSpan > 1) {
-            this.root.push(
-                new NextAttributeComponent({
-                    rowSpan: { key: "rowSpan", value: options.rowSpan },
-                }),
-            );
-        }
-
-        // a:txBody (DrawingML namespace, not p:txBody)
-        if (options.children) {
-            this.root.push(new CellTextBody(options.children, options.margins));
-        } else if (options.text !== undefined) {
-            this.root.push(
-                new CellTextBody(
-                    [
-                        new Paragraph({
-                            properties: { bulletNone: false },
-                            children: [new Run({ text: options.text })],
-                        }),
-                    ],
-                    options.margins,
-                ),
-            );
-        } else {
-            this.root.push(new CellTextBody(undefined, options.margins));
-        }
-
-        // a:tcPr
-        this.root.push(
-            new TableCellProperties({
-                fill: options.fill,
-                borders: options.borders,
-                verticalAlign: options.verticalAlign
-                    ? VerticalAlignment[options.verticalAlign]
-                    : undefined,
-            }),
-        );
+        this.options = options;
+        this.paragraphs =
+            options.children ??
+            (options.text !== undefined
+                ? [
+                      new Paragraph({
+                          properties: { bulletNone: false },
+                          children: [new Run({ text: options.text })],
+                      }),
+                  ]
+                : undefined);
     }
-}
 
-/**
- * a:txBody — Text body for table cells (DrawingML namespace).
- * Differs from shape TextBody (p:txBody) and omits a:buNone.
- */
-class CellTextBody extends XmlComponent {
-    public constructor(
-        paragraphs?: readonly XmlComponent[],
-        margins?: {
-            readonly top?: number;
-            readonly bottom?: number;
-            readonly left?: number;
-            readonly right?: number;
-        },
-    ) {
-        super("a:txBody");
+    public override prepForXml(context: IContext): IXmlableObject {
+        const opts = this.options;
+        const children: IXmlableObject[] = [];
 
-        const bodyPrAttrs: Record<string, { readonly key: string; readonly value: number }> = {};
-        if (margins?.top !== undefined) bodyPrAttrs.tIns = { key: "tIns", value: margins.top };
-        if (margins?.bottom !== undefined)
-            bodyPrAttrs.bIns = { key: "bIns", value: margins.bottom };
-        if (margins?.left !== undefined) bodyPrAttrs.lIns = { key: "lIns", value: margins.left };
-        if (margins?.right !== undefined) bodyPrAttrs.rIns = { key: "rIns", value: margins.right };
-        this.root.push(
-            new BuilderElement({
-                name: "a:bodyPr",
-                attributes: Object.keys(bodyPrAttrs).length > 0 ? bodyPrAttrs : undefined,
-            }),
-        );
-        this.root.push(new BuilderElement({ name: "a:lstStyle" }));
+        // gridSpan and rowSpan attributes
+        const tcAttrs: Record<string, number> = {};
+        if (opts.columnSpan !== undefined && opts.columnSpan > 1)
+            tcAttrs.gridSpan = opts.columnSpan;
+        if (opts.rowSpan !== undefined && opts.rowSpan > 1) tcAttrs.rowSpan = opts.rowSpan;
+        if (Object.keys(tcAttrs).length > 0) children.push({ _attr: tcAttrs });
 
-        if (paragraphs) {
-            for (const p of paragraphs) {
-                this.root.push(p);
+        // a:txBody
+        const txBodyChildren: IXmlableObject[] = [];
+        const margins = opts.margins;
+        const bodyPrAttrs: Record<string, number> = {};
+        if (margins?.top !== undefined) bodyPrAttrs.tIns = margins.top;
+        if (margins?.bottom !== undefined) bodyPrAttrs.bIns = margins.bottom;
+        if (margins?.left !== undefined) bodyPrAttrs.lIns = margins.left;
+        if (margins?.right !== undefined) bodyPrAttrs.rIns = margins.right;
+        txBodyChildren.push({
+            "a:bodyPr": Object.keys(bodyPrAttrs).length > 0 ? { _attr: bodyPrAttrs } : {},
+        });
+        txBodyChildren.push({ "a:lstStyle": {} });
+
+        if (this.paragraphs) {
+            for (const p of this.paragraphs) {
+                const pObj = p.prepForXml(context);
+                if (pObj) txBodyChildren.push(pObj);
             }
         } else {
-            this.root.push(new Paragraph({ properties: { bulletNone: false } }));
+            txBodyChildren.push({ "a:p": [] });
         }
+        children.push({ "a:txBody": txBodyChildren });
+
+        // a:tcPr
+        const tcPr = new TableCellProperties({
+            fill: opts.fill,
+            borders: opts.borders,
+            verticalAlign: opts.verticalAlign ? VerticalAlignment[opts.verticalAlign] : undefined,
+        });
+        const tcPrObj = tcPr.prepForXml(context);
+        if (tcPrObj) children.push(tcPrObj);
+
+        return { "a:tc": children };
     }
 }

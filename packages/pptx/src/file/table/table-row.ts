@@ -1,4 +1,5 @@
-import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BaseXmlComponent } from "@file/xml-components";
+import type { IContext, IXmlableObject } from "@file/xml-components";
 
 import { TableCell, type ITableCellOptions } from "./table-cell";
 
@@ -9,20 +10,26 @@ export interface ITableRowOptions {
 
 /**
  * a:tr — Table row containing cells.
- *
- * Per OOXML spec, `h` is a required attribute on `a:tr`.
- * Children: tc (multiple) → extLst. No trPr in DrawingML tables.
+ * Lazy: stores options, builds IXmlableObject in prepForXml.
  */
-export class TableRow extends XmlComponent {
+export class TableRow extends BaseXmlComponent {
+    private readonly options: ITableRowOptions;
+
     public constructor(options: ITableRowOptions) {
         super("a:tr");
-        this.root.push(
-            new NextAttributeComponent({
-                h: { key: "h", value: options.height ?? 0 },
-            }),
-        );
-        for (const cell of options.cells) {
-            this.root.push(new TableCell(cell));
+        this.options = options;
+    }
+
+    public override prepForXml(context: IContext): IXmlableObject {
+        const children: IXmlableObject[] = [];
+        children.push({ _attr: { h: this.options.height ?? 0 } });
+
+        for (const cell of this.options.cells) {
+            const tc = new TableCell(cell);
+            const obj = tc.prepForXml(context);
+            if (obj) children.push(obj);
         }
+
+        return { "a:tr": children };
     }
 }

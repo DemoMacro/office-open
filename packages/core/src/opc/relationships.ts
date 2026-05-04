@@ -1,4 +1,5 @@
-import { XmlComponent, XmlAttributeComponent, BuilderElement } from "../xml-components";
+import { BaseXmlComponent } from "../xml-components/base";
+import type { IContext, IXmlableObject } from "../xml-components/base";
 
 export type RelationshipType =
     | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"
@@ -48,45 +49,22 @@ export const TargetModeType = {
     EXTERNAL: "External",
 } as const;
 
-class RelationshipsAttributes extends XmlAttributeComponent<{
-    readonly xmlns: string;
-}> {
-    protected readonly xmlKeys = {
-        xmlns: "xmlns",
-    };
-}
-
-interface IRelationshipAttributes {
+interface RelationshipEntry {
     readonly id: string;
     readonly type: RelationshipType;
     readonly target: string;
-    readonly targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType];
+    readonly targetMode?: string;
 }
 
-export const createRelationship = (
-    id: string,
-    type: RelationshipType,
-    target: string,
-    targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType],
-): XmlComponent =>
-    new BuilderElement<IRelationshipAttributes>({
-        attributes: {
-            id: { key: "Id", value: id },
-            target: { key: "Target", value: target },
-            targetMode: { key: "TargetMode", value: targetMode },
-            type: { key: "Type", value: type },
-        },
-        name: "Relationship",
-    });
+const RELS_ATTRS: IXmlableObject = {
+    _attr: { xmlns: "http://schemas.openxmlformats.org/package/2006/relationships" },
+};
 
-export class Relationships extends XmlComponent {
+export class Relationships extends BaseXmlComponent {
+    private entries: RelationshipEntry[] = [];
+
     public constructor() {
         super("Relationships");
-        this.root.push(
-            new RelationshipsAttributes({
-                xmlns: "http://schemas.openxmlformats.org/package/2006/relationships",
-            }),
-        );
     }
 
     public addRelationship(
@@ -95,10 +73,24 @@ export class Relationships extends XmlComponent {
         target: string,
         targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType],
     ): void {
-        this.root.push(createRelationship(`rId${id}`, type, target, targetMode));
+        this.entries.push({ id: `rId${id}`, type, target, targetMode });
     }
 
     public get RelationshipCount(): number {
-        return this.root.length - 1;
+        return this.entries.length;
+    }
+
+    public override prepForXml(_context: IContext): IXmlableObject {
+        const children: IXmlableObject[] = [RELS_ATTRS];
+        for (const e of this.entries) {
+            const attrs: Record<string, string> = {
+                Id: e.id,
+                Type: e.type,
+                Target: e.target,
+            };
+            if (e.targetMode) attrs.TargetMode = e.targetMode;
+            children.push({ Relationship: { _attr: attrs } });
+        }
+        return { Relationships: children };
     }
 }

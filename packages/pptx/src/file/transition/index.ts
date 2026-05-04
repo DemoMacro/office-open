@@ -1,1 +1,6 @@
-export { Transition, type ITransitionOptions, type TransitionType } from "./transition";
+export {
+    Transition,
+    buildTransition,
+    type ITransitionOptions,
+    type TransitionType,
+} from "./transition";

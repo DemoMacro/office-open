@@ -1,7 +1,5 @@
-import { GroupShapeProperties } from "@file/drawingml/group-shape-properties";
-import type { IGroupTransform2DOptions } from "@file/drawingml/group-transform-2d";
-import { GroupShapeNonVisualProperties } from "@file/shape-tree/group-shape-non-visual";
-import { XmlComponent } from "@file/xml-components";
+import { BaseXmlComponent } from "@file/xml-components";
+import type { IContext, IXmlableObject } from "@file/xml-components";
 import { pixelsToEmus } from "@util/types";
 
 export interface IGroupShapeOptions {
@@ -11,36 +9,71 @@ export interface IGroupShapeOptions {
     readonly height?: number;
     readonly rotation?: number;
     readonly flipH?: boolean;
-    readonly children: readonly XmlComponent[];
+    readonly children: readonly BaseXmlComponent[];
 }
 
 /**
  * p:grpSp — Group shape containing child shapes.
- *
- * Children can be Shape, Picture, ChartFrame, or nested GroupShape.
- * x/y/width/height define the group's bounding box in EMUs (pixel values auto-converted).
+ * Lazy: stores options, builds XML object in prepForXml.
  */
-export class GroupShape extends XmlComponent {
+export class GroupShape extends BaseXmlComponent {
     private static nextId = 100;
+    private readonly id: number;
+    private readonly options: IGroupShapeOptions;
 
     public constructor(options: IGroupShapeOptions) {
         super("p:grpSp");
+        this.id = GroupShape.nextId++;
+        this.options = options;
+    }
 
-        const id = GroupShape.nextId++;
+    public override prepForXml(context: IContext): IXmlableObject {
+        const opts = this.options;
+        const id = this.id;
         const name = `Group ${id}`;
+        const children: IXmlableObject[] = [];
 
-        this.root.push(new GroupShapeNonVisualProperties(id, name));
+        // p:nvGrpSpPr
+        children.push({
+            "p:nvGrpSpPr": [
+                { "p:cNvPr": { _attr: { id, name } } },
+                { "p:cNvGrpSpPr": {} },
+                { "p:nvPr": {} },
+            ],
+        });
 
-        const transformOptions: IGroupTransform2DOptions = {
-            x: options.x !== undefined ? pixelsToEmus(options.x) : undefined,
-            y: options.y !== undefined ? pixelsToEmus(options.y) : undefined,
-            width: options.width !== undefined ? pixelsToEmus(options.width) : undefined,
-            height: options.height !== undefined ? pixelsToEmus(options.height) : undefined,
-            flipH: options.flipH,
-            rotation: options.rotation,
-        };
-        this.root.push(new GroupShapeProperties(transformOptions));
+        // p:grpSpPr
+        const xfrmChildren: IXmlableObject[] = [];
+        const xfrmAttrs: Record<string, string | number> = {};
+        if (opts.flipH !== undefined) xfrmAttrs.flipH = opts.flipH ? 1 : 0;
+        if (opts.rotation !== undefined) xfrmAttrs.rot = opts.rotation;
+        if (Object.keys(xfrmAttrs).length > 0) xfrmChildren.push({ _attr: xfrmAttrs });
+        xfrmChildren.push({
+            "a:off": {
+                _attr: {
+                    x: opts.x !== undefined ? pixelsToEmus(opts.x) : 0,
+                    y: opts.y !== undefined ? pixelsToEmus(opts.y) : 0,
+                },
+            },
+        });
+        xfrmChildren.push({
+            "a:ext": {
+                _attr: {
+                    cx: opts.width !== undefined ? pixelsToEmus(opts.width) : 0,
+                    cy: opts.height !== undefined ? pixelsToEmus(opts.height) : 0,
+                },
+            },
+        });
+        xfrmChildren.push({ "a:chOff": { _attr: { x: 0, y: 0 } } });
+        xfrmChildren.push({ "a:chExt": { _attr: { cx: 0, cy: 0 } } });
+        children.push({ "p:grpSpPr": { "a:xfrm": xfrmChildren } });
 
-        this.root.push(...options.children);
+        // Children
+        for (const child of opts.children) {
+            const obj = child.prepForXml(context);
+            if (obj) children.push(obj);
+        }
+
+        return { "p:grpSp": children };
     }
 }

@@ -1,11 +1,11 @@
 import { Relationships } from "@file/relationships/relationships";
-import type { XmlComponent } from "@file/xml-components";
+import type { BaseXmlComponent } from "@file/xml-components";
 
 import { Presentation } from "./presentation";
 import type { IPresentationOptions } from "./presentation";
 
 export interface IViewWrapper {
-    readonly View: XmlComponent;
+    readonly View: BaseXmlComponent;
     readonly Relationships: Relationships;
 }
 

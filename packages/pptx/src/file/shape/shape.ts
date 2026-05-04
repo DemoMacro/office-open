@@ -1,10 +1,11 @@
 import type { IAnimationOptions } from "@file/animation/types";
 import type { IEffectsOptions } from "@file/drawingml/effects";
-import { NonVisualShapeProperties } from "@file/drawingml/non-visual-shape-props";
 import type { OutlineOptions } from "@file/drawingml/outline";
 import { ShapeProperties } from "@file/drawingml/shape-properties";
 import type { IShapePropertiesOptions } from "@file/drawingml/shape-properties";
-import { BuilderElement, XmlComponent as Xc } from "@file/xml-components";
+import type { File } from "@file/file";
+import { XmlComponent as Xc } from "@file/xml-components";
+import type { IContext, IXmlableObject } from "@file/xml-components";
 import { pixelsToEmus } from "@util/types";
 
 import { Paragraph } from "./paragraph/paragraph";
@@ -40,7 +41,17 @@ export interface IShapeOptions {
 }
 
 /**
+ * Pure function: builds p:ph element for placeholder.
+ */
+function buildPlaceholder(type: string, index?: number): IXmlableObject {
+    const attrs: Record<string, string | number> = { type };
+    if (index !== undefined) attrs.idx = index;
+    return { "p:ph": { _attr: attrs } };
+}
+
+/**
  * p:sp — A shape on a slide.
+ * Lazy: stores options, builds XML object in prepForXml.
  *
  * x/y/width/height accept pixel values and are internally converted to EMUs.
  */
@@ -48,6 +59,7 @@ export class Shape extends Xc {
     private static nextId = 2;
     private readonly shapeId: number;
     private readonly animationOptions?: IAnimationOptions;
+    private readonly options: IShapeOptions;
 
     public constructor(options: IShapeOptions = {}) {
         super("p:sp");
@@ -55,59 +67,7 @@ export class Shape extends Xc {
         const id = options.id ?? Shape.nextId++;
         this.shapeId = id;
         this.animationOptions = options.animation;
-        const name = options.name ?? `Shape ${id}`;
-
-        this.root.push(
-            new BuilderElement({
-                name: "p:nvSpPr",
-                children: [
-                    new BuilderElement({
-                        name: "p:cNvPr",
-                        attributes: {
-                            id: { key: "id", value: id },
-                            name: { key: "name", value: name },
-                        },
-                    }),
-                    new NonVisualShapeProperties(),
-                    new BuilderElement({
-                        name: "p:nvPr",
-                        children: options.placeholder
-                            ? [buildPlaceholder(options.placeholder, options.placeholderIndex)]
-                            : undefined,
-                    }),
-                ],
-            }),
-        );
-
-        const shapeProps: IShapePropertiesOptions = {
-            x: options.x !== undefined ? pixelsToEmus(options.x) : undefined,
-            y: options.y !== undefined ? pixelsToEmus(options.y) : undefined,
-            width: options.width !== undefined ? pixelsToEmus(options.width) : undefined,
-            height: options.height !== undefined ? pixelsToEmus(options.height) : undefined,
-            geometry: options.geometry,
-            fill: options.fill,
-            outline: options.outline,
-            effects: options.effects,
-            flipH: options.flipH,
-            rotation: options.rotation,
-        };
-        this.root.push(new ShapeProperties(shapeProps));
-
-        const textBodyOptions: ITextBodyOptions = {
-            paragraphs:
-                options.paragraphs ??
-                (options.text
-                    ? [new Paragraph({ children: [new Run({ text: options.text })] })]
-                    : undefined),
-            vertical: options.textVertical,
-            anchor: options.textAnchor,
-            autoFit: options.textAutoFit,
-            wrap: options.textWrap,
-            margins: options.textMargins,
-            columns: options.textColumns,
-            columnSpacing: options.textColumnSpacing,
-        };
-        this.root.push(new TextBody(textBodyOptions));
+        this.options = { ...options, id };
     }
 
     public get ShapeId(): number {
@@ -117,12 +77,62 @@ export class Shape extends Xc {
     public get Animation(): IAnimationOptions | undefined {
         return this.animationOptions;
     }
-}
 
-function buildPlaceholder(type: string, index?: number): BuilderElement<{}> {
-    const attrs: Record<string, { readonly key: string; readonly value: string | number }> = {
-        type: { key: "type", value: type },
-    };
-    if (index !== undefined) attrs.idx = { key: "idx", value: index };
-    return new BuilderElement({ name: "p:ph", attributes: attrs });
+    public override prepForXml(context: IContext): IXmlableObject | undefined {
+        const opts = this.options;
+        const id = this.shapeId;
+        const name = opts.name ?? `Shape ${id}`;
+        const children: IXmlableObject[] = [];
+
+        // nvSpPr
+        const nvPrChildren: IXmlableObject[] = [];
+        if (opts.placeholder) {
+            nvPrChildren.push(buildPlaceholder(opts.placeholder, opts.placeholderIndex));
+        }
+        children.push({
+            "p:nvSpPr": [
+                { "p:cNvPr": { _attr: { id, name } } },
+                { "p:cNvSpPr": {} },
+                { "p:nvPr": nvPrChildren.length > 0 ? nvPrChildren : {} },
+            ],
+        });
+
+        // spPr (ShapeProperties)
+        const shapeProps: IShapePropertiesOptions = {
+            x: opts.x !== undefined ? pixelsToEmus(opts.x) : undefined,
+            y: opts.y !== undefined ? pixelsToEmus(opts.y) : undefined,
+            width: opts.width !== undefined ? pixelsToEmus(opts.width) : undefined,
+            height: opts.height !== undefined ? pixelsToEmus(opts.height) : undefined,
+            geometry: opts.geometry,
+            fill: opts.fill,
+            outline: opts.outline,
+            effects: opts.effects,
+            flipH: opts.flipH,
+            rotation: opts.rotation,
+        };
+        const spPr = new ShapeProperties(shapeProps);
+        const spPrObj = spPr.prepForXml(context as IContext<File>);
+        if (spPrObj) children.push(spPrObj);
+
+        // txBody (TextBody)
+        const textBodyOptions: ITextBodyOptions = {
+            paragraphs:
+                opts.paragraphs ??
+                (opts.text
+                    ? [new Paragraph({ children: [new Run({ text: opts.text })] })]
+                    : undefined),
+            vertical: opts.textVertical,
+            anchor: opts.textAnchor,
+            autoFit: opts.textAutoFit,
+            wrap: opts.textWrap,
+            margins: opts.textMargins,
+            columns: opts.textColumns,
+            columnSpacing: opts.textColumnSpacing,
+        };
+        const txBody = new TextBody(textBodyOptions);
+        const txBodyObj = txBody.prepForXml(context);
+        if (txBodyObj) children.push(txBodyObj);
+
+        return { "p:sp": children };
+    }
 }
