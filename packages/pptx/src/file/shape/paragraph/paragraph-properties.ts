@@ -1,8 +1,5 @@
-import {
-    BuilderElement,
-    IgnoreIfEmptyXmlComponent,
-    NextAttributeComponent,
-} from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
+import type { IXmlableObject } from "@file/xml-components";
 
 export const TextAlignment = {
     LEFT: "l",
@@ -47,165 +44,116 @@ export interface IParagraphPropertiesOptions {
     readonly defTabSize?: number;
 }
 
-/**
- * a:pPr — Paragraph properties (alignment, indent, spacing).
- * Omitted from output when completely empty.
- */
-export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
-    public constructor(options: IParagraphPropertiesOptions = {}) {
-        super("a:pPr");
+function buildBulletChildren(options: BulletOptions): IXmlableObject[] {
+    const children: IXmlableObject[] = [];
 
-        const attrs: Record<
-            string,
-            { readonly key: string; readonly value: string | number | undefined }
-        > = {};
-        if (options.alignment)
-            attrs.algn = { key: "algn", value: TextAlignment[options.alignment] };
-        if (options.indentLevel !== undefined)
-            attrs.lvl = { key: "lvl", value: options.indentLevel };
-        if (options.marginIndent !== undefined)
-            attrs.marL = { key: "marL", value: options.marginIndent };
-        if (options.marginRight !== undefined)
-            attrs.marR = { key: "marR", value: options.marginRight };
-        if (options.defTabSize !== undefined)
-            attrs.defTabSz = { key: "defTabSz", value: options.defTabSize };
-        if (Object.keys(attrs).length > 0) {
-            this.root.push(new NextAttributeComponent(attrs));
-        }
-
-        if (options.lineSpacing !== undefined) {
-            this.root.push(
-                new BuilderElement({
-                    name: "a:lnSpc",
-                    children: [
-                        new BuilderElement({
-                            name: "a:spcPct",
-                            attributes: { val: { key: "val", value: options.lineSpacing * 1000 } },
-                        }),
-                    ],
-                }),
-            );
-        }
-
-        if (options.lineSpacingPoints !== undefined) {
-            this.root.push(
-                new BuilderElement({
-                    name: "a:lnSpc",
-                    children: [
-                        new BuilderElement({
-                            name: "a:spcPts",
-                            attributes: {
-                                val: { key: "val", value: options.lineSpacingPoints * 100 },
-                            },
-                        }),
-                    ],
-                }),
-            );
-        }
-
-        if (options.marginBottom !== undefined || options.marginTop !== undefined) {
-            this.root.push(
-                new BuilderElement({
-                    name: "a:spcAft",
-                    children: [
-                        new BuilderElement({
-                            name: "a:spcPts",
-                            attributes: { val: { key: "val", value: options.marginBottom ?? 0 } },
-                        }),
-                    ],
-                }),
-            );
-        }
-
-        if (options.marginTop !== undefined) {
-            this.root.push(
-                new BuilderElement({
-                    name: "a:spcBef",
-                    children: [
-                        new BuilderElement({
-                            name: "a:spcPts",
-                            attributes: { val: { key: "val", value: options.marginTop } },
-                        }),
-                    ],
-                }),
-            );
-        }
-
-        if (options.bullet) {
-            this.pushBulletElements(options.bullet);
-        } else if (options.bulletNone !== false) {
-            this.root.push(new BuilderElement({ name: "a:buNone" }));
-        }
+    if (options.type === "none") {
+        children.push({ "a:buNone": {} });
+        return children;
     }
 
-    private pushBulletElements(options: BulletOptions) {
-        if (options.type === "none") {
-            this.root.push(new BuilderElement({ name: "a:buNone" }));
-            return;
-        }
+    if (options.color) {
+        children.push({
+            "a:buClr": [{ "a:srgbClr": { _attr: { val: options.color.replace("#", "") } } }],
+        });
+    }
 
-        // buClr (EG_TextBulletColor)
-        if (options.color) {
-            this.root.push(
-                new BuilderElement({
-                    name: "a:buClr",
-                    children: [
-                        new BuilderElement({
-                            name: "a:srgbClr",
-                            attributes: {
-                                val: { key: "val", value: options.color.replace("#", "") },
-                            },
-                        }),
-                    ],
-                }),
-            );
-        }
+    if (options.size !== undefined) {
+        children.push({ "a:buSzPct": { _attr: { val: `${options.size}%` } } });
+    }
 
-        // buSzPct (EG_TextBulletSize) — val is a percentage string like "75%"
-        if (options.size !== undefined) {
-            this.root.push(
-                new BuilderElement({
-                    name: "a:buSzPct",
-                    attributes: { val: { key: "val", value: `${options.size}%` } },
-                }),
-            );
-        }
+    children.push({
+        "a:buFont": {
+            _attr: {
+                typeface: "Arial",
+                panose: "020B0604020202020204",
+                pitchFamily: "34",
+                charset: "0",
+            },
+        },
+    });
 
-        // buFont (EG_TextBulletTypeface)
-        this.root.push(
-            new BuilderElement({
-                name: "a:buFont",
-                attributes: {
-                    typeface: { key: "typeface", value: "Arial" },
-                    panose: { key: "panose", value: "020B0604020202020204" },
-                    pitchFamily: { key: "pitchFamily", value: "34" },
-                    charset: { key: "charset", value: "0" },
-                },
-            }),
-        );
+    if (options.type === "char") {
+        children.push({ "a:buChar": { _attr: { char: options.char ?? "•" } } });
+    } else if (options.type === "autoNum") {
+        const buAttrs: Record<string, string | number> = { type: options.format ?? "arabicPeriod" };
+        if (options.startAt !== undefined) buAttrs.startAt = options.startAt;
+        children.push({ "a:buAutoNum": { _attr: buAttrs } });
+    }
 
-        // buChar or buAutoNum (EG_TextBullet)
-        if (options.type === "char") {
-            this.root.push(
-                new BuilderElement({
-                    name: "a:buChar",
-                    attributes: { char: { key: "char", value: options.char ?? "•" } },
-                }),
-            );
-        } else if (options.type === "autoNum") {
-            const attrs: Record<string, { readonly key: string; readonly value: string | number }> =
-                {
-                    type: { key: "type", value: options.format ?? "arabicPeriod" },
-                };
-            if (options.startAt !== undefined) {
-                attrs.startAt = { key: "startAt", value: options.startAt };
-            }
-            this.root.push(
-                new BuilderElement({
-                    name: "a:buAutoNum",
-                    attributes: attrs,
-                }),
-            );
-        }
+    return children;
+}
+
+/**
+ * Pure function: builds a:pPr XML object from options.
+ * Returns undefined when no meaningful content (empty → omitted from output).
+ */
+export function buildParagraphProperties(
+    options: IParagraphPropertiesOptions,
+): IXmlableObject | undefined {
+    const children: IXmlableObject[] = [];
+
+    const attrs: Record<string, string | number> = {};
+    if (options.alignment) attrs.algn = TextAlignment[options.alignment];
+    if (options.indentLevel !== undefined) attrs.lvl = options.indentLevel;
+    if (options.marginIndent !== undefined) attrs.marL = options.marginIndent;
+    if (options.marginRight !== undefined) attrs.marR = options.marginRight;
+    if (options.defTabSize !== undefined) attrs.defTabSz = options.defTabSize;
+    if (Object.keys(attrs).length > 0) children.push({ _attr: attrs });
+
+    if (options.lineSpacing !== undefined) {
+        children.push({
+            "a:lnSpc": [{ "a:spcPct": { _attr: { val: options.lineSpacing * 1000 } } }],
+        });
+    }
+
+    if (options.lineSpacingPoints !== undefined) {
+        children.push({
+            "a:lnSpc": [{ "a:spcPts": { _attr: { val: options.lineSpacingPoints * 100 } } }],
+        });
+    }
+
+    if (options.marginBottom !== undefined || options.marginTop !== undefined) {
+        children.push({
+            "a:spcAft": [{ "a:spcPts": { _attr: { val: options.marginBottom ?? 0 } } }],
+        });
+    }
+
+    if (options.marginTop !== undefined) {
+        children.push({
+            "a:spcBef": [{ "a:spcPts": { _attr: { val: options.marginTop } } }],
+        });
+    }
+
+    if (options.bullet) {
+        children.push(...buildBulletChildren(options.bullet));
+    } else if (options.bulletNone !== false) {
+        children.push({ "a:buNone": {} });
+    }
+
+    if (children.length === 0) return undefined;
+
+    return {
+        "a:pPr": children.length === 1 && "_attr" in children[0] ? children[0] : children,
+    };
+}
+
+/**
+ * a:pPr — Paragraph properties (alignment, indent, spacing).
+ * Lazy: stores options, builds XML object in prepForXml.
+ * Omitted from output when completely empty.
+ */
+export class ParagraphProperties extends XmlComponent {
+    private readonly options: IParagraphPropertiesOptions;
+
+    public constructor(options: IParagraphPropertiesOptions = {}) {
+        super("a:pPr");
+        this.options = options;
+    }
+
+    public prepForXml(
+        _context: import("@file/xml-components").IContext,
+    ): IXmlableObject | undefined {
+        return buildParagraphProperties(this.options);
     }
 }

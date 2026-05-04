@@ -24,7 +24,11 @@
 ## Installation
 
 ```terminal
+# npm
 npm install @office-open/docx
+
+# pnpm
+pnpm add @office-open/docx
 ```
 
 Then you can `require` or `import` as usual:

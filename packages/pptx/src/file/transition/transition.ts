@@ -1,14 +1,5 @@
-import { BuilderElement, NextAttributeComponent, XmlComponent } from "@file/xml-components";
-
-const EMPTY_TYPES = new Set([
-    "circle",
-    "dissolve",
-    "diamond",
-    "newsflash",
-    "plus",
-    "wedge",
-    "random",
-]);
+import type { IContext, IXmlableObject } from "@file/xml-components";
+import { BaseXmlComponent } from "@file/xml-components";
 
 const ORIENT_TYPES = new Set(["blinds", "checker", "comb", "randomBar"]);
 
@@ -50,120 +41,73 @@ export interface ITransitionOptions {
     readonly spokes?: number;
 }
 
-/**
- * p:transition — Slide transition effect.
- */
-export class Transition extends XmlComponent {
-    public constructor(options: ITransitionOptions = {}) {
-        super("p:transition");
+function buildTransitionElement(
+    type: TransitionType,
+    dir?: string,
+    orient?: string,
+    thruBlk?: boolean,
+    spokes?: number,
+): IXmlableObject {
+    const attrs: Record<string, string | number> = {};
 
-        const attrs: Record<
-            string,
-            { readonly key: string; readonly value: string | number | boolean }
-        > = {};
-        if (options.speed) attrs.spd = { key: "spd", value: options.speed };
-        if (options.advanceOnClick !== undefined)
-            attrs.advClick = { key: "advClick", value: options.advanceOnClick ? 1 : 0 };
-        if (options.advanceAfterTime !== undefined)
-            attrs.advTm = { key: "advTm", value: options.advanceAfterTime };
-
-        this.root.push(new NextAttributeComponent(attrs));
-
-        if (options.type) {
-            const child = this.buildTransitionElement(options);
-            if (child) {
-                this.root.push(child);
-            }
-        }
+    if (ORIENT_TYPES.has(type) && dir) {
+        attrs.dir = dir;
+    } else if (SIDE_DIR_TYPES.has(type) && dir) {
+        attrs.dir = dir;
+    } else if (EIGHT_DIR_TYPES.has(type) && dir) {
+        attrs.dir = dir;
+    } else if (type === "strips" && dir) {
+        attrs.dir = dir;
+    } else if ((type === "fade" || type === "cut") && thruBlk !== undefined) {
+        attrs.thruBlk = thruBlk ? 1 : 0;
+    } else if (type === "split") {
+        attrs.orient = orient ?? "horz";
+        attrs.dir = dir ?? "out";
+    } else if (type === "wheel") {
+        attrs.spokes = spokes ?? 4;
+    } else if (type === "zoom" && dir) {
+        attrs.dir = dir;
     }
 
-    private buildTransitionElement(options: ITransitionOptions): XmlComponent | undefined {
-        const { type, dir, orient, thruBlk, spokes } = options;
+    return { [`p:${type}`]: Object.keys(attrs).length > 0 ? { _attr: attrs } : {} };
+}
 
-        if (!type) return undefined;
+export function buildTransition(options: ITransitionOptions): IXmlableObject {
+    const children: IXmlableObject[] = [];
+    const attrs: Record<string, string | number> = {};
+    if (options.speed) attrs.spd = options.speed;
+    if (options.advanceOnClick !== undefined) attrs.advClick = options.advanceOnClick ? 1 : 0;
+    if (options.advanceAfterTime !== undefined) attrs.advTm = options.advanceAfterTime;
+    if (Object.keys(attrs).length > 0) children.push({ _attr: attrs });
 
-        // Empty transitions (no attributes)
-        if (EMPTY_TYPES.has(type)) {
-            return new BuilderElement({ name: `p:${type}` });
-        }
+    if (options.type) {
+        children.push(
+            buildTransitionElement(
+                options.type,
+                options.dir,
+                options.orient,
+                options.thruBlk,
+                options.spokes,
+            ),
+        );
+    }
 
-        // Orientation transitions: blinds, checker, comb, randomBar
-        if (ORIENT_TYPES.has(type) && dir) {
-            return new BuilderElement({
-                name: `p:${type}`,
-                attributes: { dir: { key: "dir", value: dir } },
-            });
-        }
-        if (ORIENT_TYPES.has(type)) {
-            return new BuilderElement({ name: `p:${type}` });
-        }
+    return { "p:transition": children.length === 0 ? {} : children };
+}
 
-        // Side direction transitions: push, wipe
-        if (SIDE_DIR_TYPES.has(type)) {
-            const elementAttrs: Record<string, { readonly key: string; readonly value: string }> =
-                {};
-            if (dir) elementAttrs.dir = { key: "dir", value: dir };
-            return new BuilderElement({ name: `p:${type}`, attributes: elementAttrs });
-        }
+/**
+ * p:transition — Slide transition effect.
+ * Lazy: stores options, builds XML object in prepForXml.
+ */
+export class Transition extends BaseXmlComponent {
+    private readonly options: ITransitionOptions;
 
-        // Eight direction transitions: cover, pull
-        if (EIGHT_DIR_TYPES.has(type)) {
-            const elementAttrs: Record<string, { readonly key: string; readonly value: string }> =
-                {};
-            if (dir) elementAttrs.dir = { key: "dir", value: dir };
-            return new BuilderElement({ name: `p:${type}`, attributes: elementAttrs });
-        }
+    public constructor(options: ITransitionOptions = {}) {
+        super("p:transition");
+        this.options = options;
+    }
 
-        // Corner direction: strips
-        if (type === "strips") {
-            const elementAttrs: Record<string, { readonly key: string; readonly value: string }> =
-                {};
-            if (dir) elementAttrs.dir = { key: "dir", value: dir };
-            return new BuilderElement({ name: "p:strips", attributes: elementAttrs });
-        }
-
-        // Fade / Cut: thruBlk
-        if (type === "fade" || type === "cut") {
-            const elementAttrs: Record<
-                string,
-                { readonly key: string; readonly value: string | number | boolean }
-            > = {};
-            if (thruBlk !== undefined)
-                elementAttrs.thruBlk = { key: "thruBlk", value: thruBlk ? 1 : 0 };
-            return new BuilderElement({ name: `p:${type}`, attributes: elementAttrs });
-        }
-
-        // Split: orient + dir
-        if (type === "split") {
-            const elementAttrs: Record<
-                string,
-                { readonly key: string; readonly value: string | number | boolean }
-            > = {
-                orient: { key: "orient", value: orient ?? "horz" },
-                dir: { key: "dir", value: dir ?? "out" },
-            };
-            return new BuilderElement({ name: "p:split", attributes: elementAttrs });
-        }
-
-        // Wheel: spokes
-        if (type === "wheel") {
-            const elementAttrs: Record<
-                string,
-                { readonly key: string; readonly value: string | number }
-            > = {
-                spokes: { key: "spokes", value: spokes ?? 4 },
-            };
-            return new BuilderElement({ name: "p:wheel", attributes: elementAttrs });
-        }
-
-        // Zoom: dir (in/out)
-        if (type === "zoom") {
-            const elementAttrs: Record<string, { readonly key: string; readonly value: string }> =
-                {};
-            if (dir) elementAttrs.dir = { key: "dir", value: dir };
-            return new BuilderElement({ name: "p:zoom", attributes: elementAttrs });
-        }
-
-        return new BuilderElement({ name: `p:${type}` });
+    public override prepForXml(_context: IContext): IXmlableObject {
+        return buildTransition(this.options);
     }
 }

@@ -106,10 +106,7 @@ export { CoreProperties, type ICorePropertiesOptions } from "./core-properties/p
 export { AppProperties } from "./app-properties/app-properties";
 export { ContentTypes } from "./content-types/content-types";
 export { Relationships } from "./relationships/relationships";
-export {
-    createRelationship,
-    type RelationshipType,
-} from "./relationships/relationship/relationship";
+export { type RelationshipType } from "./relationships/relationship/relationship";
 export { Slide } from "./slide/slide";
 export { ShapeTree } from "./shape-tree/shape-tree";
 export { DefaultTheme } from "./theme/theme";

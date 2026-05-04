@@ -1,4 +1,5 @@
-import { BuilderElement, NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BaseXmlComponent } from "@file/xml-components";
+import type { IContext, IXmlableObject } from "@file/xml-components";
 
 import { buildFill } from "../drawingml/fill";
 import type { FillOptions } from "../drawingml/fill";
@@ -9,12 +10,39 @@ export interface ICellBorderOptions {
     readonly dashStyle?: "solid" | "dash" | "dashDot" | "lgDash" | "sysDot" | "sysDash";
 }
 
+function buildBorderLine(name: string, options: ICellBorderOptions): IXmlableObject {
+    const attrs: Record<string, string | number> = {};
+    const children: IXmlableObject[] = [];
+
+    if (options.width !== undefined) attrs.w = options.width;
+    if (options.color) {
+        children.push({
+            "a:solidFill": [{ "a:srgbClr": { _attr: { val: options.color.replace("#", "") } } }],
+        });
+    }
+    if (options.dashStyle) {
+        children.push({ "a:prstDash": { _attr: { val: options.dashStyle } } });
+    }
+
+    return { [name]: Object.keys(attrs).length > 0 ? [{ _attr: attrs }, ...children] : children };
+}
+
 /**
  * a:tcPr — Table cell properties (borders + fill).
- * XSD order: lnL → lnR → lnT → lnB → lnTlToBr → lnBlToTr → cell3D → EG_FillProperties → headers → extLst
- * anchor is an attribute, not a child element.
+ * Lazy: stores options, builds IXmlableObject in prepForXml.
  */
-export class TableCellProperties extends XmlComponent {
+export class TableCellProperties extends BaseXmlComponent {
+    private readonly options?: {
+        readonly fill?: FillOptions;
+        readonly borders?: {
+            readonly top?: ICellBorderOptions;
+            readonly bottom?: ICellBorderOptions;
+            readonly left?: ICellBorderOptions;
+            readonly right?: ICellBorderOptions;
+        };
+        readonly verticalAlign?: "t" | "ctr" | "b";
+    };
+
     public constructor(options?: {
         readonly fill?: FillOptions;
         readonly borders?: {
@@ -26,75 +54,37 @@ export class TableCellProperties extends XmlComponent {
         readonly verticalAlign?: "t" | "ctr" | "b";
     }) {
         super("a:tcPr");
-
-        if (options?.verticalAlign) {
-            this.root.push(
-                new NextAttributeComponent({
-                    anchor: { key: "anchor", value: options.verticalAlign },
-                }),
-            );
-        }
-
-        if (options?.borders) {
-            if (options.borders.left) {
-                this.root.push(new BorderLine("a:lnL", options.borders.left));
-            }
-            if (options.borders.right) {
-                this.root.push(new BorderLine("a:lnR", options.borders.right));
-            }
-            if (options.borders.top) {
-                this.root.push(new BorderLine("a:lnT", options.borders.top));
-            }
-            if (options.borders.bottom) {
-                this.root.push(new BorderLine("a:lnB", options.borders.bottom));
-            }
-        }
-
-        if (options?.fill !== undefined) {
-            this.root.push(buildFill(options.fill));
-        }
+        this.options = options;
     }
-}
 
-class BorderLine extends BuilderElement<{}> {
-    public constructor(name: string, options: ICellBorderOptions) {
-        const children: BuilderElement<{}>[] = [];
-        const attributes: Record<
-            string,
-            { readonly key: string; readonly value: string | number | undefined }
-        > = {};
+    public override prepForXml(context: IContext): IXmlableObject {
+        const children: IXmlableObject[] = [];
+        const opts = this.options;
 
-        if (options.width !== undefined) {
-            attributes.w = { key: "w", value: options.width };
-        }
-        if (options.color) {
-            children.push(
-                new BuilderElement({
-                    name: "a:solidFill",
-                    children: [
-                        new BuilderElement({
-                            name: "a:srgbClr",
-                            attributes: {
-                                val: { key: "val", value: options.color.replace("#", "") },
-                            },
-                        }),
-                    ],
-                }),
-            );
-        }
-        if (options.dashStyle) {
-            children.push(
-                new BuilderElement({
-                    name: "a:prstDash",
-                    attributes: { val: { key: "val", value: options.dashStyle } },
-                }),
-            );
+        if (opts?.verticalAlign) {
+            children.push({ _attr: { anchor: opts.verticalAlign } });
         }
 
-        super({
-            name,
-            attributes: Object.keys(attributes).length > 0 ? attributes : undefined,
-            children: children.length > 0 ? children : undefined,
-        });
+        if (opts?.borders) {
+            if (opts.borders.left) children.push(buildBorderLine("a:lnL", opts.borders.left));
+            if (opts.borders.right) children.push(buildBorderLine("a:lnR", opts.borders.right));
+            if (opts.borders.top) children.push(buildBorderLine("a:lnT", opts.borders.top));
+            if (opts.borders.bottom) children.push(buildBorderLine("a:lnB", opts.borders.bottom));
+        }
+
+        if (opts?.fill !== undefined) {
+            const fillComp = buildFill(opts.fill);
+            const fillObj = fillComp.prepForXml(context);
+            if (fillObj) children.push(fillObj);
+        }
+
+        return {
+            "a:tcPr":
+                children.length === 0
+                    ? {}
+                    : children.length === 1 && "_attr" in children[0]
+                      ? children[0]
+                      : children,
+        };
     }
 }

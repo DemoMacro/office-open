@@ -1,6 +1,6 @@
 import type { FillOptions } from "@file/drawingml/fill";
 import { buildFill } from "@file/drawingml/fill";
-import { BuilderElement, NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 
 let nextHyperlinkId = 1;
@@ -49,12 +49,63 @@ export interface IRunPropertiesOptions {
 }
 
 /**
+ * Pure function: builds a:rPr XML object from options.
+ * @param hyperlinkKey - pre-generated key for hyperlink placeholder
+ * @param fillObject - pre-built fill IXmlableObject (from buildFill)
+ */
+export function buildRunProperties(
+    options: IRunPropertiesOptions,
+    hyperlinkKey?: string,
+    fillObject?: IXmlableObject,
+): IXmlableObject | undefined {
+    const children: IXmlableObject[] = [];
+
+    const attrs: Record<string, string | number | boolean> = {};
+    if (options.fontSize) attrs.sz = options.fontSize * 100;
+    if (options.bold !== undefined) attrs.b = options.bold;
+    if (options.italic !== undefined) attrs.i = options.italic;
+    if (options.underline) attrs.u = UnderlineStyle[options.underline];
+    if (options.lang) attrs.lang = options.lang;
+    if (options.strike) attrs.strike = StrikeStyle[options.strike];
+    if (options.baseline !== undefined) attrs.baseline = options.baseline;
+    if (options.capitalization) attrs.cap = TextCapitalization[options.capitalization];
+    if (options.spacing !== undefined) attrs.spc = options.spacing;
+    if (options.noProof !== undefined) attrs.noProof = options.noProof;
+    if (options.dirty !== undefined) attrs.dirty = options.dirty;
+    if (Object.keys(attrs).length > 0) children.push({ _attr: attrs });
+
+    if (options.font) {
+        children.push({ "a:latin": { _attr: { typeface: options.font } } });
+        children.push({ "a:ea": { _attr: { typeface: options.font } } });
+    }
+
+    if (options.hyperlink && hyperlinkKey) {
+        const hlinkAttrs: Record<string, string> = { "r:id": `{hlink:${hyperlinkKey}}` };
+        if (options.hyperlink.tooltip) hlinkAttrs.tooltip = options.hyperlink.tooltip;
+        children.push({ "a:hlinkClick": { _attr: hlinkAttrs } });
+    }
+
+    if (options.rightToLeft !== undefined) {
+        children.push({ "a:rtl": { _attr: { val: options.rightToLeft ? 1 : 0 } } });
+    }
+
+    if (fillObject) {
+        children.push(fillObject);
+    }
+
+    if (children.length === 0) return undefined;
+
+    return {
+        "a:rPr": children.length === 1 && "_attr" in children[0] ? children[0] : children,
+    };
+}
+
+/**
  * a:rPr — Run properties (font, size, color, etc.).
+ * Lazy: stores options, builds XML object in prepForXml.
  */
 export class RunProperties extends XmlComponent {
-    private readonly hyperlinkKey?: string;
-    private readonly hyperlinkUrl?: string;
-    private readonly hyperlinkTooltip?: string;
+    private readonly options: IRunPropertiesOptions;
 
     public static hasProperties(options: IRunPropertiesOptions): boolean {
         return !!(
@@ -80,83 +131,32 @@ export class RunProperties extends XmlComponent {
 
     public constructor(options: IRunPropertiesOptions = {}) {
         super("a:rPr");
-
-        const attrs: Record<
-            string,
-            { readonly key: string; readonly value: string | number | boolean | undefined }
-        > = {};
-        if (options.fontSize) attrs.sz = { key: "sz", value: options.fontSize * 100 };
-        if (options.bold !== undefined) attrs.b = { key: "b", value: options.bold };
-        if (options.italic !== undefined) attrs.i = { key: "i", value: options.italic };
-        if (options.underline) attrs.u = { key: "u", value: UnderlineStyle[options.underline] };
-        if (options.lang) attrs.lang = { key: "lang", value: options.lang };
-        if (options.strike) attrs.strike = { key: "strike", value: StrikeStyle[options.strike] };
-        if (options.baseline !== undefined)
-            attrs.baseline = { key: "baseline", value: options.baseline };
-        if (options.capitalization)
-            attrs.cap = { key: "cap", value: TextCapitalization[options.capitalization] };
-        if (options.spacing !== undefined) attrs.spc = { key: "spc", value: options.spacing };
-        if (options.noProof !== undefined)
-            attrs.noProof = { key: "noProof", value: options.noProof };
-        if (options.dirty !== undefined) attrs.dirty = { key: "dirty", value: options.dirty };
-
-        this.root.push(new NextAttributeComponent(attrs));
-
-        if (options.font) {
-            this.root.push(
-                new BuilderElement({
-                    name: "a:latin",
-                    attributes: { typeface: { key: "typeface", value: options.font } },
-                }),
-            );
-            this.root.push(
-                new BuilderElement({
-                    name: "a:ea",
-                    attributes: { typeface: { key: "typeface", value: options.font } },
-                }),
-            );
-        }
-
-        if (options.fill !== undefined) {
-            this.root.push(buildFill(options.fill));
-        }
-
-        if (options.hyperlink) {
-            const key = `hlink_${nextHyperlinkId++}`;
-            this.hyperlinkKey = key;
-            this.hyperlinkUrl = options.hyperlink.url;
-            this.hyperlinkTooltip = options.hyperlink.tooltip;
-
-            const hlinkAttrs: Record<string, { readonly key: string; readonly value: string }> = {
-                rId: { key: "r:id", value: `{hlink:${key}}` },
-            };
-            if (options.hyperlink.tooltip) {
-                hlinkAttrs.tooltip = { key: "tooltip", value: options.hyperlink.tooltip };
-            }
-            this.root.push(new BuilderElement({ name: "a:hlinkClick", attributes: hlinkAttrs }));
-        }
-
-        if (options.rightToLeft !== undefined) {
-            this.root.push(
-                new BuilderElement({
-                    name: "a:rtl",
-                    attributes: { val: { key: "val", value: options.rightToLeft ? 1 : 0 } },
-                }),
-            );
-        }
+        this.options = options;
     }
 
     public prepForXml(context: IContext): IXmlableObject | undefined {
-        if (this.hyperlinkKey) {
+        const opts = this.options;
+
+        // Register hyperlinks (B-level: side effect on context)
+        let hyperlinkKey: string | undefined;
+        if (opts.hyperlink) {
+            hyperlinkKey = `hlink_${nextHyperlinkId++}`;
             const file = context.fileData as {
                 Hyperlinks?: { addHyperlink(key: string, url: string, tooltip?: string): void };
             };
             file?.Hyperlinks?.addHyperlink(
-                this.hyperlinkKey,
-                this.hyperlinkUrl!,
-                this.hyperlinkTooltip,
+                hyperlinkKey,
+                opts.hyperlink.url,
+                opts.hyperlink.tooltip,
             );
         }
-        return super.prepForXml(context);
+
+        // Handle fill (needs context for prepForXml)
+        let fillObj: IXmlableObject | undefined;
+        if (opts.fill !== undefined) {
+            fillObj = buildFill(opts.fill).prepForXml(context) ?? undefined;
+        }
+
+        return buildRunProperties(opts, hyperlinkKey, fillObj);
     }
 }
