@@ -886,7 +886,7 @@ describe("replacer", () => {
                 },
                 // Cspell:enable
                 patch: {
-                    children: [new Paragraph("Lorem ipsum paragraph")],
+                    children: [new TextRun("Lorem ipsum paragraph")],
                     type: PatchType.PARAGRAPH,
                 },
                 patchText: "{{address}}",

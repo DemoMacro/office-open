@@ -62,12 +62,12 @@ writeFileSync("presentation.pptx", buffer);
 
 Object instantiation performance vs [PptxGenJS](https://github.com/gitbrent/PptxGenJS) (higher hz is better, run on Windows 11 / Node 22):
 
-| Scenario | @office-open/pptx | PptxGenJS | Speedup |
-|---|---|---|---|
-| Simple (2 shapes) | 4.64M ops/s | 559K ops/s | **8.3x** |
-| Styled shapes (20 shapes) | 243K ops/s | 77K ops/s | **3.2x** |
-| Table (10x5) | 1.86M ops/s | 27K ops/s | **69.8x** |
-| Full featured | 188K ops/s | 19K ops/s | **9.7x** |
+| Scenario                  | @office-open/pptx | PptxGenJS  | Speedup   |
+| ------------------------- | ----------------- | ---------- | --------- |
+| Simple (2 shapes)         | 4.64M ops/s       | 559K ops/s | **8.3x**  |
+| Styled shapes (20 shapes) | 243K ops/s        | 77K ops/s  | **3.2x**  |
+| Table (10x5)              | 1.86M ops/s       | 27K ops/s  | **69.8x** |
+| Full featured             | 188K ops/s        | 19K ops/s  | **9.7x**  |
 
 ## Examples
 

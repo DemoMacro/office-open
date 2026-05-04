@@ -1,20 +1,23 @@
 /**
  * FileChild module for WordprocessingML documents.
  *
- * FileChild is the base class for block-level elements that can appear
+ * FileChild is a marker interface for block-level elements that can appear
  * in the document body, such as paragraphs and tables.
  *
  * @module
  */
-import { XmlComponent } from "@file/xml-components";
+import type { BaseXmlComponent } from "@file/xml-components";
 
 /**
- * Base class for document body children.
+ * Marker interface for document body children.
  *
- * FileChild represents a block-level element that can be added directly
+ * FileChild identifies a block-level element that can be added directly
  * to the document body. Examples include Paragraph and Table.
+ *
+ * Consumers should use `instanceof BaseXmlComponent` with the `fileChild`
+ * symbol check when needed, or use this type for parameter typing.
  */
-export class FileChild extends XmlComponent {
+export interface FileChild extends BaseXmlComponent {
     /** Marker property identifying this as a FileChild */
-    public readonly fileChild = Symbol();
+    readonly fileChild: symbol;
 }

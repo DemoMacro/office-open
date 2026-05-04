@@ -53,7 +53,57 @@ function loadValidator(xsdFile: string): XsdValidator {
     return validator;
 }
 
+// Namespaces known to be valid in transitional OOXML but not in strict ISO XSD.
+// These are used via mc:Ignorable or VML namespaces that Word accepts.
+const TRANSITIONAL_NAMESPACES = new Set([
+    "http://schemas.microsoft.com/office/word/2010/wordml",
+    "http://schemas.microsoft.com/office/word/2012/wordml",
+    "http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing",
+    "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
+    "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
+    "http://schemas.microsoft.com/office/word/2010/wordprocessingGroup",
+    "http://schemas.microsoft.com/office/word/2010/wordprocessingInk",
+    "urn:schemas-microsoft-com:vml",
+    "urn:schemas-microsoft-com:office:office",
+    "urn:schemas-microsoft-com:office:word",
+]);
+
+function extractIgnorableNamespaces(xml: string): Set<string> {
+    // Parse mc:Ignorable attribute to get prefix list, then resolve prefixes to namespace URIs
+    const ignorable = new Set(TRANSITIONAL_NAMESPACES);
+    const ignorableMatch = xml.match(/mc:Ignorable="([^"]+)"/);
+    if (ignorableMatch) {
+        const prefixes = ignorableMatch[1].split(/\s+/);
+        for (const prefix of prefixes) {
+            const nsMatch = xml.match(new RegExp(`xmlns:${prefix}="([^"]+)"`));
+            if (nsMatch) ignorable.add(nsMatch[1]);
+        }
+    }
+    return ignorable;
+}
+
+// Element names that exist in transitional OOXML but not in strict ISO XSD.
+// These are valid in Word but rejected by strict schema validation.
+const TRANSITIONAL_ELEMENT_PATTERNS = [
+    "'{http://schemas.openxmlformats.org/wordprocessingml/2006/main}pict'",
+    "'{http://schemas.openxmlformats.org/wordprocessingml/2006/main}ruby'",
+    "'{http://schemas.openxmlformats.org/wordprocessingml/2006/main}checkbox'",
+];
+
+function isIgnorableError(message: string, ignorableNs: Set<string>): boolean {
+    // Check transitional element patterns
+    for (const pattern of TRANSITIONAL_ELEMENT_PATTERNS) {
+        if (message.includes(pattern)) return true;
+    }
+    // Check ignorable/transitional namespaces (XSD errors use both '{ns}' and "'ns'" formats)
+    for (const ns of ignorableNs) {
+        if (message.includes(`{${ns}}`) || message.includes(`'${ns}'`)) return true;
+    }
+    return false;
+}
+
 function validateXml(validator: XsdValidator, xml: string): { pass: boolean; error?: string } {
+    const ignorableNs = extractIgnorableNamespaces(xml);
     const doc = XmlDocument.fromString(xml);
     try {
         validator.validate(doc);
@@ -65,7 +115,10 @@ function validateXml(validator: XsdValidator, xml: string): { pass: boolean; err
                 line: number;
                 col: number;
             }>;
-            return { pass: false, error: details.map((d) => d.message.trim()).join("\n    ") };
+            // Filter out errors from ignorable/transitional namespaces
+            const relevant = details.filter((d) => !isIgnorableError(d.message, ignorableNs));
+            if (relevant.length === 0) return { pass: true };
+            return { pass: false, error: relevant.map((d) => d.message.trim()).join("\n    ") };
         }
         return { pass: false, error: (e as Error).message };
     } finally {

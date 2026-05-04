@@ -24,6 +24,6 @@ export class FootnoteRefRun extends Run {
             style: "FootnoteReference",
         });
 
-        this.root.push(new FootnoteRef());
+        this.extraChildren.push(new FootnoteRef());
     }
 }

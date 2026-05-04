@@ -46,10 +46,12 @@ describe("Paragraph", () => {
         });
 
         it("should create have valid properties", () => {
-            const paragraph = new Paragraph("");
-            const stringifiedJson = JSON.stringify(paragraph);
-            const newJson = JSON.parse(stringifiedJson);
-            assert.equal(newJson.root[0].rootKey, "w:pPr");
+            const paragraph = new Paragraph({
+                alignment: AlignmentType.LEFT,
+            });
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.have.property("w:p").which.is.an("array");
+            expect(tree["w:p"][0]).to.have.property("w:pPr");
         });
     });
 
@@ -991,13 +993,11 @@ describe("Paragraph", () => {
                 },
             } as unknown as IViewWrapper;
 
-            const file = {} as unknown as File;
-            paragraph.prepForXml({
-                file: file,
+            const tree = new Formatter().format(paragraph, {
+                file: {} as unknown as File,
                 stack: [],
                 viewWrapper: viewWrapperMock,
             });
-            const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
                 "w:p": [
                     {

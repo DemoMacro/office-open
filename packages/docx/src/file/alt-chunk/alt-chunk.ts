@@ -1,5 +1,5 @@
-import { FileChild } from "@file/file-child";
-import { EmptyElement, XmlAttributeComponent } from "@file/xml-components";
+import type { FileChild } from "@file/file-child";
+import { EmptyElement, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 /**
@@ -56,7 +56,8 @@ const ALTCHUNK_RELATIONSHIP_TYPE =
  * });
  * ```
  */
-export class AltChunk extends FileChild {
+export class AltChunk extends XmlComponent implements FileChild {
+    public readonly fileChild = Symbol();
     private readonly options: IAltChunkOptions;
 
     public constructor(options: IAltChunkOptions) {

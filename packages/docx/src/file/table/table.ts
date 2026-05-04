@@ -5,7 +5,9 @@
  *
  * @module
  */
-import { FileChild } from "@file/file-child";
+import type { FileChild } from "@file/file-child";
+import { BaseXmlComponent } from "@file/xml-components";
+import type { IContext, IXmlableObject } from "@file/xml-components";
 
 import type { AlignmentType } from "../paragraph";
 import type { StructuredDocumentTagRow } from "../sdt";
@@ -22,7 +24,7 @@ import type {
 import type { ITableCellMarginOptions } from "./table-properties/table-cell-margin";
 import type { TableLayoutType } from "./table-properties/table-layout";
 import type { ITableLookOptions } from "./table-properties/table-look";
-import type { TableRow } from "./table-row";
+import { TableRow } from "./table-row";
 import type { ITableWidthProperties } from "./table-width";
 
 /**
@@ -97,79 +99,80 @@ export interface ITableOptions {
  * });
  * ```
  */
-export class Table extends FileChild {
-    public constructor({
-        rows,
-        width,
-        columnWidths = Array<number>(Math.max(...rows.map((row) => row.CellCount))).fill(100),
-        columnWidthsRevision,
-        margins,
-        indent,
-        float,
-        layout,
-        style,
-        borders,
-        alignment,
-        visuallyRightToLeft,
-        tableLook,
-        cellSpacing,
-        styleRowBandSize,
-        styleColBandSize,
-        caption,
-        description,
-        revision,
-    }: ITableOptions) {
+export class Table extends BaseXmlComponent implements FileChild {
+    public readonly fileChild = Symbol();
+
+    private readonly options: ITableOptions;
+    private readonly columnWidths: readonly number[];
+
+    public constructor(options: ITableOptions) {
         super("w:tbl");
+        this.options = options;
+        this.columnWidths =
+            options.columnWidths ??
+            Array<number>(Math.max(...options.rows.map((row) => row.CellCount))).fill(100);
 
-        this.root.push(
-            new TableProperties({
-                alignment,
-                borders: borders ?? {},
-                caption,
-                cellMargin: margins,
-                cellSpacing,
-                description,
-                float,
-                indent,
-                layout,
-                revision,
-                style,
-                styleColBandSize,
-                styleRowBandSize,
-                tableLook,
-                visuallyRightToLeft,
-                width: width ?? { size: 100 },
-            }),
-        );
-
-        this.root.push(new TableGrid(columnWidths, columnWidthsRevision));
-
-        for (const row of rows) {
-            this.root.push(row);
-        }
-
+        // Register CONTINUE cells on subsequent rows for vertical merge
+        const rows = options.rows;
         rows.forEach((row, rowIndex) => {
-            if (rowIndex === rows.length - 1) {
-                // Don't process the end row
-                return;
-            }
+            if (rowIndex === rows.length - 1) return;
+            if (!(row instanceof TableRow)) return;
+
             let columnIndex = 0;
             row.cells.forEach((cell) => {
-                // Row Span has to be added in this method and not the constructor because it needs to know information about the column which happens after Table Cell construction
-                // Row Span of 1 will crash word as it will add RESTART and not a corresponding CONTINUE
                 if (cell.options.rowSpan && cell.options.rowSpan > 1) {
-                    const continueCell = new TableCell({
-                        // The inserted CONTINUE cell has rowSpan, and will be handled when process the next row
-                        borders: cell.options.borders,
-                        children: [],
-                        columnSpan: cell.options.columnSpan,
-                        rowSpan: cell.options.rowSpan - 1,
-                        verticalMerge: VerticalMergeType.CONTINUE,
-                    });
-                    rows[rowIndex + 1].addCellToColumnIndex(continueCell, columnIndex);
+                    const nextRow = rows[rowIndex + 1];
+                    if (nextRow instanceof TableRow) {
+                        const continueCell = new TableCell({
+                            borders: cell.options.borders,
+                            children: [],
+                            columnSpan: cell.options.columnSpan,
+                            rowSpan: cell.options.rowSpan - 1,
+                            verticalMerge: VerticalMergeType.CONTINUE,
+                        });
+                        nextRow.addCellToColumnIndex(continueCell, columnIndex);
+                    }
                 }
                 columnIndex += cell.options.columnSpan || 1;
             });
         });
+    }
+
+    public prepForXml(context: IContext): IXmlableObject | undefined {
+        const children: IXmlableObject[] = [];
+
+        const tblPr = new TableProperties({
+            alignment: this.options.alignment,
+            borders: this.options.borders ?? {},
+            caption: this.options.caption,
+            cellMargin: this.options.margins,
+            cellSpacing: this.options.cellSpacing,
+            description: this.options.description,
+            float: this.options.float,
+            indent: this.options.indent,
+            layout: this.options.layout,
+            revision: this.options.revision,
+            style: this.options.style,
+            styleColBandSize: this.options.styleColBandSize,
+            styleRowBandSize: this.options.styleRowBandSize,
+            tableLook: this.options.tableLook,
+            visuallyRightToLeft: this.options.visuallyRightToLeft,
+            width: this.options.width ?? { size: 100 },
+        });
+        const tblPrObj = tblPr.prepForXml(context);
+        if (tblPrObj) children.push(tblPrObj);
+
+        const gridObj = new TableGrid(
+            this.columnWidths,
+            this.options.columnWidthsRevision,
+        ).prepForXml(context);
+        if (gridObj) children.push(gridObj);
+
+        for (const row of this.options.rows) {
+            const obj = row.prepForXml(context);
+            if (obj) children.push(obj);
+        }
+
+        return { "w:tbl": children };
     }
 }

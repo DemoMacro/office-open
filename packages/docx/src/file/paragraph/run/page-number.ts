@@ -8,72 +8,92 @@
  *
  * @module
  */
-import { SpaceType } from "@file/shared";
-import { XmlComponent } from "@file/xml-components";
+import { BaseXmlComponent } from "@file/xml-components";
+import type { IXmlableObject } from "@file/xml-components";
 
-import { TextAttributes } from "./text-attributes";
+const INSTR_TEXT_ATTRS = { _attr: { "xml:space": "preserve" } };
 
 /**
- * Represents a PAGE field instruction.
- *
- * Displays the current page number in the document.
- *
- * @example
- * ```typescript
- * new Run({ children: [new Begin(true), new Page(), new End()] });
- * ```
+ * Builds a w:instrText element for field instructions.
  *
  * @internal
  */
-export class Page extends XmlComponent {
+function buildInstrText(instruction: string): IXmlableObject {
+    return { "w:instrText": [INSTR_TEXT_ATTRS, instruction] };
+}
+
+/**
+ * Builds a PAGE field instruction.
+ *
+ * @internal
+ */
+export const buildPage = () => buildInstrText("PAGE");
+
+/**
+ * Builds a NUMPAGES field instruction.
+ *
+ * @internal
+ */
+export const buildNumberOfPages = () => buildInstrText("NUMPAGES");
+
+/**
+ * Builds a SECTIONPAGES field instruction.
+ *
+ * @internal
+ */
+export const buildNumberOfPagesSection = () => buildInstrText("SECTIONPAGES");
+
+/**
+ * Builds a SECTION field instruction.
+ *
+ * @internal
+ */
+export const buildCurrentSection = () => buildInstrText("SECTION");
+
+/**
+ * @deprecated Use buildPage() instead.
+ */
+export class Page extends BaseXmlComponent {
     public constructor() {
         super("w:instrText");
-        this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
-        this.root.push("PAGE");
+    }
+    public prepForXml(): IXmlableObject {
+        return buildPage();
     }
 }
 
 /**
- * Represents a NUMPAGES field instruction.
- *
- * Displays the total number of pages in the document.
- *
- * @internal
+ * @deprecated Use buildNumberOfPages() instead.
  */
-export class NumberOfPages extends XmlComponent {
+export class NumberOfPages extends BaseXmlComponent {
     public constructor() {
         super("w:instrText");
-        this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
-        this.root.push("NUMPAGES");
+    }
+    public prepForXml(): IXmlableObject {
+        return buildNumberOfPages();
     }
 }
 
 /**
- * Represents a SECTIONPAGES field instruction.
- *
- * Displays the total number of pages in the current section.
- *
- * @internal
+ * @deprecated Use buildNumberOfPagesSection() instead.
  */
-export class NumberOfPagesSection extends XmlComponent {
+export class NumberOfPagesSection extends BaseXmlComponent {
     public constructor() {
         super("w:instrText");
-        this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
-        this.root.push("SECTIONPAGES");
+    }
+    public prepForXml(): IXmlableObject {
+        return buildNumberOfPagesSection();
     }
 }
 
 /**
- * Represents a SECTION field instruction.
- *
- * Displays the current section number.
- *
- * @internal
+ * @deprecated Use buildCurrentSection() instead.
  */
-export class CurrentSection extends XmlComponent {
+export class CurrentSection extends BaseXmlComponent {
     public constructor() {
         super("w:instrText");
-        this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
-        this.root.push("SECTION");
+    }
+    public prepForXml(): IXmlableObject {
+        return buildCurrentSection();
     }
 }

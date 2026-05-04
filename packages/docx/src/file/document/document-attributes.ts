@@ -8,8 +8,7 @@
  *
  * @module
  */
-import { XmlAttributeComponent } from "@file/xml-components";
-import type { AttributeMap } from "@file/xml-components";
+import type { IXmlableObject } from "@file/xml-components";
 
 /**
  * XML namespace URIs used in WordprocessingML documents.
@@ -64,42 +63,31 @@ export const DocumentAttributeNamespaces = {
  */
 export type DocumentAttributeNamespace = keyof typeof DocumentAttributeNamespaces;
 
-/**
- * Properties for document namespace attributes.
- *
- * Allows specifying which namespaces to include and optional Ignorable attribute
- * for compatibility with older processors.
- */
-export type IDocumentAttributesProperties = Partial<Record<DocumentAttributeNamespace, string>> & {
-    readonly Ignorable?: string;
-};
+const attrsCache = new Map<string, IXmlableObject>();
 
 /**
- * Represents XML namespace attributes for a WordprocessingML document.
+ * Builds XML namespace attributes for a WordprocessingML document.
  *
- * This class generates the xmlns declarations required at the root element
- * of document.xml and other document parts.
- *
- * @example
- * ```typescript
- * new DocumentAttributes(['w', 'r', 'wp'], 'w14 w15');
- * // Generates: xmlns:w="..." xmlns:r="..." xmlns:wp="..." mc:Ignorable="w14 w15"
- * ```
+ * Results are cached by (namespaces + ignorable) key.
  *
  * @internal
  */
-export class DocumentAttributes extends XmlAttributeComponent<IDocumentAttributesProperties> {
-    protected readonly xmlKeys = {
-        Ignorable: "mc:Ignorable",
-        ...Object.fromEntries(
-            Object.keys(DocumentAttributeNamespaces).map((key) => [key, `xmlns:${key}`]),
-        ),
-    } as AttributeMap<IDocumentAttributesProperties>;
+export function buildDocumentAttributes(
+    ns: readonly DocumentAttributeNamespace[],
+    Ignorable?: string,
+): IXmlableObject {
+    const cacheKey = `${ns.join(",")}:${Ignorable ?? ""}`;
+    const cached = attrsCache.get(cacheKey);
+    if (cached) return cached;
 
-    public constructor(ns: readonly DocumentAttributeNamespace[], Ignorable?: string) {
-        super({
-            Ignorable,
-            ...Object.fromEntries(ns.map((n) => [n, DocumentAttributeNamespaces[n]])),
-        });
+    const attrs: Record<string, string> = {};
+    if (Ignorable !== undefined) {
+        attrs["mc:Ignorable"] = Ignorable;
     }
+    for (const n of ns) {
+        attrs[`xmlns:${n}`] = DocumentAttributeNamespaces[n];
+    }
+    const result = { _attr: attrs };
+    attrsCache.set(cacheKey, result);
+    return result;
 }

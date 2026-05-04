@@ -25,6 +25,6 @@ export class EndnoteReferenceRun extends Run {
     public constructor(id: number) {
         super({ style: "EndnoteReference" });
 
-        this.root.push(new EndnoteIdReference(id));
+        this.extraChildren.push(new EndnoteIdReference(id));
     }
 }

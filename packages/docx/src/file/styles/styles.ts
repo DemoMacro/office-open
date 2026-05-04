@@ -9,7 +9,7 @@
  */
 import type { IDefaultStylesOptions } from "@file/styles/factory";
 import { XmlComponent } from "@file/xml-components";
-import type { BaseXmlComponent, ImportedXmlComponent } from "@file/xml-components";
+import type { BaseXmlComponent, IXmlableObject, ImportedXmlComponent } from "@file/xml-components";
 
 import { StyleForCharacter, StyleForParagraph } from "./style";
 import type { ICharacterStyleOptions } from "./style/character-style";
@@ -30,7 +30,7 @@ export interface IStylesOptions {
     /** Default styles for document, headings, and common elements */
     readonly default?: IDefaultStylesOptions;
     /** Initial base XML component for styles root element */
-    readonly initialStyles?: BaseXmlComponent;
+    readonly initialStyles?: BaseXmlComponent | IXmlableObject;
     /** Array of custom paragraph style definitions */
     readonly paragraphStyles?: readonly IParagraphStyleOptions[];
     /** Array of custom character style definitions */

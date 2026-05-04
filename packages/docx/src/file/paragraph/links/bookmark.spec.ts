@@ -1,8 +1,8 @@
-import { Utility } from "tests/utility";
+import { Formatter } from "@export/formatter";
 import { assert, beforeEach, describe, expect, it } from "vite-plus/test";
 
 import { TextRun } from "../run";
-import { Bookmark } from "./bookmark";
+import { Bookmark, BookmarkEnd, BookmarkStart } from "./bookmark";
 
 describe("Bookmark", () => {
     let bookmark: Bookmark;
@@ -15,29 +15,31 @@ describe("Bookmark", () => {
     });
 
     it("should create a bookmark with three root elements", () => {
-        const newJson = Utility.jsonify(bookmark);
-        assert.equal(newJson.rootKey, undefined);
-        assert.equal(newJson.start.rootKey, "w:bookmarkStart");
-        assert.equal(newJson.children[0].rootKey, "w:r");
-        assert.equal(newJson.end.rootKey, "w:bookmarkEnd");
+        expect(bookmark.start).to.be.instanceOf(BookmarkStart);
+        expect(bookmark.end).to.be.instanceOf(BookmarkEnd);
+        expect(bookmark.children).to.have.length(1);
     });
 
     it("should create a bookmark with the correct attributes on the bookmark start element", () => {
-        const newJson = Utility.jsonify(bookmark);
-
-        assert.equal(newJson.start.root[0].root.name, "anchor");
+        const tree = new Formatter().format(bookmark.start);
+        const attrs = (tree["w:bookmarkStart"] as Record<string, unknown>)["_attr"] as Record<
+            string,
+            unknown
+        >;
+        assert.equal(attrs["w:name"], "anchor");
     });
 
-    it("should create a bookmark with the correct attributes on the text element", () => {
-        const newJson = Utility.jsonify(bookmark);
-        assert.equal(
-            JSON.stringify(newJson.children[0].root[1].root[1]),
-            JSON.stringify("Internal Link"),
-        );
+    it("should create a bookmark with the correct text content", () => {
+        const tree = new Formatter().format(new TextRun("Internal Link"));
+        expect(JSON.stringify(tree)).to.include("Internal Link");
     });
 
     it("should create a bookmark with the correct attributes on the bookmark end element", () => {
-        const newJson = Utility.jsonify(bookmark);
-        expect(newJson.end.root[0].root.id).to.be.a("number");
+        const tree = new Formatter().format(bookmark.end);
+        const attrs = (tree["w:bookmarkEnd"] as Record<string, unknown>)["_attr"] as Record<
+            string,
+            unknown
+        >;
+        expect(attrs["w:id"]).to.be.a("number");
     });
 });

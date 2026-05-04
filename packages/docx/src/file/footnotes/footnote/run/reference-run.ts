@@ -84,6 +84,6 @@ export class FootnoteReferenceRun extends Run {
     public constructor(id: number) {
         super({ style: "FootnoteReference" });
 
-        this.root.push(new FootnoteReference(id));
+        this.extraChildren.push(new FootnoteReference(id));
     }
 }

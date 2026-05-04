@@ -17,7 +17,7 @@ import { dateTimeValue } from "@util/values";
 
 import type { ICustomPropertyOptions } from "../custom-properties";
 import type { IDocumentBackgroundOptions } from "../document";
-import { DocumentAttributes } from "../document/document-attributes";
+import { buildDocumentAttributes } from "../document/document-attributes";
 import type { ISectionOptions } from "../file";
 import type { INumberingOptions } from "../numbering";
 import type { Paragraph } from "../paragraph";
@@ -165,7 +165,7 @@ export interface IPropertiesOptions {
 export class CoreProperties extends XmlComponent {
     public constructor(options: Omit<IPropertiesOptions, "sections">) {
         super("cp:coreProperties");
-        this.root.push(new DocumentAttributes(["cp", "dc", "dcterms", "dcmitype", "xsi"]));
+        this.root.push(buildDocumentAttributes(["cp", "dc", "dcterms", "dcmitype", "xsi"]));
         if (options.title) {
             this.root.push(new StringContainer("dc:title", options.title));
         }

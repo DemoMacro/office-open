@@ -87,7 +87,7 @@ export class ChartRun extends Run {
             floating: options.floating,
         });
 
-        this.root.push(drawing);
+        this.extraChildren.push(drawing);
     }
 
     public prepForXml(context: IContext): IXmlableObject | undefined {

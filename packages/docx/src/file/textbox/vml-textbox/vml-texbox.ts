@@ -7,7 +7,7 @@
  *
  * @module
  */
-import type { ParagraphChild } from "@file/paragraph";
+import type { FileChild } from "@file/file-child";
 import { BuilderElement } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
 import type { InsetMode } from "@util/types";
@@ -29,8 +29,8 @@ import type { LengthUnit } from "../types";
 export interface VTextboxOptions {
     /** CSS-style string for textbox styling */
     readonly style?: string;
-    /** Array of paragraph children to include in the textbox */
-    readonly children?: readonly ParagraphChild[];
+    /** Array of block-level children to include in the textbox */
+    readonly children?: readonly FileChild[];
     /** Custom inset margins for the textbox content (top, left, bottom, right) */
     readonly inset?: {
         /** Top inset margin */

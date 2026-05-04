@@ -50,7 +50,7 @@ export class WpgGroupRun extends Run {
             .filter((child) => child.type !== "wps")
             .map((child) => child as IMediaData);
 
-        this.root.push(drawing);
+        this.extraChildren.push(drawing);
     }
 
     public prepForXml(context: IContext): IXmlableObject | undefined {

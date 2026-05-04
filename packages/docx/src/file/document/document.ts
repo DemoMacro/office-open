@@ -7,11 +7,10 @@
  */
 import { XmlComponent } from "@file/xml-components";
 
-import type { ConcreteHyperlink, Paragraph } from "../paragraph";
-import type { Table } from "../table";
-import type { TableOfContents } from "../table-of-contents";
+import type { FileChild } from "../file-child";
+import type { ConcreteHyperlink } from "../paragraph";
 import { Body } from "./body";
-import { DocumentAttributes } from "./document-attributes";
+import { buildDocumentAttributes } from "./document-attributes";
 import { DocumentBackground } from "./document-background";
 import type { IDocumentBackgroundOptions } from "./document-background";
 
@@ -81,7 +80,7 @@ export class Document extends XmlComponent {
     public constructor(options: IDocumentOptions) {
         super("w:document");
         this.root.push(
-            new DocumentAttributes(
+            buildDocumentAttributes(
                 [
                     "wpc",
                     "mc",
@@ -132,7 +131,7 @@ export class Document extends XmlComponent {
      * @param item - The element to add (paragraph, table, table of contents, or hyperlink)
      * @returns The Document instance for method chaining
      */
-    public add(item: Paragraph | Table | TableOfContents | ConcreteHyperlink): Document {
+    public add(item: FileChild | ConcreteHyperlink): Document {
         this.body.push(item);
         return this;
     }

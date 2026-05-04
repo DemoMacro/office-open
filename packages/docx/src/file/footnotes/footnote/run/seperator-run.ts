@@ -23,6 +23,6 @@ export class SeperatorRun extends Run {
     public constructor() {
         super({});
 
-        this.root.push(new Seperator());
+        this.extraChildren.push(new Seperator());
     }
 }

@@ -40,11 +40,11 @@ export class SymbolRun extends Run {
     public constructor(options: ISymbolRunOptions | string) {
         if (typeof options === "string") {
             super({});
-            this.root.push(new Symbol(options));
+            this.extraChildren.push(new Symbol(options));
             return this;
         }
 
         super(options);
-        this.root.push(new Symbol(options.char, options.symbolfont));
+        this.extraChildren.push(new Symbol(options.char, options.symbolfont));
     }
 }

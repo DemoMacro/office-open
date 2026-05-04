@@ -136,7 +136,7 @@ export class ImageRun extends Run {
             tile: options.tile,
         });
 
-        this.root.push(drawing);
+        this.extraChildren.push(drawing);
     }
 
     public prepForXml(context: IContext): IXmlableObject | undefined {

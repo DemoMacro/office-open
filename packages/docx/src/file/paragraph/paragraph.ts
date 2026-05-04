@@ -1,3 +1,4 @@
+import type { FootnoteReferenceRun } from "@file/footnotes";
 /**
  * Paragraph module for WordprocessingML documents.
  *
@@ -5,13 +6,14 @@
  *
  * @module
  */
-import { FileChild } from "@file/file-child";
-import type { FootnoteReferenceRun } from "@file/footnotes";
+import { BaseXmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 
 import type { AltChunk } from "../alt-chunk";
 import type { CheckBox } from "../checkbox";
+import type { SectionProperties } from "../document/body/section-properties/section-properties";
+import type { FileChild } from "../file-child";
 import type { PermEnd, PermStart } from "../permissions";
 import { TargetModeType } from "../relationships/relationship/relationship";
 import type { StructuredDocumentTagRun } from "../sdt";
@@ -37,11 +39,13 @@ import { ParagraphProperties } from "./properties";
 import type { IParagraphPropertiesOptions } from "./properties";
 import { TextRun } from "./run";
 import type {
+    ChartRun,
     ImageRun,
     Run,
     SequentialIdentifier,
     SimpleField,
     SimpleMailMergeField,
+    SmartArtRun,
     SymbolRun,
 } from "./run";
 import type {
@@ -73,6 +77,8 @@ export type ParagraphChild =
     | Math
     | SimpleField
     | SimpleMailMergeField
+    | ChartRun
+    | SmartArtRun
     | Comments
     | Comment
     | CommentRangeStart
@@ -143,66 +149,93 @@ export type IParagraphOptions = {
  * });
  * ```
  */
-export class Paragraph extends FileChild {
-    private readonly properties: ParagraphProperties;
+export class Paragraph extends BaseXmlComponent implements FileChild {
+    public readonly fileChild = Symbol();
+    private readonly options: IParagraphOptions;
+    private frontRuns: Run[] = [];
+    private sectionProperties?: SectionProperties;
 
     public constructor(options: string | IParagraphOptions) {
         super("w:p");
 
         if (typeof options === "string") {
-            this.properties = new ParagraphProperties({});
-            this.root.push(this.properties);
-            this.root.push(new TextRun(options));
-            return this;
-        }
-
-        this.properties = new ParagraphProperties(options);
-
-        this.root.push(this.properties);
-
-        if (options.text) {
-            this.root.push(new TextRun(options.text));
-        }
-
-        if (options.children) {
-            for (const child of options.children) {
-                if (child instanceof Bookmark) {
-                    this.root.push(child.start);
-                    for (const textRun of child.children) {
-                        this.root.push(textRun);
-                    }
-                    this.root.push(child.end);
-                    continue;
-                }
-
-                this.root.push(child);
-            }
+            this.options = { text: options };
+        } else {
+            this.options = options;
         }
     }
 
     public prepForXml(context: IContext): IXmlableObject | undefined {
-        for (const element of this.root) {
-            if (element instanceof ExternalHyperlink) {
-                const index = this.root.indexOf(element);
-                const concreteHyperlink = new ConcreteHyperlink(
-                    element.options.children,
-                    uniqueId(),
-                );
-                context.viewWrapper.Relationships.addRelationship(
-                    concreteHyperlink.linkId,
-                    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
-                    element.options.link,
-                    TargetModeType.EXTERNAL,
-                );
-                this.root[index] = concreteHyperlink;
+        const children: IXmlableObject[] = [];
+
+        // Build paragraph properties (including optional section properties)
+        const pPr = new ParagraphProperties(this.options);
+        if (this.sectionProperties) {
+            pPr.push(this.sectionProperties);
+        }
+        const pPrObj = pPr.prepForXml(context);
+        if (pPrObj) children.push(pPrObj);
+
+        // Front runs (added via addRunToFront)
+        for (const run of this.frontRuns) {
+            const obj = run.prepForXml(context);
+            if (obj) children.push(obj);
+        }
+
+        // Simple text shorthand
+        if (this.options.text) {
+            const obj = new TextRun(this.options.text).prepForXml(context);
+            if (obj) children.push(obj);
+        }
+
+        // Children
+        if (this.options.children) {
+            for (const child of this.options.children) {
+                if (child instanceof ExternalHyperlink) {
+                    const concreteHyperlink = new ConcreteHyperlink(
+                        child.options.children,
+                        uniqueId(),
+                    );
+                    context.viewWrapper.Relationships.addRelationship(
+                        concreteHyperlink.linkId,
+                        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+                        child.options.link,
+                        TargetModeType.EXTERNAL,
+                    );
+                    const obj = concreteHyperlink.prepForXml(context);
+                    if (obj) children.push(obj);
+                    continue;
+                }
+                if (child instanceof Bookmark) {
+                    const startObj = child.start.prepForXml(context);
+                    if (startObj) children.push(startObj);
+                    for (const textRun of child.children) {
+                        if (textRun instanceof BaseXmlComponent) {
+                            const obj = textRun.prepForXml(context);
+                            if (obj) children.push(obj);
+                        }
+                    }
+                    const endObj = child.end.prepForXml(context);
+                    if (endObj) children.push(endObj);
+                    continue;
+                }
+                if (child instanceof BaseXmlComponent) {
+                    const obj = child.prepForXml(context);
+                    if (obj) children.push(obj);
+                }
             }
         }
 
-        return super.prepForXml(context);
+        return { "w:p": children.length > 0 ? children : {} };
     }
 
     public addRunToFront(run: Run): Paragraph {
-        this.root.splice(1, 0, run);
+        this.frontRuns.push(run);
         return this;
+    }
+
+    /** @internal Used by Body to attach section properties for non-last sections. */
+    public setSectionProperties(section: SectionProperties): void {
+        this.sectionProperties = section;
     }
 }
