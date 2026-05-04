@@ -58,7 +58,7 @@ $ pnpm add @office-open/pptx
 ```
 
 ```typescript
-import { Presentation, Shape, SolidFill, Paragraph, Run, Packer } from "@office-open/pptx";
+import { Presentation, Shape, Packer } from "@office-open/pptx";
 import { writeFileSync } from "node:fs";
 
 const pres = new Presentation({
@@ -66,17 +66,12 @@ const pres = new Presentation({
         {
             children: [
                 new Shape({
-                    textBody: new TextBody({
-                        paragraphs: [
-                            new Paragraph({
-                                children: [new Run({ text: "Hello World", fontSize: 32 })],
-                            }),
-                        ],
-                    }),
-                    properties: {
-                        fill: new SolidFill("4472C4"),
-                        transform: { x: 100, y: 100, width: 600, height: 400 },
-                    },
+                    text: "Hello World",
+                    fill: "4472C4",
+                    x: 100,
+                    y: 100,
+                    width: 600,
+                    height: 400,
                 }),
             ],
         },

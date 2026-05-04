@@ -11,7 +11,9 @@ describe("Shading", () => {
             const tree = new Formatter().format(shading);
             expect(tree).to.deep.equal({
                 "w:shd": {
-                    _attr: {},
+                    _attr: {
+                        "w:val": "clear",
+                    },
                 },
             });
         });

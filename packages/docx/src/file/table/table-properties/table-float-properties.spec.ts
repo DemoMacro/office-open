@@ -35,18 +35,9 @@ describe("Table Float Properties", () => {
             const tree = new Formatter().format(properties);
 
             expect(tree).to.deep.equal({
-                "w:tblpPr": [
-                    {
-                        _attr: {},
-                    },
-                    {
-                        "w:tblOverlap": {
-                            _attr: {
-                                "w:val": "never",
-                            },
-                        },
-                    },
-                ],
+                "w:tblpPr": {
+                    _attr: {},
+                },
             });
         });
     });

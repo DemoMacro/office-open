@@ -49,6 +49,10 @@
         "./drawingml": {
             "types": "./dist/drawingml/index.d.mts",
             "import": "./dist/drawingml/index.mjs"
+        },
+        "./archive": {
+            "types": "./dist/archive.d.mts",
+            "import": "./dist/archive.mjs"
         }
     },
     "scripts": {
@@ -60,6 +64,7 @@
     },
     "dependencies": {
         "@office-open/xml": "workspace:*",
+        "fflate": "0.8.2",
         "hash.js": "1.1.7",
         "nanoid": "5.1.9"
     }

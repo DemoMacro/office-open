@@ -50,7 +50,7 @@ describe("MathFraction", () => {
             expect(tree).to.deep.equal({
                 "m:f": [
                     {
-                        "m:fPr": [{ "m:type": { _attr: { val: "bar" } } }],
+                        "m:fPr": [{ "m:type": { _attr: { "m:val": "bar" } } }],
                     },
                     {
                         "m:num": [{ "m:r": [{ "m:t": ["1"] }] }],
@@ -70,7 +70,7 @@ describe("MathFraction", () => {
             });
             const tree = new Formatter().format(mathFraction);
             expect(tree["m:f"][0]).to.deep.equal({
-                "m:fPr": [{ "m:type": { _attr: { val: "skw" } } }],
+                "m:fPr": [{ "m:type": { _attr: { "m:val": "skw" } } }],
             });
         });
 
@@ -82,7 +82,7 @@ describe("MathFraction", () => {
             });
             const tree = new Formatter().format(mathFraction);
             expect(tree["m:f"][0]).to.deep.equal({
-                "m:fPr": [{ "m:type": { _attr: { val: "lin" } } }],
+                "m:fPr": [{ "m:type": { _attr: { "m:val": "lin" } } }],
             });
         });
 
@@ -94,7 +94,7 @@ describe("MathFraction", () => {
             });
             const tree = new Formatter().format(mathFraction);
             expect(tree["m:f"][0]).to.deep.equal({
-                "m:fPr": [{ "m:type": { _attr: { val: "noBar" } } }],
+                "m:fPr": [{ "m:type": { _attr: { "m:val": "noBar" } } }],
             });
         });
     });

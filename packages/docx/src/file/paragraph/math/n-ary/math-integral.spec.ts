@@ -82,20 +82,26 @@ describe("MathIntegral", () => {
                                 },
                             },
                             {
-                                "m:supHide": {
-                                    _attr: {
-                                        "m:val": 1,
-                                    },
-                                },
-                            },
-                            {
                                 "m:subHide": {
                                     _attr: {
                                         "m:val": 1,
                                     },
                                 },
                             },
+                            {
+                                "m:supHide": {
+                                    _attr: {
+                                        "m:val": 1,
+                                    },
+                                },
+                            },
                         ],
+                    },
+                    {
+                        "m:sub": {},
+                    },
+                    {
+                        "m:sup": {},
                     },
                     {
                         "m:e": [

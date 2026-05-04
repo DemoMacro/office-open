@@ -55,21 +55,21 @@ describe("Border", () => {
                         },
                     },
                     {
-                        "w:bottom": {
-                            _attr: {
-                                "w:color": "FF0000",
-                                "w:space": 3,
-                                "w:sz": 4,
-                                "w:val": "wave",
-                            },
-                        },
-                    },
-                    {
                         "w:left": {
                             _attr: {
                                 "w:color": "FF0000",
                                 "w:space": 5,
                                 "w:sz": 6,
+                                "w:val": "wave",
+                            },
+                        },
+                    },
+                    {
+                        "w:bottom": {
+                            _attr: {
+                                "w:color": "FF0000",
+                                "w:space": 3,
+                                "w:sz": 4,
                                 "w:val": "wave",
                             },
                         },

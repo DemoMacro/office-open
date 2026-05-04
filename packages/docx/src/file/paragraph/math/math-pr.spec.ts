@@ -12,21 +12,21 @@ describe("createMathProperties", () => {
     it("should create math properties with mathFont", () => {
         const tree = new Formatter().format(createMathProperties({ mathFont: "Cambria Math" }));
         expect(tree).to.deep.equal({
-            "m:mathPr": [{ "m:mathFont": { _attr: { val: "Cambria Math" } } }],
+            "m:mathPr": [{ "m:mathFont": { _attr: { "m:val": "Cambria Math" } } }],
         });
     });
 
     it("should create math properties with breakBin", () => {
         const tree = new Formatter().format(createMathProperties({ breakBin: "before" }));
         expect(tree).to.deep.equal({
-            "m:mathPr": [{ "m:brkBin": { _attr: { val: "before" } } }],
+            "m:mathPr": [{ "m:brkBin": { _attr: { "m:val": "before" } } }],
         });
     });
 
     it("should create math properties with breakBinSub", () => {
         const tree = new Formatter().format(createMathProperties({ breakBinSub: "--" }));
         expect(tree).to.deep.equal({
-            "m:mathPr": [{ "m:brkBinSub": { _attr: { val: "--" } } }],
+            "m:mathPr": [{ "m:brkBinSub": { _attr: { "m:val": "--" } } }],
         });
     });
 
@@ -50,8 +50,8 @@ describe("createMathProperties", () => {
         );
         expect(tree).to.deep.equal({
             "m:mathPr": [
-                { "m:lMargin": { _attr: { val: "100" } } },
-                { "m:rMargin": { _attr: { val: "200" } } },
+                { "m:lMargin": { _attr: { "m:val": "100" } } },
+                { "m:rMargin": { _attr: { "m:val": "200" } } },
             ],
         });
     });
@@ -61,7 +61,7 @@ describe("createMathProperties", () => {
             createMathProperties({ defaultJustification: "center" }),
         );
         expect(tree).to.deep.equal({
-            "m:mathPr": [{ "m:defJc": { _attr: { val: "center" } } }],
+            "m:mathPr": [{ "m:defJc": { _attr: { "m:val": "center" } } }],
         });
     });
 
@@ -76,10 +76,10 @@ describe("createMathProperties", () => {
         );
         expect(tree).to.deep.equal({
             "m:mathPr": [
-                { "m:preSp": { _attr: { val: "50" } } },
-                { "m:postSp": { _attr: { val: "50" } } },
-                { "m:interSp": { _attr: { val: "100" } } },
-                { "m:intraSp": { _attr: { val: "25" } } },
+                { "m:preSp": { _attr: { "m:val": "50" } } },
+                { "m:postSp": { _attr: { "m:val": "50" } } },
+                { "m:interSp": { _attr: { "m:val": "100" } } },
+                { "m:intraSp": { _attr: { "m:val": "25" } } },
             ],
         });
     });
@@ -89,7 +89,7 @@ describe("createMathProperties", () => {
             createMathProperties({ wrapIndent: 500, wrapRight: true }),
         );
         expect(tree).to.deep.equal({
-            "m:mathPr": [{ "m:wrapIndent": { _attr: { val: "500" } } }, { "m:wrapRight": {} }],
+            "m:mathPr": [{ "m:wrapIndent": { _attr: { "m:val": "500" } } }, { "m:wrapRight": {} }],
         });
     });
 
@@ -102,8 +102,8 @@ describe("createMathProperties", () => {
         );
         expect(tree).to.deep.equal({
             "m:mathPr": [
-                { "m:intLim": { _attr: { val: "subSup" } } },
-                { "m:naryLim": { _attr: { val: "undOvr" } } },
+                { "m:intLim": { _attr: { "m:val": "subSup" } } },
+                { "m:naryLim": { _attr: { "m:val": "undOvr" } } },
             ],
         });
     });

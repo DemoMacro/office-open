@@ -26,14 +26,14 @@ describe("createMathRunProperties", () => {
     it("should create run properties with script", () => {
         const tree = new Formatter().format(createMathRunProperties({ script: "script" }));
         expect(tree).to.deep.equal({
-            "m:rPr": [{ "m:scr": { _attr: { val: "script" } } }],
+            "m:rPr": [{ "m:scr": { _attr: { "m:val": "script" } } }],
         });
     });
 
     it("should create run properties with style", () => {
         const tree = new Formatter().format(createMathRunProperties({ style: "bi" }));
         expect(tree).to.deep.equal({
-            "m:rPr": [{ "m:sty": { _attr: { val: "bi" } } }],
+            "m:rPr": [{ "m:sty": { _attr: { "m:val": "bi" } } }],
         });
     });
 
@@ -43,8 +43,8 @@ describe("createMathRunProperties", () => {
         );
         expect(tree).to.deep.equal({
             "m:rPr": [
-                { "m:scr": { _attr: { val: "fraktur" } } },
-                { "m:sty": { _attr: { val: "b" } } },
+                { "m:scr": { _attr: { "m:val": "fraktur" } } },
+                { "m:sty": { _attr: { "m:val": "b" } } },
             ],
         });
     });

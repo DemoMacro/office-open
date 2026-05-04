@@ -80,10 +80,10 @@ Performance comparison against original `docx` (9.6.1) package:
 
 | Scenario                                                | @office-open/docx |     docx |   Speedup |
 | ------------------------------------------------------- | ----------------: | -------: | --------: |
-| Simple document (2 paragraphs)                          |         10,519 hz | 6,128 hz | **1.72x** |
-| Styled paragraphs (20 paragraphs)                       |          8,157 hz | 4,785 hz | **1.70x** |
-| Table (10x5 cells)                                      |          4,621 hz | 3,302 hz | **1.40x** |
-| Full featured (header/footer/headings/table/paragraphs) |          3,875 hz | 2,810 hz | **1.38x** |
+| Simple document (2 paragraphs)                          |          7,095 hz | 5,108 hz | **1.39x** |
+| Styled paragraphs (20 paragraphs)                       |          5,982 hz | 4,800 hz | **1.25x** |
+| Table (10x5 cells)                                      |          3,514 hz | 3,244 hz | **1.08x** |
+| Full featured (header/footer/headings/table/paragraphs) |          2,453 hz | 1,304 hz | **1.88x** |
 
 ## License
 

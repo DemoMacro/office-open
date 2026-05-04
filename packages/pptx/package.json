@@ -49,10 +49,5 @@
         "@office-open/xml": "workspace:*",
         "fflate": "0.8.2",
         "undio": "0.2.0"
-    },
-    "devDependencies": {
-        "@rolldown/plugin-node-polyfills": "1.0.3",
-        "@voidzero-dev/vite-plus-test": "0.1.18",
-        "tsx": "4.21.0"
     }
 }

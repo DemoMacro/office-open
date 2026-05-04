@@ -34,6 +34,10 @@
         ".": {
             "types": "./dist/index.d.mts",
             "import": "./dist/index.mjs"
+        },
+        "./utils": {
+            "types": "./dist/utils.d.mts",
+            "import": "./dist/utils.mjs"
         }
     },
     "scripts": {

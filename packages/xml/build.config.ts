@@ -4,7 +4,7 @@ import type { BuildConfig } from "@funish/build/config";
 export default defineBuildConfig({
     entries: [
         {
-            entry: ["src/index.ts"],
+            entry: ["src/index.ts", "src/utils.ts"],
         },
     ],
 } satisfies BuildConfig);

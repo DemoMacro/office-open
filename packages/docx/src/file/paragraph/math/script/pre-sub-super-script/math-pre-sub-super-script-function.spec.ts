@@ -20,17 +20,6 @@ describe("MathPreSubScript", () => {
                         "m:sPrePr": {},
                     },
                     {
-                        "m:e": [
-                            {
-                                "m:r": [
-                                    {
-                                        "m:t": ["e"],
-                                    },
-                                ],
-                            },
-                        ],
-                    },
-                    {
                         "m:sub": [
                             {
                                 "m:r": [
@@ -47,6 +36,17 @@ describe("MathPreSubScript", () => {
                                 "m:r": [
                                     {
                                         "m:t": ["5"],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        "m:e": [
+                            {
+                                "m:r": [
+                                    {
+                                        "m:t": ["e"],
                                     },
                                 ],
                             },
