@@ -10,6 +10,7 @@ const mockCtx: DocxParseContext = {
     hyperlinks: new Map(),
     media: new Map(),
     documentRels: new Map(),
+    mediaPaths: new Set(),
 };
 
 describe("parseParagraph", () => {

@@ -2,6 +2,7 @@ import { findChild, findDeep, attr, attrNum, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import type { DocxParseContext } from "./context";
+import { getMediaData } from "./context";
 import type { ParagraphChildJson } from "./types";
 
 export function parseRun(run: Element, ctx: DocxParseContext): ParagraphChildJson | undefined {
@@ -259,7 +260,7 @@ function parseDrawingImage(
     const mediaPath = rel.target.startsWith("../")
         ? rel.target.replace("../", "word/")
         : `word/${rel.target}`;
-    const mediaEntry = ctx.media.get(mediaPath);
+    const mediaEntry = getMediaData(ctx, mediaPath);
     if (!mediaEntry) return undefined;
 
     // Extract dimensions
@@ -297,7 +298,7 @@ function parsePictImage(pict: Element, ctx: DocxParseContext): ParagraphChildJso
     const mediaPath = rel.target.startsWith("../")
         ? rel.target.replace("../", "word/")
         : `word/${rel.target}`;
-    const mediaEntry = ctx.media.get(mediaPath);
+    const mediaEntry = getMediaData(ctx, mediaPath);
     if (!mediaEntry) return undefined;
 
     return {

@@ -6,12 +6,14 @@ export interface DocxParseContext {
     hyperlinks: Map<string, string>;
     media: Map<string, { data: string; type: string }>;
     documentRels: Map<string, Relationship>;
+    mediaPaths: Set<string>;
 }
 
 export function createDocxParseContext(zip: Map<string, Uint8Array>): DocxParseContext {
     const hyperlinks = new Map<string, string>();
     const media = new Map<string, { data: string; type: string }>();
     const documentRels = new Map<string, Relationship>();
+    const mediaPaths = new Set<string>();
 
     // Parse document.xml.rels
     const rels = parseRels(zip, "word/_rels/document.xml.rels");
@@ -24,16 +26,28 @@ export function createDocxParseContext(zip: Map<string, Uint8Array>): DocxParseC
         }
     }
 
-    // Extract all media files from word/media/
-    for (const [path, data] of zip) {
+    // Collect media paths (lazy conversion)
+    for (const path of zip.keys()) {
         if (path.startsWith("word/media/")) {
-            const fileName = path.split("/").pop() ?? path;
-            media.set(path, {
-                data: uint8ToBase64(data),
-                type: getImageType(fileName),
-            });
+            mediaPaths.add(path);
         }
     }
 
-    return { zip, hyperlinks, media, documentRels };
+    return { zip, hyperlinks, media, documentRels, mediaPaths };
+}
+
+export function getMediaData(
+    ctx: DocxParseContext,
+    path: string,
+): { data: string; type: string } | undefined {
+    let entry = ctx.media.get(path);
+    if (entry) return entry;
+
+    const raw = ctx.zip.get(path);
+    if (!raw || !ctx.mediaPaths.has(path)) return undefined;
+
+    const fileName = path.split("/").pop() ?? path;
+    entry = { data: uint8ToBase64(raw), type: getImageType(fileName) };
+    ctx.media.set(path, entry);
+    return entry;
 }

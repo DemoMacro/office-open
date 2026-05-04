@@ -55,18 +55,22 @@ export function resolveSlideMediaPath(relsTarget: string): string {
     return `ppt/${relsTarget}`;
 }
 
+const relsCache = new Map<string, Map<string, { target: string; type: string }>>();
+
 export function getSlideRels(
     ctx: PptxParseContext,
     slidePath: string,
 ): Map<string, { target: string; type: string }> {
-    const relsMap = new Map<string, { target: string; type: string }>();
+    const cached = relsCache.get(slidePath);
+    if (cached) return cached;
 
-    // Convert slide path to rels path
+    const relsMap = new Map<string, { target: string; type: string }>();
     const relsPath = slidePath.replace("ppt/slides/", "ppt/slides/_rels/") + ".rels";
     const rels = parseRels(ctx.zip, relsPath);
     for (const rel of rels) {
         relsMap.set(rel.id, { target: rel.target, type: rel.type });
     }
 
+    relsCache.set(slidePath, relsMap);
     return relsMap;
 }

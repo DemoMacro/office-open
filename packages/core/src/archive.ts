@@ -65,9 +65,11 @@ export function listFiles(zip: Map<string, Uint8Array>, prefix: string): string[
  * Convert Uint8Array to base64 string.
  */
 export function uint8ToBase64(data: Uint8Array): string {
+    const chunkSize = 8192;
     let binary = "";
-    for (let i = 0; i < data.length; i++) {
-        binary += String.fromCharCode(data[i]);
+    for (let i = 0; i < data.length; i += chunkSize) {
+        const chunk = data.subarray(i, Math.min(i + chunkSize, data.length));
+        binary += String.fromCharCode(...chunk);
     }
     return btoa(binary);
 }
