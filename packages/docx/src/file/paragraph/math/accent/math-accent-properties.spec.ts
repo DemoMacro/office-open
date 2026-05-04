@@ -9,7 +9,7 @@ describe("createMathAccentProperties", () => {
             createMathAccentProperties({ accentCharacter: "\u0302" }),
         );
         expect(tree).to.deep.equal({
-            "m:accPr": [{ "m:chr": { _attr: { val: "\u0302" } } }],
+            "m:accPr": [{ "m:chr": { _attr: { "m:val": "\u0302" } } }],
         });
     });
 
@@ -18,7 +18,7 @@ describe("createMathAccentProperties", () => {
             createMathAccentProperties({ accentCharacter: "\u0303" }),
         );
         expect(tree).to.deep.equal({
-            "m:accPr": [{ "m:chr": { _attr: { val: "\u0303" } } }],
+            "m:accPr": [{ "m:chr": { _attr: { "m:val": "\u0303" } } }],
         });
     });
 });

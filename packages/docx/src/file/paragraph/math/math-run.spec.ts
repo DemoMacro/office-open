@@ -86,14 +86,14 @@ describe("MathRun", () => {
                             {
                                 "m:scr": {
                                     _attr: {
-                                        val: "fraktur",
+                                        "m:val": "fraktur",
                                     },
                                 },
                             },
                             {
                                 "m:sty": {
                                     _attr: {
-                                        val: "b",
+                                        "m:val": "b",
                                     },
                                 },
                             },

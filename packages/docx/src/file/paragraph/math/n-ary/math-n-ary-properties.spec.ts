@@ -128,14 +128,14 @@ describe("createMathNAryProperties", () => {
                         },
                     },
                     {
-                        "m:supHide": {
+                        "m:subHide": {
                             _attr: {
                                 "m:val": 1,
                             },
                         },
                     },
                     {
-                        "m:subHide": {
+                        "m:supHide": {
                             _attr: {
                                 "m:val": 1,
                             },

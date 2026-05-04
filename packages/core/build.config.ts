@@ -10,11 +10,8 @@ export default defineBuildConfig({
                 "src/smartart/index.ts",
                 "src/chart/index.ts",
                 "src/drawingml/index.ts",
+                "src/archive.ts",
             ],
-            deps: {
-                alwaysBundle: ["@office-open/xml"],
-                onlyBundle: false,
-            },
         },
     ],
 } satisfies BuildConfig);

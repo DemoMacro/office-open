@@ -11,3 +11,5 @@ export type * from "./output-type";
 export * from "./opc";
 export * from "./formatter";
 export * from "./smartart";
+export * from "./archive";
+export * from "./core-properties";

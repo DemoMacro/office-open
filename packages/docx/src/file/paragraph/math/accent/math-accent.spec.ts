@@ -34,7 +34,7 @@ describe("createMathAccent", () => {
         expect(tree).to.deep.equal({
             "m:acc": [
                 {
-                    "m:accPr": [{ "m:chr": { _attr: { val: "\u0302" } } }],
+                    "m:accPr": [{ "m:chr": { _attr: { "m:val": "\u0302" } } }],
                 },
                 {
                     "m:e": [
