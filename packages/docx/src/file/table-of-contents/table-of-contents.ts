@@ -8,13 +8,13 @@
  *
  * @module
  */
-import { FileChild } from "@file/file-child";
+import type { FileChild } from "@file/file-child";
 import { InternalHyperlink, Paragraph } from "@file/paragraph";
 import type { TabStopDefinition } from "@file/paragraph";
 import { Run, Tab } from "@file/paragraph/run";
 import { createBegin, createEnd, createSeparate } from "@file/paragraph/run/field";
 import { Text } from "@file/paragraph/run/run-components/text";
-import type { XmlComponent } from "@file/xml-components";
+import { BaseXmlComponent, XmlComponent } from "@file/xml-components";
 
 import { FieldInstruction } from "./field-instruction";
 import { StructuredDocumentTagContent } from "./sdt-content";
@@ -57,7 +57,8 @@ interface ToCEntry {
  * });
  * ```
  */
-export class TableOfContents extends FileChild {
+export class TableOfContents extends XmlComponent implements FileChild {
+    public readonly fileChild = Symbol();
     public constructor(
         alias: string = "Table of Contents",
         {
@@ -66,7 +67,7 @@ export class TableOfContents extends FileChild {
             beginDirty = true,
             ...properties
         }: ITableOfContentsOptions & {
-            readonly contentChildren?: readonly (XmlComponent | string)[];
+            readonly contentChildren?: readonly (BaseXmlComponent | string)[];
             /**
              * Use this to provide pre-generated entries for the Table of Contents.
              *

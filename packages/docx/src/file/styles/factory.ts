@@ -1,4 +1,4 @@
-import { DocumentAttributes } from "../document/document-attributes";
+import { buildDocumentAttributes } from "../document/document-attributes";
 /**
  * Factory module for creating default document styles.
  *
@@ -85,11 +85,14 @@ export interface IDefaultStylesOptions {
     readonly endnoteTextChar?: IBaseCharacterStyleOptions;
 }
 
+let cachedDefaultStyles: IStylesOptions | null = null;
+
 /**
  * Factory for creating default document styles.
  *
  * This factory creates a complete set of default styles for common document elements
- * such as headings, hyperlinks, and footnotes.
+ * such as headings, hyperlinks, and footnotes. When no custom options are provided,
+ * a cached instance is reused across documents.
  *
  * @example
  * ```typescript
@@ -107,10 +110,16 @@ export interface IDefaultStylesOptions {
  */
 export class DefaultStylesFactory {
     public newInstance(options: IDefaultStylesOptions = {}): IStylesOptions {
-        const documentAttributes = new DocumentAttributes(
-            ["mc", "r", "w", "w14", "w15"],
-            "w14 w15",
-        );
+        if (Object.keys(options).length === 0) {
+            if (!cachedDefaultStyles) {
+                cachedDefaultStyles = this.build({});
+            }
+            return cachedDefaultStyles;
+        }
+        return this.build(options);
+    }
+
+    private build(options: IDefaultStylesOptions): IStylesOptions {
         return {
             importedStyles: [
                 new DocumentDefaults(options.document ?? {}),
@@ -141,7 +150,7 @@ export class DefaultStylesFactory {
                 new EndnoteText(options.endnoteText || {}),
                 new EndnoteTextChar(options.endnoteTextChar || {}),
             ],
-            initialStyles: documentAttributes,
+            initialStyles: buildDocumentAttributes(["mc", "r", "w", "w14", "w15"], "w14 w15"),
         };
     }
 }

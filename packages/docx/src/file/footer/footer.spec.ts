@@ -1,7 +1,7 @@
 import { Formatter } from "@export/formatter";
+import { XmlComponent } from "@file/xml-components";
 import { describe, expect, it } from "vite-plus/test";
 
-import { Paragraph } from "../paragraph";
 import { Footer } from "./footer";
 
 describe("Footer", () => {
@@ -41,7 +41,13 @@ describe("Footer", () => {
     });
 
     it("should create with initContent", () => {
-        const header = new Footer(1, new Paragraph({}));
+        const initComp = new (class extends XmlComponent {
+            public constructor() {
+                super("w:ftr");
+            }
+        })();
+
+        const header = new Footer(1, initComp);
 
         const tree = new Formatter().format(header);
 

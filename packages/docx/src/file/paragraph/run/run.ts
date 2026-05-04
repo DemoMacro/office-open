@@ -10,7 +10,8 @@
  */
 import type { FootnoteReferenceRun } from "@file/footnotes/footnote/run/reference-run";
 import type { FieldInstruction } from "@file/table-of-contents/field-instruction";
-import { XmlComponent } from "@file/xml-components";
+import { BaseXmlComponent } from "@file/xml-components";
+import type { IContext, IXmlableObject } from "@file/xml-components";
 
 import { createBreak } from "./break";
 import type {
@@ -33,47 +34,17 @@ import type {
     YearShort,
 } from "./empty-children";
 import { createBegin, createEnd, createSeparate } from "./field";
-import { CurrentSection, NumberOfPages, NumberOfPagesSection, Page } from "./page-number";
-import { RunProperties } from "./properties";
+import {
+    buildCurrentSection,
+    buildNumberOfPages,
+    buildNumberOfPagesSection,
+    buildPage,
+} from "./page-number";
+import { buildRunProperties } from "./properties";
 import type { IParagraphRunPropertiesOptions, IRunPropertiesOptions } from "./properties";
-import { Text } from "./run-components/text";
+import { buildText } from "./run-components/text";
 
 interface IRunOptionsBase {
-    // <xsd:choice>
-    //     <xsd:element name="br" type="CT_Br" />
-    //     <xsd:element name="t" type="CT_Text" />
-    //     <xsd:element name="contentPart" type="CT_Rel" />
-    //     <xsd:element name="delText" type="CT_Text" />
-    //     <xsd:element name="instrText" type="CT_Text" />
-    //     <xsd:element name="delInstrText" type="CT_Text" />
-    //     <xsd:element name="noBreakHyphen" type="CT_Empty" />
-    //     <xsd:element name="softHyphen" type="CT_Empty" minOccurs="0" />
-    //     <xsd:element name="dayShort" type="CT_Empty" minOccurs="0" />
-    //     <xsd:element name="monthShort" type="CT_Empty" minOccurs="0" />
-    //     <xsd:element name="yearShort" type="CT_Empty" minOccurs="0" />
-    //     <xsd:element name="dayLong" type="CT_Empty" minOccurs="0" />
-    //     <xsd:element name="monthLong" type="CT_Empty" minOccurs="0" />
-    //     <xsd:element name="yearLong" type="CT_Empty" minOccurs="0" />
-    //     <xsd:element name="annotationRef" type="CT_Empty" minOccurs="0" />
-    //     <xsd:element name="footnoteRef" type="CT_Empty" minOccurs="0" />
-    //     <xsd:element name="endnoteRef" type="CT_Empty" minOccurs="0" />
-    //     <xsd:element name="separator" type="CT_Empty" minOccurs="0" />
-    //     <xsd:element name="continuationSeparator" type="CT_Empty" minOccurs="0" />
-    //     <xsd:element name="sym" type="CT_Sym" minOccurs="0" />
-    //     <xsd:element name="pgNum" type="CT_Empty" minOccurs="0" />
-    //     <xsd:element name="cr" type="CT_Empty" minOccurs="0" />
-    //     <xsd:element name="tab" type="CT_Empty" minOccurs="0" />
-    //     <xsd:element name="object" type="CT_Object" />
-    //     <xsd:element name="pict" type="CT_Picture" />
-    //     <xsd:element name="fldChar" type="CT_FldChar" />
-    //     <xsd:element name="ruby" type="CT_Ruby" />
-    //     <xsd:element name="footnoteReference" type="CT_FtnEdnRef" />
-    //     <xsd:element name="endnoteReference" type="CT_FtnEdnRef" />
-    //     <xsd:element name="commentReference" type="CT_Markup" />
-    //     <xsd:element name="drawing" type="CT_Drawing" />
-    //     <xsd:element name="ptab" type="CT_PTab" minOccurs="0" />
-    //     <xsd:element name="lastRenderedPageBreak" type="CT_Empty" minOccurs="0" maxOccurs="1" />
-    // </xsd:choice>
     readonly children?: readonly (
         | FieldInstruction
         | (typeof PageNumber)[keyof typeof PageNumber]
@@ -96,7 +67,7 @@ interface IRunOptionsBase {
         | Tab
         | YearLong
         | YearShort
-        | XmlComponent
+        | BaseXmlComponent
     )[];
     readonly break?: number;
     readonly text?: string;
@@ -140,91 +111,87 @@ export const PageNumber = {
  * A run is the lowest level unit of text in a paragraph. All content within a run
  * shares the same formatting properties (bold, italic, font, size, etc.).
  *
- * Reference: http://officeopenxml.com/WPtext.php
- *
- * ## XSD Schema
- * ```xml
- * <xsd:complexType name="CT_R">
- *   <xsd:sequence>
- *     <xsd:group ref="EG_RPr" minOccurs="0"/>
- *     <xsd:group ref="EG_RunInnerContent" minOccurs="0" maxOccurs="unbounded"/>
- *   </xsd:sequence>
- *   <xsd:attribute name="rsidRPr" type="ST_LongHexNumber"/>
- *   <xsd:attribute name="rsidDel" type="ST_LongHexNumber"/>
- *   <xsd:attribute name="rsidR" type="ST_LongHexNumber"/>
- * </xsd:complexType>
- * ```
- *
- * @example
- * ```typescript
- * // Simple run with text
- * new Run({ text: "Hello World" });
- *
- * // Bold and italic run
- * new Run({ text: "Formatted", bold: true, italics: true });
- *
- * // Run with page number
- * new Run({ children: [PageNumber.CURRENT] });
- * ```
+ * Lazy: stores options, builds IXmlableObject in prepForXml.
  */
-export class Run extends XmlComponent {
-    protected readonly properties: RunProperties;
+export class Run extends BaseXmlComponent {
+    private readonly options: IRunOptions;
+    protected extraChildren: (BaseXmlComponent | IXmlableObject)[] = [];
 
     public constructor(options: IRunOptions) {
         super("w:r");
-        this.properties = new RunProperties(options);
-        this.root.push(this.properties);
+        this.options = options;
+    }
 
-        if (options.break) {
-            for (let i = 0; i < options.break; i++) {
-                this.root.push(createBreak());
+    public prepForXml(context: IContext): IXmlableObject | undefined {
+        const children: IXmlableObject[] = [];
+
+        const rPr = buildRunProperties(this.options);
+        if (rPr) children.push(rPr);
+
+        if (this.options.break) {
+            for (let i = 0; i < this.options.break; i++) {
+                children.push(createBreak().prepForXml(context) as IXmlableObject);
             }
         }
 
-        if (options.children) {
-            for (const child of options.children) {
+        if (this.options.children) {
+            for (const child of this.options.children) {
                 if (typeof child === "string") {
                     switch (child) {
                         case PageNumber.CURRENT: {
-                            this.root.push(createBegin());
-                            this.root.push(new Page());
-                            this.root.push(createSeparate());
-                            this.root.push(createEnd());
+                            children.push(createBegin().prepForXml(context) as IXmlableObject);
+                            children.push(buildPage());
+                            children.push(createSeparate().prepForXml(context) as IXmlableObject);
+                            children.push(createEnd().prepForXml(context) as IXmlableObject);
                             break;
                         }
                         case PageNumber.TOTAL_PAGES: {
-                            this.root.push(createBegin());
-                            this.root.push(new NumberOfPages());
-                            this.root.push(createSeparate());
-                            this.root.push(createEnd());
+                            children.push(createBegin().prepForXml(context) as IXmlableObject);
+                            children.push(buildNumberOfPages());
+                            children.push(createSeparate().prepForXml(context) as IXmlableObject);
+                            children.push(createEnd().prepForXml(context) as IXmlableObject);
                             break;
                         }
                         case PageNumber.TOTAL_PAGES_IN_SECTION: {
-                            this.root.push(createBegin());
-                            this.root.push(new NumberOfPagesSection());
-                            this.root.push(createSeparate());
-                            this.root.push(createEnd());
+                            children.push(createBegin().prepForXml(context) as IXmlableObject);
+                            children.push(buildNumberOfPagesSection());
+                            children.push(createSeparate().prepForXml(context) as IXmlableObject);
+                            children.push(createEnd().prepForXml(context) as IXmlableObject);
                             break;
                         }
                         case PageNumber.CURRENT_SECTION: {
-                            this.root.push(createBegin());
-                            this.root.push(new CurrentSection());
-                            this.root.push(createSeparate());
-                            this.root.push(createEnd());
+                            children.push(createBegin().prepForXml(context) as IXmlableObject);
+                            children.push(buildCurrentSection());
+                            children.push(createSeparate().prepForXml(context) as IXmlableObject);
+                            children.push(createEnd().prepForXml(context) as IXmlableObject);
                             break;
                         }
                         default: {
-                            this.root.push(new Text(child));
+                            children.push(buildText(child));
                             break;
                         }
                     }
                     continue;
                 }
 
-                this.root.push(child);
+                if (child instanceof BaseXmlComponent) {
+                    const obj = child.prepForXml(context);
+                    if (obj) children.push(obj);
+                }
             }
-        } else if (options.text !== undefined) {
-            this.root.push(new Text(options.text));
+        } else if (this.options.text !== undefined) {
+            children.push(buildText(this.options.text));
         }
+
+        for (const child of this.extraChildren) {
+            if (child instanceof BaseXmlComponent) {
+                const obj = child.prepForXml(context);
+                if (obj) children.push(obj);
+            } else {
+                children.push(child);
+            }
+        }
+
+        return { "w:r": children.length > 0 ? children : {} };
     }
 }

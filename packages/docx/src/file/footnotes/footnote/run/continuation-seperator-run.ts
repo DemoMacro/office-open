@@ -24,6 +24,6 @@ export class ContinuationSeperatorRun extends Run {
     public constructor() {
         super({});
 
-        this.root.push(new ContinuationSeperator());
+        this.extraChildren.push(new ContinuationSeperator());
     }
 }

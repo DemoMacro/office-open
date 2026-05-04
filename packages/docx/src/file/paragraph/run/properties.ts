@@ -17,6 +17,7 @@ import { ChangeAttributes } from "@file/track-revision/track-revision";
 import type { IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { DeletionTrackChange } from "@file/track-revision/track-revision-components/deletion-track-change";
 import { InsertionTrackChange } from "@file/track-revision/track-revision-components/insertion-track-change";
+import type { IXmlableObject } from "@file/xml-components";
 import {
     HpsMeasureElement,
     IgnoreIfEmptyXmlComponent,
@@ -25,6 +26,14 @@ import {
     StringValueElement,
     XmlComponent,
 } from "@file/xml-components";
+import {
+    onOffObj,
+    hpsMeasureObj,
+    stringEnumValObj,
+    stringValObj,
+    numberValObj,
+} from "@office-open/core";
+import type { IContext } from "@office-open/core";
 import type { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
 
 import { createEastAsianLayout } from "./east-asian-layout";
@@ -492,4 +501,196 @@ export class RunPropertiesChange extends XmlComponent {
         );
         this.addChildElement(new RunProperties(options as IRunPropertiesOptions));
     }
+}
+
+const EMPTY_CTX: IContext = { stack: [] };
+
+/**
+ * Build run properties (w:rPr) as IXmlableObject without allocating XmlComponent tree.
+ * Used by Run.prepForXml for O(1) construction.
+ */
+export function buildRunProperties(options?: IRunPropertiesOptions): IXmlableObject | undefined {
+    if (!options) return undefined;
+
+    const children: IXmlableObject[] = [];
+
+    if (options.style) {
+        children.push(stringValObj("w:rStyle", options.style));
+    }
+
+    if (options.font) {
+        if (typeof options.font === "string") {
+            children.push(createRunFonts(options.font).prepForXml(EMPTY_CTX) as IXmlableObject);
+        } else if ("name" in options.font) {
+            children.push(
+                createRunFonts(options.font.name, options.font.hint).prepForXml(
+                    EMPTY_CTX,
+                ) as IXmlableObject,
+            );
+        } else {
+            children.push(createRunFonts(options.font).prepForXml(EMPTY_CTX) as IXmlableObject);
+        }
+    }
+
+    if (options.bold !== undefined) children.push(onOffObj("w:b", options.bold));
+
+    if (
+        (options.boldComplexScript === undefined && options.bold !== undefined) ||
+        options.boldComplexScript
+    ) {
+        children.push(onOffObj("w:bCs", options.boldComplexScript ?? options.bold));
+    }
+
+    if (options.italics !== undefined) children.push(onOffObj("w:i", options.italics));
+
+    if (
+        (options.italicsComplexScript === undefined && options.italics !== undefined) ||
+        options.italicsComplexScript
+    ) {
+        children.push(onOffObj("w:iCs", options.italicsComplexScript ?? options.italics));
+    }
+
+    if (options.smallCaps !== undefined) {
+        children.push(onOffObj("w:smallCaps", options.smallCaps));
+    } else if (options.allCaps !== undefined) {
+        children.push(onOffObj("w:caps", options.allCaps));
+    }
+
+    if (options.strike !== undefined) children.push(onOffObj("w:strike", options.strike));
+    if (options.doubleStrike !== undefined)
+        children.push(onOffObj("w:dstrike", options.doubleStrike));
+    if (options.emboss !== undefined) children.push(onOffObj("w:emboss", options.emboss));
+    if (options.imprint !== undefined) children.push(onOffObj("w:imprint", options.imprint));
+    if (options.outline !== undefined) children.push(onOffObj("w:outline", options.outline));
+    if (options.shadow !== undefined) children.push(onOffObj("w:shadow", options.shadow));
+    if (options.webHidden !== undefined) children.push(onOffObj("w:webHidden", options.webHidden));
+    if (options.noProof !== undefined) children.push(onOffObj("w:noProof", options.noProof));
+    if (options.snapToGrid !== undefined)
+        children.push(onOffObj("w:snapToGrid", options.snapToGrid));
+
+    if (options.vanish) {
+        children.push(onOffObj("w:vanish", options.vanish));
+    }
+
+    if (options.color) {
+        children.push(new Color(options.color).prepForXml(EMPTY_CTX) as IXmlableObject);
+    }
+
+    if (options.characterSpacing) {
+        children.push(
+            new CharacterSpacing(options.characterSpacing).prepForXml(EMPTY_CTX) as IXmlableObject,
+        );
+    }
+
+    if (options.scale !== undefined) {
+        children.push(numberValObj("w:w", options.scale));
+    }
+
+    if (options.kern) {
+        children.push(hpsMeasureObj("w:kern", options.kern));
+    }
+
+    if (options.position) {
+        children.push(stringValObj("w:position", options.position));
+    }
+
+    if (options.size !== undefined) {
+        children.push(hpsMeasureObj("w:sz", options.size));
+    }
+    const szCs =
+        options.sizeComplexScript === undefined || options.sizeComplexScript === true
+            ? options.size
+            : options.sizeComplexScript;
+    if (szCs) {
+        children.push(hpsMeasureObj("w:szCs", szCs));
+    }
+
+    if (options.highlight) {
+        children.push(new Highlight(options.highlight).prepForXml(EMPTY_CTX) as IXmlableObject);
+    }
+    const highlightCs =
+        options.highlightComplexScript === undefined || options.highlightComplexScript === true
+            ? options.highlight
+            : options.highlightComplexScript;
+    if (highlightCs) {
+        children.push(
+            new HighlightComplexScript(highlightCs).prepForXml(EMPTY_CTX) as IXmlableObject,
+        );
+    }
+
+    if (options.underline) {
+        children.push(
+            createUnderline(options.underline.type, options.underline.color).prepForXml(
+                EMPTY_CTX,
+            ) as IXmlableObject,
+        );
+    }
+
+    if (options.effect) {
+        children.push(stringValObj("w:effect", options.effect));
+    }
+
+    if (options.border) {
+        children.push(
+            createBorderElement("w:bdr", options.border).prepForXml(EMPTY_CTX) as IXmlableObject,
+        );
+    }
+
+    if (options.shading) {
+        children.push(createShading(options.shading).prepForXml(EMPTY_CTX) as IXmlableObject);
+    }
+
+    if (options.subScript) {
+        children.push(stringEnumValObj("w:vertAlign", "subscript"));
+    }
+
+    if (options.superScript) {
+        children.push(stringEnumValObj("w:vertAlign", "superscript"));
+    }
+
+    if (options.rightToLeft !== undefined) {
+        children.push(onOffObj("w:rtl", options.rightToLeft));
+    }
+
+    if (options.emphasisMark) {
+        children.push(
+            createEmphasisMark(options.emphasisMark.type).prepForXml(EMPTY_CTX) as IXmlableObject,
+        );
+    }
+
+    if (options.language) {
+        children.push(
+            createLanguageComponent(options.language).prepForXml(EMPTY_CTX) as IXmlableObject,
+        );
+    }
+
+    if (options.specVanish) {
+        children.push(onOffObj("w:specVanish", options.specVanish));
+    }
+
+    if (options.math) {
+        children.push(onOffObj("w:oMath", options.math));
+    }
+
+    if (options.fitText !== undefined) {
+        children.push(numberValObj("w:fitText", options.fitText));
+    }
+
+    if (options.complexScript !== undefined) {
+        children.push(onOffObj("w:cs", options.complexScript));
+    }
+
+    if (options.eastAsianLayout) {
+        children.push(
+            createEastAsianLayout(options.eastAsianLayout).prepForXml(EMPTY_CTX) as IXmlableObject,
+        );
+    }
+
+    if (options.revision) {
+        children.push(
+            new RunPropertiesChange(options.revision).prepForXml(EMPTY_CTX) as IXmlableObject,
+        );
+    }
+
+    return children.length > 0 ? { "w:rPr": children } : undefined;
 }

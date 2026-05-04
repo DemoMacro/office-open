@@ -1,5 +1,5 @@
 import PptxGenJS from "pptxgenjs";
-import { bench, describe } from "vitest";
+import { bench, describe } from "vite-plus/test";
 
 import { Paragraph, Presentation, Run, Shape, Table } from "./index";
 

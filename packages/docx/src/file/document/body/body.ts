@@ -5,8 +5,8 @@
  *
  * @module
  */
-import { Paragraph, ParagraphProperties } from "@file/paragraph";
-import { XmlComponent } from "@file/xml-components";
+import { Paragraph } from "@file/paragraph";
+import { BaseXmlComponent, XmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 
 import { SectionProperties } from "./section-properties/section-properties";
@@ -107,15 +107,13 @@ export class Body extends XmlComponent {
      *
      * @param component - The XML component to add (paragraph, table, etc.)
      */
-    public push(component: XmlComponent): void {
-        this.root.push(component);
+    public push(component: BaseXmlComponent | string): void {
+        this.root.push(component as BaseXmlComponent);
     }
 
     private createSectionParagraph(section: SectionProperties): Paragraph {
         const paragraph = new Paragraph({});
-        const properties = new ParagraphProperties({});
-        properties.push(section);
-        paragraph.addChildElement(properties);
+        paragraph.setSectionProperties(section);
         return paragraph;
     }
 }

@@ -9,7 +9,7 @@
  *
  * @module
  */
-import type { ParagraphChild } from "@file/paragraph";
+import type { FileChild } from "@file/file-child";
 import { BuilderElement } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
 
@@ -129,8 +129,8 @@ const formatShapeStyle = (style?: VmlShapeStyle): string | undefined =>
 interface ShapeOptions {
     /** Unique identifier for the shape */
     readonly id: string;
-    /** Array of paragraph children to include in the shape's textbox */
-    readonly children?: readonly ParagraphChild[];
+    /** Array of block-level children to include in the shape's textbox */
+    readonly children?: readonly FileChild[];
     /** VML shape type identifier (default: "#_x0000_t202" for text rectangle) */
     readonly type?: string;
     /** Styling properties for the shape */

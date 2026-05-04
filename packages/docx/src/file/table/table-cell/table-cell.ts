@@ -6,7 +6,7 @@
  * @module
  */
 import { Paragraph } from "@file/paragraph";
-import { XmlComponent } from "@file/xml-components";
+import { BaseXmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 
 import type { StructuredDocumentTagCell } from "../../sdt";
@@ -54,22 +54,29 @@ export type ITableCellOptions = {
  * });
  * ```
  */
-export class TableCell extends XmlComponent {
+export class TableCell extends BaseXmlComponent {
     public constructor(public readonly options: ITableCellOptions) {
         super("w:tc");
-
-        this.root.push(new TableCellProperties(options));
-
-        for (const child of options.children) {
-            this.root.push(child);
-        }
     }
 
     public prepForXml(context: IContext): IXmlableObject | undefined {
-        // Cells must end with a paragraph
-        if (!(this.root[this.root.length - 1] instanceof Paragraph)) {
-            this.root.push(new Paragraph({}));
+        const children: IXmlableObject[] = [];
+
+        const tPr = new TableCellProperties(this.options);
+        const tPrObj = tPr.prepForXml(context);
+        if (tPrObj) children.push(tPrObj);
+
+        for (const child of this.options.children) {
+            const obj = child.prepForXml(context);
+            if (obj) children.push(obj);
         }
-        return super.prepForXml(context);
+
+        // Cells must end with a paragraph
+        const last = this.options.children[this.options.children.length - 1];
+        if (!(last instanceof Paragraph)) {
+            children.push(new Paragraph({}).prepForXml(context)!);
+        }
+
+        return { "w:tc": children };
     }
 }

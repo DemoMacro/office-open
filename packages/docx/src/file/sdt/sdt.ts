@@ -12,8 +12,8 @@
  *
  * @module
  */
-import { FileChild } from "@file/file-child";
-import { XmlComponent } from "@file/xml-components";
+import type { FileChild } from "@file/file-child";
+import { BaseXmlComponent, XmlComponent } from "@file/xml-components";
 
 import {
     StructuredDocumentTagContent,
@@ -28,7 +28,7 @@ export interface ISdtRunOptions {
     /** SDT properties (alias, tag, type discriminator, etc.) */
     readonly properties: SdtPropertiesOptions;
     /** Content children (runs, text runs, etc.) to place inside the SDT */
-    readonly children?: readonly XmlComponent[];
+    readonly children?: readonly BaseXmlComponent[];
 }
 
 /**
@@ -87,7 +87,7 @@ export interface ISdtBlockOptions {
     /** SDT properties */
     readonly properties: SdtPropertiesOptions;
     /** Content children (paragraphs, tables, etc.) to place inside the SDT */
-    readonly children?: readonly XmlComponent[];
+    readonly children?: readonly BaseXmlComponent[];
 }
 
 /**
@@ -115,7 +115,8 @@ export interface ISdtBlockOptions {
  * });
  * ```
  */
-export class StructuredDocumentTagBlock extends FileChild {
+export class StructuredDocumentTagBlock extends XmlComponent implements FileChild {
+    public readonly fileChild = Symbol();
     public constructor(options: ISdtBlockOptions) {
         super("w:sdt");
         this.root.push(new StructuredDocumentTagProperties(options.properties));

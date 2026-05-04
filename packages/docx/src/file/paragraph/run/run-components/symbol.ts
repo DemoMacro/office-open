@@ -6,39 +6,38 @@
  *
  * @module
  */
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BaseXmlComponent } from "@file/xml-components";
+import type { IXmlableObject } from "@file/xml-components";
 
 /**
- * Attributes for the symbol element.
+ * Builds a symbol element XML object.
+ *
+ * @param char - Character code (hex value)
+ * @param symbolfont - Symbol font name (default: "Wingdings")
+ * @returns IXmlableObject for the w:sym element
+ *
  * @internal
  */
-class SymbolAttributes extends XmlAttributeComponent<{
-    readonly char: string;
-    readonly symbolfont?: string;
-}> {
-    protected readonly xmlKeys = {
-        char: "w:char",
-        symbolfont: "w:font",
+export function buildSymbol(char: string = "", symbolfont: string = "Wingdings"): IXmlableObject {
+    return {
+        "w:sym": { _attr: { "w:char": char, "w:font": symbolfont } },
     };
 }
 
 /**
- * Represents a symbol character in a run.
- *
- * Symbol inserts a character from a symbol font using its
- * character code (hex value).
- *
- * ## XSD Schema
- * ```xml
- * <xsd:complexType name="CT_Sym">
- *   <xsd:attribute name="font" type="s:ST_String"/>
- *   <xsd:attribute name="char" type="s:ST_ShortHexNumber"/>
- * </xsd:complexType>
- * ```
+ * @deprecated Use buildSymbol() instead.
  */
-export class Symbol extends XmlComponent {
+export class Symbol extends BaseXmlComponent {
+    private readonly _char: string;
+    private readonly _font: string;
+
     public constructor(char: string = "", symbolfont: string = "Wingdings") {
         super("w:sym");
-        this.root.push(new SymbolAttributes({ char: char, symbolfont: symbolfont }));
+        this._char = char;
+        this._font = symbolfont;
+    }
+
+    public prepForXml(): IXmlableObject {
+        return buildSymbol(this._char, this._font);
     }
 }

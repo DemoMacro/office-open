@@ -20,7 +20,7 @@ export abstract class XmlComponent extends BaseXmlComponent {
     /**
      * Array of child components, text nodes, and attributes.
      */
-    protected root: (BaseXmlComponent | IXmlableObject | string)[];
+    public root: (BaseXmlComponent | IXmlableObject | string)[];
 
     public constructor(rootKey: string) {
         super(rootKey);
@@ -62,7 +62,7 @@ export abstract class XmlComponent extends BaseXmlComponent {
     /**
      * @deprecated Internal use only.
      */
-    public addChildElement(child: XmlComponent | string): XmlComponent {
+    public addChildElement(child: BaseXmlComponent | string): XmlComponent {
         this.root.push(child);
         return this;
     }

@@ -91,6 +91,10 @@ export class Relationships extends BaseXmlComponent {
             if (e.targetMode) attrs.TargetMode = e.targetMode;
             children.push({ Relationship: { _attr: attrs } });
         }
+        // Unwrap single _attr child (matches XmlComponent.prepForXml behavior)
+        if (children.length === 1 && "_attr" in children[0]) {
+            return { Relationships: children[0] };
+        }
         return { Relationships: children };
     }
 }

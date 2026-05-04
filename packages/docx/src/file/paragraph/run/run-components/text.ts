@@ -1,14 +1,18 @@
 /**
  * Text module for WordprocessingML run content.
  *
- * This module provides the Text class for text content within runs.
+ * This module provides the buildText function for text content within runs.
  *
  * @module
  */
 import { SpaceType } from "@file/shared";
-import { XmlComponent } from "@file/xml-components";
+import { BaseXmlComponent } from "@file/xml-components";
+import type { IXmlableObject } from "@file/xml-components";
 
-import { TextAttributes } from "../text-attributes";
+interface ITextOptions {
+    readonly space?: (typeof SpaceType)[keyof typeof SpaceType];
+    readonly text?: string;
+}
 
 // <xsd:complexType name="CT_Text">
 //     <xsd:simpleContent>
@@ -19,42 +23,36 @@ import { TextAttributes } from "../text-attributes";
 // </xsd:complexType>
 
 /**
- * Options for creating a Text element.
+ * Builds a text element XML object.
+ *
+ * @param options - Text string or options with space/text
+ * @returns IXmlableObject for the w:t element
+ *
+ * @internal
  */
-interface ITextOptions {
-    /** How whitespace should be handled */
-    readonly space?: (typeof SpaceType)[keyof typeof SpaceType];
-    /** The text content */
-    readonly text?: string;
+export function buildText(options: string | ITextOptions): IXmlableObject {
+    if (typeof options === "string") {
+        return {
+            "w:t": [{ _attr: { "xml:space": SpaceType.PRESERVE } }, options],
+        };
+    }
+    return {
+        "w:t": [{ _attr: { "xml:space": options.space ?? SpaceType.DEFAULT } }, options.text ?? ""],
+    };
 }
 
 /**
- * Represents a text element within a run.
- *
- * Text is the container for actual character content in a Word document.
- * It corresponds to the `<w:t>` element.
- *
- * ## XSD Schema
- * ```xml
- * <xsd:complexType name="CT_Text">
- *   <xsd:simpleContent>
- *     <xsd:extension base="s:ST_String">
- *       <xsd:attribute ref="xml:space" use="optional"/>
- *     </xsd:extension>
- *   </xsd:simpleContent>
- * </xsd:complexType>
- * ```
+ * @deprecated Use buildText() instead.
  */
-export class Text extends XmlComponent {
+export class Text extends BaseXmlComponent {
+    private readonly _opts: string | ITextOptions;
+
     public constructor(options: string | ITextOptions) {
         super("w:t");
+        this._opts = options;
+    }
 
-        if (typeof options === "string") {
-            this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
-            this.root.push(options);
-        } else {
-            this.root.push(new TextAttributes({ space: options.space ?? SpaceType.DEFAULT }));
-            this.root.push(options.text ?? "");
-        }
+    public prepForXml(): IXmlableObject {
+        return buildText(this._opts);
     }
 }

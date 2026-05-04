@@ -7,9 +7,76 @@ import { BaseXmlComponent, NextAttributeComponent, XmlComponent } from ".";
 import { hpsMeasureValue } from "../values";
 import type { PositiveUniversalMeasure } from "../values";
 import type { AttributePayload } from "./attributes";
+import type { IXmlableObject } from "./types";
+
+// ── Pure functions (zero-allocation) ──
+
+const ON_OFF_TRUE_CACHE = new Map<string, IXmlableObject>();
+
+/**
+ * Build a CT_OnOff XML object without allocating any XmlComponent.
+ * `val=true` returns a frozen singleton (cached per name).
+ */
+export function onOffObj(name: string, val: boolean | undefined = true): IXmlableObject {
+    if (val === true) {
+        let cached = ON_OFF_TRUE_CACHE.get(name);
+        if (!cached) {
+            cached = Object.freeze({ [name]: Object.freeze({}) });
+            ON_OFF_TRUE_CACHE.set(name, cached);
+        }
+        return cached;
+    }
+    const ns = name.split(":")[0];
+    return { [name]: { _attr: { [`${ns}:val`]: val } } };
+}
+
+/**
+ * Build a CT_HpsMeasure XML object (half-point size) without allocation.
+ */
+export function hpsMeasureObj(
+    name: string,
+    val: number | PositiveUniversalMeasure,
+): IXmlableObject {
+    const ns = name.split(":")[0];
+    return { [name]: { _attr: { [`${ns}:val`]: hpsMeasureValue(val) } } };
+}
+
+/**
+ * Build a CT_String XML object (string value attribute) without allocation.
+ */
+export function stringValObj(name: string, val: string): IXmlableObject {
+    const ns = name.split(":")[0];
+    return { [name]: { _attr: { [`${ns}:val`]: val } } };
+}
+
+/**
+ * Build a numeric value attribute XML object without allocation.
+ */
+export function numberValObj(name: string, val: number): IXmlableObject {
+    const ns = name.split(":")[0];
+    return { [name]: { _attr: { [`${ns}:val`]: val } } };
+}
+
+/**
+ * Build a string enum value attribute XML object without allocation.
+ */
+export function stringEnumValObj<T extends string>(name: string, val: T): IXmlableObject {
+    const ns = name.split(":")[0];
+    return { [name]: { _attr: { [`${ns}:val`]: val } } };
+}
+
+/**
+ * Build an element wrapping a text string without allocation.
+ */
+export function stringContainerObj(name: string, val: string): IXmlableObject {
+    return { [name]: [val] };
+}
+
+// ── Legacy classes (still used by non-hot-path code) ──
 
 /**
  * XML element representing a boolean on/off value (CT_OnOff).
+ * @deprecated Use `onOffObj()` for hot-path code.
  */
 export class OnOffElement extends XmlComponent {
     public constructor(name: string, val: boolean | undefined = true) {
@@ -26,6 +93,7 @@ export class OnOffElement extends XmlComponent {
 
 /**
  * XML element representing a half-point size measurement (CT_HpsMeasure).
+ * @deprecated Use `hpsMeasureObj()` for hot-path code.
  */
 export class HpsMeasureElement extends XmlComponent {
     public constructor(name: string, val: number | PositiveUniversalMeasure) {
@@ -44,6 +112,7 @@ export class EmptyElement extends XmlComponent {}
 
 /**
  * XML element with a string value attribute (CT_String).
+ * @deprecated Use `stringValObj()` for hot-path code.
  */
 export class StringValueElement extends XmlComponent {
     public constructor(name: string, val: string) {
@@ -55,6 +124,7 @@ export class StringValueElement extends XmlComponent {
 
 /**
  * XML element with a numeric value attribute.
+ * @deprecated Use `numberValObj()` for hot-path code.
  */
 export class NumberValueElement extends XmlComponent {
     public constructor(name: string, val: number) {
@@ -66,6 +136,7 @@ export class NumberValueElement extends XmlComponent {
 
 /**
  * XML element with a string enum value attribute.
+ * @deprecated Use `stringEnumValObj()` for hot-path code.
  */
 export class StringEnumValueElement<T extends string> extends XmlComponent {
     public constructor(name: string, val: T) {
@@ -77,6 +148,7 @@ export class StringEnumValueElement<T extends string> extends XmlComponent {
 
 /**
  * XML element containing text content.
+ * @deprecated Use `stringContainerObj()` for hot-path code.
  */
 export class StringContainer extends XmlComponent {
     public constructor(name: string, val: string) {
@@ -96,7 +168,7 @@ export class BuilderElement<T = {}> extends XmlComponent {
     }: {
         readonly name: string;
         readonly attributes?: AttributePayload<T>;
-        readonly children?: readonly XmlComponent[];
+        readonly children?: readonly (BaseXmlComponent | string)[];
     }) {
         super(name);
 

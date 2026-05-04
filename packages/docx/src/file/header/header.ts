@@ -10,8 +10,7 @@
 import { InitializableXmlComponent } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
 
-import type { Paragraph } from "../paragraph";
-import type { Table } from "../table";
+import type { FileChild } from "../file-child";
 import { HeaderAttributes } from "./header-attributes";
 
 /**
@@ -95,7 +94,7 @@ export class Header extends InitializableXmlComponent {
         return this.refId;
     }
 
-    public add(item: Paragraph | Table): void {
+    public add(item: FileChild): void {
         this.root.push(item);
     }
 }

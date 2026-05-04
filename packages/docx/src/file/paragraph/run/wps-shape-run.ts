@@ -41,6 +41,6 @@ export class WpsShapeRun extends Run {
             fill: options.fill,
         });
 
-        this.root.push(drawing);
+        this.extraChildren.push(drawing);
     }
 }

@@ -6,9 +6,10 @@
  *
  * @module
  */
-import { FileChild } from "@file/file-child";
+import type { FileChild } from "@file/file-child";
 import { ParagraphProperties } from "@file/paragraph";
 import type { IParagraphOptions } from "@file/paragraph";
+import { XmlComponent } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 
 import { createPictElement } from "./pict-element/pict-element";
@@ -23,9 +24,11 @@ import type { VmlShapeStyle } from "./shape/shape";
  * @property style - VML shape style properties for positioning and sizing
  * @property children - Array of child elements (text runs, hyperlinks, etc.)
  */
-type ITextboxOptions = Omit<IParagraphOptions, "style"> & {
+type ITextboxOptions = Omit<IParagraphOptions, "style" | "children"> & {
     /** VML shape style properties for the textbox (positioning, sizing, wrapping, etc.) */
     readonly style?: VmlShapeStyle;
+    /** Array of block-level content elements (paragraphs, tables, etc.) */
+    readonly children?: readonly FileChild[];
 };
 
 /**
@@ -76,7 +79,8 @@ type ITextboxOptions = Omit<IParagraphOptions, "style"> & {
  * });
  * ```
  */
-export class Textbox extends FileChild {
+export class Textbox extends XmlComponent implements FileChild {
+    public readonly fileChild = Symbol();
     public constructor({ style, children, ...rest }: ITextboxOptions) {
         super("w:p");
         this.root.push(new ParagraphProperties(rest));

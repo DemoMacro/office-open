@@ -273,7 +273,7 @@ describe("TableRow", () => {
         });
     });
 
-    describe("#addCellToIndex", () => {
+    describe("#addCellToColumnIndex", () => {
         it("should add cell to correct index with no initial properties", () => {
             const tableRow = new TableRow({
                 children: [
@@ -284,7 +284,7 @@ describe("TableRow", () => {
                 tableHeader: true,
             });
 
-            tableRow.addCellToIndex(
+            tableRow.addCellToColumnIndex(
                 new TableCell({
                     children: [],
                 }),

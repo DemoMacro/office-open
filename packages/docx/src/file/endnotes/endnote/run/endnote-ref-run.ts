@@ -6,6 +6,6 @@ export class EndnoteRefRun extends Run {
             style: "EndnoteReference",
         });
 
-        this.root.push(new EndnoteReference());
+        this.extraChildren.push(new EndnoteReference());
     }
 }

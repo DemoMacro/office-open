@@ -18,7 +18,7 @@ import {
     convertInchesToTwip,
 } from "@util/convenience-functions";
 
-import { DocumentAttributes } from "../document/document-attributes";
+import { buildDocumentAttributes } from "../document/document-attributes";
 import { AbstractNumbering } from "./abstract-numbering";
 import { LevelFormat } from "./level";
 import type { ILevelsOptions } from "./level";
@@ -120,7 +120,7 @@ export class Numbering extends XmlComponent {
     public constructor(options: INumberingOptions) {
         super("w:numbering");
         this.root.push(
-            new DocumentAttributes(
+            buildDocumentAttributes(
                 [
                     "wpc",
                     "mc",

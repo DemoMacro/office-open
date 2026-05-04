@@ -78,12 +78,12 @@ Check the [demo folder](./demo) for 100+ working examples covering every feature
 
 Performance comparison against original `docx` (9.6.1) package:
 
-| Scenario                                                | @office-open/docx |     docx |   Speedup |
-| ------------------------------------------------------- | ----------------: | -------: | --------: |
-| Simple document (2 paragraphs)                          |          7,095 hz | 5,108 hz | **1.39x** |
-| Styled paragraphs (20 paragraphs)                       |          5,982 hz | 4,800 hz | **1.25x** |
-| Table (10x5 cells)                                      |          3,514 hz | 3,244 hz | **1.08x** |
-| Full featured (header/footer/headings/table/paragraphs) |          2,453 hz | 1,304 hz | **1.88x** |
+| Scenario                                                | @office-open/docx |       docx |   Speedup |
+| ------------------------------------------------------- | ----------------: | ---------: | --------: |
+| Simple document (2 paragraphs)                          |       25.7K ops/s | 5.3K ops/s | **4.84x** |
+| Styled paragraphs (20 paragraphs)                       |       24.2K ops/s | 4.4K ops/s | **5.45x** |
+| Table (10x5 cells)                                      |       15.5K ops/s | 3.3K ops/s | **4.70x** |
+| Full featured (header/footer/headings/table/paragraphs) |       13.8K ops/s | 2.6K ops/s | **5.30x** |
 
 ## License
 

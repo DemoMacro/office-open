@@ -9,8 +9,8 @@
  *
  * @module
  */
-import { FileChild } from "@file/file-child";
-import { XmlAttributeComponent } from "@file/xml-components";
+import type { FileChild } from "@file/file-child";
+import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 
@@ -47,7 +47,8 @@ export interface ISubDocOptions {
  * });
  * ```
  */
-export class SubDoc extends FileChild {
+export class SubDoc extends XmlComponent implements FileChild {
+    public readonly fileChild = Symbol();
     private readonly options: ISubDocOptions;
 
     public constructor(options: ISubDocOptions) {

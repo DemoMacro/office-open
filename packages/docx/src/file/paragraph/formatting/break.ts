@@ -65,7 +65,7 @@ class Break extends XmlComponent {
 export class PageBreak extends Run {
     public constructor() {
         super({});
-        this.root.push(new Break(BreakType.PAGE));
+        this.extraChildren.push(new Break(BreakType.PAGE));
     }
 }
 
@@ -96,7 +96,7 @@ export class PageBreak extends Run {
 export class ColumnBreak extends Run {
     public constructor() {
         super({});
-        this.root.push(new Break(BreakType.COLUMN));
+        this.extraChildren.push(new Break(BreakType.COLUMN));
     }
 }
 

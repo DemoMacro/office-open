@@ -104,10 +104,20 @@ export const replacer = ({
                         (e) => e.type === "element" && e.name === "w:rPr",
                     );
 
-                    newRunElements = textJson.map((e) => ({
-                        ...e,
-                        elements: [...runElementNonTextualElements, ...(e.elements ?? [])],
-                    }));
+                    newRunElements = textJson.map((e) => {
+                        // Only prepend rPr to w:r elements that don't already have one
+                        if (
+                            e.type !== "element" ||
+                            e.name !== "w:r" ||
+                            e.elements?.some((c: any) => c.type === "element" && c.name === "w:rPr")
+                        ) {
+                            return e;
+                        }
+                        return {
+                            ...e,
+                            elements: [...runElementNonTextualElements, ...(e.elements ?? [])],
+                        };
+                    });
 
                     patchedRightElement = {
                         ...right,
