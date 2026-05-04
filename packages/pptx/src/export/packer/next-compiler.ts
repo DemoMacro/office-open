@@ -9,6 +9,7 @@ import {
     getStyleXml,
 } from "@file/smartart/built-in-definitions";
 import type { IContext } from "@file/xml-components";
+import { collectPlaceholderKeys, hasPlaceholders } from "@office-open/core";
 import { xml } from "@office-open/xml";
 import type { Zippable } from "fflate";
 
@@ -202,142 +203,127 @@ export class Compiler {
             );
             currentImageCount += slideMediaData.length;
 
-            // Chart placeholder replacement — only for charts present in this slide
-            const chartPlaceholderRegex = /\{chart:([^}]+)\}/g;
-            const slideChartKeys: string[] = [];
-            let match: RegExpExecArray | null;
-            const slideXmlForCharts = replacedSlideXml;
-            while ((match = chartPlaceholderRegex.exec(slideXmlForCharts)) !== null) {
-                if (!slideChartKeys.includes(match[1])) {
-                    slideChartKeys.push(match[1]);
+            // Placeholder replacement — single pre-check avoids 4 regex scans when none exist
+            if (hasPlaceholders(replacedSlideXml)) {
+                // Chart placeholder replacement
+                const slideChartKeys = collectPlaceholderKeys(replacedSlideXml, "chart:");
+                if (slideChartKeys.length > 0) {
+                    const slideChartOffset = slideWrapper.Relationships.RelationshipCount + 1;
+                    const slideCharts = file.Charts.Array.filter((c) =>
+                        slideChartKeys.includes(c.key),
+                    );
+
+                    replacedSlideXml = this.chartReplacer.replace(
+                        replacedSlideXml,
+                        { Array: slideCharts } as unknown as ChartCollection,
+                        slideChartOffset,
+                    );
+
+                    slideCharts.forEach((chartData, ci) => {
+                        const globalIndex = file.Charts.Array.indexOf(chartData);
+                        slideWrapper.Relationships.addRelationship(
+                            slideChartOffset + ci,
+                            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart",
+                            `../charts/chart${globalIndex + 1}.xml`,
+                        );
+                    });
                 }
-            }
 
-            if (slideChartKeys.length > 0) {
-                const slideChartOffset = slideWrapper.Relationships.RelationshipCount + 1;
-                const slideCharts = file.Charts.Array.filter((c) => slideChartKeys.includes(c.key));
-
-                replacedSlideXml = this.chartReplacer.replace(
-                    replacedSlideXml,
-                    { Array: slideCharts } as unknown as ChartCollection,
-                    slideChartOffset,
-                );
-
-                slideCharts.forEach((chartData, ci) => {
-                    const globalIndex = file.Charts.Array.indexOf(chartData);
-                    slideWrapper.Relationships.addRelationship(
-                        slideChartOffset + ci,
-                        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart",
-                        `../charts/chart${globalIndex + 1}.xml`,
+                // SmartArt placeholder replacement
+                const slideSmartArtKeys = collectPlaceholderKeys(replacedSlideXml, "smartart:");
+                if (slideSmartArtKeys.length > 0) {
+                    const slideSmartArts = file.SmartArts.Array.filter((s) =>
+                        slideSmartArtKeys.includes(s.key),
                     );
-                });
-            }
+                    const saOffset = slideWrapper.Relationships.RelationshipCount + 1;
 
-            // SmartArt placeholder replacement
-            const slideSmartArtKeys: string[] = [];
-            const smartArtRegex = /\{smartart:([^}]+)\}/g;
-            let saMatch: RegExpExecArray | null;
-            while ((saMatch = smartArtRegex.exec(replacedSlideXml)) !== null) {
-                if (!slideSmartArtKeys.includes(saMatch[1])) {
-                    slideSmartArtKeys.push(saMatch[1]);
+                    replacedSlideXml = this.smartArtReplacer.replace(
+                        replacedSlideXml,
+                        {
+                            Array: slideSmartArts,
+                        } as unknown as import("@file/smartart/smartart-collection").SmartArtCollection,
+                        saOffset,
+                    );
+
+                    const saGlobalStart = file.SmartArts.Array.indexOf(slideSmartArts[0]);
+                    this.smartArtReplacer.addRelationships(
+                        {
+                            Array: slideSmartArts,
+                        } as unknown as import("@file/smartart/smartart-collection").SmartArtCollection,
+                        (id, type, target) => {
+                            slideWrapper.Relationships.addRelationship(id, type, target);
+                        },
+                        saOffset,
+                        saGlobalStart,
+                    );
                 }
-            }
 
-            if (slideSmartArtKeys.length > 0) {
-                const slideSmartArts = file.SmartArts.Array.filter((s) =>
-                    slideSmartArtKeys.includes(s.key),
-                );
-                const saOffset = slideWrapper.Relationships.RelationshipCount + 1;
+                // Hyperlink placeholder replacement
+                const slideHlinkKeys = collectPlaceholderKeys(replacedSlideXml, "hlink:");
+                if (slideHlinkKeys.length > 0) {
+                    const slideHlinks = file.Hyperlinks.Array.filter((h) =>
+                        slideHlinkKeys.includes(h.key),
+                    );
+                    const hlinkOffset = slideWrapper.Relationships.RelationshipCount + 1;
 
-                replacedSlideXml = this.smartArtReplacer.replace(
-                    replacedSlideXml,
-                    {
-                        Array: slideSmartArts,
-                    } as unknown as import("@file/smartart/smartart-collection").SmartArtCollection,
-                    saOffset,
-                );
+                    replacedSlideXml = this.hyperlinkReplacer.replace(
+                        replacedSlideXml,
+                        slideHlinks,
+                        hlinkOffset,
+                    );
 
-                const saGlobalStart = file.SmartArts.Array.indexOf(slideSmartArts[0]);
-                this.smartArtReplacer.addRelationships(
-                    {
-                        Array: slideSmartArts,
-                    } as unknown as import("@file/smartart/smartart-collection").SmartArtCollection,
-                    (id, type, target) => {
-                        slideWrapper.Relationships.addRelationship(id, type, target);
-                    },
-                    saOffset,
-                    saGlobalStart,
-                );
-            }
-
-            // Hyperlink placeholder replacement
-            const hlinkPlaceholderRegex = /\{hlink:([^}]+)\}/g;
-            const slideHlinkKeys: string[] = [];
-            let hlinkMatch: RegExpExecArray | null;
-            while ((hlinkMatch = hlinkPlaceholderRegex.exec(replacedSlideXml)) !== null) {
-                if (!slideHlinkKeys.includes(hlinkMatch[1])) {
-                    slideHlinkKeys.push(hlinkMatch[1]);
+                    slideHlinks.forEach((hlink, hi) => {
+                        slideWrapper.Relationships.addRelationship(
+                            hlinkOffset + hi,
+                            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+                            hlink.url,
+                            "External",
+                        );
+                    });
                 }
-            }
 
-            if (slideHlinkKeys.length > 0) {
-                const slideHlinks = file.Hyperlinks.Array.filter((h) =>
-                    slideHlinkKeys.includes(h.key),
-                );
-                const hlinkOffset = slideWrapper.Relationships.RelationshipCount + 1;
-
-                replacedSlideXml = this.hyperlinkReplacer.replace(
+                // Media (video/audio) placeholder replacement
+                const slideMediaRefs = this.mediaReplacer.getMediaRefs(
                     replacedSlideXml,
-                    slideHlinks,
-                    hlinkOffset,
+                    file.Media,
                 );
-
-                slideHlinks.forEach((hlink, hi) => {
-                    slideWrapper.Relationships.addRelationship(
-                        hlinkOffset + hi,
-                        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
-                        hlink.url,
-                        "External",
-                    );
-                });
-            }
-
-            // Media (video/audio) placeholder replacement
-            const slideMediaRefs = this.mediaReplacer.getMediaRefs(replacedSlideXml, file.Media);
-            const slideVideoRefs = this.mediaReplacer.getVideoRefs(replacedSlideXml, file.Media);
-            const slideAllMediaRefs = [...slideMediaRefs, ...slideVideoRefs];
-
-            if (slideAllMediaRefs.length > 0) {
-                const mediaOffset = slideWrapper.Relationships.RelationshipCount + 1;
-                const videoOffset = mediaOffset + slideMediaRefs.length;
-
-                replacedSlideXml = this.mediaReplacer.replaceMedia(
+                const slideVideoRefs = this.mediaReplacer.getVideoRefs(
                     replacedSlideXml,
-                    slideMediaRefs,
-                    mediaOffset,
+                    file.Media,
                 );
 
-                replacedSlideXml = this.mediaReplacer.replaceVideo(
-                    replacedSlideXml,
-                    slideVideoRefs,
-                    videoOffset,
-                );
+                if (slideMediaRefs.length > 0 || slideVideoRefs.length > 0) {
+                    const mediaOffset = slideWrapper.Relationships.RelationshipCount + 1;
+                    const videoOffset = mediaOffset + slideMediaRefs.length;
 
-                slideMediaRefs.forEach((media, mi) => {
-                    slideWrapper.Relationships.addRelationship(
-                        mediaOffset + mi,
-                        "http://schemas.microsoft.com/office/2007/relationships/media",
-                        `../media/${media.fileName}`,
+                    replacedSlideXml = this.mediaReplacer.replaceMedia(
+                        replacedSlideXml,
+                        slideMediaRefs,
+                        mediaOffset,
                     );
-                });
 
-                slideVideoRefs.forEach((video, vi) => {
-                    slideWrapper.Relationships.addRelationship(
-                        videoOffset + vi,
-                        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/video",
-                        `../media/${video.fileName}`,
+                    replacedSlideXml = this.mediaReplacer.replaceVideo(
+                        replacedSlideXml,
+                        slideVideoRefs,
+                        videoOffset,
                     );
-                });
+
+                    slideMediaRefs.forEach((media, mi) => {
+                        slideWrapper.Relationships.addRelationship(
+                            mediaOffset + mi,
+                            "http://schemas.microsoft.com/office/2007/relationships/media",
+                            `../media/${media.fileName}`,
+                        );
+                    });
+
+                    slideVideoRefs.forEach((video, vi) => {
+                        slideWrapper.Relationships.addRelationship(
+                            videoOffset + vi,
+                            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/video",
+                            `../media/${video.fileName}`,
+                        );
+                    });
+                }
             }
 
             mapping[`Slide${i}`] = {

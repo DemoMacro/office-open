@@ -6,12 +6,8 @@ import {
     getLayoutXml,
     getStyleXml,
 } from "@file/smartart/built-in-definitions";
+import { hasPlaceholders } from "@office-open/core";
 import { xml } from "@office-open/xml";
-/**
- * Compiler module for converting File objects into OOXML ZIP archives.
- *
- * @module
- */
 import type { Zippable } from "fflate";
 import { textToUint8Array, toUint8Array } from "undio";
 
@@ -285,9 +281,15 @@ export class Compiler {
             },
         );
 
-        const documentMediaDatas = this.imageReplacer.getMediaData(documentXmlData, file.Media);
-        const commentMediaDatas = this.imageReplacer.getMediaData(commentXmlData, file.Media);
-        const footnoteMediaDatas = this.imageReplacer.getMediaData(footnoteXmlData, file.Media);
+        const documentMediaDatas = hasPlaceholders(documentXmlData)
+            ? this.imageReplacer.getMediaData(documentXmlData, file.Media)
+            : [];
+        const commentMediaDatas = hasPlaceholders(commentXmlData)
+            ? this.imageReplacer.getMediaData(commentXmlData, file.Media)
+            : [];
+        const footnoteMediaDatas = hasPlaceholders(footnoteXmlData)
+            ? this.imageReplacer.getMediaData(footnoteXmlData, file.Media)
+            : [];
 
         return {
             AppProperties: {
@@ -310,16 +312,18 @@ export class Compiler {
             },
             Comments: {
                 data: (() => {
-                    const xmlData = this.imageReplacer.replace(
-                        commentXmlData,
-                        commentMediaDatas,
-                        commentRelationshipCount,
-                    );
-                    const referenedXmlData = this.numberingReplacer.replace(
+                    const xmlData =
+                        commentMediaDatas.length > 0
+                            ? this.imageReplacer.replace(
+                                  commentXmlData,
+                                  commentMediaDatas,
+                                  commentRelationshipCount,
+                              )
+                            : commentXmlData;
+                    return this.numberingReplacer.replace(
                         xmlData,
                         file.Numbering.ConcreteNumbering,
                     );
-                    return referenedXmlData;
                 })(),
                 path: "word/comments.xml",
             },
@@ -402,30 +406,35 @@ export class Compiler {
             },
             Document: {
                 data: (() => {
-                    let xmlData = this.imageReplacer.replace(
-                        documentXmlData,
-                        documentMediaDatas,
-                        documentRelationshipCount,
-                    );
-                    xmlData = this.chartReplacer.replace(
-                        xmlData,
-                        file.Charts,
-                        documentRelationshipCount,
-                    );
-                    const smartArtDataOffset =
-                        documentRelationshipCount +
-                        documentMediaDatas.length +
-                        file.Charts.Array.length;
-                    xmlData = this.smartArtReplacer.replace(
-                        xmlData,
-                        file.SmartArts,
-                        smartArtDataOffset,
-                    );
-                    const referenedXmlData = this.numberingReplacer.replace(
+                    let xmlData =
+                        documentMediaDatas.length > 0
+                            ? this.imageReplacer.replace(
+                                  documentXmlData,
+                                  documentMediaDatas,
+                                  documentRelationshipCount,
+                              )
+                            : documentXmlData;
+                    if (hasPlaceholders(xmlData)) {
+                        xmlData = this.chartReplacer.replace(
+                            xmlData,
+                            file.Charts,
+                            documentRelationshipCount,
+                        );
+                        const smartArtDataOffset =
+                            documentRelationshipCount +
+                            documentMediaDatas.length +
+                            file.Charts.Array.length;
+                        xmlData = this.smartArtReplacer.replace(
+                            xmlData,
+                            file.SmartArts,
+                            smartArtDataOffset,
+                        );
+                    }
+                    const referencedXmlData = this.numberingReplacer.replace(
                         xmlData,
                         file.Numbering.ConcreteNumbering,
                     );
-                    return referenedXmlData;
+                    return referencedXmlData;
                 })(),
                 path: "word/document.xml",
             },
@@ -518,16 +527,18 @@ export class Compiler {
             },
             FootNotes: {
                 data: (() => {
-                    const xmlData = this.imageReplacer.replace(
-                        footnoteXmlData,
-                        footnoteMediaDatas,
-                        footnoteRelationshipCount,
-                    );
-                    const referenedXmlData = this.numberingReplacer.replace(
+                    const xmlData =
+                        footnoteMediaDatas.length > 0
+                            ? this.imageReplacer.replace(
+                                  footnoteXmlData,
+                                  footnoteMediaDatas,
+                                  footnoteRelationshipCount,
+                              )
+                            : footnoteXmlData;
+                    return this.numberingReplacer.replace(
                         xmlData,
                         file.Numbering.ConcreteNumbering,
                     );
-                    return referenedXmlData;
                 })(),
                 path: "word/footnotes.xml",
             },
@@ -602,17 +613,16 @@ export class Compiler {
             }),
             Footers: file.Footers.map((_footerWrapper, index) => {
                 const tempXmlData = footerFormattedViews.get(index)!;
-                const mediaDatas = this.imageReplacer.getMediaData(tempXmlData, file.Media);
-                // TODO: 0 needs to be changed when headers get relationships of their own
-                const xmlData = this.imageReplacer.replace(tempXmlData, mediaDatas, 0);
-
-                const referenedXmlData = this.numberingReplacer.replace(
-                    xmlData,
-                    file.Numbering.ConcreteNumbering,
-                );
+                const mediaDatas = hasPlaceholders(tempXmlData)
+                    ? this.imageReplacer.getMediaData(tempXmlData, file.Media)
+                    : [];
+                const xmlData =
+                    mediaDatas.length > 0
+                        ? this.imageReplacer.replace(tempXmlData, mediaDatas, 0)
+                        : tempXmlData;
 
                 return {
-                    data: referenedXmlData,
+                    data: this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering),
                     path: `word/footer${index + 1}.xml`,
                 };
             }),
@@ -661,17 +671,16 @@ export class Compiler {
             }),
             Headers: file.Headers.map((_headerWrapper, index) => {
                 const tempXmlData = headerFormattedViews.get(index)!;
-                const mediaDatas = this.imageReplacer.getMediaData(tempXmlData, file.Media);
-                // TODO: 0 needs to be changed when headers get relationships of their own
-                const xmlData = this.imageReplacer.replace(tempXmlData, mediaDatas, 0);
-
-                const referenedXmlData = this.numberingReplacer.replace(
-                    xmlData,
-                    file.Numbering.ConcreteNumbering,
-                );
+                const mediaDatas = hasPlaceholders(tempXmlData)
+                    ? this.imageReplacer.getMediaData(tempXmlData, file.Media)
+                    : [];
+                const xmlData =
+                    mediaDatas.length > 0
+                        ? this.imageReplacer.replace(tempXmlData, mediaDatas, 0)
+                        : tempXmlData;
 
                 return {
-                    data: referenedXmlData,
+                    data: this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering),
                     path: `word/header${index + 1}.xml`,
                 };
             }),

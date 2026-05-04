@@ -15,3 +15,4 @@ export * from "./archive";
 export * from "./core-properties";
 export * from "./parser";
 export * from "./raw-passthrough";
+export * from "./placeholder";
