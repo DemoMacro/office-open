@@ -82,7 +82,7 @@ export async function parseDocx(
     };
 }
 
-function parseBodySections(
+export function parseBodySections(
     body: Element,
     ctx: ReturnType<typeof createDocxParseContext>,
 ): SectionJson[] {
@@ -142,7 +142,7 @@ function parseBodySections(
 }
 
 /** Resolve header/footer reference IDs to actual paragraph content */
-function resolveHeadersFooters(sections: SectionJson[], ctx: DocxParseContext): void {
+export function resolveHeadersFooters(sections: SectionJson[], ctx: DocxParseContext): void {
     for (const section of sections) {
         const props = section.properties as Record<string, unknown> | undefined;
         if (!props) continue;
@@ -176,7 +176,10 @@ function resolveHeadersFooters(sections: SectionJson[], ctx: DocxParseContext): 
     }
 }
 
-function parseHeaderFooterContent(rId: string, ctx: DocxParseContext): FileChildJson[] | undefined {
+export function parseHeaderFooterContent(
+    rId: string,
+    ctx: DocxParseContext,
+): FileChildJson[] | undefined {
     const rel = ctx.documentRels.get(rId);
     if (!rel) return undefined;
 

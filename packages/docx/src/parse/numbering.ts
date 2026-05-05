@@ -63,7 +63,7 @@ export function parseNumbering(zip: Map<string, Uint8Array>): {
     return { abstractNums, nums };
 }
 
-function parseLevels(abstractNum: Element): ParsedLevel[] {
+export function parseLevels(abstractNum: Element): ParsedLevel[] {
     const levels: ParsedLevel[] = [];
     for (const child of abstractNum.elements ?? []) {
         if (child.name === "w:lvl") {
@@ -74,7 +74,7 @@ function parseLevels(abstractNum: Element): ParsedLevel[] {
     return levels;
 }
 
-function parseLevel(lvl: Element): ParsedLevel | undefined {
+export function parseLevel(lvl: Element): ParsedLevel | undefined {
     const ilvl = attrNum(lvl, "w:ilvl") ?? 0;
     const result: ParsedLevel = { level: ilvl };
 
@@ -136,7 +136,7 @@ function parseLevel(lvl: Element): ParsedLevel | undefined {
     return result;
 }
 
-function parseLevelOverrides(
+export function parseLevelOverrides(
     num: Element,
 ): Array<{ ilvl: number; startOverride?: number }> | undefined {
     const overrides: Array<{ ilvl: number; startOverride?: number }> = [];
@@ -221,7 +221,7 @@ export function buildNumberingConfig(
     return config;
 }
 
-function collectUsedNumIds(children: SectionJson["children"], used: Set<string>): void {
+export function collectUsedNumIds(children: SectionJson["children"], used: Set<string>): void {
     for (const child of children) {
         const c = child as Record<string, unknown>;
         if (c.$type === "paragraph" && c.numbering) {
@@ -231,7 +231,7 @@ function collectUsedNumIds(children: SectionJson["children"], used: Set<string>)
     }
 }
 
-function remapNumberingReferences(
+export function remapNumberingReferences(
     children: SectionJson["children"],
     numIdToReference: Map<string, string>,
 ): void {

@@ -102,7 +102,7 @@ export function parseParagraph(p: Element, ctx: DocxParseContext): ParagraphJson
     return result;
 }
 
-function parseParagraphProperties(pPr: Element, out: ParagraphJson): void {
+export function parseParagraphProperties(pPr: Element, out: ParagraphJson): void {
     // Style
     const pStyle = findChild(pPr, "w:pStyle");
     if (pStyle) {
@@ -290,7 +290,7 @@ function parseParagraphProperties(pPr: Element, out: ParagraphJson): void {
 }
 
 /** Collect field code (begin → separate → end) into a FieldJson */
-function collectField(
+export function collectField(
     elements: Element[],
     startIndex: number,
     ctx: DocxParseContext,
@@ -347,7 +347,10 @@ function collectField(
     return field;
 }
 
-function parseHyperlink(hl: Element, ctx: DocxParseContext): ExternalHyperlinkJson | undefined {
+export function parseHyperlink(
+    hl: Element,
+    ctx: DocxParseContext,
+): ExternalHyperlinkJson | undefined {
     const rid = attr(hl, "r:id");
     let link = "";
 

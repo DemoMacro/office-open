@@ -7,7 +7,7 @@ import { BaseXmlComponent } from "./xml-components";
  * Convert an Element tree to xml-js compact format (IXmlableObject).
  * Always wraps in a named key so the element name is preserved even for empty elements.
  */
-function elementToCompact(el: Element): IXmlableObject {
+export function elementToCompact(el: Element): IXmlableObject {
     const inner: Record<string, any> = {};
 
     if (el.attributes && Object.keys(el.attributes).length > 0) {

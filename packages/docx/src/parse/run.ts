@@ -75,7 +75,7 @@ export function parseRun(run: Element, ctx: DocxParseContext): ParagraphChildJso
     return result as ParagraphChildJson;
 }
 
-function parseRunProperties(rPr: Element, out: Record<string, unknown>): void {
+export function parseRunProperties(rPr: Element, out: Record<string, unknown>): void {
     // Bold
     const b = findChild(rPr, "w:b");
     if (b) {
@@ -294,7 +294,7 @@ function parseRunProperties(rPr: Element, out: Record<string, unknown>): void {
     }
 }
 
-function parseDrawingImage(
+export function parseDrawingImage(
     drawing: Element,
     ctx: DocxParseContext,
 ): ParagraphChildJson | undefined {
@@ -338,7 +338,10 @@ function parseDrawingImage(
     return result;
 }
 
-function parsePictImage(pict: Element, ctx: DocxParseContext): ParagraphChildJson | undefined {
+export function parsePictImage(
+    pict: Element,
+    ctx: DocxParseContext,
+): ParagraphChildJson | undefined {
     // Look for imagedata element with r:id
     const imageData = findDeep(pict, "v:imagedata")[0];
     if (!imageData) return undefined;

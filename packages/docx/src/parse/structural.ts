@@ -76,7 +76,7 @@ export function parseComments(zip: Map<string, Uint8Array>): CommentEntry[] {
     return entries;
 }
 
-function getFootnoteType(
+export function getFootnoteType(
     note: Element,
 ): "separator" | "continuationSeparator" | "normal" | undefined {
     const type = attr(note, "w:type");
@@ -85,7 +85,7 @@ function getFootnoteType(
     return undefined;
 }
 
-function parseNoteContent(
+export function parseNoteContent(
     note: Element,
     zip: Map<string, Uint8Array>,
     _partType: string,
@@ -101,7 +101,7 @@ function parseNoteContent(
 }
 
 /** Create a minimal parse context for note parsing (no hyperlinks/media) */
-function createNoteContext(zip: Map<string, Uint8Array>): DocxParseContext {
+export function createNoteContext(zip: Map<string, Uint8Array>): DocxParseContext {
     return {
         zip,
         hyperlinks: new Map(),

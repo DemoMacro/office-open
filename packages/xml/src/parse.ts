@@ -9,11 +9,11 @@ const ENTITY_MAP: Record<string, string> = {
 };
 const ENTITY_PATTERN = /&(amp|lt|gt|quot|apos);/g;
 
-function unescapeXml(str: string): string {
+export function unescapeXml(str: string): string {
     return str.replace(ENTITY_PATTERN, (match) => ENTITY_MAP[match]);
 }
 
-function nativeTypeValue(value: string): string | number | boolean {
+export function nativeTypeValue(value: string): string | number | boolean {
     const n = Number(value);
     if (!isNaN(n)) return n;
     const lower = value.toLowerCase();
@@ -239,7 +239,7 @@ function parseAttributesFromXml(
     return { attrs, pos: i };
 }
 
-function parseAttributes(str: string): Record<string, string> {
+export function parseAttributes(str: string): Record<string, string> {
     const result: Record<string, string> = {};
     let i = 0;
     const len = str.length;

@@ -39,5 +39,4 @@ export * from "./file";
 export * from "./export";
 export * from "./util";
 export * from "./patcher";
-export * from "./parse/document";
-export * from "./parse/convert";
+export * from "./parse";

@@ -69,7 +69,7 @@ export function toDocumentOptions(json: DocxDocumentJson): IPropertiesOptions {
 
 // ── Section converter ──
 
-function convertSection(section: SectionJson): Record<string, unknown> {
+export function convertSection(section: SectionJson): Record<string, unknown> {
     const props = { ...section.properties };
     delete props.headerRefs;
     delete props.footerRefs;
@@ -104,7 +104,7 @@ function convertSection(section: SectionJson): Record<string, unknown> {
 
 // ── File-level converters ──
 
-function convertFileChild(child: FileChildJson): BaseXmlComponent {
+export function convertFileChild(child: FileChildJson): BaseXmlComponent {
     if (isRaw(child)) return new RawPassthrough(child.element);
 
     switch (child.$type) {
@@ -129,7 +129,7 @@ function convertFileChild(child: FileChildJson): BaseXmlComponent {
 
 // ── Paragraph-level converters ──
 
-function convertParagraphChild(child: ParagraphChildJson): BaseXmlComponent {
+export function convertParagraphChild(child: ParagraphChildJson): BaseXmlComponent {
     if (isRaw(child)) return new RawPassthrough(child.element);
 
     switch (child.$type) {
@@ -160,7 +160,7 @@ function convertParagraphChild(child: ParagraphChildJson): BaseXmlComponent {
     }
 }
 
-function convertParagraph(json: ParagraphJson): Paragraph {
+export function convertParagraph(json: ParagraphJson): Paragraph {
     const { children, text, tabs, ...rest } = json as any;
     const runs = children ? toParagraphChildren(children) : text ? [new Run({ text })] : undefined;
     return new Paragraph({
@@ -178,7 +178,7 @@ function convertParagraph(json: ParagraphJson): Paragraph {
     });
 }
 
-function convertRun(json: TextRunJson): Run {
+export function convertRun(json: TextRunJson): Run {
     const { underline, strike, doubleStrike, size, sizeCs, ...rest } = json as any;
     return new Run({
         ...rest,
@@ -192,7 +192,7 @@ function convertRun(json: TextRunJson): Run {
 
 const EMU_PER_PIXEL = 9525;
 
-function convertImageRun(json: ImageRunJson): ImageRun {
+export function convertImageRun(json: ImageRunJson): ImageRun {
     const { data, type, transformation, altText } = json as any;
     const convertedTransform = transformation
         ? {
@@ -212,7 +212,7 @@ function convertImageRun(json: ImageRunJson): ImageRun {
     });
 }
 
-function convertExternalHyperlink(json: ExternalHyperlinkJson): ExternalHyperlink {
+export function convertExternalHyperlink(json: ExternalHyperlinkJson): ExternalHyperlink {
     const { children, link, tooltip } = json as any;
     return new ExternalHyperlink({
         link,
@@ -221,15 +221,15 @@ function convertExternalHyperlink(json: ExternalHyperlinkJson): ExternalHyperlin
     });
 }
 
-function convertSdt(json: SdtJson): BaseXmlComponent {
+export function convertSdt(json: SdtJson): BaseXmlComponent {
     return new RawPassthrough(json.element!);
 }
 
-function convertSdtRun(json: SdtRunJson): BaseXmlComponent {
+export function convertSdtRun(json: SdtRunJson): BaseXmlComponent {
     return new RawPassthrough(json.element!);
 }
 
-function convertField(json: FieldJson): SimpleField {
+export function convertField(json: FieldJson): SimpleField {
     const { instruction, children } = json as any;
     const cachedText =
         children
@@ -243,7 +243,7 @@ function convertField(json: FieldJson): SimpleField {
     return new SimpleField(instruction ?? "", cachedText);
 }
 
-function convertTable(json: TableJson): Table {
+export function convertTable(json: TableJson): Table {
     const { rows, ...rest } = json as any;
     return new Table({
         ...rest,
@@ -251,7 +251,7 @@ function convertTable(json: TableJson): Table {
     });
 }
 
-function convertTableRow(row: TableRowJson): TableRow {
+export function convertTableRow(row: TableRowJson): TableRow {
     const { cells, height, ...rest } = row as any;
     return new TableRow({
         children: cells.map(convertTableCell),
@@ -260,7 +260,7 @@ function convertTableRow(row: TableRowJson): TableRow {
     });
 }
 
-function convertTableCell(cell: TableCellJson): TableCell {
+export function convertTableCell(cell: TableCellJson): TableCell {
     const { children, ...rest } = cell as any;
     return new TableCell({
         ...rest,
@@ -270,7 +270,7 @@ function convertTableCell(cell: TableCellJson): TableCell {
 
 // ── Helpers ──
 
-function convertUnderline(underline: Record<string, unknown> | string | undefined): any {
+export function convertUnderline(underline: Record<string, unknown> | string | undefined): any {
     if (!underline) return undefined;
     if (typeof underline === "string") return { type: underline };
     return underline;

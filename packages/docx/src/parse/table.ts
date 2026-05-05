@@ -38,7 +38,7 @@ export function parseTable(tbl: Element, ctx: DocxParseContext): TableJson {
     return result;
 }
 
-function parseTableProperties(tblPr: Element, out: TableJson): void {
+export function parseTableProperties(tblPr: Element, out: TableJson): void {
     // Table width
     const tblW = findChild(tblPr, "w:tblW");
     if (tblW) {
@@ -121,7 +121,7 @@ function parseTableProperties(tblPr: Element, out: TableJson): void {
     }
 }
 
-function parseTableRow(tr: Element, ctx: DocxParseContext): TableRowJson {
+export function parseTableRow(tr: Element, ctx: DocxParseContext): TableRowJson {
     const result: TableRowJson = { cells: [] };
 
     const trPr = findChild(tr, "w:trPr");
@@ -152,7 +152,7 @@ function parseTableRow(tr: Element, ctx: DocxParseContext): TableRowJson {
     return result;
 }
 
-function parseTableCell(tc: Element, ctx: DocxParseContext): TableCellJson {
+export function parseTableCell(tc: Element, ctx: DocxParseContext): TableCellJson {
     const result: TableCellJson = { children: [] };
     const tcPr = findChild(tc, "w:tcPr");
 
@@ -279,7 +279,7 @@ function parseTableCell(tc: Element, ctx: DocxParseContext): TableCellJson {
 }
 
 /** Post-process: calculate actual rowSpan values from vMerge patterns */
-function calculateRowSpans(table: TableJson): void {
+export function calculateRowSpans(table: TableJson): void {
     // Track merge spans by column index
     const mergeCounts: number[] = [];
 
