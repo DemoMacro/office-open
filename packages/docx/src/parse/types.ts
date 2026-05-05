@@ -32,7 +32,6 @@ export type ParagraphChildJson =
 export interface ParagraphJson {
     $type?: "paragraph";
     children?: MixedChildren<ParagraphChildJson>;
-    text?: string;
     alignment?: string;
     spacing?: {
         before?: number;
@@ -51,14 +50,14 @@ export interface ParagraphJson {
     bullet?: { level: number };
     numbering?: { reference: string; level: number; instance?: number };
     border?: Record<string, unknown>;
-    shading?: { fill?: string; type?: string };
+    shading?: { fill?: string; color?: string; type?: string };
     thematicBreak?: boolean;
     pageBreakBefore?: boolean;
     keepNext?: boolean;
     keepLines?: boolean;
     widowControl?: boolean;
     outlineLevel?: number;
-    tabs?: Array<{ pos: number; align?: string; leader?: string }>;
+    tabStops?: Array<{ position: number; type?: string; leader?: string }>;
     suppressLineNumbers?: boolean;
     contextualSpacing?: boolean;
     mirrorIndents?: boolean;
@@ -79,7 +78,6 @@ export interface TextRunJson {
     subScript?: boolean;
     superScript?: boolean;
     size?: number;
-    sizeCs?: number;
     sizeComplexScript?: boolean | number;
     color?: string;
     font?:
@@ -88,7 +86,7 @@ export interface TextRunJson {
     highlight?: string;
     characterSpacing?: number;
     rightToLeft?: boolean;
-    shading?: { fill?: string };
+    shading?: { fill?: string; color?: string };
     kern?: number;
     position?: string;
     emboss?: boolean;
@@ -188,7 +186,7 @@ export interface TableJson {
 export interface TableRowJson {
     cells: TableCellJson[];
     height?: { value: number; rule?: string };
-    isHeader?: boolean;
+    header?: boolean;
 }
 
 export interface TableCellJson {

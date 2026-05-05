@@ -474,7 +474,10 @@ async function main() {
 
     // Para 5: Plain text
     const p5 = asParagraph(children[4]);
-    assert("para 4 plain text", p5.text === "Simple paragraph with plain text.");
+    assert(
+        "para 4 plain text",
+        asRun(p5.children?.[0]).text === "Simple paragraph with plain text.",
+    );
 
     // Para 6: Multiple formatting
     const p6 = asParagraph(children[5]);
@@ -527,7 +530,10 @@ async function main() {
     const tbl = asTable(children[tblIdx]);
     assert("table has 2 rows", tbl.rows.length === 2);
     assert("row 1 has 2 cells", tbl.rows[0].cells.length === 2);
-    assert("cell A1 text", (tbl.rows[0].cells[0].children[0] as ParagraphJson).text === "Cell A1");
+    assert(
+        "cell A1 text",
+        asRun((tbl.rows[0].cells[0].children[0] as ParagraphJson).children?.[0]).text === "Cell A1",
+    );
 
     // Verify table borders are in IBorderOptions format (not raw XML attributes)
     const tblBorders = tbl.borders as Record<string, unknown> | undefined;
@@ -620,7 +626,10 @@ async function main() {
     assert("re-parsed heading bold", asRun(rp1.children?.[0]).bold === true);
 
     const rp5 = asParagraph(sec2.children[4]);
-    assert("re-parsed plain text", rp5.text === "Simple paragraph with plain text.");
+    assert(
+        "re-parsed plain text",
+        asRun(rp5.children?.[0]).text === "Simple paragraph with plain text.",
+    );
 
     // Re-parsed table borders should still be IBorderOptions format
     const rpTblIdx = sec2.children.findIndex(

@@ -2,7 +2,7 @@ import { readXmlFromZip } from "@office-open/core";
 import { attr, attrNum, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
-import type { SectionJson } from "./types";
+import type { SectionJson, ParagraphJson } from "./types";
 
 export interface ParsedLevel {
     level: number;
@@ -241,6 +241,31 @@ export function remapNumberingReferences(
             const n = c.numbering as { reference: string };
             const newRef = numIdToReference.get(n.reference);
             if (newRef) n.reference = newRef;
+        }
+    }
+}
+
+/**
+ * Set `bullet` field on paragraphs whose numbering format is "bullet".
+ * Must be called after `buildNumberingConfig` (references already remapped).
+ */
+export function markBulletParagraphs(
+    sections: SectionJson[],
+    numberingConfig: ParsedNumberingConfig[],
+): void {
+    const configMap = new Map(numberingConfig.map((c) => [c.reference, c]));
+
+    for (const section of sections) {
+        for (const child of section.children) {
+            const c = child as Record<string, unknown>;
+            if (c.$type !== "paragraph" || !c.numbering) continue;
+            const n = c.numbering as { reference: string; level: number };
+            const config = configMap.get(n.reference);
+            if (!config) continue;
+            const levelDef = config.levels.find((l) => l.level === n.level);
+            if (levelDef?.format === "bullet") {
+                (c as ParagraphJson).bullet = { level: n.level };
+            }
         }
     }
 }

@@ -9,10 +9,8 @@ import type {
     ParagraphChildJson,
     ExternalHyperlinkJson,
     RawElement,
-    TextRunJson,
     FieldJson,
 } from "./types";
-import { isRaw } from "./types";
 
 export function parseParagraph(p: Element, ctx: DocxParseContext): ParagraphJson {
     const result: ParagraphJson = { $type: "paragraph" };
@@ -36,7 +34,9 @@ export function parseParagraph(p: Element, ctx: DocxParseContext): ParagraphJson
             if (fldChar) {
                 const fldCharType = attr(fldChar, "w:fldCharType");
                 if (fldCharType === "begin") {
-                    const field = collectField(elements, i, ctx);
+                    const locked = attr(fldChar, "w:fldLock") === "true";
+                    const dirty = attr(fldChar, "w:dirty") === "true";
+                    const field = collectField(elements, i, ctx, locked, dirty);
                     if (field) children.push(field);
                     // Advance past the field
                     while (i < elements.length) {
@@ -85,17 +85,7 @@ export function parseParagraph(p: Element, ctx: DocxParseContext): ParagraphJson
         i++;
     }
 
-    // If only one text run with no formatting, simplify to text property
-    const first = children[0];
-    if (children.length === 1 && !isRaw(first) && first.$type === "textRun") {
-        const textRun = first as TextRunJson;
-        const hasFormatting = Object.keys(textRun).some((k) => k !== "$type" && k !== "text");
-        if (!hasFormatting && textRun.text !== undefined) {
-            result.text = textRun.text;
-        } else {
-            result.children = children;
-        }
-    } else if (children.length > 0) {
+    if (children.length > 0) {
         result.children = children;
     }
 
@@ -215,7 +205,12 @@ export function parseParagraphProperties(pPr: Element, out: ParagraphJson): void
         const fill = attr(shd, "w:fill");
         const val = attr(shd, "w:val");
         if (fill && fill !== "auto") {
-            out.shading = { fill, ...(val && val !== "clear" && { type: val }) };
+            const color = colorAttr(shd, "w:color");
+            out.shading = {
+                fill,
+                ...(color && color !== "auto" && { color }),
+                ...(val && val !== "clear" && { type: val }),
+            };
         }
     }
 
@@ -246,25 +241,25 @@ export function parseParagraphProperties(pPr: Element, out: ParagraphJson): void
         if (hasNonNoneBorder) out.thematicBreak = true;
     }
 
-    // Tabs
-    const tabs = findChild(pPr, "w:tabs");
-    if (tabs) {
-        const tabList: Array<{ pos: number; align?: string; leader?: string }> = [];
-        for (const tab of tabs.elements ?? []) {
+    // Tab stops
+    const tabStops = findChild(pPr, "w:tabs");
+    if (tabStops) {
+        const tabList: Array<{ position: number; type?: string; leader?: string }> = [];
+        for (const tab of tabStops.elements ?? []) {
             if (tab.name === "w:tab") {
-                const pos = attrNum(tab, "w:pos");
-                const align = attr(tab, "w:val");
+                const position = attrNum(tab, "w:pos");
+                const type = attr(tab, "w:val");
                 const leader = attr(tab, "w:leader");
-                if (pos !== undefined) {
+                if (position !== undefined) {
                     tabList.push({
-                        pos,
-                        ...(align && align !== "left" && { align }),
+                        position,
+                        ...(type && type !== "left" && { type }),
                         ...(leader && leader !== "none" && { leader }),
                     });
                 }
             }
         }
-        if (tabList.length > 0) out.tabs = tabList;
+        if (tabList.length > 0) out.tabStops = tabList;
     }
 
     // Suppress line numbers
@@ -294,10 +289,10 @@ export function collectField(
     elements: Element[],
     startIndex: number,
     ctx: DocxParseContext,
+    locked: boolean,
+    dirty: boolean,
 ): FieldJson | undefined {
     let instruction = "";
-    let locked = false;
-    let dirty = false;
     const fieldChildren: ParagraphChildJson[] = [];
     let pastSeparate = false;
 
@@ -313,26 +308,15 @@ export function collectField(
                 pastSeparate = true;
                 continue;
             }
-        }
-
-        if (fldChar) {
-            // Check locked/dirty on begin char
-            const fldLock = findChild(el, "w:fldChar");
-            if (fldLock) {
-                if (attr(fldLock, "w:fldLock") === "true") locked = true;
-                if (attr(fldLock, "w:dirty") === "true") dirty = true;
-            }
             continue;
         }
 
         if (!pastSeparate) {
-            // Instruction part — collect instrText
             const instrText = findChild(el, "w:instrText");
             if (instrText) {
                 instruction += textOf(instrText);
             }
         } else {
-            // Result part — parse as normal run
             const run = parseRun(el, ctx);
             if (run) fieldChildren.push(run);
         }

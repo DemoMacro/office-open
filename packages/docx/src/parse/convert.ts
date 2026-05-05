@@ -32,28 +32,26 @@ import type {
     TableCellJson,
 } from "./types";
 
+// ── Helpers ──
+
+// Type assertion for cross-boundary conversion (parse JSON → constructor options).
+// The two type systems are intentionally separate; this is the single bridging point.
+function bridge<T>(value: unknown): T {
+    return value as T;
+}
+
 // ── Public API ──
 
-/**
- * Convert parsed section children to constructor-ready FileChild[].
- */
 export function toSectionChildren(children: FileChildJson[]): BaseXmlComponent[] {
     return children.map(convertFileChild);
 }
 
-/**
- * Convert parsed paragraph children to constructor-ready ParagraphChild[].
- */
 export function toParagraphChildren(children: ParagraphChildJson[]): BaseXmlComponent[] {
     return children.map(convertParagraphChild);
 }
 
-/**
- * Convert parsed DocxDocumentJson to constructor-ready Document options.
- * Handles numbering, headers/footers, and all section properties.
- */
 export function toDocumentOptions(json: DocxDocumentJson): IPropertiesOptions {
-    return {
+    return bridge<IPropertiesOptions>({
         ...(json.title && { title: json.title }),
         ...(json.creator && { creator: json.creator }),
         ...(json.subject && { subject: json.subject }),
@@ -64,12 +62,12 @@ export function toDocumentOptions(json: DocxDocumentJson): IPropertiesOptions {
         ...(json.numbering &&
             json.numbering.length > 0 && { numbering: { config: json.numbering } }),
         sections: json.sections.map(convertSection),
-    } as unknown as IPropertiesOptions;
+    });
 }
 
 // ── Section converter ──
 
-export function convertSection(section: SectionJson): Record<string, unknown> {
+function convertSection(section: SectionJson): Record<string, unknown> {
     const props = { ...section.properties };
     delete props.headerRefs;
     delete props.footerRefs;
@@ -83,7 +81,7 @@ export function convertSection(section: SectionJson): Record<string, unknown> {
         const headers: Record<string, unknown> = {};
         for (const [type, content] of Object.entries(section.headers)) {
             headers[type] = new Header({
-                children: toSectionChildren(content.children) as any,
+                children: toSectionChildren(content.children) as Paragraph[],
             });
         }
         result.headers = headers;
@@ -93,7 +91,7 @@ export function convertSection(section: SectionJson): Record<string, unknown> {
         const footers: Record<string, unknown> = {};
         for (const [type, content] of Object.entries(section.footers)) {
             footers[type] = new Footer({
-                children: toSectionChildren(content.children) as any,
+                children: toSectionChildren(content.children) as Paragraph[],
             });
         }
         result.footers = footers;
@@ -123,7 +121,7 @@ export function convertFileChild(child: FileChildJson): BaseXmlComponent {
         case "math":
             return new RawPassthrough(child.element);
         default:
-            return new RawPassthrough((child as Record<string, unknown>).element as any);
+            return new RawPassthrough(bridge((child as Record<string, unknown>).element));
     }
 }
 
@@ -148,77 +146,68 @@ export function convertParagraphChild(child: ParagraphChildJson): BaseXmlCompone
         case "tab":
             return new Run({ children: [new Tab()] });
         case "bookmark":
-            return new RawPassthrough((child as BookmarkJson).element!);
+            return new RawPassthrough(bridge((child as BookmarkJson).element));
         case "sdtRun":
             return convertSdtRun(child);
-        case "math":
-            return new RawPassthrough((child as any).element);
+        case "math": {
+            const el = (child as { element?: unknown }).element;
+            return new RawPassthrough(bridge(el));
+        }
         case "field":
             return convertField(child);
         default:
-            return new RawPassthrough((child as Record<string, unknown>).element as any);
+            return new RawPassthrough(bridge((child as Record<string, unknown>).element));
     }
 }
 
 export function convertParagraph(json: ParagraphJson): Paragraph {
-    const { children, text, tabs, ...rest } = json as any;
-    const runs = children ? toParagraphChildren(children) : text ? [new Run({ text })] : undefined;
-    return new Paragraph({
-        ...rest,
-        children: runs,
-        ...(tabs
-            ? {
-                  tabStops: tabs.map((t: { pos: number; align?: string; leader?: string }) => ({
-                      position: t.pos,
-                      ...(t.align ? { type: t.align } : {}),
-                      ...(t.leader ? { leader: t.leader } : {}),
-                  })),
-              }
-            : {}),
-    });
+    const { children, ...rest } = json;
+    const runs = children ? toParagraphChildren(children) : undefined;
+    return new Paragraph(bridge({ ...rest, children: runs }));
 }
 
 export function convertRun(json: TextRunJson): Run {
-    const { underline, strike, doubleStrike, size, sizeCs, ...rest } = json as any;
-    return new Run({
-        ...rest,
-        underline: convertUnderline(underline),
-        strike: strike ? true : undefined,
-        doubleStrike: doubleStrike ? true : undefined,
-        size: size,
-        sizeComplexScript: sizeCs,
-    });
+    const { underline, strike, doubleStrike, ...rest } = json;
+    return new Run(
+        bridge({
+            ...rest,
+            underline: convertUnderline(underline),
+            strike: strike ? true : undefined,
+            doubleStrike: doubleStrike ? true : undefined,
+        }),
+    );
 }
 
 const EMU_PER_PIXEL = 9525;
 
 export function convertImageRun(json: ImageRunJson): ImageRun {
-    const { data, type, transformation, altText } = json as any;
-    const convertedTransform = transformation
-        ? {
-              width: Math.round(transformation.width / EMU_PER_PIXEL),
-              height: Math.round(transformation.height / EMU_PER_PIXEL),
-              ...(transformation.flip && { flip: transformation.flip }),
-              ...(transformation.offset && { offset: transformation.offset }),
-          }
-        : { width: 100, height: 100 };
+    const { data, type, transformation, altText } = json;
+    const width = transformation?.width ?? 100;
+    const height = transformation?.height ?? 100;
     const imageData =
         typeof data === "string" ? Uint8Array.from(atob(data), (c) => c.charCodeAt(0)) : data;
-    return new ImageRun({
-        data: imageData,
-        type: type as "jpg" | "png" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf",
-        transformation: convertedTransform,
-        altText,
-    });
+    return new ImageRun(
+        bridge({
+            data: imageData,
+            type,
+            transformation: {
+                width: Math.round(width / EMU_PER_PIXEL),
+                height: Math.round(height / EMU_PER_PIXEL),
+            },
+            altText,
+        }),
+    );
 }
 
 export function convertExternalHyperlink(json: ExternalHyperlinkJson): ExternalHyperlink {
-    const { children, link, tooltip } = json as any;
-    return new ExternalHyperlink({
-        link,
-        tooltip,
-        children: children ? (toParagraphChildren(children) as any) : [new Run({ text: link })],
-    });
+    const { children, link, tooltip } = json;
+    return new ExternalHyperlink(
+        bridge({
+            link,
+            tooltip,
+            children: children ? toParagraphChildren(children) : [new Run({ text: link })],
+        }),
+    );
 }
 
 export function convertSdt(json: SdtJson): BaseXmlComponent {
@@ -230,7 +219,7 @@ export function convertSdtRun(json: SdtRunJson): BaseXmlComponent {
 }
 
 export function convertField(json: FieldJson): SimpleField {
-    const { instruction, children } = json as any;
+    const { instruction, children } = json;
     const cachedText =
         children
             ?.map((c: ParagraphChildJson) => {
@@ -244,33 +233,34 @@ export function convertField(json: FieldJson): SimpleField {
 }
 
 export function convertTable(json: TableJson): Table {
-    const { rows, ...rest } = json as any;
-    return new Table({
-        ...rest,
-        rows: rows.map(convertTableRow),
-    });
+    const { rows, ...rest } = json;
+    return new Table(bridge({ ...rest, rows: rows.map(convertTableRow) }));
 }
 
 export function convertTableRow(row: TableRowJson): TableRow {
-    const { cells, height, ...rest } = row as any;
-    return new TableRow({
-        children: cells.map(convertTableCell),
-        ...(height && { height }),
-        ...rest,
-    });
+    const { cells, height, ...rest } = row;
+    return new TableRow(
+        bridge({
+            ...rest,
+            children: cells.map(convertTableCell),
+            ...(height && { height }),
+        }),
+    );
 }
 
 export function convertTableCell(cell: TableCellJson): TableCell {
-    const { children, ...rest } = cell as any;
-    return new TableCell({
-        ...rest,
-        children: children ? toSectionChildren(children) : [new Paragraph({ text: "" })],
-    });
+    const { children, ...rest } = cell;
+    return new TableCell(
+        bridge({
+            ...rest,
+            children: children ? toSectionChildren(children) : [new Paragraph({ text: "" })],
+        }),
+    );
 }
 
-// ── Helpers ──
-
-export function convertUnderline(underline: Record<string, unknown> | string | undefined): any {
+export function convertUnderline(
+    underline: { type?: string; color?: string } | string | undefined,
+): { type?: string; color?: string } | undefined {
     if (!underline) return undefined;
     if (typeof underline === "string") return { type: underline };
     return underline;

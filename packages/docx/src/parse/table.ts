@@ -139,7 +139,7 @@ export function parseTableRow(tr: Element, ctx: DocxParseContext): TableRowJson 
         // Table header row repeat
         const tblHeader = findChild(trPr, "w:tblHeader");
         if (tblHeader) {
-            result.isHeader = true;
+            result.header = true;
         }
     }
 

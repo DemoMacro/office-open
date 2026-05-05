@@ -12,8 +12,11 @@ export function parseRun(run: Element, ctx: DocxParseContext): ParagraphChildJso
     const br = findChild(run, "w:br");
     if (br) {
         const brType = attr(br, "w:type");
-        if (brType === "page" || brType === undefined) {
+        if (brType === "page") {
             return { $type: "pageBreak" };
+        }
+        if (brType === undefined || brType === "line" || brType === "textWrapping") {
+            return { $type: "lineBreak" };
         }
         if (brType === "column") {
             return { $type: "columnBreak" };
@@ -162,7 +165,7 @@ export function parseRunProperties(rPr: Element, out: Record<string, unknown>): 
     const szCs = findChild(rPr, "w:szCs");
     if (szCs) {
         const val = attrNum(szCs, "w:val");
-        if (val !== undefined) out.sizeCs = val;
+        if (val !== undefined) out.sizeComplexScript = val;
     }
 
     // Color
@@ -221,7 +224,12 @@ export function parseRunProperties(rPr: Element, out: Record<string, unknown>): 
         const fill = attr(shd, "w:fill");
         const val = attr(shd, "w:val");
         if (fill && fill !== "auto") {
-            out.shading = { fill, ...(val && val !== "clear" && { type: val }) };
+            const color = colorAttr(shd, "w:color");
+            out.shading = {
+                fill,
+                ...(color && color !== "auto" && { color }),
+                ...(val && val !== "clear" && { type: val }),
+            };
         }
     }
 

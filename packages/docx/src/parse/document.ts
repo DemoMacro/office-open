@@ -7,7 +7,7 @@ import {
 import { findChild, type Element } from "@office-open/xml";
 
 import { createDocxParseContext, type DocxParseContext } from "./context";
-import { parseNumbering, buildNumberingConfig } from "./numbering";
+import { parseNumbering, buildNumberingConfig, markBulletParagraphs } from "./numbering";
 import { parseParagraph } from "./paragraph";
 import { parseSdtContent } from "./sdt";
 import { parseSectionProperties } from "./section";
@@ -51,6 +51,7 @@ export async function parseDocx(
     // Parse numbering.xml and build config
     const numberingData = parseNumbering(zip);
     const numberingConfig = buildNumberingConfig(numberingData, sections);
+    markBulletParagraphs(sections, numberingConfig);
 
     // Parse structural parts
     const footnotes = parseFootnotes(zip);

@@ -20,7 +20,8 @@ describe("parseParagraph", () => {
         };
         const result = parseParagraph(p, mockCtx);
         expect(result.$type).toBe("paragraph");
-        expect(result.text).toBe("Hello");
+        expect(result.children?.length).toBe(1);
+        expect((result.children![0] as TextRunJson).text).toBe("Hello");
     });
 
     it("should detect heading from style", () => {
