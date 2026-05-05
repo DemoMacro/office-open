@@ -1,4 +1,4 @@
-import { BaseXmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 import { ImportedXmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 
@@ -47,7 +47,7 @@ const DEFAULT_TEXT_STYLE_OBJ: IXmlableObject = ImportedXmlComponent.fromXmlStrin
  * p:presentation — Root element of a PPTX file.
  * Lazy: stores options, builds XML object directly in prepForXml.
  */
-export class Presentation extends BaseXmlComponent {
+export class Presentation extends XmlComponent {
     private readonly options: IPresentationOptions;
 
     public constructor(options: IPresentationOptions) {

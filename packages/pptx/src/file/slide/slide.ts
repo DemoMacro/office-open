@@ -4,7 +4,7 @@ import type { IHeaderFooterOptions } from "@file/header-footer/header-footer";
 import { Shape } from "@file/shape/shape";
 import type { ITransitionOptions } from "@file/transition/transition";
 import { buildTransition } from "@file/transition/transition";
-import { BaseXmlComponent } from "@file/xml-components";
+import { BaseXmlComponent, XmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 import { xml } from "@office-open/xml";
 
@@ -41,7 +41,7 @@ function collectAnimations(children: readonly BaseXmlComponent[]): Array<{
  * p:sld — A slide in a presentation.
  * Lazy: stores options, builds XML object in prepForXml.
  */
-export class Slide extends BaseXmlComponent {
+export class Slide extends XmlComponent {
     private readonly children: readonly BaseXmlComponent[];
     private readonly background?: Background;
     private readonly transition?: ITransitionOptions;
