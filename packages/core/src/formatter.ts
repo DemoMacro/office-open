@@ -1,5 +1,5 @@
-import type { BaseXmlComponent, IContext, IXmlableObject } from "./xml-components";
-import type { XmlComponent } from "./xml-components";
+import type { BaseXmlComponent, IContext, IXmlableObject } from "./xml-components/base";
+import type { XmlComponent } from "./xml-components/component";
 
 const XML_DECL = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
 

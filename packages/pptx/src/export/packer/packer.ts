@@ -1,74 +1,12 @@
 import { Readable } from "stream";
 
 import type { File } from "@file/file";
+import { convertOutput, convertPrettifyType, OoxmlMimeType, PrettifyType } from "@office-open/core";
+export { PrettifyType } from "@office-open/core";
+import type { IXmlifyedFile, OutputByType, OutputType } from "@office-open/core";
 import { type ZipOptions, Zip, ZipDeflate, ZipPassThrough, zipSync } from "fflate";
 
 import { Compiler } from "./next-compiler";
-import type { IXmlifyedFile } from "./next-compiler";
-
-export interface OutputByType {
-    readonly base64: string;
-    readonly string: string;
-    readonly text: string;
-    readonly binarystring: string;
-    readonly array: readonly number[];
-    readonly uint8array: Uint8Array;
-    readonly arraybuffer: ArrayBuffer;
-    readonly blob: Blob;
-    readonly nodebuffer: Buffer;
-}
-
-export type OutputType = keyof OutputByType;
-
-export const convertOutput = <T extends OutputType>(data: Uint8Array, type: T): OutputByType[T] => {
-    switch (type) {
-        case "nodebuffer":
-            return Buffer.from(data) as OutputByType[T];
-        case "blob":
-            return new Blob(
-                [
-                    (data.buffer as ArrayBuffer).slice(
-                        data.byteOffset,
-                        data.byteOffset + data.byteLength,
-                    ),
-                ],
-                {
-                    type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                },
-            ) as OutputByType[T];
-        case "arraybuffer":
-            return data.buffer.slice(
-                data.byteOffset,
-                data.byteOffset + data.byteLength,
-            ) as OutputByType[T];
-        case "uint8array":
-            return data as OutputByType[T];
-        case "base64":
-            return btoa(
-                Array.from(data, (b) => String.fromCharCode(b)).join(""),
-            ) as OutputByType[T];
-        case "string":
-        case "text":
-        case "binarystring":
-            return new TextDecoder().decode(data) as OutputByType[T];
-        case "array":
-            return [...data] as unknown as OutputByType[T];
-        default:
-            return data as unknown as OutputByType[T];
-    }
-};
-
-export const PrettifyType = {
-    NONE: "",
-    WITH_2_BLANKS: "  ",
-    WITH_4_BLANKS: "    ",
-    WITH_TAB: "\t",
-} as const;
-
-const convertPrettifyType = (
-    prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
-): (typeof PrettifyType)[keyof typeof PrettifyType] | undefined =>
-    prettify === true ? PrettifyType.WITH_2_BLANKS : prettify === false ? undefined : prettify;
 
 export class Packer {
     public static async pack<T extends OutputType>(
@@ -79,7 +17,7 @@ export class Packer {
     ): Promise<OutputByType[T]> {
         const files = this.compiler.compile(file, convertPrettifyType(prettify), overrides);
         const zipped = zipSync(files, { level: 6 });
-        return convertOutput(zipped, type);
+        return convertOutput(zipped, type, OoxmlMimeType.PPTX);
     }
 
     public static toBuffer(

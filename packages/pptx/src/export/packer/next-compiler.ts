@@ -1,5 +1,4 @@
 import { Formatter } from "@export/formatter";
-import type { ChartCollection } from "@file/chart/chart-collection";
 import type { File } from "@file/file";
 import { DefaultNotesMaster } from "@file/notes-master/notes-master";
 import {
@@ -9,32 +8,33 @@ import {
     getStyleXml,
 } from "@file/smartart/built-in-definitions";
 import type { IContext } from "@file/xml-components";
-import { collectPlaceholderKeys, hasPlaceholders } from "@office-open/core";
+import {
+    addSmartArtRelationships,
+    collectPlaceholderKeys,
+    getReferencedMedia,
+    hasPlaceholders,
+    replaceChartPlaceholders,
+    replaceImagePlaceholders,
+    replaceSmartArtPlaceholders,
+} from "@office-open/core";
+import type { IXmlifyedFile } from "@office-open/core";
 import { xml } from "@office-open/xml";
 import type { Zippable } from "fflate";
-
-export interface IXmlifyedFile {
-    readonly path: string;
-    readonly data: string | Uint8Array;
-}
 
 interface IXmlifyedFileMapping {
     [key: string]: { data: string; path: string };
 }
 
-import { ChartReplacer } from "./chart-replacer";
-import { HyperlinkReplacer } from "./hyperlink-replacer";
-import { ImageReplacer } from "./image-replacer";
-import { MediaReplacer } from "./media-replacer";
-import { SmartArtReplacer } from "./smartart-replacer";
+import { replaceHyperlinkPlaceholders } from "./hyperlink-placeholders";
+import {
+    getMediaRefs,
+    getVideoRefs,
+    replaceMediaPlaceholders,
+    replaceVideoPlaceholders,
+} from "./media-placeholders";
 
 export class Compiler {
     private readonly formatter = new Formatter();
-    private readonly imageReplacer = new ImageReplacer();
-    private readonly chartReplacer = new ChartReplacer();
-    private readonly hyperlinkReplacer = new HyperlinkReplacer();
-    private readonly mediaReplacer = new MediaReplacer();
-    private readonly smartArtReplacer = new SmartArtReplacer();
 
     public compile(
         file: File,
@@ -47,10 +47,7 @@ export class Compiler {
 
         const mapping: IXmlifyedFileMapping = {
             AppProperties: {
-                data: xml(this.formatter.format(file.AppProperties, context), {
-                    declaration,
-                    indent,
-                }),
+                data: xml(this.formatter.format(file.AppProperties, context), { declaration }),
                 path: "docProps/app.xml",
             },
             Properties: {
@@ -143,7 +140,7 @@ export class Compiler {
         );
         let currentImageCount = 0;
 
-        const mediaData = this.imageReplacer.getMediaData(presentationXml, file.Media);
+        const mediaData = getReferencedMedia(presentationXml, file.Media.Array);
         const presImageOffset = file.PresentationWrapper.Relationships.RelationshipCount + 1;
         mediaData.forEach((image, idx) => {
             file.PresentationWrapper.Relationships.addRelationship(
@@ -153,7 +150,7 @@ export class Compiler {
             );
         });
 
-        const replacedPresentationXml = this.imageReplacer.replace(
+        const replacedPresentationXml = replaceImagePlaceholders(
             presentationXml,
             mediaData,
             presImageOffset,
@@ -177,7 +174,7 @@ export class Compiler {
             const slideWrapper = file.SlideWrappers[i];
             const slideXml = this.formatter.formatToXml(slideWrapper.View, context, declaration);
 
-            const slideMediaData = this.imageReplacer.getMediaData(slideXml, file.Media);
+            const slideMediaData = getReferencedMedia(slideXml, file.Media.Array);
             const slideImageOffset = slideWrapper.Relationships.RelationshipCount + 1;
             slideMediaData.forEach((image, idx) => {
                 slideWrapper.Relationships.addRelationship(
@@ -187,7 +184,7 @@ export class Compiler {
                 );
             });
 
-            let replacedSlideXml = this.imageReplacer.replace(
+            let replacedSlideXml = replaceImagePlaceholders(
                 slideXml,
                 slideMediaData,
                 slideImageOffset,
@@ -204,9 +201,9 @@ export class Compiler {
                         slideChartKeys.includes(c.key),
                     );
 
-                    replacedSlideXml = this.chartReplacer.replace(
+                    replacedSlideXml = replaceChartPlaceholders(
                         replacedSlideXml,
-                        { Array: slideCharts } as unknown as ChartCollection,
+                        slideCharts.map((c) => c.key),
                         slideChartOffset,
                     );
 
@@ -228,24 +225,25 @@ export class Compiler {
                     );
                     const saOffset = slideWrapper.Relationships.RelationshipCount + 1;
 
-                    replacedSlideXml = this.smartArtReplacer.replace(
+                    replacedSlideXml = replaceSmartArtPlaceholders(
                         replacedSlideXml,
-                        {
-                            Array: slideSmartArts,
-                        } as unknown as import("@file/smartart/smartart-collection").SmartArtCollection,
+                        slideSmartArts.map((s) => s.key),
                         saOffset,
                     );
 
                     const saGlobalStart = file.SmartArts.Array.indexOf(slideSmartArts[0]);
-                    this.smartArtReplacer.addRelationships(
-                        {
-                            Array: slideSmartArts,
-                        } as unknown as import("@file/smartart/smartart-collection").SmartArtCollection,
+                    addSmartArtRelationships(
+                        slideSmartArts.map((s) => s.key),
                         (id, type, target) => {
                             slideWrapper.Relationships.addRelationship(id, type, target);
                         },
                         saOffset,
                         saGlobalStart,
+                        {
+                            pathPrefix: "../",
+                            styleRelType:
+                                "http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramQuickStyle",
+                        },
                     );
                 }
 
@@ -257,7 +255,7 @@ export class Compiler {
                     );
                     const hlinkOffset = slideWrapper.Relationships.RelationshipCount + 1;
 
-                    replacedSlideXml = this.hyperlinkReplacer.replace(
+                    replacedSlideXml = replaceHyperlinkPlaceholders(
                         replacedSlideXml,
                         slideHlinks,
                         hlinkOffset,
@@ -274,26 +272,20 @@ export class Compiler {
                 }
 
                 // Media (video/audio) placeholder replacement
-                const slideMediaRefs = this.mediaReplacer.getMediaRefs(
-                    replacedSlideXml,
-                    file.Media,
-                );
-                const slideVideoRefs = this.mediaReplacer.getVideoRefs(
-                    replacedSlideXml,
-                    file.Media,
-                );
+                const slideMediaRefs = getMediaRefs(replacedSlideXml, file.Media.Array);
+                const slideVideoRefs = getVideoRefs(replacedSlideXml, file.Media.Array);
 
                 if (slideMediaRefs.length > 0 || slideVideoRefs.length > 0) {
                     const mediaOffset = slideWrapper.Relationships.RelationshipCount + 1;
                     const videoOffset = mediaOffset + slideMediaRefs.length;
 
-                    replacedSlideXml = this.mediaReplacer.replaceMedia(
+                    replacedSlideXml = replaceMediaPlaceholders(
                         replacedSlideXml,
                         slideMediaRefs,
                         mediaOffset,
                     );
 
-                    replacedSlideXml = this.mediaReplacer.replaceVideo(
+                    replacedSlideXml = replaceVideoPlaceholders(
                         replacedSlideXml,
                         slideVideoRefs,
                         videoOffset,

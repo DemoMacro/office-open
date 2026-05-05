@@ -1,6 +1,7 @@
 import { File } from "@file/file";
 import { Footer, Header } from "@file/header";
 import { ImageRun, Paragraph } from "@file/paragraph";
+import * as core from "@office-open/core";
 import * as convenienceFunctions from "@util/convenience-functions";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
@@ -187,52 +188,9 @@ describe("Compiler", () => {
                 ],
             });
 
-            vi.spyOn(compiler["imageReplacer"], "getMediaData").mockReturnValue([
-                {
-                    data: Buffer.from(""),
-                    fileName: "test",
-                    transformation: {
-                        emus: {
-                            x: 100,
-                            y: 100,
-                        },
-                        pixels: {
-                            x: 100,
-                            y: 100,
-                        },
-                    },
-                    type: "png",
-                },
-                {
-                    data: Buffer.from(""),
-                    fallback: {
-                        data: Buffer.from(""),
-                        fileName: "test",
-                        transformation: {
-                            emus: {
-                                x: 100,
-                                y: 100,
-                            },
-                            pixels: {
-                                x: 100,
-                                y: 100,
-                            },
-                        },
-                        type: "png",
-                    },
-                    fileName: "test",
-                    transformation: {
-                        emus: {
-                            x: 100,
-                            y: 100,
-                        },
-                        pixels: {
-                            x: 100,
-                            y: 100,
-                        },
-                    },
-                    type: "svg",
-                },
+            vi.spyOn(core, "getReferencedMedia").mockReturnValue([
+                { fileName: "test" },
+                { fileName: "test" },
             ]);
 
             compiler.compile(file);

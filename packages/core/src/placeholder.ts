@@ -1,28 +1,24 @@
 /**
- * Placeholder detection utilities for compiler post-processing optimization.
+ * Placeholder detection and replacement utilities for compiler post-processing.
  *
  * Both DOCX and PPTX compilers use placeholder tokens (e.g. `{chart:key}`)
  * in XML strings to defer relationship ID assignment. This module provides
- * fast pre-check utilities to avoid unnecessary regex scans when no placeholders exist.
+ * fast pre-check utilities and shared replacement functions.
  */
 
-/**
- * Check if an XML string contains any placeholder tokens.
- * Uses a simple `{` character check which is O(n) but much cheaper
- * than running multiple regex scans.
- */
+export type IdFormat = "rId" | "plain";
+
+export const formatId = (offset: number, index: number, style: IdFormat): string =>
+    style === "rId" ? `rId${offset + index}` : `${offset + index}`;
+
+export function escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export function hasPlaceholders(xml: string): boolean {
     return xml.includes("{");
 }
 
-/**
- * Collect all unique placeholder keys with a given prefix from an XML string.
- * Single-pass scan using indexOf, avoiding RegExp overhead.
- *
- * @param xml - The XML string to scan
- * @param prefix - The placeholder prefix (e.g. "chart:", "smartart:", "hlink:")
- * @returns Array of unique keys found after the prefix
- */
 export function collectPlaceholderKeys(xml: string, prefix: string): string[] {
     const keys: string[] = [];
     const search = `{${prefix}`;
@@ -41,4 +37,124 @@ export function collectPlaceholderKeys(xml: string, prefix: string): string[] {
     }
 
     return keys;
+}
+
+export function replaceImagePlaceholders(
+    xml: string,
+    mediaData: readonly { readonly fileName: string }[],
+    offset: number,
+    idFormat: IdFormat = "rId",
+): string {
+    let result = xml;
+    mediaData.forEach((image, i) => {
+        result = result.replace(
+            new RegExp(`\\{${escapeRegex(image.fileName)}\\}`, "g"),
+            formatId(offset, i, idFormat),
+        );
+    });
+    return result;
+}
+
+export function getReferencedMedia(
+    xml: string,
+    mediaArray: readonly { readonly fileName: string }[],
+): readonly { readonly fileName: string }[] {
+    return mediaArray.filter((image) => xml.includes(`{${image.fileName}}`));
+}
+
+export function replaceChartPlaceholders(
+    xml: string,
+    chartKeys: readonly string[],
+    offset: number,
+    idFormat: IdFormat = "rId",
+): string {
+    let result = xml;
+    chartKeys.forEach((key, i) => {
+        result = result.replace(
+            new RegExp(`\\{chart:${escapeRegex(key)}\\}`, "g"),
+            formatId(offset, i, idFormat),
+        );
+    });
+    return result;
+}
+
+import type { RelationshipType } from "./opc/relationships";
+
+export interface SmartArtRelOptions {
+    readonly pathPrefix: string;
+    readonly styleRelType: RelationshipType;
+}
+
+export function replaceSmartArtPlaceholders(
+    xml: string,
+    keys: readonly string[],
+    dataOffset: number,
+    idFormat: IdFormat = "rId",
+): string {
+    let result = xml;
+    const count = keys.length;
+    const loOffset = dataOffset + count;
+    const qsOffset = loOffset + count;
+    const csOffset = qsOffset + count;
+
+    keys.forEach((key, i) => {
+        result = result.replace(
+            new RegExp(`\\{smartart:${escapeRegex(key)}\\}`, "g"),
+            formatId(dataOffset, i, idFormat),
+        );
+        result = result.replace(
+            new RegExp(`\\{smartart-lo:${escapeRegex(key)}\\}`, "g"),
+            formatId(loOffset, i, idFormat),
+        );
+        result = result.replace(
+            new RegExp(`\\{smartart-qs:${escapeRegex(key)}\\}`, "g"),
+            formatId(qsOffset, i, idFormat),
+        );
+        result = result.replace(
+            new RegExp(`\\{smartart-cs:${escapeRegex(key)}\\}`, "g"),
+            formatId(csOffset, i, idFormat),
+        );
+    });
+
+    return result;
+}
+
+export function addSmartArtRelationships(
+    keys: readonly string[],
+    addRel: (id: number, type: RelationshipType, target: string, targetMode?: string) => void,
+    baseOffset: number,
+    globalStartIndex: number,
+    options: SmartArtRelOptions,
+): void {
+    const { pathPrefix, styleRelType } = options;
+    const count = keys.length;
+    const loOffset = baseOffset + count;
+    const qsOffset = loOffset + count;
+    const csOffset = qsOffset + count;
+
+    keys.forEach((_key, i) => {
+        const gi = globalStartIndex + i;
+        addRel(
+            baseOffset + i,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramData",
+            `${pathPrefix}diagrams/data${gi + 1}.xml`,
+        );
+        addRel(
+            loOffset + i,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramLayout",
+            `${pathPrefix}diagrams/layout${gi + 1}.xml`,
+        );
+        addRel(qsOffset + i, styleRelType, `${pathPrefix}diagrams/quickStyle${gi + 1}.xml`);
+        addRel(
+            csOffset + i,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramColors",
+            `${pathPrefix}diagrams/colors${gi + 1}.xml`,
+        );
+        const drOffset = csOffset + count;
+        addRel(
+            drOffset + i,
+            "http://schemas.microsoft.com/office/2007/relationships/diagramDrawing",
+            `${pathPrefix}diagrams/drawing${gi + 1}.xml`,
+        );
+    });
 }

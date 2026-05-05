@@ -1,41 +1,12 @@
 import { Readable } from "stream";
 
 import type { File } from "@file/file";
-import { convertOutput } from "@util/output-type";
-import type { OutputByType, OutputType } from "@util/output-type";
-/**
- * Packer module for exporting documents to various output formats.
- *
- * @module
- */
+import { convertOutput, convertPrettifyType, PrettifyType } from "@office-open/core";
+export { PrettifyType } from "@office-open/core";
+import type { IXmlifyedFile, OutputByType, OutputType } from "@office-open/core";
 import { type ZipOptions, Zip, ZipDeflate, ZipPassThrough, zipSync } from "fflate";
 
 import { Compiler } from "./next-compiler";
-import type { IXmlifyedFile } from "./next-compiler";
-
-/**
- * Prettify options for formatting XML output.
- *
- * Controls the indentation style used when formatting the generated XML.
- * Prettified output is more human-readable but results in larger file sizes.
- *
- * @publicApi
- */
-export const PrettifyType = {
-    /** No prettification (smallest file size) */
-    NONE: "",
-    /** Indent with 2 spaces */
-    WITH_2_BLANKS: "  ",
-    /** Indent with 4 spaces */
-    WITH_4_BLANKS: "    ",
-    /** Indent with tab character */
-    WITH_TAB: "\t",
-} as const;
-
-const convertPrettifyType = (
-    prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
-): (typeof PrettifyType)[keyof typeof PrettifyType] | undefined =>
-    prettify === true ? PrettifyType.WITH_2_BLANKS : prettify === false ? undefined : prettify;
 
 /**
  * Exports documents to various output formats.

@@ -1,19 +1,18 @@
-import { ImageReplacer } from "@export/packer/image-replacer";
 import { DocumentAttributeNamespaces } from "@file/document";
 import type { IViewWrapper } from "@file/document-wrapper";
 import type { File } from "@file/file";
 import type { FileChild } from "@file/file-child";
 import { Media } from "@file/media";
-import type { IMediaData } from "@file/media";
 import { ConcreteHyperlink, ExternalHyperlink } from "@file/paragraph";
 import type { ParagraphChild } from "@file/paragraph";
 import { TargetModeType } from "@file/relationships/relationship/relationship";
 import type { IContext } from "@file/xml-components";
+import { getReferencedMedia, replaceImagePlaceholders } from "@office-open/core";
+import { convertOutput } from "@office-open/core";
+import type { OutputByType, OutputType } from "@office-open/core";
 import { js2xml } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { uniqueId } from "@util/convenience-functions";
-import { convertOutput } from "@util/output-type";
-import type { OutputByType, OutputType } from "@util/output-type";
 /**
  * Document patching module for modifying existing .docx files.
  *
@@ -81,10 +80,8 @@ interface FilePatch {
  * Internal type for tracking image relationships that need to be added.
  */
 interface IImageRelationshipAddition {
-    /** XML file path where the image is used */
     readonly key: string;
-    /** Media data for the images */
-    readonly mediaDatas: readonly IMediaData[];
+    readonly mediaDatas: readonly { readonly fileName: string }[];
 }
 
 /**
@@ -135,7 +132,6 @@ export interface PatchDocumentOptions<T extends PatchDocumentOutputType = PatchD
     readonly recursive?: boolean;
 }
 
-const imageReplacer = new ImageReplacer();
 const UTF16LE = new Uint8Array([0xff, 0xfe]);
 const UTF16BE = new Uint8Array([0xfe, 0xff]);
 
@@ -315,7 +311,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                 }
             }
 
-            const mediaDatas = imageReplacer.getMediaData(JSON.stringify(json), context.file.Media);
+            const mediaDatas = getReferencedMedia(JSON.stringify(json), context.file.Media.Array);
             if (mediaDatas.length > 0) {
                 hasMedia = true;
                 imageRelationshipAdditions.push({
@@ -334,7 +330,12 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
         map.set(relationshipKey, relationshipsJson);
 
         const index = getNextRelationshipIndex(relationshipsJson);
-        const newJson = imageReplacer.replace(JSON.stringify(map.get(key)), mediaDatas, index);
+        const newJson = replaceImagePlaceholders(
+            JSON.stringify(map.get(key)),
+            mediaDatas,
+            index,
+            "plain",
+        );
         map.set(key, JSON.parse(newJson) as Element);
 
         for (let i = 0; i < mediaDatas.length; i++) {

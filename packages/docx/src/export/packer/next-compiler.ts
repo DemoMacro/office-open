@@ -6,28 +6,22 @@ import {
     getLayoutXml,
     getStyleXml,
 } from "@file/smartart/built-in-definitions";
-import { hasPlaceholders } from "@office-open/core";
+import {
+    addSmartArtRelationships,
+    getReferencedMedia,
+    hasPlaceholders,
+    replaceChartPlaceholders,
+    replaceImagePlaceholders,
+    replaceSmartArtPlaceholders,
+} from "@office-open/core";
+import type { IXmlifyedFile } from "@office-open/core";
+import type { PrettifyType } from "@office-open/core";
 import { xml } from "@office-open/xml";
 import type { Zippable } from "fflate";
 import { textToUint8Array, toUint8Array } from "undio";
 
 import { Formatter } from "../formatter";
-import { ChartReplacer } from "./chart-replacer";
-import { ImageReplacer } from "./image-replacer";
-import { NumberingReplacer } from "./numbering-replacer";
-import type { PrettifyType } from "./packer";
-import { SmartArtReplacer } from "./smartart-replacer";
-
-/**
- * Represents a serialized XML file with its path in the OOXML package.
- *
- * @property data - The XML content as a string
- * @property path - The file path within the ZIP archive (e.g., "word/document.xml")
- */
-export interface IXmlifyedFile {
-    readonly data: string | Uint8Array;
-    readonly path: string;
-}
+import { replaceNumberingPlaceholders } from "./numbering-placeholders";
 
 /**
  * Complete mapping of all XML files in an OOXML document package.
@@ -116,22 +110,9 @@ interface IXmlifyedFileMapping {
 
 export class Compiler {
     private readonly formatter: Formatter;
-    private readonly imageReplacer: ImageReplacer;
-    private readonly numberingReplacer: NumberingReplacer;
-    private readonly chartReplacer: ChartReplacer;
-    private readonly smartArtReplacer: SmartArtReplacer;
 
-    /**
-     * Creates a new Compiler instance.
-     *
-     * Initializes the formatter and replacer utilities used during compilation.
-     */
     public constructor() {
         this.formatter = new Formatter();
-        this.imageReplacer = new ImageReplacer();
-        this.numberingReplacer = new NumberingReplacer();
-        this.chartReplacer = new ChartReplacer();
-        this.smartArtReplacer = new SmartArtReplacer();
     }
 
     /**
@@ -178,23 +159,29 @@ export class Compiler {
         for (const [, obj] of map) {
             if (Array.isArray(obj)) {
                 for (const subFile of obj as readonly IXmlifyedFile[]) {
-                    files[subFile.path] =
+                    files[subFile.path] = [
                         typeof subFile.data === "string"
                             ? textToUint8Array(subFile.data)
-                            : subFile.data;
+                            : subFile.data,
+                        { level: 0 },
+                    ];
                 }
             } else {
                 const fileObj = obj as IXmlifyedFile;
-                files[fileObj.path] =
+                files[fileObj.path] = [
                     typeof fileObj.data === "string"
                         ? textToUint8Array(fileObj.data)
-                        : fileObj.data;
+                        : fileObj.data,
+                    { level: 0 },
+                ];
             }
         }
 
         for (const subFile of overrides) {
-            files[subFile.path] =
-                typeof subFile.data === "string" ? textToUint8Array(subFile.data) : subFile.data;
+            files[subFile.path] = [
+                typeof subFile.data === "string" ? textToUint8Array(subFile.data) : subFile.data,
+                { level: 0 },
+            ];
         }
 
         // Media files: use STORE (level 0) for already-compressed formats
@@ -282,13 +269,13 @@ export class Compiler {
         );
 
         const documentMediaDatas = hasPlaceholders(documentXmlData)
-            ? this.imageReplacer.getMediaData(documentXmlData, file.Media)
+            ? getReferencedMedia(documentXmlData, file.Media.Array)
             : [];
         const commentMediaDatas = hasPlaceholders(commentXmlData)
-            ? this.imageReplacer.getMediaData(commentXmlData, file.Media)
+            ? getReferencedMedia(commentXmlData, file.Media.Array)
             : [];
         const footnoteMediaDatas = hasPlaceholders(footnoteXmlData)
-            ? this.imageReplacer.getMediaData(footnoteXmlData, file.Media)
+            ? getReferencedMedia(footnoteXmlData, file.Media.Array)
             : [];
 
         return {
@@ -299,14 +286,8 @@ export class Compiler {
                         file,
                         stack: [],
                         viewWrapper: file.Document,
-                    }),
-                    {
-                        declaration: {
-                            encoding: "UTF-8",
-                            standalone: "yes",
-                        },
-                        indent: prettify,
-                    },
+                    } as any),
+                    { declaration: { encoding: "UTF-8", standalone: "yes" } },
                 ),
                 path: "docProps/app.xml",
             },
@@ -314,16 +295,14 @@ export class Compiler {
                 data: (() => {
                     const xmlData =
                         commentMediaDatas.length > 0
-                            ? this.imageReplacer.replace(
+                            ? replaceImagePlaceholders(
                                   commentXmlData,
                                   commentMediaDatas,
                                   commentRelationshipCount,
+                                  "plain",
                               )
                             : commentXmlData;
-                    return this.numberingReplacer.replace(
-                        xmlData,
-                        file.Numbering.ConcreteNumbering,
-                    );
+                    return replaceNumberingPlaceholders(xmlData, file.Numbering.ConcreteNumbering);
                 })(),
                 path: "word/comments.xml",
             },
@@ -408,29 +387,32 @@ export class Compiler {
                 data: (() => {
                     let xmlData =
                         documentMediaDatas.length > 0
-                            ? this.imageReplacer.replace(
+                            ? replaceImagePlaceholders(
                                   documentXmlData,
                                   documentMediaDatas,
                                   documentRelationshipCount,
+                                  "plain",
                               )
                             : documentXmlData;
                     if (hasPlaceholders(xmlData)) {
-                        xmlData = this.chartReplacer.replace(
+                        xmlData = replaceChartPlaceholders(
                             xmlData,
-                            file.Charts,
+                            file.Charts.Array.map((c) => c.key),
                             documentRelationshipCount,
+                            "plain",
                         );
                         const smartArtDataOffset =
                             documentRelationshipCount +
                             documentMediaDatas.length +
                             file.Charts.Array.length;
-                        xmlData = this.smartArtReplacer.replace(
+                        xmlData = replaceSmartArtPlaceholders(
                             xmlData,
-                            file.SmartArts,
+                            file.SmartArts.Array.map((s) => s.key),
                             smartArtDataOffset,
+                            "plain",
                         );
                     }
-                    const referencedXmlData = this.numberingReplacer.replace(
+                    const referencedXmlData = replaceNumberingPlaceholders(
                         xmlData,
                         file.Numbering.ConcreteNumbering,
                     );
@@ -529,16 +511,14 @@ export class Compiler {
                 data: (() => {
                     const xmlData =
                         footnoteMediaDatas.length > 0
-                            ? this.imageReplacer.replace(
+                            ? replaceImagePlaceholders(
                                   footnoteXmlData,
                                   footnoteMediaDatas,
                                   footnoteRelationshipCount,
+                                  "plain",
                               )
                             : footnoteXmlData;
-                    return this.numberingReplacer.replace(
-                        xmlData,
-                        file.Numbering.ConcreteNumbering,
-                    );
+                    return replaceNumberingPlaceholders(xmlData, file.Numbering.ConcreteNumbering);
                 })(),
                 path: "word/footnotes.xml",
             },
@@ -583,7 +563,7 @@ export class Compiler {
                 });
                 // Cache for reuse in Footers section
                 footerFormattedViews.set(index, xmlData);
-                const mediaDatas = this.imageReplacer.getMediaData(xmlData, file.Media);
+                const mediaDatas = getReferencedMedia(xmlData, file.Media.Array);
 
                 mediaDatas.forEach((mediaData, i) => {
                     footerWrapper.Relationships.addRelationship(
@@ -614,15 +594,15 @@ export class Compiler {
             Footers: file.Footers.map((_footerWrapper, index) => {
                 const tempXmlData = footerFormattedViews.get(index)!;
                 const mediaDatas = hasPlaceholders(tempXmlData)
-                    ? this.imageReplacer.getMediaData(tempXmlData, file.Media)
+                    ? getReferencedMedia(tempXmlData, file.Media.Array)
                     : [];
                 const xmlData =
                     mediaDatas.length > 0
-                        ? this.imageReplacer.replace(tempXmlData, mediaDatas, 0)
+                        ? replaceImagePlaceholders(tempXmlData, mediaDatas, 0, "plain")
                         : tempXmlData;
 
                 return {
-                    data: this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering),
+                    data: replaceNumberingPlaceholders(xmlData, file.Numbering.ConcreteNumbering),
                     path: `word/footer${index + 1}.xml`,
                 };
             }),
@@ -641,7 +621,7 @@ export class Compiler {
                 });
                 // Cache for reuse in Headers section
                 headerFormattedViews.set(index, xmlData);
-                const mediaDatas = this.imageReplacer.getMediaData(xmlData, file.Media);
+                const mediaDatas = getReferencedMedia(xmlData, file.Media.Array);
 
                 mediaDatas.forEach((mediaData, i) => {
                     headerWrapper.Relationships.addRelationship(
@@ -672,15 +652,15 @@ export class Compiler {
             Headers: file.Headers.map((_headerWrapper, index) => {
                 const tempXmlData = headerFormattedViews.get(index)!;
                 const mediaDatas = hasPlaceholders(tempXmlData)
-                    ? this.imageReplacer.getMediaData(tempXmlData, file.Media)
+                    ? getReferencedMedia(tempXmlData, file.Media.Array)
                     : [];
                 const xmlData =
                     mediaDatas.length > 0
-                        ? this.imageReplacer.replace(tempXmlData, mediaDatas, 0)
+                        ? replaceImagePlaceholders(tempXmlData, mediaDatas, 0, "plain")
                         : tempXmlData;
 
                 return {
-                    data: this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering),
+                    data: replaceNumberingPlaceholders(xmlData, file.Numbering.ConcreteNumbering),
                     path: `word/header${index + 1}.xml`,
                 };
             }),
@@ -741,18 +721,20 @@ export class Compiler {
                     });
 
                     // SmartArt relationships (data + layout/style/color internal)
-                    this.smartArtReplacer.addRelationships(
-                        file.SmartArts,
-                        (id, type, target, targetMode) => {
-                            file.Document.Relationships.addRelationship(
-                                id,
-                                type,
-                                target,
-                                targetMode as any,
-                            );
+                    addSmartArtRelationships(
+                        file.SmartArts.Array.map((s) => s.key),
+                        (id, type, target) => {
+                            file.Document.Relationships.addRelationship(id, type, target);
                         },
-                        documentRelationshipCount,
-                        documentMediaDatas.length + file.Charts.Array.length,
+                        documentRelationshipCount +
+                            documentMediaDatas.length +
+                            file.Charts.Array.length,
+                        0,
+                        {
+                            pathPrefix: "",
+                            styleRelType:
+                                "http://schemas.microsoft.com/office/2007/relationships/diagramStyle",
+                        },
                     );
 
                     file.Document.Relationships.addRelationship(
@@ -813,7 +795,7 @@ export class Compiler {
                             indent: prettify,
                         },
                     );
-                    const referencedXmlStyles = this.numberingReplacer.replace(
+                    const referencedXmlStyles = replaceNumberingPlaceholders(
                         xmlStyles,
                         file.Numbering.ConcreteNumbering,
                     );
