@@ -640,10 +640,7 @@ describe("ParagraphStyle", () => {
 
         const highlightTests = [
             {
-                expected: [
-                    { "w:highlight": { _attr: { "w:val": "yellow" } } },
-                    { "w:highlightCs": { _attr: { "w:val": "yellow" } } },
-                ],
+                expected: [{ "w:highlight": { _attr: { "w:val": "yellow" } } }],
                 highlight: HighlightColor.YELLOW,
             },
             {

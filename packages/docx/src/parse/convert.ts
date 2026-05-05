@@ -146,7 +146,7 @@ function convertParagraphChild(child: ParagraphChildJson): BaseXmlComponent {
         case "columnBreak":
             return new ColumnBreak();
         case "tab":
-            return new Tab();
+            return new Run({ children: [new Tab()] });
         case "bookmark":
             return new RawPassthrough((child as BookmarkJson).element!);
         case "sdtRun":
@@ -161,11 +161,16 @@ function convertParagraphChild(child: ParagraphChildJson): BaseXmlComponent {
 }
 
 function convertParagraph(json: ParagraphJson): Paragraph {
-    const { children, text, ...rest } = json as any;
+    const { children, text, tabs, ...rest } = json as any;
     const runs = children ? toParagraphChildren(children) : text ? [new Run({ text })] : undefined;
     return new Paragraph({
         ...rest,
         children: runs,
+        ...(tabs ? { tabStops: tabs.map((t: { pos: number; align?: string; leader?: string }) => ({
+            position: t.pos,
+            ...(t.align ? { type: t.align } : {}),
+            ...(t.leader ? { leader: t.leader } : {}),
+        })) } : {}),
     });
 }
 

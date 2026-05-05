@@ -77,7 +77,7 @@ async function main() {
                             }),
                             new Paragraph({
                                 children: [
-                                    new Run({ text: "Size 24pt", fontSize: 2400, bold: true }),
+                                    new Run({ text: "Size 24pt", fontSize: 24, bold: true }),
                                     new Run({ text: " | Small Caps", capitalization: "SMALL" }),
                                     new Run({ text: " | ALL CAPS", capitalization: "ALL" }),
                                 ],
@@ -158,7 +158,7 @@ async function main() {
                         paragraphs: [
                             new Paragraph({
                                 children: [
-                                    new Run({ text: "Table Demo", fontSize: 2800, bold: true }),
+                                    new Run({ text: "Table Demo", fontSize: 28, bold: true }),
                                 ],
                             }),
                         ],
@@ -237,7 +237,7 @@ async function main() {
     // Rich text para 2: fontSize, capitalization
     const s4P2Runs = s4Paras?.[1]?.children;
     assert("shape 4 para 2 has 3 runs", s4P2Runs?.length === 3);
-    assert("shape 4 run fontSize", s4P2Runs?.[0]?.fontSize === 240000);
+    assert("shape 4 run fontSize", s4P2Runs?.[0]?.fontSize === 2400);
     // Note: capitalization parsed as raw XML value (small/all/none)
     if (s4P2Runs?.[1]?.capitalization) {
         assert(

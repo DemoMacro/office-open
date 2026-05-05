@@ -76,6 +76,9 @@ export function parseParagraph(p: Element, ctx: DocxParseContext): ParagraphJson
             children.push({ $type: "math", element: child });
         } else if (child.name === "w:pPr") {
             // Paragraph properties — skip (already processed above)
+        } else if (child.name === "w:tab") {
+            // Bare tab outside run — normalize into a run wrapper for XSD compliance
+            children.push({ $type: "tab" });
         } else {
             children.push({ $raw: true, element: child } as RawElement);
         }

@@ -225,16 +225,7 @@ describe("Run", () => {
             expect(tree).to.deep.equal({
                 "w:r": [
                     {
-                        "w:rPr": [
-                            { "w:highlight": { _attr: { "w:val": "yellow" } } },
-                            {
-                                "w:highlightCs": {
-                                    _attr: {
-                                        "w:val": "yellow",
-                                    },
-                                },
-                            },
-                        ],
+                        "w:rPr": [{ "w:highlight": { _attr: { "w:val": "yellow" } } }],
                     },
                 ],
             });

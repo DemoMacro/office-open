@@ -145,6 +145,7 @@ export interface ParagraphJson {
 
 export interface RunJson {
     text?: string;
+    /** Font size in hundredths of a point (e.g. 2400 = 24pt). Matches OOXML `a:sz`. */
     fontSize?: number;
     bold?: boolean;
     italic?: boolean;

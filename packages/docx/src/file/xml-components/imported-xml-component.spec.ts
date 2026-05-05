@@ -80,7 +80,9 @@ describe("ImportedXmlComponent", () => {
 
     it("should create XmlComponent from xml string", () => {
         const converted = ImportedXmlComponent.fromXmlString(xmlString);
-        expect(JSON.parse(JSON.stringify(converted))).to.deep.equal(convertedXmlElement);
+        const serialized = JSON.parse(JSON.stringify(converted));
+        delete serialized._sourceXml;
+        expect(serialized).to.deep.equal(convertedXmlElement);
     });
 
     describe("convertToXmlComponent", () => {

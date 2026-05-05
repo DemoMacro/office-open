@@ -127,17 +127,16 @@ function parseGroupShape(
         }
     }
 
-    // Parse children from spTree
-    const spTree = findChild(grpSp, "p:spTree");
-    if (spTree) {
-        const children: SlideChildJson[] = [];
-        for (const child of spTree.elements ?? []) {
-            if (child.name === "p:nvGrpSpPr" || child.name === "p:grpSpPr") continue;
-            const parsed = parseShapeTreeElement(child, ctx, slideRels);
-            if (parsed) children.push(parsed);
-        }
-        if (children.length > 0) result.children = children;
+    // Parse children — CT_GroupShape allows sp/grpSp/etc directly (no spTree wrapper)
+    // Some producers use spTree inside grpSp; handle both layouts
+    const childSource = findChild(grpSp, "p:spTree") ?? grpSp;
+    const children: SlideChildJson[] = [];
+    for (const child of childSource.elements ?? []) {
+        if (child.name === "p:nvGrpSpPr" || child.name === "p:grpSpPr") continue;
+        const parsed = parseShapeTreeElement(child, ctx, slideRels);
+        if (parsed) children.push(parsed);
     }
+    if (children.length > 0) result.children = children;
 
     return result;
 }

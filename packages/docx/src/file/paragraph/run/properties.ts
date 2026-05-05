@@ -394,12 +394,13 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
         if (options.highlight) {
             this.push(new Highlight(options.highlight));
         }
-        const highlightCs =
-            options.highlightComplexScript === undefined || options.highlightComplexScript === true
-                ? options.highlight
-                : options.highlightComplexScript;
-        if (highlightCs) {
-            this.push(new HighlightComplexScript(highlightCs));
+        if (options.highlightComplexScript === true) {
+            // true = mirror highlight value to complex script
+            if (options.highlight) {
+                this.push(new HighlightComplexScript(options.highlight));
+            }
+        } else if (options.highlightComplexScript !== undefined && options.highlightComplexScript !== false) {
+            this.push(new HighlightComplexScript(options.highlightComplexScript));
         }
 
         if (options.underline) {
@@ -608,13 +609,15 @@ export function buildRunProperties(options?: IRunPropertiesOptions): IXmlableObj
     if (options.highlight) {
         children.push(new Highlight(options.highlight).prepForXml(EMPTY_CTX) as IXmlableObject);
     }
-    const highlightCs =
-        options.highlightComplexScript === undefined || options.highlightComplexScript === true
-            ? options.highlight
-            : options.highlightComplexScript;
-    if (highlightCs) {
+    if (options.highlightComplexScript === true) {
+        if (options.highlight) {
+            children.push(
+                new HighlightComplexScript(options.highlight).prepForXml(EMPTY_CTX) as IXmlableObject,
+            );
+        }
+    } else if (options.highlightComplexScript !== undefined && options.highlightComplexScript !== false) {
         children.push(
-            new HighlightComplexScript(highlightCs).prepForXml(EMPTY_CTX) as IXmlableObject,
+            new HighlightComplexScript(options.highlightComplexScript).prepForXml(EMPTY_CTX) as IXmlableObject,
         );
     }
 

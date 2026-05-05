@@ -64,7 +64,6 @@ describe("SymbolRun", () => {
                             { "w:sz": { _attr: { "w:val": 40 } } },
                             { "w:szCs": { _attr: { "w:val": 40 } } },
                             { "w:highlight": { _attr: { "w:val": "yellow" } } },
-                            { "w:highlightCs": { _attr: { "w:val": "yellow" } } },
                             { "w:u": { _attr: { "w:color": "ff0000", "w:val": "double" } } },
                             { "w:em": { _attr: { "w:val": "dot" } } },
                         ],

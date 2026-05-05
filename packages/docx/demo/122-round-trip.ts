@@ -5,6 +5,7 @@ import {
     Document,
     Paragraph,
     TextRun,
+    Run,
     Table,
     TableRow,
     TableCell,
@@ -209,7 +210,7 @@ async function main() {
                         ],
                         children: [
                             new TextRun({ text: "Tab leader" }),
-                            new Tab(),
+                            new Run({ children: [new Tab()] }),
                             new TextRun({ text: "End" }),
                         ],
                     }),
