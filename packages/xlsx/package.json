@@ -1,6 +1,6 @@
 {
     "name": "@office-open/xlsx",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "Generate .xlsx files with JS/TS",
     "keywords": [
         "excel",

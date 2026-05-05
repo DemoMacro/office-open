@@ -1,7 +1,5 @@
 # office-open
 
-> **⚠️ Warning:** This project is not yet stable and may undergo significant changes before reaching version 1.0.0. We strongly advise against using it in production environments.
-
 ![GitHub](https://img.shields.io/github/license/DemoMacro/office-open)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](https://www.contributor-covenant.org/version/2/1/code_of_conduct/)
 
