@@ -76,14 +76,25 @@ Check the [demo folder](./demo) for 100+ working examples covering every feature
 
 ## Benchmark
 
-Performance comparison against original `docx` (9.6.1) package:
+Performance comparison against original `docx` (9.6.1) package (Windows 11 / Node 22):
 
-| Scenario                                                | @office-open/docx |       docx |   Speedup |
-| ------------------------------------------------------- | ----------------: | ---------: | --------: |
-| Simple document (2 paragraphs)                          |       25.7K ops/s | 5.3K ops/s | **4.84x** |
-| Styled paragraphs (20 paragraphs)                       |       24.2K ops/s | 4.4K ops/s | **5.45x** |
-| Table (10x5 cells)                                      |       15.5K ops/s | 3.3K ops/s | **4.70x** |
-| Full featured (header/footer/headings/table/paragraphs) |       13.8K ops/s | 2.6K ops/s | **5.30x** |
+**Object Creation (no pack)**
+
+| Scenario                                                | @office-open/docx |       docx |  Speedup |
+| ------------------------------------------------------- | ----------------: | ---------: | -------: |
+| Simple document (2 paragraphs)                          |       27.6K ops/s | 6.9K ops/s | **4.0x** |
+| Styled paragraphs (20 paragraphs)                       |       26.1K ops/s | 4.3K ops/s | **6.0x** |
+| Table (10x5 cells)                                      |       18.3K ops/s | 3.6K ops/s | **5.1x** |
+| Full featured (header/footer/headings/table/paragraphs) |       15.3K ops/s | 2.9K ops/s | **5.3x** |
+
+**Create + toBuffer (end-to-end)**
+
+| Scenario                                                | @office-open/docx |      docx |  Speedup |
+| ------------------------------------------------------- | ----------------: | --------: | -------: |
+| Simple document (2 paragraphs)                          |         398 ops/s | 252 ops/s | **1.6x** |
+| Styled paragraphs (20 paragraphs)                       |         492 ops/s | 290 ops/s | **1.7x** |
+| Table (10x5 cells)                                      |         442 ops/s | 268 ops/s | **1.6x** |
+| Full featured (header/footer/headings/table/paragraphs) |         347 ops/s | 219 ops/s | **1.6x** |
 
 ## License
 

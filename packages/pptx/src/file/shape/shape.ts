@@ -4,9 +4,9 @@ import type { OutlineOptions } from "@file/drawingml/outline";
 import { ShapeProperties } from "@file/drawingml/shape-properties";
 import type { IShapePropertiesOptions } from "@file/drawingml/shape-properties";
 import type { File } from "@file/file";
-import { attrs, escapeXml, xml } from "@office-open/xml";
 import { XmlComponent as Xc } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
+import { attrs, escapeXml, xml } from "@office-open/xml";
 import { pixelsToEmus } from "@util/types";
 
 import { Paragraph } from "./paragraph/paragraph";

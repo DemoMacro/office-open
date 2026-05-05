@@ -1,8 +1,8 @@
 import type { FillOptions } from "@file/drawingml/fill";
 import { buildFill } from "@file/drawingml/fill";
-import { attrs, escapeXml, xml } from "@office-open/xml";
 import { XmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
+import { attrs, xml } from "@office-open/xml";
 
 let nextHyperlinkId = 1;
 
@@ -172,7 +172,11 @@ export class RunProperties extends XmlComponent {
             const file = context.fileData as {
                 Hyperlinks?: { addHyperlink(key: string, url: string, tooltip?: string): void };
             };
-            file?.Hyperlinks?.addHyperlink(hyperlinkKey, opts.hyperlink.url, opts.hyperlink.tooltip);
+            file?.Hyperlinks?.addHyperlink(
+                hyperlinkKey,
+                opts.hyperlink.url,
+                opts.hyperlink.tooltip,
+            );
         }
 
         let fillObj: IXmlableObject | undefined;
@@ -200,7 +204,8 @@ export function buildRunPropertiesXml(
     if (options.lang) a.lang = options.lang;
     if (options.strike) a.strike = StrikeStyle[options.strike];
     if (options.baseline !== undefined) a.baseline = options.baseline;
-    if (options.capitalization) a.cap = TextCapitalization[options.capitalization] ?? options.capitalization;
+    if (options.capitalization)
+        a.cap = TextCapitalization[options.capitalization] ?? options.capitalization;
     if (options.spacing !== undefined) a.spc = options.spacing;
     if (options.noProof !== undefined) a.noProof = options.noProof;
     if (options.dirty !== undefined) a.dirty = options.dirty;
@@ -209,7 +214,9 @@ export function buildRunPropertiesXml(
     const body: string[] = [];
 
     if (options.font) {
-        body.push(`<a:latin${attrs({ typeface: options.font })}/><a:ea${attrs({ typeface: options.font })}/>`);
+        body.push(
+            `<a:latin${attrs({ typeface: options.font })}/><a:ea${attrs({ typeface: options.font })}/>`,
+        );
     }
 
     if (options.hyperlink && hyperlinkKey) {

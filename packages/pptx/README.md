@@ -60,14 +60,25 @@ writeFileSync("presentation.pptx", buffer);
 
 ## Performance
 
-Object instantiation performance vs [PptxGenJS](https://github.com/gitbrent/PptxGenJS) (higher hz is better, run on Windows 11 / Node 22):
+Performance vs [PptxGenJS](https://github.com/gitbrent/PptxGenJS) (higher hz is better, Windows 11 / Node 22):
 
-| Scenario                  | @office-open/pptx | PptxGenJS  | Speedup   |
-| ------------------------- | ----------------- | ---------- | --------- |
-| Simple (2 shapes)         | 4.64M ops/s       | 559K ops/s | **8.3x**  |
-| Styled shapes (20 shapes) | 243K ops/s        | 77K ops/s  | **3.2x**  |
-| Table (10x5)              | 1.86M ops/s       | 27K ops/s  | **69.8x** |
-| Full featured             | 188K ops/s        | 19K ops/s  | **9.7x**  |
+**Object Creation (no pack)**
+
+| Scenario                  | @office-open/pptx | PptxGenJS   | Speedup   |
+| ------------------------- | ----------------- | ----------- | --------- |
+| Simple (2 shapes)         | 4.70M ops/s       | 1.20M ops/s | **3.9x**  |
+| Styled shapes (20 shapes) | 256K ops/s        | 166K ops/s  | **1.5x**  |
+| Table (10x5)              | 2.23M ops/s       | 35K ops/s   | **62.9x** |
+| Full featured             | 198K ops/s        | 24K ops/s   | **8.4x**  |
+
+**Create + toBuffer (end-to-end)**
+
+| Scenario                  | @office-open/pptx | PptxGenJS (DEFLATE) | Speedup  |
+| ------------------------- | ----------------- | ------------------- | -------- |
+| Simple (2 shapes)         | 1,922 ops/s       | 1,152 ops/s         | **1.7x** |
+| Styled shapes (20 shapes) | 1,540 ops/s       | 1,123 ops/s         | **1.4x** |
+| Table (10x5)              | 1,790 ops/s       | 934 ops/s           | **1.9x** |
+| Full featured             | 1,125 ops/s       | 827 ops/s           | **1.4x** |
 
 ## Examples
 

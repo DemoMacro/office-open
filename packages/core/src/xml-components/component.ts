@@ -4,6 +4,7 @@
  * @module
  */
 import { xml } from "@office-open/xml";
+
 import { BaseXmlComponent } from "./base";
 import type { IContext, IXmlableObject } from "./base";
 

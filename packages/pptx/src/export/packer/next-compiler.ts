@@ -8,10 +8,19 @@ import {
     getLayoutXml,
     getStyleXml,
 } from "@file/smartart/built-in-definitions";
-import type { BaseXmlComponent, IContext } from "@file/xml-components";
+import type { IContext } from "@file/xml-components";
 import { collectPlaceholderKeys, hasPlaceholders } from "@office-open/core";
 import { xml } from "@office-open/xml";
 import type { Zippable } from "fflate";
+
+export interface IXmlifyedFile {
+    readonly path: string;
+    readonly data: string | Uint8Array;
+}
+
+interface IXmlifyedFileMapping {
+    [key: string]: { data: string; path: string };
+}
 
 import { ChartReplacer } from "./chart-replacer";
 import { HyperlinkReplacer } from "./hyperlink-replacer";
@@ -127,7 +136,11 @@ export class Compiler {
         }
 
         // Presentation + its relationships
-        const presentationXml = this.formatter.formatToXml(file.PresentationWrapper.View, context, declaration);
+        const presentationXml = this.formatter.formatToXml(
+            file.PresentationWrapper.View,
+            context,
+            declaration,
+        );
         let currentImageCount = 0;
 
         const mediaData = this.imageReplacer.getMediaData(presentationXml, file.Media);
@@ -353,68 +366,89 @@ export class Compiler {
         // Add chart parts (STORE — XML, no compression benefit)
         for (let i = 0; i < file.Charts.Array.length; i++) {
             const chartData = file.Charts.Array[i];
-            files[`ppt/charts/chart${i + 1}.xml`] = [textToUint8Array(
-                xml(this.formatter.format(chartData.chartSpace, context), {
-                    declaration,
-                    indent,
-                }),
-            ), { level: 0 }];
-            files[`ppt/charts/_rels/chart${i + 1}.xml.rels`] = [textToUint8Array(
-                xml(
-                    {
-                        Relationships: {
-                            _attr: {
-                                xmlns: "http://schemas.openxmlformats.org/package/2006/relationships",
+            files[`ppt/charts/chart${i + 1}.xml`] = [
+                textToUint8Array(
+                    xml(this.formatter.format(chartData.chartSpace, context), {
+                        declaration,
+                        indent,
+                    }),
+                ),
+                { level: 0 },
+            ];
+            files[`ppt/charts/_rels/chart${i + 1}.xml.rels`] = [
+                textToUint8Array(
+                    xml(
+                        {
+                            Relationships: {
+                                _attr: {
+                                    xmlns: "http://schemas.openxmlformats.org/package/2006/relationships",
+                                },
                             },
                         },
-                    },
-                    { declaration: { encoding: "UTF-8", standalone: "yes" } },
+                        { declaration: { encoding: "UTF-8", standalone: "yes" } },
+                    ),
                 ),
-            ), { level: 0 }];
+                { level: 0 },
+            ];
         }
 
         // Add SmartArt diagram parts (STORE)
         for (let i = 0; i < file.SmartArts.Array.length; i++) {
             const smartArtData = file.SmartArts.Array[i];
-            files[`ppt/diagrams/data${i + 1}.xml`] = [textToUint8Array(
-                xml(this.formatter.format(smartArtData.dataModel, context), {
-                    declaration,
-                    indent,
-                }),
-            ), { level: 0 }];
-            files[`ppt/diagrams/layout${i + 1}.xml`] = [textToUint8Array(
-                getLayoutXml(smartArtData.layout),
-            ), { level: 0 }];
-            files[`ppt/diagrams/quickStyle${i + 1}.xml`] = [textToUint8Array(
-                getStyleXml(smartArtData.style),
-            ), { level: 0 }];
-            files[`ppt/diagrams/colors${i + 1}.xml`] = [textToUint8Array(
-                getColorXml(smartArtData.color),
-            ), { level: 0 }];
-            files[`ppt/diagrams/drawing${i + 1}.xml`] = [textToUint8Array(DEFAULT_DRAWING_XML), { level: 0 }];
+            files[`ppt/diagrams/data${i + 1}.xml`] = [
+                textToUint8Array(
+                    xml(this.formatter.format(smartArtData.dataModel, context), {
+                        declaration,
+                        indent,
+                    }),
+                ),
+                { level: 0 },
+            ];
+            files[`ppt/diagrams/layout${i + 1}.xml`] = [
+                textToUint8Array(getLayoutXml(smartArtData.layout)),
+                { level: 0 },
+            ];
+            files[`ppt/diagrams/quickStyle${i + 1}.xml`] = [
+                textToUint8Array(getStyleXml(smartArtData.style)),
+                { level: 0 },
+            ];
+            files[`ppt/diagrams/colors${i + 1}.xml`] = [
+                textToUint8Array(getColorXml(smartArtData.color)),
+                { level: 0 },
+            ];
+            files[`ppt/diagrams/drawing${i + 1}.xml`] = [
+                textToUint8Array(DEFAULT_DRAWING_XML),
+                { level: 0 },
+            ];
         }
 
         // Add notes slides (STORE)
         for (let i = 0; i < file.NotesSlides.length; i++) {
             const notesSlide = file.NotesSlides[i];
-            files[`ppt/notesSlides/notesSlide${i + 1}.xml`] = [textToUint8Array(
-                xml(this.formatter.format(notesSlide, context), {
-                    declaration,
-                    indent,
-                }),
-            ), { level: 0 }];
-            files[`ppt/notesSlides/_rels/notesSlide${i + 1}.xml.rels`] = [textToUint8Array(
-                xml(
-                    {
-                        Relationships: {
-                            _attr: {
-                                xmlns: "http://schemas.openxmlformats.org/package/2006/relationships",
+            files[`ppt/notesSlides/notesSlide${i + 1}.xml`] = [
+                textToUint8Array(
+                    xml(this.formatter.format(notesSlide, context), {
+                        declaration,
+                        indent,
+                    }),
+                ),
+                { level: 0 },
+            ];
+            files[`ppt/notesSlides/_rels/notesSlide${i + 1}.xml.rels`] = [
+                textToUint8Array(
+                    xml(
+                        {
+                            Relationships: {
+                                _attr: {
+                                    xmlns: "http://schemas.openxmlformats.org/package/2006/relationships",
+                                },
                             },
                         },
-                    },
-                    { declaration: { encoding: "UTF-8", standalone: "yes" } },
+                        { declaration: { encoding: "UTF-8", standalone: "yes" } },
+                    ),
                 ),
-            ), { level: 0 }];
+                { level: 0 },
+            ];
         }
 
         // Add media files (STORE compression)

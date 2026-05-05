@@ -399,7 +399,10 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
             if (options.highlight) {
                 this.push(new HighlightComplexScript(options.highlight));
             }
-        } else if (options.highlightComplexScript !== undefined && options.highlightComplexScript !== false) {
+        } else if (
+            options.highlightComplexScript !== undefined &&
+            options.highlightComplexScript !== false
+        ) {
             this.push(new HighlightComplexScript(options.highlightComplexScript));
         }
 
@@ -612,12 +615,19 @@ export function buildRunProperties(options?: IRunPropertiesOptions): IXmlableObj
     if (options.highlightComplexScript === true) {
         if (options.highlight) {
             children.push(
-                new HighlightComplexScript(options.highlight).prepForXml(EMPTY_CTX) as IXmlableObject,
+                new HighlightComplexScript(options.highlight).prepForXml(
+                    EMPTY_CTX,
+                ) as IXmlableObject,
             );
         }
-    } else if (options.highlightComplexScript !== undefined && options.highlightComplexScript !== false) {
+    } else if (
+        options.highlightComplexScript !== undefined &&
+        options.highlightComplexScript !== false
+    ) {
         children.push(
-            new HighlightComplexScript(options.highlightComplexScript).prepForXml(EMPTY_CTX) as IXmlableObject,
+            new HighlightComplexScript(options.highlightComplexScript).prepForXml(
+                EMPTY_CTX,
+            ) as IXmlableObject,
         );
     }
 

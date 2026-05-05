@@ -103,12 +103,7 @@ function formatElement(name: string, values: any, indent: string, depth: number)
                     } else if (value && typeof value === "object") {
                         const childKeys = Object.keys(value);
                         elemParts.push(
-                            formatElement(
-                                childKeys[0],
-                                value[childKeys[0]],
-                                indent,
-                                depth + 1,
-                            ),
+                            formatElement(childKeys[0], value[childKeys[0]], indent, depth + 1),
                         );
                     } else if (value != null) {
                         textParts.push(escapeXml(String(value)));

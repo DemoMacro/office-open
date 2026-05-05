@@ -1,5 +1,5 @@
-import { xml } from "@office-open/xml";
 import type { BaseXmlComponent, IContext, IXmlableObject } from "./xml-components";
+import type { XmlComponent } from "./xml-components";
 
 const XML_DECL = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
 
@@ -18,14 +18,8 @@ export class Formatter {
         throw new Error("XMLComponent did not format correctly");
     }
 
-    public formatToXml(
-        input: BaseXmlComponent,
-        context: IContext,
-        declaration?: boolean,
-    ): string {
-        const str = typeof input.toXml === "function"
-            ? input.toXml(context)
-            : xml(input.prepForXml(context)!);
+    public formatToXml(input: XmlComponent, context: IContext, declaration?: boolean): string {
+        const str = input.toXml(context);
         return declaration ? XML_DECL + str : str;
     }
 }

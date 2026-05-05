@@ -35,9 +35,7 @@ export function escapeAttributeValue(str: string): string {
  * attrs({ id: 1, name: "foo", hidden: undefined })
  * // => ' id="1" name="foo"'
  */
-export function attrs(
-    record: Record<string, string | number | boolean | undefined>,
-): string {
+export function attrs(record: Record<string, string | number | boolean | undefined>): string {
     let s = "";
     for (const [k, v] of Object.entries(record)) {
         if (v !== undefined) {

@@ -1,8 +1,7 @@
-import { attrs, escapeXml } from "@office-open/xml";
 import { XmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
+import { escapeXml } from "@office-open/xml";
 
-import { buildRunPropertiesXml } from "./run-properties";
 import type { IRunPropertiesOptions } from "./run-properties";
 import { RunProperties } from "./run-properties";
 

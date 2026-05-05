@@ -1,6 +1,6 @@
-import { attrs, escapeXml } from "@office-open/xml";
 import { XmlComponent } from "@file/xml-components";
 import type { IXmlableObject } from "@file/xml-components";
+import { attrs } from "@office-open/xml";
 
 export const TextAlignment = {
     LEFT: "l",
@@ -179,7 +179,9 @@ function buildBulletChildrenXml(options: BulletOptions): string {
     if (options.type === "char") {
         s += `<a:buChar${attrs({ char: options.char ?? "•" })}/>`;
     } else if (options.type === "autoNum") {
-        const buAttrs: Record<string, string | number | undefined> = { type: options.format ?? "arabicPeriod" };
+        const buAttrs: Record<string, string | number | undefined> = {
+            type: options.format ?? "arabicPeriod",
+        };
         if (options.startAt !== undefined) buAttrs.startAt = options.startAt;
         s += `<a:buAutoNum${attrs(buAttrs)}/>`;
     }
@@ -202,7 +204,9 @@ export function buildParagraphPropertiesXml(options: IParagraphPropertiesOptions
     }
 
     if (options.lineSpacingPoints !== undefined) {
-        body.push(`<a:lnSpc><a:spcPts${attrs({ val: options.lineSpacingPoints * 100 })}/></a:lnSpc>`);
+        body.push(
+            `<a:lnSpc><a:spcPts${attrs({ val: options.lineSpacingPoints * 100 })}/></a:lnSpc>`,
+        );
     }
 
     if (options.marginBottom !== undefined || options.marginTop !== undefined) {

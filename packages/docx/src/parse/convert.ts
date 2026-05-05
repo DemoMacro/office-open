@@ -166,11 +166,15 @@ function convertParagraph(json: ParagraphJson): Paragraph {
     return new Paragraph({
         ...rest,
         children: runs,
-        ...(tabs ? { tabStops: tabs.map((t: { pos: number; align?: string; leader?: string }) => ({
-            position: t.pos,
-            ...(t.align ? { type: t.align } : {}),
-            ...(t.leader ? { leader: t.leader } : {}),
-        })) } : {}),
+        ...(tabs
+            ? {
+                  tabStops: tabs.map((t: { pos: number; align?: string; leader?: string }) => ({
+                      position: t.pos,
+                      ...(t.align ? { type: t.align } : {}),
+                      ...(t.leader ? { leader: t.leader } : {}),
+                  })),
+              }
+            : {}),
     });
 }
 

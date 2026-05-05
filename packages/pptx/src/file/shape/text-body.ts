@@ -1,6 +1,6 @@
-import { attrs } from "@office-open/xml";
 import { XmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
+import { attrs } from "@office-open/xml";
 
 import { VerticalAlignment } from "../table/table-cell";
 import { Paragraph } from "./paragraph/paragraph";

@@ -8,13 +8,12 @@ import { BaseXmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 import { xml } from "@office-open/xml";
 
-const NV_GRP_SP_PR =
-    '<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>';
+const NV_GRP_SP_PR = '<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>';
 
 const GRP_SP_PR =
     '<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>';
 
-const CLR_MAP_OVR = '<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>';
+const CLR_MAP_OVR = "<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>";
 
 const XMLNS =
     ' xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"';
@@ -65,11 +64,13 @@ export class Slide extends BaseXmlComponent {
         const children: IXmlableObject[] = [];
 
         // xmlns attributes
-        children.push({ _attr: {
-            "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
-            "xmlns:r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
-            "xmlns:p": "http://schemas.openxmlformats.org/presentationml/2006/main",
-        }});
+        children.push({
+            _attr: {
+                "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+                "xmlns:r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+                "xmlns:p": "http://schemas.openxmlformats.org/presentationml/2006/main",
+            },
+        });
 
         // p:cSld — common slide data (background + shape tree)
         const cSldChildren: IXmlableObject[] = [];
@@ -80,19 +81,23 @@ export class Slide extends BaseXmlComponent {
 
         // p:spTree — shape tree
         const spTreeChildren: IXmlableObject[] = [
-            { "p:nvGrpSpPr": [
-                { "p:cNvPr": { _attr: { id: 1, name: "" } } },
-                { "p:cNvGrpSpPr": {} },
-                { "p:nvPr": {} },
-            ]},
-            { "p:grpSpPr": {
-                "a:xfrm": [
-                    { "a:off": { _attr: { x: 0, y: 0 } } },
-                    { "a:ext": { _attr: { cx: 0, cy: 0 } } },
-                    { "a:chOff": { _attr: { x: 0, y: 0 } } },
-                    { "a:chExt": { _attr: { cx: 0, cy: 0 } } },
+            {
+                "p:nvGrpSpPr": [
+                    { "p:cNvPr": { _attr: { id: 1, name: "" } } },
+                    { "p:cNvGrpSpPr": {} },
+                    { "p:nvPr": {} },
                 ],
-            }},
+            },
+            {
+                "p:grpSpPr": {
+                    "a:xfrm": [
+                        { "a:off": { _attr: { x: 0, y: 0 } } },
+                        { "a:ext": { _attr: { cx: 0, cy: 0 } } },
+                        { "a:chOff": { _attr: { x: 0, y: 0 } } },
+                        { "a:chExt": { _attr: { cx: 0, cy: 0 } } },
+                    ],
+                },
+            },
         ];
         for (const child of this.children) {
             const obj = child.prepForXml(context);
