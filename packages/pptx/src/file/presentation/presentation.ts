@@ -107,4 +107,25 @@ export class Presentation extends BaseXmlComponent {
 
         return { "p:presentation": children };
     }
+
+    public toXml(_context: IContext): string {
+        const opts = this.options;
+
+        const cx = opts.slideWidth ?? 9144000;
+        const cy = opts.slideHeight ?? 6858000;
+        const typeAttr = cx === 914400 && cy === 6858000 ? ' type="screen4x3"' : "";
+
+        let s = `<p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">`;
+        s += '<p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst>';
+        s += "<p:sldIdLst>";
+        for (let i = 0; i < opts.slideIds.length; i++) {
+            s += `<p:sldId id="${opts.slideIds[i]}" r:id="rId${i + 2}"/>`;
+        }
+        s += "</p:sldIdLst>";
+        s += `<p:sldSz cx="${cx}" cy="${cy}"${typeAttr}/>`;
+        s += '<p:notesSz cx="6858000" cy="9144000"/>';
+        s += DEFAULT_TEXT_STYLE_XML;
+        s += "</p:presentation>";
+        return s;
+    }
 }

@@ -8,7 +8,7 @@ import {
     getLayoutXml,
     getStyleXml,
 } from "@file/smartart/built-in-definitions";
-import type { IContext } from "@file/xml-components";
+import type { BaseXmlComponent, IContext } from "@file/xml-components";
 import { collectPlaceholderKeys, hasPlaceholders } from "@office-open/core";
 import { xml } from "@office-open/xml";
 import type { Zippable } from "fflate";
@@ -18,15 +18,6 @@ import { HyperlinkReplacer } from "./hyperlink-replacer";
 import { ImageReplacer } from "./image-replacer";
 import { MediaReplacer } from "./media-replacer";
 import { SmartArtReplacer } from "./smartart-replacer";
-
-export interface IXmlifyedFile {
-    readonly data: string | Uint8Array;
-    readonly path: string;
-}
-
-export interface IXmlifyedFileMapping {
-    [key: string]: IXmlifyedFile;
-}
 
 export class Compiler {
     private readonly formatter = new Formatter();
@@ -68,37 +59,32 @@ export class Compiler {
             },
         };
 
-        // Theme
+        // Static singletons (ImportedXmlComponent.toXml uses sourceXml directly)
         mapping["Theme"] = {
-            data: xml(this.formatter.format(file.Theme, context), { declaration, indent }),
+            data: this.formatter.formatToXml(file.Theme, context, declaration),
             path: "ppt/theme/theme1.xml",
         };
 
-        // Table styles
         mapping["TableStyles"] = {
-            data: xml(this.formatter.format(file.TableStyles, context), { declaration, indent }),
+            data: this.formatter.formatToXml(file.TableStyles, context, declaration),
             path: "ppt/tableStyles.xml",
         };
 
-        // Presentation properties
         mapping["PresProps"] = {
-            data: xml(this.formatter.format(file.PresProps, context), { declaration, indent }),
+            data: this.formatter.formatToXml(file.PresProps, context, declaration),
             path: "ppt/presProps.xml",
         };
 
-        // View properties
         mapping["ViewProps"] = {
-            data: xml(this.formatter.format(file.ViewProps, context), { declaration, indent }),
+            data: this.formatter.formatToXml(file.ViewProps, context, declaration),
             path: "ppt/viewProps.xml",
         };
 
-        // Slide Master
         mapping["SlideMaster"] = {
-            data: xml(this.formatter.format(file.SlideMaster, context), { declaration, indent }),
+            data: this.formatter.formatToXml(file.SlideMaster, context, declaration),
             path: "ppt/slideMasters/slideMaster1.xml",
         };
 
-        // Slide Master relationships
         mapping["SlideMasterRelationships"] = {
             data: xml(this.formatter.format(file.SlideMasterRelationships, context), {
                 declaration: false,
@@ -106,13 +92,11 @@ export class Compiler {
             path: "ppt/slideMasters/_rels/slideMaster1.xml.rels",
         };
 
-        // Slide Layout
         mapping["SlideLayout"] = {
-            data: xml(this.formatter.format(file.SlideLayout, context), { declaration, indent }),
+            data: this.formatter.formatToXml(file.SlideLayout, context, declaration),
             path: "ppt/slideLayouts/slideLayout1.xml",
         };
 
-        // Slide Layout relationships
         mapping["SlideLayoutRelationships"] = {
             data: xml(this.formatter.format(file.SlideLayoutRelationships, context), {
                 declaration: false,
@@ -143,10 +127,7 @@ export class Compiler {
         }
 
         // Presentation + its relationships
-        const presentationXml = xml(this.formatter.format(file.PresentationWrapper.View, context), {
-            declaration,
-            indent,
-        });
+        const presentationXml = this.formatter.formatToXml(file.PresentationWrapper.View, context, declaration);
         let currentImageCount = 0;
 
         const mediaData = this.imageReplacer.getMediaData(presentationXml, file.Media);
@@ -181,10 +162,7 @@ export class Compiler {
         // Slides — format BEFORE ContentTypes so ChartFrame.prepForXml() populates Charts
         for (let i = 0; i < file.Slides.length; i++) {
             const slideWrapper = file.SlideWrappers[i];
-            const slideXml = xml(this.formatter.format(slideWrapper.View, context), {
-                declaration,
-                indent,
-            });
+            const slideXml = this.formatter.formatToXml(slideWrapper.View, context, declaration);
 
             const slideMediaData = this.imageReplacer.getMediaData(slideXml, file.Media);
             const slideImageOffset = slideWrapper.Relationships.RelationshipCount + 1;
@@ -357,11 +335,11 @@ export class Compiler {
             path: "[Content_Types].xml",
         };
 
-        // Convert mapping to Zippable
+        // Convert mapping to Zippable (XML files: STORE, no compression benefit)
         const files: Zippable = {};
         for (const key of Object.keys(mapping)) {
             const entry = mapping[key];
-            files[entry.path] = textToUint8Array(entry.data);
+            files[entry.path] = [textToUint8Array(entry.data), { level: 0 }];
         }
 
         // Add overrides
@@ -372,16 +350,16 @@ export class Compiler {
                     : textToUint8Array(override.data);
         }
 
-        // Add chart parts
+        // Add chart parts (STORE — XML, no compression benefit)
         for (let i = 0; i < file.Charts.Array.length; i++) {
             const chartData = file.Charts.Array[i];
-            files[`ppt/charts/chart${i + 1}.xml`] = textToUint8Array(
+            files[`ppt/charts/chart${i + 1}.xml`] = [textToUint8Array(
                 xml(this.formatter.format(chartData.chartSpace, context), {
                     declaration,
                     indent,
                 }),
-            );
-            files[`ppt/charts/_rels/chart${i + 1}.xml.rels`] = textToUint8Array(
+            ), { level: 0 }];
+            files[`ppt/charts/_rels/chart${i + 1}.xml.rels`] = [textToUint8Array(
                 xml(
                     {
                         Relationships: {
@@ -392,40 +370,40 @@ export class Compiler {
                     },
                     { declaration: { encoding: "UTF-8", standalone: "yes" } },
                 ),
-            );
+            ), { level: 0 }];
         }
 
-        // Add SmartArt diagram parts
+        // Add SmartArt diagram parts (STORE)
         for (let i = 0; i < file.SmartArts.Array.length; i++) {
             const smartArtData = file.SmartArts.Array[i];
-            files[`ppt/diagrams/data${i + 1}.xml`] = textToUint8Array(
+            files[`ppt/diagrams/data${i + 1}.xml`] = [textToUint8Array(
                 xml(this.formatter.format(smartArtData.dataModel, context), {
                     declaration,
                     indent,
                 }),
-            );
-            files[`ppt/diagrams/layout${i + 1}.xml`] = textToUint8Array(
+            ), { level: 0 }];
+            files[`ppt/diagrams/layout${i + 1}.xml`] = [textToUint8Array(
                 getLayoutXml(smartArtData.layout),
-            );
-            files[`ppt/diagrams/quickStyle${i + 1}.xml`] = textToUint8Array(
+            ), { level: 0 }];
+            files[`ppt/diagrams/quickStyle${i + 1}.xml`] = [textToUint8Array(
                 getStyleXml(smartArtData.style),
-            );
-            files[`ppt/diagrams/colors${i + 1}.xml`] = textToUint8Array(
+            ), { level: 0 }];
+            files[`ppt/diagrams/colors${i + 1}.xml`] = [textToUint8Array(
                 getColorXml(smartArtData.color),
-            );
-            files[`ppt/diagrams/drawing${i + 1}.xml`] = textToUint8Array(DEFAULT_DRAWING_XML);
+            ), { level: 0 }];
+            files[`ppt/diagrams/drawing${i + 1}.xml`] = [textToUint8Array(DEFAULT_DRAWING_XML), { level: 0 }];
         }
 
-        // Add notes slides
+        // Add notes slides (STORE)
         for (let i = 0; i < file.NotesSlides.length; i++) {
             const notesSlide = file.NotesSlides[i];
-            files[`ppt/notesSlides/notesSlide${i + 1}.xml`] = textToUint8Array(
+            files[`ppt/notesSlides/notesSlide${i + 1}.xml`] = [textToUint8Array(
                 xml(this.formatter.format(notesSlide, context), {
                     declaration,
                     indent,
                 }),
-            );
-            files[`ppt/notesSlides/_rels/notesSlide${i + 1}.xml.rels`] = textToUint8Array(
+            ), { level: 0 }];
+            files[`ppt/notesSlides/_rels/notesSlide${i + 1}.xml.rels`] = [textToUint8Array(
                 xml(
                     {
                         Relationships: {
@@ -436,7 +414,7 @@ export class Compiler {
                     },
                     { declaration: { encoding: "UTF-8", standalone: "yes" } },
                 ),
-            );
+            ), { level: 0 }];
         }
 
         // Add media files (STORE compression)

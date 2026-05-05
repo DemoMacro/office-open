@@ -4,6 +4,7 @@ import type { OutlineOptions } from "@file/drawingml/outline";
 import { ShapeProperties } from "@file/drawingml/shape-properties";
 import type { IShapePropertiesOptions } from "@file/drawingml/shape-properties";
 import type { File } from "@file/file";
+import { attrs, escapeXml, xml } from "@office-open/xml";
 import { XmlComponent as Xc } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 import { pixelsToEmus } from "@util/types";
@@ -134,5 +135,62 @@ export class Shape extends Xc {
         if (txBodyObj) children.push(txBodyObj);
 
         return { "p:sp": children };
+    }
+
+    public override toXml(context: IContext): string {
+        const opts = this.options;
+        const id = this.shapeId;
+        const name = escapeXml(opts.name ?? `Shape ${id}`);
+
+        let s = "<p:sp><p:nvSpPr>";
+        s += `<p:cNvPr${attrs({ id, name })}/>`;
+        s += "<p:cNvSpPr/>";
+
+        if (opts.placeholder) {
+            const phAttrs: Record<string, string | number | undefined> = { type: opts.placeholder };
+            if (opts.placeholderIndex !== undefined) phAttrs.idx = opts.placeholderIndex;
+            s += `<p:nvPr><p:ph${attrs(phAttrs)}/></p:nvPr>`;
+        } else {
+            s += "<p:nvPr/>";
+        }
+        s += "</p:nvSpPr>";
+
+        // spPr — use prepForXml + xml (ShapeProperties not yet converted)
+        const spPr = new ShapeProperties({
+            x: opts.x !== undefined ? pixelsToEmus(opts.x) : undefined,
+            y: opts.y !== undefined ? pixelsToEmus(opts.y) : undefined,
+            width: opts.width !== undefined ? pixelsToEmus(opts.width) : undefined,
+            height: opts.height !== undefined ? pixelsToEmus(opts.height) : undefined,
+            geometry: opts.geometry,
+            fill: opts.fill,
+            outline: opts.outline,
+            effects: opts.effects,
+            flipH: opts.flipH,
+            rotation: opts.rotation,
+        });
+        const spPrObj = spPr.prepForXml(context as IContext<File>);
+        if (spPrObj) {
+            s += xml(spPrObj);
+        }
+
+        // txBody
+        const txBodyOpts: ITextBodyOptions = {
+            paragraphs:
+                opts.paragraphs ??
+                (opts.text
+                    ? [new Paragraph({ children: [new Run({ text: opts.text })] })]
+                    : undefined),
+            vertical: opts.textVertical,
+            anchor: opts.textAnchor,
+            autoFit: opts.textAutoFit,
+            wrap: opts.textWrap,
+            margins: opts.textMargins,
+            columns: opts.textColumns,
+            columnSpacing: opts.textColumnSpacing,
+        };
+        s += new TextBody(txBodyOpts).toXml(context);
+
+        s += "</p:sp>";
+        return s;
     }
 }

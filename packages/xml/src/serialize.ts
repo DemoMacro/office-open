@@ -2,15 +2,6 @@ import { escapeXml } from "./escape";
 
 const DEFAULT_INDENT = "    ";
 
-interface ResolvedElement {
-    name: string;
-    attributes: string[];
-    content: (ResolvedElement | string)[];
-    indent: string;
-    depth: number;
-    emptyArray: boolean;
-}
-
 export function xml(
     input: Record<string, any> | Record<string, any>[],
     options?:
@@ -37,7 +28,8 @@ export function xml(
 
     const items = Array.isArray(input) ? input : [input];
     for (let i = 0; i < items.length; i++) {
-        parts.push(formatElement(resolve(items[i], opts.indent, 0)));
+        const keys = Object.keys(items[i]);
+        parts.push(formatElement(keys[0], items[i][keys[0]], opts.indent, 0));
         if (opts.indent && i < items.length - 1) parts.push("\n");
     }
 
@@ -64,96 +56,96 @@ function normalizeOptions(options?: boolean | string | XmlInputOptions): {
     return { indent, declaration: opts.declaration };
 }
 
-function resolve(data: Record<string, any>, indent: string, depth: number): ResolvedElement {
-    const keys = Object.keys(data);
-    const name = keys[0];
-    const values = data[name];
-    const attributes: string[] = [];
-    const content: (ResolvedElement | string)[] = [];
+/**
+ * Single-pass XML formatter: directly converts IXmlableObject to string,
+ * eliminating the intermediate ResolvedElement tree.
+ */
+function formatElement(name: string, values: any, indent: string, depth: number): string {
+    const attrParts: string[] = [];
+    const textParts: string[] = [];
+    const elemParts: string[] = [];
+    let emptyArray = false;
 
     if (values == null) {
-        return { name, attributes, content, indent, depth, emptyArray: false };
-    }
-
-    switch (typeof values) {
-        case "object": {
-            if (values._attr) {
-                for (const key of Object.keys(values._attr)) {
-                    attributes.push(`${key}="${escapeXml(String(values._attr[key]))}"`);
-                }
-            }
-            if (values._attributes) {
-                for (const key of Object.keys(values._attributes)) {
-                    attributes.push(`${key}="${escapeXml(String(values._attributes[key]))}"`);
-                }
-            }
-            if (values._cdata) {
-                const escaped = String(values._cdata).replace(/\]\]>/g, "]]]]><![CDATA[>");
-                content.push(`<![CDATA[${escaped}]]>`);
-            }
-            if (Array.isArray(values)) {
-                if (values.length === 0) {
-                    return { name, attributes, content, indent, depth, emptyArray: true };
-                }
-                for (const value of values) {
-                    if (value && typeof value === "object" && "_attr" in value) {
-                        for (const key of Object.keys(value._attr)) {
-                            attributes.push(`${key}="${escapeXml(String(value._attr[key]))}"`);
-                        }
-                    } else if (value && typeof value === "object" && "_attributes" in value) {
-                        for (const key of Object.keys(value._attributes)) {
-                            attributes.push(
-                                `${key}="${escapeXml(String(value._attributes[key]))}"`,
-                            );
-                        }
-                    } else if (value && typeof value === "object") {
-                        content.push(resolve(value, indent, depth + 1));
-                    } else if (value != null) {
-                        content.push(escapeXml(String(value)));
-                    }
-                }
-            }
-            break;
-        }
-        default:
-            content.push(escapeXml(String(values)));
-    }
-
-    return { name, attributes, content, indent, depth, emptyArray: false };
-}
-
-function formatElement(elem: ResolvedElement): string {
-    const { name, attributes, content, indent, depth } = elem;
-    const hasChildren = content.length > 0;
-    const ind = indent ? indent.repeat(depth) : "";
-
-    const attrStr = attributes.length ? " " + attributes.join(" ") : "";
-
-    if (!hasChildren) {
-        if (elem.emptyArray) {
-            return `${ind}<${name}${attrStr}></${name}>`;
-        }
+        const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
+        const ind = indent ? indent.repeat(depth) : "";
         return `${ind}<${name}${attrStr}/>`;
     }
 
-    // Check if content is purely text (single string, no nested elements)
-    const textContent = content.length === 1 && typeof content[0] === "string" ? content[0] : null;
-    if (textContent !== null && !indent) {
-        return `<${name}${attrStr}>${textContent}</${name}>`;
-    }
-    if (textContent !== null) {
-        return `${ind}<${name}${attrStr}>${textContent}</${name}>`;
+    if (typeof values === "object") {
+        if (values._attr) {
+            for (const key of Object.keys(values._attr)) {
+                attrParts.push(`${key}="${escapeXml(String(values._attr[key]))}"`);
+            }
+        }
+        if (values._attributes) {
+            for (const key of Object.keys(values._attributes)) {
+                attrParts.push(`${key}="${escapeXml(String(values._attributes[key]))}"`);
+            }
+        }
+        if (values._cdata) {
+            const escaped = String(values._cdata).replace(/\]\]>/g, "]]]]><![CDATA[>");
+            textParts.push(`<![CDATA[${escaped}]]>`);
+        }
+        if (Array.isArray(values)) {
+            if (values.length === 0) {
+                emptyArray = true;
+            } else {
+                for (const value of values) {
+                    if (value && typeof value === "object" && "_attr" in value) {
+                        for (const key of Object.keys(value._attr)) {
+                            attrParts.push(`${key}="${escapeXml(String(value._attr[key]))}"`);
+                        }
+                    } else if (value && typeof value === "object" && "_attributes" in value) {
+                        for (const key of Object.keys(value._attributes)) {
+                            attrParts.push(`${key}="${escapeXml(String(value._attributes[key]))}"`);
+                        }
+                    } else if (value && typeof value === "object") {
+                        const childKeys = Object.keys(value);
+                        elemParts.push(
+                            formatElement(
+                                childKeys[0],
+                                value[childKeys[0]],
+                                indent,
+                                depth + 1,
+                            ),
+                        );
+                    } else if (value != null) {
+                        textParts.push(escapeXml(String(value)));
+                    }
+                }
+            }
+        }
+    } else {
+        textParts.push(escapeXml(String(values)));
     }
 
+    const ind = indent ? indent.repeat(depth) : "";
+    const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
+    const totalParts = textParts.length + elemParts.length;
+
+    if (totalParts === 0) {
+        return emptyArray ? `${ind}<${name}${attrStr}></${name}>` : `${ind}<${name}${attrStr}/>`;
+    }
+
+    // Text-only optimization: single text child, no element children
+    if (elemParts.length === 0 && textParts.length === 1) {
+        return indent
+            ? `${ind}<${name}${attrStr}>${textParts[0]}</${name}>`
+            : `<${name}${attrStr}>${textParts[0]}</${name}>`;
+    }
+
+    // Mixed content
     const parts: string[] = [];
     parts.push(`${ind}<${name}${attrStr}>`);
     if (indent) parts.push("\n");
-    for (const child of content) {
-        if (typeof child === "string") {
-            parts.push(`${indent.repeat(depth + 1)}${child}`);
-        } else {
-            parts.push(formatElement(child));
-        }
+    const childIndent = indent ? indent.repeat(depth + 1) : "";
+    for (const t of textParts) {
+        parts.push(`${childIndent}${t}`);
+        if (indent) parts.push("\n");
+    }
+    for (const e of elemParts) {
+        parts.push(e);
         if (indent) parts.push("\n");
     }
     parts.push(`${ind}</${name}>`);

@@ -1,3 +1,4 @@
+import { attrs } from "@office-open/xml";
 import { XmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 
@@ -57,6 +58,29 @@ function buildBodyPr(options: ITextBodyOptions): IXmlableObject {
     };
 }
 
+function buildBodyPrXml(options: ITextBodyOptions): string {
+    let s = "<a:bodyPr";
+
+    const a: Record<string, string | number | undefined> = {};
+    if (options.vertical) a.vert = options.vertical;
+    if (options.anchor) a.anchor = VerticalAlignment[options.anchor];
+    if (options.wrap) a.wrap = options.wrap;
+    if (options.margins?.top !== undefined) a.tIns = options.margins.top;
+    if (options.margins?.bottom !== undefined) a.bIns = options.margins.bottom;
+    if (options.margins?.left !== undefined) a.lIns = options.margins.left;
+    if (options.margins?.right !== undefined) a.rIns = options.margins.right;
+    if (options.columns !== undefined) a.numCol = options.columns;
+    if (options.columnSpacing !== undefined) a.spcCol = options.columnSpacing * 100;
+    s += attrs(a);
+
+    let inner = "";
+    if (options.autoFit === "normal") inner += "<a:normAutofit/>";
+    else if (options.autoFit === "shape") inner += "<a:spAutoFit/>";
+    else if (options.autoFit === "none") inner += "<a:noAutofit/>";
+
+    return inner ? `${s}>${inner}</a:bodyPr>` : `${s}/>`;
+}
+
 /**
  * p:txBody — Text body within a shape.
  * Lazy: stores options, builds XML object in prepForXml.
@@ -88,5 +112,24 @@ export class TextBody extends XmlComponent {
         }
 
         return { "p:txBody": children };
+    }
+
+    public toXml(context: IContext): string {
+        let s = "<p:txBody>";
+        s += buildBodyPrXml(this.options);
+        s += "<a:lstStyle/>";
+
+        if (this.options.paragraphs) {
+            for (const p of this.options.paragraphs) {
+                const para =
+                    typeof p === "string" ? new Paragraph({ children: [new Run({ text: p })] }) : p;
+                s += para.toXml(context);
+            }
+        } else {
+            s += new Paragraph().toXml(context);
+        }
+
+        s += "</p:txBody>";
+        return s;
     }
 }

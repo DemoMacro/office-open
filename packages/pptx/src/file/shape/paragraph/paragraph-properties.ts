@@ -1,3 +1,4 @@
+import { attrs, escapeXml } from "@office-open/xml";
 import { XmlComponent } from "@file/xml-components";
 import type { IXmlableObject } from "@file/xml-components";
 
@@ -156,4 +157,69 @@ export class ParagraphProperties extends XmlComponent {
     ): IXmlableObject | undefined {
         return buildParagraphProperties(this.options);
     }
+
+    public toXml(): string {
+        return buildParagraphPropertiesXml(this.options);
+    }
+}
+
+function buildBulletChildrenXml(options: BulletOptions): string {
+    if (options.type === "none") {
+        return "<a:buNone/>";
+    }
+
+    let s = "";
+    if (options.color) {
+        s += `<a:buClr><a:srgbClr${attrs({ val: options.color.replace("#", "") })}/></a:buClr>`;
+    }
+    if (options.size !== undefined) {
+        s += `<a:buSzPct${attrs({ val: `${options.size}%` })}/>`;
+    }
+    s += `<a:buFont${attrs({ typeface: "Arial", panose: "020B0604020202020204", pitchFamily: "34", charset: "0" })}/>`;
+    if (options.type === "char") {
+        s += `<a:buChar${attrs({ char: options.char ?? "•" })}/>`;
+    } else if (options.type === "autoNum") {
+        const buAttrs: Record<string, string | number | undefined> = { type: options.format ?? "arabicPeriod" };
+        if (options.startAt !== undefined) buAttrs.startAt = options.startAt;
+        s += `<a:buAutoNum${attrs(buAttrs)}/>`;
+    }
+    return s;
+}
+
+export function buildParagraphPropertiesXml(options: IParagraphPropertiesOptions): string {
+    const attrStr = attrs({
+        algn: options.alignment ? TextAlignment[options.alignment] : undefined,
+        lvl: options.indentLevel,
+        marL: options.marginIndent,
+        marR: options.marginRight,
+        defTabSz: options.defTabSize,
+    });
+
+    const body: string[] = [];
+
+    if (options.lineSpacing !== undefined) {
+        body.push(`<a:lnSpc><a:spcPct${attrs({ val: options.lineSpacing * 1000 })}/></a:lnSpc>`);
+    }
+
+    if (options.lineSpacingPoints !== undefined) {
+        body.push(`<a:lnSpc><a:spcPts${attrs({ val: options.lineSpacingPoints * 100 })}/></a:lnSpc>`);
+    }
+
+    if (options.marginBottom !== undefined || options.marginTop !== undefined) {
+        body.push(`<a:spcAft><a:spcPts${attrs({ val: options.marginBottom ?? 0 })}/></a:spcAft>`);
+    }
+
+    if (options.marginTop !== undefined) {
+        body.push(`<a:spcBef><a:spcPts${attrs({ val: options.marginTop })}/></a:spcBef>`);
+    }
+
+    if (options.bullet) {
+        body.push(buildBulletChildrenXml(options.bullet));
+    } else if (options.bulletNone !== false) {
+        body.push("<a:buNone/>");
+    }
+
+    if (!attrStr && body.length === 0) return "";
+    if (body.length === 0) return `<a:pPr${attrStr}/>`;
+    return `<a:pPr${attrStr}>${body.join("")}</a:pPr>`;
 }

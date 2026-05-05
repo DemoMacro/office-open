@@ -3,6 +3,7 @@
  *
  * @module
  */
+import { xml } from "@office-open/xml";
 import { BaseXmlComponent } from "./base";
 import type { IContext, IXmlableObject } from "./base";
 
@@ -57,6 +58,15 @@ export abstract class XmlComponent extends BaseXmlComponent {
                     : children
                 : EMPTY_OBJECT,
         };
+    }
+
+    /**
+     * Direct XML serialization. Override in subclasses for zero-allocation output.
+     * Default falls back to prepForXml() + xml().
+     */
+    public toXml(context: IContext): string {
+        const obj = this.prepForXml(context);
+        return obj ? xml(obj) : "";
     }
 
     /**

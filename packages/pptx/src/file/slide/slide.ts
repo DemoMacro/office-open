@@ -6,46 +6,18 @@ import type { ITransitionOptions } from "@file/transition/transition";
 import { buildTransition } from "@file/transition/transition";
 import { BaseXmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
+import { xml } from "@office-open/xml";
 
-/**
- * p:nvGrpSpPr singleton — non-visual properties for shape tree.
- */
-const NV_GRP_SP_PR: IXmlableObject = {
-    "p:nvGrpSpPr": [
-        { "p:cNvPr": { _attr: { id: 1, name: "" } } },
-        { "p:cNvGrpSpPr": {} },
-        { "p:nvPr": {} },
-    ],
-};
+const NV_GRP_SP_PR =
+    '<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>';
 
-/**
- * p:grpSpPr singleton — group shape properties with default transform.
- */
-const GRP_SP_PR: IXmlableObject = {
-    "p:grpSpPr": {
-        "a:xfrm": [
-            { "a:off": { _attr: { x: 0, y: 0 } } },
-            { "a:ext": { _attr: { cx: 0, cy: 0 } } },
-            { "a:chOff": { _attr: { x: 0, y: 0 } } },
-            { "a:chExt": { _attr: { cx: 0, cy: 0 } } },
-        ],
-    },
-};
+const GRP_SP_PR =
+    '<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>';
 
-/**
- * p:clrMapOvr singleton — color map override.
- */
-const CLR_MAP_OVR: IXmlableObject = {
-    "p:clrMapOvr": [{ "a:masterClrMapping": {} }],
-};
+const CLR_MAP_OVR = '<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>';
 
-const XMLNS_ATTRS: IXmlableObject = {
-    _attr: {
-        "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
-        "xmlns:r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
-        "xmlns:p": "http://schemas.openxmlformats.org/presentationml/2006/main",
-    },
-};
+const XMLNS =
+    ' xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"';
 
 function collectAnimations(children: readonly BaseXmlComponent[]): Array<{
     readonly spid: number;
@@ -93,7 +65,11 @@ export class Slide extends BaseXmlComponent {
         const children: IXmlableObject[] = [];
 
         // xmlns attributes
-        children.push(XMLNS_ATTRS);
+        children.push({ _attr: {
+            "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+            "xmlns:r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+            "xmlns:p": "http://schemas.openxmlformats.org/presentationml/2006/main",
+        }});
 
         // p:cSld — common slide data (background + shape tree)
         const cSldChildren: IXmlableObject[] = [];
@@ -103,7 +79,21 @@ export class Slide extends BaseXmlComponent {
         }
 
         // p:spTree — shape tree
-        const spTreeChildren: IXmlableObject[] = [NV_GRP_SP_PR, GRP_SP_PR];
+        const spTreeChildren: IXmlableObject[] = [
+            { "p:nvGrpSpPr": [
+                { "p:cNvPr": { _attr: { id: 1, name: "" } } },
+                { "p:cNvGrpSpPr": {} },
+                { "p:nvPr": {} },
+            ]},
+            { "p:grpSpPr": {
+                "a:xfrm": [
+                    { "a:off": { _attr: { x: 0, y: 0 } } },
+                    { "a:ext": { _attr: { cx: 0, cy: 0 } } },
+                    { "a:chOff": { _attr: { x: 0, y: 0 } } },
+                    { "a:chExt": { _attr: { cx: 0, cy: 0 } } },
+                ],
+            }},
+        ];
         for (const child of this.children) {
             const obj = child.prepForXml(context);
             if (obj) spTreeChildren.push(obj);
@@ -113,7 +103,7 @@ export class Slide extends BaseXmlComponent {
         children.push({ "p:cSld": cSldChildren });
 
         // p:clrMapOvr
-        children.push(CLR_MAP_OVR);
+        children.push({ "p:clrMapOvr": [{ "a:masterClrMapping": {} }] });
 
         // p:transition (optional)
         if (this.transition) {
@@ -130,5 +120,47 @@ export class Slide extends BaseXmlComponent {
         }
 
         return { "p:sld": children };
+    }
+
+    public toXml(context: IContext): string {
+        let s = `<p:sld${XMLNS}>`;
+
+        // p:cSld
+        s += "<p:cSld>";
+        if (this.background) {
+            const bgObj = this.background.prepForXml(context);
+            if (bgObj) s += xml(bgObj);
+        }
+
+        // p:spTree
+        s += "<p:spTree>";
+        s += NV_GRP_SP_PR;
+        s += GRP_SP_PR;
+        for (const child of this.children) {
+            if (typeof (child as unknown as { toXml?: Function }).toXml === "function") {
+                s += (child as unknown as { toXml(ctx: IContext): string }).toXml(context);
+            } else {
+                const obj = child.prepForXml(context);
+                if (obj) s += xml(obj);
+            }
+        }
+        s += "</p:spTree></p:cSld>";
+
+        s += CLR_MAP_OVR;
+
+        if (this.transition) {
+            const transObj = buildTransition(this.transition);
+            if (transObj) s += xml(transObj);
+        }
+
+        const animations = collectAnimations(this.children);
+        if (animations.length > 0) {
+            const timing = new SlideTiming(animations);
+            const timingObj = timing.prepForXml(context);
+            if (timingObj) s += xml(timingObj);
+        }
+
+        s += "</p:sld>";
+        return s;
     }
 }

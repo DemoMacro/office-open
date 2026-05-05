@@ -1,6 +1,8 @@
+import { attrs, escapeXml } from "@office-open/xml";
 import { XmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 
+import { buildRunPropertiesXml } from "./run-properties";
 import type { IRunPropertiesOptions } from "./run-properties";
 import { RunProperties } from "./run-properties";
 
@@ -41,5 +43,21 @@ export class Run extends XmlComponent {
                       ? children[0]
                       : children,
         };
+    }
+
+    public toXml(context: IContext): string {
+        let s = "<a:r>";
+
+        if (RunProperties.hasProperties(this.options)) {
+            const rp = new RunProperties(this.options);
+            s += rp.toXml(context);
+        }
+
+        if (this.options.text) {
+            s += `<a:t>${escapeXml(this.options.text)}</a:t>`;
+        }
+
+        s += "</a:r>";
+        return s;
     }
 }

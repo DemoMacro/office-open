@@ -50,10 +50,22 @@ class ImportedXmlComponentAttributes extends XmlAttributeComponent<any> {}
  * XML component representing imported XML content.
  */
 export class ImportedXmlComponent extends XmlComponent {
+    protected _sourceXml?: string;
+
     public static fromXmlString(importedContent: string): ImportedXmlComponent {
         const xmlObj = xml2js(importedContent, { compact: false }) as XmlElement;
         const root = xmlObj.elements?.[0] ?? xmlObj;
-        return convertToXmlComponent(root as XmlElement) as ImportedXmlComponent;
+        const component = convertToXmlComponent(root as XmlElement) as ImportedXmlComponent;
+        component._sourceXml = importedContent;
+        return component;
+    }
+
+    public get sourceXml(): string | undefined {
+        return this._sourceXml;
+    }
+
+    public override toXml(_context: IContext): string {
+        return this._sourceXml ?? super.toXml(_context);
     }
 
     public constructor(rootKey: string, _attr?: any) {

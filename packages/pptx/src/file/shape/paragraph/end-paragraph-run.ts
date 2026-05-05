@@ -1,11 +1,16 @@
 import { BuilderElement } from "@file/xml-components";
 import type { IXmlableObject } from "@file/xml-components";
+import { attrs } from "@office-open/xml";
 
 /**
  * Pure function: builds a:endParaRPr XML object.
  */
 export function buildEndParagraphRunProperties(lang: string = "en-US"): IXmlableObject {
     return { "a:endParaRPr": { _attr: { lang } } };
+}
+
+export function buildEndParagraphRunPropertiesXml(lang: string = "en-US"): string {
+    return `<a:endParaRPr${attrs({ lang })}/>`;
 }
 
 /**
