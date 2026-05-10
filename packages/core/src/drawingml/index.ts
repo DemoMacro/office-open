@@ -119,6 +119,10 @@ export { createTileInfo } from "./blip/tile";
 export type { TileOptions } from "./blip/tile";
 export { TileAlignment } from "./blip/tile";
 
+// Transform
+export { createTransform2D, createGroupTransform2D } from "./transform";
+export type { Transform2DOptions, GroupTransform2DOptions } from "./transform";
+
 // Media transformation
 export { createTransformation } from "./media/transformation";
 export type { IMediaTransformation, IMediaDataTransformation } from "./media/transformation";

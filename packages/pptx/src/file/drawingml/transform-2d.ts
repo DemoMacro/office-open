@@ -1,53 +1,25 @@
-import { BuilderElement, NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
+import type { IContext, IXmlableObject } from "@file/xml-components";
+import {
+    createTransform2D,
+    type Transform2DOptions as CoreTransform2DOptions,
+} from "@office-open/core/drawingml";
 
-export interface ITransform2DOptions {
-    readonly x?: number;
-    readonly y?: number;
-    readonly width?: number;
-    readonly height?: number;
-    readonly flipH?: boolean;
-    readonly rotation?: number;
-}
+export type ITransform2DOptions = CoreTransform2DOptions;
 
 /**
  * a:xfrm / p:xfrm — 2D transform for shapes and graphic frames (position + size in EMUs).
+ * Delegates to core createTransform2D.
  */
 export class Transform2D extends XmlComponent {
+    private readonly core: XmlComponent;
+
     public constructor(options: ITransform2DOptions, prefix: "a" | "p" = "a") {
         super(`${prefix}:xfrm`);
+        this.core = createTransform2D(options, `${prefix}:xfrm`);
+    }
 
-        const attrs: Record<
-            string,
-            { readonly key: string; readonly value: string | boolean | number | undefined }
-        > = {};
-        if (options.flipH !== undefined) attrs.flipH = { key: "flipH", value: options.flipH };
-        if (options.rotation !== undefined) attrs.rot = { key: "rot", value: options.rotation };
-        if (Object.keys(attrs).length > 0) {
-            this.root.push(new NextAttributeComponent(attrs));
-        }
-
-        if (options.x !== undefined || options.y !== undefined) {
-            this.root.push(
-                new BuilderElement({
-                    name: "a:off",
-                    attributes: {
-                        x: { key: "x", value: options.x ?? 0 },
-                        y: { key: "y", value: options.y ?? 0 },
-                    },
-                }),
-            );
-        }
-
-        if (options.width !== undefined || options.height !== undefined) {
-            this.root.push(
-                new BuilderElement({
-                    name: "a:ext",
-                    attributes: {
-                        cx: { key: "cx", value: options.width ?? 0 },
-                        cy: { key: "cy", value: options.height ?? 0 },
-                    },
-                }),
-            );
-        }
+    public override prepForXml(context: IContext): IXmlableObject | undefined {
+        return this.core["prepForXml"]?.(context);
     }
 }

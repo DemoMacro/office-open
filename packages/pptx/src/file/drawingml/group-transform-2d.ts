@@ -1,70 +1,26 @@
-import { BuilderElement, NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
+import type { IContext, IXmlableObject } from "@file/xml-components";
+import {
+    createGroupTransform2D,
+    type GroupTransform2DOptions as CoreGroupTransform2DOptions,
+} from "@office-open/core/drawingml";
 
-import type { ITransform2DOptions } from "./transform-2d";
-
-export interface IGroupTransform2DOptions extends ITransform2DOptions {
-    readonly childOffsetX?: number;
-    readonly childOffsetY?: number;
-    readonly childExtentWidth?: number;
-    readonly childExtentHeight?: number;
-}
+export type IGroupTransform2DOptions = CoreGroupTransform2DOptions;
 
 /**
  * a:xfrm — Group transform (CT_GroupTransform2D).
  * Extends regular Transform2D with child offset (chOff) and child extent (chExt).
+ * Delegates to core createGroupTransform2D.
  */
 export class GroupTransform2D extends XmlComponent {
+    private readonly core: XmlComponent;
+
     public constructor(options: IGroupTransform2DOptions, prefix: "a" | "p" = "a") {
         super(`${prefix}:xfrm`);
+        this.core = createGroupTransform2D(options, `${prefix}:xfrm`);
+    }
 
-        const attrs: Record<
-            string,
-            { readonly key: string; readonly value: string | boolean | number | undefined }
-        > = {};
-        if (options.flipH !== undefined) attrs.flipH = { key: "flipH", value: options.flipH };
-        if (options.rotation !== undefined) attrs.rot = { key: "rot", value: options.rotation };
-        if (Object.keys(attrs).length > 0) {
-            this.root.push(new NextAttributeComponent(attrs));
-        }
-
-        this.root.push(
-            new BuilderElement({
-                name: "a:off",
-                attributes: {
-                    x: { key: "x", value: options.x ?? 0 },
-                    y: { key: "y", value: options.y ?? 0 },
-                },
-            }),
-        );
-
-        this.root.push(
-            new BuilderElement({
-                name: "a:ext",
-                attributes: {
-                    cx: { key: "cx", value: options.width ?? 0 },
-                    cy: { key: "cy", value: options.height ?? 0 },
-                },
-            }),
-        );
-
-        this.root.push(
-            new BuilderElement({
-                name: "a:chOff",
-                attributes: {
-                    x: { key: "x", value: options.childOffsetX ?? 0 },
-                    y: { key: "y", value: options.childOffsetY ?? 0 },
-                },
-            }),
-        );
-
-        this.root.push(
-            new BuilderElement({
-                name: "a:chExt",
-                attributes: {
-                    cx: { key: "cx", value: options.childExtentWidth ?? 0 },
-                    cy: { key: "cy", value: options.childExtentHeight ?? 0 },
-                },
-            }),
-        );
+    public override prepForXml(context: IContext): IXmlableObject | undefined {
+        return this.core["prepForXml"]?.(context);
     }
 }
