@@ -3,7 +3,7 @@ import { GroupShapeNonVisualProperties } from "@file/shape-tree/group-shape-non-
 import { BuilderElement, NextAttributeComponent, XmlComponent } from "@file/xml-components";
 
 import { Paragraph } from "../shape/paragraph/paragraph";
-import { Run } from "../shape/paragraph/run";
+import { TextRun } from "../shape/paragraph/run";
 import { TextBody } from "../shape/text-body";
 
 export interface INotesSlideOptions {
@@ -177,7 +177,7 @@ class NotesBodyPlaceholder extends XmlComponent {
         );
 
         const textBodyOptions = text
-            ? { paragraphs: [new Paragraph({ children: [new Run({ text })] })] }
+            ? { paragraphs: [new Paragraph({ children: [new TextRun({ text })] })] }
             : undefined;
         this.root.push(new TextBody(textBodyOptions));
     }

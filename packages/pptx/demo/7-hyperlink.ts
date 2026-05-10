@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Presentation, Packer, Shape, Run, Paragraph } from "@office-open/pptx";
+import { Presentation, Packer, Shape, TextRun, Paragraph } from "@office-open/pptx";
 
 const pres = new Presentation({
     title: "Hyperlink Demo",
@@ -24,10 +24,10 @@ const pres = new Presentation({
                     paragraphs: [
                         new Paragraph({
                             children: [
-                                new Run({
+                                new TextRun({
                                     text: "Visit ",
                                 }),
-                                new Run({
+                                new TextRun({
                                     text: "Google",
                                     hyperlink: {
                                         url: "https://www.google.com",
@@ -35,10 +35,10 @@ const pres = new Presentation({
                                     },
                                     bold: true,
                                 }),
-                                new Run({
+                                new TextRun({
                                     text: " or ",
                                 }),
-                                new Run({
+                                new TextRun({
                                     text: "GitHub",
                                     hyperlink: { url: "https://github.com" },
                                     italic: true,
@@ -47,10 +47,10 @@ const pres = new Presentation({
                         }),
                         new Paragraph({
                             children: [
-                                new Run({
+                                new TextRun({
                                     text: "Another link: ",
                                 }),
-                                new Run({
+                                new TextRun({
                                     text: "Office Open XML Spec",
                                     hyperlink: {
                                         url: "https://www.iso.org/standard/71691.html",

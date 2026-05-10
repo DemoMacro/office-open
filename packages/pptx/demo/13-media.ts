@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
 
-import { Presentation, Packer, Shape, Paragraph, Run, VideoFrame } from "@office-open/pptx";
+import { Presentation, Packer, Shape, Paragraph, TextRun, VideoFrame } from "@office-open/pptx";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const videoPath = path.join(__dirname, "assets/test-video.mp4");
@@ -25,7 +25,7 @@ const pres = new Presentation({
                         new Paragraph({
                             properties: { alignment: "CENTER", bulletNone: true },
                             children: [
-                                new Run({ text: "Video Embedding Demo", fontSize: 32, bold: true }),
+                                new TextRun({ text: "Video Embedding Demo", fontSize: 32, bold: true }),
                             ],
                         }),
                     ],
@@ -50,7 +50,7 @@ const pres = new Presentation({
                         new Paragraph({
                             properties: { bulletNone: true },
                             children: [
-                                new Run({
+                                new TextRun({
                                     text: "Video: Big Buck Bunny (360p, 10s, ~1MB MP4)",
                                     fontSize: 14,
                                     fill: "666666",

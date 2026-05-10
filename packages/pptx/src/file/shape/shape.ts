@@ -10,7 +10,7 @@ import { attrs, escapeXml, xml } from "@office-open/xml";
 import { pixelsToEmus } from "@util/types";
 
 import { Paragraph } from "./paragraph/paragraph";
-import { Run } from "./paragraph/run";
+import { TextRun } from "./paragraph/run";
 import { TextBody } from "./text-body";
 import type { ITextBodyOptions } from "./text-body";
 
@@ -120,7 +120,7 @@ export class Shape extends Xc {
             paragraphs:
                 opts.paragraphs ??
                 (opts.text
-                    ? [new Paragraph({ children: [new Run({ text: opts.text })] })]
+                    ? [new Paragraph({ text: opts.text })]
                     : undefined),
             vertical: opts.textVertical,
             anchor: opts.textAnchor,
@@ -178,7 +178,7 @@ export class Shape extends Xc {
             paragraphs:
                 opts.paragraphs ??
                 (opts.text
-                    ? [new Paragraph({ children: [new Run({ text: opts.text })] })]
+                    ? [new Paragraph({ text: opts.text })]
                     : undefined),
             vertical: opts.textVertical,
             anchor: opts.textAnchor,

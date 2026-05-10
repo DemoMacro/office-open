@@ -4,7 +4,7 @@ export type { IPresentationOptions as IPresentationXmlOptions } from "./presenta
 export { Shape, type IShapeOptions } from "./shape/shape";
 export { TextBody, type ITextBodyOptions } from "./shape/text-body";
 export { Paragraph, type IParagraphOptions } from "./shape/paragraph/paragraph";
-export { Run, type IRunOptions } from "./shape/paragraph/run";
+export { TextRun, type IRunOptions } from "./shape/paragraph/run";
 export { Text } from "./shape/paragraph/text";
 export {
     RunProperties,

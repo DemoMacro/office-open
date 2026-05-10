@@ -2,7 +2,7 @@ import * as fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-import { Presentation, Shape, Packer, Paragraph, Run } from "@office-open/pptx";
+import { Presentation, Shape, Packer, Paragraph, TextRun } from "@office-open/pptx";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -65,7 +65,7 @@ const pres = new Presentation({
                         new Paragraph({
                             properties: { bulletNone: true },
                             children: [
-                                new Run({ text: "Vertical Text (top to bottom)", fontSize: 14 }),
+                                new TextRun({ text: "Vertical Text (top to bottom)", fontSize: 14 }),
                             ],
                         }),
                     ],
@@ -81,7 +81,7 @@ const pres = new Presentation({
                         new Paragraph({
                             properties: { bulletNone: true },
                             children: [
-                                new Run({ text: "Rotated 270 (bottom to top)", fontSize: 14 }),
+                                new TextRun({ text: "Rotated 270 (bottom to top)", fontSize: 14 }),
                             ],
                         }),
                     ],
@@ -96,7 +96,7 @@ const pres = new Presentation({
                     paragraphs: [
                         new Paragraph({
                             properties: { bulletNone: true },
-                            children: [new Run({ text: "Horizontal (default)", fontSize: 14 })],
+                            children: [new TextRun({ text: "Horizontal (default)", fontSize: 14 })],
                         }),
                     ],
                     outline: { color: "70AD47", width: 1 },
@@ -188,7 +188,7 @@ const pres = new Presentation({
                         new Paragraph({
                             properties: { bulletNone: true },
                             children: [
-                                new Run({
+                                new TextRun({
                                     text: "Default margins (no extra padding)",
                                     fontSize: 12,
                                 }),
@@ -208,7 +208,7 @@ const pres = new Presentation({
                         new Paragraph({
                             properties: { bulletNone: true },
                             children: [
-                                new Run({
+                                new TextRun({
                                     text: "Wide margins (extra padding all around)",
                                     fontSize: 12,
                                 }),
@@ -229,7 +229,7 @@ const pres = new Presentation({
                         new Paragraph({
                             properties: { bulletNone: true },
                             children: [
-                                new Run({
+                                new TextRun({
                                     text: "This is column 1 text. The shape is divided into 2 columns with spacing between them.",
                                     fontSize: 12,
                                 }),

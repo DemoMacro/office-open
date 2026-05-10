@@ -3,7 +3,7 @@ import type { IContext, IXmlableObject } from "@file/xml-components";
 
 import type { FillOptions } from "../drawingml/fill";
 import { Paragraph } from "../shape/paragraph/paragraph";
-import { Run } from "../shape/paragraph/run";
+import { TextRun } from "../shape/paragraph/run";
 import { TableCellProperties, type ICellBorderOptions } from "./table-cell-properties";
 
 export const VerticalAlignment = {
@@ -50,7 +50,7 @@ export class TableCell extends BaseXmlComponent {
                 ? [
                       new Paragraph({
                           properties: { bulletNone: false },
-                          children: [new Run({ text: options.text })],
+                          children: [new TextRun({ text: options.text })],
                       }),
                   ]
                 : undefined);

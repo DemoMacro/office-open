@@ -13,12 +13,12 @@ export interface IRunOptions extends IRunPropertiesOptions {
  * a:r — A run of text with properties.
  * Lazy: stores options, builds XML object in prepForXml.
  */
-export class Run extends XmlComponent {
+export class TextRun extends XmlComponent {
     private readonly options: IRunOptions;
 
-    public constructor(options: IRunOptions = {}) {
+    public constructor(options: IRunOptions | string = {}) {
         super("a:r");
-        this.options = options;
+        this.options = typeof options === "string" ? { text: options } : options;
     }
 
     public prepForXml(context: IContext): IXmlableObject | undefined {

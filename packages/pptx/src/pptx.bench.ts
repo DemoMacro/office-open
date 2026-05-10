@@ -2,7 +2,7 @@ import PptxGenJS from "pptxgenjs";
 import { bench, describe } from "vite-plus/test";
 
 import { Packer } from "./export";
-import { Paragraph, Presentation, Run, Shape, Table } from "./index";
+import { Paragraph, Presentation, TextRun, Shape, Table } from "./index";
 
 // ── Shared fixture data ──
 
@@ -65,7 +65,7 @@ describe("PPTX: Object Creation (no pack)", () => {
                                     new Paragraph({
                                         properties: { bulletNone: true },
                                         children: [
-                                            new Run({
+                                            new TextRun({
                                                 text: s.text,
                                                 bold: s.bold,
                                                 italic: s.italic,
@@ -149,7 +149,7 @@ describe("PPTX: Object Creation (no pack)", () => {
                                 new Paragraph({
                                     properties: { alignment: "CENTER", bulletNone: true },
                                     children: [
-                                        new Run({ text: "Title Slide", fontSize: 28, bold: true }),
+                                        new TextRun({ text: "Title Slide", fontSize: 28, bold: true }),
                                     ],
                                 }),
                             ],
@@ -166,7 +166,7 @@ describe("PPTX: Object Creation (no pack)", () => {
                                         new Paragraph({
                                             properties: { bulletNone: true },
                                             children: [
-                                                new Run({
+                                                new TextRun({
                                                     text: s.text,
                                                     bold: s.bold,
                                                     italic: s.italic,
@@ -280,7 +280,7 @@ describe("PPTX: Create + toBuffer", () => {
                                     new Paragraph({
                                         properties: { bulletNone: true },
                                         children: [
-                                            new Run({
+                                            new TextRun({
                                                 text: s.text,
                                                 bold: s.bold,
                                                 italic: s.italic,
@@ -400,7 +400,7 @@ describe("PPTX: Create + toBuffer", () => {
                                 new Paragraph({
                                     properties: { alignment: "CENTER", bulletNone: true },
                                     children: [
-                                        new Run({ text: "Title Slide", fontSize: 28, bold: true }),
+                                        new TextRun({ text: "Title Slide", fontSize: 28, bold: true }),
                                     ],
                                 }),
                             ],
@@ -417,7 +417,7 @@ describe("PPTX: Create + toBuffer", () => {
                                         new Paragraph({
                                             properties: { bulletNone: true },
                                             children: [
-                                                new Run({
+                                                new TextRun({
                                                     text: s.text,
                                                     bold: s.bold,
                                                     italic: s.italic,
@@ -539,7 +539,7 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
                             new Paragraph({
                                 properties: { bulletNone: true },
                                 children: [
-                                    new Run({
+                                    new TextRun({
                                         text: s.text,
                                         bold: s.bold,
                                         italic: s.italic,
@@ -632,7 +632,7 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
                             new Paragraph({
                                 properties: { alignment: "CENTER", bulletNone: true },
                                 children: [
-                                    new Run({
+                                    new TextRun({
                                         text: `Slide ${si + 1} Title`,
                                         fontSize: 28,
                                         bold: true,
@@ -653,7 +653,7 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
                                 new Paragraph({
                                     properties: { bulletNone: true },
                                     children: [
-                                        new Run({ text: s.text, bold: s.bold, fontSize: 14 }),
+                                        new TextRun({ text: s.text, bold: s.bold, fontSize: 14 }),
                                     ],
                                 }),
                             ],

@@ -1,4 +1,4 @@
-import { Presentation, Packer, Shape, Paragraph, Run, SmartArtFrame } from "@office-open/pptx";
+import { Presentation, Packer, Shape, Paragraph, TextRun, SmartArtFrame } from "@office-open/pptx";
 
 const pres = new Presentation({
     title: "SmartArt Demo",
@@ -15,7 +15,7 @@ const pres = new Presentation({
                     paragraphs: [
                         new Paragraph({
                             properties: { alignment: "CENTER", bulletNone: true },
-                            children: [new Run({ text: "List Layouts", fontSize: 32, bold: true })],
+                            children: [new TextRun({ text: "List Layouts", fontSize: 32, bold: true })],
                         }),
                     ],
                 }),
@@ -58,7 +58,7 @@ const pres = new Presentation({
                         new Paragraph({
                             properties: { alignment: "CENTER", bulletNone: true },
                             children: [
-                                new Run({ text: "Process Layouts", fontSize: 32, bold: true }),
+                                new TextRun({ text: "Process Layouts", fontSize: 32, bold: true }),
                             ],
                         }),
                     ],
@@ -132,7 +132,7 @@ const pres = new Presentation({
                         new Paragraph({
                             properties: { alignment: "CENTER", bulletNone: true },
                             children: [
-                                new Run({ text: "Cycle Layouts", fontSize: 32, bold: true }),
+                                new TextRun({ text: "Cycle Layouts", fontSize: 32, bold: true }),
                             ],
                         }),
                     ],
@@ -183,7 +183,7 @@ const pres = new Presentation({
                         new Paragraph({
                             properties: { alignment: "CENTER", bulletNone: true },
                             children: [
-                                new Run({ text: "Hierarchy Layouts", fontSize: 32, bold: true }),
+                                new TextRun({ text: "Hierarchy Layouts", fontSize: 32, bold: true }),
                             ],
                         }),
                     ],
@@ -253,7 +253,7 @@ const pres = new Presentation({
                         new Paragraph({
                             properties: { alignment: "CENTER", bulletNone: true },
                             children: [
-                                new Run({
+                                new TextRun({
                                     text: "Relationship / Other Layouts",
                                     fontSize: 32,
                                     bold: true,
@@ -303,7 +303,7 @@ const pres = new Presentation({
                         new Paragraph({
                             properties: { alignment: "CENTER", bulletNone: true },
                             children: [
-                                new Run({ text: "Pyramid Layouts", fontSize: 32, bold: true }),
+                                new TextRun({ text: "Pyramid Layouts", fontSize: 32, bold: true }),
                             ],
                         }),
                     ],
@@ -348,7 +348,7 @@ const pres = new Presentation({
                         new Paragraph({
                             properties: { alignment: "CENTER", bulletNone: true },
                             children: [
-                                new Run({
+                                new TextRun({
                                     text: "Matrix / Radial / Other Layouts",
                                     fontSize: 32,
                                     bold: true,

@@ -5,7 +5,7 @@ import {
     Shape,
     Packer,
     Paragraph,
-    Run,
+    TextRun,
     GroupShape,
     ConnectorShape,
     parsePptx,
@@ -69,23 +69,23 @@ async function main() {
                         paragraphs: [
                             new Paragraph({
                                 children: [
-                                    new Run({ text: "Bold", bold: true }),
-                                    new Run({ text: ", Italic", italic: true }),
-                                    new Run({ text: ", Underline", underline: "SINGLE" }),
-                                    new Run({ text: ", Strike", strike: "SINGLE" }),
+                                    new TextRun({ text: "Bold", bold: true }),
+                                    new TextRun({ text: ", Italic", italic: true }),
+                                    new TextRun({ text: ", Underline", underline: "SINGLE" }),
+                                    new TextRun({ text: ", Strike", strike: "SINGLE" }),
                                 ],
                             }),
                             new Paragraph({
                                 children: [
-                                    new Run({ text: "Size 24pt", fontSize: 24, bold: true }),
-                                    new Run({ text: " | Small Caps", capitalization: "SMALL" }),
-                                    new Run({ text: " | ALL CAPS", capitalization: "ALL" }),
+                                    new TextRun({ text: "Size 24pt", fontSize: 24, bold: true }),
+                                    new TextRun({ text: " | Small Caps", capitalization: "SMALL" }),
+                                    new TextRun({ text: " | ALL CAPS", capitalization: "ALL" }),
                                 ],
                             }),
                             new Paragraph({
                                 children: [
-                                    new Run({ text: "Colored run", fill: "FF0000" }),
-                                    new Run({ text: " | Shadow", shadow: true }),
+                                    new TextRun({ text: "Colored run", fill: "FF0000" }),
+                                    new TextRun({ text: " | Shadow", shadow: true }),
                                 ],
                             }),
                         ],
@@ -158,7 +158,7 @@ async function main() {
                         paragraphs: [
                             new Paragraph({
                                 children: [
-                                    new Run({ text: "Table Demo", fontSize: 28, bold: true }),
+                                    new TextRun({ text: "Table Demo", fontSize: 28, bold: true }),
                                 ],
                             }),
                         ],

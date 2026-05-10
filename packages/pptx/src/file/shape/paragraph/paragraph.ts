@@ -6,11 +6,13 @@ import { buildEndParagraphRunPropertiesXml } from "./end-paragraph-run";
 import type { IParagraphPropertiesOptions } from "./paragraph-properties";
 import { buildParagraphProperties } from "./paragraph-properties";
 import { buildParagraphPropertiesXml } from "./paragraph-properties";
-import { Run } from "./run";
+import { TextRun } from "./run";
 
 export interface IParagraphOptions {
+    /** Simple text content for the paragraph. Creates a single TextRun. */
+    readonly text?: string;
     readonly properties?: IParagraphPropertiesOptions;
-    readonly children?: readonly (Run | XmlComponent)[];
+    readonly children?: readonly (TextRun | XmlComponent)[];
 }
 
 /**
@@ -20,9 +22,9 @@ export interface IParagraphOptions {
 export class Paragraph extends XmlComponent {
     private readonly options: IParagraphOptions;
 
-    public constructor(options: IParagraphOptions = {}) {
+    public constructor(options: string | IParagraphOptions = {}) {
         super("a:p");
-        this.options = options;
+        this.options = typeof options === "string" ? { text: options } : options;
     }
 
     public prepForXml(context: IContext): IXmlableObject | undefined {
@@ -30,6 +32,11 @@ export class Paragraph extends XmlComponent {
 
         const pPr = buildParagraphProperties(this.options.properties ?? {});
         if (pPr) children.push(pPr);
+
+        if (this.options.text) {
+            const obj = new TextRun(this.options.text).prepForXml(context);
+            if (obj) children.push(obj);
+        }
 
         if (this.options.children) {
             for (const child of this.options.children) {
@@ -48,6 +55,10 @@ export class Paragraph extends XmlComponent {
 
         const pPr = buildParagraphPropertiesXml(this.options.properties ?? {});
         if (pPr) s += pPr;
+
+        if (this.options.text) {
+            s += new TextRun(this.options.text).toXml(context);
+        }
 
         if (this.options.children) {
             for (const child of this.options.children) {

@@ -2,7 +2,7 @@ import { Picture } from "@file/picture/picture";
 import { GroupShape } from "@file/shape/group-shape";
 import { ConnectorShape } from "@file/shape/line-shape";
 import { Paragraph } from "@file/shape/paragraph/paragraph";
-import { Run } from "@file/shape/paragraph/run";
+import { TextRun } from "@file/shape/paragraph/run";
 import type { TextCapitalization } from "@file/shape/paragraph/run-properties";
 import { Shape } from "@file/shape/shape";
 import { Table } from "@file/table/table";
@@ -145,7 +145,7 @@ function convertTableCell(cell: any): any {
 
 function convertParagraph(json: ParagraphJson): Paragraph {
     const { children, text, ...rest } = json as any;
-    const runs = children?.map(convertRun) ?? (text ? [new Run({ text })] : undefined);
+    const runs = children?.map(convertRun) ?? (text ? [new TextRun({ text })] : undefined);
     return new Paragraph({
         ...rest,
         children: runs,
@@ -154,7 +154,7 @@ function convertParagraph(json: ParagraphJson): Paragraph {
 
 function convertRun(json: RunJson): Run {
     const { fill, underline, strike, capitalization, fontSize, ...rest } = json as any;
-    return new Run({
+    return new TextRun({
         ...rest,
         fontSize: fontSize != null ? Math.round(fontSize / 100) : undefined,
         fill: convertFill(fill),

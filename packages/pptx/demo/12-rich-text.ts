@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Presentation, Packer, Shape, Paragraph, Run } from "@office-open/pptx";
+import { Presentation, Packer, Shape, Paragraph, TextRun } from "@office-open/pptx";
 
 const pres = new Presentation({
     title: "Rich Text Demo",
@@ -18,7 +18,7 @@ const pres = new Presentation({
                         new Paragraph({
                             properties: { alignment: "CENTER", bulletNone: true },
                             children: [
-                                new Run({
+                                new TextRun({
                                     text: "Rich Text Formatting",
                                     fontSize: 36,
                                     bold: true,
@@ -38,13 +38,13 @@ const pres = new Presentation({
                         new Paragraph({
                             properties: { bulletNone: true },
                             children: [
-                                new Run({ text: "Bold", bold: true, fontSize: 18 }),
-                                new Run({ text: " | " }),
-                                new Run({ text: "Italic", italic: true, fontSize: 18 }),
-                                new Run({ text: " | " }),
-                                new Run({ text: "Underline", underline: "SINGLE", fontSize: 18 }),
-                                new Run({ text: " | " }),
-                                new Run({
+                                new TextRun({ text: "Bold", bold: true, fontSize: 18 }),
+                                new TextRun({ text: " | " }),
+                                new TextRun({ text: "Italic", italic: true, fontSize: 18 }),
+                                new TextRun({ text: " | " }),
+                                new TextRun({ text: "Underline", underline: "SINGLE", fontSize: 18 }),
+                                new TextRun({ text: " | " }),
+                                new TextRun({
                                     text: "Bold+Italic+Underline",
                                     bold: true,
                                     italic: true,
@@ -65,13 +65,13 @@ const pres = new Presentation({
                         new Paragraph({
                             properties: { bulletNone: true },
                             children: [
-                                new Run({
+                                new TextRun({
                                     text: "Single Strike",
                                     strike: "SINGLE",
                                     fontSize: 18,
                                 }),
-                                new Run({ text: " | " }),
-                                new Run({
+                                new TextRun({ text: " | " }),
+                                new TextRun({
                                     text: "Double Strike",
                                     strike: "DOUBLE",
                                     fontSize: 18,
@@ -90,12 +90,12 @@ const pres = new Presentation({
                         new Paragraph({
                             properties: { bulletNone: true },
                             children: [
-                                new Run({ text: "E = mc", fontSize: 20 }),
-                                new Run({ text: "2", fontSize: 14, baseline: 30000 }),
-                                new Run({ text: "    H", fontSize: 20 }),
-                                new Run({ text: "2", fontSize: 14, baseline: -25000 }),
-                                new Run({ text: "O    x", fontSize: 20 }),
-                                new Run({ text: "n+1", fontSize: 14, baseline: 30000 }),
+                                new TextRun({ text: "E = mc", fontSize: 20 }),
+                                new TextRun({ text: "2", fontSize: 14, baseline: 30000 }),
+                                new TextRun({ text: "    H", fontSize: 20 }),
+                                new TextRun({ text: "2", fontSize: 14, baseline: -25000 }),
+                                new TextRun({ text: "O    x", fontSize: 20 }),
+                                new TextRun({ text: "n+1", fontSize: 14, baseline: 30000 }),
                             ],
                         }),
                     ],
@@ -110,9 +110,9 @@ const pres = new Presentation({
                         new Paragraph({
                             properties: { bulletNone: true },
                             children: [
-                                new Run({ text: "Normal spacing", fontSize: 18 }),
-                                new Run({ text: "    Wide spacing", fontSize: 18, spacing: 400 }),
-                                new Run({ text: "    Tight spacing", fontSize: 18, spacing: -100 }),
+                                new TextRun({ text: "Normal spacing", fontSize: 18 }),
+                                new TextRun({ text: "    Wide spacing", fontSize: 18, spacing: 400 }),
+                                new TextRun({ text: "    Tight spacing", fontSize: 18, spacing: -100 }),
                             ],
                         }),
                     ],
@@ -127,13 +127,13 @@ const pres = new Presentation({
                         new Paragraph({
                             properties: { bulletNone: true },
                             children: [
-                                new Run({ text: "Normal text", fontSize: 18 }),
-                                new Run({
+                                new TextRun({ text: "Normal text", fontSize: 18 }),
+                                new TextRun({
                                     text: "    ALL CAPS",
                                     fontSize: 18,
                                     capitalization: "ALL",
                                 }),
-                                new Run({
+                                new TextRun({
                                     text: "    Small Caps",
                                     fontSize: 18,
                                     capitalization: "SMALL",
@@ -153,25 +153,25 @@ const pres = new Presentation({
                         new Paragraph({
                             properties: { bulletNone: true },
                             children: [
-                                new Run({
+                                new TextRun({
                                     text: "Red",
                                     fontSize: 20,
                                     fill: "FF0000",
                                 }),
-                                new Run({ text: " | " }),
-                                new Run({
+                                new TextRun({ text: " | " }),
+                                new TextRun({
                                     text: "Green",
                                     fontSize: 20,
                                     fill: "00FF00",
                                 }),
-                                new Run({ text: " | " }),
-                                new Run({
+                                new TextRun({ text: " | " }),
+                                new TextRun({
                                     text: "Blue",
                                     fontSize: 20,
                                     fill: "4472C4",
                                 }),
-                                new Run({ text: " | " }),
-                                new Run({
+                                new TextRun({ text: " | " }),
+                                new TextRun({
                                     text: "Yellow",
                                     fontSize: 20,
                                     fill: "FFC000",
@@ -190,20 +190,20 @@ const pres = new Presentation({
                     paragraphs: [
                         new Paragraph({
                             properties: { alignment: "LEFT", bulletNone: true },
-                            children: [new Run({ text: "Left aligned text", fontSize: 16 })],
+                            children: [new TextRun({ text: "Left aligned text", fontSize: 16 })],
                         }),
                         new Paragraph({
                             properties: { alignment: "CENTER", bulletNone: true },
-                            children: [new Run({ text: "Center aligned text", fontSize: 16 })],
+                            children: [new TextRun({ text: "Center aligned text", fontSize: 16 })],
                         }),
                         new Paragraph({
                             properties: { alignment: "RIGHT", bulletNone: true },
-                            children: [new Run({ text: "Right aligned text", fontSize: 16 })],
+                            children: [new TextRun({ text: "Right aligned text", fontSize: 16 })],
                         }),
                         new Paragraph({
                             properties: { alignment: "JUSTIFY", bulletNone: true },
                             children: [
-                                new Run({
+                                new TextRun({
                                     text: "Justified text that is long enough to wrap to multiple lines to demonstrate the justification effect clearly",
                                     fontSize: 16,
                                 }),
@@ -221,19 +221,19 @@ const pres = new Presentation({
                     paragraphs: [
                         new Paragraph({
                             properties: { bullet: { type: "char", char: "●" } },
-                            children: [new Run({ text: "Bullet Point 1" })],
+                            children: [new TextRun({ text: "Bullet Point 1" })],
                         }),
                         new Paragraph({
                             properties: { bullet: { type: "char", char: "●", color: "4472C4" } },
-                            children: [new Run({ text: "Blue Bullet 2" })],
+                            children: [new TextRun({ text: "Blue Bullet 2" })],
                         }),
                         new Paragraph({
                             properties: { bullet: { type: "char", char: "■", size: 75 } },
-                            children: [new Run({ text: "Small Square 3" })],
+                            children: [new TextRun({ text: "Small Square 3" })],
                         }),
                         new Paragraph({
                             properties: { bullet: { type: "char", char: "➢" } },
-                            children: [new Run({ text: "Arrow Bullet 4" })],
+                            children: [new TextRun({ text: "Arrow Bullet 4" })],
                         }),
                     ],
                 }),
@@ -246,23 +246,23 @@ const pres = new Presentation({
                     paragraphs: [
                         new Paragraph({
                             properties: { bullet: { type: "autoNum", format: "arabicPeriod" } },
-                            children: [new Run({ text: "First item" })],
+                            children: [new TextRun({ text: "First item" })],
                         }),
                         new Paragraph({
                             properties: { bullet: { type: "autoNum", format: "arabicPeriod" } },
-                            children: [new Run({ text: "Second item" })],
+                            children: [new TextRun({ text: "Second item" })],
                         }),
                         new Paragraph({
                             properties: { bullet: { type: "autoNum", format: "arabicPeriod" } },
-                            children: [new Run({ text: "Third item" })],
+                            children: [new TextRun({ text: "Third item" })],
                         }),
                         new Paragraph({
                             properties: { bullet: { type: "autoNum", format: "alphaLcParenBoth" } },
-                            children: [new Run({ text: "Sub-item a" })],
+                            children: [new TextRun({ text: "Sub-item a" })],
                         }),
                         new Paragraph({
                             properties: { bullet: { type: "autoNum", format: "alphaLcParenBoth" } },
-                            children: [new Run({ text: "Sub-item b" })],
+                            children: [new TextRun({ text: "Sub-item b" })],
                         }),
                     ],
                 }),
@@ -275,26 +275,26 @@ const pres = new Presentation({
                     outline: { color: "70AD47", width: 1 },
                     paragraphs: [
                         new Paragraph({
-                            children: [new Run({ text: "Normal text", fontSize: 16 })],
+                            children: [new TextRun({ text: "Normal text", fontSize: 16 })],
                         }),
                         new Paragraph({
                             children: [
-                                new Run({ text: "Right-to-Left", rightToLeft: true, fontSize: 16 }),
+                                new TextRun({ text: "Right-to-Left", rightToLeft: true, fontSize: 16 }),
                             ],
                         }),
                         new Paragraph({
                             children: [
-                                new Run({ text: "No proof text", noProof: true, fontSize: 16 }),
+                                new TextRun({ text: "No proof text", noProof: true, fontSize: 16 }),
                             ],
                         }),
                         new Paragraph({
                             children: [
-                                new Run({ text: "Shadow text", shadow: true, fontSize: 16 }),
+                                new TextRun({ text: "Shadow text", shadow: true, fontSize: 16 }),
                             ],
                         }),
                         new Paragraph({
                             children: [
-                                new Run({ text: "Outline text", outline: true, fontSize: 16 }),
+                                new TextRun({ text: "Outline text", outline: true, fontSize: 16 }),
                             ],
                         }),
                     ],
@@ -309,15 +309,15 @@ const pres = new Presentation({
                     paragraphs: [
                         new Paragraph({
                             properties: { lineSpacing: 100, bulletNone: true },
-                            children: [new Run({ text: "Single spacing (1.0)", fontSize: 14 })],
+                            children: [new TextRun({ text: "Single spacing (1.0)", fontSize: 14 })],
                         }),
                         new Paragraph({
                             properties: { lineSpacing: 150, bulletNone: true },
-                            children: [new Run({ text: "1.5x spacing", fontSize: 14 })],
+                            children: [new TextRun({ text: "1.5x spacing", fontSize: 14 })],
                         }),
                         new Paragraph({
                             properties: { lineSpacing: 200, bulletNone: true },
-                            children: [new Run({ text: "Double spacing (2.0)", fontSize: 14 })],
+                            children: [new TextRun({ text: "Double spacing (2.0)", fontSize: 14 })],
                         }),
                     ],
                 }),
@@ -331,15 +331,15 @@ const pres = new Presentation({
                     paragraphs: [
                         new Paragraph({
                             properties: { lineSpacingPoints: 14, bulletNone: true },
-                            children: [new Run({ text: "Exactly 14pt", fontSize: 14 })],
+                            children: [new TextRun({ text: "Exactly 14pt", fontSize: 14 })],
                         }),
                         new Paragraph({
                             properties: { lineSpacingPoints: 20, bulletNone: true },
-                            children: [new Run({ text: "Exactly 20pt", fontSize: 14 })],
+                            children: [new TextRun({ text: "Exactly 20pt", fontSize: 14 })],
                         }),
                         new Paragraph({
                             properties: { lineSpacingPoints: 28, bulletNone: true },
-                            children: [new Run({ text: "Exactly 28pt", fontSize: 14 })],
+                            children: [new TextRun({ text: "Exactly 28pt", fontSize: 14 })],
                         }),
                     ],
                 }),
