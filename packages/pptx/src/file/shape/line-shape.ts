@@ -78,7 +78,7 @@ export class LineShape extends Xc {
                 ],
                 attributes: xfrmAttrs,
             }),
-            new PresetGeometry("line"),
+            new PresetGeometry({ preset: "line" }),
         ];
 
         if (options.fill !== undefined) {
@@ -200,7 +200,7 @@ export class ConnectorShape extends Xc {
                 ],
                 attributes: xfrmAttrs,
             }),
-            new PresetGeometry("line"),
+            new PresetGeometry({ preset: "line" }),
         ];
 
         if (options.fill !== undefined) {

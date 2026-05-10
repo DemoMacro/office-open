@@ -60,7 +60,7 @@ export class ShapeProperties extends BaseXmlComponent {
         }
 
         // PresetGeometry
-        const geomObj = new PresetGeometry(opts.geometry ?? "rect").prepForXml(context);
+        const geomObj = new PresetGeometry({ preset: opts.geometry ?? "rect" }).prepForXml(context);
         if (geomObj) children.push(geomObj);
 
         // Fill (register blipFill media — B-level side effect)

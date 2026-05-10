@@ -126,7 +126,7 @@ export class AudioFrame extends XmlComponent {
                         width: convertPixelsToEmu(options.width ?? 0),
                         height: convertPixelsToEmu(options.height ?? 0),
                     }),
-                    new PresetGeometry("rect"),
+                    new PresetGeometry({ preset: "rect" }),
                 ],
             }),
         );
