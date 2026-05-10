@@ -3,7 +3,7 @@ import { Transform2D } from "@file/drawingml/transform-2d";
 import type { File } from "@file/file";
 import type { IMediaData } from "@file/media/data";
 import { BuilderElement, type IContext, XmlComponent } from "@file/xml-components";
-import { pixelsToEmus } from "@util/types";
+import { convertPixelsToEmu } from "@office-open/core";
 
 const MEDIA_EXT_URI = "{CF1602FD-DB20-4165-A070-5F299619DA56}";
 
@@ -40,7 +40,7 @@ export class AudioFrame extends XmlComponent {
             fileName: mediaFileName,
             transformation: {
                 pixels: { x: options.width ?? 0, y: options.height ?? 0 },
-                emus: { x: pixelsToEmus(options.width ?? 0), y: pixelsToEmus(options.height ?? 0) },
+                emus: { x: convertPixelsToEmu(options.width ?? 0), y: convertPixelsToEmu(options.height ?? 0) },
             },
             data: options.data,
         };
@@ -121,10 +121,10 @@ export class AudioFrame extends XmlComponent {
                 name: "p:spPr",
                 children: [
                     new Transform2D({
-                        x: pixelsToEmus(options.x ?? 0),
-                        y: pixelsToEmus(options.y ?? 0),
-                        width: pixelsToEmus(options.width ?? 0),
-                        height: pixelsToEmus(options.height ?? 0),
+                        x: convertPixelsToEmu(options.x ?? 0),
+                        y: convertPixelsToEmu(options.y ?? 0),
+                        width: convertPixelsToEmu(options.width ?? 0),
+                        height: convertPixelsToEmu(options.height ?? 0),
                     }),
                     new PresetGeometry("rect"),
                 ],

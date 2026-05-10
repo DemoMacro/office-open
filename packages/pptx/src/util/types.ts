@@ -1,10 +1,10 @@
 export {
-    convertPixelsToEmu as pixelsToEmus,
-    convertEmuToPixels as emusToPixels,
-    convertInchesToEmu as inchesToEmus,
-    convertEmuToInches as emusToInches,
-    convertPointsToEmu as pointsToEmus,
-    convertEmuToPoints as emusToPoints,
+    convertPixelsToEmu,
+    convertEmuToPixels,
+    convertInchesToEmu,
+    convertEmuToInches,
+    convertPointsToEmu,
+    convertEmuToPoints,
 } from "@office-open/core";
 
 /** Convert percentage to thousandths of a percent (used in some OOXML attributes) */

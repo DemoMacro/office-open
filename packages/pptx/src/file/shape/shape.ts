@@ -7,7 +7,7 @@ import type { File } from "@file/file";
 import { XmlComponent as Xc } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 import { attrs, escapeXml, xml } from "@office-open/xml";
-import { pixelsToEmus } from "@util/types";
+import { convertPixelsToEmu } from "@office-open/core";
 
 import { Paragraph } from "./paragraph/paragraph";
 import { TextRun } from "./paragraph/run";
@@ -100,10 +100,10 @@ export class Shape extends Xc {
 
         // spPr (ShapeProperties)
         const shapeProps: IShapePropertiesOptions = {
-            x: opts.x !== undefined ? pixelsToEmus(opts.x) : undefined,
-            y: opts.y !== undefined ? pixelsToEmus(opts.y) : undefined,
-            width: opts.width !== undefined ? pixelsToEmus(opts.width) : undefined,
-            height: opts.height !== undefined ? pixelsToEmus(opts.height) : undefined,
+            x: opts.x !== undefined ? convertPixelsToEmu(opts.x) : undefined,
+            y: opts.y !== undefined ? convertPixelsToEmu(opts.y) : undefined,
+            width: opts.width !== undefined ? convertPixelsToEmu(opts.width) : undefined,
+            height: opts.height !== undefined ? convertPixelsToEmu(opts.height) : undefined,
             geometry: opts.geometry,
             fill: opts.fill,
             outline: opts.outline,
@@ -157,10 +157,10 @@ export class Shape extends Xc {
 
         // spPr — use prepForXml + xml (ShapeProperties not yet converted)
         const spPr = new ShapeProperties({
-            x: opts.x !== undefined ? pixelsToEmus(opts.x) : undefined,
-            y: opts.y !== undefined ? pixelsToEmus(opts.y) : undefined,
-            width: opts.width !== undefined ? pixelsToEmus(opts.width) : undefined,
-            height: opts.height !== undefined ? pixelsToEmus(opts.height) : undefined,
+            x: opts.x !== undefined ? convertPixelsToEmu(opts.x) : undefined,
+            y: opts.y !== undefined ? convertPixelsToEmu(opts.y) : undefined,
+            width: opts.width !== undefined ? convertPixelsToEmu(opts.width) : undefined,
+            height: opts.height !== undefined ? convertPixelsToEmu(opts.height) : undefined,
             geometry: opts.geometry,
             fill: opts.fill,
             outline: opts.outline,

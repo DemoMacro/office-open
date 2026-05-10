@@ -1,6 +1,6 @@
 import { BaseXmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
-import { pixelsToEmus } from "@util/types";
+import { convertPixelsToEmu } from "@office-open/core";
 
 export interface IGroupShapeOptions {
     readonly x?: number;
@@ -51,16 +51,16 @@ export class GroupShape extends BaseXmlComponent {
         xfrmChildren.push({
             "a:off": {
                 _attr: {
-                    x: opts.x !== undefined ? pixelsToEmus(opts.x) : 0,
-                    y: opts.y !== undefined ? pixelsToEmus(opts.y) : 0,
+                    x: opts.x !== undefined ? convertPixelsToEmu(opts.x) : 0,
+                    y: opts.y !== undefined ? convertPixelsToEmu(opts.y) : 0,
                 },
             },
         });
         xfrmChildren.push({
             "a:ext": {
                 _attr: {
-                    cx: opts.width !== undefined ? pixelsToEmus(opts.width) : 0,
-                    cy: opts.height !== undefined ? pixelsToEmus(opts.height) : 0,
+                    cx: opts.width !== undefined ? convertPixelsToEmu(opts.width) : 0,
+                    cy: opts.height !== undefined ? convertPixelsToEmu(opts.height) : 0,
                 },
             },
         });

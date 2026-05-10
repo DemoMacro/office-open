@@ -4,7 +4,7 @@ import { NonVisualShapeProperties } from "@file/drawingml/non-visual-shape-props
 import { createOutlineCompat, type OutlineOptions } from "@file/drawingml/outline";
 import { PresetGeometry } from "@file/drawingml/preset-geometry";
 import { BuilderElement, XmlComponent as Xc } from "@file/xml-components";
-import { pixelsToEmus } from "@util/types";
+import { convertPixelsToEmu } from "@office-open/core";
 
 /**
  * p:sp — A line shape on a slide.
@@ -20,10 +20,10 @@ export class LineShape extends Xc {
         this.shapeId = id;
         const name = options.name ?? `Line ${id}`;
 
-        const x1 = pixelsToEmus(options.x1 ?? 0);
-        const y1 = pixelsToEmus(options.y1 ?? 0);
-        const x2 = pixelsToEmus(options.x2 ?? 100);
-        const y2 = pixelsToEmus(options.y2 ?? 100);
+        const x1 = convertPixelsToEmu(options.x1 ?? 0);
+        const y1 = convertPixelsToEmu(options.y1 ?? 0);
+        const x2 = convertPixelsToEmu(options.x2 ?? 100);
+        const y2 = convertPixelsToEmu(options.y2 ?? 100);
 
         this.root.push(
             new BuilderElement({
@@ -142,10 +142,10 @@ export class ConnectorShape extends Xc {
         this.shapeId = id;
         const name = options.name ?? `Connector ${id}`;
 
-        const x1 = pixelsToEmus(options.x1 ?? 0);
-        const y1 = pixelsToEmus(options.y1 ?? 0);
-        const x2 = pixelsToEmus(options.x2 ?? 100);
-        const y2 = pixelsToEmus(options.y2 ?? 100);
+        const x1 = convertPixelsToEmu(options.x1 ?? 0);
+        const y1 = convertPixelsToEmu(options.y1 ?? 0);
+        const x2 = convertPixelsToEmu(options.x2 ?? 100);
+        const y2 = convertPixelsToEmu(options.y2 ?? 100);
 
         this.root.push(
             new BuilderElement({

@@ -25,7 +25,7 @@ import type {
 
 // ── Constants ──
 
-const EMU_PER_PIXEL = 9525;
+import { convertEmuToPixels } from "@office-open/core";
 
 // ── Public API ──
 
@@ -61,10 +61,10 @@ function convertShape(json: ShapeJson): Shape {
     const { paragraphs, fill, outline, x, y, width, height, rotation, ...rest } = json as any;
     return new Shape({
         ...rest,
-        x: x != null ? Math.round(x / EMU_PER_PIXEL) : undefined,
-        y: y != null ? Math.round(y / EMU_PER_PIXEL) : undefined,
-        width: width != null ? Math.round(width / EMU_PER_PIXEL) : undefined,
-        height: height != null ? Math.round(height / EMU_PER_PIXEL) : undefined,
+        x: x != null ? Math.round(convertEmuToPixels(x)) : undefined,
+        y: y != null ? Math.round(convertEmuToPixels(y)) : undefined,
+        width: width != null ? Math.round(convertEmuToPixels(width)) : undefined,
+        height: height != null ? Math.round(convertEmuToPixels(height)) : undefined,
         rotation: rotation != null ? rotation * 60000 : undefined,
         fill: convertFill(fill),
         outline: convertOutline(outline),
@@ -78,20 +78,20 @@ function convertPicture(json: PictureJson): Picture {
         ...rest,
         data: base64ToUint8Array(data),
         type: type as any,
-        x: x != null ? Math.round(x / EMU_PER_PIXEL) : undefined,
-        y: y != null ? Math.round(y / EMU_PER_PIXEL) : undefined,
-        width: width != null ? Math.round(width / EMU_PER_PIXEL) : undefined,
-        height: height != null ? Math.round(height / EMU_PER_PIXEL) : undefined,
+        x: x != null ? Math.round(convertEmuToPixels(x)) : undefined,
+        y: y != null ? Math.round(convertEmuToPixels(y)) : undefined,
+        width: width != null ? Math.round(convertEmuToPixels(width)) : undefined,
+        height: height != null ? Math.round(convertEmuToPixels(height)) : undefined,
     });
 }
 
 function convertConnectorShape(json: ConnectorShapeJson): ConnectorShape {
     const { outline, x, y, width, height, ...rest } = json as any;
     // Parser outputs x/y/width/height (EMU), constructor expects x1/y1/x2/y2 (pixel)
-    const x1 = x != null ? Math.round(x / EMU_PER_PIXEL) : 0;
-    const y1 = y != null ? Math.round(y / EMU_PER_PIXEL) : 0;
-    const x2 = x != null && width != null ? Math.round((x + width) / EMU_PER_PIXEL) : x1 + 100;
-    const y2 = y != null && height != null ? Math.round((y + height) / EMU_PER_PIXEL) : y1 + 100;
+    const x1 = x != null ? Math.round(convertEmuToPixels(x)) : 0;
+    const y1 = y != null ? Math.round(convertEmuToPixels(y)) : 0;
+    const x2 = x != null && width != null ? Math.round(convertEmuToPixels(x + width)) : x1 + 100;
+    const y2 = y != null && height != null ? Math.round(convertEmuToPixels(y + height)) : y1 + 100;
     return new ConnectorShape({
         ...rest,
         x1,
@@ -114,10 +114,10 @@ function convertGroupShape(json: GroupShapeJson): GroupShape {
     const { children, x, y, width, height, rotation, ...rest } = json as any;
     return new GroupShape({
         ...rest,
-        x: x != null ? Math.round(x / EMU_PER_PIXEL) : undefined,
-        y: y != null ? Math.round(y / EMU_PER_PIXEL) : undefined,
-        width: width != null ? Math.round(width / EMU_PER_PIXEL) : undefined,
-        height: height != null ? Math.round(height / EMU_PER_PIXEL) : undefined,
+        x: x != null ? Math.round(convertEmuToPixels(x)) : undefined,
+        y: y != null ? Math.round(convertEmuToPixels(y)) : undefined,
+        width: width != null ? Math.round(convertEmuToPixels(width)) : undefined,
+        height: height != null ? Math.round(convertEmuToPixels(height)) : undefined,
         // Group rotation is in degrees (rot / 60000), constructor expects rot value
         rotation: rotation != null ? rotation * 60000 : undefined,
         children: children ? toSlideChildren(children) : [],

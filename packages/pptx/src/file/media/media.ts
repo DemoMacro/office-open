@@ -3,6 +3,8 @@
  *
  * @module
  */
+import { convertPixelsToEmu } from "@office-open/core";
+
 import type { IMediaDataTransformation } from "./data";
 import type { IMediaData } from "./data";
 
@@ -22,8 +24,8 @@ export interface IMediaTransformation {
 
 export const createTransformation = (options: IMediaTransformation): IMediaDataTransformation => ({
     emus: {
-        x: Math.round(options.width * 9525),
-        y: Math.round(options.height * 9525),
+        x: convertPixelsToEmu(options.width),
+        y: convertPixelsToEmu(options.height),
     },
     pixels: {
         x: Math.round(options.width),

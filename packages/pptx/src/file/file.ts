@@ -20,7 +20,7 @@ import type { ITransitionOptions } from "@file/transition/transition";
 import { ViewProperties } from "@file/view-properties";
 import type { BaseXmlComponent } from "@file/xml-components";
 import type { RelationshipType } from "@office-open/core";
-import { pixelsToEmus } from "@util/types";
+import { convertPixelsToEmu } from "@office-open/core";
 
 export interface ISlideOptions {
     readonly children?: readonly BaseXmlComponent[];
@@ -98,8 +98,8 @@ export class File {
         this.slideOptions = slides;
         this.corePropsOptions = options;
         this.showOptions = options.show;
-        this.slideWidthEmus = options.slideWidth ? pixelsToEmus(options.slideWidth) : undefined;
-        this.slideHeightEmus = options.slideHeight ? pixelsToEmus(options.slideHeight) : undefined;
+        this.slideWidthEmus = options.slideWidth ? convertPixelsToEmu(options.slideWidth) : undefined;
+        this.slideHeightEmus = options.slideHeight ? convertPixelsToEmu(options.slideHeight) : undefined;
     }
 
     // ── Lazy getters ──

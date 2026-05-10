@@ -6,7 +6,7 @@ import {
     type IXmlableObject,
     XmlComponent,
 } from "@file/xml-components";
-import { pixelsToEmus } from "@util/types";
+import { convertPixelsToEmu } from "@office-open/core";
 
 import type { SmartArtCollection } from "./smartart-collection";
 import { createDataModel, type ITreeNode } from "./tree-to-model";
@@ -54,10 +54,10 @@ export class SmartArtFrame extends XmlComponent {
         this.root.push(
             new Transform2D(
                 {
-                    x: pixelsToEmus(options.x ?? 0),
-                    y: pixelsToEmus(options.y ?? 0),
-                    width: pixelsToEmus(options.width ?? 0),
-                    height: pixelsToEmus(options.height ?? 0),
+                    x: convertPixelsToEmu(options.x ?? 0),
+                    y: convertPixelsToEmu(options.y ?? 0),
+                    width: convertPixelsToEmu(options.width ?? 0),
+                    height: convertPixelsToEmu(options.height ?? 0),
                 },
                 "p",
             ),

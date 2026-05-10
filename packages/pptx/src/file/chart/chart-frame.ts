@@ -1,7 +1,7 @@
 import { Transform2D } from "@file/drawingml/transform-2d";
 import { BuilderElement, NextAttributeComponent, XmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
-import { pixelsToEmus } from "@util/types";
+import { convertPixelsToEmu } from "@office-open/core";
 
 import { ChartCollection } from "./chart-collection";
 import type { IChartSpaceOptions } from "./chart-space";
@@ -37,10 +37,10 @@ export class ChartFrame extends XmlComponent {
         this.root.push(
             new Transform2D(
                 {
-                    x: pixelsToEmus(options.x ?? 0),
-                    y: pixelsToEmus(options.y ?? 0),
-                    width: pixelsToEmus(options.width ?? 0),
-                    height: pixelsToEmus(options.height ?? 0),
+                    x: convertPixelsToEmu(options.x ?? 0),
+                    y: convertPixelsToEmu(options.y ?? 0),
+                    width: convertPixelsToEmu(options.width ?? 0),
+                    height: convertPixelsToEmu(options.height ?? 0),
                 },
                 "p",
             ),
