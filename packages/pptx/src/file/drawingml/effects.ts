@@ -1,4 +1,14 @@
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import {
+    createEffectList,
+    createScene3D,
+    createShape3D,
+    createBevel,
+    createBottomBevel,
+    type EffectListOptions,
+    type Scene3DOptions,
+    type Shape3DOptions,
+    type BevelOptions,
+} from "@office-open/core/drawingml";
 
 export type EffectType = "outerShadow" | "innerShadow" | "glow" | "reflection" | "softEdge";
 
@@ -110,212 +120,124 @@ export interface IEffectsOptions {
         | "gallery";
 }
 
-function buildShadowElement(tag: string, options: IShadowOptions): XmlComponent {
-    const attrs: Record<
-        string,
-        { readonly key: string; readonly value: string | number | boolean }
-    > = {};
-    if (options.blur !== undefined) attrs.blurRad = { key: "blurRad", value: options.blur };
-    if (options.dist !== undefined) attrs.dist = { key: "dist", value: options.dist };
-    if (options.direction !== undefined) attrs.dir = { key: "dir", value: options.direction };
-    if (options.rotateWithShape !== undefined)
-        attrs.rotWithShape = { key: "rotWithShape", value: options.rotateWithShape ? 1 : 0 };
-
-    const color = options.color ?? "000000";
-    const alpha = options.alpha ?? 40;
-
-    return new BuilderElement({
-        name: `a:${tag}`,
-        attributes: attrs,
-        children: [
-            new BuilderElement({
-                name: "a:srgbClr",
-                attributes: { val: { key: "val", value: color } },
-                children: [
-                    new BuilderElement({
-                        name: "a:alpha",
-                        attributes: { val: { key: "val", value: alpha * 1000 } },
-                    }),
-                ],
-            }),
-        ],
-    });
+/** Convert PPTX simple color to core SolidFillOptions. */
+function toColor(color?: string, alpha?: number) {
+    if (!color) return { value: "000000", alpha: (alpha ?? 40) * 1000 };
+    return { value: color.replace("#", ""), alpha: (alpha ?? 40) * 1000 };
 }
 
-function buildGlowElement(options: IGlowOptions): XmlComponent {
-    const radius = options.radius ?? 152400;
-    const color = options.color ?? "4472C4";
-    const alpha = options.alpha ?? 40;
-
-    return new BuilderElement({
-        name: "a:glow",
-        attributes: { rad: { key: "rad", value: radius } },
-        children: [
-            new BuilderElement({
-                name: "a:srgbClr",
-                attributes: { val: { key: "val", value: color } },
-                children: [
-                    new BuilderElement({
-                        name: "a:alpha",
-                        attributes: { val: { key: "val", value: alpha * 1000 } },
-                    }),
-                ],
-            }),
-        ],
-    });
+/** Convert PPTX IShadowOptions to core OuterShadowEffectOptions. */
+function toOuterShadow(opts: IShadowOptions) {
+    return {
+        blurRad: opts.blur,
+        dist: opts.dist,
+        dir: opts.direction,
+        rotWithShape: opts.rotateWithShape === false ? false : undefined,
+        color: toColor(opts.color, opts.alpha),
+    };
 }
 
-function buildReflectionElement(options: IReflectionOptions): XmlComponent {
-    const attrs: Record<string, { readonly key: string; readonly value: string | number }> = {};
-    if (options.blurRadius !== undefined)
-        attrs.blurRad = { key: "blurRad", value: options.blurRadius };
-    if (options.startAlpha !== undefined)
-        attrs.stA = { key: "stA", value: options.startAlpha * 1000 };
-    if (options.startPosition !== undefined)
-        attrs.stPos = { key: "stPos", value: options.startPosition * 1000 };
-    if (options.endAlpha !== undefined)
-        attrs.endA = { key: "endA", value: options.endAlpha * 1000 };
-    if (options.endPosition !== undefined)
-        attrs.endPos = { key: "endPos", value: options.endPosition * 1000 };
-    if (options.dist !== undefined) attrs.dist = { key: "dist", value: options.dist };
-    if (options.direction !== undefined) attrs.dir = { key: "dir", value: options.direction };
-    if (options.fadeDirection !== undefined)
-        attrs.fadeDir = { key: "fadeDir", value: options.fadeDirection * 60000 };
-    if (options.scaleX !== undefined) attrs.sx = { key: "sx", value: options.scaleX * 1000 };
-    if (options.scaleY !== undefined) attrs.sy = { key: "sy", value: options.scaleY * 1000 };
-    if (options.skewX !== undefined) attrs.kx = { key: "kx", value: options.skewX * 60000 };
-    if (options.skewY !== undefined) attrs.ky = { key: "ky", value: options.skewY * 60000 };
-    if (options.alignment !== undefined)
-        attrs.algn = { key: "algn", value: ReflectionAlignment[options.alignment] };
-    if (options.rotateWithShape !== undefined)
-        attrs.rotWithShape = { key: "rotWithShape", value: options.rotateWithShape ? 1 : 0 };
-
-    return new BuilderElement({ name: "a:reflection", attributes: attrs });
+/** Convert PPTX IShadowOptions to core InnerShadowEffectOptions. */
+function toInnerShadow(opts: IShadowOptions) {
+    return {
+        blurRad: opts.blur,
+        dist: opts.dist,
+        dir: opts.direction,
+        color: toColor(opts.color, opts.alpha),
+    };
 }
 
-function buildSoftEdgeElement(options: ISoftEdgeOptions): XmlComponent {
-    const radius = options.radius ?? 50800;
-    return new BuilderElement({
-        name: "a:softEdge",
-        attributes: { rad: { key: "rad", value: radius } },
-    });
+/** Convert PPTX IGlowOptions to core GlowEffectOptions. */
+function toGlow(opts: IGlowOptions) {
+    return {
+        rad: opts.radius ?? 152400,
+        color: toColor(opts.color, opts.alpha),
+    };
 }
 
-/**
- * a:effectLst — Visual effects for a shape (shadow, glow, reflection, etc.).
- * XSD order: blur → fillOverlay → glow → innerShdw → outerShdw → prstShdw → reflection → softEdge
- */
-export class EffectList extends XmlComponent {
-    public constructor(options: IEffectsOptions) {
-        super("a:effectLst");
-
-        if (options.glow) {
-            this.root.push(buildGlowElement(options.glow));
-        }
-        if (options.innerShadow) {
-            this.root.push(buildShadowElement("innerShdw", options.innerShadow));
-        }
-        if (options.outerShadow) {
-            this.root.push(buildShadowElement("outerShdw", options.outerShadow));
-        }
-        if (options.reflection) {
-            this.root.push(buildReflectionElement(options.reflection));
-        }
-        if (options.softEdge) {
-            this.root.push(buildSoftEdgeElement(options.softEdge));
-        }
-    }
+/** Convert PPTX IReflectionOptions to core ReflectionEffectOptions. */
+function toReflection(opts: IReflectionOptions) {
+    const result: Record<string, number> = {};
+    if (opts.blurRadius !== undefined) result.blurRad = opts.blurRadius;
+    if (opts.dist !== undefined) result.dist = opts.dist;
+    if (opts.direction !== undefined) result.dir = opts.direction;
+    if (opts.startAlpha !== undefined) result.stA = opts.startAlpha * 1000;
+    if (opts.startPosition !== undefined) result.stPos = opts.startPosition * 1000;
+    if (opts.endAlpha !== undefined) result.endA = opts.endAlpha * 1000;
+    if (opts.endPosition !== undefined) result.endPos = opts.endPosition * 1000;
+    if (opts.fadeDirection !== undefined) result.fadeDir = opts.fadeDirection * 60000;
+    if (opts.scaleX !== undefined) result.sx = opts.scaleX * 1000;
+    if (opts.scaleY !== undefined) result.sy = opts.scaleY * 1000;
+    if (opts.skewX !== undefined) result.kx = opts.skewX * 60000;
+    if (opts.skewY !== undefined) result.ky = opts.skewY * 60000;
+    if (opts.alignment !== undefined) result.algn = ReflectionAlignment[opts.alignment];
+    if (opts.rotateWithShape === false) result.rotWithShape = 0;
+    return result;
 }
 
-/**
- * a:scene3d — 3D scene for a shape (camera + lighting rig).
- */
-export function buildScene3D(options: IEffectsOptions): XmlComponent | null {
+/** Convert PPTX IBevelOptions to core BevelOptions. */
+function toBevel(opts: IBevelOptions): BevelOptions {
+    return {
+        ...(opts.width !== undefined && { w: opts.width * 12700 }),
+        ...(opts.height !== undefined && { h: opts.height * 12700 }),
+    };
+}
+
+/** Map PPTX IEffectsOptions to core EffectListOptions. */
+function toEffectListOptions(opts: IEffectsOptions): EffectListOptions | undefined {
+    const hasEffects = opts.outerShadow || opts.innerShadow || opts.glow || opts.reflection || opts.softEdge;
+    if (!hasEffects) return undefined;
+
+    return {
+        outerShadow: opts.outerShadow ? toOuterShadow(opts.outerShadow) : undefined,
+        innerShadow: opts.innerShadow ? toInnerShadow(opts.innerShadow) : undefined,
+        glow: opts.glow ? toGlow(opts.glow) : undefined,
+        reflection: opts.reflection ? toReflection(opts.reflection) : undefined,
+        softEdge: opts.softEdge ? opts.softEdge.radius ?? 50800 : undefined,
+    };
+}
+
+/** Map PPTX IEffectsOptions to core Scene3DOptions, or null if not needed. */
+export function buildScene3D(options: IEffectsOptions): ReturnType<typeof createScene3D> | null {
     if (!options.rotation3D && !options.lighting) return null;
 
-    const rotAttrs: Record<string, { readonly key: string; readonly value: number }> = {
-        lat: { key: "lat", value: (options.rotation3D?.x ?? 0) * 60000 },
-        lon: { key: "lon", value: (options.rotation3D?.y ?? 0) * 60000 },
-        rev: { key: "rev", value: (options.rotation3D?.z ?? 0) * 60000 },
+    const cameraPreset = options.rotation3D?.perspective ? "legacyPerspectiveFront" : "orthographicFront";
+    const cameraOpts = {
+        preset: cameraPreset,
+        ...(options.rotation3D?.perspective && { fov: options.rotation3D.perspective }),
+        ...(options.rotation3D && {
+            rotation: {
+                lat: (options.rotation3D.x ?? 0) * 60000,
+                lon: (options.rotation3D.y ?? 0) * 60000,
+                rev: (options.rotation3D.z ?? 0) * 60000,
+            },
+        }),
     };
 
-    const cameraAttrs: Record<string, { readonly key: string; readonly value: string | number }> = {
-        prst: {
-            key: "prst",
-            value: options.rotation3D?.perspective ? "legacyPerspectiveFront" : "orthographicFront",
-        },
-    };
-    if (options.rotation3D?.perspective) {
-        cameraAttrs.fov = { key: "fov", value: options.rotation3D.perspective };
-    }
-
-    const camera = new BuilderElement({
-        name: "a:camera",
-        attributes: cameraAttrs,
-        children: options.rotation3D
-            ? [new BuilderElement({ name: "a:rot", attributes: rotAttrs })]
-            : undefined,
-    });
-
-    const lightRig = new BuilderElement({
-        name: "a:lightRig",
-        attributes: {
-            rig: { key: "rig", value: options.lighting ?? "threePt" },
-            dir: { key: "dir", value: "t" },
-        },
-        children: [
-            new BuilderElement({
-                name: "a:rot",
-                attributes: {
-                    lat: { key: "lat", value: 0 },
-                    lon: { key: "lon", value: 0 },
-                    rev: { key: "rev", value: 0 },
-                },
-            }),
-        ],
-    });
-
-    return new BuilderElement({
-        name: "a:scene3d",
-        children: [camera, lightRig],
+    return createScene3D({
+        camera: cameraOpts as Scene3DOptions["camera"],
+        lightRig: { rig: options.lighting ?? "threePt", direction: "t" },
     });
 }
 
-/**
- * a:sp3d — 3D shape properties (extrusion, bevel, material).
- * XSD: extrusionH/prstMaterial/contourW/z are attributes; children are bevelT → bevelB → extrusionClr → contourClr → extLst
- */
-export function buildShape3D(options: IEffectsOptions): XmlComponent | null {
-    if (!options.extrusionH && !options.bevelTop && !options.bevelBottom && !options.material)
-        return null;
+/** Map PPTX IEffectsOptions to core Shape3DOptions, or null if not needed. */
+export function buildShape3D(options: IEffectsOptions): ReturnType<typeof createShape3D> | null {
+    if (!options.extrusionH && !options.bevelTop && !options.bevelBottom && !options.material) return null;
 
-    const children: BuilderElement<{}>[] = [];
+    const shape3dOpts: Shape3DOptions = {};
+    if (options.bevelTop) shape3dOpts.bevelT = toBevel(options.bevelTop);
+    if (options.bevelBottom) shape3dOpts.bevelB = toBevel(options.bevelBottom);
+    if (options.extrusionH !== undefined) shape3dOpts.extrusionH = options.extrusionH;
+    if (options.material) shape3dOpts.prstMaterial = options.material;
 
-    if (options.bevelTop) {
-        children.push(buildBevelElement("a:bevelT", options.bevelTop));
-    }
-    if (options.bevelBottom) {
-        children.push(buildBevelElement("a:bevelB", options.bevelBottom));
-    }
-
-    const attrs: Record<string, { readonly key: string; readonly value: string | number }> = {};
-    if (options.extrusionH !== undefined)
-        attrs.extrusionH = { key: "extrusionH", value: options.extrusionH };
-    if (options.material) attrs.prstMaterial = { key: "prstMaterial", value: options.material };
-
-    return new BuilderElement({
-        name: "a:sp3d",
-        attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
-        children: children.length > 0 ? children : undefined,
-    });
+    return createShape3D(shape3dOpts);
 }
 
-function buildBevelElement(name: string, options: IBevelOptions): BuilderElement<{}> {
-    const attrs: Record<string, { readonly key: string; readonly value: number }> = {};
-    if (options.width !== undefined) attrs.w = { key: "w", value: options.width * 12700 };
-    if (options.height !== undefined) attrs.h = { key: "h", value: options.height * 12700 };
-    return new BuilderElement({
-        name,
-        attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
-    });
+/** Create a:effectLst from PPTX simplified IEffectsOptions. */
+export function createPptxEffectList(options: IEffectsOptions) {
+    const effectListOpts = toEffectListOptions(options);
+    return effectListOpts ? createEffectList(effectListOpts) : null;
 }
+
+// Re-export core types for advanced users
+export { EffectListOptions, Scene3DOptions, Shape3DOptions, BevelOptions };

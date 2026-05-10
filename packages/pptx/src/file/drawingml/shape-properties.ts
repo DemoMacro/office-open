@@ -2,7 +2,7 @@ import type { File } from "@file/file";
 import { BaseXmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 
-import { EffectList, buildScene3D, buildShape3D, type IEffectsOptions } from "./effects";
+import { createPptxEffectList, buildScene3D, buildShape3D, type IEffectsOptions } from "./effects";
 import { buildFill, extractBlipFillMedia } from "./fill";
 import type { FillOptions } from "./fill";
 import { createOutlineCompat } from "./outline";
@@ -86,8 +86,11 @@ export class ShapeProperties extends BaseXmlComponent {
 
         // Effects
         if (opts.effects) {
-            const effectObj = new EffectList(opts.effects).prepForXml(context);
-            if (effectObj) children.push(effectObj);
+            const effectObj = createPptxEffectList(opts.effects);
+            if (effectObj) {
+                const effectXmlObj = effectObj.prepForXml(context);
+                if (effectXmlObj) children.push(effectXmlObj);
+            }
 
             const scene3d = buildScene3D(opts.effects);
             if (scene3d) {

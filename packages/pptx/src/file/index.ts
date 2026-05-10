@@ -75,7 +75,7 @@ export { Transform2D, type ITransform2DOptions } from "./drawingml/transform-2d"
 export { PresetGeometry } from "./drawingml/preset-geometry";
 export { ShapeProperties, type IShapePropertiesOptions } from "./drawingml/shape-properties";
 export {
-    EffectList,
+    createPptxEffectList,
     ReflectionAlignment,
     type IEffectsOptions,
     type IShadowOptions,
