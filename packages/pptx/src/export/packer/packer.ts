@@ -20,6 +20,22 @@ export class Packer {
         return convertOutput(zipped, type, OoxmlMimeType.PPTX);
     }
 
+    public static async toString(
+        file: File,
+        prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
+        overrides: readonly IXmlifyedFile[] = [],
+    ): Promise<string> {
+        return Packer.pack(file, "string", prettify, overrides);
+    }
+
+    public static toArrayBuffer(
+        file: File,
+        prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
+        overrides: readonly IXmlifyedFile[] = [],
+    ): Promise<ArrayBuffer> {
+        return Packer.pack(file, "arraybuffer", prettify, overrides);
+    }
+
     public static toBuffer(
         file: File,
         prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
