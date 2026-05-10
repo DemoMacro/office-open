@@ -1,3 +1,5 @@
+export * from "./axes";
+export * from "./chart-space";
 export * from "./chart-collection";
 export * from "./create-chart-type";
 export * from "./series/series-data";
