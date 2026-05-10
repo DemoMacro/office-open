@@ -178,9 +178,6 @@ describe("Drawing", () => {
                                                             {
                                                                 "a:xfrm": [
                                                                     {
-                                                                        _attr: {},
-                                                                    },
-                                                                    {
                                                                         "a:off": {
                                                                             _attr: {
                                                                                 x: 0,
@@ -414,9 +411,6 @@ describe("Drawing", () => {
                                                             },
                                                             {
                                                                 "a:xfrm": [
-                                                                    {
-                                                                        _attr: {},
-                                                                    },
                                                                     {
                                                                         "a:off": {
                                                                             _attr: {
@@ -673,9 +667,6 @@ describe("Drawing", () => {
                                                             },
                                                             {
                                                                 "a:xfrm": [
-                                                                    {
-                                                                        _attr: {},
-                                                                    },
                                                                     {
                                                                         "a:off": {
                                                                             _attr: {

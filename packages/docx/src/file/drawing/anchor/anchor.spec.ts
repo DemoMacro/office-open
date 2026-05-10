@@ -578,9 +578,6 @@ describe("Anchor", () => {
                                                     {
                                                         "a:xfrm": [
                                                             {
-                                                                _attr: {},
-                                                            },
-                                                            {
                                                                 "a:off": {
                                                                     _attr: {
                                                                         x: 0,

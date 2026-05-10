@@ -22,9 +22,6 @@ describe("Form", () => {
             expect(tree).to.deep.equal({
                 "a:xfrm": [
                     {
-                        _attr: {},
-                    },
-                    {
                         "a:off": {
                             _attr: {
                                 x: 0,
