@@ -10,7 +10,6 @@ import {
     Packer,
     parseDocx,
     HeadingLevel,
-    AlignmentType,
 } from "@office-open/docx";
 import type { Element } from "@office-open/xml";
 import { findChild } from "@office-open/xml";
@@ -18,10 +17,12 @@ import { findChild } from "@office-open/xml";
 function getText(el: Element | undefined): string {
     if (!el) return "";
     if (el.text != null) return String(el.text);
-    return el.elements
-        ?.filter((e) => e.type === "text")
-        .map((e) => String(e.text ?? ""))
-        .join("") ?? "";
+    return (
+        el.elements
+            ?.filter((e) => e.type === "text")
+            .map((e) => String(e.text ?? ""))
+            .join("") ?? ""
+    );
 }
 
 function setText(el: Element | undefined, text: string): void {
@@ -80,7 +81,7 @@ async function main() {
     console.log(`Generated DOCX: ${buffer.length} bytes`);
 
     // 3. Parse it back — returns ParsedDocument + w:body Element tree
-    const { doc: parsed, body } = parseDocx(new Uint8Array(buffer));
+    const { doc: parsed, body, styles, numbering, partRefs } = parseDocx(new Uint8Array(buffer));
 
     // 4. Verify Element tree structure
     let pass = 0;
@@ -111,12 +112,12 @@ async function main() {
     // Verify first paragraph has w:pStyle = Heading1
     const p1 = paragraphs[0];
     const p1Pr = findChild(p1, "w:pPr");
-    const p1Style = p1Pr ? findChild(p1Pr, "w:pStyle") : null;
+    const p1Style = findChild(p1Pr, "w:pStyle");
     assert("first paragraph has Heading1 style", p1Style?.attributes?.["w:val"] === "Heading1");
 
     // Verify heading text content
     const headingRun = findChild(p1, "w:r");
-    const headingT = headingRun ? findChild(headingRun, "w:t") : null;
+    const headingT = findChild(headingRun, "w:t");
     assert("heading text is 'Heading 1'", getText(headingT) === "Heading 1");
 
     // Verify table has 2 rows
@@ -140,8 +141,8 @@ async function main() {
     // 7. Re-parse modified document and verify
     const { body: modifiedBody } = parseDocx(new Uint8Array(modifiedBuffer));
     const modifiedP1 = modifiedBody.elements?.filter((e) => e.name === "w:p")[0];
-    const modifiedRun = modifiedP1 ? findChild(modifiedP1, "w:r") : null;
-    const modifiedT = modifiedRun ? findChild(modifiedRun, "w:t") : null;
+    const modifiedRun = findChild(modifiedP1, "w:r");
+    const modifiedT = findChild(modifiedRun, "w:t");
     assert("re-parsed modified heading", getText(modifiedT) === "Modified Heading");
 
     // 8. Test ParsedDocument utility methods
@@ -154,11 +155,20 @@ async function main() {
     assert("keys with prefix returns results", allKeys.length > 0);
     console.log(`  word/ keys: ${allKeys.length} files`);
 
-    const styleEl = parsed.get("word/styles.xml");
-    assert("get styles.xml returns Element", !!styleEl);
-
     const rawBinary = parsed.getRaw("word/styles.xml");
     assert("getRaw returns Uint8Array", rawBinary instanceof Uint8Array);
+
+    // 9. Test enhanced parsing — styles, numbering, partRefs
+    console.log("\n--- Enhanced Parsing ---");
+    assert("styles parsed", !!styles);
+    assert("numbering parsed", !!numbering);
+
+    assert("styles root is w:styles", styles!.name === "w:styles");
+
+    console.log(`  headers: ${partRefs.headers.size}, footers: ${partRefs.footers.size}`);
+    console.log(`  footnotes: ${partRefs.footnotes ?? "none"}`);
+    console.log(`  endnotes: ${partRefs.endnotes ?? "none"}`);
+    console.log(`  comments: ${partRefs.comments ?? "none"}`);
 
     // 9. Unmodified round-trip — parse and save without changes
     const { doc: unmodified } = parseDocx(new Uint8Array(buffer));

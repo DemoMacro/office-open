@@ -7,10 +7,12 @@ import { findChild } from "@office-open/xml";
 function getText(el: Element | undefined): string {
     if (!el) return "";
     if (el.text != null) return String(el.text);
-    return el.elements
-        ?.filter((e) => e.type === "text")
-        .map((e) => String(e.text ?? ""))
-        .join("") ?? "";
+    return (
+        el.elements
+            ?.filter((e) => e.type === "text")
+            .map((e) => String(e.text ?? ""))
+            .join("") ?? ""
+    );
 }
 
 function setText(el: Element | undefined, text: string): void {
@@ -90,7 +92,15 @@ async function main() {
     console.log(`Generated PPTX: ${buffer.length} bytes`);
 
     // 3. Parse it back — returns ParsedDocument + slide paths
-    const { doc: parsed, slidePaths, slideWidth, slideHeight } = parsePptx(new Uint8Array(buffer));
+    const {
+        doc: parsed,
+        slidePaths,
+        slideMasterPaths,
+        slideLayoutPaths,
+        notesSlidePaths,
+        slideWidth,
+        slideHeight,
+    } = parsePptx(new Uint8Array(buffer));
 
     // 4. Verify parsed data
     let pass = 0;
@@ -135,7 +145,7 @@ async function main() {
         const sp1TxBody = findChild(shapes[0], "p:txBody");
         const sp1FirstPara = sp1TxBody?.elements?.find((e) => e.name === "a:p");
         const sp1Run = sp1FirstPara?.elements?.find((e) => e.name === "a:r");
-        const sp1T = sp1Run ? findChild(sp1Run, "a:t") : null;
+        const sp1T = findChild(sp1Run, "a:t");
         assert("shape 1 text is 'Hello PPTX'", getText(sp1T) === "Hello PPTX");
 
         // Verify third shape has 2 paragraphs (rich text)
@@ -164,7 +174,7 @@ async function main() {
     const reparsedTxBody = findChild(reparsedSp1!, "p:txBody");
     const reparsedFirstPara = reparsedTxBody?.elements?.find((e) => e.name === "a:p");
     const reparsedRun = reparsedFirstPara?.elements?.find((e) => e.name === "a:r");
-    const reparsedT = reparsedRun ? findChild(reparsedRun, "a:t") : null;
+    const reparsedT = findChild(reparsedRun, "a:t");
     assert("re-parsed modified text", getText(reparsedT) === "Modified PPTX");
 
     // 8. Test ParsedDocument utility methods
@@ -179,6 +189,14 @@ async function main() {
     const presEl = parsed.get("ppt/presentation.xml");
     assert("get presentation.xml returns Element", !!presEl);
     assert("presentation has sldSz", !!findChild(presEl!, "p:sldSz"));
+
+    // 9. Test enhanced parsing
+    console.log("\n--- Enhanced Parsing ---");
+    assert("has slide masters", slideMasterPaths.length >= 1);
+    assert("has slide layouts", slideLayoutPaths.length >= 1);
+    console.log(`  slideMasters: ${slideMasterPaths.join(", ")}`);
+    console.log(`  slideLayouts: ${slideLayoutPaths.join(", ")}`);
+    console.log(`  notesSlides: ${notesSlidePaths.length}`);
 
     // Summary
     console.log(`\n=== Results: ${pass} passed, ${fail} failed ===`);
