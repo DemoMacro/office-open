@@ -149,7 +149,11 @@ describe("PPTX: Object Creation (no pack)", () => {
                                 new Paragraph({
                                     properties: { alignment: "CENTER", bulletNone: true },
                                     children: [
-                                        new TextRun({ text: "Title Slide", fontSize: 28, bold: true }),
+                                        new TextRun({
+                                            text: "Title Slide",
+                                            fontSize: 28,
+                                            bold: true,
+                                        }),
                                     ],
                                 }),
                             ],
@@ -400,7 +404,11 @@ describe("PPTX: Create + toBuffer", () => {
                                 new Paragraph({
                                     properties: { alignment: "CENTER", bulletNone: true },
                                     children: [
-                                        new TextRun({ text: "Title Slide", fontSize: 28, bold: true }),
+                                        new TextRun({
+                                            text: "Title Slide",
+                                            fontSize: 28,
+                                            bold: true,
+                                        }),
                                     ],
                                 }),
                             ],

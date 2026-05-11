@@ -42,7 +42,11 @@ const pres = new Presentation({
                                 new TextRun({ text: " | " }),
                                 new TextRun({ text: "Italic", italic: true, fontSize: 18 }),
                                 new TextRun({ text: " | " }),
-                                new TextRun({ text: "Underline", underline: "SINGLE", fontSize: 18 }),
+                                new TextRun({
+                                    text: "Underline",
+                                    underline: "SINGLE",
+                                    fontSize: 18,
+                                }),
                                 new TextRun({ text: " | " }),
                                 new TextRun({
                                     text: "Bold+Italic+Underline",
@@ -111,8 +115,16 @@ const pres = new Presentation({
                             properties: { bulletNone: true },
                             children: [
                                 new TextRun({ text: "Normal spacing", fontSize: 18 }),
-                                new TextRun({ text: "    Wide spacing", fontSize: 18, spacing: 400 }),
-                                new TextRun({ text: "    Tight spacing", fontSize: 18, spacing: -100 }),
+                                new TextRun({
+                                    text: "    Wide spacing",
+                                    fontSize: 18,
+                                    spacing: 400,
+                                }),
+                                new TextRun({
+                                    text: "    Tight spacing",
+                                    fontSize: 18,
+                                    spacing: -100,
+                                }),
                             ],
                         }),
                     ],
@@ -279,7 +291,11 @@ const pres = new Presentation({
                         }),
                         new Paragraph({
                             children: [
-                                new TextRun({ text: "Right-to-Left", rightToLeft: true, fontSize: 16 }),
+                                new TextRun({
+                                    text: "Right-to-Left",
+                                    rightToLeft: true,
+                                    fontSize: 16,
+                                }),
                             ],
                         }),
                         new Paragraph({

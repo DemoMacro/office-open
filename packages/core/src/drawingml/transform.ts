@@ -50,7 +50,10 @@ export interface GroupTransform2DOptions extends Transform2DOptions {
 }
 
 function buildXfrmAttrs(options: Transform2DOptions) {
-    const attrs: Record<string, { readonly key: string; readonly value: string | number | boolean | undefined }> = {};
+    const attrs: Record<
+        string,
+        { readonly key: string; readonly value: string | number | boolean | undefined }
+    > = {};
     if (options.flipH !== undefined) attrs.flipH = { key: "flipH", value: options.flipH };
     if (options.flipV !== undefined) attrs.flipV = { key: "flipV", value: options.flipV };
     if (options.rotation !== undefined) attrs.rot = { key: "rot", value: options.rotation };
@@ -73,7 +76,10 @@ export const createTransform2D = (
         children.push(
             new BuilderElement({
                 name: "a:off",
-                attributes: { x: { key: "x", value: options.x ?? 0 }, y: { key: "y", value: options.y ?? 0 } },
+                attributes: {
+                    x: { key: "x", value: options.x ?? 0 },
+                    y: { key: "y", value: options.y ?? 0 },
+                },
             }),
         );
     }
@@ -82,7 +88,10 @@ export const createTransform2D = (
         children.push(
             new BuilderElement({
                 name: "a:ext",
-                attributes: { cx: { key: "cx", value: options.width ?? 0 }, cy: { key: "cy", value: options.height ?? 0 } },
+                attributes: {
+                    cx: { key: "cx", value: options.width ?? 0 },
+                    cy: { key: "cy", value: options.height ?? 0 },
+                },
             }),
         );
     }

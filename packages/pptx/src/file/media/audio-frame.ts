@@ -40,7 +40,10 @@ export class AudioFrame extends XmlComponent {
             fileName: mediaFileName,
             transformation: {
                 pixels: { x: options.width ?? 0, y: options.height ?? 0 },
-                emus: { x: convertPixelsToEmu(options.width ?? 0), y: convertPixelsToEmu(options.height ?? 0) },
+                emus: {
+                    x: convertPixelsToEmu(options.width ?? 0),
+                    y: convertPixelsToEmu(options.height ?? 0),
+                },
             },
             data: options.data,
         };

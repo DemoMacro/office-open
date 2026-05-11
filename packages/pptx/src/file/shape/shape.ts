@@ -6,11 +6,10 @@ import type { IShapePropertiesOptions } from "@file/drawingml/shape-properties";
 import type { File } from "@file/file";
 import { XmlComponent as Xc } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
-import { attrs, escapeXml, xml } from "@office-open/xml";
 import { convertPixelsToEmu } from "@office-open/core";
+import { attrs, escapeXml, xml } from "@office-open/xml";
 
 import { Paragraph } from "./paragraph/paragraph";
-import { TextRun } from "./paragraph/run";
 import { TextBody } from "./text-body";
 import type { ITextBodyOptions } from "./text-body";
 
@@ -118,10 +117,7 @@ export class Shape extends Xc {
         // txBody (TextBody)
         const textBodyOptions: ITextBodyOptions = {
             paragraphs:
-                opts.paragraphs ??
-                (opts.text
-                    ? [new Paragraph({ text: opts.text })]
-                    : undefined),
+                opts.paragraphs ?? (opts.text ? [new Paragraph({ text: opts.text })] : undefined),
             vertical: opts.textVertical,
             anchor: opts.textAnchor,
             autoFit: opts.textAutoFit,
@@ -176,10 +172,7 @@ export class Shape extends Xc {
         // txBody
         const txBodyOpts: ITextBodyOptions = {
             paragraphs:
-                opts.paragraphs ??
-                (opts.text
-                    ? [new Paragraph({ text: opts.text })]
-                    : undefined),
+                opts.paragraphs ?? (opts.text ? [new Paragraph({ text: opts.text })] : undefined),
             vertical: opts.textVertical,
             anchor: opts.textAnchor,
             autoFit: opts.textAutoFit,

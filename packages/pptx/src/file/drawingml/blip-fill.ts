@@ -1,4 +1,4 @@
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 import { createBlip, Stretch } from "@office-open/core/drawingml";
 
 /**

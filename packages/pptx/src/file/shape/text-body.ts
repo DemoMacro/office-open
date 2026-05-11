@@ -102,7 +102,9 @@ export class TextBody extends XmlComponent {
         if (this.options.paragraphs) {
             for (const p of this.options.paragraphs) {
                 const para =
-                    typeof p === "string" ? new Paragraph({ children: [new TextRun({ text: p })] }) : p;
+                    typeof p === "string"
+                        ? new Paragraph({ children: [new TextRun({ text: p })] })
+                        : p;
                 const obj = para.prepForXml(context);
                 if (obj) children.push(obj);
             }
@@ -122,7 +124,9 @@ export class TextBody extends XmlComponent {
         if (this.options.paragraphs) {
             for (const p of this.options.paragraphs) {
                 const para =
-                    typeof p === "string" ? new Paragraph({ children: [new TextRun({ text: p })] }) : p;
+                    typeof p === "string"
+                        ? new Paragraph({ children: [new TextRun({ text: p })] })
+                        : p;
                 s += para.toXml(context);
             }
         } else {

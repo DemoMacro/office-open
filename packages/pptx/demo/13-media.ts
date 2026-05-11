@@ -25,7 +25,11 @@ const pres = new Presentation({
                         new Paragraph({
                             properties: { alignment: "CENTER", bulletNone: true },
                             children: [
-                                new TextRun({ text: "Video Embedding Demo", fontSize: 32, bold: true }),
+                                new TextRun({
+                                    text: "Video Embedding Demo",
+                                    fontSize: 32,
+                                    bold: true,
+                                }),
                             ],
                         }),
                     ],

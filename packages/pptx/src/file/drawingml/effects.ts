@@ -2,8 +2,6 @@ import {
     createEffectList,
     createScene3D,
     createShape3D,
-    createBevel,
-    createBottomBevel,
     type EffectListOptions,
     type Scene3DOptions,
     type Shape3DOptions,
@@ -157,7 +155,7 @@ function toGlow(opts: IGlowOptions) {
 
 /** Convert PPTX IReflectionOptions to core ReflectionEffectOptions. */
 function toReflection(opts: IReflectionOptions) {
-    const result: Record<string, number> = {};
+    const result: Record<string, number | string> = {};
     if (opts.blurRadius !== undefined) result.blurRad = opts.blurRadius;
     if (opts.dist !== undefined) result.dist = opts.dist;
     if (opts.direction !== undefined) result.dir = opts.direction;
@@ -185,7 +183,8 @@ function toBevel(opts: IBevelOptions): BevelOptions {
 
 /** Map PPTX IEffectsOptions to core EffectListOptions. */
 function toEffectListOptions(opts: IEffectsOptions): EffectListOptions | undefined {
-    const hasEffects = opts.outerShadow || opts.innerShadow || opts.glow || opts.reflection || opts.softEdge;
+    const hasEffects =
+        opts.outerShadow || opts.innerShadow || opts.glow || opts.reflection || opts.softEdge;
     if (!hasEffects) return undefined;
 
     return {
@@ -193,7 +192,7 @@ function toEffectListOptions(opts: IEffectsOptions): EffectListOptions | undefin
         innerShadow: opts.innerShadow ? toInnerShadow(opts.innerShadow) : undefined,
         glow: opts.glow ? toGlow(opts.glow) : undefined,
         reflection: opts.reflection ? toReflection(opts.reflection) : undefined,
-        softEdge: opts.softEdge ? opts.softEdge.radius ?? 50800 : undefined,
+        softEdge: opts.softEdge ? (opts.softEdge.radius ?? 50800) : undefined,
     };
 }
 
@@ -201,7 +200,9 @@ function toEffectListOptions(opts: IEffectsOptions): EffectListOptions | undefin
 export function buildScene3D(options: IEffectsOptions): ReturnType<typeof createScene3D> | null {
     if (!options.rotation3D && !options.lighting) return null;
 
-    const cameraPreset = options.rotation3D?.perspective ? "legacyPerspectiveFront" : "orthographicFront";
+    const cameraPreset = options.rotation3D?.perspective
+        ? "legacyPerspectiveFront"
+        : "orthographicFront";
     const cameraOpts = {
         preset: cameraPreset,
         ...(options.rotation3D?.perspective && { fov: options.rotation3D.perspective }),
@@ -222,13 +223,17 @@ export function buildScene3D(options: IEffectsOptions): ReturnType<typeof create
 
 /** Map PPTX IEffectsOptions to core Shape3DOptions, or null if not needed. */
 export function buildShape3D(options: IEffectsOptions): ReturnType<typeof createShape3D> | null {
-    if (!options.extrusionH && !options.bevelTop && !options.bevelBottom && !options.material) return null;
+    if (!options.extrusionH && !options.bevelTop && !options.bevelBottom && !options.material)
+        return null;
 
-    const shape3dOpts: Shape3DOptions = {};
-    if (options.bevelTop) shape3dOpts.bevelT = toBevel(options.bevelTop);
-    if (options.bevelBottom) shape3dOpts.bevelB = toBevel(options.bevelBottom);
-    if (options.extrusionH !== undefined) shape3dOpts.extrusionH = options.extrusionH;
-    if (options.material) shape3dOpts.prstMaterial = options.material;
+    const shape3dOpts: Shape3DOptions = {
+        ...(options.bevelTop ? { bevelT: toBevel(options.bevelTop) } : {}),
+        ...(options.bevelBottom ? { bevelB: toBevel(options.bevelBottom) } : {}),
+        ...(options.extrusionH !== undefined ? { extrusionH: options.extrusionH } : {}),
+        ...(options.material
+            ? { prstMaterial: options.material as Shape3DOptions["prstMaterial"] }
+            : {}),
+    };
 
     return createShape3D(shape3dOpts);
 }
@@ -240,4 +245,4 @@ export function createPptxEffectList(options: IEffectsOptions) {
 }
 
 // Re-export core types for advanced users
-export { EffectListOptions, Scene3DOptions, Shape3DOptions, BevelOptions };
+export type { EffectListOptions, Scene3DOptions, Shape3DOptions, BevelOptions };

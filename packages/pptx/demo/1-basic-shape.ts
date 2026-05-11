@@ -65,7 +65,10 @@ const pres = new Presentation({
                         new Paragraph({
                             properties: { bulletNone: true },
                             children: [
-                                new TextRun({ text: "Vertical Text (top to bottom)", fontSize: 14 }),
+                                new TextRun({
+                                    text: "Vertical Text (top to bottom)",
+                                    fontSize: 14,
+                                }),
                             ],
                         }),
                     ],

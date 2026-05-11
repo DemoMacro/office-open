@@ -15,7 +15,9 @@ const pres = new Presentation({
                     paragraphs: [
                         new Paragraph({
                             properties: { alignment: "CENTER", bulletNone: true },
-                            children: [new TextRun({ text: "List Layouts", fontSize: 32, bold: true })],
+                            children: [
+                                new TextRun({ text: "List Layouts", fontSize: 32, bold: true }),
+                            ],
                         }),
                     ],
                 }),
@@ -183,7 +185,11 @@ const pres = new Presentation({
                         new Paragraph({
                             properties: { alignment: "CENTER", bulletNone: true },
                             children: [
-                                new TextRun({ text: "Hierarchy Layouts", fontSize: 32, bold: true }),
+                                new TextRun({
+                                    text: "Hierarchy Layouts",
+                                    fontSize: 32,
+                                    bold: true,
+                                }),
                             ],
                         }),
                     ],

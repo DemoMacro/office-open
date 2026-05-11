@@ -98,8 +98,12 @@ export class File {
         this.slideOptions = slides;
         this.corePropsOptions = options;
         this.showOptions = options.show;
-        this.slideWidthEmus = options.slideWidth ? convertPixelsToEmu(options.slideWidth) : undefined;
-        this.slideHeightEmus = options.slideHeight ? convertPixelsToEmu(options.slideHeight) : undefined;
+        this.slideWidthEmus = options.slideWidth
+            ? convertPixelsToEmu(options.slideWidth)
+            : undefined;
+        this.slideHeightEmus = options.slideHeight
+            ? convertPixelsToEmu(options.slideHeight)
+            : undefined;
     }
 
     // ── Lazy getters ──

@@ -6,7 +6,6 @@
  * @module
  */
 import { BuilderElement, XmlComponent, chartAttr, wrapEl } from "../xml-components";
-
 import { CatAx, ValAx } from "./axes";
 import { createChartType } from "./create-chart-type";
 import type { ChartType } from "./create-chart-type";
