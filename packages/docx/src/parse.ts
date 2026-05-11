@@ -29,8 +29,9 @@ export interface DocxDocument {
 }
 
 function resolveRelsPath(target: string): string {
-    if (target.startsWith("../")) return `word/${target.replace("../", "")}`;
+    // Target is relative to the source part (word/document.xml), base is "word/"
     if (target.startsWith("/")) return target.slice(1);
+    if (target.startsWith("../")) return target.replace("../", "");
     return `word/${target}`;
 }
 

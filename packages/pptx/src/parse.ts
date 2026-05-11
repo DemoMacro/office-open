@@ -15,8 +15,9 @@ export interface PptxDocument {
 }
 
 function resolveRelsPath(target: string): string {
-    if (target.startsWith("../")) return `ppt/${target.replace("../", "")}`;
+    // Target is relative to the source part (ppt/presentation.xml), base is "ppt/"
     if (target.startsWith("/")) return target.slice(1);
+    if (target.startsWith("../")) return target.replace("../", "");
     return `ppt/${target}`;
 }
 
