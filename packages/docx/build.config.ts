@@ -8,9 +8,6 @@ export default defineBuildConfig({
             entry: ["src/index.ts"],
             plugins: [nodePolyfills()],
             shims: true,
-            deps: {
-                neverBundle: ["stream"],
-            },
         },
     ],
 } satisfies BuildConfig);

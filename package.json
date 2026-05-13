@@ -36,7 +36,10 @@
         "prerelease": "pnpm --filter \"./packages/**\" -r exec basis version --prerelease",
         "publish": "pnpm --filter \"./packages/**\" -r exec basis publish",
         "postinstall": "pnpm dev && basis git setup",
-        "serve.docs": "cd docs && docsify serve"
+        "docs:dev": "pnpm --filter @office-open/docs dev",
+        "docs:build": "pnpm --filter @office-open/docs build",
+        "docs:generate": "pnpm --filter @office-open/docs generate",
+        "docs:preview": "pnpm --filter @office-open/docs preview"
     },
     "devDependencies": {
         "@funish/basis": "0.2.17",
