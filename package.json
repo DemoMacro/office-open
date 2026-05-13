@@ -49,7 +49,7 @@
         "docx": "9.6.1",
         "execa": "9.6.1",
         "happy-dom": "20.9.0",
-        "inquirer": "13.4.2",
+        "inquirer": "13.4.3",
         "libxml2-wasm": "0.7.1",
         "pptxgenjs": "4.0.1",
         "tsx": "4.21.0",
