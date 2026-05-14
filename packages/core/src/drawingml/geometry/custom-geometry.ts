@@ -105,10 +105,10 @@ export interface PathLineTo {
 /** Arc-to path command (CT_Path2DArcTo). */
 export interface PathArcTo {
     readonly command: "arcTo";
-    readonly wR: string;
-    readonly hR: string;
-    readonly stAng: string;
-    readonly swAng: string;
+    readonly widthRadius: string;
+    readonly heightRadius: string;
+    readonly startAngle: string;
+    readonly sweepAngle: string;
 }
 
 /** Quadratic Bezier-to path command (CT_Path2DQuadBezierTo). */
@@ -152,10 +152,10 @@ const createPathCommand = (cmd: PathCommand): XmlComponent => {
             }>({
                 name: "a:arcTo",
                 attributes: {
-                    wR: { key: "wR", value: cmd.wR },
-                    hR: { key: "hR", value: cmd.hR },
-                    stAng: { key: "stAng", value: cmd.stAng },
-                    swAng: { key: "swAng", value: cmd.swAng },
+                    wR: { key: "wR", value: cmd.widthRadius },
+                    hR: { key: "hR", value: cmd.heightRadius },
+                    stAng: { key: "stAng", value: cmd.startAngle },
+                    swAng: { key: "swAng", value: cmd.sweepAngle },
                 },
             });
         case "quadBezTo":
@@ -266,10 +266,10 @@ export interface AdjustHandlePosition {
  */
 export interface XYAdjustHandle {
     readonly type: "xy";
-    readonly gdRefX?: string;
+    readonly guideRefX?: string;
     readonly minX?: string;
     readonly maxX?: string;
-    readonly gdRefY?: string;
+    readonly guideRefY?: string;
     readonly minY?: string;
     readonly maxY?: string;
     readonly position: AdjustHandlePosition;
@@ -282,12 +282,12 @@ export interface XYAdjustHandle {
  */
 export interface PolarAdjustHandle {
     readonly type: "polar";
-    readonly gdRefR?: string;
-    readonly minR?: string;
-    readonly maxR?: string;
-    readonly gdRefAng?: string;
-    readonly minAng?: string;
-    readonly maxAng?: string;
+    readonly guideRefRadius?: string;
+    readonly minRadius?: string;
+    readonly maxRadius?: string;
+    readonly guideRefAngle?: string;
+    readonly minAngle?: string;
+    readonly maxAngle?: string;
     readonly position: AdjustHandlePosition;
 }
 
@@ -305,10 +305,10 @@ const createAdjustHandlePos = (position: AdjustHandlePosition): XmlComponent =>
 
 const createXYAdjustHandle = (handle: XYAdjustHandle): XmlComponent => {
     const attrs: Record<string, { readonly key: string; readonly value: string }> = {};
-    if (handle.gdRefX !== undefined) attrs.gdRefX = { key: "gdRefX", value: handle.gdRefX };
+    if (handle.guideRefX !== undefined) attrs.gdRefX = { key: "gdRefX", value: handle.guideRefX };
     if (handle.minX !== undefined) attrs.minX = { key: "minX", value: handle.minX };
     if (handle.maxX !== undefined) attrs.maxX = { key: "maxX", value: handle.maxX };
-    if (handle.gdRefY !== undefined) attrs.gdRefY = { key: "gdRefY", value: handle.gdRefY };
+    if (handle.guideRefY !== undefined) attrs.gdRefY = { key: "gdRefY", value: handle.guideRefY };
     if (handle.minY !== undefined) attrs.minY = { key: "minY", value: handle.minY };
     if (handle.maxY !== undefined) attrs.maxY = { key: "maxY", value: handle.maxY };
 
@@ -321,12 +321,14 @@ const createXYAdjustHandle = (handle: XYAdjustHandle): XmlComponent => {
 
 const createPolarAdjustHandle = (handle: PolarAdjustHandle): XmlComponent => {
     const attrs: Record<string, { readonly key: string; readonly value: string }> = {};
-    if (handle.gdRefR !== undefined) attrs.gdRefR = { key: "gdRefR", value: handle.gdRefR };
-    if (handle.minR !== undefined) attrs.minR = { key: "minR", value: handle.minR };
-    if (handle.maxR !== undefined) attrs.maxR = { key: "maxR", value: handle.maxR };
-    if (handle.gdRefAng !== undefined) attrs.gdRefAng = { key: "gdRefAng", value: handle.gdRefAng };
-    if (handle.minAng !== undefined) attrs.minAng = { key: "minAng", value: handle.minAng };
-    if (handle.maxAng !== undefined) attrs.maxAng = { key: "maxAng", value: handle.maxAng };
+    if (handle.guideRefRadius !== undefined)
+        attrs.gdRefR = { key: "gdRefR", value: handle.guideRefRadius };
+    if (handle.minRadius !== undefined) attrs.minR = { key: "minR", value: handle.minRadius };
+    if (handle.maxRadius !== undefined) attrs.maxR = { key: "maxR", value: handle.maxRadius };
+    if (handle.guideRefAngle !== undefined)
+        attrs.gdRefAng = { key: "gdRefAng", value: handle.guideRefAngle };
+    if (handle.minAngle !== undefined) attrs.minAng = { key: "minAng", value: handle.minAngle };
+    if (handle.maxAngle !== undefined) attrs.maxAng = { key: "maxAng", value: handle.maxAngle };
 
     return new BuilderElement({
         name: "a:ahPolar",
@@ -344,7 +346,7 @@ const createPolarAdjustHandle = (handle: PolarAdjustHandle): XmlComponent => {
  */
 export interface ConnectionSite {
     /** Angle (absolute value or guide name) */
-    readonly ang: string;
+    readonly angle: string;
     /** Position */
     readonly position: AdjustHandlePosition;
 }
@@ -352,7 +354,7 @@ export interface ConnectionSite {
 const createConnectionSite = (site: ConnectionSite): XmlComponent =>
     new BuilderElement<{ readonly ang: string }>({
         name: "a:cxn",
-        attributes: { ang: { key: "ang", value: site.ang } },
+        attributes: { ang: { key: "ang", value: site.angle } },
         children: [createAdjustHandlePos(site.position)],
     });
 
@@ -365,10 +367,10 @@ const createConnectionSite = (site: ConnectionSite): XmlComponent =>
  * Coordinates can be absolute values or references to geometry guide names.
  */
 export interface GeomRect {
-    readonly l: string;
-    readonly t: string;
-    readonly r: string;
-    readonly b: string;
+    readonly left: string;
+    readonly top: string;
+    readonly right: string;
+    readonly bottom: string;
 }
 
 const createGeomRect = (rect: GeomRect): XmlComponent =>
@@ -380,10 +382,10 @@ const createGeomRect = (rect: GeomRect): XmlComponent =>
     }>({
         name: "a:rect",
         attributes: {
-            l: { key: "l", value: rect.l },
-            t: { key: "t", value: rect.t },
-            r: { key: "r", value: rect.r },
-            b: { key: "b", value: rect.b },
+            l: { key: "l", value: rect.left },
+            t: { key: "t", value: rect.top },
+            r: { key: "r", value: rect.right },
+            b: { key: "b", value: rect.bottom },
         },
     });
 
@@ -454,6 +456,7 @@ export interface CustomGeometryOptions {
  *       { command: "close" },
  *     ],
  *   }],
+ *   textRect: { left: "2000000", top: "2000000", right: "8000000", bottom: "8000000" },
  * });
  * ```
  */

@@ -219,9 +219,7 @@ describe("SectionProperties", () => {
             const properties = new SectionProperties({
                 page: {
                     borders: {
-                        pageBorders: {
-                            offsetFrom: PageBorderOffsetFrom.PAGE,
-                        },
+                        offsetFrom: PageBorderOffsetFrom.PAGE,
                     },
                 },
             });

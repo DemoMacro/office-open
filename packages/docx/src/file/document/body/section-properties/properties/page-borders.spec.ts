@@ -13,9 +13,7 @@ describe("PageBorders", () => {
 
         it("should create page borders with some configuration", () => {
             const properties = new PageBorders({
-                pageBorders: {
-                    display: PageBorderDisplay.FIRST_PAGE,
-                },
+                display: PageBorderDisplay.FIRST_PAGE,
             });
             const tree = new Formatter().format(properties);
 
@@ -37,30 +35,28 @@ describe("PageBorders", () => {
 
         it("should create page borders with full configuration", () => {
             const properties = new PageBorders({
-                pageBorderBottom: {
+                bottom: {
                     color: "556677",
                     size: 30,
                     style: BorderStyle.SINGLE,
                 },
-                pageBorderLeft: {
+                left: {
                     color: "889900",
                     size: 40,
                     style: BorderStyle.DOTTED,
                 },
-                pageBorderRight: {
+                right: {
                     color: "223344",
                     size: 20,
                     style: BorderStyle.DOUBLE,
                 },
-                pageBorderTop: {
+                top: {
                     color: "001122",
                     size: 10,
                     style: BorderStyle.DOUBLE_WAVE,
                 },
-                pageBorders: {
-                    display: PageBorderDisplay.FIRST_PAGE,
-                    zOrder: PageBorderZOrder.BACK,
-                },
+                display: PageBorderDisplay.FIRST_PAGE,
+                zOrder: PageBorderZOrder.BACK,
             });
             const tree = new Formatter().format(properties);
 

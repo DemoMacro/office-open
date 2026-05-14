@@ -24,7 +24,7 @@ export interface IShapeOptions {
     readonly fill?: IShapePropertiesOptions["fill"];
     readonly outline?: OutlineOptions;
     readonly effects?: IEffectsOptions;
-    readonly flipH?: boolean;
+    readonly flipHorizontal?: boolean;
     readonly rotation?: number;
     readonly text?: string;
     readonly paragraphs?: ITextBodyOptions["paragraphs"];
@@ -107,7 +107,7 @@ export class Shape extends Xc {
             fill: opts.fill,
             outline: opts.outline,
             effects: opts.effects,
-            flipH: opts.flipH,
+            flipHorizontal: opts.flipHorizontal,
             rotation: opts.rotation,
         };
         const spPr = new ShapeProperties(shapeProps);
@@ -161,7 +161,7 @@ export class Shape extends Xc {
             fill: opts.fill,
             outline: opts.outline,
             effects: opts.effects,
-            flipH: opts.flipH,
+            flipHorizontal: opts.flipHorizontal,
             rotation: opts.rotation,
         });
         const spPrObj = spPr.prepForXml(context as IContext<File>);

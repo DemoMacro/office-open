@@ -45,7 +45,7 @@ const PRESET_COLOR_VALUES: ReadonlySet<string> = new Set(Object.values(PresetCol
 const SCHEME_COLOR_VALUES: ReadonlySet<string> = new Set(Object.values(SchemeColor));
 
 export const createColorElement = (color: SolidFillOptions): XmlComponent => {
-    if ("hue" in color && "sat" in color && "lum" in color) {
+    if ("hue" in color && "saturation" in color && "luminance" in color) {
         return createHslColor(color);
     }
     if ("r" in color && "g" in color && "b" in color) {
@@ -89,7 +89,7 @@ export const createColorElement = (color: SolidFillOptions): XmlComponent => {
  *   value: SchemeColor.ACCENT1, transforms: { tint: 40000 },
  * });
  * // HSL solid fill
- * const hslFill = createSolidFill({ hue: 120000, sat: 100000, lum: 50000 });
+ * const hslFill = createSolidFill({ hue: 120000, saturation: 100000, luminance: 50000 });
  * ```
  */
 export const createSolidFill = (options: SolidFillOptions): XmlComponent =>

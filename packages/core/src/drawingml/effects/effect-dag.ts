@@ -64,7 +64,7 @@ export const EffectContainerType = {
 /** Alpha bi-level effect — clips alpha to threshold (CT_AlphaBiLevelEffect). */
 export interface AlphaBiLevelEffectOptions {
     /** Alpha threshold (fixed percentage, required) */
-    readonly thresh: number;
+    readonly threshold: number;
 }
 
 /** Alpha inverse effect — inverts alpha, optionally with color (CT_AlphaInverseEffect). */
@@ -76,19 +76,19 @@ export interface AlphaInverseEffectOptions {
 /** Alpha modulate fixed effect (CT_AlphaModulateFixedEffect). */
 export interface AlphaModulateFixedEffectOptions {
     /** Amount percentage (default 100%) */
-    readonly amt?: number;
+    readonly amount?: number;
 }
 
 /** Alpha outset effect (CT_AlphaOutsetEffect). */
 export interface AlphaOutsetEffectOptions {
     /** Outset radius */
-    readonly rad?: number;
+    readonly radius?: number;
 }
 
 /** Alpha replace effect — replaces alpha value (CT_AlphaReplaceEffect). */
 export interface AlphaReplaceEffectOptions {
     /** New alpha value (fixed percentage, required) */
-    readonly a: number;
+    readonly alpha: number;
 }
 
 /** Blend effect — blends with nested container (CT_BlendEffect). */
@@ -136,9 +136,9 @@ export interface HSLEffectOptions {
     /** Hue angle in 60,000ths of a degree (default 0) */
     readonly hue?: number;
     /** Saturation percentage (default 0%) */
-    readonly sat?: number;
+    readonly saturation?: number;
     /** Luminance percentage (default 0%) */
-    readonly lum?: number;
+    readonly luminance?: number;
 }
 
 /** Luminance effect — adjusts brightness and contrast (CT_LuminanceEffect). */
@@ -154,31 +154,31 @@ export interface TintEffectOptions {
     /** Hue angle in 60,000ths of a degree (default 0) */
     readonly hue?: number;
     /** Tint amount percentage (default 0%) */
-    readonly amt?: number;
+    readonly amount?: number;
 }
 
 /** Relative offset effect (CT_RelativeOffsetEffect). */
 export interface RelativeOffsetEffectOptions {
     /** Horizontal offset percentage (default 0%) */
-    readonly tx?: number;
+    readonly translateX?: number;
     /** Vertical offset percentage (default 0%) */
-    readonly ty?: number;
+    readonly translateY?: number;
 }
 
 /** Transform effect — scale, skew, translate (CT_TransformEffect). */
 export interface TransformEffectOptions {
     /** Horizontal scale percentage (default 100%) */
-    readonly sx?: number;
+    readonly scaleX?: number;
     /** Vertical scale percentage (default 100%) */
-    readonly sy?: number;
+    readonly scaleY?: number;
     /** Horizontal skew angle (default 0) */
-    readonly kx?: number;
+    readonly skewX?: number;
     /** Vertical skew angle (default 0) */
-    readonly ky?: number;
+    readonly skewY?: number;
     /** Horizontal translation */
-    readonly tx?: number;
+    readonly translateX?: number;
     /** Vertical translation */
-    readonly ty?: number;
+    readonly translateY?: number;
 }
 
 /** Effect reference — references an effect by ID (CT_EffectReference). */
@@ -241,7 +241,7 @@ export interface EffectDagOptions {
     /** Alpha replace effect */
     readonly alphaReplace?: AlphaReplaceEffectOptions;
     /** Bi-level effect (threshold) */
-    readonly biLevel?: { readonly thresh: number };
+    readonly biLevel?: { readonly threshold: number };
     /** Blend effect (requires nested container) */
     readonly blend?: BlendEffectOptions;
     /** Color change effect */
@@ -285,7 +285,7 @@ const buildOptionalAttributes = (
 const createAlphaBiLevelEffect = (options: AlphaBiLevelEffectOptions): XmlComponent =>
     new BuilderElement<{ readonly thresh: number }>({
         name: "a:alphaBiLevel",
-        attributes: { thresh: { key: "thresh", value: options.thresh } },
+        attributes: { thresh: { key: "thresh", value: options.threshold } },
     });
 
 const createAlphaCeilingEffect = (): XmlComponent => new BuilderElement({ name: "a:alphaCeiling" });
@@ -301,29 +301,29 @@ const createAlphaInverseEffect = (options?: AlphaInverseEffectOptions): XmlCompo
 const createAlphaModulateFixedEffect = (
     options?: AlphaModulateFixedEffectOptions,
 ): XmlComponent => {
-    if (options?.amt === undefined) {
+    if (options?.amount === undefined) {
         return new BuilderElement({ name: "a:alphaModFix" });
     }
     return new BuilderElement<{ readonly amt: number }>({
         name: "a:alphaModFix",
-        attributes: { amt: { key: "amt", value: options.amt } },
+        attributes: { amt: { key: "amt", value: options.amount } },
     });
 };
 
 const createAlphaOutsetEffect = (options?: AlphaOutsetEffectOptions): XmlComponent => {
-    if (options?.rad === undefined) {
+    if (options?.radius === undefined) {
         return new BuilderElement({ name: "a:alphaOutset" });
     }
     return new BuilderElement<{ readonly rad: number }>({
         name: "a:alphaOutset",
-        attributes: { rad: { key: "rad", value: options.rad } },
+        attributes: { rad: { key: "rad", value: options.radius } },
     });
 };
 
 const createAlphaReplaceEffect = (options: AlphaReplaceEffectOptions): XmlComponent =>
     new BuilderElement<{ readonly a: number }>({
         name: "a:alphaRepl",
-        attributes: { a: { key: "a", value: options.a } },
+        attributes: { a: { key: "a", value: options.alpha } },
     });
 
 const createBiLevelEffect = (thresh: number): XmlComponent =>
@@ -402,8 +402,8 @@ const createGrayscaleEffect = (): XmlComponent => new BuilderElement({ name: "a:
 const createHSLEffect = (options?: HSLEffectOptions): XmlComponent => {
     const attrs = buildOptionalAttributes({
         hue: options?.hue,
-        sat: options?.sat,
-        lum: options?.lum,
+        sat: options?.saturation,
+        lum: options?.luminance,
     });
     return new BuilderElement({
         name: "a:hsl",
@@ -425,7 +425,7 @@ const createLuminanceEffect = (options?: LuminanceEffectOptions): XmlComponent =
 const createTintEffect = (options?: TintEffectOptions): XmlComponent => {
     const attrs = buildOptionalAttributes({
         hue: options?.hue,
-        amt: options?.amt,
+        amt: options?.amount,
     });
     return new BuilderElement({
         name: "a:tint",
@@ -435,8 +435,8 @@ const createTintEffect = (options?: TintEffectOptions): XmlComponent => {
 
 const createRelativeOffsetEffect = (options?: RelativeOffsetEffectOptions): XmlComponent => {
     const attrs = buildOptionalAttributes({
-        tx: options?.tx,
-        ty: options?.ty,
+        tx: options?.translateX,
+        ty: options?.translateY,
     });
     return new BuilderElement({
         name: "a:relOff",
@@ -446,12 +446,12 @@ const createRelativeOffsetEffect = (options?: RelativeOffsetEffectOptions): XmlC
 
 const createTransformEffect = (options?: TransformEffectOptions): XmlComponent => {
     const attrs = buildOptionalAttributes({
-        sx: options?.sx,
-        sy: options?.sy,
-        kx: options?.kx,
-        ky: options?.ky,
-        tx: options?.tx,
-        ty: options?.ty,
+        sx: options?.scaleX,
+        sy: options?.scaleY,
+        kx: options?.skewX,
+        ky: options?.skewY,
+        tx: options?.translateX,
+        ty: options?.translateY,
     });
     return new BuilderElement({
         name: "a:xfrm",
@@ -468,15 +468,15 @@ const createEffectReference = (options: EffectReferenceOptions): XmlComponent =>
 // ─── Blur Effect (from effect-list, re-implemented for DAG) ─────────────────
 
 const createBlurEffect = (options: BlurEffectOptions): XmlComponent => {
-    const hasAttributes = options.rad !== undefined || options.grow === false;
+    const hasAttributes = options.radius !== undefined || options.grow === false;
 
     if (!hasAttributes) {
         return new BuilderElement({ name: "a:blur" });
     }
 
     const attributePayload = {
-        ...(options.rad !== undefined && {
-            rad: { key: "rad", value: options.rad },
+        ...(options.radius !== undefined && {
+            rad: { key: "rad", value: options.radius },
         }),
         ...(options.grow === false && {
             grow: { key: "grow", value: 0 },
@@ -586,7 +586,7 @@ const createEffectContainer = (options: EffectDagOptions, elementName = "a:cont"
         children.push(createAlphaReplaceEffect(options.alphaReplace));
     }
     if (options.biLevel) {
-        children.push(createBiLevelEffect(options.biLevel.thresh));
+        children.push(createBiLevelEffect(options.biLevel.threshold));
     }
     if (options.blend) {
         children.push(createBlendEffect(options.blend));
@@ -639,14 +639,14 @@ const createEffectContainer = (options: EffectDagOptions, elementName = "a:cont"
  * ```typescript
  * // Simple effect DAG with glow and outer shadow
  * createEffectDag({
- *   glow: { rad: 50800, color: { value: "FF0000" } },
- *   outerShadow: { color: { value: "000000" }, blurRad: 76200 },
+ *   glow: { radius: 50800, color: { value: "FF0000" } },
+ *   outerShadow: { color: { value: "000000" }, blurRadius: 76200 },
  * });
  *
  * // DAG with alpha effects and nested container
  * createEffectDag({
  *   type: "tree",
- *   alphaBiLevel: { thresh: 50000 },
+ *   alphaBiLevel: { threshold: 50000 },
  *   containers: [{
  *     glow: { color: { value: "FF0000" } },
  *   }],

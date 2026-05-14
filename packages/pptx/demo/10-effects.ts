@@ -26,7 +26,7 @@ const pres = new Presentation({
                     effects: {
                         outerShadow: {
                             blur: 50800,
-                            dist: 38100,
+                            distance: 38100,
                             direction: 5400000,
                             color: "000000",
                             alpha: 50,
@@ -54,7 +54,7 @@ const pres = new Presentation({
                     effects: {
                         reflection: {
                             blurRadius: 6350,
-                            dist: 38100,
+                            distance: 38100,
                             direction: 5400000,
                             startAlpha: 90,
                             endAlpha: 0,
@@ -71,7 +71,7 @@ const pres = new Presentation({
                     effects: {
                         innerShadow: {
                             blur: 40000,
-                            dist: 30000,
+                            distance: 30000,
                             direction: 5400000,
                             color: "000000",
                             alpha: 40,
@@ -99,7 +99,7 @@ const pres = new Presentation({
                     effects: {
                         outerShadow: {
                             blur: 40000,
-                            dist: 30000,
+                            distance: 30000,
                             direction: 2700000,
                             color: "000000",
                             alpha: 40,

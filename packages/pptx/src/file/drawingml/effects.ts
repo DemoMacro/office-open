@@ -24,7 +24,7 @@ export const ReflectionAlignment = {
 
 export interface IShadowOptions {
     readonly blur?: number;
-    readonly dist?: number;
+    readonly distance?: number;
     readonly direction?: number;
     readonly color?: string;
     readonly alpha?: number;
@@ -39,7 +39,7 @@ export interface IGlowOptions {
 
 export interface IReflectionOptions {
     readonly blurRadius?: number;
-    readonly dist?: number;
+    readonly distance?: number;
     readonly direction?: number;
     readonly startAlpha?: number;
     readonly startPosition?: number;
@@ -127,9 +127,9 @@ function toColor(color?: string, alpha?: number) {
 /** Convert PPTX IShadowOptions to core OuterShadowEffectOptions. */
 function toOuterShadow(opts: IShadowOptions) {
     return {
-        blurRad: opts.blur,
-        dist: opts.dist,
-        dir: opts.direction,
+        blurRadius: opts.blur,
+        distance: opts.distance,
+        direction: opts.direction,
         rotWithShape: opts.rotateWithShape === false ? false : undefined,
         color: toColor(opts.color, opts.alpha),
     };
@@ -138,9 +138,9 @@ function toOuterShadow(opts: IShadowOptions) {
 /** Convert PPTX IShadowOptions to core InnerShadowEffectOptions. */
 function toInnerShadow(opts: IShadowOptions) {
     return {
-        blurRad: opts.blur,
-        dist: opts.dist,
-        dir: opts.direction,
+        blurRadius: opts.blur,
+        distance: opts.distance,
+        direction: opts.direction,
         color: toColor(opts.color, opts.alpha),
     };
 }
@@ -148,7 +148,7 @@ function toInnerShadow(opts: IShadowOptions) {
 /** Convert PPTX IGlowOptions to core GlowEffectOptions. */
 function toGlow(opts: IGlowOptions) {
     return {
-        rad: opts.radius ?? 152400,
+        radius: opts.radius ?? 152400,
         color: toColor(opts.color, opts.alpha),
     };
 }
@@ -156,19 +156,19 @@ function toGlow(opts: IGlowOptions) {
 /** Convert PPTX IReflectionOptions to core ReflectionEffectOptions. */
 function toReflection(opts: IReflectionOptions) {
     const result: Record<string, number | string> = {};
-    if (opts.blurRadius !== undefined) result.blurRad = opts.blurRadius;
-    if (opts.dist !== undefined) result.dist = opts.dist;
-    if (opts.direction !== undefined) result.dir = opts.direction;
-    if (opts.startAlpha !== undefined) result.stA = opts.startAlpha * 1000;
-    if (opts.startPosition !== undefined) result.stPos = opts.startPosition * 1000;
-    if (opts.endAlpha !== undefined) result.endA = opts.endAlpha * 1000;
-    if (opts.endPosition !== undefined) result.endPos = opts.endPosition * 1000;
-    if (opts.fadeDirection !== undefined) result.fadeDir = opts.fadeDirection * 60000;
-    if (opts.scaleX !== undefined) result.sx = opts.scaleX * 1000;
-    if (opts.scaleY !== undefined) result.sy = opts.scaleY * 1000;
-    if (opts.skewX !== undefined) result.kx = opts.skewX * 60000;
-    if (opts.skewY !== undefined) result.ky = opts.skewY * 60000;
-    if (opts.alignment !== undefined) result.algn = ReflectionAlignment[opts.alignment];
+    if (opts.blurRadius !== undefined) result.blurRadius = opts.blurRadius;
+    if (opts.distance !== undefined) result.distance = opts.distance;
+    if (opts.direction !== undefined) result.direction = opts.direction;
+    if (opts.startAlpha !== undefined) result.startAlpha = opts.startAlpha * 1000;
+    if (opts.startPosition !== undefined) result.startPosition = opts.startPosition * 1000;
+    if (opts.endAlpha !== undefined) result.endAlpha = opts.endAlpha * 1000;
+    if (opts.endPosition !== undefined) result.endPosition = opts.endPosition * 1000;
+    if (opts.fadeDirection !== undefined) result.fadeDirection = opts.fadeDirection * 60000;
+    if (opts.scaleX !== undefined) result.scaleX = opts.scaleX * 1000;
+    if (opts.scaleY !== undefined) result.scaleY = opts.scaleY * 1000;
+    if (opts.skewX !== undefined) result.skewX = opts.skewX * 60000;
+    if (opts.skewY !== undefined) result.skewY = opts.skewY * 60000;
+    if (opts.alignment !== undefined) result.alignment = ReflectionAlignment[opts.alignment];
     if (opts.rotateWithShape === false) result.rotWithShape = 0;
     return result;
 }

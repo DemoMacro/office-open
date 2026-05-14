@@ -26,8 +26,8 @@ export interface Transform2DOptions {
     readonly y?: number;
     readonly width?: number;
     readonly height?: number;
-    readonly flipH?: boolean;
-    readonly flipV?: boolean;
+    readonly flipHorizontal?: boolean;
+    readonly flipVertical?: boolean;
     readonly rotation?: number;
 }
 
@@ -54,8 +54,10 @@ function buildXfrmAttrs(options: Transform2DOptions) {
         string,
         { readonly key: string; readonly value: string | number | boolean | undefined }
     > = {};
-    if (options.flipH !== undefined) attrs.flipH = { key: "flipH", value: options.flipH };
-    if (options.flipV !== undefined) attrs.flipV = { key: "flipV", value: options.flipV };
+    if (options.flipHorizontal !== undefined)
+        attrs.flipH = { key: "flipH", value: options.flipHorizontal };
+    if (options.flipVertical !== undefined)
+        attrs.flipV = { key: "flipV", value: options.flipVertical };
     if (options.rotation !== undefined) attrs.rot = { key: "rot", value: options.rotation };
     return Object.keys(attrs).length > 0 ? attrs : undefined;
 }

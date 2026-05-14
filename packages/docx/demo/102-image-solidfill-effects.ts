@@ -34,10 +34,10 @@ const doc = new Document({
                             data: fs.readFileSync("./demo/images/cat.jpg"),
                             effects: {
                                 outerShadow: {
-                                    blurRad: 50800,
+                                    blurRadius: 50800,
                                     color: { value: "000000" },
-                                    dir: 5400000,
-                                    dist: 38100,
+                                    direction: 5400000,
+                                    distance: 38100,
                                 },
                             },
                             transformation: {
@@ -68,7 +68,7 @@ const doc = new Document({
                             effects: {
                                 glow: {
                                     color: { value: "00B0F0" },
-                                    rad: 76200,
+                                    radius: 76200,
                                 },
                             },
                             transformation: {
@@ -98,8 +98,8 @@ const doc = new Document({
                             data: fs.readFileSync("./demo/images/cat.jpg"),
                             effects: {
                                 reflection: {
-                                    blurRad: 6350,
-                                    stA: 40000,
+                                    blurRadius: 6350,
+                                    startAlpha: 40000,
                                 },
                             },
                             transformation: {
@@ -158,17 +158,17 @@ const doc = new Document({
                             effects: {
                                 glow: {
                                     color: { value: "FFD700" },
-                                    rad: 50800,
+                                    radius: 50800,
                                 },
                                 outerShadow: {
-                                    blurRad: 40000,
+                                    blurRadius: 40000,
                                     color: { value: "000000" },
-                                    dir: 5400000,
-                                    dist: 30000,
+                                    direction: 5400000,
+                                    distance: 30000,
                                 },
                                 reflection: {
-                                    blurRad: 4000,
-                                    stA: 30000,
+                                    blurRadius: 4000,
+                                    startAlpha: 30000,
                                 },
                             },
                             transformation: {

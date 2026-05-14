@@ -19,19 +19,19 @@ export interface MathBorderBoxPropertiesOptions {
     /** Hide top border */
     readonly hideTop?: boolean;
     /** Hide bottom border */
-    readonly hideBot?: boolean;
+    readonly hideBottom?: boolean;
     /** Hide left border */
     readonly hideLeft?: boolean;
     /** Hide right border */
     readonly hideRight?: boolean;
     /** Horizontal strike-through */
-    readonly strikeH?: boolean;
+    readonly strikeHorizontal?: boolean;
     /** Vertical strike-through */
-    readonly strikeV?: boolean;
+    readonly strikeVertical?: boolean;
     /** Bottom-left to top-right diagonal strike */
-    readonly strikeBLTR?: boolean;
+    readonly strikeDiagonalUp?: boolean;
     /** Top-left to bottom-right diagonal strike */
-    readonly strikeTLBR?: boolean;
+    readonly strikeDiagonalDown?: boolean;
 }
 
 /**
@@ -62,8 +62,8 @@ export const createMathBorderBoxProperties = (
     if (options.hideTop !== undefined) {
         children.push(new OnOffElement("m:hideTop", options.hideTop));
     }
-    if (options.hideBot !== undefined) {
-        children.push(new OnOffElement("m:hideBot", options.hideBot));
+    if (options.hideBottom !== undefined) {
+        children.push(new OnOffElement("m:hideBot", options.hideBottom));
     }
     if (options.hideLeft !== undefined) {
         children.push(new OnOffElement("m:hideLeft", options.hideLeft));
@@ -71,17 +71,17 @@ export const createMathBorderBoxProperties = (
     if (options.hideRight !== undefined) {
         children.push(new OnOffElement("m:hideRight", options.hideRight));
     }
-    if (options.strikeH !== undefined) {
-        children.push(new OnOffElement("m:strikeH", options.strikeH));
+    if (options.strikeHorizontal !== undefined) {
+        children.push(new OnOffElement("m:strikeH", options.strikeHorizontal));
     }
-    if (options.strikeV !== undefined) {
-        children.push(new OnOffElement("m:strikeV", options.strikeV));
+    if (options.strikeVertical !== undefined) {
+        children.push(new OnOffElement("m:strikeV", options.strikeVertical));
     }
-    if (options.strikeBLTR !== undefined) {
-        children.push(new OnOffElement("m:strikeBLTR", options.strikeBLTR));
+    if (options.strikeDiagonalUp !== undefined) {
+        children.push(new OnOffElement("m:strikeBLTR", options.strikeDiagonalUp));
     }
-    if (options.strikeTLBR !== undefined) {
-        children.push(new OnOffElement("m:strikeTLBR", options.strikeTLBR));
+    if (options.strikeDiagonalDown !== undefined) {
+        children.push(new OnOffElement("m:strikeTLBR", options.strikeDiagonalDown));
     }
 
     return new BuilderElement({

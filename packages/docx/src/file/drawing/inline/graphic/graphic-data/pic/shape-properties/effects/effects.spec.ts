@@ -14,7 +14,7 @@ describe("Effects", () => {
     describe("createGlowEffect", () => {
         it("should create glow with color and radius", () => {
             const tree = new Formatter().format(
-                createGlowEffect({ rad: 50800, color: { value: "FF0000" } }),
+                createGlowEffect({ radius: 50800, color: { value: "FF0000" } }),
             );
             expect(tree).to.deep.equal({
                 "a:glow": [
@@ -46,9 +46,9 @@ describe("Effects", () => {
         it("should create outer shadow with required color", () => {
             const tree = new Formatter().format(
                 createOuterShadowEffect({
-                    blurRad: 76200,
-                    dist: 38100,
-                    dir: 5400000,
+                    blurRadius: 76200,
+                    distance: 38100,
+                    direction: 5400000,
                     color: { value: "000000" },
                 }),
             );
@@ -92,14 +92,14 @@ describe("Effects", () => {
         it("should create outer shadow with all optional attributes", () => {
             const tree = new Formatter().format(
                 createOuterShadowEffect({
-                    blurRad: 76200,
-                    dist: 38100,
-                    dir: 5400000,
-                    sx: 120000,
-                    sy: 80000,
-                    kx: 5400000,
-                    ky: 2700000,
-                    algn: "BOTTOM_LEFT",
+                    blurRadius: 76200,
+                    distance: 38100,
+                    direction: 5400000,
+                    scaleX: 120000,
+                    scaleY: 80000,
+                    skewX: 5400000,
+                    skewY: 2700000,
+                    alignment: "BOTTOM_LEFT",
                     color: { value: "000000" },
                 }),
             );
@@ -148,9 +148,9 @@ describe("Effects", () => {
         it("should create inner shadow with color and attributes", () => {
             const tree = new Formatter().format(
                 createInnerShadowEffect({
-                    blurRad: 50800,
-                    dist: 38100,
-                    dir: 2700000,
+                    blurRadius: 50800,
+                    distance: 38100,
+                    direction: 2700000,
                     color: { value: "000000" },
                 }),
             );
@@ -177,7 +177,7 @@ describe("Effects", () => {
         it("should create preset shadow with only prst and color", () => {
             const tree = new Formatter().format(
                 createPresetShadowEffect({
-                    prst: "SHDW2",
+                    preset: "SHDW2",
                     color: { value: "000000" },
                 }),
             );
@@ -196,9 +196,9 @@ describe("Effects", () => {
         it("should create preset shadow with prst, dist, dir and color", () => {
             const tree = new Formatter().format(
                 createPresetShadowEffect({
-                    prst: "SHDW2",
-                    dist: 38100,
-                    dir: 5400000,
+                    preset: "SHDW2",
+                    distance: 38100,
+                    direction: 5400000,
                     color: { value: "000000" },
                 }),
             );
@@ -232,10 +232,10 @@ describe("Effects", () => {
         it("should create reflection with attributes", () => {
             const tree = new Formatter().format(
                 createReflectionEffect({
-                    blurRad: 6350,
-                    stA: 40000,
-                    dist: 38100,
-                    fadeDir: 5400000,
+                    blurRadius: 6350,
+                    startAlpha: 40000,
+                    distance: 38100,
+                    fadeDirection: 5400000,
                 }),
             );
             expect(tree).to.deep.equal({
@@ -253,19 +253,19 @@ describe("Effects", () => {
         it("should create reflection with all optional attributes", () => {
             const tree = new Formatter().format(
                 createReflectionEffect({
-                    blurRad: 6350,
-                    stA: 40000,
-                    stPos: 10000,
-                    endA: 20000,
-                    endPos: 90000,
-                    dist: 38100,
-                    dir: 5400000,
-                    fadeDir: 5400000,
-                    sx: 120000,
-                    sy: 80000,
-                    kx: 5400000,
-                    ky: 2700000,
-                    algn: "bl",
+                    blurRadius: 6350,
+                    startAlpha: 40000,
+                    startPosition: 10000,
+                    endAlpha: 20000,
+                    endPosition: 90000,
+                    distance: 38100,
+                    direction: 5400000,
+                    fadeDirection: 5400000,
+                    scaleX: 120000,
+                    scaleY: 80000,
+                    skewX: 5400000,
+                    skewY: 2700000,
+                    alignment: "bl",
                     rotWithShape: false,
                 }),
             );
@@ -320,7 +320,7 @@ describe("Effects", () => {
         it("should create effect list with blur effect", () => {
             const tree = new Formatter().format(
                 createEffectList({
-                    blur: { rad: 40000, grow: false },
+                    blur: { radius: 40000, grow: false },
                 }),
             );
             expect(tree).to.deep.equal({
@@ -341,9 +341,9 @@ describe("Effects", () => {
             const tree = new Formatter().format(
                 createEffectList({
                     innerShadow: {
-                        blurRad: 50800,
-                        dist: 38100,
-                        dir: 2700000,
+                        blurRadius: 50800,
+                        distance: 38100,
+                        direction: 2700000,
                         color: { value: "000000" },
                     },
                 }),
@@ -374,9 +374,9 @@ describe("Effects", () => {
             const tree = new Formatter().format(
                 createEffectList({
                     presetShadow: {
-                        prst: "SHDW5",
-                        dist: 38100,
-                        dir: 5400000,
+                        preset: "SHDW5",
+                        distance: 38100,
+                        direction: 5400000,
                         color: { value: "000000" },
                     },
                 }),
@@ -406,7 +406,7 @@ describe("Effects", () => {
         it("should create effect list with single effect", () => {
             const tree = new Formatter().format(
                 createEffectList({
-                    glow: { rad: 50800, color: { value: "FF0000" } },
+                    glow: { radius: 50800, color: { value: "FF0000" } },
                 }),
             );
             expect(tree).to.deep.equal({
@@ -429,9 +429,9 @@ describe("Effects", () => {
             const tree = new Formatter().format(
                 createEffectList({
                     outerShadow: {
-                        blurRad: 76200,
-                        dist: 38100,
-                        dir: 5400000,
+                        blurRadius: 76200,
+                        distance: 38100,
+                        direction: 5400000,
                         color: { value: "000000" },
                     },
                     reflection: true,
@@ -469,7 +469,7 @@ describe("Effects", () => {
         it("should create effect list with reflection options", () => {
             const tree = new Formatter().format(
                 createEffectList({
-                    reflection: { blurRad: 6350, stA: 40000 },
+                    reflection: { blurRadius: 6350, startAlpha: 40000 },
                 }),
             );
             expect(tree).to.deep.equal({

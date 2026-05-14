@@ -36,7 +36,7 @@ describe("BlipEffects", () => {
 
         it("should create HSL effect", () => {
             const effects = createBlipEffects({
-                hsl: { hue: 1800000, sat: 50, lum: -10 },
+                hsl: { hue: 1800000, saturation: 50, luminance: -10 },
             });
             const tree = new Formatter().format(effects[0]);
             expect(tree).to.deep.equal({
@@ -52,7 +52,7 @@ describe("BlipEffects", () => {
 
         it("should create tint effect", () => {
             const effects = createBlipEffects({
-                tint: { hue: 6000000, amt: 40 },
+                tint: { hue: 6000000, amount: 40 },
             });
             const tree = new Formatter().format(effects[0]);
             expect(tree).to.deep.equal({
@@ -91,7 +91,7 @@ describe("BlipEffects", () => {
 
         it("should create biLevel effect", () => {
             const effects = createBlipEffects({
-                biLevel: { thresh: 50 },
+                biLevel: { threshold: 50 },
             });
             const tree = new Formatter().format(effects[0]);
             expect(tree).to.deep.equal({
@@ -141,7 +141,7 @@ describe("BlipEffects", () => {
 
         it("should create alphaBiLevel effect", () => {
             const effects = createBlipEffects({
-                alphaBiLevel: { thresh: 25 },
+                alphaBiLevel: { threshold: 25 },
             });
             const tree = new Formatter().format(effects[0]);
             expect(tree).to.deep.equal({
@@ -209,7 +209,7 @@ describe("BlipEffects", () => {
 
         it("should create blur effect", () => {
             const effects = createBlipEffects({
-                blur: { rad: 40000, grow: false },
+                blur: { radius: 40000, grow: false },
             });
             const tree = new Formatter().format(effects[0]);
             expect(tree).to.deep.equal({

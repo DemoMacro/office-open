@@ -142,7 +142,7 @@ describe("ShapeProperties", () => {
             element: "pic",
             transform: TRANSFORM,
             effects: {
-                glow: { rad: 50800, color: { value: "FF0000" } },
+                glow: { radius: 50800, color: { value: "FF0000" } },
             },
         });
         const tree = new Formatter().format(props);

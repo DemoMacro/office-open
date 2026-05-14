@@ -30,21 +30,21 @@ export const RectAlignment = {
  */
 export interface OuterShadowEffectOptions {
     /** Blur radius in EMUs */
-    readonly blurRad?: number;
+    readonly blurRadius?: number;
     /** Distance from shape in EMUs */
-    readonly dist?: number;
+    readonly distance?: number;
     /** Direction angle in 60,000ths of a degree */
-    readonly dir?: number;
+    readonly direction?: number;
     /** Horizontal scale percentage (e.g., 100000 = 100%) */
-    readonly sx?: number;
+    readonly scaleX?: number;
     /** Vertical scale percentage */
-    readonly sy?: number;
+    readonly scaleY?: number;
     /** Horizontal skew angle in 60,000ths of a degree */
-    readonly kx?: number;
+    readonly skewX?: number;
     /** Vertical skew angle */
-    readonly ky?: number;
+    readonly skewY?: number;
     /** Shadow alignment */
-    readonly algn?: keyof typeof RectAlignment;
+    readonly alignment?: keyof typeof RectAlignment;
     /** Whether shadow rotates with shape */
     readonly rotWithShape?: boolean;
     /** Shadow color */
@@ -76,29 +76,29 @@ export const createOuterShadowEffect = (options: OuterShadowEffectOptions): XmlC
     const attributes: Record<string, { readonly key: string; readonly value: string | number }> =
         {};
 
-    if (options.blurRad !== undefined) {
-        attributes.blurRad = { key: "blurRad", value: options.blurRad };
+    if (options.blurRadius !== undefined) {
+        attributes.blurRad = { key: "blurRad", value: options.blurRadius };
     }
-    if (options.dist !== undefined) {
-        attributes.dist = { key: "dist", value: options.dist };
+    if (options.distance !== undefined) {
+        attributes.dist = { key: "dist", value: options.distance };
     }
-    if (options.dir !== undefined) {
-        attributes.dir = { key: "dir", value: options.dir };
+    if (options.direction !== undefined) {
+        attributes.dir = { key: "dir", value: options.direction };
     }
-    if (options.sx !== undefined) {
-        attributes.sx = { key: "sx", value: options.sx };
+    if (options.scaleX !== undefined) {
+        attributes.sx = { key: "sx", value: options.scaleX };
     }
-    if (options.sy !== undefined) {
-        attributes.sy = { key: "sy", value: options.sy };
+    if (options.scaleY !== undefined) {
+        attributes.sy = { key: "sy", value: options.scaleY };
     }
-    if (options.kx !== undefined) {
-        attributes.kx = { key: "kx", value: options.kx };
+    if (options.skewX !== undefined) {
+        attributes.kx = { key: "kx", value: options.skewX };
     }
-    if (options.ky !== undefined) {
-        attributes.ky = { key: "ky", value: options.ky };
+    if (options.skewY !== undefined) {
+        attributes.ky = { key: "ky", value: options.skewY };
     }
-    if (options.algn !== undefined) {
-        attributes.algn = { key: "algn", value: RectAlignment[options.algn] };
+    if (options.alignment !== undefined) {
+        attributes.algn = { key: "algn", value: RectAlignment[options.alignment] };
     }
     if (options.rotWithShape === false) {
         attributes.rotWithShape = { key: "rotWithShape", value: 0 };

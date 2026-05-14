@@ -40,7 +40,7 @@ describe("createSolidFill", () => {
 
     it("should create hsl fill", () => {
         const tree = new Formatter().format(
-            createSolidFill({ hue: 120000, sat: 100000, lum: 50000 }),
+            createSolidFill({ hue: 120000, saturation: 100000, luminance: 50000 }),
         );
         expect(tree).to.deep.equal({
             "a:solidFill": [
@@ -126,7 +126,7 @@ describe("createSolidFill", () => {
 describe("createHslColor", () => {
     it("should create HSL color element", () => {
         const tree = new Formatter().format(
-            createHslColor({ hue: 240000, sat: 100000, lum: 50000 }),
+            createHslColor({ hue: 240000, saturation: 100000, luminance: 50000 }),
         );
         expect(tree).to.deep.equal({
             "a:hslClr": { _attr: { hue: 240000, lum: 50000, sat: 100000 } },
@@ -135,7 +135,12 @@ describe("createHslColor", () => {
 
     it("should create HSL color with transforms", () => {
         const tree = new Formatter().format(
-            createHslColor({ hue: 240000, sat: 100000, lum: 50000, transforms: { shade: 30000 } }),
+            createHslColor({
+                hue: 240000,
+                saturation: 100000,
+                luminance: 50000,
+                transforms: { shade: 30000 },
+            }),
         );
         expect(tree).to.deep.equal({
             "a:hslClr": [

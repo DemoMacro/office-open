@@ -34,8 +34,8 @@ export class Form extends XmlComponent {
             y: options.offset?.emus?.y ?? 0,
             width: options.emus.x,
             height: options.emus.y,
-            flipH: options.flip?.horizontal,
-            flipV: options.flip?.vertical,
+            flipHorizontal: options.flip?.horizontal,
+            flipVertical: options.flip?.vertical,
             rotation: options.rotation,
         });
     }

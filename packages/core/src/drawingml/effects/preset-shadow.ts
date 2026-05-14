@@ -43,11 +43,11 @@ export const PresetShadowVal = {
  */
 export interface PresetShadowEffectOptions {
     /** Preset shadow type (required) */
-    readonly prst: keyof typeof PresetShadowVal;
+    readonly preset: keyof typeof PresetShadowVal;
     /** Distance from shape in EMUs */
-    readonly dist?: number;
+    readonly distance?: number;
     /** Direction angle in 60,000ths of a degree */
-    readonly dir?: number;
+    readonly direction?: number;
     /** Shadow color */
     readonly color: SolidFillOptions;
 }
@@ -69,14 +69,14 @@ export interface PresetShadowEffectOptions {
  */
 export const createPresetShadowEffect = (options: PresetShadowEffectOptions): XmlComponent => {
     const attributes: Record<string, { readonly key: string; readonly value: string | number }> = {
-        prst: { key: "prst", value: PresetShadowVal[options.prst] },
+        prst: { key: "prst", value: PresetShadowVal[options.preset] },
     };
 
-    if (options.dist !== undefined) {
-        attributes.dist = { key: "dist", value: options.dist };
+    if (options.distance !== undefined) {
+        attributes.dist = { key: "dist", value: options.distance };
     }
-    if (options.dir !== undefined) {
-        attributes.dir = { key: "dir", value: options.dir };
+    if (options.direction !== undefined) {
+        attributes.dir = { key: "dir", value: options.direction };
     }
 
     return new BuilderElement({

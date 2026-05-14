@@ -19,9 +19,9 @@ export interface HslColorOptions {
     /** Hue angle in 60,000ths of a degree (0-21600000) */
     readonly hue: number;
     /** Saturation in 1/1000th of a percent (0-100000) */
-    readonly sat: number;
+    readonly saturation: number;
     /** Luminance in 1/1000th of a percent (0-100000) */
-    readonly lum: number;
+    readonly luminance: number;
     /** Optional color transforms */
     readonly transforms?: ColorTransformOptions;
 }
@@ -48,8 +48,8 @@ export const createHslColor = (options: HslColorOptions): XmlComponent => {
     return new BuilderElement({
         attributes: {
             hue: { key: "hue", value: options.hue },
-            lum: { key: "lum", value: options.lum },
-            sat: { key: "sat", value: options.sat },
+            lum: { key: "lum", value: options.luminance },
+            sat: { key: "sat", value: options.saturation },
         },
         children: [...transforms],
         name: "a:hslClr",

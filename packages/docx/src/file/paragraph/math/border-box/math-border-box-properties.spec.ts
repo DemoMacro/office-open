@@ -16,8 +16,8 @@ describe("createMathBorderBoxProperties", () => {
         });
     });
 
-    it("should create border box properties with hideBot", () => {
-        const tree = new Formatter().format(createMathBorderBoxProperties({ hideBot: true }));
+    it("should create border box properties with hideBottom", () => {
+        const tree = new Formatter().format(createMathBorderBoxProperties({ hideBottom: true }));
         expect(tree).to.deep.equal({
             "m:borderBoxPr": [{ "m:hideBot": {} }],
         });
@@ -37,29 +37,37 @@ describe("createMathBorderBoxProperties", () => {
         });
     });
 
-    it("should create border box properties with strikeH", () => {
-        const tree = new Formatter().format(createMathBorderBoxProperties({ strikeH: true }));
+    it("should create border box properties with strikeHorizontal", () => {
+        const tree = new Formatter().format(
+            createMathBorderBoxProperties({ strikeHorizontal: true }),
+        );
         expect(tree).to.deep.equal({
             "m:borderBoxPr": [{ "m:strikeH": {} }],
         });
     });
 
-    it("should create border box properties with strikeV", () => {
-        const tree = new Formatter().format(createMathBorderBoxProperties({ strikeV: true }));
+    it("should create border box properties with strikeVertical", () => {
+        const tree = new Formatter().format(
+            createMathBorderBoxProperties({ strikeVertical: true }),
+        );
         expect(tree).to.deep.equal({
             "m:borderBoxPr": [{ "m:strikeV": {} }],
         });
     });
 
-    it("should create border box properties with strikeBLTR", () => {
-        const tree = new Formatter().format(createMathBorderBoxProperties({ strikeBLTR: true }));
+    it("should create border box properties with strikeDiagonalUp", () => {
+        const tree = new Formatter().format(
+            createMathBorderBoxProperties({ strikeDiagonalUp: true }),
+        );
         expect(tree).to.deep.equal({
             "m:borderBoxPr": [{ "m:strikeBLTR": {} }],
         });
     });
 
-    it("should create border box properties with strikeTLBR", () => {
-        const tree = new Formatter().format(createMathBorderBoxProperties({ strikeTLBR: true }));
+    it("should create border box properties with strikeDiagonalDown", () => {
+        const tree = new Formatter().format(
+            createMathBorderBoxProperties({ strikeDiagonalDown: true }),
+        );
         expect(tree).to.deep.equal({
             "m:borderBoxPr": [{ "m:strikeTLBR": {} }],
         });

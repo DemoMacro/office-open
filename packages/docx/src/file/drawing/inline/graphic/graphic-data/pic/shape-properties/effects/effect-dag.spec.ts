@@ -24,7 +24,7 @@ describe("createEffectDag", () => {
     it("should create an effectDag with glow", () => {
         const tree = new Formatter().format(
             createEffectDag({
-                glow: { rad: 50800, color: { value: "FF0000" } },
+                glow: { radius: 50800, color: { value: "FF0000" } },
             }),
         );
         expect(tree).to.deep.equal({
@@ -43,9 +43,9 @@ describe("createEffectDag", () => {
         const tree = new Formatter().format(
             createEffectDag({
                 outerShadow: {
-                    blurRad: 76200,
-                    dist: 38100,
-                    dir: 5400000,
+                    blurRadius: 76200,
+                    distance: 38100,
+                    direction: 5400000,
                     color: { value: "000000" },
                 },
             }),
@@ -65,7 +65,7 @@ describe("createEffectDag", () => {
     it("should create an effectDag with blur, reflection, and softEdge", () => {
         const tree = new Formatter().format(
             createEffectDag({
-                blur: { rad: 40000 },
+                blur: { radius: 40000 },
                 reflection: true,
                 softEdge: 25400,
             }),
@@ -102,7 +102,9 @@ describe("createEffectDag", () => {
     // ── Alpha effects ──
 
     it("should create an effectDag with alphaBiLevel", () => {
-        const tree = new Formatter().format(createEffectDag({ alphaBiLevel: { thresh: 50000 } }));
+        const tree = new Formatter().format(
+            createEffectDag({ alphaBiLevel: { threshold: 50000 } }),
+        );
         expect(tree).to.deep.equal({
             "a:effectDag": [{ "a:alphaBiLevel": { _attr: { thresh: 50000 } } }],
         });
@@ -139,7 +141,7 @@ describe("createEffectDag", () => {
 
     it("should create an effectDag with alphaModulateFixed", () => {
         const tree = new Formatter().format(
-            createEffectDag({ alphaModulateFixed: { amt: 75000 } }),
+            createEffectDag({ alphaModulateFixed: { amount: 75000 } }),
         );
         expect(tree).to.deep.equal({
             "a:effectDag": [{ "a:alphaModFix": { _attr: { amt: 75000 } } }],
@@ -154,14 +156,14 @@ describe("createEffectDag", () => {
     });
 
     it("should create an effectDag with alphaOutset", () => {
-        const tree = new Formatter().format(createEffectDag({ alphaOutset: { rad: 50800 } }));
+        const tree = new Formatter().format(createEffectDag({ alphaOutset: { radius: 50800 } }));
         expect(tree).to.deep.equal({
             "a:effectDag": [{ "a:alphaOutset": { _attr: { rad: 50800 } } }],
         });
     });
 
     it("should create an effectDag with alphaReplace", () => {
-        const tree = new Formatter().format(createEffectDag({ alphaReplace: { a: 50000 } }));
+        const tree = new Formatter().format(createEffectDag({ alphaReplace: { alpha: 50000 } }));
         expect(tree).to.deep.equal({
             "a:effectDag": [{ "a:alphaRepl": { _attr: { a: 50000 } } }],
         });
@@ -170,7 +172,7 @@ describe("createEffectDag", () => {
     // ── New effects ──
 
     it("should create an effectDag with biLevel", () => {
-        const tree = new Formatter().format(createEffectDag({ biLevel: { thresh: 50000 } }));
+        const tree = new Formatter().format(createEffectDag({ biLevel: { threshold: 50000 } }));
         expect(tree).to.deep.equal({
             "a:effectDag": [{ "a:biLevel": { _attr: { thresh: 50000 } } }],
         });
@@ -185,7 +187,7 @@ describe("createEffectDag", () => {
 
     it("should create an effectDag with hsl", () => {
         const tree = new Formatter().format(
-            createEffectDag({ hsl: { hue: 5400000, sat: 100000, lum: 50000 } }),
+            createEffectDag({ hsl: { hue: 5400000, saturation: 100000, luminance: 50000 } }),
         );
         expect(tree).to.deep.equal({
             "a:effectDag": [{ "a:hsl": { _attr: { hue: 5400000, lum: 50000, sat: 100000 } } }],
@@ -203,7 +205,7 @@ describe("createEffectDag", () => {
 
     it("should create an effectDag with tint", () => {
         const tree = new Formatter().format(
-            createEffectDag({ tint: { hue: 2700000, amt: 30000 } }),
+            createEffectDag({ tint: { hue: 2700000, amount: 30000 } }),
         );
         expect(tree).to.deep.equal({
             "a:effectDag": [{ "a:tint": { _attr: { amt: 30000, hue: 2700000 } } }],
@@ -212,7 +214,7 @@ describe("createEffectDag", () => {
 
     it("should create an effectDag with relativeOffset", () => {
         const tree = new Formatter().format(
-            createEffectDag({ relativeOffset: { tx: 10000, ty: -5000 } }),
+            createEffectDag({ relativeOffset: { translateX: 10000, translateY: -5000 } }),
         );
         expect(tree).to.deep.equal({
             "a:effectDag": [{ "a:relOff": { _attr: { tx: 10000, ty: -5000 } } }],
@@ -222,7 +224,14 @@ describe("createEffectDag", () => {
     it("should create an effectDag with transform", () => {
         const tree = new Formatter().format(
             createEffectDag({
-                transform: { sx: 120000, sy: 80000, kx: 5400000, ky: 2700000, tx: 100, ty: 200 },
+                transform: {
+                    scaleX: 120000,
+                    scaleY: 80000,
+                    skewX: 5400000,
+                    skewY: 2700000,
+                    translateX: 100,
+                    translateY: 200,
+                },
             }),
         );
         expect(tree).to.deep.equal({
@@ -372,7 +381,7 @@ describe("createEffectDag", () => {
                 blend: {
                     blend: BlendMode.SCREEN,
                     container: {
-                        blur: { rad: 40000 },
+                        blur: { radius: 40000 },
                     },
                 },
             }),
@@ -397,10 +406,10 @@ describe("createEffectDag", () => {
         const tree = new Formatter().format(
             createEffectDag({
                 type: "sib",
-                blur: { rad: 40000 },
-                glow: { rad: 50800, color: { value: "FF0000" } },
+                blur: { radius: 40000 },
+                glow: { radius: 50800, color: { value: "FF0000" } },
                 outerShadow: { color: { value: "000000" } },
-                alphaBiLevel: { thresh: 50000 },
+                alphaBiLevel: { threshold: 50000 },
                 grayscale: true,
                 luminance: { bright: 10000 },
             }),
@@ -435,7 +444,7 @@ describe("createEffectDag", () => {
                         glow: { color: { value: "FF0000" } },
                         containers: [
                             {
-                                alphaBiLevel: { thresh: 50000 },
+                                alphaBiLevel: { threshold: 50000 },
                             },
                         ],
                     },

@@ -21,7 +21,7 @@ export interface IShapePropertiesOptions {
     readonly y?: number;
     readonly width?: number;
     readonly height?: number;
-    readonly flipH?: boolean;
+    readonly flipHorizontal?: boolean;
     readonly rotation?: number;
     readonly geometry?: string;
     readonly fill?: FillOptions;
@@ -52,7 +52,7 @@ export class ShapeProperties extends BaseXmlComponent {
             opts.y !== undefined ||
             opts.width !== undefined ||
             opts.height !== undefined ||
-            opts.flipH !== undefined ||
+            opts.flipHorizontal !== undefined ||
             opts.rotation !== undefined
         ) {
             const xfrmObj = new Transform2D(opts).prepForXml(context);

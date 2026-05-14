@@ -35,31 +35,29 @@ const doc = new Document({
             properties: {
                 page: {
                     borders: {
-                        pageBorderBottom: {
+                        bottom: {
                             style: BorderStyle.SINGLE,
                             size: 2 * 8, //2pt;
                             color: "000000",
                         },
-                        pageBorderLeft: {
+                        left: {
                             style: BorderStyle.SINGLE,
                             size: 1 * 8, //1pt;
                             color: "000000",
                         },
-                        pageBorderRight: {
+                        right: {
                             style: BorderStyle.SINGLE,
                             size: 1 * 8, //1pt;
                             color: "FF00AA",
                         },
-                        pageBorderTop: {
+                        top: {
                             style: BorderStyle.SINGLE,
                             size: 1 * 8, //1pt;
                             color: "000000",
                         },
-                        pageBorders: {
-                            display: PageBorderDisplay.ALL_PAGES,
-                            offsetFrom: PageBorderOffsetFrom.TEXT,
-                            zOrder: PageBorderZOrder.FRONT,
-                        },
+                        display: PageBorderDisplay.ALL_PAGES,
+                        offsetFrom: PageBorderOffsetFrom.TEXT,
+                        zOrder: PageBorderZOrder.FRONT,
                     },
                 },
             },

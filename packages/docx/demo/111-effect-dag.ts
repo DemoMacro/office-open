@@ -39,12 +39,12 @@ const doc = new Document({
                                 }),
                             ],
                             effectDag: {
-                                glow: { rad: 50800, color: { value: "00B0F0" } },
+                                glow: { radius: 50800, color: { value: "00B0F0" } },
                                 outerShadow: {
-                                    blurRad: 76200,
+                                    blurRadius: 76200,
                                     color: { value: "000000" },
-                                    dir: 5400000,
-                                    dist: 38100,
+                                    direction: 5400000,
+                                    distance: 38100,
                                 },
                             },
                             fill: "0070C0",
@@ -72,7 +72,7 @@ const doc = new Document({
                             ],
                             effectDag: {
                                 luminance: { bright: 20000, contrast: -10000 },
-                                tint: { hue: 2700000, amt: 30000 },
+                                tint: { hue: 2700000, amount: 30000 },
                             },
                             fill: "4472C4",
                             transformation: { height: 80, width: 300 },
@@ -111,13 +111,13 @@ const doc = new Document({
                             ],
                             effectDag: {
                                 type: "sib",
-                                blur: { rad: 40000 },
+                                blur: { radius: 40000 },
                                 softEdge: 25400,
                                 outerShadow: {
                                     color: { value: "000000" },
-                                    blurRad: 50800,
-                                    dir: 2700000,
-                                    dist: 25400,
+                                    blurRadius: 50800,
+                                    direction: 2700000,
+                                    distance: 25400,
                                 },
                             },
                             fill: {

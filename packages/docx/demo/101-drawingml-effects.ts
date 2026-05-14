@@ -85,10 +85,10 @@ const doc = new Document({
                             ],
                             effects: {
                                 outerShadow: {
-                                    blurRad: 50800,
+                                    blurRadius: 50800,
                                     color: { value: "000000" },
-                                    dist: 38100,
-                                    dir: 5400000,
+                                    distance: 38100,
+                                    direction: 5400000,
                                 },
                             },
                             outline: {
@@ -134,7 +134,7 @@ const doc = new Document({
                                 }),
                             ],
                             effects: {
-                                glow: { color: { value: "00B0F0" }, rad: 76200 },
+                                glow: { color: { value: "00B0F0" }, radius: 76200 },
                             },
                             outline: {
                                 color: { value: "0070C0" },
@@ -174,10 +174,10 @@ const doc = new Document({
                             ],
                             effects: {
                                 reflection: {
-                                    blurRad: 6350,
-                                    dist: 38100,
-                                    fadeDir: 5400000,
-                                    stA: 40000,
+                                    blurRadius: 6350,
+                                    distance: 38100,
+                                    fadeDirection: 5400000,
+                                    startAlpha: 40000,
                                 },
                             },
                             outline: {
@@ -397,16 +397,16 @@ const doc = new Document({
                             ],
                             effects: {
                                 outerShadow: {
-                                    blurRad: 40000,
+                                    blurRadius: 40000,
                                     color: { value: "000000" },
-                                    dist: 30000,
-                                    dir: 5400000,
+                                    distance: 30000,
+                                    direction: 5400000,
                                 },
                                 reflection: {
-                                    blurRad: 4000,
-                                    dist: 20000,
-                                    fadeDir: 5400000,
-                                    stA: 30000,
+                                    blurRadius: 4000,
+                                    distance: 20000,
+                                    fadeDirection: 5400000,
+                                    startAlpha: 30000,
                                 },
                             },
                             fill: {

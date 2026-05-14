@@ -89,10 +89,10 @@ describe("createCustomGeometry", () => {
                             { command: "moveTo", point: { x: "0", y: "0" } },
                             {
                                 command: "arcTo",
-                                wR: "5000000",
-                                hR: "5000000",
-                                stAng: "0",
-                                swAng: "5400000",
+                                widthRadius: "5000000",
+                                heightRadius: "5000000",
+                                startAngle: "0",
+                                sweepAngle: "5400000",
                             },
                             { command: "close" },
                         ],
@@ -241,17 +241,17 @@ describe("createCustomGeometry", () => {
                 adjustHandles: [
                     {
                         type: "xy",
-                        gdRefX: "adjX",
+                        guideRefX: "adjX",
                         minX: "0",
                         maxX: "10000000",
                         position: { x: "5000000", y: "5000000" },
                     },
                     {
                         type: "polar",
-                        gdRefR: "adjR",
-                        minR: "0",
-                        maxR: "10000000",
-                        gdRefAng: "adjAng",
+                        guideRefRadius: "adjR",
+                        minRadius: "0",
+                        maxRadius: "10000000",
+                        guideRefAngle: "adjAng",
                         position: { x: "5000000", y: "0" },
                     },
                 ],
@@ -294,8 +294,8 @@ describe("createCustomGeometry", () => {
         const tree = new Formatter().format(
             createCustomGeometry({
                 connectionSites: [
-                    { ang: "0", position: { x: "5000000", y: "0" } },
-                    { ang: "5400000", position: { x: "10000000", y: "5000000" } },
+                    { angle: "0", position: { x: "5000000", y: "0" } },
+                    { angle: "5400000", position: { x: "10000000", y: "5000000" } },
                 ],
                 pathList: [{ commands: [{ command: "close" }] }],
             }),
@@ -328,7 +328,7 @@ describe("createCustomGeometry", () => {
     it("should create a custom geometry with text rect", () => {
         const tree = new Formatter().format(
             createCustomGeometry({
-                textRect: { l: "0", t: "0", r: "10000000", b: "10000000" },
+                textRect: { left: "0", top: "0", right: "10000000", bottom: "10000000" },
                 pathList: [{ commands: [{ command: "close" }] }],
             }),
         );
@@ -405,8 +405,8 @@ describe("createCustomGeometry", () => {
                 adjustmentValues: [{ name: "adj", formula: "val 50000" }],
                 guides: [{ name: "g1", formula: "val 100" }],
                 adjustHandles: [{ type: "xy", position: { x: "0", y: "0" } }],
-                connectionSites: [{ ang: "0", position: { x: "0", y: "0" } }],
-                textRect: { l: "l", t: "t", r: "r", b: "b" },
+                connectionSites: [{ angle: "0", position: { x: "0", y: "0" } }],
+                textRect: { left: "l", top: "t", right: "r", bottom: "b" },
                 pathList: [{ commands: [{ command: "close" }] }],
             }),
         );

@@ -26,7 +26,7 @@ import { createSoftEdgeEffect } from "./soft-edge";
  */
 export interface BlurEffectOptions {
     /** Blur radius in EMUs */
-    readonly rad?: number;
+    readonly radius?: number;
     /** Whether to grow the shape boundary */
     readonly grow?: boolean;
 }
@@ -68,15 +68,15 @@ export interface EffectListOptions {
  * ```
  */
 const createBlurEffect = (options: BlurEffectOptions): XmlComponent => {
-    const hasAttributes = options.rad !== undefined || options.grow === false;
+    const hasAttributes = options.radius !== undefined || options.grow === false;
 
     if (!hasAttributes) {
         return new BuilderElement({ name: "a:blur" });
     }
 
     const attributePayload = {
-        ...(options.rad !== undefined && {
-            rad: { key: "rad", value: options.rad },
+        ...(options.radius !== undefined && {
+            rad: { key: "rad", value: options.radius },
         }),
         ...(options.grow === false && {
             grow: { key: "grow", value: 0 },

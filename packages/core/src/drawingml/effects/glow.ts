@@ -15,7 +15,7 @@ import type { SolidFillOptions } from "../color/solid-fill";
  */
 export interface GlowEffectOptions {
     /** Glow radius in EMUs */
-    readonly rad?: number;
+    readonly radius?: number;
     /** Glow color */
     readonly color: SolidFillOptions;
 }
@@ -34,7 +34,7 @@ export interface GlowEffectOptions {
  * ```
  */
 export const createGlowEffect = (options: GlowEffectOptions): XmlComponent => {
-    if (options.rad === undefined) {
+    if (options.radius === undefined) {
         return new BuilderElement({
             children: [createColorElement(options.color)],
             name: "a:glow",
@@ -43,7 +43,7 @@ export const createGlowEffect = (options: GlowEffectOptions): XmlComponent => {
 
     return new BuilderElement<{ readonly rad: number }>({
         attributes: {
-            rad: { key: "rad", value: options.rad },
+            rad: { key: "rad", value: options.radius },
         },
         children: [createColorElement(options.color)],
         name: "a:glow",

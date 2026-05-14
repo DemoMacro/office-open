@@ -14,31 +14,31 @@ import { BuilderElement } from "../../xml-components";
  */
 export interface ReflectionEffectOptions {
     /** Blur radius in EMUs */
-    readonly blurRad?: number;
+    readonly blurRadius?: number;
     /** Start opacity (fixed percentage, e.g., 100000 = 100%) */
-    readonly stA?: number;
+    readonly startAlpha?: number;
     /** Start position (fixed percentage) */
-    readonly stPos?: number;
+    readonly startPosition?: number;
     /** End opacity (fixed percentage) */
-    readonly endA?: number;
+    readonly endAlpha?: number;
     /** End position (fixed percentage) */
-    readonly endPos?: number;
+    readonly endPosition?: number;
     /** Distance from shape in EMUs */
-    readonly dist?: number;
+    readonly distance?: number;
     /** Direction angle in 60,000ths of a degree */
-    readonly dir?: number;
+    readonly direction?: number;
     /** Fade direction angle in 60,000ths of a degree */
-    readonly fadeDir?: number;
+    readonly fadeDirection?: number;
     /** Horizontal scale percentage */
-    readonly sx?: number;
+    readonly scaleX?: number;
     /** Vertical scale percentage */
-    readonly sy?: number;
+    readonly scaleY?: number;
     /** Horizontal skew angle */
-    readonly kx?: number;
+    readonly skewX?: number;
     /** Vertical skew angle */
-    readonly ky?: number;
+    readonly skewY?: number;
     /** Alignment */
-    readonly algn?: string;
+    readonly alignment?: string;
     /** Whether reflection rotates with shape */
     readonly rotWithShape?: boolean;
 }
@@ -74,44 +74,44 @@ export const createReflectionEffect = (options?: ReflectionEffectOptions) => {
     const attributes: Record<string, { readonly key: string; readonly value: string | number }> =
         {};
 
-    if (options.blurRad !== undefined) {
-        attributes.blurRad = { key: "blurRad", value: options.blurRad };
+    if (options.blurRadius !== undefined) {
+        attributes.blurRad = { key: "blurRad", value: options.blurRadius };
     }
-    if (options.stA !== undefined) {
-        attributes.stA = { key: "stA", value: options.stA };
+    if (options.startAlpha !== undefined) {
+        attributes.stA = { key: "stA", value: options.startAlpha };
     }
-    if (options.stPos !== undefined) {
-        attributes.stPos = { key: "stPos", value: options.stPos };
+    if (options.startPosition !== undefined) {
+        attributes.stPos = { key: "stPos", value: options.startPosition };
     }
-    if (options.endA !== undefined) {
-        attributes.endA = { key: "endA", value: options.endA };
+    if (options.endAlpha !== undefined) {
+        attributes.endA = { key: "endA", value: options.endAlpha };
     }
-    if (options.endPos !== undefined) {
-        attributes.endPos = { key: "endPos", value: options.endPos };
+    if (options.endPosition !== undefined) {
+        attributes.endPos = { key: "endPos", value: options.endPosition };
     }
-    if (options.dist !== undefined) {
-        attributes.dist = { key: "dist", value: options.dist };
+    if (options.distance !== undefined) {
+        attributes.dist = { key: "dist", value: options.distance };
     }
-    if (options.dir !== undefined) {
-        attributes.dir = { key: "dir", value: options.dir };
+    if (options.direction !== undefined) {
+        attributes.dir = { key: "dir", value: options.direction };
     }
-    if (options.fadeDir !== undefined) {
-        attributes.fadeDir = { key: "fadeDir", value: options.fadeDir };
+    if (options.fadeDirection !== undefined) {
+        attributes.fadeDir = { key: "fadeDir", value: options.fadeDirection };
     }
-    if (options.sx !== undefined) {
-        attributes.sx = { key: "sx", value: options.sx };
+    if (options.scaleX !== undefined) {
+        attributes.sx = { key: "sx", value: options.scaleX };
     }
-    if (options.sy !== undefined) {
-        attributes.sy = { key: "sy", value: options.sy };
+    if (options.scaleY !== undefined) {
+        attributes.sy = { key: "sy", value: options.scaleY };
     }
-    if (options.kx !== undefined) {
-        attributes.kx = { key: "kx", value: options.kx };
+    if (options.skewX !== undefined) {
+        attributes.kx = { key: "kx", value: options.skewX };
     }
-    if (options.ky !== undefined) {
-        attributes.ky = { key: "ky", value: options.ky };
+    if (options.skewY !== undefined) {
+        attributes.ky = { key: "ky", value: options.skewY };
     }
-    if (options.algn !== undefined) {
-        attributes.algn = { key: "algn", value: options.algn };
+    if (options.alignment !== undefined) {
+        attributes.algn = { key: "algn", value: options.alignment };
     }
     if (options.rotWithShape === false) {
         attributes.rotWithShape = { key: "rotWithShape", value: 0 };

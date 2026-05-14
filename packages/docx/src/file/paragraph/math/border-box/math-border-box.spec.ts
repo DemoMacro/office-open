@@ -25,7 +25,7 @@ describe("MathBorderBox", () => {
 
         it("should create a MathBorderBox with hidden borders", () => {
             const borderBox = new MathBorderBox({
-                properties: { hideTop: true, hideBot: false },
+                properties: { hideTop: true, hideBottom: false },
                 children: [new MathRun("x")],
             });
             const tree = new Formatter().format(borderBox);
@@ -51,7 +51,12 @@ describe("MathBorderBox", () => {
 
         it("should create a MathBorderBox with strike-through", () => {
             const borderBox = new MathBorderBox({
-                properties: { strikeH: true, strikeV: true, strikeBLTR: false, strikeTLBR: false },
+                properties: {
+                    strikeHorizontal: true,
+                    strikeVertical: true,
+                    strikeDiagonalUp: false,
+                    strikeDiagonalDown: false,
+                },
                 children: [new MathRun("x")],
             });
             const tree = new Formatter().format(borderBox);

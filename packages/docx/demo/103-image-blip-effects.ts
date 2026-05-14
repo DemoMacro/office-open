@@ -118,7 +118,7 @@ const doc = new Document({
                         new ImageRun({
                             data: fs.readFileSync("./demo/images/cat.jpg"),
                             blipEffects: {
-                                tint: { hue: 6000000, amt: 40 },
+                                tint: { hue: 6000000, amount: 40 },
                             },
                             transformation: {
                                 height: 150,
@@ -146,7 +146,7 @@ const doc = new Document({
                         new ImageRun({
                             data: fs.readFileSync("./demo/images/cat.jpg"),
                             blipEffects: {
-                                biLevel: { thresh: 50 },
+                                biLevel: { threshold: 50 },
                             },
                             transformation: {
                                 height: 150,

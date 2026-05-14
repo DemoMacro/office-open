@@ -68,7 +68,7 @@ const doc = new Document({
                                 new MathRun(" + "),
                                 new MathBorderBox({
                                     children: [new MathRun("b")],
-                                    properties: { hideTop: true, hideBot: true },
+                                    properties: { hideTop: true, hideBottom: true },
                                 }),
                             ],
                         }),

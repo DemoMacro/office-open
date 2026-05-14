@@ -46,9 +46,9 @@ export interface HSLEffectOptions {
     /** Hue rotation in 60000ths of a degree. Default 0. */
     readonly hue?: number;
     /** Saturation adjustment in percentage points (-100 to 100). Default 0. */
-    readonly sat?: number;
+    readonly saturation?: number;
     /** Luminance adjustment in percentage points (-100 to 100). Default 0. */
-    readonly lum?: number;
+    readonly luminance?: number;
 }
 
 /**
@@ -64,7 +64,7 @@ export interface TintEffectOptions {
     /** Hue in 60000ths of a degree. Default 0. */
     readonly hue?: number;
     /** Amount in percentage points (0 to 100). Default 0. */
-    readonly amt?: number;
+    readonly amount?: number;
 }
 
 /**
@@ -92,7 +92,7 @@ export interface DuotoneEffectOptions {
  */
 export interface BiLevelEffectOptions {
     /** Threshold percentage (0 to 100). Pixels above are white, below are black. */
-    readonly thresh: number;
+    readonly threshold: number;
 }
 
 /**
@@ -118,7 +118,7 @@ export interface AlphaReplaceEffectOptions {
  */
 export interface AlphaBiLevelEffectOptions {
     /** Threshold percentage (0 to 100). Alpha above is fully opaque, below is fully transparent. */
-    readonly thresh: number;
+    readonly threshold: number;
 }
 
 /**
@@ -177,7 +177,7 @@ export interface ColorReplaceEffectOptions {
  */
 export interface BlipBlurEffectOptions {
     /** Blur radius in EMUs. Default 0. */
-    readonly rad?: number;
+    readonly radius?: number;
     /** Whether to grow the blur boundary. Default true. */
     readonly grow?: boolean;
 }
@@ -248,11 +248,11 @@ export const createBlipEffects = (options: BlipEffectsOptions): XmlComponent[] =
         if (options.hsl.hue !== undefined) {
             attrs.hue = { key: "hue", value: String(options.hsl.hue) };
         }
-        if (options.hsl.sat !== undefined) {
-            attrs.sat = { key: "sat", value: `${options.hsl.sat}%` };
+        if (options.hsl.saturation !== undefined) {
+            attrs.sat = { key: "sat", value: `${options.hsl.saturation}%` };
         }
-        if (options.hsl.lum !== undefined) {
-            attrs.lum = { key: "lum", value: `${options.hsl.lum}%` };
+        if (options.hsl.luminance !== undefined) {
+            attrs.lum = { key: "lum", value: `${options.hsl.luminance}%` };
         }
         children.push(new BuilderElement({ attributes: attrs as never, name: "a:hsl" }));
     }
@@ -262,8 +262,8 @@ export const createBlipEffects = (options: BlipEffectsOptions): XmlComponent[] =
         if (options.tint.hue !== undefined) {
             attrs.hue = { key: "hue", value: String(options.tint.hue) };
         }
-        if (options.tint.amt !== undefined) {
-            attrs.amt = { key: "amt", value: `${options.tint.amt}%` };
+        if (options.tint.amount !== undefined) {
+            attrs.amt = { key: "amt", value: `${options.tint.amount}%` };
         }
         children.push(new BuilderElement({ attributes: attrs as never, name: "a:tint" }));
     }
@@ -283,7 +283,7 @@ export const createBlipEffects = (options: BlipEffectsOptions): XmlComponent[] =
     if (options.biLevel) {
         children.push(
             new BuilderElement({
-                attributes: { thresh: { key: "thresh", value: `${options.biLevel.thresh}%` } },
+                attributes: { thresh: { key: "thresh", value: `${options.biLevel.threshold}%` } },
                 name: "a:biLevel",
             }),
         );
@@ -332,7 +332,9 @@ export const createBlipEffects = (options: BlipEffectsOptions): XmlComponent[] =
     if (options.alphaBiLevel) {
         children.push(
             new BuilderElement({
-                attributes: { thresh: { key: "thresh", value: `${options.alphaBiLevel.thresh}%` } },
+                attributes: {
+                    thresh: { key: "thresh", value: `${options.alphaBiLevel.threshold}%` },
+                },
                 name: "a:alphaBiLevel",
             }),
         );
@@ -372,8 +374,8 @@ export const createBlipEffects = (options: BlipEffectsOptions): XmlComponent[] =
 
     if (options.blur) {
         const attrs: Record<string, { readonly key: string; readonly value: string | number }> = {};
-        if (options.blur.rad !== undefined) {
-            attrs.rad = { key: "rad", value: options.blur.rad };
+        if (options.blur.radius !== undefined) {
+            attrs.rad = { key: "rad", value: options.blur.radius };
         }
         if (options.blur.grow === false) {
             attrs.grow = { key: "grow", value: 0 };

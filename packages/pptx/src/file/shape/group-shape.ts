@@ -8,7 +8,7 @@ export interface IGroupShapeOptions {
     readonly width?: number;
     readonly height?: number;
     readonly rotation?: number;
-    readonly flipH?: boolean;
+    readonly flipHorizontal?: boolean;
     readonly children: readonly BaseXmlComponent[];
 }
 
@@ -45,7 +45,7 @@ export class GroupShape extends BaseXmlComponent {
         // p:grpSpPr
         const xfrmChildren: IXmlableObject[] = [];
         const xfrmAttrs: Record<string, string | number> = {};
-        if (opts.flipH !== undefined) xfrmAttrs.flipH = opts.flipH ? 1 : 0;
+        if (opts.flipHorizontal !== undefined) xfrmAttrs.flipH = opts.flipHorizontal ? 1 : 0;
         if (opts.rotation !== undefined) xfrmAttrs.rot = opts.rotation;
         if (Object.keys(xfrmAttrs).length > 0) xfrmChildren.push({ _attr: xfrmAttrs });
         xfrmChildren.push({

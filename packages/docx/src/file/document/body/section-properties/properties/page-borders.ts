@@ -81,44 +81,38 @@ export const PageBorderZOrder = {
 } as const;
 
 /**
- * Attributes for configuring page border behavior.
+ * Options for configuring page borders.
  *
  * @property display - Which pages display the border
  * @property offsetFrom - Whether border is positioned relative to page or text
  * @property zOrder - Whether border appears in front or behind page contents
+ * @property top - Top border styling
+ * @property right - Right border styling
+ * @property bottom - Bottom border styling
+ * @property left - Left border styling
  */
-export interface IPageBorderAttributes {
+export interface IPageBordersOptions {
     /** Which pages display the border */
     readonly display?: (typeof PageBorderDisplay)[keyof typeof PageBorderDisplay];
     /** Whether border is positioned relative to page or text (default: text) */
     readonly offsetFrom?: (typeof PageBorderOffsetFrom)[keyof typeof PageBorderOffsetFrom];
     /** Whether border appears in front or behind page contents (default: front) */
     readonly zOrder?: (typeof PageBorderZOrder)[keyof typeof PageBorderZOrder];
-}
-
-/**
- * Options for configuring page borders.
- *
- * @property pageBorders - General page border attributes (display, offset, z-order)
- * @property pageBorderTop - Top border styling
- * @property pageBorderRight - Right border styling
- * @property pageBorderBottom - Bottom border styling
- * @property pageBorderLeft - Left border styling
- */
-export interface IPageBordersOptions {
-    /** General page border attributes (display, offset, z-order) */
-    readonly pageBorders?: IPageBorderAttributes;
     /** Top border styling */
-    readonly pageBorderTop?: IBorderOptions;
+    readonly top?: IBorderOptions;
     /** Right border styling */
-    readonly pageBorderRight?: IBorderOptions;
+    readonly right?: IBorderOptions;
     /** Bottom border styling */
-    readonly pageBorderBottom?: IBorderOptions;
+    readonly bottom?: IBorderOptions;
     /** Left border styling */
-    readonly pageBorderLeft?: IBorderOptions;
+    readonly left?: IBorderOptions;
 }
 
-class PageBordersAttributes extends XmlAttributeComponent<IPageBorderAttributes> {
+class PageBordersAttributes extends XmlAttributeComponent<{
+    readonly display?: string;
+    readonly offsetFrom?: string;
+    readonly zOrder?: string;
+}> {
     protected readonly xmlKeys = {
         display: "w:display",
         offsetFrom: "w:offsetFrom",
@@ -153,13 +147,11 @@ class PageBordersAttributes extends XmlAttributeComponent<IPageBorderAttributes>
  * ```typescript
  * // Add page borders to all pages
  * new PageBorders({
- *   pageBorders: {
- *     display: PageBorderDisplay.ALL_PAGES,
- *     offsetFrom: PageBorderOffsetFrom.PAGE,
- *     zOrder: PageBorderZOrder.FRONT
- *   },
- *   pageBorderTop: { style: BorderStyle.SINGLE, size: 24, color: "000000" },
- *   pageBorderBottom: { style: BorderStyle.SINGLE, size: 24, color: "000000" }
+ *   display: PageBorderDisplay.ALL_PAGES,
+ *   offsetFrom: PageBorderOffsetFrom.PAGE,
+ *   zOrder: PageBorderZOrder.FRONT,
+ *   top: { style: BorderStyle.SINGLE, size: 24, color: "000000" },
+ *   bottom: { style: BorderStyle.SINGLE, size: 24, color: "000000" }
  * });
  * ```
  */
@@ -171,29 +163,33 @@ export class PageBorders extends IgnoreIfEmptyXmlComponent {
             return this;
         }
 
-        if (options.pageBorders) {
+        const hasAttributes =
+            options.display !== undefined ||
+            options.offsetFrom !== undefined ||
+            options.zOrder !== undefined;
+        if (hasAttributes) {
             this.root.push(
                 new PageBordersAttributes({
-                    display: options.pageBorders.display,
-                    offsetFrom: options.pageBorders.offsetFrom,
-                    zOrder: options.pageBorders.zOrder,
+                    display: options.display,
+                    offsetFrom: options.offsetFrom,
+                    zOrder: options.zOrder,
                 }),
             );
         } else {
             this.root.push(new PageBordersAttributes({}));
         }
 
-        if (options.pageBorderTop) {
-            this.root.push(createBorderElement("w:top", options.pageBorderTop));
+        if (options.top) {
+            this.root.push(createBorderElement("w:top", options.top));
         }
-        if (options.pageBorderLeft) {
-            this.root.push(createBorderElement("w:left", options.pageBorderLeft));
+        if (options.left) {
+            this.root.push(createBorderElement("w:left", options.left));
         }
-        if (options.pageBorderBottom) {
-            this.root.push(createBorderElement("w:bottom", options.pageBorderBottom));
+        if (options.bottom) {
+            this.root.push(createBorderElement("w:bottom", options.bottom));
         }
-        if (options.pageBorderRight) {
-            this.root.push(createBorderElement("w:right", options.pageBorderRight));
+        if (options.right) {
+            this.root.push(createBorderElement("w:right", options.right));
         }
     }
 }

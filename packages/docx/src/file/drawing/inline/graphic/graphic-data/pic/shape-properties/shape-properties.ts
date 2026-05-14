@@ -61,7 +61,7 @@ import type { Shape3DOptions } from "./three-d/shape-3d";
  *   element: "pic",
  *   transform: { emus: { x: 914400, y: 914400 } },
  *   effects: {
- *     glow: { rad: 50800, color: { value: "FF0000" } },
+ *     glow: { radius: 50800, color: { value: "FF0000" } },
  *   },
  * });
  * ```

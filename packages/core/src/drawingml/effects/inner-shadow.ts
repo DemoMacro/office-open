@@ -15,11 +15,11 @@ import type { SolidFillOptions } from "../color/solid-fill";
  */
 export interface InnerShadowEffectOptions {
     /** Blur radius in EMUs */
-    readonly blurRad?: number;
+    readonly blurRadius?: number;
     /** Distance from shape edge in EMUs */
-    readonly dist?: number;
+    readonly distance?: number;
     /** Direction angle in 60,000ths of a degree */
-    readonly dir?: number;
+    readonly direction?: number;
     /** Shadow color */
     readonly color: SolidFillOptions;
 }
@@ -41,7 +41,9 @@ export interface InnerShadowEffectOptions {
  */
 export const createInnerShadowEffect = (options: InnerShadowEffectOptions): XmlComponent => {
     const hasAttributes =
-        options.blurRad !== undefined || options.dist !== undefined || options.dir !== undefined;
+        options.blurRadius !== undefined ||
+        options.distance !== undefined ||
+        options.direction !== undefined;
 
     if (!hasAttributes) {
         return new BuilderElement({
@@ -51,14 +53,14 @@ export const createInnerShadowEffect = (options: InnerShadowEffectOptions): XmlC
     }
 
     const attributePayload = {
-        ...(options.blurRad !== undefined && {
-            blurRad: { key: "blurRad", value: options.blurRad },
+        ...(options.blurRadius !== undefined && {
+            blurRad: { key: "blurRad", value: options.blurRadius },
         }),
-        ...(options.dist !== undefined && {
-            dist: { key: "dist", value: options.dist },
+        ...(options.distance !== undefined && {
+            dist: { key: "dist", value: options.distance },
         }),
-        ...(options.dir !== undefined && {
-            dir: { key: "dir", value: options.dir },
+        ...(options.direction !== undefined && {
+            dir: { key: "dir", value: options.direction },
         }),
     };
 
