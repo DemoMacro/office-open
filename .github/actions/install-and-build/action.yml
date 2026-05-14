@@ -1,12 +1,19 @@
-name: Install dependencies and build ⚙️
-description: Install dependencies and build
+name: Install dependencies and build
+description: Set up Node.js, pnpm, install dependencies and build
 
 runs:
     using: composite
     steps:
+        - name: Install pnpm
+          uses: pnpm/action-setup@v4
+        - name: Set up Node.js
+          uses: actions/setup-node@v4
+          with:
+              node-version-file: .nvmrc
+              cache: pnpm
         - name: Install Dependencies
           shell: bash
-          run: pnpm install
+          run: pnpm install --frozen-lockfile
         - name: Build
           shell: bash
           run: pnpm run build

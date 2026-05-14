@@ -20,14 +20,14 @@ Presentation
 import { Shape } from "@office-open/pptx";
 
 new Shape({
-    id: 1,                      // Optional, auto-assigned
-    name: "My Shape",           // Optional display name
-    x: 50,                      // Position X (pixels)
-    y: 100,                     // Position Y (pixels)
-    width: 300,                 // Width (pixels)
-    height: 80,                 // Height (pixels)
-    text: "Hello World",        // Simple text content
-    fill: "4472C4",             // Solid fill shorthand
+    id: 1, // Optional, auto-assigned
+    name: "My Shape", // Optional display name
+    x: 50, // Position X (pixels)
+    y: 100, // Position Y (pixels)
+    width: 300, // Width (pixels)
+    height: 80, // Height (pixels)
+    text: "Hello World", // Simple text content
+    fill: "4472C4", // Solid fill shorthand
 });
 ```
 
@@ -37,7 +37,10 @@ new Shape({
 import { Shape, Paragraph, TextRun } from "@office-open/pptx";
 
 new Shape({
-    x: 50, y: 100, width: 400, height: 120,
+    x: 50,
+    y: 100,
+    width: 400,
+    height: 120,
     paragraphs: [
         new Paragraph({
             children: [
@@ -46,9 +49,7 @@ new Shape({
             alignment: "center",
         }),
         new Paragraph({
-            children: [
-                new TextRun({ text: "Subtitle", fontSize: 16, color: "CCCCCC" }),
-            ],
+            children: [new TextRun({ text: "Subtitle", fontSize: 16, color: "CCCCCC" })],
         }),
     ],
     fill: { type: "solid", color: "2E74B5" },
@@ -60,16 +61,19 @@ new Shape({
 ```ts
 new Shape({
     text: "Content",
-    textAnchor: "ctr",          // "ctr" | "t" | "b"
-    textVertical: false,        // Vertical text direction
-    textAutoFit: "normal",      // "none" | "normal" | "shape"
-    textWrap: "square",         // "square" | "none"
-    textMargins: {              // EMU values
-        top: 45720, bottom: 45720,
-        left: 91440, right: 91440,
+    textAnchor: "ctr", // "ctr" | "t" | "b"
+    textVertical: false, // Vertical text direction
+    textAutoFit: "normal", // "none" | "normal" | "shape"
+    textWrap: "square", // "square" | "none"
+    textMargins: {
+        // EMU values
+        top: 45720,
+        bottom: 45720,
+        left: 91440,
+        right: 91440,
     },
-    textColumns: 2,             // Number of text columns
-    textColumnSpacing: 45720,   // Spacing between columns (EMU)
+    textColumns: 2, // Number of text columns
+    textColumnSpacing: 45720, // Spacing between columns (EMU)
 });
 ```
 
@@ -77,7 +81,7 @@ new Shape({
 
 ```ts
 new Shape({
-    geometry: "rect",           // Default
+    geometry: "rect", // Default
     // "roundRect", "ellipse", "triangle", "diamond", "hexagon",
     // "star5", "star6", "arrow", "chevron", "cloud", "heart",
     // "lightningBolt", "moon", "sun", and many more
@@ -123,7 +127,9 @@ fill: {
 ### No Fill
 
 ```ts
-fill: { type: "noFill" }
+fill: {
+    type: "noFill";
+}
 ```
 
 ## Outline
@@ -237,7 +243,10 @@ effects: {
 import { Table, TableRow, TableCell } from "@office-open/pptx";
 
 new Table({
-    x: 50, y: 200, width: 600, height: 200,
+    x: 50,
+    y: 200,
+    width: 600,
+    height: 200,
     rows: [
         new TableRow({
             children: [
@@ -260,7 +269,10 @@ new Table({
 import { Image } from "@office-open/pptx";
 
 new Image({
-    x: 100, y: 100, width: 300, height: 200,
+    x: 100,
+    y: 100,
+    width: 300,
+    height: 200,
     data: imageBuffer,
     imageType: "png",
 });
@@ -276,7 +288,10 @@ Charts are created via `@office-open/core` and embedded in slides.
 import { Connector } from "@office-open/pptx";
 
 new Connector({
-    x: 100, y: 100, width: 200, height: 0,
+    x: 100,
+    y: 100,
+    width: 200,
+    height: 0,
     outline: { color: "000000", width: 2 },
 });
 ```
@@ -287,7 +302,10 @@ new Connector({
 import { GroupShape } from "@office-open/pptx";
 
 new GroupShape({
-    x: 50, y: 50, width: 500, height: 300,
+    x: 50,
+    y: 50,
+    width: 500,
+    height: 300,
     children: [
         new Shape({ x: 0, y: 0, width: 240, height: 140, text: "A", fill: "4472C4" }),
         new Shape({ x: 260, y: 0, width: 240, height: 140, text: "B", fill: "ED7D31" }),
@@ -327,7 +345,10 @@ new Presentation({
 
 ```ts
 new Shape({
-    x: 50, y: 100, width: 200, height: 80,
+    x: 50,
+    y: 100,
+    width: 200,
+    height: 80,
     text: "Animated",
     animation: {
         type: "appear",

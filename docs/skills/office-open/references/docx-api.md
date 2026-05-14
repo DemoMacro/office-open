@@ -25,17 +25,17 @@ new TextRun({
     bold: true,
     italics: true,
     underline: { type: "single", color: "FF0000" },
-    strike: "single",           // "single" | "double" | "none"
+    strike: "single", // "single" | "double" | "none"
     doubleStrike: true,
     subScript: true,
     superScript: true,
     font: "Calibri",
-    size: 24,                   // Half-points (24 = 12pt)
+    size: 24, // Half-points (24 = 12pt)
     color: "FF0000",
-    highlight: "yellow",        // Word highlight colors
+    highlight: "yellow", // Word highlight colors
     shading: { type: "clear", fill: "E0E0E0" },
     characterSpacing: 100,
-    break: 1,                   // Line breaks
+    break: 1, // Line breaks
     tab: { type: "left", position: 1000 },
     border: {
         color: "000000",
@@ -233,9 +233,20 @@ new Document({
 
 ```ts
 import {
-    Math, MathRun, MathFraction, MathSubScript, MathSuperScript,
-    MathRadical, MathNary, MathAccent, MathBorderBox, MathBox,
-    MathEqArr, MathMatrix, MathGroupChr, MathPhant,
+    Math,
+    MathRun,
+    MathFraction,
+    MathSubScript,
+    MathSuperScript,
+    MathRadical,
+    MathNary,
+    MathAccent,
+    MathBorderBox,
+    MathBox,
+    MathEqArr,
+    MathMatrix,
+    MathGroupChr,
+    MathPhant,
 } from "@office-open/docx";
 
 // Fraction
@@ -260,13 +271,23 @@ new MathBorderBox({
 new MathEqArr({ rows: [[new MathRun("x + y = 1")], [new MathRun("2x - y = 3")]] });
 
 // Matrix
-new MathMatrix({ rows: [[new MathRun("1"), new MathRun("0")], [new MathRun("0"), new MathRun("1")]] });
+new MathMatrix({
+    rows: [
+        [new MathRun("1"), new MathRun("0")],
+        [new MathRun("0"), new MathRun("1")],
+    ],
+});
 ```
 
 ## Links & Bookmarks
 
 ```ts
-import { ExternalHyperlink, InternalHyperlink, BookmarkStart, BookmarkEnd } from "@office-open/docx";
+import {
+    ExternalHyperlink,
+    InternalHyperlink,
+    BookmarkStart,
+    BookmarkEnd,
+} from "@office-open/docx";
 
 new ExternalHyperlink({
     children: [new TextRun("Click here")],
@@ -323,15 +344,18 @@ import { WpsShapeRun } from "@office-open/docx";
 new WpsShapeRun({
     children: [new Paragraph({ children: [new TextRun("Shape text")] })],
     customGeometry: {
-        pathList: [{
-            w: 100000, h: 100000,
-            commands: [
-                { command: "moveTo", point: { x: "50000", y: "0" } },
-                { command: "lineTo", point: { x: "100000", y: "100000" } },
-                { command: "lineTo", point: { x: "0", y: "100000" } },
-                { command: "close" },
-            ],
-        }],
+        pathList: [
+            {
+                w: 100000,
+                h: 100000,
+                commands: [
+                    { command: "moveTo", point: { x: "50000", y: "0" } },
+                    { command: "lineTo", point: { x: "100000", y: "100000" } },
+                    { command: "lineTo", point: { x: "0", y: "100000" } },
+                    { command: "close" },
+                ],
+            },
+        ],
     },
     fill: "4472C4",
     transformation: { height: 150, width: 200 },
@@ -354,15 +378,14 @@ new Document({
             }),
         ],
     },
-    sections: [{
-        children: [
-            new Paragraph({
-                children: [
-                    new TextRun("Some text"),
-                    new CommentReference(0),
-                ],
-            }),
-        ],
-    }],
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [new TextRun("Some text"), new CommentReference(0)],
+                }),
+            ],
+        },
+    ],
 });
 ```

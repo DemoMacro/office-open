@@ -55,5 +55,6 @@
         "tsx": "4.21.0",
         "typedoc": "0.28.19",
         "vite-plus": "0.1.18"
-    }
+    },
+    "packageManager": "pnpm@10.33.0"
 }

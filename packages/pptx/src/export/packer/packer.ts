@@ -76,7 +76,7 @@ export class Packer {
                     return;
                 }
                 if (!stream.destroyed) {
-                    stream.push(chunk);
+                    stream.push(Buffer.from(chunk));
                 }
                 if (final) {
                     stream.push(null);
