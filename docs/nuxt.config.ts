@@ -38,6 +38,9 @@ export default defineNuxtConfig({
             mcpServer: "/mcp",
             apiPath: "/api/search",
         },
+        skills: {
+            dir: "skills",
+        },
     },
 
     hooks: {
