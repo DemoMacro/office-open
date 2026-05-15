@@ -1,6 +1,6 @@
 {
     "name": "@office-open/xlsx",
-    "version": "0.0.6",
+    "version": "0.4.0",
     "description": "Generate .xlsx files with JS/TS",
     "keywords": [
         "excel",
@@ -9,7 +9,7 @@
         "spreadsheet",
         "xlsx"
     ],
-    "homepage": "https://github.com/DemoMacro/office-open#readme",
+    "homepage": "https://www.office-open.com",
     "bugs": {
         "url": "https://github.com/DemoMacro/office-open/issues"
     },

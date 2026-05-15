@@ -1,6 +1,6 @@
 {
     "name": "@office-open/pptx",
-    "version": "0.3.6",
+    "version": "0.4.0",
     "description": "Generate .pptx files with JS/TS",
     "keywords": [
         "office-open",
@@ -9,7 +9,7 @@
         "pptx",
         "presentation"
     ],
-    "homepage": "https://github.com/DemoMacro/office-open#readme",
+    "homepage": "https://www.office-open.com",
     "bugs": {
         "url": "https://github.com/DemoMacro/office-open/issues"
     },

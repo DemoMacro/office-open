@@ -18,7 +18,7 @@ export default defineNuxtConfig({
     },
 
     llms: {
-        domain: "https://office-open.com",
+        domain: "https://www.office-open.com",
         title: "Office Open",
         description:
             "Generate Office Open XML documents (.docx, .pptx, .xlsx) with JavaScript/TypeScript",

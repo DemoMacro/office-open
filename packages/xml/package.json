@@ -1,6 +1,6 @@
 {
     "name": "@office-open/xml",
-    "version": "0.3.6",
+    "version": "0.4.0",
     "description": "XML parsing and serialization for Office Open XML. Zero dependencies, drop-in replacement for xml + xml-js.",
     "keywords": [
         "office-open",
@@ -10,7 +10,7 @@
         "xml",
         "zero-dependencies"
     ],
-    "homepage": "https://github.com/DemoMacro/office-open#readme",
+    "homepage": "https://www.office-open.com",
     "bugs": {
         "url": "https://github.com/DemoMacro/office-open/issues"
     },

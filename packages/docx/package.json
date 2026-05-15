@@ -1,6 +1,6 @@
 {
     "name": "@office-open/docx",
-    "version": "0.3.6",
+    "version": "0.4.0",
     "description": "Easily generate .docx files with JS/TS with a nice declarative API. Works for Node and on the Browser.",
     "keywords": [
         "clippy",
@@ -14,7 +14,7 @@
         "officegen",
         "word"
     ],
-    "homepage": "https://github.com/DemoMacro/office-open#readme",
+    "homepage": "https://www.office-open.com",
     "bugs": {
         "url": "https://github.com/DemoMacro/office-open/issues"
     },

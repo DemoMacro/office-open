@@ -1,6 +1,6 @@
 {
     "name": "@office-open/core",
-    "version": "0.3.6",
+    "version": "0.4.0",
     "description": "Shared OOXML infrastructure: XmlComponent, value validators, unit converters",
     "keywords": [
         "core",
@@ -9,7 +9,7 @@
         "shared",
         "xml"
     ],
-    "homepage": "https://github.com/DemoMacro/office-open#readme",
+    "homepage": "https://www.office-open.com",
     "bugs": {
         "url": "https://github.com/DemoMacro/office-open/issues"
     },
