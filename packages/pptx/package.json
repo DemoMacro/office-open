@@ -1,6 +1,6 @@
 {
     "name": "@office-open/pptx",
-    "version": "0.4.0",
+    "version": "0.4.1",
     "description": "Generate .pptx files with JS/TS",
     "keywords": [
         "office-open",
@@ -40,8 +40,7 @@
         "build": "basis build",
         "prepack": "pnpm build",
         "test": "vp test run --coverage",
-        "check": "vp check --fix",
-        "run-ts": "tsx --tsconfig demo/tsconfig.json"
+        "check": "vp check --fix"
     },
     "dependencies": {
         "@office-open/core": "workspace:*",

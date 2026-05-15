@@ -87,8 +87,25 @@ Only use XSD abbreviations when the abbreviation IS the standard English term (e
 
 ```bash
 # Docx demos (run from packages/docx)
-cd packages/docx && pnpm run-ts demo/<demo-file>.ts
+cd packages/docx && pnpm tsx demo/<demo-file>.ts
 
 # PPTX demos (run from packages/pptx)
-cd packages/pptx && pnpm run-ts demo/<demo-file>.ts
+cd packages/pptx && pnpm tsx demo/<demo-file>.ts
+```
+
+## Validation
+
+Validate generated XML against OOXML XSD schemas:
+
+```bash
+# Validate all demos (pptx + docx)
+pnpm tsx scripts/validate.ts
+
+# Validate single package
+pnpm tsx scripts/validate.ts pptx
+pnpm tsx scripts/validate.ts docx
+
+# Validate specific demo file
+pnpm tsx scripts/validate.ts slide "packages/pptx/My Presentation.pptx" [slide-number]
+pnpm tsx scripts/validate.ts docx "packages/docx/My Document.docx"
 ```

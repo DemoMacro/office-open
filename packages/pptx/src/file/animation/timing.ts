@@ -1,8 +1,16 @@
 import { BuilderElement, StringContainer, XmlComponent } from "@file/xml-components";
 
-import type { IAnimationOptions, AnimationType } from "./types";
+import type {
+    AnimationClass,
+    AnimationType,
+    EmphasisType,
+    IAnimationOptions,
+    PathAnimationType,
+} from "./types";
 
-const PRESET_IDS: Record<AnimationType, number> = {
+// --- Preset ID mappings ---
+
+const ENTR_PRESET_IDS: Record<AnimationType, number> = {
     appear: 1,
     fade: 10,
     fly: 2,
@@ -17,6 +25,45 @@ const PRESET_IDS: Record<AnimationType, number> = {
     cover: 28,
     push: 19,
     strips: 23,
+};
+
+const EXIT_PRESET_IDS: Record<AnimationType, number> = {
+    appear: 53,
+    fade: 59,
+    fly: 51,
+    wipe: 72,
+    dissolve: 84,
+    split: 71,
+    blinds: 75,
+    checker: 76,
+    randomBars: 74,
+    wheel: 77,
+    zoom: 60,
+    cover: 78,
+    push: 69,
+    strips: 73,
+};
+
+const EMPH_PRESET_IDS: Record<EmphasisType, number> = {
+    growShrink: 53,
+    spin: 54,
+    growWithTurn: 56,
+    colorChange: 29,
+    transparency: 57,
+    boldFlash: 50,
+    wave: 55,
+    pulse: 58,
+};
+
+const PATH_PRESET_IDS: Record<PathAnimationType, number> = {
+    customPath: 200,
+    arc: 201,
+    bounce: 202,
+    circle: 203,
+    curve: 204,
+    figureEight: 205,
+    line: 206,
+    loop: 207,
 };
 
 const DIRECTION_SUBTYPES: Record<string, number> = {
@@ -62,6 +109,445 @@ const DIRECTION_FILTER: Record<string, Record<string, string>> = {
     wheel: {},
 };
 
+const PATH_STRINGS: Record<PathAnimationType, string> = {
+    customPath: "",
+    arc: "M 0 0 C 50 -100 100 -100 150 0",
+    bounce: "M 0 0 L 50 0 C 50 -30 30 -50 0 -50 C -30 -50 -50 -30 -50 0 L 50 0",
+    circle: "M 0 0 C 50 -50 100 0 50 50 C 0 100 -50 50 0 0",
+    curve: "M 0 0 C 50 -80 100 -80 150 0 C 200 80 250 80 300 0",
+    figureEight:
+        "M 0 0 C 50 -50 100 0 50 50 C 0 100 -50 50 0 0 C -50 -50 -100 0 -50 50 C 0 100 50 50 0 0",
+    line: "M 0 0 L 200 0",
+    loop: "M 0 0 C 50 -80 100 0 50 80 C 0 160 -50 80 0 0",
+};
+
+// --- Helper functions ---
+
+function resolvePresetId(options: IAnimationOptions): number {
+    const cls: AnimationClass = options.class ?? "entr";
+
+    if (cls === "emph" && options.emphasisType) {
+        return EMPH_PRESET_IDS[options.emphasisType] ?? 0;
+    }
+
+    if (options.pathType) {
+        return PATH_PRESET_IDS[options.pathType] ?? 200;
+    }
+
+    const type = options.type ?? "appear";
+    const map = cls === "exit" ? EXIT_PRESET_IDS : ENTR_PRESET_IDS;
+    return map[type] ?? 0;
+}
+
+function resolvePresetClass(options: IAnimationOptions): AnimationClass {
+    if (options.pathType) return "emph";
+    return options.class ?? "entr";
+}
+
+function resolvePresetSubtype(options: IAnimationOptions): number {
+    if (options.direction) {
+        return DIRECTION_SUBTYPES[options.direction] ?? 0;
+    }
+    return 0;
+}
+
+function buildEntrOrExitEffects(
+    options: IAnimationOptions,
+    spid: number,
+    ids: { set: number; effect: number },
+): XmlComponent[] {
+    const children: XmlComponent[] = [];
+
+    // p:set — make shape visible (entr) or hidden (exit)
+    const cls = options.class ?? "entr";
+    const visibility = cls === "exit" ? "hidden" : "visible";
+    children.push(
+        new BuilderElement({
+            name: "p:set",
+            children: [
+                new BuilderElement({
+                    name: "p:cBhvr",
+                    children: [
+                        new BuilderElement({
+                            name: "p:cTn",
+                            attributes: {
+                                id: { key: "id", value: ids.set },
+                                dur: { key: "dur", value: "1" },
+                                fill: { key: "fill", value: "hold" },
+                            },
+                            children: [
+                                new BuilderElement({
+                                    name: "p:stCondLst",
+                                    children: [
+                                        new BuilderElement({
+                                            name: "p:cond",
+                                            attributes: { delay: { key: "delay", value: "0" } },
+                                        }),
+                                    ],
+                                }),
+                            ],
+                        }),
+                        new BuilderElement({
+                            name: "p:tgtEl",
+                            children: [
+                                new BuilderElement({
+                                    name: "p:spTgt",
+                                    attributes: { spid: { key: "spid", value: spid } },
+                                }),
+                            ],
+                        }),
+                        new BuilderElement({
+                            name: "p:attrNameLst",
+                            children: [new StringContainer("p:attrName", "style.visibility")],
+                        }),
+                    ],
+                }),
+                new BuilderElement({
+                    name: "p:to",
+                    children: [
+                        new BuilderElement({
+                            name: "p:strVal",
+                            attributes: { val: { key: "val", value: visibility } },
+                        }),
+                    ],
+                }),
+            ],
+        }),
+    );
+
+    // p:animEffect for non-appear types
+    if (options.type !== "appear") {
+        const filterBase = FILTER_MAP[options.type ?? "fade"];
+        const dirMap = DIRECTION_FILTER[options.type ?? "fade"];
+        const dirFilter = options.direction && dirMap ? dirMap[options.direction] : undefined;
+
+        let filter = filterBase;
+        if (options.type === "wheel") {
+            filter = "wheel(4)";
+        } else if (options.type === "split") {
+            const dir = options.direction ?? "horizontal";
+            filter = `split(${dir})`;
+        } else if (dirFilter) {
+            filter = `${filterBase}(${dirFilter})`;
+        }
+
+        const transition = cls === "exit" ? "out" : "in";
+
+        children.push(
+            new BuilderElement({
+                name: "p:animEffect",
+                attributes: {
+                    transition: { key: "transition", value: transition },
+                    filter: { key: "filter", value: filter },
+                },
+                children: [
+                    new BuilderElement({
+                        name: "p:cBhvr",
+                        children: [
+                            new BuilderElement({
+                                name: "p:cTn",
+                                attributes: {
+                                    id: { key: "id", value: ids.effect },
+                                    dur: { key: "dur", value: String(options.duration ?? 500) },
+                                    fill: { key: "fill", value: "hold" },
+                                },
+                            }),
+                            new BuilderElement({
+                                name: "p:tgtEl",
+                                children: [
+                                    new BuilderElement({
+                                        name: "p:spTgt",
+                                        attributes: { spid: { key: "spid", value: spid } },
+                                    }),
+                                ],
+                            }),
+                        ],
+                    }),
+                ],
+            }),
+        );
+    }
+
+    return children;
+}
+
+function buildEmphasisEffects(
+    options: IAnimationOptions,
+    spid: number,
+    ids: { set: number; effect: number },
+): XmlComponent[] {
+    const emphType = options.emphasisType ?? "growShrink";
+    const children: XmlComponent[] = [];
+    const dur = String(options.duration ?? 500);
+
+    // Common target element
+    const tgtEl = new BuilderElement({
+        name: "p:tgtEl",
+        children: [
+            new BuilderElement({
+                name: "p:spTgt",
+                attributes: { spid: { key: "spid", value: spid } },
+            }),
+        ],
+    });
+
+    switch (emphType) {
+        case "growShrink":
+            children.push(
+                new BuilderElement({
+                    name: "p:animScale",
+                    children: [
+                        new BuilderElement({
+                            name: "p:cBhvr",
+                            children: [
+                                new BuilderElement({
+                                    name: "p:cTn",
+                                    attributes: {
+                                        id: { key: "id", value: ids.effect },
+                                        dur: { key: "dur", value: dur },
+                                        fill: { key: "fill", value: "hold" },
+                                        ...(options.autoReverse
+                                            ? { autoRev: { key: "autoRev", value: 1 } }
+                                            : {}),
+                                    },
+                                    children: [
+                                        new BuilderElement({
+                                            name: "p:stCondLst",
+                                            children: [
+                                                new BuilderElement({
+                                                    name: "p:cond",
+                                                    attributes: {
+                                                        delay: { key: "delay", value: "0" },
+                                                    },
+                                                }),
+                                            ],
+                                        }),
+                                    ],
+                                }),
+                                tgtEl,
+                            ],
+                        }),
+                        new BuilderElement({
+                            name: "p:by",
+                            attributes: {
+                                x: { key: "x", value: "150000" },
+                                y: { key: "y", value: "150000" },
+                            },
+                        }),
+                    ],
+                }),
+            );
+            break;
+
+        case "spin":
+            children.push(
+                new BuilderElement({
+                    name: "p:animRot",
+                    attributes: { by: { key: "by", value: "3600000" } },
+                    children: [
+                        new BuilderElement({
+                            name: "p:cBhvr",
+                            children: [
+                                new BuilderElement({
+                                    name: "p:cTn",
+                                    attributes: {
+                                        id: { key: "id", value: ids.effect },
+                                        dur: { key: "dur", value: dur },
+                                        fill: { key: "fill", value: "hold" },
+                                    },
+                                    children: [
+                                        new BuilderElement({
+                                            name: "p:stCondLst",
+                                            children: [
+                                                new BuilderElement({
+                                                    name: "p:cond",
+                                                    attributes: {
+                                                        delay: { key: "delay", value: "0" },
+                                                    },
+                                                }),
+                                            ],
+                                        }),
+                                    ],
+                                }),
+                                tgtEl,
+                            ],
+                        }),
+                    ],
+                }),
+            );
+            break;
+
+        case "colorChange": {
+            const color = options.color ?? "FF0000";
+            children.push(
+                new BuilderElement({
+                    name: "p:animClr",
+                    children: [
+                        new BuilderElement({
+                            name: "p:cBhvr",
+                            children: [
+                                new BuilderElement({
+                                    name: "p:cTn",
+                                    attributes: {
+                                        id: { key: "id", value: ids.effect },
+                                        dur: { key: "dur", value: dur },
+                                        fill: { key: "fill", value: "hold" },
+                                    },
+                                    children: [
+                                        new BuilderElement({
+                                            name: "p:stCondLst",
+                                            children: [
+                                                new BuilderElement({
+                                                    name: "p:cond",
+                                                    attributes: {
+                                                        delay: { key: "delay", value: "0" },
+                                                    },
+                                                }),
+                                            ],
+                                        }),
+                                    ],
+                                }),
+                                tgtEl,
+                            ],
+                        }),
+                        new BuilderElement({
+                            name: "p:to",
+                            children: [
+                                new BuilderElement({
+                                    name: "a:srgbClr",
+                                    attributes: { val: { key: "val", value: color } },
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            );
+            break;
+        }
+
+        case "transparency":
+            children.push(
+                new BuilderElement({
+                    name: "p:anim",
+                    attributes: {
+                        calcmode: { key: "calcmode", value: "lin" },
+                        valueType: { key: "valueType", value: "num" },
+                        from: { key: "from", value: "0" },
+                        to: { key: "to", value: "1" },
+                    },
+                    children: [
+                        new BuilderElement({
+                            name: "p:cBhvr",
+                            children: [
+                                new BuilderElement({
+                                    name: "p:cTn",
+                                    attributes: {
+                                        id: { key: "id", value: ids.effect },
+                                        dur: { key: "dur", value: dur },
+                                        fill: { key: "fill", value: "hold" },
+                                    },
+                                }),
+                                tgtEl,
+                                new BuilderElement({
+                                    name: "p:attrNameLst",
+                                    children: [new StringContainer("p:attrName", "style.opacity")],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            );
+            break;
+
+        default:
+            // boldFlash, wave, pulse, growWithTurn — use p:animEffect with emph filter
+            children.push(
+                new BuilderElement({
+                    name: "p:animEffect",
+                    attributes: {
+                        transition: { key: "transition", value: "in" },
+                        filter: { key: "filter", value: emphType },
+                    },
+                    children: [
+                        new BuilderElement({
+                            name: "p:cBhvr",
+                            children: [
+                                new BuilderElement({
+                                    name: "p:cTn",
+                                    attributes: {
+                                        id: { key: "id", value: ids.effect },
+                                        dur: { key: "dur", value: dur },
+                                        fill: { key: "fill", value: "hold" },
+                                    },
+                                }),
+                                tgtEl,
+                            ],
+                        }),
+                    ],
+                }),
+            );
+            break;
+    }
+
+    return children;
+}
+
+function buildPathEffects(
+    options: IAnimationOptions,
+    spid: number,
+    ids: { set: number; effect: number },
+): XmlComponent[] {
+    const pathStr = options.path ?? PATH_STRINGS[options.pathType ?? "customPath"] ?? "";
+    const dur = String(options.duration ?? 1000);
+
+    return [
+        new BuilderElement({
+            name: "p:animMotion",
+            attributes: {
+                origin: { key: "origin", value: "layout" },
+                path: { key: "path", value: pathStr },
+            },
+            children: [
+                new BuilderElement({
+                    name: "p:cBhvr",
+                    children: [
+                        new BuilderElement({
+                            name: "p:cTn",
+                            attributes: {
+                                id: { key: "id", value: ids.effect },
+                                dur: { key: "dur", value: dur },
+                                fill: { key: "fill", value: "hold" },
+                            },
+                            children: [
+                                new BuilderElement({
+                                    name: "p:stCondLst",
+                                    children: [
+                                        new BuilderElement({
+                                            name: "p:cond",
+                                            attributes: { delay: { key: "delay", value: "0" } },
+                                        }),
+                                    ],
+                                }),
+                            ],
+                        }),
+                        new BuilderElement({
+                            name: "p:tgtEl",
+                            children: [
+                                new BuilderElement({
+                                    name: "p:spTgt",
+                                    attributes: { spid: { key: "spid", value: spid } },
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        }),
+    ];
+}
+
+// --- Main class ---
+
 interface IAnimationEntry {
     readonly spid: number;
     readonly options: IAnimationOptions;
@@ -80,7 +566,6 @@ export class SlideTiming extends XmlComponent {
         const rootCtnId = id++;
         const seqCtnId = id++;
 
-        // Build animation nodes grouped by click (onClick triggers create new click groups)
         const animationNodes: XmlComponent[] = [];
         let clickGroupDelay = 0;
 
@@ -95,11 +580,9 @@ export class SlideTiming extends XmlComponent {
                       ? "afterEffect"
                       : "clickEffect";
 
-            // For afterEffect, add delay from previous click group
             if (options.trigger === "afterPrevious" && i > 0) {
                 clickGroupDelay += (options.duration ?? 500) + (options.delay ?? 0);
             }
-            // For new clickEffect, reset delay
             if (options.trigger === "onClick" || options.trigger === undefined) {
                 clickGroupDelay = 0;
             }
@@ -109,139 +592,49 @@ export class SlideTiming extends XmlComponent {
             const setCtnId = id++;
             const effectCtnId2 = id++;
 
-            const presetId = PRESET_IDS[options.type];
-            const presetSubtype = options.direction
-                ? (DIRECTION_SUBTYPES[options.direction] ?? 0)
-                : 0;
+            const presetId = resolvePresetId(options);
+            const presetClass = resolvePresetClass(options);
+            const presetSubtype = resolvePresetSubtype(options);
 
-            // Build the animation effect children
-            const effectChildren: XmlComponent[] = [];
+            // Build effect children based on animation class
+            let effectChildren: XmlComponent[];
 
-            // <p:set> to make shape visible
-            effectChildren.push(
-                new BuilderElement({
-                    name: "p:set",
-                    children: [
-                        new BuilderElement({
-                            name: "p:cBhvr",
-                            children: [
-                                new BuilderElement({
-                                    name: "p:cTn",
-                                    attributes: {
-                                        id: { key: "id", value: setCtnId },
-                                        dur: { key: "dur", value: "1" },
-                                        fill: { key: "fill", value: "hold" },
-                                    },
-                                    children: [
-                                        new BuilderElement({
-                                            name: "p:stCondLst",
-                                            children: [
-                                                new BuilderElement({
-                                                    name: "p:cond",
-                                                    attributes: {
-                                                        delay: { key: "delay", value: "0" },
-                                                    },
-                                                }),
-                                            ],
-                                        }),
-                                    ],
-                                }),
-                                new BuilderElement({
-                                    name: "p:tgtEl",
-                                    children: [
-                                        new BuilderElement({
-                                            name: "p:spTgt",
-                                            attributes: { spid: { key: "spid", value: spid } },
-                                        }),
-                                    ],
-                                }),
-                                new BuilderElement({
-                                    name: "p:attrNameLst",
-                                    children: [
-                                        new StringContainer("p:attrName", "style.visibility"),
-                                    ],
-                                }),
-                            ],
-                        }),
-                        new BuilderElement({
-                            name: "p:to",
-                            children: [
-                                new BuilderElement({
-                                    name: "p:strVal",
-                                    attributes: { val: { key: "val", value: "visible" } },
-                                }),
-                            ],
-                        }),
-                    ],
-                }),
-            );
-
-            // Add animEffect for non-appear types
-            if (options.type !== "appear") {
-                const filterBase = FILTER_MAP[options.type];
-                const dirMap = DIRECTION_FILTER[options.type];
-                const dirFilter =
-                    options.direction && dirMap ? dirMap[options.direction] : undefined;
-
-                let filter = filterBase;
-                if (options.type === "wheel") {
-                    filter = "wheel(4)";
-                } else if (options.type === "split") {
-                    const dir = options.direction ?? "horizontal";
-                    filter = `split(${dir})`;
-                } else if (dirFilter) {
-                    filter = `${filterBase}(${dirFilter})`;
-                }
-
-                effectChildren.push(
-                    new BuilderElement({
-                        name: "p:animEffect",
-                        attributes: {
-                            transition: { key: "transition", value: "in" },
-                            filter: { key: "filter", value: filter },
-                        },
-                        children: [
-                            new BuilderElement({
-                                name: "p:cBhvr",
-                                children: [
-                                    new BuilderElement({
-                                        name: "p:cTn",
-                                        attributes: {
-                                            id: { key: "id", value: effectCtnId2 },
-                                            dur: {
-                                                key: "dur",
-                                                value: String(options.duration ?? 500),
-                                            },
-                                            fill: { key: "fill", value: "hold" },
-                                        },
-                                    }),
-                                    new BuilderElement({
-                                        name: "p:tgtEl",
-                                        children: [
-                                            new BuilderElement({
-                                                name: "p:spTgt",
-                                                attributes: { spid: { key: "spid", value: spid } },
-                                            }),
-                                        ],
-                                    }),
-                                ],
-                            }),
-                        ],
-                    }),
-                );
+            if (options.pathType) {
+                effectChildren = buildPathEffects(options, spid, {
+                    set: setCtnId,
+                    effect: effectCtnId2,
+                });
+            } else if (presetClass === "emph") {
+                effectChildren = buildEmphasisEffects(options, spid, {
+                    set: setCtnId,
+                    effect: effectCtnId2,
+                });
+            } else {
+                effectChildren = buildEntrOrExitEffects(options, spid, {
+                    set: setCtnId,
+                    effect: effectCtnId2,
+                });
             }
+
+            // Build cTn attributes with optional speed/repeatCount/autoReverse
+            const cTnAttrs: Record<string, { key: string; value: string | number }> = {
+                id: { key: "id", value: effectCtnId },
+                presetID: { key: "presetID", value: presetId },
+                presetClass: { key: "presetClass", value: presetClass },
+                presetSubtype: { key: "presetSubtype", value: presetSubtype },
+                fill: { key: "fill", value: "hold" },
+                nodeType: { key: "nodeType", value: nodeType },
+            };
+            if (options.speed !== undefined)
+                cTnAttrs.spd = { key: "spd", value: String(options.speed) };
+            if (options.repeatCount !== undefined)
+                cTnAttrs.repeatCount = { key: "repeatCount", value: String(options.repeatCount) };
+            if (options.autoReverse) cTnAttrs.autoRev = { key: "autoRev", value: 1 };
 
             // Build effect cTn
             const effectCtn = new BuilderElement({
                 name: "p:cTn",
-                attributes: {
-                    id: { key: "id", value: effectCtnId },
-                    presetID: { key: "presetID", value: presetId },
-                    presetClass: { key: "presetClass", value: "entr" },
-                    presetSubtype: { key: "presetSubtype", value: presetSubtype },
-                    fill: { key: "fill", value: "hold" },
-                    nodeType: { key: "nodeType", value: nodeType },
-                },
+                attributes: cTnAttrs,
                 children: [
                     new BuilderElement({
                         name: "p:stCondLst",

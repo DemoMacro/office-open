@@ -90,7 +90,7 @@ Performance vs [PptxGenJS](https://github.com/gitbrent/PptxGenJS) (higher hz is 
 
 ## Examples
 
-Check the [demo folder](./demo) for 15 working examples covering every feature.
+Check the [demo folder](./demo) for working examples covering every feature.
 
 ## License
 

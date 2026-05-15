@@ -134,5 +134,8 @@ export {
     type AnimationType,
     type AnimationTrigger,
     type AnimationDirection,
+    type AnimationClass,
+    type EmphasisType,
+    type PathAnimationType,
     type IAnimationOptions,
 } from "./animation/types";
