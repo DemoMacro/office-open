@@ -15,6 +15,9 @@ const PPTX_SLIDE_LAYOUT =
     "application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml";
 const PPTX_THEME = "application/vnd.openxmlformats-officedocument.theme+xml";
 const PPTX_NOTES = "application/vnd.openxmlformats-officedocument.presentationml.notesSlide+xml";
+const PPTX_COMMENTS = "application/vnd.openxmlformats-officedocument.presentationml.comments+xml";
+const PPTX_COMMENT_AUTHORS =
+    "application/vnd.openxmlformats-officedocument.presentationml.commentAuthors+xml";
 const PPTX_CHART = "application/vnd.openxmlformats-officedocument.drawingml.chart+xml";
 const PPTX_PRES_PROPS =
     "application/vnd.openxmlformats-officedocument.presentationml.presProps+xml";
@@ -90,6 +93,22 @@ export class ContentTypes extends BaseXmlComponent {
             type: "Override",
             contentType: PPTX_NOTES,
             key: `/ppt/notesSlides/notesSlide${index}.xml`,
+        });
+    }
+
+    public addComments(index: number): void {
+        this.dynamicEntries.push({
+            type: "Override",
+            contentType: PPTX_COMMENTS,
+            key: `/ppt/comments/comment${index}.xml`,
+        });
+    }
+
+    public addCommentAuthors(): void {
+        this.dynamicEntries.push({
+            type: "Override",
+            contentType: PPTX_COMMENT_AUTHORS,
+            key: "/ppt/commentAuthors.xml",
         });
     }
 

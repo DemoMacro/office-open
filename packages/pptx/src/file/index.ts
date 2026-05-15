@@ -1,4 +1,4 @@
-export { File, type IPresentationOptions, type ISlideOptions } from "./file";
+export { File, type IPresentationOptions, type ISlideOptions, type ICommentOptions } from "./file";
 export { Presentation } from "./presentation/presentation";
 export type { IPresentationOptions as IPresentationXmlOptions } from "./presentation/presentation";
 export { Shape, type IShapeOptions } from "./shape/shape";

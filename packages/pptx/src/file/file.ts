@@ -1,6 +1,9 @@
 import { AppProperties } from "@file/app-properties/app-properties";
 import type { Background } from "@file/background/background";
 import { ChartCollection } from "@file/chart/chart-collection";
+import { CommentAuthorList } from "@file/comment/comment-author-list";
+import type { AuthorEntry } from "@file/comment/comment-author-list";
+import { SlideCommentList } from "@file/comment/slide-comment-list";
 import { ContentTypes } from "@file/content-types/content-types";
 import { CoreProperties, type ICorePropertiesOptions } from "@file/core-properties/properties";
 import type { IHeaderFooterOptions } from "@file/header-footer/header-footer";
@@ -22,12 +25,22 @@ import type { BaseXmlComponent } from "@file/xml-components";
 import type { RelationshipType } from "@office-open/core";
 import { convertPixelsToEmu } from "@office-open/core";
 
+export interface ICommentOptions {
+    readonly author: string;
+    readonly text: string;
+    readonly x: number;
+    readonly y: number;
+    readonly initials?: string;
+    readonly date?: string;
+}
+
 export interface ISlideOptions {
     readonly children?: readonly BaseXmlComponent[];
     readonly background?: Background;
     readonly notes?: string;
     readonly transition?: ITransitionOptions;
     readonly headerFooter?: IHeaderFooterOptions;
+    readonly comments?: readonly ICommentOptions[];
 }
 
 export interface IShowOptions {
@@ -57,6 +70,13 @@ function buildRelationships(entries: readonly RelEntry[]): Relationships {
         rels.addRelationship(e.id, e.type, e.target, e.mode as "External" | undefined);
     }
     return rels;
+}
+
+function deriveInitials(name: string): string {
+    const parts = name.trim().split(/\s+/);
+    return parts.length >= 2
+        ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+        : name.slice(0, 2).toUpperCase();
 }
 
 export class File {
@@ -89,6 +109,8 @@ export class File {
     private slides?: Slide[];
     private slideWrappers?: Array<{ readonly View: Slide; readonly Relationships: Relationships }>;
     private notesSlides?: NotesSlide[];
+    private commentAuthorList?: CommentAuthorList;
+    private slideCommentLists?: (SlideCommentList | undefined)[];
 
     // Lazy relationship data — built on first access
     private fileRels?: Relationships;
@@ -119,11 +141,19 @@ export class File {
     public get ContentTypes(): ContentTypes {
         if (!this.contentTypes) {
             this.contentTypes = new ContentTypes();
+            let hasComments = false;
             for (let i = 0; i < this.slideOptions.length; i++) {
                 this.contentTypes.addSlide(i + 1);
                 if (this.slideOptions[i].notes) {
                     this.contentTypes.addNotesSlide(i + 1);
                 }
+                if (this.slideOptions[i].comments && this.slideOptions[i].comments!.length > 0) {
+                    this.contentTypes.addComments(i + 1);
+                    hasComments = true;
+                }
+            }
+            if (hasComments) {
+                this.contentTypes.addCommentAuthors();
             }
         }
         return this.contentTypes;
@@ -321,5 +351,83 @@ export class File {
 
     public get NotesMasterRelationships(): Relationships {
         return (this.notesMasterRels ??= new Relationships());
+    }
+
+    public get CommentAuthorList(): CommentAuthorList | undefined {
+        if (!this.commentAuthorList && !this.slideCommentLists) {
+            this.buildComments();
+        }
+        return this.commentAuthorList;
+    }
+
+    public get SlideCommentLists(): readonly (SlideCommentList | undefined)[] {
+        if (!this.slideCommentLists) {
+            this.buildComments();
+        }
+        return this.slideCommentLists!;
+    }
+
+    private buildComments(): void {
+        const authorMap = new Map<
+            string,
+            { id: number; name: string; initials: string; clrIdx: number; commentCount: number }
+        >();
+        let nextAuthorId = 0;
+
+        this.slideCommentLists = Array.from<SlideCommentList | undefined>({
+            length: this.slideOptions.length,
+        });
+
+        for (let i = 0; i < this.slideOptions.length; i++) {
+            const slideComments = this.slideOptions[i].comments;
+            if (!slideComments || slideComments.length === 0) continue;
+
+            const commentEntries: Array<{
+                readonly authorId: number;
+                readonly idx: number;
+                readonly date?: string;
+                readonly x: number;
+                readonly y: number;
+                readonly text: string;
+            }> = [];
+
+            for (const c of slideComments) {
+                let author = authorMap.get(c.author);
+                if (!author) {
+                    const id = nextAuthorId++;
+                    author = {
+                        id,
+                        name: c.author,
+                        initials: c.initials || deriveInitials(c.author),
+                        clrIdx: id,
+                        commentCount: 0,
+                    };
+                    authorMap.set(c.author, author);
+                }
+                author.commentCount++;
+
+                commentEntries.push({
+                    authorId: author.id,
+                    idx: author.commentCount,
+                    date: c.date,
+                    x: c.x,
+                    y: c.y,
+                    text: c.text,
+                });
+            }
+
+            this.slideCommentLists[i] = new SlideCommentList(commentEntries);
+        }
+
+        if (authorMap.size > 0) {
+            const authors: AuthorEntry[] = [...authorMap.values()].map((a) => ({
+                id: a.id,
+                name: a.name,
+                initials: a.initials,
+                clrIdx: a.clrIdx,
+                lastIdx: a.commentCount,
+            }));
+            this.commentAuthorList = new CommentAuthorList(authors);
+        }
     }
 }

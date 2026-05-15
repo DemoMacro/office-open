@@ -132,6 +132,15 @@ export class Compiler {
             };
         }
 
+        // Comment Authors — only when comments exist
+        if (file.CommentAuthorList) {
+            file.PresentationWrapper.Relationships.addRelationship(
+                file.PresentationWrapper.Relationships.RelationshipCount + 1,
+                "http://schemas.openxmlformats.org/officeDocument/2006/relationships/commentAuthors",
+                "commentAuthors.xml",
+            );
+        }
+
         // Presentation + its relationships
         const presentationXml = this.formatter.formatToXml(
             file.PresentationWrapper.View,
@@ -314,6 +323,16 @@ export class Compiler {
                 path: `ppt/slides/slide${i + 1}.xml`,
             };
 
+            // Add comment relationship for this slide
+            const slideComments = file.SlideCommentLists[i];
+            if (slideComments) {
+                slideWrapper.Relationships.addRelationship(
+                    slideWrapper.Relationships.RelationshipCount + 1,
+                    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
+                    `../comments/comment${i + 1}.xml`,
+                );
+            }
+
             mapping[`SlideRelationships${i}`] = {
                 data: xml(this.formatter.format(slideWrapper.Relationships, context), {
                     declaration: false,
@@ -441,6 +460,35 @@ export class Compiler {
                 ),
                 { level: 0 },
             ];
+        }
+
+        // Add comment authors (STORE)
+        if (file.CommentAuthorList) {
+            files["ppt/commentAuthors.xml"] = [
+                textToUint8Array(
+                    xml(this.formatter.format(file.CommentAuthorList, context), {
+                        declaration,
+                        indent,
+                    }),
+                ),
+                { level: 0 },
+            ];
+        }
+
+        // Add slide comments (STORE)
+        const commentLists = file.SlideCommentLists;
+        for (let i = 0; i < commentLists.length; i++) {
+            if (commentLists[i]) {
+                files[`ppt/comments/comment${i + 1}.xml`] = [
+                    textToUint8Array(
+                        xml(this.formatter.format(commentLists[i]!, context), {
+                            declaration,
+                            indent,
+                        }),
+                    ),
+                    { level: 0 },
+                ];
+            }
         }
 
         // Add media files (STORE compression)
