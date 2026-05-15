@@ -43,6 +43,7 @@ const STATIC_ENTRIES: readonly ContentEntry[] = [
     { type: "Default", contentType: "application/xml", key: "xml" },
     { type: "Default", contentType: "image/png", key: "png" },
     { type: "Default", contentType: "image/jpeg", key: "jpeg" },
+    { type: "Default", contentType: "image/jpeg", key: "jpg" },
     { type: "Default", contentType: "video/mp4", key: "mp4" },
     { type: "Override", contentType: PPTX_MAIN, key: "/ppt/presentation.xml" },
     {

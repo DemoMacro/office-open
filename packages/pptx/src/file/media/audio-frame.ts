@@ -1,3 +1,4 @@
+import type { IAnimationOptions } from "@file/animation/types";
 import { PresetGeometry } from "@file/drawingml/preset-geometry";
 import { Transform2D } from "@file/drawingml/transform-2d";
 import type { File } from "@file/file";
@@ -17,6 +18,7 @@ export interface IAudioFrameOptions {
     readonly data: Uint8Array;
     readonly type: AudioType;
     readonly name?: string;
+    readonly animation?: IAnimationOptions;
 }
 
 /**
@@ -27,11 +29,15 @@ export interface IAudioFrameOptions {
 export class AudioFrame extends XmlComponent {
     private static nextId = 200;
     private readonly audioData: IMediaData;
+    private readonly shapeId: number;
+    private readonly animationOptions?: IAnimationOptions;
 
     public constructor(options: IAudioFrameOptions) {
         super("p:pic");
 
         const id = AudioFrame.nextId++;
+        this.shapeId = id;
+        this.animationOptions = options.animation;
         const name = options.name ?? `Audio ${id}`;
         const mediaFileName = `${name.replace(/\s+/g, "_")}.${options.type}`;
 
@@ -133,6 +139,14 @@ export class AudioFrame extends XmlComponent {
                 ],
             }),
         );
+    }
+
+    public get ShapeId(): number {
+        return this.shapeId;
+    }
+
+    public get Animation(): IAnimationOptions | undefined {
+        return this.animationOptions;
     }
 
     public override prepForXml(context: IContext) {

@@ -18,7 +18,7 @@ export type AnimationTrigger = "onClick" | "withPrevious" | "afterPrevious";
 
 export type AnimationDirection = "left" | "right" | "up" | "down" | "horizontal" | "vertical";
 
-export type AnimationClass = "entr" | "exit" | "emph";
+export type AnimationClass = "entr" | "exit" | "emph" | "mediacall";
 
 export type EmphasisType =
     | "growShrink"
@@ -40,6 +40,12 @@ export type PathAnimationType =
     | "line"
     | "loop";
 
+export type MediaAnimationType = "playAudio" | "playVideo";
+
+export type AnimationCalcMode = "discrete" | "lin" | "fmla";
+
+export type AnimationValueType = "str" | "num" | "clr";
+
 export interface IAnimationOptions {
     readonly type?: AnimationType;
     readonly duration?: number;
@@ -54,4 +60,23 @@ export interface IAnimationOptions {
     readonly repeatCount?: number;
     readonly autoReverse?: boolean;
     readonly color?: string;
+
+    // Media playback animation
+    readonly mediaType?: MediaAnimationType;
+    readonly isNarration?: boolean;
+    readonly fullScreen?: boolean;
+    readonly volume?: number;
+    readonly mute?: boolean;
+
+    // Generic property animation (p:anim)
+    readonly attributeName?: string;
+    readonly calcMode?: AnimationCalcMode;
+    readonly valueType?: AnimationValueType;
+    readonly from?: string;
+    readonly to?: string;
+    readonly animBy?: string;
+
+    // Text-level animation target
+    readonly charRange?: readonly [number, number];
+    readonly paragraphRange?: readonly [number, number];
 }

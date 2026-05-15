@@ -1,3 +1,4 @@
+import type { IAnimationOptions } from "@file/animation/types";
 import { PresetGeometry } from "@file/drawingml/preset-geometry";
 import { Transform2D } from "@file/drawingml/transform-2d";
 import type { File } from "@file/file";
@@ -11,12 +12,15 @@ const MEDIA_EXT_URI = "{DAA4B4D4-6D71-4841-9C94-3DE7FCFB9230}";
  * Extract the first video frame from MP4 data as JPEG.
  * Falls back to a generated placeholder if extraction fails.
  */
-function extractFirstFrame(videoData: Uint8Array, type: VideoType): Uint8Array {
+function extractFirstFrame(
+    videoData: Uint8Array,
+    type: VideoType,
+): { data: Uint8Array; isJpeg: boolean } {
     if (type === "mp4") {
         const jpeg = extractMp4FirstFrame(videoData);
-        if (jpeg) return jpeg;
+        if (jpeg) return { data: jpeg, isJpeg: true };
     }
-    return generatePlaceholderPoster();
+    return { data: generatePlaceholderPoster(), isJpeg: false };
 }
 
 /**
@@ -137,6 +141,7 @@ export interface IVideoFrameOptions {
     readonly poster?: Uint8Array;
     readonly posterType?: PosterType;
     readonly posterFrameTime?: number;
+    readonly animation?: IAnimationOptions;
 }
 
 /**
@@ -151,14 +156,19 @@ export class VideoFrame extends XmlComponent {
     private static nextId = 100;
     private readonly posterData: IMediaData;
     private readonly videoData: IMediaData;
+    private readonly shapeId: number;
+    private readonly animationOptions?: IAnimationOptions;
 
     public constructor(options: IVideoFrameOptions) {
         super("p:pic");
 
         const id = VideoFrame.nextId++;
+        this.shapeId = id;
+        this.animationOptions = options.animation;
         const name = options.name ?? `Video ${id}`;
         const mediaFileName = `${name.replace(/\s+/g, "_")}.${options.type}`;
-        const posterType = options.posterType ?? "png";
+        const extracted = options.poster ? null : extractFirstFrame(options.data, options.type);
+        const posterType = options.posterType ?? (extracted?.isJpeg ? "jpg" : "png");
         const posterFileName = `${name.replace(/\s+/g, "_")}_poster.${posterType}`;
 
         this.videoData = {
@@ -174,7 +184,7 @@ export class VideoFrame extends XmlComponent {
             data: options.data,
         };
 
-        const posterBytes = options.poster ?? extractFirstFrame(options.data, options.type);
+        const posterBytes = options.poster ?? extracted!.data;
         this.posterData = {
             type: posterType === "jpg" ? "jpg" : "png",
             fileName: posterFileName,
@@ -287,6 +297,14 @@ export class VideoFrame extends XmlComponent {
                 ],
             }),
         );
+    }
+
+    public get ShapeId(): number {
+        return this.shapeId;
+    }
+
+    public get Animation(): IAnimationOptions | undefined {
+        return this.animationOptions;
     }
 
     public override prepForXml(context: IContext) {

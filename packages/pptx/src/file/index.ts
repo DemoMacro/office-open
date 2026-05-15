@@ -137,5 +137,8 @@ export {
     type AnimationClass,
     type EmphasisType,
     type PathAnimationType,
+    type MediaAnimationType,
+    type AnimationCalcMode,
+    type AnimationValueType,
     type IAnimationOptions,
 } from "./animation/types";

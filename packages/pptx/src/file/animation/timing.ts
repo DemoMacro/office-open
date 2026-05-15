@@ -124,6 +124,8 @@ const PATH_STRINGS: Record<PathAnimationType, string> = {
 // --- Helper functions ---
 
 function resolvePresetId(options: IAnimationOptions): number {
+    if (options.mediaType) return 1;
+    if (options.attributeName) return 0;
     const cls: AnimationClass = options.class ?? "entr";
 
     if (cls === "emph" && options.emphasisType) {
@@ -140,6 +142,8 @@ function resolvePresetId(options: IAnimationOptions): number {
 }
 
 function resolvePresetClass(options: IAnimationOptions): AnimationClass {
+    if (options.mediaType) return "mediacall";
+    if (options.attributeName) return "entr";
     if (options.pathType) return "emph";
     return options.class ?? "entr";
 }
@@ -149,6 +153,52 @@ function resolvePresetSubtype(options: IAnimationOptions): number {
         return DIRECTION_SUBTYPES[options.direction] ?? 0;
     }
     return 0;
+}
+
+function buildTargetElement(spid: number, options?: IAnimationOptions): XmlComponent {
+    const spTgtChildren: XmlComponent[] = [];
+    if (options?.charRange) {
+        spTgtChildren.push(
+            new BuilderElement({
+                name: "p:txEl",
+                children: [
+                    new BuilderElement({
+                        name: "p:charRg",
+                        attributes: {
+                            st: { key: "st", value: options.charRange[0] },
+                            end: { key: "end", value: options.charRange[1] },
+                        },
+                    }),
+                ],
+            }),
+        );
+    } else if (options?.paragraphRange) {
+        spTgtChildren.push(
+            new BuilderElement({
+                name: "p:txEl",
+                children: [
+                    new BuilderElement({
+                        name: "p:pRg",
+                        attributes: {
+                            st: { key: "st", value: options.paragraphRange[0] },
+                            end: { key: "end", value: options.paragraphRange[1] },
+                        },
+                    }),
+                ],
+            }),
+        );
+    }
+
+    return new BuilderElement({
+        name: "p:tgtEl",
+        children: [
+            new BuilderElement({
+                name: "p:spTgt",
+                attributes: { spid: { key: "spid", value: spid } },
+                children: spTgtChildren.length > 0 ? spTgtChildren : undefined,
+            }),
+        ],
+    });
 }
 
 function buildEntrOrExitEffects(
@@ -530,20 +580,212 @@ function buildPathEffects(
                                 }),
                             ],
                         }),
-                        new BuilderElement({
-                            name: "p:tgtEl",
-                            children: [
-                                new BuilderElement({
-                                    name: "p:spTgt",
-                                    attributes: { spid: { key: "spid", value: spid } },
-                                }),
-                            ],
-                        }),
+                        buildTargetElement(spid, options),
                     ],
                 }),
             ],
         }),
     ];
+}
+
+/**
+ * Build p:cmd for media play/pause/stop (goes inside the animation sequence).
+ * PowerPoint uses p:cmd type="call" cmd="playFrom(0.0)" for video play.
+ */
+function buildMediaPlayCommand(
+    options: IAnimationOptions,
+    spid: number,
+    ids: { cmd: number },
+): XmlComponent {
+    const cmdStr = options.fullScreen ? "playFrom(0.0,1.0)" : "playFrom(0.0)";
+
+    return new BuilderElement({
+        name: "p:cmd",
+        attributes: {
+            type: { key: "type", value: "call" },
+            cmd: { key: "cmd", value: cmdStr },
+        },
+        children: [
+            new BuilderElement({
+                name: "p:cBhvr",
+                children: [
+                    new BuilderElement({
+                        name: "p:cTn",
+                        attributes: {
+                            id: { key: "id", value: ids.cmd },
+                            dur: { key: "dur", value: String(options.duration ?? 10000) },
+                            fill: { key: "fill", value: "hold" },
+                        },
+                    }),
+                    buildTargetElement(spid),
+                ],
+            }),
+        ],
+    });
+}
+
+/**
+ * Build p:video/p:audio with p:cMediaNode (goes as sibling of p:seq).
+ * This is the media state controller, separate from the play command.
+ */
+function buildMediaStateNode(
+    options: IAnimationOptions,
+    spid: number,
+    ids: { mediaCtn: number },
+): XmlComponent {
+    const isVideo = options.mediaType === "playVideo";
+    const elementName = isVideo ? "p:video" : "p:audio";
+
+    const mediaAttrs: Record<string, { key: string; value: string | number | boolean }> = {};
+    if (!isVideo && options.isNarration) {
+        mediaAttrs.isNarration = { key: "isNarration", value: true };
+    }
+    if (isVideo && options.fullScreen) {
+        mediaAttrs.fullScrn = { key: "fullScrn", value: true };
+    }
+
+    const cMediaNodeAttrs: Record<string, { key: string; value: string | number }> = {};
+    if (options.volume !== undefined) {
+        cMediaNodeAttrs.vol = { key: "vol", value: options.volume * 1000 };
+    } else {
+        cMediaNodeAttrs.vol = { key: "vol", value: 80000 };
+    }
+    if (options.mute) {
+        cMediaNodeAttrs.mute = { key: "mute", value: 1 };
+    }
+
+    return new BuilderElement({
+        name: elementName,
+        attributes: Object.keys(mediaAttrs).length > 0 ? mediaAttrs : undefined,
+        children: [
+            new BuilderElement({
+                name: "p:cMediaNode",
+                attributes: cMediaNodeAttrs,
+                children: [
+                    new BuilderElement({
+                        name: "p:cTn",
+                        attributes: {
+                            id: { key: "id", value: ids.mediaCtn },
+                            fill: { key: "fill", value: "hold" },
+                            display: { key: "display", value: "0" },
+                        },
+                        children: [
+                            new BuilderElement({
+                                name: "p:stCondLst",
+                                children: [
+                                    new BuilderElement({
+                                        name: "p:cond",
+                                        attributes: {
+                                            delay: { key: "delay", value: "indefinite" },
+                                        },
+                                    }),
+                                ],
+                            }),
+                        ],
+                    }),
+                    buildTargetElement(spid),
+                ],
+            }),
+        ],
+    });
+}
+
+function buildPropertyAnimation(
+    options: IAnimationOptions,
+    spid: number,
+    ids: { cBhvr: number },
+): XmlComponent {
+    const attrs: Record<string, { key: string; value: string }> = {};
+    if (options.calcMode) attrs.calcmode = { key: "calcmode", value: options.calcMode };
+    if (options.valueType) attrs.valueType = { key: "valueType", value: options.valueType };
+    if (options.from !== undefined) attrs.from = { key: "from", value: options.from };
+    if (options.to !== undefined) attrs.to = { key: "to", value: options.to };
+    if (options.animBy !== undefined) attrs.by = { key: "by", value: options.animBy };
+
+    const cBhvrChildren: XmlComponent[] = [
+        new BuilderElement({
+            name: "p:cTn",
+            attributes: {
+                id: { key: "id", value: ids.cBhvr },
+                dur: { key: "dur", value: String(options.duration ?? 500) },
+                fill: { key: "fill", value: "hold" },
+            },
+        }),
+        buildTargetElement(spid, options),
+    ];
+
+    if (options.attributeName) {
+        cBhvrChildren.push(
+            new BuilderElement({
+                name: "p:attrNameLst",
+                children: [new StringContainer("p:attrName", options.attributeName)],
+            }),
+        );
+    }
+
+    const animChildren: XmlComponent[] = [
+        new BuilderElement({
+            name: "p:cBhvr",
+            children: cBhvrChildren,
+        }),
+    ];
+
+    // Build tavLst if from/to are specified
+    if (options.from !== undefined || options.to !== undefined) {
+        const tavList: XmlComponent[] = [];
+        if (options.from !== undefined) {
+            tavList.push(
+                new BuilderElement({
+                    name: "p:tav",
+                    attributes: { tm: { key: "tm", value: "0" } },
+                    children: [
+                        new BuilderElement({
+                            name: "p:val",
+                            children: [
+                                new BuilderElement({
+                                    name: "p:strVal",
+                                    attributes: { val: { key: "val", value: options.from } },
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            );
+        }
+        if (options.to !== undefined) {
+            tavList.push(
+                new BuilderElement({
+                    name: "p:tav",
+                    attributes: { tm: { key: "tm", value: "100000" } },
+                    children: [
+                        new BuilderElement({
+                            name: "p:val",
+                            children: [
+                                new BuilderElement({
+                                    name: "p:strVal",
+                                    attributes: { val: { key: "val", value: options.to } },
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            );
+        }
+        if (tavList.length > 0) {
+            animChildren.push(
+                new BuilderElement({
+                    name: "p:tavLst",
+                    children: tavList,
+                }),
+            );
+        }
+    }
+
+    return new BuilderElement({
+        name: "p:anim",
+        attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
+        children: animChildren,
+    });
 }
 
 // --- Main class ---
@@ -567,6 +809,7 @@ export class SlideTiming extends XmlComponent {
         const seqCtnId = id++;
 
         const animationNodes: XmlComponent[] = [];
+        const mediaStateNodes: XmlComponent[] = [];
         let clickGroupDelay = 0;
 
         for (let i = 0; i < entries.length; i++) {
@@ -599,7 +842,16 @@ export class SlideTiming extends XmlComponent {
             // Build effect children based on animation class
             let effectChildren: XmlComponent[];
 
-            if (options.pathType) {
+            if (options.mediaType) {
+                effectChildren = [buildMediaPlayCommand(options, spid, { cmd: effectCtnId2 })];
+                // Generate media state node (p:video/p:audio) as sibling of p:seq
+                const mediaStateId = id++;
+                mediaStateNodes.push(
+                    buildMediaStateNode(options, spid, { mediaCtn: mediaStateId }),
+                );
+            } else if (options.attributeName) {
+                effectChildren = [buildPropertyAnimation(options, spid, { cBhvr: effectCtnId2 })];
+            } else if (options.pathType) {
                 effectChildren = buildPathEffects(options, spid, {
                     set: setCtnId,
                     effect: effectCtnId2,
@@ -619,12 +871,19 @@ export class SlideTiming extends XmlComponent {
             // Build cTn attributes with optional speed/repeatCount/autoReverse
             const cTnAttrs: Record<string, { key: string; value: string | number }> = {
                 id: { key: "id", value: effectCtnId },
-                presetID: { key: "presetID", value: presetId },
-                presetClass: { key: "presetClass", value: presetClass },
-                presetSubtype: { key: "presetSubtype", value: presetSubtype },
                 fill: { key: "fill", value: "hold" },
                 nodeType: { key: "nodeType", value: nodeType },
             };
+            if (!options.mediaType && !options.attributeName) {
+                cTnAttrs.presetID = { key: "presetID", value: presetId };
+                cTnAttrs.presetClass = { key: "presetClass", value: presetClass };
+                cTnAttrs.presetSubtype = { key: "presetSubtype", value: presetSubtype };
+            }
+            if (options.mediaType) {
+                cTnAttrs.presetID = { key: "presetID", value: presetId };
+                cTnAttrs.presetClass = { key: "presetClass", value: presetClass };
+                cTnAttrs.presetSubtype = { key: "presetSubtype", value: presetSubtype };
+            }
             if (options.speed !== undefined)
                 cTnAttrs.spd = { key: "spd", value: String(options.speed) };
             if (options.repeatCount !== undefined)
@@ -797,6 +1056,7 @@ export class SlideTiming extends XmlComponent {
                                                     }),
                                                 ],
                                             }),
+                                            ...mediaStateNodes,
                                         ],
                                     }),
                                 ],

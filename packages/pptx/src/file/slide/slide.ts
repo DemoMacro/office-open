@@ -1,6 +1,9 @@
 import { SlideTiming } from "@file/animation/timing";
+import type { IAnimationOptions } from "@file/animation/types";
 import type { Background } from "@file/background/background";
 import type { IHeaderFooterOptions } from "@file/header-footer/header-footer";
+import { AudioFrame } from "@file/media/audio-frame";
+import { VideoFrame } from "@file/media/video-frame";
 import { Shape } from "@file/shape/shape";
 import type { ITransitionOptions } from "@file/transition/transition";
 import { buildTransition } from "@file/transition/transition";
@@ -20,18 +23,24 @@ const XMLNS =
 
 function collectAnimations(children: readonly BaseXmlComponent[]): Array<{
     readonly spid: number;
-    readonly options: import("@file/animation/types").IAnimationOptions;
+    readonly options: IAnimationOptions;
 }> {
-    const entries: Array<{
-        readonly spid: number;
-        readonly options: import("@file/animation/types").IAnimationOptions;
-    }> = [];
+    const entries: Array<{ readonly spid: number; readonly options: IAnimationOptions }> = [];
     for (const child of children) {
+        let anim: IAnimationOptions | undefined;
+        let spid: number | undefined;
         if (child instanceof Shape) {
-            const anim = child.Animation;
-            if (anim) {
-                entries.push({ spid: child.ShapeId, options: anim });
-            }
+            anim = child.Animation;
+            spid = child.ShapeId;
+        } else if (child instanceof VideoFrame) {
+            anim = child.Animation;
+            spid = child.ShapeId;
+        } else if (child instanceof AudioFrame) {
+            anim = child.Animation;
+            spid = child.ShapeId;
+        }
+        if (anim && spid !== undefined) {
+            entries.push({ spid, options: anim });
         }
     }
     return entries;

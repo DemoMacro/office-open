@@ -6,5 +6,8 @@ export type {
     AnimationClass,
     EmphasisType,
     PathAnimationType,
+    MediaAnimationType,
+    AnimationCalcMode,
+    AnimationValueType,
     IAnimationOptions,
 } from "./types";

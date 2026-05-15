@@ -36,7 +36,8 @@ describe("Bibliography", () => {
             "b:Sources": [
                 {
                     _attr: {
-                        "xmlns:b": "http://schemas.openxmlformats.org/officeDocument/2006/bibliography",
+                        "xmlns:b":
+                            "http://schemas.openxmlformats.org/officeDocument/2006/bibliography",
                         StyleName: "APA",
                     },
                 },
@@ -77,7 +78,8 @@ describe("Bibliography", () => {
             "b:Sources": [
                 {
                     _attr: {
-                        "xmlns:b": "http://schemas.openxmlformats.org/officeDocument/2006/bibliography",
+                        "xmlns:b":
+                            "http://schemas.openxmlformats.org/officeDocument/2006/bibliography",
                     },
                 },
                 {
