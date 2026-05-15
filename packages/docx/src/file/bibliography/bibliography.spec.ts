@@ -9,7 +9,7 @@ describe("Bibliography", () => {
         expect(tree).to.deep.equal({
             "b:Sources": {
                 _attr: {
-                    "xmlns:b": "http://purl.oclc.org/ooxml/officeDocument/bibliography",
+                    "xmlns:b": "http://schemas.openxmlformats.org/officeDocument/2006/bibliography",
                 },
             },
         });
@@ -36,7 +36,7 @@ describe("Bibliography", () => {
             "b:Sources": [
                 {
                     _attr: {
-                        "xmlns:b": "http://purl.oclc.org/ooxml/officeDocument/bibliography",
+                        "xmlns:b": "http://schemas.openxmlformats.org/officeDocument/2006/bibliography",
                         StyleName: "APA",
                     },
                 },
@@ -77,7 +77,7 @@ describe("Bibliography", () => {
             "b:Sources": [
                 {
                     _attr: {
-                        "xmlns:b": "http://purl.oclc.org/ooxml/officeDocument/bibliography",
+                        "xmlns:b": "http://schemas.openxmlformats.org/officeDocument/2006/bibliography",
                     },
                 },
                 {

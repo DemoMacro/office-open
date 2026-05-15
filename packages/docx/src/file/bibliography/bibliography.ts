@@ -180,7 +180,7 @@ export class Bibliography extends XmlComponent {
 
         this.root.push(
             new SourcesAttributes({
-                "xmlns:b": "http://purl.oclc.org/ooxml/officeDocument/bibliography",
+                "xmlns:b": "http://schemas.openxmlformats.org/officeDocument/2006/bibliography",
                 StyleName: options.styleName,
             }),
         );
