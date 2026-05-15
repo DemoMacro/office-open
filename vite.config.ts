@@ -2,6 +2,7 @@ import { configDefaults, defineConfig } from "vite-plus";
 
 export default defineConfig({
     fmt: {
+        ignorePatterns: ["**/docs/content/*/index.md"],
         sortImports: {
             type: "natural",
         },

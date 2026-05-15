@@ -5,9 +5,10 @@ seo:
     description: Create .docx, .pptx, and .xlsx files programmatically with a declarative API. Works in Node.js and browsers.
 ---
 
-## ::u-page-hero
-
-## orientation: horizontal
+::u-page-hero
+---
+orientation: horizontal
+---
 
 :::code-group
 
@@ -43,110 +44,100 @@ Create `.docx`, `.pptx`, and `.xlsx` files programmatically with a declarative T
 
 #links
 :::u-button
-
 ---
-
 label: Get Started
 size: lg
 to: /en/getting-started/installation
 trailingIcon: i-lucide-arrow-right
-
 ---
-
 :::
 
 :::u-button
-
 ---
-
 label: GitHub
 icon: i-simple-icons-github
 size: lg
-target: \_blank
+target: _blank
 to: https://github.com/DemoMacro/office-open
 variant: outline
-
 ---
-
 :::
 ::
 
 ::u-container{.pb-12.xl:pb-24}
 :::u-page-grid
 ::::u-page-feature
-
 ---
-
-## icon: i-lucide-code
-
+icon: i-lucide-code
+---
 #title{unwrap="p"}
 Declarative API
 
-    #description{unwrap="p"}
-    Describe document structure with intuitive TypeScript classes. Each element maps to valid OOXML markup.
-    ::::
+#description{unwrap="p"}
+Describe document structure with intuitive TypeScript classes. Each element maps to valid OOXML markup.
+::::
 
-    ::::u-page-feature
-    ---
-    icon: i-lucide-layers
-    ---
-    #title{unwrap="p"}
-    Rich Content
+::::u-page-feature
+---
+icon: i-lucide-layers
+---
+#title{unwrap="p"}
+Rich Content
 
-    #description{unwrap="p"}
-    Paragraphs, tables, images, charts, SmartArt, math equations, headers, footers, and more.
-    ::::
+#description{unwrap="p"}
+Paragraphs, tables, images, charts, SmartArt, math equations, headers, footers, and more.
+::::
 
-    ::::u-page-feature
-    ---
-    icon: i-simple-icons-typescript
-    ---
-    #title{unwrap="p"}
-    Type-safe
+::::u-page-feature
+---
+icon: i-simple-icons-typescript
+---
+#title{unwrap="p"}
+Type-safe
 
-    #description{unwrap="p"}
-    Full type definitions and autocomplete out of the box. No additional `@types` packages needed.
-    ::::
+#description{unwrap="p"}
+Full type definitions and autocomplete out of the box. No additional `@types` packages needed.
+::::
 
-    ::::u-page-feature
-    ---
-    icon: i-lucide-monitor
-    ---
-    #title{unwrap="p"}
-    Cross-platform
+::::u-page-feature
+---
+icon: i-lucide-monitor
+---
+#title{unwrap="p"}
+Cross-platform
 
-    #description{unwrap="p"}
-    Works in Node.js and browsers. Export to Buffer, Blob, Base64, stream, or string.
-    ::::
+#description{unwrap="p"}
+Works in Node.js and browsers. Export to Buffer, Blob, Base64, stream, or string.
+::::
 
-    ::::u-page-feature
-    ---
-    icon: i-lucide-shield-check
-    ---
-    #title{unwrap="p"}
-    OOXML Compliant
+::::u-page-feature
+---
+icon: i-lucide-shield-check
+---
+#title{unwrap="p"}
+OOXML Compliant
 
-    #description{unwrap="p"}
-    Generates files that fully comply with the ISO/IEC 29500 Office Open XML specification.
-    ::::
+#description{unwrap="p"}
+Generates files that fully comply with the ISO/IEC 29500 Office Open XML specification.
+::::
 
-    ::::u-page-feature
-    ---
-    icon: i-lucide-package
-    ---
-    #title{unwrap="p"}
-    Modular Packages
+::::u-page-feature
+---
+icon: i-lucide-package
+---
+#title{unwrap="p"}
+Modular Packages
 
-    #description{unwrap="p"}
-    Install only what you need — docx, pptx, xml, or core.
-    ::::
-
+#description{unwrap="p"}
+Install only what you need — docx, pptx, xml, or core.
+::::
 :::
 ::
 
-## ::u-page-section
-
-## orientation: horizontal
+::u-page-section
+---
+orientation: horizontal
+---
 
 :::code-group
 
@@ -204,62 +195,45 @@ Describe your document structure using intuitive classes. Each element produces 
 
 #features
 :::u-page-feature
-
 ---
-
 icon: i-lucide-file-text
-
 ---
-
 #title{unwrap="p"}
 Create Word documents with paragraphs, tables, images, and charts
 :::
 
 :::u-page-feature
-
 ---
-
 icon: i-lucide-presentation
-
 ---
-
 #title{unwrap="p"}
 Create PowerPoint presentations with shapes, animations, and transitions
 :::
 
 :::u-page-feature
-
 ---
-
 icon: i-lucide-download
-
 ---
-
 #title{unwrap="p"}
 Export to Buffer, Blob, Base64, stream, or string
 :::
 
 #links
 :::u-button
-
 ---
-
 color: neutral
 label: Explore @office-open/docx
 to: /en/docx
 trailingIcon: i-lucide-arrow-right
 variant: subtle
-
 ---
-
 :::
 ::
 
-## ::u-page-section
-
+::u-page-section
+---
 orientation: horizontal
 reverse: true
-
 ---
 
 :::code-group
@@ -286,54 +260,38 @@ Parse existing `.docx` and `.pptx` files into structured objects. Inspect docume
 
 #features
 :::u-page-feature
-
 ---
-
 icon: i-lucide-search
-
 ---
-
 #title{unwrap="p"}
 Read document structure, styles, and content
 :::
 
 :::u-page-feature
-
 ---
-
 icon: i-lucide-file-output
-
 ---
-
 #title{unwrap="p"}
 Support for both Node.js Buffer and browser File
 :::
 
 :::u-page-feature
-
 ---
-
 icon: i-lucide-arrow-right-left
-
 ---
-
 #title{unwrap="p"}
 Parse, modify, and re-export in a pipeline
 :::
 
 #links
 :::u-button
-
 ---
-
 color: neutral
 label: Explore @office-open/pptx
 to: /en/pptx
 trailingIcon: i-lucide-arrow-right
 variant: subtle
-
 ---
-
 :::
 ::
 
