@@ -164,7 +164,7 @@ import { Presentation, Slide, Shape, Paragraph, TextRun, Packer } from "@office-
 
 const pres = new Presentation({
     slides: [
-        new Slide({
+        {
             children: [
                 new Shape({
                     x: 1,
@@ -178,7 +178,7 @@ const pres = new Presentation({
                     ],
                 }),
             ],
-        }),
+        },
     ],
 });
 
