@@ -2,7 +2,7 @@ import * as fs from "fs";
 
 import { Presentation, Shape, Packer, Paragraph, TextRun, parsePptx } from "@office-open/pptx";
 import type { Element } from "@office-open/xml";
-import { findChild } from "@office-open/xml";
+import { findChild, attrNum } from "@office-open/xml";
 
 function getText(el: Element | undefined): string {
     if (!el) return "";
@@ -94,12 +94,11 @@ async function main() {
     // 3. Parse it back — returns ParsedDocument + slide paths
     const {
         doc: parsed,
-        slidePaths,
-        slideMasterPaths,
-        slideLayoutPaths,
-        notesSlidePaths,
-        slideWidth,
-        slideHeight,
+        presentation,
+        slides,
+        slideMasters,
+        slideLayouts,
+        notesSlides,
     } = parsePptx(new Uint8Array(buffer));
 
     // 4. Verify parsed data
@@ -118,20 +117,23 @@ async function main() {
     console.log("\n--- ParsedDocument Verification ---");
 
     // Slide paths
-    assert("2 slides", slidePaths.length === 2);
-    assert("slide 1 path", slidePaths[0] === "ppt/slides/slide1.xml");
-    assert("slide 2 path", slidePaths[1] === "ppt/slides/slide2.xml");
+    assert("2 slides", slides.length === 2);
+    assert("slide 1 path", slides[0] === "ppt/slides/slide1.xml");
+    assert("slide 2 path", slides[1] === "ppt/slides/slide2.xml");
 
-    // Slide dimensions
-    assert("has slideWidth", slideWidth !== undefined);
-    assert("has slideHeight", slideHeight !== undefined);
-    if (slideWidth && slideHeight) {
-        console.log(`  slide size: ${slideWidth} x ${slideHeight}`);
+    // Slide dimensions from presentation element
+    assert("has presentation element", !!presentation);
+    if (presentation) {
+        const sldSz = findChild(presentation, "p:sldSz");
+        const cx = sldSz ? attrNum(sldSz, "cx") : undefined;
+        const cy = sldSz ? attrNum(sldSz, "cy") : undefined;
+        assert("has slide size", !!cx && !!cy);
+        console.log(`  slide size: ${cx} x ${cy}`);
     }
 
     // 5. Inspect slide 1 Element tree
     console.log("\n--- Slide 1 Element Tree ---");
-    const slide1 = parsed.get(slidePaths[0]);
+    const slide1 = parsed.get(slides[0]);
     assert("slide 1 parsed", !!slide1);
 
     if (slide1) {
@@ -157,7 +159,7 @@ async function main() {
         setText(sp1T, "Modified PPTX");
 
         // Write modified slide back
-        parsed.set(slidePaths[0], slide1);
+        parsed.set(slides[0], slide1);
     }
 
     // 6. Save modified document
@@ -166,7 +168,7 @@ async function main() {
     console.log(`Modified PPTX: ${modifiedBuffer.length} bytes`);
 
     // 7. Re-parse and verify modification
-    const { doc: reparsed, slidePaths: reparsedPaths } = parsePptx(new Uint8Array(modifiedBuffer));
+    const { doc: reparsed, slides: reparsedPaths } = parsePptx(new Uint8Array(modifiedBuffer));
     const reparsedSlide1 = reparsed.get(reparsedPaths[0]);
     const reparsedCSld = findChild(reparsedSlide1!, "p:cSld");
     const reparsedSpTree = reparsedCSld ? findChild(reparsedCSld, "p:spTree") : null;
@@ -192,11 +194,11 @@ async function main() {
 
     // 9. Test enhanced parsing
     console.log("\n--- Enhanced Parsing ---");
-    assert("has slide masters", slideMasterPaths.length >= 1);
-    assert("has slide layouts", slideLayoutPaths.length >= 1);
-    console.log(`  slideMasters: ${slideMasterPaths.join(", ")}`);
-    console.log(`  slideLayouts: ${slideLayoutPaths.join(", ")}`);
-    console.log(`  notesSlides: ${notesSlidePaths.length}`);
+    assert("has slide masters", slideMasters.length >= 1);
+    assert("has slide layouts", slideLayouts.length >= 1);
+    console.log(`  slideMasters: ${slideMasters.join(", ")}`);
+    console.log(`  slideLayouts: ${slideLayouts.join(", ")}`);
+    console.log(`  notesSlides: ${notesSlides.length}`);
 
     // Summary
     console.log(`\n=== Results: ${pass} passed, ${fail} failed ===`);

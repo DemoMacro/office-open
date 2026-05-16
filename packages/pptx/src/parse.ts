@@ -1,21 +1,57 @@
 import type { ParsedDocument } from "@office-open/core";
 import { parseDocument } from "@office-open/core";
-import { attr, attrNum, findChild } from "@office-open/xml";
+import type { Element } from "@office-open/xml";
+import { attr } from "@office-open/xml";
 
 export { parseDocument };
 
+/**
+ * All part paths extracted from the PPTX package.
+ * Field names correspond directly to the OOXML directory structure.
+ */
+export interface PptxPartRefs {
+    /** ppt/theme/themeN.xml */
+    themes: string[];
+    /** ppt/notesMasters/notesMasterN.xml */
+    notesMasters: string[];
+    /** ppt/commentAuthors.xml */
+    commentAuthors?: string;
+    /** ppt/comments/commentN.xml (from slide rels) */
+    comments: string[];
+    /** ppt/charts/chartN.xml (from slide rels) */
+    charts: string[];
+    /** ppt/diagrams/dataN.xml (from slide rels) */
+    diagramData: string[];
+    /** ppt/media/* (all media files) */
+    media: string[];
+}
+
 export interface PptxDocument {
     doc: ParsedDocument;
-    slidePaths: string[];
-    slideMasterPaths: string[];
-    slideLayoutPaths: string[];
-    notesSlidePaths: string[];
-    slideWidth?: number;
-    slideHeight?: number;
+    /** ppt/presentation.xml root element (p:presentation) */
+    presentation?: Element;
+    /** ppt/slides/slideN.xml */
+    slides: string[];
+    /** ppt/slideMasters/slideMasterN.xml */
+    slideMasters: string[];
+    /** ppt/slideLayouts/slideLayoutN.xml */
+    slideLayouts: string[];
+    /** ppt/notesSlides/notesSlideN.xml */
+    notesSlides: string[];
+    partRefs: PptxPartRefs;
+    /** ppt/presProps.xml */
+    presProps?: string;
+    /** ppt/viewProps.xml */
+    viewProps?: string;
+    /** ppt/tableStyles.xml */
+    tableStyles?: string;
+    /** docProps/core.xml */
+    coreProps?: string;
+    /** docProps/app.xml */
+    appProps?: string;
 }
 
 function resolveRelsPath(target: string): string {
-    // Target is relative to the source part (ppt/presentation.xml), base is "ppt/"
     if (target.startsWith("/")) return target.slice(1);
     if (target.startsWith("../")) return target.replace("../", "");
     return `ppt/${target}`;
@@ -29,30 +65,83 @@ function sortByNumber(paths: string[]): string[] {
     });
 }
 
-/** Filter keys to XML files only (exclude .rels and binary files). */
 function xmlKeys(keys: string[]): string[] {
     return keys.filter((k) => k.endsWith(".xml"));
+}
+
+function parseRootRels(doc: ParsedDocument): { coreProps?: string; appProps?: string } {
+    const relsEl = doc.get("_rels/.rels");
+    if (!relsEl) return {};
+
+    let coreProps: string | undefined;
+    let appProps: string | undefined;
+
+    for (const child of relsEl.elements ?? []) {
+        if (child.name !== "Relationship") continue;
+        const type = attr(child, "Type") ?? "";
+        const target = attr(child, "Target") ?? "";
+        if (!target) continue;
+
+        const path = target.startsWith("/") ? target.slice(1) : target;
+
+        if (type.includes("/core-properties")) {
+            coreProps = path;
+        } else if (type.includes("/extended-properties")) {
+            appProps = path;
+        }
+    }
+
+    return { coreProps, appProps };
+}
+
+function parseSlideRels(doc: ParsedDocument, slidePaths: string[], refs: PptxPartRefs): void {
+    for (const slidePath of slidePaths) {
+        const parts = slidePath.split("/");
+        const fileName = parts.pop()!;
+        const relsPath = `${parts.join("/")}/_rels/${fileName}.rels`;
+
+        const relsEl = doc.get(relsPath);
+        if (!relsEl) continue;
+
+        for (const child of relsEl.elements ?? []) {
+            if (child.name !== "Relationship") continue;
+            const type = attr(child, "Type") ?? "";
+            const target = attr(child, "Target") ?? "";
+            if (!target) continue;
+
+            const path = resolveRelsPath(target);
+
+            if (type.includes("/comments") && !type.includes("commentAuthors")) {
+                if (!refs.comments.includes(path)) refs.comments.push(path);
+            } else if (type.includes("/chart")) {
+                if (!refs.charts.includes(path)) refs.charts.push(path);
+            } else if (type.includes("/diagramData")) {
+                if (!refs.diagramData.includes(path)) refs.diagramData.push(path);
+            } else if (
+                type.includes("/image") ||
+                type.includes("/video") ||
+                type.includes("/media")
+            ) {
+                if (!refs.media.includes(path)) refs.media.push(path);
+            }
+        }
+    }
 }
 
 export function parsePptx(data: Uint8Array): PptxDocument {
     const doc = parseDocument(data);
 
-    // Parse slide size from presentation.xml
-    const presentationXml = doc.get("ppt/presentation.xml");
-    let slideWidth: number | undefined;
-    let slideHeight: number | undefined;
-    if (presentationXml) {
-        const sldSz = findChild(presentationXml, "p:sldSz");
-        if (sldSz) {
-            slideWidth = attrNum(sldSz, "cx");
-            slideHeight = attrNum(sldSz, "cy");
-        }
-    }
+    const presentation = doc.get("ppt/presentation.xml");
 
-    // Parse slide/slideMaster/notesSlide paths from presentation.xml.rels
     const relsXml = doc.get("ppt/_rels/presentation.xml.rels");
-    const slidePaths: string[] = [];
-    const slideMasterPaths: string[] = [];
+    const slides: string[] = [];
+    const slideMasters: string[] = [];
+    const themes: string[] = [];
+    const notesMasters: string[] = [];
+    let presProps: string | undefined;
+    let viewProps: string | undefined;
+    let tableStyles: string | undefined;
+    let commentAuthors: string | undefined;
 
     if (relsXml) {
         for (const child of relsXml.elements ?? []) {
@@ -64,33 +153,66 @@ export function parsePptx(data: Uint8Array): PptxDocument {
             const path = resolveRelsPath(target);
 
             if (type.includes("/slideMaster")) {
-                slideMasterPaths.push(path);
+                slideMasters.push(path);
             } else if (
                 type.includes("/slide") &&
                 !type.includes("slideLayout") &&
                 !type.includes("slideMaster")
             ) {
-                slidePaths.push(path);
+                slides.push(path);
+            } else if (type.includes("/theme")) {
+                themes.push(path);
+            } else if (type.includes("/notesMaster")) {
+                notesMasters.push(path);
+            } else if (type.includes("/presProps")) {
+                presProps = path;
+            } else if (type.includes("/viewProps")) {
+                viewProps = path;
+            } else if (type.includes("/tableStyles")) {
+                tableStyles = path;
+            } else if (type.includes("/commentAuthors")) {
+                commentAuthors = path;
             }
         }
     }
 
-    sortByNumber(slidePaths);
-    sortByNumber(slideMasterPaths);
+    sortByNumber(slides);
+    sortByNumber(slideMasters);
+    sortByNumber(themes);
+    sortByNumber(notesMasters);
 
-    // slideLayouts are referenced from slideMaster rels, not presentation.xml.rels
-    const slideLayoutPaths = sortByNumber(xmlKeys(doc.keys("ppt/slideLayouts/")));
+    const slideLayouts = sortByNumber(xmlKeys(doc.keys("ppt/slideLayouts/")));
+    const notesSlides = sortByNumber(xmlKeys(doc.keys("ppt/notesSlides/")));
 
-    // notesSlides are referenced from slide rels, not presentation.xml.rels
-    const notesSlidePaths = sortByNumber(xmlKeys(doc.keys("ppt/notesSlides/")));
+    const partRefs: PptxPartRefs = {
+        themes,
+        notesMasters,
+        commentAuthors,
+        comments: [],
+        charts: [],
+        diagramData: [],
+        media: doc.keys("ppt/media/"),
+    };
+
+    parseSlideRels(doc, slides, partRefs);
+    sortByNumber(partRefs.comments);
+    sortByNumber(partRefs.charts);
+    sortByNumber(partRefs.diagramData);
+
+    const { coreProps, appProps } = parseRootRels(doc);
 
     return {
         doc,
-        slidePaths,
-        slideMasterPaths,
-        slideLayoutPaths,
-        notesSlidePaths,
-        slideWidth,
-        slideHeight,
+        presentation,
+        slides,
+        slideMasters,
+        slideLayouts,
+        notesSlides,
+        partRefs,
+        presProps,
+        viewProps,
+        tableStyles,
+        coreProps,
+        appProps,
     };
 }
