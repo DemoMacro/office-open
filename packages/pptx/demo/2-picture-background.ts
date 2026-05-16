@@ -59,6 +59,53 @@ const pres = new Presentation({
                 }),
             ],
         },
+        {
+            background: {
+                fill: "1B2A4A",
+                effects: {
+                    outerShadow: {
+                        blur: 50800,
+                        distance: 38100,
+                        direction: 2700000,
+                        color: "000000",
+                        alpha: 50,
+                    },
+                },
+            },
+            children: [
+                new Shape({
+                    x: 100,
+                    y: 100,
+                    width: 500,
+                    height: 80,
+                    text: "Background with Shadow Effect",
+                    fill: "4472C4",
+                }),
+            ],
+        },
+        {
+            background: {
+                fill: {
+                    type: "gradient",
+                    angle: 90,
+                    stops: [
+                        { position: 0, color: "2E4057" },
+                        { position: 100, color: "048A81" },
+                    ],
+                },
+                shadeToTitle: true,
+            },
+            children: [
+                new Shape({
+                    x: 100,
+                    y: 100,
+                    width: 500,
+                    height: 80,
+                    text: "Background with shadeToTitle",
+                    fill: "FFFFFF",
+                }),
+            ],
+        },
     ],
 });
 

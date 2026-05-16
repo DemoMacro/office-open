@@ -1,3 +1,5 @@
+import * as fs from "fs";
+
 import { Presentation, Packer, Shape, Paragraph, TextRun, SmartArtFrame } from "@office-open/pptx";
 
 const pres = new Presentation({
@@ -428,5 +430,4 @@ const pres = new Presentation({
 });
 
 const buffer = await Packer.toBuffer(pres);
-import { writeFileSync } from "fs";
-writeFileSync("My Presentation.pptx", buffer);
+fs.writeFileSync("My Presentation.pptx", buffer);

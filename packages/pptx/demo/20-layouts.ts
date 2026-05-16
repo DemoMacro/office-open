@@ -28,6 +28,49 @@ const pres = new Presentation({
                     height: 38,
                 },
             },
+            layouts: [
+                // Preset layouts
+                { type: "title" },
+                { type: "obj" },
+                { type: "twoColTx" },
+                { type: "blank" },
+                { type: "titleOnly" },
+                // Custom layout with decorative shapes + positioned placeholders
+                {
+                    name: "Hero",
+                    type: "blank",
+                    children: [
+                        new Shape({
+                            x: 0,
+                            y: 0,
+                            width: 1280,
+                            height: 280,
+                            geometry: "rect",
+                            fill: "4472C4",
+                        }),
+                    ],
+                    placeholders: {
+                        title: {
+                            x: 100,
+                            y: 50,
+                            width: 1080,
+                            height: 180,
+                        },
+                        body: {
+                            x: 100,
+                            y: 320,
+                            width: 1080,
+                            height: 300,
+                        },
+                        slideNumber: {
+                            x: 904,
+                            y: 667,
+                            width: 288,
+                            height: 38,
+                        },
+                    },
+                },
+            ],
         },
     ],
     slides: [
@@ -102,6 +145,27 @@ const pres = new Presentation({
                     height: 100,
                     text: "Title Only Layout",
                     fill: "ED7D31",
+                }),
+            ],
+        },
+        {
+            layout: "Hero",
+            children: [
+                new Shape({
+                    x: 100,
+                    y: 50,
+                    width: 1080,
+                    height: 180,
+                    text: "Custom Hero Layout",
+                    fill: "2E75B6",
+                }),
+                new Shape({
+                    x: 100,
+                    y: 320,
+                    width: 1080,
+                    height: 300,
+                    text: "This slide uses a custom layout with decorative header bar and custom placeholder positions.",
+                    fill: "E8E8E8",
                 }),
             ],
         },
