@@ -2,6 +2,7 @@ import type { FillOptions } from "@file/drawingml/fill";
 import { buildFill } from "@file/drawingml/fill";
 import { XmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
+import { createEffectList, createOutline } from "@office-open/core/drawingml";
 import { attrs, xml } from "@office-open/xml";
 
 let nextHyperlinkId = 1;
@@ -59,6 +60,8 @@ export function buildRunProperties(
     options: IRunPropertiesOptions,
     hyperlinkKey?: string,
     fillObject?: IXmlableObject,
+    effectListObject?: IXmlableObject,
+    outlineObject?: IXmlableObject,
 ): IXmlableObject | undefined {
     const children: IXmlableObject[] = [];
 
@@ -94,6 +97,14 @@ export function buildRunProperties(
 
     if (fillObject) {
         children.push(fillObject);
+    }
+
+    if (outlineObject) {
+        children.push(outlineObject);
+    }
+
+    if (effectListObject) {
+        children.push(effectListObject);
     }
 
     if (children.length === 0) return undefined;
@@ -160,7 +171,32 @@ export class RunProperties extends XmlComponent {
             fillObj = buildFill(opts.fill).prepForXml(context) ?? undefined;
         }
 
-        return buildRunProperties(opts, hyperlinkKey, fillObj);
+        // Handle outline
+        let outlineObj: IXmlableObject | undefined;
+        if (opts.outline) {
+            outlineObj =
+                createOutline({
+                    width: 12700,
+                    type: "solidFill",
+                    color: { value: "000000" },
+                }).prepForXml(context) ?? undefined;
+        }
+
+        // Handle shadow
+        let effectListObj: IXmlableObject | undefined;
+        if (opts.shadow) {
+            effectListObj =
+                createEffectList({
+                    outerShadow: {
+                        blurRadius: 50800,
+                        distance: 38100,
+                        direction: 2700000,
+                        color: { value: "000000", transforms: { alpha: 40000 } },
+                    },
+                }).prepForXml(context) ?? undefined;
+        }
+
+        return buildRunProperties(opts, hyperlinkKey, fillObj, effectListObj, outlineObj);
     }
 
     public toXml(context: IContext): string {
@@ -184,7 +220,30 @@ export class RunProperties extends XmlComponent {
             fillObj = buildFill(opts.fill).prepForXml(context) ?? undefined;
         }
 
-        return buildRunPropertiesXml(opts, hyperlinkKey, fillObj);
+        let outlineObj: IXmlableObject | undefined;
+        if (opts.outline) {
+            outlineObj =
+                createOutline({
+                    width: 12700,
+                    type: "solidFill",
+                    color: { value: "000000" },
+                }).prepForXml(context) ?? undefined;
+        }
+
+        let effectListObj: IXmlableObject | undefined;
+        if (opts.shadow) {
+            effectListObj =
+                createEffectList({
+                    outerShadow: {
+                        blurRadius: 50800,
+                        distance: 38100,
+                        direction: 2700000,
+                        color: { value: "000000", transforms: { alpha: 40000 } },
+                    },
+                }).prepForXml(context) ?? undefined;
+        }
+
+        return buildRunPropertiesXml(opts, hyperlinkKey, fillObj, effectListObj, outlineObj);
     }
 }
 
@@ -195,6 +254,8 @@ export function buildRunPropertiesXml(
     options: IRunPropertiesOptions,
     hyperlinkKey?: string,
     fillObject?: IXmlableObject,
+    effectListObject?: IXmlableObject,
+    outlineObject?: IXmlableObject,
 ): string {
     const a: Record<string, string | number | boolean | undefined> = {};
     if (options.fontSize) a.sz = options.fontSize * 100;
@@ -231,6 +292,14 @@ export function buildRunPropertiesXml(
 
     if (fillObject) {
         body.push(xml(fillObject));
+    }
+
+    if (outlineObject) {
+        body.push(xml(outlineObject));
+    }
+
+    if (effectListObject) {
+        body.push(xml(effectListObject));
     }
 
     if (!attrStr && body.length === 0) return "";

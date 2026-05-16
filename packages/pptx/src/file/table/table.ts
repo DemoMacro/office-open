@@ -20,8 +20,6 @@ export interface ITableOptions {
         readonly bottom?: ICellBorderOptions;
         readonly left?: ICellBorderOptions;
         readonly right?: ICellBorderOptions;
-        readonly insideHorizontal?: ICellBorderOptions;
-        readonly insideVertical?: ICellBorderOptions;
     };
 }
 
@@ -62,9 +60,23 @@ export class Table extends BaseXmlComponent {
         const gridObj = grid.prepForXml(context);
         if (gridObj) children.push(gridObj);
 
-        // a:tr rows
-        for (const row of opts.rows) {
-            const tr = new TableRow(row);
+        // a:tr rows — distribute table-level borders to edge cells
+        const tb = opts.borders;
+        const rowCount = opts.rows.length;
+        for (let ri = 0; ri < rowCount; ri++) {
+            const row = opts.rows[ri];
+            const colCount = row.cells.length;
+            const cells = tb
+                ? row.cells.map((cell, ci) => {
+                      const b = { ...cell.borders };
+                      if (ri === 0 && tb.top && !b.top) b.top = tb.top;
+                      if (ri === rowCount - 1 && tb.bottom && !b.bottom) b.bottom = tb.bottom;
+                      if (ci === 0 && tb.left && !b.left) b.left = tb.left;
+                      if (ci === colCount - 1 && tb.right && !b.right) b.right = tb.right;
+                      return Object.keys(b).length === 0 ? cell : { ...cell, borders: b };
+                  })
+                : row.cells;
+            const tr = new TableRow({ ...row, cells });
             const trObj = tr.prepForXml(context);
             if (trObj) children.push(trObj);
         }

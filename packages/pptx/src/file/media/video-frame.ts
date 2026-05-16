@@ -8,124 +8,12 @@ import { convertPixelsToEmu } from "@office-open/core";
 
 const MEDIA_EXT_URI = "{DAA4B4D4-6D71-4841-9C94-3DE7FCFB9230}";
 
-/**
- * Extract the first video frame from MP4 data as JPEG.
- * Falls back to a generated placeholder if extraction fails.
- */
-function extractFirstFrame(
-    videoData: Uint8Array,
-    type: VideoType,
-): { data: Uint8Array; isJpeg: boolean } {
-    if (type === "mp4") {
-        const jpeg = extractMp4FirstFrame(videoData);
-        if (jpeg) return { data: jpeg, isJpeg: true };
-    }
-    return { data: generatePlaceholderPoster(), isJpeg: false };
-}
-
-/**
- * Attempt to extract the first I-frame from an MP4 file.
- * MP4 structure: ftyp -> moov (metadata) -> mdat (media data).
- * We scan mdat for JPEG start markers (FFD8) which indicate
- * embedded poster frames, or for AVC NAL unit start codes.
- */
-function extractMp4FirstFrame(data: Uint8Array): Uint8Array | null {
-    const bytes = new Uint8Array(data);
-
-    // Check for embedded JPEG poster (some MP4 files have this in moov/udta/meta)
-    for (let i = 0; i < bytes.length - 1; i++) {
-        if (bytes[i] === 0xff && bytes[i + 1] === 0xd8) {
-            // Found JPEG SOI marker — find EOI
-            let end = -1;
-            for (let j = i + 2; j < bytes.length - 1; j++) {
-                if (bytes[j] === 0xff && bytes[j + 1] === 0xd9) {
-                    end = j + 2;
-                    break;
-                }
-            }
-            if (end > i + 100) {
-                return bytes.slice(i, end);
-            }
-        }
-    }
-    return null;
-}
-
-/**
- * Generate a minimal 320x180 dark gray PNG as a video placeholder poster.
- */
-function generatePlaceholderPoster(): Uint8Array {
-    const width = 320;
-    const height = 180;
-    const zlib = require("zlib");
-
-    // RGBA raw data: dark gray background with a centered play triangle
-    const rawData = Buffer.alloc((width * 3 + 1) * height);
-    const centerX = width / 2;
-    const centerY = height / 2;
-    const triSize = 30;
-
-    for (let y = 0; y < height; y++) {
-        const rowOffset = y * (width * 3 + 1);
-        rawData[rowOffset] = 0; // PNG filter: None
-        for (let x = 0; x < width; x++) {
-            const px = rowOffset + 1 + x * 3;
-
-            // Play triangle: centered, pointing right
-            const dx = x - centerX + triSize * 0.3;
-            const dy = y - centerY;
-            const inTriangle =
-                dy >= -triSize &&
-                dy <= triSize &&
-                dx >= -triSize * 0.5 &&
-                dx <= triSize * 0.5 &&
-                dx <= triSize * 0.5 - (Math.abs(dy) / triSize) * triSize;
-
-            if (inTriangle) {
-                rawData[px] = 255; // R
-                rawData[px + 1] = 255; // G
-                rawData[px + 2] = 255; // B
-            } else {
-                rawData[px] = 51; // R  (#333333)
-                rawData[px + 1] = 51; // G
-                rawData[px + 2] = 51; // B
-            }
-        }
-    }
-
-    const compressed = zlib.deflateSync(rawData);
-
-    function crc32(buf: Buffer): number {
-        let crc = 0xffffffff;
-        for (let i = 0; i < buf.length; i++) {
-            crc ^= buf[i];
-            for (let j = 0; j < 8; j++) crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0);
-        }
-        return (crc ^ 0xffffffff) >>> 0;
-    }
-
-    function makeChunk(type: string, data: Buffer): Buffer {
-        const len = Buffer.alloc(4);
-        len.writeUInt32BE(data.length);
-        const typeData = Buffer.concat([Buffer.from(type), data]);
-        const crc = Buffer.alloc(4);
-        crc.writeUInt32BE(crc32(typeData));
-        return Buffer.concat([len, typeData, crc]);
-    }
-
-    const ihdr = Buffer.alloc(13);
-    ihdr.writeUInt32BE(width, 0);
-    ihdr.writeUInt32BE(height, 4);
-    ihdr[8] = 8; // bit depth
-    ihdr[9] = 2; // RGB
-
-    return Buffer.concat([
-        Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
-        makeChunk("IHDR", ihdr),
-        makeChunk("IDAT", compressed),
-        makeChunk("IEND", Buffer.alloc(0)),
-    ]);
-}
+/** Minimal 1x1 transparent PNG (67 bytes). */
+const MINIMAL_PNG = new Uint8Array([
+    137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 0, 1, 0, 0, 0, 1, 8, 6, 0,
+    0, 0, 31, 21, 196, 137, 0, 0, 0, 13, 73, 68, 65, 84, 8, 215, 99, 24, 5, 163, 0, 0, 0, 2, 0, 1,
+    226, 33, 188, 51, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
+]);
 
 export type VideoType = "mp4" | "mov" | "wmv" | "avi";
 export type PosterType = "png" | "jpg";
@@ -140,7 +28,6 @@ export interface IVideoFrameOptions {
     readonly name?: string;
     readonly poster?: Uint8Array;
     readonly posterType?: PosterType;
-    readonly posterFrameTime?: number;
     readonly animation?: IAnimationOptions;
 }
 
@@ -167,8 +54,8 @@ export class VideoFrame extends XmlComponent {
         this.animationOptions = options.animation;
         const name = options.name ?? `Video ${id}`;
         const mediaFileName = `${name.replace(/\s+/g, "_")}.${options.type}`;
-        const extracted = options.poster ? null : extractFirstFrame(options.data, options.type);
-        const posterType = options.posterType ?? (extracted?.isJpeg ? "jpg" : "png");
+        const posterBytes = options.poster ?? MINIMAL_PNG;
+        const posterType = options.posterType ?? "png";
         const posterFileName = `${name.replace(/\s+/g, "_")}_poster.${posterType}`;
 
         this.videoData = {
@@ -184,7 +71,6 @@ export class VideoFrame extends XmlComponent {
             data: options.data,
         };
 
-        const posterBytes = options.poster ?? extracted!.data;
         this.posterData = {
             type: posterType === "jpg" ? "jpg" : "png",
             fileName: posterFileName,
