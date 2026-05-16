@@ -66,10 +66,14 @@ export class Compiler {
         };
 
         // Static singletons (ImportedXmlComponent.toXml uses sourceXml directly)
-        mapping["Theme"] = {
-            data: this.formatter.formatToXml(file.Theme, context, declaration),
-            path: "ppt/theme/theme1.xml",
-        };
+        // Themes (one per master)
+        const themes = file.Themes;
+        for (let ti = 0; ti < themes.length; ti++) {
+            mapping[`Theme${ti}`] = {
+                data: this.formatter.formatToXml(themes[ti], context, declaration),
+                path: `ppt/theme/theme${ti + 1}.xml`,
+            };
+        }
 
         mapping["TableStyles"] = {
             data: this.formatter.formatToXml(file.TableStyles, context, declaration),
@@ -86,29 +90,47 @@ export class Compiler {
             path: "ppt/viewProps.xml",
         };
 
-        mapping["SlideMaster"] = {
-            data: this.formatter.formatToXml(file.SlideMaster, context, declaration),
-            path: "ppt/slideMasters/slideMaster1.xml",
-        };
+        // Slide Masters
+        const masters = file.SlideMasters;
+        const masterRels = file.SlideMasterRelsArray;
+        for (let mi = 0; mi < masters.length; mi++) {
+            mapping[`SlideMaster${mi}`] = {
+                data: this.formatter.formatToXml(masters[mi], context, declaration),
+                path: `ppt/slideMasters/slideMaster${mi + 1}.xml`,
+            };
+            mapping[`SlideMasterRels${mi}`] = {
+                data: xml(this.formatter.format(masterRels[mi], context), {
+                    declaration: false,
+                }),
+                path: `ppt/slideMasters/_rels/slideMaster${mi + 1}.xml.rels`,
+            };
+        }
 
-        mapping["SlideMasterRelationships"] = {
-            data: xml(this.formatter.format(file.SlideMasterRelationships, context), {
-                declaration: false,
-            }),
-            path: "ppt/slideMasters/_rels/slideMaster1.xml.rels",
-        };
+        // Slide Layouts
+        const layouts = file.AllLayouts;
+        const layoutRels = file.AllLayoutRelsArray;
+        for (let li = 0; li < layouts.length; li++) {
+            mapping[`SlideLayout${li}`] = {
+                data: this.formatter.formatToXml(layouts[li].layout, context, declaration),
+                path: `ppt/slideLayouts/slideLayout${li + 1}.xml`,
+            };
+            mapping[`SlideLayoutRels${li}`] = {
+                data: xml(this.formatter.format(layoutRels[li], context), {
+                    declaration: false,
+                }),
+                path: `ppt/slideLayouts/_rels/slideLayout${li + 1}.xml.rels`,
+            };
+        }
 
-        mapping["SlideLayout"] = {
-            data: this.formatter.formatToXml(file.SlideLayout, context, declaration),
-            path: "ppt/slideLayouts/slideLayout1.xml",
-        };
-
-        mapping["SlideLayoutRelationships"] = {
-            data: xml(this.formatter.format(file.SlideLayoutRelationships, context), {
-                declaration: false,
-            }),
-            path: "ppt/slideLayouts/_rels/slideLayout1.xml.rels",
-        };
+        // Register layout content types
+        for (let i = 0; i < layouts.length; i++) {
+            file.ContentTypes.addSlideLayout(i + 1);
+        }
+        // Register master + theme content types
+        for (let mi = 0; mi < masters.length; mi++) {
+            file.ContentTypes.addSlideMaster(mi + 1);
+            file.ContentTypes.addTheme(mi + 1);
+        }
 
         // Notes Master — only when notes slides exist
         if (file.NotesSlides.length > 0) {

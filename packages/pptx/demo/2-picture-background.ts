@@ -1,13 +1,13 @@
 import * as fs from "fs";
 
-import { Background, Presentation, Packer, Shape } from "@office-open/pptx";
+import { Presentation, Packer, Shape } from "@office-open/pptx";
 
 const pres = new Presentation({
     title: "Phase 2 Demo",
     creator: "Demo",
     slides: [
         {
-            background: new Background({ fill: "F2F2F2" }),
+            background: { fill: "F2F2F2" },
             children: [
                 new Shape({
                     x: 50,
@@ -37,7 +37,7 @@ const pres = new Presentation({
             ],
         },
         {
-            background: new Background({
+            background: {
                 fill: {
                     type: "gradient",
                     angle: 270,
@@ -46,7 +46,7 @@ const pres = new Presentation({
                         { position: 100, color: "16213e" },
                     ],
                 },
-            }),
+            },
             children: [
                 new Shape({
                     x: 100,

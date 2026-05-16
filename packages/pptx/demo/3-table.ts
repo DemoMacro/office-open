@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Background, Presentation, Packer, Shape, TableFrame } from "@office-open/pptx";
+import { Presentation, Packer, Shape, TableFrame } from "@office-open/pptx";
 
 const pres = new Presentation({
     title: "Phase 3 Demo",
@@ -49,7 +49,7 @@ const pres = new Presentation({
             ],
         },
         {
-            background: new Background({ fill: "F5F5F5" }),
+            background: { fill: "F5F5F5" },
             children: [
                 new TableFrame({
                     x: 100,

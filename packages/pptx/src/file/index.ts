@@ -1,4 +1,13 @@
-export { File, type IPresentationOptions, type ISlideOptions, type ICommentOptions } from "./file";
+export {
+    File,
+    type IPresentationOptions,
+    type ISlideOptions,
+    type ICommentOptions,
+    type IMasterDefinition,
+    type ILayoutDefinition,
+    type ILayoutPlaceholderOptions,
+    type SlideSize,
+} from "./file";
 export { Presentation } from "./presentation/presentation";
 export type { IPresentationOptions as IPresentationXmlOptions } from "./presentation/presentation";
 export { Shape, type IShapeOptions } from "./shape/shape";
@@ -109,9 +118,14 @@ export { Relationships } from "./relationships/relationships";
 export { type RelationshipType } from "./relationships/relationship/relationship";
 export { Slide } from "./slide/slide";
 export { ShapeTree } from "./shape-tree/shape-tree";
-export { DefaultTheme } from "./theme/theme";
-export { DefaultSlideMaster } from "./slide-master/slide-master";
-export { DefaultSlideLayout } from "./slide-layout/slide-layout";
+export { DefaultTheme, type IThemeOptions } from "./theme/theme";
+export {
+    DefaultSlideMaster,
+    type ISlideMasterOptions,
+    type IMasterPlaceholderOptions,
+    type IMasterPlaceholderPosition,
+} from "./slide-master/slide-master";
+export { DefaultSlideLayout, SlideLayout, type SlideLayoutType } from "./slide-layout/slide-layout";
 export { DefaultNotesMaster } from "./notes-master/notes-master";
 export { NotesSlide, type INotesSlideOptions } from "./notes/notes-slide";
 export { HeaderFooter, type IHeaderFooterOptions } from "./header-footer/header-footer";

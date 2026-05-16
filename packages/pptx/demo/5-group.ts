@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Background, GroupShape, Presentation, Packer, Shape } from "@office-open/pptx";
+import { GroupShape, Presentation, Packer, Shape } from "@office-open/pptx";
 
 const pres = new Presentation({
     title: "Group Shape Demo",
@@ -75,7 +75,7 @@ const pres = new Presentation({
             ],
         },
         {
-            background: new Background({ fill: "F2F2F2" }),
+            background: { fill: "F2F2F2" },
             children: [
                 new Shape({
                     x: 50,

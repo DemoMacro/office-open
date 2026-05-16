@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Background, ChartFrame, Presentation, Packer, Shape } from "@office-open/pptx";
+import { ChartFrame, Presentation, Packer, Shape } from "@office-open/pptx";
 
 const pres = new Presentation({
     title: "Phase 4 Demo - Charts",
@@ -34,7 +34,7 @@ const pres = new Presentation({
             ],
         },
         {
-            background: new Background({ fill: "F5F5F5" }),
+            background: { fill: "F5F5F5" },
             children: [
                 new Shape({
                     x: 50,

@@ -6,6 +6,7 @@ export interface IPresentationOptions {
     readonly slideWidth?: number;
     readonly slideHeight?: number;
     readonly slideIds: readonly number[];
+    readonly masterCount: number;
 }
 
 const DEFAULT_TEXT_STYLE_XML = `<p:defaultTextStyle xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
@@ -69,30 +70,27 @@ export class Presentation extends XmlComponent {
             },
         });
 
-        // sldMasterIdLst
-        children.push({
-            "p:sldMasterIdLst": [
-                {
-                    "p:sldMasterId": { _attr: { id: 2147483648, "r:id": "rId1" } },
-                },
-            ],
-        });
+        // sldMasterIdLst (dynamic — supports multiple masters)
+        const masterIds = Array.from({ length: opts.masterCount }, (_, i) => ({
+            "p:sldMasterId": { _attr: { id: 2147483648 + i * 12, "r:id": `rId${i + 1}` } },
+        }));
+        children.push({ "p:sldMasterIdLst": masterIds });
 
-        // sldIdLst (dynamic)
+        // sldIdLst (dynamic) — rIds follow after master rIds
+        const slideRidOffset = opts.masterCount + 1;
         const sldIds = opts.slideIds.map((id, i) => ({
-            "p:sldId": { _attr: { id, "r:id": `rId${i + 2}` } },
+            "p:sldId": { _attr: { id, "r:id": `rId${slideRidOffset + i}` } },
         }));
         children.push({ "p:sldIdLst": sldIds });
 
         // sldSz
-        const cx = opts.slideWidth ?? 9144000;
+        const cx = opts.slideWidth ?? 12192000;
         const cy = opts.slideHeight ?? 6858000;
         children.push({
             "p:sldSz": {
                 _attr: {
                     cx,
                     cy,
-                    ...(cx === 914400 && cy === 6858000 ? { type: "screen4x3" } : {}),
                 },
             },
         });
@@ -111,18 +109,22 @@ export class Presentation extends XmlComponent {
     public toXml(_context: IContext): string {
         const opts = this.options;
 
-        const cx = opts.slideWidth ?? 9144000;
+        const cx = opts.slideWidth ?? 12192000;
         const cy = opts.slideHeight ?? 6858000;
-        const typeAttr = cx === 914400 && cy === 6858000 ? ' type="screen4x3"' : "";
 
         let s = `<p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">`;
-        s += '<p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst>';
+        s += "<p:sldMasterIdLst>";
+        for (let mi = 0; mi < opts.masterCount; mi++) {
+            s += `<p:sldMasterId id="${2147483648 + mi * 12}" r:id="rId${mi + 1}"/>`;
+        }
+        s += "</p:sldMasterIdLst>";
         s += "<p:sldIdLst>";
+        const sRidOff = opts.masterCount + 1;
         for (let i = 0; i < opts.slideIds.length; i++) {
-            s += `<p:sldId id="${opts.slideIds[i]}" r:id="rId${i + 2}"/>`;
+            s += `<p:sldId id="${opts.slideIds[i]}" r:id="rId${sRidOff + i}"/>`;
         }
         s += "</p:sldIdLst>";
-        s += `<p:sldSz cx="${cx}" cy="${cy}"${typeAttr}/>`;
+        s += `<p:sldSz cx="${cx}" cy="${cy}"/>`;
         s += '<p:notesSz cx="6858000" cy="9144000"/>';
         s += DEFAULT_TEXT_STYLE_XML;
         s += "</p:presentation>";

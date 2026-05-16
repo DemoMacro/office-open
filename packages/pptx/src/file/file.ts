@@ -1,5 +1,5 @@
 import { AppProperties } from "@file/app-properties/app-properties";
-import type { Background } from "@file/background/background";
+import { Background, type IBackgroundOptions } from "@file/background/background";
 import { ChartCollection } from "@file/chart/chart-collection";
 import { CommentAuthorList } from "@file/comment/comment-author-list";
 import type { AuthorEntry } from "@file/comment/comment-author-list";
@@ -13,17 +13,47 @@ import { NotesSlide } from "@file/notes/notes-slide";
 import { PresentationProperties } from "@file/presentation-properties";
 import { PresentationWrapper } from "@file/presentation/presentation-wrapper";
 import { Relationships } from "@file/relationships/relationships";
-import { DefaultSlideLayout } from "@file/slide-layout/slide-layout";
-import { DefaultSlideMaster } from "@file/slide-master/slide-master";
+import { SlideLayout, type SlideLayoutType } from "@file/slide-layout/slide-layout";
+import {
+    DefaultSlideMaster,
+    type IMasterPlaceholderPosition,
+    type ISlideMasterOptions,
+} from "@file/slide-master/slide-master";
 import { Slide } from "@file/slide/slide";
 import { SmartArtCollection } from "@file/smartart/smartart-collection";
 import { TableStyles } from "@file/table-styles";
-import { DefaultTheme } from "@file/theme/theme";
+import { DefaultTheme, type IThemeOptions } from "@file/theme/theme";
 import type { ITransitionOptions } from "@file/transition/transition";
 import { ViewProperties } from "@file/view-properties";
 import type { BaseXmlComponent } from "@file/xml-components";
 import type { RelationshipType } from "@office-open/core";
 import { convertPixelsToEmu } from "@office-open/core";
+
+// ── Public interfaces ──
+
+export type SlideSize = "16:9" | "4:3" | { readonly width: number; readonly height: number };
+
+export interface ILayoutPlaceholderOptions {
+    readonly title?: IMasterPlaceholderPosition | false;
+    readonly body?: IMasterPlaceholderPosition | false;
+    readonly subtitle?: IMasterPlaceholderPosition | false;
+    readonly date?: IMasterPlaceholderPosition | false;
+    readonly footer?: IMasterPlaceholderPosition | false;
+    readonly slideNumber?: IMasterPlaceholderPosition | false;
+}
+
+export interface ILayoutDefinition {
+    readonly type?: SlideLayoutType;
+    readonly name?: string;
+    readonly placeholders?: ILayoutPlaceholderOptions;
+    readonly children?: readonly BaseXmlComponent[];
+}
+
+export interface IMasterDefinition extends ISlideMasterOptions {
+    readonly name?: string;
+    readonly theme?: IThemeOptions;
+    readonly layouts?: readonly ILayoutDefinition[];
+}
 
 export interface ICommentOptions {
     readonly author: string;
@@ -36,11 +66,13 @@ export interface ICommentOptions {
 
 export interface ISlideOptions {
     readonly children?: readonly BaseXmlComponent[];
-    readonly background?: Background;
+    readonly background?: IBackgroundOptions;
     readonly notes?: string;
     readonly transition?: ITransitionOptions;
     readonly headerFooter?: IHeaderFooterOptions;
     readonly comments?: readonly ICommentOptions[];
+    readonly layout?: SlideLayoutType | string;
+    readonly master?: string;
 }
 
 export interface IShowOptions {
@@ -51,8 +83,8 @@ export interface IShowOptions {
 }
 
 export interface IPresentationOptions extends ICorePropertiesOptions {
-    readonly slideWidth?: number;
-    readonly slideHeight?: number;
+    readonly size?: SlideSize;
+    readonly masters?: readonly IMasterDefinition[];
     readonly slides?: readonly ISlideOptions[];
     readonly show?: IShowOptions;
 }
@@ -79,14 +111,39 @@ function deriveInitials(name: string): string {
         : name.slice(0, 2).toUpperCase();
 }
 
+function resolveSlideSize(size?: SlideSize): { width: number; height: number } {
+    if (!size || size === "16:9") return { width: 12192000, height: 6858000 };
+    if (size === "4:3") return { width: 9144000, height: 6858000 };
+    return { width: convertPixelsToEmu(size.width), height: convertPixelsToEmu(size.height) };
+}
+
+interface LayoutInfo {
+    readonly key: string;
+    readonly index: number;
+    readonly masterIndex: number;
+    readonly layout: SlideLayout;
+}
+
+interface MasterInfo {
+    readonly name: string;
+    readonly index: number;
+    readonly definition: IMasterDefinition;
+    readonly master: DefaultSlideMaster;
+    readonly theme: DefaultTheme;
+    readonly layouts: LayoutInfo[];
+    readonly masterRels: Relationships;
+    readonly layoutRels: Relationships[];
+}
+
 export class File {
     private readonly slideOptions: readonly ISlideOptions[];
     private readonly corePropsOptions: ICorePropertiesOptions;
     private readonly showOptions?: IShowOptions;
-    private readonly slideWidthEmus?: number;
-    private readonly slideHeightEmus?: number;
+    private readonly slideWidthEmus: number;
+    private readonly slideHeightEmus: number;
+    private readonly masterDefs: readonly IMasterDefinition[];
 
-    // Lazy components — created on first getter access
+    // Lazy components
     private coreProperties?: CoreProperties;
     private appProperties?: AppProperties;
     private contentTypes?: ContentTypes;
@@ -95,37 +152,167 @@ export class File {
     private smartArts?: SmartArtCollection;
     private hyperlinks?: HyperlinkCollection;
     private presentationWrapper?: PresentationWrapper;
-    private theme?: DefaultTheme;
     private tableStyles?: TableStyles;
     private presProps?: PresentationProperties;
     private viewProps?: ViewProperties;
-    private slideMaster?: DefaultSlideMaster;
-    private slideLayout?: DefaultSlideLayout;
-    private slideMasterRels?: Relationships;
-    private slideLayoutRels?: Relationships;
     private notesMasterRels?: Relationships;
 
-    // Lazy slide data — built on first access
+    // Multi-master support
+    private masterMap?: MasterInfo[];
+    private allLayouts?: readonly LayoutInfo[];
+    private allLayoutRels?: readonly Relationships[];
+
+    // Lazy slide data
     private slides?: Slide[];
     private slideWrappers?: Array<{ readonly View: Slide; readonly Relationships: Relationships }>;
     private notesSlides?: NotesSlide[];
     private commentAuthorList?: CommentAuthorList;
     private slideCommentLists?: (SlideCommentList | undefined)[];
 
-    // Lazy relationship data — built on first access
+    // Lazy relationship data
     private fileRels?: Relationships;
 
     public constructor(options: IPresentationOptions) {
-        const slides = options.slides ?? [];
-        this.slideOptions = slides;
+        this.slideOptions = options.slides ?? [];
         this.corePropsOptions = options;
         this.showOptions = options.show;
-        this.slideWidthEmus = options.slideWidth
-            ? convertPixelsToEmu(options.slideWidth)
-            : undefined;
-        this.slideHeightEmus = options.slideHeight
-            ? convertPixelsToEmu(options.slideHeight)
-            : undefined;
+        this.masterDefs = options.masters ?? [];
+        const sz = resolveSlideSize(options.size);
+        this.slideWidthEmus = sz.width;
+        this.slideHeightEmus = sz.height;
+    }
+
+    // ── Master / Layout resolution ──
+
+    private getMasterMap(): MasterInfo[] {
+        if (this.masterMap) return this.masterMap;
+
+        const defs = this.masterDefs.length > 0 ? this.masterDefs : [{} as IMasterDefinition];
+        const slideMasterLookup = new Map<number, number>();
+
+        // Build slide → master index lookup
+        for (let si = 0; si < this.slideOptions.length; si++) {
+            const masterName = this.slideOptions[si].master;
+            if (masterName === undefined) {
+                slideMasterLookup.set(si, 0);
+                continue;
+            }
+            const mi = defs.findIndex((d) => d.name === masterName);
+            slideMasterLookup.set(si, mi >= 0 ? mi : 0);
+        }
+
+        let globalLayoutIndex = 0;
+        const masters: MasterInfo[] = [];
+
+        for (let mi = 0; mi < defs.length; mi++) {
+            const def = defs[mi];
+            const name = def.name ?? `master${mi + 1}`;
+
+            // Collect layout types needed for this master
+            const layoutDefs = def.layouts;
+            let layoutKeys: readonly string[];
+            if (layoutDefs && layoutDefs.length > 0) {
+                layoutKeys = layoutDefs.map(
+                    (ld) => ld.type ?? ld.name ?? `layout${mi}_${layoutDefs.indexOf(ld)}`,
+                );
+            } else {
+                // Auto-derive from slides referencing this master
+                const seen = new Set<string>();
+                const keys: string[] = [];
+                for (let si = 0; si < this.slideOptions.length; si++) {
+                    if (slideMasterLookup.get(si) === mi) {
+                        const lt = this.slideOptions[si].layout ?? "blank";
+                        if (!seen.has(lt)) {
+                            seen.add(lt);
+                            keys.push(lt);
+                        }
+                    }
+                }
+                layoutKeys = keys.length > 0 ? keys : ["blank"];
+            }
+
+            const hf = this.slideOptions.find((s) => s.headerFooter)?.headerFooter;
+            const master = new DefaultSlideMaster(
+                layoutKeys.length,
+                hf,
+                def,
+                this.slideWidthEmus,
+                mi,
+            );
+            const theme = new DefaultTheme(def.theme);
+
+            const layouts: LayoutInfo[] = [];
+            const layoutRels: Relationships[] = [];
+
+            for (let li = 0; li < layoutKeys.length; li++) {
+                const key = layoutKeys[li];
+                const layoutDef = layoutDefs?.[li];
+                const slideLayoutType = (layoutDef?.type ?? key) as SlideLayoutType;
+                layouts.push({
+                    key,
+                    index: globalLayoutIndex,
+                    masterIndex: mi,
+                    layout: new SlideLayout(slideLayoutType, this.slideWidthEmus, layoutDef),
+                });
+                layoutRels.push(
+                    buildRelationships([
+                        {
+                            id: 1,
+                            type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster",
+                            target: `../slideMasters/slideMaster${mi + 1}.xml`,
+                        },
+                    ]),
+                );
+                globalLayoutIndex++;
+            }
+
+            // Master rels: layouts + theme
+            const masterRelsEntries: RelEntry[] = [];
+            for (let li = 0; li < layouts.length; li++) {
+                masterRelsEntries.push({
+                    id: li + 1,
+                    type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout",
+                    target: `../slideLayouts/slideLayout${layouts[li].index + 1}.xml`,
+                });
+            }
+            masterRelsEntries.push({
+                id: layouts.length + 1,
+                type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
+                target: `../theme/theme${mi + 1}.xml`,
+            });
+
+            masters.push({
+                name,
+                index: mi,
+                definition: def,
+                master,
+                theme,
+                layouts,
+                masterRels: buildRelationships(masterRelsEntries),
+                layoutRels,
+            });
+        }
+
+        this.masterMap = masters;
+        this.allLayouts = masters.flatMap((m) => m.layouts);
+        this.allLayoutRels = masters.flatMap((m) => m.layoutRels);
+        return this.masterMap;
+    }
+
+    private findLayoutForSlide(slideIndex: number): LayoutInfo {
+        const opts = this.slideOptions[slideIndex];
+        const masters = this.getMasterMap();
+        const mi =
+            opts.master !== undefined
+                ? Math.max(
+                      0,
+                      masters.findIndex((m) => m.name === opts.master),
+                  )
+                : 0;
+        const master = masters[mi];
+        const layoutKey = opts.layout ?? "blank";
+        const li = master.layouts.find((l) => l.key === layoutKey);
+        return li ?? master.layouts[0];
     }
 
     // ── Lazy getters ──
@@ -200,43 +387,51 @@ export class File {
 
     public get PresentationWrapper(): PresentationWrapper {
         if (!this.presentationWrapper) {
+            const masters = this.getMasterMap();
             this.presentationWrapper = new PresentationWrapper({
                 slideWidth: this.slideWidthEmus,
                 slideHeight: this.slideHeightEmus,
                 slideIds: this.slideOptions.map((_, i) => 256 + i),
+                masterCount: masters.length,
             });
-            // Presentation-level relationships
             const presRels = this.PresentationWrapper.Relationships;
-            presRels.addRelationship(
-                1,
-                "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster",
-                "slideMasters/slideMaster1.xml",
-            );
+            let rid = 1;
+            // Masters
+            for (let mi = 0; mi < masters.length; mi++) {
+                presRels.addRelationship(
+                    rid++,
+                    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster",
+                    `slideMasters/slideMaster${mi + 1}.xml`,
+                );
+            }
+            // Slides
             for (let i = 0; i < this.slideOptions.length; i++) {
                 presRels.addRelationship(
-                    i + 2,
+                    rid++,
                     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide",
                     `slides/slide${i + 1}.xml`,
                 );
             }
-            const n = this.slideOptions.length + 2;
+            // Static parts
             presRels.addRelationship(
-                n,
+                rid++,
                 "http://schemas.openxmlformats.org/officeDocument/2006/relationships/presProps",
                 "presProps.xml",
             );
             presRels.addRelationship(
-                n + 1,
+                rid++,
                 "http://schemas.openxmlformats.org/officeDocument/2006/relationships/viewProps",
                 "viewProps.xml",
             );
+            for (let mi = 0; mi < masters.length; mi++) {
+                presRels.addRelationship(
+                    rid++,
+                    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
+                    `theme/theme${mi + 1}.xml`,
+                );
+            }
             presRels.addRelationship(
-                n + 2,
-                "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
-                "theme/theme1.xml",
-            );
-            presRels.addRelationship(
-                n + 3,
+                rid,
                 "http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles",
                 "tableStyles.xml",
             );
@@ -244,8 +439,8 @@ export class File {
         return this.presentationWrapper;
     }
 
-    public get Theme(): DefaultTheme {
-        return (this.theme ??= new DefaultTheme());
+    public get Themes(): readonly DefaultTheme[] {
+        return this.getMasterMap().map((m) => m.theme);
     }
 
     public get TableStyles(): TableStyles {
@@ -260,47 +455,22 @@ export class File {
         return (this.viewProps ??= new ViewProperties());
     }
 
-    public get SlideMaster(): DefaultSlideMaster {
-        if (!this.slideMaster) {
-            const hf = this.slideOptions.find((s) => s.headerFooter)?.headerFooter;
-            this.slideMaster = new DefaultSlideMaster(hf);
-        }
-        return this.slideMaster;
+    public get SlideMasters(): readonly DefaultSlideMaster[] {
+        return this.getMasterMap().map((m) => m.master);
     }
 
-    public get SlideMasterRelationships(): Relationships {
-        if (!this.slideMasterRels) {
-            this.slideMasterRels = buildRelationships([
-                {
-                    id: 1,
-                    type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout",
-                    target: "../slideLayouts/slideLayout1.xml",
-                },
-                {
-                    id: 2,
-                    type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
-                    target: "../theme/theme1.xml",
-                },
-            ]);
-        }
-        return this.slideMasterRels;
+    public get SlideMasterRelsArray(): readonly Relationships[] {
+        return this.getMasterMap().map((m) => m.masterRels);
     }
 
-    public get SlideLayout(): DefaultSlideLayout {
-        return (this.slideLayout ??= new DefaultSlideLayout());
+    public get AllLayouts(): readonly LayoutInfo[] {
+        this.getMasterMap();
+        return this.allLayouts!;
     }
 
-    public get SlideLayoutRelationships(): Relationships {
-        if (!this.slideLayoutRels) {
-            this.slideLayoutRels = buildRelationships([
-                {
-                    id: 1,
-                    type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster",
-                    target: "../slideMasters/slideMaster1.xml",
-                },
-            ]);
-        }
-        return this.slideLayoutRels;
+    public get AllLayoutRelsArray(): readonly Relationships[] {
+        this.getMasterMap();
+        return this.allLayoutRels!;
     }
 
     public get Slides(): readonly Slide[] {
@@ -308,7 +478,12 @@ export class File {
             this.slides = [];
             for (const s of this.slideOptions) {
                 this.slides.push(
-                    new Slide(s.children ?? [], s.background, s.transition, s.headerFooter),
+                    new Slide(
+                        s.children ?? [],
+                        s.background ? new Background(s.background) : undefined,
+                        s.transition,
+                        s.headerFooter,
+                    ),
                 );
             }
         }
@@ -322,13 +497,14 @@ export class File {
         if (!this.slideWrappers) {
             this.slideWrappers = [];
             for (let i = 0; i < this.slideOptions.length; i++) {
+                const layout = this.findLayoutForSlide(i);
                 this.slideWrappers.push({
                     View: this.Slides[i],
                     Relationships: buildRelationships([
                         {
                             id: 1,
                             type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout",
-                            target: "../slideLayouts/slideLayout1.xml",
+                            target: `../slideLayouts/slideLayout${layout.index + 1}.xml`,
                         },
                     ]),
                 });

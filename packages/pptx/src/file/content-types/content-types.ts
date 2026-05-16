@@ -57,8 +57,6 @@ const STATIC_ENTRIES: readonly ContentEntry[] = [
         key: "/docProps/app.xml",
     },
     { type: "Override", contentType: PPTX_THEME, key: "/ppt/theme/theme1.xml" },
-    { type: "Override", contentType: PPTX_SLIDE_MASTER, key: "/ppt/slideMasters/slideMaster1.xml" },
-    { type: "Override", contentType: PPTX_SLIDE_LAYOUT, key: "/ppt/slideLayouts/slideLayout1.xml" },
     { type: "Override", contentType: PPTX_PRES_PROPS, key: "/ppt/presProps.xml" },
     { type: "Override", contentType: PPTX_VIEW_PROPS, key: "/ppt/viewProps.xml" },
     { type: "Override", contentType: PPTX_TABLE_STYLES, key: "/ppt/tableStyles.xml" },
@@ -161,6 +159,32 @@ export class ContentTypes extends BaseXmlComponent {
             contentType: "application/vnd.ms-office.drawingml.diagramDrawing+xml",
             key: `/ppt/diagrams/drawing${index}.xml`,
         });
+    }
+
+    public addSlideLayout(index: number): void {
+        this.dynamicEntries.push({
+            type: "Override",
+            contentType: PPTX_SLIDE_LAYOUT,
+            key: `/ppt/slideLayouts/slideLayout${index}.xml`,
+        });
+    }
+
+    public addSlideMaster(index: number): void {
+        this.dynamicEntries.push({
+            type: "Override",
+            contentType: PPTX_SLIDE_MASTER,
+            key: `/ppt/slideMasters/slideMaster${index}.xml`,
+        });
+    }
+
+    public addTheme(index: number): void {
+        if (index !== 1) {
+            this.dynamicEntries.push({
+                type: "Override",
+                contentType: PPTX_THEME,
+                key: `/ppt/theme/theme${index}.xml`,
+            });
+        }
     }
 
     public override prepForXml(_context: IContext): IXmlableObject {
