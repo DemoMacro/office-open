@@ -77,8 +77,8 @@ importers:
         specifier: 1.1.7
         version: 1.1.7
       nanoid:
-        specifier: 5.1.9
-        version: 5.1.9
+        specifier: 5.1.11
+        version: 5.1.11
 
   packages/docx:
     dependencies:
@@ -6126,8 +6126,8 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
-  nanoid@5.1.9:
-    resolution: {integrity: sha512-ZUvP7KeBLe3OZ1ypw6dI/TzYJuvHP77IM4Ry73waSQTLn8/g8rpdjfyVAh7t1/+FjBtG4lCP42MEbDxOsRpBMw==}
+  nanoid@5.1.11:
+    resolution: {integrity: sha512-v+KEsUv2ps74PaSKv0gHTxTCgMXOIfBEbaqa6w6ISIGC7ZsvHN4N9oJ8d4cmf0n5oTzQz2SLmThbQWhjd/8eKg==}
     engines: {node: ^18 || >=20}
     hasBin: true
 
@@ -12494,7 +12494,7 @@ snapshots:
       '@types/node': 25.6.0
       hash.js: 1.1.7
       jszip: 3.10.1
-      nanoid: 5.1.9
+      nanoid: 5.1.11
       xml: 1.0.1
       xml-js: 1.6.11
 
@@ -14291,7 +14291,7 @@ snapshots:
 
   nanoid@3.3.12: {}
 
-  nanoid@5.1.9: {}
+  nanoid@5.1.11: {}
 
   nanotar@0.3.0: {}
 
