@@ -52,7 +52,7 @@
         "inquirer": "13.4.2",
         "libxml2-wasm": "0.7.1",
         "pptxgenjs": "4.0.1",
-        "tsx": "4.21.0",
+        "tsx": "4.22.1",
         "typedoc": "0.28.19",
         "vite-plus": "0.1.18"
     },
