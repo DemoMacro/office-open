@@ -299,7 +299,7 @@ export class Compiler {
                                   commentXmlData,
                                   commentMediaDatas,
                                   commentRelationshipCount,
-                                  "plain",
+                                  "rId",
                               )
                             : commentXmlData;
                     return replaceNumberingPlaceholders(xmlData, file.Numbering.ConcreteNumbering);
@@ -391,7 +391,7 @@ export class Compiler {
                                   documentXmlData,
                                   documentMediaDatas,
                                   documentRelationshipCount,
-                                  "plain",
+                                  "rId",
                               )
                             : documentXmlData;
                     if (hasPlaceholders(xmlData)) {
@@ -399,7 +399,7 @@ export class Compiler {
                             xmlData,
                             file.Charts.Array.map((c) => c.key),
                             documentRelationshipCount,
-                            "plain",
+                            "rId",
                         );
                         const smartArtDataOffset =
                             documentRelationshipCount +
@@ -409,7 +409,7 @@ export class Compiler {
                             xmlData,
                             file.SmartArts.Array.map((s) => s.key),
                             smartArtDataOffset,
-                            "plain",
+                            "rId",
                         );
                     }
                     const referencedXmlData = replaceNumberingPlaceholders(
@@ -515,7 +515,7 @@ export class Compiler {
                                   footnoteXmlData,
                                   footnoteMediaDatas,
                                   footnoteRelationshipCount,
-                                  "plain",
+                                  "rId",
                               )
                             : footnoteXmlData;
                     return replaceNumberingPlaceholders(xmlData, file.Numbering.ConcreteNumbering);
@@ -598,7 +598,7 @@ export class Compiler {
                     : [];
                 const xmlData =
                     mediaDatas.length > 0
-                        ? replaceImagePlaceholders(tempXmlData, mediaDatas, 0, "plain")
+                        ? replaceImagePlaceholders(tempXmlData, mediaDatas, 0, "rId")
                         : tempXmlData;
 
                 return {
@@ -656,7 +656,7 @@ export class Compiler {
                     : [];
                 const xmlData =
                     mediaDatas.length > 0
-                        ? replaceImagePlaceholders(tempXmlData, mediaDatas, 0, "plain")
+                        ? replaceImagePlaceholders(tempXmlData, mediaDatas, 0, "rId")
                         : tempXmlData;
 
                 return {
