@@ -1,24 +1,11 @@
-import type { IAnimationOptions } from "@file/animation/types";
-import { PresetGeometry } from "@file/drawingml/preset-geometry";
-import { Transform2D } from "@file/drawingml/transform-2d";
-import type { File } from "@file/file";
-import type { IMediaData } from "@file/media/data";
-import { BuilderElement, type IContext, XmlComponent } from "@file/xml-components";
-import { convertPixelsToEmu } from "@office-open/core";
+import { MediaFrameBase, type IMediaFrameBaseOptions } from "./media-frame-base";
 
 const MEDIA_EXT_URI = "{CF1602FD-DB20-4165-A070-5F299619DA56}";
 
 export type AudioType = "mp3" | "wav" | "wma" | "aac";
 
-export interface IAudioFrameOptions {
-    readonly x?: number;
-    readonly y?: number;
-    readonly width?: number;
-    readonly height?: number;
-    readonly data: Uint8Array;
+export interface IAudioFrameOptions extends IMediaFrameBaseOptions {
     readonly type: AudioType;
-    readonly name?: string;
-    readonly animation?: IAnimationOptions;
 }
 
 /**
@@ -26,131 +13,17 @@ export interface IAudioFrameOptions {
  *
  * Uses a media relationship for the audio file (via {media:fileName} placeholder).
  */
-export class AudioFrame extends XmlComponent {
+export class AudioFrame extends MediaFrameBase {
     private static nextId = 200;
-    private readonly audioData: IMediaData;
-    private readonly shapeId: number;
-    private readonly animationOptions?: IAnimationOptions;
 
     public constructor(options: IAudioFrameOptions) {
-        super("p:pic");
-
         const id = AudioFrame.nextId++;
-        this.shapeId = id;
-        this.animationOptions = options.animation;
         const name = options.name ?? `Audio ${id}`;
         const mediaFileName = `${name.replace(/\s+/g, "_")}.${options.type}`;
 
-        this.audioData = {
-            type: options.type,
-            fileName: mediaFileName,
-            transformation: {
-                pixels: { x: options.width ?? 0, y: options.height ?? 0 },
-                emus: {
-                    x: convertPixelsToEmu(options.width ?? 0),
-                    y: convertPixelsToEmu(options.height ?? 0),
-                },
-            },
-            data: options.data,
-        };
-
-        // p:nvPicPr with p14:media extension
-        this.root.push(
-            new BuilderElement({
-                name: "p:nvPicPr",
-                children: [
-                    new BuilderElement({
-                        name: "a:cNvPr",
-                        attributes: {
-                            id: { key: "id", value: id },
-                            name: { key: "name", value: name },
-                            descr: { key: "descr", value: "" },
-                        },
-                    }),
-                    new BuilderElement({
-                        name: "a:cNvPicPr",
-                        children: [
-                            new BuilderElement({
-                                name: "a:picLocks",
-                                attributes: {
-                                    noChangeAspect: { key: "noChangeAspect", value: "1" },
-                                },
-                            }),
-                        ],
-                    }),
-                    new BuilderElement({
-                        name: "p:nvPr",
-                        children: [
-                            new BuilderElement({
-                                name: "p:extLst",
-                                children: [
-                                    new BuilderElement({
-                                        name: "p:ext",
-                                        attributes: { uri: { key: "uri", value: MEDIA_EXT_URI } },
-                                        children: [
-                                            new BuilderElement({
-                                                name: "p14:media",
-                                                attributes: {
-                                                    "r:embed": {
-                                                        key: "r:embed",
-                                                        value: `{media:${mediaFileName}}`,
-                                                    },
-                                                    "xmlns:p14": {
-                                                        key: "xmlns:p14",
-                                                        value: "http://schemas.microsoft.com/office/powerpoint/2010/main",
-                                                    },
-                                                },
-                                            }),
-                                        ],
-                                    }),
-                                ],
-                            }),
-                        ],
-                    }),
-                ],
-            }),
-        );
-
-        // p:blipFill — empty (no poster for audio, PowerPoint provides default icon)
-        this.root.push(
-            new BuilderElement({
-                name: "p:blipFill",
-                children: [
-                    new BuilderElement({
-                        name: "a:stretch",
-                        children: [new BuilderElement({ name: "a:fillRect" })],
-                    }),
-                ],
-            }),
-        );
-
-        // p:spPr
-        this.root.push(
-            new BuilderElement({
-                name: "p:spPr",
-                children: [
-                    new Transform2D({
-                        x: convertPixelsToEmu(options.x ?? 0),
-                        y: convertPixelsToEmu(options.y ?? 0),
-                        width: convertPixelsToEmu(options.width ?? 0),
-                        height: convertPixelsToEmu(options.height ?? 0),
-                    }),
-                    new PresetGeometry({ preset: "rect" }),
-                ],
-            }),
-        );
-    }
-
-    public get ShapeId(): number {
-        return this.shapeId;
-    }
-
-    public get Animation(): IAnimationOptions | undefined {
-        return this.animationOptions;
-    }
-
-    public override prepForXml(context: IContext) {
-        (context.fileData as File)?.Media.addMedia(this.audioData.fileName, this.audioData);
-        return super.prepForXml(context);
+        super(options, id, mediaFileName, {
+            extUri: MEDIA_EXT_URI,
+            cNvPrPrefix: "a",
+        });
     }
 }

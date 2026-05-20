@@ -1,6 +1,6 @@
 import { Transform2D } from "@file/drawingml/transform-2d";
 import { XmlComponent } from "@file/xml-components";
-import { convertPixelsToEmu } from "@office-open/core";
+import { emuPosition } from "@util/position";
 
 import { Graphic } from "./graphic";
 import { GraphicFrameNonVisual } from "./graphic-frame-non-visual";
@@ -28,10 +28,7 @@ export class TableFrame extends XmlComponent {
         this.root.push(
             new Transform2D(
                 {
-                    x: convertPixelsToEmu(options.x ?? 0),
-                    y: convertPixelsToEmu(options.y ?? 0),
-                    width: convertPixelsToEmu(options.width ?? 0),
-                    height: convertPixelsToEmu(options.height ?? 0),
+                    ...emuPosition(options),
                 },
                 "p",
             ),

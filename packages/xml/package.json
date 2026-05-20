@@ -1,53 +1,53 @@
 {
-    "name": "@office-open/xml",
-    "version": "0.4.5",
-    "description": "XML parsing and serialization for Office Open XML. Zero dependencies, drop-in replacement for xml + xml-js.",
-    "keywords": [
-        "office-open",
-        "ooxml",
-        "parse",
-        "serialize",
-        "xml",
-        "zero-dependencies"
-    ],
-    "homepage": "https://www.office-open.com",
-    "bugs": {
-        "url": "https://github.com/DemoMacro/office-open/issues"
+  "name": "@office-open/xml",
+  "version": "0.4.6",
+  "description": "XML parsing and serialization for Office Open XML. Zero dependencies, drop-in replacement for xml + xml-js.",
+  "keywords": [
+    "office-open",
+    "ooxml",
+    "parse",
+    "serialize",
+    "xml",
+    "zero-dependencies"
+  ],
+  "homepage": "https://www.office-open.com",
+  "bugs": {
+    "url": "https://github.com/DemoMacro/office-open/issues"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Demo Macro",
+    "email": "abc@imst.xyz",
+    "url": "https://imst.xyz/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DemoMacro/office-open.git"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "dist/index.mjs",
+  "types": "dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
     },
-    "license": "MIT",
-    "author": {
-        "name": "Demo Macro",
-        "email": "abc@imst.xyz",
-        "url": "https://imst.xyz/"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/DemoMacro/office-open.git"
-    },
-    "files": [
-        "dist"
-    ],
-    "type": "module",
-    "main": "dist/index.mjs",
-    "types": "dist/index.d.mts",
-    "exports": {
-        ".": {
-            "types": "./dist/index.d.mts",
-            "import": "./dist/index.mjs"
-        },
-        "./utils": {
-            "types": "./dist/utils.d.mts",
-            "import": "./dist/utils.mjs"
-        }
-    },
-    "scripts": {
-        "dev": "basis build --stub",
-        "build": "basis build",
-        "prepack": "pnpm build"
-    },
-    "devDependencies": {
-        "@types/xml": "1.0.11",
-        "xml": "1.0.1",
-        "xml-js": "1.6.11"
+    "./utils": {
+      "types": "./dist/utils.d.mts",
+      "import": "./dist/utils.mjs"
     }
+  },
+  "scripts": {
+    "dev": "basis build --stub",
+    "build": "basis build",
+    "prepack": "pnpm build"
+  },
+  "devDependencies": {
+    "@types/xml": "1.0.11",
+    "xml": "1.0.1",
+    "xml-js": "1.6.11"
+  }
 }

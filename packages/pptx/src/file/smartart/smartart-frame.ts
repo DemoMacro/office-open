@@ -6,7 +6,7 @@ import {
     type IXmlableObject,
     XmlComponent,
 } from "@file/xml-components";
-import { convertPixelsToEmu } from "@office-open/core";
+import { emuPosition } from "@util/position";
 
 import type { SmartArtCollection } from "./smartart-collection";
 import { createDataModel, type ITreeNode } from "./tree-to-model";
@@ -54,10 +54,7 @@ export class SmartArtFrame extends XmlComponent {
         this.root.push(
             new Transform2D(
                 {
-                    x: convertPixelsToEmu(options.x ?? 0),
-                    y: convertPixelsToEmu(options.y ?? 0),
-                    width: convertPixelsToEmu(options.width ?? 0),
-                    height: convertPixelsToEmu(options.height ?? 0),
+                    ...emuPosition(options),
                 },
                 "p",
             ),

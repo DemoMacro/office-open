@@ -1,9 +1,15 @@
+import {
+    DEFAULT_OUTLINE_WIDTH,
+    DEFAULT_SHADOW_ALPHA,
+    DEFAULT_SHADOW_BLUR_RADIUS,
+    DEFAULT_SHADOW_DIRECTION,
+    DEFAULT_SHADOW_DISTANCE,
+} from "@file/constants";
 import type { FillOptions } from "@file/drawingml/fill";
 import { buildFill } from "@file/drawingml/fill";
 import { XmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 import { createEffectList, createOutline } from "@office-open/core/drawingml";
-import { attrs, xml } from "@office-open/xml";
 
 let nextHyperlinkId = 1;
 
@@ -176,7 +182,7 @@ export class RunProperties extends XmlComponent {
         if (opts.outline) {
             outlineObj =
                 createOutline({
-                    width: 12700,
+                    width: DEFAULT_OUTLINE_WIDTH,
                     type: "solidFill",
                     color: { value: "000000" },
                 }).prepForXml(context) ?? undefined;
@@ -188,121 +194,14 @@ export class RunProperties extends XmlComponent {
             effectListObj =
                 createEffectList({
                     outerShadow: {
-                        blurRadius: 50800,
-                        distance: 38100,
-                        direction: 2700000,
-                        color: { value: "000000", transforms: { alpha: 40000 } },
+                        blurRadius: DEFAULT_SHADOW_BLUR_RADIUS,
+                        distance: DEFAULT_SHADOW_DISTANCE,
+                        direction: DEFAULT_SHADOW_DIRECTION,
+                        color: { value: "000000", transforms: { alpha: DEFAULT_SHADOW_ALPHA } },
                     },
                 }).prepForXml(context) ?? undefined;
         }
 
         return buildRunProperties(opts, hyperlinkKey, fillObj, effectListObj, outlineObj);
     }
-
-    public toXml(context: IContext): string {
-        const opts = this.options;
-
-        let hyperlinkKey: string | undefined;
-        if (opts.hyperlink) {
-            hyperlinkKey = `hlink_${nextHyperlinkId++}`;
-            const file = context.fileData as {
-                Hyperlinks?: { addHyperlink(key: string, url: string, tooltip?: string): void };
-            };
-            file?.Hyperlinks?.addHyperlink(
-                hyperlinkKey,
-                opts.hyperlink.url,
-                opts.hyperlink.tooltip,
-            );
-        }
-
-        let fillObj: IXmlableObject | undefined;
-        if (opts.fill !== undefined) {
-            fillObj = buildFill(opts.fill).prepForXml(context) ?? undefined;
-        }
-
-        let outlineObj: IXmlableObject | undefined;
-        if (opts.outline) {
-            outlineObj =
-                createOutline({
-                    width: 12700,
-                    type: "solidFill",
-                    color: { value: "000000" },
-                }).prepForXml(context) ?? undefined;
-        }
-
-        let effectListObj: IXmlableObject | undefined;
-        if (opts.shadow) {
-            effectListObj =
-                createEffectList({
-                    outerShadow: {
-                        blurRadius: 50800,
-                        distance: 38100,
-                        direction: 2700000,
-                        color: { value: "000000", transforms: { alpha: 40000 } },
-                    },
-                }).prepForXml(context) ?? undefined;
-        }
-
-        return buildRunPropertiesXml(opts, hyperlinkKey, fillObj, effectListObj, outlineObj);
-    }
-}
-
-/**
- * String version of buildRunProperties for zero-allocation serialization.
- */
-export function buildRunPropertiesXml(
-    options: IRunPropertiesOptions,
-    hyperlinkKey?: string,
-    fillObject?: IXmlableObject,
-    effectListObject?: IXmlableObject,
-    outlineObject?: IXmlableObject,
-): string {
-    const a: Record<string, string | number | boolean | undefined> = {};
-    if (options.fontSize) a.sz = options.fontSize * 100;
-    if (options.bold !== undefined) a.b = options.bold;
-    if (options.italic !== undefined) a.i = options.italic;
-    if (options.underline) a.u = UnderlineStyle[options.underline];
-    if (options.lang) a.lang = options.lang;
-    if (options.strike) a.strike = StrikeStyle[options.strike];
-    if (options.baseline !== undefined) a.baseline = options.baseline;
-    if (options.capitalization)
-        a.cap = TextCapitalization[options.capitalization] ?? options.capitalization;
-    if (options.spacing !== undefined) a.spc = options.spacing;
-    if (options.noProof !== undefined) a.noProof = options.noProof;
-    if (options.dirty !== undefined) a.dirty = options.dirty;
-
-    const attrStr = attrs(a);
-    const body: string[] = [];
-
-    if (options.font) {
-        body.push(
-            `<a:latin${attrs({ typeface: options.font })}/><a:ea${attrs({ typeface: options.font })}/>`,
-        );
-    }
-
-    if (options.hyperlink && hyperlinkKey) {
-        const h: Record<string, string | undefined> = { "r:id": `{hlink:${hyperlinkKey}}` };
-        if (options.hyperlink.tooltip) h.tooltip = options.hyperlink.tooltip;
-        body.push(`<a:hlinkClick${attrs(h)}/>`);
-    }
-
-    if (options.rightToLeft !== undefined) {
-        body.push(`<a:rtl${attrs({ val: options.rightToLeft ? 1 : 0 })}/>`);
-    }
-
-    if (fillObject) {
-        body.push(xml(fillObject));
-    }
-
-    if (outlineObject) {
-        body.push(xml(outlineObject));
-    }
-
-    if (effectListObject) {
-        body.push(xml(effectListObject));
-    }
-
-    if (!attrStr && body.length === 0) return "";
-    if (body.length === 0) return `<a:rPr${attrStr}/>`;
-    return `<a:rPr${attrStr}>${body.join("")}</a:rPr>`;
 }

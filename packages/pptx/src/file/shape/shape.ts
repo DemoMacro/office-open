@@ -6,8 +6,7 @@ import type { IShapePropertiesOptions } from "@file/drawingml/shape-properties";
 import type { File } from "@file/file";
 import { XmlComponent as Xc } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
-import { convertPixelsToEmu } from "@office-open/core";
-import { attrs, escapeXml, xml } from "@office-open/xml";
+import { emuPositionOptional } from "@util/position";
 
 import { Paragraph } from "./paragraph/paragraph";
 import { TextBody } from "./text-body";
@@ -99,10 +98,7 @@ export class Shape extends Xc {
 
         // spPr (ShapeProperties)
         const shapeProps: IShapePropertiesOptions = {
-            x: opts.x !== undefined ? convertPixelsToEmu(opts.x) : undefined,
-            y: opts.y !== undefined ? convertPixelsToEmu(opts.y) : undefined,
-            width: opts.width !== undefined ? convertPixelsToEmu(opts.width) : undefined,
-            height: opts.height !== undefined ? convertPixelsToEmu(opts.height) : undefined,
+            ...emuPositionOptional(opts),
             geometry: opts.geometry,
             fill: opts.fill,
             outline: opts.outline,
@@ -131,59 +127,5 @@ export class Shape extends Xc {
         if (txBodyObj) children.push(txBodyObj);
 
         return { "p:sp": children };
-    }
-
-    public override toXml(context: IContext): string {
-        const opts = this.options;
-        const id = this.shapeId;
-        const name = escapeXml(opts.name ?? `Shape ${id}`);
-
-        let s = "<p:sp><p:nvSpPr>";
-        s += `<p:cNvPr${attrs({ id, name })}/>`;
-        s += "<p:cNvSpPr/>";
-
-        if (opts.placeholder) {
-            const phAttrs: Record<string, string | number | undefined> = { type: opts.placeholder };
-            if (opts.placeholderIndex !== undefined) phAttrs.idx = opts.placeholderIndex;
-            s += `<p:nvPr><p:ph${attrs(phAttrs)}/></p:nvPr>`;
-        } else {
-            s += "<p:nvPr/>";
-        }
-        s += "</p:nvSpPr>";
-
-        // spPr — use prepForXml + xml (ShapeProperties not yet converted)
-        const spPr = new ShapeProperties({
-            x: opts.x !== undefined ? convertPixelsToEmu(opts.x) : undefined,
-            y: opts.y !== undefined ? convertPixelsToEmu(opts.y) : undefined,
-            width: opts.width !== undefined ? convertPixelsToEmu(opts.width) : undefined,
-            height: opts.height !== undefined ? convertPixelsToEmu(opts.height) : undefined,
-            geometry: opts.geometry,
-            fill: opts.fill,
-            outline: opts.outline,
-            effects: opts.effects,
-            flipHorizontal: opts.flipHorizontal,
-            rotation: opts.rotation,
-        });
-        const spPrObj = spPr.prepForXml(context as IContext<File>);
-        if (spPrObj) {
-            s += xml(spPrObj);
-        }
-
-        // txBody
-        const txBodyOpts: ITextBodyOptions = {
-            paragraphs:
-                opts.paragraphs ?? (opts.text ? [new Paragraph({ text: opts.text })] : undefined),
-            vertical: opts.textVertical,
-            anchor: opts.textAnchor,
-            autoFit: opts.textAutoFit,
-            wrap: opts.textWrap,
-            margins: opts.textMargins,
-            columns: opts.textColumns,
-            columnSpacing: opts.textColumnSpacing,
-        };
-        s += new TextBody(txBodyOpts).toXml(context);
-
-        s += "</p:sp>";
-        return s;
     }
 }

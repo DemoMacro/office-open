@@ -5,6 +5,7 @@ import type { File } from "@file/file";
 import type { IMediaData } from "@file/media/data";
 import { BuilderElement, type IContext, XmlComponent } from "@file/xml-components";
 import { convertPixelsToEmu } from "@office-open/core";
+import { emuPosition } from "@util/position";
 
 import { PictureNonVisual } from "./picture-non-visual";
 
@@ -60,10 +61,7 @@ export class Picture extends XmlComponent {
                 name: "p:spPr",
                 children: [
                     new Transform2D({
-                        x: convertPixelsToEmu(options.x ?? 0),
-                        y: convertPixelsToEmu(options.y ?? 0),
-                        width: convertPixelsToEmu(options.width ?? 0),
-                        height: convertPixelsToEmu(options.height ?? 0),
+                        ...emuPosition(options),
                     }),
                     new PresetGeometry({ preset: "rect" }),
                 ],

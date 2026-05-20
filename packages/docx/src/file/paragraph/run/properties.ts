@@ -18,14 +18,7 @@ import type { IChangedAttributesProperties } from "@file/track-revision/track-re
 import { DeletionTrackChange } from "@file/track-revision/track-revision-components/deletion-track-change";
 import { InsertionTrackChange } from "@file/track-revision/track-revision-components/insertion-track-change";
 import type { IXmlableObject } from "@file/xml-components";
-import {
-    HpsMeasureElement,
-    IgnoreIfEmptyXmlComponent,
-    NumberValueElement,
-    OnOffElement,
-    StringValueElement,
-    XmlComponent,
-} from "@file/xml-components";
+import { IgnoreIfEmptyXmlComponent, XmlComponent } from "@file/xml-components";
 import {
     onOffObj,
     hpsMeasureObj,
@@ -46,7 +39,6 @@ import { createLanguageComponent } from "./language";
 import type { ILanguageOptions } from "./language";
 import { createRunFonts } from "./run-fonts";
 import type { IFontAttributesProperties } from "./run-fonts";
-import { createSubScript, createSuperScript } from "./script";
 import { createUnderline } from "./underline";
 import type { UnderlineType } from "./underline";
 
@@ -275,196 +267,12 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
             return;
         }
 
-        if (options.style) {
-            this.push(new StringValueElement("w:rStyle", options.style));
-        }
-
-        if (options.font) {
-            if (typeof options.font === "string") {
-                this.push(createRunFonts(options.font));
-            } else if ("name" in options.font) {
-                this.push(createRunFonts(options.font.name, options.font.hint));
-            } else {
-                this.push(createRunFonts(options.font));
+        const result = buildRunProperties(options);
+        if (result) {
+            const children = result["w:rPr"];
+            if (Array.isArray(children)) {
+                this.root.push(...children);
             }
-        }
-
-        if (options.bold !== undefined) {
-            this.push(new OnOffElement("w:b", options.bold));
-        }
-
-        if (
-            (options.boldComplexScript === undefined && options.bold !== undefined) ||
-            options.boldComplexScript
-        ) {
-            this.push(new OnOffElement("w:bCs", options.boldComplexScript ?? options.bold));
-        }
-
-        if (options.italics !== undefined) {
-            this.push(new OnOffElement("w:i", options.italics));
-        }
-
-        if (
-            (options.italicsComplexScript === undefined && options.italics !== undefined) ||
-            options.italicsComplexScript
-        ) {
-            this.push(new OnOffElement("w:iCs", options.italicsComplexScript ?? options.italics));
-        }
-
-        // These two are mutually exclusive
-        if (options.smallCaps !== undefined) {
-            this.push(new OnOffElement("w:smallCaps", options.smallCaps));
-        } else if (options.allCaps !== undefined) {
-            this.push(new OnOffElement("w:caps", options.allCaps));
-        }
-
-        if (options.strike !== undefined) {
-            this.push(new OnOffElement("w:strike", options.strike));
-        }
-
-        if (options.doubleStrike !== undefined) {
-            this.push(new OnOffElement("w:dstrike", options.doubleStrike));
-        }
-
-        if (options.emboss !== undefined) {
-            this.push(new OnOffElement("w:emboss", options.emboss));
-        }
-
-        if (options.imprint !== undefined) {
-            this.push(new OnOffElement("w:imprint", options.imprint));
-        }
-
-        if (options.outline !== undefined) {
-            this.push(new OnOffElement("w:outline", options.outline));
-        }
-
-        if (options.shadow !== undefined) {
-            this.push(new OnOffElement("w:shadow", options.shadow));
-        }
-
-        if (options.webHidden !== undefined) {
-            this.push(new OnOffElement("w:webHidden", options.webHidden));
-        }
-
-        if (options.noProof !== undefined) {
-            this.push(new OnOffElement("w:noProof", options.noProof));
-        }
-
-        if (options.snapToGrid !== undefined) {
-            this.push(new OnOffElement("w:snapToGrid", options.snapToGrid));
-        }
-
-        if (options.vanish) {
-            // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_vanish_topic_ID0E6W3O.html
-            // http://www.datypic.com/sc/ooxml/e-w_vanish-1.html
-            this.push(new OnOffElement("w:vanish", options.vanish));
-        }
-
-        if (options.color) {
-            this.push(new Color(options.color));
-        }
-
-        if (options.characterSpacing) {
-            this.push(new CharacterSpacing(options.characterSpacing));
-        }
-
-        if (options.scale !== undefined) {
-            this.push(new NumberValueElement("w:w", options.scale));
-        }
-
-        if (options.kern) {
-            this.push(new HpsMeasureElement("w:kern", options.kern));
-        }
-
-        if (options.position) {
-            this.push(new StringValueElement("w:position", options.position));
-        }
-
-        if (options.size !== undefined) {
-            this.push(new HpsMeasureElement("w:sz", options.size));
-        }
-        const szCs =
-            options.sizeComplexScript === undefined || options.sizeComplexScript === true
-                ? options.size
-                : options.sizeComplexScript;
-        if (szCs) {
-            this.push(new HpsMeasureElement("w:szCs", szCs));
-        }
-
-        if (options.highlight) {
-            this.push(new Highlight(options.highlight));
-        }
-        if (options.highlightComplexScript === true) {
-            // true = mirror highlight value to complex script
-            if (options.highlight) {
-                this.push(new HighlightComplexScript(options.highlight));
-            }
-        } else if (
-            options.highlightComplexScript !== undefined &&
-            options.highlightComplexScript !== false
-        ) {
-            this.push(new HighlightComplexScript(options.highlightComplexScript));
-        }
-
-        if (options.underline) {
-            this.push(createUnderline(options.underline.type, options.underline.color));
-        }
-
-        if (options.effect) {
-            this.push(new StringValueElement("w:effect", options.effect));
-        }
-
-        if (options.border) {
-            this.push(createBorderElement("w:bdr", options.border));
-        }
-
-        if (options.shading) {
-            this.push(createShading(options.shading));
-        }
-
-        if (options.subScript) {
-            this.push(createSubScript());
-        }
-
-        if (options.superScript) {
-            this.push(createSuperScript());
-        }
-
-        if (options.rightToLeft !== undefined) {
-            this.push(new OnOffElement("w:rtl", options.rightToLeft));
-        }
-
-        if (options.emphasisMark) {
-            this.push(createEmphasisMark(options.emphasisMark.type));
-        }
-
-        if (options.language) {
-            this.push(createLanguageComponent(options.language));
-        }
-
-        if (options.specVanish) {
-            // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_specVanish_topic_ID0EIE1O.html
-            this.push(new OnOffElement("w:specVanish", options.specVanish));
-        }
-
-        if (options.math) {
-            this.push(new OnOffElement("w:oMath", options.math));
-        }
-
-        if (options.fitText !== undefined) {
-            this.push(new NumberValueElement("w:fitText", options.fitText));
-        }
-
-        if (options.complexScript !== undefined) {
-            this.push(new OnOffElement("w:cs", options.complexScript));
-        }
-
-        if (options.eastAsianLayout) {
-            this.push(createEastAsianLayout(options.eastAsianLayout));
-        }
-
-        if (options.revision) {
-            this.push(new RunPropertiesChange(options.revision));
         }
     }
 

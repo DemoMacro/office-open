@@ -2,10 +2,8 @@ import { XmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 
 import { buildEndParagraphRunProperties } from "./end-paragraph-run";
-import { buildEndParagraphRunPropertiesXml } from "./end-paragraph-run";
 import type { IParagraphPropertiesOptions } from "./paragraph-properties";
 import { buildParagraphProperties } from "./paragraph-properties";
-import { buildParagraphPropertiesXml } from "./paragraph-properties";
 import { TextRun } from "./run";
 
 export interface IParagraphOptions {
@@ -48,26 +46,5 @@ export class Paragraph extends XmlComponent {
         children.push(buildEndParagraphRunProperties());
 
         return { "a:p": children };
-    }
-
-    public toXml(context: IContext): string {
-        let s = "<a:p>";
-
-        const pPr = buildParagraphPropertiesXml(this.options.properties ?? {});
-        if (pPr) s += pPr;
-
-        if (this.options.text) {
-            s += new TextRun(this.options.text).toXml(context);
-        }
-
-        if (this.options.children) {
-            for (const child of this.options.children) {
-                s += child.toXml(context);
-            }
-        }
-
-        s += buildEndParagraphRunPropertiesXml();
-        s += "</a:p>";
-        return s;
     }
 }
