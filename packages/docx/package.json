@@ -54,7 +54,7 @@
   "dependencies": {
     "@office-open/core": "workspace:*",
     "@office-open/xml": "workspace:*",
-    "fflate": "0.8.2",
+    "fflate": "0.8.3",
     "undio": "0.2.0"
   }
 }
