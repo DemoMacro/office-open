@@ -30,14 +30,14 @@ import type { Percentage, UniversalMeasure } from "@util/values";
  * @publicApi
  */
 export const WidthType = {
-    /** Auto. */
-    AUTO: "auto",
-    /** Value is in twentieths of a point */
-    DXA: "dxa",
-    /** No (empty) value. */
-    NIL: "nil",
-    /** Value is in percentage. */
-    PERCENTAGE: "pct",
+  /** Auto. */
+  AUTO: "auto",
+  /** Value is in twentieths of a point */
+  DXA: "dxa",
+  /** No (empty) value. */
+  NIL: "nil",
+  /** Value is in percentage. */
+  PERCENTAGE: "pct",
 } as const;
 
 /**
@@ -52,8 +52,8 @@ export const WidthType = {
  * ```
  */
 export interface ITableWidthProperties {
-    readonly size: number | Percentage | UniversalMeasure;
-    readonly type?: (typeof WidthType)[keyof typeof WidthType];
+  readonly size: number | Percentage | UniversalMeasure;
+  readonly type?: (typeof WidthType)[keyof typeof WidthType];
 }
 
 /**
@@ -70,19 +70,19 @@ export interface ITableWidthProperties {
  * ```
  */
 export const createTableWidthElement = (
-    name: string,
-    { type = WidthType.AUTO, size }: ITableWidthProperties,
+  name: string,
+  { type = WidthType.AUTO, size }: ITableWidthProperties,
 ): XmlComponent => {
-    let tableWidthValue = size;
-    if (type === WidthType.PERCENTAGE && typeof size === "number") {
-        tableWidthValue = `${size}%`;
-    }
+  let tableWidthValue = size;
+  if (type === WidthType.PERCENTAGE && typeof size === "number") {
+    tableWidthValue = `${size}%`;
+  }
 
-    return new BuilderElement<ITableWidthProperties>({
-        attributes: {
-            size: { key: "w:w", value: measurementOrPercentValue(tableWidthValue) },
-            type: { key: "w:type", value: type },
-        },
-        name,
-    });
+  return new BuilderElement<ITableWidthProperties>({
+    attributes: {
+      size: { key: "w:w", value: measurementOrPercentValue(tableWidthValue) },
+      type: { key: "w:type", value: type },
+    },
+    name,
+  });
 };

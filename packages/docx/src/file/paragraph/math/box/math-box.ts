@@ -21,10 +21,10 @@ import type { MathBoxPropertiesOptions } from "./math-box-properties";
  * @see {@link MathBox}
  */
 export interface IMathBoxOptions {
-    /** Box properties */
-    readonly properties?: MathBoxPropertiesOptions;
-    /** Content to be boxed */
-    readonly children: readonly MathComponent[];
+  /** Box properties */
+  readonly properties?: MathBoxPropertiesOptions;
+  /** Content to be boxed */
+  readonly children: readonly MathComponent[];
 }
 
 /**
@@ -48,13 +48,13 @@ export interface IMathBoxOptions {
  * ```
  */
 export class MathBox extends XmlComponent {
-    public constructor(options: IMathBoxOptions) {
-        super("m:box");
+  public constructor(options: IMathBoxOptions) {
+    super("m:box");
 
-        if (options.properties) {
-            this.root.push(createMathBoxProperties(options.properties));
-        }
-
-        this.root.push(createMathBase({ children: options.children }));
+    if (options.properties) {
+      this.root.push(createMathBoxProperties(options.properties));
     }
+
+    this.root.push(createMathBase({ children: options.children }));
+  }
 }

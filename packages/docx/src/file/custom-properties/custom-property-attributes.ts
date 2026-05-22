@@ -17,16 +17,16 @@ import { XmlAttributeComponent } from "@file/xml-components";
  * @property name - Property name
  */
 export class CustomPropertyAttributes extends XmlAttributeComponent<{
-    /** Format identifier (GUID) */
-    readonly formatId: string;
-    /** Property identifier (unique ID) */
-    readonly pid: string;
-    /** Property name */
-    readonly name: string;
+  /** Format identifier (GUID) */
+  readonly formatId: string;
+  /** Property identifier (unique ID) */
+  readonly pid: string;
+  /** Property name */
+  readonly name: string;
 }> {
-    protected readonly xmlKeys = {
-        formatId: "fmtid",
-        name: "name",
-        pid: "pid",
-    };
+  protected readonly xmlKeys = {
+    formatId: "fmtid",
+    name: "name",
+    pid: "pid",
+  };
 }

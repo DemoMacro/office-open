@@ -10,9 +10,9 @@ import { Run } from "../run";
 export * from "@file/drawing/inline/graphic/graphic-data/wps/body-properties";
 
 interface CoreShapeOptions {
-    readonly transformation: IMediaTransformation;
-    readonly floating?: IFloating;
-    readonly altText?: DocPropertiesOptions;
+  readonly transformation: IMediaTransformation;
+  readonly floating?: IFloating;
+  readonly altText?: DocPropertiesOptions;
 }
 
 /**
@@ -24,23 +24,23 @@ export type IWpsShapeOptions = WpsShapeCoreOptions & { readonly type: "wps" } & 
  * @publicApi
  */
 export class WpsShapeRun extends Run {
-    private readonly wpsShapeData: WpsMediaData;
+  private readonly wpsShapeData: WpsMediaData;
 
-    public constructor(options: IWpsShapeOptions) {
-        super({});
+  public constructor(options: IWpsShapeOptions) {
+    super({});
 
-        this.wpsShapeData = {
-            data: { ...options },
-            transformation: createTransformation(options.transformation),
-            type: options.type,
-        };
-        const drawing = new Drawing(this.wpsShapeData, {
-            docProperties: options.altText,
-            floating: options.floating,
-            outline: options.outline,
-            fill: options.fill,
-        });
+    this.wpsShapeData = {
+      data: { ...options },
+      transformation: createTransformation(options.transformation),
+      type: options.type,
+    };
+    const drawing = new Drawing(this.wpsShapeData, {
+      docProperties: options.altText,
+      floating: options.floating,
+      outline: options.outline,
+      fill: options.fill,
+    });
 
-        this.extraChildren.push(drawing);
-    }
+    this.extraChildren.push(drawing);
+  }
 }

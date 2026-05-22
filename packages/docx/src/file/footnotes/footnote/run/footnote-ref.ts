@@ -25,7 +25,7 @@ import { XmlComponent } from "@file/xml-components";
  * @internal
  */
 export class FootnoteRef extends XmlComponent {
-    public constructor() {
-        super("w:footnoteRef");
-    }
+  public constructor() {
+    super("w:footnoteRef");
+  }
 }

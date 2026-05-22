@@ -18,22 +18,22 @@ export type { ColorTransformOptions } from "./color/color-transform";
 
 // Fill
 export {
-    buildFill,
-    extractBlipFillMedia,
-    type BlipFillConfigOptions,
-    type BlipFillMediaData,
-    type FillOptions,
-    type GradientStopOptions,
+  buildFill,
+  extractBlipFillMedia,
+  type BlipFillConfigOptions,
+  type BlipFillMediaData,
+  type FillOptions,
+  type GradientStopOptions,
 } from "./fill/fill-options";
 export { createNoFill } from "./fill/no-fill";
 export { createGradientFill, createGradientStop } from "./fill/gradient-fill";
 export type {
-    GradientFillOptions,
-    GradientShadeOptions,
-    LinearShadeOptions,
-    PathShadeOptions,
-    IGradientStop,
-    RelativeRect,
+  GradientFillOptions,
+  GradientShadeOptions,
+  LinearShadeOptions,
+  PathShadeOptions,
+  IGradientStop,
+  RelativeRect,
 } from "./fill/gradient-fill";
 export { PathShadeType, TileFlipMode } from "./fill/gradient-fill";
 export { createPatternFill, PresetPattern } from "./fill/pattern-fill";
@@ -73,13 +73,13 @@ export { RectAlignment } from "./effects/outer-shadow";
 // 3D
 export { createScene3D } from "./three-d/scene-3d";
 export type {
-    Scene3DOptions,
-    CameraOptions,
-    LightRigOptions,
-    BackdropOptions,
-    SphereCoords,
-    Point3D,
-    Vector3D,
+  Scene3DOptions,
+  CameraOptions,
+  LightRigOptions,
+  BackdropOptions,
+  SphereCoords,
+  Point3D,
+  Vector3D,
 } from "./three-d/scene-3d";
 export { createShape3D } from "./three-d/shape-3d";
 export type { Shape3DOptions } from "./three-d/shape-3d";
@@ -96,12 +96,12 @@ export { createAdjustmentValues } from "./geometry/adjustment-values";
 export type { GeometryGuide } from "./geometry/adjustment-values";
 export { createCustomGeometry } from "./geometry/custom-geometry";
 export type {
-    CustomGeometryOptions,
-    PathOptions,
-    PathCommand,
-    PathFillMode,
-    ConnectionSite,
-    GeomRect,
+  CustomGeometryOptions,
+  PathOptions,
+  PathCommand,
+  PathFillMode,
+  ConnectionSite,
+  GeomRect,
 } from "./geometry/custom-geometry";
 
 // Blip

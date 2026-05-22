@@ -51,17 +51,17 @@ import { toUint8Array } from "undio";
  * @internal
  */
 export class DocumentBackgroundAttributes extends XmlAttributeComponent<{
-    readonly color?: string;
-    readonly themeColor?: string;
-    readonly themeShade?: string;
-    readonly themeTint?: string;
+  readonly color?: string;
+  readonly themeColor?: string;
+  readonly themeShade?: string;
+  readonly themeTint?: string;
 }> {
-    protected readonly xmlKeys = {
-        color: "w:color",
-        themeColor: "w:themeColor",
-        themeShade: "w:themeShade",
-        themeTint: "w:themeTint",
-    };
+  protected readonly xmlKeys = {
+    color: "w:color",
+    themeColor: "w:themeColor",
+    themeShade: "w:themeShade",
+    themeTint: "w:themeTint",
+  };
 }
 
 /**
@@ -71,10 +71,10 @@ export class DocumentBackgroundAttributes extends XmlAttributeComponent<{
  * The image is rendered as a full-page background using VML `v:fill`.
  */
 export interface IBackgroundImageOptions {
-    /** Raw image data (Uint8Array, base64 string, etc.) */
-    readonly data: DataType;
-    /** Image format type */
-    readonly type: "jpg" | "png" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
+  /** Raw image data (Uint8Array, base64 string, etc.) */
+  readonly data: DataType;
+  /** Image format type */
+  readonly type: "jpg" | "png" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
 }
 
 /**
@@ -83,22 +83,22 @@ export interface IBackgroundImageOptions {
  * @see {@link DocumentBackground}
  */
 export interface IDocumentBackgroundOptions {
-    /** Background color in hex format (e.g., "FF0000" for red) */
-    readonly color?: string;
-    /** Theme color name (e.g., "accent1", "dark1") */
-    readonly themeColor?: string;
-    /** Theme shade value (darkens the theme color) */
-    readonly themeShade?: string;
-    /** Theme tint value (lightens the theme color) */
-    readonly themeTint?: string;
-    /** Background image rendered as a full-page VML fill */
-    readonly image?: IBackgroundImageOptions;
+  /** Background color in hex format (e.g., "FF0000" for red) */
+  readonly color?: string;
+  /** Theme color name (e.g., "accent1", "dark1") */
+  readonly themeColor?: string;
+  /** Theme shade value (darkens the theme color) */
+  readonly themeShade?: string;
+  /** Theme tint value (lightens the theme color) */
+  readonly themeTint?: string;
+  /** Background image rendered as a full-page VML fill */
+  readonly image?: IBackgroundImageOptions;
 }
 
 interface ImageData {
-    readonly fileName: string;
-    readonly data: Uint8Array;
-    readonly type: string;
+  readonly fileName: string;
+  readonly data: Uint8Array;
+  readonly type: string;
 }
 
 /**
@@ -140,85 +140,74 @@ interface ImageData {
  * ```
  */
 export class DocumentBackground extends XmlComponent {
-    private readonly imageData?: ImageData;
+  private readonly imageData?: ImageData;
 
-    public constructor(options: IDocumentBackgroundOptions) {
-        super("w:background");
+  public constructor(options: IDocumentBackgroundOptions) {
+    super("w:background");
 
-        this.root.push(
-            new DocumentBackgroundAttributes({
-                color: options.color === undefined ? undefined : hexColorValue(options.color),
-                themeColor: options.themeColor,
-                themeShade:
-                    options.themeShade === undefined
-                        ? undefined
-                        : uCharHexNumber(options.themeShade),
-                themeTint:
-                    options.themeTint === undefined ? undefined : uCharHexNumber(options.themeTint),
-            }),
-        );
+    this.root.push(
+      new DocumentBackgroundAttributes({
+        color: options.color === undefined ? undefined : hexColorValue(options.color),
+        themeColor: options.themeColor,
+        themeShade:
+          options.themeShade === undefined ? undefined : uCharHexNumber(options.themeShade),
+        themeTint: options.themeTint === undefined ? undefined : uCharHexNumber(options.themeTint),
+      }),
+    );
 
-        if (options.image) {
-            const rawData = toUint8Array(options.image.data) as Uint8Array;
-            const hash = hashedId(rawData);
-            this.imageData = {
-                data: rawData,
-                fileName: `${hash}.${options.image.type}`,
-                type: options.image.type,
-            };
-        }
+    if (options.image) {
+      const rawData = toUint8Array(options.image.data) as Uint8Array;
+      const hash = hashedId(rawData);
+      this.imageData = {
+        data: rawData,
+        fileName: `${hash}.${options.image.type}`,
+        type: options.image.type,
+      };
     }
+  }
 
-    public prepForXml(context: IContext): IXmlableObject | undefined {
-        if (this.imageData) {
-            // Register the image with the media collection for packaging
-            context.file.Media.addImage(this.imageData.fileName, {
-                type: this.imageData.type as
-                    | "jpg"
-                    | "png"
-                    | "gif"
-                    | "bmp"
-                    | "tif"
-                    | "ico"
-                    | "emf"
-                    | "wmf",
-                data: this.imageData.data,
-                fileName: this.imageData.fileName,
-                transformation: {
-                    emus: { x: 0, y: 0 },
-                    pixels: { x: 0, y: 0 },
+  public prepForXml(context: IContext): IXmlableObject | undefined {
+    if (this.imageData) {
+      // Register the image with the media collection for packaging
+      context.file.Media.addImage(this.imageData.fileName, {
+        type: this.imageData.type as "jpg" | "png" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf",
+        data: this.imageData.data,
+        fileName: this.imageData.fileName,
+        transformation: {
+          emus: { x: 0, y: 0 },
+          pixels: { x: 0, y: 0 },
+        },
+      });
+
+      // VML background with fill referencing the image via relationship
+      // Word uses v:background + v:fill for true page background images
+      this.root.push(
+        new BuilderElement({
+          attributes: {
+            id: { key: "id", value: "_x0000_s1025" },
+          },
+          children: [
+            new BuilderElement({
+              attributes: {
+                id: {
+                  key: "r:id",
+                  value: `{${this.imageData.fileName}}`,
                 },
-            });
-
-            // VML background with fill referencing the image via relationship
-            // Word uses v:background + v:fill for true page background images
-            this.root.push(
-                new BuilderElement({
-                    attributes: {
-                        id: { key: "id", value: "_x0000_s1025" },
-                    },
-                    children: [
-                        new BuilderElement({
-                            attributes: {
-                                id: {
-                                    key: "r:id",
-                                    value: `{${this.imageData.fileName}}`,
-                                },
-                                title: {
-                                    key: "o:title",
-                                    value: this.imageData.fileName.split(".")[0],
-                                },
-                                recolor: { key: "recolor", value: "t" },
-                                type: { key: "type", value: "frame" },
-                            },
-                            name: "v:fill",
-                        }),
-                    ],
-                    name: "v:background",
-                }),
-            );
-        }
-
-        return super.prepForXml(context);
+                title: {
+                  key: "o:title",
+                  value: this.imageData.fileName.split(".")[0],
+                },
+                recolor: { key: "recolor", value: "t" },
+                type: { key: "type", value: "frame" },
+              },
+              name: "v:fill",
+            }),
+          ],
+          name: "v:background",
+        }),
+      );
     }
+
+    return super.prepForXml(context);
+  }
 }

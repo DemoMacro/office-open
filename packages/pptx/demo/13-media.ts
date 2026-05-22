@@ -11,61 +11,61 @@ const posterPath = path.join(__dirname, "assets/test-poster.png");
 const posterData = new Uint8Array(fs.readFileSync(posterPath));
 
 const pres = new Presentation({
-    title: "Video Demo",
-    creator: "Demo",
-    slides: [
-        {
-            children: [
-                new Shape({
-                    x: 50,
-                    y: 30,
-                    width: 500,
-                    height: 50,
-                    paragraphs: [
-                        new Paragraph({
-                            properties: { alignment: "CENTER", bulletNone: true },
-                            children: [
-                                new TextRun({
-                                    text: "Video Embedding Demo",
-                                    fontSize: 32,
-                                    bold: true,
-                                }),
-                            ],
-                        }),
-                    ],
+  title: "Video Demo",
+  creator: "Demo",
+  slides: [
+    {
+      children: [
+        new Shape({
+          x: 50,
+          y: 30,
+          width: 500,
+          height: 50,
+          paragraphs: [
+            new Paragraph({
+              properties: { alignment: "CENTER", bulletNone: true },
+              children: [
+                new TextRun({
+                  text: "Video Embedding Demo",
+                  fontSize: 32,
+                  bold: true,
                 }),
-                new VideoFrame({
-                    x: 50,
-                    y: 100,
-                    width: 480,
-                    height: 270,
-                    data: videoData,
-                    type: "mp4",
-                    name: "Big Buck Bunny",
-                    poster: posterData,
-                    posterType: "png",
+              ],
+            }),
+          ],
+        }),
+        new VideoFrame({
+          x: 50,
+          y: 100,
+          width: 480,
+          height: 270,
+          data: videoData,
+          type: "mp4",
+          name: "Big Buck Bunny",
+          poster: posterData,
+          posterType: "png",
+        }),
+        new Shape({
+          x: 50,
+          y: 390,
+          width: 500,
+          height: 40,
+          paragraphs: [
+            new Paragraph({
+              properties: { bulletNone: true },
+              children: [
+                new TextRun({
+                  text: "Video: Big Buck Bunny (360p, 10s, ~1MB MP4)",
+                  fontSize: 14,
+                  fill: "666666",
                 }),
-                new Shape({
-                    x: 50,
-                    y: 390,
-                    width: 500,
-                    height: 40,
-                    paragraphs: [
-                        new Paragraph({
-                            properties: { bulletNone: true },
-                            children: [
-                                new TextRun({
-                                    text: "Video: Big Buck Bunny (360p, 10s, ~1MB MP4)",
-                                    fontSize: 14,
-                                    fill: "666666",
-                                }),
-                            ],
-                        }),
-                    ],
-                }),
-            ],
-        },
-    ],
+              ],
+            }),
+          ],
+        }),
+      ],
+    },
+  ],
 });
 
 const buffer = await Packer.toBuffer(pres);

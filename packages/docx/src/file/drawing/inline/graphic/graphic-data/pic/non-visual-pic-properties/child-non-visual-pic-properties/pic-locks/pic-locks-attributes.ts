@@ -17,13 +17,13 @@ import { XmlAttributeComponent } from "@file/xml-components";
  * @internal
  */
 export class PicLocksAttributes extends XmlAttributeComponent<{
-    /** Disallow aspect ratio changes (0=allow, 1=disallow) */
-    readonly noChangeAspect?: number;
-    /** Disallow arrowhead changes (0=allow, 1=disallow) */
-    readonly noChangeArrowheads?: number;
+  /** Disallow aspect ratio changes (0=allow, 1=disallow) */
+  readonly noChangeAspect?: number;
+  /** Disallow arrowhead changes (0=allow, 1=disallow) */
+  readonly noChangeArrowheads?: number;
 }> {
-    protected readonly xmlKeys = {
-        noChangeArrowheads: "noChangeArrowheads",
-        noChangeAspect: "noChangeAspect",
-    };
+  protected readonly xmlKeys = {
+    noChangeArrowheads: "noChangeArrowheads",
+    noChangeAspect: "noChangeAspect",
+  };
 }

@@ -14,8 +14,8 @@ import type { XmlComponent } from "@file/xml-components";
 import type { IMargins } from "../floating";
 
 interface IWrapTopAndBottomAttributes {
-    readonly distT?: number;
-    readonly distB?: number;
+  readonly distT?: number;
+  readonly distB?: number;
 }
 
 /**
@@ -38,15 +38,15 @@ interface IWrapTopAndBottomAttributes {
  * ```
  */
 export const createWrapTopAndBottom = (
-    margins: IMargins = {
-        bottom: 0,
-        top: 0,
-    },
+  margins: IMargins = {
+    bottom: 0,
+    top: 0,
+  },
 ): XmlComponent =>
-    new BuilderElement<IWrapTopAndBottomAttributes>({
-        attributes: {
-            distB: { key: "distB", value: margins.bottom },
-            distT: { key: "distT", value: margins.top },
-        },
-        name: "wp:wrapTopAndBottom",
-    });
+  new BuilderElement<IWrapTopAndBottomAttributes>({
+    attributes: {
+      distB: { key: "distB", value: margins.bottom },
+      distT: { key: "distT", value: margins.top },
+    },
+    name: "wp:wrapTopAndBottom",
+  });

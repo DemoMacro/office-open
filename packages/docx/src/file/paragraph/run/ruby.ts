@@ -32,18 +32,18 @@ import { Text } from "./run-components/text";
  * ```
  */
 export const RubyAlign = {
-    /** Center alignment */
-    CENTER: "center",
-    /** Distribute letters evenly */
-    DISTRIBUTE_LETTER: "distributeLetter",
-    /** Distribute space evenly */
-    DISTRIBUTE_SPACE: "distributeSpace",
-    /** Left alignment */
-    LEFT: "left",
-    /** Right alignment */
-    RIGHT: "right",
-    /** Right vertical alignment */
-    RIGHT_VERTICAL: "rightVertical",
+  /** Center alignment */
+  CENTER: "center",
+  /** Distribute letters evenly */
+  DISTRIBUTE_LETTER: "distributeLetter",
+  /** Distribute space evenly */
+  DISTRIBUTE_SPACE: "distributeSpace",
+  /** Left alignment */
+  LEFT: "left",
+  /** Right alignment */
+  RIGHT: "right",
+  /** Right vertical alignment */
+  RIGHT_VERTICAL: "rightVertical",
 } as const;
 
 /**
@@ -61,40 +61,40 @@ export const RubyAlign = {
  * ```
  */
 export interface RubyOptions {
-    /** Ruby annotation text (e.g., furigana, pinyin) */
-    readonly text: string;
-    /** Base text being annotated */
-    readonly base: string;
-    /**
-     * Ruby alignment (defaults to "center").
-     */
-    readonly alignment?: keyof typeof RubyAlign;
-    /**
-     * Font size for the ruby annotation text in half-points (e.g., 20 = 10pt).
-     *
-     * Defaults to half the base text size if not specified.
-     */
-    readonly fontSize?: number;
-    /**
-     * Vertical offset for the ruby annotation in half-points.
-     *
-     * How far the annotation is raised above (or below) the base text.
-     */
-    readonly raise?: number;
-    /**
-     * Font size for the base text in half-points.
-     *
-     * Used to calculate the ruby annotation positioning.
-     */
-    readonly baseFontSize?: number;
-    /**
-     * Language identifier for the ruby annotation (e.g., "ja-JP").
-     */
-    readonly languageId?: string;
-    /**
-     * Whether the ruby annotation is dirty (needs recalculation).
-     */
-    readonly dirty?: boolean;
+  /** Ruby annotation text (e.g., furigana, pinyin) */
+  readonly text: string;
+  /** Base text being annotated */
+  readonly base: string;
+  /**
+   * Ruby alignment (defaults to "center").
+   */
+  readonly alignment?: keyof typeof RubyAlign;
+  /**
+   * Font size for the ruby annotation text in half-points (e.g., 20 = 10pt).
+   *
+   * Defaults to half the base text size if not specified.
+   */
+  readonly fontSize?: number;
+  /**
+   * Vertical offset for the ruby annotation in half-points.
+   *
+   * How far the annotation is raised above (or below) the base text.
+   */
+  readonly raise?: number;
+  /**
+   * Font size for the base text in half-points.
+   *
+   * Used to calculate the ruby annotation positioning.
+   */
+  readonly baseFontSize?: number;
+  /**
+   * Language identifier for the ruby annotation (e.g., "ja-JP").
+   */
+  readonly languageId?: string;
+  /**
+   * Whether the ruby annotation is dirty (needs recalculation).
+   */
+  readonly dirty?: boolean;
 }
 
 /**
@@ -110,15 +110,15 @@ export interface RubyOptions {
  * ```
  */
 const createRubyContent = (name: string, text: string): XmlComponent =>
-    new BuilderElement({
-        children: [
-            new BuilderElement({
-                children: [new Text(text)],
-                name: "w:r",
-            }),
-        ],
-        name,
-    });
+  new BuilderElement({
+    children: [
+      new BuilderElement({
+        children: [new Text(text)],
+        name: "w:r",
+      }),
+    ],
+    name,
+  });
 
 /**
  * Creates a Ruby annotation element (w:ruby).
@@ -151,54 +151,54 @@ const createRubyContent = (name: string, text: string): XmlComponent =>
  * ```
  */
 export const createRuby = (options: RubyOptions): XmlComponent => {
-    const align = options.alignment ?? "CENTER";
-    const hps = options.fontSize ?? 20;
-    const hpsRaise = options.raise ?? 20;
-    const hpsBaseText = options.baseFontSize ?? 40;
+  const align = options.alignment ?? "CENTER";
+  const hps = options.fontSize ?? 20;
+  const hpsRaise = options.raise ?? 20;
+  const hpsBaseText = options.baseFontSize ?? 40;
 
-    const rubyPr = new BuilderElement({
-        children: [
-            new BuilderElement<{ readonly val: string }>({
-                attributes: { val: { key: "w:val", value: RubyAlign[align] } },
-                name: "w:rubyAlign",
+  const rubyPr = new BuilderElement({
+    children: [
+      new BuilderElement<{ readonly val: string }>({
+        attributes: { val: { key: "w:val", value: RubyAlign[align] } },
+        name: "w:rubyAlign",
+      }),
+      new BuilderElement<{ readonly val: number }>({
+        attributes: { val: { key: "w:val", value: hps } },
+        name: "w:hps",
+      }),
+      new BuilderElement<{ readonly val: number }>({
+        attributes: { val: { key: "w:val", value: hpsRaise } },
+        name: "w:hpsRaise",
+      }),
+      new BuilderElement<{ readonly val: number }>({
+        attributes: { val: { key: "w:val", value: hpsBaseText } },
+        name: "w:hpsBaseText",
+      }),
+      new BuilderElement<{ readonly val: string }>({
+        attributes: {
+          val: {
+            key: "w:val",
+            value: options.languageId ?? "ja-JP",
+          },
+        },
+        name: "w:lid",
+      }),
+      ...(options.dirty !== undefined
+        ? [
+            new BuilderElement({
+              name: "w:dirty",
             }),
-            new BuilderElement<{ readonly val: number }>({
-                attributes: { val: { key: "w:val", value: hps } },
-                name: "w:hps",
-            }),
-            new BuilderElement<{ readonly val: number }>({
-                attributes: { val: { key: "w:val", value: hpsRaise } },
-                name: "w:hpsRaise",
-            }),
-            new BuilderElement<{ readonly val: number }>({
-                attributes: { val: { key: "w:val", value: hpsBaseText } },
-                name: "w:hpsBaseText",
-            }),
-            new BuilderElement<{ readonly val: string }>({
-                attributes: {
-                    val: {
-                        key: "w:val",
-                        value: options.languageId ?? "ja-JP",
-                    },
-                },
-                name: "w:lid",
-            }),
-            ...(options.dirty !== undefined
-                ? [
-                      new BuilderElement({
-                          name: "w:dirty",
-                      }),
-                  ]
-                : []),
-        ],
-        name: "w:rubyPr",
-    });
+          ]
+        : []),
+    ],
+    name: "w:rubyPr",
+  });
 
-    const rt = createRubyContent("w:rt", options.text);
-    const rubyBase = createRubyContent("w:rubyBase", options.base);
+  const rt = createRubyContent("w:rt", options.text);
+  const rubyBase = createRubyContent("w:rubyBase", options.base);
 
-    return new BuilderElement({
-        children: [rubyPr, rt, rubyBase],
-        name: "w:ruby",
-    });
+  return new BuilderElement({
+    children: [rubyPr, rt, rubyBase],
+    name: "w:ruby",
+  });
 };

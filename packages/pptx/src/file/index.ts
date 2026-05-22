@@ -1,12 +1,12 @@
 export {
-    File,
-    type IPresentationOptions,
-    type ISlideOptions,
-    type ICommentOptions,
-    type IMasterDefinition,
-    type ILayoutDefinition,
-    type ILayoutPlaceholderOptions,
-    type SlideSize,
+  File,
+  type IPresentationOptions,
+  type ISlideOptions,
+  type ICommentOptions,
+  type IMasterDefinition,
+  type ILayoutDefinition,
+  type ILayoutPlaceholderOptions,
+  type SlideSize,
 } from "./file";
 export { Presentation } from "./presentation/presentation";
 export type { IPresentationOptions as IPresentationXmlOptions } from "./presentation/presentation";
@@ -16,52 +16,52 @@ export { Paragraph, type IParagraphOptions } from "./shape/paragraph/paragraph";
 export { TextRun, type IRunOptions } from "./shape/paragraph/run";
 export { Text } from "./shape/paragraph/text";
 export {
-    RunProperties,
-    UnderlineStyle,
-    StrikeStyle,
-    TextCapitalization,
-    type IRunPropertiesOptions,
-    type IHyperlinkOptions,
+  RunProperties,
+  UnderlineStyle,
+  StrikeStyle,
+  TextCapitalization,
+  type IRunPropertiesOptions,
+  type IHyperlinkOptions,
 } from "./shape/paragraph/run-properties";
 export {
-    ParagraphProperties,
-    TextAlignment,
-    type IParagraphPropertiesOptions,
+  ParagraphProperties,
+  TextAlignment,
+  type IParagraphPropertiesOptions,
 } from "./shape/paragraph/paragraph-properties";
 export { EndParagraphRunProperties } from "./shape/paragraph/end-paragraph-run";
 export { Field, SlideNumberField, DateTimeField } from "./shape/paragraph/field";
 
 // DrawingML — re-exports from core
 export {
-    createOutline,
-    type OutlineOptions as CoreOutlineOptions,
+  createOutline,
+  type OutlineOptions as CoreOutlineOptions,
 } from "@office-open/core/drawingml";
 export {
-    createGradientFill,
-    createGradientStop,
-    type GradientFillOptions as CoreGradientFillOptions,
-    type IGradientStop,
-    PathShadeType,
-    TileFlipMode,
+  createGradientFill,
+  createGradientStop,
+  type GradientFillOptions as CoreGradientFillOptions,
+  type IGradientStop,
+  PathShadeType,
+  TileFlipMode,
 } from "@office-open/core/drawingml";
 export {
-    LineCap,
-    CompoundLine,
-    PenAlignment,
-    PresetDash,
-    LineJoin,
+  LineCap,
+  CompoundLine,
+  PenAlignment,
+  PresetDash,
+  LineJoin,
 } from "@office-open/core/drawingml";
 export { createScene3D, type Scene3DOptions } from "@office-open/core/drawingml";
 export {
-    createShape3D,
-    type Shape3DOptions,
-    PresetMaterialType,
+  createShape3D,
+  type Shape3DOptions,
+  PresetMaterialType,
 } from "@office-open/core/drawingml";
 export {
-    createBevel,
-    createBottomBevel,
-    type BevelOptions,
-    BevelPresetType,
+  createBevel,
+  createBottomBevel,
+  type BevelOptions,
+  BevelPresetType,
 } from "@office-open/core/drawingml";
 export { createEffectList, type EffectListOptions } from "@office-open/core/drawingml";
 export { createColorElement } from "@office-open/core/drawingml";
@@ -69,12 +69,12 @@ export { createColorTransforms, type ColorTransformOptions } from "@office-open/
 
 // DrawingML — fill API
 export {
-    buildFill,
-    extractBlipFillMedia,
-    type BlipFillConfigOptions,
-    type BlipFillMediaData,
-    type FillOptions,
-    type GradientStopOptions,
+  buildFill,
+  extractBlipFillMedia,
+  type BlipFillConfigOptions,
+  type BlipFillMediaData,
+  type FillOptions,
+  type GradientStopOptions,
 } from "./drawingml/fill";
 export { createOutlineCompat, type OutlineOptions } from "./drawingml/outline";
 
@@ -84,13 +84,13 @@ export { Transform2D, type ITransform2DOptions } from "./drawingml/transform-2d"
 export { PresetGeometry } from "./drawingml/preset-geometry";
 export { ShapeProperties, type IShapePropertiesOptions } from "./drawingml/shape-properties";
 export {
-    createPptxEffectList,
-    ReflectionAlignment,
-    type IEffectsOptions,
-    type IShadowOptions,
-    type IGlowOptions,
-    type IReflectionOptions,
-    type ISoftEdgeOptions,
+  createPptxEffectList,
+  ReflectionAlignment,
+  type IEffectsOptions,
+  type IShadowOptions,
+  type IGlowOptions,
+  type IReflectionOptions,
+  type ISoftEdgeOptions,
 } from "./drawingml/effects";
 export { NonVisualDrawingProperties } from "./drawingml/non-visual-drawing-props";
 export { NonVisualShapeProperties } from "./drawingml/non-visual-shape-props";
@@ -105,10 +105,10 @@ export { Media } from "./media/media";
 export { createTransformation, type IMediaTransformation } from "./media/media";
 export type { IMediaData, IMediaDataTransformation } from "./media/data";
 export {
-    VideoFrame,
-    type IVideoFrameOptions,
-    type VideoType,
-    type PosterType,
+  VideoFrame,
+  type IVideoFrameOptions,
+  type VideoType,
+  type PosterType,
 } from "./media/video-frame";
 export { AudioFrame, type IAudioFrameOptions, type AudioType } from "./media/audio-frame";
 export { CoreProperties, type ICorePropertiesOptions } from "./core-properties/properties";
@@ -117,13 +117,15 @@ export { ContentTypes } from "./content-types/content-types";
 export { Relationships } from "./relationships/relationships";
 export { type RelationshipType } from "./relationships/relationship/relationship";
 export { Slide } from "./slide/slide";
+export { type SlideChild } from "./slide/slide-child";
+export { coerceChild } from "./slide/coerce";
 export { ShapeTree } from "./shape-tree/shape-tree";
 export { DefaultTheme, type IThemeOptions } from "./theme/theme";
 export {
-    DefaultSlideMaster,
-    type ISlideMasterOptions,
-    type IMasterPlaceholderOptions,
-    type IMasterPlaceholderPosition,
+  DefaultSlideMaster,
+  type ISlideMasterOptions,
+  type IMasterPlaceholderOptions,
+  type IMasterPlaceholderPosition,
 } from "./slide-master/slide-master";
 export { DefaultSlideLayout, SlideLayout, type SlideLayoutType } from "./slide-layout/slide-layout";
 export { DefaultNotesMaster } from "./notes-master/notes-master";
@@ -145,14 +147,14 @@ export type { ChartType } from "./chart/chart-types/create-chart-type";
 export { SmartArtFrame, type ISmartArtFrameOptions, type ITreeNode } from "./smartart";
 export { Transition, type ITransitionOptions, type TransitionType } from "./transition/transition";
 export {
-    type AnimationType,
-    type AnimationTrigger,
-    type AnimationDirection,
-    type AnimationClass,
-    type EmphasisType,
-    type PathAnimationType,
-    type MediaAnimationType,
-    type AnimationCalcMode,
-    type AnimationValueType,
-    type IAnimationOptions,
+  type AnimationType,
+  type AnimationTrigger,
+  type AnimationDirection,
+  type AnimationClass,
+  type EmphasisType,
+  type PathAnimationType,
+  type MediaAnimationType,
+  type AnimationCalcMode,
+  type AnimationValueType,
+  type IAnimationOptions,
 } from "./animation/types";

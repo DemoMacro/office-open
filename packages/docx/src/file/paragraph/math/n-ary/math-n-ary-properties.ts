@@ -21,16 +21,16 @@ import { createMathSuperScriptHide } from "./math-super-script-hide";
  * @see {@link createMathNAryProperties}
  */
 export interface MathNAryPropertiesOptions {
-    /** The n-ary operator character (e.g., "∑" for sum, "∫" for integral) */
-    readonly accent: string;
-    /** Whether the n-ary has a superscript (upper limit) */
-    readonly hasSuperScript: boolean;
-    /** Whether the n-ary has a subscript (lower limit) */
-    readonly hasSubScript: boolean;
-    /** Location of limits: "undOvr" (under/over) or "subSup" (subscript/superscript) */
-    readonly limitLocationVal?: string;
-    /** Whether the operator grows to match its content */
-    readonly grow?: boolean;
+  /** The n-ary operator character (e.g., "∑" for sum, "∫" for integral) */
+  readonly accent: string;
+  /** Whether the n-ary has a superscript (upper limit) */
+  readonly hasSuperScript: boolean;
+  /** Whether the n-ary has a subscript (lower limit) */
+  readonly hasSubScript: boolean;
+  /** Location of limits: "undOvr" (under/over) or "subSup" (subscript/superscript) */
+  readonly limitLocationVal?: string;
+  /** Whether the operator grows to match its content */
+  readonly grow?: boolean;
 }
 
 /**
@@ -56,30 +56,30 @@ export interface MathNAryPropertiesOptions {
  * ```
  */
 export const createMathNAryProperties = ({
-    accent,
-    hasSuperScript,
-    hasSubScript,
-    limitLocationVal,
-    grow,
+  accent,
+  hasSuperScript,
+  hasSubScript,
+  limitLocationVal,
+  grow,
 }: MathNAryPropertiesOptions): XmlComponent => {
-    const children: XmlComponent[] = [];
+  const children: XmlComponent[] = [];
 
-    if (accent) {
-        children.push(createMathAccentCharacter({ accent }));
-    }
-    children.push(createMathLimitLocation({ value: limitLocationVal }));
-    if (grow !== undefined) {
-        children.push(new OnOffElement("m:grow", grow));
-    }
-    if (!hasSubScript) {
-        children.push(createMathSubScriptHide());
-    }
-    if (!hasSuperScript) {
-        children.push(createMathSuperScriptHide());
-    }
+  if (accent) {
+    children.push(createMathAccentCharacter({ accent }));
+  }
+  children.push(createMathLimitLocation({ value: limitLocationVal }));
+  if (grow !== undefined) {
+    children.push(new OnOffElement("m:grow", grow));
+  }
+  if (!hasSubScript) {
+    children.push(createMathSubScriptHide());
+  }
+  if (!hasSuperScript) {
+    children.push(createMathSuperScriptHide());
+  }
 
-    return new BuilderElement({
-        children,
-        name: "m:naryPr",
-    });
+  return new BuilderElement({
+    children,
+    name: "m:naryPr",
+  });
 };

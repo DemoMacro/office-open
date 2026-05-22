@@ -15,10 +15,10 @@ import { Symbol } from "./run-components/symbol";
  * @see {@link SymbolRun}
  */
 export type ISymbolRunOptions = {
-    /** The Unicode character code for the symbol */
-    readonly char: string;
-    /** The font to use for the symbol (e.g., "Wingdings", "Symbol") */
-    readonly symbolfont?: string;
+  /** The Unicode character code for the symbol */
+  readonly char: string;
+  /** The font to use for the symbol (e.g., "Wingdings", "Symbol") */
+  readonly symbolfont?: string;
 } & IRunOptions;
 
 /**
@@ -37,14 +37,14 @@ export type ISymbolRunOptions = {
  * ```
  */
 export class SymbolRun extends Run {
-    public constructor(options: ISymbolRunOptions | string) {
-        if (typeof options === "string") {
-            super({});
-            this.extraChildren.push(new Symbol(options));
-            return this;
-        }
-
-        super(options);
-        this.extraChildren.push(new Symbol(options.char, options.symbolfont));
+  public constructor(options: ISymbolRunOptions | string) {
+    if (typeof options === "string") {
+      super({});
+      this.extraChildren.push(new Symbol(options));
+      return this;
     }
+
+    super(options);
+    this.extraChildren.push(new Symbol(options.char, options.symbolfont));
+  }
 }

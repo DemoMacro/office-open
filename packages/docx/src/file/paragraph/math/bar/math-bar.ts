@@ -18,10 +18,10 @@ import { createMathBarProperties } from "./math-bar-properties";
  * Options for creating a math bar element.
  */
 interface MathBarOptions {
-    /** Position of the bar: "top" for overline, "bot" for underline */
-    readonly type: "top" | "bot";
-    /** Content under/over the bar */
-    readonly children: readonly MathComponent[];
+  /** Position of the bar: "top" for overline, "bot" for underline */
+  readonly type: "top" | "bot";
+  /** Content under/over the bar */
+  readonly children: readonly MathComponent[];
 }
 
 /**
@@ -43,7 +43,7 @@ interface MathBarOptions {
  * ```
  */
 export const createMathBar = ({ type, children }: MathBarOptions): XmlComponent =>
-    new BuilderElement({
-        children: [createMathBarProperties({ type }), createMathBase({ children })],
-        name: "m:bar",
-    });
+  new BuilderElement({
+    children: [createMathBarProperties({ type }), createMathBase({ children })],
+    name: "m:bar",
+  });

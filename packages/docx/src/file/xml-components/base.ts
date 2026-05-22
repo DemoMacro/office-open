@@ -21,8 +21,8 @@ export { BaseXmlComponent } from "@office-open/core";
  * The `file` field is a convenience alias for `fileData`.
  */
 export interface IContext extends CoreContext<File> {
-    /** The root File object being serialized. */
-    readonly file: File;
-    /** Access to document relationships and other document parts. */
-    readonly viewWrapper: IViewWrapper;
+  /** The root File object being serialized. */
+  readonly file: File;
+  /** Access to document relationships and other document parts. */
+  readonly viewWrapper: IViewWrapper;
 }

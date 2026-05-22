@@ -14,8 +14,8 @@ import type { XmlComponent } from "@file/xml-components";
  * Options for creating a limit location element.
  */
 interface MathLimitLocationOptions {
-    /** Location: "undOvr" (under/over) or "subSup" (subscript/superscript). Defaults to "undOvr". */
-    readonly value?: string;
+  /** Location: "undOvr" (under/over) or "subSup" (subscript/superscript). Defaults to "undOvr". */
+  readonly value?: string;
 }
 
 /**
@@ -35,9 +35,9 @@ interface MathLimitLocationOptions {
  * ```
  */
 export const createMathLimitLocation = ({ value }: MathLimitLocationOptions): XmlComponent =>
-    new BuilderElement<Required<MathLimitLocationOptions>>({
-        attributes: {
-            value: { key: "m:val", value: value || "undOvr" },
-        },
-        name: "m:limLoc",
-    });
+  new BuilderElement<Required<MathLimitLocationOptions>>({
+    attributes: {
+      value: { key: "m:val", value: value || "undOvr" },
+    },
+    name: "m:limLoc",
+  });

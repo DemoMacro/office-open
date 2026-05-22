@@ -20,10 +20,10 @@ import { XmlAttributeComponent } from "../../xml-components";
  * @internal
  */
 export class PresetGeometryAttributes extends XmlAttributeComponent<{
-    /** Preset shape type (e.g., "rect", "ellipse", "triangle") */
-    readonly prst?: string;
+  /** Preset shape type (e.g., "rect", "ellipse", "triangle") */
+  readonly prst?: string;
 }> {
-    protected readonly xmlKeys = {
-        prst: "prst",
-    };
+  protected readonly xmlKeys = {
+    prst: "prst",
+  };
 }

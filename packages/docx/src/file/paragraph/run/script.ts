@@ -26,7 +26,7 @@ import { BuilderElement } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
 
 interface IVerticalAlignAttributes {
-    readonly val: string;
+  readonly val: string;
 }
 
 /**
@@ -34,12 +34,12 @@ interface IVerticalAlignAttributes {
  * @internal
  */
 const createVerticalAlignRun = (type: string): XmlComponent =>
-    new BuilderElement<IVerticalAlignAttributes>({
-        attributes: {
-            val: { key: "w:val", value: type },
-        },
-        name: "w:vertAlign",
-    });
+  new BuilderElement<IVerticalAlignAttributes>({
+    attributes: {
+      val: { key: "w:val", value: type },
+    },
+    name: "w:vertAlign",
+  });
 
 /**
  * Creates superscript text formatting.

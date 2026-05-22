@@ -33,34 +33,34 @@ import type { PatternFillOptions } from "../fill/pattern-fill";
  * ```
  */
 export const BlendMode = {
-    /** Over blend mode */
-    OVER: "over",
-    /** Multiply blend mode */
-    MULTIPLY: "mult",
-    /** Screen blend mode */
-    SCREEN: "screen",
-    /** Darken blend mode */
-    DARKEN: "darken",
-    /** Lighten blend mode */
-    LIGHTEN: "lighten",
+  /** Over blend mode */
+  OVER: "over",
+  /** Multiply blend mode */
+  MULTIPLY: "mult",
+  /** Screen blend mode */
+  SCREEN: "screen",
+  /** Darken blend mode */
+  DARKEN: "darken",
+  /** Lighten blend mode */
+  LIGHTEN: "lighten",
 } as const;
 
 /**
  * Options for fill overlay effect.
  */
 export interface FillOverlayEffectOptions {
-    /** Blend mode (required) */
-    readonly blend: (typeof BlendMode)[keyof typeof BlendMode];
-    /** Solid fill color */
-    readonly solidFill?: SolidFillOptions;
-    /** Gradient fill */
-    readonly gradientFill?: GradientFillOptions;
-    /** Pattern fill */
-    readonly patternFill?: PatternFillOptions;
-    /** Group fill (inherit from parent) */
-    readonly groupFill?: boolean;
-    /** No fill */
-    readonly noFill?: boolean;
+  /** Blend mode (required) */
+  readonly blend: (typeof BlendMode)[keyof typeof BlendMode];
+  /** Solid fill color */
+  readonly solidFill?: SolidFillOptions;
+  /** Gradient fill */
+  readonly gradientFill?: GradientFillOptions;
+  /** Pattern fill */
+  readonly patternFill?: PatternFillOptions;
+  /** Group fill (inherit from parent) */
+  readonly groupFill?: boolean;
+  /** No fill */
+  readonly noFill?: boolean;
 }
 
 /**
@@ -92,28 +92,28 @@ export interface FillOverlayEffectOptions {
  * ```
  */
 export const createFillOverlayEffect = (options: FillOverlayEffectOptions): XmlComponent => {
-    let fillElement: XmlComponent;
+  let fillElement: XmlComponent;
 
-    if (options.noFill) {
-        fillElement = createNoFill();
-    } else if (options.solidFill) {
-        fillElement = createSolidFill(options.solidFill);
-    } else if (options.gradientFill) {
-        fillElement = createGradientFill(options.gradientFill);
-    } else if (options.patternFill) {
-        fillElement = createPatternFill(options.patternFill);
-    } else if (options.groupFill) {
-        fillElement = createGroupFill();
-    } else {
-        // Default to solid fill if nothing specified
-        fillElement = createSolidFill({ value: "000000" });
-    }
+  if (options.noFill) {
+    fillElement = createNoFill();
+  } else if (options.solidFill) {
+    fillElement = createSolidFill(options.solidFill);
+  } else if (options.gradientFill) {
+    fillElement = createGradientFill(options.gradientFill);
+  } else if (options.patternFill) {
+    fillElement = createPatternFill(options.patternFill);
+  } else if (options.groupFill) {
+    fillElement = createGroupFill();
+  } else {
+    // Default to solid fill if nothing specified
+    fillElement = createSolidFill({ value: "000000" });
+  }
 
-    return new BuilderElement<{ readonly blend: string }>({
-        attributes: {
-            blend: { key: "blend", value: options.blend },
-        },
-        children: [fillElement],
-        name: "a:fillOverlay",
-    });
+  return new BuilderElement<{ readonly blend: string }>({
+    attributes: {
+      blend: { key: "blend", value: options.blend },
+    },
+    children: [fillElement],
+    name: "a:fillOverlay",
+  });
 };

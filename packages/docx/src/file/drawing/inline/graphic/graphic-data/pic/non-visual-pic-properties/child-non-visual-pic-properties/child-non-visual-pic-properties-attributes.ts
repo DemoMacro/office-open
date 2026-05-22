@@ -16,9 +16,9 @@ import { XmlAttributeComponent } from "@file/xml-components";
  * @internal
  */
 export class ChildNonVisualPropertiesAttributes extends XmlAttributeComponent<{
-    readonly preferRelativeResize?: boolean;
+  readonly preferRelativeResize?: boolean;
 }> {
-    protected readonly xmlKeys = {
-        preferRelativeResize: "preferRelativeResize",
-    };
+  protected readonly xmlKeys = {
+    preferRelativeResize: "preferRelativeResize",
+  };
 }

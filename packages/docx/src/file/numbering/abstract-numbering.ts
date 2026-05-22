@@ -22,15 +22,15 @@ import { MultiLevelType } from "./multi-level-type";
  * @property restartNumberingAfterBreak - Whether to restart numbering after section breaks
  */
 class AbstractNumberingAttributes extends XmlAttributeComponent<{
-    /** Unique identifier for the abstract numbering definition. */
-    readonly abstractNumId: number;
-    /** Whether to restart numbering after section breaks (0 or 1). */
-    readonly restartNumberingAfterBreak: number;
+  /** Unique identifier for the abstract numbering definition. */
+  readonly abstractNumId: number;
+  /** Whether to restart numbering after section breaks (0 or 1). */
+  readonly restartNumberingAfterBreak: number;
 }> {
-    protected readonly xmlKeys = {
-        abstractNumId: "w:abstractNumId",
-        restartNumberingAfterBreak: "w15:restartNumberingAfterBreak",
-    };
+  protected readonly xmlKeys = {
+    abstractNumId: "w:abstractNumId",
+    restartNumberingAfterBreak: "w15:restartNumberingAfterBreak",
+  };
 }
 
 /**
@@ -78,28 +78,28 @@ class AbstractNumberingAttributes extends XmlAttributeComponent<{
  * ```
  */
 export class AbstractNumbering extends XmlComponent {
-    /** The unique identifier for this abstract numbering definition. */
-    public readonly id: number;
+  /** The unique identifier for this abstract numbering definition. */
+  public readonly id: number;
 
-    /**
-     * Creates a new abstract numbering definition.
-     *
-     * @param id - Unique identifier for this abstract numbering definition
-     * @param levelOptions - Array of level definitions (up to 9 levels)
-     */
-    public constructor(id: number, levelOptions: readonly ILevelsOptions[]) {
-        super("w:abstractNum");
-        this.root.push(
-            new AbstractNumberingAttributes({
-                abstractNumId: decimalNumber(id),
-                restartNumberingAfterBreak: 0,
-            }),
-        );
-        this.root.push(new MultiLevelType("hybridMultilevel"));
-        this.id = id;
+  /**
+   * Creates a new abstract numbering definition.
+   *
+   * @param id - Unique identifier for this abstract numbering definition
+   * @param levelOptions - Array of level definitions (up to 9 levels)
+   */
+  public constructor(id: number, levelOptions: readonly ILevelsOptions[]) {
+    super("w:abstractNum");
+    this.root.push(
+      new AbstractNumberingAttributes({
+        abstractNumId: decimalNumber(id),
+        restartNumberingAfterBreak: 0,
+      }),
+    );
+    this.root.push(new MultiLevelType("hybridMultilevel"));
+    this.id = id;
 
-        for (const option of levelOptions) {
-            this.root.push(new Level(option));
-        }
+    for (const option of levelOptions) {
+      this.root.push(new Level(option));
     }
+  }
 }

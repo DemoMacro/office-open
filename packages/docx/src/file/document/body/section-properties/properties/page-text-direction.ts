@@ -16,16 +16,16 @@ import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
  * vertically (top-to-bottom), commonly used for East Asian languages.
  */
 export const PageTextDirectionType = {
-    /** Left-to-right, top-to-bottom (standard Western text flow) */
-    LEFT_TO_RIGHT_TOP_TO_BOTTOM: "lrTb",
-    /** Top-to-bottom, right-to-left (vertical East Asian text flow) */
-    TOP_TO_BOTTOM_RIGHT_TO_LEFT: "tbRl",
+  /** Left-to-right, top-to-bottom (standard Western text flow) */
+  LEFT_TO_RIGHT_TOP_TO_BOTTOM: "lrTb",
+  /** Top-to-bottom, right-to-left (vertical East Asian text flow) */
+  TOP_TO_BOTTOM_RIGHT_TO_LEFT: "tbRl",
 } as const;
 
 class PageTextDirectionAttributes extends XmlAttributeComponent<{
-    readonly val: (typeof PageTextDirectionType)[keyof typeof PageTextDirectionType];
+  readonly val: (typeof PageTextDirectionType)[keyof typeof PageTextDirectionType];
 }> {
-    protected readonly xmlKeys = { val: "w:val" };
+  protected readonly xmlKeys = { val: "w:val" };
 }
 
 /**
@@ -46,13 +46,13 @@ class PageTextDirectionAttributes extends XmlAttributeComponent<{
  * ```
  */
 export class PageTextDirection extends XmlComponent {
-    public constructor(value: (typeof PageTextDirectionType)[keyof typeof PageTextDirectionType]) {
-        super("w:textDirection");
+  public constructor(value: (typeof PageTextDirectionType)[keyof typeof PageTextDirectionType]) {
+    super("w:textDirection");
 
-        this.root.push(
-            new PageTextDirectionAttributes({
-                val: value,
-            }),
-        );
-    }
+    this.root.push(
+      new PageTextDirectionAttributes({
+        val: value,
+      }),
+    );
+  }
 }

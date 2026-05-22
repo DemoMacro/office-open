@@ -3,171 +3,171 @@
 import * as fs from "fs";
 
 import {
-    Document,
-    HorizontalPositionAlign,
-    HorizontalPositionRelativeFrom,
-    ImageRun,
-    Packer,
-    Paragraph,
-    VerticalPositionAlign,
-    VerticalPositionRelativeFrom,
-    convertMillimetersToTwip,
+  Document,
+  HorizontalPositionAlign,
+  HorizontalPositionRelativeFrom,
+  ImageRun,
+  Packer,
+  Paragraph,
+  VerticalPositionAlign,
+  VerticalPositionRelativeFrom,
+  convertMillimetersToTwip,
 } from "@office-open/docx";
 
 const doc = new Document({
-    sections: [
-        {
-            children: [
-                new Paragraph("Hello World"),
-                new Paragraph({
-                    children: [
-                        new ImageRun({
-                            altText: {
-                                description: "This is an ultimate image",
-                                name: "My Ultimate Image",
-                                title: "This is an ultimate title",
-                            },
-                            data: fs.readFileSync("./demo/images/image1.jpeg"),
-                            transformation: {
-                                height: 100,
-                                width: 100,
-                            },
-                            type: "jpg",
-                        }),
-                    ],
-                }),
-                new Paragraph({
-                    children: [
-                        new ImageRun({
-                            data: fs.readFileSync("./demo/images/dog.png").toString("base64"),
-                            outline: {
-                                color: { value: "FF0000" },
-                                type: "solidFill",
-                            },
-                            transformation: {
-                                height: 100,
-                                width: 100,
-                            },
-                            type: "png",
-                        }),
-                    ],
-                }),
-                new Paragraph({
-                    children: [
-                        new ImageRun({
-                            data: fs.readFileSync("./demo/images/cat.jpg"),
-                            outline: {
-                                color: { value: "0000FF" },
-                                type: "solidFill",
-                                width: convertMillimetersToTwip(600),
-                            },
-                            transformation: {
-                                flip: {
-                                    vertical: true,
-                                },
-                                height: 100,
-                                width: 100,
-                            },
-                            type: "jpg",
-                        }),
-                    ],
-                }),
-                new Paragraph({
-                    children: [
-                        new ImageRun({
-                            data: fs.readFileSync("./demo/images/parrots.bmp"),
-                            transformation: {
-                                flip: {
-                                    horizontal: true,
-                                },
-                                height: 150,
-                                rotation: 225,
-                                width: 150,
-                            },
-                            type: "bmp",
-                        }),
-                    ],
-                }),
-                new Paragraph({
-                    children: [
-                        new ImageRun({
-                            data: fs.readFileSync("./demo/images/pizza.gif"),
-                            transformation: {
-                                flip: {
-                                    horizontal: true,
-                                    vertical: true,
-                                },
-                                height: 200,
-                                width: 200,
-                            },
-                            type: "gif",
-                        }),
-                    ],
-                }),
-                new Paragraph({
-                    children: [
-                        new ImageRun({
-                            data: fs.readFileSync("./demo/images/pizza.gif"),
-                            floating: {
-                                horizontalPosition: {
-                                    offset: 1_014_400,
-                                },
-                                verticalPosition: {
-                                    offset: 1_014_400,
-                                },
-                                zIndex: 10,
-                            },
-                            transformation: {
-                                height: 200,
-                                rotation: 45,
-                                width: 200,
-                            },
-                            type: "gif",
-                        }),
-                    ],
-                }),
-                new Paragraph({
-                    children: [
-                        new ImageRun({
-                            data: fs.readFileSync("./demo/images/cat.jpg"),
-                            floating: {
-                                horizontalPosition: {
-                                    align: HorizontalPositionAlign.RIGHT,
-                                    relative: HorizontalPositionRelativeFrom.PAGE,
-                                },
-                                verticalPosition: {
-                                    align: VerticalPositionAlign.BOTTOM,
-                                    relative: VerticalPositionRelativeFrom.PAGE,
-                                },
-                                zIndex: 5,
-                            },
-                            transformation: {
-                                height: 200,
-                                width: 200,
-                            },
-                            type: "jpg",
-                        }),
-                    ],
-                }),
-                new Paragraph({
-                    children: [
-                        new ImageRun({
-                            data: fs.readFileSync("./demo/images/linux-svg.svg"),
-                            fallback: {
-                                data: fs.readFileSync("./demo/images/linux-png.png"),
-                                type: "png",
-                            },
-                            transformation: {
-                                height: 200,
-                                width: 200,
-                            },
-                            type: "svg",
-                        }),
-                    ],
-                }),
-            ],
-        },
-    ],
+  sections: [
+    {
+      children: [
+        new Paragraph("Hello World"),
+        new Paragraph({
+          children: [
+            new ImageRun({
+              altText: {
+                description: "This is an ultimate image",
+                name: "My Ultimate Image",
+                title: "This is an ultimate title",
+              },
+              data: fs.readFileSync("./demo/images/image1.jpeg"),
+              transformation: {
+                height: 100,
+                width: 100,
+              },
+              type: "jpg",
+            }),
+          ],
+        }),
+        new Paragraph({
+          children: [
+            new ImageRun({
+              data: fs.readFileSync("./demo/images/dog.png").toString("base64"),
+              outline: {
+                color: { value: "FF0000" },
+                type: "solidFill",
+              },
+              transformation: {
+                height: 100,
+                width: 100,
+              },
+              type: "png",
+            }),
+          ],
+        }),
+        new Paragraph({
+          children: [
+            new ImageRun({
+              data: fs.readFileSync("./demo/images/cat.jpg"),
+              outline: {
+                color: { value: "0000FF" },
+                type: "solidFill",
+                width: convertMillimetersToTwip(600),
+              },
+              transformation: {
+                flip: {
+                  vertical: true,
+                },
+                height: 100,
+                width: 100,
+              },
+              type: "jpg",
+            }),
+          ],
+        }),
+        new Paragraph({
+          children: [
+            new ImageRun({
+              data: fs.readFileSync("./demo/images/parrots.bmp"),
+              transformation: {
+                flip: {
+                  horizontal: true,
+                },
+                height: 150,
+                rotation: 225,
+                width: 150,
+              },
+              type: "bmp",
+            }),
+          ],
+        }),
+        new Paragraph({
+          children: [
+            new ImageRun({
+              data: fs.readFileSync("./demo/images/pizza.gif"),
+              transformation: {
+                flip: {
+                  horizontal: true,
+                  vertical: true,
+                },
+                height: 200,
+                width: 200,
+              },
+              type: "gif",
+            }),
+          ],
+        }),
+        new Paragraph({
+          children: [
+            new ImageRun({
+              data: fs.readFileSync("./demo/images/pizza.gif"),
+              floating: {
+                horizontalPosition: {
+                  offset: 1_014_400,
+                },
+                verticalPosition: {
+                  offset: 1_014_400,
+                },
+                zIndex: 10,
+              },
+              transformation: {
+                height: 200,
+                rotation: 45,
+                width: 200,
+              },
+              type: "gif",
+            }),
+          ],
+        }),
+        new Paragraph({
+          children: [
+            new ImageRun({
+              data: fs.readFileSync("./demo/images/cat.jpg"),
+              floating: {
+                horizontalPosition: {
+                  align: HorizontalPositionAlign.RIGHT,
+                  relative: HorizontalPositionRelativeFrom.PAGE,
+                },
+                verticalPosition: {
+                  align: VerticalPositionAlign.BOTTOM,
+                  relative: VerticalPositionRelativeFrom.PAGE,
+                },
+                zIndex: 5,
+              },
+              transformation: {
+                height: 200,
+                width: 200,
+              },
+              type: "jpg",
+            }),
+          ],
+        }),
+        new Paragraph({
+          children: [
+            new ImageRun({
+              data: fs.readFileSync("./demo/images/linux-svg.svg"),
+              fallback: {
+                data: fs.readFileSync("./demo/images/linux-png.png"),
+                type: "png",
+              },
+              transformation: {
+                height: 200,
+                width: 200,
+              },
+              type: "svg",
+            }),
+          ],
+        }),
+      ],
+    },
+  ],
 });
 
 const buffer = await Packer.toBuffer(doc);

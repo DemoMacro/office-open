@@ -45,15 +45,15 @@ import { XmlAttributeComponent } from "@file/xml-components";
  * ```
  */
 export class BookmarkStartAttributes extends XmlAttributeComponent<{
-    /** Unique numeric identifier for the bookmark */
-    readonly id: number;
-    /** Name of the bookmark used for reference */
-    readonly name: string;
+  /** Unique numeric identifier for the bookmark */
+  readonly id: number;
+  /** Name of the bookmark used for reference */
+  readonly name: string;
 }> {
-    protected readonly xmlKeys = {
-        id: "w:id",
-        name: "w:name",
-    };
+  protected readonly xmlKeys = {
+    id: "w:id",
+    name: "w:name",
+  };
 }
 
 /**
@@ -75,10 +75,10 @@ export class BookmarkStartAttributes extends XmlAttributeComponent<{
  * ```
  */
 export class BookmarkEndAttributes extends XmlAttributeComponent<{
-    /** Unique numeric identifier matching the bookmark start */
-    readonly id: number;
+  /** Unique numeric identifier matching the bookmark start */
+  readonly id: number;
 }> {
-    protected readonly xmlKeys = {
-        id: "w:id",
-    };
+  protected readonly xmlKeys = {
+    id: "w:id",
+  };
 }

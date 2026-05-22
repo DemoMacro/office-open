@@ -29,12 +29,12 @@ import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
  * @publicApi
  */
 export const PositionalTabAlignment = {
-    /** Left-aligned tab */
-    LEFT: "left",
-    /** Center-aligned tab */
-    CENTER: "center",
-    /** Right-aligned tab */
-    RIGHT: "right",
+  /** Left-aligned tab */
+  LEFT: "left",
+  /** Center-aligned tab */
+  CENTER: "center",
+  /** Right-aligned tab */
+  RIGHT: "right",
 } as const;
 
 /**
@@ -55,10 +55,10 @@ export const PositionalTabAlignment = {
  * @publicApi
  */
 export const PositionalTabRelativeTo = {
-    /** Position relative to margin */
-    MARGIN: "margin",
-    /** Position relative to indent */
-    INDENT: "indent",
+  /** Position relative to margin */
+  MARGIN: "margin",
+  /** Position relative to indent */
+  INDENT: "indent",
 } as const;
 
 /**
@@ -82,16 +82,16 @@ export const PositionalTabRelativeTo = {
  * @publicApi
  */
 export const PositionalTabLeader = {
-    /** No leader character */
-    NONE: "none",
-    /** Dot leader (...) */
-    DOT: "dot",
-    /** Hyphen leader (---) */
-    HYPHEN: "hyphen",
-    /** Underscore leader (___) */
-    UNDERSCORE: "underscore",
-    /** Middle dot leader (···) */
-    MIDDLE_DOT: "middleDot",
+  /** No leader character */
+  NONE: "none",
+  /** Dot leader (...) */
+  DOT: "dot",
+  /** Hyphen leader (---) */
+  HYPHEN: "hyphen",
+  /** Underscore leader (___) */
+  UNDERSCORE: "underscore",
+  /** Middle dot leader (···) */
+  MIDDLE_DOT: "middleDot",
 } as const;
 
 /**
@@ -102,24 +102,24 @@ export const PositionalTabLeader = {
  * @property leader - Character used to fill space before the tab
  */
 export interface PositionalTabOptions {
-    /** How text is aligned at the tab stop */
-    readonly alignment: (typeof PositionalTabAlignment)[keyof typeof PositionalTabAlignment];
-    /** What the tab position is relative to */
-    readonly relativeTo: (typeof PositionalTabRelativeTo)[keyof typeof PositionalTabRelativeTo];
-    /** Character used to fill space before the tab */
-    readonly leader: (typeof PositionalTabLeader)[keyof typeof PositionalTabLeader];
+  /** How text is aligned at the tab stop */
+  readonly alignment: (typeof PositionalTabAlignment)[keyof typeof PositionalTabAlignment];
+  /** What the tab position is relative to */
+  readonly relativeTo: (typeof PositionalTabRelativeTo)[keyof typeof PositionalTabRelativeTo];
+  /** Character used to fill space before the tab */
+  readonly leader: (typeof PositionalTabLeader)[keyof typeof PositionalTabLeader];
 }
 
 class PositionalTabAttributes extends XmlAttributeComponent<{
-    readonly alignment: string;
-    readonly relativeTo: string;
-    readonly leader: string;
+  readonly alignment: string;
+  readonly relativeTo: string;
+  readonly leader: string;
 }> {
-    protected readonly xmlKeys = {
-        alignment: "w:alignment",
-        leader: "w:leader",
-        relativeTo: "w:relativeTo",
-    };
+  protected readonly xmlKeys = {
+    alignment: "w:alignment",
+    leader: "w:leader",
+    relativeTo: "w:relativeTo",
+  };
 }
 
 /**
@@ -153,15 +153,15 @@ class PositionalTabAttributes extends XmlAttributeComponent<{
  * ```
  */
 export class PositionalTab extends XmlComponent {
-    public constructor(options: PositionalTabOptions) {
-        super("w:ptab");
+  public constructor(options: PositionalTabOptions) {
+    super("w:ptab");
 
-        this.root.push(
-            new PositionalTabAttributes({
-                alignment: options.alignment,
-                leader: options.leader,
-                relativeTo: options.relativeTo,
-            }),
-        );
-    }
+    this.root.push(
+      new PositionalTabAttributes({
+        alignment: options.alignment,
+        leader: options.leader,
+        relativeTo: options.relativeTo,
+      }),
+    );
+  }
 }

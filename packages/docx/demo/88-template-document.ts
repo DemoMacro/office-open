@@ -7,28 +7,28 @@ import { patchDocument, PatchType, TextRun } from "@office-open/docx";
 
 export const font = "Trebuchet MS";
 export const getPatches = (fields: Record<string, string>) => {
-    const patches: Record<string, IPatch> = {};
+  const patches: Record<string, IPatch> = {};
 
-    for (const field in fields) {
-        patches[field] = {
-            children: [new TextRun({ font, text: fields[field] })],
-            type: PatchType.PARAGRAPH,
-        };
-    }
+  for (const field in fields) {
+    patches[field] = {
+      children: [new TextRun({ font, text: fields[field] })],
+      type: PatchType.PARAGRAPH,
+    };
+  }
 
-    return patches;
+  return patches;
 };
 
 const patches = getPatches({
-    item_1: "Doe",
-    name: "Mr",
-    paragraph_replace: "Lorem ipsum paragraph",
-    table_heading_1: "John",
+  item_1: "Doe",
+  name: "Mr",
+  paragraph_replace: "Lorem ipsum paragraph",
+  table_heading_1: "John",
 });
 
 const doc = await patchDocument({
-    data: fs.readFileSync("demo/assets/simple-template.docx"),
-    outputType: "nodebuffer",
-    patches,
+  data: fs.readFileSync("demo/assets/simple-template.docx"),
+  outputType: "nodebuffer",
+  patches,
 });
 fs.writeFileSync("My Document.docx", doc);

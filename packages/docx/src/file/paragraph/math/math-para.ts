@@ -26,10 +26,10 @@ export type MathJustification = "left" | "right" | "center" | "centerGroup";
  * @see {@link MathParagraph}
  */
 export interface IMathParagraphOptions {
-    /** Justification for the math paragraph */
-    readonly justification?: MathJustification;
-    /** Math equations in this paragraph */
-    readonly children: readonly IMathOptions[];
+  /** Justification for the math paragraph */
+  readonly justification?: MathJustification;
+  /** Math equations in this paragraph */
+  readonly children: readonly IMathOptions[];
 }
 
 /**
@@ -45,15 +45,15 @@ export interface IMathParagraphOptions {
  * ```
  */
 const createMathParagraphProperties = (justification: MathJustification): XmlComponent =>
-    new BuilderElement({
-        children: [
-            new BuilderElement({
-                attributes: { val: { key: "m:val", value: justification } },
-                name: "m:jc",
-            }),
-        ],
-        name: "m:oMathParaPr",
-    });
+  new BuilderElement({
+    children: [
+      new BuilderElement({
+        attributes: { val: { key: "m:val", value: justification } },
+        name: "m:jc",
+      }),
+    ],
+    name: "m:oMathParaPr",
+  });
 
 /**
  * Represents a math paragraph in a WordprocessingML document.
@@ -87,15 +87,15 @@ const createMathParagraphProperties = (justification: MathJustification): XmlCom
  * ```
  */
 export class MathParagraph extends XmlComponent {
-    public constructor(options: IMathParagraphOptions) {
-        super("m:oMathPara");
+  public constructor(options: IMathParagraphOptions) {
+    super("m:oMathPara");
 
-        if (options.justification) {
-            this.root.push(createMathParagraphProperties(options.justification));
-        }
-
-        for (const child of options.children) {
-            this.root.push(new Math(child));
-        }
+    if (options.justification) {
+      this.root.push(createMathParagraphProperties(options.justification));
     }
+
+    for (const child of options.children) {
+      this.root.push(new Math(child));
+    }
+  }
 }

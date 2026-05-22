@@ -34,14 +34,14 @@ import { OffsetAttributes } from "./off-attributes";
  * ```
  */
 export class Offset extends XmlComponent {
-    public constructor(x: number | undefined, y: number | undefined) {
-        super("a:off");
+  public constructor(x: number | undefined, y: number | undefined) {
+    super("a:off");
 
-        this.root.push(
-            new OffsetAttributes({
-                x: x ?? 0,
-                y: y ?? 0,
-            }),
-        );
-    }
+    this.root.push(
+      new OffsetAttributes({
+        x: x ?? 0,
+        y: y ?? 0,
+      }),
+    );
+  }
 }

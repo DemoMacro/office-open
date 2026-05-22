@@ -67,89 +67,89 @@ import type { Shape3DOptions } from "./three-d/shape-3d";
  * ```
  */
 export class ShapeProperties extends XmlComponent {
-    private readonly form: Form;
-    private readonly fillOptions?: FillOptions;
+  private readonly form: Form;
+  private readonly fillOptions?: FillOptions;
 
-    public constructor({
-        element,
-        customGeometry,
-        effectDag,
-        effects,
-        fill,
-        outline,
-        presetGeometry,
-        scene3d,
-        shape3d,
-        transform,
-    }: {
-        readonly element: string;
-        readonly outline?: OutlineOptions;
-        readonly fill?: FillOptions;
-        readonly presetGeometry?: PresetGeometryOptions;
-        /** Custom geometry (mutually exclusive with presetGeometry). */
-        readonly customGeometry?: CustomGeometryOptions;
-        /** Effect DAG container (mutually exclusive with effects). */
-        readonly effectDag?: EffectDagOptions;
-        readonly effects?: EffectListOptions;
-        readonly scene3d?: Scene3DOptions;
-        readonly shape3d?: Shape3DOptions;
-        readonly transform: IMediaDataTransformation;
-    }) {
-        super(`${element}:spPr`);
+  public constructor({
+    element,
+    customGeometry,
+    effectDag,
+    effects,
+    fill,
+    outline,
+    presetGeometry,
+    scene3d,
+    shape3d,
+    transform,
+  }: {
+    readonly element: string;
+    readonly outline?: OutlineOptions;
+    readonly fill?: FillOptions;
+    readonly presetGeometry?: PresetGeometryOptions;
+    /** Custom geometry (mutually exclusive with presetGeometry). */
+    readonly customGeometry?: CustomGeometryOptions;
+    /** Effect DAG container (mutually exclusive with effects). */
+    readonly effectDag?: EffectDagOptions;
+    readonly effects?: EffectListOptions;
+    readonly scene3d?: Scene3DOptions;
+    readonly shape3d?: Shape3DOptions;
+    readonly transform: IMediaDataTransformation;
+  }) {
+    super(`${element}:spPr`);
 
-        this.fillOptions = fill;
+    this.fillOptions = fill;
 
-        this.root.push(
-            new ShapePropertiesAttributes({
-                bwMode: "auto",
-            }),
-        );
+    this.root.push(
+      new ShapePropertiesAttributes({
+        bwMode: "auto",
+      }),
+    );
 
-        this.form = new Form(transform);
+    this.form = new Form(transform);
 
-        this.root.push(this.form);
+    this.root.push(this.form);
 
-        // EG_Geometry: custGeom and prstGeom are mutually exclusive
-        if (customGeometry) {
-            this.root.push(createCustomGeometry(customGeometry));
-        } else {
-            this.root.push(new PresetGeometry(presetGeometry));
-        }
-
-        if (fill !== undefined) {
-            this.root.push(buildFill(fill));
-        }
-
-        if (outline) {
-            this.root.push(createOutline(outline));
-        }
-
-        // EG_EffectProperties: effectDag and effectLst are mutually exclusive
-        if (effectDag) {
-            this.root.push(createEffectDag(effectDag));
-        } else if (effects) {
-            this.root.push(createEffectList(effects));
-        }
-
-        if (scene3d) {
-            this.root.push(createScene3D(scene3d));
-        }
-
-        if (shape3d) {
-            this.root.push(createShape3D(shape3d));
-        }
+    // EG_Geometry: custGeom and prstGeom are mutually exclusive
+    if (customGeometry) {
+      this.root.push(createCustomGeometry(customGeometry));
+    } else {
+      this.root.push(new PresetGeometry(presetGeometry));
     }
 
-    public override prepForXml(context: IContext): IXmlableObject | undefined {
-        const media = this.fillOptions ? extractBlipFillMedia(this.fillOptions) : undefined;
-        if (media) {
-            context.file.Media.addImage(media.fileName, {
-                data: media.data,
-                fileName: media.fileName,
-                type: media.type as "png",
-                transformation: { pixels: { x: 0, y: 0 }, emus: { x: 0, y: 0 } },
-            });
-        }
-        return super.prepForXml(context);
+    if (fill !== undefined) {
+      this.root.push(buildFill(fill));
     }
+
+    if (outline) {
+      this.root.push(createOutline(outline));
+    }
+
+    // EG_EffectProperties: effectDag and effectLst are mutually exclusive
+    if (effectDag) {
+      this.root.push(createEffectDag(effectDag));
+    } else if (effects) {
+      this.root.push(createEffectList(effects));
+    }
+
+    if (scene3d) {
+      this.root.push(createScene3D(scene3d));
+    }
+
+    if (shape3d) {
+      this.root.push(createShape3D(shape3d));
+    }
+  }
+
+  public override prepForXml(context: IContext): IXmlableObject | undefined {
+    const media = this.fillOptions ? extractBlipFillMedia(this.fillOptions) : undefined;
+    if (media) {
+      context.file.Media.addImage(media.fileName, {
+        data: media.data,
+        fileName: media.fileName,
+        type: media.type as "png",
+        transformation: { pixels: { x: 0, y: 0 }, emus: { x: 0, y: 0 } },
+      });
+    }
+    return super.prepForXml(context);
+  }
 }

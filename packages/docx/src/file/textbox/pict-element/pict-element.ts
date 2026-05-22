@@ -14,8 +14,8 @@ import type { XmlComponent } from "@file/xml-components";
  * @property shape - The VML shape to be contained within the picture element
  */
 export interface IPictElement {
-    /** The VML shape to be contained within the picture element */
-    readonly shape: XmlComponent;
+  /** The VML shape to be contained within the picture element */
+  readonly shape: XmlComponent;
 }
 
 /**
@@ -54,7 +54,7 @@ export interface IPictElement {
  * ```
  */
 export const createPictElement = ({ shape }: IPictElement): XmlComponent =>
-    new BuilderElement<{ readonly style?: string }>({
-        children: [shape],
-        name: "w:pict",
-    });
+  new BuilderElement<{ readonly style?: string }>({
+    children: [shape],
+    name: "w:pict",
+  });

@@ -30,18 +30,18 @@ import type { XmlComponent } from "../../xml-components";
  * @publicApi
  */
 export const LineEndType = {
-    /** No line end */
-    NONE: "none",
-    /** Triangle arrow */
-    TRIANGLE: "triangle",
-    /** Stealth arrow (filled triangle) */
-    STEALTH: "stealth",
-    /** Diamond shape */
-    DIAMOND: "diamond",
-    /** Oval shape */
-    OVAL: "oval",
-    /** Simple arrow */
-    ARROW: "arrow",
+  /** No line end */
+  NONE: "none",
+  /** Triangle arrow */
+  TRIANGLE: "triangle",
+  /** Stealth arrow (filled triangle) */
+  STEALTH: "stealth",
+  /** Diamond shape */
+  DIAMOND: "diamond",
+  /** Oval shape */
+  OVAL: "oval",
+  /** Simple arrow */
+  ARROW: "arrow",
 } as const;
 
 /**
@@ -61,12 +61,12 @@ export const LineEndType = {
  * @publicApi
  */
 export const LineEndWidth = {
-    /** Small width */
-    SMALL: "sm",
-    /** Medium width */
-    MEDIUM: "med",
-    /** Large width */
-    LARGE: "lg",
+  /** Small width */
+  SMALL: "sm",
+  /** Medium width */
+  MEDIUM: "med",
+  /** Large width */
+  LARGE: "lg",
 } as const;
 
 /**
@@ -86,12 +86,12 @@ export const LineEndWidth = {
  * @publicApi
  */
 export const LineEndLength = {
-    /** Small length */
-    SMALL: "sm",
-    /** Medium length */
-    MEDIUM: "med",
-    /** Large length */
-    LARGE: "lg",
+  /** Small length */
+  SMALL: "sm",
+  /** Medium length */
+  MEDIUM: "med",
+  /** Large length */
+  LARGE: "lg",
 } as const;
 
 /**
@@ -107,12 +107,12 @@ export const LineEndLength = {
  * ```
  */
 export interface LineEndOptions {
-    /** Arrow/head type */
-    readonly type: keyof typeof LineEndType;
-    /** Arrow width */
-    readonly width?: keyof typeof LineEndWidth;
-    /** Arrow length */
-    readonly length?: keyof typeof LineEndLength;
+  /** Arrow/head type */
+  readonly type: keyof typeof LineEndType;
+  /** Arrow width */
+  readonly width?: keyof typeof LineEndWidth;
+  /** Arrow length */
+  readonly length?: keyof typeof LineEndLength;
 }
 
 /**
@@ -127,11 +127,11 @@ export interface LineEndOptions {
  * ```
  */
 export const createLineEnd = (name: string, options: LineEndOptions): XmlComponent =>
-    new BuilderElement<{ readonly type?: string; readonly w?: string; readonly len?: string }>({
-        attributes: {
-            type: { key: "type", value: LineEndType[options.type] },
-            w: { key: "w", value: options.width ? LineEndWidth[options.width] : undefined },
-            len: { key: "len", value: options.length ? LineEndLength[options.length] : undefined },
-        },
-        name,
-    });
+  new BuilderElement<{ readonly type?: string; readonly w?: string; readonly len?: string }>({
+    attributes: {
+      type: { key: "type", value: LineEndType[options.type] },
+      w: { key: "w", value: options.width ? LineEndWidth[options.width] : undefined },
+      len: { key: "len", value: options.length ? LineEndLength[options.length] : undefined },
+    },
+    name,
+  });

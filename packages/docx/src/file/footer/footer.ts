@@ -50,7 +50,7 @@ import { HeaderFooterBase, FOOTER_NAMESPACES } from "../header-footer-base";
  * ```
  */
 export class Footer extends HeaderFooterBase {
-    public constructor(referenceNumber: number, initContent?: XmlComponent) {
-        super("w:ftr", referenceNumber, FOOTER_NAMESPACES, initContent);
-    }
+  public constructor(referenceNumber: number, initContent?: XmlComponent) {
+    super("w:ftr", referenceNumber, FOOTER_NAMESPACES, initContent);
+  }
 }

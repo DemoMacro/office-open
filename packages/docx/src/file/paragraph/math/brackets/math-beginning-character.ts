@@ -14,8 +14,8 @@ import type { XmlComponent } from "@file/xml-components";
  * Options for creating a beginning character element.
  */
 interface MathBeginningCharacterOptions {
-    /** The opening bracket character */
-    readonly character: string;
+  /** The opening bracket character */
+  readonly character: string;
 }
 
 /**
@@ -34,11 +34,11 @@ interface MathBeginningCharacterOptions {
  * ```
  */
 export const createMathBeginningCharacter = ({
-    character,
+  character,
 }: MathBeginningCharacterOptions): XmlComponent =>
-    new BuilderElement<MathBeginningCharacterOptions>({
-        attributes: {
-            character: { key: "m:val", value: character },
-        },
-        name: "m:begChr",
-    });
+  new BuilderElement<MathBeginningCharacterOptions>({
+    attributes: {
+      character: { key: "m:val", value: character },
+    },
+    name: "m:begChr",
+  });

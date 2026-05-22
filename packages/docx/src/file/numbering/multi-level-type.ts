@@ -42,17 +42,17 @@ import { Attributes, XmlComponent } from "@file/xml-components";
  * ```
  */
 export class MultiLevelType extends XmlComponent {
-    /**
-     * Creates a new multi-level type specification.
-     *
-     * @param value - The multi-level type: "singleLevel", "multilevel", or "hybridMultilevel"
-     */
-    public constructor(value: string) {
-        super("w:multiLevelType");
-        this.root.push(
-            new Attributes({
-                val: value,
-            }),
-        );
-    }
+  /**
+   * Creates a new multi-level type specification.
+   *
+   * @param value - The multi-level type: "singleLevel", "multilevel", or "hybridMultilevel"
+   */
+  public constructor(value: string) {
+    super("w:multiLevelType");
+    this.root.push(
+      new Attributes({
+        val: value,
+      }),
+    );
+  }
 }

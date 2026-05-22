@@ -26,8 +26,8 @@ const SPLIT_TOKEN = "ɵ";
  * @property didFindOccurrence - Whether a placeholder occurrence was found and replaced
  */
 interface IReplacerResult {
-    readonly element: Element;
-    readonly didFindOccurrence: boolean;
+  readonly element: Element;
+  readonly didFindOccurrence: boolean;
 }
 
 /**
@@ -45,117 +45,105 @@ interface IReplacerResult {
  * @returns Result containing the modified element and whether a replacement occurred
  */
 export const replacer = ({
-    json,
-    patch,
-    patchText,
-    context,
-    keepOriginalStyles = true,
+  json,
+  patch,
+  patchText,
+  context,
+  keepOriginalStyles = true,
 }: {
-    readonly json: Element;
-    readonly patch: IPatch;
-    readonly patchText: string;
-    readonly context: IContext;
-    readonly keepOriginalStyles?: boolean;
+  readonly json: Element;
+  readonly patch: IPatch;
+  readonly patchText: string;
+  readonly context: IContext;
+  readonly keepOriginalStyles?: boolean;
 }): IReplacerResult => {
-    const renderedParagraphs = findLocationOfText(json, patchText);
+  const renderedParagraphs = findLocationOfText(json, patchText);
 
-    if (renderedParagraphs.length === 0) {
-        return { didFindOccurrence: false, element: json };
-    }
+  if (renderedParagraphs.length === 0) {
+    return { didFindOccurrence: false, element: json };
+  }
 
-    for (const renderedParagraph of renderedParagraphs) {
-        const textJson = patch.children
-            .map((c) => toJson(xml(formatter.format(c as XmlComponent, context))))
-            .map((c) => c.elements![0]);
+  for (const renderedParagraph of renderedParagraphs) {
+    const textJson = patch.children
+      .map((c) => toJson(xml(formatter.format(c as XmlComponent, context))))
+      .map((c) => c.elements![0]);
 
-        switch (patch.type) {
-            case PatchType.DOCUMENT: {
-                const parentElement = goToParentElementFromPath(
-                    json,
-                    renderedParagraph.pathToParagraph,
-                );
-                const elementIndex = getLastElementIndexFromPath(renderedParagraph.pathToParagraph);
-                parentElement.elements!.splice(elementIndex, 1, ...textJson);
-                break;
+    switch (patch.type) {
+      case PatchType.DOCUMENT: {
+        const parentElement = goToParentElementFromPath(json, renderedParagraph.pathToParagraph);
+        const elementIndex = getLastElementIndexFromPath(renderedParagraph.pathToParagraph);
+        parentElement.elements!.splice(elementIndex, 1, ...textJson);
+        break;
+      }
+      case PatchType.PARAGRAPH:
+      default: {
+        const paragraphElement = goToElementFromPath(json, renderedParagraph.pathToParagraph);
+        replaceTokenInParagraphElement({
+          originalText: patchText,
+          paragraphElement,
+          renderedParagraph,
+          replacementText: SPLIT_TOKEN,
+        });
+
+        const index = findRunElementIndexWithToken(paragraphElement, SPLIT_TOKEN);
+
+        const runElementToBeReplaced = paragraphElement.elements![index];
+        const { left, right } = splitRunElement(runElementToBeReplaced, SPLIT_TOKEN);
+
+        let newRunElements = textJson;
+        let patchedRightElement = right;
+
+        if (keepOriginalStyles) {
+          const runElementNonTextualElements = runElementToBeReplaced.elements!.filter(
+            (e) => e.type === "element" && e.name === "w:rPr",
+          );
+
+          newRunElements = textJson.map((e) => {
+            // Only prepend rPr to w:r elements that don't already have one
+            if (
+              e.type !== "element" ||
+              e.name !== "w:r" ||
+              e.elements?.some((c: any) => c.type === "element" && c.name === "w:rPr")
+            ) {
+              return e;
             }
-            case PatchType.PARAGRAPH:
-            default: {
-                const paragraphElement = goToElementFromPath(
-                    json,
-                    renderedParagraph.pathToParagraph,
-                );
-                replaceTokenInParagraphElement({
-                    originalText: patchText,
-                    paragraphElement,
-                    renderedParagraph,
-                    replacementText: SPLIT_TOKEN,
-                });
+            return {
+              ...e,
+              elements: [...runElementNonTextualElements, ...(e.elements ?? [])],
+            };
+          });
 
-                const index = findRunElementIndexWithToken(paragraphElement, SPLIT_TOKEN);
-
-                const runElementToBeReplaced = paragraphElement.elements![index];
-                const { left, right } = splitRunElement(runElementToBeReplaced, SPLIT_TOKEN);
-
-                let newRunElements = textJson;
-                let patchedRightElement = right;
-
-                if (keepOriginalStyles) {
-                    const runElementNonTextualElements = runElementToBeReplaced.elements!.filter(
-                        (e) => e.type === "element" && e.name === "w:rPr",
-                    );
-
-                    newRunElements = textJson.map((e) => {
-                        // Only prepend rPr to w:r elements that don't already have one
-                        if (
-                            e.type !== "element" ||
-                            e.name !== "w:r" ||
-                            e.elements?.some((c: any) => c.type === "element" && c.name === "w:rPr")
-                        ) {
-                            return e;
-                        }
-                        return {
-                            ...e,
-                            elements: [...runElementNonTextualElements, ...(e.elements ?? [])],
-                        };
-                    });
-
-                    patchedRightElement = {
-                        ...right,
-                        elements: [...runElementNonTextualElements, ...right.elements!],
-                    };
-                }
-
-                paragraphElement.elements!.splice(
-                    index,
-                    1,
-                    left,
-                    ...newRunElements,
-                    patchedRightElement,
-                );
-                break;
-            }
+          patchedRightElement = {
+            ...right,
+            elements: [...runElementNonTextualElements, ...right.elements!],
+          };
         }
-    }
 
-    return { didFindOccurrence: true, element: json };
+        paragraphElement.elements!.splice(index, 1, left, ...newRunElements, patchedRightElement);
+        break;
+      }
+    }
+  }
+
+  return { didFindOccurrence: true, element: json };
 };
 
 const goToElementFromPath = (json: Element, path: readonly number[]): Element => {
-    let element = json;
+  let element = json;
 
-    // We start from 1 because the first element is the root element
-    // Which we do not want to double count
-    for (let i = 1; i < path.length; i++) {
-        const index = path[i];
-        const nextElements = element.elements!;
+  // We start from 1 because the first element is the root element
+  // Which we do not want to double count
+  for (let i = 1; i < path.length; i++) {
+    const index = path[i];
+    const nextElements = element.elements!;
 
-        element = nextElements[index];
-    }
+    element = nextElements[index];
+  }
 
-    return element;
+  return element;
 };
 
 const goToParentElementFromPath = (json: Element, path: readonly number[]): Element =>
-    goToElementFromPath(json, path.slice(0, -1));
+  goToElementFromPath(json, path.slice(0, -1));
 
 const getLastElementIndexFromPath = (path: readonly number[]): number => path[path.length - 1];

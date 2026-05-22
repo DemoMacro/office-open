@@ -10,8 +10,8 @@
  */
 import type { HyperlinkOptions } from "@file/drawing/doc-properties/doc-properties";
 import {
-    createHyperlinkClick,
-    createHyperlinkHover,
+  createHyperlinkClick,
+  createHyperlinkHover,
 } from "@file/drawing/doc-properties/doc-properties-children";
 import { ConcreteHyperlink } from "@file/paragraph";
 import { TargetModeType } from "@file/relationships/relationship/relationship";
@@ -22,7 +22,7 @@ import { uniqueId } from "@util/convenience-functions";
 import { NonVisualPropertiesAttributes } from "./non-visual-properties-attributes";
 
 const HYPERLINK_RELATIONSHIP_TYPE =
-    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink";
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink";
 
 /**
  * Represents non-visual drawing properties for pictures.
@@ -54,62 +54,62 @@ const HYPERLINK_RELATIONSHIP_TYPE =
  * ```
  */
 export class NonVisualProperties extends XmlComponent {
-    private readonly hyperlink?: HyperlinkOptions;
+  private readonly hyperlink?: HyperlinkOptions;
 
-    public constructor(hyperlink?: HyperlinkOptions) {
-        super("pic:cNvPr");
+  public constructor(hyperlink?: HyperlinkOptions) {
+    super("pic:cNvPr");
 
-        this.hyperlink = hyperlink;
+    this.hyperlink = hyperlink;
 
-        this.root.push(
-            new NonVisualPropertiesAttributes({
-                descr: "",
-                id: 0,
-                name: "",
-            }),
+    this.root.push(
+      new NonVisualPropertiesAttributes({
+        descr: "",
+        id: 0,
+        name: "",
+      }),
+    );
+  }
+
+  public prepForXml(context: IContext): IXmlableObject | undefined {
+    // Stack-based detection (backward compatible with ConcreteHyperlink wrapping)
+    let hasStackClick = false;
+    for (let i = context.stack.length - 1; i >= 0; i--) {
+      const element = context.stack[i];
+      if (!(element instanceof ConcreteHyperlink)) {
+        continue;
+      }
+
+      this.root.push(createHyperlinkClick(element.linkId, false));
+      hasStackClick = true;
+
+      break;
+    }
+
+    // Explicit hyperlink options take precedence over stack-based detection
+    if (this.hyperlink) {
+      if (this.hyperlink.click && !hasStackClick) {
+        const linkId = uniqueId();
+        context.viewWrapper.Relationships.addRelationship(
+          linkId,
+          HYPERLINK_RELATIONSHIP_TYPE,
+          this.hyperlink.click,
+          TargetModeType.EXTERNAL,
         );
+        this.root.push(createHyperlinkClick(linkId, false));
+      }
+
+      if (this.hyperlink.hover) {
+        const linkId = uniqueId();
+        context.viewWrapper.Relationships.addRelationship(
+          linkId,
+          HYPERLINK_RELATIONSHIP_TYPE,
+          this.hyperlink.hover,
+          TargetModeType.EXTERNAL,
+        );
+        this.root.push(createHyperlinkHover(linkId, false));
+      }
     }
 
-    public prepForXml(context: IContext): IXmlableObject | undefined {
-        // Stack-based detection (backward compatible with ConcreteHyperlink wrapping)
-        let hasStackClick = false;
-        for (let i = context.stack.length - 1; i >= 0; i--) {
-            const element = context.stack[i];
-            if (!(element instanceof ConcreteHyperlink)) {
-                continue;
-            }
-
-            this.root.push(createHyperlinkClick(element.linkId, false));
-            hasStackClick = true;
-
-            break;
-        }
-
-        // Explicit hyperlink options take precedence over stack-based detection
-        if (this.hyperlink) {
-            if (this.hyperlink.click && !hasStackClick) {
-                const linkId = uniqueId();
-                context.viewWrapper.Relationships.addRelationship(
-                    linkId,
-                    HYPERLINK_RELATIONSHIP_TYPE,
-                    this.hyperlink.click,
-                    TargetModeType.EXTERNAL,
-                );
-                this.root.push(createHyperlinkClick(linkId, false));
-            }
-
-            if (this.hyperlink.hover) {
-                const linkId = uniqueId();
-                context.viewWrapper.Relationships.addRelationship(
-                    linkId,
-                    HYPERLINK_RELATIONSHIP_TYPE,
-                    this.hyperlink.hover,
-                    TargetModeType.EXTERNAL,
-                );
-                this.root.push(createHyperlinkHover(linkId, false));
-            }
-        }
-
-        return super.prepForXml(context);
-    }
+    return super.prepForXml(context);
+  }
 }

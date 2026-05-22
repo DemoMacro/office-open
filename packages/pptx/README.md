@@ -38,20 +38,20 @@ import { Presentation, Shape, Packer, Paragraph, Run } from "@office-open/pptx";
 import { writeFileSync } from "node:fs";
 
 const pres = new Presentation({
-    slides: [
-        {
-            children: [
-                new Shape({
-                    text: "Hello World",
-                    fill: "4472C4",
-                    x: 100,
-                    y: 100,
-                    width: 600,
-                    height: 400,
-                }),
-            ],
-        },
-    ],
+  slides: [
+    {
+      children: [
+        new Shape({
+          text: "Hello World",
+          fill: "4472C4",
+          x: 100,
+          y: 100,
+          width: 600,
+          height: 400,
+        }),
+      ],
+    },
+  ],
 });
 
 const buffer = await Packer.toBuffer(pres);
@@ -82,11 +82,11 @@ Performance vs [PptxGenJS](https://github.com/gitbrent/PptxGenJS) (higher hz is 
 
 **Large Files — Create + toBuffer**
 
-| Scenario               | @office-open/pptx | PptxGenJS (DEFLATE) |  Speedup |
-| ---------------------- | ----------------: | ------------------: | -------: |
-| 10 slides × 10 shapes  |         493 ops/s |           475 ops/s | **1.0x** |
-| 50×10 table            |         450 ops/s |           243 ops/s | **1.9x** |
-| 20 slides full         |         450 ops/s |           343 ops/s | **1.3x** |
+| Scenario              | @office-open/pptx | PptxGenJS (DEFLATE) |  Speedup |
+| --------------------- | ----------------: | ------------------: | -------: |
+| 10 slides × 10 shapes |         493 ops/s |           475 ops/s | **1.0x** |
+| 50×10 table           |         450 ops/s |           243 ops/s | **1.9x** |
+| 20 slides full        |         450 ops/s |           343 ops/s | **1.3x** |
 
 ## Examples
 

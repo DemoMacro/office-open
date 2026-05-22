@@ -16,8 +16,8 @@ import type { MathComponent } from "../math-component";
  * Options for creating a superscript element.
  */
 interface MathSuperScriptElementOptions {
-    /** The content of the superscript */
-    readonly children: readonly MathComponent[];
+  /** The content of the superscript */
+  readonly children: readonly MathComponent[];
 }
 
 /**
@@ -40,9 +40,9 @@ interface MathSuperScriptElementOptions {
  * ```
  */
 export const createMathSuperScriptElement = ({
-    children,
+  children,
 }: MathSuperScriptElementOptions): XmlComponent =>
-    new BuilderElement({
-        children,
-        name: "m:sup",
-    });
+  new BuilderElement({
+    children,
+    name: "m:sup",
+  });

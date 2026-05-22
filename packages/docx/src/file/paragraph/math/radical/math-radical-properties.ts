@@ -32,11 +32,11 @@ import { MathDegreeHide } from "./math-degree-hide";
  * @internal
  */
 export class MathRadicalProperties extends XmlComponent {
-    public constructor(hasDegree: boolean) {
-        super("m:radPr");
+  public constructor(hasDegree: boolean) {
+    super("m:radPr");
 
-        if (!hasDegree) {
-            this.root.push(new MathDegreeHide());
-        }
+    if (!hasDegree) {
+      this.root.push(new MathDegreeHide());
     }
+  }
 }

@@ -16,16 +16,16 @@ import type { XmlComponent } from "@file/xml-components";
  * @see {@link createMathPhantProperties}
  */
 export interface MathPhantPropertiesOptions {
-    /** Show the phantom content */
-    readonly show?: boolean;
-    /** Zero width */
-    readonly zeroWid?: boolean;
-    /** Zero ascent */
-    readonly zeroAsc?: boolean;
-    /** Zero descent */
-    readonly zeroDesc?: boolean;
-    /** Transparent */
-    readonly transp?: boolean;
+  /** Show the phantom content */
+  readonly show?: boolean;
+  /** Zero width */
+  readonly zeroWid?: boolean;
+  /** Zero ascent */
+  readonly zeroAsc?: boolean;
+  /** Zero descent */
+  readonly zeroDesc?: boolean;
+  /** Transparent */
+  readonly transp?: boolean;
 }
 
 /**
@@ -46,26 +46,26 @@ export interface MathPhantPropertiesOptions {
  * ```
  */
 export const createMathPhantProperties = (options: MathPhantPropertiesOptions): XmlComponent => {
-    const children: XmlComponent[] = [];
+  const children: XmlComponent[] = [];
 
-    if (options.show !== undefined) {
-        children.push(new OnOffElement("m:show", options.show));
-    }
-    if (options.zeroWid !== undefined) {
-        children.push(new OnOffElement("m:zeroWid", options.zeroWid));
-    }
-    if (options.zeroAsc !== undefined) {
-        children.push(new OnOffElement("m:zeroAsc", options.zeroAsc));
-    }
-    if (options.zeroDesc !== undefined) {
-        children.push(new OnOffElement("m:zeroDesc", options.zeroDesc));
-    }
-    if (options.transp !== undefined) {
-        children.push(new OnOffElement("m:transp", options.transp));
-    }
+  if (options.show !== undefined) {
+    children.push(new OnOffElement("m:show", options.show));
+  }
+  if (options.zeroWid !== undefined) {
+    children.push(new OnOffElement("m:zeroWid", options.zeroWid));
+  }
+  if (options.zeroAsc !== undefined) {
+    children.push(new OnOffElement("m:zeroAsc", options.zeroAsc));
+  }
+  if (options.zeroDesc !== undefined) {
+    children.push(new OnOffElement("m:zeroDesc", options.zeroDesc));
+  }
+  if (options.transp !== undefined) {
+    children.push(new OnOffElement("m:transp", options.transp));
+  }
 
-    return new BuilderElement({
-        children,
-        name: "m:phantPr",
-    });
+  return new BuilderElement({
+    children,
+    name: "m:phantPr",
+  });
 };

@@ -17,10 +17,10 @@ import type { OutlineOptions } from "./inline/graphic/graphic-data/pic/shape-pro
  * Specifies the margins around a drawing element.
  */
 export interface IDistance {
-    readonly distT?: number;
-    readonly distB?: number;
-    readonly distL?: number;
-    readonly distR?: number;
+  readonly distT?: number;
+  readonly distB?: number;
+  readonly distL?: number;
+  readonly distR?: number;
 }
 
 /**
@@ -29,13 +29,13 @@ export interface IDistance {
  * @see {@link Drawing}
  */
 export interface IDrawingOptions {
-    readonly floating?: IFloating;
-    readonly docProperties?: DocPropertiesOptions;
-    readonly outline?: OutlineOptions;
-    readonly fill?: FillOptions;
-    readonly effects?: EffectListOptions;
-    readonly blipEffects?: BlipEffectsOptions;
-    readonly tile?: TileOptions;
+  readonly floating?: IFloating;
+  readonly docProperties?: DocPropertiesOptions;
+  readonly outline?: OutlineOptions;
+  readonly fill?: FillOptions;
+  readonly effects?: EffectListOptions;
+  readonly blipEffects?: BlipEffectsOptions;
+  readonly tile?: TileOptions;
 }
 
 /**
@@ -57,30 +57,30 @@ export interface IDrawingOptions {
  * ```
  */
 export class Drawing extends XmlComponent {
-    public constructor(imageData: IExtendedMediaData, drawingOptions: IDrawingOptions = {}) {
-        super("w:drawing");
+  public constructor(imageData: IExtendedMediaData, drawingOptions: IDrawingOptions = {}) {
+    super("w:drawing");
 
-        if (!drawingOptions.floating) {
-            this.root.push(
-                createInline({
-                    blipEffects: drawingOptions.blipEffects,
-                    docProperties: drawingOptions.docProperties,
-                    effects: drawingOptions.effects,
-                    mediaData: imageData,
-                    outline: drawingOptions.outline,
-                    fill: drawingOptions.fill,
-                    tile: drawingOptions.tile,
-                    transform: imageData.transformation,
-                }),
-            );
-        } else {
-            this.root.push(
-                new Anchor({
-                    drawingOptions,
-                    mediaData: imageData,
-                    transform: imageData.transformation,
-                }),
-            );
-        }
+    if (!drawingOptions.floating) {
+      this.root.push(
+        createInline({
+          blipEffects: drawingOptions.blipEffects,
+          docProperties: drawingOptions.docProperties,
+          effects: drawingOptions.effects,
+          mediaData: imageData,
+          outline: drawingOptions.outline,
+          fill: drawingOptions.fill,
+          tile: drawingOptions.tile,
+          transform: imageData.transformation,
+        }),
+      );
+    } else {
+      this.root.push(
+        new Anchor({
+          drawingOptions,
+          mediaData: imageData,
+          transform: imageData.transformation,
+        }),
+      );
     }
+  }
 }

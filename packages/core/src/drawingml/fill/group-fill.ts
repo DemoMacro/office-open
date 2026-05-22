@@ -30,6 +30,6 @@ import type { XmlComponent } from "../../xml-components";
  * ```
  */
 export const createGroupFill = (): XmlComponent =>
-    new BuilderElement({
-        name: "a:grpFill",
-    });
+  new BuilderElement({
+    name: "a:grpFill",
+  });

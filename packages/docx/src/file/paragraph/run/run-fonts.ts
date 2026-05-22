@@ -27,24 +27,24 @@ import type { ThemeFont } from "@util/values";
  * @property cstheme - Theme font for complex script characters
  */
 export interface IFontAttributesProperties {
-    /** Font for ASCII characters (0x00-0x7F) */
-    readonly ascii?: string;
-    /** Font for complex script characters */
-    readonly cs?: string;
-    /** Font for East Asian characters */
-    readonly eastAsia?: string;
-    /** Font for high ANSI characters (0x80-0xFF) */
-    readonly hAnsi?: string;
-    /** Hint for font selection algorithm */
-    readonly hint?: string;
-    /** Theme font for ASCII characters */
-    readonly asciiTheme?: (typeof ThemeFont)[keyof typeof ThemeFont];
-    /** Theme font for high ANSI characters */
-    readonly hAnsiTheme?: (typeof ThemeFont)[keyof typeof ThemeFont];
-    /** Theme font for East Asian characters */
-    readonly eastAsiaTheme?: (typeof ThemeFont)[keyof typeof ThemeFont];
-    /** Theme font for complex script characters */
-    readonly cstheme?: (typeof ThemeFont)[keyof typeof ThemeFont];
+  /** Font for ASCII characters (0x00-0x7F) */
+  readonly ascii?: string;
+  /** Font for complex script characters */
+  readonly cs?: string;
+  /** Font for East Asian characters */
+  readonly eastAsia?: string;
+  /** Font for high ANSI characters (0x80-0xFF) */
+  readonly hAnsi?: string;
+  /** Hint for font selection algorithm */
+  readonly hint?: string;
+  /** Theme font for ASCII characters */
+  readonly asciiTheme?: (typeof ThemeFont)[keyof typeof ThemeFont];
+  /** Theme font for high ANSI characters */
+  readonly hAnsiTheme?: (typeof ThemeFont)[keyof typeof ThemeFont];
+  /** Theme font for East Asian characters */
+  readonly eastAsiaTheme?: (typeof ThemeFont)[keyof typeof ThemeFont];
+  /** Theme font for complex script characters */
+  readonly cstheme?: (typeof ThemeFont)[keyof typeof ThemeFont];
 }
 
 /**
@@ -86,36 +86,36 @@ export interface IFontAttributesProperties {
  * ```
  */
 export const createRunFonts = (
-    nameOrAttrs: string | IFontAttributesProperties,
-    hint?: string,
+  nameOrAttrs: string | IFontAttributesProperties,
+  hint?: string,
 ): XmlComponent => {
-    if (typeof nameOrAttrs === "string") {
-        const name = nameOrAttrs;
-        return new BuilderElement<IFontAttributesProperties>({
-            attributes: {
-                ascii: { key: "w:ascii", value: name },
-                cs: { key: "w:cs", value: name },
-                eastAsia: { key: "w:eastAsia", value: name },
-                hAnsi: { key: "w:hAnsi", value: name },
-                hint: { key: "w:hint", value: hint },
-            },
-            name: "w:rFonts",
-        });
-    }
-
-    const attrs = nameOrAttrs;
+  if (typeof nameOrAttrs === "string") {
+    const name = nameOrAttrs;
     return new BuilderElement<IFontAttributesProperties>({
-        attributes: {
-            ascii: { key: "w:ascii", value: attrs.ascii },
-            asciiTheme: { key: "w:asciiTheme", value: attrs.asciiTheme },
-            cs: { key: "w:cs", value: attrs.cs },
-            cstheme: { key: "w:cstheme", value: attrs.cstheme },
-            eastAsia: { key: "w:eastAsia", value: attrs.eastAsia },
-            eastAsiaTheme: { key: "w:eastAsiaTheme", value: attrs.eastAsiaTheme },
-            hAnsi: { key: "w:hAnsi", value: attrs.hAnsi },
-            hAnsiTheme: { key: "w:hAnsiTheme", value: attrs.hAnsiTheme },
-            hint: { key: "w:hint", value: attrs.hint },
-        },
-        name: "w:rFonts",
+      attributes: {
+        ascii: { key: "w:ascii", value: name },
+        cs: { key: "w:cs", value: name },
+        eastAsia: { key: "w:eastAsia", value: name },
+        hAnsi: { key: "w:hAnsi", value: name },
+        hint: { key: "w:hint", value: hint },
+      },
+      name: "w:rFonts",
     });
+  }
+
+  const attrs = nameOrAttrs;
+  return new BuilderElement<IFontAttributesProperties>({
+    attributes: {
+      ascii: { key: "w:ascii", value: attrs.ascii },
+      asciiTheme: { key: "w:asciiTheme", value: attrs.asciiTheme },
+      cs: { key: "w:cs", value: attrs.cs },
+      cstheme: { key: "w:cstheme", value: attrs.cstheme },
+      eastAsia: { key: "w:eastAsia", value: attrs.eastAsia },
+      eastAsiaTheme: { key: "w:eastAsiaTheme", value: attrs.eastAsiaTheme },
+      hAnsi: { key: "w:hAnsi", value: attrs.hAnsi },
+      hAnsiTheme: { key: "w:hAnsiTheme", value: attrs.hAnsiTheme },
+      hint: { key: "w:hint", value: attrs.hint },
+    },
+    name: "w:rFonts",
+  });
 };

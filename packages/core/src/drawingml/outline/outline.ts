@@ -48,12 +48,12 @@ import type { LineEndOptions } from "./line-end";
  * Defines how the ends of a line are rendered.
  */
 export const LineCap = {
-    /** Round cap style */
-    ROUND: "rnd",
-    /** Square cap style */
-    SQUARE: "sq",
-    /** Flat cap style */
-    FLAT: "flat",
+  /** Round cap style */
+  ROUND: "rnd",
+  /** Square cap style */
+  SQUARE: "sq",
+  /** Flat cap style */
+  FLAT: "flat",
 } as const;
 
 // <xsd:simpleType name="ST_CompoundLine">
@@ -72,16 +72,16 @@ export const LineCap = {
  * Defines the structure of compound lines (single, double, etc.).
  */
 export const CompoundLine = {
-    /** Single line */
-    SINGLE: "sng",
-    /** Double line */
-    DOUBLE: "dbl",
-    /** Thick-thin double line */
-    THICK_THIN: "thickThin",
-    /** Thin-thick double line */
-    THIN_THICK: "thinThick",
-    /** Triple line */
-    TRI: "tri",
+  /** Single line */
+  SINGLE: "sng",
+  /** Double line */
+  DOUBLE: "dbl",
+  /** Thick-thin double line */
+  THICK_THIN: "thickThin",
+  /** Thin-thick double line */
+  THIN_THICK: "thinThick",
+  /** Triple line */
+  TRI: "tri",
 } as const;
 
 // <xsd:simpleType name="ST_PenAlignment">
@@ -97,10 +97,10 @@ export const CompoundLine = {
  * Defines how the outline is aligned relative to the shape edge.
  */
 export const PenAlignment = {
-    /** Center alignment */
-    CENTER: "ctr",
-    /** Inset alignment */
-    INSET: "in",
+  /** Center alignment */
+  CENTER: "ctr",
+  /** Inset alignment */
+  INSET: "in",
 } as const;
 
 /**
@@ -126,60 +126,60 @@ export const PenAlignment = {
  * ```
  */
 export const PresetDash = {
-    SOLID: "solid",
-    DOT: "dot",
-    DASH: "dash",
-    LG_DASH: "lgDash",
-    DASH_DOT: "dashDot",
-    LG_DASH_DOT: "lgDashDot",
-    LG_DASH_DOT_DOT: "lgDashDotDot",
-    SYS_DASH: "sysDash",
-    SYS_DOT: "sysDot",
-    SYS_DASH_DOT: "sysDashDot",
-    SYS_DASH_DOT_DOT: "sysDashDotDot",
+  SOLID: "solid",
+  DOT: "dot",
+  DASH: "dash",
+  LG_DASH: "lgDash",
+  DASH_DOT: "dashDot",
+  LG_DASH_DOT: "lgDashDot",
+  LG_DASH_DOT_DOT: "lgDashDotDot",
+  SYS_DASH: "sysDash",
+  SYS_DOT: "sysDot",
+  SYS_DASH_DOT: "sysDashDot",
+  SYS_DASH_DOT_DOT: "sysDashDotDot",
 } as const;
 
 /**
  * Line join styles.
  */
 export const LineJoin = {
-    ROUND: "round",
-    BEVEL: "bevel",
-    MITER: "miter",
+  ROUND: "round",
+  BEVEL: "bevel",
+  MITER: "miter",
 } as const;
 
 /**
  * Attributes for configuring outline properties.
  */
 export interface OutlineAttributes {
-    /** Line width in EMUs (English Metric Units) */
-    readonly width?: number;
-    /** Line cap style */
-    readonly cap?: keyof typeof LineCap;
-    /** Compound line type */
-    readonly compoundLine?: keyof typeof CompoundLine;
-    /** Pen alignment */
-    readonly align?: keyof typeof PenAlignment;
-    /**
-     * Preset dash style.
-     *
-     * Mutually exclusive with `customDash` — only one can be specified.
-     */
-    readonly dash?: keyof typeof PresetDash;
-    /**
-     * Custom dash pattern (list of dash/space stops).
-     *
-     * Mutually exclusive with `dash` — only one can be specified.
-     */
-    readonly customDash?: readonly DashStop[];
-    /** Line join style */
-    readonly join?: keyof typeof LineJoin;
-    /** Miter limit (only when join is MITER) */
-    readonly miterLimit?: number;
-    /** Line start arrow/head */
-    readonly headEnd?: LineEndOptions;
-    /** Line end arrow/tail */
-    readonly tailEnd?: LineEndOptions;
+  /** Line width in EMUs (English Metric Units) */
+  readonly width?: number;
+  /** Line cap style */
+  readonly cap?: keyof typeof LineCap;
+  /** Compound line type */
+  readonly compoundLine?: keyof typeof CompoundLine;
+  /** Pen alignment */
+  readonly align?: keyof typeof PenAlignment;
+  /**
+   * Preset dash style.
+   *
+   * Mutually exclusive with `customDash` — only one can be specified.
+   */
+  readonly dash?: keyof typeof PresetDash;
+  /**
+   * Custom dash pattern (list of dash/space stops).
+   *
+   * Mutually exclusive with `dash` — only one can be specified.
+   */
+  readonly customDash?: readonly DashStop[];
+  /** Line join style */
+  readonly join?: keyof typeof LineJoin;
+  /** Miter limit (only when join is MITER) */
+  readonly miterLimit?: number;
+  /** Line start arrow/head */
+  readonly headEnd?: LineEndOptions;
+  /** Line end arrow/tail */
+  readonly tailEnd?: LineEndOptions;
 }
 
 /**
@@ -189,14 +189,14 @@ export interface OutlineAttributes {
  * blipFill and grpFill are not applicable to lines.
  */
 export interface OutlineFillProperties {
-    /** Fill type */
-    readonly type?: "noFill" | "solidFill" | "gradFill" | "pattFill";
-    /** Color definition (required when type is "solidFill") */
-    readonly color?: SolidFillOptions;
-    /** Gradient fill options (required when type is "gradFill") */
-    readonly gradientFill?: GradientFillOptions;
-    /** Pattern fill options (required when type is "pattFill") */
-    readonly patternFill?: PatternFillOptions;
+  /** Fill type */
+  readonly type?: "noFill" | "solidFill" | "gradFill" | "pattFill";
+  /** Color definition (required when type is "solidFill") */
+  readonly color?: SolidFillOptions;
+  /** Gradient fill options (required when type is "gradFill") */
+  readonly gradientFill?: GradientFillOptions;
+  /** Pattern fill options (required when type is "pattFill") */
+  readonly patternFill?: PatternFillOptions;
 }
 
 /**
@@ -212,19 +212,19 @@ export type OutlineOptions = OutlineAttributes & OutlineFillProperties;
  * Returns null when no fill type is specified (OOXML allows outline without fill).
  */
 const createOutlineFill = (options: OutlineOptions): XmlComponent | null => {
-    if (options.type === "noFill") {
-        return createNoFill();
-    }
-    if (options.type === "solidFill" && options.color) {
-        return createSolidFill(options.color);
-    }
-    if (options.type === "gradFill" && options.gradientFill) {
-        return createGradientFill(options.gradientFill);
-    }
-    if (options.type === "pattFill" && options.patternFill) {
-        return createPatternFill(options.patternFill);
-    }
-    return null;
+  if (options.type === "noFill") {
+    return createNoFill();
+  }
+  if (options.type === "solidFill" && options.color) {
+    return createSolidFill(options.color);
+  }
+  if (options.type === "gradFill" && options.gradientFill) {
+    return createGradientFill(options.gradientFill);
+  }
+  if (options.type === "pattFill" && options.patternFill) {
+    return createPatternFill(options.patternFill);
+  }
+  return null;
 };
 
 /**
@@ -260,80 +260,78 @@ const createOutlineFill = (options: OutlineOptions): XmlComponent | null => {
  * ```
  */
 export const createOutline = (options: OutlineOptions): XmlComponent => {
-    const children: XmlComponent[] = [];
+  const children: XmlComponent[] = [];
 
-    // Fill (optional per OOXML spec)
-    const fill = createOutlineFill(options);
-    if (fill) {
-        children.push(fill);
-    }
+  // Fill (optional per OOXML spec)
+  const fill = createOutlineFill(options);
+  if (fill) {
+    children.push(fill);
+  }
 
-    // Dash (prstDash and custDash are mutually exclusive per XSD choice)
-    if (options.customDash !== undefined) {
-        children.push(createCustomDash(options.customDash));
-    } else if (options.dash !== undefined) {
-        children.push(
-            new BuilderElement<{ readonly val: string }>({
-                attributes: {
-                    val: { key: "val", value: PresetDash[options.dash] },
-                },
-                name: "a:prstDash",
-            }),
-        );
-    }
-
-    // Join
-    if (options.join !== undefined) {
-        if (options.join === "MITER" && options.miterLimit !== undefined) {
-            children.push(
-                new BuilderElement<{ readonly lim: number }>({
-                    attributes: {
-                        lim: { key: "lim", value: options.miterLimit },
-                    },
-                    name: "a:miter",
-                }),
-            );
-        } else {
-            children.push(
-                new BuilderElement({
-                    name: `a:${LineJoin[options.join]}`,
-                }),
-            );
-        }
-    }
-
-    // Line end markers (arrows)
-    if (options.headEnd) {
-        children.push(createLineEnd("a:headEnd", options.headEnd));
-    }
-    if (options.tailEnd) {
-        children.push(createLineEnd("a:tailEnd", options.tailEnd));
-    }
-
-    return new BuilderElement<OutlineAttributes>({
+  // Dash (prstDash and custDash are mutually exclusive per XSD choice)
+  if (options.customDash !== undefined) {
+    children.push(createCustomDash(options.customDash));
+  } else if (options.dash !== undefined) {
+    children.push(
+      new BuilderElement<{ readonly val: string }>({
         attributes: {
-            align: {
-                key: "algn",
-                value: options.align
-                    ? (PenAlignment[options.align] as typeof options.align)
-                    : undefined,
-            },
-            cap: {
-                key: "cap",
-                value: options.cap ? (LineCap[options.cap] as typeof options.cap) : undefined,
-            },
-            compoundLine: {
-                key: "cmpd",
-                value: options.compoundLine
-                    ? (CompoundLine[options.compoundLine] as typeof options.compoundLine)
-                    : undefined,
-            },
-            width: {
-                key: "w",
-                value: options.width,
-            },
+          val: { key: "val", value: PresetDash[options.dash] },
         },
-        children,
-        name: "a:ln",
-    });
+        name: "a:prstDash",
+      }),
+    );
+  }
+
+  // Join
+  if (options.join !== undefined) {
+    if (options.join === "MITER" && options.miterLimit !== undefined) {
+      children.push(
+        new BuilderElement<{ readonly lim: number }>({
+          attributes: {
+            lim: { key: "lim", value: options.miterLimit },
+          },
+          name: "a:miter",
+        }),
+      );
+    } else {
+      children.push(
+        new BuilderElement({
+          name: `a:${LineJoin[options.join]}`,
+        }),
+      );
+    }
+  }
+
+  // Line end markers (arrows)
+  if (options.headEnd) {
+    children.push(createLineEnd("a:headEnd", options.headEnd));
+  }
+  if (options.tailEnd) {
+    children.push(createLineEnd("a:tailEnd", options.tailEnd));
+  }
+
+  return new BuilderElement<OutlineAttributes>({
+    attributes: {
+      align: {
+        key: "algn",
+        value: options.align ? (PenAlignment[options.align] as typeof options.align) : undefined,
+      },
+      cap: {
+        key: "cap",
+        value: options.cap ? (LineCap[options.cap] as typeof options.cap) : undefined,
+      },
+      compoundLine: {
+        key: "cmpd",
+        value: options.compoundLine
+          ? (CompoundLine[options.compoundLine] as typeof options.compoundLine)
+          : undefined,
+      },
+      width: {
+        key: "w",
+        value: options.width,
+      },
+    },
+    children,
+    name: "a:ln",
+  });
 };

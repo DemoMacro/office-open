@@ -39,32 +39,32 @@ import type { XmlComponent } from "@file/xml-components";
  * ```
  */
 export const TableStyleOverrideType = {
-    /** Override applies to the entire table */
-    WHOLE_TABLE: "wholeTable",
-    /** Override applies to the first row */
-    FIRST_ROW: "firstRow",
-    /** Override applies to the last row */
-    LAST_ROW: "lastRow",
-    /** Override applies to the first column */
-    FIRST_COL: "firstCol",
-    /** Override applies to the last column */
-    LAST_COL: "lastCol",
-    /** Override applies to odd-numbered vertical bands (columns) */
-    BAND1_VERT: "band1Vert",
-    /** Override applies to even-numbered vertical bands (columns) */
-    BAND2_VERT: "band2Vert",
-    /** Override applies to odd-numbered horizontal bands (rows) */
-    BAND1_HORZ: "band1Horz",
-    /** Override applies to even-numbered horizontal bands (rows) */
-    BAND2_HORZ: "band2Horz",
-    /** Override applies to the northeast (top-right) corner cell */
-    NE_CELL: "neCell",
-    /** Override applies to the northwest (top-left) corner cell */
-    NW_CELL: "nwCell",
-    /** Override applies to the southeast (bottom-right) corner cell */
-    SE_CELL: "seCell",
-    /** Override applies to the southwest (bottom-left) corner cell */
-    SW_CELL: "swCell",
+  /** Override applies to the entire table */
+  WHOLE_TABLE: "wholeTable",
+  /** Override applies to the first row */
+  FIRST_ROW: "firstRow",
+  /** Override applies to the last row */
+  LAST_ROW: "lastRow",
+  /** Override applies to the first column */
+  FIRST_COL: "firstCol",
+  /** Override applies to the last column */
+  LAST_COL: "lastCol",
+  /** Override applies to odd-numbered vertical bands (columns) */
+  BAND1_VERT: "band1Vert",
+  /** Override applies to even-numbered vertical bands (columns) */
+  BAND2_VERT: "band2Vert",
+  /** Override applies to odd-numbered horizontal bands (rows) */
+  BAND1_HORZ: "band1Horz",
+  /** Override applies to even-numbered horizontal bands (rows) */
+  BAND2_HORZ: "band2Horz",
+  /** Override applies to the northeast (top-right) corner cell */
+  NE_CELL: "neCell",
+  /** Override applies to the northwest (top-left) corner cell */
+  NW_CELL: "nwCell",
+  /** Override applies to the southeast (bottom-right) corner cell */
+  SE_CELL: "seCell",
+  /** Override applies to the southwest (bottom-left) corner cell */
+  SW_CELL: "swCell",
 } as const;
 
 /**
@@ -85,40 +85,40 @@ export const TableStyleOverrideType = {
  * ```
  */
 export interface TableStyleOverrideOptions {
-    /**
-     * The table region this override applies to.
-     */
-    readonly type: (typeof TableStyleOverrideType)[keyof typeof TableStyleOverrideType];
-    /**
-     * Paragraph properties for this region.
-     *
-     * Accepts any XmlComponent (e.g., ParagraphProperties instance).
-     */
-    readonly paragraphProperties?: XmlComponent;
-    /**
-     * Run (character) properties for this region.
-     *
-     * Accepts any XmlComponent (e.g., RunProperties instance).
-     */
-    readonly runProperties?: XmlComponent;
-    /**
-     * Table properties for this region.
-     *
-     * Accepts any XmlComponent (e.g., TableProperties instance).
-     */
-    readonly tableProperties?: XmlComponent;
-    /**
-     * Table row properties for this region.
-     *
-     * Accepts any XmlComponent (e.g., TableRowProperties instance).
-     */
-    readonly rowProperties?: XmlComponent;
-    /**
-     * Table cell properties for this region.
-     *
-     * Accepts any XmlComponent (e.g., TableCellProperties instance).
-     */
-    readonly cellProperties?: XmlComponent;
+  /**
+   * The table region this override applies to.
+   */
+  readonly type: (typeof TableStyleOverrideType)[keyof typeof TableStyleOverrideType];
+  /**
+   * Paragraph properties for this region.
+   *
+   * Accepts any XmlComponent (e.g., ParagraphProperties instance).
+   */
+  readonly paragraphProperties?: XmlComponent;
+  /**
+   * Run (character) properties for this region.
+   *
+   * Accepts any XmlComponent (e.g., RunProperties instance).
+   */
+  readonly runProperties?: XmlComponent;
+  /**
+   * Table properties for this region.
+   *
+   * Accepts any XmlComponent (e.g., TableProperties instance).
+   */
+  readonly tableProperties?: XmlComponent;
+  /**
+   * Table row properties for this region.
+   *
+   * Accepts any XmlComponent (e.g., TableRowProperties instance).
+   */
+  readonly rowProperties?: XmlComponent;
+  /**
+   * Table cell properties for this region.
+   *
+   * Accepts any XmlComponent (e.g., TableCellProperties instance).
+   */
+  readonly cellProperties?: XmlComponent;
 }
 
 /**
@@ -160,29 +160,29 @@ export interface TableStyleOverrideOptions {
  * ```
  */
 export const createTableStyleOverride = (options: TableStyleOverrideOptions): XmlComponent => {
-    const children: XmlComponent[] = [];
+  const children: XmlComponent[] = [];
 
-    if (options.paragraphProperties) {
-        children.push(options.paragraphProperties);
-    }
-    if (options.runProperties) {
-        children.push(options.runProperties);
-    }
-    if (options.tableProperties) {
-        children.push(options.tableProperties);
-    }
-    if (options.rowProperties) {
-        children.push(options.rowProperties);
-    }
-    if (options.cellProperties) {
-        children.push(options.cellProperties);
-    }
+  if (options.paragraphProperties) {
+    children.push(options.paragraphProperties);
+  }
+  if (options.runProperties) {
+    children.push(options.runProperties);
+  }
+  if (options.tableProperties) {
+    children.push(options.tableProperties);
+  }
+  if (options.rowProperties) {
+    children.push(options.rowProperties);
+  }
+  if (options.cellProperties) {
+    children.push(options.cellProperties);
+  }
 
-    return new BuilderElement<{ readonly type: string }>({
-        attributes: {
-            type: { key: "w:type", value: options.type },
-        },
-        children,
-        name: "w:tblStylePr",
-    });
+  return new BuilderElement<{ readonly type: string }>({
+    attributes: {
+      type: { key: "w:type", value: options.type },
+    },
+    children,
+    name: "w:tblStylePr",
+  });
 };

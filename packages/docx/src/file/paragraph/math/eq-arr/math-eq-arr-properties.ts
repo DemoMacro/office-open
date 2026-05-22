@@ -16,16 +16,16 @@ import type { XmlComponent } from "@file/xml-components";
  * @see {@link createMathEqArrProperties}
  */
 export interface MathEqArrPropertiesOptions {
-    /** Base justification (vertical alignment) */
-    readonly baseJc?: "top" | "bot" | "center";
-    /** Maximum distance between equations */
-    readonly maxDist?: boolean;
-    /** Object distance */
-    readonly objDist?: boolean;
-    /** Row spacing rule */
-    readonly rSpRule?: "single" | "1.5" | "double" | "exactly" | "multiple";
-    /** Row spacing value */
-    readonly rSp?: number;
+  /** Base justification (vertical alignment) */
+  readonly baseJc?: "top" | "bot" | "center";
+  /** Maximum distance between equations */
+  readonly maxDist?: boolean;
+  /** Object distance */
+  readonly objDist?: boolean;
+  /** Row spacing rule */
+  readonly rSpRule?: "single" | "1.5" | "double" | "exactly" | "multiple";
+  /** Row spacing value */
+  readonly rSp?: number;
 }
 
 /**
@@ -46,41 +46,41 @@ export interface MathEqArrPropertiesOptions {
  * ```
  */
 export const createMathEqArrProperties = (options: MathEqArrPropertiesOptions): XmlComponent => {
-    const children: XmlComponent[] = [];
+  const children: XmlComponent[] = [];
 
-    if (options.baseJc !== undefined) {
-        children.push(
-            new BuilderElement({
-                attributes: { val: { key: "m:val", value: options.baseJc } },
-                name: "m:baseJc",
-            }),
-        );
-    }
-    if (options.maxDist !== undefined) {
-        children.push(new OnOffElement("m:maxDist", options.maxDist));
-    }
-    if (options.objDist !== undefined) {
-        children.push(new OnOffElement("m:objDist", options.objDist));
-    }
-    if (options.rSpRule !== undefined) {
-        children.push(
-            new BuilderElement({
-                attributes: { val: { key: "m:val", value: options.rSpRule } },
-                name: "m:rSpRule",
-            }),
-        );
-    }
-    if (options.rSp !== undefined) {
-        children.push(
-            new BuilderElement({
-                attributes: { val: { key: "m:val", value: options.rSp } },
-                name: "m:rSp",
-            }),
-        );
-    }
+  if (options.baseJc !== undefined) {
+    children.push(
+      new BuilderElement({
+        attributes: { val: { key: "m:val", value: options.baseJc } },
+        name: "m:baseJc",
+      }),
+    );
+  }
+  if (options.maxDist !== undefined) {
+    children.push(new OnOffElement("m:maxDist", options.maxDist));
+  }
+  if (options.objDist !== undefined) {
+    children.push(new OnOffElement("m:objDist", options.objDist));
+  }
+  if (options.rSpRule !== undefined) {
+    children.push(
+      new BuilderElement({
+        attributes: { val: { key: "m:val", value: options.rSpRule } },
+        name: "m:rSpRule",
+      }),
+    );
+  }
+  if (options.rSp !== undefined) {
+    children.push(
+      new BuilderElement({
+        attributes: { val: { key: "m:val", value: options.rSp } },
+        name: "m:rSp",
+      }),
+    );
+  }
 
-    return new BuilderElement({
-        children,
-        name: "m:eqArrPr",
-    });
+  return new BuilderElement({
+    children,
+    name: "m:eqArrPr",
+  });
 };

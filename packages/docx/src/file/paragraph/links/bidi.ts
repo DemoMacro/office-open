@@ -16,17 +16,17 @@ import type { ParagraphChild } from "../paragraph";
  * Options for directional text override.
  */
 export interface IDirOptions {
-    /** Array of paragraph children inside the direction override */
-    readonly children: readonly ParagraphChild[];
-    /** Text direction: "ltr" or "rtl" */
-    readonly val: "ltr" | "rtl";
+  /** Array of paragraph children inside the direction override */
+  readonly children: readonly ParagraphChild[];
+  /** Text direction: "ltr" or "rtl" */
+  readonly val: "ltr" | "rtl";
 }
 
 /**
  * @internal
  */
 class DirAttributes extends XmlAttributeComponent<{ readonly val: string }> {
-    protected readonly xmlKeys = { val: "w:val" };
+  protected readonly xmlKeys = { val: "w:val" };
 }
 
 /**
@@ -43,13 +43,13 @@ class DirAttributes extends XmlAttributeComponent<{ readonly val: string }> {
  * ```
  */
 export class Dir extends XmlComponent {
-    public constructor(options: IDirOptions) {
-        super("w:dir");
-        this.root.push(new DirAttributes({ val: options.val }));
-        for (const child of options.children) {
-            this.root.push(child);
-        }
+  public constructor(options: IDirOptions) {
+    super("w:dir");
+    this.root.push(new DirAttributes({ val: options.val }));
+    for (const child of options.children) {
+      this.root.push(child);
     }
+  }
 }
 
 /**
@@ -66,11 +66,11 @@ export class Dir extends XmlComponent {
  * ```
  */
 export class Bdo extends XmlComponent {
-    public constructor(options: IDirOptions) {
-        super("w:bdo");
-        this.root.push(new DirAttributes({ val: options.val }));
-        for (const child of options.children) {
-            this.root.push(child);
-        }
+  public constructor(options: IDirOptions) {
+    super("w:bdo");
+    this.root.push(new DirAttributes({ val: options.val }));
+    for (const child of options.children) {
+      this.root.push(child);
     }
+  }
 }

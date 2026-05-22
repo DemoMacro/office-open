@@ -27,21 +27,21 @@ import type { LengthUnit } from "../types";
  * @property inset - Custom inset margins for the textbox content
  */
 export interface VTextboxOptions {
-    /** CSS-style string for textbox styling */
-    readonly style?: string;
-    /** Array of block-level children to include in the textbox */
-    readonly children?: readonly FileChild[];
-    /** Custom inset margins for the textbox content (top, left, bottom, right) */
-    readonly inset?: {
-        /** Top inset margin */
-        readonly top: LengthUnit;
-        /** Left inset margin */
-        readonly left: LengthUnit;
-        /** Bottom inset margin */
-        readonly bottom: LengthUnit;
-        /** Right inset margin */
-        readonly right: LengthUnit;
-    };
+  /** CSS-style string for textbox styling */
+  readonly style?: string;
+  /** Array of block-level children to include in the textbox */
+  readonly children?: readonly FileChild[];
+  /** Custom inset margins for the textbox content (top, left, bottom, right) */
+  readonly inset?: {
+    /** Top inset margin */
+    readonly top: LengthUnit;
+    /** Left inset margin */
+    readonly left: LengthUnit;
+    /** Bottom inset margin */
+    readonly bottom: LengthUnit;
+    /** Right inset margin */
+    readonly right: LengthUnit;
+  };
 }
 
 /**
@@ -83,27 +83,25 @@ export interface VTextboxOptions {
  * ```
  */
 export const createVmlTextbox = ({ style, children, inset }: VTextboxOptions): XmlComponent =>
-    new BuilderElement<{
-        readonly style?: string;
-        readonly inset?: string;
-        readonly insetMode?: InsetMode;
-    }>({
-        attributes: {
-            inset: {
-                key: "inset",
-                value: inset
-                    ? `${inset.left}, ${inset.top}, ${inset.right}, ${inset.bottom}`
-                    : undefined,
-            },
-            insetMode: {
-                key: "insetmode",
-                value: inset ? "custom" : "auto",
-            },
-            style: {
-                key: "style",
-                value: style,
-            },
-        },
-        children: [createTextboxContent({ children })],
-        name: "v:textbox",
-    });
+  new BuilderElement<{
+    readonly style?: string;
+    readonly inset?: string;
+    readonly insetMode?: InsetMode;
+  }>({
+    attributes: {
+      inset: {
+        key: "inset",
+        value: inset ? `${inset.left}, ${inset.top}, ${inset.right}, ${inset.bottom}` : undefined,
+      },
+      insetMode: {
+        key: "insetmode",
+        value: inset ? "custom" : "auto",
+      },
+      style: {
+        key: "style",
+        value: style,
+      },
+    },
+    children: [createTextboxContent({ children })],
+    name: "v:textbox",
+  });

@@ -1,8 +1,8 @@
 import { XmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 import {
-    createGroupTransform2D,
-    type GroupTransform2DOptions as CoreGroupTransform2DOptions,
+  createGroupTransform2D,
+  type GroupTransform2DOptions as CoreGroupTransform2DOptions,
 } from "@office-open/core/drawingml";
 
 export type IGroupTransform2DOptions = CoreGroupTransform2DOptions;
@@ -13,14 +13,14 @@ export type IGroupTransform2DOptions = CoreGroupTransform2DOptions;
  * Delegates to core createGroupTransform2D.
  */
 export class GroupTransform2D extends XmlComponent {
-    private readonly core: XmlComponent;
+  private readonly core: XmlComponent;
 
-    public constructor(options: IGroupTransform2DOptions, prefix: "a" | "p" = "a") {
-        super(`${prefix}:xfrm`);
-        this.core = createGroupTransform2D(options, `${prefix}:xfrm`);
-    }
+  public constructor(options: IGroupTransform2DOptions, prefix: "a" | "p" = "a") {
+    super(`${prefix}:xfrm`);
+    this.core = createGroupTransform2D(options, `${prefix}:xfrm`);
+  }
 
-    public override prepForXml(context: IContext): IXmlableObject | undefined {
-        return this.core["prepForXml"]?.(context);
-    }
+  public override prepForXml(context: IContext): IXmlableObject | undefined {
+    return this.core["prepForXml"]?.(context);
+  }
 }

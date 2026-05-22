@@ -14,14 +14,14 @@ import type { SolidFillOptions } from "../color/solid-fill";
  * Options for inner shadow effect.
  */
 export interface InnerShadowEffectOptions {
-    /** Blur radius in EMUs */
-    readonly blurRadius?: number;
-    /** Distance from shape edge in EMUs */
-    readonly distance?: number;
-    /** Direction angle in 60,000ths of a degree */
-    readonly direction?: number;
-    /** Shadow color */
-    readonly color: SolidFillOptions;
+  /** Blur radius in EMUs */
+  readonly blurRadius?: number;
+  /** Distance from shape edge in EMUs */
+  readonly distance?: number;
+  /** Direction angle in 60,000ths of a degree */
+  readonly direction?: number;
+  /** Shadow color */
+  readonly color: SolidFillOptions;
 }
 
 /**
@@ -40,33 +40,33 @@ export interface InnerShadowEffectOptions {
  * ```
  */
 export const createInnerShadowEffect = (options: InnerShadowEffectOptions): XmlComponent => {
-    const hasAttributes =
-        options.blurRadius !== undefined ||
-        options.distance !== undefined ||
-        options.direction !== undefined;
+  const hasAttributes =
+    options.blurRadius !== undefined ||
+    options.distance !== undefined ||
+    options.direction !== undefined;
 
-    if (!hasAttributes) {
-        return new BuilderElement({
-            children: [createColorElement(options.color)],
-            name: "a:innerShdw",
-        });
-    }
-
-    const attributePayload = {
-        ...(options.blurRadius !== undefined && {
-            blurRad: { key: "blurRad", value: options.blurRadius },
-        }),
-        ...(options.distance !== undefined && {
-            dist: { key: "dist", value: options.distance },
-        }),
-        ...(options.direction !== undefined && {
-            dir: { key: "dir", value: options.direction },
-        }),
-    };
-
+  if (!hasAttributes) {
     return new BuilderElement({
-        attributes: attributePayload as never,
-        children: [createColorElement(options.color)],
-        name: "a:innerShdw",
+      children: [createColorElement(options.color)],
+      name: "a:innerShdw",
     });
+  }
+
+  const attributePayload = {
+    ...(options.blurRadius !== undefined && {
+      blurRad: { key: "blurRad", value: options.blurRadius },
+    }),
+    ...(options.distance !== undefined && {
+      dist: { key: "dist", value: options.distance },
+    }),
+    ...(options.direction !== undefined && {
+      dir: { key: "dir", value: options.direction },
+    }),
+  };
+
+  return new BuilderElement({
+    attributes: attributePayload as never,
+    children: [createColorElement(options.color)],
+    name: "a:innerShdw",
+  });
 };

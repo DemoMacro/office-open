@@ -9,8 +9,8 @@ import { XmlComponent } from "@file/xml-components";
 
 import type { ITableCellOptions, TableCell } from "../table";
 import {
-    StructuredDocumentTagContent,
-    StructuredDocumentTagProperties,
+  StructuredDocumentTagContent,
+  StructuredDocumentTagProperties,
 } from "../table-of-contents";
 import type { SdtPropertiesOptions } from "../table-of-contents";
 
@@ -18,8 +18,8 @@ import type { SdtPropertiesOptions } from "../table-of-contents";
  * Options for creating a cell-level Structured Document Tag (CT_SdtCell).
  */
 export interface ISdtCellOptions {
-    readonly properties: SdtPropertiesOptions;
-    readonly children?: readonly TableCell[];
+  readonly properties: SdtPropertiesOptions;
+  readonly children?: readonly TableCell[];
 }
 
 /**
@@ -37,18 +37,18 @@ export interface ISdtCellOptions {
  * ```
  */
 export class StructuredDocumentTagCell extends XmlComponent {
-    public readonly options: ITableCellOptions;
+  public readonly options: ITableCellOptions;
 
-    public constructor(sdtOptions: ISdtCellOptions) {
-        super("w:sdt");
-        this.options = { children: [] };
-        this.root.push(new StructuredDocumentTagProperties(sdtOptions.properties));
-        if (sdtOptions.children && sdtOptions.children.length > 0) {
-            const content = new StructuredDocumentTagContent();
-            for (const child of sdtOptions.children) {
-                content.addChildElement(child);
-            }
-            this.root.push(content);
-        }
+  public constructor(sdtOptions: ISdtCellOptions) {
+    super("w:sdt");
+    this.options = { children: [] };
+    this.root.push(new StructuredDocumentTagProperties(sdtOptions.properties));
+    if (sdtOptions.children && sdtOptions.children.length > 0) {
+      const content = new StructuredDocumentTagContent();
+      for (const child of sdtOptions.children) {
+        content.addChildElement(child);
+      }
+      this.root.push(content);
     }
+  }
 }

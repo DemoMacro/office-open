@@ -16,22 +16,22 @@ import type { XmlComponent } from "@file/xml-components";
  * @see {@link createMathBorderBoxProperties}
  */
 export interface MathBorderBoxPropertiesOptions {
-    /** Hide top border */
-    readonly hideTop?: boolean;
-    /** Hide bottom border */
-    readonly hideBottom?: boolean;
-    /** Hide left border */
-    readonly hideLeft?: boolean;
-    /** Hide right border */
-    readonly hideRight?: boolean;
-    /** Horizontal strike-through */
-    readonly strikeHorizontal?: boolean;
-    /** Vertical strike-through */
-    readonly strikeVertical?: boolean;
-    /** Bottom-left to top-right diagonal strike */
-    readonly strikeDiagonalUp?: boolean;
-    /** Top-left to bottom-right diagonal strike */
-    readonly strikeDiagonalDown?: boolean;
+  /** Hide top border */
+  readonly hideTop?: boolean;
+  /** Hide bottom border */
+  readonly hideBottom?: boolean;
+  /** Hide left border */
+  readonly hideLeft?: boolean;
+  /** Hide right border */
+  readonly hideRight?: boolean;
+  /** Horizontal strike-through */
+  readonly strikeHorizontal?: boolean;
+  /** Vertical strike-through */
+  readonly strikeVertical?: boolean;
+  /** Bottom-left to top-right diagonal strike */
+  readonly strikeDiagonalUp?: boolean;
+  /** Top-left to bottom-right diagonal strike */
+  readonly strikeDiagonalDown?: boolean;
 }
 
 /**
@@ -55,37 +55,37 @@ export interface MathBorderBoxPropertiesOptions {
  * ```
  */
 export const createMathBorderBoxProperties = (
-    options: MathBorderBoxPropertiesOptions,
+  options: MathBorderBoxPropertiesOptions,
 ): XmlComponent => {
-    const children: XmlComponent[] = [];
+  const children: XmlComponent[] = [];
 
-    if (options.hideTop !== undefined) {
-        children.push(new OnOffElement("m:hideTop", options.hideTop));
-    }
-    if (options.hideBottom !== undefined) {
-        children.push(new OnOffElement("m:hideBot", options.hideBottom));
-    }
-    if (options.hideLeft !== undefined) {
-        children.push(new OnOffElement("m:hideLeft", options.hideLeft));
-    }
-    if (options.hideRight !== undefined) {
-        children.push(new OnOffElement("m:hideRight", options.hideRight));
-    }
-    if (options.strikeHorizontal !== undefined) {
-        children.push(new OnOffElement("m:strikeH", options.strikeHorizontal));
-    }
-    if (options.strikeVertical !== undefined) {
-        children.push(new OnOffElement("m:strikeV", options.strikeVertical));
-    }
-    if (options.strikeDiagonalUp !== undefined) {
-        children.push(new OnOffElement("m:strikeBLTR", options.strikeDiagonalUp));
-    }
-    if (options.strikeDiagonalDown !== undefined) {
-        children.push(new OnOffElement("m:strikeTLBR", options.strikeDiagonalDown));
-    }
+  if (options.hideTop !== undefined) {
+    children.push(new OnOffElement("m:hideTop", options.hideTop));
+  }
+  if (options.hideBottom !== undefined) {
+    children.push(new OnOffElement("m:hideBot", options.hideBottom));
+  }
+  if (options.hideLeft !== undefined) {
+    children.push(new OnOffElement("m:hideLeft", options.hideLeft));
+  }
+  if (options.hideRight !== undefined) {
+    children.push(new OnOffElement("m:hideRight", options.hideRight));
+  }
+  if (options.strikeHorizontal !== undefined) {
+    children.push(new OnOffElement("m:strikeH", options.strikeHorizontal));
+  }
+  if (options.strikeVertical !== undefined) {
+    children.push(new OnOffElement("m:strikeV", options.strikeVertical));
+  }
+  if (options.strikeDiagonalUp !== undefined) {
+    children.push(new OnOffElement("m:strikeBLTR", options.strikeDiagonalUp));
+  }
+  if (options.strikeDiagonalDown !== undefined) {
+    children.push(new OnOffElement("m:strikeTLBR", options.strikeDiagonalDown));
+  }
 
-    return new BuilderElement({
-        children,
-        name: "m:borderBoxPr",
-    });
+  return new BuilderElement({
+    children,
+    name: "m:borderBoxPr",
+  });
 };

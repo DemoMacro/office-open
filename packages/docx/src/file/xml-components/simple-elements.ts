@@ -13,9 +13,9 @@ import type { XmlComponent } from "@office-open/core";
  * @param value - String value for the `w:val` attribute
  */
 export const createStringElement = (name: string, value: string): XmlComponent =>
-    new BuilderElement({
-        attributes: {
-            value: { key: "w:val", value },
-        },
-        name,
-    });
+  new BuilderElement({
+    attributes: {
+      value: { key: "w:val", value },
+    },
+    name,
+  });

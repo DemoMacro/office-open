@@ -21,28 +21,28 @@ Document
 
 ```ts
 new TextRun({
-    text: "Hello",
-    bold: true,
-    italics: true,
-    underline: { type: "single", color: "FF0000" },
-    strike: "single", // "single" | "double" | "none"
-    doubleStrike: true,
-    subScript: true,
-    superScript: true,
-    font: "Calibri",
-    size: 24, // Half-points (24 = 12pt)
-    color: "FF0000",
-    highlight: "yellow", // Word highlight colors
-    shading: { type: "clear", fill: "E0E0E0" },
-    characterSpacing: 100,
-    break: 1, // Line breaks
-    tab: { type: "left", position: 1000 },
-    border: {
-        color: "000000",
-        style: "single",
-        space: 1,
-        size: 6,
-    },
+  text: "Hello",
+  bold: true,
+  italics: true,
+  underline: { type: "single", color: "FF0000" },
+  strike: "single", // "single" | "double" | "none"
+  doubleStrike: true,
+  subScript: true,
+  superScript: true,
+  font: "Calibri",
+  size: 24, // Half-points (24 = 12pt)
+  color: "FF0000",
+  highlight: "yellow", // Word highlight colors
+  shading: { type: "clear", fill: "E0E0E0" },
+  characterSpacing: 100,
+  break: 1, // Line breaks
+  tab: { type: "left", position: 1000 },
+  border: {
+    color: "000000",
+    style: "single",
+    space: 1,
+    size: 6,
+  },
 });
 ```
 
@@ -84,50 +84,50 @@ import { ImageRun } from "@office-open/docx";
 
 // Basic
 new ImageRun({
-    type: "png",
-    data: imageBuffer,
-    transformation: { width: 200, height: 150 },
+  type: "png",
+  data: imageBuffer,
+  transformation: { width: 200, height: 150 },
 });
 
 // With effects
 new ImageRun({
-    type: "jpg",
-    data: imageBuffer,
-    transformation: {
-        width: 200,
-        height: 150,
-        rotation: 45,
-        flip: { horizontal: true },
-    },
-    srcRect: { left: 1000, top: 1000, right: 1000, bottom: 1000 },
-    blipEffects: {
-        grayscale: true,
-        luminance: { bright: 30, contrast: -20 },
-        hsl: { hue: 0, saturation: 50, luminance: 0 },
-        tint: { hue: 6000000, amount: 40 },
-        duotone: { color1: { value: "002060" }, color2: { value: "D0CECE" } },
-        biLevel: { threshold: 50 },
-    },
+  type: "jpg",
+  data: imageBuffer,
+  transformation: {
+    width: 200,
+    height: 150,
+    rotation: 45,
+    flip: { horizontal: true },
+  },
+  srcRect: { left: 1000, top: 1000, right: 1000, bottom: 1000 },
+  blipEffects: {
+    grayscale: true,
+    luminance: { bright: 30, contrast: -20 },
+    hsl: { hue: 0, saturation: 50, luminance: 0 },
+    tint: { hue: 6000000, amount: 40 },
+    duotone: { color1: { value: "002060" }, color2: { value: "D0CECE" } },
+    biLevel: { threshold: 50 },
+  },
 });
 
 // Floating image
 new ImageRun({
-    type: "png",
-    data: imageBuffer,
-    transformation: { width: 150, height: 150 },
-    floating: {
-        horizontalPosition: { offset: 720000 },
-        verticalPosition: { offset: 720000 },
-        wrap: { type: "square" },
-    },
+  type: "png",
+  data: imageBuffer,
+  transformation: { width: 150, height: 150 },
+  floating: {
+    horizontalPosition: { offset: 720000 },
+    verticalPosition: { offset: 720000 },
+    wrap: { type: "square" },
+  },
 });
 
 // SVG with fallback
 new ImageRun({
-    type: "svg",
-    data: svgBuffer,
-    transformation: { width: 200, height: 200 },
-    fallback: { type: "png", data: pngBuffer },
+  type: "svg",
+  data: svgBuffer,
+  transformation: { width: 200, height: 200 },
+  fallback: { type: "png", data: pngBuffer },
 });
 ```
 
@@ -139,21 +139,21 @@ Supported types: `"jpg"`, `"png"`, `"gif"`, `"bmp"`, `"svg"`, `"emf"`, `"wmf"`, 
 import { Table, TableRow, TableCell, WidthType, VerticalAlign } from "@office-open/docx";
 
 new Table({
-    width: { size: 100, units: WidthType.PERCENTAGE },
-    rows: [
-        new TableRow({
-            children: [
-                new TableCell({
-                    width: { size: 50, units: WidthType.PERCENTAGE },
-                    shading: { fill: "4472C4" },
-                    children: [new Paragraph("Header 1")],
-                }),
-                new TableCell({
-                    children: [new Paragraph("Header 2")],
-                }),
-            ],
+  width: { size: 100, units: WidthType.PERCENTAGE },
+  rows: [
+    new TableRow({
+      children: [
+        new TableCell({
+          width: { size: 50, units: WidthType.PERCENTAGE },
+          shading: { fill: "4472C4" },
+          children: [new Paragraph("Header 1")],
         }),
-    ],
+        new TableCell({
+          children: [new Paragraph("Header 2")],
+        }),
+      ],
+    }),
+  ],
 });
 ```
 
@@ -233,20 +233,20 @@ new Document({
 
 ```ts
 import {
-    Math,
-    MathRun,
-    MathFraction,
-    MathSubScript,
-    MathSuperScript,
-    MathRadical,
-    MathNary,
-    MathAccent,
-    MathBorderBox,
-    MathBox,
-    MathEqArr,
-    MathMatrix,
-    MathGroupChr,
-    MathPhant,
+  Math,
+  MathRun,
+  MathFraction,
+  MathSubScript,
+  MathSuperScript,
+  MathRadical,
+  MathNary,
+  MathAccent,
+  MathBorderBox,
+  MathBox,
+  MathEqArr,
+  MathMatrix,
+  MathGroupChr,
+  MathPhant,
 } from "@office-open/docx";
 
 // Fraction
@@ -263,8 +263,8 @@ new MathNary({ operator: "∑", children: [new MathRun("i=1..n")] });
 
 // Border box with hidden borders
 new MathBorderBox({
-    children: [new MathRun("a")],
-    properties: { hideTop: true, hideBottom: true, strikeHorizontal: true },
+  children: [new MathRun("a")],
+  properties: { hideTop: true, hideBottom: true, strikeHorizontal: true },
 });
 
 // Equation array
@@ -272,10 +272,10 @@ new MathEqArr({ rows: [[new MathRun("x + y = 1")], [new MathRun("2x - y = 3")]] 
 
 // Matrix
 new MathMatrix({
-    rows: [
-        [new MathRun("1"), new MathRun("0")],
-        [new MathRun("0"), new MathRun("1")],
-    ],
+  rows: [
+    [new MathRun("1"), new MathRun("0")],
+    [new MathRun("0"), new MathRun("1")],
+  ],
 });
 ```
 
@@ -283,23 +283,23 @@ new MathMatrix({
 
 ```ts
 import {
-    ExternalHyperlink,
-    InternalHyperlink,
-    BookmarkStart,
-    BookmarkEnd,
+  ExternalHyperlink,
+  InternalHyperlink,
+  BookmarkStart,
+  BookmarkEnd,
 } from "@office-open/docx";
 
 new ExternalHyperlink({
-    children: [new TextRun("Click here")],
-    link: "https://example.com",
+  children: [new TextRun("Click here")],
+  link: "https://example.com",
 });
 
 new Paragraph({
-    children: [
-        new BookmarkStart("my-bookmark"),
-        new TextRun("Target text"),
-        new BookmarkEnd("my-bookmark"),
-    ],
+  children: [
+    new BookmarkStart("my-bookmark"),
+    new TextRun("Target text"),
+    new BookmarkEnd("my-bookmark"),
+  ],
 });
 ```
 
@@ -342,24 +342,24 @@ new Document({
 import { WpsShapeRun } from "@office-open/docx";
 
 new WpsShapeRun({
-    children: [new Paragraph({ children: [new TextRun("Shape text")] })],
-    customGeometry: {
-        pathList: [
-            {
-                w: 100000,
-                h: 100000,
-                commands: [
-                    { command: "moveTo", point: { x: "50000", y: "0" } },
-                    { command: "lineTo", point: { x: "100000", y: "100000" } },
-                    { command: "lineTo", point: { x: "0", y: "100000" } },
-                    { command: "close" },
-                ],
-            },
+  children: [new Paragraph({ children: [new TextRun("Shape text")] })],
+  customGeometry: {
+    pathList: [
+      {
+        w: 100000,
+        h: 100000,
+        commands: [
+          { command: "moveTo", point: { x: "50000", y: "0" } },
+          { command: "lineTo", point: { x: "100000", y: "100000" } },
+          { command: "lineTo", point: { x: "0", y: "100000" } },
+          { command: "close" },
         ],
-    },
-    fill: "4472C4",
-    transformation: { height: 150, width: 200 },
-    type: "wps",
+      },
+    ],
+  },
+  fill: "4472C4",
+  transformation: { height: 150, width: 200 },
+  type: "wps",
 });
 ```
 
@@ -369,23 +369,23 @@ new WpsShapeRun({
 import { Comment, CommentReference } from "@office-open/docx";
 
 new Document({
-    comments: {
-        children: [
-            new Comment({
-                id: 0,
-                author: "User",
-                children: [new Paragraph("This is a comment")],
-            }),
-        ],
-    },
-    sections: [
-        {
-            children: [
-                new Paragraph({
-                    children: [new TextRun("Some text"), new CommentReference(0)],
-                }),
-            ],
-        },
+  comments: {
+    children: [
+      new Comment({
+        id: 0,
+        author: "User",
+        children: [new Paragraph("This is a comment")],
+      }),
     ],
+  },
+  sections: [
+    {
+      children: [
+        new Paragraph({
+          children: [new TextRun("Some text"), new CommentReference(0)],
+        }),
+      ],
+    },
+  ],
 });
 ```

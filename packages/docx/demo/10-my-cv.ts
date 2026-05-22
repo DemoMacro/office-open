@@ -3,15 +3,15 @@
 import * as fs from "fs";
 
 import {
-    AlignmentType,
-    Document,
-    HeadingLevel,
-    Packer,
-    Paragraph,
-    Tab,
-    TabStopPosition,
-    TabStopType,
-    TextRun,
+  AlignmentType,
+  Document,
+  HeadingLevel,
+  Packer,
+  Paragraph,
+  Tab,
+  TabStopPosition,
+  TabStopType,
+  TextRun,
 } from "@office-open/docx";
 
 const PHONE_NUMBER = "07534563401";
@@ -19,406 +19,399 @@ const PROFILE_URL = "https://www.linkedin.com/in/dolan1";
 const EMAIL = "docx@com";
 
 interface Experience {
-    readonly isCurrent: boolean;
-    readonly summary: string;
-    readonly title: string;
-    readonly startDate: {
-        readonly month: number;
-        readonly year: number;
-    };
-    readonly endDate?: {
-        readonly month: number;
-        readonly year: number;
-    };
-    readonly company: {
-        readonly name: string;
-    };
+  readonly isCurrent: boolean;
+  readonly summary: string;
+  readonly title: string;
+  readonly startDate: {
+    readonly month: number;
+    readonly year: number;
+  };
+  readonly endDate?: {
+    readonly month: number;
+    readonly year: number;
+  };
+  readonly company: {
+    readonly name: string;
+  };
 }
 
 interface Education {
-    readonly degree: string;
-    readonly fieldOfStudy: string;
-    readonly notes: string;
-    readonly schoolName: string;
-    readonly startDate: {
-        readonly year: number;
-    };
-    readonly endDate: {
-        readonly year: number;
-    };
+  readonly degree: string;
+  readonly fieldOfStudy: string;
+  readonly notes: string;
+  readonly schoolName: string;
+  readonly startDate: {
+    readonly year: number;
+  };
+  readonly endDate: {
+    readonly year: number;
+  };
 }
 
 interface Skill {
-    readonly name: string;
+  readonly name: string;
 }
 
 interface Achievement {
-    readonly issuer: string;
-    readonly name: string;
+  readonly issuer: string;
+  readonly name: string;
 }
 
 const experiences: Experience[] = [
-    {
-        company: {
-            name: "BlackRock",
-        },
-        isCurrent: true,
-        startDate: {
-            month: 11,
-            year: 2017,
-        },
-        summary:
-            "Full-stack developer working with Angular and Java. Working for the iShares platform",
-        title: "Associate Software Developer",
+  {
+    company: {
+      name: "BlackRock",
     },
-    {
-        company: {
-            name: "Torch Markets",
-        },
-        endDate: {
-            month: 11,
-            year: 2017,
-        },
-        isCurrent: false,
-        startDate: {
-            month: 10,
-            year: 2016,
-        },
-        summary:
-            "Full-stack developer working with Angular, Node and TypeScript. Working for the iShares platform. Emphasis on Dev-ops and developing the continuous integration pipeline.",
-        title: "Software Developer",
+    isCurrent: true,
+    startDate: {
+      month: 11,
+      year: 2017,
     },
-    {
-        company: {
-            name: "Soundmouse",
-        },
-        endDate: {
-            month: 10,
-            year: 2016,
-        },
-        isCurrent: false,
-        startDate: {
-            month: 3,
-            year: 2015,
-        },
-        summary:
-            "Used ASP.NET MVC 5 to produce a diversity data collection tool for the future of British television.\n\nUsed AngularJS and C# best practices. Technologies used include JavaScript, ASP.NET MVC 5, SQL, Oracle, SASS, Bootstrap, Grunt.",
-        title: "Software Developer",
+    summary: "Full-stack developer working with Angular and Java. Working for the iShares platform",
+    title: "Associate Software Developer",
+  },
+  {
+    company: {
+      name: "Torch Markets",
     },
-    {
-        company: {
-            name: "Soundmouse",
-        },
-        endDate: {
-            month: 10,
-            year: 2014,
-        },
-        isCurrent: false,
-        startDate: {
-            month: 3,
-            year: 2013,
-        },
-        summary:
-            // Cspell:disable-next-line
-            "Develop web commerce platforms for various high profile clients.\n\nCreated a log analysis web application with the Play Framework in Java, incorporating Test Driven Development. It asynchronously uploads and processes large (2 GB) log files, and outputs meaningful results in context with the problem. \n\nAnalysis  and  development  of  the payment system infrastructure and user accounts section to be used by several clients of the company such as Waitrose, Tally Weijl, DJ Sports, Debenhams, Ann Summers, John Lewis and others.\n\nTechnologies used include WebSphere Commerce, Java, JavaScript and JSP.",
-        title: "Java Developer",
+    endDate: {
+      month: 11,
+      year: 2017,
     },
+    isCurrent: false,
+    startDate: {
+      month: 10,
+      year: 2016,
+    },
+    summary:
+      "Full-stack developer working with Angular, Node and TypeScript. Working for the iShares platform. Emphasis on Dev-ops and developing the continuous integration pipeline.",
+    title: "Software Developer",
+  },
+  {
+    company: {
+      name: "Soundmouse",
+    },
+    endDate: {
+      month: 10,
+      year: 2016,
+    },
+    isCurrent: false,
+    startDate: {
+      month: 3,
+      year: 2015,
+    },
+    summary:
+      "Used ASP.NET MVC 5 to produce a diversity data collection tool for the future of British television.\n\nUsed AngularJS and C# best practices. Technologies used include JavaScript, ASP.NET MVC 5, SQL, Oracle, SASS, Bootstrap, Grunt.",
+    title: "Software Developer",
+  },
+  {
+    company: {
+      name: "Soundmouse",
+    },
+    endDate: {
+      month: 10,
+      year: 2014,
+    },
+    isCurrent: false,
+    startDate: {
+      month: 3,
+      year: 2013,
+    },
+    summary:
+      // Cspell:disable-next-line
+      "Develop web commerce platforms for various high profile clients.\n\nCreated a log analysis web application with the Play Framework in Java, incorporating Test Driven Development. It asynchronously uploads and processes large (2 GB) log files, and outputs meaningful results in context with the problem. \n\nAnalysis  and  development  of  the payment system infrastructure and user accounts section to be used by several clients of the company such as Waitrose, Tally Weijl, DJ Sports, Debenhams, Ann Summers, John Lewis and others.\n\nTechnologies used include WebSphere Commerce, Java, JavaScript and JSP.",
+    title: "Java Developer",
+  },
 ];
 
 const education: Education[] = [
-    {
-        degree: "Master of Science (MSc)",
-        endDate: {
-            year: 2013,
-        },
-        fieldOfStudy: "Computer Science",
-        notes: "Exam Results: 1st Class with Distinction, Dissertation: 1st Class with Distinction\n\nRelevant Courses: Java and C# Programming, Software Engineering, Artificial Intelligence, \nComputational Photography, Algorithms, Architecture and Hardware.\n\nCreated a Windows 8 game in JavaScript for the dissertation. \n\nCreated an award-winning 3D stereoscopic game in C# using XNA.",
-        schoolName: "University College London",
-        startDate: {
-            year: 2012,
-        },
+  {
+    degree: "Master of Science (MSc)",
+    endDate: {
+      year: 2013,
     },
-    {
-        degree: "Bachelor of Engineering (BEng)",
-        endDate: {
-            year: 2012,
-        },
-        fieldOfStudy: "Material Science and Engineering",
-        notes: "Exam Results: 2:1, Dissertation: 1st Class with Distinction\n\nRelevant courses: C Programming, Mathematics and Business for Engineers.",
-        schoolName: "Imperial College London",
-        startDate: {
-            year: 2009,
-        },
+    fieldOfStudy: "Computer Science",
+    notes:
+      "Exam Results: 1st Class with Distinction, Dissertation: 1st Class with Distinction\n\nRelevant Courses: Java and C# Programming, Software Engineering, Artificial Intelligence, \nComputational Photography, Algorithms, Architecture and Hardware.\n\nCreated a Windows 8 game in JavaScript for the dissertation. \n\nCreated an award-winning 3D stereoscopic game in C# using XNA.",
+    schoolName: "University College London",
+    startDate: {
+      year: 2012,
     },
+  },
+  {
+    degree: "Bachelor of Engineering (BEng)",
+    endDate: {
+      year: 2012,
+    },
+    fieldOfStudy: "Material Science and Engineering",
+    notes:
+      "Exam Results: 2:1, Dissertation: 1st Class with Distinction\n\nRelevant courses: C Programming, Mathematics and Business for Engineers.",
+    schoolName: "Imperial College London",
+    startDate: {
+      year: 2009,
+    },
+  },
 ];
 
 const skills: Skill[] = [
-    {
-        name: "Angular",
-    },
-    {
-        name: "TypeScript",
-    },
-    {
-        name: "JavaScript",
-    },
-    {
-        name: "NodeJS",
-    },
+  {
+    name: "Angular",
+  },
+  {
+    name: "TypeScript",
+  },
+  {
+    name: "JavaScript",
+  },
+  {
+    name: "NodeJS",
+  },
 ];
 
 const achievements: Achievement[] = [
-    {
-        issuer: "Oracle",
-        name: "Oracle Certified Expert",
-    },
+  {
+    issuer: "Oracle",
+    name: "Oracle Certified Expert",
+  },
 ];
 
 class DocumentCreator {
-    public create([experiences, educations, skills, achievements]: [
-        Experience[],
-        Education[],
-        Skill[],
-        Achievement[],
-    ]): Document {
-        const document = new Document({
-            sections: [
-                {
-                    children: [
-                        new Paragraph({
-                            heading: HeadingLevel.TITLE,
-                            text: "Dolan Miu",
-                        }),
-                        this.createContactInfo(PHONE_NUMBER, PROFILE_URL, EMAIL),
-                        this.createHeading("Education"),
-                        ...educations
-                            .map((education) => {
-                                const arr: Paragraph[] = [];
-                                arr.push(
-                                    this.createInstitutionHeader(
-                                        education.schoolName,
-                                        `${education.startDate.year} - ${education.endDate.year}`,
-                                    ),
-                                );
-                                arr.push(
-                                    this.createRoleText(
-                                        `${education.fieldOfStudy} - ${education.degree}`,
-                                    ),
-                                );
+  public create([experiences, educations, skills, achievements]: [
+    Experience[],
+    Education[],
+    Skill[],
+    Achievement[],
+  ]): Document {
+    const document = new Document({
+      sections: [
+        {
+          children: [
+            new Paragraph({
+              heading: HeadingLevel.TITLE,
+              text: "Dolan Miu",
+            }),
+            this.createContactInfo(PHONE_NUMBER, PROFILE_URL, EMAIL),
+            this.createHeading("Education"),
+            ...educations
+              .map((education) => {
+                const arr: Paragraph[] = [];
+                arr.push(
+                  this.createInstitutionHeader(
+                    education.schoolName,
+                    `${education.startDate.year} - ${education.endDate.year}`,
+                  ),
+                );
+                arr.push(this.createRoleText(`${education.fieldOfStudy} - ${education.degree}`));
 
-                                const bulletPoints = this.splitParagraphIntoBullets(
-                                    education.notes,
-                                );
-                                bulletPoints.forEach((bulletPoint) => {
-                                    arr.push(this.createBullet(bulletPoint));
-                                });
+                const bulletPoints = this.splitParagraphIntoBullets(education.notes);
+                bulletPoints.forEach((bulletPoint) => {
+                  arr.push(this.createBullet(bulletPoint));
+                });
 
-                                return arr;
-                            })
-                            .reduce((prev, curr) => prev.concat(curr), []),
-                        this.createHeading("Experience"),
-                        ...experiences
-                            .map((position) => {
-                                const arr: Paragraph[] = [];
+                return arr;
+              })
+              .reduce((prev, curr) => prev.concat(curr), []),
+            this.createHeading("Experience"),
+            ...experiences
+              .map((position) => {
+                const arr: Paragraph[] = [];
 
-                                arr.push(
-                                    this.createInstitutionHeader(
-                                        position.company.name,
-                                        this.createPositionDateText(
-                                            position.startDate,
-                                            position.endDate,
-                                            position.isCurrent,
-                                        ),
-                                    ),
-                                );
-                                arr.push(this.createRoleText(position.title));
+                arr.push(
+                  this.createInstitutionHeader(
+                    position.company.name,
+                    this.createPositionDateText(
+                      position.startDate,
+                      position.endDate,
+                      position.isCurrent,
+                    ),
+                  ),
+                );
+                arr.push(this.createRoleText(position.title));
 
-                                const bulletPoints = this.splitParagraphIntoBullets(
-                                    position.summary,
-                                );
+                const bulletPoints = this.splitParagraphIntoBullets(position.summary);
 
-                                bulletPoints.forEach((bulletPoint) => {
-                                    arr.push(this.createBullet(bulletPoint));
-                                });
+                bulletPoints.forEach((bulletPoint) => {
+                  arr.push(this.createBullet(bulletPoint));
+                });
 
-                                return arr;
-                            })
-                            .reduce((prev, curr) => prev.concat(curr), []),
-                        this.createHeading("Skills, Achievements and Interests"),
-                        this.createSubHeading("Skills"),
-                        this.createSkillList(skills),
-                        this.createSubHeading("Achievements"),
-                        ...this.createAchievementsList(achievements),
-                        this.createSubHeading("Interests"),
-                        this.createInterests(
-                            "Programming, Technology, Music Production, Web Design, 3D Modelling, Dancing.",
-                        ),
-                        this.createHeading("References"),
-                        new Paragraph(
-                            "Dr. Dean Mohamedally Director of Postgraduate Studies Department of Computer Science, University College London Malet Place, Bloomsbury, London WC1E d.mohamedally@ucl.ac.uk",
-                        ),
-                        new Paragraph("More references upon request"),
-                        new Paragraph({
-                            alignment: AlignmentType.CENTER,
-                            text: "This CV was generated in real-time based on my Linked-In profile from my personal website www.dolan.bio.",
-                        }),
-                    ],
-                },
-            ],
-        });
+                return arr;
+              })
+              .reduce((prev, curr) => prev.concat(curr), []),
+            this.createHeading("Skills, Achievements and Interests"),
+            this.createSubHeading("Skills"),
+            this.createSkillList(skills),
+            this.createSubHeading("Achievements"),
+            ...this.createAchievementsList(achievements),
+            this.createSubHeading("Interests"),
+            this.createInterests(
+              "Programming, Technology, Music Production, Web Design, 3D Modelling, Dancing.",
+            ),
+            this.createHeading("References"),
+            new Paragraph(
+              "Dr. Dean Mohamedally Director of Postgraduate Studies Department of Computer Science, University College London Malet Place, Bloomsbury, London WC1E d.mohamedally@ucl.ac.uk",
+            ),
+            new Paragraph("More references upon request"),
+            new Paragraph({
+              alignment: AlignmentType.CENTER,
+              text: "This CV was generated in real-time based on my Linked-In profile from my personal website www.dolan.bio.",
+            }),
+          ],
+        },
+      ],
+    });
 
-        return document;
+    return document;
+  }
+
+  public createContactInfo(phoneNumber: string, profileUrl: string, email: string): Paragraph {
+    return new Paragraph({
+      alignment: AlignmentType.CENTER,
+      children: [
+        new TextRun(`Mobile: ${phoneNumber} | LinkedIn: ${profileUrl} | Email: ${email}`),
+        new TextRun({
+          break: 1,
+          text: "Address: 58 Elm Avenue, Kent ME4 6ER, UK",
+        }),
+      ],
+    });
+  }
+
+  public createHeading(text: string): Paragraph {
+    return new Paragraph({
+      heading: HeadingLevel.HEADING_1,
+      text: text,
+      thematicBreak: true,
+    });
+  }
+
+  public createSubHeading(text: string): Paragraph {
+    return new Paragraph({
+      heading: HeadingLevel.HEADING_2,
+      text: text,
+    });
+  }
+
+  public createInstitutionHeader(institutionName: string, dateText: string): Paragraph {
+    return new Paragraph({
+      children: [
+        new TextRun({
+          bold: true,
+          text: institutionName,
+        }),
+        new TextRun({
+          bold: true,
+          children: [new Tab(), dateText],
+        }),
+      ],
+      tabStops: [
+        {
+          position: TabStopPosition.MAX,
+          type: TabStopType.RIGHT,
+        },
+      ],
+    });
+  }
+
+  public createRoleText(roleText: string): Paragraph {
+    return new Paragraph({
+      children: [
+        new TextRun({
+          italics: true,
+          text: roleText,
+        }),
+      ],
+    });
+  }
+
+  public createBullet(text: string): Paragraph {
+    return new Paragraph({
+      bullet: {
+        level: 0,
+      },
+      text: text,
+    });
+  }
+
+  public createSkillList(skills: any[]): Paragraph {
+    return new Paragraph({
+      children: [new TextRun(skills.map((skill) => skill.name).join(", ") + ".")],
+    });
+  }
+
+  public createAchievementsList(achievements: any[]): Paragraph[] {
+    return achievements.map(
+      (achievement) =>
+        new Paragraph({
+          bullet: {
+            level: 0,
+          },
+          text: achievement.name,
+        }),
+    );
+  }
+
+  public createInterests(interests: string): Paragraph {
+    return new Paragraph({
+      children: [new TextRun(interests)],
+    });
+  }
+
+  public splitParagraphIntoBullets(text: string): string[] {
+    return text.split("\n\n");
+  }
+
+  public createPositionDateText(startDate: any, endDate: any, isCurrent: boolean): string {
+    const startDateText = this.getMonthFromInt(startDate.month) + ". " + startDate.year;
+    const endDateText = isCurrent
+      ? "Present"
+      : `${this.getMonthFromInt(endDate.month)}. ${endDate.year}`;
+
+    return `${startDateText} - ${endDateText}`;
+  }
+
+  public getMonthFromInt(value: number): string {
+    switch (value) {
+      case 1: {
+        return "Jan";
+      }
+      case 2: {
+        return "Feb";
+      }
+      case 3: {
+        return "Mar";
+      }
+      case 4: {
+        return "Apr";
+      }
+      case 5: {
+        return "May";
+      }
+      case 6: {
+        return "Jun";
+      }
+      case 7: {
+        return "Jul";
+      }
+      case 8: {
+        return "Aug";
+      }
+      case 9: {
+        return "Sept";
+      }
+      case 10: {
+        return "Oct";
+      }
+      case 11: {
+        return "Nov";
+      }
+      case 12: {
+        return "Dec";
+      }
+      default: {
+        return "N/A";
+      }
     }
-
-    public createContactInfo(phoneNumber: string, profileUrl: string, email: string): Paragraph {
-        return new Paragraph({
-            alignment: AlignmentType.CENTER,
-            children: [
-                new TextRun(`Mobile: ${phoneNumber} | LinkedIn: ${profileUrl} | Email: ${email}`),
-                new TextRun({
-                    break: 1,
-                    text: "Address: 58 Elm Avenue, Kent ME4 6ER, UK",
-                }),
-            ],
-        });
-    }
-
-    public createHeading(text: string): Paragraph {
-        return new Paragraph({
-            heading: HeadingLevel.HEADING_1,
-            text: text,
-            thematicBreak: true,
-        });
-    }
-
-    public createSubHeading(text: string): Paragraph {
-        return new Paragraph({
-            heading: HeadingLevel.HEADING_2,
-            text: text,
-        });
-    }
-
-    public createInstitutionHeader(institutionName: string, dateText: string): Paragraph {
-        return new Paragraph({
-            children: [
-                new TextRun({
-                    bold: true,
-                    text: institutionName,
-                }),
-                new TextRun({
-                    bold: true,
-                    children: [new Tab(), dateText],
-                }),
-            ],
-            tabStops: [
-                {
-                    position: TabStopPosition.MAX,
-                    type: TabStopType.RIGHT,
-                },
-            ],
-        });
-    }
-
-    public createRoleText(roleText: string): Paragraph {
-        return new Paragraph({
-            children: [
-                new TextRun({
-                    italics: true,
-                    text: roleText,
-                }),
-            ],
-        });
-    }
-
-    public createBullet(text: string): Paragraph {
-        return new Paragraph({
-            bullet: {
-                level: 0,
-            },
-            text: text,
-        });
-    }
-
-    public createSkillList(skills: any[]): Paragraph {
-        return new Paragraph({
-            children: [new TextRun(skills.map((skill) => skill.name).join(", ") + ".")],
-        });
-    }
-
-    public createAchievementsList(achievements: any[]): Paragraph[] {
-        return achievements.map(
-            (achievement) =>
-                new Paragraph({
-                    bullet: {
-                        level: 0,
-                    },
-                    text: achievement.name,
-                }),
-        );
-    }
-
-    public createInterests(interests: string): Paragraph {
-        return new Paragraph({
-            children: [new TextRun(interests)],
-        });
-    }
-
-    public splitParagraphIntoBullets(text: string): string[] {
-        return text.split("\n\n");
-    }
-
-    public createPositionDateText(startDate: any, endDate: any, isCurrent: boolean): string {
-        const startDateText = this.getMonthFromInt(startDate.month) + ". " + startDate.year;
-        const endDateText = isCurrent
-            ? "Present"
-            : `${this.getMonthFromInt(endDate.month)}. ${endDate.year}`;
-
-        return `${startDateText} - ${endDateText}`;
-    }
-
-    public getMonthFromInt(value: number): string {
-        switch (value) {
-            case 1: {
-                return "Jan";
-            }
-            case 2: {
-                return "Feb";
-            }
-            case 3: {
-                return "Mar";
-            }
-            case 4: {
-                return "Apr";
-            }
-            case 5: {
-                return "May";
-            }
-            case 6: {
-                return "Jun";
-            }
-            case 7: {
-                return "Jul";
-            }
-            case 8: {
-                return "Aug";
-            }
-            case 9: {
-                return "Sept";
-            }
-            case 10: {
-                return "Oct";
-            }
-            case 11: {
-                return "Nov";
-            }
-            case 12: {
-                return "Dec";
-            }
-            default: {
-                return "N/A";
-            }
-        }
-    }
+  }
 }
 
 const documentCreator = new DocumentCreator();

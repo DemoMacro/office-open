@@ -45,10 +45,10 @@ export type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffe
  * @publicApi
  */
 export const PatchType = {
-    /** Replace entire file-level elements (e.g., whole paragraphs) */
-    DOCUMENT: "file",
-    /** Replace content within paragraphs (inline replacement) */
-    PARAGRAPH: "paragraph",
+  /** Replace entire file-level elements (e.g., whole paragraphs) */
+  DOCUMENT: "file",
+  /** Replace content within paragraphs (inline replacement) */
+  PARAGRAPH: "paragraph",
 } as const;
 
 /**
@@ -58,10 +58,10 @@ export const PatchType = {
  * while preserving the surrounding paragraph structure.
  */
 interface ParagraphPatch {
-    /** Indicates this is a paragraph-level patch */
-    readonly type: typeof PatchType.PARAGRAPH;
-    /** Content to insert (runs, hyperlinks, images, etc.) */
-    readonly children: readonly ParagraphChild[];
+  /** Indicates this is a paragraph-level patch */
+  readonly type: typeof PatchType.PARAGRAPH;
+  /** Content to insert (runs, hyperlinks, images, etc.) */
+  readonly children: readonly ParagraphChild[];
 }
 
 /**
@@ -70,28 +70,28 @@ interface ParagraphPatch {
  * Replaces placeholder text with block-level content (entire paragraphs, tables, etc.).
  */
 interface FilePatch {
-    /** Indicates this is a document-level patch */
-    readonly type: typeof PatchType.DOCUMENT;
-    /** Content to insert (paragraphs, tables, etc.) */
-    readonly children: readonly FileChild[];
+  /** Indicates this is a document-level patch */
+  readonly type: typeof PatchType.DOCUMENT;
+  /** Content to insert (paragraphs, tables, etc.) */
+  readonly children: readonly FileChild[];
 }
 
 /**
  * Internal type for tracking image relationships that need to be added.
  */
 interface IImageRelationshipAddition {
-    readonly key: string;
-    readonly mediaDatas: readonly { readonly fileName: string }[];
+  readonly key: string;
+  readonly mediaDatas: readonly { readonly fileName: string }[];
 }
 
 /**
  * Internal type for tracking hyperlink relationships that need to be added.
  */
 interface IHyperlinkRelationshipAddition {
-    /** XML file path where the hyperlink is used */
-    readonly key: string;
-    /** Hyperlink relationship details */
-    readonly hyperlink: { readonly id: string; readonly link: string };
+  /** XML file path where the hyperlink is used */
+  readonly key: string;
+  /** Hyperlink relationship details */
+  readonly hyperlink: { readonly id: string; readonly link: string };
 }
 
 /**
@@ -115,36 +115,36 @@ export type PatchDocumentOutputType = OutputType;
  * @property recursive - Whether to search for multiple occurrences of placeholders
  */
 export interface PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocumentOutputType> {
-    /** Output format type */
-    readonly outputType: T;
-    /** Input document data */
-    readonly data: InputDataType;
-    /** Mapping of placeholder keys to patch content */
-    readonly patches: Readonly<Record<string, IPatch>>;
-    /** Preserve original formatting of replaced text (default: true) */
-    readonly keepOriginalStyles?: boolean;
-    /** Custom placeholder delimiters (default: {{ and }}) */
-    readonly placeholderDelimiters?: Readonly<{
-        readonly start: string;
-        readonly end: string;
-    }>;
-    /** Search for multiple occurrences after patching (default: true) */
-    readonly recursive?: boolean;
+  /** Output format type */
+  readonly outputType: T;
+  /** Input document data */
+  readonly data: InputDataType;
+  /** Mapping of placeholder keys to patch content */
+  readonly patches: Readonly<Record<string, IPatch>>;
+  /** Preserve original formatting of replaced text (default: true) */
+  readonly keepOriginalStyles?: boolean;
+  /** Custom placeholder delimiters (default: {{ and }}) */
+  readonly placeholderDelimiters?: Readonly<{
+    readonly start: string;
+    readonly end: string;
+  }>;
+  /** Search for multiple occurrences after patching (default: true) */
+  readonly recursive?: boolean;
 }
 
 const UTF16LE = new Uint8Array([0xff, 0xfe]);
 const UTF16BE = new Uint8Array([0xfe, 0xff]);
 
 const compareByteArrays = (a: Uint8Array, b: Uint8Array): boolean => {
-    if (a.length !== b.length) {
-        return false;
+  if (a.length !== b.length) {
+    return false;
+  }
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) {
+      return false;
     }
-    for (let i = 0; i < a.length; i++) {
-        if (a[i] !== b[i]) {
-            return false;
-        }
-    }
-    return true;
+  }
+  return true;
 };
 
 /**
@@ -183,251 +183,251 @@ const compareByteArrays = (a: Uint8Array, b: Uint8Array): boolean => {
  * @publicApi
  */
 export const patchDocument = async <T extends PatchDocumentOutputType = PatchDocumentOutputType>({
-    outputType,
-    data,
-    patches,
-    keepOriginalStyles,
-    placeholderDelimiters = { end: "}}", start: "{{" } as const,
-    /**
-     * Search for occurrences over patched document
-     */
-    recursive = true,
+  outputType,
+  data,
+  patches,
+  keepOriginalStyles,
+  placeholderDelimiters = { end: "}}", start: "{{" } as const,
+  /**
+   * Search for occurrences over patched document
+   */
+  recursive = true,
 }: PatchDocumentOptions<T>): Promise<OutputByType[T]> => {
-    const zipContent = unzipSync(toUint8Array(data));
-    const contexts = new Map<string, IContext>();
-    const file = {
-        Media: new Media(),
-    } as unknown as File;
+  const zipContent = unzipSync(toUint8Array(data));
+  const contexts = new Map<string, IContext>();
+  const file = {
+    Media: new Media(),
+  } as unknown as File;
 
-    const map = new Map<string, Element>();
+  const map = new Map<string, Element>();
 
-    const imageRelationshipAdditions: IImageRelationshipAddition[] = [];
-    const hyperlinkRelationshipAdditions: IHyperlinkRelationshipAddition[] = [];
-    let hasMedia = false;
+  const imageRelationshipAdditions: IImageRelationshipAddition[] = [];
+  const hyperlinkRelationshipAdditions: IHyperlinkRelationshipAddition[] = [];
+  let hasMedia = false;
 
-    const binaryContentMap = new Map<string, Uint8Array>();
+  const binaryContentMap = new Map<string, Uint8Array>();
 
-    for (const [key, value] of Object.entries(zipContent)) {
-        const startBytes = value.slice(0, 2);
-        if (compareByteArrays(startBytes, UTF16LE) || compareByteArrays(startBytes, UTF16BE)) {
-            binaryContentMap.set(key, value);
-            continue;
+  for (const [key, value] of Object.entries(zipContent)) {
+    const startBytes = value.slice(0, 2);
+    if (compareByteArrays(startBytes, UTF16LE) || compareByteArrays(startBytes, UTF16BE)) {
+      binaryContentMap.set(key, value);
+      continue;
+    }
+
+    if (!key.endsWith(".xml") && !key.endsWith(".rels")) {
+      binaryContentMap.set(key, value);
+      continue;
+    }
+
+    const json = toJson(strFromU8(value));
+
+    if (key === "word/document.xml") {
+      const document = json.elements?.find((i) => i.name === "w:document");
+      if (document && document.attributes) {
+        // We could check all namespaces from Document, but we'll instead
+        // Check only those that may be used by our element types.
+
+        for (const ns of ["mc", "wp", "r", "w15", "m"] as const) {
+          document.attributes[`xmlns:${ns}`] = DocumentAttributeNamespaces[ns];
         }
+        document.attributes["mc:Ignorable"] =
+          `${document.attributes["mc:Ignorable"] || ""} w15`.trim();
+      }
+    }
 
-        if (!key.endsWith(".xml") && !key.endsWith(".rels")) {
-            binaryContentMap.set(key, value);
-            continue;
-        }
+    if (key.startsWith("word/") && !key.endsWith(".xml.rels")) {
+      const context: IContext = {
+        fileData: file,
+        file,
+        stack: [],
+        viewWrapper: {
+          Relationships: {
+            addRelationship: (
+              linkId: string,
+              _: string,
+              target: string,
+              __: (typeof TargetModeType)[keyof typeof TargetModeType],
+            ) => {
+              hyperlinkRelationshipAdditions.push({
+                hyperlink: {
+                  id: linkId,
+                  link: target,
+                },
+                key,
+              });
+            },
+          },
+        } as unknown as IViewWrapper,
+      };
+      contexts.set(key, context);
 
-        const json = toJson(strFromU8(value));
+      if (!placeholderDelimiters?.start.trim() || !placeholderDelimiters?.end.trim()) {
+        throw new Error("Both start and end delimiters must be non-empty strings.");
+      }
 
-        if (key === "word/document.xml") {
-            const document = json.elements?.find((i) => i.name === "w:document");
-            if (document && document.attributes) {
-                // We could check all namespaces from Document, but we'll instead
-                // Check only those that may be used by our element types.
+      const { start, end } = placeholderDelimiters;
 
-                for (const ns of ["mc", "wp", "r", "w15", "m"] as const) {
-                    document.attributes[`xmlns:${ns}`] = DocumentAttributeNamespaces[ns];
-                }
-                document.attributes["mc:Ignorable"] =
-                    `${document.attributes["mc:Ignorable"] || ""} w15`.trim();
-            }
-        }
-
-        if (key.startsWith("word/") && !key.endsWith(".xml.rels")) {
-            const context: IContext = {
-                fileData: file,
-                file,
-                stack: [],
-                viewWrapper: {
-                    Relationships: {
-                        addRelationship: (
-                            linkId: string,
-                            _: string,
-                            target: string,
-                            __: (typeof TargetModeType)[keyof typeof TargetModeType],
-                        ) => {
-                            hyperlinkRelationshipAdditions.push({
-                                hyperlink: {
-                                    id: linkId,
-                                    link: target,
-                                },
-                                key,
-                            });
-                        },
+      for (const [patchKey, patchValue] of Object.entries(patches)) {
+        const patchText = `${start}${patchKey}${end}`;
+        // TODO: mutates json. Make it immutable
+        // We need to loop through to catch every occurrence of the patch text
+        // It is possible that the patch text is in the same run
+        // This algorithm is limited to one patch per text run
+        // We break out of the loop once it cannot find any more occurrences
+        // https://github.com/dolanmiu/docx/issues/2267
+        while (true) {
+          const { didFindOccurrence } = replacer({
+            context,
+            json,
+            keepOriginalStyles,
+            patch: {
+              ...patchValue,
+              children: patchValue.children.map((element) => {
+                // We need to replace external hyperlinks with concrete hyperlinks
+                if (element instanceof ExternalHyperlink) {
+                  const concreteHyperlink = new ConcreteHyperlink(
+                    element.options.children,
+                    uniqueId(),
+                  );
+                  hyperlinkRelationshipAdditions.push({
+                    hyperlink: {
+                      id: concreteHyperlink.linkId,
+                      link: element.options.link,
                     },
-                } as unknown as IViewWrapper,
-            };
-            contexts.set(key, context);
-
-            if (!placeholderDelimiters?.start.trim() || !placeholderDelimiters?.end.trim()) {
-                throw new Error("Both start and end delimiters must be non-empty strings.");
-            }
-
-            const { start, end } = placeholderDelimiters;
-
-            for (const [patchKey, patchValue] of Object.entries(patches)) {
-                const patchText = `${start}${patchKey}${end}`;
-                // TODO: mutates json. Make it immutable
-                // We need to loop through to catch every occurrence of the patch text
-                // It is possible that the patch text is in the same run
-                // This algorithm is limited to one patch per text run
-                // We break out of the loop once it cannot find any more occurrences
-                // https://github.com/dolanmiu/docx/issues/2267
-                while (true) {
-                    const { didFindOccurrence } = replacer({
-                        context,
-                        json,
-                        keepOriginalStyles,
-                        patch: {
-                            ...patchValue,
-                            children: patchValue.children.map((element) => {
-                                // We need to replace external hyperlinks with concrete hyperlinks
-                                if (element instanceof ExternalHyperlink) {
-                                    const concreteHyperlink = new ConcreteHyperlink(
-                                        element.options.children,
-                                        uniqueId(),
-                                    );
-                                    hyperlinkRelationshipAdditions.push({
-                                        hyperlink: {
-                                            id: concreteHyperlink.linkId,
-                                            link: element.options.link,
-                                        },
-                                        key,
-                                    });
-                                    return concreteHyperlink;
-                                } else {
-                                    return element;
-                                }
-                            }),
-                        } as any,
-                        patchText,
-                    });
-                    // What the reason doing that? Once document is patched - it search over patched json again, that takes too long if patched document has big and deep structure.
-                    if (!recursive || !didFindOccurrence) {
-                        break;
-                    }
-                }
-            }
-
-            const mediaDatas = getReferencedMedia(JSON.stringify(json), context.file.Media.Array);
-            if (mediaDatas.length > 0) {
-                hasMedia = true;
-                imageRelationshipAdditions.push({
                     key,
-                    mediaDatas,
-                });
-            }
+                  });
+                  return concreteHyperlink;
+                } else {
+                  return element;
+                }
+              }),
+            } as any,
+            patchText,
+          });
+          // What the reason doing that? Once document is patched - it search over patched json again, that takes too long if patched document has big and deep structure.
+          if (!recursive || !didFindOccurrence) {
+            break;
+          }
         }
+      }
 
-        map.set(key, json);
+      const mediaDatas = getReferencedMedia(JSON.stringify(json), context.file.Media.Array);
+      if (mediaDatas.length > 0) {
+        hasMedia = true;
+        imageRelationshipAdditions.push({
+          key,
+          mediaDatas,
+        });
+      }
     }
 
-    for (const { key, mediaDatas } of imageRelationshipAdditions) {
-        const relationshipKey = `word/_rels/${key.split("/").pop()}.rels`;
-        const relationshipsJson = map.get(relationshipKey) ?? createRelationshipFile();
-        map.set(relationshipKey, relationshipsJson);
+    map.set(key, json);
+  }
 
-        const index = getNextRelationshipIndex(relationshipsJson);
-        const newJson = replaceImagePlaceholders(
-            JSON.stringify(map.get(key)),
-            mediaDatas,
-            index,
-            "plain",
-        );
-        map.set(key, JSON.parse(newJson) as Element);
+  for (const { key, mediaDatas } of imageRelationshipAdditions) {
+    const relationshipKey = `word/_rels/${key.split("/").pop()}.rels`;
+    const relationshipsJson = map.get(relationshipKey) ?? createRelationshipFile();
+    map.set(relationshipKey, relationshipsJson);
 
-        for (let i = 0; i < mediaDatas.length; i++) {
-            const { fileName } = mediaDatas[i];
-            appendRelationship(
-                relationshipsJson,
-                index + i,
-                "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-                `media/${fileName}`,
-            );
-        }
+    const index = getNextRelationshipIndex(relationshipsJson);
+    const newJson = replaceImagePlaceholders(
+      JSON.stringify(map.get(key)),
+      mediaDatas,
+      index,
+      "plain",
+    );
+    map.set(key, JSON.parse(newJson) as Element);
+
+    for (let i = 0; i < mediaDatas.length; i++) {
+      const { fileName } = mediaDatas[i];
+      appendRelationship(
+        relationshipsJson,
+        index + i,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+        `media/${fileName}`,
+      );
+    }
+  }
+
+  for (const { key, hyperlink } of hyperlinkRelationshipAdditions) {
+    const relationshipKey = `word/_rels/${key.split("/").pop()}.rels`;
+
+    const relationshipsJson = map.get(relationshipKey) ?? createRelationshipFile();
+    map.set(relationshipKey, relationshipsJson);
+
+    appendRelationship(
+      relationshipsJson,
+      hyperlink.id,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+      hyperlink.link,
+      TargetModeType.EXTERNAL,
+    );
+  }
+
+  if (hasMedia) {
+    const contentTypesJson = map.get("[Content_Types].xml");
+
+    if (!contentTypesJson) {
+      throw new Error("Could not find content types file");
     }
 
-    for (const { key, hyperlink } of hyperlinkRelationshipAdditions) {
-        const relationshipKey = `word/_rels/${key.split("/").pop()}.rels`;
+    appendContentType(contentTypesJson, "image/png", "png");
+    appendContentType(contentTypesJson, "image/jpeg", "jpeg");
+    appendContentType(contentTypesJson, "image/jpeg", "jpg");
+    appendContentType(contentTypesJson, "image/bmp", "bmp");
+    appendContentType(contentTypesJson, "image/gif", "gif");
+    appendContentType(contentTypesJson, "image/svg+xml", "svg");
+  }
 
-        const relationshipsJson = map.get(relationshipKey) ?? createRelationshipFile();
-        map.set(relationshipKey, relationshipsJson);
+  const files: Record<string, Uint8Array> = {};
 
-        appendRelationship(
-            relationshipsJson,
-            hyperlink.id,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
-            hyperlink.link,
-            TargetModeType.EXTERNAL,
-        );
-    }
+  for (const [key, value] of map) {
+    const output = toXml(value);
+    files[key] = textToUint8Array(output);
+  }
 
-    if (hasMedia) {
-        const contentTypesJson = map.get("[Content_Types].xml");
+  for (const [key, value] of binaryContentMap) {
+    files[key] = value;
+  }
 
-        if (!contentTypesJson) {
-            throw new Error("Could not find content types file");
-        }
+  for (const { data: mediaData, fileName } of file.Media.Array) {
+    files[`word/media/${fileName}`] =
+      mediaData instanceof Uint8Array ? mediaData : new Uint8Array(mediaData);
+  }
 
-        appendContentType(contentTypesJson, "image/png", "png");
-        appendContentType(contentTypesJson, "image/jpeg", "jpeg");
-        appendContentType(contentTypesJson, "image/jpeg", "jpg");
-        appendContentType(contentTypesJson, "image/bmp", "bmp");
-        appendContentType(contentTypesJson, "image/gif", "gif");
-        appendContentType(contentTypesJson, "image/svg+xml", "svg");
-    }
-
-    const files: Record<string, Uint8Array> = {};
-
-    for (const [key, value] of map) {
-        const output = toXml(value);
-        files[key] = textToUint8Array(output);
-    }
-
-    for (const [key, value] of binaryContentMap) {
-        files[key] = value;
-    }
-
-    for (const { data: mediaData, fileName } of file.Media.Array) {
-        files[`word/media/${fileName}`] =
-            mediaData instanceof Uint8Array ? mediaData : new Uint8Array(mediaData);
-    }
-
-    const zipped = zipSync(files, { level: 6 });
-    return convertOutput(zipped, outputType);
+  const zipped = zipSync(files, { level: 6 });
+  return convertOutput(zipped, outputType);
 };
 
 const toXml = (jsonObj: Element): string => {
-    const output = js2xml(jsonObj, {
-        attributeValueFn: (str) =>
-            String(str)
-                .replace(/&(?!amp;|lt;|gt;|quot;|apos;)/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&apos;"), // Cspell:words apos
-    });
-    return output;
+  const output = js2xml(jsonObj, {
+    attributeValueFn: (str) =>
+      String(str)
+        .replace(/&(?!amp;|lt;|gt;|quot;|apos;)/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&apos;"), // Cspell:words apos
+  });
+  return output;
 };
 
 const createRelationshipFile = (): Element => ({
-    declaration: {
-        attributes: {
-            encoding: "UTF-8",
-            standalone: "yes",
-            version: "1.0",
-        },
+  declaration: {
+    attributes: {
+      encoding: "UTF-8",
+      standalone: "yes",
+      version: "1.0",
     },
-    elements: [
-        {
-            attributes: {
-                xmlns: "http://schemas.openxmlformats.org/package/2006/relationships",
-            },
-            elements: [],
-            name: "Relationships",
-            type: "element",
-        },
-    ],
+  },
+  elements: [
+    {
+      attributes: {
+        xmlns: "http://schemas.openxmlformats.org/package/2006/relationships",
+      },
+      elements: [],
+      name: "Relationships",
+      type: "element",
+    },
+  ],
 });

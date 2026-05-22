@@ -15,10 +15,10 @@ import { XmlAttributeComponent } from "@file/xml-components";
  * @internal
  */
 export class PicAttributes extends XmlAttributeComponent<{
-    /** Picture namespace declaration (http://schemas.openxmlformats.org/drawingml/2006/picture) */
-    readonly xmlns?: string;
+  /** Picture namespace declaration (http://schemas.openxmlformats.org/drawingml/2006/picture) */
+  readonly xmlns?: string;
 }> {
-    protected readonly xmlKeys = {
-        xmlns: "xmlns:pic",
-    };
+  protected readonly xmlKeys = {
+    xmlns: "xmlns:pic",
+  };
 }

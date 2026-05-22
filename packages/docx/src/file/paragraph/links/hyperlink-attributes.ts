@@ -17,18 +17,18 @@ import { XmlAttributeComponent } from "@file/xml-components";
  * @property history - Whether to add this link to the document's history
  */
 export interface IHyperlinkAttributesProperties {
-    /** Relationship ID for external hyperlinks */
-    readonly id?: string;
-    /** Bookmark name for internal hyperlinks */
-    readonly anchor?: string;
-    /** Whether to add this link to the document's history (1 for true, 0 for false) */
-    readonly history: number;
-    /** Screen tip text shown when hovering over the hyperlink */
-    readonly tooltip?: string;
-    /** Target frame for the hyperlink (e.g., "_blank", "_self") */
-    readonly tgtFrame?: string;
-    /** Location within the target document */
-    readonly docLocation?: string;
+  /** Relationship ID for external hyperlinks */
+  readonly id?: string;
+  /** Bookmark name for internal hyperlinks */
+  readonly anchor?: string;
+  /** Whether to add this link to the document's history (1 for true, 0 for false) */
+  readonly history: number;
+  /** Screen tip text shown when hovering over the hyperlink */
+  readonly tooltip?: string;
+  /** Target frame for the hyperlink (e.g., "_blank", "_self") */
+  readonly tgtFrame?: string;
+  /** Location within the target document */
+  readonly docLocation?: string;
 }
 
 /**
@@ -48,12 +48,12 @@ export interface IHyperlinkAttributesProperties {
  * ```
  */
 export class HyperlinkAttributes extends XmlAttributeComponent<IHyperlinkAttributesProperties> {
-    protected readonly xmlKeys = {
-        anchor: "w:anchor",
-        docLocation: "w:docLocation",
-        history: "w:history",
-        id: "r:id",
-        tgtFrame: "w:tgtFrame",
-        tooltip: "w:tooltip",
-    };
+  protected readonly xmlKeys = {
+    anchor: "w:anchor",
+    docLocation: "w:docLocation",
+    history: "w:history",
+    id: "r:id",
+    tgtFrame: "w:tgtFrame",
+    tooltip: "w:tooltip",
+  };
 }

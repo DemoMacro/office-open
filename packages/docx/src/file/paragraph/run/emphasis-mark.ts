@@ -33,20 +33,20 @@ import type { XmlComponent } from "@file/xml-components";
  * @publicApi
  */
 export const EmphasisMarkType = {
-    /** No emphasis mark */
-    NONE: "none",
-    /** Comma emphasis mark */
-    COMMA: "comma",
-    /** Circle emphasis mark */
-    CIRCLE: "circle",
-    /** Dot emphasis mark */
-    DOT: "dot",
-    /** Under dot emphasis mark */
-    UNDER_DOT: "underDot",
+  /** No emphasis mark */
+  NONE: "none",
+  /** Comma emphasis mark */
+  COMMA: "comma",
+  /** Circle emphasis mark */
+  CIRCLE: "circle",
+  /** Dot emphasis mark */
+  DOT: "dot",
+  /** Under dot emphasis mark */
+  UNDER_DOT: "underDot",
 } as const;
 
 interface IEmphasisMarkAttributes {
-    readonly val: (typeof EmphasisMarkType)[keyof typeof EmphasisMarkType];
+  readonly val: (typeof EmphasisMarkType)[keyof typeof EmphasisMarkType];
 }
 
 /**
@@ -74,14 +74,14 @@ interface IEmphasisMarkAttributes {
  * ```
  */
 export const createEmphasisMark = (
-    emphasisMarkType: (typeof EmphasisMarkType)[keyof typeof EmphasisMarkType] = EmphasisMarkType.DOT,
+  emphasisMarkType: (typeof EmphasisMarkType)[keyof typeof EmphasisMarkType] = EmphasisMarkType.DOT,
 ): XmlComponent =>
-    new BuilderElement<IEmphasisMarkAttributes>({
-        attributes: {
-            val: { key: "w:val", value: emphasisMarkType },
-        },
-        name: "w:em",
-    });
+  new BuilderElement<IEmphasisMarkAttributes>({
+    attributes: {
+      val: { key: "w:val", value: emphasisMarkType },
+    },
+    name: "w:em",
+  });
 
 /**
  * Creates a dot emphasis mark.

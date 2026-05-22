@@ -10,11 +10,11 @@
 
 export { createGradientFill, createGradientStop } from "@office-open/core/drawingml";
 export type {
-    GradientFillOptions,
-    GradientShadeOptions,
-    LinearShadeOptions,
-    PathShadeOptions,
-    IGradientStop,
-    RelativeRect,
+  GradientFillOptions,
+  GradientShadeOptions,
+  LinearShadeOptions,
+  PathShadeOptions,
+  IGradientStop,
+  RelativeRect,
 } from "@office-open/core/drawingml";
 export { PathShadeType, TileFlipMode } from "@office-open/core/drawingml";

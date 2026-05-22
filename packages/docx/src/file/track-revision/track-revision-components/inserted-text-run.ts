@@ -63,15 +63,15 @@ type IInsertedRunOptions = IChangedAttributesProperties & IRunOptions;
  * ```
  */
 export class InsertedTextRun extends XmlComponent {
-    public constructor(options: IInsertedRunOptions) {
-        super("w:ins");
-        this.root.push(
-            new ChangeAttributes({
-                author: options.author,
-                date: options.date,
-                id: options.id,
-            }),
-        );
-        this.addChildElement(new TextRun(options as IRunOptions));
-    }
+  public constructor(options: IInsertedRunOptions) {
+    super("w:ins");
+    this.root.push(
+      new ChangeAttributes({
+        author: options.author,
+        date: options.date,
+        id: options.id,
+      }),
+    );
+    this.addChildElement(new TextRun(options as IRunOptions));
+  }
 }

@@ -22,10 +22,10 @@ import type { IHyperlinkAttributesProperties } from "./hyperlink-attributes";
  * @publicApi
  */
 export const HyperlinkType = {
-    /** Internal hyperlink to a bookmark within the document */
-    INTERNAL: "INTERNAL",
-    /** External hyperlink to a URL outside the document */
-    EXTERNAL: "EXTERNAL",
+  /** Internal hyperlink to a bookmark within the document */
+  INTERNAL: "INTERNAL",
+  /** External hyperlink to a URL outside the document */
+  EXTERNAL: "EXTERNAL",
 } as const;
 
 /**
@@ -35,12 +35,12 @@ export const HyperlinkType = {
  * @property anchor - Name of the bookmark to link to within the document
  */
 export interface IInternalHyperlinkOptions {
-    /** Array of paragraph children that form the hyperlink text */
-    readonly children: readonly ParagraphChild[];
-    /** Name of the bookmark to link to within the document */
-    readonly anchor: string;
-    /** Screen tip text shown when hovering over the hyperlink */
-    readonly tooltip?: string;
+  /** Array of paragraph children that form the hyperlink text */
+  readonly children: readonly ParagraphChild[];
+  /** Name of the bookmark to link to within the document */
+  readonly anchor: string;
+  /** Screen tip text shown when hovering over the hyperlink */
+  readonly tooltip?: string;
 }
 
 /**
@@ -52,14 +52,14 @@ export interface IInternalHyperlinkOptions {
  * @property tgtFrame - Target frame for the hyperlink (e.g., "_blank", "_self")
  */
 export interface IExternalHyperlinkOptions {
-    /** Array of paragraph children that form the hyperlink text */
-    readonly children: readonly ParagraphChild[];
-    /** URL to link to outside the document */
-    readonly link: string;
-    /** Screen tip text shown when hovering over the hyperlink */
-    readonly tooltip?: string;
-    /** Target frame for the hyperlink (e.g., "_blank", "_self") */
-    readonly tgtFrame?: string;
+  /** Array of paragraph children that form the hyperlink text */
+  readonly children: readonly ParagraphChild[];
+  /** URL to link to outside the document */
+  readonly link: string;
+  /** Screen tip text shown when hovering over the hyperlink */
+  readonly tooltip?: string;
+  /** Target frame for the hyperlink (e.g., "_blank", "_self") */
+  readonly tgtFrame?: string;
 }
 
 /**
@@ -86,33 +86,33 @@ export interface IExternalHyperlinkOptions {
  * ```
  */
 export class ConcreteHyperlink extends XmlComponent {
-    public readonly linkId: string;
+  public readonly linkId: string;
 
-    public constructor(
-        children: readonly ParagraphChild[],
-        relationshipId: string,
-        anchor?: string,
-        tooltip?: string,
-        tgtFrame?: string,
-    ) {
-        super("w:hyperlink");
+  public constructor(
+    children: readonly ParagraphChild[],
+    relationshipId: string,
+    anchor?: string,
+    tooltip?: string,
+    tgtFrame?: string,
+  ) {
+    super("w:hyperlink");
 
-        this.linkId = relationshipId;
+    this.linkId = relationshipId;
 
-        const props: IHyperlinkAttributesProperties = {
-            anchor: anchor ? anchor : undefined,
-            history: 1,
-            id: !anchor ? `rId${this.linkId}` : undefined,
-            tooltip,
-            tgtFrame,
-        };
+    const props: IHyperlinkAttributesProperties = {
+      anchor: anchor ? anchor : undefined,
+      history: 1,
+      id: !anchor ? `rId${this.linkId}` : undefined,
+      tooltip,
+      tgtFrame,
+    };
 
-        const attributes = new HyperlinkAttributes(props);
-        this.root.push(attributes);
-        children.forEach((child) => {
-            this.root.push(child);
-        });
-    }
+    const attributes = new HyperlinkAttributes(props);
+    this.root.push(attributes);
+    children.forEach((child) => {
+      this.root.push(child);
+    });
+  }
 }
 
 /**
@@ -152,9 +152,9 @@ export class ConcreteHyperlink extends XmlComponent {
  * ```
  */
 export class InternalHyperlink extends ConcreteHyperlink {
-    public constructor(options: IInternalHyperlinkOptions) {
-        super(options.children, uniqueId(), options.anchor, options.tooltip);
-    }
+  public constructor(options: IInternalHyperlinkOptions) {
+    super(options.children, uniqueId(), options.anchor, options.tooltip);
+  }
 }
 
 /**
@@ -188,7 +188,7 @@ export class InternalHyperlink extends ConcreteHyperlink {
  * ```
  */
 export class ExternalHyperlink extends XmlComponent {
-    public constructor(public readonly options: IExternalHyperlinkOptions) {
-        super("w:externalHyperlink");
-    }
+  public constructor(public readonly options: IExternalHyperlinkOptions) {
+    super("w:externalHyperlink");
+  }
 }

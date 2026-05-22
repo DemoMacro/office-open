@@ -54,30 +54,30 @@ import { createPositionOffset } from "./position-offset";
  * ```
  */
 export const createVerticalPosition = ({
-    relative,
-    align,
-    offset,
+  relative,
+  align,
+  offset,
 }: IVerticalPositionOptions): XmlComponent =>
-    new BuilderElement<{
-        /** Vertical Position Relative Base */
-        readonly relativeFrom: (typeof VerticalPositionRelativeFrom)[keyof typeof VerticalPositionRelativeFrom];
-    }>({
-        attributes: {
-            relativeFrom: {
-                key: "relativeFrom",
-                value: relative ?? VerticalPositionRelativeFrom.PAGE,
-            },
-        },
-        children: [
-            (() => {
-                if (align) {
-                    return createAlign(align);
-                }
-                if (offset !== undefined) {
-                    return createPositionOffset(offset);
-                }
-                return createAlign(VerticalPositionAlign.TOP);
-            })(),
-        ],
-        name: "wp:positionV",
-    });
+  new BuilderElement<{
+    /** Vertical Position Relative Base */
+    readonly relativeFrom: (typeof VerticalPositionRelativeFrom)[keyof typeof VerticalPositionRelativeFrom];
+  }>({
+    attributes: {
+      relativeFrom: {
+        key: "relativeFrom",
+        value: relative ?? VerticalPositionRelativeFrom.PAGE,
+      },
+    },
+    children: [
+      (() => {
+        if (align) {
+          return createAlign(align);
+        }
+        if (offset !== undefined) {
+          return createPositionOffset(offset);
+        }
+        return createAlign(VerticalPositionAlign.TOP);
+      })(),
+    ],
+    name: "wp:positionV",
+  });

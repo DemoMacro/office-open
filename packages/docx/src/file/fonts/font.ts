@@ -20,12 +20,12 @@ import type { XmlComponent } from "@file/xml-components";
  * @property subsetted - Whether the embedded font is subsetted
  */
 export interface IFontRelationshipOptions {
-    /** Relationship to Part */
-    readonly id: string;
-    /** Embedded Font Obfuscation Key (GUID) */
-    readonly fontKey?: string;
-    /** Whether the embedded font is subsetted */
-    readonly subsetted?: boolean;
+  /** Relationship to Part */
+  readonly id: string;
+  /** Embedded Font Obfuscation Key (GUID) */
+  readonly fontKey?: string;
+  /** Whether the embedded font is subsetted */
+  readonly subsetted?: boolean;
 }
 
 /**
@@ -35,25 +35,25 @@ export interface IFontRelationshipOptions {
  * @publicApi
  */
 export const CharacterSet = {
-    ANSI: "00",
-    ARABIC: "B2",
-    BALTIC: "BA",
-    CHINESEBIG5: "88",
-    DEFAULT: "01",
-    EASTEUROPE: "EE",
-    GB_2312: "86",
-    GREEK: "A1",
-    HANGUL: "81",
-    HEBREW: "B1",
-    JIS: "80",
-    JOHAB: "82",
-    MAC: "4D",
-    OEM: "FF",
-    RUSSIAN: "CC",
-    SYMBOL: "02",
-    THAI: "DE",
-    TURKISH: "A2",
-    VIETNAMESE: "A3",
+  ANSI: "00",
+  ARABIC: "B2",
+  BALTIC: "BA",
+  CHINESEBIG5: "88",
+  DEFAULT: "01",
+  EASTEUROPE: "EE",
+  GB_2312: "86",
+  GREEK: "A1",
+  HANGUL: "81",
+  HEBREW: "B1",
+  JIS: "80",
+  JOHAB: "82",
+  MAC: "4D",
+  OEM: "FF",
+  RUSSIAN: "CC",
+  SYMBOL: "02",
+  THAI: "DE",
+  TURKISH: "A2",
+  VIETNAMESE: "A3",
 } as const;
 
 /**
@@ -75,60 +75,60 @@ export const CharacterSet = {
  * @property embedBoldItalic - Embedded bold-italic font relationship
  */
 export interface FontOptions {
-    /** Font name (required) */
-    readonly name: string;
-    /** Alternative font name */
-    readonly altName?: string;
-    /** PANOSE-1 classification */
-    readonly panose1?: string;
-    /** Character set identifier */
-    readonly charset?: (typeof CharacterSet)[keyof typeof CharacterSet];
-    /** Font family */
-    readonly family?: string;
-    /** Whether this is not a TrueType font */
-    readonly notTrueType?: boolean;
-    /** Font pitch */
-    readonly pitch?: string;
-    /** Font signature (Unicode and code page ranges) */
-    readonly sig?: {
-        /** Unicode Subset Bitfield 0 */
-        readonly usb0: string;
-        /** Unicode Subset Bitfield 1 */
-        readonly usb1: string;
-        /** Unicode Subset Bitfield 2 */
-        readonly usb2: string;
-        /** Unicode Subset Bitfield 3 */
-        readonly usb3: string;
-        /** Code Page Bitfield 0 */
-        readonly csb0: string;
-        /** Code Page Bitfield 1 */
-        readonly csb1: string;
-    };
-    /** Embedded regular font relationship */
-    readonly embedRegular?: IFontRelationshipOptions;
-    /** Embedded bold font relationship */
-    readonly embedBold?: IFontRelationshipOptions;
-    /** Embedded italic font relationship */
-    readonly embedItalic?: IFontRelationshipOptions;
-    /** Embedded bold-italic font relationship */
-    readonly embedBoldItalic?: IFontRelationshipOptions;
+  /** Font name (required) */
+  readonly name: string;
+  /** Alternative font name */
+  readonly altName?: string;
+  /** PANOSE-1 classification */
+  readonly panose1?: string;
+  /** Character set identifier */
+  readonly charset?: (typeof CharacterSet)[keyof typeof CharacterSet];
+  /** Font family */
+  readonly family?: string;
+  /** Whether this is not a TrueType font */
+  readonly notTrueType?: boolean;
+  /** Font pitch */
+  readonly pitch?: string;
+  /** Font signature (Unicode and code page ranges) */
+  readonly sig?: {
+    /** Unicode Subset Bitfield 0 */
+    readonly usb0: string;
+    /** Unicode Subset Bitfield 1 */
+    readonly usb1: string;
+    /** Unicode Subset Bitfield 2 */
+    readonly usb2: string;
+    /** Unicode Subset Bitfield 3 */
+    readonly usb3: string;
+    /** Code Page Bitfield 0 */
+    readonly csb0: string;
+    /** Code Page Bitfield 1 */
+    readonly csb1: string;
+  };
+  /** Embedded regular font relationship */
+  readonly embedRegular?: IFontRelationshipOptions;
+  /** Embedded bold font relationship */
+  readonly embedBold?: IFontRelationshipOptions;
+  /** Embedded italic font relationship */
+  readonly embedItalic?: IFontRelationshipOptions;
+  /** Embedded bold-italic font relationship */
+  readonly embedBoldItalic?: IFontRelationshipOptions;
 }
 
 /**
  * Creates a font relationship element for embedding fonts.
  */
 const createFontRelationship = (
-    { id, fontKey, subsetted }: IFontRelationshipOptions,
-    name: string,
+  { id, fontKey, subsetted }: IFontRelationshipOptions,
+  name: string,
 ): XmlComponent =>
-    new BuilderElement({
-        attributes: {
-            id: { key: "r:id", value: id },
-            ...(fontKey ? { fontKey: { key: "w:fontKey", value: `{${fontKey}}` } } : {}),
-        },
-        children: subsetted ? [new OnOffElement("w:subsetted", subsetted)] : [],
-        name,
-    });
+  new BuilderElement({
+    attributes: {
+      id: { key: "r:id", value: id },
+      ...(fontKey ? { fontKey: { key: "w:fontKey", value: `{${fontKey}}` } } : {}),
+    },
+    children: subsetted ? [new OnOffElement("w:subsetted", subsetted)] : [],
+    name,
+  });
 
 /**
  * Creates a font element with the specified options.
@@ -169,61 +169,59 @@ const createFontRelationship = (
  * ```
  */
 export const createFont = ({
-    name,
-    altName,
-    panose1,
-    charset,
-    family,
-    notTrueType,
-    pitch,
-    sig,
-    embedRegular,
-    embedBold,
-    embedItalic,
-    embedBoldItalic,
+  name,
+  altName,
+  panose1,
+  charset,
+  family,
+  notTrueType,
+  pitch,
+  sig,
+  embedRegular,
+  embedBold,
+  embedItalic,
+  embedBoldItalic,
 }: FontOptions): XmlComponent =>
-    new BuilderElement({
-        attributes: {
-            name: { key: "w:name", value: name },
-        },
-        children: [
-            // http://www.datypic.com/sc/ooxml/e-w_altName-1.html
-            ...(altName ? [createStringElement("w:altName", altName)] : []),
-            // http://www.datypic.com/sc/ooxml/e-w_panose1-1.html
-            ...(panose1 ? [createStringElement("w:panose1", panose1)] : []),
-            // http://www.datypic.com/sc/ooxml/e-w_charset-1.html
-            ...(charset ? [createStringElement("w:charset", charset)] : []),
-            // http://www.datypic.com/sc/ooxml/e-w_family-1.html
-            ...(family ? [createStringElement("w:family", family)] : []),
-            // http://www.datypic.com/sc/ooxml/e-w_notTrueType-1.html
-            ...(notTrueType ? [new OnOffElement("w:notTrueType", notTrueType)] : []),
-            ...(pitch ? [createStringElement("w:pitch", pitch)] : []),
-            // http://www.datypic.com/sc/ooxml/e-w_sig-1.html
-            ...(sig
-                ? [
-                      new BuilderElement({
-                          attributes: {
-                              csb0: { key: "w:csb0", value: sig.csb0 },
-                              csb1: { key: "w:csb1", value: sig.csb1 },
-                              usb0: { key: "w:usb0", value: sig.usb0 },
-                              usb1: { key: "w:usb1", value: sig.usb1 },
-                              usb2: { key: "w:usb2", value: sig.usb2 },
-                              usb3: { key: "w:usb3", value: sig.usb3 },
-                          },
-                          name: "w:sig",
-                      }),
-                  ]
-                : []),
-            // http://www.datypic.com/sc/ooxml/e-w_embedRegular-1.html
-            ...(embedRegular ? [createFontRelationship(embedRegular, "w:embedRegular")] : []),
-            // http://www.datypic.com/sc/ooxml/e-w_embedBold-1.html
-            ...(embedBold ? [createFontRelationship(embedBold, "w:embedBold")] : []),
-            // http://www.datypic.com/sc/ooxml/e-w_embedItalic-1.html
-            ...(embedItalic ? [createFontRelationship(embedItalic, "w:embedItalic")] : []),
-            // http://www.datypic.com/sc/ooxml/e-w_embedBoldItalic-1.html
-            ...(embedBoldItalic
-                ? [createFontRelationship(embedBoldItalic, "w:embedBoldItalic")]
-                : []),
-        ],
-        name: "w:font",
-    });
+  new BuilderElement({
+    attributes: {
+      name: { key: "w:name", value: name },
+    },
+    children: [
+      // http://www.datypic.com/sc/ooxml/e-w_altName-1.html
+      ...(altName ? [createStringElement("w:altName", altName)] : []),
+      // http://www.datypic.com/sc/ooxml/e-w_panose1-1.html
+      ...(panose1 ? [createStringElement("w:panose1", panose1)] : []),
+      // http://www.datypic.com/sc/ooxml/e-w_charset-1.html
+      ...(charset ? [createStringElement("w:charset", charset)] : []),
+      // http://www.datypic.com/sc/ooxml/e-w_family-1.html
+      ...(family ? [createStringElement("w:family", family)] : []),
+      // http://www.datypic.com/sc/ooxml/e-w_notTrueType-1.html
+      ...(notTrueType ? [new OnOffElement("w:notTrueType", notTrueType)] : []),
+      ...(pitch ? [createStringElement("w:pitch", pitch)] : []),
+      // http://www.datypic.com/sc/ooxml/e-w_sig-1.html
+      ...(sig
+        ? [
+            new BuilderElement({
+              attributes: {
+                csb0: { key: "w:csb0", value: sig.csb0 },
+                csb1: { key: "w:csb1", value: sig.csb1 },
+                usb0: { key: "w:usb0", value: sig.usb0 },
+                usb1: { key: "w:usb1", value: sig.usb1 },
+                usb2: { key: "w:usb2", value: sig.usb2 },
+                usb3: { key: "w:usb3", value: sig.usb3 },
+              },
+              name: "w:sig",
+            }),
+          ]
+        : []),
+      // http://www.datypic.com/sc/ooxml/e-w_embedRegular-1.html
+      ...(embedRegular ? [createFontRelationship(embedRegular, "w:embedRegular")] : []),
+      // http://www.datypic.com/sc/ooxml/e-w_embedBold-1.html
+      ...(embedBold ? [createFontRelationship(embedBold, "w:embedBold")] : []),
+      // http://www.datypic.com/sc/ooxml/e-w_embedItalic-1.html
+      ...(embedItalic ? [createFontRelationship(embedItalic, "w:embedItalic")] : []),
+      // http://www.datypic.com/sc/ooxml/e-w_embedBoldItalic-1.html
+      ...(embedBoldItalic ? [createFontRelationship(embedBoldItalic, "w:embedBoldItalic")] : []),
+    ],
+    name: "w:font",
+  });

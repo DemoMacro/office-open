@@ -4,328 +4,328 @@ import { describe, expect, it } from "vite-plus/test";
 import { ConcreteNumbering } from "./num";
 
 describe("ConcreteNumbering", () => {
-    it("should create without overrideLevels", () => {
-        const concreteNumbering = new ConcreteNumbering({
-            abstractNumId: 1,
-            instance: 0,
-            numId: 0,
-            reference: "1",
-        });
+  it("should create without overrideLevels", () => {
+    const concreteNumbering = new ConcreteNumbering({
+      abstractNumId: 1,
+      instance: 0,
+      numId: 0,
+      reference: "1",
+    });
 
-        const tree = new Formatter().format(concreteNumbering);
+    const tree = new Formatter().format(concreteNumbering);
 
-        expect(tree).to.deep.equal({
-            "w:num": [
-                {
-                    _attr: {
-                        "w:numId": 0,
-                    },
+    expect(tree).to.deep.equal({
+      "w:num": [
+        {
+          _attr: {
+            "w:numId": 0,
+          },
+        },
+        {
+          "w:abstractNumId": {
+            _attr: {
+              "w:val": 1,
+            },
+          },
+        },
+      ],
+    });
+  });
+
+  describe("#overrideLevel", () => {
+    it("sets a new override level for the given level number", () => {
+      const concreteNumbering = new ConcreteNumbering({
+        abstractNumId: 1,
+        instance: 0,
+        numId: 0,
+        overrideLevels: [
+          {
+            num: 3,
+          },
+        ],
+        reference: "1",
+      });
+
+      const tree = new Formatter().format(concreteNumbering);
+
+      expect(tree).to.deep.equal({
+        "w:num": [
+          {
+            _attr: {
+              "w:numId": 0,
+            },
+          },
+          {
+            "w:abstractNumId": {
+              _attr: {
+                "w:val": 1,
+              },
+            },
+          },
+          {
+            "w:lvlOverride": {
+              _attr: {
+                "w:ilvl": 3,
+              },
+            },
+          },
+        ],
+      });
+    });
+
+    it("sets a new override level for two different level numbers", () => {
+      const concreteNumbering = new ConcreteNumbering({
+        abstractNumId: 1,
+        instance: 0,
+        numId: 0,
+        overrideLevels: [{ num: 3 }, { num: 5 }],
+        reference: "1",
+      });
+
+      const tree = new Formatter().format(concreteNumbering);
+
+      expect(tree).to.deep.equal({
+        "w:num": [
+          {
+            _attr: {
+              "w:numId": 0,
+            },
+          },
+          {
+            "w:abstractNumId": {
+              _attr: {
+                "w:val": 1,
+              },
+            },
+          },
+          {
+            "w:lvlOverride": {
+              _attr: {
+                "w:ilvl": 3,
+              },
+            },
+          },
+          {
+            "w:lvlOverride": {
+              _attr: {
+                "w:ilvl": 5,
+              },
+            },
+          },
+        ],
+      });
+    });
+
+    it("sets the startOverride element if start is given", () => {
+      const concreteNumbering = new ConcreteNumbering({
+        abstractNumId: 1,
+        instance: 0,
+        numId: 0,
+        overrideLevels: [
+          {
+            num: 1,
+            start: 9,
+          },
+        ],
+        reference: "1",
+      });
+      const tree = new Formatter().format(concreteNumbering);
+      expect(tree).to.deep.equal({
+        "w:num": [
+          {
+            _attr: {
+              "w:numId": 0,
+            },
+          },
+          {
+            "w:abstractNumId": {
+              _attr: {
+                "w:val": 1,
+              },
+            },
+          },
+          {
+            "w:lvlOverride": [
+              {
+                _attr: {
+                  "w:ilvl": 1,
                 },
-                {
-                    "w:abstractNumId": {
-                        _attr: {
-                            "w:val": 1,
-                        },
-                    },
+              },
+              {
+                "w:startOverride": {
+                  _attr: {
+                    "w:val": 9,
+                  },
                 },
+              },
             ],
-        });
+          },
+        ],
+      });
     });
 
-    describe("#overrideLevel", () => {
-        it("sets a new override level for the given level number", () => {
-            const concreteNumbering = new ConcreteNumbering({
-                abstractNumId: 1,
-                instance: 0,
-                numId: 0,
-                overrideLevels: [
-                    {
-                        num: 3,
-                    },
-                ],
-                reference: "1",
-            });
-
-            const tree = new Formatter().format(concreteNumbering);
-
-            expect(tree).to.deep.equal({
-                "w:num": [
-                    {
-                        _attr: {
-                            "w:numId": 0,
-                        },
-                    },
-                    {
-                        "w:abstractNumId": {
-                            _attr: {
-                                "w:val": 1,
-                            },
-                        },
-                    },
-                    {
-                        "w:lvlOverride": {
-                            _attr: {
-                                "w:ilvl": 3,
-                            },
-                        },
-                    },
-                ],
-            });
-        });
-
-        it("sets a new override level for two different level numbers", () => {
-            const concreteNumbering = new ConcreteNumbering({
-                abstractNumId: 1,
-                instance: 0,
-                numId: 0,
-                overrideLevels: [{ num: 3 }, { num: 5 }],
-                reference: "1",
-            });
-
-            const tree = new Formatter().format(concreteNumbering);
-
-            expect(tree).to.deep.equal({
-                "w:num": [
-                    {
-                        _attr: {
-                            "w:numId": 0,
-                        },
-                    },
-                    {
-                        "w:abstractNumId": {
-                            _attr: {
-                                "w:val": 1,
-                            },
-                        },
-                    },
-                    {
-                        "w:lvlOverride": {
-                            _attr: {
-                                "w:ilvl": 3,
-                            },
-                        },
-                    },
-                    {
-                        "w:lvlOverride": {
-                            _attr: {
-                                "w:ilvl": 5,
-                            },
-                        },
-                    },
-                ],
-            });
-        });
-
-        it("sets the startOverride element if start is given", () => {
-            const concreteNumbering = new ConcreteNumbering({
-                abstractNumId: 1,
-                instance: 0,
-                numId: 0,
-                overrideLevels: [
-                    {
-                        num: 1,
-                        start: 9,
-                    },
-                ],
-                reference: "1",
-            });
-            const tree = new Formatter().format(concreteNumbering);
-            expect(tree).to.deep.equal({
-                "w:num": [
-                    {
-                        _attr: {
-                            "w:numId": 0,
-                        },
-                    },
-                    {
-                        "w:abstractNumId": {
-                            _attr: {
-                                "w:val": 1,
-                            },
-                        },
-                    },
-                    {
-                        "w:lvlOverride": [
-                            {
-                                _attr: {
-                                    "w:ilvl": 1,
-                                },
-                            },
-                            {
-                                "w:startOverride": {
-                                    _attr: {
-                                        "w:val": 9,
-                                    },
-                                },
-                            },
-                        ],
-                    },
-                ],
-            });
-        });
-
-        it("sets the startOverride element for several levels if start is given", () => {
-            const concreteNumbering = new ConcreteNumbering({
-                abstractNumId: 1,
-                instance: 0,
-                numId: 0,
-                overrideLevels: [
-                    {
-                        num: 1,
-                        start: 9,
-                    },
-                    {
-                        num: 3,
-                        start: 10,
-                    },
-                ],
-                reference: "1",
-            });
-            const tree = new Formatter().format(concreteNumbering);
-            expect(tree).to.deep.equal({
-                "w:num": [
-                    {
-                        _attr: {
-                            "w:numId": 0,
-                        },
-                    },
-                    {
-                        "w:abstractNumId": {
-                            _attr: {
-                                "w:val": 1,
-                            },
-                        },
-                    },
-                    {
-                        "w:lvlOverride": [
-                            {
-                                _attr: {
-                                    "w:ilvl": 1,
-                                },
-                            },
-                            {
-                                "w:startOverride": {
-                                    _attr: {
-                                        "w:val": 9,
-                                    },
-                                },
-                            },
-                        ],
-                    },
-                    {
-                        "w:lvlOverride": [
-                            {
-                                _attr: {
-                                    "w:ilvl": 3,
-                                },
-                            },
-                            {
-                                "w:startOverride": {
-                                    _attr: {
-                                        "w:val": 10,
-                                    },
-                                },
-                            },
-                        ],
-                    },
-                ],
-            });
-        });
-
-        it("Mix of overrideLevels with start and without", () => {
-            const concreteNumbering = new ConcreteNumbering({
-                abstractNumId: 1,
-                instance: 0,
-                numId: 0,
-                overrideLevels: [
-                    {
-                        num: 1,
-                        start: 9,
-                    },
-                    {
-                        num: 3,
-                    },
-                ],
-                reference: "1",
-            });
-            const tree = new Formatter().format(concreteNumbering);
-            expect(tree).to.deep.equal({
-                "w:num": [
-                    {
-                        _attr: {
-                            "w:numId": 0,
-                        },
-                    },
-                    {
-                        "w:abstractNumId": {
-                            _attr: {
-                                "w:val": 1,
-                            },
-                        },
-                    },
-                    {
-                        "w:lvlOverride": [
-                            {
-                                _attr: {
-                                    "w:ilvl": 1,
-                                },
-                            },
-                            {
-                                "w:startOverride": {
-                                    _attr: {
-                                        "w:val": 9,
-                                    },
-                                },
-                            },
-                        ],
-                    },
-                    {
-                        "w:lvlOverride": {
-                            _attr: {
-                                "w:ilvl": 3,
-                            },
-                        },
-                    },
-                ],
-            });
-        });
-
-        it("sets the lvl element if overrideLevel.Level is accessed", () => {
-            const concreteNumbering = new ConcreteNumbering({
-                abstractNumId: 1,
-                instance: 0,
-                numId: 0,
-                overrideLevels: [
-                    {
-                        num: 1,
-                    },
-                ],
-                reference: "1",
-            });
-            const tree = new Formatter().format(concreteNumbering);
-            expect(tree).to.deep.equal({
-                "w:num": [
-                    {
-                        _attr: {
-                            "w:numId": 0,
-                        },
-                    },
-                    {
-                        "w:abstractNumId": {
-                            _attr: {
-                                "w:val": 1,
-                            },
-                        },
-                    },
-                    {
-                        "w:lvlOverride": {
-                            _attr: {
-                                "w:ilvl": 1,
-                            },
-                        },
-                    },
-                ],
-            });
-        });
+    it("sets the startOverride element for several levels if start is given", () => {
+      const concreteNumbering = new ConcreteNumbering({
+        abstractNumId: 1,
+        instance: 0,
+        numId: 0,
+        overrideLevels: [
+          {
+            num: 1,
+            start: 9,
+          },
+          {
+            num: 3,
+            start: 10,
+          },
+        ],
+        reference: "1",
+      });
+      const tree = new Formatter().format(concreteNumbering);
+      expect(tree).to.deep.equal({
+        "w:num": [
+          {
+            _attr: {
+              "w:numId": 0,
+            },
+          },
+          {
+            "w:abstractNumId": {
+              _attr: {
+                "w:val": 1,
+              },
+            },
+          },
+          {
+            "w:lvlOverride": [
+              {
+                _attr: {
+                  "w:ilvl": 1,
+                },
+              },
+              {
+                "w:startOverride": {
+                  _attr: {
+                    "w:val": 9,
+                  },
+                },
+              },
+            ],
+          },
+          {
+            "w:lvlOverride": [
+              {
+                _attr: {
+                  "w:ilvl": 3,
+                },
+              },
+              {
+                "w:startOverride": {
+                  _attr: {
+                    "w:val": 10,
+                  },
+                },
+              },
+            ],
+          },
+        ],
+      });
     });
+
+    it("Mix of overrideLevels with start and without", () => {
+      const concreteNumbering = new ConcreteNumbering({
+        abstractNumId: 1,
+        instance: 0,
+        numId: 0,
+        overrideLevels: [
+          {
+            num: 1,
+            start: 9,
+          },
+          {
+            num: 3,
+          },
+        ],
+        reference: "1",
+      });
+      const tree = new Formatter().format(concreteNumbering);
+      expect(tree).to.deep.equal({
+        "w:num": [
+          {
+            _attr: {
+              "w:numId": 0,
+            },
+          },
+          {
+            "w:abstractNumId": {
+              _attr: {
+                "w:val": 1,
+              },
+            },
+          },
+          {
+            "w:lvlOverride": [
+              {
+                _attr: {
+                  "w:ilvl": 1,
+                },
+              },
+              {
+                "w:startOverride": {
+                  _attr: {
+                    "w:val": 9,
+                  },
+                },
+              },
+            ],
+          },
+          {
+            "w:lvlOverride": {
+              _attr: {
+                "w:ilvl": 3,
+              },
+            },
+          },
+        ],
+      });
+    });
+
+    it("sets the lvl element if overrideLevel.Level is accessed", () => {
+      const concreteNumbering = new ConcreteNumbering({
+        abstractNumId: 1,
+        instance: 0,
+        numId: 0,
+        overrideLevels: [
+          {
+            num: 1,
+          },
+        ],
+        reference: "1",
+      });
+      const tree = new Formatter().format(concreteNumbering);
+      expect(tree).to.deep.equal({
+        "w:num": [
+          {
+            _attr: {
+              "w:numId": 0,
+            },
+          },
+          {
+            "w:abstractNumId": {
+              _attr: {
+                "w:val": 1,
+              },
+            },
+          },
+          {
+            "w:lvlOverride": {
+              _attr: {
+                "w:ilvl": 1,
+              },
+            },
+          },
+        ],
+      });
+    });
+  });
 });

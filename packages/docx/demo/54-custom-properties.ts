@@ -8,18 +8,18 @@ import * as fs from "fs";
 import { Document, Packer } from "@office-open/docx";
 
 const doc = new Document(
-    // Standard properties
-    {
-        creator: "Creator",
-        customProperties: [
-            { name: "Subtitle", value: "Subtitle" },
-            { name: "Address", value: "Address" },
-        ],
-        description: "Description",
-        sections: [],
-        subject: "Subject",
-        title: "Title",
-    },
+  // Standard properties
+  {
+    creator: "Creator",
+    customProperties: [
+      { name: "Subtitle", value: "Subtitle" },
+      { name: "Address", value: "Address" },
+    ],
+    description: "Description",
+    sections: [],
+    subject: "Subject",
+    title: "Title",
+  },
 );
 
 const buffer = await Packer.toBuffer(doc);

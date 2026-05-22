@@ -22,25 +22,25 @@ import { Run } from "../run";
  * @publicApi
  */
 export interface IChartOptions {
-    /** Chart type */
-    readonly type: "column" | "bar" | "line" | "pie" | "area" | "scatter";
-    /** Chart data */
-    readonly data: {
-        readonly categories: readonly string[];
-        readonly series: readonly { name: string; values: readonly number[] }[];
-    };
-    /** Display dimensions */
-    readonly transformation: IMediaTransformation;
-    /** Floating positioning */
-    readonly floating?: IFloating;
-    /** Alternative text for accessibility */
-    readonly altText?: DocPropertiesOptions;
-    /** Chart title */
-    readonly title?: string;
-    /** Show legend (default: true) */
-    readonly showLegend?: boolean;
-    /** Chart style preset (2-48) */
-    readonly style?: number;
+  /** Chart type */
+  readonly type: "column" | "bar" | "line" | "pie" | "area" | "scatter";
+  /** Chart data */
+  readonly data: {
+    readonly categories: readonly string[];
+    readonly series: readonly { name: string; values: readonly number[] }[];
+  };
+  /** Display dimensions */
+  readonly transformation: IMediaTransformation;
+  /** Floating positioning */
+  readonly floating?: IFloating;
+  /** Alternative text for accessibility */
+  readonly altText?: DocPropertiesOptions;
+  /** Chart title */
+  readonly title?: string;
+  /** Show legend (default: true) */
+  readonly showLegend?: boolean;
+  /** Chart style preset (2-48) */
+  readonly style?: number;
 }
 
 /**
@@ -64,58 +64,58 @@ export interface IChartOptions {
  * ```
  */
 export class ChartRun extends Run {
-    private readonly chartOptions: IChartOptions;
-    private readonly chartKey: string;
+  private readonly chartOptions: IChartOptions;
+  private readonly chartKey: string;
 
-    public constructor(options: IChartOptions) {
-        super({});
-        this.chartOptions = options;
+  public constructor(options: IChartOptions) {
+    super({});
+    this.chartOptions = options;
 
-        // Generate a unique key based on chart data
-        const hash = this.hashChartData(options);
-        this.chartKey = `chart_${hash}`;
+    // Generate a unique key based on chart data
+    const hash = this.hashChartData(options);
+    this.chartKey = `chart_${hash}`;
 
-        // Create media data for the drawing system
-        const mediaData = {
-            chartKey: this.chartKey,
-            transformation: createTransformation(options.transformation),
-            type: "chart" as const,
-        };
+    // Create media data for the drawing system
+    const mediaData = {
+      chartKey: this.chartKey,
+      transformation: createTransformation(options.transformation),
+      type: "chart" as const,
+    };
 
-        const drawing = new Drawing(mediaData, {
-            docProperties: options.altText,
-            floating: options.floating,
-        });
+    const drawing = new Drawing(mediaData, {
+      docProperties: options.altText,
+      floating: options.floating,
+    });
 
-        this.extraChildren.push(drawing);
+    this.extraChildren.push(drawing);
+  }
+
+  public prepForXml(context: IContext): IXmlableObject | undefined {
+    // Register chart with the file's chart collection
+    const chartSpace = new ChartSpace({
+      categories: this.chartOptions.data.categories,
+      series: this.chartOptions.data.series,
+      showLegend: this.chartOptions.showLegend,
+      style: this.chartOptions.style,
+      title: this.chartOptions.title,
+      type: this.chartOptions.type,
+    });
+
+    context.file.Charts.addChart(this.chartKey, {
+      chartSpace,
+      key: this.chartKey,
+    });
+
+    return super.prepForXml(context);
+  }
+
+  private hashChartData(options: IChartOptions): number {
+    const data = `${options.type}:${JSON.stringify(options.data)}`;
+    let hash = 0;
+    for (let i = 0; i < data.length; i++) {
+      const char = data.charCodeAt(i);
+      hash = ((hash << 5) - hash + char) | 0;
     }
-
-    public prepForXml(context: IContext): IXmlableObject | undefined {
-        // Register chart with the file's chart collection
-        const chartSpace = new ChartSpace({
-            categories: this.chartOptions.data.categories,
-            series: this.chartOptions.data.series,
-            showLegend: this.chartOptions.showLegend,
-            style: this.chartOptions.style,
-            title: this.chartOptions.title,
-            type: this.chartOptions.type,
-        });
-
-        context.file.Charts.addChart(this.chartKey, {
-            chartSpace,
-            key: this.chartKey,
-        });
-
-        return super.prepForXml(context);
-    }
-
-    private hashChartData(options: IChartOptions): number {
-        const data = `${options.type}:${JSON.stringify(options.data)}`;
-        let hash = 0;
-        for (let i = 0; i < data.length; i++) {
-            const char = data.charCodeAt(i);
-            hash = ((hash << 5) - hash + char) | 0;
-        }
-        return Math.abs(hash);
-    }
+    return Math.abs(hash);
+  }
 }

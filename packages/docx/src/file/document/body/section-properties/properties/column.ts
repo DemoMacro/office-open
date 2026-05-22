@@ -26,20 +26,20 @@ import type { PositiveUniversalMeasure } from "@util/values";
  * @property space - Space after column in twips or universal measure (default: 0)
  */
 export interface IColumnAttributes {
-    /** Column width in twips or universal measure */
-    readonly width: number | PositiveUniversalMeasure;
-    /** Space after column in twips or universal measure (default: 0) */
-    readonly space?: number | PositiveUniversalMeasure;
+  /** Column width in twips or universal measure */
+  readonly width: number | PositiveUniversalMeasure;
+  /** Space after column in twips or universal measure (default: 0) */
+  readonly space?: number | PositiveUniversalMeasure;
 }
 
 class ColumnAttributes extends XmlAttributeComponent<{
-    readonly width?: number | PositiveUniversalMeasure;
-    readonly space?: number | PositiveUniversalMeasure;
+  readonly width?: number | PositiveUniversalMeasure;
+  readonly space?: number | PositiveUniversalMeasure;
 }> {
-    protected readonly xmlKeys = {
-        space: "w:space",
-        width: "w:w",
-    };
+  protected readonly xmlKeys = {
+    space: "w:space",
+    width: "w:w",
+  };
 }
 
 /**
@@ -62,14 +62,14 @@ class ColumnAttributes extends XmlAttributeComponent<{
  * ```
  */
 export class Column extends XmlComponent {
-    public constructor(options: IColumnAttributes) {
-        super("w:col");
+  public constructor(options: IColumnAttributes) {
+    super("w:col");
 
-        this.root.push(
-            new ColumnAttributes({
-                space: options.space === undefined ? undefined : twipsMeasureValue(options.space),
-                width: twipsMeasureValue(options.width),
-            }),
-        );
-    }
+    this.root.push(
+      new ColumnAttributes({
+        space: options.space === undefined ? undefined : twipsMeasureValue(options.space),
+        width: twipsMeasureValue(options.width),
+      }),
+    );
+  }
 }

@@ -13,9 +13,9 @@ import { AlignmentType } from "@file/paragraph";
 import { XmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 import {
-    abstractNumUniqueNumericIdGen,
-    concreteNumUniqueNumericIdGen,
-    convertInchesToTwip,
+  abstractNumUniqueNumericIdGen,
+  concreteNumUniqueNumericIdGen,
+  convertInchesToTwip,
 } from "@util/convenience-functions";
 
 import { buildDocumentAttributes } from "../document/document-attributes";
@@ -32,13 +32,13 @@ import { ConcreteNumbering } from "./num";
  * @see {@link Numbering}
  */
 export interface INumberingOptions {
-    /** Array of numbering configurations, each with levels and a reference name. */
-    readonly config: readonly {
-        /** Array of level definitions for this numbering configuration. */
-        readonly levels: readonly ILevelsOptions[];
-        /** Unique reference name for this numbering configuration. */
-        readonly reference: string;
-    }[];
+  /** Array of numbering configurations, each with levels and a reference name. */
+  readonly config: readonly {
+    /** Array of level definitions for this numbering configuration. */
+    readonly levels: readonly ILevelsOptions[];
+    /** Unique reference name for this numbering configuration. */
+    readonly reference: string;
+  }[];
 }
 
 /**
@@ -103,265 +103,262 @@ export interface INumberingOptions {
  * ```
  */
 export class Numbering extends XmlComponent {
-    private readonly abstractNumberingMap = new Map<string, AbstractNumbering>();
-    private readonly concreteNumberingMap = new Map<string, ConcreteNumbering>();
-    private readonly referenceConfigMap = new Map<string, Record<string, any>>();
-    private readonly abstractNumUniqueNumericId = abstractNumUniqueNumericIdGen();
-    private readonly concreteNumUniqueNumericId = concreteNumUniqueNumericIdGen();
+  private readonly abstractNumberingMap = new Map<string, AbstractNumbering>();
+  private readonly concreteNumberingMap = new Map<string, ConcreteNumbering>();
+  private readonly referenceConfigMap = new Map<string, Record<string, any>>();
+  private readonly abstractNumUniqueNumericId = abstractNumUniqueNumericIdGen();
+  private readonly concreteNumUniqueNumericId = concreteNumUniqueNumericIdGen();
 
-    /**
-     * Creates a new numbering definition collection.
-     *
-     * Initializes the numbering with a default bullet list configuration and
-     * any custom numbering configurations provided in the options.
-     *
-     * @param options - Configuration options for numbering definitions
-     */
-    public constructor(options: INumberingOptions) {
-        super("w:numbering");
-        this.root.push(
-            buildDocumentAttributes(
-                [
-                    "wpc",
-                    "mc",
-                    "o",
-                    "r",
-                    "m",
-                    "v",
-                    "wp14",
-                    "wp",
-                    "w10",
-                    "w",
-                    "w14",
-                    "w15",
-                    "wpg",
-                    "wpi",
-                    "wne",
-                    "wps",
-                ],
-                "w14 w15 wp14",
-            ),
-        );
+  /**
+   * Creates a new numbering definition collection.
+   *
+   * Initializes the numbering with a default bullet list configuration and
+   * any custom numbering configurations provided in the options.
+   *
+   * @param options - Configuration options for numbering definitions
+   */
+  public constructor(options: INumberingOptions) {
+    super("w:numbering");
+    this.root.push(
+      buildDocumentAttributes(
+        [
+          "wpc",
+          "mc",
+          "o",
+          "r",
+          "m",
+          "v",
+          "wp14",
+          "wp",
+          "w10",
+          "w",
+          "w14",
+          "w15",
+          "wpg",
+          "wpi",
+          "wne",
+          "wps",
+        ],
+        "w14 w15 wp14",
+      ),
+    );
 
-        const abstractNumbering = new AbstractNumbering(this.abstractNumUniqueNumericId(), [
-            {
-                alignment: AlignmentType.LEFT,
-                format: LevelFormat.BULLET,
-                level: 0,
-                style: {
-                    paragraph: {
-                        indent: {
-                            hanging: convertInchesToTwip(0.25),
-                            left: convertInchesToTwip(0.5),
-                        },
-                    },
-                },
-                text: "\u25CF",
+    const abstractNumbering = new AbstractNumbering(this.abstractNumUniqueNumericId(), [
+      {
+        alignment: AlignmentType.LEFT,
+        format: LevelFormat.BULLET,
+        level: 0,
+        style: {
+          paragraph: {
+            indent: {
+              hanging: convertInchesToTwip(0.25),
+              left: convertInchesToTwip(0.5),
             },
-            {
-                alignment: AlignmentType.LEFT,
-                format: LevelFormat.BULLET,
-                level: 1,
-                style: {
-                    paragraph: {
-                        indent: {
-                            hanging: convertInchesToTwip(0.25),
-                            left: convertInchesToTwip(1),
-                        },
-                    },
-                },
-                text: "\u25CB",
+          },
+        },
+        text: "\u25CF",
+      },
+      {
+        alignment: AlignmentType.LEFT,
+        format: LevelFormat.BULLET,
+        level: 1,
+        style: {
+          paragraph: {
+            indent: {
+              hanging: convertInchesToTwip(0.25),
+              left: convertInchesToTwip(1),
             },
-            {
-                alignment: AlignmentType.LEFT,
-                format: LevelFormat.BULLET,
-                level: 2,
-                style: {
-                    paragraph: {
-                        indent: { hanging: convertInchesToTwip(0.25), left: 2160 },
-                    },
-                },
-                text: "\u25A0",
-            },
-            {
-                alignment: AlignmentType.LEFT,
-                format: LevelFormat.BULLET,
-                level: 3,
-                style: {
-                    paragraph: {
-                        indent: { hanging: convertInchesToTwip(0.25), left: 2880 },
-                    },
-                },
-                text: "\u25CF",
-            },
-            {
-                alignment: AlignmentType.LEFT,
-                format: LevelFormat.BULLET,
-                level: 4,
-                style: {
-                    paragraph: {
-                        indent: { hanging: convertInchesToTwip(0.25), left: 3600 },
-                    },
-                },
-                text: "\u25CB",
-            },
-            {
-                alignment: AlignmentType.LEFT,
-                format: LevelFormat.BULLET,
-                level: 5,
-                style: {
-                    paragraph: {
-                        indent: { hanging: convertInchesToTwip(0.25), left: 4320 },
-                    },
-                },
-                text: "\u25A0",
-            },
-            {
-                alignment: AlignmentType.LEFT,
-                format: LevelFormat.BULLET,
-                level: 6,
-                style: {
-                    paragraph: {
-                        indent: { hanging: convertInchesToTwip(0.25), left: 5040 },
-                    },
-                },
-                text: "\u25CF",
-            },
-            {
-                alignment: AlignmentType.LEFT,
-                format: LevelFormat.BULLET,
-                level: 7,
-                style: {
-                    paragraph: {
-                        indent: { hanging: convertInchesToTwip(0.25), left: 5760 },
-                    },
-                },
-                text: "\u25CF",
-            },
-            {
-                alignment: AlignmentType.LEFT,
-                format: LevelFormat.BULLET,
-                level: 8,
-                style: {
-                    paragraph: {
-                        indent: { hanging: convertInchesToTwip(0.25), left: 6480 },
-                    },
-                },
-                text: "\u25CF",
-            },
-        ]);
+          },
+        },
+        text: "\u25CB",
+      },
+      {
+        alignment: AlignmentType.LEFT,
+        format: LevelFormat.BULLET,
+        level: 2,
+        style: {
+          paragraph: {
+            indent: { hanging: convertInchesToTwip(0.25), left: 2160 },
+          },
+        },
+        text: "\u25A0",
+      },
+      {
+        alignment: AlignmentType.LEFT,
+        format: LevelFormat.BULLET,
+        level: 3,
+        style: {
+          paragraph: {
+            indent: { hanging: convertInchesToTwip(0.25), left: 2880 },
+          },
+        },
+        text: "\u25CF",
+      },
+      {
+        alignment: AlignmentType.LEFT,
+        format: LevelFormat.BULLET,
+        level: 4,
+        style: {
+          paragraph: {
+            indent: { hanging: convertInchesToTwip(0.25), left: 3600 },
+          },
+        },
+        text: "\u25CB",
+      },
+      {
+        alignment: AlignmentType.LEFT,
+        format: LevelFormat.BULLET,
+        level: 5,
+        style: {
+          paragraph: {
+            indent: { hanging: convertInchesToTwip(0.25), left: 4320 },
+          },
+        },
+        text: "\u25A0",
+      },
+      {
+        alignment: AlignmentType.LEFT,
+        format: LevelFormat.BULLET,
+        level: 6,
+        style: {
+          paragraph: {
+            indent: { hanging: convertInchesToTwip(0.25), left: 5040 },
+          },
+        },
+        text: "\u25CF",
+      },
+      {
+        alignment: AlignmentType.LEFT,
+        format: LevelFormat.BULLET,
+        level: 7,
+        style: {
+          paragraph: {
+            indent: { hanging: convertInchesToTwip(0.25), left: 5760 },
+          },
+        },
+        text: "\u25CF",
+      },
+      {
+        alignment: AlignmentType.LEFT,
+        format: LevelFormat.BULLET,
+        level: 8,
+        style: {
+          paragraph: {
+            indent: { hanging: convertInchesToTwip(0.25), left: 6480 },
+          },
+        },
+        text: "\u25CF",
+      },
+    ]);
 
-        this.concreteNumberingMap.set(
-            "default-bullet-numbering",
-            new ConcreteNumbering({
-                abstractNumId: abstractNumbering.id,
-                instance: 0,
-                numId: 1,
-                overrideLevels: [
-                    {
-                        num: 0,
-                        start: 1,
-                    },
-                ],
-                reference: "default-bullet-numbering",
-            }),
-        );
+    this.concreteNumberingMap.set(
+      "default-bullet-numbering",
+      new ConcreteNumbering({
+        abstractNumId: abstractNumbering.id,
+        instance: 0,
+        numId: 1,
+        overrideLevels: [
+          {
+            num: 0,
+            start: 1,
+          },
+        ],
+        reference: "default-bullet-numbering",
+      }),
+    );
 
-        this.abstractNumberingMap.set("default-bullet-numbering", abstractNumbering);
+    this.abstractNumberingMap.set("default-bullet-numbering", abstractNumbering);
 
-        for (const con of options.config) {
-            this.abstractNumberingMap.set(
-                con.reference,
-                new AbstractNumbering(this.abstractNumUniqueNumericId(), con.levels),
-            );
-            this.referenceConfigMap.set(con.reference, con.levels);
-        }
+    for (const con of options.config) {
+      this.abstractNumberingMap.set(
+        con.reference,
+        new AbstractNumbering(this.abstractNumUniqueNumericId(), con.levels),
+      );
+      this.referenceConfigMap.set(con.reference, con.levels);
+    }
+  }
+
+  /**
+   * Prepares the numbering definitions for XML serialization.
+   *
+   * Adds all abstract and concrete numbering definitions to the XML tree.
+   *
+   * @param context - The XML context
+   * @returns The prepared XML object
+   */
+  public prepForXml(context: IContext): IXmlableObject | undefined {
+    for (const numbering of this.abstractNumberingMap.values()) {
+      this.root.push(numbering);
     }
 
-    /**
-     * Prepares the numbering definitions for XML serialization.
-     *
-     * Adds all abstract and concrete numbering definitions to the XML tree.
-     *
-     * @param context - The XML context
-     * @returns The prepared XML object
-     */
-    public prepForXml(context: IContext): IXmlableObject | undefined {
-        for (const numbering of this.abstractNumberingMap.values()) {
-            this.root.push(numbering);
-        }
+    for (const numbering of this.concreteNumberingMap.values()) {
+      this.root.push(numbering);
+    }
+    return super.prepForXml(context);
+  }
 
-        for (const numbering of this.concreteNumberingMap.values()) {
-            this.root.push(numbering);
-        }
-        return super.prepForXml(context);
+  /**
+   * Creates a concrete numbering instance from an abstract numbering definition.
+   *
+   * This method creates a new concrete numbering instance that references an
+   * abstract numbering definition. It's used internally when paragraphs reference
+   * numbering configurations.
+   *
+   * @param reference - The reference name of the abstract numbering definition
+   * @param instance - The instance number for this concrete numbering
+   */
+  public createConcreteNumberingInstance(reference: string, instance: number): void {
+    const abstractNumbering = this.abstractNumberingMap.get(reference);
+
+    if (!abstractNumbering) {
+      return;
     }
 
-    /**
-     * Creates a concrete numbering instance from an abstract numbering definition.
-     *
-     * This method creates a new concrete numbering instance that references an
-     * abstract numbering definition. It's used internally when paragraphs reference
-     * numbering configurations.
-     *
-     * @param reference - The reference name of the abstract numbering definition
-     * @param instance - The instance number for this concrete numbering
-     */
-    public createConcreteNumberingInstance(reference: string, instance: number): void {
-        const abstractNumbering = this.abstractNumberingMap.get(reference);
+    const fullReference = `${reference}-${instance}`;
 
-        if (!abstractNumbering) {
-            return;
-        }
-
-        const fullReference = `${reference}-${instance}`;
-
-        if (this.concreteNumberingMap.has(fullReference)) {
-            return;
-        }
-
-        const referenceConfigLevels = this.referenceConfigMap.get(reference);
-        const firstLevelStartNumber = referenceConfigLevels && referenceConfigLevels[0].start;
-
-        const concreteNumberingSettings = {
-            abstractNumId: abstractNumbering.id,
-            instance,
-            numId: this.concreteNumUniqueNumericId(),
-            overrideLevels: [
-                typeof firstLevelStartNumber === "number" && Number.isInteger(firstLevelStartNumber)
-                    ? {
-                          num: 0,
-                          start: firstLevelStartNumber,
-                      }
-                    : {
-                          num: 0,
-                          start: 1,
-                      },
-            ],
-            reference,
-        };
-
-        this.concreteNumberingMap.set(
-            fullReference,
-            new ConcreteNumbering(concreteNumberingSettings),
-        );
+    if (this.concreteNumberingMap.has(fullReference)) {
+      return;
     }
 
-    /**
-     * Gets all concrete numbering instances.
-     *
-     * @returns An array of all concrete numbering instances
-     */
-    public get ConcreteNumbering(): readonly ConcreteNumbering[] {
-        return [...this.concreteNumberingMap.values()];
-    }
+    const referenceConfigLevels = this.referenceConfigMap.get(reference);
+    const firstLevelStartNumber = referenceConfigLevels && referenceConfigLevels[0].start;
 
-    /**
-     * Gets all reference configurations.
-     *
-     * @returns An array of all numbering reference configurations
-     */
-    public get ReferenceConfig(): readonly Record<string, any>[] {
-        return [...this.referenceConfigMap.values()];
-    }
+    const concreteNumberingSettings = {
+      abstractNumId: abstractNumbering.id,
+      instance,
+      numId: this.concreteNumUniqueNumericId(),
+      overrideLevels: [
+        typeof firstLevelStartNumber === "number" && Number.isInteger(firstLevelStartNumber)
+          ? {
+              num: 0,
+              start: firstLevelStartNumber,
+            }
+          : {
+              num: 0,
+              start: 1,
+            },
+      ],
+      reference,
+    };
+
+    this.concreteNumberingMap.set(fullReference, new ConcreteNumbering(concreteNumberingSettings));
+  }
+
+  /**
+   * Gets all concrete numbering instances.
+   *
+   * @returns An array of all concrete numbering instances
+   */
+  public get ConcreteNumbering(): readonly ConcreteNumbering[] {
+    return [...this.concreteNumberingMap.values()];
+  }
+
+  /**
+   * Gets all reference configurations.
+   *
+   * @returns An array of all numbering reference configurations
+   */
+  public get ReferenceConfig(): readonly Record<string, any>[] {
+    return [...this.referenceConfigMap.values()];
+  }
 }

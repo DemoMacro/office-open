@@ -55,65 +55,65 @@ import type { ISectionPropertiesOptions } from "./section-properties/section-pro
  * ```
  */
 export class Body extends XmlComponent {
-    private readonly sections: SectionProperties[] = [];
+  private readonly sections: SectionProperties[] = [];
 
-    public constructor() {
-        super("w:body");
+  public constructor() {
+    super("w:body");
+  }
+
+  /**
+   * Adds new section properties to the document body.
+   *
+   * Creates a new section by moving the previous section's properties into a paragraph
+   * at the end of that section, and then adding the new section as the current section.
+   *
+   * According to the OOXML specification:
+   * - Section properties for all sections except the last must be stored in a paragraph's
+   *   properties (pPr/sectPr) at the end of each section
+   * - The last section's properties are stored as a direct child of the body element (w:body/w:sectPr)
+   *
+   * @param options - Section properties configuration (page size, margins, headers, footers, etc.)
+   */
+  public addSection(options: ISectionPropertiesOptions): void {
+    const currentSection = this.sections.pop() as SectionProperties;
+    this.root.push(this.createSectionParagraph(currentSection));
+
+    this.sections.push(new SectionProperties(options));
+  }
+
+  /**
+   * Prepares the body element for XML serialization.
+   *
+   * Ensures that the last section's properties are placed as a direct child of the body
+   * element, as required by the OOXML specification.
+   *
+   * @param context - The XML serialization context
+   * @returns The prepared XML object or undefined
+   */
+  public prepForXml(context: IContext): IXmlableObject | undefined {
+    if (this.sections.length === 1) {
+      this.root.splice(0, 1);
+      this.root.push(this.sections.pop() as SectionProperties);
     }
 
-    /**
-     * Adds new section properties to the document body.
-     *
-     * Creates a new section by moving the previous section's properties into a paragraph
-     * at the end of that section, and then adding the new section as the current section.
-     *
-     * According to the OOXML specification:
-     * - Section properties for all sections except the last must be stored in a paragraph's
-     *   properties (pPr/sectPr) at the end of each section
-     * - The last section's properties are stored as a direct child of the body element (w:body/w:sectPr)
-     *
-     * @param options - Section properties configuration (page size, margins, headers, footers, etc.)
-     */
-    public addSection(options: ISectionPropertiesOptions): void {
-        const currentSection = this.sections.pop() as SectionProperties;
-        this.root.push(this.createSectionParagraph(currentSection));
+    return super.prepForXml(context);
+  }
 
-        this.sections.push(new SectionProperties(options));
-    }
+  /**
+   * Adds a block-level component to the body.
+   *
+   * This method is used internally by the Document class to add paragraphs,
+   * tables, and other block-level elements to the document body.
+   *
+   * @param component - The XML component to add (paragraph, table, etc.)
+   */
+  public push(component: BaseXmlComponent | string): void {
+    this.root.push(component as BaseXmlComponent);
+  }
 
-    /**
-     * Prepares the body element for XML serialization.
-     *
-     * Ensures that the last section's properties are placed as a direct child of the body
-     * element, as required by the OOXML specification.
-     *
-     * @param context - The XML serialization context
-     * @returns The prepared XML object or undefined
-     */
-    public prepForXml(context: IContext): IXmlableObject | undefined {
-        if (this.sections.length === 1) {
-            this.root.splice(0, 1);
-            this.root.push(this.sections.pop() as SectionProperties);
-        }
-
-        return super.prepForXml(context);
-    }
-
-    /**
-     * Adds a block-level component to the body.
-     *
-     * This method is used internally by the Document class to add paragraphs,
-     * tables, and other block-level elements to the document body.
-     *
-     * @param component - The XML component to add (paragraph, table, etc.)
-     */
-    public push(component: BaseXmlComponent | string): void {
-        this.root.push(component as BaseXmlComponent);
-    }
-
-    private createSectionParagraph(section: SectionProperties): Paragraph {
-        const paragraph = new Paragraph({});
-        paragraph.setSectionProperties(section);
-        return paragraph;
-    }
+  private createSectionParagraph(section: SectionProperties): Paragraph {
+    const paragraph = new Paragraph({});
+    paragraph.setSectionProperties(section);
+    return paragraph;
+  }
 }

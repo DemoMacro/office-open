@@ -16,17 +16,17 @@ import type { IRenderedParagraphNode } from "./run-renderer";
  * @property parent - Parent element wrapper (undefined for root)
  */
 export interface ElementWrapper {
-    readonly element: Element;
-    readonly index: number;
-    readonly parent: ElementWrapper | undefined;
+  readonly element: Element;
+  readonly index: number;
+  readonly parent: ElementWrapper | undefined;
 }
 
 const elementsToWrapper = (wrapper: ElementWrapper): readonly ElementWrapper[] =>
-    wrapper.element.elements?.map((e, i) => ({
-        element: e,
-        index: i,
-        parent: wrapper,
-    })) ?? [];
+  wrapper.element.elements?.map((e, i) => ({
+    element: e,
+    index: i,
+    parent: wrapper,
+  })) ?? [];
 
 /**
  * Traverses an XML document tree to find and render all paragraphs.
@@ -45,27 +45,27 @@ const elementsToWrapper = (wrapper: ElementWrapper): readonly ElementWrapper[] =
  * ```
  */
 export const traverse = (node: Element): readonly IRenderedParagraphNode[] => {
-    let renderedParagraphs: readonly IRenderedParagraphNode[] = [];
+  let renderedParagraphs: readonly IRenderedParagraphNode[] = [];
 
-    const queue: ElementWrapper[] = [
-        ...elementsToWrapper({
-            element: node,
-            index: 0,
-            parent: undefined,
-        }),
-    ];
+  const queue: ElementWrapper[] = [
+    ...elementsToWrapper({
+      element: node,
+      index: 0,
+      parent: undefined,
+    }),
+  ];
 
-    let currentNode: ElementWrapper | undefined;
-    while (queue.length > 0) {
-        currentNode = queue.shift()!; // This is safe because we check the length of the queue
+  let currentNode: ElementWrapper | undefined;
+  while (queue.length > 0) {
+    currentNode = queue.shift()!; // This is safe because we check the length of the queue
 
-        if (currentNode.element.name === "w:p") {
-            renderedParagraphs = [...renderedParagraphs, renderParagraphNode(currentNode)];
-        }
-        queue.push(...elementsToWrapper(currentNode));
+    if (currentNode.element.name === "w:p") {
+      renderedParagraphs = [...renderedParagraphs, renderParagraphNode(currentNode)];
     }
+    queue.push(...elementsToWrapper(currentNode));
+  }
 
-    return renderedParagraphs;
+  return renderedParagraphs;
 };
 
 /**
@@ -86,6 +86,6 @@ export const traverse = (node: Element): readonly IRenderedParagraphNode[] => {
  * ```
  */
 export const findLocationOfText = (
-    node: Element,
-    text: string,
+  node: Element,
+  text: string,
 ): readonly IRenderedParagraphNode[] => traverse(node).filter((p) => p.text.includes(text));

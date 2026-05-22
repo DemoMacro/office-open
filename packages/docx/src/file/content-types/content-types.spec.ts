@@ -4,245 +4,243 @@ import { beforeEach, describe, expect, it } from "vite-plus/test";
 import { ContentTypes } from "./content-types";
 
 describe("ContentTypes", () => {
-    let contentTypes: ContentTypes;
+  let contentTypes: ContentTypes;
 
-    beforeEach(() => {
-        contentTypes = new ContentTypes();
+  beforeEach(() => {
+    contentTypes = new ContentTypes();
+  });
+
+  describe("#constructor()", () => {
+    it("should create default content types", () => {
+      const tree = new Formatter().format(contentTypes);
+
+      expect(tree["Types"]).to.be.an.instanceof(Array);
+
+      expect(tree["Types"][0]).to.deep.equal({
+        _attr: { xmlns: "http://schemas.openxmlformats.org/package/2006/content-types" },
+      });
+      expect(tree["Types"][1]).to.deep.equal({
+        Default: { _attr: { ContentType: "image/png", Extension: "png" } },
+      });
+      expect(tree["Types"][2]).to.deep.equal({
+        Default: { _attr: { ContentType: "image/jpeg", Extension: "jpeg" } },
+      });
+      expect(tree["Types"][3]).to.deep.equal({
+        Default: { _attr: { ContentType: "image/jpeg", Extension: "jpg" } },
+      });
+      expect(tree["Types"][4]).to.deep.equal({
+        Default: { _attr: { ContentType: "image/bmp", Extension: "bmp" } },
+      });
+      expect(tree["Types"][5]).to.deep.equal({
+        Default: { _attr: { ContentType: "image/gif", Extension: "gif" } },
+      });
+      expect(tree["Types"][6]).to.deep.equal({
+        Default: { _attr: { ContentType: "image/tiff", Extension: "tif" } },
+      });
+      expect(tree["Types"][7]).to.deep.equal({
+        Default: { _attr: { ContentType: "image/tiff", Extension: "tiff" } },
+      });
+      expect(tree["Types"][8]).to.deep.equal({
+        Default: { _attr: { ContentType: "image/x-emf", Extension: "emf" } },
+      });
+      expect(tree["Types"][9]).to.deep.equal({
+        Default: { _attr: { ContentType: "image/x-wmf", Extension: "wmf" } },
+      });
+      expect(tree["Types"][10]).to.deep.equal({
+        Default: { _attr: { ContentType: "image/x-icon", Extension: "ico" } },
+      });
+      expect(tree["Types"][11]).to.deep.equal({
+        Default: { _attr: { ContentType: "image/svg+xml", Extension: "svg" } },
+      });
+      expect(tree["Types"][12]).to.deep.equal({
+        Default: {
+          _attr: {
+            ContentType: "application/vnd.openxmlformats-package.relationships+xml",
+            Extension: "rels",
+          },
+        },
+      });
+      expect(tree["Types"][13]).to.deep.equal({
+        Default: { _attr: { ContentType: "application/xml", Extension: "xml" } },
+      });
+
+      expect(tree["Types"][14]).to.deep.equal({
+        Default: {
+          _attr: {
+            ContentType: "application/vnd.openxmlformats-officedocument.obfuscatedFont",
+            Extension: "odttf",
+          },
+        },
+      });
+      expect(tree["Types"][15]).to.deep.equal({
+        Override: {
+          _attr: {
+            ContentType:
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml",
+            PartName: "/word/document.xml",
+          },
+        },
+      });
+      expect(tree["Types"][16]).to.deep.equal({
+        Override: {
+          _attr: {
+            ContentType:
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml",
+            PartName: "/word/styles.xml",
+          },
+        },
+      });
+      expect(tree["Types"][17]).to.deep.equal({
+        Override: {
+          _attr: {
+            ContentType: "application/vnd.openxmlformats-package.core-properties+xml",
+            PartName: "/docProps/core.xml",
+          },
+        },
+      });
+      expect(tree["Types"][18]).to.deep.equal({
+        Override: {
+          _attr: {
+            ContentType: "application/vnd.openxmlformats-officedocument.custom-properties+xml",
+            PartName: "/docProps/custom.xml",
+          },
+        },
+      });
+      expect(tree["Types"][19]).to.deep.equal({
+        Override: {
+          _attr: {
+            ContentType: "application/vnd.openxmlformats-officedocument.extended-properties+xml",
+            PartName: "/docProps/app.xml",
+          },
+        },
+      });
+      expect(tree["Types"][20]).to.deep.equal({
+        Override: {
+          _attr: {
+            ContentType:
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml",
+            PartName: "/word/numbering.xml",
+          },
+        },
+      });
+      expect(tree["Types"][21]).to.deep.equal({
+        Override: {
+          _attr: {
+            ContentType:
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml",
+            PartName: "/word/footnotes.xml",
+          },
+        },
+      });
+      expect(tree["Types"][22]).to.deep.equal({
+        Override: {
+          _attr: {
+            ContentType:
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml",
+            PartName: "/word/endnotes.xml",
+          },
+        },
+      });
+      expect(tree["Types"][23]).to.deep.equal({
+        Override: {
+          _attr: {
+            ContentType:
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml",
+            PartName: "/word/settings.xml",
+          },
+        },
+      });
+      expect(tree["Types"][24]).to.deep.equal({
+        Override: {
+          _attr: {
+            ContentType:
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml",
+            PartName: "/word/comments.xml",
+          },
+        },
+      });
+      expect(tree["Types"][25]).to.deep.equal({
+        Override: {
+          _attr: {
+            ContentType:
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml",
+            PartName: "/word/fontTable.xml",
+          },
+        },
+      });
     });
+  });
 
-    describe("#constructor()", () => {
-        it("should create default content types", () => {
-            const tree = new Formatter().format(contentTypes);
+  describe("#addBibliography()", () => {
+    it("should add bibliography content type", () => {
+      contentTypes.addBibliography();
+      const tree = new Formatter().format(contentTypes);
 
-            expect(tree["Types"]).to.be.an.instanceof(Array);
-
-            expect(tree["Types"][0]).to.deep.equal({
-                _attr: { xmlns: "http://schemas.openxmlformats.org/package/2006/content-types" },
-            });
-            expect(tree["Types"][1]).to.deep.equal({
-                Default: { _attr: { ContentType: "image/png", Extension: "png" } },
-            });
-            expect(tree["Types"][2]).to.deep.equal({
-                Default: { _attr: { ContentType: "image/jpeg", Extension: "jpeg" } },
-            });
-            expect(tree["Types"][3]).to.deep.equal({
-                Default: { _attr: { ContentType: "image/jpeg", Extension: "jpg" } },
-            });
-            expect(tree["Types"][4]).to.deep.equal({
-                Default: { _attr: { ContentType: "image/bmp", Extension: "bmp" } },
-            });
-            expect(tree["Types"][5]).to.deep.equal({
-                Default: { _attr: { ContentType: "image/gif", Extension: "gif" } },
-            });
-            expect(tree["Types"][6]).to.deep.equal({
-                Default: { _attr: { ContentType: "image/tiff", Extension: "tif" } },
-            });
-            expect(tree["Types"][7]).to.deep.equal({
-                Default: { _attr: { ContentType: "image/tiff", Extension: "tiff" } },
-            });
-            expect(tree["Types"][8]).to.deep.equal({
-                Default: { _attr: { ContentType: "image/x-emf", Extension: "emf" } },
-            });
-            expect(tree["Types"][9]).to.deep.equal({
-                Default: { _attr: { ContentType: "image/x-wmf", Extension: "wmf" } },
-            });
-            expect(tree["Types"][10]).to.deep.equal({
-                Default: { _attr: { ContentType: "image/x-icon", Extension: "ico" } },
-            });
-            expect(tree["Types"][11]).to.deep.equal({
-                Default: { _attr: { ContentType: "image/svg+xml", Extension: "svg" } },
-            });
-            expect(tree["Types"][12]).to.deep.equal({
-                Default: {
-                    _attr: {
-                        ContentType: "application/vnd.openxmlformats-package.relationships+xml",
-                        Extension: "rels",
-                    },
-                },
-            });
-            expect(tree["Types"][13]).to.deep.equal({
-                Default: { _attr: { ContentType: "application/xml", Extension: "xml" } },
-            });
-
-            expect(tree["Types"][14]).to.deep.equal({
-                Default: {
-                    _attr: {
-                        ContentType: "application/vnd.openxmlformats-officedocument.obfuscatedFont",
-                        Extension: "odttf",
-                    },
-                },
-            });
-            expect(tree["Types"][15]).to.deep.equal({
-                Override: {
-                    _attr: {
-                        ContentType:
-                            "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml",
-                        PartName: "/word/document.xml",
-                    },
-                },
-            });
-            expect(tree["Types"][16]).to.deep.equal({
-                Override: {
-                    _attr: {
-                        ContentType:
-                            "application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml",
-                        PartName: "/word/styles.xml",
-                    },
-                },
-            });
-            expect(tree["Types"][17]).to.deep.equal({
-                Override: {
-                    _attr: {
-                        ContentType: "application/vnd.openxmlformats-package.core-properties+xml",
-                        PartName: "/docProps/core.xml",
-                    },
-                },
-            });
-            expect(tree["Types"][18]).to.deep.equal({
-                Override: {
-                    _attr: {
-                        ContentType:
-                            "application/vnd.openxmlformats-officedocument.custom-properties+xml",
-                        PartName: "/docProps/custom.xml",
-                    },
-                },
-            });
-            expect(tree["Types"][19]).to.deep.equal({
-                Override: {
-                    _attr: {
-                        ContentType:
-                            "application/vnd.openxmlformats-officedocument.extended-properties+xml",
-                        PartName: "/docProps/app.xml",
-                    },
-                },
-            });
-            expect(tree["Types"][20]).to.deep.equal({
-                Override: {
-                    _attr: {
-                        ContentType:
-                            "application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml",
-                        PartName: "/word/numbering.xml",
-                    },
-                },
-            });
-            expect(tree["Types"][21]).to.deep.equal({
-                Override: {
-                    _attr: {
-                        ContentType:
-                            "application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml",
-                        PartName: "/word/footnotes.xml",
-                    },
-                },
-            });
-            expect(tree["Types"][22]).to.deep.equal({
-                Override: {
-                    _attr: {
-                        ContentType:
-                            "application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml",
-                        PartName: "/word/endnotes.xml",
-                    },
-                },
-            });
-            expect(tree["Types"][23]).to.deep.equal({
-                Override: {
-                    _attr: {
-                        ContentType:
-                            "application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml",
-                        PartName: "/word/settings.xml",
-                    },
-                },
-            });
-            expect(tree["Types"][24]).to.deep.equal({
-                Override: {
-                    _attr: {
-                        ContentType:
-                            "application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml",
-                        PartName: "/word/comments.xml",
-                    },
-                },
-            });
-            expect(tree["Types"][25]).to.deep.equal({
-                Override: {
-                    _attr: {
-                        ContentType:
-                            "application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml",
-                        PartName: "/word/fontTable.xml",
-                    },
-                },
-            });
-        });
+      expect(tree["Types"][26]).to.deep.equal({
+        Override: {
+          _attr: {
+            ContentType:
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.bibliography+xml",
+            PartName: "/word/bibliography.xml",
+          },
+        },
+      });
     });
+  });
 
-    describe("#addBibliography()", () => {
-        it("should add bibliography content type", () => {
-            contentTypes.addBibliography();
-            const tree = new Formatter().format(contentTypes);
+  describe("#addFooter()", () => {
+    it("should add footer", () => {
+      contentTypes.addFooter(101);
+      contentTypes.addFooter(102);
+      const tree = new Formatter().format(contentTypes);
 
-            expect(tree["Types"][26]).to.deep.equal({
-                Override: {
-                    _attr: {
-                        ContentType:
-                            "application/vnd.openxmlformats-officedocument.wordprocessingml.bibliography+xml",
-                        PartName: "/word/bibliography.xml",
-                    },
-                },
-            });
-        });
+      expect(tree["Types"][26]).to.deep.equal({
+        Override: {
+          _attr: {
+            ContentType:
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml",
+            PartName: "/word/footer101.xml",
+          },
+        },
+      });
+
+      expect(tree["Types"][27]).to.deep.equal({
+        Override: {
+          _attr: {
+            ContentType:
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml",
+            PartName: "/word/footer102.xml",
+          },
+        },
+      });
     });
+  });
 
-    describe("#addFooter()", () => {
-        it("should add footer", () => {
-            contentTypes.addFooter(101);
-            contentTypes.addFooter(102);
-            const tree = new Formatter().format(contentTypes);
+  describe("#addHeader()", () => {
+    it("should add header", () => {
+      contentTypes.addHeader(201);
+      contentTypes.addHeader(202);
+      const tree = new Formatter().format(contentTypes);
 
-            expect(tree["Types"][26]).to.deep.equal({
-                Override: {
-                    _attr: {
-                        ContentType:
-                            "application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml",
-                        PartName: "/word/footer101.xml",
-                    },
-                },
-            });
+      expect(tree["Types"][26]).to.deep.equal({
+        Override: {
+          _attr: {
+            ContentType:
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml",
+            PartName: "/word/header201.xml",
+          },
+        },
+      });
 
-            expect(tree["Types"][27]).to.deep.equal({
-                Override: {
-                    _attr: {
-                        ContentType:
-                            "application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml",
-                        PartName: "/word/footer102.xml",
-                    },
-                },
-            });
-        });
+      expect(tree["Types"][27]).to.deep.equal({
+        Override: {
+          _attr: {
+            ContentType:
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml",
+            PartName: "/word/header202.xml",
+          },
+        },
+      });
     });
-
-    describe("#addHeader()", () => {
-        it("should add header", () => {
-            contentTypes.addHeader(201);
-            contentTypes.addHeader(202);
-            const tree = new Formatter().format(contentTypes);
-
-            expect(tree["Types"][26]).to.deep.equal({
-                Override: {
-                    _attr: {
-                        ContentType:
-                            "application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml",
-                        PartName: "/word/header201.xml",
-                    },
-                },
-            });
-
-            expect(tree["Types"][27]).to.deep.equal({
-                Override: {
-                    _attr: {
-                        ContentType:
-                            "application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml",
-                        PartName: "/word/header202.xml",
-                    },
-                },
-            });
-        });
-    });
+  });
 });

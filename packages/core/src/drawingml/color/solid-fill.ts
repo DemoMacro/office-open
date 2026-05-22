@@ -30,12 +30,12 @@ import type { SystemColorOptions } from "./system-color";
  * RGB, scheme, HSL, system, and preset colors.
  */
 export type SolidFillOptions =
-    | ScRgbColorOptions
-    | RgbColorOptions
-    | SchemeColorOptions
-    | HslColorOptions
-    | SystemColorOptions
-    | PresetColorOptions;
+  | ScRgbColorOptions
+  | RgbColorOptions
+  | SchemeColorOptions
+  | HslColorOptions
+  | SystemColorOptions
+  | PresetColorOptions;
 
 /**
  * Creates the color child element for a solid fill based on the color type.
@@ -45,24 +45,24 @@ const PRESET_COLOR_VALUES: ReadonlySet<string> = new Set(Object.values(PresetCol
 const SCHEME_COLOR_VALUES: ReadonlySet<string> = new Set(Object.values(SchemeColor));
 
 export const createColorElement = (color: SolidFillOptions): XmlComponent => {
-    if ("hue" in color && "saturation" in color && "luminance" in color) {
-        return createHslColor(color);
-    }
-    if ("r" in color && "g" in color && "b" in color) {
-        return createScRgbColor(color);
-    }
-    // At this point, color is guaranteed to have a string value property
-    const colorValue = (color as { readonly value: string }).value;
-    if (SYSTEM_COLOR_VALUES.has(colorValue)) {
-        return createSystemColor(color as SystemColorOptions);
-    }
-    if (PRESET_COLOR_VALUES.has(colorValue)) {
-        return createPresetColor(color as PresetColorOptions);
-    }
-    if (SCHEME_COLOR_VALUES.has(colorValue)) {
-        return createSchemeColor(color as SchemeColorOptions);
-    }
-    return createRgbColor(color as RgbColorOptions);
+  if ("hue" in color && "saturation" in color && "luminance" in color) {
+    return createHslColor(color);
+  }
+  if ("r" in color && "g" in color && "b" in color) {
+    return createScRgbColor(color);
+  }
+  // At this point, color is guaranteed to have a string value property
+  const colorValue = (color as { readonly value: string }).value;
+  if (SYSTEM_COLOR_VALUES.has(colorValue)) {
+    return createSystemColor(color as SystemColorOptions);
+  }
+  if (PRESET_COLOR_VALUES.has(colorValue)) {
+    return createPresetColor(color as PresetColorOptions);
+  }
+  if (SCHEME_COLOR_VALUES.has(colorValue)) {
+    return createSchemeColor(color as SchemeColorOptions);
+  }
+  return createRgbColor(color as RgbColorOptions);
 };
 
 /**
@@ -93,7 +93,7 @@ export const createColorElement = (color: SolidFillOptions): XmlComponent => {
  * ```
  */
 export const createSolidFill = (options: SolidFillOptions): XmlComponent =>
-    new BuilderElement({
-        children: [createColorElement(options)],
-        name: "a:solidFill",
-    });
+  new BuilderElement({
+    children: [createColorElement(options)],
+    name: "a:solidFill",
+  });

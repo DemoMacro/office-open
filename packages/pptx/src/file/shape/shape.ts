@@ -13,39 +13,39 @@ import { TextBody } from "./text-body";
 import type { ITextBodyOptions } from "./text-body";
 
 export interface IShapeOptions {
-    readonly id?: number;
-    readonly name?: string;
-    readonly x?: number;
-    readonly y?: number;
-    readonly width?: number;
-    readonly height?: number;
-    readonly geometry?: string;
-    readonly fill?: IShapePropertiesOptions["fill"];
-    readonly outline?: OutlineOptions;
-    readonly effects?: IEffectsOptions;
-    readonly flipHorizontal?: boolean;
-    readonly rotation?: number;
-    readonly text?: string;
-    readonly paragraphs?: ITextBodyOptions["paragraphs"];
-    readonly textVertical?: ITextBodyOptions["vertical"];
-    readonly textAnchor?: ITextBodyOptions["anchor"];
-    readonly textAutoFit?: ITextBodyOptions["autoFit"];
-    readonly textWrap?: ITextBodyOptions["wrap"];
-    readonly textMargins?: ITextBodyOptions["margins"];
-    readonly textColumns?: ITextBodyOptions["columns"];
-    readonly textColumnSpacing?: ITextBodyOptions["columnSpacing"];
-    readonly animation?: IAnimationOptions;
-    readonly placeholder?: "title" | "body" | "subTitle" | "sldNum" | "dt" | "ftr" | "hdr" | "obj";
-    readonly placeholderIndex?: number;
+  readonly id?: number;
+  readonly name?: string;
+  readonly x?: number;
+  readonly y?: number;
+  readonly width?: number;
+  readonly height?: number;
+  readonly geometry?: string;
+  readonly fill?: IShapePropertiesOptions["fill"];
+  readonly outline?: OutlineOptions;
+  readonly effects?: IEffectsOptions;
+  readonly flipHorizontal?: boolean;
+  readonly rotation?: number;
+  readonly text?: string;
+  readonly paragraphs?: ITextBodyOptions["paragraphs"];
+  readonly textVertical?: ITextBodyOptions["vertical"];
+  readonly textAnchor?: ITextBodyOptions["anchor"];
+  readonly textAutoFit?: ITextBodyOptions["autoFit"];
+  readonly textWrap?: ITextBodyOptions["wrap"];
+  readonly textMargins?: ITextBodyOptions["margins"];
+  readonly textColumns?: ITextBodyOptions["columns"];
+  readonly textColumnSpacing?: ITextBodyOptions["columnSpacing"];
+  readonly animation?: IAnimationOptions;
+  readonly placeholder?: "title" | "body" | "subTitle" | "sldNum" | "dt" | "ftr" | "hdr" | "obj";
+  readonly placeholderIndex?: number;
 }
 
 /**
  * Pure function: builds p:ph element for placeholder.
  */
 function buildPlaceholder(type: string, index?: number): IXmlableObject {
-    const attrs: Record<string, string | number> = { type };
-    if (index !== undefined) attrs.idx = index;
-    return { "p:ph": { _attr: attrs } };
+  const attrs: Record<string, string | number> = { type };
+  if (index !== undefined) attrs.idx = index;
+  return { "p:ph": { _attr: attrs } };
 }
 
 /**
@@ -55,77 +55,76 @@ function buildPlaceholder(type: string, index?: number): IXmlableObject {
  * x/y/width/height accept pixel values and are internally converted to EMUs.
  */
 export class Shape extends Xc {
-    private static nextId = 2;
-    private readonly shapeId: number;
-    private readonly animationOptions?: IAnimationOptions;
-    private readonly options: IShapeOptions;
+  private static nextId = 2;
+  private readonly shapeId: number;
+  private readonly animationOptions?: IAnimationOptions;
+  private readonly options: IShapeOptions;
 
-    public constructor(options: IShapeOptions = {}) {
-        super("p:sp");
+  public constructor(options: IShapeOptions = {}) {
+    super("p:sp");
 
-        const id = options.id ?? Shape.nextId++;
-        this.shapeId = id;
-        this.animationOptions = options.animation;
-        this.options = { ...options, id };
+    const id = options.id ?? Shape.nextId++;
+    this.shapeId = id;
+    this.animationOptions = options.animation;
+    this.options = { ...options, id };
+  }
+
+  public get ShapeId(): number {
+    return this.shapeId;
+  }
+
+  public get Animation(): IAnimationOptions | undefined {
+    return this.animationOptions;
+  }
+
+  public override prepForXml(context: IContext): IXmlableObject | undefined {
+    const opts = this.options;
+    const id = this.shapeId;
+    const name = opts.name ?? `Shape ${id}`;
+    const children: IXmlableObject[] = [];
+
+    // nvSpPr
+    const nvPrChildren: IXmlableObject[] = [];
+    if (opts.placeholder) {
+      nvPrChildren.push(buildPlaceholder(opts.placeholder, opts.placeholderIndex));
     }
+    children.push({
+      "p:nvSpPr": [
+        { "p:cNvPr": { _attr: { id, name } } },
+        { "p:cNvSpPr": {} },
+        { "p:nvPr": nvPrChildren.length > 0 ? nvPrChildren : {} },
+      ],
+    });
 
-    public get ShapeId(): number {
-        return this.shapeId;
-    }
+    // spPr (ShapeProperties)
+    const shapeProps: IShapePropertiesOptions = {
+      ...emuPositionOptional(opts),
+      geometry: opts.geometry,
+      fill: opts.fill,
+      outline: opts.outline,
+      effects: opts.effects,
+      flipHorizontal: opts.flipHorizontal,
+      rotation: opts.rotation,
+    };
+    const spPr = new ShapeProperties(shapeProps);
+    const spPrObj = spPr.prepForXml(context as IContext<File>);
+    if (spPrObj) children.push(spPrObj);
 
-    public get Animation(): IAnimationOptions | undefined {
-        return this.animationOptions;
-    }
+    // txBody (TextBody)
+    const textBodyOptions: ITextBodyOptions = {
+      paragraphs: opts.paragraphs ?? (opts.text ? [new Paragraph({ text: opts.text })] : undefined),
+      vertical: opts.textVertical,
+      anchor: opts.textAnchor,
+      autoFit: opts.textAutoFit,
+      wrap: opts.textWrap,
+      margins: opts.textMargins,
+      columns: opts.textColumns,
+      columnSpacing: opts.textColumnSpacing,
+    };
+    const txBody = new TextBody(textBodyOptions);
+    const txBodyObj = txBody.prepForXml(context);
+    if (txBodyObj) children.push(txBodyObj);
 
-    public override prepForXml(context: IContext): IXmlableObject | undefined {
-        const opts = this.options;
-        const id = this.shapeId;
-        const name = opts.name ?? `Shape ${id}`;
-        const children: IXmlableObject[] = [];
-
-        // nvSpPr
-        const nvPrChildren: IXmlableObject[] = [];
-        if (opts.placeholder) {
-            nvPrChildren.push(buildPlaceholder(opts.placeholder, opts.placeholderIndex));
-        }
-        children.push({
-            "p:nvSpPr": [
-                { "p:cNvPr": { _attr: { id, name } } },
-                { "p:cNvSpPr": {} },
-                { "p:nvPr": nvPrChildren.length > 0 ? nvPrChildren : {} },
-            ],
-        });
-
-        // spPr (ShapeProperties)
-        const shapeProps: IShapePropertiesOptions = {
-            ...emuPositionOptional(opts),
-            geometry: opts.geometry,
-            fill: opts.fill,
-            outline: opts.outline,
-            effects: opts.effects,
-            flipHorizontal: opts.flipHorizontal,
-            rotation: opts.rotation,
-        };
-        const spPr = new ShapeProperties(shapeProps);
-        const spPrObj = spPr.prepForXml(context as IContext<File>);
-        if (spPrObj) children.push(spPrObj);
-
-        // txBody (TextBody)
-        const textBodyOptions: ITextBodyOptions = {
-            paragraphs:
-                opts.paragraphs ?? (opts.text ? [new Paragraph({ text: opts.text })] : undefined),
-            vertical: opts.textVertical,
-            anchor: opts.textAnchor,
-            autoFit: opts.textAutoFit,
-            wrap: opts.textWrap,
-            margins: opts.textMargins,
-            columns: opts.textColumns,
-            columnSpacing: opts.textColumnSpacing,
-        };
-        const txBody = new TextBody(textBodyOptions);
-        const txBodyObj = txBody.prepForXml(context);
-        if (txBodyObj) children.push(txBodyObj);
-
-        return { "p:sp": children };
-    }
+    return { "p:sp": children };
+  }
 }

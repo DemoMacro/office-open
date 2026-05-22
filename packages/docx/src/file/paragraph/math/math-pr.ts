@@ -44,38 +44,38 @@ export type MathPropertiesJustification = "left" | "right" | "center" | "centerG
  * @see {@link createMathProperties}
  */
 export interface MathPropertiesOptions {
-    /** Math font name */
-    readonly mathFont?: string;
-    /** Binary operator break position */
-    readonly breakBin?: MathBreakBin;
-    /** Binary operator subtraction break position */
-    readonly breakBinSub?: MathBreakBinSub;
-    /** Use small fractions */
-    readonly smallFrac?: boolean;
-    /** Display default */
-    readonly displayDefault?: boolean;
-    /** Left margin in twips */
-    readonly leftMargin?: number;
-    /** Right margin in twips */
-    readonly rightMargin?: number;
-    /** Default justification */
-    readonly defaultJustification?: MathPropertiesJustification;
-    /** Pre-spacing in twips */
-    readonly preSpacing?: number;
-    /** Post-spacing in twips */
-    readonly postSpacing?: number;
-    /** Inter-spacing in twips */
-    readonly interSpacing?: number;
-    /** Intra-spacing in twips */
-    readonly intraSpacing?: number;
-    /** Wrap indent in twips */
-    readonly wrapIndent?: number;
-    /** Wrap right */
-    readonly wrapRight?: boolean;
-    /** Integral limit location: "undOvr" (under/over) or "subSup" (subscript/superscript) */
-    readonly integralLimitLocation?: string;
-    /** N-ary limit location: "undOvr" (under/over) or "subSup" (subscript/superscript) */
-    readonly naryLimitLocation?: string;
+  /** Math font name */
+  readonly mathFont?: string;
+  /** Binary operator break position */
+  readonly breakBin?: MathBreakBin;
+  /** Binary operator subtraction break position */
+  readonly breakBinSub?: MathBreakBinSub;
+  /** Use small fractions */
+  readonly smallFrac?: boolean;
+  /** Display default */
+  readonly displayDefault?: boolean;
+  /** Left margin in twips */
+  readonly leftMargin?: number;
+  /** Right margin in twips */
+  readonly rightMargin?: number;
+  /** Default justification */
+  readonly defaultJustification?: MathPropertiesJustification;
+  /** Pre-spacing in twips */
+  readonly preSpacing?: number;
+  /** Post-spacing in twips */
+  readonly postSpacing?: number;
+  /** Inter-spacing in twips */
+  readonly interSpacing?: number;
+  /** Intra-spacing in twips */
+  readonly intraSpacing?: number;
+  /** Wrap indent in twips */
+  readonly wrapIndent?: number;
+  /** Wrap right */
+  readonly wrapRight?: boolean;
+  /** Integral limit location: "undOvr" (under/over) or "subSup" (subscript/superscript) */
+  readonly integralLimitLocation?: string;
+  /** N-ary limit location: "undOvr" (under/over) or "subSup" (subscript/superscript) */
+  readonly naryLimitLocation?: string;
 }
 
 /**
@@ -113,124 +113,124 @@ export interface MathPropertiesOptions {
  * ```
  */
 export const createMathProperties = (options: MathPropertiesOptions): XmlComponent => {
-    const children: XmlComponent[] = [];
+  const children: XmlComponent[] = [];
 
-    if (options.mathFont !== undefined) {
-        children.push(
-            new BuilderElement({
-                attributes: { val: { key: "m:val", value: options.mathFont } },
-                name: "m:mathFont",
-            }),
-        );
-    }
-    if (options.breakBin !== undefined) {
-        children.push(
-            new BuilderElement({
-                attributes: { val: { key: "m:val", value: options.breakBin } },
-                name: "m:brkBin",
-            }),
-        );
-    }
-    if (options.breakBinSub !== undefined) {
-        children.push(
-            new BuilderElement({
-                attributes: { val: { key: "m:val", value: options.breakBinSub } },
-                name: "m:brkBinSub",
-            }),
-        );
-    }
-    if (options.smallFrac !== undefined) {
-        children.push(new OnOffElement("m:smallFrac", options.smallFrac));
-    }
-    if (options.displayDefault !== undefined) {
-        children.push(new OnOffElement("m:dispDef", options.displayDefault));
-    }
-    if (options.leftMargin !== undefined) {
-        children.push(
-            new BuilderElement({
-                attributes: { val: { key: "m:val", value: options.leftMargin.toString() } },
-                name: "m:lMargin",
-            }),
-        );
-    }
-    if (options.rightMargin !== undefined) {
-        children.push(
-            new BuilderElement({
-                attributes: { val: { key: "m:val", value: options.rightMargin.toString() } },
-                name: "m:rMargin",
-            }),
-        );
-    }
-    if (options.defaultJustification !== undefined) {
-        children.push(
-            new BuilderElement({
-                attributes: { val: { key: "m:val", value: options.defaultJustification } },
-                name: "m:defJc",
-            }),
-        );
-    }
-    if (options.preSpacing !== undefined) {
-        children.push(
-            new BuilderElement({
-                attributes: { val: { key: "m:val", value: options.preSpacing.toString() } },
-                name: "m:preSp",
-            }),
-        );
-    }
-    if (options.postSpacing !== undefined) {
-        children.push(
-            new BuilderElement({
-                attributes: { val: { key: "m:val", value: options.postSpacing.toString() } },
-                name: "m:postSp",
-            }),
-        );
-    }
-    if (options.interSpacing !== undefined) {
-        children.push(
-            new BuilderElement({
-                attributes: { val: { key: "m:val", value: options.interSpacing.toString() } },
-                name: "m:interSp",
-            }),
-        );
-    }
-    if (options.intraSpacing !== undefined) {
-        children.push(
-            new BuilderElement({
-                attributes: { val: { key: "m:val", value: options.intraSpacing.toString() } },
-                name: "m:intraSp",
-            }),
-        );
-    }
-    if (options.wrapIndent !== undefined) {
-        children.push(
-            new BuilderElement({
-                attributes: { val: { key: "m:val", value: options.wrapIndent.toString() } },
-                name: "m:wrapIndent",
-            }),
-        );
-    }
-    if (options.wrapRight !== undefined) {
-        children.push(new OnOffElement("m:wrapRight", options.wrapRight));
-    }
-    if (options.integralLimitLocation !== undefined) {
-        children.push(
-            new BuilderElement({
-                attributes: { val: { key: "m:val", value: options.integralLimitLocation } },
-                name: "m:intLim",
-            }),
-        );
-    }
-    if (options.naryLimitLocation !== undefined) {
-        children.push(
-            new BuilderElement({
-                attributes: { val: { key: "m:val", value: options.naryLimitLocation } },
-                name: "m:naryLim",
-            }),
-        );
-    }
+  if (options.mathFont !== undefined) {
+    children.push(
+      new BuilderElement({
+        attributes: { val: { key: "m:val", value: options.mathFont } },
+        name: "m:mathFont",
+      }),
+    );
+  }
+  if (options.breakBin !== undefined) {
+    children.push(
+      new BuilderElement({
+        attributes: { val: { key: "m:val", value: options.breakBin } },
+        name: "m:brkBin",
+      }),
+    );
+  }
+  if (options.breakBinSub !== undefined) {
+    children.push(
+      new BuilderElement({
+        attributes: { val: { key: "m:val", value: options.breakBinSub } },
+        name: "m:brkBinSub",
+      }),
+    );
+  }
+  if (options.smallFrac !== undefined) {
+    children.push(new OnOffElement("m:smallFrac", options.smallFrac));
+  }
+  if (options.displayDefault !== undefined) {
+    children.push(new OnOffElement("m:dispDef", options.displayDefault));
+  }
+  if (options.leftMargin !== undefined) {
+    children.push(
+      new BuilderElement({
+        attributes: { val: { key: "m:val", value: options.leftMargin.toString() } },
+        name: "m:lMargin",
+      }),
+    );
+  }
+  if (options.rightMargin !== undefined) {
+    children.push(
+      new BuilderElement({
+        attributes: { val: { key: "m:val", value: options.rightMargin.toString() } },
+        name: "m:rMargin",
+      }),
+    );
+  }
+  if (options.defaultJustification !== undefined) {
+    children.push(
+      new BuilderElement({
+        attributes: { val: { key: "m:val", value: options.defaultJustification } },
+        name: "m:defJc",
+      }),
+    );
+  }
+  if (options.preSpacing !== undefined) {
+    children.push(
+      new BuilderElement({
+        attributes: { val: { key: "m:val", value: options.preSpacing.toString() } },
+        name: "m:preSp",
+      }),
+    );
+  }
+  if (options.postSpacing !== undefined) {
+    children.push(
+      new BuilderElement({
+        attributes: { val: { key: "m:val", value: options.postSpacing.toString() } },
+        name: "m:postSp",
+      }),
+    );
+  }
+  if (options.interSpacing !== undefined) {
+    children.push(
+      new BuilderElement({
+        attributes: { val: { key: "m:val", value: options.interSpacing.toString() } },
+        name: "m:interSp",
+      }),
+    );
+  }
+  if (options.intraSpacing !== undefined) {
+    children.push(
+      new BuilderElement({
+        attributes: { val: { key: "m:val", value: options.intraSpacing.toString() } },
+        name: "m:intraSp",
+      }),
+    );
+  }
+  if (options.wrapIndent !== undefined) {
+    children.push(
+      new BuilderElement({
+        attributes: { val: { key: "m:val", value: options.wrapIndent.toString() } },
+        name: "m:wrapIndent",
+      }),
+    );
+  }
+  if (options.wrapRight !== undefined) {
+    children.push(new OnOffElement("m:wrapRight", options.wrapRight));
+  }
+  if (options.integralLimitLocation !== undefined) {
+    children.push(
+      new BuilderElement({
+        attributes: { val: { key: "m:val", value: options.integralLimitLocation } },
+        name: "m:intLim",
+      }),
+    );
+  }
+  if (options.naryLimitLocation !== undefined) {
+    children.push(
+      new BuilderElement({
+        attributes: { val: { key: "m:val", value: options.naryLimitLocation } },
+        name: "m:naryLim",
+      }),
+    );
+  }
 
-    return new BuilderElement({
-        children,
-        name: "m:mathPr",
-    });
+  return new BuilderElement({
+    children,
+    name: "m:mathPr",
+  });
 };

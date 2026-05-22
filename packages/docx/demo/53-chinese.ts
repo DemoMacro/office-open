@@ -10,27 +10,27 @@ import * as fs from "fs";
 import { Document, HeadingLevel, Packer, Paragraph, TextRun } from "@office-open/docx";
 
 const doc = new Document({
-    sections: [
-        {
-            children: [
-                new Paragraph({
-                    heading: HeadingLevel.HEADING_1,
-                    text: "中文和英文 Chinese and English",
-                }),
-                new Paragraph({
-                    text: "中文和英文 Chinese and English",
-                }),
-                new Paragraph({
-                    children: [
-                        new TextRun({
-                            font: { eastAsia: "SimSun" },
-                            text: "中文和英文 Chinese and English", // Set eastAsia to "SimSun".
-                            // The ascii characters will use the default font ("Times") specified in paragraphStyles
-                        }),
-                    ],
-                }),
-                new Paragraph({
-                    text: `店様付旅母正役基社発破班。発治治京岡局本因追意金紀統責郵滴尽。立功日庁重天富評界明済不着法返祉経正引行。載区列防新目治日群付無人道言越名。界安無死専体風木人教録覧訃。女問堂容県作先芸便効証帯債土全極的日。能山中岡仕関攻井季接店線幌温後率事阜止。成間路行究今式歌像祉帯式媛読徹。安行息古入出文侵監株登部席内文第珍鶴問用。
+  sections: [
+    {
+      children: [
+        new Paragraph({
+          heading: HeadingLevel.HEADING_1,
+          text: "中文和英文 Chinese and English",
+        }),
+        new Paragraph({
+          text: "中文和英文 Chinese and English",
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({
+              font: { eastAsia: "SimSun" },
+              text: "中文和英文 Chinese and English", // Set eastAsia to "SimSun".
+              // The ascii characters will use the default font ("Times") specified in paragraphStyles
+            }),
+          ],
+        }),
+        new Paragraph({
+          text: `店様付旅母正役基社発破班。発治治京岡局本因追意金紀統責郵滴尽。立功日庁重天富評界明済不着法返祉経正引行。載区列防新目治日群付無人道言越名。界安無死専体風木人教録覧訃。女問堂容県作先芸便効証帯債土全極的日。能山中岡仕関攻井季接店線幌温後率事阜止。成間路行究今式歌像祉帯式媛読徹。安行息古入出文侵監株登部席内文第珍鶴問用。
     
                 編竹入俳多応日氏陸福芸北供動。情績拠僧肺軍油能認郷翌南対韓短東食束兵晶。政予任習口佐所当止市告号。悩申無式立医毎部観潟訴菱権。発臼背郎上予配光記芸注然出。梨場株以政囲下球品材県動政押婚面見。米共試使落帳遅毅間三子開。問与大八地芸第線体架辺今死。押構草齢戦重最変社豪記目盗連報準周込。系貸劇様重鷲始能質村異社学動導勤。
                 
@@ -49,41 +49,41 @@ const doc = new Document({
                 責開児食福実帰治師今策今。水重寺圧医観送連東者秒途。選央力律式開作掲写様階組戦写型紙。式国販時天遣国出難共前次領体康稲住転。査見保重議原速群者内月正連。爾天膨装芸別巨平運数準三浜念載創県奈飛提。素京発揮田談気党示見象定電類代級。善返跡国有話権入猛府週亡辞馬脳。関残主祐雪塚去集村完海関文受載表川護照立。
                 
                 発闘美慎健育旅布容広互無秋認天歌媛芸。転器合読県増認会賞倒点系。食気母服絵知去祝芸車報熱勝。能貿月更障文的欠賞現覇声敏施会。懲病写昼法族業律記聡生開緊楽暮護。東地二員者説盟治害討面提。第北乗査庭年近的禁疑報方店記必迷都流通。聞有力前愛院梨野関業前訳本清滋補。蒲読火死勝広保会婚際気二由保国。用君込村需起相点選紙拡氏訃不。`,
-                }),
-            ],
-        },
-    ],
-    styles: {
-        default: {
-            document: {
-                run: {
-                    font: {
-                        ascii: "minorHAnsi",
-                        cs: "minorBidi",
-                        eastAsia: "minorEastAsia",
-                        hAnsi: "minorHAnsi",
-                    },
-                },
-            },
-        },
-        paragraphStyles: [
-            {
-                basedOn: "Normal",
-                id: "Normal",
-                name: "Normal",
-                next: "Normal",
-                quickFormat: true,
-                run: {
-                    font: {
-                        ascii: "minorHAnsi", // Can also use minorHAnsi
-                        eastAsia: "minorEastAsia", // Can also use minorEastAsia
-                        cs: "minorBidi",
-                        hAnsi: "minorHAnsi",
-                    },
-                },
-            },
-        ],
+        }),
+      ],
     },
+  ],
+  styles: {
+    default: {
+      document: {
+        run: {
+          font: {
+            ascii: "minorHAnsi",
+            cs: "minorBidi",
+            eastAsia: "minorEastAsia",
+            hAnsi: "minorHAnsi",
+          },
+        },
+      },
+    },
+    paragraphStyles: [
+      {
+        basedOn: "Normal",
+        id: "Normal",
+        name: "Normal",
+        next: "Normal",
+        quickFormat: true,
+        run: {
+          font: {
+            ascii: "minorHAnsi", // Can also use minorHAnsi
+            eastAsia: "minorEastAsia", // Can also use minorEastAsia
+            cs: "minorBidi",
+            hAnsi: "minorHAnsi",
+          },
+        },
+      },
+    ],
+  },
 });
 
 const buffer = await Packer.toBuffer(doc);

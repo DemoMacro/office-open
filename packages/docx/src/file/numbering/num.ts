@@ -16,24 +16,24 @@ import { decimalNumber } from "@util/values";
  * Reference to an abstract numbering definition.
  */
 class AbstractNumId extends XmlComponent {
-    public constructor(value: number) {
-        super("w:abstractNumId");
-        this.root.push(
-            new Attributes({
-                val: value,
-            }),
-        );
-    }
+  public constructor(value: number) {
+    super("w:abstractNumId");
+    this.root.push(
+      new Attributes({
+        val: value,
+      }),
+    );
+  }
 }
 
 /**
  * Attributes for concrete numbering instances.
  */
 class NumAttributes extends XmlAttributeComponent<{
-    /** The unique identifier for this numbering instance. */
-    readonly numId: number;
+  /** The unique identifier for this numbering instance. */
+  readonly numId: number;
 }> {
-    protected readonly xmlKeys = { numId: "w:numId" };
+  protected readonly xmlKeys = { numId: "w:numId" };
 }
 
 /**
@@ -43,10 +43,10 @@ class NumAttributes extends XmlAttributeComponent<{
  * @property start - The starting number for this level
  */
 interface IOverrideLevel {
-    /** The level number to override (0-8). */
-    readonly num: number;
-    /** The starting number for this level. */
-    readonly start?: number;
+  /** The level number to override (0-8). */
+  readonly num: number;
+  /** The starting number for this level. */
+  readonly start?: number;
 }
 
 /**
@@ -59,16 +59,16 @@ interface IOverrideLevel {
  * @property overrideLevels - Array of level overrides to customize specific levels
  */
 export interface IConcreteNumberingOptions {
-    /** Unique identifier for this numbering instance. */
-    readonly numId: number;
-    /** ID of the abstract numbering definition to reference. */
-    readonly abstractNumId: number;
-    /** Reference name for this numbering instance. */
-    readonly reference: string;
-    /** Instance number for tracking multiple uses. */
-    readonly instance: number;
-    /** Array of level overrides to customize specific levels. */
-    readonly overrideLevels?: readonly IOverrideLevel[];
+  /** Unique identifier for this numbering instance. */
+  readonly numId: number;
+  /** ID of the abstract numbering definition to reference. */
+  readonly abstractNumId: number;
+  /** Reference name for this numbering instance. */
+  readonly reference: string;
+  /** Instance number for tracking multiple uses. */
+  readonly instance: number;
+  /** Array of level overrides to customize specific levels. */
+  readonly overrideLevels?: readonly IOverrideLevel[];
 }
 
 /**
@@ -109,49 +109,49 @@ export interface IConcreteNumberingOptions {
  * ```
  */
 export class ConcreteNumbering extends XmlComponent {
-    /** The unique identifier for this numbering instance. */
-    public readonly numId: number;
-    /** The reference name for this numbering instance. */
-    public readonly reference: string;
-    /** The instance number for tracking multiple uses. */
-    public readonly instance: number;
+  /** The unique identifier for this numbering instance. */
+  public readonly numId: number;
+  /** The reference name for this numbering instance. */
+  public readonly reference: string;
+  /** The instance number for tracking multiple uses. */
+  public readonly instance: number;
 
-    /**
-     * Creates a new concrete numbering instance.
-     *
-     * @param options - Configuration options for the numbering instance
-     */
-    public constructor(options: IConcreteNumberingOptions) {
-        super("w:num");
+  /**
+   * Creates a new concrete numbering instance.
+   *
+   * @param options - Configuration options for the numbering instance
+   */
+  public constructor(options: IConcreteNumberingOptions) {
+    super("w:num");
 
-        this.numId = options.numId;
-        this.reference = options.reference;
-        this.instance = options.instance;
+    this.numId = options.numId;
+    this.reference = options.reference;
+    this.instance = options.instance;
 
-        this.root.push(
-            new NumAttributes({
-                numId: decimalNumber(options.numId),
-            }),
-        );
+    this.root.push(
+      new NumAttributes({
+        numId: decimalNumber(options.numId),
+      }),
+    );
 
-        this.root.push(new AbstractNumId(decimalNumber(options.abstractNumId)));
+    this.root.push(new AbstractNumId(decimalNumber(options.abstractNumId)));
 
-        if (options.overrideLevels && options.overrideLevels.length) {
-            for (const level of options.overrideLevels) {
-                this.root.push(new LevelOverride(level.num, level.start));
-            }
-        }
+    if (options.overrideLevels && options.overrideLevels.length) {
+      for (const level of options.overrideLevels) {
+        this.root.push(new LevelOverride(level.num, level.start));
+      }
     }
+  }
 }
 
 /**
  * Attributes for level overrides.
  */
 class LevelOverrideAttributes extends XmlAttributeComponent<{
-    /** The level number being overridden. */
-    readonly ilvl: number;
+  /** The level number being overridden. */
+  readonly ilvl: number;
 }> {
-    protected readonly xmlKeys = { ilvl: "w:ilvl" };
+  protected readonly xmlKeys = { ilvl: "w:ilvl" };
 }
 
 /**
@@ -172,29 +172,29 @@ class LevelOverrideAttributes extends XmlAttributeComponent<{
  * ```
  */
 export class LevelOverride extends XmlComponent {
-    /**
-     * Creates a new level override.
-     *
-     * @param levelNum - The level number to override (0-8)
-     * @param start - Optional starting number for the level
-     */
-    public constructor(levelNum: number, start?: number) {
-        super("w:lvlOverride");
-        this.root.push(new LevelOverrideAttributes({ ilvl: levelNum }));
-        if (start !== undefined) {
-            this.root.push(new StartOverride(start));
-        }
+  /**
+   * Creates a new level override.
+   *
+   * @param levelNum - The level number to override (0-8)
+   * @param start - Optional starting number for the level
+   */
+  public constructor(levelNum: number, start?: number) {
+    super("w:lvlOverride");
+    this.root.push(new LevelOverrideAttributes({ ilvl: levelNum }));
+    if (start !== undefined) {
+      this.root.push(new StartOverride(start));
     }
+  }
 }
 
 /**
  * Attributes for start override values.
  */
 class StartOverrideAttributes extends XmlAttributeComponent<{
-    /** The starting number value. */
-    readonly val: number;
+  /** The starting number value. */
+  readonly val: number;
 }> {
-    protected readonly xmlKeys = { val: "w:val" };
+  protected readonly xmlKeys = { val: "w:val" };
 }
 
 /**
@@ -203,13 +203,13 @@ class StartOverrideAttributes extends XmlAttributeComponent<{
  * This element overrides the starting number for a specific level.
  */
 class StartOverride extends XmlComponent {
-    /**
-     * Creates a new start override.
-     *
-     * @param start - The starting number
-     */
-    public constructor(start: number) {
-        super("w:startOverride");
-        this.root.push(new StartOverrideAttributes({ val: start }));
-    }
+  /**
+   * Creates a new start override.
+   *
+   * @param start - The starting number
+   */
+  public constructor(start: number) {
+    super("w:startOverride");
+    this.root.push(new StartOverrideAttributes({ val: start }));
+  }
 }

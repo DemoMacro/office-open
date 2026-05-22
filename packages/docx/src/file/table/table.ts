@@ -17,9 +17,9 @@ import { TableCell, VerticalMergeType } from "./table-cell";
 import type { ITableCellSpacingProperties } from "./table-cell-spacing";
 import { TableProperties } from "./table-properties";
 import type {
-    ITableBordersOptions,
-    ITableFloatOptions,
-    ITablePropertiesChangeOptions,
+  ITableBordersOptions,
+  ITableFloatOptions,
+  ITablePropertiesChangeOptions,
 } from "./table-properties";
 import type { ITableCellMarginOptions } from "./table-properties/table-cell-margin";
 import type { TableLayoutType } from "./table-properties/table-layout";
@@ -42,25 +42,25 @@ import type { ITableWidthProperties } from "./table-width";
  * @see {@link Table}
  */
 export interface ITableOptions {
-    readonly rows: readonly (TableRow | StructuredDocumentTagRow)[];
-    readonly width?: ITableWidthProperties;
-    readonly columnWidths?: readonly number[];
-    readonly columnWidthsRevision?: ITableGridChangeOptions;
-    readonly margins?: ITableCellMarginOptions;
-    readonly indent?: ITableWidthProperties;
-    readonly float?: ITableFloatOptions;
-    readonly layout?: (typeof TableLayoutType)[keyof typeof TableLayoutType];
-    readonly style?: string;
-    readonly borders?: ITableBordersOptions;
-    readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
-    readonly visuallyRightToLeft?: boolean;
-    readonly tableLook?: ITableLookOptions;
-    readonly cellSpacing?: ITableCellSpacingProperties;
-    readonly styleRowBandSize?: number;
-    readonly styleColBandSize?: number;
-    readonly caption?: string;
-    readonly description?: string;
-    readonly revision?: ITablePropertiesChangeOptions;
+  readonly rows: readonly (TableRow | StructuredDocumentTagRow)[];
+  readonly width?: ITableWidthProperties;
+  readonly columnWidths?: readonly number[];
+  readonly columnWidthsRevision?: ITableGridChangeOptions;
+  readonly margins?: ITableCellMarginOptions;
+  readonly indent?: ITableWidthProperties;
+  readonly float?: ITableFloatOptions;
+  readonly layout?: (typeof TableLayoutType)[keyof typeof TableLayoutType];
+  readonly style?: string;
+  readonly borders?: ITableBordersOptions;
+  readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
+  readonly visuallyRightToLeft?: boolean;
+  readonly tableLook?: ITableLookOptions;
+  readonly cellSpacing?: ITableCellSpacingProperties;
+  readonly styleRowBandSize?: number;
+  readonly styleColBandSize?: number;
+  readonly caption?: string;
+  readonly description?: string;
+  readonly revision?: ITablePropertiesChangeOptions;
 }
 
 /**
@@ -100,79 +100,78 @@ export interface ITableOptions {
  * ```
  */
 export class Table extends BaseXmlComponent implements FileChild {
-    public readonly fileChild = Symbol();
+  public readonly fileChild = Symbol();
 
-    private readonly options: ITableOptions;
-    private readonly columnWidths: readonly number[];
+  private readonly options: ITableOptions;
+  private readonly columnWidths: readonly number[];
 
-    public constructor(options: ITableOptions) {
-        super("w:tbl");
-        this.options = options;
-        this.columnWidths =
-            options.columnWidths ??
-            Array<number>(Math.max(...options.rows.map((row) => row.CellCount))).fill(100);
+  public constructor(options: ITableOptions) {
+    super("w:tbl");
+    this.options = options;
+    this.columnWidths =
+      options.columnWidths ??
+      Array<number>(Math.max(...options.rows.map((row) => row.CellCount))).fill(100);
 
-        // Register CONTINUE cells on subsequent rows for vertical merge
-        const rows = options.rows;
-        rows.forEach((row, rowIndex) => {
-            if (rowIndex === rows.length - 1) return;
-            if (!(row instanceof TableRow)) return;
+    // Register CONTINUE cells on subsequent rows for vertical merge
+    const rows = options.rows;
+    rows.forEach((row, rowIndex) => {
+      if (rowIndex === rows.length - 1) return;
+      if (!(row instanceof TableRow)) return;
 
-            let columnIndex = 0;
-            row.cells.forEach((cell) => {
-                if (cell.options.rowSpan && cell.options.rowSpan > 1) {
-                    const nextRow = rows[rowIndex + 1];
-                    if (nextRow instanceof TableRow) {
-                        const continueCell = new TableCell({
-                            borders: cell.options.borders,
-                            children: [],
-                            columnSpan: cell.options.columnSpan,
-                            rowSpan: cell.options.rowSpan - 1,
-                            verticalMerge: VerticalMergeType.CONTINUE,
-                        });
-                        nextRow.addCellToColumnIndex(continueCell, columnIndex);
-                    }
-                }
-                columnIndex += cell.options.columnSpan || 1;
+      let columnIndex = 0;
+      row.cells.forEach((cell) => {
+        if (cell.options.rowSpan && cell.options.rowSpan > 1) {
+          const nextRow = rows[rowIndex + 1];
+          if (nextRow instanceof TableRow) {
+            const continueCell = new TableCell({
+              borders: cell.options.borders,
+              children: [],
+              columnSpan: cell.options.columnSpan,
+              rowSpan: cell.options.rowSpan - 1,
+              verticalMerge: VerticalMergeType.CONTINUE,
             });
-        });
-    }
-
-    public prepForXml(context: IContext): IXmlableObject | undefined {
-        const children: IXmlableObject[] = [];
-
-        const tblPr = new TableProperties({
-            alignment: this.options.alignment,
-            borders: this.options.borders ?? {},
-            caption: this.options.caption,
-            cellMargin: this.options.margins,
-            cellSpacing: this.options.cellSpacing,
-            description: this.options.description,
-            float: this.options.float,
-            indent: this.options.indent,
-            layout: this.options.layout,
-            revision: this.options.revision,
-            style: this.options.style,
-            styleColBandSize: this.options.styleColBandSize,
-            styleRowBandSize: this.options.styleRowBandSize,
-            tableLook: this.options.tableLook,
-            visuallyRightToLeft: this.options.visuallyRightToLeft,
-            width: this.options.width ?? { size: 100 },
-        });
-        const tblPrObj = tblPr.prepForXml(context);
-        if (tblPrObj) children.push(tblPrObj);
-
-        const gridObj = new TableGrid(
-            this.columnWidths,
-            this.options.columnWidthsRevision,
-        ).prepForXml(context);
-        if (gridObj) children.push(gridObj);
-
-        for (const row of this.options.rows) {
-            const obj = row.prepForXml(context);
-            if (obj) children.push(obj);
+            nextRow.addCellToColumnIndex(continueCell, columnIndex);
+          }
         }
+        columnIndex += cell.options.columnSpan || 1;
+      });
+    });
+  }
 
-        return { "w:tbl": children };
+  public prepForXml(context: IContext): IXmlableObject | undefined {
+    const children: IXmlableObject[] = [];
+
+    const tblPr = new TableProperties({
+      alignment: this.options.alignment,
+      borders: this.options.borders ?? {},
+      caption: this.options.caption,
+      cellMargin: this.options.margins,
+      cellSpacing: this.options.cellSpacing,
+      description: this.options.description,
+      float: this.options.float,
+      indent: this.options.indent,
+      layout: this.options.layout,
+      revision: this.options.revision,
+      style: this.options.style,
+      styleColBandSize: this.options.styleColBandSize,
+      styleRowBandSize: this.options.styleRowBandSize,
+      tableLook: this.options.tableLook,
+      visuallyRightToLeft: this.options.visuallyRightToLeft,
+      width: this.options.width ?? { size: 100 },
+    });
+    const tblPrObj = tblPr.prepForXml(context);
+    if (tblPrObj) children.push(tblPrObj);
+
+    const gridObj = new TableGrid(this.columnWidths, this.options.columnWidthsRevision).prepForXml(
+      context,
+    );
+    if (gridObj) children.push(gridObj);
+
+    for (const row of this.options.rows) {
+      const obj = row.prepForXml(context);
+      if (obj) children.push(obj);
     }
+
+    return { "w:tbl": children };
+  }
 }

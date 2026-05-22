@@ -3,177 +3,177 @@ import * as fs from "fs";
 import { Presentation, Packer, Shape, TableFrame } from "@office-open/pptx";
 
 const pres = new Presentation({
-    title: "Phase 3 Demo",
-    creator: "Demo",
-    slides: [
-        {
-            children: [
-                new Shape({
-                    x: 50,
-                    y: 30,
-                    width: 400,
-                    height: 60,
-                    text: "Table Demo",
-                    fill: "4472C4",
-                }),
-                new TableFrame({
-                    x: 50,
-                    y: 120,
-                    width: 600,
-                    height: 250,
-                    rows: [
-                        {
-                            cells: [
-                                {
-                                    text: "Name",
-                                    fill: "4472C4",
-                                },
-                                { text: "Age" },
-                                { text: "City" },
-                            ],
-                        },
-                        {
-                            cells: [{ text: "Alice" }, { text: "30" }, { text: "Beijing" }],
-                        },
-                        {
-                            cells: [{ text: "Bob" }, { text: "25" }, { text: "Shanghai" }],
-                        },
-                        {
-                            cells: [{ text: "Charlie" }, { text: "35" }, { text: "Shenzhen" }],
-                        },
-                    ],
-                    columnWidths: [2000000, 1500000, 2500000],
-                    firstRow: true,
-                    bandRow: true,
-                }),
-            ],
-        },
-        {
-            background: { fill: "F5F5F5" },
-            children: [
-                new TableFrame({
-                    x: 100,
-                    y: 80,
-                    width: 500,
-                    height: 200,
-                    rows: [
-                        {
-                            cells: [
-                                {
-                                    text: "Header 1",
-                                    fill: "ED7D31",
-                                },
-                                { text: "Header 2", fill: "ED7D31" },
-                            ],
-                        },
-                        {
-                            cells: [{ text: "A" }, { text: "B" }],
-                        },
-                        {
-                            cells: [{ text: "C" }, { text: "D" }],
-                        },
-                    ],
-                    columnWidths: [2500000, 2500000],
-                }),
-            ],
-        },
-        {
-            children: [
-                new Shape({
-                    x: 50,
-                    y: 30,
-                    width: 600,
-                    height: 50,
-                    text: "Vertical Align & Cell Margins",
-                    fill: "4472C4",
-                }),
-                new TableFrame({
-                    x: 50,
-                    y: 120,
-                    width: 600,
-                    height: 250,
-                    rows: [
-                        {
-                            height: 700000,
-                            cells: [
-                                {
-                                    text: "Top",
-                                    verticalAlign: "TOP",
-                                    fill: "E8F0FE",
-                                },
-                                {
-                                    text: "Center",
-                                    verticalAlign: "CENTER",
-                                    fill: "E8F0FE",
-                                },
-                                {
-                                    text: "Bottom",
-                                    verticalAlign: "BOTTOM",
-                                    fill: "E8F0FE",
-                                },
-                            ],
-                        },
-                        {
-                            height: 500000,
-                            cells: [
-                                { text: "Default" },
-                                { text: "Wide L/R", margins: { left: 300000, right: 300000 } },
-                                { text: "Wide T/B", margins: { top: 80000, bottom: 80000 } },
-                            ],
-                        },
-                    ],
-                }),
-            ],
-        },
-        // Slide 4: Merged cells
-        {
-            children: [
-                new Shape({
-                    x: 50,
-                    y: 30,
-                    width: 600,
-                    height: 50,
-                    text: "Merged Cells",
-                    fill: "4472C4",
-                }),
-                new TableFrame({
-                    x: 50,
-                    y: 120,
-                    width: 600,
-                    height: 200,
-                    rows: [
-                        {
-                            cells: [
-                                {
-                                    text: "A",
-                                    columnSpan: 2,
-                                    fill: "E8F0FE",
-                                },
-                                { text: "C" },
-                            ],
-                        },
-                        {
-                            cells: [{ text: "D" }, { text: "E" }, { text: "F" }],
-                        },
-                        {
-                            cells: [
-                                {
-                                    text: "Merged",
-                                    rowSpan: 2,
-                                    fill: "FFF2CC",
-                                },
-                                { text: "H" },
-                                { text: "I" },
-                            ],
-                        },
-                        {
-                            cells: [{ text: "K" }, { text: "L" }],
-                        },
-                    ],
-                }),
-            ],
-        },
-    ],
+  title: "Phase 3 Demo",
+  creator: "Demo",
+  slides: [
+    {
+      children: [
+        new Shape({
+          x: 50,
+          y: 30,
+          width: 400,
+          height: 60,
+          text: "Table Demo",
+          fill: "4472C4",
+        }),
+        new TableFrame({
+          x: 50,
+          y: 120,
+          width: 600,
+          height: 250,
+          rows: [
+            {
+              cells: [
+                {
+                  text: "Name",
+                  fill: "4472C4",
+                },
+                { text: "Age" },
+                { text: "City" },
+              ],
+            },
+            {
+              cells: [{ text: "Alice" }, { text: "30" }, { text: "Beijing" }],
+            },
+            {
+              cells: [{ text: "Bob" }, { text: "25" }, { text: "Shanghai" }],
+            },
+            {
+              cells: [{ text: "Charlie" }, { text: "35" }, { text: "Shenzhen" }],
+            },
+          ],
+          columnWidths: [2000000, 1500000, 2500000],
+          firstRow: true,
+          bandRow: true,
+        }),
+      ],
+    },
+    {
+      background: { fill: "F5F5F5" },
+      children: [
+        new TableFrame({
+          x: 100,
+          y: 80,
+          width: 500,
+          height: 200,
+          rows: [
+            {
+              cells: [
+                {
+                  text: "Header 1",
+                  fill: "ED7D31",
+                },
+                { text: "Header 2", fill: "ED7D31" },
+              ],
+            },
+            {
+              cells: [{ text: "A" }, { text: "B" }],
+            },
+            {
+              cells: [{ text: "C" }, { text: "D" }],
+            },
+          ],
+          columnWidths: [2500000, 2500000],
+        }),
+      ],
+    },
+    {
+      children: [
+        new Shape({
+          x: 50,
+          y: 30,
+          width: 600,
+          height: 50,
+          text: "Vertical Align & Cell Margins",
+          fill: "4472C4",
+        }),
+        new TableFrame({
+          x: 50,
+          y: 120,
+          width: 600,
+          height: 250,
+          rows: [
+            {
+              height: 700000,
+              cells: [
+                {
+                  text: "Top",
+                  verticalAlign: "TOP",
+                  fill: "E8F0FE",
+                },
+                {
+                  text: "Center",
+                  verticalAlign: "CENTER",
+                  fill: "E8F0FE",
+                },
+                {
+                  text: "Bottom",
+                  verticalAlign: "BOTTOM",
+                  fill: "E8F0FE",
+                },
+              ],
+            },
+            {
+              height: 500000,
+              cells: [
+                { text: "Default" },
+                { text: "Wide L/R", margins: { left: 300000, right: 300000 } },
+                { text: "Wide T/B", margins: { top: 80000, bottom: 80000 } },
+              ],
+            },
+          ],
+        }),
+      ],
+    },
+    // Slide 4: Merged cells
+    {
+      children: [
+        new Shape({
+          x: 50,
+          y: 30,
+          width: 600,
+          height: 50,
+          text: "Merged Cells",
+          fill: "4472C4",
+        }),
+        new TableFrame({
+          x: 50,
+          y: 120,
+          width: 600,
+          height: 200,
+          rows: [
+            {
+              cells: [
+                {
+                  text: "A",
+                  columnSpan: 2,
+                  fill: "E8F0FE",
+                },
+                { text: "C" },
+              ],
+            },
+            {
+              cells: [{ text: "D" }, { text: "E" }, { text: "F" }],
+            },
+            {
+              cells: [
+                {
+                  text: "Merged",
+                  rowSpan: 2,
+                  fill: "FFF2CC",
+                },
+                { text: "H" },
+                { text: "I" },
+              ],
+            },
+            {
+              cells: [{ text: "K" }, { text: "L" }],
+            },
+          ],
+        }),
+      ],
+    },
+  ],
 });
 
 const buffer = await Packer.toBuffer(pres);

@@ -21,13 +21,13 @@ import { XmlAttributeComponent } from "@file/xml-components";
  * @internal
  */
 export class ExtentsAttributes extends XmlAttributeComponent<{
-    /** Width in EMUs (English Metric Units) */
-    readonly cx?: number;
-    /** Height in EMUs (English Metric Units) */
-    readonly cy?: number;
+  /** Width in EMUs (English Metric Units) */
+  readonly cx?: number;
+  /** Height in EMUs (English Metric Units) */
+  readonly cy?: number;
 }> {
-    protected readonly xmlKeys = {
-        cx: "cx",
-        cy: "cy",
-    };
+  protected readonly xmlKeys = {
+    cx: "cx",
+    cy: "cy",
+  };
 }

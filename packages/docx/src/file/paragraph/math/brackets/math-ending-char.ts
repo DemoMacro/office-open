@@ -14,8 +14,8 @@ import type { XmlComponent } from "@file/xml-components";
  * Options for creating an ending character element.
  */
 interface MathEndingCharacterOptions {
-    /** The closing bracket character */
-    readonly character: string;
+  /** The closing bracket character */
+  readonly character: string;
 }
 
 /**
@@ -34,11 +34,11 @@ interface MathEndingCharacterOptions {
  * ```
  */
 export const createMathEndingCharacter = ({
-    character,
+  character,
 }: MathEndingCharacterOptions): XmlComponent =>
-    new BuilderElement<MathEndingCharacterOptions>({
-        attributes: {
-            character: { key: "m:val", value: character },
-        },
-        name: "m:endChr",
-    });
+  new BuilderElement<MathEndingCharacterOptions>({
+    attributes: {
+      character: { key: "m:val", value: character },
+    },
+    name: "m:endChr",
+  });

@@ -5,7 +5,7 @@ import { XmlComponent } from "@file/xml-components";
  * Uses p: prefix in PresentationML context.
  */
 export class NonVisualShapeProperties extends XmlComponent {
-    public constructor() {
-        super("p:cNvSpPr");
-    }
+  public constructor() {
+    super("p:cNvSpPr");
+  }
 }

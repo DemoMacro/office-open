@@ -16,14 +16,14 @@ import { BuilderElement } from "../../xml-components";
  * The values represent the inset from each edge.
  */
 export interface SourceRectangleOptions {
-    /** Left inset percentage (0-100000) */
-    readonly left?: number;
-    /** Top inset percentage (0-100000) */
-    readonly top?: number;
-    /** Right inset percentage (0-100000) */
-    readonly right?: number;
-    /** Bottom inset percentage (0-100000) */
-    readonly bottom?: number;
+  /** Left inset percentage (0-100000) */
+  readonly left?: number;
+  /** Top inset percentage (0-100000) */
+  readonly top?: number;
+  /** Right inset percentage (0-100000) */
+  readonly right?: number;
+  /** Bottom inset percentage (0-100000) */
+  readonly bottom?: number;
 }
 
 /**
@@ -51,27 +51,27 @@ export interface SourceRectangleOptions {
  * ```
  */
 export const createSourceRectangle = (options?: SourceRectangleOptions) => {
-    if (!options) {
-        return new BuilderElement({ name: "a:srcRect" });
-    }
+  if (!options) {
+    return new BuilderElement({ name: "a:srcRect" });
+  }
 
-    const attributes: Record<string, { readonly key: string; readonly value: number }> = {};
+  const attributes: Record<string, { readonly key: string; readonly value: number }> = {};
 
-    if (options.left !== undefined) {
-        attributes.l = { key: "l", value: options.left };
-    }
-    if (options.top !== undefined) {
-        attributes.t = { key: "t", value: options.top };
-    }
-    if (options.right !== undefined) {
-        attributes.r = { key: "r", value: options.right };
-    }
-    if (options.bottom !== undefined) {
-        attributes.b = { key: "b", value: options.bottom };
-    }
+  if (options.left !== undefined) {
+    attributes.l = { key: "l", value: options.left };
+  }
+  if (options.top !== undefined) {
+    attributes.t = { key: "t", value: options.top };
+  }
+  if (options.right !== undefined) {
+    attributes.r = { key: "r", value: options.right };
+  }
+  if (options.bottom !== undefined) {
+    attributes.b = { key: "b", value: options.bottom };
+  }
 
-    return new BuilderElement({
-        attributes: attributes as never,
-        name: "a:srcRect",
-    });
+  return new BuilderElement({
+    attributes: attributes as never,
+    name: "a:srcRect",
+  });
 };

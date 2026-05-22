@@ -60,11 +60,11 @@ Available from `@office-open/core`:
 
 ```ts
 import {
-    convertMillimetersToTwip,
-    convertInchesToTwip,
-    convertPixelsToEmu,
-    convertEmuToPixels,
-    convertTwipToEMU,
+  convertMillimetersToTwip,
+  convertInchesToTwip,
+  convertPixelsToEmu,
+  convertEmuToPixels,
+  convertTwipToEMU,
 } from "@office-open/core";
 
 // mm → twips

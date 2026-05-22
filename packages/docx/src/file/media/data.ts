@@ -2,133 +2,133 @@ import type { SourceRectangleOptions } from "@file/drawing/inline/graphic/graphi
 import type { EffectListOptions } from "@file/drawing/inline/graphic/graphic-data/pic/shape-properties/effects/effect-list";
 import type { OutlineOptions } from "@file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
 import type {
-    IChildExtent,
-    IChildOffset,
+  IChildExtent,
+  IChildOffset,
 } from "@file/drawing/inline/graphic/graphic-data/wpg/wpg-group";
 import type { WpsShapeCoreOptions } from "@file/drawing/inline/graphic/graphic-data/wps";
 import type { FillOptions } from "@office-open/core/drawingml";
 
 export interface IMediaDataTransformation {
-    readonly offset?: {
-        readonly pixels: {
-            readonly x: number;
-            readonly y: number;
-        };
-        readonly emus?: {
-            readonly x: number;
-            readonly y: number;
-        };
-    };
+  readonly offset?: {
     readonly pixels: {
-        /** Width in pixels */
-        readonly x: number;
-        /** Height in pixels */
-        readonly y: number;
+      readonly x: number;
+      readonly y: number;
     };
-    /** Display dimensions in EMUs (English Metric Units) */
-    readonly emus: {
-        /** Width in EMUs (1 inch = 914400 EMUs) */
-        readonly x: number;
-        /** Height in EMUs (1 inch = 914400 EMUs) */
-        readonly y: number;
+    readonly emus?: {
+      readonly x: number;
+      readonly y: number;
     };
-    /** Optional flip transformations */
-    readonly flip?: {
-        /** Whether to flip the image vertically */
-        readonly vertical?: boolean;
-        /** Whether to flip the image horizontally */
-        readonly horizontal?: boolean;
-    };
-    /** Optional rotation angle in degrees */
-    readonly rotation?: number;
+  };
+  readonly pixels: {
+    /** Width in pixels */
+    readonly x: number;
+    /** Height in pixels */
+    readonly y: number;
+  };
+  /** Display dimensions in EMUs (English Metric Units) */
+  readonly emus: {
+    /** Width in EMUs (1 inch = 914400 EMUs) */
+    readonly x: number;
+    /** Height in EMUs (1 inch = 914400 EMUs) */
+    readonly y: number;
+  };
+  /** Optional flip transformations */
+  readonly flip?: {
+    /** Whether to flip the image vertically */
+    readonly vertical?: boolean;
+    /** Whether to flip the image horizontally */
+    readonly horizontal?: boolean;
+  };
+  /** Optional rotation angle in degrees */
+  readonly rotation?: number;
 }
 
 /**
  * Core properties shared by all media data types.
  */
 interface CoreMediaData {
-    /** File name for the media in the package */
-    readonly fileName: string;
-    /** Transformation settings for display */
-    readonly transformation: IMediaDataTransformation;
-    /** Raw image data */
-    readonly data: Uint8Array;
-    /** Source rectangle for image cropping */
-    readonly srcRect?: SourceRectangleOptions;
+  /** File name for the media in the package */
+  readonly fileName: string;
+  /** Transformation settings for display */
+  readonly transformation: IMediaDataTransformation;
+  /** Raw image data */
+  readonly data: Uint8Array;
+  /** Source rectangle for image cropping */
+  readonly srcRect?: SourceRectangleOptions;
 }
 
 /**
  * Regular raster image formats.
  */
 interface RegularMediaData {
-    /** Image format type */
-    readonly type: "jpg" | "png" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
+  /** Image format type */
+  readonly type: "jpg" | "png" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
 }
 
 /**
  * SVG image format with fallback support.
  */
 interface SvgMediaData {
-    /** SVG image type */
-    readonly type: "svg";
-    /**
-     * Fallback image for Word processors that do not support SVG.
-     * This ensures the document displays correctly in all viewers.
-     */
-    readonly fallback: RegularMediaData & CoreMediaData;
+  /** SVG image type */
+  readonly type: "svg";
+  /**
+   * Fallback image for Word processors that do not support SVG.
+   * This ensures the document displays correctly in all viewers.
+   */
+  readonly fallback: RegularMediaData & CoreMediaData;
 }
 
 export interface WpsMediaData {
-    readonly type: "wps";
-    readonly transformation: IMediaDataTransformation;
-    readonly data: WpsShapeCoreOptions;
+  readonly type: "wps";
+  readonly transformation: IMediaDataTransformation;
+  readonly data: WpsShapeCoreOptions;
 }
 
 export interface WpgCommonMediaData {
-    readonly outline?: OutlineOptions;
-    readonly fill?: FillOptions;
+  readonly outline?: OutlineOptions;
+  readonly fill?: FillOptions;
 }
 
 export type IGroupChildMediaData = (WpsMediaData | IMediaData) & WpgCommonMediaData;
 
 export interface WpgMediaData {
-    readonly type: "wpg";
-    readonly transformation: IMediaDataTransformation;
-    readonly children: readonly IGroupChildMediaData[];
-    /** Child coordinate offset */
-    readonly chOff?: IChildOffset;
-    /** Child coordinate extent */
-    readonly chExt?: IChildExtent;
-    /** Group fill */
-    readonly fill?: FillOptions;
-    /** Group effects */
-    readonly effects?: EffectListOptions;
+  readonly type: "wpg";
+  readonly transformation: IMediaDataTransformation;
+  readonly children: readonly IGroupChildMediaData[];
+  /** Child coordinate offset */
+  readonly chOff?: IChildOffset;
+  /** Child coordinate extent */
+  readonly chExt?: IChildExtent;
+  /** Group fill */
+  readonly fill?: FillOptions;
+  /** Group effects */
+  readonly effects?: EffectListOptions;
 }
 
 /**
  * Chart media data — references a chart part via placeholder.
  */
 export interface ChartMediaData {
-    readonly type: "chart";
-    readonly transformation: IMediaDataTransformation;
-    readonly chartKey: string;
+  readonly type: "chart";
+  readonly transformation: IMediaDataTransformation;
+  readonly chartKey: string;
 }
 
 /**
  * SmartArt media data — references a diagram data part via placeholder.
  */
 export interface SmartArtMediaData {
-    readonly type: "smartart";
-    readonly transformation: IMediaDataTransformation;
-    readonly smartArtKey: string;
+  readonly type: "smartart";
+  readonly transformation: IMediaDataTransformation;
+  readonly smartArtKey: string;
 }
 
 export type IExtendedMediaData =
-    | IMediaData
-    | WpsMediaData
-    | WpgMediaData
-    | ChartMediaData
-    | SmartArtMediaData;
+  | IMediaData
+  | WpsMediaData
+  | WpgMediaData
+  | ChartMediaData
+  | SmartArtMediaData;
 
 export type IMediaData = (RegularMediaData | SvgMediaData) & CoreMediaData;
 

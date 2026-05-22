@@ -26,8 +26,8 @@ import type { XmlComponent } from "./xml-components";
  * @property Relationships - The relationships associated with this view
  */
 export interface IViewWrapper {
-    readonly View: Document | Footer | Header | FootNotes | Endnotes | XmlComponent;
-    readonly Relationships: Relationships;
+  readonly View: Document | Footer | Header | FootNotes | Endnotes | XmlComponent;
+  readonly Relationships: Relationships;
 }
 
 /**
@@ -47,19 +47,19 @@ export interface IViewWrapper {
  * ```
  */
 export class DocumentWrapper implements IViewWrapper {
-    private readonly document: Document;
-    private readonly relationships: Relationships;
+  private readonly document: Document;
+  private readonly relationships: Relationships;
 
-    public constructor(options: IDocumentOptions) {
-        this.document = new Document(options);
-        this.relationships = new Relationships();
-    }
+  public constructor(options: IDocumentOptions) {
+    this.document = new Document(options);
+    this.relationships = new Relationships();
+  }
 
-    public get View(): Document {
-        return this.document;
-    }
+  public get View(): Document {
+    return this.document;
+  }
 
-    public get Relationships(): Relationships {
-        return this.relationships;
-    }
+  public get Relationships(): Relationships {
+    return this.relationships;
+  }
 }

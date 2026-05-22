@@ -26,10 +26,10 @@ import type { XmlComponent } from "@file/xml-components";
  * @publicApi
  */
 export const TableLayoutType = {
-    /** Auto-fit layout - column widths are adjusted based on content */
-    AUTOFIT: "autofit",
-    /** Fixed layout - column widths are fixed as specified */
-    FIXED: "fixed",
+  /** Auto-fit layout - column widths are adjusted based on content */
+  AUTOFIT: "autofit",
+  /** Fixed layout - column widths are fixed as specified */
+  FIXED: "fixed",
 } as const;
 
 /**
@@ -50,11 +50,11 @@ export const TableLayoutType = {
  * ```
  */
 export const createTableLayout = (
-    type: (typeof TableLayoutType)[keyof typeof TableLayoutType],
+  type: (typeof TableLayoutType)[keyof typeof TableLayoutType],
 ): XmlComponent =>
-    new BuilderElement<{ readonly type: (typeof TableLayoutType)[keyof typeof TableLayoutType] }>({
-        attributes: {
-            type: { key: "w:type", value: type },
-        },
-        name: "w:tblLayout",
-    });
+  new BuilderElement<{ readonly type: (typeof TableLayoutType)[keyof typeof TableLayoutType] }>({
+    attributes: {
+      type: { key: "w:type", value: type },
+    },
+    name: "w:tblLayout",
+  });

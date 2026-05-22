@@ -2,9 +2,9 @@ import { ExternalHyperlink, ImageRun, Paragraph, TextRun } from "@file/paragraph
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 vi.mock("fflate", () => ({
-    strFromU8: vi.fn().mockImplementation((data: Uint8Array) => new TextDecoder().decode(data)),
-    unzipSync: vi.fn(),
-    zipSync: vi.fn().mockReturnValue(new Uint8Array(0)),
+  strFromU8: vi.fn().mockImplementation((data: Uint8Array) => new TextDecoder().decode(data)),
+  unzipSync: vi.fn(),
+  zipSync: vi.fn().mockReturnValue(new Uint8Array(0)),
 }));
 
 import { unzipSync } from "fflate";
@@ -210,314 +210,307 @@ const MOCK_XML = `
  * violations on OOXML file paths like "word/document.xml".
  */
 const createMockUnzipped = (
-    entries: readonly (readonly [string, string | Uint8Array])[],
-): Record<string, Uint8Array> =>
-    Object.fromEntries(
-        entries.map(([key, value]): readonly [string, Uint8Array] => [
-            key,
-            typeof value === "string" ? new TextEncoder().encode(value) : value,
-        ]),
-    );
+  entries: readonly (readonly [string, string | Uint8Array])[],
+): Record<string, Uint8Array<ArrayBuffer>> =>
+  Object.fromEntries(
+    entries.map(([key, value]): readonly [string, Uint8Array<ArrayBuffer>] => [
+      key,
+      typeof value === "string"
+        ? new TextEncoder().encode(value)
+        : (value as Uint8Array<ArrayBuffer>),
+    ]),
+  );
 
 describe("from-docx", () => {
-    describe("patchDocument", () => {
-        describe("document.xml and [Content_Types].xml", () => {
-            beforeEach(() => {
-                vi.mocked(unzipSync).mockImplementation(() =>
-                    createMockUnzipped([
-                        ["word/document.xml", MOCK_XML],
-                        [
-                            "[Content_Types].xml",
-                            `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
-                        ],
-                    ]),
-                );
-            });
+  describe("patchDocument", () => {
+    describe("document.xml and [Content_Types].xml", () => {
+      beforeEach(() => {
+        vi.mocked(unzipSync).mockImplementation(() =>
+          createMockUnzipped([
+            ["word/document.xml", MOCK_XML],
+            ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`],
+          ]),
+        );
+      });
 
-            afterEach(() => {
-                vi.restoreAllMocks();
-            });
+      afterEach(() => {
+        vi.restoreAllMocks();
+      });
 
-            it("should patch the document", async () => {
-                const output = await patchDocument({
-                    data: Buffer.from(""),
-                    outputType: "uint8array",
-                    patches: {
-                        image_test: {
-                            children: [
-                                new ImageRun({
-                                    data: Buffer.from(""),
-                                    transformation: { height: 100, width: 100 },
-                                    type: "png",
-                                }),
-                            ],
-                            type: PatchType.PARAGRAPH,
-                        },
-                        item_1: {
-                            children: [
-                                new TextRun("#657"),
-                                new ExternalHyperlink({
-                                    children: [
-                                        new TextRun({
-                                            text: "BBC News Link",
-                                        }),
-                                    ],
-                                    link: "https://www.bbc.co.uk/news",
-                                }),
-                            ],
-                            type: PatchType.PARAGRAPH,
-                        },
-                        name: {
-                            children: [
-                                new TextRun("Sir. "),
-                                new TextRun("John Doe"),
-                                new TextRun("(The Conqueror)"),
-                            ],
-                            type: PatchType.PARAGRAPH,
-                        },
-                        paragraph_replace: {
-                            children: [
-                                new Paragraph({
-                                    children: [
-                                        new TextRun("This is a "),
-                                        new ExternalHyperlink({
-                                            children: [
-                                                new TextRun({
-                                                    text: "Google Link",
-                                                }),
-                                            ],
-                                            link: "https://www.google.co.uk",
-                                        }),
-                                        new ImageRun({
-                                            data: Buffer.from(""),
-                                            transformation: { height: 100, width: 100 },
-                                            type: "png",
-                                        }),
-                                    ],
-                                }),
-                            ],
-                            type: PatchType.DOCUMENT,
-                        },
-                    },
-                });
-                expect(output).to.not.be.undefined;
-            });
-
-            it("should patch the document", async () => {
-                const output = await patchDocument({
-                    data: Buffer.from(""),
-                    outputType: "uint8array",
-                    patches: {},
-                });
-                expect(output).to.not.be.undefined;
-            });
-
-            it("should skiup UTF-16 types", async () => {
-                vi.mocked(unzipSync).mockImplementation(() =>
-                    createMockUnzipped([
-                        ["word/document.xml", MOCK_XML],
-                        ["[Content_Types].xml", Buffer.from([0xff, 0xfe])],
-                    ]),
-                );
-                const output = await patchDocument({
-                    data: Buffer.from(""),
-                    outputType: "uint8array",
-                    patches: {},
-                });
-                expect(output).to.not.be.undefined;
-            });
-
-            it("should patch the document", async () => {
-                const output = await patchDocument({
-                    data: Buffer.from(""),
-                    outputType: "uint8array",
-                    patches: {
-                        image_test: {
-                            children: [
-                                new ImageRun({
-                                    data: Buffer.from(""),
-                                    transformation: { height: 100, width: 100 },
-                                    type: "png",
-                                }),
-                            ],
-                            type: PatchType.PARAGRAPH,
-                        },
-                        item_1: {
-                            children: [
-                                new TextRun("#657"),
-                                new ExternalHyperlink({
-                                    children: [
-                                        new TextRun({
-                                            text: "BBC News Link",
-                                        }),
-                                    ],
-                                    link: "https://www.bbc.co.uk/news",
-                                }),
-                            ],
-                            type: PatchType.PARAGRAPH,
-                        },
-                        name: {
-                            children: [
-                                new TextRun("Sir. "),
-                                new TextRun("John Doe"),
-                                new TextRun("(The Conqueror)"),
-                            ],
-                            type: PatchType.PARAGRAPH,
-                        },
-                        paragraph_replace: {
-                            children: [
-                                new Paragraph({
-                                    children: [
-                                        new TextRun("This is a "),
-                                        new ExternalHyperlink({
-                                            children: [
-                                                new TextRun({
-                                                    text: "Google Link",
-                                                }),
-                                            ],
-                                            link: "https://www.google.co.uk",
-                                        }),
-                                        new ImageRun({
-                                            data: Buffer.from(""),
-                                            transformation: { height: 100, width: 100 },
-                                            type: "png",
-                                        }),
-                                    ],
-                                }),
-                            ],
-                            type: PatchType.DOCUMENT,
-                        },
-                    },
-                    placeholderDelimiters: { end: "}}", start: "{{" },
-                });
-                expect(output).to.not.be.undefined;
-            });
-
-            it("should patch the document", async () => {
-                const output = await patchDocument({
-                    data: Buffer.from(""),
-                    outputType: "uint8array",
-                    patches: {},
-                });
-                expect(output).to.not.be.undefined;
-            });
-
-            it("throws error with empty delimiters", async () => {
-                await expect(() =>
-                    patchDocument({
-                        data: Buffer.from(""),
-                        outputType: "uint8array",
-                        patches: {},
-                        placeholderDelimiters: { end: "", start: "" },
+      it("should patch the document", async () => {
+        const output = await patchDocument({
+          data: Buffer.from(""),
+          outputType: "uint8array",
+          patches: {
+            image_test: {
+              children: [
+                new ImageRun({
+                  data: Buffer.from(""),
+                  transformation: { height: 100, width: 100 },
+                  type: "png",
+                }),
+              ],
+              type: PatchType.PARAGRAPH,
+            },
+            item_1: {
+              children: [
+                new TextRun("#657"),
+                new ExternalHyperlink({
+                  children: [
+                    new TextRun({
+                      text: "BBC News Link",
                     }),
-                ).rejects.toThrow();
-            });
-
-            it("throws error with whitespace-only delimiters", async () => {
-                await expect(() =>
-                    patchDocument({
-                        data: Buffer.from(""),
-                        outputType: "uint8array",
-                        patches: {},
-                        placeholderDelimiters: { end: " ", start: " " },
+                  ],
+                  link: "https://www.bbc.co.uk/news",
+                }),
+              ],
+              type: PatchType.PARAGRAPH,
+            },
+            name: {
+              children: [
+                new TextRun("Sir. "),
+                new TextRun("John Doe"),
+                new TextRun("(The Conqueror)"),
+              ],
+              type: PatchType.PARAGRAPH,
+            },
+            paragraph_replace: {
+              children: [
+                new Paragraph({
+                  children: [
+                    new TextRun("This is a "),
+                    new ExternalHyperlink({
+                      children: [
+                        new TextRun({
+                          text: "Google Link",
+                        }),
+                      ],
+                      link: "https://www.google.co.uk",
                     }),
-                ).rejects.toThrowError();
-            });
+                    new ImageRun({
+                      data: Buffer.from(""),
+                      transformation: { height: 100, width: 100 },
+                      type: "png",
+                    }),
+                  ],
+                }),
+              ],
+              type: PatchType.DOCUMENT,
+            },
+          },
         });
+        expect(output).to.not.be.undefined;
+      });
 
-        describe("document.xml and [Content_Types].xml with relationships", () => {
-            beforeEach(() => {
-                vi.mocked(unzipSync).mockImplementation(() =>
-                    createMockUnzipped([
-                        ["word/document.xml", MOCK_XML],
-                        [
-                            "word/_rels/document.xml.rels",
-                            `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
-                        ],
-                        [
-                            "[Content_Types].xml",
-                            `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
-                        ],
-                    ]),
-                );
-            });
-
-            afterEach(() => {
-                vi.restoreAllMocks();
-            });
-
-            it("should use the relationships file rather than create one", async () => {
-                const output = await patchDocument({
-                    data: Buffer.from(""),
-                    outputType: "uint8array",
-                    patches: {
-                        image_test: {
-                            children: [
-                                new ImageRun({
-                                    data: Buffer.from(""),
-                                    transformation: { height: 100, width: 100 },
-                                    type: "png",
-                                }),
-                                new ExternalHyperlink({
-                                    children: [
-                                        new TextRun({
-                                            text: "Google Link",
-                                        }),
-                                    ],
-                                    link: "https://www.google.co.uk",
-                                }),
-                            ],
-                            type: PatchType.PARAGRAPH,
-                        },
-                    },
-                });
-                expect(output).to.not.be.undefined;
-            });
+      it("should patch the document", async () => {
+        const output = await patchDocument({
+          data: Buffer.from(""),
+          outputType: "uint8array",
+          patches: {},
         });
+        expect(output).to.not.be.undefined;
+      });
 
-        describe("document.xml and [Content_Types].xml without relationships file", () => {
-            beforeEach(() => {
-                vi.mocked(unzipSync).mockImplementation(() =>
-                    createMockUnzipped([
-                        ["word/document.xml", MOCK_XML],
-                        [
-                            "[Content_Types].xml",
-                            `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
-                        ],
-                    ]),
-                );
-            });
-
-            afterEach(() => {
-                vi.restoreAllMocks();
-            });
-
-            it("should create a relationships file for hyperlink only patches", async () => {
-                const output = await patchDocument({
-                    data: Buffer.from(""),
-                    outputType: "uint8array",
-                    patches: {
-                        image_test: {
-                            children: [
-                                new ExternalHyperlink({
-                                    children: [
-                                        new TextRun({
-                                            text: "Google Link",
-                                        }),
-                                    ],
-                                    link: "https://www.google.co.uk",
-                                }),
-                            ],
-                            type: PatchType.PARAGRAPH,
-                        },
-                    },
-                });
-                expect(output).to.not.be.undefined;
-            });
+      it("should skiup UTF-16 types", async () => {
+        vi.mocked(unzipSync).mockImplementation(() =>
+          createMockUnzipped([
+            ["word/document.xml", MOCK_XML],
+            ["[Content_Types].xml", Buffer.from([0xff, 0xfe])],
+          ]),
+        );
+        const output = await patchDocument({
+          data: Buffer.from(""),
+          outputType: "uint8array",
+          patches: {},
         });
+        expect(output).to.not.be.undefined;
+      });
 
-        describe("document.xml without attributes on w:document", () => {
-            const MOCK_XML_NO_ATTRS = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+      it("should patch the document", async () => {
+        const output = await patchDocument({
+          data: Buffer.from(""),
+          outputType: "uint8array",
+          patches: {
+            image_test: {
+              children: [
+                new ImageRun({
+                  data: Buffer.from(""),
+                  transformation: { height: 100, width: 100 },
+                  type: "png",
+                }),
+              ],
+              type: PatchType.PARAGRAPH,
+            },
+            item_1: {
+              children: [
+                new TextRun("#657"),
+                new ExternalHyperlink({
+                  children: [
+                    new TextRun({
+                      text: "BBC News Link",
+                    }),
+                  ],
+                  link: "https://www.bbc.co.uk/news",
+                }),
+              ],
+              type: PatchType.PARAGRAPH,
+            },
+            name: {
+              children: [
+                new TextRun("Sir. "),
+                new TextRun("John Doe"),
+                new TextRun("(The Conqueror)"),
+              ],
+              type: PatchType.PARAGRAPH,
+            },
+            paragraph_replace: {
+              children: [
+                new Paragraph({
+                  children: [
+                    new TextRun("This is a "),
+                    new ExternalHyperlink({
+                      children: [
+                        new TextRun({
+                          text: "Google Link",
+                        }),
+                      ],
+                      link: "https://www.google.co.uk",
+                    }),
+                    new ImageRun({
+                      data: Buffer.from(""),
+                      transformation: { height: 100, width: 100 },
+                      type: "png",
+                    }),
+                  ],
+                }),
+              ],
+              type: PatchType.DOCUMENT,
+            },
+          },
+          placeholderDelimiters: { end: "}}", start: "{{" },
+        });
+        expect(output).to.not.be.undefined;
+      });
+
+      it("should patch the document", async () => {
+        const output = await patchDocument({
+          data: Buffer.from(""),
+          outputType: "uint8array",
+          patches: {},
+        });
+        expect(output).to.not.be.undefined;
+      });
+
+      it("throws error with empty delimiters", async () => {
+        await expect(() =>
+          patchDocument({
+            data: Buffer.from(""),
+            outputType: "uint8array",
+            patches: {},
+            placeholderDelimiters: { end: "", start: "" },
+          }),
+        ).rejects.toThrow();
+      });
+
+      it("throws error with whitespace-only delimiters", async () => {
+        await expect(() =>
+          patchDocument({
+            data: Buffer.from(""),
+            outputType: "uint8array",
+            patches: {},
+            placeholderDelimiters: { end: " ", start: " " },
+          }),
+        ).rejects.toThrowError();
+      });
+    });
+
+    describe("document.xml and [Content_Types].xml with relationships", () => {
+      beforeEach(() => {
+        vi.mocked(unzipSync).mockImplementation(() =>
+          createMockUnzipped([
+            ["word/document.xml", MOCK_XML],
+            [
+              "word/_rels/document.xml.rels",
+              `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
+            ],
+            ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`],
+          ]),
+        );
+      });
+
+      afterEach(() => {
+        vi.restoreAllMocks();
+      });
+
+      it("should use the relationships file rather than create one", async () => {
+        const output = await patchDocument({
+          data: Buffer.from(""),
+          outputType: "uint8array",
+          patches: {
+            image_test: {
+              children: [
+                new ImageRun({
+                  data: Buffer.from(""),
+                  transformation: { height: 100, width: 100 },
+                  type: "png",
+                }),
+                new ExternalHyperlink({
+                  children: [
+                    new TextRun({
+                      text: "Google Link",
+                    }),
+                  ],
+                  link: "https://www.google.co.uk",
+                }),
+              ],
+              type: PatchType.PARAGRAPH,
+            },
+          },
+        });
+        expect(output).to.not.be.undefined;
+      });
+    });
+
+    describe("document.xml and [Content_Types].xml without relationships file", () => {
+      beforeEach(() => {
+        vi.mocked(unzipSync).mockImplementation(() =>
+          createMockUnzipped([
+            ["word/document.xml", MOCK_XML],
+            ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`],
+          ]),
+        );
+      });
+
+      afterEach(() => {
+        vi.restoreAllMocks();
+      });
+
+      it("should create a relationships file for hyperlink only patches", async () => {
+        const output = await patchDocument({
+          data: Buffer.from(""),
+          outputType: "uint8array",
+          patches: {
+            image_test: {
+              children: [
+                new ExternalHyperlink({
+                  children: [
+                    new TextRun({
+                      text: "Google Link",
+                    }),
+                  ],
+                  link: "https://www.google.co.uk",
+                }),
+              ],
+              type: PatchType.PARAGRAPH,
+            },
+          },
+        });
+        expect(output).to.not.be.undefined;
+      });
+    });
+
+    describe("document.xml without attributes on w:document", () => {
+      const MOCK_XML_NO_ATTRS = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document>
     <w:body>
         <w:p>
@@ -528,197 +521,191 @@ describe("from-docx", () => {
     </w:body>
 </w:document>`;
 
-            beforeEach(() => {
-                vi.mocked(unzipSync).mockImplementation(() =>
-                    createMockUnzipped([
-                        ["word/document.xml", MOCK_XML_NO_ATTRS],
-                        [
-                            "[Content_Types].xml",
-                            `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
-                        ],
-                    ]),
-                );
-            });
+      beforeEach(() => {
+        vi.mocked(unzipSync).mockImplementation(() =>
+          createMockUnzipped([
+            ["word/document.xml", MOCK_XML_NO_ATTRS],
+            ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`],
+          ]),
+        );
+      });
 
-            afterEach(() => {
-                vi.restoreAllMocks();
-            });
+      afterEach(() => {
+        vi.restoreAllMocks();
+      });
 
-            it("should patch a document whose w:document element has no attributes", async () => {
-                const output = await patchDocument({
-                    data: Buffer.from(""),
-                    outputType: "uint8array",
-                    patches: {
-                        name: {
-                            children: [new TextRun("World")],
-                            type: PatchType.PARAGRAPH,
-                        },
-                    },
-                });
-                expect(output).to.not.be.undefined;
-            });
+      it("should patch a document whose w:document element has no attributes", async () => {
+        const output = await patchDocument({
+          data: Buffer.from(""),
+          outputType: "uint8array",
+          patches: {
+            name: {
+              children: [new TextRun("World")],
+              type: PatchType.PARAGRAPH,
+            },
+          },
         });
-
-        describe("document.xml", () => {
-            beforeEach(() => {
-                vi.mocked(unzipSync).mockImplementation(() =>
-                    createMockUnzipped([["word/document.xml", MOCK_XML]]),
-                );
-            });
-
-            afterEach(() => {
-                vi.restoreAllMocks();
-            });
-
-            it("should throw an error if the content types is not found", () =>
-                expect(
-                    patchDocument({
-                        data: Buffer.from(""),
-                        outputType: "uint8array",
-                        patches: {
-                            image_test: {
-                                children: [
-                                    new ImageRun({
-                                        data: Buffer.from(""),
-                                        transformation: { height: 100, width: 100 },
-                                        type: "png",
-                                    }),
-                                ],
-                                type: PatchType.PARAGRAPH,
-                            },
-                        },
-                    }),
-                ).rejects.toThrowError());
-        });
-
-        describe("Images", () => {
-            beforeEach(() => {
-                vi.mocked(unzipSync).mockImplementation(() =>
-                    createMockUnzipped([
-                        ["word/document.xml", MOCK_XML],
-                        ["word/document.bmp", ""],
-                    ]),
-                );
-            });
-
-            afterEach(() => {
-                vi.restoreAllMocks();
-            });
-
-            it("should throw an error if the content types is not found", () =>
-                expect(
-                    patchDocument({
-                        data: Buffer.from(""),
-                        outputType: "uint8array",
-                        patches: {
-                            image_test: {
-                                children: [
-                                    new ImageRun({
-                                        data: Buffer.from(""),
-                                        transformation: { height: 100, width: 100 },
-                                        type: "png",
-                                    }),
-                                ],
-                                type: PatchType.PARAGRAPH,
-                            },
-                        },
-                    }),
-                ).rejects.toThrowError());
-        });
-
-        describe("output types", () => {
-            beforeEach(() => {
-                vi.mocked(unzipSync).mockImplementation(() =>
-                    createMockUnzipped([
-                        ["word/document.xml", MOCK_XML],
-                        [
-                            "[Content_Types].xml",
-                            `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
-                        ],
-                    ]),
-                );
-            });
-
-            afterEach(() => {
-                vi.restoreAllMocks();
-            });
-
-            it("should export to nodebuffer", async () => {
-                const output = await patchDocument({
-                    data: Buffer.from(""),
-                    outputType: "nodebuffer",
-                    patches: {
-                        name: { children: [new TextRun("World")], type: PatchType.PARAGRAPH },
-                    },
-                });
-                expect(Buffer.isBuffer(output)).toBe(true);
-            });
-
-            it("should export to blob", async () => {
-                const output = await patchDocument({
-                    data: Buffer.from(""),
-                    outputType: "blob",
-                    patches: {
-                        name: { children: [new TextRun("World")], type: PatchType.PARAGRAPH },
-                    },
-                });
-                expect(output).toBeInstanceOf(Blob);
-            });
-
-            it("should export to arraybuffer", async () => {
-                const output = await patchDocument({
-                    data: Buffer.from(""),
-                    outputType: "arraybuffer",
-                    patches: {
-                        name: { children: [new TextRun("World")], type: PatchType.PARAGRAPH },
-                    },
-                });
-                expect(output).toBeInstanceOf(ArrayBuffer);
-            });
-
-            it("should export to base64", async () => {
-                const output = await patchDocument({
-                    data: Buffer.from(""),
-                    outputType: "base64",
-                    patches: {
-                        name: { children: [new TextRun("World")], type: PatchType.PARAGRAPH },
-                    },
-                });
-                expect(typeof output).toBe("string");
-            });
-
-            it("should export to string", async () => {
-                const output = await patchDocument({
-                    data: Buffer.from(""),
-                    outputType: "string",
-                    patches: {
-                        name: { children: [new TextRun("World")], type: PatchType.PARAGRAPH },
-                    },
-                });
-                expect(typeof output).toBe("string");
-            });
-
-            it("should export to binarystring", async () => {
-                const output = await patchDocument({
-                    data: Buffer.from(""),
-                    outputType: "binarystring",
-                    patches: {
-                        name: { children: [new TextRun("World")], type: PatchType.PARAGRAPH },
-                    },
-                });
-                expect(typeof output).toBe("string");
-            });
-
-            it("should export to array", async () => {
-                const output = await patchDocument({
-                    data: Buffer.from(""),
-                    outputType: "array",
-                    patches: {
-                        name: { children: [new TextRun("World")], type: PatchType.PARAGRAPH },
-                    },
-                });
-                expect(Array.isArray(output)).toBe(true);
-            });
-        });
+        expect(output).to.not.be.undefined;
+      });
     });
+
+    describe("document.xml", () => {
+      beforeEach(() => {
+        vi.mocked(unzipSync).mockImplementation(() =>
+          createMockUnzipped([["word/document.xml", MOCK_XML]]),
+        );
+      });
+
+      afterEach(() => {
+        vi.restoreAllMocks();
+      });
+
+      it("should throw an error if the content types is not found", () =>
+        expect(
+          patchDocument({
+            data: Buffer.from(""),
+            outputType: "uint8array",
+            patches: {
+              image_test: {
+                children: [
+                  new ImageRun({
+                    data: Buffer.from(""),
+                    transformation: { height: 100, width: 100 },
+                    type: "png",
+                  }),
+                ],
+                type: PatchType.PARAGRAPH,
+              },
+            },
+          }),
+        ).rejects.toThrowError());
+    });
+
+    describe("Images", () => {
+      beforeEach(() => {
+        vi.mocked(unzipSync).mockImplementation(() =>
+          createMockUnzipped([
+            ["word/document.xml", MOCK_XML],
+            ["word/document.bmp", ""],
+          ]),
+        );
+      });
+
+      afterEach(() => {
+        vi.restoreAllMocks();
+      });
+
+      it("should throw an error if the content types is not found", () =>
+        expect(
+          patchDocument({
+            data: Buffer.from(""),
+            outputType: "uint8array",
+            patches: {
+              image_test: {
+                children: [
+                  new ImageRun({
+                    data: Buffer.from(""),
+                    transformation: { height: 100, width: 100 },
+                    type: "png",
+                  }),
+                ],
+                type: PatchType.PARAGRAPH,
+              },
+            },
+          }),
+        ).rejects.toThrowError());
+    });
+
+    describe("output types", () => {
+      beforeEach(() => {
+        vi.mocked(unzipSync).mockImplementation(() =>
+          createMockUnzipped([
+            ["word/document.xml", MOCK_XML],
+            ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`],
+          ]),
+        );
+      });
+
+      afterEach(() => {
+        vi.restoreAllMocks();
+      });
+
+      it("should export to nodebuffer", async () => {
+        const output = await patchDocument({
+          data: Buffer.from(""),
+          outputType: "nodebuffer",
+          patches: {
+            name: { children: [new TextRun("World")], type: PatchType.PARAGRAPH },
+          },
+        });
+        expect(Buffer.isBuffer(output)).toBe(true);
+      });
+
+      it("should export to blob", async () => {
+        const output = await patchDocument({
+          data: Buffer.from(""),
+          outputType: "blob",
+          patches: {
+            name: { children: [new TextRun("World")], type: PatchType.PARAGRAPH },
+          },
+        });
+        expect(output).toBeInstanceOf(Blob);
+      });
+
+      it("should export to arraybuffer", async () => {
+        const output = await patchDocument({
+          data: Buffer.from(""),
+          outputType: "arraybuffer",
+          patches: {
+            name: { children: [new TextRun("World")], type: PatchType.PARAGRAPH },
+          },
+        });
+        expect(output).toBeInstanceOf(ArrayBuffer);
+      });
+
+      it("should export to base64", async () => {
+        const output = await patchDocument({
+          data: Buffer.from(""),
+          outputType: "base64",
+          patches: {
+            name: { children: [new TextRun("World")], type: PatchType.PARAGRAPH },
+          },
+        });
+        expect(typeof output).toBe("string");
+      });
+
+      it("should export to string", async () => {
+        const output = await patchDocument({
+          data: Buffer.from(""),
+          outputType: "string",
+          patches: {
+            name: { children: [new TextRun("World")], type: PatchType.PARAGRAPH },
+          },
+        });
+        expect(typeof output).toBe("string");
+      });
+
+      it("should export to binarystring", async () => {
+        const output = await patchDocument({
+          data: Buffer.from(""),
+          outputType: "binarystring",
+          patches: {
+            name: { children: [new TextRun("World")], type: PatchType.PARAGRAPH },
+          },
+        });
+        expect(typeof output).toBe("string");
+      });
+
+      it("should export to array", async () => {
+        const output = await patchDocument({
+          data: Buffer.from(""),
+          outputType: "array",
+          patches: {
+            name: { children: [new TextRun("World")], type: PatchType.PARAGRAPH },
+          },
+        });
+        expect(Array.isArray(output)).toBe(true);
+      });
+    });
+  });
 });

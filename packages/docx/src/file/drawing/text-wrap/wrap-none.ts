@@ -20,6 +20,6 @@ import type { XmlComponent } from "@file/xml-components";
  * Reference: http://officeopenxml.com/drwPicFloating-textWrap.php
  */
 export const createWrapNone = (): XmlComponent =>
-    new BuilderElement({
-        name: "wp:wrapNone",
-    });
+  new BuilderElement({
+    name: "wp:wrapNone",
+  });

@@ -19,10 +19,10 @@ import { createMathSubScriptProperties } from "./math-sub-script-function-proper
  * @see {@link MathSubScript}
  */
 export interface IMathSubScriptOptions {
-    /** The base expression */
-    readonly children: readonly MathComponent[];
-    /** The subscript expression */
-    readonly subScript: readonly MathComponent[];
+  /** The base expression */
+  readonly children: readonly MathComponent[];
+  /** The subscript expression */
+  readonly subScript: readonly MathComponent[];
 }
 
 /**
@@ -55,11 +55,11 @@ export interface IMathSubScriptOptions {
  * ```
  */
 export class MathSubScript extends XmlComponent {
-    public constructor(options: IMathSubScriptOptions) {
-        super("m:sSub");
+  public constructor(options: IMathSubScriptOptions) {
+    super("m:sSub");
 
-        this.root.push(createMathSubScriptProperties());
-        this.root.push(createMathBase({ children: options.children }));
-        this.root.push(createMathSubScriptElement({ children: options.subScript }));
-    }
+    this.root.push(createMathSubScriptProperties());
+    this.root.push(createMathBase({ children: options.children }));
+    this.root.push(createMathSubScriptElement({ children: options.subScript }));
+  }
 }

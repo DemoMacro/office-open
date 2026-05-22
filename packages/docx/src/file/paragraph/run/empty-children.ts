@@ -38,9 +38,9 @@ import { EmptyElement } from "@file/xml-components";
  * Inserts a hyphen that prevents line breaking at that position.
  */
 export class NoBreakHyphen extends EmptyElement {
-    public constructor() {
-        super("w:noBreakHyphen");
-    }
+  public constructor() {
+    super("w:noBreakHyphen");
+  }
 }
 
 /**
@@ -49,9 +49,9 @@ export class NoBreakHyphen extends EmptyElement {
  * Inserts a hyphen that only appears when a word is broken across lines.
  */
 export class SoftHyphen extends EmptyElement {
-    public constructor() {
-        super("w:softHyphen");
-    }
+  public constructor() {
+    super("w:softHyphen");
+  }
 }
 
 /**
@@ -60,9 +60,9 @@ export class SoftHyphen extends EmptyElement {
  * Inserts a dynamic field showing the day portion of the current date.
  */
 export class DayShort extends EmptyElement {
-    public constructor() {
-        super("w:dayShort");
-    }
+  public constructor() {
+    super("w:dayShort");
+  }
 }
 
 /**
@@ -71,9 +71,9 @@ export class DayShort extends EmptyElement {
  * Inserts a dynamic field showing the month portion of the current date.
  */
 export class MonthShort extends EmptyElement {
-    public constructor() {
-        super("w:monthShort");
-    }
+  public constructor() {
+    super("w:monthShort");
+  }
 }
 
 /**
@@ -82,9 +82,9 @@ export class MonthShort extends EmptyElement {
  * Inserts a dynamic field showing the year portion of the current date in two digits.
  */
 export class YearShort extends EmptyElement {
-    public constructor() {
-        super("w:yearShort");
-    }
+  public constructor() {
+    super("w:yearShort");
+  }
 }
 
 /**
@@ -93,9 +93,9 @@ export class YearShort extends EmptyElement {
  * Inserts a dynamic field showing the day portion of the current date with leading zeros.
  */
 export class DayLong extends EmptyElement {
-    public constructor() {
-        super("w:dayLong");
-    }
+  public constructor() {
+    super("w:dayLong");
+  }
 }
 
 /**
@@ -104,9 +104,9 @@ export class DayLong extends EmptyElement {
  * Inserts a dynamic field showing the full month name of the current date.
  */
 export class MonthLong extends EmptyElement {
-    public constructor() {
-        super("w:monthLong");
-    }
+  public constructor() {
+    super("w:monthLong");
+  }
 }
 
 /**
@@ -115,9 +115,9 @@ export class MonthLong extends EmptyElement {
  * Inserts a dynamic field showing the year portion of the current date in four digits.
  */
 export class YearLong extends EmptyElement {
-    public constructor() {
-        super("w:yearLong");
-    }
+  public constructor() {
+    super("w:yearLong");
+  }
 }
 
 /**
@@ -126,9 +126,9 @@ export class YearLong extends EmptyElement {
  * Used internally within comment ranges to mark comment references.
  */
 export class AnnotationReference extends EmptyElement {
-    public constructor() {
-        super("w:annotationRef");
-    }
+  public constructor() {
+    super("w:annotationRef");
+  }
 }
 
 /**
@@ -137,9 +137,9 @@ export class AnnotationReference extends EmptyElement {
  * Used within footnote content to refer back to the footnote marker.
  */
 export class FootnoteReferenceElement extends EmptyElement {
-    public constructor() {
-        super("w:footnoteRef");
-    }
+  public constructor() {
+    super("w:footnoteRef");
+  }
 }
 
 /**
@@ -148,9 +148,9 @@ export class FootnoteReferenceElement extends EmptyElement {
  * Used within endnote content to refer back to the endnote marker.
  */
 export class EndnoteReference extends EmptyElement {
-    public constructor() {
-        super("w:endnoteRef");
-    }
+  public constructor() {
+    super("w:endnoteRef");
+  }
 }
 
 /**
@@ -159,9 +159,9 @@ export class EndnoteReference extends EmptyElement {
  * Used to create the separator line between document content and footnotes/endnotes.
  */
 export class Separator extends EmptyElement {
-    public constructor() {
-        super("w:separator");
-    }
+  public constructor() {
+    super("w:separator");
+  }
 }
 
 /**
@@ -170,9 +170,9 @@ export class Separator extends EmptyElement {
  * Used when footnotes/endnotes continue across multiple pages.
  */
 export class ContinuationSeparator extends EmptyElement {
-    public constructor() {
-        super("w:continuationSeparator");
-    }
+  public constructor() {
+    super("w:continuationSeparator");
+  }
 }
 
 /**
@@ -181,9 +181,9 @@ export class ContinuationSeparator extends EmptyElement {
  * Inserts the current page number at this position.
  */
 export class PageNumberElement extends EmptyElement {
-    public constructor() {
-        super("w:pgNum");
-    }
+  public constructor() {
+    super("w:pgNum");
+  }
 }
 
 /**
@@ -192,9 +192,9 @@ export class PageNumberElement extends EmptyElement {
  * Inserts a carriage return, which may be rendered differently than a standard line break.
  */
 export class CarriageReturn extends EmptyElement {
-    public constructor() {
-        super("w:cr");
-    }
+  public constructor() {
+    super("w:cr");
+  }
 }
 
 /**
@@ -205,9 +205,9 @@ export class CarriageReturn extends EmptyElement {
  * @publicApi
  */
 export class Tab extends EmptyElement {
-    public constructor() {
-        super("w:tab");
-    }
+  public constructor() {
+    super("w:tab");
+  }
 }
 
 /**
@@ -217,7 +217,7 @@ export class Tab extends EmptyElement {
  * This is typically generated by Word and not created manually.
  */
 export class LastRenderedPageBreak extends EmptyElement {
-    public constructor() {
-        super("w:lastRenderedPageBreak");
-    }
+  public constructor() {
+    super("w:lastRenderedPageBreak");
+  }
 }

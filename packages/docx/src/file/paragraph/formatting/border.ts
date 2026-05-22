@@ -23,16 +23,16 @@ import { IgnoreIfEmptyXmlComponent, XmlComponent } from "@file/xml-components";
  * @property between - Border between consecutive paragraphs with the same border settings
  */
 export interface IBordersOptions {
-    /** Border for the top edge of the paragraph */
-    readonly top?: IBorderOptions;
-    /** Border for the bottom edge of the paragraph */
-    readonly bottom?: IBorderOptions;
-    /** Border for the left edge of the paragraph */
-    readonly left?: IBorderOptions;
-    /** Border for the right edge of the paragraph */
-    readonly right?: IBorderOptions;
-    /** Border between consecutive paragraphs with the same border settings */
-    readonly between?: IBorderOptions;
+  /** Border for the top edge of the paragraph */
+  readonly top?: IBorderOptions;
+  /** Border for the bottom edge of the paragraph */
+  readonly bottom?: IBorderOptions;
+  /** Border for the left edge of the paragraph */
+  readonly left?: IBorderOptions;
+  /** Border for the right edge of the paragraph */
+  readonly right?: IBorderOptions;
+  /** Border between consecutive paragraphs with the same border settings */
+  readonly between?: IBorderOptions;
 }
 
 /**
@@ -68,29 +68,29 @@ export interface IBordersOptions {
  * ```
  */
 export class Border extends IgnoreIfEmptyXmlComponent {
-    public constructor(options: IBordersOptions) {
-        super("w:pBdr");
+  public constructor(options: IBordersOptions) {
+    super("w:pBdr");
 
-        if (options.top) {
-            this.root.push(createBorderElement("w:top", options.top));
-        }
-
-        if (options.left) {
-            this.root.push(createBorderElement("w:left", options.left));
-        }
-
-        if (options.bottom) {
-            this.root.push(createBorderElement("w:bottom", options.bottom));
-        }
-
-        if (options.right) {
-            this.root.push(createBorderElement("w:right", options.right));
-        }
-
-        if (options.between) {
-            this.root.push(createBorderElement("w:between", options.between));
-        }
+    if (options.top) {
+      this.root.push(createBorderElement("w:top", options.top));
     }
+
+    if (options.left) {
+      this.root.push(createBorderElement("w:left", options.left));
+    }
+
+    if (options.bottom) {
+      this.root.push(createBorderElement("w:bottom", options.bottom));
+    }
+
+    if (options.right) {
+      this.root.push(createBorderElement("w:right", options.right));
+    }
+
+    if (options.between) {
+      this.root.push(createBorderElement("w:between", options.between));
+    }
+  }
 }
 
 /**
@@ -118,14 +118,14 @@ export class Border extends IgnoreIfEmptyXmlComponent {
  * ```
  */
 export class ThematicBreak extends XmlComponent {
-    public constructor() {
-        super("w:pBdr");
-        const bottom = createBorderElement("w:bottom", {
-            color: "auto",
-            size: 6,
-            space: 1,
-            style: BorderStyle.SINGLE,
-        });
-        this.root.push(bottom);
-    }
+  public constructor() {
+    super("w:pBdr");
+    const bottom = createBorderElement("w:bottom", {
+      color: "auto",
+      size: 6,
+      space: 1,
+      style: BorderStyle.SINGLE,
+    });
+    this.root.push(bottom);
+  }
 }

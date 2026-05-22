@@ -1,6 +1,6 @@
 import type {
-    RelationshipType,
-    TargetModeType,
+  RelationshipType,
+  TargetModeType,
 } from "@file/relationships/relationship/relationship";
 /**
  * Relationship manager for OOXML .rels file management.
@@ -18,8 +18,8 @@ import { getFirstLevelElements } from "./util";
  * @returns The numeric portion of the ID
  */
 const getIdFromRelationshipId = (relationshipId: string): number => {
-    const output = parseInt(relationshipId.substring(3), 10);
-    return isNaN(output) ? 0 : output;
+  const output = parseInt(relationshipId.substring(3), 10);
+  return isNaN(output) ? 0 : output;
 };
 
 /**
@@ -38,13 +38,13 @@ const getIdFromRelationshipId = (relationshipId: string): number => {
  * ```
  */
 export const getNextRelationshipIndex = (relationships: Element): number => {
-    const relationshipElements = getFirstLevelElements(relationships, "Relationships");
+  const relationshipElements = getFirstLevelElements(relationships, "Relationships");
 
-    return (
-        relationshipElements
-            .map((e) => getIdFromRelationshipId(e.attributes?.Id?.toString() ?? ""))
-            .reduce((acc, curr) => Math.max(acc, curr), 0) + 1
-    );
+  return (
+    relationshipElements
+      .map((e) => getIdFromRelationshipId(e.attributes?.Id?.toString() ?? ""))
+      .reduce((acc, curr) => Math.max(acc, curr), 0) + 1
+  );
 };
 
 /**
@@ -71,23 +71,23 @@ export const getNextRelationshipIndex = (relationships: Element): number => {
  * ```
  */
 export const appendRelationship = (
-    relationships: Element,
-    id: number | string,
-    type: RelationshipType,
-    target: string,
-    targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType],
+  relationships: Element,
+  id: number | string,
+  type: RelationshipType,
+  target: string,
+  targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType],
 ): readonly Element[] => {
-    const relationshipElements = getFirstLevelElements(relationships, "Relationships");
-    relationshipElements.push({
-        attributes: {
-            Id: `rId${id}`,
-            Target: target,
-            TargetMode: targetMode,
-            Type: type,
-        },
-        name: "Relationship",
-        type: "element",
-    });
+  const relationshipElements = getFirstLevelElements(relationships, "Relationships");
+  relationshipElements.push({
+    attributes: {
+      Id: `rId${id}`,
+      Target: target,
+      TargetMode: targetMode,
+      Type: type,
+    },
+    name: "Relationship",
+    type: "element",
+  });
 
-    return relationshipElements;
+  return relationshipElements;
 };

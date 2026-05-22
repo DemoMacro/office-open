@@ -50,23 +50,23 @@ import type { XmlComponent } from "@file/xml-components";
  * @returns An XML component representing the click hyperlink
  */
 export const createHyperlinkClick = (linkId: string, hasXmlNs: boolean): XmlComponent =>
-    new BuilderElement({
-        attributes: {
-            ...(hasXmlNs
-                ? {
-                      xmlns: {
-                          key: "xmlns:a",
-                          value: "http://schemas.openxmlformats.org/drawingml/2006/main",
-                      },
-                  }
-                : {}),
-            id: {
-                key: "r:id",
-                value: `rId${linkId}`,
+  new BuilderElement({
+    attributes: {
+      ...(hasXmlNs
+        ? {
+            xmlns: {
+              key: "xmlns:a",
+              value: "http://schemas.openxmlformats.org/drawingml/2006/main",
             },
-        },
-        name: "a:hlinkClick",
-    });
+          }
+        : {}),
+      id: {
+        key: "r:id",
+        value: `rId${linkId}`,
+      },
+    },
+    name: "a:hlinkClick",
+  });
 
 /**
  * Creates a hover hyperlink element for a drawing.
@@ -91,20 +91,20 @@ export const createHyperlinkClick = (linkId: string, hasXmlNs: boolean): XmlComp
  * @returns An XML component representing the hover hyperlink
  */
 export const createHyperlinkHover = (linkId: string, hasXmlNs: boolean): XmlComponent =>
-    new BuilderElement({
-        attributes: {
-            ...(hasXmlNs
-                ? {
-                      xmlns: {
-                          key: "xmlns:a",
-                          value: "http://schemas.openxmlformats.org/drawingml/2006/main",
-                      },
-                  }
-                : {}),
-            id: {
-                key: "r:id",
-                value: `rId${linkId}`,
+  new BuilderElement({
+    attributes: {
+      ...(hasXmlNs
+        ? {
+            xmlns: {
+              key: "xmlns:a",
+              value: "http://schemas.openxmlformats.org/drawingml/2006/main",
             },
-        },
-        name: "a:hlinkHover",
-    });
+          }
+        : {}),
+      id: {
+        key: "r:id",
+        value: `rId${linkId}`,
+      },
+    },
+    name: "a:hlinkHover",
+  });

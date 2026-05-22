@@ -39,21 +39,21 @@ import type { ThemeColor } from "@util/values";
  * @property type - Shading pattern type
  */
 export interface IShadingAttributesProperties {
-    readonly fill?: string;
-    readonly color?: string;
-    readonly type?: (typeof ShadingType)[keyof typeof ShadingType];
-    /** Theme color reference */
-    readonly themeColor?: (typeof ThemeColor)[keyof typeof ThemeColor];
-    /** Theme color tint (2-char hex) */
-    readonly themeTint?: string;
-    /** Theme color shade (2-char hex) */
-    readonly themeShade?: string;
-    /** Theme fill color reference */
-    readonly themeFill?: (typeof ThemeColor)[keyof typeof ThemeColor];
-    /** Theme fill tint (2-char hex) */
-    readonly themeFillTint?: string;
-    /** Theme fill shade (2-char hex) */
-    readonly themeFillShade?: string;
+  readonly fill?: string;
+  readonly color?: string;
+  readonly type?: (typeof ShadingType)[keyof typeof ShadingType];
+  /** Theme color reference */
+  readonly themeColor?: (typeof ThemeColor)[keyof typeof ThemeColor];
+  /** Theme color tint (2-char hex) */
+  readonly themeTint?: string;
+  /** Theme color shade (2-char hex) */
+  readonly themeShade?: string;
+  /** Theme fill color reference */
+  readonly themeFill?: (typeof ThemeColor)[keyof typeof ThemeColor];
+  /** Theme fill tint (2-char hex) */
+  readonly themeFillTint?: string;
+  /** Theme fill shade (2-char hex) */
+  readonly themeFillShade?: string;
 }
 
 /**
@@ -65,45 +65,45 @@ export interface IShadingAttributesProperties {
  * Reference: http://officeopenxml.com/WPshading.php
  */
 export const createShading = ({
-    fill,
-    color,
-    type,
-    themeColor,
-    themeTint,
-    themeShade,
-    themeFill,
-    themeFillTint,
-    themeFillShade,
+  fill,
+  color,
+  type,
+  themeColor,
+  themeTint,
+  themeShade,
+  themeFill,
+  themeFillTint,
+  themeFillShade,
 }: IShadingAttributesProperties): XmlComponent =>
-    new BuilderElement<IShadingAttributesProperties>({
-        attributes: {
-            color: {
-                key: "w:color",
-                value: color === undefined ? undefined : hexColorValue(color),
-            },
-            fill: { key: "w:fill", value: fill === undefined ? undefined : hexColorValue(fill) },
-            themeColor: { key: "w:themeColor", value: themeColor },
-            themeFill: { key: "w:themeFill", value: themeFill },
-            themeFillShade: {
-                key: "w:themeFillShade",
-                value: themeFillShade === undefined ? undefined : uCharHexNumber(themeFillShade),
-            },
-            themeFillTint: {
-                key: "w:themeFillTint",
-                value: themeFillTint === undefined ? undefined : uCharHexNumber(themeFillTint),
-            },
-            themeShade: {
-                key: "w:themeShade",
-                value: themeShade === undefined ? undefined : uCharHexNumber(themeShade),
-            },
-            themeTint: {
-                key: "w:themeTint",
-                value: themeTint === undefined ? undefined : uCharHexNumber(themeTint),
-            },
-            type: { key: "w:val", value: type ?? "clear" },
-        },
-        name: "w:shd",
-    });
+  new BuilderElement<IShadingAttributesProperties>({
+    attributes: {
+      color: {
+        key: "w:color",
+        value: color === undefined ? undefined : hexColorValue(color),
+      },
+      fill: { key: "w:fill", value: fill === undefined ? undefined : hexColorValue(fill) },
+      themeColor: { key: "w:themeColor", value: themeColor },
+      themeFill: { key: "w:themeFill", value: themeFill },
+      themeFillShade: {
+        key: "w:themeFillShade",
+        value: themeFillShade === undefined ? undefined : uCharHexNumber(themeFillShade),
+      },
+      themeFillTint: {
+        key: "w:themeFillTint",
+        value: themeFillTint === undefined ? undefined : uCharHexNumber(themeFillTint),
+      },
+      themeShade: {
+        key: "w:themeShade",
+        value: themeShade === undefined ? undefined : uCharHexNumber(themeShade),
+      },
+      themeTint: {
+        key: "w:themeTint",
+        value: themeTint === undefined ? undefined : uCharHexNumber(themeTint),
+      },
+      type: { key: "w:val", value: type ?? "clear" },
+    },
+    name: "w:shd",
+  });
 
 /**
  * Shading pattern types.
@@ -132,42 +132,42 @@ export const createShading = ({
  * @publicApi
  */
 export const ShadingType = {
-    /** Clear shading - no pattern, fill color only */
-    CLEAR: "clear",
-    DIAGONAL_CROSS: "diagCross",
-    DIAGONAL_STRIPE: "diagStripe",
-    HORIZONTAL_CROSS: "horzCross",
-    HORIZONTAL_STRIPE: "horzStripe",
-    NIL: "nil",
-    PERCENT_10: "pct10",
-    PERCENT_12: "pct12",
-    PERCENT_15: "pct15",
-    PERCENT_20: "pct20",
-    PERCENT_25: "pct25",
-    PERCENT_30: "pct30",
-    PERCENT_35: "pct35",
-    PERCENT_37: "pct37",
-    PERCENT_40: "pct40",
-    PERCENT_45: "pct45",
-    PERCENT_5: "pct5",
-    PERCENT_50: "pct50",
-    PERCENT_55: "pct55",
-    PERCENT_60: "pct60",
-    PERCENT_62: "pct62",
-    PERCENT_65: "pct65",
-    PERCENT_70: "pct70",
-    PERCENT_75: "pct75",
-    PERCENT_80: "pct80",
-    PERCENT_85: "pct85",
-    PERCENT_87: "pct87",
-    PERCENT_90: "pct90",
-    PERCENT_95: "pct95",
-    REVERSE_DIAGONAL_STRIPE: "reverseDiagStripe",
-    SOLID: "solid",
-    THIN_DIAGONAL_CROSS: "thinDiagCross",
-    THIN_DIAGONAL_STRIPE: "thinDiagStripe",
-    THIN_HORIZONTAL_CROSS: "thinHorzCross",
-    THIN_REVERSE_DIAGONAL_STRIPE: "thinReverseDiagStripe",
-    THIN_VERTICAL_STRIPE: "thinVertStripe",
-    VERTICAL_STRIPE: "vertStripe",
+  /** Clear shading - no pattern, fill color only */
+  CLEAR: "clear",
+  DIAGONAL_CROSS: "diagCross",
+  DIAGONAL_STRIPE: "diagStripe",
+  HORIZONTAL_CROSS: "horzCross",
+  HORIZONTAL_STRIPE: "horzStripe",
+  NIL: "nil",
+  PERCENT_10: "pct10",
+  PERCENT_12: "pct12",
+  PERCENT_15: "pct15",
+  PERCENT_20: "pct20",
+  PERCENT_25: "pct25",
+  PERCENT_30: "pct30",
+  PERCENT_35: "pct35",
+  PERCENT_37: "pct37",
+  PERCENT_40: "pct40",
+  PERCENT_45: "pct45",
+  PERCENT_5: "pct5",
+  PERCENT_50: "pct50",
+  PERCENT_55: "pct55",
+  PERCENT_60: "pct60",
+  PERCENT_62: "pct62",
+  PERCENT_65: "pct65",
+  PERCENT_70: "pct70",
+  PERCENT_75: "pct75",
+  PERCENT_80: "pct80",
+  PERCENT_85: "pct85",
+  PERCENT_87: "pct87",
+  PERCENT_90: "pct90",
+  PERCENT_95: "pct95",
+  REVERSE_DIAGONAL_STRIPE: "reverseDiagStripe",
+  SOLID: "solid",
+  THIN_DIAGONAL_CROSS: "thinDiagCross",
+  THIN_DIAGONAL_STRIPE: "thinDiagStripe",
+  THIN_HORIZONTAL_CROSS: "thinHorzCross",
+  THIN_REVERSE_DIAGONAL_STRIPE: "thinReverseDiagStripe",
+  THIN_VERTICAL_STRIPE: "thinVertStripe",
+  VERTICAL_STRIPE: "vertStripe",
 } as const;

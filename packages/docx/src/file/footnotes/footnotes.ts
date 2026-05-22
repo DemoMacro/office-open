@@ -59,78 +59,78 @@ import { FootnotesAttributes } from "./footnotes-attributes";
  * ```
  */
 export class FootNotes extends XmlComponent {
-    public constructor() {
-        super("w:footnotes");
+  public constructor() {
+    super("w:footnotes");
 
-        this.root.push(
-            new FootnotesAttributes({
-                Ignorable: "w14 w15 wp14",
-                m: "http://schemas.openxmlformats.org/officeDocument/2006/math",
-                mc: "http://schemas.openxmlformats.org/markup-compatibility/2006",
-                o: "urn:schemas-microsoft-com:office:office",
-                r: "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
-                v: "urn:schemas-microsoft-com:vml",
-                w: "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
-                w10: "urn:schemas-microsoft-com:office:word",
-                w14: "http://schemas.microsoft.com/office/word/2010/wordml",
-                w15: "http://schemas.microsoft.com/office/word/2012/wordml",
-                wne: "http://schemas.microsoft.com/office/word/2006/wordml",
-                wp: "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing",
-                wp14: "http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing",
-                wpc: "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
-                wpg: "http://schemas.microsoft.com/office/word/2010/wordprocessingGroup",
-                wpi: "http://schemas.microsoft.com/office/word/2010/wordprocessingInk",
-                wps: "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
-            }),
-        );
+    this.root.push(
+      new FootnotesAttributes({
+        Ignorable: "w14 w15 wp14",
+        m: "http://schemas.openxmlformats.org/officeDocument/2006/math",
+        mc: "http://schemas.openxmlformats.org/markup-compatibility/2006",
+        o: "urn:schemas-microsoft-com:office:office",
+        r: "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+        v: "urn:schemas-microsoft-com:vml",
+        w: "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
+        w10: "urn:schemas-microsoft-com:office:word",
+        w14: "http://schemas.microsoft.com/office/word/2010/wordml",
+        w15: "http://schemas.microsoft.com/office/word/2012/wordml",
+        wne: "http://schemas.microsoft.com/office/word/2006/wordml",
+        wp: "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing",
+        wp14: "http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing",
+        wpc: "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
+        wpg: "http://schemas.microsoft.com/office/word/2010/wordprocessingGroup",
+        wpi: "http://schemas.microsoft.com/office/word/2010/wordprocessingInk",
+        wps: "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
+      }),
+    );
 
-        const begin = new Footnote({
-            children: [
-                new Paragraph({
-                    children: [new SeperatorRun()],
-                    spacing: {
-                        after: 0,
-                        line: 240,
-                        lineRule: LineRuleType.AUTO,
-                    },
-                }),
-            ],
-            id: -1,
-            type: FootnoteType.SEPERATOR,
-        });
+    const begin = new Footnote({
+      children: [
+        new Paragraph({
+          children: [new SeperatorRun()],
+          spacing: {
+            after: 0,
+            line: 240,
+            lineRule: LineRuleType.AUTO,
+          },
+        }),
+      ],
+      id: -1,
+      type: FootnoteType.SEPERATOR,
+    });
 
-        this.root.push(begin);
+    this.root.push(begin);
 
-        const spacing = new Footnote({
-            children: [
-                new Paragraph({
-                    children: [new ContinuationSeperatorRun()],
-                    spacing: {
-                        after: 0,
-                        line: 240,
-                        lineRule: LineRuleType.AUTO,
-                    },
-                }),
-            ],
-            id: 0,
-            type: FootnoteType.CONTINUATION_SEPERATOR,
-        });
+    const spacing = new Footnote({
+      children: [
+        new Paragraph({
+          children: [new ContinuationSeperatorRun()],
+          spacing: {
+            after: 0,
+            line: 240,
+            lineRule: LineRuleType.AUTO,
+          },
+        }),
+      ],
+      id: 0,
+      type: FootnoteType.CONTINUATION_SEPERATOR,
+    });
 
-        this.root.push(spacing);
-    }
+    this.root.push(spacing);
+  }
 
-    /**
-     * Creates and adds a new footnote to the collection.
-     *
-     * @param id - Unique numeric identifier for the footnote
-     * @param paragraph - Array of paragraphs that make up the footnote content
-     */
-    public createFootNote(id: number, paragraph: readonly Paragraph[]): void {
-        const footnote = new Footnote({
-            children: paragraph,
-            id: id,
-        });
+  /**
+   * Creates and adds a new footnote to the collection.
+   *
+   * @param id - Unique numeric identifier for the footnote
+   * @param paragraph - Array of paragraphs that make up the footnote content
+   */
+  public createFootNote(id: number, paragraph: readonly Paragraph[]): void {
+    const footnote = new Footnote({
+      children: paragraph,
+      id: id,
+    });
 
-        this.root.push(footnote);
-    }
+    this.root.push(footnote);
+  }
 }

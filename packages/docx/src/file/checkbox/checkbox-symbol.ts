@@ -17,15 +17,15 @@ import { shortHexNumber } from "@util/values";
  * @property symbolfont - Font family for rendering the symbol
  */
 class CheckboxSymbolAttributes extends XmlAttributeComponent<{
-    /** Hexadecimal character code for the symbol. */
-    readonly val?: string | number | boolean;
-    /** Font family for rendering the symbol. */
-    readonly symbolfont?: string;
+  /** Hexadecimal character code for the symbol. */
+  readonly val?: string | number | boolean;
+  /** Font family for rendering the symbol. */
+  readonly symbolfont?: string;
 }> {
-    protected readonly xmlKeys = {
-        symbolfont: "w14:font",
-        val: "w14:val",
-    };
+  protected readonly xmlKeys = {
+    symbolfont: "w14:font",
+    val: "w14:val",
+  };
 }
 
 /**
@@ -55,14 +55,12 @@ class CheckboxSymbolAttributes extends XmlAttributeComponent<{
  * ```
  */
 export class CheckBoxSymbolElement extends XmlComponent {
-    public constructor(name: string, val: string, font?: string) {
-        super(name);
-        if (font) {
-            this.root.push(
-                new CheckboxSymbolAttributes({ symbolfont: font, val: shortHexNumber(val) }),
-            );
-        } else {
-            this.root.push(new CheckboxSymbolAttributes({ val }));
-        }
+  public constructor(name: string, val: string, font?: string) {
+    super(name);
+    if (font) {
+      this.root.push(new CheckboxSymbolAttributes({ symbolfont: font, val: shortHexNumber(val) }));
+    } else {
+      this.root.push(new CheckboxSymbolAttributes({ val }));
     }
+  }
 }

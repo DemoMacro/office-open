@@ -23,29 +23,29 @@ const SHAPE_TYPE = "#_x0000_t202";
  * Used internally for converting TypeScript-friendly property names to VML style attributes.
  */
 const styleToKeyMap: Record<keyof VmlShapeStyle, string> = {
-    flip: "flip",
-    height: "height",
-    left: "left",
-    marginBottom: "margin-bottom",
-    marginLeft: "margin-left",
-    marginRight: "margin-right",
-    marginTop: "margin-top",
-    position: "position",
-    positionHorizontal: "mso-position-horizontal",
-    positionHorizontalRelative: "mso-position-horizontal-relative",
-    positionVertical: "mso-position-vertical",
-    positionVerticalRelative: "mso-position-vertical-relative",
-    rotation: "rotation",
-    top: "top",
-    visibility: "visibility",
-    width: "width",
-    wrapDistanceBottom: "mso-wrap-distance-bottom",
-    wrapDistanceLeft: "mso-wrap-distance-left",
-    wrapDistanceRight: "mso-wrap-distance-right",
-    wrapDistanceTop: "mso-wrap-distance-top",
-    wrapEdited: "mso-wrap-edited",
-    wrapStyle: "mso-wrap-style",
-    zIndex: "z-index",
+  flip: "flip",
+  height: "height",
+  left: "left",
+  marginBottom: "margin-bottom",
+  marginLeft: "margin-left",
+  marginRight: "margin-right",
+  marginTop: "margin-top",
+  position: "position",
+  positionHorizontal: "mso-position-horizontal",
+  positionHorizontalRelative: "mso-position-horizontal-relative",
+  positionVertical: "mso-position-vertical",
+  positionVerticalRelative: "mso-position-vertical-relative",
+  rotation: "rotation",
+  top: "top",
+  visibility: "visibility",
+  width: "width",
+  wrapDistanceBottom: "mso-wrap-distance-bottom",
+  wrapDistanceLeft: "mso-wrap-distance-left",
+  wrapDistanceRight: "mso-wrap-distance-right",
+  wrapDistanceTop: "mso-wrap-distance-top",
+  wrapEdited: "mso-wrap-edited",
+  wrapStyle: "mso-wrap-style",
+  zIndex: "z-index",
 };
 
 /**
@@ -56,52 +56,52 @@ const styleToKeyMap: Record<keyof VmlShapeStyle, string> = {
  * the shape's appearance, layout, and interaction with surrounding text.
  */
 export interface VmlShapeStyle {
-    /** Specifies that the orientation of a shape is flipped. Default is no value. */
-    readonly flip?: "x" | "y" | "xy" | "yx";
-    /** Specifies the height of the containing block of the shape. Default is 0. It is specified in CSS units or, for elements in a group, in the coordinate system of the parent element. */
-    readonly height?: LengthUnit;
-    /** Specifies the position of the left of the containing block of the shape relative to the element left of it in the flow of the page. Default is 0. It is specified in CSS units or, for elements in a group, in the coordinate system of the parent element. This property shall not be used for shapes anchored inline. */
-    readonly left?: LengthUnit;
-    /** Specifies the position of the bottom of the containing block of the shape relative to the shape anchor. Default is 0. It is specified in CSS units or, for elements in a group, in the coordinate system of the parent element. */
-    readonly marginBottom?: LengthUnit;
-    /** Specifies the position of the left of the containing block of the shape relative to the shape anchor. Default is 0. It is specified in CSS units or, for elements in a group, in the coordinate system of the parent element. */
-    readonly marginLeft?: LengthUnit;
-    /** Specifies the position of the right of the containing block of the shape relative to the shape anchor. Default is 0. It is specified in CSS units or, for elements in a group, in the coordinate system of the parent element. */
-    readonly marginRight?: LengthUnit;
-    /** Specifies the position of the top of the containing block of the shape relative to the shape anchor. Default is 0. It is specified in CSS units or, for elements in a group, in the coordinate system of the parent element. */
-    readonly marginTop?: LengthUnit;
-    /** Specifies the horizontal positioning data for objects in WordprocessingML documents. Default is absolute. */
-    readonly positionHorizontal?: "absolute" | "left" | "center" | "right" | "inside" | "outside";
-    /** Specifies relative horizontal position data for objects in WordprocessingML documents. This modifies the mso-position-horizontal property. Default is text. */
-    readonly positionHorizontalRelative?: "margin" | "page" | "text" | "char";
-    /** Specifies the vertical positioning data for objects in WordprocessingML documents. Default is absolute. */
-    readonly positionVertical?: "absolute" | "left" | "center" | "right" | "inside" | "outside";
-    /** Specifies relative vertical position data for objects in WordprocessingML documents. This modifies the mso-position-vertical property. Default is text. */
-    readonly positionVerticalRelative?: "margin" | "page" | "text" | "char";
-    /** Specifies the distance from the bottom of the shape to the text that wraps around it. Default is 0 pt. Note that this property is different from the CSS margin property, which changes the origin of the shape to include the margin areas. This property does not change the origin. */
-    readonly wrapDistanceBottom?: number;
-    /** Specifies the distance from the left side of the shape to the text that wraps around it. Default is 0 pt. Note that this property is different from the CSS margin property, which changes the origin of the shape to include the margin areas. This property does not change the origin. */
-    readonly wrapDistanceLeft?: number;
-    /** Specifies the distance from the right side of the shape to the text that wraps around it. Default is 0 pt. Note that this property is different from the CSS margin property, which changes the origin of the shape to include the margin areas. This property does not change the origin. */
-    readonly wrapDistanceRight?: number;
-    /** Specifies the distance from the top of the shape to the text that wraps around it. Default is 0 pt. Note that this property is different from the CSS margin property, which changes the origin of the shape to include the margin areas. This property does not change the origin. */
-    readonly wrapDistanceTop?: number;
-    /** Specifies whether the wrap coordinates were customized by the user. If the wrap coordinates are generated by an editor, this property is true; otherwise they were customized by a user. Default is false. */
-    readonly wrapEdited?: boolean;
-    /** Specifies the wrapping mode for text in shapes in WordprocessingML documents. Default is square. */
-    readonly wrapStyle?: "square" | "none";
-    /** Specifies the type of positioning used to place an element. Default is static. When the element is contained inside a group, this property must be absolute. */
-    readonly position?: "static" | "absolute" | "relative";
-    /** Specifies the angle that a shape is rotated, in degrees. Default is 0. Positive angles are clockwise. */
-    readonly rotation?: number;
-    /** Specifies the position of the top of the containing block of the shape relative to the element above it in the flow of the page. Default is 0. It is specified in CSS units or, for elements in a group, in the coordinate system of the parent element. This property shall not be used for shapes anchored inline. */
-    readonly top?: LengthUnit;
-    /** Specifies whether a shape is displayed. Only inherit and hidden are used; any other values are mapped to inherit. Default is inherit. */
-    readonly visibility?: "hidden" | "inherit";
-    /** Specifies the width of the containing block of the shape. Default is 0. It is specified in CSS units or, for elements in a group, in the coordinate system of the parent element. */
-    readonly width: LengthUnit;
-    /** Specifies the display order of overlapping shapes. Default is 0. This property shall not be used for shapes anchored inline. */
-    readonly zIndex?: "auto" | number;
+  /** Specifies that the orientation of a shape is flipped. Default is no value. */
+  readonly flip?: "x" | "y" | "xy" | "yx";
+  /** Specifies the height of the containing block of the shape. Default is 0. It is specified in CSS units or, for elements in a group, in the coordinate system of the parent element. */
+  readonly height?: LengthUnit;
+  /** Specifies the position of the left of the containing block of the shape relative to the element left of it in the flow of the page. Default is 0. It is specified in CSS units or, for elements in a group, in the coordinate system of the parent element. This property shall not be used for shapes anchored inline. */
+  readonly left?: LengthUnit;
+  /** Specifies the position of the bottom of the containing block of the shape relative to the shape anchor. Default is 0. It is specified in CSS units or, for elements in a group, in the coordinate system of the parent element. */
+  readonly marginBottom?: LengthUnit;
+  /** Specifies the position of the left of the containing block of the shape relative to the shape anchor. Default is 0. It is specified in CSS units or, for elements in a group, in the coordinate system of the parent element. */
+  readonly marginLeft?: LengthUnit;
+  /** Specifies the position of the right of the containing block of the shape relative to the shape anchor. Default is 0. It is specified in CSS units or, for elements in a group, in the coordinate system of the parent element. */
+  readonly marginRight?: LengthUnit;
+  /** Specifies the position of the top of the containing block of the shape relative to the shape anchor. Default is 0. It is specified in CSS units or, for elements in a group, in the coordinate system of the parent element. */
+  readonly marginTop?: LengthUnit;
+  /** Specifies the horizontal positioning data for objects in WordprocessingML documents. Default is absolute. */
+  readonly positionHorizontal?: "absolute" | "left" | "center" | "right" | "inside" | "outside";
+  /** Specifies relative horizontal position data for objects in WordprocessingML documents. This modifies the mso-position-horizontal property. Default is text. */
+  readonly positionHorizontalRelative?: "margin" | "page" | "text" | "char";
+  /** Specifies the vertical positioning data for objects in WordprocessingML documents. Default is absolute. */
+  readonly positionVertical?: "absolute" | "left" | "center" | "right" | "inside" | "outside";
+  /** Specifies relative vertical position data for objects in WordprocessingML documents. This modifies the mso-position-vertical property. Default is text. */
+  readonly positionVerticalRelative?: "margin" | "page" | "text" | "char";
+  /** Specifies the distance from the bottom of the shape to the text that wraps around it. Default is 0 pt. Note that this property is different from the CSS margin property, which changes the origin of the shape to include the margin areas. This property does not change the origin. */
+  readonly wrapDistanceBottom?: number;
+  /** Specifies the distance from the left side of the shape to the text that wraps around it. Default is 0 pt. Note that this property is different from the CSS margin property, which changes the origin of the shape to include the margin areas. This property does not change the origin. */
+  readonly wrapDistanceLeft?: number;
+  /** Specifies the distance from the right side of the shape to the text that wraps around it. Default is 0 pt. Note that this property is different from the CSS margin property, which changes the origin of the shape to include the margin areas. This property does not change the origin. */
+  readonly wrapDistanceRight?: number;
+  /** Specifies the distance from the top of the shape to the text that wraps around it. Default is 0 pt. Note that this property is different from the CSS margin property, which changes the origin of the shape to include the margin areas. This property does not change the origin. */
+  readonly wrapDistanceTop?: number;
+  /** Specifies whether the wrap coordinates were customized by the user. If the wrap coordinates are generated by an editor, this property is true; otherwise they were customized by a user. Default is false. */
+  readonly wrapEdited?: boolean;
+  /** Specifies the wrapping mode for text in shapes in WordprocessingML documents. Default is square. */
+  readonly wrapStyle?: "square" | "none";
+  /** Specifies the type of positioning used to place an element. Default is static. When the element is contained inside a group, this property must be absolute. */
+  readonly position?: "static" | "absolute" | "relative";
+  /** Specifies the angle that a shape is rotated, in degrees. Default is 0. Positive angles are clockwise. */
+  readonly rotation?: number;
+  /** Specifies the position of the top of the containing block of the shape relative to the element above it in the flow of the page. Default is 0. It is specified in CSS units or, for elements in a group, in the coordinate system of the parent element. This property shall not be used for shapes anchored inline. */
+  readonly top?: LengthUnit;
+  /** Specifies whether a shape is displayed. Only inherit and hidden are used; any other values are mapped to inherit. Default is inherit. */
+  readonly visibility?: "hidden" | "inherit";
+  /** Specifies the width of the containing block of the shape. Default is 0. It is specified in CSS units or, for elements in a group, in the coordinate system of the parent element. */
+  readonly width: LengthUnit;
+  /** Specifies the display order of overlapping shapes. Default is 0. This property shall not be used for shapes anchored inline. */
+  readonly zIndex?: "auto" | number;
 }
 
 /**
@@ -112,11 +112,11 @@ export interface VmlShapeStyle {
  * @internal
  */
 const formatShapeStyle = (style?: VmlShapeStyle): string | undefined =>
-    style
-        ? Object.entries(style)
-              .map(([key, value]) => `${styleToKeyMap[key as keyof VmlShapeStyle]}:${value}`)
-              .join(";")
-        : undefined;
+  style
+    ? Object.entries(style)
+        .map(([key, value]) => `${styleToKeyMap[key as keyof VmlShapeStyle]}:${value}`)
+        .join(";")
+    : undefined;
 
 /**
  * Options for creating a VML shape.
@@ -127,14 +127,14 @@ const formatShapeStyle = (style?: VmlShapeStyle): string | undefined =>
  * @property style - Styling properties for the shape
  */
 interface ShapeOptions {
-    /** Unique identifier for the shape */
-    readonly id: string;
-    /** Array of block-level children to include in the shape's textbox */
-    readonly children?: readonly FileChild[];
-    /** VML shape type identifier (default: "#_x0000_t202" for text rectangle) */
-    readonly type?: string;
-    /** Styling properties for the shape */
-    readonly style?: VmlShapeStyle;
+  /** Unique identifier for the shape */
+  readonly id: string;
+  /** Array of block-level children to include in the shape's textbox */
+  readonly children?: readonly FileChild[];
+  /** VML shape type identifier (default: "#_x0000_t202" for text rectangle) */
+  readonly type?: string;
+  /** Styling properties for the shape */
+  readonly style?: VmlShapeStyle;
 }
 
 /**
@@ -182,30 +182,30 @@ interface ShapeOptions {
  * ```
  */
 export const createShape = ({
-    id,
-    children,
-    type = SHAPE_TYPE,
-    style,
+  id,
+  children,
+  type = SHAPE_TYPE,
+  style,
 }: ShapeOptions): XmlComponent =>
-    new BuilderElement<
-        Pick<ShapeOptions, "id" | "type"> & {
-            readonly style?: string;
-        }
-    >({
-        attributes: {
-            id: {
-                key: "id",
-                value: id,
-            },
-            style: {
-                key: "style",
-                value: formatShapeStyle(style),
-            },
-            type: {
-                key: "type",
-                value: type,
-            },
-        },
-        children: [createVmlTextbox({ children, style: "mso-fit-shape-to-text:t;" })],
-        name: "v:shape",
-    });
+  new BuilderElement<
+    Pick<ShapeOptions, "id" | "type"> & {
+      readonly style?: string;
+    }
+  >({
+    attributes: {
+      id: {
+        key: "id",
+        value: id,
+      },
+      style: {
+        key: "style",
+        value: formatShapeStyle(style),
+      },
+      type: {
+        key: "type",
+        value: type,
+      },
+    },
+    children: [createVmlTextbox({ children, style: "mso-fit-shape-to-text:t;" })],
+    name: "v:shape",
+  });

@@ -25,10 +25,10 @@ import type { VmlShapeStyle } from "./shape/shape";
  * @property children - Array of child elements (text runs, hyperlinks, etc.)
  */
 type ITextboxOptions = Omit<IParagraphOptions, "style" | "children"> & {
-    /** VML shape style properties for the textbox (positioning, sizing, wrapping, etc.) */
-    readonly style?: VmlShapeStyle;
-    /** Array of block-level content elements (paragraphs, tables, etc.) */
-    readonly children?: readonly FileChild[];
+  /** VML shape style properties for the textbox (positioning, sizing, wrapping, etc.) */
+  readonly style?: VmlShapeStyle;
+  /** Array of block-level content elements (paragraphs, tables, etc.) */
+  readonly children?: readonly FileChild[];
 };
 
 /**
@@ -80,19 +80,19 @@ type ITextboxOptions = Omit<IParagraphOptions, "style" | "children"> & {
  * ```
  */
 export class Textbox extends XmlComponent implements FileChild {
-    public readonly fileChild = Symbol();
-    public constructor({ style, children, ...rest }: ITextboxOptions) {
-        super("w:p");
-        this.root.push(new ParagraphProperties(rest));
+  public readonly fileChild = Symbol();
+  public constructor({ style, children, ...rest }: ITextboxOptions) {
+    super("w:p");
+    this.root.push(new ParagraphProperties(rest));
 
-        this.root.push(
-            createPictElement({
-                shape: createShape({
-                    children: children,
-                    id: uniqueId(),
-                    style: style,
-                }),
-            }),
-        );
-    }
+    this.root.push(
+      createPictElement({
+        shape: createShape({
+          children: children,
+          id: uniqueId(),
+          style: style,
+        }),
+      }),
+    );
+  }
 }

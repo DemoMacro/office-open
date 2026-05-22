@@ -5,50 +5,50 @@ import * as fs from "fs";
 import { Document, Packer, Paragraph, TextRun } from "@office-open/docx";
 
 const doc = new Document({
-    sections: [
-        {
-            children: [
-                new Paragraph({
-                    children: [
-                        new TextRun("我今天遛狗去公园"),
-                        new TextRun({
-                            text: "456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345",
-                        }),
-                    ],
-                    wordWrap: true,
-                }),
-                new Paragraph({
-                    children: [
-                        new TextRun(
-                            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua",
-                        ),
-                        new TextRun({
-                            text: "456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345",
-                        }),
-                    ],
-                    wordWrap: true,
-                }),
-                new Paragraph({
-                    children: [
-                        new TextRun("我今天遛狗去公园"),
-                        new TextRun({
-                            text: "456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345",
-                        }),
-                    ],
-                }),
-                new Paragraph({
-                    children: [
-                        new TextRun(
-                            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua",
-                        ),
-                        new TextRun({
-                            text: "456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345",
-                        }),
-                    ],
-                }),
-            ],
-        },
-    ],
+  sections: [
+    {
+      children: [
+        new Paragraph({
+          children: [
+            new TextRun("我今天遛狗去公园"),
+            new TextRun({
+              text: "456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345",
+            }),
+          ],
+          wordWrap: true,
+        }),
+        new Paragraph({
+          children: [
+            new TextRun(
+              "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua",
+            ),
+            new TextRun({
+              text: "456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345",
+            }),
+          ],
+          wordWrap: true,
+        }),
+        new Paragraph({
+          children: [
+            new TextRun("我今天遛狗去公园"),
+            new TextRun({
+              text: "456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345",
+            }),
+          ],
+        }),
+        new Paragraph({
+          children: [
+            new TextRun(
+              "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua",
+            ),
+            new TextRun({
+              text: "456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345",
+            }),
+          ],
+        }),
+      ],
+    },
+  ],
 });
 
 const buffer = await Packer.toBuffer(doc);

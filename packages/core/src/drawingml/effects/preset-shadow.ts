@@ -16,40 +16,40 @@ import type { SolidFillOptions } from "../color/solid-fill";
  * Reference: ISO/IEC 29500-4, dml-main.xsd, ST_PresetShadowVal
  */
 export const PresetShadowVal = {
-    SHDW1: "shdw1",
-    SHDW2: "shdw2",
-    SHDW3: "shdw3",
-    SHDW4: "shdw4",
-    SHDW5: "shdw5",
-    SHDW6: "shdw6",
-    SHDW7: "shdw7",
-    SHDW8: "shdw8",
-    SHDW9: "shdw9",
-    SHDW10: "shdw10",
-    SHDW11: "shdw11",
-    SHDW12: "shdw12",
-    SHDW13: "shdw13",
-    SHDW14: "shdw14",
-    SHDW15: "shdw15",
-    SHDW16: "shdw16",
-    SHDW17: "shdw17",
-    SHDW18: "shdw18",
-    SHDW19: "shdw19",
-    SHDW20: "shdw20",
+  SHDW1: "shdw1",
+  SHDW2: "shdw2",
+  SHDW3: "shdw3",
+  SHDW4: "shdw4",
+  SHDW5: "shdw5",
+  SHDW6: "shdw6",
+  SHDW7: "shdw7",
+  SHDW8: "shdw8",
+  SHDW9: "shdw9",
+  SHDW10: "shdw10",
+  SHDW11: "shdw11",
+  SHDW12: "shdw12",
+  SHDW13: "shdw13",
+  SHDW14: "shdw14",
+  SHDW15: "shdw15",
+  SHDW16: "shdw16",
+  SHDW17: "shdw17",
+  SHDW18: "shdw18",
+  SHDW19: "shdw19",
+  SHDW20: "shdw20",
 } as const;
 
 /**
  * Options for preset shadow effect.
  */
 export interface PresetShadowEffectOptions {
-    /** Preset shadow type (required) */
-    readonly preset: keyof typeof PresetShadowVal;
-    /** Distance from shape in EMUs */
-    readonly distance?: number;
-    /** Direction angle in 60,000ths of a degree */
-    readonly direction?: number;
-    /** Shadow color */
-    readonly color: SolidFillOptions;
+  /** Preset shadow type (required) */
+  readonly preset: keyof typeof PresetShadowVal;
+  /** Distance from shape in EMUs */
+  readonly distance?: number;
+  /** Direction angle in 60,000ths of a degree */
+  readonly direction?: number;
+  /** Shadow color */
+  readonly color: SolidFillOptions;
 }
 
 /**
@@ -68,20 +68,20 @@ export interface PresetShadowEffectOptions {
  * ```
  */
 export const createPresetShadowEffect = (options: PresetShadowEffectOptions): XmlComponent => {
-    const attributes: Record<string, { readonly key: string; readonly value: string | number }> = {
-        prst: { key: "prst", value: PresetShadowVal[options.preset] },
-    };
+  const attributes: Record<string, { readonly key: string; readonly value: string | number }> = {
+    prst: { key: "prst", value: PresetShadowVal[options.preset] },
+  };
 
-    if (options.distance !== undefined) {
-        attributes.dist = { key: "dist", value: options.distance };
-    }
-    if (options.direction !== undefined) {
-        attributes.dir = { key: "dir", value: options.direction };
-    }
+  if (options.distance !== undefined) {
+    attributes.dist = { key: "dist", value: options.distance };
+  }
+  if (options.direction !== undefined) {
+    attributes.dir = { key: "dir", value: options.direction };
+  }
 
-    return new BuilderElement({
-        attributes: attributes as never,
-        children: [createColorElement(options.color)],
-        name: "a:prstShdw",
-    });
+  return new BuilderElement({
+    attributes: attributes as never,
+    children: [createColorElement(options.color)],
+    name: "a:prstShdw",
+  });
 };

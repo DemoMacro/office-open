@@ -5,7 +5,7 @@ import type { IXmlableObject } from "@file/xml-components";
  * Pure function: builds a:endParaRPr XML object.
  */
 export function buildEndParagraphRunProperties(lang: string = "en-US"): IXmlableObject {
-    return { "a:endParaRPr": { _attr: { lang } } };
+  return { "a:endParaRPr": { _attr: { lang } } };
 }
 
 /**
@@ -13,18 +13,18 @@ export function buildEndParagraphRunProperties(lang: string = "en-US"): IXmlable
  * Lazy: stores lang, builds XML object in prepForXml.
  */
 export class EndParagraphRunProperties extends BuilderElement<{
-    readonly lang: string;
+  readonly lang: string;
 }> {
-    private readonly lang: string;
+  private readonly lang: string;
 
-    public constructor(lang: string = "en-US") {
-        super({ name: "a:endParaRPr" });
-        this.lang = lang;
-    }
+  public constructor(lang: string = "en-US") {
+    super({ name: "a:endParaRPr" });
+    this.lang = lang;
+  }
 
-    public override prepForXml(
-        _context: import("@file/xml-components").IContext,
-    ): IXmlableObject | undefined {
-        return buildEndParagraphRunProperties(this.lang);
-    }
+  public override prepForXml(
+    _context: import("@file/xml-components").IContext,
+  ): IXmlableObject | undefined {
+    return buildEndParagraphRunProperties(this.lang);
+  }
 }

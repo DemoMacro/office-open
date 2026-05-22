@@ -28,17 +28,17 @@ import { createMathBracketProperties } from "./math-bracket-properties";
  * ```
  */
 export class MathSquareBrackets extends XmlComponent {
-    public constructor(options: { readonly children: readonly MathComponent[] }) {
-        super("m:d");
+  public constructor(options: { readonly children: readonly MathComponent[] }) {
+    super("m:d");
 
-        this.root.push(
-            createMathBracketProperties({
-                characters: {
-                    beginningCharacter: "[",
-                    endingCharacter: "]",
-                },
-            }),
-        );
-        this.root.push(createMathBase({ children: options.children }));
-    }
+    this.root.push(
+      createMathBracketProperties({
+        characters: {
+          beginningCharacter: "[",
+          endingCharacter: "]",
+        },
+      }),
+    );
+    this.root.push(createMathBase({ children: options.children }));
+  }
 }

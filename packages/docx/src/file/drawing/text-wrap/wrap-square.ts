@@ -17,7 +17,7 @@ import { TextWrappingSide } from "./text-wrapping";
 import type { ITextWrapping } from "./text-wrapping";
 
 type IWrapSquareAttributes = {
-    readonly wrapText?: (typeof TextWrappingSide)[keyof typeof TextWrappingSide];
+  readonly wrapText?: (typeof TextWrappingSide)[keyof typeof TextWrappingSide];
 } & IDistance;
 
 /**
@@ -43,21 +43,21 @@ type IWrapSquareAttributes = {
  * ```
  */
 export const createWrapSquare = (
-    textWrapping: ITextWrapping,
-    margins: IMargins = {
-        bottom: 0,
-        left: 0,
-        right: 0,
-        top: 0,
-    },
+  textWrapping: ITextWrapping,
+  margins: IMargins = {
+    bottom: 0,
+    left: 0,
+    right: 0,
+    top: 0,
+  },
 ): XmlComponent =>
-    new BuilderElement<IWrapSquareAttributes>({
-        attributes: {
-            distB: { key: "distB", value: margins.bottom },
-            distL: { key: "distL", value: margins.left },
-            distR: { key: "distR", value: margins.right },
-            distT: { key: "distT", value: margins.top },
-            wrapText: { key: "wrapText", value: textWrapping.side || TextWrappingSide.BOTH_SIDES },
-        },
-        name: "wp:wrapSquare",
-    });
+  new BuilderElement<IWrapSquareAttributes>({
+    attributes: {
+      distB: { key: "distB", value: margins.bottom },
+      distL: { key: "distL", value: margins.left },
+      distR: { key: "distR", value: margins.right },
+      distT: { key: "distT", value: margins.top },
+      wrapText: { key: "wrapText", value: textWrapping.side || TextWrappingSide.BOTH_SIDES },
+    },
+    name: "wp:wrapSquare",
+  });

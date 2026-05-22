@@ -5,7 +5,7 @@ import { XmlComponent } from "@file/xml-components";
  * Uses a: prefix (DrawingML type) but referenced via p:cNvPicPr in PML context.
  */
 export class NonVisualPictureProperties extends XmlComponent {
-    public constructor() {
-        super("a:cNvPicPr");
-    }
+  public constructor() {
+    super("a:cNvPicPr");
+  }
 }

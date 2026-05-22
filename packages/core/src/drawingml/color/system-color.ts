@@ -28,48 +28,48 @@ import { createColorTransforms } from "./color-transform";
  * ```
  */
 export const SystemColor = {
-    SCROLL_BAR: "scrollBar",
-    BACKGROUND: "background",
-    ACTIVE_CAPTION: "activeCaption",
-    INACTIVE_CAPTION: "inactiveCaption",
-    MENU: "menu",
-    WINDOW: "window",
-    WINDOW_FRAME: "windowFrame",
-    MENU_TEXT: "menuText",
-    WINDOW_TEXT: "windowText",
-    CAPTION_TEXT: "captionText",
-    ACTIVE_BORDER: "activeBorder",
-    INACTIVE_BORDER: "inactiveBorder",
-    APP_WORKSPACE: "appWorkspace",
-    HIGHLIGHT: "highlight",
-    HIGHLIGHT_TEXT: "highlightText",
-    BTN_FACE: "btnFace",
-    BTN_SHADOW: "btnShadow",
-    GRAY_TEXT: "grayText",
-    BTN_TEXT: "btnText",
-    INACTIVE_CAPTION_TEXT: "inactiveCaptionText",
-    BTN_HIGHLIGHT: "btnHighlight",
-    THREE_D_DK_SHADOW: "3dDkShadow",
-    THREE_D_LIGHT: "3dLight",
-    INFO_TEXT: "infoText",
-    INFO_BK: "infoBk",
-    HOT_LIGHT: "hotLight",
-    GRADIENT_ACTIVE_CAPTION: "gradientActiveCaption",
-    GRADIENT_INACTIVE_CAPTION: "gradientInactiveCaption",
-    MENU_HIGHLIGHT: "menuHighlight",
-    MENU_BAR: "menuBar",
+  SCROLL_BAR: "scrollBar",
+  BACKGROUND: "background",
+  ACTIVE_CAPTION: "activeCaption",
+  INACTIVE_CAPTION: "inactiveCaption",
+  MENU: "menu",
+  WINDOW: "window",
+  WINDOW_FRAME: "windowFrame",
+  MENU_TEXT: "menuText",
+  WINDOW_TEXT: "windowText",
+  CAPTION_TEXT: "captionText",
+  ACTIVE_BORDER: "activeBorder",
+  INACTIVE_BORDER: "inactiveBorder",
+  APP_WORKSPACE: "appWorkspace",
+  HIGHLIGHT: "highlight",
+  HIGHLIGHT_TEXT: "highlightText",
+  BTN_FACE: "btnFace",
+  BTN_SHADOW: "btnShadow",
+  GRAY_TEXT: "grayText",
+  BTN_TEXT: "btnText",
+  INACTIVE_CAPTION_TEXT: "inactiveCaptionText",
+  BTN_HIGHLIGHT: "btnHighlight",
+  THREE_D_DK_SHADOW: "3dDkShadow",
+  THREE_D_LIGHT: "3dLight",
+  INFO_TEXT: "infoText",
+  INFO_BK: "infoBk",
+  HOT_LIGHT: "hotLight",
+  GRADIENT_ACTIVE_CAPTION: "gradientActiveCaption",
+  GRADIENT_INACTIVE_CAPTION: "gradientInactiveCaption",
+  MENU_HIGHLIGHT: "menuHighlight",
+  MENU_BAR: "menuBar",
 } as const;
 
 /**
  * Options for system color.
  */
 export interface SystemColorOptions {
-    /** System color value */
-    readonly value: (typeof SystemColor)[keyof typeof SystemColor];
-    /** Last known RGB color value (optional fallback) */
-    readonly lastClr?: string;
-    /** Optional color transforms */
-    readonly transforms?: ColorTransformOptions;
+  /** System color value */
+  readonly value: (typeof SystemColor)[keyof typeof SystemColor];
+  /** Last known RGB color value (optional fallback) */
+  readonly lastClr?: string;
+  /** Optional color transforms */
+  readonly transforms?: ColorTransformOptions;
 }
 
 /**
@@ -89,13 +89,13 @@ export interface SystemColorOptions {
  * ```
  */
 export const createSystemColor = (options: SystemColorOptions): XmlComponent => {
-    const transforms = options.transforms ? createColorTransforms(options.transforms) : [];
-    return new BuilderElement({
-        attributes: {
-            lastClr: { key: "lastClr", value: options.lastClr },
-            value: { key: "val", value: options.value },
-        },
-        children: [...transforms],
-        name: "a:sysClr",
-    });
+  const transforms = options.transforms ? createColorTransforms(options.transforms) : [];
+  return new BuilderElement({
+    attributes: {
+      lastClr: { key: "lastClr", value: options.lastClr },
+      value: { key: "val", value: options.value },
+    },
+    children: [...transforms],
+    name: "a:sysClr",
+  });
 };

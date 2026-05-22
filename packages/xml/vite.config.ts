@@ -1,9 +1,13 @@
 import { defineConfig } from "vite-plus";
 
 export default defineConfig({
-    test: {
-        benchmark: {
-            include: ["src/**/*.bench.ts"],
-        },
+  pack: {
+    entry: ["src/index.ts", "src/utils.ts"],
+    minify: true,
+  },
+  test: {
+    benchmark: {
+      include: ["src/**/*.bench.ts"],
     },
+  },
 });

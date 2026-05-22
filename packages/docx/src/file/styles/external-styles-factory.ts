@@ -29,54 +29,54 @@ import type { IStylesOptions } from "./styles";
  * ```
  */
 export class ExternalStylesFactory {
-    /**
-     * Creates new Styles based on the given XML data.
-     *
-     * Parses the styles XML and converts them to XmlComponent instances.
-     *
-     * Example content from styles.xml:
-     * ```xml
-     * <?xml version="1.0"?>
-     * <w:styles xmlns:mc="some schema" ...>
-     *   <w:style w:type="paragraph" w:styleId="Heading1">
-     *     <w:name w:val="heading 1"/>
-     *     ...
-     *   </w:style>
-     *   <w:style w:type="paragraph" w:styleId="Heading2">
-     *     <w:name w:val="heading 2"/>
-     *     ...
-     *   </w:style>
-     *   <w:docDefaults>...</w:docDefaults>
-     * </w:styles>
-     * ```
-     *
-     * @param xmlData - XML string containing styles data from styles.xml
-     * @returns Styles object containing all parsed styles
-     * @throws Error if styles element cannot be found in the XML
-     */
-    public newInstance(xmlData: string): IStylesOptions {
-        const xmlObj = xml2js(xmlData, { compact: false }) as XMLElement;
+  /**
+   * Creates new Styles based on the given XML data.
+   *
+   * Parses the styles XML and converts them to XmlComponent instances.
+   *
+   * Example content from styles.xml:
+   * ```xml
+   * <?xml version="1.0"?>
+   * <w:styles xmlns:mc="some schema" ...>
+   *   <w:style w:type="paragraph" w:styleId="Heading1">
+   *     <w:name w:val="heading 1"/>
+   *     ...
+   *   </w:style>
+   *   <w:style w:type="paragraph" w:styleId="Heading2">
+   *     <w:name w:val="heading 2"/>
+   *     ...
+   *   </w:style>
+   *   <w:docDefaults>...</w:docDefaults>
+   * </w:styles>
+   * ```
+   *
+   * @param xmlData - XML string containing styles data from styles.xml
+   * @returns Styles object containing all parsed styles
+   * @throws Error if styles element cannot be found in the XML
+   */
+  public newInstance(xmlData: string): IStylesOptions {
+    const xmlObj = xml2js(xmlData, { compact: false }) as XMLElement;
 
-        let stylesXmlElement: XMLElement | undefined;
-        for (const xmlElm of xmlObj.elements || []) {
-            if (xmlElm.name === "w:styles") {
-                stylesXmlElement = xmlElm;
-            }
-        }
-        if (stylesXmlElement === undefined) {
-            return {
-                importedStyles: [],
-                initialStyles: new ImportedRootElementAttributes({}),
-            };
-        }
-
-        const stylesElements = stylesXmlElement.elements || [];
-
-        return {
-            importedStyles: stylesElements.map(
-                (childElm) => convertToXmlComponent(childElm) as ImportedXmlComponent,
-            ),
-            initialStyles: new ImportedRootElementAttributes(stylesXmlElement.attributes),
-        };
+    let stylesXmlElement: XMLElement | undefined;
+    for (const xmlElm of xmlObj.elements || []) {
+      if (xmlElm.name === "w:styles") {
+        stylesXmlElement = xmlElm;
+      }
     }
+    if (stylesXmlElement === undefined) {
+      return {
+        importedStyles: [],
+        initialStyles: new ImportedRootElementAttributes({}),
+      };
+    }
+
+    const stylesElements = stylesXmlElement.elements || [];
+
+    return {
+      importedStyles: stylesElements.map(
+        (childElm) => convertToXmlComponent(childElm) as ImportedXmlComponent,
+      ),
+      initialStyles: new ImportedRootElementAttributes(stylesXmlElement.attributes),
+    };
+  }
 }

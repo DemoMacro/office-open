@@ -63,10 +63,10 @@ import type { XmlComponent } from "@file/xml-components";
  * ```
  */
 export const createBreak = (options?: {
-    /** How text reflows after the break: "none", "left", "right", or "all" */
-    readonly clear?: "none" | "left" | "right" | "all";
+  /** How text reflows after the break: "none", "left", "right", or "all" */
+  readonly clear?: "none" | "left" | "right" | "all";
 }): XmlComponent =>
-    new BuilderElement({
-        name: "w:br",
-        attributes: options?.clear ? [{ key: "w:clear", value: options.clear }] : undefined,
-    });
+  new BuilderElement({
+    name: "w:br",
+    attributes: options?.clear ? [{ key: "w:clear", value: options.clear }] : undefined,
+  });

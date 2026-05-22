@@ -15,16 +15,16 @@
  * @publicApi
  */
 export const HorizontalPositionAlign = {
-    /** Center horizontally */
-    CENTER: "center",
-    /** Align to inside margin (left on odd, right on even pages) */
-    INSIDE: "inside",
-    /** Align to left */
-    LEFT: "left",
-    /** Align to outside margin (right on odd, left on even pages) */
-    OUTSIDE: "outside",
-    /** Align to right */
-    RIGHT: "right",
+  /** Center horizontally */
+  CENTER: "center",
+  /** Align to inside margin (left on odd, right on even pages) */
+  INSIDE: "inside",
+  /** Align to left */
+  LEFT: "left",
+  /** Align to outside margin (right on odd, left on even pages) */
+  OUTSIDE: "outside",
+  /** Align to right */
+  RIGHT: "right",
 } as const;
 
 /**
@@ -35,14 +35,14 @@ export const HorizontalPositionAlign = {
  * @publicApi
  */
 export const VerticalPositionAlign = {
-    /** Align to bottom */
-    BOTTOM: "bottom",
-    /** Center vertically */
-    CENTER: "center",
-    /** Align to inside margin */
-    INSIDE: "inside",
-    /** Align to outside margin */
-    OUTSIDE: "outside",
-    /** Align to top */
-    TOP: "top",
+  /** Align to bottom */
+  BOTTOM: "bottom",
+  /** Center vertically */
+  CENTER: "center",
+  /** Align to inside margin */
+  INSIDE: "inside",
+  /** Align to outside margin */
+  OUTSIDE: "outside",
+  /** Align to top */
+  TOP: "top",
 } as const;

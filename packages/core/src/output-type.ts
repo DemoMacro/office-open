@@ -7,61 +7,56 @@
 import { strFromU8 } from "fflate";
 
 export interface OutputByType {
-    readonly base64: string;
-    readonly string: string;
-    readonly text: string;
-    readonly binarystring: string;
-    readonly array: readonly number[];
-    readonly uint8array: Uint8Array;
-    readonly arraybuffer: ArrayBuffer;
-    readonly blob: Blob;
-    readonly nodebuffer: Buffer;
+  readonly base64: string;
+  readonly string: string;
+  readonly text: string;
+  readonly binarystring: string;
+  readonly array: readonly number[];
+  readonly uint8array: Uint8Array;
+  readonly arraybuffer: ArrayBuffer;
+  readonly blob: Blob;
+  readonly nodebuffer: Buffer;
 }
 
 export type OutputType = keyof OutputByType;
 
 /* V8 ignore start */
 export const OoxmlMimeType = {
-    DOCX: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    PPTX: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  DOCX: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  PPTX: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
 } as const;
 
 export const convertOutput = <T extends OutputType>(
-    data: Uint8Array,
-    type: T,
-    mimeType: string = OoxmlMimeType.DOCX,
+  data: Uint8Array,
+  type: T,
+  mimeType: string = OoxmlMimeType.DOCX,
 ): OutputByType[T] => {
-    switch (type) {
-        case "nodebuffer":
-            return Buffer.from(data) as OutputByType[T];
-        case "blob":
-            return new Blob(
-                [
-                    (data.buffer as ArrayBuffer).slice(
-                        data.byteOffset,
-                        data.byteOffset + data.byteLength,
-                    ),
-                ],
-                { type: mimeType },
-            ) as OutputByType[T];
-        case "arraybuffer":
-            return data.buffer.slice(
-                data.byteOffset,
-                data.byteOffset + data.byteLength,
-            ) as OutputByType[T];
-        case "uint8array":
-            return data as OutputByType[T];
-        case "base64":
-            return btoa(strFromU8(data, true)) as OutputByType[T];
-        case "string":
-        case "text":
-        case "binarystring":
-            return strFromU8(data, true) as OutputByType[T];
-        case "array":
-            return [...data] as unknown as OutputByType[T];
-        /* V8 ignore next */
-        default:
-            return data as unknown as OutputByType[T];
-    }
+  switch (type) {
+    case "nodebuffer":
+      return Buffer.from(data) as OutputByType[T];
+    case "blob":
+      return new Blob(
+        [(data.buffer as ArrayBuffer).slice(data.byteOffset, data.byteOffset + data.byteLength)],
+        { type: mimeType },
+      ) as OutputByType[T];
+    case "arraybuffer":
+      return data.buffer.slice(
+        data.byteOffset,
+        data.byteOffset + data.byteLength,
+      ) as OutputByType[T];
+    case "uint8array":
+      return data as OutputByType[T];
+    case "base64":
+      return btoa(strFromU8(data, true)) as OutputByType[T];
+    case "string":
+    case "text":
+    case "binarystring":
+      return strFromU8(data, true) as OutputByType[T];
+    case "array":
+      return [...data] as unknown as OutputByType[T];
+    /* V8 ignore next */
+    default:
+      return data as unknown as OutputByType[T];
+  }
 };
 /* V8 ignore stop */

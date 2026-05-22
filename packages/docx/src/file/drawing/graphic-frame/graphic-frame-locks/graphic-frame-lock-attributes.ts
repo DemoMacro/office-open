@@ -7,13 +7,13 @@ import { XmlAttributeComponent } from "@file/xml-components";
  * on a graphic frame element.
  */
 export class GraphicFrameLockAttributes extends XmlAttributeComponent<{
-    /** DrawingML namespace declaration */
-    readonly xmlns?: string;
-    /** Disallow aspect ratio changes (0=allow, 1=disallow) */
-    readonly noChangeAspect?: number;
+  /** DrawingML namespace declaration */
+  readonly xmlns?: string;
+  /** Disallow aspect ratio changes (0=allow, 1=disallow) */
+  readonly noChangeAspect?: number;
 }> {
-    protected readonly xmlKeys = {
-        noChangeAspect: "noChangeAspect",
-        xmlns: "xmlns:a",
-    };
+  protected readonly xmlKeys = {
+    noChangeAspect: "noChangeAspect",
+    xmlns: "xmlns:a",
+  };
 }

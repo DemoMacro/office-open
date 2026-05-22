@@ -14,8 +14,8 @@ import type { XmlComponent } from "@file/xml-components";
  * Options for creating a bar position element.
  */
 interface MathBarPosOptions {
-    /** Position value: "top" for overline, "bot" for underline */
-    readonly val: string;
+  /** Position value: "top" for overline, "bot" for underline */
+  readonly val: string;
 }
 
 /**
@@ -34,9 +34,9 @@ interface MathBarPosOptions {
  * ```
  */
 export const createMathBarPos = ({ val }: MathBarPosOptions): XmlComponent =>
-    new BuilderElement<MathBarPosOptions>({
-        attributes: {
-            val: { key: "m:val", value: val },
-        },
-        name: "m:pos",
-    });
+  new BuilderElement<MathBarPosOptions>({
+    attributes: {
+      val: { key: "m:val", value: val },
+    },
+    name: "m:pos",
+  });

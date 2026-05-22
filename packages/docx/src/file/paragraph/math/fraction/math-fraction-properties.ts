@@ -28,22 +28,22 @@ import type { XmlComponent } from "@file/xml-components";
  * @publicApi
  */
 export const FractionType = {
-    /** Standard fraction with horizontal bar: a/b */
-    BAR: "bar",
-    /** Skewed fraction: a/b (diagonal) */
-    SKEWED: "skw",
-    /** Linear fraction: a/b (horizontal, no bar) */
-    LINEAR: "lin",
-    /** No bar fraction: a b (stacked, no bar) */
-    NO_BAR: "noBar",
+  /** Standard fraction with horizontal bar: a/b */
+  BAR: "bar",
+  /** Skewed fraction: a/b (diagonal) */
+  SKEWED: "skw",
+  /** Linear fraction: a/b (horizontal, no bar) */
+  LINEAR: "lin",
+  /** No bar fraction: a b (stacked, no bar) */
+  NO_BAR: "noBar",
 } as const;
 
 /**
  * Options for math fraction properties.
  */
 export interface MathFractionPropertiesOptions {
-    /** Fraction type (bar, skewed, linear, or no bar) */
-    readonly fractionType?: keyof typeof FractionType;
+  /** Fraction type (bar, skewed, linear, or no bar) */
+  readonly fractionType?: keyof typeof FractionType;
 }
 
 /**
@@ -60,23 +60,23 @@ export interface MathFractionPropertiesOptions {
  * ```
  */
 export const createMathFractionProperties = (
-    options: MathFractionPropertiesOptions,
+  options: MathFractionPropertiesOptions,
 ): XmlComponent => {
-    const children: XmlComponent[] = [];
+  const children: XmlComponent[] = [];
 
-    if (options.fractionType) {
-        children.push(
-            new BuilderElement<{ readonly val: string }>({
-                attributes: {
-                    val: { key: "m:val", value: FractionType[options.fractionType] },
-                },
-                name: "m:type",
-            }),
-        );
-    }
+  if (options.fractionType) {
+    children.push(
+      new BuilderElement<{ readonly val: string }>({
+        attributes: {
+          val: { key: "m:val", value: FractionType[options.fractionType] },
+        },
+        name: "m:type",
+      }),
+    );
+  }
 
-    return new BuilderElement({
-        children,
-        name: "m:fPr",
-    });
+  return new BuilderElement({
+    children,
+    name: "m:fPr",
+  });
 };

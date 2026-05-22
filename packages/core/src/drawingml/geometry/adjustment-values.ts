@@ -34,10 +34,10 @@ import type { XmlComponent } from "../../xml-components";
  * Note: Formula examples like `val 16667` define fixed adjustment values.
  */
 export interface GeometryGuide {
-    /** Guide name (identifier) */
-    readonly name: string;
-    /** Guide formula (e.g., "val 16667") */
-    readonly formula: string;
+  /** Guide name (identifier) */
+  readonly name: string;
+  /** Guide formula (e.g., "val 16667") */
+  readonly formula: string;
 }
 
 /**
@@ -68,24 +68,24 @@ export interface GeometryGuide {
  * ```
  */
 export const createAdjustmentValues = (guides?: readonly GeometryGuide[]): XmlComponent => {
-    const children: XmlComponent[] = [];
+  const children: XmlComponent[] = [];
 
-    if (guides) {
-        for (const guide of guides) {
-            children.push(
-                new BuilderElement<{ readonly name: string; readonly fmla: string }>({
-                    attributes: {
-                        name: { key: "name", value: guide.name },
-                        fmla: { key: "fmla", value: guide.formula },
-                    },
-                    name: "a:gd",
-                }),
-            );
-        }
+  if (guides) {
+    for (const guide of guides) {
+      children.push(
+        new BuilderElement<{ readonly name: string; readonly fmla: string }>({
+          attributes: {
+            name: { key: "name", value: guide.name },
+            fmla: { key: "fmla", value: guide.formula },
+          },
+          name: "a:gd",
+        }),
+      );
     }
+  }
 
-    return new BuilderElement({
-        children,
-        name: "a:avLst",
-    });
+  return new BuilderElement({
+    children,
+    name: "a:avLst",
+  });
 };

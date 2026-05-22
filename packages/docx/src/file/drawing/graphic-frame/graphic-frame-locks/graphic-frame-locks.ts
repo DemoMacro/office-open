@@ -32,14 +32,14 @@ import { GraphicFrameLockAttributes } from "./graphic-frame-lock-attributes";
  * ```
  */
 export class GraphicFrameLocks extends XmlComponent {
-    public constructor() {
-        super("a:graphicFrameLocks");
+  public constructor() {
+    super("a:graphicFrameLocks");
 
-        this.root.push(
-            new GraphicFrameLockAttributes({
-                noChangeAspect: 1,
-                xmlns: "http://schemas.openxmlformats.org/drawingml/2006/main",
-            }),
-        );
-    }
+    this.root.push(
+      new GraphicFrameLockAttributes({
+        noChangeAspect: 1,
+        xmlns: "http://schemas.openxmlformats.org/drawingml/2006/main",
+      }),
+    );
+  }
 }

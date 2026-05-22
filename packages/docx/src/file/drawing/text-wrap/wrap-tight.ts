@@ -16,9 +16,9 @@ import { TextWrappingSide } from "./text-wrapping";
 import type { ITextWrapping } from "./text-wrapping";
 
 interface IWrapTightAttributes {
-    readonly wrapText: (typeof TextWrappingSide)[keyof typeof TextWrappingSide];
-    readonly distL?: number;
-    readonly distR?: number;
+  readonly wrapText: (typeof TextWrappingSide)[keyof typeof TextWrappingSide];
+  readonly distL?: number;
+  readonly distR?: number;
 }
 
 /**
@@ -38,49 +38,49 @@ interface IWrapTightAttributes {
  * ```
  */
 const createWrapPolygon = (cx: number, cy: number): XmlComponent =>
-    new BuilderElement({
+  new BuilderElement({
+    attributes: {
+      edited: { key: "edited", value: "0" },
+    },
+    children: [
+      new BuilderElement({
         attributes: {
-            edited: { key: "edited", value: "0" },
+          x: { key: "x", value: 0 },
+          y: { key: "y", value: 0 },
         },
-        children: [
-            new BuilderElement({
-                attributes: {
-                    x: { key: "x", value: 0 },
-                    y: { key: "y", value: 0 },
-                },
-                name: "wp:start",
-            }),
-            new BuilderElement({
-                attributes: {
-                    x: { key: "x", value: 0 },
-                    y: { key: "y", value: -cy },
-                },
-                name: "wp:lineTo",
-            }),
-            new BuilderElement({
-                attributes: {
-                    x: { key: "x", value: cx },
-                    y: { key: "y", value: -cy },
-                },
-                name: "wp:lineTo",
-            }),
-            new BuilderElement({
-                attributes: {
-                    x: { key: "x", value: cx },
-                    y: { key: "y", value: 0 },
-                },
-                name: "wp:lineTo",
-            }),
-            new BuilderElement({
-                attributes: {
-                    x: { key: "x", value: 0 },
-                    y: { key: "y", value: 0 },
-                },
-                name: "wp:lineTo",
-            }),
-        ],
-        name: "wp:wrapPolygon",
-    });
+        name: "wp:start",
+      }),
+      new BuilderElement({
+        attributes: {
+          x: { key: "x", value: 0 },
+          y: { key: "y", value: -cy },
+        },
+        name: "wp:lineTo",
+      }),
+      new BuilderElement({
+        attributes: {
+          x: { key: "x", value: cx },
+          y: { key: "y", value: -cy },
+        },
+        name: "wp:lineTo",
+      }),
+      new BuilderElement({
+        attributes: {
+          x: { key: "x", value: cx },
+          y: { key: "y", value: 0 },
+        },
+        name: "wp:lineTo",
+      }),
+      new BuilderElement({
+        attributes: {
+          x: { key: "x", value: 0 },
+          y: { key: "y", value: 0 },
+        },
+        name: "wp:lineTo",
+      }),
+    ],
+    name: "wp:wrapPolygon",
+  });
 
 /**
  * Creates tight text wrapping for a floating drawing.
@@ -104,21 +104,21 @@ const createWrapPolygon = (cx: number, cy: number): XmlComponent =>
  * ```
  */
 export const createWrapTight = (
-    textWrapping: ITextWrapping,
-    margins: IMargins = {
-        bottom: 0,
-        left: 0,
-        right: 0,
-        top: 0,
-    },
-    extent: { x: number; y: number },
+  textWrapping: ITextWrapping,
+  margins: IMargins = {
+    bottom: 0,
+    left: 0,
+    right: 0,
+    top: 0,
+  },
+  extent: { x: number; y: number },
 ): XmlComponent =>
-    new BuilderElement<IWrapTightAttributes>({
-        attributes: {
-            distL: { key: "distL", value: margins.left },
-            distR: { key: "distR", value: margins.right },
-            wrapText: { key: "wrapText", value: textWrapping.side || TextWrappingSide.BOTH_SIDES },
-        },
-        children: [createWrapPolygon(extent.x, extent.y)],
-        name: "wp:wrapTight",
-    });
+  new BuilderElement<IWrapTightAttributes>({
+    attributes: {
+      distL: { key: "distL", value: margins.left },
+      distR: { key: "distR", value: margins.right },
+      wrapText: { key: "wrapText", value: textWrapping.side || TextWrappingSide.BOTH_SIDES },
+    },
+    children: [createWrapPolygon(extent.x, extent.y)],
+    name: "wp:wrapTight",
+  });

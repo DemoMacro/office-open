@@ -13,30 +13,30 @@ import { BuilderElement } from "../../xml-components";
  * Reference: ISO/IEC 29500-4, dml-main.xsd, ST_BevelPresetType
  */
 export const BevelPresetType = {
-    RELAXED_INSET: "relaxedInset",
-    CIRCLE: "circle",
-    SLOPE: "slope",
-    CROSS: "cross",
-    ANGLE: "angle",
-    SOFT_ROUND: "softRound",
-    CONVEX: "convex",
-    COOL_SLANT: "coolSlant",
-    DIVOT: "divot",
-    RIBLET: "riblet",
-    HARD_EDGE: "hardEdge",
-    ART_DECO: "artDeco",
+  RELAXED_INSET: "relaxedInset",
+  CIRCLE: "circle",
+  SLOPE: "slope",
+  CROSS: "cross",
+  ANGLE: "angle",
+  SOFT_ROUND: "softRound",
+  CONVEX: "convex",
+  COOL_SLANT: "coolSlant",
+  DIVOT: "divot",
+  RIBLET: "riblet",
+  HARD_EDGE: "hardEdge",
+  ART_DECO: "artDeco",
 } as const;
 
 /**
  * Options for a bevel element.
  */
 export interface BevelOptions {
-    /** Bevel width in EMUs (default 76200) */
-    readonly w?: number;
-    /** Bevel height in EMUs (default 76200) */
-    readonly h?: number;
-    /** Bevel preset type */
-    readonly prst?: keyof typeof BevelPresetType;
+  /** Bevel width in EMUs (default 76200) */
+  readonly w?: number;
+  /** Bevel height in EMUs (default 76200) */
+  readonly h?: number;
+  /** Bevel preset type */
+  readonly prst?: keyof typeof BevelPresetType;
 }
 
 /**
@@ -52,52 +52,52 @@ export interface BevelOptions {
  * ```
  */
 export const createBevel = (options?: BevelOptions) => {
-    if (!options) {
-        return new BuilderElement({ name: "a:bevelT" });
-    }
+  if (!options) {
+    return new BuilderElement({ name: "a:bevelT" });
+  }
 
-    const attributes: Record<string, { readonly key: string; readonly value: string | number }> =
-        {} as Record<string, { readonly key: string; readonly value: string | number }>;
+  const attributes: Record<string, { readonly key: string; readonly value: string | number }> =
+    {} as Record<string, { readonly key: string; readonly value: string | number }>;
 
-    if (options.w !== undefined) {
-        attributes.w = { key: "w", value: options.w };
-    }
-    if (options.h !== undefined) {
-        attributes.h = { key: "h", value: options.h };
-    }
-    if (options.prst !== undefined) {
-        attributes.prst = { key: "prst", value: BevelPresetType[options.prst] };
-    }
+  if (options.w !== undefined) {
+    attributes.w = { key: "w", value: options.w };
+  }
+  if (options.h !== undefined) {
+    attributes.h = { key: "h", value: options.h };
+  }
+  if (options.prst !== undefined) {
+    attributes.prst = { key: "prst", value: BevelPresetType[options.prst] };
+  }
 
-    return new BuilderElement({
-        attributes: attributes as never,
-        name: "a:bevelT",
-    });
+  return new BuilderElement({
+    attributes: attributes as never,
+    name: "a:bevelT",
+  });
 };
 
 /**
  * Creates a bottom bevel element (a:bevelB).
  */
 export const createBottomBevel = (options?: BevelOptions) => {
-    if (!options) {
-        return new BuilderElement({ name: "a:bevelB" });
-    }
+  if (!options) {
+    return new BuilderElement({ name: "a:bevelB" });
+  }
 
-    const attributes: Record<string, { readonly key: string; readonly value: string | number }> =
-        {} as Record<string, { readonly key: string; readonly value: string | number }>;
+  const attributes: Record<string, { readonly key: string; readonly value: string | number }> =
+    {} as Record<string, { readonly key: string; readonly value: string | number }>;
 
-    if (options.w !== undefined) {
-        attributes.w = { key: "w", value: options.w };
-    }
-    if (options.h !== undefined) {
-        attributes.h = { key: "h", value: options.h };
-    }
-    if (options.prst !== undefined) {
-        attributes.prst = { key: "prst", value: BevelPresetType[options.prst] };
-    }
+  if (options.w !== undefined) {
+    attributes.w = { key: "w", value: options.w };
+  }
+  if (options.h !== undefined) {
+    attributes.h = { key: "h", value: options.h };
+  }
+  if (options.prst !== undefined) {
+    attributes.prst = { key: "prst", value: BevelPresetType[options.prst] };
+  }
 
-    return new BuilderElement({
-        attributes: attributes as never,
-        name: "a:bevelB",
-    });
+  return new BuilderElement({
+    attributes: attributes as never,
+    name: "a:bevelB",
+  });
 };

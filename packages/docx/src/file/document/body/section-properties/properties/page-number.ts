@@ -31,16 +31,16 @@ import { decimalNumber } from "@util/values";
  * @publicApi
  */
 export const PageNumberSeparator = {
-    /** Hyphen separator (-) */
-    HYPHEN: "hyphen",
-    /** Period separator (.) */
-    PERIOD: "period",
-    /** Colon separator (:) */
-    COLON: "colon",
-    /** Em dash separator (—) */
-    EM_DASH: "emDash",
-    /** En dash separator (–) */
-    EN_DASH: "enDash",
+  /** Hyphen separator (-) */
+  HYPHEN: "hyphen",
+  /** Period separator (.) */
+  PERIOD: "period",
+  /** Colon separator (:) */
+  COLON: "colon",
+  /** Em dash separator (—) */
+  EM_DASH: "emDash",
+  /** En dash separator (–) */
+  EN_DASH: "enDash",
 } as const;
 
 /**
@@ -51,14 +51,14 @@ export const PageNumberSeparator = {
  * @property separator - Separator between chapter and page number
  */
 export interface IPageNumberTypeAttributes {
-    /** Starting page number for the section */
-    readonly start?: number;
-    /** Number format (decimal, roman, letter, etc., default: decimal) */
-    readonly formatType?: (typeof NumberFormat)[keyof typeof NumberFormat];
-    /** Separator between chapter and page number (default: hyphen) */
-    readonly separator?: (typeof PageNumberSeparator)[keyof typeof PageNumberSeparator];
-    /** Heading style ID for chapter numbering */
-    readonly chapStyle?: number;
+  /** Starting page number for the section */
+  readonly start?: number;
+  /** Number format (decimal, roman, letter, etc., default: decimal) */
+  readonly formatType?: (typeof NumberFormat)[keyof typeof NumberFormat];
+  /** Separator between chapter and page number (default: hyphen) */
+  readonly separator?: (typeof PageNumberSeparator)[keyof typeof PageNumberSeparator];
+  /** Heading style ID for chapter numbering */
+  readonly chapStyle?: number;
 }
 
 /**
@@ -89,23 +89,23 @@ export interface IPageNumberTypeAttributes {
  * ```
  */
 export const createPageNumberType = ({
-    start,
-    formatType,
-    separator,
-    chapStyle,
+  start,
+  formatType,
+  separator,
+  chapStyle,
 }: IPageNumberTypeAttributes): XmlComponent =>
-    new BuilderElement<IPageNumberTypeAttributes>({
-        attributes: {
-            chapStyle: {
-                key: "w:chapStyle",
-                value: chapStyle === undefined ? undefined : decimalNumber(chapStyle),
-            },
-            formatType: { key: "w:fmt", value: formatType },
-            separator: { key: "w:chapSep", value: separator },
-            start: {
-                key: "w:start",
-                value: start === undefined ? undefined : decimalNumber(start),
-            },
-        },
-        name: "w:pgNumType",
-    });
+  new BuilderElement<IPageNumberTypeAttributes>({
+    attributes: {
+      chapStyle: {
+        key: "w:chapStyle",
+        value: chapStyle === undefined ? undefined : decimalNumber(chapStyle),
+      },
+      formatType: { key: "w:fmt", value: formatType },
+      separator: { key: "w:chapSep", value: separator },
+      start: {
+        key: "w:start",
+        value: start === undefined ? undefined : decimalNumber(start),
+      },
+    },
+    name: "w:pgNumType",
+  });

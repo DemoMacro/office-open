@@ -16,8 +16,8 @@ import type { XmlComponent } from "@file/xml-components";
  * @see {@link createMathSubSuperScriptProperties}
  */
 export interface MathSubSuperScriptPropertiesOptions {
-    /** Align scripts to the same vertical position */
-    readonly alignScripts?: boolean;
+  /** Align scripts to the same vertical position */
+  readonly alignScripts?: boolean;
 }
 
 /**
@@ -38,16 +38,16 @@ export interface MathSubSuperScriptPropertiesOptions {
  * ```
  */
 export const createMathSubSuperScriptProperties = (
-    options?: MathSubSuperScriptPropertiesOptions,
+  options?: MathSubSuperScriptPropertiesOptions,
 ): XmlComponent => {
-    const children: XmlComponent[] = [];
+  const children: XmlComponent[] = [];
 
-    if (options?.alignScripts !== undefined) {
-        children.push(new OnOffElement("m:alnScr", options.alignScripts));
-    }
+  if (options?.alignScripts !== undefined) {
+    children.push(new OnOffElement("m:alnScr", options.alignScripts));
+  }
 
-    return new BuilderElement({
-        children,
-        name: "m:sSubSupPr",
-    });
+  return new BuilderElement({
+    children,
+    name: "m:sSubSupPr",
+  });
 };

@@ -61,7 +61,7 @@ const output = js2xml(parsed);
 
 // Direct conversion (faster than xml → xml2js bridge)
 const element = toElement({
-    "w:p": [{ _attr: { "w:val": "1" } }, { "w:r": [{ "w:t": "Hello" }] }],
+  "w:p": [{ _attr: { "w:val": "1" } }, { "w:r": [{ "w:t": "Hello" }] }],
 });
 ```
 

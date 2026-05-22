@@ -17,18 +17,18 @@ import { PresetGeometryAttributes } from "./preset-geometry-attributes";
  * Options for preset geometry.
  */
 export interface PresetGeometryOptions {
-    /**
-     * Preset shape type (ST_ShapeType).
-     *
-     * Defaults to `"rect"` if not specified.
-     */
-    readonly preset?: string;
-    /**
-     * Adjustment values that modify the base shape.
-     *
-     * Each guide has a name and formula (e.g., `{ name: "adj", formula: "val 16667" }`).
-     */
-    readonly adjustmentValues?: readonly GeometryGuide[];
+  /**
+   * Preset shape type (ST_ShapeType).
+   *
+   * Defaults to `"rect"` if not specified.
+   */
+  readonly preset?: string;
+  /**
+   * Adjustment values that modify the base shape.
+   *
+   * Each guide has a name and formula (e.g., `{ name: "adj", formula: "val 16667" }`).
+   */
+  readonly adjustmentValues?: readonly GeometryGuide[];
 }
 
 /**
@@ -61,15 +61,15 @@ export interface PresetGeometryOptions {
  * ```
  */
 export class PresetGeometry extends XmlComponent {
-    public constructor(options?: PresetGeometryOptions) {
-        super("a:prstGeom");
+  public constructor(options?: PresetGeometryOptions) {
+    super("a:prstGeom");
 
-        this.root.push(
-            new PresetGeometryAttributes({
-                prst: options?.preset ?? "rect",
-            }),
-        );
+    this.root.push(
+      new PresetGeometryAttributes({
+        prst: options?.preset ?? "rect",
+      }),
+    );
 
-        this.root.push(createAdjustmentValues(options?.adjustmentValues));
-    }
+    this.root.push(createAdjustmentValues(options?.adjustmentValues));
+  }
 }

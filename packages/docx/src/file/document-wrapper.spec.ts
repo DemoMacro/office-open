@@ -3,12 +3,12 @@ import { describe, expect, it } from "vite-plus/test";
 import { DocumentWrapper } from "./document-wrapper";
 
 describe("DocumentWrapper", () => {
-    describe("#constructor", () => {
-        it("should create", () => {
-            const file = new DocumentWrapper({ background: {} });
+  describe("#constructor", () => {
+    it("should create", () => {
+      const file = new DocumentWrapper({ background: {} });
 
-            expect(file.View).to.be.ok;
-            expect(file.Relationships).to.be.ok;
-        });
+      expect(file.View).to.be.ok;
+      expect(file.Relationships).to.be.ok;
     });
+  });
 });

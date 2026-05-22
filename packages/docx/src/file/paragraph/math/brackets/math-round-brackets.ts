@@ -38,10 +38,10 @@ import { createMathBracketProperties } from "./math-bracket-properties";
  * ```
  */
 export class MathRoundBrackets extends XmlComponent {
-    public constructor(options: { readonly children: readonly MathComponent[] }) {
-        super("m:d");
+  public constructor(options: { readonly children: readonly MathComponent[] }) {
+    super("m:d");
 
-        this.root.push(createMathBracketProperties({}));
-        this.root.push(createMathBase({ children: options.children }));
-    }
+    this.root.push(createMathBracketProperties({}));
+    this.root.push(createMathBase({ children: options.children }));
+  }
 }

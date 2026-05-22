@@ -5,29 +5,29 @@ import * as fs from "fs";
 import { Document, Packer, Paragraph, Tab, TextRun } from "@office-open/docx";
 
 const doc = new Document({
-    background: {
-        color: "C45911",
+  background: {
+    color: "C45911",
+  },
+  sections: [
+    {
+      children: [
+        new Paragraph({
+          children: [
+            new TextRun("Hello World"),
+            new TextRun({
+              bold: true,
+              text: "Foo Bar",
+            }),
+            new TextRun({
+              bold: true,
+              children: [new Tab(), "Github is the best"],
+            }),
+          ],
+        }),
+      ],
+      properties: {},
     },
-    sections: [
-        {
-            children: [
-                new Paragraph({
-                    children: [
-                        new TextRun("Hello World"),
-                        new TextRun({
-                            bold: true,
-                            text: "Foo Bar",
-                        }),
-                        new TextRun({
-                            bold: true,
-                            children: [new Tab(), "Github is the best"],
-                        }),
-                    ],
-                }),
-            ],
-            properties: {},
-        },
-    ],
+  ],
 });
 
 const buffer = await Packer.toBuffer(doc);

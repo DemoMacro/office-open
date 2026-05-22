@@ -22,9 +22,9 @@ import type { XmlComponent } from "@file/xml-components";
 // </xsd:complexType>
 
 interface ICompatibilitySettingAttributes {
-    readonly name: string;
-    readonly uri: string;
-    readonly val: string | number;
+  readonly name: string;
+  readonly uri: string;
+  readonly val: string | number;
 }
 
 /**
@@ -60,15 +60,15 @@ interface ICompatibilitySettingAttributes {
  * ```
  */
 export const createCompatibilitySetting = (
-    name: string,
-    val: string | number,
-    uri = "http://schemas.microsoft.com/office/word",
+  name: string,
+  val: string | number,
+  uri = "http://schemas.microsoft.com/office/word",
 ): XmlComponent =>
-    new BuilderElement<ICompatibilitySettingAttributes>({
-        attributes: {
-            name: { key: "w:name", value: name },
-            uri: { key: "w:uri", value: uri },
-            val: { key: "w:val", value: val },
-        },
-        name: "w:compatSetting",
-    });
+  new BuilderElement<ICompatibilitySettingAttributes>({
+    attributes: {
+      name: { key: "w:name", value: name },
+      uri: { key: "w:uri", value: uri },
+      val: { key: "w:val", value: val },
+    },
+    name: "w:compatSetting",
+  });

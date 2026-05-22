@@ -33,8 +33,8 @@ import { twipsMeasureValue } from "@util/values";
 import type { PositiveUniversalMeasure } from "@util/values";
 
 export interface ITableGridChangeOptions {
-    readonly id: number;
-    readonly columnWidths: readonly number[] | readonly PositiveUniversalMeasure[];
+  readonly id: number;
+  readonly columnWidths: readonly number[] | readonly PositiveUniversalMeasure[];
 }
 
 /**
@@ -43,15 +43,15 @@ export interface ITableGridChangeOptions {
  * The gridCol element specifies the width of a single column.
  */
 export const createGridCol = (width?: number | PositiveUniversalMeasure): XmlComponent =>
-    new BuilderElement<{ readonly width?: number | PositiveUniversalMeasure }>({
-        attributes:
-            width !== undefined
-                ? {
-                      width: { key: "w:w", value: twipsMeasureValue(width) },
-                  }
-                : undefined,
-        name: "w:gridCol",
-    });
+  new BuilderElement<{ readonly width?: number | PositiveUniversalMeasure }>({
+    attributes:
+      width !== undefined
+        ? {
+            width: { key: "w:w", value: twipsMeasureValue(width) },
+          }
+        : undefined,
+    name: "w:gridCol",
+  });
 
 /**
  * Creates the table grid for a WordprocessingML document.
@@ -61,32 +61,32 @@ export const createGridCol = (width?: number | PositiveUniversalMeasure): XmlCom
  * Reference: http://officeopenxml.com/WPtableGrid.php
  */
 export class TableGrid extends XmlComponent {
-    public constructor(
-        widths: readonly number[] | readonly PositiveUniversalMeasure[],
-        revision?: ITableGridChangeOptions,
-    ) {
-        super("w:tblGrid");
-        for (const width of widths) {
-            this.root.push(createGridCol(width));
-        }
-        if (revision) {
-            this.root.push(new TableGridChange(revision));
-        }
+  public constructor(
+    widths: readonly number[] | readonly PositiveUniversalMeasure[],
+    revision?: ITableGridChangeOptions,
+  ) {
+    super("w:tblGrid");
+    for (const width of widths) {
+      this.root.push(createGridCol(width));
     }
+    if (revision) {
+      this.root.push(new TableGridChange(revision));
+    }
+  }
 }
 
 class TableGridChangeAttributes extends XmlAttributeComponent<{ readonly id: number }> {
-    protected readonly xmlKeys = { id: "w:id" };
+  protected readonly xmlKeys = { id: "w:id" };
 }
 
 export class TableGridChange extends XmlComponent {
-    public constructor(options: ITableGridChangeOptions) {
-        super("w:tblGridChange");
-        this.root.push(
-            new TableGridChangeAttributes({
-                id: options.id,
-            }),
-        );
-        this.root.push(new TableGrid(options.columnWidths));
-    }
+  public constructor(options: ITableGridChangeOptions) {
+    super("w:tblGridChange");
+    this.root.push(
+      new TableGridChangeAttributes({
+        id: options.id,
+      }),
+    );
+    this.root.push(new TableGrid(options.columnWidths));
+  }
 }

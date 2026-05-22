@@ -55,136 +55,136 @@ import { createSoftEdgeEffect } from "./soft-edge";
  * ```
  */
 export const EffectContainerType = {
-    SIB: "sib",
-    TREE: "tree",
+  SIB: "sib",
+  TREE: "tree",
 } as const;
 
 // ─── New Effect Options ─────────────────────────────────────────────────────
 
 /** Alpha bi-level effect — clips alpha to threshold (CT_AlphaBiLevelEffect). */
 export interface AlphaBiLevelEffectOptions {
-    /** Alpha threshold (fixed percentage, required) */
-    readonly threshold: number;
+  /** Alpha threshold (fixed percentage, required) */
+  readonly threshold: number;
 }
 
 /** Alpha inverse effect — inverts alpha, optionally with color (CT_AlphaInverseEffect). */
 export interface AlphaInverseEffectOptions {
-    /** Optional color to apply inverse to */
-    readonly color?: SolidFillOptions;
+  /** Optional color to apply inverse to */
+  readonly color?: SolidFillOptions;
 }
 
 /** Alpha modulate fixed effect (CT_AlphaModulateFixedEffect). */
 export interface AlphaModulateFixedEffectOptions {
-    /** Amount percentage (default 100%) */
-    readonly amount?: number;
+  /** Amount percentage (default 100%) */
+  readonly amount?: number;
 }
 
 /** Alpha outset effect (CT_AlphaOutsetEffect). */
 export interface AlphaOutsetEffectOptions {
-    /** Outset radius */
-    readonly radius?: number;
+  /** Outset radius */
+  readonly radius?: number;
 }
 
 /** Alpha replace effect — replaces alpha value (CT_AlphaReplaceEffect). */
 export interface AlphaReplaceEffectOptions {
-    /** New alpha value (fixed percentage, required) */
-    readonly alpha: number;
+  /** New alpha value (fixed percentage, required) */
+  readonly alpha: number;
 }
 
 /** Blend effect — blends with nested container (CT_BlendEffect). */
 export interface BlendEffectOptions {
-    /** Blend mode (required) */
-    readonly blend: (typeof import("./fill-overlay").BlendMode)[keyof typeof import("./fill-overlay").BlendMode];
-    /** Nested effect container */
-    readonly container: EffectDagOptions;
+  /** Blend mode (required) */
+  readonly blend: (typeof import("./fill-overlay").BlendMode)[keyof typeof import("./fill-overlay").BlendMode];
+  /** Nested effect container */
+  readonly container: EffectDagOptions;
 }
 
 /** Color change effect — maps one color to another (CT_ColorChangeEffect). */
 export interface ColorChangeEffectOptions {
-    /** Source color to replace */
-    readonly from: SolidFillOptions;
-    /** Target color */
-    readonly to: SolidFillOptions;
-    /** Whether to use alpha channel (default true) */
-    readonly useA?: boolean;
+  /** Source color to replace */
+  readonly from: SolidFillOptions;
+  /** Target color */
+  readonly to: SolidFillOptions;
+  /** Whether to use alpha channel (default true) */
+  readonly useA?: boolean;
 }
 
 /** Duotone effect — two-color tone mapping (CT_DuotoneEffect). */
 export interface DuotoneEffectOptions {
-    /** First color */
-    readonly color1: SolidFillOptions;
-    /** Second color */
-    readonly color2: SolidFillOptions;
+  /** First color */
+  readonly color1: SolidFillOptions;
+  /** Second color */
+  readonly color2: SolidFillOptions;
 }
 
 /** Fill effect — applies a fill as an effect (CT_FillEffect). */
 export interface FillEffectOptions {
-    /** Solid fill */
-    readonly solidFill?: SolidFillOptions;
-    /** Gradient fill */
-    readonly gradientFill?: GradientFillOptions;
-    /** Pattern fill */
-    readonly patternFill?: PatternFillOptions;
-    /** Group fill (inherit from parent) */
-    readonly groupFill?: boolean;
-    /** No fill */
-    readonly noFill?: boolean;
+  /** Solid fill */
+  readonly solidFill?: SolidFillOptions;
+  /** Gradient fill */
+  readonly gradientFill?: GradientFillOptions;
+  /** Pattern fill */
+  readonly patternFill?: PatternFillOptions;
+  /** Group fill (inherit from parent) */
+  readonly groupFill?: boolean;
+  /** No fill */
+  readonly noFill?: boolean;
 }
 
 /** HSL effect — adjusts hue, saturation, luminance (CT_HSLEffect). */
 export interface HSLEffectOptions {
-    /** Hue angle in 60,000ths of a degree (default 0) */
-    readonly hue?: number;
-    /** Saturation percentage (default 0%) */
-    readonly saturation?: number;
-    /** Luminance percentage (default 0%) */
-    readonly luminance?: number;
+  /** Hue angle in 60,000ths of a degree (default 0) */
+  readonly hue?: number;
+  /** Saturation percentage (default 0%) */
+  readonly saturation?: number;
+  /** Luminance percentage (default 0%) */
+  readonly luminance?: number;
 }
 
 /** Luminance effect — adjusts brightness and contrast (CT_LuminanceEffect). */
 export interface LuminanceEffectOptions {
-    /** Brightness percentage (default 0%) */
-    readonly bright?: number;
-    /** Contrast percentage (default 0%) */
-    readonly contrast?: number;
+  /** Brightness percentage (default 0%) */
+  readonly bright?: number;
+  /** Contrast percentage (default 0%) */
+  readonly contrast?: number;
 }
 
 /** Tint effect — applies tint with hue and amount (CT_TintEffect). */
 export interface TintEffectOptions {
-    /** Hue angle in 60,000ths of a degree (default 0) */
-    readonly hue?: number;
-    /** Tint amount percentage (default 0%) */
-    readonly amount?: number;
+  /** Hue angle in 60,000ths of a degree (default 0) */
+  readonly hue?: number;
+  /** Tint amount percentage (default 0%) */
+  readonly amount?: number;
 }
 
 /** Relative offset effect (CT_RelativeOffsetEffect). */
 export interface RelativeOffsetEffectOptions {
-    /** Horizontal offset percentage (default 0%) */
-    readonly translateX?: number;
-    /** Vertical offset percentage (default 0%) */
-    readonly translateY?: number;
+  /** Horizontal offset percentage (default 0%) */
+  readonly translateX?: number;
+  /** Vertical offset percentage (default 0%) */
+  readonly translateY?: number;
 }
 
 /** Transform effect — scale, skew, translate (CT_TransformEffect). */
 export interface TransformEffectOptions {
-    /** Horizontal scale percentage (default 100%) */
-    readonly scaleX?: number;
-    /** Vertical scale percentage (default 100%) */
-    readonly scaleY?: number;
-    /** Horizontal skew angle (default 0) */
-    readonly skewX?: number;
-    /** Vertical skew angle (default 0) */
-    readonly skewY?: number;
-    /** Horizontal translation */
-    readonly translateX?: number;
-    /** Vertical translation */
-    readonly translateY?: number;
+  /** Horizontal scale percentage (default 100%) */
+  readonly scaleX?: number;
+  /** Vertical scale percentage (default 100%) */
+  readonly scaleY?: number;
+  /** Horizontal skew angle (default 0) */
+  readonly skewX?: number;
+  /** Vertical skew angle (default 0) */
+  readonly skewY?: number;
+  /** Horizontal translation */
+  readonly translateX?: number;
+  /** Vertical translation */
+  readonly translateY?: number;
 }
 
 /** Effect reference — references an effect by ID (CT_EffectReference). */
 export interface EffectReferenceOptions {
-    /** Reference ID (required) */
-    readonly ref: string;
+  /** Reference ID (required) */
+  readonly ref: string;
 }
 
 // ─── Effect Container Options ───────────────────────────────────────────────
@@ -204,289 +204,289 @@ export interface EffectReferenceOptions {
  * ```
  */
 export interface EffectDagOptions {
-    /** Container type: "sib" (parallel) or "tree" (sequential) */
-    readonly type?: (typeof EffectContainerType)[keyof typeof EffectContainerType];
-    /** Container name */
-    readonly name?: string;
+  /** Container type: "sib" (parallel) or "tree" (sequential) */
+  readonly type?: (typeof EffectContainerType)[keyof typeof EffectContainerType];
+  /** Container name */
+  readonly name?: string;
 
-    // ── Existing effects (also in CT_EffectList) ──
-    readonly blur?: BlurEffectOptions;
-    readonly fillOverlay?: FillOverlayEffectOptions;
-    readonly glow?: GlowEffectOptions;
-    readonly innerShadow?: InnerShadowEffectOptions;
-    readonly outerShadow?: OuterShadowEffectOptions;
-    readonly presetShadow?: PresetShadowEffectOptions;
-    readonly reflection?: ReflectionEffectOptions | true;
-    readonly softEdge?: number;
+  // ── Existing effects (also in CT_EffectList) ──
+  readonly blur?: BlurEffectOptions;
+  readonly fillOverlay?: FillOverlayEffectOptions;
+  readonly glow?: GlowEffectOptions;
+  readonly innerShadow?: InnerShadowEffectOptions;
+  readonly outerShadow?: OuterShadowEffectOptions;
+  readonly presetShadow?: PresetShadowEffectOptions;
+  readonly reflection?: ReflectionEffectOptions | true;
+  readonly softEdge?: number;
 
-    // ── New effects for CT_EffectContainer ──
-    /** Nested effect containers */
-    readonly containers?: readonly EffectDagOptions[];
-    /** Effect references */
-    readonly effectRefs?: readonly EffectReferenceOptions[];
-    /** Alpha bi-level effect */
-    readonly alphaBiLevel?: AlphaBiLevelEffectOptions;
-    /** Alpha ceiling effect (empty element) */
-    readonly alphaCeiling?: boolean;
-    /** Alpha floor effect (empty element) */
-    readonly alphaFloor?: boolean;
-    /** Alpha inverse effect */
-    readonly alphaInverse?: AlphaInverseEffectOptions;
-    /** Alpha modulate effect (requires nested container) */
-    readonly alphaModulate?: EffectDagOptions;
-    /** Alpha modulate fixed effect */
-    readonly alphaModulateFixed?: AlphaModulateFixedEffectOptions;
-    /** Alpha outset effect */
-    readonly alphaOutset?: AlphaOutsetEffectOptions;
-    /** Alpha replace effect */
-    readonly alphaReplace?: AlphaReplaceEffectOptions;
-    /** Bi-level effect (threshold) */
-    readonly biLevel?: { readonly threshold: number };
-    /** Blend effect (requires nested container) */
-    readonly blend?: BlendEffectOptions;
-    /** Color change effect */
-    readonly colorChange?: ColorChangeEffectOptions;
-    /** Color replace effect */
-    readonly colorReplace?: SolidFillOptions;
-    /** Duotone effect */
-    readonly duotone?: DuotoneEffectOptions;
-    /** Fill effect */
-    readonly fill?: FillEffectOptions;
-    /** Grayscale effect (empty element) */
-    readonly grayscale?: boolean;
-    /** HSL effect */
-    readonly hsl?: HSLEffectOptions;
-    /** Luminance effect */
-    readonly luminance?: LuminanceEffectOptions;
-    /** Tint effect */
-    readonly tint?: TintEffectOptions;
-    /** Relative offset effect */
-    readonly relativeOffset?: RelativeOffsetEffectOptions;
-    /** Transform effect */
-    readonly transform?: TransformEffectOptions;
+  // ── New effects for CT_EffectContainer ──
+  /** Nested effect containers */
+  readonly containers?: readonly EffectDagOptions[];
+  /** Effect references */
+  readonly effectRefs?: readonly EffectReferenceOptions[];
+  /** Alpha bi-level effect */
+  readonly alphaBiLevel?: AlphaBiLevelEffectOptions;
+  /** Alpha ceiling effect (empty element) */
+  readonly alphaCeiling?: boolean;
+  /** Alpha floor effect (empty element) */
+  readonly alphaFloor?: boolean;
+  /** Alpha inverse effect */
+  readonly alphaInverse?: AlphaInverseEffectOptions;
+  /** Alpha modulate effect (requires nested container) */
+  readonly alphaModulate?: EffectDagOptions;
+  /** Alpha modulate fixed effect */
+  readonly alphaModulateFixed?: AlphaModulateFixedEffectOptions;
+  /** Alpha outset effect */
+  readonly alphaOutset?: AlphaOutsetEffectOptions;
+  /** Alpha replace effect */
+  readonly alphaReplace?: AlphaReplaceEffectOptions;
+  /** Bi-level effect (threshold) */
+  readonly biLevel?: { readonly threshold: number };
+  /** Blend effect (requires nested container) */
+  readonly blend?: BlendEffectOptions;
+  /** Color change effect */
+  readonly colorChange?: ColorChangeEffectOptions;
+  /** Color replace effect */
+  readonly colorReplace?: SolidFillOptions;
+  /** Duotone effect */
+  readonly duotone?: DuotoneEffectOptions;
+  /** Fill effect */
+  readonly fill?: FillEffectOptions;
+  /** Grayscale effect (empty element) */
+  readonly grayscale?: boolean;
+  /** HSL effect */
+  readonly hsl?: HSLEffectOptions;
+  /** Luminance effect */
+  readonly luminance?: LuminanceEffectOptions;
+  /** Tint effect */
+  readonly tint?: TintEffectOptions;
+  /** Relative offset effect */
+  readonly relativeOffset?: RelativeOffsetEffectOptions;
+  /** Transform effect */
+  readonly transform?: TransformEffectOptions;
 }
 
 // ─── Internal Helpers ───────────────────────────────────────────────────────
 
 const buildOptionalAttributes = (
-    options: Record<string, unknown>,
+  options: Record<string, unknown>,
 ): Record<string, { readonly key: string; readonly value: string | number }> | undefined => {
-    const attrs: Record<string, { readonly key: string; readonly value: string | number }> = {};
-    for (const [key, value] of Object.entries(options)) {
-        if (value !== undefined) {
-            attrs[key] = { key, value: value as string | number };
-        }
+  const attrs: Record<string, { readonly key: string; readonly value: string | number }> = {};
+  for (const [key, value] of Object.entries(options)) {
+    if (value !== undefined) {
+      attrs[key] = { key, value: value as string | number };
     }
-    return Object.keys(attrs).length > 0 ? attrs : undefined;
+  }
+  return Object.keys(attrs).length > 0 ? attrs : undefined;
 };
 
 // ─── New Effect Factories ───────────────────────────────────────────────────
 
 const createAlphaBiLevelEffect = (options: AlphaBiLevelEffectOptions): XmlComponent =>
-    new BuilderElement<{ readonly thresh: number }>({
-        name: "a:alphaBiLevel",
-        attributes: { thresh: { key: "thresh", value: options.threshold } },
-    });
+  new BuilderElement<{ readonly thresh: number }>({
+    name: "a:alphaBiLevel",
+    attributes: { thresh: { key: "thresh", value: options.threshold } },
+  });
 
 const createAlphaCeilingEffect = (): XmlComponent => new BuilderElement({ name: "a:alphaCeiling" });
 
 const createAlphaFloorEffect = (): XmlComponent => new BuilderElement({ name: "a:alphaFloor" });
 
 const createAlphaInverseEffect = (options?: AlphaInverseEffectOptions): XmlComponent =>
-    new BuilderElement({
-        name: "a:alphaInv",
-        children: options?.color ? [createColorElement(options.color)] : undefined,
-    });
+  new BuilderElement({
+    name: "a:alphaInv",
+    children: options?.color ? [createColorElement(options.color)] : undefined,
+  });
 
 const createAlphaModulateFixedEffect = (
-    options?: AlphaModulateFixedEffectOptions,
+  options?: AlphaModulateFixedEffectOptions,
 ): XmlComponent => {
-    if (options?.amount === undefined) {
-        return new BuilderElement({ name: "a:alphaModFix" });
-    }
-    return new BuilderElement<{ readonly amt: number }>({
-        name: "a:alphaModFix",
-        attributes: { amt: { key: "amt", value: options.amount } },
-    });
+  if (options?.amount === undefined) {
+    return new BuilderElement({ name: "a:alphaModFix" });
+  }
+  return new BuilderElement<{ readonly amt: number }>({
+    name: "a:alphaModFix",
+    attributes: { amt: { key: "amt", value: options.amount } },
+  });
 };
 
 const createAlphaOutsetEffect = (options?: AlphaOutsetEffectOptions): XmlComponent => {
-    if (options?.radius === undefined) {
-        return new BuilderElement({ name: "a:alphaOutset" });
-    }
-    return new BuilderElement<{ readonly rad: number }>({
-        name: "a:alphaOutset",
-        attributes: { rad: { key: "rad", value: options.radius } },
-    });
+  if (options?.radius === undefined) {
+    return new BuilderElement({ name: "a:alphaOutset" });
+  }
+  return new BuilderElement<{ readonly rad: number }>({
+    name: "a:alphaOutset",
+    attributes: { rad: { key: "rad", value: options.radius } },
+  });
 };
 
 const createAlphaReplaceEffect = (options: AlphaReplaceEffectOptions): XmlComponent =>
-    new BuilderElement<{ readonly a: number }>({
-        name: "a:alphaRepl",
-        attributes: { a: { key: "a", value: options.alpha } },
-    });
+  new BuilderElement<{ readonly a: number }>({
+    name: "a:alphaRepl",
+    attributes: { a: { key: "a", value: options.alpha } },
+  });
 
 const createBiLevelEffect = (thresh: number): XmlComponent =>
-    new BuilderElement<{ readonly thresh: number }>({
-        name: "a:biLevel",
-        attributes: { thresh: { key: "thresh", value: thresh } },
-    });
+  new BuilderElement<{ readonly thresh: number }>({
+    name: "a:biLevel",
+    attributes: { thresh: { key: "thresh", value: thresh } },
+  });
 
 const createBlendEffect = (options: BlendEffectOptions): XmlComponent =>
-    new BuilderElement<{ readonly blend: string }>({
-        name: "a:blend",
-        attributes: { blend: { key: "blend", value: options.blend } },
-        children: [createEffectContainer(options.container)],
-    });
+  new BuilderElement<{ readonly blend: string }>({
+    name: "a:blend",
+    attributes: { blend: { key: "blend", value: options.blend } },
+    children: [createEffectContainer(options.container)],
+  });
 
 const createColorChangeEffect = (options: ColorChangeEffectOptions): XmlComponent => {
-    const children: XmlComponent[] = [
-        new BuilderElement({
-            name: "a:clrFrom",
-            children: [createColorElement(options.from)],
-        }),
-        new BuilderElement({
-            name: "a:clrTo",
-            children: [createColorElement(options.to)],
-        }),
-    ];
+  const children: XmlComponent[] = [
+    new BuilderElement({
+      name: "a:clrFrom",
+      children: [createColorElement(options.from)],
+    }),
+    new BuilderElement({
+      name: "a:clrTo",
+      children: [createColorElement(options.to)],
+    }),
+  ];
 
-    if (options.useA === false) {
-        return new BuilderElement<{ readonly useA: number }>({
-            name: "a:clrChange",
-            attributes: { useA: { key: "useA", value: 0 } },
-            children,
-        });
-    }
+  if (options.useA === false) {
+    return new BuilderElement<{ readonly useA: number }>({
+      name: "a:clrChange",
+      attributes: { useA: { key: "useA", value: 0 } },
+      children,
+    });
+  }
 
-    return new BuilderElement({ name: "a:clrChange", children });
+  return new BuilderElement({ name: "a:clrChange", children });
 };
 
 const createColorReplaceEffect = (color: SolidFillOptions): XmlComponent =>
-    new BuilderElement({
-        name: "a:clrRepl",
-        children: [createColorElement(color)],
-    });
+  new BuilderElement({
+    name: "a:clrRepl",
+    children: [createColorElement(color)],
+  });
 
 const createDuotoneEffect = (options: DuotoneEffectOptions): XmlComponent =>
-    new BuilderElement({
-        name: "a:duotone",
-        children: [createColorElement(options.color1), createColorElement(options.color2)],
-    });
+  new BuilderElement({
+    name: "a:duotone",
+    children: [createColorElement(options.color1), createColorElement(options.color2)],
+  });
 
 const createFillEffect = (options: FillEffectOptions): XmlComponent => {
-    let fillElement: XmlComponent;
+  let fillElement: XmlComponent;
 
-    if (options.noFill) {
-        fillElement = createNoFill();
-    } else if (options.solidFill) {
-        fillElement = createSolidFill(options.solidFill);
-    } else if (options.gradientFill) {
-        fillElement = createGradientFill(options.gradientFill);
-    } else if (options.patternFill) {
-        fillElement = createPatternFill(options.patternFill);
-    } else if (options.groupFill) {
-        fillElement = createGroupFill();
-    } else {
-        fillElement = createNoFill();
-    }
+  if (options.noFill) {
+    fillElement = createNoFill();
+  } else if (options.solidFill) {
+    fillElement = createSolidFill(options.solidFill);
+  } else if (options.gradientFill) {
+    fillElement = createGradientFill(options.gradientFill);
+  } else if (options.patternFill) {
+    fillElement = createPatternFill(options.patternFill);
+  } else if (options.groupFill) {
+    fillElement = createGroupFill();
+  } else {
+    fillElement = createNoFill();
+  }
 
-    return new BuilderElement({
-        name: "a:fill",
-        children: [fillElement],
-    });
+  return new BuilderElement({
+    name: "a:fill",
+    children: [fillElement],
+  });
 };
 
 const createGrayscaleEffect = (): XmlComponent => new BuilderElement({ name: "a:grayscl" });
 
 const createHSLEffect = (options?: HSLEffectOptions): XmlComponent => {
-    const attrs = buildOptionalAttributes({
-        hue: options?.hue,
-        sat: options?.saturation,
-        lum: options?.luminance,
-    });
-    return new BuilderElement({
-        name: "a:hsl",
-        attributes: attrs,
-    });
+  const attrs = buildOptionalAttributes({
+    hue: options?.hue,
+    sat: options?.saturation,
+    lum: options?.luminance,
+  });
+  return new BuilderElement({
+    name: "a:hsl",
+    attributes: attrs,
+  });
 };
 
 const createLuminanceEffect = (options?: LuminanceEffectOptions): XmlComponent => {
-    const attrs = buildOptionalAttributes({
-        bright: options?.bright,
-        contrast: options?.contrast,
-    });
-    return new BuilderElement({
-        name: "a:lum",
-        attributes: attrs,
-    });
+  const attrs = buildOptionalAttributes({
+    bright: options?.bright,
+    contrast: options?.contrast,
+  });
+  return new BuilderElement({
+    name: "a:lum",
+    attributes: attrs,
+  });
 };
 
 const createTintEffect = (options?: TintEffectOptions): XmlComponent => {
-    const attrs = buildOptionalAttributes({
-        hue: options?.hue,
-        amt: options?.amount,
-    });
-    return new BuilderElement({
-        name: "a:tint",
-        attributes: attrs,
-    });
+  const attrs = buildOptionalAttributes({
+    hue: options?.hue,
+    amt: options?.amount,
+  });
+  return new BuilderElement({
+    name: "a:tint",
+    attributes: attrs,
+  });
 };
 
 const createRelativeOffsetEffect = (options?: RelativeOffsetEffectOptions): XmlComponent => {
-    const attrs = buildOptionalAttributes({
-        tx: options?.translateX,
-        ty: options?.translateY,
-    });
-    return new BuilderElement({
-        name: "a:relOff",
-        attributes: attrs,
-    });
+  const attrs = buildOptionalAttributes({
+    tx: options?.translateX,
+    ty: options?.translateY,
+  });
+  return new BuilderElement({
+    name: "a:relOff",
+    attributes: attrs,
+  });
 };
 
 const createTransformEffect = (options?: TransformEffectOptions): XmlComponent => {
-    const attrs = buildOptionalAttributes({
-        sx: options?.scaleX,
-        sy: options?.scaleY,
-        kx: options?.skewX,
-        ky: options?.skewY,
-        tx: options?.translateX,
-        ty: options?.translateY,
-    });
-    return new BuilderElement({
-        name: "a:xfrm",
-        attributes: attrs,
-    });
+  const attrs = buildOptionalAttributes({
+    sx: options?.scaleX,
+    sy: options?.scaleY,
+    kx: options?.skewX,
+    ky: options?.skewY,
+    tx: options?.translateX,
+    ty: options?.translateY,
+  });
+  return new BuilderElement({
+    name: "a:xfrm",
+    attributes: attrs,
+  });
 };
 
 const createEffectReference = (options: EffectReferenceOptions): XmlComponent =>
-    new BuilderElement<{ readonly ref: string }>({
-        name: "a:effect",
-        attributes: { ref: { key: "ref", value: options.ref } },
-    });
+  new BuilderElement<{ readonly ref: string }>({
+    name: "a:effect",
+    attributes: { ref: { key: "ref", value: options.ref } },
+  });
 
 // ─── Blur Effect (from effect-list, re-implemented for DAG) ─────────────────
 
 const createBlurEffect = (options: BlurEffectOptions): XmlComponent => {
-    const hasAttributes = options.radius !== undefined || options.grow === false;
+  const hasAttributes = options.radius !== undefined || options.grow === false;
 
-    if (!hasAttributes) {
-        return new BuilderElement({ name: "a:blur" });
-    }
+  if (!hasAttributes) {
+    return new BuilderElement({ name: "a:blur" });
+  }
 
-    const attributePayload = {
-        ...(options.radius !== undefined && {
-            rad: { key: "rad", value: options.radius },
-        }),
-        ...(options.grow === false && {
-            grow: { key: "grow", value: 0 },
-        }),
-    };
+  const attributePayload = {
+    ...(options.radius !== undefined && {
+      rad: { key: "rad", value: options.radius },
+    }),
+    ...(options.grow === false && {
+      grow: { key: "grow", value: 0 },
+    }),
+  };
 
-    return new BuilderElement({
-        attributes: attributePayload as never,
-        name: "a:blur",
-    });
+  return new BuilderElement({
+    attributes: attributePayload as never,
+    name: "a:blur",
+  });
 };
 
 // ─── Effect Container ───────────────────────────────────────────────────────
@@ -510,123 +510,123 @@ const createBlurEffect = (options: BlurEffectOptions): XmlComponent => {
  * @param elementName - Element name, defaults to "a:effectDag" for top-level
  */
 const createEffectContainer = (options: EffectDagOptions, elementName = "a:cont"): XmlComponent => {
-    const attrs = buildOptionalAttributes({
-        type: options.type,
-        name: options.name,
-    });
+  const attrs = buildOptionalAttributes({
+    type: options.type,
+    name: options.name,
+  });
 
-    const children: XmlComponent[] = [];
+  const children: XmlComponent[] = [];
 
-    // ── Existing effects (also in CT_EffectList) ──
-    if (options.blur) {
-        children.push(createBlurEffect(options.blur));
-    }
-    if (options.fillOverlay) {
-        children.push(createFillOverlayEffect(options.fillOverlay));
-    }
-    if (options.glow) {
-        children.push(createGlowEffect(options.glow));
-    }
-    if (options.innerShadow) {
-        children.push(createInnerShadowEffect(options.innerShadow));
-    }
-    if (options.outerShadow) {
-        children.push(createOuterShadowEffect(options.outerShadow));
-    }
-    if (options.presetShadow) {
-        children.push(createPresetShadowEffect(options.presetShadow));
-    }
-    if (options.reflection) {
-        children.push(
-            createReflectionEffect(options.reflection === true ? undefined : options.reflection),
-        );
-    }
-    if (options.softEdge !== undefined) {
-        children.push(createSoftEdgeEffect(options.softEdge));
-    }
+  // ── Existing effects (also in CT_EffectList) ──
+  if (options.blur) {
+    children.push(createBlurEffect(options.blur));
+  }
+  if (options.fillOverlay) {
+    children.push(createFillOverlayEffect(options.fillOverlay));
+  }
+  if (options.glow) {
+    children.push(createGlowEffect(options.glow));
+  }
+  if (options.innerShadow) {
+    children.push(createInnerShadowEffect(options.innerShadow));
+  }
+  if (options.outerShadow) {
+    children.push(createOuterShadowEffect(options.outerShadow));
+  }
+  if (options.presetShadow) {
+    children.push(createPresetShadowEffect(options.presetShadow));
+  }
+  if (options.reflection) {
+    children.push(
+      createReflectionEffect(options.reflection === true ? undefined : options.reflection),
+    );
+  }
+  if (options.softEdge !== undefined) {
+    children.push(createSoftEdgeEffect(options.softEdge));
+  }
 
-    // ── New effects for CT_EffectContainer ──
-    if (options.containers) {
-        for (const nested of options.containers) {
-            children.push(createEffectContainer(nested));
-        }
+  // ── New effects for CT_EffectContainer ──
+  if (options.containers) {
+    for (const nested of options.containers) {
+      children.push(createEffectContainer(nested));
     }
-    if (options.effectRefs) {
-        for (const ref of options.effectRefs) {
-            children.push(createEffectReference(ref));
-        }
+  }
+  if (options.effectRefs) {
+    for (const ref of options.effectRefs) {
+      children.push(createEffectReference(ref));
     }
-    if (options.alphaBiLevel) {
-        children.push(createAlphaBiLevelEffect(options.alphaBiLevel));
-    }
-    if (options.alphaCeiling) {
-        children.push(createAlphaCeilingEffect());
-    }
-    if (options.alphaFloor) {
-        children.push(createAlphaFloorEffect());
-    }
-    if (options.alphaInverse) {
-        children.push(createAlphaInverseEffect(options.alphaInverse));
-    }
-    if (options.alphaModulate) {
-        children.push(
-            new BuilderElement({
-                name: "a:alphaMod",
-                children: [createEffectContainer(options.alphaModulate)],
-            }),
-        );
-    }
-    if (options.alphaModulateFixed) {
-        children.push(createAlphaModulateFixedEffect(options.alphaModulateFixed));
-    }
-    if (options.alphaOutset) {
-        children.push(createAlphaOutsetEffect(options.alphaOutset));
-    }
-    if (options.alphaReplace) {
-        children.push(createAlphaReplaceEffect(options.alphaReplace));
-    }
-    if (options.biLevel) {
-        children.push(createBiLevelEffect(options.biLevel.threshold));
-    }
-    if (options.blend) {
-        children.push(createBlendEffect(options.blend));
-    }
-    if (options.colorChange) {
-        children.push(createColorChangeEffect(options.colorChange));
-    }
-    if (options.colorReplace) {
-        children.push(createColorReplaceEffect(options.colorReplace));
-    }
-    if (options.duotone) {
-        children.push(createDuotoneEffect(options.duotone));
-    }
-    if (options.fill) {
-        children.push(createFillEffect(options.fill));
-    }
-    if (options.grayscale) {
-        children.push(createGrayscaleEffect());
-    }
-    if (options.hsl) {
-        children.push(createHSLEffect(options.hsl));
-    }
-    if (options.luminance) {
-        children.push(createLuminanceEffect(options.luminance));
-    }
-    if (options.tint) {
-        children.push(createTintEffect(options.tint));
-    }
-    if (options.relativeOffset) {
-        children.push(createRelativeOffsetEffect(options.relativeOffset));
-    }
-    if (options.transform) {
-        children.push(createTransformEffect(options.transform));
-    }
+  }
+  if (options.alphaBiLevel) {
+    children.push(createAlphaBiLevelEffect(options.alphaBiLevel));
+  }
+  if (options.alphaCeiling) {
+    children.push(createAlphaCeilingEffect());
+  }
+  if (options.alphaFloor) {
+    children.push(createAlphaFloorEffect());
+  }
+  if (options.alphaInverse) {
+    children.push(createAlphaInverseEffect(options.alphaInverse));
+  }
+  if (options.alphaModulate) {
+    children.push(
+      new BuilderElement({
+        name: "a:alphaMod",
+        children: [createEffectContainer(options.alphaModulate)],
+      }),
+    );
+  }
+  if (options.alphaModulateFixed) {
+    children.push(createAlphaModulateFixedEffect(options.alphaModulateFixed));
+  }
+  if (options.alphaOutset) {
+    children.push(createAlphaOutsetEffect(options.alphaOutset));
+  }
+  if (options.alphaReplace) {
+    children.push(createAlphaReplaceEffect(options.alphaReplace));
+  }
+  if (options.biLevel) {
+    children.push(createBiLevelEffect(options.biLevel.threshold));
+  }
+  if (options.blend) {
+    children.push(createBlendEffect(options.blend));
+  }
+  if (options.colorChange) {
+    children.push(createColorChangeEffect(options.colorChange));
+  }
+  if (options.colorReplace) {
+    children.push(createColorReplaceEffect(options.colorReplace));
+  }
+  if (options.duotone) {
+    children.push(createDuotoneEffect(options.duotone));
+  }
+  if (options.fill) {
+    children.push(createFillEffect(options.fill));
+  }
+  if (options.grayscale) {
+    children.push(createGrayscaleEffect());
+  }
+  if (options.hsl) {
+    children.push(createHSLEffect(options.hsl));
+  }
+  if (options.luminance) {
+    children.push(createLuminanceEffect(options.luminance));
+  }
+  if (options.tint) {
+    children.push(createTintEffect(options.tint));
+  }
+  if (options.relativeOffset) {
+    children.push(createRelativeOffsetEffect(options.relativeOffset));
+  }
+  if (options.transform) {
+    children.push(createTransformEffect(options.transform));
+  }
 
-    return new BuilderElement({
-        name: elementName,
-        attributes: attrs as never,
-        children: children.length > 0 ? children : undefined,
-    });
+  return new BuilderElement({
+    name: elementName,
+    attributes: attrs as never,
+    children: children.length > 0 ? children : undefined,
+  });
 };
 
 /**
@@ -654,4 +654,4 @@ const createEffectContainer = (options: EffectDagOptions, elementName = "a:cont"
  * ```
  */
 export const createEffectDag = (options: EffectDagOptions): XmlComponent =>
-    createEffectContainer(options, "a:effectDag");
+  createEffectContainer(options, "a:effectDag");

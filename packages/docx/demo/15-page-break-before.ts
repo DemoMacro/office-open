@@ -5,17 +5,17 @@ import * as fs from "fs";
 import { Document, Packer, Paragraph } from "@office-open/docx";
 
 const doc = new Document({
-    sections: [
-        {
-            children: [
-                new Paragraph("Hello World"),
-                new Paragraph({
-                    pageBreakBefore: true,
-                    text: "Hello World on another page",
-                }),
-            ],
-        },
-    ],
+  sections: [
+    {
+      children: [
+        new Paragraph("Hello World"),
+        new Paragraph({
+          pageBreakBefore: true,
+          text: "Hello World on another page",
+        }),
+      ],
+    },
+  ],
 });
 
 const buffer = await Packer.toBuffer(doc);

@@ -18,10 +18,10 @@ import { MathText } from "./math-text";
  * @see {@link MathRun}
  */
 export interface MathRunOptions {
-    /** The text content */
-    readonly text: string;
-    /** Optional run properties */
-    readonly properties?: MathRunPropertiesOptions;
+  /** The text content */
+  readonly text: string;
+  /** Optional run properties */
+  readonly properties?: MathRunPropertiesOptions;
 }
 
 /**
@@ -58,15 +58,15 @@ export interface MathRunOptions {
  * ```
  */
 export class MathRun extends XmlComponent {
-    public constructor(textOrOptions: string | MathRunOptions) {
-        super("m:r");
+  public constructor(textOrOptions: string | MathRunOptions) {
+    super("m:r");
 
-        const options = typeof textOrOptions === "string" ? { text: textOrOptions } : textOrOptions;
+    const options = typeof textOrOptions === "string" ? { text: textOrOptions } : textOrOptions;
 
-        if (options.properties) {
-            this.root.push(createMathRunProperties(options.properties));
-        }
-
-        this.root.push(new MathText(options.text));
+    if (options.properties) {
+      this.root.push(createMathRunProperties(options.properties));
     }
+
+    this.root.push(new MathText(options.text));
+  }
 }

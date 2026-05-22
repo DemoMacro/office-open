@@ -16,12 +16,12 @@ import type { XmlComponent } from "@file/xml-components";
  * @see {@link createMathGroupChrProperties}
  */
 export interface MathGroupChrPropertiesOptions {
-    /** Character to display (e.g., "\u23DF" for bottom curly bracket) */
-    readonly chr?: string;
-    /** Position of the character: "top" or "bot" */
-    readonly pos?: "top" | "bot";
-    /** Vertical justification: "top" or "bot" */
-    readonly vertJc?: "top" | "bot";
+  /** Character to display (e.g., "\u23DF" for bottom curly bracket) */
+  readonly chr?: string;
+  /** Position of the character: "top" or "bot" */
+  readonly pos?: "top" | "bot";
+  /** Vertical justification: "top" or "bot" */
+  readonly vertJc?: "top" | "bot";
 }
 
 /**
@@ -40,37 +40,37 @@ export interface MathGroupChrPropertiesOptions {
  * ```
  */
 export const createMathGroupChrProperties = (
-    options: MathGroupChrPropertiesOptions,
+  options: MathGroupChrPropertiesOptions,
 ): XmlComponent => {
-    const children: XmlComponent[] = [];
+  const children: XmlComponent[] = [];
 
-    if (options.chr !== undefined) {
-        children.push(
-            new BuilderElement({
-                attributes: { val: { key: "m:val", value: options.chr } },
-                name: "m:chr",
-            }),
-        );
-    }
-    if (options.pos !== undefined) {
-        children.push(
-            new BuilderElement({
-                attributes: { val: { key: "m:val", value: options.pos } },
-                name: "m:pos",
-            }),
-        );
-    }
-    if (options.vertJc !== undefined) {
-        children.push(
-            new BuilderElement({
-                attributes: { val: { key: "m:val", value: options.vertJc } },
-                name: "m:vertJc",
-            }),
-        );
-    }
+  if (options.chr !== undefined) {
+    children.push(
+      new BuilderElement({
+        attributes: { val: { key: "m:val", value: options.chr } },
+        name: "m:chr",
+      }),
+    );
+  }
+  if (options.pos !== undefined) {
+    children.push(
+      new BuilderElement({
+        attributes: { val: { key: "m:val", value: options.pos } },
+        name: "m:pos",
+      }),
+    );
+  }
+  if (options.vertJc !== undefined) {
+    children.push(
+      new BuilderElement({
+        attributes: { val: { key: "m:val", value: options.vertJc } },
+        name: "m:vertJc",
+      }),
+    );
+  }
 
-    return new BuilderElement({
-        children,
-        name: "m:groupChrPr",
-    });
+  return new BuilderElement({
+    children,
+    name: "m:groupChrPr",
+  });
 };

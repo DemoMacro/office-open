@@ -27,21 +27,21 @@ import type { IParagraphStyleOptions } from "./style/paragraph-style";
  * @see {@link Styles}
  */
 export interface IStylesOptions {
-    /** Default styles for document, headings, and common elements */
-    readonly default?: IDefaultStylesOptions;
-    /** Initial base XML component for styles root element */
-    readonly initialStyles?: BaseXmlComponent | IXmlableObject;
-    /** Array of custom paragraph style definitions */
-    readonly paragraphStyles?: readonly IParagraphStyleOptions[];
-    /** Array of custom character style definitions */
-    readonly characterStyles?: readonly ICharacterStyleOptions[];
-    /** Array of styles imported from external sources */
-    readonly importedStyles?: readonly (
-        | XmlComponent
-        | StyleForParagraph
-        | StyleForCharacter
-        | ImportedXmlComponent
-    )[];
+  /** Default styles for document, headings, and common elements */
+  readonly default?: IDefaultStylesOptions;
+  /** Initial base XML component for styles root element */
+  readonly initialStyles?: BaseXmlComponent | IXmlableObject;
+  /** Array of custom paragraph style definitions */
+  readonly paragraphStyles?: readonly IParagraphStyleOptions[];
+  /** Array of custom character style definitions */
+  readonly characterStyles?: readonly ICharacterStyleOptions[];
+  /** Array of styles imported from external sources */
+  readonly importedStyles?: readonly (
+    | XmlComponent
+    | StyleForParagraph
+    | StyleForCharacter
+    | ImportedXmlComponent
+  )[];
 }
 
 /**
@@ -83,29 +83,29 @@ export interface IStylesOptions {
  * ```
  */
 export class Styles extends XmlComponent {
-    public constructor(options: IStylesOptions) {
-        super("w:styles");
+  public constructor(options: IStylesOptions) {
+    super("w:styles");
 
-        if (options.initialStyles) {
-            this.root.push(options.initialStyles);
-        }
-
-        if (options.importedStyles) {
-            for (const style of options.importedStyles) {
-                this.root.push(style);
-            }
-        }
-
-        if (options.paragraphStyles) {
-            for (const style of options.paragraphStyles) {
-                this.root.push(new StyleForParagraph(style));
-            }
-        }
-
-        if (options.characterStyles) {
-            for (const style of options.characterStyles) {
-                this.root.push(new StyleForCharacter(style));
-            }
-        }
+    if (options.initialStyles) {
+      this.root.push(options.initialStyles);
     }
+
+    if (options.importedStyles) {
+      for (const style of options.importedStyles) {
+        this.root.push(style);
+      }
+    }
+
+    if (options.paragraphStyles) {
+      for (const style of options.paragraphStyles) {
+        this.root.push(new StyleForParagraph(style));
+      }
+    }
+
+    if (options.characterStyles) {
+      for (const style of options.characterStyles) {
+        this.root.push(new StyleForCharacter(style));
+      }
+    }
+  }
 }

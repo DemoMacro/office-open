@@ -33,10 +33,10 @@ import type { XmlComponent } from "../../xml-components";
  * ```
  */
 export interface DashStop {
-    /** Dash length as a percentage of line width (e.g., "500%") */
-    readonly d: string;
-    /** Space length as a percentage of line width (e.g., "200%") */
-    readonly sp: string;
+  /** Dash length as a percentage of line width (e.g., "500%") */
+  readonly d: string;
+  /** Space length as a percentage of line width (e.g., "200%") */
+  readonly sp: string;
 }
 
 /**
@@ -70,22 +70,22 @@ export interface DashStop {
  * ```
  */
 export const createCustomDash = (stops: readonly DashStop[]): XmlComponent => {
-    const children: XmlComponent[] = [];
+  const children: XmlComponent[] = [];
 
-    for (const stop of stops) {
-        children.push(
-            new BuilderElement<{ readonly d: string; readonly sp: string }>({
-                attributes: {
-                    d: { key: "d", value: stop.d },
-                    sp: { key: "sp", value: stop.sp },
-                },
-                name: "a:ds",
-            }),
-        );
-    }
+  for (const stop of stops) {
+    children.push(
+      new BuilderElement<{ readonly d: string; readonly sp: string }>({
+        attributes: {
+          d: { key: "d", value: stop.d },
+          sp: { key: "sp", value: stop.sp },
+        },
+        name: "a:ds",
+      }),
+    );
+  }
 
-    return new BuilderElement({
-        children,
-        name: "a:custDash",
-    });
+  return new BuilderElement({
+    children,
+    name: "a:custDash",
+  });
 };

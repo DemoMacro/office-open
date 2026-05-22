@@ -18,8 +18,8 @@ import type { Table } from "./table";
  * @see {@link Footer}
  */
 export interface IHeaderOptions {
-    /** The content elements (paragraphs and tables) for the header/footer */
-    readonly children: readonly (Paragraph | Table)[];
+  /** The content elements (paragraphs and tables) for the header/footer */
+  readonly children: readonly (Paragraph | Table)[];
 }
 
 /**
@@ -40,11 +40,11 @@ export interface IHeaderOptions {
  * ```
  */
 export class Header {
-    public readonly options: IHeaderOptions;
+  public readonly options: IHeaderOptions;
 
-    public constructor(options: IHeaderOptions = { children: [] }) {
-        this.options = options;
-    }
+  public constructor(options: IHeaderOptions = { children: [] }) {
+    this.options = options;
+  }
 }
 
 /**
@@ -65,9 +65,9 @@ export class Header {
  * ```
  */
 export class Footer {
-    public readonly options: IHeaderOptions;
+  public readonly options: IHeaderOptions;
 
-    public constructor(options: IHeaderOptions = { children: [] }) {
-        this.options = options;
-    }
+  public constructor(options: IHeaderOptions = { children: [] }) {
+    this.options = options;
+  }
 }

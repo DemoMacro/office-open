@@ -21,10 +21,10 @@ import type { MathEqArrPropertiesOptions } from "./math-eq-arr-properties";
  * @see {@link MathEqArr}
  */
 export interface IMathEqArrOptions {
-    /** Equation array properties */
-    readonly properties?: MathEqArrPropertiesOptions;
-    /** Equations to stack (each row becomes an m:e element) */
-    readonly rows: readonly (readonly MathComponent[])[];
+  /** Equation array properties */
+  readonly properties?: MathEqArrPropertiesOptions;
+  /** Equations to stack (each row becomes an m:e element) */
+  readonly rows: readonly (readonly MathComponent[])[];
 }
 
 /**
@@ -48,15 +48,15 @@ export interface IMathEqArrOptions {
  * ```
  */
 export class MathEqArr extends XmlComponent {
-    public constructor(options: IMathEqArrOptions) {
-        super("m:eqArr");
+  public constructor(options: IMathEqArrOptions) {
+    super("m:eqArr");
 
-        if (options.properties) {
-            this.root.push(createMathEqArrProperties(options.properties));
-        }
-
-        for (const row of options.rows) {
-            this.root.push(createMathBase({ children: row }));
-        }
+    if (options.properties) {
+      this.root.push(createMathEqArrProperties(options.properties));
     }
+
+    for (const row of options.rows) {
+      this.root.push(createMathBase({ children: row }));
+    }
+  }
 }

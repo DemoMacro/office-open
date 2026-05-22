@@ -15,10 +15,10 @@ import { XmlComponent } from "@file/xml-components";
  * @property font - Font family to use for rendering the symbol
  */
 export interface ICheckboxSymbolProperties {
-    /** Hexadecimal character code for the symbol (e.g., "2612" for ☒). */
-    readonly value?: string;
-    /** Font family to use for rendering the symbol. */
-    readonly font?: string;
+  /** Hexadecimal character code for the symbol (e.g., "2612" for ☒). */
+  readonly value?: string;
+  /** Font family to use for rendering the symbol. */
+  readonly font?: string;
 }
 
 /**
@@ -30,14 +30,14 @@ export interface ICheckboxSymbolProperties {
  * @property uncheckedState - Symbol properties for the unchecked state
  */
 export interface ICheckboxSymbolOptions {
-    /** Display name for the checkbox control. */
-    readonly alias?: string;
-    /** Whether the checkbox is initially checked. */
-    readonly checked?: boolean;
-    /** Symbol properties for the checked state. */
-    readonly checkedState?: ICheckboxSymbolProperties;
-    /** Symbol properties for the unchecked state. */
-    readonly uncheckedState?: ICheckboxSymbolProperties;
+  /** Display name for the checkbox control. */
+  readonly alias?: string;
+  /** Whether the checkbox is initially checked. */
+  readonly checked?: boolean;
+  /** Symbol properties for the checked state. */
+  readonly checkedState?: ICheckboxSymbolProperties;
+  /** Symbol properties for the unchecked state. */
+  readonly uncheckedState?: ICheckboxSymbolProperties;
 }
 
 /**
@@ -75,27 +75,27 @@ export interface ICheckboxSymbolOptions {
  * ```
  */
 export class CheckBoxUtil extends XmlComponent {
-    private readonly DEFAULT_UNCHECKED_SYMBOL: string = "2610";
-    private readonly DEFAULT_CHECKED_SYMBOL: string = "2612";
-    private readonly DEFAULT_FONT: string = "MS Gothic";
-    public constructor(options?: ICheckboxSymbolOptions) {
-        super("w14:checkbox");
+  private readonly DEFAULT_UNCHECKED_SYMBOL: string = "2610";
+  private readonly DEFAULT_CHECKED_SYMBOL: string = "2612";
+  private readonly DEFAULT_FONT: string = "MS Gothic";
+  public constructor(options?: ICheckboxSymbolOptions) {
+    super("w14:checkbox");
 
-        const value = options?.checked ? "1" : "0";
-        let symbol: string;
-        let font: string;
-        this.root.push(new CheckBoxSymbolElement("w14:checked", value));
+    const value = options?.checked ? "1" : "0";
+    let symbol: string;
+    let font: string;
+    this.root.push(new CheckBoxSymbolElement("w14:checked", value));
 
-        symbol = options?.checkedState?.value
-            ? options?.checkedState?.value
-            : this.DEFAULT_CHECKED_SYMBOL;
-        font = options?.checkedState?.font ? options?.checkedState?.font : this.DEFAULT_FONT;
-        this.root.push(new CheckBoxSymbolElement("w14:checkedState", symbol, font));
+    symbol = options?.checkedState?.value
+      ? options?.checkedState?.value
+      : this.DEFAULT_CHECKED_SYMBOL;
+    font = options?.checkedState?.font ? options?.checkedState?.font : this.DEFAULT_FONT;
+    this.root.push(new CheckBoxSymbolElement("w14:checkedState", symbol, font));
 
-        symbol = options?.uncheckedState?.value
-            ? options?.uncheckedState?.value
-            : this.DEFAULT_UNCHECKED_SYMBOL;
-        font = options?.uncheckedState?.font ? options?.uncheckedState?.font : this.DEFAULT_FONT;
-        this.root.push(new CheckBoxSymbolElement("w14:uncheckedState", symbol, font));
-    }
+    symbol = options?.uncheckedState?.value
+      ? options?.uncheckedState?.value
+      : this.DEFAULT_UNCHECKED_SYMBOL;
+    font = options?.uncheckedState?.font ? options?.uncheckedState?.font : this.DEFAULT_FONT;
+    this.root.push(new CheckBoxSymbolElement("w14:uncheckedState", symbol, font));
+  }
 }

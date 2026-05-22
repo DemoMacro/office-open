@@ -29,9 +29,9 @@ import { XmlComponent } from "@file/xml-components";
  * ```
  */
 export class RunPropertiesDefaults extends XmlComponent {
-    public constructor(options?: RunStylePropertiesOptions) {
-        super("w:rPrDefault");
+  public constructor(options?: RunStylePropertiesOptions) {
+    super("w:rPrDefault");
 
-        this.root.push(new RunProperties(options));
-    }
+    this.root.push(new RunProperties(options));
+  }
 }

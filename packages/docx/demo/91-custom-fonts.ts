@@ -7,33 +7,33 @@ import { CharacterSet, Document, Packer, Paragraph, Tab, TextRun } from "@office
 const font = fs.readFileSync("./demo/assets/Pacifico.ttf");
 
 const doc = new Document({
-    fonts: [{ characterSet: CharacterSet.ANSI, data: font, name: "Pacifico" }],
-    sections: [
-        {
-            children: [
-                new Paragraph({
-                    run: {
-                        font: "Pacifico",
-                    },
-                    children: [
-                        new TextRun("Hello World"),
-                        new TextRun({
-                            text: "Foo Bar",
-                            bold: true,
-                            size: 40,
-                            font: "Pacifico",
-                        }),
-                        new TextRun({
-                            children: [new Tab(), "Github is the best"],
-                            bold: true,
-                            font: "Pacifico",
-                        }),
-                    ],
-                }),
-            ],
-            properties: {},
-        },
-    ],
+  fonts: [{ characterSet: CharacterSet.ANSI, data: font, name: "Pacifico" }],
+  sections: [
+    {
+      children: [
+        new Paragraph({
+          run: {
+            font: "Pacifico",
+          },
+          children: [
+            new TextRun("Hello World"),
+            new TextRun({
+              text: "Foo Bar",
+              bold: true,
+              size: 40,
+              font: "Pacifico",
+            }),
+            new TextRun({
+              children: [new Tab(), "Github is the best"],
+              bold: true,
+              font: "Pacifico",
+            }),
+          ],
+        }),
+      ],
+      properties: {},
+    },
+  ],
 });
 
 const buffer = await Packer.toBuffer(doc);

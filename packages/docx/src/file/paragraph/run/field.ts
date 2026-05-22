@@ -21,14 +21,14 @@ import { createFormFieldData } from "./form-field";
  * @internal
  */
 const FieldCharacterType = {
-    BEGIN: "begin",
-    END: "end",
-    SEPARATE: "separate",
+  BEGIN: "begin",
+  END: "end",
+  SEPARATE: "separate",
 } as const;
 
 interface IFieldCharAttributes {
-    readonly type: (typeof FieldCharacterType)[keyof typeof FieldCharacterType];
-    readonly dirty?: boolean;
+  readonly type: (typeof FieldCharacterType)[keyof typeof FieldCharacterType];
+  readonly dirty?: boolean;
 }
 
 /**
@@ -50,22 +50,22 @@ interface IFieldCharAttributes {
  * @internal
  */
 const createFieldChar = (
-    type: (typeof FieldCharacterType)[keyof typeof FieldCharacterType],
-    dirty?: boolean,
-    ffData?: XmlComponent,
+  type: (typeof FieldCharacterType)[keyof typeof FieldCharacterType],
+  dirty?: boolean,
+  ffData?: XmlComponent,
 ): XmlComponent => {
-    const children: XmlComponent[] = [];
-    if (ffData) {
-        children.push(ffData);
-    }
-    return new BuilderElement<IFieldCharAttributes>({
-        attributes: {
-            dirty: { key: "w:dirty", value: dirty },
-            type: { key: "w:fldCharType", value: type },
-        },
-        children: children.length > 0 ? children : undefined,
-        name: "w:fldChar",
-    });
+  const children: XmlComponent[] = [];
+  if (ffData) {
+    children.push(ffData);
+  }
+  return new BuilderElement<IFieldCharAttributes>({
+    attributes: {
+      dirty: { key: "w:dirty", value: dirty },
+      type: { key: "w:fldCharType", value: type },
+    },
+    children: children.length > 0 ? children : undefined,
+    name: "w:fldChar",
+  });
 };
 
 /**
@@ -92,11 +92,11 @@ const createFieldChar = (
  * ```
  */
 export const createBegin = (dirty?: boolean, formField?: FormFieldOptions): XmlComponent =>
-    createFieldChar(
-        FieldCharacterType.BEGIN,
-        dirty,
-        formField ? createFormFieldData(formField) : undefined,
-    );
+  createFieldChar(
+    FieldCharacterType.BEGIN,
+    dirty,
+    formField ? createFormFieldData(formField) : undefined,
+  );
 
 /**
  * Creates the separator between field code and field result in a complex field.
@@ -105,7 +105,7 @@ export const createBegin = (dirty?: boolean, formField?: FormFieldOptions): XmlC
  * (the computed value).
  */
 export const createSeparate = (dirty?: boolean): XmlComponent =>
-    createFieldChar(FieldCharacterType.SEPARATE, dirty);
+  createFieldChar(FieldCharacterType.SEPARATE, dirty);
 
 /**
  * Creates the end of a complex field.
@@ -114,4 +114,4 @@ export const createSeparate = (dirty?: boolean): XmlComponent =>
  * element must be terminated with an End element.
  */
 export const createEnd = (dirty?: boolean): XmlComponent =>
-    createFieldChar(FieldCharacterType.END, dirty);
+  createFieldChar(FieldCharacterType.END, dirty);

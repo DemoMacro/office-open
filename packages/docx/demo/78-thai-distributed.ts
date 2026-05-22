@@ -5,22 +5,22 @@ import * as fs from "fs";
 import { AlignmentType, Document, Packer, Paragraph, TextRun } from "@office-open/docx";
 
 const doc = new Document({
-    sections: [
-        {
-            children: [
-                new Paragraph({
-                    alignment: AlignmentType.THAI_DISTRIBUTE,
-                    children: [
-                        new TextRun({
-                            size: 36,
-                            text: "บริษัท บิสกิด จำกัด (บริษัทฯ) ได้จดทะเบียนจัดตั้งขึ้นเป็นบริษัทจำกัดตามประมวลกฎหมายแพ่งและพาณิชย์ของประเทศไทย เมื่อวันที่ 30 พฤษภาคม 2561 ทะเบียนนิติบุคคลเลขที่ 0845561005665",
-                        }),
-                    ],
-                }),
-            ],
-            properties: {},
-        },
-    ],
+  sections: [
+    {
+      children: [
+        new Paragraph({
+          alignment: AlignmentType.THAI_DISTRIBUTE,
+          children: [
+            new TextRun({
+              size: 36,
+              text: "บริษัท บิสกิด จำกัด (บริษัทฯ) ได้จดทะเบียนจัดตั้งขึ้นเป็นบริษัทจำกัดตามประมวลกฎหมายแพ่งและพาณิชย์ของประเทศไทย เมื่อวันที่ 30 พฤษภาคม 2561 ทะเบียนนิติบุคคลเลขที่ 0845561005665",
+            }),
+          ],
+        }),
+      ],
+      properties: {},
+    },
+  ],
 });
 
 const buffer = await Packer.toBuffer(doc);

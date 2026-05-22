@@ -11,22 +11,22 @@ import { buildDocumentAttributes } from "../document/document-attributes";
 import { DocumentDefaults } from "./defaults";
 import type { IDocumentDefaultsOptions } from "./defaults";
 import {
-    EndnoteReferenceStyle,
-    EndnoteText,
-    EndnoteTextChar,
-    FootnoteReferenceStyle,
-    FootnoteText,
-    FootnoteTextChar,
-    Heading1Style,
-    Heading2Style,
-    Heading3Style,
-    Heading4Style,
-    Heading5Style,
-    Heading6Style,
-    HyperlinkStyle,
-    ListParagraph,
-    StrongStyle,
-    TitleStyle,
+  EndnoteReferenceStyle,
+  EndnoteText,
+  EndnoteTextChar,
+  FootnoteReferenceStyle,
+  FootnoteText,
+  FootnoteTextChar,
+  Heading1Style,
+  Heading2Style,
+  Heading3Style,
+  Heading4Style,
+  Heading5Style,
+  Heading6Style,
+  HyperlinkStyle,
+  ListParagraph,
+  StrongStyle,
+  TitleStyle,
 } from "./style";
 import type { IBaseCharacterStyleOptions, IBaseParagraphStyleOptions } from "./style";
 import type { IStylesOptions } from "./styles";
@@ -52,37 +52,37 @@ import type { IStylesOptions } from "./styles";
  * @property footnoteTextChar - Footnote text character style options
  */
 export interface IDefaultStylesOptions {
-    /** Document-wide default formatting */
-    readonly document?: IDocumentDefaultsOptions;
-    /** Title paragraph style options */
-    readonly title?: IBaseParagraphStyleOptions;
-    /** Heading 1 paragraph style options */
-    readonly heading1?: IBaseParagraphStyleOptions;
-    /** Heading 2 paragraph style options */
-    readonly heading2?: IBaseParagraphStyleOptions;
-    /** Heading 3 paragraph style options */
-    readonly heading3?: IBaseParagraphStyleOptions;
-    /** Heading 4 paragraph style options */
-    readonly heading4?: IBaseParagraphStyleOptions;
-    /** Heading 5 paragraph style options */
-    readonly heading5?: IBaseParagraphStyleOptions;
-    /** Heading 6 paragraph style options */
-    readonly heading6?: IBaseParagraphStyleOptions;
-    /** Strong paragraph style options */
-    readonly strong?: IBaseParagraphStyleOptions;
-    /** List paragraph style options */
-    readonly listParagraph?: IBaseParagraphStyleOptions;
-    /** Hyperlink character style options */
-    readonly hyperlink?: IBaseCharacterStyleOptions;
-    /** Footnote reference character style options */
-    readonly footnoteReference?: IBaseCharacterStyleOptions;
-    /** Footnote text paragraph style options */
-    readonly footnoteText?: IBaseParagraphStyleOptions;
-    /** Footnote text character style options */
-    readonly footnoteTextChar?: IBaseCharacterStyleOptions;
-    readonly endnoteReference?: IBaseCharacterStyleOptions;
-    readonly endnoteText?: IBaseParagraphStyleOptions;
-    readonly endnoteTextChar?: IBaseCharacterStyleOptions;
+  /** Document-wide default formatting */
+  readonly document?: IDocumentDefaultsOptions;
+  /** Title paragraph style options */
+  readonly title?: IBaseParagraphStyleOptions;
+  /** Heading 1 paragraph style options */
+  readonly heading1?: IBaseParagraphStyleOptions;
+  /** Heading 2 paragraph style options */
+  readonly heading2?: IBaseParagraphStyleOptions;
+  /** Heading 3 paragraph style options */
+  readonly heading3?: IBaseParagraphStyleOptions;
+  /** Heading 4 paragraph style options */
+  readonly heading4?: IBaseParagraphStyleOptions;
+  /** Heading 5 paragraph style options */
+  readonly heading5?: IBaseParagraphStyleOptions;
+  /** Heading 6 paragraph style options */
+  readonly heading6?: IBaseParagraphStyleOptions;
+  /** Strong paragraph style options */
+  readonly strong?: IBaseParagraphStyleOptions;
+  /** List paragraph style options */
+  readonly listParagraph?: IBaseParagraphStyleOptions;
+  /** Hyperlink character style options */
+  readonly hyperlink?: IBaseCharacterStyleOptions;
+  /** Footnote reference character style options */
+  readonly footnoteReference?: IBaseCharacterStyleOptions;
+  /** Footnote text paragraph style options */
+  readonly footnoteText?: IBaseParagraphStyleOptions;
+  /** Footnote text character style options */
+  readonly footnoteTextChar?: IBaseCharacterStyleOptions;
+  readonly endnoteReference?: IBaseCharacterStyleOptions;
+  readonly endnoteText?: IBaseParagraphStyleOptions;
+  readonly endnoteTextChar?: IBaseCharacterStyleOptions;
 }
 
 let cachedDefaultStyles: IStylesOptions | null = null;
@@ -109,48 +109,48 @@ let cachedDefaultStyles: IStylesOptions | null = null;
  * ```
  */
 export class DefaultStylesFactory {
-    public newInstance(options: IDefaultStylesOptions = {}): IStylesOptions {
-        if (Object.keys(options).length === 0) {
-            if (!cachedDefaultStyles) {
-                cachedDefaultStyles = this.build({});
-            }
-            return cachedDefaultStyles;
-        }
-        return this.build(options);
+  public newInstance(options: IDefaultStylesOptions = {}): IStylesOptions {
+    if (Object.keys(options).length === 0) {
+      if (!cachedDefaultStyles) {
+        cachedDefaultStyles = this.build({});
+      }
+      return cachedDefaultStyles;
     }
+    return this.build(options);
+  }
 
-    private build(options: IDefaultStylesOptions): IStylesOptions {
-        return {
-            importedStyles: [
-                new DocumentDefaults(options.document ?? {}),
-                new TitleStyle({
-                    run: {
-                        size: 56,
-                    },
-                    ...options.title,
-                }),
-                new Heading1Style(options.heading1 || {}),
-                new Heading2Style(options.heading2 || {}),
-                new Heading3Style(options.heading3 || {}),
-                new Heading4Style(options.heading4 || {}),
-                new Heading5Style(options.heading5 || {}),
-                new Heading6Style(options.heading6 || {}),
-                new StrongStyle({
-                    run: {
-                        bold: true,
-                    },
-                    ...options.strong,
-                }),
-                new ListParagraph(options.listParagraph || {}),
-                new HyperlinkStyle(options.hyperlink || {}),
-                new FootnoteReferenceStyle(options.footnoteReference || {}),
-                new FootnoteText(options.footnoteText || {}),
-                new FootnoteTextChar(options.footnoteTextChar || {}),
-                new EndnoteReferenceStyle(options.endnoteReference || {}),
-                new EndnoteText(options.endnoteText || {}),
-                new EndnoteTextChar(options.endnoteTextChar || {}),
-            ],
-            initialStyles: buildDocumentAttributes(["mc", "r", "w", "w14", "w15"], "w14 w15"),
-        };
-    }
+  private build(options: IDefaultStylesOptions): IStylesOptions {
+    return {
+      importedStyles: [
+        new DocumentDefaults(options.document ?? {}),
+        new TitleStyle({
+          run: {
+            size: 56,
+          },
+          ...options.title,
+        }),
+        new Heading1Style(options.heading1 || {}),
+        new Heading2Style(options.heading2 || {}),
+        new Heading3Style(options.heading3 || {}),
+        new Heading4Style(options.heading4 || {}),
+        new Heading5Style(options.heading5 || {}),
+        new Heading6Style(options.heading6 || {}),
+        new StrongStyle({
+          run: {
+            bold: true,
+          },
+          ...options.strong,
+        }),
+        new ListParagraph(options.listParagraph || {}),
+        new HyperlinkStyle(options.hyperlink || {}),
+        new FootnoteReferenceStyle(options.footnoteReference || {}),
+        new FootnoteText(options.footnoteText || {}),
+        new FootnoteTextChar(options.footnoteTextChar || {}),
+        new EndnoteReferenceStyle(options.endnoteReference || {}),
+        new EndnoteText(options.endnoteText || {}),
+        new EndnoteTextChar(options.endnoteTextChar || {}),
+      ],
+      initialStyles: buildDocumentAttributes(["mc", "r", "w", "w14", "w15"], "w14 w15"),
+    };
+  }
 }

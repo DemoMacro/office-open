@@ -21,12 +21,12 @@ import { createMathSuperScriptElement } from "./math-super-script";
  * @see {@link MathIntegral}
  */
 export interface IMathIntegralOptions {
-    /** The integrand expression */
-    readonly children: readonly MathComponent[];
-    /** Optional lower bound of integration */
-    readonly subScript?: readonly MathComponent[];
-    /** Optional upper bound of integration */
-    readonly superScript?: readonly MathComponent[];
+  /** The integrand expression */
+  readonly children: readonly MathComponent[];
+  /** Optional lower bound of integration */
+  readonly subScript?: readonly MathComponent[];
+  /** Optional upper bound of integration */
+  readonly superScript?: readonly MathComponent[];
 }
 
 /**
@@ -61,22 +61,22 @@ export interface IMathIntegralOptions {
  * ```
  */
 export class MathIntegral extends XmlComponent {
-    public constructor(options: IMathIntegralOptions) {
-        super("m:nary");
+  public constructor(options: IMathIntegralOptions) {
+    super("m:nary");
 
-        this.root.push(
-            createMathNAryProperties({
-                accent: "",
-                hasSubScript: Boolean(options.subScript),
-                hasSuperScript: Boolean(options.superScript),
-                limitLocationVal: "subSup",
-            }),
-        );
+    this.root.push(
+      createMathNAryProperties({
+        accent: "",
+        hasSubScript: Boolean(options.subScript),
+        hasSuperScript: Boolean(options.superScript),
+        limitLocationVal: "subSup",
+      }),
+    );
 
-        this.root.push(createMathSubScriptElement({ children: options.subScript ?? [] }));
+    this.root.push(createMathSubScriptElement({ children: options.subScript ?? [] }));
 
-        this.root.push(createMathSuperScriptElement({ children: options.superScript ?? [] }));
+    this.root.push(createMathSuperScriptElement({ children: options.superScript ?? [] }));
 
-        this.root.push(createMathBase({ children: options.children }));
-    }
+    this.root.push(createMathBase({ children: options.children }));
+  }
 }

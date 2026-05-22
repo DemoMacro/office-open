@@ -17,12 +17,12 @@ import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
  * @internal
  */
 export class FootNoteReferenceRunAttributes extends XmlAttributeComponent<{
-    /** Unique identifier linking to the footnote */
-    readonly id: number;
+  /** Unique identifier linking to the footnote */
+  readonly id: number;
 }> {
-    protected readonly xmlKeys = {
-        id: "w:id",
-    };
+  protected readonly xmlKeys = {
+    id: "w:id",
+  };
 }
 
 /**
@@ -42,15 +42,15 @@ export class FootNoteReferenceRunAttributes extends XmlAttributeComponent<{
  * @internal
  */
 export class FootnoteReference extends XmlComponent {
-    public constructor(id: number) {
-        super("w:footnoteReference");
+  public constructor(id: number) {
+    super("w:footnoteReference");
 
-        this.root.push(
-            new FootNoteReferenceRunAttributes({
-                id: id,
-            }),
-        );
-    }
+    this.root.push(
+      new FootNoteReferenceRunAttributes({
+        id: id,
+      }),
+    );
+  }
 }
 
 /**
@@ -76,14 +76,14 @@ export class FootnoteReference extends XmlComponent {
  * ```
  */
 export class FootnoteReferenceRun extends Run {
-    /**
-     * Creates a new footnote reference run.
-     *
-     * @param id - Unique identifier linking to the footnote content
-     */
-    public constructor(id: number) {
-        super({ style: "FootnoteReference" });
+  /**
+   * Creates a new footnote reference run.
+   *
+   * @param id - Unique identifier linking to the footnote content
+   */
+  public constructor(id: number) {
+    super({ style: "FootnoteReference" });
 
-        this.extraChildren.push(new FootnoteReference(id));
-    }
+    this.extraChildren.push(new FootnoteReference(id));
+  }
 }

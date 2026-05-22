@@ -16,11 +16,11 @@ import { Run } from "../run";
  * @internal
  */
 const BreakType = {
-    /** Column break - text continues at the beginning of the next column */
-    COLUMN: "column",
-    /** Page break - text continues at the beginning of the next page */
-    PAGE: "page",
-    // TextWrapping breaks are the default and already exposed via the "Run" class
+  /** Column break - text continues at the beginning of the next column */
+  COLUMN: "column",
+  /** Page break - text continues at the beginning of the next page */
+  PAGE: "page",
+  // TextWrapping breaks are the default and already exposed via the "Run" class
 } as const;
 
 /**
@@ -28,14 +28,14 @@ const BreakType = {
  * @internal
  */
 class Break extends XmlComponent {
-    public constructor(type: (typeof BreakType)[keyof typeof BreakType]) {
-        super("w:br");
-        this.root.push(
-            new Attributes({
-                type,
-            }),
-        );
-    }
+  public constructor(type: (typeof BreakType)[keyof typeof BreakType]) {
+    super("w:br");
+    this.root.push(
+      new Attributes({
+        type,
+      }),
+    );
+  }
 }
 
 /**
@@ -63,10 +63,10 @@ class Break extends XmlComponent {
  * ```
  */
 export class PageBreak extends Run {
-    public constructor() {
-        super({});
-        this.extraChildren.push(new Break(BreakType.PAGE));
-    }
+  public constructor() {
+    super({});
+    this.extraChildren.push(new Break(BreakType.PAGE));
+  }
 }
 
 /**
@@ -94,10 +94,10 @@ export class PageBreak extends Run {
  * ```
  */
 export class ColumnBreak extends Run {
-    public constructor() {
-        super({});
-        this.extraChildren.push(new Break(BreakType.COLUMN));
-    }
+  public constructor() {
+    super({});
+    this.extraChildren.push(new Break(BreakType.COLUMN));
+  }
 }
 
 /**
@@ -123,7 +123,7 @@ export class ColumnBreak extends Run {
  * ```
  */
 export class PageBreakBefore extends XmlComponent {
-    public constructor() {
-        super("w:pageBreakBefore");
-    }
+  public constructor() {
+    super("w:pageBreakBefore");
+  }
 }

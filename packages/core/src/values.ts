@@ -97,10 +97,10 @@ export type RelativeMeasure = `${"-" | ""}${number}${"em" | "ex"}`;
  * ```
  */
 export const decimalNumber = (val: number): number => {
-    if (isNaN(val)) {
-        throw new Error(`Invalid value '${val}' specified. Must be an integer.`);
-    }
-    return Math.floor(val);
+  if (isNaN(val)) {
+    throw new Error(`Invalid value '${val}' specified. Must be an integer.`);
+  }
+  return Math.floor(val);
 };
 
 /**
@@ -119,11 +119,11 @@ export const decimalNumber = (val: number): number => {
  * ```
  */
 export const unsignedDecimalNumber = (val: number): number => {
-    const value = decimalNumber(val);
-    if (value < 0) {
-        throw new Error(`Invalid value '${val}' specified. Must be a positive integer.`);
-    }
-    return value;
+  const value = decimalNumber(val);
+  if (value < 0) {
+    throw new Error(`Invalid value '${val}' specified. Must be a positive integer.`);
+  }
+  return value;
 };
 
 /**
@@ -145,11 +145,11 @@ export const unsignedDecimalNumber = (val: number): number => {
  * ```
  */
 export const hexBinary = (val: string, length: number): string => {
-    const expectedLength = length * 2;
-    if (val.length !== expectedLength || isNaN(Number(`0x${val}`))) {
-        throw new Error(`Invalid hex value '${val}'. Expected ${expectedLength} digit hex value`);
-    }
-    return val;
+  const expectedLength = length * 2;
+  if (val.length !== expectedLength || isNaN(Number(`0x${val}`))) {
+    throw new Error(`Invalid hex value '${val}'. Expected ${expectedLength} digit hex value`);
+  }
+  return val;
 };
 
 /**
@@ -216,9 +216,9 @@ export const uCharHexNumber = (val: string): string => hexBinary(val, 1);
  * ```
  */
 export const universalMeasureValue = (val: UniversalMeasure): UniversalMeasure => {
-    const unit = val.slice(-2);
-    const amount = val.substring(0, val.length - 2);
-    return `${Number(amount)}${unit}` as UniversalMeasure;
+  const unit = val.slice(-2);
+  const amount = val.substring(0, val.length - 2);
+  return `${Number(amount)}${unit}` as UniversalMeasure;
 };
 
 /**
@@ -237,13 +237,13 @@ export const universalMeasureValue = (val: UniversalMeasure): UniversalMeasure =
  * ```
  */
 export const positiveUniversalMeasureValue = (
-    val: PositiveUniversalMeasure,
+  val: PositiveUniversalMeasure,
 ): PositiveUniversalMeasure => {
-    const value = universalMeasureValue(val);
-    if (parseFloat(value) < 0) {
-        throw new Error(`Invalid value '${value}' specified. Expected a positive number.`);
-    }
-    return value as PositiveUniversalMeasure;
+  const value = universalMeasureValue(val);
+  if (parseFloat(value) < 0) {
+    throw new Error(`Invalid value '${value}' specified. Expected a positive number.`);
+  }
+  return value as PositiveUniversalMeasure;
 };
 
 /**
@@ -267,13 +267,13 @@ export const positiveUniversalMeasureValue = (
  * ```
  */
 export const hexColorValue = (val: string): string => {
-    if (val === "auto") {
-        return val;
-    }
-    // It's super common to see colors prefixed with a pound, but technically invalid here.
-    // Most clients work with it, but strip it off anyway for strict compliance.
-    const color = val.charAt(0) === "#" ? val.substring(1) : val;
-    return hexBinary(color, 3);
+  if (val === "auto") {
+    return val;
+  }
+  // It's super common to see colors prefixed with a pound, but technically invalid here.
+  // Most clients work with it, but strip it off anyway for strict compliance.
+  const color = val.charAt(0) === "#" ? val.substring(1) : val;
+  return hexBinary(color, 3);
 };
 
 /**
@@ -293,9 +293,9 @@ export const hexColorValue = (val: string): string => {
  * ```
  */
 export const signedTwipsMeasureValue = (
-    val: UniversalMeasure | number,
+  val: UniversalMeasure | number,
 ): UniversalMeasure | number =>
-    typeof val === "string" ? universalMeasureValue(val) : decimalNumber(val);
+  typeof val === "string" ? universalMeasureValue(val) : decimalNumber(val);
 
 /**
  * Validates a half-point (HPS) measurement value.
@@ -315,7 +315,7 @@ export const signedTwipsMeasureValue = (
  * ```
  */
 export const hpsMeasureValue = (val: PositiveUniversalMeasure | number): string | number =>
-    typeof val === "string" ? positiveUniversalMeasureValue(val) : unsignedDecimalNumber(val);
+  typeof val === "string" ? positiveUniversalMeasureValue(val) : unsignedDecimalNumber(val);
 
 /**
  * Validates a signed half-point (HPS) measurement value.
@@ -334,7 +334,7 @@ export const hpsMeasureValue = (val: PositiveUniversalMeasure | number): string 
  * ```
  */
 export const signedHpsMeasureValue = (val: UniversalMeasure | number): string | number =>
-    typeof val === "string" ? universalMeasureValue(val) : decimalNumber(val);
+  typeof val === "string" ? universalMeasureValue(val) : decimalNumber(val);
 
 /**
  * Validates a positive TWIP measurement value.
@@ -353,9 +353,9 @@ export const signedHpsMeasureValue = (val: UniversalMeasure | number): string | 
  * ```
  */
 export const twipsMeasureValue = (
-    val: PositiveUniversalMeasure | number,
+  val: PositiveUniversalMeasure | number,
 ): PositiveUniversalMeasure | number =>
-    typeof val === "string" ? positiveUniversalMeasureValue(val) : unsignedDecimalNumber(val);
+  typeof val === "string" ? positiveUniversalMeasureValue(val) : unsignedDecimalNumber(val);
 
 /**
  * Normalizes a percentage value by parsing and reformatting.
@@ -371,8 +371,8 @@ export const twipsMeasureValue = (
  * ```
  */
 export const percentageValue = (val: Percentage): Percentage => {
-    const percent = val.substring(0, val.length - 1);
-    return `${Number(percent)}%`;
+  const percent = val.substring(0, val.length - 1);
+  return `${Number(percent)}%`;
 };
 
 /**
@@ -391,15 +391,15 @@ export const percentageValue = (val: Percentage): Percentage => {
  * ```
  */
 export const measurementOrPercentValue = (
-    val: number | Percentage | UniversalMeasure,
+  val: number | Percentage | UniversalMeasure,
 ): number | UniversalMeasure | Percentage => {
-    if (typeof val === "number") {
-        return decimalNumber(val);
-    }
-    if (val.slice(-1) === "%") {
-        return percentageValue(val as Percentage);
-    }
-    return universalMeasureValue(val as UniversalMeasure);
+  if (typeof val === "number") {
+    return decimalNumber(val);
+  }
+  if (val.slice(-1) === "%") {
+    return percentageValue(val as Percentage);
+  }
+  return universalMeasureValue(val as UniversalMeasure);
 };
 
 /**
@@ -462,23 +462,23 @@ export const dateTimeValue = (val: Date): string => val.toISOString();
  * @publicApi
  */
 export const ThemeColor = {
-    DARK1: "dark1",
-    LIGHT1: "light1",
-    DARK2: "dark2",
-    LIGHT2: "light2",
-    ACCENT1: "accent1",
-    ACCENT2: "accent2",
-    ACCENT3: "accent3",
-    ACCENT4: "accent4",
-    ACCENT5: "accent5",
-    ACCENT6: "accent6",
-    HYPERLINK: "hyperlink",
-    FOLLOWED_HYPERLINK: "followedHyperlink",
-    NONE: "none",
-    BACKGROUND1: "background1",
-    TEXT1: "text1",
-    BACKGROUND2: "background2",
-    TEXT2: "text2",
+  DARK1: "dark1",
+  LIGHT1: "light1",
+  DARK2: "dark2",
+  LIGHT2: "light2",
+  ACCENT1: "accent1",
+  ACCENT2: "accent2",
+  ACCENT3: "accent3",
+  ACCENT4: "accent4",
+  ACCENT5: "accent5",
+  ACCENT6: "accent6",
+  HYPERLINK: "hyperlink",
+  FOLLOWED_HYPERLINK: "followedHyperlink",
+  NONE: "none",
+  BACKGROUND1: "background1",
+  TEXT1: "text1",
+  BACKGROUND2: "background2",
+  TEXT2: "text2",
 } as const;
 
 /**
@@ -489,12 +489,12 @@ export const ThemeColor = {
  * @publicApi
  */
 export const ThemeFont = {
-    MAJOR_EAST_ASIA: "majorEastAsia",
-    MAJOR_BIDI: "majorBidi",
-    MAJOR_ASCII: "majorAscii",
-    MAJOR_H_ANSI: "majorHAnsi",
-    MINOR_EAST_ASIA: "minorEastAsia",
-    MINOR_BIDI: "minorBidi",
-    MINOR_ASCII: "minorAscii",
-    MINOR_H_ANSI: "minorHAnsi",
+  MAJOR_EAST_ASIA: "majorEastAsia",
+  MAJOR_BIDI: "majorBidi",
+  MAJOR_ASCII: "majorAscii",
+  MAJOR_H_ANSI: "majorHAnsi",
+  MINOR_EAST_ASIA: "minorEastAsia",
+  MINOR_BIDI: "minorBidi",
+  MINOR_ASCII: "minorAscii",
+  MINOR_H_ANSI: "minorHAnsi",
 } as const;

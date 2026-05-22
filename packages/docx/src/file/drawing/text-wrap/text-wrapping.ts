@@ -17,11 +17,11 @@ import type { IDistance } from "../drawing";
  * @publicApi
  */
 export const TextWrappingType = {
-    NONE: 0,
-    SQUARE: 1,
-    TIGHT: 2,
-    TOP_AND_BOTTOM: 3,
-    THROUGH: 4,
+  NONE: 0,
+  SQUARE: 1,
+  TIGHT: 2,
+  TOP_AND_BOTTOM: 3,
+  THROUGH: 4,
 } as const;
 
 /**
@@ -34,21 +34,21 @@ export const TextWrappingType = {
  * @publicApi
  */
 export const TextWrappingSide = {
-    /** Text wraps on both sides of the drawing */
-    BOTH_SIDES: "bothSides",
-    /** Text wraps only on the left side */
-    LEFT: "left",
-    /** Text wraps only on the right side */
-    RIGHT: "right",
-    /** Text wraps on the side with more space */
-    LARGEST: "largest",
+  /** Text wraps on both sides of the drawing */
+  BOTH_SIDES: "bothSides",
+  /** Text wraps only on the left side */
+  LEFT: "left",
+  /** Text wraps only on the right side */
+  RIGHT: "right",
+  /** Text wraps on the side with more space */
+  LARGEST: "largest",
 } as const;
 
 /**
  * Options for configuring text wrapping around a drawing.
  */
 export interface ITextWrapping {
-    readonly type: (typeof TextWrappingType)[keyof typeof TextWrappingType];
-    readonly side?: (typeof TextWrappingSide)[keyof typeof TextWrappingSide];
-    readonly margins?: IDistance;
+  readonly type: (typeof TextWrappingType)[keyof typeof TextWrappingType];
+  readonly side?: (typeof TextWrappingSide)[keyof typeof TextWrappingSide];
+  readonly margins?: IDistance;
 }

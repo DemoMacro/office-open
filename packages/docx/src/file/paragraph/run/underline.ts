@@ -48,50 +48,50 @@ import type { ThemeColor } from "@util/values";
  * @publicApi
  */
 export const UnderlineType = {
-    /** Single underline */
-    SINGLE: "single",
-    /** Underline words only (not spaces) */
-    WORDS: "words",
-    /** Double underline */
-    DOUBLE: "double",
-    /** Thick single underline */
-    THICK: "thick",
-    /** Dotted underline */
-    DOTTED: "dotted",
-    /** Heavy dotted underline */
-    DOTTEDHEAVY: "dottedHeavy",
-    /** Dashed underline */
-    DASH: "dash",
-    /** Heavy dashed underline */
-    DASHEDHEAVY: "dashedHeavy",
-    /** Long dashed underline */
-    DASHLONG: "dashLong",
-    /** Heavy long dashed underline */
-    DASHLONGHEAVY: "dashLongHeavy",
-    /** Dot-dash underline */
-    DOTDASH: "dotDash",
-    /** Heavy dot-dash underline */
-    DASHDOTHEAVY: "dashDotHeavy",
-    /** Dot-dot-dash underline */
-    DOTDOTDASH: "dotDotDash",
-    /** Heavy dot-dot-dash underline */
-    DASHDOTDOTHEAVY: "dashDotDotHeavy",
-    /** Wave underline */
-    WAVE: "wave",
-    /** Heavy wave underline */
-    WAVYHEAVY: "wavyHeavy",
-    /** Double wave underline */
-    WAVYDOUBLE: "wavyDouble",
-    /** No underline */
-    NONE: "none",
+  /** Single underline */
+  SINGLE: "single",
+  /** Underline words only (not spaces) */
+  WORDS: "words",
+  /** Double underline */
+  DOUBLE: "double",
+  /** Thick single underline */
+  THICK: "thick",
+  /** Dotted underline */
+  DOTTED: "dotted",
+  /** Heavy dotted underline */
+  DOTTEDHEAVY: "dottedHeavy",
+  /** Dashed underline */
+  DASH: "dash",
+  /** Heavy dashed underline */
+  DASHEDHEAVY: "dashedHeavy",
+  /** Long dashed underline */
+  DASHLONG: "dashLong",
+  /** Heavy long dashed underline */
+  DASHLONGHEAVY: "dashLongHeavy",
+  /** Dot-dash underline */
+  DOTDASH: "dotDash",
+  /** Heavy dot-dash underline */
+  DASHDOTHEAVY: "dashDotHeavy",
+  /** Dot-dot-dash underline */
+  DOTDOTDASH: "dotDotDash",
+  /** Heavy dot-dot-dash underline */
+  DASHDOTDOTHEAVY: "dashDotDotHeavy",
+  /** Wave underline */
+  WAVE: "wave",
+  /** Heavy wave underline */
+  WAVYHEAVY: "wavyHeavy",
+  /** Double wave underline */
+  WAVYDOUBLE: "wavyDouble",
+  /** No underline */
+  NONE: "none",
 } as const;
 
 interface IUnderlineAttributes {
-    readonly val: (typeof UnderlineType)[keyof typeof UnderlineType];
-    readonly color?: string;
-    readonly themeColor?: (typeof ThemeColor)[keyof typeof ThemeColor];
-    readonly themeTint?: string;
-    readonly themeShade?: string;
+  readonly val: (typeof UnderlineType)[keyof typeof UnderlineType];
+  readonly color?: string;
+  readonly themeColor?: (typeof ThemeColor)[keyof typeof ThemeColor];
+  readonly themeTint?: string;
+  readonly themeShade?: string;
 }
 
 /**
@@ -126,28 +126,28 @@ interface IUnderlineAttributes {
  * ```
  */
 export const createUnderline = (
-    underlineType: (typeof UnderlineType)[keyof typeof UnderlineType] = UnderlineType.SINGLE,
-    color?: string,
-    themeColor?: (typeof ThemeColor)[keyof typeof ThemeColor],
-    themeTint?: string,
-    themeShade?: string,
+  underlineType: (typeof UnderlineType)[keyof typeof UnderlineType] = UnderlineType.SINGLE,
+  color?: string,
+  themeColor?: (typeof ThemeColor)[keyof typeof ThemeColor],
+  themeTint?: string,
+  themeShade?: string,
 ): XmlComponent =>
-    new BuilderElement<IUnderlineAttributes>({
-        attributes: {
-            color: {
-                key: "w:color",
-                value: color === undefined ? undefined : hexColorValue(color),
-            },
-            themeColor: { key: "w:themeColor", value: themeColor },
-            themeShade: {
-                key: "w:themeShade",
-                value: themeShade === undefined ? undefined : uCharHexNumber(themeShade),
-            },
-            themeTint: {
-                key: "w:themeTint",
-                value: themeTint === undefined ? undefined : uCharHexNumber(themeTint),
-            },
-            val: { key: "w:val", value: underlineType },
-        },
-        name: "w:u",
-    });
+  new BuilderElement<IUnderlineAttributes>({
+    attributes: {
+      color: {
+        key: "w:color",
+        value: color === undefined ? undefined : hexColorValue(color),
+      },
+      themeColor: { key: "w:themeColor", value: themeColor },
+      themeShade: {
+        key: "w:themeShade",
+        value: themeShade === undefined ? undefined : uCharHexNumber(themeShade),
+      },
+      themeTint: {
+        key: "w:themeTint",
+        value: themeTint === undefined ? undefined : uCharHexNumber(themeTint),
+      },
+      val: { key: "w:val", value: underlineType },
+    },
+    name: "w:u",
+  });

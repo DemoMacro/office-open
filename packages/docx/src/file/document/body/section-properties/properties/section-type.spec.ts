@@ -4,31 +4,31 @@ import { describe, expect, it } from "vite-plus/test";
 import { SectionType, createSectionType } from "./section-type";
 
 describe("createSectionType", () => {
-    it("should create with even page section type", () => {
-        const sectionType = createSectionType(SectionType.EVEN_PAGE);
+  it("should create with even page section type", () => {
+    const sectionType = createSectionType(SectionType.EVEN_PAGE);
 
-        const tree = new Formatter().format(sectionType);
+    const tree = new Formatter().format(sectionType);
 
-        expect(tree).to.deep.equal({
-            "w:type": {
-                _attr: {
-                    "w:val": "evenPage",
-                },
-            },
-        });
+    expect(tree).to.deep.equal({
+      "w:type": {
+        _attr: {
+          "w:val": "evenPage",
+        },
+      },
     });
+  });
 
-    it("should create with continuous section type", () => {
-        const sectionType = createSectionType(SectionType.CONTINUOUS);
+  it("should create with continuous section type", () => {
+    const sectionType = createSectionType(SectionType.CONTINUOUS);
 
-        const tree = new Formatter().format(sectionType);
+    const tree = new Formatter().format(sectionType);
 
-        expect(tree).to.deep.equal({
-            "w:type": {
-                _attr: {
-                    "w:val": "continuous",
-                },
-            },
-        });
+    expect(tree).to.deep.equal({
+      "w:type": {
+        _attr: {
+          "w:val": "continuous",
+        },
+      },
     });
+  });
 });

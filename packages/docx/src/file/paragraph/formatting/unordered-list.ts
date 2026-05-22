@@ -49,11 +49,11 @@ import { Attributes, XmlComponent } from "@file/xml-components";
  * ```
  */
 export class NumberProperties extends XmlComponent {
-    public constructor(numberId: number | string, indentLevel: number) {
-        super("w:numPr");
-        this.root.push(new IndentLevel(indentLevel));
-        this.root.push(new NumberId(numberId));
-    }
+  public constructor(numberId: number | string, indentLevel: number) {
+    super("w:numPr");
+    this.root.push(new IndentLevel(indentLevel));
+    this.root.push(new NumberId(numberId));
+  }
 }
 
 /**
@@ -64,15 +64,15 @@ export class NumberProperties extends XmlComponent {
  * @internal
  */
 class IndentLevel extends XmlComponent {
-    public constructor(level: number) {
-        super("w:ilvl");
+  public constructor(level: number) {
+    super("w:ilvl");
 
-        this.root.push(
-            new Attributes({
-                val: Math.min(level, 9),
-            }),
-        );
-    }
+    this.root.push(
+      new Attributes({
+        val: Math.min(level, 9),
+      }),
+    );
+  }
 }
 
 /**
@@ -83,12 +83,12 @@ class IndentLevel extends XmlComponent {
  * @internal
  */
 class NumberId extends XmlComponent {
-    public constructor(id: number | string) {
-        super("w:numId");
-        this.root.push(
-            new Attributes({
-                val: typeof id === "string" ? `{${id}}` : id,
-            }),
-        );
-    }
+  public constructor(id: number | string) {
+    super("w:numId");
+    this.root.push(
+      new Attributes({
+        val: typeof id === "string" ? `{${id}}` : id,
+      }),
+    );
+  }
 }

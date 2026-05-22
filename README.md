@@ -30,15 +30,15 @@ import { Document, Paragraph, TextRun, Packer } from "@office-open/docx";
 import { writeFileSync } from "node:fs";
 
 const doc = new Document({
-    sections: [
-        {
-            children: [
-                new Paragraph({
-                    children: [new TextRun({ text: "Hello World", bold: true })],
-                }),
-            ],
-        },
-    ],
+  sections: [
+    {
+      children: [
+        new Paragraph({
+          children: [new TextRun({ text: "Hello World", bold: true })],
+        }),
+      ],
+    },
+  ],
 });
 
 const buffer = await Packer.toBuffer(doc);
@@ -60,20 +60,20 @@ import { Presentation, Shape, Packer } from "@office-open/pptx";
 import { writeFileSync } from "node:fs";
 
 const pres = new Presentation({
-    slides: [
-        {
-            children: [
-                new Shape({
-                    text: "Hello World",
-                    fill: "4472C4",
-                    x: 100,
-                    y: 100,
-                    width: 600,
-                    height: 400,
-                }),
-            ],
-        },
-    ],
+  slides: [
+    {
+      children: [
+        new Shape({
+          text: "Hello World",
+          fill: "4472C4",
+          x: 100,
+          y: 100,
+          width: 600,
+          height: 400,
+        }),
+      ],
+    },
+  ],
 });
 
 const buffer = await Packer.toBuffer(pres);
@@ -92,35 +92,35 @@ writeFileSync("presentation.pptx", buffer);
 
 1. **Clone the repository**:
 
-    ```bash
-    git clone https://github.com/DemoMacro/office-open.git
-    cd office-open
-    ```
+   ```bash
+   git clone https://github.com/DemoMacro/office-open.git
+   cd office-open
+   ```
 
 2. **Install dependencies**:
 
-    ```bash
-    pnpm install
-    ```
+   ```bash
+   pnpm install
+   ```
 
 3. **Development mode**:
 
-    ```bash
-    pnpm dev
-    ```
+   ```bash
+   pnpm dev
+   ```
 
 4. **Build all packages**:
 
-    ```bash
-    pnpm build
-    ```
+   ```bash
+   pnpm build
+   ```
 
 5. **Test locally**:
 
-    ```bash
-    # Run tests
-    pnpm test
-    ```
+   ```bash
+   # Run tests
+   pnpm test
+   ```
 
 ### Development Commands
 
@@ -140,28 +140,28 @@ We welcome contributions! Here's how to get started:
 1. **Fork the repository** on GitHub
 2. **Clone your fork**:
 
-    ```bash
-    git clone https://github.com/YOUR_USERNAME/office-open.git
-    cd office-open
-    ```
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/office-open.git
+   cd office-open
+   ```
 
 3. **Add upstream remote**:
 
-    ```bash
-    git remote add upstream https://github.com/DemoMacro/office-open.git
-    ```
+   ```bash
+   git remote add upstream https://github.com/DemoMacro/office-open.git
+   ```
 
 4. **Install dependencies**:
 
-    ```bash
-    pnpm install
-    ```
+   ```bash
+   pnpm install
+   ```
 
 5. **Development mode**:
 
-    ```bash
-    pnpm dev
-    ```
+   ```bash
+   pnpm dev
+   ```
 
 ### Development Workflow
 

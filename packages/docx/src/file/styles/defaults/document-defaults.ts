@@ -19,10 +19,10 @@ import { RunPropertiesDefaults } from "./run-properties";
  * @property run - Default run properties applied to all text runs
  */
 export interface IDocumentDefaultsOptions {
-    /** Default paragraph properties applied to all paragraphs */
-    readonly paragraph?: IParagraphStylePropertiesOptions;
-    /** Default run properties applied to all text runs */
-    readonly run?: RunStylePropertiesOptions;
+  /** Default paragraph properties applied to all paragraphs */
+  readonly paragraph?: IParagraphStylePropertiesOptions;
+  /** Default run properties applied to all text runs */
+  readonly run?: RunStylePropertiesOptions;
 }
 
 /**
@@ -58,16 +58,16 @@ export interface IDocumentDefaultsOptions {
  * ```
  */
 export class DocumentDefaults extends XmlComponent {
-    private readonly runPropertiesDefaults: RunPropertiesDefaults;
-    private readonly paragraphPropertiesDefaults: ParagraphPropertiesDefaults;
+  private readonly runPropertiesDefaults: RunPropertiesDefaults;
+  private readonly paragraphPropertiesDefaults: ParagraphPropertiesDefaults;
 
-    public constructor(options: IDocumentDefaultsOptions) {
-        super("w:docDefaults");
+  public constructor(options: IDocumentDefaultsOptions) {
+    super("w:docDefaults");
 
-        this.runPropertiesDefaults = new RunPropertiesDefaults(options.run);
-        this.paragraphPropertiesDefaults = new ParagraphPropertiesDefaults(options.paragraph);
+    this.runPropertiesDefaults = new RunPropertiesDefaults(options.run);
+    this.paragraphPropertiesDefaults = new ParagraphPropertiesDefaults(options.paragraph);
 
-        this.root.push(this.runPropertiesDefaults);
-        this.root.push(this.paragraphPropertiesDefaults);
-    }
+    this.root.push(this.runPropertiesDefaults);
+    this.root.push(this.paragraphPropertiesDefaults);
+  }
 }

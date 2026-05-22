@@ -4,40 +4,40 @@
 import * as fs from "fs";
 
 import {
-    Document,
-    Packer,
-    PageOrientation,
-    Paragraph,
-    convertMillimetersToTwip,
+  Document,
+  Packer,
+  PageOrientation,
+  Paragraph,
+  convertMillimetersToTwip,
 } from "@office-open/docx";
 
 const doc = new Document({
-    sections: [
-        {
-            children: [new Paragraph("Hello World")],
-            properties: {
-                page: {
-                    size: {
-                        height: convertMillimetersToTwip(210),
-                        orientation: PageOrientation.LANDSCAPE,
-                        width: convertMillimetersToTwip(148),
-                    },
-                },
-            },
+  sections: [
+    {
+      children: [new Paragraph("Hello World")],
+      properties: {
+        page: {
+          size: {
+            height: convertMillimetersToTwip(210),
+            orientation: PageOrientation.LANDSCAPE,
+            width: convertMillimetersToTwip(148),
+          },
         },
-        {
-            children: [new Paragraph("Hello World")],
-            properties: {
-                page: {
-                    size: {
-                        height: convertMillimetersToTwip(420),
-                        orientation: PageOrientation.PORTRAIT,
-                        width: convertMillimetersToTwip(297),
-                    },
-                },
-            },
+      },
+    },
+    {
+      children: [new Paragraph("Hello World")],
+      properties: {
+        page: {
+          size: {
+            height: convertMillimetersToTwip(420),
+            orientation: PageOrientation.PORTRAIT,
+            width: convertMillimetersToTwip(297),
+          },
         },
-    ],
+      },
+    },
+  ],
 });
 
 const buffer = await Packer.toBuffer(doc);

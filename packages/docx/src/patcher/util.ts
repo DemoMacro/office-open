@@ -26,11 +26,11 @@ const formatter = new Formatter();
  * ```
  */
 export const toJson = (xmlData: string): Element => {
-    const xmlObj = xml2js(xmlData, {
-        captureSpacesBetweenElements: true,
-        compact: false,
-    }) as Element;
-    return xmlObj;
+  const xmlObj = xml2js(xmlData, {
+    captureSpacesBetweenElements: true,
+    compact: false,
+  }) as Element;
+  return xmlObj;
 };
 
 /**
@@ -50,9 +50,9 @@ export const toJson = (xmlData: string): Element => {
  * ```
  */
 export const createTextElementContents = (text: string): Element[] => {
-    const textJson = toJson(xml(formatter.format(new Text({ text }))));
+  const textJson = toJson(xml(formatter.format(new Text({ text }))));
 
-    return textJson.elements![0].elements ?? [];
+  return textJson.elements![0].elements ?? [];
 };
 
 /**
@@ -72,10 +72,10 @@ export const createTextElementContents = (text: string): Element[] => {
  * ```
  */
 export const patchSpaceAttribute = (element: Element): Element => ({
-    ...element,
-    attributes: {
-        "xml:space": "preserve",
-    },
+  ...element,
+  attributes: {
+    "xml:space": "preserve",
+  },
 });
 
 /**
@@ -95,4 +95,4 @@ export const patchSpaceAttribute = (element: Element): Element => ({
  * ```
  */
 export const getFirstLevelElements = (relationships: Element, id: string): Element[] =>
-    relationships.elements?.filter((e) => e.name === id)[0].elements ?? [];
+  relationships.elements?.filter((e) => e.name === id)[0].elements ?? [];

@@ -15,30 +15,30 @@ import type { XmlComponent } from "@file/xml-components";
  * Attributes for effect extent.
  */
 export interface EffectExtentAttributes {
-    /**
-     * ## Additional Extent on Top Edge
-     *
-     * Specifies the additional length, in EMUs, which shall be added to the top edge of the DrawingML object to determine its actual top edge including effects.
-     */
-    readonly top: number;
-    /**
-     * ## Additional Extent on Right Edge
-     *
-     * Specifies the additional length, in EMUs, which shall be added to the right edge of the DrawingML object to determine its actual right edge including effects.
-     */
-    readonly right: number;
-    /**
-     * ## Additional Extent on Bottom Edge
-     *
-     * Specifies the additional length, in EMUs, which shall be added to the bottom edge of the DrawingML object to determine its actual bottom edge including effects.
-     */
-    readonly bottom: number;
-    /**
-     * ## Additional Extent on Left Edge
-     *
-     * Specifies the additional length, in EMUs, which shall be added to the left edge of the DrawingML object to determine its actual left edge including effects.
-     */
-    readonly left: number;
+  /**
+   * ## Additional Extent on Top Edge
+   *
+   * Specifies the additional length, in EMUs, which shall be added to the top edge of the DrawingML object to determine its actual top edge including effects.
+   */
+  readonly top: number;
+  /**
+   * ## Additional Extent on Right Edge
+   *
+   * Specifies the additional length, in EMUs, which shall be added to the right edge of the DrawingML object to determine its actual right edge including effects.
+   */
+  readonly right: number;
+  /**
+   * ## Additional Extent on Bottom Edge
+   *
+   * Specifies the additional length, in EMUs, which shall be added to the bottom edge of the DrawingML object to determine its actual bottom edge including effects.
+   */
+  readonly bottom: number;
+  /**
+   * ## Additional Extent on Left Edge
+   *
+   * Specifies the additional length, in EMUs, which shall be added to the left edge of the DrawingML object to determine its actual left edge including effects.
+   */
+  readonly left: number;
 }
 
 /**
@@ -75,29 +75,29 @@ export interface EffectExtentAttributes {
  * ```
  */
 export const createEffectExtent = ({
-    top,
-    right,
-    bottom,
-    left,
+  top,
+  right,
+  bottom,
+  left,
 }: EffectExtentAttributes): XmlComponent =>
-    new BuilderElement<EffectExtentAttributes>({
-        attributes: {
-            bottom: {
-                key: "b",
-                value: bottom,
-            },
-            left: {
-                key: "l",
-                value: left,
-            },
-            right: {
-                key: "r",
-                value: right,
-            },
-            top: {
-                key: "t",
-                value: top,
-            },
-        },
-        name: "wp:effectExtent",
-    });
+  new BuilderElement<EffectExtentAttributes>({
+    attributes: {
+      bottom: {
+        key: "b",
+        value: bottom,
+      },
+      left: {
+        key: "l",
+        value: left,
+      },
+      right: {
+        key: "r",
+        value: right,
+      },
+      top: {
+        key: "t",
+        value: top,
+      },
+    },
+    name: "wp:effectExtent",
+  });

@@ -24,7 +24,7 @@ import { XmlComponent } from "@file/xml-components";
  * @internal
  */
 export class Seperator extends XmlComponent {
-    public constructor() {
-        super("w:separator");
-    }
+  public constructor() {
+    super("w:separator");
+  }
 }

@@ -8,10 +8,10 @@
  * @module
  */
 import {
-    OnOffElement,
-    StringValueElement,
-    XmlAttributeComponent,
-    XmlComponent,
+  OnOffElement,
+  StringValueElement,
+  XmlAttributeComponent,
+  XmlComponent,
 } from "@file/xml-components";
 
 import { Name, UiPriority } from "./components";
@@ -58,14 +58,14 @@ import { createTableStyleOverride } from "./table-style-override";
  * @property customStyle - Whether this is a custom user-defined style
  */
 export interface IStyleAttributes {
-    /** Type of style (paragraph, character, table, numbering) */
-    readonly type?: string;
-    /** Unique identifier for the style */
-    readonly styleId?: string;
-    /** Whether this is the default style for its type */
-    readonly default?: boolean;
-    /** Whether this is a custom user-defined style */
-    readonly customStyle?: string;
+  /** Type of style (paragraph, character, table, numbering) */
+  readonly type?: string;
+  /** Unique identifier for the style */
+  readonly styleId?: string;
+  /** Whether this is the default style for its type */
+  readonly default?: boolean;
+  /** Whether this is a custom user-defined style */
+  readonly customStyle?: string;
 }
 
 /**
@@ -81,35 +81,35 @@ export interface IStyleAttributes {
  * @property quickFormat - Whether the style appears in the quick format gallery
  */
 export interface IStyleOptions {
-    /** Display name of the style */
-    readonly name?: string;
-    /**
-     * Specifies the style upon which the current style is based-that is, the style from which the current style inherits. It is the mechanism for implementing style inheritance.
-     * Note that if the type of the current style must match the type of the style upon which it is based or the basedOn element will be ignored.
-     * However, if the current style is a numbering style, then the `basedOn` element is ignored.
-     *
-     * **WARNING**: You cannot set `basedOn` to be the same as `name`. This is akin to inheriting from itself. This creates a cyclic dependency and cause undesirable behavior.
-     */
-    readonly basedOn?: string;
-    /** Style to automatically apply to the next paragraph */
-    readonly next?: string;
-    /** Linked style ID for paragraph/character style pairing */
-    readonly link?: string;
-    /** Priority for displaying in the UI (lower numbers appear first) */
-    readonly uiPriority?: number;
-    /** Whether the style is semi-hidden in the UI */
-    readonly semiHidden?: boolean;
-    /** Whether the style should unhide when used */
-    readonly unhideWhenUsed?: boolean;
-    /** Whether the style appears in the quick format gallery */
-    readonly quickFormat?: boolean;
-    /**
-     * Table style overrides for specific table regions.
-     *
-     * Each override applies formatting to a specific region (first row,
-     * last column, banding, etc.) within a table style.
-     */
-    readonly tableStyleOverrides?: readonly TableStyleOverrideOptions[];
+  /** Display name of the style */
+  readonly name?: string;
+  /**
+   * Specifies the style upon which the current style is based-that is, the style from which the current style inherits. It is the mechanism for implementing style inheritance.
+   * Note that if the type of the current style must match the type of the style upon which it is based or the basedOn element will be ignored.
+   * However, if the current style is a numbering style, then the `basedOn` element is ignored.
+   *
+   * **WARNING**: You cannot set `basedOn` to be the same as `name`. This is akin to inheriting from itself. This creates a cyclic dependency and cause undesirable behavior.
+   */
+  readonly basedOn?: string;
+  /** Style to automatically apply to the next paragraph */
+  readonly next?: string;
+  /** Linked style ID for paragraph/character style pairing */
+  readonly link?: string;
+  /** Priority for displaying in the UI (lower numbers appear first) */
+  readonly uiPriority?: number;
+  /** Whether the style is semi-hidden in the UI */
+  readonly semiHidden?: boolean;
+  /** Whether the style should unhide when used */
+  readonly unhideWhenUsed?: boolean;
+  /** Whether the style appears in the quick format gallery */
+  readonly quickFormat?: boolean;
+  /**
+   * Table style overrides for specific table regions.
+   *
+   * Each override applies formatting to a specific region (first row,
+   * last column, banding, etc.) within a table style.
+   */
+  readonly tableStyleOverrides?: readonly TableStyleOverrideOptions[];
 }
 
 /**
@@ -118,12 +118,12 @@ export interface IStyleOptions {
  * @internal
  */
 class StyleAttributes extends XmlAttributeComponent<IStyleAttributes> {
-    protected readonly xmlKeys = {
-        customStyle: "w:customStyle",
-        default: "w:default",
-        styleId: "w:styleId",
-        type: "w:type",
-    };
+  protected readonly xmlKeys = {
+    customStyle: "w:customStyle",
+    default: "w:default",
+    styleId: "w:styleId",
+    type: "w:type",
+  };
 }
 
 /**
@@ -175,45 +175,45 @@ class StyleAttributes extends XmlAttributeComponent<IStyleAttributes> {
  * ```
  */
 export class Style extends XmlComponent {
-    public constructor(attributes: IStyleAttributes, options: IStyleOptions) {
-        super("w:style");
-        this.root.push(new StyleAttributes(attributes));
-        if (options.name) {
-            this.root.push(new Name(options.name));
-        }
-
-        if (options.basedOn) {
-            this.root.push(new StringValueElement("w:basedOn", options.basedOn));
-        }
-
-        if (options.next) {
-            this.root.push(new StringValueElement("w:next", options.next));
-        }
-
-        if (options.link) {
-            this.root.push(new StringValueElement("w:link", options.link));
-        }
-
-        if (options.uiPriority !== undefined) {
-            this.root.push(new UiPriority(options.uiPriority));
-        }
-
-        if (options.semiHidden !== undefined) {
-            this.root.push(new OnOffElement("w:semiHidden", options.semiHidden));
-        }
-
-        if (options.unhideWhenUsed !== undefined) {
-            this.root.push(new OnOffElement("w:unhideWhenUsed", options.unhideWhenUsed));
-        }
-
-        if (options.quickFormat !== undefined) {
-            this.root.push(new OnOffElement("w:qFormat", options.quickFormat));
-        }
-
-        if (options.tableStyleOverrides) {
-            for (const override of options.tableStyleOverrides) {
-                this.root.push(createTableStyleOverride(override));
-            }
-        }
+  public constructor(attributes: IStyleAttributes, options: IStyleOptions) {
+    super("w:style");
+    this.root.push(new StyleAttributes(attributes));
+    if (options.name) {
+      this.root.push(new Name(options.name));
     }
+
+    if (options.basedOn) {
+      this.root.push(new StringValueElement("w:basedOn", options.basedOn));
+    }
+
+    if (options.next) {
+      this.root.push(new StringValueElement("w:next", options.next));
+    }
+
+    if (options.link) {
+      this.root.push(new StringValueElement("w:link", options.link));
+    }
+
+    if (options.uiPriority !== undefined) {
+      this.root.push(new UiPriority(options.uiPriority));
+    }
+
+    if (options.semiHidden !== undefined) {
+      this.root.push(new OnOffElement("w:semiHidden", options.semiHidden));
+    }
+
+    if (options.unhideWhenUsed !== undefined) {
+      this.root.push(new OnOffElement("w:unhideWhenUsed", options.unhideWhenUsed));
+    }
+
+    if (options.quickFormat !== undefined) {
+      this.root.push(new OnOffElement("w:qFormat", options.quickFormat));
+    }
+
+    if (options.tableStyleOverrides) {
+      for (const override of options.tableStyleOverrides) {
+        this.root.push(createTableStyleOverride(override));
+      }
+    }
+  }
 }

@@ -17,13 +17,13 @@ import { XmlAttributeComponent } from "@file/xml-components";
  * @internal
  */
 export class FootnoteAttributes extends XmlAttributeComponent<{
-    /** Type of footnote (separator, continuationSeparator, or normal) */
-    readonly type?: string;
-    /** Unique numeric identifier for this footnote */
-    readonly id: number;
+  /** Type of footnote (separator, continuationSeparator, or normal) */
+  readonly type?: string;
+  /** Unique numeric identifier for this footnote */
+  readonly id: number;
 }> {
-    protected readonly xmlKeys = {
-        id: "w:id",
-        type: "w:type",
-    };
+  protected readonly xmlKeys = {
+    id: "w:id",
+    type: "w:type",
+  };
 }

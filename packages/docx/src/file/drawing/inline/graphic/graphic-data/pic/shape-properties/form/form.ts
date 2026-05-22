@@ -25,22 +25,22 @@ import { createTransform2D } from "@office-open/core/drawingml";
  * ```
  */
 export class Form extends XmlComponent {
-    private readonly core: XmlComponent;
+  private readonly core: XmlComponent;
 
-    public constructor(options: IMediaDataTransformation) {
-        super("a:xfrm");
-        this.core = createTransform2D({
-            x: options.offset?.emus?.x ?? 0,
-            y: options.offset?.emus?.y ?? 0,
-            width: options.emus.x,
-            height: options.emus.y,
-            flipHorizontal: options.flip?.horizontal,
-            flipVertical: options.flip?.vertical,
-            rotation: options.rotation,
-        });
-    }
+  public constructor(options: IMediaDataTransformation) {
+    super("a:xfrm");
+    this.core = createTransform2D({
+      x: options.offset?.emus?.x ?? 0,
+      y: options.offset?.emus?.y ?? 0,
+      width: options.emus.x,
+      height: options.emus.y,
+      flipHorizontal: options.flip?.horizontal,
+      flipVertical: options.flip?.vertical,
+      rotation: options.rotation,
+    });
+  }
 
-    public override prepForXml(context: IContext): IXmlableObject | undefined {
-        return this.core["prepForXml"]?.(context);
-    }
+  public override prepForXml(context: IContext): IXmlableObject | undefined {
+    return this.core["prepForXml"]?.(context);
+  }
 }

@@ -5,9 +5,9 @@ import { $ } from "execa";
 import inquirer from "inquirer";
 
 export interface Answers {
-    readonly type: "list" | "number";
-    readonly demoNumber?: number;
-    readonly demoFile?: number;
+  readonly type: "list" | "number";
+  readonly demoNumber?: number;
+  readonly demoFile?: number;
 }
 
 const dir = "./demo";
@@ -15,56 +15,56 @@ const fileNames = fs.readdirSync(dir);
 
 const keys = fileNames.map((f) => path.parse(f).name);
 const getFileNumber = (file: string): number => {
-    const [firstPart] = file.split("-");
+  const [firstPart] = file.split("-");
 
-    return Number(firstPart);
+  return Number(firstPart);
 };
 
 const demoFiles = keys
-    .filter((file) => !isNaN(getFileNumber(file)))
-    .toSorted((a, b) => getFileNumber(a) - getFileNumber(b));
+  .filter((file) => !isNaN(getFileNumber(file)))
+  .toSorted((a, b) => getFileNumber(a) - getFileNumber(b));
 
 const firstArg = process.argv[2];
 const firstArgNumber = Number.parseInt(firstArg, 10);
 let demoNumber: number;
 if (firstArg && !isNaN(firstArgNumber)) {
-    demoNumber = firstArgNumber;
+  demoNumber = firstArgNumber;
 } else {
-    const answers = await inquirer.prompt<Answers>([
-        {
-            choices: ["list", "number"],
-            message: "Select demo from a list or via number",
-            name: "type",
-            type: "list",
-        },
-        {
-            choices: demoFiles,
-            filter: (input) => parseInt(input.split("-")[0], 10),
-            message: "What demo do you wish to run?",
-            name: "demoFile",
-            type: "list",
-            when: (a) => a.type === "list",
-        },
-        {
-            default: 1,
-            message: "What demo do you wish to run? (Enter a number)",
-            name: "demoNumber",
-            type: "number",
-            when: (a) => a.type === "number",
-        },
-    ]);
-    demoNumber = answers.demoNumber ?? answers.demoFile ?? 1;
+  const answers = await inquirer.prompt<Answers>([
+    {
+      choices: ["list", "number"],
+      message: "Select demo from a list or via number",
+      name: "type",
+      type: "list",
+    },
+    {
+      choices: demoFiles,
+      filter: (input) => parseInt(input.split("-")[0], 10),
+      message: "What demo do you wish to run?",
+      name: "demoFile",
+      type: "list",
+      when: (a) => a.type === "list",
+    },
+    {
+      default: 1,
+      message: "What demo do you wish to run? (Enter a number)",
+      name: "demoNumber",
+      type: "number",
+      when: (a) => a.type === "number",
+    },
+  ]);
+  demoNumber = answers.demoNumber ?? answers.demoFile ?? 1;
 }
 
 const files = fs.readdirSync(dir).filter((fn) => fn.startsWith(demoNumber.toString()));
 
 if (files.length === 0) {
-    console.error(`demo number ${demoNumber} does not exist`);
+  console.error(`demo number ${demoNumber} does not exist`);
 } else {
-    const filePath = path.join(dir, files[0]);
+  const filePath = path.join(dir, files[0]);
 
-    console.log(`Running demo ${demoNumber}: ${files[0]}`);
-    const { stdout } = await $`tsx ${filePath}`;
-    console.log(stdout);
-    console.log("Successfully created document!");
+  console.log(`Running demo ${demoNumber}: ${files[0]}`);
+  const { stdout } = await $`tsx ${filePath}`;
+  console.log(stdout);
+  console.log("Successfully created document!");
 }

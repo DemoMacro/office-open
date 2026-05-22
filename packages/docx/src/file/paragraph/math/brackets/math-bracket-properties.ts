@@ -19,19 +19,19 @@ import { createMathEndingCharacter } from "./math-ending-char";
  * @see {@link createMathBracketProperties}
  */
 export interface MathBracketPropertiesOptions {
-    /** Optional custom characters for bracket delimiters */
-    readonly characters?: {
-        /** The opening/beginning bracket character */
-        readonly beginningCharacter: string;
-        /** The closing/ending bracket character */
-        readonly endingCharacter: string;
-    };
-    /** Separator character for multiple arguments */
-    readonly separatorCharacter?: string;
-    /** Whether the delimiters grow to match their content */
-    readonly grow?: boolean;
-    /** Delimiter shape: "centered" or "match" */
-    readonly shape?: "centered" | "match";
+  /** Optional custom characters for bracket delimiters */
+  readonly characters?: {
+    /** The opening/beginning bracket character */
+    readonly beginningCharacter: string;
+    /** The closing/ending bracket character */
+    readonly endingCharacter: string;
+  };
+  /** Separator character for multiple arguments */
+  readonly separatorCharacter?: string;
+  /** Whether the delimiters grow to match their content */
+  readonly grow?: boolean;
+  /** Delimiter shape: "centered" or "match" */
+  readonly shape?: "centered" | "match";
 }
 
 /**
@@ -57,41 +57,41 @@ export interface MathBracketPropertiesOptions {
  * ```
  */
 export const createMathBracketProperties = ({
-    characters,
-    separatorCharacter,
-    grow,
-    shape,
+  characters,
+  separatorCharacter,
+  grow,
+  shape,
 }: MathBracketPropertiesOptions): XmlComponent => {
-    const children: XmlComponent[] = [];
+  const children: XmlComponent[] = [];
 
-    if (characters) {
-        children.push(createMathBeginningCharacter({ character: characters.beginningCharacter }));
-    }
-    if (separatorCharacter !== undefined) {
-        children.push(
-            new BuilderElement({
-                attributes: { val: { key: "m:val", value: separatorCharacter } },
-                name: "m:sepChr",
-            }),
-        );
-    }
-    if (characters) {
-        children.push(createMathEndingCharacter({ character: characters.endingCharacter }));
-    }
-    if (grow !== undefined) {
-        children.push(new OnOffElement("m:grow", grow));
-    }
-    if (shape !== undefined) {
-        children.push(
-            new BuilderElement({
-                attributes: { val: { key: "m:val", value: shape } },
-                name: "m:shp",
-            }),
-        );
-    }
+  if (characters) {
+    children.push(createMathBeginningCharacter({ character: characters.beginningCharacter }));
+  }
+  if (separatorCharacter !== undefined) {
+    children.push(
+      new BuilderElement({
+        attributes: { val: { key: "m:val", value: separatorCharacter } },
+        name: "m:sepChr",
+      }),
+    );
+  }
+  if (characters) {
+    children.push(createMathEndingCharacter({ character: characters.endingCharacter }));
+  }
+  if (grow !== undefined) {
+    children.push(new OnOffElement("m:grow", grow));
+  }
+  if (shape !== undefined) {
+    children.push(
+      new BuilderElement({
+        attributes: { val: { key: "m:val", value: shape } },
+        name: "m:shp",
+      }),
+    );
+  }
 
-    return new BuilderElement({
-        children,
-        name: "m:dPr",
-    });
+  return new BuilderElement({
+    children,
+    name: "m:dPr",
+  });
 };

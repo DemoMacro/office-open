@@ -31,32 +31,32 @@ import { decimalNumber } from "@util/values";
  * @publicApi
  */
 export const CombineBracketsType = {
-    /** No brackets */
-    NONE: "none",
-    /** Round brackets (parentheses) */
-    ROUND: "round",
-    /** Square brackets */
-    SQUARE: "square",
-    /** Angle brackets */
-    ANGLE: "angle",
-    /** Curly brackets (braces) */
-    CURLY: "curly",
+  /** No brackets */
+  NONE: "none",
+  /** Round brackets (parentheses) */
+  ROUND: "round",
+  /** Square brackets */
+  SQUARE: "square",
+  /** Angle brackets */
+  ANGLE: "angle",
+  /** Curly brackets (braces) */
+  CURLY: "curly",
 } as const;
 
 /**
  * Options for East Asian layout properties.
  */
 export interface EastAsianLayoutOptions {
-    /** Character combination ID (referencing a combined character entry) */
-    readonly id?: number;
-    /** Whether to combine characters */
-    readonly combine?: boolean;
-    /** Bracket type for combined characters */
-    readonly combineBrackets?: (typeof CombineBracketsType)[keyof typeof CombineBracketsType];
-    /** Whether to render text vertically */
-    readonly vert?: boolean;
-    /** Whether to compress characters in vertical text */
-    readonly vertCompress?: boolean;
+  /** Character combination ID (referencing a combined character entry) */
+  readonly id?: number;
+  /** Whether to combine characters */
+  readonly combine?: boolean;
+  /** Bracket type for combined characters */
+  readonly combineBrackets?: (typeof CombineBracketsType)[keyof typeof CombineBracketsType];
+  /** Whether to render text vertically */
+  readonly vert?: boolean;
+  /** Whether to compress characters in vertical text */
+  readonly vertCompress?: boolean;
 }
 
 /**
@@ -74,19 +74,19 @@ export interface EastAsianLayoutOptions {
  * ```
  */
 export const createEastAsianLayout = ({
-    id,
-    combine,
-    combineBrackets,
-    vert,
-    vertCompress,
+  id,
+  combine,
+  combineBrackets,
+  vert,
+  vertCompress,
 }: EastAsianLayoutOptions): XmlComponent =>
-    new BuilderElement<EastAsianLayoutOptions>({
-        attributes: {
-            combine: { key: "w:combine", value: combine },
-            combineBrackets: { key: "w:combineBrackets", value: combineBrackets },
-            id: { key: "w:id", value: id === undefined ? undefined : decimalNumber(id) },
-            vert: { key: "w:vert", value: vert },
-            vertCompress: { key: "w:vertCompress", value: vertCompress },
-        },
-        name: "w:eastAsianLayout",
-    });
+  new BuilderElement<EastAsianLayoutOptions>({
+    attributes: {
+      combine: { key: "w:combine", value: combine },
+      combineBrackets: { key: "w:combineBrackets", value: combineBrackets },
+      id: { key: "w:id", value: id === undefined ? undefined : decimalNumber(id) },
+      vert: { key: "w:vert", value: vert },
+      vertCompress: { key: "w:vertCompress", value: vertCompress },
+    },
+    name: "w:eastAsianLayout",
+  });

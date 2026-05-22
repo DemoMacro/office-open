@@ -22,13 +22,13 @@ import type { XmlComponent } from "../xml-components";
 // </xsd:complexType>
 
 export interface Transform2DOptions {
-    readonly x?: number;
-    readonly y?: number;
-    readonly width?: number;
-    readonly height?: number;
-    readonly flipHorizontal?: boolean;
-    readonly flipVertical?: boolean;
-    readonly rotation?: number;
+  readonly x?: number;
+  readonly y?: number;
+  readonly width?: number;
+  readonly height?: number;
+  readonly flipHorizontal?: boolean;
+  readonly flipVertical?: boolean;
+  readonly rotation?: number;
 }
 
 // <xsd:complexType name="CT_GroupTransform2D">
@@ -43,23 +43,23 @@ export interface Transform2DOptions {
 // </xsd:complexType>
 
 export interface GroupTransform2DOptions extends Transform2DOptions {
-    readonly childOffsetX?: number;
-    readonly childOffsetY?: number;
-    readonly childExtentWidth?: number;
-    readonly childExtentHeight?: number;
+  readonly childOffsetX?: number;
+  readonly childOffsetY?: number;
+  readonly childExtentWidth?: number;
+  readonly childExtentHeight?: number;
 }
 
 function buildXfrmAttrs(options: Transform2DOptions) {
-    const attrs: Record<
-        string,
-        { readonly key: string; readonly value: string | number | boolean | undefined }
-    > = {};
-    if (options.flipHorizontal !== undefined)
-        attrs.flipH = { key: "flipH", value: options.flipHorizontal };
-    if (options.flipVertical !== undefined)
-        attrs.flipV = { key: "flipV", value: options.flipVertical };
-    if (options.rotation !== undefined) attrs.rot = { key: "rot", value: options.rotation };
-    return Object.keys(attrs).length > 0 ? attrs : undefined;
+  const attrs: Record<
+    string,
+    { readonly key: string; readonly value: string | number | boolean | undefined }
+  > = {};
+  if (options.flipHorizontal !== undefined)
+    attrs.flipH = { key: "flipH", value: options.flipHorizontal };
+  if (options.flipVertical !== undefined)
+    attrs.flipV = { key: "flipV", value: options.flipVertical };
+  if (options.rotation !== undefined) attrs.rot = { key: "rot", value: options.rotation };
+  return Object.keys(attrs).length > 0 ? attrs : undefined;
 }
 
 /**
@@ -69,70 +69,70 @@ function buildXfrmAttrs(options: Transform2DOptions) {
  * @param elementName - Element name, defaults to "a:xfrm".
  */
 export const createTransform2D = (
-    options: Transform2DOptions,
-    elementName: string = "a:xfrm",
+  options: Transform2DOptions,
+  elementName: string = "a:xfrm",
 ): XmlComponent => {
-    const children: XmlComponent[] = [];
+  const children: XmlComponent[] = [];
 
-    if (options.x !== undefined || options.y !== undefined) {
-        children.push(
-            new BuilderElement({
-                name: "a:off",
-                attributes: {
-                    x: { key: "x", value: options.x ?? 0 },
-                    y: { key: "y", value: options.y ?? 0 },
-                },
-            }),
-        );
-    }
+  if (options.x !== undefined || options.y !== undefined) {
+    children.push(
+      new BuilderElement({
+        name: "a:off",
+        attributes: {
+          x: { key: "x", value: options.x ?? 0 },
+          y: { key: "y", value: options.y ?? 0 },
+        },
+      }),
+    );
+  }
 
-    if (options.width !== undefined || options.height !== undefined) {
-        children.push(
-            new BuilderElement({
-                name: "a:ext",
-                attributes: {
-                    cx: { key: "cx", value: options.width ?? 0 },
-                    cy: { key: "cy", value: options.height ?? 0 },
-                },
-            }),
-        );
-    }
+  if (options.width !== undefined || options.height !== undefined) {
+    children.push(
+      new BuilderElement({
+        name: "a:ext",
+        attributes: {
+          cx: { key: "cx", value: options.width ?? 0 },
+          cy: { key: "cy", value: options.height ?? 0 },
+        },
+      }),
+    );
+  }
 
-    return new BuilderElement({
-        name: elementName,
-        attributes: buildXfrmAttrs(options) as never,
-        children: children.length > 0 ? children : undefined,
-    });
+  return new BuilderElement({
+    name: elementName,
+    attributes: buildXfrmAttrs(options) as never,
+    children: children.length > 0 ? children : undefined,
+  });
 };
 
 /**
  * Creates a group transform element (a:xfrm with chOff/chExt children).
  */
 export const createGroupTransform2D = (
-    options: GroupTransform2DOptions,
-    elementName: string = "a:xfrm",
+  options: GroupTransform2DOptions,
+  elementName: string = "a:xfrm",
 ): XmlComponent => {
-    const base = createTransform2D(options, elementName);
+  const base = createTransform2D(options, elementName);
 
-    base["root"].push(
-        new BuilderElement({
-            name: "a:chOff",
-            attributes: {
-                x: { key: "x", value: options.childOffsetX ?? 0 },
-                y: { key: "y", value: options.childOffsetY ?? 0 },
-            },
-        }),
-    );
+  base["root"].push(
+    new BuilderElement({
+      name: "a:chOff",
+      attributes: {
+        x: { key: "x", value: options.childOffsetX ?? 0 },
+        y: { key: "y", value: options.childOffsetY ?? 0 },
+      },
+    }),
+  );
 
-    base["root"].push(
-        new BuilderElement({
-            name: "a:chExt",
-            attributes: {
-                cx: { key: "cx", value: options.childExtentWidth ?? 0 },
-                cy: { key: "cy", value: options.childExtentHeight ?? 0 },
-            },
-        }),
-    );
+  base["root"].push(
+    new BuilderElement({
+      name: "a:chExt",
+      attributes: {
+        cx: { key: "cx", value: options.childExtentWidth ?? 0 },
+        cy: { key: "cy", value: options.childExtentHeight ?? 0 },
+      },
+    }),
+  );
 
-    return base;
+  return base;
 };

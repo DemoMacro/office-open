@@ -33,14 +33,14 @@ import type { IBaseParagraphStyleOptions, IParagraphStyleOptions } from "./parag
  * ```
  */
 export class HeadingStyle extends StyleForParagraph {
-    public constructor(options: IParagraphStyleOptions) {
-        super({
-            basedOn: "Normal",
-            next: "Normal",
-            quickFormat: true,
-            ...options,
-        });
-    }
+  public constructor(options: IParagraphStyleOptions) {
+    super({
+      basedOn: "Normal",
+      next: "Normal",
+      quickFormat: true,
+      ...options,
+    });
+  }
 }
 
 /**
@@ -56,13 +56,13 @@ export class HeadingStyle extends StyleForParagraph {
  * ```
  */
 export class TitleStyle extends HeadingStyle {
-    public constructor(options: IBaseParagraphStyleOptions) {
-        super({
-            id: "Title",
-            name: "Title",
-            ...options,
-        });
-    }
+  public constructor(options: IBaseParagraphStyleOptions) {
+    super({
+      id: "Title",
+      name: "Title",
+      ...options,
+    });
+  }
 }
 
 /**
@@ -78,13 +78,13 @@ export class TitleStyle extends HeadingStyle {
  * ```
  */
 export class Heading1Style extends HeadingStyle {
-    public constructor(options: IBaseParagraphStyleOptions) {
-        super({
-            id: "Heading1",
-            name: "Heading 1",
-            ...options,
-        });
-    }
+  public constructor(options: IBaseParagraphStyleOptions) {
+    super({
+      id: "Heading1",
+      name: "Heading 1",
+      ...options,
+    });
+  }
 }
 
 /**
@@ -93,13 +93,13 @@ export class Heading1Style extends HeadingStyle {
  * Second-level heading style for subsections.
  */
 export class Heading2Style extends HeadingStyle {
-    public constructor(options: IBaseParagraphStyleOptions) {
-        super({
-            id: "Heading2",
-            name: "Heading 2",
-            ...options,
-        });
-    }
+  public constructor(options: IBaseParagraphStyleOptions) {
+    super({
+      id: "Heading2",
+      name: "Heading 2",
+      ...options,
+    });
+  }
 }
 
 /**
@@ -108,13 +108,13 @@ export class Heading2Style extends HeadingStyle {
  * Third-level heading style for sub-subsections.
  */
 export class Heading3Style extends HeadingStyle {
-    public constructor(options: IBaseParagraphStyleOptions) {
-        super({
-            id: "Heading3",
-            name: "Heading 3",
-            ...options,
-        });
-    }
+  public constructor(options: IBaseParagraphStyleOptions) {
+    super({
+      id: "Heading3",
+      name: "Heading 3",
+      ...options,
+    });
+  }
 }
 
 /**
@@ -123,13 +123,13 @@ export class Heading3Style extends HeadingStyle {
  * Fourth-level heading style for nested sections.
  */
 export class Heading4Style extends HeadingStyle {
-    public constructor(options: IBaseParagraphStyleOptions) {
-        super({
-            id: "Heading4",
-            name: "Heading 4",
-            ...options,
-        });
-    }
+  public constructor(options: IBaseParagraphStyleOptions) {
+    super({
+      id: "Heading4",
+      name: "Heading 4",
+      ...options,
+    });
+  }
 }
 
 /**
@@ -138,13 +138,13 @@ export class Heading4Style extends HeadingStyle {
  * Fifth-level heading style for deeply nested sections.
  */
 export class Heading5Style extends HeadingStyle {
-    public constructor(options: IBaseParagraphStyleOptions) {
-        super({
-            id: "Heading5",
-            name: "Heading 5",
-            ...options,
-        });
-    }
+  public constructor(options: IBaseParagraphStyleOptions) {
+    super({
+      id: "Heading5",
+      name: "Heading 5",
+      ...options,
+    });
+  }
 }
 
 /**
@@ -153,13 +153,13 @@ export class Heading5Style extends HeadingStyle {
  * Sixth-level heading style for the deepest nested sections.
  */
 export class Heading6Style extends HeadingStyle {
-    public constructor(options: IBaseParagraphStyleOptions) {
-        super({
-            id: "Heading6",
-            name: "Heading 6",
-            ...options,
-        });
-    }
+  public constructor(options: IBaseParagraphStyleOptions) {
+    super({
+      id: "Heading6",
+      name: "Heading 6",
+      ...options,
+    });
+  }
 }
 
 /**
@@ -168,13 +168,13 @@ export class Heading6Style extends HeadingStyle {
  * Used for emphasizing important paragraphs with bold formatting.
  */
 export class StrongStyle extends HeadingStyle {
-    public constructor(options: IBaseParagraphStyleOptions) {
-        super({
-            id: "Strong",
-            name: "Strong",
-            ...options,
-        });
-    }
+  public constructor(options: IBaseParagraphStyleOptions) {
+    super({
+      id: "Strong",
+      name: "Strong",
+      ...options,
+    });
+  }
 }
 
 /**
@@ -183,15 +183,15 @@ export class StrongStyle extends HeadingStyle {
  * Used for paragraphs within numbered or bulleted lists.
  */
 export class ListParagraph extends StyleForParagraph {
-    public constructor(options: IBaseParagraphStyleOptions) {
-        super({
-            basedOn: "Normal",
-            id: "ListParagraph",
-            name: "List Paragraph",
-            quickFormat: true,
-            ...options,
-        });
-    }
+  public constructor(options: IBaseParagraphStyleOptions) {
+    super({
+      basedOn: "Normal",
+      id: "ListParagraph",
+      name: "List Paragraph",
+      quickFormat: true,
+      ...options,
+    });
+  }
 }
 
 /**
@@ -200,28 +200,28 @@ export class ListParagraph extends StyleForParagraph {
  * Used for the text content of footnotes with smaller font size and tighter spacing.
  */
 export class FootnoteText extends StyleForParagraph {
-    public constructor(options: IBaseParagraphStyleOptions) {
-        super({
-            basedOn: "Normal",
-            id: "FootnoteText",
-            link: "FootnoteTextChar",
-            name: "footnote text",
-            paragraph: {
-                spacing: {
-                    after: 0,
-                    line: 240,
-                    lineRule: LineRuleType.AUTO,
-                },
-            },
-            run: {
-                size: 20,
-            },
-            semiHidden: true,
-            uiPriority: 99,
-            unhideWhenUsed: true,
-            ...options,
-        });
-    }
+  public constructor(options: IBaseParagraphStyleOptions) {
+    super({
+      basedOn: "Normal",
+      id: "FootnoteText",
+      link: "FootnoteTextChar",
+      name: "footnote text",
+      paragraph: {
+        spacing: {
+          after: 0,
+          line: 240,
+          lineRule: LineRuleType.AUTO,
+        },
+      },
+      run: {
+        size: 20,
+      },
+      semiHidden: true,
+      uiPriority: 99,
+      unhideWhenUsed: true,
+      ...options,
+    });
+  }
 }
 
 /**
@@ -230,18 +230,18 @@ export class FootnoteText extends StyleForParagraph {
  * Used for footnote reference numbers in the main text, displayed as superscript.
  */
 export class FootnoteReferenceStyle extends StyleForCharacter {
-    public constructor(options: IBaseCharacterStyleOptions) {
-        super({
-            basedOn: "DefaultParagraphFont",
-            id: "FootnoteReference",
-            name: "footnote reference",
-            run: {
-                superScript: true,
-            },
-            semiHidden: true,
-            ...options,
-        });
-    }
+  public constructor(options: IBaseCharacterStyleOptions) {
+    super({
+      basedOn: "DefaultParagraphFont",
+      id: "FootnoteReference",
+      name: "footnote reference",
+      run: {
+        superScript: true,
+      },
+      semiHidden: true,
+      ...options,
+    });
+  }
 }
 
 /**
@@ -250,19 +250,19 @@ export class FootnoteReferenceStyle extends StyleForCharacter {
  * Character style linked to FootnoteText paragraph style for consistent formatting.
  */
 export class FootnoteTextChar extends StyleForCharacter {
-    public constructor(options: IBaseCharacterStyleOptions) {
-        super({
-            basedOn: "DefaultParagraphFont",
-            id: "FootnoteTextChar",
-            link: "FootnoteText",
-            name: "Footnote Text Char",
-            run: {
-                size: 20,
-            },
-            semiHidden: true,
-            ...options,
-        });
-    }
+  public constructor(options: IBaseCharacterStyleOptions) {
+    super({
+      basedOn: "DefaultParagraphFont",
+      id: "FootnoteTextChar",
+      link: "FootnoteText",
+      name: "Footnote Text Char",
+      run: {
+        size: 20,
+      },
+      semiHidden: true,
+      ...options,
+    });
+  }
 }
 
 /**
@@ -271,28 +271,28 @@ export class FootnoteTextChar extends StyleForCharacter {
  * Used for the text content of endnotes with smaller font size and tighter spacing.
  */
 export class EndnoteText extends StyleForParagraph {
-    public constructor(options: IBaseParagraphStyleOptions) {
-        super({
-            basedOn: "Normal",
-            id: "EndnoteText",
-            link: "EndnoteTextChar",
-            name: "endnote text",
-            paragraph: {
-                spacing: {
-                    after: 0,
-                    line: 240,
-                    lineRule: LineRuleType.AUTO,
-                },
-            },
-            run: {
-                size: 20,
-            },
-            semiHidden: true,
-            uiPriority: 99,
-            unhideWhenUsed: true,
-            ...options,
-        });
-    }
+  public constructor(options: IBaseParagraphStyleOptions) {
+    super({
+      basedOn: "Normal",
+      id: "EndnoteText",
+      link: "EndnoteTextChar",
+      name: "endnote text",
+      paragraph: {
+        spacing: {
+          after: 0,
+          line: 240,
+          lineRule: LineRuleType.AUTO,
+        },
+      },
+      run: {
+        size: 20,
+      },
+      semiHidden: true,
+      uiPriority: 99,
+      unhideWhenUsed: true,
+      ...options,
+    });
+  }
 }
 
 /**
@@ -301,18 +301,18 @@ export class EndnoteText extends StyleForParagraph {
  * Used for endnote reference numbers in the main text, displayed as superscript.
  */
 export class EndnoteReferenceStyle extends StyleForCharacter {
-    public constructor(options: IBaseCharacterStyleOptions) {
-        super({
-            basedOn: "DefaultParagraphFont",
-            id: "EndnoteReference",
-            name: "endnote reference",
-            run: {
-                superScript: true,
-            },
-            semiHidden: true,
-            ...options,
-        });
-    }
+  public constructor(options: IBaseCharacterStyleOptions) {
+    super({
+      basedOn: "DefaultParagraphFont",
+      id: "EndnoteReference",
+      name: "endnote reference",
+      run: {
+        superScript: true,
+      },
+      semiHidden: true,
+      ...options,
+    });
+  }
 }
 
 /**
@@ -321,19 +321,19 @@ export class EndnoteReferenceStyle extends StyleForCharacter {
  * Character style linked to EndnoteText paragraph style for consistent formatting.
  */
 export class EndnoteTextChar extends StyleForCharacter {
-    public constructor(options: IBaseCharacterStyleOptions) {
-        super({
-            basedOn: "DefaultParagraphFont",
-            id: "EndnoteTextChar",
-            link: "EndnoteText",
-            name: "Endnote Text Char",
-            run: {
-                size: 20,
-            },
-            semiHidden: true,
-            ...options,
-        });
-    }
+  public constructor(options: IBaseCharacterStyleOptions) {
+    super({
+      basedOn: "DefaultParagraphFont",
+      id: "EndnoteTextChar",
+      link: "EndnoteText",
+      name: "Endnote Text Char",
+      run: {
+        size: 20,
+      },
+      semiHidden: true,
+      ...options,
+    });
+  }
 }
 
 /**
@@ -342,18 +342,18 @@ export class EndnoteTextChar extends StyleForCharacter {
  * Used for hyperlinks with blue color and single underline formatting.
  */
 export class HyperlinkStyle extends StyleForCharacter {
-    public constructor(options: IBaseCharacterStyleOptions) {
-        super({
-            basedOn: "DefaultParagraphFont",
-            id: "Hyperlink",
-            name: "Hyperlink",
-            run: {
-                color: "0563C1",
-                underline: {
-                    type: UnderlineType.SINGLE,
-                },
-            },
-            ...options,
-        });
-    }
+  public constructor(options: IBaseCharacterStyleOptions) {
+    super({
+      basedOn: "DefaultParagraphFont",
+      id: "Hyperlink",
+      name: "Hyperlink",
+      run: {
+        color: "0563C1",
+        underline: {
+          type: UnderlineType.SINGLE,
+        },
+      },
+      ...options,
+    });
+  }
 }

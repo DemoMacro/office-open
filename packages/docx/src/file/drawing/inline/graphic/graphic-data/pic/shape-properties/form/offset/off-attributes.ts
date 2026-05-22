@@ -21,13 +21,13 @@ import { XmlAttributeComponent } from "@file/xml-components";
  * @internal
  */
 export class OffsetAttributes extends XmlAttributeComponent<{
-    /** X coordinate in EMUs (English Metric Units) */
-    readonly x?: number;
-    /** Y coordinate in EMUs (English Metric Units) */
-    readonly y?: number;
+  /** X coordinate in EMUs (English Metric Units) */
+  readonly x?: number;
+  /** Y coordinate in EMUs (English Metric Units) */
+  readonly y?: number;
 }> {
-    protected readonly xmlKeys = {
-        x: "x",
-        y: "y",
-    };
+  protected readonly xmlKeys = {
+    x: "x",
+    y: "y",
+  };
 }

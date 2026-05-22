@@ -31,7 +31,7 @@ import { createMathBarPos } from "./math-bar-pos";
  * ```
  */
 export const createMathBarProperties = ({ type }: { readonly type: string }): XmlComponent =>
-    new BuilderElement({
-        children: [createMathBarPos({ val: type })],
-        name: "m:barPr",
-    });
+  new BuilderElement({
+    children: [createMathBarPos({ val: type })],
+    name: "m:barPr",
+  });

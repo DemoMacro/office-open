@@ -8,10 +8,10 @@ import type { ITableOptions } from "./table";
 import { Table } from "./table";
 
 export interface ITableFrameOptions extends ITableOptions {
-    readonly x?: number;
-    readonly y?: number;
-    readonly width?: number;
-    readonly height?: number;
+  readonly x?: number;
+  readonly y?: number;
+  readonly width?: number;
+  readonly height?: number;
 }
 
 /**
@@ -20,21 +20,21 @@ export interface ITableFrameOptions extends ITableOptions {
  * x/y/width/height accept pixel values, converted to EMUs internally.
  */
 export class TableFrame extends XmlComponent {
-    public constructor(options: ITableFrameOptions) {
-        super("p:graphicFrame");
+  public constructor(options: ITableFrameOptions) {
+    super("p:graphicFrame");
 
-        this.root.push(new GraphicFrameNonVisual());
+    this.root.push(new GraphicFrameNonVisual());
 
-        this.root.push(
-            new Transform2D(
-                {
-                    ...emuPosition(options),
-                },
-                "p",
-            ),
-        );
+    this.root.push(
+      new Transform2D(
+        {
+          ...emuPosition(options),
+        },
+        "p",
+      ),
+    );
 
-        const table = new Table(options);
-        this.root.push(new Graphic(table));
-    }
+    const table = new Table(options);
+    this.root.push(new Graphic(table));
+  }
 }

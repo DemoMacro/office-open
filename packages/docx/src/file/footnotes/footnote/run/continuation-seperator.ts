@@ -24,7 +24,7 @@ import { XmlComponent } from "@file/xml-components";
  * @internal
  */
 export class ContinuationSeperator extends XmlComponent {
-    public constructor() {
-        super("w:continuationSeparator");
-    }
+  public constructor() {
+    super("w:continuationSeparator");
+  }
 }

@@ -19,14 +19,14 @@ import type { OutlineOptions } from "./graphic/graphic-data/pic/shape-properties
  * Options for creating an inline drawing element.
  */
 interface InlineOptions {
-    readonly mediaData: IExtendedMediaData;
-    readonly transform: IMediaDataTransformation;
-    readonly docProperties?: DocPropertiesOptions;
-    readonly outline?: OutlineOptions;
-    readonly fill?: FillOptions;
-    readonly effects?: EffectListOptions;
-    readonly blipEffects?: BlipEffectsOptions;
-    readonly tile?: TileOptions;
+  readonly mediaData: IExtendedMediaData;
+  readonly transform: IMediaDataTransformation;
+  readonly docProperties?: DocPropertiesOptions;
+  readonly outline?: OutlineOptions;
+  readonly fill?: FillOptions;
+  readonly effects?: EffectListOptions;
+  readonly blipEffects?: BlipEffectsOptions;
+  readonly tile?: TileOptions;
 }
 
 // <xsd:complexType name="CT_Inline">
@@ -44,58 +44,58 @@ interface InlineOptions {
 //     <xsd:attribute name="distR" type="ST_WrapDistance" use="optional"/>
 // </xsd:complexType>
 export const createInline = ({
-    mediaData,
-    transform,
-    docProperties,
-    outline,
-    fill,
-    effects,
-    blipEffects,
-    tile,
+  mediaData,
+  transform,
+  docProperties,
+  outline,
+  fill,
+  effects,
+  blipEffects,
+  tile,
 }: InlineOptions): XmlComponent =>
-    new BuilderElement({
-        attributes: {
-            distanceBottom: {
-                key: "distB",
-                value: 0,
-            },
-            distanceLeft: {
-                key: "distL",
-                value: 0,
-            },
-            distanceRight: {
-                key: "distR",
-                value: 0,
-            },
-            distanceTop: {
-                key: "distT",
-                value: 0,
-            },
-        },
-        children: [
-            createExtent({ x: transform.emus.x, y: transform.emus.y }),
-            createEffectExtent(
-                outline
-                    ? {
-                          bottom: (outline.width ?? 9525) * 2,
-                          left: (outline.width ?? 9525) * 2,
-                          right: (outline.width ?? 9525) * 2,
-                          top: (outline.width ?? 9525) * 2,
-                      }
-                    : { bottom: 0, left: 0, right: 0, top: 0 },
-            ),
-            new DocProperties(docProperties),
-            createGraphicFrameProperties(),
-            new Graphic({
-                blipEffects,
-                effects,
-                hyperlink: docProperties?.hyperlink,
-                mediaData,
-                outline,
-                fill,
-                tile,
-                transform,
-            }),
-        ],
-        name: "wp:inline",
-    });
+  new BuilderElement({
+    attributes: {
+      distanceBottom: {
+        key: "distB",
+        value: 0,
+      },
+      distanceLeft: {
+        key: "distL",
+        value: 0,
+      },
+      distanceRight: {
+        key: "distR",
+        value: 0,
+      },
+      distanceTop: {
+        key: "distT",
+        value: 0,
+      },
+    },
+    children: [
+      createExtent({ x: transform.emus.x, y: transform.emus.y }),
+      createEffectExtent(
+        outline
+          ? {
+              bottom: (outline.width ?? 9525) * 2,
+              left: (outline.width ?? 9525) * 2,
+              right: (outline.width ?? 9525) * 2,
+              top: (outline.width ?? 9525) * 2,
+            }
+          : { bottom: 0, left: 0, right: 0, top: 0 },
+      ),
+      new DocProperties(docProperties),
+      createGraphicFrameProperties(),
+      new Graphic({
+        blipEffects,
+        effects,
+        hyperlink: docProperties?.hyperlink,
+        mediaData,
+        outline,
+        fill,
+        tile,
+        transform,
+      }),
+    ],
+    name: "wp:inline",
+  });

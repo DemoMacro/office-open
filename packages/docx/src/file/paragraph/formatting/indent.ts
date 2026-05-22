@@ -19,18 +19,18 @@ import type { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
  * Values can be specified as numbers (in twips) or as universal measures (e.g., "1in", "2.5cm").
  */
 export interface IIndentAttributesProperties {
-    readonly start?: number | UniversalMeasure;
-    readonly startChars?: number;
-    readonly end?: number | UniversalMeasure;
-    readonly endChars?: number;
-    readonly left?: number | UniversalMeasure;
-    readonly leftChars?: number;
-    readonly right?: number | UniversalMeasure;
-    readonly rightChars?: number;
-    readonly hanging?: number | PositiveUniversalMeasure;
-    readonly hangingChars?: number;
-    readonly firstLine?: number | PositiveUniversalMeasure;
-    readonly firstLineChars?: number;
+  readonly start?: number | UniversalMeasure;
+  readonly startChars?: number;
+  readonly end?: number | UniversalMeasure;
+  readonly endChars?: number;
+  readonly left?: number | UniversalMeasure;
+  readonly leftChars?: number;
+  readonly right?: number | UniversalMeasure;
+  readonly rightChars?: number;
+  readonly hanging?: number | PositiveUniversalMeasure;
+  readonly hangingChars?: number;
+  readonly firstLine?: number | PositiveUniversalMeasure;
+  readonly firstLineChars?: number;
 }
 
 /**
@@ -59,69 +59,69 @@ export interface IIndentAttributesProperties {
  * ```
  */
 export const createIndent = ({
-    start,
-    startChars,
-    end,
-    endChars,
-    left,
-    leftChars,
-    right,
-    rightChars,
-    hanging,
-    hangingChars,
-    firstLine,
-    firstLineChars,
+  start,
+  startChars,
+  end,
+  endChars,
+  left,
+  leftChars,
+  right,
+  rightChars,
+  hanging,
+  hangingChars,
+  firstLine,
+  firstLineChars,
 }: IIndentAttributesProperties): XmlComponent =>
-    new BuilderElement<IIndentAttributesProperties>({
-        attributes: {
-            end: {
-                key: "w:end",
-                value: end === undefined ? undefined : signedTwipsMeasureValue(end),
-            },
-            endChars: {
-                key: "w:endChars",
-                value: endChars === undefined ? undefined : decimalNumber(endChars),
-            },
-            firstLine: {
-                key: "w:firstLine",
-                value: firstLine === undefined ? undefined : twipsMeasureValue(firstLine),
-            },
-            firstLineChars: {
-                key: "w:firstLineChars",
-                value: firstLineChars === undefined ? undefined : decimalNumber(firstLineChars),
-            },
-            hanging: {
-                key: "w:hanging",
-                value: hanging === undefined ? undefined : twipsMeasureValue(hanging),
-            },
-            hangingChars: {
-                key: "w:hangingChars",
-                value: hangingChars === undefined ? undefined : decimalNumber(hangingChars),
-            },
-            left: {
-                key: "w:left",
-                value: left === undefined ? undefined : signedTwipsMeasureValue(left),
-            },
-            leftChars: {
-                key: "w:leftChars",
-                value: leftChars === undefined ? undefined : decimalNumber(leftChars),
-            },
-            right: {
-                key: "w:right",
-                value: right === undefined ? undefined : signedTwipsMeasureValue(right),
-            },
-            rightChars: {
-                key: "w:rightChars",
-                value: rightChars === undefined ? undefined : decimalNumber(rightChars),
-            },
-            start: {
-                key: "w:start",
-                value: start === undefined ? undefined : signedTwipsMeasureValue(start),
-            },
-            startChars: {
-                key: "w:startChars",
-                value: startChars === undefined ? undefined : decimalNumber(startChars),
-            },
-        },
-        name: "w:ind",
-    });
+  new BuilderElement<IIndentAttributesProperties>({
+    attributes: {
+      end: {
+        key: "w:end",
+        value: end === undefined ? undefined : signedTwipsMeasureValue(end),
+      },
+      endChars: {
+        key: "w:endChars",
+        value: endChars === undefined ? undefined : decimalNumber(endChars),
+      },
+      firstLine: {
+        key: "w:firstLine",
+        value: firstLine === undefined ? undefined : twipsMeasureValue(firstLine),
+      },
+      firstLineChars: {
+        key: "w:firstLineChars",
+        value: firstLineChars === undefined ? undefined : decimalNumber(firstLineChars),
+      },
+      hanging: {
+        key: "w:hanging",
+        value: hanging === undefined ? undefined : twipsMeasureValue(hanging),
+      },
+      hangingChars: {
+        key: "w:hangingChars",
+        value: hangingChars === undefined ? undefined : decimalNumber(hangingChars),
+      },
+      left: {
+        key: "w:left",
+        value: left === undefined ? undefined : signedTwipsMeasureValue(left),
+      },
+      leftChars: {
+        key: "w:leftChars",
+        value: leftChars === undefined ? undefined : decimalNumber(leftChars),
+      },
+      right: {
+        key: "w:right",
+        value: right === undefined ? undefined : signedTwipsMeasureValue(right),
+      },
+      rightChars: {
+        key: "w:rightChars",
+        value: rightChars === undefined ? undefined : decimalNumber(rightChars),
+      },
+      start: {
+        key: "w:start",
+        value: start === undefined ? undefined : signedTwipsMeasureValue(start),
+      },
+      startChars: {
+        key: "w:startChars",
+        value: startChars === undefined ? undefined : decimalNumber(startChars),
+      },
+    },
+    name: "w:ind",
+  });

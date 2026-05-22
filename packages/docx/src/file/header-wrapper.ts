@@ -26,8 +26,8 @@ import type { Table } from "./table";
  * @property type - The header type (default, first page, even pages)
  */
 export interface IDocumentHeader {
-    readonly header: HeaderWrapper;
-    readonly type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType];
+  readonly header: HeaderWrapper;
+  readonly type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType];
 }
 
 /**
@@ -49,37 +49,37 @@ export interface IDocumentHeader {
  * ```
  */
 export class HeaderWrapper implements IViewWrapper {
-    private readonly header: Header;
-    private readonly relationships: Relationships;
+  private readonly header: Header;
+  private readonly relationships: Relationships;
 
-    public constructor(
-        private readonly media: Media,
-        referenceId: number,
-        initContent?: XmlComponent,
-    ) {
-        this.header = new Header(referenceId, initContent);
-        this.relationships = new Relationships();
-    }
+  public constructor(
+    private readonly media: Media,
+    referenceId: number,
+    initContent?: XmlComponent,
+  ) {
+    this.header = new Header(referenceId, initContent);
+    this.relationships = new Relationships();
+  }
 
-    public add(item: Paragraph | Table): HeaderWrapper {
-        this.header.add(item);
+  public add(item: Paragraph | Table): HeaderWrapper {
+    this.header.add(item);
 
-        return this;
-    }
+    return this;
+  }
 
-    public addChildElement(childElement: XmlComponent | string): void {
-        this.header.addChildElement(childElement);
-    }
+  public addChildElement(childElement: XmlComponent | string): void {
+    this.header.addChildElement(childElement);
+  }
 
-    public get View(): Header {
-        return this.header;
-    }
+  public get View(): Header {
+    return this.header;
+  }
 
-    public get Relationships(): Relationships {
-        return this.relationships;
-    }
+  public get Relationships(): Relationships {
+    return this.relationships;
+  }
 
-    public get Media(): Media {
-        return this.media;
-    }
+  public get Media(): Media {
+    return this.media;
+  }
 }

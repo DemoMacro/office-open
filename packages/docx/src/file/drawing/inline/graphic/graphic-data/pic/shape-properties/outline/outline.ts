@@ -12,9 +12,9 @@
 export { createOutline } from "@office-open/core/drawingml";
 export type { OutlineOptions, OutlineFillProperties } from "@office-open/core/drawingml";
 export {
-    LineCap,
-    CompoundLine,
-    PenAlignment,
-    PresetDash,
-    LineJoin,
+  LineCap,
+  CompoundLine,
+  PenAlignment,
+  PresetDash,
+  LineJoin,
 } from "@office-open/core/drawingml";

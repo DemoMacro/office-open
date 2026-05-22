@@ -20,9 +20,9 @@ import { Seperator } from "./seperator";
  * @internal
  */
 export class SeperatorRun extends Run {
-    public constructor() {
-        super({});
+  public constructor() {
+    super({});
 
-        this.extraChildren.push(new Seperator());
-    }
+    this.extraChildren.push(new Seperator());
+  }
 }

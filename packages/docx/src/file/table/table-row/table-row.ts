@@ -21,10 +21,10 @@ import type { ITableRowPropertiesOptions } from "./table-row-properties";
  * @see {@link TableRow}
  */
 export type ITableRowOptions = {
-    /** Array of TableCell elements that make up the row */
-    readonly children: readonly (TableCell | StructuredDocumentTagRow)[];
-    /** Table property exceptions for this row (override table-level properties) */
-    readonly propertyExceptions?: ITablePropertyExOptions;
+  /** Array of TableCell elements that make up the row */
+  readonly children: readonly (TableCell | StructuredDocumentTagRow)[];
+  /** Table property exceptions for this row (override table-level properties) */
+  readonly propertyExceptions?: ITablePropertyExOptions;
 } & ITableRowPropertiesOptions;
 
 /**
@@ -63,105 +63,101 @@ export type ITableRowOptions = {
  * ```
  */
 export class TableRow extends BaseXmlComponent {
-    // Extra cells inserted by Table's row-span CONTINUE logic
-    private extraCells: { cell: TableCell; columnIndex: number }[] = [];
+  // Extra cells inserted by Table's row-span CONTINUE logic
+  private extraCells: { cell: TableCell; columnIndex: number }[] = [];
 
-    public constructor(private readonly options: ITableRowOptions) {
-        super("w:tr");
+  public constructor(private readonly options: ITableRowOptions) {
+    super("w:tr");
+  }
+
+  public get CellCount(): number {
+    return this.options.children.length;
+  }
+
+  public get cells(): readonly TableCell[] {
+    return this.options.children.filter((child): child is TableCell => child instanceof TableCell);
+  }
+
+  /** @internal Used by Table to insert CONTINUE cells for vertical merge. */
+  public addCellToColumnIndex(cell: TableCell, columnIndex: number): void {
+    this.extraCells.push({ cell, columnIndex });
+  }
+
+  public rootIndexToColumnIndex(rootIndex: number): number {
+    // rootIndex is 0-based in XmlComponent root (0 = trPr, 1+ = cells)
+    const cellIndex = rootIndex - 1;
+    if (cellIndex < 0 || cellIndex >= this.options.children.length) {
+      throw new Error(`cell 'rootIndex' should between 1 to ${this.options.children.length}`);
+    }
+    let colIdx = 0;
+    for (let i = 0; i < cellIndex; i++) {
+      const child = this.options.children[i];
+      colIdx += child instanceof TableCell ? child.options.columnSpan || 1 : 1;
+    }
+    return colIdx;
+  }
+
+  public columnIndexToRootIndex(columnIndex: number, allowEndNewCell: boolean = false): number {
+    if (columnIndex < 0) {
+      throw new Error(`cell 'columnIndex' should not less than zero`);
+    }
+    let colIdx = 0;
+    let idx = 0;
+    while (colIdx <= columnIndex) {
+      if (idx >= this.options.children.length) {
+        if (allowEndNewCell) {
+          return this.options.children.length + 1;
+        } else {
+          throw new Error(`cell 'columnIndex' should not great than ${colIdx - 1}`);
+        }
+      }
+      const child = this.options.children[idx];
+      idx += 1;
+      colIdx += child instanceof TableCell ? child.options.columnSpan || 1 : 1;
+    }
+    return idx;
+  }
+
+  public prepForXml(context: IContext): IXmlableObject | undefined {
+    const children: IXmlableObject[] = [];
+
+    if (this.options.propertyExceptions) {
+      const obj = new TablePropertyExceptions(this.options.propertyExceptions).prepForXml(context);
+      if (obj) children.push(obj);
     }
 
-    public get CellCount(): number {
-        return this.options.children.length;
+    const trPr = new TableRowProperties(this.options);
+    const trPrObj = trPr.prepForXml(context);
+    if (trPrObj) children.push(trPrObj);
+
+    const prefixCount = children.length;
+
+    for (const child of this.options.children) {
+      const obj = child.prepForXml(context);
+      if (obj) children.push(obj);
     }
 
-    public get cells(): readonly TableCell[] {
-        return this.options.children.filter(
-            (child): child is TableCell => child instanceof TableCell,
-        );
+    // Insert extra CONTINUE cells at their designated column positions
+    if (this.extraCells.length > 0) {
+      for (const { cell, columnIndex } of this.extraCells) {
+        const insertIdx = this.findInsertIndex(columnIndex, prefixCount);
+        const obj = cell.prepForXml(context);
+        if (obj) children.splice(insertIdx, 0, obj);
+      }
     }
 
-    /** @internal Used by Table to insert CONTINUE cells for vertical merge. */
-    public addCellToColumnIndex(cell: TableCell, columnIndex: number): void {
-        this.extraCells.push({ cell, columnIndex });
+    return { "w:tr": children.length ? children : EMPTY_OBJECT };
+  }
+
+  private findInsertIndex(columnIndex: number, prefixCount: number): number {
+    let colIdx = 0;
+    for (let i = 0; i < this.options.children.length; i++) {
+      const child = this.options.children[i];
+      colIdx += child instanceof TableCell ? child.options.columnSpan || 1 : 1;
+      if (colIdx > columnIndex) {
+        return i + prefixCount;
+      }
     }
-
-    public rootIndexToColumnIndex(rootIndex: number): number {
-        // rootIndex is 0-based in XmlComponent root (0 = trPr, 1+ = cells)
-        const cellIndex = rootIndex - 1;
-        if (cellIndex < 0 || cellIndex >= this.options.children.length) {
-            throw new Error(`cell 'rootIndex' should between 1 to ${this.options.children.length}`);
-        }
-        let colIdx = 0;
-        for (let i = 0; i < cellIndex; i++) {
-            const child = this.options.children[i];
-            colIdx += child instanceof TableCell ? child.options.columnSpan || 1 : 1;
-        }
-        return colIdx;
-    }
-
-    public columnIndexToRootIndex(columnIndex: number, allowEndNewCell: boolean = false): number {
-        if (columnIndex < 0) {
-            throw new Error(`cell 'columnIndex' should not less than zero`);
-        }
-        let colIdx = 0;
-        let idx = 0;
-        while (colIdx <= columnIndex) {
-            if (idx >= this.options.children.length) {
-                if (allowEndNewCell) {
-                    return this.options.children.length + 1;
-                } else {
-                    throw new Error(`cell 'columnIndex' should not great than ${colIdx - 1}`);
-                }
-            }
-            const child = this.options.children[idx];
-            idx += 1;
-            colIdx += child instanceof TableCell ? child.options.columnSpan || 1 : 1;
-        }
-        return idx;
-    }
-
-    public prepForXml(context: IContext): IXmlableObject | undefined {
-        const children: IXmlableObject[] = [];
-
-        if (this.options.propertyExceptions) {
-            const obj = new TablePropertyExceptions(this.options.propertyExceptions).prepForXml(
-                context,
-            );
-            if (obj) children.push(obj);
-        }
-
-        const trPr = new TableRowProperties(this.options);
-        const trPrObj = trPr.prepForXml(context);
-        if (trPrObj) children.push(trPrObj);
-
-        const prefixCount = children.length;
-
-        for (const child of this.options.children) {
-            const obj = child.prepForXml(context);
-            if (obj) children.push(obj);
-        }
-
-        // Insert extra CONTINUE cells at their designated column positions
-        if (this.extraCells.length > 0) {
-            for (const { cell, columnIndex } of this.extraCells) {
-                const insertIdx = this.findInsertIndex(columnIndex, prefixCount);
-                const obj = cell.prepForXml(context);
-                if (obj) children.splice(insertIdx, 0, obj);
-            }
-        }
-
-        return { "w:tr": children.length ? children : EMPTY_OBJECT };
-    }
-
-    private findInsertIndex(columnIndex: number, prefixCount: number): number {
-        let colIdx = 0;
-        for (let i = 0; i < this.options.children.length; i++) {
-            const child = this.options.children[i];
-            colIdx += child instanceof TableCell ? child.options.columnSpan || 1 : 1;
-            if (colIdx > columnIndex) {
-                return i + prefixCount;
-            }
-        }
-        return this.options.children.length + prefixCount;
-    }
+    return this.options.children.length + prefixCount;
+  }
 }

@@ -30,14 +30,14 @@ $ pnpm add @office-open/core
 
 ```typescript
 import {
-    OnOffElement,
-    StringValueElement,
-    BuilderElement,
-    StringContainer,
-    hexColorValue,
-    decimalNumber,
-    convertMillimetersToTwip,
-    uniqueNumericIdCreator,
+  OnOffElement,
+  StringValueElement,
+  BuilderElement,
+  StringContainer,
+  hexColorValue,
+  decimalNumber,
+  convertMillimetersToTwip,
+  uniqueNumericIdCreator,
 } from "@office-open/core";
 
 // CT_OnOff — dynamic namespace prefix per XSD spec
@@ -49,9 +49,9 @@ new OnOffElement("m:hideBot", false);
 
 // Builder with attributes + children
 new BuilderElement({
-    name: "w:r",
-    attributes: { lang: { key: "xml:lang", value: "en-US" } },
-    children: [new StringContainer("w:t", "Hello")],
+  name: "w:r",
+  attributes: { lang: { key: "xml:lang", value: "en-US" } },
+  children: [new StringContainer("w:t", "Hello")],
 });
 
 // Value validators

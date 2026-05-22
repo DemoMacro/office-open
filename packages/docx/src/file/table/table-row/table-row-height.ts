@@ -31,12 +31,12 @@ import type { PositiveUniversalMeasure } from "@util/values";
  * @publicApi
  */
 export const HeightRule = {
-    /** Height is determined based on the content, so value is ignored. */
-    AUTO: "auto",
-    /** At least the value specified */
-    ATLEAST: "atLeast",
-    /** Exactly the value specified */
-    EXACT: "exact",
+  /** Height is determined based on the content, so value is ignored. */
+  AUTO: "auto",
+  /** At least the value specified */
+  ATLEAST: "atLeast",
+  /** Exactly the value specified */
+  EXACT: "exact",
 } as const;
 
 /**
@@ -61,16 +61,16 @@ export const HeightRule = {
  * ```
  */
 export const createTableRowHeight = (
-    value: number | PositiveUniversalMeasure,
-    rule: (typeof HeightRule)[keyof typeof HeightRule],
+  value: number | PositiveUniversalMeasure,
+  rule: (typeof HeightRule)[keyof typeof HeightRule],
 ): XmlComponent =>
-    new BuilderElement<{
-        readonly value: number | string;
-        readonly rule: (typeof HeightRule)[keyof typeof HeightRule];
-    }>({
-        attributes: {
-            rule: { key: "w:hRule", value: rule },
-            value: { key: "w:val", value: twipsMeasureValue(value) },
-        },
-        name: "w:trHeight",
-    });
+  new BuilderElement<{
+    readonly value: number | string;
+    readonly rule: (typeof HeightRule)[keyof typeof HeightRule];
+  }>({
+    attributes: {
+      rule: { key: "w:hRule", value: rule },
+      value: { key: "w:val", value: twipsMeasureValue(value) },
+    },
+    name: "w:trHeight",
+  });

@@ -17,10 +17,10 @@ import type { XmlComponent } from "@file/xml-components";
  * @see {@link createMathControlProperties}
  */
 export interface MathControlPropertiesOptions {
-    /** Insertion tracking reference */
-    readonly insertionReference?: string;
-    /** Deletion tracking reference */
-    readonly deletionReference?: string;
+  /** Insertion tracking reference */
+  readonly insertionReference?: string;
+  /** Deletion tracking reference */
+  readonly deletionReference?: string;
 }
 
 /**
@@ -41,30 +41,30 @@ export interface MathControlPropertiesOptions {
  * ```
  */
 export const createMathControlProperties = (
-    options?: MathControlPropertiesOptions,
+  options?: MathControlPropertiesOptions,
 ): XmlComponent => {
-    const children: XmlComponent[] = [];
+  const children: XmlComponent[] = [];
 
-    if (options?.insertionReference !== undefined) {
-        children.push(
-            new BuilderElement({
-                attributes: { id: { key: "w:id", value: options.insertionReference } },
-                name: "w:ins",
-            }),
-        );
-    }
+  if (options?.insertionReference !== undefined) {
+    children.push(
+      new BuilderElement({
+        attributes: { id: { key: "w:id", value: options.insertionReference } },
+        name: "w:ins",
+      }),
+    );
+  }
 
-    if (options?.deletionReference !== undefined) {
-        children.push(
-            new BuilderElement({
-                attributes: { id: { key: "w:id", value: options.deletionReference } },
-                name: "w:del",
-            }),
-        );
-    }
+  if (options?.deletionReference !== undefined) {
+    children.push(
+      new BuilderElement({
+        attributes: { id: { key: "w:id", value: options.deletionReference } },
+        name: "w:del",
+      }),
+    );
+  }
 
-    return new BuilderElement({
-        children,
-        name: "m:ctrlPr",
-    });
+  return new BuilderElement({
+    children,
+    name: "m:ctrlPr",
+  });
 };

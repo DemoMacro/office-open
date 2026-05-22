@@ -21,8 +21,8 @@ import { Run } from "../run";
  * A tree node for SmartArt data.
  */
 export interface ISmartArtNode {
-    readonly text: string;
-    readonly children?: readonly ISmartArtNode[];
+  readonly text: string;
+  readonly children?: readonly ISmartArtNode[];
 }
 
 /**
@@ -31,22 +31,22 @@ export interface ISmartArtNode {
  * @publicApi
  */
 export interface ISmartArtOptions {
-    /** Tree-shaped data for the diagram */
-    readonly data: {
-        readonly nodes: readonly ISmartArtNode[];
-    };
-    /** Display dimensions */
-    readonly transformation: IMediaTransformation;
-    /** Floating positioning */
-    readonly floating?: IFloating;
-    /** Alternative text for accessibility */
-    readonly altText?: DocPropertiesOptions;
-    /** Layout ID (e.g. "default", "process1", "hierarchy1") */
-    readonly layout?: string;
-    /** Quick style ID (e.g. "simple1", "moderate1") */
-    readonly style?: string;
-    /** Color transform ID (e.g. "accent1_2", "colorful1") */
-    readonly color?: string;
+  /** Tree-shaped data for the diagram */
+  readonly data: {
+    readonly nodes: readonly ISmartArtNode[];
+  };
+  /** Display dimensions */
+  readonly transformation: IMediaTransformation;
+  /** Floating positioning */
+  readonly floating?: IFloating;
+  /** Alternative text for accessibility */
+  readonly altText?: DocPropertiesOptions;
+  /** Layout ID (e.g. "default", "process1", "hierarchy1") */
+  readonly layout?: string;
+  /** Quick style ID (e.g. "simple1", "moderate1") */
+  readonly style?: string;
+  /** Color transform ID (e.g. "accent1_2", "colorful1") */
+  readonly color?: string;
 }
 
 /**
@@ -70,64 +70,59 @@ export interface ISmartArtOptions {
  * ```
  */
 export class SmartArtRun extends Run {
-    private readonly smartArtOptions: ISmartArtOptions;
-    private readonly smartArtKey: string;
+  private readonly smartArtOptions: ISmartArtOptions;
+  private readonly smartArtKey: string;
 
-    public constructor(options: ISmartArtOptions) {
-        super({});
-        this.smartArtOptions = options;
+  public constructor(options: ISmartArtOptions) {
+    super({});
+    this.smartArtOptions = options;
 
-        // Generate a unique key
-        const hash = this.hashSmartArtData(options);
-        this.smartArtKey = `smartart_${hash}`;
+    // Generate a unique key
+    const hash = this.hashSmartArtData(options);
+    this.smartArtKey = `smartart_${hash}`;
 
-        // Create media data for the drawing system
-        const mediaData = {
-            smartArtKey: this.smartArtKey,
-            transformation: createTransformation(options.transformation),
-            type: "smartart" as const,
-        };
+    // Create media data for the drawing system
+    const mediaData = {
+      smartArtKey: this.smartArtKey,
+      transformation: createTransformation(options.transformation),
+      type: "smartart" as const,
+    };
 
-        const drawing = new Drawing(mediaData, {
-            docProperties: options.altText,
-            floating: options.floating,
-        });
+    const drawing = new Drawing(mediaData, {
+      docProperties: options.altText,
+      floating: options.floating,
+    });
 
-        this.extraChildren.push(drawing);
+    this.extraChildren.push(drawing);
+  }
+
+  public prepForXml(context: IContext): IXmlableObject | undefined {
+    const layoutId = this.smartArtOptions.layout ?? "default";
+    const styleId = this.smartArtOptions.style ?? "simple1";
+    const colorId = this.smartArtOptions.color ?? "accent1_2";
+
+    const dataModel = createDataModel(this.smartArtOptions.data.nodes, layoutId, styleId, colorId);
+
+    const smartArtData: ISmartArtData = {
+      dataModel,
+      key: this.smartArtKey,
+      layout: layoutId,
+      style: styleId,
+      color: colorId,
+    };
+
+    context.file.SmartArts.addSmartArt(this.smartArtKey, smartArtData);
+
+    return super.prepForXml(context);
+  }
+
+  private hashSmartArtData(options: ISmartArtOptions): number {
+    const data = JSON.stringify(options.data);
+    let hash = 0;
+    for (let i = 0; i < data.length; i++) {
+      const char = data.charCodeAt(i);
+      hash = ((hash << 5) - hash + char) | 0;
     }
-
-    public prepForXml(context: IContext): IXmlableObject | undefined {
-        const layoutId = this.smartArtOptions.layout ?? "default";
-        const styleId = this.smartArtOptions.style ?? "simple1";
-        const colorId = this.smartArtOptions.color ?? "accent1_2";
-
-        const dataModel = createDataModel(
-            this.smartArtOptions.data.nodes,
-            layoutId,
-            styleId,
-            colorId,
-        );
-
-        const smartArtData: ISmartArtData = {
-            dataModel,
-            key: this.smartArtKey,
-            layout: layoutId,
-            style: styleId,
-            color: colorId,
-        };
-
-        context.file.SmartArts.addSmartArt(this.smartArtKey, smartArtData);
-
-        return super.prepForXml(context);
-    }
-
-    private hashSmartArtData(options: ISmartArtOptions): number {
-        const data = JSON.stringify(options.data);
-        let hash = 0;
-        for (let i = 0; i < data.length; i++) {
-            const char = data.charCodeAt(i);
-            hash = ((hash << 5) - hash + char) | 0;
-        }
-        return Math.abs(hash);
-    }
+    return Math.abs(hash);
+  }
 }

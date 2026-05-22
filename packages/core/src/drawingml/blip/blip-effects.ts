@@ -26,10 +26,10 @@ import type { SolidFillOptions } from "../color/solid-fill";
  * ```
  */
 export interface LuminanceEffectOptions {
-    /** Brightness adjustment in percentage points (-100 to 100). Default 0. */
-    readonly bright?: number;
-    /** Contrast adjustment in percentage points (-100 to 100). Default 0. */
-    readonly contrast?: number;
+  /** Brightness adjustment in percentage points (-100 to 100). Default 0. */
+  readonly bright?: number;
+  /** Contrast adjustment in percentage points (-100 to 100). Default 0. */
+  readonly contrast?: number;
 }
 
 /**
@@ -43,12 +43,12 @@ export interface LuminanceEffectOptions {
  * ```
  */
 export interface HSLEffectOptions {
-    /** Hue rotation in 60000ths of a degree. Default 0. */
-    readonly hue?: number;
-    /** Saturation adjustment in percentage points (-100 to 100). Default 0. */
-    readonly saturation?: number;
-    /** Luminance adjustment in percentage points (-100 to 100). Default 0. */
-    readonly luminance?: number;
+  /** Hue rotation in 60000ths of a degree. Default 0. */
+  readonly hue?: number;
+  /** Saturation adjustment in percentage points (-100 to 100). Default 0. */
+  readonly saturation?: number;
+  /** Luminance adjustment in percentage points (-100 to 100). Default 0. */
+  readonly luminance?: number;
 }
 
 /**
@@ -61,10 +61,10 @@ export interface HSLEffectOptions {
  * ```
  */
 export interface TintEffectOptions {
-    /** Hue in 60000ths of a degree. Default 0. */
-    readonly hue?: number;
-    /** Amount in percentage points (0 to 100). Default 0. */
-    readonly amount?: number;
+  /** Hue in 60000ths of a degree. Default 0. */
+  readonly hue?: number;
+  /** Amount in percentage points (0 to 100). Default 0. */
+  readonly amount?: number;
 }
 
 /**
@@ -76,10 +76,10 @@ export interface TintEffectOptions {
  * ```
  */
 export interface DuotoneEffectOptions {
-    /** First color (dark). */
-    readonly color1: SolidFillOptions;
-    /** Second color (light). */
-    readonly color2: SolidFillOptions;
+  /** First color (dark). */
+  readonly color1: SolidFillOptions;
+  /** Second color (light). */
+  readonly color2: SolidFillOptions;
 }
 
 /**
@@ -91,8 +91,8 @@ export interface DuotoneEffectOptions {
  * ```
  */
 export interface BiLevelEffectOptions {
-    /** Threshold percentage (0 to 100). Pixels above are white, below are black. */
-    readonly threshold: number;
+  /** Threshold percentage (0 to 100). Pixels above are white, below are black. */
+  readonly threshold: number;
 }
 
 /**
@@ -104,8 +104,8 @@ export interface BiLevelEffectOptions {
  * ```
  */
 export interface AlphaReplaceEffectOptions {
-    /** Alpha percentage (0 = fully transparent, 100 = fully opaque). */
-    readonly amount: number;
+  /** Alpha percentage (0 = fully transparent, 100 = fully opaque). */
+  readonly amount: number;
 }
 
 /**
@@ -117,8 +117,8 @@ export interface AlphaReplaceEffectOptions {
  * ```
  */
 export interface AlphaBiLevelEffectOptions {
-    /** Threshold percentage (0 to 100). Alpha above is fully opaque, below is fully transparent. */
-    readonly threshold: number;
+  /** Threshold percentage (0 to 100). Alpha above is fully opaque, below is fully transparent. */
+  readonly threshold: number;
 }
 
 /**
@@ -130,8 +130,8 @@ export interface AlphaBiLevelEffectOptions {
  * ```
  */
 export interface AlphaModulateFixedEffectOptions {
-    /** Alpha amount in percentage (0 to 100). Default 100. */
-    readonly amount?: number;
+  /** Alpha amount in percentage (0 to 100). Default 100. */
+  readonly amount?: number;
 }
 
 /**
@@ -145,12 +145,12 @@ export interface AlphaModulateFixedEffectOptions {
  * ```
  */
 export interface ColorChangeEffectOptions {
-    /** Source color to change from. */
-    readonly from: SolidFillOptions;
-    /** Target color to change to. */
-    readonly to: SolidFillOptions;
-    /** Whether to use alpha channel. Default true. */
-    readonly useAlpha?: boolean;
+  /** Source color to change from. */
+  readonly from: SolidFillOptions;
+  /** Target color to change to. */
+  readonly to: SolidFillOptions;
+  /** Whether to use alpha channel. Default true. */
+  readonly useAlpha?: boolean;
 }
 
 /**
@@ -162,8 +162,8 @@ export interface ColorChangeEffectOptions {
  * ```
  */
 export interface ColorReplaceEffectOptions {
-    /** Replacement color. */
-    readonly color: SolidFillOptions;
+  /** Replacement color. */
+  readonly color: SolidFillOptions;
 }
 
 /**
@@ -176,46 +176,46 @@ export interface ColorReplaceEffectOptions {
  * ```
  */
 export interface BlipBlurEffectOptions {
-    /** Blur radius in EMUs. Default 0. */
-    readonly radius?: number;
-    /** Whether to grow the blur boundary. Default true. */
-    readonly grow?: boolean;
+  /** Blur radius in EMUs. Default 0. */
+  readonly radius?: number;
+  /** Whether to grow the blur boundary. Default true. */
+  readonly grow?: boolean;
 }
 
 /**
  * All blip image adjustment effects.
  */
 export interface BlipEffectsOptions {
-    /** Grayscale effect (no options needed). */
-    readonly grayscale?: boolean;
-    /** Luminance (brightness/contrast) effect. */
-    readonly luminance?: LuminanceEffectOptions;
-    /** HSL adjustment effect. */
-    readonly hsl?: HSLEffectOptions;
-    /** Tint effect. */
-    readonly tint?: TintEffectOptions;
-    /** Duotone effect (two-color mapping). */
-    readonly duotone?: DuotoneEffectOptions;
-    /** Black & white threshold effect. */
-    readonly biLevel?: BiLevelEffectOptions;
-    /** Alpha ceiling effect (no options needed). */
-    readonly alphaCeiling?: boolean;
-    /** Alpha floor effect (no options needed). */
-    readonly alphaFloor?: boolean;
-    /** Alpha inverse effect (with optional color). */
-    readonly alphaInverse?: SolidFillOptions;
-    /** Alpha modulate fixed effect. */
-    readonly alphaModFix?: AlphaModulateFixedEffectOptions;
-    /** Alpha replace effect. */
-    readonly alphaRepl?: AlphaReplaceEffectOptions;
-    /** Alpha bi-level effect. */
-    readonly alphaBiLevel?: AlphaBiLevelEffectOptions;
-    /** Color change effect. */
-    readonly colorChange?: ColorChangeEffectOptions;
-    /** Color replace effect. */
-    readonly colorRepl?: ColorReplaceEffectOptions;
-    /** Blur effect on blip. */
-    readonly blur?: BlipBlurEffectOptions;
+  /** Grayscale effect (no options needed). */
+  readonly grayscale?: boolean;
+  /** Luminance (brightness/contrast) effect. */
+  readonly luminance?: LuminanceEffectOptions;
+  /** HSL adjustment effect. */
+  readonly hsl?: HSLEffectOptions;
+  /** Tint effect. */
+  readonly tint?: TintEffectOptions;
+  /** Duotone effect (two-color mapping). */
+  readonly duotone?: DuotoneEffectOptions;
+  /** Black & white threshold effect. */
+  readonly biLevel?: BiLevelEffectOptions;
+  /** Alpha ceiling effect (no options needed). */
+  readonly alphaCeiling?: boolean;
+  /** Alpha floor effect (no options needed). */
+  readonly alphaFloor?: boolean;
+  /** Alpha inverse effect (with optional color). */
+  readonly alphaInverse?: SolidFillOptions;
+  /** Alpha modulate fixed effect. */
+  readonly alphaModFix?: AlphaModulateFixedEffectOptions;
+  /** Alpha replace effect. */
+  readonly alphaRepl?: AlphaReplaceEffectOptions;
+  /** Alpha bi-level effect. */
+  readonly alphaBiLevel?: AlphaBiLevelEffectOptions;
+  /** Color change effect. */
+  readonly colorChange?: ColorChangeEffectOptions;
+  /** Color replace effect. */
+  readonly colorRepl?: ColorReplaceEffectOptions;
+  /** Blur effect on blip. */
+  readonly blur?: BlipBlurEffectOptions;
 }
 
 // ─── Factory functions ───────────────────────────────────────────────
@@ -226,162 +226,162 @@ export interface BlipEffectsOptions {
  * @returns Array of XML components representing blip effects
  */
 export const createBlipEffects = (options: BlipEffectsOptions): XmlComponent[] => {
-    const children: XmlComponent[] = [];
+  const children: XmlComponent[] = [];
 
-    if (options.grayscale) {
-        children.push(new BuilderElement({ name: "a:grayscl" }));
+  if (options.grayscale) {
+    children.push(new BuilderElement({ name: "a:grayscl" }));
+  }
+
+  if (options.luminance) {
+    const attrs: Record<string, { readonly key: string; readonly value: string }> = {};
+    if (options.luminance.bright !== undefined) {
+      attrs.bright = { key: "bright", value: `${options.luminance.bright}%` };
     }
-
-    if (options.luminance) {
-        const attrs: Record<string, { readonly key: string; readonly value: string }> = {};
-        if (options.luminance.bright !== undefined) {
-            attrs.bright = { key: "bright", value: `${options.luminance.bright}%` };
-        }
-        if (options.luminance.contrast !== undefined) {
-            attrs.contrast = { key: "contrast", value: `${options.luminance.contrast}%` };
-        }
-        children.push(new BuilderElement({ attributes: attrs as never, name: "a:lum" }));
+    if (options.luminance.contrast !== undefined) {
+      attrs.contrast = { key: "contrast", value: `${options.luminance.contrast}%` };
     }
+    children.push(new BuilderElement({ attributes: attrs as never, name: "a:lum" }));
+  }
 
-    if (options.hsl) {
-        const attrs: Record<string, { readonly key: string; readonly value: string }> = {};
-        if (options.hsl.hue !== undefined) {
-            attrs.hue = { key: "hue", value: String(options.hsl.hue) };
-        }
-        if (options.hsl.saturation !== undefined) {
-            attrs.sat = { key: "sat", value: `${options.hsl.saturation}%` };
-        }
-        if (options.hsl.luminance !== undefined) {
-            attrs.lum = { key: "lum", value: `${options.hsl.luminance}%` };
-        }
-        children.push(new BuilderElement({ attributes: attrs as never, name: "a:hsl" }));
+  if (options.hsl) {
+    const attrs: Record<string, { readonly key: string; readonly value: string }> = {};
+    if (options.hsl.hue !== undefined) {
+      attrs.hue = { key: "hue", value: String(options.hsl.hue) };
     }
-
-    if (options.tint) {
-        const attrs: Record<string, { readonly key: string; readonly value: string }> = {};
-        if (options.tint.hue !== undefined) {
-            attrs.hue = { key: "hue", value: String(options.tint.hue) };
-        }
-        if (options.tint.amount !== undefined) {
-            attrs.amt = { key: "amt", value: `${options.tint.amount}%` };
-        }
-        children.push(new BuilderElement({ attributes: attrs as never, name: "a:tint" }));
+    if (options.hsl.saturation !== undefined) {
+      attrs.sat = { key: "sat", value: `${options.hsl.saturation}%` };
     }
-
-    if (options.duotone) {
-        children.push(
-            new BuilderElement({
-                children: [
-                    createColorElement(options.duotone.color1),
-                    createColorElement(options.duotone.color2),
-                ],
-                name: "a:duotone",
-            }),
-        );
+    if (options.hsl.luminance !== undefined) {
+      attrs.lum = { key: "lum", value: `${options.hsl.luminance}%` };
     }
+    children.push(new BuilderElement({ attributes: attrs as never, name: "a:hsl" }));
+  }
 
-    if (options.biLevel) {
-        children.push(
-            new BuilderElement({
-                attributes: { thresh: { key: "thresh", value: `${options.biLevel.threshold}%` } },
-                name: "a:biLevel",
-            }),
-        );
+  if (options.tint) {
+    const attrs: Record<string, { readonly key: string; readonly value: string }> = {};
+    if (options.tint.hue !== undefined) {
+      attrs.hue = { key: "hue", value: String(options.tint.hue) };
     }
-
-    if (options.alphaCeiling) {
-        children.push(new BuilderElement({ name: "a:alphaCeiling" }));
+    if (options.tint.amount !== undefined) {
+      attrs.amt = { key: "amt", value: `${options.tint.amount}%` };
     }
+    children.push(new BuilderElement({ attributes: attrs as never, name: "a:tint" }));
+  }
 
-    if (options.alphaFloor) {
-        children.push(new BuilderElement({ name: "a:alphaFloor" }));
+  if (options.duotone) {
+    children.push(
+      new BuilderElement({
+        children: [
+          createColorElement(options.duotone.color1),
+          createColorElement(options.duotone.color2),
+        ],
+        name: "a:duotone",
+      }),
+    );
+  }
+
+  if (options.biLevel) {
+    children.push(
+      new BuilderElement({
+        attributes: { thresh: { key: "thresh", value: `${options.biLevel.threshold}%` } },
+        name: "a:biLevel",
+      }),
+    );
+  }
+
+  if (options.alphaCeiling) {
+    children.push(new BuilderElement({ name: "a:alphaCeiling" }));
+  }
+
+  if (options.alphaFloor) {
+    children.push(new BuilderElement({ name: "a:alphaFloor" }));
+  }
+
+  if (options.alphaInverse !== undefined) {
+    if (typeof options.alphaInverse === "boolean") {
+      children.push(new BuilderElement({ name: "a:alphaInv" }));
+    } else {
+      children.push(
+        new BuilderElement({
+          children: [createColorElement(options.alphaInverse)],
+          name: "a:alphaInv",
+        }),
+      );
     }
+  }
 
-    if (options.alphaInverse !== undefined) {
-        if (typeof options.alphaInverse === "boolean") {
-            children.push(new BuilderElement({ name: "a:alphaInv" }));
-        } else {
-            children.push(
-                new BuilderElement({
-                    children: [createColorElement(options.alphaInverse)],
-                    name: "a:alphaInv",
-                }),
-            );
-        }
+  if (options.alphaModFix) {
+    const amt = options.alphaModFix.amount ?? 100;
+    children.push(
+      new BuilderElement({
+        attributes: { amt: { key: "amt", value: `${amt}%` } },
+        name: "a:alphaModFix",
+      }),
+    );
+  }
+
+  if (options.alphaRepl) {
+    children.push(
+      new BuilderElement({
+        attributes: { a: { key: "a", value: `${options.alphaRepl.amount}%` } },
+        name: "a:alphaRepl",
+      }),
+    );
+  }
+
+  if (options.alphaBiLevel) {
+    children.push(
+      new BuilderElement({
+        attributes: {
+          thresh: { key: "thresh", value: `${options.alphaBiLevel.threshold}%` },
+        },
+        name: "a:alphaBiLevel",
+      }),
+    );
+  }
+
+  if (options.colorChange) {
+    const attrs: Record<string, { readonly key: string; readonly value: string }> = {};
+    if (options.colorChange.useAlpha === false) {
+      attrs.useA = { key: "useA", value: "0" };
     }
+    children.push(
+      new BuilderElement({
+        attributes: attrs as never,
+        children: [
+          new BuilderElement({
+            children: [createColorElement(options.colorChange.from)],
+            name: "a:clrFrom",
+          }),
+          new BuilderElement({
+            children: [createColorElement(options.colorChange.to)],
+            name: "a:clrTo",
+          }),
+        ],
+        name: "a:clrChange",
+      }),
+    );
+  }
 
-    if (options.alphaModFix) {
-        const amt = options.alphaModFix.amount ?? 100;
-        children.push(
-            new BuilderElement({
-                attributes: { amt: { key: "amt", value: `${amt}%` } },
-                name: "a:alphaModFix",
-            }),
-        );
+  if (options.colorRepl) {
+    children.push(
+      new BuilderElement({
+        children: [createColorElement(options.colorRepl.color)],
+        name: "a:clrRepl",
+      }),
+    );
+  }
+
+  if (options.blur) {
+    const attrs: Record<string, { readonly key: string; readonly value: string | number }> = {};
+    if (options.blur.radius !== undefined) {
+      attrs.rad = { key: "rad", value: options.blur.radius };
     }
-
-    if (options.alphaRepl) {
-        children.push(
-            new BuilderElement({
-                attributes: { a: { key: "a", value: `${options.alphaRepl.amount}%` } },
-                name: "a:alphaRepl",
-            }),
-        );
+    if (options.blur.grow === false) {
+      attrs.grow = { key: "grow", value: 0 };
     }
+    children.push(new BuilderElement({ attributes: attrs as never, name: "a:blur" }));
+  }
 
-    if (options.alphaBiLevel) {
-        children.push(
-            new BuilderElement({
-                attributes: {
-                    thresh: { key: "thresh", value: `${options.alphaBiLevel.threshold}%` },
-                },
-                name: "a:alphaBiLevel",
-            }),
-        );
-    }
-
-    if (options.colorChange) {
-        const attrs: Record<string, { readonly key: string; readonly value: string }> = {};
-        if (options.colorChange.useAlpha === false) {
-            attrs.useA = { key: "useA", value: "0" };
-        }
-        children.push(
-            new BuilderElement({
-                attributes: attrs as never,
-                children: [
-                    new BuilderElement({
-                        children: [createColorElement(options.colorChange.from)],
-                        name: "a:clrFrom",
-                    }),
-                    new BuilderElement({
-                        children: [createColorElement(options.colorChange.to)],
-                        name: "a:clrTo",
-                    }),
-                ],
-                name: "a:clrChange",
-            }),
-        );
-    }
-
-    if (options.colorRepl) {
-        children.push(
-            new BuilderElement({
-                children: [createColorElement(options.colorRepl.color)],
-                name: "a:clrRepl",
-            }),
-        );
-    }
-
-    if (options.blur) {
-        const attrs: Record<string, { readonly key: string; readonly value: string | number }> = {};
-        if (options.blur.radius !== undefined) {
-            attrs.rad = { key: "rad", value: options.blur.radius };
-        }
-        if (options.blur.grow === false) {
-            attrs.grow = { key: "grow", value: 0 };
-        }
-        children.push(new BuilderElement({ attributes: attrs as never, name: "a:blur" }));
-    }
-
-    return children;
+  return children;
 };

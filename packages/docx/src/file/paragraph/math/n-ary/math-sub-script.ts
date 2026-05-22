@@ -16,8 +16,8 @@ import type { MathComponent } from "../math-component";
  * Options for creating a subscript element.
  */
 interface MathSubScriptElementOptions {
-    /** The content of the subscript */
-    readonly children: readonly MathComponent[];
+  /** The content of the subscript */
+  readonly children: readonly MathComponent[];
 }
 
 /**
@@ -40,9 +40,9 @@ interface MathSubScriptElementOptions {
  * ```
  */
 export const createMathSubScriptElement = ({
-    children,
+  children,
 }: MathSubScriptElementOptions): XmlComponent =>
-    new BuilderElement({
-        children,
-        name: "m:sub",
-    });
+  new BuilderElement({
+    children,
+    name: "m:sub",
+  });

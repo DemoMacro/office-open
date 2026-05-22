@@ -26,8 +26,8 @@ import type { Table } from "./table";
  * @property type - The footer type (default, first page, even pages)
  */
 export interface IDocumentFooter {
-    readonly footer: FooterWrapper;
-    readonly type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType];
+  readonly footer: FooterWrapper;
+  readonly type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType];
 }
 
 /**
@@ -49,35 +49,35 @@ export interface IDocumentFooter {
  * ```
  */
 export class FooterWrapper implements IViewWrapper {
-    private readonly footer: Footer;
-    private readonly relationships: Relationships;
+  private readonly footer: Footer;
+  private readonly relationships: Relationships;
 
-    public constructor(
-        private readonly media: Media,
-        referenceId: number,
-        initContent?: XmlComponent,
-    ) {
-        this.footer = new Footer(referenceId, initContent);
-        this.relationships = new Relationships();
-    }
+  public constructor(
+    private readonly media: Media,
+    referenceId: number,
+    initContent?: XmlComponent,
+  ) {
+    this.footer = new Footer(referenceId, initContent);
+    this.relationships = new Relationships();
+  }
 
-    public add(item: Paragraph | Table): void {
-        this.footer.add(item);
-    }
+  public add(item: Paragraph | Table): void {
+    this.footer.add(item);
+  }
 
-    public addChildElement(childElement: XmlComponent): void {
-        this.footer.addChildElement(childElement);
-    }
+  public addChildElement(childElement: XmlComponent): void {
+    this.footer.addChildElement(childElement);
+  }
 
-    public get View(): Footer {
-        return this.footer;
-    }
+  public get View(): Footer {
+    return this.footer;
+  }
 
-    public get Relationships(): Relationships {
-        return this.relationships;
-    }
+  public get Relationships(): Relationships {
+    return this.relationships;
+  }
 
-    public get Media(): Media {
-        return this.media;
-    }
+  public get Media(): Media {
+    return this.media;
+  }
 }

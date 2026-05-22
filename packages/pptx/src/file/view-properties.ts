@@ -24,13 +24,13 @@ const VIEW_PROPS_XML = `<p:viewPr xmlns:a="http://schemas.openxmlformats.org/dra
 </p:viewPr>`;
 
 export class ViewProperties extends ImportedXmlComponent {
-    private static instance = ImportedXmlComponent.fromXmlString(VIEW_PROPS_XML);
+  private static instance = ImportedXmlComponent.fromXmlString(VIEW_PROPS_XML);
 
-    public constructor() {
-        super("p:viewPr");
-    }
+  public constructor() {
+    super("p:viewPr");
+  }
 
-    public prepForXml() {
-        return ViewProperties.instance.prepForXml({ stack: [] });
-    }
+  public prepForXml() {
+    return ViewProperties.instance.prepForXml({ stack: [] });
+  }
 }

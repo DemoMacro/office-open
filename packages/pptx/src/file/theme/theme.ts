@@ -1,69 +1,69 @@
 import { ImportedXmlComponent } from "@file/xml-components";
 
 interface IColorSchemeOptions {
-    dark1?: string;
-    light1?: string;
-    dark2?: string;
-    light2?: string;
-    accent1?: string;
-    accent2?: string;
-    accent3?: string;
-    accent4?: string;
-    accent5?: string;
-    accent6?: string;
-    hyperlink?: string;
-    followedHyperlink?: string;
+  dark1?: string;
+  light1?: string;
+  dark2?: string;
+  light2?: string;
+  accent1?: string;
+  accent2?: string;
+  accent3?: string;
+  accent4?: string;
+  accent5?: string;
+  accent6?: string;
+  hyperlink?: string;
+  followedHyperlink?: string;
 }
 
 interface IFontSchemeOptions {
-    majorFont?: string;
-    minorFont?: string;
-    majorFontAsian?: string;
-    minorFontAsian?: string;
+  majorFont?: string;
+  minorFont?: string;
+  majorFontAsian?: string;
+  minorFontAsian?: string;
 }
 
 export interface IThemeOptions {
-    name?: string;
-    colors?: IColorSchemeOptions;
-    fonts?: IFontSchemeOptions;
+  name?: string;
+  colors?: IColorSchemeOptions;
+  fonts?: IFontSchemeOptions;
 }
 
 const DEFAULT_COLORS: Required<IColorSchemeOptions> = {
-    dark1: "000000",
-    light1: "FFFFFF",
-    dark2: "44546A",
-    light2: "E7E6E6",
-    accent1: "4472C4",
-    accent2: "ED7D31",
-    accent3: "A5A5A5",
-    accent4: "FFC000",
-    accent5: "5B9BD5",
-    accent6: "70AD47",
-    hyperlink: "0563C1",
-    followedHyperlink: "954F72",
+  dark1: "000000",
+  light1: "FFFFFF",
+  dark2: "44546A",
+  light2: "E7E6E6",
+  accent1: "4472C4",
+  accent2: "ED7D31",
+  accent3: "A5A5A5",
+  accent4: "FFC000",
+  accent5: "5B9BD5",
+  accent6: "70AD47",
+  hyperlink: "0563C1",
+  followedHyperlink: "954F72",
 };
 
 function buildThemeXml(options?: IThemeOptions): string {
-    const name = options?.name ?? "Office Theme";
-    const c = { ...DEFAULT_COLORS, ...options?.colors };
-    const f = options?.fonts;
+  const name = options?.name ?? "Office Theme";
+  const c = { ...DEFAULT_COLORS, ...options?.colors };
+  const f = options?.fonts;
 
-    const majorFont = f?.majorFont ?? "Calibri Light";
-    const minorFont = f?.minorFont ?? "Calibri";
-    const majorFontAsian = f?.majorFontAsian ?? "";
-    const minorFontAsian = f?.minorFontAsian ?? "";
+  const majorFont = f?.majorFont ?? "Calibri Light";
+  const minorFont = f?.minorFont ?? "Calibri";
+  const majorFontAsian = f?.majorFontAsian ?? "";
+  const minorFontAsian = f?.minorFontAsian ?? "";
 
-    // dk1/lt1 use sysClr in Office theme; srgbClr override when customized
-    const dk1 =
-        options?.colors?.dark1 !== undefined
-            ? `<a:srgbClr val="${c.dark1}"/>`
-            : `<a:sysClr val="windowText" lastClr="000000"/>`;
-    const lt1 =
-        options?.colors?.light1 !== undefined
-            ? `<a:srgbClr val="${c.light1}"/>`
-            : `<a:sysClr val="window" lastClr="FFFFFF"/>`;
+  // dk1/lt1 use sysClr in Office theme; srgbClr override when customized
+  const dk1 =
+    options?.colors?.dark1 !== undefined
+      ? `<a:srgbClr val="${c.dark1}"/>`
+      : `<a:sysClr val="windowText" lastClr="000000"/>`;
+  const lt1 =
+    options?.colors?.light1 !== undefined
+      ? `<a:srgbClr val="${c.light1}"/>`
+      : `<a:sysClr val="window" lastClr="FFFFFF"/>`;
 
-    return `<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="${name}">
+  return `<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="${name}">
   <a:themeElements>
     <a:clrScheme name="${name}">
       <a:dk1>${dk1}</a:dk1>
@@ -120,21 +120,21 @@ function buildThemeXml(options?: IThemeOptions): string {
 }
 
 export class DefaultTheme extends ImportedXmlComponent {
-    private static cache = new Map<string, ImportedXmlComponent>();
-    private readonly cacheKey: string;
+  private static cache = new Map<string, ImportedXmlComponent>();
+  private readonly cacheKey: string;
 
-    public constructor(options?: IThemeOptions) {
-        super("a:theme");
-        this.cacheKey = options ? JSON.stringify(options) : "";
-        if (!DefaultTheme.cache.has(this.cacheKey)) {
-            DefaultTheme.cache.set(
-                this.cacheKey,
-                ImportedXmlComponent.fromXmlString(buildThemeXml(options)),
-            );
-        }
+  public constructor(options?: IThemeOptions) {
+    super("a:theme");
+    this.cacheKey = options ? JSON.stringify(options) : "";
+    if (!DefaultTheme.cache.has(this.cacheKey)) {
+      DefaultTheme.cache.set(
+        this.cacheKey,
+        ImportedXmlComponent.fromXmlString(buildThemeXml(options)),
+      );
     }
+  }
 
-    public prepForXml() {
-        return DefaultTheme.cache.get(this.cacheKey)!.prepForXml({ stack: [] });
-    }
+  public prepForXml() {
+    return DefaultTheme.cache.get(this.cacheKey)!.prepForXml({ stack: [] });
+  }
 }

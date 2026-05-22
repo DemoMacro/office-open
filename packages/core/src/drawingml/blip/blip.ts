@@ -18,12 +18,12 @@ import { createExtentionList } from "./blip-extentions";
  * Options for creating a blip element.
  */
 export interface BlipOptions {
-    /** File name used as placeholder; the packer's ImageReplacer replaces `{referenceId}` with `rId{N}` */
-    readonly referenceId: string;
-    /** Image type for SVG detection */
-    readonly type?: "svg" | string;
-    /** For SVG images, the fallback image file name */
-    readonly fallbackFileName?: string;
+  /** File name used as placeholder; the packer's ImageReplacer replaces `{referenceId}` with `rId{N}` */
+  readonly referenceId: string;
+  /** Image type for SVG detection */
+  readonly type?: "svg" | string;
+  /** For SVG images, the fallback image file name */
+  readonly fallbackFileName?: string;
 }
 
 /**
@@ -71,34 +71,34 @@ export interface BlipOptions {
  * @returns An XML component representing the blip element
  */
 export const createBlip = (
-    options: BlipOptions,
-    blipEffects?: BlipEffectsOptions,
+  options: BlipOptions,
+  blipEffects?: BlipEffectsOptions,
 ): XmlComponent => {
-    const children: XmlComponent[] = [];
+  const children: XmlComponent[] = [];
 
-    if (blipEffects) {
-        children.push(...createBlipEffects(blipEffects));
-    }
+  if (blipEffects) {
+    children.push(...createBlipEffects(blipEffects));
+  }
 
-    if (options.type === "svg" && options.fallbackFileName) {
-        children.push(createExtentionList(options.referenceId));
-    }
+  if (options.type === "svg" && options.fallbackFileName) {
+    children.push(createExtentionList(options.referenceId));
+  }
 
-    return new BuilderElement<{
-        readonly embed: string;
-        readonly cstate: string;
-    }>({
-        attributes: {
-            cstate: {
-                key: "cstate",
-                value: "none",
-            },
-            embed: {
-                key: "r:embed",
-                value: `{${options.type === "svg" && options.fallbackFileName ? options.fallbackFileName : options.referenceId}}`,
-            },
-        },
-        children,
-        name: "a:blip",
-    });
+  return new BuilderElement<{
+    readonly embed: string;
+    readonly cstate: string;
+  }>({
+    attributes: {
+      cstate: {
+        key: "cstate",
+        value: "none",
+      },
+      embed: {
+        key: "r:embed",
+        value: `{${options.type === "svg" && options.fallbackFileName ? options.fallbackFileName : options.referenceId}}`,
+      },
+    },
+    children,
+    name: "a:blip",
+  });
 };

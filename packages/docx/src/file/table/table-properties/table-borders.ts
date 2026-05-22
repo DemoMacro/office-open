@@ -18,24 +18,24 @@ import { XmlComponent } from "@file/xml-components";
  * and inside lines (insideHorizontal, insideVertical) of the table.
  */
 export interface ITableBordersOptions {
-    readonly top?: IBorderOptions;
-    readonly bottom?: IBorderOptions;
-    readonly left?: IBorderOptions;
-    readonly right?: IBorderOptions;
-    readonly insideHorizontal?: IBorderOptions;
-    readonly insideVertical?: IBorderOptions;
+  readonly top?: IBorderOptions;
+  readonly bottom?: IBorderOptions;
+  readonly left?: IBorderOptions;
+  readonly right?: IBorderOptions;
+  readonly insideHorizontal?: IBorderOptions;
+  readonly insideVertical?: IBorderOptions;
 }
 
 const NONE_BORDER: IBorderOptions = {
-    color: "auto",
-    size: 0,
-    style: BorderStyle.NONE,
+  color: "auto",
+  size: 0,
+  style: BorderStyle.NONE,
 };
 
 const DEFAULT_BORDER: IBorderOptions = {
-    color: "auto",
-    size: 4,
-    style: BorderStyle.SINGLE,
+  color: "auto",
+  size: 4,
+  style: BorderStyle.SINGLE,
 };
 
 /**
@@ -59,25 +59,23 @@ const DEFAULT_BORDER: IBorderOptions = {
  * ```
  */
 export class TableBorders extends XmlComponent {
-    public static readonly NONE: ITableBordersOptions = {
-        bottom: NONE_BORDER,
-        insideHorizontal: NONE_BORDER,
-        insideVertical: NONE_BORDER,
-        left: NONE_BORDER,
-        right: NONE_BORDER,
-        top: NONE_BORDER,
-    };
+  public static readonly NONE: ITableBordersOptions = {
+    bottom: NONE_BORDER,
+    insideHorizontal: NONE_BORDER,
+    insideVertical: NONE_BORDER,
+    left: NONE_BORDER,
+    right: NONE_BORDER,
+    top: NONE_BORDER,
+  };
 
-    public constructor(options: ITableBordersOptions) {
-        super("w:tblBorders");
+  public constructor(options: ITableBordersOptions) {
+    super("w:tblBorders");
 
-        this.root.push(createBorderElement("w:top", options.top ?? DEFAULT_BORDER));
-        this.root.push(createBorderElement("w:left", options.left ?? DEFAULT_BORDER));
-        this.root.push(createBorderElement("w:bottom", options.bottom ?? DEFAULT_BORDER));
-        this.root.push(createBorderElement("w:right", options.right ?? DEFAULT_BORDER));
-        this.root.push(
-            createBorderElement("w:insideH", options.insideHorizontal ?? DEFAULT_BORDER),
-        );
-        this.root.push(createBorderElement("w:insideV", options.insideVertical ?? DEFAULT_BORDER));
-    }
+    this.root.push(createBorderElement("w:top", options.top ?? DEFAULT_BORDER));
+    this.root.push(createBorderElement("w:left", options.left ?? DEFAULT_BORDER));
+    this.root.push(createBorderElement("w:bottom", options.bottom ?? DEFAULT_BORDER));
+    this.root.push(createBorderElement("w:right", options.right ?? DEFAULT_BORDER));
+    this.root.push(createBorderElement("w:insideH", options.insideHorizontal ?? DEFAULT_BORDER));
+    this.root.push(createBorderElement("w:insideV", options.insideVertical ?? DEFAULT_BORDER));
+  }
 }

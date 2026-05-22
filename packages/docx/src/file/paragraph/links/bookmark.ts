@@ -21,10 +21,10 @@ import { BookmarkEndAttributes, BookmarkStartAttributes } from "./bookmark-attri
  * @property children - Array of paragraph children contained within the bookmark range
  */
 export interface IBookmarkOptions {
-    /** The bookmark name used for reference */
-    readonly id: string;
-    /** Array of paragraph children contained within the bookmark range */
-    readonly children: readonly ParagraphChild[];
+  /** The bookmark name used for reference */
+  readonly id: string;
+  /** Array of paragraph children contained within the bookmark range */
+  readonly children: readonly ParagraphChild[];
 }
 
 /**
@@ -68,19 +68,19 @@ export interface IBookmarkOptions {
  * ```
  */
 export class Bookmark {
-    private readonly bookmarkUniqueNumericId = bookmarkUniqueNumericIdGen();
+  private readonly bookmarkUniqueNumericId = bookmarkUniqueNumericIdGen();
 
-    public readonly start: BookmarkStart;
-    public readonly children: readonly ParagraphChild[];
-    public readonly end: BookmarkEnd;
+  public readonly start: BookmarkStart;
+  public readonly children: readonly ParagraphChild[];
+  public readonly end: BookmarkEnd;
 
-    public constructor(options: IBookmarkOptions) {
-        const linkId = this.bookmarkUniqueNumericId();
+  public constructor(options: IBookmarkOptions) {
+    const linkId = this.bookmarkUniqueNumericId();
 
-        this.start = new BookmarkStart(options.id, linkId);
-        this.children = options.children;
-        this.end = new BookmarkEnd(linkId);
-    }
+    this.start = new BookmarkStart(options.id, linkId);
+    this.children = options.children;
+    this.end = new BookmarkEnd(linkId);
+  }
 }
 
 /**
@@ -110,15 +110,15 @@ export class Bookmark {
  * ```
  */
 export class BookmarkStart extends XmlComponent {
-    public constructor(id: string, linkId: number) {
-        super("w:bookmarkStart");
+  public constructor(id: string, linkId: number) {
+    super("w:bookmarkStart");
 
-        const attributes = new BookmarkStartAttributes({
-            id: linkId,
-            name: id,
-        });
-        this.root.push(attributes);
-    }
+    const attributes = new BookmarkStartAttributes({
+      id: linkId,
+      name: id,
+    });
+    this.root.push(attributes);
+  }
 }
 
 /**
@@ -148,12 +148,12 @@ export class BookmarkStart extends XmlComponent {
  * ```
  */
 export class BookmarkEnd extends XmlComponent {
-    public constructor(linkId: number) {
-        super("w:bookmarkEnd");
+  public constructor(linkId: number) {
+    super("w:bookmarkEnd");
 
-        const attributes = new BookmarkEndAttributes({
-            id: linkId,
-        });
-        this.root.push(attributes);
-    }
+    const attributes = new BookmarkEndAttributes({
+      id: linkId,
+    });
+    this.root.push(attributes);
+  }
 }

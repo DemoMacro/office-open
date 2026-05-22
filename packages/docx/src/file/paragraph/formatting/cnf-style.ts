@@ -18,30 +18,30 @@ import type { XmlComponent } from "@file/xml-components";
  * its position within a table (first/last row, first/last column, bands).
  */
 export interface ICnfStyleOptions {
-    /** Whether this is the first row in the table */
-    readonly firstRow?: boolean;
-    /** Whether this is the last row in the table */
-    readonly lastRow?: boolean;
-    /** Whether this is the first column in the table */
-    readonly firstColumn?: boolean;
-    /** Whether this is the last column in the table */
-    readonly lastColumn?: boolean;
-    /** Whether this is an odd vertical band */
-    readonly oddVBand?: boolean;
-    /** Whether this is an even vertical band */
-    readonly evenVBand?: boolean;
-    /** Whether this is an odd horizontal band */
-    readonly oddHBand?: boolean;
-    /** Whether this is an even horizontal band */
-    readonly evenHBand?: boolean;
-    /** Whether this is the first row and first column (top-left corner) */
-    readonly firstRowFirstColumn?: boolean;
-    /** Whether this is the first row and last column (top-right corner) */
-    readonly firstRowLastColumn?: boolean;
-    /** Whether this is the last row and first column (bottom-left corner) */
-    readonly lastRowFirstColumn?: boolean;
-    /** Whether this is the last row and last column (bottom-right corner) */
-    readonly lastRowLastColumn?: boolean;
+  /** Whether this is the first row in the table */
+  readonly firstRow?: boolean;
+  /** Whether this is the last row in the table */
+  readonly lastRow?: boolean;
+  /** Whether this is the first column in the table */
+  readonly firstColumn?: boolean;
+  /** Whether this is the last column in the table */
+  readonly lastColumn?: boolean;
+  /** Whether this is an odd vertical band */
+  readonly oddVBand?: boolean;
+  /** Whether this is an even vertical band */
+  readonly evenVBand?: boolean;
+  /** Whether this is an odd horizontal band */
+  readonly oddHBand?: boolean;
+  /** Whether this is an even horizontal band */
+  readonly evenHBand?: boolean;
+  /** Whether this is the first row and first column (top-left corner) */
+  readonly firstRowFirstColumn?: boolean;
+  /** Whether this is the first row and last column (top-right corner) */
+  readonly firstRowLastColumn?: boolean;
+  /** Whether this is the last row and first column (bottom-left corner) */
+  readonly lastRowFirstColumn?: boolean;
+  /** Whether this is the last row and last column (bottom-right corner) */
+  readonly lastRowLastColumn?: boolean;
 }
 
 /**
@@ -82,59 +82,59 @@ export interface ICnfStyleOptions {
  * ```
  */
 export const createCnfStyle = (options: ICnfStyleOptions): XmlComponent => {
-    const attributes: Record<string, { key: string; value: string }> = {};
+  const attributes: Record<string, { key: string; value: string }> = {};
 
-    if (options.firstRow !== undefined) {
-        attributes.firstRow = { key: "w:firstRow", value: options.firstRow ? "1" : "0" };
-    }
-    if (options.lastRow !== undefined) {
-        attributes.lastRow = { key: "w:lastRow", value: options.lastRow ? "1" : "0" };
-    }
-    if (options.firstColumn !== undefined) {
-        attributes.firstColumn = { key: "w:firstColumn", value: options.firstColumn ? "1" : "0" };
-    }
-    if (options.lastColumn !== undefined) {
-        attributes.lastColumn = { key: "w:lastColumn", value: options.lastColumn ? "1" : "0" };
-    }
-    if (options.oddVBand !== undefined) {
-        attributes.oddVBand = { key: "w:oddVBand", value: options.oddVBand ? "1" : "0" };
-    }
-    if (options.evenVBand !== undefined) {
-        attributes.evenVBand = { key: "w:evenVBand", value: options.evenVBand ? "1" : "0" };
-    }
-    if (options.oddHBand !== undefined) {
-        attributes.oddHBand = { key: "w:oddHBand", value: options.oddHBand ? "1" : "0" };
-    }
-    if (options.evenHBand !== undefined) {
-        attributes.evenHBand = { key: "w:evenHBand", value: options.evenHBand ? "1" : "0" };
-    }
-    if (options.firstRowFirstColumn !== undefined) {
-        attributes.firstRowFirstColumn = {
-            key: "w:firstRowFirstColumn",
-            value: options.firstRowFirstColumn ? "1" : "0",
-        };
-    }
-    if (options.firstRowLastColumn !== undefined) {
-        attributes.firstRowLastColumn = {
-            key: "w:firstRowLastColumn",
-            value: options.firstRowLastColumn ? "1" : "0",
-        };
-    }
-    if (options.lastRowFirstColumn !== undefined) {
-        attributes.lastRowFirstColumn = {
-            key: "w:lastRowFirstColumn",
-            value: options.lastRowFirstColumn ? "1" : "0",
-        };
-    }
-    if (options.lastRowLastColumn !== undefined) {
-        attributes.lastRowLastColumn = {
-            key: "w:lastRowLastColumn",
-            value: options.lastRowLastColumn ? "1" : "0",
-        };
-    }
+  if (options.firstRow !== undefined) {
+    attributes.firstRow = { key: "w:firstRow", value: options.firstRow ? "1" : "0" };
+  }
+  if (options.lastRow !== undefined) {
+    attributes.lastRow = { key: "w:lastRow", value: options.lastRow ? "1" : "0" };
+  }
+  if (options.firstColumn !== undefined) {
+    attributes.firstColumn = { key: "w:firstColumn", value: options.firstColumn ? "1" : "0" };
+  }
+  if (options.lastColumn !== undefined) {
+    attributes.lastColumn = { key: "w:lastColumn", value: options.lastColumn ? "1" : "0" };
+  }
+  if (options.oddVBand !== undefined) {
+    attributes.oddVBand = { key: "w:oddVBand", value: options.oddVBand ? "1" : "0" };
+  }
+  if (options.evenVBand !== undefined) {
+    attributes.evenVBand = { key: "w:evenVBand", value: options.evenVBand ? "1" : "0" };
+  }
+  if (options.oddHBand !== undefined) {
+    attributes.oddHBand = { key: "w:oddHBand", value: options.oddHBand ? "1" : "0" };
+  }
+  if (options.evenHBand !== undefined) {
+    attributes.evenHBand = { key: "w:evenHBand", value: options.evenHBand ? "1" : "0" };
+  }
+  if (options.firstRowFirstColumn !== undefined) {
+    attributes.firstRowFirstColumn = {
+      key: "w:firstRowFirstColumn",
+      value: options.firstRowFirstColumn ? "1" : "0",
+    };
+  }
+  if (options.firstRowLastColumn !== undefined) {
+    attributes.firstRowLastColumn = {
+      key: "w:firstRowLastColumn",
+      value: options.firstRowLastColumn ? "1" : "0",
+    };
+  }
+  if (options.lastRowFirstColumn !== undefined) {
+    attributes.lastRowFirstColumn = {
+      key: "w:lastRowFirstColumn",
+      value: options.lastRowFirstColumn ? "1" : "0",
+    };
+  }
+  if (options.lastRowLastColumn !== undefined) {
+    attributes.lastRowLastColumn = {
+      key: "w:lastRowLastColumn",
+      value: options.lastRowLastColumn ? "1" : "0",
+    };
+  }
 
-    return new BuilderElement({
-        attributes,
-        name: "w:cnfStyle",
-    });
+  return new BuilderElement({
+    attributes,
+    name: "w:cnfStyle",
+  });
 };

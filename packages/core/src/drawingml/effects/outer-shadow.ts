@@ -14,41 +14,41 @@ import type { SolidFillOptions } from "../color/solid-fill";
  * Rectangle alignment for shadow positioning.
  */
 export const RectAlignment = {
-    TOP_LEFT: "tl",
-    TOP: "t",
-    TOP_RIGHT: "tr",
-    LEFT: "l",
-    CENTER: "ctr",
-    RIGHT: "r",
-    BOTTOM_LEFT: "bl",
-    BOTTOM: "b",
-    BOTTOM_RIGHT: "br",
+  TOP_LEFT: "tl",
+  TOP: "t",
+  TOP_RIGHT: "tr",
+  LEFT: "l",
+  CENTER: "ctr",
+  RIGHT: "r",
+  BOTTOM_LEFT: "bl",
+  BOTTOM: "b",
+  BOTTOM_RIGHT: "br",
 } as const;
 
 /**
  * Options for outer shadow effect.
  */
 export interface OuterShadowEffectOptions {
-    /** Blur radius in EMUs */
-    readonly blurRadius?: number;
-    /** Distance from shape in EMUs */
-    readonly distance?: number;
-    /** Direction angle in 60,000ths of a degree */
-    readonly direction?: number;
-    /** Horizontal scale percentage (e.g., 100000 = 100%) */
-    readonly scaleX?: number;
-    /** Vertical scale percentage */
-    readonly scaleY?: number;
-    /** Horizontal skew angle in 60,000ths of a degree */
-    readonly skewX?: number;
-    /** Vertical skew angle */
-    readonly skewY?: number;
-    /** Shadow alignment */
-    readonly alignment?: keyof typeof RectAlignment;
-    /** Whether shadow rotates with shape */
-    readonly rotWithShape?: boolean;
-    /** Shadow color */
-    readonly color: SolidFillOptions;
+  /** Blur radius in EMUs */
+  readonly blurRadius?: number;
+  /** Distance from shape in EMUs */
+  readonly distance?: number;
+  /** Direction angle in 60,000ths of a degree */
+  readonly direction?: number;
+  /** Horizontal scale percentage (e.g., 100000 = 100%) */
+  readonly scaleX?: number;
+  /** Vertical scale percentage */
+  readonly scaleY?: number;
+  /** Horizontal skew angle in 60,000ths of a degree */
+  readonly skewX?: number;
+  /** Vertical skew angle */
+  readonly skewY?: number;
+  /** Shadow alignment */
+  readonly alignment?: keyof typeof RectAlignment;
+  /** Whether shadow rotates with shape */
+  readonly rotWithShape?: boolean;
+  /** Shadow color */
+  readonly color: SolidFillOptions;
 }
 
 /**
@@ -73,42 +73,41 @@ export interface OuterShadowEffectOptions {
  * ```
  */
 export const createOuterShadowEffect = (options: OuterShadowEffectOptions): XmlComponent => {
-    const attributes: Record<string, { readonly key: string; readonly value: string | number }> =
-        {};
+  const attributes: Record<string, { readonly key: string; readonly value: string | number }> = {};
 
-    if (options.blurRadius !== undefined) {
-        attributes.blurRad = { key: "blurRad", value: options.blurRadius };
-    }
-    if (options.distance !== undefined) {
-        attributes.dist = { key: "dist", value: options.distance };
-    }
-    if (options.direction !== undefined) {
-        attributes.dir = { key: "dir", value: options.direction };
-    }
-    if (options.scaleX !== undefined) {
-        attributes.sx = { key: "sx", value: options.scaleX };
-    }
-    if (options.scaleY !== undefined) {
-        attributes.sy = { key: "sy", value: options.scaleY };
-    }
-    if (options.skewX !== undefined) {
-        attributes.kx = { key: "kx", value: options.skewX };
-    }
-    if (options.skewY !== undefined) {
-        attributes.ky = { key: "ky", value: options.skewY };
-    }
-    if (options.alignment !== undefined) {
-        attributes.algn = { key: "algn", value: RectAlignment[options.alignment] };
-    }
-    if (options.rotWithShape === false) {
-        attributes.rotWithShape = { key: "rotWithShape", value: 0 };
-    }
+  if (options.blurRadius !== undefined) {
+    attributes.blurRad = { key: "blurRad", value: options.blurRadius };
+  }
+  if (options.distance !== undefined) {
+    attributes.dist = { key: "dist", value: options.distance };
+  }
+  if (options.direction !== undefined) {
+    attributes.dir = { key: "dir", value: options.direction };
+  }
+  if (options.scaleX !== undefined) {
+    attributes.sx = { key: "sx", value: options.scaleX };
+  }
+  if (options.scaleY !== undefined) {
+    attributes.sy = { key: "sy", value: options.scaleY };
+  }
+  if (options.skewX !== undefined) {
+    attributes.kx = { key: "kx", value: options.skewX };
+  }
+  if (options.skewY !== undefined) {
+    attributes.ky = { key: "ky", value: options.skewY };
+  }
+  if (options.alignment !== undefined) {
+    attributes.algn = { key: "algn", value: RectAlignment[options.alignment] };
+  }
+  if (options.rotWithShape === false) {
+    attributes.rotWithShape = { key: "rotWithShape", value: 0 };
+  }
 
-    const children: XmlComponent[] = [createColorElement(options.color)];
+  const children: XmlComponent[] = [createColorElement(options.color)];
 
-    return new BuilderElement({
-        attributes: attributes as never,
-        children,
-        name: "a:outerShdw",
-    });
+  return new BuilderElement({
+    attributes: attributes as never,
+    children,
+    name: "a:outerShdw",
+  });
 };

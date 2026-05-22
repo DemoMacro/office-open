@@ -34,11 +34,11 @@ import type { XmlComponent } from "@file/xml-components";
  * ```
  */
 export const createTextboxContent = ({
-    children = [],
+  children = [],
 }: {
-    readonly children?: readonly FileChild[];
+  readonly children?: readonly FileChild[];
 }): XmlComponent =>
-    new BuilderElement<{ readonly style?: string }>({
-        children,
-        name: "w:txbxContent",
-    });
+  new BuilderElement<{ readonly style?: string }>({
+    children,
+    name: "w:txbxContent",
+  });

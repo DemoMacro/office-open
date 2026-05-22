@@ -54,28 +54,28 @@ import { SubDocCollection } from "./sub-doc/sub-doc-collection";
  * @property children - Array of content elements (paragraphs, tables, etc.) for this section
  */
 export interface ISectionOptions {
-    /** Optional header definitions for the section. */
-    readonly headers?: {
-        /** Default header for all pages (when first/even not specified). */
-        readonly default?: Header;
-        /** Header for the first page of the section. */
-        readonly first?: Header;
-        /** Header for even-numbered pages. */
-        readonly even?: Header;
-    };
-    /** Optional footer definitions for the section. */
-    readonly footers?: {
-        /** Default footer for all pages (when first/even not specified). */
-        readonly default?: Footer;
-        /** Footer for the first page of the section. */
-        readonly first?: Footer;
-        /** Footer for even-numbered pages. */
-        readonly even?: Footer;
-    };
-    /** Section properties such as page size, margins, and orientation. */
-    readonly properties?: ISectionPropertiesOptions;
-    /** Array of content elements (paragraphs, tables, etc.) for this section. */
-    readonly children: readonly FileChild[];
+  /** Optional header definitions for the section. */
+  readonly headers?: {
+    /** Default header for all pages (when first/even not specified). */
+    readonly default?: Header;
+    /** Header for the first page of the section. */
+    readonly first?: Header;
+    /** Header for even-numbered pages. */
+    readonly even?: Header;
+  };
+  /** Optional footer definitions for the section. */
+  readonly footers?: {
+    /** Default footer for all pages (when first/even not specified). */
+    readonly default?: Footer;
+    /** Footer for the first page of the section. */
+    readonly first?: Footer;
+    /** Footer for even-numbered pages. */
+    readonly even?: Footer;
+  };
+  /** Section properties such as page size, margins, and orientation. */
+  readonly properties?: ISectionPropertiesOptions;
+  /** Array of content elements (paragraphs, tables, etc.) for this section. */
+  readonly children: readonly FileChild[];
 }
 
 /**
@@ -153,354 +153,338 @@ export interface ISectionOptions {
  * ```
  */
 export class File {
-    private currentRelationshipId: number = 1;
+  private currentRelationshipId: number = 1;
 
-    private readonly documentWrapper: DocumentWrapper;
-    private readonly headers: IDocumentHeader[] = [];
-    private readonly footers: IDocumentFooter[] = [];
-    private readonly coreProperties: CoreProperties;
-    private readonly numbering: Numbering;
-    private readonly media: Media;
-    private readonly charts: ChartCollection;
-    private readonly smartArts: SmartArtCollection;
-    private readonly altChunks: AltChunkCollection;
-    private readonly subDocs: SubDocCollection;
-    private readonly fileRelationships: Relationships;
-    private readonly footnotesWrapper: FootnotesWrapper;
-    private readonly endnotesWrapper: EndnotesWrapper;
-    private readonly settings: Settings;
-    private readonly contentTypes: ContentTypes;
-    private readonly customProperties: CustomProperties;
-    private readonly appProperties: AppProperties;
-    private readonly styles: Styles;
-    private readonly comments: Comments;
-    private readonly bibliography: Bibliography | undefined;
-    private readonly fontWrapper: FontWrapper;
+  private readonly documentWrapper: DocumentWrapper;
+  private readonly headers: IDocumentHeader[] = [];
+  private readonly footers: IDocumentFooter[] = [];
+  private readonly coreProperties: CoreProperties;
+  private readonly numbering: Numbering;
+  private readonly media: Media;
+  private readonly charts: ChartCollection;
+  private readonly smartArts: SmartArtCollection;
+  private readonly altChunks: AltChunkCollection;
+  private readonly subDocs: SubDocCollection;
+  private readonly fileRelationships: Relationships;
+  private readonly footnotesWrapper: FootnotesWrapper;
+  private readonly endnotesWrapper: EndnotesWrapper;
+  private readonly settings: Settings;
+  private readonly contentTypes: ContentTypes;
+  private readonly customProperties: CustomProperties;
+  private readonly appProperties: AppProperties;
+  private readonly styles: Styles;
+  private readonly comments: Comments;
+  private readonly bibliography: Bibliography | undefined;
+  private readonly fontWrapper: FontWrapper;
 
-    public constructor(options: IPropertiesOptions) {
-        this.coreProperties = new CoreProperties({
-            ...options,
-            creator: options.creator ?? "Un-named",
-            lastModifiedBy: options.lastModifiedBy ?? "Un-named",
-            revision: options.revision ?? 1,
-        });
+  public constructor(options: IPropertiesOptions) {
+    this.coreProperties = new CoreProperties({
+      ...options,
+      creator: options.creator ?? "Un-named",
+      lastModifiedBy: options.lastModifiedBy ?? "Un-named",
+      revision: options.revision ?? 1,
+    });
 
-        this.numbering = new Numbering(options.numbering ? options.numbering : { config: [] });
+    this.numbering = new Numbering(options.numbering ? options.numbering : { config: [] });
 
-        this.comments = new Comments(options.comments ?? { children: [] });
-        this.bibliography = options.bibliography
-            ? new Bibliography(options.bibliography)
-            : undefined;
-        this.fileRelationships = new Relationships();
-        this.customProperties = new CustomProperties(options.customProperties ?? []);
-        this.appProperties = new AppProperties();
-        this.footnotesWrapper = new FootnotesWrapper();
-        this.endnotesWrapper = new EndnotesWrapper();
-        this.contentTypes = new ContentTypes();
-        this.documentWrapper = new DocumentWrapper({ background: options.background });
-        this.settings = new Settings({
-            compatibility: options.compatibility,
-            compatibilityModeVersion: options.compatabilityModeVersion,
-            defaultTabStop: options.defaultTabStop,
-            evenAndOddHeaders: options.evenAndOddHeaderAndFooters ? true : false,
-            characterSpacingControl: options.characterSpacingControl,
-            hyphenation: {
-                autoHyphenation: options.hyphenation?.autoHyphenation,
-                consecutiveHyphenLimit: options.hyphenation?.consecutiveHyphenLimit,
-                doNotHyphenateCaps: options.hyphenation?.doNotHyphenateCaps,
-                hyphenationZone: options.hyphenation?.hyphenationZone,
-            },
-            trackRevisions: options.features?.trackRevisions,
-            updateFields: options.features?.updateFields,
-            documentProtection: options.features?.documentProtection,
-            view: options.view,
-            zoom: options.zoom,
-            writeProtection: options.writeProtection,
-            displayBackgroundShape:
-                options.displayBackgroundShape ?? (options.background?.image ? true : undefined),
-            embedTrueTypeFonts: options.embedTrueTypeFonts,
-            embedSystemFonts: options.embedSystemFonts,
-            saveSubsetFonts: options.saveSubsetFonts,
-            docVars: options.docVars,
-            colorSchemeMapping: options.colorSchemeMapping,
-        });
+    this.comments = new Comments(options.comments ?? { children: [] });
+    this.bibliography = options.bibliography ? new Bibliography(options.bibliography) : undefined;
+    this.fileRelationships = new Relationships();
+    this.customProperties = new CustomProperties(options.customProperties ?? []);
+    this.appProperties = new AppProperties();
+    this.footnotesWrapper = new FootnotesWrapper();
+    this.endnotesWrapper = new EndnotesWrapper();
+    this.contentTypes = new ContentTypes();
+    this.documentWrapper = new DocumentWrapper({ background: options.background });
+    this.settings = new Settings({
+      compatibility: options.compatibility,
+      compatibilityModeVersion: options.compatabilityModeVersion,
+      defaultTabStop: options.defaultTabStop,
+      evenAndOddHeaders: options.evenAndOddHeaderAndFooters ? true : false,
+      characterSpacingControl: options.characterSpacingControl,
+      hyphenation: {
+        autoHyphenation: options.hyphenation?.autoHyphenation,
+        consecutiveHyphenLimit: options.hyphenation?.consecutiveHyphenLimit,
+        doNotHyphenateCaps: options.hyphenation?.doNotHyphenateCaps,
+        hyphenationZone: options.hyphenation?.hyphenationZone,
+      },
+      trackRevisions: options.features?.trackRevisions,
+      updateFields: options.features?.updateFields,
+      documentProtection: options.features?.documentProtection,
+      view: options.view,
+      zoom: options.zoom,
+      writeProtection: options.writeProtection,
+      displayBackgroundShape:
+        options.displayBackgroundShape ?? (options.background?.image ? true : undefined),
+      embedTrueTypeFonts: options.embedTrueTypeFonts,
+      embedSystemFonts: options.embedSystemFonts,
+      saveSubsetFonts: options.saveSubsetFonts,
+      docVars: options.docVars,
+      colorSchemeMapping: options.colorSchemeMapping,
+    });
 
-        this.media = new Media();
-        this.charts = new ChartCollection();
-        this.smartArts = new SmartArtCollection();
-        this.altChunks = new AltChunkCollection();
-        this.subDocs = new SubDocCollection();
+    this.media = new Media();
+    this.charts = new ChartCollection();
+    this.smartArts = new SmartArtCollection();
+    this.altChunks = new AltChunkCollection();
+    this.subDocs = new SubDocCollection();
 
-        if (options.externalStyles !== undefined) {
-            const defaultFactory = new DefaultStylesFactory();
-            const defaultStyles = defaultFactory.newInstance(options.styles?.default);
-            const externalFactory = new ExternalStylesFactory();
-            const externalStyles = externalFactory.newInstance(options.externalStyles);
-            this.styles = new Styles({
-                ...externalStyles,
-                importedStyles: [
-                    ...defaultStyles.importedStyles!,
-                    ...externalStyles.importedStyles!,
-                ],
-            });
-        } else if (options.styles) {
-            const stylesFactory = new DefaultStylesFactory();
-            const defaultStyles = stylesFactory.newInstance(options.styles.default);
-            this.styles = new Styles({
-                ...defaultStyles,
-                ...options.styles,
-            });
-        } else {
-            const stylesFactory = new DefaultStylesFactory();
-            this.styles = new Styles(stylesFactory.newInstance());
-        }
-
-        this.addDefaultRelationships();
-
-        if (this.bibliography) {
-            this.contentTypes.addBibliography();
-        }
-
-        for (const section of options.sections) {
-            this.addSection(section);
-        }
-
-        if (options.footnotes) {
-            for (const key in options.footnotes) {
-                this.footnotesWrapper.View.createFootNote(
-                    parseFloat(key),
-                    options.footnotes[key].children,
-                );
-            }
-        }
-
-        if (options.endnotes) {
-            for (const key in options.endnotes) {
-                this.endnotesWrapper.View.createEndnote(
-                    parseFloat(key),
-                    options.endnotes[key].children,
-                );
-            }
-        }
-
-        this.fontWrapper = new FontWrapper(options.fonts ?? []);
+    if (options.externalStyles !== undefined) {
+      const defaultFactory = new DefaultStylesFactory();
+      const defaultStyles = defaultFactory.newInstance(options.styles?.default);
+      const externalFactory = new ExternalStylesFactory();
+      const externalStyles = externalFactory.newInstance(options.externalStyles);
+      this.styles = new Styles({
+        ...externalStyles,
+        importedStyles: [...defaultStyles.importedStyles!, ...externalStyles.importedStyles!],
+      });
+    } else if (options.styles) {
+      const stylesFactory = new DefaultStylesFactory();
+      const defaultStyles = stylesFactory.newInstance(options.styles.default);
+      this.styles = new Styles({
+        ...defaultStyles,
+        ...options.styles,
+      });
+    } else {
+      const stylesFactory = new DefaultStylesFactory();
+      this.styles = new Styles(stylesFactory.newInstance());
     }
 
-    private addSection({
-        headers = {},
-        footers = {},
-        children,
-        properties,
-    }: ISectionOptions): void {
-        this.documentWrapper.View.Body.addSection({
-            ...properties,
-            footerWrapperGroup: {
-                default: footers.default ? this.createFooter(footers.default) : undefined,
-                even: footers.even ? this.createFooter(footers.even) : undefined,
-                first: footers.first ? this.createFooter(footers.first) : undefined,
-            },
-            headerWrapperGroup: {
-                default: headers.default ? this.createHeader(headers.default) : undefined,
-                even: headers.even ? this.createHeader(headers.even) : undefined,
-                first: headers.first ? this.createHeader(headers.first) : undefined,
-            },
-        });
+    this.addDefaultRelationships();
 
-        for (const child of children) {
-            this.documentWrapper.View.add(child);
-        }
+    if (this.bibliography) {
+      this.contentTypes.addBibliography();
     }
 
-    private createHeader(header: Header): HeaderWrapper {
-        const wrapper = new HeaderWrapper(this.media, this.currentRelationshipId++);
-
-        for (const child of header.options.children) {
-            wrapper.add(child);
-        }
-
-        this.addHeaderToDocument(wrapper);
-        return wrapper;
+    for (const section of options.sections) {
+      this.addSection(section);
     }
 
-    private createFooter(footer: Footer): FooterWrapper {
-        const wrapper = new FooterWrapper(this.media, this.currentRelationshipId++);
-
-        for (const child of footer.options.children) {
-            wrapper.add(child);
-        }
-
-        this.addFooterToDocument(wrapper);
-        return wrapper;
+    if (options.footnotes) {
+      for (const key in options.footnotes) {
+        this.footnotesWrapper.View.createFootNote(parseFloat(key), options.footnotes[key].children);
+      }
     }
 
-    private addHeaderToDocument(
-        header: HeaderWrapper,
-        type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType] = HeaderFooterReferenceType.DEFAULT,
-    ): void {
-        this.headers.push({ header, type });
-        this.documentWrapper.Relationships.addRelationship(
-            header.View.ReferenceId,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header",
-            `header${this.headers.length}.xml`,
-        );
-        this.contentTypes.addHeader(this.headers.length);
+    if (options.endnotes) {
+      for (const key in options.endnotes) {
+        this.endnotesWrapper.View.createEndnote(parseFloat(key), options.endnotes[key].children);
+      }
     }
 
-    private addFooterToDocument(
-        footer: FooterWrapper,
-        type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType] = HeaderFooterReferenceType.DEFAULT,
-    ): void {
-        this.footers.push({ footer, type });
-        this.documentWrapper.Relationships.addRelationship(
-            footer.View.ReferenceId,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer",
-            `footer${this.footers.length}.xml`,
-        );
-        this.contentTypes.addFooter(this.footers.length);
+    this.fontWrapper = new FontWrapper(options.fonts ?? []);
+  }
+
+  private addSection({ headers = {}, footers = {}, children, properties }: ISectionOptions): void {
+    this.documentWrapper.View.Body.addSection({
+      ...properties,
+      footerWrapperGroup: {
+        default: footers.default ? this.createFooter(footers.default) : undefined,
+        even: footers.even ? this.createFooter(footers.even) : undefined,
+        first: footers.first ? this.createFooter(footers.first) : undefined,
+      },
+      headerWrapperGroup: {
+        default: headers.default ? this.createHeader(headers.default) : undefined,
+        even: headers.even ? this.createHeader(headers.even) : undefined,
+        first: headers.first ? this.createHeader(headers.first) : undefined,
+      },
+    });
+
+    for (const child of children) {
+      this.documentWrapper.View.add(child);
+    }
+  }
+
+  private createHeader(header: Header): HeaderWrapper {
+    const wrapper = new HeaderWrapper(this.media, this.currentRelationshipId++);
+
+    for (const child of header.options.children) {
+      wrapper.add(child);
     }
 
-    private addDefaultRelationships(): void {
-        this.fileRelationships.addRelationship(
-            1,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
-            "word/document.xml",
-        );
-        this.fileRelationships.addRelationship(
-            2,
-            "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties",
-            "docProps/core.xml",
-        );
-        this.fileRelationships.addRelationship(
-            3,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties",
-            "docProps/app.xml",
-        );
-        this.fileRelationships.addRelationship(
-            4,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties",
-            "docProps/custom.xml",
-        );
+    this.addHeaderToDocument(wrapper);
+    return wrapper;
+  }
 
-        this.documentWrapper.Relationships.addRelationship(
-            this.currentRelationshipId++,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles",
-            "styles.xml",
-        );
-        this.documentWrapper.Relationships.addRelationship(
-            this.currentRelationshipId++,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering",
-            "numbering.xml",
-        );
-        this.documentWrapper.Relationships.addRelationship(
-            this.currentRelationshipId++,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes",
-            "footnotes.xml",
-        );
-        this.documentWrapper.Relationships.addRelationship(
-            this.currentRelationshipId++,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes",
-            "endnotes.xml",
-        );
-        this.documentWrapper.Relationships.addRelationship(
-            this.currentRelationshipId++,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings",
-            "settings.xml",
-        );
-        this.documentWrapper.Relationships.addRelationship(
-            this.currentRelationshipId++,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
-            "comments.xml",
-        );
-        if (this.bibliography) {
-            this.documentWrapper.Relationships.addRelationship(
-                this.currentRelationshipId++,
-                "http://schemas.openxmlformats.org/officeDocument/2006/relationships/bibliography",
-                "bibliography.xml",
-            );
-        }
+  private createFooter(footer: Footer): FooterWrapper {
+    const wrapper = new FooterWrapper(this.media, this.currentRelationshipId++);
+
+    for (const child of footer.options.children) {
+      wrapper.add(child);
     }
 
-    public get Document(): DocumentWrapper {
-        return this.documentWrapper;
-    }
+    this.addFooterToDocument(wrapper);
+    return wrapper;
+  }
 
-    public get Styles(): Styles {
-        return this.styles;
-    }
+  private addHeaderToDocument(
+    header: HeaderWrapper,
+    type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType] = HeaderFooterReferenceType.DEFAULT,
+  ): void {
+    this.headers.push({ header, type });
+    this.documentWrapper.Relationships.addRelationship(
+      header.View.ReferenceId,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header",
+      `header${this.headers.length}.xml`,
+    );
+    this.contentTypes.addHeader(this.headers.length);
+  }
 
-    public get CoreProperties(): CoreProperties {
-        return this.coreProperties;
-    }
+  private addFooterToDocument(
+    footer: FooterWrapper,
+    type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType] = HeaderFooterReferenceType.DEFAULT,
+  ): void {
+    this.footers.push({ footer, type });
+    this.documentWrapper.Relationships.addRelationship(
+      footer.View.ReferenceId,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer",
+      `footer${this.footers.length}.xml`,
+    );
+    this.contentTypes.addFooter(this.footers.length);
+  }
 
-    public get Numbering(): Numbering {
-        return this.numbering;
-    }
+  private addDefaultRelationships(): void {
+    this.fileRelationships.addRelationship(
+      1,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
+      "word/document.xml",
+    );
+    this.fileRelationships.addRelationship(
+      2,
+      "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties",
+      "docProps/core.xml",
+    );
+    this.fileRelationships.addRelationship(
+      3,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties",
+      "docProps/app.xml",
+    );
+    this.fileRelationships.addRelationship(
+      4,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties",
+      "docProps/custom.xml",
+    );
 
-    public get Media(): Media {
-        return this.media;
+    this.documentWrapper.Relationships.addRelationship(
+      this.currentRelationshipId++,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles",
+      "styles.xml",
+    );
+    this.documentWrapper.Relationships.addRelationship(
+      this.currentRelationshipId++,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering",
+      "numbering.xml",
+    );
+    this.documentWrapper.Relationships.addRelationship(
+      this.currentRelationshipId++,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes",
+      "footnotes.xml",
+    );
+    this.documentWrapper.Relationships.addRelationship(
+      this.currentRelationshipId++,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes",
+      "endnotes.xml",
+    );
+    this.documentWrapper.Relationships.addRelationship(
+      this.currentRelationshipId++,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings",
+      "settings.xml",
+    );
+    this.documentWrapper.Relationships.addRelationship(
+      this.currentRelationshipId++,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
+      "comments.xml",
+    );
+    if (this.bibliography) {
+      this.documentWrapper.Relationships.addRelationship(
+        this.currentRelationshipId++,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/bibliography",
+        "bibliography.xml",
+      );
     }
+  }
 
-    public get Charts(): ChartCollection {
-        return this.charts;
-    }
+  public get Document(): DocumentWrapper {
+    return this.documentWrapper;
+  }
 
-    public get SmartArts(): SmartArtCollection {
-        return this.smartArts;
-    }
+  public get Styles(): Styles {
+    return this.styles;
+  }
 
-    public get AltChunks(): AltChunkCollection {
-        return this.altChunks;
-    }
+  public get CoreProperties(): CoreProperties {
+    return this.coreProperties;
+  }
 
-    public get SubDocs(): SubDocCollection {
-        return this.subDocs;
-    }
+  public get Numbering(): Numbering {
+    return this.numbering;
+  }
 
-    public get FileRelationships(): Relationships {
-        return this.fileRelationships;
-    }
+  public get Media(): Media {
+    return this.media;
+  }
 
-    public get Headers(): readonly HeaderWrapper[] {
-        return this.headers.map((item) => item.header);
-    }
+  public get Charts(): ChartCollection {
+    return this.charts;
+  }
 
-    public get Footers(): readonly FooterWrapper[] {
-        return this.footers.map((item) => item.footer);
-    }
+  public get SmartArts(): SmartArtCollection {
+    return this.smartArts;
+  }
 
-    public get ContentTypes(): ContentTypes {
-        return this.contentTypes;
-    }
+  public get AltChunks(): AltChunkCollection {
+    return this.altChunks;
+  }
 
-    public get CustomProperties(): CustomProperties {
-        return this.customProperties;
-    }
+  public get SubDocs(): SubDocCollection {
+    return this.subDocs;
+  }
 
-    public get AppProperties(): AppProperties {
-        return this.appProperties;
-    }
+  public get FileRelationships(): Relationships {
+    return this.fileRelationships;
+  }
 
-    public get FootNotes(): FootnotesWrapper {
-        return this.footnotesWrapper;
-    }
+  public get Headers(): readonly HeaderWrapper[] {
+    return this.headers.map((item) => item.header);
+  }
 
-    public get Endnotes(): EndnotesWrapper {
-        return this.endnotesWrapper;
-    }
+  public get Footers(): readonly FooterWrapper[] {
+    return this.footers.map((item) => item.footer);
+  }
 
-    public get Settings(): Settings {
-        return this.settings;
-    }
+  public get ContentTypes(): ContentTypes {
+    return this.contentTypes;
+  }
 
-    public get Comments(): Comments {
-        return this.comments;
-    }
+  public get CustomProperties(): CustomProperties {
+    return this.customProperties;
+  }
 
-    public get Bibliography(): Bibliography | undefined {
-        return this.bibliography;
-    }
+  public get AppProperties(): AppProperties {
+    return this.appProperties;
+  }
 
-    public get FontTable(): FontWrapper {
-        return this.fontWrapper;
-    }
+  public get FootNotes(): FootnotesWrapper {
+    return this.footnotesWrapper;
+  }
+
+  public get Endnotes(): EndnotesWrapper {
+    return this.endnotesWrapper;
+  }
+
+  public get Settings(): Settings {
+    return this.settings;
+  }
+
+  public get Comments(): Comments {
+    return this.comments;
+  }
+
+  public get Bibliography(): Bibliography | undefined {
+    return this.bibliography;
+  }
+
+  public get FontTable(): FontWrapper {
+    return this.fontWrapper;
+  }
 }

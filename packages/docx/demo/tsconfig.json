@@ -1,15 +1,15 @@
 {
-    "extends": "../tsconfig.json",
-    "compilerOptions": {
-        "noEmit": true,
-        "composite": false,
-        "paths": {
-            "@util/*": ["../src/util/*"],
-            "@export/*": ["../src/export/*"],
-            "@file/*": ["../src/file/*"],
-            "tests/*": ["../src/tests/*"],
-            "@office-open/docx": ["../src/index.ts"]
-        }
-    },
-    "include": ["**/*.ts"]
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "composite": false,
+    "paths": {
+      "@util/*": ["../src/util/*"],
+      "@export/*": ["../src/export/*"],
+      "@file/*": ["../src/file/*"],
+      "tests/*": ["../src/tests/*"],
+      "@office-open/docx": ["../src/index.ts"]
+    }
+  },
+  "include": ["**/*.ts"]
 }

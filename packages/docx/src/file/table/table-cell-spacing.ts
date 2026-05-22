@@ -27,10 +27,10 @@ import type { Percentage, UniversalMeasure } from "@util/values";
  * ```
  */
 export const CellSpacingType = {
-    /** Value is in twentieths of a point */
-    DXA: "dxa",
-    /** No (empty) value. */
-    NIL: "nil",
+  /** Value is in twentieths of a point */
+  DXA: "dxa",
+  /** No (empty) value. */
+  NIL: "nil",
 } as const;
 
 /**
@@ -39,10 +39,10 @@ export const CellSpacingType = {
  * @see {@link createTableCellSpacing}
  */
 export interface ITableCellSpacingProperties {
-    /** The spacing value (in twips, percentage, or universal measure) */
-    readonly value: number | Percentage | UniversalMeasure;
-    /** The type of measurement (defaults to DXA/twips) */
-    readonly type?: (typeof CellSpacingType)[keyof typeof CellSpacingType];
+  /** The spacing value (in twips, percentage, or universal measure) */
+  readonly value: number | Percentage | UniversalMeasure;
+  /** The type of measurement (defaults to DXA/twips) */
+  readonly type?: (typeof CellSpacingType)[keyof typeof CellSpacingType];
 }
 
 /**
@@ -66,13 +66,13 @@ export interface ITableCellSpacingProperties {
  * ```
  */
 export const createTableCellSpacing = ({
-    type = CellSpacingType.DXA,
-    value,
+  type = CellSpacingType.DXA,
+  value,
 }: ITableCellSpacingProperties): XmlComponent =>
-    new BuilderElement<ITableCellSpacingProperties>({
-        attributes: {
-            type: { key: "w:type", value: type },
-            value: { key: "w:w", value: measurementOrPercentValue(value) },
-        },
-        name: "w:tblCellSpacing",
-    });
+  new BuilderElement<ITableCellSpacingProperties>({
+    attributes: {
+      type: { key: "w:type", value: type },
+      value: { key: "w:w", value: measurementOrPercentValue(value) },
+    },
+    name: "w:tblCellSpacing",
+  });

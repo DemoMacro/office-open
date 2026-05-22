@@ -16,16 +16,16 @@ import { XmlAttributeComponent } from "@file/xml-components";
  * @internal
  */
 export class NonVisualPropertiesAttributes extends XmlAttributeComponent<{
-    /** Unique identifier for the drawing element */
-    readonly id?: number;
-    /** Name of the drawing element */
-    readonly name?: string;
-    /** Description of the drawing element */
-    readonly descr?: string;
+  /** Unique identifier for the drawing element */
+  readonly id?: number;
+  /** Name of the drawing element */
+  readonly name?: string;
+  /** Description of the drawing element */
+  readonly descr?: string;
 }> {
-    protected readonly xmlKeys = {
-        descr: "descr",
-        id: "id",
-        name: "name",
-    };
+  protected readonly xmlKeys = {
+    descr: "descr",
+    id: "id",
+    name: "name",
+  };
 }

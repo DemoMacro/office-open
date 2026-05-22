@@ -12,7 +12,7 @@
  * Converts millimeters to TWIP (twentieths of a point).
  */
 export const convertMillimetersToTwip = (millimeters: number): number =>
-    Math.floor((millimeters / 25.4) * 72 * 20);
+  Math.floor((millimeters / 25.4) * 72 * 20);
 
 /**
  * Converts inches to TWIP (twentieths of a point).

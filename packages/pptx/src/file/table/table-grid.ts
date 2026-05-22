@@ -6,17 +6,17 @@ import type { IContext, IXmlableObject } from "@file/xml-components";
  * Lazy: stores widths, builds IXmlableObject in prepForXml.
  */
 export class TableGrid extends BaseXmlComponent {
-    private readonly columnWidths: readonly number[];
+  private readonly columnWidths: readonly number[];
 
-    public constructor(columnWidths: readonly number[]) {
-        super("a:tblGrid");
-        this.columnWidths = columnWidths;
-    }
+  public constructor(columnWidths: readonly number[]) {
+    super("a:tblGrid");
+    this.columnWidths = columnWidths;
+  }
 
-    public override prepForXml(_context: IContext): IXmlableObject {
-        const children = this.columnWidths.map((w) => ({
-            "a:gridCol": { _attr: { w } },
-        }));
-        return { "a:tblGrid": children };
-    }
+  public override prepForXml(_context: IContext): IXmlableObject {
+    const children = this.columnWidths.map((w) => ({
+      "a:gridCol": { _attr: { w } },
+    }));
+    return { "a:tblGrid": children };
+  }
 }

@@ -3,56 +3,56 @@
 import * as fs from "fs";
 
 import {
-    Document,
-    Packer,
-    Paragraph,
-    PositionalTab,
-    PositionalTabAlignment,
-    PositionalTabLeader,
-    PositionalTabRelativeTo,
-    TextRun,
+  Document,
+  Packer,
+  Paragraph,
+  PositionalTab,
+  PositionalTabAlignment,
+  PositionalTabLeader,
+  PositionalTabRelativeTo,
+  TextRun,
 } from "@office-open/docx";
 
 const doc = new Document({
-    sections: [
-        {
-            children: [
-                new Paragraph({
-                    children: [
-                        new TextRun("Full name"),
-                        new TextRun({
-                            bold: true,
-                            children: [
-                                new PositionalTab({
-                                    alignment: PositionalTabAlignment.RIGHT,
-                                    relativeTo: PositionalTabRelativeTo.MARGIN,
-                                    leader: PositionalTabLeader.DOT,
-                                }),
-                                "John Doe",
-                            ],
-                        }),
-                    ],
+  sections: [
+    {
+      children: [
+        new Paragraph({
+          children: [
+            new TextRun("Full name"),
+            new TextRun({
+              bold: true,
+              children: [
+                new PositionalTab({
+                  alignment: PositionalTabAlignment.RIGHT,
+                  relativeTo: PositionalTabRelativeTo.MARGIN,
+                  leader: PositionalTabLeader.DOT,
                 }),
-                new Paragraph({
-                    children: [
-                        new TextRun("Hello World"),
-                        new TextRun({
-                            bold: true,
-                            children: [
-                                new PositionalTab({
-                                    alignment: PositionalTabAlignment.CENTER,
-                                    relativeTo: PositionalTabRelativeTo.INDENT,
-                                    leader: PositionalTabLeader.HYPHEN,
-                                }),
-                                "Foo bar",
-                            ],
-                        }),
-                    ],
+                "John Doe",
+              ],
+            }),
+          ],
+        }),
+        new Paragraph({
+          children: [
+            new TextRun("Hello World"),
+            new TextRun({
+              bold: true,
+              children: [
+                new PositionalTab({
+                  alignment: PositionalTabAlignment.CENTER,
+                  relativeTo: PositionalTabRelativeTo.INDENT,
+                  leader: PositionalTabLeader.HYPHEN,
                 }),
-            ],
-            properties: {},
-        },
-    ],
+                "Foo bar",
+              ],
+            }),
+          ],
+        }),
+      ],
+      properties: {},
+    },
+  ],
 });
 
 const buffer = await Packer.toBuffer(doc);

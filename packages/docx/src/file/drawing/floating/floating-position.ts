@@ -39,54 +39,54 @@ import type { ITextWrapping } from "../text-wrap";
  * @publicApi
  */
 export const HorizontalPositionRelativeFrom = {
-    /**
-     * ## Character
-     *
-     * Specifies that the horizontal positioning shall be relative to the position of the anchor within its run content.
-     */
-    CHARACTER: "character",
-    /**
-     * ## Column
-     *
-     * Specifies that the horizontal positioning shall be relative to the extents of the column which contains its anchor.
-     */
-    COLUMN: "column",
-    /**
-     * ## Inside Margin
-     *
-     * Specifies that the horizontal positioning shall be relative to the inside margin of the current page (the left margin on odd pages, right on even pages).
-     */
-    INSIDE_MARGIN: "insideMargin",
-    /**
-     * ## Left Margin
-     *
-     * Specifies that the horizontal positioning shall be relative to the left margin of the page.
-     */
-    LEFT_MARGIN: "leftMargin",
-    /**
-     * ## Page Margin
-     *
-     * Specifies that the horizontal positioning shall be relative to the page margins.
-     */
-    MARGIN: "margin",
-    /**
-     * ## Outside Margin
-     *
-     * Specifies that the horizontal positioning shall be relative to the outside margin of the current page (the right margin on odd pages, left on even pages).
-     */
-    OUTSIDE_MARGIN: "outsideMargin",
-    /**
-     * ## Page Edge
-     *
-     * Specifies that the horizontal positioning shall be relative to the edge of the page.
-     */
-    PAGE: "page",
-    /**
-     * ## Right Margin
-     *
-     * Specifies that the horizontal positioning shall be relative to the right margin of the page.
-     */
-    RIGHT_MARGIN: "rightMargin",
+  /**
+   * ## Character
+   *
+   * Specifies that the horizontal positioning shall be relative to the position of the anchor within its run content.
+   */
+  CHARACTER: "character",
+  /**
+   * ## Column
+   *
+   * Specifies that the horizontal positioning shall be relative to the extents of the column which contains its anchor.
+   */
+  COLUMN: "column",
+  /**
+   * ## Inside Margin
+   *
+   * Specifies that the horizontal positioning shall be relative to the inside margin of the current page (the left margin on odd pages, right on even pages).
+   */
+  INSIDE_MARGIN: "insideMargin",
+  /**
+   * ## Left Margin
+   *
+   * Specifies that the horizontal positioning shall be relative to the left margin of the page.
+   */
+  LEFT_MARGIN: "leftMargin",
+  /**
+   * ## Page Margin
+   *
+   * Specifies that the horizontal positioning shall be relative to the page margins.
+   */
+  MARGIN: "margin",
+  /**
+   * ## Outside Margin
+   *
+   * Specifies that the horizontal positioning shall be relative to the outside margin of the current page (the right margin on odd pages, left on even pages).
+   */
+  OUTSIDE_MARGIN: "outsideMargin",
+  /**
+   * ## Page Edge
+   *
+   * Specifies that the horizontal positioning shall be relative to the edge of the page.
+   */
+  PAGE: "page",
+  /**
+   * ## Right Margin
+   *
+   * Specifies that the horizontal positioning shall be relative to the right margin of the page.
+   */
+  RIGHT_MARGIN: "rightMargin",
 } as const;
 
 /**
@@ -115,88 +115,88 @@ export const HorizontalPositionRelativeFrom = {
  * @publicApi
  */
 export const VerticalPositionRelativeFrom = {
-    /**
-     * ## Bottom Margin
-     *
-     * Specifies that the vertical positioning shall be relative to the bottom margin of the current page.
-     */
-    BOTTOM_MARGIN: "bottomMargin",
-    /**
-     * ## Inside Margin
-     *
-     * Specifies that the vertical positioning shall be relative to the inside margin of the current page.
-     */
-    INSIDE_MARGIN: "insideMargin",
-    /**
-     * ## Line
-     *
-     * Specifies that the vertical positioning shall be relative to the line containing the anchor character.
-     */
-    LINE: "line",
-    /**
-     * ## Page Margin
-     *
-     * Specifies that the vertical positioning shall be relative to the page margins.
-     */
-    MARGIN: "margin",
-    /**
-     * ## Outside Margin
-     *
-     * Specifies that the vertical positioning shall be relative to the outside margin of the current page.
-     */
-    OUTSIDE_MARGIN: "outsideMargin",
-    /**
-     * ## Page Edge
-     *
-     * Specifies that the vertical positioning shall be relative to the edge of the page.
-     */
-    PAGE: "page",
-    /**
-     * ## Paragraph
-     *
-     * Specifies that the vertical positioning shall be relative to the paragraph which contains the drawing anchor.
-     */
-    PARAGRAPH: "paragraph",
-    /**
-     * ## Top Margin
-     *
-     * Specifies that the vertical positioning shall be relative to the top margin of the current page.
-     */
-    TOP_MARGIN: "topMargin",
+  /**
+   * ## Bottom Margin
+   *
+   * Specifies that the vertical positioning shall be relative to the bottom margin of the current page.
+   */
+  BOTTOM_MARGIN: "bottomMargin",
+  /**
+   * ## Inside Margin
+   *
+   * Specifies that the vertical positioning shall be relative to the inside margin of the current page.
+   */
+  INSIDE_MARGIN: "insideMargin",
+  /**
+   * ## Line
+   *
+   * Specifies that the vertical positioning shall be relative to the line containing the anchor character.
+   */
+  LINE: "line",
+  /**
+   * ## Page Margin
+   *
+   * Specifies that the vertical positioning shall be relative to the page margins.
+   */
+  MARGIN: "margin",
+  /**
+   * ## Outside Margin
+   *
+   * Specifies that the vertical positioning shall be relative to the outside margin of the current page.
+   */
+  OUTSIDE_MARGIN: "outsideMargin",
+  /**
+   * ## Page Edge
+   *
+   * Specifies that the vertical positioning shall be relative to the edge of the page.
+   */
+  PAGE: "page",
+  /**
+   * ## Paragraph
+   *
+   * Specifies that the vertical positioning shall be relative to the paragraph which contains the drawing anchor.
+   */
+  PARAGRAPH: "paragraph",
+  /**
+   * ## Top Margin
+   *
+   * Specifies that the vertical positioning shall be relative to the top margin of the current page.
+   */
+  TOP_MARGIN: "topMargin",
 } as const;
 
 /**
  * Options for horizontal positioning of a floating drawing.
  */
 export interface IHorizontalPositionOptions {
-    /** The base from which horizontal position is calculated */
-    readonly relative?: (typeof HorizontalPositionRelativeFrom)[keyof typeof HorizontalPositionRelativeFrom];
-    /** Alignment relative to the horizontal base */
-    readonly align?: (typeof HorizontalPositionAlign)[keyof typeof HorizontalPositionAlign];
-    /** Offset in EMUs from the horizontal base */
-    readonly offset?: number;
+  /** The base from which horizontal position is calculated */
+  readonly relative?: (typeof HorizontalPositionRelativeFrom)[keyof typeof HorizontalPositionRelativeFrom];
+  /** Alignment relative to the horizontal base */
+  readonly align?: (typeof HorizontalPositionAlign)[keyof typeof HorizontalPositionAlign];
+  /** Offset in EMUs from the horizontal base */
+  readonly offset?: number;
 }
 
 /**
  * Options for vertical positioning of a floating drawing.
  */
 export interface IVerticalPositionOptions {
-    /** The base from which vertical position is calculated */
-    readonly relative?: (typeof VerticalPositionRelativeFrom)[keyof typeof VerticalPositionRelativeFrom];
-    /** Alignment relative to the vertical base */
-    readonly align?: (typeof VerticalPositionAlign)[keyof typeof VerticalPositionAlign];
-    /** Offset in EMUs from the vertical base */
-    readonly offset?: number;
+  /** The base from which vertical position is calculated */
+  readonly relative?: (typeof VerticalPositionRelativeFrom)[keyof typeof VerticalPositionRelativeFrom];
+  /** Alignment relative to the vertical base */
+  readonly align?: (typeof VerticalPositionAlign)[keyof typeof VerticalPositionAlign];
+  /** Offset in EMUs from the vertical base */
+  readonly offset?: number;
 }
 
 /**
  * Margin distances around a floating drawing in EMUs.
  */
 export interface IMargins {
-    readonly left?: number;
-    readonly bottom?: number;
-    readonly top?: number;
-    readonly right?: number;
+  readonly left?: number;
+  readonly bottom?: number;
+  readonly top?: number;
+  readonly right?: number;
 }
 
 /**
@@ -205,13 +205,13 @@ export interface IMargins {
  * @see {@link Anchor}
  */
 export interface IFloating {
-    readonly horizontalPosition: IHorizontalPositionOptions;
-    readonly verticalPosition: IVerticalPositionOptions;
-    readonly allowOverlap?: boolean;
-    readonly lockAnchor?: boolean;
-    readonly behindDocument?: boolean;
-    readonly layoutInCell?: boolean;
-    readonly margins?: IMargins;
-    readonly wrap?: ITextWrapping;
-    readonly zIndex?: number;
+  readonly horizontalPosition: IHorizontalPositionOptions;
+  readonly verticalPosition: IVerticalPositionOptions;
+  readonly allowOverlap?: boolean;
+  readonly lockAnchor?: boolean;
+  readonly behindDocument?: boolean;
+  readonly layoutInCell?: boolean;
+  readonly margins?: IMargins;
+  readonly wrap?: ITextWrapping;
+  readonly zIndex?: number;
 }

@@ -16,7 +16,7 @@ import { toJson } from "./util";
  * @property data - The document template to scan for placeholders
  */
 interface PatchDetectorOptions {
-    readonly data: InputDataType;
+  readonly data: InputDataType;
 }
 
 /**
@@ -45,21 +45,19 @@ interface PatchDetectorOptions {
  * ```
  */
 export const patchDetector = async ({ data }: PatchDetectorOptions): Promise<readonly string[]> => {
-    const zipContent = unzipSync(toUint8Array(data));
-    const patches = new Set<string>();
+  const zipContent = unzipSync(toUint8Array(data));
+  const patches = new Set<string>();
 
-    for (const [key, value] of Object.entries(zipContent)) {
-        if (!key.endsWith(".xml") && !key.endsWith(".rels")) {
-            continue;
-        }
-        if (key.startsWith("word/") && !key.endsWith(".xml.rels")) {
-            const json = toJson(strFromU8(value));
-            traverse(json).forEach((p) =>
-                findPatchKeys(p.text).forEach((patch) => patches.add(patch)),
-            );
-        }
+  for (const [key, value] of Object.entries(zipContent)) {
+    if (!key.endsWith(".xml") && !key.endsWith(".rels")) {
+      continue;
     }
-    return [...patches];
+    if (key.startsWith("word/") && !key.endsWith(".xml.rels")) {
+      const json = toJson(strFromU8(value));
+      traverse(json).forEach((p) => findPatchKeys(p.text).forEach((patch) => patches.add(patch)));
+    }
+  }
+  return [...patches];
 };
 
 /**
@@ -69,6 +67,6 @@ export const patchDetector = async ({ data }: PatchDetectorOptions): Promise<rea
  * @returns Array of placeholder keys (without delimiters)
  */
 const findPatchKeys = (text: string): readonly string[] => {
-    const pattern = /(?<=\{\{).+?(?=\}\})/gs;
-    return text.match(pattern) ?? [];
+  const pattern = /(?<=\{\{).+?(?=\}\})/gs;
+  return text.match(pattern) ?? [];
 };

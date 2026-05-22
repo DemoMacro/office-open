@@ -45,11 +45,11 @@ import type { LatentStyleException } from "./exceptions";
  * ```
  */
 export class LatentStyles extends XmlComponent {
-    public constructor(latentException?: LatentStyleException) {
-        super("w:latentStyles");
+  public constructor(latentException?: LatentStyleException) {
+    super("w:latentStyles");
 
-        if (latentException) {
-            this.root.push(latentException);
-        }
+    if (latentException) {
+      this.root.push(latentException);
     }
+  }
 }

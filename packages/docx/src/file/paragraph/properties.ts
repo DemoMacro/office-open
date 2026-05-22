@@ -13,10 +13,10 @@
 import { ChangeAttributes } from "@file/track-revision/track-revision";
 import type { IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import {
-    BuilderElement,
-    IgnoreIfEmptyXmlComponent,
-    OnOffElement,
-    XmlComponent,
+  BuilderElement,
+  IgnoreIfEmptyXmlComponent,
+  OnOffElement,
+  XmlComponent,
 } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 
@@ -54,16 +54,16 @@ import { createDivId, createOutlineLevel } from "./links";
  * @publicApi
  */
 export const TextAlignmentType = {
-    /** Align text to the top */
-    TOP: "top",
-    /** Align text to the center */
-    CENTER: "center",
-    /** Align text to the baseline */
-    BASELINE: "baseline",
-    /** Align text to the bottom */
-    BOTTOM: "bottom",
-    /** Automatically determine vertical alignment */
-    AUTO: "auto",
+  /** Align text to the top */
+  TOP: "top",
+  /** Align text to the center */
+  CENTER: "center",
+  /** Align text to the baseline */
+  BASELINE: "baseline",
+  /** Align text to the bottom */
+  BOTTOM: "bottom",
+  /** Automatically determine vertical alignment */
+  AUTO: "auto",
 } as const;
 
 /**
@@ -74,16 +74,16 @@ export const TextAlignmentType = {
  * @publicApi
  */
 export const TextboxTightWrapType = {
-    /** No tight wrapping */
-    NONE: "none",
-    /** Tight wrap on all lines */
-    ALL_LINES: "allLines",
-    /** Tight wrap on first and last lines */
-    FIRST_AND_LAST_LINE: "firstAndLastLine",
-    /** Tight wrap on first line only */
-    FIRST_LINE_ONLY: "firstLineOnly",
-    /** Tight wrap on last line only */
-    LAST_LINE_ONLY: "lastLineOnly",
+  /** No tight wrapping */
+  NONE: "none",
+  /** Tight wrap on all lines */
+  ALL_LINES: "allLines",
+  /** Tight wrap on first and last lines */
+  FIRST_AND_LAST_LINE: "firstAndLastLine",
+  /** Tight wrap on first line only */
+  FIRST_LINE_ONLY: "firstLineOnly",
+  /** Tight wrap on last line only */
+  LAST_LINE_ONLY: "lastLineOnly",
 } as const;
 
 /**
@@ -92,77 +92,77 @@ export const TextboxTightWrapType = {
  * These properties are used when defining paragraph styles within numbering level definitions.
  */
 export interface LevelParagraphStylePropertiesOptions {
-    /** Paragraph text alignment (left, right, center, justified, etc.) */
-    readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
-    /** Whether to render text right-to-left for bidirectional languages */
-    readonly bidirectional?: boolean;
-    /** Whether to insert a page break before this paragraph */
-    readonly pageBreakBefore?: boolean;
-    /** Custom tab stop positions and alignments */
-    readonly tabStops?: readonly TabStopDefinition[];
-    /** Whether to display a horizontal line (thematic break) below the paragraph */
-    readonly thematicBreak?: boolean;
-    /** Whether to prevent single lines at top/bottom of page (widow/orphan control), defaults to true */
-    readonly widowControl?: boolean;
-    /** Whether to ignore spacing before/after when adjacent paragraphs have the same style */
-    readonly contextualSpacing?: boolean;
-    /** Position in twips for a right-aligned tab stop */
-    readonly rightTabStop?: number;
-    /** Position in twips for a left-aligned tab stop */
-    readonly leftTabStop?: number;
-    /** Indentation settings for the paragraph */
-    readonly indent?: IIndentAttributesProperties;
-    /** Spacing before/after paragraph and between lines */
-    readonly spacing?: ISpacingProperties;
-    /**
-     * Specifies that the paragraph (or at least part of it) should be rendered on the same page as the next paragraph when possible. If multiple paragraphs are to be kept together but they exceed a page, then the set of paragraphs begin on a new page and page breaks are used thereafter as needed.
-     */
-    readonly keepNext?: boolean;
-    /**
-     * Specifies that all lines of the paragraph are to be kept on a single page when possible.
-     */
-    readonly keepLines?: boolean;
-    /** Frame properties for positioning the paragraph */
-    readonly frame?: IFrameOptions;
-    /** Whether to suppress line numbers for this paragraph */
-    readonly suppressLineNumbers?: boolean;
-    /** Whether to allow word wrapping */
-    readonly wordWrap?: boolean;
-    /** Whether to allow punctuation to extend beyond text margins */
-    readonly overflowPunctuation?: boolean;
-    /**
-     * This element specifies whether inter-character spacing shall automatically be adjusted between regions of numbers and regions of East Asian text in the current paragraph. These regions shall be determined by the Unicode character values of the text content within the paragraph.
-     * This only works in Microsoft Word. It is not part of the ECMA-376 OOXML standard.
-     */
-    readonly autoSpaceEastAsianText?: boolean;
-    /** Whether to prevent text frames from overlapping */
-    readonly suppressOverlap?: boolean;
-    /** Whether to disable automatic hyphenation for this paragraph */
-    readonly suppressAutoHyphens?: boolean;
-    /** Whether to automatically adjust right indent for document grid */
-    readonly adjustRightInd?: boolean;
-    /** Whether to snap the current paragraph to the document grid */
-    readonly snapToGrid?: boolean;
-    /** Whether to swap left and right indent positions on odd pages for mirrored layouts */
-    readonly mirrorIndents?: boolean;
-    /** Whether to use Kinsoku forbidden character overflow rules */
-    readonly kinsoku?: boolean;
-    /** Whether to compress punctuation at the start of a line */
-    readonly topLinePunct?: boolean;
-    /** Whether to automatically add space between East Asian and Latin text */
-    readonly autoSpaceDE?: boolean;
-    /** Vertical text alignment within the paragraph */
-    readonly textAlignment?: (typeof TextAlignmentType)[keyof typeof TextAlignmentType];
-    /** Textbox tight wrap setting */
-    readonly textboxTightWrap?: (typeof TextboxTightWrapType)[keyof typeof TextboxTightWrapType];
-    /** Text direction for the paragraph (lr, rl, tb, tbV, rlV, lrV) */
-    readonly textDirection?: "lr" | "rl" | "tb" | "tbV" | "rlV" | "lrV";
-    /** Outline level for table of contents and document outline (0-9) */
-    readonly outlineLevel?: number;
-    /** HTML div ID reference */
-    readonly divId?: number;
-    /** Conditional formatting style for table rows/cells */
-    readonly cnfStyle?: ICnfStyleOptions;
+  /** Paragraph text alignment (left, right, center, justified, etc.) */
+  readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
+  /** Whether to render text right-to-left for bidirectional languages */
+  readonly bidirectional?: boolean;
+  /** Whether to insert a page break before this paragraph */
+  readonly pageBreakBefore?: boolean;
+  /** Custom tab stop positions and alignments */
+  readonly tabStops?: readonly TabStopDefinition[];
+  /** Whether to display a horizontal line (thematic break) below the paragraph */
+  readonly thematicBreak?: boolean;
+  /** Whether to prevent single lines at top/bottom of page (widow/orphan control), defaults to true */
+  readonly widowControl?: boolean;
+  /** Whether to ignore spacing before/after when adjacent paragraphs have the same style */
+  readonly contextualSpacing?: boolean;
+  /** Position in twips for a right-aligned tab stop */
+  readonly rightTabStop?: number;
+  /** Position in twips for a left-aligned tab stop */
+  readonly leftTabStop?: number;
+  /** Indentation settings for the paragraph */
+  readonly indent?: IIndentAttributesProperties;
+  /** Spacing before/after paragraph and between lines */
+  readonly spacing?: ISpacingProperties;
+  /**
+   * Specifies that the paragraph (or at least part of it) should be rendered on the same page as the next paragraph when possible. If multiple paragraphs are to be kept together but they exceed a page, then the set of paragraphs begin on a new page and page breaks are used thereafter as needed.
+   */
+  readonly keepNext?: boolean;
+  /**
+   * Specifies that all lines of the paragraph are to be kept on a single page when possible.
+   */
+  readonly keepLines?: boolean;
+  /** Frame properties for positioning the paragraph */
+  readonly frame?: IFrameOptions;
+  /** Whether to suppress line numbers for this paragraph */
+  readonly suppressLineNumbers?: boolean;
+  /** Whether to allow word wrapping */
+  readonly wordWrap?: boolean;
+  /** Whether to allow punctuation to extend beyond text margins */
+  readonly overflowPunctuation?: boolean;
+  /**
+   * This element specifies whether inter-character spacing shall automatically be adjusted between regions of numbers and regions of East Asian text in the current paragraph. These regions shall be determined by the Unicode character values of the text content within the paragraph.
+   * This only works in Microsoft Word. It is not part of the ECMA-376 OOXML standard.
+   */
+  readonly autoSpaceEastAsianText?: boolean;
+  /** Whether to prevent text frames from overlapping */
+  readonly suppressOverlap?: boolean;
+  /** Whether to disable automatic hyphenation for this paragraph */
+  readonly suppressAutoHyphens?: boolean;
+  /** Whether to automatically adjust right indent for document grid */
+  readonly adjustRightInd?: boolean;
+  /** Whether to snap the current paragraph to the document grid */
+  readonly snapToGrid?: boolean;
+  /** Whether to swap left and right indent positions on odd pages for mirrored layouts */
+  readonly mirrorIndents?: boolean;
+  /** Whether to use Kinsoku forbidden character overflow rules */
+  readonly kinsoku?: boolean;
+  /** Whether to compress punctuation at the start of a line */
+  readonly topLinePunct?: boolean;
+  /** Whether to automatically add space between East Asian and Latin text */
+  readonly autoSpaceDE?: boolean;
+  /** Vertical text alignment within the paragraph */
+  readonly textAlignment?: (typeof TextAlignmentType)[keyof typeof TextAlignmentType];
+  /** Textbox tight wrap setting */
+  readonly textboxTightWrap?: (typeof TextboxTightWrapType)[keyof typeof TextboxTightWrapType];
+  /** Text direction for the paragraph (lr, rl, tb, tbV, rlV, lrV) */
+  readonly textDirection?: "lr" | "rl" | "tb" | "tbV" | "rlV" | "lrV";
+  /** Outline level for table of contents and document outline (0-9) */
+  readonly outlineLevel?: number;
+  /** HTML div ID reference */
+  readonly divId?: number;
+  /** Conditional formatting style for table rows/cells */
+  readonly cnfStyle?: ICnfStyleOptions;
 }
 
 /**
@@ -172,44 +172,44 @@ export interface LevelParagraphStylePropertiesOptions {
  * border, shading, and numbering options in addition to level properties.
  */
 export type IParagraphStylePropertiesOptions = {
-    /** Border settings for the paragraph */
-    readonly border?: IBordersOptions;
-    /** Background shading/fill color for the paragraph */
-    readonly shading?: IShadingAttributesProperties;
-    /** Numbering configuration for lists, or false to remove numbering */
-    readonly numbering?:
-        | {
-              /** Reference ID of the numbering definition to use */
-              readonly reference: string;
-              /** Level in the numbering hierarchy (0-8) */
-              readonly level: number;
-              /** Instance number for multiple lists with same reference */
-              readonly instance?: number;
-              /** Whether this is a custom numbering definition */
-              readonly custom?: boolean;
-          }
-        | false;
+  /** Border settings for the paragraph */
+  readonly border?: IBordersOptions;
+  /** Background shading/fill color for the paragraph */
+  readonly shading?: IShadingAttributesProperties;
+  /** Numbering configuration for lists, or false to remove numbering */
+  readonly numbering?:
+    | {
+        /** Reference ID of the numbering definition to use */
+        readonly reference: string;
+        /** Level in the numbering hierarchy (0-8) */
+        readonly level: number;
+        /** Instance number for multiple lists with same reference */
+        readonly instance?: number;
+        /** Whether this is a custom numbering definition */
+        readonly custom?: boolean;
+      }
+    | false;
 } & LevelParagraphStylePropertiesOptions;
 
 export type IParagraphPropertiesOptionsBase = {
-    /** Heading level (Heading1, Heading2, etc.) - applies predefined heading style */
-    readonly heading?: (typeof HeadingLevel)[keyof typeof HeadingLevel];
-    /** Style ID to apply to this paragraph */
-    readonly style?: string;
-    /** Bullet list configuration */
-    readonly bullet?: {
-        /** Indentation level for the bullet (0-8) */
-        readonly level: number;
-    };
-    /**
-     * Run properties to apply to all runs in the paragraph.
-     * Reference: ECMA-376, 3rd Edition (June, 2011), Fundamentals and Markup Language Reference § 17.3.1.29.
-     */
-    readonly run?: IParagraphRunOptions;
+  /** Heading level (Heading1, Heading2, etc.) - applies predefined heading style */
+  readonly heading?: (typeof HeadingLevel)[keyof typeof HeadingLevel];
+  /** Style ID to apply to this paragraph */
+  readonly style?: string;
+  /** Bullet list configuration */
+  readonly bullet?: {
+    /** Indentation level for the bullet (0-8) */
+    readonly level: number;
+  };
+  /**
+   * Run properties to apply to all runs in the paragraph.
+   * Reference: ECMA-376, 3rd Edition (June, 2011), Fundamentals and Markup Language Reference § 17.3.1.29.
+   */
+  readonly run?: IParagraphRunOptions;
 } & IParagraphStylePropertiesOptions;
 
 export type IParagraphPropertiesChangeOptions = IChangedAttributesProperties &
-    IParagraphPropertiesOptionsBase;
+  IParagraphPropertiesOptionsBase;
 
 /**
  * Options for configuring paragraph properties.
@@ -220,8 +220,8 @@ export type IParagraphPropertiesChangeOptions = IChangedAttributesProperties &
  * Reference: http://officeopenxml.com/WPparagraphProperties.php
  */
 export type IParagraphPropertiesOptions = {
-    readonly revision?: IParagraphPropertiesChangeOptions;
-    readonly includeIfEmpty?: boolean;
+  readonly revision?: IParagraphPropertiesChangeOptions;
+  readonly includeIfEmpty?: boolean;
 } & IParagraphPropertiesOptionsBase;
 
 /**
@@ -329,276 +329,276 @@ export type IParagraphPropertiesOptions = {
  * ```
  */
 export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
-    private readonly numberingReferences: {
-        readonly reference: string;
-        readonly instance: number;
-    }[] = [];
+  private readonly numberingReferences: {
+    readonly reference: string;
+    readonly instance: number;
+  }[] = [];
 
-    public constructor(options?: IParagraphPropertiesOptions) {
-        super("w:pPr", options?.includeIfEmpty);
+  public constructor(options?: IParagraphPropertiesOptions) {
+    super("w:pPr", options?.includeIfEmpty);
 
-        if (!options) {
-            return this;
+    if (!options) {
+      return this;
+    }
+
+    if (options.heading) {
+      this.push(createParagraphStyle(options.heading));
+    }
+
+    if (options.bullet) {
+      this.push(createParagraphStyle("ListParagraph"));
+    }
+
+    if (options.numbering) {
+      if (!options.style && !options.heading) {
+        if (!options.numbering.custom) {
+          this.push(createParagraphStyle("ListParagraph"));
         }
+      }
+    }
 
-        if (options.heading) {
-            this.push(createParagraphStyle(options.heading));
-        }
+    if (options.style) {
+      this.push(createParagraphStyle(options.style));
+    }
 
-        if (options.bullet) {
-            this.push(createParagraphStyle("ListParagraph"));
-        }
+    if (options.keepNext !== undefined) {
+      this.push(new OnOffElement("w:keepNext", options.keepNext));
+    }
 
-        if (options.numbering) {
-            if (!options.style && !options.heading) {
-                if (!options.numbering.custom) {
-                    this.push(createParagraphStyle("ListParagraph"));
-                }
-            }
-        }
+    if (options.keepLines !== undefined) {
+      this.push(new OnOffElement("w:keepLines", options.keepLines));
+    }
 
-        if (options.style) {
-            this.push(createParagraphStyle(options.style));
-        }
+    if (options.pageBreakBefore) {
+      this.push(new PageBreakBefore());
+    }
 
-        if (options.keepNext !== undefined) {
-            this.push(new OnOffElement("w:keepNext", options.keepNext));
-        }
+    if (options.frame) {
+      this.push(createFrameProperties(options.frame));
+    }
 
-        if (options.keepLines !== undefined) {
-            this.push(new OnOffElement("w:keepLines", options.keepLines));
-        }
+    if (options.widowControl !== undefined) {
+      this.push(new OnOffElement("w:widowControl", options.widowControl));
+    }
 
-        if (options.pageBreakBefore) {
-            this.push(new PageBreakBefore());
-        }
+    if (options.bullet) {
+      this.push(new NumberProperties(1, options.bullet.level));
+    }
 
-        if (options.frame) {
-            this.push(createFrameProperties(options.frame));
-        }
+    if (options.numbering) {
+      this.numberingReferences.push({
+        instance: options.numbering.instance ?? 0,
+        reference: options.numbering.reference,
+      });
 
-        if (options.widowControl !== undefined) {
-            this.push(new OnOffElement("w:widowControl", options.widowControl));
-        }
+      this.push(
+        new NumberProperties(
+          `${options.numbering.reference}-${options.numbering.instance ?? 0}`,
+          options.numbering.level,
+        ),
+      );
+    } else if (options.numbering === false) {
+      this.push(new NumberProperties(0, 0));
+    }
 
-        if (options.bullet) {
-            this.push(new NumberProperties(1, options.bullet.level));
-        }
+    if (options.border) {
+      this.push(new Border(options.border));
+    }
 
-        if (options.numbering) {
-            this.numberingReferences.push({
-                instance: options.numbering.instance ?? 0,
-                reference: options.numbering.reference,
-            });
+    if (options.thematicBreak) {
+      this.push(new ThematicBreak());
+    }
 
-            this.push(
-                new NumberProperties(
-                    `${options.numbering.reference}-${options.numbering.instance ?? 0}`,
-                    options.numbering.level,
-                ),
-            );
-        } else if (options.numbering === false) {
-            this.push(new NumberProperties(0, 0));
-        }
+    if (options.shading) {
+      this.push(createShading(options.shading));
+    }
 
-        if (options.border) {
-            this.push(new Border(options.border));
-        }
+    if (options.wordWrap) {
+      this.push(createWordWrap());
+    }
 
-        if (options.thematicBreak) {
-            this.push(new ThematicBreak());
-        }
-
-        if (options.shading) {
-            this.push(createShading(options.shading));
-        }
-
-        if (options.wordWrap) {
-            this.push(createWordWrap());
-        }
-
-        if (options.overflowPunctuation) {
-            this.push(new OnOffElement("w:overflowPunct", options.overflowPunctuation));
-        }
-
-        /**
-         * FIX: Multitab support for Libre Writer
-         * Ensure there is only one w:tabs tag with multiple w:tab
-         */
-        const tabDefinitions: readonly TabStopDefinition[] = [
-            ...(options.rightTabStop !== undefined
-                ? [{ position: options.rightTabStop, type: TabStopType.RIGHT }]
-                : []),
-            ...(options.tabStops ? options.tabStops : []),
-            ...(options.leftTabStop !== undefined
-                ? [{ position: options.leftTabStop, type: TabStopType.LEFT }]
-                : []),
-        ];
-
-        if (tabDefinitions.length > 0) {
-            this.push(createTabStop(tabDefinitions));
-        }
-        /**
-         *  FIX - END
-         */
-
-        if (options.bidirectional !== undefined) {
-            this.push(new OnOffElement("w:bidi", options.bidirectional));
-        }
-
-        if (options.spacing) {
-            this.push(createSpacing(options.spacing));
-        }
-
-        if (options.indent) {
-            this.push(createIndent(options.indent));
-        }
-
-        if (options.contextualSpacing !== undefined) {
-            this.push(new OnOffElement("w:contextualSpacing", options.contextualSpacing));
-        }
-
-        if (options.alignment) {
-            this.push(createAlignment(options.alignment));
-        }
-
-        if (options.outlineLevel !== undefined) {
-            this.push(createOutlineLevel(options.outlineLevel));
-        }
-
-        if (options.divId !== undefined) {
-            this.push(createDivId(options.divId));
-        }
-
-        if (options.cnfStyle !== undefined) {
-            this.push(createCnfStyle(options.cnfStyle));
-        }
-
-        if (options.suppressLineNumbers !== undefined) {
-            this.push(new OnOffElement("w:suppressLineNumbers", options.suppressLineNumbers));
-        }
-
-        if (options.autoSpaceEastAsianText !== undefined) {
-            this.push(new OnOffElement("w:autoSpaceDN", options.autoSpaceEastAsianText));
-        }
-
-        if (options.suppressAutoHyphens !== undefined) {
-            this.push(new OnOffElement("w:suppressAutoHyphens", options.suppressAutoHyphens));
-        }
-
-        if (options.adjustRightInd !== undefined) {
-            this.push(new OnOffElement("w:adjustRightInd", options.adjustRightInd));
-        }
-
-        if (options.snapToGrid !== undefined) {
-            this.push(new OnOffElement("w:snapToGrid", options.snapToGrid));
-        }
-
-        if (options.mirrorIndents !== undefined) {
-            this.push(new OnOffElement("w:mirrorIndents", options.mirrorIndents));
-        }
-
-        if (options.kinsoku !== undefined) {
-            this.push(new OnOffElement("w:kinsoku", options.kinsoku));
-        }
-
-        if (options.topLinePunct !== undefined) {
-            this.push(new OnOffElement("w:topLinePunct", options.topLinePunct));
-        }
-
-        if (options.autoSpaceDE !== undefined) {
-            this.push(new OnOffElement("w:autoSpaceDE", options.autoSpaceDE));
-        }
-
-        if (options.textAlignment !== undefined) {
-            this.push(
-                new BuilderElement<{ readonly val: string }>({
-                    attributes: {
-                        val: { key: "w:val", value: options.textAlignment },
-                    },
-                    name: "w:textAlignment",
-                }),
-            );
-        }
-
-        if (options.textboxTightWrap !== undefined) {
-            this.push(
-                new BuilderElement<{ readonly val: string }>({
-                    attributes: {
-                        val: { key: "w:val", value: options.textboxTightWrap },
-                    },
-                    name: "w:textboxTightWrap",
-                }),
-            );
-        }
-
-        if (options.textDirection !== undefined) {
-            this.push(
-                new BuilderElement<{ readonly val: string }>({
-                    attributes: {
-                        val: { key: "w:val", value: options.textDirection },
-                    },
-                    name: "w:textDirection",
-                }),
-            );
-        }
-
-        if (options.suppressOverlap !== undefined) {
-            this.push(new OnOffElement("w:suppressOverlap", options.suppressOverlap));
-        }
-
-        if (options.run) {
-            this.push(new ParagraphRunProperties(options.run));
-        }
-
-        if (options.revision) {
-            this.push(new ParagraphPropertiesChange(options.revision));
-        }
+    if (options.overflowPunctuation) {
+      this.push(new OnOffElement("w:overflowPunct", options.overflowPunctuation));
     }
 
     /**
-     * Adds a property element to the paragraph properties.
-     *
-     * @param item - The XML component to add to the paragraph properties
+     * FIX: Multitab support for Libre Writer
+     * Ensure there is only one w:tabs tag with multiple w:tab
      */
-    public push(item: XmlComponent): void {
-        this.root.push(item);
-    }
+    const tabDefinitions: readonly TabStopDefinition[] = [
+      ...(options.rightTabStop !== undefined
+        ? [{ position: options.rightTabStop, type: TabStopType.RIGHT }]
+        : []),
+      ...(options.tabStops ? options.tabStops : []),
+      ...(options.leftTabStop !== undefined
+        ? [{ position: options.leftTabStop, type: TabStopType.LEFT }]
+        : []),
+    ];
 
+    if (tabDefinitions.length > 0) {
+      this.push(createTabStop(tabDefinitions));
+    }
     /**
-     * Prepares the paragraph properties for XML serialization.
-     *
-     * This method creates concrete numbering instances for any numbering references
-     * before the properties are converted to XML.
-     *
-     * @param context - The XML context containing document and file information
-     * @returns The prepared XML object, or undefined if the component should be ignored
+     *  FIX - END
      */
-    public prepForXml(context: IContext): IXmlableObject | undefined {
-        if (!(context.viewWrapper instanceof FontWrapper)) {
-            for (const reference of this.numberingReferences) {
-                context.file.Numbering.createConcreteNumberingInstance(
-                    reference.reference,
-                    reference.instance,
-                );
-            }
-        }
 
-        return super.prepForXml(context);
+    if (options.bidirectional !== undefined) {
+      this.push(new OnOffElement("w:bidi", options.bidirectional));
     }
+
+    if (options.spacing) {
+      this.push(createSpacing(options.spacing));
+    }
+
+    if (options.indent) {
+      this.push(createIndent(options.indent));
+    }
+
+    if (options.contextualSpacing !== undefined) {
+      this.push(new OnOffElement("w:contextualSpacing", options.contextualSpacing));
+    }
+
+    if (options.alignment) {
+      this.push(createAlignment(options.alignment));
+    }
+
+    if (options.outlineLevel !== undefined) {
+      this.push(createOutlineLevel(options.outlineLevel));
+    }
+
+    if (options.divId !== undefined) {
+      this.push(createDivId(options.divId));
+    }
+
+    if (options.cnfStyle !== undefined) {
+      this.push(createCnfStyle(options.cnfStyle));
+    }
+
+    if (options.suppressLineNumbers !== undefined) {
+      this.push(new OnOffElement("w:suppressLineNumbers", options.suppressLineNumbers));
+    }
+
+    if (options.autoSpaceEastAsianText !== undefined) {
+      this.push(new OnOffElement("w:autoSpaceDN", options.autoSpaceEastAsianText));
+    }
+
+    if (options.suppressAutoHyphens !== undefined) {
+      this.push(new OnOffElement("w:suppressAutoHyphens", options.suppressAutoHyphens));
+    }
+
+    if (options.adjustRightInd !== undefined) {
+      this.push(new OnOffElement("w:adjustRightInd", options.adjustRightInd));
+    }
+
+    if (options.snapToGrid !== undefined) {
+      this.push(new OnOffElement("w:snapToGrid", options.snapToGrid));
+    }
+
+    if (options.mirrorIndents !== undefined) {
+      this.push(new OnOffElement("w:mirrorIndents", options.mirrorIndents));
+    }
+
+    if (options.kinsoku !== undefined) {
+      this.push(new OnOffElement("w:kinsoku", options.kinsoku));
+    }
+
+    if (options.topLinePunct !== undefined) {
+      this.push(new OnOffElement("w:topLinePunct", options.topLinePunct));
+    }
+
+    if (options.autoSpaceDE !== undefined) {
+      this.push(new OnOffElement("w:autoSpaceDE", options.autoSpaceDE));
+    }
+
+    if (options.textAlignment !== undefined) {
+      this.push(
+        new BuilderElement<{ readonly val: string }>({
+          attributes: {
+            val: { key: "w:val", value: options.textAlignment },
+          },
+          name: "w:textAlignment",
+        }),
+      );
+    }
+
+    if (options.textboxTightWrap !== undefined) {
+      this.push(
+        new BuilderElement<{ readonly val: string }>({
+          attributes: {
+            val: { key: "w:val", value: options.textboxTightWrap },
+          },
+          name: "w:textboxTightWrap",
+        }),
+      );
+    }
+
+    if (options.textDirection !== undefined) {
+      this.push(
+        new BuilderElement<{ readonly val: string }>({
+          attributes: {
+            val: { key: "w:val", value: options.textDirection },
+          },
+          name: "w:textDirection",
+        }),
+      );
+    }
+
+    if (options.suppressOverlap !== undefined) {
+      this.push(new OnOffElement("w:suppressOverlap", options.suppressOverlap));
+    }
+
+    if (options.run) {
+      this.push(new ParagraphRunProperties(options.run));
+    }
+
+    if (options.revision) {
+      this.push(new ParagraphPropertiesChange(options.revision));
+    }
+  }
+
+  /**
+   * Adds a property element to the paragraph properties.
+   *
+   * @param item - The XML component to add to the paragraph properties
+   */
+  public push(item: XmlComponent): void {
+    this.root.push(item);
+  }
+
+  /**
+   * Prepares the paragraph properties for XML serialization.
+   *
+   * This method creates concrete numbering instances for any numbering references
+   * before the properties are converted to XML.
+   *
+   * @param context - The XML context containing document and file information
+   * @returns The prepared XML object, or undefined if the component should be ignored
+   */
+  public prepForXml(context: IContext): IXmlableObject | undefined {
+    if (!(context.viewWrapper instanceof FontWrapper)) {
+      for (const reference of this.numberingReferences) {
+        context.file.Numbering.createConcreteNumberingInstance(
+          reference.reference,
+          reference.instance,
+        );
+      }
+    }
+
+    return super.prepForXml(context);
+  }
 }
 
 export class ParagraphPropertiesChange extends XmlComponent {
-    public constructor(options: IParagraphPropertiesChangeOptions) {
-        super("w:pPrChange");
-        this.root.push(
-            new ChangeAttributes({
-                author: options.author,
-                date: options.date,
-                id: options.id,
-            }),
-        );
-        // PPr is required (minOccurs="1") even if empty
-        this.root.push(new ParagraphProperties({ ...options, includeIfEmpty: true }));
-    }
+  public constructor(options: IParagraphPropertiesChangeOptions) {
+    super("w:pPrChange");
+    this.root.push(
+      new ChangeAttributes({
+        author: options.author,
+        date: options.date,
+        id: options.id,
+      }),
+    );
+    // PPr is required (minOccurs="1") even if empty
+    this.root.push(new ParagraphProperties({ ...options, includeIfEmpty: true }));
+  }
 }

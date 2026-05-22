@@ -23,7 +23,7 @@ import { XmlAttributeComponent } from "@file/xml-components";
  * @internal
  */
 export class TextAttributes extends XmlAttributeComponent<{
-    readonly space: (typeof SpaceType)[keyof typeof SpaceType];
+  readonly space: (typeof SpaceType)[keyof typeof SpaceType];
 }> {
-    protected readonly xmlKeys = { space: "xml:space" };
+  protected readonly xmlKeys = { space: "xml:space" };
 }

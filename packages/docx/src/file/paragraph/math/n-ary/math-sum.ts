@@ -21,12 +21,12 @@ import { createMathSuperScriptElement } from "./math-super-script";
  * @see {@link MathSum}
  */
 export interface IMathSumOptions {
-    /** The expression being summed */
-    readonly children: readonly MathComponent[];
-    /** Optional lower bound (subscript) of the sum */
-    readonly subScript?: readonly MathComponent[];
-    /** Optional upper bound (superscript) of the sum */
-    readonly superScript?: readonly MathComponent[];
+  /** The expression being summed */
+  readonly children: readonly MathComponent[];
+  /** Optional lower bound (subscript) of the sum */
+  readonly subScript?: readonly MathComponent[];
+  /** Optional upper bound (superscript) of the sum */
+  readonly superScript?: readonly MathComponent[];
 }
 
 /**
@@ -61,21 +61,21 @@ export interface IMathSumOptions {
  * ```
  */
 export class MathSum extends XmlComponent {
-    public constructor(options: IMathSumOptions) {
-        super("m:nary");
+  public constructor(options: IMathSumOptions) {
+    super("m:nary");
 
-        this.root.push(
-            createMathNAryProperties({
-                accent: "∑",
-                hasSubScript: Boolean(options.subScript),
-                hasSuperScript: Boolean(options.superScript),
-            }),
-        );
+    this.root.push(
+      createMathNAryProperties({
+        accent: "∑",
+        hasSubScript: Boolean(options.subScript),
+        hasSuperScript: Boolean(options.superScript),
+      }),
+    );
 
-        this.root.push(createMathSubScriptElement({ children: options.subScript ?? [] }));
+    this.root.push(createMathSubScriptElement({ children: options.subScript ?? [] }));
 
-        this.root.push(createMathSuperScriptElement({ children: options.superScript ?? [] }));
+    this.root.push(createMathSuperScriptElement({ children: options.superScript ?? [] }));
 
-        this.root.push(createMathBase({ children: options.children }));
-    }
+    this.root.push(createMathBase({ children: options.children }));
+  }
 }

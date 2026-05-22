@@ -45,47 +45,47 @@ import type { XmlComponent } from "@file/xml-components";
  * ```
  */
 export interface ITableLookOptions {
-    /**
-     * Apply first row conditional formatting.
-     * When true, the first row of the table uses the special formatting
-     * defined for header rows in the table style.
-     */
-    readonly firstRow?: boolean;
+  /**
+   * Apply first row conditional formatting.
+   * When true, the first row of the table uses the special formatting
+   * defined for header rows in the table style.
+   */
+  readonly firstRow?: boolean;
 
-    /**
-     * Apply last row conditional formatting.
-     * When true, the last row of the table uses the special formatting
-     * defined for total/footer rows in the table style.
-     */
-    readonly lastRow?: boolean;
+  /**
+   * Apply last row conditional formatting.
+   * When true, the last row of the table uses the special formatting
+   * defined for total/footer rows in the table style.
+   */
+  readonly lastRow?: boolean;
 
-    /**
-     * Apply first column conditional formatting.
-     * When true, the first column of the table uses the special formatting
-     * defined for first columns in the table style.
-     */
-    readonly firstColumn?: boolean;
+  /**
+   * Apply first column conditional formatting.
+   * When true, the first column of the table uses the special formatting
+   * defined for first columns in the table style.
+   */
+  readonly firstColumn?: boolean;
 
-    /**
-     * Apply last column conditional formatting.
-     * When true, the last column of the table uses the special formatting
-     * defined for last columns in the table style.
-     */
-    readonly lastColumn?: boolean;
+  /**
+   * Apply last column conditional formatting.
+   * When true, the last column of the table uses the special formatting
+   * defined for last columns in the table style.
+   */
+  readonly lastColumn?: boolean;
 
-    /**
-     * Disable horizontal row banding.
-     * When true, horizontal banding (alternating row colors) is disabled.
-     * When false or undefined, horizontal banding is enabled if defined in the table style.
-     */
-    readonly noHBand?: boolean;
+  /**
+   * Disable horizontal row banding.
+   * When true, horizontal banding (alternating row colors) is disabled.
+   * When false or undefined, horizontal banding is enabled if defined in the table style.
+   */
+  readonly noHBand?: boolean;
 
-    /**
-     * Disable vertical column banding.
-     * When true, vertical banding (alternating column colors) is disabled.
-     * When false or undefined, vertical banding is enabled if defined in the table style.
-     */
-    readonly noVBand?: boolean;
+  /**
+   * Disable vertical column banding.
+   * When true, vertical banding (alternating column colors) is disabled.
+   * When false or undefined, vertical banding is enabled if defined in the table style.
+   */
+  readonly noVBand?: boolean;
 }
 
 /**
@@ -111,21 +111,21 @@ export interface ITableLookOptions {
  * ```
  */
 export const createTableLook = ({
-    firstRow,
-    lastRow,
-    firstColumn,
-    lastColumn,
-    noHBand,
-    noVBand,
+  firstRow,
+  lastRow,
+  firstColumn,
+  lastColumn,
+  noHBand,
+  noVBand,
 }: ITableLookOptions): XmlComponent =>
-    new BuilderElement<ITableLookOptions>({
-        attributes: {
-            firstColumn: { key: "w:firstColumn", value: firstColumn },
-            firstRow: { key: "w:firstRow", value: firstRow },
-            lastColumn: { key: "w:lastColumn", value: lastColumn },
-            lastRow: { key: "w:lastRow", value: lastRow },
-            noHBand: { key: "w:noHBand", value: noHBand },
-            noVBand: { key: "w:noVBand", value: noVBand },
-        },
-        name: "w:tblLook",
-    });
+  new BuilderElement<ITableLookOptions>({
+    attributes: {
+      firstColumn: { key: "w:firstColumn", value: firstColumn },
+      firstRow: { key: "w:firstRow", value: firstRow },
+      lastColumn: { key: "w:lastColumn", value: lastColumn },
+      lastRow: { key: "w:lastRow", value: lastRow },
+      noHBand: { key: "w:noHBand", value: noHBand },
+      noVBand: { key: "w:noVBand", value: noVBand },
+    },
+    name: "w:tblLook",
+  });

@@ -19,8 +19,8 @@ import type { IStyleOptions } from "./style";
  * @property run - Run properties (font, size, color, etc.) for this character style
  */
 export type IBaseCharacterStyleOptions = {
-    /** Run properties (font, size, color, etc.) for this character style */
-    readonly run?: RunStylePropertiesOptions;
+  /** Run properties (font, size, color, etc.) for this character style */
+  readonly run?: RunStylePropertiesOptions;
 } & IStyleOptions;
 
 /**
@@ -29,8 +29,8 @@ export type IBaseCharacterStyleOptions = {
  * @property id - Unique identifier for the character style
  */
 export type ICharacterStyleOptions = {
-    /** Unique identifier for the character style */
-    readonly id: string;
+  /** Unique identifier for the character style */
+  readonly id: string;
 } & IBaseCharacterStyleOptions;
 
 /**
@@ -68,19 +68,19 @@ export type ICharacterStyleOptions = {
  * ```
  */
 export class StyleForCharacter extends Style {
-    private readonly runProperties: RunProperties;
+  private readonly runProperties: RunProperties;
 
-    public constructor(options: ICharacterStyleOptions) {
-        super(
-            { styleId: options.id, type: "character" },
-            {
-                uiPriority: 99,
-                unhideWhenUsed: true,
-                ...options,
-            },
-        );
+  public constructor(options: ICharacterStyleOptions) {
+    super(
+      { styleId: options.id, type: "character" },
+      {
+        uiPriority: 99,
+        unhideWhenUsed: true,
+        ...options,
+      },
+    );
 
-        this.runProperties = new RunProperties(options.run);
-        this.root.push(this.runProperties);
-    }
+    this.runProperties = new RunProperties(options.run);
+    this.root.push(this.runProperties);
+  }
 }

@@ -21,9 +21,9 @@ import { ContinuationSeperator } from "./continuation-seperator";
  * @internal
  */
 export class ContinuationSeperatorRun extends Run {
-    public constructor() {
-        super({});
+  public constructor() {
+    super({});
 
-        this.extraChildren.push(new ContinuationSeperator());
-    }
+    this.extraChildren.push(new ContinuationSeperator());
+  }
 }

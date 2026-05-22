@@ -37,17 +37,17 @@ type IMovedRunOptions = IRunOptions & IChangedAttributesProperties;
  * ```
  */
 export class MovedFromTextRun extends XmlComponent {
-    public constructor(options: IMovedRunOptions) {
-        super("w:moveFrom");
-        this.root.push(
-            new ChangeAttributes({
-                author: options.author,
-                date: options.date,
-                id: options.id,
-            }),
-        );
-        this.addChildElement(new MovedFromRunWrapper(options));
-    }
+  public constructor(options: IMovedRunOptions) {
+    super("w:moveFrom");
+    this.root.push(
+      new ChangeAttributes({
+        author: options.author,
+        date: options.date,
+        id: options.id,
+      }),
+    );
+    this.addChildElement(new MovedFromRunWrapper(options));
+  }
 }
 
 /**
@@ -69,17 +69,17 @@ export class MovedFromTextRun extends XmlComponent {
  * ```
  */
 export class MovedToTextRun extends XmlComponent {
-    public constructor(options: IMovedRunOptions) {
-        super("w:moveTo");
-        this.root.push(
-            new ChangeAttributes({
-                author: options.author,
-                date: options.date,
-                id: options.id,
-            }),
-        );
-        this.addChildElement(new MovedToRunWrapper(options));
-    }
+  public constructor(options: IMovedRunOptions) {
+    super("w:moveTo");
+    this.root.push(
+      new ChangeAttributes({
+        author: options.author,
+        date: options.date,
+        id: options.id,
+      }),
+    );
+    this.addChildElement(new MovedToRunWrapper(options));
+  }
 }
 
 /**
@@ -89,55 +89,55 @@ export class MovedToTextRun extends XmlComponent {
  * @internal
  */
 class MovedFromRunWrapper extends XmlComponent {
-    public constructor(options: IRunOptions) {
-        super("w:r");
-        this.root.push(new RunProperties(options));
+  public constructor(options: IRunOptions) {
+    super("w:r");
+    this.root.push(new RunProperties(options));
 
-        if (options.children) {
-            for (const child of options.children) {
-                if (typeof child === "string") {
-                    switch (child) {
-                        case PageNumber.CURRENT: {
-                            this.root.push(createBegin());
-                            this.root.push(new Text("PAGE"));
-                            this.root.push(createSeparate());
-                            this.root.push(createEnd());
-                            break;
-                        }
-                        case PageNumber.TOTAL_PAGES: {
-                            this.root.push(createBegin());
-                            this.root.push(new Text("NUMPAGES"));
-                            this.root.push(createSeparate());
-                            this.root.push(createEnd());
-                            break;
-                        }
-                        case PageNumber.TOTAL_PAGES_IN_SECTION: {
-                            this.root.push(createBegin());
-                            this.root.push(new Text("SECTIONPAGES"));
-                            this.root.push(createSeparate());
-                            this.root.push(createEnd());
-                            break;
-                        }
-                        default: {
-                            this.root.push(new Text(child));
-                            break;
-                        }
-                    }
-                    continue;
-                }
-
-                this.root.push(child);
+    if (options.children) {
+      for (const child of options.children) {
+        if (typeof child === "string") {
+          switch (child) {
+            case PageNumber.CURRENT: {
+              this.root.push(createBegin());
+              this.root.push(new Text("PAGE"));
+              this.root.push(createSeparate());
+              this.root.push(createEnd());
+              break;
             }
-        } else if (options.text) {
-            this.root.push(new Text(options.text));
+            case PageNumber.TOTAL_PAGES: {
+              this.root.push(createBegin());
+              this.root.push(new Text("NUMPAGES"));
+              this.root.push(createSeparate());
+              this.root.push(createEnd());
+              break;
+            }
+            case PageNumber.TOTAL_PAGES_IN_SECTION: {
+              this.root.push(createBegin());
+              this.root.push(new Text("SECTIONPAGES"));
+              this.root.push(createSeparate());
+              this.root.push(createEnd());
+              break;
+            }
+            default: {
+              this.root.push(new Text(child));
+              break;
+            }
+          }
+          continue;
         }
 
-        if (options.break) {
-            for (let i = 0; i < options.break; i++) {
-                this.root.splice(1, 0, createBreak());
-            }
-        }
+        this.root.push(child);
+      }
+    } else if (options.text) {
+      this.root.push(new Text(options.text));
     }
+
+    if (options.break) {
+      for (let i = 0; i < options.break; i++) {
+        this.root.splice(1, 0, createBreak());
+      }
+    }
+  }
 }
 
 /**
@@ -147,22 +147,22 @@ class MovedFromRunWrapper extends XmlComponent {
  * @internal
  */
 class MovedToRunWrapper extends XmlComponent {
-    public constructor(options: IRunOptions) {
-        super("w:r");
-        this.root.push(new RunProperties(options));
+  public constructor(options: IRunOptions) {
+    super("w:r");
+    this.root.push(new RunProperties(options));
 
-        if (options.children) {
-            for (const child of options.children) {
-                this.root.push(child);
-            }
-        } else if (options.text) {
-            this.root.push(new Text(options.text));
-        }
-
-        if (options.break) {
-            for (let i = 0; i < options.break; i++) {
-                this.root.splice(1, 0, createBreak());
-            }
-        }
+    if (options.children) {
+      for (const child of options.children) {
+        this.root.push(child);
+      }
+    } else if (options.text) {
+      this.root.push(new Text(options.text));
     }
+
+    if (options.break) {
+      for (let i = 0; i < options.break; i++) {
+        this.root.splice(1, 0, createBreak());
+      }
+    }
+  }
 }

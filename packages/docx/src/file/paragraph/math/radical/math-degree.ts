@@ -33,13 +33,13 @@ import type { MathComponent } from "../math-component";
  * @internal
  */
 export class MathDegree extends XmlComponent {
-    public constructor(children?: readonly MathComponent[]) {
-        super("m:deg");
+  public constructor(children?: readonly MathComponent[]) {
+    super("m:deg");
 
-        if (children) {
-            for (const child of children) {
-                this.root.push(child);
-            }
-        }
+    if (children) {
+      for (const child of children) {
+        this.root.push(child);
+      }
     }
+  }
 }

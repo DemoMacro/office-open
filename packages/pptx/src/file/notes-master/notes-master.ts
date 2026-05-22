@@ -27,13 +27,13 @@ const NOTES_MASTER_XML = `<p:notesMaster xmlns:a="http://schemas.openxmlformats.
 </p:notesMaster>`;
 
 export class DefaultNotesMaster extends ImportedXmlComponent {
-    private static instance = ImportedXmlComponent.fromXmlString(NOTES_MASTER_XML);
+  private static instance = ImportedXmlComponent.fromXmlString(NOTES_MASTER_XML);
 
-    public constructor() {
-        super("p:notesMaster");
-    }
+  public constructor() {
+    super("p:notesMaster");
+  }
 
-    public prepForXml() {
-        return DefaultNotesMaster.instance.prepForXml({ stack: [] });
-    }
+  public prepForXml() {
+    return DefaultNotesMaster.instance.prepForXml({ stack: [] });
+  }
 }

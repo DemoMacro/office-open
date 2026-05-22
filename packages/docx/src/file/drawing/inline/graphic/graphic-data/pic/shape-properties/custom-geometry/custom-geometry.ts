@@ -11,10 +11,10 @@
 
 export { createCustomGeometry } from "@office-open/core/drawingml";
 export type {
-    CustomGeometryOptions,
-    PathOptions,
-    PathCommand,
-    PathFillMode,
-    ConnectionSite,
-    GeomRect,
+  CustomGeometryOptions,
+  PathOptions,
+  PathCommand,
+  PathFillMode,
+  ConnectionSite,
+  GeomRect,
 } from "@office-open/core/drawingml";

@@ -12,9 +12,9 @@ import { BuilderElement } from "@file/xml-components";
 
 import type { MathComponent } from "../../math-component";
 import {
-    createMathBase,
-    createMathSubScriptElement,
-    createMathSuperScriptElement,
+  createMathBase,
+  createMathSubScriptElement,
+  createMathSuperScriptElement,
 } from "../../n-ary";
 import { createMathPreSubSuperScriptProperties } from "./math-pre-sub-super-script-function-properties";
 
@@ -24,12 +24,12 @@ import { createMathPreSubSuperScriptProperties } from "./math-pre-sub-super-scri
  * @see {@link MathPreSubSuperScript}
  */
 export interface IMathPreSubSuperScriptOptions {
-    /** The base expression */
-    readonly children: readonly MathComponent[];
-    /** The pre-subscript expression (appears lower-left of base) */
-    readonly subScript: readonly MathComponent[];
-    /** The pre-superscript expression (appears upper-left of base) */
-    readonly superScript: readonly MathComponent[];
+  /** The base expression */
+  readonly children: readonly MathComponent[];
+  /** The pre-subscript expression (appears lower-left of base) */
+  readonly subScript: readonly MathComponent[];
+  /** The pre-superscript expression (appears upper-left of base) */
+  readonly superScript: readonly MathComponent[];
 }
 
 /**
@@ -65,15 +65,15 @@ export interface IMathPreSubSuperScriptOptions {
  * ```
  */
 export class MathPreSubSuperScript extends BuilderElement {
-    public constructor({ children, subScript, superScript }: IMathPreSubSuperScriptOptions) {
-        super({
-            children: [
-                createMathPreSubSuperScriptProperties(),
-                createMathSubScriptElement({ children: subScript }),
-                createMathSuperScriptElement({ children: superScript }),
-                createMathBase({ children: children }),
-            ],
-            name: "m:sPre",
-        });
-    }
+  public constructor({ children, subScript, superScript }: IMathPreSubSuperScriptOptions) {
+    super({
+      children: [
+        createMathPreSubSuperScriptProperties(),
+        createMathSubScriptElement({ children: subScript }),
+        createMathSuperScriptElement({ children: superScript }),
+        createMathBase({ children: children }),
+      ],
+      name: "m:sPre",
+    });
+  }
 }

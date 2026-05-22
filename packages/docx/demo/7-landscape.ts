@@ -5,18 +5,18 @@ import * as fs from "fs";
 import { Document, Packer, PageOrientation, Paragraph } from "@office-open/docx";
 
 const doc = new Document({
-    sections: [
-        {
-            children: [new Paragraph("Hello World")],
-            properties: {
-                page: {
-                    size: {
-                        orientation: PageOrientation.LANDSCAPE,
-                    },
-                },
-            },
+  sections: [
+    {
+      children: [new Paragraph("Hello World")],
+      properties: {
+        page: {
+          size: {
+            orientation: PageOrientation.LANDSCAPE,
+          },
         },
-    ],
+      },
+    },
+  ],
 });
 
 const buffer = await Packer.toBuffer(doc);

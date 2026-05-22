@@ -22,8 +22,8 @@ import type { IDocumentBackgroundOptions } from "./document-background";
  * @see {@link Document}
  */
 export interface IDocumentOptions {
-    /** Optional background settings for the document */
-    readonly background?: IDocumentBackgroundOptions;
+  /** Optional background settings for the document */
+  readonly background?: IDocumentBackgroundOptions;
 }
 
 /**
@@ -75,73 +75,73 @@ export interface IDocumentOptions {
  * ```
  */
 export class Document extends XmlComponent {
-    private readonly body: Body;
+  private readonly body: Body;
 
-    public constructor(options: IDocumentOptions) {
-        super("w:document");
-        this.root.push(
-            buildDocumentAttributes(
-                [
-                    "wpc",
-                    "mc",
-                    "o",
-                    "r",
-                    "m",
-                    "v",
-                    "wp14",
-                    "wp",
-                    "w10",
-                    "w",
-                    "w14",
-                    "w15",
-                    "wpg",
-                    "wpi",
-                    "wne",
-                    "wps",
-                    "cx",
-                    "cx1",
-                    "cx2",
-                    "cx3",
-                    "cx4",
-                    "cx5",
-                    "cx6",
-                    "cx7",
-                    "cx8",
-                    "aink",
-                    "am3d",
-                    "w16cex",
-                    "w16cid",
-                    "w16",
-                    "w16sdtdh",
-                    "w16se",
-                ],
-                "w14 w15 wp14",
-            ),
-        );
-        this.body = new Body();
-        if (options.background) {
-            this.root.push(new DocumentBackground(options.background));
-        }
-        this.root.push(this.body);
+  public constructor(options: IDocumentOptions) {
+    super("w:document");
+    this.root.push(
+      buildDocumentAttributes(
+        [
+          "wpc",
+          "mc",
+          "o",
+          "r",
+          "m",
+          "v",
+          "wp14",
+          "wp",
+          "w10",
+          "w",
+          "w14",
+          "w15",
+          "wpg",
+          "wpi",
+          "wne",
+          "wps",
+          "cx",
+          "cx1",
+          "cx2",
+          "cx3",
+          "cx4",
+          "cx5",
+          "cx6",
+          "cx7",
+          "cx8",
+          "aink",
+          "am3d",
+          "w16cex",
+          "w16cid",
+          "w16",
+          "w16sdtdh",
+          "w16se",
+        ],
+        "w14 w15 wp14",
+      ),
+    );
+    this.body = new Body();
+    if (options.background) {
+      this.root.push(new DocumentBackground(options.background));
     }
+    this.root.push(this.body);
+  }
 
-    /**
-     * Adds a block-level element to the document body.
-     *
-     * @param item - The element to add (paragraph, table, table of contents, or hyperlink)
-     * @returns The Document instance for method chaining
-     */
-    public add(item: FileChild | ConcreteHyperlink): Document {
-        this.body.push(item);
-        return this;
-    }
+  /**
+   * Adds a block-level element to the document body.
+   *
+   * @param item - The element to add (paragraph, table, table of contents, or hyperlink)
+   * @returns The Document instance for method chaining
+   */
+  public add(item: FileChild | ConcreteHyperlink): Document {
+    this.body.push(item);
+    return this;
+  }
 
-    /**
-     * Gets the document body element.
-     *
-     * @returns The Body instance containing all document content
-     */
-    public get Body(): Body {
-        return this.body;
-    }
+  /**
+   * Gets the document body element.
+   *
+   * @returns The Body instance containing all document content
+   */
+  public get Body(): Body {
+    return this.body;
+  }
 }

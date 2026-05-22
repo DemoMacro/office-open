@@ -4,14 +4,14 @@ import { describe, expect, it } from "vite-plus/test";
 import { createMathSubScriptProperties } from "./math-sub-script-function-properties";
 
 describe("createMathSubScriptProperties", () => {
-    describe("#constructor()", () => {
-        it("should create a MathSubScriptProperties with correct root key", () => {
-            const mathSubScriptProperties = createMathSubScriptProperties();
+  describe("#constructor()", () => {
+    it("should create a MathSubScriptProperties with correct root key", () => {
+      const mathSubScriptProperties = createMathSubScriptProperties();
 
-            const tree = new Formatter().format(mathSubScriptProperties);
-            expect(tree).to.deep.equal({
-                "m:sSubPr": {},
-            });
-        });
+      const tree = new Formatter().format(mathSubScriptProperties);
+      expect(tree).to.deep.equal({
+        "m:sSubPr": {},
+      });
     });
+  });
 });

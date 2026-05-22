@@ -1,16 +1,16 @@
 const XML_CHAR_MAP: Record<string, string> = {
-    "&": "&amp;",
-    '"': "&quot;",
-    "'": "&apos;",
-    "<": "&lt;",
-    ">": "&gt;",
+  "&": "&amp;",
+  '"': "&quot;",
+  "'": "&apos;",
+  "<": "&lt;",
+  ">": "&gt;",
 };
 
 const XML_CHAR_PATTERN = /([&"<>'])/g;
 
 /** Escape text content for XML */
 export function escapeXml(str: string): string {
-    return str.replace(XML_CHAR_PATTERN, (ch) => XML_CHAR_MAP[ch]);
+  return str.replace(XML_CHAR_PATTERN, (ch) => XML_CHAR_MAP[ch]);
 }
 
 /**
@@ -18,12 +18,12 @@ export function escapeXml(str: string): string {
  * Handles already-escaped entities to prevent double-escaping.
  */
 export function escapeAttributeValue(str: string): string {
-    return String(str)
-        .replace(/&(?!amp;|lt;|gt;|quot;|apos;)/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&apos;");
+  return String(str)
+    .replace(/&(?!amp;|lt;|gt;|quot;|apos;)/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
 }
 
 /**
@@ -36,11 +36,11 @@ export function escapeAttributeValue(str: string): string {
  * // => ' id="1" name="foo"'
  */
 export function attrs(record: Record<string, string | number | boolean | undefined>): string {
-    let s = "";
-    for (const [k, v] of Object.entries(record)) {
-        if (v !== undefined) {
-            s += ` ${k}="${typeof v === "string" ? escapeXml(v) : v}"`;
-        }
+  let s = "";
+  for (const [k, v] of Object.entries(record)) {
+    if (v !== undefined) {
+      s += ` ${k}="${typeof v === "string" ? escapeXml(v) : v}"`;
     }
-    return s;
+  }
+  return s;
 }

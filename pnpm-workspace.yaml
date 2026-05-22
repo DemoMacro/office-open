@@ -1,10 +1,10 @@
 packages:
-    - packages/**
-    - docs/**
-    - playground/**
-    - "!**/test/**"
+  - packages/**
+  - docs/**
+  - playground/**
+  - "!**/test/**"
 allowBuilds:
-    sharp: true
-    vue-demi: true
+  sharp: true
+  vue-demi: true
 patchedDependencies:
-    docus: patches/docus.patch
+  docus: patches/docus.patch

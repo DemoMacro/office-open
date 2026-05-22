@@ -17,22 +17,22 @@ import type { IMediaData } from "./data";
  * Specifies how an image should be transformed when displayed in the document.
  */
 export interface IMediaTransformation {
-    readonly offset?: {
-        readonly top?: number;
-        readonly left?: number;
-    };
-    readonly width: number;
-    /** Display height in pixels */
-    readonly height: number;
-    /** Optional flip transformations */
-    readonly flip?: {
-        /** Whether to flip the image vertically */
-        readonly vertical?: boolean;
-        /** Whether to flip the image horizontally */
-        readonly horizontal?: boolean;
-    };
-    /** Optional rotation angle in degrees */
-    readonly rotation?: number;
+  readonly offset?: {
+    readonly top?: number;
+    readonly left?: number;
+  };
+  readonly width: number;
+  /** Display height in pixels */
+  readonly height: number;
+  /** Optional flip transformations */
+  readonly flip?: {
+    /** Whether to flip the image vertically */
+    readonly vertical?: boolean;
+    /** Whether to flip the image horizontally */
+    readonly horizontal?: boolean;
+  };
+  /** Optional rotation angle in degrees */
+  readonly rotation?: number;
 }
 
 /**
@@ -43,26 +43,26 @@ export interface IMediaTransformation {
  * @returns Internal transformation data with both pixel and EMU values
  */
 export const createTransformation = (options: IMediaTransformation): IMediaDataTransformation => ({
+  emus: {
+    x: convertPixelsToEmu(options.width),
+    y: convertPixelsToEmu(options.height),
+  },
+  flip: options.flip,
+  offset: {
     emus: {
-        x: convertPixelsToEmu(options.width),
-        y: convertPixelsToEmu(options.height),
-    },
-    flip: options.flip,
-    offset: {
-        emus: {
-            x: convertPixelsToEmu(options.offset?.left ?? 0),
-            y: convertPixelsToEmu(options.offset?.top ?? 0),
-        },
-        pixels: {
-            x: Math.round(options.offset?.left ?? 0),
-            y: Math.round(options.offset?.top ?? 0),
-        },
+      x: convertPixelsToEmu(options.offset?.left ?? 0),
+      y: convertPixelsToEmu(options.offset?.top ?? 0),
     },
     pixels: {
-        x: Math.round(options.width),
-        y: Math.round(options.height),
+      x: Math.round(options.offset?.left ?? 0),
+      y: Math.round(options.offset?.top ?? 0),
     },
-    rotation: options.rotation ? options.rotation * 60_000 : undefined,
+  },
+  pixels: {
+    x: Math.round(options.width),
+    y: Math.round(options.height),
+  },
+  rotation: options.rotation ? options.rotation * 60_000 : undefined,
 });
 
 /**
@@ -88,28 +88,28 @@ export const createTransformation = (options: IMediaTransformation): IMediaDataT
  * ```
  */
 export class Media {
-    private readonly map: Map<string, IMediaData>;
+  private readonly map: Map<string, IMediaData>;
 
-    public constructor() {
-        this.map = new Map<string, IMediaData>();
-    }
+  public constructor() {
+    this.map = new Map<string, IMediaData>();
+  }
 
-    /**
-     * Adds an image to the media collection.
-     *
-     * @param key - Unique identifier for this image
-     * @param mediaData - Complete image data including file name, transformation, and raw data
-     */
-    public addImage(key: string, mediaData: IMediaData): void {
-        this.map.set(key, mediaData);
-    }
+  /**
+   * Adds an image to the media collection.
+   *
+   * @param key - Unique identifier for this image
+   * @param mediaData - Complete image data including file name, transformation, and raw data
+   */
+  public addImage(key: string, mediaData: IMediaData): void {
+    this.map.set(key, mediaData);
+  }
 
-    /**
-     * Gets all images as an array.
-     *
-     * @returns Read-only array of all media data in the collection
-     */
-    public get Array(): readonly IMediaData[] {
-        return [...this.map.values()];
-    }
+  /**
+   * Gets all images as an array.
+   *
+   * @returns Read-only array of all media data in the collection
+   */
+  public get Array(): readonly IMediaData[] {
+    return [...this.map.values()];
+  }
 }

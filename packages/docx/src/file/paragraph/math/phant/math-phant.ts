@@ -21,10 +21,10 @@ import type { MathPhantPropertiesOptions } from "./math-phant-properties";
  * @see {@link MathPhant}
  */
 export interface IMathPhantOptions {
-    /** Phantom properties */
-    readonly properties?: MathPhantPropertiesOptions;
-    /** Content to be made invisible */
-    readonly children: readonly MathComponent[];
+  /** Phantom properties */
+  readonly properties?: MathPhantPropertiesOptions;
+  /** Content to be made invisible */
+  readonly children: readonly MathComponent[];
 }
 
 /**
@@ -48,13 +48,13 @@ export interface IMathPhantOptions {
  * ```
  */
 export class MathPhant extends XmlComponent {
-    public constructor(options: IMathPhantOptions) {
-        super("m:phant");
+  public constructor(options: IMathPhantOptions) {
+    super("m:phant");
 
-        if (options.properties) {
-            this.root.push(createMathPhantProperties(options.properties));
-        }
-
-        this.root.push(createMathBase({ children: options.children }));
+    if (options.properties) {
+      this.root.push(createMathPhantProperties(options.properties));
     }
+
+    this.root.push(createMathBase({ children: options.children }));
+  }
 }

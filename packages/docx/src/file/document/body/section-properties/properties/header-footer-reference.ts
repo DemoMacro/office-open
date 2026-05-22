@@ -18,12 +18,12 @@ import type { XmlComponent } from "@file/xml-components";
  * ```
  */
 export const HeaderFooterReferenceType = {
-    /** Specifies that this header or footer shall appear on every page in this section which is not overridden with a specific `even` or `first` page header/footer. In a section with all three types specified, this type shall be used on all odd numbered pages (counting from the `first` page in the section, not the section numbering). */
-    DEFAULT: "default",
-    /** Specifies that this header or footer shall appear on the first page in this section. The appearance of this header or footer is contingent on the setting of the `titlePg` element (§2.10.6). */
-    FIRST: "first",
-    /** Specifies that this header or footer shall appear on all even numbered pages in this section (counting from the first page in the section, not the section numbering). The appearance of this header or footer is contingent on the setting of the `evenAndOddHeaders` element (§2.10.1). */
-    EVEN: "even",
+  /** Specifies that this header or footer shall appear on every page in this section which is not overridden with a specific `even` or `first` page header/footer. In a section with all three types specified, this type shall be used on all odd numbered pages (counting from the `first` page in the section, not the section numbering). */
+  DEFAULT: "default",
+  /** Specifies that this header or footer shall appear on the first page in this section. The appearance of this header or footer is contingent on the setting of the `titlePg` element (§2.10.6). */
+  FIRST: "first",
+  /** Specifies that this header or footer shall appear on all even numbered pages in this section (counting from the first page in the section, not the section numbering). The appearance of this header or footer is contingent on the setting of the `evenAndOddHeaders` element (§2.10.1). */
+  EVEN: "even",
 } as const;
 
 // <xsd:group name="EG_HdrFtrReferences">
@@ -45,28 +45,28 @@ export const HeaderFooterReferenceType = {
 // </xsd:complexType>
 
 export interface IHeaderFooterOptions {
-    readonly type?: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType];
-    readonly id?: number;
+  readonly type?: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType];
+  readonly id?: number;
 }
 
 interface IHeaderFooterReferenceAttributes {
-    readonly type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType];
-    readonly id: string;
+  readonly type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType];
+  readonly id: string;
 }
 
 export const HeaderFooterType = {
-    FOOTER: "w:footerReference",
-    HEADER: "w:headerReference",
+  FOOTER: "w:footerReference",
+  HEADER: "w:headerReference",
 } as const;
 
 export const createHeaderFooterReference = (
-    type: (typeof HeaderFooterType)[keyof typeof HeaderFooterType],
-    options: IHeaderFooterOptions,
+  type: (typeof HeaderFooterType)[keyof typeof HeaderFooterType],
+  options: IHeaderFooterOptions,
 ): XmlComponent =>
-    new BuilderElement<IHeaderFooterReferenceAttributes>({
-        attributes: {
-            id: { key: "r:id", value: `rId${options.id}` },
-            type: { key: "w:type", value: options.type || HeaderFooterReferenceType.DEFAULT },
-        },
-        name: type,
-    });
+  new BuilderElement<IHeaderFooterReferenceAttributes>({
+    attributes: {
+      id: { key: "r:id", value: `rId${options.id}` },
+      type: { key: "w:type", value: options.type || HeaderFooterReferenceType.DEFAULT },
+    },
+    name: type,
+  });

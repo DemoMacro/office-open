@@ -51,71 +51,71 @@ import type { IStylesOptions } from "../styles";
  * @property hyphenation - Hyphenation settings
  */
 export interface IPropertiesOptions {
-    readonly sections: readonly ISectionOptions[];
-    readonly title?: string;
-    readonly subject?: string;
-    readonly creator?: string;
-    readonly keywords?: string;
-    readonly description?: string;
-    readonly lastModifiedBy?: string;
-    readonly revision?: number;
-    readonly externalStyles?: string;
-    readonly styles?: IStylesOptions;
-    readonly numbering?: INumberingOptions;
-    readonly comments?: ICommentsOptions;
-    readonly bibliography?: IBibliographyOptions;
-    readonly footnotes?: Readonly<
-        Record<
-            string,
-            {
-                readonly children: readonly Paragraph[];
-            }
-        >
-    >;
-    readonly endnotes?: Readonly<
-        Record<
-            string,
-            {
-                readonly children: readonly Paragraph[];
-            }
-        >
-    >;
-    readonly background?: IDocumentBackgroundOptions;
-    readonly features?: {
-        readonly trackRevisions?: boolean;
-        readonly updateFields?: boolean;
-        readonly documentProtection?: import("@file/settings/settings").IDocumentProtectionOptions;
-    };
-    readonly compatabilityModeVersion?: number;
-    readonly compatibility?: ICompatibilityOptions;
-    readonly customProperties?: readonly ICustomPropertyOptions[];
-    readonly evenAndOddHeaderAndFooters?: boolean;
-    readonly defaultTabStop?: number;
-    readonly fonts?: readonly FontOptions[];
-    readonly hyphenation?: IHyphenationOptions;
-    /** Controls whether punctuation is compressed at line ends */
-    readonly characterSpacingControl?: "compressPunctuation" | "doNotCompress";
-    /** Default document view mode */
-    readonly view?: "none" | "print" | "outline" | "masterPages" | "normal" | "web";
-    /** Default zoom level (percentage) and type */
-    readonly zoom?: {
-        readonly percent?: number;
-        readonly val?: "none" | "fullPage" | "bestFit" | "textFit";
-    };
-    /** Write protection recommendation (not enforcement) */
-    readonly writeProtection?: import("@file/settings/settings").IWriteProtectionOptions;
-    /** Whether to display the background shape in print layout */
-    readonly displayBackgroundShape?: boolean;
-    /** Whether to embed TrueType fonts in the document */
-    readonly embedTrueTypeFonts?: boolean;
-    /** Whether to embed system fonts in the document */
-    readonly embedSystemFonts?: boolean;
-    /** Whether to save only a subset of the embedded fonts */
-    readonly saveSubsetFonts?: boolean;
-    /** Document variables (key-value pairs stored in the document) */
-    readonly docVars?: readonly { readonly name: string; readonly val: string }[];
-    /** Theme color scheme remapping */
-    readonly colorSchemeMapping?: import("@file/settings/settings").ISettingsOptions["colorSchemeMapping"];
+  readonly sections: readonly ISectionOptions[];
+  readonly title?: string;
+  readonly subject?: string;
+  readonly creator?: string;
+  readonly keywords?: string;
+  readonly description?: string;
+  readonly lastModifiedBy?: string;
+  readonly revision?: number;
+  readonly externalStyles?: string;
+  readonly styles?: IStylesOptions;
+  readonly numbering?: INumberingOptions;
+  readonly comments?: ICommentsOptions;
+  readonly bibliography?: IBibliographyOptions;
+  readonly footnotes?: Readonly<
+    Record<
+      string,
+      {
+        readonly children: readonly Paragraph[];
+      }
+    >
+  >;
+  readonly endnotes?: Readonly<
+    Record<
+      string,
+      {
+        readonly children: readonly Paragraph[];
+      }
+    >
+  >;
+  readonly background?: IDocumentBackgroundOptions;
+  readonly features?: {
+    readonly trackRevisions?: boolean;
+    readonly updateFields?: boolean;
+    readonly documentProtection?: import("@file/settings/settings").IDocumentProtectionOptions;
+  };
+  readonly compatabilityModeVersion?: number;
+  readonly compatibility?: ICompatibilityOptions;
+  readonly customProperties?: readonly ICustomPropertyOptions[];
+  readonly evenAndOddHeaderAndFooters?: boolean;
+  readonly defaultTabStop?: number;
+  readonly fonts?: readonly FontOptions[];
+  readonly hyphenation?: IHyphenationOptions;
+  /** Controls whether punctuation is compressed at line ends */
+  readonly characterSpacingControl?: "compressPunctuation" | "doNotCompress";
+  /** Default document view mode */
+  readonly view?: "none" | "print" | "outline" | "masterPages" | "normal" | "web";
+  /** Default zoom level (percentage) and type */
+  readonly zoom?: {
+    readonly percent?: number;
+    readonly val?: "none" | "fullPage" | "bestFit" | "textFit";
+  };
+  /** Write protection recommendation (not enforcement) */
+  readonly writeProtection?: import("@file/settings/settings").IWriteProtectionOptions;
+  /** Whether to display the background shape in print layout */
+  readonly displayBackgroundShape?: boolean;
+  /** Whether to embed TrueType fonts in the document */
+  readonly embedTrueTypeFonts?: boolean;
+  /** Whether to embed system fonts in the document */
+  readonly embedSystemFonts?: boolean;
+  /** Whether to save only a subset of the embedded fonts */
+  readonly saveSubsetFonts?: boolean;
+  /** Document variables (key-value pairs stored in the document) */
+  readonly docVars?: readonly { readonly name: string; readonly val: string }[];
+  /** Theme color scheme remapping */
+  readonly colorSchemeMapping?: import("@file/settings/settings").ISettingsOptions["colorSchemeMapping"];
 }
 
 /**
@@ -163,33 +163,33 @@ export interface IPropertiesOptions {
  * ```
  */
 export class CoreProperties extends XmlComponent {
-    public constructor(options: Omit<IPropertiesOptions, "sections">) {
-        super("cp:coreProperties");
-        this.root.push(buildDocumentAttributes(["cp", "dc", "dcterms", "dcmitype", "xsi"]));
-        if (options.title) {
-            this.root.push(new StringContainer("dc:title", options.title));
-        }
-        if (options.subject) {
-            this.root.push(new StringContainer("dc:subject", options.subject));
-        }
-        if (options.creator) {
-            this.root.push(new StringContainer("dc:creator", options.creator));
-        }
-        if (options.keywords) {
-            this.root.push(new StringContainer("cp:keywords", options.keywords));
-        }
-        if (options.description) {
-            this.root.push(new StringContainer("dc:description", options.description));
-        }
-        if (options.lastModifiedBy) {
-            this.root.push(new StringContainer("cp:lastModifiedBy", options.lastModifiedBy));
-        }
-        if (options.revision) {
-            this.root.push(new StringContainer("cp:revision", String(options.revision)));
-        }
-        this.root.push(new TimestampElement("dcterms:created"));
-        this.root.push(new TimestampElement("dcterms:modified"));
+  public constructor(options: Omit<IPropertiesOptions, "sections">) {
+    super("cp:coreProperties");
+    this.root.push(buildDocumentAttributes(["cp", "dc", "dcterms", "dcmitype", "xsi"]));
+    if (options.title) {
+      this.root.push(new StringContainer("dc:title", options.title));
     }
+    if (options.subject) {
+      this.root.push(new StringContainer("dc:subject", options.subject));
+    }
+    if (options.creator) {
+      this.root.push(new StringContainer("dc:creator", options.creator));
+    }
+    if (options.keywords) {
+      this.root.push(new StringContainer("cp:keywords", options.keywords));
+    }
+    if (options.description) {
+      this.root.push(new StringContainer("dc:description", options.description));
+    }
+    if (options.lastModifiedBy) {
+      this.root.push(new StringContainer("cp:lastModifiedBy", options.lastModifiedBy));
+    }
+    if (options.revision) {
+      this.root.push(new StringContainer("cp:revision", String(options.revision)));
+    }
+    this.root.push(new TimestampElement("dcterms:created"));
+    this.root.push(new TimestampElement("dcterms:modified"));
+  }
 }
 
 /**
@@ -197,7 +197,7 @@ export class CoreProperties extends XmlComponent {
  * Specifies the W3C DateTime Format type for timestamps.
  */
 class TimestampElementProperties extends XmlAttributeComponent<{ readonly type: string }> {
-    protected readonly xmlKeys = { type: "xsi:type" };
+  protected readonly xmlKeys = { type: "xsi:type" };
 }
 
 /**
@@ -205,13 +205,13 @@ class TimestampElementProperties extends XmlAttributeComponent<{ readonly type: 
  * Uses W3C DateTime Format (dcterms:W3CDTF) for dates.
  */
 class TimestampElement extends XmlComponent {
-    public constructor(name: string) {
-        super(name);
-        this.root.push(
-            new TimestampElementProperties({
-                type: "dcterms:W3CDTF",
-            }),
-        );
-        this.root.push(dateTimeValue(new Date()));
-    }
+  public constructor(name: string) {
+    super(name);
+    this.root.push(
+      new TimestampElementProperties({
+        type: "dcterms:W3CDTF",
+      }),
+    );
+    this.root.push(dateTimeValue(new Date()));
+  }
 }

@@ -7,284 +7,282 @@ import { Presentation, Shape, Packer, Paragraph, TextRun } from "@office-open/pp
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const pres = new Presentation({
-    title: "My Presentation",
-    creator: "Demo",
-    slides: [
-        // Slide 1: Basic shapes
-        {
-            children: [
-                new Shape({
-                    x: 100,
-                    y: 100,
-                    width: 400,
-                    height: 200,
-                    text: "Hello World",
-                    geometry: "rect",
-                    fill: "4472C4",
+  title: "My Presentation",
+  creator: "Demo",
+  slides: [
+    // Slide 1: Basic shapes
+    {
+      children: [
+        new Shape({
+          x: 100,
+          y: 100,
+          width: 400,
+          height: 200,
+          text: "Hello World",
+          geometry: "rect",
+          fill: "4472C4",
+        }),
+        new Shape({
+          x: 200,
+          y: 350,
+          width: 500,
+          height: 100,
+          text: "Second shape",
+        }),
+      ],
+    },
+    // Slide 2: Full width
+    {
+      children: [
+        new Shape({
+          x: 50,
+          y: 50,
+          width: 860,
+          height: 440,
+          text: "Slide 2 - Full Width",
+          geometry: "rect",
+        }),
+      ],
+    },
+    // Slide 3: Vertical text
+    {
+      children: [
+        new Shape({
+          x: 50,
+          y: 50,
+          width: 600,
+          height: 50,
+          text: "Vertical Text",
+          fill: "4472C4",
+        }),
+        new Shape({
+          x: 50,
+          y: 120,
+          width: 120,
+          height: 300,
+          textVertical: "vert",
+          paragraphs: [
+            new Paragraph({
+              properties: { bulletNone: true },
+              children: [
+                new TextRun({
+                  text: "Vertical Text (top to bottom)",
+                  fontSize: 14,
                 }),
-                new Shape({
-                    x: 200,
-                    y: 350,
-                    width: 500,
-                    height: 100,
-                    text: "Second shape",
+              ],
+            }),
+          ],
+          outline: { color: "4472C4", width: 1 },
+        }),
+        new Shape({
+          x: 200,
+          y: 120,
+          width: 120,
+          height: 300,
+          textVertical: "vert270",
+          paragraphs: [
+            new Paragraph({
+              properties: { bulletNone: true },
+              children: [new TextRun({ text: "Rotated 270 (bottom to top)", fontSize: 14 })],
+            }),
+          ],
+          outline: { color: "ED7D31", width: 1 },
+        }),
+        new Shape({
+          x: 350,
+          y: 120,
+          width: 120,
+          height: 300,
+          textVertical: "horz",
+          paragraphs: [
+            new Paragraph({
+              properties: { bulletNone: true },
+              children: [new TextRun({ text: "Horizontal (default)", fontSize: 14 })],
+            }),
+          ],
+          outline: { color: "70AD47", width: 1 },
+        }),
+      ],
+    },
+    // Slide 4: Text anchor & auto-fit
+    {
+      children: [
+        new Shape({
+          x: 50,
+          y: 50,
+          width: 600,
+          height: 50,
+          text: "Text Anchor & Auto-Fit",
+          fill: "4472C4",
+        }),
+        // Top anchor
+        new Shape({
+          x: 50,
+          y: 120,
+          width: 200,
+          height: 200,
+          textAnchor: "TOP",
+          text: "Top anchored text",
+          outline: { color: "999999", width: 1 },
+        }),
+        // Center anchor
+        new Shape({
+          x: 280,
+          y: 120,
+          width: 200,
+          height: 200,
+          textAnchor: "CENTER",
+          text: "Center anchored text",
+          outline: { color: "999999", width: 1 },
+        }),
+        // Bottom anchor
+        new Shape({
+          x: 510,
+          y: 120,
+          width: 200,
+          height: 200,
+          textAnchor: "BOTTOM",
+          text: "Bottom anchored text",
+          outline: { color: "999999", width: 1 },
+        }),
+        // Auto-fit normal
+        new Shape({
+          x: 50,
+          y: 350,
+          width: 250,
+          height: 80,
+          textAutoFit: "normal",
+          text: "This is a very long text that should auto-fit to shrink within the shape bounds",
+          outline: { color: "4472C4", width: 1 },
+        }),
+        // Auto-fit shape
+        new Shape({
+          x: 330,
+          y: 350,
+          width: 250,
+          height: 80,
+          textAutoFit: "shape",
+          text: "Shape auto-fit text",
+          outline: { color: "ED7D31", width: 1 },
+        }),
+      ],
+    },
+    // Slide 5: Text margins & columns
+    {
+      children: [
+        new Shape({
+          x: 50,
+          y: 50,
+          width: 600,
+          height: 50,
+          text: "Text Margins & Columns",
+          fill: "4472C4",
+        }),
+        // Default margins
+        new Shape({
+          x: 50,
+          y: 120,
+          width: 350,
+          height: 150,
+          outline: { color: "999999", width: 1 },
+          paragraphs: [
+            new Paragraph({
+              properties: { bulletNone: true },
+              children: [
+                new TextRun({
+                  text: "Default margins (no extra padding)",
+                  fontSize: 12,
                 }),
+              ],
+            }),
+          ],
+        }),
+        // Wide margins
+        new Shape({
+          x: 430,
+          y: 120,
+          width: 350,
+          height: 150,
+          textMargins: { top: 100000, bottom: 100000, left: 200000, right: 200000 },
+          outline: { color: "ED7D31", width: 1 },
+          paragraphs: [
+            new Paragraph({
+              properties: { bulletNone: true },
+              children: [
+                new TextRun({
+                  text: "Wide margins (extra padding all around)",
+                  fontSize: 12,
+                }),
+              ],
+            }),
+          ],
+        }),
+        // 2 columns
+        new Shape({
+          x: 50,
+          y: 300,
+          width: 730,
+          height: 150,
+          textColumns: 2,
+          textColumnSpacing: 12,
+          outline: { color: "70AD47", width: 1 },
+          paragraphs: [
+            new Paragraph({
+              properties: { bulletNone: true },
+              children: [
+                new TextRun({
+                  text: "This is column 1 text. The shape is divided into 2 columns with spacing between them.",
+                  fontSize: 12,
+                }),
+              ],
+            }),
+          ],
+        }),
+      ],
+    },
+    // Slide 6: Blip fill (image) + gradient path (radial)
+    {
+      children: [
+        new Shape({
+          x: 50,
+          y: 50,
+          width: 600,
+          height: 50,
+          text: "Blip Fill & Gradient Path",
+          fill: "4472C4",
+        }),
+        new Shape({
+          x: 50,
+          y: 120,
+          width: 400,
+          height: 200,
+          text: "Image Fill",
+          fill: {
+            type: "blip",
+            data: new Uint8Array(
+              fs.readFileSync(path.resolve(__dirname, "assets/test-poster.png")),
+            ),
+            imageType: "png",
+          },
+        }),
+        new Shape({
+          x: 480,
+          y: 120,
+          width: 300,
+          height: 200,
+          text: "Radial Gradient",
+          fill: {
+            type: "gradient",
+            path: "circle",
+            stops: [
+              { position: 0, color: "FFFFFF" },
+              { position: 100, color: "4472C4" },
             ],
-        },
-        // Slide 2: Full width
-        {
-            children: [
-                new Shape({
-                    x: 50,
-                    y: 50,
-                    width: 860,
-                    height: 440,
-                    text: "Slide 2 - Full Width",
-                    geometry: "rect",
-                }),
-            ],
-        },
-        // Slide 3: Vertical text
-        {
-            children: [
-                new Shape({
-                    x: 50,
-                    y: 50,
-                    width: 600,
-                    height: 50,
-                    text: "Vertical Text",
-                    fill: "4472C4",
-                }),
-                new Shape({
-                    x: 50,
-                    y: 120,
-                    width: 120,
-                    height: 300,
-                    textVertical: "vert",
-                    paragraphs: [
-                        new Paragraph({
-                            properties: { bulletNone: true },
-                            children: [
-                                new TextRun({
-                                    text: "Vertical Text (top to bottom)",
-                                    fontSize: 14,
-                                }),
-                            ],
-                        }),
-                    ],
-                    outline: { color: "4472C4", width: 1 },
-                }),
-                new Shape({
-                    x: 200,
-                    y: 120,
-                    width: 120,
-                    height: 300,
-                    textVertical: "vert270",
-                    paragraphs: [
-                        new Paragraph({
-                            properties: { bulletNone: true },
-                            children: [
-                                new TextRun({ text: "Rotated 270 (bottom to top)", fontSize: 14 }),
-                            ],
-                        }),
-                    ],
-                    outline: { color: "ED7D31", width: 1 },
-                }),
-                new Shape({
-                    x: 350,
-                    y: 120,
-                    width: 120,
-                    height: 300,
-                    textVertical: "horz",
-                    paragraphs: [
-                        new Paragraph({
-                            properties: { bulletNone: true },
-                            children: [new TextRun({ text: "Horizontal (default)", fontSize: 14 })],
-                        }),
-                    ],
-                    outline: { color: "70AD47", width: 1 },
-                }),
-            ],
-        },
-        // Slide 4: Text anchor & auto-fit
-        {
-            children: [
-                new Shape({
-                    x: 50,
-                    y: 50,
-                    width: 600,
-                    height: 50,
-                    text: "Text Anchor & Auto-Fit",
-                    fill: "4472C4",
-                }),
-                // Top anchor
-                new Shape({
-                    x: 50,
-                    y: 120,
-                    width: 200,
-                    height: 200,
-                    textAnchor: "TOP",
-                    text: "Top anchored text",
-                    outline: { color: "999999", width: 1 },
-                }),
-                // Center anchor
-                new Shape({
-                    x: 280,
-                    y: 120,
-                    width: 200,
-                    height: 200,
-                    textAnchor: "CENTER",
-                    text: "Center anchored text",
-                    outline: { color: "999999", width: 1 },
-                }),
-                // Bottom anchor
-                new Shape({
-                    x: 510,
-                    y: 120,
-                    width: 200,
-                    height: 200,
-                    textAnchor: "BOTTOM",
-                    text: "Bottom anchored text",
-                    outline: { color: "999999", width: 1 },
-                }),
-                // Auto-fit normal
-                new Shape({
-                    x: 50,
-                    y: 350,
-                    width: 250,
-                    height: 80,
-                    textAutoFit: "normal",
-                    text: "This is a very long text that should auto-fit to shrink within the shape bounds",
-                    outline: { color: "4472C4", width: 1 },
-                }),
-                // Auto-fit shape
-                new Shape({
-                    x: 330,
-                    y: 350,
-                    width: 250,
-                    height: 80,
-                    textAutoFit: "shape",
-                    text: "Shape auto-fit text",
-                    outline: { color: "ED7D31", width: 1 },
-                }),
-            ],
-        },
-        // Slide 5: Text margins & columns
-        {
-            children: [
-                new Shape({
-                    x: 50,
-                    y: 50,
-                    width: 600,
-                    height: 50,
-                    text: "Text Margins & Columns",
-                    fill: "4472C4",
-                }),
-                // Default margins
-                new Shape({
-                    x: 50,
-                    y: 120,
-                    width: 350,
-                    height: 150,
-                    outline: { color: "999999", width: 1 },
-                    paragraphs: [
-                        new Paragraph({
-                            properties: { bulletNone: true },
-                            children: [
-                                new TextRun({
-                                    text: "Default margins (no extra padding)",
-                                    fontSize: 12,
-                                }),
-                            ],
-                        }),
-                    ],
-                }),
-                // Wide margins
-                new Shape({
-                    x: 430,
-                    y: 120,
-                    width: 350,
-                    height: 150,
-                    textMargins: { top: 100000, bottom: 100000, left: 200000, right: 200000 },
-                    outline: { color: "ED7D31", width: 1 },
-                    paragraphs: [
-                        new Paragraph({
-                            properties: { bulletNone: true },
-                            children: [
-                                new TextRun({
-                                    text: "Wide margins (extra padding all around)",
-                                    fontSize: 12,
-                                }),
-                            ],
-                        }),
-                    ],
-                }),
-                // 2 columns
-                new Shape({
-                    x: 50,
-                    y: 300,
-                    width: 730,
-                    height: 150,
-                    textColumns: 2,
-                    textColumnSpacing: 12,
-                    outline: { color: "70AD47", width: 1 },
-                    paragraphs: [
-                        new Paragraph({
-                            properties: { bulletNone: true },
-                            children: [
-                                new TextRun({
-                                    text: "This is column 1 text. The shape is divided into 2 columns with spacing between them.",
-                                    fontSize: 12,
-                                }),
-                            ],
-                        }),
-                    ],
-                }),
-            ],
-        },
-        // Slide 6: Blip fill (image) + gradient path (radial)
-        {
-            children: [
-                new Shape({
-                    x: 50,
-                    y: 50,
-                    width: 600,
-                    height: 50,
-                    text: "Blip Fill & Gradient Path",
-                    fill: "4472C4",
-                }),
-                new Shape({
-                    x: 50,
-                    y: 120,
-                    width: 400,
-                    height: 200,
-                    text: "Image Fill",
-                    fill: {
-                        type: "blip",
-                        data: new Uint8Array(
-                            fs.readFileSync(path.resolve(__dirname, "assets/test-poster.png")),
-                        ),
-                        imageType: "png",
-                    },
-                }),
-                new Shape({
-                    x: 480,
-                    y: 120,
-                    width: 300,
-                    height: 200,
-                    text: "Radial Gradient",
-                    fill: {
-                        type: "gradient",
-                        path: "circle",
-                        stops: [
-                            { position: 0, color: "FFFFFF" },
-                            { position: 100, color: "4472C4" },
-                        ],
-                    },
-                }),
-            ],
-        },
-    ],
+          },
+        }),
+      ],
+    },
+  ],
 });
 
 const buffer = await Packer.toBuffer(pres);

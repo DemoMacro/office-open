@@ -1,16 +1,16 @@
 import { ImportedXmlComponent } from "../xml-components/imported";
 
 const APP_PROPS_XML =
-    '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"/>';
+  '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"/>';
 
 export class AppProperties extends ImportedXmlComponent {
-    private static instance = ImportedXmlComponent.fromXmlString(APP_PROPS_XML);
+  private static instance = ImportedXmlComponent.fromXmlString(APP_PROPS_XML);
 
-    public constructor() {
-        super("Properties");
-    }
+  public constructor() {
+    super("Properties");
+  }
 
-    public override prepForXml() {
-        return AppProperties.instance.prepForXml({ stack: [] } as any);
-    }
+  public override prepForXml() {
+    return AppProperties.instance.prepForXml({ stack: [] } as any);
+  }
 }

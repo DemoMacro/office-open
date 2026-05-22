@@ -15,39 +15,39 @@ import type { XmlComponent } from "@file/xml-components";
  * Attributes for extent.
  */
 interface ExtentAttributes {
-    /**
-     * ## Extent Length
-     *
-     * Specifies the length of the extents rectangle in EMUs. This rectangle shall dictate the size of the object as displayed (the result of any scaling to the original object).
-     *
-     *
-     * ### Example
-     *
-     * ```xml
-     * <... cx="1828800" cy="200000"/>
-     * ```
-     *
-     * The `cx` attributes specifies that this object has a height of `1828800` EMUs (English Metric Units).
-     *
-     * The possible values for this attribute are defined by the `ST_PositiveCoordinate` simple type (§5.1.12.42).
-     */
-    readonly x?: number;
-    /**
-     * ## Extent Width
-     *
-     * Specifies the width of the extents rectangle in EMUs. This rectangle shall dictate the size of the object as displayed (the result of any scaling to the original object).
-     *
-     * ### Example
-     *
-     * ```xml
-     * <... cx="1828800" cy="200000"/>
-     * ```
-     *
-     * The `cy` attribute specifies that this object has a width of `200000` EMUs (English Metric Units).
-     *
-     * The possible values for this attribute are defined by the `ST_PositiveCoordinate` simple type (§5.1.12.42).
-     */
-    readonly y?: number;
+  /**
+   * ## Extent Length
+   *
+   * Specifies the length of the extents rectangle in EMUs. This rectangle shall dictate the size of the object as displayed (the result of any scaling to the original object).
+   *
+   *
+   * ### Example
+   *
+   * ```xml
+   * <... cx="1828800" cy="200000"/>
+   * ```
+   *
+   * The `cx` attributes specifies that this object has a height of `1828800` EMUs (English Metric Units).
+   *
+   * The possible values for this attribute are defined by the `ST_PositiveCoordinate` simple type (§5.1.12.42).
+   */
+  readonly x?: number;
+  /**
+   * ## Extent Width
+   *
+   * Specifies the width of the extents rectangle in EMUs. This rectangle shall dictate the size of the object as displayed (the result of any scaling to the original object).
+   *
+   * ### Example
+   *
+   * ```xml
+   * <... cx="1828800" cy="200000"/>
+   * ```
+   *
+   * The `cy` attribute specifies that this object has a width of `200000` EMUs (English Metric Units).
+   *
+   * The possible values for this attribute are defined by the `ST_PositiveCoordinate` simple type (§5.1.12.42).
+   */
+  readonly y?: number;
 }
 
 /**
@@ -76,10 +76,10 @@ interface ExtentAttributes {
  * ```
  */
 export const createExtent = ({ x, y }: ExtentAttributes): XmlComponent =>
-    new BuilderElement<ExtentAttributes>({
-        attributes: {
-            x: { key: "cx", value: x },
-            y: { key: "cy", value: y },
-        },
-        name: "wp:extent",
-    });
+  new BuilderElement<ExtentAttributes>({
+    attributes: {
+      x: { key: "cx", value: x },
+      y: { key: "cy", value: y },
+    },
+    name: "wp:extent",
+  });

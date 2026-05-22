@@ -18,6 +18,6 @@ import type { BaseXmlComponent } from "@file/xml-components";
  * symbol check when needed, or use this type for parameter typing.
  */
 export interface FileChild extends BaseXmlComponent {
-    /** Marker property identifying this as a FileChild */
-    readonly fileChild: symbol;
+  /** Marker property identifying this as a FileChild */
+  readonly fileChild: symbol;
 }

@@ -21,10 +21,10 @@ import type { MathGroupChrPropertiesOptions } from "./math-group-chr-properties"
  * @see {@link MathGroupChr}
  */
 export interface IMathGroupChrOptions {
-    /** Group character properties */
-    readonly properties?: MathGroupChrPropertiesOptions;
-    /** Content under/over the group character */
-    readonly children: readonly MathComponent[];
+  /** Group character properties */
+  readonly properties?: MathGroupChrPropertiesOptions;
+  /** Content under/over the group character */
+  readonly children: readonly MathComponent[];
 }
 
 /**
@@ -48,13 +48,13 @@ export interface IMathGroupChrOptions {
  * ```
  */
 export class MathGroupChr extends XmlComponent {
-    public constructor(options: IMathGroupChrOptions) {
-        super("m:groupChr");
+  public constructor(options: IMathGroupChrOptions) {
+    super("m:groupChr");
 
-        if (options.properties) {
-            this.root.push(createMathGroupChrProperties(options.properties));
-        }
-
-        this.root.push(createMathBase({ children: options.children }));
+    if (options.properties) {
+      this.root.push(createMathGroupChrProperties(options.properties));
     }
+
+    this.root.push(createMathBase({ children: options.children }));
+  }
 }

@@ -11,9 +11,9 @@
 import { createBorderElement } from "@file/border";
 import type { IBorderOptions } from "@file/border";
 import {
-    IgnoreIfEmptyXmlComponent,
-    XmlAttributeComponent,
-    XmlComponent,
+  IgnoreIfEmptyXmlComponent,
+  XmlAttributeComponent,
+  XmlComponent,
 } from "@file/xml-components";
 import { decimalNumber } from "@util/values";
 
@@ -26,18 +26,18 @@ import { decimalNumber } from "@util/values";
  * @see {@link TableCellBorders}
  */
 export interface ITableCellBorders {
-    /** Border for the top edge of the cell */
-    readonly top?: IBorderOptions;
-    /** Border for the start edge (left in LTR, right in RTL) */
-    readonly start?: IBorderOptions;
-    /** Border for the left edge of the cell */
-    readonly left?: IBorderOptions;
-    /** Border for the bottom edge of the cell */
-    readonly bottom?: IBorderOptions;
-    /** Border for the end edge (right in LTR, left in RTL) */
-    readonly end?: IBorderOptions;
-    /** Border for the right edge of the cell */
-    readonly right?: IBorderOptions;
+  /** Border for the top edge of the cell */
+  readonly top?: IBorderOptions;
+  /** Border for the start edge (left in LTR, right in RTL) */
+  readonly start?: IBorderOptions;
+  /** Border for the left edge of the cell */
+  readonly left?: IBorderOptions;
+  /** Border for the bottom edge of the cell */
+  readonly bottom?: IBorderOptions;
+  /** Border for the end edge (right in LTR, left in RTL) */
+  readonly end?: IBorderOptions;
+  /** Border for the right edge of the cell */
+  readonly right?: IBorderOptions;
 }
 
 /**
@@ -75,35 +75,35 @@ export interface ITableCellBorders {
  * ```
  */
 export class TableCellBorders extends IgnoreIfEmptyXmlComponent {
-    public constructor(options: ITableCellBorders) {
-        super("w:tcBorders");
+  public constructor(options: ITableCellBorders) {
+    super("w:tcBorders");
 
-        if (options.top) {
-            this.root.push(createBorderElement("w:top", options.top));
-        }
-        if (options.start) {
-            this.root.push(createBorderElement("w:start", options.start));
-        }
-        if (options.left) {
-            this.root.push(createBorderElement("w:left", options.left));
-        }
-        if (options.bottom) {
-            this.root.push(createBorderElement("w:bottom", options.bottom));
-        }
-        if (options.end) {
-            this.root.push(createBorderElement("w:end", options.end));
-        }
-        if (options.right) {
-            this.root.push(createBorderElement("w:right", options.right));
-        }
+    if (options.top) {
+      this.root.push(createBorderElement("w:top", options.top));
     }
+    if (options.start) {
+      this.root.push(createBorderElement("w:start", options.start));
+    }
+    if (options.left) {
+      this.root.push(createBorderElement("w:left", options.left));
+    }
+    if (options.bottom) {
+      this.root.push(createBorderElement("w:bottom", options.bottom));
+    }
+    if (options.end) {
+      this.root.push(createBorderElement("w:end", options.end));
+    }
+    if (options.right) {
+      this.root.push(createBorderElement("w:right", options.right));
+    }
+  }
 }
 
 /**
  * Attributes for the GridSpan element.
  */
 class GridSpanAttributes extends XmlAttributeComponent<{ readonly val: number }> {
-    protected readonly xmlKeys = { val: "w:val" };
+  protected readonly xmlKeys = { val: "w:val" };
 }
 
 /**
@@ -128,15 +128,15 @@ class GridSpanAttributes extends XmlAttributeComponent<{ readonly val: number }>
  * ```
  */
 export class GridSpan extends XmlComponent {
-    public constructor(value: number) {
-        super("w:gridSpan");
+  public constructor(value: number) {
+    super("w:gridSpan");
 
-        this.root.push(
-            new GridSpanAttributes({
-                val: decimalNumber(value),
-            }),
-        );
-    }
+    this.root.push(
+      new GridSpanAttributes({
+        val: decimalNumber(value),
+      }),
+    );
+  }
 }
 
 /**
@@ -145,25 +145,25 @@ export class GridSpan extends XmlComponent {
  * Defines the merge behavior for vertically merged cells (row span).
  */
 export const VerticalMergeType = {
-    /**
-     * Cell that is merged with upper one.
-     * This cell continues a vertical merge started by a cell above it.
-     */
-    CONTINUE: "continue",
-    /**
-     * Cell that is starting the vertical merge.
-     * This cell begins a new vertical merge region.
-     */
-    RESTART: "restart",
+  /**
+   * Cell that is merged with upper one.
+   * This cell continues a vertical merge started by a cell above it.
+   */
+  CONTINUE: "continue",
+  /**
+   * Cell that is starting the vertical merge.
+   * This cell begins a new vertical merge region.
+   */
+  RESTART: "restart",
 } as const;
 
 /**
  * Attributes for the VerticalMerge element.
  */
 class VerticalMergeAttributes extends XmlAttributeComponent<{
-    readonly val: (typeof VerticalMergeType)[keyof typeof VerticalMergeType];
+  readonly val: (typeof VerticalMergeType)[keyof typeof VerticalMergeType];
 }> {
-    protected readonly xmlKeys = { val: "w:val" };
+  protected readonly xmlKeys = { val: "w:val" };
 }
 
 /**
@@ -192,15 +192,15 @@ class VerticalMergeAttributes extends XmlAttributeComponent<{
  * ```
  */
 export class VerticalMerge extends XmlComponent {
-    public constructor(value: (typeof VerticalMergeType)[keyof typeof VerticalMergeType]) {
-        super("w:vMerge");
+  public constructor(value: (typeof VerticalMergeType)[keyof typeof VerticalMergeType]) {
+    super("w:vMerge");
 
-        this.root.push(
-            new VerticalMergeAttributes({
-                val: value,
-            }),
-        );
-    }
+    this.root.push(
+      new VerticalMergeAttributes({
+        val: value,
+      }),
+    );
+  }
 }
 
 /**
@@ -209,21 +209,21 @@ export class VerticalMerge extends XmlComponent {
  * Specifies the direction in which text flows within a table cell.
  */
 export const TextDirection = {
-    /** Text flows from bottom to top, left to right */
-    BOTTOM_TO_TOP_LEFT_TO_RIGHT: "btLr",
-    /** Text flows from left to right, top to bottom (default) */
-    LEFT_TO_RIGHT_TOP_TO_BOTTOM: "lrTb",
-    /** Text flows from top to bottom, right to left */
-    TOP_TO_BOTTOM_RIGHT_TO_LEFT: "tbRl",
+  /** Text flows from bottom to top, left to right */
+  BOTTOM_TO_TOP_LEFT_TO_RIGHT: "btLr",
+  /** Text flows from left to right, top to bottom (default) */
+  LEFT_TO_RIGHT_TOP_TO_BOTTOM: "lrTb",
+  /** Text flows from top to bottom, right to left */
+  TOP_TO_BOTTOM_RIGHT_TO_LEFT: "tbRl",
 } as const;
 
 /**
  * Attributes for the TDirection element.
  */
 class TDirectionAttributes extends XmlAttributeComponent<{
-    readonly val: (typeof TextDirection)[keyof typeof TextDirection];
+  readonly val: (typeof TextDirection)[keyof typeof TextDirection];
 }> {
-    protected readonly xmlKeys = { val: "w:val" };
+  protected readonly xmlKeys = { val: "w:val" };
 }
 
 /**
@@ -248,13 +248,13 @@ class TDirectionAttributes extends XmlAttributeComponent<{
  * ```
  */
 export class TDirection extends XmlComponent {
-    public constructor(value: (typeof TextDirection)[keyof typeof TextDirection]) {
-        super("w:textDirection");
+  public constructor(value: (typeof TextDirection)[keyof typeof TextDirection]) {
+    super("w:textDirection");
 
-        this.root.push(
-            new TDirectionAttributes({
-                val: value,
-            }),
-        );
-    }
+    this.root.push(
+      new TDirectionAttributes({
+        val: value,
+      }),
+    );
+  }
 }

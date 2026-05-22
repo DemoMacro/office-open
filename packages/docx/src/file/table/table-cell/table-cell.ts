@@ -20,8 +20,8 @@ import type { ITableCellPropertiesOptions } from "./table-cell-properties";
  * @see {@link TableCell}
  */
 export type ITableCellOptions = {
-    /** Array of Paragraph or nested Table elements that make up the cell content */
-    readonly children: readonly (Paragraph | Table | StructuredDocumentTagCell)[];
+  /** Array of Paragraph or nested Table elements that make up the cell content */
+  readonly children: readonly (Paragraph | Table | StructuredDocumentTagCell)[];
 } & ITableCellPropertiesOptions;
 
 /**
@@ -55,28 +55,28 @@ export type ITableCellOptions = {
  * ```
  */
 export class TableCell extends BaseXmlComponent {
-    public constructor(public readonly options: ITableCellOptions) {
-        super("w:tc");
+  public constructor(public readonly options: ITableCellOptions) {
+    super("w:tc");
+  }
+
+  public prepForXml(context: IContext): IXmlableObject | undefined {
+    const children: IXmlableObject[] = [];
+
+    const tPr = new TableCellProperties(this.options);
+    const tPrObj = tPr.prepForXml(context);
+    if (tPrObj) children.push(tPrObj);
+
+    for (const child of this.options.children) {
+      const obj = child.prepForXml(context);
+      if (obj) children.push(obj);
     }
 
-    public prepForXml(context: IContext): IXmlableObject | undefined {
-        const children: IXmlableObject[] = [];
-
-        const tPr = new TableCellProperties(this.options);
-        const tPrObj = tPr.prepForXml(context);
-        if (tPrObj) children.push(tPrObj);
-
-        for (const child of this.options.children) {
-            const obj = child.prepForXml(context);
-            if (obj) children.push(obj);
-        }
-
-        // Cells must end with a paragraph
-        const last = this.options.children[this.options.children.length - 1];
-        if (!(last instanceof Paragraph)) {
-            children.push(new Paragraph({}).prepForXml(context)!);
-        }
-
-        return { "w:tc": children };
+    // Cells must end with a paragraph
+    const last = this.options.children[this.options.children.length - 1];
+    if (!(last instanceof Paragraph)) {
+      children.push(new Paragraph({}).prepForXml(context)!);
     }
+
+    return { "w:tc": children };
+  }
 }

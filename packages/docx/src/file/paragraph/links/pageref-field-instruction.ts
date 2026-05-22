@@ -36,19 +36,19 @@ import type { IPageReferenceOptions } from "./pageref";
  * @internal
  */
 export class PageReferenceFieldInstruction extends XmlComponent {
-    public constructor(bookmarkId: string, options: IPageReferenceOptions = {}) {
-        super("w:instrText");
-        this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
+  public constructor(bookmarkId: string, options: IPageReferenceOptions = {}) {
+    super("w:instrText");
+    this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
 
-        let instruction = `PAGEREF ${bookmarkId}`;
+    let instruction = `PAGEREF ${bookmarkId}`;
 
-        if (options.hyperlink) {
-            instruction = `${instruction} \\h`;
-        }
-        if (options.useRelativePosition) {
-            instruction = `${instruction} \\p`;
-        }
-
-        this.root.push(instruction);
+    if (options.hyperlink) {
+      instruction = `${instruction} \\h`;
     }
+    if (options.useRelativePosition) {
+      instruction = `${instruction} \\p`;
+    }
+
+    this.root.push(instruction);
+  }
 }

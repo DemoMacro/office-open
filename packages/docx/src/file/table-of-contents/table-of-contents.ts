@@ -22,10 +22,10 @@ import { StructuredDocumentTagProperties } from "./sdt-properties";
 import type { ITableOfContentsOptions } from "./table-of-contents-properties";
 
 interface ToCEntry {
-    readonly title: string;
-    readonly level: number;
-    readonly page?: number;
-    readonly href?: string;
+  readonly title: string;
+  readonly level: number;
+  readonly page?: number;
+  readonly href?: string;
 }
 
 /**
@@ -58,150 +58,145 @@ interface ToCEntry {
  * ```
  */
 export class TableOfContents extends XmlComponent implements FileChild {
-    public readonly fileChild = Symbol();
-    public constructor(
-        alias: string = "Table of Contents",
-        {
-            contentChildren = [],
-            cachedEntries = [],
-            beginDirty = true,
-            ...properties
-        }: ITableOfContentsOptions & {
-            readonly contentChildren?: readonly (BaseXmlComponent | string)[];
-            /**
-             * Use this to provide pre-generated entries for the Table of Contents.
-             *
-             * Note that indentation should come from the paragraph styles defined on the document. By default the styles are TOC1, TOC2, etc. These can be overridden with stylesWithLevels (\t)
-             */
-            readonly cachedEntries?: readonly ToCEntry[];
-            readonly beginDirty?: boolean;
-        } = {},
-    ) {
-        super("w:sdt");
-        this.root.push(new StructuredDocumentTagProperties(alias));
+  public readonly fileChild = Symbol();
+  public constructor(
+    alias: string = "Table of Contents",
+    {
+      contentChildren = [],
+      cachedEntries = [],
+      beginDirty = true,
+      ...properties
+    }: ITableOfContentsOptions & {
+      readonly contentChildren?: readonly (BaseXmlComponent | string)[];
+      /**
+       * Use this to provide pre-generated entries for the Table of Contents.
+       *
+       * Note that indentation should come from the paragraph styles defined on the document. By default the styles are TOC1, TOC2, etc. These can be overridden with stylesWithLevels (\t)
+       */
+      readonly cachedEntries?: readonly ToCEntry[];
+      readonly beginDirty?: boolean;
+    } = {},
+  ) {
+    super("w:sdt");
+    this.root.push(new StructuredDocumentTagProperties(alias));
 
-        const content = new StructuredDocumentTagContent();
+    const content = new StructuredDocumentTagContent();
 
-        const beginParagraphMandatoryChildren = [
-            new Run({
-                children: [
-                    createBegin(beginDirty),
-                    new FieldInstruction(properties),
-                    createSeparate(),
-                ],
-            }),
-        ];
+    const beginParagraphMandatoryChildren = [
+      new Run({
+        children: [createBegin(beginDirty), new FieldInstruction(properties), createSeparate()],
+      }),
+    ];
 
-        const endParagraphMandatoryChildren = [
-            new Run({
-                children: [createEnd()],
-            }),
-        ];
+    const endParagraphMandatoryChildren = [
+      new Run({
+        children: [createEnd()],
+      }),
+    ];
 
-        const hasCachedContent = cachedEntries !== undefined && cachedEntries.length > 0;
+    const hasCachedContent = cachedEntries !== undefined && cachedEntries.length > 0;
 
-        if (hasCachedContent) {
-            const { stylesWithLevels } = properties;
-            const cachedParagraphs = cachedEntries.map((entry, i) => {
-                const contentChild = this.buildCachedContentParagraphChild(entry, properties);
-                const style =
-                    stylesWithLevels?.find((s) => s.level === entry.level)?.styleName ??
-                    `TOC${entry.level}`;
-                const children =
-                    i === 0
-                        ? [...beginParagraphMandatoryChildren, contentChild]
-                        : i === cachedEntries.length - 1
-                          ? [contentChild, ...endParagraphMandatoryChildren]
-                          : [contentChild];
+    if (hasCachedContent) {
+      const { stylesWithLevels } = properties;
+      const cachedParagraphs = cachedEntries.map((entry, i) => {
+        const contentChild = this.buildCachedContentParagraphChild(entry, properties);
+        const style =
+          stylesWithLevels?.find((s) => s.level === entry.level)?.styleName ?? `TOC${entry.level}`;
+        const children =
+          i === 0
+            ? [...beginParagraphMandatoryChildren, contentChild]
+            : i === cachedEntries.length - 1
+              ? [contentChild, ...endParagraphMandatoryChildren]
+              : [contentChild];
 
-                return new Paragraph({
-                    children,
-                    style,
-                    tabStops: this.getTabStopsForLevel(entry.level),
-                });
-            });
-
-            let paragraphs = cachedParagraphs;
-            if (cachedEntries.length <= 1) {
-                paragraphs = [
-                    ...cachedParagraphs,
-                    new Paragraph({
-                        children: endParagraphMandatoryChildren,
-                    }),
-                ];
-            }
-
-            for (const paragraph of paragraphs) {
-                content.addChildElement(paragraph);
-            }
-        } else {
-            const beginParagraph = new Paragraph({
-                children: beginParagraphMandatoryChildren,
-            });
-
-            content.addChildElement(beginParagraph);
-
-            for (const child of contentChildren) {
-                content.addChildElement(child);
-            }
-
-            const endParagraph = new Paragraph({
-                children: endParagraphMandatoryChildren,
-            });
-
-            content.addChildElement(endParagraph);
-        }
-
-        this.root.push(content);
-    }
-
-    private getTabStopsForLevel(
-        level: number,
-        pageWidth: number = 9025,
-    ): readonly TabStopDefinition[] {
-        const levelSpace = 240;
-        const levelPosition = pageWidth + 1 - (level - 1) * levelSpace; // TODO: should be equal to page width + 1 - level margin
-        return [
-            {
-                position: levelPosition,
-                type: "clear",
-            },
-            {
-                leader: "dot",
-                position: pageWidth,
-                type: "right",
-            },
-        ];
-    }
-
-    private buildCachedContentRun(entry: ToCEntry, properties?: ITableOfContentsOptions): Run {
-        return new Run({
-            // TODO: The IndexLink style might always need to be set regardless of the hyperlink property. This needs to be verified.
-            children: [
-                new Text({
-                    text: entry.title,
-                }),
-                new Tab(),
-                new Text({
-                    text: entry.page?.toString() ?? "",
-                }),
-            ],
-            style: properties?.hyperlink && entry.href !== undefined ? "IndexLink" : undefined,
+        return new Paragraph({
+          children,
+          style,
+          tabStops: this.getTabStopsForLevel(entry.level),
         });
+      });
+
+      let paragraphs = cachedParagraphs;
+      if (cachedEntries.length <= 1) {
+        paragraphs = [
+          ...cachedParagraphs,
+          new Paragraph({
+            children: endParagraphMandatoryChildren,
+          }),
+        ];
+      }
+
+      for (const paragraph of paragraphs) {
+        content.addChildElement(paragraph);
+      }
+    } else {
+      const beginParagraph = new Paragraph({
+        children: beginParagraphMandatoryChildren,
+      });
+
+      content.addChildElement(beginParagraph);
+
+      for (const child of contentChildren) {
+        content.addChildElement(child);
+      }
+
+      const endParagraph = new Paragraph({
+        children: endParagraphMandatoryChildren,
+      });
+
+      content.addChildElement(endParagraph);
     }
 
-    private buildCachedContentParagraphChild(
-        entry: ToCEntry,
-        properties?: ITableOfContentsOptions,
-    ): Run | InternalHyperlink {
-        const run = this.buildCachedContentRun(entry, properties);
-        if (properties?.hyperlink && entry.href !== undefined) {
-            return new InternalHyperlink({
-                anchor: entry.href,
-                children: [run],
-            });
-        }
+    this.root.push(content);
+  }
 
-        return run;
+  private getTabStopsForLevel(
+    level: number,
+    pageWidth: number = 9025,
+  ): readonly TabStopDefinition[] {
+    const levelSpace = 240;
+    const levelPosition = pageWidth + 1 - (level - 1) * levelSpace; // TODO: should be equal to page width + 1 - level margin
+    return [
+      {
+        position: levelPosition,
+        type: "clear",
+      },
+      {
+        leader: "dot",
+        position: pageWidth,
+        type: "right",
+      },
+    ];
+  }
+
+  private buildCachedContentRun(entry: ToCEntry, properties?: ITableOfContentsOptions): Run {
+    return new Run({
+      // TODO: The IndexLink style might always need to be set regardless of the hyperlink property. This needs to be verified.
+      children: [
+        new Text({
+          text: entry.title,
+        }),
+        new Tab(),
+        new Text({
+          text: entry.page?.toString() ?? "",
+        }),
+      ],
+      style: properties?.hyperlink && entry.href !== undefined ? "IndexLink" : undefined,
+    });
+  }
+
+  private buildCachedContentParagraphChild(
+    entry: ToCEntry,
+    properties?: ITableOfContentsOptions,
+  ): Run | InternalHyperlink {
+    const run = this.buildCachedContentRun(entry, properties);
+    if (properties?.hyperlink && entry.href !== undefined) {
+      return new InternalHyperlink({
+        anchor: entry.href,
+        children: [run],
+      });
     }
+
+    return run;
+  }
 }

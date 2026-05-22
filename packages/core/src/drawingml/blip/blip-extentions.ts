@@ -22,19 +22,19 @@ import type { XmlComponent } from "../../xml-components";
  * @internal
  */
 const createSvgBlip = (svgReferenceId: string): XmlComponent =>
-    new BuilderElement({
-        attributes: {
-            asvg: {
-                key: "xmlns:asvg",
-                value: "http://schemas.microsoft.com/office/drawing/2016/SVG/main",
-            },
-            embed: {
-                key: "r:embed",
-                value: `{${svgReferenceId}}`,
-            },
-        },
-        name: "asvg:svgBlip",
-    });
+  new BuilderElement({
+    attributes: {
+      asvg: {
+        key: "xmlns:asvg",
+        value: "http://schemas.microsoft.com/office/drawing/2016/SVG/main",
+      },
+      embed: {
+        key: "r:embed",
+        value: `{${svgReferenceId}}`,
+      },
+    },
+    name: "asvg:svgBlip",
+  });
 
 /**
  * Creates an extension element for SVG support.
@@ -47,16 +47,16 @@ const createSvgBlip = (svgReferenceId: string): XmlComponent =>
  * @internal
  */
 const createExtention = (svgReferenceId: string): XmlComponent =>
-    new BuilderElement({
-        attributes: {
-            uri: {
-                key: "uri",
-                value: "{96DAC541-7B7A-43D3-8B79-37D633B846F1}",
-            },
-        },
-        children: [createSvgBlip(svgReferenceId)],
-        name: "a:ext",
-    });
+  new BuilderElement({
+    attributes: {
+      uri: {
+        key: "uri",
+        value: "{96DAC541-7B7A-43D3-8B79-37D633B846F1}",
+      },
+    },
+    children: [createSvgBlip(svgReferenceId)],
+    name: "a:ext",
+  });
 
 /**
  * Creates an extension list for SVG images.
@@ -77,7 +77,7 @@ const createExtention = (svgReferenceId: string): XmlComponent =>
  * @returns An XML component representing the extension list
  */
 export const createExtentionList = (svgReferenceId: string): XmlComponent =>
-    new BuilderElement({
-        children: [createExtention(svgReferenceId)],
-        name: "a:extLst",
-    });
+  new BuilderElement({
+    children: [createExtention(svgReferenceId)],
+    name: "a:extLst",
+  });

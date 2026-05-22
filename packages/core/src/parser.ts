@@ -5,8 +5,8 @@ import { strFromU8, strToU8 } from "fflate";
 import { unzipToMap, zipToBuffer } from "./archive";
 
 const XML_PARSE_OPTIONS = {
-    nativeTypeAttributes: true,
-    captureSpacesBetweenElements: true,
+  nativeTypeAttributes: true,
+  captureSpacesBetweenElements: true,
 };
 
 /**
@@ -16,96 +16,96 @@ const XML_PARSE_OPTIONS = {
  * for reading and modifying individual parts, then serializing back to a ZIP buffer.
  */
 export class ParsedDocument {
-    private readonly zip: Map<string, Uint8Array>;
-    private readonly modified = new Map<string, Uint8Array>();
-    private readonly wrapperCache = new Map<string, Element>();
+  private readonly zip: Map<string, Uint8Array>;
+  private readonly modified = new Map<string, Uint8Array>();
+  private readonly wrapperCache = new Map<string, Element>();
 
-    public constructor(zip: Map<string, Uint8Array>) {
-        this.zip = zip;
+  public constructor(zip: Map<string, Uint8Array>) {
+    this.zip = zip;
+  }
+
+  /** Read an XML part as an Element tree. */
+  public get(path: string): Element | undefined {
+    // Check modified first
+    const modData = this.modified.get(path);
+    if (modData) {
+      const wrapper = xml2js(strFromU8(modData), XML_PARSE_OPTIONS) as Element;
+      this.wrapperCache.set(path, wrapper);
+      return wrapper.elements?.find((e) => e.type === "element");
     }
 
-    /** Read an XML part as an Element tree. */
-    public get(path: string): Element | undefined {
-        // Check modified first
-        const modData = this.modified.get(path);
-        if (modData) {
-            const wrapper = xml2js(strFromU8(modData), XML_PARSE_OPTIONS) as Element;
-            this.wrapperCache.set(path, wrapper);
-            return wrapper.elements?.find((e) => e.type === "element");
-        }
+    const data = this.zip.get(path);
+    if (data === undefined) return undefined;
 
-        const data = this.zip.get(path);
-        if (data === undefined) return undefined;
+    // Try cache
+    const cached = this.wrapperCache.get(path);
+    if (cached) return cached.elements?.find((e) => e.type === "element");
 
-        // Try cache
-        const cached = this.wrapperCache.get(path);
-        if (cached) return cached.elements?.find((e) => e.type === "element");
+    // Parse and cache
+    const wrapper = xml2js(strFromU8(data), XML_PARSE_OPTIONS) as Element;
+    this.wrapperCache.set(path, wrapper);
+    return wrapper.elements?.find((e) => e.type === "element");
+  }
 
-        // Parse and cache
-        const wrapper = xml2js(strFromU8(data), XML_PARSE_OPTIONS) as Element;
-        this.wrapperCache.set(path, wrapper);
-        return wrapper.elements?.find((e) => e.type === "element");
+  /** Write an XML part (Element → XML string). */
+  public set(path: string, element: Element): void {
+    const wrapper = this.wrapperCache.get(path);
+    const doc: Element = wrapper
+      ? { ...wrapper, elements: [{ ...element, type: "element" as const }] }
+      : { elements: [{ ...element, type: "element" as const }] };
+    const xml = js2xml(doc);
+    this.modified.set(path, strToU8(xml));
+  }
+
+  /** Read raw binary data (images, media, etc.). */
+  public getRaw(path: string): Uint8Array | undefined {
+    return this.modified.get(path) ?? this.zip.get(path);
+  }
+
+  /** Write raw binary data. */
+  public setRaw(path: string, data: Uint8Array): void {
+    this.modified.set(path, data);
+    this.wrapperCache.delete(path);
+  }
+
+  /** Remove a part. Returns true if it existed. */
+  public remove(path: string): boolean {
+    this.wrapperCache.delete(path);
+    return this.modified.delete(path) || this.zip.delete(path);
+  }
+
+  /** Check if a part exists. */
+  public has(path: string): boolean {
+    return this.modified.has(path) || this.zip.has(path);
+  }
+
+  /** List all paths matching an optional prefix. */
+  public keys(prefix?: string): string[] {
+    const all = new Set<string>();
+    for (const key of this.zip.keys()) {
+      if (!prefix || key.startsWith(prefix)) all.add(key);
     }
-
-    /** Write an XML part (Element → XML string). */
-    public set(path: string, element: Element): void {
-        const wrapper = this.wrapperCache.get(path);
-        const doc: Element = wrapper
-            ? { ...wrapper, elements: [{ ...element, type: "element" as const }] }
-            : { elements: [{ ...element, type: "element" as const }] };
-        const xml = js2xml(doc);
-        this.modified.set(path, strToU8(xml));
+    for (const key of this.modified.keys()) {
+      if (!prefix || key.startsWith(prefix)) all.add(key);
     }
+    return [...all];
+  }
 
-    /** Read raw binary data (images, media, etc.). */
-    public getRaw(path: string): Uint8Array | undefined {
-        return this.modified.get(path) ?? this.zip.get(path);
+  /** Serialize back to a ZIP buffer, merging original zip + modifications. */
+  public save(): Uint8Array {
+    const files = new Map<string, Uint8Array | string>();
+    for (const [path, data] of this.zip) {
+      if (!this.modified.has(path)) files.set(path, data);
     }
-
-    /** Write raw binary data. */
-    public setRaw(path: string, data: Uint8Array): void {
-        this.modified.set(path, data);
-        this.wrapperCache.delete(path);
+    for (const [path, data] of this.modified) {
+      files.set(path, data);
     }
-
-    /** Remove a part. Returns true if it existed. */
-    public remove(path: string): boolean {
-        this.wrapperCache.delete(path);
-        return this.modified.delete(path) || this.zip.delete(path);
-    }
-
-    /** Check if a part exists. */
-    public has(path: string): boolean {
-        return this.modified.has(path) || this.zip.has(path);
-    }
-
-    /** List all paths matching an optional prefix. */
-    public keys(prefix?: string): string[] {
-        const all = new Set<string>();
-        for (const key of this.zip.keys()) {
-            if (!prefix || key.startsWith(prefix)) all.add(key);
-        }
-        for (const key of this.modified.keys()) {
-            if (!prefix || key.startsWith(prefix)) all.add(key);
-        }
-        return [...all];
-    }
-
-    /** Serialize back to a ZIP buffer, merging original zip + modifications. */
-    public save(): Uint8Array {
-        const files = new Map<string, Uint8Array | string>();
-        for (const [path, data] of this.zip) {
-            if (!this.modified.has(path)) files.set(path, data);
-        }
-        for (const [path, data] of this.modified) {
-            files.set(path, data);
-        }
-        return zipToBuffer(files);
-    }
+    return zipToBuffer(files);
+  }
 }
 
 /** Parse an OOXML file (.docx, .pptx) into a ParsedDocument. */
 export function parseDocument(data: Uint8Array): ParsedDocument {
-    const zip = unzipToMap(data);
-    return new ParsedDocument(zip);
+  const zip = unzipToMap(data);
+  return new ParsedDocument(zip);
 }

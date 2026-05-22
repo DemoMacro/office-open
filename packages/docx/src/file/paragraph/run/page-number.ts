@@ -19,7 +19,7 @@ const INSTR_TEXT_ATTRS = { _attr: { "xml:space": "preserve" } };
  * @internal
  */
 function buildInstrText(instruction: string): IXmlableObject {
-    return { "w:instrText": [INSTR_TEXT_ATTRS, instruction] };
+  return { "w:instrText": [INSTR_TEXT_ATTRS, instruction] };
 }
 
 /**
@@ -54,46 +54,46 @@ export const buildCurrentSection = () => buildInstrText("SECTION");
  * @deprecated Use buildPage() instead.
  */
 export class Page extends BaseXmlComponent {
-    public constructor() {
-        super("w:instrText");
-    }
-    public prepForXml(): IXmlableObject {
-        return buildPage();
-    }
+  public constructor() {
+    super("w:instrText");
+  }
+  public prepForXml(): IXmlableObject {
+    return buildPage();
+  }
 }
 
 /**
  * @deprecated Use buildNumberOfPages() instead.
  */
 export class NumberOfPages extends BaseXmlComponent {
-    public constructor() {
-        super("w:instrText");
-    }
-    public prepForXml(): IXmlableObject {
-        return buildNumberOfPages();
-    }
+  public constructor() {
+    super("w:instrText");
+  }
+  public prepForXml(): IXmlableObject {
+    return buildNumberOfPages();
+  }
 }
 
 /**
  * @deprecated Use buildNumberOfPagesSection() instead.
  */
 export class NumberOfPagesSection extends BaseXmlComponent {
-    public constructor() {
-        super("w:instrText");
-    }
-    public prepForXml(): IXmlableObject {
-        return buildNumberOfPagesSection();
-    }
+  public constructor() {
+    super("w:instrText");
+  }
+  public prepForXml(): IXmlableObject {
+    return buildNumberOfPagesSection();
+  }
 }
 
 /**
  * @deprecated Use buildCurrentSection() instead.
  */
 export class CurrentSection extends BaseXmlComponent {
-    public constructor() {
-        super("w:instrText");
-    }
-    public prepForXml(): IXmlableObject {
-        return buildCurrentSection();
-    }
+  public constructor() {
+    super("w:instrText");
+  }
+  public prepForXml(): IXmlableObject {
+    return buildCurrentSection();
+  }
 }

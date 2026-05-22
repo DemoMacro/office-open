@@ -20,9 +20,9 @@ import { BuilderElement } from "../../xml-components";
  * @param rad - Soft edge radius in EMUs (required)
  */
 export const createSoftEdgeEffect = (rad: number) =>
-    new BuilderElement<{ readonly rad: number }>({
-        attributes: {
-            rad: { key: "rad", value: rad },
-        },
-        name: "a:softEdge",
-    });
+  new BuilderElement<{ readonly rad: number }>({
+    attributes: {
+      rad: { key: "rad", value: rad },
+    },
+    name: "a:softEdge",
+  });

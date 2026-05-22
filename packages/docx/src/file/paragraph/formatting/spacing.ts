@@ -20,14 +20,14 @@ import { decimalNumber } from "@util/values";
  * @publicApi
  */
 export const LineRuleType = {
-    /** Line spacing is at least the specified value */
-    AT_LEAST: "atLeast",
-    /** Line spacing is exactly the specified value */
-    EXACTLY: "exactly",
-    /** Line spacing is exactly the specified value (alias for EXACTLY) */
-    EXACT: "exact",
-    /** Line spacing is automatically determined based on content */
-    AUTO: "auto",
+  /** Line spacing is at least the specified value */
+  AT_LEAST: "atLeast",
+  /** Line spacing is exactly the specified value */
+  EXACTLY: "exactly",
+  /** Line spacing is exactly the specified value (alias for EXACTLY) */
+  EXACT: "exact",
+  /** Line spacing is automatically determined based on content */
+  AUTO: "auto",
 } as const;
 
 /**
@@ -43,22 +43,22 @@ export const LineRuleType = {
  * @property afterAutoSpacing - Use automatic spacing after the paragraph
  */
 export interface ISpacingProperties {
-    /** Spacing after the paragraph in twips */
-    readonly after?: number;
-    /** Spacing before the paragraph in twips */
-    readonly before?: number;
-    /** Line spacing value in twips (interpretation depends on lineRule) */
-    readonly line?: number;
-    /** How to interpret the line spacing value */
-    readonly lineRule?: (typeof LineRuleType)[keyof typeof LineRuleType];
-    /** Use automatic spacing before the paragraph */
-    readonly beforeAutoSpacing?: boolean;
-    /** Use automatic spacing after the paragraph */
-    readonly afterAutoSpacing?: boolean;
-    /** Spacing before the paragraph in line units */
-    readonly beforeLines?: number;
-    /** Spacing after the paragraph in line units */
-    readonly afterLines?: number;
+  /** Spacing after the paragraph in twips */
+  readonly after?: number;
+  /** Spacing before the paragraph in twips */
+  readonly before?: number;
+  /** Line spacing value in twips (interpretation depends on lineRule) */
+  readonly line?: number;
+  /** How to interpret the line spacing value */
+  readonly lineRule?: (typeof LineRuleType)[keyof typeof LineRuleType];
+  /** Use automatic spacing before the paragraph */
+  readonly beforeAutoSpacing?: boolean;
+  /** Use automatic spacing after the paragraph */
+  readonly afterAutoSpacing?: boolean;
+  /** Spacing before the paragraph in line units */
+  readonly beforeLines?: number;
+  /** Spacing after the paragraph in line units */
+  readonly afterLines?: number;
 }
 
 /**
@@ -96,31 +96,31 @@ export interface ISpacingProperties {
  * ```
  */
 export const createSpacing = ({
-    after,
-    before,
-    line,
-    lineRule,
-    beforeAutoSpacing,
-    afterAutoSpacing,
-    beforeLines,
-    afterLines,
+  after,
+  before,
+  line,
+  lineRule,
+  beforeAutoSpacing,
+  afterAutoSpacing,
+  beforeLines,
+  afterLines,
 }: ISpacingProperties): XmlComponent =>
-    new BuilderElement<ISpacingProperties>({
-        attributes: {
-            after: { key: "w:after", value: after },
-            afterAutoSpacing: { key: "w:afterAutospacing", value: afterAutoSpacing },
-            afterLines: {
-                key: "w:afterLines",
-                value: afterLines === undefined ? undefined : decimalNumber(afterLines),
-            },
-            before: { key: "w:before", value: before },
-            beforeAutoSpacing: { key: "w:beforeAutospacing", value: beforeAutoSpacing },
-            beforeLines: {
-                key: "w:beforeLines",
-                value: beforeLines === undefined ? undefined : decimalNumber(beforeLines),
-            },
-            line: { key: "w:line", value: line },
-            lineRule: { key: "w:lineRule", value: lineRule },
-        },
-        name: "w:spacing",
-    });
+  new BuilderElement<ISpacingProperties>({
+    attributes: {
+      after: { key: "w:after", value: after },
+      afterAutoSpacing: { key: "w:afterAutospacing", value: afterAutoSpacing },
+      afterLines: {
+        key: "w:afterLines",
+        value: afterLines === undefined ? undefined : decimalNumber(afterLines),
+      },
+      before: { key: "w:before", value: before },
+      beforeAutoSpacing: { key: "w:beforeAutospacing", value: beforeAutoSpacing },
+      beforeLines: {
+        key: "w:beforeLines",
+        value: beforeLines === undefined ? undefined : decimalNumber(beforeLines),
+      },
+      line: { key: "w:line", value: line },
+      lineRule: { key: "w:lineRule", value: lineRule },
+    },
+    name: "w:spacing",
+  });

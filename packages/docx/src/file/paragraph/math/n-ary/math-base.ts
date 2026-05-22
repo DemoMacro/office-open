@@ -17,8 +17,8 @@ import type { MathComponent } from "../math-component";
  * Options for creating a math base element.
  */
 export interface MathBaseOptions {
-    /** The content of the base */
-    readonly children: readonly MathComponent[];
+  /** The content of the base */
+  readonly children: readonly MathComponent[];
 }
 
 /**
@@ -41,7 +41,7 @@ export interface MathBaseOptions {
  * ```
  */
 export const createMathBase = ({ children }: MathBaseOptions): XmlComponent =>
-    new BuilderElement({
-        children,
-        name: "m:e",
-    });
+  new BuilderElement({
+    children,
+    name: "m:e",
+  });

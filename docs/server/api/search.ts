@@ -1,10 +1,10 @@
 import { createMCPClient } from "@ai-sdk/mcp";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import {
-    streamText,
-    convertToModelMessages,
-    createUIMessageStream,
-    createUIMessageStreamResponse,
+  streamText,
+  convertToModelMessages,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
 } from "ai";
 import type { UIMessageStreamWriter, ToolCallPart, ToolSet } from "ai";
 import type { H3Event } from "h3";
@@ -12,38 +12,38 @@ import type { H3Event } from "h3";
 const MAX_STEPS = 10;
 
 function createLocalFetch(event: H3Event): typeof fetch {
-    const origin = getRequestURL(event).origin;
+  const origin = getRequestURL(event).origin;
 
-    return (input, init) => {
-        const requestUrl =
-            input instanceof URL
-                ? input
-                : typeof input === "string"
-                  ? new URL(input, origin)
-                  : new URL(input.url);
-        const localPath =
-            requestUrl.origin === origin
-                ? `${requestUrl.pathname}${requestUrl.search}`
-                : requestUrl.toString();
+  return (input, init) => {
+    const requestUrl =
+      input instanceof URL
+        ? input
+        : typeof input === "string"
+          ? new URL(input, origin)
+          : new URL(input.url);
+    const localPath =
+      requestUrl.origin === origin
+        ? `${requestUrl.pathname}${requestUrl.search}`
+        : requestUrl.toString();
 
-        return event.fetch(localPath, init);
-    };
+    return event.fetch(localPath, init);
+  };
 }
 
 function stopWhenResponseComplete({ steps }: { steps: any[] }): boolean {
-    const lastStep = steps.at(-1);
-    if (!lastStep) return false;
+  const lastStep = steps.at(-1);
+  if (!lastStep) return false;
 
-    const hasText = Boolean(lastStep.text && lastStep.text.trim().length > 0);
-    const hasNoToolCalls = !lastStep.toolCalls || lastStep.toolCalls.length === 0;
+  const hasText = Boolean(lastStep.text && lastStep.text.trim().length > 0);
+  const hasNoToolCalls = !lastStep.toolCalls || lastStep.toolCalls.length === 0;
 
-    if (hasText && hasNoToolCalls) return true;
+  if (hasText && hasNoToolCalls) return true;
 
-    return steps.length >= MAX_STEPS;
+  return steps.length >= MAX_STEPS;
 }
 
 function getSystemPrompt(siteName: string) {
-    return `You are the documentation assistant for ${siteName}. Help users navigate and understand the project documentation.
+  return `You are the documentation assistant for ${siteName}. Help users navigate and understand the project documentation.
 
 **Your identity:**
 - You are an assistant helping users with ${siteName} documentation
@@ -81,83 +81,83 @@ function getSystemPrompt(siteName: string) {
 }
 
 export default defineEventHandler(async (event) => {
-    const { messages } = await readBody(event);
-    const config = useRuntimeConfig();
-    const siteConfig = getSiteConfig(event);
+  const { messages } = await readBody(event);
+  const config = useRuntimeConfig();
+  const siteConfig = getSiteConfig(event);
 
-    const apiBaseURL = process.env.OPENAI_COMPATIBLE_BASE_URL;
-    const apiKey = process.env.OPENAI_COMPATIBLE_API_KEY;
-    const modelName = process.env.OPENAI_COMPATIBLE_MODEL;
+  const apiBaseURL = process.env.OPENAI_COMPATIBLE_BASE_URL;
+  const apiKey = process.env.OPENAI_COMPATIBLE_API_KEY;
+  const modelName = process.env.OPENAI_COMPATIBLE_MODEL;
 
-    if (!apiBaseURL || !apiKey || !modelName) {
-        throw createError({ statusCode: 503, statusMessage: "AI assistant is not configured" });
-    }
+  if (!apiBaseURL || !apiKey || !modelName) {
+    throw createError({ statusCode: 503, statusMessage: "AI assistant is not configured" });
+  }
 
-    const siteName = siteConfig.name || "Documentation";
+  const siteName = siteConfig.name || "Documentation";
 
-    const provider = createOpenAICompatible({
-        name: "openai-compatible",
-        baseURL: apiBaseURL,
-        apiKey,
-    });
+  const provider = createOpenAICompatible({
+    name: "openai-compatible",
+    baseURL: apiBaseURL,
+    apiKey,
+  });
 
-    const model = provider(modelName);
+  const model = provider(modelName);
 
-    const mcpServer = config.assistant.mcpServer;
-    const isExternalUrl = mcpServer.startsWith("http://") || mcpServer.startsWith("https://");
-    const appBaseURL = config.app?.baseURL?.replace(/\/$/, "") || "";
+  const mcpServer = config.assistant.mcpServer;
+  const isExternalUrl = mcpServer.startsWith("http://") || mcpServer.startsWith("https://");
+  const appBaseURL = config.app?.baseURL?.replace(/\/$/, "") || "";
 
-    let transport: Parameters<typeof createMCPClient>[0]["transport"];
-    if (isExternalUrl) {
-        transport = { type: "http", url: mcpServer };
-    } else if (import.meta.dev) {
-        transport = { type: "http", url: `http://localhost:3000${appBaseURL}${mcpServer}` };
-    } else {
-        transport = {
-            type: "http",
-            url: `${getRequestURL(event).origin}${appBaseURL}${mcpServer}`,
-            fetch: createLocalFetch(event),
-        };
-    }
+  let transport: Parameters<typeof createMCPClient>[0]["transport"];
+  if (isExternalUrl) {
+    transport = { type: "http", url: mcpServer };
+  } else if (import.meta.dev) {
+    transport = { type: "http", url: `http://localhost:3000${appBaseURL}${mcpServer}` };
+  } else {
+    transport = {
+      type: "http",
+      url: `${getRequestURL(event).origin}${appBaseURL}${mcpServer}`,
+      fetch: createLocalFetch(event),
+    };
+  }
 
-    const httpClient = await createMCPClient({ transport });
-    const mcpTools = await httpClient.tools();
+  const httpClient = await createMCPClient({ transport });
+  const mcpTools = await httpClient.tools();
 
-    const stream = createUIMessageStream({
-        execute: async ({ writer }: { writer: UIMessageStreamWriter }) => {
-            const modelMessages = await convertToModelMessages(messages);
-            const result = streamText({
-                model,
-                maxOutputTokens: 4000,
-                maxRetries: 2,
-                stopWhen: stopWhenResponseComplete,
-                system: getSystemPrompt(siteName),
-                messages: modelMessages,
-                tools: mcpTools as ToolSet,
-                onStepFinish: ({ toolCalls }: { toolCalls: ToolCallPart[] }) => {
-                    if (toolCalls.length === 0) return;
-                    writer.write({
-                        id: toolCalls[0]?.toolCallId,
-                        type: "data-tool-calls",
-                        data: {
-                            tools: toolCalls.map((tc: ToolCallPart) => {
-                                const args = "args" in tc ? tc.args : "input" in tc ? tc.input : {};
-                                return {
-                                    toolName: tc.toolName,
-                                    toolCallId: tc.toolCallId,
-                                    args,
-                                };
-                            }),
-                        },
-                    });
-                },
-            });
-            writer.merge(result.toUIMessageStream());
+  const stream = createUIMessageStream({
+    execute: async ({ writer }: { writer: UIMessageStreamWriter }) => {
+      const modelMessages = await convertToModelMessages(messages);
+      const result = streamText({
+        model,
+        maxOutputTokens: 4000,
+        maxRetries: 2,
+        stopWhen: stopWhenResponseComplete,
+        system: getSystemPrompt(siteName),
+        messages: modelMessages,
+        tools: mcpTools as ToolSet,
+        onStepFinish: ({ toolCalls }: { toolCalls: ToolCallPart[] }) => {
+          if (toolCalls.length === 0) return;
+          writer.write({
+            id: toolCalls[0]?.toolCallId,
+            type: "data-tool-calls",
+            data: {
+              tools: toolCalls.map((tc: ToolCallPart) => {
+                const args = "args" in tc ? tc.args : "input" in tc ? tc.input : {};
+                return {
+                  toolName: tc.toolName,
+                  toolCallId: tc.toolCallId,
+                  args,
+                };
+              }),
+            },
+          });
         },
-        onFinish: async () => {
-            await httpClient.close();
-        },
-    });
+      });
+      writer.merge(result.toUIMessageStream());
+    },
+    onFinish: async () => {
+      await httpClient.close();
+    },
+  });
 
-    return createUIMessageStreamResponse({ stream });
+  return createUIMessageStreamResponse({ stream });
 });

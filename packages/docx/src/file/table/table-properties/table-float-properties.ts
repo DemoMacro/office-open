@@ -19,32 +19,32 @@ import type { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
  * Specifies the base object from which positioning is determined.
  */
 export const TableAnchorType = {
-    MARGIN: "margin",
-    PAGE: "page",
-    TEXT: "text",
+  MARGIN: "margin",
+  PAGE: "page",
+  TEXT: "text",
 } as const;
 
 /**
  * Relative horizontal position values for floating tables.
  */
 export const RelativeHorizontalPosition = {
-    CENTER: "center",
-    INSIDE: "inside",
-    LEFT: "left",
-    OUTSIDE: "outside",
-    RIGHT: "right",
+  CENTER: "center",
+  INSIDE: "inside",
+  LEFT: "left",
+  OUTSIDE: "outside",
+  RIGHT: "right",
 } as const;
 
 /**
  * Relative vertical position values for floating tables.
  */
 export const RelativeVerticalPosition = {
-    BOTTOM: "bottom",
-    CENTER: "center",
-    INLINE: "inline",
-    INSIDE: "inside",
-    OUTSIDE: "outside",
-    TOP: "top",
+  BOTTOM: "bottom",
+  CENTER: "center",
+  INLINE: "inline",
+  INSIDE: "inside",
+  OUTSIDE: "outside",
+  TOP: "top",
 } as const;
 
 /**
@@ -61,99 +61,99 @@ export const RelativeVerticalPosition = {
  * ```
  */
 export const OverlapType = {
-    NEVER: "never",
-    OVERLAP: "overlap",
+  NEVER: "never",
+  OVERLAP: "overlap",
 } as const;
 
 export interface ITableFloatOptions {
-    /* CSpell:disable */
-    /**
-     * Specifies the horizontal anchor or the base object from which the horizontal positioning in the
-     * tblpX or tblpXSpec attribute should be determined.
-     * margin - relative to the vertical edge of the text margin before any text runs (left edge for left-to-right paragraphs)
-     * page - relative to the vertical edge of the page before any text runs (left edge for left-to-right paragraphs)
-     * text - relative to the vertical edge of the text margin for the column in which the anchor paragraph is located
-     * If omitted, the value is assumed to be page.
-     */
-    /* CSpell:enable */
-    readonly horizontalAnchor?: (typeof TableAnchorType)[keyof typeof TableAnchorType];
+  /* CSpell:disable */
+  /**
+   * Specifies the horizontal anchor or the base object from which the horizontal positioning in the
+   * tblpX or tblpXSpec attribute should be determined.
+   * margin - relative to the vertical edge of the text margin before any text runs (left edge for left-to-right paragraphs)
+   * page - relative to the vertical edge of the page before any text runs (left edge for left-to-right paragraphs)
+   * text - relative to the vertical edge of the text margin for the column in which the anchor paragraph is located
+   * If omitted, the value is assumed to be page.
+   */
+  /* CSpell:enable */
+  readonly horizontalAnchor?: (typeof TableAnchorType)[keyof typeof TableAnchorType];
 
-    /**
-     * Specifies an absolute horizontal position for the table, relative to the horizontalAnchor.
-     * The value is in twentieths of a point. Note that the value can be negative, in which case the
-     * table is positioned before the anchor object in the direction of horizontal text flow.
-     * If relativeHorizontalPosition is also specified, then the absoluteHorizontalPosition attribute is ignored.
-     * If the attribute is omitted, the value is assumed to be zero.
-     */
-    readonly absoluteHorizontalPosition?: number | UniversalMeasure;
+  /**
+   * Specifies an absolute horizontal position for the table, relative to the horizontalAnchor.
+   * The value is in twentieths of a point. Note that the value can be negative, in which case the
+   * table is positioned before the anchor object in the direction of horizontal text flow.
+   * If relativeHorizontalPosition is also specified, then the absoluteHorizontalPosition attribute is ignored.
+   * If the attribute is omitted, the value is assumed to be zero.
+   */
+  readonly absoluteHorizontalPosition?: number | UniversalMeasure;
 
-    /**
-     * Specifies a relative horizontal position for the table, relative to the horizontalAnchor attribute.
-     * This will supersede the absoluteHorizontalPosition attribute.
-     * Possible values are:
-     * center - the table should be horizontally centered with respect to the anchor
-     * inside - the table should be inside of the anchor
-     * left - the table should be left aligned with respect to the anchor
-     * outside - the table should be outside of the anchor
-     * right - the table should be right aligned with respect to the anchor
-     */
-    readonly relativeHorizontalPosition?: (typeof RelativeHorizontalPosition)[keyof typeof RelativeHorizontalPosition];
+  /**
+   * Specifies a relative horizontal position for the table, relative to the horizontalAnchor attribute.
+   * This will supersede the absoluteHorizontalPosition attribute.
+   * Possible values are:
+   * center - the table should be horizontally centered with respect to the anchor
+   * inside - the table should be inside of the anchor
+   * left - the table should be left aligned with respect to the anchor
+   * outside - the table should be outside of the anchor
+   * right - the table should be right aligned with respect to the anchor
+   */
+  readonly relativeHorizontalPosition?: (typeof RelativeHorizontalPosition)[keyof typeof RelativeHorizontalPosition];
 
-    /**
-     * Specifies the vertical anchor or the base object from which the vertical positioning
-     * in the absoluteVerticalPosition attribute should be determined. Possible values are:
-     * margin - relative to the horizontal edge of the text margin before any text runs (top edge for top-to-bottom paragraphs)
-     * page - relative to the horizontal edge of the page before any text runs (top edge for top-to-bottom paragraphs)
-     * text - relative to the horizontal edge of the text margin for the column in which the anchor paragraph is located
-     * If omitted, the value is assumed to be page.
-     */
-    readonly verticalAnchor?: (typeof TableAnchorType)[keyof typeof TableAnchorType];
+  /**
+   * Specifies the vertical anchor or the base object from which the vertical positioning
+   * in the absoluteVerticalPosition attribute should be determined. Possible values are:
+   * margin - relative to the horizontal edge of the text margin before any text runs (top edge for top-to-bottom paragraphs)
+   * page - relative to the horizontal edge of the page before any text runs (top edge for top-to-bottom paragraphs)
+   * text - relative to the horizontal edge of the text margin for the column in which the anchor paragraph is located
+   * If omitted, the value is assumed to be page.
+   */
+  readonly verticalAnchor?: (typeof TableAnchorType)[keyof typeof TableAnchorType];
 
-    /**
-     * Specifies an absolute vertical position for the table, relative to the verticalAnchor anchor.
-     * The value is in twentieths of a point. Note that the value can be negative, in which case the table is
-     * positioned before the anchor object in the direction of vertical text flow.
-     * If relativeVerticalPosition is also specified, then the absoluteVerticalPosition attribute is ignored.
-     * If the attribute is omitted, the value is assumed to be zero.
-     */
-    readonly absoluteVerticalPosition?: number | UniversalMeasure;
+  /**
+   * Specifies an absolute vertical position for the table, relative to the verticalAnchor anchor.
+   * The value is in twentieths of a point. Note that the value can be negative, in which case the table is
+   * positioned before the anchor object in the direction of vertical text flow.
+   * If relativeVerticalPosition is also specified, then the absoluteVerticalPosition attribute is ignored.
+   * If the attribute is omitted, the value is assumed to be zero.
+   */
+  readonly absoluteVerticalPosition?: number | UniversalMeasure;
 
-    /**
-     * Specifies a relative vertical position for the table, relative to the verticalAnchor attribute.
-     * This will supersede the absoluteVerticalPosition attribute. Possible values are:
-     * center - the table should be vertically centered with respect to the anchor
-     * inside - the table should be vertically aligned to the edge of the anchor and inside the anchor
-     * bottom - the table should be vertically aligned to the bottom edge of the anchor
-     * outside - the table should be vertically aligned to the edge of the anchor and outside the anchor
-     * inline - the table should be vertically aligned in line with the surrounding text (so as to not allow any text wrapping around it)
-     * top - the table should be vertically aligned to the top edge of the anchor
-     */
-    readonly relativeVerticalPosition?: (typeof RelativeVerticalPosition)[keyof typeof RelativeVerticalPosition];
+  /**
+   * Specifies a relative vertical position for the table, relative to the verticalAnchor attribute.
+   * This will supersede the absoluteVerticalPosition attribute. Possible values are:
+   * center - the table should be vertically centered with respect to the anchor
+   * inside - the table should be vertically aligned to the edge of the anchor and inside the anchor
+   * bottom - the table should be vertically aligned to the bottom edge of the anchor
+   * outside - the table should be vertically aligned to the edge of the anchor and outside the anchor
+   * inline - the table should be vertically aligned in line with the surrounding text (so as to not allow any text wrapping around it)
+   * top - the table should be vertically aligned to the top edge of the anchor
+   */
+  readonly relativeVerticalPosition?: (typeof RelativeVerticalPosition)[keyof typeof RelativeVerticalPosition];
 
-    /**
-     * Specifies the minimum distance to be maintained between the table and the top of text in the paragraph
-     * below the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
-     */
-    readonly bottomFromText?: number | PositiveUniversalMeasure;
+  /**
+   * Specifies the minimum distance to be maintained between the table and the top of text in the paragraph
+   * below the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
+   */
+  readonly bottomFromText?: number | PositiveUniversalMeasure;
 
-    /**
-     * Specifies the minimum distance to be maintained between the table and the bottom edge of text in the paragraph
-     * above the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
-     */
-    readonly topFromText?: number | PositiveUniversalMeasure;
+  /**
+   * Specifies the minimum distance to be maintained between the table and the bottom edge of text in the paragraph
+   * above the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
+   */
+  readonly topFromText?: number | PositiveUniversalMeasure;
 
-    /**
-     * Specifies the minimum distance to be maintained between the table and the edge of text in the paragraph
-     * to the left of the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
-     */
-    readonly leftFromText?: number | PositiveUniversalMeasure;
+  /**
+   * Specifies the minimum distance to be maintained between the table and the edge of text in the paragraph
+   * to the left of the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
+   */
+  readonly leftFromText?: number | PositiveUniversalMeasure;
 
-    /**
-     * Specifies the minimum distance to be maintained between the table and the edge of text in the paragraph
-     * to the right of the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
-     */
-    readonly rightFromText?: number | PositiveUniversalMeasure;
-    readonly overlap?: (typeof OverlapType)[keyof typeof OverlapType];
+  /**
+   * Specifies the minimum distance to be maintained between the table and the edge of text in the paragraph
+   * to the right of the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
+   */
+  readonly rightFromText?: number | PositiveUniversalMeasure;
+  readonly overlap?: (typeof OverlapType)[keyof typeof OverlapType];
 }
 
 /**
@@ -162,14 +162,14 @@ export interface ITableFloatOptions {
  * @internal
  */
 const createOverlapElement = (
-    overlap: (typeof OverlapType)[keyof typeof OverlapType],
+  overlap: (typeof OverlapType)[keyof typeof OverlapType],
 ): XmlComponent =>
-    new BuilderElement<{ readonly val: (typeof OverlapType)[keyof typeof OverlapType] }>({
-        attributes: {
-            val: { key: "w:val", value: overlap },
-        },
-        name: "w:tblOverlap",
-    });
+  new BuilderElement<{ readonly val: (typeof OverlapType)[keyof typeof OverlapType] }>({
+    attributes: {
+      val: { key: "w:val", value: overlap },
+    },
+    name: "w:tblOverlap",
+  });
 
 /**
  * Creates floating table properties in a WordprocessingML document.
@@ -206,69 +206,69 @@ const createOverlapElement = (
  * ```
  */
 export const createTableFloatProperties = ({
-    horizontalAnchor,
-    verticalAnchor,
-    absoluteHorizontalPosition,
-    relativeHorizontalPosition,
-    absoluteVerticalPosition,
-    relativeVerticalPosition,
-    bottomFromText,
-    topFromText,
-    leftFromText,
-    rightFromText,
+  horizontalAnchor,
+  verticalAnchor,
+  absoluteHorizontalPosition,
+  relativeHorizontalPosition,
+  absoluteVerticalPosition,
+  relativeVerticalPosition,
+  bottomFromText,
+  topFromText,
+  leftFromText,
+  rightFromText,
 }: ITableFloatOptions): XmlComponent =>
-    new BuilderElement<Omit<ITableFloatOptions, "overlap">>({
-        attributes: {
-            absoluteHorizontalPosition: {
-                key: "w:tblpX",
-                value:
-                    absoluteHorizontalPosition === undefined
-                        ? undefined
-                        : signedTwipsMeasureValue(absoluteHorizontalPosition),
-            },
-            absoluteVerticalPosition: {
-                key: "w:tblpY",
-                value:
-                    absoluteVerticalPosition === undefined
-                        ? undefined
-                        : signedTwipsMeasureValue(absoluteVerticalPosition),
-            },
-            bottomFromText: {
-                key: "w:bottomFromText",
-                value: bottomFromText === undefined ? undefined : twipsMeasureValue(bottomFromText),
-            },
-            horizontalAnchor: {
-                key: "w:horzAnchor",
-                value: horizontalAnchor,
-            },
-            leftFromText: {
-                key: "w:leftFromText",
-                value: leftFromText === undefined ? undefined : twipsMeasureValue(leftFromText),
-            },
-            relativeHorizontalPosition: {
-                key: "w:tblpXSpec",
-                value: relativeHorizontalPosition,
-            },
-            relativeVerticalPosition: {
-                key: "w:tblpYSpec",
-                value: relativeVerticalPosition,
-            },
-            rightFromText: {
-                key: "w:rightFromText",
-                value: rightFromText === undefined ? undefined : twipsMeasureValue(rightFromText),
-            },
-            topFromText: {
-                key: "w:topFromText",
-                value: topFromText === undefined ? undefined : twipsMeasureValue(topFromText),
-            },
-            verticalAnchor: {
-                key: "w:vertAnchor",
-                value: verticalAnchor,
-            },
-        },
-        name: "w:tblpPr",
-    });
+  new BuilderElement<Omit<ITableFloatOptions, "overlap">>({
+    attributes: {
+      absoluteHorizontalPosition: {
+        key: "w:tblpX",
+        value:
+          absoluteHorizontalPosition === undefined
+            ? undefined
+            : signedTwipsMeasureValue(absoluteHorizontalPosition),
+      },
+      absoluteVerticalPosition: {
+        key: "w:tblpY",
+        value:
+          absoluteVerticalPosition === undefined
+            ? undefined
+            : signedTwipsMeasureValue(absoluteVerticalPosition),
+      },
+      bottomFromText: {
+        key: "w:bottomFromText",
+        value: bottomFromText === undefined ? undefined : twipsMeasureValue(bottomFromText),
+      },
+      horizontalAnchor: {
+        key: "w:horzAnchor",
+        value: horizontalAnchor,
+      },
+      leftFromText: {
+        key: "w:leftFromText",
+        value: leftFromText === undefined ? undefined : twipsMeasureValue(leftFromText),
+      },
+      relativeHorizontalPosition: {
+        key: "w:tblpXSpec",
+        value: relativeHorizontalPosition,
+      },
+      relativeVerticalPosition: {
+        key: "w:tblpYSpec",
+        value: relativeVerticalPosition,
+      },
+      rightFromText: {
+        key: "w:rightFromText",
+        value: rightFromText === undefined ? undefined : twipsMeasureValue(rightFromText),
+      },
+      topFromText: {
+        key: "w:topFromText",
+        value: topFromText === undefined ? undefined : twipsMeasureValue(topFromText),
+      },
+      verticalAnchor: {
+        key: "w:vertAnchor",
+        value: verticalAnchor,
+      },
+    },
+    name: "w:tblpPr",
+  });
 
 export const createTableOverlap = (
-    overlap: (typeof OverlapType)[keyof typeof OverlapType],
+  overlap: (typeof OverlapType)[keyof typeof OverlapType],
 ): XmlComponent => createOverlapElement(overlap);

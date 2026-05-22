@@ -9,431 +9,431 @@ import { CellSpacingType } from "../table-cell-spacing";
 import { TableRow } from "./table-row";
 
 describe("TableRow", () => {
-    describe("#constructor", () => {
-        it("should create with no cells", () => {
-            const tableRow = new TableRow({
-                children: [],
-            });
-            const tree = new Formatter().format(tableRow);
-            expect(tree).to.deep.equal({
-                "w:tr": EMPTY_OBJECT,
-            });
-        });
-
-        it("should create with one cell", () => {
-            const tableRow = new TableRow({
-                children: [
-                    new TableCell({
-                        children: [],
-                    }),
-                ],
-            });
-            const tree = new Formatter().format(tableRow);
-            expect(tree).to.deep.equal({
-                "w:tr": [
-                    {
-                        "w:tc": [
-                            {
-                                "w:p": EMPTY_OBJECT,
-                            },
-                        ],
-                    },
-                ],
-            });
-        });
-
-        it("should create with cant split", () => {
-            const tableRow = new TableRow({
-                cantSplit: true,
-                children: [],
-            });
-            const tree = new Formatter().format(tableRow);
-            expect(tree).to.deep.equal({
-                "w:tr": [
-                    {
-                        "w:trPr": [
-                            {
-                                "w:cantSplit": {},
-                            },
-                        ],
-                    },
-                ],
-            });
-        });
-
-        it("should create with table header", () => {
-            const tableRow = new TableRow({
-                children: [],
-                tableHeader: true,
-            });
-            const tree = new Formatter().format(tableRow);
-            expect(tree).to.deep.equal({
-                "w:tr": [
-                    {
-                        "w:trPr": [
-                            {
-                                "w:tblHeader": {},
-                            },
-                        ],
-                    },
-                ],
-            });
-        });
-
-        it("should create with inserted revision", () => {
-            const tableRow = new TableRow({
-                children: [],
-                insertion: {
-                    author: "Firstname Lastname",
-                    date: "123",
-                    id: 1,
-                },
-            });
-            const tree = new Formatter().format(tableRow);
-            expect(tree).to.deep.equal({
-                "w:tr": [
-                    {
-                        "w:trPr": [
-                            {
-                                "w:ins": {
-                                    _attr: {
-                                        "w:author": "Firstname Lastname",
-                                        "w:date": "123",
-                                        "w:id": 1,
-                                    },
-                                },
-                            },
-                        ],
-                    },
-                ],
-            });
-        });
-
-        it("should create with deleted revision", () => {
-            const tableRow = new TableRow({
-                children: [],
-                deletion: {
-                    author: "Firstname Lastname",
-                    date: "123",
-                    id: 1,
-                },
-            });
-            const tree = new Formatter().format(tableRow);
-            expect(tree).to.deep.equal({
-                "w:tr": [
-                    {
-                        "w:trPr": [
-                            {
-                                "w:del": {
-                                    _attr: {
-                                        "w:author": "Firstname Lastname",
-                                        "w:date": "123",
-                                        "w:id": 1,
-                                    },
-                                },
-                            },
-                        ],
-                    },
-                ],
-            });
-        });
-
-        it("should create with properties revision", () => {
-            const run = new TableRow({
-                cantSplit: false,
-                cellSpacing: {
-                    type: CellSpacingType.DXA,
-                    value: 100,
-                },
-                children: [],
-                height: {
-                    rule: HeightRule.EXACT,
-                    value: 200,
-                },
-                revision: {
-                    author: "Firstname Lastname",
-                    cantSplit: true,
-                    cellSpacing: {
-                        type: CellSpacingType.DXA,
-                        value: 60,
-                    },
-                    date: "123",
-                    height: {
-                        rule: HeightRule.EXACT,
-                        value: 100,
-                    },
-                    id: 1,
-                    tableHeader: true,
-                },
-                tableHeader: false,
-            });
-            const tree = new Formatter().format(run);
-            expect(tree).to.deep.equal({
-                "w:tr": [
-                    {
-                        "w:trPr": [
-                            {
-                                "w:cantSplit": {
-                                    _attr: {
-                                        "w:val": false,
-                                    },
-                                },
-                            },
-                            {
-                                "w:tblHeader": {
-                                    _attr: {
-                                        "w:val": false,
-                                    },
-                                },
-                            },
-                            {
-                                "w:trHeight": {
-                                    _attr: {
-                                        "w:hRule": "exact",
-                                        "w:val": 200,
-                                    },
-                                },
-                            },
-                            {
-                                "w:tblCellSpacing": {
-                                    _attr: {
-                                        "w:type": "dxa",
-                                        "w:w": 100,
-                                    },
-                                },
-                            },
-                            {
-                                "w:trPrChange": [
-                                    {
-                                        _attr: {
-                                            "w:author": "Firstname Lastname",
-                                            "w:date": "123",
-                                            "w:id": 1,
-                                        },
-                                    },
-                                    {
-                                        "w:trPr": [
-                                            {
-                                                "w:cantSplit": {},
-                                            },
-                                            {
-                                                "w:tblHeader": {},
-                                            },
-                                            {
-                                                "w:trHeight": {
-                                                    _attr: {
-                                                        "w:hRule": "exact",
-                                                        "w:val": 100,
-                                                    },
-                                                },
-                                            },
-                                            {
-                                                "w:tblCellSpacing": {
-                                                    _attr: {
-                                                        "w:type": "dxa",
-                                                        "w:w": 60,
-                                                    },
-                                                },
-                                            },
-                                        ],
-                                    },
-                                ],
-                            },
-                        ],
-                    },
-                ],
-            });
-        });
-
-        it("should set row height", () => {
-            const tableRow = new TableRow({
-                children: [],
-                height: {
-                    rule: HeightRule.EXACT,
-                    value: 100,
-                },
-            });
-            const tree = new Formatter().format(tableRow);
-            expect(tree).to.deep.equal({
-                "w:tr": [
-                    {
-                        "w:trPr": [
-                            {
-                                "w:trHeight": {
-                                    _attr: {
-                                        "w:hRule": "exact",
-                                        "w:val": 100,
-                                    },
-                                },
-                            },
-                        ],
-                    },
-                ],
-            });
-        });
+  describe("#constructor", () => {
+    it("should create with no cells", () => {
+      const tableRow = new TableRow({
+        children: [],
+      });
+      const tree = new Formatter().format(tableRow);
+      expect(tree).to.deep.equal({
+        "w:tr": EMPTY_OBJECT,
+      });
     });
 
-    describe("#addCellToColumnIndex", () => {
-        it("should add cell to correct index with no initial properties", () => {
-            const tableRow = new TableRow({
-                children: [
-                    new TableCell({
-                        children: [new Paragraph("test")],
-                    }),
-                ],
-                tableHeader: true,
-            });
-
-            tableRow.addCellToColumnIndex(
-                new TableCell({
-                    children: [],
-                }),
-                0,
-            );
-
-            const tree = new Formatter().format(tableRow);
-
-            expect(tree).to.deep.equal({
-                "w:tr": [
-                    {
-                        "w:trPr": [
-                            {
-                                "w:tblHeader": {},
-                            },
-                        ],
-                    },
-                    {
-                        "w:tc": [
-                            {
-                                "w:p": {},
-                            },
-                        ],
-                    },
-                    {
-                        "w:tc": [
-                            {
-                                "w:p": [
-                                    {
-                                        "w:r": [
-                                            {
-                                                "w:t": [
-                                                    {
-                                                        _attr: {
-                                                            "xml:space": "preserve",
-                                                        },
-                                                    },
-                                                    "test",
-                                                ],
-                                            },
-                                        ],
-                                    },
-                                ],
-                            },
-                        ],
-                    },
-                ],
-            });
-        });
+    it("should create with one cell", () => {
+      const tableRow = new TableRow({
+        children: [
+          new TableCell({
+            children: [],
+          }),
+        ],
+      });
+      const tree = new Formatter().format(tableRow);
+      expect(tree).to.deep.equal({
+        "w:tr": [
+          {
+            "w:tc": [
+              {
+                "w:p": EMPTY_OBJECT,
+              },
+            ],
+          },
+        ],
+      });
     });
 
-    describe("#rootIndexToColumnIndex", () => {
-        it("should get the correct virtual column index by root index", () => {
-            const tableRow = new TableRow({
-                children: [
-                    new TableCell({
-                        children: [new Paragraph("test")],
-                        columnSpan: 3,
-                    }),
-                    new TableCell({
-                        children: [new Paragraph("test")],
-                    }),
-                    new TableCell({
-                        children: [new Paragraph("test")],
-                    }),
-                    new TableCell({
-                        children: [new Paragraph("test")],
-                        columnSpan: 3,
-                    }),
-                ],
-            });
-
-            expect(tableRow.rootIndexToColumnIndex(1)).to.equal(0);
-            expect(tableRow.rootIndexToColumnIndex(2)).to.equal(3);
-            expect(tableRow.rootIndexToColumnIndex(3)).to.equal(4);
-            expect(tableRow.rootIndexToColumnIndex(4)).to.equal(5);
-
-            expect(() => tableRow.rootIndexToColumnIndex(0)).to.throw(
-                `cell 'rootIndex' should between 1 to 4`,
-            );
-            expect(() => tableRow.rootIndexToColumnIndex(5)).to.throw(
-                `cell 'rootIndex' should between 1 to 4`,
-            );
-        });
+    it("should create with cant split", () => {
+      const tableRow = new TableRow({
+        cantSplit: true,
+        children: [],
+      });
+      const tree = new Formatter().format(tableRow);
+      expect(tree).to.deep.equal({
+        "w:tr": [
+          {
+            "w:trPr": [
+              {
+                "w:cantSplit": {},
+              },
+            ],
+          },
+        ],
+      });
     });
 
-    describe("#columnIndexToRootIndex", () => {
-        it("should get the correct root index by virtual column index", () => {
-            const tableRow = new TableRow({
-                children: [
-                    new TableCell({
-                        children: [new Paragraph("test")],
-                        columnSpan: 3,
-                    }),
-                    new TableCell({
-                        children: [new Paragraph("test")],
-                    }),
-                    new TableCell({
-                        children: [new Paragraph("test")],
-                    }),
-                    new TableCell({
-                        children: [new Paragraph("test")],
-                        columnSpan: 3,
-                    }),
-                ],
-            });
-
-            expect(tableRow.columnIndexToRootIndex(0)).to.equal(1);
-            expect(tableRow.columnIndexToRootIndex(1)).to.equal(1);
-            expect(tableRow.columnIndexToRootIndex(2)).to.equal(1);
-
-            expect(tableRow.columnIndexToRootIndex(3)).to.equal(2);
-            expect(tableRow.columnIndexToRootIndex(4)).to.equal(3);
-
-            expect(tableRow.columnIndexToRootIndex(5)).to.equal(4);
-            expect(tableRow.columnIndexToRootIndex(6)).to.equal(4);
-            expect(tableRow.columnIndexToRootIndex(7)).to.equal(4);
-
-            expect(() => tableRow.columnIndexToRootIndex(-1)).to.throw(
-                `cell 'columnIndex' should not less than zero`,
-            );
-            expect(() => tableRow.columnIndexToRootIndex(8)).to.throw(
-                `cell 'columnIndex' should not great than 7`,
-            );
-        });
-
-        it("should allow end new cell index", () => {
-            const tableRow = new TableRow({
-                children: [
-                    new TableCell({
-                        children: [new Paragraph("test")],
-                        columnSpan: 3,
-                    }),
-                    new TableCell({
-                        children: [new Paragraph("test")],
-                    }),
-                    new TableCell({
-                        children: [new Paragraph("test")],
-                    }),
-                    new TableCell({
-                        children: [new Paragraph("test")],
-                        columnSpan: 3,
-                    }),
-                ],
-            });
-
-            expect(tableRow.columnIndexToRootIndex(8, true)).to.equal(5);
-            // For column 10, just place the new cell at the end of row
-            expect(tableRow.columnIndexToRootIndex(10, true)).to.equal(5);
-        });
+    it("should create with table header", () => {
+      const tableRow = new TableRow({
+        children: [],
+        tableHeader: true,
+      });
+      const tree = new Formatter().format(tableRow);
+      expect(tree).to.deep.equal({
+        "w:tr": [
+          {
+            "w:trPr": [
+              {
+                "w:tblHeader": {},
+              },
+            ],
+          },
+        ],
+      });
     });
+
+    it("should create with inserted revision", () => {
+      const tableRow = new TableRow({
+        children: [],
+        insertion: {
+          author: "Firstname Lastname",
+          date: "123",
+          id: 1,
+        },
+      });
+      const tree = new Formatter().format(tableRow);
+      expect(tree).to.deep.equal({
+        "w:tr": [
+          {
+            "w:trPr": [
+              {
+                "w:ins": {
+                  _attr: {
+                    "w:author": "Firstname Lastname",
+                    "w:date": "123",
+                    "w:id": 1,
+                  },
+                },
+              },
+            ],
+          },
+        ],
+      });
+    });
+
+    it("should create with deleted revision", () => {
+      const tableRow = new TableRow({
+        children: [],
+        deletion: {
+          author: "Firstname Lastname",
+          date: "123",
+          id: 1,
+        },
+      });
+      const tree = new Formatter().format(tableRow);
+      expect(tree).to.deep.equal({
+        "w:tr": [
+          {
+            "w:trPr": [
+              {
+                "w:del": {
+                  _attr: {
+                    "w:author": "Firstname Lastname",
+                    "w:date": "123",
+                    "w:id": 1,
+                  },
+                },
+              },
+            ],
+          },
+        ],
+      });
+    });
+
+    it("should create with properties revision", () => {
+      const run = new TableRow({
+        cantSplit: false,
+        cellSpacing: {
+          type: CellSpacingType.DXA,
+          value: 100,
+        },
+        children: [],
+        height: {
+          rule: HeightRule.EXACT,
+          value: 200,
+        },
+        revision: {
+          author: "Firstname Lastname",
+          cantSplit: true,
+          cellSpacing: {
+            type: CellSpacingType.DXA,
+            value: 60,
+          },
+          date: "123",
+          height: {
+            rule: HeightRule.EXACT,
+            value: 100,
+          },
+          id: 1,
+          tableHeader: true,
+        },
+        tableHeader: false,
+      });
+      const tree = new Formatter().format(run);
+      expect(tree).to.deep.equal({
+        "w:tr": [
+          {
+            "w:trPr": [
+              {
+                "w:cantSplit": {
+                  _attr: {
+                    "w:val": false,
+                  },
+                },
+              },
+              {
+                "w:tblHeader": {
+                  _attr: {
+                    "w:val": false,
+                  },
+                },
+              },
+              {
+                "w:trHeight": {
+                  _attr: {
+                    "w:hRule": "exact",
+                    "w:val": 200,
+                  },
+                },
+              },
+              {
+                "w:tblCellSpacing": {
+                  _attr: {
+                    "w:type": "dxa",
+                    "w:w": 100,
+                  },
+                },
+              },
+              {
+                "w:trPrChange": [
+                  {
+                    _attr: {
+                      "w:author": "Firstname Lastname",
+                      "w:date": "123",
+                      "w:id": 1,
+                    },
+                  },
+                  {
+                    "w:trPr": [
+                      {
+                        "w:cantSplit": {},
+                      },
+                      {
+                        "w:tblHeader": {},
+                      },
+                      {
+                        "w:trHeight": {
+                          _attr: {
+                            "w:hRule": "exact",
+                            "w:val": 100,
+                          },
+                        },
+                      },
+                      {
+                        "w:tblCellSpacing": {
+                          _attr: {
+                            "w:type": "dxa",
+                            "w:w": 60,
+                          },
+                        },
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+    });
+
+    it("should set row height", () => {
+      const tableRow = new TableRow({
+        children: [],
+        height: {
+          rule: HeightRule.EXACT,
+          value: 100,
+        },
+      });
+      const tree = new Formatter().format(tableRow);
+      expect(tree).to.deep.equal({
+        "w:tr": [
+          {
+            "w:trPr": [
+              {
+                "w:trHeight": {
+                  _attr: {
+                    "w:hRule": "exact",
+                    "w:val": 100,
+                  },
+                },
+              },
+            ],
+          },
+        ],
+      });
+    });
+  });
+
+  describe("#addCellToColumnIndex", () => {
+    it("should add cell to correct index with no initial properties", () => {
+      const tableRow = new TableRow({
+        children: [
+          new TableCell({
+            children: [new Paragraph("test")],
+          }),
+        ],
+        tableHeader: true,
+      });
+
+      tableRow.addCellToColumnIndex(
+        new TableCell({
+          children: [],
+        }),
+        0,
+      );
+
+      const tree = new Formatter().format(tableRow);
+
+      expect(tree).to.deep.equal({
+        "w:tr": [
+          {
+            "w:trPr": [
+              {
+                "w:tblHeader": {},
+              },
+            ],
+          },
+          {
+            "w:tc": [
+              {
+                "w:p": {},
+              },
+            ],
+          },
+          {
+            "w:tc": [
+              {
+                "w:p": [
+                  {
+                    "w:r": [
+                      {
+                        "w:t": [
+                          {
+                            _attr: {
+                              "xml:space": "preserve",
+                            },
+                          },
+                          "test",
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+    });
+  });
+
+  describe("#rootIndexToColumnIndex", () => {
+    it("should get the correct virtual column index by root index", () => {
+      const tableRow = new TableRow({
+        children: [
+          new TableCell({
+            children: [new Paragraph("test")],
+            columnSpan: 3,
+          }),
+          new TableCell({
+            children: [new Paragraph("test")],
+          }),
+          new TableCell({
+            children: [new Paragraph("test")],
+          }),
+          new TableCell({
+            children: [new Paragraph("test")],
+            columnSpan: 3,
+          }),
+        ],
+      });
+
+      expect(tableRow.rootIndexToColumnIndex(1)).to.equal(0);
+      expect(tableRow.rootIndexToColumnIndex(2)).to.equal(3);
+      expect(tableRow.rootIndexToColumnIndex(3)).to.equal(4);
+      expect(tableRow.rootIndexToColumnIndex(4)).to.equal(5);
+
+      expect(() => tableRow.rootIndexToColumnIndex(0)).to.throw(
+        `cell 'rootIndex' should between 1 to 4`,
+      );
+      expect(() => tableRow.rootIndexToColumnIndex(5)).to.throw(
+        `cell 'rootIndex' should between 1 to 4`,
+      );
+    });
+  });
+
+  describe("#columnIndexToRootIndex", () => {
+    it("should get the correct root index by virtual column index", () => {
+      const tableRow = new TableRow({
+        children: [
+          new TableCell({
+            children: [new Paragraph("test")],
+            columnSpan: 3,
+          }),
+          new TableCell({
+            children: [new Paragraph("test")],
+          }),
+          new TableCell({
+            children: [new Paragraph("test")],
+          }),
+          new TableCell({
+            children: [new Paragraph("test")],
+            columnSpan: 3,
+          }),
+        ],
+      });
+
+      expect(tableRow.columnIndexToRootIndex(0)).to.equal(1);
+      expect(tableRow.columnIndexToRootIndex(1)).to.equal(1);
+      expect(tableRow.columnIndexToRootIndex(2)).to.equal(1);
+
+      expect(tableRow.columnIndexToRootIndex(3)).to.equal(2);
+      expect(tableRow.columnIndexToRootIndex(4)).to.equal(3);
+
+      expect(tableRow.columnIndexToRootIndex(5)).to.equal(4);
+      expect(tableRow.columnIndexToRootIndex(6)).to.equal(4);
+      expect(tableRow.columnIndexToRootIndex(7)).to.equal(4);
+
+      expect(() => tableRow.columnIndexToRootIndex(-1)).to.throw(
+        `cell 'columnIndex' should not less than zero`,
+      );
+      expect(() => tableRow.columnIndexToRootIndex(8)).to.throw(
+        `cell 'columnIndex' should not great than 7`,
+      );
+    });
+
+    it("should allow end new cell index", () => {
+      const tableRow = new TableRow({
+        children: [
+          new TableCell({
+            children: [new Paragraph("test")],
+            columnSpan: 3,
+          }),
+          new TableCell({
+            children: [new Paragraph("test")],
+          }),
+          new TableCell({
+            children: [new Paragraph("test")],
+          }),
+          new TableCell({
+            children: [new Paragraph("test")],
+            columnSpan: 3,
+          }),
+        ],
+      });
+
+      expect(tableRow.columnIndexToRootIndex(8, true)).to.equal(5);
+      // For column 10, just place the new cell at the end of row
+      expect(tableRow.columnIndexToRootIndex(10, true)).to.equal(5);
+    });
+  });
 });

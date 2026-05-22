@@ -16,41 +16,41 @@ import { SimpleField } from "../run/simple-field";
  * Specifies how the paragraph number should be displayed when referenced.
  */
 export enum NumberedItemReferenceFormat {
-    NONE = "none",
-    /**
-     * \r option - inserts the paragraph number of the bookmarked paragraph in relative context, or relative to its position in the numbering scheme
-     */
-    RELATIVE = "relative",
-    /**
-     * \n option - causes the field result to be the paragraph number without trailing periods. No information about prior numbered levels is displayed unless it is included as part of the current level.
-     */
-    NO_CONTEXT = "no_context",
-    /**
-     * \w option - causes the field result to be the entire paragraph number without trailing periods, regardless of the location of the REF field.
-     */
-    FULL_CONTEXT = "full_context",
+  NONE = "none",
+  /**
+   * \r option - inserts the paragraph number of the bookmarked paragraph in relative context, or relative to its position in the numbering scheme
+   */
+  RELATIVE = "relative",
+  /**
+   * \n option - causes the field result to be the paragraph number without trailing periods. No information about prior numbered levels is displayed unless it is included as part of the current level.
+   */
+  NO_CONTEXT = "no_context",
+  /**
+   * \w option - causes the field result to be the entire paragraph number without trailing periods, regardless of the location of the REF field.
+   */
+  FULL_CONTEXT = "full_context",
 }
 
 export interface INumberedItemReferenceOptions {
-    /**
-     * \h option - Creates a hyperlink to the bookmarked paragraph.
-     * @default true
-     */
-    readonly hyperlink?: boolean;
-    /**
-     * Which switch to use for the reference format
-     * @default NumberedItemReferenceFormat.FULL_CONTEXT
-     */
-    readonly referenceFormat?: NumberedItemReferenceFormat;
+  /**
+   * \h option - Creates a hyperlink to the bookmarked paragraph.
+   * @default true
+   */
+  readonly hyperlink?: boolean;
+  /**
+   * Which switch to use for the reference format
+   * @default NumberedItemReferenceFormat.FULL_CONTEXT
+   */
+  readonly referenceFormat?: NumberedItemReferenceFormat;
 }
 
 type Switch = "\\h" | "\\r" | "\\n" | "\\w";
 
 const SWITCH_MAP: Record<NumberedItemReferenceFormat, Switch | undefined> = {
-    [NumberedItemReferenceFormat.RELATIVE]: "\\r",
-    [NumberedItemReferenceFormat.NO_CONTEXT]: "\\n",
-    [NumberedItemReferenceFormat.FULL_CONTEXT]: "\\w",
-    [NumberedItemReferenceFormat.NONE]: undefined,
+  [NumberedItemReferenceFormat.RELATIVE]: "\\r",
+  [NumberedItemReferenceFormat.NO_CONTEXT]: "\\n",
+  [NumberedItemReferenceFormat.FULL_CONTEXT]: "\\w",
+  [NumberedItemReferenceFormat.NONE]: undefined,
 };
 
 /**
@@ -69,26 +69,26 @@ const SWITCH_MAP: Record<NumberedItemReferenceFormat, Switch | undefined> = {
  * ```
  */
 export class NumberedItemReference extends SimpleField {
-    public constructor(
-        bookmarkId: string,
-        // TODO: It would be nice if the cached value could be automatically generated
-        /**
-         * The cached value of the field. This is used to display the field result in the document.
-         */
-        cachedValue?: string,
-        options: INumberedItemReferenceOptions = {},
-    ) {
-        const { hyperlink = true, referenceFormat = NumberedItemReferenceFormat.FULL_CONTEXT } =
-            options;
-        const baseInstruction = `REF ${bookmarkId}`;
+  public constructor(
+    bookmarkId: string,
+    // TODO: It would be nice if the cached value could be automatically generated
+    /**
+     * The cached value of the field. This is used to display the field result in the document.
+     */
+    cachedValue?: string,
+    options: INumberedItemReferenceOptions = {},
+  ) {
+    const { hyperlink = true, referenceFormat = NumberedItemReferenceFormat.FULL_CONTEXT } =
+      options;
+    const baseInstruction = `REF ${bookmarkId}`;
 
-        const switches: readonly Switch[] = [
-            ...(hyperlink ? ["\\h" as Switch] : []),
-            ...[SWITCH_MAP[referenceFormat]].filter((a): a is Switch => Boolean(a)),
-        ];
+    const switches: readonly Switch[] = [
+      ...(hyperlink ? ["\\h" as Switch] : []),
+      ...[SWITCH_MAP[referenceFormat]].filter((a): a is Switch => Boolean(a)),
+    ];
 
-        const instruction = `${baseInstruction} ${switches.join(" ")}`;
+    const instruction = `${baseInstruction} ${switches.join(" ")}`;
 
-        super(instruction, cachedValue);
-    }
+    super(instruction, cachedValue);
+  }
 }

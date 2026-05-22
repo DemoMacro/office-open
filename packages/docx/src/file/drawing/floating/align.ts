@@ -13,11 +13,11 @@ import type { XmlComponent } from "@file/xml-components";
  * - http://officeopenxml.com/drwPicFloating-position.php
  */
 export const createAlign = (
-    value:
-        | (typeof HorizontalPositionAlign)[keyof typeof HorizontalPositionAlign]
-        | (typeof VerticalPositionAlign)[keyof typeof VerticalPositionAlign],
+  value:
+    | (typeof HorizontalPositionAlign)[keyof typeof HorizontalPositionAlign]
+    | (typeof VerticalPositionAlign)[keyof typeof VerticalPositionAlign],
 ): XmlComponent =>
-    new BuilderElement({
-        children: [value as any],
-        name: "wp:align",
-    });
+  new BuilderElement({
+    children: [value as any],
+    name: "wp:align",
+  });

@@ -4,18 +4,18 @@ import { describe, expect, it } from "vite-plus/test";
 import { createMathBeginningCharacter } from "./math-beginning-character";
 
 describe("createMathBeginningCharacter", () => {
-    describe("#constructor()", () => {
-        it("should create a MathBeginningCharacter with correct root key", () => {
-            const mathBeginningCharacter = createMathBeginningCharacter({ character: "[" });
+  describe("#constructor()", () => {
+    it("should create a MathBeginningCharacter with correct root key", () => {
+      const mathBeginningCharacter = createMathBeginningCharacter({ character: "[" });
 
-            const tree = new Formatter().format(mathBeginningCharacter);
-            expect(tree).to.deep.equal({
-                "m:begChr": {
-                    _attr: {
-                        "m:val": "[",
-                    },
-                },
-            });
-        });
+      const tree = new Formatter().format(mathBeginningCharacter);
+      expect(tree).to.deep.equal({
+        "m:begChr": {
+          _attr: {
+            "m:val": "[",
+          },
+        },
+      });
     });
+  });
 });

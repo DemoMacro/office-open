@@ -29,14 +29,14 @@ import { decimalNumber } from "@util/values";
  * @publicApi
  */
 export const FootnotePositionType = {
-    /** Footnotes at bottom of the page */
-    PAGE_BOTTOM: "pageBottom",
-    /** Footnotes beneath text on the page */
-    BENEATH_TEXT: "beneathText",
-    /** Footnotes at the end of the section */
-    SECT_END: "sectEnd",
-    /** Footnotes at the end of the document */
-    DOC_END: "docEnd",
+  /** Footnotes at bottom of the page */
+  PAGE_BOTTOM: "pageBottom",
+  /** Footnotes beneath text on the page */
+  BENEATH_TEXT: "beneathText",
+  /** Footnotes at the end of the section */
+  SECT_END: "sectEnd",
+  /** Footnotes at the end of the document */
+  DOC_END: "docEnd",
 } as const;
 
 /**
@@ -55,10 +55,10 @@ export const FootnotePositionType = {
  * @publicApi
  */
 export const EndnotePositionType = {
-    /** Endnotes at the end of the section */
-    SECT_END: "sectEnd",
-    /** Endnotes at the end of the document */
-    DOC_END: "docEnd",
+  /** Endnotes at the end of the section */
+  SECT_END: "sectEnd",
+  /** Endnotes at the end of the document */
+  DOC_END: "docEnd",
 } as const;
 
 /**
@@ -78,42 +78,42 @@ export const EndnotePositionType = {
  * @publicApi
  */
 export const NumberRestartType = {
-    /** Continuous numbering throughout the document */
-    CONTINUOUS: "continuous",
-    /** Restart numbering at each section */
-    EACH_SECT: "eachSect",
-    /** Restart numbering at each page */
-    EACH_PAGE: "eachPage",
+  /** Continuous numbering throughout the document */
+  CONTINUOUS: "continuous",
+  /** Restart numbering at each section */
+  EACH_SECT: "eachSect",
+  /** Restart numbering at each page */
+  EACH_PAGE: "eachPage",
 } as const;
 
 /**
  * Common options for footnote and endnote number properties.
  */
 interface NumberPropertiesOptions {
-    /** Number format (decimal, roman, letter, etc.) */
-    readonly formatType?: (typeof NumberFormat)[keyof typeof NumberFormat];
-    /** Custom number format string (overrides formatType when specified) */
-    readonly format?: string;
-    /** Starting number */
-    readonly numStart?: number;
-    /** When to restart numbering */
-    readonly numRestart?: (typeof NumberRestartType)[keyof typeof NumberRestartType];
+  /** Number format (decimal, roman, letter, etc.) */
+  readonly formatType?: (typeof NumberFormat)[keyof typeof NumberFormat];
+  /** Custom number format string (overrides formatType when specified) */
+  readonly format?: string;
+  /** Starting number */
+  readonly numStart?: number;
+  /** When to restart numbering */
+  readonly numRestart?: (typeof NumberRestartType)[keyof typeof NumberRestartType];
 }
 
 /**
  * Options for footnote properties.
  */
 export interface FootnotePropertiesOptions extends NumberPropertiesOptions {
-    /** Footnote placement */
-    readonly pos?: (typeof FootnotePositionType)[keyof typeof FootnotePositionType];
+  /** Footnote placement */
+  readonly pos?: (typeof FootnotePositionType)[keyof typeof FootnotePositionType];
 }
 
 /**
  * Options for endnote properties.
  */
 export interface EndnotePropertiesOptions extends NumberPropertiesOptions {
-    /** Endnote placement */
-    readonly pos?: (typeof EndnotePositionType)[keyof typeof EndnotePositionType];
+  /** Endnote placement */
+  readonly pos?: (typeof EndnotePositionType)[keyof typeof EndnotePositionType];
 }
 
 /**
@@ -131,65 +131,65 @@ export interface EndnotePropertiesOptions extends NumberPropertiesOptions {
  * ```
  */
 export const createFootnoteProperties = ({
-    pos,
-    formatType,
-    format,
-    numStart,
-    numRestart,
+  pos,
+  formatType,
+  format,
+  numStart,
+  numRestart,
 }: FootnotePropertiesOptions): XmlComponent => {
-    const container = new FootnoteProperties();
+  const container = new FootnoteProperties();
 
-    if (pos !== undefined) {
-        container.addChildElement(
-            new BuilderElement<{ readonly val: string }>({
-                attributes: { val: { key: "w:val", value: pos } },
-                name: "w:pos",
-            }),
-        );
-    }
+  if (pos !== undefined) {
+    container.addChildElement(
+      new BuilderElement<{ readonly val: string }>({
+        attributes: { val: { key: "w:val", value: pos } },
+        name: "w:pos",
+      }),
+    );
+  }
 
-    if (formatType !== undefined || format !== undefined) {
-        container.addChildElement(
-            new BuilderElement<{ readonly val?: string; readonly format?: string }>({
-                attributes: {
-                    format: { key: "w:format", value: format },
-                    val: { key: "w:fmt", value: formatType },
-                },
-                name: "w:numFmt",
-            }),
-        );
-    }
+  if (formatType !== undefined || format !== undefined) {
+    container.addChildElement(
+      new BuilderElement<{ readonly val?: string; readonly format?: string }>({
+        attributes: {
+          format: { key: "w:format", value: format },
+          val: { key: "w:fmt", value: formatType },
+        },
+        name: "w:numFmt",
+      }),
+    );
+  }
 
-    if (numStart !== undefined) {
-        container.addChildElement(
-            new BuilderElement<{ readonly val: number }>({
-                attributes: {
-                    val: { key: "w:val", value: decimalNumber(numStart) },
-                },
-                name: "w:numStart",
-            }),
-        );
-    }
+  if (numStart !== undefined) {
+    container.addChildElement(
+      new BuilderElement<{ readonly val: number }>({
+        attributes: {
+          val: { key: "w:val", value: decimalNumber(numStart) },
+        },
+        name: "w:numStart",
+      }),
+    );
+  }
 
-    if (numRestart !== undefined) {
-        container.addChildElement(
-            new BuilderElement<{ readonly val: string }>({
-                attributes: { val: { key: "w:val", value: numRestart } },
-                name: "w:numRestart",
-            }),
-        );
-    }
+  if (numRestart !== undefined) {
+    container.addChildElement(
+      new BuilderElement<{ readonly val: string }>({
+        attributes: { val: { key: "w:val", value: numRestart } },
+        name: "w:numRestart",
+      }),
+    );
+  }
 
-    return container;
+  return container;
 };
 
 /**
  * Footnote properties container element.
  */
 class FootnoteProperties extends IgnoreIfEmptyXmlComponent {
-    public constructor() {
-        super("w:footnotePr", true);
-    }
+  public constructor() {
+    super("w:footnotePr", true);
+  }
 }
 
 /**
@@ -207,63 +207,63 @@ class FootnoteProperties extends IgnoreIfEmptyXmlComponent {
  * ```
  */
 export const createEndnoteProperties = ({
-    pos,
-    formatType,
-    format,
-    numStart,
-    numRestart,
+  pos,
+  formatType,
+  format,
+  numStart,
+  numRestart,
 }: EndnotePropertiesOptions): XmlComponent => {
-    const container = new EndnoteProperties();
+  const container = new EndnoteProperties();
 
-    if (pos !== undefined) {
-        container.addChildElement(
-            new BuilderElement<{ readonly val: string }>({
-                attributes: { val: { key: "w:val", value: pos } },
-                name: "w:pos",
-            }),
-        );
-    }
+  if (pos !== undefined) {
+    container.addChildElement(
+      new BuilderElement<{ readonly val: string }>({
+        attributes: { val: { key: "w:val", value: pos } },
+        name: "w:pos",
+      }),
+    );
+  }
 
-    if (formatType !== undefined || format !== undefined) {
-        container.addChildElement(
-            new BuilderElement<{ readonly val?: string; readonly format?: string }>({
-                attributes: {
-                    format: { key: "w:format", value: format },
-                    val: { key: "w:fmt", value: formatType },
-                },
-                name: "w:numFmt",
-            }),
-        );
-    }
+  if (formatType !== undefined || format !== undefined) {
+    container.addChildElement(
+      new BuilderElement<{ readonly val?: string; readonly format?: string }>({
+        attributes: {
+          format: { key: "w:format", value: format },
+          val: { key: "w:fmt", value: formatType },
+        },
+        name: "w:numFmt",
+      }),
+    );
+  }
 
-    if (numStart !== undefined) {
-        container.addChildElement(
-            new BuilderElement<{ readonly val: number }>({
-                attributes: {
-                    val: { key: "w:val", value: decimalNumber(numStart) },
-                },
-                name: "w:numStart",
-            }),
-        );
-    }
+  if (numStart !== undefined) {
+    container.addChildElement(
+      new BuilderElement<{ readonly val: number }>({
+        attributes: {
+          val: { key: "w:val", value: decimalNumber(numStart) },
+        },
+        name: "w:numStart",
+      }),
+    );
+  }
 
-    if (numRestart !== undefined) {
-        container.addChildElement(
-            new BuilderElement<{ readonly val: string }>({
-                attributes: { val: { key: "w:val", value: numRestart } },
-                name: "w:numRestart",
-            }),
-        );
-    }
+  if (numRestart !== undefined) {
+    container.addChildElement(
+      new BuilderElement<{ readonly val: string }>({
+        attributes: { val: { key: "w:val", value: numRestart } },
+        name: "w:numRestart",
+      }),
+    );
+  }
 
-    return container;
+  return container;
 };
 
 /**
  * Endnote properties container element.
  */
 class EndnoteProperties extends IgnoreIfEmptyXmlComponent {
-    public constructor() {
-        super("w:endnotePr", true);
-    }
+  public constructor() {
+    super("w:endnotePr", true);
+  }
 }

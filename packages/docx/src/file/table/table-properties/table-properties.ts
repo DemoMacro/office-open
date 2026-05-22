@@ -46,11 +46,11 @@
 import { ChangeAttributes } from "@file/track-revision/track-revision";
 import type { IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import {
-    BuilderElement,
-    IgnoreIfEmptyXmlComponent,
-    OnOffElement,
-    StringValueElement,
-    XmlComponent,
+  BuilderElement,
+  IgnoreIfEmptyXmlComponent,
+  OnOffElement,
+  StringValueElement,
+  XmlComponent,
 } from "@file/xml-components";
 
 import { createAlignment } from "../../paragraph";
@@ -73,26 +73,26 @@ import { createTableLook } from "./table-look";
 import type { ITableLookOptions } from "./table-look";
 
 export interface ITablePropertiesOptionsBase {
-    readonly width?: ITableWidthProperties;
-    readonly indent?: ITableWidthProperties;
-    readonly layout?: (typeof TableLayoutType)[keyof typeof TableLayoutType];
-    readonly borders?: ITableBordersOptions;
-    readonly float?: ITableFloatOptions;
-    readonly shading?: IShadingAttributesProperties;
-    readonly style?: string;
-    readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
-    readonly cellMargin?: ITableCellMarginOptions;
-    readonly visuallyRightToLeft?: boolean;
-    readonly tableLook?: ITableLookOptions;
-    readonly cellSpacing?: ITableCellSpacingProperties;
-    /** Number of rows in each band for table style (tblStyleRowBandSize) */
-    readonly styleRowBandSize?: number;
-    /** Number of columns in each band for table style (tblStyleColBandSize) */
-    readonly styleColBandSize?: number;
-    /** Table caption for accessibility (tblCaption) */
-    readonly caption?: string;
-    /** Table description for accessibility (tblDescription) */
-    readonly description?: string;
+  readonly width?: ITableWidthProperties;
+  readonly indent?: ITableWidthProperties;
+  readonly layout?: (typeof TableLayoutType)[keyof typeof TableLayoutType];
+  readonly borders?: ITableBordersOptions;
+  readonly float?: ITableFloatOptions;
+  readonly shading?: IShadingAttributesProperties;
+  readonly style?: string;
+  readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
+  readonly cellMargin?: ITableCellMarginOptions;
+  readonly visuallyRightToLeft?: boolean;
+  readonly tableLook?: ITableLookOptions;
+  readonly cellSpacing?: ITableCellSpacingProperties;
+  /** Number of rows in each band for table style (tblStyleRowBandSize) */
+  readonly styleRowBandSize?: number;
+  /** Number of columns in each band for table style (tblStyleColBandSize) */
+  readonly styleColBandSize?: number;
+  /** Table caption for accessibility (tblCaption) */
+  readonly caption?: string;
+  /** Table description for accessibility (tblDescription) */
+  readonly description?: string;
 }
 
 export type ITablePropertiesChangeOptions = ITablePropertiesOptions & IChangedAttributesProperties;
@@ -103,8 +103,8 @@ export type ITablePropertiesChangeOptions = ITablePropertiesOptions & IChangedAt
  * @see {@link TableProperties}
  */
 export type ITablePropertiesOptions = {
-    readonly revision?: ITablePropertiesChangeOptions;
-    readonly includeIfEmpty?: boolean;
+  readonly revision?: ITablePropertiesChangeOptions;
+  readonly includeIfEmpty?: boolean;
 } & ITablePropertiesOptionsBase;
 
 /**
@@ -116,106 +116,106 @@ export type ITablePropertiesOptions = {
  * Reference: http://officeopenxml.com/WPtableProperties.php
  */
 export class TableProperties extends IgnoreIfEmptyXmlComponent {
-    public constructor(options: ITablePropertiesOptions) {
-        super("w:tblPr", options.includeIfEmpty);
+  public constructor(options: ITablePropertiesOptions) {
+    super("w:tblPr", options.includeIfEmpty);
 
-        if (options.style) {
-            this.root.push(new StringValueElement("w:tblStyle", options.style));
-        }
-
-        if (options.float) {
-            this.root.push(createTableFloatProperties(options.float));
-            if (options.float.overlap) {
-                this.root.push(createTableOverlap(options.float.overlap));
-            }
-        }
-
-        if (options.visuallyRightToLeft !== undefined) {
-            this.root.push(new OnOffElement("w:bidiVisual", options.visuallyRightToLeft));
-        }
-
-        if (options.styleRowBandSize !== undefined) {
-            this.root.push(
-                new BuilderElement<{ readonly val: number }>({
-                    name: "w:tblStyleRowBandSize",
-                    attributes: { val: { key: "w:val", value: options.styleRowBandSize } },
-                }),
-            );
-        }
-
-        if (options.styleColBandSize !== undefined) {
-            this.root.push(
-                new BuilderElement<{ readonly val: number }>({
-                    name: "w:tblStyleColBandSize",
-                    attributes: { val: { key: "w:val", value: options.styleColBandSize } },
-                }),
-            );
-        }
-
-        if (options.width) {
-            this.root.push(createTableWidthElement("w:tblW", options.width));
-        }
-
-        if (options.alignment) {
-            this.root.push(createAlignment(options.alignment));
-        }
-
-        if (options.indent) {
-            this.root.push(createTableWidthElement("w:tblInd", options.indent));
-        }
-
-        if (options.borders) {
-            this.root.push(new TableBorders(options.borders));
-        }
-
-        if (options.shading) {
-            this.root.push(createShading(options.shading));
-        }
-
-        if (options.layout) {
-            this.root.push(createTableLayout(options.layout));
-        }
-
-        if (options.cellMargin) {
-            const cellMargin = createTableCellMargin(options.cellMargin);
-            if (cellMargin) {
-                this.root.push(cellMargin);
-            }
-        }
-
-        if (options.tableLook) {
-            this.root.push(createTableLook(options.tableLook));
-        }
-
-        if (options.cellSpacing) {
-            this.root.push(createTableCellSpacing(options.cellSpacing));
-        }
-
-        if (options.caption !== undefined) {
-            this.root.push(new StringValueElement("w:tblCaption", options.caption));
-        }
-
-        if (options.description !== undefined) {
-            this.root.push(new StringValueElement("w:tblDescription", options.description));
-        }
-
-        if (options.revision) {
-            this.root.push(new TablePropertiesChange(options.revision));
-        }
+    if (options.style) {
+      this.root.push(new StringValueElement("w:tblStyle", options.style));
     }
+
+    if (options.float) {
+      this.root.push(createTableFloatProperties(options.float));
+      if (options.float.overlap) {
+        this.root.push(createTableOverlap(options.float.overlap));
+      }
+    }
+
+    if (options.visuallyRightToLeft !== undefined) {
+      this.root.push(new OnOffElement("w:bidiVisual", options.visuallyRightToLeft));
+    }
+
+    if (options.styleRowBandSize !== undefined) {
+      this.root.push(
+        new BuilderElement<{ readonly val: number }>({
+          name: "w:tblStyleRowBandSize",
+          attributes: { val: { key: "w:val", value: options.styleRowBandSize } },
+        }),
+      );
+    }
+
+    if (options.styleColBandSize !== undefined) {
+      this.root.push(
+        new BuilderElement<{ readonly val: number }>({
+          name: "w:tblStyleColBandSize",
+          attributes: { val: { key: "w:val", value: options.styleColBandSize } },
+        }),
+      );
+    }
+
+    if (options.width) {
+      this.root.push(createTableWidthElement("w:tblW", options.width));
+    }
+
+    if (options.alignment) {
+      this.root.push(createAlignment(options.alignment));
+    }
+
+    if (options.indent) {
+      this.root.push(createTableWidthElement("w:tblInd", options.indent));
+    }
+
+    if (options.borders) {
+      this.root.push(new TableBorders(options.borders));
+    }
+
+    if (options.shading) {
+      this.root.push(createShading(options.shading));
+    }
+
+    if (options.layout) {
+      this.root.push(createTableLayout(options.layout));
+    }
+
+    if (options.cellMargin) {
+      const cellMargin = createTableCellMargin(options.cellMargin);
+      if (cellMargin) {
+        this.root.push(cellMargin);
+      }
+    }
+
+    if (options.tableLook) {
+      this.root.push(createTableLook(options.tableLook));
+    }
+
+    if (options.cellSpacing) {
+      this.root.push(createTableCellSpacing(options.cellSpacing));
+    }
+
+    if (options.caption !== undefined) {
+      this.root.push(new StringValueElement("w:tblCaption", options.caption));
+    }
+
+    if (options.description !== undefined) {
+      this.root.push(new StringValueElement("w:tblDescription", options.description));
+    }
+
+    if (options.revision) {
+      this.root.push(new TablePropertiesChange(options.revision));
+    }
+  }
 }
 
 class TablePropertiesChange extends XmlComponent {
-    public constructor(options: ITablePropertiesChangeOptions) {
-        super("w:tblPrChange");
-        this.root.push(
-            new ChangeAttributes({
-                author: options.author,
-                date: options.date,
-                id: options.id,
-            }),
-        );
-        // TblPr is required even if empty (minOccurs="0" is missing)
-        this.root.push(new TableProperties({ ...options, includeIfEmpty: true }));
-    }
+  public constructor(options: ITablePropertiesChangeOptions) {
+    super("w:tblPrChange");
+    this.root.push(
+      new ChangeAttributes({
+        author: options.author,
+        date: options.date,
+        id: options.id,
+      }),
+    );
+    // TblPr is required even if empty (minOccurs="0" is missing)
+    this.root.push(new TableProperties({ ...options, includeIfEmpty: true }));
+  }
 }

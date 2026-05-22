@@ -1,60 +1,60 @@
 {
-    "name": "@office-open/monorepo",
-    "version": "0.0.0",
-    "private": true,
-    "description": "Office Open XML monorepo - generate .docx, .pptx, .xlsx files with JS/TS",
-    "keywords": [
-        "docx",
-        "office",
-        "office-open",
-        "ooxml",
-        "pptx",
-        "typescript",
-        "xlsx"
-    ],
-    "homepage": "https://www.office-open.com",
-    "bugs": {
-        "url": "https://github.com/DemoMacro/office-open/issues"
-    },
-    "license": "MIT",
-    "author": {
-        "name": "Demo Macro",
-        "email": "abc@imst.xyz",
-        "url": "https://imst.xyz/"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/DemoMacro/office-open.git"
-    },
-    "type": "module",
-    "scripts": {
-        "dev": "pnpm --filter \"./packages/**\" -r dev",
-        "build": "pnpm --filter \"./packages/**\" -r build",
-        "check": "vp check --fix",
-        "test": "pnpm --filter \"./packages/**\" -r test",
-        "bump": "pnpm --filter \"./packages/**\" -r exec basis version",
-        "prerelease": "pnpm --filter \"./packages/**\" -r exec basis version --prerelease",
-        "publish": "pnpm --filter \"./packages/**\" -r exec basis publish",
-        "postinstall": "pnpm dev && basis git setup",
-        "docs:dev": "pnpm --filter @office-open/docs dev",
-        "docs:build": "pnpm --filter @office-open/docs build",
-        "docs:generate": "pnpm --filter @office-open/docs generate",
-        "docs:preview": "pnpm --filter @office-open/docs preview"
-    },
-    "devDependencies": {
-        "@funish/basis": "0.2.17",
-        "@rolldown/plugin-node-polyfills": "1.0.3",
-        "@types/node": "25.6.0",
-        "@vitest/coverage-v8": "4.1.4",
-        "docx": "9.6.1",
-        "execa": "9.6.1",
-        "happy-dom": "20.9.0",
-        "inquirer": "13.4.2",
-        "libxml2-wasm": "0.7.1",
-        "pptxgenjs": "4.0.1",
-        "tsx": "4.21.0",
-        "typedoc": "0.28.19",
-        "vite-plus": "0.1.18"
-    },
-    "packageManager": "pnpm@10.33.0"
+  "name": "@office-open/monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Office Open XML monorepo - generate .docx, .pptx, .xlsx files with JS/TS",
+  "keywords": [
+    "docx",
+    "office",
+    "office-open",
+    "ooxml",
+    "pptx",
+    "typescript",
+    "xlsx"
+  ],
+  "homepage": "https://www.office-open.com",
+  "bugs": {
+    "url": "https://github.com/DemoMacro/office-open/issues"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Demo Macro",
+    "email": "abc@imst.xyz",
+    "url": "https://imst.xyz/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DemoMacro/office-open.git"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter \"./packages/**\" -r dev",
+    "build": "pnpm --filter \"./packages/**\" -r build",
+    "check": "vp check --fix",
+    "test": "pnpm --filter \"./packages/**\" -r test",
+    "bump": "pnpm --filter \"./packages/**\" -r exec basis version",
+    "prerelease": "pnpm --filter \"./packages/**\" -r exec basis version --prerelease",
+    "publish": "pnpm --filter \"./packages/**\" -r exec basis publish",
+    "postinstall": "pnpm dev && vp config && basis git setup",
+    "docs:dev": "pnpm --filter @office-open/docs dev",
+    "docs:build": "pnpm --filter @office-open/docs build",
+    "docs:generate": "pnpm --filter @office-open/docs generate",
+    "docs:preview": "pnpm --filter @office-open/docs preview"
+  },
+  "devDependencies": {
+    "@funish/basis": "0.3.0",
+    "@rolldown/plugin-node-polyfills": "1.0.3",
+    "@types/node": "25.9.1",
+    "@vitest/coverage-v8": "4.1.7",
+    "docx": "9.6.1",
+    "execa": "9.6.1",
+    "happy-dom": "20.9.0",
+    "inquirer": "13.4.3",
+    "libxml2-wasm": "0.7.1",
+    "pptxgenjs": "4.0.1",
+    "tsx": "4.22.3",
+    "typedoc": "0.28.19",
+    "vite-plus": "0.1.22"
+  },
+  "packageManager": "pnpm@10.33.0"
 }

@@ -21,10 +21,10 @@ import type { MathBorderBoxPropertiesOptions } from "./math-border-box-propertie
  * @see {@link MathBorderBox}
  */
 export interface IMathBorderBoxOptions {
-    /** Border box properties */
-    readonly properties?: MathBorderBoxPropertiesOptions;
-    /** Content to be bordered */
-    readonly children: readonly MathComponent[];
+  /** Border box properties */
+  readonly properties?: MathBorderBoxPropertiesOptions;
+  /** Content to be bordered */
+  readonly children: readonly MathComponent[];
 }
 
 /**
@@ -48,13 +48,13 @@ export interface IMathBorderBoxOptions {
  * ```
  */
 export class MathBorderBox extends XmlComponent {
-    public constructor(options: IMathBorderBoxOptions) {
-        super("m:borderBox");
+  public constructor(options: IMathBorderBoxOptions) {
+    super("m:borderBox");
 
-        if (options.properties) {
-            this.root.push(createMathBorderBoxProperties(options.properties));
-        }
-
-        this.root.push(createMathBase({ children: options.children }));
+    if (options.properties) {
+      this.root.push(createMathBorderBoxProperties(options.properties));
     }
+
+    this.root.push(createMathBase({ children: options.children }));
+  }
 }

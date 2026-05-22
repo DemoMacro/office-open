@@ -46,11 +46,11 @@ import { SequentialIdentifierInstruction } from "./sequential-identifier-instruc
  * ```
  */
 export class SequentialIdentifier extends Run {
-    public constructor(identifier: string) {
-        super({});
-        this.extraChildren.push(createBegin(true));
-        this.extraChildren.push(new SequentialIdentifierInstruction(identifier));
-        this.extraChildren.push(createSeparate());
-        this.extraChildren.push(createEnd());
-    }
+  public constructor(identifier: string) {
+    super({});
+    this.extraChildren.push(createBegin(true));
+    this.extraChildren.push(new SequentialIdentifierInstruction(identifier));
+    this.extraChildren.push(createSeparate());
+    this.extraChildren.push(createEnd());
+  }
 }

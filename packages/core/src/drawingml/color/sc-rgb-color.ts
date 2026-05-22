@@ -16,14 +16,14 @@ import { createColorTransforms } from "./color-transform";
  * Options for scRGB color.
  */
 export interface ScRgbColorOptions {
-    /** Red percentage (e.g., "50%" or "100%") */
-    readonly r: string;
-    /** Green percentage (e.g., "50%" or "100%") */
-    readonly g: string;
-    /** Blue percentage (e.g., "50%" or "100%") */
-    readonly b: string;
-    /** Optional color transforms */
-    readonly transforms?: ColorTransformOptions;
+  /** Red percentage (e.g., "50%" or "100%") */
+  readonly r: string;
+  /** Green percentage (e.g., "50%" or "100%") */
+  readonly g: string;
+  /** Blue percentage (e.g., "50%" or "100%") */
+  readonly b: string;
+  /** Optional color transforms */
+  readonly transforms?: ColorTransformOptions;
 }
 
 /**
@@ -51,23 +51,23 @@ export interface ScRgbColorOptions {
  * ```
  */
 export const createScRgbColor = (options: ScRgbColorOptions): XmlComponent => {
-    const transforms = options.transforms ? createColorTransforms(options.transforms) : [];
-    return new BuilderElement<ScRgbColorOptions>({
-        attributes: {
-            r: {
-                key: "r",
-                value: options.r,
-            },
-            g: {
-                key: "g",
-                value: options.g,
-            },
-            b: {
-                key: "b",
-                value: options.b,
-            },
-        },
-        children: [...transforms],
-        name: "a:scrgbClr",
-    });
+  const transforms = options.transforms ? createColorTransforms(options.transforms) : [];
+  return new BuilderElement<ScRgbColorOptions>({
+    attributes: {
+      r: {
+        key: "r",
+        value: options.r,
+      },
+      g: {
+        key: "g",
+        value: options.g,
+      },
+      b: {
+        key: "b",
+        value: options.b,
+      },
+    },
+    children: [...transforms],
+    name: "a:scrgbClr",
+  });
 };

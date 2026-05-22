@@ -6,401 +6,401 @@ import { describe, expect, it } from "vite-plus/test";
 import { DeletedTextRun } from "./deleted-text-run";
 
 describe("DeletedTextRun", () => {
-    describe("#constructor", () => {
-        it("should create a deleted text run", () => {
-            const deletedTextRun = new DeletedTextRun({
-                author: "Author",
-                date: "123",
-                id: 0,
-                text: "some text",
-            });
-            const tree = new Formatter().format(deletedTextRun);
-            expect(tree).to.deep.equal({
-                "w:del": [
-                    {
-                        _attr: {
-                            "w:author": "Author",
-                            "w:date": "123",
-                            "w:id": 0,
-                        },
+  describe("#constructor", () => {
+    it("should create a deleted text run", () => {
+      const deletedTextRun = new DeletedTextRun({
+        author: "Author",
+        date: "123",
+        id: 0,
+        text: "some text",
+      });
+      const tree = new Formatter().format(deletedTextRun);
+      expect(tree).to.deep.equal({
+        "w:del": [
+          {
+            _attr: {
+              "w:author": "Author",
+              "w:date": "123",
+              "w:id": 0,
+            },
+          },
+          {
+            "w:r": [
+              {
+                "w:delText": [
+                  {
+                    _attr: {
+                      "xml:space": "preserve",
                     },
-                    {
-                        "w:r": [
-                            {
-                                "w:delText": [
-                                    {
-                                        _attr: {
-                                            "xml:space": "preserve",
-                                        },
-                                    },
-                                    "some text",
-                                ],
-                            },
-                        ],
-                    },
+                  },
+                  "some text",
                 ],
-            });
-        });
+              },
+            ],
+          },
+        ],
+      });
+    });
+  });
+
+  describe("#constructor with formatting", () => {
+    it("should create a deleted text run", () => {
+      const deletedTextRun = new DeletedTextRun({
+        author: "Author",
+        bold: true,
+        date: "123",
+        id: 0,
+        text: "some text",
+      });
+      const tree = new Formatter().format(deletedTextRun);
+      expect(tree).to.deep.equal({
+        "w:del": [
+          {
+            _attr: {
+              "w:author": "Author",
+              "w:date": "123",
+              "w:id": 0,
+            },
+          },
+          {
+            "w:r": [
+              {
+                "w:rPr": [
+                  {
+                    "w:b": {},
+                  },
+                  {
+                    "w:bCs": {},
+                  },
+                ],
+              },
+              {
+                "w:delText": [
+                  {
+                    _attr: {
+                      "xml:space": "preserve",
+                    },
+                  },
+                  "some text",
+                ],
+              },
+            ],
+          },
+        ],
+      });
+    });
+  });
+
+  describe("#constructor without children or text", () => {
+    it("should create a deleted text run with no text content", () => {
+      const deletedTextRun = new DeletedTextRun({ author: "Author", date: "123", id: 0 });
+      const tree = new Formatter().format(deletedTextRun);
+      expect(tree).to.deep.equal({
+        "w:del": [
+          {
+            _attr: {
+              "w:author": "Author",
+              "w:date": "123",
+              "w:id": 0,
+            },
+          },
+          {
+            "w:r": {},
+          },
+        ],
+      });
+    });
+  });
+
+  describe("#break()", () => {
+    it("should add a break", () => {
+      const deletedTextRun = new DeletedTextRun({
+        author: "Author",
+        break: 1,
+        children: ["some text"],
+        date: "123",
+        id: 0,
+      });
+      const tree = new Formatter().format(deletedTextRun);
+      expect(tree).to.deep.equal({
+        "w:del": [
+          {
+            _attr: {
+              "w:author": "Author",
+              "w:date": "123",
+              "w:id": 0,
+            },
+          },
+          {
+            "w:r": [
+              {
+                "w:br": {},
+              },
+              {
+                "w:delText": [
+                  {
+                    _attr: {
+                      "xml:space": "preserve",
+                    },
+                  },
+                  "some text",
+                ],
+              },
+            ],
+          },
+        ],
+      });
+    });
+  });
+
+  describe("page numbering", () => {
+    it("should be able to delete the total pages", () => {
+      const deletedTextRun = new DeletedTextRun({
+        author: "Author",
+        children: [" to ", PageNumber.TOTAL_PAGES],
+        date: "123",
+        id: 0,
+      });
+      const tree = new Formatter().format(deletedTextRun);
+      expect(tree).to.deep.equal({
+        "w:del": [
+          {
+            _attr: {
+              "w:author": "Author",
+              "w:date": "123",
+              "w:id": 0,
+            },
+          },
+          {
+            "w:r": [
+              {
+                "w:delText": [
+                  {
+                    _attr: {
+                      "xml:space": "preserve",
+                    },
+                  },
+                  " to ",
+                ],
+              },
+              {
+                "w:fldChar": {
+                  _attr: {
+                    "w:fldCharType": "begin",
+                  },
+                },
+              },
+              {
+                "w:delInstrText": [
+                  {
+                    _attr: {
+                      "xml:space": "preserve",
+                    },
+                  },
+                  "NUMPAGES",
+                ],
+              },
+              {
+                "w:fldChar": {
+                  _attr: {
+                    "w:fldCharType": "separate",
+                  },
+                },
+              },
+              {
+                "w:fldChar": {
+                  _attr: {
+                    "w:fldCharType": "end",
+                  },
+                },
+              },
+            ],
+          },
+        ],
+      });
     });
 
-    describe("#constructor with formatting", () => {
-        it("should create a deleted text run", () => {
-            const deletedTextRun = new DeletedTextRun({
-                author: "Author",
-                bold: true,
-                date: "123",
-                id: 0,
-                text: "some text",
-            });
-            const tree = new Formatter().format(deletedTextRun);
-            expect(tree).to.deep.equal({
-                "w:del": [
-                    {
-                        _attr: {
-                            "w:author": "Author",
-                            "w:date": "123",
-                            "w:id": 0,
-                        },
+    it("should be able to delete the total pages in section", () => {
+      const deletedTextRun = new DeletedTextRun({
+        author: "Author",
+        children: [" to ", PageNumber.TOTAL_PAGES_IN_SECTION],
+        date: "123",
+        id: 0,
+      });
+      const tree = new Formatter().format(deletedTextRun);
+      expect(tree).to.deep.equal({
+        "w:del": [
+          {
+            _attr: {
+              "w:author": "Author",
+              "w:date": "123",
+              "w:id": 0,
+            },
+          },
+          {
+            "w:r": [
+              {
+                "w:delText": [
+                  {
+                    _attr: {
+                      "xml:space": "preserve",
                     },
-                    {
-                        "w:r": [
-                            {
-                                "w:rPr": [
-                                    {
-                                        "w:b": {},
-                                    },
-                                    {
-                                        "w:bCs": {},
-                                    },
-                                ],
-                            },
-                            {
-                                "w:delText": [
-                                    {
-                                        _attr: {
-                                            "xml:space": "preserve",
-                                        },
-                                    },
-                                    "some text",
-                                ],
-                            },
-                        ],
-                    },
+                  },
+                  " to ",
                 ],
-            });
-        });
+              },
+              {
+                "w:fldChar": {
+                  _attr: {
+                    "w:fldCharType": "begin",
+                  },
+                },
+              },
+              {
+                "w:delInstrText": [
+                  {
+                    _attr: {
+                      "xml:space": "preserve",
+                    },
+                  },
+                  "SECTIONPAGES",
+                ],
+              },
+              {
+                "w:fldChar": {
+                  _attr: {
+                    "w:fldCharType": "separate",
+                  },
+                },
+              },
+              {
+                "w:fldChar": {
+                  _attr: {
+                    "w:fldCharType": "end",
+                  },
+                },
+              },
+            ],
+          },
+        ],
+      });
     });
 
-    describe("#constructor without children or text", () => {
-        it("should create a deleted text run with no text content", () => {
-            const deletedTextRun = new DeletedTextRun({ author: "Author", date: "123", id: 0 });
-            const tree = new Formatter().format(deletedTextRun);
-            expect(tree).to.deep.equal({
-                "w:del": [
-                    {
-                        _attr: {
-                            "w:author": "Author",
-                            "w:date": "123",
-                            "w:id": 0,
-                        },
+    it("should be able to delete the current page", () => {
+      const deletedTextRun = new DeletedTextRun({
+        author: "Author",
+        children: [" to ", PageNumber.CURRENT],
+        date: "123",
+        id: 0,
+      });
+      const tree = new Formatter().format(deletedTextRun);
+      expect(tree).to.deep.equal({
+        "w:del": [
+          {
+            _attr: {
+              "w:author": "Author",
+              "w:date": "123",
+              "w:id": 0,
+            },
+          },
+          {
+            "w:r": [
+              {
+                "w:delText": [
+                  {
+                    _attr: {
+                      "xml:space": "preserve",
                     },
-                    {
-                        "w:r": {},
-                    },
+                  },
+                  " to ",
                 ],
-            });
-        });
+              },
+              {
+                "w:fldChar": {
+                  _attr: {
+                    "w:fldCharType": "begin",
+                  },
+                },
+              },
+              {
+                "w:delInstrText": [
+                  {
+                    _attr: {
+                      "xml:space": "preserve",
+                    },
+                  },
+                  "PAGE",
+                ],
+              },
+              {
+                "w:fldChar": {
+                  _attr: {
+                    "w:fldCharType": "separate",
+                  },
+                },
+              },
+              {
+                "w:fldChar": {
+                  _attr: {
+                    "w:fldCharType": "end",
+                  },
+                },
+              },
+            ],
+          },
+        ],
+      });
     });
+  });
 
-    describe("#break()", () => {
-        it("should add a break", () => {
-            const deletedTextRun = new DeletedTextRun({
-                author: "Author",
-                break: 1,
-                children: ["some text"],
-                date: "123",
-                id: 0,
-            });
-            const tree = new Formatter().format(deletedTextRun);
-            expect(tree).to.deep.equal({
-                "w:del": [
-                    {
-                        _attr: {
-                            "w:author": "Author",
-                            "w:date": "123",
-                            "w:id": 0,
-                        },
+  describe("footnote references", () => {
+    it("should add a valid footnote reference", () => {
+      const deletedTextRun = new DeletedTextRun({
+        author: "Author",
+        children: ["some text", new FootnoteReferenceRun(1)],
+        date: "123",
+        id: 0,
+      });
+      const tree = new Formatter().format(deletedTextRun);
+      expect(tree).to.deep.equal({
+        "w:del": [
+          {
+            _attr: {
+              "w:author": "Author",
+              "w:date": "123",
+              "w:id": 0,
+            },
+          },
+          {
+            "w:r": [
+              {
+                "w:delText": [
+                  {
+                    _attr: {
+                      "xml:space": "preserve",
                     },
-                    {
-                        "w:r": [
-                            {
-                                "w:br": {},
-                            },
-                            {
-                                "w:delText": [
-                                    {
-                                        _attr: {
-                                            "xml:space": "preserve",
-                                        },
-                                    },
-                                    "some text",
-                                ],
-                            },
-                        ],
-                    },
+                  },
+                  "some text",
                 ],
-            });
-        });
+              },
+              {
+                "w:r": [
+                  {
+                    "w:rPr": [
+                      {
+                        "w:rStyle": {
+                          _attr: { "w:val": "FootnoteReference" },
+                        },
+                      },
+                    ],
+                  },
+                  { "w:footnoteReference": { _attr: { "w:id": 1 } } },
+                ],
+              },
+            ],
+          },
+        ],
+      });
     });
-
-    describe("page numbering", () => {
-        it("should be able to delete the total pages", () => {
-            const deletedTextRun = new DeletedTextRun({
-                author: "Author",
-                children: [" to ", PageNumber.TOTAL_PAGES],
-                date: "123",
-                id: 0,
-            });
-            const tree = new Formatter().format(deletedTextRun);
-            expect(tree).to.deep.equal({
-                "w:del": [
-                    {
-                        _attr: {
-                            "w:author": "Author",
-                            "w:date": "123",
-                            "w:id": 0,
-                        },
-                    },
-                    {
-                        "w:r": [
-                            {
-                                "w:delText": [
-                                    {
-                                        _attr: {
-                                            "xml:space": "preserve",
-                                        },
-                                    },
-                                    " to ",
-                                ],
-                            },
-                            {
-                                "w:fldChar": {
-                                    _attr: {
-                                        "w:fldCharType": "begin",
-                                    },
-                                },
-                            },
-                            {
-                                "w:delInstrText": [
-                                    {
-                                        _attr: {
-                                            "xml:space": "preserve",
-                                        },
-                                    },
-                                    "NUMPAGES",
-                                ],
-                            },
-                            {
-                                "w:fldChar": {
-                                    _attr: {
-                                        "w:fldCharType": "separate",
-                                    },
-                                },
-                            },
-                            {
-                                "w:fldChar": {
-                                    _attr: {
-                                        "w:fldCharType": "end",
-                                    },
-                                },
-                            },
-                        ],
-                    },
-                ],
-            });
-        });
-
-        it("should be able to delete the total pages in section", () => {
-            const deletedTextRun = new DeletedTextRun({
-                author: "Author",
-                children: [" to ", PageNumber.TOTAL_PAGES_IN_SECTION],
-                date: "123",
-                id: 0,
-            });
-            const tree = new Formatter().format(deletedTextRun);
-            expect(tree).to.deep.equal({
-                "w:del": [
-                    {
-                        _attr: {
-                            "w:author": "Author",
-                            "w:date": "123",
-                            "w:id": 0,
-                        },
-                    },
-                    {
-                        "w:r": [
-                            {
-                                "w:delText": [
-                                    {
-                                        _attr: {
-                                            "xml:space": "preserve",
-                                        },
-                                    },
-                                    " to ",
-                                ],
-                            },
-                            {
-                                "w:fldChar": {
-                                    _attr: {
-                                        "w:fldCharType": "begin",
-                                    },
-                                },
-                            },
-                            {
-                                "w:delInstrText": [
-                                    {
-                                        _attr: {
-                                            "xml:space": "preserve",
-                                        },
-                                    },
-                                    "SECTIONPAGES",
-                                ],
-                            },
-                            {
-                                "w:fldChar": {
-                                    _attr: {
-                                        "w:fldCharType": "separate",
-                                    },
-                                },
-                            },
-                            {
-                                "w:fldChar": {
-                                    _attr: {
-                                        "w:fldCharType": "end",
-                                    },
-                                },
-                            },
-                        ],
-                    },
-                ],
-            });
-        });
-
-        it("should be able to delete the current page", () => {
-            const deletedTextRun = new DeletedTextRun({
-                author: "Author",
-                children: [" to ", PageNumber.CURRENT],
-                date: "123",
-                id: 0,
-            });
-            const tree = new Formatter().format(deletedTextRun);
-            expect(tree).to.deep.equal({
-                "w:del": [
-                    {
-                        _attr: {
-                            "w:author": "Author",
-                            "w:date": "123",
-                            "w:id": 0,
-                        },
-                    },
-                    {
-                        "w:r": [
-                            {
-                                "w:delText": [
-                                    {
-                                        _attr: {
-                                            "xml:space": "preserve",
-                                        },
-                                    },
-                                    " to ",
-                                ],
-                            },
-                            {
-                                "w:fldChar": {
-                                    _attr: {
-                                        "w:fldCharType": "begin",
-                                    },
-                                },
-                            },
-                            {
-                                "w:delInstrText": [
-                                    {
-                                        _attr: {
-                                            "xml:space": "preserve",
-                                        },
-                                    },
-                                    "PAGE",
-                                ],
-                            },
-                            {
-                                "w:fldChar": {
-                                    _attr: {
-                                        "w:fldCharType": "separate",
-                                    },
-                                },
-                            },
-                            {
-                                "w:fldChar": {
-                                    _attr: {
-                                        "w:fldCharType": "end",
-                                    },
-                                },
-                            },
-                        ],
-                    },
-                ],
-            });
-        });
-    });
-
-    describe("footnote references", () => {
-        it("should add a valid footnote reference", () => {
-            const deletedTextRun = new DeletedTextRun({
-                author: "Author",
-                children: ["some text", new FootnoteReferenceRun(1)],
-                date: "123",
-                id: 0,
-            });
-            const tree = new Formatter().format(deletedTextRun);
-            expect(tree).to.deep.equal({
-                "w:del": [
-                    {
-                        _attr: {
-                            "w:author": "Author",
-                            "w:date": "123",
-                            "w:id": 0,
-                        },
-                    },
-                    {
-                        "w:r": [
-                            {
-                                "w:delText": [
-                                    {
-                                        _attr: {
-                                            "xml:space": "preserve",
-                                        },
-                                    },
-                                    "some text",
-                                ],
-                            },
-                            {
-                                "w:r": [
-                                    {
-                                        "w:rPr": [
-                                            {
-                                                "w:rStyle": {
-                                                    _attr: { "w:val": "FootnoteReference" },
-                                                },
-                                            },
-                                        ],
-                                    },
-                                    { "w:footnoteReference": { _attr: { "w:id": 1 } } },
-                                ],
-                            },
-                        ],
-                    },
-                ],
-            });
-        });
-    });
+  });
 });

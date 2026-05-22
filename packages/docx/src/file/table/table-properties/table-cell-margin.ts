@@ -51,37 +51,37 @@ import type { XmlComponent } from "@file/xml-components";
  * ```
  */
 export interface ITableCellMarginOptions {
-    /**
-     * The unit type for margin values.
-     * Defaults to DXA (twentieths of a point) if not specified.
-     *
-     * @default WidthType.DXA
-     */
-    readonly marginUnitType?: (typeof WidthType)[keyof typeof WidthType];
+  /**
+   * The unit type for margin values.
+   * Defaults to DXA (twentieths of a point) if not specified.
+   *
+   * @default WidthType.DXA
+   */
+  readonly marginUnitType?: (typeof WidthType)[keyof typeof WidthType];
 
-    /**
-     * Top margin (padding above cell content).
-     * Value is in units specified by `marginUnitType`.
-     */
-    readonly top?: number;
+  /**
+   * Top margin (padding above cell content).
+   * Value is in units specified by `marginUnitType`.
+   */
+  readonly top?: number;
 
-    /**
-     * Bottom margin (padding below cell content).
-     * Value is in units specified by `marginUnitType`.
-     */
-    readonly bottom?: number;
+  /**
+   * Bottom margin (padding below cell content).
+   * Value is in units specified by `marginUnitType`.
+   */
+  readonly bottom?: number;
 
-    /**
-     * Left margin (padding to the left of cell content).
-     * Value is in units specified by `marginUnitType`.
-     */
-    readonly left?: number;
+  /**
+   * Left margin (padding to the left of cell content).
+   * Value is in units specified by `marginUnitType`.
+   */
+  readonly left?: number;
 
-    /**
-     * Right margin (padding to the right of cell content).
-     * Value is in units specified by `marginUnitType`.
-     */
-    readonly right?: number;
+  /**
+   * Right margin (padding to the right of cell content).
+   * Value is in units specified by `marginUnitType`.
+   */
+  readonly right?: number;
 }
 
 /**
@@ -90,25 +90,25 @@ export interface ITableCellMarginOptions {
  * @internal
  */
 const buildMarginChildren = ({
-    marginUnitType = WidthType.DXA,
-    top,
-    left,
-    bottom,
-    right,
+  marginUnitType = WidthType.DXA,
+  top,
+  left,
+  bottom,
+  right,
 }: ITableCellMarginOptions): readonly XmlComponent[] =>
-    (
-        [
-            { name: "w:top", size: top },
-            { name: "w:left", size: left },
-            { name: "w:bottom", size: bottom },
-            { name: "w:right", size: right },
-        ] as const
+  (
+    [
+      { name: "w:top", size: top },
+      { name: "w:left", size: left },
+      { name: "w:bottom", size: bottom },
+      { name: "w:right", size: right },
+    ] as const
+  )
+    .filter(
+      (entry): entry is { readonly name: typeof entry.name; readonly size: number } =>
+        entry.size !== undefined,
     )
-        .filter(
-            (entry): entry is { readonly name: typeof entry.name; readonly size: number } =>
-                entry.size !== undefined,
-        )
-        .map(({ name, size }) => createTableWidthElement(name, { size, type: marginUnitType }));
+    .map(({ name, size }) => createTableWidthElement(name, { size, type: marginUnitType }));
 
 /**
  * Creates a table-level cell margin element (tblCellMar).
@@ -137,18 +137,18 @@ const buildMarginChildren = ({
  * ```
  */
 export const createTableCellMargin = (
-    options: ITableCellMarginOptions,
+  options: ITableCellMarginOptions,
 ): XmlComponent | undefined => {
-    const children = buildMarginChildren(options);
+  const children = buildMarginChildren(options);
 
-    if (children.length === 0) {
-        return undefined;
-    }
+  if (children.length === 0) {
+    return undefined;
+  }
 
-    return new BuilderElement({
-        children,
-        name: "w:tblCellMar",
-    });
+  return new BuilderElement({
+    children,
+    name: "w:tblCellMar",
+  });
 };
 
 /**
@@ -177,14 +177,14 @@ export const createTableCellMargin = (
  * ```
  */
 export const createCellMargin = (options: ITableCellMarginOptions): XmlComponent | undefined => {
-    const children = buildMarginChildren(options);
+  const children = buildMarginChildren(options);
 
-    if (children.length === 0) {
-        return undefined;
-    }
+  if (children.length === 0) {
+    return undefined;
+  }
 
-    return new BuilderElement({
-        children,
-        name: "w:tcMar",
-    });
+  return new BuilderElement({
+    children,
+    name: "w:tcMar",
+  });
 };

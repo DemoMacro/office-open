@@ -55,17 +55,17 @@ import type { IColumnsAttributes } from "./properties/columns";
 import { createDocumentGrid } from "./properties/doc-grid";
 import type { IDocGridAttributesProperties } from "./properties/doc-grid";
 import {
-    createEndnoteProperties,
-    createFootnoteProperties,
+  createEndnoteProperties,
+  createFootnoteProperties,
 } from "./properties/footnote-endnote-properties";
 import type {
-    EndnotePropertiesOptions,
-    FootnotePropertiesOptions,
+  EndnotePropertiesOptions,
+  FootnotePropertiesOptions,
 } from "./properties/footnote-endnote-properties";
 import {
-    HeaderFooterReferenceType,
-    HeaderFooterType,
-    createHeaderFooterReference,
+  HeaderFooterReferenceType,
+  HeaderFooterType,
+  createHeaderFooterReference,
 } from "./properties/header-footer-reference";
 import { createLineNumberType } from "./properties/line-number";
 import type { ILineNumberAttributes } from "./properties/line-number";
@@ -91,69 +91,69 @@ import type { SectionType } from "./properties/section-type";
  * @property even - Header/footer for even pages (requires evenAndOddHeaders setting)
  */
 export interface IHeaderFooterGroup<T> {
-    /** Header/footer for default pages (odd pages when even headers are used) */
-    readonly default?: T;
-    /** Header/footer for first page (requires titlePage setting) */
-    readonly first?: T;
-    /** Header/footer for even pages (requires evenAndOddHeaders setting) */
-    readonly even?: T;
+  /** Header/footer for default pages (odd pages when even headers are used) */
+  readonly default?: T;
+  /** Header/footer for first page (requires titlePage setting) */
+  readonly first?: T;
+  /** Header/footer for even pages (requires evenAndOddHeaders setting) */
+  readonly even?: T;
 }
 
 export interface ISectionPropertiesOptionsBase {
-    /** Page-level settings including size, margins, borders, and text direction */
-    readonly page?: {
-        /** Page size and orientation */
-        readonly size?: Partial<IPageSizeAttributes>;
-        /** Page margins (top, bottom, left, right, header, footer, gutter) */
-        readonly margin?: IPageMarginAttributes;
-        /** Page numbering format and starting value */
-        readonly pageNumbers?: IPageNumberTypeAttributes;
-        /** Page border settings */
-        readonly borders?: IPageBordersOptions;
-        /** Text flow direction (horizontal or vertical) */
-        readonly textDirection?: (typeof PageTextDirectionType)[keyof typeof PageTextDirectionType];
-    };
-    /** Document grid settings for precise East Asian character layout */
-    readonly grid?: Partial<IDocGridAttributesProperties>;
-    /** Header definitions for default, first, and even pages */
-    readonly headerWrapperGroup?: IHeaderFooterGroup<HeaderWrapper>;
-    /** Footer definitions for default, first, and even pages */
-    readonly footerWrapperGroup?: IHeaderFooterGroup<FooterWrapper>;
-    /** Line numbering settings for the section */
-    readonly lineNumbers?: ILineNumberAttributes;
-    /** Whether first page has different header/footer */
-    readonly titlePage?: boolean;
-    /** Vertical alignment of text on page (top, center, bottom, justified) */
-    readonly verticalAlign?: SectionVerticalAlign;
-    /** Column layout settings (count, spacing, equal width) */
-    readonly column?: IColumnsAttributes;
-    /** Section break type (next page, continuous, even page, odd page) */
-    readonly type?: (typeof SectionType)[keyof typeof SectionType];
-    /** Whether to suppress endnotes in this section */
-    readonly noEndnote?: boolean;
-    /** Whether form protection is enabled for this section */
-    readonly formProtection?: boolean;
-    /** Whether text direction is right-to-left for this section */
-    readonly bidi?: boolean;
-    /** Whether gutter is on the right side for right-to-left sections */
-    readonly rtlGutter?: boolean;
-    /** Paper source settings for the section */
-    readonly paperSrc?: {
-        /** Paper tray for the first page */
-        readonly first?: number;
-        /** Paper tray for subsequent pages */
-        readonly other?: number;
-    };
-    /** Footnote properties for the section */
-    readonly footnotePr?: FootnotePropertiesOptions;
-    /** Endnote properties for the section */
-    readonly endnotePr?: EndnotePropertiesOptions;
-    /** Printer settings reference ID */
-    readonly printerSettingsId?: string;
+  /** Page-level settings including size, margins, borders, and text direction */
+  readonly page?: {
+    /** Page size and orientation */
+    readonly size?: Partial<IPageSizeAttributes>;
+    /** Page margins (top, bottom, left, right, header, footer, gutter) */
+    readonly margin?: IPageMarginAttributes;
+    /** Page numbering format and starting value */
+    readonly pageNumbers?: IPageNumberTypeAttributes;
+    /** Page border settings */
+    readonly borders?: IPageBordersOptions;
+    /** Text flow direction (horizontal or vertical) */
+    readonly textDirection?: (typeof PageTextDirectionType)[keyof typeof PageTextDirectionType];
+  };
+  /** Document grid settings for precise East Asian character layout */
+  readonly grid?: Partial<IDocGridAttributesProperties>;
+  /** Header definitions for default, first, and even pages */
+  readonly headerWrapperGroup?: IHeaderFooterGroup<HeaderWrapper>;
+  /** Footer definitions for default, first, and even pages */
+  readonly footerWrapperGroup?: IHeaderFooterGroup<FooterWrapper>;
+  /** Line numbering settings for the section */
+  readonly lineNumbers?: ILineNumberAttributes;
+  /** Whether first page has different header/footer */
+  readonly titlePage?: boolean;
+  /** Vertical alignment of text on page (top, center, bottom, justified) */
+  readonly verticalAlign?: SectionVerticalAlign;
+  /** Column layout settings (count, spacing, equal width) */
+  readonly column?: IColumnsAttributes;
+  /** Section break type (next page, continuous, even page, odd page) */
+  readonly type?: (typeof SectionType)[keyof typeof SectionType];
+  /** Whether to suppress endnotes in this section */
+  readonly noEndnote?: boolean;
+  /** Whether form protection is enabled for this section */
+  readonly formProtection?: boolean;
+  /** Whether text direction is right-to-left for this section */
+  readonly bidi?: boolean;
+  /** Whether gutter is on the right side for right-to-left sections */
+  readonly rtlGutter?: boolean;
+  /** Paper source settings for the section */
+  readonly paperSrc?: {
+    /** Paper tray for the first page */
+    readonly first?: number;
+    /** Paper tray for subsequent pages */
+    readonly other?: number;
+  };
+  /** Footnote properties for the section */
+  readonly footnotePr?: FootnotePropertiesOptions;
+  /** Endnote properties for the section */
+  readonly endnotePr?: EndnotePropertiesOptions;
+  /** Printer settings reference ID */
+  readonly printerSettingsId?: string;
 }
 
 export type ISectionPropertiesChangeOptions = IChangedAttributesProperties &
-    ISectionPropertiesOptionsBase;
+  ISectionPropertiesOptionsBase;
 
 /**
  * Options for configuring section properties.
@@ -174,7 +174,7 @@ export type ISectionPropertiesChangeOptions = IChangedAttributesProperties &
  * @see {@link SectionProperties}
  */
 export type ISectionPropertiesOptions = {
-    readonly revision?: ISectionPropertiesChangeOptions;
+  readonly revision?: ISectionPropertiesChangeOptions;
 } & ISectionPropertiesOptionsBase;
 
 /**
@@ -192,20 +192,20 @@ export type ISectionPropertiesOptions = {
  * @property GUTTER - Gutter margin: 0 twips
  */
 export const sectionMarginDefaults = {
-    /** Top margin: 1440 twips (1 inch) */
-    TOP: 1440,
-    /** Right margin: 1800 twips (1.25 inches) */
-    RIGHT: 1800,
-    /** Bottom margin: 1440 twips (1 inch) */
-    BOTTOM: 1440,
-    /** Left margin: 1800 twips (1.25 inches) */
-    LEFT: 1800,
-    /** Header margin from top: 851 twips */
-    HEADER: 851,
-    /** Footer margin from bottom: 992 twips */
-    FOOTER: 992,
-    /** Gutter margin for binding: 0 twips */
-    GUTTER: 0,
+  /** Top margin: 1440 twips (1 inch) */
+  TOP: 1440,
+  /** Right margin: 1800 twips (1.25 inches) */
+  RIGHT: 1800,
+  /** Bottom margin: 1440 twips (1 inch) */
+  BOTTOM: 1440,
+  /** Left margin: 1800 twips (1.25 inches) */
+  LEFT: 1800,
+  /** Header margin from top: 851 twips */
+  HEADER: 851,
+  /** Footer margin from bottom: 992 twips */
+  FOOTER: 992,
+  /** Gutter margin for binding: 0 twips */
+  GUTTER: 0,
 };
 
 /**
@@ -218,12 +218,12 @@ export const sectionMarginDefaults = {
  * @property ORIENTATION - Page orientation: portrait
  */
 export const sectionPageSizeDefaults = {
-    /** Page width: 11906 twips (8.27 inches, 210mm) */
-    WIDTH: 11_906,
-    /** Page height: 16838 twips (11.69 inches, 297mm) */
-    HEIGHT: 16_838,
-    /** Page orientation: portrait */
-    ORIENTATION: PageOrientation.PORTRAIT,
+  /** Page width: 11906 twips (8.27 inches, 210mm) */
+  WIDTH: 11_906,
+  /** Page height: 16838 twips (11.69 inches, 297mm) */
+  HEIGHT: 16_838,
+  /** Page orientation: portrait */
+  ORIENTATION: PageOrientation.PORTRAIT,
 };
 
 /**
@@ -276,189 +276,183 @@ export const sectionPageSizeDefaults = {
  * ```
  */
 export class SectionProperties extends XmlComponent {
-    public constructor({
-        page: {
-            size: {
-                width = sectionPageSizeDefaults.WIDTH,
-                height = sectionPageSizeDefaults.HEIGHT,
-                orientation = sectionPageSizeDefaults.ORIENTATION,
-            } = {},
-            margin: {
-                top = sectionMarginDefaults.TOP,
-                right = sectionMarginDefaults.RIGHT,
-                bottom = sectionMarginDefaults.BOTTOM,
-                left = sectionMarginDefaults.LEFT,
-                header = sectionMarginDefaults.HEADER,
-                footer = sectionMarginDefaults.FOOTER,
-                gutter = sectionMarginDefaults.GUTTER,
-            } = {},
-            pageNumbers = {},
-            borders,
-            textDirection,
-        } = {},
-        grid: { linePitch = 312, charSpace = 0, type: gridType = "lines" } = {},
-        headerWrapperGroup = {},
-        footerWrapperGroup = {},
-        lineNumbers,
-        titlePage,
-        verticalAlign,
-        column,
-        type,
-        revision,
-        noEndnote,
-        formProtection,
-        bidi,
-        rtlGutter,
-        paperSrc,
-        footnotePr,
-        endnotePr,
-        printerSettingsId,
-    }: ISectionPropertiesOptions = {}) {
-        super("w:sectPr");
+  public constructor({
+    page: {
+      size: {
+        width = sectionPageSizeDefaults.WIDTH,
+        height = sectionPageSizeDefaults.HEIGHT,
+        orientation = sectionPageSizeDefaults.ORIENTATION,
+      } = {},
+      margin: {
+        top = sectionMarginDefaults.TOP,
+        right = sectionMarginDefaults.RIGHT,
+        bottom = sectionMarginDefaults.BOTTOM,
+        left = sectionMarginDefaults.LEFT,
+        header = sectionMarginDefaults.HEADER,
+        footer = sectionMarginDefaults.FOOTER,
+        gutter = sectionMarginDefaults.GUTTER,
+      } = {},
+      pageNumbers = {},
+      borders,
+      textDirection,
+    } = {},
+    grid: { linePitch = 312, charSpace = 0, type: gridType = "lines" } = {},
+    headerWrapperGroup = {},
+    footerWrapperGroup = {},
+    lineNumbers,
+    titlePage,
+    verticalAlign,
+    column,
+    type,
+    revision,
+    noEndnote,
+    formProtection,
+    bidi,
+    rtlGutter,
+    paperSrc,
+    footnotePr,
+    endnotePr,
+    printerSettingsId,
+  }: ISectionPropertiesOptions = {}) {
+    super("w:sectPr");
 
-        this.addHeaderFooterGroup(HeaderFooterType.HEADER, headerWrapperGroup);
-        this.addHeaderFooterGroup(HeaderFooterType.FOOTER, footerWrapperGroup);
+    this.addHeaderFooterGroup(HeaderFooterType.HEADER, headerWrapperGroup);
+    this.addHeaderFooterGroup(HeaderFooterType.FOOTER, footerWrapperGroup);
 
-        if (footnotePr) {
-            this.root.push(createFootnoteProperties(footnotePr));
-        }
-
-        if (endnotePr) {
-            this.root.push(createEndnoteProperties(endnotePr));
-        }
-
-        if (type) {
-            this.root.push(createSectionType(type));
-        }
-
-        this.root.push(createPageSize({ height, orientation, width }));
-        this.root.push(createPageMargin(top, right, bottom, left, header, footer, gutter));
-
-        if (borders) {
-            this.root.push(new PageBorders(borders));
-        }
-
-        if (lineNumbers) {
-            this.root.push(createLineNumberType(lineNumbers));
-        }
-
-        this.root.push(createPageNumberType(pageNumbers));
-
-        if (column) {
-            this.root.push(createColumns(column));
-        }
-
-        if (verticalAlign) {
-            this.root.push(createVerticalAlign(verticalAlign));
-        }
-
-        if (titlePage !== undefined) {
-            this.root.push(new OnOffElement("w:titlePg", titlePage));
-        }
-
-        if (textDirection) {
-            this.root.push(new PageTextDirection(textDirection));
-        }
-
-        if (noEndnote !== undefined) {
-            this.root.push(new OnOffElement("w:noEndnote", noEndnote));
-        }
-
-        if (formProtection !== undefined) {
-            this.root.push(new OnOffElement("w:formProt", formProtection));
-        }
-
-        if (bidi !== undefined) {
-            this.root.push(new OnOffElement("w:bidi", bidi));
-        }
-
-        if (rtlGutter !== undefined) {
-            this.root.push(new OnOffElement("w:rtlGutter", rtlGutter));
-        }
-
-        if (paperSrc) {
-            this.root.push(
-                new BuilderElement<{ readonly first?: number; readonly other?: number }>({
-                    attributes: {
-                        first: {
-                            key: "w:first",
-                            value:
-                                paperSrc.first === undefined
-                                    ? undefined
-                                    : decimalNumber(paperSrc.first),
-                        },
-                        other: {
-                            key: "w:other",
-                            value:
-                                paperSrc.other === undefined
-                                    ? undefined
-                                    : decimalNumber(paperSrc.other),
-                        },
-                    },
-                    name: "w:paperSrc",
-                }),
-            );
-        }
-
-        if (printerSettingsId !== undefined) {
-            this.root.push(
-                new BuilderElement({
-                    attributes: { id: { key: "r:id", value: printerSettingsId } },
-                    name: "w:printerSettings",
-                }),
-            );
-        }
-
-        this.root.push(createDocumentGrid({ charSpace, linePitch, type: gridType }));
-
-        if (revision) {
-            this.root.push(new SectionPropertiesChange(revision));
-        }
+    if (footnotePr) {
+      this.root.push(createFootnoteProperties(footnotePr));
     }
 
-    private addHeaderFooterGroup(
-        type: (typeof HeaderFooterType)[keyof typeof HeaderFooterType],
-        group: IHeaderFooterGroup<HeaderWrapper> | IHeaderFooterGroup<FooterWrapper>,
-    ): void {
-        if (group.default) {
-            this.root.push(
-                createHeaderFooterReference(type, {
-                    id: group.default.View.ReferenceId,
-                    type: HeaderFooterReferenceType.DEFAULT,
-                }),
-            );
-        }
-
-        if (group.first) {
-            this.root.push(
-                createHeaderFooterReference(type, {
-                    id: group.first.View.ReferenceId,
-                    type: HeaderFooterReferenceType.FIRST,
-                }),
-            );
-        }
-
-        if (group.even) {
-            this.root.push(
-                createHeaderFooterReference(type, {
-                    id: group.even.View.ReferenceId,
-                    type: HeaderFooterReferenceType.EVEN,
-                }),
-            );
-        }
+    if (endnotePr) {
+      this.root.push(createEndnoteProperties(endnotePr));
     }
+
+    if (type) {
+      this.root.push(createSectionType(type));
+    }
+
+    this.root.push(createPageSize({ height, orientation, width }));
+    this.root.push(createPageMargin(top, right, bottom, left, header, footer, gutter));
+
+    if (borders) {
+      this.root.push(new PageBorders(borders));
+    }
+
+    if (lineNumbers) {
+      this.root.push(createLineNumberType(lineNumbers));
+    }
+
+    this.root.push(createPageNumberType(pageNumbers));
+
+    if (column) {
+      this.root.push(createColumns(column));
+    }
+
+    if (verticalAlign) {
+      this.root.push(createVerticalAlign(verticalAlign));
+    }
+
+    if (titlePage !== undefined) {
+      this.root.push(new OnOffElement("w:titlePg", titlePage));
+    }
+
+    if (textDirection) {
+      this.root.push(new PageTextDirection(textDirection));
+    }
+
+    if (noEndnote !== undefined) {
+      this.root.push(new OnOffElement("w:noEndnote", noEndnote));
+    }
+
+    if (formProtection !== undefined) {
+      this.root.push(new OnOffElement("w:formProt", formProtection));
+    }
+
+    if (bidi !== undefined) {
+      this.root.push(new OnOffElement("w:bidi", bidi));
+    }
+
+    if (rtlGutter !== undefined) {
+      this.root.push(new OnOffElement("w:rtlGutter", rtlGutter));
+    }
+
+    if (paperSrc) {
+      this.root.push(
+        new BuilderElement<{ readonly first?: number; readonly other?: number }>({
+          attributes: {
+            first: {
+              key: "w:first",
+              value: paperSrc.first === undefined ? undefined : decimalNumber(paperSrc.first),
+            },
+            other: {
+              key: "w:other",
+              value: paperSrc.other === undefined ? undefined : decimalNumber(paperSrc.other),
+            },
+          },
+          name: "w:paperSrc",
+        }),
+      );
+    }
+
+    if (printerSettingsId !== undefined) {
+      this.root.push(
+        new BuilderElement({
+          attributes: { id: { key: "r:id", value: printerSettingsId } },
+          name: "w:printerSettings",
+        }),
+      );
+    }
+
+    this.root.push(createDocumentGrid({ charSpace, linePitch, type: gridType }));
+
+    if (revision) {
+      this.root.push(new SectionPropertiesChange(revision));
+    }
+  }
+
+  private addHeaderFooterGroup(
+    type: (typeof HeaderFooterType)[keyof typeof HeaderFooterType],
+    group: IHeaderFooterGroup<HeaderWrapper> | IHeaderFooterGroup<FooterWrapper>,
+  ): void {
+    if (group.default) {
+      this.root.push(
+        createHeaderFooterReference(type, {
+          id: group.default.View.ReferenceId,
+          type: HeaderFooterReferenceType.DEFAULT,
+        }),
+      );
+    }
+
+    if (group.first) {
+      this.root.push(
+        createHeaderFooterReference(type, {
+          id: group.first.View.ReferenceId,
+          type: HeaderFooterReferenceType.FIRST,
+        }),
+      );
+    }
+
+    if (group.even) {
+      this.root.push(
+        createHeaderFooterReference(type, {
+          id: group.even.View.ReferenceId,
+          type: HeaderFooterReferenceType.EVEN,
+        }),
+      );
+    }
+  }
 }
 
 export class SectionPropertiesChange extends XmlComponent {
-    public constructor(options: ISectionPropertiesChangeOptions) {
-        super("w:sectPrChange");
-        this.root.push(
-            new ChangeAttributes({
-                author: options.author,
-                date: options.date,
-                id: options.id,
-            }),
-        );
-        this.root.push(new SectionProperties(options));
-    }
+  public constructor(options: ISectionPropertiesChangeOptions) {
+    super("w:sectPrChange");
+    this.root.push(
+      new ChangeAttributes({
+        author: options.author,
+        date: options.date,
+        id: options.id,
+      }),
+    );
+    this.root.push(new SectionProperties(options));
+  }
 }

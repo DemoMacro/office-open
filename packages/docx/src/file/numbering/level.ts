@@ -9,10 +9,10 @@
  * @module
  */
 import {
-    Attributes,
-    NumberValueElement,
-    XmlAttributeComponent,
-    XmlComponent,
+  Attributes,
+  NumberValueElement,
+  XmlAttributeComponent,
+  XmlComponent,
 } from "@file/xml-components";
 import { decimalNumber } from "@util/values";
 
@@ -45,147 +45,147 @@ import type { RunStylePropertiesOptions } from "../paragraph/run/properties";
  * @publicApi
  */
 export const LevelFormat = {
-    /** Decimal numbering (1, 2, 3...). */
-    DECIMAL: "decimal",
-    /** Uppercase roman numerals (I, II, III...). */
-    UPPER_ROMAN: "upperRoman",
-    /** Lowercase roman numerals (i, ii, iii...). */
-    LOWER_ROMAN: "lowerRoman",
-    /** Uppercase letters (A, B, C...). */
-    UPPER_LETTER: "upperLetter",
-    /** Lowercase letters (a, b, c...). */
-    LOWER_LETTER: "lowerLetter",
-    /** Ordinal numbers (1st, 2nd, 3rd...). */
-    ORDINAL: "ordinal",
-    /** Cardinal text (one, two, three...). */
-    CARDINAL_TEXT: "cardinalText",
-    /** Ordinal text (first, second, third...). */
-    ORDINAL_TEXT: "ordinalText",
-    /** Hexadecimal numbering. */
-    HEX: "hex",
-    /** Chicago Manual of Style numbering. */
-    CHICAGO: "chicago",
-    /** Ideograph digital numbering. */
-    IDEOGRAPH__DIGITAL: "ideographDigital",
-    /** Japanese counting system. */
-    JAPANESE_COUNTING: "japaneseCounting",
-    /** Japanese aiueo ordering. */
-    AIUEO: "aiueo",
-    /** Japanese iroha ordering. */
-    IROHA: "iroha",
-    /** Full-width decimal numbering. */
-    DECIMAL_FULL_WIDTH: "decimalFullWidth",
-    /** Half-width decimal numbering. */
-    DECIMAL_HALF_WIDTH: "decimalHalfWidth",
-    /** Japanese legal numbering. */
-    JAPANESE_LEGAL: "japaneseLegal",
-    /** Japanese digital ten thousand numbering. */
-    JAPANESE_DIGITAL_TEN_THOUSAND: "japaneseDigitalTenThousand",
-    /** Decimal numbers enclosed in circles. */
-    DECIMAL_ENCLOSED_CIRCLE: "decimalEnclosedCircle",
-    /** Full-width decimal numbering variant 2. */
-    DECIMAL_FULL_WIDTH2: "decimalFullWidth2",
-    /** Full-width aiueo ordering. */
-    AIUEO_FULL_WIDTH: "aiueoFullWidth",
-    /** Full-width iroha ordering. */
-    IROHA_FULL_WIDTH: "irohaFullWidth",
-    /** Decimal with leading zeros. */
-    DECIMAL_ZERO: "decimalZero",
-    /** Bullet points. */
-    BULLET: "bullet",
-    /** Korean ganada ordering. */
-    GANADA: "ganada",
-    /** Korean chosung ordering. */
-    CHOSUNG: "chosung",
-    /** Decimal enclosed with fullstop. */
-    DECIMAL_ENCLOSED_FULLSTOP: "decimalEnclosedFullstop",
-    /** Decimal enclosed in parentheses. */
-    DECIMAL_ENCLOSED_PARENTHESES: "decimalEnclosedParen",
-    /** Decimal enclosed in circles (Chinese). */
-    DECIMAL_ENCLOSED_CIRCLE_CHINESE: "decimalEnclosedCircleChinese",
-    /** Ideograph enclosed in circles. */
-    IDEOGRAPH_ENCLOSED_CIRCLE: "ideographEnclosedCircle",
-    /** Traditional ideograph numbering. */
-    IDEOGRAPH_TRADITIONAL: "ideographTraditional",
-    /** Ideograph zodiac numbering. */
-    IDEOGRAPH_ZODIAC: "ideographZodiac",
-    /** Traditional ideograph zodiac numbering. */
-    IDEOGRAPH_ZODIAC_TRADITIONAL: "ideographZodiacTraditional",
-    /** Taiwanese counting system. */
-    TAIWANESE_COUNTING: "taiwaneseCounting",
-    /** Traditional ideograph legal numbering. */
-    IDEOGRAPH_LEGAL_TRADITIONAL: "ideographLegalTraditional",
-    /** Taiwanese counting thousand system. */
-    TAIWANESE_COUNTING_THOUSAND: "taiwaneseCountingThousand",
-    /** Taiwanese digital numbering. */
-    TAIWANESE_DIGITAL: "taiwaneseDigital",
-    /** Chinese counting system. */
-    CHINESE_COUNTING: "chineseCounting",
-    /** Simplified Chinese legal numbering. */
-    CHINESE_LEGAL_SIMPLIFIED: "chineseLegalSimplified",
-    /** Chinese counting thousand system. */
-    CHINESE_COUNTING_THOUSAND: "chineseCountingThousand",
-    /** Korean digital numbering. */
-    KOREAN_DIGITAL: "koreanDigital",
-    /** Korean counting system. */
-    KOREAN_COUNTING: "koreanCounting",
-    /** Korean legal numbering. */
-    KOREAN_LEGAL: "koreanLegal",
-    /** Korean digital numbering variant 2. */
-    KOREAN_DIGITAL2: "koreanDigital2",
-    /** Vietnamese counting system. */
-    VIETNAMESE_COUNTING: "vietnameseCounting",
-    /** Russian lowercase numbering. */
-    RUSSIAN_LOWER: "russianLower",
-    /** Russian uppercase numbering. */
-    RUSSIAN_UPPER: "russianUpper",
-    /** No numbering. */
-    NONE: "none",
-    /** Number enclosed in dashes. */
-    NUMBER_IN_DASH: "numberInDash",
-    /** Hebrew numbering variant 1. */
-    HEBREW1: "hebrew1",
-    /** Hebrew numbering variant 2. */
-    HEBREW2: "hebrew2",
-    /** Arabic alpha numbering. */
-    ARABIC_ALPHA: "arabicAlpha",
-    /** Arabic abjad numbering. */
-    ARABIC_ABJAD: "arabicAbjad",
-    /** Hindi vowels. */
-    HINDI_VOWELS: "hindiVowels",
-    /** Hindi consonants. */
-    HINDI_CONSONANTS: "hindiConsonants",
-    /** Hindi numbers. */
-    HINDI_NUMBERS: "hindiNumbers",
-    /** Hindi counting system. */
-    HINDI_COUNTING: "hindiCounting",
-    /** Thai letters. */
-    THAI_LETTERS: "thaiLetters",
-    /** Thai numbers. */
-    THAI_NUMBERS: "thaiNumbers",
-    /** Thai counting system. */
-    THAI_COUNTING: "thaiCounting",
-    /** Thai Baht text. */
-    BAHT_TEXT: "bahtText",
-    /** Dollar text. */
-    DOLLAR_TEXT: "dollarText",
-    /** Custom numbering format. */
-    CUSTOM: "custom",
+  /** Decimal numbering (1, 2, 3...). */
+  DECIMAL: "decimal",
+  /** Uppercase roman numerals (I, II, III...). */
+  UPPER_ROMAN: "upperRoman",
+  /** Lowercase roman numerals (i, ii, iii...). */
+  LOWER_ROMAN: "lowerRoman",
+  /** Uppercase letters (A, B, C...). */
+  UPPER_LETTER: "upperLetter",
+  /** Lowercase letters (a, b, c...). */
+  LOWER_LETTER: "lowerLetter",
+  /** Ordinal numbers (1st, 2nd, 3rd...). */
+  ORDINAL: "ordinal",
+  /** Cardinal text (one, two, three...). */
+  CARDINAL_TEXT: "cardinalText",
+  /** Ordinal text (first, second, third...). */
+  ORDINAL_TEXT: "ordinalText",
+  /** Hexadecimal numbering. */
+  HEX: "hex",
+  /** Chicago Manual of Style numbering. */
+  CHICAGO: "chicago",
+  /** Ideograph digital numbering. */
+  IDEOGRAPH__DIGITAL: "ideographDigital",
+  /** Japanese counting system. */
+  JAPANESE_COUNTING: "japaneseCounting",
+  /** Japanese aiueo ordering. */
+  AIUEO: "aiueo",
+  /** Japanese iroha ordering. */
+  IROHA: "iroha",
+  /** Full-width decimal numbering. */
+  DECIMAL_FULL_WIDTH: "decimalFullWidth",
+  /** Half-width decimal numbering. */
+  DECIMAL_HALF_WIDTH: "decimalHalfWidth",
+  /** Japanese legal numbering. */
+  JAPANESE_LEGAL: "japaneseLegal",
+  /** Japanese digital ten thousand numbering. */
+  JAPANESE_DIGITAL_TEN_THOUSAND: "japaneseDigitalTenThousand",
+  /** Decimal numbers enclosed in circles. */
+  DECIMAL_ENCLOSED_CIRCLE: "decimalEnclosedCircle",
+  /** Full-width decimal numbering variant 2. */
+  DECIMAL_FULL_WIDTH2: "decimalFullWidth2",
+  /** Full-width aiueo ordering. */
+  AIUEO_FULL_WIDTH: "aiueoFullWidth",
+  /** Full-width iroha ordering. */
+  IROHA_FULL_WIDTH: "irohaFullWidth",
+  /** Decimal with leading zeros. */
+  DECIMAL_ZERO: "decimalZero",
+  /** Bullet points. */
+  BULLET: "bullet",
+  /** Korean ganada ordering. */
+  GANADA: "ganada",
+  /** Korean chosung ordering. */
+  CHOSUNG: "chosung",
+  /** Decimal enclosed with fullstop. */
+  DECIMAL_ENCLOSED_FULLSTOP: "decimalEnclosedFullstop",
+  /** Decimal enclosed in parentheses. */
+  DECIMAL_ENCLOSED_PARENTHESES: "decimalEnclosedParen",
+  /** Decimal enclosed in circles (Chinese). */
+  DECIMAL_ENCLOSED_CIRCLE_CHINESE: "decimalEnclosedCircleChinese",
+  /** Ideograph enclosed in circles. */
+  IDEOGRAPH_ENCLOSED_CIRCLE: "ideographEnclosedCircle",
+  /** Traditional ideograph numbering. */
+  IDEOGRAPH_TRADITIONAL: "ideographTraditional",
+  /** Ideograph zodiac numbering. */
+  IDEOGRAPH_ZODIAC: "ideographZodiac",
+  /** Traditional ideograph zodiac numbering. */
+  IDEOGRAPH_ZODIAC_TRADITIONAL: "ideographZodiacTraditional",
+  /** Taiwanese counting system. */
+  TAIWANESE_COUNTING: "taiwaneseCounting",
+  /** Traditional ideograph legal numbering. */
+  IDEOGRAPH_LEGAL_TRADITIONAL: "ideographLegalTraditional",
+  /** Taiwanese counting thousand system. */
+  TAIWANESE_COUNTING_THOUSAND: "taiwaneseCountingThousand",
+  /** Taiwanese digital numbering. */
+  TAIWANESE_DIGITAL: "taiwaneseDigital",
+  /** Chinese counting system. */
+  CHINESE_COUNTING: "chineseCounting",
+  /** Simplified Chinese legal numbering. */
+  CHINESE_LEGAL_SIMPLIFIED: "chineseLegalSimplified",
+  /** Chinese counting thousand system. */
+  CHINESE_COUNTING_THOUSAND: "chineseCountingThousand",
+  /** Korean digital numbering. */
+  KOREAN_DIGITAL: "koreanDigital",
+  /** Korean counting system. */
+  KOREAN_COUNTING: "koreanCounting",
+  /** Korean legal numbering. */
+  KOREAN_LEGAL: "koreanLegal",
+  /** Korean digital numbering variant 2. */
+  KOREAN_DIGITAL2: "koreanDigital2",
+  /** Vietnamese counting system. */
+  VIETNAMESE_COUNTING: "vietnameseCounting",
+  /** Russian lowercase numbering. */
+  RUSSIAN_LOWER: "russianLower",
+  /** Russian uppercase numbering. */
+  RUSSIAN_UPPER: "russianUpper",
+  /** No numbering. */
+  NONE: "none",
+  /** Number enclosed in dashes. */
+  NUMBER_IN_DASH: "numberInDash",
+  /** Hebrew numbering variant 1. */
+  HEBREW1: "hebrew1",
+  /** Hebrew numbering variant 2. */
+  HEBREW2: "hebrew2",
+  /** Arabic alpha numbering. */
+  ARABIC_ALPHA: "arabicAlpha",
+  /** Arabic abjad numbering. */
+  ARABIC_ABJAD: "arabicAbjad",
+  /** Hindi vowels. */
+  HINDI_VOWELS: "hindiVowels",
+  /** Hindi consonants. */
+  HINDI_CONSONANTS: "hindiConsonants",
+  /** Hindi numbers. */
+  HINDI_NUMBERS: "hindiNumbers",
+  /** Hindi counting system. */
+  HINDI_COUNTING: "hindiCounting",
+  /** Thai letters. */
+  THAI_LETTERS: "thaiLetters",
+  /** Thai numbers. */
+  THAI_NUMBERS: "thaiNumbers",
+  /** Thai counting system. */
+  THAI_COUNTING: "thaiCounting",
+  /** Thai Baht text. */
+  BAHT_TEXT: "bahtText",
+  /** Dollar text. */
+  DOLLAR_TEXT: "dollarText",
+  /** Custom numbering format. */
+  CUSTOM: "custom",
 } as const;
 
 /**
  * Attributes for numbering levels.
  */
 class LevelAttributes extends XmlAttributeComponent<{
-    /** The level index (0-8). */
-    readonly ilvl?: number;
-    /** Whether this level is tentative. */
-    readonly tentative?: number;
+  /** The level index (0-8). */
+  readonly ilvl?: number;
+  /** Whether this level is tentative. */
+  readonly tentative?: number;
 }> {
-    protected readonly xmlKeys = {
-        ilvl: "w:ilvl",
-        tentative: "w15:tentative",
-    };
+  protected readonly xmlKeys = {
+    ilvl: "w:ilvl",
+    tentative: "w15:tentative",
+  };
 }
 
 /**
@@ -194,14 +194,14 @@ class LevelAttributes extends XmlAttributeComponent<{
  * Specifies the numbering format to use (decimal, roman, letter, etc.).
  */
 class NumberFormat extends XmlComponent {
-    public constructor(value: string) {
-        super("w:numFmt");
-        this.root.push(
-            new Attributes({
-                val: value,
-            }),
-        );
-    }
+  public constructor(value: string) {
+    super("w:numFmt");
+    this.root.push(
+      new Attributes({
+        val: value,
+      }),
+    );
+  }
 }
 
 /**
@@ -211,28 +211,28 @@ class NumberFormat extends XmlComponent {
  * numbering from different levels.
  */
 class LevelText extends XmlComponent {
-    public constructor(value: string) {
-        super("w:lvlText");
-        this.root.push(
-            new Attributes({
-                val: value,
-            }),
-        );
-    }
+  public constructor(value: string) {
+    super("w:lvlText");
+    this.root.push(
+      new Attributes({
+        val: value,
+      }),
+    );
+  }
 }
 
 /**
  * Alignment specification for level numbering.
  */
 class LevelJc extends XmlComponent {
-    public constructor(value: (typeof AlignmentType)[keyof typeof AlignmentType]) {
-        super("w:lvlJc");
-        this.root.push(
-            new Attributes({
-                val: value,
-            }),
-        );
-    }
+  public constructor(value: (typeof AlignmentType)[keyof typeof AlignmentType]) {
+    super("w:lvlJc");
+    this.root.push(
+      new Attributes({
+        val: value,
+      }),
+    );
+  }
 }
 
 /**
@@ -255,12 +255,12 @@ class LevelJc extends XmlComponent {
  * @publicApi
  */
 export const LevelSuffix = {
-    /** No separator after the numbering. */
-    NOTHING: "nothing",
-    /** Space character after the numbering. */
-    SPACE: "space",
-    /** Tab character after the numbering. */
-    TAB: "tab",
+  /** No separator after the numbering. */
+  NOTHING: "nothing",
+  /** Space character after the numbering. */
+  SPACE: "space",
+  /** Tab character after the numbering. */
+  TAB: "tab",
 } as const;
 
 /**
@@ -276,27 +276,27 @@ export const LevelSuffix = {
  * @property style - Run and paragraph style properties
  */
 export interface ILevelsOptions {
-    /** Level index (0-8). */
-    readonly level: number;
-    /** Number format type (decimal, roman, letter, bullet, etc.). */
-    readonly format?: (typeof LevelFormat)[keyof typeof LevelFormat];
-    /** Level text template with placeholders like %1, %2. */
-    readonly text?: string;
-    /** Text alignment for the numbering. */
-    readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
-    /** Starting number for this level. */
-    readonly start?: number;
-    /** Character(s) following the numbering. */
-    readonly suffix?: (typeof LevelSuffix)[keyof typeof LevelSuffix];
-    /** Use legal numbering style (e.g., 1.1.1). */
-    readonly isLegalNumberingStyle?: boolean;
-    /** Run and paragraph style properties. */
-    readonly style?: {
-        /** Run style properties for the numbering text. */
-        readonly run?: RunStylePropertiesOptions;
-        /** Paragraph style properties for the level. */
-        readonly paragraph?: LevelParagraphStylePropertiesOptions;
-    };
+  /** Level index (0-8). */
+  readonly level: number;
+  /** Number format type (decimal, roman, letter, bullet, etc.). */
+  readonly format?: (typeof LevelFormat)[keyof typeof LevelFormat];
+  /** Level text template with placeholders like %1, %2. */
+  readonly text?: string;
+  /** Text alignment for the numbering. */
+  readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
+  /** Starting number for this level. */
+  readonly start?: number;
+  /** Character(s) following the numbering. */
+  readonly suffix?: (typeof LevelSuffix)[keyof typeof LevelSuffix];
+  /** Use legal numbering style (e.g., 1.1.1). */
+  readonly isLegalNumberingStyle?: boolean;
+  /** Run and paragraph style properties. */
+  readonly style?: {
+    /** Run style properties for the numbering text. */
+    readonly run?: RunStylePropertiesOptions;
+    /** Paragraph style properties for the level. */
+    readonly paragraph?: LevelParagraphStylePropertiesOptions;
+  };
 }
 
 /**
@@ -305,14 +305,14 @@ export interface ILevelsOptions {
  * Defines what character(s) follow the numbering text.
  */
 class Suffix extends XmlComponent {
-    public constructor(value: (typeof LevelSuffix)[keyof typeof LevelSuffix]) {
-        super("w:suff");
-        this.root.push(
-            new Attributes({
-                val: value,
-            }),
-        );
-    }
+  public constructor(value: (typeof LevelSuffix)[keyof typeof LevelSuffix]) {
+    super("w:suff");
+    this.root.push(
+      new Attributes({
+        val: value,
+      }),
+    );
+  }
 }
 
 /**
@@ -323,9 +323,9 @@ class Suffix extends XmlComponent {
  * Reference: http://officeopenxml.com/WPnumbering-isLgl.php
  */
 class IsLegalNumberingStyle extends XmlComponent {
-    public constructor() {
-        super("w:isLgl");
-    }
+  public constructor() {
+    super("w:isLgl");
+  }
 }
 
 /**
@@ -361,60 +361,60 @@ class IsLegalNumberingStyle extends XmlComponent {
  * ```
  */
 export class LevelBase extends XmlComponent {
-    private readonly paragraphProperties: ParagraphProperties;
-    private readonly runProperties: RunProperties;
+  private readonly paragraphProperties: ParagraphProperties;
+  private readonly runProperties: RunProperties;
 
-    /**
-     * Creates a new numbering level.
-     *
-     * @param options - Level configuration options
-     * @throws Error if level is greater than 9 (Word limitation)
-     */
-    public constructor({
-        level,
-        format,
-        text,
-        alignment = AlignmentType.START,
-        start = 1,
-        style,
-        suffix,
-        isLegalNumberingStyle,
-    }: ILevelsOptions) {
-        super("w:lvl");
+  /**
+   * Creates a new numbering level.
+   *
+   * @param options - Level configuration options
+   * @throws Error if level is greater than 9 (Word limitation)
+   */
+  public constructor({
+    level,
+    format,
+    text,
+    alignment = AlignmentType.START,
+    start = 1,
+    style,
+    suffix,
+    isLegalNumberingStyle,
+  }: ILevelsOptions) {
+    super("w:lvl");
 
-        this.root.push(new NumberValueElement("w:start", decimalNumber(start)));
+    this.root.push(new NumberValueElement("w:start", decimalNumber(start)));
 
-        if (format) {
-            this.root.push(new NumberFormat(format));
-        }
-
-        if (suffix) {
-            this.root.push(new Suffix(suffix));
-        }
-
-        if (isLegalNumberingStyle) {
-            this.root.push(new IsLegalNumberingStyle());
-        }
-
-        if (text) {
-            this.root.push(new LevelText(text));
-        }
-
-        this.root.push(new LevelJc(alignment));
-
-        this.paragraphProperties = new ParagraphProperties(style && style.paragraph);
-        this.runProperties = new RunProperties(style && style.run);
-
-        this.root.push(this.paragraphProperties);
-        this.root.push(this.runProperties);
-
-        this.root.push(
-            new LevelAttributes({
-                ilvl: decimalNumber(Math.min(level, 9)),
-                tentative: 1,
-            }),
-        );
+    if (format) {
+      this.root.push(new NumberFormat(format));
     }
+
+    if (suffix) {
+      this.root.push(new Suffix(suffix));
+    }
+
+    if (isLegalNumberingStyle) {
+      this.root.push(new IsLegalNumberingStyle());
+    }
+
+    if (text) {
+      this.root.push(new LevelText(text));
+    }
+
+    this.root.push(new LevelJc(alignment));
+
+    this.paragraphProperties = new ParagraphProperties(style && style.paragraph);
+    this.runProperties = new RunProperties(style && style.run);
+
+    this.root.push(this.paragraphProperties);
+    this.root.push(this.runProperties);
+
+    this.root.push(
+      new LevelAttributes({
+        ilvl: decimalNumber(Math.min(level, 9)),
+        tentative: 1,
+      }),
+    );
+  }
 }
 
 /**
@@ -451,7 +451,7 @@ export class LevelBase extends XmlComponent {
  * ```
  */
 export class Level extends LevelBase {
-    // This is the level that sits under abstractNum
+  // This is the level that sits under abstractNum
 }
 
 /**

@@ -9,10 +9,10 @@
 import type { MathBorderBox } from "./border-box";
 import type { MathBox } from "./box";
 import type {
-    MathAngledBrackets,
-    MathCurlyBrackets,
-    MathRoundBrackets,
-    MathSquareBrackets,
+  MathAngledBrackets,
+  MathCurlyBrackets,
+  MathRoundBrackets,
+  MathSquareBrackets,
 } from "./brackets";
 import type { MathEqArr } from "./eq-arr";
 import type { MathFraction } from "./fraction";
@@ -33,27 +33,27 @@ import type { MathSubScript, MathSubSuperScript, MathSuperScript } from "./scrip
  * boxes, matrices, and more.
  */
 export type MathComponent =
-    | MathRun
-    | MathFraction
-    | MathSum
-    | MathIntegral
-    | MathSuperScript
-    | MathSubScript
-    | MathSubSuperScript
-    | MathRadical
-    | MathFunction
-    | MathRoundBrackets
-    | MathCurlyBrackets
-    | MathAngledBrackets
-    | MathSquareBrackets
-    | MathBox
-    | MathBorderBox
-    | MathEqArr
-    | MathGroupChr
-    | MathLimitLower
-    | MathLimitUpper
-    | MathMatrix
-    | MathPhant;
+  | MathRun
+  | MathFraction
+  | MathSum
+  | MathIntegral
+  | MathSuperScript
+  | MathSubScript
+  | MathSubSuperScript
+  | MathRadical
+  | MathFunction
+  | MathRoundBrackets
+  | MathCurlyBrackets
+  | MathAngledBrackets
+  | MathSquareBrackets
+  | MathBox
+  | MathBorderBox
+  | MathEqArr
+  | MathGroupChr
+  | MathLimitLower
+  | MathLimitUpper
+  | MathMatrix
+  | MathPhant;
 
 // Needed because of: https://github.com/s-panferov/awesome-typescript-loader/issues/432
 /**

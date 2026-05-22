@@ -5,28 +5,28 @@ import * as fs from "fs";
 import { Document, Packer, Paragraph, Tab, TextRun, VerticalAlignSection } from "@office-open/docx";
 
 const doc = new Document({
-    sections: [
-        {
-            children: [
-                new Paragraph({
-                    children: [
-                        new TextRun("Hello World"),
-                        new TextRun({
-                            bold: true,
-                            text: "Foo Bar",
-                        }),
-                        new TextRun({
-                            bold: true,
-                            children: [new Tab(), "Github is the best"],
-                        }),
-                    ],
-                }),
-            ],
-            properties: {
-                verticalAlign: VerticalAlignSection.CENTER,
-            },
-        },
-    ],
+  sections: [
+    {
+      children: [
+        new Paragraph({
+          children: [
+            new TextRun("Hello World"),
+            new TextRun({
+              bold: true,
+              text: "Foo Bar",
+            }),
+            new TextRun({
+              bold: true,
+              children: [new Tab(), "Github is the best"],
+            }),
+          ],
+        }),
+      ],
+      properties: {
+        verticalAlign: VerticalAlignSection.CENTER,
+      },
+    },
+  ],
 });
 
 const buffer = await Packer.toBuffer(doc);

@@ -15,11 +15,11 @@ import type { MathComponent } from "../math-component";
  * @internal
  */
 export class MathDenominator extends XmlComponent {
-    public constructor(children: readonly MathComponent[]) {
-        super("m:den");
+  public constructor(children: readonly MathComponent[]) {
+    super("m:den");
 
-        for (const child of children) {
-            this.root.push(child);
-        }
+    for (const child of children) {
+      this.root.push(child);
     }
+  }
 }

@@ -18,10 +18,10 @@ import { CustomPropertyAttributes } from "./custom-property-attributes";
  * @property value - The property value (as string)
  */
 export interface ICustomPropertyOptions {
-    /** The property name */
-    readonly name: string;
-    /** The property value (as string) */
-    readonly value: string;
+  /** The property name */
+  readonly name: string;
+  /** The property value (as string) */
+  readonly value: string;
 }
 
 /**
@@ -53,17 +53,17 @@ export interface ICustomPropertyOptions {
  * ```
  */
 export class CustomProperty extends XmlComponent {
-    public constructor(id: number, properties: ICustomPropertyOptions) {
-        super("property");
-        this.root.push(
-            new CustomPropertyAttributes({
-                formatId: "{D5CDD505-2E9C-101B-9397-08002B2CF9AE}",
-                name: properties.name,
-                pid: id.toString(),
-            }),
-        );
-        this.root.push(new CustomPropertyValue(properties.value));
-    }
+  public constructor(id: number, properties: ICustomPropertyOptions) {
+    super("property");
+    this.root.push(
+      new CustomPropertyAttributes({
+        formatId: "{D5CDD505-2E9C-101B-9397-08002B2CF9AE}",
+        name: properties.name,
+        pid: id.toString(),
+      }),
+    );
+    this.root.push(new CustomPropertyValue(properties.value));
+  }
 }
 
 /**
@@ -71,8 +71,8 @@ export class CustomProperty extends XmlComponent {
  * Uses the variant type "long pointer to wide string" for string values.
  */
 export class CustomPropertyValue extends XmlComponent {
-    public constructor(value: string) {
-        super("vt:lpwstr");
-        this.root.push(value);
-    }
+  public constructor(value: string) {
+    super("vt:lpwstr");
+    this.root.push(value);
+  }
 }

@@ -13,7 +13,7 @@ import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
  * @internal
  */
 class MathDegreeHideAttributes extends XmlAttributeComponent<{ readonly hide: number }> {
-    protected readonly xmlKeys = { hide: "m:val" };
+  protected readonly xmlKeys = { hide: "m:val" };
 }
 
 /**
@@ -34,9 +34,9 @@ class MathDegreeHideAttributes extends XmlAttributeComponent<{ readonly hide: nu
  * @internal
  */
 export class MathDegreeHide extends XmlComponent {
-    public constructor() {
-        super("m:degHide");
+  public constructor() {
+    super("m:degHide");
 
-        this.root.push(new MathDegreeHideAttributes({ hide: 1 }));
-    }
+    this.root.push(new MathDegreeHideAttributes({ hide: 1 }));
+  }
 }

@@ -1,18 +1,18 @@
 name: Demos
 on:
-    push:
-        branches:
-            - main
-    pull_request:
-        branches:
-            - main
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-    demos:
-        name: Demos
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
-            - uses: "./.github/actions/install-and-build"
-            - name: Run All Demos
-              run: pnpm --filter @office-open/docx run demos
+  demos:
+    name: Demos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: "./.github/actions/install-and-build"
+      - name: Run All Demos
+        run: pnpm --filter @office-open/docx run demos

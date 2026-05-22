@@ -13,31 +13,28 @@ import type { IContext, IXmlableObject } from "./base";
  * Converts an xml-js Element into an XmlComponent tree.
  */
 export const convertToXmlComponent = (
-    element: XmlElement,
+  element: XmlElement,
 ): ImportedXmlComponent | string | undefined => {
-    switch (element.type) {
-        case undefined:
-        case "element": {
-            const xmlComponent = new ImportedXmlComponent(
-                element.name as string,
-                element.attributes,
-            );
-            const childElements = element.elements || [];
-            for (const childElm of childElements) {
-                const child = convertToXmlComponent(childElm);
-                if (child !== undefined) {
-                    xmlComponent.push(child);
-                }
-            }
-            return xmlComponent;
+  switch (element.type) {
+    case undefined:
+    case "element": {
+      const xmlComponent = new ImportedXmlComponent(element.name as string, element.attributes);
+      const childElements = element.elements || [];
+      for (const childElm of childElements) {
+        const child = convertToXmlComponent(childElm);
+        if (child !== undefined) {
+          xmlComponent.push(child);
         }
-        case "text": {
-            return element.text as string;
-        }
-        default: {
-            return undefined;
-        }
+      }
+      return xmlComponent;
     }
+    case "text": {
+      return element.text as string;
+    }
+    default: {
+      return undefined;
+    }
+  }
 };
 
 /**
@@ -50,47 +47,47 @@ class ImportedXmlComponentAttributes extends XmlAttributeComponent<any> {}
  * XML component representing imported XML content.
  */
 export class ImportedXmlComponent extends XmlComponent {
-    protected _sourceXml?: string;
+  protected _sourceXml?: string;
 
-    public static fromXmlString(importedContent: string): ImportedXmlComponent {
-        const xmlObj = xml2js(importedContent, { compact: false }) as XmlElement;
-        const root = xmlObj.elements?.[0] ?? xmlObj;
-        const component = convertToXmlComponent(root as XmlElement) as ImportedXmlComponent;
-        component._sourceXml = importedContent;
-        return component;
-    }
+  public static fromXmlString(importedContent: string): ImportedXmlComponent {
+    const xmlObj = xml2js(importedContent, { compact: false }) as XmlElement;
+    const root = xmlObj.elements?.[0] ?? xmlObj;
+    const component = convertToXmlComponent(root as XmlElement) as ImportedXmlComponent;
+    component._sourceXml = importedContent;
+    return component;
+  }
 
-    public get sourceXml(): string | undefined {
-        return this._sourceXml;
-    }
+  public get sourceXml(): string | undefined {
+    return this._sourceXml;
+  }
 
-    public override toXml(_context: IContext): string {
-        return this._sourceXml ?? super.toXml(_context);
-    }
+  public override toXml(_context: IContext): string {
+    return this._sourceXml ?? super.toXml(_context);
+  }
 
-    public constructor(rootKey: string, _attr?: any) {
-        super(rootKey);
-        if (_attr) {
-            this.root.push(new ImportedXmlComponentAttributes(_attr));
-        }
+  public constructor(rootKey: string, _attr?: any) {
+    super(rootKey);
+    if (_attr) {
+      this.root.push(new ImportedXmlComponentAttributes(_attr));
     }
+  }
 
-    public push(xmlComponent: XmlComponent | string): void {
-        this.root.push(xmlComponent);
-    }
+  public push(xmlComponent: XmlComponent | string): void {
+    this.root.push(xmlComponent);
+  }
 }
 
 /**
  * Represents attributes for imported root elements.
  */
 export class ImportedRootElementAttributes extends XmlComponent {
-    public constructor(private readonly _attr: any) {
-        super("");
-    }
+  public constructor(private readonly _attr: any) {
+    super("");
+  }
 
-    public prepForXml(_: IContext): IXmlableObject {
-        return {
-            _attr: this._attr,
-        };
-    }
+  public prepForXml(_: IContext): IXmlableObject {
+    return {
+      _attr: this._attr,
+    };
+  }
 }

@@ -23,16 +23,16 @@ import type { TileOptions } from "./tile";
  * Options for blip fill properties.
  */
 export interface BlipFillOptions {
-    /** DPI of the image */
-    readonly dpi?: number;
-    /** Whether the fill rotates with the shape */
-    readonly rotWithShape?: boolean;
-    /** Image adjustment effects (brightness, contrast, grayscale, etc.) */
-    readonly blipEffects?: BlipEffectsOptions;
-    /** Source rectangle for cropping */
-    readonly srcRect?: SourceRectangleOptions;
-    /** Tile fill mode (if omitted, defaults to stretch) */
-    readonly tile?: TileOptions;
+  /** DPI of the image */
+  readonly dpi?: number;
+  /** Whether the fill rotates with the shape */
+  readonly rotWithShape?: boolean;
+  /** Image adjustment effects (brightness, contrast, grayscale, etc.) */
+  readonly blipEffects?: BlipEffectsOptions;
+  /** Source rectangle for cropping */
+  readonly srcRect?: SourceRectangleOptions;
+  /** Tile fill mode (if omitted, defaults to stretch) */
+  readonly tile?: TileOptions;
 }
 
 /**
@@ -60,35 +60,35 @@ export interface BlipFillOptions {
  * @param fillOptions - Optional blip fill options
  */
 export const createBlipFill = (
-    blipOptions: BlipOptions,
-    fillOptions?: BlipFillOptions,
+  blipOptions: BlipOptions,
+  fillOptions?: BlipFillOptions,
 ): XmlComponent => {
-    const children: XmlComponent[] = [];
+  const children: XmlComponent[] = [];
 
-    children.push(createBlip(blipOptions, fillOptions?.blipEffects));
-    children.push(createSourceRectangle(fillOptions?.srcRect));
+  children.push(createBlip(blipOptions, fillOptions?.blipEffects));
+  children.push(createSourceRectangle(fillOptions?.srcRect));
 
-    if (fillOptions?.tile) {
-        children.push(createTileInfo(fillOptions.tile));
-    } else {
-        children.push(new Stretch());
-    }
+  if (fillOptions?.tile) {
+    children.push(createTileInfo(fillOptions.tile));
+  } else {
+    children.push(new Stretch());
+  }
 
-    const attributes: Record<string, { readonly key: string; readonly value: number }> = {};
+  const attributes: Record<string, { readonly key: string; readonly value: number }> = {};
 
-    if (fillOptions?.dpi !== undefined) {
-        attributes.dpi = { key: "dpi", value: fillOptions.dpi };
-    }
-    if (fillOptions?.rotWithShape !== undefined) {
-        attributes.rotWithShape = {
-            key: "rotWithShape",
-            value: fillOptions.rotWithShape ? 1 : 0,
-        };
-    }
+  if (fillOptions?.dpi !== undefined) {
+    attributes.dpi = { key: "dpi", value: fillOptions.dpi };
+  }
+  if (fillOptions?.rotWithShape !== undefined) {
+    attributes.rotWithShape = {
+      key: "rotWithShape",
+      value: fillOptions.rotWithShape ? 1 : 0,
+    };
+  }
 
-    return new BuilderElement({
-        attributes: Object.keys(attributes).length > 0 ? (attributes as never) : undefined,
-        children,
-        name: "pic:blipFill",
-    });
+  return new BuilderElement({
+    attributes: Object.keys(attributes).length > 0 ? (attributes as never) : undefined,
+    children,
+    name: "pic:blipFill",
+  });
 };

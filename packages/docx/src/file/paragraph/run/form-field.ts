@@ -31,100 +31,100 @@ import type { XmlComponent } from "@file/xml-components";
  * ```
  */
 export const FormFieldTextType = {
-    /** Regular text input */
-    REGULAR: "regular",
-    /** Numeric input */
-    NUMBER: "number",
-    /** Date input */
-    DATE: "date",
-    /** Current time */
-    CURRENT_TIME: "currentTime",
-    /** Current date */
-    CURRENT_DATE: "currentDate",
-    /** Calculated value */
-    CALCULATED: "calculated",
+  /** Regular text input */
+  REGULAR: "regular",
+  /** Numeric input */
+  NUMBER: "number",
+  /** Date input */
+  DATE: "date",
+  /** Current time */
+  CURRENT_TIME: "currentTime",
+  /** Current date */
+  CURRENT_DATE: "currentDate",
+  /** Calculated value */
+  CALCULATED: "calculated",
 } as const;
 
 /**
  * Options for a checkbox form field.
  */
 export interface CheckBoxOptions {
-    /**
-     * Checkbox size in half-points.
-     *
-     * Mutually exclusive with `sizeAuto`.
-     */
-    readonly size?: number;
-    /**
-     * Whether to auto-size the checkbox to match surrounding text.
-     *
-     * Mutually exclusive with `size`.
-     */
-    readonly sizeAuto?: boolean;
-    /** Default checked state */
-    readonly default?: boolean;
-    /** Current checked state */
-    readonly checked?: boolean;
+  /**
+   * Checkbox size in half-points.
+   *
+   * Mutually exclusive with `sizeAuto`.
+   */
+  readonly size?: number;
+  /**
+   * Whether to auto-size the checkbox to match surrounding text.
+   *
+   * Mutually exclusive with `size`.
+   */
+  readonly sizeAuto?: boolean;
+  /** Default checked state */
+  readonly default?: boolean;
+  /** Current checked state */
+  readonly checked?: boolean;
 }
 
 /**
  * Options for a dropdown list form field.
  */
 export interface DropDownListOptions {
-    /** Items in the dropdown list */
-    readonly entries: readonly string[];
-    /** Index of the currently selected entry */
-    readonly result?: number;
-    /** Index of the default entry */
-    readonly default?: number;
+  /** Items in the dropdown list */
+  readonly entries: readonly string[];
+  /** Index of the currently selected entry */
+  readonly result?: number;
+  /** Index of the default entry */
+  readonly default?: number;
 }
 
 /**
  * Options for a text input form field.
  */
 export interface TextInputOptions {
-    /** Text input type */
-    readonly type?: (typeof FormFieldTextType)[keyof typeof FormFieldTextType];
-    /** Default text value */
-    readonly default?: string;
-    /** Maximum character length */
-    readonly maxLength?: number;
-    /** Format string */
-    readonly format?: string;
+  /** Text input type */
+  readonly type?: (typeof FormFieldTextType)[keyof typeof FormFieldTextType];
+  /** Default text value */
+  readonly default?: string;
+  /** Maximum character length */
+  readonly maxLength?: number;
+  /** Format string */
+  readonly format?: string;
 }
 
 /**
  * Help or status text options.
  */
 export interface FormFieldTextOptions {
-    /** Text type: "text" for custom text, "autoText" for auto text reference */
-    readonly type: "text" | "autoText";
-    /** The text value */
-    readonly value: string;
+  /** Text type: "text" for custom text, "autoText" for auto text reference */
+  readonly type: "text" | "autoText";
+  /** The text value */
+  readonly value: string;
 }
 
 /**
  * Common options for all form field types.
  */
 export interface FormFieldCommonOptions {
-    /** Field name (max 65 characters) */
-    readonly name?: string;
-    /** Numeric label */
-    readonly label?: number;
-    /** Tab order index */
-    readonly tabIndex?: number;
-    /** Whether the field is enabled */
-    readonly enabled?: boolean;
-    /** Recalculate fields when exiting */
-    readonly calcOnExit?: boolean;
-    /** Entry macro name */
-    readonly entryMacro?: string;
-    /** Exit macro name */
-    readonly exitMacro?: string;
-    /** Help text shown when the user presses F1 */
-    readonly helpText?: FormFieldTextOptions;
-    /** Status bar text */
-    readonly statusText?: FormFieldTextOptions;
+  /** Field name (max 65 characters) */
+  readonly name?: string;
+  /** Numeric label */
+  readonly label?: number;
+  /** Tab order index */
+  readonly tabIndex?: number;
+  /** Whether the field is enabled */
+  readonly enabled?: boolean;
+  /** Recalculate fields when exiting */
+  readonly calcOnExit?: boolean;
+  /** Entry macro name */
+  readonly entryMacro?: string;
+  /** Exit macro name */
+  readonly exitMacro?: string;
+  /** Help text shown when the user presses F1 */
+  readonly helpText?: FormFieldTextOptions;
+  /** Status bar text */
+  readonly statusText?: FormFieldTextOptions;
 }
 
 /**
@@ -133,136 +133,136 @@ export interface FormFieldCommonOptions {
  * Exactly one of `checkBox`, `dropDownList`, or `textInput` must be specified.
  */
 export interface FormFieldOptions extends FormFieldCommonOptions {
-    /** Checkbox form field */
-    readonly checkBox?: CheckBoxOptions;
-    /** Dropdown list form field */
-    readonly dropDownList?: DropDownListOptions;
-    /** Text input form field */
-    readonly textInput?: TextInputOptions;
+  /** Checkbox form field */
+  readonly checkBox?: CheckBoxOptions;
+  /** Dropdown list form field */
+  readonly dropDownList?: DropDownListOptions;
+  /** Text input form field */
+  readonly textInput?: TextInputOptions;
 }
 
 /**
  * Creates a help or status text element.
  */
 const createFormFieldText = (name: string, options: FormFieldTextOptions): XmlComponent =>
-    new BuilderElement<{ readonly type: string; readonly val: string }>({
-        attributes: {
-            type: { key: "w:type", value: options.type },
-            val: { key: "w:val", value: options.value },
-        },
-        name,
-    });
+  new BuilderElement<{ readonly type: string; readonly val: string }>({
+    attributes: {
+      type: { key: "w:type", value: options.type },
+      val: { key: "w:val", value: options.value },
+    },
+    name,
+  });
 
 /**
  * Creates a checkbox form field element (w:checkBox).
  */
 const createCheckBox = (options: CheckBoxOptions): XmlComponent => {
-    const children: XmlComponent[] = [];
+  const children: XmlComponent[] = [];
 
-    if (options.size !== undefined) {
-        children.push(
-            new BuilderElement<{ readonly val: number }>({
-                attributes: { val: { key: "w:val", value: options.size } },
-                name: "w:size",
-            }),
-        );
-    } else if (options.sizeAuto !== undefined) {
-        children.push(new OnOffElement("w:sizeAuto", options.sizeAuto));
-    }
+  if (options.size !== undefined) {
+    children.push(
+      new BuilderElement<{ readonly val: number }>({
+        attributes: { val: { key: "w:val", value: options.size } },
+        name: "w:size",
+      }),
+    );
+  } else if (options.sizeAuto !== undefined) {
+    children.push(new OnOffElement("w:sizeAuto", options.sizeAuto));
+  }
 
-    if (options.default !== undefined) {
-        children.push(new OnOffElement("w:default", options.default));
-    }
-    if (options.checked !== undefined) {
-        children.push(new OnOffElement("w:checked", options.checked));
-    }
+  if (options.default !== undefined) {
+    children.push(new OnOffElement("w:default", options.default));
+  }
+  if (options.checked !== undefined) {
+    children.push(new OnOffElement("w:checked", options.checked));
+  }
 
-    return new BuilderElement({
-        children,
-        name: "w:checkBox",
-    });
+  return new BuilderElement({
+    children,
+    name: "w:checkBox",
+  });
 };
 
 /**
  * Creates a dropdown list form field element (w:ddList).
  */
 const createDropDownList = (options: DropDownListOptions): XmlComponent => {
-    const children: XmlComponent[] = [];
+  const children: XmlComponent[] = [];
 
-    if (options.result !== undefined) {
-        children.push(
-            new BuilderElement<{ readonly val: number }>({
-                attributes: { val: { key: "w:val", value: options.result } },
-                name: "w:result",
-            }),
-        );
-    }
-    if (options.default !== undefined) {
-        children.push(
-            new BuilderElement<{ readonly val: number }>({
-                attributes: { val: { key: "w:val", value: options.default } },
-                name: "w:default",
-            }),
-        );
-    }
-    for (const entry of options.entries) {
-        children.push(
-            new BuilderElement<{ readonly val: string }>({
-                attributes: { val: { key: "w:val", value: entry } },
-                name: "w:listEntry",
-            }),
-        );
-    }
+  if (options.result !== undefined) {
+    children.push(
+      new BuilderElement<{ readonly val: number }>({
+        attributes: { val: { key: "w:val", value: options.result } },
+        name: "w:result",
+      }),
+    );
+  }
+  if (options.default !== undefined) {
+    children.push(
+      new BuilderElement<{ readonly val: number }>({
+        attributes: { val: { key: "w:val", value: options.default } },
+        name: "w:default",
+      }),
+    );
+  }
+  for (const entry of options.entries) {
+    children.push(
+      new BuilderElement<{ readonly val: string }>({
+        attributes: { val: { key: "w:val", value: entry } },
+        name: "w:listEntry",
+      }),
+    );
+  }
 
-    return new BuilderElement({
-        children,
-        name: "w:ddList",
-    });
+  return new BuilderElement({
+    children,
+    name: "w:ddList",
+  });
 };
 
 /**
  * Creates a text input form field element (w:textInput).
  */
 const createTextInput = (options: TextInputOptions): XmlComponent => {
-    const children: XmlComponent[] = [];
+  const children: XmlComponent[] = [];
 
-    if (options.type !== undefined) {
-        children.push(
-            new BuilderElement<{ readonly val: string }>({
-                attributes: { val: { key: "w:val", value: options.type } },
-                name: "w:type",
-            }),
-        );
-    }
-    if (options.default !== undefined) {
-        children.push(
-            new BuilderElement<{ readonly val: string }>({
-                attributes: { val: { key: "w:val", value: options.default } },
-                name: "w:default",
-            }),
-        );
-    }
-    if (options.maxLength !== undefined) {
-        children.push(
-            new BuilderElement<{ readonly val: number }>({
-                attributes: { val: { key: "w:val", value: options.maxLength } },
-                name: "w:maxLength",
-            }),
-        );
-    }
-    if (options.format !== undefined) {
-        children.push(
-            new BuilderElement<{ readonly val: string }>({
-                attributes: { val: { key: "w:val", value: options.format } },
-                name: "w:format",
-            }),
-        );
-    }
+  if (options.type !== undefined) {
+    children.push(
+      new BuilderElement<{ readonly val: string }>({
+        attributes: { val: { key: "w:val", value: options.type } },
+        name: "w:type",
+      }),
+    );
+  }
+  if (options.default !== undefined) {
+    children.push(
+      new BuilderElement<{ readonly val: string }>({
+        attributes: { val: { key: "w:val", value: options.default } },
+        name: "w:default",
+      }),
+    );
+  }
+  if (options.maxLength !== undefined) {
+    children.push(
+      new BuilderElement<{ readonly val: number }>({
+        attributes: { val: { key: "w:val", value: options.maxLength } },
+        name: "w:maxLength",
+      }),
+    );
+  }
+  if (options.format !== undefined) {
+    children.push(
+      new BuilderElement<{ readonly val: string }>({
+        attributes: { val: { key: "w:val", value: options.format } },
+        name: "w:format",
+      }),
+    );
+  }
 
-    return new BuilderElement({
-        children,
-        name: "w:textInput",
-    });
+  return new BuilderElement({
+    children,
+    name: "w:textInput",
+  });
 };
 
 /**
@@ -315,72 +315,72 @@ const createTextInput = (options: TextInputOptions): XmlComponent => {
  * ```
  */
 export const createFormFieldData = (options: FormFieldOptions): XmlComponent => {
-    const children: XmlComponent[] = [];
+  const children: XmlComponent[] = [];
 
-    if (options.name !== undefined) {
-        children.push(
-            new BuilderElement<{ readonly val: string }>({
-                attributes: { val: { key: "w:val", value: options.name } },
-                name: "w:name",
-            }),
-        );
-    }
-    if (options.label !== undefined) {
-        children.push(
-            new BuilderElement<{ readonly val: number }>({
-                attributes: { val: { key: "w:val", value: options.label } },
-                name: "w:label",
-            }),
-        );
-    }
-    if (options.tabIndex !== undefined) {
-        children.push(
-            new BuilderElement<{ readonly val: number }>({
-                attributes: { val: { key: "w:val", value: options.tabIndex } },
-                name: "w:tabIndex",
-            }),
-        );
-    }
-    if (options.enabled !== undefined) {
-        children.push(new OnOffElement("w:enabled", options.enabled));
-    }
-    if (options.calcOnExit !== undefined) {
-        children.push(new OnOffElement("w:calcOnExit", options.calcOnExit));
-    }
-    if (options.entryMacro !== undefined) {
-        children.push(
-            new BuilderElement<{ readonly val: string }>({
-                attributes: { val: { key: "w:val", value: options.entryMacro } },
-                name: "w:entryMacro",
-            }),
-        );
-    }
-    if (options.exitMacro !== undefined) {
-        children.push(
-            new BuilderElement<{ readonly val: string }>({
-                attributes: { val: { key: "w:val", value: options.exitMacro } },
-                name: "w:exitMacro",
-            }),
-        );
-    }
-    if (options.helpText) {
-        children.push(createFormFieldText("w:helpText", options.helpText));
-    }
-    if (options.statusText) {
-        children.push(createFormFieldText("w:statusText", options.statusText));
-    }
+  if (options.name !== undefined) {
+    children.push(
+      new BuilderElement<{ readonly val: string }>({
+        attributes: { val: { key: "w:val", value: options.name } },
+        name: "w:name",
+      }),
+    );
+  }
+  if (options.label !== undefined) {
+    children.push(
+      new BuilderElement<{ readonly val: number }>({
+        attributes: { val: { key: "w:val", value: options.label } },
+        name: "w:label",
+      }),
+    );
+  }
+  if (options.tabIndex !== undefined) {
+    children.push(
+      new BuilderElement<{ readonly val: number }>({
+        attributes: { val: { key: "w:val", value: options.tabIndex } },
+        name: "w:tabIndex",
+      }),
+    );
+  }
+  if (options.enabled !== undefined) {
+    children.push(new OnOffElement("w:enabled", options.enabled));
+  }
+  if (options.calcOnExit !== undefined) {
+    children.push(new OnOffElement("w:calcOnExit", options.calcOnExit));
+  }
+  if (options.entryMacro !== undefined) {
+    children.push(
+      new BuilderElement<{ readonly val: string }>({
+        attributes: { val: { key: "w:val", value: options.entryMacro } },
+        name: "w:entryMacro",
+      }),
+    );
+  }
+  if (options.exitMacro !== undefined) {
+    children.push(
+      new BuilderElement<{ readonly val: string }>({
+        attributes: { val: { key: "w:val", value: options.exitMacro } },
+        name: "w:exitMacro",
+      }),
+    );
+  }
+  if (options.helpText) {
+    children.push(createFormFieldText("w:helpText", options.helpText));
+  }
+  if (options.statusText) {
+    children.push(createFormFieldText("w:statusText", options.statusText));
+  }
 
-    // Exactly one of the three mutually exclusive form field types
-    if (options.checkBox) {
-        children.push(createCheckBox(options.checkBox));
-    } else if (options.dropDownList) {
-        children.push(createDropDownList(options.dropDownList));
-    } else if (options.textInput) {
-        children.push(createTextInput(options.textInput));
-    }
+  // Exactly one of the three mutually exclusive form field types
+  if (options.checkBox) {
+    children.push(createCheckBox(options.checkBox));
+  } else if (options.dropDownList) {
+    children.push(createDropDownList(options.dropDownList));
+  } else if (options.textInput) {
+    children.push(createTextInput(options.textInput));
+  }
 
-    return new BuilderElement({
-        children,
-        name: "w:ffData",
-    });
+  return new BuilderElement({
+    children,
+    name: "w:ffData",
+  });
 };

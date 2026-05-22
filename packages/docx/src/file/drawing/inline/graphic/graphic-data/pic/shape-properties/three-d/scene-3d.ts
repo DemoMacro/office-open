@@ -11,11 +11,11 @@
 
 export { createScene3D } from "@office-open/core/drawingml";
 export type {
-    Scene3DOptions,
-    CameraOptions,
-    LightRigOptions,
-    BackdropOptions,
-    SphereCoords,
-    Point3D,
-    Vector3D,
+  Scene3DOptions,
+  CameraOptions,
+  LightRigOptions,
+  BackdropOptions,
+  SphereCoords,
+  Point3D,
+  Vector3D,
 } from "@office-open/core/drawingml";

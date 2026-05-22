@@ -15,21 +15,21 @@ import type { IContext, IXmlableObject } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 
 const SUBDOC_RELATIONSHIP_TYPE =
-    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/subDocument";
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/subDocument";
 
 /**
  * @internal
  */
 class SubDocAttributes extends XmlAttributeComponent<{ readonly id: string }> {
-    protected readonly xmlKeys = { id: "r:id" };
+  protected readonly xmlKeys = { id: "r:id" };
 }
 
 /**
  * Options for creating a SubDoc element.
  */
 export interface ISubDocOptions {
-    /** The sub-document data (raw bytes of a .docx file) */
-    readonly data: Uint8Array | string;
+  /** The sub-document data (raw bytes of a .docx file) */
+  readonly data: Uint8Array | string;
 }
 
 /**
@@ -48,38 +48,34 @@ export interface ISubDocOptions {
  * ```
  */
 export class SubDoc extends XmlComponent implements FileChild {
-    public readonly fileChild = Symbol();
-    private readonly options: ISubDocOptions;
+  public readonly fileChild = Symbol();
+  private readonly options: ISubDocOptions;
 
-    public constructor(options: ISubDocOptions) {
-        super("w:subDoc");
-        this.options = options;
-    }
+  public constructor(options: ISubDocOptions) {
+    super("w:subDoc");
+    this.options = options;
+  }
 
-    public prepForXml(context: IContext): IXmlableObject {
-        const relId = uniqueId();
-        const partPath = `subdocs/subdoc${relId}.docx`;
+  public prepForXml(context: IContext): IXmlableObject {
+    const relId = uniqueId();
+    const partPath = `subdocs/subdoc${relId}.docx`;
 
-        this.root.splice(0, 0, new SubDocAttributes({ id: `rId${relId}` }));
+    this.root.splice(0, 0, new SubDocAttributes({ id: `rId${relId}` }));
 
-        const data =
-            typeof this.options.data === "string"
-                ? new TextEncoder().encode(this.options.data)
-                : this.options.data;
+    const data =
+      typeof this.options.data === "string"
+        ? new TextEncoder().encode(this.options.data)
+        : this.options.data;
 
-        context.viewWrapper.Relationships.addRelationship(
-            relId,
-            SUBDOC_RELATIONSHIP_TYPE,
-            partPath,
-        );
+    context.viewWrapper.Relationships.addRelationship(relId, SUBDOC_RELATIONSHIP_TYPE, partPath);
 
-        context.file.SubDocs.addSubDoc(relId, {
-            data,
-            path: partPath,
-        });
+    context.file.SubDocs.addSubDoc(relId, {
+      data,
+      path: partPath,
+    });
 
-        context.file.ContentTypes.addSubDoc(`/word/${partPath}`);
+    context.file.ContentTypes.addSubDoc(`/word/${partPath}`);
 
-        return super.prepForXml(context) as IXmlableObject;
-    }
+    return super.prepForXml(context) as IXmlableObject;
+  }
 }

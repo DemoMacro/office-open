@@ -5,7 +5,7 @@ import type { IRunPropertiesOptions } from "./run-properties";
 import { RunProperties } from "./run-properties";
 
 export interface IRunOptions extends IRunPropertiesOptions {
-    readonly text?: string;
+  readonly text?: string;
 }
 
 /**
@@ -13,33 +13,33 @@ export interface IRunOptions extends IRunPropertiesOptions {
  * Lazy: stores options, builds XML object in prepForXml.
  */
 export class TextRun extends XmlComponent {
-    private readonly options: IRunOptions;
+  private readonly options: IRunOptions;
 
-    public constructor(options: IRunOptions | string = {}) {
-        super("a:r");
-        this.options = typeof options === "string" ? { text: options } : options;
+  public constructor(options: IRunOptions | string = {}) {
+    super("a:r");
+    this.options = typeof options === "string" ? { text: options } : options;
+  }
+
+  public prepForXml(context: IContext): IXmlableObject | undefined {
+    const children: IXmlableObject[] = [];
+
+    if (RunProperties.hasProperties(this.options)) {
+      const rPr = new RunProperties(this.options);
+      const rPrObj = rPr.prepForXml(context);
+      if (rPrObj) children.push(rPrObj);
     }
 
-    public prepForXml(context: IContext): IXmlableObject | undefined {
-        const children: IXmlableObject[] = [];
-
-        if (RunProperties.hasProperties(this.options)) {
-            const rPr = new RunProperties(this.options);
-            const rPrObj = rPr.prepForXml(context);
-            if (rPrObj) children.push(rPrObj);
-        }
-
-        if (this.options.text) {
-            children.push({ "a:t": [this.options.text] });
-        }
-
-        return {
-            "a:r":
-                children.length === 0
-                    ? {}
-                    : children.length === 1 && "_attr" in children[0]
-                      ? children[0]
-                      : children,
-        };
+    if (this.options.text) {
+      children.push({ "a:t": [this.options.text] });
     }
+
+    return {
+      "a:r":
+        children.length === 0
+          ? {}
+          : children.length === 1 && "_attr" in children[0]
+            ? children[0]
+            : children,
+    };
+  }
 }

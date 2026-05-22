@@ -31,20 +31,20 @@ import type { XmlComponent } from "@file/xml-components";
  * @publicApi
  */
 export const SectionType = {
-    /** Section begins on the next page */
-    NEXT_PAGE: "nextPage",
-    /** Section begins on the next column */
-    NEXT_COLUMN: "nextColumn",
-    /** Section begins immediately following the previous section */
-    CONTINUOUS: "continuous",
-    /** Section begins on the next even-numbered page */
-    EVEN_PAGE: "evenPage",
-    /** Section begins on the next odd-numbered page */
-    ODD_PAGE: "oddPage",
+  /** Section begins on the next page */
+  NEXT_PAGE: "nextPage",
+  /** Section begins on the next column */
+  NEXT_COLUMN: "nextColumn",
+  /** Section begins immediately following the previous section */
+  CONTINUOUS: "continuous",
+  /** Section begins on the next even-numbered page */
+  EVEN_PAGE: "evenPage",
+  /** Section begins on the next odd-numbered page */
+  ODD_PAGE: "oddPage",
 } as const;
 
 interface ISectionTypeAttributes {
-    readonly val: (typeof SectionType)[keyof typeof SectionType];
+  readonly val: (typeof SectionType)[keyof typeof SectionType];
 }
 
 /**
@@ -72,11 +72,11 @@ interface ISectionTypeAttributes {
  * ```
  */
 export const createSectionType = (
-    value: (typeof SectionType)[keyof typeof SectionType],
+  value: (typeof SectionType)[keyof typeof SectionType],
 ): XmlComponent =>
-    new BuilderElement<ISectionTypeAttributes>({
-        attributes: {
-            val: { key: "w:val", value: value },
-        },
-        name: "w:type",
-    });
+  new BuilderElement<ISectionTypeAttributes>({
+    attributes: {
+      val: { key: "w:val", value: value },
+    },
+    name: "w:type",
+  });

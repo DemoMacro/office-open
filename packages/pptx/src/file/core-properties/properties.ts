@@ -10,24 +10,24 @@ import type { IContext, IXmlableObject } from "@file/xml-components";
 import { buildCorePropertiesXml } from "@office-open/core";
 
 export interface ICorePropertiesOptions {
-    readonly title?: string;
-    readonly subject?: string;
-    readonly creator?: string;
-    readonly keywords?: string;
-    readonly description?: string;
-    readonly lastModifiedBy?: string;
-    readonly revision?: number;
+  readonly title?: string;
+  readonly subject?: string;
+  readonly creator?: string;
+  readonly keywords?: string;
+  readonly description?: string;
+  readonly lastModifiedBy?: string;
+  readonly revision?: number;
 }
 
 export class CoreProperties extends BaseXmlComponent {
-    private readonly options: ICorePropertiesOptions;
+  private readonly options: ICorePropertiesOptions;
 
-    public constructor(options: ICorePropertiesOptions) {
-        super("cp:coreProperties");
-        this.options = options;
-    }
+  public constructor(options: ICorePropertiesOptions) {
+    super("cp:coreProperties");
+    this.options = options;
+  }
 
-    public override prepForXml(_context: IContext): IXmlableObject {
-        return buildCorePropertiesXml(this.options);
-    }
+  public override prepForXml(_context: IContext): IXmlableObject {
+    return buildCorePropertiesXml(this.options);
+  }
 }

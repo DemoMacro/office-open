@@ -1,13 +1,13 @@
 export { SlideTiming } from "./timing";
 export type {
-    AnimationType,
-    AnimationTrigger,
-    AnimationDirection,
-    AnimationClass,
-    EmphasisType,
-    PathAnimationType,
-    MediaAnimationType,
-    AnimationCalcMode,
-    AnimationValueType,
-    IAnimationOptions,
+  AnimationType,
+  AnimationTrigger,
+  AnimationDirection,
+  AnimationClass,
+  EmphasisType,
+  PathAnimationType,
+  MediaAnimationType,
+  AnimationCalcMode,
+  AnimationValueType,
+  IAnimationOptions,
 } from "./types";

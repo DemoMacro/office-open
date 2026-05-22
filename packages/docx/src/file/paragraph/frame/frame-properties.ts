@@ -20,12 +20,12 @@ import type { XmlComponent } from "@file/xml-components";
  * beginning of a paragraph. This enum defines how the drop cap should be positioned.
  */
 export const DropCapType = {
-    /** No drop cap effect */
-    NONE: "none",
-    /** Drop cap that drops down into the paragraph text */
-    DROP: "drop",
-    /** Drop cap that extends into the margin */
-    MARGIN: "margin",
+  /** No drop cap effect */
+  NONE: "none",
+  /** Drop cap that drops down into the paragraph text */
+  DROP: "drop",
+  /** Drop cap that extends into the margin */
+  MARGIN: "margin",
 } as const;
 
 /**
@@ -34,12 +34,12 @@ export const DropCapType = {
  * Determines the reference point for frame positioning (horizontal and vertical).
  */
 export const FrameAnchorType = {
-    /** Anchor relative to the page margin */
-    MARGIN: "margin",
-    /** Anchor relative to the page edge */
-    PAGE: "page",
-    /** Anchor relative to the text column */
-    TEXT: "text",
+  /** Anchor relative to the page margin */
+  MARGIN: "margin",
+  /** Anchor relative to the page edge */
+  PAGE: "page",
+  /** Anchor relative to the text column */
+  TEXT: "text",
 } as const;
 
 /**
@@ -48,18 +48,18 @@ export const FrameAnchorType = {
  * Controls how surrounding text wraps around the frame.
  */
 export const FrameWrap = {
-    /** Wrap text around the frame on all sides */
-    AROUND: "around",
-    /** Automatic wrapping based on available space */
-    AUTO: "auto",
-    /** No text wrapping */
-    NONE: "none",
-    /** Do not allow text beside the frame */
-    NOT_BESIDE: "notBeside",
-    /** Allow text to flow through the frame */
-    THROUGH: "through",
-    /** Wrap text tightly around the frame */
-    TIGHT: "tight",
+  /** Wrap text around the frame on all sides */
+  AROUND: "around",
+  /** Automatic wrapping based on available space */
+  AUTO: "auto",
+  /** No text wrapping */
+  NONE: "none",
+  /** Do not allow text beside the frame */
+  NOT_BESIDE: "notBeside",
+  /** Allow text to flow through the frame */
+  THROUGH: "through",
+  /** Wrap text tightly around the frame */
+  TIGHT: "tight",
 } as const;
 
 /**
@@ -76,34 +76,34 @@ export const FrameWrap = {
  * @property rule - Height rule determining how frame height is calculated
  */
 interface IBaseFrameOptions {
-    /** Lock the anchor position to prevent it from moving */
-    readonly anchorLock?: boolean;
-    /** Drop cap effect type */
-    readonly dropCap?: (typeof DropCapType)[keyof typeof DropCapType];
-    /** Frame width in twips */
-    readonly width: number;
-    /** Frame height in twips */
-    readonly height: number;
-    /** Text wrapping behavior around the frame */
-    readonly wrap?: (typeof FrameWrap)[keyof typeof FrameWrap];
-    /** Number of lines for drop cap effect */
-    readonly lines?: number;
-    /** Anchor reference points for horizontal and vertical positioning */
-    readonly anchor: {
-        /** Horizontal anchor reference point */
-        readonly horizontal: (typeof FrameAnchorType)[keyof typeof FrameAnchorType];
-        /** Vertical anchor reference point */
-        readonly vertical: (typeof FrameAnchorType)[keyof typeof FrameAnchorType];
-    };
-    /** Spacing between frame and surrounding text in twips */
-    readonly space?: {
-        /** Horizontal spacing in twips */
-        readonly horizontal: number;
-        /** Vertical spacing in twips */
-        readonly vertical: number;
-    };
-    /** Height rule determining how frame height is calculated */
-    readonly rule?: (typeof HeightRule)[keyof typeof HeightRule];
+  /** Lock the anchor position to prevent it from moving */
+  readonly anchorLock?: boolean;
+  /** Drop cap effect type */
+  readonly dropCap?: (typeof DropCapType)[keyof typeof DropCapType];
+  /** Frame width in twips */
+  readonly width: number;
+  /** Frame height in twips */
+  readonly height: number;
+  /** Text wrapping behavior around the frame */
+  readonly wrap?: (typeof FrameWrap)[keyof typeof FrameWrap];
+  /** Number of lines for drop cap effect */
+  readonly lines?: number;
+  /** Anchor reference points for horizontal and vertical positioning */
+  readonly anchor: {
+    /** Horizontal anchor reference point */
+    readonly horizontal: (typeof FrameAnchorType)[keyof typeof FrameAnchorType];
+    /** Vertical anchor reference point */
+    readonly vertical: (typeof FrameAnchorType)[keyof typeof FrameAnchorType];
+  };
+  /** Spacing between frame and surrounding text in twips */
+  readonly space?: {
+    /** Horizontal spacing in twips */
+    readonly horizontal: number;
+    /** Vertical spacing in twips */
+    readonly vertical: number;
+  };
+  /** Height rule determining how frame height is calculated */
+  readonly rule?: (typeof HeightRule)[keyof typeof HeightRule];
 }
 
 /**
@@ -116,15 +116,15 @@ interface IBaseFrameOptions {
  * @property position - Absolute X and Y coordinates in twips
  */
 export type IXYFrameOptions = {
-    /** Must be "absolute" for coordinate-based positioning */
-    readonly type: "absolute";
-    /** Absolute X and Y coordinates in twips */
-    readonly position: {
-        /** Horizontal position in twips from the anchor point */
-        readonly x: number;
-        /** Vertical position in twips from the anchor point */
-        readonly y: number;
-    };
+  /** Must be "absolute" for coordinate-based positioning */
+  readonly type: "absolute";
+  /** Absolute X and Y coordinates in twips */
+  readonly position: {
+    /** Horizontal position in twips from the anchor point */
+    readonly x: number;
+    /** Vertical position in twips from the anchor point */
+    readonly y: number;
+  };
 } & IBaseFrameOptions;
 
 /**
@@ -137,15 +137,15 @@ export type IXYFrameOptions = {
  * @property alignment - Horizontal and vertical alignment values
  */
 export type IAlignmentFrameOptions = {
-    /** Must be "alignment" for alignment-based positioning */
-    readonly type: "alignment";
-    /** Horizontal and vertical alignment values */
-    readonly alignment: {
-        /** Horizontal alignment relative to the anchor */
-        readonly x: (typeof HorizontalPositionAlign)[keyof typeof HorizontalPositionAlign];
-        /** Vertical alignment relative to the anchor */
-        readonly y: (typeof VerticalPositionAlign)[keyof typeof VerticalPositionAlign];
-    };
+  /** Must be "alignment" for alignment-based positioning */
+  readonly type: "alignment";
+  /** Horizontal and vertical alignment values */
+  readonly alignment: {
+    /** Horizontal alignment relative to the anchor */
+    readonly x: (typeof HorizontalPositionAlign)[keyof typeof HorizontalPositionAlign];
+    /** Vertical alignment relative to the anchor */
+    readonly y: (typeof VerticalPositionAlign)[keyof typeof VerticalPositionAlign];
+  };
 } & IBaseFrameOptions;
 
 /**
@@ -182,36 +182,36 @@ export type IFrameOptions = IXYFrameOptions | IAlignmentFrameOptions;
  * @property alignmentY - Vertical alignment (for alignment-based positioning)
  */
 interface FramePropertiesAttributes {
-    /** Lock the anchor position */
-    readonly anchorLock?: boolean;
-    /** Drop cap effect type */
-    readonly dropCap?: (typeof DropCapType)[keyof typeof DropCapType];
-    /** Frame width in twips */
-    readonly width: number;
-    /** Frame height in twips */
-    readonly height: number;
-    /** Absolute horizontal position in twips (for coordinate-based positioning) */
-    readonly x?: number;
-    /** Absolute vertical position in twips (for coordinate-based positioning) */
-    readonly y?: number;
-    /** Text wrapping behavior */
-    readonly wrap?: (typeof FrameWrap)[keyof typeof FrameWrap];
-    /** Number of lines for drop cap */
-    readonly lines?: number;
-    /** Horizontal anchor reference point */
-    readonly anchorHorizontal?: (typeof FrameAnchorType)[keyof typeof FrameAnchorType];
-    /** Vertical anchor reference point */
-    readonly anchorVertical?: (typeof FrameAnchorType)[keyof typeof FrameAnchorType];
-    /** Horizontal spacing in twips */
-    readonly spaceHorizontal?: number;
-    /** Vertical spacing in twips */
-    readonly spaceVertical?: number;
-    /** Height rule */
-    readonly rule?: (typeof HeightRule)[keyof typeof HeightRule];
-    /** Horizontal alignment (for alignment-based positioning) */
-    readonly alignmentX?: (typeof HorizontalPositionAlign)[keyof typeof HorizontalPositionAlign];
-    /** Vertical alignment (for alignment-based positioning) */
-    readonly alignmentY?: (typeof VerticalPositionAlign)[keyof typeof VerticalPositionAlign];
+  /** Lock the anchor position */
+  readonly anchorLock?: boolean;
+  /** Drop cap effect type */
+  readonly dropCap?: (typeof DropCapType)[keyof typeof DropCapType];
+  /** Frame width in twips */
+  readonly width: number;
+  /** Frame height in twips */
+  readonly height: number;
+  /** Absolute horizontal position in twips (for coordinate-based positioning) */
+  readonly x?: number;
+  /** Absolute vertical position in twips (for coordinate-based positioning) */
+  readonly y?: number;
+  /** Text wrapping behavior */
+  readonly wrap?: (typeof FrameWrap)[keyof typeof FrameWrap];
+  /** Number of lines for drop cap */
+  readonly lines?: number;
+  /** Horizontal anchor reference point */
+  readonly anchorHorizontal?: (typeof FrameAnchorType)[keyof typeof FrameAnchorType];
+  /** Vertical anchor reference point */
+  readonly anchorVertical?: (typeof FrameAnchorType)[keyof typeof FrameAnchorType];
+  /** Horizontal spacing in twips */
+  readonly spaceHorizontal?: number;
+  /** Vertical spacing in twips */
+  readonly spaceVertical?: number;
+  /** Height rule */
+  readonly rule?: (typeof HeightRule)[keyof typeof HeightRule];
+  /** Horizontal alignment (for alignment-based positioning) */
+  readonly alignmentX?: (typeof HorizontalPositionAlign)[keyof typeof HorizontalPositionAlign];
+  /** Vertical alignment (for alignment-based positioning) */
+  readonly alignmentY?: (typeof VerticalPositionAlign)[keyof typeof VerticalPositionAlign];
 }
 
 /**
@@ -281,76 +281,76 @@ interface FramePropertiesAttributes {
  * @returns XmlComponent representing the frame properties element
  */
 export const createFrameProperties = (options: IFrameOptions): XmlComponent =>
-    new BuilderElement<FramePropertiesAttributes>({
-        attributes: {
-            alignmentX: {
-                key: "w:xAlign",
-                value: (options as IAlignmentFrameOptions).alignment
-                    ? (options as IAlignmentFrameOptions).alignment.x
-                    : undefined,
-            },
-            alignmentY: {
-                key: "w:yAlign",
-                value: (options as IAlignmentFrameOptions).alignment
-                    ? (options as IAlignmentFrameOptions).alignment.y
-                    : undefined,
-            },
-            anchorHorizontal: {
-                key: "w:hAnchor",
-                value: options.anchor.horizontal,
-            },
-            anchorLock: {
-                key: "w:anchorLock",
-                value: options.anchorLock,
-            },
-            anchorVertical: {
-                key: "w:vAnchor",
-                value: options.anchor.vertical,
-            },
-            dropCap: {
-                key: "w:dropCap",
-                value: options.dropCap,
-            },
-            height: {
-                key: "w:h",
-                value: options.height,
-            },
-            lines: {
-                key: "w:lines",
-                value: options.lines,
-            },
-            rule: {
-                key: "w:hRule",
-                value: options.rule,
-            },
-            spaceHorizontal: {
-                key: "w:hSpace",
-                value: options.space?.horizontal,
-            },
-            spaceVertical: {
-                key: "w:vSpace",
-                value: options.space?.vertical,
-            },
-            width: {
-                key: "w:w",
-                value: options.width,
-            },
-            wrap: {
-                key: "w:wrap",
-                value: options.wrap,
-            },
-            x: {
-                key: "w:x",
-                value: (options as IXYFrameOptions).position
-                    ? (options as IXYFrameOptions).position.x
-                    : undefined,
-            },
-            y: {
-                key: "w:y",
-                value: (options as IXYFrameOptions).position
-                    ? (options as IXYFrameOptions).position.y
-                    : undefined,
-            },
-        },
-        name: "w:framePr",
-    });
+  new BuilderElement<FramePropertiesAttributes>({
+    attributes: {
+      alignmentX: {
+        key: "w:xAlign",
+        value: (options as IAlignmentFrameOptions).alignment
+          ? (options as IAlignmentFrameOptions).alignment.x
+          : undefined,
+      },
+      alignmentY: {
+        key: "w:yAlign",
+        value: (options as IAlignmentFrameOptions).alignment
+          ? (options as IAlignmentFrameOptions).alignment.y
+          : undefined,
+      },
+      anchorHorizontal: {
+        key: "w:hAnchor",
+        value: options.anchor.horizontal,
+      },
+      anchorLock: {
+        key: "w:anchorLock",
+        value: options.anchorLock,
+      },
+      anchorVertical: {
+        key: "w:vAnchor",
+        value: options.anchor.vertical,
+      },
+      dropCap: {
+        key: "w:dropCap",
+        value: options.dropCap,
+      },
+      height: {
+        key: "w:h",
+        value: options.height,
+      },
+      lines: {
+        key: "w:lines",
+        value: options.lines,
+      },
+      rule: {
+        key: "w:hRule",
+        value: options.rule,
+      },
+      spaceHorizontal: {
+        key: "w:hSpace",
+        value: options.space?.horizontal,
+      },
+      spaceVertical: {
+        key: "w:vSpace",
+        value: options.space?.vertical,
+      },
+      width: {
+        key: "w:w",
+        value: options.width,
+      },
+      wrap: {
+        key: "w:wrap",
+        value: options.wrap,
+      },
+      x: {
+        key: "w:x",
+        value: (options as IXYFrameOptions).position
+          ? (options as IXYFrameOptions).position.x
+          : undefined,
+      },
+      y: {
+        key: "w:y",
+        value: (options as IXYFrameOptions).position
+          ? (options as IXYFrameOptions).position.y
+          : undefined,
+      },
+    },
+    name: "w:framePr",
+  });

@@ -28,12 +28,12 @@ import { IgnoreIfEmptyXmlComponent, XmlAttributeComponent } from "@file/xml-comp
  * @publicApi
  */
 export const PageBorderDisplay = {
-    /** Display border on all pages */
-    ALL_PAGES: "allPages",
-    /** Display border only on first page */
-    FIRST_PAGE: "firstPage",
-    /** Display border on all pages except first page */
-    NOT_FIRST_PAGE: "notFirstPage",
+  /** Display border on all pages */
+  ALL_PAGES: "allPages",
+  /** Display border only on first page */
+  FIRST_PAGE: "firstPage",
+  /** Display border on all pages except first page */
+  NOT_FIRST_PAGE: "notFirstPage",
 } as const;
 
 /**
@@ -52,10 +52,10 @@ export const PageBorderDisplay = {
  * @publicApi
  */
 export const PageBorderOffsetFrom = {
-    /** Position border relative to page edge */
-    PAGE: "page",
-    /** Position border relative to text (default) */
-    TEXT: "text",
+  /** Position border relative to page edge */
+  PAGE: "page",
+  /** Position border relative to text (default) */
+  TEXT: "text",
 } as const;
 
 /**
@@ -74,10 +74,10 @@ export const PageBorderOffsetFrom = {
  * @publicApi
  */
 export const PageBorderZOrder = {
-    /** Display border behind page contents */
-    BACK: "back",
-    /** Display border in front of page contents (default) */
-    FRONT: "front",
+  /** Display border behind page contents */
+  BACK: "back",
+  /** Display border in front of page contents (default) */
+  FRONT: "front",
 } as const;
 
 /**
@@ -92,32 +92,32 @@ export const PageBorderZOrder = {
  * @property left - Left border styling
  */
 export interface IPageBordersOptions {
-    /** Which pages display the border */
-    readonly display?: (typeof PageBorderDisplay)[keyof typeof PageBorderDisplay];
-    /** Whether border is positioned relative to page or text (default: text) */
-    readonly offsetFrom?: (typeof PageBorderOffsetFrom)[keyof typeof PageBorderOffsetFrom];
-    /** Whether border appears in front or behind page contents (default: front) */
-    readonly zOrder?: (typeof PageBorderZOrder)[keyof typeof PageBorderZOrder];
-    /** Top border styling */
-    readonly top?: IBorderOptions;
-    /** Right border styling */
-    readonly right?: IBorderOptions;
-    /** Bottom border styling */
-    readonly bottom?: IBorderOptions;
-    /** Left border styling */
-    readonly left?: IBorderOptions;
+  /** Which pages display the border */
+  readonly display?: (typeof PageBorderDisplay)[keyof typeof PageBorderDisplay];
+  /** Whether border is positioned relative to page or text (default: text) */
+  readonly offsetFrom?: (typeof PageBorderOffsetFrom)[keyof typeof PageBorderOffsetFrom];
+  /** Whether border appears in front or behind page contents (default: front) */
+  readonly zOrder?: (typeof PageBorderZOrder)[keyof typeof PageBorderZOrder];
+  /** Top border styling */
+  readonly top?: IBorderOptions;
+  /** Right border styling */
+  readonly right?: IBorderOptions;
+  /** Bottom border styling */
+  readonly bottom?: IBorderOptions;
+  /** Left border styling */
+  readonly left?: IBorderOptions;
 }
 
 class PageBordersAttributes extends XmlAttributeComponent<{
-    readonly display?: string;
-    readonly offsetFrom?: string;
-    readonly zOrder?: string;
+  readonly display?: string;
+  readonly offsetFrom?: string;
+  readonly zOrder?: string;
 }> {
-    protected readonly xmlKeys = {
-        display: "w:display",
-        offsetFrom: "w:offsetFrom",
-        zOrder: "w:zOrder",
-    };
+  protected readonly xmlKeys = {
+    display: "w:display",
+    offsetFrom: "w:offsetFrom",
+    zOrder: "w:zOrder",
+  };
 }
 
 /**
@@ -156,40 +156,40 @@ class PageBordersAttributes extends XmlAttributeComponent<{
  * ```
  */
 export class PageBorders extends IgnoreIfEmptyXmlComponent {
-    public constructor(options?: IPageBordersOptions) {
-        super("w:pgBorders");
+  public constructor(options?: IPageBordersOptions) {
+    super("w:pgBorders");
 
-        if (!options) {
-            return this;
-        }
-
-        const hasAttributes =
-            options.display !== undefined ||
-            options.offsetFrom !== undefined ||
-            options.zOrder !== undefined;
-        if (hasAttributes) {
-            this.root.push(
-                new PageBordersAttributes({
-                    display: options.display,
-                    offsetFrom: options.offsetFrom,
-                    zOrder: options.zOrder,
-                }),
-            );
-        } else {
-            this.root.push(new PageBordersAttributes({}));
-        }
-
-        if (options.top) {
-            this.root.push(createBorderElement("w:top", options.top));
-        }
-        if (options.left) {
-            this.root.push(createBorderElement("w:left", options.left));
-        }
-        if (options.bottom) {
-            this.root.push(createBorderElement("w:bottom", options.bottom));
-        }
-        if (options.right) {
-            this.root.push(createBorderElement("w:right", options.right));
-        }
+    if (!options) {
+      return this;
     }
+
+    const hasAttributes =
+      options.display !== undefined ||
+      options.offsetFrom !== undefined ||
+      options.zOrder !== undefined;
+    if (hasAttributes) {
+      this.root.push(
+        new PageBordersAttributes({
+          display: options.display,
+          offsetFrom: options.offsetFrom,
+          zOrder: options.zOrder,
+        }),
+      );
+    } else {
+      this.root.push(new PageBordersAttributes({}));
+    }
+
+    if (options.top) {
+      this.root.push(createBorderElement("w:top", options.top));
+    }
+    if (options.left) {
+      this.root.push(createBorderElement("w:left", options.left));
+    }
+    if (options.bottom) {
+      this.root.push(createBorderElement("w:bottom", options.bottom));
+    }
+    if (options.right) {
+      this.root.push(createBorderElement("w:right", options.right));
+    }
+  }
 }

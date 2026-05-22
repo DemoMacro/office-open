@@ -6,9 +6,9 @@ import { createBlip, Stretch } from "@office-open/core/drawingml";
  * Uses core createBlip for the blip element.
  */
 export class BlipFill extends XmlComponent {
-    public constructor(fileName: string) {
-        super("a:blipFill");
-        this.root.push(createBlip({ referenceId: fileName }));
-        this.root.push(new Stretch());
-    }
+  public constructor(fileName: string) {
+    super("a:blipFill");
+    this.root.push(createBlip({ referenceId: fileName }));
+    this.root.push(new Stretch());
+  }
 }

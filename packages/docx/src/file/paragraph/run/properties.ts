@@ -20,11 +20,11 @@ import { InsertionTrackChange } from "@file/track-revision/track-revision-compon
 import type { IXmlableObject } from "@file/xml-components";
 import { IgnoreIfEmptyXmlComponent, XmlComponent } from "@file/xml-components";
 import {
-    onOffObj,
-    hpsMeasureObj,
-    stringEnumValObj,
-    stringValObj,
-    numberValObj,
+  onOffObj,
+  hpsMeasureObj,
+  stringEnumValObj,
+  stringValObj,
+  numberValObj,
 } from "@office-open/core";
 import type { IContext } from "@office-open/core";
 import type { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
@@ -43,8 +43,8 @@ import { createUnderline } from "./underline";
 import type { UnderlineType } from "./underline";
 
 interface IFontOptions {
-    readonly name: string;
-    readonly hint?: string;
+  readonly name: string;
+  readonly hint?: string;
 }
 
 /**
@@ -73,20 +73,20 @@ interface IFontOptions {
  * @publicApi
  */
 export const TextEffect = {
-    /** Blinking background animation */
-    BLINK_BACKGROUND: "blinkBackground",
-    /** Lights animation effect */
-    LIGHTS: "lights",
-    /** Black marching ants animation */
-    ANTS_BLACK: "antsBlack",
-    /** Red marching ants animation */
-    ANTS_RED: "antsRed",
-    /** Shimmer animation effect */
-    SHIMMER: "shimmer",
-    /** Sparkle animation effect */
-    SPARKLE: "sparkle",
-    /** No text effect */
-    NONE: "none",
+  /** Blinking background animation */
+  BLINK_BACKGROUND: "blinkBackground",
+  /** Lights animation effect */
+  LIGHTS: "lights",
+  /** Black marching ants animation */
+  ANTS_BLACK: "antsBlack",
+  /** Red marching ants animation */
+  ANTS_RED: "antsRed",
+  /** Shimmer animation effect */
+  SHIMMER: "shimmer",
+  /** Sparkle animation effect */
+  SPARKLE: "sparkle",
+  /** No text effect */
+  NONE: "none",
 } as const;
 
 /**
@@ -122,40 +122,40 @@ export const TextEffect = {
  * ```
  */
 export const HighlightColor = {
-    /** Black highlight */
-    BLACK: "black",
-    /** Blue highlight */
-    BLUE: "blue",
-    /** Cyan highlight */
-    CYAN: "cyan",
-    /** Dark blue highlight */
-    DARK_BLUE: "darkBlue",
-    /** Dark cyan highlight */
-    DARK_CYAN: "darkCyan",
-    /** Dark gray highlight */
-    DARK_GRAY: "darkGray",
-    /** Dark green highlight */
-    DARK_GREEN: "darkGreen",
-    /** Dark magenta highlight */
-    DARK_MAGENTA: "darkMagenta",
-    /** Dark red highlight */
-    DARK_RED: "darkRed",
-    /** Dark yellow highlight */
-    DARK_YELLOW: "darkYellow",
-    /** Green highlight */
-    GREEN: "green",
-    /** Light gray highlight */
-    LIGHT_GRAY: "lightGray",
-    /** Magenta highlight */
-    MAGENTA: "magenta",
-    /** No highlight */
-    NONE: "none",
-    /** Red highlight */
-    RED: "red",
-    /** White highlight */
-    WHITE: "white",
-    /** Yellow highlight */
-    YELLOW: "yellow",
+  /** Black highlight */
+  BLACK: "black",
+  /** Blue highlight */
+  BLUE: "blue",
+  /** Cyan highlight */
+  CYAN: "cyan",
+  /** Dark blue highlight */
+  DARK_BLUE: "darkBlue",
+  /** Dark cyan highlight */
+  DARK_CYAN: "darkCyan",
+  /** Dark gray highlight */
+  DARK_GRAY: "darkGray",
+  /** Dark green highlight */
+  DARK_GREEN: "darkGreen",
+  /** Dark magenta highlight */
+  DARK_MAGENTA: "darkMagenta",
+  /** Dark red highlight */
+  DARK_RED: "darkRed",
+  /** Dark yellow highlight */
+  DARK_YELLOW: "darkYellow",
+  /** Green highlight */
+  GREEN: "green",
+  /** Light gray highlight */
+  LIGHT_GRAY: "lightGray",
+  /** Magenta highlight */
+  MAGENTA: "magenta",
+  /** No highlight */
+  NONE: "none",
+  /** Red highlight */
+  RED: "red",
+  /** White highlight */
+  WHITE: "white",
+  /** Yellow highlight */
+  YELLOW: "yellow",
 } as const;
 
 /**
@@ -167,52 +167,52 @@ export const HighlightColor = {
  * Reference: http://officeopenxml.com/WPtextFormatting.php
  */
 export interface RunStylePropertiesOptions {
-    readonly noProof?: boolean;
-    readonly bold?: boolean;
-    readonly boldComplexScript?: boolean;
-    readonly italics?: boolean;
-    readonly italicsComplexScript?: boolean;
-    readonly underline?: {
-        readonly color?: string;
-        readonly type?: (typeof UnderlineType)[keyof typeof UnderlineType];
-    };
-    readonly effect?: (typeof TextEffect)[keyof typeof TextEffect];
-    readonly emphasisMark?: {
-        readonly type?: (typeof EmphasisMarkType)[keyof typeof EmphasisMarkType];
-    };
-    readonly color?: string | ColorOptions;
-    readonly kern?: number | PositiveUniversalMeasure;
-    readonly position?: UniversalMeasure;
-    readonly size?: number | PositiveUniversalMeasure;
-    readonly sizeComplexScript?: boolean | number | PositiveUniversalMeasure;
-    readonly rightToLeft?: boolean;
-    readonly smallCaps?: boolean;
-    readonly allCaps?: boolean;
-    readonly strike?: boolean;
-    readonly doubleStrike?: boolean;
-    readonly subScript?: boolean;
-    readonly superScript?: boolean;
-    readonly font?: string | IFontOptions | IFontAttributesProperties;
-    readonly highlight?: (typeof HighlightColor)[keyof typeof HighlightColor];
-    readonly highlightComplexScript?: boolean | string;
-    readonly characterSpacing?: number;
-    readonly shading?: IShadingAttributesProperties;
-    readonly emboss?: boolean;
-    readonly imprint?: boolean;
-    readonly revision?: IRunPropertiesChangeOptions;
-    readonly language?: ILanguageOptions;
-    readonly border?: IBorderOptions;
-    readonly snapToGrid?: boolean;
-    readonly vanish?: boolean;
-    readonly specVanish?: boolean;
-    readonly scale?: number;
-    readonly math?: boolean;
-    readonly outline?: boolean;
-    readonly shadow?: boolean;
-    readonly webHidden?: boolean;
-    readonly fitText?: number;
-    readonly complexScript?: boolean;
-    readonly eastAsianLayout?: EastAsianLayoutOptions;
+  readonly noProof?: boolean;
+  readonly bold?: boolean;
+  readonly boldComplexScript?: boolean;
+  readonly italics?: boolean;
+  readonly italicsComplexScript?: boolean;
+  readonly underline?: {
+    readonly color?: string;
+    readonly type?: (typeof UnderlineType)[keyof typeof UnderlineType];
+  };
+  readonly effect?: (typeof TextEffect)[keyof typeof TextEffect];
+  readonly emphasisMark?: {
+    readonly type?: (typeof EmphasisMarkType)[keyof typeof EmphasisMarkType];
+  };
+  readonly color?: string | ColorOptions;
+  readonly kern?: number | PositiveUniversalMeasure;
+  readonly position?: UniversalMeasure;
+  readonly size?: number | PositiveUniversalMeasure;
+  readonly sizeComplexScript?: boolean | number | PositiveUniversalMeasure;
+  readonly rightToLeft?: boolean;
+  readonly smallCaps?: boolean;
+  readonly allCaps?: boolean;
+  readonly strike?: boolean;
+  readonly doubleStrike?: boolean;
+  readonly subScript?: boolean;
+  readonly superScript?: boolean;
+  readonly font?: string | IFontOptions | IFontAttributesProperties;
+  readonly highlight?: (typeof HighlightColor)[keyof typeof HighlightColor];
+  readonly highlightComplexScript?: boolean | string;
+  readonly characterSpacing?: number;
+  readonly shading?: IShadingAttributesProperties;
+  readonly emboss?: boolean;
+  readonly imprint?: boolean;
+  readonly revision?: IRunPropertiesChangeOptions;
+  readonly language?: ILanguageOptions;
+  readonly border?: IBorderOptions;
+  readonly snapToGrid?: boolean;
+  readonly vanish?: boolean;
+  readonly specVanish?: boolean;
+  readonly scale?: number;
+  readonly math?: boolean;
+  readonly outline?: boolean;
+  readonly shadow?: boolean;
+  readonly webHidden?: boolean;
+  readonly fitText?: number;
+  readonly complexScript?: boolean;
+  readonly eastAsianLayout?: EastAsianLayoutOptions;
 }
 
 /**
@@ -221,8 +221,8 @@ export interface RunStylePropertiesOptions {
  * Extends RunStylePropertiesOptions with a style reference.
  */
 export type IRunPropertiesOptions = {
-    /** Reference to a character style by name */
-    readonly style?: string;
+  /** Reference to a character style by name */
+  readonly style?: string;
 } & RunStylePropertiesOptions;
 
 /**
@@ -233,8 +233,8 @@ export type IRunPropertiesOptions = {
 export type IRunPropertiesChangeOptions = {} & IRunPropertiesOptions & IChangedAttributesProperties;
 
 export type IParagraphRunPropertiesOptions = {
-    readonly insertion?: IChangedAttributesProperties;
-    readonly deletion?: IChangedAttributesProperties;
+  readonly insertion?: IChangedAttributesProperties;
+  readonly deletion?: IChangedAttributesProperties;
 } & IRunPropertiesOptions;
 
 /**
@@ -260,39 +260,39 @@ export type IParagraphRunPropertiesOptions = {
  * u, effect, bdr, shd, vertAlign, rtl, em, lang, and more.
  */
 export class RunProperties extends IgnoreIfEmptyXmlComponent {
-    public constructor(options?: IRunPropertiesOptions) {
-        super("w:rPr");
+  public constructor(options?: IRunPropertiesOptions) {
+    super("w:rPr");
 
-        if (!options) {
-            return;
-        }
-
-        const result = buildRunProperties(options);
-        if (result) {
-            const children = result["w:rPr"];
-            if (Array.isArray(children)) {
-                this.root.push(...children);
-            }
-        }
+    if (!options) {
+      return;
     }
 
-    public push(item: XmlComponent): void {
-        this.root.push(item);
+    const result = buildRunProperties(options);
+    if (result) {
+      const children = result["w:rPr"];
+      if (Array.isArray(children)) {
+        this.root.push(...children);
+      }
     }
+  }
+
+  public push(item: XmlComponent): void {
+    this.root.push(item);
+  }
 }
 
 export class ParagraphRunProperties extends RunProperties {
-    public constructor(options?: IParagraphRunPropertiesOptions) {
-        super(options);
+  public constructor(options?: IParagraphRunPropertiesOptions) {
+    super(options);
 
-        if (options?.insertion) {
-            this.push(new InsertionTrackChange(options.insertion));
-        }
-
-        if (options?.deletion) {
-            this.push(new DeletionTrackChange(options.deletion));
-        }
+    if (options?.insertion) {
+      this.push(new InsertionTrackChange(options.insertion));
     }
+
+    if (options?.deletion) {
+      this.push(new DeletionTrackChange(options.deletion));
+    }
+  }
 }
 
 /**
@@ -302,17 +302,17 @@ export class ParagraphRunProperties extends RunProperties {
  * tracking is enabled in the document.
  */
 export class RunPropertiesChange extends XmlComponent {
-    public constructor(options: IRunPropertiesChangeOptions) {
-        super("w:rPrChange");
-        this.root.push(
-            new ChangeAttributes({
-                author: options.author,
-                date: options.date,
-                id: options.id,
-            }),
-        );
-        this.addChildElement(new RunProperties(options as IRunPropertiesOptions));
-    }
+  public constructor(options: IRunPropertiesChangeOptions) {
+    super("w:rPrChange");
+    this.root.push(
+      new ChangeAttributes({
+        author: options.author,
+        date: options.date,
+        id: options.id,
+      }),
+    );
+    this.addChildElement(new RunProperties(options as IRunPropertiesOptions));
+  }
 }
 
 const EMPTY_CTX: IContext = { stack: [] };
@@ -322,196 +322,193 @@ const EMPTY_CTX: IContext = { stack: [] };
  * Used by Run.prepForXml for O(1) construction.
  */
 export function buildRunProperties(options?: IRunPropertiesOptions): IXmlableObject | undefined {
-    if (!options) return undefined;
+  if (!options) return undefined;
 
-    const children: IXmlableObject[] = [];
+  const children: IXmlableObject[] = [];
 
-    if (options.style) {
-        children.push(stringValObj("w:rStyle", options.style));
+  if (options.style) {
+    children.push(stringValObj("w:rStyle", options.style));
+  }
+
+  if (options.font) {
+    if (typeof options.font === "string") {
+      children.push(createRunFonts(options.font).prepForXml(EMPTY_CTX) as IXmlableObject);
+    } else if ("name" in options.font) {
+      children.push(
+        createRunFonts(options.font.name, options.font.hint).prepForXml(
+          EMPTY_CTX,
+        ) as IXmlableObject,
+      );
+    } else {
+      children.push(createRunFonts(options.font).prepForXml(EMPTY_CTX) as IXmlableObject);
     }
+  }
 
-    if (options.font) {
-        if (typeof options.font === "string") {
-            children.push(createRunFonts(options.font).prepForXml(EMPTY_CTX) as IXmlableObject);
-        } else if ("name" in options.font) {
-            children.push(
-                createRunFonts(options.font.name, options.font.hint).prepForXml(
-                    EMPTY_CTX,
-                ) as IXmlableObject,
-            );
-        } else {
-            children.push(createRunFonts(options.font).prepForXml(EMPTY_CTX) as IXmlableObject);
-        }
-    }
+  if (options.bold !== undefined) children.push(onOffObj("w:b", options.bold));
 
-    if (options.bold !== undefined) children.push(onOffObj("w:b", options.bold));
+  if (
+    (options.boldComplexScript === undefined && options.bold !== undefined) ||
+    options.boldComplexScript
+  ) {
+    children.push(onOffObj("w:bCs", options.boldComplexScript ?? options.bold));
+  }
 
-    if (
-        (options.boldComplexScript === undefined && options.bold !== undefined) ||
-        options.boldComplexScript
-    ) {
-        children.push(onOffObj("w:bCs", options.boldComplexScript ?? options.bold));
-    }
+  if (options.italics !== undefined) children.push(onOffObj("w:i", options.italics));
 
-    if (options.italics !== undefined) children.push(onOffObj("w:i", options.italics));
+  if (
+    (options.italicsComplexScript === undefined && options.italics !== undefined) ||
+    options.italicsComplexScript
+  ) {
+    children.push(onOffObj("w:iCs", options.italicsComplexScript ?? options.italics));
+  }
 
-    if (
-        (options.italicsComplexScript === undefined && options.italics !== undefined) ||
-        options.italicsComplexScript
-    ) {
-        children.push(onOffObj("w:iCs", options.italicsComplexScript ?? options.italics));
-    }
+  if (options.smallCaps !== undefined) {
+    children.push(onOffObj("w:smallCaps", options.smallCaps));
+  } else if (options.allCaps !== undefined) {
+    children.push(onOffObj("w:caps", options.allCaps));
+  }
 
-    if (options.smallCaps !== undefined) {
-        children.push(onOffObj("w:smallCaps", options.smallCaps));
-    } else if (options.allCaps !== undefined) {
-        children.push(onOffObj("w:caps", options.allCaps));
-    }
+  if (options.strike !== undefined) children.push(onOffObj("w:strike", options.strike));
+  if (options.doubleStrike !== undefined)
+    children.push(onOffObj("w:dstrike", options.doubleStrike));
+  if (options.emboss !== undefined) children.push(onOffObj("w:emboss", options.emboss));
+  if (options.imprint !== undefined) children.push(onOffObj("w:imprint", options.imprint));
+  if (options.outline !== undefined) children.push(onOffObj("w:outline", options.outline));
+  if (options.shadow !== undefined) children.push(onOffObj("w:shadow", options.shadow));
+  if (options.webHidden !== undefined) children.push(onOffObj("w:webHidden", options.webHidden));
+  if (options.noProof !== undefined) children.push(onOffObj("w:noProof", options.noProof));
+  if (options.snapToGrid !== undefined) children.push(onOffObj("w:snapToGrid", options.snapToGrid));
 
-    if (options.strike !== undefined) children.push(onOffObj("w:strike", options.strike));
-    if (options.doubleStrike !== undefined)
-        children.push(onOffObj("w:dstrike", options.doubleStrike));
-    if (options.emboss !== undefined) children.push(onOffObj("w:emboss", options.emboss));
-    if (options.imprint !== undefined) children.push(onOffObj("w:imprint", options.imprint));
-    if (options.outline !== undefined) children.push(onOffObj("w:outline", options.outline));
-    if (options.shadow !== undefined) children.push(onOffObj("w:shadow", options.shadow));
-    if (options.webHidden !== undefined) children.push(onOffObj("w:webHidden", options.webHidden));
-    if (options.noProof !== undefined) children.push(onOffObj("w:noProof", options.noProof));
-    if (options.snapToGrid !== undefined)
-        children.push(onOffObj("w:snapToGrid", options.snapToGrid));
+  if (options.vanish) {
+    children.push(onOffObj("w:vanish", options.vanish));
+  }
 
-    if (options.vanish) {
-        children.push(onOffObj("w:vanish", options.vanish));
-    }
+  if (options.color) {
+    children.push(new Color(options.color).prepForXml(EMPTY_CTX) as IXmlableObject);
+  }
 
-    if (options.color) {
-        children.push(new Color(options.color).prepForXml(EMPTY_CTX) as IXmlableObject);
-    }
+  if (options.characterSpacing) {
+    children.push(
+      new CharacterSpacing(options.characterSpacing).prepForXml(EMPTY_CTX) as IXmlableObject,
+    );
+  }
 
-    if (options.characterSpacing) {
-        children.push(
-            new CharacterSpacing(options.characterSpacing).prepForXml(EMPTY_CTX) as IXmlableObject,
-        );
-    }
+  if (options.scale !== undefined) {
+    children.push(numberValObj("w:w", options.scale));
+  }
 
-    if (options.scale !== undefined) {
-        children.push(numberValObj("w:w", options.scale));
-    }
+  if (options.kern) {
+    children.push(hpsMeasureObj("w:kern", options.kern));
+  }
 
-    if (options.kern) {
-        children.push(hpsMeasureObj("w:kern", options.kern));
-    }
+  if (options.position) {
+    children.push(stringValObj("w:position", options.position));
+  }
 
-    if (options.position) {
-        children.push(stringValObj("w:position", options.position));
-    }
+  if (options.size !== undefined) {
+    children.push(hpsMeasureObj("w:sz", options.size));
+  }
+  const szCs =
+    options.sizeComplexScript === undefined || options.sizeComplexScript === true
+      ? options.size
+      : options.sizeComplexScript;
+  if (szCs) {
+    children.push(hpsMeasureObj("w:szCs", szCs));
+  }
 
-    if (options.size !== undefined) {
-        children.push(hpsMeasureObj("w:sz", options.size));
-    }
-    const szCs =
-        options.sizeComplexScript === undefined || options.sizeComplexScript === true
-            ? options.size
-            : options.sizeComplexScript;
-    if (szCs) {
-        children.push(hpsMeasureObj("w:szCs", szCs));
-    }
-
+  if (options.highlight) {
+    children.push(new Highlight(options.highlight).prepForXml(EMPTY_CTX) as IXmlableObject);
+  }
+  if (options.highlightComplexScript === true) {
     if (options.highlight) {
-        children.push(new Highlight(options.highlight).prepForXml(EMPTY_CTX) as IXmlableObject);
+      children.push(
+        new HighlightComplexScript(options.highlight).prepForXml(EMPTY_CTX) as IXmlableObject,
+      );
     }
-    if (options.highlightComplexScript === true) {
-        if (options.highlight) {
-            children.push(
-                new HighlightComplexScript(options.highlight).prepForXml(
-                    EMPTY_CTX,
-                ) as IXmlableObject,
-            );
-        }
-    } else if (
-        options.highlightComplexScript !== undefined &&
-        options.highlightComplexScript !== false
-    ) {
-        children.push(
-            new HighlightComplexScript(options.highlightComplexScript).prepForXml(
-                EMPTY_CTX,
-            ) as IXmlableObject,
-        );
-    }
+  } else if (
+    options.highlightComplexScript !== undefined &&
+    options.highlightComplexScript !== false
+  ) {
+    children.push(
+      new HighlightComplexScript(options.highlightComplexScript).prepForXml(
+        EMPTY_CTX,
+      ) as IXmlableObject,
+    );
+  }
 
-    if (options.underline) {
-        children.push(
-            createUnderline(options.underline.type, options.underline.color).prepForXml(
-                EMPTY_CTX,
-            ) as IXmlableObject,
-        );
-    }
+  if (options.underline) {
+    children.push(
+      createUnderline(options.underline.type, options.underline.color).prepForXml(
+        EMPTY_CTX,
+      ) as IXmlableObject,
+    );
+  }
 
-    if (options.effect) {
-        children.push(stringValObj("w:effect", options.effect));
-    }
+  if (options.effect) {
+    children.push(stringValObj("w:effect", options.effect));
+  }
 
-    if (options.border) {
-        children.push(
-            createBorderElement("w:bdr", options.border).prepForXml(EMPTY_CTX) as IXmlableObject,
-        );
-    }
+  if (options.border) {
+    children.push(
+      createBorderElement("w:bdr", options.border).prepForXml(EMPTY_CTX) as IXmlableObject,
+    );
+  }
 
-    if (options.shading) {
-        children.push(createShading(options.shading).prepForXml(EMPTY_CTX) as IXmlableObject);
-    }
+  if (options.shading) {
+    children.push(createShading(options.shading).prepForXml(EMPTY_CTX) as IXmlableObject);
+  }
 
-    if (options.subScript) {
-        children.push(stringEnumValObj("w:vertAlign", "subscript"));
-    }
+  if (options.subScript) {
+    children.push(stringEnumValObj("w:vertAlign", "subscript"));
+  }
 
-    if (options.superScript) {
-        children.push(stringEnumValObj("w:vertAlign", "superscript"));
-    }
+  if (options.superScript) {
+    children.push(stringEnumValObj("w:vertAlign", "superscript"));
+  }
 
-    if (options.rightToLeft !== undefined) {
-        children.push(onOffObj("w:rtl", options.rightToLeft));
-    }
+  if (options.rightToLeft !== undefined) {
+    children.push(onOffObj("w:rtl", options.rightToLeft));
+  }
 
-    if (options.emphasisMark) {
-        children.push(
-            createEmphasisMark(options.emphasisMark.type).prepForXml(EMPTY_CTX) as IXmlableObject,
-        );
-    }
+  if (options.emphasisMark) {
+    children.push(
+      createEmphasisMark(options.emphasisMark.type).prepForXml(EMPTY_CTX) as IXmlableObject,
+    );
+  }
 
-    if (options.language) {
-        children.push(
-            createLanguageComponent(options.language).prepForXml(EMPTY_CTX) as IXmlableObject,
-        );
-    }
+  if (options.language) {
+    children.push(
+      createLanguageComponent(options.language).prepForXml(EMPTY_CTX) as IXmlableObject,
+    );
+  }
 
-    if (options.specVanish) {
-        children.push(onOffObj("w:specVanish", options.specVanish));
-    }
+  if (options.specVanish) {
+    children.push(onOffObj("w:specVanish", options.specVanish));
+  }
 
-    if (options.math) {
-        children.push(onOffObj("w:oMath", options.math));
-    }
+  if (options.math) {
+    children.push(onOffObj("w:oMath", options.math));
+  }
 
-    if (options.fitText !== undefined) {
-        children.push(numberValObj("w:fitText", options.fitText));
-    }
+  if (options.fitText !== undefined) {
+    children.push(numberValObj("w:fitText", options.fitText));
+  }
 
-    if (options.complexScript !== undefined) {
-        children.push(onOffObj("w:cs", options.complexScript));
-    }
+  if (options.complexScript !== undefined) {
+    children.push(onOffObj("w:cs", options.complexScript));
+  }
 
-    if (options.eastAsianLayout) {
-        children.push(
-            createEastAsianLayout(options.eastAsianLayout).prepForXml(EMPTY_CTX) as IXmlableObject,
-        );
-    }
+  if (options.eastAsianLayout) {
+    children.push(
+      createEastAsianLayout(options.eastAsianLayout).prepForXml(EMPTY_CTX) as IXmlableObject,
+    );
+  }
 
-    if (options.revision) {
-        children.push(
-            new RunPropertiesChange(options.revision).prepForXml(EMPTY_CTX) as IXmlableObject,
-        );
-    }
+  if (options.revision) {
+    children.push(
+      new RunPropertiesChange(options.revision).prepForXml(EMPTY_CTX) as IXmlableObject,
+    );
+  }
 
-    return children.length > 0 ? { "w:rPr": children } : undefined;
+  return children.length > 0 ? { "w:rPr": children } : undefined;
 }

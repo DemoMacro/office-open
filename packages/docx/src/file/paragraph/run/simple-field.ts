@@ -17,7 +17,7 @@ import { TextRun } from "./text-run";
  * @internal
  */
 class FldSimpleAttrs extends XmlAttributeComponent<{ readonly instr: string }> {
-    protected readonly xmlKeys = { instr: "w:instr" };
+  protected readonly xmlKeys = { instr: "w:instr" };
 }
 
 /**
@@ -53,13 +53,13 @@ class FldSimpleAttrs extends XmlAttributeComponent<{ readonly instr: string }> {
  * ```
  */
 export class SimpleField extends XmlComponent {
-    public constructor(instruction: string, cachedValue?: string) {
-        super("w:fldSimple");
-        this.root.push(new FldSimpleAttrs({ instr: instruction }));
-        if (cachedValue !== undefined) {
-            this.root.push(new TextRun(cachedValue));
-        }
+  public constructor(instruction: string, cachedValue?: string) {
+    super("w:fldSimple");
+    this.root.push(new FldSimpleAttrs({ instr: instruction }));
+    if (cachedValue !== undefined) {
+      this.root.push(new TextRun(cachedValue));
     }
+  }
 }
 
 /**
@@ -78,7 +78,7 @@ export class SimpleField extends XmlComponent {
  * ```
  */
 export class SimpleMailMergeField extends SimpleField {
-    public constructor(fieldName: string) {
-        super(` MERGEFIELD ${fieldName} `, `«${fieldName}»`);
-    }
+  public constructor(fieldName: string) {
+    super(` MERGEFIELD ${fieldName} `, `«${fieldName}»`);
+  }
 }

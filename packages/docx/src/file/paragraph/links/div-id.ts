@@ -30,9 +30,9 @@ import type { XmlComponent } from "@file/xml-components";
  * ```
  */
 export const createDivId = (id: number): XmlComponent =>
-    new BuilderElement<{ readonly val: number }>({
-        attributes: {
-            val: { key: "w:val", value: id },
-        },
-        name: "w:divId",
-    });
+  new BuilderElement<{ readonly val: number }>({
+    attributes: {
+      val: { key: "w:val", value: id },
+    },
+    name: "w:divId",
+  });

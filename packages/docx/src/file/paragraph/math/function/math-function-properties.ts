@@ -11,8 +11,8 @@ import { BuilderElement } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
 
 import {
-    createMathControlProperties,
-    type MathControlPropertiesOptions,
+  createMathControlProperties,
+  type MathControlPropertiesOptions,
 } from "../math-control-properties";
 
 /**
@@ -21,8 +21,8 @@ import {
  * @see {@link createMathFunctionProperties}
  */
 export interface MathFunctionPropertiesOptions {
-    /** Control properties (tracking changes) */
-    readonly controlProperties?: MathControlPropertiesOptions;
+  /** Control properties (tracking changes) */
+  readonly controlProperties?: MathControlPropertiesOptions;
 }
 
 /**
@@ -43,16 +43,16 @@ export interface MathFunctionPropertiesOptions {
  * ```
  */
 export const createMathFunctionProperties = (
-    options?: MathFunctionPropertiesOptions,
+  options?: MathFunctionPropertiesOptions,
 ): XmlComponent => {
-    const children: XmlComponent[] = [];
+  const children: XmlComponent[] = [];
 
-    if (options?.controlProperties !== undefined) {
-        children.push(createMathControlProperties(options.controlProperties));
-    }
+  if (options?.controlProperties !== undefined) {
+    children.push(createMathControlProperties(options.controlProperties));
+  }
 
-    return new BuilderElement({
-        children,
-        name: "m:funcPr",
-    });
+  return new BuilderElement({
+    children,
+    name: "m:funcPr",
+  });
 };

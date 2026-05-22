@@ -15,11 +15,11 @@ import type { MathComponent } from "../math-component";
  * @internal
  */
 export class MathNumerator extends XmlComponent {
-    public constructor(children: readonly MathComponent[]) {
-        super("m:num");
+  public constructor(children: readonly MathComponent[]) {
+    super("m:num");
 
-        for (const child of children) {
-            this.root.push(child);
-        }
+    for (const child of children) {
+      this.root.push(child);
     }
+  }
 }

@@ -14,11 +14,11 @@ import type { OutlineOptions } from "./graphic-data/pic/shape-properties/outline
  * @internal
  */
 class GraphicAttributes extends XmlAttributeComponent<{
-    readonly a: string;
+  readonly a: string;
 }> {
-    protected readonly xmlKeys = {
-        a: "xmlns:a",
-    };
+  protected readonly xmlKeys = {
+    a: "xmlns:a",
+  };
 }
 
 /**
@@ -48,45 +48,45 @@ class GraphicAttributes extends XmlAttributeComponent<{
  * ```
  */
 export class Graphic extends XmlComponent {
-    private readonly data: GraphicData;
+  private readonly data: GraphicData;
 
-    public constructor({
-        mediaData,
-        transform,
-        outline,
-        fill,
-        effects,
-        blipEffects,
-        tile,
-        hyperlink,
-    }: {
-        readonly mediaData: IExtendedMediaData;
-        readonly transform: IMediaDataTransformation;
-        readonly outline?: OutlineOptions;
-        readonly fill?: FillOptions;
-        readonly effects?: EffectListOptions;
-        readonly blipEffects?: BlipEffectsOptions;
-        readonly tile?: TileOptions;
-        readonly hyperlink?: HyperlinkOptions;
-    }) {
-        super("a:graphic");
-        this.root.push(
-            new GraphicAttributes({
-                a: "http://schemas.openxmlformats.org/drawingml/2006/main",
-            }),
-        );
+  public constructor({
+    mediaData,
+    transform,
+    outline,
+    fill,
+    effects,
+    blipEffects,
+    tile,
+    hyperlink,
+  }: {
+    readonly mediaData: IExtendedMediaData;
+    readonly transform: IMediaDataTransformation;
+    readonly outline?: OutlineOptions;
+    readonly fill?: FillOptions;
+    readonly effects?: EffectListOptions;
+    readonly blipEffects?: BlipEffectsOptions;
+    readonly tile?: TileOptions;
+    readonly hyperlink?: HyperlinkOptions;
+  }) {
+    super("a:graphic");
+    this.root.push(
+      new GraphicAttributes({
+        a: "http://schemas.openxmlformats.org/drawingml/2006/main",
+      }),
+    );
 
-        this.data = new GraphicData({
-            blipEffects,
-            effects,
-            hyperlink,
-            mediaData,
-            outline,
-            fill,
-            tile,
-            transform,
-        });
+    this.data = new GraphicData({
+      blipEffects,
+      effects,
+      hyperlink,
+      mediaData,
+      outline,
+      fill,
+      tile,
+      transform,
+    });
 
-        this.root.push(this.data);
-    }
+    this.root.push(this.data);
+  }
 }

@@ -22,10 +22,10 @@ import { FootnoteRefRun } from "./run/footnote-ref-run";
  * @publicApi
  */
 export const FootnoteType = {
-    /** Separator line between body text and footnotes */
-    SEPERATOR: "separator",
-    /** Continuation separator for footnotes spanning pages */
-    CONTINUATION_SEPERATOR: "continuationSeparator",
+  /** Separator line between body text and footnotes */
+  SEPERATOR: "separator",
+  /** Continuation separator for footnotes spanning pages */
+  CONTINUATION_SEPERATOR: "continuationSeparator",
 } as const;
 
 /**
@@ -38,12 +38,12 @@ export const FootnoteType = {
  * @see {@link Footnote}
  */
 export interface IFootnoteOptions {
-    /** Unique numeric identifier for this footnote */
-    readonly id: number;
-    /** Type of footnote (separator or continuation separator) */
-    readonly type?: (typeof FootnoteType)[keyof typeof FootnoteType];
-    /** Paragraph content of the footnote */
-    readonly children: readonly Paragraph[];
+  /** Unique numeric identifier for this footnote */
+  readonly id: number;
+  /** Type of footnote (separator or continuation separator) */
+  readonly type?: (typeof FootnoteType)[keyof typeof FootnoteType];
+  /** Paragraph content of the footnote */
+  readonly children: readonly Paragraph[];
 }
 
 /**
@@ -81,23 +81,23 @@ export interface IFootnoteOptions {
  * ```
  */
 export class Footnote extends XmlComponent {
-    public constructor(options: IFootnoteOptions) {
-        super("w:footnote");
-        this.root.push(
-            new FootnoteAttributes({
-                id: options.id,
-                type: options.type,
-            }),
-        );
+  public constructor(options: IFootnoteOptions) {
+    super("w:footnote");
+    this.root.push(
+      new FootnoteAttributes({
+        id: options.id,
+        type: options.type,
+      }),
+    );
 
-        for (let i = 0; i < options.children.length; i++) {
-            const child = options.children[i];
+    for (let i = 0; i < options.children.length; i++) {
+      const child = options.children[i];
 
-            if (i === 0) {
-                child.addRunToFront(new FootnoteRefRun());
-            }
+      if (i === 0) {
+        child.addRunToFront(new FootnoteRefRun());
+      }
 
-            this.root.push(child);
-        }
+      this.root.push(child);
     }
+  }
 }

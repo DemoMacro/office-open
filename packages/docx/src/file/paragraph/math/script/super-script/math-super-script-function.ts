@@ -19,10 +19,10 @@ import { createMathSuperScriptProperties } from "./math-super-script-function-pr
  * @see {@link MathSuperScript}
  */
 export interface IMathSuperScriptOptions {
-    /** The base expression */
-    readonly children: readonly MathComponent[];
-    /** The superscript (exponent) expression */
-    readonly superScript: readonly MathComponent[];
+  /** The base expression */
+  readonly children: readonly MathComponent[];
+  /** The superscript (exponent) expression */
+  readonly superScript: readonly MathComponent[];
 }
 
 /**
@@ -55,11 +55,11 @@ export interface IMathSuperScriptOptions {
  * ```
  */
 export class MathSuperScript extends XmlComponent {
-    public constructor(options: IMathSuperScriptOptions) {
-        super("m:sSup");
+  public constructor(options: IMathSuperScriptOptions) {
+    super("m:sSup");
 
-        this.root.push(createMathSuperScriptProperties());
-        this.root.push(createMathBase({ children: options.children }));
-        this.root.push(createMathSuperScriptElement({ children: options.superScript }));
-    }
+    this.root.push(createMathSuperScriptProperties());
+    this.root.push(createMathBase({ children: options.children }));
+    this.root.push(createMathSuperScriptElement({ children: options.superScript }));
+  }
 }

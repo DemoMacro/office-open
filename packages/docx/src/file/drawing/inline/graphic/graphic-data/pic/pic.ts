@@ -52,42 +52,40 @@ import { ShapeProperties } from "./shape-properties/shape-properties";
  * ```
  */
 export class Pic extends XmlComponent {
-    public constructor({
-        mediaData,
-        transform,
-        outline,
-        fill,
-        effects,
-        blipEffects,
-        tile,
-        hyperlink,
-    }: {
-        readonly mediaData: IMediaData;
-        readonly transform: IMediaDataTransformation;
-        readonly outline?: OutlineOptions;
-        readonly fill?: FillOptions;
-        readonly effects?: EffectListOptions;
-        readonly blipEffects?: BlipEffectsOptions;
-        readonly tile?: TileOptions;
-        readonly hyperlink?: HyperlinkOptions;
-    }) {
-        super("pic:pic");
+  public constructor({
+    mediaData,
+    transform,
+    outline,
+    fill,
+    effects,
+    blipEffects,
+    tile,
+    hyperlink,
+  }: {
+    readonly mediaData: IMediaData;
+    readonly transform: IMediaDataTransformation;
+    readonly outline?: OutlineOptions;
+    readonly fill?: FillOptions;
+    readonly effects?: EffectListOptions;
+    readonly blipEffects?: BlipEffectsOptions;
+    readonly tile?: TileOptions;
+    readonly hyperlink?: HyperlinkOptions;
+  }) {
+    super("pic:pic");
 
-        this.root.push(
-            new PicAttributes({
-                xmlns: "http://schemas.openxmlformats.org/drawingml/2006/picture",
-            }),
-        );
+    this.root.push(
+      new PicAttributes({
+        xmlns: "http://schemas.openxmlformats.org/drawingml/2006/picture",
+      }),
+    );
 
-        this.root.push(new NonVisualPicProperties(hyperlink));
-        const blipOptions: BlipOptions = {
-            referenceId: mediaData.fileName,
-            type: mediaData.type,
-            fallbackFileName: "fallback" in mediaData ? mediaData.fallback.fileName : undefined,
-        };
-        this.root.push(
-            createBlipFill(blipOptions, { blipEffects, tile, srcRect: mediaData.srcRect }),
-        );
-        this.root.push(new ShapeProperties({ element: "pic", effects, fill, outline, transform }));
-    }
+    this.root.push(new NonVisualPicProperties(hyperlink));
+    const blipOptions: BlipOptions = {
+      referenceId: mediaData.fileName,
+      type: mediaData.type,
+      fallbackFileName: "fallback" in mediaData ? mediaData.fallback.fileName : undefined,
+    };
+    this.root.push(createBlipFill(blipOptions, { blipEffects, tile, srcRect: mediaData.srcRect }));
+    this.root.push(new ShapeProperties({ element: "pic", effects, fill, outline, transform }));
+  }
 }

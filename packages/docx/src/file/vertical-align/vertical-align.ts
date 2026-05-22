@@ -31,9 +31,9 @@ import type { XmlComponent } from "@file/xml-components";
  * @publicApi
  */
 export const VerticalAlignTable = {
-    BOTTOM: "bottom",
-    CENTER: "center",
-    TOP: "top",
+  BOTTOM: "bottom",
+  CENTER: "center",
+  TOP: "top",
 } as const;
 
 /**
@@ -43,8 +43,8 @@ export const VerticalAlignTable = {
  * @publicApi
  */
 export const VerticalAlignSection = {
-    ...VerticalAlignTable,
-    BOTH: "both",
+  ...VerticalAlignTable,
+  BOTH: "both",
 } as const;
 
 /**
@@ -71,13 +71,13 @@ export type SectionVerticalAlign = (typeof VerticalAlignSection)[keyof typeof Ve
  * ```
  */
 export const createVerticalAlign = (
-    value: (typeof VerticalAlign)[keyof typeof VerticalAlign],
+  value: (typeof VerticalAlign)[keyof typeof VerticalAlign],
 ): XmlComponent =>
-    new BuilderElement<{
-        readonly verticalAlign: (typeof VerticalAlign)[keyof typeof VerticalAlign];
-    }>({
-        attributes: {
-            verticalAlign: { key: "w:val", value },
-        },
-        name: "w:vAlign",
-    });
+  new BuilderElement<{
+    readonly verticalAlign: (typeof VerticalAlign)[keyof typeof VerticalAlign];
+  }>({
+    attributes: {
+      verticalAlign: { key: "w:val", value },
+    },
+    name: "w:vAlign",
+  });

@@ -1,10 +1,10 @@
 ---
 name: office-open
 description: >
-    Generate and parse Office Open XML documents (.docx, .pptx) with JavaScript/TypeScript.
-    Use when creating Word documents or PowerPoint presentations, working with paragraphs,
-    tables, images, charts, shapes, math equations, headers, footers, styles, themes,
-    effects, animations, or exporting to buffer/blob/base64.
+  Generate and parse Office Open XML documents (.docx, .pptx) with JavaScript/TypeScript.
+  Use when creating Word documents or PowerPoint presentations, working with paragraphs,
+  tables, images, charts, shapes, math equations, headers, footers, styles, themes,
+  effects, animations, or exporting to buffer/blob/base64.
 ---
 
 # Office Open XML
@@ -35,21 +35,21 @@ pnpm add @office-open/xml       # XML parsing/serialization
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from "@office-open/docx";
 
 const doc = new Document({
-    sections: [
-        {
-            properties: {},
-            children: [
-                new Paragraph({ text: "Title", heading: HeadingLevel.HEADING_1 }),
-                new Paragraph({
-                    children: [
-                        new TextRun({ text: "Bold", bold: true }),
-                        new TextRun(" and "),
-                        new TextRun({ text: "italic", italics: true }),
-                    ],
-                }),
-            ],
-        },
-    ],
+  sections: [
+    {
+      properties: {},
+      children: [
+        new Paragraph({ text: "Title", heading: HeadingLevel.HEADING_1 }),
+        new Paragraph({
+          children: [
+            new TextRun({ text: "Bold", bold: true }),
+            new TextRun(" and "),
+            new TextRun({ text: "italic", italics: true }),
+          ],
+        }),
+      ],
+    },
+  ],
 });
 
 const buffer = await Packer.toBuffer(doc);
@@ -61,21 +61,21 @@ const buffer = await Packer.toBuffer(doc);
 import { Presentation, Packer, Shape } from "@office-open/pptx";
 
 const pres = new Presentation({
-    title: "Demo",
-    slides: [
-        {
-            children: [
-                new Shape({
-                    x: 50,
-                    y: 30,
-                    width: 600,
-                    height: 60,
-                    text: "Title",
-                    fill: "4472C4",
-                }),
-            ],
-        },
-    ],
+  title: "Demo",
+  slides: [
+    {
+      children: [
+        new Shape({
+          x: 50,
+          y: 30,
+          width: 600,
+          height: 60,
+          text: "Title",
+          fill: "4472C4",
+        }),
+      ],
+    },
+  ],
 });
 
 const buffer = await Packer.toBuffer(pres);
@@ -134,14 +134,14 @@ new Document({
 import { Table, TableRow, TableCell, WidthType } from "@office-open/docx";
 
 new Table({
-    rows: [
-        new TableRow({
-            children: [
-                new TableCell({ children: [new Paragraph("Cell 1")] }),
-                new TableCell({ children: [new Paragraph("Cell 2")] }),
-            ],
-        }),
-    ],
+  rows: [
+    new TableRow({
+      children: [
+        new TableCell({ children: [new Paragraph("Cell 1")] }),
+        new TableCell({ children: [new Paragraph("Cell 2")] }),
+      ],
+    }),
+  ],
 });
 ```
 
@@ -152,15 +152,15 @@ import { ImageRun } from "@office-open/docx";
 import { readFileSync } from "node:fs";
 
 new ImageRun({
-    type: "png",
-    data: readFileSync("photo.png"),
-    transformation: { width: 200, height: 150 },
-    blipEffects: {
-        grayscale: true,
-        // luminance: { bright: 30, contrast: -20 },
-        // duotone: { color1: { value: "002060" }, color2: { value: "D0CECE" } },
-        // tint: { hue: 6000000, amount: 40 },
-    },
+  type: "png",
+  data: readFileSync("photo.png"),
+  transformation: { width: 200, height: 150 },
+  blipEffects: {
+    grayscale: true,
+    // luminance: { bright: 30, contrast: -20 },
+    // duotone: { color1: { value: "002060" }, color2: { value: "D0CECE" } },
+    // tint: { hue: 6000000, amount: 40 },
+  },
 });
 ```
 
@@ -197,18 +197,18 @@ new Document({
 import { Math, MathRun, MathFraction, MathSuperScript, MathRadical } from "@office-open/docx";
 
 new Math({
-    children: [new MathFraction({ numerator: "a + b", denominator: "c" })],
+  children: [new MathFraction({ numerator: "a + b", denominator: "c" })],
 });
 
 // E = mc²
 new Math({
-    children: [
-        new MathRun("E = m"),
-        new MathSuperScript({
-            children: [new MathRun("c")],
-            superScript: [new MathRun("2")],
-        }),
-    ],
+  children: [
+    new MathRun("E = m"),
+    new MathSuperScript({
+      children: [new MathRun("c")],
+      superScript: [new MathRun("2")],
+    }),
+  ],
 });
 ```
 
@@ -219,11 +219,11 @@ import { ChartSpace } from "@office-open/core";
 
 // Charts are created via @office-open/core and embedded in both docx and pptx
 const chart = ChartSpace.create({
-    type: "bar",
-    data: [
-        { category: "A", value: 10 },
-        { category: "B", value: 20 },
-    ],
+  type: "bar",
+  data: [
+    { category: "A", value: 10 },
+    { category: "B", value: 20 },
+  ],
 });
 ```
 
@@ -233,13 +233,13 @@ const chart = ChartSpace.create({
 
 ```ts
 new Shape({
-    x: 50,
-    y: 100,
-    width: 300,
-    height: 80,
-    text: "Hello",
-    fill: "4472C4",
-    outline: { color: "0D47A1", width: 2 },
+  x: 50,
+  y: 100,
+  width: 300,
+  height: 80,
+  text: "Hello",
+  fill: "4472C4",
+  outline: { color: "0D47A1", width: 2 },
 });
 ```
 
@@ -247,28 +247,28 @@ new Shape({
 
 ```ts
 new Shape({
-    x: 50,
-    y: 100,
-    width: 200,
-    height: 120,
-    text: "Shadow",
-    fill: "ED7D31",
-    effects: {
-        outerShadow: {
-            blur: 50800,
-            distance: 38100,
-            direction: 5400000,
-            color: "000000",
-            alpha: 50,
-        },
-        glow: { radius: 152400, color: "92D050", alpha: 60 },
-        reflection: { blurRadius: 6350, distance: 38100, startAlpha: 90, endAlpha: 0 },
-        softEdge: { radius: 50800 },
-        rotation3D: { x: 20, y: 30, z: 10, perspective: 500 },
-        extrusionH: 50000,
-        material: "plastic",
-        bevelTop: { width: 8, height: 8 },
+  x: 50,
+  y: 100,
+  width: 200,
+  height: 120,
+  text: "Shadow",
+  fill: "ED7D31",
+  effects: {
+    outerShadow: {
+      blur: 50800,
+      distance: 38100,
+      direction: 5400000,
+      color: "000000",
+      alpha: 50,
     },
+    glow: { radius: 152400, color: "92D050", alpha: 60 },
+    reflection: { blurRadius: 6350, distance: 38100, startAlpha: 90, endAlpha: 0 },
+    softEdge: { radius: 50800 },
+    rotation3D: { x: 20, y: 30, z: 10, perspective: 500 },
+    extrusionH: 50000,
+    material: "plastic",
+    bevelTop: { width: 8, height: 8 },
+  },
 });
 ```
 

@@ -4,16 +4,16 @@ import { describe, expect, it } from "vite-plus/test";
 import { createWordWrap } from "./word-wrap";
 
 describe("WordWrap", () => {
-    it("should create", () => {
-        const wordWrap = createWordWrap();
-        const tree = new Formatter().format(wordWrap);
+  it("should create", () => {
+    const wordWrap = createWordWrap();
+    const tree = new Formatter().format(wordWrap);
 
-        expect(tree).to.deep.equal({
-            "w:wordWrap": {
-                _attr: {
-                    "w:val": 0,
-                },
-            },
-        });
+    expect(tree).to.deep.equal({
+      "w:wordWrap": {
+        _attr: {
+          "w:val": 0,
+        },
+      },
     });
+  });
 });

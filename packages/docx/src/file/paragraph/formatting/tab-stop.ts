@@ -20,12 +20,12 @@ import type { XmlComponent } from "@file/xml-components";
  * @see {@link TabStop}
  */
 export interface TabStopDefinition {
-    /** The type of tab stop alignment */
-    readonly type: (typeof TabStopType)[keyof typeof TabStopType];
-    /** The position of the tab stop in twips */
-    readonly position: number | (typeof TabStopPosition)[keyof typeof TabStopPosition];
-    /** Optional leader character to fill space before the tab */
-    readonly leader?: (typeof LeaderType)[keyof typeof LeaderType];
+  /** The type of tab stop alignment */
+  readonly type: (typeof TabStopType)[keyof typeof TabStopType];
+  /** The position of the tab stop in twips */
+  readonly position: number | (typeof TabStopPosition)[keyof typeof TabStopPosition];
+  /** Optional leader character to fill space before the tab */
+  readonly leader?: (typeof LeaderType)[keyof typeof LeaderType];
 }
 
 /**
@@ -36,24 +36,24 @@ export interface TabStopDefinition {
  * @publicApi
  */
 export const TabStopType = {
-    /** Left-aligned tab stop */
-    LEFT: "left",
-    /** Right-aligned tab stop */
-    RIGHT: "right",
-    /** Center-aligned tab stop */
-    CENTER: "center",
-    /** Bar tab stop - inserts a vertical bar at the position */
-    BAR: "bar",
-    /** Clears a tab stop at the specified position */
-    CLEAR: "clear",
-    /** Decimal-aligned tab stop - aligns on decimal point */
-    DECIMAL: "decimal",
-    /** End-aligned tab stop (right-to-left equivalent) */
-    END: "end",
-    /** List tab stop for numbered lists */
-    NUM: "num",
-    /** Start-aligned tab stop (left-to-right equivalent) */
-    START: "start",
+  /** Left-aligned tab stop */
+  LEFT: "left",
+  /** Right-aligned tab stop */
+  RIGHT: "right",
+  /** Center-aligned tab stop */
+  CENTER: "center",
+  /** Bar tab stop - inserts a vertical bar at the position */
+  BAR: "bar",
+  /** Clears a tab stop at the specified position */
+  CLEAR: "clear",
+  /** Decimal-aligned tab stop - aligns on decimal point */
+  DECIMAL: "decimal",
+  /** End-aligned tab stop (right-to-left equivalent) */
+  END: "end",
+  /** List tab stop for numbered lists */
+  NUM: "num",
+  /** Start-aligned tab stop (left-to-right equivalent) */
+  START: "start",
 } as const;
 
 /**
@@ -64,18 +64,18 @@ export const TabStopType = {
  * @publicApi
  */
 export const LeaderType = {
-    /** Dot leader (....) */
-    DOT: "dot",
-    /** Heavy leader */
-    HEAVY: "heavy",
-    /** Hyphen leader (----) */
-    HYPHEN: "hyphen",
-    /** Middle dot leader (····) */
-    MIDDLE_DOT: "middleDot",
-    /** No leader */
-    NONE: "none",
-    /** Underscore leader (____) */
-    UNDERSCORE: "underscore",
+  /** Dot leader (....) */
+  DOT: "dot",
+  /** Heavy leader */
+  HEAVY: "heavy",
+  /** Hyphen leader (----) */
+  HYPHEN: "hyphen",
+  /** Middle dot leader (····) */
+  MIDDLE_DOT: "middleDot",
+  /** No leader */
+  NONE: "none",
+  /** Underscore leader (____) */
+  UNDERSCORE: "underscore",
 } as const;
 
 /**
@@ -84,8 +84,8 @@ export const LeaderType = {
  * @publicApi
  */
 export const TabStopPosition = {
-    /** Maximum tab stop position (right margin) */
-    MAX: 9026,
+  /** Maximum tab stop position (right margin) */
+  MAX: 9026,
 } as const;
 
 /**
@@ -103,18 +103,18 @@ export const TabStopPosition = {
  * ```
  */
 export const createTabStopItem = ({ type, position, leader }: TabStopDefinition): XmlComponent =>
-    new BuilderElement<{
-        readonly val: (typeof TabStopType)[keyof typeof TabStopType];
-        readonly pos: string | number;
-        readonly leader?: (typeof LeaderType)[keyof typeof LeaderType];
-    }>({
-        attributes: {
-            leader: { key: "w:leader", value: leader },
-            pos: { key: "w:pos", value: position },
-            val: { key: "w:val", value: type },
-        },
-        name: "w:tab",
-    });
+  new BuilderElement<{
+    readonly val: (typeof TabStopType)[keyof typeof TabStopType];
+    readonly pos: string | number;
+    readonly leader?: (typeof LeaderType)[keyof typeof LeaderType];
+  }>({
+    attributes: {
+      leader: { key: "w:leader", value: leader },
+      pos: { key: "w:pos", value: position },
+      val: { key: "w:val", value: type },
+    },
+    name: "w:tab",
+  });
 
 /**
  * Creates a collection of tab stops for a WordprocessingML document.
@@ -145,7 +145,7 @@ export const createTabStopItem = ({ type, position, leader }: TabStopDefinition)
  * ```
  */
 export const createTabStop = (tabDefinitions: readonly TabStopDefinition[]): XmlComponent =>
-    new BuilderElement({
-        children: tabDefinitions.map((tabDefinition) => createTabStopItem(tabDefinition)),
-        name: "w:tabs",
-    });
+  new BuilderElement({
+    children: tabDefinitions.map((tabDefinition) => createTabStopItem(tabDefinition)),
+    name: "w:tabs",
+  });

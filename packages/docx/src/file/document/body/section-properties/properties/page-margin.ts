@@ -26,20 +26,20 @@ import type { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
  * @property gutter - Gutter margin for binding
  */
 export interface IPageMarginAttributes {
-    /** Top margin in twips or universal measure */
-    readonly top?: number | UniversalMeasure;
-    /** Right margin in twips or universal measure */
-    readonly right?: number | PositiveUniversalMeasure;
-    /** Bottom margin in twips or universal measure */
-    readonly bottom?: number | UniversalMeasure;
-    /** Left margin in twips or universal measure */
-    readonly left?: number | PositiveUniversalMeasure;
-    /** Header margin (distance from top of page to header) in twips or universal measure */
-    readonly header?: number | PositiveUniversalMeasure;
-    /** Footer margin (distance from bottom of page to footer) in twips or universal measure */
-    readonly footer?: number | PositiveUniversalMeasure;
-    /** Gutter margin for binding in twips or universal measure */
-    readonly gutter?: number | PositiveUniversalMeasure;
+  /** Top margin in twips or universal measure */
+  readonly top?: number | UniversalMeasure;
+  /** Right margin in twips or universal measure */
+  readonly right?: number | PositiveUniversalMeasure;
+  /** Bottom margin in twips or universal measure */
+  readonly bottom?: number | UniversalMeasure;
+  /** Left margin in twips or universal measure */
+  readonly left?: number | PositiveUniversalMeasure;
+  /** Header margin (distance from top of page to header) in twips or universal measure */
+  readonly header?: number | PositiveUniversalMeasure;
+  /** Footer margin (distance from bottom of page to footer) in twips or universal measure */
+  readonly footer?: number | PositiveUniversalMeasure;
+  /** Gutter margin for binding in twips or universal measure */
+  readonly gutter?: number | PositiveUniversalMeasure;
 }
 
 /**
@@ -70,23 +70,23 @@ export interface IPageMarginAttributes {
  * ```
  */
 export const createPageMargin = (
-    top: number | UniversalMeasure,
-    right: number | PositiveUniversalMeasure,
-    bottom: number | UniversalMeasure,
-    left: number | PositiveUniversalMeasure,
-    header: number | PositiveUniversalMeasure,
-    footer: number | PositiveUniversalMeasure,
-    gutter: number | PositiveUniversalMeasure,
+  top: number | UniversalMeasure,
+  right: number | PositiveUniversalMeasure,
+  bottom: number | UniversalMeasure,
+  left: number | PositiveUniversalMeasure,
+  header: number | PositiveUniversalMeasure,
+  footer: number | PositiveUniversalMeasure,
+  gutter: number | PositiveUniversalMeasure,
 ): XmlComponent =>
-    new BuilderElement<IPageMarginAttributes>({
-        attributes: {
-            bottom: { key: "w:bottom", value: signedTwipsMeasureValue(bottom) },
-            footer: { key: "w:footer", value: twipsMeasureValue(footer) },
-            gutter: { key: "w:gutter", value: twipsMeasureValue(gutter) },
-            header: { key: "w:header", value: twipsMeasureValue(header) },
-            left: { key: "w:left", value: twipsMeasureValue(left) },
-            right: { key: "w:right", value: twipsMeasureValue(right) },
-            top: { key: "w:top", value: signedTwipsMeasureValue(top) },
-        },
-        name: "w:pgMar",
-    });
+  new BuilderElement<IPageMarginAttributes>({
+    attributes: {
+      bottom: { key: "w:bottom", value: signedTwipsMeasureValue(bottom) },
+      footer: { key: "w:footer", value: twipsMeasureValue(footer) },
+      gutter: { key: "w:gutter", value: twipsMeasureValue(gutter) },
+      header: { key: "w:header", value: twipsMeasureValue(header) },
+      left: { key: "w:left", value: twipsMeasureValue(left) },
+      right: { key: "w:right", value: twipsMeasureValue(right) },
+      top: { key: "w:top", value: signedTwipsMeasureValue(top) },
+    },
+    name: "w:pgMar",
+  });

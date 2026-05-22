@@ -18,10 +18,10 @@ import { XmlAttributeComponent } from "@file/xml-components";
  * @internal
  */
 export class GraphicDataAttributes extends XmlAttributeComponent<{
-    /** URI identifying the type of graphical content */
-    readonly uri?: string;
+  /** URI identifying the type of graphical content */
+  readonly uri?: string;
 }> {
-    protected readonly xmlKeys = {
-        uri: "uri",
-    };
+  protected readonly xmlKeys = {
+    uri: "uri",
+  };
 }

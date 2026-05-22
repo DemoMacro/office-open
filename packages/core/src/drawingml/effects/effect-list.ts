@@ -25,10 +25,10 @@ import { createSoftEdgeEffect } from "./soft-edge";
  * Blur effect options.
  */
 export interface BlurEffectOptions {
-    /** Blur radius in EMUs */
-    readonly radius?: number;
-    /** Whether to grow the shape boundary */
-    readonly grow?: boolean;
+  /** Blur radius in EMUs */
+  readonly radius?: number;
+  /** Whether to grow the shape boundary */
+  readonly grow?: boolean;
 }
 
 /**
@@ -38,22 +38,22 @@ export interface BlurEffectOptions {
  * Only specified effects will be included in the output.
  */
 export interface EffectListOptions {
-    /** Blur effect */
-    readonly blur?: BlurEffectOptions;
-    /** Fill overlay effect */
-    readonly fillOverlay?: FillOverlayEffectOptions;
-    /** Glow effect */
-    readonly glow?: GlowEffectOptions;
-    /** Inner shadow effect */
-    readonly innerShadow?: InnerShadowEffectOptions;
-    /** Outer shadow effect */
-    readonly outerShadow?: OuterShadowEffectOptions;
-    /** Preset shadow effect */
-    readonly presetShadow?: PresetShadowEffectOptions;
-    /** Reflection effect (pass object for attributes, or true for defaults) */
-    readonly reflection?: ReflectionEffectOptions | true;
-    /** Soft edge radius in EMUs */
-    readonly softEdge?: number;
+  /** Blur effect */
+  readonly blur?: BlurEffectOptions;
+  /** Fill overlay effect */
+  readonly fillOverlay?: FillOverlayEffectOptions;
+  /** Glow effect */
+  readonly glow?: GlowEffectOptions;
+  /** Inner shadow effect */
+  readonly innerShadow?: InnerShadowEffectOptions;
+  /** Outer shadow effect */
+  readonly outerShadow?: OuterShadowEffectOptions;
+  /** Preset shadow effect */
+  readonly presetShadow?: PresetShadowEffectOptions;
+  /** Reflection effect (pass object for attributes, or true for defaults) */
+  readonly reflection?: ReflectionEffectOptions | true;
+  /** Soft edge radius in EMUs */
+  readonly softEdge?: number;
 }
 
 /**
@@ -68,25 +68,25 @@ export interface EffectListOptions {
  * ```
  */
 const createBlurEffect = (options: BlurEffectOptions): XmlComponent => {
-    const hasAttributes = options.radius !== undefined || options.grow === false;
+  const hasAttributes = options.radius !== undefined || options.grow === false;
 
-    if (!hasAttributes) {
-        return new BuilderElement({ name: "a:blur" });
-    }
+  if (!hasAttributes) {
+    return new BuilderElement({ name: "a:blur" });
+  }
 
-    const attributePayload = {
-        ...(options.radius !== undefined && {
-            rad: { key: "rad", value: options.radius },
-        }),
-        ...(options.grow === false && {
-            grow: { key: "grow", value: 0 },
-        }),
-    };
+  const attributePayload = {
+    ...(options.radius !== undefined && {
+      rad: { key: "rad", value: options.radius },
+    }),
+    ...(options.grow === false && {
+      grow: { key: "grow", value: 0 },
+    }),
+  };
 
-    return new BuilderElement({
-        attributes: attributePayload as never,
-        name: "a:blur",
-    });
+  return new BuilderElement({
+    attributes: attributePayload as never,
+    name: "a:blur",
+  });
 };
 
 /**
@@ -112,37 +112,37 @@ const createBlurEffect = (options: BlurEffectOptions): XmlComponent => {
  * ```
  */
 export const createEffectList = (options: EffectListOptions): XmlComponent => {
-    const children: XmlComponent[] = [];
+  const children: XmlComponent[] = [];
 
-    if (options.blur) {
-        children.push(createBlurEffect(options.blur));
-    }
-    if (options.fillOverlay) {
-        children.push(createFillOverlayEffect(options.fillOverlay));
-    }
-    if (options.glow) {
-        children.push(createGlowEffect(options.glow));
-    }
-    if (options.innerShadow) {
-        children.push(createInnerShadowEffect(options.innerShadow));
-    }
-    if (options.outerShadow) {
-        children.push(createOuterShadowEffect(options.outerShadow));
-    }
-    if (options.presetShadow) {
-        children.push(createPresetShadowEffect(options.presetShadow));
-    }
-    if (options.reflection) {
-        children.push(
-            createReflectionEffect(options.reflection === true ? undefined : options.reflection),
-        );
-    }
-    if (options.softEdge !== undefined) {
-        children.push(createSoftEdgeEffect(options.softEdge));
-    }
+  if (options.blur) {
+    children.push(createBlurEffect(options.blur));
+  }
+  if (options.fillOverlay) {
+    children.push(createFillOverlayEffect(options.fillOverlay));
+  }
+  if (options.glow) {
+    children.push(createGlowEffect(options.glow));
+  }
+  if (options.innerShadow) {
+    children.push(createInnerShadowEffect(options.innerShadow));
+  }
+  if (options.outerShadow) {
+    children.push(createOuterShadowEffect(options.outerShadow));
+  }
+  if (options.presetShadow) {
+    children.push(createPresetShadowEffect(options.presetShadow));
+  }
+  if (options.reflection) {
+    children.push(
+      createReflectionEffect(options.reflection === true ? undefined : options.reflection),
+    );
+  }
+  if (options.softEdge !== undefined) {
+    children.push(createSoftEdgeEffect(options.softEdge));
+  }
 
-    return new BuilderElement({
-        children,
-        name: "a:effectLst",
-    });
+  return new BuilderElement({
+    children,
+    name: "a:effectLst",
+  });
 };

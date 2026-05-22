@@ -5,12 +5,13 @@ import { buildEndParagraphRunProperties } from "./end-paragraph-run";
 import type { IParagraphPropertiesOptions } from "./paragraph-properties";
 import { buildParagraphProperties } from "./paragraph-properties";
 import { TextRun } from "./run";
+import type { IRunOptions } from "./run";
 
 export interface IParagraphOptions {
-    /** Simple text content for the paragraph. Creates a single TextRun. */
-    readonly text?: string;
-    readonly properties?: IParagraphPropertiesOptions;
-    readonly children?: readonly (TextRun | XmlComponent)[];
+  /** Simple text content for the paragraph. Creates a single TextRun. */
+  readonly text?: string;
+  readonly properties?: IParagraphPropertiesOptions;
+  readonly children?: readonly (TextRun | IRunOptions | XmlComponent)[];
 }
 
 /**
@@ -18,33 +19,37 @@ export interface IParagraphOptions {
  * Lazy: stores options, builds XML object in prepForXml.
  */
 export class Paragraph extends XmlComponent {
-    private readonly options: IParagraphOptions;
+  private readonly options: IParagraphOptions;
 
-    public constructor(options: string | IParagraphOptions = {}) {
-        super("a:p");
-        this.options = typeof options === "string" ? { text: options } : options;
+  public constructor(options: string | IParagraphOptions = {}) {
+    super("a:p");
+    this.options = typeof options === "string" ? { text: options } : options;
+  }
+
+  public prepForXml(context: IContext): IXmlableObject | undefined {
+    const children: IXmlableObject[] = [];
+
+    const pPr = buildParagraphProperties(this.options.properties ?? {});
+    if (pPr) children.push(pPr);
+
+    if (this.options.text) {
+      const obj = new TextRun(this.options.text).prepForXml(context);
+      if (obj) children.push(obj);
     }
 
-    public prepForXml(context: IContext): IXmlableObject | undefined {
-        const children: IXmlableObject[] = [];
-
-        const pPr = buildParagraphProperties(this.options.properties ?? {});
-        if (pPr) children.push(pPr);
-
-        if (this.options.text) {
-            const obj = new TextRun(this.options.text).prepForXml(context);
-            if (obj) children.push(obj);
-        }
-
-        if (this.options.children) {
-            for (const child of this.options.children) {
-                const obj = child.prepForXml(context);
-                if (obj) children.push(obj);
-            }
-        }
-
-        children.push(buildEndParagraphRunProperties());
-
-        return { "a:p": children };
+    if (this.options.children) {
+      for (const rawChild of this.options.children) {
+        const child =
+          rawChild instanceof TextRun || rawChild instanceof XmlComponent
+            ? rawChild
+            : new TextRun(rawChild);
+        const obj = child.prepForXml(context);
+        if (obj) children.push(obj);
+      }
     }
+
+    children.push(buildEndParagraphRunProperties());
+
+    return { "a:p": children };
+  }
 }

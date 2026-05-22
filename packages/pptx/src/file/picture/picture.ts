@@ -10,13 +10,13 @@ import { emuPosition } from "@util/position";
 import { PictureNonVisual } from "./picture-non-visual";
 
 export interface IPictureOptions {
-    readonly x?: number;
-    readonly y?: number;
-    readonly width?: number;
-    readonly height?: number;
-    readonly data: Uint8Array;
-    readonly type: "png" | "jpg" | "gif" | "bmp" | "emf" | "wmf";
-    readonly name?: string;
+  readonly x?: number;
+  readonly y?: number;
+  readonly width?: number;
+  readonly height?: number;
+  readonly data: Uint8Array;
+  readonly type: "png" | "jpg" | "gif" | "bmp" | "emf" | "wmf";
+  readonly name?: string;
 }
 
 /**
@@ -26,51 +26,51 @@ export interface IPictureOptions {
  * The ImageReplacer replaces `{fileName}` placeholder with actual rId.
  */
 export class Picture extends XmlComponent {
-    private static nextId = 100;
-    private readonly imageData: IMediaData;
+  private static nextId = 100;
+  private readonly imageData: IMediaData;
 
-    public constructor(options: IPictureOptions) {
-        super("p:pic");
+  public constructor(options: IPictureOptions) {
+    super("p:pic");
 
-        const id = Picture.nextId++;
-        const name = options.name ?? `Picture ${id}`;
-        const fileName = `${name.replace(/\s+/g, "_")}.${options.type}`;
+    const id = Picture.nextId++;
+    const name = options.name ?? `Picture ${id}`;
+    const fileName = `${name.replace(/\s+/g, "_")}.${options.type}`;
 
-        this.imageData = {
-            type: options.type,
-            fileName,
-            transformation: {
-                pixels: {
-                    x: options.width ?? 0,
-                    y: options.height ?? 0,
-                },
-                emus: {
-                    x: convertPixelsToEmu(options.width ?? 0),
-                    y: convertPixelsToEmu(options.height ?? 0),
-                },
-            },
-            data: options.data,
-        };
+    this.imageData = {
+      type: options.type,
+      fileName,
+      transformation: {
+        pixels: {
+          x: options.width ?? 0,
+          y: options.height ?? 0,
+        },
+        emus: {
+          x: convertPixelsToEmu(options.width ?? 0),
+          y: convertPixelsToEmu(options.height ?? 0),
+        },
+      },
+      data: options.data,
+    };
 
-        this.root.push(new PictureNonVisual(id, name));
+    this.root.push(new PictureNonVisual(id, name));
 
-        this.root.push(new BlipFill(fileName));
+    this.root.push(new BlipFill(fileName));
 
-        this.root.push(
-            new BuilderElement({
-                name: "p:spPr",
-                children: [
-                    new Transform2D({
-                        ...emuPosition(options),
-                    }),
-                    new PresetGeometry({ preset: "rect" }),
-                ],
-            }),
-        );
-    }
+    this.root.push(
+      new BuilderElement({
+        name: "p:spPr",
+        children: [
+          new Transform2D({
+            ...emuPosition(options),
+          }),
+          new PresetGeometry({ preset: "rect" }),
+        ],
+      }),
+    );
+  }
 
-    public override prepForXml(context: IContext) {
-        (context.fileData as File)?.Media.addImage(this.imageData.fileName, this.imageData);
-        return super.prepForXml(context);
-    }
+  public override prepForXml(context: IContext) {
+    (context.fileData as File)?.Media.addImage(this.imageData.fileName, this.imageData);
+    return super.prepForXml(context);
+  }
 }

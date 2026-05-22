@@ -37,7 +37,7 @@
   },
   "scripts": {
     "dev": "basis build --stub",
-    "build": "basis build",
+    "build": "vp pack",
     "prepack": "pnpm build",
     "test": "vp test run --coverage",
     "check": "vp check --fix"
@@ -45,7 +45,7 @@
   "dependencies": {
     "@office-open/core": "workspace:*",
     "@office-open/xml": "workspace:*",
-    "fflate": "0.8.2",
+    "fflate": "0.8.3",
     "undio": "0.2.0"
   }
 }

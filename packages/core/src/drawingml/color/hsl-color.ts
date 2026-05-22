@@ -16,14 +16,14 @@ import { createColorTransforms } from "./color-transform";
  * Options for HSL color.
  */
 export interface HslColorOptions {
-    /** Hue angle in 60,000ths of a degree (0-21600000) */
-    readonly hue: number;
-    /** Saturation in 1/1000th of a percent (0-100000) */
-    readonly saturation: number;
-    /** Luminance in 1/1000th of a percent (0-100000) */
-    readonly luminance: number;
-    /** Optional color transforms */
-    readonly transforms?: ColorTransformOptions;
+  /** Hue angle in 60,000ths of a degree (0-21600000) */
+  readonly hue: number;
+  /** Saturation in 1/1000th of a percent (0-100000) */
+  readonly saturation: number;
+  /** Luminance in 1/1000th of a percent (0-100000) */
+  readonly luminance: number;
+  /** Optional color transforms */
+  readonly transforms?: ColorTransformOptions;
 }
 
 /**
@@ -44,14 +44,14 @@ export interface HslColorOptions {
  * ```
  */
 export const createHslColor = (options: HslColorOptions): XmlComponent => {
-    const transforms = options.transforms ? createColorTransforms(options.transforms) : [];
-    return new BuilderElement({
-        attributes: {
-            hue: { key: "hue", value: options.hue },
-            lum: { key: "lum", value: options.luminance },
-            sat: { key: "sat", value: options.saturation },
-        },
-        children: [...transforms],
-        name: "a:hslClr",
-    });
+  const transforms = options.transforms ? createColorTransforms(options.transforms) : [];
+  return new BuilderElement({
+    attributes: {
+      hue: { key: "hue", value: options.hue },
+      lum: { key: "lum", value: options.luminance },
+      sat: { key: "sat", value: options.saturation },
+    },
+    children: [...transforms],
+    name: "a:hslClr",
+  });
 };

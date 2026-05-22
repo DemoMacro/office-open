@@ -16,13 +16,13 @@ import { XmlAttributeComponent } from "@file/xml-components";
  * @property vt - Namespace for variant types
  */
 export class CustomPropertiesAttributes extends XmlAttributeComponent<{
-    /** Main namespace for custom properties */
-    readonly xmlns: string;
-    /** Namespace for variant types */
-    readonly vt: string;
+  /** Main namespace for custom properties */
+  readonly xmlns: string;
+  /** Namespace for variant types */
+  readonly vt: string;
 }> {
-    protected readonly xmlKeys = {
-        vt: "xmlns:vt",
-        xmlns: "xmlns",
-    };
+  protected readonly xmlKeys = {
+    vt: "xmlns:vt",
+    xmlns: "xmlns",
+  };
 }

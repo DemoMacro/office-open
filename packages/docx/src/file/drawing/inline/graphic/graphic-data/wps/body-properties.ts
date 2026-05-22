@@ -38,28 +38,28 @@ import { createShape3D } from "../pic/shape-properties/three-d/shape-3d";
  * @publicApi
  */
 export enum VerticalAnchor {
-    TOP = "t",
-    CENTER = "ctr",
-    BOTTOM = "b",
-    JUSTIFY = "just",
-    DISTRIBUTED = "dist",
+  TOP = "t",
+  CENTER = "ctr",
+  BOTTOM = "b",
+  JUSTIFY = "just",
+  DISTRIBUTED = "dist",
 }
 
 /**
  * Text vertical overflow type (ST_TextVertOverflowType).
  */
 export const TextVertOverflowType = {
-    OVERFLOW: "overflow",
-    ELLIPSIS: "ellipsis",
-    CLIP: "clip",
+  OVERFLOW: "overflow",
+  ELLIPSIS: "ellipsis",
+  CLIP: "clip",
 } as const;
 
 /**
  * Text horizontal overflow type (ST_TextHorzOverflowType).
  */
 export const TextHorzOverflowType = {
-    OVERFLOW: "overflow",
-    CLIP: "clip",
+  OVERFLOW: "overflow",
+  CLIP: "clip",
 } as const;
 
 /**
@@ -81,13 +81,13 @@ export const TextHorzOverflowType = {
  * ```
  */
 export const TextVerticalType = {
-    HORIZONTAL: "horz",
-    VERTICAL: "vert",
-    VERTICAL_270: "vert270",
-    WORD_ART_VERTICAL: "wordArtVert",
-    EAST_ASIAN_VERTICAL: "eaVert",
-    MONGOLIAN_VERTICAL: "mongolianVert",
-    WORD_ART_VERTICAL_RTL: "wordArtVertRtl",
+  HORIZONTAL: "horz",
+  VERTICAL: "vert",
+  VERTICAL_270: "vert270",
+  WORD_ART_VERTICAL: "wordArtVert",
+  EAST_ASIAN_VERTICAL: "eaVert",
+  MONGOLIAN_VERTICAL: "mongolianVert",
+  WORD_ART_VERTICAL_RTL: "wordArtVertRtl",
 } as const;
 
 /**
@@ -96,8 +96,8 @@ export const TextVerticalType = {
  * This is different from text wrapping around shapes (ST_WrapText).
  */
 export const TextBodyWrappingType = {
-    NONE: "none",
-    SQUARE: "square",
+  NONE: "none",
+  SQUARE: "square",
 } as const;
 
 // ─── Sub-element Options ────────────────────────────────────────────────────
@@ -108,28 +108,28 @@ export const TextBodyWrappingType = {
  * Scales text and line spacing to fit the shape.
  */
 export interface NormalAutofitOptions {
-    /** Font scale percentage (e.g., 100000 = 100%) */
-    readonly fontScale?: number;
-    /** Line spacing reduction percentage */
-    readonly lnSpcReduction?: number;
+  /** Font scale percentage (e.g., 100000 = 100%) */
+  readonly fontScale?: number;
+  /** Line spacing reduction percentage */
+  readonly lnSpcReduction?: number;
 }
 
 /**
  * Preset text warp options (CT_PresetTextShape).
  */
 export interface PresetTextShapeOptions {
-    /** Preset shape type (e.g., "textArchUp", "textCircle") */
-    readonly preset: string;
-    /** Optional adjustment values */
-    readonly adjustments?: readonly { readonly name: string; readonly formula: string }[];
+  /** Preset shape type (e.g., "textArchUp", "textCircle") */
+  readonly preset: string;
+  /** Optional adjustment values */
+  readonly adjustments?: readonly { readonly name: string; readonly formula: string }[];
 }
 
 /**
  * Flat text options (CT_FlatText).
  */
 export interface FlatTextOptions {
-    /** Z-offset in EMUs */
-    readonly z?: number;
+  /** Z-offset in EMUs */
+  readonly z?: number;
 }
 
 // ─── Main Options ───────────────────────────────────────────────────────────
@@ -151,122 +151,120 @@ export interface FlatTextOptions {
  * ```
  */
 export interface IBodyPropertiesOptions {
-    // ── Attributes ──
+  // ── Attributes ──
 
-    /** Text rotation angle in 60,000ths of a degree */
-    readonly rotation?: number;
-    /** Whether to use spcFirstLastPara behavior */
-    readonly spcFirstLastPara?: boolean;
-    /** Vertical text overflow behavior */
-    readonly vertOverflow?: (typeof TextVertOverflowType)[keyof typeof TextVertOverflowType];
-    /** Horizontal text overflow behavior */
-    readonly horzOverflow?: (typeof TextHorzOverflowType)[keyof typeof TextHorzOverflowType];
-    /** Text vertical direction */
-    readonly vert?: (typeof TextVerticalType)[keyof typeof TextVerticalType];
-    /** Text wrapping type */
-    readonly wrap?: (typeof TextBodyWrappingType)[keyof typeof TextBodyWrappingType];
-    /** Left inset in EMUs */
-    readonly lIns?: number;
-    /** Top inset in EMUs */
-    readonly tIns?: number;
-    /** Right inset in EMUs */
-    readonly rIns?: number;
-    /** Bottom inset in EMUs */
-    readonly bIns?: number;
-    /** Number of text columns (1-16) */
-    readonly numCol?: number;
-    /** Spacing between columns in EMUs */
-    readonly spcCol?: number;
-    /** Whether columns are right-to-left */
-    readonly rtlCol?: boolean;
-    /** Whether text is from WordArt */
-    readonly fromWordArt?: boolean;
-    /** Text anchor position */
-    readonly anchor?: (typeof VerticalAnchor)[keyof typeof VerticalAnchor];
-    /** Whether to anchor at center */
-    readonly anchorCtr?: boolean;
-    /** Whether to force anti-aliasing */
-    readonly forceAA?: boolean;
-    /** Whether text is upright (default false) */
-    readonly upright?: boolean;
-    /** Whether to use compatible line spacing */
-    readonly compatLnSpc?: boolean;
+  /** Text rotation angle in 60,000ths of a degree */
+  readonly rotation?: number;
+  /** Whether to use spcFirstLastPara behavior */
+  readonly spcFirstLastPara?: boolean;
+  /** Vertical text overflow behavior */
+  readonly vertOverflow?: (typeof TextVertOverflowType)[keyof typeof TextVertOverflowType];
+  /** Horizontal text overflow behavior */
+  readonly horzOverflow?: (typeof TextHorzOverflowType)[keyof typeof TextHorzOverflowType];
+  /** Text vertical direction */
+  readonly vert?: (typeof TextVerticalType)[keyof typeof TextVerticalType];
+  /** Text wrapping type */
+  readonly wrap?: (typeof TextBodyWrappingType)[keyof typeof TextBodyWrappingType];
+  /** Left inset in EMUs */
+  readonly lIns?: number;
+  /** Top inset in EMUs */
+  readonly tIns?: number;
+  /** Right inset in EMUs */
+  readonly rIns?: number;
+  /** Bottom inset in EMUs */
+  readonly bIns?: number;
+  /** Number of text columns (1-16) */
+  readonly numCol?: number;
+  /** Spacing between columns in EMUs */
+  readonly spcCol?: number;
+  /** Whether columns are right-to-left */
+  readonly rtlCol?: boolean;
+  /** Whether text is from WordArt */
+  readonly fromWordArt?: boolean;
+  /** Text anchor position */
+  readonly anchor?: (typeof VerticalAnchor)[keyof typeof VerticalAnchor];
+  /** Whether to anchor at center */
+  readonly anchorCtr?: boolean;
+  /** Whether to force anti-aliasing */
+  readonly forceAA?: boolean;
+  /** Whether text is upright (default false) */
+  readonly upright?: boolean;
+  /** Whether to use compatible line spacing */
+  readonly compatLnSpc?: boolean;
 
-    // ── Convenience aliases (backward compatible) ──
+  // ── Convenience aliases (backward compatible) ──
 
-    /** Vertical anchor position (alias for `anchor`) */
-    readonly verticalAnchor?: VerticalAnchor;
-    /** Margins shorthand */
-    readonly margins?: {
-        readonly top?: number;
-        readonly bottom?: number;
-        readonly left?: number;
-        readonly right?: number;
-    };
+  /** Vertical anchor position (alias for `anchor`) */
+  readonly verticalAnchor?: VerticalAnchor;
+  /** Margins shorthand */
+  readonly margins?: {
+    readonly top?: number;
+    readonly bottom?: number;
+    readonly left?: number;
+    readonly right?: number;
+  };
 
-    // ── Child elements ──
+  // ── Child elements ──
 
-    /** Preset text warp shape */
-    readonly prstTxWarp?: PresetTextShapeOptions;
-    /** Disable autofit (EG_TextAutofit choice) */
-    readonly noAutoFit?: boolean;
-    /** Normal autofit (EG_TextAutofit choice) */
-    readonly normAutofit?: NormalAutofitOptions;
-    /** Shape autofit (EG_TextAutofit choice) */
-    readonly spAutoFit?: boolean;
-    /** 3D scene */
-    readonly scene3d?: Scene3DOptions;
-    /** 3D shape properties (EG_Text3D choice) */
-    readonly sp3d?: Shape3DOptions;
-    /** Flat text (EG_Text3D choice) */
-    readonly flatTx?: FlatTextOptions;
+  /** Preset text warp shape */
+  readonly prstTxWarp?: PresetTextShapeOptions;
+  /** Disable autofit (EG_TextAutofit choice) */
+  readonly noAutoFit?: boolean;
+  /** Normal autofit (EG_TextAutofit choice) */
+  readonly normAutofit?: NormalAutofitOptions;
+  /** Shape autofit (EG_TextAutofit choice) */
+  readonly spAutoFit?: boolean;
+  /** 3D scene */
+  readonly scene3d?: Scene3DOptions;
+  /** 3D shape properties (EG_Text3D choice) */
+  readonly sp3d?: Shape3DOptions;
+  /** Flat text (EG_Text3D choice) */
+  readonly flatTx?: FlatTextOptions;
 }
 
 // ─── Internal Helpers ───────────────────────────────────────────────────────
 
 const buildOptionalAttributes = (
-    options: Record<string, unknown>,
+  options: Record<string, unknown>,
 ): Record<string, { readonly key: string; readonly value: string | number | boolean }> => {
-    const attrs: Record<
-        string,
-        { readonly key: string; readonly value: string | number | boolean }
-    > = {};
-    for (const [key, value] of Object.entries(options)) {
-        if (value !== undefined) {
-            attrs[key] = { key, value: value as string | number | boolean };
-        }
+  const attrs: Record<string, { readonly key: string; readonly value: string | number | boolean }> =
+    {};
+  for (const [key, value] of Object.entries(options)) {
+    if (value !== undefined) {
+      attrs[key] = { key, value: value as string | number | boolean };
     }
-    return attrs;
+  }
+  return attrs;
 };
 
 // ─── Preset Text Warp ───────────────────────────────────────────────────────
 
 const createPresetTextShape = (options: PresetTextShapeOptions): XmlComponent => {
-    const children: XmlComponent[] = [];
-    if (options.adjustments) {
-        for (const adj of options.adjustments) {
-            children.push(
-                new BuilderElement<{ readonly name: string; readonly fmla: string }>({
-                    name: "a:avLst",
-                    children: [
-                        new BuilderElement<{ readonly name: string; readonly fmla: string }>({
-                            name: "a:gd",
-                            attributes: {
-                                name: { key: "name", value: adj.name },
-                                fmla: { key: "fmla", value: adj.formula },
-                            },
-                        }),
-                    ],
-                }),
-            );
-        }
+  const children: XmlComponent[] = [];
+  if (options.adjustments) {
+    for (const adj of options.adjustments) {
+      children.push(
+        new BuilderElement<{ readonly name: string; readonly fmla: string }>({
+          name: "a:avLst",
+          children: [
+            new BuilderElement<{ readonly name: string; readonly fmla: string }>({
+              name: "a:gd",
+              attributes: {
+                name: { key: "name", value: adj.name },
+                fmla: { key: "fmla", value: adj.formula },
+              },
+            }),
+          ],
+        }),
+      );
     }
+  }
 
-    return new BuilderElement<{ readonly prst: string }>({
-        name: "a:prstTxWarp",
-        attributes: { prst: { key: "prst", value: options.preset } },
-        children: children.length > 0 ? children : undefined,
-    });
+  return new BuilderElement<{ readonly prst: string }>({
+    name: "a:prstTxWarp",
+    attributes: { prst: { key: "prst", value: options.preset } },
+    children: children.length > 0 ? children : undefined,
+  });
 };
 
 // ─── Main Factory ───────────────────────────────────────────────────────────
@@ -296,84 +294,84 @@ const createPresetTextShape = (options: PresetTextShapeOptions): XmlComponent =>
  * ```
  */
 export const createBodyProperties = (options: IBodyPropertiesOptions = {}): XmlComponent => {
-    // Resolve anchor (direct `anchor` takes precedence over `verticalAnchor`)
-    const anchor = options.anchor ?? options.verticalAnchor;
+  // Resolve anchor (direct `anchor` takes precedence over `verticalAnchor`)
+  const anchor = options.anchor ?? options.verticalAnchor;
 
-    // Resolve margins
-    const lIns = options.lIns ?? options.margins?.left;
-    const tIns = options.tIns ?? options.margins?.top;
-    const rIns = options.rIns ?? options.margins?.right;
-    const bIns = options.bIns ?? options.margins?.bottom;
+  // Resolve margins
+  const lIns = options.lIns ?? options.margins?.left;
+  const tIns = options.tIns ?? options.margins?.top;
+  const rIns = options.rIns ?? options.margins?.right;
+  const bIns = options.bIns ?? options.margins?.bottom;
 
-    const attrs = buildOptionalAttributes({
-        rot: options.rotation,
-        spcFirstLastPara: options.spcFirstLastPara,
-        vertOverflow: options.vertOverflow,
-        horzOverflow: options.horzOverflow,
-        vert: options.vert,
-        wrap: options.wrap,
-        lIns,
-        tIns,
-        rIns,
-        bIns,
-        numCol: options.numCol,
-        spcCol: options.spcCol,
-        rtlCol: options.rtlCol,
-        fromWordArt: options.fromWordArt,
-        anchor,
-        anchorCtr: options.anchorCtr,
-        forceAA: options.forceAA,
-        upright: options.upright,
-        compatLnSpc: options.compatLnSpc,
+  const attrs = buildOptionalAttributes({
+    rot: options.rotation,
+    spcFirstLastPara: options.spcFirstLastPara,
+    vertOverflow: options.vertOverflow,
+    horzOverflow: options.horzOverflow,
+    vert: options.vert,
+    wrap: options.wrap,
+    lIns,
+    tIns,
+    rIns,
+    bIns,
+    numCol: options.numCol,
+    spcCol: options.spcCol,
+    rtlCol: options.rtlCol,
+    fromWordArt: options.fromWordArt,
+    anchor,
+    anchorCtr: options.anchorCtr,
+    forceAA: options.forceAA,
+    upright: options.upright,
+    compatLnSpc: options.compatLnSpc,
+  });
+
+  // Build children in XSD sequence order
+  const children: XmlComponent[] = [];
+
+  // a:prstTxWarp
+  if (options.prstTxWarp) {
+    children.push(createPresetTextShape(options.prstTxWarp));
+  }
+
+  // EG_TextAutofit (mutually exclusive)
+  if (options.noAutoFit) {
+    children.push(new OnOffElement("a:noAutofit", options.noAutoFit));
+  } else if (options.normAutofit) {
+    const normAttrs = buildOptionalAttributes({
+      fontScale: options.normAutofit.fontScale,
+      lnSpcReduction: options.normAutofit.lnSpcReduction,
     });
+    children.push(
+      new BuilderElement({
+        name: "a:normAutofit",
+        attributes: Object.keys(normAttrs).length > 0 ? normAttrs : undefined,
+      }),
+    );
+  } else if (options.spAutoFit) {
+    children.push(new OnOffElement("a:spAutoFit", options.spAutoFit));
+  }
 
-    // Build children in XSD sequence order
-    const children: XmlComponent[] = [];
+  // a:scene3d
+  if (options.scene3d) {
+    children.push(createScene3D(options.scene3d));
+  }
 
-    // a:prstTxWarp
-    if (options.prstTxWarp) {
-        children.push(createPresetTextShape(options.prstTxWarp));
-    }
+  // EG_Text3D (mutually exclusive)
+  if (options.sp3d) {
+    children.push(createShape3D(options.sp3d));
+  } else if (options.flatTx) {
+    const flatAttrs = buildOptionalAttributes({ z: options.flatTx.z });
+    children.push(
+      new BuilderElement({
+        name: "a:flatTx",
+        attributes: Object.keys(flatAttrs).length > 0 ? flatAttrs : undefined,
+      }),
+    );
+  }
 
-    // EG_TextAutofit (mutually exclusive)
-    if (options.noAutoFit) {
-        children.push(new OnOffElement("a:noAutofit", options.noAutoFit));
-    } else if (options.normAutofit) {
-        const normAttrs = buildOptionalAttributes({
-            fontScale: options.normAutofit.fontScale,
-            lnSpcReduction: options.normAutofit.lnSpcReduction,
-        });
-        children.push(
-            new BuilderElement({
-                name: "a:normAutofit",
-                attributes: Object.keys(normAttrs).length > 0 ? normAttrs : undefined,
-            }),
-        );
-    } else if (options.spAutoFit) {
-        children.push(new OnOffElement("a:spAutoFit", options.spAutoFit));
-    }
-
-    // a:scene3d
-    if (options.scene3d) {
-        children.push(createScene3D(options.scene3d));
-    }
-
-    // EG_Text3D (mutually exclusive)
-    if (options.sp3d) {
-        children.push(createShape3D(options.sp3d));
-    } else if (options.flatTx) {
-        const flatAttrs = buildOptionalAttributes({ z: options.flatTx.z });
-        children.push(
-            new BuilderElement({
-                name: "a:flatTx",
-                attributes: Object.keys(flatAttrs).length > 0 ? flatAttrs : undefined,
-            }),
-        );
-    }
-
-    return new BuilderElement({
-        name: "wps:bodyPr",
-        attributes: Object.keys(attrs).length > 0 ? (attrs as never) : undefined,
-        children: children.length > 0 ? children : undefined,
-    });
+  return new BuilderElement({
+    name: "wps:bodyPr",
+    attributes: Object.keys(attrs).length > 0 ? (attrs as never) : undefined,
+    children: children.length > 0 ? children : undefined,
+  });
 };

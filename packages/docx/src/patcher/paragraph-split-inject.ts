@@ -8,10 +8,10 @@ import type { Element } from "@office-open/xml";
 import { createTextElementContents, patchSpaceAttribute } from "./util";
 
 export class TokenNotFoundError extends Error {
-    public constructor(token: string) {
-        super(`Token ${token} not found`);
-        this.name = "TokenNotFoundError";
-    }
+  public constructor(token: string) {
+    super(`Token ${token} not found`);
+    this.name = "TokenNotFoundError";
+  }
 }
 
 /**
@@ -33,26 +33,26 @@ export class TokenNotFoundError extends Error {
  * ```
  */
 export const findRunElementIndexWithToken = (paragraphElement: Element, token: string): number => {
-    for (let i = 0; i < (paragraphElement.elements ?? []).length; i++) {
-        const element = paragraphElement.elements![i];
-        if (element.type === "element" && element.name === "w:r") {
-            const textElement = (element.elements ?? []).filter(
-                (e) => e.type === "element" && e.name === "w:t",
-            );
+  for (let i = 0; i < (paragraphElement.elements ?? []).length; i++) {
+    const element = paragraphElement.elements![i];
+    if (element.type === "element" && element.name === "w:r") {
+      const textElement = (element.elements ?? []).filter(
+        (e) => e.type === "element" && e.name === "w:t",
+      );
 
-            for (const text of textElement) {
-                if (!text.elements?.[0]) {
-                    continue;
-                }
-
-                if ((text.elements[0].text as string)?.includes(token)) {
-                    return i;
-                }
-            }
+      for (const text of textElement) {
+        if (!text.elements?.[0]) {
+          continue;
         }
-    }
 
-    throw new TokenNotFoundError(token);
+        if ((text.elements[0].text as string)?.includes(token)) {
+          return i;
+        }
+      }
+    }
+  }
+
+  throw new TokenNotFoundError(token);
 };
 
 // Cspell:words Helloɵworld
@@ -75,49 +75,49 @@ export const findRunElementIndexWithToken = (paragraphElement: Element, token: s
  * ```
  */
 export const splitRunElement = (
-    runElement: Element,
-    token: string,
+  runElement: Element,
+  token: string,
 ): { readonly left: Element; readonly right: Element } => {
-    let splitIndex = -1;
+  let splitIndex = -1;
 
-    const splitElements =
-        runElement.elements
-            ?.map((e, i) => {
-                // Only take the first split we see, don't mutate the rest
-                if (splitIndex !== -1) {
-                    return e;
-                }
+  const splitElements =
+    runElement.elements
+      ?.map((e, i) => {
+        // Only take the first split we see, don't mutate the rest
+        if (splitIndex !== -1) {
+          return e;
+        }
 
-                if (e.type === "element" && e.name === "w:t") {
-                    const text = (e.elements?.[0]?.text as string) ?? "";
-                    const splitText = text.split(token);
-                    const newElements = splitText.map((t) => ({
-                        ...e,
-                        ...patchSpaceAttribute(e),
-                        elements: createTextElementContents(t),
-                    }));
+        if (e.type === "element" && e.name === "w:t") {
+          const text = (e.elements?.[0]?.text as string) ?? "";
+          const splitText = text.split(token);
+          const newElements = splitText.map((t) => ({
+            ...e,
+            ...patchSpaceAttribute(e),
+            elements: createTextElementContents(t),
+          }));
 
-                    // Only set splitIndex if this element actually contains the token
-                    if (splitText.length > 1) {
-                        splitIndex = i;
-                    }
+          // Only set splitIndex if this element actually contains the token
+          if (splitText.length > 1) {
+            splitIndex = i;
+          }
 
-                    return newElements;
-                } else {
-                    return e;
-                }
-            })
-            .flat() ?? [];
+          return newElements;
+        } else {
+          return e;
+        }
+      })
+      .flat() ?? [];
 
-    const leftRunElement: Element = {
-        ...JSON.parse(JSON.stringify(runElement)),
-        elements: splitElements.slice(0, splitIndex + 1),
-    };
+  const leftRunElement: Element = {
+    ...JSON.parse(JSON.stringify(runElement)),
+    elements: splitElements.slice(0, splitIndex + 1),
+  };
 
-    const rightRunElement: Element = {
-        ...JSON.parse(JSON.stringify(runElement)),
-        elements: splitElements.slice(splitIndex + 1),
-    };
+  const rightRunElement: Element = {
+    ...JSON.parse(JSON.stringify(runElement)),
+    elements: splitElements.slice(splitIndex + 1),
+  };
 
-    return { left: leftRunElement, right: rightRunElement };
+  return { left: leftRunElement, right: rightRunElement };
 };

@@ -21,10 +21,10 @@ import type { IStyleOptions } from "./style";
  * @property run - Run properties that apply to text within this paragraph style
  */
 export type IBaseParagraphStyleOptions = {
-    /** Paragraph properties (alignment, spacing, indentation, etc.) */
-    readonly paragraph?: IParagraphStylePropertiesOptions;
-    /** Run properties that apply to text within this paragraph style */
-    readonly run?: RunStylePropertiesOptions;
+  /** Paragraph properties (alignment, spacing, indentation, etc.) */
+  readonly paragraph?: IParagraphStylePropertiesOptions;
+  /** Run properties that apply to text within this paragraph style */
+  readonly run?: RunStylePropertiesOptions;
 } & IStyleOptions;
 
 /**
@@ -33,8 +33,8 @@ export type IBaseParagraphStyleOptions = {
  * @property id - Unique identifier for the paragraph style
  */
 export type IParagraphStyleOptions = {
-    /** Unique identifier for the paragraph style */
-    readonly id: string;
+  /** Unique identifier for the paragraph style */
+  readonly id: string;
 } & IBaseParagraphStyleOptions;
 
 /**
@@ -79,16 +79,16 @@ export type IParagraphStyleOptions = {
  * ```
  */
 export class StyleForParagraph extends Style {
-    private readonly paragraphProperties: ParagraphProperties;
-    private readonly runProperties: RunProperties;
+  private readonly paragraphProperties: ParagraphProperties;
+  private readonly runProperties: RunProperties;
 
-    public constructor(options: IParagraphStyleOptions) {
-        super({ styleId: options.id, type: "paragraph" }, options);
+  public constructor(options: IParagraphStyleOptions) {
+    super({ styleId: options.id, type: "paragraph" }, options);
 
-        this.paragraphProperties = new ParagraphProperties(options.paragraph);
-        this.runProperties = new RunProperties(options.run);
+    this.paragraphProperties = new ParagraphProperties(options.paragraph);
+    this.runProperties = new RunProperties(options.run);
 
-        this.root.push(this.paragraphProperties);
-        this.root.push(this.runProperties);
-    }
+    this.root.push(this.paragraphProperties);
+    this.root.push(this.runProperties);
+  }
 }

@@ -9,8 +9,8 @@ import { XmlComponent } from "@file/xml-components";
 
 import type { TableRow } from "../table";
 import {
-    StructuredDocumentTagContent,
-    StructuredDocumentTagProperties,
+  StructuredDocumentTagContent,
+  StructuredDocumentTagProperties,
 } from "../table-of-contents";
 import type { SdtPropertiesOptions } from "../table-of-contents";
 import { TableCell } from "../table/table-cell/table-cell";
@@ -19,8 +19,8 @@ import { TableCell } from "../table/table-cell/table-cell";
  * Options for creating a row-level Structured Document Tag (CT_SdtRow).
  */
 export interface ISdtRowOptions {
-    readonly properties: SdtPropertiesOptions;
-    readonly children?: readonly TableRow[];
+  readonly properties: SdtPropertiesOptions;
+  readonly children?: readonly TableRow[];
 }
 
 /**
@@ -40,32 +40,32 @@ export interface ISdtRowOptions {
  * ```
  */
 export class StructuredDocumentTagRow extends XmlComponent {
-    private readonly rows: readonly TableRow[];
+  private readonly rows: readonly TableRow[];
 
-    public constructor(options: ISdtRowOptions) {
-        super("w:sdt");
-        this.rows = options.children ?? [];
-        this.root.push(new StructuredDocumentTagProperties(options.properties));
-        if (this.rows.length > 0) {
-            const content = new StructuredDocumentTagContent();
-            for (const row of this.rows) {
-                content.addChildElement(row);
-            }
-            this.root.push(content);
-        }
+  public constructor(options: ISdtRowOptions) {
+    super("w:sdt");
+    this.rows = options.children ?? [];
+    this.root.push(new StructuredDocumentTagProperties(options.properties));
+    if (this.rows.length > 0) {
+      const content = new StructuredDocumentTagContent();
+      for (const row of this.rows) {
+        content.addChildElement(row);
+      }
+      this.root.push(content);
     }
+  }
 
-    public get CellCount(): number {
-        return Math.max(...this.rows.map((r) => r.CellCount), 0);
-    }
+  public get CellCount(): number {
+    return Math.max(...this.rows.map((r) => r.CellCount), 0);
+  }
 
-    public get cells(): readonly TableCell[] {
-        return this.rows.flatMap((r) => r.cells);
-    }
+  public get cells(): readonly TableCell[] {
+    return this.rows.flatMap((r) => r.cells);
+  }
 
-    public addCellToColumnIndex(cell: TableCell, columnIndex: number): void {
-        if (this.rows.length > 0) {
-            this.rows[0].addCellToColumnIndex(cell, columnIndex);
-        }
+  public addCellToColumnIndex(cell: TableCell, columnIndex: number): void {
+    if (this.rows.length > 0) {
+      this.rows[0].addCellToColumnIndex(cell, columnIndex);
     }
+  }
 }

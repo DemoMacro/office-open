@@ -10,16 +10,16 @@ import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
  * @property unhideWhenUsed - Whether the style should unhide when used
  */
 export interface ILatentStyleExceptionAttributesProperties {
-    /** The name of the style for this exception */
-    readonly name?: string;
-    /** UI priority for displaying the style */
-    readonly uiPriority?: string;
-    /** Whether this style should appear in the quick format gallery */
-    readonly qFormat?: string;
-    /** Whether the style is semi-hidden in the UI */
-    readonly semiHidden?: string;
-    /** Whether the style should unhide when used */
-    readonly unhideWhenUsed?: string;
+  /** The name of the style for this exception */
+  readonly name?: string;
+  /** UI priority for displaying the style */
+  readonly uiPriority?: string;
+  /** Whether this style should appear in the quick format gallery */
+  readonly qFormat?: string;
+  /** Whether the style is semi-hidden in the UI */
+  readonly semiHidden?: string;
+  /** Whether the style should unhide when used */
+  readonly unhideWhenUsed?: string;
 }
 
 /**
@@ -28,13 +28,13 @@ export interface ILatentStyleExceptionAttributesProperties {
  * @internal
  */
 export class LatentStyleExceptionAttributes extends XmlAttributeComponent<ILatentStyleExceptionAttributesProperties> {
-    protected readonly xmlKeys = {
-        name: "w:name",
-        qFormat: "w:qFormat",
-        semiHidden: "w:semiHidden",
-        uiPriority: "w:uiPriority",
-        unhideWhenUsed: "w:unhideWhenUsed",
-    };
+  protected readonly xmlKeys = {
+    name: "w:name",
+    qFormat: "w:qFormat",
+    semiHidden: "w:semiHidden",
+    uiPriority: "w:uiPriority",
+    unhideWhenUsed: "w:unhideWhenUsed",
+  };
 }
 
 /**
@@ -68,8 +68,8 @@ export class LatentStyleExceptionAttributes extends XmlAttributeComponent<ILaten
  * ```
  */
 export class LatentStyleException extends XmlComponent {
-    public constructor(attributes: ILatentStyleExceptionAttributesProperties) {
-        super("w:lsdException");
-        this.root.push(new LatentStyleExceptionAttributes(attributes));
-    }
+  public constructor(attributes: ILatentStyleExceptionAttributesProperties) {
+    super("w:lsdException");
+    this.root.push(new LatentStyleExceptionAttributes(attributes));
+  }
 }

@@ -38,31 +38,31 @@ import type { CharacterSet } from "./font";
  * ```
  */
 export const createRegularFont = ({
-    name,
-    index,
-    fontKey,
-    characterSet,
+  name,
+  index,
+  fontKey,
+  characterSet,
 }: {
-    readonly name: string;
-    readonly index: number;
-    readonly fontKey: string;
-    readonly characterSet?: (typeof CharacterSet)[keyof typeof CharacterSet];
+  readonly name: string;
+  readonly index: number;
+  readonly fontKey: string;
+  readonly characterSet?: (typeof CharacterSet)[keyof typeof CharacterSet];
 }): XmlComponent =>
-    createFont({
-        charset: characterSet,
-        embedRegular: {
-            fontKey,
-            id: `rId${index}`,
-        },
-        family: "auto",
-        name,
-        pitch: "variable",
-        sig: {
-            csb0: "000001FF",
-            csb1: "00000000",
-            usb0: "E0002AFF",
-            usb1: "C000247B",
-            usb2: "00000009",
-            usb3: "00000000",
-        },
-    });
+  createFont({
+    charset: characterSet,
+    embedRegular: {
+      fontKey,
+      id: `rId${index}`,
+    },
+    family: "auto",
+    name,
+    pitch: "variable",
+    sig: {
+      csb0: "000001FF",
+      csb1: "00000000",
+      usb0: "E0002AFF",
+      usb1: "C000247B",
+      usb2: "00000009",
+      usb3: "00000000",
+    },
+  });

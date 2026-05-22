@@ -22,10 +22,10 @@ import type { MathMatrixPropertiesOptions } from "./math-matrix-properties";
  * @see {@link MathMatrix}
  */
 export interface IMathMatrixOptions {
-    /** Matrix properties */
-    readonly properties?: MathMatrixPropertiesOptions;
-    /** Matrix rows (each row is an array of math components) */
-    readonly rows: readonly (readonly MathComponent[])[];
+  /** Matrix properties */
+  readonly properties?: MathMatrixPropertiesOptions;
+  /** Matrix rows (each row is an array of math components) */
+  readonly rows: readonly (readonly MathComponent[])[];
 }
 
 /**
@@ -49,22 +49,22 @@ export interface IMathMatrixOptions {
  * ```
  */
 export class MathMatrix extends XmlComponent {
-    public constructor(options: IMathMatrixOptions) {
-        super("m:m");
+  public constructor(options: IMathMatrixOptions) {
+    super("m:m");
 
-        if (options.properties) {
-            this.root.push(createMathMatrixProperties(options.properties));
-        }
-
-        for (const row of options.rows) {
-            this.root.push(
-                new BuilderElement({
-                    children: row.map((cell) =>
-                        createMathBase({ children: Array.isArray(cell) ? cell : [cell] }),
-                    ),
-                    name: "m:mr",
-                }),
-            );
-        }
+    if (options.properties) {
+      this.root.push(createMathMatrixProperties(options.properties));
     }
+
+    for (const row of options.rows) {
+      this.root.push(
+        new BuilderElement({
+          children: row.map((cell) =>
+            createMathBase({ children: Array.isArray(cell) ? cell : [cell] }),
+          ),
+          name: "m:mr",
+        }),
+      );
+    }
+  }
 }

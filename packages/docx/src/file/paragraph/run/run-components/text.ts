@@ -10,8 +10,8 @@ import { BaseXmlComponent } from "@file/xml-components";
 import type { IXmlableObject } from "@file/xml-components";
 
 interface ITextOptions {
-    readonly space?: (typeof SpaceType)[keyof typeof SpaceType];
-    readonly text?: string;
+  readonly space?: (typeof SpaceType)[keyof typeof SpaceType];
+  readonly text?: string;
 }
 
 // <xsd:complexType name="CT_Text">
@@ -31,28 +31,28 @@ interface ITextOptions {
  * @internal
  */
 export function buildText(options: string | ITextOptions): IXmlableObject {
-    if (typeof options === "string") {
-        return {
-            "w:t": [{ _attr: { "xml:space": SpaceType.PRESERVE } }, options],
-        };
-    }
+  if (typeof options === "string") {
     return {
-        "w:t": [{ _attr: { "xml:space": options.space ?? SpaceType.DEFAULT } }, options.text ?? ""],
+      "w:t": [{ _attr: { "xml:space": SpaceType.PRESERVE } }, options],
     };
+  }
+  return {
+    "w:t": [{ _attr: { "xml:space": options.space ?? SpaceType.DEFAULT } }, options.text ?? ""],
+  };
 }
 
 /**
  * @deprecated Use buildText() instead.
  */
 export class Text extends BaseXmlComponent {
-    private readonly _opts: string | ITextOptions;
+  private readonly _opts: string | ITextOptions;
 
-    public constructor(options: string | ITextOptions) {
-        super("w:t");
-        this._opts = options;
-    }
+  public constructor(options: string | ITextOptions) {
+    super("w:t");
+    this._opts = options;
+  }
 
-    public prepForXml(): IXmlableObject {
-        return buildText(this._opts);
-    }
+  public prepForXml(): IXmlableObject {
+    return buildText(this._opts);
+  }
 }

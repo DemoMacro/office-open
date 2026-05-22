@@ -79,21 +79,21 @@ import { Document, Paragraph, TextRun, Packer } from "docx-plus";
 import { writeFileSync } from "node:fs";
 
 const doc = new Document({
-    sections: [
-        {
-            children: [
-                new Paragraph({
-                    children: [
-                        new TextRun("Hello World"),
-                        new TextRun({
-                            text: " - Bold text",
-                            bold: true,
-                        }),
-                    ],
-                }),
-            ],
-        },
-    ],
+  sections: [
+    {
+      children: [
+        new Paragraph({
+          children: [
+            new TextRun("Hello World"),
+            new TextRun({
+              text: " - Bold text",
+              bold: true,
+            }),
+          ],
+        }),
+      ],
+    },
+  ],
 });
 
 const buffer = await Packer.toBuffer(doc);

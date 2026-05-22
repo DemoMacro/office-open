@@ -16,14 +16,14 @@ import type { XmlComponent } from "@file/xml-components";
  * @see {@link createMathBoxProperties}
  */
 export interface MathBoxPropertiesOptions {
-    /** Operator emulation */
-    readonly opEmu?: boolean;
-    /** No break */
-    readonly noBreak?: boolean;
-    /** Differential */
-    readonly diff?: boolean;
-    /** Alignment */
-    readonly aln?: boolean;
+  /** Operator emulation */
+  readonly opEmu?: boolean;
+  /** No break */
+  readonly noBreak?: boolean;
+  /** Differential */
+  readonly diff?: boolean;
+  /** Alignment */
+  readonly aln?: boolean;
 }
 
 /**
@@ -44,23 +44,23 @@ export interface MathBoxPropertiesOptions {
  * ```
  */
 export const createMathBoxProperties = (options: MathBoxPropertiesOptions): XmlComponent => {
-    const children: XmlComponent[] = [];
+  const children: XmlComponent[] = [];
 
-    if (options.opEmu !== undefined) {
-        children.push(new OnOffElement("m:opEmu", options.opEmu));
-    }
-    if (options.noBreak !== undefined) {
-        children.push(new OnOffElement("m:noBreak", options.noBreak));
-    }
-    if (options.diff !== undefined) {
-        children.push(new OnOffElement("m:diff", options.diff));
-    }
-    if (options.aln !== undefined) {
-        children.push(new OnOffElement("m:aln", options.aln));
-    }
+  if (options.opEmu !== undefined) {
+    children.push(new OnOffElement("m:opEmu", options.opEmu));
+  }
+  if (options.noBreak !== undefined) {
+    children.push(new OnOffElement("m:noBreak", options.noBreak));
+  }
+  if (options.diff !== undefined) {
+    children.push(new OnOffElement("m:diff", options.diff));
+  }
+  if (options.aln !== undefined) {
+    children.push(new OnOffElement("m:aln", options.aln));
+  }
 
-    return new BuilderElement({
-        children,
-        name: "m:boxPr",
-    });
+  return new BuilderElement({
+    children,
+    name: "m:boxPr",
+  });
 };

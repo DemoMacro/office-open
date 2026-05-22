@@ -11,9 +11,9 @@ import { XmlComponent } from "@file/xml-components";
 
 import type { MathComponent } from "../../math-component";
 import {
-    createMathBase,
-    createMathSubScriptElement,
-    createMathSuperScriptElement,
+  createMathBase,
+  createMathSubScriptElement,
+  createMathSuperScriptElement,
 } from "../../n-ary";
 import { createMathSubSuperScriptProperties } from "./math-sub-super-script-function-properties";
 
@@ -23,12 +23,12 @@ import { createMathSubSuperScriptProperties } from "./math-sub-super-script-func
  * @see {@link MathSubSuperScript}
  */
 export interface IMathSubSuperScriptOptions {
-    /** The base expression */
-    readonly children: readonly MathComponent[];
-    /** The subscript expression */
-    readonly subScript: readonly MathComponent[];
-    /** The superscript expression */
-    readonly superScript: readonly MathComponent[];
+  /** The base expression */
+  readonly children: readonly MathComponent[];
+  /** The subscript expression */
+  readonly subScript: readonly MathComponent[];
+  /** The superscript expression */
+  readonly superScript: readonly MathComponent[];
 }
 
 /**
@@ -64,12 +64,12 @@ export interface IMathSubSuperScriptOptions {
  * ```
  */
 export class MathSubSuperScript extends XmlComponent {
-    public constructor(options: IMathSubSuperScriptOptions) {
-        super("m:sSubSup");
+  public constructor(options: IMathSubSuperScriptOptions) {
+    super("m:sSubSup");
 
-        this.root.push(createMathSubSuperScriptProperties());
-        this.root.push(createMathBase({ children: options.children }));
-        this.root.push(createMathSubScriptElement({ children: options.subScript }));
-        this.root.push(createMathSuperScriptElement({ children: options.superScript }));
-    }
+    this.root.push(createMathSubSuperScriptProperties());
+    this.root.push(createMathBase({ children: options.children }));
+    this.root.push(createMathSubScriptElement({ children: options.subScript }));
+    this.root.push(createMathSuperScriptElement({ children: options.superScript }));
+  }
 }

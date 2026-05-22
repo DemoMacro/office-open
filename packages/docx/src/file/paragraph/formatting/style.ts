@@ -16,20 +16,20 @@ import type { XmlComponent } from "@file/xml-components";
  * @publicApi
  */
 export const HeadingLevel = {
-    /** Heading 1 style */
-    HEADING_1: "Heading1",
-    /** Heading 2 style */
-    HEADING_2: "Heading2",
-    /** Heading 3 style */
-    HEADING_3: "Heading3",
-    /** Heading 4 style */
-    HEADING_4: "Heading4",
-    /** Heading 5 style */
-    HEADING_5: "Heading5",
-    /** Heading 6 style */
-    HEADING_6: "Heading6",
-    /** Title style */
-    TITLE: "Title",
+  /** Heading 1 style */
+  HEADING_1: "Heading1",
+  /** Heading 2 style */
+  HEADING_2: "Heading2",
+  /** Heading 3 style */
+  HEADING_3: "Heading3",
+  /** Heading 4 style */
+  HEADING_4: "Heading4",
+  /** Heading 5 style */
+  HEADING_5: "Heading5",
+  /** Heading 6 style */
+  HEADING_6: "Heading6",
+  /** Title style */
+  TITLE: "Title",
 } as const;
 
 /**
@@ -62,9 +62,9 @@ export const HeadingLevel = {
  * ```
  */
 export const createParagraphStyle = (styleId: string): XmlComponent =>
-    new BuilderElement<{ readonly val: string }>({
-        attributes: {
-            val: { key: "w:val", value: styleId },
-        },
-        name: "w:pStyle",
-    });
+  new BuilderElement<{ readonly val: string }>({
+    attributes: {
+      val: { key: "w:val", value: styleId },
+    },
+    name: "w:pStyle",
+  });

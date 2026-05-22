@@ -21,12 +21,12 @@ import { MathNumerator } from "./math-numerator";
  * @see {@link MathFraction}
  */
 export interface IMathFractionOptions {
-    /** Math components for the numerator (top) of the fraction */
-    readonly numerator: readonly MathComponent[];
-    /** Math components for the denominator (bottom) of the fraction */
-    readonly denominator: readonly MathComponent[];
-    /** Fraction type (bar, skewed, linear, or no bar) */
-    readonly fractionType?: MathFractionPropertiesOptions["fractionType"];
+  /** Math components for the numerator (top) of the fraction */
+  readonly numerator: readonly MathComponent[];
+  /** Math components for the denominator (bottom) of the fraction */
+  readonly denominator: readonly MathComponent[];
+  /** Fraction type (bar, skewed, linear, or no bar) */
+  readonly fractionType?: MathFractionPropertiesOptions["fractionType"];
 }
 
 /**
@@ -58,13 +58,13 @@ export interface IMathFractionOptions {
  * ```
  */
 export class MathFraction extends XmlComponent {
-    public constructor(options: IMathFractionOptions) {
-        super("m:f");
+  public constructor(options: IMathFractionOptions) {
+    super("m:f");
 
-        if (options.fractionType) {
-            this.root.push(createMathFractionProperties({ fractionType: options.fractionType }));
-        }
-        this.root.push(new MathNumerator(options.numerator));
-        this.root.push(new MathDenominator(options.denominator));
+    if (options.fractionType) {
+      this.root.push(createMathFractionProperties({ fractionType: options.fractionType }));
     }
+    this.root.push(new MathNumerator(options.numerator));
+    this.root.push(new MathDenominator(options.denominator));
+  }
 }

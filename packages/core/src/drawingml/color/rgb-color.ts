@@ -16,10 +16,10 @@ import { createColorTransforms } from "./color-transform";
  * Options for RGB color.
  */
 export interface RgbColorOptions {
-    /** Hex color value (e.g., "FF0000" for red) */
-    readonly value: string;
-    /** Optional color transforms */
-    readonly transforms?: ColorTransformOptions;
+  /** Hex color value (e.g., "FF0000" for red) */
+  readonly value: string;
+  /** Optional color transforms */
+  readonly transforms?: ColorTransformOptions;
 }
 
 /**
@@ -45,15 +45,15 @@ export interface RgbColorOptions {
  * ```
  */
 export const createRgbColor = (options: RgbColorOptions): XmlComponent => {
-    const transforms = options.transforms ? createColorTransforms(options.transforms) : [];
-    return new BuilderElement<RgbColorOptions>({
-        attributes: {
-            value: {
-                key: "val",
-                value: options.value,
-            },
-        },
-        children: [...transforms],
-        name: "a:srgbClr",
-    });
+  const transforms = options.transforms ? createColorTransforms(options.transforms) : [];
+  return new BuilderElement<RgbColorOptions>({
+    attributes: {
+      value: {
+        key: "val",
+        value: options.value,
+      },
+    },
+    children: [...transforms],
+    name: "a:srgbClr",
+  });
 };

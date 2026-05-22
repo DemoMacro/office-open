@@ -16,8 +16,8 @@ import type { FileChild } from "@file/file-child";
 import { BaseXmlComponent, XmlComponent } from "@file/xml-components";
 
 import {
-    StructuredDocumentTagContent,
-    StructuredDocumentTagProperties,
+  StructuredDocumentTagContent,
+  StructuredDocumentTagProperties,
 } from "../table-of-contents";
 import type { SdtPropertiesOptions } from "../table-of-contents";
 
@@ -25,10 +25,10 @@ import type { SdtPropertiesOptions } from "../table-of-contents";
  * Options for creating an inline Structured Document Tag (CT_SdtRun).
  */
 export interface ISdtRunOptions {
-    /** SDT properties (alias, tag, type discriminator, etc.) */
-    readonly properties: SdtPropertiesOptions;
-    /** Content children (runs, text runs, etc.) to place inside the SDT */
-    readonly children?: readonly BaseXmlComponent[];
+  /** SDT properties (alias, tag, type discriminator, etc.) */
+  readonly properties: SdtPropertiesOptions;
+  /** Content children (runs, text runs, etc.) to place inside the SDT */
+  readonly children?: readonly BaseXmlComponent[];
 }
 
 /**
@@ -67,27 +67,27 @@ export interface ISdtRunOptions {
  * ```
  */
 export class StructuredDocumentTagRun extends XmlComponent {
-    public constructor(options: ISdtRunOptions) {
-        super("w:sdt");
-        this.root.push(new StructuredDocumentTagProperties(options.properties));
-        if (options.children && options.children.length > 0) {
-            const content = new StructuredDocumentTagContent();
-            for (const child of options.children) {
-                content.addChildElement(child);
-            }
-            this.root.push(content);
-        }
+  public constructor(options: ISdtRunOptions) {
+    super("w:sdt");
+    this.root.push(new StructuredDocumentTagProperties(options.properties));
+    if (options.children && options.children.length > 0) {
+      const content = new StructuredDocumentTagContent();
+      for (const child of options.children) {
+        content.addChildElement(child);
+      }
+      this.root.push(content);
     }
+  }
 }
 
 /**
  * Options for creating a block-level Structured Document Tag (CT_SdtBlock).
  */
 export interface ISdtBlockOptions {
-    /** SDT properties */
-    readonly properties: SdtPropertiesOptions;
-    /** Content children (paragraphs, tables, etc.) to place inside the SDT */
-    readonly children?: readonly BaseXmlComponent[];
+  /** SDT properties */
+  readonly properties: SdtPropertiesOptions;
+  /** Content children (paragraphs, tables, etc.) to place inside the SDT */
+  readonly children?: readonly BaseXmlComponent[];
 }
 
 /**
@@ -116,16 +116,16 @@ export interface ISdtBlockOptions {
  * ```
  */
 export class StructuredDocumentTagBlock extends XmlComponent implements FileChild {
-    public readonly fileChild = Symbol();
-    public constructor(options: ISdtBlockOptions) {
-        super("w:sdt");
-        this.root.push(new StructuredDocumentTagProperties(options.properties));
-        if (options.children && options.children.length > 0) {
-            const content = new StructuredDocumentTagContent();
-            for (const child of options.children) {
-                content.addChildElement(child);
-            }
-            this.root.push(content);
-        }
+  public readonly fileChild = Symbol();
+  public constructor(options: ISdtBlockOptions) {
+    super("w:sdt");
+    this.root.push(new StructuredDocumentTagProperties(options.properties));
+    if (options.children && options.children.length > 0) {
+      const content = new StructuredDocumentTagContent();
+      for (const child of options.children) {
+        content.addChildElement(child);
+      }
+      this.root.push(content);
     }
+  }
 }

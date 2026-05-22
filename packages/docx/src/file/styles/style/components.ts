@@ -16,9 +16,9 @@ import { decimalNumber } from "@util/values";
  * @internal
  */
 class ComponentAttributes extends XmlAttributeComponent<{
-    readonly val: string | number;
+  readonly val: string | number;
 }> {
-    protected readonly xmlKeys = { val: "w:val" };
+  protected readonly xmlKeys = { val: "w:val" };
 }
 
 /**
@@ -35,10 +35,10 @@ class ComponentAttributes extends XmlAttributeComponent<{
  * ```
  */
 export class Name extends XmlComponent {
-    public constructor(value: string) {
-        super("w:name");
-        this.root.push(new ComponentAttributes({ val: value }));
-    }
+  public constructor(value: string) {
+    super("w:name");
+    this.root.push(new ComponentAttributes({ val: value }));
+  }
 }
 
 /**
@@ -56,10 +56,10 @@ export class Name extends XmlComponent {
  * ```
  */
 export class UiPriority extends XmlComponent {
-    public constructor(value: number) {
-        super("w:uiPriority");
-        this.root.push(new ComponentAttributes({ val: decimalNumber(value) }));
-    }
+  public constructor(value: number) {
+    super("w:uiPriority");
+    this.root.push(new ComponentAttributes({ val: decimalNumber(value) }));
+  }
 }
 
 /**

@@ -18,39 +18,39 @@ import type { INonVisualShapePropertiesOptions } from "./non-visual-shape-proper
 import { createWpsTextBox } from "./wps-text-box";
 
 export interface WpsShapeCoreOptions {
-    readonly children: readonly Paragraph[];
-    readonly nonVisualProperties?: INonVisualShapePropertiesOptions;
-    readonly bodyProperties?: IBodyPropertiesOptions;
-    readonly outline?: OutlineOptions;
-    readonly fill?: FillOptions;
-    readonly customGeometry?: CustomGeometryOptions;
-    readonly effectDag?: EffectDagOptions;
-    readonly effects?: EffectListOptions;
-    readonly scene3d?: Scene3DOptions;
-    readonly shape3d?: Shape3DOptions;
+  readonly children: readonly Paragraph[];
+  readonly nonVisualProperties?: INonVisualShapePropertiesOptions;
+  readonly bodyProperties?: IBodyPropertiesOptions;
+  readonly outline?: OutlineOptions;
+  readonly fill?: FillOptions;
+  readonly customGeometry?: CustomGeometryOptions;
+  readonly effectDag?: EffectDagOptions;
+  readonly effects?: EffectListOptions;
+  readonly scene3d?: Scene3DOptions;
+  readonly shape3d?: Shape3DOptions;
 }
 
 export type WpsShapeOptions = WpsShapeCoreOptions & {
-    readonly transformation: IMediaDataTransformation;
+  readonly transformation: IMediaDataTransformation;
 };
 
 export const createWpsShape = (options: WpsShapeOptions): XmlComponent =>
-    new BuilderElement({
-        children: [
-            createNonVisualShapeProperties(options.nonVisualProperties),
-            new ShapeProperties({
-                element: "wps",
-                customGeometry: options.customGeometry,
-                effectDag: options.effectDag,
-                effects: options.effects,
-                fill: options.fill,
-                outline: options.outline,
-                scene3d: options.scene3d,
-                shape3d: options.shape3d,
-                transform: options.transformation,
-            }),
-            createWpsTextBox(options.children),
-            createBodyProperties(options.bodyProperties),
-        ],
-        name: "wps:wsp",
-    });
+  new BuilderElement({
+    children: [
+      createNonVisualShapeProperties(options.nonVisualProperties),
+      new ShapeProperties({
+        element: "wps",
+        customGeometry: options.customGeometry,
+        effectDag: options.effectDag,
+        effects: options.effects,
+        fill: options.fill,
+        outline: options.outline,
+        scene3d: options.scene3d,
+        shape3d: options.shape3d,
+        transform: options.transformation,
+      }),
+      createWpsTextBox(options.children),
+      createBodyProperties(options.bodyProperties),
+    ],
+    name: "wps:wsp",
+  });

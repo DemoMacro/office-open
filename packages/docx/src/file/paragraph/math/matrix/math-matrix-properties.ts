@@ -16,20 +16,20 @@ import type { XmlComponent } from "@file/xml-components";
  * @see {@link createMathMatrixProperties}
  */
 export interface MathMatrixPropertiesOptions {
-    /** Base justification (vertical alignment of cells) */
-    readonly baseJc?: "top" | "bot" | "center";
-    /** Hide place holders */
-    readonly plcHide?: boolean;
-    /** Row spacing rule */
-    readonly rSpRule?: "single" | "1.5" | "double" | "exactly" | "multiple";
-    /** Column gap rule */
-    readonly cGpRule?: "single" | "1.5" | "double" | "exactly" | "multiple";
-    /** Row spacing */
-    readonly rSp?: number;
-    /** Column spacing */
-    readonly cSp?: number;
-    /** Column group spacing */
-    readonly cGp?: number;
+  /** Base justification (vertical alignment of cells) */
+  readonly baseJc?: "top" | "bot" | "center";
+  /** Hide place holders */
+  readonly plcHide?: boolean;
+  /** Row spacing rule */
+  readonly rSpRule?: "single" | "1.5" | "double" | "exactly" | "multiple";
+  /** Column gap rule */
+  readonly cGpRule?: "single" | "1.5" | "double" | "exactly" | "multiple";
+  /** Row spacing */
+  readonly rSp?: number;
+  /** Column spacing */
+  readonly cSp?: number;
+  /** Column group spacing */
+  readonly cGp?: number;
 }
 
 /**
@@ -53,62 +53,62 @@ export interface MathMatrixPropertiesOptions {
  * ```
  */
 export const createMathMatrixProperties = (options: MathMatrixPropertiesOptions): XmlComponent => {
-    const children: XmlComponent[] = [];
+  const children: XmlComponent[] = [];
 
-    if (options.baseJc !== undefined) {
-        children.push(
-            new BuilderElement({
-                attributes: { val: { key: "m:val", value: options.baseJc } },
-                name: "m:baseJc",
-            }),
-        );
-    }
-    if (options.plcHide !== undefined) {
-        children.push(new OnOffElement("m:plcHide", options.plcHide));
-    }
-    if (options.rSpRule !== undefined) {
-        children.push(
-            new BuilderElement({
-                attributes: { val: { key: "m:val", value: options.rSpRule } },
-                name: "m:rSpRule",
-            }),
-        );
-    }
-    if (options.cGpRule !== undefined) {
-        children.push(
-            new BuilderElement({
-                attributes: { val: { key: "m:val", value: options.cGpRule } },
-                name: "m:cGpRule",
-            }),
-        );
-    }
-    if (options.rSp !== undefined) {
-        children.push(
-            new BuilderElement({
-                attributes: { val: { key: "m:val", value: options.rSp } },
-                name: "m:rSp",
-            }),
-        );
-    }
-    if (options.cSp !== undefined) {
-        children.push(
-            new BuilderElement({
-                attributes: { val: { key: "m:val", value: options.cSp } },
-                name: "m:cSp",
-            }),
-        );
-    }
-    if (options.cGp !== undefined) {
-        children.push(
-            new BuilderElement({
-                attributes: { val: { key: "m:val", value: options.cGp } },
-                name: "m:cGp",
-            }),
-        );
-    }
+  if (options.baseJc !== undefined) {
+    children.push(
+      new BuilderElement({
+        attributes: { val: { key: "m:val", value: options.baseJc } },
+        name: "m:baseJc",
+      }),
+    );
+  }
+  if (options.plcHide !== undefined) {
+    children.push(new OnOffElement("m:plcHide", options.plcHide));
+  }
+  if (options.rSpRule !== undefined) {
+    children.push(
+      new BuilderElement({
+        attributes: { val: { key: "m:val", value: options.rSpRule } },
+        name: "m:rSpRule",
+      }),
+    );
+  }
+  if (options.cGpRule !== undefined) {
+    children.push(
+      new BuilderElement({
+        attributes: { val: { key: "m:val", value: options.cGpRule } },
+        name: "m:cGpRule",
+      }),
+    );
+  }
+  if (options.rSp !== undefined) {
+    children.push(
+      new BuilderElement({
+        attributes: { val: { key: "m:val", value: options.rSp } },
+        name: "m:rSp",
+      }),
+    );
+  }
+  if (options.cSp !== undefined) {
+    children.push(
+      new BuilderElement({
+        attributes: { val: { key: "m:val", value: options.cSp } },
+        name: "m:cSp",
+      }),
+    );
+  }
+  if (options.cGp !== undefined) {
+    children.push(
+      new BuilderElement({
+        attributes: { val: { key: "m:val", value: options.cGp } },
+        name: "m:cGp",
+      }),
+    );
+  }
 
-    return new BuilderElement({
-        children,
-        name: "m:mPr",
-    });
+  return new BuilderElement({
+    children,
+    name: "m:mPr",
+  });
 };

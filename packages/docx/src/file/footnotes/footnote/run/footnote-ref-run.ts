@@ -19,11 +19,11 @@ import { FootnoteRef } from "./footnote-ref";
  * @internal
  */
 export class FootnoteRefRun extends Run {
-    public constructor() {
-        super({
-            style: "FootnoteReference",
-        });
+  public constructor() {
+    super({
+      style: "FootnoteReference",
+    });
 
-        this.extraChildren.push(new FootnoteRef());
-    }
+    this.extraChildren.push(new FootnoteRef());
+  }
 }

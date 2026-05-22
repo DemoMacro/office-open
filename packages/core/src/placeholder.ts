@@ -9,152 +9,152 @@
 export type IdFormat = "rId" | "plain";
 
 export const formatId = (offset: number, index: number, style: IdFormat): string =>
-    style === "rId" ? `rId${offset + index}` : `${offset + index}`;
+  style === "rId" ? `rId${offset + index}` : `${offset + index}`;
 
 export function escapeRegex(str: string): string {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 export function hasPlaceholders(xml: string): boolean {
-    return xml.includes("{");
+  return xml.includes("{");
 }
 
 export function collectPlaceholderKeys(xml: string, prefix: string): string[] {
-    const keys: string[] = [];
-    const search = `{${prefix}`;
-    let pos = 0;
+  const keys: string[] = [];
+  const search = `{${prefix}`;
+  let pos = 0;
 
-    while ((pos = xml.indexOf(search, pos)) !== -1) {
-        const keyStart = pos + search.length;
-        const keyEnd = xml.indexOf("}", keyStart);
-        if (keyEnd === -1) break;
+  while ((pos = xml.indexOf(search, pos)) !== -1) {
+    const keyStart = pos + search.length;
+    const keyEnd = xml.indexOf("}", keyStart);
+    if (keyEnd === -1) break;
 
-        const key = xml.substring(keyStart, keyEnd);
-        if (key.length > 0 && !keys.includes(key)) {
-            keys.push(key);
-        }
-        pos = keyEnd + 1;
+    const key = xml.substring(keyStart, keyEnd);
+    if (key.length > 0 && !keys.includes(key)) {
+      keys.push(key);
     }
+    pos = keyEnd + 1;
+  }
 
-    return keys;
+  return keys;
 }
 
 export function replaceImagePlaceholders(
-    xml: string,
-    mediaData: readonly { readonly fileName: string }[],
-    offset: number,
-    idFormat: IdFormat = "rId",
+  xml: string,
+  mediaData: readonly { readonly fileName: string }[],
+  offset: number,
+  idFormat: IdFormat = "rId",
 ): string {
-    let result = xml;
-    mediaData.forEach((image, i) => {
-        result = result.replace(
-            new RegExp(`\\{${escapeRegex(image.fileName)}\\}`, "g"),
-            formatId(offset, i, idFormat),
-        );
-    });
-    return result;
+  let result = xml;
+  mediaData.forEach((image, i) => {
+    result = result.replace(
+      new RegExp(`\\{${escapeRegex(image.fileName)}\\}`, "g"),
+      formatId(offset, i, idFormat),
+    );
+  });
+  return result;
 }
 
 export function getReferencedMedia(
-    xml: string,
-    mediaArray: readonly { readonly fileName: string }[],
+  xml: string,
+  mediaArray: readonly { readonly fileName: string }[],
 ): readonly { readonly fileName: string }[] {
-    return mediaArray.filter((image) => xml.includes(`{${image.fileName}}`));
+  return mediaArray.filter((image) => xml.includes(`{${image.fileName}}`));
 }
 
 export function replaceChartPlaceholders(
-    xml: string,
-    chartKeys: readonly string[],
-    offset: number,
-    idFormat: IdFormat = "rId",
+  xml: string,
+  chartKeys: readonly string[],
+  offset: number,
+  idFormat: IdFormat = "rId",
 ): string {
-    let result = xml;
-    chartKeys.forEach((key, i) => {
-        result = result.replace(
-            new RegExp(`\\{chart:${escapeRegex(key)}\\}`, "g"),
-            formatId(offset, i, idFormat),
-        );
-    });
-    return result;
+  let result = xml;
+  chartKeys.forEach((key, i) => {
+    result = result.replace(
+      new RegExp(`\\{chart:${escapeRegex(key)}\\}`, "g"),
+      formatId(offset, i, idFormat),
+    );
+  });
+  return result;
 }
 
 import type { RelationshipType } from "./opc/relationships";
 
 export interface SmartArtRelOptions {
-    readonly pathPrefix: string;
-    readonly styleRelType: RelationshipType;
+  readonly pathPrefix: string;
+  readonly styleRelType: RelationshipType;
 }
 
 export function replaceSmartArtPlaceholders(
-    xml: string,
-    keys: readonly string[],
-    dataOffset: number,
-    idFormat: IdFormat = "rId",
+  xml: string,
+  keys: readonly string[],
+  dataOffset: number,
+  idFormat: IdFormat = "rId",
 ): string {
-    let result = xml;
-    const count = keys.length;
-    const loOffset = dataOffset + count;
-    const qsOffset = loOffset + count;
-    const csOffset = qsOffset + count;
+  let result = xml;
+  const count = keys.length;
+  const loOffset = dataOffset + count;
+  const qsOffset = loOffset + count;
+  const csOffset = qsOffset + count;
 
-    keys.forEach((key, i) => {
-        result = result.replace(
-            new RegExp(`\\{smartart:${escapeRegex(key)}\\}`, "g"),
-            formatId(dataOffset, i, idFormat),
-        );
-        result = result.replace(
-            new RegExp(`\\{smartart-lo:${escapeRegex(key)}\\}`, "g"),
-            formatId(loOffset, i, idFormat),
-        );
-        result = result.replace(
-            new RegExp(`\\{smartart-qs:${escapeRegex(key)}\\}`, "g"),
-            formatId(qsOffset, i, idFormat),
-        );
-        result = result.replace(
-            new RegExp(`\\{smartart-cs:${escapeRegex(key)}\\}`, "g"),
-            formatId(csOffset, i, idFormat),
-        );
-    });
+  keys.forEach((key, i) => {
+    result = result.replace(
+      new RegExp(`\\{smartart:${escapeRegex(key)}\\}`, "g"),
+      formatId(dataOffset, i, idFormat),
+    );
+    result = result.replace(
+      new RegExp(`\\{smartart-lo:${escapeRegex(key)}\\}`, "g"),
+      formatId(loOffset, i, idFormat),
+    );
+    result = result.replace(
+      new RegExp(`\\{smartart-qs:${escapeRegex(key)}\\}`, "g"),
+      formatId(qsOffset, i, idFormat),
+    );
+    result = result.replace(
+      new RegExp(`\\{smartart-cs:${escapeRegex(key)}\\}`, "g"),
+      formatId(csOffset, i, idFormat),
+    );
+  });
 
-    return result;
+  return result;
 }
 
 export function addSmartArtRelationships(
-    keys: readonly string[],
-    addRel: (id: number, type: RelationshipType, target: string, targetMode?: string) => void,
-    baseOffset: number,
-    globalStartIndex: number,
-    options: SmartArtRelOptions,
+  keys: readonly string[],
+  addRel: (id: number, type: RelationshipType, target: string, targetMode?: string) => void,
+  baseOffset: number,
+  globalStartIndex: number,
+  options: SmartArtRelOptions,
 ): void {
-    const { pathPrefix, styleRelType } = options;
-    const count = keys.length;
-    const loOffset = baseOffset + count;
-    const qsOffset = loOffset + count;
-    const csOffset = qsOffset + count;
+  const { pathPrefix, styleRelType } = options;
+  const count = keys.length;
+  const loOffset = baseOffset + count;
+  const qsOffset = loOffset + count;
+  const csOffset = qsOffset + count;
 
-    keys.forEach((_key, i) => {
-        const gi = globalStartIndex + i;
-        addRel(
-            baseOffset + i,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramData",
-            `${pathPrefix}diagrams/data${gi + 1}.xml`,
-        );
-        addRel(
-            loOffset + i,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramLayout",
-            `${pathPrefix}diagrams/layout${gi + 1}.xml`,
-        );
-        addRel(qsOffset + i, styleRelType, `${pathPrefix}diagrams/quickStyle${gi + 1}.xml`);
-        addRel(
-            csOffset + i,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramColors",
-            `${pathPrefix}diagrams/colors${gi + 1}.xml`,
-        );
-        const drOffset = csOffset + count;
-        addRel(
-            drOffset + i,
-            "http://schemas.microsoft.com/office/2007/relationships/diagramDrawing",
-            `${pathPrefix}diagrams/drawing${gi + 1}.xml`,
-        );
-    });
+  keys.forEach((_key, i) => {
+    const gi = globalStartIndex + i;
+    addRel(
+      baseOffset + i,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramData",
+      `${pathPrefix}diagrams/data${gi + 1}.xml`,
+    );
+    addRel(
+      loOffset + i,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramLayout",
+      `${pathPrefix}diagrams/layout${gi + 1}.xml`,
+    );
+    addRel(qsOffset + i, styleRelType, `${pathPrefix}diagrams/quickStyle${gi + 1}.xml`);
+    addRel(
+      csOffset + i,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramColors",
+      `${pathPrefix}diagrams/colors${gi + 1}.xml`,
+    );
+    const drOffset = csOffset + count;
+    addRel(
+      drOffset + i,
+      "http://schemas.microsoft.com/office/2007/relationships/diagramDrawing",
+      `${pathPrefix}diagrams/drawing${gi + 1}.xml`,
+    );
+  });
 }

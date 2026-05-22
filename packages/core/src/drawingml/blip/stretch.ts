@@ -28,9 +28,9 @@ import { XmlComponent } from "../../xml-components";
  * ```
  */
 class FillRectangle extends XmlComponent {
-    public constructor() {
-        super("a:fillRect");
-    }
+  public constructor() {
+    super("a:fillRect");
+  }
 }
 
 /**
@@ -57,8 +57,8 @@ class FillRectangle extends XmlComponent {
  * ```
  */
 export class Stretch extends XmlComponent {
-    public constructor() {
-        super("a:stretch");
-        this.root.push(new FillRectangle());
-    }
+  public constructor() {
+    super("a:stretch");
+    this.root.push(new FillRectangle());
+  }
 }

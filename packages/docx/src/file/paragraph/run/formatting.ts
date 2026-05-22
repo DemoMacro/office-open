@@ -21,10 +21,10 @@ import type { ThemeColor, UniversalMeasure } from "@util/values";
  * @property themeShade - Theme color shade (2-char hex, e.g., "BF")
  */
 export interface ColorOptions {
-    readonly val?: string;
-    readonly themeColor?: (typeof ThemeColor)[keyof typeof ThemeColor];
-    readonly themeTint?: string;
-    readonly themeShade?: string;
+  readonly val?: string;
+  readonly themeColor?: (typeof ThemeColor)[keyof typeof ThemeColor];
+  readonly themeTint?: string;
+  readonly themeShade?: string;
 }
 
 /**
@@ -48,14 +48,14 @@ export interface ColorOptions {
  * @internal
  */
 export class CharacterSpacing extends XmlComponent {
-    public constructor(value: number | UniversalMeasure) {
-        super("w:spacing");
-        this.root.push(
-            new Attributes({
-                val: signedTwipsMeasureValue(value),
-            }),
-        );
-    }
+  public constructor(value: number | UniversalMeasure) {
+    super("w:spacing");
+    this.root.push(
+      new Attributes({
+        val: signedTwipsMeasureValue(value),
+      }),
+    );
+  }
 }
 
 /**
@@ -81,30 +81,28 @@ export class CharacterSpacing extends XmlComponent {
  * @internal
  */
 export class Color extends XmlComponent {
-    public constructor(colorOrOptions: string | ColorOptions) {
-        super("w:color");
+  public constructor(colorOrOptions: string | ColorOptions) {
+    super("w:color");
 
-        if (typeof colorOrOptions === "string") {
-            this.root.push(
-                new Attributes({
-                    val: hexColorValue(colorOrOptions),
-                }),
-            );
-            return;
-        }
-
-        const opts = colorOrOptions;
-        this.root.push(
-            new Attributes({
-                val: opts.val === undefined ? undefined : hexColorValue(opts.val),
-                themeColor: opts.themeColor,
-                themeTint:
-                    opts.themeTint === undefined ? undefined : uCharHexNumber(opts.themeTint),
-                themeShade:
-                    opts.themeShade === undefined ? undefined : uCharHexNumber(opts.themeShade),
-            }),
-        );
+    if (typeof colorOrOptions === "string") {
+      this.root.push(
+        new Attributes({
+          val: hexColorValue(colorOrOptions),
+        }),
+      );
+      return;
     }
+
+    const opts = colorOrOptions;
+    this.root.push(
+      new Attributes({
+        val: opts.val === undefined ? undefined : hexColorValue(opts.val),
+        themeColor: opts.themeColor,
+        themeTint: opts.themeTint === undefined ? undefined : uCharHexNumber(opts.themeTint),
+        themeShade: opts.themeShade === undefined ? undefined : uCharHexNumber(opts.themeShade),
+      }),
+    );
+  }
 }
 
 /**
@@ -144,14 +142,14 @@ export class Color extends XmlComponent {
  * @internal
  */
 export class Highlight extends XmlComponent {
-    public constructor(color: string) {
-        super("w:highlight");
-        this.root.push(
-            new Attributes({
-                val: color,
-            }),
-        );
-    }
+  public constructor(color: string) {
+    super("w:highlight");
+    this.root.push(
+      new Attributes({
+        val: color,
+      }),
+    );
+  }
 }
 
 /**
@@ -163,12 +161,12 @@ export class Highlight extends XmlComponent {
  * @internal
  */
 export class HighlightComplexScript extends XmlComponent {
-    public constructor(color: string) {
-        super("w:highlightCs");
-        this.root.push(
-            new Attributes({
-                val: color,
-            }),
-        );
-    }
+  public constructor(color: string) {
+    super("w:highlightCs");
+    this.root.push(
+      new Attributes({
+        val: color,
+      }),
+    );
+  }
 }

@@ -13,8 +13,8 @@ import type { MathComponent } from "../math-component";
 import { createMathBase } from "./math-base";
 import { MathLimit } from "./math-limit";
 import {
-    createMathLimitLowProperties,
-    type MathLimitLowPropertiesOptions,
+  createMathLimitLowProperties,
+  type MathLimitLowPropertiesOptions,
 } from "./math-limit-low-properties";
 
 /**
@@ -23,12 +23,12 @@ import {
  * @see {@link MathLimitLower}
  */
 export interface IMathLimitLowerOptions {
-    /** Properties for the lower limit structure */
-    readonly properties?: MathLimitLowPropertiesOptions;
-    /** The base expression */
-    readonly children: readonly MathComponent[];
-    /** The limit expression that appears below the base */
-    readonly limit: readonly MathComponent[];
+  /** Properties for the lower limit structure */
+  readonly properties?: MathLimitLowPropertiesOptions;
+  /** The base expression */
+  readonly children: readonly MathComponent[];
+  /** The limit expression that appears below the base */
+  readonly limit: readonly MathComponent[];
 }
 
 /**
@@ -62,14 +62,14 @@ export interface IMathLimitLowerOptions {
  * ```
  */
 export class MathLimitLower extends XmlComponent {
-    public constructor(options: IMathLimitLowerOptions) {
-        super("m:limLow");
+  public constructor(options: IMathLimitLowerOptions) {
+    super("m:limLow");
 
-        if (options.properties) {
-            this.root.push(createMathLimitLowProperties(options.properties));
-        }
-
-        this.root.push(createMathBase({ children: options.children }));
-        this.root.push(new MathLimit(options.limit));
+    if (options.properties) {
+      this.root.push(createMathLimitLowProperties(options.properties));
     }
+
+    this.root.push(createMathBase({ children: options.children }));
+    this.root.push(new MathLimit(options.limit));
+  }
 }

@@ -47,13 +47,13 @@ import { PicLocksAttributes } from "./pic-locks-attributes";
  * ```
  */
 export class PicLocks extends XmlComponent {
-    public constructor() {
-        super("a:picLocks");
-        this.root.push(
-            new PicLocksAttributes({
-                noChangeArrowheads: 1,
-                noChangeAspect: 1,
-            }),
-        );
-    }
+  public constructor() {
+    super("a:picLocks");
+    this.root.push(
+      new PicLocksAttributes({
+        noChangeArrowheads: 1,
+        noChangeAspect: 1,
+      }),
+    );
+  }
 }

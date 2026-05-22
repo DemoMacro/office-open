@@ -14,24 +14,24 @@ import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
  * @internal
  */
 class MoveBookmarkAttributes extends XmlAttributeComponent<{
-    readonly id: number;
-    readonly name?: string;
-    readonly author?: string;
-    readonly date?: string;
+  readonly id: number;
+  readonly name?: string;
+  readonly author?: string;
+  readonly date?: string;
 }> {
-    protected readonly xmlKeys = {
-        author: "w:author",
-        date: "w:date",
-        id: "w:id",
-        name: "w:name",
-    };
+  protected readonly xmlKeys = {
+    author: "w:author",
+    date: "w:date",
+    id: "w:id",
+    name: "w:name",
+  };
 }
 
 /**
  * @internal
  */
 class MoveRangeEndAttributes extends XmlAttributeComponent<{ readonly id: number }> {
-    protected readonly xmlKeys = { id: "w:id" };
+  protected readonly xmlKeys = { id: "w:id" };
 }
 
 /**
@@ -45,10 +45,10 @@ class MoveRangeEndAttributes extends XmlAttributeComponent<{ readonly id: number
  * ```
  */
 export class MoveFromRangeStart extends XmlComponent {
-    public constructor(id: number, name?: string, author?: string, date?: string) {
-        super("w:moveFromRangeStart");
-        this.root.push(new MoveBookmarkAttributes({ id, name, author, date }));
-    }
+  public constructor(id: number, name?: string, author?: string, date?: string) {
+    super("w:moveFromRangeStart");
+    this.root.push(new MoveBookmarkAttributes({ id, name, author, date }));
+  }
 }
 
 /**
@@ -57,10 +57,10 @@ export class MoveFromRangeStart extends XmlComponent {
  * Reference: ISO/IEC 29500-4, wml.xsd, moveFromRangeEnd (CT_MarkupRange)
  */
 export class MoveFromRangeEnd extends XmlComponent {
-    public constructor(id: number) {
-        super("w:moveFromRangeEnd");
-        this.root.push(new MoveRangeEndAttributes({ id }));
-    }
+  public constructor(id: number) {
+    super("w:moveFromRangeEnd");
+    this.root.push(new MoveRangeEndAttributes({ id }));
+  }
 }
 
 /**
@@ -74,10 +74,10 @@ export class MoveFromRangeEnd extends XmlComponent {
  * ```
  */
 export class MoveToRangeStart extends XmlComponent {
-    public constructor(id: number, name?: string, author?: string, date?: string) {
-        super("w:moveToRangeStart");
-        this.root.push(new MoveBookmarkAttributes({ id, name, author, date }));
-    }
+  public constructor(id: number, name?: string, author?: string, date?: string) {
+    super("w:moveToRangeStart");
+    this.root.push(new MoveBookmarkAttributes({ id, name, author, date }));
+  }
 }
 
 /**
@@ -86,8 +86,8 @@ export class MoveToRangeStart extends XmlComponent {
  * Reference: ISO/IEC 29500-4, wml.xsd, moveToRangeEnd (CT_MarkupRange)
  */
 export class MoveToRangeEnd extends XmlComponent {
-    public constructor(id: number) {
-        super("w:moveToRangeEnd");
-        this.root.push(new MoveRangeEndAttributes({ id }));
-    }
+  public constructor(id: number) {
+    super("w:moveToRangeEnd");
+    this.root.push(new MoveRangeEndAttributes({ id }));
+  }
 }

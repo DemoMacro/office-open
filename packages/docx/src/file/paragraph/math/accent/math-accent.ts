@@ -18,13 +18,13 @@ import { createMathAccentProperties } from "./math-accent-properties";
  * Options for creating a math accent element.
  */
 export interface MathAccentOptions {
-    /**
-     * Accent character (e.g., "\u0302" for hat, "\u0303" for tilde, "\u0307" for dot).
-     * If not specified, defaults to hat accent.
-     */
-    readonly accentCharacter?: string;
-    /** Content to place the accent over */
-    readonly children: readonly MathComponent[];
+  /**
+   * Accent character (e.g., "\u0302" for hat, "\u0303" for tilde, "\u0307" for dot).
+   * If not specified, defaults to hat accent.
+   */
+  readonly accentCharacter?: string;
+  /** Content to place the accent over */
+  readonly children: readonly MathComponent[];
 }
 
 /**
@@ -54,12 +54,12 @@ export interface MathAccentOptions {
  * ```
  */
 export const createMathAccent = ({
-    accentCharacter,
-    children,
+  accentCharacter,
+  children,
 }: MathAccentOptions): XmlComponent => {
-    const accentProps = accentCharacter ? [createMathAccentProperties({ accentCharacter })] : [];
-    return new BuilderElement({
-        children: [...accentProps, createMathBase({ children })],
-        name: "m:acc",
-    });
+  const accentProps = accentCharacter ? [createMathAccentProperties({ accentCharacter })] : [];
+  return new BuilderElement({
+    children: [...accentProps, createMathBase({ children })],
+    name: "m:acc",
+  });
 };

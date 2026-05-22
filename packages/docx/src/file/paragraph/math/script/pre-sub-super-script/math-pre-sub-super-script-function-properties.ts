@@ -27,6 +27,6 @@ import type { XmlComponent } from "@file/xml-components";
  * ```
  */
 export const createMathPreSubSuperScriptProperties = (): XmlComponent =>
-    new BuilderElement({
-        name: "m:sPrePr",
-    });
+  new BuilderElement({
+    name: "m:sPrePr",
+  });

@@ -20,10 +20,10 @@ import { XmlAttributeComponent } from "@file/xml-components";
  * @internal
  */
 export class ShapePropertiesAttributes extends XmlAttributeComponent<{
-    /** Black and white display mode */
-    readonly bwMode?: string;
+  /** Black and white display mode */
+  readonly bwMode?: string;
 }> {
-    protected readonly xmlKeys = {
-        bwMode: "bwMode",
-    };
+  protected readonly xmlKeys = {
+    bwMode: "bwMode",
+  };
 }

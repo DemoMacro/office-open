@@ -16,30 +16,30 @@ import type { ElementWrapper } from "./traverser";
  * @property pathToParagraph - Path indices from root to this paragraph
  */
 export interface IRenderedParagraphNode {
-    readonly text: string;
-    readonly runs: readonly IRenderedRunNode[];
-    readonly index: number;
-    readonly pathToParagraph: readonly number[];
+  readonly text: string;
+  readonly runs: readonly IRenderedRunNode[];
+  readonly index: number;
+  readonly pathToParagraph: readonly number[];
 }
 
 /**
  * Character position range within a paragraph.
  */
 interface StartAndEnd {
-    /** Starting character index */
-    readonly start: number;
-    /** Ending character index */
-    readonly end: number;
+  /** Starting character index */
+  readonly start: number;
+  /** Ending character index */
+  readonly end: number;
 }
 
 /**
  * Text fragment within a run element.
  */
 type IParts = {
-    /** Text content of this fragment */
-    readonly text: string;
-    /** Position index within the run */
-    readonly index: number;
+  /** Text content of this fragment */
+  readonly text: string;
+  /** Position index within the run */
+  readonly index: number;
 } & StartAndEnd;
 
 /**
@@ -52,9 +52,9 @@ type IParts = {
  * @property end - Ending character index in the paragraph
  */
 export type IRenderedRunNode = {
-    readonly text: string;
-    readonly parts: readonly IParts[];
-    readonly index: number;
+  readonly text: string;
+  readonly parts: readonly IParts[];
+  readonly index: number;
 } & StartAndEnd;
 
 /**
@@ -76,87 +76,87 @@ export type IRenderedRunNode = {
  * ```
  */
 export const renderParagraphNode = (node: ElementWrapper): IRenderedParagraphNode => {
-    if (node.element.name !== "w:p") {
-        throw new Error(`Invalid node type: ${node.element.name}`);
-    }
+  if (node.element.name !== "w:p") {
+    throw new Error(`Invalid node type: ${node.element.name}`);
+  }
 
-    if (!node.element.elements) {
-        return {
-            index: -1,
-            pathToParagraph: [],
-            runs: [],
-            text: "",
-        };
-    }
-
-    let currentRunStringLength = 0;
-
-    const runs = node.element.elements
-        .map((element, i) => ({ element, i }))
-        .filter(({ element }) => element.name === "w:r")
-        .map(({ element, i }) => {
-            const renderedRunNode = renderRunNode(element, i, currentRunStringLength);
-            currentRunStringLength += renderedRunNode.text.length;
-
-            return renderedRunNode;
-        })
-        .filter((e) => Boolean(e));
-
-    const text = runs.reduce((acc, curr) => acc + curr.text, "");
-
+  if (!node.element.elements) {
     return {
-        index: node.index,
-        pathToParagraph: buildNodePath(node),
-        runs,
-        text,
+      index: -1,
+      pathToParagraph: [],
+      runs: [],
+      text: "",
     };
+  }
+
+  let currentRunStringLength = 0;
+
+  const runs = node.element.elements
+    .map((element, i) => ({ element, i }))
+    .filter(({ element }) => element.name === "w:r")
+    .map(({ element, i }) => {
+      const renderedRunNode = renderRunNode(element, i, currentRunStringLength);
+      currentRunStringLength += renderedRunNode.text.length;
+
+      return renderedRunNode;
+    })
+    .filter((e) => Boolean(e));
+
+  const text = runs.reduce((acc, curr) => acc + curr.text, "");
+
+  return {
+    index: node.index,
+    pathToParagraph: buildNodePath(node),
+    runs,
+    text,
+  };
 };
 
 const renderRunNode = (
-    node: Element,
-    index: number,
-    currentRunStringIndex: number,
+  node: Element,
+  index: number,
+  currentRunStringIndex: number,
 ): IRenderedRunNode => {
-    if (!node.elements) {
-        return {
-            end: currentRunStringIndex,
-            index: -1,
-            parts: [],
-            start: currentRunStringIndex,
-            text: "",
-        };
-    }
-
-    let currentTextStringIndex = currentRunStringIndex;
-
-    const parts = node.elements
-        .map((element, i: number) =>
-            element.name === "w:t" && element.elements && element.elements.length > 0
-                ? (() => {
-                      const partStart = currentTextStringIndex;
-                      currentTextStringIndex += (element.elements[0].text?.toString() ?? "").length;
-                      return {
-                          end: currentTextStringIndex - 1,
-                          index: i,
-                          start: partStart,
-                          text: element.elements[0].text?.toString() ?? "",
-                      };
-                  })()
-                : undefined,
-        )
-        .filter((e) => Boolean(e))
-        .map((e) => e as IParts);
-
-    const text = parts.reduce((acc, curr) => acc + curr.text, "");
-
+  if (!node.elements) {
     return {
-        end: currentTextStringIndex - 1,
-        index,
-        parts,
-        start: currentRunStringIndex,
-        text,
+      end: currentRunStringIndex,
+      index: -1,
+      parts: [],
+      start: currentRunStringIndex,
+      text: "",
     };
+  }
+
+  let currentTextStringIndex = currentRunStringIndex;
+
+  const parts = node.elements
+    .map((element, i: number) =>
+      element.name === "w:t" && element.elements && element.elements.length > 0
+        ? (() => {
+            const partStart = currentTextStringIndex;
+            currentTextStringIndex += (element.elements[0].text?.toString() ?? "").length;
+            return {
+              end: currentTextStringIndex - 1,
+              index: i,
+              start: partStart,
+              text: element.elements[0].text?.toString() ?? "",
+            };
+          })()
+        : undefined,
+    )
+    .filter((e) => Boolean(e))
+    .map((e) => e as IParts);
+
+  const text = parts.reduce((acc, curr) => acc + curr.text, "");
+
+  return {
+    end: currentTextStringIndex - 1,
+    index,
+    parts,
+    start: currentRunStringIndex,
+    text,
+  };
 };
 
 const buildNodePath = (node: ElementWrapper): readonly number[] =>
-    node.parent ? [...buildNodePath(node.parent), node.index] : [node.index];
+  node.parent ? [...buildNodePath(node.parent), node.index] : [node.index];

@@ -39,10 +39,10 @@ import { NonVisualProperties } from "./non-visual-properties/non-visual-properti
  * ```
  */
 export class NonVisualPicProperties extends XmlComponent {
-    public constructor(hyperlink?: HyperlinkOptions) {
-        super("pic:nvPicPr");
+  public constructor(hyperlink?: HyperlinkOptions) {
+    super("pic:nvPicPr");
 
-        this.root.push(new NonVisualProperties(hyperlink));
-        this.root.push(new ChildNonVisualProperties());
-    }
+    this.root.push(new NonVisualProperties(hyperlink));
+    this.root.push(new ChildNonVisualProperties());
+  }
 }
