@@ -8,8 +8,7 @@
  *
  * @module
  */
-import type { Paragraph } from "./paragraph";
-import type { Table } from "./table";
+import type { SectionChild } from "./section-child";
 
 /**
  * Options for creating a header or footer.
@@ -18,8 +17,8 @@ import type { Table } from "./table";
  * @see {@link Footer}
  */
 export interface IHeaderOptions {
-  /** The content elements (paragraphs and tables) for the header/footer */
-  readonly children: readonly (Paragraph | Table)[];
+  /** The content elements (paragraphs, tables, etc.) for the header/footer */
+  readonly children: readonly SectionChild[];
 }
 
 /**

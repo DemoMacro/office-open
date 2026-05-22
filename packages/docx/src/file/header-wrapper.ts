@@ -13,11 +13,10 @@ import type { XmlComponent } from "@file/xml-components";
 
 import type { HeaderFooterReferenceType } from "./document";
 import type { IViewWrapper } from "./document-wrapper";
+import type { FileChild } from "./file-child";
 import { Header } from "./header/header";
 import type { Media } from "./media";
-import type { Paragraph } from "./paragraph";
 import { Relationships } from "./relationships";
-import type { Table } from "./table";
 
 /**
  * Configuration for a document header.
@@ -61,7 +60,7 @@ export class HeaderWrapper implements IViewWrapper {
     this.relationships = new Relationships();
   }
 
-  public add(item: Paragraph | Table): HeaderWrapper {
+  public add(item: FileChild): HeaderWrapper {
     this.header.add(item);
 
     return this;

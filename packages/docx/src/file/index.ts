@@ -11,6 +11,8 @@
  */
 
 export * from "./paragraph";
+export * from "./coerce";
+export * from "./section-child";
 export * from "./table";
 export * from "./file";
 export * from "./file-child";

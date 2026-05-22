@@ -10,7 +10,7 @@ import { BaseXmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 
 import type { AlignmentType } from "../paragraph";
-import type { StructuredDocumentTagRow } from "../sdt";
+import { StructuredDocumentTagRow } from "../sdt";
 import { TableGrid } from "./grid";
 import type { ITableGridChangeOptions } from "./grid";
 import { TableCell, VerticalMergeType } from "./table-cell";
@@ -25,6 +25,7 @@ import type { ITableCellMarginOptions } from "./table-properties/table-cell-marg
 import type { TableLayoutType } from "./table-properties/table-layout";
 import type { ITableLookOptions } from "./table-properties/table-look";
 import { TableRow } from "./table-row";
+import type { ITableRowOptions } from "./table-row";
 import type { ITableWidthProperties } from "./table-width";
 
 /**
@@ -42,7 +43,7 @@ import type { ITableWidthProperties } from "./table-width";
  * @see {@link Table}
  */
 export interface ITableOptions {
-  readonly rows: readonly (TableRow | StructuredDocumentTagRow)[];
+  readonly rows: readonly (TableRow | StructuredDocumentTagRow | ITableRowOptions)[];
   readonly width?: ITableWidthProperties;
   readonly columnWidths?: readonly number[];
   readonly columnWidthsRevision?: ITableGridChangeOptions;
@@ -104,24 +105,31 @@ export class Table extends BaseXmlComponent implements FileChild {
 
   private readonly options: ITableOptions;
   private readonly columnWidths: readonly number[];
+  // Coerced rows: plain ITableRowOptions are converted to TableRow instances
+  private readonly rows: readonly (TableRow | StructuredDocumentTagRow)[];
 
   public constructor(options: ITableOptions) {
     super("w:tbl");
     this.options = options;
+
+    // Coerce plain ITableRowOptions objects into TableRow instances
+    this.rows = options.rows.map((row) =>
+      row instanceof TableRow || row instanceof StructuredDocumentTagRow ? row : new TableRow(row),
+    );
+
     this.columnWidths =
       options.columnWidths ??
-      Array<number>(Math.max(...options.rows.map((row) => row.CellCount))).fill(100);
+      Array<number>(Math.max(...this.rows.map((row) => row.CellCount))).fill(100);
 
     // Register CONTINUE cells on subsequent rows for vertical merge
-    const rows = options.rows;
-    rows.forEach((row, rowIndex) => {
-      if (rowIndex === rows.length - 1) return;
+    this.rows.forEach((row, rowIndex) => {
+      if (rowIndex === this.rows.length - 1) return;
       if (!(row instanceof TableRow)) return;
 
       let columnIndex = 0;
       row.cells.forEach((cell) => {
         if (cell.options.rowSpan && cell.options.rowSpan > 1) {
-          const nextRow = rows[rowIndex + 1];
+          const nextRow = this.rows[rowIndex + 1];
           if (nextRow instanceof TableRow) {
             const continueCell = new TableCell({
               borders: cell.options.borders,
@@ -167,7 +175,7 @@ export class Table extends BaseXmlComponent implements FileChild {
     );
     if (gridObj) children.push(gridObj);
 
-    for (const row of this.options.rows) {
+    for (const row of this.rows) {
       const obj = row.prepForXml(context);
       if (obj) children.push(obj);
     }

@@ -48,6 +48,7 @@ import type {
   SmartArtRun,
   SymbolRun,
 } from "./run";
+import type { IRunOptions } from "./run";
 import type {
   Comment,
   CommentRangeEnd,
@@ -108,8 +109,10 @@ export type ParagraphChild =
 export type IParagraphOptions = {
   /** Simple text content for the paragraph. Creates a single TextRun. */
   readonly text?: string;
-  /** Array of child elements such as TextRun, ImageRun, Hyperlink, Bookmark, etc. */
-  readonly children?: readonly ParagraphChild[];
+  /** Array of child elements such as TextRun, ImageRun, Hyperlink, Bookmark, etc.
+   *  Accepts class instances, plain IRunOptions objects (coerced to TextRun),
+   *  or strings (coerced to TextRun). */
+  readonly children?: readonly (ParagraphChild | IRunOptions | string)[];
 } & IParagraphPropertiesOptions;
 
 /**
@@ -190,32 +193,43 @@ export class Paragraph extends BaseXmlComponent implements FileChild {
 
     // Children
     if (this.options.children) {
-      for (const child of this.options.children) {
-        if (child instanceof ExternalHyperlink) {
-          const concreteHyperlink = new ConcreteHyperlink(child.options.children, uniqueId());
+      for (const rawChild of this.options.children) {
+        // Bookmark and ExternalHyperlink are NOT BaseXmlComponent subclasses
+        // — they need special handling before coerce.
+        if (rawChild instanceof ExternalHyperlink) {
+          const concreteHyperlink = new ConcreteHyperlink(rawChild.options.children, uniqueId());
           context.viewWrapper.Relationships.addRelationship(
             concreteHyperlink.linkId,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
-            child.options.link,
+            rawChild.options.link,
             TargetModeType.EXTERNAL,
           );
           const obj = concreteHyperlink.prepForXml(context);
           if (obj) children.push(obj);
           continue;
         }
-        if (child instanceof Bookmark) {
-          const startObj = child.start.prepForXml(context);
+        if (rawChild instanceof Bookmark) {
+          const startObj = rawChild.start.prepForXml(context);
           if (startObj) children.push(startObj);
-          for (const textRun of child.children) {
+          for (const textRun of rawChild.children) {
             if (textRun instanceof BaseXmlComponent) {
               const obj = textRun.prepForXml(context);
               if (obj) children.push(obj);
             }
           }
-          const endObj = child.end.prepForXml(context);
+          const endObj = rawChild.end.prepForXml(context);
           if (endObj) children.push(endObj);
           continue;
         }
+
+        // Coerce strings and plain IRunOptions into TextRun instances
+        const child =
+          typeof rawChild === "string"
+            ? new TextRun(rawChild)
+            : rawChild instanceof BaseXmlComponent
+              ? rawChild
+              : new TextRun(rawChild as IRunOptions);
+
         if (child instanceof BaseXmlComponent) {
           const obj = child.prepForXml(context);
           if (obj) children.push(obj);

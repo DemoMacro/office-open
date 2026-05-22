@@ -9,8 +9,9 @@ import { Paragraph } from "@file/paragraph";
 import { BaseXmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 
+import { coerceSectionChild } from "../../coerce";
 import type { StructuredDocumentTagCell } from "../../sdt";
-import type { Table } from "../table";
+import type { SectionChild } from "../../section-child";
 import { TableCellProperties } from "./table-cell-properties";
 import type { ITableCellPropertiesOptions } from "./table-cell-properties";
 
@@ -20,8 +21,8 @@ import type { ITableCellPropertiesOptions } from "./table-cell-properties";
  * @see {@link TableCell}
  */
 export type ITableCellOptions = {
-  /** Array of Paragraph or nested Table elements that make up the cell content */
-  readonly children: readonly (Paragraph | Table | StructuredDocumentTagCell)[];
+  /** Array of Paragraph, Table, or plain objects that make up the cell content */
+  readonly children: readonly (SectionChild | StructuredDocumentTagCell)[];
 } & ITableCellPropertiesOptions;
 
 /**
@@ -66,13 +67,17 @@ export class TableCell extends BaseXmlComponent {
     const tPrObj = tPr.prepForXml(context);
     if (tPrObj) children.push(tPrObj);
 
-    for (const child of this.options.children) {
+    const coerced = this.options.children.map((c) =>
+      c instanceof BaseXmlComponent ? c : coerceSectionChild(c),
+    );
+
+    for (const child of coerced) {
       const obj = child.prepForXml(context);
       if (obj) children.push(obj);
     }
 
     // Cells must end with a paragraph
-    const last = this.options.children[this.options.children.length - 1];
+    const last = coerced[coerced.length - 1];
     if (!(last instanceof Paragraph)) {
       children.push(new Paragraph({}).prepForXml(context)!);
     }

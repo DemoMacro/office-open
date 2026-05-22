@@ -24,7 +24,7 @@ import type { VmlShapeStyle } from "./shape/shape";
  * @property style - VML shape style properties for positioning and sizing
  * @property children - Array of child elements (text runs, hyperlinks, etc.)
  */
-type ITextboxOptions = Omit<IParagraphOptions, "style" | "children"> & {
+export type ITextboxOptions = Omit<IParagraphOptions, "style" | "children"> & {
   /** VML shape style properties for the textbox (positioning, sizing, wrapping, etc.) */
   readonly style?: VmlShapeStyle;
   /** Array of block-level content elements (paragraphs, tables, etc.) */

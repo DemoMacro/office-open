@@ -10,6 +10,7 @@ import { AltChunkCollection } from "./alt-chunk/alt-chunk-collection";
 import { AppProperties } from "./app-properties/app-properties";
 import { Bibliography } from "./bibliography";
 import { ChartCollection } from "./chart/chart-collection";
+import { coerceSectionChild } from "./coerce";
 import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties } from "./core-properties";
 import type { IPropertiesOptions } from "./core-properties";
@@ -18,18 +19,18 @@ import { DocumentWrapper } from "./document-wrapper";
 import { HeaderFooterReferenceType } from "./document/body/section-properties";
 import type { ISectionPropertiesOptions } from "./document/body/section-properties";
 import { EndnotesWrapper } from "./endnotes-wrapper";
-import type { FileChild } from "./file-child";
 import { FontWrapper } from "./fonts/font-wrapper";
 import { FooterWrapper } from "./footer-wrapper";
 import type { IDocumentFooter } from "./footer-wrapper";
 import { FootnotesWrapper } from "./footnotes-wrapper";
-import type { Footer, Header } from "./header";
+import { Footer, Header } from "./header";
 import { HeaderWrapper } from "./header-wrapper";
 import type { IDocumentHeader } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
 import { Comments } from "./paragraph/run/comment-run";
 import { Relationships } from "./relationships";
+import type { SectionChild } from "./section-child";
 import { Settings } from "./settings";
 import { SmartArtCollection } from "./smartart/smartart-collection";
 import { Styles } from "./styles";
@@ -57,25 +58,25 @@ export interface ISectionOptions {
   /** Optional header definitions for the section. */
   readonly headers?: {
     /** Default header for all pages (when first/even not specified). */
-    readonly default?: Header;
+    readonly default?: Header | readonly SectionChild[];
     /** Header for the first page of the section. */
-    readonly first?: Header;
+    readonly first?: Header | readonly SectionChild[];
     /** Header for even-numbered pages. */
-    readonly even?: Header;
+    readonly even?: Header | readonly SectionChild[];
   };
   /** Optional footer definitions for the section. */
   readonly footers?: {
     /** Default footer for all pages (when first/even not specified). */
-    readonly default?: Footer;
+    readonly default?: Footer | readonly SectionChild[];
     /** Footer for the first page of the section. */
-    readonly first?: Footer;
+    readonly first?: Footer | readonly SectionChild[];
     /** Footer for even-numbered pages. */
-    readonly even?: Footer;
+    readonly even?: Footer | readonly SectionChild[];
   };
   /** Section properties such as page size, margins, and orientation. */
   readonly properties?: ISectionPropertiesOptions;
   /** Array of content elements (paragraphs, tables, etc.) for this section. */
-  readonly children: readonly FileChild[];
+  readonly children: readonly SectionChild[];
 }
 
 /**
@@ -290,27 +291,29 @@ export class File {
       },
     });
 
-    for (const child of children) {
-      this.documentWrapper.View.add(child);
+    for (const rawChild of children) {
+      this.documentWrapper.View.add(coerceSectionChild(rawChild));
     }
   }
 
-  private createHeader(header: Header): HeaderWrapper {
+  private createHeader(header: Header | readonly SectionChild[]): HeaderWrapper {
     const wrapper = new HeaderWrapper(this.media, this.currentRelationshipId++);
 
-    for (const child of header.options.children) {
-      wrapper.add(child);
+    const children = header instanceof Header ? header.options.children : header;
+    for (const rawChild of children) {
+      wrapper.add(coerceSectionChild(rawChild));
     }
 
     this.addHeaderToDocument(wrapper);
     return wrapper;
   }
 
-  private createFooter(footer: Footer): FooterWrapper {
+  private createFooter(footer: Footer | readonly SectionChild[]): FooterWrapper {
     const wrapper = new FooterWrapper(this.media, this.currentRelationshipId++);
 
-    for (const child of footer.options.children) {
-      wrapper.add(child);
+    const children = footer instanceof Footer ? footer.options.children : footer;
+    for (const rawChild of children) {
+      wrapper.add(coerceSectionChild(rawChild));
     }
 
     this.addFooterToDocument(wrapper);

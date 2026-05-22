@@ -8,8 +8,9 @@
 import { BaseXmlComponent, EMPTY_OBJECT } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 
-import type { StructuredDocumentTagRow } from "../../sdt";
+import { StructuredDocumentTagRow } from "../../sdt";
 import { TableCell } from "../table-cell";
+import type { ITableCellOptions } from "../table-cell";
 import { TablePropertyExceptions } from "../table-properties/table-property-exceptions";
 import type { ITablePropertyExOptions } from "../table-properties/table-property-exceptions";
 import { TableRowProperties } from "./table-row-properties";
@@ -21,8 +22,8 @@ import type { ITableRowPropertiesOptions } from "./table-row-properties";
  * @see {@link TableRow}
  */
 export type ITableRowOptions = {
-  /** Array of TableCell elements that make up the row */
-  readonly children: readonly (TableCell | StructuredDocumentTagRow)[];
+  /** Array of TableCell elements or plain options that make up the row */
+  readonly children: readonly (TableCell | StructuredDocumentTagRow | ITableCellOptions)[];
   /** Table property exceptions for this row (override table-level properties) */
   readonly propertyExceptions?: ITablePropertyExOptions;
 } & ITableRowPropertiesOptions;
@@ -66,16 +67,24 @@ export class TableRow extends BaseXmlComponent {
   // Extra cells inserted by Table's row-span CONTINUE logic
   private extraCells: { cell: TableCell; columnIndex: number }[] = [];
 
+  // Coerced children: plain ITableCellOptions are converted to TableCell instances
+  private readonly coercedChildren: readonly (TableCell | StructuredDocumentTagRow)[];
+
   public constructor(private readonly options: ITableRowOptions) {
     super("w:tr");
+    this.coercedChildren = options.children.map((child) =>
+      child instanceof TableCell || child instanceof StructuredDocumentTagRow
+        ? child
+        : new TableCell(child),
+    );
   }
 
   public get CellCount(): number {
-    return this.options.children.length;
+    return this.coercedChildren.length;
   }
 
   public get cells(): readonly TableCell[] {
-    return this.options.children.filter((child): child is TableCell => child instanceof TableCell);
+    return this.coercedChildren.filter((child): child is TableCell => child instanceof TableCell);
   }
 
   /** @internal Used by Table to insert CONTINUE cells for vertical merge. */
@@ -86,12 +95,12 @@ export class TableRow extends BaseXmlComponent {
   public rootIndexToColumnIndex(rootIndex: number): number {
     // rootIndex is 0-based in XmlComponent root (0 = trPr, 1+ = cells)
     const cellIndex = rootIndex - 1;
-    if (cellIndex < 0 || cellIndex >= this.options.children.length) {
-      throw new Error(`cell 'rootIndex' should between 1 to ${this.options.children.length}`);
+    if (cellIndex < 0 || cellIndex >= this.coercedChildren.length) {
+      throw new Error(`cell 'rootIndex' should between 1 to ${this.coercedChildren.length}`);
     }
     let colIdx = 0;
     for (let i = 0; i < cellIndex; i++) {
-      const child = this.options.children[i];
+      const child = this.coercedChildren[i];
       colIdx += child instanceof TableCell ? child.options.columnSpan || 1 : 1;
     }
     return colIdx;
@@ -104,14 +113,14 @@ export class TableRow extends BaseXmlComponent {
     let colIdx = 0;
     let idx = 0;
     while (colIdx <= columnIndex) {
-      if (idx >= this.options.children.length) {
+      if (idx >= this.coercedChildren.length) {
         if (allowEndNewCell) {
-          return this.options.children.length + 1;
+          return this.coercedChildren.length + 1;
         } else {
           throw new Error(`cell 'columnIndex' should not great than ${colIdx - 1}`);
         }
       }
-      const child = this.options.children[idx];
+      const child = this.coercedChildren[idx];
       idx += 1;
       colIdx += child instanceof TableCell ? child.options.columnSpan || 1 : 1;
     }
@@ -132,7 +141,7 @@ export class TableRow extends BaseXmlComponent {
 
     const prefixCount = children.length;
 
-    for (const child of this.options.children) {
+    for (const child of this.coercedChildren) {
       const obj = child.prepForXml(context);
       if (obj) children.push(obj);
     }
@@ -151,13 +160,13 @@ export class TableRow extends BaseXmlComponent {
 
   private findInsertIndex(columnIndex: number, prefixCount: number): number {
     let colIdx = 0;
-    for (let i = 0; i < this.options.children.length; i++) {
-      const child = this.options.children[i];
+    for (let i = 0; i < this.coercedChildren.length; i++) {
+      const child = this.coercedChildren[i];
       colIdx += child instanceof TableCell ? child.options.columnSpan || 1 : 1;
       if (colIdx > columnIndex) {
         return i + prefixCount;
       }
     }
-    return this.options.children.length + prefixCount;
+    return this.coercedChildren.length + prefixCount;
   }
 }
