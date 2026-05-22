@@ -30,12 +30,37 @@ export type TransitionType =
   | "random"
   | "cut";
 
+export type TransitionDirection =
+  | "left"
+  | "up"
+  | "right"
+  | "down"
+  | "leftUp"
+  | "rightUp"
+  | "leftDown"
+  | "rightDown"
+  | "out"
+  | "in";
+
+const DIRECTION_MAP: Record<TransitionDirection, string> = {
+  left: "l",
+  up: "u",
+  right: "r",
+  down: "d",
+  leftUp: "lu",
+  rightUp: "ru",
+  leftDown: "ld",
+  rightDown: "rd",
+  out: "out",
+  in: "in",
+};
+
 export interface ITransitionOptions {
   readonly type?: TransitionType;
   readonly speed?: "slow" | "med" | "fast";
   readonly advanceOnClick?: boolean;
   readonly advanceAfterTime?: number;
-  readonly dir?: string;
+  readonly direction?: TransitionDirection;
   readonly orient?: "horz" | "vert";
   readonly thruBlk?: boolean;
   readonly spokes?: number;
@@ -43,12 +68,13 @@ export interface ITransitionOptions {
 
 function buildTransitionElement(
   type: TransitionType,
-  dir?: string,
+  direction?: TransitionDirection,
   orient?: string,
   thruBlk?: boolean,
   spokes?: number,
 ): IXmlableObject {
   const attrs: Record<string, string | number> = {};
+  const dir = direction ? DIRECTION_MAP[direction] : undefined;
 
   if (ORIENT_TYPES.has(type) && dir) {
     attrs.dir = dir;
@@ -84,7 +110,7 @@ export function buildTransition(options: ITransitionOptions): IXmlableObject {
     children.push(
       buildTransitionElement(
         options.type,
-        options.dir,
+        options.direction,
         options.orient,
         options.thruBlk,
         options.spokes,

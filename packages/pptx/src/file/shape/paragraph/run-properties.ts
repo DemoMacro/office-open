@@ -86,6 +86,19 @@ export function buildRunProperties(
   if (options.dirty !== undefined) attrs.dirty = options.dirty;
   if (Object.keys(attrs).length > 0) children.push({ _attr: attrs });
 
+  // XSD order: ln → fill → effect → latin/ea → hlinkClick → rtl
+  if (outlineObject) {
+    children.push(outlineObject);
+  }
+
+  if (fillObject) {
+    children.push(fillObject);
+  }
+
+  if (effectListObject) {
+    children.push(effectListObject);
+  }
+
   if (options.font) {
     children.push({ "a:latin": { _attr: { typeface: options.font } } });
     children.push({ "a:ea": { _attr: { typeface: options.font } } });
@@ -99,18 +112,6 @@ export function buildRunProperties(
 
   if (options.rightToLeft !== undefined) {
     children.push({ "a:rtl": { _attr: { val: options.rightToLeft ? 1 : 0 } } });
-  }
-
-  if (fillObject) {
-    children.push(fillObject);
-  }
-
-  if (outlineObject) {
-    children.push(outlineObject);
-  }
-
-  if (effectListObject) {
-    children.push(effectListObject);
   }
 
   if (children.length === 0) return undefined;

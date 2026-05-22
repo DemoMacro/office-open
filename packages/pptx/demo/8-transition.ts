@@ -30,7 +30,7 @@ const pres = new Presentation({
           fill: "ED7D31",
         }),
       ],
-      transition: { type: "push", dir: "r", speed: "slow" },
+      transition: { type: "push", direction: "right", speed: "slow" },
     },
     {
       children: [
@@ -43,7 +43,7 @@ const pres = new Presentation({
           fill: "70AD47",
         }),
       ],
-      transition: { type: "wipe", dir: "d" },
+      transition: { type: "wipe", direction: "down" },
     },
     {
       children: [
@@ -56,7 +56,7 @@ const pres = new Presentation({
           fill: "FFC000",
         }),
       ],
-      transition: { type: "cover", dir: "r" },
+      transition: { type: "cover", direction: "right" },
     },
     {
       children: [
@@ -69,7 +69,7 @@ const pres = new Presentation({
           fill: "5B9BD5",
         }),
       ],
-      transition: { type: "split", orient: "horz", dir: "out" },
+      transition: { type: "split", orient: "horz", direction: "out" },
     },
     {
       children: [
