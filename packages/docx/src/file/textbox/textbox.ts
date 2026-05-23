@@ -6,9 +6,11 @@
  *
  * @module
  */
+import { coerceSectionChild } from "@file/coerce";
 import type { FileChild } from "@file/file-child";
 import { ParagraphProperties } from "@file/paragraph";
 import type { IParagraphOptions } from "@file/paragraph";
+import type { SectionChild } from "@file/section-child";
 import { XmlComponent } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 
@@ -28,7 +30,7 @@ export type ITextboxOptions = Omit<IParagraphOptions, "style" | "children"> & {
   /** VML shape style properties for the textbox (positioning, sizing, wrapping, etc.) */
   readonly style?: VmlShapeStyle;
   /** Array of block-level content elements (paragraphs, tables, etc.) */
-  readonly children?: readonly FileChild[];
+  readonly children?: readonly SectionChild[];
 };
 
 /**
@@ -85,10 +87,13 @@ export class Textbox extends XmlComponent implements FileChild {
     super("w:p");
     this.root.push(new ParagraphProperties(rest));
 
+    // Coerce SectionChild plain objects into FileChild instances
+    const coercedChildren = children?.map(coerceSectionChild);
+
     this.root.push(
       createPictElement({
         shape: createShape({
-          children: children,
+          children: coercedChildren,
           id: uniqueId(),
           style: style,
         }),

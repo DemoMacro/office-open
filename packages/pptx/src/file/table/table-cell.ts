@@ -3,6 +3,7 @@ import type { IContext, IXmlableObject } from "@file/xml-components";
 
 import type { FillOptions } from "../drawingml/fill";
 import { Paragraph } from "../shape/paragraph/paragraph";
+import type { IParagraphOptions } from "../shape/paragraph/paragraph";
 import { TextRun } from "../shape/paragraph/run";
 import { TableCellProperties, type ICellBorderOptions } from "./table-cell-properties";
 
@@ -14,7 +15,7 @@ export const VerticalAlignment = {
 
 export interface ITableCellOptions {
   readonly text?: string;
-  readonly children?: readonly BaseXmlComponent[];
+  readonly children?: readonly (BaseXmlComponent | IParagraphOptions | string)[];
   readonly fill?: FillOptions;
   readonly borders?: {
     readonly top?: ICellBorderOptions;
@@ -45,7 +46,13 @@ export class TableCell extends BaseXmlComponent {
     super("a:tc");
     this.options = options;
     this.paragraphs =
-      options.children ??
+      options.children?.map((c) =>
+        typeof c === "string"
+          ? new Paragraph(c)
+          : c instanceof BaseXmlComponent
+            ? c
+            : new Paragraph(c),
+      ) ??
       (options.text !== undefined
         ? [
             new Paragraph({

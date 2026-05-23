@@ -124,6 +124,34 @@ const pres = new Presentation({
                   { text: "{ group: {...} }" },
                 ],
               },
+              {
+                cells: [
+                  { text: "Table cells" },
+                  { text: "new Paragraph({...})" },
+                  { text: "{ children: [...] } in cell" },
+                ],
+              },
+              {
+                cells: [
+                  { text: "Cell with children" },
+                  {
+                    children: [
+                      {
+                        children: [
+                          { text: "Line 1, ", bold: true },
+                          { text: "Line 1 cont.", fill: "FF0000" },
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    children: [
+                      "String paragraph",
+                      { children: [{ text: " + object paragraph", italic: true }] },
+                    ],
+                  },
+                ],
+              },
             ],
             columnWidths: [2000000, 2500000, 2500000],
             firstRow: true,

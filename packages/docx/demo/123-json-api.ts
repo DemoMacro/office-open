@@ -145,6 +145,22 @@ const doc = new Document({
         },
       ],
     },
+
+    // ─── Section 4: textbox with SectionChild children ────────────
+    {
+      children: [
+        { paragraph: { children: ["Section 4 — textbox with JSON children"] } },
+        {
+          textbox: {
+            style: { width: "4in", height: "1in" },
+            children: [
+              { paragraph: { children: [{ text: "Textbox paragraph", bold: true }] } },
+              { paragraph: { children: ["Second line in textbox"] } },
+            ],
+          },
+        },
+      ],
+    },
   ],
 });
 
