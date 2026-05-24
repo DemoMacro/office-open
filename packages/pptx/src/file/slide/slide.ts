@@ -86,14 +86,16 @@ export class Slide extends XmlComponent {
         ],
       },
       {
-        "p:grpSpPr": {
-          "a:xfrm": [
-            { "a:off": { _attr: { x: 0, y: 0 } } },
-            { "a:ext": { _attr: { cx: 0, cy: 0 } } },
-            { "a:chOff": { _attr: { x: 0, y: 0 } } },
-            { "a:chExt": { _attr: { cx: 0, cy: 0 } } },
-          ],
-        },
+        "p:grpSpPr": [
+          {
+            "a:xfrm": [
+              { "a:off": { _attr: { x: 0, y: 0 } } },
+              { "a:ext": { _attr: { cx: 0, cy: 0 } } },
+              { "a:chOff": { _attr: { x: 0, y: 0 } } },
+              { "a:chExt": { _attr: { cx: 0, cy: 0 } } },
+            ],
+          },
+        ],
       },
     ];
     const coercedChildren = this.children.map(coerceChild);

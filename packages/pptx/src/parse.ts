@@ -3,7 +3,12 @@ import { parseDocument } from "@office-open/core";
 import type { Element } from "@office-open/xml";
 import { attr } from "@office-open/xml";
 
+import { ParseContext } from "./parse/context";
+import { parseSlide } from "./parse/slide";
+
 export { parseDocument };
+
+import type { ISlideOptions } from "./file/file";
 
 /**
  * All part paths extracted from the PPTX package.
@@ -53,7 +58,7 @@ export interface PptxDocument {
 
 function resolveRelsPath(target: string): string {
   if (target.startsWith("/")) return target.slice(1);
-  if (target.startsWith("../")) return target.replace("../", "");
+  if (target.startsWith("../")) return target.replace("../", "ppt/");
   return `ppt/${target}`;
 }
 
@@ -211,4 +216,53 @@ export function parsePptx(data: Uint8Array): PptxDocument {
     coreProps,
     appProps,
   };
+}
+
+/**
+ * Parse a single slide's relationship file into a Map<rId, path>.
+ */
+function parseSlideRelMap(doc: ParsedDocument, slidePath: string): Map<string, string> {
+  const rels = new Map<string, string>();
+  const parts = slidePath.split("/");
+  const fileName = parts.pop()!;
+  const relsPath = `${parts.join("/")}/_rels/${fileName}.rels`;
+
+  const relsEl = doc.get(relsPath);
+  if (!relsEl) return rels;
+
+  for (const child of relsEl.elements ?? []) {
+    if (child.name !== "Relationship") continue;
+    const id = attr(child, "Id") ?? "";
+    const target = attr(child, "Target") ?? "";
+    if (!id || !target) continue;
+    rels.set(id, resolveRelsPath(target));
+  }
+
+  return rels;
+}
+
+/**
+ * Read a .pptx file and convert it into ISlideOptions[].
+ *
+ * This is the main public API for parsing PPTX files.
+ * The returned options can be passed directly to `new Presentation({ slides })`
+ * to recreate the presentation.
+ *
+ * @param data - Raw bytes of a .pptx file
+ * @returns Array of slide options
+ */
+export function readPresentation(data: Uint8Array): ISlideOptions[] {
+  const pptx = parsePptx(data);
+  const result: ISlideOptions[] = [];
+
+  for (const slidePath of pptx.slides) {
+    const slideEl = pptx.doc.get(slidePath);
+    if (!slideEl) continue;
+
+    const slideRels = parseSlideRelMap(pptx.doc, slidePath);
+    const ctx = new ParseContext(pptx, slideRels);
+    result.push(parseSlide(slideEl, ctx));
+  }
+
+  return result;
 }

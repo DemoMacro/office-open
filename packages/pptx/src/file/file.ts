@@ -520,6 +520,18 @@ export class File {
     return this.notesSlides;
   }
 
+  /** Map from slide index → notesSlide index (0-based) for slides that have notes. */
+  public get NotesSlideIndexMap(): Map<number, number> {
+    const map = new Map<number, number>();
+    let notesIdx = 0;
+    for (let i = 0; i < this.slideOptions.length; i++) {
+      if (this.slideOptions[i].notes) {
+        map.set(i, notesIdx++);
+      }
+    }
+    return map;
+  }
+
   public get NotesMasterRelationships(): Relationships {
     return (this.notesMasterRels ??= new Relationships());
   }

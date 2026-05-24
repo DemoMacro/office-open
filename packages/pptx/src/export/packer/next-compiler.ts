@@ -347,6 +347,16 @@ export class Compiler {
         );
       }
 
+      // Add notesSlide relationship for this slide (if it has notes)
+      const notesSlideIndex = file.NotesSlideIndexMap.get(i);
+      if (notesSlideIndex !== undefined) {
+        slideWrapper.Relationships.addRelationship(
+          slideWrapper.Relationships.RelationshipCount + 1,
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide",
+          `../notesSlides/notesSlide${notesSlideIndex + 1}.xml`,
+        );
+      }
+
       mapping[`SlideRelationships${i}`] = {
         data: xml(this.formatter.format(slideWrapper.Relationships, context), {
           declaration: false,

@@ -68,7 +68,7 @@ export class GroupShape extends BaseXmlComponent {
     });
     xfrmChildren.push({ "a:chOff": { _attr: { x: 0, y: 0 } } });
     xfrmChildren.push({ "a:chExt": { _attr: { cx: 0, cy: 0 } } });
-    children.push({ "p:grpSpPr": { "a:xfrm": xfrmChildren } });
+    children.push({ "p:grpSpPr": [{ "a:xfrm": xfrmChildren }] });
 
     // Child shapes — direct children of p:grpSp (after nvGrpSpPr and grpSpPr)
     for (const rawChild of opts.children) {
