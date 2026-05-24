@@ -8,7 +8,7 @@
  *
  * @module
  */
-import type { Paragraph } from "@file/paragraph";
+import type { FileChild } from "@file/file-child";
 import { XmlComponent } from "@file/xml-components";
 
 import { FootnoteAttributes } from "./footnote-attributes";
@@ -42,8 +42,8 @@ export interface IFootnoteOptions {
   readonly id: number;
   /** Type of footnote (separator or continuation separator) */
   readonly type?: (typeof FootnoteType)[keyof typeof FootnoteType];
-  /** Paragraph content of the footnote */
-  readonly children: readonly Paragraph[];
+  /** Content of the footnote (paragraphs, tables, etc.) */
+  readonly children: readonly FileChild[];
 }
 
 /**
@@ -93,8 +93,8 @@ export class Footnote extends XmlComponent {
     for (let i = 0; i < options.children.length; i++) {
       const child = options.children[i];
 
-      if (i === 0) {
-        child.addRunToFront(new FootnoteRefRun());
+      if (i === 0 && "addRunToFront" in child) {
+        (child as any).addRunToFront(new FootnoteRefRun());
       }
 
       this.root.push(child);

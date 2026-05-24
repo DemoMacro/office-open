@@ -87,7 +87,7 @@ export interface ISdtBlockOptions {
   /** SDT properties */
   readonly properties: SdtPropertiesOptions;
   /** Content children (paragraphs, tables, etc.) to place inside the SDT */
-  readonly children?: readonly BaseXmlComponent[];
+  readonly children?: readonly FileChild[];
 }
 
 /**

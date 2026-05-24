@@ -1,4 +1,4 @@
-import type { Paragraph } from "@file/paragraph";
+import type { FileChild } from "@file/file-child";
 import { XmlComponent } from "@file/xml-components";
 
 import { EndnoteAttributes } from "./endnote-attributes";
@@ -13,7 +13,7 @@ export const EndnoteType = {
 export interface IEndnoteOptions {
   readonly id: number;
   readonly type?: (typeof EndnoteType)[keyof typeof EndnoteType];
-  readonly children: readonly Paragraph[];
+  readonly children: readonly FileChild[];
 }
 
 export class Endnote extends XmlComponent {
@@ -29,8 +29,8 @@ export class Endnote extends XmlComponent {
     for (let i = 0; i < options.children.length; i++) {
       const child = options.children[i];
 
-      if (i === 0) {
-        child.addRunToFront(new EndnoteRefRun());
+      if (i === 0 && "addRunToFront" in child) {
+        (child as any).addRunToFront(new EndnoteRefRun());
       }
 
       this.root.push(child);

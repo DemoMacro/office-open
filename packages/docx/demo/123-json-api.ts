@@ -161,6 +161,59 @@ const doc = new Document({
         },
       ],
     },
+
+    // ─── Section 5: SDT block with SectionChild children ──────────
+    {
+      children: [
+        { paragraph: { children: ["Section 5 — SDT block with JSON children"] } },
+        {
+          sdt: {
+            properties: { richText: true, alias: "BlockContent", tag: "block-content" },
+            children: [
+              { paragraph: { children: ["This is a block-level content control."] } },
+              { paragraph: { children: ["It can contain multiple paragraphs and tables."] } },
+            ],
+          },
+        },
+        {
+          sdt: {
+            properties: {
+              alias: "Color",
+              tag: "combo-color",
+              comboBox: {
+                items: [
+                  { displayText: "Red", value: "red" },
+                  { displayText: "Blue", value: "blue" },
+                ],
+                lastValue: "Red",
+              },
+            },
+            children: [{ paragraph: { children: ["Red"] } }],
+          },
+        },
+      ],
+    },
+
+    // ─── Section 6: altChunk (embedded HTML/plain text) ────────────
+    {
+      children: [
+        { paragraph: { children: ["Section 6 — altChunk with JSON API"] } },
+        {
+          altChunk: {
+            data: "<html><body><p>This is <b>embedded HTML</b> via JSON API.</p></body></html>",
+            contentType: "text/html",
+            extension: "html",
+          },
+        },
+        {
+          altChunk: {
+            data: "Plain text chunk inserted via JSON API.",
+            contentType: "text/plain",
+            extension: "txt",
+          },
+        },
+      ],
+    },
   ],
 });
 

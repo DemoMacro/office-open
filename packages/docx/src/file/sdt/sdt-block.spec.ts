@@ -1,6 +1,6 @@
 import { Formatter } from "@export/formatter";
 import type { FileChild } from "@file/file-child";
-import { BuilderElement } from "@file/xml-components";
+import { Paragraph, TextRun } from "@file/paragraph";
 import { describe, expect, it } from "vite-plus/test";
 
 import { StructuredDocumentTagBlock } from "./sdt";
@@ -26,18 +26,8 @@ describe("StructuredDocumentTagBlock", () => {
       new StructuredDocumentTagBlock({
         properties: { text: {} },
         children: [
-          new BuilderElement({
-            name: "w:p",
-            children: [
-              new BuilderElement({
-                name: "w:r",
-                children: [
-                  new BuilderElement({
-                    name: "w:t",
-                  }),
-                ],
-              }),
-            ],
+          new Paragraph({
+            children: [new TextRun("hello")],
           }),
         ],
       }),
@@ -50,7 +40,18 @@ describe("StructuredDocumentTagBlock", () => {
             {
               "w:p": [
                 {
-                  "w:r": [{ "w:t": {} }],
+                  "w:r": [
+                    {
+                      "w:t": [
+                        {
+                          _attr: {
+                            "xml:space": "preserve",
+                          },
+                        },
+                        "hello",
+                      ],
+                    },
+                  ],
                 },
               ],
             },

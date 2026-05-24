@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { ConcreteHyperlink } from "@file/paragraph";
+import { ConcreteHyperlink } from "@file/paragraph/links/hyperlink";
 import { TargetModeType } from "@file/relationships/relationship/relationship";
 import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";

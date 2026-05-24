@@ -13,7 +13,7 @@ import {
   createHyperlinkClick,
   createHyperlinkHover,
 } from "@file/drawing/doc-properties/doc-properties-children";
-import { ConcreteHyperlink } from "@file/paragraph";
+import { ConcreteHyperlink } from "@file/paragraph/links/hyperlink";
 import { TargetModeType } from "@file/relationships/relationship/relationship";
 import { XmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";

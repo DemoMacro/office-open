@@ -9,11 +9,22 @@ import { Paragraph } from "@file/paragraph";
 import { BaseXmlComponent } from "@file/xml-components";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 
-import { coerceSectionChild } from "../../coerce";
 import type { StructuredDocumentTagCell } from "../../sdt";
 import type { SectionChild } from "../../section-child";
 import { TableCellProperties } from "./table-cell-properties";
 import type { ITableCellPropertiesOptions } from "./table-cell-properties";
+
+// Lazy import to avoid circular dependency: coerce.ts → Table → TableRow → TableCell → coerce.ts
+type CoerceFn = (child: SectionChild) => import("@file/file-child").FileChild;
+let _coerce: CoerceFn | undefined;
+
+function lazyCoerce(child: SectionChild): import("@file/file-child").FileChild {
+  if (!_coerce) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    _coerce = require("../../coerce").coerceSectionChild;
+  }
+  return _coerce!(child);
+}
 
 /**
  * Options for creating a TableCell element.
@@ -68,7 +79,7 @@ export class TableCell extends BaseXmlComponent {
     if (tPrObj) children.push(tPrObj);
 
     const coerced = this.options.children.map((c) =>
-      c instanceof BaseXmlComponent ? c : coerceSectionChild(c),
+      c instanceof BaseXmlComponent ? c : lazyCoerce(c),
     );
 
     for (const child of coerced) {

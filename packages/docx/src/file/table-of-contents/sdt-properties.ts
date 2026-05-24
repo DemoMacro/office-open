@@ -205,7 +205,13 @@ export interface SdtDataBindingOptions {
 export interface SdtPropertiesOptions {
   /** Display name */
   readonly alias?: string;
-  /** Application-specific tag */
+  /**
+   * Application-specific tag.
+   *
+   * While optional per XSD, Microsoft Word requires this property
+   * for SDTs to function correctly. Omitting it may cause the
+   * document to fail to open in Word.
+   */
   readonly tag?: string;
   /** Unique ID */
   readonly id?: number;

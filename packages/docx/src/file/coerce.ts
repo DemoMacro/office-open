@@ -31,8 +31,17 @@ export function coerceSectionChild(child: SectionChild): FileChild {
     const { alias, ...options } = child.toc;
     return new TableOfContents(alias, options);
   }
-  if ("textbox" in child) return new Textbox(child.textbox);
-  if ("sdt" in child) return new StructuredDocumentTagBlock(child.sdt);
+  if ("textbox" in child) {
+    const { children, ...rest } = child.textbox;
+    return new Textbox({ ...rest, children: children?.map(coerceSectionChild) });
+  }
+  if ("sdt" in child) {
+    const { properties, children } = child.sdt;
+    return new StructuredDocumentTagBlock({
+      properties,
+      children: children?.map(coerceSectionChild),
+    });
+  }
   if ("altChunk" in child) return new AltChunk(child.altChunk);
   if ("subDoc" in child) return new SubDoc(child.subDoc);
   throw new Error("Unknown section child type");
