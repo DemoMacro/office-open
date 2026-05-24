@@ -39,16 +39,20 @@ import { ParagraphProperties } from "./properties";
 import type { IParagraphPropertiesOptions } from "./properties";
 import { TextRun } from "./run";
 import type {
-  ChartRun,
-  ImageRun,
   Run,
   SequentialIdentifier,
   SimpleField,
   SimpleMailMergeField,
-  SmartArtRun,
   SymbolRun,
 } from "./run";
 import type { IRunOptions } from "./run";
+import type {
+  ChartRun as ChartRunType,
+  ImageRun as ImageRunType,
+  SmartArtRun as SmartArtRunType,
+} from "./run";
+import { ChartRun } from "./run/chart-run";
+import type { IChartOptions } from "./run/chart-run";
 import type {
   Comment,
   CommentRangeEnd,
@@ -56,6 +60,10 @@ import type {
   CommentReference,
   Comments,
 } from "./run/comment-run";
+import { ImageRun } from "./run/image-run";
+import type { IImageOptions } from "./run/image-run";
+import { SmartArtRun } from "./run/smartart-run";
+import type { ISmartArtOptions } from "./run/smartart-run";
 
 /**
  * The types of children that can be contained within a Paragraph element.
@@ -64,7 +72,7 @@ import type {
  */
 export type ParagraphChild =
   | TextRun
-  | ImageRun
+  | ImageRunType
   | SymbolRun
   | Bookmark
   | PageBreak
@@ -78,8 +86,8 @@ export type ParagraphChild =
   | Math
   | SimpleField
   | SimpleMailMergeField
-  | ChartRun
-  | SmartArtRun
+  | ChartRunType
+  | SmartArtRunType
   | Comments
   | Comment
   | CommentRangeStart
@@ -100,6 +108,21 @@ export type ParagraphChild =
   | AltChunk
   | SubDoc;
 
+/** JSON-friendly wrapper for ChartRun options in paragraph children. */
+export interface IChartChild {
+  readonly chart: IChartOptions;
+}
+
+/** JSON-friendly wrapper for SmartArtRun options in paragraph children. */
+export interface ISmartArtChild {
+  readonly smartArt: ISmartArtOptions;
+}
+
+/** JSON-friendly wrapper for ImageRun options in paragraph children. */
+export interface IImageChild {
+  readonly image: IImageOptions;
+}
+
 /**
  * Options for creating a Paragraph element.
  *
@@ -111,8 +134,16 @@ export type IParagraphOptions = {
   readonly text?: string;
   /** Array of child elements such as TextRun, ImageRun, Hyperlink, Bookmark, etc.
    *  Accepts class instances, plain IRunOptions objects (coerced to TextRun),
-   *  or strings (coerced to TextRun). */
-  readonly children?: readonly (ParagraphChild | IRunOptions | string)[];
+   *  strings (coerced to TextRun), or JSON-friendly wrappers
+   *  ({ chart }, { smartArt }, { image }). */
+  readonly children?: readonly (
+    | ParagraphChild
+    | IRunOptions
+    | IChartChild
+    | ISmartArtChild
+    | IImageChild
+    | string
+  )[];
 } & IParagraphPropertiesOptions;
 
 /**
@@ -222,18 +253,24 @@ export class Paragraph extends BaseXmlComponent implements FileChild {
           continue;
         }
 
-        // Coerce strings and plain IRunOptions into TextRun instances
-        const child =
-          typeof rawChild === "string"
-            ? new TextRun(rawChild)
-            : rawChild instanceof BaseXmlComponent
-              ? rawChild
-              : new TextRun(rawChild as IRunOptions);
-
-        if (child instanceof BaseXmlComponent) {
-          const obj = child.prepForXml(context);
-          if (obj) children.push(obj);
+        // Coerce strings, JSON wrappers, and plain IRunOptions into Run instances
+        let child: BaseXmlComponent;
+        if (typeof rawChild === "string") {
+          child = new TextRun(rawChild);
+        } else if (rawChild instanceof BaseXmlComponent) {
+          child = rawChild;
+        } else if ("chart" in rawChild) {
+          child = new ChartRun(rawChild.chart);
+        } else if ("smartArt" in rawChild) {
+          child = new SmartArtRun(rawChild.smartArt);
+        } else if ("image" in rawChild) {
+          child = new ImageRun(rawChild.image);
+        } else {
+          child = new TextRun(rawChild as IRunOptions);
         }
+
+        const obj = child.prepForXml(context);
+        if (obj) children.push(obj);
       }
     }
 

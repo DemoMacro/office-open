@@ -1,185 +1,388 @@
+// Round-trip demo — one document with all content types, export → parse → verify → re-export.
+
 import * as fs from "fs";
 
-import {
-  Document,
-  Paragraph,
-  TextRun,
-  Table,
-  TableRow,
-  TableCell,
-  Packer,
-  parseDocx,
-  HeadingLevel,
-} from "@office-open/docx";
-import type { Element } from "@office-open/xml";
-import { findChild } from "@office-open/xml";
+import { Document, Packer, readDocument } from "@office-open/docx";
 
-function getText(el: Element | undefined): string {
-  if (!el) return "";
-  if (el.text != null) return String(el.text);
-  return (
-    el.elements
-      ?.filter((e) => e.type === "text")
-      .map((e) => String(e.text ?? ""))
-      .join("") ?? ""
-  );
-}
+// ─── Helpers ───────────────────────────────────────────────────────────────
 
-function setText(el: Element | undefined, text: string): void {
-  if (!el) return;
-  // If text is in a child text node, update that
-  const textNode = el.elements?.find((e) => e.type === "text");
-  if (textNode) {
-    textNode.text = text;
+let pass = 0;
+let fail = 0;
+
+function assert(label: string, condition: boolean) {
+  if (condition) {
+    pass++;
+    console.log(`  PASS: ${label}`);
   } else {
-    el.text = text;
+    fail++;
+    console.log(`  FAIL: ${label}`);
   }
 }
 
-async function main() {
-  // 1. Create a document
-  const doc = new Document({
-    title: "Round-trip Test",
-    creator: "Parser Demo",
-    sections: [
-      {
-        children: [
-          new Paragraph({
-            heading: HeadingLevel.HEADING_1,
-            children: [new TextRun({ text: "Heading 1", bold: true })],
-          }),
-          new Paragraph({
-            children: [new TextRun({ text: "Hello " }), new TextRun({ text: "World", bold: true })],
-          }),
-          new Paragraph({ text: "Simple paragraph." }),
-          new Table({
-            rows: [
-              new TableRow({
-                children: [
-                  new TableCell({ children: [new Paragraph({ text: "A1" })] }),
-                  new TableCell({ children: [new Paragraph({ text: "B1" })] }),
-                ],
-              }),
-              new TableRow({
-                children: [
-                  new TableCell({ children: [new Paragraph({ text: "A2" })] }),
-                  new TableCell({ children: [new Paragraph({ text: "B2" })] }),
-                ],
-              }),
-            ],
-          }),
-        ],
-      },
-    ],
-  });
+// ─── Main ──────────────────────────────────────────────────────────────────
 
-  // 2. Export to buffer
+async function main() {
+  // 1. Build a single document with every content type
+  const sections = [
+    // Section 1: paragraphs, tables, nested tables, SDT, headings, TOC, headers/footers
+    {
+      headers: {
+        default: [{ paragraph: { children: [{ text: "Header", bold: true }] } }],
+      },
+      footers: {
+        default: [{ paragraph: { children: ["Footer text"] } }],
+      },
+      children: [
+        // String paragraph
+        { paragraph: "I am a string paragraph" },
+
+        // Paragraph with mixed run children
+        {
+          paragraph: {
+            children: [
+              "String child",
+              { text: " + bold", bold: true },
+              { text: " + italic", italics: true },
+            ],
+          },
+        },
+
+        // Centered paragraph
+        {
+          paragraph: {
+            alignment: "center" as const,
+            children: [{ text: "Centered text", bold: true, size: 32 }],
+          },
+        },
+
+        // Table of Contents
+        { toc: { hyperlink: true, headingStyleRange: "1-3" } },
+
+        // Headings
+        { paragraph: { heading: "Heading1", children: ["First Heading"] } },
+        { paragraph: { children: ["Content under first heading."] } },
+        { paragraph: { heading: "Heading2", children: ["Second Heading"] } },
+        { paragraph: { children: ["Content under second heading."] } },
+
+        // Table
+        {
+          table: {
+            rows: [
+              {
+                children: [
+                  { children: [{ paragraph: "A1" }] },
+                  { children: [{ paragraph: "B1" }] },
+                  { children: [{ paragraph: "C1" }] },
+                ],
+              },
+              {
+                children: [
+                  {
+                    children: [
+                      { paragraph: { children: [{ text: "Underlined", underline: {} }] } },
+                    ],
+                  },
+                  {
+                    children: [
+                      { paragraph: "Cell with" },
+                      {
+                        paragraph: { children: ["multiple", { text: " paragraphs", bold: true }] },
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+
+        // Nested table
+        {
+          table: {
+            rows: [
+              {
+                children: [
+                  {
+                    children: [
+                      { paragraph: "Outer cell" },
+                      {
+                        table: {
+                          rows: [
+                            {
+                              children: [
+                                { children: [{ paragraph: "Inner A" }] },
+                                { children: [{ paragraph: "Inner B" }] },
+                              ],
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                  { children: [{ paragraph: "Sibling" }] },
+                ],
+              },
+            ],
+          },
+        },
+
+        // SDT block
+        {
+          sdt: {
+            properties: { richText: true, alias: "BlockContent", tag: "block-content" },
+            children: [
+              { paragraph: { children: ["Block-level content control."] } },
+              { paragraph: { children: ["Multiple paragraphs inside SDT."] } },
+            ],
+          },
+        },
+
+        // ComboBox SDT
+        {
+          sdt: {
+            properties: {
+              alias: "Color",
+              tag: "combo-color",
+              comboBox: {
+                items: [
+                  { displayText: "Red", value: "red" },
+                  { displayText: "Blue", value: "blue" },
+                ],
+                lastValue: "Red",
+              },
+            },
+            children: [{ paragraph: { children: ["Red"] } }],
+          },
+        },
+
+        // Textbox
+        {
+          textbox: {
+            style: { width: "4in", height: "1in" },
+            children: [
+              { paragraph: { children: [{ text: "Textbox paragraph", bold: true }] } },
+              { paragraph: { children: ["Second line in textbox"] } },
+            ],
+          },
+        },
+      ],
+    },
+
+    // Section 2: chart
+    {
+      children: [
+        { paragraph: { children: [{ text: "Chart (JSON API)", bold: true, size: 28 }] } },
+        {
+          paragraph: {
+            children: [
+              {
+                chart: {
+                  type: "column" as const,
+                  data: {
+                    categories: ["Q1", "Q2", "Q3", "Q4"],
+                    series: [
+                      { name: "2024", values: [120, 150, 180, 200] },
+                      { name: "2025", values: [140, 170, 210, 250] },
+                    ],
+                  },
+                  title: "Quarterly Revenue",
+                  transformation: { width: 500, height: 300 },
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+
+    // Section 3: smartArt
+    {
+      children: [
+        { paragraph: { children: [{ text: "SmartArt (JSON API)", bold: true, size: 28 }] } },
+        {
+          paragraph: {
+            children: [
+              {
+                smartArt: {
+                  data: {
+                    nodes: [
+                      { text: "Plan", children: [{ text: "Define scope" }] },
+                      { text: "Build" },
+                      { text: "Deploy" },
+                    ],
+                  },
+                  transformation: { width: 450, height: 250 },
+                  layout: "process1",
+                  style: "simple1",
+                  color: "accent1_2",
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+
+    // Section 4: altChunk
+    {
+      children: [
+        { paragraph: { children: [{ text: "AltChunk (JSON API)", bold: true, size: 28 }] } },
+        {
+          altChunk: {
+            data: "<html><body><p>This is <b>embedded HTML</b> via JSON API.</p></body></html>",
+            contentType: "text/html",
+            extension: "html",
+          },
+        },
+      ],
+    },
+
+    // Section 5: rich formatting for value comparison
+    {
+      children: [
+        {
+          paragraph: {
+            children: [{ text: "Styled", bold: true, italics: true, size: 28, color: "FF0000" }],
+          },
+        },
+      ],
+    },
+  ];
+
+  // 2. Create document and export
+  const doc = new Document({ sections: sections as import("@office-open/docx").ISectionOptions[] });
   const buffer = await Packer.toBuffer(doc);
   console.log(`Generated DOCX: ${buffer.length} bytes`);
 
-  // 3. Parse it back — returns ParsedDocument + w:body Element tree
-  const { doc: parsed, body, styles, numbering, partRefs } = parseDocx(new Uint8Array(buffer));
+  // 3. Parse it back
+  const parsed = readDocument(new Uint8Array(buffer));
+  console.log(`Parsed ${parsed.length} sections`);
+  console.log("Parsed:", JSON.stringify(parsed, null, 2));
 
-  // 4. Verify Element tree structure
-  let pass = 0;
-  let fail = 0;
-  const assert = (label: string, condition: boolean) => {
-    if (condition) {
-      pass++;
-      console.log(`  PASS: ${label}`);
-    } else {
-      fail++;
-      console.log(`  FAIL: ${label}`);
+  // 4. Verify
+  console.log("\n--- Verification ---");
+
+  assert("section count = 5", parsed.length === 5);
+
+  // Section 1: paragraphs + tables + SDT + textbox + headings + TOC
+  const s1 = parsed[0].children;
+  assert("s1 has content (>= 12)", s1.length >= 12);
+  assert("s1[0] is paragraph", "paragraph" in s1[0]);
+  assert(
+    "s1 has table",
+    s1.some((c) => "table" in c),
+  );
+  assert(
+    "s1 has sdt",
+    s1.some((c) => "sdt" in c),
+  );
+  assert(
+    "s1 has textbox",
+    s1.some((c) => "textbox" in c),
+  );
+  assert(
+    "s1 has toc",
+    s1.some((c) => "toc" in c),
+  );
+
+  // Section 2: chart
+  const s2 = parsed[1].children;
+  assert("s2 has content (>= 2)", s2.length >= 2);
+  {
+    const chartPara = s2.find((c): boolean => {
+      if (!("paragraph" in c)) return false;
+      const p = (c as Record<string, unknown>).paragraph as Record<string, unknown>;
+      const children = p.children as Record<string, unknown>[];
+      return children?.some((ch) => "chart" in ch);
+    });
+    assert("s2 has chart child", !!chartPara);
+    if (chartPara) {
+      const p = (chartPara as Record<string, unknown>).paragraph as Record<string, unknown>;
+      const children = p.children as Record<string, unknown>[];
+      const chartChild = children.find((ch) => "chart" in ch);
+      if (chartChild) {
+        const chart = chartChild.chart as Record<string, unknown>;
+        assert("chart type = column", chart.type === "column");
+        assert("chart title preserved", chart.title === "Quarterly Revenue");
+        const data = chart.data as Record<string, unknown>;
+        const cats = data.categories as string[];
+        assert("chart categories preserved", cats.length === 4 && cats[0] === "Q1");
+        const series = data.series as Record<string, unknown>[];
+        assert("chart series count = 2", series.length === 2);
+      }
     }
-  };
+  }
 
-  console.log("\n--- Element Tree Verification ---");
+  // Section 3: smartArt
+  const s3 = parsed[2].children;
+  assert("s3 has content (>= 2)", s3.length >= 2);
+  {
+    const saPara = s3.find((c): boolean => {
+      if (!("paragraph" in c)) return false;
+      const p = (c as Record<string, unknown>).paragraph as Record<string, unknown>;
+      const children = p.children as Record<string, unknown>[];
+      return children?.some((ch) => "smartArt" in ch);
+    });
+    assert("s3 has smartArt child", !!saPara);
+    if (saPara) {
+      const p = (saPara as Record<string, unknown>).paragraph as Record<string, unknown>;
+      const children = p.children as Record<string, unknown>[];
+      const saChild = children.find((ch) => "smartArt" in ch);
+      if (saChild) {
+        const sa = saChild.smartArt as Record<string, unknown>;
+        assert("smartArt layout preserved", sa.layout === "process1");
+        assert("smartArt style preserved", sa.style === "simple1");
+        assert("smartArt color preserved", sa.color === "accent1_2");
+        const data = sa.data as Record<string, unknown>;
+        const nodes = data.nodes as Record<string, unknown>[];
+        assert("smartArt nodes count = 3", nodes.length === 3);
+        assert("smartArt node text preserved", nodes[0].text === "Plan");
+        const planChildren = nodes[0].children as Record<string, unknown>[];
+        assert(
+          "smartArt nested children preserved",
+          planChildren?.length === 1 && planChildren[0].text === "Define scope",
+        );
+      }
+    }
+  }
 
-  // w:body should have children
-  assert("body has children", (body.elements?.length ?? 0) > 0);
+  // Section 4: altChunk
+  const s4 = parsed[3].children;
+  assert("s4 has content (>= 2)", s4.length >= 2);
+  assert(
+    "s4 has altChunk",
+    s4.some((c) => "altChunk" in c),
+  );
 
-  // Count w:p elements
-  const paragraphs = body.elements?.filter((e) => e.name === "w:p") ?? [];
-  assert("body has 3 paragraphs", paragraphs.length === 3);
+  // Section 5 (last section): value comparison
+  const s5 = parsed[4].children;
+  assert("s5 has 1 child", s5.length === 1);
+  if ("paragraph" in s5[0] && typeof s5[0].paragraph === "object" && s5[0].paragraph !== null) {
+    const opts = s5[0].paragraph as Record<string, unknown>;
+    const children = opts.children as Record<string, unknown>[];
+    if (children?.[0]) {
+      const run = children[0];
+      assert("bold preserved", run.bold === true);
+      assert("italics preserved", run.italics === true);
+      assert("size preserved", run.size === 28);
+      assert("color preserved", run.color === "FF0000");
+    }
+  }
 
-  // Count w:tbl elements
-  const tables = body.elements?.filter((e) => e.name === "w:tbl") ?? [];
-  assert("body has 1 table", tables.length === 1);
+  // 5. Re-export and re-parse to verify stability
+  const doc2 = new Document({ sections: parsed });
+  const buffer2 = await Packer.toBuffer(doc2);
+  const parsed2 = readDocument(new Uint8Array(buffer2));
+  assert("stable re-parse section count", parsed2.length === parsed.length);
+  console.log(`Re-exported DOCX: ${buffer2.length} bytes`);
 
-  // Verify first paragraph has w:pStyle = Heading1
-  const p1 = paragraphs[0];
-  const p1Pr = findChild(p1, "w:pPr");
-  const p1Style = findChild(p1Pr, "w:pStyle");
-  assert("first paragraph has Heading1 style", p1Style?.attributes?.["w:val"] === "Heading1");
+  // Save
+  fs.writeFileSync("My Document.docx", buffer);
+  fs.writeFileSync("My Document (round-trip).docx", buffer2);
 
-  // Verify heading text content
-  const headingRun = findChild(p1, "w:r");
-  const headingT = findChild(headingRun, "w:t");
-  assert("heading text is 'Heading 1'", getText(headingT) === "Heading 1");
-
-  // Verify table has 2 rows
-  const tbl = tables[0];
-  const tblRows = tbl.elements?.filter((e) => e.name === "w:tr") ?? [];
-  assert("table has 2 rows", tblRows.length === 2);
-
-  // 5. Modify Element tree — change heading text
-  setText(headingT, "Modified Heading");
-  assert("modified heading text", getText(headingT) === "Modified Heading");
-
-  // Write modified document back (body is a child of document Element)
-  const documentEl = parsed.get("word/document.xml");
-  if (documentEl) parsed.set("word/document.xml", documentEl);
-
-  // 6. Save modified document
-  const modifiedBuffer = parsed.save();
-  assert("modified buffer non-empty", modifiedBuffer.length > 0);
-  console.log(`Modified DOCX: ${modifiedBuffer.length} bytes`);
-
-  // 7. Re-parse modified document and verify
-  const { body: modifiedBody } = parseDocx(new Uint8Array(modifiedBuffer));
-  const modifiedP1 = modifiedBody.elements?.filter((e) => e.name === "w:p")[0];
-  const modifiedRun = findChild(modifiedP1, "w:r");
-  const modifiedT = findChild(modifiedRun, "w:t");
-  assert("re-parsed modified heading", getText(modifiedT) === "Modified Heading");
-
-  // 8. Test ParsedDocument utility methods
-  console.log("\n--- ParsedDocument API ---");
-  assert("has word/document.xml", parsed.has("word/document.xml"));
-  assert("has word/styles.xml", parsed.has("word/styles.xml"));
-  assert("does not have nonexistent", !parsed.has("nonexistent.xml"));
-
-  const allKeys = parsed.keys("word/");
-  assert("keys with prefix returns results", allKeys.length > 0);
-  console.log(`  word/ keys: ${allKeys.length} files`);
-
-  const rawBinary = parsed.getRaw("word/styles.xml");
-  assert("getRaw returns Uint8Array", rawBinary instanceof Uint8Array);
-
-  // 9. Test enhanced parsing — styles, numbering, partRefs
-  console.log("\n--- Enhanced Parsing ---");
-  assert("styles parsed", !!styles);
-  assert("numbering parsed", !!numbering);
-
-  assert("styles root is w:styles", styles!.name === "w:styles");
-
-  console.log(`  headers: ${partRefs.headers.size}, footers: ${partRefs.footers.size}`);
-  console.log(`  footnotes: ${partRefs.footnotes ?? "none"}`);
-  console.log(`  endnotes: ${partRefs.endnotes ?? "none"}`);
-  console.log(`  comments: ${partRefs.comments ?? "none"}`);
-
-  // 9. Unmodified round-trip — parse and save without changes
-  const { doc: unmodified } = parseDocx(new Uint8Array(buffer));
-  const unmodifiedBuffer = unmodified.save();
-  assert("unmodified round-trip produces buffer", unmodifiedBuffer.length > 0);
-
-  // Summary
   console.log(`\n=== Results: ${pass} passed, ${fail} failed ===`);
   if (fail > 0) process.exit(1);
-
-  // Save files
-  fs.writeFileSync("My Document.docx", buffer);
-  fs.writeFileSync("My Document (round-trip).docx", modifiedBuffer);
-  console.log("\nSaved original and round-trip DOCX files");
+  console.log("\nSaved My Document.docx and My Document (round-trip).docx");
 }
 
 main().catch(console.error);

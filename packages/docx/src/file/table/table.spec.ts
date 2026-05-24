@@ -1,15 +1,19 @@
 import { Formatter } from "@export/formatter";
+import { toElement } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
+import { ParseContext } from "../../parse/context";
 import { AlignmentType, Paragraph } from "../paragraph";
 import { Table } from "./table";
 import { TableCell } from "./table-cell";
+import { parseTable } from "./table-parse";
 import {
   RelativeHorizontalPosition,
   RelativeVerticalPosition,
   TableAnchorType,
 } from "./table-properties";
 import { TableLayoutType } from "./table-properties/table-layout";
+import type { ITableRowOptions } from "./table-row";
 import { TableRow } from "./table-row";
 import { WidthType } from "./table-width";
 
@@ -611,5 +615,96 @@ describe("Table", () => {
         ],
       });
     });
+  });
+});
+
+// ── Parse round-trip tests ──────────────────────────────────────────────────
+
+describe("parse round-trip", () => {
+  const ctx = new ParseContext(
+    {
+      body: {} as never,
+      partRefs: {
+        headers: new Map(),
+        footers: new Map(),
+        charts: new Map(),
+        diagramData: new Map(),
+        media: new Map(),
+        afChunks: new Map(),
+        subDocs: new Map(),
+      },
+    } as never,
+    new Map(),
+    new Map(),
+  );
+
+  function parseFormattedTable(table: Table) {
+    const tree = new Formatter().format(table);
+    const root = toElement(tree);
+    return parseTable(root, ctx);
+  }
+
+  it("should parse rows and cells", () => {
+    const table = new Table({
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({ children: [new Paragraph({ text: "A1" })] }),
+            new TableCell({ children: [new Paragraph({ text: "B1" })] }),
+          ],
+        }),
+        new TableRow({
+          children: [
+            new TableCell({ children: [new Paragraph({ text: "A2" })] }),
+            new TableCell({ children: [new Paragraph({ text: "B2" })] }),
+          ],
+        }),
+      ],
+    });
+    const parsed = parseFormattedTable(table);
+    expect(parsed.rows).toHaveLength(2);
+    expect((parsed.rows[0] as ITableRowOptions).children).toHaveLength(2);
+    expect((parsed.rows[1] as ITableRowOptions).children).toHaveLength(2);
+  });
+
+  it("should parse column widths", () => {
+    const table = new Table({
+      columnWidths: [2000, 3000],
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({ children: [new Paragraph("A")] }),
+            new TableCell({ children: [new Paragraph("B")] }),
+          ],
+        }),
+      ],
+    });
+    const parsed = parseFormattedTable(table);
+    expect(parsed.columnWidths).toBeDefined();
+    expect(parsed.columnWidths).toHaveLength(2);
+    expect(parsed.columnWidths![0]).toBe(2000);
+    expect(parsed.columnWidths![1]).toBe(3000);
+  });
+
+  it("should parse column span", () => {
+    const table = new Table({
+      rows: [
+        new TableRow({
+          children: [new TableCell({ children: [new Paragraph("Spanned")], columnSpan: 2 })],
+        }),
+        new TableRow({
+          children: [
+            new TableCell({ children: [new Paragraph("A")] }),
+            new TableCell({ children: [new Paragraph("B")] }),
+          ],
+        }),
+      ],
+    });
+    const parsed = parseFormattedTable(table);
+    expect((parsed.rows[0] as ITableRowOptions).children).toHaveLength(1);
+    expect(
+      ((parsed.rows[0] as ITableRowOptions).children[0] as unknown as Record<string, unknown>)
+        .columnSpan,
+    ).toBe(2);
   });
 });

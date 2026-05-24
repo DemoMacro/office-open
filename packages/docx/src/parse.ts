@@ -3,6 +3,10 @@ import { parseDocument } from "@office-open/core";
 import { attr } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
+import { parseBody } from "./parse/body";
+import { ParseContext } from "./parse/context";
+import { buildStyleCache, buildNumberingCache } from "./parse/styles";
+
 export { parseDocument };
 
 /**
@@ -140,6 +144,22 @@ function parseRootRels(doc: ParsedDocument): {
   }
 
   return { coreProps, appProps, customProps };
+}
+
+/**
+ * Read a .docx file and convert it into ISectionOptions[].
+ *
+ * This is the main public API for parsing DOCX files.
+ * The returned options can be passed directly to `new Document({ sections })`
+ * to recreate the document.
+ *
+ * @param data - Raw bytes of a .docx file
+ * @returns Array of section options
+ */
+export function readDocument(data: Uint8Array): import("@file/file").ISectionOptions[] {
+  const docx = parseDocx(data);
+  const ctx = new ParseContext(docx, buildStyleCache(docx), buildNumberingCache(docx));
+  return parseBody(docx.body, ctx);
 }
 
 export function parseDocx(data: Uint8Array): DocxDocument {

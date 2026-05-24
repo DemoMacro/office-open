@@ -1,6 +1,7 @@
 import { Formatter } from "@export/formatter";
 import { BorderStyle } from "@file/border";
 import { ShadingType } from "@file/shading";
+import { toElement } from "@office-open/xml";
 import { ThemeColor } from "@util/values";
 import { describe, expect, it } from "vite-plus/test";
 
@@ -8,6 +9,7 @@ import { CombineBracketsType } from "./east-asian-layout";
 import { EmphasisMarkType } from "./emphasis-mark";
 import { HighlightColor, TextEffect } from "./properties";
 import { PageNumber, Run } from "./run";
+import { parseRunProperties } from "./run-parse";
 import { UnderlineType } from "./underline";
 
 describe("Run", () => {
@@ -874,5 +876,63 @@ describe("Run", () => {
         });
       });
     });
+  });
+});
+
+// ── Parse round-trip tests ──────────────────────────────────────────────────
+
+describe("parse round-trip", () => {
+  function parseFormattedRun(run: Run) {
+    const tree = new Formatter().format(run);
+    const root = toElement(tree);
+    // root is the w:r element; find w:rPr child
+    const rPr = root.elements?.find((e) => e.name === "w:rPr");
+    return rPr ? parseRunProperties(rPr) : {};
+  }
+
+  it("should parse bold", () => {
+    const run = new Run({ text: "Bold", bold: true });
+    const parsed = parseFormattedRun(run) as Record<string, unknown>;
+    expect(parsed.bold).toBe(true);
+  });
+
+  it("should parse italics", () => {
+    const run = new Run({ text: "Italic", italics: true });
+    const parsed = parseFormattedRun(run) as Record<string, unknown>;
+    expect(parsed.italics).toBe(true);
+  });
+
+  it("should parse underline", () => {
+    const run = new Run({ text: "Underline", underline: { type: UnderlineType.SINGLE } });
+    const parsed = parseFormattedRun(run) as Record<string, unknown>;
+    expect(parsed.underline).toBeDefined();
+    const ul = parsed.underline as Record<string, unknown>;
+    expect(ul.type).toBe("single");
+  });
+
+  it("should parse font", () => {
+    const run = new Run({ text: "Font", font: "Arial" });
+    const parsed = parseFormattedRun(run) as Record<string, unknown>;
+    // When all four font families are the same, parser returns a font object
+    const font = parsed.font as Record<string, string>;
+    expect(font.ascii).toBe("Arial");
+  });
+
+  it("should parse size", () => {
+    const run = new Run({ text: "Size", size: 28 });
+    const parsed = parseFormattedRun(run) as Record<string, unknown>;
+    expect(parsed.size).toBe(28);
+  });
+
+  it("should parse color", () => {
+    const run = new Run({ text: "Color", color: "FF0000" });
+    const parsed = parseFormattedRun(run) as Record<string, unknown>;
+    expect(parsed.color).toBe("FF0000");
+  });
+
+  it("should parse strike", () => {
+    const run = new Run({ text: "Strike", strike: true });
+    const parsed = parseFormattedRun(run) as Record<string, unknown>;
+    expect(parsed.strike).toBe(true);
   });
 });

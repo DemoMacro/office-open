@@ -303,6 +303,17 @@ describe("Table of Contents", () => {
                     },
                   },
                 },
+                {
+                  "w:docPartObj": [
+                    {
+                      "w:docPartGallery": {
+                        _attr: {
+                          "w:val": "Table of Contents",
+                        },
+                      },
+                    },
+                  ],
+                },
               ],
             },
             {
@@ -360,6 +371,17 @@ describe("Table of Contents", () => {
                       "w:val": "Table of Contents",
                     },
                   },
+                },
+                {
+                  "w:docPartObj": [
+                    {
+                      "w:docPartGallery": {
+                        _attr: {
+                          "w:val": "Table of Contents",
+                        },
+                      },
+                    },
+                  ],
                 },
               ],
             },
@@ -779,6 +801,17 @@ describe("Table of Contents", () => {
                     },
                   },
                 },
+                {
+                  "w:docPartObj": [
+                    {
+                      "w:docPartGallery": {
+                        _attr: {
+                          "w:val": "Table of Contents",
+                        },
+                      },
+                    },
+                  ],
+                },
               ],
             },
             {
@@ -802,6 +835,17 @@ const DEFAULT_TOC = {
               "w:val": "Table of Contents",
             },
           },
+        },
+        {
+          "w:docPartObj": [
+            {
+              "w:docPartGallery": {
+                _attr: {
+                  "w:val": "Table of Contents",
+                },
+              },
+            },
+          ],
         },
       ],
     },
@@ -871,6 +915,17 @@ const COMPLETE_TOC = {
             },
           },
         },
+        {
+          "w:docPartObj": [
+            {
+              "w:docPartGallery": {
+                _attr: {
+                  "w:val": "Table of Contents",
+                },
+              },
+            },
+          ],
+        },
       ],
     },
     {
@@ -938,6 +993,17 @@ const TOC_WITH_CHILDREN = {
               "w:val": "My TOC",
             },
           },
+        },
+        {
+          "w:docPartObj": [
+            {
+              "w:docPartGallery": {
+                _attr: {
+                  "w:val": "Table of Contents",
+                },
+              },
+            },
+          ],
         },
       ],
     },

@@ -131,9 +131,11 @@ dist
 
 # Documents
 My Document.docx
+My Document (round-trip).docx
 
 # Presentation
 My Presentation.pptx
+My Presentation (round-trip).pptx
 
 # Temporary folder
 tmp

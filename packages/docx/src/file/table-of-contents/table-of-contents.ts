@@ -78,7 +78,12 @@ export class TableOfContents extends XmlComponent implements FileChild {
     } = {},
   ) {
     super("w:sdt");
-    this.root.push(new StructuredDocumentTagProperties(alias));
+    this.root.push(
+      new StructuredDocumentTagProperties({
+        alias,
+        docPartObj: { gallery: "Table of Contents" },
+      }),
+    );
 
     const content = new StructuredDocumentTagContent();
 

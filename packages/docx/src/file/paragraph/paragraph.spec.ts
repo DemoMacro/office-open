@@ -2,9 +2,11 @@ import { Formatter } from "@export/formatter";
 import { BorderStyle } from "@file/border";
 import { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared";
 import { EMPTY_OBJECT } from "@file/xml-components";
+import { toElement } from "@office-open/xml";
 import * as convenienceFunctions from "@util/convenience-functions";
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
+import { ParseContext } from "../../parse/context";
 import { DocumentWrapper } from "../document-wrapper";
 import type { IViewWrapper } from "../document-wrapper";
 import type { File } from "../file";
@@ -20,6 +22,7 @@ import {
 import { FrameAnchorType } from "./frame";
 import { Bookmark, ExternalHyperlink } from "./links";
 import { Paragraph } from "./paragraph";
+import { parseParagraph } from "./paragraph-parse";
 import { TextRun } from "./run";
 
 describe("Paragraph", () => {
@@ -1095,5 +1098,96 @@ describe("Paragraph", () => {
         ],
       });
     });
+  });
+});
+
+// ── Parse round-trip tests ──────────────────────────────────────────────────
+
+describe("parse round-trip", () => {
+  // Minimal mock ParseContext (most parse functions only use _ctx)
+  const ctx = new ParseContext(
+    {
+      body: {} as never,
+      partRefs: {
+        headers: new Map(),
+        footers: new Map(),
+        charts: new Map(),
+        diagramData: new Map(),
+        media: new Map(),
+        afChunks: new Map(),
+        subDocs: new Map(),
+      },
+    } as never,
+    new Map(),
+    new Map(),
+  );
+
+  function parseFormatted(component: Paragraph) {
+    const tree = new Formatter().format(component);
+    // Formatter returns { "w:p": [...] }, toElement gives us the root element
+    const root = toElement(tree);
+    // The root element IS the w:p element
+    return parseParagraph(root, ctx);
+  }
+
+  it("should parse heading", () => {
+    const paragraph = new Paragraph({
+      heading: HeadingLevel.HEADING_1,
+      children: [new TextRun({ text: "Title" })],
+    });
+    const parsed = parseFormatted(paragraph);
+    expect(typeof parsed === "object").toBe(true);
+    if (typeof parsed !== "object") return;
+    expect(parsed.heading).toBe("Heading1");
+  });
+
+  it("should parse alignment", () => {
+    const paragraph = new Paragraph({
+      alignment: AlignmentType.CENTER,
+      children: [new TextRun({ text: "Centered" })],
+    });
+    const parsed = parseFormatted(paragraph);
+    expect(typeof parsed === "object").toBe(true);
+    if (typeof parsed !== "object") return;
+    expect(parsed.alignment).toBe("center");
+  });
+
+  it("should parse spacing", () => {
+    const paragraph = new Paragraph({
+      spacing: { before: 200, after: 100, line: 360 },
+      children: [new TextRun({ text: "Spaced" })],
+    });
+    const parsed = parseFormatted(paragraph);
+    expect(typeof parsed === "object").toBe(true);
+    if (typeof parsed !== "object") return;
+    expect(parsed.spacing).toBeDefined();
+    const spacing = parsed.spacing as Record<string, unknown>;
+    expect(spacing.before).toBe(200);
+    expect(spacing.after).toBe(100);
+    expect(spacing.line).toBe(360);
+  });
+
+  it("should parse indent", () => {
+    const paragraph = new Paragraph({
+      indent: { left: 720 },
+      children: [new TextRun({ text: "Indented" })],
+    });
+    const parsed = parseFormatted(paragraph);
+    expect(typeof parsed === "object").toBe(true);
+    if (typeof parsed !== "object") return;
+    expect(parsed.indent).toBeDefined();
+    const indent = parsed.indent as Record<string, unknown>;
+    expect(indent.left).toBe(720);
+  });
+
+  it("should parse simple text as string", () => {
+    const paragraph = new Paragraph({ text: "Hello World" });
+    const parsed = parseFormatted(paragraph);
+    // Simple text-only paragraphs are optimized to string
+    if (typeof parsed === "string") {
+      expect(parsed).toBe("Hello World");
+    } else {
+      expect(parsed.text).toBe("Hello World");
+    }
   });
 });

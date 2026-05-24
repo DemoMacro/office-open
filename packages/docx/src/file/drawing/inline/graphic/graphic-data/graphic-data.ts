@@ -139,7 +139,7 @@ export class GraphicData extends XmlComponent {
             key: "xmlns:r",
             value: "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
           },
-          rId: { key: "r:id", value: `rId{chart:${md.chartKey}}` },
+          rId: { key: "r:id", value: `{chart:${md.chartKey}}` },
         }),
       );
       this.root.push(chartRef);
@@ -165,10 +165,10 @@ export class GraphicData extends XmlComponent {
             key: "xmlns:r",
             value: "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
           },
-          rCs: { key: "r:cs", value: `rId{smartart-cs:${md.smartArtKey}}` },
-          rDm: { key: "r:dm", value: `rId{smartart:${md.smartArtKey}}` },
-          rLo: { key: "r:lo", value: `rId{smartart-lo:${md.smartArtKey}}` },
-          rQs: { key: "r:qs", value: `rId{smartart-qs:${md.smartArtKey}}` },
+          rCs: { key: "r:cs", value: `{smartart-cs:${md.smartArtKey}}` },
+          rDm: { key: "r:dm", value: `{smartart:${md.smartArtKey}}` },
+          rLo: { key: "r:lo", value: `{smartart-lo:${md.smartArtKey}}` },
+          rQs: { key: "r:qs", value: `{smartart-qs:${md.smartArtKey}}` },
         }),
       );
       this.root.push(relIds);
