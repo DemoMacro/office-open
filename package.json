@@ -33,7 +33,7 @@
     "check": "vp check --fix",
     "test": "pnpm --filter \"./packages/**\" -r test",
     "bump": "pnpm --filter \"./packages/**\" -r exec basis version",
-    "prerelease": "pnpm --filter \"./packages/**\" -r exec basis version --prerelease",
+    "version": "pnpm --filter \"./packages/**\" -r exec basis version",
     "publish": "pnpm --filter \"./packages/**\" -r exec basis publish",
     "postinstall": "pnpm dev && vp config && basis git setup",
     "docs:dev": "pnpm --filter @office-open/docs dev",

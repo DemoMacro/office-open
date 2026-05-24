@@ -1,6 +1,6 @@
 # @office-open/pptx
 
-> Generate .pptx files with JS/TS with a declarative API.
+> Generate and parse .pptx files with JS/TS with a declarative API.
 
 ## Features
 
@@ -20,6 +20,7 @@
 - **Notes** — Speaker notes for each slide
 - **Group Shapes** — Group multiple shapes together
 - **DrawingML** — Shapes with fills, outlines, shadows, glow, reflection, and 3D effects
+- **Parsing** — Read existing .pptx files with `readPresentation` for round-trip workflows
 
 ## Installation
 
@@ -56,6 +57,22 @@ const pres = new Presentation({
 
 const buffer = await Packer.toBuffer(pres);
 writeFileSync("presentation.pptx", buffer);
+```
+
+## Parsing
+
+Read existing `.pptx` files and re-create them as `ISlideOptions[]`:
+
+```typescript
+import { readPresentation, Presentation, Packer } from "@office-open/pptx";
+import { readFileSync, writeFileSync } from "node:fs";
+
+const slides = readPresentation(new Uint8Array(readFileSync("input.pptx")));
+
+// Modify parsed data, then re-generate
+const pres = new Presentation({ slides });
+const buffer = await Packer.toBuffer(pres);
+writeFileSync("output.pptx", buffer);
 ```
 
 ## Performance
