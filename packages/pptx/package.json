@@ -1,6 +1,6 @@
 {
   "name": "@office-open/pptx",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Generate .pptx files with JS/TS",
   "keywords": [
     "office-open",

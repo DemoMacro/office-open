@@ -2,7 +2,7 @@
 
 import * as fs from "fs";
 
-import { Document, Packer, readDocument } from "@office-open/docx";
+import { Document, Packer, parseDocument } from "@office-open/docx";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
@@ -255,7 +255,7 @@ async function main() {
   console.log(`Generated DOCX: ${buffer.length} bytes`);
 
   // 3. Parse it back
-  const parsed = readDocument(new Uint8Array(buffer));
+  const parsed = parseDocument(new Uint8Array(buffer));
   console.log(`Parsed ${parsed.length} sections`);
   console.log("Parsed:", JSON.stringify(parsed, null, 2));
 
@@ -372,7 +372,7 @@ async function main() {
   // 5. Re-export and re-parse to verify stability
   const doc2 = new Document({ sections: parsed });
   const buffer2 = await Packer.toBuffer(doc2);
-  const parsed2 = readDocument(new Uint8Array(buffer2));
+  const parsed2 = parseDocument(new Uint8Array(buffer2));
   assert("stable re-parse section count", parsed2.length === parsed.length);
   console.log(`Re-exported DOCX: ${buffer2.length} bytes`);
 

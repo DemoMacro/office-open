@@ -104,8 +104,8 @@ export class ParsedDocument {
   }
 }
 
-/** Parse an OOXML file (.docx, .pptx) into a ParsedDocument. */
-export function parseDocument(data: Uint8Array): ParsedDocument {
+/** Parse an OOXML archive (.docx, .pptx, .xlsx) into a ParsedDocument. */
+export function parseArchive(data: Uint8Array): ParsedDocument {
   const zip = unzipToMap(data);
   return new ParsedDocument(zip);
 }

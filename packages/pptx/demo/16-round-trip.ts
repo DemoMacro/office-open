@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Presentation, Packer, readPresentation, parsePptx } from "@office-open/pptx";
+import { Presentation, Packer, parsePresentation, parsePptx } from "@office-open/pptx";
 import type { ISlideOptions } from "@office-open/pptx";
 import { findChild, attrNum } from "@office-open/xml";
 
@@ -469,11 +469,11 @@ assert("has ppt/presentation.xml", parsed.has("ppt/presentation.xml"));
 assert("has ppt/theme/theme1.xml", parsed.has("ppt/theme/theme1.xml"));
 
 // ══════════════════════════════════════════════════════════════════════════════
-// 3. High-level readPresentation verification (ISlideOptions[] API)
+// 3. High-level parsePresentation verification (ISlideOptions[] API)
 // ══════════════════════════════════════════════════════════════════════════════
 
-console.log("\n--- readPresentation (high-level) ---");
-const readSlides = readPresentation(new Uint8Array(buffer));
+console.log("\n--- parsePresentation (high-level) ---");
+const readSlides = parsePresentation(new Uint8Array(buffer));
 
 assert("9 slides parsed", readSlides.length === 9);
 
@@ -582,7 +582,7 @@ assert("re-generated buffer non-empty", buffer2.length > 0);
 console.log(`Re-generated PPTX: ${buffer2.length} bytes`);
 
 // Re-parse the re-generated file
-const readSlides2 = readPresentation(new Uint8Array(buffer2));
+const readSlides2 = parsePresentation(new Uint8Array(buffer2));
 assert("re-parsed has 9 slides", readSlides2.length === 9);
 
 const rs0 = readSlides2[0].children!;

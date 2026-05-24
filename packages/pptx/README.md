@@ -20,7 +20,7 @@
 - **Notes** — Speaker notes for each slide
 - **Group Shapes** — Group multiple shapes together
 - **DrawingML** — Shapes with fills, outlines, shadows, glow, reflection, and 3D effects
-- **Parsing** — Read existing .pptx files with `readPresentation` for round-trip workflows
+- **Parsing** — Parse existing .pptx files with `parsePresentation` for round-trip workflows
 
 ## Installation
 
@@ -64,10 +64,10 @@ writeFileSync("presentation.pptx", buffer);
 Read existing `.pptx` files and re-create them as `ISlideOptions[]`:
 
 ```typescript
-import { readPresentation, Presentation, Packer } from "@office-open/pptx";
+import { parsePresentation, Presentation, Packer } from "@office-open/pptx";
 import { readFileSync, writeFileSync } from "node:fs";
 
-const slides = readPresentation(new Uint8Array(readFileSync("input.pptx")));
+const slides = parsePresentation(new Uint8Array(readFileSync("input.pptx")));
 
 // Modify parsed data, then re-generate
 const pres = new Presentation({ slides });

@@ -1,12 +1,12 @@
 import type { ParsedDocument } from "@office-open/core";
-import { parseDocument } from "@office-open/core";
+import { parseArchive } from "@office-open/core";
 import type { Element } from "@office-open/xml";
 import { attr } from "@office-open/xml";
 
 import { ParseContext } from "./parse/context";
 import { parseSlide } from "./parse/slide";
 
-export { parseDocument };
+export { parseArchive };
 
 import type { ISlideOptions } from "./file/file";
 
@@ -130,7 +130,7 @@ function parseSlideRels(doc: ParsedDocument, slidePaths: string[], refs: PptxPar
 }
 
 export function parsePptx(data: Uint8Array): PptxDocument {
-  const doc = parseDocument(data);
+  const doc = parseArchive(data);
 
   const presentation = doc.get("ppt/presentation.xml");
 
@@ -242,7 +242,7 @@ function parseSlideRelMap(doc: ParsedDocument, slidePath: string): Map<string, s
 }
 
 /**
- * Read a .pptx file and convert it into ISlideOptions[].
+ * Parse a .pptx file and convert it into ISlideOptions[].
  *
  * This is the main public API for parsing PPTX files.
  * The returned options can be passed directly to `new Presentation({ slides })`
@@ -251,7 +251,7 @@ function parseSlideRelMap(doc: ParsedDocument, slidePath: string): Map<string, s
  * @param data - Raw bytes of a .pptx file
  * @returns Array of slide options
  */
-export function readPresentation(data: Uint8Array): ISlideOptions[] {
+export function parsePresentation(data: Uint8Array): ISlideOptions[] {
   const pptx = parsePptx(data);
   const result: ISlideOptions[] = [];
 
