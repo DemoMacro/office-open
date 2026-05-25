@@ -36,7 +36,7 @@ import type {
 } from "./links/move-bookmark";
 import { Math as MathCls } from "./math";
 import type { IMathOptions, MathComponent } from "./math";
-import { MathRun, type MathRunOptions } from "./math/math-run";
+import { coerceMathJson, type MathJson } from "./math/math-coerce";
 type Math = InstanceType<typeof MathCls>;
 // Same pattern for endnotes — specific submodule avoids barrel circular dependency.
 import { EndnoteReferenceRun as EndnoteRefCls } from "@file/endnotes/endnote/run/reference-run";
@@ -125,15 +125,10 @@ export interface IImageChild {
 }
 
 /** JSON-friendly wrapper for Math options in paragraph children.
- *  Unlike IMathOptions, children accept plain objects (e.g. { text: "2" }) and strings
- *  which will be coerced to MathRun instances at render time. */
+ *  Unlike IMathOptions, children accept recursive JSON objects via {@link MathJson}. */
 export interface IMathChild {
   readonly math: Omit<IMathOptions, "children"> & {
-    readonly children?: readonly (
-      | import("./math/math-component").MathComponent
-      | { readonly text: string }
-      | string
-    )[];
+    readonly children?: readonly MathJson[];
   };
 }
 
@@ -327,17 +322,14 @@ export class Paragraph extends BaseXmlComponent implements FileChild {
           typeof rawChild.math === "object" &&
           rawChild.math !== null
         ) {
-          // Coerce plain objects/strings in math.children to MathRun instances.
-          // MathComponent instances pass through; plain { text: "…" } → MathRun.
+          // Coerce MathJson values (strings, plain objects, class instances)
+          // to MathComponent instances via recursive coerceMathJson.
           const mathOpts = rawChild.math as Omit<IMathOptions, "children"> & {
-            readonly children?: readonly (MathComponent | { readonly text: string } | string)[];
+            readonly children?: readonly MathJson[];
           };
-          const coercedChildren = mathOpts.children?.map((c: unknown) => {
-            if (c instanceof BaseXmlComponent) return c;
-            if (typeof c === "string") return new MathRun(c);
-            if (typeof c === "object" && c !== null) return new MathRun(c as MathRunOptions);
-            return c;
-          }) as readonly MathComponent[] | undefined;
+          const coercedChildren = mathOpts.children?.map(coerceMathJson) as
+            | readonly MathComponent[]
+            | undefined;
           child = new MathCls(coercedChildren ? { children: coercedChildren } : { children: [] });
         } else if ("symbolRun" in rawChild) {
           child = new SymbolRun(rawChild.symbolRun);

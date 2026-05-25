@@ -8,7 +8,7 @@
     "preview": "nuxt preview"
   },
   "devDependencies": {
-    "@ai-sdk/openai-compatible": "2.0.47",
+    "@ai-sdk/openai-compatible": "2.0.48",
     "@office-open/docx": "workspace:*",
     "@office-open/pptx": "workspace:*",
     "docus": "5.11.0",

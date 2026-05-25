@@ -252,7 +252,7 @@ async function main() {
       ],
     },
 
-    // Section 5: math, symbol, breaks
+    // Section 5: math (JSON API with complex structures), symbol, breaks
     {
       children: [
         {
@@ -263,6 +263,47 @@ async function main() {
               " uses a ",
               { symbolRun: { char: "F021", symbolfont: "Wingdings" } },
               " symbol.",
+            ],
+          },
+        },
+        // Complex math: fraction
+        {
+          paragraph: {
+            children: [
+              {
+                math: {
+                  children: [
+                    "x",
+                    " = ",
+                    {
+                      fraction: {
+                        numerator: ["a + b"],
+                        denominator: ["c"],
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+        // Complex math: sum with superScript
+        {
+          paragraph: {
+            children: [
+              {
+                math: {
+                  children: [
+                    {
+                      sum: {
+                        children: [{ superScript: { children: ["x"], superScript: ["2"] } }],
+                        subScript: ["i=0"],
+                        superScript: ["n"],
+                      },
+                    },
+                  ],
+                },
+              },
             ],
           },
         },
@@ -431,7 +472,7 @@ async function main() {
 
   // Section 5: math, symbol, breaks, footnote
   const s5 = parsed[4].children;
-  assert("s5 has content (>= 4)", s5.length >= 4);
+  assert("s5 has content (>= 6)", s5.length >= 6);
   {
     // First paragraph: math + symbolRun
     const first = s5[0] as Record<string, unknown>;
@@ -439,34 +480,71 @@ async function main() {
       const p = first.paragraph as Record<string, unknown>;
       const children = p.children as Record<string, unknown>[];
       assert(
-        "s5 has math element",
-        children?.some(
-          (ch) => "rootKey" in ch && (ch as Record<string, unknown>).rootKey === "m:oMath",
-        ),
+        "s5 has math element parsed as JSON",
+        children?.some((ch) => {
+          if (typeof ch !== "object" || ch === null) return false;
+          const obj = ch as Record<string, unknown>;
+          if (!("math" in obj)) return false;
+          const math = obj.math as Record<string, unknown>;
+          const mathChildren = math.children as Record<string, unknown>[];
+          return Array.isArray(mathChildren) && mathChildren.length > 0;
+        }),
       );
     }
-    // Second paragraph: pageBreak
+    // Second paragraph: fraction math
     const second = s5[1] as Record<string, unknown>;
     if ("paragraph" in second) {
       const p = second.paragraph as Record<string, unknown>;
       const children = p.children as Record<string, unknown>[];
-      assert("s5 pageBreak paragraph has 3 children", children?.length === 3);
+      assert(
+        "s5 fraction math parsed",
+        children?.some((ch) => {
+          if (typeof ch !== "object" || ch === null || !("math" in ch)) return false;
+          const math = (ch as Record<string, unknown>).math as Record<string, unknown>;
+          const mathChildren = math.children as Record<string, unknown>[];
+          return mathChildren?.some(
+            (mc) => typeof mc === "object" && mc !== null && "fraction" in mc,
+          );
+        }),
+      );
     }
-    // Third paragraph: columnBreak
+    // Third paragraph: sum with superScript
     const third = s5[2] as Record<string, unknown>;
     if ("paragraph" in third) {
       const p = third.paragraph as Record<string, unknown>;
       const children = p.children as Record<string, unknown>[];
-      assert("s5 columnBreak paragraph has 3 children", children?.length === 3);
+      assert(
+        "s5 sum math parsed",
+        children?.some((ch) => {
+          if (typeof ch !== "object" || ch === null || !("math" in ch)) return false;
+          const math = (ch as Record<string, unknown>).math as Record<string, unknown>;
+          const mathChildren = math.children as Record<string, unknown>[];
+          return mathChildren?.some((mc) => typeof mc === "object" && mc !== null && "sum" in mc);
+        }),
+      );
     }
-    // Fourth paragraph: footnoteReference (parsed as styled run)
+    // Fourth paragraph: pageBreak
     const fourth = s5[3] as Record<string, unknown>;
     if ("paragraph" in fourth) {
       const p = fourth.paragraph as Record<string, unknown>;
-      const children = p.children as Record<string, unknown>[];
+      const pChildren = p.children as Record<string, unknown>[];
+      assert("s5 pageBreak paragraph has 3 children", pChildren?.length === 3);
+    }
+    // Fifth paragraph: columnBreak
+    const fifth = s5[4] as Record<string, unknown>;
+    if ("paragraph" in fifth) {
+      const p = fifth.paragraph as Record<string, unknown>;
+      const pChildren = p.children as Record<string, unknown>[];
+      assert("s5 columnBreak paragraph has 3 children", pChildren?.length === 3);
+    }
+    // Sixth paragraph: footnoteReference (parsed as styled run)
+    const sixth = s5[5] as Record<string, unknown>;
+    if ("paragraph" in sixth) {
+      const p = sixth.paragraph as Record<string, unknown>;
+      const pChildren = p.children as Record<string, unknown>[];
       assert(
         "s5 has footnoteReference",
-        children?.some(
+        pChildren?.some(
           (ch) =>
             typeof ch === "object" &&
             "style" in (ch as Record<string, unknown>) &&

@@ -12,6 +12,7 @@ import { attr, attrBool, attrNum, children, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import type { ParseContext } from "../../parse/context";
+import { parseMathChildren } from "./math/math-parse";
 import { parseRun, parseRunProperties, parsedRunToOptions } from "./run/run-parse";
 
 const HEADING_MAP: Record<string, string> = {
@@ -297,6 +298,11 @@ export function parseParagraph(el: Element, ctx: ParseContext): IParagraphOption
       case "w:commentReference": {
         const id = attrNum(child, "w:id");
         if (id !== undefined) childList.push({ commentReference: id });
+        break;
+      }
+      case "m:oMath": {
+        const mathChildren = parseMathChildren(child);
+        childList.push({ math: { children: mathChildren } });
         break;
       }
       default:
