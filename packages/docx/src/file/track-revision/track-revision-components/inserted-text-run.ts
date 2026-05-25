@@ -7,8 +7,8 @@
  */
 import { XmlComponent } from "@file/xml-components";
 
-import { TextRun } from "../../index";
-import type { IRunOptions } from "../../index";
+import { TextRun } from "../../paragraph/run";
+import type { IRunOptions } from "../../paragraph/run";
 import { ChangeAttributes } from "../track-revision";
 import type { IChangedAttributesProperties } from "../track-revision";
 

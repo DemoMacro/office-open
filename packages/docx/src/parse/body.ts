@@ -1,5 +1,6 @@
 import type { ISectionPropertiesOptions } from "@file/document/body/section-properties/section-properties";
 import type { ISectionOptions } from "@file/file";
+import type { IParagraphOptions } from "@file/paragraph/paragraph";
 import type { SectionChild } from "@file/section-child";
 /**
  * Body parser for DOCX documents.
@@ -209,16 +210,17 @@ function parseHeaderFooterRef(rId: string, ctx: ParseContext): SectionChild[] | 
 export function parseSectionChild(el: Element, ctx: ParseContext): SectionChild {
   switch (el.name) {
     case "w:p": {
-      // Check if this paragraph contains a drawing (image)
+      // Check if this paragraph contains a drawing (image/chart/smartArt)
       const drawing = findDeepElement(el, "w:drawing");
       if (drawing) {
         const drawingChild = parseDrawingRun(drawing, ctx);
         if (drawingChild) {
           const paraOpts = parseParagraph(el, ctx) as Record<string, unknown>;
+          const existingChildren = ((paraOpts.children ?? []) as IParagraphOptions["children"])!;
           return {
             paragraph: {
               ...paraOpts,
-              children: [drawingChild],
+              children: [...(existingChildren ?? []), drawingChild],
             },
           };
         }

@@ -1,6 +1,8 @@
 import { Formatter } from "@export/formatter";
+import { toElement } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
+import { Paragraph } from "../paragraph";
 import { EmphasisMarkType } from "./emphasis-mark";
 import { SymbolRun } from "./symbol-run";
 import { UnderlineType } from "./underline";
@@ -74,5 +76,39 @@ describe("SymbolRun", () => {
         ],
       });
     });
+  });
+});
+
+// ── Parse round-trip tests ──────────────────────────────────────────────────
+
+describe("SymbolRun parse round-trip", () => {
+  it("should round-trip symbolRun via Paragraph JSON API", () => {
+    const paragraph = new Paragraph({
+      children: [{ symbolRun: { char: "F071", symbolfont: "Wingdings" } }],
+    });
+    const tree = new Formatter().format(paragraph);
+    const root = toElement(tree);
+    // Find w:r containing w:sym
+    const symRun = root.elements?.find((e) => e.elements?.some((c) => c.name === "w:sym"));
+    expect(symRun).toBeDefined();
+    const symEl = symRun!.elements!.find((c) => c.name === "w:sym");
+    // toElement converts _attr to attributes
+    expect(symEl?.attributes?.["w:char"]).toBe("F071");
+    expect(symEl?.attributes?.["w:font"]).toBe("Wingdings");
+  });
+
+  it("should round-trip symbolRun with formatting via Paragraph JSON API", () => {
+    const paragraph = new Paragraph({
+      children: [
+        { symbolRun: { char: "F021", symbolfont: "Wingdings", bold: true, color: "FF0000" } },
+      ],
+    });
+    const tree = new Formatter().format(paragraph);
+    const root = toElement(tree);
+    const symRun = root.elements?.find((e) => e.elements?.some((c) => c.name === "w:sym"));
+    expect(symRun).toBeDefined();
+    // Should have run properties
+    const rPr = symRun!.elements!.find((c) => c.name === "w:rPr");
+    expect(rPr).toBeDefined();
   });
 });

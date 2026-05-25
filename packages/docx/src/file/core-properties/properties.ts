@@ -20,7 +20,7 @@ import type { IDocumentBackgroundOptions } from "../document";
 import { buildDocumentAttributes } from "../document/document-attributes";
 import type { ISectionOptions } from "../file";
 import type { INumberingOptions } from "../numbering";
-import type { Paragraph } from "../paragraph";
+import type { IParagraphOptions, Paragraph } from "../paragraph";
 import type { IStylesOptions } from "../styles";
 
 /**
@@ -68,7 +68,7 @@ export interface IPropertiesOptions {
     Record<
       string,
       {
-        readonly children: readonly Paragraph[];
+        readonly children: readonly (Paragraph | IParagraphOptions | string)[];
       }
     >
   >;
@@ -76,7 +76,7 @@ export interface IPropertiesOptions {
     Record<
       string,
       {
-        readonly children: readonly Paragraph[];
+        readonly children: readonly (Paragraph | IParagraphOptions | string)[];
       }
     >
   >;

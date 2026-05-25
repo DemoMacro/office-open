@@ -249,9 +249,19 @@ export function parseParagraph(el: Element, ctx: ParseContext): IParagraphOption
         break; // already handled
       case "w:r": {
         const parsed = parseRun(child, ctx);
-        // Convert to IRunOptions
-        const runOpts = parsedRunToOptions(parsed);
+        // Extract RawPassthrough children and push them directly to paragraph
+        const rawChildren = parsed.children.filter(
+          (c): c is RawPassthrough => c instanceof RawPassthrough,
+        );
+        const simplified = {
+          ...parsed,
+          children: parsed.children.filter((c) => !(c instanceof RawPassthrough)),
+        };
+        // Convert to IRunOptions (or { commentReference })
+        const runOpts = parsedRunToOptions(simplified);
         childList.push(runOpts);
+        // Preserve raw passthrough elements for round-trip fidelity
+        childList.push(...rawChildren);
         break;
       }
       case "w:hyperlink": {
@@ -270,9 +280,25 @@ export function parseParagraph(el: Element, ctx: ParseContext): IParagraphOption
       }
       case "w:bookmarkStart":
       case "w:bookmarkEnd":
-      case "w:commentRangeStart":
-      case "w:commentRangeEnd":
-        break; // skip bookmarks and comments for now
+        // Bookmarks span across runs and cannot be represented in the current
+        // IParagraphOptions JSON output — the text between start/end is already
+        // preserved as run children, which is sufficient for most round-trip use cases.
+        break;
+      case "w:commentRangeStart": {
+        const id = attrNum(child, "w:id");
+        if (id !== undefined) childList.push({ commentRangeStart: id });
+        break;
+      }
+      case "w:commentRangeEnd": {
+        const id = attrNum(child, "w:id");
+        if (id !== undefined) childList.push({ commentRangeEnd: id });
+        break;
+      }
+      case "w:commentReference": {
+        const id = attrNum(child, "w:id");
+        if (id !== undefined) childList.push({ commentReference: id });
+        break;
+      }
       default:
         // Wrap unknown elements as RawPassthrough
         if (child.name && child.elements && child.elements.length > 0) {

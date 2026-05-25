@@ -10,7 +10,6 @@ export default defineConfig({
       "src/drawingml/index.ts",
       "src/archive.ts",
     ],
-    minify: true,
   },
   test: {
     benchmark: {

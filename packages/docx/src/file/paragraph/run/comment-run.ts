@@ -10,6 +10,8 @@
  * @module
  */
 import type { FileChild } from "@file/file-child";
+import { Paragraph } from "@file/paragraph/paragraph";
+import type { IParagraphOptions } from "@file/paragraph/paragraph";
 import { Relationships } from "@file/relationships";
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
@@ -25,14 +27,15 @@ import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 export interface ICommentOptions {
   /** Unique identifier for the comment */
   readonly id: number;
-  /** Content of the comment (typically paragraphs) */
-  readonly children: readonly FileChild[];
+  /** Content of the comment (typically paragraphs).
+   *  Accepts class instances, plain IParagraphOptions objects, or strings (coerced to Paragraph). */
+  readonly children: readonly (FileChild | IParagraphOptions | string)[];
   /** Initials of the comment author */
   readonly initials?: string;
   /** Name of the comment author */
   readonly author?: string;
-  /** Date and time the comment was created */
-  readonly date?: Date;
+  /** Date and time the comment was created. Accepts Date or ISO string. */
+  readonly date?: Date | string;
 }
 
 /**
@@ -267,17 +270,22 @@ export class Comment extends XmlComponent {
   public constructor({ id, initials, author, date = new Date(), children }: ICommentOptions) {
     super("w:comment");
 
+    const dateStr = typeof date === "string" ? date : date.toISOString();
     this.root.push(
       new CommentAttributes({
         author,
-        date: date.toISOString(),
+        date: dateStr,
         id,
         initials,
       }),
     );
 
-    for (const child of children) {
-      this.root.push(child);
+    for (const rawChild of children) {
+      if (rawChild instanceof Paragraph) {
+        this.root.push(rawChild);
+      } else {
+        this.root.push(new Paragraph(rawChild as string | IParagraphOptions));
+      }
     }
   }
 }

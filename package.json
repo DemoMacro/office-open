@@ -35,7 +35,7 @@
     "bump": "pnpm --filter \"./packages/**\" -r exec basis version",
     "version": "pnpm --filter \"./packages/**\" -r exec basis version",
     "publish": "pnpm --filter \"./packages/**\" -r exec basis publish",
-    "postinstall": "pnpm dev && vp config && basis git setup",
+    "postinstall": "pnpm build && vp config && basis git setup",
     "docs:dev": "pnpm --filter @office-open/docs dev",
     "docs:build": "pnpm --filter @office-open/docs build",
     "docs:generate": "pnpm --filter @office-open/docs generate",

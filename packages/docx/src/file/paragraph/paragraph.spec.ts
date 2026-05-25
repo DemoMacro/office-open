@@ -1190,4 +1190,95 @@ describe("parse round-trip", () => {
       expect(parsed.text).toBe("Hello World");
     }
   });
+
+  // ── JSON API coerce round-trip tests ───────────────────────────────────────
+
+  it("should round-trip math via JSON API", () => {
+    const paragraph = new Paragraph({
+      children: [{ text: "E=mc" }, { math: { children: [{ text: "2" }] } } as never],
+    });
+    const tree = new Formatter().format(paragraph);
+    // Should contain m:oMath element
+    const root = toElement(tree);
+    const mathEl = root.elements?.find((e) => e.name === "m:oMath");
+    expect(mathEl).toBeDefined();
+  });
+
+  it("should round-trip symbolRun via JSON API", () => {
+    const paragraph = new Paragraph({
+      children: [{ text: "Arrow: " }, { symbolRun: { char: "F021", symbolfont: "Wingdings" } }],
+    });
+    const tree = new Formatter().format(paragraph);
+    const root = toElement(tree);
+    // Find w:r containing w:sym
+    const symRun = root.elements?.find((e) => e.elements?.some((c) => c.name === "w:sym"));
+    expect(symRun).toBeDefined();
+  });
+
+  it("should round-trip pageBreak via JSON API", () => {
+    const paragraph = new Paragraph({
+      children: [{ text: "Before" }, { pageBreak: true }, { text: "After" }],
+    });
+    const tree = new Formatter().format(paragraph);
+    const root = toElement(tree);
+    const brRun = root.elements?.find((e) =>
+      e.elements?.some((c) => c.name === "w:br" && c.attributes?.["w:type"] === "page"),
+    );
+    expect(brRun).toBeDefined();
+  });
+
+  it("should round-trip columnBreak via JSON API", () => {
+    const paragraph = new Paragraph({
+      children: [{ text: "Col1" }, { columnBreak: true }, { text: "Col2" }],
+    });
+    const tree = new Formatter().format(paragraph);
+    const root = toElement(tree);
+    const brRun = root.elements?.find((e) =>
+      e.elements?.some((c) => c.name === "w:br" && c.attributes?.["w:type"] === "column"),
+    );
+    expect(brRun).toBeDefined();
+  });
+
+  it("should round-trip commentRangeStart/End/Reference via JSON API", () => {
+    const paragraph = new Paragraph({
+      children: [
+        { commentRangeStart: 0 },
+        { text: "Commented" },
+        { commentRangeEnd: 0 },
+        { commentReference: 0 },
+      ],
+    });
+    const tree = new Formatter().format(paragraph);
+    const root = toElement(tree);
+    expect(root.elements?.some((e) => e.name === "w:commentRangeStart")).toBe(true);
+    expect(root.elements?.some((e) => e.name === "w:commentRangeEnd")).toBe(true);
+    // CommentReference is a direct child of w:p
+    expect(root.elements?.some((e) => e.name === "w:commentReference")).toBe(true);
+  });
+
+  it("should round-trip footnoteReference via JSON API", () => {
+    const paragraph = new Paragraph({
+      children: [{ text: "With note" }, { footnoteReference: 1 }],
+    });
+    const tree = new Formatter().format(paragraph);
+    const root = toElement(tree);
+    // footnoteReference is inside a w:r
+    const refRun = root.elements?.find(
+      (e) => e.name === "w:r" && e.elements?.some((c) => c.name === "w:footnoteReference"),
+    );
+    expect(refRun).toBeDefined();
+  });
+
+  it("should round-trip endnoteReference via JSON API", () => {
+    const paragraph = new Paragraph({
+      children: [{ text: "With endnote" }, { endnoteReference: 1 }],
+    });
+    const tree = new Formatter().format(paragraph);
+    const root = toElement(tree);
+    // endnoteReference is inside a w:r
+    const refRun = root.elements?.find(
+      (e) => e.name === "w:r" && e.elements?.some((c) => c.name === "w:endnoteReference"),
+    );
+    expect(refRun).toBeDefined();
+  });
 });

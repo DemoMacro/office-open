@@ -1,5 +1,5 @@
 import type { IRunPropertiesOptions, IRunOptions } from "@file/paragraph/run";
-import type { RawPassthrough } from "@office-open/core";
+import { RawPassthrough } from "@office-open/core";
 /**
  * Run properties parser for DOCX documents.
  *
@@ -250,6 +250,7 @@ export type ParsedRunChild =
   | typeof PARSED_CR
   | typeof PARSED_NO_BREAK_HYPHEN
   | typeof PARSED_SOFT_HYPHEN
+  | { readonly commentReference: number }
   | RawPassthrough;
 
 /**
@@ -305,12 +306,26 @@ export function parseRun(
       case "w:softHyphen":
         children.push(PARSED_SOFT_HYPHEN);
         break;
-      // Skip known children that are handled at a higher level (drawing, etc.)
+      case "w:commentReference": {
+        const id = attrNum(child, "w:id");
+        if (id !== undefined) children.push({ commentReference: id });
+        break;
+      }
+      // Drawing/pict are handled at the paragraph level (parseSectionChild in body.ts)
+      // where the drawing is extracted and replaced as a paragraph child.
       case "w:drawing":
       case "w:pict":
         break;
+      // Footnote/endnote reference runs — keep the reference style but drop the
+      // reference itself (the document-level footnote/endnote definition is separate).
+      case "w:footnoteReference":
+      case "w:endnoteReference":
+        break;
       default:
-        // Unknown children are skipped in the basic run parser
+        // Preserve unknown run-level elements for round-trip fidelity
+        if (child.name && child.elements && child.elements.length > 0) {
+          children.push(new RawPassthrough(child));
+        }
         break;
     }
   }
@@ -321,15 +336,32 @@ export function parseRun(
 /**
  * Convert parsed run data into an IRunOptions suitable for the Document constructor.
  * Simplifies the parsed children into text + break format.
+ * If the run contains only a commentReference, returns { commentReference: id } instead.
  */
-export function parsedRunToOptions(parsed: ReturnType<typeof parseRun>): IRunOptions {
+export function parsedRunToOptions(
+  parsed: ReturnType<typeof parseRun>,
+): IRunOptions | { readonly commentReference: number } {
   const opts: Record<string, unknown> = { ...parsed.properties };
+
+  // Check if this run only contains a commentReference
+  const commentRefs = parsed.children.filter(
+    (c): c is { readonly commentReference: number } =>
+      typeof c === "object" && c !== null && "commentReference" in c,
+  );
+  const nonCommentChildren = parsed.children.filter(
+    (c) => !(typeof c === "object" && c !== null && "commentReference" in c),
+  );
+
+  // If the run is a pure commentReference run (no text, no properties), return it directly
+  if (commentRefs.length > 0 && nonCommentChildren.length === 0 && !parsed.properties) {
+    return commentRefs[0];
+  }
 
   // Collect text and breaks
   const textParts: string[] = [];
   let breakCount = 0;
 
-  for (const child of parsed.children) {
+  for (const child of nonCommentChildren) {
     if (typeof child === "string") {
       textParts.push(child);
     } else if (child === PARSED_LINE_BREAK) {
