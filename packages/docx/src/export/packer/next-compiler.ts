@@ -391,7 +391,7 @@ export class Compiler {
             xmlData = replaceChartPlaceholders(
               xmlData,
               file.Charts.Array.map((c) => c.key),
-              documentRelationshipCount,
+              documentRelationshipCount + documentMediaDatas.length,
               "rId",
             );
             const smartArtDataOffset =

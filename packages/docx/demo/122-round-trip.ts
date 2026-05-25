@@ -25,7 +25,7 @@ function assert(label: string, condition: boolean) {
 async function main() {
   // 1. Build a single document with every content type
   const sections: ISectionOptions[] = [
-    // Section 1: paragraphs, tables, nested tables, SDT, headings, TOC, headers/footers
+    // Section: paragraphs, tables, nested tables, SDT, headings, TOC, headers/footers
     {
       headers: {
         default: [{ paragraph: { children: [{ text: "Header", bold: true }] } }],
@@ -183,7 +183,7 @@ async function main() {
       ],
     },
 
-    // Section 2: chart
+    // Section: chart
     {
       children: [
         { paragraph: { children: [{ text: "Chart (JSON API)", bold: true, size: 28 }] } },
@@ -210,7 +210,7 @@ async function main() {
       ],
     },
 
-    // Section 3: smartArt
+    // Section: smartArt
     {
       children: [
         { paragraph: { children: [{ text: "SmartArt (JSON API)", bold: true, size: 28 }] } },
@@ -238,7 +238,7 @@ async function main() {
       ],
     },
 
-    // Section 4: altChunk
+    // Section: altChunk
     {
       children: [
         { paragraph: { children: [{ text: "AltChunk (JSON API)", bold: true, size: 28 }] } },
@@ -252,7 +252,27 @@ async function main() {
       ],
     },
 
-    // Section 5: math (JSON API with complex structures), symbol, breaks
+    // Section: image
+    {
+      children: [
+        { paragraph: { children: [{ text: "Image (JSON API)", bold: true, size: 28 }] } },
+        {
+          paragraph: {
+            children: [
+              {
+                image: {
+                  type: "png",
+                  data: fs.readFileSync("./demo/images/dog.png"),
+                  transformation: { width: 200, height: 200 },
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+
+    // Section: math (JSON API with complex structures), symbol, breaks
     {
       children: [
         {
@@ -325,7 +345,7 @@ async function main() {
       ],
     },
 
-    // Section 6: rich formatting for value comparison
+    // Section: rich formatting for value comparison
     {
       children: [
         {
@@ -365,9 +385,9 @@ async function main() {
   // 4. Verify
   console.log("\n--- Verification ---");
 
-  assert("section count = 6", parsed.length === 6);
+  assert("section count = 7", parsed.length === 7);
 
-  // Section 1: paragraphs + tables + SDT + textbox + headings + TOC
+  // Section: paragraphs + tables + SDT + textbox + headings + TOC
   const s1 = parsed[0].children;
   assert("s1 has content (>= 12)", s1.length >= 12);
 
@@ -401,7 +421,7 @@ async function main() {
     s1.some((c) => "toc" in c),
   );
 
-  // Section 2: chart
+  // Section: chart
   const s2 = parsed[1].children;
   assert("s2 has content (>= 2)", s2.length >= 2);
   {
@@ -429,7 +449,7 @@ async function main() {
     }
   }
 
-  // Section 3: smartArt
+  // Section: smartArt
   const s3 = parsed[2].children;
   assert("s3 has content (>= 2)", s3.length >= 2);
   {
@@ -462,7 +482,7 @@ async function main() {
     }
   }
 
-  // Section 4: altChunk
+  // Section: altChunk
   const s4 = parsed[3].children;
   assert("s4 has content (>= 2)", s4.length >= 2);
   assert(
@@ -470,17 +490,46 @@ async function main() {
     s4.some((c) => "altChunk" in c),
   );
 
-  // Section 5: math, symbol, breaks, footnote
+  // Section: image
   const s5 = parsed[4].children;
-  assert("s5 has content (>= 6)", s5.length >= 6);
+  assert("s5 has content (>= 2)", s5.length >= 2);
+  {
+    const imgPara = s5.find((c): boolean => {
+      if (!("paragraph" in c)) return false;
+      const p = (c as Record<string, unknown>).paragraph as Record<string, unknown>;
+      const children = p.children as Record<string, unknown>[];
+      return children?.some(
+        (ch) => typeof ch === "object" && ch !== null && "image" in (ch as Record<string, unknown>),
+      );
+    });
+    assert("s5 has image child", !!imgPara);
+    if (imgPara) {
+      const p = (imgPara as Record<string, unknown>).paragraph as Record<string, unknown>;
+      const children = p.children as Record<string, unknown>[];
+      const imgChild = children.find(
+        (ch) => typeof ch === "object" && ch !== null && "image" in (ch as Record<string, unknown>),
+      );
+      if (imgChild) {
+        const img = (imgChild as Record<string, unknown>).image as Record<string, unknown>;
+        assert("image type = png", img.type === "png");
+        const t = img.transformation as Record<string, unknown>;
+        assert("image width preserved", t?.width === 200);
+        assert("image height preserved", t?.height === 200);
+      }
+    }
+  }
+
+  // Section: math, symbol, breaks, footnote
+  const s6 = parsed[5].children;
+  assert("s6 has content (>= 6)", s6.length >= 6);
   {
     // First paragraph: math + symbolRun
-    const first = s5[0] as Record<string, unknown>;
+    const first = s6[0] as Record<string, unknown>;
     if ("paragraph" in first) {
       const p = first.paragraph as Record<string, unknown>;
       const children = p.children as Record<string, unknown>[];
       assert(
-        "s5 has math element parsed as JSON",
+        "s6 has math element parsed as JSON",
         children?.some((ch) => {
           if (typeof ch !== "object" || ch === null) return false;
           const obj = ch as Record<string, unknown>;
@@ -492,12 +541,12 @@ async function main() {
       );
     }
     // Second paragraph: fraction math
-    const second = s5[1] as Record<string, unknown>;
+    const second = s6[1] as Record<string, unknown>;
     if ("paragraph" in second) {
       const p = second.paragraph as Record<string, unknown>;
       const children = p.children as Record<string, unknown>[];
       assert(
-        "s5 fraction math parsed",
+        "s6 fraction math parsed",
         children?.some((ch) => {
           if (typeof ch !== "object" || ch === null || !("math" in ch)) return false;
           const math = (ch as Record<string, unknown>).math as Record<string, unknown>;
@@ -509,12 +558,12 @@ async function main() {
       );
     }
     // Third paragraph: sum with superScript
-    const third = s5[2] as Record<string, unknown>;
+    const third = s6[2] as Record<string, unknown>;
     if ("paragraph" in third) {
       const p = third.paragraph as Record<string, unknown>;
       const children = p.children as Record<string, unknown>[];
       assert(
-        "s5 sum math parsed",
+        "s6 sum math parsed",
         children?.some((ch) => {
           if (typeof ch !== "object" || ch === null || !("math" in ch)) return false;
           const math = (ch as Record<string, unknown>).math as Record<string, unknown>;
@@ -524,26 +573,26 @@ async function main() {
       );
     }
     // Fourth paragraph: pageBreak
-    const fourth = s5[3] as Record<string, unknown>;
+    const fourth = s6[3] as Record<string, unknown>;
     if ("paragraph" in fourth) {
       const p = fourth.paragraph as Record<string, unknown>;
       const pChildren = p.children as Record<string, unknown>[];
-      assert("s5 pageBreak paragraph has 3 children", pChildren?.length === 3);
+      assert("s6 pageBreak paragraph has 3 children", pChildren?.length === 3);
     }
     // Fifth paragraph: columnBreak
-    const fifth = s5[4] as Record<string, unknown>;
+    const fifth = s6[4] as Record<string, unknown>;
     if ("paragraph" in fifth) {
       const p = fifth.paragraph as Record<string, unknown>;
       const pChildren = p.children as Record<string, unknown>[];
-      assert("s5 columnBreak paragraph has 3 children", pChildren?.length === 3);
+      assert("s6 columnBreak paragraph has 3 children", pChildren?.length === 3);
     }
     // Sixth paragraph: footnoteReference (parsed as styled run)
-    const sixth = s5[5] as Record<string, unknown>;
+    const sixth = s6[5] as Record<string, unknown>;
     if ("paragraph" in sixth) {
       const p = sixth.paragraph as Record<string, unknown>;
       const pChildren = p.children as Record<string, unknown>[];
       assert(
-        "s5 has footnoteReference",
+        "s6 has footnoteReference",
         pChildren?.some(
           (ch) =>
             typeof ch === "object" &&
@@ -554,11 +603,11 @@ async function main() {
     }
   }
 
-  // Section 6: rich formatting for value comparison
-  const s6 = parsed[5].children;
-  assert("s6 has 1 child", s6.length === 1);
-  if ("paragraph" in s6[0] && typeof s6[0].paragraph === "object" && s6[0].paragraph !== null) {
-    const opts = s6[0].paragraph as Record<string, unknown>;
+  // Section: rich formatting for value comparison
+  const s7 = parsed[6].children;
+  assert("s7 has 1 child", s7.length === 1);
+  if ("paragraph" in s7[0] && typeof s7[0].paragraph === "object" && s7[0].paragraph !== null) {
+    const opts = s7[0].paragraph as Record<string, unknown>;
     const children = opts.children as Record<string, unknown>[];
     if (children?.[0]) {
       const run = children[0];

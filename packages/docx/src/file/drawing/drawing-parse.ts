@@ -1,5 +1,5 @@
-import type { IRunOptions } from "@file/paragraph/run";
 import type { IChartOptions } from "@file/paragraph/run/chart-run";
+import type { IImageOptions } from "@file/paragraph/run/image-run";
 import type { ISmartArtOptions } from "@file/paragraph/run/smartart-run";
 /**
  * Drawing parser for DOCX documents.
@@ -16,7 +16,7 @@ import type { ParseContext } from "../../parse/context";
 
 /** Union type for parsed drawing child wrappers. */
 export type DrawingChild =
-  | IRunOptions
+  | { readonly image: IImageOptions }
   | { readonly chart: IChartOptions }
   | { readonly smartArt: ISmartArtOptions };
 
@@ -71,9 +71,12 @@ function imageTypeFromPath(
 }
 
 /**
- * Parse a w:drawing element and return an IRunOptions with image data.
+ * Parse a w:drawing element and return image data wrapped in { image: ... }.
  */
-export function parseImageRun(el: Element, ctx: ParseContext): IRunOptions | undefined {
+export function parseImageRun(
+  el: Element,
+  ctx: ParseContext,
+): { readonly image: IImageOptions } | undefined {
   // Try inline first, then anchor
   const inline = findDeep(el, "wp:inline")[0];
   const anchor = inline ? undefined : findDeep(el, "wp:anchor")[0];
@@ -166,7 +169,7 @@ export function parseImageRun(el: Element, ctx: ParseContext): IRunOptions | und
     }
   }
 
-  return imageOpts as unknown as IRunOptions;
+  return { image: imageOpts as unknown as IImageOptions };
 }
 
 // ── Common helpers ──────────────────────────────────────────────────────────
