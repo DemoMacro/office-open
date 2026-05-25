@@ -4,7 +4,15 @@ export default defineNuxtConfig({
 
   vite: {
     optimizeDeps: {
-      include: ["@vue/devtools-core", "@vue/devtools-kit", "remark-emoji", "remark-mdc"],
+      include: [
+        "@office-open/docx > @office-open/core",
+        "@office-open/pptx > @office-open/core",
+        "@vue/devtools-core",
+        "@vue/devtools-kit",
+        "remark-emoji",
+        "remark-mdc",
+        "undio",
+      ],
     },
   },
 

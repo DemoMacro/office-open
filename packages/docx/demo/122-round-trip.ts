@@ -3,6 +3,7 @@
 import * as fs from "fs";
 
 import { Document, Packer, parseDocument } from "@office-open/docx";
+import type { ISectionOptions } from "@office-open/docx";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
@@ -23,7 +24,7 @@ function assert(label: string, condition: boolean) {
 
 async function main() {
   // 1. Build a single document with every content type
-  const sections = [
+  const sections: ISectionOptions[] = [
     // Section 1: paragraphs, tables, nested tables, SDT, headings, TOC, headers/footers
     {
       headers: {
@@ -50,8 +51,22 @@ async function main() {
         // Centered paragraph
         {
           paragraph: {
-            alignment: "center" as const,
+            alignment: "center",
             children: [{ text: "Centered text", bold: true, size: 32 }],
+          },
+        },
+
+        // Comment
+        {
+          paragraph: {
+            children: [
+              "This paragraph has a ",
+              { commentRangeStart: 0 },
+              "comment",
+              { commentRangeEnd: 0 },
+              { commentReference: 0 },
+              " attached.",
+            ],
           },
         },
 
@@ -177,7 +192,7 @@ async function main() {
             children: [
               {
                 chart: {
-                  type: "column" as const,
+                  type: "column",
                   data: {
                     categories: ["Q1", "Q2", "Q3", "Q4"],
                     series: [
@@ -237,7 +252,39 @@ async function main() {
       ],
     },
 
-    // Section 5: rich formatting for value comparison
+    // Section 5: math, symbol, breaks
+    {
+      children: [
+        {
+          paragraph: {
+            children: [
+              "The formula E=mc",
+              { math: { children: [{ text: "2" }] } },
+              " uses a ",
+              { symbolRun: { char: "F021", symbolfont: "Wingdings" } },
+              " symbol.",
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: ["Before page break", { pageBreak: true }, "After page break"],
+          },
+        },
+        {
+          paragraph: {
+            children: ["Column 1", { columnBreak: true }, "Column 2"],
+          },
+        },
+        {
+          paragraph: {
+            children: ["With footnote", { footnoteReference: 1 }],
+          },
+        },
+      ],
+    },
+
+    // Section 6: rich formatting for value comparison
     {
       children: [
         {
@@ -250,7 +297,22 @@ async function main() {
   ];
 
   // 2. Create document and export
-  const doc = new Document({ sections: sections as import("@office-open/docx").ISectionOptions[] });
+  const doc = new Document({
+    footnotes: {
+      "1": { children: ["This is a footnote."] },
+    },
+    comments: {
+      children: [
+        {
+          id: 0,
+          author: "Demo Author",
+          initials: "DA",
+          children: ["This is a comment via JSON API."],
+        },
+      ],
+    },
+    sections,
+  });
   const buffer = await Packer.toBuffer(doc);
   console.log(`Generated DOCX: ${buffer.length} bytes`);
 
@@ -262,11 +324,24 @@ async function main() {
   // 4. Verify
   console.log("\n--- Verification ---");
 
-  assert("section count = 5", parsed.length === 5);
+  assert("section count = 6", parsed.length === 6);
 
   // Section 1: paragraphs + tables + SDT + textbox + headings + TOC
   const s1 = parsed[0].children;
   assert("s1 has content (>= 12)", s1.length >= 12);
+
+  // Comment paragraph: commentRangeStart, commentRangeEnd, commentReference preserved
+  {
+    const commentPara = s1.find((c): boolean => {
+      if (!("paragraph" in c)) return false;
+      const p = (c as Record<string, unknown>).paragraph as Record<string, unknown>;
+      const children = p.children as Record<string, unknown>[];
+      return children?.some(
+        (ch) => typeof ch === "object" && "commentRangeStart" in (ch as Record<string, unknown>),
+      );
+    });
+    assert("s1 has comment paragraph with commentRangeStart", !!commentPara);
+  }
   assert("s1[0] is paragraph", "paragraph" in s1[0]);
   assert(
     "s1 has table",
@@ -354,11 +429,58 @@ async function main() {
     s4.some((c) => "altChunk" in c),
   );
 
-  // Section 5 (last section): value comparison
+  // Section 5: math, symbol, breaks, footnote
   const s5 = parsed[4].children;
-  assert("s5 has 1 child", s5.length === 1);
-  if ("paragraph" in s5[0] && typeof s5[0].paragraph === "object" && s5[0].paragraph !== null) {
-    const opts = s5[0].paragraph as Record<string, unknown>;
+  assert("s5 has content (>= 4)", s5.length >= 4);
+  {
+    // First paragraph: math + symbolRun
+    const first = s5[0] as Record<string, unknown>;
+    if ("paragraph" in first) {
+      const p = first.paragraph as Record<string, unknown>;
+      const children = p.children as Record<string, unknown>[];
+      assert(
+        "s5 has math element",
+        children?.some(
+          (ch) => "rootKey" in ch && (ch as Record<string, unknown>).rootKey === "m:oMath",
+        ),
+      );
+    }
+    // Second paragraph: pageBreak
+    const second = s5[1] as Record<string, unknown>;
+    if ("paragraph" in second) {
+      const p = second.paragraph as Record<string, unknown>;
+      const children = p.children as Record<string, unknown>[];
+      assert("s5 pageBreak paragraph has 3 children", children?.length === 3);
+    }
+    // Third paragraph: columnBreak
+    const third = s5[2] as Record<string, unknown>;
+    if ("paragraph" in third) {
+      const p = third.paragraph as Record<string, unknown>;
+      const children = p.children as Record<string, unknown>[];
+      assert("s5 columnBreak paragraph has 3 children", children?.length === 3);
+    }
+    // Fourth paragraph: footnoteReference (parsed as styled run)
+    const fourth = s5[3] as Record<string, unknown>;
+    if ("paragraph" in fourth) {
+      const p = fourth.paragraph as Record<string, unknown>;
+      const children = p.children as Record<string, unknown>[];
+      assert(
+        "s5 has footnoteReference",
+        children?.some(
+          (ch) =>
+            typeof ch === "object" &&
+            "style" in (ch as Record<string, unknown>) &&
+            (ch as Record<string, unknown>).style === "FootnoteReference",
+        ),
+      );
+    }
+  }
+
+  // Section 6: rich formatting for value comparison
+  const s6 = parsed[5].children;
+  assert("s6 has 1 child", s6.length === 1);
+  if ("paragraph" in s6[0] && typeof s6[0].paragraph === "object" && s6[0].paragraph !== null) {
+    const opts = s6[0].paragraph as Record<string, unknown>;
     const children = opts.children as Record<string, unknown>[];
     if (children?.[0]) {
       const run = children[0];

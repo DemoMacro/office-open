@@ -28,6 +28,7 @@ import { HeaderWrapper } from "./header-wrapper";
 import type { IDocumentHeader } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
+import { Paragraph } from "./paragraph/paragraph";
 import { Comments } from "./paragraph/run/comment-run";
 import { Relationships } from "./relationships";
 import type { SectionChild } from "./section-child";
@@ -263,13 +264,19 @@ export class File {
 
     if (options.footnotes) {
       for (const key in options.footnotes) {
-        this.footnotesWrapper.View.createFootNote(parseFloat(key), options.footnotes[key].children);
+        const children = options.footnotes[key].children.map((p) =>
+          p instanceof Paragraph ? p : new Paragraph(p),
+        );
+        this.footnotesWrapper.View.createFootNote(parseFloat(key), children);
       }
     }
 
     if (options.endnotes) {
       for (const key in options.endnotes) {
-        this.endnotesWrapper.View.createEndnote(parseFloat(key), options.endnotes[key].children);
+        const children = options.endnotes[key].children.map((p) =>
+          p instanceof Paragraph ? p : new Paragraph(p),
+        );
+        this.endnotesWrapper.View.createEndnote(parseFloat(key), children);
       }
     }
 

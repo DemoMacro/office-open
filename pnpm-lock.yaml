@@ -58,6 +58,12 @@ importers:
       '@ai-sdk/openai-compatible':
         specifier: 2.0.47
         version: 2.0.47(zod@4.4.3)
+      '@office-open/docx':
+        specifier: workspace:*
+        version: link:../packages/docx
+      '@office-open/pptx':
+        specifier: workspace:*
+        version: link:../packages/pptx
       docus:
         specifier: 5.11.0
         version: 5.11.0(patch_hash=2cef2251c15fb42cfeed749d19692cc0b798cff69f72d817e82398869559acf1)(c38ad5c6283e94b308f7f08782af8868)

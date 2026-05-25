@@ -1,4 +1,5 @@
 import { Formatter } from "@export/formatter";
+import { toElement } from "@office-open/xml";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { Paragraph } from "../paragraph";
@@ -215,5 +216,53 @@ describe("Comments", () => {
         ],
       });
     });
+  });
+});
+
+// ── Parse round-trip tests ──────────────────────────────────────────────────
+
+describe("Comment parse round-trip", () => {
+  it("should round-trip commentRangeStart via Paragraph JSON API", () => {
+    const paragraph = new Paragraph({
+      children: [{ commentRangeStart: 0 }, { text: "Marked" }],
+    });
+    const tree = new Formatter().format(paragraph);
+    const root = toElement(tree);
+    expect(root.elements?.some((e) => e.name === "w:commentRangeStart")).toBe(true);
+  });
+
+  it("should round-trip commentRangeEnd via Paragraph JSON API", () => {
+    const paragraph = new Paragraph({
+      children: [{ text: "Marked" }, { commentRangeEnd: 0 }],
+    });
+    const tree = new Formatter().format(paragraph);
+    const root = toElement(tree);
+    expect(root.elements?.some((e) => e.name === "w:commentRangeEnd")).toBe(true);
+  });
+
+  it("should round-trip commentReference via Paragraph JSON API", () => {
+    const paragraph = new Paragraph({
+      children: [{ commentReference: 0 }],
+    });
+    const tree = new Formatter().format(paragraph);
+    const root = toElement(tree);
+    // CommentReference is a direct child of w:p (not nested in w:r)
+    expect(root.elements?.some((e) => e.name === "w:commentReference")).toBe(true);
+  });
+
+  it("should round-trip full comment cycle via Paragraph JSON API", () => {
+    const paragraph = new Paragraph({
+      children: [
+        { commentRangeStart: 0 },
+        { text: "Commented text" },
+        { commentRangeEnd: 0 },
+        { commentReference: 0 },
+      ],
+    });
+    const tree = new Formatter().format(paragraph);
+    const root = toElement(tree);
+    expect(root.elements?.some((e) => e.name === "w:commentRangeStart")).toBe(true);
+    expect(root.elements?.some((e) => e.name === "w:commentRangeEnd")).toBe(true);
+    expect(root.elements?.some((e) => e.name === "w:commentReference")).toBe(true);
   });
 });

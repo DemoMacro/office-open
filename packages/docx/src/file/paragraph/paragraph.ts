@@ -18,15 +18,15 @@ import type { PermEnd, PermStart } from "../permissions";
 import { TargetModeType } from "../relationships/relationship/relationship";
 import type { StructuredDocumentTagRun } from "../sdt";
 import type { SubDoc } from "../sub-doc";
-import type {
-  DeletedTextRun,
-  InsertedTextRun,
-  MovedFromTextRun,
-  MovedToTextRun,
-} from "../track-revision";
+import type { MovedFromTextRun, MovedToTextRun } from "../track-revision";
+import type { IChangedAttributesProperties } from "../track-revision/track-revision";
+import { DeletedTextRun } from "../track-revision/track-revision-components/deleted-text-run";
+// Import from specific submodule to avoid circular dependency:
+// paragraph.ts → track-revision barrel → inserted-text-run → ../../index (paragraph barrel)
+import { InsertedTextRun } from "../track-revision/track-revision-components/inserted-text-run";
 import type { ColumnBreak, PageBreak } from "./formatting/break";
-import { Bookmark, ConcreteHyperlink, ExternalHyperlink } from "./links";
-import type { InternalHyperlink } from "./links";
+import { PageBreak as PageBreakCls, ColumnBreak as ColumnBreakCls } from "./formatting/break";
+import { Bookmark, ConcreteHyperlink, ExternalHyperlink, InternalHyperlink } from "./links";
 import type { Dir, Bdo } from "./links/bidi";
 import type {
   MoveFromRangeEnd,
@@ -34,17 +34,21 @@ import type {
   MoveToRangeEnd,
   MoveToRangeStart,
 } from "./links/move-bookmark";
-import type { Math } from "./math";
+import { Math as MathCls } from "./math";
+import type { IMathOptions, MathComponent } from "./math";
+import { MathRun, type MathRunOptions } from "./math/math-run";
+type Math = InstanceType<typeof MathCls>;
+// Same pattern for endnotes — specific submodule avoids barrel circular dependency.
+import { EndnoteReferenceRun as EndnoteRefCls } from "@file/endnotes/endnote/run/reference-run";
+// Import from specific submodule to avoid circular dependency:
+// paragraph.ts → @file/footnotes barrel → footnotes.ts → imports Paragraph → paragraph.ts
+// But @file/footnotes/footnote/run/reference-run only imports Run from @file/paragraph/run — no cycle.
+import { FootnoteReferenceRun as FootnoteRefCls } from "@file/footnotes/footnote/run/reference-run";
+
 import { ParagraphProperties } from "./properties";
 import type { IParagraphPropertiesOptions } from "./properties";
 import { TextRun } from "./run";
-import type {
-  Run,
-  SequentialIdentifier,
-  SimpleField,
-  SimpleMailMergeField,
-  SymbolRun,
-} from "./run";
+import type { Run, SequentialIdentifier, SimpleField, SimpleMailMergeField } from "./run";
 import type { IRunOptions } from "./run";
 import type {
   ChartRun as ChartRunType,
@@ -53,17 +57,14 @@ import type {
 } from "./run";
 import { ChartRun } from "./run/chart-run";
 import type { IChartOptions } from "./run/chart-run";
-import type {
-  Comment,
-  CommentRangeEnd,
-  CommentRangeStart,
-  CommentReference,
-  Comments,
-} from "./run/comment-run";
+import { Comment, CommentRangeEnd, CommentRangeStart, CommentReference } from "./run/comment-run";
+import type { Comments } from "./run/comment-run";
 import { ImageRun } from "./run/image-run";
 import type { IImageOptions } from "./run/image-run";
 import { SmartArtRun } from "./run/smartart-run";
 import type { ISmartArtOptions } from "./run/smartart-run";
+import { SymbolRun } from "./run/symbol-run";
+import type { ISymbolRunOptions } from "./run/symbol-run";
 
 /**
  * The types of children that can be contained within a Paragraph element.
@@ -123,6 +124,36 @@ export interface IImageChild {
   readonly image: IImageOptions;
 }
 
+/** JSON-friendly wrapper for Math options in paragraph children.
+ *  Unlike IMathOptions, children accept plain objects (e.g. { text: "2" }) and strings
+ *  which will be coerced to MathRun instances at render time. */
+export interface IMathChild {
+  readonly math: Omit<IMathOptions, "children"> & {
+    readonly children?: readonly (
+      | import("./math/math-component").MathComponent
+      | { readonly text: string }
+      | string
+    )[];
+  };
+}
+
+/** JSON-friendly wrappers for simple paragraph child types (JSON API). */
+export type IParagraphJsonChild =
+  | IChartChild
+  | ISmartArtChild
+  | IImageChild
+  | IMathChild
+  | { readonly symbolRun: ISymbolRunOptions }
+  | { readonly footnoteReference: number }
+  | { readonly endnoteReference: number }
+  | { readonly pageBreak: true }
+  | { readonly columnBreak: true }
+  | { readonly commentRangeStart: number }
+  | { readonly commentRangeEnd: number }
+  | { readonly commentReference: number }
+  | { readonly insertion: IRunOptions & IChangedAttributesProperties }
+  | { readonly deletion: IRunOptions & IChangedAttributesProperties };
+
 /**
  * Options for creating a Paragraph element.
  *
@@ -135,15 +166,8 @@ export type IParagraphOptions = {
   /** Array of child elements such as TextRun, ImageRun, Hyperlink, Bookmark, etc.
    *  Accepts class instances, plain IRunOptions objects (coerced to TextRun),
    *  strings (coerced to TextRun), or JSON-friendly wrappers
-   *  ({ chart }, { smartArt }, { image }). */
-  readonly children?: readonly (
-    | ParagraphChild
-    | IRunOptions
-    | IChartChild
-    | ISmartArtChild
-    | IImageChild
-    | string
-  )[];
+   *  ({ chart }, { smartArt }, { image }, { math }, { symbolRun }, etc.). */
+  readonly children?: readonly (ParagraphChild | IRunOptions | IParagraphJsonChild | string)[];
 } & IParagraphPropertiesOptions;
 
 /**
@@ -265,6 +289,76 @@ export class Paragraph extends BaseXmlComponent implements FileChild {
           child = new SmartArtRun(rawChild.smartArt);
         } else if ("image" in rawChild) {
           child = new ImageRun(rawChild.image);
+        } else if (typeof rawChild === "object" && rawChild !== null && "hyperlink" in rawChild) {
+          // JSON API: { text: "...", hyperlink: { link?: string, anchor?: string, tooltip?: string }, ...formatting }
+          const { hyperlink, ...runOpts } = rawChild as Record<string, unknown> & {
+            hyperlink: Record<string, unknown>;
+          };
+          const textRun = new TextRun(runOpts as IRunOptions);
+          if ("link" in hyperlink) {
+            const ext = new ExternalHyperlink({
+              link: hyperlink.link as string,
+              tooltip: hyperlink.tooltip as string | undefined,
+              children: [textRun],
+            });
+            const concrete = new ConcreteHyperlink(ext.options.children, uniqueId());
+            context.viewWrapper.Relationships.addRelationship(
+              concrete.linkId,
+              "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+              ext.options.link,
+              TargetModeType.EXTERNAL,
+            );
+            const obj = concrete.prepForXml(context);
+            if (obj) children.push(obj);
+          } else if ("anchor" in hyperlink) {
+            const internal = new InternalHyperlink({
+              anchor: hyperlink.anchor as string,
+              tooltip: hyperlink.tooltip as string | undefined,
+              children: [textRun],
+            });
+            const obj = internal.prepForXml(context);
+            if (obj) children.push(obj);
+          }
+          continue;
+        } else if (
+          "math" in rawChild &&
+          typeof rawChild === "object" &&
+          rawChild !== null &&
+          typeof rawChild.math === "object" &&
+          rawChild.math !== null
+        ) {
+          // Coerce plain objects/strings in math.children to MathRun instances.
+          // MathComponent instances pass through; plain { text: "…" } → MathRun.
+          const mathOpts = rawChild.math as Omit<IMathOptions, "children"> & {
+            readonly children?: readonly (MathComponent | { readonly text: string } | string)[];
+          };
+          const coercedChildren = mathOpts.children?.map((c: unknown) => {
+            if (c instanceof BaseXmlComponent) return c;
+            if (typeof c === "string") return new MathRun(c);
+            if (typeof c === "object" && c !== null) return new MathRun(c as MathRunOptions);
+            return c;
+          }) as readonly MathComponent[] | undefined;
+          child = new MathCls(coercedChildren ? { children: coercedChildren } : { children: [] });
+        } else if ("symbolRun" in rawChild) {
+          child = new SymbolRun(rawChild.symbolRun);
+        } else if ("footnoteReference" in rawChild) {
+          child = new FootnoteRefCls(rawChild.footnoteReference);
+        } else if ("endnoteReference" in rawChild) {
+          child = new EndnoteRefCls(rawChild.endnoteReference);
+        } else if ("pageBreak" in rawChild) {
+          child = new PageBreakCls();
+        } else if ("columnBreak" in rawChild) {
+          child = new ColumnBreakCls();
+        } else if ("commentRangeStart" in rawChild) {
+          child = new CommentRangeStart(rawChild.commentRangeStart);
+        } else if ("commentRangeEnd" in rawChild) {
+          child = new CommentRangeEnd(rawChild.commentRangeEnd);
+        } else if ("commentReference" in rawChild) {
+          child = new CommentReference(rawChild.commentReference);
+        } else if ("insertion" in rawChild) {
+          child = new InsertedTextRun(rawChild.insertion);
+        } else if ("deletion" in rawChild) {
+          child = new DeletedTextRun(rawChild.deletion);
         } else {
           child = new TextRun(rawChild as IRunOptions);
         }
