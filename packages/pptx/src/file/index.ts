@@ -6,6 +6,8 @@ export {
   type IMasterDefinition,
   type ILayoutDefinition,
   type ILayoutPlaceholderOptions,
+  type IParsedPresentation,
+  type MasterChild,
   type SlideSize,
 } from "./file";
 export { Presentation } from "./presentation/presentation";
@@ -120,7 +122,12 @@ export { Slide } from "./slide/slide";
 export { type SlideChild } from "./slide/slide-child";
 export { coerceChild } from "./slide/coerce";
 export { ShapeTree } from "./shape-tree/shape-tree";
-export { DefaultTheme, type IThemeOptions } from "./theme/theme";
+export {
+  DefaultTheme,
+  type IThemeOptions,
+  type IColorSchemeOptions,
+  type IFontSchemeOptions,
+} from "./theme/theme";
 export {
   DefaultSlideMaster,
   type ISlideMasterOptions,

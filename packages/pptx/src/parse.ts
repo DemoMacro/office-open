@@ -1,14 +1,18 @@
 import type { ParsedDocument } from "@office-open/core";
 import { parseArchive } from "@office-open/core";
 import type { Element } from "@office-open/xml";
-import { attr } from "@office-open/xml";
+import { attr, findChild } from "@office-open/xml";
 
 import { ParseContext } from "./parse/context";
 import { parseSlide } from "./parse/slide";
+import { parseBackground } from "./parse/slide";
+import { parseSlideLayoutType } from "./parse/slide-layout";
+import { parseTheme } from "./parse/theme";
 
 export { parseArchive };
 
-import type { ISlideOptions } from "./file/file";
+import type { IMasterDefinition, ISlideOptions, IParsedPresentation } from "./file/file";
+import type { SlideLayoutType } from "./file/slide-layout/slide-layout";
 
 /**
  * All part paths extracted from the PPTX package.
@@ -242,27 +246,112 @@ function parseSlideRelMap(doc: ParsedDocument, slidePath: string): Map<string, s
 }
 
 /**
- * Parse a .pptx file and convert it into ISlideOptions[].
+ * Build a map from each path to the rel target matching a predicate.
+ */
+function resolveRelTargets(
+  doc: ParsedDocument,
+  paths: readonly string[],
+  predicate: (target: string) => boolean,
+): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const path of paths) {
+    for (const target of parseSlideRelMap(doc, path).values()) {
+      if (predicate(target)) map.set(path, target);
+    }
+  }
+  return map;
+}
+
+/**
+ * Parse a .pptx file and convert it into IParsedPresentation.
  *
  * This is the main public API for parsing PPTX files.
  * The returned options can be passed directly to `new Presentation({ slides })`
- * to recreate the presentation.
+ * or `new Presentation({ masters, slides })` to recreate the presentation.
  *
  * @param data - Raw bytes of a .pptx file
- * @returns Array of slide options
+ * @returns Parsed presentation with slides and optional masters
  */
-export function parsePresentation(data: Uint8Array): ISlideOptions[] {
+export function parsePresentation(data: Uint8Array): IParsedPresentation {
   const pptx = parsePptx(data);
-  const result: ISlideOptions[] = [];
 
-  for (const slidePath of pptx.slides) {
+  // 1. Build relationship maps
+  const masterThemePaths = resolveRelTargets(pptx.doc, pptx.slideMasters, (t) =>
+    t.includes("/theme"),
+  );
+  const layoutMasterPaths = resolveRelTargets(pptx.doc, pptx.slideLayouts, (t) =>
+    t.includes("/slideMaster"),
+  );
+  const slideLayoutPaths = resolveRelTargets(pptx.doc, pptx.slides, (t) =>
+    t.includes("/slideLayout"),
+  );
+
+  // 2. Parse masters
+  const masterCount = pptx.slideMasters.length;
+  const masterDefs: IMasterDefinition[] = [];
+  for (let mi = 0; mi < masterCount; mi++) {
+    const masterPath = pptx.slideMasters[mi];
+    const masterEl = pptx.doc.get(masterPath);
+    if (!masterEl) continue;
+
+    // Theme
+    const themePath = masterThemePaths.get(masterPath);
+    const themeEl = themePath ? pptx.doc.get(themePath) : undefined;
+    const themeOptions = themeEl ? parseTheme(themeEl) : undefined;
+
+    // Background (inline: findChild → parseBackground)
+    const cSld = findChild(masterEl, "p:cSld");
+    const bg = cSld ? findChild(cSld, "p:bg") : undefined;
+    const masterBackground = bg ? parseBackground(bg) : undefined;
+    const hasBackground = masterBackground && Object.keys(masterBackground).length > 0;
+
+    // Layouts belonging to this master
+    const masterLayouts: NonNullable<IMasterDefinition["layouts"]>[number][] = [];
+    for (const layoutPath of pptx.slideLayouts) {
+      if (layoutMasterPaths.get(layoutPath) !== masterPath) continue;
+      const layoutEl = pptx.doc.get(layoutPath);
+      if (layoutEl) masterLayouts.push({ type: parseSlideLayoutType(layoutEl) as SlideLayoutType });
+    }
+
+    const masterName = themeOptions?.name ?? `master${mi + 1}`;
+    const masterDef = {} as Record<string, unknown>;
+    masterDef.name = masterName;
+    if (themeOptions) masterDef.theme = themeOptions;
+    if (hasBackground) masterDef.background = masterBackground;
+    if (masterLayouts.length > 0) masterDef.layouts = masterLayouts;
+    masterDefs.push(masterDef as IMasterDefinition);
+  }
+
+  // 3. Parse slides with layout and master references
+  const result: ISlideOptions[] = [];
+  for (let si = 0; si < pptx.slides.length; si++) {
+    const slidePath = pptx.slides[si];
     const slideEl = pptx.doc.get(slidePath);
     if (!slideEl) continue;
 
     const slideRels = parseSlideRelMap(pptx.doc, slidePath);
     const ctx = new ParseContext(pptx, slideRels);
-    result.push(parseSlide(slideEl, ctx));
+    const slideOpts = parseSlide(slideEl, ctx) as Record<string, unknown>;
+
+    // Resolve layout → master
+    const layoutPath = slideLayoutPaths.get(slidePath);
+    if (layoutPath) {
+      const layoutEl = pptx.doc.get(layoutPath);
+      if (layoutEl) slideOpts.layout = parseSlideLayoutType(layoutEl);
+
+      const resolvedMasterPath = layoutMasterPaths.get(layoutPath);
+      if (resolvedMasterPath) {
+        const masterIdx = pptx.slideMasters.indexOf(resolvedMasterPath);
+        if (masterIdx >= 0 && masterDefs[masterIdx]) {
+          slideOpts.master = masterDefs[masterIdx].name;
+        }
+      }
+    }
+
+    result.push(slideOpts as ISlideOptions);
   }
 
-  return result;
+  // Only return masters if there's more than one (single master is auto-created)
+  const masters = masterCount > 1 ? masterDefs : undefined;
+  return { slides: result, masters };
 }

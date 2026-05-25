@@ -1,7 +1,7 @@
 import * as fs from "fs";
 
 import { Presentation, Packer, parsePresentation, parsePptx } from "@office-open/pptx";
-import type { ISlideOptions } from "@office-open/pptx";
+import type { ISlideOptions, IMasterDefinition } from "@office-open/pptx";
 import { findChild, attrNum } from "@office-open/xml";
 
 // ── helpers ────────────────────────────────────────────────────────────────────
@@ -445,7 +445,7 @@ console.log(`Generated PPTX: ${buffer.length} bytes`);
 
 console.log("\n--- parsePptx (low-level) ---");
 const {
-  doc: parsed,
+  doc: pptxDoc,
   presentation,
   slides: slidePaths,
   slideMasters,
@@ -465,20 +465,20 @@ if (presentation) {
 
 assert("has slide masters", slideMasters.length >= 1);
 assert("has slide layouts", slideLayouts.length >= 1);
-assert("has ppt/presentation.xml", parsed.has("ppt/presentation.xml"));
-assert("has ppt/theme/theme1.xml", parsed.has("ppt/theme/theme1.xml"));
+assert("has ppt/presentation.xml", pptxDoc.has("ppt/presentation.xml"));
+assert("has ppt/theme/theme1.xml", pptxDoc.has("ppt/theme/theme1.xml"));
 
 // ══════════════════════════════════════════════════════════════════════════════
 // 3. High-level parsePresentation verification (ISlideOptions[] API)
 // ══════════════════════════════════════════════════════════════════════════════
 
 console.log("\n--- parsePresentation (high-level) ---");
-const readSlides = parsePresentation(new Uint8Array(buffer));
+const parsed = parsePresentation(new Uint8Array(buffer));
 
-assert("9 slides parsed", readSlides.length === 9);
+assert("9 slides parsed", parsed.slides.length === 9);
 
 // ── Slide 1: Shapes, effects, rich text ──
-const s0 = readSlides[0];
+const s0 = parsed.slides[0];
 const s0c = s0.children!;
 assert("s0 has children", s0c.length >= 6);
 
@@ -496,7 +496,7 @@ const s0shape2 = s0c[2] as unknown as { shape: Record<string, unknown> };
 assert("s0 shape 2 has gradient fill", typeof s0shape2.shape.fill === "object");
 
 // ── Slide 2: Table + transition ──
-const s1 = readSlides[1];
+const s1 = parsed.slides[1];
 assert("s1 has transition", !!s1.transition);
 assert("s1 transition type", (s1.transition as Record<string, unknown>)?.type === "push");
 const s1tbl = s1.children!.find((c) => "table" in (c as object)) as unknown as {
@@ -508,7 +508,7 @@ assert("s1 table firstRow", s1tbl.table.firstRow === true);
 assert("s1 table bandRow", s1tbl.table.bandRow === true);
 
 // ── Slide 3: Chart ──
-const s2 = readSlides[2];
+const s2 = parsed.slides[2];
 const s2chart = s2.children!.find((c) => "chart" in (c as object)) as unknown as {
   chart: Record<string, unknown>;
 };
@@ -520,7 +520,7 @@ assert("s2 chart has series", Array.isArray(s2chart.chart.series));
 assert("s2 chart showLegend", s2chart.chart.showLegend === true);
 
 // ── Slide 4: SmartArt ──
-const s3 = readSlides[3];
+const s3 = parsed.slides[3];
 const s3sa = s3.children!.find((c) => "smartart" in (c as object)) as unknown as {
   smartart: Record<string, unknown>;
 };
@@ -529,7 +529,7 @@ assert("s3 smartart has nodes", Array.isArray(s3sa.smartart.nodes));
 assert("s3 smartart has layout", s3sa.smartart.layout === "hierarchy1");
 
 // ── Slide 5: Connector ──
-const s4 = readSlides[4];
+const s4 = parsed.slides[4];
 const s4conn = s4.children!.find((c) => "connector" in (c as object)) as unknown as {
   connector: Record<string, unknown>;
 };
@@ -538,7 +538,7 @@ assert("s4 connector endArrowhead", s4conn.connector.endArrowhead === "triangle"
 assert("s4 connector beginArrowhead", s4conn.connector.beginArrowhead === "oval");
 
 // ── Slide 6: Group ──
-const s5 = readSlides[5];
+const s5 = parsed.slides[5];
 const s5grp = s5.children!.find((c) => "group" in (c as object)) as unknown as {
   group: Record<string, unknown>;
 };
@@ -547,7 +547,7 @@ assert("s5 group has children", Array.isArray(s5grp.group.children));
 assert("s5 group has rotation", s5grp.group.rotation !== undefined);
 
 // ── Slide 7: Background + transition ──
-const s6 = readSlides[6];
+const s6 = parsed.slides[6];
 assert("s6 has background", !!s6.background);
 assert(
   "s6 background is gradient",
@@ -557,12 +557,12 @@ assert("s6 has transition", !!s6.transition);
 assert("s6 transition type is fade", (s6.transition as Record<string, unknown>)?.type === "fade");
 
 // ── Slide 8: Animation ──
-const s7 = readSlides[7];
+const s7 = parsed.slides[7];
 const s7shapes = s7.children!.filter((c) => "shape" in (c as object));
 assert("s7 has animated shapes", s7shapes.length >= 3);
 
 // ── Slide 9: Notes + headerFooter ──
-const s8 = readSlides[8];
+const s8 = parsed.slides[8];
 assert("s8 has notes", !!s8.notes);
 // headerFooter is stored in slide master placeholders, not directly in slide XML
 // Skip headerFooter round-trip assertion
@@ -575,34 +575,160 @@ console.log("\n--- Round-trip Re-generation ---");
 
 const pres2 = new Presentation({
   title: "Round-trip Feature Showcase",
-  slides: readSlides as ISlideOptions[],
+  slides: parsed.slides as ISlideOptions[],
 });
 const buffer2 = await Packer.toBuffer(pres2);
 assert("re-generated buffer non-empty", buffer2.length > 0);
 console.log(`Re-generated PPTX: ${buffer2.length} bytes`);
 
 // Re-parse the re-generated file
-const readSlides2 = parsePresentation(new Uint8Array(buffer2));
-assert("re-parsed has 9 slides", readSlides2.length === 9);
+const parsed2 = parsePresentation(new Uint8Array(buffer2));
+assert("re-parsed has 9 slides", parsed2.slides.length === 9);
 
-const rs0 = readSlides2[0].children!;
+const rs0 = parsed2.slides[0].children!;
 assert("re-parsed s0 has children", rs0.length >= 6);
 const rs0shape0 = rs0[0] as unknown as { shape: Record<string, unknown> };
 assert("re-parsed shape text preserved", rs0shape0.shape.text === undefined); // title shape uses paragraphs
 
 // Verify chart round-trip
-const rs2chart = readSlides2[2].children!.find((c) => "chart" in (c as object)) as unknown as {
+const rs2chart = parsed2.slides[2].children!.find((c) => "chart" in (c as object)) as unknown as {
   chart: Record<string, unknown>;
 };
 assert("re-parsed chart type preserved", rs2chart.chart.type === "column");
 assert("re-parsed chart title preserved", rs2chart.chart.title === "Quarterly Sales");
 
 // Verify table round-trip
-const rs1tbl = readSlides2[1].children!.find((c) => "table" in (c as object)) as unknown as {
+const rs1tbl = parsed2.slides[1].children!.find((c) => "table" in (c as object)) as unknown as {
   table: Record<string, unknown>;
 };
 assert("re-parsed table rows preserved", Array.isArray(rs1tbl.table.rows));
 assert("re-parsed table firstRow preserved", rs1tbl.table.firstRow === true);
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 5. Multi-master round-trip test
+// ══════════════════════════════════════════════════════════════════════════════
+
+console.log("\n--- Multi-master Round-trip ---");
+
+const masters: IMasterDefinition[] = [
+  {
+    name: "light",
+    background: { fill: "FFFFFF" },
+    theme: {
+      name: "Light Theme",
+      colors: { dark1: "333333", light1: "FFFFFF", dark2: "44546A", light2: "E7E6E6" },
+    },
+    children: [
+      {
+        shape: {
+          x: 0,
+          y: 640,
+          width: 960,
+          height: 40,
+          fill: "4472C4",
+        },
+      },
+    ],
+  },
+  {
+    name: "dark",
+    background: { fill: "1B2A4A" },
+    theme: {
+      name: "Dark Theme",
+      colors: { dark1: "FFFFFF", light1: "1B2A4A", dark2: "E7E6E6", light2: "333333" },
+    },
+    children: [
+      {
+        shape: {
+          x: 0,
+          y: 640,
+          width: 960,
+          height: 40,
+          fill: "ED7D31",
+        },
+      },
+    ],
+  },
+];
+
+const multiSlides: ISlideOptions[] = [
+  {
+    master: "light",
+    layout: "blank",
+    children: [
+      {
+        shape: {
+          x: 100,
+          y: 100,
+          width: 760,
+          height: 400,
+          fill: "F2F2F2",
+          text: "Light theme slide",
+        },
+      },
+    ],
+  },
+  {
+    master: "dark",
+    layout: "blank",
+    children: [
+      {
+        shape: {
+          x: 100,
+          y: 100,
+          width: 760,
+          height: 400,
+          fill: "2D4A7A",
+          text: "Dark theme slide",
+          paragraphs: [
+            {
+              properties: { bullet: { type: "none" } },
+              children: [{ text: "Dark theme slide", fill: "FFFFFF", fontSize: 24 }],
+            },
+          ],
+        },
+      },
+    ],
+  },
+];
+
+const multiPres = new Presentation({
+  title: "Multi-master Test",
+  masters,
+  slides: multiSlides,
+});
+
+const multiBuffer = await Packer.toBuffer(multiPres);
+console.log(`Multi-master PPTX: ${multiBuffer.length} bytes`);
+
+const multiParsed = parsePresentation(new Uint8Array(multiBuffer));
+assert("multi-master has 2 slides", multiParsed.slides.length === 2);
+assert("multi-master has masters", !!multiParsed.masters);
+assert("multi-master has 2 masters", multiParsed.masters!.length === 2);
+assert("slide 0 master", multiParsed.slides[0].master === "Light Theme");
+assert("slide 1 master", multiParsed.slides[1].master === "Dark Theme");
+// Master name is derived from theme name
+assert("master 0 name", multiParsed.masters![0].name === "Light Theme");
+assert("master 1 name", multiParsed.masters![1].name === "Dark Theme");
+assert("master 0 has theme", !!multiParsed.masters![0].theme);
+assert("master 0 theme name", multiParsed.masters![0].theme?.name === "Light Theme");
+assert("master 1 has theme", !!multiParsed.masters![1].theme);
+assert("master 1 theme name", multiParsed.masters![1].theme?.name === "Dark Theme");
+
+// Multi-master round-trip: re-generate from parsed data
+const multiPres2 = new Presentation({
+  title: "Multi-master Test (round-trip)",
+  masters: multiParsed.masters as IMasterDefinition[],
+  slides: multiParsed.slides as ISlideOptions[],
+});
+const multiBuffer2 = await Packer.toBuffer(multiPres2);
+assert("multi-master re-gen non-empty", multiBuffer2.length > 0);
+
+const multiParsed2 = parsePresentation(new Uint8Array(multiBuffer2));
+assert("re-gen multi has 2 slides", multiParsed2.slides.length === 2);
+assert("re-gen multi has 2 masters", multiParsed2.masters!.length === 2);
+assert("re-gen slide 0 master", multiParsed2.slides[0].master === "Light Theme");
+assert("re-gen slide 1 master", multiParsed2.slides[1].master === "Dark Theme");
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Summary

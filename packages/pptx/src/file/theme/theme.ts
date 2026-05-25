@@ -1,6 +1,6 @@
 import { ImportedXmlComponent } from "@file/xml-components";
 
-interface IColorSchemeOptions {
+export interface IColorSchemeOptions {
   dark1?: string;
   light1?: string;
   dark2?: string;
@@ -15,7 +15,7 @@ interface IColorSchemeOptions {
   followedHyperlink?: string;
 }
 
-interface IFontSchemeOptions {
+export interface IFontSchemeOptions {
   majorFont?: string;
   minorFont?: string;
   majorFontAsian?: string;

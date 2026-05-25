@@ -13,6 +13,7 @@ import { NotesSlide } from "@file/notes/notes-slide";
 import { PresentationProperties } from "@file/presentation-properties";
 import { PresentationWrapper } from "@file/presentation/presentation-wrapper";
 import { Relationships } from "@file/relationships/relationships";
+import type { IShapeOptions } from "@file/shape/shape";
 import { SlideLayout, type SlideLayoutType } from "@file/slide-layout/slide-layout";
 import {
   DefaultSlideMaster,
@@ -32,6 +33,8 @@ import { convertPixelsToEmu } from "@office-open/core";
 
 // ── Public interfaces ──
 
+export type MasterChild = BaseXmlComponent | { shape: IShapeOptions };
+
 export type SlideSize = "16:9" | "4:3" | { readonly width: number; readonly height: number };
 
 export interface ILayoutPlaceholderOptions {
@@ -47,13 +50,18 @@ export interface ILayoutDefinition {
   readonly type?: SlideLayoutType;
   readonly name?: string;
   readonly placeholders?: ILayoutPlaceholderOptions;
-  readonly children?: readonly BaseXmlComponent[];
+  readonly children?: readonly MasterChild[];
 }
 
 export interface IMasterDefinition extends ISlideMasterOptions {
   readonly name?: string;
   readonly theme?: IThemeOptions;
   readonly layouts?: readonly ILayoutDefinition[];
+}
+
+export interface IParsedPresentation {
+  readonly slides: ISlideOptions[];
+  readonly masters?: IMasterDefinition[];
 }
 
 export interface ICommentOptions {

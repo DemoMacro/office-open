@@ -1,4 +1,5 @@
 import { ChartFrame } from "@file/chart/chart-frame";
+import type { MasterChild } from "@file/file";
 import { AudioFrame } from "@file/media/audio-frame";
 import { VideoFrame } from "@file/media/video-frame";
 import { Picture } from "@file/picture/picture";
@@ -23,4 +24,10 @@ export function coerceChild(child: SlideChild): BaseXmlComponent {
   if ("group" in child) return new GroupShape(child.group);
   if ("smartart" in child) return new SmartArtFrame(child.smartart);
   throw new Error("Unknown slide child type");
+}
+
+export function coerceMasterChild(child: MasterChild): BaseXmlComponent {
+  if (child instanceof BaseXmlComponent) return child;
+  if ("shape" in child) return new Shape(child.shape);
+  throw new Error("Unknown master child type");
 }

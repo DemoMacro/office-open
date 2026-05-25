@@ -1,6 +1,7 @@
 import type { IBackgroundOptions } from "@file/background/background";
+import type { MasterChild } from "@file/file";
 import type { IHeaderFooterOptions } from "@file/header-footer/header-footer";
-import type { BaseXmlComponent } from "@file/xml-components";
+import { coerceMasterChild } from "@file/slide/coerce";
 import type { IContext } from "@file/xml-components";
 import { ImportedXmlComponent } from "@file/xml-components";
 import { convertPixelsToEmu } from "@office-open/core";
@@ -23,7 +24,7 @@ export interface IMasterPlaceholderOptions {
 
 export interface ISlideMasterOptions {
   readonly background?: IBackgroundOptions;
-  readonly children?: readonly BaseXmlComponent[];
+  readonly children?: readonly MasterChild[];
   readonly placeholders?: IMasterPlaceholderOptions;
 }
 
@@ -92,12 +93,12 @@ function buildBackgroundXml(bg?: IBackgroundOptions): string {
   return full.replace(/^<p:bg[^>]*>/, "").replace(/<\/p:bg>$/, "");
 }
 
-function buildChildrenXml(children?: readonly BaseXmlComponent[]): string {
+function buildChildrenXml(children?: readonly MasterChild[]): string {
   if (!children || children.length === 0) return "";
   const ctx: IContext = { stack: [] };
   let result = "";
   for (const child of children) {
-    const obj = child.prepForXml(ctx);
+    const obj = coerceMasterChild(child).prepForXml(ctx);
     if (obj) result += xml(obj);
   }
   return result;

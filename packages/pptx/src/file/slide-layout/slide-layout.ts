@@ -1,8 +1,8 @@
-import type { ILayoutDefinition } from "@file/file";
+import type { ILayoutDefinition, MasterChild } from "@file/file";
 import type { IMasterPlaceholderPosition } from "@file/slide-master/slide-master";
+import { coerceMasterChild } from "@file/slide/coerce";
 import type { IContext } from "@file/xml-components";
 import { ImportedXmlComponent } from "@file/xml-components";
-import type { BaseXmlComponent } from "@file/xml-components";
 import { convertPixelsToEmu } from "@office-open/core";
 import { xml } from "@office-open/xml";
 
@@ -317,12 +317,12 @@ function positionedSldNumPlaceholder(
   return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="Slide Number Placeholder ${id - 1}"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="sldNum" sz="quarter" idx="12"/></p:nvPr></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:fld id="{C1FF6DA9-008F-8B48-92A6-B652298478BF}" type="slidenum"><a:rPr lang="en-US" smtClean="0"/><a:t>‹#›</a:t></a:fld><a:endParaRPr lang="en-US"/></a:p></p:txBody></p:sp>`;
 }
 
-function buildChildrenXml(children?: readonly BaseXmlComponent[]): string {
+function buildChildrenXml(children?: readonly MasterChild[]): string {
   if (!children || children.length === 0) return "";
   const ctx: IContext = { stack: [] };
   let result = "";
   for (const child of children) {
-    const obj = child.prepForXml(ctx);
+    const obj = coerceMasterChild(child).prepForXml(ctx);
     if (obj) result += xml(obj);
   }
   return result;

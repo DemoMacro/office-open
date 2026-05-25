@@ -84,7 +84,7 @@ function parseSlideChild(el: Element, ctx: ParseContext): SlideChild | undefined
 
 // ── Background parser ─────────────────────────────────────────────────────────
 
-function parseBackground(el: Element): IBackgroundOptions {
+export function parseBackground(el: Element): IBackgroundOptions {
   const opts: Record<string, unknown> = {};
   const bgPr = findChild(el, "p:bgPr");
   if (bgPr) {
