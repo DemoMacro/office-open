@@ -27,4 +27,4 @@ const doc = new Document({
 });
 
 const str = await Packer.toBase64String(doc);
-fs.writeFileSync("My Document.docx", str);
+fs.writeFileSync("My Document.docx", Buffer.from(str, "base64"));

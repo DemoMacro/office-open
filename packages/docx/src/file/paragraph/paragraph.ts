@@ -346,7 +346,7 @@ export class Paragraph extends BaseXmlComponent implements FileChild {
         } else if ("commentRangeEnd" in rawChild) {
           child = new CommentRangeEnd(rawChild.commentRangeEnd);
         } else if ("commentReference" in rawChild) {
-          child = new CommentReference(rawChild.commentReference);
+          child = new TextRun({ children: [new CommentReference(rawChild.commentReference)] });
         } else if ("insertion" in rawChild) {
           child = new InsertedTextRun(rawChild.insertion);
         } else if ("deletion" in rawChild) {

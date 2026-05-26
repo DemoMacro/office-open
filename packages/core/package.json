@@ -1,6 +1,6 @@
 {
   "name": "@office-open/core",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Shared OOXML infrastructure: XmlComponent, value validators, unit converters",
   "keywords": [
     "core",
@@ -60,7 +60,7 @@
     "build": "vp pack",
     "prepack": "pnpm build",
     "test": "vp test run --coverage",
-    "test:ci": "vp test run --coverage"
+    "check": "vp check --fix"
   },
   "dependencies": {
     "@office-open/xml": "workspace:*",

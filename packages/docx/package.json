@@ -1,6 +1,6 @@
 {
   "name": "@office-open/docx",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Easily generate .docx files with JS/TS with a nice declarative API. Works for Node and on the Browser.",
   "keywords": [
     "clippy",
@@ -45,7 +45,7 @@
     "build": "vp pack",
     "prepack": "pnpm build",
     "test": "vp test run --coverage",
-    "test:ci": "vp test run --coverage",
+    "check": "vp check --fix",
     "demo": "tsx ./demo/index.ts",
     "typedoc": "typedoc src/index.ts --tsconfig tsconfig.typedoc.json",
     "extract": "tsx scripts/extract-document.ts",
