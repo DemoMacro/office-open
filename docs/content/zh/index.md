@@ -239,15 +239,19 @@ reverse: true
 :::code-group
 
 ```ts [DOCX]
-import { parseDocx } from "@office-open/docx";
+import { parseDocument } from "@office-open/docx";
 
-const { document, sections, paragraphs } = await parseDocx(buffer);
+const opts = parseDocument(buffer);
+// opts.sections — 文档节
+// opts.title, opts.creator — 核心属性
 ```
 
 ```ts [PPTX]
-import { parsePptx } from "@office-open/pptx";
+import { parsePresentation } from "@office-open/pptx";
 
-const { slides, shapes } = await parsePptx(buffer);
+const opts = parsePresentation(buffer);
+// opts.slides — 幻灯片数组
+// opts.size, opts.title — 演示文稿属性
 ```
 
 :::

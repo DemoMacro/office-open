@@ -239,15 +239,19 @@ reverse: true
 :::code-group
 
 ```ts [DOCX]
-import { parseDocx } from "@office-open/docx";
+import { parseDocument } from "@office-open/docx";
 
-const { document, sections, paragraphs } = await parseDocx(buffer);
+const opts = parseDocument(buffer);
+// opts.sections — document sections
+// opts.title, opts.creator — core properties
 ```
 
 ```ts [PPTX]
-import { parsePptx } from "@office-open/pptx";
+import { parsePresentation } from "@office-open/pptx";
 
-const { slides, shapes } = await parsePptx(buffer);
+const opts = parsePresentation(buffer);
+// opts.slides — slide array
+// opts.size, opts.title — presentation properties
 ```
 
 :::
