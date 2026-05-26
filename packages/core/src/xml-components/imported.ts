@@ -7,7 +7,7 @@ import { xml2js } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
 import { XmlAttributeComponent, XmlComponent } from ".";
-import type { IContext, IXmlableObject } from "./base";
+import type { Context, IXmlableObject } from "./base";
 
 /**
  * Converts an xml-js Element into an XmlComponent tree.
@@ -61,7 +61,7 @@ export class ImportedXmlComponent extends XmlComponent {
     return this._sourceXml;
   }
 
-  public override toXml(_context: IContext): string {
+  public override toXml(_context: Context): string {
     return this._sourceXml ?? super.toXml(_context);
   }
 
@@ -85,7 +85,7 @@ export class ImportedRootElementAttributes extends XmlComponent {
     super("");
   }
 
-  public prepForXml(_: IContext): IXmlableObject {
+  public prepForXml(_: Context): IXmlableObject {
     return {
       _attr: this._attr,
     };

@@ -11,7 +11,7 @@
 import type { FootnoteReferenceRun } from "@file/footnotes/footnote/run/reference-run";
 import type { FieldInstruction } from "@file/table-of-contents/field-instruction";
 import { BaseXmlComponent } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 
 import { createBreak } from "./break";
 import type {
@@ -41,10 +41,10 @@ import {
   buildPage,
 } from "./page-number";
 import { buildRunProperties } from "./properties";
-import type { IParagraphRunPropertiesOptions, IRunPropertiesOptions } from "./properties";
+import type { IParagraphRunPropertiesOptions, RunPropertiesOptions } from "./properties";
 import { buildText } from "./run-components/text";
 
-interface IRunOptionsBase {
+interface RunOptionsBase {
   readonly children?: readonly (
     | FieldInstruction
     | (typeof PageNumber)[keyof typeof PageNumber]
@@ -81,9 +81,9 @@ interface IRunOptionsBase {
  *
  * @see {@link Run}
  */
-export type IRunOptions = IRunOptionsBase & IRunPropertiesOptions;
+export type RunOptions = RunOptionsBase & RunPropertiesOptions;
 
-export type IParagraphRunOptions = IRunOptionsBase & IParagraphRunPropertiesOptions;
+export type IParagraphRunOptions = RunOptionsBase & IParagraphRunPropertiesOptions;
 
 /**
  * Constants for page number field types.
@@ -114,15 +114,15 @@ export const PageNumber = {
  * Lazy: stores options, builds IXmlableObject in prepForXml.
  */
 export class Run extends BaseXmlComponent {
-  private readonly options: IRunOptions;
+  private readonly options: RunOptions;
   protected extraChildren: (BaseXmlComponent | IXmlableObject)[] = [];
 
-  public constructor(options: IRunOptions) {
+  public constructor(options: RunOptions) {
     super("w:r");
     this.options = options;
   }
 
-  public prepForXml(context: IContext): IXmlableObject | undefined {
+  public prepForXml(context: Context): IXmlableObject | undefined {
     const children: IXmlableObject[] = [];
 
     const rPr = buildRunProperties(this.options);

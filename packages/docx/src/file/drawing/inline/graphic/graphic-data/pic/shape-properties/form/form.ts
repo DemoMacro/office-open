@@ -7,8 +7,8 @@
  *
  * @module
  */
-import type { IMediaDataTransformation } from "@file/media";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { MediaDataTransformation } from "@file/media";
+import type { Context, IXmlableObject } from "@file/xml-components";
 import { XmlComponent } from "@file/xml-components";
 import { createTransform2D } from "@office-open/core/drawingml";
 
@@ -27,7 +27,7 @@ import { createTransform2D } from "@office-open/core/drawingml";
 export class Form extends XmlComponent {
   private readonly core: XmlComponent;
 
-  public constructor(options: IMediaDataTransformation) {
+  public constructor(options: MediaDataTransformation) {
     super("a:xfrm");
     this.core = createTransform2D({
       x: options.offset?.emus?.x ?? 0,
@@ -40,7 +40,7 @@ export class Form extends XmlComponent {
     });
   }
 
-  public override prepForXml(context: IContext): IXmlableObject | undefined {
+  public override prepForXml(context: Context): IXmlableObject | undefined {
     return this.core["prepForXml"]?.(context);
   }
 }

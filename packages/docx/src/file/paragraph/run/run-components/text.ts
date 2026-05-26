@@ -9,7 +9,7 @@ import { SpaceType } from "@file/shared";
 import { BaseXmlComponent } from "@file/xml-components";
 import type { IXmlableObject } from "@file/xml-components";
 
-interface ITextOptions {
+interface TextOptions {
   readonly space?: (typeof SpaceType)[keyof typeof SpaceType];
   readonly text?: string;
 }
@@ -30,7 +30,7 @@ interface ITextOptions {
  *
  * @internal
  */
-export function buildText(options: string | ITextOptions): IXmlableObject {
+export function buildText(options: string | TextOptions): IXmlableObject {
   if (typeof options === "string") {
     return {
       "w:t": [{ _attr: { "xml:space": SpaceType.PRESERVE } }, options],
@@ -45,9 +45,9 @@ export function buildText(options: string | ITextOptions): IXmlableObject {
  * @deprecated Use buildText() instead.
  */
 export class Text extends BaseXmlComponent {
-  private readonly _opts: string | ITextOptions;
+  private readonly _opts: string | TextOptions;
 
-  public constructor(options: string | ITextOptions) {
+  public constructor(options: string | TextOptions) {
     super("w:t");
     this._opts = options;
   }

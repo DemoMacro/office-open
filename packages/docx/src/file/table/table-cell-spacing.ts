@@ -38,7 +38,7 @@ export const CellSpacingType = {
  *
  * @see {@link createTableCellSpacing}
  */
-export interface ITableCellSpacingProperties {
+export interface TableCellSpacingProperties {
   /** The spacing value (in twips, percentage, or universal measure) */
   readonly value: number | Percentage | UniversalMeasure;
   /** The type of measurement (defaults to DXA/twips) */
@@ -68,8 +68,8 @@ export interface ITableCellSpacingProperties {
 export const createTableCellSpacing = ({
   type = CellSpacingType.DXA,
   value,
-}: ITableCellSpacingProperties): XmlComponent =>
-  new BuilderElement<ITableCellSpacingProperties>({
+}: TableCellSpacingProperties): XmlComponent =>
+  new BuilderElement<TableCellSpacingProperties>({
     attributes: {
       type: { key: "w:type", value: type },
       value: { key: "w:w", value: measurementOrPercentValue(value) },

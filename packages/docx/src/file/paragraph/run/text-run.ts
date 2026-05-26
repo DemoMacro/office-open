@@ -1,5 +1,5 @@
 import { Run } from "./run";
-import type { IRunOptions } from "./run";
+import type { RunOptions } from "./run";
 
 /**
  * Represents a text run in a WordprocessingML document.
@@ -22,7 +22,7 @@ import type { IRunOptions } from "./run";
  * ```
  */
 export class TextRun extends Run {
-  public constructor(options: IRunOptions | string) {
+  public constructor(options: RunOptions | string) {
     super(typeof options === "string" ? { text: options } : options);
   }
 }

@@ -7,7 +7,7 @@
 /**
  * Stores sub-document data for later serialization by the compiler.
  */
-export interface ISubDocData {
+export interface SubDocData {
   /** Raw document data (.docx bytes) */
   readonly data: Uint8Array;
   /** Part sub-path within word/ (e.g., "subdocs/subdoc1.docx") */
@@ -18,17 +18,17 @@ export interface ISubDocData {
  * Manages sub-document parts in a document.
  */
 export class SubDocCollection {
-  private readonly map: Map<string, ISubDocData>;
+  private readonly map: Map<string, SubDocData>;
 
   public constructor() {
-    this.map = new Map<string, ISubDocData>();
+    this.map = new Map<string, SubDocData>();
   }
 
-  public addSubDoc(key: string, data: ISubDocData): void {
+  public addSubDoc(key: string, data: SubDocData): void {
     this.map.set(key, data);
   }
 
-  public get Array(): readonly ISubDocData[] {
+  public get Array(): readonly SubDocData[] {
     return [...this.map.values()];
   }
 }

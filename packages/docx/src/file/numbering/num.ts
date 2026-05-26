@@ -42,7 +42,7 @@ class NumAttributes extends XmlAttributeComponent<{
  * @property num - The level number to override (0-8)
  * @property start - The starting number for this level
  */
-interface IOverrideLevel {
+interface OverrideLevel {
   /** The level number to override (0-8). */
   readonly num: number;
   /** The starting number for this level. */
@@ -58,7 +58,7 @@ interface IOverrideLevel {
  * @property instance - Instance number for tracking multiple uses
  * @property overrideLevels - Array of level overrides to customize specific levels
  */
-export interface IConcreteNumberingOptions {
+export interface ConcreteNumberingOptions {
   /** Unique identifier for this numbering instance. */
   readonly numId: number;
   /** ID of the abstract numbering definition to reference. */
@@ -68,7 +68,7 @@ export interface IConcreteNumberingOptions {
   /** Instance number for tracking multiple uses. */
   readonly instance: number;
   /** Array of level overrides to customize specific levels. */
-  readonly overrideLevels?: readonly IOverrideLevel[];
+  readonly overrideLevels?: readonly OverrideLevel[];
 }
 
 /**
@@ -121,7 +121,7 @@ export class ConcreteNumbering extends XmlComponent {
    *
    * @param options - Configuration options for the numbering instance
    */
-  public constructor(options: IConcreteNumberingOptions) {
+  public constructor(options: ConcreteNumberingOptions) {
     super("w:num");
 
     this.numId = options.numId;

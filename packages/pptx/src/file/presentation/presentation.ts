@@ -1,8 +1,8 @@
 import { XmlComponent } from "@file/xml-components";
 import { ImportedXmlComponent } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 
-export interface IPresentationOptions {
+export interface PresentationOptions {
   readonly slideWidth?: number;
   readonly slideHeight?: number;
   readonly slideIds: readonly number[];
@@ -49,14 +49,14 @@ const DEFAULT_TEXT_STYLE_OBJ: IXmlableObject = ImportedXmlComponent.fromXmlStrin
  * Lazy: stores options, builds XML object directly in prepForXml.
  */
 export class Presentation extends XmlComponent {
-  private readonly options: IPresentationOptions;
+  private readonly options: PresentationOptions;
 
-  public constructor(options: IPresentationOptions) {
+  public constructor(options: PresentationOptions) {
     super("p:presentation");
     this.options = options;
   }
 
-  public prepForXml(_context: IContext): IXmlableObject | undefined {
+  public prepForXml(_context: Context): IXmlableObject | undefined {
     const opts = this.options;
 
     const children: IXmlableObject[] = [];
@@ -106,7 +106,7 @@ export class Presentation extends XmlComponent {
     return { "p:presentation": children };
   }
 
-  public toXml(_context: IContext): string {
+  public toXml(_context: Context): string {
     const opts = this.options;
 
     const cx = opts.slideWidth ?? 12192000;

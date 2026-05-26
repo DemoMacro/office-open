@@ -43,7 +43,7 @@ export const SectionType = {
   ODD_PAGE: "oddPage",
 } as const;
 
-interface ISectionTypeAttributes {
+interface SectionTypeAttributes {
   readonly val: (typeof SectionType)[keyof typeof SectionType];
 }
 
@@ -74,7 +74,7 @@ interface ISectionTypeAttributes {
 export const createSectionType = (
   value: (typeof SectionType)[keyof typeof SectionType],
 ): XmlComponent =>
-  new BuilderElement<ISectionTypeAttributes>({
+  new BuilderElement<SectionTypeAttributes>({
     attributes: {
       val: { key: "w:val", value: value },
     },

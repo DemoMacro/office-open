@@ -1,8 +1,8 @@
-import type { IViewWrapper } from "./document-wrapper";
+import type { ViewWrapper } from "./document-wrapper";
 import { Endnotes } from "./endnotes/endnotes";
 import { Relationships } from "./relationships";
 
-export class EndnotesWrapper implements IViewWrapper {
+export class EndnotesWrapper implements ViewWrapper {
   private readonly endnotes: Endnotes;
   private readonly relationships: Relationships;
 

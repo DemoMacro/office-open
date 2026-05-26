@@ -29,7 +29,7 @@ export type BulletNoneOption = {
 
 export type BulletOptions = BulletCharOptions | BulletAutoNumOptions | BulletNoneOption;
 
-export interface IParagraphPropertiesOptions {
+export interface ParagraphPropertiesOptions {
   readonly alignment?: keyof typeof TextAlignment;
   readonly indentLevel?: number;
   readonly marginBottom?: number;
@@ -89,7 +89,7 @@ function buildBulletChildren(options: BulletOptions): IXmlableObject[] {
  * Returns undefined when no meaningful content (empty → omitted from output).
  */
 export function buildParagraphProperties(
-  options: IParagraphPropertiesOptions,
+  options: ParagraphPropertiesOptions,
 ): IXmlableObject | undefined {
   const children: IXmlableObject[] = [];
 
@@ -144,14 +144,14 @@ export function buildParagraphProperties(
  * Omitted from output when completely empty.
  */
 export class ParagraphProperties extends XmlComponent {
-  private readonly options: IParagraphPropertiesOptions;
+  private readonly options: ParagraphPropertiesOptions;
 
-  public constructor(options: IParagraphPropertiesOptions = {}) {
+  public constructor(options: ParagraphPropertiesOptions = {}) {
     super("a:pPr");
     this.options = options;
   }
 
-  public prepForXml(_context: import("@file/xml-components").IContext): IXmlableObject | undefined {
+  public prepForXml(_context: import("@file/xml-components").Context): IXmlableObject | undefined {
     return buildParagraphProperties(this.options);
   }
 }

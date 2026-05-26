@@ -8,7 +8,7 @@
  */
 import { XmlAttributeComponent } from "@file/xml-components";
 
-import type { IDistance } from "../drawing";
+import type { Distance } from "../drawing";
 
 /**
  * Attributes for an anchored drawing element.
@@ -28,7 +28,7 @@ export type IAnchorAttributes = {
   readonly relativeHeight?: number;
   /** Whether to use simple positioning ("0" = false, "1" = true) */
   readonly simplePos?: "0" | "1";
-} & IDistance;
+} & Distance;
 
 /**
  * XML attributes component for anchored drawings.

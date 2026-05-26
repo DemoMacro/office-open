@@ -11,7 +11,7 @@
  */
 import type { FileChild } from "@file/file-child";
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 
 const SUBDOC_RELATIONSHIP_TYPE =
@@ -27,7 +27,7 @@ class SubDocAttributes extends XmlAttributeComponent<{ readonly id: string }> {
 /**
  * Options for creating a SubDoc element.
  */
-export interface ISubDocOptions {
+export interface SubDocOptions {
   /** The sub-document data (raw bytes of a .docx file) */
   readonly data: Uint8Array | string;
 }
@@ -49,14 +49,14 @@ export interface ISubDocOptions {
  */
 export class SubDoc extends XmlComponent implements FileChild {
   public readonly fileChild = Symbol();
-  private readonly options: ISubDocOptions;
+  private readonly options: SubDocOptions;
 
-  public constructor(options: ISubDocOptions) {
+  public constructor(options: SubDocOptions) {
     super("w:subDoc");
     this.options = options;
   }
 
-  public prepForXml(context: IContext): IXmlableObject {
+  public prepForXml(context: Context): IXmlableObject {
     const relId = uniqueId();
     const partPath = `subdocs/subdoc${relId}.docx`;
 

@@ -1,4 +1,4 @@
-import type { IMediaDataTransformation } from "@file/media";
+import type { MediaDataTransformation } from "@file/media";
 import { BuilderElement } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
 import { buildFill, type FillOptions } from "@office-open/core/drawingml";
@@ -13,7 +13,7 @@ export type GroupChild = XmlComponent;
 /**
  * Child coordinate offset (CT_Point2D).
  */
-export interface IChildOffset {
+export interface ChildOffset {
   readonly x: number;
   readonly y: number;
 }
@@ -21,7 +21,7 @@ export interface IChildOffset {
 /**
  * Child coordinate extent (CT_PositiveSize2D).
  */
-export interface IChildExtent {
+export interface ChildExtent {
   readonly cx: number;
   readonly cy: number;
 }
@@ -31,11 +31,11 @@ export interface WpgGroupCoreOptions {
 }
 
 export type WpgGroupOptions = WpgGroupCoreOptions & {
-  readonly transformation: IMediaDataTransformation;
+  readonly transformation: MediaDataTransformation;
   /** Child coordinate offset (chOff) */
-  readonly chOff?: IChildOffset;
+  readonly chOff?: ChildOffset;
   /** Child coordinate extent (chExt) */
-  readonly chExt?: IChildExtent;
+  readonly chExt?: ChildExtent;
   /** Group fill */
   readonly fill?: FillOptions;
   /** Group effects */
@@ -64,9 +64,9 @@ export type WpgGroupOptions = WpgGroupCoreOptions & {
  * ```
  */
 const createGroupForm = (
-  transform: IMediaDataTransformation,
-  chOff?: IChildOffset,
-  chExt?: IChildExtent,
+  transform: MediaDataTransformation,
+  chOff?: ChildOffset,
+  chExt?: ChildExtent,
 ): XmlComponent => {
   const children: XmlComponent[] = [
     new Offset(transform.offset?.emus?.x, transform.offset?.emus?.y),

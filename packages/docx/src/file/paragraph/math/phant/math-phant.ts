@@ -20,7 +20,7 @@ import type { MathPhantPropertiesOptions } from "./math-phant-properties";
  *
  * @see {@link MathPhant}
  */
-export interface IMathPhantOptions {
+export interface MathPhantOptions {
   /** Phantom properties */
   readonly properties?: MathPhantPropertiesOptions;
   /** Content to be made invisible */
@@ -48,7 +48,7 @@ export interface IMathPhantOptions {
  * ```
  */
 export class MathPhant extends XmlComponent {
-  public constructor(options: IMathPhantOptions) {
+  public constructor(options: MathPhantOptions) {
     super("m:phant");
 
     if (options.properties) {

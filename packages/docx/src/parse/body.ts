@@ -1,11 +1,11 @@
 import type { ISectionPropertiesOptions } from "@file/document/body/section-properties/section-properties";
-import type { ISectionOptions } from "@file/file";
-import type { IParagraphOptions } from "@file/paragraph/paragraph";
+import type { SectionOptions } from "@file/file";
+import type { ParagraphOptions } from "@file/paragraph/paragraph";
 import type { SectionChild } from "@file/section-child";
 /**
  * Body parser for DOCX documents.
  *
- * Parses w:body → ISectionOptions[] by splitting at w:sectPr boundaries.
+ * Parses w:body → SectionOptions[] by splitting at w:sectPr boundaries.
  *
  * @module
  */
@@ -216,7 +216,7 @@ export function parseSectionChild(el: Element, ctx: ParseContext): SectionChild 
         const drawingChild = parseDrawingRun(drawing, ctx);
         if (drawingChild) {
           const paraOpts = parseParagraph(el, ctx) as Record<string, unknown>;
-          const existingChildren = ((paraOpts.children ?? []) as IParagraphOptions["children"])!;
+          const existingChildren = ((paraOpts.children ?? []) as ParagraphOptions["children"])!;
           return {
             paragraph: {
               ...paraOpts,
@@ -279,13 +279,13 @@ function findDeepElement(parent: Element, name: string): Element | undefined {
 // ── Body parsing with section splitting ───────────────────────────────────────
 
 /**
- * Parse w:body element into ISectionOptions[].
+ * Parse w:body element into SectionOptions[].
  *
  * Splits body content at w:sectPr boundaries to create sections.
  * The last w:sectPr (child of w:body directly) defines the last section.
  * Previous w:sectPr elements appear inside w:pPr elements.
  */
-export function parseBody(body: Element, ctx: ParseContext): ISectionOptions[] {
+export function parseBody(body: Element, ctx: ParseContext): SectionOptions[] {
   // Wire up circular dependencies
   setSectionChildParser(parseSectionChild);
   setSectionChildrenParser(parseSectionChildrenElements);
@@ -330,7 +330,7 @@ export function parseBody(body: Element, ctx: ParseContext): ISectionOptions[] {
   }
 
   // Split into sections
-  const sections: ISectionOptions[] = [];
+  const sections: SectionOptions[] = [];
   let start = 0;
 
   for (let i = 0; i < boundaries.length; i++) {
@@ -353,7 +353,7 @@ export function parseBody(body: Element, ctx: ParseContext): ISectionOptions[] {
       properties: cleanProps,
       ...(parsedHeaders ? { headers: parsedHeaders } : {}),
       ...(parsedFooters ? { footers: parsedFooters } : {}),
-    } as ISectionOptions;
+    } as SectionOptions;
 
     sections.push(section);
     start = boundary.index;

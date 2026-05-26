@@ -1,15 +1,15 @@
 import { Transform2D } from "@file/drawingml/transform-2d";
 import { BuilderElement, NextAttributeComponent, XmlComponent } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 import { emuPosition } from "@util/position";
 
 import { ChartCollection } from "./chart-collection";
-import type { IChartSpaceOptions } from "./chart-space";
+import type { ChartSpaceOptions } from "./chart-space";
 import { ChartSpace } from "./chart-space";
 
 let nextChartFrameId = 2048;
 
-export interface IChartFrameOptions extends IChartSpaceOptions {
+export interface ChartFrameOptions extends ChartSpaceOptions {
   readonly x?: number;
   readonly y?: number;
   readonly width?: number;
@@ -23,10 +23,10 @@ export interface IChartFrameOptions extends IChartSpaceOptions {
  * and referenced via a relationship ID placeholder {chart:key}.
  */
 export class ChartFrame extends XmlComponent {
-  private readonly chartOptions: IChartSpaceOptions;
+  private readonly chartOptions: ChartSpaceOptions;
   private readonly chartKey: string;
 
-  public constructor(options: IChartFrameOptions) {
+  public constructor(options: ChartFrameOptions) {
     super("p:graphicFrame");
 
     this.chartOptions = options;
@@ -46,7 +46,7 @@ export class ChartFrame extends XmlComponent {
     this.root.push(new ChartGraphic(this.chartKey));
   }
 
-  public prepForXml(context: IContext): IXmlableObject | undefined {
+  public prepForXml(context: Context): IXmlableObject | undefined {
     const file = context.fileData as { Charts: ChartCollection };
     if (file?.Charts) {
       file.Charts.addChart(this.chartKey, {

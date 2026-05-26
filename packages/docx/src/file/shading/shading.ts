@@ -38,7 +38,7 @@ import type { ThemeColor } from "@util/values";
  * @property color - Pattern color in hex format
  * @property type - Shading pattern type
  */
-export interface IShadingAttributesProperties {
+export interface ShadingAttributesProperties {
   readonly fill?: string;
   readonly color?: string;
   readonly type?: (typeof ShadingType)[keyof typeof ShadingType];
@@ -74,8 +74,8 @@ export const createShading = ({
   themeFill,
   themeFillTint,
   themeFillShade,
-}: IShadingAttributesProperties): XmlComponent =>
-  new BuilderElement<IShadingAttributesProperties>({
+}: ShadingAttributesProperties): XmlComponent =>
+  new BuilderElement<ShadingAttributesProperties>({
     attributes: {
       color: {
         key: "w:color",

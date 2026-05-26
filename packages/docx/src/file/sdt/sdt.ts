@@ -24,7 +24,7 @@ import type { SdtPropertiesOptions } from "../table-of-contents";
 /**
  * Options for creating an inline Structured Document Tag (CT_SdtRun).
  */
-export interface ISdtRunOptions {
+export interface SdtRunOptions {
   /** SDT properties (alias, tag, type discriminator, etc.) */
   readonly properties: SdtPropertiesOptions;
   /** Content children (runs, text runs, etc.) to place inside the SDT */
@@ -67,7 +67,7 @@ export interface ISdtRunOptions {
  * ```
  */
 export class StructuredDocumentTagRun extends XmlComponent {
-  public constructor(options: ISdtRunOptions) {
+  public constructor(options: SdtRunOptions) {
     super("w:sdt");
     this.root.push(new StructuredDocumentTagProperties(options.properties));
     if (options.children && options.children.length > 0) {
@@ -83,7 +83,7 @@ export class StructuredDocumentTagRun extends XmlComponent {
 /**
  * Options for creating a block-level Structured Document Tag (CT_SdtBlock).
  */
-export interface ISdtBlockOptions {
+export interface SdtBlockOptions {
   /** SDT properties */
   readonly properties: SdtPropertiesOptions;
   /** Content children (paragraphs, tables, etc.) to place inside the SDT */
@@ -117,7 +117,7 @@ export interface ISdtBlockOptions {
  */
 export class StructuredDocumentTagBlock extends XmlComponent implements FileChild {
   public readonly fileChild = Symbol();
-  public constructor(options: ISdtBlockOptions) {
+  public constructor(options: SdtBlockOptions) {
     super("w:sdt");
     this.root.push(new StructuredDocumentTagProperties(options.properties));
     if (options.children && options.children.length > 0) {

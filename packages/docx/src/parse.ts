@@ -149,7 +149,7 @@ function parseRootRels(doc: ParsedDocument): {
 }
 
 /**
- * Parse a .docx file and convert it into IPropertiesOptions.
+ * Parse a .docx file and convert it into PropertiesOptions.
  *
  * This is the main public API for parsing DOCX files.
  * The returned options can be passed directly to `new Document(parsed)`
@@ -158,9 +158,7 @@ function parseRootRels(doc: ParsedDocument): {
  * @param data - Raw bytes of a .docx file
  * @returns Document options including sections and metadata
  */
-export function parseDocument(
-  data: Uint8Array,
-): import("@file/core-properties").IPropertiesOptions {
+export function parseDocument(data: Uint8Array): import("@file/core-properties").PropertiesOptions {
   const docx = parseDocx(data);
   const ctx = new ParseContext(docx, buildStyleCache(docx), buildNumberingCache(docx));
   const sections = parseBody(docx.body, ctx);
@@ -198,7 +196,7 @@ export function parseDocument(
     }
   }
 
-  return opts as unknown as import("@file/core-properties").IPropertiesOptions;
+  return opts as unknown as import("@file/core-properties").PropertiesOptions;
 }
 
 export function parseDocx(data: Uint8Array): DocxDocument {

@@ -11,11 +11,11 @@
 import { BuilderElement } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
 
-import type { IMargins } from "../floating";
+import type { Margins } from "../floating";
 import { TextWrappingSide } from "./text-wrapping";
-import type { ITextWrapping } from "./text-wrapping";
+import type { TextWrapping } from "./text-wrapping";
 
-interface IWrapTightAttributes {
+interface WrapTightAttributes {
   readonly wrapText: (typeof TextWrappingSide)[keyof typeof TextWrappingSide];
   readonly distL?: number;
   readonly distR?: number;
@@ -104,8 +104,8 @@ const createWrapPolygon = (cx: number, cy: number): XmlComponent =>
  * ```
  */
 export const createWrapTight = (
-  textWrapping: ITextWrapping,
-  margins: IMargins = {
+  textWrapping: TextWrapping,
+  margins: Margins = {
     bottom: 0,
     left: 0,
     right: 0,
@@ -113,7 +113,7 @@ export const createWrapTight = (
   },
   extent: { x: number; y: number },
 ): XmlComponent =>
-  new BuilderElement<IWrapTightAttributes>({
+  new BuilderElement<WrapTightAttributes>({
     attributes: {
       distL: { key: "distL", value: margins.left },
       distR: { key: "distR", value: margins.right },

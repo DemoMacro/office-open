@@ -7,7 +7,7 @@
  */
 import { XmlComponent } from "@file/xml-components";
 
-import type { ITableCellOptions, TableCell } from "../table";
+import type { TableCellOptions, TableCell } from "../table";
 import {
   StructuredDocumentTagContent,
   StructuredDocumentTagProperties,
@@ -17,7 +17,7 @@ import type { SdtPropertiesOptions } from "../table-of-contents";
 /**
  * Options for creating a cell-level Structured Document Tag (CT_SdtCell).
  */
-export interface ISdtCellOptions {
+export interface SdtCellOptions {
   readonly properties: SdtPropertiesOptions;
   readonly children?: readonly TableCell[];
 }
@@ -37,9 +37,9 @@ export interface ISdtCellOptions {
  * ```
  */
 export class StructuredDocumentTagCell extends XmlComponent {
-  public readonly options: ITableCellOptions;
+  public readonly options: TableCellOptions;
 
-  public constructor(sdtOptions: ISdtCellOptions) {
+  public constructor(sdtOptions: SdtCellOptions) {
     super("w:sdt");
     this.options = { children: [] };
     this.root.push(new StructuredDocumentTagProperties(sdtOptions.properties));

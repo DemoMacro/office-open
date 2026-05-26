@@ -1,31 +1,31 @@
 import { AppProperties } from "@file/app-properties/app-properties";
-import { Background, type IBackgroundOptions } from "@file/background/background";
+import { Background, type BackgroundOptions } from "@file/background/background";
 import { ChartCollection } from "@file/chart/chart-collection";
 import { CommentAuthorList } from "@file/comment/comment-author-list";
 import type { AuthorEntry } from "@file/comment/comment-author-list";
 import { SlideCommentList } from "@file/comment/slide-comment-list";
 import { ContentTypes } from "@file/content-types/content-types";
-import { CoreProperties, type ICorePropertiesOptions } from "@file/core-properties/properties";
-import type { IHeaderFooterOptions } from "@file/header-footer/header-footer";
+import { CoreProperties, type CorePropertiesOptions } from "@file/core-properties/properties";
+import type { SlideHeaderFooterOptions } from "@file/header-footer/header-footer";
 import { HyperlinkCollection } from "@file/hyperlink-collection";
 import { Media } from "@file/media/media";
 import { NotesSlide } from "@file/notes/notes-slide";
 import { PresentationProperties } from "@file/presentation-properties";
 import { PresentationWrapper } from "@file/presentation/presentation-wrapper";
 import { Relationships } from "@file/relationships/relationships";
-import type { IShapeOptions } from "@file/shape/shape";
+import type { ShapeOptions } from "@file/shape/shape";
 import { SlideLayout, type SlideLayoutType } from "@file/slide-layout/slide-layout";
 import {
   DefaultSlideMaster,
-  type IMasterPlaceholderPosition,
-  type ISlideMasterOptions,
+  type MasterPlaceholderPosition,
+  type SlideMasterOptions,
 } from "@file/slide-master/slide-master";
 import { Slide } from "@file/slide/slide";
 import type { SlideChild } from "@file/slide/slide-child";
 import { SmartArtCollection } from "@file/smartart/smartart-collection";
 import { TableStyles } from "@file/table-styles";
-import { DefaultTheme, type IThemeOptions } from "@file/theme/theme";
-import type { ITransitionOptions } from "@file/transition/transition";
+import { DefaultTheme, type ThemeOptions } from "@file/theme/theme";
+import type { TransitionOptions } from "@file/transition/transition";
 import { ViewProperties } from "@file/view-properties";
 import type { BaseXmlComponent } from "@file/xml-components";
 import type { RelationshipType } from "@office-open/core";
@@ -33,33 +33,33 @@ import { convertPixelsToEmu } from "@office-open/core";
 
 // ── Public interfaces ──
 
-export type MasterChild = BaseXmlComponent | { shape: IShapeOptions };
+export type MasterChild = BaseXmlComponent | { shape: ShapeOptions };
 
 export type SlideSize = "16:9" | "4:3" | { readonly width: number; readonly height: number };
 
-export interface ILayoutPlaceholderOptions {
-  readonly title?: IMasterPlaceholderPosition | false;
-  readonly body?: IMasterPlaceholderPosition | false;
-  readonly subtitle?: IMasterPlaceholderPosition | false;
-  readonly date?: IMasterPlaceholderPosition | false;
-  readonly footer?: IMasterPlaceholderPosition | false;
-  readonly slideNumber?: IMasterPlaceholderPosition | false;
+export interface LayoutPlaceholderOptions {
+  readonly title?: MasterPlaceholderPosition | false;
+  readonly body?: MasterPlaceholderPosition | false;
+  readonly subtitle?: MasterPlaceholderPosition | false;
+  readonly date?: MasterPlaceholderPosition | false;
+  readonly footer?: MasterPlaceholderPosition | false;
+  readonly slideNumber?: MasterPlaceholderPosition | false;
 }
 
-export interface ILayoutDefinition {
+export interface LayoutDefinition {
   readonly type?: SlideLayoutType;
   readonly name?: string;
-  readonly placeholders?: ILayoutPlaceholderOptions;
+  readonly placeholders?: LayoutPlaceholderOptions;
   readonly children?: readonly MasterChild[];
 }
 
-export interface IMasterDefinition extends ISlideMasterOptions {
+export interface MasterDefinition extends SlideMasterOptions {
   readonly name?: string;
-  readonly theme?: IThemeOptions;
-  readonly layouts?: readonly ILayoutDefinition[];
+  readonly theme?: ThemeOptions;
+  readonly layouts?: readonly LayoutDefinition[];
 }
 
-export interface ICommentOptions {
+export interface SlideCommentOptions {
   readonly author: string;
   readonly text: string;
   readonly x: number;
@@ -68,29 +68,29 @@ export interface ICommentOptions {
   readonly date?: string;
 }
 
-export interface ISlideOptions {
+export interface SlideOptions {
   readonly children?: readonly SlideChild[];
-  readonly background?: IBackgroundOptions;
+  readonly background?: BackgroundOptions;
   readonly notes?: string;
-  readonly transition?: ITransitionOptions;
-  readonly headerFooter?: IHeaderFooterOptions;
-  readonly comments?: readonly ICommentOptions[];
+  readonly transition?: TransitionOptions;
+  readonly headerFooter?: SlideHeaderFooterOptions;
+  readonly comments?: readonly SlideCommentOptions[];
   readonly layout?: SlideLayoutType | string;
   readonly master?: string;
 }
 
-export interface IShowOptions {
+export interface ShowOptions {
   readonly loop?: boolean;
   readonly kiosk?: boolean;
   readonly showNarration?: boolean;
   readonly useTimings?: boolean;
 }
 
-export interface IPresentationOptions extends ICorePropertiesOptions {
+export interface PresentationOptions extends CorePropertiesOptions {
   readonly size?: SlideSize;
-  readonly masters?: readonly IMasterDefinition[];
-  readonly slides?: readonly ISlideOptions[];
-  readonly show?: IShowOptions;
+  readonly masters?: readonly MasterDefinition[];
+  readonly slides?: readonly SlideOptions[];
+  readonly show?: ShowOptions;
 }
 
 interface RelEntry {
@@ -131,7 +131,7 @@ interface LayoutInfo {
 interface MasterInfo {
   readonly name: string;
   readonly index: number;
-  readonly definition: IMasterDefinition;
+  readonly definition: MasterDefinition;
   readonly master: DefaultSlideMaster;
   readonly theme: DefaultTheme;
   readonly layouts: LayoutInfo[];
@@ -140,12 +140,12 @@ interface MasterInfo {
 }
 
 export class File {
-  private readonly slideOptions: readonly ISlideOptions[];
-  private readonly corePropsOptions: ICorePropertiesOptions;
-  private readonly showOptions?: IShowOptions;
+  private readonly slideOptions: readonly SlideOptions[];
+  private readonly corePropsOptions: CorePropertiesOptions;
+  private readonly showOptions?: ShowOptions;
   private readonly slideWidthEmus: number;
   private readonly slideHeightEmus: number;
-  private readonly masterDefs: readonly IMasterDefinition[];
+  private readonly masterDefs: readonly MasterDefinition[];
 
   // Lazy components
   private coreProperties?: CoreProperties;
@@ -176,7 +176,7 @@ export class File {
   // Lazy relationship data
   private fileRels?: Relationships;
 
-  public constructor(options: IPresentationOptions) {
+  public constructor(options: PresentationOptions) {
     this.slideOptions = options.slides ?? [];
     this.corePropsOptions = options;
     this.showOptions = options.show;
@@ -191,7 +191,7 @@ export class File {
   private getMasterMap(): MasterInfo[] {
     if (this.masterMap) return this.masterMap;
 
-    const defs = this.masterDefs.length > 0 ? this.masterDefs : [{} as IMasterDefinition];
+    const defs = this.masterDefs.length > 0 ? this.masterDefs : [{} as MasterDefinition];
     const slideMasterLookup = new Map<number, number>();
 
     // Build slide → master index lookup

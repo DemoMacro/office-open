@@ -12,7 +12,7 @@
 import type { XmlComponent } from "@file/xml-components";
 
 import type { HeaderFooterReferenceType } from "./document";
-import type { IViewWrapper } from "./document-wrapper";
+import type { ViewWrapper } from "./document-wrapper";
 import type { FileChild } from "./file-child";
 import { Header } from "./header/header";
 import type { Media } from "./media";
@@ -24,7 +24,7 @@ import { Relationships } from "./relationships";
  * @property header - The HeaderWrapper instance containing the header content
  * @property type - The header type (default, first page, even pages)
  */
-export interface IDocumentHeader {
+export interface DocumentHeader {
   readonly header: HeaderWrapper;
   readonly type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType];
 }
@@ -47,7 +47,7 @@ export interface IDocumentHeader {
  * }));
  * ```
  */
-export class HeaderWrapper implements IViewWrapper {
+export class HeaderWrapper implements ViewWrapper {
   private readonly header: Header;
   private readonly relationships: Relationships;
 

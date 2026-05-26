@@ -20,7 +20,7 @@ import { MathNumerator } from "./math-numerator";
  *
  * @see {@link MathFraction}
  */
-export interface IMathFractionOptions {
+export interface MathFractionOptions {
   /** Math components for the numerator (top) of the fraction */
   readonly numerator: readonly MathComponent[];
   /** Math components for the denominator (bottom) of the fraction */
@@ -58,7 +58,7 @@ export interface IMathFractionOptions {
  * ```
  */
 export class MathFraction extends XmlComponent {
-  public constructor(options: IMathFractionOptions) {
+  public constructor(options: MathFractionOptions) {
     super("m:f");
 
     if (options.fractionType) {

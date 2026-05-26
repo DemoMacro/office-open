@@ -1,31 +1,31 @@
-import type { IBackgroundOptions } from "@file/background/background";
+import type { BackgroundOptions } from "@file/background/background";
 import type { MasterChild } from "@file/file";
-import type { IHeaderFooterOptions } from "@file/header-footer/header-footer";
+import type { SlideHeaderFooterOptions } from "@file/header-footer/header-footer";
 import { coerceMasterChild } from "@file/slide/coerce";
-import type { IContext } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 import { ImportedXmlComponent } from "@file/xml-components";
 import { convertPixelsToEmu } from "@office-open/core";
 import { xml } from "@office-open/xml";
 
-export interface IMasterPlaceholderPosition {
+export interface MasterPlaceholderPosition {
   readonly x: number;
   readonly y: number;
   readonly width: number;
   readonly height: number;
 }
 
-export interface IMasterPlaceholderOptions {
-  readonly title?: boolean | IMasterPlaceholderPosition;
-  readonly body?: boolean | IMasterPlaceholderPosition;
-  readonly date?: boolean | IMasterPlaceholderPosition;
-  readonly footer?: boolean | IMasterPlaceholderPosition;
-  readonly slideNumber?: boolean | IMasterPlaceholderPosition;
+export interface MasterPlaceholderOptions {
+  readonly title?: boolean | MasterPlaceholderPosition;
+  readonly body?: boolean | MasterPlaceholderPosition;
+  readonly date?: boolean | MasterPlaceholderPosition;
+  readonly footer?: boolean | MasterPlaceholderPosition;
+  readonly slideNumber?: boolean | MasterPlaceholderPosition;
 }
 
-export interface ISlideMasterOptions {
-  readonly background?: IBackgroundOptions;
+export interface SlideMasterOptions {
+  readonly background?: BackgroundOptions;
   readonly children?: readonly MasterChild[];
-  readonly placeholders?: IMasterPlaceholderOptions;
+  readonly placeholders?: MasterPlaceholderOptions;
 }
 
 // Reference positions (16:9 master, slideWidth = 12192000 EMU)
@@ -38,7 +38,7 @@ const REF_DATE = { x: 838200, y: 6356350, cx: 2743200, cy: 365125 };
 const REF_FOOTER = { x: 4038600, y: 6356350, cx: 4114800, cy: 365125 };
 const REF_SLDNUM = { x: 8610600, y: 6356350, cx: 2743200, cy: 365125 };
 
-function toEmu(pos: IMasterPlaceholderPosition) {
+function toEmu(pos: MasterPlaceholderPosition) {
   return {
     x: convertPixelsToEmu(pos.x),
     y: convertPixelsToEmu(pos.y),
@@ -48,7 +48,7 @@ function toEmu(pos: IMasterPlaceholderPosition) {
 }
 
 function resolvePos(
-  opt: boolean | IMasterPlaceholderPosition | undefined,
+  opt: boolean | MasterPlaceholderPosition | undefined,
   ref: { x: number; y: number; cx: number; cy: number },
 ): { x: number; y: number; cx: number; cy: number } | null {
   if (opt === false) return null;
@@ -79,10 +79,10 @@ function footerBody(algn: string, fldType: string, fldId: string, fldText: strin
   return `<a:bodyPr/><a:lstStyle><a:lvl1pPr algn="${algn}"><a:defRPr sz="1200"><a:solidFill><a:schemeClr val="tx1"><a:tint val="75000"/></a:schemeClr></a:solidFill></a:defRPr></a:lvl1pPr></a:lstStyle><a:p>${fld}<a:endParaRPr lang="en-US"/></a:p>`;
 }
 
-function buildBackgroundXml(bg?: IBackgroundOptions): string {
+function buildBackgroundXml(bg?: BackgroundOptions): string {
   if (!bg) return `<p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef>`;
   const { Background } = require("@file/background/background") as {
-    Background: new (o?: IBackgroundOptions) => { prepForXml(ctx: IContext): unknown };
+    Background: new (o?: BackgroundOptions) => { prepForXml(ctx: Context): unknown };
   };
   const bgObj = new Background(bg);
   const obj = bgObj.prepForXml({ stack: [] });
@@ -95,7 +95,7 @@ function buildBackgroundXml(bg?: IBackgroundOptions): string {
 
 function buildChildrenXml(children?: readonly MasterChild[]): string {
   if (!children || children.length === 0) return "";
-  const ctx: IContext = { stack: [] };
+  const ctx: Context = { stack: [] };
   let result = "";
   for (const child of children) {
     const obj = coerceMasterChild(child).prepForXml(ctx);
@@ -106,8 +106,8 @@ function buildChildrenXml(children?: readonly MasterChild[]): string {
 
 function buildSlideMasterXml(
   layoutCount: number,
-  headerFooter?: IHeaderFooterOptions,
-  masterOptions?: ISlideMasterOptions,
+  headerFooter?: SlideHeaderFooterOptions,
+  masterOptions?: SlideMasterOptions,
   slideWidth: number = SW_REF,
   masterIndex: number = 0,
 ): string {
@@ -233,8 +233,8 @@ export class DefaultSlideMaster extends ImportedXmlComponent {
 
   public constructor(
     layoutCount: number = 1,
-    headerFooter?: IHeaderFooterOptions,
-    masterOptions?: ISlideMasterOptions,
+    headerFooter?: SlideHeaderFooterOptions,
+    masterOptions?: SlideMasterOptions,
     slideWidth: number = SW_REF,
     masterIndex: number = 0,
   ) {

@@ -150,7 +150,7 @@ export interface FlatTextOptions {
  * </xsd:complexType>
  * ```
  */
-export interface IBodyPropertiesOptions {
+export interface BodyPropertiesOptions {
   // ── Attributes ──
 
   /** Text rotation angle in 60,000ths of a degree */
@@ -293,7 +293,7 @@ const createPresetTextShape = (options: PresetTextShapeOptions): XmlComponent =>
  * });
  * ```
  */
-export const createBodyProperties = (options: IBodyPropertiesOptions = {}): XmlComponent => {
+export const createBodyProperties = (options: BodyPropertiesOptions = {}): XmlComponent => {
   // Resolve anchor (direct `anchor` takes precedence over `verticalAnchor`)
   const anchor = options.anchor ?? options.verticalAnchor;
 

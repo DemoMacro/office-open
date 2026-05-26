@@ -1,1 +1,1 @@
-export { HeaderFooter, type IHeaderFooterOptions } from "./header-footer";
+export { HeaderFooter, type SlideHeaderFooterOptions } from "./header-footer";

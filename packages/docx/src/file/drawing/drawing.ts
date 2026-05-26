@@ -4,7 +4,7 @@ import type { FillOptions } from "@office-open/core/drawingml";
 
 import { Anchor } from "./anchor";
 import type { DocPropertiesOptions } from "./doc-properties/doc-properties";
-import type { IFloating } from "./floating";
+import type { Floating } from "./floating";
 import { createInline } from "./inline";
 import type { BlipEffectsOptions } from "./inline/graphic/graphic-data/pic/blip/blip-effects";
 import type { TileOptions } from "./inline/graphic/graphic-data/pic/blip/tile";
@@ -16,7 +16,7 @@ import type { OutlineOptions } from "./inline/graphic/graphic-data/pic/shape-pro
  *
  * Specifies the margins around a drawing element.
  */
-export interface IDistance {
+export interface Distance {
   readonly distT?: number;
   readonly distB?: number;
   readonly distL?: number;
@@ -28,8 +28,8 @@ export interface IDistance {
  *
  * @see {@link Drawing}
  */
-export interface IDrawingOptions {
-  readonly floating?: IFloating;
+export interface DrawingOptions {
+  readonly floating?: Floating;
   readonly docProperties?: DocPropertiesOptions;
   readonly outline?: OutlineOptions;
   readonly fill?: FillOptions;
@@ -57,7 +57,7 @@ export interface IDrawingOptions {
  * ```
  */
 export class Drawing extends XmlComponent {
-  public constructor(imageData: IExtendedMediaData, drawingOptions: IDrawingOptions = {}) {
+  public constructor(imageData: IExtendedMediaData, drawingOptions: DrawingOptions = {}) {
     super("w:drawing");
 
     if (!drawingOptions.floating) {

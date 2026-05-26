@@ -1,13 +1,13 @@
 import type { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 
 import { Run } from ".";
 import { Drawing } from "../../drawing";
-import type { IFloating } from "../../drawing";
+import type { Floating } from "../../drawing";
 import type {
   IGroupChildMediaData,
   IMediaData,
-  IMediaTransformation,
+  MediaTransformation,
   WpgMediaData,
 } from "../../media";
 import { createTransformation } from "../../media";
@@ -16,8 +16,8 @@ export * from "@file/drawing/inline/graphic/graphic-data/wps/body-properties";
 
 interface CoreGroupOptions {
   readonly children: readonly IGroupChildMediaData[];
-  readonly transformation: IMediaTransformation;
-  readonly floating?: IFloating;
+  readonly transformation: MediaTransformation;
+  readonly floating?: Floating;
   readonly altText?: DocPropertiesOptions;
 }
 
@@ -53,7 +53,7 @@ export class WpgGroupRun extends Run {
     this.extraChildren.push(drawing);
   }
 
-  public prepForXml(context: IContext): IXmlableObject | undefined {
+  public prepForXml(context: Context): IXmlableObject | undefined {
     this.mediaDatas.forEach((child) => {
       context.file.Media.addImage(child.fileName, child);
 

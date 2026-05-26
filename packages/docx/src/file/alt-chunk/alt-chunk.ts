@@ -1,6 +1,6 @@
 import type { FileChild } from "@file/file-child";
 import { EmptyElement, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 /**
  * Alternative format chunk module for WordprocessingML documents.
@@ -24,7 +24,7 @@ class AltChunkAttributes extends XmlAttributeComponent<{ readonly id: string }> 
 /**
  * Options for creating an AltChunk element.
  */
-export interface IAltChunkOptions {
+export interface AltChunkOptions {
   /** Content data to embed (string or binary) */
   readonly data: Uint8Array | string;
   /** MIME content type of the data */
@@ -58,9 +58,9 @@ const ALTCHUNK_RELATIONSHIP_TYPE =
  */
 export class AltChunk extends XmlComponent implements FileChild {
   public readonly fileChild = Symbol();
-  private readonly options: IAltChunkOptions;
+  private readonly options: AltChunkOptions;
 
-  public constructor(options: IAltChunkOptions) {
+  public constructor(options: AltChunkOptions) {
     super("w:altChunk");
     this.options = options;
 
@@ -71,7 +71,7 @@ export class AltChunk extends XmlComponent implements FileChild {
     }
   }
 
-  public prepForXml(context: IContext): IXmlableObject {
+  public prepForXml(context: Context): IXmlableObject {
     const relId = uniqueId();
     const extension = this.options.extension;
 

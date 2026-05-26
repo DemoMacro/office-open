@@ -10,7 +10,7 @@
  */
 // http://officeopenxml.com/drwPic.php
 import type { HyperlinkOptions } from "@file/drawing/doc-properties/doc-properties";
-import type { IMediaData, IMediaDataTransformation } from "@file/media";
+import type { IMediaData, MediaDataTransformation } from "@file/media";
 import { XmlComponent } from "@file/xml-components";
 import type { FillOptions, TileOptions } from "@office-open/core/drawingml";
 
@@ -63,7 +63,7 @@ export class Pic extends XmlComponent {
     hyperlink,
   }: {
     readonly mediaData: IMediaData;
-    readonly transform: IMediaDataTransformation;
+    readonly transform: MediaDataTransformation;
     readonly outline?: OutlineOptions;
     readonly fill?: FillOptions;
     readonly effects?: EffectListOptions;

@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import type { IContext } from "./base";
+import type { Context } from "./base";
 import { XmlComponent, IgnoreIfEmptyXmlComponent, EMPTY_OBJECT } from "./component";
 
-const emptyContext: IContext = { stack: [] };
+const emptyContext: Context = { stack: [] };
 
 describe("XmlComponent", () => {
   it("should create an element with rootKey", () => {

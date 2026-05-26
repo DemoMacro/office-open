@@ -15,7 +15,7 @@ import { createColorElement } from "../color/solid-fill";
 /**
  * Gradient stop position (0-100000, representing 0%-100%).
  */
-export interface IGradientStop {
+export interface GradientStop {
   /** Position of the color stop (0-100000) */
   readonly position: number;
   /** Color at this stop */
@@ -131,7 +131,7 @@ export type GradientShadeOptions = LinearShadeOptions | PathShadeOptions;
  */
 export interface GradientFillOptions {
   /** Gradient color stops (minimum 2) */
-  readonly stops: readonly IGradientStop[];
+  readonly stops: readonly GradientStop[];
   /** Shade type (linear or path) */
   readonly shade?: GradientShadeOptions;
   /**
@@ -159,7 +159,7 @@ export interface GradientFillOptions {
  * createGradientStop({ position: 100000, color: { value: "0000FF" } });
  * ```
  */
-export const createGradientStop = (stop: IGradientStop): XmlComponent =>
+export const createGradientStop = (stop: GradientStop): XmlComponent =>
   new BuilderElement<{ readonly pos: number }>({
     attributes: {
       pos: { key: "pos", value: stop.position },

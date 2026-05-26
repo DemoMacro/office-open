@@ -13,7 +13,7 @@ export class LineShape extends Xc {
   private static nextId = 2;
   private readonly shapeId: number;
 
-  public constructor(options: ILineShapeOptions = {}) {
+  public constructor(options: LineShapeOptions = {}) {
     super("p:sp");
 
     const id = options.id ?? LineShape.nextId++;
@@ -112,7 +112,7 @@ export class LineShape extends Xc {
   }
 }
 
-export interface ILineShapeOptions {
+export interface LineShapeOptions {
   readonly id?: number;
   readonly name?: string;
   readonly x1?: number;
@@ -132,7 +132,7 @@ export class ConnectorShape extends Xc {
   private static nextId = 2;
   private readonly shapeId: number;
 
-  public constructor(options: IConnectorShapeOptions = {}) {
+  public constructor(options: ConnectorShapeOptions = {}) {
     super("p:cxnSp");
 
     const id = options.id ?? ConnectorShape.nextId++;
@@ -232,7 +232,7 @@ export class ConnectorShape extends Xc {
   }
 }
 
-export interface IConnectorShapeOptions {
+export interface ConnectorShapeOptions {
   readonly id?: number;
   readonly name?: string;
   readonly x1?: number;

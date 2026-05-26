@@ -9,5 +9,5 @@ export type {
   MediaAnimationType,
   AnimationCalcMode,
   AnimationValueType,
-  IAnimationOptions,
+  AnimationOptions,
 } from "./types";

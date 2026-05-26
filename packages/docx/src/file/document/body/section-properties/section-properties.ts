@@ -44,16 +44,16 @@
 import type { FooterWrapper } from "@file/footer-wrapper";
 import type { HeaderWrapper } from "@file/header-wrapper";
 import { ChangeAttributes } from "@file/track-revision/track-revision";
-import type { IChangedAttributesProperties } from "@file/track-revision/track-revision";
+import type { ChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { createVerticalAlign } from "@file/vertical-align";
 import type { SectionVerticalAlign } from "@file/vertical-align";
 import { BuilderElement, OnOffElement, XmlComponent } from "@file/xml-components";
 import { decimalNumber } from "@util/values";
 
 import { createColumns } from "./properties/columns";
-import type { IColumnsAttributes } from "./properties/columns";
+import type { ColumnsAttributes } from "./properties/columns";
 import { createDocumentGrid } from "./properties/doc-grid";
-import type { IDocGridAttributesProperties } from "./properties/doc-grid";
+import type { DocGridAttributesProperties } from "./properties/doc-grid";
 import {
   createEndnoteProperties,
   createFootnoteProperties,
@@ -68,15 +68,15 @@ import {
   createHeaderFooterReference,
 } from "./properties/header-footer-reference";
 import { createLineNumberType } from "./properties/line-number";
-import type { ILineNumberAttributes } from "./properties/line-number";
+import type { LineNumberAttributes } from "./properties/line-number";
 import { PageBorders } from "./properties/page-borders";
-import type { IPageBordersOptions } from "./properties/page-borders";
+import type { PageBordersOptions } from "./properties/page-borders";
 import { createPageMargin } from "./properties/page-margin";
-import type { IPageMarginAttributes } from "./properties/page-margin";
+import type { PageMarginAttributes } from "./properties/page-margin";
 import { createPageNumberType } from "./properties/page-number";
-import type { IPageNumberTypeAttributes } from "./properties/page-number";
+import type { PageNumberTypeAttributes } from "./properties/page-number";
 import { PageOrientation, createPageSize } from "./properties/page-size";
-import type { IPageSizeAttributes } from "./properties/page-size";
+import type { PageSizeAttributes } from "./properties/page-size";
 import { PageTextDirection } from "./properties/page-text-direction";
 import type { PageTextDirectionType } from "./properties/page-text-direction";
 import { createSectionType } from "./properties/section-type";
@@ -90,7 +90,7 @@ import type { SectionType } from "./properties/section-type";
  * @property first - Header/footer for first page (requires titlePage setting)
  * @property even - Header/footer for even pages (requires evenAndOddHeaders setting)
  */
-export interface IHeaderFooterGroup<T> {
+export interface HeaderFooterGroup<T> {
   /** Header/footer for default pages (odd pages when even headers are used) */
   readonly default?: T;
   /** Header/footer for first page (requires titlePage setting) */
@@ -99,34 +99,34 @@ export interface IHeaderFooterGroup<T> {
   readonly even?: T;
 }
 
-export interface ISectionPropertiesOptionsBase {
+export interface SectionPropertiesOptionsBase {
   /** Page-level settings including size, margins, borders, and text direction */
   readonly page?: {
     /** Page size and orientation */
-    readonly size?: Partial<IPageSizeAttributes>;
+    readonly size?: Partial<PageSizeAttributes>;
     /** Page margins (top, bottom, left, right, header, footer, gutter) */
-    readonly margin?: IPageMarginAttributes;
+    readonly margin?: PageMarginAttributes;
     /** Page numbering format and starting value */
-    readonly pageNumbers?: IPageNumberTypeAttributes;
+    readonly pageNumbers?: PageNumberTypeAttributes;
     /** Page border settings */
-    readonly borders?: IPageBordersOptions;
+    readonly borders?: PageBordersOptions;
     /** Text flow direction (horizontal or vertical) */
     readonly textDirection?: (typeof PageTextDirectionType)[keyof typeof PageTextDirectionType];
   };
   /** Document grid settings for precise East Asian character layout */
-  readonly grid?: Partial<IDocGridAttributesProperties>;
+  readonly grid?: Partial<DocGridAttributesProperties>;
   /** Header definitions for default, first, and even pages */
-  readonly headerWrapperGroup?: IHeaderFooterGroup<HeaderWrapper>;
+  readonly headerWrapperGroup?: HeaderFooterGroup<HeaderWrapper>;
   /** Footer definitions for default, first, and even pages */
-  readonly footerWrapperGroup?: IHeaderFooterGroup<FooterWrapper>;
+  readonly footerWrapperGroup?: HeaderFooterGroup<FooterWrapper>;
   /** Line numbering settings for the section */
-  readonly lineNumbers?: ILineNumberAttributes;
+  readonly lineNumbers?: LineNumberAttributes;
   /** Whether first page has different header/footer */
   readonly titlePage?: boolean;
   /** Vertical alignment of text on page (top, center, bottom, justified) */
   readonly verticalAlign?: SectionVerticalAlign;
   /** Column layout settings (count, spacing, equal width) */
-  readonly column?: IColumnsAttributes;
+  readonly column?: ColumnsAttributes;
   /** Section break type (next page, continuous, even page, odd page) */
   readonly type?: (typeof SectionType)[keyof typeof SectionType];
   /** Whether to suppress endnotes in this section */
@@ -152,8 +152,8 @@ export interface ISectionPropertiesOptionsBase {
   readonly printerSettingsId?: string;
 }
 
-export type ISectionPropertiesChangeOptions = IChangedAttributesProperties &
-  ISectionPropertiesOptionsBase;
+export type ISectionPropertiesChangeOptions = ChangedAttributesProperties &
+  SectionPropertiesOptionsBase;
 
 /**
  * Options for configuring section properties.
@@ -175,7 +175,7 @@ export type ISectionPropertiesChangeOptions = IChangedAttributesProperties &
  */
 export type ISectionPropertiesOptions = {
   readonly revision?: ISectionPropertiesChangeOptions;
-} & ISectionPropertiesOptionsBase;
+} & SectionPropertiesOptionsBase;
 
 /**
  * Default margin values for sections (in twips).
@@ -412,7 +412,7 @@ export class SectionProperties extends XmlComponent {
 
   private addHeaderFooterGroup(
     type: (typeof HeaderFooterType)[keyof typeof HeaderFooterType],
-    group: IHeaderFooterGroup<HeaderWrapper> | IHeaderFooterGroup<FooterWrapper>,
+    group: HeaderFooterGroup<HeaderWrapper> | HeaderFooterGroup<FooterWrapper>,
   ): void {
     if (group.default) {
       this.root.push(

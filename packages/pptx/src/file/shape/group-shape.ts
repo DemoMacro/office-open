@@ -1,10 +1,10 @@
 import { coerceChild } from "@file/slide/coerce";
 import type { SlideChild } from "@file/slide/slide-child";
 import { BaseXmlComponent } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 import { convertPixelsToEmu } from "@office-open/core";
 
-export interface IGroupShapeOptions {
+export interface GroupShapeOptions {
   readonly x?: number;
   readonly y?: number;
   readonly width?: number;
@@ -21,15 +21,15 @@ export interface IGroupShapeOptions {
 export class GroupShape extends BaseXmlComponent {
   private static nextId = 100;
   private readonly id: number;
-  private readonly options: IGroupShapeOptions;
+  private readonly options: GroupShapeOptions;
 
-  public constructor(options: IGroupShapeOptions) {
+  public constructor(options: GroupShapeOptions) {
     super("p:grpSp");
     this.id = GroupShape.nextId++;
     this.options = options;
   }
 
-  public override prepForXml(context: IContext): IXmlableObject {
+  public override prepForXml(context: Context): IXmlableObject {
     const opts = this.options;
     const id = this.id;
     const name = `Group ${id}`;

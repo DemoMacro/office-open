@@ -2,11 +2,11 @@ import { Packer } from "@export/packer/packer";
 import { describe, expect, it } from "vite-plus/test";
 
 import { File as Presentation } from "./file/file";
-import type { IMasterDefinition, ISlideOptions } from "./file/file";
+import type { MasterDefinition, SlideOptions } from "./file/file";
 import { parsePresentation } from "./parse";
 
 describe("parsePresentation", () => {
-  it("returns IPresentationOptions with slides", async () => {
+  it("returns PresentationOptions with slides", async () => {
     const pres = new Presentation({
       slides: [
         {
@@ -53,7 +53,7 @@ describe("parsePresentation", () => {
   });
 
   it("parses multi-master file", async () => {
-    const masters: IMasterDefinition[] = [
+    const masters: MasterDefinition[] = [
       {
         name: "light",
         theme: { name: "Light", colors: { dark1: "333333" } },
@@ -64,7 +64,7 @@ describe("parsePresentation", () => {
       },
     ];
 
-    const slides: ISlideOptions[] = [
+    const slides: SlideOptions[] = [
       {
         master: "light",
         layout: "blank",
@@ -110,11 +110,11 @@ describe("parsePresentation", () => {
   });
 
   it("round-trips multi-master structure", async () => {
-    const masters: IMasterDefinition[] = [
+    const masters: MasterDefinition[] = [
       { name: "m1", theme: { name: "Theme One" } },
       { name: "m2", theme: { name: "Theme Two" } },
     ];
-    const slides: ISlideOptions[] = [
+    const slides: SlideOptions[] = [
       {
         master: "m1",
         children: [{ shape: { x: 50, y: 50, width: 400, height: 300, text: "S1" } }],

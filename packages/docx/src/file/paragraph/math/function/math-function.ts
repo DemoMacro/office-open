@@ -22,7 +22,7 @@ import {
  *
  * @see {@link MathFunction}
  */
-export interface IMathFunctionOptions {
+export interface MathFunctionOptions {
   /** Properties for the function structure */
   readonly properties?: MathFunctionPropertiesOptions;
   /** The function argument (e.g., the expression inside sin(...)) */
@@ -62,7 +62,7 @@ export interface IMathFunctionOptions {
  * ```
  */
 export class MathFunction extends XmlComponent {
-  public constructor(options: IMathFunctionOptions) {
+  public constructor(options: MathFunctionOptions) {
     super("m:func");
 
     if (options.properties) {

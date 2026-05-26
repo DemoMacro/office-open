@@ -1,4 +1,4 @@
-import type { ISubDocOptions } from "@file/sub-doc/sub-doc";
+import type { SubDocOptions } from "@file/sub-doc/sub-doc";
 /**
  * SubDoc parser for DOCX documents.
  *
@@ -12,10 +12,10 @@ import type { Element } from "@office-open/xml";
 import type { ParseContext } from "../../parse/context";
 
 /**
- * Parse a w:subDoc element into ISubDocOptions.
+ * Parse a w:subDoc element into SubDocOptions.
  * Reads the referenced document data from the ZIP package.
  */
-export function parseSubDoc(el: Element, ctx: ParseContext): ISubDocOptions {
+export function parseSubDoc(el: Element, ctx: ParseContext): SubDocOptions {
   const rId = attr(el, "r:id");
   if (!rId) {
     throw new Error("w:subDoc missing r:id attribute");

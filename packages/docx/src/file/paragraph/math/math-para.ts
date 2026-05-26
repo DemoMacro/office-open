@@ -13,7 +13,7 @@ import { BuilderElement } from "@file/xml-components";
 import { XmlComponent } from "@file/xml-components";
 
 import { Math } from "./math";
-import type { IMathOptions } from "./math";
+import type { MathOptions } from "./math";
 
 /**
  * Math paragraph justification types.
@@ -25,11 +25,11 @@ export type MathJustification = "left" | "right" | "center" | "centerGroup";
  *
  * @see {@link MathParagraph}
  */
-export interface IMathParagraphOptions {
+export interface MathParagraphOptions {
   /** Justification for the math paragraph */
   readonly justification?: MathJustification;
   /** Math equations in this paragraph */
-  readonly children: readonly IMathOptions[];
+  readonly children: readonly MathOptions[];
 }
 
 /**
@@ -87,7 +87,7 @@ const createMathParagraphProperties = (justification: MathJustification): XmlCom
  * ```
  */
 export class MathParagraph extends XmlComponent {
-  public constructor(options: IMathParagraphOptions) {
+  public constructor(options: MathParagraphOptions) {
     super("m:oMathPara");
 
     if (options.justification) {

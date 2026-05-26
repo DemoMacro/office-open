@@ -7,7 +7,7 @@ import type { FootnoteReferenceRun } from "@file/footnotes";
  * @module
  */
 import { BaseXmlComponent } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 
 import type { AltChunk } from "../alt-chunk";
@@ -19,7 +19,7 @@ import { TargetModeType } from "../relationships/relationship/relationship";
 import type { StructuredDocumentTagRun } from "../sdt";
 import type { SubDoc } from "../sub-doc";
 import type { MovedFromTextRun, MovedToTextRun } from "../track-revision";
-import type { IChangedAttributesProperties } from "../track-revision/track-revision";
+import type { ChangedAttributesProperties } from "../track-revision/track-revision";
 import { DeletedTextRun } from "../track-revision/track-revision-components/deleted-text-run";
 // Import from specific submodule to avoid circular dependency:
 // paragraph.ts → track-revision barrel → inserted-text-run → ../../index (paragraph barrel)
@@ -35,7 +35,7 @@ import type {
   MoveToRangeStart,
 } from "./links/move-bookmark";
 import { Math as MathCls } from "./math";
-import type { IMathOptions, MathComponent } from "./math";
+import type { MathOptions, MathComponent } from "./math";
 import { coerceMathJson, type MathJson } from "./math/math-coerce";
 type Math = InstanceType<typeof MathCls>;
 // Same pattern for endnotes — specific submodule avoids barrel circular dependency.
@@ -46,23 +46,23 @@ import { EndnoteReferenceRun as EndnoteRefCls } from "@file/endnotes/endnote/run
 import { FootnoteReferenceRun as FootnoteRefCls } from "@file/footnotes/footnote/run/reference-run";
 
 import { ParagraphProperties } from "./properties";
-import type { IParagraphPropertiesOptions } from "./properties";
+import type { ParagraphPropertiesOptions } from "./properties";
 import { TextRun } from "./run";
 import type { Run, SequentialIdentifier, SimpleField, SimpleMailMergeField } from "./run";
-import type { IRunOptions } from "./run";
+import type { RunOptions } from "./run";
 import type {
   ChartRun as ChartRunType,
   ImageRun as ImageRunType,
   SmartArtRun as SmartArtRunType,
 } from "./run";
 import { ChartRun } from "./run/chart-run";
-import type { IChartOptions } from "./run/chart-run";
+import type { ChartOptions } from "./run/chart-run";
 import { Comment, CommentRangeEnd, CommentRangeStart, CommentReference } from "./run/comment-run";
 import type { Comments } from "./run/comment-run";
 import { ImageRun } from "./run/image-run";
 import type { IImageOptions } from "./run/image-run";
 import { SmartArtRun } from "./run/smartart-run";
-import type { ISmartArtOptions } from "./run/smartart-run";
+import type { SmartArtOptions } from "./run/smartart-run";
 import { SymbolRun } from "./run/symbol-run";
 import type { ISymbolRunOptions } from "./run/symbol-run";
 
@@ -110,34 +110,34 @@ export type ParagraphChild =
   | SubDoc;
 
 /** JSON-friendly wrapper for ChartRun options in paragraph children. */
-export interface IChartChild {
-  readonly chart: IChartOptions;
+export interface ChartChild {
+  readonly chart: ChartOptions;
 }
 
 /** JSON-friendly wrapper for SmartArtRun options in paragraph children. */
-export interface ISmartArtChild {
-  readonly smartArt: ISmartArtOptions;
+export interface SmartArtChild {
+  readonly smartArt: SmartArtOptions;
 }
 
 /** JSON-friendly wrapper for ImageRun options in paragraph children. */
-export interface IImageChild {
+export interface ImageChild {
   readonly image: IImageOptions;
 }
 
 /** JSON-friendly wrapper for Math options in paragraph children.
- *  Unlike IMathOptions, children accept recursive JSON objects via {@link MathJson}. */
-export interface IMathChild {
-  readonly math: Omit<IMathOptions, "children"> & {
+ *  Unlike MathOptions, children accept recursive JSON objects via {@link MathJson}. */
+export interface MathChild {
+  readonly math: Omit<MathOptions, "children"> & {
     readonly children?: readonly MathJson[];
   };
 }
 
 /** JSON-friendly wrappers for simple paragraph child types (JSON API). */
 export type IParagraphJsonChild =
-  | IChartChild
-  | ISmartArtChild
-  | IImageChild
-  | IMathChild
+  | ChartChild
+  | SmartArtChild
+  | ImageChild
+  | MathChild
   | { readonly symbolRun: ISymbolRunOptions }
   | { readonly footnoteReference: number }
   | { readonly endnoteReference: number }
@@ -146,8 +146,8 @@ export type IParagraphJsonChild =
   | { readonly commentRangeStart: number }
   | { readonly commentRangeEnd: number }
   | { readonly commentReference: number }
-  | { readonly insertion: IRunOptions & IChangedAttributesProperties }
-  | { readonly deletion: IRunOptions & IChangedAttributesProperties };
+  | { readonly insertion: RunOptions & ChangedAttributesProperties }
+  | { readonly deletion: RunOptions & ChangedAttributesProperties };
 
 /**
  * Options for creating a Paragraph element.
@@ -155,15 +155,15 @@ export type IParagraphJsonChild =
  * @property text - Simple text content for the paragraph (creates a single TextRun)
  * @property children - Array of child elements (runs, hyperlinks, bookmarks, etc.)
  */
-export type IParagraphOptions = {
+export type ParagraphOptions = {
   /** Simple text content for the paragraph. Creates a single TextRun. */
   readonly text?: string;
   /** Array of child elements such as TextRun, ImageRun, Hyperlink, Bookmark, etc.
-   *  Accepts class instances, plain IRunOptions objects (coerced to TextRun),
+   *  Accepts class instances, plain RunOptions objects (coerced to TextRun),
    *  strings (coerced to TextRun), or JSON-friendly wrappers
    *  ({ chart }, { smartArt }, { image }, { math }, { symbolRun }, etc.). */
-  readonly children?: readonly (ParagraphChild | IRunOptions | IParagraphJsonChild | string)[];
-} & IParagraphPropertiesOptions;
+  readonly children?: readonly (ParagraphChild | RunOptions | IParagraphJsonChild | string)[];
+} & ParagraphPropertiesOptions;
 
 /**
  * Represents a paragraph in a WordprocessingML document.
@@ -204,11 +204,11 @@ export type IParagraphOptions = {
  */
 export class Paragraph extends BaseXmlComponent implements FileChild {
   public readonly fileChild = Symbol();
-  private readonly options: IParagraphOptions;
+  private readonly options: ParagraphOptions;
   private frontRuns: Run[] = [];
   private sectionProperties?: SectionProperties;
 
-  public constructor(options: string | IParagraphOptions) {
+  public constructor(options: string | ParagraphOptions) {
     super("w:p");
 
     if (typeof options === "string") {
@@ -218,7 +218,7 @@ export class Paragraph extends BaseXmlComponent implements FileChild {
     }
   }
 
-  public prepForXml(context: IContext): IXmlableObject | undefined {
+  public prepForXml(context: Context): IXmlableObject | undefined {
     const children: IXmlableObject[] = [];
 
     // Build paragraph properties (including optional section properties)
@@ -272,7 +272,7 @@ export class Paragraph extends BaseXmlComponent implements FileChild {
           continue;
         }
 
-        // Coerce strings, JSON wrappers, and plain IRunOptions into Run instances
+        // Coerce strings, JSON wrappers, and plain RunOptions into Run instances
         let child: BaseXmlComponent;
         if (typeof rawChild === "string") {
           child = new TextRun(rawChild);
@@ -289,7 +289,7 @@ export class Paragraph extends BaseXmlComponent implements FileChild {
           const { hyperlink, ...runOpts } = rawChild as Record<string, unknown> & {
             hyperlink: Record<string, unknown>;
           };
-          const textRun = new TextRun(runOpts as IRunOptions);
+          const textRun = new TextRun(runOpts as RunOptions);
           if ("link" in hyperlink) {
             const ext = new ExternalHyperlink({
               link: hyperlink.link as string,
@@ -324,7 +324,7 @@ export class Paragraph extends BaseXmlComponent implements FileChild {
         ) {
           // Coerce MathJson values (strings, plain objects, class instances)
           // to MathComponent instances via recursive coerceMathJson.
-          const mathOpts = rawChild.math as Omit<IMathOptions, "children"> & {
+          const mathOpts = rawChild.math as Omit<MathOptions, "children"> & {
             readonly children?: readonly MathJson[];
           };
           const coercedChildren = mathOpts.children?.map(coerceMathJson) as
@@ -352,7 +352,7 @@ export class Paragraph extends BaseXmlComponent implements FileChild {
         } else if ("deletion" in rawChild) {
           child = new DeletedTextRun(rawChild.deletion);
         } else {
-          child = new TextRun(rawChild as IRunOptions);
+          child = new TextRun(rawChild as RunOptions);
         }
 
         const obj = child.prepForXml(context);

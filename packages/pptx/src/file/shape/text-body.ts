@@ -1,13 +1,13 @@
 import { XmlComponent } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 
 import { VerticalAlignment } from "../table/table-cell";
 import { Paragraph } from "./paragraph/paragraph";
-import type { IParagraphOptions } from "./paragraph/paragraph";
+import type { ParagraphOptions } from "./paragraph/paragraph";
 import { TextRun } from "./paragraph/run";
 
-export interface ITextBodyOptions {
-  readonly paragraphs?: readonly (Paragraph | IParagraphOptions | string)[];
+export interface TextBodyOptions {
+  readonly paragraphs?: readonly (Paragraph | ParagraphOptions | string)[];
   readonly vertical?: "vert" | "vert270" | "horz" | "wordArtVert";
   readonly anchor?: keyof typeof VerticalAlignment;
   readonly autoFit?: "normal" | "shape" | "none";
@@ -25,7 +25,7 @@ export interface ITextBodyOptions {
 /**
  * Pure function: builds a:bodyPr content.
  */
-function buildBodyPr(options: ITextBodyOptions): IXmlableObject {
+function buildBodyPr(options: TextBodyOptions): IXmlableObject {
   const bodyPrChildren: IXmlableObject[] = [];
 
   if (options.autoFit === "normal") bodyPrChildren.push({ "a:normAutofit": {} });
@@ -63,14 +63,14 @@ function buildBodyPr(options: ITextBodyOptions): IXmlableObject {
  * Lazy: stores options, builds XML object in prepForXml.
  */
 export class TextBody extends XmlComponent {
-  private readonly options: ITextBodyOptions;
+  private readonly options: TextBodyOptions;
 
-  public constructor(options: ITextBodyOptions = {}) {
+  public constructor(options: TextBodyOptions = {}) {
     super("p:txBody");
     this.options = options;
   }
 
-  public prepForXml(context: IContext): IXmlableObject | undefined {
+  public prepForXml(context: Context): IXmlableObject | undefined {
     const children: IXmlableObject[] = [];
 
     children.push(buildBodyPr(this.options));

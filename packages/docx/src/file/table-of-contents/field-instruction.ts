@@ -12,7 +12,7 @@ import { TextAttributes } from "@file/paragraph/run/text-attributes";
 import { SpaceType } from "@file/shared";
 import { XmlComponent } from "@file/xml-components";
 
-import type { ITableOfContentsOptions } from "./table-of-contents-properties";
+import type { TableOfContentsOptions } from "./table-of-contents-properties";
 
 /**
  * Represents a field instruction for a Table of Contents.
@@ -42,9 +42,9 @@ import type { ITableOfContentsOptions } from "./table-of-contents-properties";
  * ```
  */
 export class FieldInstruction extends XmlComponent {
-  private readonly properties: ITableOfContentsOptions;
+  private readonly properties: TableOfContentsOptions;
 
-  public constructor(properties: ITableOfContentsOptions = {}) {
+  public constructor(properties: TableOfContentsOptions = {}) {
     super("w:instrText");
 
     this.properties = properties;

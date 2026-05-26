@@ -22,7 +22,7 @@ import { createMathSubSuperScriptProperties } from "./math-sub-super-script-func
  *
  * @see {@link MathSubSuperScript}
  */
-export interface IMathSubSuperScriptOptions {
+export interface MathSubSuperScriptOptions {
   /** The base expression */
   readonly children: readonly MathComponent[];
   /** The subscript expression */
@@ -64,7 +64,7 @@ export interface IMathSubSuperScriptOptions {
  * ```
  */
 export class MathSubSuperScript extends XmlComponent {
-  public constructor(options: IMathSubSuperScriptOptions) {
+  public constructor(options: MathSubSuperScriptOptions) {
     super("m:sSubSup");
 
     this.root.push(createMathSubSuperScriptProperties());

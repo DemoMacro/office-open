@@ -17,7 +17,7 @@ import type { XmlComponent } from "@file/xml-components";
  * These options specify which conditions apply to the element based on
  * its position within a table (first/last row, first/last column, bands).
  */
-export interface ICnfStyleOptions {
+export interface CnfConditionalOptions {
   /** Whether this is the first row in the table */
   readonly firstRow?: boolean;
   /** Whether this is the last row in the table */
@@ -81,7 +81,7 @@ export interface ICnfStyleOptions {
  * createCnfStyle({ firstRow: true, firstColumn: true, firstRowFirstColumn: true });
  * ```
  */
-export const createCnfStyle = (options: ICnfStyleOptions): XmlComponent => {
+export const createCnfStyle = (options: CnfConditionalOptions): XmlComponent => {
   const attributes: Record<string, { key: string; value: string }> = {};
 
   if (options.firstRow !== undefined) {

@@ -1,14 +1,14 @@
 import { EmptyElement, XmlComponent, chartAttr, wrapEl } from "../../xml-components";
-import type { IChartSeriesData } from "../create-chart-type";
+import type { ChartSeriesData } from "../create-chart-type";
 import { createStrRef, createNumRef } from "../series/series-data";
 
-interface IScatterChartOptions {
+interface ScatterChartOptions {
   readonly categories: readonly string[];
-  readonly series: readonly IChartSeriesData[];
+  readonly series: readonly ChartSeriesData[];
 }
 
 export class ScatterChart extends XmlComponent {
-  public constructor(options: IScatterChartOptions) {
+  public constructor(options: ScatterChartOptions) {
     super("c:scatterChart");
     this.root.push(wrapEl("c:scatterStyle", chartAttr({ val: "line" })));
 
@@ -22,7 +22,7 @@ export class ScatterChart extends XmlComponent {
 }
 
 class ScatterSeries extends XmlComponent {
-  public constructor(index: number, series: IChartSeriesData, categories: readonly string[]) {
+  public constructor(index: number, series: ChartSeriesData, categories: readonly string[]) {
     super("c:ser");
     this.root.push(wrapEl("c:idx", chartAttr({ val: index })));
     this.root.push(wrapEl("c:order", chartAttr({ val: index })));

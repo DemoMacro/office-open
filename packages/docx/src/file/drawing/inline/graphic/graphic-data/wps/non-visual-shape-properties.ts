@@ -1,12 +1,12 @@
 import { BuilderElement } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
 
-export interface INonVisualShapePropertiesOptions {
+export interface NonVisualShapePropertiesOptions {
   readonly txBox: string;
 }
 
 export const createNonVisualShapeProperties = (
-  options: INonVisualShapePropertiesOptions = { txBox: "1" },
+  options: NonVisualShapePropertiesOptions = { txBox: "1" },
 ): XmlComponent =>
   new BuilderElement<{ readonly txBox: string }>({
     attributes: {

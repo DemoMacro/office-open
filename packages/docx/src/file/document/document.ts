@@ -12,7 +12,7 @@ import type { ConcreteHyperlink } from "../paragraph";
 import { Body } from "./body";
 import { buildDocumentAttributes } from "./document-attributes";
 import { DocumentBackground } from "./document-background";
-import type { IDocumentBackgroundOptions } from "./document-background";
+import type { DocumentBackgroundOptions } from "./document-background";
 
 /**
  * Options for creating a Document element.
@@ -21,9 +21,9 @@ import type { IDocumentBackgroundOptions } from "./document-background";
  *
  * @see {@link Document}
  */
-export interface IDocumentOptions {
+export interface DocumentOptions {
   /** Optional background settings for the document */
-  readonly background?: IDocumentBackgroundOptions;
+  readonly background?: DocumentBackgroundOptions;
 }
 
 /**
@@ -77,7 +77,7 @@ export interface IDocumentOptions {
 export class Document extends XmlComponent {
   private readonly body: Body;
 
-  public constructor(options: IDocumentOptions) {
+  public constructor(options: DocumentOptions) {
     super("w:document");
     this.root.push(
       buildDocumentAttributes(

@@ -16,7 +16,7 @@ import type { SectionChild } from "./section-child";
  * @see {@link Header}
  * @see {@link Footer}
  */
-export interface IHeaderOptions {
+export interface HeaderOptions {
   /** The content elements (paragraphs, tables, etc.) for the header/footer */
   readonly children: readonly SectionChild[];
 }
@@ -39,9 +39,9 @@ export interface IHeaderOptions {
  * ```
  */
 export class Header {
-  public readonly options: IHeaderOptions;
+  public readonly options: HeaderOptions;
 
-  public constructor(options: IHeaderOptions = { children: [] }) {
+  public constructor(options: HeaderOptions = { children: [] }) {
     this.options = options;
   }
 }
@@ -64,9 +64,9 @@ export class Header {
  * ```
  */
 export class Footer {
-  public readonly options: IHeaderOptions;
+  public readonly options: HeaderOptions;
 
-  public constructor(options: IHeaderOptions = { children: [] }) {
+  public constructor(options: HeaderOptions = { children: [] }) {
     this.options = options;
   }
 }

@@ -21,7 +21,7 @@ import type { XmlComponent } from "@file/xml-components";
 //     <xsd:attribute name="val" type="s:ST_String"/>
 // </xsd:complexType>
 
-interface ICompatibilitySettingAttributes {
+interface CompatibilitySettingAttributes {
   readonly name: string;
   readonly uri: string;
   readonly val: string | number;
@@ -64,7 +64,7 @@ export const createCompatibilitySetting = (
   val: string | number,
   uri = "http://schemas.microsoft.com/office/word",
 ): XmlComponent =>
-  new BuilderElement<ICompatibilitySettingAttributes>({
+  new BuilderElement<CompatibilitySettingAttributes>({
     attributes: {
       name: { key: "w:name", value: name },
       uri: { key: "w:uri", value: uri },

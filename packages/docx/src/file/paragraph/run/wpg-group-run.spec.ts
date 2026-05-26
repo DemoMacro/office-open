@@ -1,5 +1,5 @@
 import { Formatter } from "@export/formatter";
-import type { IViewWrapper } from "@file/document-wrapper";
+import type { ViewWrapper } from "@file/document-wrapper";
 import type { File } from "@file/file";
 import { Paragraph } from "@file/index";
 import type { IMediaData } from "@file/media";
@@ -37,7 +37,7 @@ describe("WpgGroupRun", () => {
           },
         } as unknown as File,
         stack: [],
-        viewWrapper: {} as unknown as IViewWrapper,
+        viewWrapper: {} as unknown as ViewWrapper,
       });
 
       expect(tree).toBeDefined();
@@ -70,7 +70,7 @@ describe("WpgGroupRun", () => {
           Media: {},
         } as unknown as File,
         stack: [],
-        viewWrapper: {} as unknown as IViewWrapper,
+        viewWrapper: {} as unknown as ViewWrapper,
       });
 
       expect(tree).toBeDefined();
@@ -117,7 +117,7 @@ describe("WpgGroupRun", () => {
           },
         } as unknown as File,
         stack: [],
-        viewWrapper: {} as unknown as IViewWrapper,
+        viewWrapper: {} as unknown as ViewWrapper,
       });
 
       expect(tree).toBeDefined();
@@ -148,7 +148,7 @@ describe("WpgGroupRun", () => {
           Media: {},
         } as unknown as File,
         stack: [],
-        viewWrapper: {} as unknown as IViewWrapper,
+        viewWrapper: {} as unknown as ViewWrapper,
       });
 
       expect(tree).toBeDefined();
@@ -178,7 +178,7 @@ describe("WpgGroupRun", () => {
           Media: {},
         } as unknown as File,
         stack: [],
-        viewWrapper: {} as unknown as IViewWrapper,
+        viewWrapper: {} as unknown as ViewWrapper,
       });
 
       expect(tree).toBeDefined();
@@ -205,7 +205,7 @@ describe("WpgGroupRun", () => {
           Media: {},
         } as unknown as File,
         stack: [],
-        viewWrapper: {} as unknown as IViewWrapper,
+        viewWrapper: {} as unknown as ViewWrapper,
       });
 
       expect(tree).toBeDefined();
@@ -242,7 +242,7 @@ describe("WpgGroupRun", () => {
           },
         } as unknown as File,
         stack: [],
-        viewWrapper: {} as unknown as IViewWrapper,
+        viewWrapper: {} as unknown as ViewWrapper,
       });
 
       expect(addImageMock).toHaveBeenCalledWith("test.png", imageChild);
@@ -277,7 +277,7 @@ describe("WpgGroupRun", () => {
           },
         } as unknown as File,
         stack: [],
-        viewWrapper: {} as unknown as IViewWrapper,
+        viewWrapper: {} as unknown as ViewWrapper,
       });
 
       expect(addImageMock).not.toHaveBeenCalled();
@@ -320,7 +320,7 @@ describe("WpgGroupRun", () => {
           },
         } as unknown as File,
         stack: [],
-        viewWrapper: {} as unknown as IViewWrapper,
+        viewWrapper: {} as unknown as ViewWrapper,
       });
 
       expect(addImageMock).toHaveBeenCalledTimes(2);
@@ -366,7 +366,7 @@ describe("WpgGroupRun", () => {
           },
         } as unknown as File,
         stack: [],
-        viewWrapper: {} as unknown as IViewWrapper,
+        viewWrapper: {} as unknown as ViewWrapper,
       });
 
       expect(addImageMock).toHaveBeenCalledTimes(2);
@@ -414,7 +414,7 @@ describe("WpgGroupRun", () => {
           },
         } as unknown as File,
         stack: [],
-        viewWrapper: {} as unknown as IViewWrapper,
+        viewWrapper: {} as unknown as ViewWrapper,
       });
 
       expect(addImageMock).toHaveBeenCalledTimes(1);

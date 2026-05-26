@@ -1,6 +1,6 @@
 import { ImportedXmlComponent } from "@file/xml-components";
 
-export interface IColorSchemeOptions {
+export interface ColorSchemeOptions {
   dark1?: string;
   light1?: string;
   dark2?: string;
@@ -15,20 +15,20 @@ export interface IColorSchemeOptions {
   followedHyperlink?: string;
 }
 
-export interface IFontSchemeOptions {
+export interface FontSchemeOptions {
   majorFont?: string;
   minorFont?: string;
   majorFontAsian?: string;
   minorFontAsian?: string;
 }
 
-export interface IThemeOptions {
+export interface ThemeOptions {
   name?: string;
-  colors?: IColorSchemeOptions;
-  fonts?: IFontSchemeOptions;
+  colors?: ColorSchemeOptions;
+  fonts?: FontSchemeOptions;
 }
 
-const DEFAULT_COLORS: Required<IColorSchemeOptions> = {
+const DEFAULT_COLORS: Required<ColorSchemeOptions> = {
   dark1: "000000",
   light1: "FFFFFF",
   dark2: "44546A",
@@ -43,7 +43,7 @@ const DEFAULT_COLORS: Required<IColorSchemeOptions> = {
   followedHyperlink: "954F72",
 };
 
-function buildThemeXml(options?: IThemeOptions): string {
+function buildThemeXml(options?: ThemeOptions): string {
   const name = options?.name ?? "Office Theme";
   const c = { ...DEFAULT_COLORS, ...options?.colors };
   const f = options?.fonts;
@@ -123,7 +123,7 @@ export class DefaultTheme extends ImportedXmlComponent {
   private static cache = new Map<string, ImportedXmlComponent>();
   private readonly cacheKey: string;
 
-  public constructor(options?: IThemeOptions) {
+  public constructor(options?: ThemeOptions) {
     super("a:theme");
     this.cacheKey = options ? JSON.stringify(options) : "";
     if (!DefaultTheme.cache.has(this.cacheKey)) {

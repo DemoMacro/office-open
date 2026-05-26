@@ -7,7 +7,7 @@
  *
  * @module
  */
-import type { IDefaultStylesOptions } from "@file/styles/factory";
+import type { DefaultStylesOptions } from "@file/styles/factory";
 import { XmlComponent } from "@file/xml-components";
 import type { BaseXmlComponent, IXmlableObject, ImportedXmlComponent } from "@file/xml-components";
 
@@ -26,9 +26,9 @@ import type { IParagraphStyleOptions } from "./style/paragraph-style";
  *
  * @see {@link Styles}
  */
-export interface IStylesOptions {
+export interface StylesOptions {
   /** Default styles for document, headings, and common elements */
-  readonly default?: IDefaultStylesOptions;
+  readonly default?: DefaultStylesOptions;
   /** Initial base XML component for styles root element */
   readonly initialStyles?: BaseXmlComponent | IXmlableObject;
   /** Array of custom paragraph style definitions */
@@ -83,7 +83,7 @@ export interface IStylesOptions {
  * ```
  */
 export class Styles extends XmlComponent {
-  public constructor(options: IStylesOptions) {
+  public constructor(options: StylesOptions) {
     super("w:styles");
 
     if (options.initialStyles) {

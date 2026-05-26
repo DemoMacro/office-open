@@ -9,7 +9,7 @@ import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
  * @property semiHidden - Whether the style is semi-hidden in the UI
  * @property unhideWhenUsed - Whether the style should unhide when used
  */
-export interface ILatentStyleExceptionAttributesProperties {
+export interface LatentStyleExceptionAttributesProperties {
   /** The name of the style for this exception */
   readonly name?: string;
   /** UI priority for displaying the style */
@@ -27,7 +27,7 @@ export interface ILatentStyleExceptionAttributesProperties {
  *
  * @internal
  */
-export class LatentStyleExceptionAttributes extends XmlAttributeComponent<ILatentStyleExceptionAttributesProperties> {
+export class LatentStyleExceptionAttributes extends XmlAttributeComponent<LatentStyleExceptionAttributesProperties> {
   protected readonly xmlKeys = {
     name: "w:name",
     qFormat: "w:qFormat",
@@ -68,7 +68,7 @@ export class LatentStyleExceptionAttributes extends XmlAttributeComponent<ILaten
  * ```
  */
 export class LatentStyleException extends XmlComponent {
-  public constructor(attributes: ILatentStyleExceptionAttributesProperties) {
+  public constructor(attributes: LatentStyleExceptionAttributesProperties) {
     super("w:lsdException");
     this.root.push(new LatentStyleExceptionAttributes(attributes));
   }

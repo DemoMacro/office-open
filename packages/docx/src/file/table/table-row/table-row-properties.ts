@@ -49,7 +49,7 @@
  */
 import { DeletedTableRow, InsertedTableRow } from "@file/track-revision";
 import { ChangeAttributes } from "@file/track-revision/track-revision";
-import type { IChangedAttributesProperties } from "@file/track-revision/track-revision";
+import type { ChangedAttributesProperties } from "@file/track-revision/track-revision";
 import {
   BuilderElement,
   IgnoreIfEmptyXmlComponent,
@@ -61,9 +61,9 @@ import type { PositiveUniversalMeasure } from "@util/values";
 import { createAlignment } from "../../paragraph";
 import type { AlignmentType } from "../../paragraph";
 import { createTableCellSpacing } from "../table-cell-spacing";
-import type { ITableCellSpacingProperties } from "../table-cell-spacing";
+import type { TableCellSpacingProperties } from "../table-cell-spacing";
 import { createTableWidthElement } from "../table-width";
-import type { ITableWidthProperties } from "../table-width";
+import type { TableWidthProperties } from "../table-width";
 import { createTableRowHeight } from "./table-row-height";
 import type { HeightRule } from "./table-row-height";
 
@@ -85,7 +85,7 @@ export interface CnfStyleOptions {
   readonly changed?: boolean;
 }
 
-export interface ITableRowPropertiesOptionsBase {
+export interface TableRowPropertiesOptionsBase {
   /** Conditional formatting style (cnfStyle) */
   readonly cnfStyle?: CnfStyleOptions;
   /** Whether the row can be split across pages (cantSplit) */
@@ -100,7 +100,7 @@ export interface ITableRowPropertiesOptionsBase {
     readonly rule: (typeof HeightRule)[keyof typeof HeightRule];
   };
   /** Spacing between cells in the row (tblCellSpacing) */
-  readonly cellSpacing?: ITableCellSpacingProperties;
+  readonly cellSpacing?: TableCellSpacingProperties;
   /** div ID for HTML compatibility (divId) */
   readonly divId?: number;
   /** Number of grid columns before the first cell (gridBefore) */
@@ -108,9 +108,9 @@ export interface ITableRowPropertiesOptionsBase {
   /** Number of grid columns after the last cell (gridAfter) */
   readonly gridAfter?: number;
   /** Preferred width before the row (wBefore) */
-  readonly widthBefore?: ITableWidthProperties;
+  readonly widthBefore?: TableWidthProperties;
   /** Preferred width after the row (wAfter) */
-  readonly widthAfter?: ITableWidthProperties;
+  readonly widthAfter?: TableWidthProperties;
   /** Row alignment (jc) */
   readonly rowAlignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
   /** Whether the row is hidden (hidden) */
@@ -122,15 +122,15 @@ export interface ITableRowPropertiesOptionsBase {
  *
  * @see {@link TableRowProperties}
  */
-export type ITableRowPropertiesOptions = ITableRowPropertiesOptionsBase & {
-  readonly insertion?: IChangedAttributesProperties;
-  readonly deletion?: IChangedAttributesProperties;
+export type ITableRowPropertiesOptions = TableRowPropertiesOptionsBase & {
+  readonly insertion?: ChangedAttributesProperties;
+  readonly deletion?: ChangedAttributesProperties;
   readonly revision?: ITableRowPropertiesChangeOptions;
   readonly includeIfEmpty?: boolean;
 };
 
-export type ITableRowPropertiesChangeOptions = ITableRowPropertiesOptionsBase &
-  IChangedAttributesProperties;
+export type ITableRowPropertiesChangeOptions = TableRowPropertiesOptionsBase &
+  ChangedAttributesProperties;
 
 /**
  * Represents table row properties (trPr) in a WordprocessingML document.

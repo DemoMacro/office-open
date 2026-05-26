@@ -19,7 +19,7 @@ import type { XmlComponent } from "@file/xml-components";
  * @property fontKey - Embedded Font Obfuscation Key (GUID)
  * @property subsetted - Whether the embedded font is subsetted
  */
-export interface IFontRelationshipOptions {
+export interface FontRelationshipOptions {
   /** Relationship to Part */
   readonly id: string;
   /** Embedded Font Obfuscation Key (GUID) */
@@ -74,7 +74,7 @@ export const CharacterSet = {
  * @property embedItalic - Embedded italic font relationship
  * @property embedBoldItalic - Embedded bold-italic font relationship
  */
-export interface FontOptions {
+export interface FontEntry {
   /** Font name (required) */
   readonly name: string;
   /** Alternative font name */
@@ -105,20 +105,20 @@ export interface FontOptions {
     readonly csb1: string;
   };
   /** Embedded regular font relationship */
-  readonly embedRegular?: IFontRelationshipOptions;
+  readonly embedRegular?: FontRelationshipOptions;
   /** Embedded bold font relationship */
-  readonly embedBold?: IFontRelationshipOptions;
+  readonly embedBold?: FontRelationshipOptions;
   /** Embedded italic font relationship */
-  readonly embedItalic?: IFontRelationshipOptions;
+  readonly embedItalic?: FontRelationshipOptions;
   /** Embedded bold-italic font relationship */
-  readonly embedBoldItalic?: IFontRelationshipOptions;
+  readonly embedBoldItalic?: FontRelationshipOptions;
 }
 
 /**
  * Creates a font relationship element for embedding fonts.
  */
 const createFontRelationship = (
-  { id, fontKey, subsetted }: IFontRelationshipOptions,
+  { id, fontKey, subsetted }: FontRelationshipOptions,
   name: string,
 ): XmlComponent =>
   new BuilderElement({
@@ -181,7 +181,7 @@ export const createFont = ({
   embedBold,
   embedItalic,
   embedBoldItalic,
-}: FontOptions): XmlComponent =>
+}: FontEntry): XmlComponent =>
   new BuilderElement({
     attributes: {
       name: { key: "w:name", value: name },

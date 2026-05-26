@@ -1,14 +1,14 @@
 import { EmptyElement, XmlComponent, chartAttr, wrapEl } from "../../xml-components";
-import type { IChartSeriesData } from "../create-chart-type";
+import type { ChartSeriesData } from "../create-chart-type";
 import { createStrRef, createNumRef } from "../series/series-data";
 
-interface IAreaChartOptions {
+interface AreaChartOptions {
   readonly categories: readonly string[];
-  readonly series: readonly IChartSeriesData[];
+  readonly series: readonly ChartSeriesData[];
 }
 
 export class AreaChart extends XmlComponent {
-  public constructor(options: IAreaChartOptions) {
+  public constructor(options: AreaChartOptions) {
     super("c:areaChart");
     this.root.push(wrapEl("c:grouping", chartAttr({ val: "standard" })));
 
@@ -22,7 +22,7 @@ export class AreaChart extends XmlComponent {
 }
 
 class AreaSeries extends XmlComponent {
-  public constructor(index: number, series: IChartSeriesData, categories: readonly string[]) {
+  public constructor(index: number, series: ChartSeriesData, categories: readonly string[]) {
     super("c:ser");
     this.root.push(wrapEl("c:idx", chartAttr({ val: index })));
     this.root.push(wrapEl("c:order", chartAttr({ val: index })));

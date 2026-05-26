@@ -1,4 +1,4 @@
-import type { ITableOfContentsOptions } from "@file/table-of-contents/table-of-contents-properties";
+import type { TableOfContentsOptions } from "@file/table-of-contents/table-of-contents-properties";
 /**
  * Table of Contents parser for DOCX documents.
  *
@@ -25,7 +25,7 @@ export function parseToc(
 ):
   | ({
       alias?: string;
-    } & ITableOfContentsOptions)
+    } & TableOfContentsOptions)
   | undefined {
   const sdtPr = findChild(el, "w:sdtPr");
   if (!sdtPr) return undefined;
@@ -73,7 +73,7 @@ export function parseToc(
     }
   }
 
-  return { alias, ...tocOpts } as { alias?: string } & ITableOfContentsOptions;
+  return { alias, ...tocOpts } as { alias?: string } & TableOfContentsOptions;
 }
 
 /**
@@ -94,7 +94,7 @@ function hasTocFieldInstruction(el: Element): boolean {
 
 /**
  * Parse a TOC field instruction string (e.g., ' TOC \o "1-3" \h \z ')
- * into ITableOfContentsOptions properties.
+ * into TableOfContentsOptions properties.
  */
 function parseTocFieldInstruction(instruction: string, opts: Record<string, unknown>): void {
   if (!instruction.startsWith("TOC")) return;

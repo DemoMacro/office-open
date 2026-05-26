@@ -2,23 +2,23 @@ import { Transform2D } from "@file/drawingml/transform-2d";
 import {
   BuilderElement,
   NextAttributeComponent,
-  type IContext,
+  type Context,
   type IXmlableObject,
   XmlComponent,
 } from "@file/xml-components";
 import { emuPosition } from "@util/position";
 
 import type { SmartArtCollection } from "./smartart-collection";
-import { createDataModel, type ITreeNode } from "./tree-to-model";
+import { createDataModel, type TreeNode } from "./tree-to-model";
 
 let nextSmartArtFrameId = 1024;
 
-export interface ISmartArtFrameOptions {
+export interface SmartArtFrameOptions {
   readonly x?: number;
   readonly y?: number;
   readonly width?: number;
   readonly height?: number;
-  readonly nodes: readonly ITreeNode[];
+  readonly nodes: readonly TreeNode[];
   readonly name?: string;
   /** Layout ID (e.g. "default", "process1", "hierarchy1") */
   readonly layout?: string;
@@ -38,7 +38,7 @@ export class SmartArtFrame extends XmlComponent {
   private readonly styleId: string;
   private readonly colorId: string;
 
-  public constructor(options: ISmartArtFrameOptions) {
+  public constructor(options: SmartArtFrameOptions) {
     super("p:graphicFrame");
 
     this.smartArtKey = `smartart_${nextSmartArtFrameId++}`;
@@ -62,7 +62,7 @@ export class SmartArtFrame extends XmlComponent {
     this.root.push(new SmartArtGraphic(this.smartArtKey));
   }
 
-  public prepForXml(context: IContext): IXmlableObject | undefined {
+  public prepForXml(context: Context): IXmlableObject | undefined {
     const file = context.fileData as { SmartArts: SmartArtCollection };
     if (file?.SmartArts) {
       file.SmartArts.addSmartArt(this.smartArtKey, {

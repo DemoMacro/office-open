@@ -8,7 +8,7 @@ import { xml2js } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { beforeEach, describe, expect, it } from "vite-plus/test";
 
-import type { IContext } from "./base";
+import type { Context } from "./base";
 
 const xmlString = `
         <w:p w:one="value 1" w:two="value 2">
@@ -61,7 +61,7 @@ describe("ImportedXmlComponent", () => {
 
   describe("#prepForXml()", () => {
     it("should transform for xml", () => {
-      const converted = importedXmlComponent.prepForXml({ stack: [] } as unknown as IContext);
+      const converted = importedXmlComponent.prepForXml({ stack: [] } as unknown as Context);
       expect(JSON.parse(JSON.stringify(converted))).to.deep.equal({
         "w:test": [
           {
@@ -128,7 +128,7 @@ describe("ImportedRootElementAttributes", () => {
 
   describe("#prepForXml()", () => {
     it("should work", () => {
-      const converted = attributes.prepForXml({} as IContext);
+      const converted = attributes.prepForXml({} as Context);
       expect(converted).to.deep.equal({
         _attr: {},
       });

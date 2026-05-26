@@ -57,7 +57,7 @@ import { createTableStyleOverride } from "./table-style-override";
  * @property default - Whether this is the default style for its type
  * @property customStyle - Whether this is a custom user-defined style
  */
-export interface IStyleAttributes {
+export interface StyleAttributes {
   /** Type of style (paragraph, character, table, numbering) */
   readonly type?: string;
   /** Unique identifier for the style */
@@ -80,7 +80,7 @@ export interface IStyleAttributes {
  * @property unhideWhenUsed - Whether the style should unhide when used
  * @property quickFormat - Whether the style appears in the quick format gallery
  */
-export interface IStyleOptions {
+export interface StyleOptions {
   /** Display name of the style */
   readonly name?: string;
   /**
@@ -117,7 +117,7 @@ export interface IStyleOptions {
  *
  * @internal
  */
-class StyleAttributes extends XmlAttributeComponent<IStyleAttributes> {
+class StyleAttributesXml extends XmlAttributeComponent<StyleAttributes> {
   protected readonly xmlKeys = {
     customStyle: "w:customStyle",
     default: "w:default",
@@ -175,9 +175,9 @@ class StyleAttributes extends XmlAttributeComponent<IStyleAttributes> {
  * ```
  */
 export class Style extends XmlComponent {
-  public constructor(attributes: IStyleAttributes, options: IStyleOptions) {
+  public constructor(attributes: StyleAttributes, options: StyleOptions) {
     super("w:style");
-    this.root.push(new StyleAttributes(attributes));
+    this.root.push(new StyleAttributesXml(attributes));
     if (options.name) {
       this.root.push(new Name(options.name));
     }

@@ -6,12 +6,12 @@
  *
  * @module
  */
-import type { IAltChunkOptions } from "./alt-chunk/alt-chunk";
-import type { IParagraphOptions } from "./paragraph/paragraph";
-import type { ISubDocOptions } from "./sub-doc/sub-doc";
+import type { AltChunkOptions } from "./alt-chunk/alt-chunk";
+import type { ParagraphOptions } from "./paragraph/paragraph";
+import type { SubDocOptions } from "./sub-doc/sub-doc";
 import type { SdtPropertiesOptions } from "./table-of-contents";
-import type { ITableOfContentsOptions } from "./table-of-contents/table-of-contents-properties";
-import type { ITableOptions } from "./table/table";
+import type { TableOfContentsOptions } from "./table-of-contents/table-of-contents-properties";
+import type { TableOptions } from "./table/table";
 import type { VmlShapeStyle } from "./textbox/shape/shape";
 import type { BaseXmlComponent } from "./xml-components";
 
@@ -32,11 +32,11 @@ import type { BaseXmlComponent } from "./xml-components";
  */
 export type SectionChild =
   | BaseXmlComponent
-  | { paragraph: string | IParagraphOptions }
-  | { table: ITableOptions }
-  | { toc: ITableOfContentsOptions & { readonly alias?: string } }
+  | { paragraph: string | ParagraphOptions }
+  | { table: TableOptions }
+  | { toc: TableOfContentsOptions & { readonly alias?: string } }
   | {
-      textbox: Omit<IParagraphOptions, "style" | "children"> & {
+      textbox: Omit<ParagraphOptions, "style" | "children"> & {
         readonly style?: VmlShapeStyle;
         readonly children?: readonly SectionChild[];
       };
@@ -47,5 +47,5 @@ export type SectionChild =
         readonly children?: readonly SectionChild[];
       };
     }
-  | { altChunk: IAltChunkOptions }
-  | { subDoc: ISubDocOptions };
+  | { altChunk: AltChunkOptions }
+  | { subDoc: SubDocOptions };

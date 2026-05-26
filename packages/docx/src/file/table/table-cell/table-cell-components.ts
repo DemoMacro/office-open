@@ -9,7 +9,7 @@
  * @module
  */
 import { createBorderElement } from "@file/border";
-import type { IBorderOptions } from "@file/border";
+import type { BorderOptions } from "@file/border";
 import {
   IgnoreIfEmptyXmlComponent,
   XmlAttributeComponent,
@@ -25,19 +25,19 @@ import { decimalNumber } from "@util/values";
  *
  * @see {@link TableCellBorders}
  */
-export interface ITableCellBorders {
+export interface TableCellBordersOptions {
   /** Border for the top edge of the cell */
-  readonly top?: IBorderOptions;
+  readonly top?: BorderOptions;
   /** Border for the start edge (left in LTR, right in RTL) */
-  readonly start?: IBorderOptions;
+  readonly start?: BorderOptions;
   /** Border for the left edge of the cell */
-  readonly left?: IBorderOptions;
+  readonly left?: BorderOptions;
   /** Border for the bottom edge of the cell */
-  readonly bottom?: IBorderOptions;
+  readonly bottom?: BorderOptions;
   /** Border for the end edge (right in LTR, left in RTL) */
-  readonly end?: IBorderOptions;
+  readonly end?: BorderOptions;
   /** Border for the right edge of the cell */
-  readonly right?: IBorderOptions;
+  readonly right?: BorderOptions;
 }
 
 /**
@@ -75,7 +75,7 @@ export interface ITableCellBorders {
  * ```
  */
 export class TableCellBorders extends IgnoreIfEmptyXmlComponent {
-  public constructor(options: ITableCellBorders) {
+  public constructor(options: TableCellBordersOptions) {
     super("w:tcBorders");
 
     if (options.top) {

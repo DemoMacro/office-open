@@ -1,4 +1,4 @@
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 import { BaseXmlComponent } from "@file/xml-components";
 
 const ORIENT_TYPES = new Set(["blinds", "checker", "comb", "randomBar"]);
@@ -55,7 +55,7 @@ const DIRECTION_MAP: Record<TransitionDirection, string> = {
   in: "in",
 };
 
-export interface ITransitionOptions {
+export interface TransitionOptions {
   readonly type?: TransitionType;
   readonly speed?: "slow" | "med" | "fast";
   readonly advanceOnClick?: boolean;
@@ -98,7 +98,7 @@ function buildTransitionElement(
   return { [`p:${type}`]: Object.keys(attrs).length > 0 ? { _attr: attrs } : {} };
 }
 
-export function buildTransition(options: ITransitionOptions): IXmlableObject {
+export function buildTransition(options: TransitionOptions): IXmlableObject {
   const children: IXmlableObject[] = [];
   const attrs: Record<string, string | number> = {};
   if (options.speed) attrs.spd = options.speed;
@@ -126,14 +126,14 @@ export function buildTransition(options: ITransitionOptions): IXmlableObject {
  * Lazy: stores options, builds XML object in prepForXml.
  */
 export class Transition extends BaseXmlComponent {
-  private readonly options: ITransitionOptions;
+  private readonly options: TransitionOptions;
 
-  public constructor(options: ITransitionOptions = {}) {
+  public constructor(options: TransitionOptions = {}) {
     super("p:transition");
     this.options = options;
   }
 
-  public override prepForXml(_context: IContext): IXmlableObject {
+  public override prepForXml(_context: Context): IXmlableObject {
     return buildTransition(this.options);
   }
 }

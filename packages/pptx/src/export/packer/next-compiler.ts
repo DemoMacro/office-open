@@ -7,7 +7,7 @@ import {
   getLayoutXml,
   getStyleXml,
 } from "@file/smartart/built-in-definitions";
-import type { IContext } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 import {
   addSmartArtRelationships,
   collectPlaceholderKeys,
@@ -17,11 +17,11 @@ import {
   replaceImagePlaceholders,
   replaceSmartArtPlaceholders,
 } from "@office-open/core";
-import type { IXmlifyedFile } from "@office-open/core";
+import type { XmlifyedFile } from "@office-open/core";
 import { xml } from "@office-open/xml";
 import type { Zippable } from "fflate";
 
-interface IXmlifyedFileMapping {
+interface XmlifyedFileMapping {
   [key: string]: { data: string; path: string };
 }
 
@@ -39,13 +39,13 @@ export class Compiler {
   public compile(
     file: File,
     prettifyXml?: string,
-    overrides: readonly IXmlifyedFile[] = [],
+    overrides: readonly XmlifyedFile[] = [],
   ): Zippable {
     const declaration = true;
     const indent = prettifyXml;
-    const context: IContext = { fileData: file, stack: [] };
+    const context: Context = { fileData: file, stack: [] };
 
-    const mapping: IXmlifyedFileMapping = {
+    const mapping: XmlifyedFileMapping = {
       AppProperties: {
         data: xml(this.formatter.format(file.AppProperties, context), { declaration }),
         path: "docProps/app.xml",

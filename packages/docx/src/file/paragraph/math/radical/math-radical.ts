@@ -19,7 +19,7 @@ import { MathRadicalProperties } from "./math-radical-properties";
  *
  * @see {@link MathRadical}
  */
-export interface IMathRadicalOptions {
+export interface MathRadicalOptions {
   /** The content under the radical sign */
   readonly children: readonly MathComponent[];
   /** Optional degree of the root (e.g., 3 for cube root). If omitted, square root is assumed. */
@@ -60,7 +60,7 @@ export interface IMathRadicalOptions {
  * ```
  */
 export class MathRadical extends XmlComponent {
-  public constructor(options: IMathRadicalOptions) {
+  public constructor(options: MathRadicalOptions) {
     super("m:rad");
 
     this.root.push(new MathRadicalProperties(Boolean(options.degree)));

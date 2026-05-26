@@ -1,11 +1,11 @@
-import type { IPropertiesOptions } from "@file/core-properties";
+import type { PropertiesOptions } from "@file/core-properties";
 import { attr, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 /**
- * Parse word/settings.xml Element into IPropertiesOptions fields.
+ * Parse word/settings.xml Element into PropertiesOptions fields.
  */
-export function parseSettings(el: Element | undefined): Partial<IPropertiesOptions> {
+export function parseSettings(el: Element | undefined): Partial<PropertiesOptions> {
   if (!el) return {};
 
   const opts: Record<string, unknown> = {};
@@ -19,7 +19,7 @@ export function parseSettings(el: Element | undefined): Partial<IPropertiesOptio
   const viewEl = findChild(el, "w:view");
   if (viewEl) {
     const val = attr(viewEl, "w:val");
-    if (val) opts.view = val as IPropertiesOptions["view"];
+    if (val) opts.view = val as PropertiesOptions["view"];
   }
 
   // zoom → w:zoom/@w:percent, @w:val
@@ -97,7 +97,7 @@ export function parseSettings(el: Element | undefined): Partial<IPropertiesOptio
   const cscEl = findChild(el, "w:characterSpacingControl");
   if (cscEl) {
     const val = attr(cscEl, "w:val");
-    if (val) opts.characterSpacingControl = val as IPropertiesOptions["characterSpacingControl"];
+    if (val) opts.characterSpacingControl = val as PropertiesOptions["characterSpacingControl"];
   }
 
   // displayBackgroundShape → w:displayBackgroundShape (presence)

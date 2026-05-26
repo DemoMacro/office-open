@@ -2,13 +2,13 @@ import type { SourceRectangleOptions } from "@file/drawing/inline/graphic/graphi
 import type { EffectListOptions } from "@file/drawing/inline/graphic/graphic-data/pic/shape-properties/effects/effect-list";
 import type { OutlineOptions } from "@file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
 import type {
-  IChildExtent,
-  IChildOffset,
+  ChildExtent,
+  ChildOffset,
 } from "@file/drawing/inline/graphic/graphic-data/wpg/wpg-group";
 import type { WpsShapeCoreOptions } from "@file/drawing/inline/graphic/graphic-data/wps";
 import type { FillOptions } from "@office-open/core/drawingml";
 
-export interface IMediaDataTransformation {
+export interface MediaDataTransformation {
   readonly offset?: {
     readonly pixels: {
       readonly x: number;
@@ -50,7 +50,7 @@ interface CoreMediaData {
   /** File name for the media in the package */
   readonly fileName: string;
   /** Transformation settings for display */
-  readonly transformation: IMediaDataTransformation;
+  readonly transformation: MediaDataTransformation;
   /** Raw image data */
   readonly data: Uint8Array;
   /** Source rectangle for image cropping */
@@ -80,7 +80,7 @@ interface SvgMediaData {
 
 export interface WpsMediaData {
   readonly type: "wps";
-  readonly transformation: IMediaDataTransformation;
+  readonly transformation: MediaDataTransformation;
   readonly data: WpsShapeCoreOptions;
 }
 
@@ -93,12 +93,12 @@ export type IGroupChildMediaData = (WpsMediaData | IMediaData) & WpgCommonMediaD
 
 export interface WpgMediaData {
   readonly type: "wpg";
-  readonly transformation: IMediaDataTransformation;
+  readonly transformation: MediaDataTransformation;
   readonly children: readonly IGroupChildMediaData[];
   /** Child coordinate offset */
-  readonly chOff?: IChildOffset;
+  readonly chOff?: ChildOffset;
   /** Child coordinate extent */
-  readonly chExt?: IChildExtent;
+  readonly chExt?: ChildExtent;
   /** Group fill */
   readonly fill?: FillOptions;
   /** Group effects */
@@ -110,7 +110,7 @@ export interface WpgMediaData {
  */
 export interface ChartMediaData {
   readonly type: "chart";
-  readonly transformation: IMediaDataTransformation;
+  readonly transformation: MediaDataTransformation;
   readonly chartKey: string;
 }
 
@@ -119,7 +119,7 @@ export interface ChartMediaData {
  */
 export interface SmartArtMediaData {
   readonly type: "smartart";
-  readonly transformation: IMediaDataTransformation;
+  readonly transformation: MediaDataTransformation;
   readonly smartArtKey: string;
 }
 

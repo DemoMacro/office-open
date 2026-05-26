@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vite-plus/test";
 
 import { XmlAttributeComponent, NextAttributeComponent } from "./attributes";
-import type { IContext } from "./base";
+import type { Context } from "./base";
 
-const emptyContext: IContext = { stack: [] };
+const emptyContext: Context = { stack: [] };
 
 describe("XmlAttributeComponent", () => {
   it("should map properties using xmlKeys", () => {

@@ -22,7 +22,7 @@ export const ReflectionAlignment = {
   BOTTOM_RIGHT: "br",
 } as const;
 
-export interface IShadowOptions {
+export interface ShadowOptions {
   readonly blur?: number;
   readonly distance?: number;
   readonly direction?: number;
@@ -31,13 +31,13 @@ export interface IShadowOptions {
   readonly rotateWithShape?: boolean;
 }
 
-export interface IGlowOptions {
+export interface GlowOptions {
   readonly radius?: number;
   readonly color?: string;
   readonly alpha?: number;
 }
 
-export interface IReflectionOptions {
+export interface ReflectionOptions {
   readonly blurRadius?: number;
   readonly distance?: number;
   readonly direction?: number;
@@ -54,31 +54,31 @@ export interface IReflectionOptions {
   readonly rotateWithShape?: boolean;
 }
 
-export interface ISoftEdgeOptions {
+export interface SoftEdgeOptions {
   readonly radius?: number;
 }
 
-export interface IBevelOptions {
+export interface PPTXBevelOptions {
   readonly width?: number;
   readonly height?: number;
 }
 
-export interface IRotation3DOptions {
+export interface Rotation3DOptions {
   readonly x?: number;
   readonly y?: number;
   readonly z?: number;
   readonly perspective?: number;
 }
 
-export interface IEffectsOptions {
-  readonly outerShadow?: IShadowOptions;
-  readonly innerShadow?: IShadowOptions;
-  readonly glow?: IGlowOptions;
-  readonly reflection?: IReflectionOptions;
-  readonly softEdge?: ISoftEdgeOptions;
-  readonly rotation3D?: IRotation3DOptions;
-  readonly bevelTop?: IBevelOptions;
-  readonly bevelBottom?: IBevelOptions;
+export interface EffectsOptions {
+  readonly outerShadow?: ShadowOptions;
+  readonly innerShadow?: ShadowOptions;
+  readonly glow?: GlowOptions;
+  readonly reflection?: ReflectionOptions;
+  readonly softEdge?: SoftEdgeOptions;
+  readonly rotation3D?: Rotation3DOptions;
+  readonly bevelTop?: PPTXBevelOptions;
+  readonly bevelBottom?: PPTXBevelOptions;
   readonly extrusionH?: number;
   readonly material?: "plastic" | "metal" | "matte" | "warmMatte" | "softEdge" | "flat" | "powder";
   readonly lighting?:
@@ -117,8 +117,8 @@ function toColor(color?: string, alpha?: number) {
   return { value: color.replace("#", ""), alpha: (alpha ?? 40) * 1000 };
 }
 
-/** Convert PPTX IShadowOptions to core OuterShadowEffectOptions. */
-function toOuterShadow(opts: IShadowOptions) {
+/** Convert PPTX ShadowOptions to core OuterShadowEffectOptions. */
+function toOuterShadow(opts: ShadowOptions) {
   return {
     blurRadius: opts.blur,
     distance: opts.distance,
@@ -128,8 +128,8 @@ function toOuterShadow(opts: IShadowOptions) {
   };
 }
 
-/** Convert PPTX IShadowOptions to core InnerShadowEffectOptions. */
-function toInnerShadow(opts: IShadowOptions) {
+/** Convert PPTX ShadowOptions to core InnerShadowEffectOptions. */
+function toInnerShadow(opts: ShadowOptions) {
   return {
     blurRadius: opts.blur,
     distance: opts.distance,
@@ -138,16 +138,16 @@ function toInnerShadow(opts: IShadowOptions) {
   };
 }
 
-/** Convert PPTX IGlowOptions to core GlowEffectOptions. */
-function toGlow(opts: IGlowOptions) {
+/** Convert PPTX GlowOptions to core GlowEffectOptions. */
+function toGlow(opts: GlowOptions) {
   return {
     radius: opts.radius ?? 152400,
     color: toColor(opts.color, opts.alpha),
   };
 }
 
-/** Convert PPTX IReflectionOptions to core ReflectionEffectOptions. */
-function toReflection(opts: IReflectionOptions) {
+/** Convert PPTX ReflectionOptions to core ReflectionEffectOptions. */
+function toReflection(opts: ReflectionOptions) {
   const result: Record<string, number | string> = {};
   if (opts.blurRadius !== undefined) result.blurRadius = opts.blurRadius;
   if (opts.distance !== undefined) result.distance = opts.distance;
@@ -166,16 +166,16 @@ function toReflection(opts: IReflectionOptions) {
   return result;
 }
 
-/** Convert PPTX IBevelOptions to core BevelOptions. */
-function toBevel(opts: IBevelOptions): BevelOptions {
+/** Convert PPTX PPTXBevelOptions to core BevelOptions. */
+function toBevel(opts: PPTXBevelOptions): BevelOptions {
   return {
     ...(opts.width !== undefined && { w: opts.width * 12700 }),
     ...(opts.height !== undefined && { h: opts.height * 12700 }),
   };
 }
 
-/** Map PPTX IEffectsOptions to core EffectListOptions. */
-function toEffectListOptions(opts: IEffectsOptions): EffectListOptions | undefined {
+/** Map PPTX EffectsOptions to core EffectListOptions. */
+function toEffectListOptions(opts: EffectsOptions): EffectListOptions | undefined {
   const hasEffects =
     opts.outerShadow || opts.innerShadow || opts.glow || opts.reflection || opts.softEdge;
   if (!hasEffects) return undefined;
@@ -189,8 +189,8 @@ function toEffectListOptions(opts: IEffectsOptions): EffectListOptions | undefin
   };
 }
 
-/** Map PPTX IEffectsOptions to core Scene3DOptions, or null if not needed. */
-export function buildScene3D(options: IEffectsOptions): ReturnType<typeof createScene3D> | null {
+/** Map PPTX EffectsOptions to core Scene3DOptions, or null if not needed. */
+export function buildScene3D(options: EffectsOptions): ReturnType<typeof createScene3D> | null {
   if (!options.rotation3D && !options.lighting) return null;
 
   const cameraPreset = options.rotation3D?.perspective
@@ -214,8 +214,8 @@ export function buildScene3D(options: IEffectsOptions): ReturnType<typeof create
   });
 }
 
-/** Map PPTX IEffectsOptions to core Shape3DOptions, or null if not needed. */
-export function buildShape3D(options: IEffectsOptions): ReturnType<typeof createShape3D> | null {
+/** Map PPTX EffectsOptions to core Shape3DOptions, or null if not needed. */
+export function buildShape3D(options: EffectsOptions): ReturnType<typeof createShape3D> | null {
   if (!options.extrusionH && !options.bevelTop && !options.bevelBottom && !options.material)
     return null;
 
@@ -231,8 +231,8 @@ export function buildShape3D(options: IEffectsOptions): ReturnType<typeof create
   return createShape3D(shape3dOpts);
 }
 
-/** Create a:effectLst from PPTX simplified IEffectsOptions. */
-export function createPptxEffectList(options: IEffectsOptions) {
+/** Create a:effectLst from PPTX simplified EffectsOptions. */
+export function createPptxEffectList(options: EffectsOptions) {
   const effectListOpts = toEffectListOptions(options);
   return effectListOpts ? createEffectList(effectListOpts) : null;
 }

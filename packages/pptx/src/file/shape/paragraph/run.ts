@@ -1,10 +1,10 @@
 import { XmlComponent } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 
-import type { IRunPropertiesOptions } from "./run-properties";
+import type { RunPropertiesOptions } from "./run-properties";
 import { RunProperties } from "./run-properties";
 
-export interface IRunOptions extends IRunPropertiesOptions {
+export interface RunOptions extends RunPropertiesOptions {
   readonly text?: string;
 }
 
@@ -13,14 +13,14 @@ export interface IRunOptions extends IRunPropertiesOptions {
  * Lazy: stores options, builds XML object in prepForXml.
  */
 export class TextRun extends XmlComponent {
-  private readonly options: IRunOptions;
+  private readonly options: RunOptions;
 
-  public constructor(options: IRunOptions | string = {}) {
+  public constructor(options: RunOptions | string = {}) {
     super("a:r");
     this.options = typeof options === "string" ? { text: options } : options;
   }
 
-  public prepForXml(context: IContext): IXmlableObject | undefined {
+  public prepForXml(context: Context): IXmlableObject | undefined {
     const children: IXmlableObject[] = [];
 
     if (RunProperties.hasProperties(this.options)) {

@@ -8,7 +8,7 @@ import { afterEach, assert, beforeEach, describe, expect, it, vi } from "vite-pl
 
 import { ParseContext } from "../../parse/context";
 import { DocumentWrapper } from "../document-wrapper";
-import type { IViewWrapper } from "../document-wrapper";
+import type { ViewWrapper } from "../document-wrapper";
 import type { File } from "../file";
 import { ShadingType } from "../shading";
 import {
@@ -994,7 +994,7 @@ describe("Paragraph", () => {
         Relationships: {
           addRelationship: () => {},
         },
-      } as unknown as IViewWrapper;
+      } as unknown as ViewWrapper;
 
       const tree = new Formatter().format(paragraph, {
         file: {} as unknown as File,

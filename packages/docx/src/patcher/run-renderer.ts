@@ -15,7 +15,7 @@ import type { ElementWrapper } from "./traverser";
  * @property index - Position index of the paragraph among siblings
  * @property pathToParagraph - Path indices from root to this paragraph
  */
-export interface IRenderedParagraphNode {
+export interface RenderedParagraphNode {
   readonly text: string;
   readonly runs: readonly IRenderedRunNode[];
   readonly index: number;
@@ -75,7 +75,7 @@ export type IRenderedRunNode = {
  * console.log(rendered.runs.length); // 2 (if text is in separate runs)
  * ```
  */
-export const renderParagraphNode = (node: ElementWrapper): IRenderedParagraphNode => {
+export const renderParagraphNode = (node: ElementWrapper): RenderedParagraphNode => {
   if (node.element.name !== "w:p") {
     throw new Error(`Invalid node type: ${node.element.name}`);
   }

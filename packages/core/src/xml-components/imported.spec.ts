@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import type { IContext } from "./base";
+import type { Context } from "./base";
 import { EMPTY_OBJECT } from "./component";
 import {
   ImportedXmlComponent,
@@ -8,7 +8,7 @@ import {
   convertToXmlComponent,
 } from "./imported";
 
-const emptyContext: IContext = { stack: [] };
+const emptyContext: Context = { stack: [] };
 
 describe("ImportedXmlComponent", () => {
   it("should create from XML string", () => {
@@ -67,6 +67,6 @@ describe("convertToXmlComponent", () => {
 describe("ImportedRootElementAttributes", () => {
   it("should produce _attr output", () => {
     const attrs = new ImportedRootElementAttributes({ key: "value" });
-    expect(attrs.prepForXml(emptyContext as IContext)).toEqual({ _attr: { key: "value" } });
+    expect(attrs.prepForXml(emptyContext as Context)).toEqual({ _attr: { key: "value" } });
   });
 });

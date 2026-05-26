@@ -23,7 +23,7 @@ import type { Column } from "./column";
  * @property equalWidth - Whether all columns have equal width
  * @property children - Individual column definitions (used when equalWidth is false)
  */
-export interface IColumnsAttributes {
+export interface ColumnsAttributes {
   /** Spacing between columns in twips (default: 720) */
   readonly space?: number | PositiveUniversalMeasure;
   /** Number of columns (default: 1) */
@@ -83,8 +83,8 @@ export const createColumns = ({
   separate,
   equalWidth,
   children,
-}: IColumnsAttributes): XmlComponent =>
-  new BuilderElement<Omit<IColumnsAttributes, "children">>({
+}: ColumnsAttributes): XmlComponent =>
+  new BuilderElement<Omit<ColumnsAttributes, "children">>({
     attributes: {
       count: { key: "w:num", value: count === undefined ? undefined : decimalNumber(count) },
       equalWidth: { key: "w:equalWidth", value: equalWidth },

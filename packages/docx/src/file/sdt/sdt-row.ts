@@ -18,7 +18,7 @@ import { TableCell } from "../table/table-cell/table-cell";
 /**
  * Options for creating a row-level Structured Document Tag (CT_SdtRow).
  */
-export interface ISdtRowOptions {
+export interface SdtRowOptions {
   readonly properties: SdtPropertiesOptions;
   readonly children?: readonly TableRow[];
 }
@@ -42,7 +42,7 @@ export interface ISdtRowOptions {
 export class StructuredDocumentTagRow extends XmlComponent {
   private readonly rows: readonly TableRow[];
 
-  public constructor(options: ISdtRowOptions) {
+  public constructor(options: SdtRowOptions) {
     super("w:sdt");
     this.rows = options.children ?? [];
     this.root.push(new StructuredDocumentTagProperties(options.properties));

@@ -23,7 +23,7 @@ export class EndParagraphRunProperties extends BuilderElement<{
   }
 
   public override prepForXml(
-    _context: import("@file/xml-components").IContext,
+    _context: import("@file/xml-components").Context,
   ): IXmlableObject | undefined {
     return buildEndParagraphRunProperties(this.lang);
   }

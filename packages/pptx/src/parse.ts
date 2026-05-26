@@ -11,7 +11,7 @@ import { parseTheme } from "./parse/theme";
 
 export { parseArchive };
 
-import type { IMasterDefinition, ISlideOptions, IPresentationOptions } from "./file/file";
+import type { MasterDefinition, SlideOptions, PresentationOptions } from "./file/file";
 import type { SlideLayoutType } from "./file/slide-layout/slide-layout";
 
 /**
@@ -263,7 +263,7 @@ function resolveRelTargets(
 }
 
 /**
- * Parse a .pptx file and convert it into IPresentationOptions.
+ * Parse a .pptx file and convert it into PresentationOptions.
  *
  * This is the main public API for parsing PPTX files.
  * The returned options can be passed directly to `new Presentation(parsed)`
@@ -272,7 +272,7 @@ function resolveRelTargets(
  * @param data - Raw bytes of a .pptx file
  * @returns Parsed presentation options
  */
-export function parsePresentation(data: Uint8Array): IPresentationOptions {
+export function parsePresentation(data: Uint8Array): PresentationOptions {
   const pptx = parsePptx(data);
   const opts: Record<string, unknown> = {};
 
@@ -339,7 +339,7 @@ export function parsePresentation(data: Uint8Array): IPresentationOptions {
 
   // 5. Parse masters
   const masterCount = pptx.slideMasters.length;
-  const masterDefs: IMasterDefinition[] = [];
+  const masterDefs: MasterDefinition[] = [];
   for (let mi = 0; mi < masterCount; mi++) {
     const masterPath = pptx.slideMasters[mi];
     const masterEl = pptx.doc.get(masterPath);
@@ -357,7 +357,7 @@ export function parsePresentation(data: Uint8Array): IPresentationOptions {
     const hasBackground = masterBackground && Object.keys(masterBackground).length > 0;
 
     // Layouts belonging to this master
-    const masterLayouts: NonNullable<IMasterDefinition["layouts"]>[number][] = [];
+    const masterLayouts: NonNullable<MasterDefinition["layouts"]>[number][] = [];
     for (const layoutPath of pptx.slideLayouts) {
       if (layoutMasterPaths.get(layoutPath) !== masterPath) continue;
       const layoutEl = pptx.doc.get(layoutPath);
@@ -370,7 +370,7 @@ export function parsePresentation(data: Uint8Array): IPresentationOptions {
     if (themeOptions) masterDef.theme = themeOptions;
     if (hasBackground) masterDef.background = masterBackground;
     if (masterLayouts.length > 0) masterDef.layouts = masterLayouts;
-    masterDefs.push(masterDef as IMasterDefinition);
+    masterDefs.push(masterDef as MasterDefinition);
   }
 
   // Only set masters if there's more than one (single master is auto-created)
@@ -379,7 +379,7 @@ export function parsePresentation(data: Uint8Array): IPresentationOptions {
   }
 
   // 6. Parse slides with layout and master references
-  const result: ISlideOptions[] = [];
+  const result: SlideOptions[] = [];
   for (let si = 0; si < pptx.slides.length; si++) {
     const slidePath = pptx.slides[si];
     const slideEl = pptx.doc.get(slidePath);
@@ -404,9 +404,9 @@ export function parsePresentation(data: Uint8Array): IPresentationOptions {
       }
     }
 
-    result.push(slideOpts as ISlideOptions);
+    result.push(slideOpts as SlideOptions);
   }
 
   opts.slides = result;
-  return opts as IPresentationOptions;
+  return opts as PresentationOptions;
 }

@@ -51,7 +51,7 @@ export const WidthType = {
  * </xsd:complexType>
  * ```
  */
-export interface ITableWidthProperties {
+export interface TableWidthProperties {
   readonly size: number | Percentage | UniversalMeasure;
   readonly type?: (typeof WidthType)[keyof typeof WidthType];
 }
@@ -71,14 +71,14 @@ export interface ITableWidthProperties {
  */
 export const createTableWidthElement = (
   name: string,
-  { type = WidthType.AUTO, size }: ITableWidthProperties,
+  { type = WidthType.AUTO, size }: TableWidthProperties,
 ): XmlComponent => {
   let tableWidthValue = size;
   if (type === WidthType.PERCENTAGE && typeof size === "number") {
     tableWidthValue = `${size}%`;
   }
 
-  return new BuilderElement<ITableWidthProperties>({
+  return new BuilderElement<TableWidthProperties>({
     attributes: {
       size: { key: "w:w", value: measurementOrPercentValue(tableWidthValue) },
       type: { key: "w:type", value: type },

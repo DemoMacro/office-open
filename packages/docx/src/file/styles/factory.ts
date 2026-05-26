@@ -9,7 +9,7 @@ import { buildDocumentAttributes } from "../document/document-attributes";
  * @module
  */
 import { DocumentDefaults } from "./defaults";
-import type { IDocumentDefaultsOptions } from "./defaults";
+import type { DocumentDefaultsOptions } from "./defaults";
 import {
   EndnoteReferenceStyle,
   EndnoteText,
@@ -29,7 +29,7 @@ import {
   TitleStyle,
 } from "./style";
 import type { IBaseCharacterStyleOptions, IBaseParagraphStyleOptions } from "./style";
-import type { IStylesOptions } from "./styles";
+import type { StylesOptions } from "./styles";
 
 /**
  * Options for configuring default document styles.
@@ -51,9 +51,9 @@ import type { IStylesOptions } from "./styles";
  * @property footnoteText - Footnote text paragraph style options
  * @property footnoteTextChar - Footnote text character style options
  */
-export interface IDefaultStylesOptions {
+export interface DefaultStylesOptions {
   /** Document-wide default formatting */
-  readonly document?: IDocumentDefaultsOptions;
+  readonly document?: DocumentDefaultsOptions;
   /** Title paragraph style options */
   readonly title?: IBaseParagraphStyleOptions;
   /** Heading 1 paragraph style options */
@@ -85,7 +85,7 @@ export interface IDefaultStylesOptions {
   readonly endnoteTextChar?: IBaseCharacterStyleOptions;
 }
 
-let cachedDefaultStyles: IStylesOptions | null = null;
+let cachedDefaultStyles: StylesOptions | null = null;
 
 /**
  * Factory for creating default document styles.
@@ -109,7 +109,7 @@ let cachedDefaultStyles: IStylesOptions | null = null;
  * ```
  */
 export class DefaultStylesFactory {
-  public newInstance(options: IDefaultStylesOptions = {}): IStylesOptions {
+  public newInstance(options: DefaultStylesOptions = {}): StylesOptions {
     if (Object.keys(options).length === 0) {
       if (!cachedDefaultStyles) {
         cachedDefaultStyles = this.build({});
@@ -119,7 +119,7 @@ export class DefaultStylesFactory {
     return this.build(options);
   }
 
-  private build(options: IDefaultStylesOptions): IStylesOptions {
+  private build(options: DefaultStylesOptions): StylesOptions {
     return {
       importedStyles: [
         new DocumentDefaults(options.document ?? {}),

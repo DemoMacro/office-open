@@ -3,7 +3,7 @@ import { Readable } from "stream";
 import type { File } from "@file/file";
 import { convertOutput, convertPrettifyType, OoxmlMimeType, PrettifyType } from "@office-open/core";
 export { PrettifyType } from "@office-open/core";
-import type { IXmlifyedFile, OutputByType, OutputType } from "@office-open/core";
+import type { XmlifyedFile, OutputByType, OutputType } from "@office-open/core";
 import { type ZipOptions, Zip, ZipDeflate, ZipPassThrough, zipSync } from "fflate";
 
 import { Compiler } from "./next-compiler";
@@ -13,7 +13,7 @@ export class Packer {
     file: File,
     type: T,
     prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
-    overrides: readonly IXmlifyedFile[] = [],
+    overrides: readonly XmlifyedFile[] = [],
   ): Promise<OutputByType[T]> {
     const files = this.compiler.compile(file, convertPrettifyType(prettify), overrides);
     const zipped = zipSync(files, { level: 6 });
@@ -23,7 +23,7 @@ export class Packer {
   public static async toString(
     file: File,
     prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
-    overrides: readonly IXmlifyedFile[] = [],
+    overrides: readonly XmlifyedFile[] = [],
   ): Promise<string> {
     return Packer.pack(file, "string", prettify, overrides);
   }
@@ -31,7 +31,7 @@ export class Packer {
   public static toArrayBuffer(
     file: File,
     prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
-    overrides: readonly IXmlifyedFile[] = [],
+    overrides: readonly XmlifyedFile[] = [],
   ): Promise<ArrayBuffer> {
     return Packer.pack(file, "arraybuffer", prettify, overrides);
   }
@@ -39,7 +39,7 @@ export class Packer {
   public static toBuffer(
     file: File,
     prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
-    overrides: readonly IXmlifyedFile[] = [],
+    overrides: readonly XmlifyedFile[] = [],
   ): Promise<Buffer> {
     return Packer.pack(file, "nodebuffer", prettify, overrides);
   }
@@ -47,7 +47,7 @@ export class Packer {
   public static toBlob(
     file: File,
     prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
-    overrides: readonly IXmlifyedFile[] = [],
+    overrides: readonly XmlifyedFile[] = [],
   ): Promise<Blob> {
     return Packer.pack(file, "blob", prettify, overrides);
   }
@@ -55,7 +55,7 @@ export class Packer {
   public static toBase64String(
     file: File,
     prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
-    overrides: readonly IXmlifyedFile[] = [],
+    overrides: readonly XmlifyedFile[] = [],
   ): Promise<string> {
     return Packer.pack(file, "base64", prettify, overrides);
   }
@@ -63,7 +63,7 @@ export class Packer {
   public static toStream(
     file: File,
     prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
-    overrides: readonly IXmlifyedFile[] = [],
+    overrides: readonly XmlifyedFile[] = [],
   ): Readable {
     const stream = new Readable({ read() {} });
 

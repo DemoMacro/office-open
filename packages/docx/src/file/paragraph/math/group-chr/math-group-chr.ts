@@ -20,7 +20,7 @@ import type { MathGroupChrPropertiesOptions } from "./math-group-chr-properties"
  *
  * @see {@link MathGroupChr}
  */
-export interface IMathGroupChrOptions {
+export interface MathGroupChrOptions {
   /** Group character properties */
   readonly properties?: MathGroupChrPropertiesOptions;
   /** Content under/over the group character */
@@ -48,7 +48,7 @@ export interface IMathGroupChrOptions {
  * ```
  */
 export class MathGroupChr extends XmlComponent {
-  public constructor(options: IMathGroupChrOptions) {
+  public constructor(options: MathGroupChrOptions) {
     super("m:groupChr");
 
     if (options.properties) {

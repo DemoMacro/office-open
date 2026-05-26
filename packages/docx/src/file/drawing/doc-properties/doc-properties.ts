@@ -11,7 +11,7 @@
 import { ConcreteHyperlink } from "@file/paragraph/links/hyperlink";
 import { TargetModeType } from "@file/relationships/relationship/relationship";
 import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 import { docPropertiesUniqueNumericIdGen, uniqueId } from "@util/convenience-functions";
 
 import { createHyperlinkClick, createHyperlinkHover } from "./doc-properties-children";
@@ -130,7 +130,7 @@ export class DocProperties extends XmlComponent {
     this.root.push(new NextAttributeComponent(attributes));
   }
 
-  public prepForXml(context: IContext): IXmlableObject | undefined {
+  public prepForXml(context: Context): IXmlableObject | undefined {
     // Stack-based detection (backward compatible with ConcreteHyperlink wrapping)
     let hasStackClick = false;
     for (let i = context.stack.length - 1; i >= 0; i--) {

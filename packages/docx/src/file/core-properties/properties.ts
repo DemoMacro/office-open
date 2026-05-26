@@ -1,4 +1,4 @@
-import type { IBibliographyOptions } from "@file/bibliography";
+import type { BibliographyOptions } from "@file/bibliography";
 /**
  * Core Properties module for WordprocessingML documents.
  *
@@ -8,20 +8,20 @@ import type { IBibliographyOptions } from "@file/bibliography";
  *
  * @module
  */
-import type { FontOptions } from "@file/fonts/font-table";
-import type { ICommentsOptions } from "@file/paragraph/run/comment-run";
-import type { IHyphenationOptions } from "@file/settings";
-import type { ICompatibilityOptions } from "@file/settings/compatibility";
+import type { EmbeddedFontOptions } from "@file/fonts/font-table";
+import type { CommentsOptions } from "@file/paragraph/run/comment-run";
+import type { HyphenationOptions } from "@file/settings";
+import type { CompatibilityOptions } from "@file/settings/compatibility";
 import { StringContainer, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 import { dateTimeValue } from "@util/values";
 
-import type { ICustomPropertyOptions } from "../custom-properties";
-import type { IDocumentBackgroundOptions } from "../document";
+import type { CustomPropertyOptions } from "../custom-properties";
+import type { DocumentBackgroundOptions } from "../document";
 import { buildDocumentAttributes } from "../document/document-attributes";
-import type { ISectionOptions } from "../file";
-import type { INumberingOptions } from "../numbering";
-import type { IParagraphOptions, Paragraph } from "../paragraph";
-import type { IStylesOptions } from "../styles";
+import type { SectionOptions } from "../file";
+import type { NumberingOptions } from "../numbering";
+import type { ParagraphOptions, Paragraph } from "../paragraph";
+import type { StylesOptions } from "../styles";
 
 /**
  * Options for configuring document properties.
@@ -50,8 +50,8 @@ import type { IStylesOptions } from "../styles";
  * @property fonts - Font configurations
  * @property hyphenation - Hyphenation settings
  */
-export interface IPropertiesOptions {
-  readonly sections: readonly ISectionOptions[];
+export interface PropertiesOptions {
+  readonly sections: readonly SectionOptions[];
   readonly title?: string;
   readonly subject?: string;
   readonly creator?: string;
@@ -60,15 +60,15 @@ export interface IPropertiesOptions {
   readonly lastModifiedBy?: string;
   readonly revision?: number;
   readonly externalStyles?: string;
-  readonly styles?: IStylesOptions;
-  readonly numbering?: INumberingOptions;
-  readonly comments?: ICommentsOptions;
-  readonly bibliography?: IBibliographyOptions;
+  readonly styles?: StylesOptions;
+  readonly numbering?: NumberingOptions;
+  readonly comments?: CommentsOptions;
+  readonly bibliography?: BibliographyOptions;
   readonly footnotes?: Readonly<
     Record<
       string,
       {
-        readonly children: readonly (Paragraph | IParagraphOptions | string)[];
+        readonly children: readonly (Paragraph | ParagraphOptions | string)[];
       }
     >
   >;
@@ -76,23 +76,23 @@ export interface IPropertiesOptions {
     Record<
       string,
       {
-        readonly children: readonly (Paragraph | IParagraphOptions | string)[];
+        readonly children: readonly (Paragraph | ParagraphOptions | string)[];
       }
     >
   >;
-  readonly background?: IDocumentBackgroundOptions;
+  readonly background?: DocumentBackgroundOptions;
   readonly features?: {
     readonly trackRevisions?: boolean;
     readonly updateFields?: boolean;
-    readonly documentProtection?: import("@file/settings/settings").IDocumentProtectionOptions;
+    readonly documentProtection?: import("@file/settings/settings").DocumentProtectionOptions;
   };
   readonly compatabilityModeVersion?: number;
-  readonly compatibility?: ICompatibilityOptions;
-  readonly customProperties?: readonly ICustomPropertyOptions[];
+  readonly compatibility?: CompatibilityOptions;
+  readonly customProperties?: readonly CustomPropertyOptions[];
   readonly evenAndOddHeaderAndFooters?: boolean;
   readonly defaultTabStop?: number;
-  readonly fonts?: readonly FontOptions[];
-  readonly hyphenation?: IHyphenationOptions;
+  readonly fonts?: readonly EmbeddedFontOptions[];
+  readonly hyphenation?: HyphenationOptions;
   /** Controls whether punctuation is compressed at line ends */
   readonly characterSpacingControl?: "compressPunctuation" | "doNotCompress";
   /** Default document view mode */
@@ -103,7 +103,7 @@ export interface IPropertiesOptions {
     readonly val?: "none" | "fullPage" | "bestFit" | "textFit";
   };
   /** Write protection recommendation (not enforcement) */
-  readonly writeProtection?: import("@file/settings/settings").IWriteProtectionOptions;
+  readonly writeProtection?: import("@file/settings/settings").WriteProtectionOptions;
   /** Whether to display the background shape in print layout */
   readonly displayBackgroundShape?: boolean;
   /** Whether to embed TrueType fonts in the document */
@@ -115,7 +115,7 @@ export interface IPropertiesOptions {
   /** Document variables (key-value pairs stored in the document) */
   readonly docVars?: readonly { readonly name: string; readonly val: string }[];
   /** Theme color scheme remapping */
-  readonly colorSchemeMapping?: import("@file/settings/settings").ISettingsOptions["colorSchemeMapping"];
+  readonly colorSchemeMapping?: import("@file/settings/settings").SettingsOptions["colorSchemeMapping"];
 }
 
 /**
@@ -163,7 +163,7 @@ export interface IPropertiesOptions {
  * ```
  */
 export class CoreProperties extends XmlComponent {
-  public constructor(options: Omit<IPropertiesOptions, "sections">) {
+  public constructor(options: Omit<PropertiesOptions, "sections">) {
     super("cp:coreProperties");
     this.root.push(buildDocumentAttributes(["cp", "dc", "dcterms", "dcmitype", "xsi"]));
     if (options.title) {

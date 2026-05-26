@@ -12,7 +12,7 @@ import type { ImportedXmlComponent } from "@file/xml-components";
 import { xml2js } from "@office-open/xml";
 import type { Element as XMLElement } from "@office-open/xml";
 
-import type { IStylesOptions } from "./styles";
+import type { StylesOptions } from "./styles";
 
 /**
  * Factory for creating styles from external XML sources.
@@ -54,7 +54,7 @@ export class ExternalStylesFactory {
    * @returns Styles object containing all parsed styles
    * @throws Error if styles element cannot be found in the XML
    */
-  public newInstance(xmlData: string): IStylesOptions {
+  public newInstance(xmlData: string): StylesOptions {
     const xmlObj = xml2js(xmlData, { compact: false }) as XMLElement;
 
     let stylesXmlElement: XMLElement | undefined;

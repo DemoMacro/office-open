@@ -25,7 +25,7 @@
 import { BuilderElement } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
 
-interface IVerticalAlignAttributes {
+interface VerticalAlignAttributes {
   readonly val: string;
 }
 
@@ -34,7 +34,7 @@ interface IVerticalAlignAttributes {
  * @internal
  */
 const createVerticalAlignRun = (type: string): XmlComponent =>
-  new BuilderElement<IVerticalAlignAttributes>({
+  new BuilderElement<VerticalAlignAttributes>({
     attributes: {
       val: { key: "w:val", value: type },
     },

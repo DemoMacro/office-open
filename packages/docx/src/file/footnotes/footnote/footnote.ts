@@ -37,7 +37,7 @@ export const FootnoteType = {
  *
  * @see {@link Footnote}
  */
-export interface IFootnoteOptions {
+export interface FootnoteOptions {
   /** Unique numeric identifier for this footnote */
   readonly id: number;
   /** Type of footnote (separator or continuation separator) */
@@ -81,7 +81,7 @@ export interface IFootnoteOptions {
  * ```
  */
 export class Footnote extends XmlComponent {
-  public constructor(options: IFootnoteOptions) {
+  public constructor(options: FootnoteOptions) {
     super("w:footnote");
     this.root.push(
       new FootnoteAttributes({

@@ -11,7 +11,7 @@
  */
 import { AlignmentType } from "@file/paragraph";
 import { XmlComponent } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 import {
   abstractNumUniqueNumericIdGen,
   concreteNumUniqueNumericIdGen,
@@ -21,7 +21,7 @@ import {
 import { buildDocumentAttributes } from "../document/document-attributes";
 import { AbstractNumbering } from "./abstract-numbering";
 import { LevelFormat } from "./level";
-import type { ILevelsOptions } from "./level";
+import type { LevelsOptions } from "./level";
 import { ConcreteNumbering } from "./num";
 
 /**
@@ -31,11 +31,11 @@ import { ConcreteNumbering } from "./num";
  *
  * @see {@link Numbering}
  */
-export interface INumberingOptions {
+export interface NumberingOptions {
   /** Array of numbering configurations, each with levels and a reference name. */
   readonly config: readonly {
     /** Array of level definitions for this numbering configuration. */
-    readonly levels: readonly ILevelsOptions[];
+    readonly levels: readonly LevelsOptions[];
     /** Unique reference name for this numbering configuration. */
     readonly reference: string;
   }[];
@@ -117,7 +117,7 @@ export class Numbering extends XmlComponent {
    *
    * @param options - Configuration options for numbering definitions
    */
-  public constructor(options: INumberingOptions) {
+  public constructor(options: NumberingOptions) {
     super("w:numbering");
     this.root.push(
       buildDocumentAttributes(
@@ -286,7 +286,7 @@ export class Numbering extends XmlComponent {
    * @param context - The XML context
    * @returns The prepared XML object
    */
-  public prepForXml(context: IContext): IXmlableObject | undefined {
+  public prepForXml(context: Context): IXmlableObject | undefined {
     for (const numbering of this.abstractNumberingMap.values()) {
       this.root.push(numbering);
     }

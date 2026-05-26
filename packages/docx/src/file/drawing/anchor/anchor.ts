@@ -1,10 +1,10 @@
 // http://officeopenxml.com/drwPicFloating.php
-import type { IExtendedMediaData, IMediaDataTransformation } from "@file/media";
+import type { IExtendedMediaData, MediaDataTransformation } from "@file/media";
 import { XmlComponent } from "@file/xml-components";
 
-import type { IDrawingOptions } from "../drawing";
+import type { DrawingOptions } from "../drawing";
 import { createHorizontalPosition, createSimplePos, createVerticalPosition } from "../floating";
-import type { IFloating } from "../floating";
+import type { Floating } from "../floating";
 import { Graphic } from "../inline/graphic";
 import {
   TextWrappingType,
@@ -88,12 +88,12 @@ export class Anchor extends XmlComponent {
     drawingOptions,
   }: {
     readonly mediaData: IExtendedMediaData;
-    readonly transform: IMediaDataTransformation;
-    readonly drawingOptions: IDrawingOptions;
+    readonly transform: MediaDataTransformation;
+    readonly drawingOptions: DrawingOptions;
   }) {
     super("wp:anchor");
 
-    const floating: IFloating = {
+    const floating: Floating = {
       allowOverlap: true,
       behindDocument: false,
       horizontalPosition: {},

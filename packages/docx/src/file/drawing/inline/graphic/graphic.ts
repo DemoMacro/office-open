@@ -1,5 +1,5 @@
 import type { HyperlinkOptions } from "@file/drawing/doc-properties/doc-properties";
-import type { IExtendedMediaData, IMediaDataTransformation } from "@file/media";
+import type { IExtendedMediaData, MediaDataTransformation } from "@file/media";
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 import type { FillOptions } from "@office-open/core/drawingml";
 
@@ -61,7 +61,7 @@ export class Graphic extends XmlComponent {
     hyperlink,
   }: {
     readonly mediaData: IExtendedMediaData;
-    readonly transform: IMediaDataTransformation;
+    readonly transform: MediaDataTransformation;
     readonly outline?: OutlineOptions;
     readonly fill?: FillOptions;
     readonly effects?: EffectListOptions;

@@ -4,7 +4,7 @@
  * @module
  */
 import { BaseXmlComponent } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 
 const PPTX_MAIN =
   "application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml";
@@ -185,7 +185,7 @@ export class ContentTypes extends BaseXmlComponent {
     }
   }
 
-  public override prepForXml(_context: IContext): IXmlableObject {
+  public override prepForXml(_context: Context): IXmlableObject {
     const children = [...STATIC_CHILDREN];
     for (const e of this.dynamicEntries) {
       if (e.type === "Default") {

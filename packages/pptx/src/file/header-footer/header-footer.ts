@@ -5,7 +5,7 @@ import {
   XmlComponent,
 } from "@file/xml-components";
 
-export interface IHeaderFooterOptions {
+export interface SlideHeaderFooterOptions {
   readonly slideNumber?: boolean;
   readonly dateTime?: boolean;
   readonly footer?: string | boolean;
@@ -19,7 +19,7 @@ export interface IHeaderFooterOptions {
  * Footer text content is passed as p:ftr child element (legacy support).
  */
 export class HeaderFooter extends XmlComponent {
-  public constructor(options: IHeaderFooterOptions = {}) {
+  public constructor(options: SlideHeaderFooterOptions = {}) {
     super("p:hf");
 
     // Boolean visibility attributes

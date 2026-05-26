@@ -12,7 +12,7 @@ import { uniqueId } from "@util/convenience-functions";
 
 import type { ParagraphChild } from "../paragraph";
 import { HyperlinkAttributes } from "./hyperlink-attributes";
-import type { IHyperlinkAttributesProperties } from "./hyperlink-attributes";
+import type { HyperlinkAttributesProperties } from "./hyperlink-attributes";
 
 /**
  * Hyperlink type enumeration.
@@ -34,7 +34,7 @@ export const HyperlinkType = {
  * @property children - Array of paragraph children (usually TextRun elements) that form the hyperlink text
  * @property anchor - Name of the bookmark to link to within the document
  */
-export interface IInternalHyperlinkOptions {
+export interface InternalHyperlinkOptions {
   /** Array of paragraph children that form the hyperlink text */
   readonly children: readonly ParagraphChild[];
   /** Name of the bookmark to link to within the document */
@@ -51,7 +51,7 @@ export interface IInternalHyperlinkOptions {
  * @property tooltip - Screen tip text shown when hovering over the hyperlink
  * @property tgtFrame - Target frame for the hyperlink (e.g., "_blank", "_self")
  */
-export interface IExternalHyperlinkOptions {
+export interface ExternalHyperlinkOptions {
   /** Array of paragraph children that form the hyperlink text */
   readonly children: readonly ParagraphChild[];
   /** URL to link to outside the document */
@@ -99,7 +99,7 @@ export class ConcreteHyperlink extends XmlComponent {
 
     this.linkId = relationshipId;
 
-    const props: IHyperlinkAttributesProperties = {
+    const props: HyperlinkAttributesProperties = {
       anchor: anchor ? anchor : undefined,
       history: 1,
       id: !anchor ? `rId${this.linkId}` : undefined,
@@ -152,7 +152,7 @@ export class ConcreteHyperlink extends XmlComponent {
  * ```
  */
 export class InternalHyperlink extends ConcreteHyperlink {
-  public constructor(options: IInternalHyperlinkOptions) {
+  public constructor(options: InternalHyperlinkOptions) {
     super(options.children, uniqueId(), options.anchor, options.tooltip);
   }
 }
@@ -188,7 +188,7 @@ export class InternalHyperlink extends ConcreteHyperlink {
  * ```
  */
 export class ExternalHyperlink extends XmlComponent {
-  public constructor(public readonly options: IExternalHyperlinkOptions) {
+  public constructor(public readonly options: ExternalHyperlinkOptions) {
     super("w:externalHyperlink");
   }
 }

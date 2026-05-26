@@ -1,5 +1,5 @@
 import { Formatter } from "@export/formatter";
-import type { IContext } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 import * as convenienceFunctions from "@util/convenience-functions";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
@@ -65,7 +65,7 @@ describe("DocumentBackground", () => {
         file: { Media: { addImage } },
         viewWrapper: { Relationships: { addRelationship: vi.fn() } },
         stack: [],
-      } as unknown as IContext;
+      } as unknown as Context;
 
       const documentBackground = new DocumentBackground({
         image: {
@@ -91,7 +91,7 @@ describe("DocumentBackground", () => {
         file: { Media: { addImage } },
         viewWrapper: { Relationships: { addRelationship: vi.fn() } },
         stack: [],
-      } as unknown as IContext;
+      } as unknown as Context;
 
       const documentBackground = new DocumentBackground({
         image: {

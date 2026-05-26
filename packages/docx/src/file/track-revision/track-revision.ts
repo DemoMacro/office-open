@@ -19,7 +19,7 @@ import { XmlAttributeComponent } from "@file/xml-components";
  * @property author - Name of the author who made the change
  * @property date - Date and time when the change was made (ISO 8601 format)
  */
-export interface IChangedAttributesProperties {
+export interface ChangedAttributesProperties {
   /** Unique identifier for this change (must be unique within the document) */
   readonly id: number;
   /** Name of the author who made the change */
@@ -55,7 +55,7 @@ export interface IChangedAttributesProperties {
  *
  * @internal
  */
-export class ChangeAttributes extends XmlAttributeComponent<IChangedAttributesProperties> {
+export class ChangeAttributes extends XmlAttributeComponent<ChangedAttributesProperties> {
   protected readonly xmlKeys = {
     author: "w:author",
     date: "w:date",

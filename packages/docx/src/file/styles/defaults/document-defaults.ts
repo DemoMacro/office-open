@@ -18,7 +18,7 @@ import { RunPropertiesDefaults } from "./run-properties";
  * @property paragraph - Default paragraph properties applied to all paragraphs
  * @property run - Default run properties applied to all text runs
  */
-export interface IDocumentDefaultsOptions {
+export interface DocumentDefaultsOptions {
   /** Default paragraph properties applied to all paragraphs */
   readonly paragraph?: IParagraphStylePropertiesOptions;
   /** Default run properties applied to all text runs */
@@ -61,7 +61,7 @@ export class DocumentDefaults extends XmlComponent {
   private readonly runPropertiesDefaults: RunPropertiesDefaults;
   private readonly paragraphPropertiesDefaults: ParagraphPropertiesDefaults;
 
-  public constructor(options: IDocumentDefaultsOptions) {
+  public constructor(options: DocumentDefaultsOptions) {
     super("w:docDefaults");
 
     this.runPropertiesDefaults = new RunPropertiesDefaults(options.run);

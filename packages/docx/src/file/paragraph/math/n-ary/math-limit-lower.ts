@@ -22,7 +22,7 @@ import {
  *
  * @see {@link MathLimitLower}
  */
-export interface IMathLimitLowerOptions {
+export interface MathLimitLowerOptions {
   /** Properties for the lower limit structure */
   readonly properties?: MathLimitLowPropertiesOptions;
   /** The base expression */
@@ -62,7 +62,7 @@ export interface IMathLimitLowerOptions {
  * ```
  */
 export class MathLimitLower extends XmlComponent {
-  public constructor(options: IMathLimitLowerOptions) {
+  public constructor(options: MathLimitLowerOptions) {
     super("m:limLow");
 
     if (options.properties) {

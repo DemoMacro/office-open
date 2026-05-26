@@ -6,7 +6,7 @@
  * @module
  */
 import { Run } from "./run";
-import type { IRunOptions } from "./run";
+import type { RunOptions } from "./run";
 import { Symbol } from "./run-components/symbol";
 
 /**
@@ -19,7 +19,7 @@ export type ISymbolRunOptions = {
   readonly char: string;
   /** The font to use for the symbol (e.g., "Wingdings", "Symbol") */
   readonly symbolfont?: string;
-} & IRunOptions;
+} & RunOptions;
 
 /**
  * Represents a symbol character in a WordprocessingML document.

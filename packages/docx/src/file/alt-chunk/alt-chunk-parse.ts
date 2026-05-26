@@ -1,4 +1,4 @@
-import type { IAltChunkOptions } from "@file/alt-chunk/alt-chunk";
+import type { AltChunkOptions } from "@file/alt-chunk/alt-chunk";
 /**
  * AltChunk parser for DOCX documents.
  *
@@ -12,10 +12,10 @@ import type { Element } from "@office-open/xml";
 import type { ParseContext } from "../../parse/context";
 
 /**
- * Parse a w:altChunk element into IAltChunkOptions.
+ * Parse a w:altChunk element into AltChunkOptions.
  * Reads the referenced data from the ZIP package.
  */
-export function parseAltChunk(el: Element, ctx: ParseContext): IAltChunkOptions {
+export function parseAltChunk(el: Element, ctx: ParseContext): AltChunkOptions {
   const rId = attr(el, "r:id");
   if (!rId) {
     throw new Error("w:altChunk missing r:id attribute");

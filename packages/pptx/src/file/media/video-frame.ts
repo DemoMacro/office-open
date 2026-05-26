@@ -1,6 +1,6 @@
 import { BuilderElement } from "@file/xml-components";
 
-import { MediaFrameBase, type IMediaFrameBaseOptions } from "./media-frame-base";
+import { MediaFrameBase, type MediaFrameBaseOptions } from "./media-frame-base";
 
 const MEDIA_EXT_URI = "{DAA4B4D4-6D71-4841-9C94-3DE7FCFB9230}";
 
@@ -14,7 +14,7 @@ const MINIMAL_PNG = new Uint8Array([
 export type VideoType = "mp4" | "mov" | "wmv" | "avi";
 export type PosterType = "png" | "jpg";
 
-export interface IVideoFrameOptions extends IMediaFrameBaseOptions {
+export interface VideoFrameOptions extends MediaFrameBaseOptions {
   readonly type: VideoType;
   readonly poster?: Uint8Array;
   readonly posterType?: PosterType;
@@ -31,7 +31,7 @@ export interface IVideoFrameOptions extends IMediaFrameBaseOptions {
 export class VideoFrame extends MediaFrameBase {
   private static nextId = 100;
 
-  public constructor(options: IVideoFrameOptions) {
+  public constructor(options: VideoFrameOptions) {
     const id = VideoFrame.nextId++;
     const name = options.name ?? `Video ${id}`;
     const mediaFileName = `${name.replace(/\s+/g, "_")}.${options.type}`;

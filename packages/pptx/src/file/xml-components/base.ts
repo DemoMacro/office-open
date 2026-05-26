@@ -5,4 +5,4 @@
  * @module
  */
 export { BaseXmlComponent } from "@office-open/core";
-export type { IContext, IXmlableObject } from "@office-open/core";
+export type { Context, IXmlableObject } from "@office-open/core";

@@ -1,9 +1,9 @@
-import type { IRunPropertiesOptions, IRunOptions } from "@file/paragraph/run";
+import type { RunPropertiesOptions, RunOptions } from "@file/paragraph/run";
 import { RawPassthrough } from "@office-open/core";
 /**
  * Run properties parser for DOCX documents.
  *
- * Parses w:rPr Element trees into IRunPropertiesOptions objects.
+ * Parses w:rPr Element trees into RunPropertiesOptions objects.
  *
  * @module
  */
@@ -13,9 +13,9 @@ import type { Element } from "@office-open/xml";
 import type { ParseContext } from "../../../parse/context";
 
 /**
- * Parse a w:rPr element into IRunPropertiesOptions.
+ * Parse a w:rPr element into RunPropertiesOptions.
  */
-export function parseRunProperties(el: Element): IRunPropertiesOptions {
+export function parseRunProperties(el: Element): RunPropertiesOptions {
   const opts: Record<string, unknown> = {};
 
   const rStyle = findChild(el, "w:rStyle");
@@ -190,11 +190,11 @@ export function parseRunProperties(el: Element): IRunPropertiesOptions {
     opts.shading = parseShading(shd);
   }
 
-  return opts as IRunPropertiesOptions;
+  return opts as RunPropertiesOptions;
 }
 
 /**
- * Parse a w:bdr element into IBorderOptions.
+ * Parse a w:bdr element into BorderOptions.
  */
 export function parseBorder(el: Element): Record<string, unknown> {
   const opts: Record<string, unknown> = {};
@@ -214,7 +214,7 @@ export function parseBorder(el: Element): Record<string, unknown> {
 }
 
 /**
- * Parse a w:shd element into IShadingAttributesProperties.
+ * Parse a w:shd element into ShadingAttributesProperties.
  */
 export function parseShading(el: Element): Record<string, unknown> {
   const opts: Record<string, unknown> = {};
@@ -261,7 +261,7 @@ export function parseRun(
   el: Element,
   _ctx: ParseContext,
 ): {
-  properties: IRunPropertiesOptions | undefined;
+  properties: RunPropertiesOptions | undefined;
   children: ParsedRunChild[];
 } {
   const rPr = findChild(el, "w:rPr");
@@ -334,13 +334,13 @@ export function parseRun(
 }
 
 /**
- * Convert parsed run data into an IRunOptions suitable for the Document constructor.
+ * Convert parsed run data into an RunOptions suitable for the Document constructor.
  * Simplifies the parsed children into text + break format.
  * If the run contains only a commentReference, returns { commentReference: id } instead.
  */
 export function parsedRunToOptions(
   parsed: ReturnType<typeof parseRun>,
-): IRunOptions | { readonly commentReference: number } {
+): RunOptions | { readonly commentReference: number } {
   const opts: Record<string, unknown> = { ...parsed.properties };
 
   // Check if this run only contains a commentReference
@@ -377,5 +377,5 @@ export function parsedRunToOptions(
     opts.break = breakCount;
   }
 
-  return opts as IRunOptions;
+  return opts as RunOptions;
 }

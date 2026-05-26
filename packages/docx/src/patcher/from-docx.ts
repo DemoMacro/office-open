@@ -1,12 +1,12 @@
 import { DocumentAttributeNamespaces } from "@file/document";
-import type { IViewWrapper } from "@file/document-wrapper";
+import type { ViewWrapper } from "@file/document-wrapper";
 import type { File } from "@file/file";
 import type { FileChild } from "@file/file-child";
 import { Media } from "@file/media";
 import { ConcreteHyperlink, ExternalHyperlink } from "@file/paragraph";
 import type { ParagraphChild } from "@file/paragraph";
 import { TargetModeType } from "@file/relationships/relationship/relationship";
-import type { IContext } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 import { getReferencedMedia, replaceImagePlaceholders } from "@office-open/core";
 import { convertOutput } from "@office-open/core";
 import type { OutputByType, OutputType } from "@office-open/core";
@@ -79,7 +79,7 @@ interface FilePatch {
 /**
  * Internal type for tracking image relationships that need to be added.
  */
-interface IImageRelationshipAddition {
+interface ImageRelationshipAddition {
   readonly key: string;
   readonly mediaDatas: readonly { readonly fileName: string }[];
 }
@@ -87,7 +87,7 @@ interface IImageRelationshipAddition {
 /**
  * Internal type for tracking hyperlink relationships that need to be added.
  */
-interface IHyperlinkRelationshipAddition {
+interface HyperlinkRelationshipAddition {
   /** XML file path where the hyperlink is used */
   readonly key: string;
   /** Hyperlink relationship details */
@@ -194,15 +194,15 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
   recursive = true,
 }: PatchDocumentOptions<T>): Promise<OutputByType[T]> => {
   const zipContent = unzipSync(toUint8Array(data));
-  const contexts = new Map<string, IContext>();
+  const contexts = new Map<string, Context>();
   const file = {
     Media: new Media(),
   } as unknown as File;
 
   const map = new Map<string, Element>();
 
-  const imageRelationshipAdditions: IImageRelationshipAddition[] = [];
-  const hyperlinkRelationshipAdditions: IHyperlinkRelationshipAddition[] = [];
+  const imageRelationshipAdditions: ImageRelationshipAddition[] = [];
+  const hyperlinkRelationshipAdditions: HyperlinkRelationshipAddition[] = [];
   let hasMedia = false;
 
   const binaryContentMap = new Map<string, Uint8Array>();
@@ -236,7 +236,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     }
 
     if (key.startsWith("word/") && !key.endsWith(".xml.rels")) {
-      const context: IContext = {
+      const context: Context = {
         fileData: file,
         file,
         stack: [],
@@ -257,7 +257,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
               });
             },
           },
-        } as unknown as IViewWrapper,
+        } as unknown as ViewWrapper,
       };
       contexts.set(key, context);
 

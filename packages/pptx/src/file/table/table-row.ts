@@ -1,11 +1,11 @@
 import { BaseXmlComponent } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 
-import { TableCell, type ITableCellOptions } from "./table-cell";
+import { TableCell, type TableCellOptions } from "./table-cell";
 
-export interface ITableRowOptions {
+export interface TableRowOptions {
   readonly height?: number;
-  readonly cells: readonly ITableCellOptions[];
+  readonly cells: readonly TableCellOptions[];
 }
 
 /**
@@ -13,14 +13,14 @@ export interface ITableRowOptions {
  * Lazy: stores options, builds IXmlableObject in prepForXml.
  */
 export class TableRow extends BaseXmlComponent {
-  private readonly options: ITableRowOptions;
+  private readonly options: TableRowOptions;
 
-  public constructor(options: ITableRowOptions) {
+  public constructor(options: TableRowOptions) {
     super("a:tr");
     this.options = options;
   }
 
-  public override prepForXml(context: IContext): IXmlableObject {
+  public override prepForXml(context: Context): IXmlableObject {
     const children: IXmlableObject[] = [];
     children.push({ _attr: { h: this.options.height ?? 0 } });
 

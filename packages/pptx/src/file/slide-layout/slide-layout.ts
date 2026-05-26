@@ -1,7 +1,7 @@
-import type { ILayoutDefinition, MasterChild } from "@file/file";
-import type { IMasterPlaceholderPosition } from "@file/slide-master/slide-master";
+import type { LayoutDefinition, MasterChild } from "@file/file";
+import type { MasterPlaceholderPosition } from "@file/slide-master/slide-master";
 import { coerceMasterChild } from "@file/slide/coerce";
-import type { IContext } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 import { ImportedXmlComponent } from "@file/xml-components";
 import { convertPixelsToEmu } from "@office-open/core";
 import { xml } from "@office-open/xml";
@@ -247,7 +247,7 @@ function buildLayoutXml(layoutType: SlideLayoutType, slideWidth: number = SW_REF
 
 // ── Custom layout builder ──
 
-function posToEmu(pos: IMasterPlaceholderPosition) {
+function posToEmu(pos: MasterPlaceholderPosition) {
   return {
     x: convertPixelsToEmu(pos.x),
     y: convertPixelsToEmu(pos.y),
@@ -319,7 +319,7 @@ function positionedSldNumPlaceholder(
 
 function buildChildrenXml(children?: readonly MasterChild[]): string {
   if (!children || children.length === 0) return "";
-  const ctx: IContext = { stack: [] };
+  const ctx: Context = { stack: [] };
   let result = "";
   for (const child of children) {
     const obj = coerceMasterChild(child).prepForXml(ctx);
@@ -328,7 +328,7 @@ function buildChildrenXml(children?: readonly MasterChild[]): string {
   return result;
 }
 
-function buildCustomLayoutXml(def: ILayoutDefinition): string {
+function buildCustomLayoutXml(def: LayoutDefinition): string {
   const ph = def.placeholders ?? {};
   const layoutType = def.type ?? "blank";
   const displayName = def.name ?? LAYOUT_DEFS[layoutType]?.name ?? layoutType;
@@ -412,7 +412,7 @@ export class SlideLayout extends ImportedXmlComponent {
   public constructor(
     layoutType: SlideLayoutType = "blank",
     slideWidth: number = SW_REF,
-    definition?: ILayoutDefinition,
+    definition?: LayoutDefinition,
   ) {
     super("p:sldLayout");
     this.layoutType = layoutType;

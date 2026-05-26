@@ -11,12 +11,12 @@ import { createBreak } from "../../paragraph/run/break";
 import { createBegin, createEnd, createSeparate } from "../../paragraph/run/field";
 import { RunProperties } from "../../paragraph/run/properties";
 import { PageNumber } from "../../paragraph/run/run";
-import type { IRunOptions } from "../../paragraph/run/run";
+import type { RunOptions } from "../../paragraph/run/run";
 import { Text } from "../../paragraph/run/run-components/text";
 import { ChangeAttributes } from "../track-revision";
-import type { IChangedAttributesProperties } from "../track-revision";
+import type { ChangedAttributesProperties } from "../track-revision";
 
-type IMovedRunOptions = IRunOptions & IChangedAttributesProperties;
+type IMovedRunOptions = RunOptions & ChangedAttributesProperties;
 
 /**
  * Represents a move source run in a tracked changes document.
@@ -89,7 +89,7 @@ export class MovedToTextRun extends XmlComponent {
  * @internal
  */
 class MovedFromRunWrapper extends XmlComponent {
-  public constructor(options: IRunOptions) {
+  public constructor(options: RunOptions) {
     super("w:r");
     this.root.push(new RunProperties(options));
 
@@ -147,7 +147,7 @@ class MovedFromRunWrapper extends XmlComponent {
  * @internal
  */
 class MovedToRunWrapper extends XmlComponent {
-  public constructor(options: IRunOptions) {
+  public constructor(options: RunOptions) {
     super("w:r");
     this.root.push(new RunProperties(options));
 

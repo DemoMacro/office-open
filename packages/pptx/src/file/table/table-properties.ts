@@ -1,5 +1,5 @@
 import { BaseXmlComponent } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 
 /**
  * a:tblPr — Table properties (firstRow, bandRow, etc.).
@@ -27,7 +27,7 @@ export class TableProperties extends BaseXmlComponent {
     this.options = options;
   }
 
-  public override prepForXml(_context: IContext): IXmlableObject {
+  public override prepForXml(_context: Context): IXmlableObject {
     if (!this.options) return { "a:tblPr": {} };
 
     const attrs: Record<string, string | number> = {};

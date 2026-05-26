@@ -1,5 +1,5 @@
 import { Formatter } from "@export/formatter";
-import type { IViewWrapper } from "@file/document-wrapper";
+import type { ViewWrapper } from "@file/document-wrapper";
 import { resetDocPropertiesIdGen } from "@file/drawing/doc-properties/doc-properties";
 import type { File } from "@file/file";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
@@ -39,7 +39,7 @@ describe("ImageRun", () => {
           },
         } as unknown as File,
         stack: [],
-        viewWrapper: {} as unknown as IViewWrapper,
+        viewWrapper: {} as unknown as ViewWrapper,
       });
       expect(tree).to.deep.equal({
         "w:r": [
@@ -297,7 +297,7 @@ describe("ImageRun", () => {
           },
         } as unknown as File,
         stack: [],
-        viewWrapper: {} as unknown as IViewWrapper,
+        viewWrapper: {} as unknown as ViewWrapper,
       });
       expect(tree).to.deep.equal({
         "w:r": [
@@ -557,7 +557,7 @@ describe("ImageRun", () => {
           },
         } as unknown as File,
         stack: [],
-        viewWrapper: {} as unknown as IViewWrapper,
+        viewWrapper: {} as unknown as ViewWrapper,
       });
 
       expect(tree).to.deep.equal({
@@ -818,7 +818,7 @@ describe("ImageRun", () => {
           },
         } as unknown as File,
         stack: [],
-        viewWrapper: {} as unknown as IViewWrapper,
+        viewWrapper: {} as unknown as ViewWrapper,
       });
 
       expect(tree).to.deep.equal({
@@ -1068,7 +1068,7 @@ describe("ImageRun", () => {
           },
         } as unknown as File,
         stack: [],
-        viewWrapper: {} as unknown as IViewWrapper,
+        viewWrapper: {} as unknown as ViewWrapper,
       });
       expect(tree).toBeDefined();
     });
@@ -1094,7 +1094,7 @@ describe("ImageRun", () => {
           },
         } as unknown as File,
         stack: [],
-        viewWrapper: {} as unknown as IViewWrapper,
+        viewWrapper: {} as unknown as ViewWrapper,
       });
 
       expect(tree).toStrictEqual({
@@ -1188,7 +1188,7 @@ describe("ImageRun", () => {
           },
         } as unknown as File,
         stack: [],
-        viewWrapper: {} as unknown as IViewWrapper,
+        viewWrapper: {} as unknown as ViewWrapper,
       };
 
       new Formatter().format(imageRunStringData, context);

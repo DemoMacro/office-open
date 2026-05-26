@@ -8,7 +8,7 @@ import {
 import type { FillOptions } from "@file/drawingml/fill";
 import { buildFill } from "@file/drawingml/fill";
 import { XmlComponent } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 import { createEffectList, createOutline } from "@office-open/core/drawingml";
 
 let nextHyperlinkId = 1;
@@ -31,12 +31,12 @@ export const TextCapitalization = {
   SMALL: "small",
 } as const;
 
-export interface IHyperlinkOptions {
+export interface HyperlinkOptions {
   readonly url: string;
   readonly tooltip?: string;
 }
 
-export interface IRunPropertiesOptions {
+export interface RunPropertiesOptions {
   /** Font size in points. Serialized as OOXML `a:sz` (hundredths of a point). */
   readonly fontSize?: number;
   readonly bold?: boolean;
@@ -45,7 +45,7 @@ export interface IRunPropertiesOptions {
   readonly font?: string;
   readonly lang?: string;
   readonly fill?: FillOptions;
-  readonly hyperlink?: IHyperlinkOptions;
+  readonly hyperlink?: HyperlinkOptions;
   readonly strike?: keyof typeof StrikeStyle;
   readonly baseline?: number;
   readonly spacing?: number;
@@ -63,7 +63,7 @@ export interface IRunPropertiesOptions {
  * @param fillObject - pre-built fill IXmlableObject (from buildFill)
  */
 export function buildRunProperties(
-  options: IRunPropertiesOptions,
+  options: RunPropertiesOptions,
   hyperlinkKey?: string,
   fillObject?: IXmlableObject,
   effectListObject?: IXmlableObject,
@@ -126,9 +126,9 @@ export function buildRunProperties(
  * Lazy: stores options, builds XML object in prepForXml.
  */
 export class RunProperties extends XmlComponent {
-  private readonly options: IRunPropertiesOptions;
+  private readonly options: RunPropertiesOptions;
 
-  public static hasProperties(options: IRunPropertiesOptions): boolean {
+  public static hasProperties(options: RunPropertiesOptions): boolean {
     return !!(
       options.fontSize ||
       options.bold !== undefined ||
@@ -150,12 +150,12 @@ export class RunProperties extends XmlComponent {
     );
   }
 
-  public constructor(options: IRunPropertiesOptions = {}) {
+  public constructor(options: RunPropertiesOptions = {}) {
     super("a:rPr");
     this.options = options;
   }
 
-  public prepForXml(context: IContext): IXmlableObject | undefined {
+  public prepForXml(context: Context): IXmlableObject | undefined {
     const opts = this.options;
 
     // Register hyperlinks (B-level: side effect on context)

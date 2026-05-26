@@ -6,14 +6,14 @@
  * @module
  */
 import { BaseXmlComponent, EMPTY_OBJECT } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 
 import { StructuredDocumentTagCell } from "../../sdt";
 import { StructuredDocumentTagRow } from "../../sdt";
 import { TableCell } from "../table-cell";
-import type { ITableCellOptions } from "../table-cell";
+import type { TableCellOptions } from "../table-cell";
 import { TablePropertyExceptions } from "../table-properties/table-property-exceptions";
-import type { ITablePropertyExOptions } from "../table-properties/table-property-exceptions";
+import type { TablePropertyExOptions } from "../table-properties/table-property-exceptions";
 import { TableRowProperties } from "./table-row-properties";
 import type { ITableRowPropertiesOptions } from "./table-row-properties";
 
@@ -22,16 +22,16 @@ import type { ITableRowPropertiesOptions } from "./table-row-properties";
  *
  * @see {@link TableRow}
  */
-export type ITableRowOptions = {
+export type TableRowOptions = {
   /** Array of TableCell elements or plain options that make up the row */
   readonly children: readonly (
     | TableCell
     | StructuredDocumentTagCell
     | StructuredDocumentTagRow
-    | ITableCellOptions
+    | TableCellOptions
   )[];
   /** Table property exceptions for this row (override table-level properties) */
-  readonly propertyExceptions?: ITablePropertyExOptions;
+  readonly propertyExceptions?: TablePropertyExOptions;
 } & ITableRowPropertiesOptions;
 
 /**
@@ -73,14 +73,14 @@ export class TableRow extends BaseXmlComponent {
   // Extra cells inserted by Table's row-span CONTINUE logic
   private extraCells: { cell: TableCell; columnIndex: number }[] = [];
 
-  // Coerced children: plain ITableCellOptions are converted to TableCell instances
+  // Coerced children: plain TableCellOptions are converted to TableCell instances
   private readonly coercedChildren: readonly (
     | TableCell
     | StructuredDocumentTagCell
     | StructuredDocumentTagRow
   )[];
 
-  public constructor(private readonly options: ITableRowOptions) {
+  public constructor(private readonly options: TableRowOptions) {
     super("w:tr");
     this.coercedChildren = options.children.map((child) =>
       child instanceof TableCell ||
@@ -139,7 +139,7 @@ export class TableRow extends BaseXmlComponent {
     return idx;
   }
 
-  public prepForXml(context: IContext): IXmlableObject | undefined {
+  public prepForXml(context: Context): IXmlableObject | undefined {
     const children: IXmlableObject[] = [];
 
     if (this.options.propertyExceptions) {

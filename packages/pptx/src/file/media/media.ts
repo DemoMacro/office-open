@@ -5,10 +5,10 @@
  */
 import { convertPixelsToEmu } from "@office-open/core";
 
-import type { IMediaDataTransformation } from "./data";
+import type { MediaDataTransformation } from "./data";
 import type { IMediaData } from "./data";
 
-export interface IMediaTransformation {
+export interface MediaTransformation {
   readonly offset?: {
     readonly top?: number;
     readonly left?: number;
@@ -22,7 +22,7 @@ export interface IMediaTransformation {
   readonly rotation?: number;
 }
 
-export const createTransformation = (options: IMediaTransformation): IMediaDataTransformation => ({
+export const createTransformation = (options: MediaTransformation): MediaDataTransformation => ({
   emus: {
     x: convertPixelsToEmu(options.width),
     y: convertPixelsToEmu(options.height),

@@ -1,7 +1,7 @@
 /**
  * Slide parser for PPTX documents.
  *
- * Parses p:sld elements into ISlideOptions.
+ * Parses p:sld elements into SlideOptions.
  *
  * @module
  */
@@ -9,11 +9,11 @@ import { convertEmuToPixels } from "@office-open/core";
 import { attr, attrBool, attrNum, children, findChild, findDeep, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
-import type { IBackgroundOptions } from "../file/background/background";
-import type { ISlideOptions } from "../file/file";
+import type { BackgroundOptions } from "../file/background/background";
+import type { SlideOptions } from "../file/file";
 import type { SlideChild } from "../file/slide/slide-child";
 import type {
-  ITransitionOptions,
+  TransitionOptions,
   TransitionDirection,
   TransitionType,
 } from "../file/transition/transition";
@@ -22,9 +22,9 @@ import type { ParseContext } from "./context";
 // ── Slide parser ──────────────────────────────────────────────────────────────
 
 /**
- * Parse a p:sld element into ISlideOptions.
+ * Parse a p:sld element into SlideOptions.
  */
-export function parseSlide(el: Element, ctx: ParseContext): ISlideOptions {
+export function parseSlide(el: Element, ctx: ParseContext): SlideOptions {
   const opts: Record<string, unknown> = {};
 
   // p:cSld
@@ -60,7 +60,7 @@ export function parseSlide(el: Element, ctx: ParseContext): ISlideOptions {
     break;
   }
 
-  return opts as ISlideOptions;
+  return opts as SlideOptions;
 }
 
 // ── Slide child dispatch ──────────────────────────────────────────────────────
@@ -84,7 +84,7 @@ function parseSlideChild(el: Element, ctx: ParseContext): SlideChild | undefined
 
 // ── Background parser ─────────────────────────────────────────────────────────
 
-export function parseBackground(el: Element): IBackgroundOptions {
+export function parseBackground(el: Element): BackgroundOptions {
   const opts: Record<string, unknown> = {};
   const bgPr = findChild(el, "p:bgPr");
   if (bgPr) {
@@ -95,7 +95,7 @@ export function parseBackground(el: Element): IBackgroundOptions {
     const fill = parseFillFromElement(bgPr);
     if (fill) opts.fill = fill;
   }
-  return opts as IBackgroundOptions;
+  return opts as BackgroundOptions;
 }
 
 // ── Transition parser ─────────────────────────────────────────────────────────
@@ -119,7 +119,7 @@ const SPEED_MAP: Record<string, "slow" | "med" | "fast"> = {
   fast: "fast",
 };
 
-function parseTransition(el: Element): ITransitionOptions {
+function parseTransition(el: Element): TransitionOptions {
   const opts: Record<string, unknown> = {};
 
   const spd = attr(el, "spd");
@@ -172,12 +172,12 @@ function parseTransition(el: Element): ITransitionOptions {
     }
   }
 
-  return opts as ITransitionOptions;
+  return opts as TransitionOptions;
 }
 
 // ── Shape parser ──────────────────────────────────────────────────────────────
 
-function parseShape(el: Element, _ctx: ParseContext): import("../file/shape/shape").IShapeOptions {
+function parseShape(el: Element, _ctx: ParseContext): import("../file/shape/shape").ShapeOptions {
   const opts: Record<string, unknown> = {};
 
   // p:nvSpPr → id, name, placeholder
@@ -222,7 +222,7 @@ function parseShape(el: Element, _ctx: ParseContext): import("../file/shape/shap
     parseTextBody(txBody, opts);
   }
 
-  return opts as unknown as import("../file/shape/shape").IShapeOptions;
+  return opts as unknown as import("../file/shape/shape").ShapeOptions;
 }
 
 // ── Picture parser ────────────────────────────────────────────────────────────
@@ -230,7 +230,7 @@ function parseShape(el: Element, _ctx: ParseContext): import("../file/shape/shap
 function parsePicture(
   el: Element,
   ctx: ParseContext,
-): import("../file/picture/picture").IPictureOptions {
+): import("../file/picture/picture").PictureOptions {
   const opts: Record<string, unknown> = {};
 
   // Position from p:spPr
@@ -264,7 +264,7 @@ function parsePicture(
     }
   }
 
-  return opts as unknown as import("../file/picture/picture").IPictureOptions;
+  return opts as unknown as import("../file/picture/picture").PictureOptions;
 }
 
 // ── Graphic frame parser (chart / table / smartart) ───────────────────────────
@@ -296,7 +296,7 @@ function parseGraphicFrame(el: Element, ctx: ParseContext): SlideChild | undefin
 function parseChartFrame(
   el: Element,
   ctx: ParseContext,
-): import("../file/chart/chart-frame").IChartFrameOptions {
+): import("../file/chart/chart-frame").ChartFrameOptions {
   const opts: Record<string, unknown> = {};
 
   // Position from p:xfrm
@@ -318,7 +318,7 @@ function parseChartFrame(
     }
   }
 
-  return opts as unknown as import("../file/chart/chart-frame").IChartFrameOptions;
+  return opts as unknown as import("../file/chart/chart-frame").ChartFrameOptions;
 }
 
 /**
@@ -445,7 +445,7 @@ function extractNumCache(parent: Element): number[] {
 function parseSmartArtFrame(
   el: Element,
   ctx: ParseContext,
-): import("../file/smartart/smartart-frame").ISmartArtFrameOptions {
+): import("../file/smartart/smartart-frame").SmartArtFrameOptions {
   const opts: Record<string, unknown> = {};
 
   // Position
@@ -476,7 +476,7 @@ function parseSmartArtFrame(
     }
   }
 
-  return opts as unknown as import("../file/smartart/smartart-frame").ISmartArtFrameOptions;
+  return opts as unknown as import("../file/smartart/smartart-frame").SmartArtFrameOptions;
 }
 
 function parseSmartArtDataXml(el: Element, opts: Record<string, unknown>): void {
@@ -554,7 +554,7 @@ function buildSmartArtNode(
 function parseTableFrame(
   el: Element,
   tbl: Element,
-): import("../file/table/table-frame").ITableFrameOptions {
+): import("../file/table/table-frame").TableFrameOptions {
   const opts: Record<string, unknown> = {};
 
   // Position
@@ -598,7 +598,7 @@ function parseTableFrame(
   }
   opts.rows = rows;
 
-  return opts as unknown as import("../file/table/table-frame").ITableFrameOptions;
+  return opts as unknown as import("../file/table/table-frame").TableFrameOptions;
 }
 
 function parseTableCell(tc: Element): Record<string, unknown> {
@@ -667,7 +667,7 @@ function parseTableCell(tc: Element): Record<string, unknown> {
 
 // ── Connector parser ──────────────────────────────────────────────────────────
 
-function parseConnector(el: Element): import("../file/shape/line-shape").IConnectorShapeOptions {
+function parseConnector(el: Element): import("../file/shape/line-shape").ConnectorShapeOptions {
   const opts: Record<string, unknown> = {};
 
   // p:nvCxnSpPr → id, name
@@ -737,7 +737,7 @@ function parseConnector(el: Element): import("../file/shape/line-shape").IConnec
     }
   }
 
-  return opts as unknown as import("../file/shape/line-shape").IConnectorShapeOptions;
+  return opts as unknown as import("../file/shape/line-shape").ConnectorShapeOptions;
 }
 
 // ── Group parser ──────────────────────────────────────────────────────────────
@@ -745,7 +745,7 @@ function parseConnector(el: Element): import("../file/shape/line-shape").IConnec
 function parseGroup(
   el: Element,
   ctx: ParseContext,
-): import("../file/shape/group-shape").IGroupShapeOptions {
+): import("../file/shape/group-shape").GroupShapeOptions {
   const opts: Record<string, unknown> = {};
 
   // p:grpSpPr → position, rotation, flip
@@ -783,7 +783,7 @@ function parseGroup(
   }
   opts.children = groupChildren;
 
-  return opts as unknown as import("../file/shape/group-shape").IGroupShapeOptions;
+  return opts as unknown as import("../file/shape/group-shape").GroupShapeOptions;
 }
 
 // ── Text body / paragraph / run parsers ───────────────────────────────────────

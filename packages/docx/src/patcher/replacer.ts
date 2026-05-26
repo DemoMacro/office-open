@@ -1,5 +1,5 @@
 import { Formatter } from "@export/formatter";
-import type { IContext, XmlComponent } from "@file/xml-components";
+import type { Context, XmlComponent } from "@file/xml-components";
 /**
  * Replacer module for performing placeholder substitution in XML structures.
  *
@@ -25,7 +25,7 @@ const SPLIT_TOKEN = "ɵ";
  * @property element - The modified XML element
  * @property didFindOccurrence - Whether a placeholder occurrence was found and replaced
  */
-interface IReplacerResult {
+interface ReplacerResult {
   readonly element: Element;
   readonly didFindOccurrence: boolean;
 }
@@ -54,9 +54,9 @@ export const replacer = ({
   readonly json: Element;
   readonly patch: IPatch;
   readonly patchText: string;
-  readonly context: IContext;
+  readonly context: Context;
   readonly keepOriginalStyles?: boolean;
-}): IReplacerResult => {
+}): ReplacerResult => {
   const renderedParagraphs = findLocationOfText(json, patchText);
 
   if (renderedParagraphs.length === 0) {

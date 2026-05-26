@@ -8,7 +8,7 @@
  * @module
  */
 import { createBorderElement } from "@file/border";
-import type { IBorderOptions } from "@file/border";
+import type { BorderOptions } from "@file/border";
 import { IgnoreIfEmptyXmlComponent, XmlAttributeComponent } from "@file/xml-components";
 
 /**
@@ -91,7 +91,7 @@ export const PageBorderZOrder = {
  * @property bottom - Bottom border styling
  * @property left - Left border styling
  */
-export interface IPageBordersOptions {
+export interface PageBordersOptions {
   /** Which pages display the border */
   readonly display?: (typeof PageBorderDisplay)[keyof typeof PageBorderDisplay];
   /** Whether border is positioned relative to page or text (default: text) */
@@ -99,13 +99,13 @@ export interface IPageBordersOptions {
   /** Whether border appears in front or behind page contents (default: front) */
   readonly zOrder?: (typeof PageBorderZOrder)[keyof typeof PageBorderZOrder];
   /** Top border styling */
-  readonly top?: IBorderOptions;
+  readonly top?: BorderOptions;
   /** Right border styling */
-  readonly right?: IBorderOptions;
+  readonly right?: BorderOptions;
   /** Bottom border styling */
-  readonly bottom?: IBorderOptions;
+  readonly bottom?: BorderOptions;
   /** Left border styling */
-  readonly left?: IBorderOptions;
+  readonly left?: BorderOptions;
 }
 
 class PageBordersAttributes extends XmlAttributeComponent<{
@@ -156,7 +156,7 @@ class PageBordersAttributes extends XmlAttributeComponent<{
  * ```
  */
 export class PageBorders extends IgnoreIfEmptyXmlComponent {
-  public constructor(options?: IPageBordersOptions) {
+  public constructor(options?: PageBordersOptions) {
     super("w:pgBorders");
 
     if (!options) {

@@ -7,22 +7,22 @@
  * @module
  */
 import { Drawing } from "@file/drawing";
-import type { IFloating } from "@file/drawing";
+import type { Floating } from "@file/drawing";
 import type { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
-import type { IMediaTransformation } from "@file/media";
+import type { MediaTransformation } from "@file/media";
 import { createTransformation } from "@file/media";
-import type { ISmartArtData } from "@file/smartart/smartart-collection";
+import type { SmartArtData } from "@file/smartart/smartart-collection";
 import { createDataModel } from "@file/smartart/tree-to-model";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 
 import { Run } from "../run";
 
 /**
  * A tree node for SmartArt data.
  */
-export interface ISmartArtNode {
+export interface SmartArtNode {
   readonly text: string;
-  readonly children?: readonly ISmartArtNode[];
+  readonly children?: readonly SmartArtNode[];
 }
 
 /**
@@ -30,15 +30,15 @@ export interface ISmartArtNode {
  *
  * @publicApi
  */
-export interface ISmartArtOptions {
+export interface SmartArtOptions {
   /** Tree-shaped data for the diagram */
   readonly data: {
-    readonly nodes: readonly ISmartArtNode[];
+    readonly nodes: readonly SmartArtNode[];
   };
   /** Display dimensions */
-  readonly transformation: IMediaTransformation;
+  readonly transformation: MediaTransformation;
   /** Floating positioning */
-  readonly floating?: IFloating;
+  readonly floating?: Floating;
   /** Alternative text for accessibility */
   readonly altText?: DocPropertiesOptions;
   /** Layout ID (e.g. "default", "process1", "hierarchy1") */
@@ -70,10 +70,10 @@ export interface ISmartArtOptions {
  * ```
  */
 export class SmartArtRun extends Run {
-  private readonly smartArtOptions: ISmartArtOptions;
+  private readonly smartArtOptions: SmartArtOptions;
   private readonly smartArtKey: string;
 
-  public constructor(options: ISmartArtOptions) {
+  public constructor(options: SmartArtOptions) {
     super({});
     this.smartArtOptions = options;
 
@@ -96,14 +96,14 @@ export class SmartArtRun extends Run {
     this.extraChildren.push(drawing);
   }
 
-  public prepForXml(context: IContext): IXmlableObject | undefined {
+  public prepForXml(context: Context): IXmlableObject | undefined {
     const layoutId = this.smartArtOptions.layout ?? "default";
     const styleId = this.smartArtOptions.style ?? "simple1";
     const colorId = this.smartArtOptions.color ?? "accent1_2";
 
     const dataModel = createDataModel(this.smartArtOptions.data.nodes, layoutId, styleId, colorId);
 
-    const smartArtData: ISmartArtData = {
+    const smartArtData: SmartArtData = {
       dataModel,
       key: this.smartArtKey,
       layout: layoutId,
@@ -116,7 +116,7 @@ export class SmartArtRun extends Run {
     return super.prepForXml(context);
   }
 
-  private hashSmartArtData(options: ISmartArtOptions): number {
+  private hashSmartArtData(options: SmartArtOptions): number {
     const data = JSON.stringify(options.data);
     let hash = 0;
     for (let i = 0; i < data.length; i++) {

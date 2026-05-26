@@ -44,12 +44,12 @@ export const HeaderFooterReferenceType = {
 //   <xsd:attribute ref="r:id" use="required"/>
 // </xsd:complexType>
 
-export interface IHeaderFooterOptions {
+export interface HeaderFooterReferenceOptions {
   readonly type?: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType];
   readonly id?: number;
 }
 
-interface IHeaderFooterReferenceAttributes {
+interface HeaderFooterReferenceAttributes {
   readonly type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType];
   readonly id: string;
 }
@@ -61,9 +61,9 @@ export const HeaderFooterType = {
 
 export const createHeaderFooterReference = (
   type: (typeof HeaderFooterType)[keyof typeof HeaderFooterType],
-  options: IHeaderFooterOptions,
+  options: HeaderFooterReferenceOptions,
 ): XmlComponent =>
-  new BuilderElement<IHeaderFooterReferenceAttributes>({
+  new BuilderElement<HeaderFooterReferenceAttributes>({
     attributes: {
       id: { key: "r:id", value: `rId${options.id}` },
       type: { key: "w:type", value: options.type || HeaderFooterReferenceType.DEFAULT },

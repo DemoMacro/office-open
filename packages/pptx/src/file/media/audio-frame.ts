@@ -1,10 +1,10 @@
-import { MediaFrameBase, type IMediaFrameBaseOptions } from "./media-frame-base";
+import { MediaFrameBase, type MediaFrameBaseOptions } from "./media-frame-base";
 
 const MEDIA_EXT_URI = "{CF1602FD-DB20-4165-A070-5F299619DA56}";
 
 export type AudioType = "mp3" | "wav" | "wma" | "aac";
 
-export interface IAudioFrameOptions extends IMediaFrameBaseOptions {
+export interface AudioFrameOptions extends MediaFrameBaseOptions {
   readonly type: AudioType;
 }
 
@@ -16,7 +16,7 @@ export interface IAudioFrameOptions extends IMediaFrameBaseOptions {
 export class AudioFrame extends MediaFrameBase {
   private static nextId = 200;
 
-  public constructor(options: IAudioFrameOptions) {
+  public constructor(options: AudioFrameOptions) {
     const id = AudioFrame.nextId++;
     const name = options.name ?? `Audio ${id}`;
     const mediaFileName = `${name.replace(/\s+/g, "_")}.${options.type}`;

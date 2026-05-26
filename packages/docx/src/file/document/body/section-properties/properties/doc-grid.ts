@@ -43,7 +43,7 @@ export const DocumentGridType = {
   SNAP_TO_CHARS: "snapToChars",
 } as const;
 
-export interface IDocGridAttributesProperties {
+export interface DocGridAttributesProperties {
   /**
    * Specifies the type of the current document grid, which defines the grid behavior.
    *
@@ -107,8 +107,8 @@ export const createDocumentGrid = ({
   type,
   linePitch,
   charSpace,
-}: IDocGridAttributesProperties): XmlComponent =>
-  new BuilderElement<IDocGridAttributesProperties>({
+}: DocGridAttributesProperties): XmlComponent =>
+  new BuilderElement<DocGridAttributesProperties>({
     attributes: {
       charSpace: {
         key: "w:charSpace",

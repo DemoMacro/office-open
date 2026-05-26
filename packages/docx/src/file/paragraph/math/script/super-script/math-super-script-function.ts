@@ -18,7 +18,7 @@ import { createMathSuperScriptProperties } from "./math-super-script-function-pr
  *
  * @see {@link MathSuperScript}
  */
-export interface IMathSuperScriptOptions {
+export interface MathSuperScriptOptions {
   /** The base expression */
   readonly children: readonly MathComponent[];
   /** The superscript (exponent) expression */
@@ -55,7 +55,7 @@ export interface IMathSuperScriptOptions {
  * ```
  */
 export class MathSuperScript extends XmlComponent {
-  public constructor(options: IMathSuperScriptOptions) {
+  public constructor(options: MathSuperScriptOptions) {
     super("m:sSup");
 
     this.root.push(createMathSuperScriptProperties());

@@ -10,14 +10,14 @@ export const EndnoteType = {
   SEPARATOR: "separator",
 } as const;
 
-export interface IEndnoteOptions {
+export interface EndnoteOptions {
   readonly id: number;
   readonly type?: (typeof EndnoteType)[keyof typeof EndnoteType];
   readonly children: readonly FileChild[];
 }
 
 export class Endnote extends XmlComponent {
-  public constructor(options: IEndnoteOptions) {
+  public constructor(options: EndnoteOptions) {
     super("w:endnote");
     this.root.push(
       new EndnoteAttributes({

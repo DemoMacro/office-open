@@ -1,5 +1,5 @@
 import { BaseXmlComponent } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 
 /**
  * a:tblGrid — Table grid with column width definitions.
@@ -13,7 +13,7 @@ export class TableGrid extends BaseXmlComponent {
     this.columnWidths = columnWidths;
   }
 
-  public override prepForXml(_context: IContext): IXmlableObject {
+  public override prepForXml(_context: Context): IXmlableObject {
     const children = this.columnWidths.map((w) => ({
       "a:gridCol": { _attr: { w } },
     }));

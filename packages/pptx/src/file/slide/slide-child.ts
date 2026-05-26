@@ -1,12 +1,12 @@
-import type { IChartFrameOptions } from "@file/chart/chart-frame";
-import type { IAudioFrameOptions } from "@file/media/audio-frame";
-import type { IVideoFrameOptions } from "@file/media/video-frame";
-import type { IPictureOptions } from "@file/picture/picture";
-import type { IGroupShapeOptions } from "@file/shape/group-shape";
-import type { IConnectorShapeOptions, ILineShapeOptions } from "@file/shape/line-shape";
-import type { IShapeOptions } from "@file/shape/shape";
-import type { ISmartArtFrameOptions } from "@file/smartart/smartart-frame";
-import type { ITableFrameOptions } from "@file/table/table-frame";
+import type { ChartFrameOptions } from "@file/chart/chart-frame";
+import type { AudioFrameOptions } from "@file/media/audio-frame";
+import type { VideoFrameOptions } from "@file/media/video-frame";
+import type { PictureOptions } from "@file/picture/picture";
+import type { GroupShapeOptions } from "@file/shape/group-shape";
+import type { ConnectorShapeOptions, LineShapeOptions } from "@file/shape/line-shape";
+import type { ShapeOptions } from "@file/shape/shape";
+import type { SmartArtFrameOptions } from "@file/smartart/smartart-frame";
+import type { TableFrameOptions } from "@file/table/table-frame";
 import type { BaseXmlComponent } from "@file/xml-components";
 
 /**
@@ -15,13 +15,13 @@ import type { BaseXmlComponent } from "@file/xml-components";
  */
 export type SlideChild =
   | BaseXmlComponent
-  | { shape: IShapeOptions }
-  | { picture: IPictureOptions }
-  | { table: ITableFrameOptions }
-  | { chart: IChartFrameOptions }
-  | { line: ILineShapeOptions }
-  | { connector: IConnectorShapeOptions }
-  | { video: IVideoFrameOptions }
-  | { audio: IAudioFrameOptions }
-  | { group: IGroupShapeOptions }
-  | { smartart: ISmartArtFrameOptions };
+  | { shape: ShapeOptions }
+  | { picture: PictureOptions }
+  | { table: TableFrameOptions }
+  | { chart: ChartFrameOptions }
+  | { line: LineShapeOptions }
+  | { connector: ConnectorShapeOptions }
+  | { video: VideoFrameOptions }
+  | { audio: AudioFrameOptions }
+  | { group: GroupShapeOptions }
+  | { smartart: SmartArtFrameOptions };

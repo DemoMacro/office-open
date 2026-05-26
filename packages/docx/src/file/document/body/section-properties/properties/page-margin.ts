@@ -25,7 +25,7 @@ import type { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
  * @property footer - Footer margin (distance from bottom of page to footer)
  * @property gutter - Gutter margin for binding
  */
-export interface IPageMarginAttributes {
+export interface PageMarginAttributes {
   /** Top margin in twips or universal measure */
   readonly top?: number | UniversalMeasure;
   /** Right margin in twips or universal measure */
@@ -78,7 +78,7 @@ export const createPageMargin = (
   footer: number | PositiveUniversalMeasure,
   gutter: number | PositiveUniversalMeasure,
 ): XmlComponent =>
-  new BuilderElement<IPageMarginAttributes>({
+  new BuilderElement<PageMarginAttributes>({
     attributes: {
       bottom: { key: "w:bottom", value: signedTwipsMeasureValue(bottom) },
       footer: { key: "w:footer", value: twipsMeasureValue(footer) },

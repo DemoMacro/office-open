@@ -20,7 +20,7 @@ import type { MathBorderBoxPropertiesOptions } from "./math-border-box-propertie
  *
  * @see {@link MathBorderBox}
  */
-export interface IMathBorderBoxOptions {
+export interface MathBorderBoxOptions {
   /** Border box properties */
   readonly properties?: MathBorderBoxPropertiesOptions;
   /** Content to be bordered */
@@ -48,7 +48,7 @@ export interface IMathBorderBoxOptions {
  * ```
  */
 export class MathBorderBox extends XmlComponent {
-  public constructor(options: IMathBorderBoxOptions) {
+  public constructor(options: MathBorderBoxOptions) {
     super("m:borderBox");
 
     if (options.properties) {

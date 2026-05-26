@@ -46,7 +46,7 @@ import type { ThemeColor } from "@util/values";
  * @property size - Border thickness in eighths of a point (1/8 pt)
  * @property space - Spacing offset from the content in points
  */
-export interface IBorderOptions {
+export interface BorderOptions {
   readonly style: (typeof BorderStyle)[keyof typeof BorderStyle];
   /** Border color, in hex (eg 'FF00AA') */
   readonly color?: string;
@@ -86,9 +86,9 @@ export interface IBorderOptions {
  */
 export const createBorderElement = (
   elementName: string,
-  { color, size, space, style, themeColor, themeTint, themeShade, shadow, frame }: IBorderOptions,
+  { color, size, space, style, themeColor, themeTint, themeShade, shadow, frame }: BorderOptions,
 ): XmlComponent =>
-  new BuilderElement<IBorderOptions>({
+  new BuilderElement<BorderOptions>({
     attributes: {
       color: {
         key: "w:color",

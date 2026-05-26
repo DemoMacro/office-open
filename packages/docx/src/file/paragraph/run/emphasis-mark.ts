@@ -45,7 +45,7 @@ export const EmphasisMarkType = {
   UNDER_DOT: "underDot",
 } as const;
 
-interface IEmphasisMarkAttributes {
+interface EmphasisMarkAttributes {
   readonly val: (typeof EmphasisMarkType)[keyof typeof EmphasisMarkType];
 }
 
@@ -76,7 +76,7 @@ interface IEmphasisMarkAttributes {
 export const createEmphasisMark = (
   emphasisMarkType: (typeof EmphasisMarkType)[keyof typeof EmphasisMarkType] = EmphasisMarkType.DOT,
 ): XmlComponent =>
-  new BuilderElement<IEmphasisMarkAttributes>({
+  new BuilderElement<EmphasisMarkAttributes>({
     attributes: {
       val: { key: "w:val", value: emphasisMarkType },
     },

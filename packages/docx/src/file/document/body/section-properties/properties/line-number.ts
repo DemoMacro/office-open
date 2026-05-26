@@ -43,7 +43,7 @@ export const LineNumberRestartFormat = {
   CONTINUOUS: "continuous",
 } as const;
 
-export interface ILineNumberAttributes {
+export interface LineNumberAttributes {
   /**
    * Specifies the line number increments to be displayed in the current document.
    *
@@ -132,8 +132,8 @@ export const createLineNumberType = ({
   start,
   restart,
   distance,
-}: ILineNumberAttributes): XmlComponent =>
-  new BuilderElement<ILineNumberAttributes>({
+}: LineNumberAttributes): XmlComponent =>
+  new BuilderElement<LineNumberAttributes>({
     attributes: {
       countBy: {
         key: "w:countBy",

@@ -30,7 +30,7 @@ import type { XmlComponent } from "@file/xml-components";
  * @property eastAsia - Language for East Asian text (e.g., "ja-JP", "zh-CN")
  * @property bidirectional - Language for bidirectional text (e.g., "ar-SA", "he-IL")
  */
-export interface ILanguageOptions {
+export interface LanguageOptions {
   /** Language for Latin and complex script text (RFC 1766 format, e.g., "en-US") */
   readonly value?: string;
   /** Language for East Asian text (RFC 1766 format, e.g., "ja-JP") */
@@ -63,7 +63,7 @@ export interface ILanguageOptions {
  * });
  * ```
  */
-export const createLanguageComponent = (options: ILanguageOptions): XmlComponent =>
+export const createLanguageComponent = (options: LanguageOptions): XmlComponent =>
   new BuilderElement<{
     readonly value?: string;
     readonly eastAsia?: string;

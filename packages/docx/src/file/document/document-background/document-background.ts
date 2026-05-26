@@ -14,7 +14,7 @@
  */
 import { BuilderElement } from "@file/xml-components";
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 import { hashedId } from "@util/convenience-functions";
 import { hexColorValue, uCharHexNumber } from "@util/values";
 import type { DataType } from "undio";
@@ -70,7 +70,7 @@ export class DocumentBackgroundAttributes extends XmlAttributeComponent<{
  * Specifies the image data and type for a background image.
  * The image is rendered as a full-page background using VML `v:fill`.
  */
-export interface IBackgroundImageOptions {
+export interface BackgroundImageOptions {
   /** Raw image data (Uint8Array, base64 string, etc.) */
   readonly data: DataType;
   /** Image format type */
@@ -82,7 +82,7 @@ export interface IBackgroundImageOptions {
  *
  * @see {@link DocumentBackground}
  */
-export interface IDocumentBackgroundOptions {
+export interface DocumentBackgroundOptions {
   /** Background color in hex format (e.g., "FF0000" for red) */
   readonly color?: string;
   /** Theme color name (e.g., "accent1", "dark1") */
@@ -92,7 +92,7 @@ export interface IDocumentBackgroundOptions {
   /** Theme tint value (lightens the theme color) */
   readonly themeTint?: string;
   /** Background image rendered as a full-page VML fill */
-  readonly image?: IBackgroundImageOptions;
+  readonly image?: BackgroundImageOptions;
 }
 
 interface ImageData {
@@ -142,7 +142,7 @@ interface ImageData {
 export class DocumentBackground extends XmlComponent {
   private readonly imageData?: ImageData;
 
-  public constructor(options: IDocumentBackgroundOptions) {
+  public constructor(options: DocumentBackgroundOptions) {
     super("w:background");
 
     this.root.push(
@@ -166,7 +166,7 @@ export class DocumentBackground extends XmlComponent {
     }
   }
 
-  public prepForXml(context: IContext): IXmlableObject | undefined {
+  public prepForXml(context: Context): IXmlableObject | undefined {
     if (this.imageData) {
       // Register the image with the media collection for packaging
       context.file.Media.addImage(this.imageData.fileName, {

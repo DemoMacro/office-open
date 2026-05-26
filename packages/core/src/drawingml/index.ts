@@ -32,7 +32,7 @@ export type {
   GradientShadeOptions,
   LinearShadeOptions,
   PathShadeOptions,
-  IGradientStop,
+  GradientStop,
   RelativeRect,
 } from "./fill/gradient-fill";
 export { PathShadeType, TileFlipMode } from "./fill/gradient-fill";
@@ -125,4 +125,4 @@ export type { Transform2DOptions, GroupTransform2DOptions } from "./transform";
 
 // Media transformation
 export { createTransformation } from "./media/transformation";
-export type { IMediaTransformation, IMediaDataTransformation } from "./media/transformation";
+export type { MediaTransformation, MediaDataTransformation } from "./media/transformation";

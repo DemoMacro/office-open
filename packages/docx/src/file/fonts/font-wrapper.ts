@@ -7,18 +7,18 @@
  *
  * @module
  */
-import type { IViewWrapper } from "@file/document-wrapper";
+import type { ViewWrapper } from "@file/document-wrapper";
 import { Relationships } from "@file/relationships";
 import type { XmlComponent } from "@file/xml-components";
 import { uniqueUuid } from "@util/convenience-functions";
 
 import { createFontTable } from "./font-table";
-import type { FontOptions } from "./font-table";
+import type { EmbeddedFontOptions } from "./font-table";
 
 /**
  * Font options extended with a unique font key.
  */
-export type FontOptionsWithKey = FontOptions & { readonly fontKey: string };
+export type EmbeddedFontOptionsWithKey = EmbeddedFontOptions & { readonly fontKey: string };
 
 /**
  * Wrapper class for managing the font table and its relationships.
@@ -33,12 +33,12 @@ export type FontOptionsWithKey = FontOptions & { readonly fontKey: string };
  * ]);
  * ```
  */
-export class FontWrapper implements IViewWrapper {
+export class FontWrapper implements ViewWrapper {
   private readonly fontTable: XmlComponent;
   private readonly relationships: Relationships;
-  public readonly fontOptionsWithKey: readonly FontOptionsWithKey[] = [];
+  public readonly fontOptionsWithKey: readonly EmbeddedFontOptionsWithKey[] = [];
 
-  public constructor(public readonly options: readonly FontOptions[]) {
+  public constructor(public readonly options: readonly EmbeddedFontOptions[]) {
     this.fontOptionsWithKey = options.map((o) => ({ ...o, fontKey: uniqueUuid() }));
     this.fontTable = createFontTable(this.fontOptionsWithKey);
     this.relationships = new Relationships();

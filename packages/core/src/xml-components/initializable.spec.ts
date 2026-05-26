@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import type { IContext } from "./base";
+import type { Context } from "./base";
 import { InitializableXmlComponent } from "./initializable";
 
-const emptyContext: IContext = { stack: [] };
+const emptyContext: Context = { stack: [] };
 
 describe("InitializableXmlComponent", () => {
   it("should create without init component", () => {

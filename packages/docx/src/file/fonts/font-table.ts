@@ -12,7 +12,7 @@ import type { XmlComponent } from "@file/xml-components";
 
 import { createRegularFont } from "./create-regular-font";
 import type { CharacterSet } from "./font";
-import type { FontOptionsWithKey } from "./font-wrapper";
+import type { EmbeddedFontOptionsWithKey } from "./font-wrapper";
 
 // <xsd:complexType name="CT_FontsList">
 //     <xsd:sequence>
@@ -23,7 +23,7 @@ import type { FontOptionsWithKey } from "./font-wrapper";
 /**
  * Options for embedding a font in the document.
  */
-export interface FontOptions {
+export interface EmbeddedFontOptions {
   /** Font family name */
   readonly name: string;
   /** Font file data (TTF, OTF, etc.) */
@@ -49,7 +49,7 @@ export interface FontOptions {
  * </xsd:complexType>
  * ```
  */
-export const createFontTable = (fonts: readonly FontOptionsWithKey[]): XmlComponent =>
+export const createFontTable = (fonts: readonly EmbeddedFontOptionsWithKey[]): XmlComponent =>
   // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_Font_topic_ID0ERNCU.html
   // http://www.datypic.com/sc/ooxml/e-w_fonts.html
   new BuilderElement({

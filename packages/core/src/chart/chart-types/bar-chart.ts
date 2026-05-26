@@ -1,15 +1,15 @@
 import { EmptyElement, XmlComponent, chartAttr, wrapEl } from "../../xml-components";
-import type { IChartSeriesData } from "../create-chart-type";
+import type { ChartSeriesData } from "../create-chart-type";
 import { createStrRef, createNumRef } from "../series/series-data";
 
-interface IBarChartOptions {
+interface BarChartOptions {
   readonly barDirection: "col" | "bar";
   readonly categories: readonly string[];
-  readonly series: readonly IChartSeriesData[];
+  readonly series: readonly ChartSeriesData[];
 }
 
 export class BarChart extends XmlComponent {
-  public constructor(options: IBarChartOptions) {
+  public constructor(options: BarChartOptions) {
     super("c:barChart");
     this.root.push(wrapEl("c:barDir", chartAttr({ val: options.barDirection })));
     this.root.push(wrapEl("c:grouping", chartAttr({ val: "clustered" })));
@@ -24,7 +24,7 @@ export class BarChart extends XmlComponent {
 }
 
 class BarSeries extends XmlComponent {
-  public constructor(index: number, series: IChartSeriesData, categories: readonly string[]) {
+  public constructor(index: number, series: ChartSeriesData, categories: readonly string[]) {
     super("c:ser");
     this.root.push(wrapEl("c:idx", chartAttr({ val: index })));
     this.root.push(wrapEl("c:order", chartAttr({ val: index })));

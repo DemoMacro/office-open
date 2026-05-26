@@ -11,7 +11,7 @@ import { convertPixelsToEmu } from "../../converters";
 /**
  * Internal media data transformation with both pixel and EMU values.
  */
-export interface IMediaDataTransformation {
+export interface MediaDataTransformation {
   readonly offset?: {
     readonly pixels: {
       readonly x: number;
@@ -51,7 +51,7 @@ export interface IMediaDataTransformation {
  *
  * Specifies how an image should be transformed when displayed in the document.
  */
-export interface IMediaTransformation {
+export interface MediaTransformation {
   readonly offset?: {
     readonly top?: number;
     readonly left?: number;
@@ -77,7 +77,7 @@ export interface IMediaTransformation {
  * @param options - User-facing transformation in pixels
  * @returns Internal transformation data with both pixel and EMU values
  */
-export const createTransformation = (options: IMediaTransformation): IMediaDataTransformation => ({
+export const createTransformation = (options: MediaTransformation): MediaDataTransformation => ({
   emus: {
     x: convertPixelsToEmu(options.width),
     y: convertPixelsToEmu(options.height),

@@ -7,7 +7,7 @@
  */
 import { Paragraph } from "@file/paragraph";
 import { BaseXmlComponent } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 
 import type { StructuredDocumentTagCell } from "../../sdt";
 import type { SectionChild } from "../../section-child";
@@ -31,7 +31,7 @@ function lazyCoerce(child: SectionChild): import("@file/file-child").FileChild {
  *
  * @see {@link TableCell}
  */
-export type ITableCellOptions = {
+export type TableCellOptions = {
   /** Array of Paragraph, Table, or plain objects that make up the cell content */
   readonly children: readonly (SectionChild | StructuredDocumentTagCell)[];
 } & ITableCellPropertiesOptions;
@@ -67,11 +67,11 @@ export type ITableCellOptions = {
  * ```
  */
 export class TableCell extends BaseXmlComponent {
-  public constructor(public readonly options: ITableCellOptions) {
+  public constructor(public readonly options: TableCellOptions) {
     super("w:tc");
   }
 
-  public prepForXml(context: IContext): IXmlableObject | undefined {
+  public prepForXml(context: Context): IXmlableObject | undefined {
     const children: IXmlableObject[] = [];
 
     const tPr = new TableCellProperties(this.options);

@@ -23,7 +23,7 @@ import { createMathPreSubSuperScriptProperties } from "./math-pre-sub-super-scri
  *
  * @see {@link MathPreSubSuperScript}
  */
-export interface IMathPreSubSuperScriptOptions {
+export interface MathPreSubSuperScriptOptions {
   /** The base expression */
   readonly children: readonly MathComponent[];
   /** The pre-subscript expression (appears lower-left of base) */
@@ -65,7 +65,7 @@ export interface IMathPreSubSuperScriptOptions {
  * ```
  */
 export class MathPreSubSuperScript extends BuilderElement {
-  public constructor({ children, subScript, superScript }: IMathPreSubSuperScriptOptions) {
+  public constructor({ children, subScript, superScript }: MathPreSubSuperScriptOptions) {
     super({
       children: [
         createMathPreSubSuperScriptProperties(),

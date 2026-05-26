@@ -1,13 +1,13 @@
-import type { IEffectsOptions } from "@file/drawingml/effects";
+import type { EffectsOptions } from "@file/drawingml/effects";
 import { createPptxEffectList } from "@file/drawingml/effects";
 import type { FillOptions } from "@file/drawingml/fill";
 import { buildFill } from "@file/drawingml/fill";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 import { XmlComponent } from "@file/xml-components";
 
-export interface IBackgroundOptions {
+export interface BackgroundOptions {
   readonly fill?: FillOptions;
-  readonly effects?: IEffectsOptions;
+  readonly effects?: EffectsOptions;
   readonly shadeToTitle?: boolean;
 }
 
@@ -15,7 +15,7 @@ export interface IBackgroundOptions {
  * p:bg — Slide background.
  */
 export class Background extends XmlComponent {
-  public constructor(options: IBackgroundOptions = {}) {
+  public constructor(options: BackgroundOptions = {}) {
     super("p:bg");
     this.root.push(new BackgroundProperties(options));
   }
@@ -24,7 +24,7 @@ export class Background extends XmlComponent {
 class BackgroundProperties extends XmlComponent {
   private readonly shadeToTitle: boolean;
 
-  public constructor(options: IBackgroundOptions) {
+  public constructor(options: BackgroundOptions) {
     super("p:bgPr");
     this.shadeToTitle = !!options.shadeToTitle;
     this.root.push(
@@ -36,7 +36,7 @@ class BackgroundProperties extends XmlComponent {
     }
   }
 
-  public override prepForXml(context: IContext): IXmlableObject | undefined {
+  public override prepForXml(context: Context): IXmlableObject | undefined {
     const obj = super.prepForXml(context);
     if (!obj) return undefined;
     // shadeToTitle is an attribute of p:bgPr, not a child element

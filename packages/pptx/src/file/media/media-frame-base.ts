@@ -1,4 +1,4 @@
-import type { IAnimationOptions } from "@file/animation/types";
+import type { AnimationOptions } from "@file/animation/types";
 /**
  * Shared base class for media frames (video, audio) on slides.
  * @module
@@ -7,7 +7,7 @@ import { PresetGeometry } from "@file/drawingml/preset-geometry";
 import { Transform2D } from "@file/drawingml/transform-2d";
 import type { File } from "@file/file";
 import type { IMediaData } from "@file/media/data";
-import { BuilderElement, type IContext, XmlComponent } from "@file/xml-components";
+import { BuilderElement, type Context, XmlComponent } from "@file/xml-components";
 import { convertPixelsToEmu } from "@office-open/core";
 import { emuPosition } from "@util/position";
 
@@ -15,7 +15,7 @@ import { emuPosition } from "@util/position";
  * Common options for all media frames.
  * @internal
  */
-export interface IMediaFrameBaseOptions {
+export interface MediaFrameBaseOptions {
   readonly x?: number;
   readonly y?: number;
   readonly width?: number;
@@ -23,7 +23,7 @@ export interface IMediaFrameBaseOptions {
   readonly data: Uint8Array;
   readonly type: IMediaData["type"];
   readonly name?: string;
-  readonly animation?: IAnimationOptions;
+  readonly animation?: AnimationOptions;
 }
 
 /**
@@ -57,12 +57,12 @@ function buildMediaData<T extends IMediaData["type"]>(
  */
 export abstract class MediaFrameBase extends XmlComponent {
   private readonly shapeId: number;
-  private readonly animationOptions?: IAnimationOptions;
+  private readonly animationOptions?: AnimationOptions;
   protected readonly mediaData: IMediaData;
   protected readonly posterData?: IMediaData;
 
   protected constructor(
-    options: IMediaFrameBaseOptions,
+    options: MediaFrameBaseOptions,
     id: number,
     mediaFileName: string,
     params: {
@@ -190,11 +190,11 @@ export abstract class MediaFrameBase extends XmlComponent {
     return this.shapeId;
   }
 
-  public get Animation(): IAnimationOptions | undefined {
+  public get Animation(): AnimationOptions | undefined {
     return this.animationOptions;
   }
 
-  public override prepForXml(context: IContext) {
+  public override prepForXml(context: Context) {
     const file = context.fileData as File;
     if (this.posterData) {
       file?.Media.addImage(this.posterData.fileName, this.posterData);

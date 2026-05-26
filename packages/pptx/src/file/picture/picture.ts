@@ -3,13 +3,13 @@ import { PresetGeometry } from "@file/drawingml/preset-geometry";
 import { Transform2D } from "@file/drawingml/transform-2d";
 import type { File } from "@file/file";
 import type { IMediaData } from "@file/media/data";
-import { BuilderElement, type IContext, XmlComponent } from "@file/xml-components";
+import { BuilderElement, type Context, XmlComponent } from "@file/xml-components";
 import { convertPixelsToEmu } from "@office-open/core";
 import { emuPosition } from "@util/position";
 
 import { PictureNonVisual } from "./picture-non-visual";
 
-export interface IPictureOptions {
+export interface PictureOptions {
   readonly x?: number;
   readonly y?: number;
   readonly width?: number;
@@ -29,7 +29,7 @@ export class Picture extends XmlComponent {
   private static nextId = 100;
   private readonly imageData: IMediaData;
 
-  public constructor(options: IPictureOptions) {
+  public constructor(options: PictureOptions) {
     super("p:pic");
 
     const id = Picture.nextId++;
@@ -69,7 +69,7 @@ export class Picture extends XmlComponent {
     );
   }
 
-  public override prepForXml(context: IContext) {
+  public override prepForXml(context: Context) {
     (context.fileData as File)?.Media.addImage(this.imageData.fileName, this.imageData);
     return super.prepForXml(context);
   }

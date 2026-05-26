@@ -13,7 +13,7 @@ import type { XmlComponent } from "@file/xml-components";
 
 import { createAlign } from "./align";
 import { VerticalPositionAlign, VerticalPositionRelativeFrom } from "./floating-position";
-import type { IVerticalPositionOptions } from "./floating-position";
+import type { VerticalPositionOptions } from "./floating-position";
 import { createPositionOffset } from "./position-offset";
 
 /**
@@ -57,7 +57,7 @@ export const createVerticalPosition = ({
   relative,
   align,
   offset,
-}: IVerticalPositionOptions): XmlComponent =>
+}: VerticalPositionOptions): XmlComponent =>
   new BuilderElement<{
     /** Vertical Position Relative Base */
     readonly relativeFrom: (typeof VerticalPositionRelativeFrom)[keyof typeof VerticalPositionRelativeFrom];

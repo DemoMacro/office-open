@@ -36,7 +36,7 @@ import type { XmlComponent } from "@file/xml-components";
  * @example
  * ```typescript
  * // Apply header row and first column formatting with horizontal banding
- * const tableLook: ITableLookOptions = {
+ * const tableLook: TableLookOptions = {
  *   firstRow: true,      // Apply header row formatting
  *   firstColumn: true,   // Apply first column formatting
  *   noHBand: false,      // Enable horizontal row banding
@@ -44,7 +44,7 @@ import type { XmlComponent } from "@file/xml-components";
  * };
  * ```
  */
-export interface ITableLookOptions {
+export interface TableLookOptions {
   /**
    * Apply first row conditional formatting.
    * When true, the first row of the table uses the special formatting
@@ -117,8 +117,8 @@ export const createTableLook = ({
   lastColumn,
   noHBand,
   noVBand,
-}: ITableLookOptions): XmlComponent =>
-  new BuilderElement<ITableLookOptions>({
+}: TableLookOptions): XmlComponent =>
+  new BuilderElement<TableLookOptions>({
     attributes: {
       firstColumn: { key: "w:firstColumn", value: firstColumn },
       firstRow: { key: "w:firstRow", value: firstRow },

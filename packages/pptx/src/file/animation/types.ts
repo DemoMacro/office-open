@@ -46,7 +46,7 @@ export type AnimationCalcMode = "discrete" | "lin" | "fmla";
 
 export type AnimationValueType = "str" | "num" | "clr";
 
-export interface IAnimationOptions {
+export interface AnimationOptions {
   readonly type?: AnimationType;
   readonly duration?: number;
   readonly delay?: number;

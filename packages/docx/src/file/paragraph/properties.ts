@@ -11,31 +11,31 @@
  * @module
  */
 import { ChangeAttributes } from "@file/track-revision/track-revision";
-import type { IChangedAttributesProperties } from "@file/track-revision/track-revision";
+import type { ChangedAttributesProperties } from "@file/track-revision/track-revision";
 import {
   BuilderElement,
   IgnoreIfEmptyXmlComponent,
   OnOffElement,
   XmlComponent,
 } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 
 import { ParagraphRunProperties } from ".";
 import type { IParagraphRunOptions } from ".";
 import { FontWrapper } from "../fonts/font-wrapper";
 import { createShading } from "../shading";
-import type { IShadingAttributesProperties } from "../shading";
+import type { ShadingAttributesProperties } from "../shading";
 import { createAlignment } from "./formatting/alignment";
 import type { AlignmentType } from "./formatting/alignment";
 import { Border, ThematicBreak } from "./formatting/border";
-import type { IBordersOptions } from "./formatting/border";
+import type { BordersOptions } from "./formatting/border";
 import { PageBreakBefore } from "./formatting/break";
 import { createCnfStyle } from "./formatting/cnf-style";
-import type { ICnfStyleOptions } from "./formatting/cnf-style";
+import type { CnfConditionalOptions } from "./formatting/cnf-style";
 import { createIndent } from "./formatting/indent";
-import type { IIndentAttributesProperties } from "./formatting/indent";
+import type { IndentAttributesProperties } from "./formatting/indent";
 import { createSpacing } from "./formatting/spacing";
-import type { ISpacingProperties } from "./formatting/spacing";
+import type { SpacingProperties } from "./formatting/spacing";
 import { createParagraphStyle } from "./formatting/style";
 import type { HeadingLevel } from "./formatting/style";
 import { TabStopType, createTabStop } from "./formatting/tab-stop";
@@ -111,9 +111,9 @@ export interface LevelParagraphStylePropertiesOptions {
   /** Position in twips for a left-aligned tab stop */
   readonly leftTabStop?: number;
   /** Indentation settings for the paragraph */
-  readonly indent?: IIndentAttributesProperties;
+  readonly indent?: IndentAttributesProperties;
   /** Spacing before/after paragraph and between lines */
-  readonly spacing?: ISpacingProperties;
+  readonly spacing?: SpacingProperties;
   /**
    * Specifies that the paragraph (or at least part of it) should be rendered on the same page as the next paragraph when possible. If multiple paragraphs are to be kept together but they exceed a page, then the set of paragraphs begin on a new page and page breaks are used thereafter as needed.
    */
@@ -162,7 +162,7 @@ export interface LevelParagraphStylePropertiesOptions {
   /** HTML div ID reference */
   readonly divId?: number;
   /** Conditional formatting style for table rows/cells */
-  readonly cnfStyle?: ICnfStyleOptions;
+  readonly cnfStyle?: CnfConditionalOptions;
 }
 
 /**
@@ -173,9 +173,9 @@ export interface LevelParagraphStylePropertiesOptions {
  */
 export type IParagraphStylePropertiesOptions = {
   /** Border settings for the paragraph */
-  readonly border?: IBordersOptions;
+  readonly border?: BordersOptions;
   /** Background shading/fill color for the paragraph */
-  readonly shading?: IShadingAttributesProperties;
+  readonly shading?: ShadingAttributesProperties;
   /** Numbering configuration for lists, or false to remove numbering */
   readonly numbering?:
     | {
@@ -208,7 +208,7 @@ export type IParagraphPropertiesOptionsBase = {
   readonly run?: IParagraphRunOptions;
 } & IParagraphStylePropertiesOptions;
 
-export type IParagraphPropertiesChangeOptions = IChangedAttributesProperties &
+export type IParagraphPropertiesChangeOptions = ChangedAttributesProperties &
   IParagraphPropertiesOptionsBase;
 
 /**
@@ -219,7 +219,7 @@ export type IParagraphPropertiesChangeOptions = IChangedAttributesProperties &
  *
  * Reference: http://officeopenxml.com/WPparagraphProperties.php
  */
-export type IParagraphPropertiesOptions = {
+export type ParagraphPropertiesOptions = {
   readonly revision?: IParagraphPropertiesChangeOptions;
   readonly includeIfEmpty?: boolean;
 } & IParagraphPropertiesOptionsBase;
@@ -334,7 +334,7 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
     readonly instance: number;
   }[] = [];
 
-  public constructor(options?: IParagraphPropertiesOptions) {
+  public constructor(options?: ParagraphPropertiesOptions) {
     super("w:pPr", options?.includeIfEmpty);
 
     if (!options) {
@@ -574,7 +574,7 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
    * @param context - The XML context containing document and file information
    * @returns The prepared XML object, or undefined if the component should be ignored
    */
-  public prepForXml(context: IContext): IXmlableObject | undefined {
+  public prepForXml(context: Context): IXmlableObject | undefined {
     if (!(context.viewWrapper instanceof FontWrapper)) {
       for (const reference of this.numberingReferences) {
         context.file.Numbering.createConcreteNumberingInstance(

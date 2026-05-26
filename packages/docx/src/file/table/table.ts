@@ -7,26 +7,26 @@
  */
 import type { FileChild } from "@file/file-child";
 import { BaseXmlComponent } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 
 import type { AlignmentType } from "../paragraph";
 import { StructuredDocumentTagRow } from "../sdt";
 import { TableGrid } from "./grid";
-import type { ITableGridChangeOptions } from "./grid";
+import type { TableGridChangeOptions } from "./grid";
 import { TableCell, VerticalMergeType } from "./table-cell";
-import type { ITableCellSpacingProperties } from "./table-cell-spacing";
+import type { TableCellSpacingProperties } from "./table-cell-spacing";
 import { TableProperties } from "./table-properties";
 import type {
-  ITableBordersOptions,
-  ITableFloatOptions,
+  TableBordersOptions,
+  TableFloatOptions,
   ITablePropertiesChangeOptions,
 } from "./table-properties";
-import type { ITableCellMarginOptions } from "./table-properties/table-cell-margin";
+import type { TableCellMarginOptions } from "./table-properties/table-cell-margin";
 import type { TableLayoutType } from "./table-properties/table-layout";
-import type { ITableLookOptions } from "./table-properties/table-look";
+import type { TableLookOptions } from "./table-properties/table-look";
 import { TableRow } from "./table-row";
-import type { ITableRowOptions } from "./table-row";
-import type { ITableWidthProperties } from "./table-width";
+import type { TableRowOptions } from "./table-row";
+import type { TableWidthProperties } from "./table-width";
 
 /**
  * Options for creating a Table element.
@@ -42,21 +42,21 @@ import type { ITableWidthProperties } from "./table-width";
  *
  * @see {@link Table}
  */
-export interface ITableOptions {
-  readonly rows: readonly (TableRow | StructuredDocumentTagRow | ITableRowOptions)[];
-  readonly width?: ITableWidthProperties;
+export interface TableOptions {
+  readonly rows: readonly (TableRow | StructuredDocumentTagRow | TableRowOptions)[];
+  readonly width?: TableWidthProperties;
   readonly columnWidths?: readonly number[];
-  readonly columnWidthsRevision?: ITableGridChangeOptions;
-  readonly margins?: ITableCellMarginOptions;
-  readonly indent?: ITableWidthProperties;
-  readonly float?: ITableFloatOptions;
+  readonly columnWidthsRevision?: TableGridChangeOptions;
+  readonly margins?: TableCellMarginOptions;
+  readonly indent?: TableWidthProperties;
+  readonly float?: TableFloatOptions;
   readonly layout?: (typeof TableLayoutType)[keyof typeof TableLayoutType];
   readonly style?: string;
-  readonly borders?: ITableBordersOptions;
+  readonly borders?: TableBordersOptions;
   readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
   readonly visuallyRightToLeft?: boolean;
-  readonly tableLook?: ITableLookOptions;
-  readonly cellSpacing?: ITableCellSpacingProperties;
+  readonly tableLook?: TableLookOptions;
+  readonly cellSpacing?: TableCellSpacingProperties;
   readonly styleRowBandSize?: number;
   readonly styleColBandSize?: number;
   readonly caption?: string;
@@ -103,16 +103,16 @@ export interface ITableOptions {
 export class Table extends BaseXmlComponent implements FileChild {
   public readonly fileChild = Symbol();
 
-  private readonly options: ITableOptions;
+  private readonly options: TableOptions;
   private readonly columnWidths: readonly number[];
-  // Coerced rows: plain ITableRowOptions are converted to TableRow instances
+  // Coerced rows: plain TableRowOptions are converted to TableRow instances
   private readonly rows: readonly (TableRow | StructuredDocumentTagRow)[];
 
-  public constructor(options: ITableOptions) {
+  public constructor(options: TableOptions) {
     super("w:tbl");
     this.options = options;
 
-    // Coerce plain ITableRowOptions objects into TableRow instances
+    // Coerce plain TableRowOptions objects into TableRow instances
     this.rows = options.rows.map((row) =>
       row instanceof TableRow || row instanceof StructuredDocumentTagRow ? row : new TableRow(row),
     );
@@ -146,7 +146,7 @@ export class Table extends BaseXmlComponent implements FileChild {
     });
   }
 
-  public prepForXml(context: IContext): IXmlableObject | undefined {
+  public prepForXml(context: Context): IXmlableObject | undefined {
     const children: IXmlableObject[] = [];
 
     const tblPr = new TableProperties({

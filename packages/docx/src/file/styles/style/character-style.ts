@@ -11,7 +11,7 @@ import { RunProperties } from "@file/paragraph/run/properties";
 import type { RunStylePropertiesOptions } from "@file/paragraph/run/properties";
 
 import { Style } from "./style";
-import type { IStyleOptions } from "./style";
+import type { StyleOptions } from "./style";
 
 /**
  * Base options for character style configuration.
@@ -21,7 +21,7 @@ import type { IStyleOptions } from "./style";
 export type IBaseCharacterStyleOptions = {
   /** Run properties (font, size, color, etc.) for this character style */
   readonly run?: RunStylePropertiesOptions;
-} & IStyleOptions;
+} & StyleOptions;
 
 /**
  * Options for creating a character style.

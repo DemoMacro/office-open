@@ -8,7 +8,7 @@
  */
 import type { FileChild } from "@file/file-child";
 import { ParagraphProperties } from "@file/paragraph";
-import type { IParagraphOptions } from "@file/paragraph";
+import type { ParagraphOptions } from "@file/paragraph";
 import { XmlComponent } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 
@@ -24,7 +24,7 @@ import type { VmlShapeStyle } from "./shape/shape";
  * @property style - VML shape style properties for positioning and sizing
  * @property children - Array of child elements (text runs, hyperlinks, etc.)
  */
-export type ITextboxOptions = Omit<IParagraphOptions, "style" | "children"> & {
+export type ITextboxOptions = Omit<ParagraphOptions, "style" | "children"> & {
   /** VML shape style properties for the textbox (positioning, sizing, wrapping, etc.) */
   readonly style?: VmlShapeStyle;
   /** Array of block-level content elements (paragraphs, tables, etc.) */

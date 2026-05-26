@@ -2,16 +2,16 @@ import type { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-prop
 import type { WpsShapeCoreOptions } from "@file/drawing/inline/graphic/graphic-data/wps";
 
 import { Drawing } from "../../drawing";
-import type { IFloating } from "../../drawing";
-import type { IMediaTransformation, WpsMediaData } from "../../media";
+import type { Floating } from "../../drawing";
+import type { MediaTransformation, WpsMediaData } from "../../media";
 import { createTransformation } from "../../media";
 import { Run } from "../run";
 
 export * from "@file/drawing/inline/graphic/graphic-data/wps/body-properties";
 
 interface CoreShapeOptions {
-  readonly transformation: IMediaTransformation;
-  readonly floating?: IFloating;
+  readonly transformation: MediaTransformation;
+  readonly floating?: Floating;
   readonly altText?: DocPropertiesOptions;
 }
 

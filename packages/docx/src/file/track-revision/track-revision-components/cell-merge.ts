@@ -1,6 +1,6 @@
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
-import type { IChangedAttributesProperties } from "../track-revision";
+import type { ChangedAttributesProperties } from "../track-revision";
 
 /**
  * Vertical merge revision types.
@@ -16,7 +16,7 @@ export const VerticalMergeRevisionType = {
   RESTART: "rest",
 } as const;
 
-export type ICellMergeAttributes = IChangedAttributesProperties & {
+export type ICellMergeAttributes = ChangedAttributesProperties & {
   readonly verticalMerge?: (typeof VerticalMergeRevisionType)[keyof typeof VerticalMergeRevisionType];
   readonly verticalMergeOriginal?: (typeof VerticalMergeRevisionType)[keyof typeof VerticalMergeRevisionType];
 };

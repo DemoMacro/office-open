@@ -17,7 +17,7 @@ import { CustomPropertyAttributes } from "./custom-property-attributes";
  * @property name - The property name
  * @property value - The property value (as string)
  */
-export interface ICustomPropertyOptions {
+export interface CustomPropertyOptions {
   /** The property name */
   readonly name: string;
   /** The property value (as string) */
@@ -53,7 +53,7 @@ export interface ICustomPropertyOptions {
  * ```
  */
 export class CustomProperty extends XmlComponent {
-  public constructor(id: number, properties: ICustomPropertyOptions) {
+  public constructor(id: number, properties: CustomPropertyOptions) {
     super("property");
     this.root.push(
       new CustomPropertyAttributes({

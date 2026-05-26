@@ -20,7 +20,7 @@ import { BookmarkEndAttributes, BookmarkStartAttributes } from "./bookmark-attri
  * @property id - The bookmark name used for reference
  * @property children - Array of paragraph children contained within the bookmark range
  */
-export interface IBookmarkOptions {
+export interface BookmarkOptions {
   /** The bookmark name used for reference */
   readonly id: string;
   /** Array of paragraph children contained within the bookmark range */
@@ -74,7 +74,7 @@ export class Bookmark {
   public readonly children: readonly ParagraphChild[];
   public readonly end: BookmarkEnd;
 
-  public constructor(options: IBookmarkOptions) {
+  public constructor(options: BookmarkOptions) {
     const linkId = this.bookmarkUniqueNumericId();
 
     this.start = new BookmarkStart(options.id, linkId);

@@ -1,1 +1,1 @@
-export { NotesSlide, type INotesSlideOptions } from "./notes-slide";
+export { NotesSlide, type NotesSlideOptions } from "./notes-slide";

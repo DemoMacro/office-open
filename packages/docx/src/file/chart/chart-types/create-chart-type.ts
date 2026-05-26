@@ -1,6 +1,6 @@
 export {
   createChartType,
   type ChartType,
-  type IChartTypeOptions,
-  type IChartSeriesData,
+  type ChartTypeOptions,
+  type ChartSeriesData,
 } from "@office-open/core/chart";

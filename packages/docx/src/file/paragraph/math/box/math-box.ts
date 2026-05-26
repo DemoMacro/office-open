@@ -20,7 +20,7 @@ import type { MathBoxPropertiesOptions } from "./math-box-properties";
  *
  * @see {@link MathBox}
  */
-export interface IMathBoxOptions {
+export interface MathBoxOptions {
   /** Box properties */
   readonly properties?: MathBoxPropertiesOptions;
   /** Content to be boxed */
@@ -48,7 +48,7 @@ export interface IMathBoxOptions {
  * ```
  */
 export class MathBox extends XmlComponent {
-  public constructor(options: IMathBoxOptions) {
+  public constructor(options: MathBoxOptions) {
     super("m:box");
 
     if (options.properties) {

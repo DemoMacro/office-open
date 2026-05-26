@@ -14,7 +14,7 @@ import {
   replaceImagePlaceholders,
   replaceSmartArtPlaceholders,
 } from "@office-open/core";
-import type { IXmlifyedFile } from "@office-open/core";
+import type { XmlifyedFile } from "@office-open/core";
 import type { PrettifyType } from "@office-open/core";
 import { xml } from "@office-open/xml";
 import type { Zippable } from "fflate";
@@ -29,69 +29,69 @@ import { replaceNumberingPlaceholders } from "./numbering-placeholders";
  * This type represents the full structure of a .docx file, including the main
  * document, styles, relationships, headers, footers, and metadata files.
  */
-interface IXmlifyedFileMapping {
+interface XmlifyedFileMapping {
   /** Main document content (word/document.xml) */
-  readonly Document: IXmlifyedFile;
+  readonly Document: XmlifyedFile;
   /** Style definitions (word/styles.xml) */
-  readonly Styles: IXmlifyedFile;
+  readonly Styles: XmlifyedFile;
   /** Core document properties (docProps/core.xml) */
-  readonly Properties: IXmlifyedFile;
+  readonly Properties: XmlifyedFile;
   /** Numbering definitions (word/numbering.xml) */
-  readonly Numbering: IXmlifyedFile;
+  readonly Numbering: XmlifyedFile;
   /** Document relationships (word/_rels/document.xml.rels) */
-  readonly Relationships: IXmlifyedFile;
+  readonly Relationships: XmlifyedFile;
   /** Package-level relationships (_rels/.rels) */
-  readonly FileRelationships: IXmlifyedFile;
+  readonly FileRelationships: XmlifyedFile;
   /** Header content files */
-  readonly Headers: readonly IXmlifyedFile[];
+  readonly Headers: readonly XmlifyedFile[];
   /** Footer content files */
-  readonly Footers: readonly IXmlifyedFile[];
+  readonly Footers: readonly XmlifyedFile[];
   /** Header relationship files */
-  readonly HeaderRelationships: readonly IXmlifyedFile[];
+  readonly HeaderRelationships: readonly XmlifyedFile[];
   /** Footer relationship files */
-  readonly FooterRelationships: readonly IXmlifyedFile[];
+  readonly FooterRelationships: readonly XmlifyedFile[];
   /** Content types mapping ([Content_Types].xml) */
-  readonly ContentTypes: IXmlifyedFile;
+  readonly ContentTypes: XmlifyedFile;
   /** Custom document properties (docProps/custom.xml) */
-  readonly CustomProperties: IXmlifyedFile;
+  readonly CustomProperties: XmlifyedFile;
   /** Application properties (docProps/app.xml) */
-  readonly AppProperties: IXmlifyedFile;
+  readonly AppProperties: XmlifyedFile;
   /** Footnotes content (word/footnotes.xml) */
-  readonly FootNotes: IXmlifyedFile;
+  readonly FootNotes: XmlifyedFile;
   /** Footnotes relationships (word/_rels/footnotes.xml.rels) */
-  readonly FootNotesRelationships: IXmlifyedFile;
+  readonly FootNotesRelationships: XmlifyedFile;
   /** Endnotes content (word/endnotes.xml) */
-  readonly Endnotes: IXmlifyedFile;
+  readonly Endnotes: XmlifyedFile;
   /** Endnotes relationships (word/_rels/endnotes.xml.rels) */
-  readonly EndnotesRelationships: IXmlifyedFile;
+  readonly EndnotesRelationships: XmlifyedFile;
   /** Document settings (word/settings.xml) */
-  readonly Settings: IXmlifyedFile;
+  readonly Settings: XmlifyedFile;
   /** Comments content (word/comments.xml) */
-  readonly Comments?: IXmlifyedFile;
+  readonly Comments?: XmlifyedFile;
   /** Comments relationships (word/_rels/comments.xml.rels) */
-  readonly CommentsRelationships?: IXmlifyedFile;
+  readonly CommentsRelationships?: XmlifyedFile;
   /** Font table (word/fontTable.xml) */
-  readonly FontTable?: IXmlifyedFile;
+  readonly FontTable?: XmlifyedFile;
   /** Font table relationships (word/_rels/fontTable.xml.rels) */
-  readonly FontTableRelationships?: IXmlifyedFile;
+  readonly FontTableRelationships?: XmlifyedFile;
   /** Bibliography content (word/bibliography.xml) */
-  readonly Bibliography?: IXmlifyedFile;
+  readonly Bibliography?: XmlifyedFile;
   /** Chart XML parts (word/charts/chart{n}.xml) */
-  readonly Charts?: readonly IXmlifyedFile[];
+  readonly Charts?: readonly XmlifyedFile[];
   /** Diagram data XML parts (word/diagrams/data{n}.xml) */
-  readonly DiagramData?: readonly IXmlifyedFile[];
+  readonly DiagramData?: readonly XmlifyedFile[];
   /** Diagram layout XML parts (word/diagrams/layout{n}.xml) */
-  readonly DiagramLayout?: readonly IXmlifyedFile[];
+  readonly DiagramLayout?: readonly XmlifyedFile[];
   /** Diagram style XML parts (word/diagrams/quickStyle{n}.xml) */
-  readonly DiagramStyle?: readonly IXmlifyedFile[];
+  readonly DiagramStyle?: readonly XmlifyedFile[];
   /** Diagram colors XML parts (word/diagrams/colors{n}.xml) */
-  readonly DiagramColors?: readonly IXmlifyedFile[];
+  readonly DiagramColors?: readonly XmlifyedFile[];
   /** Diagram drawing XML parts (word/diagrams/drawing{n}.xml) */
-  readonly DiagramDrawing?: readonly IXmlifyedFile[];
+  readonly DiagramDrawing?: readonly XmlifyedFile[];
   /** AltChunk parts (word/afchunks/afchunk{n}.{ext}) */
-  readonly AltChunks?: readonly IXmlifyedFile[];
+  readonly AltChunks?: readonly XmlifyedFile[];
   /** SubDoc parts (word/subdocs/subdoc{n}.docx) */
-  readonly SubDocs?: readonly IXmlifyedFile[];
+  readonly SubDocs?: readonly XmlifyedFile[];
 }
 
 /**
@@ -136,7 +136,7 @@ export class Compiler {
   public compile(
     file: File,
     prettifyXml?: (typeof PrettifyType)[keyof typeof PrettifyType],
-    overrides: readonly IXmlifyedFile[] = [],
+    overrides: readonly XmlifyedFile[] = [],
   ): Zippable {
     const files: Zippable = {};
 
@@ -152,20 +152,20 @@ export class Compiler {
       footerFormattedViews,
       prettifyXml,
     );
-    const map = new Map<string, IXmlifyedFile | readonly IXmlifyedFile[]>(
+    const map = new Map<string, XmlifyedFile | readonly XmlifyedFile[]>(
       Object.entries(xmlifiedFileMapping),
     );
 
     for (const [, obj] of map) {
       if (Array.isArray(obj)) {
-        for (const subFile of obj as readonly IXmlifyedFile[]) {
+        for (const subFile of obj as readonly XmlifyedFile[]) {
           files[subFile.path] = [
             typeof subFile.data === "string" ? textToUint8Array(subFile.data) : subFile.data,
             { level: 0 },
           ];
         }
       } else {
-        const fileObj = obj as IXmlifyedFile;
+        const fileObj = obj as XmlifyedFile;
         files[fileObj.path] = [
           typeof fileObj.data === "string" ? textToUint8Array(fileObj.data) : fileObj.data,
           { level: 0 },
@@ -205,7 +205,7 @@ export class Compiler {
     headerFormattedViews: Map<number, string>,
     footerFormattedViews: Map<number, string>,
     prettify?: (typeof PrettifyType)[keyof typeof PrettifyType],
-  ): IXmlifyedFileMapping {
+  ): XmlifyedFileMapping {
     const documentRelationshipCount = file.Document.Relationships.RelationshipCount + 1;
 
     const documentXmlData = xml(

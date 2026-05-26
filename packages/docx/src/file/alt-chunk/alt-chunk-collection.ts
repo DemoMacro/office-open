@@ -7,7 +7,7 @@
 /**
  * Stores alternative format chunk data for later serialization by the compiler.
  */
-export interface IAltChunkData {
+export interface AltChunkData {
   /** Unique key for this alt chunk (e.g., relId) */
   readonly key: string;
   /** Raw content data */
@@ -27,17 +27,17 @@ export interface IAltChunkData {
  * serialized into separate parts in the DOCX package.
  */
 export class AltChunkCollection {
-  private readonly map: Map<string, IAltChunkData>;
+  private readonly map: Map<string, AltChunkData>;
 
   public constructor() {
-    this.map = new Map<string, IAltChunkData>();
+    this.map = new Map<string, AltChunkData>();
   }
 
-  public addAltChunk(key: string, data: IAltChunkData): void {
+  public addAltChunk(key: string, data: AltChunkData): void {
     this.map.set(key, data);
   }
 
-  public get Array(): readonly IAltChunkData[] {
+  public get Array(): readonly AltChunkData[] {
     return [...this.map.values()];
   }
 }

@@ -1,4 +1,4 @@
-import type { BaseXmlComponent, IContext, IXmlableObject } from "./xml-components/base";
+import type { BaseXmlComponent, Context, IXmlableObject } from "./xml-components/base";
 import type { XmlComponent } from "./xml-components/component";
 
 const XML_DECL = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
@@ -7,7 +7,7 @@ const XML_DECL = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
  * Converts an XmlComponent tree into a serializable XML object.
  */
 export class Formatter {
-  public format<T extends IContext = IContext>(
+  public format<T extends Context = Context>(
     input: BaseXmlComponent,
     context: T = { stack: [] } as unknown as T,
   ): IXmlableObject {
@@ -18,7 +18,7 @@ export class Formatter {
     throw new Error("XMLComponent did not format correctly");
   }
 
-  public formatToXml(input: XmlComponent, context: IContext, declaration?: boolean): string {
+  public formatToXml(input: XmlComponent, context: Context, declaration?: boolean): string {
     const str = input.toXml(context);
     return declaration ? XML_DECL + str : str;
   }

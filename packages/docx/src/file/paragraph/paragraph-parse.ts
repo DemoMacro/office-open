@@ -1,9 +1,9 @@
 import { HeadingLevel } from "@file/paragraph/formatting/style";
-import type { IParagraphOptions } from "@file/paragraph/paragraph";
+import type { ParagraphOptions } from "@file/paragraph/paragraph";
 /**
  * Paragraph parser for DOCX documents.
  *
- * Parses w:p and w:pPr Element trees into IParagraphOptions objects.
+ * Parses w:p and w:pPr Element trees into ParagraphOptions objects.
  *
  * @module
  */
@@ -231,9 +231,9 @@ export function parseParagraphProperties(el: Element, _ctx: ParseContext): Recor
 }
 
 /**
- * Parse a w:p element into IParagraphOptions.
+ * Parse a w:p element into ParagraphOptions.
  */
-export function parseParagraph(el: Element, ctx: ParseContext): IParagraphOptions {
+export function parseParagraph(el: Element, ctx: ParseContext): ParagraphOptions {
   const opts: Record<string, unknown> = {};
 
   const pPr = findChild(el, "w:pPr");
@@ -258,7 +258,7 @@ export function parseParagraph(el: Element, ctx: ParseContext): IParagraphOption
           ...parsed,
           children: parsed.children.filter((c) => !(c instanceof RawPassthrough)),
         };
-        // Convert to IRunOptions (or { commentReference })
+        // Convert to RunOptions (or { commentReference })
         const runOpts = parsedRunToOptions(simplified);
         childList.push(runOpts);
         // Preserve raw passthrough elements for round-trip fidelity
@@ -282,7 +282,7 @@ export function parseParagraph(el: Element, ctx: ParseContext): IParagraphOption
       case "w:bookmarkStart":
       case "w:bookmarkEnd":
         // Bookmarks span across runs and cannot be represented in the current
-        // IParagraphOptions JSON output — the text between start/end is already
+        // ParagraphOptions JSON output — the text between start/end is already
         // preserved as run children, which is sufficient for most round-trip use cases.
         break;
       case "w:commentRangeStart": {
@@ -326,16 +326,16 @@ export function parseParagraph(el: Element, ctx: ParseContext): IParagraphOption
     if (allStrings) {
       const combined = childList.map((c) => (c as Record<string, unknown>).text as string).join("");
       if (combined && Object.keys(opts).length === 0) {
-        return combined as unknown as IParagraphOptions;
+        return combined as unknown as ParagraphOptions;
       }
       if (combined) {
         opts.text = combined;
-        return opts as IParagraphOptions;
+        return opts as ParagraphOptions;
       }
     }
 
-    opts.children = childList as (import("@file/paragraph/run").IRunOptions | string)[];
+    opts.children = childList as (import("@file/paragraph/run").RunOptions | string)[];
   }
 
-  return opts as IParagraphOptions;
+  return opts as ParagraphOptions;
 }

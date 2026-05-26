@@ -7,7 +7,7 @@
  */
 import { Paragraph } from "@file/paragraph";
 import { BaseXmlComponent, XmlComponent } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 
 import { SectionProperties } from "./section-properties/section-properties";
 import type { ISectionPropertiesOptions } from "./section-properties/section-properties";
@@ -90,7 +90,7 @@ export class Body extends XmlComponent {
    * @param context - The XML serialization context
    * @returns The prepared XML object or undefined
    */
-  public prepForXml(context: IContext): IXmlableObject | undefined {
+  public prepForXml(context: Context): IXmlableObject | undefined {
     if (this.sections.length === 1) {
       this.root.splice(0, 1);
       this.root.push(this.sections.pop() as SectionProperties);

@@ -1,4 +1,4 @@
-import type { IViewWrapper } from "@file/document-wrapper";
+import type { ViewWrapper } from "@file/document-wrapper";
 import type { File } from "@file/file";
 import { Paragraph, TextRun } from "@file/paragraph";
 import { describe, expect, it, vi } from "vite-plus/test";
@@ -131,7 +131,7 @@ describe("replacer", () => {
           stack: [],
           viewWrapper: {
             Relationships: {},
-          } as unknown as IViewWrapper,
+          } as unknown as ViewWrapper,
         },
         json: JSON.parse(JSON.stringify(MOCK_JSON)),
         patch: {
@@ -152,7 +152,7 @@ describe("replacer", () => {
           stack: [],
           viewWrapper: {
             Relationships: {},
-          } as unknown as IViewWrapper,
+          } as unknown as ViewWrapper,
         },
         json: JSON.parse(JSON.stringify(MOCK_JSON)),
         keepOriginalStyles: false,
@@ -183,7 +183,7 @@ describe("replacer", () => {
           stack: [],
           viewWrapper: {
             Relationships: {},
-          } as unknown as IViewWrapper,
+          } as unknown as ViewWrapper,
         },
         json: JSON.parse(JSON.stringify(MOCK_JSON)),
         keepOriginalStyles: true,
@@ -259,7 +259,7 @@ describe("replacer", () => {
           stack: [],
           viewWrapper: {
             Relationships: {},
-          } as unknown as IViewWrapper,
+          } as unknown as ViewWrapper,
         },
         json: JSON.parse(JSON.stringify(MOCK_JSON)),
         patch: {
@@ -887,7 +887,7 @@ describe("replacer", () => {
           stack: [],
           viewWrapper: {
             Relationships: {},
-          } as unknown as IViewWrapper,
+          } as unknown as ViewWrapper,
         },
       });
 
@@ -966,7 +966,7 @@ describe("replacer", () => {
           stack: [],
           viewWrapper: {
             Relationships: {},
-          } as unknown as IViewWrapper,
+          } as unknown as ViewWrapper,
         },
         keepOriginalStyles: true,
       });
@@ -1015,7 +1015,7 @@ describe("replacer", () => {
         context: {
           file: {} as unknown as File,
           stack: [],
-          viewWrapper: { Relationships: {} } as unknown as IViewWrapper,
+          viewWrapper: { Relationships: {} } as unknown as ViewWrapper,
         },
         json,
         patch: { children: [new TextRun("X")], type: PatchType.PARAGRAPH },
@@ -1027,7 +1027,7 @@ describe("replacer", () => {
         context: {
           file: {} as unknown as File,
           stack: [],
-          viewWrapper: { Relationships: {} } as unknown as IViewWrapper,
+          viewWrapper: { Relationships: {} } as unknown as ViewWrapper,
         },
         json,
         patch: { children: [new TextRun("Y")], type: PatchType.PARAGRAPH },

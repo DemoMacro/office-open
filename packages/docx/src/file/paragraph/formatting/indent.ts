@@ -18,7 +18,7 @@ import type { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
  *
  * Values can be specified as numbers (in twips) or as universal measures (e.g., "1in", "2.5cm").
  */
-export interface IIndentAttributesProperties {
+export interface IndentAttributesProperties {
   readonly start?: number | UniversalMeasure;
   readonly startChars?: number;
   readonly end?: number | UniversalMeasure;
@@ -71,8 +71,8 @@ export const createIndent = ({
   hangingChars,
   firstLine,
   firstLineChars,
-}: IIndentAttributesProperties): XmlComponent =>
-  new BuilderElement<IIndentAttributesProperties>({
+}: IndentAttributesProperties): XmlComponent =>
+  new BuilderElement<IndentAttributesProperties>({
     attributes: {
       end: {
         key: "w:end",

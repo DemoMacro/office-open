@@ -9,8 +9,8 @@
  *
  * @module
  */
-import type { IMediaDataTransformation } from "@file/media";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { MediaDataTransformation } from "@file/media";
+import type { Context, IXmlableObject } from "@file/xml-components";
 import { XmlComponent } from "@file/xml-components";
 import { buildFill, extractBlipFillMedia, type FillOptions } from "@office-open/core/drawingml";
 
@@ -93,7 +93,7 @@ export class ShapeProperties extends XmlComponent {
     readonly effects?: EffectListOptions;
     readonly scene3d?: Scene3DOptions;
     readonly shape3d?: Shape3DOptions;
-    readonly transform: IMediaDataTransformation;
+    readonly transform: MediaDataTransformation;
   }) {
     super(`${element}:spPr`);
 
@@ -140,7 +140,7 @@ export class ShapeProperties extends XmlComponent {
     }
   }
 
-  public override prepForXml(context: IContext): IXmlableObject | undefined {
+  public override prepForXml(context: Context): IXmlableObject | undefined {
     const media = this.fillOptions ? extractBlipFillMedia(this.fillOptions) : undefined;
     if (media) {
       context.file.Media.addImage(media.fileName, {

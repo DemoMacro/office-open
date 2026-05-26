@@ -22,7 +22,7 @@ import {
  *
  * @see {@link MathLimitUpper}
  */
-export interface IMathLimitUpperOptions {
+export interface MathLimitUpperOptions {
   /** Properties for the upper limit structure */
   readonly properties?: MathLimitUpperPropertiesOptions;
   /** The base expression */
@@ -62,7 +62,7 @@ export interface IMathLimitUpperOptions {
  * ```
  */
 export class MathLimitUpper extends XmlComponent {
-  public constructor(options: IMathLimitUpperOptions) {
+  public constructor(options: MathLimitUpperOptions) {
     super("m:limUpp");
 
     if (options.properties) {

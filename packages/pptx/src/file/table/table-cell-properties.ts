@@ -1,16 +1,16 @@
 import { BaseXmlComponent } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 
 import { buildFill } from "../drawingml/fill";
 import type { FillOptions } from "../drawingml/fill";
 
-export interface ICellBorderOptions {
+export interface CellBorderOptions {
   readonly width?: number;
   readonly color?: string;
   readonly dashStyle?: "solid" | "dash" | "dashDot" | "lgDash" | "sysDot" | "sysDash";
 }
 
-function buildBorderLine(name: string, options: ICellBorderOptions): IXmlableObject {
+function buildBorderLine(name: string, options: CellBorderOptions): IXmlableObject {
   const attrs: Record<string, string | number> = {};
   const children: IXmlableObject[] = [];
 
@@ -35,10 +35,10 @@ export class TableCellProperties extends BaseXmlComponent {
   private readonly options?: {
     readonly fill?: FillOptions;
     readonly borders?: {
-      readonly top?: ICellBorderOptions;
-      readonly bottom?: ICellBorderOptions;
-      readonly left?: ICellBorderOptions;
-      readonly right?: ICellBorderOptions;
+      readonly top?: CellBorderOptions;
+      readonly bottom?: CellBorderOptions;
+      readonly left?: CellBorderOptions;
+      readonly right?: CellBorderOptions;
     };
     readonly verticalAlign?: "t" | "ctr" | "b";
   };
@@ -46,10 +46,10 @@ export class TableCellProperties extends BaseXmlComponent {
   public constructor(options?: {
     readonly fill?: FillOptions;
     readonly borders?: {
-      readonly top?: ICellBorderOptions;
-      readonly bottom?: ICellBorderOptions;
-      readonly left?: ICellBorderOptions;
-      readonly right?: ICellBorderOptions;
+      readonly top?: CellBorderOptions;
+      readonly bottom?: CellBorderOptions;
+      readonly left?: CellBorderOptions;
+      readonly right?: CellBorderOptions;
     };
     readonly verticalAlign?: "t" | "ctr" | "b";
   }) {
@@ -57,7 +57,7 @@ export class TableCellProperties extends BaseXmlComponent {
     this.options = options;
   }
 
-  public override prepForXml(context: IContext): IXmlableObject {
+  public override prepForXml(context: Context): IXmlableObject {
     const children: IXmlableObject[] = [];
     const opts = this.options;
 

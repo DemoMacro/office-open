@@ -1,4 +1,4 @@
-export interface IMediaDataTransformation {
+export interface MediaDataTransformation {
   readonly pixels: {
     readonly x: number;
     readonly y: number;
@@ -16,7 +16,7 @@ export interface IMediaDataTransformation {
 
 interface CoreMediaData {
   readonly fileName: string;
-  readonly transformation: IMediaDataTransformation;
+  readonly transformation: MediaDataTransformation;
   readonly data: Uint8Array;
 }
 

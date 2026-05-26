@@ -26,7 +26,7 @@ const FieldCharacterType = {
   SEPARATE: "separate",
 } as const;
 
-interface IFieldCharAttributes {
+interface FieldCharAttributes {
   readonly type: (typeof FieldCharacterType)[keyof typeof FieldCharacterType];
   readonly dirty?: boolean;
 }
@@ -58,7 +58,7 @@ const createFieldChar = (
   if (ffData) {
     children.push(ffData);
   }
-  return new BuilderElement<IFieldCharAttributes>({
+  return new BuilderElement<FieldCharAttributes>({
     attributes: {
       dirty: { key: "w:dirty", value: dirty },
       type: { key: "w:fldCharType", value: type },

@@ -11,14 +11,14 @@
 import { BuilderElement } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
 
-import type { IDistance } from "../drawing";
-import type { IMargins } from "../floating";
+import type { Distance } from "../drawing";
+import type { Margins } from "../floating";
 import { TextWrappingSide } from "./text-wrapping";
-import type { ITextWrapping } from "./text-wrapping";
+import type { TextWrapping } from "./text-wrapping";
 
 type IWrapSquareAttributes = {
   readonly wrapText?: (typeof TextWrappingSide)[keyof typeof TextWrappingSide];
-} & IDistance;
+} & Distance;
 
 /**
  * Creates square text wrapping for a floating drawing.
@@ -43,8 +43,8 @@ type IWrapSquareAttributes = {
  * ```
  */
 export const createWrapSquare = (
-  textWrapping: ITextWrapping,
-  margins: IMargins = {
+  textWrapping: TextWrapping,
+  margins: Margins = {
     bottom: 0,
     left: 0,
     right: 0,

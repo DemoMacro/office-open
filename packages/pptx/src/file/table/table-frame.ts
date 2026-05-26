@@ -4,10 +4,10 @@ import { emuPosition } from "@util/position";
 
 import { Graphic } from "./graphic";
 import { GraphicFrameNonVisual } from "./graphic-frame-non-visual";
-import type { ITableOptions } from "./table";
+import type { TableOptions } from "./table";
 import { Table } from "./table";
 
-export interface ITableFrameOptions extends ITableOptions {
+export interface TableFrameOptions extends TableOptions {
   readonly x?: number;
   readonly y?: number;
   readonly width?: number;
@@ -20,7 +20,7 @@ export interface ITableFrameOptions extends ITableOptions {
  * x/y/width/height accept pixel values, converted to EMUs internally.
  */
 export class TableFrame extends XmlComponent {
-  public constructor(options: ITableFrameOptions) {
+  public constructor(options: TableFrameOptions) {
     super("p:graphicFrame");
 
     this.root.push(new GraphicFrameNonVisual());

@@ -18,7 +18,7 @@ import {
 } from "@file/xml-components";
 
 import { Compatibility } from "./compatibility";
-import type { ICompatibilityOptions } from "./compatibility";
+import type { CompatibilityOptions } from "./compatibility";
 
 /**
  * Attributes for the settings element with XML namespace declarations.
@@ -178,7 +178,7 @@ export class SettingsAttributes extends XmlAttributeComponent<{
  *
  * @see {@link Settings}
  */
-export interface ISettingsOptions {
+export interface SettingsOptions {
   /** @deprecated Use compatibility.version instead */
   readonly compatibilityModeVersion?: number;
   /** Enable different headers/footers for even and odd pages */
@@ -188,15 +188,15 @@ export interface ISettingsOptions {
   /** Update fields when document is opened */
   readonly updateFields?: boolean;
   /** Compatibility settings for older Word versions */
-  readonly compatibility?: ICompatibilityOptions;
+  readonly compatibility?: CompatibilityOptions;
   /** Default distance between tab stops in twips */
   readonly defaultTabStop?: number;
   /** Hyphenation settings */
-  readonly hyphenation?: IHyphenationOptions;
+  readonly hyphenation?: HyphenationOptions;
   /** Controls whether punctuation is compressed at line ends */
   readonly characterSpacingControl?: "compressPunctuation" | "doNotCompress";
   /** Document protection settings */
-  readonly documentProtection?: IDocumentProtectionOptions;
+  readonly documentProtection?: DocumentProtectionOptions;
   /** Default document view mode */
   readonly view?: "none" | "print" | "outline" | "masterPages" | "normal" | "web";
   /** Default zoom level (percentage) and type */
@@ -205,7 +205,7 @@ export interface ISettingsOptions {
     readonly val?: "none" | "fullPage" | "bestFit" | "textFit";
   };
   /** Write protection recommendation (not enforcement) */
-  readonly writeProtection?: IWriteProtectionOptions;
+  readonly writeProtection?: WriteProtectionOptions;
   /** Whether to display the background shape in print layout */
   readonly displayBackgroundShape?: boolean;
   /** Whether to embed TrueType fonts in the document */
@@ -238,7 +238,7 @@ export interface ISettingsOptions {
  *
  * Reference: ISO/IEC 29500-4, wml.xsd, CT_DocProtect
  */
-export interface IDocumentProtectionOptions {
+export interface DocumentProtectionOptions {
   /** Type of editing restriction */
   readonly edit?: "none" | "readOnly" | "comments" | "trackedChanges" | "forms";
   /** Whether formatting is restricted */
@@ -258,7 +258,7 @@ export interface IDocumentProtectionOptions {
  *
  * Reference: ISO/IEC 29500-4, wml.xsd, CT_WriteProtection
  */
-export interface IWriteProtectionOptions {
+export interface WriteProtectionOptions {
   /** Cryptographic hash of the password */
   readonly hashValue?: string;
   /** Salt value for the hash (base64) */
@@ -276,7 +276,7 @@ export interface IWriteProtectionOptions {
  *
  * @see {@link Settings}
  */
-export interface IHyphenationOptions {
+export interface HyphenationOptions {
   /** Specifies whether the application automatically hyphenates words as they are typed in the document. */
   readonly autoHyphenation?: boolean;
   /** Specifies the minimum number of characters at the beginning of a word before a hyphen can be inserted. */
@@ -334,7 +334,7 @@ export interface IHyphenationOptions {
  * ```
  */
 export class Settings extends XmlComponent {
-  public constructor(options: ISettingsOptions) {
+  public constructor(options: SettingsOptions) {
     super("w:settings");
     this.root.push(
       new SettingsAttributes({
@@ -527,7 +527,7 @@ class DocumentProtectionAttributes extends XmlAttributeComponent<{
  * Reference: ISO/IEC 29500-4, wml.xsd, CT_DocProtect
  */
 class DocumentProtection extends XmlComponent {
-  public constructor(options: IDocumentProtectionOptions) {
+  public constructor(options: DocumentProtectionOptions) {
     super("w:documentProtection");
     this.root.push(
       new DocumentProtectionAttributes({
@@ -585,7 +585,7 @@ class WriteProtectionAttributes extends XmlAttributeComponent<{
 }
 
 class WriteProtection extends XmlComponent {
-  public constructor(options: IWriteProtectionOptions) {
+  public constructor(options: WriteProtectionOptions) {
     super("w:writeProtection");
     this.root.push(
       new WriteProtectionAttributes({

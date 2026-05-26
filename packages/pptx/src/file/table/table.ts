@@ -1,13 +1,13 @@
 import { BaseXmlComponent } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 
-import type { ICellBorderOptions } from "./table-cell-properties";
+import type { CellBorderOptions } from "./table-cell-properties";
 import { TableGrid } from "./table-grid";
 import { TableProperties } from "./table-properties";
-import { TableRow, type ITableRowOptions } from "./table-row";
+import { TableRow, type TableRowOptions } from "./table-row";
 
-export interface ITableOptions {
-  readonly rows: readonly ITableRowOptions[];
+export interface TableOptions {
+  readonly rows: readonly TableRowOptions[];
   readonly columnWidths?: readonly number[];
   readonly firstRow?: boolean;
   readonly lastRow?: boolean;
@@ -16,10 +16,10 @@ export interface ITableOptions {
   readonly lastCol?: boolean;
   readonly bandCol?: boolean;
   readonly borders?: {
-    readonly top?: ICellBorderOptions;
-    readonly bottom?: ICellBorderOptions;
-    readonly left?: ICellBorderOptions;
-    readonly right?: ICellBorderOptions;
+    readonly top?: CellBorderOptions;
+    readonly bottom?: CellBorderOptions;
+    readonly left?: CellBorderOptions;
+    readonly right?: CellBorderOptions;
   };
 }
 
@@ -28,14 +28,14 @@ export interface ITableOptions {
  * Lazy: stores options, builds IXmlableObject in prepForXml.
  */
 export class Table extends BaseXmlComponent {
-  private readonly options: ITableOptions;
+  private readonly options: TableOptions;
 
-  public constructor(options: ITableOptions) {
+  public constructor(options: TableOptions) {
     super("a:tbl");
     this.options = options;
   }
 
-  public override prepForXml(context: IContext): IXmlableObject {
+  public override prepForXml(context: Context): IXmlableObject {
     const opts = this.options;
     const children: IXmlableObject[] = [];
 

@@ -50,7 +50,7 @@ export const PageNumberSeparator = {
  * @property formatType - Number format (decimal, roman, letter, etc.)
  * @property separator - Separator between chapter and page number
  */
-export interface IPageNumberTypeAttributes {
+export interface PageNumberTypeAttributes {
   /** Starting page number for the section */
   readonly start?: number;
   /** Number format (decimal, roman, letter, etc., default: decimal) */
@@ -93,8 +93,8 @@ export const createPageNumberType = ({
   formatType,
   separator,
   chapStyle,
-}: IPageNumberTypeAttributes): XmlComponent =>
-  new BuilderElement<IPageNumberTypeAttributes>({
+}: PageNumberTypeAttributes): XmlComponent =>
+  new BuilderElement<PageNumberTypeAttributes>({
     attributes: {
       chapStyle: {
         key: "w:chapStyle",

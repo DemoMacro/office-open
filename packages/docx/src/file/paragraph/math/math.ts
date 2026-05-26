@@ -17,7 +17,7 @@ import type { MathComponent } from "./math-component";
  *
  * @see {@link Math}
  */
-export interface IMathOptions {
+export interface MathOptions {
   /** Array of math components (fractions, radicals, runs, etc.) */
   readonly children: readonly MathComponent[];
 }
@@ -54,7 +54,7 @@ export interface IMathOptions {
  * ```
  */
 export class Math extends XmlComponent {
-  public constructor(options: IMathOptions) {
+  public constructor(options: MathOptions) {
     super("m:oMath");
 
     for (const child of options.children) {

@@ -12,7 +12,7 @@ import { SpaceType } from "@file/shared";
 import { XmlComponent } from "@file/xml-components";
 
 import { TextAttributes } from "../run/text-attributes";
-import type { IPageReferenceOptions } from "./pageref";
+import type { PageReferenceOptions } from "./pageref";
 
 /**
  * Represents a PAGEREF field instruction.
@@ -36,7 +36,7 @@ import type { IPageReferenceOptions } from "./pageref";
  * @internal
  */
 export class PageReferenceFieldInstruction extends XmlComponent {
-  public constructor(bookmarkId: string, options: IPageReferenceOptions = {}) {
+  public constructor(bookmarkId: string, options: PageReferenceOptions = {}) {
     super("w:instrText");
     this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
 

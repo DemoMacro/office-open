@@ -13,7 +13,7 @@ import { ChartCollection } from "./chart/chart-collection";
 import { coerceSectionChild } from "./coerce";
 import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties } from "./core-properties";
-import type { IPropertiesOptions } from "./core-properties";
+import type { PropertiesOptions } from "./core-properties";
 import { CustomProperties } from "./custom-properties";
 import { DocumentWrapper } from "./document-wrapper";
 import { HeaderFooterReferenceType } from "./document/body/section-properties";
@@ -21,11 +21,11 @@ import type { ISectionPropertiesOptions } from "./document/body/section-properti
 import { EndnotesWrapper } from "./endnotes-wrapper";
 import { FontWrapper } from "./fonts/font-wrapper";
 import { FooterWrapper } from "./footer-wrapper";
-import type { IDocumentFooter } from "./footer-wrapper";
+import type { DocumentFooter } from "./footer-wrapper";
 import { FootnotesWrapper } from "./footnotes-wrapper";
 import { Footer, Header } from "./header";
 import { HeaderWrapper } from "./header-wrapper";
-import type { IDocumentHeader } from "./header-wrapper";
+import type { DocumentHeader } from "./header-wrapper";
 import { Media } from "./media";
 import { Numbering } from "./numbering";
 import { Paragraph } from "./paragraph/paragraph";
@@ -55,7 +55,7 @@ import { SubDocCollection } from "./sub-doc/sub-doc-collection";
  * @property properties - Section properties such as page size, margins, and orientation
  * @property children - Array of content elements (paragraphs, tables, etc.) for this section
  */
-export interface ISectionOptions {
+export interface SectionOptions {
   /** Optional header definitions for the section. */
   readonly headers?: {
     /** Default header for all pages (when first/even not specified). */
@@ -158,8 +158,8 @@ export class File {
   private currentRelationshipId: number = 1;
 
   private readonly documentWrapper: DocumentWrapper;
-  private readonly headers: IDocumentHeader[] = [];
-  private readonly footers: IDocumentFooter[] = [];
+  private readonly headers: DocumentHeader[] = [];
+  private readonly footers: DocumentFooter[] = [];
   private readonly coreProperties: CoreProperties;
   private readonly numbering: Numbering;
   private readonly media: Media;
@@ -179,7 +179,7 @@ export class File {
   private readonly bibliography: Bibliography | undefined;
   private readonly fontWrapper: FontWrapper;
 
-  public constructor(options: IPropertiesOptions) {
+  public constructor(options: PropertiesOptions) {
     this.coreProperties = new CoreProperties({
       ...options,
       creator: options.creator ?? "Un-named",
@@ -283,7 +283,7 @@ export class File {
     this.fontWrapper = new FontWrapper(options.fonts ?? []);
   }
 
-  private addSection({ headers = {}, footers = {}, children, properties }: ISectionOptions): void {
+  private addSection({ headers = {}, footers = {}, children, properties }: SectionOptions): void {
     this.documentWrapper.View.Body.addSection({
       ...properties,
       footerWrapperGroup: {

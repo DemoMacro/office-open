@@ -12,37 +12,37 @@ import { IgnoreIfEmptyXmlComponent } from "@file/xml-components";
 import { createAlignment } from "../../paragraph";
 import type { AlignmentType } from "../../paragraph";
 import { createShading } from "../../shading";
-import type { IShadingAttributesProperties } from "../../shading";
+import type { ShadingAttributesProperties } from "../../shading";
 import { createTableCellSpacing } from "../table-cell-spacing";
-import type { ITableCellSpacingProperties } from "../table-cell-spacing";
+import type { TableCellSpacingProperties } from "../table-cell-spacing";
 import { createTableWidthElement } from "../table-width";
-import type { ITableWidthProperties } from "../table-width";
+import type { TableWidthProperties } from "../table-width";
 import { TableBorders } from "./table-borders";
-import type { ITableBordersOptions } from "./table-borders";
+import type { TableBordersOptions } from "./table-borders";
 import { createTableCellMargin } from "./table-cell-margin";
-import type { ITableCellMarginOptions } from "./table-cell-margin";
+import type { TableCellMarginOptions } from "./table-cell-margin";
 import { createTableLayout } from "./table-layout";
 import type { TableLayoutType } from "./table-layout";
 import { createTableLook } from "./table-look";
-import type { ITableLookOptions } from "./table-look";
+import type { TableLookOptions } from "./table-look";
 
 /**
  * Options for table property exceptions (w:tblPrEx).
  *
  * These override the parent table's properties for a specific row.
- * Subset of ITablePropertiesOptionsBase — excludes style, float, bidiVisual,
+ * Subset of TablePropertiesOptionsBase — excludes style, float, bidiVisual,
  * styleRowBandSize, styleColBandSize, caption, description.
  */
-export interface ITablePropertyExOptions {
-  readonly width?: ITableWidthProperties;
-  readonly indent?: ITableWidthProperties;
+export interface TablePropertyExOptions {
+  readonly width?: TableWidthProperties;
+  readonly indent?: TableWidthProperties;
   readonly layout?: (typeof TableLayoutType)[keyof typeof TableLayoutType];
-  readonly borders?: ITableBordersOptions;
-  readonly shading?: IShadingAttributesProperties;
+  readonly borders?: TableBordersOptions;
+  readonly shading?: ShadingAttributesProperties;
   readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
-  readonly cellMargin?: ITableCellMarginOptions;
-  readonly tableLook?: ITableLookOptions;
-  readonly cellSpacing?: ITableCellSpacingProperties;
+  readonly cellMargin?: TableCellMarginOptions;
+  readonly tableLook?: TableLookOptions;
+  readonly cellSpacing?: TableCellSpacingProperties;
 }
 
 /**
@@ -53,7 +53,7 @@ export interface ITablePropertyExOptions {
  * Reference: ISO/IEC 29500-4, wml.xsd, CT_TblPrEx
  */
 export class TablePropertyExceptions extends IgnoreIfEmptyXmlComponent {
-  public constructor(options: ITablePropertyExOptions) {
+  public constructor(options: TablePropertyExOptions) {
     super("w:tblPrEx", true);
 
     if (options.width) {

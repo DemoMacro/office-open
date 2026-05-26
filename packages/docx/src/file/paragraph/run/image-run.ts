@@ -8,20 +8,20 @@
  * @module
  */
 import type { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 import type { FillOptions } from "@office-open/core/drawingml";
 import { hashedId } from "@util/convenience-functions";
 import type { DataType } from "undio";
 import { toUint8Array } from "undio";
 
 import { Drawing } from "../../drawing";
-import type { IFloating } from "../../drawing";
+import type { Floating } from "../../drawing";
 import type { BlipEffectsOptions } from "../../drawing/inline/graphic/graphic-data/pic/blip/blip-effects";
 import type { SourceRectangleOptions } from "../../drawing/inline/graphic/graphic-data/pic/blip/source-rectangle";
 import type { TileOptions } from "../../drawing/inline/graphic/graphic-data/pic/blip/tile";
 import type { EffectListOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/effects/effect-list";
 import type { OutlineOptions } from "../../drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline";
-import type { IMediaTransformation } from "../../media";
+import type { MediaTransformation } from "../../media";
 import { createTransformation } from "../../media";
 import type { IMediaData } from "../../media/data";
 import { Run } from "../run";
@@ -30,8 +30,8 @@ import { Run } from "../run";
  * Core options for image configuration.
  */
 interface CoreImageOptions {
-  readonly transformation: IMediaTransformation;
-  readonly floating?: IFloating;
+  readonly transformation: MediaTransformation;
+  readonly floating?: Floating;
   readonly altText?: DocPropertiesOptions;
   readonly outline?: OutlineOptions;
   readonly fill?: FillOptions;
@@ -64,7 +64,7 @@ export type IImageOptions = (RegularImageOptions | SvgMediaOptions) & CoreImageO
 
 const createImageData = (
   data: Uint8Array,
-  transformation: IMediaTransformation,
+  transformation: MediaTransformation,
   key: string,
   srcRect?: SourceRectangleOptions,
 ): Pick<IMediaData, "data" | "fileName" | "transformation" | "srcRect"> => ({
@@ -139,7 +139,7 @@ export class ImageRun extends Run {
     this.extraChildren.push(drawing);
   }
 
-  public prepForXml(context: IContext): IXmlableObject | undefined {
+  public prepForXml(context: Context): IXmlableObject | undefined {
     context.file.Media.addImage(this.imageData.fileName, this.imageData);
 
     if (this.imageData.type === "svg") {

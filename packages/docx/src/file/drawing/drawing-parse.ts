@@ -1,6 +1,6 @@
-import type { IChartOptions } from "@file/paragraph/run/chart-run";
+import type { ChartOptions } from "@file/paragraph/run/chart-run";
 import type { IImageOptions } from "@file/paragraph/run/image-run";
-import type { ISmartArtOptions } from "@file/paragraph/run/smartart-run";
+import type { SmartArtOptions } from "@file/paragraph/run/smartart-run";
 /**
  * Drawing parser for DOCX documents.
  *
@@ -17,8 +17,8 @@ import type { ParseContext } from "../../parse/context";
 /** Union type for parsed drawing child wrappers. */
 export type DrawingChild =
   | { readonly image: IImageOptions }
-  | { readonly chart: IChartOptions }
-  | { readonly smartArt: ISmartArtOptions };
+  | { readonly chart: ChartOptions }
+  | { readonly smartArt: SmartArtOptions };
 
 /**
  * Parse a w:drawing element and dispatch to the correct parser
@@ -209,7 +209,7 @@ function lookupRId(map: Map<string, string>, rId: string | undefined): string | 
 function parseChartDrawing(
   el: Element,
   ctx: ParseContext,
-): { readonly chart: IChartOptions } | undefined {
+): { readonly chart: ChartOptions } | undefined {
   const chartRef = findDeep(el, "c:chart")[0];
   if (!chartRef) return undefined;
 
@@ -230,11 +230,11 @@ function parseChartDrawing(
     };
   }
 
-  return { chart: opts as unknown as IChartOptions };
+  return { chart: opts as unknown as ChartOptions };
 }
 
 /**
- * Parse c:chartSpace element into IChartOptions.
+ * Parse c:chartSpace element into ChartOptions.
  */
 function parseChartXml(el: Element): Record<string, unknown> | undefined {
   const chart = findChild(el, "c:chart");
@@ -370,7 +370,7 @@ function extractNumCache(parent: Element): number[] {
 function parseSmartArtDrawing(
   el: Element,
   ctx: ParseContext,
-): { readonly smartArt: ISmartArtOptions } | undefined {
+): { readonly smartArt: SmartArtOptions } | undefined {
   const relIds = findDeep(el, "dgm:relIds")[0];
   if (!relIds) return undefined;
 
@@ -391,11 +391,11 @@ function parseSmartArtDrawing(
     };
   }
 
-  return { smartArt: opts as unknown as ISmartArtOptions };
+  return { smartArt: opts as unknown as SmartArtOptions };
 }
 
 /**
- * Parse dgm:dataModel element into ISmartArtOptions.
+ * Parse dgm:dataModel element into SmartArtOptions.
  */
 function parseSmartArtDataXml(el: Element): Record<string, unknown> | undefined {
   const ptLst = findChild(el, "dgm:ptLst");

@@ -35,7 +35,7 @@ import type { XmlComponent } from "@file/xml-components";
  * @example
  * ```typescript
  * // Set uniform margins of 100 twips on all sides
- * const margins: ITableCellMarginOptions = {
+ * const margins: TableCellMarginOptions = {
  *   top: 100,
  *   bottom: 100,
  *   left: 100,
@@ -43,14 +43,14 @@ import type { XmlComponent } from "@file/xml-components";
  * };
  *
  * // Set margins using percentage-based width
- * const percentMargins: ITableCellMarginOptions = {
+ * const percentMargins: TableCellMarginOptions = {
  *   marginUnitType: WidthType.PERCENTAGE,
  *   left: 5,
  *   right: 5,
  * };
  * ```
  */
-export interface ITableCellMarginOptions {
+export interface TableCellMarginOptions {
   /**
    * The unit type for margin values.
    * Defaults to DXA (twentieths of a point) if not specified.
@@ -95,7 +95,7 @@ const buildMarginChildren = ({
   left,
   bottom,
   right,
-}: ITableCellMarginOptions): readonly XmlComponent[] =>
+}: TableCellMarginOptions): readonly XmlComponent[] =>
   (
     [
       { name: "w:top", size: top },
@@ -137,7 +137,7 @@ const buildMarginChildren = ({
  * ```
  */
 export const createTableCellMargin = (
-  options: ITableCellMarginOptions,
+  options: TableCellMarginOptions,
 ): XmlComponent | undefined => {
   const children = buildMarginChildren(options);
 
@@ -176,7 +176,7 @@ export const createTableCellMargin = (
  * });
  * ```
  */
-export const createCellMargin = (options: ITableCellMarginOptions): XmlComponent | undefined => {
+export const createCellMargin = (options: TableCellMarginOptions): XmlComponent | undefined => {
   const children = buildMarginChildren(options);
 
   if (children.length === 0) {

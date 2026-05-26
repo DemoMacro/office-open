@@ -1,6 +1,6 @@
 export {
   Transition,
   buildTransition,
-  type ITransitionOptions,
+  type TransitionOptions,
   type TransitionType,
 } from "./transition";

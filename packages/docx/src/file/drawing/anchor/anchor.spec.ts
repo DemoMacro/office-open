@@ -3,11 +3,11 @@ import { Utility } from "tests/utility";
 import { assert, beforeEach, describe, expect, it } from "vite-plus/test";
 
 import { resetDocPropertiesIdGen } from "../doc-properties/doc-properties";
-import type { IDrawingOptions } from "../drawing";
+import type { DrawingOptions } from "../drawing";
 import { TextWrappingSide, TextWrappingType } from "../text-wrap";
 import { Anchor } from "./anchor";
 
-const createAnchor = (drawingOptions: IDrawingOptions): Anchor =>
+const createAnchor = (drawingOptions: DrawingOptions): Anchor =>
   new Anchor({
     drawingOptions,
     mediaData: {

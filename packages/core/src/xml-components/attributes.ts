@@ -4,7 +4,7 @@
  * @module
  */
 import { BaseXmlComponent } from "./base";
-import type { IContext } from "./base";
+import type { Context } from "./base";
 import type { IXmlAttribute, IXmlableObject } from "./types";
 
 /**
@@ -37,7 +37,7 @@ export abstract class XmlAttributeComponent<
     super("_attr");
   }
 
-  public prepForXml(_: IContext): IXmlableObject {
+  public prepForXml(_: Context): IXmlableObject {
     const attrs: Record<string, string> = {};
     Object.entries(this.root).forEach(([key, value]) => {
       if (value !== undefined) {
@@ -57,7 +57,7 @@ export class NextAttributeComponent<T> extends BaseXmlComponent {
     super("_attr");
   }
 
-  public prepForXml(_: IContext): IXmlableObject {
+  public prepForXml(_: Context): IXmlableObject {
     const attrs = (
       Object.values(this.root) as readonly {
         readonly key: string;

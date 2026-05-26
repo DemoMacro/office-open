@@ -10,11 +10,11 @@
  * @module
  */
 import { createBorderElement } from "@file/border";
-import type { IBorderOptions } from "@file/border";
+import type { BorderOptions } from "@file/border";
 import { createShading } from "@file/shading";
-import type { IShadingAttributesProperties } from "@file/shading";
+import type { ShadingAttributesProperties } from "@file/shading";
 import { ChangeAttributes } from "@file/track-revision/track-revision";
-import type { IChangedAttributesProperties } from "@file/track-revision/track-revision";
+import type { ChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { DeletionTrackChange } from "@file/track-revision/track-revision-components/deletion-track-change";
 import { InsertionTrackChange } from "@file/track-revision/track-revision-components/insertion-track-change";
 import type { IXmlableObject } from "@file/xml-components";
@@ -26,7 +26,7 @@ import {
   stringValObj,
   numberValObj,
 } from "@office-open/core";
-import type { IContext } from "@office-open/core";
+import type { Context } from "@office-open/core";
 import type { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
 
 import { createEastAsianLayout } from "./east-asian-layout";
@@ -36,13 +36,13 @@ import type { EmphasisMarkType } from "./emphasis-mark";
 import { CharacterSpacing, Color, Highlight, HighlightComplexScript } from "./formatting";
 import type { ColorOptions } from "./formatting";
 import { createLanguageComponent } from "./language";
-import type { ILanguageOptions } from "./language";
+import type { LanguageOptions } from "./language";
 import { createRunFonts } from "./run-fonts";
-import type { IFontAttributesProperties } from "./run-fonts";
+import type { FontAttributesProperties } from "./run-fonts";
 import { createUnderline } from "./underline";
 import type { UnderlineType } from "./underline";
 
-interface IFontOptions {
+interface RunFontReference {
   readonly name: string;
   readonly hint?: string;
 }
@@ -192,16 +192,16 @@ export interface RunStylePropertiesOptions {
   readonly doubleStrike?: boolean;
   readonly subScript?: boolean;
   readonly superScript?: boolean;
-  readonly font?: string | IFontOptions | IFontAttributesProperties;
+  readonly font?: string | RunFontReference | FontAttributesProperties;
   readonly highlight?: (typeof HighlightColor)[keyof typeof HighlightColor];
   readonly highlightComplexScript?: boolean | string;
   readonly characterSpacing?: number;
-  readonly shading?: IShadingAttributesProperties;
+  readonly shading?: ShadingAttributesProperties;
   readonly emboss?: boolean;
   readonly imprint?: boolean;
   readonly revision?: IRunPropertiesChangeOptions;
-  readonly language?: ILanguageOptions;
-  readonly border?: IBorderOptions;
+  readonly language?: LanguageOptions;
+  readonly border?: BorderOptions;
   readonly snapToGrid?: boolean;
   readonly vanish?: boolean;
   readonly specVanish?: boolean;
@@ -220,7 +220,7 @@ export interface RunStylePropertiesOptions {
  *
  * Extends RunStylePropertiesOptions with a style reference.
  */
-export type IRunPropertiesOptions = {
+export type RunPropertiesOptions = {
   /** Reference to a character style by name */
   readonly style?: string;
 } & RunStylePropertiesOptions;
@@ -230,12 +230,12 @@ export type IRunPropertiesOptions = {
  *
  * Used for revision tracking when run properties have been modified.
  */
-export type IRunPropertiesChangeOptions = {} & IRunPropertiesOptions & IChangedAttributesProperties;
+export type IRunPropertiesChangeOptions = {} & RunPropertiesOptions & ChangedAttributesProperties;
 
 export type IParagraphRunPropertiesOptions = {
-  readonly insertion?: IChangedAttributesProperties;
-  readonly deletion?: IChangedAttributesProperties;
-} & IRunPropertiesOptions;
+  readonly insertion?: ChangedAttributesProperties;
+  readonly deletion?: ChangedAttributesProperties;
+} & RunPropertiesOptions;
 
 /**
  * Represents run properties (rPr) in a WordprocessingML document.
@@ -260,7 +260,7 @@ export type IParagraphRunPropertiesOptions = {
  * u, effect, bdr, shd, vertAlign, rtl, em, lang, and more.
  */
 export class RunProperties extends IgnoreIfEmptyXmlComponent {
-  public constructor(options?: IRunPropertiesOptions) {
+  public constructor(options?: RunPropertiesOptions) {
     super("w:rPr");
 
     if (!options) {
@@ -311,17 +311,17 @@ export class RunPropertiesChange extends XmlComponent {
         id: options.id,
       }),
     );
-    this.addChildElement(new RunProperties(options as IRunPropertiesOptions));
+    this.addChildElement(new RunProperties(options as RunPropertiesOptions));
   }
 }
 
-const EMPTY_CTX: IContext = { stack: [] };
+const EMPTY_CTX: Context = { stack: [] };
 
 /**
  * Build run properties (w:rPr) as IXmlableObject without allocating XmlComponent tree.
  * Used by Run.prepForXml for O(1) construction.
  */
-export function buildRunProperties(options?: IRunPropertiesOptions): IXmlableObject | undefined {
+export function buildRunProperties(options?: RunPropertiesOptions): IXmlableObject | undefined {
   if (!options) return undefined;
 
   const children: IXmlableObject[] = [];

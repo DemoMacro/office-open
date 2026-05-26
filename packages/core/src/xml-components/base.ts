@@ -11,7 +11,7 @@ export type { IXmlableObject };
  *
  * @typeParam TFileData - The type of the root file data object (format-specific)
  */
-export interface IContext<TFileData = unknown> {
+export interface Context<TFileData = unknown> {
   /** The root file data object being serialized (format-specific). */
   readonly fileData?: TFileData;
   /** Current traversal stack of components (mutable for performance). */
@@ -35,5 +35,5 @@ export abstract class BaseXmlComponent {
    * @param context - The serialization context
    * @returns The XML-serializable object, or undefined to exclude from output
    */
-  public abstract prepForXml(context: IContext): IXmlableObject | undefined;
+  public abstract prepForXml(context: Context): IXmlableObject | undefined;
 }

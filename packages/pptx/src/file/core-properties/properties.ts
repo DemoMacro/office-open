@@ -6,10 +6,10 @@
  * @module
  */
 import { BaseXmlComponent } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 import { buildCorePropertiesXml } from "@office-open/core";
 
-export interface ICorePropertiesOptions {
+export interface CorePropertiesOptions {
   readonly title?: string;
   readonly subject?: string;
   readonly creator?: string;
@@ -20,14 +20,14 @@ export interface ICorePropertiesOptions {
 }
 
 export class CoreProperties extends BaseXmlComponent {
-  private readonly options: ICorePropertiesOptions;
+  private readonly options: CorePropertiesOptions;
 
-  public constructor(options: ICorePropertiesOptions) {
+  public constructor(options: CorePropertiesOptions) {
     super("cp:coreProperties");
     this.options = options;
   }
 
-  public override prepForXml(_context: IContext): IXmlableObject {
+  public override prepForXml(_context: Context): IXmlableObject {
     return buildCorePropertiesXml(this.options);
   }
 }

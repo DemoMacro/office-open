@@ -1,11 +1,11 @@
 import { BaseXmlComponent } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 
 import type { FillOptions } from "../drawingml/fill";
 import { Paragraph } from "../shape/paragraph/paragraph";
-import type { IParagraphOptions } from "../shape/paragraph/paragraph";
+import type { ParagraphOptions } from "../shape/paragraph/paragraph";
 import { TextRun } from "../shape/paragraph/run";
-import { TableCellProperties, type ICellBorderOptions } from "./table-cell-properties";
+import { TableCellProperties, type CellBorderOptions } from "./table-cell-properties";
 
 export const VerticalAlignment = {
   TOP: "t",
@@ -13,15 +13,15 @@ export const VerticalAlignment = {
   BOTTOM: "b",
 } as const;
 
-export interface ITableCellOptions {
+export interface TableCellOptions {
   readonly text?: string;
-  readonly children?: readonly (BaseXmlComponent | IParagraphOptions | string)[];
+  readonly children?: readonly (BaseXmlComponent | ParagraphOptions | string)[];
   readonly fill?: FillOptions;
   readonly borders?: {
-    readonly top?: ICellBorderOptions;
-    readonly bottom?: ICellBorderOptions;
-    readonly left?: ICellBorderOptions;
-    readonly right?: ICellBorderOptions;
+    readonly top?: CellBorderOptions;
+    readonly bottom?: CellBorderOptions;
+    readonly left?: CellBorderOptions;
+    readonly right?: CellBorderOptions;
   };
   readonly columnSpan?: number;
   readonly rowSpan?: number;
@@ -39,10 +39,10 @@ export interface ITableCellOptions {
  * Lazy: stores options, builds IXmlableObject in prepForXml.
  */
 export class TableCell extends BaseXmlComponent {
-  private readonly options: ITableCellOptions;
+  private readonly options: TableCellOptions;
   private readonly paragraphs?: readonly BaseXmlComponent[];
 
-  public constructor(options: ITableCellOptions = {}) {
+  public constructor(options: TableCellOptions = {}) {
     super("a:tc");
     this.options = options;
     this.paragraphs =
@@ -63,7 +63,7 @@ export class TableCell extends BaseXmlComponent {
         : undefined);
   }
 
-  public override prepForXml(context: IContext): IXmlableObject {
+  public override prepForXml(context: Context): IXmlableObject {
     const opts = this.options;
     const children: IXmlableObject[] = [];
 

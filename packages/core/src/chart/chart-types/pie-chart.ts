@@ -1,14 +1,14 @@
 import { EmptyElement, XmlComponent, chartAttr, wrapEl } from "../../xml-components";
-import type { IChartSeriesData } from "../create-chart-type";
+import type { ChartSeriesData } from "../create-chart-type";
 import { createStrRef, createNumRef } from "../series/series-data";
 
-interface IPieChartOptions {
+interface PieChartOptions {
   readonly categories: readonly string[];
-  readonly series: readonly IChartSeriesData[];
+  readonly series: readonly ChartSeriesData[];
 }
 
 export class PieChart extends XmlComponent {
-  public constructor(options: IPieChartOptions) {
+  public constructor(options: PieChartOptions) {
     super("c:pieChart");
     this.root.push(wrapEl("c:varyColors", chartAttr({ val: true })));
 
@@ -19,7 +19,7 @@ export class PieChart extends XmlComponent {
 }
 
 class PieSeries extends XmlComponent {
-  public constructor(index: number, series: IChartSeriesData, categories: readonly string[]) {
+  public constructor(index: number, series: ChartSeriesData, categories: readonly string[]) {
     super("c:ser");
     this.root.push(wrapEl("c:idx", chartAttr({ val: index })));
     this.root.push(wrapEl("c:order", chartAttr({ val: index })));

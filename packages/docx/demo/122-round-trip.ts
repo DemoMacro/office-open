@@ -3,7 +3,7 @@
 import * as fs from "fs";
 
 import { Document, Packer, parseDocument } from "@office-open/docx";
-import type { ISectionOptions } from "@office-open/docx";
+import type { SectionOptions } from "@office-open/docx";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
@@ -24,7 +24,7 @@ function assert(label: string, condition: boolean) {
 
 async function main() {
   // 1. Build a single document with every content type
-  const sections: ISectionOptions[] = [
+  const sections: SectionOptions[] = [
     // Section: paragraphs, tables, nested tables, SDT, headings, TOC, headers/footers
     {
       headers: {

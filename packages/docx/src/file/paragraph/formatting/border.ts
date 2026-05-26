@@ -8,7 +8,7 @@
  * @module
  */
 import { BorderStyle, createBorderElement } from "@file/border";
-import type { IBorderOptions } from "@file/border";
+import type { BorderOptions } from "@file/border";
 import { IgnoreIfEmptyXmlComponent, XmlComponent } from "@file/xml-components";
 
 /**
@@ -22,17 +22,17 @@ import { IgnoreIfEmptyXmlComponent, XmlComponent } from "@file/xml-components";
  * @property right - Border for the right edge of the paragraph
  * @property between - Border between consecutive paragraphs with the same border settings
  */
-export interface IBordersOptions {
+export interface BordersOptions {
   /** Border for the top edge of the paragraph */
-  readonly top?: IBorderOptions;
+  readonly top?: BorderOptions;
   /** Border for the bottom edge of the paragraph */
-  readonly bottom?: IBorderOptions;
+  readonly bottom?: BorderOptions;
   /** Border for the left edge of the paragraph */
-  readonly left?: IBorderOptions;
+  readonly left?: BorderOptions;
   /** Border for the right edge of the paragraph */
-  readonly right?: IBorderOptions;
+  readonly right?: BorderOptions;
   /** Border between consecutive paragraphs with the same border settings */
-  readonly between?: IBorderOptions;
+  readonly between?: BorderOptions;
 }
 
 /**
@@ -68,7 +68,7 @@ export interface IBordersOptions {
  * ```
  */
 export class Border extends IgnoreIfEmptyXmlComponent {
-  public constructor(options: IBordersOptions) {
+  public constructor(options: BordersOptions) {
     super("w:pBdr");
 
     if (options.top) {

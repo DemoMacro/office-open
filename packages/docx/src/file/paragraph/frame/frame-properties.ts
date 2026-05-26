@@ -75,7 +75,7 @@ export const FrameWrap = {
  * @property space - Spacing between frame and surrounding text
  * @property rule - Height rule determining how frame height is calculated
  */
-interface IBaseFrameOptions {
+interface BaseFrameOptions {
   /** Lock the anchor position to prevent it from moving */
   readonly anchorLock?: boolean;
   /** Drop cap effect type */
@@ -125,7 +125,7 @@ export type IXYFrameOptions = {
     /** Vertical position in twips from the anchor point */
     readonly y: number;
   };
-} & IBaseFrameOptions;
+} & BaseFrameOptions;
 
 /**
  * Options for frames positioned using alignment values.
@@ -146,7 +146,7 @@ export type IAlignmentFrameOptions = {
     /** Vertical alignment relative to the anchor */
     readonly y: (typeof VerticalPositionAlign)[keyof typeof VerticalPositionAlign];
   };
-} & IBaseFrameOptions;
+} & BaseFrameOptions;
 
 /**
  * Union type for all frame positioning options.

@@ -44,7 +44,7 @@
  * @module
  */
 import { ChangeAttributes } from "@file/track-revision/track-revision";
-import type { IChangedAttributesProperties } from "@file/track-revision/track-revision";
+import type { ChangedAttributesProperties } from "@file/track-revision/track-revision";
 import {
   BuilderElement,
   IgnoreIfEmptyXmlComponent,
@@ -56,35 +56,35 @@ import {
 import { createAlignment } from "../../paragraph";
 import type { AlignmentType } from "../../paragraph";
 import { createShading } from "../../shading";
-import type { IShadingAttributesProperties } from "../../shading";
+import type { ShadingAttributesProperties } from "../../shading";
 import { createTableCellSpacing } from "../table-cell-spacing";
-import type { ITableCellSpacingProperties } from "../table-cell-spacing";
+import type { TableCellSpacingProperties } from "../table-cell-spacing";
 import { createTableWidthElement } from "../table-width";
-import type { ITableWidthProperties } from "../table-width";
+import type { TableWidthProperties } from "../table-width";
 import { TableBorders } from "./table-borders";
-import type { ITableBordersOptions } from "./table-borders";
+import type { TableBordersOptions } from "./table-borders";
 import { createTableCellMargin } from "./table-cell-margin";
-import type { ITableCellMarginOptions } from "./table-cell-margin";
+import type { TableCellMarginOptions } from "./table-cell-margin";
 import { createTableFloatProperties, createTableOverlap } from "./table-float-properties";
-import type { ITableFloatOptions } from "./table-float-properties";
+import type { TableFloatOptions } from "./table-float-properties";
 import { createTableLayout } from "./table-layout";
 import type { TableLayoutType } from "./table-layout";
 import { createTableLook } from "./table-look";
-import type { ITableLookOptions } from "./table-look";
+import type { TableLookOptions } from "./table-look";
 
-export interface ITablePropertiesOptionsBase {
-  readonly width?: ITableWidthProperties;
-  readonly indent?: ITableWidthProperties;
+export interface TablePropertiesOptionsBase {
+  readonly width?: TableWidthProperties;
+  readonly indent?: TableWidthProperties;
   readonly layout?: (typeof TableLayoutType)[keyof typeof TableLayoutType];
-  readonly borders?: ITableBordersOptions;
-  readonly float?: ITableFloatOptions;
-  readonly shading?: IShadingAttributesProperties;
+  readonly borders?: TableBordersOptions;
+  readonly float?: TableFloatOptions;
+  readonly shading?: ShadingAttributesProperties;
   readonly style?: string;
   readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
-  readonly cellMargin?: ITableCellMarginOptions;
+  readonly cellMargin?: TableCellMarginOptions;
   readonly visuallyRightToLeft?: boolean;
-  readonly tableLook?: ITableLookOptions;
-  readonly cellSpacing?: ITableCellSpacingProperties;
+  readonly tableLook?: TableLookOptions;
+  readonly cellSpacing?: TableCellSpacingProperties;
   /** Number of rows in each band for table style (tblStyleRowBandSize) */
   readonly styleRowBandSize?: number;
   /** Number of columns in each band for table style (tblStyleColBandSize) */
@@ -95,7 +95,7 @@ export interface ITablePropertiesOptionsBase {
   readonly description?: string;
 }
 
-export type ITablePropertiesChangeOptions = ITablePropertiesOptions & IChangedAttributesProperties;
+export type ITablePropertiesChangeOptions = ITablePropertiesOptions & ChangedAttributesProperties;
 
 /**
  * Options for configuring table properties.
@@ -105,7 +105,7 @@ export type ITablePropertiesChangeOptions = ITablePropertiesOptions & IChangedAt
 export type ITablePropertiesOptions = {
   readonly revision?: ITablePropertiesChangeOptions;
   readonly includeIfEmpty?: boolean;
-} & ITablePropertiesOptionsBase;
+} & TablePropertiesOptionsBase;
 
 /**
  * Represents table properties (tblPr) in a WordprocessingML document.

@@ -6,7 +6,7 @@
 import type { Element } from "@office-open/xml";
 
 import { renderParagraphNode } from "./run-renderer";
-import type { IRenderedParagraphNode } from "./run-renderer";
+import type { RenderedParagraphNode } from "./run-renderer";
 
 /**
  * Wrapper for XML elements that tracks position in the document tree.
@@ -44,8 +44,8 @@ const elementsToWrapper = (wrapper: ElementWrapper): readonly ElementWrapper[] =
  * paragraphs.forEach(p => console.log(p.text));
  * ```
  */
-export const traverse = (node: Element): readonly IRenderedParagraphNode[] => {
-  let renderedParagraphs: readonly IRenderedParagraphNode[] = [];
+export const traverse = (node: Element): readonly RenderedParagraphNode[] => {
+  let renderedParagraphs: readonly RenderedParagraphNode[] = [];
 
   const queue: ElementWrapper[] = [
     ...elementsToWrapper({
@@ -85,7 +85,5 @@ export const traverse = (node: Element): readonly IRenderedParagraphNode[] => {
  * // Returns all paragraphs containing "{{name}}"
  * ```
  */
-export const findLocationOfText = (
-  node: Element,
-  text: string,
-): readonly IRenderedParagraphNode[] => traverse(node).filter((p) => p.text.includes(text));
+export const findLocationOfText = (node: Element, text: string): readonly RenderedParagraphNode[] =>
+  traverse(node).filter((p) => p.text.includes(text));

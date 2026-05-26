@@ -1,10 +1,10 @@
 import { attr, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
-import type { IColorSchemeOptions, IFontSchemeOptions, IThemeOptions } from "../file/theme/theme";
+import type { ColorSchemeOptions, FontSchemeOptions, ThemeOptions } from "../file/theme/theme";
 
-// Mapping: XML element name → IColorSchemeOptions key
-const COLOR_MAP: Record<string, keyof IColorSchemeOptions> = {
+// Mapping: XML element name → ColorSchemeOptions key
+const COLOR_MAP: Record<string, keyof ColorSchemeOptions> = {
   "a:dk1": "dark1",
   "a:lt1": "light1",
   "a:dk2": "dark2",
@@ -27,7 +27,7 @@ function extractColor(el: Element): string | undefined {
   return undefined;
 }
 
-export function parseColorScheme(el: Element): IColorSchemeOptions {
+export function parseColorScheme(el: Element): ColorSchemeOptions {
   const colors: Record<string, string> = {};
   for (const child of el.elements ?? []) {
     if (!child.name) continue;
@@ -36,10 +36,10 @@ export function parseColorScheme(el: Element): IColorSchemeOptions {
     const val = extractColor(child);
     if (val) colors[key] = val;
   }
-  return colors as IColorSchemeOptions;
+  return colors as ColorSchemeOptions;
 }
 
-export function parseFontScheme(el: Element): IFontSchemeOptions {
+export function parseFontScheme(el: Element): FontSchemeOptions {
   const fonts: Record<string, string> = {};
   const major = findChild(el, "a:majorFont");
   if (major) {
@@ -55,10 +55,10 @@ export function parseFontScheme(el: Element): IFontSchemeOptions {
     const ea = findChild(minor, "a:ea");
     if (ea) fonts.minorFontAsian = attr(ea, "typeface") ?? "";
   }
-  return fonts as IFontSchemeOptions;
+  return fonts as FontSchemeOptions;
 }
 
-export function parseTheme(el: Element): IThemeOptions {
+export function parseTheme(el: Element): ThemeOptions {
   const opts: Record<string, unknown> = {};
   const name = attr(el, "name");
   if (name) opts.name = name;
@@ -72,5 +72,5 @@ export function parseTheme(el: Element): IThemeOptions {
     if (fontScheme) opts.fonts = parseFontScheme(fontScheme);
   }
 
-  return opts as IThemeOptions;
+  return opts as ThemeOptions;
 }

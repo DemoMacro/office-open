@@ -4,9 +4,9 @@ import { Connection } from "./data-model/connection";
 import { DataModel } from "./data-model/data-model";
 import { Point, TransPoint } from "./data-model/point";
 
-export interface ITreeNode {
+export interface TreeNode {
   readonly text: string;
-  readonly children?: readonly ITreeNode[];
+  readonly children?: readonly TreeNode[];
 }
 
 function createDocPoint(layout: string, style: string, color: string): XmlComponent {
@@ -66,7 +66,7 @@ function uuid(): string {
  * Creates a DataModel from tree nodes with layout/style/color settings.
  */
 export const createDataModel = (
-  nodes: readonly ITreeNode[],
+  nodes: readonly TreeNode[],
   layout: string = "default",
   style: string = "simple1",
   color: string = "accent1_2",
@@ -77,7 +77,7 @@ export const createDataModel = (
   points.push(createDocPoint(layout, style, color));
 
   for (let i = 0; i < nodes.length; i++) {
-    const walk = (node: ITreeNode, parentUuid: string, srcOrd: number): void => {
+    const walk = (node: TreeNode, parentUuid: string, srcOrd: number): void => {
       const nodeUuid = uuid();
       const parTransUuid = uuid();
       const sibTransUuid = uuid();

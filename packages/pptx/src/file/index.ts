@@ -1,33 +1,33 @@
 export {
   File,
-  type IPresentationOptions,
-  type ISlideOptions,
-  type ICommentOptions,
-  type IMasterDefinition,
-  type ILayoutDefinition,
-  type ILayoutPlaceholderOptions,
+  type PresentationOptions,
+  type SlideOptions,
+  type SlideCommentOptions,
+  type MasterDefinition,
+  type LayoutDefinition,
+  type LayoutPlaceholderOptions,
   type MasterChild,
   type SlideSize,
 } from "./file";
 export { Presentation } from "./presentation/presentation";
-export type { IPresentationOptions as IPresentationXmlOptions } from "./presentation/presentation";
-export { Shape, type IShapeOptions } from "./shape/shape";
-export { TextBody, type ITextBodyOptions } from "./shape/text-body";
-export { Paragraph, type IParagraphOptions } from "./shape/paragraph/paragraph";
-export { TextRun, type IRunOptions } from "./shape/paragraph/run";
+export type { PresentationOptions as IPresentationXmlOptions } from "./presentation/presentation";
+export { Shape, type ShapeOptions } from "./shape/shape";
+export { TextBody, type TextBodyOptions } from "./shape/text-body";
+export { Paragraph, type ParagraphOptions } from "./shape/paragraph/paragraph";
+export { TextRun, type RunOptions } from "./shape/paragraph/run";
 export { Text } from "./shape/paragraph/text";
 export {
   RunProperties,
   UnderlineStyle,
   StrikeStyle,
   TextCapitalization,
-  type IRunPropertiesOptions,
-  type IHyperlinkOptions,
+  type RunPropertiesOptions,
+  type HyperlinkOptions,
 } from "./shape/paragraph/run-properties";
 export {
   ParagraphProperties,
   TextAlignment,
-  type IParagraphPropertiesOptions,
+  type ParagraphPropertiesOptions,
 } from "./shape/paragraph/paragraph-properties";
 export { EndParagraphRunProperties } from "./shape/paragraph/end-paragraph-run";
 export { Field, SlideNumberField, DateTimeField } from "./shape/paragraph/field";
@@ -41,7 +41,7 @@ export {
   createGradientFill,
   createGradientStop,
   type GradientFillOptions as CoreGradientFillOptions,
-  type IGradientStop,
+  type GradientStop,
   PathShadeType,
   TileFlipMode,
 } from "@office-open/core/drawingml";
@@ -83,15 +83,15 @@ export { createOutlineCompat, type OutlineOptions } from "./drawingml/outline";
 export { BlipFill } from "./drawingml/blip-fill";
 export { Transform2D, type ITransform2DOptions } from "./drawingml/transform-2d";
 export { PresetGeometry } from "./drawingml/preset-geometry";
-export { ShapeProperties, type IShapePropertiesOptions } from "./drawingml/shape-properties";
+export { ShapeProperties, type ShapePropertiesOptions } from "./drawingml/shape-properties";
 export {
   createPptxEffectList,
   ReflectionAlignment,
-  type IEffectsOptions,
-  type IShadowOptions,
-  type IGlowOptions,
-  type IReflectionOptions,
-  type ISoftEdgeOptions,
+  type EffectsOptions,
+  type ShadowOptions,
+  type GlowOptions,
+  type ReflectionOptions,
+  type SoftEdgeOptions,
 } from "./drawingml/effects";
 export { NonVisualDrawingProperties } from "./drawingml/non-visual-drawing-props";
 export { NonVisualShapeProperties } from "./drawingml/non-visual-shape-props";
@@ -99,20 +99,20 @@ export { NonVisualPictureProperties } from "./drawingml/non-visual-picture-props
 export { GroupShapeProperties } from "./drawingml/group-shape-properties";
 export { GroupTransform2D, type IGroupTransform2DOptions } from "./drawingml/group-transform-2d";
 
-export { GroupShape, type IGroupShapeOptions } from "./shape/group-shape";
-export { LineShape, type ILineShapeOptions } from "./shape/line-shape";
-export { ConnectorShape, type IConnectorShapeOptions } from "./shape/line-shape";
+export { GroupShape, type GroupShapeOptions } from "./shape/group-shape";
+export { LineShape, type LineShapeOptions } from "./shape/line-shape";
+export { ConnectorShape, type ConnectorShapeOptions } from "./shape/line-shape";
 export { Media } from "./media/media";
-export { createTransformation, type IMediaTransformation } from "./media/media";
-export type { IMediaData, IMediaDataTransformation } from "./media/data";
+export { createTransformation, type MediaTransformation } from "./media/media";
+export type { IMediaData, MediaDataTransformation } from "./media/data";
 export {
   VideoFrame,
-  type IVideoFrameOptions,
+  type VideoFrameOptions,
   type VideoType,
   type PosterType,
 } from "./media/video-frame";
-export { AudioFrame, type IAudioFrameOptions, type AudioType } from "./media/audio-frame";
-export { CoreProperties, type ICorePropertiesOptions } from "./core-properties/properties";
+export { AudioFrame, type AudioFrameOptions, type AudioType } from "./media/audio-frame";
+export { CoreProperties, type CorePropertiesOptions } from "./core-properties/properties";
 export { AppProperties } from "./app-properties/app-properties";
 export { ContentTypes } from "./content-types/content-types";
 export { Relationships } from "./relationships/relationships";
@@ -123,37 +123,37 @@ export { coerceChild } from "./slide/coerce";
 export { ShapeTree } from "./shape-tree/shape-tree";
 export {
   DefaultTheme,
-  type IThemeOptions,
-  type IColorSchemeOptions,
-  type IFontSchemeOptions,
+  type ThemeOptions,
+  type ColorSchemeOptions,
+  type FontSchemeOptions,
 } from "./theme/theme";
 export {
   DefaultSlideMaster,
-  type ISlideMasterOptions,
-  type IMasterPlaceholderOptions,
-  type IMasterPlaceholderPosition,
+  type SlideMasterOptions,
+  type MasterPlaceholderOptions,
+  type MasterPlaceholderPosition,
 } from "./slide-master/slide-master";
 export { DefaultSlideLayout, SlideLayout, type SlideLayoutType } from "./slide-layout/slide-layout";
 export { DefaultNotesMaster } from "./notes-master/notes-master";
-export { NotesSlide, type INotesSlideOptions } from "./notes/notes-slide";
-export { HeaderFooter, type IHeaderFooterOptions } from "./header-footer/header-footer";
-export { PresentationWrapper, type IViewWrapper } from "./presentation/presentation-wrapper";
-export { Picture, type IPictureOptions } from "./picture/picture";
-export { Background, type IBackgroundOptions } from "./background/background";
-export { TableFrame, type ITableFrameOptions } from "./table/table-frame";
-export { Table, type ITableOptions } from "./table/table";
-export { TableRow, type ITableRowOptions } from "./table/table-row";
-export { TableCell, VerticalAlignment, type ITableCellOptions } from "./table/table-cell";
+export { NotesSlide, type NotesSlideOptions } from "./notes/notes-slide";
+export { HeaderFooter, type SlideHeaderFooterOptions } from "./header-footer/header-footer";
+export { PresentationWrapper, type ViewWrapper } from "./presentation/presentation-wrapper";
+export { Picture, type PictureOptions } from "./picture/picture";
+export { Background, type BackgroundOptions } from "./background/background";
+export { TableFrame, type TableFrameOptions } from "./table/table-frame";
+export { Table, type TableOptions } from "./table/table";
+export { TableRow, type TableRowOptions } from "./table/table-row";
+export { TableCell, VerticalAlignment, type TableCellOptions } from "./table/table-cell";
 export { TableProperties } from "./table/table-properties";
-export { TableCellProperties, type ICellBorderOptions } from "./table/table-cell-properties";
-export { ChartFrame, type IChartFrameOptions } from "./chart/chart-frame";
-export { ChartCollection, type IChartData } from "./chart/chart-collection";
-export { ChartSpace, type IChartSpaceOptions, type IChartSeriesData } from "./chart/chart-space";
+export { TableCellProperties, type CellBorderOptions } from "./table/table-cell-properties";
+export { ChartFrame, type ChartFrameOptions } from "./chart/chart-frame";
+export { ChartCollection, type ChartData } from "./chart/chart-collection";
+export { ChartSpace, type ChartSpaceOptions, type ChartSeriesData } from "./chart/chart-space";
 export type { ChartType } from "./chart/chart-types/create-chart-type";
-export { SmartArtFrame, type ISmartArtFrameOptions, type ITreeNode } from "./smartart";
+export { SmartArtFrame, type SmartArtFrameOptions, type TreeNode } from "./smartart";
 export {
   Transition,
-  type ITransitionOptions,
+  type TransitionOptions,
   type TransitionType,
   type TransitionDirection,
 } from "./transition/transition";
@@ -167,5 +167,5 @@ export {
   type MediaAnimationType,
   type AnimationCalcMode,
   type AnimationValueType,
-  type IAnimationOptions,
+  type AnimationOptions,
 } from "./animation/types";

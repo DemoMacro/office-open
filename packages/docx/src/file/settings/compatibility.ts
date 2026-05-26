@@ -92,7 +92,7 @@ import { createCompatibilitySetting } from "./compatibility-setting/compatibilit
  *
  * @see {@link Compatibility}
  */
-export interface ICompatibilityOptions {
+export interface CompatibilityOptions {
   /** Word compatibility mode version (e.g., 15 for Word 2013+) */
   readonly version?: number;
   /** Use Simplified Rules For Table Border Conflicts */
@@ -273,7 +273,7 @@ export interface ICompatibilityOptions {
  * ```
  */
 export class Compatibility extends XmlComponent {
-  public constructor(options: ICompatibilityOptions) {
+  public constructor(options: CompatibilityOptions) {
     super("w:compat");
 
     if (options.version) {

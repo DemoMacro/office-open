@@ -16,7 +16,7 @@ import { XmlAttributeComponent } from "@file/xml-components";
  * @property anchor - Bookmark name for internal hyperlinks
  * @property history - Whether to add this link to the document's history
  */
-export interface IHyperlinkAttributesProperties {
+export interface HyperlinkAttributesProperties {
   /** Relationship ID for external hyperlinks */
   readonly id?: string;
   /** Bookmark name for internal hyperlinks */
@@ -47,7 +47,7 @@ export interface IHyperlinkAttributesProperties {
  * </xsd:complexType>
  * ```
  */
-export class HyperlinkAttributes extends XmlAttributeComponent<IHyperlinkAttributesProperties> {
+export class HyperlinkAttributes extends XmlAttributeComponent<HyperlinkAttributesProperties> {
   protected readonly xmlKeys = {
     anchor: "w:anchor",
     docLocation: "w:docLocation",

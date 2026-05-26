@@ -7,7 +7,7 @@
  *
  * @module
  */
-import type { IDistance } from "../drawing";
+import type { Distance } from "../drawing";
 
 /**
  * Enumeration of text wrapping types for floating drawings.
@@ -47,8 +47,8 @@ export const TextWrappingSide = {
 /**
  * Options for configuring text wrapping around a drawing.
  */
-export interface ITextWrapping {
+export interface TextWrapping {
   readonly type: (typeof TextWrappingType)[keyof typeof TextWrappingType];
   readonly side?: (typeof TextWrappingSide)[keyof typeof TextWrappingSide];
-  readonly margins?: IDistance;
+  readonly margins?: Distance;
 }

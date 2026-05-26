@@ -1,7 +1,7 @@
 import * as fs from "fs";
 
 import { Presentation, Packer, parsePresentation, parsePptx } from "@office-open/pptx";
-import type { ISlideOptions, IMasterDefinition } from "@office-open/pptx";
+import type { SlideOptions, MasterDefinition } from "@office-open/pptx";
 import { findChild, attrNum } from "@office-open/xml";
 
 // ── helpers ────────────────────────────────────────────────────────────────────
@@ -22,7 +22,7 @@ const assert = (label: string, condition: boolean) => {
 // 1. Generate a presentation using the JSON-friendly API
 // ══════════════════════════════════════════════════════════════════════════════
 
-const slides: ISlideOptions[] = [
+const slides: SlideOptions[] = [
   // ── Slide 1: Shapes, rich text, effects ──
   {
     children: [
@@ -469,7 +469,7 @@ assert("has ppt/presentation.xml", pptxDoc.has("ppt/presentation.xml"));
 assert("has ppt/theme/theme1.xml", pptxDoc.has("ppt/theme/theme1.xml"));
 
 // ══════════════════════════════════════════════════════════════════════════════
-// 3. High-level parsePresentation verification (IPresentationOptions API)
+// 3. High-level parsePresentation verification (PresentationOptions API)
 // ══════════════════════════════════════════════════════════════════════════════
 
 console.log("\n--- parsePresentation (high-level) ---");
@@ -612,7 +612,7 @@ assert("re-parsed table firstRow preserved", rs1tbl.table.firstRow === true);
 
 console.log("\n--- Multi-master Round-trip ---");
 
-const masters: IMasterDefinition[] = [
+const masters: MasterDefinition[] = [
   {
     name: "light",
     background: { fill: "FFFFFF" },
@@ -653,7 +653,7 @@ const masters: IMasterDefinition[] = [
   },
 ];
 
-const multiSlides: ISlideOptions[] = [
+const multiSlides: SlideOptions[] = [
   {
     master: "light",
     layout: "blank",

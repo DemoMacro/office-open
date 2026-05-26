@@ -3,10 +3,10 @@ import { describe, bench } from "vite-plus/test";
 import { convertMillimetersToTwip, convertInchesToTwip } from "./converters";
 import { uniqueId, uniqueUuid, hashedId, uniqueNumericIdCreator } from "./id-generators";
 import { decimalNumber, hexColorValue, hpsMeasureValue, universalMeasureValue } from "./values";
-import type { IContext } from "./xml-components/base";
+import type { Context } from "./xml-components/base";
 import { OnOffElement, BuilderElement, StringContainer } from "./xml-components/elements";
 
-const ctx: IContext = { stack: [] };
+const ctx: Context = { stack: [] };
 
 describe("values validators", () => {
   bench("decimalNumber", () => {

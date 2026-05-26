@@ -20,7 +20,7 @@ import { createMathSuperScriptElement } from "./math-super-script";
  *
  * @see {@link MathIntegral}
  */
-export interface IMathIntegralOptions {
+export interface MathIntegralOptions {
   /** The integrand expression */
   readonly children: readonly MathComponent[];
   /** Optional lower bound of integration */
@@ -61,7 +61,7 @@ export interface IMathIntegralOptions {
  * ```
  */
 export class MathIntegral extends XmlComponent {
-  public constructor(options: IMathIntegralOptions) {
+  public constructor(options: MathIntegralOptions) {
     super("m:nary");
 
     this.root.push(

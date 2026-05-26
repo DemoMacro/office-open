@@ -8,7 +8,7 @@
  * @module
  */
 import { BorderStyle, createBorderElement } from "@file/border";
-import type { IBorderOptions } from "@file/border";
+import type { BorderOptions } from "@file/border";
 import { XmlComponent } from "@file/xml-components";
 
 /**
@@ -17,22 +17,22 @@ import { XmlComponent } from "@file/xml-components";
  * Borders can be applied to the outside edges (top, bottom, left, right)
  * and inside lines (insideHorizontal, insideVertical) of the table.
  */
-export interface ITableBordersOptions {
-  readonly top?: IBorderOptions;
-  readonly bottom?: IBorderOptions;
-  readonly left?: IBorderOptions;
-  readonly right?: IBorderOptions;
-  readonly insideHorizontal?: IBorderOptions;
-  readonly insideVertical?: IBorderOptions;
+export interface TableBordersOptions {
+  readonly top?: BorderOptions;
+  readonly bottom?: BorderOptions;
+  readonly left?: BorderOptions;
+  readonly right?: BorderOptions;
+  readonly insideHorizontal?: BorderOptions;
+  readonly insideVertical?: BorderOptions;
 }
 
-const NONE_BORDER: IBorderOptions = {
+const NONE_BORDER: BorderOptions = {
   color: "auto",
   size: 0,
   style: BorderStyle.NONE,
 };
 
-const DEFAULT_BORDER: IBorderOptions = {
+const DEFAULT_BORDER: BorderOptions = {
   color: "auto",
   size: 4,
   style: BorderStyle.SINGLE,
@@ -59,7 +59,7 @@ const DEFAULT_BORDER: IBorderOptions = {
  * ```
  */
 export class TableBorders extends XmlComponent {
-  public static readonly NONE: ITableBordersOptions = {
+  public static readonly NONE: TableBordersOptions = {
     bottom: NONE_BORDER,
     insideHorizontal: NONE_BORDER,
     insideVertical: NONE_BORDER,
@@ -68,7 +68,7 @@ export class TableBorders extends XmlComponent {
     top: NONE_BORDER,
   };
 
-  public constructor(options: ITableBordersOptions) {
+  public constructor(options: TableBordersOptions) {
     super("w:tblBorders");
 
     this.root.push(createBorderElement("w:top", options.top ?? DEFAULT_BORDER));

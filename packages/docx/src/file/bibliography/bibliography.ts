@@ -60,7 +60,7 @@ export interface SourceTypeOptions {
  * @property sources - Array of bibliography source entries
  * @property styleName - Bibliography style name (e.g., "APA", "Chicago", "IEEE")
  */
-export interface IBibliographyOptions {
+export interface BibliographyOptions {
   readonly sources: readonly SourceTypeOptions[];
   readonly styleName?: string;
 }
@@ -175,7 +175,7 @@ class Source extends XmlComponent {
 export class Bibliography extends XmlComponent {
   private readonly relationships: Relationships;
 
-  public constructor(options: IBibliographyOptions) {
+  public constructor(options: BibliographyOptions) {
     super("b:Sources");
 
     this.root.push(

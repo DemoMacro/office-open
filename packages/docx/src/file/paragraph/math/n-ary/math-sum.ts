@@ -20,7 +20,7 @@ import { createMathSuperScriptElement } from "./math-super-script";
  *
  * @see {@link MathSum}
  */
-export interface IMathSumOptions {
+export interface MathSumOptions {
   /** The expression being summed */
   readonly children: readonly MathComponent[];
   /** Optional lower bound (subscript) of the sum */
@@ -61,7 +61,7 @@ export interface IMathSumOptions {
  * ```
  */
 export class MathSum extends XmlComponent {
-  public constructor(options: IMathSumOptions) {
+  public constructor(options: MathSumOptions) {
     super("m:nary");
 
     this.root.push(

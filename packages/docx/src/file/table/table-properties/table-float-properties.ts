@@ -65,7 +65,7 @@ export const OverlapType = {
   OVERLAP: "overlap",
 } as const;
 
-export interface ITableFloatOptions {
+export interface TableFloatOptions {
   /* CSpell:disable */
   /**
    * Specifies the horizontal anchor or the base object from which the horizontal positioning in the
@@ -216,8 +216,8 @@ export const createTableFloatProperties = ({
   topFromText,
   leftFromText,
   rightFromText,
-}: ITableFloatOptions): XmlComponent =>
-  new BuilderElement<Omit<ITableFloatOptions, "overlap">>({
+}: TableFloatOptions): XmlComponent =>
+  new BuilderElement<Omit<TableFloatOptions, "overlap">>({
     attributes: {
       absoluteHorizontalPosition: {
         key: "w:tblpX",

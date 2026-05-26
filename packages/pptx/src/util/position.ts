@@ -7,7 +7,7 @@ import { convertPixelsToEmu } from "@office-open/core";
 /**
  * Pixel position options accepted by most positioned components.
  */
-export interface IPositionOptions {
+export interface PositionOptions {
   readonly x?: number;
   readonly y?: number;
   readonly width?: number;
@@ -20,7 +20,7 @@ export interface IPositionOptions {
  * Used by components that always need a transform (ChartFrame, Picture,
  * TableFrame, SmartArtFrame, MediaFrameBase, etc.).
  */
-export function emuPosition(opts: IPositionOptions): {
+export function emuPosition(opts: PositionOptions): {
   x: number;
   y: number;
   width: number;
@@ -39,7 +39,7 @@ export function emuPosition(opts: IPositionOptions): {
  *
  * Used by Shape which may omit position to let PowerPoint auto-layout.
  */
-export function emuPositionOptional(opts: IPositionOptions): {
+export function emuPositionOptional(opts: PositionOptions): {
   x: number | undefined;
   y: number | undefined;
   width: number | undefined;

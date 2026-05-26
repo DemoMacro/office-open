@@ -42,7 +42,7 @@ export const LineRuleType = {
  * @property beforeAutoSpacing - Use automatic spacing before the paragraph
  * @property afterAutoSpacing - Use automatic spacing after the paragraph
  */
-export interface ISpacingProperties {
+export interface SpacingProperties {
   /** Spacing after the paragraph in twips */
   readonly after?: number;
   /** Spacing before the paragraph in twips */
@@ -104,8 +104,8 @@ export const createSpacing = ({
   afterAutoSpacing,
   beforeLines,
   afterLines,
-}: ISpacingProperties): XmlComponent =>
-  new BuilderElement<ISpacingProperties>({
+}: SpacingProperties): XmlComponent =>
+  new BuilderElement<SpacingProperties>({
     attributes: {
       after: { key: "w:after", value: after },
       afterAutoSpacing: { key: "w:afterAutospacing", value: afterAutoSpacing },

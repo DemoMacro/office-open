@@ -36,7 +36,7 @@ export const PageOrientation = {
   LANDSCAPE: "landscape",
 } as const;
 
-export interface IPageSizeAttributes {
+export interface PageSizeAttributes {
   /**
    * ## Page Width
    *
@@ -126,10 +126,10 @@ export const createPageSize = ({
   height,
   orientation,
   code,
-}: IPageSizeAttributes): XmlComponent => {
+}: PageSizeAttributes): XmlComponent => {
   const widthTwips = twipsMeasureValue(width);
   const heightTwips = twipsMeasureValue(height);
-  return new BuilderElement<IPageSizeAttributes>({
+  return new BuilderElement<PageSizeAttributes>({
     attributes: {
       code: { key: "w:code", value: code },
       height: {

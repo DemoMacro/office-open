@@ -12,7 +12,7 @@ import type { IParagraphStylePropertiesOptions, RunStylePropertiesOptions } from
 import { RunProperties } from "@file/paragraph/run/properties";
 
 import { Style } from "./style";
-import type { IStyleOptions } from "./style";
+import type { StyleOptions } from "./style";
 
 /**
  * Base options for paragraph style configuration.
@@ -25,7 +25,7 @@ export type IBaseParagraphStyleOptions = {
   readonly paragraph?: IParagraphStylePropertiesOptions;
   /** Run properties that apply to text within this paragraph style */
   readonly run?: RunStylePropertiesOptions;
-} & IStyleOptions;
+} & StyleOptions;
 
 /**
  * Options for creating a paragraph style.

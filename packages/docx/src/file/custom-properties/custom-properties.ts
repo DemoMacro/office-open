@@ -8,11 +8,11 @@
  * @module
  */
 import { XmlComponent } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 
 import { CustomPropertiesAttributes } from "./custom-properties-attributes";
 import { CustomProperty } from "./custom-property";
-import type { ICustomPropertyOptions } from "./custom-property";
+import type { CustomPropertyOptions } from "./custom-property";
 
 /**
  * Represents the collection of custom document properties.
@@ -43,7 +43,7 @@ export class CustomProperties extends XmlComponent {
   private nextId: number;
   private readonly properties: CustomProperty[] = [];
 
-  public constructor(properties: readonly ICustomPropertyOptions[]) {
+  public constructor(properties: readonly CustomPropertyOptions[]) {
     super("Properties");
 
     this.root.push(
@@ -62,12 +62,12 @@ export class CustomProperties extends XmlComponent {
     }
   }
 
-  public prepForXml(context: IContext): IXmlableObject | undefined {
+  public prepForXml(context: Context): IXmlableObject | undefined {
     this.properties.forEach((x) => this.root.push(x));
     return super.prepForXml(context);
   }
 
-  public addCustomProperty(property: ICustomPropertyOptions): void {
+  public addCustomProperty(property: CustomPropertyOptions): void {
     this.properties.push(new CustomProperty(this.nextId++, property));
   }
 }

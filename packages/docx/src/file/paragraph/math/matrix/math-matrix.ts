@@ -21,7 +21,7 @@ import type { MathMatrixPropertiesOptions } from "./math-matrix-properties";
  *
  * @see {@link MathMatrix}
  */
-export interface IMathMatrixOptions {
+export interface MathMatrixOptions {
   /** Matrix properties */
   readonly properties?: MathMatrixPropertiesOptions;
   /** Matrix rows (each row is an array of math components) */
@@ -49,7 +49,7 @@ export interface IMathMatrixOptions {
  * ```
  */
 export class MathMatrix extends XmlComponent {
-  public constructor(options: IMathMatrixOptions) {
+  public constructor(options: MathMatrixOptions) {
     super("m:m");
 
     if (options.properties) {

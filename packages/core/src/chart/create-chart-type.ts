@@ -4,20 +4,20 @@ import { LineChart } from "./chart-types/line-chart";
 import { PieChart } from "./chart-types/pie-chart";
 import { ScatterChart } from "./chart-types/scatter-chart";
 
-export interface IChartSeriesData {
+export interface ChartSeriesData {
   readonly name: string;
   readonly values: readonly number[];
 }
 
 export type ChartType = "column" | "bar" | "line" | "pie" | "area" | "scatter";
 
-export interface IChartTypeOptions {
+export interface ChartTypeOptions {
   readonly type: ChartType;
-  readonly series: readonly IChartSeriesData[];
+  readonly series: readonly ChartSeriesData[];
   readonly categories: readonly string[];
 }
 
-export const createChartType = (options: IChartTypeOptions) => {
+export const createChartType = (options: ChartTypeOptions) => {
   switch (options.type) {
     case "column":
     case "bar":
@@ -47,6 +47,6 @@ export const createChartType = (options: IChartTypeOptions) => {
         series: options.series,
       });
     default:
-      throw new Error(`Unsupported chart type: ${(options as IChartTypeOptions).type}`);
+      throw new Error(`Unsupported chart type: ${(options as ChartTypeOptions).type}`);
   }
 };

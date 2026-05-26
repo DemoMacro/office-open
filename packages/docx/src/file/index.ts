@@ -43,4 +43,4 @@ export * from "./textbox";
 export * from "./bibliography";
 export * from "./chart";
 export * from "./smartart";
-export { type IPropertiesOptions } from "./core-properties";
+export { type PropertiesOptions } from "./core-properties";

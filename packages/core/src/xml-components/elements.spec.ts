@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import type { IContext } from "./base";
+import type { Context } from "./base";
 import {
   BuilderElement,
   EmptyElement,
@@ -14,7 +14,7 @@ import {
   wrapEl,
 } from "./elements";
 
-const emptyContext: IContext = { stack: [] };
+const emptyContext: Context = { stack: [] };
 
 describe("OnOffElement (CT_OnOff)", () => {
   it("should emit no val attribute when true (default)", () => {

@@ -1,5 +1,5 @@
 import { Formatter } from "@export/formatter";
-import type { IViewWrapper } from "@file/document-wrapper";
+import type { ViewWrapper } from "@file/document-wrapper";
 import { resetDocPropertiesIdGen } from "@file/drawing/doc-properties/doc-properties";
 import type { File } from "@file/file";
 import { Paragraph } from "@file/index";
@@ -39,7 +39,7 @@ describe("WpsShapeRun", () => {
           Media: {},
         } as unknown as File,
         stack: [],
-        viewWrapper: {} as unknown as IViewWrapper,
+        viewWrapper: {} as unknown as ViewWrapper,
       });
 
       expect(tree).to.deep.equal({

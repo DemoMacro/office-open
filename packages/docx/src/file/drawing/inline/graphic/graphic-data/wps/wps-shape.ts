@@ -1,4 +1,4 @@
-import type { IMediaDataTransformation } from "@file/media";
+import type { MediaDataTransformation } from "@file/media";
 import type { Paragraph } from "@file/paragraph";
 import { BuilderElement } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
@@ -12,15 +12,15 @@ import { ShapeProperties } from "../pic/shape-properties/shape-properties";
 import type { Scene3DOptions } from "../pic/shape-properties/three-d/scene-3d";
 import type { Shape3DOptions } from "../pic/shape-properties/three-d/shape-3d";
 import { createBodyProperties } from "./body-properties";
-import type { IBodyPropertiesOptions } from "./body-properties";
+import type { BodyPropertiesOptions } from "./body-properties";
 import { createNonVisualShapeProperties } from "./non-visual-shape-properties";
-import type { INonVisualShapePropertiesOptions } from "./non-visual-shape-properties";
+import type { NonVisualShapePropertiesOptions } from "./non-visual-shape-properties";
 import { createWpsTextBox } from "./wps-text-box";
 
 export interface WpsShapeCoreOptions {
   readonly children: readonly Paragraph[];
-  readonly nonVisualProperties?: INonVisualShapePropertiesOptions;
-  readonly bodyProperties?: IBodyPropertiesOptions;
+  readonly nonVisualProperties?: NonVisualShapePropertiesOptions;
+  readonly bodyProperties?: BodyPropertiesOptions;
   readonly outline?: OutlineOptions;
   readonly fill?: FillOptions;
   readonly customGeometry?: CustomGeometryOptions;
@@ -31,7 +31,7 @@ export interface WpsShapeCoreOptions {
 }
 
 export type WpsShapeOptions = WpsShapeCoreOptions & {
-  readonly transformation: IMediaDataTransformation;
+  readonly transformation: MediaDataTransformation;
 };
 
 export const createWpsShape = (options: WpsShapeOptions): XmlComponent =>

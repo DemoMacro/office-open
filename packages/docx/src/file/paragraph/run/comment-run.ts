@@ -11,7 +11,7 @@
  */
 import type { FileChild } from "@file/file-child";
 import { Paragraph } from "@file/paragraph/paragraph";
-import type { IParagraphOptions } from "@file/paragraph/paragraph";
+import type { ParagraphOptions } from "@file/paragraph/paragraph";
 import { Relationships } from "@file/relationships";
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
@@ -24,12 +24,12 @@ import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
  * @property author - Name of the comment author
  * @property date - Date and time the comment was created
  */
-export interface ICommentOptions {
+export interface CommentOptions {
   /** Unique identifier for the comment */
   readonly id: number;
   /** Content of the comment (typically paragraphs).
-   *  Accepts class instances, plain IParagraphOptions objects, or strings (coerced to Paragraph). */
-  readonly children: readonly (FileChild | IParagraphOptions | string)[];
+   *  Accepts class instances, plain ParagraphOptions objects, or strings (coerced to Paragraph). */
+  readonly children: readonly (FileChild | ParagraphOptions | string)[];
   /** Initials of the comment author */
   readonly initials?: string;
   /** Name of the comment author */
@@ -43,9 +43,9 @@ export interface ICommentOptions {
  *
  * @property children - Array of comment definitions
  */
-export interface ICommentsOptions {
+export interface CommentsOptions {
   /** Array of comment definitions */
-  readonly children: readonly ICommentOptions[];
+  readonly children: readonly CommentOptions[];
 }
 
 /**
@@ -267,7 +267,7 @@ export class CommentReference extends XmlComponent {
  * ```
  */
 export class Comment extends XmlComponent {
-  public constructor({ id, initials, author, date = new Date(), children }: ICommentOptions) {
+  public constructor({ id, initials, author, date = new Date(), children }: CommentOptions) {
     super("w:comment");
 
     const dateStr = typeof date === "string" ? date : date.toISOString();
@@ -284,7 +284,7 @@ export class Comment extends XmlComponent {
       if (rawChild instanceof Paragraph) {
         this.root.push(rawChild);
       } else {
-        this.root.push(new Paragraph(rawChild as string | IParagraphOptions));
+        this.root.push(new Paragraph(rawChild as string | ParagraphOptions));
       }
     }
   }
@@ -329,7 +329,7 @@ export class Comment extends XmlComponent {
 export class Comments extends XmlComponent {
   private readonly relationships: Relationships;
 
-  public constructor({ children }: ICommentsOptions) {
+  public constructor({ children }: CommentsOptions) {
     super("w:comments");
 
     this.root.push(

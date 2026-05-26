@@ -31,7 +31,7 @@ export type EditGroup = (typeof EditGroupType)[keyof typeof EditGroupType];
 /**
  * Options for creating a permission start marker.
  */
-export interface IPermStartOptions {
+export interface PermStartOptions {
   /** Unique identifier for this permission range (typically a number) */
   readonly id: string | number;
   /** Editing group that can edit this range */
@@ -47,7 +47,7 @@ export interface IPermStartOptions {
 /**
  * @internal
  */
-class PermStartAttributes extends XmlAttributeComponent<IPermStartOptions> {
+class PermStartAttributes extends XmlAttributeComponent<PermStartOptions> {
   protected readonly xmlKeys = {
     colFirst: "w:colFirst",
     colLast: "w:colLast",
@@ -78,7 +78,7 @@ class PermEndAttributes extends XmlAttributeComponent<{ readonly id: string | nu
  * ```
  */
 export class PermStart extends XmlComponent {
-  public constructor(options: IPermStartOptions) {
+  public constructor(options: PermStartOptions) {
     super("w:permStart");
     this.root.push(new PermStartAttributes(options));
   }

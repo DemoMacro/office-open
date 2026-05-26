@@ -15,7 +15,7 @@ import type { ParagraphChild } from "../paragraph";
 /**
  * Options for directional text override.
  */
-export interface IDirOptions {
+export interface DirOptions {
   /** Array of paragraph children inside the direction override */
   readonly children: readonly ParagraphChild[];
   /** Text direction: "ltr" or "rtl" */
@@ -43,7 +43,7 @@ class DirAttributes extends XmlAttributeComponent<{ readonly val: string }> {
  * ```
  */
 export class Dir extends XmlComponent {
-  public constructor(options: IDirOptions) {
+  public constructor(options: DirOptions) {
     super("w:dir");
     this.root.push(new DirAttributes({ val: options.val }));
     for (const child of options.children) {
@@ -66,7 +66,7 @@ export class Dir extends XmlComponent {
  * ```
  */
 export class Bdo extends XmlComponent {
-  public constructor(options: IDirOptions) {
+  public constructor(options: DirOptions) {
     super("w:bdo");
     this.root.push(new DirAttributes({ val: options.val }));
     for (const child of options.children) {

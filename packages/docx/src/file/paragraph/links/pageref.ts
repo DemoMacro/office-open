@@ -18,7 +18,7 @@ import { PageReferenceFieldInstruction } from "./pageref-field-instruction";
  *
  * @see {@link PageReference}
  */
-export interface IPageReferenceOptions {
+export interface PageReferenceOptions {
   /**
    * \h option - Creates a hyperlink to the bookmarked paragraph.
    */
@@ -57,7 +57,7 @@ export interface IPageReferenceOptions {
  * ```
  */
 export class PageReference extends Run {
-  public constructor(bookmarkId: string, options: IPageReferenceOptions = {}) {
+  public constructor(bookmarkId: string, options: PageReferenceOptions = {}) {
     super({
       children: [
         createBegin(true),

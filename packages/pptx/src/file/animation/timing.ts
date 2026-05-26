@@ -4,7 +4,7 @@ import type {
   AnimationClass,
   AnimationType,
   EmphasisType,
-  IAnimationOptions,
+  AnimationOptions,
   PathAnimationType,
 } from "./types";
 
@@ -123,7 +123,7 @@ const PATH_STRINGS: Record<PathAnimationType, string> = {
 
 // --- Helper functions ---
 
-function resolvePresetId(options: IAnimationOptions): number {
+function resolvePresetId(options: AnimationOptions): number {
   if (options.mediaType) return 1;
   if (options.attributeName) return 0;
   const cls: AnimationClass = options.class ?? "entr";
@@ -141,21 +141,21 @@ function resolvePresetId(options: IAnimationOptions): number {
   return map[type] ?? 0;
 }
 
-function resolvePresetClass(options: IAnimationOptions): AnimationClass {
+function resolvePresetClass(options: AnimationOptions): AnimationClass {
   if (options.mediaType) return "mediacall";
   if (options.attributeName) return "entr";
   if (options.pathType) return "emph";
   return options.class ?? "entr";
 }
 
-function resolvePresetSubtype(options: IAnimationOptions): number {
+function resolvePresetSubtype(options: AnimationOptions): number {
   if (options.direction) {
     return DIRECTION_SUBTYPES[options.direction] ?? 0;
   }
   return 0;
 }
 
-function buildTargetElement(spid: number, options?: IAnimationOptions): XmlComponent {
+function buildTargetElement(spid: number, options?: AnimationOptions): XmlComponent {
   const spTgtChildren: XmlComponent[] = [];
   if (options?.charRange) {
     spTgtChildren.push(
@@ -202,7 +202,7 @@ function buildTargetElement(spid: number, options?: IAnimationOptions): XmlCompo
 }
 
 function buildEntrOrExitEffects(
-  options: IAnimationOptions,
+  options: AnimationOptions,
   spid: number,
   ids: { set: number; effect: number },
 ): XmlComponent[] {
@@ -322,7 +322,7 @@ function buildEntrOrExitEffects(
 }
 
 function buildEmphasisEffects(
-  options: IAnimationOptions,
+  options: AnimationOptions,
   spid: number,
   ids: { set: number; effect: number },
 ): XmlComponent[] {
@@ -541,7 +541,7 @@ function buildEmphasisEffects(
 }
 
 function buildPathEffects(
-  options: IAnimationOptions,
+  options: AnimationOptions,
   spid: number,
   ids: { set: number; effect: number },
 ): XmlComponent[] {
@@ -591,7 +591,7 @@ function buildPathEffects(
  * PowerPoint uses p:cmd type="call" cmd="playFrom(0.0)" for video play.
  */
 function buildMediaPlayCommand(
-  options: IAnimationOptions,
+  options: AnimationOptions,
   spid: number,
   ids: { cmd: number },
 ): XmlComponent {
@@ -627,7 +627,7 @@ function buildMediaPlayCommand(
  * This is the media state controller, separate from the play command.
  */
 function buildMediaStateNode(
-  options: IAnimationOptions,
+  options: AnimationOptions,
   spid: number,
   ids: { mediaCtn: number },
 ): XmlComponent {
@@ -689,7 +689,7 @@ function buildMediaStateNode(
 }
 
 function buildPropertyAnimation(
-  options: IAnimationOptions,
+  options: AnimationOptions,
   spid: number,
   ids: { cBhvr: number },
 ): XmlComponent {
@@ -788,16 +788,16 @@ function buildPropertyAnimation(
 
 // --- Main class ---
 
-interface IAnimationEntry {
+interface AnimationEntry {
   readonly spid: number;
-  readonly options: IAnimationOptions;
+  readonly options: AnimationOptions;
 }
 
 /**
  * p:timing — Slide timing for shape animations.
  */
 export class SlideTiming extends XmlComponent {
-  public constructor(entries: readonly IAnimationEntry[]) {
+  public constructor(entries: readonly AnimationEntry[]) {
     super("p:timing");
 
     if (entries.length === 0) return;

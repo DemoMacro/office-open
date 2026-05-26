@@ -9,14 +9,14 @@ import { BuilderElement, XmlComponent, chartAttr, wrapEl } from "../xml-componen
 import { CatAx, ValAx } from "./axes";
 import { createChartType } from "./create-chart-type";
 import type { ChartType } from "./create-chart-type";
-import type { IChartSeriesData } from "./create-chart-type";
+import type { ChartSeriesData } from "./create-chart-type";
 import { ChartTitle } from "./title";
 
-export interface IChartSpaceOptions {
+export interface ChartSpaceOptions {
   readonly title?: string;
   readonly type: ChartType;
   readonly categories: readonly string[];
-  readonly series: readonly IChartSeriesData[];
+  readonly series: readonly ChartSeriesData[];
   readonly showLegend?: boolean;
   readonly style?: number;
 }
@@ -25,7 +25,7 @@ export interface IChartSpaceOptions {
  * c:chartSpace — root element for chart XML parts.
  */
 export class ChartSpace extends XmlComponent {
-  public constructor(options: IChartSpaceOptions) {
+  public constructor(options: ChartSpaceOptions) {
     super("c:chartSpace");
 
     this.root.push(

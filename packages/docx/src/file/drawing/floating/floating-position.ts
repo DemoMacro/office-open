@@ -11,7 +11,7 @@
 import type { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared/alignment";
 export { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared/alignment";
 
-import type { ITextWrapping } from "../text-wrap";
+import type { TextWrapping } from "../text-wrap";
 
 /**
  * Horizontal Relative Positioning.
@@ -168,7 +168,7 @@ export const VerticalPositionRelativeFrom = {
 /**
  * Options for horizontal positioning of a floating drawing.
  */
-export interface IHorizontalPositionOptions {
+export interface HorizontalPositionOptions {
   /** The base from which horizontal position is calculated */
   readonly relative?: (typeof HorizontalPositionRelativeFrom)[keyof typeof HorizontalPositionRelativeFrom];
   /** Alignment relative to the horizontal base */
@@ -180,7 +180,7 @@ export interface IHorizontalPositionOptions {
 /**
  * Options for vertical positioning of a floating drawing.
  */
-export interface IVerticalPositionOptions {
+export interface VerticalPositionOptions {
   /** The base from which vertical position is calculated */
   readonly relative?: (typeof VerticalPositionRelativeFrom)[keyof typeof VerticalPositionRelativeFrom];
   /** Alignment relative to the vertical base */
@@ -192,7 +192,7 @@ export interface IVerticalPositionOptions {
 /**
  * Margin distances around a floating drawing in EMUs.
  */
-export interface IMargins {
+export interface Margins {
   readonly left?: number;
   readonly bottom?: number;
   readonly top?: number;
@@ -204,14 +204,14 @@ export interface IMargins {
  *
  * @see {@link Anchor}
  */
-export interface IFloating {
-  readonly horizontalPosition: IHorizontalPositionOptions;
-  readonly verticalPosition: IVerticalPositionOptions;
+export interface Floating {
+  readonly horizontalPosition: HorizontalPositionOptions;
+  readonly verticalPosition: VerticalPositionOptions;
   readonly allowOverlap?: boolean;
   readonly lockAnchor?: boolean;
   readonly behindDocument?: boolean;
   readonly layoutInCell?: boolean;
-  readonly margins?: IMargins;
-  readonly wrap?: ITextWrapping;
+  readonly margins?: Margins;
+  readonly wrap?: TextWrapping;
   readonly zIndex?: number;
 }

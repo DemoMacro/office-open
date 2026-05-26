@@ -26,7 +26,7 @@ import type { ThemeFont } from "@util/values";
  * @property eastAsiaTheme - Theme font for East Asian characters
  * @property cstheme - Theme font for complex script characters
  */
-export interface IFontAttributesProperties {
+export interface FontAttributesProperties {
   /** Font for ASCII characters (0x00-0x7F) */
   readonly ascii?: string;
   /** Font for complex script characters */
@@ -86,12 +86,12 @@ export interface IFontAttributesProperties {
  * ```
  */
 export const createRunFonts = (
-  nameOrAttrs: string | IFontAttributesProperties,
+  nameOrAttrs: string | FontAttributesProperties,
   hint?: string,
 ): XmlComponent => {
   if (typeof nameOrAttrs === "string") {
     const name = nameOrAttrs;
-    return new BuilderElement<IFontAttributesProperties>({
+    return new BuilderElement<FontAttributesProperties>({
       attributes: {
         ascii: { key: "w:ascii", value: name },
         cs: { key: "w:cs", value: name },
@@ -104,7 +104,7 @@ export const createRunFonts = (
   }
 
   const attrs = nameOrAttrs;
-  return new BuilderElement<IFontAttributesProperties>({
+  return new BuilderElement<FontAttributesProperties>({
     attributes: {
       ascii: { key: "w:ascii", value: attrs.ascii },
       asciiTheme: { key: "w:asciiTheme", value: attrs.asciiTheme },

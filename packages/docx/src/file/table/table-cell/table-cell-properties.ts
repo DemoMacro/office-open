@@ -11,7 +11,7 @@
 import { CellMerge, DeletedTableCell, InsertedTableCell } from "@file/track-revision";
 import type { ICellMergeAttributes } from "@file/track-revision";
 import { ChangeAttributes } from "@file/track-revision/track-revision";
-import type { IChangedAttributesProperties } from "@file/track-revision/track-revision";
+import type { ChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { createVerticalAlign } from "@file/vertical-align";
 import type { TableVerticalAlign } from "@file/vertical-align";
 import {
@@ -22,12 +22,12 @@ import {
 } from "@file/xml-components";
 
 import { createShading } from "../../shading";
-import type { IShadingAttributesProperties } from "../../shading";
+import type { ShadingAttributesProperties } from "../../shading";
 import { createCellMargin } from "../table-properties/table-cell-margin";
-import type { ITableCellMarginOptions } from "../table-properties/table-cell-margin";
+import type { TableCellMarginOptions } from "../table-properties/table-cell-margin";
 import type { CnfStyleOptions } from "../table-row/table-row-properties";
 import { createTableWidthElement } from "../table-width";
-import type { ITableWidthProperties } from "../table-width";
+import type { TableWidthProperties } from "../table-width";
 import {
   GridSpan,
   TDirection,
@@ -35,15 +35,15 @@ import {
   VerticalMerge,
   VerticalMergeType,
 } from "./table-cell-components";
-import type { ITableCellBorders, TextDirection } from "./table-cell-components";
+import type { TableCellBordersOptions, TextDirection } from "./table-cell-components";
 
-export interface ITableCellPropertiesOptionsBase {
+export interface TableCellPropertiesOptionsBase {
   /** Conditional formatting style (cnfStyle) */
   readonly cnfStyle?: CnfStyleOptions;
   /** Shading (background color/pattern) for the cell */
-  readonly shading?: IShadingAttributesProperties;
+  readonly shading?: ShadingAttributesProperties;
   /** Cell margins (padding) for the cell content */
-  readonly margins?: ITableCellMarginOptions;
+  readonly margins?: TableCellMarginOptions;
   /** Vertical alignment of content within the cell */
   readonly verticalAlign?: TableVerticalAlign;
   /** Text direction/flow within the cell */
@@ -51,13 +51,13 @@ export interface ITableCellPropertiesOptionsBase {
   /** Vertical merge setting for the cell */
   readonly verticalMerge?: (typeof VerticalMergeType)[keyof typeof VerticalMergeType];
   /** Width specification for the cell */
-  readonly width?: ITableWidthProperties;
+  readonly width?: TableWidthProperties;
   /** Number of columns this cell spans (horizontal merge) */
   readonly columnSpan?: number;
   /** Number of rows this cell spans (vertical merge) */
   readonly rowSpan?: number;
   /** Border settings for the cell edges */
-  readonly borders?: ITableCellBorders;
+  readonly borders?: TableCellBordersOptions;
   /** Horizontal merge setting (hMerge) */
   readonly horizontalMerge?: "continue" | "restart";
   /** Whether the cell content does not wrap (noWrap) */
@@ -68,8 +68,8 @@ export interface ITableCellPropertiesOptionsBase {
   readonly hideMark?: boolean;
   /** Header cells associated with this cell (headers) */
   readonly headers?: string[];
-  readonly insertion?: IChangedAttributesProperties;
-  readonly deletion?: IChangedAttributesProperties;
+  readonly insertion?: ChangedAttributesProperties;
+  readonly deletion?: ChangedAttributesProperties;
   readonly cellMerge?: ICellMergeAttributes;
 }
 
@@ -81,10 +81,10 @@ export interface ITableCellPropertiesOptionsBase {
 export type ITableCellPropertiesOptions = {
   readonly revision?: ITableCellPropertiesChangeOptions;
   readonly includeIfEmpty?: boolean;
-} & ITableCellPropertiesOptionsBase;
+} & TableCellPropertiesOptionsBase;
 
-export type ITableCellPropertiesChangeOptions = ITableCellPropertiesOptionsBase &
-  IChangedAttributesProperties;
+export type ITableCellPropertiesChangeOptions = TableCellPropertiesOptionsBase &
+  ChangedAttributesProperties;
 
 /**
  * Represents table cell properties (tcPr) in a WordprocessingML document.

@@ -1,13 +1,13 @@
 import { ImportedXmlComponent } from "@file/xml-components";
 
-export interface IShowOptions {
+export interface ShowOptions {
   readonly loop?: boolean;
   readonly kiosk?: boolean;
   readonly showNarration?: boolean;
   readonly useTimings?: boolean;
 }
 
-function buildPresPropsXml(showOptions?: IShowOptions): string {
+function buildPresPropsXml(showOptions?: ShowOptions): string {
   if (!showOptions) {
     return `<p:presentationPr xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"/>`;
   }
@@ -27,7 +27,7 @@ function buildPresPropsXml(showOptions?: IShowOptions): string {
 export class PresentationProperties extends ImportedXmlComponent {
   private static cache = new Map<string, ImportedXmlComponent>();
 
-  public constructor(showOptions?: IShowOptions) {
+  public constructor(showOptions?: ShowOptions) {
     super("p:presentationPr");
     const key = showOptions ? JSON.stringify(showOptions) : "";
     if (!PresentationProperties.cache.has(key)) {
@@ -43,5 +43,5 @@ export class PresentationProperties extends ImportedXmlComponent {
     return PresentationProperties.cache.get(key)!.prepForXml({ stack: [] });
   }
 
-  private readonly showOptions?: IShowOptions;
+  private readonly showOptions?: ShowOptions;
 }

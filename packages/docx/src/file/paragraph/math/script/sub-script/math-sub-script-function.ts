@@ -18,7 +18,7 @@ import { createMathSubScriptProperties } from "./math-sub-script-function-proper
  *
  * @see {@link MathSubScript}
  */
-export interface IMathSubScriptOptions {
+export interface MathSubScriptOptions {
   /** The base expression */
   readonly children: readonly MathComponent[];
   /** The subscript expression */
@@ -55,7 +55,7 @@ export interface IMathSubScriptOptions {
  * ```
  */
 export class MathSubScript extends XmlComponent {
-  public constructor(options: IMathSubScriptOptions) {
+  public constructor(options: MathSubScriptOptions) {
     super("m:sSub");
 
     this.root.push(createMathSubScriptProperties());

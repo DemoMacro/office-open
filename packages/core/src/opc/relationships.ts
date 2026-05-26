@@ -1,5 +1,5 @@
 import { BaseXmlComponent } from "../xml-components/base";
-import type { IContext, IXmlableObject } from "../xml-components/base";
+import type { Context, IXmlableObject } from "../xml-components/base";
 
 export type RelationshipType =
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"
@@ -81,7 +81,7 @@ export class Relationships extends BaseXmlComponent {
     return this.entries.length;
   }
 
-  public override prepForXml(_context: IContext): IXmlableObject {
+  public override prepForXml(_context: Context): IXmlableObject {
     const children: IXmlableObject[] = [RELS_ATTRS];
     for (const e of this.entries) {
       const attrs: Record<string, string> = {

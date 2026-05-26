@@ -1,4 +1,4 @@
-import type { IContext } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 import * as convenienceFunctions from "@util/convenience-functions";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
@@ -32,7 +32,7 @@ describe("AltChunk", () => {
         Relationships: { addRelationship },
       },
       stack: [],
-    } as unknown as IContext;
+    } as unknown as Context;
 
     const result = altChunk.prepForXml(mockContext);
 
@@ -85,7 +85,7 @@ describe("AltChunk", () => {
         Relationships: { addRelationship: vi.fn() },
       },
       stack: [],
-    } as unknown as IContext;
+    } as unknown as Context;
 
     altChunk.prepForXml(mockContext);
 
@@ -117,7 +117,7 @@ describe("AltChunk", () => {
         Relationships: { addRelationship: vi.fn() },
       },
       stack: [],
-    } as unknown as IContext;
+    } as unknown as Context;
 
     altChunk.prepForXml(mockContext);
 
@@ -147,7 +147,7 @@ describe("AltChunk", () => {
         Relationships: { addRelationship: vi.fn() },
       },
       stack: [],
-    } as unknown as IContext;
+    } as unknown as Context;
 
     const result = altChunk.prepForXml(mockContext);
 

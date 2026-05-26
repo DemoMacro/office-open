@@ -1,28 +1,28 @@
 import { SlideTiming } from "@file/animation/timing";
-import type { IAnimationOptions } from "@file/animation/types";
+import type { AnimationOptions } from "@file/animation/types";
 import type { Background } from "@file/background/background";
-import type { IHeaderFooterOptions } from "@file/header-footer/header-footer";
+import type { SlideHeaderFooterOptions } from "@file/header-footer/header-footer";
 import { coerceChild } from "@file/slide/coerce";
 import type { SlideChild } from "@file/slide/slide-child";
-import type { ITransitionOptions } from "@file/transition/transition";
+import type { TransitionOptions } from "@file/transition/transition";
 import { buildTransition } from "@file/transition/transition";
 import { BaseXmlComponent, XmlComponent } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 
-interface IAnimatable {
+interface Animatable {
   readonly ShapeId: number;
-  readonly Animation?: IAnimationOptions;
+  readonly Animation?: AnimationOptions;
 }
 
-function isAnimatable(child: BaseXmlComponent): child is BaseXmlComponent & IAnimatable {
+function isAnimatable(child: BaseXmlComponent): child is BaseXmlComponent & Animatable {
   return "ShapeId" in child && "Animation" in child;
 }
 
 function collectAnimations(children: readonly BaseXmlComponent[]): Array<{
   readonly spid: number;
-  readonly options: IAnimationOptions;
+  readonly options: AnimationOptions;
 }> {
-  const entries: Array<{ readonly spid: number; readonly options: IAnimationOptions }> = [];
+  const entries: Array<{ readonly spid: number; readonly options: AnimationOptions }> = [];
   for (const child of children) {
     if (isAnimatable(child)) {
       const anim = child.Animation;
@@ -41,14 +41,14 @@ function collectAnimations(children: readonly BaseXmlComponent[]): Array<{
 export class Slide extends XmlComponent {
   private readonly children: readonly SlideChild[];
   private readonly background?: Background;
-  private readonly transition?: ITransitionOptions;
-  public readonly HeaderFooter?: IHeaderFooterOptions;
+  private readonly transition?: TransitionOptions;
+  public readonly HeaderFooter?: SlideHeaderFooterOptions;
 
   public constructor(
     children: readonly SlideChild[],
     background?: Background,
-    transition?: ITransitionOptions,
-    headerFooter?: IHeaderFooterOptions,
+    transition?: TransitionOptions,
+    headerFooter?: SlideHeaderFooterOptions,
   ) {
     super("p:sld");
     this.children = children;
@@ -57,7 +57,7 @@ export class Slide extends XmlComponent {
     this.HeaderFooter = headerFooter;
   }
 
-  public override prepForXml(context: IContext): IXmlableObject {
+  public override prepForXml(context: Context): IXmlableObject {
     const children: IXmlableObject[] = [];
 
     // xmlns attributes

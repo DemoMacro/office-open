@@ -8,7 +8,7 @@
  * @module
  */
 import { Document } from "./document";
-import type { IDocumentOptions } from "./document";
+import type { DocumentOptions } from "./document";
 import type { Endnotes } from "./endnotes";
 import type { Footer } from "./footer/footer";
 import type { FootNotes } from "./footnotes";
@@ -25,7 +25,7 @@ import type { XmlComponent } from "./xml-components";
  * @property View - The document part (Document, Header, Footer, etc.)
  * @property Relationships - The relationships associated with this view
  */
-export interface IViewWrapper {
+export interface ViewWrapper {
   readonly View: Document | Footer | Header | FootNotes | Endnotes | XmlComponent;
   readonly Relationships: Relationships;
 }
@@ -46,11 +46,11 @@ export interface IViewWrapper {
  * });
  * ```
  */
-export class DocumentWrapper implements IViewWrapper {
+export class DocumentWrapper implements ViewWrapper {
   private readonly document: Document;
   private readonly relationships: Relationships;
 
-  public constructor(options: IDocumentOptions) {
+  public constructor(options: DocumentOptions) {
     this.document = new Document(options);
     this.relationships = new Relationships();
   }

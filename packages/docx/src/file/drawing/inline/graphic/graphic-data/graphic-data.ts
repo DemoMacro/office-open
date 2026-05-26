@@ -4,7 +4,7 @@ import type {
   ChartMediaData,
   IExtendedMediaData,
   IMediaData,
-  IMediaDataTransformation,
+  MediaDataTransformation,
   SmartArtMediaData,
   WpgMediaData,
 } from "@file/media";
@@ -61,7 +61,7 @@ export class GraphicData extends XmlComponent {
     hyperlink,
   }: {
     readonly mediaData: IExtendedMediaData;
-    readonly transform: IMediaDataTransformation;
+    readonly transform: MediaDataTransformation;
     readonly outline?: OutlineOptions;
     readonly fill?: FillOptions;
     readonly effects?: EffectListOptions;

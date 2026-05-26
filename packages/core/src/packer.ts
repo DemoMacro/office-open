@@ -4,7 +4,7 @@
  * @module
  */
 
-export interface IXmlifyedFile {
+export interface XmlifyedFile {
   readonly path: string;
   readonly data: string | Uint8Array;
 }

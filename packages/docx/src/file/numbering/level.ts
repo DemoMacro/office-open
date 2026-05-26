@@ -275,7 +275,7 @@ export const LevelSuffix = {
  * @property isLegalNumberingStyle - Use legal numbering style
  * @property style - Run and paragraph style properties
  */
-export interface ILevelsOptions {
+export interface LevelsOptions {
   /** Level index (0-8). */
   readonly level: number;
   /** Number format type (decimal, roman, letter, bullet, etc.). */
@@ -379,7 +379,7 @@ export class LevelBase extends XmlComponent {
     style,
     suffix,
     isLegalNumberingStyle,
-  }: ILevelsOptions) {
+  }: LevelsOptions) {
     super("w:lvl");
 
     this.root.push(new NumberValueElement("w:start", decimalNumber(start)));

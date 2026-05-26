@@ -38,12 +38,11 @@ You are a senior TypeScript developer.
 
 ### Interface Naming
 
-- **Top-level element options** (constructor parameters for public document element classes like `Document`, `Section`, `Paragraph`, `Table`, `ImageRun`): use `I` prefix
-  - e.g., `IPropertiesOptions`, `ISectionOptions`, `IParagraphOptions`, `ITableOptions`, `IImageOptions`
-- **Sub-component options** (nested configuration properties within an element, passed to factory functions): no `I` prefix
-  - e.g., `OutlineOptions`, `SolidFillOptions`, `GradientFillOptions`, `ColorOptions`, `EffectListOptions`
-- **Internal data interfaces** (runtime data structures, not user-facing configuration): use `I` prefix
-  - e.g., `IMediaData`, `IMediaDataTransformation`, `IContext`, `IXmlableObject`, `IGradientStop`
+Do **not** use the `I` prefix for interfaces. This aligns with modern TypeScript conventions (TypeScript official, Google, ts.dev style guides).
+
+- e.g., `PropertiesOptions`, `SectionOptions`, `ParagraphOptions`, `TableOptions`, `ImageOptions`
+- e.g., `OutlineOptions`, `SolidFillOptions`, `GradientFillOptions`, `ColorOptions`, `EffectListOptions`
+- e.g., `MediaData`, `MediaDataTransformation`, `Context`, `XmlableObject`, `GradientStop`
 
 ### Property Naming vs XML Element Names
 

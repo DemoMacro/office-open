@@ -19,7 +19,7 @@ import { BaseXmlComponent, XmlComponent } from "@file/xml-components";
 import { FieldInstruction } from "./field-instruction";
 import { StructuredDocumentTagContent } from "./sdt-content";
 import { StructuredDocumentTagProperties } from "./sdt-properties";
-import type { ITableOfContentsOptions } from "./table-of-contents-properties";
+import type { TableOfContentsOptions } from "./table-of-contents-properties";
 
 interface ToCEntry {
   readonly title: string;
@@ -66,7 +66,7 @@ export class TableOfContents extends XmlComponent implements FileChild {
       cachedEntries = [],
       beginDirty = true,
       ...properties
-    }: ITableOfContentsOptions & {
+    }: TableOfContentsOptions & {
       readonly contentChildren?: readonly (BaseXmlComponent | string)[];
       /**
        * Use this to provide pre-generated entries for the Table of Contents.
@@ -174,7 +174,7 @@ export class TableOfContents extends XmlComponent implements FileChild {
     ];
   }
 
-  private buildCachedContentRun(entry: ToCEntry, properties?: ITableOfContentsOptions): Run {
+  private buildCachedContentRun(entry: ToCEntry, properties?: TableOfContentsOptions): Run {
     return new Run({
       // TODO: The IndexLink style might always need to be set regardless of the hyperlink property. This needs to be verified.
       children: [
@@ -192,7 +192,7 @@ export class TableOfContents extends XmlComponent implements FileChild {
 
   private buildCachedContentParagraphChild(
     entry: ToCEntry,
-    properties?: ITableOfContentsOptions,
+    properties?: TableOfContentsOptions,
   ): Run | InternalHyperlink {
     const run = this.buildCachedContentRun(entry, properties);
     if (properties?.hyperlink && entry.href !== undefined) {

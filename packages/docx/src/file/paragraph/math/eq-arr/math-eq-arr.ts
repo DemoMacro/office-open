@@ -20,7 +20,7 @@ import type { MathEqArrPropertiesOptions } from "./math-eq-arr-properties";
  *
  * @see {@link MathEqArr}
  */
-export interface IMathEqArrOptions {
+export interface MathEqArrOptions {
   /** Equation array properties */
   readonly properties?: MathEqArrPropertiesOptions;
   /** Equations to stack (each row becomes an m:e element) */
@@ -48,7 +48,7 @@ export interface IMathEqArrOptions {
  * ```
  */
 export class MathEqArr extends XmlComponent {
-  public constructor(options: IMathEqArrOptions) {
+  public constructor(options: MathEqArrOptions) {
     super("m:eqArr");
 
     if (options.properties) {

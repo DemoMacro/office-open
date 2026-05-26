@@ -8,9 +8,9 @@
 import { XmlComponent } from "@file/xml-components";
 
 import { TextRun } from "../../paragraph/run";
-import type { IRunOptions } from "../../paragraph/run";
+import type { RunOptions } from "../../paragraph/run";
 import { ChangeAttributes } from "../track-revision";
-import type { IChangedAttributesProperties } from "../track-revision";
+import type { ChangedAttributesProperties } from "../track-revision";
 
 /**
  * Options for creating an inserted text run.
@@ -21,7 +21,7 @@ import type { IChangedAttributesProperties } from "../track-revision";
  * @property author - Name of the author who inserted the text
  * @property date - Date and time when the insertion was made (ISO 8601 format)
  */
-type IInsertedRunOptions = IChangedAttributesProperties & IRunOptions;
+type IInsertedRunOptions = ChangedAttributesProperties & RunOptions;
 
 /**
  * Represents an inserted text run in a tracked changes document.
@@ -72,6 +72,6 @@ export class InsertedTextRun extends XmlComponent {
         id: options.id,
       }),
     );
-    this.addChildElement(new TextRun(options as IRunOptions));
+    this.addChildElement(new TextRun(options as RunOptions));
   }
 }

@@ -31,7 +31,7 @@ export enum NumberedItemReferenceFormat {
   FULL_CONTEXT = "full_context",
 }
 
-export interface INumberedItemReferenceOptions {
+export interface NumberedItemReferenceOptions {
   /**
    * \h option - Creates a hyperlink to the bookmarked paragraph.
    * @default true
@@ -76,7 +76,7 @@ export class NumberedItemReference extends SimpleField {
      * The cached value of the field. This is used to display the field result in the document.
      */
     cachedValue?: string,
-    options: INumberedItemReferenceOptions = {},
+    options: NumberedItemReferenceOptions = {},
   ) {
     const { hyperlink = true, referenceFormat = NumberedItemReferenceFormat.FULL_CONTEXT } =
       options;

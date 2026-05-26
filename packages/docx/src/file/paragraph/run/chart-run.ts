@@ -8,11 +8,11 @@
  */
 import { ChartSpace } from "@file/chart/chart-space";
 import { Drawing } from "@file/drawing";
-import type { IFloating } from "@file/drawing";
+import type { Floating } from "@file/drawing";
 import type { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
-import type { IMediaTransformation } from "@file/media";
+import type { MediaTransformation } from "@file/media";
 import { createTransformation } from "@file/media";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 
 import { Run } from "../run";
 
@@ -21,7 +21,7 @@ import { Run } from "../run";
  *
  * @publicApi
  */
-export interface IChartOptions {
+export interface ChartOptions {
   /** Chart type */
   readonly type: "column" | "bar" | "line" | "pie" | "area" | "scatter";
   /** Chart data */
@@ -30,9 +30,9 @@ export interface IChartOptions {
     readonly series: readonly { name: string; values: readonly number[] }[];
   };
   /** Display dimensions */
-  readonly transformation: IMediaTransformation;
+  readonly transformation: MediaTransformation;
   /** Floating positioning */
-  readonly floating?: IFloating;
+  readonly floating?: Floating;
   /** Alternative text for accessibility */
   readonly altText?: DocPropertiesOptions;
   /** Chart title */
@@ -64,10 +64,10 @@ export interface IChartOptions {
  * ```
  */
 export class ChartRun extends Run {
-  private readonly chartOptions: IChartOptions;
+  private readonly chartOptions: ChartOptions;
   private readonly chartKey: string;
 
-  public constructor(options: IChartOptions) {
+  public constructor(options: ChartOptions) {
     super({});
     this.chartOptions = options;
 
@@ -90,7 +90,7 @@ export class ChartRun extends Run {
     this.extraChildren.push(drawing);
   }
 
-  public prepForXml(context: IContext): IXmlableObject | undefined {
+  public prepForXml(context: Context): IXmlableObject | undefined {
     // Register chart with the file's chart collection
     const chartSpace = new ChartSpace({
       categories: this.chartOptions.data.categories,
@@ -109,7 +109,7 @@ export class ChartRun extends Run {
     return super.prepForXml(context);
   }
 
-  private hashChartData(options: IChartOptions): number {
+  private hashChartData(options: ChartOptions): number {
     const data = `${options.type}:${JSON.stringify(options.data)}`;
     let hash = 0;
     for (let i = 0; i < data.length; i++) {

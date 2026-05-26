@@ -12,7 +12,7 @@ import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 import { decimalNumber } from "@util/values";
 
 import { Level } from "./level";
-import type { ILevelsOptions } from "./level";
+import type { LevelsOptions } from "./level";
 import { MultiLevelType } from "./multi-level-type";
 
 /**
@@ -87,7 +87,7 @@ export class AbstractNumbering extends XmlComponent {
    * @param id - Unique identifier for this abstract numbering definition
    * @param levelOptions - Array of level definitions (up to 9 levels)
    */
-  public constructor(id: number, levelOptions: readonly ILevelsOptions[]) {
+  public constructor(id: number, levelOptions: readonly LevelsOptions[]) {
     super("w:abstractNum");
     this.root.push(
       new AbstractNumberingAttributes({

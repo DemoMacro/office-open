@@ -8,7 +8,7 @@
  *
  * @module
  */
-import type { IViewWrapper } from "./document-wrapper";
+import type { ViewWrapper } from "./document-wrapper";
 import { FootNotes } from "./footnotes/footnotes";
 import { Relationships } from "./relationships";
 
@@ -16,7 +16,7 @@ import { Relationships } from "./relationships";
  * Wrapper class for managing footnotes in a document.
  *
  * Encapsulates the footnotes collection and its relationships,
- * implementing the IViewWrapper interface for consistent access.
+ * implementing the ViewWrapper interface for consistent access.
  *
  * @example
  * ```typescript
@@ -25,7 +25,7 @@ import { Relationships } from "./relationships";
  * const relationships = wrapper.Relationships;
  * ```
  */
-export class FootnotesWrapper implements IViewWrapper {
+export class FootnotesWrapper implements ViewWrapper {
   private readonly footnotess: FootNotes;
   private readonly relationships: Relationships;
 

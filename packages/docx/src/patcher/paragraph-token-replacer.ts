@@ -5,7 +5,7 @@
  */
 import type { Element } from "@office-open/xml";
 
-import type { IRenderedParagraphNode } from "./run-renderer";
+import type { RenderedParagraphNode } from "./run-renderer";
 import { createTextElementContents, patchSpaceAttribute } from "./util";
 
 /**
@@ -50,7 +50,7 @@ export const replaceTokenInParagraphElement = ({
   replacementText,
 }: {
   readonly paragraphElement: Element;
-  readonly renderedParagraph: IRenderedParagraphNode;
+  readonly renderedParagraph: RenderedParagraphNode;
   readonly originalText: string;
   readonly replacementText: string;
 }): Element => {

@@ -1,6 +1,6 @@
 import type { DataModel } from "./data-model/data-model";
 
-export interface ISmartArtData {
+export interface SmartArtData {
   readonly key: string;
   readonly dataModel: DataModel;
   readonly layout: string;
@@ -12,17 +12,17 @@ export interface ISmartArtData {
  * Manages SmartArt parts in a document.
  */
 export class SmartArtCollection {
-  private readonly map: Map<string, ISmartArtData>;
+  private readonly map: Map<string, SmartArtData>;
 
   public constructor() {
-    this.map = new Map<string, ISmartArtData>();
+    this.map = new Map<string, SmartArtData>();
   }
 
-  public addSmartArt(key: string, data: ISmartArtData): void {
+  public addSmartArt(key: string, data: SmartArtData): void {
     this.map.set(key, data);
   }
 
-  public get Array(): readonly ISmartArtData[] {
+  public get Array(): readonly SmartArtData[] {
     return [...this.map.values()];
   }
 }

@@ -6,7 +6,7 @@ import { Paragraph } from "../shape/paragraph/paragraph";
 import { TextRun } from "../shape/paragraph/run";
 import { TextBody } from "../shape/text-body";
 
-export interface INotesSlideOptions {
+export interface NotesSlideOptions {
   readonly text?: string;
 }
 
@@ -16,7 +16,7 @@ export interface INotesSlideOptions {
  * Contains a slide image placeholder and a body text area for speaker notes.
  */
 export class NotesSlide extends XmlComponent {
-  public constructor(options: INotesSlideOptions = {}) {
+  public constructor(options: NotesSlideOptions = {}) {
     super("p:notes");
 
     this.root.push(

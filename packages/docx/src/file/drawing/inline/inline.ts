@@ -1,5 +1,5 @@
 // http://officeopenxml.com/drwPicInline.php
-import type { IExtendedMediaData, IMediaDataTransformation } from "@file/media";
+import type { IExtendedMediaData, MediaDataTransformation } from "@file/media";
 import { BuilderElement } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
 import type { FillOptions } from "@office-open/core/drawingml";
@@ -20,7 +20,7 @@ import type { OutlineOptions } from "./graphic/graphic-data/pic/shape-properties
  */
 interface InlineOptions {
   readonly mediaData: IExtendedMediaData;
-  readonly transform: IMediaDataTransformation;
+  readonly transform: MediaDataTransformation;
   readonly docProperties?: DocPropertiesOptions;
   readonly outline?: OutlineOptions;
   readonly fill?: FillOptions;

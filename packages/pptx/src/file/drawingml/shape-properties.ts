@@ -1,8 +1,8 @@
 import type { File } from "@file/file";
 import { BaseXmlComponent } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 
-import { createPptxEffectList, buildScene3D, buildShape3D, type IEffectsOptions } from "./effects";
+import { createPptxEffectList, buildScene3D, buildShape3D, type EffectsOptions } from "./effects";
 import { buildFill, extractBlipFillMedia } from "./fill";
 import type { FillOptions } from "./fill";
 import { createOutlineCompat } from "./outline";
@@ -10,13 +10,13 @@ import type { OutlineOptions } from "./outline";
 import { PresetGeometry } from "./preset-geometry";
 import { Transform2D } from "./transform-2d";
 
-export interface IConnectionSiteOptions {
+export interface ConnectionSiteOptions {
   readonly x: number;
   readonly y: number;
   readonly angle?: number;
 }
 
-export interface IShapePropertiesOptions {
+export interface ShapePropertiesOptions {
   readonly x?: number;
   readonly y?: number;
   readonly width?: number;
@@ -26,8 +26,8 @@ export interface IShapePropertiesOptions {
   readonly geometry?: string;
   readonly fill?: FillOptions;
   readonly outline?: OutlineOptions;
-  readonly effects?: IEffectsOptions;
-  readonly connectionSites?: readonly IConnectionSiteOptions[];
+  readonly effects?: EffectsOptions;
+  readonly connectionSites?: readonly ConnectionSiteOptions[];
 }
 
 /**
@@ -35,14 +35,14 @@ export interface IShapePropertiesOptions {
  * Lazy: stores options, builds XML object directly in prepForXml.
  */
 export class ShapeProperties extends BaseXmlComponent {
-  private readonly options: IShapePropertiesOptions;
+  private readonly options: ShapePropertiesOptions;
 
-  public constructor(options: IShapePropertiesOptions) {
+  public constructor(options: ShapePropertiesOptions) {
     super("p:spPr");
     this.options = options;
   }
 
-  public prepForXml(context: IContext<File>): IXmlableObject | undefined {
+  public prepForXml(context: Context<File>): IXmlableObject | undefined {
     const opts = this.options;
     const children: IXmlableObject[] = [];
 

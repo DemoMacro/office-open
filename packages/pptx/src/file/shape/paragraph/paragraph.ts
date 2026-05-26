@@ -1,17 +1,17 @@
 import { XmlComponent } from "@file/xml-components";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 
 import { buildEndParagraphRunProperties } from "./end-paragraph-run";
-import type { IParagraphPropertiesOptions } from "./paragraph-properties";
+import type { ParagraphPropertiesOptions } from "./paragraph-properties";
 import { buildParagraphProperties } from "./paragraph-properties";
 import { TextRun } from "./run";
-import type { IRunOptions } from "./run";
+import type { RunOptions } from "./run";
 
-export interface IParagraphOptions {
+export interface ParagraphOptions {
   /** Simple text content for the paragraph. Creates a single TextRun. */
   readonly text?: string;
-  readonly properties?: IParagraphPropertiesOptions;
-  readonly children?: readonly (TextRun | IRunOptions | XmlComponent)[];
+  readonly properties?: ParagraphPropertiesOptions;
+  readonly children?: readonly (TextRun | RunOptions | XmlComponent)[];
 }
 
 /**
@@ -19,14 +19,14 @@ export interface IParagraphOptions {
  * Lazy: stores options, builds XML object in prepForXml.
  */
 export class Paragraph extends XmlComponent {
-  private readonly options: IParagraphOptions;
+  private readonly options: ParagraphOptions;
 
-  public constructor(options: string | IParagraphOptions = {}) {
+  public constructor(options: string | ParagraphOptions = {}) {
     super("a:p");
     this.options = typeof options === "string" ? { text: options } : options;
   }
 
-  public prepForXml(context: IContext): IXmlableObject | undefined {
+  public prepForXml(context: Context): IXmlableObject | undefined {
     const children: IXmlableObject[] = [];
 
     const pPr = buildParagraphProperties(this.options.properties ?? {});

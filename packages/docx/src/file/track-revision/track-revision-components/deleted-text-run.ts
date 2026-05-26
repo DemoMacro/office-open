@@ -11,9 +11,9 @@ import { createBreak } from "../../paragraph/run/break";
 import { createBegin, createEnd, createSeparate } from "../../paragraph/run/field";
 import { RunProperties } from "../../paragraph/run/properties";
 import { PageNumber } from "../../paragraph/run/run";
-import type { IRunOptions } from "../../paragraph/run/run";
+import type { RunOptions } from "../../paragraph/run/run";
 import { ChangeAttributes } from "../track-revision";
-import type { IChangedAttributesProperties } from "../track-revision";
+import type { ChangedAttributesProperties } from "../track-revision";
 import {
   DeletedNumberOfPages,
   DeletedNumberOfPagesSection,
@@ -30,7 +30,7 @@ import { DeletedText } from "./deleted-text";
  * @property author - Name of the author who deleted the text
  * @property date - Date and time when the deletion was made (ISO 8601 format)
  */
-type IDeletedRunOptions = IRunOptions & IChangedAttributesProperties;
+type IDeletedRunOptions = RunOptions & ChangedAttributesProperties;
 
 /**
  * Represents a deleted text run in a tracked changes document.
@@ -107,7 +107,7 @@ export class DeletedTextRun extends XmlComponent {
  * @internal
  */
 class DeletedTextRunWrapper extends XmlComponent {
-  public constructor(options: IRunOptions) {
+  public constructor(options: RunOptions) {
     super("w:r");
     this.root.push(new RunProperties(options));
 

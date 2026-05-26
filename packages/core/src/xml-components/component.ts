@@ -6,7 +6,7 @@
 import { xml } from "@office-open/xml";
 
 import { BaseXmlComponent } from "./base";
-import type { IContext, IXmlableObject } from "./base";
+import type { Context, IXmlableObject } from "./base";
 
 /**
  * Empty object singleton used for empty XML elements.
@@ -32,7 +32,7 @@ export abstract class XmlComponent extends BaseXmlComponent {
   /**
    * Prepares this component and its children for XML serialization.
    */
-  public prepForXml(context: IContext): IXmlableObject | undefined {
+  public prepForXml(context: Context): IXmlableObject | undefined {
     context.stack.push(this);
 
     const children: (BaseXmlComponent | IXmlableObject | string | undefined)[] = [];
@@ -65,7 +65,7 @@ export abstract class XmlComponent extends BaseXmlComponent {
    * Direct XML serialization. Override in subclasses for zero-allocation output.
    * Default falls back to prepForXml() + xml().
    */
-  public toXml(context: IContext): string {
+  public toXml(context: Context): string {
     const obj = this.prepForXml(context);
     return obj ? xml(obj) : "";
   }
@@ -90,7 +90,7 @@ export abstract class IgnoreIfEmptyXmlComponent extends XmlComponent {
     this.includeIfEmpty = includeIfEmpty;
   }
 
-  public prepForXml(context: IContext): IXmlableObject | undefined {
+  public prepForXml(context: Context): IXmlableObject | undefined {
     const result = super.prepForXml(context);
 
     if (this.includeIfEmpty) {

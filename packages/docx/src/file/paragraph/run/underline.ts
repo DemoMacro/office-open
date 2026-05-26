@@ -86,7 +86,7 @@ export const UnderlineType = {
   NONE: "none",
 } as const;
 
-interface IUnderlineAttributes {
+interface UnderlineAttributes {
   readonly val: (typeof UnderlineType)[keyof typeof UnderlineType];
   readonly color?: string;
   readonly themeColor?: (typeof ThemeColor)[keyof typeof ThemeColor];
@@ -132,7 +132,7 @@ export const createUnderline = (
   themeTint?: string,
   themeShade?: string,
 ): XmlComponent =>
-  new BuilderElement<IUnderlineAttributes>({
+  new BuilderElement<UnderlineAttributes>({
     attributes: {
       color: {
         key: "w:color",

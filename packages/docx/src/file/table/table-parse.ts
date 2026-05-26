@@ -1,11 +1,11 @@
 import type { SectionChild } from "@file/section-child";
-import type { ITableOptions } from "@file/table/table";
-import type { ITableCellOptions } from "@file/table/table-cell";
-import type { ITableRowOptions } from "@file/table/table-row";
+import type { TableOptions } from "@file/table/table";
+import type { TableCellOptions } from "@file/table/table-cell";
+import type { TableRowOptions } from "@file/table/table-row";
 /**
  * Table parser for DOCX documents.
  *
- * Parses w:tbl, w:tr, w:tc Element trees into ITableOptions.
+ * Parses w:tbl, w:tr, w:tc Element trees into TableOptions.
  *
  * @module
  */
@@ -234,9 +234,9 @@ export function setSectionChildParser(fn: (el: Element, ctx: ParseContext) => Se
 }
 
 /**
- * Parse w:tc element into ITableCellOptions.
+ * Parse w:tc element into TableCellOptions.
  */
-export function parseTableCell(el: Element, ctx: ParseContext): ITableCellOptions {
+export function parseTableCell(el: Element, ctx: ParseContext): TableCellOptions {
   const opts: Record<string, unknown> = {};
 
   const tcPr = findChild(el, "w:tcPr");
@@ -269,13 +269,13 @@ export function parseTableCell(el: Element, ctx: ParseContext): ITableCellOption
   }
 
   opts.children = childElements;
-  return opts as unknown as ITableCellOptions;
+  return opts as unknown as TableCellOptions;
 }
 
 /**
- * Parse w:tr element into ITableRowOptions.
+ * Parse w:tr element into TableRowOptions.
  */
-export function parseTableRow(el: Element, ctx: ParseContext): ITableRowOptions {
+export function parseTableRow(el: Element, ctx: ParseContext): TableRowOptions {
   const opts: Record<string, unknown> = {};
 
   const trPr = findChild(el, "w:trPr");
@@ -283,7 +283,7 @@ export function parseTableRow(el: Element, ctx: ParseContext): ITableRowOptions 
     Object.assign(opts, parseTableRowProperties(trPr));
   }
 
-  const childCells: ITableCellOptions[] = [];
+  const childCells: TableCellOptions[] = [];
   for (const child of el.elements ?? []) {
     if (child.name === "w:tc") {
       childCells.push(parseTableCell(child, ctx));
@@ -291,13 +291,13 @@ export function parseTableRow(el: Element, ctx: ParseContext): ITableRowOptions 
   }
 
   opts.children = childCells;
-  return opts as unknown as ITableRowOptions;
+  return opts as unknown as TableRowOptions;
 }
 
 /**
- * Parse w:tbl element into ITableOptions.
+ * Parse w:tbl element into TableOptions.
  */
-export function parseTable(el: Element, ctx: ParseContext): ITableOptions {
+export function parseTable(el: Element, ctx: ParseContext): TableOptions {
   const opts: Record<string, unknown> = {};
 
   const tblPr = findChild(el, "w:tblPr");
@@ -312,7 +312,7 @@ export function parseTable(el: Element, ctx: ParseContext): ITableOptions {
   }
 
   // Rows
-  const rows: ITableRowOptions[] = [];
+  const rows: TableRowOptions[] = [];
   for (const child of el.elements ?? []) {
     if (child.name === "w:tr") {
       rows.push(parseTableRow(child, ctx));
@@ -320,5 +320,5 @@ export function parseTable(el: Element, ctx: ParseContext): ITableOptions {
   }
 
   opts.rows = rows;
-  return opts as unknown as ITableOptions;
+  return opts as unknown as TableOptions;
 }

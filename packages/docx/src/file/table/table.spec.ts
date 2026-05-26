@@ -13,7 +13,7 @@ import {
   TableAnchorType,
 } from "./table-properties";
 import { TableLayoutType } from "./table-properties/table-layout";
-import type { ITableRowOptions } from "./table-row";
+import type { TableRowOptions } from "./table-row";
 import { TableRow } from "./table-row";
 import { WidthType } from "./table-width";
 
@@ -663,8 +663,8 @@ describe("parse round-trip", () => {
     });
     const parsed = parseFormattedTable(table);
     expect(parsed.rows).toHaveLength(2);
-    expect((parsed.rows[0] as ITableRowOptions).children).toHaveLength(2);
-    expect((parsed.rows[1] as ITableRowOptions).children).toHaveLength(2);
+    expect((parsed.rows[0] as TableRowOptions).children).toHaveLength(2);
+    expect((parsed.rows[1] as TableRowOptions).children).toHaveLength(2);
   });
 
   it("should parse column widths", () => {
@@ -701,9 +701,9 @@ describe("parse round-trip", () => {
       ],
     });
     const parsed = parseFormattedTable(table);
-    expect((parsed.rows[0] as ITableRowOptions).children).toHaveLength(1);
+    expect((parsed.rows[0] as TableRowOptions).children).toHaveLength(1);
     expect(
-      ((parsed.rows[0] as ITableRowOptions).children[0] as unknown as Record<string, unknown>)
+      ((parsed.rows[0] as TableRowOptions).children[0] as unknown as Record<string, unknown>)
         .columnSpan,
     ).toBe(2);
   });

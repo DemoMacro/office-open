@@ -1,10 +1,10 @@
 import { XmlComponent } from "@file/xml-components";
 
 import { ChangeAttributes } from "../track-revision";
-import type { IChangedAttributesProperties } from "../track-revision";
+import type { ChangedAttributesProperties } from "../track-revision";
 
 export class InsertionTrackChange extends XmlComponent {
-  public constructor(options: IChangedAttributesProperties) {
+  public constructor(options: ChangedAttributesProperties) {
     super("w:ins");
     this.root.push(
       new ChangeAttributes({
