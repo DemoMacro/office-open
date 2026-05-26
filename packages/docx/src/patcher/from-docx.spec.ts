@@ -4,7 +4,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test"
 vi.mock("fflate", () => ({
   strFromU8: vi.fn().mockImplementation((data: Uint8Array) => new TextDecoder().decode(data)),
   unzipSync: vi.fn(),
-  zipSync: vi.fn().mockReturnValue(new Uint8Array(0)),
+  zip: vi
+    .fn()
+    .mockImplementation(
+      (_data: unknown, _opts: unknown, cb: (err: null, data: Uint8Array) => void) =>
+        cb(null, new Uint8Array(0)),
+    ),
 }));
 
 import { unzipSync } from "@office-open/core";

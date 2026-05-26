@@ -63,7 +63,7 @@ describe("DOCX: Object Creation (no pack)", () => {
     });
   });
 
-  bench("original — simple", () => {
+  bench("docx — simple", () => {
     new DocumentOrig({
       sections: [
         {
@@ -91,7 +91,7 @@ describe("DOCX: Object Creation (no pack)", () => {
     });
   });
 
-  bench("original — styled paragraphs (20)", () => {
+  bench("docx — styled paragraphs (20)", () => {
     new DocumentOrig({
       sections: [
         {
@@ -144,7 +144,7 @@ describe("DOCX: Object Creation (no pack)", () => {
     });
   });
 
-  bench("original — table (10x5)", () => {
+  bench("docx — table (10x5)", () => {
     new DocumentOrig({
       sections: [
         {
@@ -251,7 +251,7 @@ describe("DOCX: Object Creation (no pack)", () => {
     });
   });
 
-  bench("original — full featured", () => {
+  bench("docx — full featured", () => {
     new DocumentOrig({
       sections: [
         {
@@ -327,6 +327,8 @@ describe("DOCX: Object Creation (no pack)", () => {
   });
 });
 
+// Both libraries use DEFLATE compression for a fair comparison.
+// Our Packer uses fflate async zip() (Web Workers); docx uses JSZip.
 describe("DOCX: Create + toBuffer", () => {
   bench("ours — simple + toBuffer", async () => {
     const doc = new Document({
@@ -342,7 +344,7 @@ describe("DOCX: Create + toBuffer", () => {
     await Packer.toBuffer(doc);
   });
 
-  bench("original — simple + toBuffer", async () => {
+  bench("docx — simple + toBuffer", async () => {
     const doc = new DocumentOrig({
       sections: [
         {
@@ -372,7 +374,7 @@ describe("DOCX: Create + toBuffer", () => {
     await Packer.toBuffer(doc);
   });
 
-  bench("original — styled paragraphs (20) + toBuffer", async () => {
+  bench("docx — styled paragraphs (20) + toBuffer", async () => {
     const doc = new DocumentOrig({
       sections: [
         {
@@ -427,7 +429,7 @@ describe("DOCX: Create + toBuffer", () => {
     await Packer.toBuffer(doc);
   });
 
-  bench("original — table (10x5) + toBuffer", async () => {
+  bench("docx — table (10x5) + toBuffer", async () => {
     const doc = new DocumentOrig({
       sections: [
         {
@@ -536,7 +538,7 @@ describe("DOCX: Create + toBuffer", () => {
     await Packer.toBuffer(doc);
   });
 
-  bench("original — full featured + toBuffer", async () => {
+  bench("docx — full featured + toBuffer", async () => {
     const doc = new DocumentOrig({
       sections: [
         {
@@ -653,7 +655,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
     await Packer.toBuffer(doc);
   });
 
-  bench("original — 500 paragraphs + toBuffer", async () => {
+  bench("docx — 500 paragraphs + toBuffer", async () => {
     const doc = new DocumentOrig({
       sections: [
         {
@@ -709,7 +711,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
     await Packer.toBuffer(doc);
   });
 
-  bench("original — 100x10 table + toBuffer", async () => {
+  bench("docx — 100x10 table + toBuffer", async () => {
     const doc = new DocumentOrig({
       sections: [
         {
@@ -765,7 +767,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
     await Packer.toBuffer(doc);
   });
 
-  bench("original — 10 sections × 50 paragraphs + toBuffer", async () => {
+  bench("docx — 10 sections × 50 paragraphs + toBuffer", async () => {
     const doc = new DocumentOrig({
       sections: Array.from({ length: 10 }, (_, si) => ({
         properties: { page: { margin: { top: 1440, bottom: 1440 } } },

@@ -6,7 +6,15 @@
 
 import { Readable } from "stream";
 
-import { type ZipOptions, type Zippable, Zip, ZipDeflate, ZipPassThrough, zipSync } from "fflate";
+import {
+  type AsyncZippable,
+  type ZipOptions,
+  type Zippable,
+  AsyncZipDeflate,
+  Zip,
+  ZipPassThrough,
+  zip,
+} from "fflate";
 
 import { convertOutput } from "./output-type";
 import type { OutputByType, OutputType } from "./output-type";
@@ -38,25 +46,36 @@ export const ZIP_DEFLATE_LEVEL = 6;
 export const ZIP_STORED_LEVEL = 0;
 
 /**
- * Compress files and convert to the requested output format.
+ * Asynchronously compress files and convert to the requested output format.
  *
+ * Uses Web Workers for non-blocking compression.
  * XML entries use DEFLATE by default; media entries should explicitly set
  * `{ level: ZIP_STORED_LEVEL }` to avoid redundant compression.
  */
-export const zipSyncAndConvert = <T extends OutputType>(
+export const zipAndConvert = async <T extends OutputType>(
   files: Zippable,
   type: T,
   mimeType: string,
-): OutputByType[T] => {
-  const zipped = zipSync(files, { level: ZIP_DEFLATE_LEVEL });
+  level: number = ZIP_DEFLATE_LEVEL,
+): Promise<OutputByType[T]> => {
+  const zipped = await new Promise<Uint8Array>((resolve, reject) => {
+    zip(files as AsyncZippable, { level: level as ZipOptions["level"] }, (err, data) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(data);
+      }
+    });
+  });
   return convertOutput(zipped, type, mimeType);
 };
 
 /**
  * Create a Node.js Readable stream from compressed file entries.
  *
- * Uses fflate's streaming Zip API to emit compressed chunks incrementally,
- * avoiding buffering the entire archive in a single buffer.
+ * Uses fflate's AsyncZipDeflate for non-blocking DEFLATE compression via
+ * Web Workers. STORED entries (media) pass through synchronously.
+ * Chunks are emitted asynchronously as each file's compression completes.
  */
 export const createZipStream = (files: Zippable): Readable => {
   const stream = new Readable({ read() {} });
@@ -81,7 +100,9 @@ export const createZipStream = (files: Zippable): Readable => {
         ? ((data[1] as ZipOptions).level ?? ZIP_DEFLATE_LEVEL)
         : ZIP_DEFLATE_LEVEL;
       const entry =
-        level === ZIP_STORED_LEVEL ? new ZipPassThrough(name) : new ZipDeflate(name, { level });
+        level === ZIP_STORED_LEVEL
+          ? new ZipPassThrough(name)
+          : new AsyncZipDeflate(name, { level });
       zip.add(entry);
       entry.push(raw, true);
     }
@@ -113,6 +134,7 @@ export type CompileFn<TFile> = (
  * Packer interface returned by {@link createPacker}.
  */
 export interface Packer<TFile> {
+  compile: CompileFn<TFile>;
   pack<T extends OutputType>(
     file: TFile,
     type: T,
@@ -171,10 +193,11 @@ export const createPacker = <TFile>(options: {
     overrides: readonly XmlifyedFile[] = [],
   ): Promise<OutputByType[T]> => {
     const files = compile(file, convertPrettifyType(prettify), overrides);
-    return zipSyncAndConvert(files, type, mimeType);
+    return zipAndConvert(files, type, mimeType);
   };
 
   return {
+    compile,
     pack,
 
     toString: (file, prettify, overrides) => pack(file, "string", prettify, overrides),

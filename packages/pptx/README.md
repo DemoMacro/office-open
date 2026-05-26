@@ -81,29 +81,31 @@ Performance vs [PptxGenJS](https://github.com/gitbrent/PptxGenJS) (higher hz is 
 
 **Object Creation (no pack)**
 
-| Scenario                  | @office-open/pptx |   PptxGenJS |   Speedup |
-| ------------------------- | ----------------: | ----------: | --------: |
-| Simple (2 shapes)         |       5.06M ops/s |  659K ops/s |  **7.7x** |
-| Styled shapes (20 shapes) |        244K ops/s | 82.9K ops/s |  **2.9x** |
-| Table (10x5)              |       2.32M ops/s | 28.9K ops/s | **80.2x** |
-| Full featured             |        199K ops/s | 18.1K ops/s | **11.0x** |
+| Scenario                  | @office-open/pptx |  PptxGenJS |  Speedup |
+| ------------------------- | ----------------: | ---------: | -------: |
+| Simple (2 shapes)         |       4.60M ops/s | 545K ops/s | **8.4x** |
+| Styled shapes (20 shapes) |        231K ops/s |  77K ops/s | **3.0x** |
+| Table (10x5)              |       2.23M ops/s |  28K ops/s |  **79x** |
+| Full featured             |        193K ops/s |  17K ops/s |  **11x** |
 
 **Create + toBuffer (end-to-end)**
 
-| Scenario                  | @office-open/pptx | PptxGenJS (DEFLATE) |  Speedup |
-| ------------------------- | ----------------: | ------------------: | -------: |
-| Simple (2 shapes)         |       1,705 ops/s |         1,456 ops/s | **1.2x** |
-| Styled shapes (20 shapes) |       1,377 ops/s |         1,243 ops/s | **1.1x** |
-| Table (10x5)              |       1,644 ops/s |           983 ops/s | **1.7x** |
-| Full featured             |       1,138 ops/s |           806 ops/s | **1.4x** |
+@office-open/pptx defaults to DEFLATE compression (smaller files). PptxGenJS always uses STORE (no compression). Speedup is based on same-compression (STORE vs STORE) comparison.
+
+| Scenario                  | @office-open/pptx (DEFLATE) | @office-open/pptx (STORE) |   PptxGenJS |  Speedup |
+| ------------------------- | --------------------------: | ------------------------: | ----------: | -------: |
+| Simple (2 shapes)         |                   373 ops/s |               1,885 ops/s | 1,383 ops/s | **1.4x** |
+| Styled shapes (20 shapes) |                   393 ops/s |               1,359 ops/s | 1,152 ops/s | **1.2x** |
+| Table (10x5)              |                   532 ops/s |               1,498 ops/s |   898 ops/s | **1.7x** |
+| Full featured             |                   455 ops/s |               1,057 ops/s |   752 ops/s | **1.4x** |
 
 **Large Files — Create + toBuffer**
 
-| Scenario              | @office-open/pptx | PptxGenJS (DEFLATE) |  Speedup |
-| --------------------- | ----------------: | ------------------: | -------: |
-| 10 slides × 10 shapes |         493 ops/s |           475 ops/s | **1.0x** |
-| 50×10 table           |         450 ops/s |           243 ops/s | **1.9x** |
-| 20 slides full        |         450 ops/s |           343 ops/s | **1.3x** |
+| Scenario              | @office-open/pptx (DEFLATE) | @office-open/pptx (STORE) | PptxGenJS |  Speedup |
+| --------------------- | --------------------------: | ------------------------: | --------: | -------: |
+| 10 slides × 10 shapes |                   207 ops/s |                 488 ops/s | 445 ops/s | **1.1x** |
+| 50×10 table           |                   293 ops/s |                 458 ops/s | 228 ops/s | **2.0x** |
+| 20 slides full        |                   167 ops/s |                 411 ops/s | 313 ops/s | **1.3x** |
 
 ## Examples
 
