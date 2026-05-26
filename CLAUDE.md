@@ -12,7 +12,7 @@ You are a senior TypeScript developer.
 - `packages/docx-plus` - docx-plus (compat re-export of @office-open/docx)
 - `packages/xlsx` - @office-open/xlsx (TODO)
 - `packages/pptx` - @office-open/pptx (PPTX generation package)
-- `ooxml-schemas/` - ISO-IEC29500 OOXML XSD schemas
+- `ooxml-schemas/` - OOXML XSD schemas (strict, transitional, microsoft, mce)
 
 ## Build & Test
 
@@ -22,7 +22,12 @@ You are a senior TypeScript developer.
 
 ## OOXML Specification
 
-`ooxml-schemas/` contains official ISO-IEC29500 OOXML XSD schemas - the **golden source of truth**. Always reference these when implementing XML elements.
+`ooxml-schemas/` contains OOXML XSD schemas - the **golden source of truth**. Always reference these when implementing XML elements.
+
+- `strict/` — ISO/IEC 29500 standard schemas (`purl.oclc.org/ooxml/` namespaces)
+- `transitional/` — Transitional OOXML schemas (`schemas.openxmlformats.org/` namespaces, used by all major software)
+- `microsoft/` — Microsoft extension schemas (`schemas.microsoft.com/` namespaces)
+- `mce/` — Markup Compatibility schemas
 
 - `wml.xsd` - WordprocessingML (documents)
 - `pml.xsd` - PresentationML (presentations)

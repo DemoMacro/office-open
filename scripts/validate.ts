@@ -19,7 +19,7 @@ import { xmlRegisterFsInputProviders } from "libxml2-wasm/lib/nodejs.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.resolve(__dirname, "..");
-const XSD_DIR = path.resolve(__dirname, "../ooxml-schemas/legacy");
+const XSD_DIR = path.resolve(__dirname, "../ooxml-schemas/transitional");
 
 function getDemoFiles(dir: string): string[] {
   return fs

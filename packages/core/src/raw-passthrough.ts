@@ -16,7 +16,7 @@ export function elementToCompact(el: Element): IXmlableObject {
 
   if (el.cdata) {
     inner._cdata = el.cdata;
-  } else if (el.text != null) {
+  } else if (el.text !== null && el.text !== undefined) {
     inner._text = el.text;
   }
 

@@ -6,8 +6,8 @@ Complete API reference for `@office-open/docx`.
 
 ```
 Document
-├── sections: ISectionOptions[]
-│   ├── properties: ISectionPropertiesOptions
+├── sections: SectionOptions[]
+│   ├── properties: SectionPropertiesOptionsBase
 │   │   ├── page: { size, margins, columns, borders }
 │   │   └── type: SectionType (CONTINUOUS | NEXT_PAGE | EVEN_PAGE | ODD_PAGE)
 │   ├── headers: { default, first, even, odd }

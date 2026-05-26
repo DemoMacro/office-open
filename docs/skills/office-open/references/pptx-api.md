@@ -7,9 +7,9 @@ Complete API reference for `@office-open/pptx`.
 ```
 Presentation
 ├── title, creator, subject, description
-├── slides: ISlideOptions[]
+├── slides: SlideOptions[]
 │   ├── children: (Shape | Table | Image | GroupShape | Connector)[]
-│   └── background?: IFillOptions
+│   └── background?: FillOptions
 ```
 
 ## Shapes
