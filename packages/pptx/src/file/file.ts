@@ -59,11 +59,6 @@ export interface IMasterDefinition extends ISlideMasterOptions {
   readonly layouts?: readonly ILayoutDefinition[];
 }
 
-export interface IParsedPresentation {
-  readonly slides: ISlideOptions[];
-  readonly masters?: IMasterDefinition[];
-}
-
 export interface ICommentOptions {
   readonly author: string;
   readonly text: string;

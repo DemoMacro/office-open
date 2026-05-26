@@ -379,16 +379,15 @@ async function main() {
 
   // 3. Parse it back
   const parsed = parseDocument(new Uint8Array(buffer));
-  console.log(`Parsed ${parsed.length} sections`);
-  console.log("Parsed:", JSON.stringify(parsed, null, 2));
+  console.log(`Parsed ${parsed.sections!.length} sections`);
 
   // 4. Verify
   console.log("\n--- Verification ---");
 
-  assert("section count = 7", parsed.length === 7);
+  assert("section count = 7", parsed.sections!.length === 7);
 
   // Section: paragraphs + tables + SDT + textbox + headings + TOC
-  const s1 = parsed[0].children;
+  const s1 = parsed.sections![0].children;
   assert("s1 has content (>= 12)", s1.length >= 12);
 
   // Comment paragraph: commentRangeStart, commentRangeEnd, commentReference preserved
@@ -422,7 +421,7 @@ async function main() {
   );
 
   // Section: chart
-  const s2 = parsed[1].children;
+  const s2 = parsed.sections![1].children;
   assert("s2 has content (>= 2)", s2.length >= 2);
   {
     const chartPara = s2.find((c): boolean => {
@@ -450,7 +449,7 @@ async function main() {
   }
 
   // Section: smartArt
-  const s3 = parsed[2].children;
+  const s3 = parsed.sections![2].children;
   assert("s3 has content (>= 2)", s3.length >= 2);
   {
     const saPara = s3.find((c): boolean => {
@@ -483,7 +482,7 @@ async function main() {
   }
 
   // Section: altChunk
-  const s4 = parsed[3].children;
+  const s4 = parsed.sections![3].children;
   assert("s4 has content (>= 2)", s4.length >= 2);
   assert(
     "s4 has altChunk",
@@ -491,7 +490,7 @@ async function main() {
   );
 
   // Section: image
-  const s5 = parsed[4].children;
+  const s5 = parsed.sections![4].children;
   assert("s5 has content (>= 2)", s5.length >= 2);
   {
     const imgPara = s5.find((c): boolean => {
@@ -520,7 +519,7 @@ async function main() {
   }
 
   // Section: math, symbol, breaks, footnote
-  const s6 = parsed[5].children;
+  const s6 = parsed.sections![5].children;
   assert("s6 has content (>= 6)", s6.length >= 6);
   {
     // First paragraph: math + symbolRun
@@ -604,7 +603,7 @@ async function main() {
   }
 
   // Section: rich formatting for value comparison
-  const s7 = parsed[6].children;
+  const s7 = parsed.sections![6].children;
   assert("s7 has 1 child", s7.length === 1);
   if ("paragraph" in s7[0] && typeof s7[0].paragraph === "object" && s7[0].paragraph !== null) {
     const opts = s7[0].paragraph as Record<string, unknown>;
@@ -619,10 +618,10 @@ async function main() {
   }
 
   // 5. Re-export and re-parse to verify stability
-  const doc2 = new Document({ sections: parsed });
+  const doc2 = new Document(parsed);
   const buffer2 = await Packer.toBuffer(doc2);
   const parsed2 = parseDocument(new Uint8Array(buffer2));
-  assert("stable re-parse section count", parsed2.length === parsed.length);
+  assert("stable re-parse section count", parsed2.sections!.length === parsed.sections!.length);
   console.log(`Re-exported DOCX: ${buffer2.length} bytes`);
 
   // Save

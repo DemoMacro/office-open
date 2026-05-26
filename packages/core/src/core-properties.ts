@@ -1,4 +1,5 @@
 import { textOf } from "@office-open/xml";
+import type { Element } from "@office-open/xml";
 
 import { readXmlFromZip } from "./archive";
 import type { IXmlableObject } from "./xml-components";
@@ -28,15 +29,25 @@ export function parseCoreProperties(zip: Map<string, Uint8Array>): CorePropertie
   const xml = readXmlFromZip(zip, "docProps/core.xml");
   if (!xml) return {};
 
+  return parseCorePropsElement(xml);
+}
+
+/**
+ * Parse core properties from an already-parsed XML element.
+ * Shared by docx and pptx to extract Dublin Core metadata.
+ */
+export function parseCorePropsElement(el: Element | undefined): CoreProperties {
+  if (!el) return {};
+
   const props: CoreProperties = {};
 
   for (const field of FIELD_MAP) {
-    const el = xml.elements?.find((e) => e.name === field.name);
-    const value = textOf(el) || undefined;
+    const child = el.elements?.find((e) => e.name === field.name);
+    const value = textOf(child) || undefined;
     if (value) (props as Record<string, unknown>)[field.key] = value;
   }
 
-  const revEl = xml.elements?.find((e) => e.name === "cp:revision");
+  const revEl = el.elements?.find((e) => e.name === "cp:revision");
   if (revEl) {
     const rev = textOf(revEl);
     if (rev) {

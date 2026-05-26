@@ -8,14 +8,19 @@ export interface IShowOptions {
 }
 
 function buildPresPropsXml(showOptions?: IShowOptions): string {
-  const showPrXml = showOptions
-    ? `<p:showPr${[
-        showOptions.loop ? ' loop="1"' : "",
-        showOptions.kiosk ? ' kiosk="1"' : "",
-        showOptions.showNarration === false ? ' showNarration="0"' : "",
-        showOptions.useTimings ? ' useTimings="1"' : "",
-      ].join("")}><p:present/></p:showPr>`
-    : "";
+  if (!showOptions) {
+    return `<p:presentationPr xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"/>`;
+  }
+
+  const attrs: string[] = [];
+  if (showOptions.loop) attrs.push(' loop="1"');
+  if (showOptions.showNarration === false) attrs.push(' showNarration="0"');
+  if (showOptions.useTimings) attrs.push(' useTimings="1"');
+
+  // EG_ShowType: present | browse | kiosk (child element, not attribute)
+  const showType = showOptions.kiosk ? "<p:kiosk/>" : "<p:present/>";
+  const showPrXml = `<p:showPr${attrs.join("")}>${showType}</p:showPr>`;
+
   return `<p:presentationPr xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">${showPrXml}</p:presentationPr>`;
 }
 

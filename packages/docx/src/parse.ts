@@ -1,10 +1,12 @@
 import type { ParsedDocument } from "@office-open/core";
-import { parseArchive } from "@office-open/core";
+import { parseArchive, parseCorePropsElement } from "@office-open/core";
 import { attr } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import { parseBody } from "./parse/body";
 import { ParseContext } from "./parse/context";
+import { parseCustomProperties } from "./parse/custom-properties";
+import { parseSettings } from "./parse/settings";
 import { buildStyleCache, buildNumberingCache } from "./parse/styles";
 
 export { parseArchive };
@@ -147,19 +149,56 @@ function parseRootRels(doc: ParsedDocument): {
 }
 
 /**
- * Parse a .docx file and convert it into ISectionOptions[].
+ * Parse a .docx file and convert it into IPropertiesOptions.
  *
  * This is the main public API for parsing DOCX files.
- * The returned options can be passed directly to `new Document({ sections })`
+ * The returned options can be passed directly to `new Document(parsed)`
  * to recreate the document.
  *
  * @param data - Raw bytes of a .docx file
- * @returns Array of section options
+ * @returns Document options including sections and metadata
  */
-export function parseDocument(data: Uint8Array): import("@file/file").ISectionOptions[] {
+export function parseDocument(
+  data: Uint8Array,
+): import("@file/core-properties").IPropertiesOptions {
   const docx = parseDocx(data);
   const ctx = new ParseContext(docx, buildStyleCache(docx), buildNumberingCache(docx));
-  return parseBody(docx.body, ctx);
+  const sections = parseBody(docx.body, ctx);
+
+  const opts: Record<string, unknown> = { sections };
+
+  // Core properties
+  if (docx.coreProps) {
+    const corePropsEl = docx.doc.get(docx.coreProps);
+    if (corePropsEl) {
+      const cp = parseCorePropsElement(corePropsEl);
+      if (cp.title) opts.title = cp.title;
+      if (cp.subject) opts.subject = cp.subject;
+      if (cp.creator) opts.creator = cp.creator;
+      if (cp.keywords) opts.keywords = cp.keywords;
+      if (cp.description) opts.description = cp.description;
+      if (cp.lastModifiedBy) opts.lastModifiedBy = cp.lastModifiedBy;
+      if (cp.revision) opts.revision = parseInt(cp.revision, 10);
+    }
+  }
+
+  // Settings
+  if (docx.settings) {
+    Object.assign(opts, parseSettings(docx.settings));
+  }
+
+  // Custom properties
+  if (docx.customProps) {
+    const customPropsEl = docx.doc.get(docx.customProps);
+    if (customPropsEl) {
+      const cpEntries = parseCustomProperties(customPropsEl);
+      if (cpEntries.length > 0) {
+        opts.customProperties = cpEntries;
+      }
+    }
+  }
+
+  return opts as unknown as import("@file/core-properties").IPropertiesOptions;
 }
 
 export function parseDocx(data: Uint8Array): DocxDocument {

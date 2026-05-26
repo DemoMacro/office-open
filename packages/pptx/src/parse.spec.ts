@@ -6,7 +6,7 @@ import type { IMasterDefinition, ISlideOptions } from "./file/file";
 import { parsePresentation } from "./parse";
 
 describe("parsePresentation", () => {
-  it("returns IParsedPresentation with slides", async () => {
+  it("returns IPresentationOptions with slides", async () => {
     const pres = new Presentation({
       slides: [
         {
@@ -20,7 +20,7 @@ describe("parsePresentation", () => {
     const result = parsePresentation(new Uint8Array(buffer));
 
     expect(result.slides).to.exist;
-    expect(result.slides.length).to.equal(1);
+    expect(result.slides!.length).to.equal(1);
     expect(result.masters).to.be.undefined;
   });
 
@@ -34,8 +34,22 @@ describe("parsePresentation", () => {
     const buffer = await Packer.toBuffer(pres);
     const result = parsePresentation(new Uint8Array(buffer));
 
-    expect(result.slides.length).to.equal(2);
+    expect(result.slides!.length).to.equal(2);
     expect(result.masters).to.be.undefined;
+  });
+
+  it("parses core properties and size", async () => {
+    const pres = new Presentation({
+      title: "Test Title",
+      creator: "Test Creator",
+      slides: [{ children: [{ shape: { x: 0, y: 0, width: 200, height: 100, text: "A" } }] }],
+    });
+    const buffer = await Packer.toBuffer(pres);
+    const result = parsePresentation(new Uint8Array(buffer));
+
+    expect(result.title).to.equal("Test Title");
+    expect(result.creator).to.equal("Test Creator");
+    expect(result.size).to.equal("16:9");
   });
 
   it("parses multi-master file", async () => {
@@ -83,12 +97,12 @@ describe("parsePresentation", () => {
     const buffer = await Packer.toBuffer(pres);
     const result = parsePresentation(new Uint8Array(buffer));
 
-    expect(result.slides.length).to.equal(2);
+    expect(result.slides!.length).to.equal(2);
     expect(result.masters).to.exist;
     expect(result.masters!.length).to.equal(2);
     // Master name is derived from theme name
-    expect(result.slides[0].master).to.equal("Light");
-    expect(result.slides[1].master).to.equal("Dark");
+    expect(result.slides![0].master).to.equal("Light");
+    expect(result.slides![1].master).to.equal("Dark");
     expect(result.masters![0].name).to.equal("Light");
     expect(result.masters![1].name).to.equal("Dark");
     expect(result.masters![0].theme?.name).to.equal("Light");
@@ -119,18 +133,15 @@ describe("parsePresentation", () => {
     expect(parsed1.masters!.length).to.equal(2);
 
     // Re-generate from parsed data
-    const pres2 = new Presentation({
-      masters: parsed1.masters as IMasterDefinition[],
-      slides: parsed1.slides as ISlideOptions[],
-    });
+    const pres2 = new Presentation(parsed1);
     const buffer2 = await Packer.toBuffer(pres2);
 
     // Second parse
     const parsed2 = parsePresentation(new Uint8Array(buffer2));
-    expect(parsed2.slides.length).to.equal(2);
+    expect(parsed2.slides!.length).to.equal(2);
     expect(parsed2.masters!.length).to.equal(2);
     // Master name derived from theme name, not original master name
-    expect(parsed2.slides[0].master).to.equal("Theme One");
-    expect(parsed2.slides[1].master).to.equal("Theme Two");
+    expect(parsed2.slides![0].master).to.equal("Theme One");
+    expect(parsed2.slides![1].master).to.equal("Theme Two");
   });
 });

@@ -6,7 +6,6 @@ export {
   type IMasterDefinition,
   type ILayoutDefinition,
   type ILayoutPlaceholderOptions,
-  type IParsedPresentation,
   type MasterChild,
   type SlideSize,
 } from "./file";

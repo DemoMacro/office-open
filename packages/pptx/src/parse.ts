@@ -1,7 +1,7 @@
 import type { ParsedDocument } from "@office-open/core";
-import { parseArchive } from "@office-open/core";
+import { parseArchive, parseCorePropsElement, convertEmuToPixels } from "@office-open/core";
 import type { Element } from "@office-open/xml";
-import { attr, findChild } from "@office-open/xml";
+import { attr, attrNum, findChild } from "@office-open/xml";
 
 import { ParseContext } from "./parse/context";
 import { parseSlide } from "./parse/slide";
@@ -11,7 +11,7 @@ import { parseTheme } from "./parse/theme";
 
 export { parseArchive };
 
-import type { IMasterDefinition, ISlideOptions, IParsedPresentation } from "./file/file";
+import type { IMasterDefinition, ISlideOptions, IPresentationOptions } from "./file/file";
 import type { SlideLayoutType } from "./file/slide-layout/slide-layout";
 
 /**
@@ -263,19 +263,70 @@ function resolveRelTargets(
 }
 
 /**
- * Parse a .pptx file and convert it into IParsedPresentation.
+ * Parse a .pptx file and convert it into IPresentationOptions.
  *
  * This is the main public API for parsing PPTX files.
- * The returned options can be passed directly to `new Presentation({ slides })`
- * or `new Presentation({ masters, slides })` to recreate the presentation.
+ * The returned options can be passed directly to `new Presentation(parsed)`
+ * to recreate the presentation.
  *
  * @param data - Raw bytes of a .pptx file
- * @returns Parsed presentation with slides and optional masters
+ * @returns Parsed presentation options
  */
-export function parsePresentation(data: Uint8Array): IParsedPresentation {
+export function parsePresentation(data: Uint8Array): IPresentationOptions {
   const pptx = parsePptx(data);
+  const opts: Record<string, unknown> = {};
 
-  // 1. Build relationship maps
+  // 1. Parse slide size from p:sldSz
+  if (pptx.presentation) {
+    const sldSz = findChild(pptx.presentation, "p:sldSz");
+    if (sldSz) {
+      const cx = attrNum(sldSz, "cx");
+      const cy = attrNum(sldSz, "cy");
+      if (cx === 12192000 && cy === 6858000) {
+        opts.size = "16:9";
+      } else if (cx === 9144000 && cy === 6858000) {
+        opts.size = "4:3";
+      } else if (cx && cy) {
+        opts.size = { width: convertEmuToPixels(cx), height: convertEmuToPixels(cy) };
+      }
+    }
+  }
+
+  // 2. Parse core properties
+  if (pptx.coreProps) {
+    const corePropsEl = pptx.doc.get(pptx.coreProps);
+    if (corePropsEl) {
+      const cp = parseCorePropsElement(corePropsEl);
+      if (cp.title) opts.title = cp.title;
+      if (cp.subject) opts.subject = cp.subject;
+      if (cp.creator) opts.creator = cp.creator;
+      if (cp.keywords) opts.keywords = cp.keywords;
+      if (cp.description) opts.description = cp.description;
+      if (cp.lastModifiedBy) opts.lastModifiedBy = cp.lastModifiedBy;
+      if (cp.revision) opts.revision = parseInt(cp.revision, 10);
+    }
+  }
+
+  // 3. Parse show options from presProps
+  if (pptx.presProps) {
+    const presPropsEl = pptx.doc.get(pptx.presProps);
+    if (presPropsEl) {
+      const showPr = findChild(presPropsEl, "p:showPr");
+      if (showPr) {
+        const show: Record<string, unknown> = {};
+        if (attr(showPr, "loop") === "1") show.loop = true;
+        // kiosk is a child element per XSD EG_ShowType, not an attribute
+        if (findChild(showPr, "p:kiosk")) show.kiosk = true;
+        const showNarrationVal = attr(showPr, "showNarration");
+        if (showNarrationVal === "0") show.showNarration = false;
+        else if (showNarrationVal !== undefined) show.showNarration = true;
+        if (attr(showPr, "useTimings") === "1") show.useTimings = true;
+        if (Object.keys(show).length > 0) opts.show = show;
+      }
+    }
+  }
+
+  // 4. Build relationship maps
   const masterThemePaths = resolveRelTargets(pptx.doc, pptx.slideMasters, (t) =>
     t.includes("/theme"),
   );
@@ -286,7 +337,7 @@ export function parsePresentation(data: Uint8Array): IParsedPresentation {
     t.includes("/slideLayout"),
   );
 
-  // 2. Parse masters
+  // 5. Parse masters
   const masterCount = pptx.slideMasters.length;
   const masterDefs: IMasterDefinition[] = [];
   for (let mi = 0; mi < masterCount; mi++) {
@@ -322,7 +373,12 @@ export function parsePresentation(data: Uint8Array): IParsedPresentation {
     masterDefs.push(masterDef as IMasterDefinition);
   }
 
-  // 3. Parse slides with layout and master references
+  // Only set masters if there's more than one (single master is auto-created)
+  if (masterCount > 1) {
+    opts.masters = masterDefs;
+  }
+
+  // 6. Parse slides with layout and master references
   const result: ISlideOptions[] = [];
   for (let si = 0; si < pptx.slides.length; si++) {
     const slidePath = pptx.slides[si];
@@ -351,7 +407,6 @@ export function parsePresentation(data: Uint8Array): IParsedPresentation {
     result.push(slideOpts as ISlideOptions);
   }
 
-  // Only return masters if there's more than one (single master is auto-created)
-  const masters = masterCount > 1 ? masterDefs : undefined;
-  return { slides: result, masters };
+  opts.slides = result;
+  return opts as IPresentationOptions;
 }
