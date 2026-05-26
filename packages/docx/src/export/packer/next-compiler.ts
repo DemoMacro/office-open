@@ -14,10 +14,9 @@ import {
   replaceImagePlaceholders,
   replaceSmartArtPlaceholders,
 } from "@office-open/core";
-import type { XmlifyedFile } from "@office-open/core";
-import type { PrettifyType } from "@office-open/core";
+import type { PrettifyType, XmlifyedFile, Zippable } from "@office-open/core";
+import { ZIP_STORED_LEVEL } from "@office-open/core";
 import { xml } from "@office-open/xml";
-import type { Zippable } from "fflate";
 import { textToUint8Array, toUint8Array } from "undio";
 
 import { Formatter } from "../formatter";
@@ -159,34 +158,31 @@ export class Compiler {
     for (const [, obj] of map) {
       if (Array.isArray(obj)) {
         for (const subFile of obj as readonly XmlifyedFile[]) {
-          files[subFile.path] = [
-            typeof subFile.data === "string" ? textToUint8Array(subFile.data) : subFile.data,
-            { level: 0 },
-          ];
+          files[subFile.path] =
+            typeof subFile.data === "string" ? textToUint8Array(subFile.data) : subFile.data;
         }
       } else {
         const fileObj = obj as XmlifyedFile;
-        files[fileObj.path] = [
-          typeof fileObj.data === "string" ? textToUint8Array(fileObj.data) : fileObj.data,
-          { level: 0 },
-        ];
+        files[fileObj.path] =
+          typeof fileObj.data === "string" ? textToUint8Array(fileObj.data) : fileObj.data;
       }
     }
 
     for (const subFile of overrides) {
-      files[subFile.path] = [
-        typeof subFile.data === "string" ? textToUint8Array(subFile.data) : subFile.data,
-        { level: 0 },
-      ];
+      files[subFile.path] =
+        typeof subFile.data === "string" ? textToUint8Array(subFile.data) : subFile.data;
     }
 
-    // Media files: use STORE (level 0) for already-compressed formats
+    // Media files: use STORE for already-compressed formats (JPEG, PNG, GIF, etc.)
     for (const mediaData of file.Media.Array) {
-      files[`word/media/${mediaData.fileName}`] = [toUint8Array(mediaData.data), { level: 0 }];
+      files[`word/media/${mediaData.fileName}`] = [
+        toUint8Array(mediaData.data),
+        { level: ZIP_STORED_LEVEL },
+      ];
       if (mediaData.type === "svg") {
         files[`word/media/${mediaData.fallback.fileName}`] = [
           toUint8Array(mediaData.fallback.data),
-          { level: 0 },
+          { level: ZIP_STORED_LEVEL },
         ];
       }
     }

@@ -8,7 +8,7 @@ import type { ParagraphChild } from "@file/paragraph";
 import { TargetModeType } from "@file/relationships/relationship/relationship";
 import type { Context } from "@file/xml-components";
 import { getReferencedMedia, replaceImagePlaceholders } from "@office-open/core";
-import { convertOutput } from "@office-open/core";
+import { OoxmlMimeType, strFromU8, unzipSync, zipSyncAndConvert } from "@office-open/core";
 import type { OutputByType, OutputType } from "@office-open/core";
 import { js2xml } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
@@ -21,7 +21,6 @@ import { uniqueId } from "@util/convenience-functions";
  *
  * @module
  */
-import { strFromU8, unzipSync, zipSync } from "fflate";
 import { textToUint8Array, toUint8Array } from "undio";
 
 import { appendContentType } from "./content-types-manager";
@@ -395,8 +394,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
       mediaData instanceof Uint8Array ? mediaData : new Uint8Array(mediaData);
   }
 
-  const zipped = zipSync(files, { level: 6 });
-  return convertOutput(zipped, outputType);
+  return zipSyncAndConvert(files, outputType, OoxmlMimeType.DOCX);
 };
 
 const toXml = (jsonObj: Element): string => {

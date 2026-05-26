@@ -3,7 +3,7 @@
  *
  * @module
  */
-import { strFromU8, unzipSync } from "fflate";
+import { strFromU8, unzipSync } from "@office-open/core";
 import { toUint8Array } from "undio";
 
 import type { InputDataType } from "./from-docx";

@@ -3,7 +3,7 @@ vi.mock("fflate", () => ({
   strFromU8: vi.fn().mockImplementation((data: Uint8Array) => new TextDecoder().decode(data)),
   unzipSync: vi.fn(),
 }));
-import { unzipSync } from "fflate";
+import { unzipSync } from "@office-open/core";
 
 import { patchDetector } from "./patch-detector";
 

@@ -9,6 +9,7 @@ import {
 } from "@file/smartart/built-in-definitions";
 import type { Context } from "@file/xml-components";
 import {
+  ZIP_STORED_LEVEL,
   addSmartArtRelationships,
   collectPlaceholderKeys,
   getReferencedMedia,
@@ -17,9 +18,8 @@ import {
   replaceImagePlaceholders,
   replaceSmartArtPlaceholders,
 } from "@office-open/core";
-import type { XmlifyedFile } from "@office-open/core";
+import type { XmlifyedFile, Zippable } from "@office-open/core";
 import { xml } from "@office-open/xml";
-import type { Zippable } from "fflate";
 
 interface XmlifyedFileMapping {
   [key: string]: { data: string; path: string };
@@ -383,11 +383,11 @@ export class Compiler {
       path: "[Content_Types].xml",
     };
 
-    // Convert mapping to Zippable (XML files: STORE, no compression benefit)
+    // Convert mapping to Zippable (XML files use global DEFLATE default)
     const files: Zippable = {};
     for (const key of Object.keys(mapping)) {
       const entry = mapping[key];
-      files[entry.path] = [textToUint8Array(entry.data), { level: 0 }];
+      files[entry.path] = textToUint8Array(entry.data);
     }
 
     // Add overrides
@@ -396,133 +396,104 @@ export class Compiler {
         override.data instanceof Uint8Array ? override.data : textToUint8Array(override.data);
     }
 
-    // Add chart parts (STORE — XML, no compression benefit)
+    // Add chart parts
     for (let i = 0; i < file.Charts.Array.length; i++) {
       const chartData = file.Charts.Array[i];
-      files[`ppt/charts/chart${i + 1}.xml`] = [
-        textToUint8Array(
-          xml(this.formatter.format(chartData.chartSpace, context), {
-            declaration,
-            indent,
-          }),
-        ),
-        { level: 0 },
-      ];
-      files[`ppt/charts/_rels/chart${i + 1}.xml.rels`] = [
-        textToUint8Array(
-          xml(
-            {
-              Relationships: {
-                _attr: {
-                  xmlns: "http://schemas.openxmlformats.org/package/2006/relationships",
-                },
+      files[`ppt/charts/chart${i + 1}.xml`] = textToUint8Array(
+        xml(this.formatter.format(chartData.chartSpace, context), {
+          declaration,
+          indent,
+        }),
+      );
+      files[`ppt/charts/_rels/chart${i + 1}.xml.rels`] = textToUint8Array(
+        xml(
+          {
+            Relationships: {
+              _attr: {
+                xmlns: "http://schemas.openxmlformats.org/package/2006/relationships",
               },
             },
-            { declaration: { encoding: "UTF-8", standalone: "yes" } },
-          ),
+          },
+          { declaration: { encoding: "UTF-8", standalone: "yes" } },
         ),
-        { level: 0 },
-      ];
+      );
     }
 
-    // Add SmartArt diagram parts (STORE)
+    // Add SmartArt diagram parts
     for (let i = 0; i < file.SmartArts.Array.length; i++) {
       const smartArtData = file.SmartArts.Array[i];
-      files[`ppt/diagrams/data${i + 1}.xml`] = [
-        textToUint8Array(
-          xml(this.formatter.format(smartArtData.dataModel, context), {
-            declaration,
-            indent,
-          }),
-        ),
-        { level: 0 },
-      ];
-      files[`ppt/diagrams/layout${i + 1}.xml`] = [
-        textToUint8Array(getLayoutXml(smartArtData.layout)),
-        { level: 0 },
-      ];
-      files[`ppt/diagrams/quickStyle${i + 1}.xml`] = [
-        textToUint8Array(getStyleXml(smartArtData.style)),
-        { level: 0 },
-      ];
-      files[`ppt/diagrams/colors${i + 1}.xml`] = [
-        textToUint8Array(getColorXml(smartArtData.color)),
-        { level: 0 },
-      ];
-      files[`ppt/diagrams/drawing${i + 1}.xml`] = [
-        textToUint8Array(DEFAULT_DRAWING_XML),
-        { level: 0 },
-      ];
+      files[`ppt/diagrams/data${i + 1}.xml`] = textToUint8Array(
+        xml(this.formatter.format(smartArtData.dataModel, context), {
+          declaration,
+          indent,
+        }),
+      );
+      files[`ppt/diagrams/layout${i + 1}.xml`] = textToUint8Array(
+        getLayoutXml(smartArtData.layout),
+      );
+      files[`ppt/diagrams/quickStyle${i + 1}.xml`] = textToUint8Array(
+        getStyleXml(smartArtData.style),
+      );
+      files[`ppt/diagrams/colors${i + 1}.xml`] = textToUint8Array(getColorXml(smartArtData.color));
+      files[`ppt/diagrams/drawing${i + 1}.xml`] = textToUint8Array(DEFAULT_DRAWING_XML);
     }
 
-    // Add notes slides (STORE)
+    // Add notes slides
     for (let i = 0; i < file.NotesSlides.length; i++) {
       const notesSlide = file.NotesSlides[i];
-      files[`ppt/notesSlides/notesSlide${i + 1}.xml`] = [
-        textToUint8Array(
-          xml(this.formatter.format(notesSlide, context), {
-            declaration,
-            indent,
-          }),
-        ),
-        { level: 0 },
-      ];
-      files[`ppt/notesSlides/_rels/notesSlide${i + 1}.xml.rels`] = [
-        textToUint8Array(
-          xml(
-            {
-              Relationships: {
-                _attr: {
-                  xmlns: "http://schemas.openxmlformats.org/package/2006/relationships",
-                },
+      files[`ppt/notesSlides/notesSlide${i + 1}.xml`] = textToUint8Array(
+        xml(this.formatter.format(notesSlide, context), {
+          declaration,
+          indent,
+        }),
+      );
+      files[`ppt/notesSlides/_rels/notesSlide${i + 1}.xml.rels`] = textToUint8Array(
+        xml(
+          {
+            Relationships: {
+              _attr: {
+                xmlns: "http://schemas.openxmlformats.org/package/2006/relationships",
               },
             },
-            { declaration: { encoding: "UTF-8", standalone: "yes" } },
-          ),
+          },
+          { declaration: { encoding: "UTF-8", standalone: "yes" } },
         ),
-        { level: 0 },
-      ];
+      );
     }
 
-    // Add comment authors (STORE)
+    // Add comment authors
     if (file.CommentAuthorList) {
-      files["ppt/commentAuthors.xml"] = [
-        textToUint8Array(
-          xml(this.formatter.format(file.CommentAuthorList, context), {
-            declaration,
-            indent,
-          }),
-        ),
-        { level: 0 },
-      ];
+      files["ppt/commentAuthors.xml"] = textToUint8Array(
+        xml(this.formatter.format(file.CommentAuthorList, context), {
+          declaration,
+          indent,
+        }),
+      );
     }
 
-    // Add slide comments (STORE)
+    // Add slide comments
     const commentLists = file.SlideCommentLists;
     for (let i = 0; i < commentLists.length; i++) {
       if (commentLists[i]) {
-        files[`ppt/comments/comment${i + 1}.xml`] = [
-          textToUint8Array(
-            xml(this.formatter.format(commentLists[i]!, context), {
-              declaration,
-              indent,
-            }),
-          ),
-          { level: 0 },
-        ];
+        files[`ppt/comments/comment${i + 1}.xml`] = textToUint8Array(
+          xml(this.formatter.format(commentLists[i]!, context), {
+            declaration,
+            indent,
+          }),
+        );
       }
     }
 
-    // Add media files (STORE compression)
+    // Add media files (STORE — already-compressed formats)
     for (const image of file.Media.Array) {
-      files[`ppt/media/${image.fileName}`] = [image.data, { level: 0 }];
+      files[`ppt/media/${image.fileName}`] = [image.data, { level: ZIP_STORED_LEVEL }];
       if (image.type === "svg" && "fallback" in image) {
         const fallback = (
           image as import("@file/media/data").IMediaData & {
             readonly fallback: { readonly fileName: string; readonly data: Uint8Array };
           }
         ).fallback;
-        files[`ppt/media/${fallback.fileName}`] = [fallback.data, { level: 0 }];
+        files[`ppt/media/${fallback.fileName}`] = [fallback.data, { level: ZIP_STORED_LEVEL }];
       }
     }
 

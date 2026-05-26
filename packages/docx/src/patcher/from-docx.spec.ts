@@ -7,7 +7,7 @@ vi.mock("fflate", () => ({
   zipSync: vi.fn().mockReturnValue(new Uint8Array(0)),
 }));
 
-import { unzipSync } from "fflate";
+import { unzipSync } from "@office-open/core";
 
 import { PatchType, patchDocument } from "./from-docx";
 
