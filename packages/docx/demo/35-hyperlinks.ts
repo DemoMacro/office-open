@@ -6,6 +6,7 @@ import {
   Document,
   ExternalHyperlink,
   Footer,
+  Header,
   FootnoteReferenceRun,
   ImageRun,
   Packer,
@@ -164,7 +165,7 @@ const doc = new Document({
         }),
       },
       headers: {
-        default: new Footer({
+        default: new Header({
           children: [
             new Paragraph({
               children: [

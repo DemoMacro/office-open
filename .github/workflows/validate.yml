@@ -1,4 +1,4 @@
-name: Demos
+name: Validate
 on:
   push:
     branches:
@@ -8,11 +8,11 @@ on:
       - main
 
 jobs:
-  demos:
-    name: Demos
+  validate:
+    name: Validate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: "./.github/actions/install-and-build"
-      - name: Run All Demos
-        run: pnpm --filter @office-open/docx run demos
+      - name: Validate Demos
+        run: npx tsx scripts/validate.ts
