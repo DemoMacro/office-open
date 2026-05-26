@@ -38,24 +38,34 @@ function transformSlot(slot: any, index: number): any {
 
 onBeforeUpdate(() => rerenderCount.value++);
 
-const jsonIndex = computed(() =>
-  items.value.findIndex((item) => item.label.toUpperCase() === "JSON"),
-);
-const jsonItem = computed(() => (jsonIndex.value >= 0 ? items.value[jsonIndex.value] : undefined));
-const showExport = computed(() => {
+function parseExportable(code: string) {
+  try {
+    const data = JSON.parse(code);
+    if (data.sections) return { data, type: "docx" as const };
+    if (data.slides) return { data, type: "pptx" as const };
+  } catch {}
+  return undefined;
+}
+
+const activeItem = computed(() => {
   const active = model.value ?? props.defaultValue ?? "0";
-  return !!jsonItem.value && !!props.type && active === String(jsonIndex.value);
+  return items.value[Number(active)];
 });
 
+const showExport = computed(() => !!activeItem.value && !!parseExportable(activeItem.value.code));
+
 async function handleExport() {
-  if (!jsonItem.value || !props.type) return;
+  if (!activeItem.value) return;
+  const parsed = parseExportable(activeItem.value.code);
+  if (!parsed) return;
   exporting.value = true;
   try {
-    const data = JSON.parse(jsonItem.value.code);
+    const { data, type } = parsed;
+    const isDocx = props.type === "docx" || type === "docx";
     let blob: Blob;
     let filename: string;
 
-    if (props.type === "docx") {
+    if (isDocx) {
       const { Document, Packer } = await import("@office-open/docx");
       const options = data.sections ? data : { sections: Array.isArray(data) ? data : [data] };
       const doc = new Document(options);
@@ -90,7 +100,7 @@ async function handleExport() {
     v-model="model"
     :default-value="defaultValue"
     :unmount-on-hide="false"
-    class="group relative my-5 *:not-first:!static *:not-first:!my-0"
+    class="group relative my-5 *:not-first:static! *:not-first:my-0!"
   >
     <TabsList
       class="border-muted bg-default relative flex items-center gap-1 overflow-x-auto rounded-t-md border border-b-0 p-2"
@@ -105,6 +115,7 @@ async function handleExport() {
         :value="String(index)"
         class="text-default data-[state=active]:text-highlighted hover:bg-elevated/50 focus-visible:ring-primary relative inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset disabled:cursor-not-allowed disabled:opacity-75"
       >
+        <ProseCodeIcon :icon="item.icon" :filename="item.label" class="size-4 shrink-0" />
         <span class="truncate">{{ item.label }}</span>
       </TabsTrigger>
     </TabsList>

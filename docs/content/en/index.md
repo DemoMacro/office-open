@@ -10,24 +10,18 @@ seo:
 orientation: horizontal
 ---
 
-:::code-group
+:::api-example{type="docx"}
 
-```ts [example.ts]
-import { Document, Packer, Paragraph, TextRun } from "@office-open/docx";
-
-const doc = new Document({
-    sections: [
+```json [JSON]
+{
+    "sections": [
         {
-            children: [
-                new Paragraph({
-                    children: [new TextRun({ text: "Hello, World!", bold: true })],
-                }),
-            ],
-        },
-    ],
-});
-
-const buffer = await Packer.toBuffer(doc);
+            "children": [
+                { "paragraph": { "children": [{ "text": "Hello, World!", "bold": true }] } }
+            ]
+        }
+    ]
+}
 ```
 
 ```bash [Terminal]
@@ -40,7 +34,7 @@ pnpm add @office-open/docx
 Generate Office Open XML :br documents.
 
 #description
-Create `.docx`, `.pptx`, and `.xlsx` files programmatically with a declarative TypeScript API. Works in Node.js and browsers.
+Create `.docx`, `.pptx`, and `.xlsx` files with JSON or TypeScript. Ideal for AI agents and traditional workflows alike.
 
 #links
 :::u-button
@@ -68,13 +62,13 @@ variant: outline
 :::u-page-grid
 ::::u-page-feature
 ---
-icon: i-lucide-code
+icon: i-lucide-braces
 ---
 #title{unwrap="p"}
-Declarative API
+JSON & TypeScript
 
 #description{unwrap="p"}
-Describe document structure with intuitive TypeScript classes. Each element maps to valid OOXML markup.
+Create documents with pure JSON objects or TypeScript classes. JSON-first design makes it ideal for AI agents and LLM workflows.
 ::::
 
 ::::u-page-feature
@@ -139,59 +133,52 @@ Install only what you need — docx, pptx, xml, or core.
 orientation: horizontal
 ---
 
-:::code-group
+:::api-example
 
-```ts [DOCX]
-import { Document, Packer, Paragraph, TextRun } from "@office-open/docx";
-
-const doc = new Document({
-    sections: [
+```json [DOCX]
+{
+    "sections": [
         {
-            children: [
-                new Paragraph({
-                    children: [new TextRun({ text: "Hello, World!", bold: true })],
-                }),
-            ],
-        },
-    ],
-});
-
-await Packer.toBuffer(doc);
+            "children": [
+                {
+                    "table": {
+                        "rows": [
+                            { "children": [{ "children": [{ "paragraph": "Name" }] }, { "children": [{ "paragraph": "Role" }] }] },
+                            { "children": [{ "children": [{ "paragraph": "Alice" }] }, { "children": [{ "paragraph": "Engineer" }] }] },
+                            { "children": [{ "children": [{ "paragraph": "Bob" }] }, { "children": [{ "paragraph": "Designer" }] }] }
+                        ]
+                    }
+                }
+            ]
+        }
+    ]
+}
 ```
 
-```ts [PPTX]
-import { Presentation, Slide, Shape, Paragraph, TextRun, Packer } from "@office-open/pptx";
-
-const pres = new Presentation({
-    slides: [
+```json [PPTX]
+{
+    "slides": [
         {
-            children: [
-                new Shape({
-                    x: 1,
-                    y: 1,
-                    width: 8,
-                    height: 4,
-                    paragraphs: [
-                        new Paragraph({
-                            children: [new TextRun({ text: "Hello, World!", fontSize: 32 })],
-                        }),
-                    ],
-                }),
-            ],
-        },
-    ],
-});
-
-await Packer.toBuffer(pres);
+            "children": [
+                {
+                    "shape": {
+                        "x": 100, "y": 100, "width": 760, "height": 340,
+                        "paragraphs": [{ "children": [{ "text": "Hello, World!", "fontSize": 32 }] }]
+                    }
+                }
+            ]
+        }
+    ]
+}
 ```
 
 :::
 
 #title
-Build documents with [TypeScript]{.text-(--ui-primary)} classes
+Build documents with [JSON]{.text-(--ui-primary)} or TypeScript
 
 #description
-Describe your document structure using intuitive classes. Each element produces valid OOXML markup — no XML wrestling required.
+Define documents as plain JSON objects — perfect for AI agents — or use TypeScript classes for a full IDE experience. Both produce valid OOXML markup.
 
 #features
 :::u-page-feature

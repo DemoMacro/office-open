@@ -10,24 +10,18 @@ seo:
 orientation: horizontal
 ---
 
-:::code-group
+:::api-example{type="docx"}
 
-```ts [example.ts]
-import { Document, Packer, Paragraph, TextRun } from "@office-open/docx";
-
-const doc = new Document({
-    sections: [
+```json [JSON]
+{
+    "sections": [
         {
-            children: [
-                new Paragraph({
-                    children: [new TextRun({ text: "Hello, World!", bold: true })],
-                }),
-            ],
-        },
-    ],
-});
-
-const buffer = await Packer.toBuffer(doc);
+            "children": [
+                { "paragraph": { "children": [{ "text": "Hello, World!", "bold": true }] } }
+            ]
+        }
+    ]
+}
 ```
 
 ```bash [Terminal]
@@ -40,7 +34,7 @@ pnpm add @office-open/docx
 生成 Office Open XML :br 文档。
 
 #description
-通过声明式 TypeScript API 以编程方式创建 `.docx`、`.pptx` 和 `.xlsx` 文件。支持 Node.js 和浏览器。
+使用 JSON 或 TypeScript 创建 `.docx`、`.pptx` 和 `.xlsx` 文件。既适合 AI 代理，也适合传统开发工作流。
 
 #links
 :::u-button
@@ -68,13 +62,13 @@ variant: outline
 :::u-page-grid
 ::::u-page-feature
 ---
-icon: i-lucide-code
+icon: i-lucide-braces
 ---
 #title{unwrap="p"}
-声明式 API
+JSON 与 TypeScript
 
 #description{unwrap="p"}
-使用直观的 TypeScript 类描述文档结构。每个元素映射到有效的 OOXML 标记。
+使用纯 JSON 对象或 TypeScript 类创建文档。JSON 优先的设计使其成为 AI 代理和 LLM 工作流的理想选择。
 ::::
 
 ::::u-page-feature
@@ -139,59 +133,52 @@ icon: i-lucide-package
 orientation: horizontal
 ---
 
-:::code-group
+:::api-example
 
-```ts [DOCX]
-import { Document, Packer, Paragraph, TextRun } from "@office-open/docx";
-
-const doc = new Document({
-    sections: [
+```json [DOCX]
+{
+    "sections": [
         {
-            children: [
-                new Paragraph({
-                    children: [new TextRun({ text: "Hello, World!", bold: true })],
-                }),
-            ],
-        },
-    ],
-});
-
-await Packer.toBuffer(doc);
+            "children": [
+                {
+                    "table": {
+                        "rows": [
+                            { "children": [{ "children": [{ "paragraph": "Name" }] }, { "children": [{ "paragraph": "Role" }] }] },
+                            { "children": [{ "children": [{ "paragraph": "Alice" }] }, { "children": [{ "paragraph": "Engineer" }] }] },
+                            { "children": [{ "children": [{ "paragraph": "Bob" }] }, { "children": [{ "paragraph": "Designer" }] }] }
+                        ]
+                    }
+                }
+            ]
+        }
+    ]
+}
 ```
 
-```ts [PPTX]
-import { Presentation, Slide, Shape, Paragraph, TextRun, Packer } from "@office-open/pptx";
-
-const pres = new Presentation({
-    slides: [
+```json [PPTX]
+{
+    "slides": [
         {
-            children: [
-                new Shape({
-                    x: 1,
-                    y: 1,
-                    width: 8,
-                    height: 4,
-                    paragraphs: [
-                        new Paragraph({
-                            children: [new TextRun({ text: "Hello, World!", fontSize: 32 })],
-                        }),
-                    ],
-                }),
-            ],
-        },
-    ],
-});
-
-await Packer.toBuffer(pres);
+            "children": [
+                {
+                    "shape": {
+                        "x": 100, "y": 100, "width": 760, "height": 340,
+                        "paragraphs": [{ "children": [{ "text": "Hello, World!", "fontSize": 32 }] }]
+                    }
+                }
+            ]
+        }
+    ]
+}
 ```
 
 :::
 
 #title
-用 [TypeScript]{.text-(--ui-primary)} 类构建文档
+使用 [JSON]{.text-(--ui-primary)} 或 TypeScript 构建文档
 
 #description
-使用直观的类描述文档结构。每个元素生成有效的 OOXML 标记 — 无需手动编写 XML。
+将文档定义为纯 JSON 对象——非常适合 AI 代理——或使用 TypeScript 类获得完整的 IDE 体验。两者均生成有效的 OOXML 标记。
 
 #features
 :::u-page-feature
