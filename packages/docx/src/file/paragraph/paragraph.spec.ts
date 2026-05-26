@@ -1252,8 +1252,11 @@ describe("parse round-trip", () => {
     const root = toElement(tree);
     expect(root.elements?.some((e) => e.name === "w:commentRangeStart")).toBe(true);
     expect(root.elements?.some((e) => e.name === "w:commentRangeEnd")).toBe(true);
-    // CommentReference is a direct child of w:p
-    expect(root.elements?.some((e) => e.name === "w:commentReference")).toBe(true);
+    // CommentReference is nested inside w:r (run-level element per OOXML spec)
+    const refRun = root.elements?.find(
+      (e) => e.name === "w:r" && e.elements?.some((c) => c.name === "w:commentReference"),
+    );
+    expect(refRun).toBeDefined();
   });
 
   it("should round-trip footnoteReference via JSON API", () => {

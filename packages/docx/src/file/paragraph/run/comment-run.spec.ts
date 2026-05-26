@@ -246,8 +246,11 @@ describe("Comment parse round-trip", () => {
     });
     const tree = new Formatter().format(paragraph);
     const root = toElement(tree);
-    // CommentReference is a direct child of w:p (not nested in w:r)
-    expect(root.elements?.some((e) => e.name === "w:commentReference")).toBe(true);
+    // CommentReference is nested inside w:r (run-level element per OOXML spec)
+    const refRun = root.elements?.find(
+      (e) => e.name === "w:r" && e.elements?.some((c) => c.name === "w:commentReference"),
+    );
+    expect(refRun).toBeDefined();
   });
 
   it("should round-trip full comment cycle via Paragraph JSON API", () => {
@@ -263,6 +266,9 @@ describe("Comment parse round-trip", () => {
     const root = toElement(tree);
     expect(root.elements?.some((e) => e.name === "w:commentRangeStart")).toBe(true);
     expect(root.elements?.some((e) => e.name === "w:commentRangeEnd")).toBe(true);
-    expect(root.elements?.some((e) => e.name === "w:commentReference")).toBe(true);
+    const refRun = root.elements?.find(
+      (e) => e.name === "w:r" && e.elements?.some((c) => c.name === "w:commentReference"),
+    );
+    expect(refRun).toBeDefined();
   });
 });
