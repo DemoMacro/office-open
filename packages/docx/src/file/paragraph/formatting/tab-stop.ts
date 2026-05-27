@@ -7,8 +7,8 @@
  *
  * @module
  */
-import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import { BuilderElement, attrObj } from "@file/xml-components";
+import type { IXmlableObject, XmlComponent } from "@file/xml-components";
 
 /**
  * Definition for a single tab stop.
@@ -149,3 +149,13 @@ export const createTabStop = (tabDefinitions: readonly TabStopDefinition[]): Xml
     children: tabDefinitions.map((tabDefinition) => createTabStopItem(tabDefinition)),
     name: "w:tabs",
   });
+
+export const buildTabStopObj = (tabDefinitions: readonly TabStopDefinition[]): IXmlableObject => ({
+  "w:tabs": tabDefinitions.map(({ type, position, leader }) =>
+    attrObj("w:tab", {
+      "w:val": type,
+      "w:pos": position,
+      "w:leader": leader,
+    }),
+  ),
+});

@@ -7,8 +7,8 @@
  *
  * @module
  */
-import { BuilderElement, OnOffElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import { BuilderElement, onOffObj } from "@file/xml-components";
+import type { BuilderChild, XmlComponent } from "@file/xml-components";
 
 /**
  * Script type for math run properties.
@@ -84,14 +84,14 @@ export interface MathRunPropertiesOptions {
  * ```
  */
 export const createMathRunProperties = (options: MathRunPropertiesOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+  const children: BuilderChild[] = [];
 
   if (options.lit !== undefined) {
-    children.push(new OnOffElement("m:lit", options.lit));
+    children.push(onOffObj("m:lit", options.lit));
   }
 
   if (options.normal !== undefined) {
-    children.push(new OnOffElement("m:nor", options.normal));
+    children.push(onOffObj("m:nor", options.normal));
   } else if (options.script !== undefined || options.style !== undefined) {
     if (options.script !== undefined) {
       children.push(
@@ -121,7 +121,7 @@ export const createMathRunProperties = (options: MathRunPropertiesOptions): XmlC
   }
 
   if (options.align !== undefined) {
-    children.push(new OnOffElement("m:aln", options.align));
+    children.push(onOffObj("m:aln", options.align));
   }
 
   return new BuilderElement({

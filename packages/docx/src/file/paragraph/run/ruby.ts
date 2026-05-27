@@ -12,7 +12,7 @@
 import { BuilderElement } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
 
-import { Text } from "./run-components/text";
+import { buildText } from "./run-components/text";
 
 /**
  * Ruby alignment options.
@@ -113,7 +113,7 @@ const createRubyContent = (name: string, text: string): XmlComponent =>
   new BuilderElement({
     children: [
       new BuilderElement({
-        children: [new Text(text)],
+        children: [buildText(text)],
         name: "w:r",
       }),
     ],

@@ -9,8 +9,9 @@
  *
  * @module
  */
+
 import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import type { BuilderChild, XmlComponent } from "@file/xml-components";
 
 /**
  * Table style override type (ST_TblStyleOverrideType).
@@ -160,7 +161,7 @@ export interface TableStyleOverrideOptions {
  * ```
  */
 export const createTableStyleOverride = (options: TableStyleOverrideOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+  const children: BuilderChild[] = [];
 
   if (options.paragraphProperties) {
     children.push(options.paragraphProperties);

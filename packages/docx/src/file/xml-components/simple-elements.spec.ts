@@ -1,5 +1,5 @@
 import { Formatter } from "@export/formatter";
-import { BuilderElement, StringEnumValueElement } from "@office-open/core";
+import { BuilderElement, stringEnumValObj } from "@office-open/core";
 import { describe, expect, it } from "vite-plus/test";
 
 describe("BuilderElement", () => {
@@ -35,22 +35,24 @@ describe("BuilderElement", () => {
         },
       });
     });
-  });
-});
 
-describe("StringEnumValueElement", () => {
-  describe("#constructor()", () => {
-    it("should create an element with an enum value", () => {
-      type AlignmentType = "left" | "center" | "right";
-      const element = new StringEnumValueElement<AlignmentType>("w:jc", "center");
+    it("should accept IXmlableObject directly as child", () => {
+      const element = new BuilderElement({
+        name: "w:pPr",
+        children: [stringEnumValObj("w:jc", "center")],
+      });
 
       const tree = new Formatter().format(element);
       expect(tree).to.deep.equal({
-        "w:jc": {
-          _attr: {
-            "w:val": "center",
+        "w:pPr": [
+          {
+            "w:jc": {
+              _attr: {
+                "w:val": "center",
+              },
+            },
           },
-        },
+        ],
       });
     });
   });

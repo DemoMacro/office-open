@@ -1,6 +1,6 @@
 import type { HyperlinkOptions } from "@file/drawing/doc-properties/doc-properties";
 import type { IExtendedMediaData, MediaDataTransformation } from "@file/media";
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 import type { FillOptions } from "@office-open/core/drawingml";
 
 import { GraphicData } from "./graphic-data";
@@ -8,18 +8,6 @@ import type { BlipEffectsOptions } from "./graphic-data/pic/blip/blip-effects";
 import type { TileOptions } from "./graphic-data/pic/blip/tile";
 import type { EffectListOptions } from "./graphic-data/pic/shape-properties/effects/effect-list";
 import type { OutlineOptions } from "./graphic-data/pic/shape-properties/outline/outline";
-
-/**
- * Attributes for the graphic element.
- * @internal
- */
-class GraphicAttributes extends XmlAttributeComponent<{
-  readonly a: string;
-}> {
-  protected readonly xmlKeys = {
-    a: "xmlns:a",
-  };
-}
 
 /**
  * Represents a graphic element in DrawingML.
@@ -70,11 +58,11 @@ export class Graphic extends XmlComponent {
     readonly hyperlink?: HyperlinkOptions;
   }) {
     super("a:graphic");
-    this.root.push(
-      new GraphicAttributes({
-        a: "http://schemas.openxmlformats.org/drawingml/2006/main",
-      }),
-    );
+    this.root.push({
+      _attr: {
+        "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+      },
+    });
 
     this.data = new GraphicData({
       blipEffects,

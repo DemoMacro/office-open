@@ -8,8 +8,8 @@
  *
  * @module
  */
-import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import { BuilderElement, attrObj } from "@file/xml-components";
+import type { IXmlableObject, XmlComponent } from "@file/xml-components";
 import { signedTwipsMeasureValue, twipsMeasureValue } from "@util/values";
 import type { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
 
@@ -267,6 +267,38 @@ export const createTableFloatProperties = ({
       },
     },
     name: "w:tblpPr",
+  });
+
+export const buildTableFloatPropertiesObj = ({
+  horizontalAnchor,
+  verticalAnchor,
+  absoluteHorizontalPosition,
+  relativeHorizontalPosition,
+  absoluteVerticalPosition,
+  relativeVerticalPosition,
+  bottomFromText,
+  topFromText,
+  leftFromText,
+  rightFromText,
+}: TableFloatOptions): IXmlableObject =>
+  attrObj("w:tblpPr", {
+    "w:horzAnchor": horizontalAnchor,
+    "w:vertAnchor": verticalAnchor,
+    "w:tblpX":
+      absoluteHorizontalPosition !== undefined
+        ? signedTwipsMeasureValue(absoluteHorizontalPosition)
+        : undefined,
+    "w:tblpXSpec": relativeHorizontalPosition,
+    "w:tblpY":
+      absoluteVerticalPosition !== undefined
+        ? signedTwipsMeasureValue(absoluteVerticalPosition)
+        : undefined,
+    "w:tblpYSpec": relativeVerticalPosition,
+    "w:bottomFromText":
+      bottomFromText !== undefined ? twipsMeasureValue(bottomFromText) : undefined,
+    "w:topFromText": topFromText !== undefined ? twipsMeasureValue(topFromText) : undefined,
+    "w:leftFromText": leftFromText !== undefined ? twipsMeasureValue(leftFromText) : undefined,
+    "w:rightFromText": rightFromText !== undefined ? twipsMeasureValue(rightFromText) : undefined,
   });
 
 export const createTableOverlap = (

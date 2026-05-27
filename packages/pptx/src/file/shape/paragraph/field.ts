@@ -1,8 +1,8 @@
 import {
   NextAttributeComponent,
   BuilderElement,
-  StringContainer,
   XmlComponent,
+  stringContainerObj,
 } from "@file/xml-components";
 
 /**
@@ -31,7 +31,7 @@ export class Field extends XmlComponent {
       }),
     );
 
-    this.root.push(new StringContainer("a:t", displayText));
+    this.root.push(stringContainerObj("a:t", displayText));
   }
 }
 

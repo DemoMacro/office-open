@@ -26,7 +26,7 @@ export abstract class XmlComponent extends BaseXmlComponent {
 
   public constructor(rootKey: string) {
     super(rootKey);
-    this.root = new Array<BaseXmlComponent | string>();
+    this.root = [];
   }
 
   /**

@@ -9,8 +9,8 @@
  *
  * @module
  */
-import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import { BuilderElement, attrObj } from "@file/xml-components";
+import type { IXmlableObject, XmlComponent } from "@file/xml-components";
 import type { ThemeFont } from "@util/values";
 
 /**
@@ -117,5 +117,37 @@ export const createRunFonts = (
       hint: { key: "w:hint", value: attrs.hint },
     },
     name: "w:rFonts",
+  });
+};
+
+/**
+ * Build run fonts (w:rFonts) as IXmlableObject without allocating XmlComponent tree.
+ */
+export const buildRunFontsObj = (
+  nameOrAttrs: string | FontAttributesProperties,
+  hint?: string,
+): IXmlableObject => {
+  if (typeof nameOrAttrs === "string") {
+    const name = nameOrAttrs;
+    return attrObj("w:rFonts", {
+      "w:ascii": name,
+      "w:cs": name,
+      "w:eastAsia": name,
+      "w:hAnsi": name,
+      "w:hint": hint,
+    });
+  }
+
+  const attrs = nameOrAttrs;
+  return attrObj("w:rFonts", {
+    "w:ascii": attrs.ascii,
+    "w:asciiTheme": attrs.asciiTheme,
+    "w:cs": attrs.cs,
+    "w:cstheme": attrs.cstheme,
+    "w:eastAsia": attrs.eastAsia,
+    "w:eastAsiaTheme": attrs.eastAsiaTheme,
+    "w:hAnsi": attrs.hAnsi,
+    "w:hAnsiTheme": attrs.hAnsiTheme,
+    "w:hint": attrs.hint,
   });
 };

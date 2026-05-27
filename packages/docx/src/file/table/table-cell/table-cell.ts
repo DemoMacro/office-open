@@ -11,7 +11,7 @@ import type { Context, IXmlableObject } from "@file/xml-components";
 
 import type { StructuredDocumentTagCell } from "../../sdt";
 import type { SectionChild } from "../../section-child";
-import { TableCellProperties } from "./table-cell-properties";
+import { buildTableCellProperties } from "./table-cell-properties";
 import type { ITableCellPropertiesOptions } from "./table-cell-properties";
 
 // Lazy import to avoid circular dependency: coerce.ts → Table → TableRow → TableCell → coerce.ts
@@ -74,8 +74,7 @@ export class TableCell extends BaseXmlComponent {
   public prepForXml(context: Context): IXmlableObject | undefined {
     const children: IXmlableObject[] = [];
 
-    const tPr = new TableCellProperties(this.options);
-    const tPrObj = tPr.prepForXml(context);
+    const tPrObj = buildTableCellProperties(this.options);
     if (tPrObj) children.push(tPrObj);
 
     const coerced = this.options.children.map((c) =>

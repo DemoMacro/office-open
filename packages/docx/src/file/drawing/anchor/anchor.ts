@@ -15,10 +15,9 @@ import {
   createWrapTopAndBottom,
 } from "../text-wrap";
 import { DocProperties } from "./../doc-properties/doc-properties";
-import { createEffectExtent } from "./../effect-extent/effect-extent";
-import { createExtent } from "./../extent/extent";
-import { createGraphicFrameProperties } from "./../graphic-frame/graphic-frame-properties";
-import { AnchorAttributes } from "./anchor-attributes";
+import { buildEffectExtentObj } from "./../effect-extent/effect-extent";
+import { buildExtentObj } from "./../extent/extent";
+import { buildGraphicFramePropertiesObj } from "./../graphic-frame/graphic-frame-properties";
 
 // <xsd:complexType name="CT_Anchor">
 //     <xsd:sequence>
@@ -103,8 +102,8 @@ export class Anchor extends XmlComponent {
       ...drawingOptions.floating,
     };
 
-    this.root.push(
-      new AnchorAttributes({
+    this.root.push({
+      _attr: {
         distT: floating.margins ? floating.margins.top || 0 : 0,
         distB: floating.margins ? floating.margins.bottom || 0 : 0,
         distL: floating.margins ? floating.margins.left || 0 : 0,
@@ -115,14 +114,14 @@ export class Anchor extends XmlComponent {
         locked: floating.lockAnchor === true ? "1" : "0",
         layoutInCell: floating.layoutInCell === true ? "1" : "0",
         relativeHeight: floating.zIndex ? floating.zIndex : transform.emus.y,
-      }),
-    );
+      },
+    });
 
     this.root.push(createSimplePos());
     this.root.push(createHorizontalPosition(floating.horizontalPosition));
     this.root.push(createVerticalPosition(floating.verticalPosition));
-    this.root.push(createExtent({ x: transform.emus.x, y: transform.emus.y }));
-    this.root.push(createEffectExtent({ bottom: 0, left: 0, right: 0, top: 0 }));
+    this.root.push(buildExtentObj({ x: transform.emus.x, y: transform.emus.y }));
+    this.root.push(buildEffectExtentObj({ bottom: 0, left: 0, right: 0, top: 0 }));
 
     if (drawingOptions.floating !== undefined && drawingOptions.floating.wrap !== undefined) {
       switch (drawingOptions.floating.wrap.type) {
@@ -164,7 +163,7 @@ export class Anchor extends XmlComponent {
     }
 
     this.root.push(new DocProperties(drawingOptions.docProperties));
-    this.root.push(createGraphicFrameProperties());
+    this.root.push(buildGraphicFramePropertiesObj());
     this.root.push(
       new Graphic({
         blipEffects: drawingOptions.blipEffects,

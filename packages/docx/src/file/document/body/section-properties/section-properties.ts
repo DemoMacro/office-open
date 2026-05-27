@@ -47,7 +47,7 @@ import { ChangeAttributes } from "@file/track-revision/track-revision";
 import type { ChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { createVerticalAlign } from "@file/vertical-align";
 import type { SectionVerticalAlign } from "@file/vertical-align";
-import { BuilderElement, OnOffElement, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent, onOffObj } from "@file/xml-components";
 import { decimalNumber } from "@util/values";
 
 import { createColumns } from "./properties/columns";
@@ -353,7 +353,7 @@ export class SectionProperties extends XmlComponent {
     }
 
     if (titlePage !== undefined) {
-      this.root.push(new OnOffElement("w:titlePg", titlePage));
+      this.root.push(onOffObj("w:titlePg", titlePage));
     }
 
     if (textDirection) {
@@ -361,19 +361,19 @@ export class SectionProperties extends XmlComponent {
     }
 
     if (noEndnote !== undefined) {
-      this.root.push(new OnOffElement("w:noEndnote", noEndnote));
+      this.root.push(onOffObj("w:noEndnote", noEndnote));
     }
 
     if (formProtection !== undefined) {
-      this.root.push(new OnOffElement("w:formProt", formProtection));
+      this.root.push(onOffObj("w:formProt", formProtection));
     }
 
     if (bidi !== undefined) {
-      this.root.push(new OnOffElement("w:bidi", bidi));
+      this.root.push(onOffObj("w:bidi", bidi));
     }
 
     if (rtlGutter !== undefined) {
-      this.root.push(new OnOffElement("w:rtlGutter", rtlGutter));
+      this.root.push(onOffObj("w:rtlGutter", rtlGutter));
     }
 
     if (paperSrc) {

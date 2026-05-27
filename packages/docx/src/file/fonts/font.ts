@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { BuilderElement, OnOffElement, createStringElement } from "@file/xml-components";
+import { BuilderElement, createStringElement, onOffObj } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
 
 /**
@@ -126,7 +126,7 @@ const createFontRelationship = (
       id: { key: "r:id", value: id },
       ...(fontKey ? { fontKey: { key: "w:fontKey", value: `{${fontKey}}` } } : {}),
     },
-    children: subsetted ? [new OnOffElement("w:subsetted", subsetted)] : [],
+    children: subsetted ? [onOffObj("w:subsetted", subsetted)] : [],
     name,
   });
 
@@ -196,7 +196,7 @@ export const createFont = ({
       // http://www.datypic.com/sc/ooxml/e-w_family-1.html
       ...(family ? [createStringElement("w:family", family)] : []),
       // http://www.datypic.com/sc/ooxml/e-w_notTrueType-1.html
-      ...(notTrueType ? [new OnOffElement("w:notTrueType", notTrueType)] : []),
+      ...(notTrueType ? [onOffObj("w:notTrueType", notTrueType)] : []),
       ...(pitch ? [createStringElement("w:pitch", pitch)] : []),
       // http://www.datypic.com/sc/ooxml/e-w_sig-1.html
       ...(sig

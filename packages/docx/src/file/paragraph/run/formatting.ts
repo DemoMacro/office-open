@@ -8,7 +8,8 @@
  *
  * @module
  */
-import { Attributes, XmlComponent } from "@file/xml-components";
+import { Attributes, XmlComponent, attrObj } from "@file/xml-components";
+import type { IXmlableObject } from "@file/xml-components";
 import { hexColorValue, signedTwipsMeasureValue, uCharHexNumber } from "@util/values";
 import type { ThemeColor, UniversalMeasure } from "@util/values";
 
@@ -170,3 +171,38 @@ export class HighlightComplexScript extends XmlComponent {
     );
   }
 }
+
+/**
+ * Build character spacing (w:spacing) as IXmlableObject without allocating XmlComponent tree.
+ */
+export const buildCharacterSpacingObj = (value: number | UniversalMeasure): IXmlableObject =>
+  attrObj("w:spacing", { "w:val": signedTwipsMeasureValue(value) });
+
+/**
+ * Build text color (w:color) as IXmlableObject without allocating XmlComponent tree.
+ */
+export const buildColorObj = (colorOrOptions: string | ColorOptions): IXmlableObject => {
+  if (typeof colorOrOptions === "string") {
+    return attrObj("w:color", { "w:val": hexColorValue(colorOrOptions) });
+  }
+
+  const opts = colorOrOptions;
+  return attrObj("w:color", {
+    "w:val": opts.val === undefined ? undefined : hexColorValue(opts.val),
+    "w:themeColor": opts.themeColor,
+    "w:themeTint": opts.themeTint === undefined ? undefined : uCharHexNumber(opts.themeTint),
+    "w:themeShade": opts.themeShade === undefined ? undefined : uCharHexNumber(opts.themeShade),
+  });
+};
+
+/**
+ * Build highlight (w:highlight) as IXmlableObject without allocating XmlComponent tree.
+ */
+export const buildHighlightObj = (color: string): IXmlableObject =>
+  attrObj("w:highlight", { "w:val": color });
+
+/**
+ * Build complex script highlight (w:highlightCs) as IXmlableObject without allocating XmlComponent tree.
+ */
+export const buildHighlightComplexScriptObj = (color: string): IXmlableObject =>
+  attrObj("w:highlightCs", { "w:val": color });

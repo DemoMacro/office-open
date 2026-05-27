@@ -7,8 +7,8 @@
  *
  * @module
  */
-import { BuilderElement, OnOffElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import { BuilderElement, onOffObj } from "@file/xml-components";
+import type { BuilderChild, XmlComponent } from "@file/xml-components";
 
 /**
  * Options for math sub-super-script properties.
@@ -40,10 +40,10 @@ export interface MathSubSuperScriptPropertiesOptions {
 export const createMathSubSuperScriptProperties = (
   options?: MathSubSuperScriptPropertiesOptions,
 ): XmlComponent => {
-  const children: XmlComponent[] = [];
+  const children: BuilderChild[] = [];
 
   if (options?.alignScripts !== undefined) {
-    children.push(new OnOffElement("m:alnScr", options.alignScripts));
+    children.push(onOffObj("m:alnScr", options.alignScripts));
   }
 
   return new BuilderElement({

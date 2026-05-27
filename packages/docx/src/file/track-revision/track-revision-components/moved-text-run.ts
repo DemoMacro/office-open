@@ -12,7 +12,7 @@ import { createBegin, createEnd, createSeparate } from "../../paragraph/run/fiel
 import { RunProperties } from "../../paragraph/run/properties";
 import { PageNumber } from "../../paragraph/run/run";
 import type { RunOptions } from "../../paragraph/run/run";
-import { Text } from "../../paragraph/run/run-components/text";
+import { buildText } from "../../paragraph/run/run-components/text";
 import { ChangeAttributes } from "../track-revision";
 import type { ChangedAttributesProperties } from "../track-revision";
 
@@ -99,27 +99,27 @@ class MovedFromRunWrapper extends XmlComponent {
           switch (child) {
             case PageNumber.CURRENT: {
               this.root.push(createBegin());
-              this.root.push(new Text("PAGE"));
+              this.root.push(buildText("PAGE"));
               this.root.push(createSeparate());
               this.root.push(createEnd());
               break;
             }
             case PageNumber.TOTAL_PAGES: {
               this.root.push(createBegin());
-              this.root.push(new Text("NUMPAGES"));
+              this.root.push(buildText("NUMPAGES"));
               this.root.push(createSeparate());
               this.root.push(createEnd());
               break;
             }
             case PageNumber.TOTAL_PAGES_IN_SECTION: {
               this.root.push(createBegin());
-              this.root.push(new Text("SECTIONPAGES"));
+              this.root.push(buildText("SECTIONPAGES"));
               this.root.push(createSeparate());
               this.root.push(createEnd());
               break;
             }
             default: {
-              this.root.push(new Text(child));
+              this.root.push(buildText(child));
               break;
             }
           }
@@ -129,7 +129,7 @@ class MovedFromRunWrapper extends XmlComponent {
         this.root.push(child);
       }
     } else if (options.text) {
-      this.root.push(new Text(options.text));
+      this.root.push(buildText(options.text));
     }
 
     if (options.break) {
@@ -156,7 +156,7 @@ class MovedToRunWrapper extends XmlComponent {
         this.root.push(child);
       }
     } else if (options.text) {
-      this.root.push(new Text(options.text));
+      this.root.push(buildText(options.text));
     }
 
     if (options.break) {

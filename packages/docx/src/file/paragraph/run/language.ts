@@ -8,8 +8,8 @@
  *
  * @module
  */
-import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import { BuilderElement, attrObj } from "@file/xml-components";
+import type { IXmlableObject, XmlComponent } from "@file/xml-components";
 
 /**
  * Options for language settings.
@@ -84,4 +84,14 @@ export const createLanguageComponent = (options: LanguageOptions): XmlComponent 
       },
     },
     name: "w:lang",
+  });
+
+/**
+ * Build language (w:lang) as IXmlableObject without allocating XmlComponent tree.
+ */
+export const buildLanguageObj = (options: LanguageOptions): IXmlableObject =>
+  attrObj("w:lang", {
+    "w:bidi": options.bidirectional,
+    "w:eastAsia": options.eastAsia,
+    "w:val": options.value,
   });

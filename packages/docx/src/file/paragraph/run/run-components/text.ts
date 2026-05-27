@@ -6,21 +6,12 @@
  * @module
  */
 import { SpaceType } from "@file/shared";
-import { BaseXmlComponent } from "@file/xml-components";
 import type { IXmlableObject } from "@file/xml-components";
 
 interface TextOptions {
   readonly space?: (typeof SpaceType)[keyof typeof SpaceType];
   readonly text?: string;
 }
-
-// <xsd:complexType name="CT_Text">
-//     <xsd:simpleContent>
-//         <xsd:extension base="s:ST_String">
-//             <xsd:attribute ref="xml:space" use="optional" />
-//         </xsd:extension>
-//     </xsd:simpleContent>
-// </xsd:complexType>
 
 /**
  * Builds a text element XML object.
@@ -39,20 +30,4 @@ export function buildText(options: string | TextOptions): IXmlableObject {
   return {
     "w:t": [{ _attr: { "xml:space": options.space ?? SpaceType.DEFAULT } }, options.text ?? ""],
   };
-}
-
-/**
- * @deprecated Use buildText() instead.
- */
-export class Text extends BaseXmlComponent {
-  private readonly _opts: string | TextOptions;
-
-  public constructor(options: string | TextOptions) {
-    super("w:t");
-    this._opts = options;
-  }
-
-  public prepForXml(): IXmlableObject {
-    return buildText(this._opts);
-  }
 }

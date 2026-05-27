@@ -8,8 +8,7 @@
  *
  * @module
  */
-import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import type { IXmlableObject } from "@file/xml-components";
 
 /**
  * Attributes for extent.
@@ -69,17 +68,12 @@ interface ExtentAttributes {
  * @example
  * ```typescript
  * // Create a 1-inch by 1-inch extent
- * const extent = createExtent({
+ * const extent = buildExtentObj({
  *   x: 914400,
  *   y: 914400
  * });
  * ```
  */
-export const createExtent = ({ x, y }: ExtentAttributes): XmlComponent =>
-  new BuilderElement<ExtentAttributes>({
-    attributes: {
-      x: { key: "cx", value: x },
-      y: { key: "cy", value: y },
-    },
-    name: "wp:extent",
-  });
+export const buildExtentObj = ({ x, y }: ExtentAttributes): IXmlableObject => ({
+  "wp:extent": { _attr: { cx: x, cy: y } },
+});

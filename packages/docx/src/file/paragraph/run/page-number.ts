@@ -8,7 +8,6 @@
  *
  * @module
  */
-import { BaseXmlComponent } from "@file/xml-components";
 import type { IXmlableObject } from "@file/xml-components";
 
 const INSTR_TEXT_ATTRS = { _attr: { "xml:space": "preserve" } };
@@ -49,51 +48,3 @@ export const buildNumberOfPagesSection = () => buildInstrText("SECTIONPAGES");
  * @internal
  */
 export const buildCurrentSection = () => buildInstrText("SECTION");
-
-/**
- * @deprecated Use buildPage() instead.
- */
-export class Page extends BaseXmlComponent {
-  public constructor() {
-    super("w:instrText");
-  }
-  public prepForXml(): IXmlableObject {
-    return buildPage();
-  }
-}
-
-/**
- * @deprecated Use buildNumberOfPages() instead.
- */
-export class NumberOfPages extends BaseXmlComponent {
-  public constructor() {
-    super("w:instrText");
-  }
-  public prepForXml(): IXmlableObject {
-    return buildNumberOfPages();
-  }
-}
-
-/**
- * @deprecated Use buildNumberOfPagesSection() instead.
- */
-export class NumberOfPagesSection extends BaseXmlComponent {
-  public constructor() {
-    super("w:instrText");
-  }
-  public prepForXml(): IXmlableObject {
-    return buildNumberOfPagesSection();
-  }
-}
-
-/**
- * @deprecated Use buildCurrentSection() instead.
- */
-export class CurrentSection extends BaseXmlComponent {
-  public constructor() {
-    super("w:instrText");
-  }
-  public prepForXml(): IXmlableObject {
-    return buildCurrentSection();
-  }
-}

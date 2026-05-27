@@ -1,21 +1,16 @@
 import { Formatter } from "@export/formatter";
+import { createTransform2D } from "@office-open/core/drawingml";
 import { describe, expect, it } from "vite-plus/test";
 
-import { Form } from "./form/form";
-
-describe("Form", () => {
+describe("Form (createTransform2D)", () => {
   describe("#constructor()", () => {
     it("should create", () => {
       const tree = new Formatter().format(
-        new Form({
-          emus: {
-            x: 100,
-            y: 100,
-          },
-          pixels: {
-            x: 100,
-            y: 100,
-          },
+        createTransform2D({
+          x: 0,
+          y: 0,
+          width: 100,
+          height: 100,
         }),
       );
 
@@ -43,19 +38,13 @@ describe("Form", () => {
 
     it("should create with flip", () => {
       const tree = new Formatter().format(
-        new Form({
-          emus: {
-            x: 100,
-            y: 100,
-          },
-          flip: {
-            horizontal: true,
-            vertical: true,
-          },
-          pixels: {
-            x: 100,
-            y: 100,
-          },
+        createTransform2D({
+          x: 0,
+          y: 0,
+          width: 100,
+          height: 100,
+          flipHorizontal: true,
+          flipVertical: true,
         }),
       );
 

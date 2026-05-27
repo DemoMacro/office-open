@@ -1,4 +1,4 @@
-import { BuilderElement, StringContainer, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent, stringContainerObj } from "@file/xml-components";
 
 import type {
   AnimationClass,
@@ -248,7 +248,7 @@ function buildEntrOrExitEffects(
             }),
             new BuilderElement({
               name: "p:attrNameLst",
-              children: [new StringContainer("p:attrName", "style.visibility")],
+              children: [stringContainerObj("p:attrName", "style.visibility")],
             }),
           ],
         }),
@@ -498,7 +498,7 @@ function buildEmphasisEffects(
                 tgtEl,
                 new BuilderElement({
                   name: "p:attrNameLst",
-                  children: [new StringContainer("p:attrName", "style.opacity")],
+                  children: [stringContainerObj("p:attrName", "style.opacity")],
                 }),
               ],
             }),
@@ -716,7 +716,7 @@ function buildPropertyAnimation(
     cBhvrChildren.push(
       new BuilderElement({
         name: "p:attrNameLst",
-        children: [new StringContainer("p:attrName", options.attributeName)],
+        children: [stringContainerObj("p:attrName", options.attributeName)],
       }),
     );
   }

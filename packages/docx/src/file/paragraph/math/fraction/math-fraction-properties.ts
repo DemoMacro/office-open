@@ -7,8 +7,9 @@
  *
  * @module
  */
+
 import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import type { BuilderChild, XmlComponent } from "@file/xml-components";
 
 /**
  * Fraction type (how the fraction bar is displayed).
@@ -62,7 +63,7 @@ export interface MathFractionPropertiesOptions {
 export const createMathFractionProperties = (
   options: MathFractionPropertiesOptions,
 ): XmlComponent => {
-  const children: XmlComponent[] = [];
+  const children: BuilderChild[] = [];
 
   if (options.fractionType) {
     children.push(

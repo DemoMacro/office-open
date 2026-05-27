@@ -12,7 +12,7 @@ import type { EmbeddedFontOptions } from "@file/fonts/font-table";
 import type { CommentsOptions } from "@file/paragraph/run/comment-run";
 import type { HyphenationOptions } from "@file/settings";
 import type { CompatibilityOptions } from "@file/settings/compatibility";
-import { StringContainer, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { XmlAttributeComponent, XmlComponent, stringContainerObj } from "@file/xml-components";
 import { dateTimeValue } from "@util/values";
 
 import type { CustomPropertyOptions } from "../custom-properties";
@@ -167,25 +167,25 @@ export class CoreProperties extends XmlComponent {
     super("cp:coreProperties");
     this.root.push(buildDocumentAttributes(["cp", "dc", "dcterms", "dcmitype", "xsi"]));
     if (options.title) {
-      this.root.push(new StringContainer("dc:title", options.title));
+      this.root.push(stringContainerObj("dc:title", options.title));
     }
     if (options.subject) {
-      this.root.push(new StringContainer("dc:subject", options.subject));
+      this.root.push(stringContainerObj("dc:subject", options.subject));
     }
     if (options.creator) {
-      this.root.push(new StringContainer("dc:creator", options.creator));
+      this.root.push(stringContainerObj("dc:creator", options.creator));
     }
     if (options.keywords) {
-      this.root.push(new StringContainer("cp:keywords", options.keywords));
+      this.root.push(stringContainerObj("cp:keywords", options.keywords));
     }
     if (options.description) {
-      this.root.push(new StringContainer("dc:description", options.description));
+      this.root.push(stringContainerObj("dc:description", options.description));
     }
     if (options.lastModifiedBy) {
-      this.root.push(new StringContainer("cp:lastModifiedBy", options.lastModifiedBy));
+      this.root.push(stringContainerObj("cp:lastModifiedBy", options.lastModifiedBy));
     }
     if (options.revision) {
-      this.root.push(new StringContainer("cp:revision", String(options.revision)));
+      this.root.push(stringContainerObj("cp:revision", String(options.revision)));
     }
     this.root.push(new TimestampElement("dcterms:created"));
     this.root.push(new TimestampElement("dcterms:modified"));

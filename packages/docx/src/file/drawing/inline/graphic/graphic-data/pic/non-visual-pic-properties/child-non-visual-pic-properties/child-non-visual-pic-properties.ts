@@ -8,13 +8,10 @@
  *
  * @module
  */
-import { XmlComponent } from "@file/xml-components";
-
-import { ChildNonVisualPropertiesAttributes } from "./child-non-visual-pic-properties-attributes";
-import { PicLocks } from "./pic-locks/pic-locks";
+import type { IXmlableObject } from "@file/xml-components";
 
 /**
- * Represents non-visual picture drawing properties.
+ * Builds the non-visual picture drawing properties object.
  *
  * This element specifies the non-visual properties specific to a picture.
  * These properties include picture-specific locking settings that control
@@ -32,17 +29,10 @@ import { PicLocks } from "./pic-locks/pic-locks";
  *   <xsd:attribute name="preferRelativeResize" type="xsd:boolean" use="optional" default="true"/>
  * </xsd:complexType>
  * ```
- *
- * @example
- * ```typescript
- * const cNvPicPr = new ChildNonVisualProperties();
- * ```
  */
-export class ChildNonVisualProperties extends XmlComponent {
-  public constructor() {
-    super("pic:cNvPicPr");
-
-    this.root.push(new ChildNonVisualPropertiesAttributes({ preferRelativeResize: true }));
-    this.root.push(new PicLocks());
-  }
-}
+export const buildChildNonVisualPropertiesObj = (): IXmlableObject => ({
+  "pic:cNvPicPr": [
+    { _attr: { preferRelativeResize: true } },
+    { "a:picLocks": { _attr: { noChangeArrowheads: 1, noChangeAspect: 1 } } },
+  ],
+});

@@ -7,8 +7,9 @@
  *
  * @module
  */
+
 import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import type { BuilderChild, XmlComponent } from "@file/xml-components";
 
 import {
   createMathControlProperties,
@@ -45,7 +46,7 @@ export interface MathFunctionPropertiesOptions {
 export const createMathFunctionProperties = (
   options?: MathFunctionPropertiesOptions,
 ): XmlComponent => {
-  const children: XmlComponent[] = [];
+  const children: BuilderChild[] = [];
 
   if (options?.controlProperties !== undefined) {
     children.push(createMathControlProperties(options.controlProperties));

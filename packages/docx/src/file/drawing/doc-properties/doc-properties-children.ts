@@ -12,8 +12,7 @@
 //         <element name="extLst" type="CT_OfficeArtExtensionList" minOccurs="0" maxOccurs="1" />
 //     </sequence>
 
-import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import type { IXmlableObject } from "@file/xml-components";
 
 // <xsd:complexType name="CT_Hyperlink">
 //     <xsd:group ref="EG_PContent" minOccurs="0" maxOccurs="unbounded" />
@@ -28,7 +27,7 @@ import type { XmlComponent } from "@file/xml-components";
 // TODO: Implement the rest of the attributes
 
 /**
- * Creates a click hyperlink element for a drawing.
+ * Builds a click hyperlink object for a drawing.
  *
  * This element defines what happens when a user clicks on a drawing element.
  *
@@ -47,29 +46,19 @@ import type { XmlComponent } from "@file/xml-components";
  *
  * @param linkId - The relationship ID for the hyperlink target
  * @param hasXmlNs - Whether to include the XML namespace declaration
- * @returns An XML component representing the click hyperlink
+ * @returns An IXmlableObject representing the click hyperlink
  */
-export const createHyperlinkClick = (linkId: string, hasXmlNs: boolean): XmlComponent =>
-  new BuilderElement({
-    attributes: {
-      ...(hasXmlNs
-        ? {
-            xmlns: {
-              key: "xmlns:a",
-              value: "http://schemas.openxmlformats.org/drawingml/2006/main",
-            },
-          }
-        : {}),
-      id: {
-        key: "r:id",
-        value: `rId${linkId}`,
-      },
+export const buildHyperlinkClickObj = (linkId: string, hasXmlNs: boolean): IXmlableObject => ({
+  "a:hlinkClick": {
+    _attr: {
+      ...(hasXmlNs ? { "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main" } : {}),
+      "r:id": `rId${linkId}`,
     },
-    name: "a:hlinkClick",
-  });
+  },
+});
 
 /**
- * Creates a hover hyperlink element for a drawing.
+ * Builds a hover hyperlink object for a drawing.
  *
  * This element defines what happens when a user hovers over a drawing element.
  *
@@ -88,23 +77,13 @@ export const createHyperlinkClick = (linkId: string, hasXmlNs: boolean): XmlComp
  *
  * @param linkId - The relationship ID for the hyperlink target
  * @param hasXmlNs - Whether to include the XML namespace declaration
- * @returns An XML component representing the hover hyperlink
+ * @returns An IXmlableObject representing the hover hyperlink
  */
-export const createHyperlinkHover = (linkId: string, hasXmlNs: boolean): XmlComponent =>
-  new BuilderElement({
-    attributes: {
-      ...(hasXmlNs
-        ? {
-            xmlns: {
-              key: "xmlns:a",
-              value: "http://schemas.openxmlformats.org/drawingml/2006/main",
-            },
-          }
-        : {}),
-      id: {
-        key: "r:id",
-        value: `rId${linkId}`,
-      },
+export const buildHyperlinkHoverObj = (linkId: string, hasXmlNs: boolean): IXmlableObject => ({
+  "a:hlinkHover": {
+    _attr: {
+      ...(hasXmlNs ? { "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main" } : {}),
+      "r:id": `rId${linkId}`,
     },
-    name: "a:hlinkHover",
-  });
+  },
+});

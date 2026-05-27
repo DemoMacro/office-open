@@ -48,24 +48,33 @@ import type { ChangedAttributesProperties } from "@file/track-revision/track-rev
 import {
   BuilderElement,
   IgnoreIfEmptyXmlComponent,
-  OnOffElement,
-  StringValueElement,
   XmlComponent,
+  attrObj,
+  numberValObj,
+  onOffObj,
+  stringEnumValObj,
+  stringValObj,
 } from "@file/xml-components";
+import type { IXmlableObject } from "@file/xml-components";
+import { measurementOrPercentValue } from "@util/values";
 
 import { createAlignment } from "../../paragraph";
 import type { AlignmentType } from "../../paragraph";
-import { createShading } from "../../shading";
+import { buildShadingObj, createShading } from "../../shading";
 import type { ShadingAttributesProperties } from "../../shading";
 import { createTableCellSpacing } from "../table-cell-spacing";
 import type { TableCellSpacingProperties } from "../table-cell-spacing";
-import { createTableWidthElement } from "../table-width";
+import { buildTableWidthObj, createTableWidthElement } from "../table-width";
 import type { TableWidthProperties } from "../table-width";
-import { TableBorders } from "./table-borders";
+import { TableBorders, buildTableBorders } from "./table-borders";
 import type { TableBordersOptions } from "./table-borders";
-import { createTableCellMargin } from "./table-cell-margin";
+import { buildTableCellMarginObj, createTableCellMargin } from "./table-cell-margin";
 import type { TableCellMarginOptions } from "./table-cell-margin";
-import { createTableFloatProperties, createTableOverlap } from "./table-float-properties";
+import {
+  buildTableFloatPropertiesObj,
+  createTableFloatProperties,
+  createTableOverlap,
+} from "./table-float-properties";
 import type { TableFloatOptions } from "./table-float-properties";
 import { createTableLayout } from "./table-layout";
 import type { TableLayoutType } from "./table-layout";
@@ -108,6 +117,120 @@ export type ITablePropertiesOptions = {
 } & TablePropertiesOptionsBase;
 
 /**
+ * Build table properties change (w:tblPrChange) as IXmlableObject without allocating XmlComponent tree.
+ */
+function buildTablePropertiesChangeObj(options: ITablePropertiesChangeOptions): IXmlableObject {
+  const innerPr = buildTableProperties({ ...options, includeIfEmpty: true })!;
+  return {
+    "w:tblPrChange": [
+      { _attr: { "w:author": options.author, "w:date": options.date, "w:id": options.id } },
+      innerPr,
+    ],
+  };
+}
+
+/**
+ * Build table properties (w:tblPr) as IXmlableObject without allocating XmlComponent tree.
+ */
+export function buildTableProperties(options: ITablePropertiesOptions): IXmlableObject | undefined {
+  const children: IXmlableObject[] = [];
+
+  if (options.style) {
+    children.push(stringValObj("w:tblStyle", options.style));
+  }
+
+  if (options.float) {
+    children.push(buildTableFloatPropertiesObj(options.float));
+    if (options.float.overlap) {
+      children.push(stringEnumValObj("w:tblOverlap", options.float.overlap));
+    }
+  }
+
+  if (options.visuallyRightToLeft !== undefined) {
+    children.push(onOffObj("w:bidiVisual", options.visuallyRightToLeft));
+  }
+
+  if (options.styleRowBandSize !== undefined) {
+    children.push(numberValObj("w:tblStyleRowBandSize", options.styleRowBandSize));
+  }
+
+  if (options.styleColBandSize !== undefined) {
+    children.push(numberValObj("w:tblStyleColBandSize", options.styleColBandSize));
+  }
+
+  if (options.width) {
+    children.push(buildTableWidthObj("w:tblW", options.width));
+  }
+
+  if (options.alignment) {
+    children.push(stringEnumValObj("w:jc", options.alignment));
+  }
+
+  if (options.indent) {
+    children.push(buildTableWidthObj("w:tblInd", options.indent));
+  }
+
+  if (options.borders) {
+    children.push(buildTableBorders(options.borders));
+  }
+
+  if (options.shading) {
+    children.push(buildShadingObj(options.shading));
+  }
+
+  if (options.layout) {
+    children.push(stringEnumValObj("w:tblLayout", options.layout));
+  }
+
+  if (options.cellMargin) {
+    const cellMargin = buildTableCellMarginObj(options.cellMargin);
+    if (cellMargin) {
+      children.push(cellMargin);
+    }
+  }
+
+  if (options.tableLook) {
+    children.push(
+      attrObj("w:tblLook", {
+        "w:firstRow": options.tableLook.firstRow,
+        "w:lastRow": options.tableLook.lastRow,
+        "w:firstColumn": options.tableLook.firstColumn,
+        "w:lastColumn": options.tableLook.lastColumn,
+        "w:noHBand": options.tableLook.noHBand,
+        "w:noVBand": options.tableLook.noVBand,
+      }),
+    );
+  }
+
+  if (options.cellSpacing) {
+    children.push(
+      attrObj("w:tblCellSpacing", {
+        "w:w": measurementOrPercentValue(options.cellSpacing.value),
+        "w:type": options.cellSpacing.type,
+      }),
+    );
+  }
+
+  if (options.caption !== undefined) {
+    children.push(stringValObj("w:tblCaption", options.caption));
+  }
+
+  if (options.description !== undefined) {
+    children.push(stringValObj("w:tblDescription", options.description));
+  }
+
+  if (options.revision) {
+    children.push(buildTablePropertiesChangeObj(options.revision));
+  }
+
+  if (options.includeIfEmpty || children.length > 0) {
+    return { "w:tblPr": children };
+  }
+
+  return undefined;
+}
+
+/**
  * Represents table properties (tblPr) in a WordprocessingML document.
  *
  * The tblPr element specifies the properties for a table including width,
@@ -120,7 +243,7 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
     super("w:tblPr", options.includeIfEmpty);
 
     if (options.style) {
-      this.root.push(new StringValueElement("w:tblStyle", options.style));
+      this.root.push(stringValObj("w:tblStyle", options.style));
     }
 
     if (options.float) {
@@ -131,7 +254,7 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
     }
 
     if (options.visuallyRightToLeft !== undefined) {
-      this.root.push(new OnOffElement("w:bidiVisual", options.visuallyRightToLeft));
+      this.root.push(onOffObj("w:bidiVisual", options.visuallyRightToLeft));
     }
 
     if (options.styleRowBandSize !== undefined) {
@@ -192,11 +315,11 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
     }
 
     if (options.caption !== undefined) {
-      this.root.push(new StringValueElement("w:tblCaption", options.caption));
+      this.root.push(stringValObj("w:tblCaption", options.caption));
     }
 
     if (options.description !== undefined) {
-      this.root.push(new StringValueElement("w:tblDescription", options.description));
+      this.root.push(stringValObj("w:tblDescription", options.description));
     }
 
     if (options.revision) {

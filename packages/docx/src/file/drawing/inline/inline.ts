@@ -6,9 +6,9 @@ import type { FillOptions } from "@office-open/core/drawingml";
 
 import { DocProperties } from "./../doc-properties/doc-properties";
 import type { DocPropertiesOptions } from "./../doc-properties/doc-properties";
-import { createEffectExtent } from "./../effect-extent/effect-extent";
-import { createExtent } from "./../extent/extent";
-import { createGraphicFrameProperties } from "./../graphic-frame/graphic-frame-properties";
+import { buildEffectExtentObj } from "./../effect-extent/effect-extent";
+import { buildExtentObj } from "./../extent/extent";
+import { buildGraphicFramePropertiesObj } from "./../graphic-frame/graphic-frame-properties";
 import { Graphic } from "./../inline/graphic";
 import type { BlipEffectsOptions } from "./graphic/graphic-data/pic/blip/blip-effects";
 import type { TileOptions } from "./graphic/graphic-data/pic/blip/tile";
@@ -73,8 +73,8 @@ export const createInline = ({
       },
     },
     children: [
-      createExtent({ x: transform.emus.x, y: transform.emus.y }),
-      createEffectExtent(
+      buildExtentObj({ x: transform.emus.x, y: transform.emus.y }),
+      buildEffectExtentObj(
         outline
           ? {
               bottom: (outline.width ?? 9525) * 2,
@@ -85,7 +85,7 @@ export const createInline = ({
           : { bottom: 0, left: 0, right: 0, top: 0 },
       ),
       new DocProperties(docProperties),
-      createGraphicFrameProperties(),
+      buildGraphicFramePropertiesObj(),
       new Graphic({
         blipEffects,
         effects,

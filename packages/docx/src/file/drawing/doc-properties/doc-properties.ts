@@ -10,11 +10,11 @@
  */
 import { ConcreteHyperlink } from "@file/paragraph/links/hyperlink";
 import { TargetModeType } from "@file/relationships/relationship/relationship";
-import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
 import { docPropertiesUniqueNumericIdGen, uniqueId } from "@util/convenience-functions";
 
-import { createHyperlinkClick, createHyperlinkHover } from "./doc-properties-children";
+import { buildHyperlinkClickObj, buildHyperlinkHoverObj } from "./doc-properties-children";
 
 // <complexType name="CT_NonVisualDrawingProps">
 //     <sequence>
@@ -102,32 +102,20 @@ export class DocProperties extends XmlComponent {
 
     this.hyperlink = hyperlink;
 
-    const attributes: Record<string, { readonly key: string; readonly value: string | number }> = {
-      id: {
-        key: "id",
-        value: id ?? globalDocPropertiesIdGen(),
-      },
-      name: {
-        key: "name",
-        value: name,
-      },
+    const attributes: Record<string, string | number> = {
+      id: id ?? globalDocPropertiesIdGen(),
+      name,
     };
 
     if (description !== null && description !== undefined) {
-      attributes.description = {
-        key: "descr",
-        value: description,
-      };
+      attributes.descr = description;
     }
 
     if (title !== null && title !== undefined) {
-      attributes.title = {
-        key: "title",
-        value: title,
-      };
+      attributes.title = title;
     }
 
-    this.root.push(new NextAttributeComponent(attributes));
+    this.root.push({ _attr: attributes });
   }
 
   public prepForXml(context: Context): IXmlableObject | undefined {
@@ -139,7 +127,7 @@ export class DocProperties extends XmlComponent {
         continue;
       }
 
-      this.root.push(createHyperlinkClick(element.linkId, true));
+      this.root.push(buildHyperlinkClickObj(element.linkId, true));
       hasStackClick = true;
       break;
     }
@@ -154,7 +142,7 @@ export class DocProperties extends XmlComponent {
           this.hyperlink.click,
           TargetModeType.EXTERNAL,
         );
-        this.root.push(createHyperlinkClick(linkId, true));
+        this.root.push(buildHyperlinkClickObj(linkId, true));
       }
 
       if (this.hyperlink.hover) {
@@ -165,7 +153,7 @@ export class DocProperties extends XmlComponent {
           this.hyperlink.hover,
           TargetModeType.EXTERNAL,
         );
-        this.root.push(createHyperlinkHover(linkId, true));
+        this.root.push(buildHyperlinkHoverObj(linkId, true));
       }
     }
 

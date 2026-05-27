@@ -7,8 +7,8 @@
  *
  * @module
  */
-import { BuilderElement, OnOffElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import { BuilderElement, onOffObj } from "@file/xml-components";
+import type { BuilderChild, XmlComponent } from "@file/xml-components";
 
 /**
  * Options for math phantom properties.
@@ -46,22 +46,22 @@ export interface MathPhantPropertiesOptions {
  * ```
  */
 export const createMathPhantProperties = (options: MathPhantPropertiesOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+  const children: BuilderChild[] = [];
 
   if (options.show !== undefined) {
-    children.push(new OnOffElement("m:show", options.show));
+    children.push(onOffObj("m:show", options.show));
   }
   if (options.zeroWid !== undefined) {
-    children.push(new OnOffElement("m:zeroWid", options.zeroWid));
+    children.push(onOffObj("m:zeroWid", options.zeroWid));
   }
   if (options.zeroAsc !== undefined) {
-    children.push(new OnOffElement("m:zeroAsc", options.zeroAsc));
+    children.push(onOffObj("m:zeroAsc", options.zeroAsc));
   }
   if (options.zeroDesc !== undefined) {
-    children.push(new OnOffElement("m:zeroDesc", options.zeroDesc));
+    children.push(onOffObj("m:zeroDesc", options.zeroDesc));
   }
   if (options.transp !== undefined) {
-    children.push(new OnOffElement("m:transp", options.transp));
+    children.push(onOffObj("m:transp", options.transp));
   }
 
   return new BuilderElement({

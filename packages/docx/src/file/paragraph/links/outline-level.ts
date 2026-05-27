@@ -8,8 +8,8 @@
  *
  * @module
  */
-import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import { BuilderElement, numberValObj } from "@file/xml-components";
+import type { IXmlableObject, XmlComponent } from "@file/xml-components";
 
 /**
  * Creates an outline level element for a paragraph.
@@ -41,3 +41,6 @@ export const createOutlineLevel = (level: number): XmlComponent =>
     },
     name: "w:outlineLvl",
   });
+
+export const buildOutlineLevelObj = (level: number): IXmlableObject =>
+  numberValObj("w:outlineLvl", level);

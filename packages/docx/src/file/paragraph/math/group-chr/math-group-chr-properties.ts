@@ -7,8 +7,9 @@
  *
  * @module
  */
+
 import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import type { BuilderChild, XmlComponent } from "@file/xml-components";
 
 /**
  * Options for math group character properties.
@@ -42,7 +43,7 @@ export interface MathGroupChrPropertiesOptions {
 export const createMathGroupChrProperties = (
   options: MathGroupChrPropertiesOptions,
 ): XmlComponent => {
-  const children: XmlComponent[] = [];
+  const children: BuilderChild[] = [];
 
   if (options.chr !== undefined) {
     children.push(

@@ -7,8 +7,9 @@
  *
  * @module
  */
+
 import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import type { BuilderChild, XmlComponent } from "@file/xml-components";
 
 import {
   createMathControlProperties,
@@ -44,7 +45,7 @@ export interface MathLimitUpperPropertiesOptions {
 export const createMathLimitUpperProperties = (
   options?: MathLimitUpperPropertiesOptions,
 ): XmlComponent => {
-  const children: XmlComponent[] = [];
+  const children: BuilderChild[] = [];
 
   if (options?.controlProperties !== undefined) {
     children.push(createMathControlProperties(options.controlProperties));

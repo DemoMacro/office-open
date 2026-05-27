@@ -14,7 +14,7 @@ import { TableCell } from "../table-cell";
 import type { TableCellOptions } from "../table-cell";
 import { TablePropertyExceptions } from "../table-properties/table-property-exceptions";
 import type { TablePropertyExOptions } from "../table-properties/table-property-exceptions";
-import { TableRowProperties } from "./table-row-properties";
+import { buildTableRowProperties } from "./table-row-properties";
 import type { ITableRowPropertiesOptions } from "./table-row-properties";
 
 /**
@@ -147,8 +147,7 @@ export class TableRow extends BaseXmlComponent {
       if (obj) children.push(obj);
     }
 
-    const trPr = new TableRowProperties(this.options);
-    const trPrObj = trPr.prepForXml(context);
+    const trPrObj = buildTableRowProperties(this.options);
     if (trPrObj) children.push(trPrObj);
 
     const prefixCount = children.length;

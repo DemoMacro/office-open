@@ -9,8 +9,9 @@
  *
  * @module
  */
+
 import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import type { BuilderChild, XmlComponent } from "@file/xml-components";
 
 import type { FormFieldOptions } from "./form-field";
 import { createFormFieldData } from "./form-field";
@@ -54,7 +55,7 @@ const createFieldChar = (
   dirty?: boolean,
   ffData?: XmlComponent,
 ): XmlComponent => {
-  const children: XmlComponent[] = [];
+  const children: BuilderChild[] = [];
   if (ffData) {
     children.push(ffData);
   }

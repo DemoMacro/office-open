@@ -1,5 +1,4 @@
-import { Formatter } from "@export/formatter";
-import { Text } from "@file/paragraph/run/run-components/text";
+import { buildText } from "@file/paragraph/run/run-components/text";
 /**
  * Utility functions for XML manipulation in document patching.
  *
@@ -7,8 +6,6 @@ import { Text } from "@file/paragraph/run/run-components/text";
  */
 import { xml, xml2js } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
-
-const formatter = new Formatter();
 
 /**
  * Converts XML string to JSON element structure.
@@ -50,7 +47,7 @@ export const toJson = (xmlData: string): Element => {
  * ```
  */
 export const createTextElementContents = (text: string): Element[] => {
-  const textJson = toJson(xml(formatter.format(new Text({ text }))));
+  const textJson = toJson(xml(buildText({ text })));
 
   return textJson.elements![0].elements ?? [];
 };

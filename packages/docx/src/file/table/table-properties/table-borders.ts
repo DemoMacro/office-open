@@ -7,8 +7,9 @@
  *
  * @module
  */
-import { BorderStyle, createBorderElement } from "@file/border";
+import { BorderStyle, buildBorderObj, createBorderElement } from "@file/border";
 import type { BorderOptions } from "@file/border";
+import type { IXmlableObject } from "@file/xml-components";
 import { XmlComponent } from "@file/xml-components";
 
 /**
@@ -58,6 +59,22 @@ const DEFAULT_BORDER: BorderOptions = {
  * new TableBorders(TableBorders.NONE);
  * ```
  */
+/**
+ * Build table borders (w:tblBorders) as IXmlableObject without allocating XmlComponent tree.
+ */
+export function buildTableBorders(options: TableBordersOptions): IXmlableObject {
+  return {
+    "w:tblBorders": [
+      buildBorderObj("w:top", options.top ?? DEFAULT_BORDER),
+      buildBorderObj("w:left", options.left ?? DEFAULT_BORDER),
+      buildBorderObj("w:bottom", options.bottom ?? DEFAULT_BORDER),
+      buildBorderObj("w:right", options.right ?? DEFAULT_BORDER),
+      buildBorderObj("w:insideH", options.insideHorizontal ?? DEFAULT_BORDER),
+      buildBorderObj("w:insideV", options.insideVertical ?? DEFAULT_BORDER),
+    ],
+  };
+}
+
 export class TableBorders extends XmlComponent {
   public static readonly NONE: TableBordersOptions = {
     bottom: NONE_BORDER,

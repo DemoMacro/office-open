@@ -8,8 +8,8 @@
  *
  * @module
  */
-import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import { BuilderElement, attrObj } from "@file/xml-components";
+import type { IXmlableObject, XmlComponent } from "@file/xml-components";
 import { decimalNumber } from "@util/values";
 
 /**
@@ -123,4 +123,25 @@ export const createSpacing = ({
       lineRule: { key: "w:lineRule", value: lineRule },
     },
     name: "w:spacing",
+  });
+
+export const buildSpacingObj = ({
+  after,
+  before,
+  line,
+  lineRule,
+  beforeAutoSpacing,
+  afterAutoSpacing,
+  beforeLines,
+  afterLines,
+}: SpacingProperties): IXmlableObject =>
+  attrObj("w:spacing", {
+    "w:after": after,
+    "w:afterAutospacing": afterAutoSpacing,
+    "w:afterLines": afterLines !== undefined ? decimalNumber(afterLines) : undefined,
+    "w:before": before,
+    "w:beforeAutospacing": beforeAutoSpacing,
+    "w:beforeLines": beforeLines !== undefined ? decimalNumber(beforeLines) : undefined,
+    "w:line": line,
+    "w:lineRule": lineRule,
   });

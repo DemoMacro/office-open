@@ -68,6 +68,7 @@ interface RunOptionsBase {
     | YearLong
     | YearShort
     | BaseXmlComponent
+    | IXmlableObject
   )[];
   readonly break?: number;
   readonly text?: string;
@@ -177,6 +178,8 @@ export class Run extends BaseXmlComponent {
         if (child instanceof BaseXmlComponent) {
           const obj = child.prepForXml(context);
           if (obj) children.push(obj);
+        } else {
+          children.push(child);
         }
       }
     } else if (this.options.text !== undefined) {

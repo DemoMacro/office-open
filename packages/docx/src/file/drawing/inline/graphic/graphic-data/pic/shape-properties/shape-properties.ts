@@ -12,7 +12,12 @@
 import type { MediaDataTransformation } from "@file/media";
 import type { Context, IXmlableObject } from "@file/xml-components";
 import { XmlComponent } from "@file/xml-components";
-import { buildFill, extractBlipFillMedia, type FillOptions } from "@office-open/core/drawingml";
+import {
+  buildFill,
+  createTransform2D,
+  extractBlipFillMedia,
+  type FillOptions,
+} from "@office-open/core/drawingml";
 
 import { createCustomGeometry } from "./custom-geometry/custom-geometry";
 import type { CustomGeometryOptions } from "./custom-geometry/custom-geometry";
@@ -20,12 +25,10 @@ import { createEffectDag } from "./effects/effect-dag";
 import type { EffectDagOptions } from "./effects/effect-dag";
 import { createEffectList } from "./effects/effect-list";
 import type { EffectListOptions } from "./effects/effect-list";
-import { Form } from "./form";
 import { createOutline } from "./outline/outline";
 import type { OutlineOptions } from "./outline/outline";
 import { PresetGeometry } from "./preset-geometry/preset-geometry";
 import type { PresetGeometryOptions } from "./preset-geometry/preset-geometry";
-import { ShapePropertiesAttributes } from "./shape-properties-attributes";
 import { createScene3D } from "./three-d/scene-3d";
 import type { Scene3DOptions } from "./three-d/scene-3d";
 import { createShape3D } from "./three-d/shape-3d";
@@ -67,7 +70,6 @@ import type { Shape3DOptions } from "./three-d/shape-3d";
  * ```
  */
 export class ShapeProperties extends XmlComponent {
-  private readonly form: Form;
   private readonly fillOptions?: FillOptions;
 
   public constructor({
@@ -99,15 +101,19 @@ export class ShapeProperties extends XmlComponent {
 
     this.fillOptions = fill;
 
+    this.root.push({ _attr: { bwMode: "auto" } });
+
     this.root.push(
-      new ShapePropertiesAttributes({
-        bwMode: "auto",
+      createTransform2D({
+        x: transform.offset?.emus?.x ?? 0,
+        y: transform.offset?.emus?.y ?? 0,
+        width: transform.emus.x,
+        height: transform.emus.y,
+        flipHorizontal: transform.flip?.horizontal,
+        flipVertical: transform.flip?.vertical,
+        rotation: transform.rotation,
       }),
     );
-
-    this.form = new Form(transform);
-
-    this.root.push(this.form);
 
     // EG_Geometry: custGeom and prstGeom are mutually exclusive
     if (customGeometry) {

@@ -1,6 +1,6 @@
 import type { MediaDataTransformation } from "@file/media";
 import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import type { BuilderChild, XmlComponent } from "@file/xml-components";
 import { buildFill, type FillOptions } from "@office-open/core/drawingml";
 
 import { createEffectList } from "../pic/shape-properties/effects/effect-list";
@@ -68,7 +68,7 @@ const createGroupForm = (
   chOff?: ChildOffset,
   chExt?: ChildExtent,
 ): XmlComponent => {
-  const children: XmlComponent[] = [
+  const children: BuilderChild[] = [
     new Offset(transform.offset?.emus?.x, transform.offset?.emus?.y),
     new Extents(transform.emus.x, transform.emus.y),
   ];
@@ -124,7 +124,7 @@ const createGroupForm = (
 };
 
 const createGroupProperties = (options: WpgGroupOptions): XmlComponent => {
-  const children: XmlComponent[] = [
+  const children: BuilderChild[] = [
     createGroupForm(options.transformation, options.chOff, options.chExt),
   ];
 

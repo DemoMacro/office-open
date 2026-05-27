@@ -9,9 +9,9 @@
  *
  * @module
  */
-import { createBorderElement } from "@file/border";
+import { buildBorderObj } from "@file/border";
 import type { BorderOptions } from "@file/border";
-import { createShading } from "@file/shading";
+import { buildShadingObj } from "@file/shading";
 import type { ShadingAttributesProperties } from "@file/shading";
 import { ChangeAttributes } from "@file/track-revision/track-revision";
 import type { ChangedAttributesProperties } from "@file/track-revision/track-revision";
@@ -26,20 +26,24 @@ import {
   stringValObj,
   numberValObj,
 } from "@office-open/core";
-import type { Context } from "@office-open/core";
 import type { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
 
-import { createEastAsianLayout } from "./east-asian-layout";
+import { buildEastAsianLayoutObj } from "./east-asian-layout";
 import type { EastAsianLayoutOptions } from "./east-asian-layout";
-import { createEmphasisMark } from "./emphasis-mark";
+import { buildEmphasisMarkObj } from "./emphasis-mark";
 import type { EmphasisMarkType } from "./emphasis-mark";
-import { CharacterSpacing, Color, Highlight, HighlightComplexScript } from "./formatting";
+import {
+  buildCharacterSpacingObj,
+  buildColorObj,
+  buildHighlightObj,
+  buildHighlightComplexScriptObj,
+} from "./formatting";
 import type { ColorOptions } from "./formatting";
-import { createLanguageComponent } from "./language";
+import { buildLanguageObj } from "./language";
 import type { LanguageOptions } from "./language";
-import { createRunFonts } from "./run-fonts";
+import { buildRunFontsObj } from "./run-fonts";
 import type { FontAttributesProperties } from "./run-fonts";
-import { createUnderline } from "./underline";
+import { buildUnderlineObj } from "./underline";
 import type { UnderlineType } from "./underline";
 
 interface RunFontReference {
@@ -315,8 +319,6 @@ export class RunPropertiesChange extends XmlComponent {
   }
 }
 
-const EMPTY_CTX: Context = { stack: [] };
-
 /**
  * Build run properties (w:rPr) as IXmlableObject without allocating XmlComponent tree.
  * Used by Run.prepForXml for O(1) construction.
@@ -332,15 +334,11 @@ export function buildRunProperties(options?: RunPropertiesOptions): IXmlableObje
 
   if (options.font) {
     if (typeof options.font === "string") {
-      children.push(createRunFonts(options.font).prepForXml(EMPTY_CTX) as IXmlableObject);
+      children.push(buildRunFontsObj(options.font));
     } else if ("name" in options.font) {
-      children.push(
-        createRunFonts(options.font.name, options.font.hint).prepForXml(
-          EMPTY_CTX,
-        ) as IXmlableObject,
-      );
+      children.push(buildRunFontsObj(options.font.name, options.font.hint));
     } else {
-      children.push(createRunFonts(options.font).prepForXml(EMPTY_CTX) as IXmlableObject);
+      children.push(buildRunFontsObj(options.font));
     }
   }
 
@@ -384,13 +382,11 @@ export function buildRunProperties(options?: RunPropertiesOptions): IXmlableObje
   }
 
   if (options.color) {
-    children.push(new Color(options.color).prepForXml(EMPTY_CTX) as IXmlableObject);
+    children.push(buildColorObj(options.color));
   }
 
   if (options.characterSpacing) {
-    children.push(
-      new CharacterSpacing(options.characterSpacing).prepForXml(EMPTY_CTX) as IXmlableObject,
-    );
+    children.push(buildCharacterSpacingObj(options.characterSpacing));
   }
 
   if (options.scale !== undefined) {
@@ -417,31 +413,21 @@ export function buildRunProperties(options?: RunPropertiesOptions): IXmlableObje
   }
 
   if (options.highlight) {
-    children.push(new Highlight(options.highlight).prepForXml(EMPTY_CTX) as IXmlableObject);
+    children.push(buildHighlightObj(options.highlight));
   }
   if (options.highlightComplexScript === true) {
     if (options.highlight) {
-      children.push(
-        new HighlightComplexScript(options.highlight).prepForXml(EMPTY_CTX) as IXmlableObject,
-      );
+      children.push(buildHighlightComplexScriptObj(options.highlight));
     }
   } else if (
     options.highlightComplexScript !== undefined &&
     options.highlightComplexScript !== false
   ) {
-    children.push(
-      new HighlightComplexScript(options.highlightComplexScript).prepForXml(
-        EMPTY_CTX,
-      ) as IXmlableObject,
-    );
+    children.push(buildHighlightComplexScriptObj(options.highlightComplexScript));
   }
 
   if (options.underline) {
-    children.push(
-      createUnderline(options.underline.type, options.underline.color).prepForXml(
-        EMPTY_CTX,
-      ) as IXmlableObject,
-    );
+    children.push(buildUnderlineObj(options.underline.type, options.underline.color));
   }
 
   if (options.effect) {
@@ -449,13 +435,11 @@ export function buildRunProperties(options?: RunPropertiesOptions): IXmlableObje
   }
 
   if (options.border) {
-    children.push(
-      createBorderElement("w:bdr", options.border).prepForXml(EMPTY_CTX) as IXmlableObject,
-    );
+    children.push(buildBorderObj("w:bdr", options.border));
   }
 
   if (options.shading) {
-    children.push(createShading(options.shading).prepForXml(EMPTY_CTX) as IXmlableObject);
+    children.push(buildShadingObj(options.shading));
   }
 
   if (options.subScript) {
@@ -471,15 +455,11 @@ export function buildRunProperties(options?: RunPropertiesOptions): IXmlableObje
   }
 
   if (options.emphasisMark) {
-    children.push(
-      createEmphasisMark(options.emphasisMark.type).prepForXml(EMPTY_CTX) as IXmlableObject,
-    );
+    children.push(buildEmphasisMarkObj(options.emphasisMark.type));
   }
 
   if (options.language) {
-    children.push(
-      createLanguageComponent(options.language).prepForXml(EMPTY_CTX) as IXmlableObject,
-    );
+    children.push(buildLanguageObj(options.language));
   }
 
   if (options.specVanish) {
@@ -499,15 +479,18 @@ export function buildRunProperties(options?: RunPropertiesOptions): IXmlableObje
   }
 
   if (options.eastAsianLayout) {
-    children.push(
-      createEastAsianLayout(options.eastAsianLayout).prepForXml(EMPTY_CTX) as IXmlableObject,
-    );
+    children.push(buildEastAsianLayoutObj(options.eastAsianLayout));
   }
 
   if (options.revision) {
-    children.push(
-      new RunPropertiesChange(options.revision).prepForXml(EMPTY_CTX) as IXmlableObject,
-    );
+    const rev = options.revision;
+    const { author: _, date: __, id: ___, ...originalProps } = rev;
+    const rPrChangeChildren: (IXmlableObject | { _attr: Record<string, string | number> })[] = [
+      { _attr: { "w:author": rev.author, "w:date": rev.date, "w:id": rev.id } },
+    ];
+    const innerRPr = buildRunProperties(originalProps as RunPropertiesOptions);
+    if (innerRPr) rPrChangeChildren.push(innerRPr);
+    children.push({ "w:rPrChange": rPrChangeChildren });
   }
 
   return children.length > 0 ? { "w:rPr": children } : undefined;

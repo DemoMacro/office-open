@@ -7,8 +7,8 @@
  *
  * @module
  */
-import { BuilderElement, OnOffElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import { BuilderElement, onOffObj } from "@file/xml-components";
+import type { BuilderChild, XmlComponent } from "@file/xml-components";
 
 import { createMathAccentCharacter } from "./math-accent-character";
 import { createMathLimitLocation } from "./math-limit-location";
@@ -62,14 +62,14 @@ export const createMathNAryProperties = ({
   limitLocationVal,
   grow,
 }: MathNAryPropertiesOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+  const children: BuilderChild[] = [];
 
   if (accent) {
     children.push(createMathAccentCharacter({ accent }));
   }
   children.push(createMathLimitLocation({ value: limitLocationVal }));
   if (grow !== undefined) {
-    children.push(new OnOffElement("m:grow", grow));
+    children.push(onOffObj("m:grow", grow));
   }
   if (!hasSubScript) {
     children.push(createMathSubScriptHide());

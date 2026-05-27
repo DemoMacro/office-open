@@ -10,16 +10,14 @@
  */
 import type { HyperlinkOptions } from "@file/drawing/doc-properties/doc-properties";
 import {
-  createHyperlinkClick,
-  createHyperlinkHover,
+  buildHyperlinkClickObj,
+  buildHyperlinkHoverObj,
 } from "@file/drawing/doc-properties/doc-properties-children";
 import { ConcreteHyperlink } from "@file/paragraph/links/hyperlink";
 import { TargetModeType } from "@file/relationships/relationship/relationship";
 import { XmlComponent } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
-
-import { NonVisualPropertiesAttributes } from "./non-visual-properties-attributes";
 
 const HYPERLINK_RELATIONSHIP_TYPE =
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink";
@@ -61,13 +59,7 @@ export class NonVisualProperties extends XmlComponent {
 
     this.hyperlink = hyperlink;
 
-    this.root.push(
-      new NonVisualPropertiesAttributes({
-        descr: "",
-        id: 0,
-        name: "",
-      }),
-    );
+    this.root.push({ _attr: { id: 0, name: "", descr: "" } });
   }
 
   public prepForXml(context: Context): IXmlableObject | undefined {
@@ -79,7 +71,7 @@ export class NonVisualProperties extends XmlComponent {
         continue;
       }
 
-      this.root.push(createHyperlinkClick(element.linkId, false));
+      this.root.push(buildHyperlinkClickObj(element.linkId, false));
       hasStackClick = true;
 
       break;
@@ -95,7 +87,7 @@ export class NonVisualProperties extends XmlComponent {
           this.hyperlink.click,
           TargetModeType.EXTERNAL,
         );
-        this.root.push(createHyperlinkClick(linkId, false));
+        this.root.push(buildHyperlinkClickObj(linkId, false));
       }
 
       if (this.hyperlink.hover) {
@@ -106,7 +98,7 @@ export class NonVisualProperties extends XmlComponent {
           this.hyperlink.hover,
           TargetModeType.EXTERNAL,
         );
-        this.root.push(createHyperlinkHover(linkId, false));
+        this.root.push(buildHyperlinkHoverObj(linkId, false));
       }
     }
 

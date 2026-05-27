@@ -47,22 +47,32 @@
  *
  * @module
  */
-import { DeletedTableRow, InsertedTableRow } from "@file/track-revision";
+import {
+  DeletedTableRow,
+  InsertedTableRow,
+  buildDeletedTableRowObj,
+  buildInsertedTableRowObj,
+} from "@file/track-revision";
 import { ChangeAttributes } from "@file/track-revision/track-revision";
 import type { ChangedAttributesProperties } from "@file/track-revision/track-revision";
 import {
   BuilderElement,
   IgnoreIfEmptyXmlComponent,
-  OnOffElement,
   XmlComponent,
+  attrObj,
+  numberValObj,
+  onOffObj,
+  stringEnumValObj,
 } from "@file/xml-components";
+import type { IXmlableObject } from "@file/xml-components";
 import type { PositiveUniversalMeasure } from "@util/values";
+import { measurementOrPercentValue, twipsMeasureValue } from "@util/values";
 
 import { createAlignment } from "../../paragraph";
 import type { AlignmentType } from "../../paragraph";
 import { createTableCellSpacing } from "../table-cell-spacing";
 import type { TableCellSpacingProperties } from "../table-cell-spacing";
-import { createTableWidthElement } from "../table-width";
+import { buildTableWidthObj, createTableWidthElement } from "../table-width";
 import type { TableWidthProperties } from "../table-width";
 import { createTableRowHeight } from "./table-row-height";
 import type { HeightRule } from "./table-row-height";
@@ -131,6 +141,110 @@ export type ITableRowPropertiesOptions = TableRowPropertiesOptionsBase & {
 
 export type ITableRowPropertiesChangeOptions = TableRowPropertiesOptionsBase &
   ChangedAttributesProperties;
+
+/**
+ * Build table row properties change (w:trPrChange) as IXmlableObject without allocating XmlComponent tree.
+ */
+export function buildTableRowPropertiesChangeObj(
+  options: ITableRowPropertiesChangeOptions,
+): IXmlableObject {
+  const innerPr = buildTableRowProperties({ ...options, includeIfEmpty: true })!;
+  return {
+    "w:trPrChange": [
+      { _attr: { "w:author": options.author, "w:date": options.date, "w:id": options.id } },
+      innerPr,
+    ],
+  };
+}
+
+/**
+ * Build table row properties (w:trPr) as IXmlableObject without allocating XmlComponent tree.
+ */
+export function buildTableRowProperties(
+  options: ITableRowPropertiesOptions,
+): IXmlableObject | undefined {
+  const children: IXmlableObject[] = [];
+
+  if (options.cnfStyle !== undefined) {
+    const attrs: Record<string, string | boolean> = { "w:val": options.cnfStyle.val };
+    if (options.cnfStyle.changed !== undefined) {
+      attrs["w:changed"] = options.cnfStyle.changed;
+    }
+    children.push({ "w:cnfStyle": { _attr: attrs } });
+  }
+
+  if (options.divId !== undefined) {
+    children.push(numberValObj("w:divId", options.divId));
+  }
+
+  if (options.gridBefore !== undefined) {
+    children.push(numberValObj("w:gridBefore", options.gridBefore));
+  }
+
+  if (options.gridAfter !== undefined) {
+    children.push(numberValObj("w:gridAfter", options.gridAfter));
+  }
+
+  if (options.widthBefore) {
+    children.push(buildTableWidthObj("w:wBefore", options.widthBefore));
+  }
+
+  if (options.widthAfter) {
+    children.push(buildTableWidthObj("w:wAfter", options.widthAfter));
+  }
+
+  if (options.cantSplit !== undefined) {
+    children.push(onOffObj("w:cantSplit", options.cantSplit));
+  }
+
+  if (options.tableHeader !== undefined) {
+    children.push(onOffObj("w:tblHeader", options.tableHeader));
+  }
+
+  if (options.height) {
+    children.push(
+      attrObj("w:trHeight", {
+        "w:val": twipsMeasureValue(options.height.value),
+        "w:hRule": options.height.rule,
+      }),
+    );
+  }
+
+  if (options.cellSpacing) {
+    children.push(
+      attrObj("w:tblCellSpacing", {
+        "w:w": measurementOrPercentValue(options.cellSpacing.value),
+        "w:type": options.cellSpacing.type,
+      }),
+    );
+  }
+
+  if (options.rowAlignment) {
+    children.push(stringEnumValObj("w:jc", options.rowAlignment));
+  }
+
+  if (options.hidden !== undefined) {
+    children.push(onOffObj("w:hidden", options.hidden));
+  }
+
+  if (options.insertion) {
+    children.push(buildInsertedTableRowObj(options.insertion));
+  }
+
+  if (options.deletion) {
+    children.push(buildDeletedTableRowObj(options.deletion));
+  }
+
+  if (options.revision) {
+    children.push(buildTableRowPropertiesChangeObj(options.revision));
+  }
+
+  if (options.includeIfEmpty || children.length > 0) {
+    return { "w:trPr": children };
+  }
+
+  return undefined;
+}
 
 /**
  * Represents table row properties (trPr) in a WordprocessingML document.
@@ -202,11 +316,11 @@ export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
     }
 
     if (options.cantSplit !== undefined) {
-      this.root.push(new OnOffElement("w:cantSplit", options.cantSplit));
+      this.root.push(onOffObj("w:cantSplit", options.cantSplit));
     }
 
     if (options.tableHeader !== undefined) {
-      this.root.push(new OnOffElement("w:tblHeader", options.tableHeader));
+      this.root.push(onOffObj("w:tblHeader", options.tableHeader));
     }
 
     if (options.height) {
@@ -222,7 +336,7 @@ export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
     }
 
     if (options.hidden !== undefined) {
-      this.root.push(new OnOffElement("w:hidden", options.hidden));
+      this.root.push(onOffObj("w:hidden", options.hidden));
     }
 
     if (options.insertion) {

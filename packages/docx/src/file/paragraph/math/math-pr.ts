@@ -7,8 +7,8 @@
  *
  * @module
  */
-import { BuilderElement, OnOffElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import { BuilderElement, onOffObj } from "@file/xml-components";
+import type { BuilderChild, XmlComponent } from "@file/xml-components";
 
 /**
  * Binary operator break position.
@@ -113,7 +113,7 @@ export interface MathPropertiesOptions {
  * ```
  */
 export const createMathProperties = (options: MathPropertiesOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+  const children: BuilderChild[] = [];
 
   if (options.mathFont !== undefined) {
     children.push(
@@ -140,10 +140,10 @@ export const createMathProperties = (options: MathPropertiesOptions): XmlCompone
     );
   }
   if (options.smallFrac !== undefined) {
-    children.push(new OnOffElement("m:smallFrac", options.smallFrac));
+    children.push(onOffObj("m:smallFrac", options.smallFrac));
   }
   if (options.displayDefault !== undefined) {
-    children.push(new OnOffElement("m:dispDef", options.displayDefault));
+    children.push(onOffObj("m:dispDef", options.displayDefault));
   }
   if (options.leftMargin !== undefined) {
     children.push(
@@ -210,7 +210,7 @@ export const createMathProperties = (options: MathPropertiesOptions): XmlCompone
     );
   }
   if (options.wrapRight !== undefined) {
-    children.push(new OnOffElement("m:wrapRight", options.wrapRight));
+    children.push(onOffObj("m:wrapRight", options.wrapRight));
   }
   if (options.integralLimitLocation !== undefined) {
     children.push(

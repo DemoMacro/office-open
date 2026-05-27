@@ -10,16 +10,11 @@ export { XmlComponent, IgnoreIfEmptyXmlComponent, EMPTY_OBJECT } from "@office-o
 export { XmlAttributeComponent, NextAttributeComponent } from "@office-open/core";
 export type { AttributeMap, AttributeData, AttributePayload } from "@office-open/core";
 export {
-  OnOffElement,
-  HpsMeasureElement,
   EmptyElement,
-  StringValueElement,
-  NumberValueElement,
-  StringEnumValueElement,
-  StringContainer,
   BuilderElement,
   chartAttr,
   wrapEl,
+  stringContainerObj,
 } from "@office-open/core";
 export {
   ImportedXmlComponent,

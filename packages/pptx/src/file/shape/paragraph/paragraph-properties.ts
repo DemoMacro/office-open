@@ -35,8 +35,6 @@ export interface ParagraphPropertiesOptions {
   readonly marginBottom?: number;
   readonly marginTop?: number;
   readonly bullet?: BulletOptions;
-  /** @deprecated Use bullet: { type: "none" } instead */
-  readonly bulletNone?: boolean;
   readonly lineSpacing?: number;
   readonly lineSpacingPoints?: number;
   readonly marginIndent?: number;
@@ -127,8 +125,6 @@ export function buildParagraphProperties(
 
   if (options.bullet) {
     children.push(...buildBulletChildren(options.bullet));
-  } else if (options.bulletNone !== false) {
-    children.push({ "a:buNone": {} });
   }
 
   if (children.length === 0) return undefined;

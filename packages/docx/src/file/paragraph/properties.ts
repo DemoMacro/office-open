@@ -15,36 +15,44 @@ import type { ChangedAttributesProperties } from "@file/track-revision/track-rev
 import {
   BuilderElement,
   IgnoreIfEmptyXmlComponent,
-  OnOffElement,
   XmlComponent,
+  numberValObj,
+  onOffObj,
+  stringEnumValObj,
+  stringValObj,
 } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
 
-import { ParagraphRunProperties } from ".";
 import type { IParagraphRunOptions } from ".";
 import { FontWrapper } from "../fonts/font-wrapper";
-import { createShading } from "../shading";
+import { buildShadingObj, createShading } from "../shading";
 import type { ShadingAttributesProperties } from "../shading";
 import { createAlignment } from "./formatting/alignment";
 import type { AlignmentType } from "./formatting/alignment";
-import { Border, ThematicBreak } from "./formatting/border";
+import {
+  Border,
+  ThematicBreak,
+  buildParagraphBorders,
+  buildThematicBreakObj,
+} from "./formatting/border";
 import type { BordersOptions } from "./formatting/border";
 import { PageBreakBefore } from "./formatting/break";
-import { createCnfStyle } from "./formatting/cnf-style";
+import { buildCnfStyleObj, createCnfStyle } from "./formatting/cnf-style";
 import type { CnfConditionalOptions } from "./formatting/cnf-style";
-import { createIndent } from "./formatting/indent";
+import { buildIndentObj, createIndent } from "./formatting/indent";
 import type { IndentAttributesProperties } from "./formatting/indent";
-import { createSpacing } from "./formatting/spacing";
+import { buildSpacingObj, createSpacing } from "./formatting/spacing";
 import type { SpacingProperties } from "./formatting/spacing";
 import { createParagraphStyle } from "./formatting/style";
 import type { HeadingLevel } from "./formatting/style";
-import { TabStopType, createTabStop } from "./formatting/tab-stop";
+import { buildTabStopObj, TabStopType, createTabStop } from "./formatting/tab-stop";
 import type { TabStopDefinition } from "./formatting/tab-stop";
-import { NumberProperties } from "./formatting/unordered-list";
+import { NumberProperties, buildNumberProperties } from "./formatting/unordered-list";
 import { createWordWrap } from "./formatting/word-wrap";
-import { createFrameProperties } from "./frame/frame-properties";
+import { buildFramePropertiesObj, createFrameProperties } from "./frame/frame-properties";
 import type { IFrameOptions } from "./frame/frame-properties";
-import { createDivId, createOutlineLevel } from "./links";
+import { buildDivIdObj, buildOutlineLevelObj, createDivId, createOutlineLevel } from "./links";
+import { buildRunProperties, ParagraphRunProperties } from "./run/properties";
 
 /**
  * Vertical text alignment types for paragraphs.
@@ -225,6 +233,250 @@ export type ParagraphPropertiesOptions = {
 } & IParagraphPropertiesOptionsBase;
 
 /**
+ * Result of building paragraph properties.
+ * Includes the XML object and any numbering references that need to be registered.
+ */
+export interface ParagraphPropertiesResult {
+  readonly xml: IXmlableObject | undefined;
+  readonly numberingReferences: readonly {
+    readonly reference: string;
+    readonly instance: number;
+  }[];
+}
+
+/**
+ * Build paragraph properties (w:pPr) as IXmlableObject without allocating XmlComponent tree.
+ * Returns both the XML object and any numbering references that need to be registered
+ * with the document's numbering context.
+ */
+export function buildParagraphProperties(
+  options?: ParagraphPropertiesOptions,
+): ParagraphPropertiesResult {
+  const numberingReferences: { reference: string; instance: number }[] = [];
+
+  if (!options) {
+    return { xml: undefined, numberingReferences };
+  }
+
+  const children: IXmlableObject[] = [];
+
+  if (options.heading) {
+    children.push(stringValObj("w:pStyle", options.heading));
+  }
+
+  if (options.bullet) {
+    children.push(stringValObj("w:pStyle", "ListParagraph"));
+  }
+
+  if (options.numbering) {
+    if (!options.style && !options.heading) {
+      if (!options.numbering.custom) {
+        children.push(stringValObj("w:pStyle", "ListParagraph"));
+      }
+    }
+  }
+
+  if (options.style) {
+    children.push(stringValObj("w:pStyle", options.style));
+  }
+
+  if (options.keepNext !== undefined) {
+    children.push(onOffObj("w:keepNext", options.keepNext));
+  }
+
+  if (options.keepLines !== undefined) {
+    children.push(onOffObj("w:keepLines", options.keepLines));
+  }
+
+  if (options.pageBreakBefore) {
+    children.push(onOffObj("w:pageBreakBefore", true));
+  }
+
+  if (options.frame) {
+    children.push(buildFramePropertiesObj(options.frame));
+  }
+
+  if (options.widowControl !== undefined) {
+    children.push(onOffObj("w:widowControl", options.widowControl));
+  }
+
+  if (options.bullet) {
+    children.push(buildNumberProperties(1, options.bullet.level));
+  }
+
+  if (options.numbering) {
+    numberingReferences.push({
+      instance: options.numbering.instance ?? 0,
+      reference: options.numbering.reference,
+    });
+
+    children.push(
+      buildNumberProperties(
+        `${options.numbering.reference}-${options.numbering.instance ?? 0}`,
+        options.numbering.level,
+      ),
+    );
+  } else if (options.numbering === false) {
+    children.push(buildNumberProperties(0, 0));
+  }
+
+  if (options.border) {
+    const border = buildParagraphBorders(options.border);
+    if (border) children.push(border);
+  }
+
+  if (options.thematicBreak) {
+    children.push(buildThematicBreakObj());
+  }
+
+  if (options.shading) {
+    children.push(buildShadingObj(options.shading));
+  }
+
+  if (options.wordWrap) {
+    children.push(numberValObj("w:wordWrap", 0));
+  }
+
+  if (options.overflowPunctuation) {
+    children.push(onOffObj("w:overflowPunct", options.overflowPunctuation));
+  }
+
+  const tabDefinitions: readonly TabStopDefinition[] = [
+    ...(options.rightTabStop !== undefined
+      ? [{ position: options.rightTabStop, type: TabStopType.RIGHT }]
+      : []),
+    ...(options.tabStops ? options.tabStops : []),
+    ...(options.leftTabStop !== undefined
+      ? [{ position: options.leftTabStop, type: TabStopType.LEFT }]
+      : []),
+  ];
+
+  if (tabDefinitions.length > 0) {
+    children.push(buildTabStopObj(tabDefinitions));
+  }
+
+  if (options.bidirectional !== undefined) {
+    children.push(onOffObj("w:bidi", options.bidirectional));
+  }
+
+  if (options.spacing) {
+    children.push(buildSpacingObj(options.spacing));
+  }
+
+  if (options.indent) {
+    children.push(buildIndentObj(options.indent));
+  }
+
+  if (options.contextualSpacing !== undefined) {
+    children.push(onOffObj("w:contextualSpacing", options.contextualSpacing));
+  }
+
+  if (options.alignment) {
+    children.push(stringEnumValObj("w:jc", options.alignment));
+  }
+
+  if (options.outlineLevel !== undefined) {
+    children.push(buildOutlineLevelObj(options.outlineLevel));
+  }
+
+  if (options.divId !== undefined) {
+    children.push(buildDivIdObj(options.divId));
+  }
+
+  if (options.cnfStyle !== undefined) {
+    children.push(buildCnfStyleObj(options.cnfStyle));
+  }
+
+  if (options.suppressLineNumbers !== undefined) {
+    children.push(onOffObj("w:suppressLineNumbers", options.suppressLineNumbers));
+  }
+
+  if (options.autoSpaceEastAsianText !== undefined) {
+    children.push(onOffObj("w:autoSpaceDN", options.autoSpaceEastAsianText));
+  }
+
+  if (options.suppressAutoHyphens !== undefined) {
+    children.push(onOffObj("w:suppressAutoHyphens", options.suppressAutoHyphens));
+  }
+
+  if (options.adjustRightInd !== undefined) {
+    children.push(onOffObj("w:adjustRightInd", options.adjustRightInd));
+  }
+
+  if (options.snapToGrid !== undefined) {
+    children.push(onOffObj("w:snapToGrid", options.snapToGrid));
+  }
+
+  if (options.mirrorIndents !== undefined) {
+    children.push(onOffObj("w:mirrorIndents", options.mirrorIndents));
+  }
+
+  if (options.kinsoku !== undefined) {
+    children.push(onOffObj("w:kinsoku", options.kinsoku));
+  }
+
+  if (options.topLinePunct !== undefined) {
+    children.push(onOffObj("w:topLinePunct", options.topLinePunct));
+  }
+
+  if (options.autoSpaceDE !== undefined) {
+    children.push(onOffObj("w:autoSpaceDE", options.autoSpaceDE));
+  }
+
+  if (options.textAlignment !== undefined) {
+    children.push(stringEnumValObj("w:textAlignment", options.textAlignment));
+  }
+
+  if (options.textboxTightWrap !== undefined) {
+    children.push(stringEnumValObj("w:textboxTightWrap", options.textboxTightWrap));
+  }
+
+  if (options.textDirection !== undefined) {
+    children.push(stringEnumValObj("w:textDirection", options.textDirection));
+  }
+
+  if (options.suppressOverlap !== undefined) {
+    children.push(onOffObj("w:suppressOverlap", options.suppressOverlap));
+  }
+
+  if (options.run) {
+    const rPr = buildRunProperties(options.run);
+    if (rPr) {
+      const rPrChildren = rPr["w:rPr"] as IXmlableObject[];
+      if (options.run.insertion) {
+        const { id, author, date } = options.run.insertion;
+        rPrChildren.push({
+          "w:ins": [{ _attr: { "w:id": id, "w:author": author, "w:date": date } }],
+        });
+      }
+      if (options.run.deletion) {
+        const { id, author, date } = options.run.deletion;
+        rPrChildren.push({
+          "w:del": [{ _attr: { "w:id": id, "w:author": author, "w:date": date } }],
+        });
+      }
+      children.push(rPr);
+    }
+  }
+
+  if (options.revision) {
+    const rev = options.revision;
+    const { author: _, date: __, id: ___, ...originalProps } = rev;
+    const pPrChangeChildren: (IXmlableObject | { _attr: Record<string, string | number> })[] = [
+      { _attr: { "w:author": rev.author, "w:date": rev.date, "w:id": rev.id } },
+    ];
+    // PPr is required (minOccurs="1") even if empty — use original properties from revision
+    const innerPPr = buildParagraphProperties({ ...originalProps, includeIfEmpty: true });
+    if (innerPPr?.xml) pPrChangeChildren.push(innerPPr.xml);
+    children.push({ "w:pPrChange": pPrChangeChildren });
+  }
+
+  const xml = options.includeIfEmpty || children.length > 0 ? { "w:pPr": children } : undefined;
+
+  return { xml, numberingReferences };
+}
+
+/**
  * Represents paragraph properties (pPr) in a WordprocessingML document.
  *
  * The paragraph properties element specifies all formatting applied to a paragraph,
@@ -342,47 +594,47 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
     }
 
     if (options.heading) {
-      this.push(createParagraphStyle(options.heading));
+      this.root.push(createParagraphStyle(options.heading));
     }
 
     if (options.bullet) {
-      this.push(createParagraphStyle("ListParagraph"));
+      this.root.push(createParagraphStyle("ListParagraph"));
     }
 
     if (options.numbering) {
       if (!options.style && !options.heading) {
         if (!options.numbering.custom) {
-          this.push(createParagraphStyle("ListParagraph"));
+          this.root.push(createParagraphStyle("ListParagraph"));
         }
       }
     }
 
     if (options.style) {
-      this.push(createParagraphStyle(options.style));
+      this.root.push(createParagraphStyle(options.style));
     }
 
     if (options.keepNext !== undefined) {
-      this.push(new OnOffElement("w:keepNext", options.keepNext));
+      this.root.push(onOffObj("w:keepNext", options.keepNext));
     }
 
     if (options.keepLines !== undefined) {
-      this.push(new OnOffElement("w:keepLines", options.keepLines));
+      this.root.push(onOffObj("w:keepLines", options.keepLines));
     }
 
     if (options.pageBreakBefore) {
-      this.push(new PageBreakBefore());
+      this.root.push(new PageBreakBefore());
     }
 
     if (options.frame) {
-      this.push(createFrameProperties(options.frame));
+      this.root.push(createFrameProperties(options.frame));
     }
 
     if (options.widowControl !== undefined) {
-      this.push(new OnOffElement("w:widowControl", options.widowControl));
+      this.root.push(onOffObj("w:widowControl", options.widowControl));
     }
 
     if (options.bullet) {
-      this.push(new NumberProperties(1, options.bullet.level));
+      this.root.push(new NumberProperties(1, options.bullet.level));
     }
 
     if (options.numbering) {
@@ -391,34 +643,34 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
         reference: options.numbering.reference,
       });
 
-      this.push(
+      this.root.push(
         new NumberProperties(
           `${options.numbering.reference}-${options.numbering.instance ?? 0}`,
           options.numbering.level,
         ),
       );
     } else if (options.numbering === false) {
-      this.push(new NumberProperties(0, 0));
+      this.root.push(new NumberProperties(0, 0));
     }
 
     if (options.border) {
-      this.push(new Border(options.border));
+      this.root.push(new Border(options.border));
     }
 
     if (options.thematicBreak) {
-      this.push(new ThematicBreak());
+      this.root.push(new ThematicBreak());
     }
 
     if (options.shading) {
-      this.push(createShading(options.shading));
+      this.root.push(createShading(options.shading));
     }
 
     if (options.wordWrap) {
-      this.push(createWordWrap());
+      this.root.push(createWordWrap());
     }
 
     if (options.overflowPunctuation) {
-      this.push(new OnOffElement("w:overflowPunct", options.overflowPunctuation));
+      this.root.push(onOffObj("w:overflowPunct", options.overflowPunctuation));
     }
 
     /**
@@ -436,82 +688,82 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
     ];
 
     if (tabDefinitions.length > 0) {
-      this.push(createTabStop(tabDefinitions));
+      this.root.push(createTabStop(tabDefinitions));
     }
     /**
      *  FIX - END
      */
 
     if (options.bidirectional !== undefined) {
-      this.push(new OnOffElement("w:bidi", options.bidirectional));
+      this.root.push(onOffObj("w:bidi", options.bidirectional));
     }
 
     if (options.spacing) {
-      this.push(createSpacing(options.spacing));
+      this.root.push(createSpacing(options.spacing));
     }
 
     if (options.indent) {
-      this.push(createIndent(options.indent));
+      this.root.push(createIndent(options.indent));
     }
 
     if (options.contextualSpacing !== undefined) {
-      this.push(new OnOffElement("w:contextualSpacing", options.contextualSpacing));
+      this.root.push(onOffObj("w:contextualSpacing", options.contextualSpacing));
     }
 
     if (options.alignment) {
-      this.push(createAlignment(options.alignment));
+      this.root.push(createAlignment(options.alignment));
     }
 
     if (options.outlineLevel !== undefined) {
-      this.push(createOutlineLevel(options.outlineLevel));
+      this.root.push(createOutlineLevel(options.outlineLevel));
     }
 
     if (options.divId !== undefined) {
-      this.push(createDivId(options.divId));
+      this.root.push(createDivId(options.divId));
     }
 
     if (options.cnfStyle !== undefined) {
-      this.push(createCnfStyle(options.cnfStyle));
+      this.root.push(createCnfStyle(options.cnfStyle));
     }
 
     if (options.suppressLineNumbers !== undefined) {
-      this.push(new OnOffElement("w:suppressLineNumbers", options.suppressLineNumbers));
+      this.root.push(onOffObj("w:suppressLineNumbers", options.suppressLineNumbers));
     }
 
     if (options.autoSpaceEastAsianText !== undefined) {
-      this.push(new OnOffElement("w:autoSpaceDN", options.autoSpaceEastAsianText));
+      this.root.push(onOffObj("w:autoSpaceDN", options.autoSpaceEastAsianText));
     }
 
     if (options.suppressAutoHyphens !== undefined) {
-      this.push(new OnOffElement("w:suppressAutoHyphens", options.suppressAutoHyphens));
+      this.root.push(onOffObj("w:suppressAutoHyphens", options.suppressAutoHyphens));
     }
 
     if (options.adjustRightInd !== undefined) {
-      this.push(new OnOffElement("w:adjustRightInd", options.adjustRightInd));
+      this.root.push(onOffObj("w:adjustRightInd", options.adjustRightInd));
     }
 
     if (options.snapToGrid !== undefined) {
-      this.push(new OnOffElement("w:snapToGrid", options.snapToGrid));
+      this.root.push(onOffObj("w:snapToGrid", options.snapToGrid));
     }
 
     if (options.mirrorIndents !== undefined) {
-      this.push(new OnOffElement("w:mirrorIndents", options.mirrorIndents));
+      this.root.push(onOffObj("w:mirrorIndents", options.mirrorIndents));
     }
 
     if (options.kinsoku !== undefined) {
-      this.push(new OnOffElement("w:kinsoku", options.kinsoku));
+      this.root.push(onOffObj("w:kinsoku", options.kinsoku));
     }
 
     if (options.topLinePunct !== undefined) {
-      this.push(new OnOffElement("w:topLinePunct", options.topLinePunct));
+      this.root.push(onOffObj("w:topLinePunct", options.topLinePunct));
     }
 
     if (options.autoSpaceDE !== undefined) {
-      this.push(new OnOffElement("w:autoSpaceDE", options.autoSpaceDE));
+      this.root.push(onOffObj("w:autoSpaceDE", options.autoSpaceDE));
     }
 
     if (options.textAlignment !== undefined) {
-      this.push(
+      this.root.push(
         new BuilderElement<{ readonly val: string }>({
           attributes: {
             val: { key: "w:val", value: options.textAlignment },
@@ -522,7 +774,7 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
     }
 
     if (options.textboxTightWrap !== undefined) {
-      this.push(
+      this.root.push(
         new BuilderElement<{ readonly val: string }>({
           attributes: {
             val: { key: "w:val", value: options.textboxTightWrap },
@@ -533,7 +785,7 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
     }
 
     if (options.textDirection !== undefined) {
-      this.push(
+      this.root.push(
         new BuilderElement<{ readonly val: string }>({
           attributes: {
             val: { key: "w:val", value: options.textDirection },
@@ -544,15 +796,15 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
     }
 
     if (options.suppressOverlap !== undefined) {
-      this.push(new OnOffElement("w:suppressOverlap", options.suppressOverlap));
+      this.root.push(onOffObj("w:suppressOverlap", options.suppressOverlap));
     }
 
     if (options.run) {
-      this.push(new ParagraphRunProperties(options.run));
+      this.root.push(new ParagraphRunProperties(options.run));
     }
 
     if (options.revision) {
-      this.push(new ParagraphPropertiesChange(options.revision));
+      this.root.push(new ParagraphPropertiesChange(options.revision));
     }
   }
 

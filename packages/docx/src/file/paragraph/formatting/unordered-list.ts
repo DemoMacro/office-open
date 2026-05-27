@@ -6,6 +6,7 @@
  * @module
  */
 import { Attributes, XmlComponent } from "@file/xml-components";
+import type { IXmlableObject } from "@file/xml-components";
 
 /**
  * Represents numbering properties for a paragraph.
@@ -48,6 +49,25 @@ import { Attributes, XmlComponent } from "@file/xml-components";
  * });
  * ```
  */
+/**
+ * Build numbering properties (w:numPr) as IXmlableObject without allocating XmlComponent tree.
+ */
+export function buildNumberProperties(
+  numberId: number | string,
+  indentLevel: number,
+): IXmlableObject {
+  return {
+    "w:numPr": [
+      { "w:ilvl": { _attr: { "w:val": Math.min(indentLevel, 9) } } },
+      {
+        "w:numId": {
+          _attr: { "w:val": typeof numberId === "string" ? `{${numberId}}` : numberId },
+        },
+      },
+    ],
+  };
+}
+
 export class NumberProperties extends XmlComponent {
   public constructor(numberId: number | string, indentLevel: number) {
     super("w:numPr");

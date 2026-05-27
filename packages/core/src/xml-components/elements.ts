@@ -11,6 +11,20 @@ import type { IXmlableObject } from "./types";
 
 // ── Pure functions (zero-allocation) ──
 
+/**
+ * Build an XML element with arbitrary attributes, filtering out undefined values.
+ */
+export function attrObj(
+  name: string,
+  attrs: Record<string, string | number | boolean | undefined>,
+): IXmlableObject {
+  const filtered: Record<string, string | number | boolean> = {};
+  for (const [key, val] of Object.entries(attrs)) {
+    if (val !== undefined) filtered[key] = val;
+  }
+  return { [name]: { _attr: filtered } };
+}
+
 const ON_OFF_TRUE_CACHE = new Map<string, IXmlableObject>();
 
 /**
@@ -72,90 +86,12 @@ export function stringContainerObj(name: string, val: string): IXmlableObject {
   return { [name]: [val] };
 }
 
-// ── Legacy classes (still used by non-hot-path code) ──
-
-/**
- * XML element representing a boolean on/off value (CT_OnOff).
- * @deprecated Use `onOffObj()` for hot-path code.
- */
-export class OnOffElement extends XmlComponent {
-  public constructor(name: string, val: boolean | undefined = true) {
-    super(name);
-    if (val !== true) {
-      this.root.push(
-        new NextAttributeComponent({
-          val: { key: `${name.split(":")[0]}:val`, value: val },
-        }),
-      );
-    }
-  }
-}
-
-/**
- * XML element representing a half-point size measurement (CT_HpsMeasure).
- * @deprecated Use `hpsMeasureObj()` for hot-path code.
- */
-export class HpsMeasureElement extends XmlComponent {
-  public constructor(name: string, val: number | PositiveUniversalMeasure) {
-    super(name);
-    const ns = name.split(":")[0];
-    this.root.push(
-      new NextAttributeComponent({ val: { key: `${ns}:val`, value: hpsMeasureValue(val) } }),
-    );
-  }
-}
+// ── Class-based elements ──
 
 /**
  * XML element representing an empty element (CT_Empty).
  */
 export class EmptyElement extends XmlComponent {}
-
-/**
- * XML element with a string value attribute (CT_String).
- * @deprecated Use `stringValObj()` for hot-path code.
- */
-export class StringValueElement extends XmlComponent {
-  public constructor(name: string, val: string) {
-    super(name);
-    const ns = name.split(":")[0];
-    this.root.push(new NextAttributeComponent({ val: { key: `${ns}:val`, value: val } }));
-  }
-}
-
-/**
- * XML element with a numeric value attribute.
- * @deprecated Use `numberValObj()` for hot-path code.
- */
-export class NumberValueElement extends XmlComponent {
-  public constructor(name: string, val: number) {
-    super(name);
-    const ns = name.split(":")[0];
-    this.root.push(new NextAttributeComponent({ val: { key: `${ns}:val`, value: val } }));
-  }
-}
-
-/**
- * XML element with a string enum value attribute.
- * @deprecated Use `stringEnumValObj()` for hot-path code.
- */
-export class StringEnumValueElement<T extends string> extends XmlComponent {
-  public constructor(name: string, val: T) {
-    super(name);
-    const ns = name.split(":")[0];
-    this.root.push(new NextAttributeComponent({ val: { key: `${ns}:val`, value: val } }));
-  }
-}
-
-/**
- * XML element containing text content.
- * @deprecated Use `stringContainerObj()` for hot-path code.
- */
-export class StringContainer extends XmlComponent {
-  public constructor(name: string, val: string) {
-    super(name);
-    this.root.push(val);
-  }
-}
 
 /**
  * Flexible XML element builder with explicit attribute and child configuration.
@@ -168,7 +104,7 @@ export class BuilderElement<T = {}> extends XmlComponent {
   }: {
     readonly name: string;
     readonly attributes?: AttributePayload<T>;
-    readonly children?: readonly (BaseXmlComponent | string)[];
+    readonly children?: readonly (BaseXmlComponent | IXmlableObject | string)[];
   }) {
     super(name);
 

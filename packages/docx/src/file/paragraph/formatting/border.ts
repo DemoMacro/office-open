@@ -7,9 +7,41 @@
  *
  * @module
  */
-import { BorderStyle, createBorderElement } from "@file/border";
+import { BorderStyle, buildBorderObj, createBorderElement } from "@file/border";
 import type { BorderOptions } from "@file/border";
+import type { IXmlableObject } from "@file/xml-components";
 import { IgnoreIfEmptyXmlComponent, XmlComponent } from "@file/xml-components";
+
+/**
+ * Build paragraph borders (w:pBdr) as IXmlableObject without allocating XmlComponent tree.
+ */
+export function buildParagraphBorders(options: BordersOptions): IXmlableObject | undefined {
+  const children: IXmlableObject[] = [];
+
+  if (options.top) children.push(buildBorderObj("w:top", options.top));
+  if (options.left) children.push(buildBorderObj("w:left", options.left));
+  if (options.bottom) children.push(buildBorderObj("w:bottom", options.bottom));
+  if (options.right) children.push(buildBorderObj("w:right", options.right));
+  if (options.between) children.push(buildBorderObj("w:between", options.between));
+
+  return children.length > 0 ? { "w:pBdr": children } : undefined;
+}
+
+/**
+ * Build thematic break (w:pBdr with bottom border) as IXmlableObject.
+ */
+export function buildThematicBreakObj(): IXmlableObject {
+  return {
+    "w:pBdr": [
+      buildBorderObj("w:bottom", {
+        color: "auto",
+        size: 6,
+        space: 1,
+        style: BorderStyle.SINGLE,
+      }),
+    ],
+  };
+}
 
 /**
  * Options for configuring paragraph borders.

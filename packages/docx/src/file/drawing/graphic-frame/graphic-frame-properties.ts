@@ -1,7 +1,6 @@
-import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import type { IXmlableObject } from "@file/xml-components";
 
-import { GraphicFrameLocks } from "./graphic-frame-locks/graphic-frame-locks";
+import { buildGraphicFrameLocksObj } from "./graphic-frame-locks/graphic-frame-locks";
 
 /**
  * # Common DrawingML Non-Visual Properties
@@ -22,8 +21,6 @@ import { GraphicFrameLocks } from "./graphic-frame-locks/graphic-frame-locks";
  * </xsd:complexType>
  * ```
  */
-export const createGraphicFrameProperties = (): XmlComponent =>
-  new BuilderElement({
-    children: [new GraphicFrameLocks()],
-    name: "wp:cNvGraphicFramePr",
-  });
+export const buildGraphicFramePropertiesObj = (): IXmlableObject => ({
+  "wp:cNvGraphicFramePr": [buildGraphicFrameLocksObj()],
+});

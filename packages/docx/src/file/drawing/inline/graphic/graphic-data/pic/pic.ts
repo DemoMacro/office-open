@@ -18,7 +18,6 @@ import type { BlipOptions } from "./blip/blip";
 import type { BlipEffectsOptions } from "./blip/blip-effects";
 import { createBlipFill } from "./blip/blip-fill";
 import { NonVisualPicProperties } from "./non-visual-pic-properties/non-visual-pic-properties";
-import { PicAttributes } from "./pic-attributes";
 import type { EffectListOptions } from "./shape-properties/effects/effect-list";
 import type { OutlineOptions } from "./shape-properties/outline/outline";
 import { ShapeProperties } from "./shape-properties/shape-properties";
@@ -73,11 +72,11 @@ export class Pic extends XmlComponent {
   }) {
     super("pic:pic");
 
-    this.root.push(
-      new PicAttributes({
-        xmlns: "http://schemas.openxmlformats.org/drawingml/2006/picture",
-      }),
-    );
+    this.root.push({
+      _attr: {
+        "xmlns:pic": "http://schemas.openxmlformats.org/drawingml/2006/picture",
+      },
+    });
 
     this.root.push(new NonVisualPicProperties(hyperlink));
     const blipOptions: BlipOptions = {

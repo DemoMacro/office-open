@@ -4,63 +4,108 @@ import type { Context } from "./base";
 import {
   BuilderElement,
   EmptyElement,
-  HpsMeasureElement,
-  NumberValueElement,
-  OnOffElement,
-  StringContainer,
-  StringEnumValueElement,
-  StringValueElement,
+  attrObj,
   chartAttr,
+  hpsMeasureObj,
+  numberValObj,
+  onOffObj,
+  stringContainerObj,
+  stringEnumValObj,
+  stringValObj,
   wrapEl,
 } from "./elements";
 
 const emptyContext: Context = { stack: [] };
 
-describe("OnOffElement (CT_OnOff)", () => {
+describe("onOffObj (CT_OnOff)", () => {
   it("should emit no val attribute when true (default)", () => {
-    const el = new OnOffElement("w:b");
-    expect(el.prepForXml(emptyContext)).toEqual({ "w:b": {} });
+    expect(onOffObj("w:b")).toEqual({ "w:b": {} });
   });
 
   it("should emit no val attribute when explicitly true", () => {
-    const el = new OnOffElement("w:b", true);
-    expect(el.prepForXml(emptyContext)).toEqual({ "w:b": {} });
+    expect(onOffObj("w:b", true)).toEqual({ "w:b": {} });
+  });
+
+  it("should return cached singleton for same name with true", () => {
+    expect(onOffObj("w:b", true)).toBe(onOffObj("w:b", true));
   });
 
   it("should emit w:val=false for w: element", () => {
-    const el = new OnOffElement("w:b", false);
-    expect(el.prepForXml(emptyContext)).toEqual({ "w:b": { _attr: { "w:val": false } } });
+    expect(onOffObj("w:b", false)).toEqual({ "w:b": { _attr: { "w:val": false } } });
   });
 
   it("should emit m:val=false for m: element (dynamic namespace)", () => {
-    const el = new OnOffElement("m:hideBot", false);
-    expect(el.prepForXml(emptyContext)).toEqual({ "m:hideBot": { _attr: { "m:val": false } } });
+    expect(onOffObj("m:hideBot", false)).toEqual({ "m:hideBot": { _attr: { "m:val": false } } });
   });
 
   it("should emit a:val=false for a: element", () => {
-    const el = new OnOffElement("a:noAutofit", false);
-    expect(el.prepForXml(emptyContext)).toEqual({
+    expect(onOffObj("a:noAutofit", false)).toEqual({
       "a:noAutofit": { _attr: { "a:val": false } },
     });
   });
 
   it("should handle element without namespace prefix", () => {
-    const el = new OnOffElement("bold", false);
-    expect(el.prepForXml(emptyContext)).toEqual({ bold: { _attr: { "bold:val": false } } });
+    expect(onOffObj("bold", false)).toEqual({ bold: { _attr: { "bold:val": false } } });
   });
 });
 
-describe("HpsMeasureElement (CT_HpsMeasure)", () => {
+describe("hpsMeasureObj (CT_HpsMeasure)", () => {
   it("should accept a number", () => {
-    const el = new HpsMeasureElement("w:sz", 24);
-    const result = el.prepForXml(emptyContext);
-    expect(result).toEqual({ "w:sz": { _attr: { "w:val": 24 } } });
+    expect(hpsMeasureObj("w:sz", 24)).toEqual({ "w:sz": { _attr: { "w:val": 24 } } });
   });
 
   it("should accept a universal measure string", () => {
-    const el = new HpsMeasureElement("w:sz", "12pt");
-    const result = el.prepForXml(emptyContext);
-    expect(result).toEqual({ "w:sz": { _attr: { "w:val": "12pt" } } });
+    expect(hpsMeasureObj("w:sz", "12pt")).toEqual({ "w:sz": { _attr: { "w:val": "12pt" } } });
+  });
+});
+
+describe("stringValObj", () => {
+  it("should emit val attribute with w: namespace", () => {
+    expect(stringValObj("w:pStyle", "Heading1")).toEqual({
+      "w:pStyle": { _attr: { "w:val": "Heading1" } },
+    });
+  });
+
+  it("should emit val attribute with m: namespace", () => {
+    expect(stringValObj("m:mathFont", "Cambria Math")).toEqual({
+      "m:mathFont": { _attr: { "m:val": "Cambria Math" } },
+    });
+  });
+});
+
+describe("numberValObj", () => {
+  it("should emit val attribute with number", () => {
+    expect(numberValObj("w:ilvl", 0)).toEqual({
+      "w:ilvl": { _attr: { "w:val": 0 } },
+    });
+  });
+});
+
+describe("stringEnumValObj", () => {
+  it("should emit val attribute with enum string", () => {
+    expect(stringEnumValObj("w:jc", "center")).toEqual({
+      "w:jc": { _attr: { "w:val": "center" } },
+    });
+  });
+});
+
+describe("stringContainerObj", () => {
+  it("should contain text content", () => {
+    expect(stringContainerObj("w:t", "Hello")).toEqual({ "w:t": ["Hello"] });
+  });
+});
+
+describe("attrObj", () => {
+  it("should filter out undefined values", () => {
+    expect(attrObj("w:spacing", { "w:before": 100, "w:after": undefined })).toEqual({
+      "w:spacing": { _attr: { "w:before": 100 } },
+    });
+  });
+
+  it("should include all defined values", () => {
+    expect(attrObj("w:spacing", { "w:before": 100, "w:after": 200 })).toEqual({
+      "w:spacing": { _attr: { "w:before": 100, "w:after": 200 } },
+    });
   });
 });
 
@@ -68,47 +113,6 @@ describe("EmptyElement (CT_Empty)", () => {
   it("should produce an empty element", () => {
     const el = new EmptyElement("w:bookmarkStart");
     expect(el.prepForXml(emptyContext)).toEqual({ "w:bookmarkStart": {} });
-  });
-});
-
-describe("StringValueElement (CT_String)", () => {
-  it("should use w: namespace for w: element", () => {
-    const el = new StringValueElement("w:pStyle", "Heading1");
-    expect(el.prepForXml(emptyContext)).toEqual({
-      "w:pStyle": { _attr: { "w:val": "Heading1" } },
-    });
-  });
-
-  it("should use m: namespace for m: element", () => {
-    const el = new StringValueElement("m:mathFont", "Cambria Math");
-    expect(el.prepForXml(emptyContext)).toEqual({
-      "m:mathFont": { _attr: { "m:val": "Cambria Math" } },
-    });
-  });
-});
-
-describe("NumberValueElement", () => {
-  it("should emit val attribute with number", () => {
-    const el = new NumberValueElement("w:ilvl", 0);
-    expect(el.prepForXml(emptyContext)).toEqual({
-      "w:ilvl": { _attr: { "w:val": 0 } },
-    });
-  });
-});
-
-describe("StringEnumValueElement", () => {
-  it("should emit val attribute with enum string", () => {
-    const el = new StringEnumValueElement("w:jc", "center");
-    expect(el.prepForXml(emptyContext)).toEqual({
-      "w:jc": { _attr: { "w:val": "center" } },
-    });
-  });
-});
-
-describe("StringContainer", () => {
-  it("should contain text content", () => {
-    const el = new StringContainer("w:t", "Hello");
-    expect(el.prepForXml(emptyContext)).toEqual({ "w:t": ["Hello"] });
   });
 });
 
@@ -139,7 +143,7 @@ describe("BuilderElement", () => {
   });
 
   it("should create an element with both attributes and children", () => {
-    const child = new StringContainer("w:t", "text");
+    const child = stringContainerObj("w:t", "text");
     const el = new BuilderElement({
       name: "w:r",
       attributes: { lang: { key: "xml:lang", value: "en-US" } },
@@ -147,6 +151,16 @@ describe("BuilderElement", () => {
     });
     expect(el.prepForXml(emptyContext)).toEqual({
       "w:r": [{ _attr: { "xml:lang": "en-US" } }, { "w:t": ["text"] }],
+    });
+  });
+
+  it("should accept IXmlableObject children directly", () => {
+    const el = new BuilderElement({
+      name: "w:pPr",
+      children: [onOffObj("w:b", true), stringValObj("w:pStyle", "Heading1")],
+    });
+    expect(el.prepForXml(emptyContext)).toEqual({
+      "w:pPr": [{ "w:b": {} }, { "w:pStyle": { _attr: { "w:val": "Heading1" } } }],
     });
   });
 });
@@ -162,10 +176,10 @@ describe("chartAttr", () => {
 
 describe("wrapEl", () => {
   it("should wrap a component in a named element", () => {
-    const inner = new StringContainer("w:t", "text");
+    const inner = new EmptyElement("w:r");
     const wrapped = wrapEl("w:r", inner);
     expect(wrapped.prepForXml(emptyContext)).toEqual({
-      "w:r": [{ "w:t": ["text"] }],
+      "w:r": [{ "w:r": {} }],
     });
   });
 });

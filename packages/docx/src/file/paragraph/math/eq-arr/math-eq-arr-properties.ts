@@ -7,8 +7,8 @@
  *
  * @module
  */
-import { BuilderElement, OnOffElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import { BuilderElement, onOffObj } from "@file/xml-components";
+import type { BuilderChild, XmlComponent } from "@file/xml-components";
 
 /**
  * Options for math equation array properties.
@@ -46,7 +46,7 @@ export interface MathEqArrPropertiesOptions {
  * ```
  */
 export const createMathEqArrProperties = (options: MathEqArrPropertiesOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+  const children: BuilderChild[] = [];
 
   if (options.baseJc !== undefined) {
     children.push(
@@ -57,10 +57,10 @@ export const createMathEqArrProperties = (options: MathEqArrPropertiesOptions): 
     );
   }
   if (options.maxDist !== undefined) {
-    children.push(new OnOffElement("m:maxDist", options.maxDist));
+    children.push(onOffObj("m:maxDist", options.maxDist));
   }
   if (options.objDist !== undefined) {
-    children.push(new OnOffElement("m:objDist", options.objDist));
+    children.push(onOffObj("m:objDist", options.objDist));
   }
   if (options.rSpRule !== undefined) {
     children.push(

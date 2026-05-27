@@ -13,7 +13,7 @@ import { InternalHyperlink, Paragraph } from "@file/paragraph";
 import type { TabStopDefinition } from "@file/paragraph";
 import { Run, Tab } from "@file/paragraph/run";
 import { createBegin, createEnd, createSeparate } from "@file/paragraph/run/field";
-import { Text } from "@file/paragraph/run/run-components/text";
+import { buildText } from "@file/paragraph/run/run-components/text";
 import { BaseXmlComponent, XmlComponent } from "@file/xml-components";
 
 import { FieldInstruction } from "./field-instruction";
@@ -178,11 +178,11 @@ export class TableOfContents extends XmlComponent implements FileChild {
     return new Run({
       // TODO: The IndexLink style might always need to be set regardless of the hyperlink property. This needs to be verified.
       children: [
-        new Text({
+        buildText({
           text: entry.title,
         }),
         new Tab(),
-        new Text({
+        buildText({
           text: entry.page?.toString() ?? "",
         }),
       ],

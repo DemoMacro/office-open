@@ -70,7 +70,7 @@ describe("PPTX: Object Creation (no pack)", () => {
                 fill: s.bold ? "4472C4" : undefined,
                 paragraphs: [
                   new Paragraph({
-                    properties: { bulletNone: true },
+                    properties: { bullet: { type: "none" } },
                     children: [
                       new TextRun({
                         text: s.text,
@@ -152,7 +152,7 @@ describe("PPTX: Object Creation (no pack)", () => {
               fill: "4472C4",
               paragraphs: [
                 new Paragraph({
-                  properties: { alignment: "CENTER", bulletNone: true },
+                  properties: { alignment: "CENTER", bullet: { type: "none" } },
                   children: [
                     new TextRun({
                       text: "Title Slide",
@@ -173,7 +173,7 @@ describe("PPTX: Object Creation (no pack)", () => {
                   fill: s.bold ? "4472C4" : undefined,
                   paragraphs: [
                     new Paragraph({
-                      properties: { bulletNone: true },
+                      properties: { bullet: { type: "none" } },
                       children: [
                         new TextRun({
                           text: s.text,
@@ -296,7 +296,7 @@ describe("PPTX: Create + toBuffer", () => {
                 fill: s.bold ? "4472C4" : undefined,
                 paragraphs: [
                   new Paragraph({
-                    properties: { bulletNone: true },
+                    properties: { bullet: { type: "none" } },
                     children: [
                       new TextRun({
                         text: s.text,
@@ -329,7 +329,7 @@ describe("PPTX: Create + toBuffer", () => {
                 fill: s.bold ? "4472C4" : undefined,
                 paragraphs: [
                   new Paragraph({
-                    properties: { bulletNone: true },
+                    properties: { bullet: { type: "none" } },
                     children: [
                       new TextRun({
                         text: s.text,
@@ -435,7 +435,7 @@ describe("PPTX: Create + toBuffer", () => {
               fill: "4472C4",
               paragraphs: [
                 new Paragraph({
-                  properties: { alignment: "CENTER", bulletNone: true },
+                  properties: { alignment: "CENTER", bullet: { type: "none" } },
                   children: [
                     new TextRun({
                       text: "Title Slide",
@@ -456,7 +456,7 @@ describe("PPTX: Create + toBuffer", () => {
                   fill: s.bold ? "4472C4" : undefined,
                   paragraphs: [
                     new Paragraph({
-                      properties: { bulletNone: true },
+                      properties: { bullet: { type: "none" } },
                       children: [
                         new TextRun({
                           text: s.text,
@@ -499,7 +499,7 @@ describe("PPTX: Create + toBuffer", () => {
               fill: "4472C4",
               paragraphs: [
                 new Paragraph({
-                  properties: { alignment: "CENTER", bulletNone: true },
+                  properties: { alignment: "CENTER", bullet: { type: "none" } },
                   children: [
                     new TextRun({
                       text: "Title Slide",
@@ -520,7 +520,7 @@ describe("PPTX: Create + toBuffer", () => {
                   fill: s.bold ? "4472C4" : undefined,
                   paragraphs: [
                     new Paragraph({
-                      properties: { bulletNone: true },
+                      properties: { bullet: { type: "none" } },
                       children: [
                         new TextRun({
                           text: s.text,
@@ -613,7 +613,7 @@ const build10Slides10Shapes = () =>
           fill: s.fill,
           paragraphs: [
             new Paragraph({
-              properties: { bulletNone: true },
+              properties: { bullet: { type: "none" } },
               children: [
                 new TextRun({ text: s.text, bold: s.bold, italic: s.italic, fontSize: s.fontSize }),
               ],
@@ -654,7 +654,7 @@ const build20SlidesFull = () =>
           fill: "4472C4",
           paragraphs: [
             new Paragraph({
-              properties: { alignment: "CENTER", bulletNone: true },
+              properties: { alignment: "CENTER", bullet: { type: "none" } },
               children: [new TextRun({ text: `Slide ${si + 1} Title`, fontSize: 28, bold: true })],
             }),
           ],
@@ -669,7 +669,7 @@ const build20SlidesFull = () =>
             fill: s.fill,
             paragraphs: [
               new Paragraph({
-                properties: { bulletNone: true },
+                properties: { bullet: { type: "none" } },
                 children: [new TextRun({ text: s.text, bold: s.bold, fontSize: 14 })],
               }),
             ],

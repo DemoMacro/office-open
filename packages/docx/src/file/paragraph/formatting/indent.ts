@@ -8,8 +8,8 @@
  *
  * @module
  */
-import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import { BuilderElement, attrObj } from "@file/xml-components";
+import type { IXmlableObject, XmlComponent } from "@file/xml-components";
 import { decimalNumber, signedTwipsMeasureValue, twipsMeasureValue } from "@util/values";
 import type { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
 
@@ -124,4 +124,33 @@ export const createIndent = ({
       },
     },
     name: "w:ind",
+  });
+
+export const buildIndentObj = ({
+  start,
+  startChars,
+  end,
+  endChars,
+  left,
+  leftChars,
+  right,
+  rightChars,
+  hanging,
+  hangingChars,
+  firstLine,
+  firstLineChars,
+}: IndentAttributesProperties): IXmlableObject =>
+  attrObj("w:ind", {
+    "w:start": start !== undefined ? signedTwipsMeasureValue(start) : undefined,
+    "w:startChars": startChars !== undefined ? decimalNumber(startChars) : undefined,
+    "w:end": end !== undefined ? signedTwipsMeasureValue(end) : undefined,
+    "w:endChars": endChars !== undefined ? decimalNumber(endChars) : undefined,
+    "w:left": left !== undefined ? signedTwipsMeasureValue(left) : undefined,
+    "w:leftChars": leftChars !== undefined ? decimalNumber(leftChars) : undefined,
+    "w:right": right !== undefined ? signedTwipsMeasureValue(right) : undefined,
+    "w:rightChars": rightChars !== undefined ? decimalNumber(rightChars) : undefined,
+    "w:hanging": hanging !== undefined ? twipsMeasureValue(hanging) : undefined,
+    "w:hangingChars": hangingChars !== undefined ? decimalNumber(hangingChars) : undefined,
+    "w:firstLine": firstLine !== undefined ? twipsMeasureValue(firstLine) : undefined,
+    "w:firstLineChars": firstLineChars !== undefined ? decimalNumber(firstLineChars) : undefined,
   });

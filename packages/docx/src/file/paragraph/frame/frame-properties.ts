@@ -10,8 +10,8 @@
  */
 import type { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared/alignment";
 import type { HeightRule } from "@file/table";
-import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import { BuilderElement, attrObj } from "@file/xml-components";
+import type { IXmlableObject, XmlComponent } from "@file/xml-components";
 
 /**
  * Drop cap types for paragraph frames.
@@ -353,4 +353,31 @@ export const createFrameProperties = (options: IFrameOptions): XmlComponent =>
       },
     },
     name: "w:framePr",
+  });
+
+export const buildFramePropertiesObj = (options: IFrameOptions): IXmlableObject =>
+  attrObj("w:framePr", {
+    "w:xAlign": (options as IAlignmentFrameOptions).alignment
+      ? (options as IAlignmentFrameOptions).alignment.x
+      : undefined,
+    "w:yAlign": (options as IAlignmentFrameOptions).alignment
+      ? (options as IAlignmentFrameOptions).alignment.y
+      : undefined,
+    "w:hAnchor": options.anchor.horizontal,
+    "w:anchorLock": options.anchorLock,
+    "w:vAnchor": options.anchor.vertical,
+    "w:dropCap": options.dropCap,
+    "w:h": options.height,
+    "w:lines": options.lines,
+    "w:hRule": options.rule,
+    "w:hSpace": options.space?.horizontal,
+    "w:vSpace": options.space?.vertical,
+    "w:w": options.width,
+    "w:wrap": options.wrap,
+    "w:x": (options as IXYFrameOptions).position
+      ? (options as IXYFrameOptions).position.x
+      : undefined,
+    "w:y": (options as IXYFrameOptions).position
+      ? (options as IXYFrameOptions).position.y
+      : undefined,
   });

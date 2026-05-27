@@ -8,9 +8,8 @@
  *
  * @module
  */
-import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
-import { OnOffElement } from "@file/xml-components";
+import { BuilderElement, onOffObj } from "@file/xml-components";
+import type { BuilderChild, XmlComponent } from "@file/xml-components";
 
 import type { Scene3DOptions } from "../pic/shape-properties/three-d/scene-3d";
 import { createScene3D } from "../pic/shape-properties/three-d/scene-3d";
@@ -240,7 +239,7 @@ const buildOptionalAttributes = (
 // ─── Preset Text Warp ───────────────────────────────────────────────────────
 
 const createPresetTextShape = (options: PresetTextShapeOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+  const children: BuilderChild[] = [];
   if (options.adjustments) {
     for (const adj of options.adjustments) {
       children.push(
@@ -326,7 +325,7 @@ export const createBodyProperties = (options: BodyPropertiesOptions = {}): XmlCo
   });
 
   // Build children in XSD sequence order
-  const children: XmlComponent[] = [];
+  const children: BuilderChild[] = [];
 
   // a:prstTxWarp
   if (options.prstTxWarp) {
@@ -335,7 +334,7 @@ export const createBodyProperties = (options: BodyPropertiesOptions = {}): XmlCo
 
   // EG_TextAutofit (mutually exclusive)
   if (options.noAutoFit) {
-    children.push(new OnOffElement("a:noAutofit", options.noAutoFit));
+    children.push(onOffObj("a:noAutofit", options.noAutoFit));
   } else if (options.normAutofit) {
     const normAttrs = buildOptionalAttributes({
       fontScale: options.normAutofit.fontScale,
@@ -348,7 +347,7 @@ export const createBodyProperties = (options: BodyPropertiesOptions = {}): XmlCo
       }),
     );
   } else if (options.spAutoFit) {
-    children.push(new OnOffElement("a:spAutoFit", options.spAutoFit));
+    children.push(onOffObj("a:spAutoFit", options.spAutoFit));
   }
 
   // a:scene3d

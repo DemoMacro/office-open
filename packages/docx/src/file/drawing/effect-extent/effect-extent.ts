@@ -8,8 +8,7 @@
  *
  * @module
  */
-import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import type { IXmlableObject } from "@file/xml-components";
 
 /**
  * Attributes for effect extent.
@@ -66,7 +65,7 @@ export interface EffectExtentAttributes {
  *
  * @example
  * ```typescript
- * const effectExtent = createEffectExtent({
+ * const effectExtent = buildEffectExtentObj({
  *   top: 0,
  *   right: 0,
  *   bottom: 0,
@@ -74,30 +73,11 @@ export interface EffectExtentAttributes {
  * });
  * ```
  */
-export const createEffectExtent = ({
+export const buildEffectExtentObj = ({
   top,
   right,
   bottom,
   left,
-}: EffectExtentAttributes): XmlComponent =>
-  new BuilderElement<EffectExtentAttributes>({
-    attributes: {
-      bottom: {
-        key: "b",
-        value: bottom,
-      },
-      left: {
-        key: "l",
-        value: left,
-      },
-      right: {
-        key: "r",
-        value: right,
-      },
-      top: {
-        key: "t",
-        value: top,
-      },
-    },
-    name: "wp:effectExtent",
-  });
+}: EffectExtentAttributes): IXmlableObject => ({
+  "wp:effectExtent": { _attr: { t: top, r: right, b: bottom, l: left } },
+});

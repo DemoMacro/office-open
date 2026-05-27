@@ -8,8 +8,8 @@
  *
  * @module
  */
-import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import { BuilderElement, attrObj } from "@file/xml-components";
+import type { IXmlableObject, XmlComponent } from "@file/xml-components";
 
 /**
  * Options for conditional formatting style.
@@ -138,3 +138,36 @@ export const createCnfStyle = (options: CnfConditionalOptions): XmlComponent => 
     name: "w:cnfStyle",
   });
 };
+
+export const buildCnfStyleObj = (options: CnfConditionalOptions): IXmlableObject =>
+  attrObj("w:cnfStyle", {
+    "w:firstRow": options.firstRow !== undefined ? (options.firstRow ? "1" : "0") : undefined,
+    "w:lastRow": options.lastRow !== undefined ? (options.lastRow ? "1" : "0") : undefined,
+    "w:firstColumn":
+      options.firstColumn !== undefined ? (options.firstColumn ? "1" : "0") : undefined,
+    "w:lastColumn": options.lastColumn !== undefined ? (options.lastColumn ? "1" : "0") : undefined,
+    "w:oddVBand": options.oddVBand !== undefined ? (options.oddVBand ? "1" : "0") : undefined,
+    "w:evenVBand": options.evenVBand !== undefined ? (options.evenVBand ? "1" : "0") : undefined,
+    "w:oddHBand": options.oddHBand !== undefined ? (options.oddHBand ? "1" : "0") : undefined,
+    "w:evenHBand": options.evenHBand !== undefined ? (options.evenHBand ? "1" : "0") : undefined,
+    "w:firstRowFirstColumn":
+      options.firstRowFirstColumn !== undefined
+        ? options.firstRowFirstColumn
+          ? "1"
+          : "0"
+        : undefined,
+    "w:firstRowLastColumn":
+      options.firstRowLastColumn !== undefined
+        ? options.firstRowLastColumn
+          ? "1"
+          : "0"
+        : undefined,
+    "w:lastRowFirstColumn":
+      options.lastRowFirstColumn !== undefined
+        ? options.lastRowFirstColumn
+          ? "1"
+          : "0"
+        : undefined,
+    "w:lastRowLastColumn":
+      options.lastRowLastColumn !== undefined ? (options.lastRowLastColumn ? "1" : "0") : undefined,
+  });

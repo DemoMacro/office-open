@@ -8,8 +8,8 @@
  *
  * @module
  */
-import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import { BuilderElement, numberValObj } from "@file/xml-components";
+import type { IXmlableObject, XmlComponent } from "@file/xml-components";
 
 /**
  * Creates a div ID element for a paragraph.
@@ -36,3 +36,5 @@ export const createDivId = (id: number): XmlComponent =>
     },
     name: "w:divId",
   });
+
+export const buildDivIdObj = (id: number): IXmlableObject => numberValObj("w:divId", id);

@@ -8,8 +8,8 @@
  *
  * @module
  */
-import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import { BuilderElement, attrObj } from "@file/xml-components";
+import type { IXmlableObject, XmlComponent } from "@file/xml-components";
 import { decimalNumber } from "@util/values";
 
 /**
@@ -89,4 +89,22 @@ export const createEastAsianLayout = ({
       vertCompress: { key: "w:vertCompress", value: vertCompress },
     },
     name: "w:eastAsianLayout",
+  });
+
+/**
+ * Build East Asian layout (w:eastAsianLayout) as IXmlableObject without allocating XmlComponent tree.
+ */
+export const buildEastAsianLayoutObj = ({
+  id,
+  combine,
+  combineBrackets,
+  vert,
+  vertCompress,
+}: EastAsianLayoutOptions): IXmlableObject =>
+  attrObj("w:eastAsianLayout", {
+    "w:combine": combine,
+    "w:combineBrackets": combineBrackets,
+    "w:id": id === undefined ? undefined : decimalNumber(id),
+    "w:vert": vert,
+    "w:vertCompress": vertCompress,
   });

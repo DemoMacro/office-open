@@ -8,7 +8,7 @@
  * @module
  */
 import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import type { IXmlableObject, XmlComponent } from "@file/xml-components";
 import { measurementOrPercentValue } from "@util/values";
 import type { Percentage, UniversalMeasure } from "@util/values";
 
@@ -69,6 +69,24 @@ export interface TableWidthProperties {
  * createTableWidthElement("w:tcW", { size: 50, type: WidthType.PERCENTAGE });
  * ```
  */
+export const buildTableWidthObj = (
+  name: string,
+  { type = WidthType.AUTO, size }: TableWidthProperties,
+): IXmlableObject => {
+  let tableWidthValue = size;
+  if (type === WidthType.PERCENTAGE && typeof size === "number") {
+    tableWidthValue = `${size}%`;
+  }
+  return {
+    [name]: {
+      _attr: {
+        ...(tableWidthValue !== undefined && { "w:w": measurementOrPercentValue(tableWidthValue) }),
+        "w:type": type,
+      },
+    },
+  };
+};
+
 export const createTableWidthElement = (
   name: string,
   { type = WidthType.AUTO, size }: TableWidthProperties,

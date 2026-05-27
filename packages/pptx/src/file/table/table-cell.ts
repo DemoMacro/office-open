@@ -56,7 +56,7 @@ export class TableCell extends BaseXmlComponent {
       (options.text !== undefined
         ? [
             new Paragraph({
-              properties: { bulletNone: false },
+              properties: {},
               children: [new TextRun({ text: options.text })],
             }),
           ]

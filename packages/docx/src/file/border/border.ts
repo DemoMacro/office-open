@@ -29,7 +29,7 @@
  * @module
  */
 import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import type { IXmlableObject, XmlComponent } from "@file/xml-components";
 import {
   eighthPointMeasureValue,
   hexColorValue,
@@ -65,6 +65,28 @@ export interface BorderOptions {
   /** Spacing offset. Values are specified in pt */
   readonly space?: number;
 }
+
+/**
+ * Build a border element as IXmlableObject without allocating XmlComponent tree.
+ *
+ * Directly constructs the XML object, filtering out undefined attributes.
+ */
+export const buildBorderObj = (
+  elementName: string,
+  { color, size, space, style, themeColor, themeTint, themeShade, shadow, frame }: BorderOptions,
+): IXmlableObject => {
+  const attrs: Record<string, string | number | boolean> = {};
+  if (style !== undefined) attrs["w:val"] = style;
+  if (color !== undefined) attrs["w:color"] = hexColorValue(color);
+  if (size !== undefined) attrs["w:sz"] = eighthPointMeasureValue(size);
+  if (space !== undefined) attrs["w:space"] = pointMeasureValue(space);
+  if (themeColor !== undefined) attrs["w:themeColor"] = themeColor;
+  if (themeTint !== undefined) attrs["w:themeTint"] = uCharHexNumber(themeTint);
+  if (themeShade !== undefined) attrs["w:themeShade"] = uCharHexNumber(themeShade);
+  if (shadow !== undefined) attrs["w:shadow"] = shadow;
+  if (frame !== undefined) attrs["w:frame"] = frame;
+  return { [elementName]: { _attr: attrs } };
+};
 
 /**
  * Creates a border element for a WordprocessingML document.

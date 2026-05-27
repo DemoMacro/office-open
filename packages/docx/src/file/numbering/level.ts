@@ -10,9 +10,9 @@
  */
 import {
   Attributes,
-  NumberValueElement,
   XmlAttributeComponent,
   XmlComponent,
+  numberValObj,
 } from "@file/xml-components";
 import { decimalNumber } from "@util/values";
 
@@ -382,7 +382,7 @@ export class LevelBase extends XmlComponent {
   }: LevelsOptions) {
     super("w:lvl");
 
-    this.root.push(new NumberValueElement("w:start", decimalNumber(start)));
+    this.root.push(numberValObj("w:start", decimalNumber(start)));
 
     if (format) {
       this.root.push(new NumberFormat(format));

@@ -7,8 +7,8 @@
  *
  * @module
  */
-import { BuilderElement, OnOffElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import { BuilderElement, onOffObj } from "@file/xml-components";
+import type { BuilderChild, XmlComponent } from "@file/xml-components";
 
 /**
  * Options for math box properties.
@@ -44,19 +44,19 @@ export interface MathBoxPropertiesOptions {
  * ```
  */
 export const createMathBoxProperties = (options: MathBoxPropertiesOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+  const children: BuilderChild[] = [];
 
   if (options.opEmu !== undefined) {
-    children.push(new OnOffElement("m:opEmu", options.opEmu));
+    children.push(onOffObj("m:opEmu", options.opEmu));
   }
   if (options.noBreak !== undefined) {
-    children.push(new OnOffElement("m:noBreak", options.noBreak));
+    children.push(onOffObj("m:noBreak", options.noBreak));
   }
   if (options.diff !== undefined) {
-    children.push(new OnOffElement("m:diff", options.diff));
+    children.push(onOffObj("m:diff", options.diff));
   }
   if (options.aln !== undefined) {
-    children.push(new OnOffElement("m:aln", options.aln));
+    children.push(onOffObj("m:aln", options.aln));
   }
 
   return new BuilderElement({

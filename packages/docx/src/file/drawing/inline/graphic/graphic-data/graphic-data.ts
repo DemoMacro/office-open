@@ -8,10 +8,9 @@ import type {
   SmartArtMediaData,
   WpgMediaData,
 } from "@file/media";
-import { NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 import type { FillOptions } from "@office-open/core/drawingml";
 
-import { GraphicDataAttributes } from "./graphic-data-attribute";
 import { Pic } from "./pic";
 import type { BlipEffectsOptions } from "./pic/blip/blip-effects";
 import type { TileOptions } from "./pic/blip/tile";
@@ -72,11 +71,9 @@ export class GraphicData extends XmlComponent {
     super("a:graphicData");
 
     if (mediaData.type === "wps") {
-      this.root.push(
-        new GraphicDataAttributes({
-          uri: "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
-        }),
-      );
+      this.root.push({
+        _attr: { uri: "http://schemas.microsoft.com/office/word/2010/wordprocessingShape" },
+      });
       const wps = createWpsShape({
         ...mediaData.data,
         outline,
@@ -85,11 +82,9 @@ export class GraphicData extends XmlComponent {
       });
       this.root.push(wps);
     } else if (mediaData.type === "wpg") {
-      this.root.push(
-        new GraphicDataAttributes({
-          uri: "http://schemas.microsoft.com/office/word/2010/wordprocessingGroup",
-        }),
-      );
+      this.root.push({
+        _attr: { uri: "http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" },
+      });
       const md = mediaData as WpgMediaData;
       const children = md.children.map((child) => {
         if (child.type === "wps") {
@@ -118,66 +113,46 @@ export class GraphicData extends XmlComponent {
       });
       this.root.push(wpg);
     } else if (mediaData.type === "chart") {
-      this.root.push(
-        new GraphicDataAttributes({
-          uri: "http://schemas.openxmlformats.org/drawingml/2006/chart",
-        }),
-      );
+      this.root.push({ _attr: { uri: "http://schemas.openxmlformats.org/drawingml/2006/chart" } });
       const md = mediaData as ChartMediaData;
       const chartRef = new (class extends XmlComponent {
         public constructor() {
           super("c:chart");
         }
       })();
-      chartRef["root"].push(
-        new NextAttributeComponent({
-          xmlnsC: {
-            key: "xmlns:c",
-            value: "http://schemas.openxmlformats.org/drawingml/2006/chart",
-          },
-          xmlnsR: {
-            key: "xmlns:r",
-            value: "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
-          },
-          rId: { key: "r:id", value: `{chart:${md.chartKey}}` },
-        }),
-      );
+      chartRef["root"].push({
+        _attr: {
+          "xmlns:c": "http://schemas.openxmlformats.org/drawingml/2006/chart",
+          "xmlns:r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+          "r:id": `{chart:${md.chartKey}}`,
+        },
+      });
       this.root.push(chartRef);
     } else if (mediaData.type === "smartart") {
-      this.root.push(
-        new GraphicDataAttributes({
-          uri: "http://schemas.openxmlformats.org/drawingml/2006/diagram",
-        }),
-      );
+      this.root.push({
+        _attr: { uri: "http://schemas.openxmlformats.org/drawingml/2006/diagram" },
+      });
       const md = mediaData as SmartArtMediaData;
       const relIds = new (class extends XmlComponent {
         public constructor() {
           super("dgm:relIds");
         }
       })();
-      relIds["root"].push(
-        new NextAttributeComponent({
-          xmlnsDgm: {
-            key: "xmlns:dgm",
-            value: "http://schemas.openxmlformats.org/drawingml/2006/diagram",
-          },
-          xmlnsR: {
-            key: "xmlns:r",
-            value: "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
-          },
-          rCs: { key: "r:cs", value: `{smartart-cs:${md.smartArtKey}}` },
-          rDm: { key: "r:dm", value: `{smartart:${md.smartArtKey}}` },
-          rLo: { key: "r:lo", value: `{smartart-lo:${md.smartArtKey}}` },
-          rQs: { key: "r:qs", value: `{smartart-qs:${md.smartArtKey}}` },
-        }),
-      );
+      relIds["root"].push({
+        _attr: {
+          "xmlns:dgm": "http://schemas.openxmlformats.org/drawingml/2006/diagram",
+          "xmlns:r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+          "r:cs": `{smartart-cs:${md.smartArtKey}}`,
+          "r:dm": `{smartart:${md.smartArtKey}}`,
+          "r:lo": `{smartart-lo:${md.smartArtKey}}`,
+          "r:qs": `{smartart-qs:${md.smartArtKey}}`,
+        },
+      });
       this.root.push(relIds);
     } else {
-      this.root.push(
-        new GraphicDataAttributes({
-          uri: "http://schemas.openxmlformats.org/drawingml/2006/picture",
-        }),
-      );
+      this.root.push({
+        _attr: { uri: "http://schemas.openxmlformats.org/drawingml/2006/picture" },
+      });
       const md = mediaData as IMediaData;
       const pic = new Pic({
         blipEffects,

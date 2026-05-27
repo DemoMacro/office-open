@@ -8,12 +8,15 @@
  *
  * @module
  */
-import { createBorderElement } from "@file/border";
+import { buildBorderObj, createBorderElement } from "@file/border";
 import type { BorderOptions } from "@file/border";
+import type { IXmlableObject } from "@file/xml-components";
 import {
   IgnoreIfEmptyXmlComponent,
   XmlAttributeComponent,
   XmlComponent,
+  numberValObj,
+  stringEnumValObj,
 } from "@file/xml-components";
 import { decimalNumber } from "@util/values";
 
@@ -74,6 +77,24 @@ export interface TableCellBordersOptions {
  * });
  * ```
  */
+/**
+ * Build table cell borders (w:tcBorders) as IXmlableObject without allocating XmlComponent tree.
+ */
+export function buildTableCellBorders(
+  options: TableCellBordersOptions,
+): IXmlableObject | undefined {
+  const children: IXmlableObject[] = [];
+
+  if (options.top) children.push(buildBorderObj("w:top", options.top));
+  if (options.start) children.push(buildBorderObj("w:start", options.start));
+  if (options.left) children.push(buildBorderObj("w:left", options.left));
+  if (options.bottom) children.push(buildBorderObj("w:bottom", options.bottom));
+  if (options.end) children.push(buildBorderObj("w:end", options.end));
+  if (options.right) children.push(buildBorderObj("w:right", options.right));
+
+  return children.length > 0 ? { "w:tcBorders": children } : undefined;
+}
+
 export class TableCellBorders extends IgnoreIfEmptyXmlComponent {
   public constructor(options: TableCellBordersOptions) {
     super("w:tcBorders");
@@ -97,6 +118,13 @@ export class TableCellBorders extends IgnoreIfEmptyXmlComponent {
       this.root.push(createBorderElement("w:right", options.right));
     }
   }
+}
+
+/**
+ * Build grid span (w:gridSpan) as IXmlableObject without allocating XmlComponent tree.
+ */
+export function buildGridSpan(value: number): IXmlableObject {
+  return numberValObj("w:gridSpan", decimalNumber(value));
 }
 
 /**
@@ -158,6 +186,15 @@ export const VerticalMergeType = {
 } as const;
 
 /**
+ * Build vertical merge (w:vMerge) as IXmlableObject without allocating XmlComponent tree.
+ */
+export function buildVerticalMerge(
+  value: (typeof VerticalMergeType)[keyof typeof VerticalMergeType],
+): IXmlableObject {
+  return stringEnumValObj("w:vMerge", value);
+}
+
+/**
  * Attributes for the VerticalMerge element.
  */
 class VerticalMergeAttributes extends XmlAttributeComponent<{
@@ -216,6 +253,15 @@ export const TextDirection = {
   /** Text flows from top to bottom, right to left */
   TOP_TO_BOTTOM_RIGHT_TO_LEFT: "tbRl",
 } as const;
+
+/**
+ * Build text direction (w:textDirection) as IXmlableObject without allocating XmlComponent tree.
+ */
+export function buildTextDirection(
+  value: (typeof TextDirection)[keyof typeof TextDirection],
+): IXmlableObject {
+  return stringEnumValObj("w:textDirection", value);
+}
 
 /**
  * Attributes for the TDirection element.

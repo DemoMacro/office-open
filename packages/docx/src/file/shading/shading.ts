@@ -26,8 +26,8 @@
  *
  * @module
  */
-import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import { BuilderElement, attrObj } from "@file/xml-components";
+import type { IXmlableObject, XmlComponent } from "@file/xml-components";
 import { hexColorValue, uCharHexNumber } from "@util/values";
 import type { ThemeColor } from "@util/values";
 
@@ -103,6 +103,29 @@ export const createShading = ({
       type: { key: "w:val", value: type ?? "clear" },
     },
     name: "w:shd",
+  });
+
+export const buildShadingObj = ({
+  fill,
+  color,
+  type,
+  themeColor,
+  themeTint,
+  themeShade,
+  themeFill,
+  themeFillTint,
+  themeFillShade,
+}: ShadingAttributesProperties): IXmlableObject =>
+  attrObj("w:shd", {
+    "w:val": type ?? "clear",
+    "w:color": color !== undefined ? hexColorValue(color) : undefined,
+    "w:fill": fill !== undefined ? hexColorValue(fill) : undefined,
+    "w:themeColor": themeColor,
+    "w:themeTint": themeTint !== undefined ? uCharHexNumber(themeTint) : undefined,
+    "w:themeShade": themeShade !== undefined ? uCharHexNumber(themeShade) : undefined,
+    "w:themeFill": themeFill,
+    "w:themeFillTint": themeFillTint !== undefined ? uCharHexNumber(themeFillTint) : undefined,
+    "w:themeFillShade": themeFillShade !== undefined ? uCharHexNumber(themeFillShade) : undefined,
   });
 
 /**

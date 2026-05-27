@@ -7,12 +7,7 @@
  *
  * @module
  */
-import {
-  OnOffElement,
-  StringValueElement,
-  XmlAttributeComponent,
-  XmlComponent,
-} from "@file/xml-components";
+import { XmlAttributeComponent, XmlComponent, onOffObj, stringValObj } from "@file/xml-components";
 
 import { Name, UiPriority } from "./components";
 import type { TableStyleOverrideOptions } from "./table-style-override";
@@ -183,15 +178,15 @@ export class Style extends XmlComponent {
     }
 
     if (options.basedOn) {
-      this.root.push(new StringValueElement("w:basedOn", options.basedOn));
+      this.root.push(stringValObj("w:basedOn", options.basedOn));
     }
 
     if (options.next) {
-      this.root.push(new StringValueElement("w:next", options.next));
+      this.root.push(stringValObj("w:next", options.next));
     }
 
     if (options.link) {
-      this.root.push(new StringValueElement("w:link", options.link));
+      this.root.push(stringValObj("w:link", options.link));
     }
 
     if (options.uiPriority !== undefined) {
@@ -199,15 +194,15 @@ export class Style extends XmlComponent {
     }
 
     if (options.semiHidden !== undefined) {
-      this.root.push(new OnOffElement("w:semiHidden", options.semiHidden));
+      this.root.push(onOffObj("w:semiHidden", options.semiHidden));
     }
 
     if (options.unhideWhenUsed !== undefined) {
-      this.root.push(new OnOffElement("w:unhideWhenUsed", options.unhideWhenUsed));
+      this.root.push(onOffObj("w:unhideWhenUsed", options.unhideWhenUsed));
     }
 
     if (options.quickFormat !== undefined) {
-      this.root.push(new OnOffElement("w:qFormat", options.quickFormat));
+      this.root.push(onOffObj("w:qFormat", options.quickFormat));
     }
 
     if (options.tableStyleOverrides) {

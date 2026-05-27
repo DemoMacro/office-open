@@ -1,9 +1,7 @@
-import { XmlComponent } from "@file/xml-components";
-
-import { GraphicFrameLockAttributes } from "./graphic-frame-lock-attributes";
+import type { IXmlableObject } from "@file/xml-components";
 
 /**
- * Represents graphic frame locking properties in DrawingML.
+ * Builds graphic frame locking properties object.
  *
  * This element specifies all locking properties for a graphic frame. These properties
  * inform the generating application about which operations are forbidden on the parent
@@ -25,21 +23,12 @@ import { GraphicFrameLockAttributes } from "./graphic-frame-lock-attributes";
  *   <xsd:attribute name="noResize" type="xsd:boolean" use="optional"/>
  * </xsd:complexType>
  * ```
- *
- * @example
- * ```typescript
- * const locks = new GraphicFrameLocks();
- * ```
  */
-export class GraphicFrameLocks extends XmlComponent {
-  public constructor() {
-    super("a:graphicFrameLocks");
-
-    this.root.push(
-      new GraphicFrameLockAttributes({
-        noChangeAspect: 1,
-        xmlns: "http://schemas.openxmlformats.org/drawingml/2006/main",
-      }),
-    );
-  }
-}
+export const buildGraphicFrameLocksObj = (): IXmlableObject => ({
+  "a:graphicFrameLocks": {
+    _attr: {
+      noChangeAspect: 1,
+      "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+    },
+  },
+});

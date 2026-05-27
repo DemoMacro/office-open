@@ -10,11 +10,11 @@
  */
 import {
   BuilderElement,
-  NumberValueElement,
-  OnOffElement,
-  StringValueElement,
   XmlAttributeComponent,
   XmlComponent,
+  numberValObj,
+  onOffObj,
+  stringValObj,
 } from "@file/xml-components";
 
 import { Compatibility } from "./compatibility";
@@ -360,7 +360,7 @@ export class Settings extends XmlComponent {
 
     // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_trackRevisions_topic_ID0EKXKY.html
     if (options.trackRevisions !== undefined) {
-      this.root.push(new OnOffElement("w:trackRevisions", options.trackRevisions));
+      this.root.push(onOffObj("w:trackRevisions", options.trackRevisions));
     }
 
     // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_documentProtection_topic_ID0EKCBA.html
@@ -386,19 +386,19 @@ export class Settings extends XmlComponent {
     }
 
     if (options.displayBackgroundShape !== undefined) {
-      this.root.push(new OnOffElement("w:displayBackgroundShape", options.displayBackgroundShape));
+      this.root.push(onOffObj("w:displayBackgroundShape", options.displayBackgroundShape));
     }
 
     if (options.embedTrueTypeFonts !== undefined) {
-      this.root.push(new OnOffElement("w:embedTrueTypeFonts", options.embedTrueTypeFonts));
+      this.root.push(onOffObj("w:embedTrueTypeFonts", options.embedTrueTypeFonts));
     }
 
     if (options.embedSystemFonts !== undefined) {
-      this.root.push(new OnOffElement("w:embedSystemFonts", options.embedSystemFonts));
+      this.root.push(onOffObj("w:embedSystemFonts", options.embedSystemFonts));
     }
 
     if (options.saveSubsetFonts !== undefined) {
-      this.root.push(new OnOffElement("w:saveSubsetFonts", options.saveSubsetFonts));
+      this.root.push(onOffObj("w:saveSubsetFonts", options.saveSubsetFonts));
     }
 
     if (options.docVars !== undefined && options.docVars.length > 0) {
@@ -422,47 +422,40 @@ export class Settings extends XmlComponent {
     // http://officeopenxml.com/WPSectionFooterReference.php
     // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_evenAndOddHeaders_topic_ID0ET1WU.html
     if (options.evenAndOddHeaders !== undefined) {
-      this.root.push(new OnOffElement("w:evenAndOddHeaders", options.evenAndOddHeaders));
+      this.root.push(onOffObj("w:evenAndOddHeaders", options.evenAndOddHeaders));
     }
 
     if (options.updateFields !== undefined) {
-      this.root.push(new OnOffElement("w:updateFields", options.updateFields));
+      this.root.push(onOffObj("w:updateFields", options.updateFields));
     }
 
     // https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_defaultTabStop_topic_ID0EIXSX.html
-    this.root.push(new NumberValueElement("w:defaultTabStop", options.defaultTabStop ?? 420));
+    this.root.push(numberValObj("w:defaultTabStop", options.defaultTabStop ?? 420));
 
     // https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_autoHyphenation_topic_ID0EFUMX.html
     if (options.hyphenation?.autoHyphenation !== undefined) {
-      this.root.push(new OnOffElement("w:autoHyphenation", options.hyphenation.autoHyphenation));
+      this.root.push(onOffObj("w:autoHyphenation", options.hyphenation.autoHyphenation));
     }
 
     // https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_hyphenationZone_topic_ID0ERI3X.html
     if (options.hyphenation?.hyphenationZone !== undefined) {
-      this.root.push(
-        new NumberValueElement("w:hyphenationZone", options.hyphenation.hyphenationZone),
-      );
+      this.root.push(numberValObj("w:hyphenationZone", options.hyphenation.hyphenationZone));
     }
 
     // https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_consecutiveHyphenLim_topic_ID0EQ6RX.html
     if (options.hyphenation?.consecutiveHyphenLimit !== undefined) {
       this.root.push(
-        new NumberValueElement(
-          "w:consecutiveHyphenLimit",
-          options.hyphenation.consecutiveHyphenLimit,
-        ),
+        numberValObj("w:consecutiveHyphenLimit", options.hyphenation.consecutiveHyphenLimit),
       );
     }
 
     // https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_doNotHyphenateCaps_topic_ID0EW4XX.html
     if (options.hyphenation?.doNotHyphenateCaps !== undefined) {
-      this.root.push(
-        new OnOffElement("w:doNotHyphenateCaps", options.hyphenation.doNotHyphenateCaps),
-      );
+      this.root.push(onOffObj("w:doNotHyphenateCaps", options.hyphenation.doNotHyphenateCaps));
     }
 
     this.root.push(
-      new StringValueElement(
+      stringValObj(
         "w:characterSpacingControl",
         options.characterSpacingControl ?? "compressPunctuation",
       ),

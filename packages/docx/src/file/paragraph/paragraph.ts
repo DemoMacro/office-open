@@ -14,6 +14,7 @@ import type { AltChunk } from "../alt-chunk";
 import type { CheckBox } from "../checkbox";
 import type { SectionProperties } from "../document/body/section-properties/section-properties";
 import type { FileChild } from "../file-child";
+import { FontWrapper } from "../fonts/font-wrapper";
 import type { PermEnd, PermStart } from "../permissions";
 import { TargetModeType } from "../relationships/relationship/relationship";
 import type { StructuredDocumentTagRun } from "../sdt";
@@ -45,7 +46,7 @@ import { EndnoteReferenceRun as EndnoteRefCls } from "@file/endnotes/endnote/run
 // But @file/footnotes/footnote/run/reference-run only imports Run from @file/paragraph/run — no cycle.
 import { FootnoteReferenceRun as FootnoteRefCls } from "@file/footnotes/footnote/run/reference-run";
 
-import { ParagraphProperties } from "./properties";
+import { buildParagraphProperties } from "./properties";
 import type { ParagraphPropertiesOptions } from "./properties";
 import { TextRun } from "./run";
 import type { Run, SequentialIdentifier, SimpleField, SimpleMailMergeField } from "./run";
@@ -221,13 +222,33 @@ export class Paragraph extends BaseXmlComponent implements FileChild {
   public prepForXml(context: Context): IXmlableObject | undefined {
     const children: IXmlableObject[] = [];
 
-    // Build paragraph properties (including optional section properties)
-    const pPr = new ParagraphProperties(this.options);
-    if (this.sectionProperties) {
-      pPr.push(this.sectionProperties);
+    // Build paragraph properties using pure function
+    const { xml: pPrObj, numberingReferences } = buildParagraphProperties(this.options);
+
+    // Register numbering references (same logic as ParagraphProperties.prepForXml)
+    if (!(context.viewWrapper instanceof FontWrapper)) {
+      for (const reference of numberingReferences) {
+        context.file.Numbering.createConcreteNumberingInstance(
+          reference.reference,
+          reference.instance,
+        );
+      }
     }
-    const pPrObj = pPr.prepForXml(context);
-    if (pPrObj) children.push(pPrObj);
+
+    // Append section properties to pPr children if present
+    let finalPPrObj = pPrObj;
+    if (this.sectionProperties) {
+      const sectPrObj = this.sectionProperties.prepForXml(context);
+      if (sectPrObj) {
+        if (finalPPrObj) {
+          (finalPPrObj["w:pPr"] as IXmlableObject[]).push(sectPrObj);
+        } else {
+          finalPPrObj = { "w:pPr": [sectPrObj] };
+        }
+      }
+    }
+
+    if (finalPPrObj) children.push(finalPPrObj);
 
     // Front runs (added via addRunToFront)
     for (const run of this.frontRuns) {

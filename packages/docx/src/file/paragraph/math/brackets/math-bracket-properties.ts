@@ -7,8 +7,8 @@
  *
  * @module
  */
-import { BuilderElement, OnOffElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import { BuilderElement, onOffObj } from "@file/xml-components";
+import type { BuilderChild, XmlComponent } from "@file/xml-components";
 
 import { createMathBeginningCharacter } from "./math-beginning-character";
 import { createMathEndingCharacter } from "./math-ending-char";
@@ -62,7 +62,7 @@ export const createMathBracketProperties = ({
   grow,
   shape,
 }: MathBracketPropertiesOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+  const children: BuilderChild[] = [];
 
   if (characters) {
     children.push(createMathBeginningCharacter({ character: characters.beginningCharacter }));
@@ -79,7 +79,7 @@ export const createMathBracketProperties = ({
     children.push(createMathEndingCharacter({ character: characters.endingCharacter }));
   }
   if (grow !== undefined) {
-    children.push(new OnOffElement("m:grow", grow));
+    children.push(onOffObj("m:grow", grow));
   }
   if (shape !== undefined) {
     children.push(

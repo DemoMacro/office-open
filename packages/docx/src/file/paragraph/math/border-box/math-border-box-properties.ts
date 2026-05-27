@@ -7,8 +7,8 @@
  *
  * @module
  */
-import { BuilderElement, OnOffElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import { BuilderElement, onOffObj } from "@file/xml-components";
+import type { BuilderChild, XmlComponent } from "@file/xml-components";
 
 /**
  * Options for math border box properties.
@@ -57,31 +57,31 @@ export interface MathBorderBoxPropertiesOptions {
 export const createMathBorderBoxProperties = (
   options: MathBorderBoxPropertiesOptions,
 ): XmlComponent => {
-  const children: XmlComponent[] = [];
+  const children: BuilderChild[] = [];
 
   if (options.hideTop !== undefined) {
-    children.push(new OnOffElement("m:hideTop", options.hideTop));
+    children.push(onOffObj("m:hideTop", options.hideTop));
   }
   if (options.hideBottom !== undefined) {
-    children.push(new OnOffElement("m:hideBot", options.hideBottom));
+    children.push(onOffObj("m:hideBot", options.hideBottom));
   }
   if (options.hideLeft !== undefined) {
-    children.push(new OnOffElement("m:hideLeft", options.hideLeft));
+    children.push(onOffObj("m:hideLeft", options.hideLeft));
   }
   if (options.hideRight !== undefined) {
-    children.push(new OnOffElement("m:hideRight", options.hideRight));
+    children.push(onOffObj("m:hideRight", options.hideRight));
   }
   if (options.strikeHorizontal !== undefined) {
-    children.push(new OnOffElement("m:strikeH", options.strikeHorizontal));
+    children.push(onOffObj("m:strikeH", options.strikeHorizontal));
   }
   if (options.strikeVertical !== undefined) {
-    children.push(new OnOffElement("m:strikeV", options.strikeVertical));
+    children.push(onOffObj("m:strikeV", options.strikeVertical));
   }
   if (options.strikeDiagonalUp !== undefined) {
-    children.push(new OnOffElement("m:strikeBLTR", options.strikeDiagonalUp));
+    children.push(onOffObj("m:strikeBLTR", options.strikeDiagonalUp));
   }
   if (options.strikeDiagonalDown !== undefined) {
-    children.push(new OnOffElement("m:strikeTLBR", options.strikeDiagonalDown));
+    children.push(onOffObj("m:strikeTLBR", options.strikeDiagonalDown));
   }
 
   return new BuilderElement({

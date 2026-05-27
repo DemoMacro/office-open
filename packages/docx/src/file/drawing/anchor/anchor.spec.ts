@@ -75,7 +75,7 @@ describe("Anchor", () => {
       const newJson = Utility.jsonify(anchor);
       assert.equal(newJson.root.length, 10);
 
-      const anchorAttributes = newJson.root[0].root;
+      const anchorAttributes = newJson.root[0]._attr;
       assert.include(anchorAttributes, {
         allowOverlap: "1",
         behindDoc: "0",
@@ -106,13 +106,13 @@ describe("Anchor", () => {
       assert.equal(verticalPosition.root[1].rootKey, "wp:posOffset");
       assert.include(verticalPosition.root[1].root[0], 0);
 
-      // 4: extent
+      // 4: extent (now IXmlableObject literal)
       const extent = newJson.root[4];
-      assert.equal(extent.rootKey, "wp:extent");
+      assert.property(extent, "wp:extent");
 
-      // 5: effect extent
+      // 5: effect extent (now IXmlableObject literal)
       const effectExtent = newJson.root[5];
-      assert.equal(effectExtent.rootKey, "wp:effectExtent");
+      assert.property(effectExtent, "wp:effectExtent");
 
       // 6 text wrap: none
       const textWrap = newJson.root[6];
@@ -122,9 +122,9 @@ describe("Anchor", () => {
       const docProperties = newJson.root[7];
       assert.equal(docProperties.rootKey, "wp:docPr");
 
-      // 8: graphic frame properties
+      // 8: graphic frame properties (now IXmlableObject literal)
       const graphicFrame = newJson.root[8];
-      assert.equal(graphicFrame.rootKey, "wp:cNvGraphicFramePr");
+      assert.property(graphicFrame, "wp:cNvGraphicFramePr");
 
       // 9: graphic
       const graphic = newJson.root[9];
@@ -256,7 +256,7 @@ describe("Anchor", () => {
         },
       });
       const newJson = Utility.jsonify(anchor);
-      const anchorAttributes = newJson.root[0].root;
+      const anchorAttributes = newJson.root[0]._attr;
       assert.include(anchorAttributes, {
         distB: 10,
         distL: 10,
@@ -278,7 +278,7 @@ describe("Anchor", () => {
         },
       });
       const newJson = Utility.jsonify(anchor);
-      const anchorAttributes = newJson.root[0].root;
+      const anchorAttributes = newJson.root[0]._attr;
       assert.include(anchorAttributes, {
         distB: 0,
         distL: 0,
@@ -300,7 +300,7 @@ describe("Anchor", () => {
         },
       });
       const newJson = Utility.jsonify(anchor);
-      const anchorAttributes = newJson.root[0].root;
+      const anchorAttributes = newJson.root[0]._attr;
       assert.include(anchorAttributes, {
         allowOverlap: "0",
       });
@@ -319,7 +319,7 @@ describe("Anchor", () => {
         },
       });
       const newJson = Utility.jsonify(anchor);
-      const anchorAttributes = newJson.root[0].root;
+      const anchorAttributes = newJson.root[0]._attr;
       assert.include(anchorAttributes, {
         behindDoc: "1",
       });
@@ -338,7 +338,7 @@ describe("Anchor", () => {
         },
       });
       const newJson = Utility.jsonify(anchor);
-      const anchorAttributes = newJson.root[0].root;
+      const anchorAttributes = newJson.root[0]._attr;
       assert.include(anchorAttributes, {
         locked: "1",
       });
@@ -357,7 +357,7 @@ describe("Anchor", () => {
         },
       });
       const newJson = Utility.jsonify(anchor);
-      const anchorAttributes = newJson.root[0].root;
+      const anchorAttributes = newJson.root[0]._attr;
       assert.include(anchorAttributes, {
         layoutInCell: "0",
       });
@@ -376,7 +376,7 @@ describe("Anchor", () => {
         },
       });
       const newJson = Utility.jsonify(anchor);
-      const anchorAttributes = newJson.root[0].root;
+      const anchorAttributes = newJson.root[0]._attr;
 
       assert.include(anchorAttributes, {
         relativeHeight: 120,

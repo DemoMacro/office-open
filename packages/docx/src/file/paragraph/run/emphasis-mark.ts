@@ -8,8 +8,8 @@
  *
  * @module
  */
-import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import { BuilderElement, attrObj } from "@file/xml-components";
+import type { IXmlableObject, XmlComponent } from "@file/xml-components";
 
 /**
  * Emphasis mark types.
@@ -89,3 +89,10 @@ export const createEmphasisMark = (
  * Convenience function for applying a dot emphasis mark to text.
  */
 export const createDotEmphasisMark = (): XmlComponent => createEmphasisMark(EmphasisMarkType.DOT);
+
+/**
+ * Build emphasis mark (w:em) as IXmlableObject without allocating XmlComponent tree.
+ */
+export const buildEmphasisMarkObj = (
+  emphasisMarkType: (typeof EmphasisMarkType)[keyof typeof EmphasisMarkType] = EmphasisMarkType.DOT,
+): IXmlableObject => attrObj("w:em", { "w:val": emphasisMarkType });

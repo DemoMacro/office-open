@@ -7,7 +7,7 @@
  */
 import { Run } from "./run";
 import type { RunOptions } from "./run";
-import { Symbol } from "./run-components/symbol";
+import { buildSymbol } from "./run-components/symbol";
 
 /**
  * Options for creating a SymbolRun.
@@ -40,11 +40,11 @@ export class SymbolRun extends Run {
   public constructor(options: ISymbolRunOptions | string) {
     if (typeof options === "string") {
       super({});
-      this.extraChildren.push(new Symbol(options));
+      this.extraChildren.push(buildSymbol(options));
       return this;
     }
 
     super(options);
-    this.extraChildren.push(new Symbol(options.char, options.symbolfont));
+    this.extraChildren.push(buildSymbol(options.char, options.symbolfont));
   }
 }

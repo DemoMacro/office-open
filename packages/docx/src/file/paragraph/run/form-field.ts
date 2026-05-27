@@ -10,8 +10,8 @@
  *
  * @module
  */
-import { BuilderElement, OnOffElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import { BuilderElement, onOffObj } from "@file/xml-components";
+import type { BuilderChild, XmlComponent } from "@file/xml-components";
 
 /**
  * Text input field type (ST_FFTextType).
@@ -157,7 +157,7 @@ const createFormFieldText = (name: string, options: FormFieldTextOptions): XmlCo
  * Creates a checkbox form field element (w:checkBox).
  */
 const createCheckBox = (options: CheckBoxOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+  const children: BuilderChild[] = [];
 
   if (options.size !== undefined) {
     children.push(
@@ -167,14 +167,14 @@ const createCheckBox = (options: CheckBoxOptions): XmlComponent => {
       }),
     );
   } else if (options.sizeAuto !== undefined) {
-    children.push(new OnOffElement("w:sizeAuto", options.sizeAuto));
+    children.push(onOffObj("w:sizeAuto", options.sizeAuto));
   }
 
   if (options.default !== undefined) {
-    children.push(new OnOffElement("w:default", options.default));
+    children.push(onOffObj("w:default", options.default));
   }
   if (options.checked !== undefined) {
-    children.push(new OnOffElement("w:checked", options.checked));
+    children.push(onOffObj("w:checked", options.checked));
   }
 
   return new BuilderElement({
@@ -187,7 +187,7 @@ const createCheckBox = (options: CheckBoxOptions): XmlComponent => {
  * Creates a dropdown list form field element (w:ddList).
  */
 const createDropDownList = (options: DropDownListOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+  const children: BuilderChild[] = [];
 
   if (options.result !== undefined) {
     children.push(
@@ -224,7 +224,7 @@ const createDropDownList = (options: DropDownListOptions): XmlComponent => {
  * Creates a text input form field element (w:textInput).
  */
 const createTextInput = (options: TextInputOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+  const children: BuilderChild[] = [];
 
   if (options.type !== undefined) {
     children.push(
@@ -315,7 +315,7 @@ const createTextInput = (options: TextInputOptions): XmlComponent => {
  * ```
  */
 export const createFormFieldData = (options: FormFieldOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+  const children: BuilderChild[] = [];
 
   if (options.name !== undefined) {
     children.push(
@@ -342,10 +342,10 @@ export const createFormFieldData = (options: FormFieldOptions): XmlComponent => 
     );
   }
   if (options.enabled !== undefined) {
-    children.push(new OnOffElement("w:enabled", options.enabled));
+    children.push(onOffObj("w:enabled", options.enabled));
   }
   if (options.calcOnExit !== undefined) {
-    children.push(new OnOffElement("w:calcOnExit", options.calcOnExit));
+    children.push(onOffObj("w:calcOnExit", options.calcOnExit));
   }
   if (options.entryMacro !== undefined) {
     children.push(

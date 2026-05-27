@@ -1,10 +1,11 @@
-import { StringContainer } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 
 /**
  * a:t — Text content within a run.
  */
-export class Text extends StringContainer {
+export class Text extends XmlComponent {
   public constructor(value: string) {
-    super("a:t", value);
+    super("a:t");
+    this.root.push(value);
   }
 }

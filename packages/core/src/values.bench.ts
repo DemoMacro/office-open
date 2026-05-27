@@ -4,7 +4,7 @@ import { convertMillimetersToTwip, convertInchesToTwip } from "./converters";
 import { uniqueId, uniqueUuid, hashedId, uniqueNumericIdCreator } from "./id-generators";
 import { decimalNumber, hexColorValue, hpsMeasureValue, universalMeasureValue } from "./values";
 import type { Context } from "./xml-components/base";
-import { OnOffElement, BuilderElement, StringContainer } from "./xml-components/elements";
+import { BuilderElement, stringContainerObj, onOffObj } from "./xml-components/elements";
 
 const ctx: Context = { stack: [] };
 
@@ -64,12 +64,12 @@ describe("id generators", () => {
 });
 
 describe("xml component prepForXml", () => {
-  bench("OnOffElement (true)", () => {
-    new OnOffElement("w:b", true).prepForXml(ctx);
+  bench("onOffObj (true)", () => {
+    onOffObj("w:b", true);
   });
 
-  bench("OnOffElement (false)", () => {
-    new OnOffElement("w:b", false).prepForXml(ctx);
+  bench("onOffObj (false)", () => {
+    onOffObj("w:b", false);
   });
 
   bench("BuilderElement with attributes", () => {
@@ -82,7 +82,7 @@ describe("xml component prepForXml", () => {
   bench("BuilderElement with children", () => {
     new BuilderElement({
       name: "w:p",
-      children: [new StringContainer("w:t", "Hello World")],
+      children: [stringContainerObj("w:t", "Hello World")],
     }).prepForXml(ctx);
   });
 });

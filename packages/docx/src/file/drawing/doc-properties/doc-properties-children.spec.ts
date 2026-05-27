@@ -1,14 +1,11 @@
-import { Formatter } from "@export/formatter";
 import { describe, expect, it } from "vite-plus/test";
 
-import { createHyperlinkClick, createHyperlinkHover } from "./doc-properties-children";
+import { buildHyperlinkClickObj, buildHyperlinkHoverObj } from "./doc-properties-children";
 
 describe("Document Properties Children", () => {
-  describe("#createHyperlinkClick", () => {
-    it("should create a Hyperlink Click component", () => {
-      const tree = new Formatter().format(createHyperlinkClick("1", false));
-
-      expect(tree).to.deep.equal({
+  describe("#buildHyperlinkClickObj", () => {
+    it("should create a Hyperlink Click object", () => {
+      expect(buildHyperlinkClickObj("1", false)).to.deep.equal({
         "a:hlinkClick": {
           _attr: {
             "r:id": "rId1",
@@ -17,25 +14,21 @@ describe("Document Properties Children", () => {
       });
     });
 
-    it("should create a Hyperlink Click component with xmlns:a", () => {
-      const tree = new Formatter().format(createHyperlinkClick("1", true));
-
-      expect(tree).to.deep.equal({
+    it("should create a Hyperlink Click object with xmlns:a", () => {
+      expect(buildHyperlinkClickObj("1", true)).to.deep.equal({
         "a:hlinkClick": {
           _attr: {
-            "r:id": "rId1",
             "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+            "r:id": "rId1",
           },
         },
       });
     });
   });
 
-  describe("#createHyperlinkHover", () => {
-    it("should create a Hyperlink Hover component", () => {
-      const tree = new Formatter().format(createHyperlinkHover("1", false));
-
-      expect(tree).to.deep.equal({
+  describe("#buildHyperlinkHoverObj", () => {
+    it("should create a Hyperlink Hover object", () => {
+      expect(buildHyperlinkHoverObj("1", false)).to.deep.equal({
         "a:hlinkHover": {
           _attr: {
             "r:id": "rId1",
@@ -44,14 +37,12 @@ describe("Document Properties Children", () => {
       });
     });
 
-    it("should create a Hyperlink Hover component with xmlns:a", () => {
-      const tree = new Formatter().format(createHyperlinkHover("1", true));
-
-      expect(tree).to.deep.equal({
+    it("should create a Hyperlink Hover object with xmlns:a", () => {
+      expect(buildHyperlinkHoverObj("1", true)).to.deep.equal({
         "a:hlinkHover": {
           _attr: {
-            "r:id": "rId1",
             "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+            "r:id": "rId1",
           },
         },
       });

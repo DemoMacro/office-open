@@ -1,38 +1,33 @@
-import { Formatter } from "@export/formatter";
 import { SpaceType } from "@file/shared";
 import { describe, expect, it } from "vite-plus/test";
 
-import { Text } from "./text";
+import { buildText } from "./text";
 
-describe("Text", () => {
-  describe("#constructor", () => {
-    it("adds the passed in text to the component", () => {
-      const t = new Text(" this is\n text");
-      const f = new Formatter().format(t);
-      expect(f).to.deep.equal({
-        "w:t": [{ _attr: { "xml:space": "preserve" } }, " this is\n text"],
-      });
+describe("buildText", () => {
+  it("builds text element with string argument", () => {
+    expect(buildText(" this is\n text")).toEqual({
+      "w:t": [{ _attr: { "xml:space": "preserve" } }, " this is\n text"],
     });
+  });
 
-    it("adds the passed in text to the component with options", () => {
-      const t = new Text({
+  it("builds text element with options and explicit space type", () => {
+    expect(
+      buildText({
         space: SpaceType.PRESERVE,
         text: " this is\n text",
-      });
-      const f = new Formatter().format(t);
-      expect(f).to.deep.equal({
-        "w:t": [{ _attr: { "xml:space": "preserve" } }, " this is\n text"],
-      });
+      }),
+    ).toEqual({
+      "w:t": [{ _attr: { "xml:space": "preserve" } }, " this is\n text"],
     });
+  });
 
-    it("adds the passed in text to the component with options and sets default space type", () => {
-      const t = new Text({
+  it("builds text element with options and default space type", () => {
+    expect(
+      buildText({
         text: " this is\n text",
-      });
-      const f = new Formatter().format(t);
-      expect(f).to.deep.equal({
-        "w:t": [{ _attr: { "xml:space": "default" } }, " this is\n text"],
-      });
+      }),
+    ).toEqual({
+      "w:t": [{ _attr: { "xml:space": "default" } }, " this is\n text"],
     });
   });
 });

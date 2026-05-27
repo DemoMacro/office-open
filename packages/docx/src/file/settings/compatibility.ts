@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { OnOffElement, XmlComponent } from "@file/xml-components";
+import { onOffObj, XmlComponent } from "@file/xml-components";
 
 import { createCompatibilitySetting } from "./compatibility-setting/compatibility-setting";
 
@@ -282,337 +282,290 @@ export class Compatibility extends XmlComponent {
 
     if (options.useSingleBorderforContiguousCells) {
       this.root.push(
-        new OnOffElement(
-          "w:useSingleBorderforContiguousCells",
-          options.useSingleBorderforContiguousCells,
-        ),
+        onOffObj("w:useSingleBorderforContiguousCells", options.useSingleBorderforContiguousCells),
       );
     }
 
     if (options.wordPerfectJustification) {
-      this.root.push(new OnOffElement("w:wpJustification", options.wordPerfectJustification));
+      this.root.push(onOffObj("w:wpJustification", options.wordPerfectJustification));
     }
 
     if (options.noTabStopForHangingIndent) {
-      this.root.push(new OnOffElement("w:noTabHangInd", options.noTabStopForHangingIndent));
+      this.root.push(onOffObj("w:noTabHangInd", options.noTabStopForHangingIndent));
     }
 
     if (options.noLeading) {
-      this.root.push(new OnOffElement("w:noLeading", options.noLeading));
+      this.root.push(onOffObj("w:noLeading", options.noLeading));
     }
 
     if (options.spaceForUnderline) {
-      this.root.push(new OnOffElement("w:spaceForUL", options.spaceForUnderline));
+      this.root.push(onOffObj("w:spaceForUL", options.spaceForUnderline));
     }
 
     if (options.noColumnBalance) {
-      this.root.push(new OnOffElement("w:noColumnBalance", options.noColumnBalance));
+      this.root.push(onOffObj("w:noColumnBalance", options.noColumnBalance));
     }
 
     if (options.balanceSingleByteDoubleByteWidth) {
       this.root.push(
-        new OnOffElement(
-          "w:balanceSingleByteDoubleByteWidth",
-          options.balanceSingleByteDoubleByteWidth,
-        ),
+        onOffObj("w:balanceSingleByteDoubleByteWidth", options.balanceSingleByteDoubleByteWidth),
       );
     }
 
     if (options.noExtraLineSpacing) {
-      this.root.push(new OnOffElement("w:noExtraLineSpacing", options.noExtraLineSpacing));
+      this.root.push(onOffObj("w:noExtraLineSpacing", options.noExtraLineSpacing));
     }
 
     if (options.doNotLeaveBackslashAlone) {
-      this.root.push(
-        new OnOffElement("w:doNotLeaveBackslashAlone", options.doNotLeaveBackslashAlone),
-      );
+      this.root.push(onOffObj("w:doNotLeaveBackslashAlone", options.doNotLeaveBackslashAlone));
     }
 
     if (options.underlineTrailingSpaces) {
-      this.root.push(new OnOffElement("w:ulTrailSpace", options.underlineTrailingSpaces));
+      this.root.push(onOffObj("w:ulTrailSpace", options.underlineTrailingSpaces));
     }
 
     if (options.doNotExpandShiftReturn) {
-      this.root.push(new OnOffElement("w:doNotExpandShiftReturn", options.doNotExpandShiftReturn));
+      this.root.push(onOffObj("w:doNotExpandShiftReturn", options.doNotExpandShiftReturn));
     }
 
     if (options.spacingInWholePoints) {
-      this.root.push(new OnOffElement("w:spacingInWholePoints", options.spacingInWholePoints));
+      this.root.push(onOffObj("w:spacingInWholePoints", options.spacingInWholePoints));
     }
 
     if (options.lineWrapLikeWord6) {
-      this.root.push(new OnOffElement("w:lineWrapLikeWord6", options.lineWrapLikeWord6));
+      this.root.push(onOffObj("w:lineWrapLikeWord6", options.lineWrapLikeWord6));
     }
 
     if (options.printBodyTextBeforeHeader) {
-      this.root.push(
-        new OnOffElement("w:printBodyTextBeforeHeader", options.printBodyTextBeforeHeader),
-      );
+      this.root.push(onOffObj("w:printBodyTextBeforeHeader", options.printBodyTextBeforeHeader));
     }
 
     if (options.printColorsBlack) {
-      this.root.push(new OnOffElement("w:printColBlack", options.printColorsBlack));
+      this.root.push(onOffObj("w:printColBlack", options.printColorsBlack));
     }
 
     if (options.spaceWidth) {
-      this.root.push(new OnOffElement("w:wpSpaceWidth", options.spaceWidth));
+      this.root.push(onOffObj("w:wpSpaceWidth", options.spaceWidth));
     }
 
     if (options.showBreaksInFrames) {
-      this.root.push(new OnOffElement("w:showBreaksInFrames", options.showBreaksInFrames));
+      this.root.push(onOffObj("w:showBreaksInFrames", options.showBreaksInFrames));
     }
 
     if (options.subFontBySize) {
-      this.root.push(new OnOffElement("w:subFontBySize", options.subFontBySize));
+      this.root.push(onOffObj("w:subFontBySize", options.subFontBySize));
     }
 
     if (options.suppressBottomSpacing) {
-      this.root.push(new OnOffElement("w:suppressBottomSpacing", options.suppressBottomSpacing));
+      this.root.push(onOffObj("w:suppressBottomSpacing", options.suppressBottomSpacing));
     }
 
     if (options.suppressTopSpacing) {
-      this.root.push(new OnOffElement("w:suppressTopSpacing", options.suppressTopSpacing));
+      this.root.push(onOffObj("w:suppressTopSpacing", options.suppressTopSpacing));
     }
 
     if (options.suppressSpacingAtTopOfPage) {
-      this.root.push(
-        new OnOffElement("w:suppressSpacingAtTopOfPage", options.suppressSpacingAtTopOfPage),
-      );
+      this.root.push(onOffObj("w:suppressSpacingAtTopOfPage", options.suppressSpacingAtTopOfPage));
     }
 
     if (options.suppressTopSpacingWP) {
-      this.root.push(new OnOffElement("w:suppressTopSpacingWP", options.suppressTopSpacingWP));
+      this.root.push(onOffObj("w:suppressTopSpacingWP", options.suppressTopSpacingWP));
     }
 
     if (options.suppressSpBfAfterPgBrk) {
-      this.root.push(new OnOffElement("w:suppressSpBfAfterPgBrk", options.suppressSpBfAfterPgBrk));
+      this.root.push(onOffObj("w:suppressSpBfAfterPgBrk", options.suppressSpBfAfterPgBrk));
     }
 
     if (options.swapBordersFacingPages) {
-      this.root.push(new OnOffElement("w:swapBordersFacingPages", options.swapBordersFacingPages));
+      this.root.push(onOffObj("w:swapBordersFacingPages", options.swapBordersFacingPages));
     }
 
     if (options.convertMailMergeEsc) {
-      this.root.push(new OnOffElement("w:convMailMergeEsc", options.convertMailMergeEsc));
+      this.root.push(onOffObj("w:convMailMergeEsc", options.convertMailMergeEsc));
     }
 
     if (options.truncateFontHeightsLikeWP6) {
-      this.root.push(
-        new OnOffElement("w:truncateFontHeightsLikeWP6", options.truncateFontHeightsLikeWP6),
-      );
+      this.root.push(onOffObj("w:truncateFontHeightsLikeWP6", options.truncateFontHeightsLikeWP6));
     }
 
     if (options.macWordSmallCaps) {
-      this.root.push(new OnOffElement("w:mwSmallCaps", options.macWordSmallCaps));
+      this.root.push(onOffObj("w:mwSmallCaps", options.macWordSmallCaps));
     }
 
     if (options.usePrinterMetrics) {
-      this.root.push(new OnOffElement("w:usePrinterMetrics", options.usePrinterMetrics));
+      this.root.push(onOffObj("w:usePrinterMetrics", options.usePrinterMetrics));
     }
 
     if (options.doNotSuppressParagraphBorders) {
       this.root.push(
-        new OnOffElement("w:doNotSuppressParagraphBorders", options.doNotSuppressParagraphBorders),
+        onOffObj("w:doNotSuppressParagraphBorders", options.doNotSuppressParagraphBorders),
       );
     }
 
     if (options.wrapTrailSpaces) {
-      this.root.push(new OnOffElement("w:wrapTrailSpaces", options.wrapTrailSpaces));
+      this.root.push(onOffObj("w:wrapTrailSpaces", options.wrapTrailSpaces));
     }
 
     if (options.footnoteLayoutLikeWW8) {
-      this.root.push(new OnOffElement("w:footnoteLayoutLikeWW8", options.footnoteLayoutLikeWW8));
+      this.root.push(onOffObj("w:footnoteLayoutLikeWW8", options.footnoteLayoutLikeWW8));
     }
 
     if (options.shapeLayoutLikeWW8) {
-      this.root.push(new OnOffElement("w:shapeLayoutLikeWW8", options.shapeLayoutLikeWW8));
+      this.root.push(onOffObj("w:shapeLayoutLikeWW8", options.shapeLayoutLikeWW8));
     }
 
     if (options.alignTablesRowByRow) {
-      this.root.push(new OnOffElement("w:alignTablesRowByRow", options.alignTablesRowByRow));
+      this.root.push(onOffObj("w:alignTablesRowByRow", options.alignTablesRowByRow));
     }
 
     if (options.forgetLastTabAlignment) {
-      this.root.push(new OnOffElement("w:forgetLastTabAlignment", options.forgetLastTabAlignment));
+      this.root.push(onOffObj("w:forgetLastTabAlignment", options.forgetLastTabAlignment));
     }
 
     if (options.adjustLineHeightInTable) {
-      this.root.push(
-        new OnOffElement("w:adjustLineHeightInTable", options.adjustLineHeightInTable),
-      );
+      this.root.push(onOffObj("w:adjustLineHeightInTable", options.adjustLineHeightInTable));
     }
 
     if (options.autoSpaceLikeWord95) {
-      this.root.push(new OnOffElement("w:autoSpaceLikeWord95", options.autoSpaceLikeWord95));
+      this.root.push(onOffObj("w:autoSpaceLikeWord95", options.autoSpaceLikeWord95));
     }
 
     if (options.noSpaceRaiseLower) {
-      this.root.push(new OnOffElement("w:noSpaceRaiseLower", options.noSpaceRaiseLower));
+      this.root.push(onOffObj("w:noSpaceRaiseLower", options.noSpaceRaiseLower));
     }
 
     if (options.doNotUseHTMLParagraphAutoSpacing) {
       this.root.push(
-        new OnOffElement(
-          "w:doNotUseHTMLParagraphAutoSpacing",
-          options.doNotUseHTMLParagraphAutoSpacing,
-        ),
+        onOffObj("w:doNotUseHTMLParagraphAutoSpacing", options.doNotUseHTMLParagraphAutoSpacing),
       );
     }
 
     if (options.layoutRawTableWidth) {
-      this.root.push(new OnOffElement("w:layoutRawTableWidth", options.layoutRawTableWidth));
+      this.root.push(onOffObj("w:layoutRawTableWidth", options.layoutRawTableWidth));
     }
 
     if (options.layoutTableRowsApart) {
-      this.root.push(new OnOffElement("w:layoutTableRowsApart", options.layoutTableRowsApart));
+      this.root.push(onOffObj("w:layoutTableRowsApart", options.layoutTableRowsApart));
     }
 
     if (options.useWord97LineBreakRules) {
-      this.root.push(
-        new OnOffElement("w:useWord97LineBreakRules", options.useWord97LineBreakRules),
-      );
+      this.root.push(onOffObj("w:useWord97LineBreakRules", options.useWord97LineBreakRules));
     }
 
     if (options.doNotBreakWrappedTables) {
-      this.root.push(
-        new OnOffElement("w:doNotBreakWrappedTables", options.doNotBreakWrappedTables),
-      );
+      this.root.push(onOffObj("w:doNotBreakWrappedTables", options.doNotBreakWrappedTables));
     }
 
     if (options.doNotSnapToGridInCell) {
-      this.root.push(new OnOffElement("w:doNotSnapToGridInCell", options.doNotSnapToGridInCell));
+      this.root.push(onOffObj("w:doNotSnapToGridInCell", options.doNotSnapToGridInCell));
     }
 
     if (options.selectFieldWithFirstOrLastCharacter) {
       this.root.push(
-        new OnOffElement(
-          "w:selectFldWithFirstOrLastChar",
-          options.selectFieldWithFirstOrLastCharacter,
-        ),
+        onOffObj("w:selectFldWithFirstOrLastChar", options.selectFieldWithFirstOrLastCharacter),
       );
     }
 
     if (options.applyBreakingRules) {
-      this.root.push(new OnOffElement("w:applyBreakingRules", options.applyBreakingRules));
+      this.root.push(onOffObj("w:applyBreakingRules", options.applyBreakingRules));
     }
 
     if (options.doNotWrapTextWithPunctuation) {
-      this.root.push(
-        new OnOffElement("w:doNotWrapTextWithPunct", options.doNotWrapTextWithPunctuation),
-      );
+      this.root.push(onOffObj("w:doNotWrapTextWithPunct", options.doNotWrapTextWithPunctuation));
     }
 
     if (options.doNotUseEastAsianBreakRules) {
       this.root.push(
-        new OnOffElement("w:doNotUseEastAsianBreakRules", options.doNotUseEastAsianBreakRules),
+        onOffObj("w:doNotUseEastAsianBreakRules", options.doNotUseEastAsianBreakRules),
       );
     }
 
     if (options.useWord2002TableStyleRules) {
-      this.root.push(
-        new OnOffElement("w:useWord2002TableStyleRules", options.useWord2002TableStyleRules),
-      );
+      this.root.push(onOffObj("w:useWord2002TableStyleRules", options.useWord2002TableStyleRules));
     }
 
     if (options.growAutofit) {
-      this.root.push(new OnOffElement("w:growAutofit", options.growAutofit));
+      this.root.push(onOffObj("w:growAutofit", options.growAutofit));
     }
 
     if (options.useFELayout) {
-      this.root.push(new OnOffElement("w:useFELayout", options.useFELayout));
+      this.root.push(onOffObj("w:useFELayout", options.useFELayout));
     }
 
     if (options.useNormalStyleForList) {
-      this.root.push(new OnOffElement("w:useNormalStyleForList", options.useNormalStyleForList));
+      this.root.push(onOffObj("w:useNormalStyleForList", options.useNormalStyleForList));
     }
 
     if (options.doNotUseIndentAsNumberingTabStop) {
       this.root.push(
-        new OnOffElement(
-          "w:doNotUseIndentAsNumberingTabStop",
-          options.doNotUseIndentAsNumberingTabStop,
-        ),
+        onOffObj("w:doNotUseIndentAsNumberingTabStop", options.doNotUseIndentAsNumberingTabStop),
       );
     }
 
     if (options.useAlternateEastAsianLineBreakRules) {
       this.root.push(
-        new OnOffElement(
-          "w:useAltKinsokuLineBreakRules",
-          options.useAlternateEastAsianLineBreakRules,
-        ),
+        onOffObj("w:useAltKinsokuLineBreakRules", options.useAlternateEastAsianLineBreakRules),
       );
     }
 
     if (options.allowSpaceOfSameStyleInTable) {
       this.root.push(
-        new OnOffElement("w:allowSpaceOfSameStyleInTable", options.allowSpaceOfSameStyleInTable),
+        onOffObj("w:allowSpaceOfSameStyleInTable", options.allowSpaceOfSameStyleInTable),
       );
     }
 
     if (options.doNotSuppressIndentation) {
-      this.root.push(
-        new OnOffElement("w:doNotSuppressIndentation", options.doNotSuppressIndentation),
-      );
+      this.root.push(onOffObj("w:doNotSuppressIndentation", options.doNotSuppressIndentation));
     }
 
     if (options.doNotAutofitConstrainedTables) {
       this.root.push(
-        new OnOffElement("w:doNotAutofitConstrainedTables", options.doNotAutofitConstrainedTables),
+        onOffObj("w:doNotAutofitConstrainedTables", options.doNotAutofitConstrainedTables),
       );
     }
 
     if (options.autofitToFirstFixedWidthCell) {
       this.root.push(
-        new OnOffElement("w:autofitToFirstFixedWidthCell", options.autofitToFirstFixedWidthCell),
+        onOffObj("w:autofitToFirstFixedWidthCell", options.autofitToFirstFixedWidthCell),
       );
     }
 
     if (options.underlineTabInNumberingList) {
-      this.root.push(
-        new OnOffElement("w:underlineTabInNumList", options.underlineTabInNumberingList),
-      );
+      this.root.push(onOffObj("w:underlineTabInNumList", options.underlineTabInNumberingList));
     }
 
     if (options.displayHangulFixedWidth) {
-      this.root.push(
-        new OnOffElement("w:displayHangulFixedWidth", options.displayHangulFixedWidth),
-      );
+      this.root.push(onOffObj("w:displayHangulFixedWidth", options.displayHangulFixedWidth));
     }
 
     if (options.splitPgBreakAndParaMark) {
-      this.root.push(
-        new OnOffElement("w:splitPgBreakAndParaMark", options.splitPgBreakAndParaMark),
-      );
+      this.root.push(onOffObj("w:splitPgBreakAndParaMark", options.splitPgBreakAndParaMark));
     }
 
     if (options.doNotVerticallyAlignCellWithSp) {
       this.root.push(
-        new OnOffElement("w:doNotVertAlignCellWithSp", options.doNotVerticallyAlignCellWithSp),
+        onOffObj("w:doNotVertAlignCellWithSp", options.doNotVerticallyAlignCellWithSp),
       );
     }
 
     if (options.doNotBreakConstrainedForcedTable) {
       this.root.push(
-        new OnOffElement(
-          "w:doNotBreakConstrainedForcedTable",
-          options.doNotBreakConstrainedForcedTable,
-        ),
+        onOffObj("w:doNotBreakConstrainedForcedTable", options.doNotBreakConstrainedForcedTable),
       );
     }
 
     if (options.ignoreVerticalAlignmentInTextboxes) {
       this.root.push(
-        new OnOffElement("w:doNotVertAlignInTxbx", options.ignoreVerticalAlignmentInTextboxes),
+        onOffObj("w:doNotVertAlignInTxbx", options.ignoreVerticalAlignmentInTextboxes),
       );
     }
 
     if (options.useAnsiKerningPairs) {
-      this.root.push(new OnOffElement("w:useAnsiKerningPairs", options.useAnsiKerningPairs));
+      this.root.push(onOffObj("w:useAnsiKerningPairs", options.useAnsiKerningPairs));
     }
 
     if (options.cachedColumnBalance) {
-      this.root.push(new OnOffElement("w:cachedColBalance", options.cachedColumnBalance));
+      this.root.push(onOffObj("w:cachedColBalance", options.cachedColumnBalance));
     }
 
     if (options.overrideTableStyleFontSizeAndJustification) {

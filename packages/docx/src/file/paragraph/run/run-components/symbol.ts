@@ -6,7 +6,6 @@
  *
  * @module
  */
-import { BaseXmlComponent } from "@file/xml-components";
 import type { IXmlableObject } from "@file/xml-components";
 
 /**
@@ -22,22 +21,4 @@ export function buildSymbol(char: string = "", symbolfont: string = "Wingdings")
   return {
     "w:sym": { _attr: { "w:char": char, "w:font": symbolfont } },
   };
-}
-
-/**
- * @deprecated Use buildSymbol() instead.
- */
-export class Symbol extends BaseXmlComponent {
-  private readonly _char: string;
-  private readonly _font: string;
-
-  public constructor(char: string = "", symbolfont: string = "Wingdings") {
-    super("w:sym");
-    this._char = char;
-    this._font = symbolfont;
-  }
-
-  public prepForXml(): IXmlableObject {
-    return buildSymbol(this._char, this._font);
-  }
 }

@@ -7,8 +7,8 @@
  *
  * @module
  */
-import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import { BuilderElement, attrObj } from "@file/xml-components";
+import type { IXmlableObject, XmlComponent } from "@file/xml-components";
 import { hexColorValue, uCharHexNumber } from "@util/values";
 import type { ThemeColor } from "@util/values";
 
@@ -150,4 +150,22 @@ export const createUnderline = (
       val: { key: "w:val", value: underlineType },
     },
     name: "w:u",
+  });
+
+/**
+ * Build underline (w:u) as IXmlableObject without allocating XmlComponent tree.
+ */
+export const buildUnderlineObj = (
+  underlineType: (typeof UnderlineType)[keyof typeof UnderlineType] = UnderlineType.SINGLE,
+  color?: string,
+  themeColor?: (typeof ThemeColor)[keyof typeof ThemeColor],
+  themeTint?: string,
+  themeShade?: string,
+): IXmlableObject =>
+  attrObj("w:u", {
+    "w:color": color === undefined ? undefined : hexColorValue(color),
+    "w:themeColor": themeColor,
+    "w:themeShade": themeShade === undefined ? undefined : uCharHexNumber(themeShade),
+    "w:themeTint": themeTint === undefined ? undefined : uCharHexNumber(themeTint),
+    "w:val": underlineType,
   });

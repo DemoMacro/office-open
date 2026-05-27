@@ -8,7 +8,14 @@
  *
  * @module
  */
-import { CellMerge, DeletedTableCell, InsertedTableCell } from "@file/track-revision";
+import {
+  CellMerge,
+  DeletedTableCell,
+  InsertedTableCell,
+  buildCellMergeObj,
+  buildDeletedTableCellObj,
+  buildInsertedTableCellObj,
+} from "@file/track-revision";
 import type { ICellMergeAttributes } from "@file/track-revision";
 import { ChangeAttributes } from "@file/track-revision/track-revision";
 import type { ChangedAttributesProperties } from "@file/track-revision/track-revision";
@@ -17,16 +24,18 @@ import type { TableVerticalAlign } from "@file/vertical-align";
 import {
   BuilderElement,
   IgnoreIfEmptyXmlComponent,
-  OnOffElement,
   XmlComponent,
+  onOffObj,
+  stringEnumValObj,
 } from "@file/xml-components";
+import type { IXmlableObject } from "@file/xml-components";
 
-import { createShading } from "../../shading";
+import { buildShadingObj, createShading } from "../../shading";
 import type { ShadingAttributesProperties } from "../../shading";
-import { createCellMargin } from "../table-properties/table-cell-margin";
+import { buildCellMarginObj, createCellMargin } from "../table-properties/table-cell-margin";
 import type { TableCellMarginOptions } from "../table-properties/table-cell-margin";
 import type { CnfStyleOptions } from "../table-row/table-row-properties";
-import { createTableWidthElement } from "../table-width";
+import { buildTableWidthObj, createTableWidthElement } from "../table-width";
 import type { TableWidthProperties } from "../table-width";
 import {
   GridSpan,
@@ -34,6 +43,10 @@ import {
   TableCellBorders,
   VerticalMerge,
   VerticalMergeType,
+  buildGridSpan,
+  buildTableCellBorders,
+  buildTextDirection,
+  buildVerticalMerge,
 } from "./table-cell-components";
 import type { TableCellBordersOptions, TextDirection } from "./table-cell-components";
 
@@ -85,6 +98,125 @@ export type ITableCellPropertiesOptions = {
 
 export type ITableCellPropertiesChangeOptions = TableCellPropertiesOptionsBase &
   ChangedAttributesProperties;
+
+/**
+ * Build table cell properties change (w:tcPrChange) as IXmlableObject without allocating XmlComponent tree.
+ */
+function buildTableCellPropertiesChangeObj(
+  options: ITableCellPropertiesChangeOptions,
+): IXmlableObject {
+  const innerPr = buildTableCellProperties({ ...options, includeIfEmpty: true })!;
+  return {
+    "w:tcPrChange": [
+      { _attr: { "w:author": options.author, "w:date": options.date, "w:id": options.id } },
+      innerPr,
+    ],
+  };
+}
+
+/**
+ * Build table cell properties (w:tcPr) as IXmlableObject without allocating XmlComponent tree.
+ */
+export function buildTableCellProperties(
+  options: ITableCellPropertiesOptions,
+): IXmlableObject | undefined {
+  const children: IXmlableObject[] = [];
+
+  if (options.cnfStyle !== undefined) {
+    const attrs: Record<string, string | boolean> = { "w:val": options.cnfStyle.val };
+    if (options.cnfStyle.changed !== undefined) {
+      attrs["w:changed"] = options.cnfStyle.changed;
+    }
+    children.push({ "w:cnfStyle": { _attr: attrs } });
+  }
+
+  if (options.width) {
+    children.push(buildTableWidthObj("w:tcW", options.width));
+  }
+
+  if (options.columnSpan) {
+    children.push(buildGridSpan(options.columnSpan));
+  }
+
+  if (options.verticalMerge) {
+    children.push(buildVerticalMerge(options.verticalMerge));
+  } else if (options.rowSpan && options.rowSpan > 1) {
+    children.push(buildVerticalMerge(VerticalMergeType.RESTART));
+  }
+
+  if (options.borders) {
+    const borders = buildTableCellBorders(options.borders);
+    if (borders) children.push(borders);
+  }
+
+  if (options.shading) {
+    children.push(buildShadingObj(options.shading));
+  }
+
+  if (options.margins) {
+    const cellMargin = buildCellMarginObj(options.margins);
+    if (cellMargin) {
+      children.push(cellMargin);
+    }
+  }
+
+  if (options.textDirection) {
+    children.push(buildTextDirection(options.textDirection));
+  }
+
+  if (options.verticalAlign) {
+    children.push(stringEnumValObj("w:vAlign", options.verticalAlign));
+  }
+
+  if (options.horizontalMerge !== undefined) {
+    if (options.horizontalMerge === "restart") {
+      children.push({ "w:hMerge": { _attr: { "w:val": "restart" } } });
+    } else {
+      children.push({ "w:hMerge": {} });
+    }
+  }
+
+  if (options.noWrap !== undefined) {
+    children.push(onOffObj("w:noWrap", options.noWrap));
+  }
+
+  if (options.fitText !== undefined) {
+    children.push(onOffObj("w:tcFitText", options.fitText));
+  }
+
+  if (options.hideMark !== undefined) {
+    children.push(onOffObj("w:hideMark", options.hideMark));
+  }
+
+  if (options.headers !== undefined) {
+    const headerChildren: IXmlableObject[] = options.headers.map((h) => ({
+      "w:header": { _attr: { "w:val": h } },
+    }));
+    children.push({ "w:headers": headerChildren });
+  }
+
+  if (options.insertion) {
+    children.push(buildInsertedTableCellObj(options.insertion));
+  }
+
+  if (options.deletion) {
+    children.push(buildDeletedTableCellObj(options.deletion));
+  }
+
+  if (options.revision) {
+    children.push(buildTableCellPropertiesChangeObj(options.revision));
+  }
+
+  if (options.cellMerge) {
+    children.push(buildCellMergeObj(options.cellMerge));
+  }
+
+  if (options.includeIfEmpty || children.length > 0) {
+    return { "w:tcPr": children };
+  }
+
+  return undefined;
+}
 
 /**
  * Represents table cell properties (tcPr) in a WordprocessingML document.
@@ -231,15 +363,15 @@ export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
     }
 
     if (options.noWrap !== undefined) {
-      this.root.push(new OnOffElement("w:noWrap", options.noWrap));
+      this.root.push(onOffObj("w:noWrap", options.noWrap));
     }
 
     if (options.fitText !== undefined) {
-      this.root.push(new OnOffElement("w:tcFitText", options.fitText));
+      this.root.push(onOffObj("w:tcFitText", options.fitText));
     }
 
     if (options.hideMark !== undefined) {
-      this.root.push(new OnOffElement("w:hideMark", options.hideMark));
+      this.root.push(onOffObj("w:hideMark", options.hideMark));
     }
 
     if (options.headers !== undefined) {

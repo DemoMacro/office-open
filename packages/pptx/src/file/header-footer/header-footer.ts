@@ -1,8 +1,8 @@
 import {
   BuilderElement,
   NextAttributeComponent,
-  StringContainer,
   XmlComponent,
+  stringContainerObj,
 } from "@file/xml-components";
 
 export interface SlideHeaderFooterOptions {
@@ -52,7 +52,7 @@ export class HeaderFooter extends XmlComponent {
                   children: [
                     new BuilderElement({
                       name: "a:r",
-                      children: [new StringContainer("a:t", options.footer)],
+                      children: [stringContainerObj("a:t", options.footer)],
                     }),
                     new BuilderElement({
                       name: "a:endParaRPr",

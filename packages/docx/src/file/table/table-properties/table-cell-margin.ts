@@ -22,9 +22,9 @@
  *
  * @module
  */
-import { WidthType, createTableWidthElement } from "@file/table";
+import { WidthType, buildTableWidthObj, createTableWidthElement } from "@file/table";
 import { BuilderElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import type { IXmlableObject, XmlComponent } from "@file/xml-components";
 
 /**
  * Options for configuring table cell margins.
@@ -187,4 +187,35 @@ export const createCellMargin = (options: TableCellMarginOptions): XmlComponent 
     children,
     name: "w:tcMar",
   });
+};
+
+const buildMarginChildrenObjs = ({
+  marginUnitType = WidthType.DXA,
+  top,
+  left,
+  bottom,
+  right,
+}: TableCellMarginOptions): IXmlableObject[] => {
+  const children: IXmlableObject[] = [];
+  if (top !== undefined)
+    children.push(buildTableWidthObj("w:top", { size: top, type: marginUnitType }));
+  if (left !== undefined)
+    children.push(buildTableWidthObj("w:left", { size: left, type: marginUnitType }));
+  if (bottom !== undefined)
+    children.push(buildTableWidthObj("w:bottom", { size: bottom, type: marginUnitType }));
+  if (right !== undefined)
+    children.push(buildTableWidthObj("w:right", { size: right, type: marginUnitType }));
+  return children;
+};
+
+export const buildTableCellMarginObj = (
+  options: TableCellMarginOptions,
+): IXmlableObject | undefined => {
+  const children = buildMarginChildrenObjs(options);
+  return children.length > 0 ? { "w:tblCellMar": children } : undefined;
+};
+
+export const buildCellMarginObj = (options: TableCellMarginOptions): IXmlableObject | undefined => {
+  const children = buildMarginChildrenObjs(options);
+  return children.length > 0 ? { "w:tcMar": children } : undefined;
 };

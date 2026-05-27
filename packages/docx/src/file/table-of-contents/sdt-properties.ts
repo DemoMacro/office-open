@@ -10,13 +10,8 @@
  *
  * @module
  */
-import {
-  BuilderElement,
-  OnOffElement,
-  StringValueElement,
-  XmlComponent,
-} from "@file/xml-components";
-import type { XmlComponent as XmlComponentType } from "@file/xml-components";
+import { BuilderElement, XmlComponent, onOffObj, stringValObj } from "@file/xml-components";
+import type { BuilderChild } from "@file/xml-components";
 
 // ─── Lock ───────────────────────────────────────────────────────────────────
 
@@ -222,7 +217,7 @@ export interface SdtPropertiesOptions {
   /** Whether the placeholder text is currently shown */
   readonly showingPlaceholder?: boolean;
   /** Placeholder content (block-level content: paragraphs, tables, etc.) */
-  readonly placeholder?: XmlComponentType[];
+  readonly placeholder?: XmlComponent[];
   /** Data binding to custom XML */
   readonly dataBinding?: SdtDataBindingOptions;
   /** Numeric label */
@@ -230,7 +225,7 @@ export interface SdtPropertiesOptions {
   /** Tab order index */
   readonly tabIndex?: number;
   /** SDT content run properties (rPr) */
-  readonly runProperties?: XmlComponentType;
+  readonly runProperties?: XmlComponent;
 
   // ─── Type discriminators (xsd:choice, at most one) ───
 
@@ -276,7 +271,7 @@ export interface SdtPropertiesOptions {
  * even though the XSD marks it as optional. When value is not provided,
  * it defaults to displayText.
  */
-const createListItem = (item: SdtListItem, forceValue?: boolean): XmlComponentType => {
+const createListItem = (item: SdtListItem, forceValue?: boolean): XmlComponent => {
   const attrs: Record<string, { readonly key: string; readonly value: string }> = {};
   if (item.displayText !== undefined) {
     attrs.displayText = { key: "w:displayText", value: item.displayText };
@@ -292,8 +287,8 @@ const createListItem = (item: SdtListItem, forceValue?: boolean): XmlComponentTy
 const createListType = (
   name: string,
   options: { readonly items?: readonly SdtListItem[]; readonly lastValue?: string },
-): XmlComponentType => {
-  const children: XmlComponentType[] = [];
+): XmlComponent => {
+  const children: BuilderChild[] = [];
   if (options.items) {
     for (const item of options.items) {
       children.push(createListItem(item, name === "w:dropDownList"));
@@ -311,13 +306,13 @@ const createListType = (
 };
 
 /** Creates a date SDT element (w:date). */
-const createDate = (options: SdtDateOptions): XmlComponentType => {
-  const children: XmlComponentType[] = [];
+const createDate = (options: SdtDateOptions): XmlComponent => {
+  const children: BuilderChild[] = [];
   if (options.dateFormat !== undefined) {
-    children.push(new StringValueElement("w:dateFormat", options.dateFormat));
+    children.push(stringValObj("w:dateFormat", options.dateFormat));
   }
   if (options.languageId !== undefined) {
-    children.push(new StringValueElement("w:lid", options.languageId));
+    children.push(stringValObj("w:lid", options.languageId));
   }
   if (options.storeMappedDataAs !== undefined) {
     children.push(
@@ -347,7 +342,7 @@ const createDate = (options: SdtDateOptions): XmlComponentType => {
 };
 
 /** Creates a dataBinding element (w:dataBinding). */
-const createDataBinding = (options: SdtDataBindingOptions): XmlComponentType => {
+const createDataBinding = (options: SdtDataBindingOptions): XmlComponent => {
   const attrs: Record<string, { readonly key: string; readonly value: string }> = {
     xpath: { key: "w:xpath", value: options.xpath },
     storeItemID: { key: "w:storeItemID", value: options.storeItemID },
@@ -362,16 +357,16 @@ const createDataBinding = (options: SdtDataBindingOptions): XmlComponentType => 
 const createDocPart = (
   name: string,
   options: { readonly gallery?: string; readonly category?: string; readonly unique?: boolean },
-): XmlComponentType => {
-  const children: XmlComponentType[] = [];
+): XmlComponent => {
+  const children: BuilderChild[] = [];
   if (options.gallery !== undefined) {
-    children.push(new StringValueElement("w:docPartGallery", options.gallery));
+    children.push(stringValObj("w:docPartGallery", options.gallery));
   }
   if (options.category !== undefined) {
-    children.push(new StringValueElement("w:docPartCategory", options.category));
+    children.push(stringValObj("w:docPartCategory", options.category));
   }
   if (options.unique !== undefined) {
-    children.push(new OnOffElement("w:docPartUnique", options.unique));
+    children.push(onOffObj("w:docPartUnique", options.unique));
   }
   return new BuilderElement({ name, children: children.length > 0 ? children : undefined });
 };
@@ -446,10 +441,10 @@ export class StructuredDocumentTagProperties extends XmlComponent {
       this.root.push(options.runProperties);
     }
     if (options.alias !== undefined) {
-      this.root.push(new StringValueElement("w:alias", options.alias));
+      this.root.push(stringValObj("w:alias", options.alias));
     }
     if (options.tag !== undefined) {
-      this.root.push(new StringValueElement("w:tag", options.tag));
+      this.root.push(stringValObj("w:tag", options.tag));
     }
     if (options.id !== undefined) {
       this.root.push(
@@ -476,14 +471,14 @@ export class StructuredDocumentTagProperties extends XmlComponent {
       );
     }
     if (options.temporary !== undefined) {
-      this.root.push(new OnOffElement("w:temporary", options.temporary));
+      this.root.push(onOffObj("w:temporary", options.temporary));
     }
     // When placeholder has content, showingPlcHdr must be true for Word to render correctly
     const effectiveShowingPlcHdr =
       options.showingPlaceholder ??
       (options.placeholder !== undefined && options.placeholder.length > 0);
     if (options.showingPlaceholder !== undefined || effectiveShowingPlcHdr) {
-      this.root.push(new OnOffElement("w:showingPlcHdr", effectiveShowingPlcHdr));
+      this.root.push(onOffObj("w:showingPlcHdr", effectiveShowingPlcHdr));
     }
     if (options.dataBinding) {
       this.root.push(createDataBinding(options.dataBinding));

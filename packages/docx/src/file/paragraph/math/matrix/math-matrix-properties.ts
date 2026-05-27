@@ -7,8 +7,8 @@
  *
  * @module
  */
-import { BuilderElement, OnOffElement } from "@file/xml-components";
-import type { XmlComponent } from "@file/xml-components";
+import { BuilderElement, onOffObj } from "@file/xml-components";
+import type { BuilderChild, XmlComponent } from "@file/xml-components";
 
 /**
  * Options for math matrix properties.
@@ -53,7 +53,7 @@ export interface MathMatrixPropertiesOptions {
  * ```
  */
 export const createMathMatrixProperties = (options: MathMatrixPropertiesOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+  const children: BuilderChild[] = [];
 
   if (options.baseJc !== undefined) {
     children.push(
@@ -64,7 +64,7 @@ export const createMathMatrixProperties = (options: MathMatrixPropertiesOptions)
     );
   }
   if (options.plcHide !== undefined) {
-    children.push(new OnOffElement("m:plcHide", options.plcHide));
+    children.push(onOffObj("m:plcHide", options.plcHide));
   }
   if (options.rSpRule !== undefined) {
     children.push(

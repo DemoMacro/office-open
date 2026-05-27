@@ -47,15 +47,6 @@ export const VerticalAlignSection = {
   BOTH: "both",
 } as const;
 
-/**
- * @deprecated Use {@link VerticalAlignTable} for table cells or
- * {@link VerticalAlignSection} for section properties. This alias remains for
- * backward-compatibility and will be removed in the next major release.
- *
- * @publicApi
- */
-export const VerticalAlign = VerticalAlignSection;
-
 export type TableVerticalAlign = (typeof VerticalAlignTable)[keyof typeof VerticalAlignTable];
 
 export type SectionVerticalAlign = (typeof VerticalAlignSection)[keyof typeof VerticalAlignSection];
@@ -71,10 +62,10 @@ export type SectionVerticalAlign = (typeof VerticalAlignSection)[keyof typeof Ve
  * ```
  */
 export const createVerticalAlign = (
-  value: (typeof VerticalAlign)[keyof typeof VerticalAlign],
+  value: TableVerticalAlign | SectionVerticalAlign,
 ): XmlComponent =>
   new BuilderElement<{
-    readonly verticalAlign: (typeof VerticalAlign)[keyof typeof VerticalAlign];
+    readonly verticalAlign: TableVerticalAlign | SectionVerticalAlign;
   }>({
     attributes: {
       verticalAlign: { key: "w:val", value },
