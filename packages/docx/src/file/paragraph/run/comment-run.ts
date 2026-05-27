@@ -13,7 +13,7 @@ import type { FileChild } from "@file/file-child";
 import { Paragraph } from "@file/paragraph/paragraph";
 import type { ParagraphOptions } from "@file/paragraph/paragraph";
 import { Relationships } from "@file/relationships";
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 
 /**
  * Options for creating a single comment.
@@ -49,101 +49,6 @@ export interface CommentsOptions {
 }
 
 /**
- * @internal
- */
-class CommentAttributes extends XmlAttributeComponent<{
-  readonly id: number;
-  readonly initials?: string;
-  readonly author?: string;
-  readonly date?: string;
-}> {
-  protected readonly xmlKeys = {
-    author: "w:author",
-    date: "w:date",
-    id: "w:id",
-    initials: "w:initials",
-  };
-}
-
-/**
- * @internal
- */
-class CommentRangeAttributes extends XmlAttributeComponent<{ readonly id: number }> {
-  protected readonly xmlKeys = { id: "w:id" };
-}
-
-/**
- * @internal
- */
-class RootCommentsAttributes extends XmlAttributeComponent<{
-  readonly "xmlns:cx"?: string;
-  readonly "xmlns:cx1"?: string;
-  readonly "xmlns:cx2"?: string;
-  readonly "xmlns:cx3"?: string;
-  readonly "xmlns:cx4"?: string;
-  readonly "xmlns:cx5"?: string;
-  readonly "xmlns:cx6"?: string;
-  readonly "xmlns:cx7"?: string;
-  readonly "xmlns:cx8"?: string;
-  readonly "xmlns:mc"?: string;
-  readonly "xmlns:aink"?: string;
-  readonly "xmlns:am3d"?: string;
-  readonly "xmlns:o"?: string;
-  readonly "xmlns:r"?: string;
-  readonly "xmlns:m"?: string;
-  readonly "xmlns:v"?: string;
-  readonly "xmlns:wp14"?: string;
-  readonly "xmlns:wp"?: string;
-  readonly "xmlns:w10"?: string;
-  readonly "xmlns:w"?: string;
-  readonly "xmlns:w14"?: string;
-  readonly "xmlns:w15"?: string;
-  readonly "xmlns:w16cex"?: string;
-  readonly "xmlns:w16cid"?: string;
-  readonly "xmlns:w16"?: string;
-  readonly "xmlns:w16sdtdh"?: string;
-  readonly "xmlns:w16se"?: string;
-  readonly "xmlns:wpg": string;
-  readonly "xmlns:wpi"?: string;
-  readonly "xmlns:wne"?: string;
-  readonly "xmlns:wps"?: string;
-}> {
-  protected readonly xmlKeys = {
-    "xmlns:aink": "xmlns:aink",
-    "xmlns:am3d": "xmlns:am3d",
-    "xmlns:cx": "xmlns:cx",
-    "xmlns:cx1": "xmlns:cx1",
-    "xmlns:cx2": "xmlns:cx2",
-    "xmlns:cx3": "xmlns:cx3",
-    "xmlns:cx4": "xmlns:cx4",
-    "xmlns:cx5": "xmlns:cx5",
-    "xmlns:cx6": "xmlns:cx6",
-    "xmlns:cx7": "xmlns:cx7",
-    "xmlns:cx8": "xmlns:cx8",
-    "xmlns:m": "xmlns:m",
-    "xmlns:mc": "xmlns:mc",
-    "xmlns:o": "xmlns:o",
-    "xmlns:r": "xmlns:r",
-    "xmlns:v": "xmlns:v",
-    "xmlns:w": "xmlns:w",
-    "xmlns:w10": "xmlns:w10",
-    "xmlns:w14": "xmlns:w14",
-    "xmlns:w15": "xmlns:w15",
-    "xmlns:w16": "xmlns:w16",
-    "xmlns:w16cex": "xmlns:w16cex",
-    "xmlns:w16cid": "xmlns:w16cid",
-    "xmlns:w16sdtdh": "xmlns:w16sdtdh",
-    "xmlns:w16se": "xmlns:w16se",
-    "xmlns:wne": "xmlns:wne",
-    "xmlns:wp": "xmlns:wp",
-    "xmlns:wp14": "xmlns:wp14",
-    "xmlns:wpg": "xmlns:wpg",
-    "xmlns:wpi": "xmlns:wpi",
-    "xmlns:wps": "xmlns:wps",
-  };
-}
-
-/**
  * Represents the start of a comment range in a WordprocessingML document.
  *
  * Marks the beginning of a region of text that is associated with a comment.
@@ -169,7 +74,7 @@ export class CommentRangeStart extends XmlComponent {
   public constructor(id: number) {
     super("w:commentRangeStart");
 
-    this.root.push(new CommentRangeAttributes({ id }));
+    this.root.push({ _attr: { "w:id": id } });
   }
 }
 
@@ -199,7 +104,7 @@ export class CommentRangeEnd extends XmlComponent {
   public constructor(id: number) {
     super("w:commentRangeEnd");
 
-    this.root.push(new CommentRangeAttributes({ id }));
+    this.root.push({ _attr: { "w:id": id } });
   }
 }
 
@@ -229,7 +134,7 @@ export class CommentReference extends XmlComponent {
   public constructor(id: number) {
     super("w:commentReference");
 
-    this.root.push(new CommentRangeAttributes({ id }));
+    this.root.push({ _attr: { "w:id": id } });
   }
 }
 
@@ -271,14 +176,14 @@ export class Comment extends XmlComponent {
     super("w:comment");
 
     const dateStr = typeof date === "string" ? date : date.toISOString();
-    this.root.push(
-      new CommentAttributes({
-        author,
-        date: dateStr,
-        id,
-        initials,
-      }),
-    );
+    const attr: Record<string, string | number> = { "w:id": id, "w:date": dateStr };
+    if (author !== undefined) {
+      attr["w:author"] = author;
+    }
+    if (initials !== undefined) {
+      attr["w:initials"] = initials;
+    }
+    this.root.push({ _attr: attr });
 
     for (const rawChild of children) {
       if (rawChild instanceof Paragraph) {
@@ -332,8 +237,8 @@ export class Comments extends XmlComponent {
   public constructor({ children }: CommentsOptions) {
     super("w:comments");
 
-    this.root.push(
-      new RootCommentsAttributes({
+    this.root.push({
+      _attr: {
         "xmlns:aink": "http://schemas.microsoft.com/office/drawing/2016/ink",
         "xmlns:am3d": "http://schemas.microsoft.com/office/drawing/2017/model3d",
         "xmlns:cx": "http://schemas.microsoft.com/office/drawing/2014/chartex",
@@ -365,8 +270,8 @@ export class Comments extends XmlComponent {
         "xmlns:wpg": "http://schemas.microsoft.com/office/word/2010/wordprocessingGroup",
         "xmlns:wpi": "http://schemas.microsoft.com/office/word/2010/wordprocessingInk",
         "xmlns:wps": "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
-      }),
-    );
+      },
+    });
 
     for (const child of children) {
       this.root.push(new Comment(child));

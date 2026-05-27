@@ -12,7 +12,6 @@ import { XmlComponent } from "@file/xml-components";
 import { bookmarkUniqueNumericIdGen } from "@util/convenience-functions";
 
 import type { ParagraphChild } from "../paragraph";
-import { BookmarkEndAttributes, BookmarkStartAttributes } from "./bookmark-attributes";
 
 /**
  * Options for creating a bookmark.
@@ -113,11 +112,7 @@ export class BookmarkStart extends XmlComponent {
   public constructor(id: string, linkId: number) {
     super("w:bookmarkStart");
 
-    const attributes = new BookmarkStartAttributes({
-      id: linkId,
-      name: id,
-    });
-    this.root.push(attributes);
+    this.root.push({ _attr: { "w:id": linkId, "w:name": id } });
   }
 }
 
@@ -151,9 +146,6 @@ export class BookmarkEnd extends XmlComponent {
   public constructor(linkId: number) {
     super("w:bookmarkEnd");
 
-    const attributes = new BookmarkEndAttributes({
-      id: linkId,
-    });
-    this.root.push(attributes);
+    this.root.push({ _attr: { "w:id": linkId } });
   }
 }

@@ -109,7 +109,20 @@ export class BuilderElement<T = {}> extends XmlComponent {
     super(name);
 
     if (attributes) {
-      this.root.push(new NextAttributeComponent(attributes));
+      // Build _attr object directly instead of creating NextAttributeComponent.
+      // This saves one class allocation and one prepForXml call per element.
+      const attrs: Record<string, string | number | boolean> = {};
+      const vals = Object.values(attributes) as readonly {
+        readonly key: string;
+        readonly value: string | number | boolean;
+      }[];
+      for (let i = 0; i < vals.length; i++) {
+        const { key, value } = vals[i];
+        if (value !== undefined) {
+          attrs[key] = value;
+        }
+      }
+      this.root.push({ _attr: attrs });
     }
 
     if (children) {

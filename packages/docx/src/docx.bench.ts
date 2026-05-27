@@ -617,22 +617,22 @@ describe("DOCX: Create + toBuffer", () => {
 
 // ── Large file benchmarks ──
 
-const LARGE_PARAGRAPHS = Array.from({ length: 500 }, (_, i) => ({
-  text: `This is paragraph ${i + 1} with sample content to simulate real document generation. Each paragraph contains enough text to represent a realistic scenario.`,
+const LARGE_PARAGRAPHS = Array.from({ length: 2000 }, (_, i) => ({
+  text: `This is paragraph ${i + 1} with sample content to simulate real document generation. Each paragraph contains enough text to represent a realistic scenario for stress testing large file creation.`,
   bold: i % 3 === 0,
   italics: i % 5 === 0,
   underline: i % 7 === 0,
 }));
 
-const LARGE_TABLE_ROWS = Array.from({ length: 100 }, (_, rowIdx) => ({
+const LARGE_TABLE_ROWS = Array.from({ length: 200 }, (_, rowIdx) => ({
   cells: Array.from({ length: 10 }, (_, colIdx) => ({
-    text: `R${rowIdx + 1}C${colIdx + 1} data`,
+    text: `R${rowIdx + 1}C${colIdx + 1} data content`,
     width: { size: 1000, type: WidthType.PERCENTAGE },
   })),
 }));
 
 describe("DOCX: Large Files — Create + toBuffer", () => {
-  bench("ours — 500 paragraphs + toBuffer", async () => {
+  bench("ours — 2000 paragraphs + toBuffer", async () => {
     const doc = new Document({
       sections: [
         {
@@ -655,7 +655,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
     await Packer.toBuffer(doc);
   });
 
-  bench("docx — 500 paragraphs + toBuffer", async () => {
+  bench("docx — 2000 paragraphs + toBuffer", async () => {
     const doc = new DocumentOrig({
       sections: [
         {
@@ -678,7 +678,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
     await PackerOrig.toBuffer(doc);
   });
 
-  bench("ours — 100x10 table + toBuffer", async () => {
+  bench("ours — 200x10 table + toBuffer", async () => {
     const doc = new Document({
       sections: [
         {
@@ -711,7 +711,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
     await Packer.toBuffer(doc);
   });
 
-  bench("docx — 100x10 table + toBuffer", async () => {
+  bench("docx — 200x10 table + toBuffer", async () => {
     const doc = new DocumentOrig({
       sections: [
         {
@@ -744,20 +744,46 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
     await PackerOrig.toBuffer(doc);
   });
 
-  bench("ours — 10 sections × 50 paragraphs + toBuffer", async () => {
+  bench("ours — 20 sections × 100 paragraphs + toBuffer", async () => {
     const doc = new Document({
-      sections: Array.from({ length: 10 }, (_, si) => ({
+      sections: Array.from({ length: 20 }, (_, si) => ({
         properties: { page: { margin: { top: 1440, bottom: 1440 } } },
-        children: Array.from({ length: 50 }, (_, pi) => {
+        headers: {
+          default: new Header({
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.RIGHT,
+                children: [
+                  new TextRun(`Chapter ${si + 1}`),
+                  new TextRun({ children: [PageNumber.CURRENT] }),
+                ],
+              }),
+            ],
+          }),
+        },
+        footers: {
+          default: new Footer({
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [new TextRun("Footer text")],
+              }),
+            ],
+          }),
+        },
+        children: Array.from({ length: 100 }, (_, pi) => {
           return new Paragraph({
-            heading: pi === 0 ? HeadingLevel.HEADING_1 : undefined,
+            heading:
+              pi === 0 ? HeadingLevel.HEADING_1 : pi === 1 ? HeadingLevel.HEADING_2 : undefined,
             children: [
               new TextRun({
                 text:
                   pi === 0
                     ? `Chapter ${si + 1} Title`
-                    : `Chapter ${si + 1} paragraph ${pi} body content for realistic document simulation.`,
-                bold: pi === 0,
+                    : pi === 1
+                      ? `Section ${si + 1}.${1} Subtitle`
+                      : `Chapter ${si + 1} paragraph ${pi} body content for realistic document simulation with enough text.`,
+                bold: pi <= 1,
               }),
             ],
           });
@@ -767,20 +793,50 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
     await Packer.toBuffer(doc);
   });
 
-  bench("docx — 10 sections × 50 paragraphs + toBuffer", async () => {
+  bench("docx — 20 sections × 100 paragraphs + toBuffer", async () => {
     const doc = new DocumentOrig({
-      sections: Array.from({ length: 10 }, (_, si) => ({
+      sections: Array.from({ length: 20 }, (_, si) => ({
         properties: { page: { margin: { top: 1440, bottom: 1440 } } },
-        children: Array.from({ length: 50 }, (_, pi) => {
+        headers: {
+          default: new HeaderOrig({
+            children: [
+              new ParagraphOrig({
+                alignment: AlignmentTypeOrig.RIGHT,
+                children: [
+                  new TextRunOrig(`Chapter ${si + 1}`),
+                  new TextRunOrig({ children: [PageNumberOrig.CURRENT] }),
+                ],
+              }),
+            ],
+          }),
+        },
+        footers: {
+          default: new FooterOrig({
+            children: [
+              new ParagraphOrig({
+                alignment: AlignmentTypeOrig.CENTER,
+                children: [new TextRunOrig("Footer text")],
+              }),
+            ],
+          }),
+        },
+        children: Array.from({ length: 100 }, (_, pi) => {
           return new ParagraphOrig({
-            heading: pi === 0 ? HeadingLevelOrig.HEADING_1 : undefined,
+            heading:
+              pi === 0
+                ? HeadingLevelOrig.HEADING_1
+                : pi === 1
+                  ? HeadingLevelOrig.HEADING_2
+                  : undefined,
             children: [
               new TextRunOrig({
                 text:
                   pi === 0
                     ? `Chapter ${si + 1} Title`
-                    : `Chapter ${si + 1} paragraph ${pi} body content for realistic document simulation.`,
-                bold: pi === 0,
+                    : pi === 1
+                      ? `Section ${si + 1}.${1} Subtitle`
+                      : `Chapter ${si + 1} paragraph ${pi} body content for realistic document simulation with enough text.`,
+                bold: pi <= 1,
               }),
             ],
           });

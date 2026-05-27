@@ -1,4 +1,4 @@
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 
 /**
  * Properties for latent style exception attributes.
@@ -20,21 +20,6 @@ export interface LatentStyleExceptionAttributesProperties {
   readonly semiHidden?: string;
   /** Whether the style should unhide when used */
   readonly unhideWhenUsed?: string;
-}
-
-/**
- * Represents attributes for a latent style exception.
- *
- * @internal
- */
-export class LatentStyleExceptionAttributes extends XmlAttributeComponent<LatentStyleExceptionAttributesProperties> {
-  protected readonly xmlKeys = {
-    name: "w:name",
-    qFormat: "w:qFormat",
-    semiHidden: "w:semiHidden",
-    uiPriority: "w:uiPriority",
-    unhideWhenUsed: "w:unhideWhenUsed",
-  };
 }
 
 /**
@@ -70,6 +55,22 @@ export class LatentStyleExceptionAttributes extends XmlAttributeComponent<Latent
 export class LatentStyleException extends XmlComponent {
   public constructor(attributes: LatentStyleExceptionAttributesProperties) {
     super("w:lsdException");
-    this.root.push(new LatentStyleExceptionAttributes(attributes));
+    const attrs: Record<string, string> = {};
+    if (attributes.name !== undefined) {
+      attrs["w:name"] = attributes.name;
+    }
+    if (attributes.qFormat !== undefined) {
+      attrs["w:qFormat"] = attributes.qFormat;
+    }
+    if (attributes.semiHidden !== undefined) {
+      attrs["w:semiHidden"] = attributes.semiHidden;
+    }
+    if (attributes.uiPriority !== undefined) {
+      attrs["w:uiPriority"] = attributes.uiPriority;
+    }
+    if (attributes.unhideWhenUsed !== undefined) {
+      attrs["w:unhideWhenUsed"] = attributes.unhideWhenUsed;
+    }
+    this.root.push({ _attr: attrs });
   }
 }

@@ -209,6 +209,11 @@ export class Paragraph extends BaseXmlComponent implements FileChild {
   private frontRuns: Run[] = [];
   private sectionProperties?: SectionProperties;
 
+  // Cached at construction time — options never change.
+  private readonly _props: ReturnType<typeof buildParagraphProperties>;
+  // Pre-created TextRun for options.text shorthand (avoids allocation in prepForXml).
+  private readonly _textRun: TextRun | undefined;
+
   public constructor(options: string | ParagraphOptions) {
     super("w:p");
 
@@ -217,13 +222,16 @@ export class Paragraph extends BaseXmlComponent implements FileChild {
     } else {
       this.options = options;
     }
+
+    this._props = buildParagraphProperties(this.options);
+    this._textRun = this.options.text ? new TextRun(this.options.text) : undefined;
   }
 
   public prepForXml(context: Context): IXmlableObject | undefined {
     const children: IXmlableObject[] = [];
 
-    // Build paragraph properties using pure function
-    const { xml: pPrObj, numberingReferences } = buildParagraphProperties(this.options);
+    // Use cached paragraph properties
+    const { xml: pPrObj, numberingReferences } = this._props;
 
     // Register numbering references (same logic as ParagraphProperties.prepForXml)
     if (!(context.viewWrapper instanceof FontWrapper)) {
@@ -256,9 +264,9 @@ export class Paragraph extends BaseXmlComponent implements FileChild {
       if (obj) children.push(obj);
     }
 
-    // Simple text shorthand
-    if (this.options.text) {
-      const obj = new TextRun(this.options.text).prepForXml(context);
+    // Simple text shorthand — use pre-created TextRun
+    if (this._textRun) {
+      const obj = this._textRun.prepForXml(context);
       if (obj) children.push(obj);
     }
 

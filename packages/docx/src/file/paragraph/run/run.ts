@@ -112,21 +112,43 @@ export const PageNumber = {
  * A run is the lowest level unit of text in a paragraph. All content within a run
  * shares the same formatting properties (bold, italic, font, size, etc.).
  *
- * Lazy: stores options, builds IXmlableObject in prepForXml.
+ * Pre-computes run properties and text at construction time to minimise
+ * allocation during serialization.
  */
 export class Run extends BaseXmlComponent {
   private readonly options: RunOptions;
   protected extraChildren: (BaseXmlComponent | IXmlableObject)[] = [];
 
+  // Cached at construction time — options never change.
+  private readonly _prebuilt: IXmlableObject | undefined;
+
   public constructor(options: RunOptions) {
     super("w:r");
     this.options = options;
+
+    // Pre-build the entire IXmlableObject for the simple case:
+    // text-only (no children array, no break, no extra children).
+    // This eliminates all object allocation in prepForXml for the hot path.
+    if (!options.children && !options.break) {
+      const rPr = buildRunProperties(options);
+      const text = options.text !== undefined ? buildText(options.text) : undefined;
+      if (rPr || text) {
+        const children: IXmlableObject[] = [];
+        if (rPr) children.push(rPr);
+        if (text) children.push(text);
+        this._prebuilt = { "w:r": children };
+      }
+    }
   }
 
   public prepForXml(context: Context): IXmlableObject | undefined {
-    const children: IXmlableObject[] = [];
+    // Fast path: return pre-built object (zero allocation).
+    // Only valid when no extraChildren were added by subclasses.
+    if (this._prebuilt && this.extraChildren.length === 0) return this._prebuilt;
 
+    // Slow path: complex children, breaks, or extra children.
     const rPr = buildRunProperties(this.options);
+    const children: IXmlableObject[] = [];
     if (rPr) children.push(rPr);
 
     if (this.options.break) {

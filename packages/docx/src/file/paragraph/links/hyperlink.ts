@@ -11,8 +11,15 @@ import { XmlComponent } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 
 import type { ParagraphChild } from "../paragraph";
-import { HyperlinkAttributes } from "./hyperlink-attributes";
-import type { HyperlinkAttributesProperties } from "./hyperlink-attributes";
+
+interface HyperlinkAttributesProperties {
+  readonly id?: string;
+  readonly anchor?: string;
+  readonly history: number;
+  readonly tooltip?: string;
+  readonly tgtFrame?: string;
+  readonly docLocation?: string;
+}
 
 /**
  * Hyperlink type enumeration.
@@ -107,8 +114,21 @@ export class ConcreteHyperlink extends XmlComponent {
       tgtFrame,
     };
 
-    const attributes = new HyperlinkAttributes(props);
-    this.root.push(attributes);
+    const attr: Record<string, string | number> = {};
+    if (props.anchor !== undefined) {
+      attr["w:anchor"] = props.anchor;
+    }
+    attr["w:history"] = props.history;
+    if (props.id !== undefined) {
+      attr["r:id"] = props.id;
+    }
+    if (props.tooltip !== undefined) {
+      attr["w:tooltip"] = props.tooltip;
+    }
+    if (props.tgtFrame !== undefined) {
+      attr["w:tgtFrame"] = props.tgtFrame;
+    }
+    this.root.push({ _attr: attr });
     children.forEach((child) => {
       this.root.push(child);
     });

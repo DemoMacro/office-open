@@ -63,7 +63,7 @@ const pres = new Presentation({
           textVertical: "vert",
           paragraphs: [
             new Paragraph({
-              properties: { bulletNone: true },
+              properties: { bullet: { type: "none" } },
               children: [
                 new TextRun({
                   text: "Vertical Text (top to bottom)",
@@ -82,7 +82,7 @@ const pres = new Presentation({
           textVertical: "vert270",
           paragraphs: [
             new Paragraph({
-              properties: { bulletNone: true },
+              properties: { bullet: { type: "none" } },
               children: [new TextRun({ text: "Rotated 270 (bottom to top)", fontSize: 14 })],
             }),
           ],
@@ -96,7 +96,7 @@ const pres = new Presentation({
           textVertical: "horz",
           paragraphs: [
             new Paragraph({
-              properties: { bulletNone: true },
+              properties: { bullet: { type: "none" } },
               children: [new TextRun({ text: "Horizontal (default)", fontSize: 14 })],
             }),
           ],
@@ -187,7 +187,7 @@ const pres = new Presentation({
           outline: { color: "999999", width: 1 },
           paragraphs: [
             new Paragraph({
-              properties: { bulletNone: true },
+              properties: { bullet: { type: "none" } },
               children: [
                 new TextRun({
                   text: "Default margins (no extra padding)",
@@ -207,7 +207,7 @@ const pres = new Presentation({
           outline: { color: "ED7D31", width: 1 },
           paragraphs: [
             new Paragraph({
-              properties: { bulletNone: true },
+              properties: { bullet: { type: "none" } },
               children: [
                 new TextRun({
                   text: "Wide margins (extra padding all around)",
@@ -228,7 +228,7 @@ const pres = new Presentation({
           outline: { color: "70AD47", width: 1 },
           paragraphs: [
             new Paragraph({
-              properties: { bulletNone: true },
+              properties: { bullet: { type: "none" } },
               children: [
                 new TextRun({
                   text: "This is column 1 text. The shape is divided into 2 columns with spacing between them.",

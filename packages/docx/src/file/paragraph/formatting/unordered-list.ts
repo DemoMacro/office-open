@@ -5,7 +5,7 @@
  *
  * @module
  */
-import { Attributes, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 import type { IXmlableObject } from "@file/xml-components";
 
 /**
@@ -87,11 +87,7 @@ class IndentLevel extends XmlComponent {
   public constructor(level: number) {
     super("w:ilvl");
 
-    this.root.push(
-      new Attributes({
-        val: Math.min(level, 9),
-      }),
-    );
+    this.root.push({ _attr: { "w:val": Math.min(level, 9) } });
   }
 }
 
@@ -105,10 +101,6 @@ class IndentLevel extends XmlComponent {
 class NumberId extends XmlComponent {
   public constructor(id: number | string) {
     super("w:numId");
-    this.root.push(
-      new Attributes({
-        val: typeof id === "string" ? `{${id}}` : id,
-      }),
-    );
+    this.root.push({ _attr: { "w:val": typeof id === "string" ? `{${id}}` : id } });
   }
 }

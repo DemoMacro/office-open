@@ -7,13 +7,12 @@
 import { Readable } from "stream";
 
 import {
-  type AsyncZippable,
   type ZipOptions,
   type Zippable,
   AsyncZipDeflate,
   Zip,
   ZipPassThrough,
-  zip,
+  zipSync,
 } from "fflate";
 
 import { convertOutput } from "./output-type";
@@ -46,27 +45,19 @@ export const ZIP_DEFLATE_LEVEL = 6;
 export const ZIP_STORED_LEVEL = 0;
 
 /**
- * Asynchronously compress files and convert to the requested output format.
+ * Compress files and convert to the requested output format.
  *
- * Uses Web Workers for non-blocking compression.
+ * Uses synchronous DEFLATE compression for maximum throughput.
  * XML entries use DEFLATE by default; media entries should explicitly set
  * `{ level: ZIP_STORED_LEVEL }` to avoid redundant compression.
  */
-export const zipAndConvert = async <T extends OutputType>(
+export const zipAndConvert = <T extends OutputType>(
   files: Zippable,
   type: T,
   mimeType: string,
   level: number = ZIP_DEFLATE_LEVEL,
-): Promise<OutputByType[T]> => {
-  const zipped = await new Promise<Uint8Array>((resolve, reject) => {
-    zip(files as AsyncZippable, { level: level as ZipOptions["level"] }, (err, data) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(data);
-      }
-    });
-  });
+): OutputByType[T] => {
+  const zipped = zipSync(files, { level: level as ZipOptions["level"] });
   return convertOutput(zipped, type, mimeType);
 };
 
@@ -200,15 +191,19 @@ export const createPacker = <TFile>(options: {
     compile,
     pack,
 
-    toString: (file, prettify, overrides) => pack(file, "string", prettify, overrides),
+    toString: (file, prettify, overrides) =>
+      Promise.resolve(pack(file, "string", prettify, overrides)),
 
-    toBuffer: (file, prettify, overrides) => pack(file, "nodebuffer", prettify, overrides),
+    toBuffer: (file, prettify, overrides) =>
+      Promise.resolve(pack(file, "nodebuffer", prettify, overrides)),
 
-    toBase64String: (file, prettify, overrides) => pack(file, "base64", prettify, overrides),
+    toBase64String: (file, prettify, overrides) =>
+      Promise.resolve(pack(file, "base64", prettify, overrides)),
 
-    toBlob: (file, prettify, overrides) => pack(file, "blob", prettify, overrides),
+    toBlob: (file, prettify, overrides) => Promise.resolve(pack(file, "blob", prettify, overrides)),
 
-    toArrayBuffer: (file, prettify, overrides) => pack(file, "arraybuffer", prettify, overrides),
+    toArrayBuffer: (file, prettify, overrides) =>
+      Promise.resolve(pack(file, "arraybuffer", prettify, overrides)),
 
     toStream: (file, prettify, overrides) => {
       let files: Zippable;

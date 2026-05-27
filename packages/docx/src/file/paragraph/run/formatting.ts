@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { Attributes, XmlComponent, attrObj } from "@file/xml-components";
+import { XmlComponent, attrObj } from "@file/xml-components";
 import type { IXmlableObject } from "@file/xml-components";
 import { hexColorValue, signedTwipsMeasureValue, uCharHexNumber } from "@util/values";
 import type { ThemeColor, UniversalMeasure } from "@util/values";
@@ -51,11 +51,7 @@ export interface ColorOptions {
 export class CharacterSpacing extends XmlComponent {
   public constructor(value: number | UniversalMeasure) {
     super("w:spacing");
-    this.root.push(
-      new Attributes({
-        val: signedTwipsMeasureValue(value),
-      }),
-    );
+    this.root.push({ _attr: { "w:val": signedTwipsMeasureValue(value) } });
   }
 }
 
@@ -86,23 +82,25 @@ export class Color extends XmlComponent {
     super("w:color");
 
     if (typeof colorOrOptions === "string") {
-      this.root.push(
-        new Attributes({
-          val: hexColorValue(colorOrOptions),
-        }),
-      );
+      this.root.push({ _attr: { "w:val": hexColorValue(colorOrOptions) } });
       return;
     }
 
     const opts = colorOrOptions;
-    this.root.push(
-      new Attributes({
-        val: opts.val === undefined ? undefined : hexColorValue(opts.val),
-        themeColor: opts.themeColor,
-        themeTint: opts.themeTint === undefined ? undefined : uCharHexNumber(opts.themeTint),
-        themeShade: opts.themeShade === undefined ? undefined : uCharHexNumber(opts.themeShade),
-      }),
-    );
+    const attrs: Record<string, string> = {};
+    if (opts.val !== undefined) {
+      attrs["w:val"] = hexColorValue(opts.val);
+    }
+    if (opts.themeColor !== undefined) {
+      attrs["w:themeColor"] = opts.themeColor;
+    }
+    if (opts.themeTint !== undefined) {
+      attrs["w:themeTint"] = uCharHexNumber(opts.themeTint);
+    }
+    if (opts.themeShade !== undefined) {
+      attrs["w:themeShade"] = uCharHexNumber(opts.themeShade);
+    }
+    this.root.push({ _attr: attrs });
   }
 }
 
@@ -145,11 +143,7 @@ export class Color extends XmlComponent {
 export class Highlight extends XmlComponent {
   public constructor(color: string) {
     super("w:highlight");
-    this.root.push(
-      new Attributes({
-        val: color,
-      }),
-    );
+    this.root.push({ _attr: { "w:val": color } });
   }
 }
 
@@ -164,11 +158,7 @@ export class Highlight extends XmlComponent {
 export class HighlightComplexScript extends XmlComponent {
   public constructor(color: string) {
     super("w:highlightCs");
-    this.root.push(
-      new Attributes({
-        val: color,
-      }),
-    );
+    this.root.push({ _attr: { "w:val": color } });
   }
 }
 

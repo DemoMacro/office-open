@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { XmlAttributeComponent, XmlComponent, onOffObj, stringValObj } from "@file/xml-components";
+import { XmlComponent, onOffObj, stringValObj } from "@file/xml-components";
 
 import { Name, UiPriority } from "./components";
 import type { TableStyleOverrideOptions } from "./table-style-override";
@@ -108,20 +108,6 @@ export interface StyleOptions {
 }
 
 /**
- * Represents style attributes for XML serialization.
- *
- * @internal
- */
-class StyleAttributesXml extends XmlAttributeComponent<StyleAttributes> {
-  protected readonly xmlKeys = {
-    customStyle: "w:customStyle",
-    default: "w:default",
-    styleId: "w:styleId",
-    type: "w:type",
-  };
-}
-
-/**
  * Represents a base style definition in a WordprocessingML document.
  *
  * This is the base class for paragraph and character styles. It defines common
@@ -172,7 +158,16 @@ class StyleAttributesXml extends XmlAttributeComponent<StyleAttributes> {
 export class Style extends XmlComponent {
   public constructor(attributes: StyleAttributes, options: StyleOptions) {
     super("w:style");
-    this.root.push(new StyleAttributesXml(attributes));
+    this.root.push({
+      _attr: {
+        ...(attributes.type !== undefined ? { "w:type": attributes.type } : {}),
+        ...(attributes.styleId !== undefined ? { "w:styleId": attributes.styleId } : {}),
+        ...(attributes.default !== undefined ? { "w:default": attributes.default } : {}),
+        ...(attributes.customStyle !== undefined
+          ? { "w:customStyle": attributes.customStyle }
+          : {}),
+      },
+    });
     if (options.name) {
       this.root.push(new Name(options.name));
     }

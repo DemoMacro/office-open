@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 
 /**
  * Editing group values for permission ranges.
@@ -45,26 +45,6 @@ export interface PermStartOptions {
 }
 
 /**
- * @internal
- */
-class PermStartAttributes extends XmlAttributeComponent<PermStartOptions> {
-  protected readonly xmlKeys = {
-    colFirst: "w:colFirst",
-    colLast: "w:colLast",
-    ed: "w:ed",
-    edGroup: "w:edGrp",
-    id: "w:id",
-  };
-}
-
-/**
- * @internal
- */
-class PermEndAttributes extends XmlAttributeComponent<{ readonly id: string | number }> {
-  protected readonly xmlKeys = { id: "w:id" };
-}
-
-/**
  * Marks the start of a permission range.
  *
  * Permission ranges define editable regions within a protected document.
@@ -80,7 +60,12 @@ class PermEndAttributes extends XmlAttributeComponent<{ readonly id: string | nu
 export class PermStart extends XmlComponent {
   public constructor(options: PermStartOptions) {
     super("w:permStart");
-    this.root.push(new PermStartAttributes(options));
+    const attrs: Record<string, string | number> = { "w:id": options.id };
+    if (options.edGroup !== undefined) attrs["w:edGrp"] = options.edGroup;
+    if (options.ed !== undefined) attrs["w:ed"] = options.ed;
+    if (options.colFirst !== undefined) attrs["w:colFirst"] = options.colFirst;
+    if (options.colLast !== undefined) attrs["w:colLast"] = options.colLast;
+    this.root.push({ _attr: attrs });
   }
 }
 
@@ -99,6 +84,6 @@ export class PermStart extends XmlComponent {
 export class PermEnd extends XmlComponent {
   public constructor(id: string | number) {
     super("w:permEnd");
-    this.root.push(new PermEndAttributes({ id }));
+    this.root.push({ _attr: { "w:id": id } });
   }
 }

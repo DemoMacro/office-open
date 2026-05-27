@@ -5,7 +5,7 @@
  */
 import { BaseXmlComponent } from "./base";
 import type { Context } from "./base";
-import type { IXmlAttribute, IXmlableObject } from "./types";
+import type { IXmlableObject } from "./types";
 
 /**
  * Maps TypeScript property names to their XML attribute names.
@@ -58,14 +58,17 @@ export class NextAttributeComponent<T> extends BaseXmlComponent {
   }
 
   public prepForXml(_: Context): IXmlableObject {
-    const attrs = (
-      Object.values(this.root) as readonly {
-        readonly key: string;
-        readonly value: string | boolean | number;
-      }[]
-    )
-      .filter(({ value }) => value !== undefined)
-      .reduce((acc, { key, value }) => ({ ...acc, [key]: value }), {} as IXmlAttribute);
+    const attrs: Record<string, string | boolean | number> = {};
+    const values = Object.values(this.root) as readonly {
+      readonly key: string;
+      readonly value: string | boolean | number;
+    }[];
+    for (let i = 0; i < values.length; i++) {
+      const { key, value } = values[i];
+      if (value !== undefined) {
+        attrs[key] = value;
+      }
+    }
     return { _attr: attrs };
   }
 }

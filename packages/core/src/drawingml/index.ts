@@ -91,7 +91,6 @@ export { BevelPresetType } from "./three-d/bevel";
 // Geometry
 export { PresetGeometry } from "./geometry/preset-geometry";
 export type { PresetGeometryOptions } from "./geometry/preset-geometry";
-export { PresetGeometryAttributes } from "./geometry/preset-geometry-attributes";
 export { createAdjustmentValues } from "./geometry/adjustment-values";
 export type { GeometryGuide } from "./geometry/adjustment-values";
 export { createCustomGeometry } from "./geometry/custom-geometry";

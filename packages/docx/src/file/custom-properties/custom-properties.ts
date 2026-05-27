@@ -10,7 +10,6 @@
 import { XmlComponent } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
 
-import { CustomPropertiesAttributes } from "./custom-properties-attributes";
 import { CustomProperty } from "./custom-property";
 import type { CustomPropertyOptions } from "./custom-property";
 
@@ -46,12 +45,12 @@ export class CustomProperties extends XmlComponent {
   public constructor(properties: readonly CustomPropertyOptions[]) {
     super("Properties");
 
-    this.root.push(
-      new CustomPropertiesAttributes({
-        vt: "http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes",
+    this.root.push({
+      _attr: {
         xmlns: "http://schemas.openxmlformats.org/officeDocument/2006/custom-properties",
-      }),
-    );
+        "xmlns:vt": "http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes",
+      },
+    });
 
     // I'm not sure why, but every example I have seen starts with 2
     // https://docs.microsoft.com/en-us/office/open-xml/how-to-set-a-custom-property-in-a-word-processing-document

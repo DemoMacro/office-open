@@ -15,7 +15,7 @@
  *
  * @module
  */
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 import { twipsMeasureValue } from "@util/values";
 import type { PositiveUniversalMeasure } from "@util/values";
 
@@ -30,16 +30,6 @@ export interface ColumnAttributes {
   readonly width: number | PositiveUniversalMeasure;
   /** Space after column in twips or universal measure (default: 0) */
   readonly space?: number | PositiveUniversalMeasure;
-}
-
-class ColumnAttributesXml extends XmlAttributeComponent<{
-  readonly width?: number | PositiveUniversalMeasure;
-  readonly space?: number | PositiveUniversalMeasure;
-}> {
-  protected readonly xmlKeys = {
-    space: "w:space",
-    width: "w:w",
-  };
 }
 
 /**
@@ -65,11 +55,11 @@ export class Column extends XmlComponent {
   public constructor(options: ColumnAttributes) {
     super("w:col");
 
-    this.root.push(
-      new ColumnAttributesXml({
-        space: options.space === undefined ? undefined : twipsMeasureValue(options.space),
-        width: twipsMeasureValue(options.width),
-      }),
-    );
+    this.root.push({
+      _attr: {
+        "w:w": twipsMeasureValue(options.width),
+        ...(options.space !== undefined ? { "w:space": twipsMeasureValue(options.space) } : {}),
+      },
+    });
   }
 }

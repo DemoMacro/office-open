@@ -8,9 +8,19 @@ const XML_CHAR_MAP: Record<string, string> = {
 
 const XML_CHAR_PATTERN = /([&"<>'])/g;
 
-/** Escape text content for XML */
+/** Escape text content for XML. Fast path returns original string when no special chars. */
 export function escapeXml(str: string): string {
-  return str.replace(XML_CHAR_PATTERN, (ch) => XML_CHAR_MAP[ch]);
+  // Fast path: most text content doesn't contain XML-special characters.
+  // Manual scan avoids regex overhead; returning the original string reference
+  // means zero allocation for the common case.
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    if (c === 38 || c === 34 || c === 39 || c === 60 || c === 62) {
+      // & " ' < >
+      return str.replace(XML_CHAR_PATTERN, (ch) => XML_CHAR_MAP[ch]);
+    }
+  }
+  return str;
 }
 
 /**

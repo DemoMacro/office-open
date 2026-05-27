@@ -9,7 +9,6 @@ import { XmlComponent } from "@file/xml-components";
 
 import { TextRun } from "../../paragraph/run";
 import type { RunOptions } from "../../paragraph/run";
-import { ChangeAttributes } from "../track-revision";
 import type { ChangedAttributesProperties } from "../track-revision";
 
 /**
@@ -65,13 +64,9 @@ type IInsertedRunOptions = ChangedAttributesProperties & RunOptions;
 export class InsertedTextRun extends XmlComponent {
   public constructor(options: IInsertedRunOptions) {
     super("w:ins");
-    this.root.push(
-      new ChangeAttributes({
-        author: options.author,
-        date: options.date,
-        id: options.id,
-      }),
-    );
+    this.root.push({
+      _attr: { "w:author": options.author, "w:date": options.date, "w:id": options.id },
+    });
     this.addChildElement(new TextRun(options as RunOptions));
   }
 }

@@ -6,7 +6,7 @@
 import { xml2js } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
-import { XmlAttributeComponent, XmlComponent } from ".";
+import { XmlComponent } from ".";
 import type { Context, IXmlableObject } from "./base";
 
 /**
@@ -38,12 +38,6 @@ export const convertToXmlComponent = (
 };
 
 /**
- * Internal attribute component for imported XML elements.
- * @internal
- */
-class ImportedXmlComponentAttributes extends XmlAttributeComponent<any> {}
-
-/**
  * XML component representing imported XML content.
  */
 export class ImportedXmlComponent extends XmlComponent {
@@ -68,7 +62,7 @@ export class ImportedXmlComponent extends XmlComponent {
   public constructor(rootKey: string, _attr?: any) {
     super(rootKey);
     if (_attr) {
-      this.root.push(new ImportedXmlComponentAttributes(_attr));
+      this.root.push({ _attr });
     }
   }
 

@@ -9,7 +9,7 @@
  *
  * @module
  */
-import { Attributes, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 import { decimalNumber } from "@util/values";
 
 /**
@@ -18,22 +18,8 @@ import { decimalNumber } from "@util/values";
 class AbstractNumId extends XmlComponent {
   public constructor(value: number) {
     super("w:abstractNumId");
-    this.root.push(
-      new Attributes({
-        val: value,
-      }),
-    );
+    this.root.push({ _attr: { "w:val": value } });
   }
-}
-
-/**
- * Attributes for concrete numbering instances.
- */
-class NumAttributes extends XmlAttributeComponent<{
-  /** The unique identifier for this numbering instance. */
-  readonly numId: number;
-}> {
-  protected readonly xmlKeys = { numId: "w:numId" };
 }
 
 /**
@@ -128,11 +114,7 @@ export class ConcreteNumbering extends XmlComponent {
     this.reference = options.reference;
     this.instance = options.instance;
 
-    this.root.push(
-      new NumAttributes({
-        numId: decimalNumber(options.numId),
-      }),
-    );
+    this.root.push({ _attr: { "w:numId": decimalNumber(options.numId) } });
 
     this.root.push(new AbstractNumId(decimalNumber(options.abstractNumId)));
 
@@ -142,16 +124,6 @@ export class ConcreteNumbering extends XmlComponent {
       }
     }
   }
-}
-
-/**
- * Attributes for level overrides.
- */
-class LevelOverrideAttributes extends XmlAttributeComponent<{
-  /** The level number being overridden. */
-  readonly ilvl: number;
-}> {
-  protected readonly xmlKeys = { ilvl: "w:ilvl" };
 }
 
 /**
@@ -180,36 +152,16 @@ export class LevelOverride extends XmlComponent {
    */
   public constructor(levelNum: number, start?: number) {
     super("w:lvlOverride");
-    this.root.push(new LevelOverrideAttributes({ ilvl: levelNum }));
+    this.root.push({ _attr: { "w:ilvl": levelNum } });
     if (start !== undefined) {
       this.root.push(new StartOverride(start));
     }
   }
 }
 
-/**
- * Attributes for start override values.
- */
-class StartOverrideAttributes extends XmlAttributeComponent<{
-  /** The starting number value. */
-  readonly val: number;
-}> {
-  protected readonly xmlKeys = { val: "w:val" };
-}
-
-/**
- * Represents a start override for a numbering level.
- *
- * This element overrides the starting number for a specific level.
- */
 class StartOverride extends XmlComponent {
-  /**
-   * Creates a new start override.
-   *
-   * @param start - The starting number
-   */
   public constructor(start: number) {
     super("w:startOverride");
-    this.root.push(new StartOverrideAttributes({ val: start }));
+    this.root.push({ _attr: { "w:val": start } });
   }
 }

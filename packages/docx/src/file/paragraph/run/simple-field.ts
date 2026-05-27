@@ -9,16 +9,9 @@
  *
  * @module
  */
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 
 import { TextRun } from "./text-run";
-
-/**
- * @internal
- */
-class FldSimpleAttrs extends XmlAttributeComponent<{ readonly instr: string }> {
-  protected readonly xmlKeys = { instr: "w:instr" };
-}
 
 /**
  * Represents a simple field in a WordprocessingML document.
@@ -55,7 +48,7 @@ class FldSimpleAttrs extends XmlAttributeComponent<{ readonly instr: string }> {
 export class SimpleField extends XmlComponent {
   public constructor(instruction: string, cachedValue?: string) {
     super("w:fldSimple");
-    this.root.push(new FldSimpleAttrs({ instr: instruction }));
+    this.root.push({ _attr: { "w:instr": instruction } });
     if (cachedValue !== undefined) {
       this.root.push(new TextRun(cachedValue));
     }

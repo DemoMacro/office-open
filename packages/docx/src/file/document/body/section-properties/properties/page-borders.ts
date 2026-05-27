@@ -9,7 +9,7 @@
  */
 import { createBorderElement } from "@file/border";
 import type { BorderOptions } from "@file/border";
-import { IgnoreIfEmptyXmlComponent, XmlAttributeComponent } from "@file/xml-components";
+import { IgnoreIfEmptyXmlComponent } from "@file/xml-components";
 
 /**
  * Specifies which pages display the page border.
@@ -108,18 +108,6 @@ export interface PageBordersOptions {
   readonly left?: BorderOptions;
 }
 
-class PageBordersAttributes extends XmlAttributeComponent<{
-  readonly display?: string;
-  readonly offsetFrom?: string;
-  readonly zOrder?: string;
-}> {
-  protected readonly xmlKeys = {
-    display: "w:display",
-    offsetFrom: "w:offsetFrom",
-    zOrder: "w:zOrder",
-  };
-}
-
 /**
  * Represents page borders (pgBorders) for a document section.
  *
@@ -168,15 +156,15 @@ export class PageBorders extends IgnoreIfEmptyXmlComponent {
       options.offsetFrom !== undefined ||
       options.zOrder !== undefined;
     if (hasAttributes) {
-      this.root.push(
-        new PageBordersAttributes({
-          display: options.display,
-          offsetFrom: options.offsetFrom,
-          zOrder: options.zOrder,
-        }),
-      );
+      this.root.push({
+        _attr: {
+          ...(options.display !== undefined ? { "w:display": options.display } : {}),
+          ...(options.offsetFrom !== undefined ? { "w:offsetFrom": options.offsetFrom } : {}),
+          ...(options.zOrder !== undefined ? { "w:zOrder": options.zOrder } : {}),
+        },
+      });
     } else {
-      this.root.push(new PageBordersAttributes({}));
+      this.root.push({ _attr: {} });
     }
 
     if (options.top) {

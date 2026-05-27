@@ -9,8 +9,6 @@
  */
 import { XmlComponent } from "@file/xml-components";
 
-import { CustomPropertyAttributes } from "./custom-property-attributes";
-
 /**
  * Options for creating a custom property.
  *
@@ -55,13 +53,13 @@ export interface CustomPropertyOptions {
 export class CustomProperty extends XmlComponent {
   public constructor(id: number, properties: CustomPropertyOptions) {
     super("property");
-    this.root.push(
-      new CustomPropertyAttributes({
-        formatId: "{D5CDD505-2E9C-101B-9397-08002B2CF9AE}",
+    this.root.push({
+      _attr: {
+        fmtid: "{D5CDD505-2E9C-101B-9397-08002B2CF9AE}",
         name: properties.name,
         pid: id.toString(),
-      }),
-    );
+      },
+    });
     this.root.push(new CustomPropertyValue(properties.value));
   }
 }

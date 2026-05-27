@@ -8,31 +8,21 @@
  *
  * @module
  */
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 
-/**
- * @internal
- */
-class MoveBookmarkAttributes extends XmlAttributeComponent<{
-  readonly id: number;
-  readonly name?: string;
-  readonly author?: string;
-  readonly date?: string;
-}> {
-  protected readonly xmlKeys = {
-    author: "w:author",
-    date: "w:date",
-    id: "w:id",
-    name: "w:name",
-  };
-}
-
-/**
- * @internal
- */
-class MoveRangeEndAttributes extends XmlAttributeComponent<{ readonly id: number }> {
-  protected readonly xmlKeys = { id: "w:id" };
-}
+/** Builds move bookmark attributes with optional fields omitted when undefined. */
+const buildMoveBookmarkAttr = (
+  id: number,
+  name?: string,
+  author?: string,
+  date?: string,
+): { readonly _attr: Record<string, string | number> } => {
+  const attrs: Record<string, string | number> = { "w:id": id };
+  if (name !== undefined) attrs["w:name"] = name;
+  if (author !== undefined) attrs["w:author"] = author;
+  if (date !== undefined) attrs["w:date"] = date;
+  return { _attr: attrs };
+};
 
 /**
  * Marks the start of a move source range.
@@ -47,7 +37,7 @@ class MoveRangeEndAttributes extends XmlAttributeComponent<{ readonly id: number
 export class MoveFromRangeStart extends XmlComponent {
   public constructor(id: number, name?: string, author?: string, date?: string) {
     super("w:moveFromRangeStart");
-    this.root.push(new MoveBookmarkAttributes({ id, name, author, date }));
+    this.root.push(buildMoveBookmarkAttr(id, name, author, date));
   }
 }
 
@@ -59,7 +49,7 @@ export class MoveFromRangeStart extends XmlComponent {
 export class MoveFromRangeEnd extends XmlComponent {
   public constructor(id: number) {
     super("w:moveFromRangeEnd");
-    this.root.push(new MoveRangeEndAttributes({ id }));
+    this.root.push({ _attr: { "w:id": id } });
   }
 }
 
@@ -76,7 +66,7 @@ export class MoveFromRangeEnd extends XmlComponent {
 export class MoveToRangeStart extends XmlComponent {
   public constructor(id: number, name?: string, author?: string, date?: string) {
     super("w:moveToRangeStart");
-    this.root.push(new MoveBookmarkAttributes({ id, name, author, date }));
+    this.root.push(buildMoveBookmarkAttr(id, name, author, date));
   }
 }
 
@@ -88,6 +78,6 @@ export class MoveToRangeStart extends XmlComponent {
 export class MoveToRangeEnd extends XmlComponent {
   public constructor(id: number) {
     super("w:moveToRangeEnd");
-    this.root.push(new MoveRangeEndAttributes({ id }));
+    this.root.push({ _attr: { "w:id": id } });
   }
 }

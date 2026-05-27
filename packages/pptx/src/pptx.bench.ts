@@ -581,17 +581,17 @@ describe("PPTX: Create + toBuffer", () => {
 
 // ── Large file benchmarks ──
 
-const LARGE_SHAPES = Array.from({ length: 100 }, (_, i) => ({
-  text: `Shape ${i + 1} text content with sample data for realistic presentation simulation.`,
+const LARGE_SHAPES = Array.from({ length: 600 }, (_, i) => ({
+  text: `Shape ${i + 1} text content with sample data for realistic presentation simulation and stress testing.`,
   bold: i % 3 === 0,
   italic: i % 5 === 0,
   fontSize: 12 + (i % 6) * 2,
   fill: i % 4 === 0 ? "4472C4" : undefined,
 }));
 
-const LARGE_TABLE_ROWS = Array.from({ length: 50 }, (_, rowIdx) => ({
+const LARGE_TABLE_ROWS = Array.from({ length: 100 }, (_, rowIdx) => ({
   cells: Array.from({ length: 10 }, (_, colIdx) => ({
-    text: `R${rowIdx + 1}C${colIdx + 1} data`,
+    text: `R${rowIdx + 1}C${colIdx + 1} data content for stress test`,
     fill: rowIdx === 0 ? "4472C4" : undefined,
   })),
 }));
@@ -600,15 +600,15 @@ const LARGE_TABLE_ROWS = Array.from({ length: 50 }, (_, rowIdx) => ({
 const packOurs = (pres: Presentation, store: boolean) =>
   store ? toBufferStore(pres) : Packer.toBuffer(pres);
 
-const build10Slides10Shapes = () =>
+const build30Slides20Shapes = () =>
   new Presentation({
-    slides: Array.from({ length: 10 }, (_, si) => ({
-      children: Array.from({ length: 10 }, (_, shi) => {
-        const s = LARGE_SHAPES[si * 10 + shi];
+    slides: Array.from({ length: 30 }, (_, si) => ({
+      children: Array.from({ length: 20 }, (_, shi) => {
+        const s = LARGE_SHAPES[(si * 20 + shi) % LARGE_SHAPES.length];
         return new Shape({
-          x: 100 + (shi % 3) * 300,
-          y: 100 + Math.floor(shi / 3) * 200,
-          width: 250,
+          x: 50 + (shi % 4) * 230,
+          y: 50 + Math.floor(shi / 4) * 110,
+          width: 200,
           height: 80,
           fill: s.fill,
           paragraphs: [
@@ -624,7 +624,7 @@ const build10Slides10Shapes = () =>
     })),
   });
 
-const build50x10Table = () =>
+const build100x10Table = () =>
   new Presentation({
     slides: [
       {
@@ -642,9 +642,9 @@ const build50x10Table = () =>
     ],
   });
 
-const build20SlidesFull = () =>
+const build50SlidesFull = () =>
   new Presentation({
-    slides: Array.from({ length: 20 }, (_, si) => ({
+    slides: Array.from({ length: 50 }, (_, si) => ({
       children: [
         new Shape({
           x: 100,
@@ -659,18 +659,20 @@ const build20SlidesFull = () =>
             }),
           ],
         }),
-        ...Array.from({ length: 5 }, (_, j) => {
-          const s = LARGE_SHAPES[si * 5 + j];
+        ...Array.from({ length: 10 }, (_, j) => {
+          const s = LARGE_SHAPES[(si * 10 + j) % LARGE_SHAPES.length];
           return new Shape({
-            x: 100 + (j % 2) * 400,
-            y: 150 + Math.floor(j / 2) * 150,
-            width: 350,
-            height: 100,
+            x: 50 + (j % 3) * 300,
+            y: 150 + Math.floor(j / 3) * 120,
+            width: 270,
+            height: 90,
             fill: s.fill,
             paragraphs: [
               new Paragraph({
                 properties: { bullet: { type: "none" } },
-                children: [new TextRun({ text: s.text, bold: s.bold, fontSize: 14 })],
+                children: [
+                  new TextRun({ text: s.text, bold: s.bold, italic: s.italic, fontSize: 14 }),
+                ],
               }),
             ],
           });
@@ -680,26 +682,26 @@ const build20SlidesFull = () =>
   });
 
 describe("PPTX: Large Files — Create + toBuffer", () => {
-  bench("ours DEFLATE — 10 slides × 10 shapes + toBuffer", async () => {
-    await packOurs(build10Slides10Shapes(), false);
+  bench("ours DEFLATE — 30 slides × 20 shapes + toBuffer", async () => {
+    await packOurs(build30Slides20Shapes(), false);
   });
 
-  bench("ours STORE — 10 slides × 10 shapes + toBuffer", async () => {
-    await packOurs(build10Slides10Shapes(), true);
+  bench("ours STORE — 30 slides × 20 shapes + toBuffer", async () => {
+    await packOurs(build30Slides20Shapes(), true);
   });
 
-  bench("pptxgenjs — 10 slides × 10 shapes + toBuffer", async () => {
+  bench("pptxgenjs — 30 slides × 20 shapes + toBuffer", async () => {
     const pptx = new PptxGenJS();
-    for (let si = 0; si < 10; si++) {
+    for (let si = 0; si < 30; si++) {
       const slide = pptx.addSlide();
-      for (let shi = 0; shi < 10; shi++) {
-        const s = LARGE_SHAPES[si * 10 + shi];
+      for (let shi = 0; shi < 20; shi++) {
+        const s = LARGE_SHAPES[(si * 20 + shi) % LARGE_SHAPES.length];
         slide.addText(
           [{ text: s.text, options: { bold: s.bold, italic: s.italic, fontSize: s.fontSize } }],
           {
-            x: 1 + (shi % 3) * 3,
-            y: 1 + Math.floor(shi / 3) * 2,
-            w: 2.5,
+            x: 0.5 + (shi % 4) * 2.3,
+            y: 0.5 + Math.floor(shi / 4) * 1.1,
+            w: 2,
             h: 0.8,
             fill: s.fill ? { color: s.fill } : undefined,
           },
@@ -709,15 +711,15 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
     await pptx.write({ outputType: "nodebuffer", compression: true });
   });
 
-  bench("ours DEFLATE — 50x10 table + toBuffer", async () => {
-    await packOurs(build50x10Table(), false);
+  bench("ours DEFLATE — 100x10 table + toBuffer", async () => {
+    await packOurs(build100x10Table(), false);
   });
 
-  bench("ours STORE — 50x10 table + toBuffer", async () => {
-    await packOurs(build50x10Table(), true);
+  bench("ours STORE — 100x10 table + toBuffer", async () => {
+    await packOurs(build100x10Table(), true);
   });
 
-  bench("pptxgenjs — 50x10 table + toBuffer", async () => {
+  bench("pptxgenjs — 100x10 table + toBuffer", async () => {
     const pptx = new PptxGenJS();
     const slide = pptx.addSlide();
     slide.addTable(
@@ -732,31 +734,34 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
     await pptx.write({ outputType: "nodebuffer", compression: true });
   });
 
-  bench("ours DEFLATE — 20 slides full + toBuffer", async () => {
-    await packOurs(build20SlidesFull(), false);
+  bench("ours DEFLATE — 50 slides full + toBuffer", async () => {
+    await packOurs(build50SlidesFull(), false);
   });
 
-  bench("ours STORE — 20 slides full + toBuffer", async () => {
-    await packOurs(build20SlidesFull(), true);
+  bench("ours STORE — 50 slides full + toBuffer", async () => {
+    await packOurs(build50SlidesFull(), true);
   });
 
-  bench("pptxgenjs — 20 slides full + toBuffer", async () => {
+  bench("pptxgenjs — 50 slides full + toBuffer", async () => {
     const pptx = new PptxGenJS();
-    for (let si = 0; si < 20; si++) {
+    for (let si = 0; si < 50; si++) {
       const slide = pptx.addSlide();
       slide.addText(
         [{ text: `Slide ${si + 1} Title`, options: { fontSize: 28, bold: true, color: "FFFFFF" } }],
         { x: 1, y: 0.5, w: 8, h: 0.6, fill: { color: "4472C4" }, align: "center" },
       );
-      for (let j = 0; j < 5; j++) {
-        const s = LARGE_SHAPES[si * 5 + j];
-        slide.addText([{ text: s.text, options: { bold: s.bold, fontSize: 14 } }], {
-          x: 1 + (j % 2) * 4,
-          y: 1.5 + Math.floor(j / 2) * 1.5,
-          w: 3.5,
-          h: 1,
-          fill: s.fill ? { color: s.fill } : undefined,
-        });
+      for (let j = 0; j < 10; j++) {
+        const s = LARGE_SHAPES[(si * 10 + j) % LARGE_SHAPES.length];
+        slide.addText(
+          [{ text: s.text, options: { bold: s.bold, italic: s.italic, fontSize: 14 } }],
+          {
+            x: 0.5 + (j % 3) * 3,
+            y: 1.5 + Math.floor(j / 3) * 1.2,
+            w: 2.7,
+            h: 0.9,
+            fill: s.fill ? { color: s.fill } : undefined,
+          },
+        );
       }
     }
     await pptx.write({ outputType: "nodebuffer", compression: true });

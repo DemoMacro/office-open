@@ -16,7 +16,7 @@ const pres = new Presentation({
           height: 50,
           paragraphs: [
             new Paragraph({
-              properties: { alignment: "CENTER", bulletNone: true },
+              properties: { alignment: "CENTER", bullet: { type: "none" } },
               children: [new TextRun({ text: "List Layouts", fontSize: 32, bold: true })],
             }),
           ],
@@ -58,7 +58,7 @@ const pres = new Presentation({
           height: 50,
           paragraphs: [
             new Paragraph({
-              properties: { alignment: "CENTER", bulletNone: true },
+              properties: { alignment: "CENTER", bullet: { type: "none" } },
               children: [new TextRun({ text: "Process Layouts", fontSize: 32, bold: true })],
             }),
           ],
@@ -125,7 +125,7 @@ const pres = new Presentation({
           height: 50,
           paragraphs: [
             new Paragraph({
-              properties: { alignment: "CENTER", bulletNone: true },
+              properties: { alignment: "CENTER", bullet: { type: "none" } },
               children: [new TextRun({ text: "Cycle Layouts", fontSize: 32, bold: true })],
             }),
           ],
@@ -169,7 +169,7 @@ const pres = new Presentation({
           height: 50,
           paragraphs: [
             new Paragraph({
-              properties: { alignment: "CENTER", bulletNone: true },
+              properties: { alignment: "CENTER", bullet: { type: "none" } },
               children: [
                 new TextRun({
                   text: "Hierarchy Layouts",
@@ -243,7 +243,7 @@ const pres = new Presentation({
           height: 50,
           paragraphs: [
             new Paragraph({
-              properties: { alignment: "CENTER", bulletNone: true },
+              properties: { alignment: "CENTER", bullet: { type: "none" } },
               children: [
                 new TextRun({
                   text: "Relationship / Other Layouts",
@@ -293,7 +293,7 @@ const pres = new Presentation({
           height: 50,
           paragraphs: [
             new Paragraph({
-              properties: { alignment: "CENTER", bulletNone: true },
+              properties: { alignment: "CENTER", bullet: { type: "none" } },
               children: [new TextRun({ text: "Pyramid Layouts", fontSize: 32, bold: true })],
             }),
           ],
@@ -336,7 +336,7 @@ const pres = new Presentation({
           height: 50,
           paragraphs: [
             new Paragraph({
-              properties: { alignment: "CENTER", bulletNone: true },
+              properties: { alignment: "CENTER", bullet: { type: "none" } },
               children: [
                 new TextRun({
                   text: "Matrix / Radial / Other Layouts",

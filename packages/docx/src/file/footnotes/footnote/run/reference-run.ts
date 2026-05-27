@@ -9,21 +9,7 @@
  * @module
  */
 import { Run } from "@file/paragraph/run";
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
-
-/**
- * Represents the attributes for a footnote reference element.
- *
- * @internal
- */
-export class FootNoteReferenceRunAttributes extends XmlAttributeComponent<{
-  /** Unique identifier linking to the footnote */
-  readonly id: number;
-}> {
-  protected readonly xmlKeys = {
-    id: "w:id",
-  };
-}
+import { XmlComponent } from "@file/xml-components";
 
 /**
  * Represents a footnote reference element in WordprocessingML.
@@ -45,11 +31,7 @@ export class FootnoteReference extends XmlComponent {
   public constructor(id: number) {
     super("w:footnoteReference");
 
-    this.root.push(
-      new FootNoteReferenceRunAttributes({
-        id: id,
-      }),
-    );
+    this.root.push({ _attr: { "w:id": id } });
   }
 }
 

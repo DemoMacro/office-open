@@ -10,7 +10,6 @@
  */
 import {
   BuilderElement,
-  XmlAttributeComponent,
   XmlComponent,
   numberValObj,
   onOffObj,
@@ -19,55 +18,6 @@ import {
 
 import { Compatibility } from "./compatibility";
 import type { CompatibilityOptions } from "./compatibility";
-
-/**
- * Attributes for the settings element with XML namespace declarations.
- *
- * Defines the XML namespaces required for the settings.xml document part.
- * These namespaces enable compatibility features, markup compatibility,
- * and various Office-specific extensions.
- *
- * @internal
- */
-export class SettingsAttributes extends XmlAttributeComponent<{
-  readonly wpc?: string;
-  readonly mc?: string;
-  readonly o?: string;
-  readonly r?: string;
-  readonly m?: string;
-  readonly v?: string;
-  readonly wp14?: string;
-  readonly wp?: string;
-  readonly w10?: string;
-  readonly w?: string;
-  readonly w14?: string;
-  readonly w15?: string;
-  readonly wpg?: string;
-  readonly wpi?: string;
-  readonly wne?: string;
-  readonly wps?: string;
-  readonly Ignorable?: string;
-}> {
-  protected readonly xmlKeys = {
-    Ignorable: "mc:Ignorable",
-    m: "xmlns:m",
-    mc: "xmlns:mc",
-    o: "xmlns:o",
-    r: "xmlns:r",
-    v: "xmlns:v",
-    w: "xmlns:w",
-    w10: "xmlns:w10",
-    w14: "xmlns:w14",
-    w15: "xmlns:w15",
-    wne: "xmlns:wne",
-    wp: "xmlns:wp",
-    wp14: "xmlns:wp14",
-    wpc: "xmlns:wpc",
-    wpg: "xmlns:wpg",
-    wpi: "xmlns:wpi",
-    wps: "xmlns:wps",
-  };
-}
 
 // <xsd:complexType name="CT_Settings">
 // <xsd:sequence>
@@ -336,27 +286,27 @@ export interface HyphenationOptions {
 export class Settings extends XmlComponent {
   public constructor(options: SettingsOptions) {
     super("w:settings");
-    this.root.push(
-      new SettingsAttributes({
-        Ignorable: "w14 w15 wp14",
-        m: "http://schemas.openxmlformats.org/officeDocument/2006/math",
-        mc: "http://schemas.openxmlformats.org/markup-compatibility/2006",
-        o: "urn:schemas-microsoft-com:office:office",
-        r: "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
-        v: "urn:schemas-microsoft-com:vml",
-        w: "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
-        w10: "urn:schemas-microsoft-com:office:word",
-        w14: "http://schemas.microsoft.com/office/word/2010/wordml",
-        w15: "http://schemas.microsoft.com/office/word/2012/wordml",
-        wne: "http://schemas.microsoft.com/office/word/2006/wordml",
-        wp: "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing",
-        wp14: "http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing",
-        wpc: "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
-        wpg: "http://schemas.microsoft.com/office/word/2010/wordprocessingGroup",
-        wpi: "http://schemas.microsoft.com/office/word/2010/wordprocessingInk",
-        wps: "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
-      }),
-    );
+    this.root.push({
+      _attr: {
+        "mc:Ignorable": "w14 w15 wp14",
+        "xmlns:m": "http://schemas.openxmlformats.org/officeDocument/2006/math",
+        "xmlns:mc": "http://schemas.openxmlformats.org/markup-compatibility/2006",
+        "xmlns:o": "urn:schemas-microsoft-com:office:office",
+        "xmlns:r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+        "xmlns:v": "urn:schemas-microsoft-com:vml",
+        "xmlns:w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
+        "xmlns:w10": "urn:schemas-microsoft-com:office:word",
+        "xmlns:w14": "http://schemas.microsoft.com/office/word/2010/wordml",
+        "xmlns:w15": "http://schemas.microsoft.com/office/word/2012/wordml",
+        "xmlns:wne": "http://schemas.microsoft.com/office/word/2006/wordml",
+        "xmlns:wp": "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing",
+        "xmlns:wp14": "http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing",
+        "xmlns:wpc": "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
+        "xmlns:wpg": "http://schemas.microsoft.com/office/word/2010/wordprocessingGroup",
+        "xmlns:wpi": "http://schemas.microsoft.com/office/word/2010/wordprocessingInk",
+        "xmlns:wps": "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
+      },
+    });
 
     // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_trackRevisions_topic_ID0EKXKY.html
     if (options.trackRevisions !== undefined) {
@@ -487,31 +437,6 @@ export class Settings extends XmlComponent {
 }
 
 /**
- * Attributes for the documentProtection element.
- *
- * @internal
- */
-class DocumentProtectionAttributes extends XmlAttributeComponent<{
-  readonly edit?: string;
-  readonly enforcement?: string;
-  readonly formatting?: string;
-  readonly algorithmName?: string;
-  readonly hashValue?: string;
-  readonly saltValue?: string;
-  readonly spinCount?: number;
-}> {
-  protected readonly xmlKeys = {
-    edit: "w:edit",
-    enforcement: "w:enforcement",
-    formatting: "w:formatting",
-    algorithmName: "w:algorithmName",
-    hashValue: "w:hashValue",
-    saltValue: "w:saltValue",
-    spinCount: "w:spinCount",
-  };
-}
-
-/**
  * Represents document protection settings (CT_DocProtect).
  *
  * Restricts the types of editing allowed in the document.
@@ -522,105 +447,68 @@ class DocumentProtectionAttributes extends XmlAttributeComponent<{
 class DocumentProtection extends XmlComponent {
   public constructor(options: DocumentProtectionOptions) {
     super("w:documentProtection");
-    this.root.push(
-      new DocumentProtectionAttributes({
-        enforcement: "1",
-        edit: options.edit,
-        formatting: options.formatting !== undefined ? (options.formatting ? "1" : "0") : undefined,
-        algorithmName: options.algorithmName,
-        hashValue: options.hashValue,
-        saltValue: options.saltValue,
-        spinCount: options.spinCount,
-      }),
-    );
+    const attr: Record<string, string | number> = { "w:enforcement": "1" };
+    if (options.edit !== undefined) {
+      attr["w:edit"] = options.edit;
+    }
+    if (options.formatting !== undefined) {
+      attr["w:formatting"] = options.formatting ? "1" : "0";
+    }
+    if (options.algorithmName !== undefined) {
+      attr["w:algorithmName"] = options.algorithmName;
+    }
+    if (options.hashValue !== undefined) {
+      attr["w:hashValue"] = options.hashValue;
+    }
+    if (options.saltValue !== undefined) {
+      attr["w:saltValue"] = options.saltValue;
+    }
+    if (options.spinCount !== undefined) {
+      attr["w:spinCount"] = options.spinCount;
+    }
+    this.root.push({ _attr: attr });
   }
-}
-
-class ViewAttributes extends XmlAttributeComponent<{ readonly val: string }> {
-  protected readonly xmlKeys = { val: "w:val" };
 }
 
 class View extends XmlComponent {
   public constructor(val: string) {
     super("w:view");
-    this.root.push(new ViewAttributes({ val }));
+    this.root.push({ _attr: { "w:val": val } });
   }
-}
-
-class ZoomAttributes extends XmlAttributeComponent<{
-  readonly val?: string;
-  readonly percent?: number;
-}> {
-  protected readonly xmlKeys = { val: "w:val", percent: "w:percent" };
 }
 
 class Zoom extends XmlComponent {
   public constructor(options: { val?: string; percent: number }) {
     super("w:zoom");
-    this.root.push(new ZoomAttributes(options));
+    const attr: Record<string, string | number> = { "w:percent": options.percent };
+    if (options.val !== undefined) {
+      attr["w:val"] = options.val;
+    }
+    this.root.push({ _attr: attr });
   }
-}
-
-class WriteProtectionAttributes extends XmlAttributeComponent<{
-  readonly recommended?: string;
-  readonly hashValue?: string;
-  readonly saltValue?: string;
-  readonly spinCount?: number;
-  readonly algorithmName?: string;
-}> {
-  protected readonly xmlKeys = {
-    recommended: "w:recommended",
-    hashValue: "w:hashValue",
-    saltValue: "w:saltValue",
-    spinCount: "w:spinCount",
-    algorithmName: "w:algorithmName",
-  };
 }
 
 class WriteProtection extends XmlComponent {
   public constructor(options: WriteProtectionOptions) {
     super("w:writeProtection");
-    this.root.push(
-      new WriteProtectionAttributes({
-        recommended:
-          options.recommended !== undefined ? (options.recommended ? "1" : "0") : undefined,
-        hashValue: options.hashValue,
-        saltValue: options.saltValue,
-        spinCount: options.spinCount,
-        algorithmName: options.algorithmName,
-      }),
-    );
+    const attr: Record<string, string | number> = {};
+    if (options.recommended !== undefined) {
+      attr["w:recommended"] = options.recommended ? "1" : "0";
+    }
+    if (options.hashValue !== undefined) {
+      attr["w:hashValue"] = options.hashValue;
+    }
+    if (options.saltValue !== undefined) {
+      attr["w:saltValue"] = options.saltValue;
+    }
+    if (options.spinCount !== undefined) {
+      attr["w:spinCount"] = options.spinCount;
+    }
+    if (options.algorithmName !== undefined) {
+      attr["w:algorithmName"] = options.algorithmName;
+    }
+    this.root.push({ _attr: attr });
   }
-}
-
-class ColorSchemeMappingAttributes extends XmlAttributeComponent<{
-  readonly bg1?: string;
-  readonly t1?: string;
-  readonly bg2?: string;
-  readonly t2?: string;
-  readonly accent1?: string;
-  readonly accent2?: string;
-  readonly accent3?: string;
-  readonly accent4?: string;
-  readonly accent5?: string;
-  readonly accent6?: string;
-  readonly hyperlink?: string;
-  readonly followedHyperlink?: string;
-}> {
-  protected readonly xmlKeys = {
-    bg1: "w:bg1",
-    t1: "w:t1",
-    bg2: "w:bg2",
-    t2: "w:t2",
-    accent1: "w:accent1",
-    accent2: "w:accent2",
-    accent3: "w:accent3",
-    accent4: "w:accent4",
-    accent5: "w:accent5",
-    accent6: "w:accent6",
-    hyperlink: "w:hyperlink",
-    followedHyperlink: "w:followedHyperlink",
-  };
 }
 
 class ColorSchemeMapping extends XmlComponent {
@@ -639,6 +527,20 @@ class ColorSchemeMapping extends XmlComponent {
     readonly followedHyperlink?: string;
   }) {
     super("w:clrSchemeMapping");
-    this.root.push(new ColorSchemeMappingAttributes(options));
+    const attr: Record<string, string> = {};
+    if (options.bg1 !== undefined) attr["w:bg1"] = options.bg1;
+    if (options.t1 !== undefined) attr["w:t1"] = options.t1;
+    if (options.bg2 !== undefined) attr["w:bg2"] = options.bg2;
+    if (options.t2 !== undefined) attr["w:t2"] = options.t2;
+    if (options.accent1 !== undefined) attr["w:accent1"] = options.accent1;
+    if (options.accent2 !== undefined) attr["w:accent2"] = options.accent2;
+    if (options.accent3 !== undefined) attr["w:accent3"] = options.accent3;
+    if (options.accent4 !== undefined) attr["w:accent4"] = options.accent4;
+    if (options.accent5 !== undefined) attr["w:accent5"] = options.accent5;
+    if (options.accent6 !== undefined) attr["w:accent6"] = options.accent6;
+    if (options.hyperlink !== undefined) attr["w:hyperlink"] = options.hyperlink;
+    if (options.followedHyperlink !== undefined)
+      attr["w:followedHyperlink"] = options.followedHyperlink;
+    this.root.push({ _attr: attr });
   }
 }

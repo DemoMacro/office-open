@@ -8,7 +8,6 @@
  *
  * @module
  */
-import { TextAttributes } from "@file/paragraph/run/text-attributes";
 import { SpaceType } from "@file/shared";
 import { XmlComponent } from "@file/xml-components";
 
@@ -49,7 +48,7 @@ export class FieldInstruction extends XmlComponent {
 
     this.properties = properties;
 
-    this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
+    this.root.push({ _attr: { "xml:space": SpaceType.PRESERVE } });
     let instruction = "TOC";
 
     if (this.properties.captionLabel) {

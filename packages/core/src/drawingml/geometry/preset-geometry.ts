@@ -11,7 +11,6 @@
 import { XmlComponent } from "../../xml-components";
 import { createAdjustmentValues } from "./adjustment-values";
 import type { GeometryGuide } from "./adjustment-values";
-import { PresetGeometryAttributes } from "./preset-geometry-attributes";
 
 /**
  * Options for preset geometry.
@@ -64,11 +63,7 @@ export class PresetGeometry extends XmlComponent {
   public constructor(options?: PresetGeometryOptions) {
     super("a:prstGeom");
 
-    this.root.push(
-      new PresetGeometryAttributes({
-        prst: options?.preset ?? "rect",
-      }),
-    );
+    this.root.push({ _attr: { prst: options?.preset ?? "rect" } });
 
     this.root.push(createAdjustmentValues(options?.adjustmentValues));
   }

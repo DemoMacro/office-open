@@ -10,8 +10,6 @@
 // http://officeopenxml.com/drwSp-size.php
 import { XmlComponent } from "@file/xml-components";
 
-import { OffsetAttributes } from "./off-attributes";
-
 /**
  * Represents the offset (position) of a DrawingML shape.
  *
@@ -37,11 +35,6 @@ export class Offset extends XmlComponent {
   public constructor(x: number | undefined, y: number | undefined) {
     super("a:off");
 
-    this.root.push(
-      new OffsetAttributes({
-        x: x ?? 0,
-        y: y ?? 0,
-      }),
-    );
+    this.root.push({ _attr: { x: x ?? 0, y: y ?? 0 } });
   }
 }

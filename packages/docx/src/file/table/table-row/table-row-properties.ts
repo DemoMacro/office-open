@@ -53,7 +53,6 @@ import {
   buildDeletedTableRowObj,
   buildInsertedTableRowObj,
 } from "@file/track-revision";
-import { ChangeAttributes } from "@file/track-revision/track-revision";
 import type { ChangedAttributesProperties } from "@file/track-revision/track-revision";
 import {
   BuilderElement,
@@ -356,13 +355,9 @@ export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
 export class TableRowPropertiesChange extends XmlComponent {
   public constructor(options: ITableRowPropertiesChangeOptions) {
     super("w:trPrChange");
-    this.root.push(
-      new ChangeAttributes({
-        author: options.author,
-        date: options.date,
-        id: options.id,
-      }),
-    );
+    this.root.push({
+      _attr: { "w:author": options.author, "w:date": options.date, "w:id": options.id },
+    });
     // TrPr is required (minOccurs="1") even if empty
     this.root.push(new TableRowProperties({ ...options, includeIfEmpty: true }));
   }

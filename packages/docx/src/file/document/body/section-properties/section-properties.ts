@@ -43,7 +43,6 @@
  */
 import type { FooterWrapper } from "@file/footer-wrapper";
 import type { HeaderWrapper } from "@file/header-wrapper";
-import { ChangeAttributes } from "@file/track-revision/track-revision";
 import type { ChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { createVerticalAlign } from "@file/vertical-align";
 import type { SectionVerticalAlign } from "@file/vertical-align";
@@ -446,13 +445,9 @@ export class SectionProperties extends XmlComponent {
 export class SectionPropertiesChange extends XmlComponent {
   public constructor(options: ISectionPropertiesChangeOptions) {
     super("w:sectPrChange");
-    this.root.push(
-      new ChangeAttributes({
-        author: options.author,
-        date: options.date,
-        id: options.id,
-      }),
-    );
+    this.root.push({
+      _attr: { "w:author": options.author, "w:date": options.date, "w:id": options.id },
+    });
     this.root.push(new SectionProperties(options));
   }
 }

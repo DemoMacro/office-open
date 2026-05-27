@@ -10,7 +10,6 @@
  */
 import { XmlComponent } from "@file/xml-components";
 
-import { ContentTypeAttributes } from "./content-types-attributes";
 import { createDefault } from "./default/default";
 import { createOverride } from "./override/override";
 
@@ -33,11 +32,11 @@ export class ContentTypes extends XmlComponent {
   public constructor() {
     super("Types");
 
-    this.root.push(
-      new ContentTypeAttributes({
+    this.root.push({
+      _attr: {
         xmlns: "http://schemas.openxmlformats.org/package/2006/content-types",
-      }),
-    );
+      },
+    });
 
     this.root.push(createDefault("image/png", "png"));
     this.root.push(createDefault("image/jpeg", "jpeg"));

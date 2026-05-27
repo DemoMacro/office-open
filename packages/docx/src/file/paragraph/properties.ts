@@ -10,7 +10,6 @@
  *
  * @module
  */
-import { ChangeAttributes } from "@file/track-revision/track-revision";
 import type { ChangedAttributesProperties } from "@file/track-revision/track-revision";
 import {
   BuilderElement,
@@ -843,13 +842,9 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
 export class ParagraphPropertiesChange extends XmlComponent {
   public constructor(options: IParagraphPropertiesChangeOptions) {
     super("w:pPrChange");
-    this.root.push(
-      new ChangeAttributes({
-        author: options.author,
-        date: options.date,
-        id: options.id,
-      }),
-    );
+    this.root.push({
+      _attr: { "w:author": options.author, "w:date": options.date, "w:id": options.id },
+    });
     // PPr is required (minOccurs="1") even if empty
     this.root.push(new ParagraphProperties({ ...options, includeIfEmpty: true }));
   }

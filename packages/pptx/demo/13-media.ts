@@ -23,7 +23,7 @@ const pres = new Presentation({
           height: 50,
           paragraphs: [
             new Paragraph({
-              properties: { alignment: "CENTER", bulletNone: true },
+              properties: { alignment: "CENTER", bullet: { type: "none" } },
               children: [
                 new TextRun({
                   text: "Video Embedding Demo",
@@ -52,7 +52,7 @@ const pres = new Presentation({
           height: 40,
           paragraphs: [
             new Paragraph({
-              properties: { bulletNone: true },
+              properties: { bullet: { type: "none" } },
               children: [
                 new TextRun({
                   text: "Video: Big Buck Bunny (360p, 10s, ~1MB MP4)",

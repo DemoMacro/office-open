@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 
 /**
  * Specifies the text flow direction for pages in a section.
@@ -21,12 +21,6 @@ export const PageTextDirectionType = {
   /** Top-to-bottom, right-to-left (vertical East Asian text flow) */
   TOP_TO_BOTTOM_RIGHT_TO_LEFT: "tbRl",
 } as const;
-
-class PageTextDirectionAttributes extends XmlAttributeComponent<{
-  readonly val: (typeof PageTextDirectionType)[keyof typeof PageTextDirectionType];
-}> {
-  protected readonly xmlKeys = { val: "w:val" };
-}
 
 /**
  * Represents text direction (textDirection) for pages in a section.
@@ -49,10 +43,6 @@ export class PageTextDirection extends XmlComponent {
   public constructor(value: (typeof PageTextDirectionType)[keyof typeof PageTextDirectionType]) {
     super("w:textDirection");
 
-    this.root.push(
-      new PageTextDirectionAttributes({
-        val: value,
-      }),
-    );
+    this.root.push({ _attr: { "w:val": value } });
   }
 }

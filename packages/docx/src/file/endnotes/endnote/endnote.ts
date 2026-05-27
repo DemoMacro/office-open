@@ -1,7 +1,6 @@
 import type { FileChild } from "@file/file-child";
 import { XmlComponent } from "@file/xml-components";
 
-import { EndnoteAttributes } from "./endnote-attributes";
 import { EndnoteRefRun } from "./run/endnote-ref-run";
 
 export const EndnoteType = {
@@ -19,12 +18,11 @@ export interface EndnoteOptions {
 export class Endnote extends XmlComponent {
   public constructor(options: EndnoteOptions) {
     super("w:endnote");
-    this.root.push(
-      new EndnoteAttributes({
-        id: options.id,
-        type: options.type,
-      }),
-    );
+    const attr: Record<string, string | number> = { "w:id": options.id };
+    if (options.type !== undefined) {
+      attr["w:type"] = options.type;
+    }
+    this.root.push({ _attr: attr });
 
     for (let i = 0; i < options.children.length; i++) {
       const child = options.children[i];

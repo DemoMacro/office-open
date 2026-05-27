@@ -69,13 +69,12 @@ describe("External styles factory", () => {
                   {
                     root: [
                       {
-                        root: {
+                        _attr: {
                           "w:ascii": "Arial",
                           "w:cstheme": "minorHAnsi",
                           "w:eastAsiaTheme": "minorHAnsi",
                           "w:hAnsi": "Arial",
                         },
-                        rootKey: "_attr",
                       },
                     ],
                     rootKey: "w:rFonts",
@@ -83,12 +82,11 @@ describe("External styles factory", () => {
                   {
                     root: [
                       {
-                        root: {
+                        _attr: {
                           "w:bidi": "ar-SA",
                           "w:eastAsia": "en-US",
                           "w:val": "en-US",
                         },
-                        rootKey: "_attr",
                       },
                     ],
                     rootKey: "w:lang",
@@ -106,12 +104,11 @@ describe("External styles factory", () => {
                   {
                     root: [
                       {
-                        root: {
+                        _attr: {
                           "w:after": "160",
                           "w:line": "259",
                           "w:lineRule": "auto",
                         },
-                        rootKey: "_attr",
                       },
                     ],
                     rootKey: "w:spacing",
@@ -128,11 +125,10 @@ describe("External styles factory", () => {
       expect(JSON.parse(JSON.stringify(importedStyles[1]))).to.deep.equal({
         root: [
           {
-            root: {
+            _attr: {
               "w:defLockedState": "1",
               "w:defUIPriority": "99",
             },
-            rootKey: "_attr",
           },
         ],
         rootKey: "w:latentStyles",
@@ -169,20 +165,18 @@ describe("External styles factory", () => {
       expect(JSON.parse(JSON.stringify(importedStyles[2]))).to.deep.equal({
         root: [
           {
-            root: {
+            _attr: {
               "w:default": "1",
               "w:styleId": "Normal",
               "w:type": "paragraph",
             },
-            rootKey: "_attr",
           },
           {
             root: [
               {
-                root: {
+                _attr: {
                   "w:val": "Normal",
                 },
-                rootKey: "_attr",
               },
             ],
             rootKey: "w:name",
@@ -198,19 +192,17 @@ describe("External styles factory", () => {
       expect(JSON.parse(JSON.stringify(importedStyles[3]))).to.deep.equal({
         root: [
           {
-            root: {
+            _attr: {
               "w:styleId": "Heading1",
               "w:type": "paragraph",
             },
-            rootKey: "_attr",
           },
           {
             root: [
               {
-                root: {
+                _attr: {
                   "w:val": "heading 1",
                 },
-                rootKey: "_attr",
               },
             ],
             rootKey: "w:name",
@@ -218,10 +210,9 @@ describe("External styles factory", () => {
           {
             root: [
               {
-                root: {
+                _attr: {
                   "w:val": "Normal",
                 },
-                rootKey: "_attr",
               },
             ],
             rootKey: "w:basedOn",
@@ -241,13 +232,12 @@ describe("External styles factory", () => {
                   {
                     root: [
                       {
-                        root: {
+                        _attr: {
                           "w:color": "auto",
                           "w:space": "1",
                           "w:sz": "4",
                           "w:val": "single",
                         },
-                        rootKey: "_attr",
                       },
                     ],
                     rootKey: "w:bottom",

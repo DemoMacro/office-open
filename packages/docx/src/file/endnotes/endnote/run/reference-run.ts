@@ -1,23 +1,11 @@
 import { Run } from "@file/paragraph/run";
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
-
-export class EndnoteReferenceRunAttributes extends XmlAttributeComponent<{
-  readonly id: number;
-}> {
-  protected readonly xmlKeys = {
-    id: "w:id",
-  };
-}
+import { XmlComponent } from "@file/xml-components";
 
 export class EndnoteIdReference extends XmlComponent {
   public constructor(id: number) {
     super("w:endnoteReference");
 
-    this.root.push(
-      new EndnoteReferenceRunAttributes({
-        id: id,
-      }),
-    );
+    this.root.push({ _attr: { "w:id": id } });
   }
 }
 

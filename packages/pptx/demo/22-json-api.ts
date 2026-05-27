@@ -22,7 +22,7 @@ const pres = new Presentation({
             height: 80,
             paragraphs: [
               {
-                properties: { alignment: "CENTER", bulletNone: true },
+                properties: { alignment: "CENTER", bullet: { type: "none" } },
                 children: [
                   {
                     text: "JSON-Friendly API",
@@ -44,7 +44,7 @@ const pres = new Presentation({
             height: 40,
             paragraphs: [
               {
-                properties: { alignment: "CENTER", bulletNone: true },
+                properties: { alignment: "CENTER", bullet: { type: "none" } },
                 children: [
                   {
                     text: "Pure objects, no class instantiation needed",
@@ -262,7 +262,7 @@ const pres = new Presentation({
             height: 40,
             paragraphs: [
               {
-                properties: { alignment: "CENTER", bulletNone: true },
+                properties: { alignment: "CENTER", bullet: { type: "none" } },
                 children: [{ text: "Rich Text (Plain Objects)", fontSize: 28, bold: true }],
               },
             ],
@@ -277,7 +277,7 @@ const pres = new Presentation({
             height: 35,
             paragraphs: [
               {
-                properties: { bulletNone: true },
+                properties: { bullet: { type: "none" } },
                 children: [
                   { text: "Bold", bold: true, fontSize: 18 },
                   { text: " | " },
@@ -302,7 +302,7 @@ const pres = new Presentation({
             height: 35,
             paragraphs: [
               {
-                properties: { bulletNone: true },
+                properties: { bullet: { type: "none" } },
                 children: [
                   { text: "E = mc", fontSize: 20 },
                   { text: "2", fontSize: 14, baseline: 30000 },

@@ -8,12 +8,7 @@
  *
  * @module
  */
-import {
-  Attributes,
-  XmlAttributeComponent,
-  XmlComponent,
-  numberValObj,
-} from "@file/xml-components";
+import { XmlComponent, numberValObj } from "@file/xml-components";
 import { decimalNumber } from "@util/values";
 
 import { AlignmentType } from "../paragraph/formatting";
@@ -174,21 +169,6 @@ export const LevelFormat = {
 } as const;
 
 /**
- * Attributes for numbering levels.
- */
-class LevelAttributes extends XmlAttributeComponent<{
-  /** The level index (0-8). */
-  readonly ilvl?: number;
-  /** Whether this level is tentative. */
-  readonly tentative?: number;
-}> {
-  protected readonly xmlKeys = {
-    ilvl: "w:ilvl",
-    tentative: "w15:tentative",
-  };
-}
-
-/**
  * Number format specification for a level.
  *
  * Specifies the numbering format to use (decimal, roman, letter, etc.).
@@ -196,11 +176,7 @@ class LevelAttributes extends XmlAttributeComponent<{
 class NumberFormat extends XmlComponent {
   public constructor(value: string) {
     super("w:numFmt");
-    this.root.push(
-      new Attributes({
-        val: value,
-      }),
-    );
+    this.root.push({ _attr: { "w:val": value } });
   }
 }
 
@@ -213,11 +189,7 @@ class NumberFormat extends XmlComponent {
 class LevelText extends XmlComponent {
   public constructor(value: string) {
     super("w:lvlText");
-    this.root.push(
-      new Attributes({
-        val: value,
-      }),
-    );
+    this.root.push({ _attr: { "w:val": value } });
   }
 }
 
@@ -227,11 +199,7 @@ class LevelText extends XmlComponent {
 class LevelJc extends XmlComponent {
   public constructor(value: (typeof AlignmentType)[keyof typeof AlignmentType]) {
     super("w:lvlJc");
-    this.root.push(
-      new Attributes({
-        val: value,
-      }),
-    );
+    this.root.push({ _attr: { "w:val": value } });
   }
 }
 
@@ -307,11 +275,7 @@ export interface LevelsOptions {
 class Suffix extends XmlComponent {
   public constructor(value: (typeof LevelSuffix)[keyof typeof LevelSuffix]) {
     super("w:suff");
-    this.root.push(
-      new Attributes({
-        val: value,
-      }),
-    );
+    this.root.push({ _attr: { "w:val": value } });
   }
 }
 
@@ -408,12 +372,12 @@ export class LevelBase extends XmlComponent {
     this.root.push(this.paragraphProperties);
     this.root.push(this.runProperties);
 
-    this.root.push(
-      new LevelAttributes({
-        ilvl: decimalNumber(Math.min(level, 9)),
-        tentative: 1,
-      }),
-    );
+    this.root.push({
+      _attr: {
+        "w:ilvl": decimalNumber(Math.min(level, 9)),
+        "w15:tentative": 1,
+      },
+    });
   }
 }
 

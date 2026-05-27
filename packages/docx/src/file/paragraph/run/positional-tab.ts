@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 
 /**
  * Positional tab alignment types.
@@ -110,18 +110,6 @@ export interface PositionalTabOptions {
   readonly leader: (typeof PositionalTabLeader)[keyof typeof PositionalTabLeader];
 }
 
-class PositionalTabAttributes extends XmlAttributeComponent<{
-  readonly alignment: string;
-  readonly relativeTo: string;
-  readonly leader: string;
-}> {
-  protected readonly xmlKeys = {
-    alignment: "w:alignment",
-    leader: "w:leader",
-    relativeTo: "w:relativeTo",
-  };
-}
-
 /**
  * Represents a positional tab element for a WordprocessingML document.
  *
@@ -156,12 +144,12 @@ export class PositionalTab extends XmlComponent {
   public constructor(options: PositionalTabOptions) {
     super("w:ptab");
 
-    this.root.push(
-      new PositionalTabAttributes({
-        alignment: options.alignment,
-        leader: options.leader,
-        relativeTo: options.relativeTo,
-      }),
-    );
+    this.root.push({
+      _attr: {
+        "w:alignment": options.alignment,
+        "w:leader": options.leader,
+        "w:relativeTo": options.relativeTo,
+      },
+    });
   }
 }

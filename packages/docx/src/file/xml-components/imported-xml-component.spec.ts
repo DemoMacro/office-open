@@ -26,20 +26,14 @@ const xmlString = `
 
 const convertedXmlElement = {
   root: [
-    { root: { "w:one": "value 1", "w:two": "value 2" }, rootKey: "_attr" },
+    { _attr: { "w:one": "value 1", "w:two": "value 2" } },
     { root: [{ rootKey: "w:noProof", root: ["some value"] }], rootKey: "w:rPr" },
     {
-      root: [
-        { rootKey: "_attr", root: { active: "true" } },
-        { rootKey: "w:t", root: ["Text 1"] },
-      ],
+      root: [{ _attr: { active: "true" } }, { rootKey: "w:t", root: ["Text 1"] }],
       rootKey: "w:r",
     },
     {
-      root: [
-        { rootKey: "_attr", root: { active: "true" } },
-        { rootKey: "w:t", root: ["Text 2"] },
-      ],
+      root: [{ _attr: { active: "true" } }, { rootKey: "w:t", root: ["Text 2"] }],
       rootKey: "w:r",
     },
   ],

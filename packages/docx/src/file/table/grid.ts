@@ -28,7 +28,7 @@
  *
  * @module
  */
-import { BuilderElement, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent } from "@file/xml-components";
 import { twipsMeasureValue } from "@util/values";
 import type { PositiveUniversalMeasure } from "@util/values";
 
@@ -75,18 +75,10 @@ export class TableGrid extends XmlComponent {
   }
 }
 
-class TableGridChangeAttributes extends XmlAttributeComponent<{ readonly id: number }> {
-  protected readonly xmlKeys = { id: "w:id" };
-}
-
 export class TableGridChange extends XmlComponent {
   public constructor(options: TableGridChangeOptions) {
     super("w:tblGridChange");
-    this.root.push(
-      new TableGridChangeAttributes({
-        id: options.id,
-      }),
-    );
+    this.root.push({ _attr: { "w:id": options.id } });
     this.root.push(new TableGrid(options.columnWidths));
   }
 }

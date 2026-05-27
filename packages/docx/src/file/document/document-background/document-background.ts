@@ -13,56 +13,12 @@
  * @module
  */
 import { BuilderElement } from "@file/xml-components";
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
 import { hashedId } from "@util/convenience-functions";
 import { hexColorValue, uCharHexNumber } from "@util/values";
 import type { DataType } from "undio";
 import { toUint8Array } from "undio";
-
-/**
- * Attributes for the document background element.
- *
- * ## XSD Schema (ST_ThemeColor)
- * ```xml
- * <xsd:simpleType name="ST_ThemeColor">
- *   <xsd:restriction base="xsd:string">
- *     <xsd:enumeration value="dark1"/>
- *     <xsd:enumeration value="light1"/>
- *     <xsd:enumeration value="dark2"/>
- *     <xsd:enumeration value="light2"/>
- *     <xsd:enumeration value="accent1"/>
- *     <xsd:enumeration value="accent2"/>
- *     <xsd:enumeration value="accent3"/>
- *     <xsd:enumeration value="accent4"/>
- *     <xsd:enumeration value="accent5"/>
- *     <xsd:enumeration value="accent6"/>
- *     <xsd:enumeration value="hyperlink"/>
- *     <xsd:enumeration value="followedHyperlink"/>
- *     <xsd:enumeration value="none"/>
- *     <xsd:enumeration value="background1"/>
- *     <xsd:enumeration value="text1"/>
- *     <xsd:enumeration value="background2"/>
- *     <xsd:enumeration value="text2"/>
- *   </xsd:restriction>
- * </xsd:simpleType>
- * ```
- *
- * @internal
- */
-export class DocumentBackgroundAttributes extends XmlAttributeComponent<{
-  readonly color?: string;
-  readonly themeColor?: string;
-  readonly themeShade?: string;
-  readonly themeTint?: string;
-}> {
-  protected readonly xmlKeys = {
-    color: "w:color",
-    themeColor: "w:themeColor",
-    themeShade: "w:themeShade",
-    themeTint: "w:themeTint",
-  };
-}
 
 /**
  * Image options for document background.
@@ -145,15 +101,20 @@ export class DocumentBackground extends XmlComponent {
   public constructor(options: DocumentBackgroundOptions) {
     super("w:background");
 
-    this.root.push(
-      new DocumentBackgroundAttributes({
-        color: options.color === undefined ? undefined : hexColorValue(options.color),
-        themeColor: options.themeColor,
-        themeShade:
-          options.themeShade === undefined ? undefined : uCharHexNumber(options.themeShade),
-        themeTint: options.themeTint === undefined ? undefined : uCharHexNumber(options.themeTint),
-      }),
-    );
+    const attr: Record<string, string> = {};
+    if (options.color !== undefined) {
+      attr["w:color"] = hexColorValue(options.color);
+    }
+    if (options.themeColor !== undefined) {
+      attr["w:themeColor"] = options.themeColor;
+    }
+    if (options.themeShade !== undefined) {
+      attr["w:themeShade"] = uCharHexNumber(options.themeShade);
+    }
+    if (options.themeTint !== undefined) {
+      attr["w:themeTint"] = uCharHexNumber(options.themeTint);
+    }
+    this.root.push({ _attr: attr });
 
     if (options.image) {
       const rawData = toUint8Array(options.image.data) as Uint8Array;

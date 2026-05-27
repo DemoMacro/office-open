@@ -10,19 +10,12 @@
  * @module
  */
 import type { FileChild } from "@file/file-child";
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 
 const SUBDOC_RELATIONSHIP_TYPE =
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/subDocument";
-
-/**
- * @internal
- */
-class SubDocAttributes extends XmlAttributeComponent<{ readonly id: string }> {
-  protected readonly xmlKeys = { id: "r:id" };
-}
 
 /**
  * Options for creating a SubDoc element.
@@ -60,7 +53,7 @@ export class SubDoc extends XmlComponent implements FileChild {
     const relId = uniqueId();
     const partPath = `subdocs/subdoc${relId}.docx`;
 
-    this.root.splice(0, 0, new SubDocAttributes({ id: `rId${relId}` }));
+    this.root.splice(0, 0, { _attr: { "r:id": `rId${relId}` } });
 
     const data =
       typeof this.options.data === "string"

@@ -12,7 +12,7 @@ import type { EmbeddedFontOptions } from "@file/fonts/font-table";
 import type { CommentsOptions } from "@file/paragraph/run/comment-run";
 import type { HyphenationOptions } from "@file/settings";
 import type { CompatibilityOptions } from "@file/settings/compatibility";
-import { XmlAttributeComponent, XmlComponent, stringContainerObj } from "@file/xml-components";
+import { XmlComponent, stringContainerObj } from "@file/xml-components";
 import { dateTimeValue } from "@util/values";
 
 import type { CustomPropertyOptions } from "../custom-properties";
@@ -193,25 +193,13 @@ export class CoreProperties extends XmlComponent {
 }
 
 /**
- * Attributes for timestamp elements in core properties.
- * Specifies the W3C DateTime Format type for timestamps.
- */
-class TimestampElementProperties extends XmlAttributeComponent<{ readonly type: string }> {
-  protected readonly xmlKeys = { type: "xsi:type" };
-}
-
-/**
  * Represents a timestamp element (created or modified date).
  * Uses W3C DateTime Format (dcterms:W3CDTF) for dates.
  */
 class TimestampElement extends XmlComponent {
   public constructor(name: string) {
     super(name);
-    this.root.push(
-      new TimestampElementProperties({
-        type: "dcterms:W3CDTF",
-      }),
-    );
+    this.root.push({ _attr: { "xsi:type": "dcterms:W3CDTF" } });
     this.root.push(dateTimeValue(new Date()));
   }
 }

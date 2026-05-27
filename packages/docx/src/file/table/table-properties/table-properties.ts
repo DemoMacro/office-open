@@ -43,7 +43,6 @@
  *
  * @module
  */
-import { ChangeAttributes } from "@file/track-revision/track-revision";
 import type { ChangedAttributesProperties } from "@file/track-revision/track-revision";
 import {
   BuilderElement,
@@ -331,13 +330,9 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
 class TablePropertiesChange extends XmlComponent {
   public constructor(options: ITablePropertiesChangeOptions) {
     super("w:tblPrChange");
-    this.root.push(
-      new ChangeAttributes({
-        author: options.author,
-        date: options.date,
-        id: options.id,
-      }),
-    );
+    this.root.push({
+      _attr: { "w:author": options.author, "w:date": options.date, "w:id": options.id },
+    });
     // TblPr is required even if empty (minOccurs="0" is missing)
     this.root.push(new TableProperties({ ...options, includeIfEmpty: true }));
   }

@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { Attributes, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 
 /**
  * Represents the multi-level type of a numbering definition.
@@ -49,10 +49,6 @@ export class MultiLevelType extends XmlComponent {
    */
   public constructor(value: string) {
     super("w:multiLevelType");
-    this.root.push(
-      new Attributes({
-        val: value,
-      }),
-    );
+    this.root.push({ _attr: { "w:val": value } });
   }
 }

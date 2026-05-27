@@ -13,7 +13,6 @@ import { RunProperties } from "../../paragraph/run/properties";
 import { PageNumber } from "../../paragraph/run/run";
 import type { RunOptions } from "../../paragraph/run/run";
 import { buildText } from "../../paragraph/run/run-components/text";
-import { ChangeAttributes } from "../track-revision";
 import type { ChangedAttributesProperties } from "../track-revision";
 
 type IMovedRunOptions = RunOptions & ChangedAttributesProperties;
@@ -39,13 +38,9 @@ type IMovedRunOptions = RunOptions & ChangedAttributesProperties;
 export class MovedFromTextRun extends XmlComponent {
   public constructor(options: IMovedRunOptions) {
     super("w:moveFrom");
-    this.root.push(
-      new ChangeAttributes({
-        author: options.author,
-        date: options.date,
-        id: options.id,
-      }),
-    );
+    this.root.push({
+      _attr: { "w:author": options.author, "w:date": options.date, "w:id": options.id },
+    });
     this.addChildElement(new MovedFromRunWrapper(options));
   }
 }
@@ -71,13 +66,9 @@ export class MovedFromTextRun extends XmlComponent {
 export class MovedToTextRun extends XmlComponent {
   public constructor(options: IMovedRunOptions) {
     super("w:moveTo");
-    this.root.push(
-      new ChangeAttributes({
-        author: options.author,
-        date: options.date,
-        id: options.id,
-      }),
-    );
+    this.root.push({
+      _attr: { "w:author": options.author, "w:date": options.date, "w:id": options.id },
+    });
     this.addChildElement(new MovedToRunWrapper(options));
   }
 }

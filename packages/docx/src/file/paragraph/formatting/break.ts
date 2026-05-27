@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { Attributes, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 
 import { Run } from "../run";
 
@@ -30,11 +30,7 @@ const BreakType = {
 class Break extends XmlComponent {
   public constructor(type: (typeof BreakType)[keyof typeof BreakType]) {
     super("w:br");
-    this.root.push(
-      new Attributes({
-        type,
-      }),
-    );
+    this.root.push({ _attr: { "w:type": type } });
   }
 }
 

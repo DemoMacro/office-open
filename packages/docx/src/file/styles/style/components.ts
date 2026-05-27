@@ -7,19 +7,8 @@
  *
  * @module
  */
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 import { decimalNumber } from "@util/values";
-
-/**
- * Represents component attributes with a value.
- *
- * @internal
- */
-class ComponentAttributes extends XmlAttributeComponent<{
-  readonly val: string | number;
-}> {
-  protected readonly xmlKeys = { val: "w:val" };
-}
 
 /**
  * Represents the name element of a style.
@@ -37,7 +26,7 @@ class ComponentAttributes extends XmlAttributeComponent<{
 export class Name extends XmlComponent {
   public constructor(value: string) {
     super("w:name");
-    this.root.push(new ComponentAttributes({ val: value }));
+    this.root.push({ _attr: { "w:val": value } });
   }
 }
 
@@ -58,7 +47,7 @@ export class Name extends XmlComponent {
 export class UiPriority extends XmlComponent {
   public constructor(value: number) {
     super("w:uiPriority");
-    this.root.push(new ComponentAttributes({ val: decimalNumber(value) }));
+    this.root.push({ _attr: { "w:val": decimalNumber(value) } });
   }
 }
 

@@ -10,7 +10,7 @@
  * @module
  */
 import { Relationships } from "@file/relationships";
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 
 /**
  * Options for a single bibliography source entry.
@@ -63,21 +63,6 @@ export interface SourceTypeOptions {
 export interface BibliographyOptions {
   readonly sources: readonly SourceTypeOptions[];
   readonly styleName?: string;
-}
-
-/** @internal */
-class SourcesAttributes extends XmlAttributeComponent<{
-  readonly "xmlns:b"?: string;
-  readonly SelectedStyle?: string;
-  readonly StyleName?: string;
-  readonly URI?: string;
-}> {
-  protected readonly xmlKeys = {
-    SelectedStyle: "SelectedStyle",
-    StyleName: "StyleName",
-    URI: "URI",
-    "xmlns:b": "xmlns:b",
-  };
 }
 
 /**
@@ -178,12 +163,12 @@ export class Bibliography extends XmlComponent {
   public constructor(options: BibliographyOptions) {
     super("b:Sources");
 
-    this.root.push(
-      new SourcesAttributes({
+    this.root.push({
+      _attr: {
         "xmlns:b": "http://schemas.openxmlformats.org/officeDocument/2006/bibliography",
-        StyleName: options.styleName,
-      }),
-    );
+        ...(options.styleName !== undefined ? { StyleName: options.styleName } : {}),
+      },
+    });
 
     for (const source of options.sources) {
       this.root.push(new Source(source));

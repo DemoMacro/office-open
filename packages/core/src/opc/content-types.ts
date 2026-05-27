@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { BuilderElement, XmlAttributeComponent } from "../xml-components";
+import { BuilderElement } from "../xml-components";
 import type { XmlComponent } from "../xml-components";
 
 export interface DefaultAttributes {
@@ -44,13 +44,3 @@ export const createOverride = (contentType: string, partName?: string): XmlCompo
     },
     name: "Override",
   });
-
-/**
- * Attributes for the Types (Content Types) root element.
- * Declares the XML namespace for the content types part.
- */
-export class ContentTypeAttributes extends XmlAttributeComponent<{
-  readonly xmlns?: string;
-}> {
-  protected readonly xmlKeys = { xmlns: "xmlns" };
-}

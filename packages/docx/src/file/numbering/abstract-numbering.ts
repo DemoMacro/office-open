@@ -8,30 +8,12 @@
  *
  * @module
  */
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 import { decimalNumber } from "@util/values";
 
 import { Level } from "./level";
 import type { LevelsOptions } from "./level";
 import { MultiLevelType } from "./multi-level-type";
-
-/**
- * Attributes for abstract numbering definitions.
- *
- * @property abstractNumId - Unique identifier for the abstract numbering definition
- * @property restartNumberingAfterBreak - Whether to restart numbering after section breaks
- */
-class AbstractNumberingAttributes extends XmlAttributeComponent<{
-  /** Unique identifier for the abstract numbering definition. */
-  readonly abstractNumId: number;
-  /** Whether to restart numbering after section breaks (0 or 1). */
-  readonly restartNumberingAfterBreak: number;
-}> {
-  protected readonly xmlKeys = {
-    abstractNumId: "w:abstractNumId",
-    restartNumberingAfterBreak: "w15:restartNumberingAfterBreak",
-  };
-}
 
 /**
  * Represents an abstract numbering definition in a WordprocessingML document.
@@ -89,12 +71,12 @@ export class AbstractNumbering extends XmlComponent {
    */
   public constructor(id: number, levelOptions: readonly LevelsOptions[]) {
     super("w:abstractNum");
-    this.root.push(
-      new AbstractNumberingAttributes({
-        abstractNumId: decimalNumber(id),
-        restartNumberingAfterBreak: 0,
-      }),
-    );
+    this.root.push({
+      _attr: {
+        "w:abstractNumId": decimalNumber(id),
+        "w15:restartNumberingAfterBreak": 0,
+      },
+    });
     this.root.push(new MultiLevelType("hybridMultilevel"));
     this.id = id;
 

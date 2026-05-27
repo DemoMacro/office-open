@@ -11,7 +11,6 @@
 import type { FileChild } from "@file/file-child";
 import { XmlComponent } from "@file/xml-components";
 
-import { FootnoteAttributes } from "./footnote-attributes";
 import { FootnoteRefRun } from "./run/footnote-ref-run";
 
 /**
@@ -83,12 +82,11 @@ export interface FootnoteOptions {
 export class Footnote extends XmlComponent {
   public constructor(options: FootnoteOptions) {
     super("w:footnote");
-    this.root.push(
-      new FootnoteAttributes({
-        id: options.id,
-        type: options.type,
-      }),
-    );
+    const attr: Record<string, string | number> = { "w:id": options.id };
+    if (options.type !== undefined) {
+      attr["w:type"] = options.type;
+    }
+    this.root.push({ _attr: attr });
 
     for (let i = 0; i < options.children.length; i++) {
       const child = options.children[i];

@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { XmlComponent } from "@file/xml-components";
 
 import type { ParagraphChild } from "../paragraph";
 
@@ -20,13 +20,6 @@ export interface DirOptions {
   readonly children: readonly ParagraphChild[];
   /** Text direction: "ltr" or "rtl" */
   readonly val: "ltr" | "rtl";
-}
-
-/**
- * @internal
- */
-class DirAttributes extends XmlAttributeComponent<{ readonly val: string }> {
-  protected readonly xmlKeys = { val: "w:val" };
 }
 
 /**
@@ -45,7 +38,7 @@ class DirAttributes extends XmlAttributeComponent<{ readonly val: string }> {
 export class Dir extends XmlComponent {
   public constructor(options: DirOptions) {
     super("w:dir");
-    this.root.push(new DirAttributes({ val: options.val }));
+    this.root.push({ _attr: { "w:val": options.val } });
     for (const child of options.children) {
       this.root.push(child);
     }
@@ -68,7 +61,7 @@ export class Dir extends XmlComponent {
 export class Bdo extends XmlComponent {
   public constructor(options: DirOptions) {
     super("w:bdo");
-    this.root.push(new DirAttributes({ val: options.val }));
+    this.root.push({ _attr: { "w:val": options.val } });
     for (const child of options.children) {
       this.root.push(child);
     }

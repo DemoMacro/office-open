@@ -11,7 +11,6 @@
 import { SpaceType } from "@file/shared";
 import { XmlComponent } from "@file/xml-components";
 
-import { TextAttributes } from "../run/text-attributes";
 import type { PageReferenceOptions } from "./pageref";
 
 /**
@@ -38,7 +37,7 @@ import type { PageReferenceOptions } from "./pageref";
 export class PageReferenceFieldInstruction extends XmlComponent {
   public constructor(bookmarkId: string, options: PageReferenceOptions = {}) {
     super("w:instrText");
-    this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
+    this.root.push({ _attr: { "xml:space": SpaceType.PRESERVE } });
 
     let instruction = `PAGEREF ${bookmarkId}`;
 

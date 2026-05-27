@@ -7,14 +7,7 @@
  *
  * @module
  */
-import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
-
-/**
- * @internal
- */
-class MathDegreeHideAttributes extends XmlAttributeComponent<{ readonly hide: number }> {
-  protected readonly xmlKeys = { hide: "m:val" };
-}
+import { XmlComponent } from "@file/xml-components";
 
 /**
  * Represents a property to hide the degree in a radical.
@@ -37,6 +30,6 @@ export class MathDegreeHide extends XmlComponent {
   public constructor() {
     super("m:degHide");
 
-    this.root.push(new MathDegreeHideAttributes({ hide: 1 }));
+    this.root.push({ _attr: { "m:val": 1 } });
   }
 }

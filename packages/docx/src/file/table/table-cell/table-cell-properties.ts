@@ -17,7 +17,6 @@ import {
   buildInsertedTableCellObj,
 } from "@file/track-revision";
 import type { ICellMergeAttributes } from "@file/track-revision";
-import { ChangeAttributes } from "@file/track-revision/track-revision";
 import type { ChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { createVerticalAlign } from "@file/vertical-align";
 import type { TableVerticalAlign } from "@file/vertical-align";
@@ -406,13 +405,9 @@ export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
 export class TableCellPropertiesChange extends XmlComponent {
   public constructor(options: ITableCellPropertiesChangeOptions) {
     super("w:tcPrChange");
-    this.root.push(
-      new ChangeAttributes({
-        author: options.author,
-        date: options.date,
-        id: options.id,
-      }),
-    );
+    this.root.push({
+      _attr: { "w:author": options.author, "w:date": options.date, "w:id": options.id },
+    });
     // TcPr is required (minOccurs="1") even if empty
     this.root.push(new TableCellProperties({ ...options, includeIfEmpty: true }));
   }

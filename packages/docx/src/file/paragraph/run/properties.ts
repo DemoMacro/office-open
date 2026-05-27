@@ -13,7 +13,6 @@ import { buildBorderObj } from "@file/border";
 import type { BorderOptions } from "@file/border";
 import { buildShadingObj } from "@file/shading";
 import type { ShadingAttributesProperties } from "@file/shading";
-import { ChangeAttributes } from "@file/track-revision/track-revision";
 import type { ChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { DeletionTrackChange } from "@file/track-revision/track-revision-components/deletion-track-change";
 import { InsertionTrackChange } from "@file/track-revision/track-revision-components/insertion-track-change";
@@ -308,13 +307,9 @@ export class ParagraphRunProperties extends RunProperties {
 export class RunPropertiesChange extends XmlComponent {
   public constructor(options: IRunPropertiesChangeOptions) {
     super("w:rPrChange");
-    this.root.push(
-      new ChangeAttributes({
-        author: options.author,
-        date: options.date,
-        id: options.id,
-      }),
-    );
+    this.root.push({
+      _attr: { "w:author": options.author, "w:date": options.date, "w:id": options.id },
+    });
     this.addChildElement(new RunProperties(options as RunPropertiesOptions));
   }
 }

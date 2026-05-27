@@ -5,7 +5,6 @@
  *
  * @module
  */
-import { TextAttributes } from "@file/paragraph/run/text-attributes";
 import { SpaceType } from "@file/shared";
 import { XmlComponent } from "@file/xml-components";
 
@@ -40,7 +39,7 @@ import { XmlComponent } from "@file/xml-components";
 export class DeletedText extends XmlComponent {
   public constructor(text: string) {
     super("w:delText");
-    this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
+    this.root.push({ _attr: { "xml:space": SpaceType.PRESERVE } });
 
     this.root.push(text);
   }

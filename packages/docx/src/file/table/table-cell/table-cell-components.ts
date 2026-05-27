@@ -13,7 +13,6 @@ import type { BorderOptions } from "@file/border";
 import type { IXmlableObject } from "@file/xml-components";
 import {
   IgnoreIfEmptyXmlComponent,
-  XmlAttributeComponent,
   XmlComponent,
   numberValObj,
   stringEnumValObj,
@@ -128,13 +127,6 @@ export function buildGridSpan(value: number): IXmlableObject {
 }
 
 /**
- * Attributes for the GridSpan element.
- */
-class GridSpanAttributes extends XmlAttributeComponent<{ readonly val: number }> {
-  protected readonly xmlKeys = { val: "w:val" };
-}
-
-/**
  * Represents a grid span (gridSpan) element in a WordprocessingML document.
  *
  * The gridSpan element specifies the number of logical columns this cell spans
@@ -159,11 +151,7 @@ export class GridSpan extends XmlComponent {
   public constructor(value: number) {
     super("w:gridSpan");
 
-    this.root.push(
-      new GridSpanAttributes({
-        val: decimalNumber(value),
-      }),
-    );
+    this.root.push({ _attr: { "w:val": decimalNumber(value) } });
   }
 }
 
@@ -195,15 +183,6 @@ export function buildVerticalMerge(
 }
 
 /**
- * Attributes for the VerticalMerge element.
- */
-class VerticalMergeAttributes extends XmlAttributeComponent<{
-  readonly val: (typeof VerticalMergeType)[keyof typeof VerticalMergeType];
-}> {
-  protected readonly xmlKeys = { val: "w:val" };
-}
-
-/**
  * Represents a vertical merge (vMerge) element in a WordprocessingML document.
  *
  * The vMerge element specifies that this cell is part of a vertically merged region.
@@ -232,11 +211,7 @@ export class VerticalMerge extends XmlComponent {
   public constructor(value: (typeof VerticalMergeType)[keyof typeof VerticalMergeType]) {
     super("w:vMerge");
 
-    this.root.push(
-      new VerticalMergeAttributes({
-        val: value,
-      }),
-    );
+    this.root.push({ _attr: { "w:val": value } });
   }
 }
 
@@ -264,15 +239,6 @@ export function buildTextDirection(
 }
 
 /**
- * Attributes for the TDirection element.
- */
-class TDirectionAttributes extends XmlAttributeComponent<{
-  readonly val: (typeof TextDirection)[keyof typeof TextDirection];
-}> {
-  protected readonly xmlKeys = { val: "w:val" };
-}
-
-/**
  * Represents a text direction (textDirection) element in a WordprocessingML document.
  *
  * The textDirection element specifies the flow of text within a table cell. This is
@@ -297,10 +263,6 @@ export class TDirection extends XmlComponent {
   public constructor(value: (typeof TextDirection)[keyof typeof TextDirection]) {
     super("w:textDirection");
 
-    this.root.push(
-      new TDirectionAttributes({
-        val: value,
-      }),
-    );
+    this.root.push({ _attr: { "w:val": value } });
   }
 }

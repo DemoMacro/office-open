@@ -1,5 +1,5 @@
 import type { FileChild } from "@file/file-child";
-import { EmptyElement, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { EmptyElement, XmlComponent } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 /**
@@ -13,13 +13,6 @@ import { uniqueId } from "@util/convenience-functions";
  *
  * @module
  */
-
-/**
- * @internal
- */
-class AltChunkAttributes extends XmlAttributeComponent<{ readonly id: string }> {
-  protected readonly xmlKeys = { id: "r:id" };
-}
 
 /**
  * Options for creating an AltChunk element.
@@ -75,7 +68,7 @@ export class AltChunk extends XmlComponent implements FileChild {
     const relId = uniqueId();
     const extension = this.options.extension;
 
-    this.root.splice(0, 0, new AltChunkAttributes({ id: `rId${relId}` }));
+    this.root.splice(0, 0, { _attr: { "r:id": `rId${relId}` } });
 
     const partPath = `afchunks/afchunk${relId}.${extension}`;
     const rawData =
