@@ -61,6 +61,8 @@ describe("createPacker", () => {
     });
   });
 
+  // ── Async methods ──
+
   describe("#toString()", () => {
     it("should return a non-empty string", async () => {
       const result = await Packer.toString(mockFile);
@@ -80,6 +82,14 @@ describe("createPacker", () => {
         throw new Error("compile failed");
       });
       await expect(Packer.toBuffer(mockFile)).rejects.toBeDefined();
+    });
+  });
+
+  describe("#toBytes()", () => {
+    it("should return a Uint8Array", async () => {
+      const result = await Packer.toBytes(mockFile);
+      expect(result).toBeInstanceOf(Uint8Array);
+      expect(result.byteLength).toBeGreaterThan(0);
     });
   });
 
@@ -123,6 +133,92 @@ describe("createPacker", () => {
       expect(Array.isArray(result)).toBe(true);
     });
   });
+
+  // ── Sync methods ──
+
+  describe("#toBufferSync()", () => {
+    it("should return a Buffer synchronously", () => {
+      const result = Packer.toBufferSync(mockFile);
+      expect(result).toBeInstanceOf(Buffer);
+      expect(result.byteLength).toBeGreaterThan(0);
+    });
+
+    it("should throw when compile throws", () => {
+      compileMock.mockImplementation(() => {
+        throw new Error("compile failed");
+      });
+      expect(() => Packer.toBufferSync(mockFile)).toThrow("compile failed");
+    });
+  });
+
+  describe("#toBytesSync()", () => {
+    it("should return a Uint8Array synchronously", () => {
+      const result = Packer.toBytesSync(mockFile);
+      expect(result).toBeInstanceOf(Uint8Array);
+      expect(result.byteLength).toBeGreaterThan(0);
+    });
+  });
+
+  describe("#toStringSync()", () => {
+    it("should return a string synchronously", () => {
+      const result = Packer.toStringSync(mockFile);
+      expect(typeof result).toBe("string");
+      expect(result.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("#toBase64StringSync()", () => {
+    it("should return a base64 string synchronously", () => {
+      const result = Packer.toBase64StringSync(mockFile);
+      expect(result.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("#toBlobSync()", () => {
+    it("should return a Blob synchronously", () => {
+      const result = Packer.toBlobSync(mockFile);
+      expect(result).toBeInstanceOf(Blob);
+      expect(result.type).toBe(mimeType);
+    });
+  });
+
+  describe("#toArrayBufferSync()", () => {
+    it("should return an ArrayBuffer synchronously", () => {
+      const result = Packer.toArrayBufferSync(mockFile);
+      expect(result).toBeInstanceOf(ArrayBuffer);
+      expect(result.byteLength).toBeGreaterThan(0);
+    });
+  });
+
+  describe("#packSync()", () => {
+    it("should export to uint8array synchronously", () => {
+      const result = Packer.packSync(mockFile, "uint8array");
+      expect(result).toBeInstanceOf(Uint8Array);
+    });
+
+    it("should export to nodebuffer synchronously", () => {
+      const result = Packer.packSync(mockFile, "nodebuffer");
+      expect(result).toBeInstanceOf(Buffer);
+    });
+  });
+
+  // ── Async/Sync parity ──
+
+  describe("async/sync parity", () => {
+    it("should produce identical output for toBuffer vs toBufferSync", async () => {
+      const asyncResult = await Packer.toBuffer(mockFile);
+      const syncResult = Packer.toBufferSync(mockFile);
+      expect(asyncResult.equals(syncResult)).toBe(true);
+    });
+
+    it("should produce identical output for toBytes vs toBytesSync", async () => {
+      const asyncResult = await Packer.toBytes(mockFile);
+      const syncResult = Packer.toBytesSync(mockFile);
+      expect(asyncResult).toEqual(syncResult);
+    });
+  });
+
+  // ── Stream ──
 
   describe("#toStream()", () => {
     it("should return a Readable stream", () => {

@@ -4,6 +4,7 @@ import {
   Footer as FooterOrig,
   Header as HeaderOrig,
   HeadingLevel as HeadingLevelOrig,
+  ImageRun as ImageRunOrig,
   PageNumber as PageNumberOrig,
   Paragraph as ParagraphOrig,
   Packer as PackerOrig,
@@ -21,6 +22,7 @@ import {
   Footer,
   Header,
   HeadingLevel,
+  ImageRun,
   PageNumber,
   Packer,
   Paragraph,
@@ -328,7 +330,7 @@ describe("DOCX: Object Creation (no pack)", () => {
 });
 
 // Both libraries use DEFLATE compression for a fair comparison.
-// Our Packer uses fflate async zip() (Web Workers); docx uses JSZip.
+// Our Packer uses fflate zipSync() for maximum throughput; docx uses JSZip.
 describe("DOCX: Create + toBuffer", () => {
   bench("ours — simple + toBuffer", async () => {
     const doc = new Document({
@@ -341,7 +343,7 @@ describe("DOCX: Create + toBuffer", () => {
         },
       ],
     });
-    await Packer.toBuffer(doc);
+    Packer.toBufferSync(doc);
   });
 
   bench("docx — simple + toBuffer", async () => {
@@ -371,7 +373,7 @@ describe("DOCX: Create + toBuffer", () => {
         },
       ],
     });
-    await Packer.toBuffer(doc);
+    Packer.toBufferSync(doc);
   });
 
   bench("docx — styled paragraphs (20) + toBuffer", async () => {
@@ -426,7 +428,7 @@ describe("DOCX: Create + toBuffer", () => {
         },
       ],
     });
-    await Packer.toBuffer(doc);
+    Packer.toBufferSync(doc);
   });
 
   bench("docx — table (10x5) + toBuffer", async () => {
@@ -535,7 +537,7 @@ describe("DOCX: Create + toBuffer", () => {
         },
       ],
     });
-    await Packer.toBuffer(doc);
+    Packer.toBufferSync(doc);
   });
 
   bench("docx — full featured + toBuffer", async () => {
@@ -652,7 +654,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
         },
       ],
     });
-    await Packer.toBuffer(doc);
+    Packer.toBufferSync(doc);
   });
 
   bench("docx — 2000 paragraphs + toBuffer", async () => {
@@ -708,7 +710,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
         },
       ],
     });
-    await Packer.toBuffer(doc);
+    Packer.toBufferSync(doc);
   });
 
   bench("docx — 200x10 table + toBuffer", async () => {
@@ -790,7 +792,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
         }),
       })),
     });
-    await Packer.toBuffer(doc);
+    Packer.toBufferSync(doc);
   });
 
   bench("docx — 20 sections × 100 paragraphs + toBuffer", async () => {
@@ -842,6 +844,149 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
           });
         }),
       })),
+    });
+    await PackerOrig.toBuffer(doc);
+  });
+});
+
+// ── Large file ~100MB mixed benchmarks ──
+
+// Generate a unique 500KB fake image per seed — different seeds produce different
+// byte patterns, so images have unique hashes and won't be deduplicated by the packer.
+const makeImage = (seed: number): Uint8Array => {
+  const size = 500 * 1024;
+  const buf = new Uint8Array(size);
+  for (let i = 0; i < size; i++) buf[i] = (i * 7 + seed * 13 + 37) & 0xff;
+  return buf;
+};
+
+const MIXED_IMAGES = Array.from({ length: 200 }, (_, i) => makeImage(i));
+
+const buildMixed100MbDoc = () =>
+  new Document({
+    sections: [
+      {
+        children: [
+          // 2000 paragraphs (bold/italic alternating)
+          ...LARGE_PARAGRAPHS.map(
+            (p) =>
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: p.text,
+                    bold: p.bold,
+                    italics: p.italics,
+                    underline: { type: UnderlineType.SINGLE },
+                  }),
+                ],
+              }),
+          ),
+          // 200 unique images (500KB each)
+          ...MIXED_IMAGES.map(
+            (img) =>
+              new Paragraph({
+                children: [
+                  new ImageRun({
+                    data: img,
+                    transformation: { width: 400, height: 300 },
+                    type: "jpg",
+                  }),
+                ],
+              }),
+          ),
+          // 100×10 table
+          new Table({
+            rows: Array.from(
+              { length: 100 },
+              (_, rowIdx) =>
+                new TableRow({
+                  children: Array.from(
+                    { length: 10 },
+                    (_, colIdx) =>
+                      new TableCell({
+                        width: { size: 1000, type: WidthType.PERCENTAGE },
+                        children: [
+                          new Paragraph({
+                            children: [new TextRun(`R${rowIdx + 1}C${colIdx + 1} data content`)],
+                          }),
+                        ],
+                      }),
+                  ),
+                }),
+            ),
+          }),
+        ],
+      },
+    ],
+  });
+
+describe("DOCX: Large File (~100MB) — Mixed + async vs sync", () => {
+  bench("ours sync — mixed (2kp+200img+100x10) + toBufferSync", () => {
+    Packer.toBufferSync(buildMixed100MbDoc());
+  });
+
+  bench("ours async — mixed (2kp+200img+100x10) + toBuffer", async () => {
+    await Packer.toBuffer(buildMixed100MbDoc());
+  });
+
+  bench("docx — mixed (2kp+200img+100x10) + toBuffer", async () => {
+    const doc = new DocumentOrig({
+      sections: [
+        {
+          children: [
+            // 2000 paragraphs
+            ...LARGE_PARAGRAPHS.map(
+              (p) =>
+                new ParagraphOrig({
+                  children: [
+                    new TextRunOrig({
+                      text: p.text,
+                      bold: p.bold,
+                      italics: p.italics,
+                      underline: { type: UnderlineTypeOrig.SINGLE },
+                    }),
+                  ],
+                }),
+            ),
+            // 200 unique images (500KB each)
+            ...MIXED_IMAGES.map(
+              (img) =>
+                new ParagraphOrig({
+                  children: [
+                    new ImageRunOrig({
+                      data: img,
+                      transformation: { width: 400, height: 300 },
+                      type: "jpg",
+                    }),
+                  ],
+                }),
+            ),
+            // 100×10 table
+            new TableOrig({
+              rows: Array.from(
+                { length: 100 },
+                (_, rowIdx) =>
+                  new TableRowOrig({
+                    children: Array.from(
+                      { length: 10 },
+                      (_, colIdx) =>
+                        new TableCellOrig({
+                          width: { size: 1000, type: WidthType.PERCENTAGE },
+                          children: [
+                            new ParagraphOrig({
+                              children: [
+                                new TextRunOrig(`R${rowIdx + 1}C${colIdx + 1} data content`),
+                              ],
+                            }),
+                          ],
+                        }),
+                    ),
+                  }),
+              ),
+            }),
+          ],
+        },
+      ],
     });
     await PackerOrig.toBuffer(doc);
   });

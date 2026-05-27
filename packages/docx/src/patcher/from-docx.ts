@@ -394,7 +394,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
       mediaData instanceof Uint8Array ? mediaData : new Uint8Array(mediaData);
   }
 
-  return zipAndConvert(files, outputType, OoxmlMimeType.DOCX);
+  return await zipAndConvert(files, outputType, OoxmlMimeType.DOCX);
 };
 
 const toXml = (jsonObj: Element): string => {

@@ -82,10 +82,10 @@ Performance comparison against original `docx` (9.6.1) package (Windows 11 / Nod
 
 | Scenario                                                | @office-open/docx |       docx |  Speedup |
 | ------------------------------------------------------- | ----------------: | ---------: | -------: |
-| Simple document (2 paragraphs)                          |       18.6K ops/s | 6.2K ops/s | **3.0x** |
-| Styled paragraphs (20 paragraphs)                       |       11.4K ops/s | 4.7K ops/s | **2.4x** |
-| Table (10x5 cells)                                      |       10.8K ops/s | 3.9K ops/s | **2.8x** |
-| Full featured (header/footer/headings/table/paragraphs) |        5.7K ops/s | 2.9K ops/s | **1.9x** |
+| Simple document (2 paragraphs)                          |       20.0K ops/s | 6.2K ops/s | **3.2x** |
+| Styled paragraphs (20 paragraphs)                       |       11.4K ops/s | 4.6K ops/s | **2.5x** |
+| Table (10x5 cells)                                      |       10.1K ops/s | 3.7K ops/s | **2.7x** |
+| Full featured (header/footer/headings/table/paragraphs) |        5.5K ops/s | 2.8K ops/s | **2.0x** |
 
 **Create + toBuffer (end-to-end)**
 
@@ -93,18 +93,28 @@ Both libraries use DEFLATE compression.
 
 | Scenario                                                | @office-open/docx |      docx |  Speedup |
 | ------------------------------------------------------- | ----------------: | --------: | -------: |
-| Simple document (2 paragraphs)                          |         387 ops/s | 233 ops/s | **1.7x** |
-| Styled paragraphs (20 paragraphs)                       |         493 ops/s | 261 ops/s | **1.9x** |
-| Table (10x5 cells)                                      |         501 ops/s | 252 ops/s | **2.0x** |
-| Full featured (header/footer/headings/table/paragraphs) |         357 ops/s | 198 ops/s | **1.8x** |
+| Simple document (2 paragraphs)                          |         388 ops/s | 194 ops/s | **2.0x** |
+| Styled paragraphs (20 paragraphs)                       |         402 ops/s | 232 ops/s | **1.7x** |
+| Table (10x5 cells)                                      |         463 ops/s | 238 ops/s | **1.9x** |
+| Full featured (header/footer/headings/table/paragraphs) |         346 ops/s | 179 ops/s | **1.9x** |
 
 **Large Files — Create + toBuffer**
 
 | Scenario                     | @office-open/docx |       docx |  Speedup |
 | ---------------------------- | ----------------: | ---------: | -------: |
-| 2000 paragraphs              |        43.5 ops/s | 28.3 ops/s | **1.5x** |
-| 200×10 table                 |        84.7 ops/s | 37.6 ops/s | **2.3x** |
-| 20 sections × 100 paragraphs |        44.3 ops/s | 30.1 ops/s | **1.5x** |
+| 2000 paragraphs              |        42.2 ops/s | 27.7 ops/s | **1.5x** |
+| 200×10 table                 |        77.4 ops/s | 37.3 ops/s | **2.1x** |
+| 20 sections × 100 paragraphs |        47.0 ops/s | 30.9 ops/s | **1.5x** |
+
+**Large File (~100MB) — Mixed Content**
+
+2000 paragraphs + 200 unique images (500KB each) + 100×10 table. Speedup is vs docx.
+
+| Method                    |      Speed |  Speedup |
+| ------------------------- | ---------: | -------: |
+| @office-open/docx (sync)  | 0.36 ops/s |     1.2x |
+| @office-open/docx (async) | 0.40 ops/s | **1.3x** |
+| docx                      | 0.30 ops/s |          |
 
 ## License
 
