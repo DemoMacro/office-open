@@ -125,10 +125,12 @@ export function parseImageRun(
   if (docPr) {
     const name = attr(docPr, "name");
     const descr = attr(docPr, "descr");
-    if (name || descr) {
+    const title = attr(docPr, "title");
+    if (name || descr || title) {
       imageOpts.altText = {
         ...(name ? { name } : {}),
         ...(descr ? { description: descr } : {}),
+        ...(title ? { title } : {}),
       };
     }
   }
@@ -142,15 +144,20 @@ export function parseImageRun(
       const align = findChild(posH, "wp:align");
       const posOffset = findChild(posH, "wp:posOffset");
       if (align) floating.horizontalPosition = { align: textOf(align) };
-      else if (posOffset)
-        floating.horizontalPosition = { offset: attrNum(posOffset, "offset") ?? 0 };
+      else if (posOffset) {
+        const val = Number(textOf(posOffset));
+        if (!isNaN(val)) floating.horizontalPosition = { offset: val };
+      }
     }
     const posV = findChild(anchor, "wp:positionV");
     if (posV) {
       const align = findChild(posV, "wp:align");
       const posOffset = findChild(posV, "wp:posOffset");
       if (align) floating.verticalPosition = { align: textOf(align) };
-      else if (posOffset) floating.verticalPosition = { offset: attrNum(posOffset, "offset") ?? 0 };
+      else if (posOffset) {
+        const val = Number(textOf(posOffset));
+        if (!isNaN(val)) floating.verticalPosition = { offset: val };
+      }
     }
     // Wrap
     for (const wrapType of ["wrapSquare", "wrapTight", "wrapTopAndBottom", "wrapNone"]) {

@@ -26,22 +26,20 @@ function buildPresPropsXml(showOptions?: ShowOptions): string {
 
 export class PresentationProperties extends ImportedXmlComponent {
   private static cache = new Map<string, ImportedXmlComponent>();
+  private readonly key: string;
 
   public constructor(showOptions?: ShowOptions) {
     super("p:presentationPr");
-    const key = showOptions ? JSON.stringify(showOptions) : "";
-    if (!PresentationProperties.cache.has(key)) {
+    this.key = showOptions ? JSON.stringify(showOptions) : "";
+    if (!PresentationProperties.cache.has(this.key)) {
       PresentationProperties.cache.set(
-        key,
+        this.key,
         ImportedXmlComponent.fromXmlString(buildPresPropsXml(showOptions)),
       );
     }
   }
 
   public prepForXml() {
-    const key = this.showOptions ? JSON.stringify(this.showOptions) : "";
-    return PresentationProperties.cache.get(key)!.prepForXml({ stack: [] });
+    return PresentationProperties.cache.get(this.key)!.prepForXml({ stack: [] });
   }
-
-  private readonly showOptions?: ShowOptions;
 }

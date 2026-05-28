@@ -6,7 +6,16 @@
  * @module
  */
 import { convertEmuToPixels } from "@office-open/core";
-import { attr, attrBool, attrNum, children, findChild, findDeep, textOf } from "@office-open/xml";
+import {
+  attr,
+  attrBool,
+  attrNum,
+  children,
+  colorAttr,
+  findChild,
+  findDeep,
+  textOf,
+} from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import type { BackgroundOptions } from "../file/background/background";
@@ -108,7 +117,7 @@ export function parseSlide(el: Element, ctx: ParseContext): SlideOptions {
 
 // ── Slide child dispatch ──────────────────────────────────────────────────────
 
-function parseSlideChild(el: Element, ctx: ParseContext): SlideChild | undefined {
+export function parseSlideChild(el: Element, ctx: ParseContext): SlideChild | undefined {
   switch (el.name) {
     case "p:sp": {
       // Check if it's a line shape (prstGeom with prst="line")
@@ -241,7 +250,7 @@ function parseTransition(el: Element): TransitionOptions {
 
 // ── Shape parser ──────────────────────────────────────────────────────────────
 
-function parseShape(el: Element, _ctx: ParseContext): ShapeOptions {
+function parseShape(el: Element, ctx: ParseContext): ShapeOptions {
   const opts: Record<string, unknown> = {};
 
   // p:nvSpPr → id, name, placeholder
@@ -283,7 +292,7 @@ function parseShape(el: Element, _ctx: ParseContext): ShapeOptions {
   // p:txBody → text, paragraphs
   const txBody = findChild(el, "p:txBody");
   if (txBody) {
-    parseTextBody(txBody, opts);
+    parseTextBody(txBody, opts, ctx.slideRels);
   }
 
   return opts as unknown as ShapeOptions;
@@ -371,10 +380,10 @@ function parsePicture(el: Element, ctx: ParseContext): PictureOptions {
     }
   }
 
-  // Name from p:nvPicPr → p:cNvPr
+  // Name from p:nvPicPr → a:cNvPr or p:cNvPr
   const nvPicPr = findChild(el, "p:nvPicPr");
   if (nvPicPr) {
-    const cNvPr = findChild(nvPicPr, "p:cNvPr");
+    const cNvPr = findChild(nvPicPr, "a:cNvPr") ?? findChild(nvPicPr, "p:cNvPr");
     if (cNvPr) {
       const name = attr(cNvPr, "name");
       if (name) opts.name = name;
@@ -738,11 +747,27 @@ function parseTableCell(tc: Element): Record<string, unknown> {
   const rowSpan = attrNum(tc, "rowSpan");
   if (rowSpan !== undefined && rowSpan > 1) opts.rowSpan = rowSpan;
 
-  // a:txBody → paragraphs
+  // a:txBody → paragraphs + bodyPr margins
   const txBody = findChild(tc, "a:txBody");
   if (txBody) {
     const paragraphs = parseParagraphsFromTxBody(txBody);
     if (paragraphs.length > 0) opts.children = paragraphs;
+
+    // Extract margins from a:bodyPr (if not already from a:tcPr)
+    const bodyPr = findChild(txBody, "a:bodyPr");
+    if (bodyPr) {
+      const margins: Record<string, number> = {};
+      for (const [attrName, key] of [
+        ["tIns", "top"],
+        ["bIns", "bottom"],
+        ["lIns", "left"],
+        ["rIns", "right"],
+      ] as const) {
+        const val = attrNum(bodyPr, attrName);
+        if (val !== undefined) margins[key] = val;
+      }
+      if (Object.keys(margins).length > 0) opts.margins = margins;
+    }
   }
 
   // a:tcPr
@@ -783,7 +808,7 @@ function parseTableCell(tc: Element): Record<string, unknown> {
         const borderOpts: Record<string, unknown> = {};
         if (w !== undefined) borderOpts.width = w;
         const fill = parseFillFromElement(borderEl);
-        if (fill) borderOpts.fill = fill;
+        if (typeof fill === "string") borderOpts.color = fill;
         if (Object.keys(borderOpts).length > 0) borders[key] = borderOpts;
       }
     }
@@ -913,7 +938,11 @@ function parseGroup(el: Element, ctx: ParseContext): GroupShapeOptions {
 
 // ── Text body / paragraph / run parsers ───────────────────────────────────────
 
-function parseTextBody(txBody: Element, opts: Record<string, unknown>): void {
+function parseTextBody(
+  txBody: Element,
+  opts: Record<string, unknown>,
+  rels?: Map<string, string>,
+): void {
   // a:bodyPr
   const bodyPr = findChild(txBody, "a:bodyPr");
   if (bodyPr) {
@@ -949,9 +978,7 @@ function parseTextBody(txBody: Element, opts: Record<string, unknown>): void {
   }
 
   // Paragraphs
-  const paragraphs = parseParagraphsFromTxBody(txBody);
-
-  // Simple text extraction: single paragraph with just text (no formatting)
+  const paragraphs = parseParagraphsFromTxBody(txBody, rels);
   if (paragraphs.length === 1) {
     const p = paragraphs[0] as Record<string, unknown>;
     // parseParagraph already promotes single-run-plain-text to p.text
@@ -973,15 +1000,15 @@ function parseTextBody(txBody: Element, opts: Record<string, unknown>): void {
   if (paragraphs.length > 0) opts.paragraphs = paragraphs;
 }
 
-function parseParagraphsFromTxBody(txBody: Element): unknown[] {
+function parseParagraphsFromTxBody(txBody: Element, rels?: Map<string, string>): unknown[] {
   const paragraphs: unknown[] = [];
   for (const pEl of children(txBody, "a:p")) {
-    paragraphs.push(parseParagraph(pEl));
+    paragraphs.push(parseParagraph(pEl, rels));
   }
   return paragraphs;
 }
 
-function parseParagraph(el: Element): Record<string, unknown> {
+function parseParagraph(el: Element, rels?: Map<string, string>): Record<string, unknown> {
   const opts: Record<string, unknown> = {};
 
   // a:pPr
@@ -1021,7 +1048,7 @@ function parseParagraph(el: Element): Record<string, unknown> {
       if (buClr) {
         const srgbClr = findChild(buClr, "a:srgbClr");
         if (srgbClr) {
-          const val = attr(srgbClr, "val");
+          const val = colorAttr(srgbClr, "val");
           if (val) bulletOpts.color = val;
         }
       }
@@ -1081,7 +1108,7 @@ function parseParagraph(el: Element): Record<string, unknown> {
   // Runs (a:r)
   const runs: Record<string, unknown>[] = [];
   for (const rEl of children(el, "a:r")) {
-    runs.push(parseRun(rEl));
+    runs.push(parseRun(rEl, rels));
   }
 
   // Simple text extraction: if single run with only text
@@ -1094,7 +1121,7 @@ function parseParagraph(el: Element): Record<string, unknown> {
   return opts;
 }
 
-function parseRun(el: Element): Record<string, unknown> {
+function parseRun(el: Element, rels?: Map<string, string>): Record<string, unknown> {
   const opts: Record<string, unknown> = {};
 
   // a:rPr
@@ -1150,6 +1177,21 @@ function parseRun(el: Element): Record<string, unknown> {
     // Fill (text color)
     const fill = parseFillFromElement(rPr);
     if (fill) opts.fill = fill;
+
+    // Hyperlink (a:hlinkClick)
+    const hlinkClick = findChild(rPr, "a:hlinkClick");
+    if (hlinkClick && rels) {
+      const rId = attr(hlinkClick, "r:id");
+      if (rId) {
+        const url = rels.get(rId);
+        if (url) {
+          const hyperlink: Record<string, unknown> = { url };
+          const tooltip = attr(hlinkClick, "tooltip");
+          if (tooltip) hyperlink.tooltip = tooltip;
+          opts.hyperlink = hyperlink;
+        }
+      }
+    }
   }
 
   // a:t → text
@@ -1225,7 +1267,7 @@ function parseFillFromElement(parent: Element): unknown {
   if (solidFill) {
     const srgbClr = findChild(solidFill, "a:srgbClr");
     if (srgbClr) {
-      return attr(srgbClr, "val");
+      return colorAttr(srgbClr, "val");
     }
     const schemeClr = findChild(solidFill, "a:schemeClr");
     if (schemeClr) {
@@ -1246,7 +1288,7 @@ function parseFillFromElement(parent: Element): unknown {
     if (fgClr) {
       const srgbClr = findChild(fgClr, "a:srgbClr");
       if (srgbClr) {
-        const val = attr(srgbClr, "val");
+        const val = colorAttr(srgbClr, "val");
         if (val) result.foregroundColor = val;
       }
     }
@@ -1255,7 +1297,7 @@ function parseFillFromElement(parent: Element): unknown {
     if (bgClr) {
       const srgbClr = findChild(bgClr, "a:srgbClr");
       if (srgbClr) {
-        const val = attr(srgbClr, "val");
+        const val = colorAttr(srgbClr, "val");
         if (val) result.backgroundColor = val;
       }
     }
@@ -1283,7 +1325,7 @@ function parseFillFromElement(parent: Element): unknown {
         const pos = attrNum(gs, "pos");
         const srgbClr = findChild(gs, "a:srgbClr");
         if (pos !== undefined && srgbClr) {
-          stops.push({ position: pos / 100000, color: attr(srgbClr, "val") ?? "" });
+          stops.push({ position: pos / 1000, color: colorAttr(srgbClr, "val") ?? "" });
         }
       }
     }
@@ -1294,6 +1336,12 @@ function parseFillFromElement(parent: Element): unknown {
       if (lin) {
         const ang = attrNum(lin, "ang");
         if (ang !== undefined) result.angle = Math.round(ang / 60000);
+      }
+      // Extract path shade from a:path element
+      const pathEl = findChild(gradFill, "a:path");
+      if (pathEl) {
+        const pathType = attr(pathEl, "path");
+        if (pathType) result.path = pathType;
       }
       return result;
     }
@@ -1315,7 +1363,7 @@ function parseOutlineFromElement(parent: Element): unknown {
   if (solidFill) {
     const srgbClr = findChild(solidFill, "a:srgbClr");
     if (srgbClr) {
-      const val = attr(srgbClr, "val");
+      const val = colorAttr(srgbClr, "val");
       if (val) opts.color = val;
     }
   }
@@ -1392,6 +1440,10 @@ function parseEffectsFromElement(parent: Element): unknown {
           if (dist !== undefined) reflection.distance = dist;
           const dir = attrNum(child, "dir");
           if (dir !== undefined) reflection.direction = dir;
+          const stA = attrNum(child, "stA");
+          if (stA !== undefined) reflection.startAlpha = stA / 1000;
+          const endA = attrNum(child, "endA");
+          if (endA !== undefined) reflection.endAlpha = endA / 1000;
           opts.reflection = reflection;
           break;
         }
@@ -1477,7 +1529,7 @@ function parseEffectsFromElement(parent: Element): unknown {
 function extractColorFromElement(el: Element): { color?: string; alpha?: number } | undefined {
   for (const child of el.elements ?? []) {
     if (child.name === "a:srgbClr") {
-      const color = attr(child, "val");
+      const color = colorAttr(child, "val");
       let alpha: number | undefined;
       for (const transform of child.elements ?? []) {
         if (transform.name === "a:alpha") {
@@ -1603,28 +1655,32 @@ function parseMediaFrame(
   const spPr = findChild(el, "p:spPr");
   if (spPr) parseTransformFromSpPr(spPr, opts);
 
-  // Name from p:nvPicPr → p:cNvPr
+  // Name from p:nvPicPr → a:cNvPr or p:cNvPr
   const nvPicPr = findChild(el, "p:nvPicPr");
   if (nvPicPr) {
-    const cNvPr = findChild(nvPicPr, "p:cNvPr");
+    const cNvPr = findChild(nvPicPr, "a:cNvPr") ?? findChild(nvPicPr, "p:cNvPr");
     if (cNvPr) {
       const name = attr(cNvPr, "name");
       if (name) opts.name = name;
     }
   }
 
-  // Media data from blipFill → a:blip → r:embed → rels → media file
-  const blip = findDeep(el, "a:blip")[0];
-  if (blip) {
-    const rEmbed = attr(blip, "r:embed");
-    if (rEmbed) {
-      const mediaPath = ctx.slideRels.get(rEmbed);
-      if (mediaPath) {
-        const data = ctx.pptx.doc.getRaw(mediaPath);
-        if (data) {
-          opts.data = data;
-          opts.type = mediaTypeFromPath(mediaPath, mediaKind);
-        }
+  // Media data from a:videoFile/a:audioFile (r:link) or p14:media (r:embed)
+  const mediaFileEl = findDeep(el, "a:videoFile")[0] ?? findDeep(el, "a:audioFile")[0];
+  const rLink = mediaFileEl ? attr(mediaFileEl, "r:link") : undefined;
+
+  // Fallback: p14:media in extLst (used by audio frames)
+  const p14media = !mediaFileEl ? findDeep(el, "p14:media")[0] : undefined;
+  const rEmbed = p14media ? attr(p14media, "r:embed") : undefined;
+
+  const mediaRef = rLink ?? rEmbed;
+  if (mediaRef) {
+    const mediaPath = ctx.slideRels.get(mediaRef);
+    if (mediaPath) {
+      const data = ctx.pptx.doc.getRaw(mediaPath);
+      if (data) {
+        opts.data = data;
+        opts.type = mediaTypeFromPath(mediaPath, mediaKind);
       }
     }
   }

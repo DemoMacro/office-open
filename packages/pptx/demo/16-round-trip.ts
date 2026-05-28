@@ -1,8 +1,15 @@
 import * as fs from "fs";
 
-import { Presentation, Packer, parsePresentation, parsePptx } from "@office-open/pptx";
-import type { SlideOptions, MasterDefinition } from "@office-open/pptx";
-import { findChild, attrNum } from "@office-open/xml";
+import {
+  Presentation,
+  Packer,
+  parsePresentation,
+  parsePptx,
+  parseArchive,
+} from "@office-open/pptx";
+import type { SlideOptions } from "@office-open/pptx";
+import { findChild, attrNum, xml2js, js2xml } from "@office-open/xml";
+import { strFromU8 } from "fflate";
 
 // ── helpers ────────────────────────────────────────────────────────────────────
 
@@ -17,6 +24,110 @@ const assert = (label: string, condition: boolean) => {
     console.log(`  FAIL: ${label}`);
   }
 };
+
+function normalizeXml(raw: Uint8Array): string {
+  const parsed = xml2js(strFromU8(raw), {
+    nativeTypeAttributes: true,
+    captureSpacesBetweenElements: true,
+  });
+  let xml = js2xml(parsed);
+  // Normalize non-deterministic values: cNvPr id, GraphicFrame name/id, diagram UUIDs
+  xml = xml.replace(/ id="\d+"/g, ' id="N"');
+  xml = xml.replace(/ name="(Table|Chart|Diagram|Group) \d+"/g, ' name="$1 N"');
+  xml = xml.replace(/\{[0-9A-F-]{36}\}/g, "{UUID}");
+  return xml;
+}
+
+function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+interface Diff {
+  path: string;
+  kind: "missing-left" | "missing-right" | "content";
+}
+
+function compareZips(buf1: Uint8Array, buf2: Uint8Array, ignorePaths?: Set<string>): Diff[] {
+  const zip1 = parseArchive(buf1);
+  const zip2 = parseArchive(buf2);
+  const diffs: Diff[] = [];
+
+  const allPaths = new Set([...zip1.keys(), ...zip2.keys()]);
+
+  for (const path of allPaths) {
+    if (ignorePaths?.has(path)) continue;
+
+    const raw1 = zip1.getRaw(path);
+    const raw2 = zip2.getRaw(path);
+
+    if (!raw1) {
+      diffs.push({ path, kind: "missing-left" });
+      continue;
+    }
+    if (!raw2) {
+      diffs.push({ path, kind: "missing-right" });
+      continue;
+    }
+
+    if (path.endsWith(".xml") || path.endsWith(".rels")) {
+      const s1 = normalizeXml(raw1);
+      const s2 = normalizeXml(raw2);
+      if (s1 !== s2) {
+        diffs.push({ path, kind: "content" });
+      }
+    } else {
+      if (!bytesEqual(raw1, raw2)) {
+        diffs.push({ path, kind: "content" });
+      }
+    }
+  }
+
+  return diffs;
+}
+
+function printDiffs(diffs: Diff[]): void {
+  if (diffs.length === 0) {
+    console.log("  No differences found!");
+    return;
+  }
+  for (const d of diffs) {
+    const label =
+      d.kind === "missing-left"
+        ? "only in buffer2"
+        : d.kind === "missing-right"
+          ? "only in buffer1"
+          : "content differs";
+    console.log(`  DIFF: ${d.path} (${label})`);
+  }
+}
+
+// ── media assets ───────────────────────────────────────────────────────────────
+
+const imageData = fs.readFileSync("./demo/assets/test-poster.png");
+const videoData = fs.readFileSync("./demo/assets/test-video.mp4");
+const posterData = fs.readFileSync("./demo/assets/test-poster.png");
+
+// Generate a minimal valid WAV file (1 second of silence, mono, 8000 Hz)
+const wavSize = 8000; // 1 second × 8000 samples
+const wavBuf = Buffer.alloc(44 + wavSize);
+wavBuf.write("RIFF", 0);
+wavBuf.writeUInt32LE(36 + wavSize, 4);
+wavBuf.write("WAVE", 8);
+wavBuf.write("fmt ", 12);
+wavBuf.writeUInt32LE(16, 16); // chunk size
+wavBuf.writeUInt16LE(1, 20); // PCM
+wavBuf.writeUInt16LE(1, 22); // mono
+wavBuf.writeUInt32LE(8000, 24); // sample rate
+wavBuf.writeUInt32LE(8000, 28); // byte rate
+wavBuf.writeUInt16LE(1, 32); // block align
+wavBuf.writeUInt16LE(8, 34); // bits per sample
+wavBuf.write("data", 36);
+wavBuf.writeUInt32LE(wavSize, 40);
+// data is all zeros (silence)
 
 // ══════════════════════════════════════════════════════════════════════════════
 // 1. Generate a presentation using the JSON-friendly API
@@ -118,11 +229,11 @@ const slides: SlideOptions[] = [
           outline: { color: "4472C4", width: 12700, dashStyle: "dash" },
           paragraphs: [
             {
-              properties: { bullet: { type: "char", char: "●", color: "4472C4" } },
+              properties: { bullet: { type: "char", char: "\u25CF", color: "4472C4" } },
               children: [{ text: "Bullet point one" }],
             },
             {
-              properties: { bullet: { type: "char", char: "●", color: "4472C4" } },
+              properties: { bullet: { type: "char", char: "\u25CF", color: "4472C4" } },
               children: [{ text: "Bullet point two" }],
             },
             {
@@ -132,7 +243,7 @@ const slides: SlideOptions[] = [
           ],
         },
       },
-      // 3D effects (rotation, bevel, extrusion)
+      // 3D effects (rotation, bevel, extrusion, material)
       {
         shape: {
           x: 550,
@@ -163,7 +274,7 @@ const slides: SlideOptions[] = [
               children: [
                 { text: "H", fontSize: 20 },
                 { text: "2", fontSize: 12, baseline: -25000 },
-                { text: "O  —  E=mc", fontSize: 20 },
+                { text: "O  \u2014  E=mc", fontSize: 20 },
                 { text: "2", fontSize: 12, baseline: 30000 },
               ],
             },
@@ -181,14 +292,7 @@ const slides: SlideOptions[] = [
   {
     children: [
       {
-        shape: {
-          x: 50,
-          y: 20,
-          width: 300,
-          height: 40,
-          text: "Table",
-          fill: "4472C4",
-        },
+        shape: { x: 50, y: 20, width: 300, height: 40, text: "Table", fill: "4472C4" },
       },
       {
         table: {
@@ -204,11 +308,15 @@ const slides: SlideOptions[] = [
                 { text: "Notes", fill: "4472C4" },
               ],
             },
-            { cells: [{ text: "Shapes" }, { text: "OK" }, { text: "rect, roundRect, chevron…" }] },
-            { cells: [{ text: "Tables" }, { text: "OK" }, { text: "rows, cells, borders" }] },
             {
-              cells: [{ text: "Merge", columnSpan: 2 }, { text: "Spanned cell" }],
+              cells: [
+                { text: "Shapes" },
+                { text: "OK" },
+                { text: "rect, roundRect, chevron\u2026" },
+              ],
             },
+            { cells: [{ text: "Tables" }, { text: "OK" }, { text: "rows, cells, borders" }] },
+            { cells: [{ text: "Merge", columnSpan: 2 }, { text: "Spanned cell" }] },
           ],
           columnWidths: [2500000, 2000000, 3000000],
           firstRow: true,
@@ -225,19 +333,10 @@ const slides: SlideOptions[] = [
     transition: { type: "push", speed: "med", direction: "left" },
   },
 
-  // ── Slide 3: Chart ──
+  // ── Slide 3: Chart (column) ──
   {
     children: [
-      {
-        shape: {
-          x: 50,
-          y: 20,
-          width: 300,
-          height: 40,
-          text: "Chart",
-          fill: "ED7D31",
-        },
-      },
+      { shape: { x: 50, y: 20, width: 300, height: 40, text: "Chart", fill: "ED7D31" } },
       {
         chart: {
           x: 80,
@@ -261,16 +360,7 @@ const slides: SlideOptions[] = [
   // ── Slide 4: SmartArt ──
   {
     children: [
-      {
-        shape: {
-          x: 50,
-          y: 20,
-          width: 300,
-          height: 40,
-          text: "SmartArt",
-          fill: "70AD47",
-        },
-      },
+      { shape: { x: 50, y: 20, width: 300, height: 40, text: "SmartArt", fill: "70AD47" } },
       {
         smartart: {
           x: 80,
@@ -295,14 +385,7 @@ const slides: SlideOptions[] = [
   {
     children: [
       {
-        shape: {
-          x: 50,
-          y: 20,
-          width: 300,
-          height: 40,
-          text: "Lines & Connectors",
-          fill: "7030A0",
-        },
+        shape: { x: 50, y: 20, width: 300, height: 40, text: "Lines & Connectors", fill: "7030A0" },
       },
       { line: { x1: 50, y1: 100, x2: 750, y2: 100, outline: { color: "4472C4", width: 25400 } } },
       {
@@ -322,16 +405,7 @@ const slides: SlideOptions[] = [
   // ── Slide 6: Group with nested shapes ──
   {
     children: [
-      {
-        shape: {
-          x: 50,
-          y: 20,
-          width: 300,
-          height: 40,
-          text: "Group",
-          fill: "FFC000",
-        },
-      },
+      { shape: { x: 50, y: 20, width: 300, height: 40, text: "Group", fill: "FFC000" } },
       {
         group: {
           x: 80,
@@ -389,16 +463,7 @@ const slides: SlideOptions[] = [
   // ── Slide 8: Animation ──
   {
     children: [
-      {
-        shape: {
-          x: 50,
-          y: 20,
-          width: 300,
-          height: 40,
-          text: "Animation",
-          fill: "C00000",
-        },
-      },
+      { shape: { x: 50, y: 20, width: 300, height: 40, text: "Animation", fill: "C00000" } },
       {
         shape: {
           x: 100,
@@ -438,7 +503,7 @@ const slides: SlideOptions[] = [
   // ── Slide 9: Notes + Header/Footer ──
   {
     notes: "These are speaker notes for the round-trip test.",
-    headerFooter: { slideNumber: true, footer: "Round-trip Demo" },
+    headerFooter: { slideNumber: true, footer: "Round-trip Demo", dateTime: true },
     children: [
       {
         shape: {
@@ -452,11 +517,659 @@ const slides: SlideOptions[] = [
       },
     ],
   },
+
+  // ── Slide 10: Multi-master (light theme) ──
+  {
+    master: "light",
+    layout: "blank",
+    children: [
+      {
+        shape: {
+          x: 100,
+          y: 100,
+          width: 760,
+          height: 400,
+          fill: "F2F2F2",
+          text: "Light theme slide",
+        },
+      },
+    ],
+  },
+
+  // ── Slide 11: Multi-master (dark theme) ──
+  {
+    master: "dark",
+    layout: "blank",
+    children: [
+      {
+        shape: {
+          x: 100,
+          y: 100,
+          width: 760,
+          height: 400,
+          fill: "2D4A7A",
+          paragraphs: [
+            {
+              properties: { bullet: { type: "none" } },
+              children: [{ text: "Dark theme slide", fill: "FFFFFF", fontSize: 24 }],
+            },
+          ],
+        },
+      },
+    ],
+  },
+
+  // ── Slide 12: Picture + Fill Types ──
+  {
+    children: [
+      {
+        shape: {
+          x: 50,
+          y: 20,
+          width: 300,
+          height: 40,
+          text: "Picture + Fill Types",
+          fill: "7030A0",
+        },
+      },
+      // Picture element
+      {
+        picture: {
+          x: 50,
+          y: 80,
+          width: 200,
+          height: 200,
+          data: imageData,
+          type: "png",
+          name: "Test Image",
+        },
+      },
+      // Pattern fill
+      {
+        shape: {
+          x: 300,
+          y: 80,
+          width: 200,
+          height: 150,
+          fill: {
+            type: "pattern",
+            pattern: "crossHatch",
+            foregroundColor: "4472C4",
+            backgroundColor: "FFFFFF",
+          },
+          text: "Pattern",
+        },
+      },
+      // No fill (outline only)
+      {
+        shape: {
+          x: 550,
+          y: 80,
+          width: 200,
+          height: 150,
+          fill: { type: "none" },
+          outline: { color: "ED7D31", width: 25400 },
+          text: "No Fill",
+        },
+      },
+      // Radial gradient
+      {
+        shape: {
+          x: 300,
+          y: 280,
+          width: 200,
+          height: 150,
+          fill: {
+            type: "gradient",
+            path: "circle",
+            stops: [
+              { position: 0, color: "FFFFFF" },
+              { position: 100, color: "4472C4" },
+            ],
+          },
+          text: "Radial",
+        },
+      },
+      // Solid fill with transparency
+      {
+        shape: {
+          x: 550,
+          y: 280,
+          width: 200,
+          height: 150,
+          fill: { type: "solid", color: "FF0000" },
+          text: "Solid",
+        },
+      },
+    ],
+  },
+
+  // ── Slide 13: More Effects (innerShadow, reflection, softEdge) ──
+  {
+    children: [
+      { shape: { x: 50, y: 20, width: 300, height: 40, text: "More Effects", fill: "44546A" } },
+      // Inner shadow
+      {
+        shape: {
+          x: 50,
+          y: 80,
+          width: 250,
+          height: 150,
+          fill: "FFC000",
+          text: "Inner Shadow",
+          effects: {
+            innerShadow: {
+              blur: 40000,
+              distance: 30000,
+              direction: 5400000,
+              color: "000000",
+              alpha: 40,
+            },
+          },
+        },
+      },
+      // Reflection
+      {
+        shape: {
+          x: 350,
+          y: 80,
+          width: 250,
+          height: 150,
+          fill: "4472C4",
+          text: "Reflection",
+          effects: {
+            reflection: {
+              blurRadius: 6350,
+              distance: 38100,
+              direction: 5400000,
+              startAlpha: 90,
+              endAlpha: 0,
+            },
+          },
+        },
+      },
+      // Soft edge
+      {
+        shape: {
+          x: 50,
+          y: 280,
+          width: 250,
+          height: 150,
+          fill: "70AD47",
+          text: "Soft Edge",
+          effects: { softEdge: { radius: 50800 } },
+        },
+      },
+      // Multiple effects combined
+      {
+        shape: {
+          x: 350,
+          y: 280,
+          width: 250,
+          height: 150,
+          fill: "ED7D31",
+          geometry: "ellipse",
+          text: "Combined",
+          effects: {
+            outerShadow: {
+              blur: 38100,
+              distance: 25400,
+              direction: 5400000,
+              color: "000000",
+              alpha: 50,
+            },
+            reflection: { startAlpha: 80, endAlpha: 0 },
+            glow: { radius: 50000, color: "ED7D31", alpha: 40 },
+          },
+        },
+      },
+    ],
+  },
+
+  // ── Slide 14: More Charts (bar, line, pie) ──
+  {
+    children: [
+      { shape: { x: 50, y: 10, width: 300, height: 30, text: "Chart Types", fill: "ED7D31" } },
+      {
+        chart: {
+          x: 20,
+          y: 50,
+          width: 300,
+          height: 180,
+          type: "bar",
+          title: "Bar Chart",
+          categories: ["A", "B", "C"],
+          series: [{ name: "Values", values: [10, 20, 30] }],
+          style: 2,
+        },
+      },
+      {
+        chart: {
+          x: 340,
+          y: 50,
+          width: 300,
+          height: 180,
+          type: "line",
+          title: "Line Chart",
+          categories: ["Jan", "Feb", "Mar"],
+          series: [{ name: "Sales", values: [5, 15, 10] }],
+          showLegend: true,
+          style: 2,
+        },
+      },
+      {
+        chart: {
+          x: 180,
+          y: 250,
+          width: 300,
+          height: 200,
+          type: "pie",
+          title: "Pie Chart",
+          categories: ["Red", "Green", "Blue"],
+          series: [{ name: "Share", values: [40, 35, 25] }],
+          showLegend: true,
+          style: 2,
+        },
+      },
+    ],
+  },
+
+  // ── Slide 15: Enhanced Table (rowSpan, verticalAlign, cell margins) ──
+  {
+    children: [
+      { shape: { x: 50, y: 20, width: 400, height: 40, text: "Enhanced Table", fill: "44546A" } },
+      {
+        table: {
+          x: 50,
+          y: 80,
+          width: 700,
+          height: 300,
+          rows: [
+            {
+              cells: [
+                { text: "Header 1", fill: "4472C4", verticalAlign: "CENTER" },
+                { text: "Header 2", fill: "4472C4", verticalAlign: "CENTER" },
+                { text: "Header 3", fill: "4472C4", verticalAlign: "CENTER" },
+              ],
+            },
+            {
+              cells: [
+                {
+                  text: "RowSpan 2",
+                  rowSpan: 2,
+                  fill: "E8F0FE",
+                  verticalAlign: "CENTER",
+                  margins: { left: 100000, right: 100000, top: 50000, bottom: 50000 },
+                },
+                { text: "Cell B1", fill: "F2F2F2" },
+                { text: "Cell C1" },
+              ],
+            },
+            {
+              cells: [
+                // A2 is merged with A1 (rowSpan)
+                { text: "Cell B2", fill: "F2F2F2" },
+                { text: "Cell C2" },
+              ],
+            },
+            {
+              cells: [{ text: "ColSpan 2", columnSpan: 2, fill: "FFF2CC" }, { text: "Last" }],
+            },
+          ],
+          columnWidths: [2500000, 2500000, 2000000],
+          firstRow: true,
+          lastRow: true,
+          firstCol: true,
+          bandRow: true,
+          bandCol: true,
+          borders: {
+            top: { color: "333333", width: 12700 },
+            bottom: { color: "333333", width: 12700 },
+            left: { color: "333333", width: 12700 },
+            right: { color: "333333", width: 12700 },
+          },
+        },
+      },
+    ],
+  },
+
+  // ── Slide 16: Comments + Hyperlink ──
+  {
+    comments: [
+      { author: "Alice Wang", text: "Great slide!", x: 200, y: 50, date: "2026-05-15T10:00:00Z" },
+      { author: "Bob Li", text: "Consider a different color.", x: 400, y: 200, initials: "BL" },
+    ],
+    children: [
+      {
+        shape: {
+          x: 50,
+          y: 20,
+          width: 300,
+          height: 40,
+          text: "Comments + Hyperlink",
+          fill: "7030A0",
+        },
+      },
+      {
+        shape: {
+          x: 100,
+          y: 100,
+          width: 600,
+          height: 60,
+          paragraphs: [
+            {
+              properties: { bullet: { type: "none" } },
+              children: [
+                { text: "Visit " },
+                {
+                  text: "our website",
+                  hyperlink: { url: "https://example.com", tooltip: "Example" },
+                },
+                { text: " for more." },
+              ],
+            },
+          ],
+        },
+      },
+    ],
+  },
+
+  // ── Slide 17: More Transitions + Emphasis Animation ──
+  {
+    transition: { type: "cover", direction: "right", speed: "med" },
+    children: [
+      {
+        shape: {
+          x: 50,
+          y: 20,
+          width: 400,
+          height: 40,
+          text: "Transitions + Emphasis",
+          fill: "C00000",
+        },
+      },
+      {
+        shape: {
+          x: 50,
+          y: 100,
+          width: 200,
+          height: 100,
+          text: "Grow",
+          fill: "4472C4",
+          animation: { class: "emph", emphasisType: "growShrink", duration: 800 },
+        },
+      },
+      {
+        shape: {
+          x: 300,
+          y: 100,
+          width: 200,
+          height: 100,
+          text: "Spin",
+          fill: "70AD47",
+          animation: { class: "emph", emphasisType: "spin", duration: 1000 },
+        },
+      },
+      {
+        shape: {
+          x: 550,
+          y: 100,
+          width: 200,
+          height: 100,
+          text: "Color",
+          fill: "ED7D31",
+          animation: { class: "emph", emphasisType: "colorChange", color: "FF0000", duration: 800 },
+        },
+      },
+      {
+        shape: {
+          x: 300,
+          y: 260,
+          width: 200,
+          height: 100,
+          text: "Pulse",
+          fill: "7030A0",
+          animation: { class: "emph", emphasisType: "pulse", duration: 500 },
+        },
+      },
+    ],
+  },
+
+  // ── Slide 18: Video ──
+  {
+    children: [
+      { shape: { x: 50, y: 20, width: 300, height: 40, text: "Video", fill: "2D4A7A" } },
+      {
+        video: {
+          x: 100,
+          y: 80,
+          width: 480,
+          height: 270,
+          data: videoData,
+          type: "mp4",
+          name: "Test Video",
+          poster: posterData,
+          posterType: "png",
+        },
+      },
+    ],
+  },
+
+  // ── Slide 19: Audio ──
+  {
+    children: [
+      { shape: { x: 50, y: 20, width: 300, height: 40, text: "Audio", fill: "44546A" } },
+      {
+        audio: {
+          x: 300,
+          y: 200,
+          width: 120,
+          height: 120,
+          data: wavBuf,
+          type: "wav",
+          name: "Test Audio",
+        },
+      },
+    ],
+  },
+
+  // ── Slide 20: Geometry showcase ──
+  {
+    children: [
+      { shape: { x: 50, y: 20, width: 300, height: 40, text: "Geometry", fill: "4472C4" } },
+      { shape: { x: 50, y: 80, width: 150, height: 150, text: "rect", fill: "4472C4" } },
+      {
+        shape: {
+          x: 220,
+          y: 80,
+          width: 150,
+          height: 150,
+          text: "ellipse",
+          fill: "ED7D31",
+          geometry: "ellipse",
+        },
+      },
+      {
+        shape: {
+          x: 390,
+          y: 80,
+          width: 150,
+          height: 150,
+          text: "diamond",
+          fill: "70AD47",
+          geometry: "diamond",
+        },
+      },
+      {
+        shape: {
+          x: 560,
+          y: 80,
+          width: 150,
+          height: 150,
+          text: "triangle",
+          fill: "FFC000",
+          geometry: "triangle",
+        },
+      },
+      {
+        shape: {
+          x: 50,
+          y: 260,
+          width: 150,
+          height: 150,
+          text: "pentagon",
+          fill: "7030A0",
+          geometry: "pentagon",
+        },
+      },
+      {
+        shape: {
+          x: 220,
+          y: 260,
+          width: 150,
+          height: 150,
+          text: "hexagon",
+          fill: "C00000",
+          geometry: "hexagon",
+        },
+      },
+      {
+        shape: {
+          x: 390,
+          y: 260,
+          width: 150,
+          height: 150,
+          text: "star",
+          fill: "44546A",
+          geometry: "star5",
+        },
+      },
+      {
+        shape: {
+          x: 560,
+          y: 260,
+          width: 150,
+          height: 150,
+          text: "plus",
+          fill: "2D4A7A",
+          geometry: "plus",
+        },
+      },
+    ],
+  },
+
+  // ── Slide 21: Text body options (vertical, anchor, autoFit, wrap, margins) ──
+  {
+    children: [
+      {
+        shape: { x: 50, y: 20, width: 400, height: 40, text: "Text Body Options", fill: "44546A" },
+      },
+      // Vertical text
+      {
+        shape: {
+          x: 50,
+          y: 80,
+          width: 100,
+          height: 300,
+          fill: "4472C4",
+          text: "Vertical",
+          textVertical: "vert",
+        },
+      },
+      // Anchor bottom
+      {
+        shape: {
+          x: 180,
+          y: 80,
+          width: 200,
+          height: 300,
+          fill: "F2F2F2",
+          outline: { color: "4472C4", width: 12700 },
+          text: "Anchored Bottom",
+          textAnchor: "BOTTOM",
+        },
+      },
+      // AutoFit shrink
+      {
+        shape: {
+          x: 410,
+          y: 80,
+          width: 200,
+          height: 100,
+          fill: "E8F0FE",
+          text: "AutoFit Shrink Text To Fit Shape",
+          textAutoFit: "normal",
+        },
+      },
+      // Flip horizontal
+      {
+        shape: {
+          x: 650,
+          y: 80,
+          width: 150,
+          height: 100,
+          fill: "ED7D31",
+          text: "Flipped",
+          flipHorizontal: true,
+        },
+      },
+    ],
+  },
 ];
 
 const pres = new Presentation({
   title: "Round-trip Feature Showcase",
+  subject: "Comprehensive PPTX round-trip test",
   creator: "Parser Demo",
+  keywords: "test, round-trip, pptx",
+  description: "A presentation covering all supported element types",
+  lastModifiedBy: "Test Suite",
+  revision: 1,
+  show: { loop: true, useTimings: true },
+  masters: [
+    {
+      name: "light",
+      background: { fill: "FFFFFF" },
+      theme: {
+        name: "Light Theme",
+        colors: {
+          dark1: "333333",
+          light1: "FFFFFF",
+          dark2: "44546A",
+          light2: "E7E6E6",
+          accent1: "4472C4",
+          accent2: "ED7D31",
+          accent3: "70AD47",
+          accent4: "FFC000",
+          accent5: "7030A0",
+          accent6: "C00000",
+        },
+        fonts: { majorFont: "Segoe UI", minorFont: "Calibri" },
+      },
+      children: [{ shape: { x: 0, y: 640, width: 960, height: 40, fill: "4472C4" } }],
+    },
+    {
+      name: "dark",
+      background: { fill: "1B2A4A" },
+      theme: {
+        name: "Dark Theme",
+        colors: {
+          dark1: "FFFFFF",
+          light1: "1B2A4A",
+          dark2: "E7E6E6",
+          light2: "333333",
+          accent1: "5B9BD5",
+          accent2: "F4B183",
+          accent3: "A9D18E",
+          accent4: "FFD966",
+          accent5: "9B7BB6",
+          accent6: "FF6B6B",
+        },
+        fonts: { majorFont: "Segoe UI Light", minorFont: "Calibri" },
+      },
+      children: [{ shape: { x: 0, y: 640, width: 960, height: 40, fill: "ED7D31" } }],
+    },
+  ],
   slides,
 });
 
@@ -476,7 +1189,8 @@ const {
   slideLayouts,
 } = parsePptx(buffer);
 
-assert("9 slide paths", slidePaths.length === 9);
+const slideCount = 21;
+assert(`${slideCount} slide paths`, slidePaths.length === slideCount);
 assert("slide 1 path", slidePaths[0] === "ppt/slides/slide1.xml");
 assert("has presentation element", !!presentation);
 
@@ -499,293 +1213,25 @@ assert("has ppt/theme/theme1.xml", pptxDoc.has("ppt/theme/theme1.xml"));
 console.log("\n--- parsePresentation (high-level) ---");
 const parsed = parsePresentation(buffer);
 
-assert("9 slides parsed", parsed.slides!.length === 9);
+assert(`${slideCount} slides parsed`, parsed.slides!.length === slideCount);
 assert("title preserved", parsed.title === "Round-trip Feature Showcase");
 assert("creator preserved", parsed.creator === "Parser Demo");
 assert("size is 16:9", parsed.size === "16:9");
 
-// ── Slide 1: Shapes, effects, rich text ──
-const s0 = parsed.slides![0];
-const s0c = s0.children!;
-assert("s0 has children", s0c.length >= 6);
-
-const s0shape0 = s0c[0] as unknown as { shape: Record<string, unknown> };
-assert("s0 child 0 is shape", "shape" in s0shape0);
-assert("s0 shape has fill", s0shape0.shape.fill === "1B2A4A");
-assert("s0 shape has paragraphs", Array.isArray(s0shape0.shape.paragraphs));
-
-const s0shape1 = s0c[1] as unknown as { shape: Record<string, unknown> };
-assert("s0 shape 1 has geometry", s0shape1.shape.geometry === "roundRect");
-assert("s0 shape 1 has outline", !!s0shape1.shape.outline);
-assert("s0 shape 1 has effects", !!s0shape1.shape.effects);
-
-// Verify outline dashStyle on bullet shape
-const s0bulletShape = s0c[4] as unknown as { shape: Record<string, unknown> };
-assert(
-  "s0 bullet shape has dashStyle",
-  (s0bulletShape.shape.outline as Record<string, unknown>)?.dashStyle === "dash",
-);
-
-// Verify 3D effects (rotation3D, bevel, extrusion, material)
-const s03dShape = s0c[5] as unknown as { shape: Record<string, unknown> };
-const s03dEffects = s03dShape.shape.effects as Record<string, unknown> | undefined;
-assert("s0 3D shape has effects", !!s03dEffects);
-assert("s0 3D shape has rotation3D", !!s03dEffects?.rotation3D);
-assert("s0 3D rotation3D x", (s03dEffects?.rotation3D as Record<string, number>)?.x === 20);
-assert("s0 3D shape has bevelTop", !!s03dEffects?.bevelTop);
-assert("s0 3D shape has extrusionH", (s03dEffects?.extrusionH as number) === 30000);
-assert("s0 3D shape has material", s03dEffects?.material === "plastic");
-
-const s0shape2 = s0c[2] as unknown as { shape: Record<string, unknown> };
-assert("s0 shape 2 has gradient fill", typeof s0shape2.shape.fill === "object");
-
-// ── Slide 2: Table + transition ──
-const s1 = parsed.slides![1];
-assert("s1 has transition", !!s1.transition);
-assert("s1 transition type", (s1.transition as Record<string, unknown>)?.type === "push");
-const s1tbl = s1.children!.find((c) => "table" in (c as object)) as unknown as {
-  table: Record<string, unknown>;
-};
-assert("s1 has table", !!s1tbl);
-assert("s1 table has rows", Array.isArray(s1tbl.table.rows));
-assert("s1 table firstRow", s1tbl.table.firstRow === true);
-assert("s1 table bandRow", s1tbl.table.bandRow === true);
-// Note: table-level borders are distributed to edge cells during generation,
-// so they appear in a:tcPr rather than a:tblPr. The parser supports both paths.
-
-// ── Slide 3: Chart ──
-const s2 = parsed.slides![2];
-const s2chart = s2.children!.find((c) => "chart" in (c as object)) as unknown as {
-  chart: Record<string, unknown>;
-};
-assert("s2 has chart", !!s2chart);
-assert("s2 chart type is column", s2chart.chart.type === "column");
-assert("s2 chart has title", s2chart.chart.title === "Quarterly Sales");
-assert("s2 chart has categories", Array.isArray(s2chart.chart.categories));
-assert("s2 chart has series", Array.isArray(s2chart.chart.series));
-assert("s2 chart showLegend", s2chart.chart.showLegend === true);
-
-// ── Slide 4: SmartArt ──
-const s3 = parsed.slides![3];
-const s3sa = s3.children!.find((c) => "smartart" in (c as object)) as unknown as {
-  smartart: Record<string, unknown>;
-};
-assert("s3 has smartart", !!s3sa);
-assert("s3 smartart has nodes", Array.isArray(s3sa.smartart.nodes));
-assert("s3 smartart has layout", s3sa.smartart.layout === "hierarchy1");
-
-// ── Slide 5: Connector + Line ──
-const s4 = parsed.slides![4];
-const s4line = s4.children!.find((c) => "line" in (c as object)) as unknown as {
-  line: Record<string, unknown>;
-};
-assert("s4 has line shape", !!s4line);
-assert("s4 line has x1", s4line?.line?.x1 !== undefined);
-assert("s4 line has x2", s4line?.line?.x2 !== undefined);
-
-const s4conn = s4.children!.find((c) => "connector" in (c as object)) as unknown as {
-  connector: Record<string, unknown>;
-};
-assert("s4 has connector", !!s4conn);
-assert("s4 connector endArrowhead", s4conn.connector.endArrowhead === "triangle");
-assert("s4 connector beginArrowhead", s4conn.connector.beginArrowhead === "oval");
-
-// ── Slide 6: Group ──
-const s5 = parsed.slides![5];
-const s5grp = s5.children!.find((c) => "group" in (c as object)) as unknown as {
-  group: Record<string, unknown>;
-};
-assert("s5 has group", !!s5grp);
-assert("s5 group has children", Array.isArray(s5grp.group.children));
-assert("s5 group has rotation", s5grp.group.rotation !== undefined);
-
-// ── Slide 7: Background + transition ──
-const s6 = parsed.slides![6];
-assert("s6 has background", !!s6.background);
-assert(
-  "s6 background is gradient",
-  typeof (s6.background as Record<string, unknown>)?.fill === "object",
-);
-assert("s6 has transition", !!s6.transition);
-assert("s6 transition type is fade", (s6.transition as Record<string, unknown>)?.type === "fade");
-
-// ── Slide 8: Animation ──
-const s7 = parsed.slides![7];
-const s7shapes = s7.children!.filter((c) => "shape" in (c as object));
-assert("s7 has animated shapes", s7shapes.length >= 3);
-// Verify at least one shape has animation parsed
-const s7animated = s7shapes.find((s) => {
-  const shape = (s as Record<string, unknown>).shape as Record<string, unknown>;
-  return !!shape.animation;
-});
-assert("s7 shape has animation parsed", !!s7animated);
-
-// ── Slide 9: Notes + headerFooter ──
-const s8 = parsed.slides![8];
-assert("s8 has notes", !!s8.notes);
-// Note: Slide class stores headerFooter but doesn't generate p:hf XML yet.
-// The parser supports p:hf when present in slide XML.
-
 // ══════════════════════════════════════════════════════════════════════════════
-// 4. Round-trip: re-generate from parsed data
+// 4. Round-trip: re-generate from parsed data → compare ZIPs
 // ══════════════════════════════════════════════════════════════════════════════
 
-console.log("\n--- Round-trip Re-generation ---");
+console.log("\n--- Round-trip ZIP comparison ---");
 
 const pres2 = new Presentation(parsed);
 const buffer2 = await Packer.toBuffer(pres2);
-assert("re-generated buffer non-empty", buffer2.length > 0);
 console.log(`Re-generated PPTX: ${buffer2.length} bytes`);
 
-// Re-parse the re-generated file
-const parsed2 = parsePresentation(buffer2);
-assert("re-parsed has 9 slides", parsed2.slides!.length === 9);
-assert("re-parsed title preserved", parsed2.title === "Round-trip Feature Showcase");
-assert("re-parsed creator preserved", parsed2.creator === "Parser Demo");
-
-const rs0 = parsed2.slides![0].children!;
-assert("re-parsed s0 has children", rs0.length >= 6);
-const rs0shape0 = rs0[0] as unknown as { shape: Record<string, unknown> };
-assert("re-parsed shape text preserved", rs0shape0.shape.text === undefined); // title shape uses paragraphs
-
-// Verify chart round-trip
-const rs2chart = parsed2.slides![2].children!.find((c) => "chart" in (c as object)) as unknown as {
-  chart: Record<string, unknown>;
-};
-assert("re-parsed chart type preserved", rs2chart.chart.type === "column");
-assert("re-parsed chart title preserved", rs2chart.chart.title === "Quarterly Sales");
-
-// Verify table round-trip
-const rs1tbl = parsed2.slides![1].children!.find((c) => "table" in (c as object)) as unknown as {
-  table: Record<string, unknown>;
-};
-assert("re-parsed table rows preserved", Array.isArray(rs1tbl.table.rows));
-assert("re-parsed table firstRow preserved", rs1tbl.table.firstRow === true);
-
-// ══════════════════════════════════════════════════════════════════════════════
-// 5. Multi-master round-trip test
-// ══════════════════════════════════════════════════════════════════════════════
-
-console.log("\n--- Multi-master Round-trip ---");
-
-const masters: MasterDefinition[] = [
-  {
-    name: "light",
-    background: { fill: "FFFFFF" },
-    theme: {
-      name: "Light Theme",
-      colors: { dark1: "333333", light1: "FFFFFF", dark2: "44546A", light2: "E7E6E6" },
-    },
-    children: [
-      {
-        shape: {
-          x: 0,
-          y: 640,
-          width: 960,
-          height: 40,
-          fill: "4472C4",
-        },
-      },
-    ],
-  },
-  {
-    name: "dark",
-    background: { fill: "1B2A4A" },
-    theme: {
-      name: "Dark Theme",
-      colors: { dark1: "FFFFFF", light1: "1B2A4A", dark2: "E7E6E6", light2: "333333" },
-    },
-    children: [
-      {
-        shape: {
-          x: 0,
-          y: 640,
-          width: 960,
-          height: 40,
-          fill: "ED7D31",
-        },
-      },
-    ],
-  },
-];
-
-const multiSlides: SlideOptions[] = [
-  {
-    master: "light",
-    layout: "blank",
-    children: [
-      {
-        shape: {
-          x: 100,
-          y: 100,
-          width: 760,
-          height: 400,
-          fill: "F2F2F2",
-          text: "Light theme slide",
-        },
-      },
-    ],
-  },
-  {
-    master: "dark",
-    layout: "blank",
-    children: [
-      {
-        shape: {
-          x: 100,
-          y: 100,
-          width: 760,
-          height: 400,
-          fill: "2D4A7A",
-          text: "Dark theme slide",
-          paragraphs: [
-            {
-              properties: { bullet: { type: "none" } },
-              children: [{ text: "Dark theme slide", fill: "FFFFFF", fontSize: 24 }],
-            },
-          ],
-        },
-      },
-    ],
-  },
-];
-
-const multiPres = new Presentation({
-  title: "Multi-master Test",
-  masters,
-  slides: multiSlides,
-});
-
-const multiBuffer = await Packer.toBuffer(multiPres);
-console.log(`Multi-master PPTX: ${multiBuffer.length} bytes`);
-
-const multiParsed = parsePresentation(multiBuffer);
-assert("multi-master has 2 slides", multiParsed.slides!.length === 2);
-assert("multi-master has masters", !!multiParsed.masters);
-assert("multi-master has 2 masters", multiParsed.masters!.length === 2);
-assert("slide 0 master", multiParsed.slides![0].master === "Light Theme");
-assert("slide 1 master", multiParsed.slides![1].master === "Dark Theme");
-// Master name is derived from theme name
-assert("master 0 name", multiParsed.masters![0].name === "Light Theme");
-assert("master 1 name", multiParsed.masters![1].name === "Dark Theme");
-assert("master 0 has theme", !!multiParsed.masters![0].theme);
-assert("master 0 theme name", multiParsed.masters![0].theme?.name === "Light Theme");
-assert("master 1 has theme", !!multiParsed.masters![1].theme);
-assert("master 1 theme name", multiParsed.masters![1].theme?.name === "Dark Theme");
-
-// Multi-master round-trip: re-generate from parsed data
-const multiPres2 = new Presentation({
-  title: "Multi-master Test (round-trip)",
-  ...multiParsed,
-});
-const multiBuffer2 = await Packer.toBuffer(multiPres2);
-assert("multi-master re-gen non-empty", multiBuffer2.length > 0);
-
-const multiParsed2 = parsePresentation(multiBuffer2);
-assert("re-gen multi has 2 slides", multiParsed2.slides!.length === 2);
-assert("re-gen multi has 2 masters", multiParsed2.masters!.length === 2);
-assert("re-gen slide 0 master", multiParsed2.slides![0].master === "Light Theme");
-assert("re-gen slide 1 master", multiParsed2.slides![1].master === "Dark Theme");
+const ignorePaths = new Set(["docProps/core.xml"]);
+const diffs = compareZips(buffer, buffer2, ignorePaths);
+printDiffs(diffs);
+assert("round-trip ZIPs match", diffs.length === 0);
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Summary

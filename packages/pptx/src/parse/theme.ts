@@ -1,4 +1,4 @@
-import { attr, findChild } from "@office-open/xml";
+import { attr, colorAttr, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import type { ColorSchemeOptions, FontSchemeOptions, ThemeOptions } from "../file/theme/theme";
@@ -21,7 +21,7 @@ const COLOR_MAP: Record<string, keyof ColorSchemeOptions> = {
 
 function extractColor(el: Element): string | undefined {
   const srgb = findChild(el, "a:srgbClr");
-  if (srgb) return attr(srgb, "val") ?? undefined;
+  if (srgb) return colorAttr(srgb, "val") ?? undefined;
   const sysClr = findChild(el, "a:sysClr");
   if (sysClr) return attr(sysClr, "lastClr") ?? undefined;
   return undefined;

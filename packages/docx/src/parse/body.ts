@@ -1,6 +1,5 @@
 import type { ISectionPropertiesOptions } from "@file/document/body/section-properties/section-properties";
 import type { SectionOptions } from "@file/file";
-import type { ParagraphOptions } from "@file/paragraph/paragraph";
 import type { SectionChild } from "@file/section-child";
 /**
  * Body parser for DOCX documents.
@@ -14,7 +13,6 @@ import { attr, attrBool, attrNum, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import { parseAltChunk } from "../file/alt-chunk/alt-chunk-parse";
-import { parseDrawingRun } from "../file/drawing/drawing-parse";
 import { parseParagraph } from "../file/paragraph/paragraph-parse";
 import { parseSdtBlock, setSectionChildrenParser } from "../file/sdt/sdt-parse";
 import { parseSubDoc } from "../file/sub-doc/sub-doc-parse";
@@ -37,10 +35,16 @@ function parseSectionProperties(el: Element, ctx: ParseContext): ISectionPropert
     const page: Record<string, unknown> = {};
     const size: Record<string, unknown> = {};
     const w = attrNum(pgSz, "w:w");
-    if (w !== undefined) size.width = w;
     const h = attrNum(pgSz, "w:h");
-    if (h !== undefined) size.height = h;
     const orient = attr(pgSz, "w:orient");
+    // createPageSize swaps w/h for landscape, so reverse that here
+    if (orient === "landscape" && w !== undefined && h !== undefined) {
+      size.width = h;
+      size.height = w;
+    } else {
+      if (w !== undefined) size.width = w;
+      if (h !== undefined) size.height = h;
+    }
     if (orient) size.orientation = orient;
     if (Object.keys(size).length > 0) page.size = size;
 
@@ -129,8 +133,8 @@ function parseSectionProperties(el: Element, ctx: ParseContext): ISectionPropert
   const lnNumType = findChild(el, "w:lnNumType");
   if (lnNumType) {
     const lineNumbers: Record<string, unknown> = {};
-    const count = attrNum(lnNumType, "w:count");
-    if (count !== undefined) lineNumbers.count = count;
+    const countBy = attrNum(lnNumType, "w:countBy");
+    if (countBy !== undefined) lineNumbers.countBy = countBy;
     const start = attrNum(lnNumType, "w:start");
     if (start !== undefined) lineNumbers.start = start;
     const restart = attr(lnNumType, "w:restart");
@@ -138,6 +142,39 @@ function parseSectionProperties(el: Element, ctx: ParseContext): ISectionPropert
     const distance = attrNum(lnNumType, "w:distance");
     if (distance !== undefined) lineNumbers.distance = distance;
     if (Object.keys(lineNumbers).length > 0) opts.lineNumbers = lineNumbers;
+  }
+
+  // Page borders
+  const pgBorders = findChild(el, "w:pgBorders");
+  if (pgBorders) {
+    const borders: Record<string, unknown> = {};
+    for (const side of ["top", "left", "bottom", "right"] as const) {
+      const sideEl = findChild(pgBorders, `w:${side}`);
+      if (sideEl) {
+        const b: Record<string, unknown> = {};
+        const val = attr(sideEl, "w:val");
+        if (val) b.style = val;
+        const color = attr(sideEl, "w:color");
+        if (color) b.color = color;
+        const sz = attrNum(sideEl, "w:sz");
+        if (sz !== undefined) b.size = sz;
+        const space = attrNum(sideEl, "w:space");
+        if (space !== undefined) b.space = space;
+        borders[side] = b;
+      }
+    }
+    // Global page border attributes
+    const display = attr(pgBorders, "w:display");
+    if (display) borders.display = display;
+    const offsetFrom = attr(pgBorders, "w:offsetFrom");
+    if (offsetFrom) borders.offsetFrom = offsetFrom;
+    const zOrder = attr(pgBorders, "w:zOrder");
+    if (zOrder) borders.zOrder = zOrder;
+    if (Object.keys(borders).length > 0) {
+      const page = (opts.page ?? {}) as Record<string, unknown>;
+      page.borders = borders;
+      opts.page = page;
+    }
   }
 
   // Vertical align
@@ -210,22 +247,6 @@ function parseHeaderFooterRef(rId: string, ctx: ParseContext): SectionChild[] | 
 export function parseSectionChild(el: Element, ctx: ParseContext): SectionChild {
   switch (el.name) {
     case "w:p": {
-      // Check if this paragraph contains a drawing (image/chart/smartArt)
-      const drawing = findDeepElement(el, "w:drawing");
-      if (drawing) {
-        const drawingChild = parseDrawingRun(drawing, ctx);
-        if (drawingChild) {
-          const paraOpts = parseParagraph(el, ctx) as Record<string, unknown>;
-          const existingChildren = ((paraOpts.children ?? []) as ParagraphOptions["children"])!;
-          return {
-            paragraph: {
-              ...paraOpts,
-              children: [...(existingChildren ?? []), drawingChild],
-            },
-          };
-        }
-      }
-
       // Check for textbox (w:pict containing v:textbox)
       const pict = findChild(el, "w:pict");
       if (pict) {
@@ -335,7 +356,12 @@ export function parseBody(body: Element, ctx: ParseContext): SectionOptions[] {
 
   for (let i = 0; i < boundaries.length; i++) {
     const boundary = boundaries[i];
-    const sectionElements = bodyChildren.slice(start, boundary.index);
+    // For inline sectPr (inside w:pPr), the containing paragraph was pushed to
+    // bodyChildren. Exclude it — it's a section break marker, not content.
+    // The last boundary uses a body-level sectPr, so no paragraph to exclude.
+    const isInlineSectPr = i < boundaries.length - 1;
+    const endIdx = isInlineSectPr ? Math.max(start, boundary.index - 1) : boundary.index;
+    const sectionElements = bodyChildren.slice(start, endIdx);
     const parsedProps = parseSectionProperties(boundary.sectPr, ctx);
     const rawProps = parsedProps as Record<string, unknown>;
 

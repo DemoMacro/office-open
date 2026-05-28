@@ -10,9 +10,11 @@ export function parseSettings(el: Element | undefined): Partial<PropertiesOption
 
   const opts: Record<string, unknown> = {};
 
-  // evenAndOddHeaderAndFooters → w:evenAndOddHeaders (presence check)
-  if (findChild(el, "w:evenAndOddHeaders")) {
-    opts.evenAndOddHeaderAndFooters = true;
+  // evenAndOddHeaderAndFooters → w:evenAndOddHeaders (check val attribute)
+  const eohEl = findChild(el, "w:evenAndOddHeaders");
+  if (eohEl) {
+    const val = attr(eohEl, "w:val");
+    opts.evenAndOddHeaderAndFooters = val !== "false" && val !== "0" && val !== "off";
   }
 
   // view → w:view/@w:val
@@ -80,17 +82,6 @@ export function parseSettings(el: Element | undefined): Partial<PropertiesOption
       }
     }
     if (vars.length > 0) opts.docVars = vars;
-  }
-
-  // background → w:background
-  const bgEl = findChild(el, "w:background");
-  if (bgEl) {
-    const bg: Record<string, unknown> = {};
-    const color = attr(bgEl, "w:color");
-    if (color) bg.color = color;
-    const themeColor = attr(bgEl, "w:themeColor");
-    if (themeColor) bg.themeColor = themeColor;
-    if (Object.keys(bg).length > 0) opts.background = bg;
   }
 
   // characterSpacingControl → w:characterSpacingControl/@w:val

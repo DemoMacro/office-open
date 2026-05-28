@@ -13,6 +13,7 @@ import { attr, attrBool, attrNum, children, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import type { ParseContext } from "../../parse/context";
+import { parseDrawingRun } from "../drawing/drawing-parse";
 import { parseMathChildren } from "./math/math-parse";
 import { parseRun, parseRunProperties, parsedRunToOptions } from "./run/run-parse";
 
@@ -91,12 +92,37 @@ export function parseParagraphProperties(el: Element, _ctx: ParseContext): Recor
     if (Object.keys(indentObj).length > 0) opts.indent = indentObj;
   }
 
-  // Numbering (w:numPr) → bullet
+  // Numbering (w:numPr) → numbering reference or bullet fallback
   const numPr = findChild(el, "w:numPr");
   if (numPr) {
     const ilvl = findChild(numPr, "w:ilvl");
     const level = ilvl ? (attrNum(ilvl, "w:val") ?? 0) : 0;
-    opts.bullet = { level };
+    const numIdEl = findChild(numPr, "w:numId");
+    const numId = numIdEl ? attr(numIdEl, "w:val") : undefined;
+    if (numId !== undefined && _ctx.numberingCache.size > 0) {
+      // Resolve numId → abstractNumId → find in numberingCache
+      const numEl = _ctx.docx.numbering;
+      if (numEl) {
+        let abstractNumId: string | undefined;
+        for (const child of numEl.elements ?? []) {
+          if (child.name !== "w:num") continue;
+          if (attr(child, "w:numId") === numId) {
+            const absRef = findChild(child, "w:abstractNumId");
+            abstractNumId = absRef ? attr(absRef, "w:val") : undefined;
+            break;
+          }
+        }
+        if (abstractNumId !== undefined) {
+          opts.numbering = { reference: `list_${numId}`, level };
+        } else {
+          opts.bullet = { level };
+        }
+      } else {
+        opts.bullet = { level };
+      }
+    } else {
+      opts.bullet = { level };
+    }
   }
 
   // Tab stops
@@ -250,6 +276,15 @@ export function parseParagraph(el: Element, ctx: ParseContext): ParagraphOptions
       case "w:pPr":
         break; // already handled
       case "w:r": {
+        // Check for drawing inside run (image/chart/smartArt) — preserve original position
+        const drawingEl = findChild(child, "w:drawing");
+        if (drawingEl) {
+          const drawingChild = parseDrawingRun(drawingEl, ctx);
+          if (drawingChild) {
+            childList.push(drawingChild);
+            break;
+          }
+        }
         const parsed = parseRun(child, ctx);
         // Extract RawPassthrough children and push them directly to paragraph
         const rawChildren = parsed.children.filter(
@@ -259,9 +294,9 @@ export function parseParagraph(el: Element, ctx: ParseContext): ParagraphOptions
           ...parsed,
           children: parsed.children.filter((c) => !(c instanceof RawPassthrough)),
         };
-        // Convert to RunOptions (or { commentReference })
+        // Convert to RunOptions (or { commentReference }, or null if footnoteRef-only)
         const runOpts = parsedRunToOptions(simplified);
-        childList.push(runOpts);
+        if (runOpts !== null) childList.push(runOpts);
         // Preserve raw passthrough elements for round-trip fidelity
         childList.push(...rawChildren);
         break;
@@ -329,6 +364,44 @@ export function parseParagraph(el: Element, ctx: ParseContext): ParagraphOptions
         childList.push({ math: { children: mathChildren } });
         break;
       }
+      case "w:ins": {
+        // Track change insertion: w:ins containing w:r children
+        const insRun = findChild(child, "w:r");
+        if (insRun) {
+          const parsed = parseRun(insRun, ctx);
+          const runOpts = parsedRunToOptions(parsed);
+          if (runOpts !== null && typeof runOpts === "object" && !("commentReference" in runOpts)) {
+            childList.push({
+              insertion: {
+                id: attrNum(child, "w:id") ?? 0,
+                author: attr(child, "w:author") ?? "",
+                date: attr(child, "w:date") ?? "",
+                ...(runOpts as Record<string, unknown>),
+              },
+            });
+          }
+        }
+        break;
+      }
+      case "w:del": {
+        // Track change deletion: w:del containing w:r with w:delText
+        const delRun = findChild(child, "w:r");
+        if (delRun) {
+          const parsed = parseRun(delRun, ctx);
+          const runOpts = parsedRunToOptions(parsed);
+          if (runOpts !== null && typeof runOpts === "object" && !("commentReference" in runOpts)) {
+            childList.push({
+              deletion: {
+                id: attrNum(child, "w:id") ?? 0,
+                author: attr(child, "w:author") ?? "",
+                date: attr(child, "w:date") ?? "",
+                ...(runOpts as Record<string, unknown>),
+              },
+            });
+          }
+        }
+        break;
+      }
       default:
         // Wrap unknown elements as RawPassthrough
         if (child.name && child.elements && child.elements.length > 0) {
@@ -338,14 +411,14 @@ export function parseParagraph(el: Element, ctx: ParseContext): ParagraphOptions
     }
   }
 
-  // Simple text optimization: if there's only text content, use the text field
+  // Simple text optimization: if there's only pure text content (no formatting), use the text field
   if (childList.length > 0) {
     const allStrings = childList.every(
       (c) =>
         typeof c === "object" &&
         c !== null &&
         "text" in (c as Record<string, unknown>) &&
-        Object.keys(c as Record<string, unknown>).length <= 2,
+        Object.keys(c as Record<string, unknown>).length === 1,
     );
     if (allStrings) {
       const combined = childList.map((c) => (c as Record<string, unknown>).text as string).join("");

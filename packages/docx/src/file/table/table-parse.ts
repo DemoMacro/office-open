@@ -29,8 +29,10 @@ function parseTableProperties(el: Element): Record<string, unknown> {
 
   const tblW = findChild(el, "w:tblW");
   if (tblW) {
-    const size = attrNum(tblW, "w:w");
+    const rawSize = attr(tblW, "w:w");
     const type = attr(tblW, "w:type");
+    // For "pct" type, size may be a percentage string like "100%"
+    const size = type === "pct" ? rawSize : attrNum(tblW, "w:w");
     if (size !== undefined || type) {
       opts.width = { size: size ?? 0, ...(type ? { type } : {}) };
     }
@@ -213,6 +215,26 @@ function parseTableCellProperties(el: Element): Record<string, unknown> {
 
   const noWrap = findChild(el, "w:noWrap");
   if (noWrap) opts.noWrap = true;
+
+  // Cell margins (w:tcMar → TableCellMarginOptions)
+  const tcMar = findChild(el, "w:tcMar");
+  if (tcMar) {
+    const margins: Record<string, unknown> = {};
+    let marginUnitType: string | undefined;
+    for (const side of ["top", "bottom", "left", "right"] as const) {
+      const sideEl = findChild(tcMar, `w:${side}`);
+      if (sideEl) {
+        const size = attrNum(sideEl, "w:w");
+        const type = attr(sideEl, "w:type");
+        if (size !== undefined) {
+          margins[side] = size;
+          if (type && !marginUnitType) marginUnitType = type;
+        }
+      }
+    }
+    if (marginUnitType) margins.marginUnitType = marginUnitType;
+    if (Object.keys(margins).length > 0) opts.margins = margins;
+  }
 
   const textDirection = findChild(el, "w:textDirection");
   if (textDirection) {

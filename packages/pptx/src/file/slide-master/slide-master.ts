@@ -106,12 +106,12 @@ function buildChildrenXml(children?: readonly MasterChild[]): string {
 
 function buildSlideMasterXml(
   layoutCount: number,
-  headerFooter?: SlideHeaderFooterOptions,
+  _headerFooter?: SlideHeaderFooterOptions,
   masterOptions?: SlideMasterOptions,
   slideWidth: number = SW_REF,
   masterIndex: number = 0,
 ): string {
-  const hfXml = headerFooter ? `<p:hf dt="0" hdr="0" ftr="0" sldNum="0"/>` : "";
+  const hfXml = `<p:hf dt="0" hdr="0" ftr="0" sldNum="0"/>`;
   const ph = masterOptions?.placeholders ?? {};
 
   // Layout IDs must be globally unique across all masters.
@@ -239,7 +239,7 @@ export class DefaultSlideMaster extends ImportedXmlComponent {
     masterIndex: number = 0,
   ) {
     super("p:sldMaster");
-    this.cacheKey = `${layoutCount}:${headerFooter ? JSON.stringify(headerFooter) : ""}:${masterOptions ? JSON.stringify(masterOptions) : ""}:${slideWidth}:${masterIndex}`;
+    this.cacheKey = `${layoutCount}:${masterOptions ? JSON.stringify(masterOptions) : ""}:${slideWidth}:${masterIndex}`;
     if (!DefaultSlideMaster.cache.has(this.cacheKey)) {
       DefaultSlideMaster.cache.set(
         this.cacheKey,

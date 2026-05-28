@@ -49,6 +49,8 @@ export interface DocxDocument {
   doc: ParsedDocument;
   /** word/document.xml → w:body element */
   body: Element;
+  /** word/document.xml → w:background element */
+  background?: Element;
   /** word/styles.xml */
   styles?: Element;
   /** word/numbering.xml */
@@ -175,6 +177,14 @@ export function parseDocument(data: DataType): PropertiesOptions {
 
   const opts: Record<string, unknown> = { sections };
 
+  // Background (w:background in document.xml)
+  if (docx.background) {
+    const bg: Record<string, unknown> = {};
+    const color = attr(docx.background, "w:color");
+    if (color) bg.color = color;
+    if (Object.keys(bg).length > 0) opts.background = bg;
+  }
+
   // Core properties
   if (docx.coreProps) {
     const corePropsEl = docx.doc.get(docx.coreProps);
@@ -266,6 +276,7 @@ export function parseDocx(data: DataType): DocxDocument {
   if (!documentEl) throw new Error("word/document.xml not found");
   const body = documentEl.elements?.find((e) => e.name === "w:body");
   if (!body) throw new Error("w:body not found in word/document.xml");
+  const background = documentEl.elements?.find((e) => e.name === "w:background");
 
   const styles = doc.get("word/styles.xml");
   const numbering = doc.get("word/numbering.xml");
@@ -279,6 +290,7 @@ export function parseDocx(data: DataType): DocxDocument {
   return {
     doc,
     body,
+    background,
     styles,
     numbering,
     settings,

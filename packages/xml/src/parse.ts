@@ -14,6 +14,7 @@ export function unescapeXml(str: string): string {
 }
 
 export function nativeTypeValue(value: string): string | number | boolean {
+  if (value === "") return value;
   const n = Number(value);
   if (!isNaN(n)) return n;
   const lower = value.toLowerCase();

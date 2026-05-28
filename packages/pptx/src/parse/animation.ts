@@ -216,13 +216,16 @@ function parseAnimationEffect(el: Element): AnimationOptions | undefined {
     for (const sub of childTnLst.elements ?? []) {
       switch (sub.name) {
         case "p:animEffect": {
-          // Duration from the animEffect's cTn
-          const subCTn = findChild(sub, "p:cTn");
-          if (subCTn) {
-            const subDur = attr(subCTn, "dur");
-            if (subDur) {
-              const ms = parseDuration(subDur);
-              if (ms !== undefined) opts.duration = ms;
+          // Duration is inside p:animEffect > p:cBhvr > p:cTn
+          if (opts.duration === undefined) {
+            const cBhvr = findChild(sub, "p:cBhvr");
+            const subCTn = cBhvr ? findChild(cBhvr, "p:cTn") : undefined;
+            if (subCTn) {
+              const subDur = attr(subCTn, "dur");
+              if (subDur) {
+                const ms = parseDuration(subDur);
+                if (ms !== undefined) opts.duration = ms;
+              }
             }
           }
           break;
@@ -269,14 +272,17 @@ function parseAnimationEffect(el: Element): AnimationOptions | undefined {
         }
         case "p:animScale": {
           opts.emphasisType = "growShrink" as EmphasisType;
+          readSubDuration(sub, opts);
           break;
         }
         case "p:animRot": {
           opts.emphasisType = "spin" as EmphasisType;
+          readSubDuration(sub, opts);
           break;
         }
         case "p:animClr": {
           opts.emphasisType = "colorChange" as EmphasisType;
+          readSubDuration(sub, opts);
           break;
         }
         case "p:cmd": {
@@ -322,6 +328,22 @@ function findDeep(parent: Element, name: string): Element[] {
     walk(child);
   }
   return results;
+}
+
+/**
+ * Read duration from p:cBhvr > p:cTn inside a sub-effect element.
+ */
+function readSubDuration(sub: Element, opts: Record<string, unknown>): void {
+  if (opts.duration !== undefined) return;
+  const cBhvr = findChild(sub, "p:cBhvr");
+  const subCTn = cBhvr ? findChild(cBhvr, "p:cTn") : undefined;
+  if (subCTn) {
+    const subDur = attr(subCTn, "dur");
+    if (subDur) {
+      const ms = parseDuration(subDur);
+      if (ms !== undefined) opts.duration = ms;
+    }
+  }
 }
 
 /**

@@ -46,6 +46,10 @@ export function parseNumberingDefinitions(el: Element): Record<string, unknown> 
       if (levelOpts) levels.push(levelOpts);
     }
 
+    // Skip default bullet list (all levels are bullet format) —
+    // Numbering constructor already creates a default bullet list.
+    if (levels.length > 0 && levels.every((l) => l.format === "bullet")) continue;
+
     if (levels.length > 0) {
       configs.push({ reference: `list_${numId}`, levels });
     }

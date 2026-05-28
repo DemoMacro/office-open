@@ -2,8 +2,10 @@
 
 import * as fs from "fs";
 
-import { Document, Packer, parseDocument } from "@office-open/docx";
+import { Document, Packer, parseDocument, parseArchive } from "@office-open/docx";
 import type { SectionOptions } from "@office-open/docx";
+import { xml2js, js2xml } from "@office-open/xml";
+import { strFromU8 } from "fflate";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
@@ -20,12 +22,100 @@ function assert(label: string, condition: boolean) {
   }
 }
 
+function normalizeXml(raw: Uint8Array): string {
+  const parsed = xml2js(strFromU8(raw), {
+    nativeTypeAttributes: true,
+    captureSpacesBetweenElements: true,
+  });
+  let xml = js2xml(parsed);
+  // Normalize non-deterministic values
+  xml = xml.replace(/\{[0-9A-F-]{36}\}/g, "{UUID}");
+  xml = xml.replace(/afchunk[a-z0-9_-]+/g, "afchunk_NORM");
+  xml = xml.replace(/rId[a-z0-9_-]+/g, "rId_NORM");
+  // Normalize non-deterministic shape/element IDs (random alphanumeric with hyphens/underscores)
+  xml = xml.replace(/ id="([a-z0-9_][a-z0-9_-]{10,})"/g, ' id="ID_NORM"');
+  // Normalize wp:docPr id (auto-incremented numeric id)
+  xml = xml.replace(/(<wp:docPr[^>]*?) id="\d+"/g, '$1 id="N"');
+  return xml;
+}
+
+function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+interface Diff {
+  path: string;
+  kind: "missing-left" | "missing-right" | "content";
+}
+
+function compareZips(buf1: Uint8Array, buf2: Uint8Array, ignorePaths?: Set<string>): Diff[] {
+  const zip1 = parseArchive(buf1);
+  const zip2 = parseArchive(buf2);
+  const diffs: Diff[] = [];
+
+  const allPaths = new Set([...zip1.keys(), ...zip2.keys()]);
+
+  for (const path of allPaths) {
+    if (ignorePaths?.has(path)) continue;
+    // Skip afchunks files (random names, content is identical)
+    if (path.includes("afchunks/")) continue;
+
+    const raw1 = zip1.getRaw(path);
+    const raw2 = zip2.getRaw(path);
+
+    if (!raw1) {
+      diffs.push({ path, kind: "missing-left" });
+      continue;
+    }
+    if (!raw2) {
+      diffs.push({ path, kind: "missing-right" });
+      continue;
+    }
+
+    if (path.endsWith(".xml") || path.endsWith(".rels")) {
+      const s1 = normalizeXml(raw1);
+      const s2 = normalizeXml(raw2);
+      if (s1 !== s2) {
+        diffs.push({ path, kind: "content" });
+      }
+    } else {
+      if (!bytesEqual(raw1, raw2)) {
+        diffs.push({ path, kind: "content" });
+      }
+    }
+  }
+
+  return diffs;
+}
+
+function printDiffs(diffs: Diff[]): void {
+  if (diffs.length === 0) {
+    console.log("  No differences found!");
+    return;
+  }
+  for (const d of diffs) {
+    const label =
+      d.kind === "missing-left"
+        ? "only in buffer2"
+        : d.kind === "missing-right"
+          ? "only in buffer1"
+          : "content differs";
+    console.log(`  DIFF: ${d.path} (${label})`);
+  }
+}
+
 // ─── Main ──────────────────────────────────────────────────────────────────
 
 async function main() {
+  const imageData = fs.readFileSync("./demo/images/dog.png");
+
   // 1. Build a single document with every content type
   const sections: SectionOptions[] = [
-    // Section: paragraphs, tables, nested tables, SDT, headings, TOC, headers/footers
+    // Section 1: paragraphs, tables, nested tables, SDT, headings, TOC, headers/footers
     {
       headers: {
         default: [{ paragraph: { children: [{ text: "Header", bold: true }] } }],
@@ -104,7 +194,7 @@ async function main() {
         { paragraph: { heading: "Heading2", children: ["Second Heading"] } },
         { paragraph: { children: ["Content under second heading."] } },
 
-        // Table
+        // Table with borders
         {
           table: {
             rows: [
@@ -166,7 +256,7 @@ async function main() {
           },
         },
 
-        // SDT block
+        // SDT block (richText)
         {
           sdt: {
             properties: { richText: true, alias: "BlockContent", tag: "block-content" },
@@ -208,7 +298,7 @@ async function main() {
       ],
     },
 
-    // Section: chart
+    // Section 2: chart
     {
       children: [
         { paragraph: { children: [{ text: "Chart (JSON API)", bold: true, size: 28 }] } },
@@ -235,7 +325,7 @@ async function main() {
       ],
     },
 
-    // Section: smartArt
+    // Section 3: smartArt
     {
       children: [
         { paragraph: { children: [{ text: "SmartArt (JSON API)", bold: true, size: 28 }] } },
@@ -263,7 +353,7 @@ async function main() {
       ],
     },
 
-    // Section: altChunk
+    // Section 4: altChunk
     {
       children: [
         { paragraph: { children: [{ text: "AltChunk (JSON API)", bold: true, size: 28 }] } },
@@ -277,27 +367,50 @@ async function main() {
       ],
     },
 
-    // Section: image
+    // Section 5: image (inline + floating)
     {
       children: [
-        { paragraph: { children: [{ text: "Image (JSON API)", bold: true, size: 28 }] } },
+        { paragraph: { children: [{ text: "Images (JSON API)", bold: true, size: 28 }] } },
+        // Inline image
         {
           paragraph: {
             children: [
               {
                 image: {
                   type: "png",
-                  data: fs.readFileSync("./demo/images/dog.png"),
-                  transformation: { width: 200, height: 200 },
+                  data: imageData,
+                  transformation: { width: 150, height: 150 },
+                  altText: { name: "Dog", description: "A dog picture", title: "Dog Image" },
                 },
               },
+            ],
+          },
+        },
+        // Floating image with wrapping
+        {
+          paragraph: {
+            children: [
+              {
+                image: {
+                  type: "png",
+                  data: imageData,
+                  transformation: { width: 100, height: 100 },
+                  floating: {
+                    horizontalPosition: { offset: 2000000 },
+                    verticalPosition: { offset: 0 },
+                    behindDocument: false,
+                  },
+                },
+              },
+              "Text wrapping around a floating image. ",
+              "This tests the anchor positioning and text wrapping capabilities.",
             ],
           },
         },
       ],
     },
 
-    // Section: math (JSON API with complex structures), symbol, breaks
+    // Section 6: math, symbol, breaks, footnote/endnote
     {
       children: [
         {
@@ -311,7 +424,7 @@ async function main() {
             ],
           },
         },
-        // Complex math: fraction
+        // Math: fraction
         {
           paragraph: {
             children: [
@@ -320,19 +433,14 @@ async function main() {
                   children: [
                     "x",
                     " = ",
-                    {
-                      fraction: {
-                        numerator: ["a + b"],
-                        denominator: ["c"],
-                      },
-                    },
+                    { fraction: { numerator: ["a + b"], denominator: ["c"] } },
                   ],
                 },
               },
             ],
           },
         },
-        // Complex math: sum with superScript
+        // Math: sum with superScript
         {
           paragraph: {
             children: [
@@ -352,36 +460,391 @@ async function main() {
             ],
           },
         },
+        // Math: integral
         {
           paragraph: {
-            children: ["Before page break", { pageBreak: true }, "After page break"],
+            children: [
+              {
+                math: {
+                  children: [
+                    {
+                      integral: {
+                        children: ["x"],
+                        subScript: ["0"],
+                        superScript: ["1"],
+                      },
+                    },
+                    " dx",
+                  ],
+                },
+              },
+            ],
           },
         },
+        // Math: radical (square root)
         {
           paragraph: {
-            children: ["Column 1", { columnBreak: true }, "Column 2"],
+            children: [
+              {
+                math: {
+                  children: [{ radical: { children: ["x", " + ", "1"] } }],
+                },
+              },
+            ],
           },
         },
+        // Math: subScript + subSuperScript
         {
           paragraph: {
-            children: ["With footnote", { footnoteReference: 1 }],
+            children: [
+              {
+                math: {
+                  children: [
+                    { subScript: { children: ["a"], subScript: ["n"] } },
+                    { subSuperScript: { children: ["x"], subScript: ["i"], superScript: ["2"] } },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+        // Breaks
+        {
+          paragraph: { children: ["Before page break", { pageBreak: true }, "After page break"] },
+        },
+        {
+          paragraph: { children: ["Column 1", { columnBreak: true }, "Column 2"] },
+        },
+        // Footnote + endnote references
+        {
+          paragraph: {
+            children: [
+              "With footnote",
+              { footnoteReference: 1 },
+              " and endnote",
+              { endnoteReference: 1 },
+            ],
           },
         },
       ],
     },
 
-    // Section: rich formatting for value comparison
+    // Section 7: rich run formatting
     {
       children: [
+        { paragraph: { heading: "Heading1", children: ["Run Formatting"] } },
+        // doubleStrike, subScript, superScript, smallCaps, allCaps
         {
           paragraph: {
-            children: [{ text: "Styled", bold: true, italics: true, size: 28, color: "FF0000" }],
+            children: [
+              { text: "Double Strike", doubleStrike: true },
+              " | ",
+              { text: "SubScript", subScript: true },
+              " | ",
+              { text: "SuperScript", superScript: true },
+              " | ",
+              { text: "SmallCaps", smallCaps: true },
+              " | ",
+              { text: "AllCaps", allCaps: true },
+            ],
+          },
+        },
+        // Highlight, underline with type+color
+        {
+          paragraph: {
+            children: [
+              { text: "Highlighted Yellow", highlight: "yellow" },
+              " | ",
+              { text: "Underline Wave", underline: { type: "wave", color: "FF0000" } },
+              " | ",
+              { text: "Double Underline", underline: { type: "double" } },
+            ],
+          },
+        },
+        // characterSpacing, kern, position, scale
+        {
+          paragraph: {
+            children: [
+              { text: "Spaced Out", characterSpacing: 200 },
+              " | ",
+              { text: "Kerned", kern: 20 },
+              " | ",
+              { text: "Raised", position: "6pt" },
+              " | ",
+              { text: "Scaled", scale: 150 },
+            ],
+          },
+        },
+        // effect, emboss, imprint, shadow, outline
+        {
+          paragraph: {
+            children: [
+              { text: "Shimmer Effect", effect: "shimmer" },
+              " | ",
+              { text: "Embossed", emboss: true },
+              " | ",
+              { text: "Shadow", shadow: true },
+              " | ",
+              { text: "Outline", outline: true },
+            ],
+          },
+        },
+        // Run border + shading
+        {
+          paragraph: {
+            children: [
+              {
+                text: "Bordered + Shaded",
+                border: { color: "FF0000", size: 1, space: 1, style: "single" },
+                shading: { color: "auto", fill: "FFFF00", type: "clear" },
+              },
+            ],
+          },
+        },
+        // Multi-property font
+        {
+          paragraph: {
+            children: [
+              {
+                text: "Multi-font",
+                font: { ascii: "Calibri", eastAsia: "SimSun", hAnsi: "Arial" },
+                size: 24,
+              },
+            ],
           },
         },
       ],
     },
 
-    // Section: custom styles + numbering
+    // Section 8: paragraph formatting (indent, spacing, tabStops, border, shading)
+    {
+      properties: {
+        page: {
+          margin: { top: 1440, bottom: 1440, left: 1440, right: 1440 },
+        },
+      },
+      children: [
+        { paragraph: { heading: "Heading1", children: ["Paragraph Formatting"] } },
+        // Indent
+        {
+          paragraph: {
+            indent: { left: 720, firstLine: 360 },
+            children: ["Indented paragraph with first-line indent."],
+          },
+        },
+        // Spacing
+        {
+          paragraph: {
+            spacing: { before: 400, after: 400, line: 360, lineRule: "auto" },
+            children: ["Paragraph with explicit before/after/line spacing."],
+          },
+        },
+        // Tab stops
+        {
+          paragraph: {
+            tabStops: [{ position: 5000, type: "right" }],
+            children: ["Left text\tRight aligned"],
+          },
+        },
+        // Paragraph border
+        {
+          paragraph: {
+            border: {
+              bottom: { color: "4472C4", size: 6, space: 1, style: "single" },
+              top: { color: "4472C4", size: 6, space: 1, style: "single" },
+            },
+            children: ["Paragraph with top and bottom borders."],
+          },
+        },
+        // Paragraph shading
+        {
+          paragraph: {
+            shading: { color: "auto", fill: "D9E2F3", type: "clear" },
+            children: ["Paragraph with background shading."],
+          },
+        },
+        // keepLines, keepNext, pageBreakBefore
+        {
+          paragraph: {
+            keepLines: true,
+            keepNext: true,
+            children: ["Keep these lines together, keep with next paragraph."],
+          },
+        },
+        // Thematic break
+        {
+          paragraph: { thematicBreak: true },
+        },
+      ],
+    },
+
+    // Section 9: enhanced table (rowSpan, shading, verticalAlign, margins)
+    {
+      children: [
+        { paragraph: { heading: "Heading1", children: ["Enhanced Table"] } },
+        {
+          table: {
+            rows: [
+              {
+                children: [
+                  {
+                    children: [{ paragraph: "Header 1" }],
+                    shading: { fill: "4472C4", type: "clear" },
+                  },
+                  {
+                    children: [{ paragraph: "Header 2" }],
+                    shading: { fill: "4472C4", type: "clear" },
+                  },
+                  {
+                    children: [{ paragraph: "Header 3" }],
+                    shading: { fill: "4472C4", type: "clear" },
+                  },
+                ],
+              },
+              {
+                children: [
+                  {
+                    children: [{ paragraph: "RowSpan 2" }],
+                    rowSpan: 2,
+                    verticalAlign: "center",
+                    margins: { top: 200, bottom: 200, left: 200, right: 200 },
+                  },
+                  {
+                    children: [{ paragraph: "Cell B1" }],
+                    shading: { fill: "F2F2F2", type: "clear" },
+                  },
+                  { children: [{ paragraph: "Cell C1" }] },
+                ],
+              },
+              {
+                children: [
+                  // A2 merged with A1 (rowSpan)
+                  {
+                    children: [{ paragraph: "Cell B2" }],
+                    shading: { fill: "F2F2F2", type: "clear" },
+                  },
+                  { children: [{ paragraph: "Cell C2" }] },
+                ],
+              },
+              {
+                children: [
+                  {
+                    children: [{ paragraph: "ColSpan 2" }],
+                    columnSpan: 2,
+                    shading: { fill: "FFF2CC", type: "clear" },
+                  },
+                  { children: [{ paragraph: "Last" }] },
+                ],
+              },
+            ],
+            width: { size: 100, type: "pct" },
+          },
+        },
+      ],
+    },
+
+    // Section 10: page setup — landscape orientation + page borders
+    {
+      properties: {
+        page: {
+          size: { orientation: "landscape" },
+          borders: {
+            top: { color: "4472C4", size: 24, space: 24, style: "single" },
+            bottom: { color: "4472C4", size: 24, space: 24, style: "single" },
+            left: { color: "4472C4", size: 24, space: 24, style: "single" },
+            right: { color: "4472C4", size: 24, space: 24, style: "single" },
+          },
+        },
+      },
+      children: [
+        { paragraph: { heading: "Heading1", children: ["Landscape + Page Borders"] } },
+        { paragraph: { children: ["This section uses landscape orientation with page borders."] } },
+      ],
+    },
+
+    // Section 11: multiple columns + line numbers
+    {
+      properties: {
+        column: { count: 2, space: 708 },
+        lineNumbers: { countBy: 1 },
+      },
+      children: [
+        { paragraph: { heading: "Heading1", children: ["Columns + Line Numbers"] } },
+        {
+          paragraph: {
+            children: ["First paragraph in column layout. This text flows into two columns."],
+          },
+        },
+        {
+          paragraph: {
+            children: ["Second paragraph in the column layout. Line numbers are visible."],
+          },
+        },
+        { paragraph: { children: ["Third paragraph continues the multi-column flow."] } },
+      ],
+    },
+
+    // Section 12: even/odd/first page headers
+    {
+      headers: {
+        default: [{ paragraph: { children: ["Default Header"] } }],
+        first: [{ paragraph: { children: [{ text: "First Page Header", bold: true }] } }],
+        even: [{ paragraph: { children: ["Even Page Header"] } }],
+      },
+      footers: {
+        default: [{ paragraph: { children: ["Default Footer"] } }],
+        first: [{ paragraph: { children: ["First Page Footer"] } }],
+        even: [{ paragraph: { children: ["Even Page Footer"] } }],
+      },
+      properties: {
+        titlePage: true,
+      },
+      children: [
+        { paragraph: { heading: "Heading1", children: ["Even/Odd/First Headers"] } },
+        {
+          paragraph: {
+            children: [
+              "This section has different headers for first, even, and default (odd) pages.",
+            ],
+          },
+        },
+        { paragraph: { children: ["Page break forces a new page to see the different headers."] } },
+      ],
+    },
+
+    // Section 13: track changes (insertion + deletion)
+    {
+      children: [
+        { paragraph: { heading: "Heading1", children: ["Track Changes"] } },
+        {
+          paragraph: {
+            children: [
+              "Normal text, then ",
+              {
+                insertion: {
+                  author: "John Doe",
+                  date: "2026-05-28T10:00:00Z",
+                  id: 100,
+                  text: "inserted text",
+                },
+              },
+              ", and ",
+              {
+                deletion: {
+                  author: "Jane Smith",
+                  date: "2026-05-28T11:00:00Z",
+                  id: 101,
+                  text: "deleted text",
+                },
+              },
+              ".",
+            ],
+          },
+        },
+      ],
+    },
+
+    // Section 14: custom styles + numbering
     {
       children: [
         {
@@ -406,10 +869,16 @@ async function main() {
     },
   ];
 
+  const sectionCount = sections.length;
+
   // 2. Create document and export
   const doc = new Document({
+    background: { color: "FFFFFF" },
     footnotes: {
       "1": { children: ["This is a footnote."] },
+    },
+    endnotes: {
+      "1": { children: ["This is an endnote."] },
     },
     comments: {
       children: [
@@ -462,6 +931,14 @@ async function main() {
         },
       ],
     },
+    evenAndOddHeaderAndFooters: true,
+    customProperties: [
+      { name: "Project", value: "Round-trip Test" },
+      { name: "Version", value: "1.0" },
+    ],
+    features: {
+      trackRevisions: true,
+    },
     sections,
   });
   const buffer = await Packer.toBuffer(doc);
@@ -471,377 +948,20 @@ async function main() {
   const parsed = parseDocument(buffer);
   console.log(`Parsed ${parsed.sections!.length} sections`);
 
-  // 4. Verify
+  // 4. Basic verification
   console.log("\n--- Verification ---");
+  assert(`section count = ${sectionCount}`, parsed.sections!.length === sectionCount);
 
-  assert("section count = 8", parsed.sections!.length === 8);
-
-  // Section: paragraphs + tables + SDT + textbox + headings + TOC
-  const s1 = parsed.sections![0].children;
-  assert("s1 has content (>= 12)", s1.length >= 12);
-
-  // Comment paragraph: commentRangeStart, commentRangeEnd, commentReference preserved
-  {
-    const commentPara = s1.find((c): boolean => {
-      if (!("paragraph" in c)) return false;
-      const p = (c as Record<string, unknown>).paragraph as Record<string, unknown>;
-      const children = p.children as Record<string, unknown>[];
-      return children?.some(
-        (ch) => typeof ch === "object" && "commentRangeStart" in (ch as Record<string, unknown>),
-      );
-    });
-    assert("s1 has comment paragraph with commentRangeStart", !!commentPara);
-  }
-
-  // Hyperlink paragraph: verify link target preserved
-  {
-    const hlPara = s1.find((c): boolean => {
-      if (!("paragraph" in c)) return false;
-      const p = (c as Record<string, unknown>).paragraph as Record<string, unknown>;
-      const children = p.children as Record<string, unknown>[];
-      return children?.some(
-        (ch) =>
-          typeof ch === "object" && ch !== null && "hyperlink" in (ch as Record<string, unknown>),
-      );
-    });
-    assert("s1 has hyperlink paragraph", !!hlPara);
-    if (hlPara) {
-      const p = (hlPara as Record<string, unknown>).paragraph as Record<string, unknown>;
-      const children = p.children as Record<string, unknown>[];
-      const hlChild = children.find(
-        (ch) =>
-          typeof ch === "object" && ch !== null && "hyperlink" in (ch as Record<string, unknown>),
-      ) as Record<string, unknown> | undefined;
-      if (hlChild) {
-        const hl = hlChild.hyperlink as Record<string, unknown>;
-        assert("hyperlink target preserved", hl.link === "https://example.com");
-        assert("hyperlink tooltip preserved", hl.tooltip === "Example");
-      }
-    }
-  }
-
-  // Bookmark paragraph: verify bookmark range preserved
-  {
-    const bmPara = s1.find((c): boolean => {
-      if (!("paragraph" in c)) return false;
-      const p = (c as Record<string, unknown>).paragraph as Record<string, unknown>;
-      const children = p.children as Record<string, unknown>[];
-      return children?.some(
-        (ch) => typeof ch === "object" && "bookmarkStart" in (ch as Record<string, unknown>),
-      );
-    });
-    assert("s1 has bookmark paragraph", !!bmPara);
-    if (bmPara) {
-      const p = (bmPara as Record<string, unknown>).paragraph as Record<string, unknown>;
-      const children = p.children as Record<string, unknown>[];
-      const bmStart = children.find(
-        (ch) => typeof ch === "object" && "bookmarkStart" in (ch as Record<string, unknown>),
-      ) as Record<string, unknown> | undefined;
-      if (bmStart) {
-        const bm = bmStart.bookmarkStart as Record<string, unknown>;
-        assert("bookmark name preserved", bm.name === "my-bookmark");
-        assert("bookmark id preserved", bm.id === 42);
-      }
-    }
-  }
-  assert("s1[0] is paragraph", "paragraph" in s1[0]);
-  assert(
-    "s1 has table",
-    s1.some((c) => "table" in c),
-  );
-  assert(
-    "s1 has sdt",
-    s1.some((c) => "sdt" in c),
-  );
-  assert(
-    "s1 has textbox",
-    s1.some((c) => "textbox" in c),
-  );
-  assert(
-    "s1 has toc",
-    s1.some((c) => "toc" in c),
-  );
-
-  // Section: chart
-  const s2 = parsed.sections![1].children;
-  assert("s2 has content (>= 2)", s2.length >= 2);
-  {
-    const chartPara = s2.find((c): boolean => {
-      if (!("paragraph" in c)) return false;
-      const p = (c as Record<string, unknown>).paragraph as Record<string, unknown>;
-      const children = p.children as Record<string, unknown>[];
-      return children?.some((ch) => "chart" in ch);
-    });
-    assert("s2 has chart child", !!chartPara);
-    if (chartPara) {
-      const p = (chartPara as Record<string, unknown>).paragraph as Record<string, unknown>;
-      const children = p.children as Record<string, unknown>[];
-      const chartChild = children.find((ch) => "chart" in ch);
-      if (chartChild) {
-        const chart = chartChild.chart as Record<string, unknown>;
-        assert("chart type = column", chart.type === "column");
-        assert("chart title preserved", chart.title === "Quarterly Revenue");
-        const data = chart.data as Record<string, unknown>;
-        const cats = data.categories as string[];
-        assert("chart categories preserved", cats.length === 4 && cats[0] === "Q1");
-        const series = data.series as Record<string, unknown>[];
-        assert("chart series count = 2", series.length === 2);
-      }
-    }
-  }
-
-  // Section: smartArt
-  const s3 = parsed.sections![2].children;
-  assert("s3 has content (>= 2)", s3.length >= 2);
-  {
-    const saPara = s3.find((c): boolean => {
-      if (!("paragraph" in c)) return false;
-      const p = (c as Record<string, unknown>).paragraph as Record<string, unknown>;
-      const children = p.children as Record<string, unknown>[];
-      return children?.some((ch) => "smartArt" in ch);
-    });
-    assert("s3 has smartArt child", !!saPara);
-    if (saPara) {
-      const p = (saPara as Record<string, unknown>).paragraph as Record<string, unknown>;
-      const children = p.children as Record<string, unknown>[];
-      const saChild = children.find((ch) => "smartArt" in ch);
-      if (saChild) {
-        const sa = saChild.smartArt as Record<string, unknown>;
-        assert("smartArt layout preserved", sa.layout === "process1");
-        assert("smartArt style preserved", sa.style === "simple1");
-        assert("smartArt color preserved", sa.color === "accent1_2");
-        const data = sa.data as Record<string, unknown>;
-        const nodes = data.nodes as Record<string, unknown>[];
-        assert("smartArt nodes count = 3", nodes.length === 3);
-        assert("smartArt node text preserved", nodes[0].text === "Plan");
-        const planChildren = nodes[0].children as Record<string, unknown>[];
-        assert(
-          "smartArt nested children preserved",
-          planChildren?.length === 1 && planChildren[0].text === "Define scope",
-        );
-      }
-    }
-  }
-
-  // Section: altChunk
-  const s4 = parsed.sections![3].children;
-  assert("s4 has content (>= 2)", s4.length >= 2);
-  assert(
-    "s4 has altChunk",
-    s4.some((c) => "altChunk" in c),
-  );
-
-  // Section: image
-  const s5 = parsed.sections![4].children;
-  assert("s5 has content (>= 2)", s5.length >= 2);
-  {
-    const imgPara = s5.find((c): boolean => {
-      if (!("paragraph" in c)) return false;
-      const p = (c as Record<string, unknown>).paragraph as Record<string, unknown>;
-      const children = p.children as Record<string, unknown>[];
-      return children?.some(
-        (ch) => typeof ch === "object" && ch !== null && "image" in (ch as Record<string, unknown>),
-      );
-    });
-    assert("s5 has image child", !!imgPara);
-    if (imgPara) {
-      const p = (imgPara as Record<string, unknown>).paragraph as Record<string, unknown>;
-      const children = p.children as Record<string, unknown>[];
-      const imgChild = children.find(
-        (ch) => typeof ch === "object" && ch !== null && "image" in (ch as Record<string, unknown>),
-      );
-      if (imgChild) {
-        const img = (imgChild as Record<string, unknown>).image as Record<string, unknown>;
-        assert("image type = png", img.type === "png");
-        const t = img.transformation as Record<string, unknown>;
-        assert("image width preserved", t?.width === 200);
-        assert("image height preserved", t?.height === 200);
-      }
-    }
-  }
-
-  // Section: math, symbol, breaks, footnote
-  const s6 = parsed.sections![5].children;
-  assert("s6 has content (>= 6)", s6.length >= 6);
-  {
-    // First paragraph: math + symbolRun
-    const first = s6[0] as Record<string, unknown>;
-    if ("paragraph" in first) {
-      const p = first.paragraph as Record<string, unknown>;
-      const children = p.children as Record<string, unknown>[];
-      assert(
-        "s6 has math element parsed as JSON",
-        children?.some((ch) => {
-          if (typeof ch !== "object" || ch === null) return false;
-          const obj = ch as Record<string, unknown>;
-          if (!("math" in obj)) return false;
-          const math = obj.math as Record<string, unknown>;
-          const mathChildren = math.children as Record<string, unknown>[];
-          return Array.isArray(mathChildren) && mathChildren.length > 0;
-        }),
-      );
-    }
-    // Second paragraph: fraction math
-    const second = s6[1] as Record<string, unknown>;
-    if ("paragraph" in second) {
-      const p = second.paragraph as Record<string, unknown>;
-      const children = p.children as Record<string, unknown>[];
-      assert(
-        "s6 fraction math parsed",
-        children?.some((ch) => {
-          if (typeof ch !== "object" || ch === null || !("math" in ch)) return false;
-          const math = (ch as Record<string, unknown>).math as Record<string, unknown>;
-          const mathChildren = math.children as Record<string, unknown>[];
-          return mathChildren?.some(
-            (mc) => typeof mc === "object" && mc !== null && "fraction" in mc,
-          );
-        }),
-      );
-    }
-    // Third paragraph: sum with superScript
-    const third = s6[2] as Record<string, unknown>;
-    if ("paragraph" in third) {
-      const p = third.paragraph as Record<string, unknown>;
-      const children = p.children as Record<string, unknown>[];
-      assert(
-        "s6 sum math parsed",
-        children?.some((ch) => {
-          if (typeof ch !== "object" || ch === null || !("math" in ch)) return false;
-          const math = (ch as Record<string, unknown>).math as Record<string, unknown>;
-          const mathChildren = math.children as Record<string, unknown>[];
-          return mathChildren?.some((mc) => typeof mc === "object" && mc !== null && "sum" in mc);
-        }),
-      );
-    }
-    // Fourth paragraph: pageBreak
-    const fourth = s6[3] as Record<string, unknown>;
-    if ("paragraph" in fourth) {
-      const p = fourth.paragraph as Record<string, unknown>;
-      const pChildren = p.children as Record<string, unknown>[];
-      assert("s6 pageBreak paragraph has 3 children", pChildren?.length === 3);
-    }
-    // Fifth paragraph: columnBreak
-    const fifth = s6[4] as Record<string, unknown>;
-    if ("paragraph" in fifth) {
-      const p = fifth.paragraph as Record<string, unknown>;
-      const pChildren = p.children as Record<string, unknown>[];
-      assert("s6 columnBreak paragraph has 3 children", pChildren?.length === 3);
-    }
-    // Sixth paragraph: footnoteReference (parsed as styled run)
-    const sixth = s6[5] as Record<string, unknown>;
-    if ("paragraph" in sixth) {
-      const p = sixth.paragraph as Record<string, unknown>;
-      const pChildren = p.children as Record<string, unknown>[];
-      assert(
-        "s6 has footnoteReference",
-        pChildren?.some(
-          (ch) =>
-            typeof ch === "object" &&
-            "style" in (ch as Record<string, unknown>) &&
-            (ch as Record<string, unknown>).style === "FootnoteReference",
-        ),
-      );
-    }
-  }
-
-  // Section: rich formatting for value comparison
-  const s7 = parsed.sections![6].children;
-  assert("s7 has >= 1 child", s7.length >= 1);
-  if ("paragraph" in s7[0] && typeof s7[0].paragraph === "object" && s7[0].paragraph !== null) {
-    const opts = s7[0].paragraph as Record<string, unknown>;
-    const children = opts.children as Record<string, unknown>[];
-    if (children?.[0]) {
-      const run = children[0];
-      assert("bold preserved", run.bold === true);
-      assert("italics preserved", run.italics === true);
-      assert("size preserved", run.size === 28);
-      assert("color preserved", run.color === "FF0000");
-    }
-  }
-
-  // Comments content: verify comment body parsed
-  {
-    const comments = (parsed as unknown as Record<string, unknown>).comments as
-      | Record<string, unknown>
-      | undefined;
-    assert("comments parsed", !!comments);
-    if (comments) {
-      const commentChildren = comments.children as Record<string, unknown>[];
-      assert("comments has children", Array.isArray(commentChildren) && commentChildren.length > 0);
-      if (commentChildren?.[0]) {
-        const c = commentChildren[0];
-        assert("comment author preserved", c.author === "Demo Author");
-        assert("comment id preserved", c.id === 0);
-      }
-    }
-  }
-
-  // Footnotes content: verify footnote body parsed
-  {
-    const footnotes = (parsed as unknown as Record<string, unknown>).footnotes as
-      | Record<string, unknown>
-      | undefined;
-    assert("footnotes parsed", !!footnotes);
-    if (footnotes) {
-      const fn1 = (footnotes as Record<string, Record<string, unknown>>)["1"];
-      assert("footnote 1 parsed", !!fn1);
-      if (fn1) {
-        assert("footnote 1 has children", Array.isArray(fn1.children) && fn1.children.length > 0);
-      }
-    }
-  }
-
-  // Styles: verify parsed style definitions
-  {
-    const styles = (parsed as unknown as Record<string, unknown>).styles as
-      | Record<string, unknown>
-      | undefined;
-    assert("styles parsed", !!styles);
-    if (styles) {
-      const pStyles = styles.paragraphStyles as Record<string, unknown>[] | undefined;
-      assert("paragraphStyles parsed", Array.isArray(pStyles) && pStyles.length > 0);
-      if (pStyles && pStyles.length > 0) {
-        const customHeading = pStyles.find((s) => s.id === "CustomHeading");
-        assert("CustomHeading style found", !!customHeading);
-        if (customHeading) {
-          assert("CustomHeading name", customHeading.name === "Custom Heading");
-          assert("CustomHeading quickFormat", customHeading.quickFormat === true);
-        }
-      }
-      const cStyles = styles.characterStyles as Record<string, unknown>[] | undefined;
-      assert("characterStyles parsed", Array.isArray(cStyles) && cStyles.length > 0);
-    }
-  }
-
-  // Numbering: verify parsed numbering definitions
-  {
-    const numbering = (parsed as unknown as Record<string, unknown>).numbering as
-      | Record<string, unknown>
-      | undefined;
-    assert("numbering parsed", !!numbering);
-    if (numbering) {
-      const config = numbering.config as Record<string, unknown>[];
-      assert("numbering config parsed", Array.isArray(config) && config.length > 0);
-    }
-  }
-
-  // Section 8: verify style/numbering paragraphs
-  const s8 = parsed.sections![7].children;
-  assert("s8 has 3 children", s8.length === 3);
-  {
-    const headingPara = s8[0] as Record<string, unknown>;
-    if ("paragraph" in headingPara) {
-      const p = headingPara.paragraph as Record<string, unknown>;
-      assert("s8 heading has style", p.style === "CustomHeading");
-    }
-  }
-
-  // 5. Re-export and re-parse to verify stability
+  // 5. Round-trip: re-generate from parsed data → compare ZIPs
+  console.log("\n--- Round-trip ZIP comparison ---");
   const doc2 = new Document(parsed);
   const buffer2 = await Packer.toBuffer(doc2);
-  const parsed2 = parseDocument(buffer2);
-  assert("stable re-parse section count", parsed2.sections!.length === parsed.sections!.length);
   console.log(`Re-exported DOCX: ${buffer2.length} bytes`);
+
+  const ignorePaths = new Set(["docProps/core.xml"]);
+  const diffs = compareZips(buffer, buffer2, ignorePaths);
+  printDiffs(diffs);
+  assert("round-trip ZIPs match", diffs.length === 0);
 
   // Save
   fs.writeFileSync("My Document.docx", buffer);
