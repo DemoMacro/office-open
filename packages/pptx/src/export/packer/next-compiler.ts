@@ -1,5 +1,6 @@
 import { Formatter } from "@export/formatter";
 import type { File } from "@file/file";
+import type { IMediaData } from "@file/media/data";
 import { DefaultNotesMaster } from "@file/notes-master/notes-master";
 import {
   DEFAULT_DRAWING_XML,
@@ -489,7 +490,7 @@ export class Compiler {
       files[`ppt/media/${image.fileName}`] = [image.data, { level: ZIP_STORED_LEVEL }];
       if (image.type === "svg" && "fallback" in image) {
         const fallback = (
-          image as import("@file/media/data").IMediaData & {
+          image as IMediaData & {
             readonly fallback: { readonly fileName: string; readonly data: Uint8Array };
           }
         ).fallback;

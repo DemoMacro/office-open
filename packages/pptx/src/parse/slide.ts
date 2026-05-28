@@ -10,13 +10,27 @@ import { attr, attrBool, attrNum, children, findChild, findDeep, textOf } from "
 import type { Element } from "@office-open/xml";
 
 import type { BackgroundOptions } from "../file/background/background";
+import type { ChartFrameOptions } from "../file/chart/chart-frame";
 import type { SlideOptions } from "../file/file";
+import type { AudioFrameOptions } from "../file/media/audio-frame";
+import type { VideoFrameOptions } from "../file/media/video-frame";
+import type { PictureOptions } from "../file/picture/picture";
+import type { GroupShapeOptions } from "../file/shape/group-shape";
+import type {
+  ArrowheadType,
+  ConnectorShapeOptions,
+  LineShapeOptions,
+} from "../file/shape/line-shape";
+import type { ShapeOptions } from "../file/shape/shape";
 import type { SlideChild } from "../file/slide/slide-child";
+import type { SmartArtFrameOptions } from "../file/smartart/smartart-frame";
+import type { TableFrameOptions } from "../file/table/table-frame";
 import type {
   TransitionOptions,
   TransitionDirection,
   TransitionType,
 } from "../file/transition/transition";
+import { parseTiming } from "./animation";
 import type { ParseContext } from "./context";
 
 // ── Slide parser ──────────────────────────────────────────────────────────────
@@ -44,11 +58,40 @@ export function parseSlide(el: Element, ctx: ParseContext): SlideOptions {
       }
       if (slideChildren.length > 0) opts.children = slideChildren;
     }
+
+    // Header/Footer (p:hf)
+    const hf = findChild(cSld, "p:hf");
+    if (hf) {
+      const hfOpts: Record<string, unknown> = {};
+      if (findChild(hf, "p:sldNum")) hfOpts.slideNumber = true;
+      if (findChild(hf, "p:dt")) hfOpts.dateTime = true;
+      if (findChild(hf, "p:ftr")) hfOpts.footer = true;
+      if (findChild(hf, "p:hdr")) hfOpts.header = true;
+      if (Object.keys(hfOpts).length > 0) opts.headerFooter = hfOpts;
+    }
   }
 
   // p:transition
   const transition = findChild(el, "p:transition");
   if (transition) opts.transition = parseTransition(transition);
+
+  // p:timing → animation (attach to shapes by ID)
+  const timing = findChild(el, "p:timing");
+  if (timing) {
+    const animMap = parseTiming(timing);
+    if (animMap.size > 0 && opts.children) {
+      // Build ID → child index map
+      const children = opts.children as SlideChild[];
+      for (let i = 0; i < children.length; i++) {
+        const child = children[i] as Record<string, unknown>;
+        const inner = (child[Object.keys(child)[0]] ?? {}) as Record<string, unknown>;
+        const shapeId = inner.id as number | undefined;
+        if (shapeId !== undefined && animMap.has(shapeId)) {
+          inner.animation = animMap.get(shapeId);
+        }
+      }
+    }
+  }
 
   // Notes via slide rels (notesSlide relationship)
   for (const [, path] of ctx.slideRels) {
@@ -67,10 +110,31 @@ export function parseSlide(el: Element, ctx: ParseContext): SlideOptions {
 
 function parseSlideChild(el: Element, ctx: ParseContext): SlideChild | undefined {
   switch (el.name) {
-    case "p:sp":
+    case "p:sp": {
+      // Check if it's a line shape (prstGeom with prst="line")
+      const spPr = findChild(el, "p:spPr");
+      const prstGeom = spPr ? findChild(spPr, "a:prstGeom") : undefined;
+      const prst = prstGeom ? attr(prstGeom, "prst") : undefined;
+      if (prst === "line") {
+        return { line: parseLineShape(el) };
+      }
       return { shape: parseShape(el, ctx) };
-    case "p:pic":
+    }
+    case "p:pic": {
+      // Check for video/audio extension URI in nvPr
+      const mediaType = detectMediaType(el);
+      if (mediaType === "video") {
+        return {
+          video: parseMediaFrame(el, ctx, "video") as unknown as VideoFrameOptions,
+        };
+      }
+      if (mediaType === "audio") {
+        return {
+          audio: parseMediaFrame(el, ctx, "audio") as unknown as AudioFrameOptions,
+        };
+      }
       return { picture: parsePicture(el, ctx) };
+    }
     case "p:graphicFrame":
       return parseGraphicFrame(el, ctx);
     case "p:cxnSp":
@@ -177,7 +241,7 @@ function parseTransition(el: Element): TransitionOptions {
 
 // ── Shape parser ──────────────────────────────────────────────────────────────
 
-function parseShape(el: Element, _ctx: ParseContext): import("../file/shape/shape").ShapeOptions {
+function parseShape(el: Element, _ctx: ParseContext): ShapeOptions {
   const opts: Record<string, unknown> = {};
 
   // p:nvSpPr → id, name, placeholder
@@ -222,15 +286,68 @@ function parseShape(el: Element, _ctx: ParseContext): import("../file/shape/shap
     parseTextBody(txBody, opts);
   }
 
-  return opts as unknown as import("../file/shape/shape").ShapeOptions;
+  return opts as unknown as ShapeOptions;
 }
 
 // ── Picture parser ────────────────────────────────────────────────────────────
 
-function parsePicture(
-  el: Element,
-  ctx: ParseContext,
-): import("../file/picture/picture").PictureOptions {
+// ── Line shape parser ─────────────────────────────────────────────────────────
+
+function parseLineShape(el: Element): LineShapeOptions {
+  const opts: Record<string, unknown> = {};
+
+  // p:nvSpPr → id, name
+  const nvSpPr = findChild(el, "p:nvSpPr");
+  if (nvSpPr) {
+    const cNvPr = findChild(nvSpPr, "p:cNvPr");
+    if (cNvPr) {
+      const id = attrNum(cNvPr, "id");
+      if (id !== undefined) opts.id = id;
+      const name = attr(cNvPr, "name");
+      if (name) opts.name = name;
+    }
+  }
+
+  // p:spPr → endpoints (same logic as connector)
+  const spPr = findChild(el, "p:spPr");
+  if (spPr) {
+    const xfrm = findChild(spPr, "a:xfrm");
+    if (xfrm) {
+      const off = findChild(xfrm, "a:off");
+      const ext = findChild(xfrm, "a:ext");
+      const flipH = attrBool(xfrm, "flipH");
+      const flipV = attrBool(xfrm, "flipV");
+
+      if (off && ext) {
+        const offX = attrNum(off, "x") ?? 0;
+        const offY = attrNum(off, "y") ?? 0;
+        const cx = attrNum(ext, "cx") ?? 0;
+        const cy = attrNum(ext, "cy") ?? 0;
+
+        const x1 = flipH ? offX + cx : offX;
+        const y1 = flipV ? offY + cy : offY;
+        const x2 = flipH ? offX : offX + cx;
+        const y2 = flipV ? offY : offY + cy;
+
+        opts.x1 = convertEmuToPixels(x1);
+        opts.y1 = convertEmuToPixels(y1);
+        opts.x2 = convertEmuToPixels(x2);
+        opts.y2 = convertEmuToPixels(y2);
+      }
+    }
+
+    const fill = parseFillFromElement(spPr);
+    if (fill) opts.fill = fill;
+    const outline = parseOutlineFromElement(spPr);
+    if (outline) opts.outline = outline;
+  }
+
+  return opts as LineShapeOptions;
+}
+
+// ── Picture parser (continued) ────────────────────────────────────────────────
+
+function parsePicture(el: Element, ctx: ParseContext): PictureOptions {
   const opts: Record<string, unknown> = {};
 
   // Position from p:spPr
@@ -264,7 +381,7 @@ function parsePicture(
     }
   }
 
-  return opts as unknown as import("../file/picture/picture").PictureOptions;
+  return opts as unknown as PictureOptions;
 }
 
 // ── Graphic frame parser (chart / table / smartart) ───────────────────────────
@@ -293,10 +410,7 @@ function parseGraphicFrame(el: Element, ctx: ParseContext): SlideChild | undefin
 
 // ── Chart frame parser ────────────────────────────────────────────────────────
 
-function parseChartFrame(
-  el: Element,
-  ctx: ParseContext,
-): import("../file/chart/chart-frame").ChartFrameOptions {
+function parseChartFrame(el: Element, ctx: ParseContext): ChartFrameOptions {
   const opts: Record<string, unknown> = {};
 
   // Position from p:xfrm
@@ -318,7 +432,7 @@ function parseChartFrame(
     }
   }
 
-  return opts as unknown as import("../file/chart/chart-frame").ChartFrameOptions;
+  return opts as unknown as ChartFrameOptions;
 }
 
 /**
@@ -442,10 +556,7 @@ function extractNumCache(parent: Element): number[] {
 
 // ── SmartArt frame parser ─────────────────────────────────────────────────────
 
-function parseSmartArtFrame(
-  el: Element,
-  ctx: ParseContext,
-): import("../file/smartart/smartart-frame").SmartArtFrameOptions {
+function parseSmartArtFrame(el: Element, ctx: ParseContext): SmartArtFrameOptions {
   const opts: Record<string, unknown> = {};
 
   // Position
@@ -476,7 +587,7 @@ function parseSmartArtFrame(
     }
   }
 
-  return opts as unknown as import("../file/smartart/smartart-frame").SmartArtFrameOptions;
+  return opts as unknown as SmartArtFrameOptions;
 }
 
 function parseSmartArtDataXml(el: Element, opts: Record<string, unknown>): void {
@@ -551,10 +662,7 @@ function buildSmartArtNode(
 
 // ── Table frame parser ────────────────────────────────────────────────────────
 
-function parseTableFrame(
-  el: Element,
-  tbl: Element,
-): import("../file/table/table-frame").TableFrameOptions {
+function parseTableFrame(el: Element, tbl: Element): TableFrameOptions {
   const opts: Record<string, unknown> = {};
 
   // Position
@@ -569,6 +677,26 @@ function parseTableFrame(
     if (attrBool(tblPr, "firstCol")) opts.firstCol = true;
     if (attrBool(tblPr, "lastCol")) opts.lastCol = true;
     if (attrBool(tblPr, "bandCol")) opts.bandCol = true;
+
+    // Table-level borders (a:lnL/lnR/lnT/lnB)
+    const borders: Record<string, unknown> = {};
+    for (const [elName, key] of [
+      ["a:lnL", "left"],
+      ["a:lnR", "right"],
+      ["a:lnT", "top"],
+      ["a:lnB", "bottom"],
+    ] as const) {
+      const borderEl = findChild(tblPr, elName);
+      if (borderEl) {
+        const borderOpts: Record<string, unknown> = {};
+        const w = attrNum(borderEl, "w");
+        if (w !== undefined) borderOpts.width = w;
+        const fill = parseFillFromElement(borderEl);
+        if (typeof fill === "string") borderOpts.color = fill;
+        if (Object.keys(borderOpts).length > 0) borders[key] = borderOpts;
+      }
+    }
+    if (Object.keys(borders).length > 0) opts.borders = borders;
   }
 
   // a:tblGrid → columnWidths
@@ -598,7 +726,7 @@ function parseTableFrame(
   }
   opts.rows = rows;
 
-  return opts as unknown as import("../file/table/table-frame").TableFrameOptions;
+  return opts as unknown as TableFrameOptions;
 }
 
 function parseTableCell(tc: Element): Record<string, unknown> {
@@ -667,7 +795,7 @@ function parseTableCell(tc: Element): Record<string, unknown> {
 
 // ── Connector parser ──────────────────────────────────────────────────────────
 
-function parseConnector(el: Element): import("../file/shape/line-shape").ConnectorShapeOptions {
+function parseConnector(el: Element): ConnectorShapeOptions {
   const opts: Record<string, unknown> = {};
 
   // p:nvCxnSpPr → id, name
@@ -723,7 +851,7 @@ function parseConnector(el: Element): import("../file/shape/line-shape").Connect
       const headEnd = findChild(ln, "a:headEnd");
       if (headEnd) {
         const type = attr(headEnd, "type");
-        if (type) opts.endArrowhead = type as import("../file/shape/line-shape").ArrowheadType;
+        if (type) opts.endArrowhead = type as ArrowheadType;
         const len = attr(headEnd, "len");
         if (len) opts.arrowheadLength = len as "sm" | "med" | "lg";
         const w = attr(headEnd, "w");
@@ -732,20 +860,17 @@ function parseConnector(el: Element): import("../file/shape/line-shape").Connect
       const tailEnd = findChild(ln, "a:tailEnd");
       if (tailEnd) {
         const type = attr(tailEnd, "type");
-        if (type) opts.beginArrowhead = type as import("../file/shape/line-shape").ArrowheadType;
+        if (type) opts.beginArrowhead = type as ArrowheadType;
       }
     }
   }
 
-  return opts as unknown as import("../file/shape/line-shape").ConnectorShapeOptions;
+  return opts as unknown as ConnectorShapeOptions;
 }
 
 // ── Group parser ──────────────────────────────────────────────────────────────
 
-function parseGroup(
-  el: Element,
-  ctx: ParseContext,
-): import("../file/shape/group-shape").GroupShapeOptions {
+function parseGroup(el: Element, ctx: ParseContext): GroupShapeOptions {
   const opts: Record<string, unknown> = {};
 
   // p:grpSpPr → position, rotation, flip
@@ -783,7 +908,7 @@ function parseGroup(
   }
   opts.children = groupChildren;
 
-  return opts as unknown as import("../file/shape/group-shape").GroupShapeOptions;
+  return opts as unknown as GroupShapeOptions;
 }
 
 // ── Text body / paragraph / run parsers ───────────────────────────────────────
@@ -1111,6 +1236,42 @@ function parseFillFromElement(parent: Element): unknown {
   // No fill
   if (findChild(parent, "a:noFill")) return { type: "none" };
 
+  // Pattern fill
+  const pattFill = findChild(parent, "a:pattFill");
+  if (pattFill) {
+    const prst = attr(pattFill, "prst");
+    const result: Record<string, unknown> = { type: "pattern", pattern: prst ?? "" };
+
+    const fgClr = findChild(pattFill, "a:fgClr");
+    if (fgClr) {
+      const srgbClr = findChild(fgClr, "a:srgbClr");
+      if (srgbClr) {
+        const val = attr(srgbClr, "val");
+        if (val) result.foregroundColor = val;
+      }
+    }
+
+    const bgClr = findChild(pattFill, "a:bgClr");
+    if (bgClr) {
+      const srgbClr = findChild(bgClr, "a:srgbClr");
+      if (srgbClr) {
+        const val = attr(srgbClr, "val");
+        if (val) result.backgroundColor = val;
+      }
+    }
+
+    return result;
+  }
+
+  // Blip fill (image fill on shapes)
+  const blipFill = findChild(parent, "a:blipFill");
+  if (blipFill) {
+    const blip = findChild(blipFill, "a:blip");
+    if (blip) {
+      return { type: "blip" };
+    }
+  }
+
   // Gradient fill
   const gradFill = findChild(parent, "a:gradFill");
   if (gradFill) {
@@ -1157,6 +1318,13 @@ function parseOutlineFromElement(parent: Element): unknown {
       const val = attr(srgbClr, "val");
       if (val) opts.color = val;
     }
+  }
+
+  // Dash style
+  const prstDash = findChild(ln, "a:prstDash");
+  if (prstDash) {
+    const val = attr(prstDash, "val");
+    if (val) opts.dashStyle = val;
   }
 
   return Object.keys(opts).length > 0 ? opts : undefined;
@@ -1330,3 +1498,134 @@ function imageTypeFromPath(path: string): "jpg" | "png" | "gif" | "bmp" | "emf" 
       return "png";
   }
 }
+
+// ── Video / Audio detection and parsing ───────────────────────────────────────
+
+const VIDEO_EXT_URI = "{DAA4B4D4-6D71-4841-9C94-3DE7FCFB9230}";
+const AUDIO_EXT_URI = "{CF1602FD-DB20-4165-A070-5F299619DA56}";
+
+/**
+ * Check if a p:pic element is actually a video or audio frame
+ * by looking for media extension URIs in nvPr > extLst.
+ */
+function detectMediaType(el: Element): "video" | "audio" | undefined {
+  const nvPicPr = findChild(el, "p:nvPicPr");
+  if (!nvPicPr) return undefined;
+
+  const nvPr = findChild(nvPicPr, "p:nvPr");
+  if (!nvPr) return undefined;
+
+  const extLst = findChild(nvPr, "p:extLst");
+  if (!extLst) return undefined;
+
+  for (const ext of extLst.elements ?? []) {
+    if (ext.name !== "p:ext") continue;
+    const uri = attr(ext, "uri");
+    if (uri === VIDEO_EXT_URI) return "video";
+    if (uri === AUDIO_EXT_URI) return "audio";
+  }
+
+  return undefined;
+}
+
+function parseMediaFrame(
+  el: Element,
+  ctx: ParseContext,
+  mediaKind: "video" | "audio",
+): Record<string, unknown> {
+  const opts: Record<string, unknown> = {};
+
+  // Position from p:spPr
+  const spPr = findChild(el, "p:spPr");
+  if (spPr) parseTransformFromSpPr(spPr, opts);
+
+  // Name from p:nvPicPr → p:cNvPr
+  const nvPicPr = findChild(el, "p:nvPicPr");
+  if (nvPicPr) {
+    const cNvPr = findChild(nvPicPr, "p:cNvPr");
+    if (cNvPr) {
+      const name = attr(cNvPr, "name");
+      if (name) opts.name = name;
+    }
+  }
+
+  // Media data from blipFill → a:blip → r:embed → rels → media file
+  const blip = findDeep(el, "a:blip")[0];
+  if (blip) {
+    const rEmbed = attr(blip, "r:embed");
+    if (rEmbed) {
+      const mediaPath = ctx.slideRels.get(rEmbed);
+      if (mediaPath) {
+        const data = ctx.pptx.doc.getRaw(mediaPath);
+        if (data) {
+          opts.data = data;
+          opts.type = mediaTypeFromPath(mediaPath, mediaKind);
+        }
+      }
+    }
+  }
+
+  // Video poster frame from blipFill
+  if (mediaKind === "video") {
+    const blipFill = findChild(el, "p:blipFill");
+    if (blipFill) {
+      const posterBlip = findChild(blipFill, "a:blip");
+      if (posterBlip) {
+        const rEmbed = attr(posterBlip, "r:embed");
+        if (rEmbed) {
+          const posterPath = ctx.slideRels.get(rEmbed);
+          if (posterPath) {
+            const posterData = ctx.pptx.doc.getRaw(posterPath);
+            if (posterData) {
+              opts.poster = posterData;
+              opts.posterType = imageTypeFromPath(posterPath);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return opts;
+}
+
+function mediaTypeFromPath(path: string, kind: "video" | "audio"): string {
+  const ext = path.split(".").pop()?.toLowerCase() ?? "";
+
+  if (kind === "video") {
+    switch (ext) {
+      case "mp4":
+        return "mp4";
+      case "mov":
+      case "qt":
+        return "mov";
+      case "wmv":
+        return "wmv";
+      case "avi":
+        return "avi";
+      default:
+        return "mp4";
+    }
+  } else {
+    switch (ext) {
+      case "mp3":
+        return "mp3";
+      case "wav":
+        return "wav";
+      case "wma":
+        return "wma";
+      case "aac":
+        return "aac";
+      default:
+        return "mp3";
+    }
+  }
+}
+
+// ── Blip fill parsing ─────────────────────────────────────────────────────────
+
+/**
+ * Parse a:blipFill from a shape's spPr.
+ * Used when a shape has an image fill (not a picture element).
+ * Returns { type: "blip", data } if found.
+ */

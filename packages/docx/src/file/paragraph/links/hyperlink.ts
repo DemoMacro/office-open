@@ -92,19 +92,27 @@ export interface ExternalHyperlinkOptions {
  * </xsd:complexType>
  * ```
  */
+export interface ConcreteHyperlinkOptions {
+  readonly anchor?: string;
+  readonly tooltip?: string;
+  readonly tgtFrame?: string;
+}
+
 export class ConcreteHyperlink extends XmlComponent {
   public readonly linkId: string;
 
   public constructor(
     children: readonly ParagraphChild[],
     relationshipId: string,
-    anchor?: string,
-    tooltip?: string,
-    tgtFrame?: string,
+    options?: ConcreteHyperlinkOptions,
   ) {
     super("w:hyperlink");
 
     this.linkId = relationshipId;
+
+    const anchor = options?.anchor;
+    const tooltip = options?.tooltip;
+    const tgtFrame = options?.tgtFrame;
 
     const props: HyperlinkAttributesProperties = {
       anchor: anchor ? anchor : undefined,
@@ -173,7 +181,7 @@ export class ConcreteHyperlink extends XmlComponent {
  */
 export class InternalHyperlink extends ConcreteHyperlink {
   public constructor(options: InternalHyperlinkOptions) {
-    super(options.children, uniqueId(), options.anchor, options.tooltip);
+    super(options.children, uniqueId(), { anchor: options.anchor, tooltip: options.tooltip });
   }
 }
 

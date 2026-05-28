@@ -100,14 +100,19 @@ await Packer.toFile(doc, "output.docx");
 ## Parsing Existing Documents
 
 ```ts
-import { Packer, Document } from "@office-open/docx";
+import { parseDocument, Document, Packer } from "@office-open/docx";
 import { readFileSync } from "node:fs";
 
-const buffer = readFileSync("input.docx");
-const doc = await Packer.fromBuffer(buffer);
+// DOCX — accepts Uint8Array, ArrayBuffer, DataView, number[], base64 string, etc.
+const opts = parseDocument(readFileSync("input.docx"));
+const doc = new Document(opts);
+const buffer = await Packer.toBuffer(doc);
 
-// Access parsed content
-const parsed = doc.toParsedDocument();
+// PPTX — same flexible input types
+import { parsePresentation, Presentation } from "@office-open/pptx";
+const presOpts = parsePresentation(readFileSync("input.pptx"));
+const pres = new Presentation(presOpts);
+const presBuffer = await Packer.toBuffer(pres);
 ```
 
 ## DOCX Features

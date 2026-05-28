@@ -1,13 +1,18 @@
+import type { PropertiesOptions } from "@file/core-properties";
 import type { ParsedDocument } from "@office-open/core";
 import { parseArchive, parseCorePropsElement } from "@office-open/core";
-import { attr } from "@office-open/xml";
+import { attr, attrNum } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
+import type { DataType } from "undio";
+import { toUint8Array } from "undio";
 
+import { parseParagraph } from "./file/paragraph/paragraph-parse";
 import { parseBody } from "./parse/body";
 import { ParseContext } from "./parse/context";
 import { parseCustomProperties } from "./parse/custom-properties";
+import { parseNumberingDefinitions } from "./parse/numbering";
 import { parseSettings } from "./parse/settings";
-import { buildStyleCache, buildNumberingCache } from "./parse/styles";
+import { buildStyleCache, buildNumberingCache, parseStyleDefinitions } from "./parse/styles";
 
 export { parseArchive };
 
@@ -26,6 +31,8 @@ export interface DocxPartRefs {
   endnotes?: string;
   /** word/comments.xml */
   comments?: string;
+  /** Hyperlink targets keyed by rId (external URLs) */
+  hyperlinks: Map<string, string>;
   /** word/charts/chartN.xml keyed by rId */
   charts: Map<string, string>;
   /** word/diagrams/dataN.xml keyed by rId */
@@ -71,6 +78,7 @@ function parseDocPartRefs(doc: ParsedDocument): DocxPartRefs {
   const refs: DocxPartRefs = {
     headers: new Map(),
     footers: new Map(),
+    hyperlinks: new Map(),
     charts: new Map(),
     diagramData: new Map(),
     media: new Map(),
@@ -110,6 +118,8 @@ function parseDocPartRefs(doc: ParsedDocument): DocxPartRefs {
       refs.afChunks.set(id, path);
     } else if (type.includes("/subDocument")) {
       refs.subDocs.set(id, path);
+    } else if (type.includes("/hyperlink")) {
+      refs.hyperlinks.set(id, target);
     }
   }
 
@@ -158,7 +168,7 @@ function parseRootRels(doc: ParsedDocument): {
  * @param data - Raw bytes of a .docx file
  * @returns Document options including sections and metadata
  */
-export function parseDocument(data: Uint8Array): import("@file/core-properties").PropertiesOptions {
+export function parseDocument(data: DataType): PropertiesOptions {
   const docx = parseDocx(data);
   const ctx = new ParseContext(docx, buildStyleCache(docx), buildNumberingCache(docx));
   const sections = parseBody(docx.body, ctx);
@@ -196,11 +206,61 @@ export function parseDocument(data: Uint8Array): import("@file/core-properties")
     }
   }
 
-  return opts as unknown as import("@file/core-properties").PropertiesOptions;
+  // Comments content
+  if (docx.partRefs.comments) {
+    const commentsEl = docx.doc.get(docx.partRefs.comments);
+    if (commentsEl) {
+      const comments = parseComments(commentsEl, ctx);
+      if (comments.length > 0) {
+        opts.comments = { children: comments };
+      }
+    }
+  }
+
+  // Footnotes content
+  if (docx.partRefs.footnotes) {
+    const footnotesEl = docx.doc.get(docx.partRefs.footnotes);
+    if (footnotesEl) {
+      const footnotes = parseNotesContent(footnotesEl, "w:footnote", ctx);
+      const footnotesMap: Record<string, { children: unknown[] }> = {};
+      for (const fn of footnotes) {
+        footnotesMap[String(fn.id)] = { children: fn.children };
+      }
+      if (Object.keys(footnotesMap).length > 0) opts.footnotes = footnotesMap;
+    }
+  }
+
+  // Endnotes content
+  if (docx.partRefs.endnotes) {
+    const endnotesEl = docx.doc.get(docx.partRefs.endnotes);
+    if (endnotesEl) {
+      const endnotes = parseNotesContent(endnotesEl, "w:endnote", ctx);
+      const endnotesMap: Record<string, { children: unknown[] }> = {};
+      for (const en of endnotes) {
+        endnotesMap[String(en.id)] = { children: en.children };
+      }
+      if (Object.keys(endnotesMap).length > 0) opts.endnotes = endnotesMap;
+    }
+  }
+
+  // Styles definitions
+  if (docx.styles) {
+    const styleOpts = parseStyleDefinitions(docx.styles, ctx);
+    if (styleOpts) opts.styles = styleOpts;
+  }
+
+  // Numbering definitions
+  if (docx.numbering) {
+    const numOpts = parseNumberingDefinitions(docx.numbering);
+    if (numOpts) opts.numbering = numOpts;
+  }
+
+  return opts as unknown as PropertiesOptions;
 }
 
-export function parseDocx(data: Uint8Array): DocxDocument {
-  const doc = parseArchive(data);
+export function parseDocx(data: DataType): DocxDocument {
+  const uint8 = toUint8Array(data);
+  const doc = parseArchive(uint8);
 
   const documentEl = doc.get("word/document.xml");
   if (!documentEl) throw new Error("word/document.xml not found");
@@ -229,4 +289,81 @@ export function parseDocx(data: Uint8Array): DocxDocument {
     appProps,
     customProps,
   };
+}
+
+/**
+ * Parse w:comments element into CommentOptions array.
+ */
+function parseComments(
+  el: Element,
+  ctx: ParseContext,
+): { id: number; author?: string; initials?: string; date?: string; children: unknown[] }[] {
+  const comments: {
+    id: number;
+    author?: string;
+    initials?: string;
+    date?: string;
+    children: unknown[];
+  }[] = [];
+
+  for (const child of el.elements ?? []) {
+    if (child.name !== "w:comment") continue;
+    const id = attrNum(child, "w:id");
+    if (id === undefined) continue;
+
+    const author = attr(child, "w:author");
+    const initials = attr(child, "w:initials");
+    const date = attr(child, "w:date");
+
+    const children: unknown[] = [];
+    for (const sub of child.elements ?? []) {
+      if (sub.name === "w:p") {
+        children.push(parseParagraph(sub, ctx));
+      }
+    }
+
+    comments.push({
+      id,
+      author: author || undefined,
+      initials: initials || undefined,
+      date: date || undefined,
+      children,
+    });
+  }
+
+  return comments;
+}
+
+/**
+ * Parse footnotes or endnotes content into {id, children} array.
+ * Skips system notes (id=-1 for separator, id=0 for continuation separator).
+ */
+function parseNotesContent(
+  el: Element,
+  tagName: "w:footnote" | "w:endnote",
+  ctx: ParseContext,
+): { id: number; type?: string; children: unknown[] }[] {
+  const notes: { id: number; type?: string; children: unknown[] }[] = [];
+
+  for (const child of el.elements ?? []) {
+    if (child.name !== tagName) continue;
+    const id = attrNum(child, "w:id");
+    if (id === undefined) continue;
+
+    // Skip system footnotes/endnotes (separator and continuation)
+    if (id < 1) continue;
+
+    const type = attr(child, "w:type");
+
+    const children: unknown[] = [];
+    for (const sub of child.elements ?? []) {
+      if (sub.name === "w:p") {
+        children.push(parseParagraph(sub, ctx));
+      }
+    }
+
+    notes.push({ id, type: type || undefined, children });
+  }
+
+  return notes;
 }

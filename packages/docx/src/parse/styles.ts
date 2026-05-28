@@ -1,15 +1,19 @@
 /**
- * Style cache builder for DOCX parsing.
+ * Style cache builder and definition parser for DOCX documents.
  *
  * Builds lookup maps from parsed styles.xml and numbering.xml elements
  * for efficient style resolution during document parsing.
+ * Also parses full style definitions into StylesOptions for round-trip fidelity.
  *
  * @module
  */
-import { attr, findChild } from "@office-open/xml";
+import { attr, attrBool, attrNum, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
+import { parseParagraphProperties } from "../file/paragraph/paragraph-parse";
+import { parseRunProperties } from "../file/paragraph/run/run-parse";
 import type { DocxDocument } from "../parse";
+import type { ParseContext } from "./context";
 
 /**
  * Build a cache of style elements keyed by styleId.
@@ -21,8 +25,7 @@ export function buildStyleCache(docx: DocxDocument): Map<string, Element> {
 
   for (const child of docx.styles.elements ?? []) {
     if (child.name !== "w:style") continue;
-    const styleIdEl = findChild(child, "w:styleId");
-    const styleId = styleIdEl ? attr(styleIdEl, "w:val") : undefined;
+    const styleId = attr(child, "w:styleId");
     if (styleId) {
       cache.set(styleId, child);
     }
@@ -48,4 +51,163 @@ export function buildNumberingCache(docx: DocxDocument): Map<string, Element> {
   }
 
   return cache;
+}
+
+// ── Style definition parsing ──────────────────────────────────────────────────
+
+/**
+ * Parse w:styles element into StylesOptions.
+ */
+export function parseStyleDefinitions(
+  el: Element,
+  ctx: ParseContext,
+): Record<string, unknown> | undefined {
+  const opts: Record<string, unknown> = {};
+  const paragraphStyles: Record<string, unknown>[] = [];
+  const characterStyles: Record<string, unknown>[] = [];
+
+  for (const child of el.elements ?? []) {
+    if (child.name === "w:docDefaults") {
+      const defOpts = parseDocDefaults(child);
+      if (defOpts) opts.default = defOpts;
+    } else if (child.name === "w:style") {
+      const styleOpts = parseStyleElement(child, ctx);
+      if (!styleOpts) continue;
+
+      const type = styleOpts._type as string | undefined;
+      delete styleOpts._type;
+
+      if (type === "paragraph") {
+        paragraphStyles.push(styleOpts);
+      } else if (type === "character") {
+        characterStyles.push(styleOpts);
+      }
+    }
+  }
+
+  if (paragraphStyles.length > 0) opts.paragraphStyles = paragraphStyles;
+  if (characterStyles.length > 0) opts.characterStyles = characterStyles;
+
+  return Object.keys(opts).length > 0 ? opts : undefined;
+}
+
+function parseDocDefaults(el: Element): Record<string, unknown> | undefined {
+  const result: Record<string, unknown> = {};
+  const docDefaults: Record<string, unknown> = {};
+
+  // rPrDefault → run defaults
+  const rPrDefault = findChild(el, "w:rPrDefault");
+  if (rPrDefault) {
+    const rPr = findChild(rPrDefault, "w:rPr");
+    if (rPr) {
+      const runDefaults = parseRunProperties(rPr);
+      if (Object.keys(runDefaults).length > 0) docDefaults.run = runDefaults;
+    }
+  }
+
+  // pPrDefault → paragraph defaults
+  const pPrDefault = findChild(el, "w:pPrDefault");
+  if (pPrDefault) {
+    const pPr = findChild(pPrDefault, "w:pPr");
+    if (pPr) {
+      const paraDefaults: Record<string, unknown> = {};
+      const spacing = findChild(pPr, "w:spacing");
+      if (spacing) {
+        const sp: Record<string, unknown> = {};
+        const before = attrNum(spacing, "w:before");
+        if (before !== undefined) sp.before = before;
+        const after = attrNum(spacing, "w:after");
+        if (after !== undefined) sp.after = after;
+        const line = attrNum(spacing, "w:line");
+        if (line !== undefined) sp.line = line;
+        if (Object.keys(sp).length > 0) paraDefaults.spacing = sp;
+      }
+      if (Object.keys(paraDefaults).length > 0) docDefaults.paragraph = paraDefaults;
+    }
+  }
+
+  if (Object.keys(docDefaults).length > 0) result.document = docDefaults;
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function parseStyleElement(
+  el: Element,
+  ctx: ParseContext,
+): (Record<string, unknown> & { _type?: string }) | undefined {
+  const opts: Record<string, unknown> & { _type?: string } = {};
+
+  // Type and ID — these are attributes on w:style element, not child elements
+  const type = attr(el, "w:type");
+  if (type) opts._type = type;
+
+  const id = attr(el, "w:styleId");
+  if (id) opts.id = id;
+
+  // Default flag
+  const isDefault = attrBool(el, "w:default");
+  if (isDefault) opts.default = true;
+
+  // Custom style flag
+  const customStyle = attrBool(el, "w:customStyle");
+  if (customStyle) opts.customStyle = "1";
+
+  // Name
+  const nameEl = findChild(el, "w:name");
+  if (nameEl) {
+    const name = attr(nameEl, "w:val");
+    if (name) opts.name = name;
+  }
+
+  // basedOn
+  const basedOn = findChild(el, "w:basedOn");
+  if (basedOn) {
+    const val = attr(basedOn, "w:val");
+    if (val) opts.basedOn = val;
+  }
+
+  // next
+  const next = findChild(el, "w:next");
+  if (next) {
+    const val = attr(next, "w:val");
+    if (val) opts.next = val;
+  }
+
+  // link
+  const link = findChild(el, "w:link");
+  if (link) {
+    const val = attr(link, "w:val");
+    if (val) opts.link = val;
+  }
+
+  // uiPriority
+  const uiPriority = findChild(el, "w:uiPriority");
+  if (uiPriority) {
+    const val = attrNum(uiPriority, "w:val");
+    if (val !== undefined) opts.uiPriority = val;
+  }
+
+  // quickFormat
+  if (findChild(el, "w:qFormat")) opts.quickFormat = true;
+
+  // semiHidden
+  if (findChild(el, "w:semiHidden")) opts.semiHidden = true;
+
+  // unhideWhenUsed
+  if (findChild(el, "w:unhideWhenUsed")) opts.unhideWhenUsed = true;
+
+  // Paragraph properties
+  const pPr = findChild(el, "w:pPr");
+  if (pPr) {
+    const paraOpts = parseParagraphProperties(pPr, ctx);
+    if (Object.keys(paraOpts).length > 0) opts.paragraph = paraOpts;
+  }
+
+  // Run properties
+  const rPr = findChild(el, "w:rPr");
+  if (rPr) {
+    const runOpts = parseRunProperties(rPr);
+    if (Object.keys(runOpts).length > 0) opts.run = runOpts;
+  }
+
+  return opts;
 }

@@ -1,5 +1,5 @@
 import { XmlComponent } from "@file/xml-components";
-import type { IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 
 export const TextAlignment = {
   LEFT: "l",
@@ -147,7 +147,7 @@ export class ParagraphProperties extends XmlComponent {
     this.options = options;
   }
 
-  public prepForXml(_context: import("@file/xml-components").Context): IXmlableObject | undefined {
+  public prepForXml(_context: Context): IXmlableObject | undefined {
     return buildParagraphProperties(this.options);
   }
 }

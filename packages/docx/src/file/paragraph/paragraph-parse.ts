@@ -1,5 +1,6 @@
 import { HeadingLevel } from "@file/paragraph/formatting/style";
 import type { ParagraphOptions } from "@file/paragraph/paragraph";
+import type { RunOptions } from "@file/paragraph/run";
 /**
  * Paragraph parser for DOCX documents.
  *
@@ -266,7 +267,20 @@ export function parseParagraph(el: Element, ctx: ParseContext): ParagraphOptions
         break;
       }
       case "w:hyperlink": {
-        // For now, extract text from hyperlink runs
+        const hl: Record<string, unknown> = {};
+        // External link via r:id
+        const rId = attr(child, "r:id");
+        if (rId) {
+          const target = ctx.docx.partRefs.hyperlinks.get(rId);
+          if (target) hl.link = target;
+        }
+        // Internal bookmark anchor
+        const anchor = attr(child, "w:anchor");
+        if (anchor) hl.anchor = anchor;
+        // Tooltip
+        const tooltip = attr(child, "w:tooltip");
+        if (tooltip) hl.tooltip = tooltip;
+
         const linkRuns: unknown[] = [];
         for (const sub of child.elements ?? []) {
           if (sub.name === "w:r") {
@@ -275,16 +289,26 @@ export function parseParagraph(el: Element, ctx: ParseContext): ParagraphOptions
             linkRuns.push(runOpts);
           }
         }
-        // Flatten hyperlink text into the paragraph children
-        childList.push(...linkRuns);
+
+        if (linkRuns.length > 0) {
+          hl.children = linkRuns;
+          childList.push({ hyperlink: hl });
+        }
         break;
       }
-      case "w:bookmarkStart":
-      case "w:bookmarkEnd":
-        // Bookmarks span across runs and cannot be represented in the current
-        // ParagraphOptions JSON output — the text between start/end is already
-        // preserved as run children, which is sufficient for most round-trip use cases.
+      case "w:bookmarkStart": {
+        const id = attrNum(child, "w:id");
+        const name = attr(child, "w:name");
+        if (id !== undefined && name) {
+          childList.push({ bookmarkStart: { id, name } });
+        }
         break;
+      }
+      case "w:bookmarkEnd": {
+        const id = attrNum(child, "w:id");
+        if (id !== undefined) childList.push({ bookmarkEnd: id });
+        break;
+      }
       case "w:commentRangeStart": {
         const id = attrNum(child, "w:id");
         if (id !== undefined) childList.push({ commentRangeStart: id });
@@ -334,7 +358,7 @@ export function parseParagraph(el: Element, ctx: ParseContext): ParagraphOptions
       }
     }
 
-    opts.children = childList as (import("@file/paragraph/run").RunOptions | string)[];
+    opts.children = childList as (RunOptions | string)[];
   }
 
   return opts as ParagraphOptions;

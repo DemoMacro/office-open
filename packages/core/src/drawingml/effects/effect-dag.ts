@@ -22,6 +22,7 @@ import { createPatternFill } from "../fill/pattern-fill";
 import type { PatternFillOptions } from "../fill/pattern-fill";
 import type { BlurEffectOptions } from "./effect-list";
 import type { FillOverlayEffectOptions } from "./fill-overlay";
+import { BlendMode } from "./fill-overlay";
 import { createFillOverlayEffect } from "./fill-overlay";
 import type { GlowEffectOptions } from "./glow";
 import { createGlowEffect } from "./glow";
@@ -94,7 +95,7 @@ export interface AlphaReplaceEffectOptions {
 /** Blend effect — blends with nested container (CT_BlendEffect). */
 export interface BlendEffectOptions {
   /** Blend mode (required) */
-  readonly blend: (typeof import("./fill-overlay").BlendMode)[keyof typeof import("./fill-overlay").BlendMode];
+  readonly blend: (typeof BlendMode)[keyof typeof BlendMode];
   /** Nested effect container */
   readonly container: EffectDagOptions;
 }

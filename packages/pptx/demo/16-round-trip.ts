@@ -115,7 +115,7 @@ const slides: SlideOptions[] = [
           y: 270,
           width: 340,
           height: 160,
-          outline: { color: "4472C4", width: 12700 },
+          outline: { color: "4472C4", width: 12700, dashStyle: "dash" },
           paragraphs: [
             {
               properties: { bullet: { type: "char", char: "●", color: "4472C4" } },
@@ -195,6 +195,12 @@ const slides: SlideOptions[] = [
           columnWidths: [2500000, 2000000, 3000000],
           firstRow: true,
           bandRow: true,
+          borders: {
+            top: { color: "4472C4", width: 12700 },
+            bottom: { color: "4472C4", width: 12700 },
+            left: { color: "4472C4", width: 12700 },
+            right: { color: "4472C4", width: 12700 },
+          },
         },
       },
     ],
@@ -450,7 +456,7 @@ const {
   slides: slidePaths,
   slideMasters,
   slideLayouts,
-} = parsePptx(new Uint8Array(buffer));
+} = parsePptx(buffer);
 
 assert("9 slide paths", slidePaths.length === 9);
 assert("slide 1 path", slidePaths[0] === "ppt/slides/slide1.xml");
@@ -473,7 +479,7 @@ assert("has ppt/theme/theme1.xml", pptxDoc.has("ppt/theme/theme1.xml"));
 // ══════════════════════════════════════════════════════════════════════════════
 
 console.log("\n--- parsePresentation (high-level) ---");
-const parsed = parsePresentation(new Uint8Array(buffer));
+const parsed = parsePresentation(buffer);
 
 assert("9 slides parsed", parsed.slides!.length === 9);
 assert("title preserved", parsed.title === "Round-trip Feature Showcase");
@@ -495,6 +501,13 @@ assert("s0 shape 1 has geometry", s0shape1.shape.geometry === "roundRect");
 assert("s0 shape 1 has outline", !!s0shape1.shape.outline);
 assert("s0 shape 1 has effects", !!s0shape1.shape.effects);
 
+// Verify outline dashStyle on bullet shape
+const s0bulletShape = s0c[4] as unknown as { shape: Record<string, unknown> };
+assert(
+  "s0 bullet shape has dashStyle",
+  (s0bulletShape.shape.outline as Record<string, unknown>)?.dashStyle === "dash",
+);
+
 const s0shape2 = s0c[2] as unknown as { shape: Record<string, unknown> };
 assert("s0 shape 2 has gradient fill", typeof s0shape2.shape.fill === "object");
 
@@ -509,6 +522,8 @@ assert("s1 has table", !!s1tbl);
 assert("s1 table has rows", Array.isArray(s1tbl.table.rows));
 assert("s1 table firstRow", s1tbl.table.firstRow === true);
 assert("s1 table bandRow", s1tbl.table.bandRow === true);
+// Note: table-level borders are distributed to edge cells during generation,
+// so they appear in a:tcPr rather than a:tblPr. The parser supports both paths.
 
 // ── Slide 3: Chart ──
 const s2 = parsed.slides![2];
@@ -531,8 +546,15 @@ assert("s3 has smartart", !!s3sa);
 assert("s3 smartart has nodes", Array.isArray(s3sa.smartart.nodes));
 assert("s3 smartart has layout", s3sa.smartart.layout === "hierarchy1");
 
-// ── Slide 5: Connector ──
+// ── Slide 5: Connector + Line ──
 const s4 = parsed.slides![4];
+const s4line = s4.children!.find((c) => "line" in (c as object)) as unknown as {
+  line: Record<string, unknown>;
+};
+assert("s4 has line shape", !!s4line);
+assert("s4 line has x1", s4line?.line?.x1 !== undefined);
+assert("s4 line has x2", s4line?.line?.x2 !== undefined);
+
 const s4conn = s4.children!.find((c) => "connector" in (c as object)) as unknown as {
   connector: Record<string, unknown>;
 };
@@ -563,12 +585,18 @@ assert("s6 transition type is fade", (s6.transition as Record<string, unknown>)?
 const s7 = parsed.slides![7];
 const s7shapes = s7.children!.filter((c) => "shape" in (c as object));
 assert("s7 has animated shapes", s7shapes.length >= 3);
+// Verify at least one shape has animation parsed
+const s7animated = s7shapes.find((s) => {
+  const shape = (s as Record<string, unknown>).shape as Record<string, unknown>;
+  return !!shape.animation;
+});
+assert("s7 shape has animation parsed", !!s7animated);
 
 // ── Slide 9: Notes + headerFooter ──
 const s8 = parsed.slides![8];
 assert("s8 has notes", !!s8.notes);
-// headerFooter is stored in slide master placeholders, not directly in slide XML
-// Skip headerFooter round-trip assertion
+// Note: Slide class stores headerFooter but doesn't generate p:hf XML yet.
+// The parser supports p:hf when present in slide XML.
 
 // ══════════════════════════════════════════════════════════════════════════════
 // 4. Round-trip: re-generate from parsed data
@@ -582,7 +610,7 @@ assert("re-generated buffer non-empty", buffer2.length > 0);
 console.log(`Re-generated PPTX: ${buffer2.length} bytes`);
 
 // Re-parse the re-generated file
-const parsed2 = parsePresentation(new Uint8Array(buffer2));
+const parsed2 = parsePresentation(buffer2);
 assert("re-parsed has 9 slides", parsed2.slides!.length === 9);
 assert("re-parsed title preserved", parsed2.title === "Round-trip Feature Showcase");
 assert("re-parsed creator preserved", parsed2.creator === "Parser Demo");
@@ -703,7 +731,7 @@ const multiPres = new Presentation({
 const multiBuffer = await Packer.toBuffer(multiPres);
 console.log(`Multi-master PPTX: ${multiBuffer.length} bytes`);
 
-const multiParsed = parsePresentation(new Uint8Array(multiBuffer));
+const multiParsed = parsePresentation(multiBuffer);
 assert("multi-master has 2 slides", multiParsed.slides!.length === 2);
 assert("multi-master has masters", !!multiParsed.masters);
 assert("multi-master has 2 masters", multiParsed.masters!.length === 2);
@@ -725,7 +753,7 @@ const multiPres2 = new Presentation({
 const multiBuffer2 = await Packer.toBuffer(multiPres2);
 assert("multi-master re-gen non-empty", multiBuffer2.length > 0);
 
-const multiParsed2 = parsePresentation(new Uint8Array(multiBuffer2));
+const multiParsed2 = parsePresentation(multiBuffer2);
 assert("re-gen multi has 2 slides", multiParsed2.slides!.length === 2);
 assert("re-gen multi has 2 masters", multiParsed2.masters!.length === 2);
 assert("re-gen slide 0 master", multiParsed2.slides![0].master === "Light Theme");

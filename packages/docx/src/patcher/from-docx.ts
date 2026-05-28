@@ -287,6 +287,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                   const concreteHyperlink = new ConcreteHyperlink(
                     element.options.children,
                     uniqueId(),
+                    { tooltip: element.options.tooltip as string | undefined },
                   );
                   hyperlinkRelationshipAdditions.push({
                     hyperlink: {

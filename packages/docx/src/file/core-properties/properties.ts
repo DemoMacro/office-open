@@ -12,6 +12,11 @@ import type { EmbeddedFontOptions } from "@file/fonts/font-table";
 import type { CommentsOptions } from "@file/paragraph/run/comment-run";
 import type { HyphenationOptions } from "@file/settings";
 import type { CompatibilityOptions } from "@file/settings/compatibility";
+import type {
+  DocumentProtectionOptions,
+  SettingsOptions,
+  WriteProtectionOptions,
+} from "@file/settings/settings";
 import { XmlComponent, stringContainerObj } from "@file/xml-components";
 import { dateTimeValue } from "@util/values";
 
@@ -84,7 +89,7 @@ export interface PropertiesOptions {
   readonly features?: {
     readonly trackRevisions?: boolean;
     readonly updateFields?: boolean;
-    readonly documentProtection?: import("@file/settings/settings").DocumentProtectionOptions;
+    readonly documentProtection?: DocumentProtectionOptions;
   };
   readonly compatabilityModeVersion?: number;
   readonly compatibility?: CompatibilityOptions;
@@ -103,7 +108,7 @@ export interface PropertiesOptions {
     readonly val?: "none" | "fullPage" | "bestFit" | "textFit";
   };
   /** Write protection recommendation (not enforcement) */
-  readonly writeProtection?: import("@file/settings/settings").WriteProtectionOptions;
+  readonly writeProtection?: WriteProtectionOptions;
   /** Whether to display the background shape in print layout */
   readonly displayBackgroundShape?: boolean;
   /** Whether to embed TrueType fonts in the document */
@@ -115,7 +120,7 @@ export interface PropertiesOptions {
   /** Document variables (key-value pairs stored in the document) */
   readonly docVars?: readonly { readonly name: string; readonly val: string }[];
   /** Theme color scheme remapping */
-  readonly colorSchemeMapping?: import("@file/settings/settings").SettingsOptions["colorSchemeMapping"];
+  readonly colorSchemeMapping?: SettingsOptions["colorSchemeMapping"];
 }
 
 /**

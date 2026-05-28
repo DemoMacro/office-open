@@ -5,6 +5,7 @@
  *
  * @module
  */
+import type { FileChild } from "@file/file-child";
 import { Paragraph } from "@file/paragraph";
 import { BaseXmlComponent } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
@@ -15,10 +16,10 @@ import { buildTableCellProperties } from "./table-cell-properties";
 import type { ITableCellPropertiesOptions } from "./table-cell-properties";
 
 // Lazy import to avoid circular dependency: coerce.ts → Table → TableRow → TableCell → coerce.ts
-type CoerceFn = (child: SectionChild) => import("@file/file-child").FileChild;
+type CoerceFn = (child: SectionChild) => FileChild;
 let _coerce: CoerceFn | undefined;
 
-function lazyCoerce(child: SectionChild): import("@file/file-child").FileChild {
+function lazyCoerce(child: SectionChild): FileChild {
   if (!_coerce) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     _coerce = require("../../coerce").coerceSectionChild;

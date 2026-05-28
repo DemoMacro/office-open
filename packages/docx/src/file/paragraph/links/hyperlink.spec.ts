@@ -52,7 +52,7 @@ describe("ConcreteHyperlink", () => {
             }),
           ],
           "superid2",
-          "anchor",
+          { anchor: "anchor" },
         );
       });
 

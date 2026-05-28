@@ -1,7 +1,9 @@
 import type { ParsedDocument } from "@office-open/core";
 import { parseArchive, parseCorePropsElement, convertEmuToPixels } from "@office-open/core";
 import type { Element } from "@office-open/xml";
-import { attr, attrNum, findChild } from "@office-open/xml";
+import { attr, attrNum, findChild, textOf } from "@office-open/xml";
+import type { DataType } from "undio";
+import { toUint8Array } from "undio";
 
 import { ParseContext } from "./parse/context";
 import { parseSlide } from "./parse/slide";
@@ -133,8 +135,9 @@ function parseSlideRels(doc: ParsedDocument, slidePaths: string[], refs: PptxPar
   }
 }
 
-export function parsePptx(data: Uint8Array): PptxDocument {
-  const doc = parseArchive(data);
+export function parsePptx(data: DataType): PptxDocument {
+  const uint8 = toUint8Array(data);
+  const doc = parseArchive(uint8);
 
   const presentation = doc.get("ppt/presentation.xml");
 
@@ -272,7 +275,7 @@ function resolveRelTargets(
  * @param data - Raw bytes of a .pptx file
  * @returns Parsed presentation options
  */
-export function parsePresentation(data: Uint8Array): PresentationOptions {
+export function parsePresentation(data: DataType): PresentationOptions {
   const pptx = parsePptx(data);
   const opts: Record<string, unknown> = {};
 
@@ -378,7 +381,24 @@ export function parsePresentation(data: Uint8Array): PresentationOptions {
     opts.masters = masterDefs;
   }
 
-  // 6. Parse slides with layout and master references
+  // 6. Parse comment authors
+  const commentAuthors = new Map<number, { name: string; initials: string }>();
+  if (pptx.partRefs.commentAuthors) {
+    const authorsEl = pptx.doc.get(pptx.partRefs.commentAuthors);
+    if (authorsEl) {
+      for (const child of authorsEl.elements ?? []) {
+        if (child.name !== "p:cmAuthor") continue;
+        const id = attrNum(child, "id");
+        const name = attr(child, "name");
+        const initials = attr(child, "initials");
+        if (id !== undefined) {
+          commentAuthors.set(id, { name: name ?? "", initials: initials ?? "" });
+        }
+      }
+    }
+  }
+
+  // 7. Parse slides with layout and master references
   const result: SlideOptions[] = [];
   for (let si = 0; si < pptx.slides.length; si++) {
     const slidePath = pptx.slides[si];
@@ -404,9 +424,67 @@ export function parsePresentation(data: Uint8Array): PresentationOptions {
       }
     }
 
+    // Comments via slide rels
+    for (const [, relPath] of slideRels) {
+      if (!relPath.includes("/comments/")) continue;
+      const commentsEl = pptx.doc.get(relPath);
+      if (!commentsEl) continue;
+
+      const comments: Record<string, unknown>[] = [];
+      for (const cm of commentsEl.elements ?? []) {
+        if (cm.name !== "p:cm") continue;
+        const authorId = attrNum(cm, "authorId");
+        const dt = attr(cm, "dt");
+        const idx = attrNum(cm, "idx");
+
+        const author = authorId !== undefined ? commentAuthors.get(authorId) : undefined;
+        const pos = findChild(cm, "p:pos");
+        const x = pos ? attrNum(pos, "x") : undefined;
+        const y = pos ? attrNum(pos, "y") : undefined;
+
+        // Extract text from p:txBody
+        const txBody = findChild(cm, "p:txBody");
+        const text = txBody ? extractCommentText(txBody) : "";
+
+        const commentEntry: Record<string, unknown> = {};
+        if (authorId !== undefined) commentEntry.authorId = authorId;
+        if (author) commentEntry.author = author.name;
+        if (idx !== undefined) commentEntry.idx = idx;
+        if (dt) commentEntry.date = dt;
+        if (x !== undefined) commentEntry.x = x;
+        if (y !== undefined) commentEntry.y = y;
+        if (text) commentEntry.text = text;
+
+        comments.push(commentEntry);
+      }
+
+      if (comments.length > 0) slideOpts.comments = comments;
+      break;
+    }
+
     result.push(slideOpts as SlideOptions);
   }
 
   opts.slides = result;
   return opts as PresentationOptions;
+}
+
+/**
+ * Extract plain text from a p:txBody in a comment element.
+ */
+function extractCommentText(txBody: Element): string {
+  const parts: string[] = [];
+  for (const p of txBody.elements ?? []) {
+    if (p.name !== "a:p") continue;
+    for (const r of p.elements ?? []) {
+      if (r.name !== "a:r") continue;
+      for (const t of r.elements ?? []) {
+        if (t.name === "a:t") {
+          const text = textOf(t);
+          if (text) parts.push(text);
+        }
+      }
+    }
+  }
+  return parts.join("");
 }

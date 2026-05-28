@@ -360,10 +360,12 @@ new Shape({
 ## Parsing
 
 ```ts
-import { Packer, Presentation } from "@office-open/pptx";
+import { parsePresentation, Presentation, Packer } from "@office-open/pptx";
 import { readFileSync } from "node:fs";
 
-const buffer = readFileSync("input.pptx");
-const pres = await Packer.fromBuffer(buffer);
-const parsed = pres.toParsedDocument();
+const opts = parsePresentation(readFileSync("input.pptx"));
+
+// Modify and re-export
+const pres = new Presentation(opts);
+const buffer = await Packer.toBuffer(pres);
 ```

@@ -1,5 +1,5 @@
 import { BuilderElement } from "@file/xml-components";
-import type { IXmlableObject } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
 
 /**
  * Pure function: builds a:endParaRPr XML object.
@@ -22,9 +22,7 @@ export class EndParagraphRunProperties extends BuilderElement<{
     this.lang = lang;
   }
 
-  public override prepForXml(
-    _context: import("@file/xml-components").Context,
-  ): IXmlableObject | undefined {
+  public override prepForXml(_context: Context): IXmlableObject | undefined {
     return buildEndParagraphRunProperties(this.lang);
   }
 }

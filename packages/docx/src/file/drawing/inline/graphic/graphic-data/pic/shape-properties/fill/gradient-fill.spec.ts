@@ -2,6 +2,7 @@ import { Formatter } from "@export/formatter";
 import { describe, expect, it } from "vite-plus/test";
 
 import { createGradientFill, createGradientStop } from "./gradient-fill";
+import type { PathShadeOptions } from "./gradient-fill";
 
 describe("createGradientStop", () => {
   it("should create gradient stop with RGB color", () => {
@@ -150,7 +151,7 @@ describe("createGradientFill", () => {
           { position: 0, color: { value: "FF0000" } },
           { position: 100000, color: { value: "0000FF" } },
         ],
-        shade: {} as import("./gradient-fill").PathShadeOptions,
+        shade: {} as PathShadeOptions,
       }),
     );
     expect(tree).to.deep.equal({

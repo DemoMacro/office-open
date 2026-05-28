@@ -17,7 +17,7 @@ describe("parsePresentation", () => {
       ],
     });
     const buffer = await Packer.toBuffer(pres);
-    const result = parsePresentation(new Uint8Array(buffer));
+    const result = parsePresentation(buffer);
 
     expect(result.slides).to.exist;
     expect(result.slides!.length).to.equal(1);
@@ -32,7 +32,7 @@ describe("parsePresentation", () => {
       ],
     });
     const buffer = await Packer.toBuffer(pres);
-    const result = parsePresentation(new Uint8Array(buffer));
+    const result = parsePresentation(buffer);
 
     expect(result.slides!.length).to.equal(2);
     expect(result.masters).to.be.undefined;
@@ -45,7 +45,7 @@ describe("parsePresentation", () => {
       slides: [{ children: [{ shape: { x: 0, y: 0, width: 200, height: 100, text: "A" } }] }],
     });
     const buffer = await Packer.toBuffer(pres);
-    const result = parsePresentation(new Uint8Array(buffer));
+    const result = parsePresentation(buffer);
 
     expect(result.title).to.equal("Test Title");
     expect(result.creator).to.equal("Test Creator");
@@ -95,7 +95,7 @@ describe("parsePresentation", () => {
 
     const pres = new Presentation({ title: "Multi-master", masters, slides });
     const buffer = await Packer.toBuffer(pres);
-    const result = parsePresentation(new Uint8Array(buffer));
+    const result = parsePresentation(buffer);
 
     expect(result.slides!.length).to.equal(2);
     expect(result.masters).to.exist;
@@ -129,7 +129,7 @@ describe("parsePresentation", () => {
     const buffer = await Packer.toBuffer(pres);
 
     // First parse
-    const parsed1 = parsePresentation(new Uint8Array(buffer));
+    const parsed1 = parsePresentation(buffer);
     expect(parsed1.masters!.length).to.equal(2);
 
     // Re-generate from parsed data
@@ -137,7 +137,7 @@ describe("parsePresentation", () => {
     const buffer2 = await Packer.toBuffer(pres2);
 
     // Second parse
-    const parsed2 = parsePresentation(new Uint8Array(buffer2));
+    const parsed2 = parsePresentation(buffer2);
     expect(parsed2.slides!.length).to.equal(2);
     expect(parsed2.masters!.length).to.equal(2);
     // Master name derived from theme name, not original master name

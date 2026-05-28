@@ -27,7 +27,14 @@ import { DeletedTextRun } from "../track-revision/track-revision-components/dele
 import { InsertedTextRun } from "../track-revision/track-revision-components/inserted-text-run";
 import type { ColumnBreak, PageBreak } from "./formatting/break";
 import { PageBreak as PageBreakCls, ColumnBreak as ColumnBreakCls } from "./formatting/break";
-import { Bookmark, ConcreteHyperlink, ExternalHyperlink, InternalHyperlink } from "./links";
+import {
+  Bookmark,
+  BookmarkEnd,
+  BookmarkStart,
+  ConcreteHyperlink,
+  ExternalHyperlink,
+  InternalHyperlink,
+} from "./links";
 import type { Dir, Bdo } from "./links/bidi";
 import type {
   MoveFromRangeEnd,
@@ -148,7 +155,17 @@ export type IParagraphJsonChild =
   | { readonly commentRangeEnd: number }
   | { readonly commentReference: number }
   | { readonly insertion: RunOptions & ChangedAttributesProperties }
-  | { readonly deletion: RunOptions & ChangedAttributesProperties };
+  | { readonly deletion: RunOptions & ChangedAttributesProperties }
+  | {
+      readonly hyperlink: {
+        readonly link?: string;
+        readonly anchor?: string;
+        readonly tooltip?: string;
+        readonly children?: readonly (RunOptions | string)[];
+      };
+    }
+  | { readonly bookmarkStart: { readonly id: number; readonly name: string } }
+  | { readonly bookmarkEnd: number };
 
 /**
  * Options for creating a Paragraph element.
@@ -276,7 +293,9 @@ export class Paragraph extends BaseXmlComponent implements FileChild {
         // Bookmark and ExternalHyperlink are NOT BaseXmlComponent subclasses
         // — they need special handling before coerce.
         if (rawChild instanceof ExternalHyperlink) {
-          const concreteHyperlink = new ConcreteHyperlink(rawChild.options.children, uniqueId());
+          const concreteHyperlink = new ConcreteHyperlink(rawChild.options.children, uniqueId(), {
+            tooltip: rawChild.options.tooltip as string | undefined,
+          });
           context.viewWrapper.Relationships.addRelationship(
             concreteHyperlink.linkId,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
@@ -314,18 +333,29 @@ export class Paragraph extends BaseXmlComponent implements FileChild {
         } else if ("image" in rawChild) {
           child = new ImageRun(rawChild.image);
         } else if (typeof rawChild === "object" && rawChild !== null && "hyperlink" in rawChild) {
-          // JSON API: { text: "...", hyperlink: { link?: string, anchor?: string, tooltip?: string }, ...formatting }
+          // JSON API: { text: "...", hyperlink: { link?, anchor?, tooltip?, children? }, ...formatting }
           const { hyperlink, ...runOpts } = rawChild as Record<string, unknown> & {
             hyperlink: Record<string, unknown>;
           };
-          const textRun = new TextRun(runOpts as RunOptions);
+          const hlChildren = hyperlink.children as readonly (RunOptions | string)[] | undefined;
+          const textRuns: TextRun[] = [];
+          if (hlChildren && hlChildren.length > 0) {
+            for (const rc of hlChildren) {
+              textRuns.push(new TextRun(rc as RunOptions));
+            }
+          } else {
+            textRuns.push(new TextRun(runOpts as RunOptions));
+          }
+
           if ("link" in hyperlink) {
             const ext = new ExternalHyperlink({
               link: hyperlink.link as string,
               tooltip: hyperlink.tooltip as string | undefined,
-              children: [textRun],
+              children: textRuns,
             });
-            const concrete = new ConcreteHyperlink(ext.options.children, uniqueId());
+            const concrete = new ConcreteHyperlink(ext.options.children, uniqueId(), {
+              tooltip: ext.options.tooltip as string | undefined,
+            });
             context.viewWrapper.Relationships.addRelationship(
               concrete.linkId,
               "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
@@ -338,7 +368,7 @@ export class Paragraph extends BaseXmlComponent implements FileChild {
             const internal = new InternalHyperlink({
               anchor: hyperlink.anchor as string,
               tooltip: hyperlink.tooltip as string | undefined,
-              children: [textRun],
+              children: textRuns,
             });
             const obj = internal.prepForXml(context);
             if (obj) children.push(obj);
@@ -376,6 +406,16 @@ export class Paragraph extends BaseXmlComponent implements FileChild {
           child = new CommentRangeEnd(rawChild.commentRangeEnd);
         } else if ("commentReference" in rawChild) {
           child = new TextRun({ children: [new CommentReference(rawChild.commentReference)] });
+        } else if ("bookmarkStart" in rawChild) {
+          const startEl = new BookmarkStart(rawChild.bookmarkStart.name, rawChild.bookmarkStart.id);
+          const startObj = startEl.prepForXml(context);
+          if (startObj) children.push(startObj);
+          continue;
+        } else if ("bookmarkEnd" in rawChild) {
+          const endEl = new BookmarkEnd(rawChild.bookmarkEnd);
+          const endObj = endEl.prepForXml(context);
+          if (endObj) children.push(endObj);
+          continue;
         } else if ("insertion" in rawChild) {
           child = new InsertedTextRun(rawChild.insertion);
         } else if ("deletion" in rawChild) {

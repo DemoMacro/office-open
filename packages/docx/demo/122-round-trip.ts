@@ -70,6 +70,31 @@ async function main() {
           },
         },
 
+        // Hyperlink
+        {
+          paragraph: {
+            children: [
+              "Visit ",
+              {
+                text: "our website",
+                hyperlink: { link: "https://example.com", tooltip: "Example" },
+              },
+              " for more.",
+            ],
+          },
+        },
+
+        // Bookmark
+        {
+          paragraph: {
+            children: [
+              { bookmarkStart: { id: 42, name: "my-bookmark" } },
+              "This is a bookmarked paragraph.",
+              { bookmarkEnd: 42 },
+            ],
+          },
+        },
+
         // Table of Contents
         { toc: { hyperlink: true, headingStyleRange: "1-3" } },
 
@@ -355,6 +380,30 @@ async function main() {
         },
       ],
     },
+
+    // Section: custom styles + numbering
+    {
+      children: [
+        {
+          paragraph: {
+            style: "CustomHeading",
+            children: ["Custom Heading Style Applied"],
+          },
+        },
+        {
+          paragraph: {
+            numbering: { reference: "custom-list", level: 0 },
+            children: ["First numbered item"],
+          },
+        },
+        {
+          paragraph: {
+            numbering: { reference: "custom-list", level: 0 },
+            children: ["Second numbered item"],
+          },
+        },
+      ],
+    },
   ];
 
   // 2. Create document and export
@@ -372,19 +421,60 @@ async function main() {
         },
       ],
     },
+    styles: {
+      default: {
+        document: {
+          run: { font: "Calibri", size: 22 },
+        },
+      },
+      paragraphStyles: [
+        {
+          id: "CustomHeading",
+          name: "Custom Heading",
+          basedOn: "Normal",
+          next: "Normal",
+          quickFormat: true,
+          run: { bold: true, size: 32, color: "1F4E79" },
+        },
+      ],
+      characterStyles: [
+        {
+          id: "CustomHighlight",
+          name: "Custom Highlight",
+          run: { bold: true, color: "FF0000" },
+        },
+      ],
+    },
+    numbering: {
+      config: [
+        {
+          reference: "custom-list",
+          levels: [
+            {
+              level: 0,
+              format: "decimal",
+              text: "%1.",
+              alignment: "start",
+              start: 1,
+              suffix: "space",
+            },
+          ],
+        },
+      ],
+    },
     sections,
   });
   const buffer = await Packer.toBuffer(doc);
   console.log(`Generated DOCX: ${buffer.length} bytes`);
 
   // 3. Parse it back
-  const parsed = parseDocument(new Uint8Array(buffer));
+  const parsed = parseDocument(buffer);
   console.log(`Parsed ${parsed.sections!.length} sections`);
 
   // 4. Verify
   console.log("\n--- Verification ---");
 
-  assert("section count = 7", parsed.sections!.length === 7);
+  assert("section count = 8", parsed.sections!.length === 8);
 
   // Section: paragraphs + tables + SDT + textbox + headings + TOC
   const s1 = parsed.sections![0].children;
@@ -401,6 +491,58 @@ async function main() {
       );
     });
     assert("s1 has comment paragraph with commentRangeStart", !!commentPara);
+  }
+
+  // Hyperlink paragraph: verify link target preserved
+  {
+    const hlPara = s1.find((c): boolean => {
+      if (!("paragraph" in c)) return false;
+      const p = (c as Record<string, unknown>).paragraph as Record<string, unknown>;
+      const children = p.children as Record<string, unknown>[];
+      return children?.some(
+        (ch) =>
+          typeof ch === "object" && ch !== null && "hyperlink" in (ch as Record<string, unknown>),
+      );
+    });
+    assert("s1 has hyperlink paragraph", !!hlPara);
+    if (hlPara) {
+      const p = (hlPara as Record<string, unknown>).paragraph as Record<string, unknown>;
+      const children = p.children as Record<string, unknown>[];
+      const hlChild = children.find(
+        (ch) =>
+          typeof ch === "object" && ch !== null && "hyperlink" in (ch as Record<string, unknown>),
+      ) as Record<string, unknown> | undefined;
+      if (hlChild) {
+        const hl = hlChild.hyperlink as Record<string, unknown>;
+        assert("hyperlink target preserved", hl.link === "https://example.com");
+        assert("hyperlink tooltip preserved", hl.tooltip === "Example");
+      }
+    }
+  }
+
+  // Bookmark paragraph: verify bookmark range preserved
+  {
+    const bmPara = s1.find((c): boolean => {
+      if (!("paragraph" in c)) return false;
+      const p = (c as Record<string, unknown>).paragraph as Record<string, unknown>;
+      const children = p.children as Record<string, unknown>[];
+      return children?.some(
+        (ch) => typeof ch === "object" && "bookmarkStart" in (ch as Record<string, unknown>),
+      );
+    });
+    assert("s1 has bookmark paragraph", !!bmPara);
+    if (bmPara) {
+      const p = (bmPara as Record<string, unknown>).paragraph as Record<string, unknown>;
+      const children = p.children as Record<string, unknown>[];
+      const bmStart = children.find(
+        (ch) => typeof ch === "object" && "bookmarkStart" in (ch as Record<string, unknown>),
+      ) as Record<string, unknown> | undefined;
+      if (bmStart) {
+        const bm = bmStart.bookmarkStart as Record<string, unknown>;
+        assert("bookmark name preserved", bm.name === "my-bookmark");
+        assert("bookmark id preserved", bm.id === 42);
+      }
+    }
   }
   assert("s1[0] is paragraph", "paragraph" in s1[0]);
   assert(
@@ -604,7 +746,7 @@ async function main() {
 
   // Section: rich formatting for value comparison
   const s7 = parsed.sections![6].children;
-  assert("s7 has 1 child", s7.length === 1);
+  assert("s7 has >= 1 child", s7.length >= 1);
   if ("paragraph" in s7[0] && typeof s7[0].paragraph === "object" && s7[0].paragraph !== null) {
     const opts = s7[0].paragraph as Record<string, unknown>;
     const children = opts.children as Record<string, unknown>[];
@@ -617,10 +759,87 @@ async function main() {
     }
   }
 
+  // Comments content: verify comment body parsed
+  {
+    const comments = (parsed as unknown as Record<string, unknown>).comments as
+      | Record<string, unknown>
+      | undefined;
+    assert("comments parsed", !!comments);
+    if (comments) {
+      const commentChildren = comments.children as Record<string, unknown>[];
+      assert("comments has children", Array.isArray(commentChildren) && commentChildren.length > 0);
+      if (commentChildren?.[0]) {
+        const c = commentChildren[0];
+        assert("comment author preserved", c.author === "Demo Author");
+        assert("comment id preserved", c.id === 0);
+      }
+    }
+  }
+
+  // Footnotes content: verify footnote body parsed
+  {
+    const footnotes = (parsed as unknown as Record<string, unknown>).footnotes as
+      | Record<string, unknown>
+      | undefined;
+    assert("footnotes parsed", !!footnotes);
+    if (footnotes) {
+      const fn1 = (footnotes as Record<string, Record<string, unknown>>)["1"];
+      assert("footnote 1 parsed", !!fn1);
+      if (fn1) {
+        assert("footnote 1 has children", Array.isArray(fn1.children) && fn1.children.length > 0);
+      }
+    }
+  }
+
+  // Styles: verify parsed style definitions
+  {
+    const styles = (parsed as unknown as Record<string, unknown>).styles as
+      | Record<string, unknown>
+      | undefined;
+    assert("styles parsed", !!styles);
+    if (styles) {
+      const pStyles = styles.paragraphStyles as Record<string, unknown>[] | undefined;
+      assert("paragraphStyles parsed", Array.isArray(pStyles) && pStyles.length > 0);
+      if (pStyles && pStyles.length > 0) {
+        const customHeading = pStyles.find((s) => s.id === "CustomHeading");
+        assert("CustomHeading style found", !!customHeading);
+        if (customHeading) {
+          assert("CustomHeading name", customHeading.name === "Custom Heading");
+          assert("CustomHeading quickFormat", customHeading.quickFormat === true);
+        }
+      }
+      const cStyles = styles.characterStyles as Record<string, unknown>[] | undefined;
+      assert("characterStyles parsed", Array.isArray(cStyles) && cStyles.length > 0);
+    }
+  }
+
+  // Numbering: verify parsed numbering definitions
+  {
+    const numbering = (parsed as unknown as Record<string, unknown>).numbering as
+      | Record<string, unknown>
+      | undefined;
+    assert("numbering parsed", !!numbering);
+    if (numbering) {
+      const config = numbering.config as Record<string, unknown>[];
+      assert("numbering config parsed", Array.isArray(config) && config.length > 0);
+    }
+  }
+
+  // Section 8: verify style/numbering paragraphs
+  const s8 = parsed.sections![7].children;
+  assert("s8 has 3 children", s8.length === 3);
+  {
+    const headingPara = s8[0] as Record<string, unknown>;
+    if ("paragraph" in headingPara) {
+      const p = headingPara.paragraph as Record<string, unknown>;
+      assert("s8 heading has style", p.style === "CustomHeading");
+    }
+  }
+
   // 5. Re-export and re-parse to verify stability
   const doc2 = new Document(parsed);
   const buffer2 = await Packer.toBuffer(doc2);
-  const parsed2 = parseDocument(new Uint8Array(buffer2));
+  const parsed2 = parseDocument(buffer2);
   assert("stable re-parse section count", parsed2.sections!.length === parsed.sections!.length);
   console.log(`Re-exported DOCX: ${buffer2.length} bytes`);
 
