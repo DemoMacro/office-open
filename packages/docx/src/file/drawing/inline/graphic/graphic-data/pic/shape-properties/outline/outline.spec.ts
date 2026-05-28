@@ -72,7 +72,7 @@ describe("createOutline", () => {
 
   it("should create outline with dash", () => {
     const tree = new Formatter().format(
-      createOutline({ type: "solidFill", color: { value: "000000" }, dash: "DASH" }),
+      createOutline({ type: "solidFill", color: { value: "000000" }, dash: "dash" }),
     );
     expect(tree).to.deep.equal({
       "a:ln": [
@@ -85,7 +85,7 @@ describe("createOutline", () => {
 
   it("should create outline with round join", () => {
     const tree = new Formatter().format(
-      createOutline({ type: "solidFill", color: { value: "000000" }, join: "ROUND" }),
+      createOutline({ type: "solidFill", color: { value: "000000" }, join: "round" }),
     );
     expect(tree).to.deep.equal({
       "a:ln": [
@@ -101,7 +101,7 @@ describe("createOutline", () => {
       createOutline({
         type: "solidFill",
         color: { value: "000000" },
-        join: "MITER",
+        join: "miter",
         miterLimit: 800000,
       }),
     );
@@ -120,10 +120,10 @@ describe("createOutline", () => {
         type: "solidFill",
         color: { value: "FF0000" },
         width: 19050,
-        cap: "ROUND",
-        compoundLine: "DOUBLE",
-        dash: "DOT",
-        align: "INSET",
+        cap: "round",
+        compoundLine: "double",
+        dash: "dot",
+        align: "inside",
       }),
     );
     expect(tree).to.deep.equal({
@@ -191,7 +191,7 @@ describe("createOutline", () => {
     const tree = new Formatter().format(
       createOutline({
         customDash: [{ d: "300%", sp: "100%" }],
-        dash: "DASH",
+        dash: "dash",
       }),
     );
     expect(tree).to.deep.equal({
@@ -248,7 +248,7 @@ describe("createOutline", () => {
       createOutline({
         type: "pattFill",
         patternFill: {
-          pattern: "dkDnDiag",
+          pattern: "darkDownDiagonal",
           foregroundColor: { value: "FF0000" },
           backgroundColor: { value: "0000FF" },
         },

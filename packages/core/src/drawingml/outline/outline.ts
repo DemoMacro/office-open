@@ -10,6 +10,7 @@
  */
 import { BuilderElement } from "../../xml-components";
 import type { XmlComponent } from "../../xml-components";
+import { xsdCompoundLine, xsdLineCap, xsdPenAlignment } from "../../xsd-mappings";
 import { createSolidFill } from "../color/solid-fill";
 import type { SolidFillOptions } from "../color/solid-fill";
 import { createGradientFill } from "../fill/gradient-fill";
@@ -49,9 +50,9 @@ import type { LineEndOptions } from "./line-end";
  */
 export const LineCap = {
   /** Round cap style */
-  ROUND: "rnd",
+  ROUND: "round",
   /** Square cap style */
-  SQUARE: "sq",
+  SQUARE: "square",
   /** Flat cap style */
   FLAT: "flat",
 } as const;
@@ -73,15 +74,15 @@ export const LineCap = {
  */
 export const CompoundLine = {
   /** Single line */
-  SINGLE: "sng",
+  SINGLE: "single",
   /** Double line */
-  DOUBLE: "dbl",
+  DOUBLE: "double",
   /** Thick-thin double line */
   THICK_THIN: "thickThin",
   /** Thin-thick double line */
   THIN_THICK: "thinThick",
   /** Triple line */
-  TRI: "tri",
+  TRI: "triple",
 } as const;
 
 // <xsd:simpleType name="ST_PenAlignment">
@@ -98,9 +99,9 @@ export const CompoundLine = {
  */
 export const PenAlignment = {
   /** Center alignment */
-  CENTER: "ctr",
+  CENTER: "center",
   /** Inset alignment */
-  INSET: "in",
+  INSET: "inside",
 } as const;
 
 /**
@@ -155,17 +156,17 @@ export interface OutlineAttributes {
   /** Line width in EMUs (English Metric Units) */
   readonly width?: number;
   /** Line cap style */
-  readonly cap?: keyof typeof LineCap;
+  readonly cap?: (typeof LineCap)[keyof typeof LineCap];
   /** Compound line type */
-  readonly compoundLine?: keyof typeof CompoundLine;
+  readonly compoundLine?: (typeof CompoundLine)[keyof typeof CompoundLine];
   /** Pen alignment */
-  readonly align?: keyof typeof PenAlignment;
+  readonly align?: (typeof PenAlignment)[keyof typeof PenAlignment];
   /**
    * Preset dash style.
    *
    * Mutually exclusive with `customDash` — only one can be specified.
    */
-  readonly dash?: keyof typeof PresetDash;
+  readonly dash?: (typeof PresetDash)[keyof typeof PresetDash];
   /**
    * Custom dash pattern (list of dash/space stops).
    *
@@ -173,7 +174,7 @@ export interface OutlineAttributes {
    */
   readonly customDash?: readonly DashStop[];
   /** Line join style */
-  readonly join?: keyof typeof LineJoin;
+  readonly join?: (typeof LineJoin)[keyof typeof LineJoin];
   /** Miter limit (only when join is MITER) */
   readonly miterLimit?: number;
   /** Line start arrow/head */
@@ -275,7 +276,7 @@ export const createOutline = (options: OutlineOptions): XmlComponent => {
     children.push(
       new BuilderElement<{ readonly val: string }>({
         attributes: {
-          val: { key: "val", value: PresetDash[options.dash] },
+          val: { key: "val", value: options.dash },
         },
         name: "a:prstDash",
       }),
@@ -284,7 +285,7 @@ export const createOutline = (options: OutlineOptions): XmlComponent => {
 
   // Join
   if (options.join !== undefined) {
-    if (options.join === "MITER" && options.miterLimit !== undefined) {
+    if (options.join === "miter" && options.miterLimit !== undefined) {
       children.push(
         new BuilderElement<{ readonly lim: number }>({
           attributes: {
@@ -296,7 +297,7 @@ export const createOutline = (options: OutlineOptions): XmlComponent => {
     } else {
       children.push(
         new BuilderElement({
-          name: `a:${LineJoin[options.join]}`,
+          name: `a:${options.join}`,
         }),
       );
     }
@@ -310,21 +311,19 @@ export const createOutline = (options: OutlineOptions): XmlComponent => {
     children.push(createLineEnd("a:tailEnd", options.tailEnd));
   }
 
-  return new BuilderElement<OutlineAttributes>({
+  return new BuilderElement({
     attributes: {
       align: {
         key: "algn",
-        value: options.align ? (PenAlignment[options.align] as typeof options.align) : undefined,
+        value: options.align ? xsdPenAlignment.to(options.align) : undefined,
       },
       cap: {
         key: "cap",
-        value: options.cap ? (LineCap[options.cap] as typeof options.cap) : undefined,
+        value: options.cap ? xsdLineCap.to(options.cap) : undefined,
       },
       compoundLine: {
         key: "cmpd",
-        value: options.compoundLine
-          ? (CompoundLine[options.compoundLine] as typeof options.compoundLine)
-          : undefined,
+        value: options.compoundLine ? xsdCompoundLine.to(options.compoundLine) : undefined,
       },
       width: {
         key: "w",

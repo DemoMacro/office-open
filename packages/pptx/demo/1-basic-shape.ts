@@ -18,7 +18,7 @@ const pres = new Presentation({
           y: 100,
           width: 400,
           height: 200,
-          text: "Hello World",
+          textBody: { text: "Hello World" },
           geometry: "rect",
           fill: "4472C4",
         }),
@@ -27,7 +27,7 @@ const pres = new Presentation({
           y: 350,
           width: 500,
           height: 100,
-          text: "Second shape",
+          textBody: { text: "Second shape" },
         }),
       ],
     },
@@ -39,7 +39,7 @@ const pres = new Presentation({
           y: 50,
           width: 860,
           height: 440,
-          text: "Slide 2 - Full Width",
+          textBody: { text: "Slide 2 - Full Width" },
           geometry: "rect",
         }),
       ],
@@ -52,7 +52,7 @@ const pres = new Presentation({
           y: 50,
           width: 600,
           height: 50,
-          text: "Vertical Text",
+          textBody: { text: "Vertical Text" },
           fill: "4472C4",
         }),
         new Shape({
@@ -60,18 +60,20 @@ const pres = new Presentation({
           y: 120,
           width: 120,
           height: 300,
-          textVertical: "vert",
-          paragraphs: [
-            new Paragraph({
-              properties: { bullet: { type: "none" } },
-              children: [
-                new TextRun({
-                  text: "Vertical Text (top to bottom)",
-                  fontSize: 14,
-                }),
-              ],
-            }),
-          ],
+          textBody: {
+            vertical: "vert",
+            children: [
+              new Paragraph({
+                properties: { bullet: { type: "none" } },
+                children: [
+                  new TextRun({
+                    text: "Vertical Text (top to bottom)",
+                    fontSize: 14,
+                  }),
+                ],
+              }),
+            ],
+          },
           outline: { color: "4472C4", width: 1 },
         }),
         new Shape({
@@ -79,13 +81,15 @@ const pres = new Presentation({
           y: 120,
           width: 120,
           height: 300,
-          textVertical: "vert270",
-          paragraphs: [
-            new Paragraph({
-              properties: { bullet: { type: "none" } },
-              children: [new TextRun({ text: "Rotated 270 (bottom to top)", fontSize: 14 })],
-            }),
-          ],
+          textBody: {
+            vertical: "vert270",
+            children: [
+              new Paragraph({
+                properties: { bullet: { type: "none" } },
+                children: [new TextRun({ text: "Rotated 270 (bottom to top)", fontSize: 14 })],
+              }),
+            ],
+          },
           outline: { color: "ED7D31", width: 1 },
         }),
         new Shape({
@@ -93,13 +97,15 @@ const pres = new Presentation({
           y: 120,
           width: 120,
           height: 300,
-          textVertical: "horz",
-          paragraphs: [
-            new Paragraph({
-              properties: { bullet: { type: "none" } },
-              children: [new TextRun({ text: "Horizontal (default)", fontSize: 14 })],
-            }),
-          ],
+          textBody: {
+            vertical: "horz",
+            children: [
+              new Paragraph({
+                properties: { bullet: { type: "none" } },
+                children: [new TextRun({ text: "Horizontal (default)", fontSize: 14 })],
+              }),
+            ],
+          },
           outline: { color: "70AD47", width: 1 },
         }),
       ],
@@ -112,7 +118,7 @@ const pres = new Presentation({
           y: 50,
           width: 600,
           height: 50,
-          text: "Text Anchor & Auto-Fit",
+          textBody: { text: "Text Anchor & Auto-Fit" },
           fill: "4472C4",
         }),
         // Top anchor
@@ -121,8 +127,7 @@ const pres = new Presentation({
           y: 120,
           width: 200,
           height: 200,
-          textAnchor: "TOP",
-          text: "Top anchored text",
+          textBody: { anchor: "top", text: "Top anchored text" },
           outline: { color: "999999", width: 1 },
         }),
         // Center anchor
@@ -131,8 +136,7 @@ const pres = new Presentation({
           y: 120,
           width: 200,
           height: 200,
-          textAnchor: "CENTER",
-          text: "Center anchored text",
+          textBody: { anchor: "center", text: "Center anchored text" },
           outline: { color: "999999", width: 1 },
         }),
         // Bottom anchor
@@ -141,8 +145,7 @@ const pres = new Presentation({
           y: 120,
           width: 200,
           height: 200,
-          textAnchor: "BOTTOM",
-          text: "Bottom anchored text",
+          textBody: { anchor: "bottom", text: "Bottom anchored text" },
           outline: { color: "999999", width: 1 },
         }),
         // Auto-fit normal
@@ -151,8 +154,10 @@ const pres = new Presentation({
           y: 350,
           width: 250,
           height: 80,
-          textAutoFit: "normal",
-          text: "This is a very long text that should auto-fit to shrink within the shape bounds",
+          textBody: {
+            autoFit: "normal",
+            text: "This is a very long text that should auto-fit to shrink within the shape bounds",
+          },
           outline: { color: "4472C4", width: 1 },
         }),
         // Auto-fit shape
@@ -161,8 +166,7 @@ const pres = new Presentation({
           y: 350,
           width: 250,
           height: 80,
-          textAutoFit: "shape",
-          text: "Shape auto-fit text",
+          textBody: { autoFit: "shape", text: "Shape auto-fit text" },
           outline: { color: "ED7D31", width: 1 },
         }),
       ],
@@ -175,7 +179,7 @@ const pres = new Presentation({
           y: 50,
           width: 600,
           height: 50,
-          text: "Text Margins & Columns",
+          textBody: { text: "Text Margins & Columns" },
           fill: "4472C4",
         }),
         // Default margins
@@ -185,17 +189,19 @@ const pres = new Presentation({
           width: 350,
           height: 150,
           outline: { color: "999999", width: 1 },
-          paragraphs: [
-            new Paragraph({
-              properties: { bullet: { type: "none" } },
-              children: [
-                new TextRun({
-                  text: "Default margins (no extra padding)",
-                  fontSize: 12,
-                }),
-              ],
-            }),
-          ],
+          textBody: {
+            children: [
+              new Paragraph({
+                properties: { bullet: { type: "none" } },
+                children: [
+                  new TextRun({
+                    text: "Default margins (no extra padding)",
+                    fontSize: 12,
+                  }),
+                ],
+              }),
+            ],
+          },
         }),
         // Wide margins
         new Shape({
@@ -203,19 +209,21 @@ const pres = new Presentation({
           y: 120,
           width: 350,
           height: 150,
-          textMargins: { top: 100000, bottom: 100000, left: 200000, right: 200000 },
+          textBody: {
+            margins: { top: 100000, bottom: 100000, left: 200000, right: 200000 },
+            children: [
+              new Paragraph({
+                properties: { bullet: { type: "none" } },
+                children: [
+                  new TextRun({
+                    text: "Wide margins (extra padding all around)",
+                    fontSize: 12,
+                  }),
+                ],
+              }),
+            ],
+          },
           outline: { color: "ED7D31", width: 1 },
-          paragraphs: [
-            new Paragraph({
-              properties: { bullet: { type: "none" } },
-              children: [
-                new TextRun({
-                  text: "Wide margins (extra padding all around)",
-                  fontSize: 12,
-                }),
-              ],
-            }),
-          ],
         }),
         // 2 columns
         new Shape({
@@ -223,20 +231,22 @@ const pres = new Presentation({
           y: 300,
           width: 730,
           height: 150,
-          textColumns: 2,
-          textColumnSpacing: 12,
+          textBody: {
+            columns: 2,
+            columnSpacing: 12,
+            children: [
+              new Paragraph({
+                properties: { bullet: { type: "none" } },
+                children: [
+                  new TextRun({
+                    text: "This is column 1 text. The shape is divided into 2 columns with spacing between them.",
+                    fontSize: 12,
+                  }),
+                ],
+              }),
+            ],
+          },
           outline: { color: "70AD47", width: 1 },
-          paragraphs: [
-            new Paragraph({
-              properties: { bullet: { type: "none" } },
-              children: [
-                new TextRun({
-                  text: "This is column 1 text. The shape is divided into 2 columns with spacing between them.",
-                  fontSize: 12,
-                }),
-              ],
-            }),
-          ],
         }),
       ],
     },
@@ -248,7 +258,7 @@ const pres = new Presentation({
           y: 50,
           width: 600,
           height: 50,
-          text: "Blip Fill & Gradient Path",
+          textBody: { text: "Blip Fill & Gradient Path" },
           fill: "4472C4",
         }),
         new Shape({
@@ -256,7 +266,7 @@ const pres = new Presentation({
           y: 120,
           width: 400,
           height: 200,
-          text: "Image Fill",
+          textBody: { text: "Image Fill" },
           fill: {
             type: "blip",
             data: new Uint8Array(
@@ -270,7 +280,7 @@ const pres = new Presentation({
           y: 120,
           width: 300,
           height: 200,
-          text: "Radial Gradient",
+          textBody: { text: "Radial Gradient" },
           fill: {
             type: "gradient",
             path: "circle",

@@ -32,7 +32,7 @@ const pres = new Presentation({
           y: 30,
           width: 500,
           height: 50,
-          text: "Video Auto-Play",
+          textBody: { text: "Video Auto-Play" },
           fill: "4472C4",
         }),
       ],
@@ -46,7 +46,7 @@ const pres = new Presentation({
           y: 30,
           width: 500,
           height: 50,
-          text: "Opacity Property Animation",
+          textBody: { text: "Opacity Property Animation" },
           fill: "70AD47",
         }),
         new Shape({
@@ -54,7 +54,7 @@ const pres = new Presentation({
           y: 150,
           width: 200,
           height: 100,
-          text: "Fade Me",
+          textBody: { text: "Fade Me" },
           fill: "FFC000",
           animation: {
             attributeName: "style.opacity",
@@ -76,18 +76,20 @@ const pres = new Presentation({
           y: 30,
           width: 500,
           height: 50,
-          text: "Text-Level Animation",
+          textBody: { text: "Text-Level Animation" },
           fill: "5B9BD5",
         }),
         new Shape({
-          paragraphs: [
-            new Paragraph({
-              children: [new TextRun("Hello ")],
-            }),
-            new Paragraph({
-              children: [new TextRun("World")],
-            }),
-          ],
+          textBody: {
+            children: [
+              new Paragraph({
+                children: [new TextRun("Hello ")],
+              }),
+              new Paragraph({
+                children: [new TextRun("World")],
+              }),
+            ],
+          },
           x: 100,
           y: 150,
           width: 300,

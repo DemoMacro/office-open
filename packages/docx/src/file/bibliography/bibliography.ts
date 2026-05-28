@@ -158,7 +158,7 @@ class Source extends XmlComponent {
  * ```
  */
 export class Bibliography extends XmlComponent {
-  private readonly relationships: Relationships;
+  public readonly relationships: Relationships;
 
   public constructor(options: BibliographyOptions) {
     super("b:Sources");
@@ -175,9 +175,5 @@ export class Bibliography extends XmlComponent {
     }
 
     this.relationships = new Relationships();
-  }
-
-  public get Relationships(): Relationships {
-    return this.relationships;
   }
 }

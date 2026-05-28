@@ -28,7 +28,7 @@ export class SubDocCollection {
     this.map.set(key, data);
   }
 
-  public get Array(): readonly SubDocData[] {
+  public get array(): readonly SubDocData[] {
     return [...this.map.values()];
   }
 }

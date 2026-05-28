@@ -35,13 +35,19 @@ describe("PPTX: Object Creation (no pack)", () => {
       slides: [
         {
           children: [
-            new Shape({ x: 100, y: 100, width: 400, height: 200, text: "Hello World" }),
+            new Shape({
+              x: 100,
+              y: 100,
+              width: 400,
+              height: 200,
+              textBody: { text: "Hello World" },
+            }),
             new Shape({
               x: 200,
               y: 350,
               width: 500,
               height: 100,
-              text: "Second shape",
+              textBody: { text: "Second shape" },
             }),
           ],
         },
@@ -68,19 +74,21 @@ describe("PPTX: Object Creation (no pack)", () => {
                 width: 400,
                 height: 200,
                 fill: s.bold ? "4472C4" : undefined,
-                paragraphs: [
-                  new Paragraph({
-                    properties: { bullet: { type: "none" } },
-                    children: [
-                      new TextRun({
-                        text: s.text,
-                        bold: s.bold,
-                        italic: s.italic,
-                        fontSize: s.fontSize,
-                      }),
-                    ],
-                  }),
-                ],
+                textBody: {
+                  children: [
+                    new Paragraph({
+                      properties: { bullet: { type: "none" } },
+                      children: [
+                        new TextRun({
+                          text: s.text,
+                          bold: s.bold,
+                          italic: s.italic,
+                          fontSize: s.fontSize,
+                        }),
+                      ],
+                    }),
+                  ],
+                },
               }),
           ),
         },
@@ -147,21 +155,23 @@ describe("PPTX: Object Creation (no pack)", () => {
               y: 50,
               width: 800,
               height: 60,
-              text: "Title Slide",
+              textBody: {
+                text: "Title Slide",
+                children: [
+                  new Paragraph({
+                    properties: { alignment: "center", bullet: { type: "none" } },
+                    children: [
+                      new TextRun({
+                        text: "Title Slide",
+                        fontSize: 28,
+                        bold: true,
+                      }),
+                    ],
+                  }),
+                ],
+              },
               geometry: "rect",
               fill: "4472C4",
-              paragraphs: [
-                new Paragraph({
-                  properties: { alignment: "CENTER", bullet: { type: "none" } },
-                  children: [
-                    new TextRun({
-                      text: "Title Slide",
-                      fontSize: 28,
-                      bold: true,
-                    }),
-                  ],
-                }),
-              ],
             }),
             ...SHAPE_TEXTS.map(
               (s) =>
@@ -171,19 +181,21 @@ describe("PPTX: Object Creation (no pack)", () => {
                   width: 400,
                   height: 200,
                   fill: s.bold ? "4472C4" : undefined,
-                  paragraphs: [
-                    new Paragraph({
-                      properties: { bullet: { type: "none" } },
-                      children: [
-                        new TextRun({
-                          text: s.text,
-                          bold: s.bold,
-                          italic: s.italic,
-                          fontSize: s.fontSize,
-                        }),
-                      ],
-                    }),
-                  ],
+                  textBody: {
+                    children: [
+                      new Paragraph({
+                        properties: { bullet: { type: "none" } },
+                        children: [
+                          new TextRun({
+                            text: s.text,
+                            bold: s.bold,
+                            italic: s.italic,
+                            fontSize: s.fontSize,
+                          }),
+                        ],
+                      }),
+                    ],
+                  },
                 }),
             ),
             new Table({
@@ -239,13 +251,19 @@ describe("PPTX: Create + toBuffer", () => {
       slides: [
         {
           children: [
-            new Shape({ x: 100, y: 100, width: 400, height: 200, text: "Hello World" }),
+            new Shape({
+              x: 100,
+              y: 100,
+              width: 400,
+              height: 200,
+              textBody: { text: "Hello World" },
+            }),
             new Shape({
               x: 200,
               y: 350,
               width: 500,
               height: 100,
-              text: "Second shape",
+              textBody: { text: "Second shape" },
             }),
           ],
         },
@@ -259,13 +277,19 @@ describe("PPTX: Create + toBuffer", () => {
       slides: [
         {
           children: [
-            new Shape({ x: 100, y: 100, width: 400, height: 200, text: "Hello World" }),
+            new Shape({
+              x: 100,
+              y: 100,
+              width: 400,
+              height: 200,
+              textBody: { text: "Hello World" },
+            }),
             new Shape({
               x: 200,
               y: 350,
               width: 500,
               height: 100,
-              text: "Second shape",
+              textBody: { text: "Second shape" },
             }),
           ],
         },
@@ -294,19 +318,21 @@ describe("PPTX: Create + toBuffer", () => {
                 width: 400,
                 height: 200,
                 fill: s.bold ? "4472C4" : undefined,
-                paragraphs: [
-                  new Paragraph({
-                    properties: { bullet: { type: "none" } },
-                    children: [
-                      new TextRun({
-                        text: s.text,
-                        bold: s.bold,
-                        italic: s.italic,
-                        fontSize: s.fontSize,
-                      }),
-                    ],
-                  }),
-                ],
+                textBody: {
+                  children: [
+                    new Paragraph({
+                      properties: { bullet: { type: "none" } },
+                      children: [
+                        new TextRun({
+                          text: s.text,
+                          bold: s.bold,
+                          italic: s.italic,
+                          fontSize: s.fontSize,
+                        }),
+                      ],
+                    }),
+                  ],
+                },
               }),
           ),
         },
@@ -327,19 +353,21 @@ describe("PPTX: Create + toBuffer", () => {
                 width: 400,
                 height: 200,
                 fill: s.bold ? "4472C4" : undefined,
-                paragraphs: [
-                  new Paragraph({
-                    properties: { bullet: { type: "none" } },
-                    children: [
-                      new TextRun({
-                        text: s.text,
-                        bold: s.bold,
-                        italic: s.italic,
-                        fontSize: s.fontSize,
-                      }),
-                    ],
-                  }),
-                ],
+                textBody: {
+                  children: [
+                    new Paragraph({
+                      properties: { bullet: { type: "none" } },
+                      children: [
+                        new TextRun({
+                          text: s.text,
+                          bold: s.bold,
+                          italic: s.italic,
+                          fontSize: s.fontSize,
+                        }),
+                      ],
+                    }),
+                  ],
+                },
               }),
           ),
         },
@@ -430,21 +458,23 @@ describe("PPTX: Create + toBuffer", () => {
               y: 50,
               width: 800,
               height: 60,
-              text: "Title Slide",
+              textBody: {
+                text: "Title Slide",
+                children: [
+                  new Paragraph({
+                    properties: { alignment: "center", bullet: { type: "none" } },
+                    children: [
+                      new TextRun({
+                        text: "Title Slide",
+                        fontSize: 28,
+                        bold: true,
+                      }),
+                    ],
+                  }),
+                ],
+              },
               geometry: "rect",
               fill: "4472C4",
-              paragraphs: [
-                new Paragraph({
-                  properties: { alignment: "CENTER", bullet: { type: "none" } },
-                  children: [
-                    new TextRun({
-                      text: "Title Slide",
-                      fontSize: 28,
-                      bold: true,
-                    }),
-                  ],
-                }),
-              ],
             }),
             ...SHAPE_TEXTS.map(
               (s) =>
@@ -454,19 +484,21 @@ describe("PPTX: Create + toBuffer", () => {
                   width: 400,
                   height: 200,
                   fill: s.bold ? "4472C4" : undefined,
-                  paragraphs: [
-                    new Paragraph({
-                      properties: { bullet: { type: "none" } },
-                      children: [
-                        new TextRun({
-                          text: s.text,
-                          bold: s.bold,
-                          italic: s.italic,
-                          fontSize: s.fontSize,
-                        }),
-                      ],
-                    }),
-                  ],
+                  textBody: {
+                    children: [
+                      new Paragraph({
+                        properties: { bullet: { type: "none" } },
+                        children: [
+                          new TextRun({
+                            text: s.text,
+                            bold: s.bold,
+                            italic: s.italic,
+                            fontSize: s.fontSize,
+                          }),
+                        ],
+                      }),
+                    ],
+                  },
                 }),
             ),
             new Table({
@@ -494,21 +526,23 @@ describe("PPTX: Create + toBuffer", () => {
               y: 50,
               width: 800,
               height: 60,
-              text: "Title Slide",
+              textBody: {
+                text: "Title Slide",
+                children: [
+                  new Paragraph({
+                    properties: { alignment: "center", bullet: { type: "none" } },
+                    children: [
+                      new TextRun({
+                        text: "Title Slide",
+                        fontSize: 28,
+                        bold: true,
+                      }),
+                    ],
+                  }),
+                ],
+              },
               geometry: "rect",
               fill: "4472C4",
-              paragraphs: [
-                new Paragraph({
-                  properties: { alignment: "CENTER", bullet: { type: "none" } },
-                  children: [
-                    new TextRun({
-                      text: "Title Slide",
-                      fontSize: 28,
-                      bold: true,
-                    }),
-                  ],
-                }),
-              ],
             }),
             ...SHAPE_TEXTS.map(
               (s) =>
@@ -518,19 +552,21 @@ describe("PPTX: Create + toBuffer", () => {
                   width: 400,
                   height: 200,
                   fill: s.bold ? "4472C4" : undefined,
-                  paragraphs: [
-                    new Paragraph({
-                      properties: { bullet: { type: "none" } },
-                      children: [
-                        new TextRun({
-                          text: s.text,
-                          bold: s.bold,
-                          italic: s.italic,
-                          fontSize: s.fontSize,
-                        }),
-                      ],
-                    }),
-                  ],
+                  textBody: {
+                    children: [
+                      new Paragraph({
+                        properties: { bullet: { type: "none" } },
+                        children: [
+                          new TextRun({
+                            text: s.text,
+                            bold: s.bold,
+                            italic: s.italic,
+                            fontSize: s.fontSize,
+                          }),
+                        ],
+                      }),
+                    ],
+                  },
                 }),
             ),
             new Table({
@@ -611,14 +647,21 @@ const build30Slides20Shapes = () =>
           width: 200,
           height: 80,
           fill: s.fill,
-          paragraphs: [
-            new Paragraph({
-              properties: { bullet: { type: "none" } },
-              children: [
-                new TextRun({ text: s.text, bold: s.bold, italic: s.italic, fontSize: s.fontSize }),
-              ],
-            }),
-          ],
+          textBody: {
+            children: [
+              new Paragraph({
+                properties: { bullet: { type: "none" } },
+                children: [
+                  new TextRun({
+                    text: s.text,
+                    bold: s.bold,
+                    italic: s.italic,
+                    fontSize: s.fontSize,
+                  }),
+                ],
+              }),
+            ],
+          },
         });
       }),
     })),
@@ -652,12 +695,16 @@ const build50SlidesFull = () =>
           width: 800,
           height: 60,
           fill: "4472C4",
-          paragraphs: [
-            new Paragraph({
-              properties: { alignment: "CENTER", bullet: { type: "none" } },
-              children: [new TextRun({ text: `Slide ${si + 1} Title`, fontSize: 28, bold: true })],
-            }),
-          ],
+          textBody: {
+            children: [
+              new Paragraph({
+                properties: { alignment: "center", bullet: { type: "none" } },
+                children: [
+                  new TextRun({ text: `Slide ${si + 1} Title`, fontSize: 28, bold: true }),
+                ],
+              }),
+            ],
+          },
         }),
         ...Array.from({ length: 10 }, (_, j) => {
           const s = LARGE_SHAPES[(si * 10 + j) % LARGE_SHAPES.length];
@@ -667,14 +714,16 @@ const build50SlidesFull = () =>
             width: 270,
             height: 90,
             fill: s.fill,
-            paragraphs: [
-              new Paragraph({
-                properties: { bullet: { type: "none" } },
-                children: [
-                  new TextRun({ text: s.text, bold: s.bold, italic: s.italic, fontSize: 14 }),
-                ],
-              }),
-            ],
+            textBody: {
+              children: [
+                new Paragraph({
+                  properties: { bullet: { type: "none" } },
+                  children: [
+                    new TextRun({ text: s.text, bold: s.bold, italic: s.italic, fontSize: 14 }),
+                  ],
+                }),
+              ],
+            },
           });
         }),
       ],
@@ -798,19 +847,21 @@ const buildMixed100MbPres = () =>
             width: 160,
             height: 80,
             fill: s.fill,
-            paragraphs: [
-              new Paragraph({
-                properties: { bullet: { type: "none" } },
-                children: [
-                  new TextRun({
-                    text: s.text,
-                    bold: s.bold,
-                    italic: s.italic,
-                    fontSize: s.fontSize,
-                  }),
-                ],
-              }),
-            ],
+            textBody: {
+              children: [
+                new Paragraph({
+                  properties: { bullet: { type: "none" } },
+                  children: [
+                    new TextRun({
+                      text: s.text,
+                      bold: s.bold,
+                      italic: s.italic,
+                      fontSize: s.fontSize,
+                    }),
+                  ],
+                }),
+              ],
+            },
           });
         }),
         // 2 unique images (500KB each)

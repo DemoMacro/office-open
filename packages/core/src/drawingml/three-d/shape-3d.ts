@@ -7,6 +7,7 @@
  */
 import { BuilderElement } from "../../xml-components";
 import type { XmlComponent } from "../../xml-components";
+import { xsdMaterialType } from "../../xsd-mappings";
 import { createColorElement } from "../color/solid-fill";
 import type { SolidFillOptions } from "../color/solid-fill";
 import { createBevel, createBottomBevel } from "./bevel";
@@ -28,11 +29,11 @@ export const PresetMaterialType = {
   WARM_MATTE: "warmMatte",
   TRANSLUCENT_POWDER: "translucentPowder",
   POWDER: "powder",
-  DK_EDGE: "dkEdge",
+  DK_EDGE: "darkEdge",
   SOFT_EDGE: "softEdge",
   CLEAR: "clear",
   FLAT: "flat",
-  SOFT_METAL: "softmetal",
+  SOFT_METAL: "softMetal",
 } as const;
 
 /**
@@ -54,7 +55,7 @@ export interface Shape3DOptions {
   /** Contour width in EMUs (default 0) */
   readonly contourW?: number;
   /** Material preset type */
-  readonly prstMaterial?: keyof typeof PresetMaterialType;
+  readonly prstMaterial?: (typeof PresetMaterialType)[keyof typeof PresetMaterialType];
 }
 
 /**
@@ -120,7 +121,7 @@ export const createShape3D = (options: Shape3DOptions): XmlComponent => {
         ...(options.prstMaterial !== undefined && {
           prstMaterial: {
             key: "prstMaterial",
-            value: PresetMaterialType[options.prstMaterial],
+            value: xsdMaterialType.to(options.prstMaterial),
           },
         }),
       }

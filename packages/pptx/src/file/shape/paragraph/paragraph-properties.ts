@@ -1,11 +1,12 @@
 import { XmlComponent } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
+import { xsdTextAlign } from "@office-open/core";
 
 export const TextAlignment = {
-  LEFT: "l",
-  CENTER: "ctr",
-  RIGHT: "r",
-  JUSTIFY: "just",
+  LEFT: "left",
+  CENTER: "center",
+  RIGHT: "right",
+  JUSTIFY: "justify",
 } as const;
 
 export type BulletCharOptions = {
@@ -30,7 +31,7 @@ export type BulletNoneOption = {
 export type BulletOptions = BulletCharOptions | BulletAutoNumOptions | BulletNoneOption;
 
 export interface ParagraphPropertiesOptions {
-  readonly alignment?: keyof typeof TextAlignment;
+  readonly alignment?: (typeof TextAlignment)[keyof typeof TextAlignment];
   readonly indentLevel?: number;
   readonly marginBottom?: number;
   readonly marginTop?: number;
@@ -92,7 +93,7 @@ export function buildParagraphProperties(
   const children: IXmlableObject[] = [];
 
   const attrs: Record<string, string | number> = {};
-  if (options.alignment) attrs.algn = TextAlignment[options.alignment];
+  if (options.alignment) attrs.algn = xsdTextAlign.to(options.alignment);
   if (options.indentLevel !== undefined) attrs.lvl = options.indentLevel;
   if (options.marginIndent !== undefined) attrs.marL = options.marginIndent;
   if (options.marginRight !== undefined) attrs.marR = options.marginRight;

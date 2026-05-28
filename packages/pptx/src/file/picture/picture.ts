@@ -70,7 +70,7 @@ export class Picture extends XmlComponent {
   }
 
   public override prepForXml(context: Context) {
-    (context.fileData as File)?.Media.addImage(this.imageData.fileName, this.imageData);
+    (context.fileData as File)?.media.addImage(this.imageData.fileName, this.imageData);
     return super.prepForXml(context);
   }
 }

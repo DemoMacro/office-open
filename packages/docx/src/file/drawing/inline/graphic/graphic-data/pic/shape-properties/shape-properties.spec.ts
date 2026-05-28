@@ -148,7 +148,7 @@ describe("ShapeProperties", () => {
       transform: TRANSFORM,
       shape3d: {
         z: 76200,
-        prstMaterial: "METAL",
+        prstMaterial: "metal",
       },
     });
     const tree = new Formatter().format(props);

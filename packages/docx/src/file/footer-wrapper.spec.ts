@@ -9,7 +9,7 @@ describe("FooterWrapper", () => {
   describe("#add", () => {
     it("should call the underlying footer's addParagraph", () => {
       const file = new FooterWrapper(new Media(), 1);
-      const spy = vi.spyOn(file.View, "add");
+      const spy = vi.spyOn(file.view, "add");
       file.add(new Paragraph({}));
 
       expect(spy).toBeCalled();
@@ -17,7 +17,7 @@ describe("FooterWrapper", () => {
 
     it("should call the underlying footer's addParagraph", () => {
       const file = new FooterWrapper(new Media(), 1);
-      const spy = vi.spyOn(file.View, "add");
+      const spy = vi.spyOn(file.view, "add");
       file.add(
         new Table({
           rows: [
@@ -39,7 +39,7 @@ describe("FooterWrapper", () => {
   describe("#addChildElement", () => {
     it("should call the underlying footer's addChildElement", () => {
       const file = new FooterWrapper(new Media(), 1);
-      const spy = vi.spyOn(file.View, "addChildElement");
+      const spy = vi.spyOn(file.view, "addChildElement");
       file.addChildElement({} as any);
 
       expect(spy).toBeCalled();
@@ -50,7 +50,7 @@ describe("FooterWrapper", () => {
     it("should get Media", () => {
       const media = new Media();
       const file = new FooterWrapper(media, 1);
-      expect(file.Media).to.equal(media);
+      expect(file.media).to.equal(media);
     });
   });
 });

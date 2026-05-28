@@ -46,7 +46,7 @@ describe("createCustomGeometry", () => {
           {
             w: 10000000,
             h: 10000000,
-            fill: "norm",
+            fill: "normal",
             stroke: true,
             extrusionOk: false,
             commands: [{ command: "close" }],

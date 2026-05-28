@@ -53,7 +53,7 @@ describe("createRuby", () => {
       createRuby({
         text: "pinyin",
         base: "汉字",
-        alignment: "LEFT",
+        alignment: "left",
       }),
     );
     expect(tree).to.deep.equal({

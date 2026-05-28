@@ -14,7 +14,7 @@ const pres = new Presentation({
           y: 30,
           width: 400,
           height: 50,
-          text: "Lines & Connectors",
+          textBody: { text: "Lines & Connectors" },
           fill: "4472C4",
         }),
         // Horizontal line
@@ -59,7 +59,7 @@ const pres = new Presentation({
           y: 30,
           width: 400,
           height: 50,
-          text: "Connectors with Arrowheads",
+          textBody: { text: "Connectors with Arrowheads" },
           fill: "4472C4",
         }),
         // Left-to-right arrow

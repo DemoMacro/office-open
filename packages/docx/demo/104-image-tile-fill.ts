@@ -83,7 +83,7 @@ const doc = new Document({
           children: [
             new ImageRun({
               data: fs.readFileSync("./demo/images/cat.jpg"),
-              tile: { flip: "XY", sx: 50, sy: 50 },
+              tile: { flip: "xy", sx: 50, sy: 50 },
               transformation: {
                 height: 100,
                 width: 300,
@@ -109,7 +109,7 @@ const doc = new Document({
           children: [
             new ImageRun({
               data: fs.readFileSync("./demo/images/cat.jpg"),
-              tile: { align: "CENTER", sx: 50, sy: 50 },
+              tile: { align: "center", sx: 50, sy: 50 },
               transformation: {
                 height: 100,
                 width: 300,

@@ -35,7 +35,7 @@ export type EmbeddedFontOptionsWithKey = EmbeddedFontOptions & { readonly fontKe
  */
 export class FontWrapper implements ViewWrapper {
   private readonly fontTable: XmlComponent;
-  private readonly relationships: Relationships;
+  public readonly relationships: Relationships;
   public readonly fontOptionsWithKey: readonly EmbeddedFontOptionsWithKey[] = [];
 
   public constructor(public readonly options: readonly EmbeddedFontOptions[]) {
@@ -52,11 +52,7 @@ export class FontWrapper implements ViewWrapper {
     }
   }
 
-  public get View(): XmlComponent {
+  public get view(): XmlComponent {
     return this.fontTable;
-  }
-
-  public get Relationships(): Relationships {
-    return this.relationships;
   }
 }

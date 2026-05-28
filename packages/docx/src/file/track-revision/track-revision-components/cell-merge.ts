@@ -1,5 +1,6 @@
 import type { IXmlableObject } from "@file/xml-components";
 import { XmlComponent } from "@file/xml-components";
+import { xsdVerticalMergeRev } from "@office-open/core";
 
 import type { ChangedAttributesProperties } from "../track-revision";
 
@@ -10,11 +11,11 @@ export const VerticalMergeRevisionType = {
   /**
    * Cell that is merged with upper one.
    */
-  CONTINUE: "cont",
+  CONTINUE: "continue",
   /**
    * Cell that is starting the vertical merge.
    */
-  RESTART: "rest",
+  RESTART: "restart",
 } as const;
 
 export type ICellMergeAttributes = ChangedAttributesProperties & {
@@ -29,10 +30,10 @@ export function buildCellMergeObj(options: ICellMergeAttributes): IXmlableObject
     "w:id": options.id,
   };
   if (options.verticalMerge !== undefined) {
-    attrs["w:vMerge"] = options.verticalMerge;
+    attrs["w:vMerge"] = xsdVerticalMergeRev.to(options.verticalMerge);
   }
   if (options.verticalMergeOriginal !== undefined) {
-    attrs["w:vMergeOrig"] = options.verticalMergeOriginal;
+    attrs["w:vMergeOrig"] = xsdVerticalMergeRev.to(options.verticalMergeOriginal);
   }
   return { "w:cellMerge": { _attr: attrs } };
 }
@@ -47,10 +48,10 @@ export class CellMerge extends XmlComponent {
       "w:id": options.id,
     };
     if (options.verticalMerge !== undefined) {
-      attrs["w:vMerge"] = options.verticalMerge;
+      attrs["w:vMerge"] = xsdVerticalMergeRev.to(options.verticalMerge);
     }
     if (options.verticalMergeOriginal !== undefined) {
-      attrs["w:vMergeOrig"] = options.verticalMergeOriginal;
+      attrs["w:vMergeOrig"] = xsdVerticalMergeRev.to(options.verticalMergeOriginal);
     }
     this.root.push({ _attr: attrs });
   }

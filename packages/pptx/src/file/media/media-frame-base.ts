@@ -56,8 +56,8 @@ function buildMediaData<T extends IMediaData["type"]>(
  * and media registration in prepForXml.
  */
 export abstract class MediaFrameBase extends XmlComponent {
-  private readonly shapeId: number;
-  private readonly animationOptions?: AnimationOptions;
+  public readonly shapeId: number;
+  public readonly animation: AnimationOptions | undefined;
   protected readonly mediaData: IMediaData;
   protected readonly posterData?: IMediaData;
 
@@ -77,7 +77,7 @@ export abstract class MediaFrameBase extends XmlComponent {
     super("p:pic");
 
     this.shapeId = id;
-    this.animationOptions = options.animation;
+    this.animation = options.animation;
 
     const name = options.name ?? `Media ${id}`;
     const w = options.width ?? 0;
@@ -186,20 +186,12 @@ export abstract class MediaFrameBase extends XmlComponent {
     );
   }
 
-  public get ShapeId(): number {
-    return this.shapeId;
-  }
-
-  public get Animation(): AnimationOptions | undefined {
-    return this.animationOptions;
-  }
-
   public override prepForXml(context: Context) {
     const file = context.fileData as File;
     if (this.posterData) {
-      file?.Media.addImage(this.posterData.fileName, this.posterData);
+      file?.media.addImage(this.posterData.fileName, this.posterData);
     }
-    file?.Media.addMedia(this.mediaData.fileName, this.mediaData);
+    file?.media.addMedia(this.mediaData.fileName, this.mediaData);
     return super.prepForXml(context);
   }
 }

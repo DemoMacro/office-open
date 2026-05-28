@@ -6,6 +6,7 @@
  * @module
  */
 import { BuilderElement } from "../../xml-components";
+import { xsdRectAlignment } from "../../xsd-mappings";
 
 /**
  * Options for reflection effect.
@@ -110,7 +111,7 @@ export const createReflectionEffect = (options?: ReflectionEffectOptions) => {
     attributes.ky = { key: "ky", value: options.skewY };
   }
   if (options.alignment !== undefined) {
-    attributes.algn = { key: "algn", value: options.alignment };
+    attributes.algn = { key: "algn", value: xsdRectAlignment.to(options.alignment) };
   }
   if (options.rotWithShape === false) {
     attributes.rotWithShape = { key: "rotWithShape", value: 0 };

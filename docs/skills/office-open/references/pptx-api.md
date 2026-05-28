@@ -41,15 +41,17 @@ new Shape({
   y: 100,
   width: 400,
   height: 120,
-  paragraphs: [
-    new Paragraph({
-      children: [new TextRun({ text: "Bold title", bold: true, fontSize: 24, color: "FFFFFF" })],
-      alignment: "center",
-    }),
-    new Paragraph({
-      children: [new TextRun({ text: "Subtitle", fontSize: 16, color: "CCCCCC" })],
-    }),
-  ],
+  textBody: {
+    children: [
+      new Paragraph({
+        children: [new TextRun({ text: "Bold title", bold: true, fontSize: 24, color: "FFFFFF" })],
+        alignment: "center",
+      }),
+      new Paragraph({
+        children: [new TextRun({ text: "Subtitle", fontSize: 16, color: "CCCCCC" })],
+      }),
+    ],
+  },
   fill: { type: "solid", color: "2E74B5" },
 });
 ```
@@ -58,20 +60,22 @@ new Shape({
 
 ```ts
 new Shape({
-  text: "Content",
-  textAnchor: "ctr", // "ctr" | "t" | "b"
-  textVertical: false, // Vertical text direction
-  textAutoFit: "normal", // "none" | "normal" | "shape"
-  textWrap: "square", // "square" | "none"
-  textMargins: {
-    // EMU values
-    top: 45720,
-    bottom: 45720,
-    left: 91440,
-    right: 91440,
+  textBody: {
+    text: "Content",
+    anchor: "center", // "top" | "center" | "bottom"
+    vertical: "vert", // Vertical text direction
+    autoFit: "normal", // "none" | "normal" | "shape"
+    wrap: "square", // "square" | "none"
+    margins: {
+      // EMU values
+      top: 45720,
+      bottom: 45720,
+      left: 91440,
+      right: 91440,
+    },
+    columns: 2, // Number of text columns
+    columnSpacing: 45720, // Spacing between columns (EMU)
   },
-  textColumns: 2, // Number of text columns
-  textColumnSpacing: 45720, // Spacing between columns (EMU)
 });
 ```
 

@@ -62,11 +62,11 @@ describe("Numbering", () => {
             },
           ],
         });
-        expect(numbering.ConcreteNumbering).to.have.length(1);
+        expect(numbering.concreteNumbering).to.have.length(1);
 
         numbering.createConcreteNumberingInstance("test-reference", 0);
 
-        expect(numbering.ConcreteNumbering).to.have.length(2);
+        expect(numbering.concreteNumbering).to.have.length(2);
       });
 
       it("should not create a concrete numbering instance if reference is invalid", () => {
@@ -82,11 +82,11 @@ describe("Numbering", () => {
             },
           ],
         });
-        expect(numbering.ConcreteNumbering).to.have.length(1);
+        expect(numbering.concreteNumbering).to.have.length(1);
 
         numbering.createConcreteNumberingInstance("invalid-reference", 0);
 
-        expect(numbering.ConcreteNumbering).to.have.length(1);
+        expect(numbering.concreteNumbering).to.have.length(1);
       });
 
       it("should not create a concrete numbering instance if one already exists", () => {
@@ -103,12 +103,12 @@ describe("Numbering", () => {
           ],
         });
 
-        expect(numbering.ConcreteNumbering).to.have.length(1);
+        expect(numbering.concreteNumbering).to.have.length(1);
 
         numbering.createConcreteNumberingInstance("test-reference", 0);
         numbering.createConcreteNumberingInstance("test-reference", 0);
 
-        expect(numbering.ConcreteNumbering).to.have.length(2);
+        expect(numbering.concreteNumbering).to.have.length(2);
       });
     });
     describe("#referenceConfigMap", () => {
@@ -127,7 +127,7 @@ describe("Numbering", () => {
           ],
         });
         numbering.createConcreteNumberingInstance("test-reference", 0);
-        const referenceConfig = numbering.ReferenceConfig[0];
+        const referenceConfig = numbering.referenceConfig[0];
         const zeroLevelConfig = referenceConfig[0];
         expect(zeroLevelConfig.start).to.be.equal(10);
       });

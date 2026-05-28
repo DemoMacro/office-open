@@ -1,5 +1,6 @@
 import { BaseXmlComponent } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
+import { xsdTextAnchor } from "@office-open/core";
 
 import type { FillOptions } from "../drawingml/fill";
 import { Paragraph } from "../shape/paragraph/paragraph";
@@ -8,9 +9,9 @@ import { TextRun } from "../shape/paragraph/run";
 import { TableCellProperties, type CellBorderOptions } from "./table-cell-properties";
 
 export const VerticalAlignment = {
-  TOP: "t",
-  CENTER: "ctr",
-  BOTTOM: "b",
+  TOP: "top",
+  CENTER: "center",
+  BOTTOM: "bottom",
 } as const;
 
 export interface TableCellOptions {
@@ -25,7 +26,7 @@ export interface TableCellOptions {
   };
   readonly columnSpan?: number;
   readonly rowSpan?: number;
-  readonly verticalAlign?: keyof typeof VerticalAlignment;
+  readonly verticalAlign?: (typeof VerticalAlignment)[keyof typeof VerticalAlignment];
   readonly margins?: {
     readonly top?: number;
     readonly bottom?: number;
@@ -100,7 +101,9 @@ export class TableCell extends BaseXmlComponent {
     const tcPr = new TableCellProperties({
       fill: opts.fill,
       borders: opts.borders,
-      verticalAlign: opts.verticalAlign ? VerticalAlignment[opts.verticalAlign] : undefined,
+      verticalAlign: opts.verticalAlign
+        ? (xsdTextAnchor.to(opts.verticalAlign) as "t" | "ctr" | "b")
+        : undefined,
     });
     const tcPrObj = tcPr.prepForXml(context);
     if (tcPrObj) children.push(tcPrObj);

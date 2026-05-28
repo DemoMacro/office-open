@@ -68,7 +68,7 @@ describe("createGradientFill", () => {
           { position: 0, color: { value: "FFFFFF" } },
           { position: 100000, color: { value: "000000" } },
         ],
-        shade: { path: "CIRCLE" },
+        shade: { path: "circle" },
       }),
     );
     expect(tree).to.deep.equal({
@@ -123,7 +123,7 @@ describe("createGradientFill", () => {
           { position: 0, color: { value: "FF0000" } },
           { position: 100000, color: { value: "0000FF" } },
         ],
-        shade: { path: "SHAPE" },
+        shade: { path: "shape" },
       }),
     );
     expect(tree).to.deep.equal({
@@ -179,7 +179,7 @@ describe("createGradientFill", () => {
           { position: 0, color: { value: "FF0000" } },
           { position: 100000, color: { value: "0000FF" } },
         ],
-        flip: "X",
+        flip: "x",
       }),
     );
     expect(tree).to.deep.equal({
@@ -239,7 +239,7 @@ describe("createGradientFill", () => {
           { position: 100000, color: { value: "0000FF" } },
         ],
         shade: {
-          path: "RECT",
+          path: "rect",
           fillToRect: { left: "25%", top: "25%", right: "75%", bottom: "75%" },
         },
       }),
@@ -279,7 +279,7 @@ describe("createGradientFill", () => {
           { position: 100000, color: { value: "0000FF" } },
         ],
         shade: { angle: 5400000 },
-        flip: "XY",
+        flip: "xy",
         tileRect: { left: "5%", top: "5%", right: "95%", bottom: "95%" },
         rotateWithShape: false,
       }),

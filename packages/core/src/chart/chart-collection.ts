@@ -16,7 +16,7 @@ export class ChartCollection {
     this.map.set(key, chartData);
   }
 
-  public get Array(): readonly ChartData[] {
+  public get array(): readonly ChartData[] {
     return [...this.map.values()];
   }
 }

@@ -416,7 +416,7 @@ export class SectionProperties extends XmlComponent {
     if (group.default) {
       this.root.push(
         createHeaderFooterReference(type, {
-          id: group.default.View.ReferenceId,
+          id: group.default.view.referenceId,
           type: HeaderFooterReferenceType.DEFAULT,
         }),
       );
@@ -425,7 +425,7 @@ export class SectionProperties extends XmlComponent {
     if (group.first) {
       this.root.push(
         createHeaderFooterReference(type, {
-          id: group.first.View.ReferenceId,
+          id: group.first.view.referenceId,
           type: HeaderFooterReferenceType.FIRST,
         }),
       );
@@ -434,7 +434,7 @@ export class SectionProperties extends XmlComponent {
     if (group.even) {
       this.root.push(
         createHeaderFooterReference(type, {
-          id: group.even.View.ReferenceId,
+          id: group.even.view.referenceId,
           type: HeaderFooterReferenceType.EVEN,
         }),
       );

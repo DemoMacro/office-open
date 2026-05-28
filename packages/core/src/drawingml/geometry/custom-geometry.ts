@@ -10,6 +10,7 @@
  */
 import { BuilderElement } from "../../xml-components";
 import type { XmlComponent } from "../../xml-components";
+import { xsdPathFillMode } from "../../xsd-mappings";
 import type { GeometryGuide } from "./adjustment-values";
 
 /**
@@ -53,7 +54,7 @@ const createGuideList = (name: string, guides: readonly GeometryGuide[]): XmlCom
  */
 export const PathFillMode = {
   NONE: "none",
-  NORM: "norm",
+  NORM: "normal",
   LIGHTEN: "lighten",
   LIGHTEN_LESS: "lightenLess",
   DARKEN: "darken",
@@ -235,7 +236,8 @@ const createPath = (options: PathOptions): XmlComponent => {
     {};
   if (options.w !== undefined) attrs.w = { key: "w", value: options.w };
   if (options.h !== undefined) attrs.h = { key: "h", value: options.h };
-  if (options.fill !== undefined) attrs.fill = { key: "fill", value: options.fill };
+  if (options.fill !== undefined)
+    attrs.fill = { key: "fill", value: xsdPathFillMode.to(options.fill) };
   if (options.stroke !== undefined) attrs.stroke = { key: "stroke", value: options.stroke };
   if (options.extrusionOk !== undefined)
     attrs.extrusionOk = { key: "extrusionOk", value: options.extrusionOk };

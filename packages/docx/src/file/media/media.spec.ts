@@ -99,7 +99,7 @@ describe("Media", () => {
         type: "png",
       });
 
-      const array = media.Array;
+      const array = media.array;
       expect(array).to.be.an.instanceof(Array);
       expect(array.length).to.equal(1);
 

@@ -8,6 +8,7 @@
  * @module
  */
 import { BuilderElement } from "../../xml-components";
+import { xsdRectAlignment } from "../../xsd-mappings";
 
 /**
  * Tile flip mode for tiling images.
@@ -33,23 +34,23 @@ export const TileFlipMode = {
  */
 export const TileAlignment = {
   /** Top-left corner */
-  TOP_LEFT: "tl",
+  TOP_LEFT: "topLeft",
   /** Top center */
-  TOP: "t",
+  TOP: "top",
   /** Top-right corner */
-  TOP_RIGHT: "tr",
+  TOP_RIGHT: "topRight",
   /** Middle-left */
-  LEFT: "l",
+  LEFT: "left",
   /** Center */
-  CENTER: "ctr",
+  CENTER: "center",
   /** Middle-right */
-  RIGHT: "r",
+  RIGHT: "right",
   /** Bottom-left corner */
-  BOTTOM_LEFT: "bl",
+  BOTTOM_LEFT: "bottomLeft",
   /** Bottom center */
-  BOTTOM: "b",
+  BOTTOM: "bottom",
   /** Bottom-right corner */
-  BOTTOM_RIGHT: "br",
+  BOTTOM_RIGHT: "bottomRight",
 } as const;
 
 /**
@@ -67,9 +68,9 @@ export interface TileOptions {
   /** Vertical scale factor as percentage (e.g., 50 = 50%) */
   readonly sy?: number;
   /** Flip mode for alternating tiles */
-  readonly flip?: keyof typeof TileFlipMode;
+  readonly flip?: (typeof TileFlipMode)[keyof typeof TileFlipMode];
   /** Alignment of the first tile within the shape */
-  readonly align?: keyof typeof TileAlignment;
+  readonly align?: (typeof TileAlignment)[keyof typeof TileAlignment];
 }
 
 /**
@@ -121,10 +122,13 @@ export const createTileInfo = (options?: TileOptions) => {
     attributes.sy = { key: "sy", value: options.sy };
   }
   if (options.flip !== undefined) {
-    attributes.flip = { key: "flip", value: TileFlipMode[options.flip] };
+    attributes.flip = { key: "flip", value: options.flip };
   }
   if (options.align !== undefined) {
-    attributes.algn = { key: "algn", value: TileAlignment[options.align] };
+    attributes.algn = {
+      key: "algn",
+      value: xsdRectAlignment.to(options.align),
+    };
   }
 
   return new BuilderElement({

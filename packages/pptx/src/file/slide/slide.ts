@@ -10,12 +10,12 @@ import { BaseXmlComponent, XmlComponent } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
 
 interface Animatable {
-  readonly ShapeId: number;
-  readonly Animation?: AnimationOptions;
+  readonly shapeId: number;
+  readonly animation?: AnimationOptions;
 }
 
 function isAnimatable(child: BaseXmlComponent): child is BaseXmlComponent & Animatable {
-  return "ShapeId" in child && "Animation" in child;
+  return "shapeId" in child && "animation" in child;
 }
 
 function collectAnimations(children: readonly BaseXmlComponent[]): Array<{
@@ -25,9 +25,9 @@ function collectAnimations(children: readonly BaseXmlComponent[]): Array<{
   const entries: Array<{ readonly spid: number; readonly options: AnimationOptions }> = [];
   for (const child of children) {
     if (isAnimatable(child)) {
-      const anim = child.Animation;
+      const anim = child.animation;
       if (anim) {
-        entries.push({ spid: child.ShapeId, options: anim });
+        entries.push({ spid: child.shapeId, options: anim });
       }
     }
   }

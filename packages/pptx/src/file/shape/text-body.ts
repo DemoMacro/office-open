@@ -1,5 +1,6 @@
 import { XmlComponent } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
+import { xsdTextAnchor } from "@office-open/core";
 
 import { VerticalAlignment } from "../table/table-cell";
 import { Paragraph } from "./paragraph/paragraph";
@@ -7,9 +8,10 @@ import type { ParagraphOptions } from "./paragraph/paragraph";
 import { TextRun } from "./paragraph/run";
 
 export interface TextBodyOptions {
-  readonly paragraphs?: readonly (Paragraph | ParagraphOptions | string)[];
+  readonly text?: string;
+  readonly children?: readonly (Paragraph | ParagraphOptions | string)[];
   readonly vertical?: "vert" | "vert270" | "horz" | "wordArtVert";
-  readonly anchor?: keyof typeof VerticalAlignment;
+  readonly anchor?: (typeof VerticalAlignment)[keyof typeof VerticalAlignment];
   readonly autoFit?: "normal" | "shape" | "none";
   readonly wrap?: "square" | "none";
   readonly margins?: {
@@ -36,7 +38,7 @@ function buildBodyPr(options: TextBodyOptions): IXmlableObject {
 
   const attrs: Record<string, string | number> = {};
   if (options.vertical) attrs.vert = options.vertical;
-  if (options.anchor) attrs.anchor = VerticalAlignment[options.anchor];
+  if (options.anchor) attrs.anchor = xsdTextAnchor.to(options.anchor);
   if (options.wrap) attrs.wrap = options.wrap;
   if (options.margins?.top !== undefined) attrs.tIns = options.margins.top;
   if (options.margins?.bottom !== undefined) attrs.bIns = options.margins.bottom;
@@ -76,8 +78,8 @@ export class TextBody extends XmlComponent {
     children.push(buildBodyPr(this.options));
     children.push({ "a:lstStyle": {} });
 
-    if (this.options.paragraphs) {
-      for (const p of this.options.paragraphs) {
+    if (this.options.children) {
+      for (const p of this.options.children) {
         const para =
           typeof p === "string"
             ? new Paragraph({ children: [new TextRun({ text: p })] })
@@ -87,6 +89,11 @@ export class TextBody extends XmlComponent {
         const obj = para.prepForXml(context);
         if (obj) children.push(obj);
       }
+    } else if (this.options.text !== undefined) {
+      const obj = new Paragraph({
+        children: [new TextRun({ text: this.options.text })],
+      }).prepForXml(context);
+      if (obj) children.push(obj);
     } else {
       const obj = new Paragraph().prepForXml(context);
       if (obj) children.push(obj);

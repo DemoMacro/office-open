@@ -101,7 +101,7 @@ export class ChartRun extends Run {
       type: this.chartOptions.type,
     });
 
-    context.file.Charts.addChart(this.chartKey, {
+    context.file.charts.addChart(this.chartKey, {
       chartSpace,
       key: this.chartKey,
     });

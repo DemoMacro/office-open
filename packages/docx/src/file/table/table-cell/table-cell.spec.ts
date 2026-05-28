@@ -716,7 +716,7 @@ describe("TableCell", () => {
           author: "Firstname Lastname",
           date: "123",
           id: 1,
-          verticalMerge: "cont",
+          verticalMerge: "continue",
         },
         children: [],
       });

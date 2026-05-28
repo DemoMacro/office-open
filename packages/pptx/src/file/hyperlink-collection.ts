@@ -11,7 +11,7 @@ export class HyperlinkCollection {
     this.map.set(key, { key, url, tooltip });
   }
 
-  public get Array(): readonly HyperlinkData[] {
+  public get array(): readonly HyperlinkData[] {
     return [...this.map.values()];
   }
 }

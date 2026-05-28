@@ -21,18 +21,20 @@ const pres = new Presentation({
           y: 30,
           width: 500,
           height: 50,
-          paragraphs: [
-            new Paragraph({
-              properties: { alignment: "CENTER", bullet: { type: "none" } },
-              children: [
-                new TextRun({
-                  text: "Video Embedding Demo",
-                  fontSize: 32,
-                  bold: true,
-                }),
-              ],
-            }),
-          ],
+          textBody: {
+            children: [
+              new Paragraph({
+                properties: { alignment: "center", bullet: { type: "none" } },
+                children: [
+                  new TextRun({
+                    text: "Video Embedding Demo",
+                    fontSize: 32,
+                    bold: true,
+                  }),
+                ],
+              }),
+            ],
+          },
         }),
         new VideoFrame({
           x: 50,
@@ -50,18 +52,20 @@ const pres = new Presentation({
           y: 390,
           width: 500,
           height: 40,
-          paragraphs: [
-            new Paragraph({
-              properties: { bullet: { type: "none" } },
-              children: [
-                new TextRun({
-                  text: "Video: Big Buck Bunny (360p, 10s, ~1MB MP4)",
-                  fontSize: 14,
-                  fill: "666666",
-                }),
-              ],
-            }),
-          ],
+          textBody: {
+            children: [
+              new Paragraph({
+                properties: { bullet: { type: "none" } },
+                children: [
+                  new TextRun({
+                    text: "Video: Big Buck Bunny (360p, 10s, ~1MB MP4)",
+                    fontSize: 14,
+                    fill: "666666",
+                  }),
+                ],
+              }),
+            ],
+          },
         }),
       ],
     },

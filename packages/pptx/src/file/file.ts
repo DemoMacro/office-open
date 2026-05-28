@@ -148,33 +148,33 @@ export class File {
   private readonly masterDefs: readonly MasterDefinition[];
 
   // Lazy components
-  private coreProperties?: CoreProperties;
-  private appProperties?: AppProperties;
-  private contentTypes?: ContentTypes;
-  private media?: Media;
-  private charts?: ChartCollection;
-  private smartArts?: SmartArtCollection;
-  private hyperlinks?: HyperlinkCollection;
-  private presentationWrapper?: PresentationWrapper;
-  private tableStyles?: TableStyles;
-  private presProps?: PresentationProperties;
-  private viewProps?: ViewProperties;
-  private notesMasterRels?: Relationships;
+  private _coreProperties?: CoreProperties;
+  private _appProperties?: AppProperties;
+  private _contentTypes?: ContentTypes;
+  private _media?: Media;
+  private _charts?: ChartCollection;
+  private _smartArts?: SmartArtCollection;
+  private _hyperlinks?: HyperlinkCollection;
+  private _presentationWrapper?: PresentationWrapper;
+  private _tableStyles?: TableStyles;
+  private _presProps?: PresentationProperties;
+  private _viewProps?: ViewProperties;
+  private _notesMasterRels?: Relationships;
 
   // Multi-master support
   private masterMap?: MasterInfo[];
-  private allLayouts?: readonly LayoutInfo[];
-  private allLayoutRels?: readonly Relationships[];
+  private _allLayouts?: readonly LayoutInfo[];
+  private _allLayoutRels?: readonly Relationships[];
 
   // Lazy slide data
-  private slides?: Slide[];
-  private slideWrappers?: Array<{ readonly View: Slide; readonly Relationships: Relationships }>;
-  private notesSlides?: NotesSlide[];
-  private commentAuthorList?: CommentAuthorList;
-  private slideCommentLists?: (SlideCommentList | undefined)[];
+  private _slides?: Slide[];
+  private _slideWrappers?: Array<{ readonly view: Slide; readonly relationships: Relationships }>;
+  private _notesSlides?: NotesSlide[];
+  private _commentAuthorList?: CommentAuthorList;
+  private _slideCommentLists?: (SlideCommentList | undefined)[];
 
   // Lazy relationship data
-  private fileRels?: Relationships;
+  private _fileRels?: Relationships;
 
   public constructor(options: PresentationOptions) {
     this.slideOptions = options.slides ?? [];
@@ -292,8 +292,8 @@ export class File {
     }
 
     this.masterMap = masters;
-    this.allLayouts = masters.flatMap((m) => m.layouts);
-    this.allLayoutRels = masters.flatMap((m) => m.layoutRels);
+    this._allLayouts = masters.flatMap((m) => m.layouts);
+    this._allLayoutRels = masters.flatMap((m) => m.layoutRels);
     return this.masterMap;
   }
 
@@ -315,38 +315,38 @@ export class File {
 
   // ── Lazy getters ──
 
-  public get CoreProperties(): CoreProperties {
-    return (this.coreProperties ??= new CoreProperties(this.corePropsOptions));
+  public get coreProperties(): CoreProperties {
+    return (this._coreProperties ??= new CoreProperties(this.corePropsOptions));
   }
 
-  public get AppProperties(): AppProperties {
-    return (this.appProperties ??= new AppProperties());
+  public get appProperties(): AppProperties {
+    return (this._appProperties ??= new AppProperties());
   }
 
-  public get ContentTypes(): ContentTypes {
-    if (!this.contentTypes) {
-      this.contentTypes = new ContentTypes();
+  public get contentTypes(): ContentTypes {
+    if (!this._contentTypes) {
+      this._contentTypes = new ContentTypes();
       let hasComments = false;
       for (let i = 0; i < this.slideOptions.length; i++) {
-        this.contentTypes.addSlide(i + 1);
+        this._contentTypes.addSlide(i + 1);
         if (this.slideOptions[i].notes) {
-          this.contentTypes.addNotesSlide(i + 1);
+          this._contentTypes.addNotesSlide(i + 1);
         }
         if (this.slideOptions[i].comments && this.slideOptions[i].comments!.length > 0) {
-          this.contentTypes.addComments(i + 1);
+          this._contentTypes.addComments(i + 1);
           hasComments = true;
         }
       }
       if (hasComments) {
-        this.contentTypes.addCommentAuthors();
+        this._contentTypes.addCommentAuthors();
       }
     }
-    return this.contentTypes;
+    return this._contentTypes;
   }
 
-  public get FileRelationships(): Relationships {
-    if (!this.fileRels) {
-      this.fileRels = buildRelationships([
+  public get fileRelationships(): Relationships {
+    if (!this._fileRels) {
+      this._fileRels = buildRelationships([
         {
           id: 1,
           type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
@@ -364,35 +364,35 @@ export class File {
         },
       ]);
     }
-    return this.fileRels;
+    return this._fileRels;
   }
 
-  public get Media(): Media {
-    return (this.media ??= new Media());
+  public get media(): Media {
+    return (this._media ??= new Media());
   }
 
-  public get Charts(): ChartCollection {
-    return (this.charts ??= new ChartCollection());
+  public get charts(): ChartCollection {
+    return (this._charts ??= new ChartCollection());
   }
 
-  public get SmartArts(): SmartArtCollection {
-    return (this.smartArts ??= new SmartArtCollection());
+  public get smartArts(): SmartArtCollection {
+    return (this._smartArts ??= new SmartArtCollection());
   }
 
-  public get Hyperlinks(): HyperlinkCollection {
-    return (this.hyperlinks ??= new HyperlinkCollection());
+  public get hyperlinks(): HyperlinkCollection {
+    return (this._hyperlinks ??= new HyperlinkCollection());
   }
 
-  public get PresentationWrapper(): PresentationWrapper {
-    if (!this.presentationWrapper) {
+  public get presentationWrapper(): PresentationWrapper {
+    if (!this._presentationWrapper) {
       const masters = this.getMasterMap();
-      this.presentationWrapper = new PresentationWrapper({
+      this._presentationWrapper = new PresentationWrapper({
         slideWidth: this.slideWidthEmus,
         slideHeight: this.slideHeightEmus,
         slideIds: this.slideOptions.map((_, i) => 256 + i),
         masterCount: masters.length,
       });
-      const presRels = this.PresentationWrapper.Relationships;
+      const presRels = this._presentationWrapper.relationships;
       let rid = 1;
       // Masters
       for (let mi = 0; mi < masters.length; mi++) {
@@ -434,48 +434,48 @@ export class File {
         "tableStyles.xml",
       );
     }
-    return this.presentationWrapper;
+    return this._presentationWrapper;
   }
 
-  public get Themes(): readonly DefaultTheme[] {
+  public get themes(): readonly DefaultTheme[] {
     return this.getMasterMap().map((m) => m.theme);
   }
 
-  public get TableStyles(): TableStyles {
-    return (this.tableStyles ??= new TableStyles());
+  public get tableStyles(): TableStyles {
+    return (this._tableStyles ??= new TableStyles());
   }
 
-  public get PresProps(): PresentationProperties {
-    return (this.presProps ??= new PresentationProperties(this.showOptions));
+  public get presProps(): PresentationProperties {
+    return (this._presProps ??= new PresentationProperties(this.showOptions));
   }
 
-  public get ViewProps(): ViewProperties {
-    return (this.viewProps ??= new ViewProperties());
+  public get viewProps(): ViewProperties {
+    return (this._viewProps ??= new ViewProperties());
   }
 
-  public get SlideMasters(): readonly DefaultSlideMaster[] {
+  public get slideMasters(): readonly DefaultSlideMaster[] {
     return this.getMasterMap().map((m) => m.master);
   }
 
-  public get SlideMasterRelsArray(): readonly Relationships[] {
+  public get slideMasterRelsArray(): readonly Relationships[] {
     return this.getMasterMap().map((m) => m.masterRels);
   }
 
-  public get AllLayouts(): readonly LayoutInfo[] {
+  public get allLayouts(): readonly LayoutInfo[] {
     this.getMasterMap();
-    return this.allLayouts!;
+    return this._allLayouts!;
   }
 
-  public get AllLayoutRelsArray(): readonly Relationships[] {
+  public get allLayoutRelsArray(): readonly Relationships[] {
     this.getMasterMap();
-    return this.allLayoutRels!;
+    return this._allLayoutRels!;
   }
 
-  public get Slides(): readonly Slide[] {
-    if (!this.slides) {
-      this.slides = [];
+  public get slides(): readonly Slide[] {
+    if (!this._slides) {
+      this._slides = [];
       for (const s of this.slideOptions) {
-        this.slides.push(
+        this._slides!.push(
           new Slide(
             s.children ?? [],
             s.background ? new Background(s.background) : undefined,
@@ -485,20 +485,20 @@ export class File {
         );
       }
     }
-    return this.slides;
+    return this._slides;
   }
 
-  public get SlideWrappers(): Array<{
-    readonly View: Slide;
-    readonly Relationships: Relationships;
+  public get slideWrappers(): Array<{
+    readonly view: Slide;
+    readonly relationships: Relationships;
   }> {
-    if (!this.slideWrappers) {
-      this.slideWrappers = [];
+    if (!this._slideWrappers) {
+      this._slideWrappers = [];
       for (let i = 0; i < this.slideOptions.length; i++) {
         const layout = this.findLayoutForSlide(i);
-        this.slideWrappers.push({
-          View: this.Slides[i],
-          Relationships: buildRelationships([
+        this._slideWrappers.push({
+          view: this.slides[i],
+          relationships: buildRelationships([
             {
               id: 1,
               type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout",
@@ -508,23 +508,23 @@ export class File {
         });
       }
     }
-    return this.slideWrappers;
+    return this._slideWrappers;
   }
 
-  public get NotesSlides(): readonly NotesSlide[] {
-    if (!this.notesSlides) {
-      this.notesSlides = [];
+  public get notesSlides(): readonly NotesSlide[] {
+    if (!this._notesSlides) {
+      this._notesSlides = [];
       for (let i = 0; i < this.slideOptions.length; i++) {
         if (this.slideOptions[i].notes) {
-          this.notesSlides.push(new NotesSlide({ text: this.slideOptions[i].notes }));
+          this._notesSlides.push(new NotesSlide({ text: this.slideOptions[i].notes }));
         }
       }
     }
-    return this.notesSlides;
+    return this._notesSlides;
   }
 
   /** Map from slide index → notesSlide index (0-based) for slides that have notes. */
-  public get NotesSlideIndexMap(): Map<number, number> {
+  public get notesSlideIndexMap(): Map<number, number> {
     const map = new Map<number, number>();
     let notesIdx = 0;
     for (let i = 0; i < this.slideOptions.length; i++) {
@@ -535,22 +535,22 @@ export class File {
     return map;
   }
 
-  public get NotesMasterRelationships(): Relationships {
-    return (this.notesMasterRels ??= new Relationships());
+  public get notesMasterRelationships(): Relationships {
+    return (this._notesMasterRels ??= new Relationships());
   }
 
-  public get CommentAuthorList(): CommentAuthorList | undefined {
-    if (!this.commentAuthorList && !this.slideCommentLists) {
+  public get commentAuthorList(): CommentAuthorList | undefined {
+    if (!this._commentAuthorList && !this._slideCommentLists) {
       this.buildComments();
     }
-    return this.commentAuthorList;
+    return this._commentAuthorList;
   }
 
-  public get SlideCommentLists(): readonly (SlideCommentList | undefined)[] {
-    if (!this.slideCommentLists) {
+  public get slideCommentLists(): readonly (SlideCommentList | undefined)[] {
+    if (!this._slideCommentLists) {
       this.buildComments();
     }
-    return this.slideCommentLists!;
+    return this._slideCommentLists!;
   }
 
   private buildComments(): void {
@@ -560,7 +560,7 @@ export class File {
     >();
     let nextAuthorId = 0;
 
-    this.slideCommentLists = Array.from<SlideCommentList | undefined>({
+    this._slideCommentLists = Array.from<SlideCommentList | undefined>({
       length: this.slideOptions.length,
     });
 
@@ -602,7 +602,7 @@ export class File {
         });
       }
 
-      this.slideCommentLists[i] = new SlideCommentList(commentEntries);
+      this._slideCommentLists[i] = new SlideCommentList(commentEntries);
     }
 
     if (authorMap.size > 0) {
@@ -613,7 +613,7 @@ export class File {
         clrIdx: a.clrIdx,
         lastIdx: a.commentCount,
       }));
-      this.commentAuthorList = new CommentAuthorList(authors);
+      this._commentAuthorList = new CommentAuthorList(authors);
     }
   }
 }

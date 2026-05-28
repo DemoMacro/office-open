@@ -14,12 +14,14 @@ const pres = new Presentation({
           y: 30,
           width: 500,
           height: 50,
-          paragraphs: [
-            new Paragraph({
-              properties: { alignment: "CENTER", bullet: { type: "none" } },
-              children: [new TextRun({ text: "List Layouts", fontSize: 32, bold: true })],
-            }),
-          ],
+          textBody: {
+            children: [
+              new Paragraph({
+                properties: { alignment: "center", bullet: { type: "none" } },
+                children: [new TextRun({ text: "List Layouts", fontSize: 32, bold: true })],
+              }),
+            ],
+          },
         }),
         new SmartArtFrame({
           x: 50,
@@ -56,12 +58,14 @@ const pres = new Presentation({
           y: 30,
           width: 500,
           height: 50,
-          paragraphs: [
-            new Paragraph({
-              properties: { alignment: "CENTER", bullet: { type: "none" } },
-              children: [new TextRun({ text: "Process Layouts", fontSize: 32, bold: true })],
-            }),
-          ],
+          textBody: {
+            children: [
+              new Paragraph({
+                properties: { alignment: "center", bullet: { type: "none" } },
+                children: [new TextRun({ text: "Process Layouts", fontSize: 32, bold: true })],
+              }),
+            ],
+          },
         }),
         new SmartArtFrame({
           x: 50,
@@ -123,12 +127,14 @@ const pres = new Presentation({
           y: 30,
           width: 500,
           height: 50,
-          paragraphs: [
-            new Paragraph({
-              properties: { alignment: "CENTER", bullet: { type: "none" } },
-              children: [new TextRun({ text: "Cycle Layouts", fontSize: 32, bold: true })],
-            }),
-          ],
+          textBody: {
+            children: [
+              new Paragraph({
+                properties: { alignment: "center", bullet: { type: "none" } },
+                children: [new TextRun({ text: "Cycle Layouts", fontSize: 32, bold: true })],
+              }),
+            ],
+          },
         }),
         new SmartArtFrame({
           x: 50,
@@ -167,18 +173,20 @@ const pres = new Presentation({
           y: 30,
           width: 500,
           height: 50,
-          paragraphs: [
-            new Paragraph({
-              properties: { alignment: "CENTER", bullet: { type: "none" } },
-              children: [
-                new TextRun({
-                  text: "Hierarchy Layouts",
-                  fontSize: 32,
-                  bold: true,
-                }),
-              ],
-            }),
-          ],
+          textBody: {
+            children: [
+              new Paragraph({
+                properties: { alignment: "center", bullet: { type: "none" } },
+                children: [
+                  new TextRun({
+                    text: "Hierarchy Layouts",
+                    fontSize: 32,
+                    bold: true,
+                  }),
+                ],
+              }),
+            ],
+          },
         }),
         new SmartArtFrame({
           x: 50,
@@ -241,18 +249,20 @@ const pres = new Presentation({
           y: 30,
           width: 500,
           height: 50,
-          paragraphs: [
-            new Paragraph({
-              properties: { alignment: "CENTER", bullet: { type: "none" } },
-              children: [
-                new TextRun({
-                  text: "Relationship / Other Layouts",
-                  fontSize: 32,
-                  bold: true,
-                }),
-              ],
-            }),
-          ],
+          textBody: {
+            children: [
+              new Paragraph({
+                properties: { alignment: "center", bullet: { type: "none" } },
+                children: [
+                  new TextRun({
+                    text: "Relationship / Other Layouts",
+                    fontSize: 32,
+                    bold: true,
+                  }),
+                ],
+              }),
+            ],
+          },
         }),
         new SmartArtFrame({
           x: 50,
@@ -291,12 +301,14 @@ const pres = new Presentation({
           y: 30,
           width: 500,
           height: 50,
-          paragraphs: [
-            new Paragraph({
-              properties: { alignment: "CENTER", bullet: { type: "none" } },
-              children: [new TextRun({ text: "Pyramid Layouts", fontSize: 32, bold: true })],
-            }),
-          ],
+          textBody: {
+            children: [
+              new Paragraph({
+                properties: { alignment: "center", bullet: { type: "none" } },
+                children: [new TextRun({ text: "Pyramid Layouts", fontSize: 32, bold: true })],
+              }),
+            ],
+          },
         }),
         new SmartArtFrame({
           x: 50,
@@ -334,18 +346,20 @@ const pres = new Presentation({
           y: 30,
           width: 500,
           height: 50,
-          paragraphs: [
-            new Paragraph({
-              properties: { alignment: "CENTER", bullet: { type: "none" } },
-              children: [
-                new TextRun({
-                  text: "Matrix / Radial / Other Layouts",
-                  fontSize: 32,
-                  bold: true,
-                }),
-              ],
-            }),
-          ],
+          textBody: {
+            children: [
+              new Paragraph({
+                properties: { alignment: "center", bullet: { type: "none" } },
+                children: [
+                  new TextRun({
+                    text: "Matrix / Radial / Other Layouts",
+                    fontSize: 32,
+                    bold: true,
+                  }),
+                ],
+              }),
+            ],
+          },
         }),
         new SmartArtFrame({
           x: 50,

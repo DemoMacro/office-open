@@ -4,18 +4,14 @@ import { Relationships } from "./relationships";
 
 export class EndnotesWrapper implements ViewWrapper {
   private readonly endnotes: Endnotes;
-  private readonly relationships: Relationships;
+  public readonly relationships: Relationships;
 
   public constructor() {
     this.endnotes = new Endnotes();
     this.relationships = new Relationships();
   }
 
-  public get View(): Endnotes {
+  public get view(): Endnotes {
     return this.endnotes;
-  }
-
-  public get Relationships(): Relationships {
-    return this.relationships;
   }
 }

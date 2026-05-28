@@ -93,7 +93,7 @@ export abstract class HeaderFooterBase extends InitializableXmlComponent {
     }
   }
 
-  public get ReferenceId(): number {
+  public get referenceId(): number {
     return this.refId;
   }
 

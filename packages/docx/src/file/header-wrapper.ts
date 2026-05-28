@@ -49,13 +49,11 @@ export interface DocumentHeader {
  */
 export class HeaderWrapper implements ViewWrapper {
   private readonly header: Header;
-  private readonly relationships: Relationships;
+  public readonly relationships: Relationships;
+  public readonly media: Media;
 
-  public constructor(
-    private readonly media: Media,
-    referenceId: number,
-    initContent?: XmlComponent,
-  ) {
+  public constructor(media: Media, referenceId: number, initContent?: XmlComponent) {
+    this.media = media;
     this.header = new Header(referenceId, initContent);
     this.relationships = new Relationships();
   }
@@ -70,15 +68,7 @@ export class HeaderWrapper implements ViewWrapper {
     this.header.addChildElement(childElement);
   }
 
-  public get View(): Header {
+  public get view(): Header {
     return this.header;
-  }
-
-  public get Relationships(): Relationships {
-    return this.relationships;
-  }
-
-  public get Media(): Media {
-    return this.media;
   }
 }

@@ -144,14 +144,16 @@ const slides: SlideOptions[] = [
           width: 750,
           height: 60,
           fill: "1B2A4A",
-          paragraphs: [
-            {
-              properties: { alignment: "CENTER", bullet: { type: "none" } },
-              children: [
-                { text: "Round-trip Feature Showcase", fontSize: 32, bold: true, fill: "FFFFFF" },
-              ],
-            },
-          ],
+          textBody: {
+            children: [
+              {
+                properties: { alignment: "center", bullet: { type: "none" } },
+                children: [
+                  { text: "Round-trip Feature Showcase", fontSize: 32, bold: true, fill: "FFFFFF" },
+                ],
+              },
+            ],
+          },
         },
       },
       // Geometry + fill + outline + effects (shadow, glow)
@@ -161,7 +163,7 @@ const slides: SlideOptions[] = [
           y: 110,
           width: 220,
           height: 130,
-          text: "Shadow + Glow",
+          textBody: { text: "Shadow + Glow" },
           geometry: "roundRect",
           fill: "4472C4",
           outline: { color: "2F5496", width: 12700 },
@@ -184,7 +186,7 @@ const slides: SlideOptions[] = [
           y: 110,
           width: 220,
           height: 130,
-          text: "Gradient",
+          textBody: { text: "Gradient" },
           geometry: "chevron",
           fill: {
             type: "gradient",
@@ -203,20 +205,22 @@ const slides: SlideOptions[] = [
           y: 110,
           width: 250,
           height: 130,
-          paragraphs: [
-            {
-              properties: { bullet: { type: "none" } },
-              children: [
-                { text: "Bold", bold: true, fontSize: 14 },
-                { text: " " },
-                { text: "Italic", italic: true, fontSize: 14 },
-                { text: "\n" },
-                { text: "Underline", underline: "SINGLE", fontSize: 14 },
-                { text: " " },
-                { text: "Strike", strike: "SINGLE", fontSize: 14, fill: "FF0000" },
-              ],
-            },
-          ],
+          textBody: {
+            children: [
+              {
+                properties: { bullet: { type: "none" } },
+                children: [
+                  { text: "Bold", bold: true, fontSize: 14 },
+                  { text: " " },
+                  { text: "Italic", italic: true, fontSize: 14 },
+                  { text: "\n" },
+                  { text: "Underline", underline: "single", fontSize: 14 },
+                  { text: " " },
+                  { text: "Strike", strike: "sngStrike", fontSize: 14, fill: "FF0000" },
+                ],
+              },
+            ],
+          },
         },
       },
       // Bullet list (char + autoNum)
@@ -227,20 +231,22 @@ const slides: SlideOptions[] = [
           width: 340,
           height: 160,
           outline: { color: "4472C4", width: 12700, dashStyle: "dash" },
-          paragraphs: [
-            {
-              properties: { bullet: { type: "char", char: "\u25CF", color: "4472C4" } },
-              children: [{ text: "Bullet point one" }],
-            },
-            {
-              properties: { bullet: { type: "char", char: "\u25CF", color: "4472C4" } },
-              children: [{ text: "Bullet point two" }],
-            },
-            {
-              properties: { bullet: { type: "autoNum", format: "arabicPeriod" } },
-              children: [{ text: "Numbered item" }],
-            },
-          ],
+          textBody: {
+            children: [
+              {
+                properties: { bullet: { type: "char", char: "\u25CF", color: "4472C4" } },
+                children: [{ text: "Bullet point one" }],
+              },
+              {
+                properties: { bullet: { type: "char", char: "\u25CF", color: "4472C4" } },
+                children: [{ text: "Bullet point two" }],
+              },
+              {
+                properties: { bullet: { type: "autoNum", format: "arabicPeriod" } },
+                children: [{ text: "Numbered item" }],
+              },
+            ],
+          },
         },
       },
       // 3D effects (rotation, bevel, extrusion, material)
@@ -250,7 +256,7 @@ const slides: SlideOptions[] = [
           y: 270,
           width: 250,
           height: 100,
-          text: "3D",
+          textBody: { text: "3D" },
           geometry: "roundRect",
           fill: "70AD47",
           effects: {
@@ -268,21 +274,23 @@ const slides: SlideOptions[] = [
           y: 390,
           width: 380,
           height: 160,
-          paragraphs: [
-            {
-              properties: { alignment: "CENTER", bullet: { type: "none" }, lineSpacing: 1.5 },
-              children: [
-                { text: "H", fontSize: 20 },
-                { text: "2", fontSize: 12, baseline: -25000 },
-                { text: "O  \u2014  E=mc", fontSize: 20 },
-                { text: "2", fontSize: 12, baseline: 30000 },
-              ],
-            },
-            {
-              properties: { alignment: "RIGHT", bullet: { type: "none" } },
-              children: [{ text: "Right-aligned text", fill: "70AD47", font: "Consolas" }],
-            },
-          ],
+          textBody: {
+            children: [
+              {
+                properties: { alignment: "center", bullet: { type: "none" }, lineSpacing: 1.5 },
+                children: [
+                  { text: "H", fontSize: 20 },
+                  { text: "2", fontSize: 12, baseline: -25000 },
+                  { text: "O  \u2014  E=mc", fontSize: 20 },
+                  { text: "2", fontSize: 12, baseline: 30000 },
+                ],
+              },
+              {
+                properties: { alignment: "right", bullet: { type: "none" } },
+                children: [{ text: "Right-aligned text", fill: "70AD47", font: "Consolas" }],
+              },
+            ],
+          },
         },
       },
     ],
@@ -292,7 +300,14 @@ const slides: SlideOptions[] = [
   {
     children: [
       {
-        shape: { x: 50, y: 20, width: 300, height: 40, text: "Table", fill: "4472C4" },
+        shape: {
+          x: 50,
+          y: 20,
+          width: 300,
+          height: 40,
+          textBody: { text: "Table" },
+          fill: "4472C4",
+        },
       },
       {
         table: {
@@ -336,7 +351,16 @@ const slides: SlideOptions[] = [
   // ── Slide 3: Chart (column) ──
   {
     children: [
-      { shape: { x: 50, y: 20, width: 300, height: 40, text: "Chart", fill: "ED7D31" } },
+      {
+        shape: {
+          x: 50,
+          y: 20,
+          width: 300,
+          height: 40,
+          textBody: { text: "Chart" },
+          fill: "ED7D31",
+        },
+      },
       {
         chart: {
           x: 80,
@@ -360,7 +384,16 @@ const slides: SlideOptions[] = [
   // ── Slide 4: SmartArt ──
   {
     children: [
-      { shape: { x: 50, y: 20, width: 300, height: 40, text: "SmartArt", fill: "70AD47" } },
+      {
+        shape: {
+          x: 50,
+          y: 20,
+          width: 300,
+          height: 40,
+          textBody: { text: "SmartArt" },
+          fill: "70AD47",
+        },
+      },
       {
         smartart: {
           x: 80,
@@ -385,7 +418,14 @@ const slides: SlideOptions[] = [
   {
     children: [
       {
-        shape: { x: 50, y: 20, width: 300, height: 40, text: "Lines & Connectors", fill: "7030A0" },
+        shape: {
+          x: 50,
+          y: 20,
+          width: 300,
+          height: 40,
+          textBody: { text: "Lines & Connectors" },
+          fill: "7030A0",
+        },
       },
       { line: { x1: 50, y1: 100, x2: 750, y2: 100, outline: { color: "4472C4", width: 25400 } } },
       {
@@ -405,7 +445,16 @@ const slides: SlideOptions[] = [
   // ── Slide 6: Group with nested shapes ──
   {
     children: [
-      { shape: { x: 50, y: 20, width: 300, height: 40, text: "Group", fill: "FFC000" } },
+      {
+        shape: {
+          x: 50,
+          y: 20,
+          width: 300,
+          height: 40,
+          textBody: { text: "Group" },
+          fill: "FFC000",
+        },
+      },
       {
         group: {
           x: 80,
@@ -414,8 +463,26 @@ const slides: SlideOptions[] = [
           height: 200,
           rotation: 5000,
           children: [
-            { shape: { x: 0, y: 0, width: 290, height: 180, text: "A", fill: "4472C4" } },
-            { shape: { x: 310, y: 0, width: 290, height: 180, text: "B", fill: "ED7D31" } },
+            {
+              shape: {
+                x: 0,
+                y: 0,
+                width: 290,
+                height: 180,
+                textBody: { text: "A" },
+                fill: "4472C4",
+              },
+            },
+            {
+              shape: {
+                x: 310,
+                y: 0,
+                width: 290,
+                height: 180,
+                textBody: { text: "B" },
+                fill: "ED7D31",
+              },
+            },
           ],
         },
       },
@@ -442,19 +509,21 @@ const slides: SlideOptions[] = [
           y: 200,
           width: 500,
           height: 80,
-          paragraphs: [
-            {
-              properties: { alignment: "CENTER", bullet: { type: "none" } },
-              children: [
-                {
-                  text: "Gradient Background + Fade Transition",
-                  fontSize: 24,
-                  bold: true,
-                  fill: "FFFFFF",
-                },
-              ],
-            },
-          ],
+          textBody: {
+            children: [
+              {
+                properties: { alignment: "center", bullet: { type: "none" } },
+                children: [
+                  {
+                    text: "Gradient Background + Fade Transition",
+                    fontSize: 24,
+                    bold: true,
+                    fill: "FFFFFF",
+                  },
+                ],
+              },
+            ],
+          },
         },
       },
     ],
@@ -463,14 +532,23 @@ const slides: SlideOptions[] = [
   // ── Slide 8: Animation ──
   {
     children: [
-      { shape: { x: 50, y: 20, width: 300, height: 40, text: "Animation", fill: "C00000" } },
+      {
+        shape: {
+          x: 50,
+          y: 20,
+          width: 300,
+          height: 40,
+          textBody: { text: "Animation" },
+          fill: "C00000",
+        },
+      },
       {
         shape: {
           x: 100,
           y: 120,
           width: 250,
           height: 100,
-          text: "Fly In",
+          textBody: { text: "Fly In" },
           fill: "4472C4",
           animation: { type: "fly", class: "entr", direction: "left", duration: 500 },
         },
@@ -481,7 +559,7 @@ const slides: SlideOptions[] = [
           y: 120,
           width: 250,
           height: 100,
-          text: "Appear",
+          textBody: { text: "Appear" },
           fill: "70AD47",
           animation: { type: "appear", class: "entr", trigger: "afterPrevious" },
         },
@@ -492,7 +570,7 @@ const slides: SlideOptions[] = [
           y: 280,
           width: 250,
           height: 100,
-          text: "Fade Exit",
+          textBody: { text: "Fade Exit" },
           fill: "ED7D31",
           animation: { type: "fade", class: "exit", duration: 750 },
         },
@@ -511,7 +589,7 @@ const slides: SlideOptions[] = [
           y: 200,
           width: 400,
           height: 60,
-          text: "Notes + Header/Footer slide",
+          textBody: { text: "Notes + Header/Footer slide" },
           fill: "F2F2F2",
         },
       },
@@ -530,7 +608,7 @@ const slides: SlideOptions[] = [
           width: 760,
           height: 400,
           fill: "F2F2F2",
-          text: "Light theme slide",
+          textBody: { text: "Light theme slide" },
         },
       },
     ],
@@ -548,12 +626,14 @@ const slides: SlideOptions[] = [
           width: 760,
           height: 400,
           fill: "2D4A7A",
-          paragraphs: [
-            {
-              properties: { bullet: { type: "none" } },
-              children: [{ text: "Dark theme slide", fill: "FFFFFF", fontSize: 24 }],
-            },
-          ],
+          textBody: {
+            children: [
+              {
+                properties: { bullet: { type: "none" } },
+                children: [{ text: "Dark theme slide", fill: "FFFFFF", fontSize: 24 }],
+              },
+            ],
+          },
         },
       },
     ],
@@ -568,7 +648,7 @@ const slides: SlideOptions[] = [
           y: 20,
           width: 300,
           height: 40,
-          text: "Picture + Fill Types",
+          textBody: { text: "Picture + Fill Types" },
           fill: "7030A0",
         },
       },
@@ -593,11 +673,11 @@ const slides: SlideOptions[] = [
           height: 150,
           fill: {
             type: "pattern",
-            pattern: "crossHatch",
+            pattern: "diagCross",
             foregroundColor: "4472C4",
             backgroundColor: "FFFFFF",
           },
-          text: "Pattern",
+          textBody: { text: "Pattern" },
         },
       },
       // No fill (outline only)
@@ -609,7 +689,7 @@ const slides: SlideOptions[] = [
           height: 150,
           fill: { type: "none" },
           outline: { color: "ED7D31", width: 25400 },
-          text: "No Fill",
+          textBody: { text: "No Fill" },
         },
       },
       // Radial gradient
@@ -627,7 +707,7 @@ const slides: SlideOptions[] = [
               { position: 100, color: "4472C4" },
             ],
           },
-          text: "Radial",
+          textBody: { text: "Radial" },
         },
       },
       // Solid fill with transparency
@@ -638,7 +718,7 @@ const slides: SlideOptions[] = [
           width: 200,
           height: 150,
           fill: { type: "solid", color: "FF0000" },
-          text: "Solid",
+          textBody: { text: "Solid" },
         },
       },
     ],
@@ -647,7 +727,16 @@ const slides: SlideOptions[] = [
   // ── Slide 13: More Effects (innerShadow, reflection, softEdge) ──
   {
     children: [
-      { shape: { x: 50, y: 20, width: 300, height: 40, text: "More Effects", fill: "44546A" } },
+      {
+        shape: {
+          x: 50,
+          y: 20,
+          width: 300,
+          height: 40,
+          textBody: { text: "More Effects" },
+          fill: "44546A",
+        },
+      },
       // Inner shadow
       {
         shape: {
@@ -656,7 +745,7 @@ const slides: SlideOptions[] = [
           width: 250,
           height: 150,
           fill: "FFC000",
-          text: "Inner Shadow",
+          textBody: { text: "Inner Shadow" },
           effects: {
             innerShadow: {
               blur: 40000,
@@ -676,7 +765,7 @@ const slides: SlideOptions[] = [
           width: 250,
           height: 150,
           fill: "4472C4",
-          text: "Reflection",
+          textBody: { text: "Reflection" },
           effects: {
             reflection: {
               blurRadius: 6350,
@@ -696,7 +785,7 @@ const slides: SlideOptions[] = [
           width: 250,
           height: 150,
           fill: "70AD47",
-          text: "Soft Edge",
+          textBody: { text: "Soft Edge" },
           effects: { softEdge: { radius: 50800 } },
         },
       },
@@ -709,7 +798,7 @@ const slides: SlideOptions[] = [
           height: 150,
           fill: "ED7D31",
           geometry: "ellipse",
-          text: "Combined",
+          textBody: { text: "Combined" },
           effects: {
             outerShadow: {
               blur: 38100,
@@ -729,7 +818,16 @@ const slides: SlideOptions[] = [
   // ── Slide 14: More Charts (bar, line, pie) ──
   {
     children: [
-      { shape: { x: 50, y: 10, width: 300, height: 30, text: "Chart Types", fill: "ED7D31" } },
+      {
+        shape: {
+          x: 50,
+          y: 10,
+          width: 300,
+          height: 30,
+          textBody: { text: "Chart Types" },
+          fill: "ED7D31",
+        },
+      },
       {
         chart: {
           x: 20,
@@ -777,7 +875,16 @@ const slides: SlideOptions[] = [
   // ── Slide 15: Enhanced Table (rowSpan, verticalAlign, cell margins) ──
   {
     children: [
-      { shape: { x: 50, y: 20, width: 400, height: 40, text: "Enhanced Table", fill: "44546A" } },
+      {
+        shape: {
+          x: 50,
+          y: 20,
+          width: 400,
+          height: 40,
+          textBody: { text: "Enhanced Table" },
+          fill: "44546A",
+        },
+      },
       {
         table: {
           x: 50,
@@ -787,9 +894,9 @@ const slides: SlideOptions[] = [
           rows: [
             {
               cells: [
-                { text: "Header 1", fill: "4472C4", verticalAlign: "CENTER" },
-                { text: "Header 2", fill: "4472C4", verticalAlign: "CENTER" },
-                { text: "Header 3", fill: "4472C4", verticalAlign: "CENTER" },
+                { text: "Header 1", fill: "4472C4", verticalAlign: "center" },
+                { text: "Header 2", fill: "4472C4", verticalAlign: "center" },
+                { text: "Header 3", fill: "4472C4", verticalAlign: "center" },
               ],
             },
             {
@@ -798,7 +905,7 @@ const slides: SlideOptions[] = [
                   text: "RowSpan 2",
                   rowSpan: 2,
                   fill: "E8F0FE",
-                  verticalAlign: "CENTER",
+                  verticalAlign: "center",
                   margins: { left: 100000, right: 100000, top: 50000, bottom: 50000 },
                 },
                 { text: "Cell B1", fill: "F2F2F2" },
@@ -846,7 +953,7 @@ const slides: SlideOptions[] = [
           y: 20,
           width: 300,
           height: 40,
-          text: "Comments + Hyperlink",
+          textBody: { text: "Comments + Hyperlink" },
           fill: "7030A0",
         },
       },
@@ -856,19 +963,21 @@ const slides: SlideOptions[] = [
           y: 100,
           width: 600,
           height: 60,
-          paragraphs: [
-            {
-              properties: { bullet: { type: "none" } },
-              children: [
-                { text: "Visit " },
-                {
-                  text: "our website",
-                  hyperlink: { url: "https://example.com", tooltip: "Example" },
-                },
-                { text: " for more." },
-              ],
-            },
-          ],
+          textBody: {
+            children: [
+              {
+                properties: { bullet: { type: "none" } },
+                children: [
+                  { text: "Visit " },
+                  {
+                    text: "our website",
+                    hyperlink: { url: "https://example.com", tooltip: "Example" },
+                  },
+                  { text: " for more." },
+                ],
+              },
+            ],
+          },
         },
       },
     ],
@@ -884,7 +993,7 @@ const slides: SlideOptions[] = [
           y: 20,
           width: 400,
           height: 40,
-          text: "Transitions + Emphasis",
+          textBody: { text: "Transitions + Emphasis" },
           fill: "C00000",
         },
       },
@@ -894,7 +1003,7 @@ const slides: SlideOptions[] = [
           y: 100,
           width: 200,
           height: 100,
-          text: "Grow",
+          textBody: { text: "Grow" },
           fill: "4472C4",
           animation: { class: "emph", emphasisType: "growShrink", duration: 800 },
         },
@@ -905,7 +1014,7 @@ const slides: SlideOptions[] = [
           y: 100,
           width: 200,
           height: 100,
-          text: "Spin",
+          textBody: { text: "Spin" },
           fill: "70AD47",
           animation: { class: "emph", emphasisType: "spin", duration: 1000 },
         },
@@ -916,7 +1025,7 @@ const slides: SlideOptions[] = [
           y: 100,
           width: 200,
           height: 100,
-          text: "Color",
+          textBody: { text: "Color" },
           fill: "ED7D31",
           animation: { class: "emph", emphasisType: "colorChange", color: "FF0000", duration: 800 },
         },
@@ -927,7 +1036,7 @@ const slides: SlideOptions[] = [
           y: 260,
           width: 200,
           height: 100,
-          text: "Pulse",
+          textBody: { text: "Pulse" },
           fill: "7030A0",
           animation: { class: "emph", emphasisType: "pulse", duration: 500 },
         },
@@ -938,7 +1047,16 @@ const slides: SlideOptions[] = [
   // ── Slide 18: Video ──
   {
     children: [
-      { shape: { x: 50, y: 20, width: 300, height: 40, text: "Video", fill: "2D4A7A" } },
+      {
+        shape: {
+          x: 50,
+          y: 20,
+          width: 300,
+          height: 40,
+          textBody: { text: "Video" },
+          fill: "2D4A7A",
+        },
+      },
       {
         video: {
           x: 100,
@@ -958,7 +1076,16 @@ const slides: SlideOptions[] = [
   // ── Slide 19: Audio ──
   {
     children: [
-      { shape: { x: 50, y: 20, width: 300, height: 40, text: "Audio", fill: "44546A" } },
+      {
+        shape: {
+          x: 50,
+          y: 20,
+          width: 300,
+          height: 40,
+          textBody: { text: "Audio" },
+          fill: "44546A",
+        },
+      },
       {
         audio: {
           x: 300,
@@ -976,15 +1103,33 @@ const slides: SlideOptions[] = [
   // ── Slide 20: Geometry showcase ──
   {
     children: [
-      { shape: { x: 50, y: 20, width: 300, height: 40, text: "Geometry", fill: "4472C4" } },
-      { shape: { x: 50, y: 80, width: 150, height: 150, text: "rect", fill: "4472C4" } },
+      {
+        shape: {
+          x: 50,
+          y: 20,
+          width: 300,
+          height: 40,
+          textBody: { text: "Geometry" },
+          fill: "4472C4",
+        },
+      },
+      {
+        shape: {
+          x: 50,
+          y: 80,
+          width: 150,
+          height: 150,
+          textBody: { text: "rect" },
+          fill: "4472C4",
+        },
+      },
       {
         shape: {
           x: 220,
           y: 80,
           width: 150,
           height: 150,
-          text: "ellipse",
+          textBody: { text: "ellipse" },
           fill: "ED7D31",
           geometry: "ellipse",
         },
@@ -995,7 +1140,7 @@ const slides: SlideOptions[] = [
           y: 80,
           width: 150,
           height: 150,
-          text: "diamond",
+          textBody: { text: "diamond" },
           fill: "70AD47",
           geometry: "diamond",
         },
@@ -1006,7 +1151,7 @@ const slides: SlideOptions[] = [
           y: 80,
           width: 150,
           height: 150,
-          text: "triangle",
+          textBody: { text: "triangle" },
           fill: "FFC000",
           geometry: "triangle",
         },
@@ -1017,7 +1162,7 @@ const slides: SlideOptions[] = [
           y: 260,
           width: 150,
           height: 150,
-          text: "pentagon",
+          textBody: { text: "pentagon" },
           fill: "7030A0",
           geometry: "pentagon",
         },
@@ -1028,7 +1173,7 @@ const slides: SlideOptions[] = [
           y: 260,
           width: 150,
           height: 150,
-          text: "hexagon",
+          textBody: { text: "hexagon" },
           fill: "C00000",
           geometry: "hexagon",
         },
@@ -1039,7 +1184,7 @@ const slides: SlideOptions[] = [
           y: 260,
           width: 150,
           height: 150,
-          text: "star",
+          textBody: { text: "star" },
           fill: "44546A",
           geometry: "star5",
         },
@@ -1050,7 +1195,7 @@ const slides: SlideOptions[] = [
           y: 260,
           width: 150,
           height: 150,
-          text: "plus",
+          textBody: { text: "plus" },
           fill: "2D4A7A",
           geometry: "plus",
         },
@@ -1062,7 +1207,14 @@ const slides: SlideOptions[] = [
   {
     children: [
       {
-        shape: { x: 50, y: 20, width: 400, height: 40, text: "Text Body Options", fill: "44546A" },
+        shape: {
+          x: 50,
+          y: 20,
+          width: 400,
+          height: 40,
+          textBody: { text: "Text Body Options" },
+          fill: "44546A",
+        },
       },
       // Vertical text
       {
@@ -1072,8 +1224,7 @@ const slides: SlideOptions[] = [
           width: 100,
           height: 300,
           fill: "4472C4",
-          text: "Vertical",
-          textVertical: "vert",
+          textBody: { text: "Vertical", vertical: "vert" },
         },
       },
       // Anchor bottom
@@ -1085,8 +1236,7 @@ const slides: SlideOptions[] = [
           height: 300,
           fill: "F2F2F2",
           outline: { color: "4472C4", width: 12700 },
-          text: "Anchored Bottom",
-          textAnchor: "BOTTOM",
+          textBody: { text: "Anchored Bottom", anchor: "bottom" },
         },
       },
       // AutoFit shrink
@@ -1097,8 +1247,7 @@ const slides: SlideOptions[] = [
           width: 200,
           height: 100,
           fill: "E8F0FE",
-          text: "AutoFit Shrink Text To Fit Shape",
-          textAutoFit: "normal",
+          textBody: { text: "AutoFit Shrink Text To Fit Shape", autoFit: "normal" },
         },
       },
       // Flip horizontal
@@ -1109,7 +1258,7 @@ const slides: SlideOptions[] = [
           width: 150,
           height: 100,
           fill: "ED7D31",
-          text: "Flipped",
+          textBody: { text: "Flipped" },
           flipHorizontal: true,
         },
       },

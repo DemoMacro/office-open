@@ -7,6 +7,7 @@
  */
 import { BuilderElement } from "../../xml-components";
 import type { XmlComponent } from "../../xml-components";
+import { xsdBlendMode } from "../../xsd-mappings";
 import { createSolidFill } from "../color/solid-fill";
 import type { SolidFillOptions } from "../color/solid-fill";
 import { createGradientFill } from "../fill/gradient-fill";
@@ -36,7 +37,7 @@ export const BlendMode = {
   /** Over blend mode */
   OVER: "over",
   /** Multiply blend mode */
-  MULTIPLY: "mult",
+  MULTIPLY: "multiply",
   /** Screen blend mode */
   SCREEN: "screen",
   /** Darken blend mode */
@@ -111,7 +112,7 @@ export const createFillOverlayEffect = (options: FillOverlayEffectOptions): XmlC
 
   return new BuilderElement<{ readonly blend: string }>({
     attributes: {
-      blend: { key: "blend", value: options.blend },
+      blend: { key: "blend", value: xsdBlendMode.to(options.blend) },
     },
     children: [fillElement],
     name: "a:fillOverlay",

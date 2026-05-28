@@ -22,12 +22,12 @@ import type { XmlComponent } from "./xml-components";
  * ViewWrappers combine a document part (view) with its relationships,
  * providing a unified interface for managing document components.
  *
- * @property View - The document part (Document, Header, Footer, etc.)
- * @property Relationships - The relationships associated with this view
+ * @property view - The document part (Document, Header, Footer, etc.)
+ * @property relationships - The relationships associated with this view
  */
 export interface ViewWrapper {
-  readonly View: Document | Footer | Header | FootNotes | Endnotes | XmlComponent;
-  readonly Relationships: Relationships;
+  readonly view: Document | Footer | Header | FootNotes | Endnotes | XmlComponent;
+  readonly relationships: Relationships;
 }
 
 /**
@@ -48,18 +48,14 @@ export interface ViewWrapper {
  */
 export class DocumentWrapper implements ViewWrapper {
   private readonly document: Document;
-  private readonly relationships: Relationships;
+  public readonly relationships: Relationships;
 
   public constructor(options: DocumentOptions) {
     this.document = new Document(options);
     this.relationships = new Relationships();
   }
 
-  public get View(): Document {
+  public get view(): Document {
     return this.document;
-  }
-
-  public get Relationships(): Relationships {
-    return this.relationships;
   }
 }

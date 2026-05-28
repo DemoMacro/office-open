@@ -7,8 +7,8 @@ describe("DocumentWrapper", () => {
     it("should create", () => {
       const file = new DocumentWrapper({ background: {} });
 
-      expect(file.View).to.be.ok;
-      expect(file.Relationships).to.be.ok;
+      expect(file.view).to.be.ok;
+      expect(file.relationships).to.be.ok;
     });
   });
 });

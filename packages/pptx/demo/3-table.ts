@@ -13,7 +13,7 @@ const pres = new Presentation({
           y: 30,
           width: 400,
           height: 60,
-          text: "Table Demo",
+          textBody: { text: "Table Demo" },
           fill: "4472C4",
         }),
         new TableFrame({
@@ -84,7 +84,7 @@ const pres = new Presentation({
           y: 30,
           width: 600,
           height: 50,
-          text: "Vertical Align & Cell Margins",
+          textBody: { text: "Vertical Align & Cell Margins" },
           fill: "4472C4",
         }),
         new TableFrame({
@@ -98,17 +98,17 @@ const pres = new Presentation({
               cells: [
                 {
                   text: "Top",
-                  verticalAlign: "TOP",
+                  verticalAlign: "top",
                   fill: "E8F0FE",
                 },
                 {
                   text: "Center",
-                  verticalAlign: "CENTER",
+                  verticalAlign: "center",
                   fill: "E8F0FE",
                 },
                 {
                   text: "Bottom",
-                  verticalAlign: "BOTTOM",
+                  verticalAlign: "bottom",
                   fill: "E8F0FE",
                 },
               ],
@@ -133,7 +133,7 @@ const pres = new Presentation({
           y: 30,
           width: 600,
           height: 50,
-          text: "Merged Cells",
+          textBody: { text: "Merged Cells" },
           fill: "4472C4",
         }),
         new TableFrame({

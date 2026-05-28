@@ -91,7 +91,7 @@ export class TableRow extends BaseXmlComponent {
     );
   }
 
-  public get CellCount(): number {
+  public get cellCount(): number {
     return this.coercedChildren.length;
   }
 

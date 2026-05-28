@@ -136,7 +136,7 @@ export class DocProperties extends XmlComponent {
     if (this.hyperlink) {
       if (this.hyperlink.click && !hasStackClick) {
         const linkId = uniqueId();
-        context.viewWrapper.Relationships.addRelationship(
+        context.viewWrapper.relationships.addRelationship(
           linkId,
           HYPERLINK_RELATIONSHIP_TYPE,
           this.hyperlink.click,
@@ -147,7 +147,7 @@ export class DocProperties extends XmlComponent {
 
       if (this.hyperlink.hover) {
         const linkId = uniqueId();
-        context.viewWrapper.Relationships.addRelationship(
+        context.viewWrapper.relationships.addRelationship(
           linkId,
           HYPERLINK_RELATIONSHIP_TYPE,
           this.hyperlink.hover,

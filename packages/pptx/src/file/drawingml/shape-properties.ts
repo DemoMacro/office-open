@@ -66,7 +66,7 @@ export class ShapeProperties extends BaseXmlComponent {
     // Fill (register blipFill media — B-level side effect)
     const media = opts.fill ? extractBlipFillMedia(opts.fill) : undefined;
     if (media) {
-      context.fileData?.Media.addImage(media.fileName, {
+      context.fileData?.media.addImage(media.fileName, {
         data: media.data,
         fileName: media.fileName,
         type: media.type as "png",

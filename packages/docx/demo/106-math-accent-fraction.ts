@@ -85,7 +85,7 @@ const doc = new Document({
                 new MathFraction({
                   numerator: [new MathRun("a")],
                   denominator: [new MathRun("b")],
-                  fractionType: "SKEWED",
+                  fractionType: "skw",
                 }),
               ],
             }),
@@ -99,7 +99,7 @@ const doc = new Document({
                 new MathFraction({
                   numerator: [new MathRun("a")],
                   denominator: [new MathRun("b")],
-                  fractionType: "LINEAR",
+                  fractionType: "lin",
                 }),
               ],
             }),
@@ -113,7 +113,7 @@ const doc = new Document({
                 new MathFraction({
                   numerator: [new MathRun("a")],
                   denominator: [new MathRun("b")],
-                  fractionType: "NO_BAR",
+                  fractionType: "noBar",
                 }),
               ],
             }),

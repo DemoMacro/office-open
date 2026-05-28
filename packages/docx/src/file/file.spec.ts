@@ -29,7 +29,7 @@ describe("File", () => {
         ],
       });
 
-      const tree = new Formatter().format(doc.Document.View.Body);
+      const tree = new Formatter().format(doc.document.view.body);
 
       expect(tree["w:body"][0]["w:sectPr"][0]["w:headerReference"]._attr["w:type"]).to.equal(
         "default",
@@ -54,7 +54,7 @@ describe("File", () => {
         ],
       });
 
-      const tree = new Formatter().format(doc.Document.View.Body);
+      const tree = new Formatter().format(doc.document.view.body);
       expect(tree["w:body"][0]["w:sectPr"][0]["w:headerReference"]._attr["w:type"]).to.equal(
         "first",
       );
@@ -82,7 +82,7 @@ describe("File", () => {
         ],
       });
 
-      const tree = new Formatter().format(doc.Document.View.Body);
+      const tree = new Formatter().format(doc.document.view.body);
 
       expect(tree["w:body"][0]["w:sectPr"][0]["w:headerReference"]._attr["w:type"]).to.equal(
         "default",
@@ -114,7 +114,7 @@ describe("File", () => {
         ],
       });
 
-      const tree = new Formatter().format(doc.Document.View.Body);
+      const tree = new Formatter().format(doc.document.view.body);
 
       expect(tree).to.deep.equal({
         "w:body": [
@@ -196,7 +196,7 @@ describe("File", () => {
         sections: [],
       });
 
-      const tree = new Formatter().format(wrapper.FootNotes.View);
+      const tree = new Formatter().format(wrapper.footNotes.view);
 
       expect(tree).to.deep.equal({
         "w:footnotes": [
@@ -386,7 +386,7 @@ describe("File", () => {
         sections: [],
       });
 
-      const tree = new Formatter().format(wrapper.Endnotes.View);
+      const tree = new Formatter().format(wrapper.endnotes.view);
 
       expect(tree["w:endnotes"]).to.be.an("array");
       // Should have attributes, two default endnotes (separator and continuation separator), plus one created endnote
@@ -402,7 +402,7 @@ describe("File", () => {
       },
     });
 
-    const tree = new Formatter().format(doc.Styles);
+    const tree = new Formatter().format(doc.styles);
 
     expect(tree["w:styles"][1]).to.deep.equal({
       "w:docDefaults": [
@@ -422,7 +422,7 @@ describe("File", () => {
       sections: [],
     });
 
-    const tree = new Formatter().format(doc.Settings);
+    const tree = new Formatter().format(doc.settings);
 
     expect(tree["w:settings"][1]).to.deep.equal({ "w:evenAndOddHeaders": {} });
   });
@@ -436,7 +436,7 @@ describe("File", () => {
         sections: [],
       });
 
-      expect(doc.Comments).to.not.be.undefined;
+      expect(doc.comments).to.not.be.undefined;
     });
   });
 
@@ -447,7 +447,7 @@ describe("File", () => {
         sections: [],
       });
 
-      expect(doc.Numbering).to.not.be.undefined;
+      expect(doc.numbering).to.not.be.undefined;
     });
   });
 
@@ -457,17 +457,17 @@ describe("File", () => {
         sections: [],
       });
 
-      expect(doc.CoreProperties).to.not.be.undefined;
-      expect(doc.Media).to.not.be.undefined;
-      expect(doc.FileRelationships).to.not.be.undefined;
-      expect(doc.Headers).to.not.be.undefined;
-      expect(doc.Footers).to.not.be.undefined;
-      expect(doc.ContentTypes).to.not.be.undefined;
-      expect(doc.CustomProperties).to.not.be.undefined;
-      expect(doc.AppProperties).to.not.be.undefined;
-      expect(doc.FootNotes).to.not.be.undefined;
-      expect(doc.Settings).to.not.be.undefined;
-      expect(doc.Comments).to.not.be.undefined;
+      expect(doc.coreProperties).to.not.be.undefined;
+      expect(doc.media).to.not.be.undefined;
+      expect(doc.fileRelationships).to.not.be.undefined;
+      expect(doc.headers).to.not.be.undefined;
+      expect(doc.footers).to.not.be.undefined;
+      expect(doc.contentTypes).to.not.be.undefined;
+      expect(doc.customProperties).to.not.be.undefined;
+      expect(doc.appProperties).to.not.be.undefined;
+      expect(doc.footNotes).to.not.be.undefined;
+      expect(doc.settings).to.not.be.undefined;
+      expect(doc.comments).to.not.be.undefined;
     });
   });
 
@@ -515,7 +515,7 @@ describe("File", () => {
         sections: [],
       });
 
-      expect(doc.Styles).to.not.be.undefined;
+      expect(doc.styles).to.not.be.undefined;
     });
 
     it("should merge external styles with default styles when both are provided", () => {
@@ -539,7 +539,7 @@ describe("File", () => {
         },
       });
 
-      expect(doc.Styles).to.not.be.undefined;
+      expect(doc.styles).to.not.be.undefined;
     });
   });
 
@@ -552,7 +552,7 @@ describe("File", () => {
         sections: [],
       });
 
-      expect(doc.Styles).to.not.be.undefined;
+      expect(doc.styles).to.not.be.undefined;
     });
 
     it("should work with trackRevisions", () => {
@@ -563,7 +563,7 @@ describe("File", () => {
         sections: [],
       });
 
-      expect(doc.Styles).to.not.be.undefined;
+      expect(doc.styles).to.not.be.undefined;
     });
   });
 
@@ -576,7 +576,7 @@ describe("File", () => {
         sections: [],
       });
 
-      expect(doc.Styles).to.not.be.undefined;
+      expect(doc.styles).to.not.be.undefined;
     });
   });
 });

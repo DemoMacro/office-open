@@ -55,8 +55,8 @@ export class StructuredDocumentTagRow extends XmlComponent {
     }
   }
 
-  public get CellCount(): number {
-    return Math.max(...this.rows.map((r) => r.CellCount), 0);
+  public get cellCount(): number {
+    return Math.max(...this.rows.map((r) => r.cellCount), 0);
   }
 
   public get cells(): readonly TableCell[] {

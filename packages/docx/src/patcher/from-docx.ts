@@ -311,7 +311,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
         }
       }
 
-      const mediaDatas = getReferencedMedia(JSON.stringify(json), context.file.Media.Array);
+      const mediaDatas = getReferencedMedia(JSON.stringify(json), context.file.media.array);
       if (mediaDatas.length > 0) {
         hasMedia = true;
         imageRelationshipAdditions.push({
@@ -390,7 +390,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     files[key] = value;
   }
 
-  for (const { data: mediaData, fileName } of file.Media.Array) {
+  for (const { data: mediaData, fileName } of file.media.array) {
     files[`word/media/${fileName}`] =
       mediaData instanceof Uint8Array ? mediaData : new Uint8Array(mediaData);
   }

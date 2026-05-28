@@ -184,7 +184,7 @@ describe("TableCellProperties", () => {
           author: "Firstname Lastname",
           date: "123",
           id: 1,
-          verticalMerge: "rest",
+          verticalMerge: "restart",
         },
       });
       const tree = new Formatter().format(cellProperties);

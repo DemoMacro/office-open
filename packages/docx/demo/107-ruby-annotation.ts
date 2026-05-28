@@ -23,7 +23,7 @@ const doc = new Document({
             createRuby({
               text: "かな",
               base: "漢字",
-              alignment: "CENTER",
+              alignment: "center",
               fontSize: 20,
               raise: 20,
               baseFontSize: 40,
@@ -45,7 +45,7 @@ const doc = new Document({
             createRuby({
               text: "hàn zì",
               base: "汉字",
-              alignment: "CENTER",
+              alignment: "center",
               fontSize: 18,
               raise: 20,
               baseFontSize: 40,
@@ -64,11 +64,11 @@ const doc = new Document({
         new Paragraph({
           children: [
             new TextRun("Left: "),
-            createRuby({ text: "left", base: "Align", alignment: "LEFT" }),
+            createRuby({ text: "left", base: "Align", alignment: "left" }),
             new TextRun("  Center: "),
-            createRuby({ text: "center", base: "Align", alignment: "CENTER" }),
+            createRuby({ text: "center", base: "Align", alignment: "center" }),
             new TextRun("  Right: "),
-            createRuby({ text: "right", base: "Align", alignment: "RIGHT" }),
+            createRuby({ text: "right", base: "Align", alignment: "right" }),
           ],
         }),
       ],

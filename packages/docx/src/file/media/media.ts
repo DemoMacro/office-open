@@ -109,7 +109,7 @@ export class Media {
    *
    * @returns Read-only array of all media data in the collection
    */
-  public get Array(): readonly IMediaData[] {
+  public get array(): readonly IMediaData[] {
     return [...this.map.values()];
   }
 }

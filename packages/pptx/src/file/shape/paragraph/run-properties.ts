@@ -9,13 +9,14 @@ import type { FillOptions } from "@file/drawingml/fill";
 import { buildFill } from "@file/drawingml/fill";
 import { XmlComponent } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
+import { xsdStrikeStyle, xsdTextCaps, xsdUnderlineStyle } from "@office-open/core";
 import { createEffectList, createOutline } from "@office-open/core/drawingml";
 
 let nextHyperlinkId = 1;
 
 export const UnderlineStyle = {
-  SINGLE: "sng",
-  DOUBLE: "dbl",
+  SINGLE: "single",
+  DOUBLE: "double",
   NONE: "none",
 } as const;
 
@@ -41,15 +42,15 @@ export interface RunPropertiesOptions {
   readonly fontSize?: number;
   readonly bold?: boolean;
   readonly italic?: boolean;
-  readonly underline?: keyof typeof UnderlineStyle;
+  readonly underline?: (typeof UnderlineStyle)[keyof typeof UnderlineStyle];
   readonly font?: string;
   readonly lang?: string;
   readonly fill?: FillOptions;
   readonly hyperlink?: HyperlinkOptions;
-  readonly strike?: keyof typeof StrikeStyle;
+  readonly strike?: (typeof StrikeStyle)[keyof typeof StrikeStyle];
   readonly baseline?: number;
   readonly spacing?: number;
-  readonly capitalization?: keyof typeof TextCapitalization;
+  readonly capitalization?: (typeof TextCapitalization)[keyof typeof TextCapitalization];
   readonly shadow?: boolean;
   readonly outline?: boolean;
   readonly rightToLeft?: boolean;
@@ -75,12 +76,11 @@ export function buildRunProperties(
   if (options.fontSize) attrs.sz = options.fontSize * 100;
   if (options.bold !== undefined) attrs.b = options.bold;
   if (options.italic !== undefined) attrs.i = options.italic;
-  if (options.underline) attrs.u = UnderlineStyle[options.underline];
+  if (options.underline) attrs.u = xsdUnderlineStyle.to(options.underline);
   if (options.lang) attrs.lang = options.lang;
-  if (options.strike) attrs.strike = StrikeStyle[options.strike];
+  if (options.strike) attrs.strike = xsdStrikeStyle.to(options.strike);
   if (options.baseline !== undefined) attrs.baseline = options.baseline;
-  if (options.capitalization)
-    attrs.cap = TextCapitalization[options.capitalization] ?? options.capitalization;
+  if (options.capitalization) attrs.cap = xsdTextCaps.to(options.capitalization);
   if (options.spacing !== undefined) attrs.spc = options.spacing;
   if (options.noProof !== undefined) attrs.noProof = options.noProof;
   if (options.dirty !== undefined) attrs.dirty = options.dirty;
@@ -163,9 +163,9 @@ export class RunProperties extends XmlComponent {
     if (opts.hyperlink) {
       hyperlinkKey = `hlink_${nextHyperlinkId++}`;
       const file = context.fileData as {
-        Hyperlinks?: { addHyperlink(key: string, url: string, tooltip?: string): void };
+        hyperlinks?: { addHyperlink(key: string, url: string, tooltip?: string): void };
       };
-      file?.Hyperlinks?.addHyperlink(hyperlinkKey, opts.hyperlink.url, opts.hyperlink.tooltip);
+      file?.hyperlinks?.addHyperlink(hyperlinkKey, opts.hyperlink.url, opts.hyperlink.tooltip);
     }
 
     // Handle fill (needs context for prepForXml)

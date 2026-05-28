@@ -77,7 +77,7 @@ export class Relationships extends BaseXmlComponent {
     this.entries.push({ id: `rId${id}`, type, target, targetMode });
   }
 
-  public get RelationshipCount(): number {
+  public get relationshipCount(): number {
     return this.entries.length;
   }
 

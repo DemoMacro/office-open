@@ -63,9 +63,9 @@ export class SmartArtFrame extends XmlComponent {
   }
 
   public prepForXml(context: Context): IXmlableObject | undefined {
-    const file = context.fileData as { SmartArts: SmartArtCollection };
-    if (file?.SmartArts) {
-      file.SmartArts.addSmartArt(this.smartArtKey, {
+    const file = context.fileData as { smartArts: SmartArtCollection };
+    if (file?.smartArts) {
+      file.smartArts.addSmartArt(this.smartArtKey, {
         key: this.smartArtKey,
         dataModel: this.dataModel,
         layout: this.layoutId,

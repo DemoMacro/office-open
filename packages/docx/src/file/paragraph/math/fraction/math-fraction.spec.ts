@@ -44,7 +44,7 @@ describe("MathFraction", () => {
       const mathFraction = new MathFraction({
         denominator: [new MathRun("2")],
         numerator: [new MathRun("1")],
-        fractionType: "BAR",
+        fractionType: "bar",
       });
       const tree = new Formatter().format(mathFraction);
       expect(tree).to.deep.equal({
@@ -66,7 +66,7 @@ describe("MathFraction", () => {
       const mathFraction = new MathFraction({
         denominator: [new MathRun("b")],
         numerator: [new MathRun("a")],
-        fractionType: "SKEWED",
+        fractionType: "skw",
       });
       const tree = new Formatter().format(mathFraction);
       expect(tree["m:f"][0]).to.deep.equal({
@@ -78,7 +78,7 @@ describe("MathFraction", () => {
       const mathFraction = new MathFraction({
         denominator: [new MathRun("b")],
         numerator: [new MathRun("a")],
-        fractionType: "LINEAR",
+        fractionType: "lin",
       });
       const tree = new Formatter().format(mathFraction);
       expect(tree["m:f"][0]).to.deep.equal({
@@ -90,7 +90,7 @@ describe("MathFraction", () => {
       const mathFraction = new MathFraction({
         denominator: [new MathRun("b")],
         numerator: [new MathRun("a")],
-        fractionType: "NO_BAR",
+        fractionType: "noBar",
       });
       const tree = new Formatter().format(mathFraction);
       expect(tree["m:f"][0]).to.deep.equal({

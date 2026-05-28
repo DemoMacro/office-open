@@ -9,7 +9,7 @@ describe("HeaderWrapper", () => {
   describe("#add", () => {
     it("should call the underlying header's addChildElement for Paragraph", () => {
       const wrapper = new HeaderWrapper(new Media(), 1);
-      const spy = vi.spyOn(wrapper.View, "add");
+      const spy = vi.spyOn(wrapper.view, "add");
       wrapper.add(new Paragraph({}));
 
       expect(spy).toBeCalled();
@@ -17,7 +17,7 @@ describe("HeaderWrapper", () => {
 
     it("should call the underlying header's addChildElement for Table", () => {
       const wrapper = new HeaderWrapper(new Media(), 1);
-      const spy = vi.spyOn(wrapper.View, "add");
+      const spy = vi.spyOn(wrapper.view, "add");
       wrapper.add(
         new Table({
           rows: [
@@ -39,7 +39,7 @@ describe("HeaderWrapper", () => {
   describe("#addChildElement", () => {
     it("should call the underlying header's addChildElement", () => {
       const file = new HeaderWrapper(new Media(), 1);
-      const spy = vi.spyOn(file.View, "addChildElement");
+      const spy = vi.spyOn(file.view, "addChildElement");
       file.addChildElement({} as any);
 
       expect(spy).toBeCalled();
@@ -50,7 +50,7 @@ describe("HeaderWrapper", () => {
     it("should get Media", () => {
       const media = new Media();
       const file = new HeaderWrapper(media, 1);
-      expect(file.Media).to.equal(media);
+      expect(file.media).to.equal(media);
     });
   });
 });

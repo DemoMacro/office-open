@@ -232,7 +232,7 @@ export class Comment extends XmlComponent {
  * ```
  */
 export class Comments extends XmlComponent {
-  private readonly relationships: Relationships;
+  public readonly relationships: Relationships;
 
   public constructor({ children }: CommentsOptions) {
     super("w:comments");
@@ -278,9 +278,5 @@ export class Comments extends XmlComponent {
     }
 
     this.relationships = new Relationships();
-  }
-
-  public get Relationships(): Relationships {
-    return this.relationships;
   }
 }

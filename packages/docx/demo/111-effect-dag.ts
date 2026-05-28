@@ -110,7 +110,7 @@ const doc = new Document({
                 }),
               ],
               effectDag: {
-                type: "sib",
+                type: "sibling",
                 blur: { radius: 40000 },
                 softEdge: 25400,
                 outerShadow: {

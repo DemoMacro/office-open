@@ -174,7 +174,7 @@ export class Compiler {
     }
 
     // Media files: use STORE for already-compressed formats (JPEG, PNG, GIF, etc.)
-    for (const mediaData of file.Media.Array) {
+    for (const mediaData of file.media.array) {
       files[`word/media/${mediaData.fileName}`] = [
         toUint8Array(mediaData.data),
         { level: ZIP_STORED_LEVEL },
@@ -188,7 +188,7 @@ export class Compiler {
     }
 
     // Font files: use higher compression for binary font data
-    for (const { data: buffer, name, fontKey } of file.FontTable.fontOptionsWithKey) {
+    for (const { data: buffer, name, fontKey } of file.fontTable.fontOptionsWithKey) {
       const [nameWithoutExtension] = name.split(".");
       files[`word/fonts/${nameWithoutExtension}.odttf`] = obfuscate(buffer, fontKey);
     }
@@ -202,14 +202,14 @@ export class Compiler {
     footerFormattedViews: Map<number, string>,
     prettify?: (typeof PrettifyType)[keyof typeof PrettifyType],
   ): XmlifyedFileMapping {
-    const documentRelationshipCount = file.Document.Relationships.RelationshipCount + 1;
+    const documentRelationshipCount = file.document.relationships.relationshipCount + 1;
 
     const documentXmlData = xml(
-      this.formatter.format(file.Document.View, {
+      this.formatter.format(file.document.view, {
         fileData: file,
         file,
         stack: [],
-        viewWrapper: file.Document,
+        viewWrapper: file.document,
       }),
       {
         declaration: {
@@ -220,15 +220,15 @@ export class Compiler {
       },
     );
 
-    const commentRelationshipCount = file.Comments.Relationships.RelationshipCount + 1;
+    const commentRelationshipCount = file.comments.relationships.relationshipCount + 1;
     const commentXmlData = xml(
-      this.formatter.format(file.Comments, {
+      this.formatter.format(file.comments, {
         fileData: file,
         file,
         stack: [],
         viewWrapper: {
-          Relationships: file.Comments.Relationships,
-          View: file.Comments,
+          relationships: file.comments.relationships,
+          view: file.comments,
         },
       }),
       {
@@ -240,13 +240,13 @@ export class Compiler {
       },
     );
 
-    const footnoteRelationshipCount = file.FootNotes.Relationships.RelationshipCount + 1;
+    const footnoteRelationshipCount = file.footNotes.relationships.relationshipCount + 1;
     const footnoteXmlData = xml(
-      this.formatter.format(file.FootNotes.View, {
+      this.formatter.format(file.footNotes.view, {
         fileData: file,
         file,
         stack: [],
-        viewWrapper: file.FootNotes,
+        viewWrapper: file.footNotes,
       }),
       {
         declaration: {
@@ -258,23 +258,23 @@ export class Compiler {
     );
 
     const documentMediaDatas = hasPlaceholders(documentXmlData)
-      ? getReferencedMedia(documentXmlData, file.Media.Array)
+      ? getReferencedMedia(documentXmlData, file.media.array)
       : [];
     const commentMediaDatas = hasPlaceholders(commentXmlData)
-      ? getReferencedMedia(commentXmlData, file.Media.Array)
+      ? getReferencedMedia(commentXmlData, file.media.array)
       : [];
     const footnoteMediaDatas = hasPlaceholders(footnoteXmlData)
-      ? getReferencedMedia(footnoteXmlData, file.Media.Array)
+      ? getReferencedMedia(footnoteXmlData, file.media.array)
       : [];
 
     return {
       AppProperties: {
         data: xml(
-          this.formatter.format(file.AppProperties, {
+          this.formatter.format(file.appProperties, {
             fileData: file,
             file,
             stack: [],
-            viewWrapper: file.Document,
+            viewWrapper: file.document,
           } as any),
           { declaration: { encoding: "UTF-8", standalone: "yes" } },
         ),
@@ -291,27 +291,27 @@ export class Compiler {
                   "rId",
                 )
               : commentXmlData;
-          return replaceNumberingPlaceholders(xmlData, file.Numbering.ConcreteNumbering);
+          return replaceNumberingPlaceholders(xmlData, file.numbering.concreteNumbering);
         })(),
         path: "word/comments.xml",
       },
       CommentsRelationships: {
         data: (() => {
           commentMediaDatas.forEach((mediaData, i) => {
-            file.Comments.Relationships.addRelationship(
+            file.comments.relationships.addRelationship(
               commentRelationshipCount + i,
               "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
               `media/${mediaData.fileName}`,
             );
           });
           return xml(
-            this.formatter.format(file.Comments.Relationships, {
+            this.formatter.format(file.comments.relationships, {
               fileData: file,
               file,
               stack: [],
               viewWrapper: {
-                Relationships: file.Comments.Relationships,
-                View: file.Comments,
+                relationships: file.comments.relationships,
+                view: file.comments,
               },
             }),
             {
@@ -327,22 +327,22 @@ export class Compiler {
       ContentTypes: {
         data: (() => {
           // Register chart and diagram content types BEFORE serialization
-          file.Charts.Array.forEach((_, i) => {
-            file.ContentTypes.addChart(i + 1);
+          file.charts.array.forEach((_, i) => {
+            file.contentTypes.addChart(i + 1);
           });
-          file.SmartArts.Array.forEach((_, i) => {
-            file.ContentTypes.addDiagramData(i + 1);
-            file.ContentTypes.addDiagramLayout(i + 1);
-            file.ContentTypes.addDiagramStyle(i + 1);
-            file.ContentTypes.addDiagramColors(i + 1);
-            file.ContentTypes.addDiagramDrawing(i + 1);
+          file.smartArts.array.forEach((_, i) => {
+            file.contentTypes.addDiagramData(i + 1);
+            file.contentTypes.addDiagramLayout(i + 1);
+            file.contentTypes.addDiagramStyle(i + 1);
+            file.contentTypes.addDiagramColors(i + 1);
+            file.contentTypes.addDiagramDrawing(i + 1);
           });
           return xml(
-            this.formatter.format(file.ContentTypes, {
+            this.formatter.format(file.contentTypes, {
               fileData: file,
               file,
               stack: [],
-              viewWrapper: file.Document,
+              viewWrapper: file.document,
             }),
             {
               declaration: {
@@ -356,11 +356,11 @@ export class Compiler {
       },
       CustomProperties: {
         data: xml(
-          this.formatter.format(file.CustomProperties, {
+          this.formatter.format(file.customProperties, {
             fileData: file,
             file,
             stack: [],
-            viewWrapper: file.Document,
+            viewWrapper: file.document,
           }),
           {
             declaration: {
@@ -386,22 +386,22 @@ export class Compiler {
           if (hasPlaceholders(xmlData)) {
             xmlData = replaceChartPlaceholders(
               xmlData,
-              file.Charts.Array.map((c) => c.key),
+              file.charts.array.map((c) => c.key),
               documentRelationshipCount + documentMediaDatas.length,
               "rId",
             );
             const smartArtDataOffset =
-              documentRelationshipCount + documentMediaDatas.length + file.Charts.Array.length;
+              documentRelationshipCount + documentMediaDatas.length + file.charts.array.length;
             xmlData = replaceSmartArtPlaceholders(
               xmlData,
-              file.SmartArts.Array.map((s) => s.key),
+              file.smartArts.array.map((s) => s.key),
               smartArtDataOffset,
               "rId",
             );
           }
           const referencedXmlData = replaceNumberingPlaceholders(
             xmlData,
-            file.Numbering.ConcreteNumbering,
+            file.numbering.concreteNumbering,
           );
           return referencedXmlData;
         })(),
@@ -409,11 +409,11 @@ export class Compiler {
       },
       Endnotes: {
         data: xml(
-          this.formatter.format(file.Endnotes.View, {
+          this.formatter.format(file.endnotes.view, {
             fileData: file,
             file,
             stack: [],
-            viewWrapper: file.Endnotes,
+            viewWrapper: file.endnotes,
           }),
           {
             declaration: {
@@ -426,11 +426,11 @@ export class Compiler {
       },
       EndnotesRelationships: {
         data: xml(
-          this.formatter.format(file.Endnotes.Relationships, {
+          this.formatter.format(file.endnotes.relationships, {
             fileData: file,
             file,
             stack: [],
-            viewWrapper: file.Endnotes,
+            viewWrapper: file.endnotes,
           }),
           {
             declaration: {
@@ -443,11 +443,11 @@ export class Compiler {
       },
       FileRelationships: {
         data: xml(
-          this.formatter.format(file.FileRelationships, {
+          this.formatter.format(file.fileRelationships, {
             fileData: file,
             file,
             stack: [],
-            viewWrapper: file.Document,
+            viewWrapper: file.document,
           }),
           {
             declaration: {
@@ -460,11 +460,11 @@ export class Compiler {
       },
       FontTable: {
         data: xml(
-          this.formatter.format(file.FontTable.View, {
+          this.formatter.format(file.fontTable.view, {
             fileData: file,
             file,
             stack: [],
-            viewWrapper: file.Document,
+            viewWrapper: file.document,
           }),
           {
             declaration: {
@@ -479,11 +479,11 @@ export class Compiler {
       FontTableRelationships: {
         data: (() =>
           xml(
-            this.formatter.format(file.FontTable.Relationships, {
+            this.formatter.format(file.fontTable.relationships, {
               fileData: file,
               file,
               stack: [],
-              viewWrapper: file.Document,
+              viewWrapper: file.document,
             }),
             {
               declaration: {
@@ -505,25 +505,25 @@ export class Compiler {
                   "rId",
                 )
               : footnoteXmlData;
-          return replaceNumberingPlaceholders(xmlData, file.Numbering.ConcreteNumbering);
+          return replaceNumberingPlaceholders(xmlData, file.numbering.concreteNumbering);
         })(),
         path: "word/footnotes.xml",
       },
       FootNotesRelationships: {
         data: (() => {
           footnoteMediaDatas.forEach((mediaData, i) => {
-            file.FootNotes.Relationships.addRelationship(
+            file.footNotes.relationships.addRelationship(
               footnoteRelationshipCount + i,
               "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
               `media/${mediaData.fileName}`,
             );
           });
           return xml(
-            this.formatter.format(file.FootNotes.Relationships, {
+            this.formatter.format(file.footNotes.relationships, {
               fileData: file,
               file,
               stack: [],
-              viewWrapper: file.FootNotes,
+              viewWrapper: file.footNotes,
             }),
             {
               declaration: {
@@ -535,8 +535,8 @@ export class Compiler {
         })(),
         path: "word/_rels/footnotes.xml.rels",
       },
-      FooterRelationships: file.Footers.map((footerWrapper, index) => {
-        const formatted = this.formatter.format(footerWrapper.View, {
+      FooterRelationships: file.footers.map((footerWrapper, index) => {
+        const formatted = this.formatter.format(footerWrapper.view, {
           fileData: file,
           file,
           stack: [],
@@ -550,10 +550,10 @@ export class Compiler {
         });
         // Cache for reuse in Footers section
         footerFormattedViews.set(index, xmlData);
-        const mediaDatas = getReferencedMedia(xmlData, file.Media.Array);
+        const mediaDatas = getReferencedMedia(xmlData, file.media.array);
 
         mediaDatas.forEach((mediaData, i) => {
-          footerWrapper.Relationships.addRelationship(
+          footerWrapper.relationships.addRelationship(
             i,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
             `media/${mediaData.fileName}`,
@@ -562,7 +562,7 @@ export class Compiler {
 
         return {
           data: xml(
-            this.formatter.format(footerWrapper.Relationships, {
+            this.formatter.format(footerWrapper.relationships, {
               fileData: file,
               file,
               stack: [],
@@ -578,10 +578,10 @@ export class Compiler {
           path: `word/_rels/footer${index + 1}.xml.rels`,
         };
       }),
-      Footers: file.Footers.map((_footerWrapper, index) => {
+      Footers: file.footers.map((_footerWrapper, index) => {
         const tempXmlData = footerFormattedViews.get(index)!;
         const mediaDatas = hasPlaceholders(tempXmlData)
-          ? getReferencedMedia(tempXmlData, file.Media.Array)
+          ? getReferencedMedia(tempXmlData, file.media.array)
           : [];
         const xmlData =
           mediaDatas.length > 0
@@ -589,12 +589,12 @@ export class Compiler {
             : tempXmlData;
 
         return {
-          data: replaceNumberingPlaceholders(xmlData, file.Numbering.ConcreteNumbering),
+          data: replaceNumberingPlaceholders(xmlData, file.numbering.concreteNumbering),
           path: `word/footer${index + 1}.xml`,
         };
       }),
-      HeaderRelationships: file.Headers.map((headerWrapper, index) => {
-        const formatted = this.formatter.format(headerWrapper.View, {
+      HeaderRelationships: file.headers.map((headerWrapper, index) => {
+        const formatted = this.formatter.format(headerWrapper.view, {
           fileData: file,
           file,
           stack: [],
@@ -608,10 +608,10 @@ export class Compiler {
         });
         // Cache for reuse in Headers section
         headerFormattedViews.set(index, xmlData);
-        const mediaDatas = getReferencedMedia(xmlData, file.Media.Array);
+        const mediaDatas = getReferencedMedia(xmlData, file.media.array);
 
         mediaDatas.forEach((mediaData, i) => {
-          headerWrapper.Relationships.addRelationship(
+          headerWrapper.relationships.addRelationship(
             i,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
             `media/${mediaData.fileName}`,
@@ -620,7 +620,7 @@ export class Compiler {
 
         return {
           data: xml(
-            this.formatter.format(headerWrapper.Relationships, {
+            this.formatter.format(headerWrapper.relationships, {
               fileData: file,
               file,
               stack: [],
@@ -636,10 +636,10 @@ export class Compiler {
           path: `word/_rels/header${index + 1}.xml.rels`,
         };
       }),
-      Headers: file.Headers.map((_headerWrapper, index) => {
+      Headers: file.headers.map((_headerWrapper, index) => {
         const tempXmlData = headerFormattedViews.get(index)!;
         const mediaDatas = hasPlaceholders(tempXmlData)
-          ? getReferencedMedia(tempXmlData, file.Media.Array)
+          ? getReferencedMedia(tempXmlData, file.media.array)
           : [];
         const xmlData =
           mediaDatas.length > 0
@@ -647,17 +647,17 @@ export class Compiler {
             : tempXmlData;
 
         return {
-          data: replaceNumberingPlaceholders(xmlData, file.Numbering.ConcreteNumbering),
+          data: replaceNumberingPlaceholders(xmlData, file.numbering.concreteNumbering),
           path: `word/header${index + 1}.xml`,
         };
       }),
       Numbering: {
         data: xml(
-          this.formatter.format(file.Numbering, {
+          this.formatter.format(file.numbering, {
             fileData: file,
             file,
             stack: [],
-            viewWrapper: file.Document,
+            viewWrapper: file.document,
           }),
           {
             declaration: {
@@ -671,11 +671,11 @@ export class Compiler {
       },
       Properties: {
         data: xml(
-          this.formatter.format(file.CoreProperties, {
+          this.formatter.format(file.coreProperties, {
             fileData: file,
             file,
             stack: [],
-            viewWrapper: file.Document,
+            viewWrapper: file.document,
           }),
           {
             declaration: {
@@ -690,7 +690,7 @@ export class Compiler {
       Relationships: {
         data: (() => {
           documentMediaDatas.forEach((mediaData, i) => {
-            file.Document.Relationships.addRelationship(
+            file.document.relationships.addRelationship(
               documentRelationshipCount + i,
               "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
               `media/${mediaData.fileName}`,
@@ -699,8 +699,8 @@ export class Compiler {
 
           // Chart relationships
           const chartOffset = documentRelationshipCount + documentMediaDatas.length;
-          file.Charts.Array.forEach((_chartData, i) => {
-            file.Document.Relationships.addRelationship(
+          file.charts.array.forEach((_chartData, i) => {
+            file.document.relationships.addRelationship(
               chartOffset + i,
               "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart",
               `charts/chart${i + 1}.xml`,
@@ -709,11 +709,11 @@ export class Compiler {
 
           // SmartArt relationships (data + layout/style/color internal)
           addSmartArtRelationships(
-            file.SmartArts.Array.map((s) => s.key),
+            file.smartArts.array.map((s) => s.key),
             (id, type, target) => {
-              file.Document.Relationships.addRelationship(id, type, target);
+              file.document.relationships.addRelationship(id, type, target);
             },
-            documentRelationshipCount + documentMediaDatas.length + file.Charts.Array.length,
+            documentRelationshipCount + documentMediaDatas.length + file.charts.array.length,
             0,
             {
               pathPrefix: "",
@@ -721,18 +721,18 @@ export class Compiler {
             },
           );
 
-          file.Document.Relationships.addRelationship(
-            file.Document.Relationships.RelationshipCount + 1,
+          file.document.relationships.addRelationship(
+            file.document.relationships.relationshipCount + 1,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/fontTable",
             "fontTable.xml",
           );
 
           return xml(
-            this.formatter.format(file.Document.Relationships, {
+            this.formatter.format(file.document.relationships, {
               fileData: file,
               file,
               stack: [],
-              viewWrapper: file.Document,
+              viewWrapper: file.document,
             }),
             {
               declaration: {
@@ -746,11 +746,11 @@ export class Compiler {
       },
       Settings: {
         data: xml(
-          this.formatter.format(file.Settings, {
+          this.formatter.format(file.settings, {
             fileData: file,
             file,
             stack: [],
-            viewWrapper: file.Document,
+            viewWrapper: file.document,
           }),
           {
             declaration: {
@@ -765,11 +765,11 @@ export class Compiler {
       Styles: {
         data: (() => {
           const xmlStyles = xml(
-            this.formatter.format(file.Styles, {
+            this.formatter.format(file.styles, {
               fileData: file,
               file,
               stack: [],
-              viewWrapper: file.Document,
+              viewWrapper: file.document,
             }),
             {
               declaration: {
@@ -781,23 +781,23 @@ export class Compiler {
           );
           const referencedXmlStyles = replaceNumberingPlaceholders(
             xmlStyles,
-            file.Numbering.ConcreteNumbering,
+            file.numbering.concreteNumbering,
           );
           return referencedXmlStyles;
         })(),
         path: "word/styles.xml",
       },
-      ...(file.Bibliography
+      ...(file.bibliography
         ? {
             Bibliography: {
               data: xml(
-                this.formatter.format(file.Bibliography, {
+                this.formatter.format(file.bibliography, {
                   fileData: file,
                   file,
                   stack: [],
                   viewWrapper: {
-                    Relationships: file.Bibliography.Relationships,
-                    View: file.Bibliography,
+                    relationships: file.bibliography.relationships,
+                    view: file.bibliography,
                   },
                 }),
                 {
@@ -812,16 +812,16 @@ export class Compiler {
             },
           }
         : {}),
-      ...(file.Charts.Array.length > 0
+      ...(file.charts.array.length > 0
         ? {
-            Charts: file.Charts.Array.flatMap((chartData, i) => [
+            Charts: file.charts.array.flatMap((chartData, i) => [
               {
                 data: xml(
                   this.formatter.format(chartData.chartSpace, {
                     fileData: file,
                     file,
                     stack: [],
-                    viewWrapper: file.Document,
+                    viewWrapper: file.document,
                   }),
                   {
                     declaration: {
@@ -849,15 +849,15 @@ export class Compiler {
             ]),
           }
         : {}),
-      ...(file.SmartArts.Array.length > 0
+      ...(file.smartArts.array.length > 0
         ? {
-            DiagramData: file.SmartArts.Array.map((smartArtData, i) => ({
+            DiagramData: file.smartArts.array.map((smartArtData, i) => ({
               data: xml(
                 this.formatter.format(smartArtData.dataModel, {
                   fileData: file,
                   file,
                   stack: [],
-                  viewWrapper: file.Document,
+                  viewWrapper: file.document,
                 }),
                 {
                   declaration: {
@@ -869,35 +869,35 @@ export class Compiler {
               ),
               path: `word/diagrams/data${i + 1}.xml`,
             })),
-            DiagramLayout: file.SmartArts.Array.map((smartArtData, i) => ({
+            DiagramLayout: file.smartArts.array.map((smartArtData, i) => ({
               data: getLayoutXml(smartArtData.layout),
               path: `word/diagrams/layout${i + 1}.xml`,
             })),
-            DiagramStyle: file.SmartArts.Array.map((smartArtData, i) => ({
+            DiagramStyle: file.smartArts.array.map((smartArtData, i) => ({
               data: getStyleXml(smartArtData.style),
               path: `word/diagrams/quickStyle${i + 1}.xml`,
             })),
-            DiagramColors: file.SmartArts.Array.map((smartArtData, i) => ({
+            DiagramColors: file.smartArts.array.map((smartArtData, i) => ({
               data: getColorXml(smartArtData.color),
               path: `word/diagrams/colors${i + 1}.xml`,
             })),
-            DiagramDrawing: file.SmartArts.Array.map((_, i) => ({
+            DiagramDrawing: file.smartArts.array.map((_, i) => ({
               data: DEFAULT_DRAWING_XML,
               path: `word/diagrams/drawing${i + 1}.xml`,
             })),
           }
         : {}),
-      ...(file.AltChunks.Array.length > 0
+      ...(file.altChunks.array.length > 0
         ? {
-            AltChunks: file.AltChunks.Array.map((altChunkData) => ({
+            AltChunks: file.altChunks.array.map((altChunkData) => ({
               data: altChunkData.data,
               path: `word/${altChunkData.path}`,
             })),
           }
         : {}),
-      ...(file.SubDocs.Array.length > 0
+      ...(file.subDocs.array.length > 0
         ? {
-            SubDocs: file.SubDocs.Array.map((subDocData) => ({
+            SubDocs: file.subDocs.array.map((subDocData) => ({
               data: subDocData.data,
               path: `word/${subDocData.path}`,
             })),

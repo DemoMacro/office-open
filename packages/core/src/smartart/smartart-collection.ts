@@ -22,7 +22,7 @@ export class SmartArtCollection {
     this.map.set(key, data);
   }
 
-  public get Array(): readonly SmartArtData[] {
+  public get array(): readonly SmartArtData[] {
     return [...this.map.values()];
   }
 }

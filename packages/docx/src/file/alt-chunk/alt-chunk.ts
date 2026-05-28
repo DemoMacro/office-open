@@ -80,9 +80,9 @@ export class AltChunk extends XmlComponent implements FileChild {
         ? new TextEncoder().encode(wrapHtmlDocument(this.options.data))
         : rawData;
 
-    context.viewWrapper.Relationships.addRelationship(relId, ALTCHUNK_RELATIONSHIP_TYPE, partPath);
+    context.viewWrapper.relationships.addRelationship(relId, ALTCHUNK_RELATIONSHIP_TYPE, partPath);
 
-    context.file.AltChunks.addAltChunk(relId, {
+    context.file.altChunks.addAltChunk(relId, {
       key: relId,
       data,
       path: partPath,
@@ -90,7 +90,7 @@ export class AltChunk extends XmlComponent implements FileChild {
       contentType: this.options.contentType,
     });
 
-    context.file.ContentTypes.addAltChunk(`/word/${partPath}`, this.options.contentType, extension);
+    context.file.contentTypes.addAltChunk(`/word/${partPath}`, this.options.contentType, extension);
 
     return super.prepForXml(context) as IXmlableObject;
   }

@@ -149,7 +149,7 @@ export class ShapeProperties extends XmlComponent {
   public override prepForXml(context: Context): IXmlableObject | undefined {
     const media = this.fillOptions ? extractBlipFillMedia(this.fillOptions) : undefined;
     if (media) {
-      context.file.Media.addImage(media.fileName, {
+      context.file.media.addImage(media.fileName, {
         data: media.data,
         fileName: media.fileName,
         type: media.type as "png",

@@ -135,7 +135,7 @@ describe("Bibliography", () => {
 
   it("should expose a Relationships instance", () => {
     const bib = new Bibliography({ sources: [] });
-    expect(bib.Relationships).to.be.ok;
-    expect(bib.Relationships.RelationshipCount).to.equal(0);
+    expect(bib.relationships).to.be.ok;
+    expect(bib.relationships.relationshipCount).to.equal(0);
   });
 });

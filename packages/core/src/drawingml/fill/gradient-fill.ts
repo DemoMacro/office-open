@@ -99,7 +99,7 @@ export interface RelativeRect {
  */
 export interface PathShadeOptions {
   /** Path type */
-  readonly path?: keyof typeof PathShadeType;
+  readonly path?: (typeof PathShadeType)[keyof typeof PathShadeType];
   /**
    * Fill-to rectangle for path gradient.
    *
@@ -139,7 +139,7 @@ export interface GradientFillOptions {
    *
    * Controls how the gradient is flipped when tiled.
    */
-  readonly flip?: keyof typeof TileFlipMode;
+  readonly flip?: (typeof TileFlipMode)[keyof typeof TileFlipMode];
   /**
    * Tile rectangle for gradient tiling.
    *
@@ -211,7 +211,7 @@ const createShadeElement = (shade: GradientShadeOptions): XmlComponent => {
     attributes: {
       path: {
         key: "path",
-        value: pathShade.path ? PathShadeType[pathShade.path] : undefined,
+        value: pathShade.path,
       },
     },
     children,
@@ -273,7 +273,7 @@ export const createGradientFill = (options: GradientFillOptions): XmlComponent =
     attributes: {
       flip: {
         key: "flip",
-        value: options.flip ? TileFlipMode[options.flip] : undefined,
+        value: options.flip,
       },
       rotWithShape: { key: "rotWithShape", value: options.rotateWithShape },
     },

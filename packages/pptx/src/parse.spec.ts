@@ -11,7 +11,16 @@ describe("parsePresentation", () => {
       slides: [
         {
           children: [
-            { shape: { x: 100, y: 100, width: 600, height: 400, text: "Hello", fill: "4472C4" } },
+            {
+              shape: {
+                x: 100,
+                y: 100,
+                width: 600,
+                height: 400,
+                textBody: { text: "Hello" },
+                fill: "4472C4",
+              },
+            },
           ],
         },
       ],
@@ -27,8 +36,8 @@ describe("parsePresentation", () => {
   it("parses single master file with undefined masters", async () => {
     const pres = new Presentation({
       slides: [
-        { children: [{ shape: { x: 0, y: 0, width: 200, height: 100, text: "A" } }] },
-        { children: [{ shape: { x: 0, y: 0, width: 200, height: 100, text: "B" } }] },
+        { children: [{ shape: { x: 0, y: 0, width: 200, height: 100, textBody: { text: "A" } } }] },
+        { children: [{ shape: { x: 0, y: 0, width: 200, height: 100, textBody: { text: "B" } } }] },
       ],
     });
     const buffer = await Packer.toBuffer(pres);
@@ -42,7 +51,9 @@ describe("parsePresentation", () => {
     const pres = new Presentation({
       title: "Test Title",
       creator: "Test Creator",
-      slides: [{ children: [{ shape: { x: 0, y: 0, width: 200, height: 100, text: "A" } }] }],
+      slides: [
+        { children: [{ shape: { x: 0, y: 0, width: 200, height: 100, textBody: { text: "A" } } }] },
+      ],
     });
     const buffer = await Packer.toBuffer(pres);
     const result = parsePresentation(buffer);
@@ -68,7 +79,9 @@ describe("parsePresentation", () => {
       {
         master: "light",
         layout: "blank",
-        children: [{ shape: { x: 100, y: 100, width: 600, height: 400, text: "Light slide" } }],
+        children: [
+          { shape: { x: 100, y: 100, width: 600, height: 400, textBody: { text: "Light slide" } } },
+        ],
       },
       {
         master: "dark",
@@ -80,13 +93,15 @@ describe("parsePresentation", () => {
               y: 100,
               width: 600,
               height: 400,
-              text: "Dark slide",
-              paragraphs: [
-                {
-                  properties: { bullet: { type: "none" } },
-                  children: [{ text: "Dark slide", fill: "FFFFFF" }],
-                },
-              ],
+              textBody: {
+                text: "Dark slide",
+                children: [
+                  {
+                    properties: { bullet: { type: "none" } },
+                    children: [{ text: "Dark slide", fill: "FFFFFF" }],
+                  },
+                ],
+              },
             },
           },
         ],
@@ -117,11 +132,11 @@ describe("parsePresentation", () => {
     const slides: SlideOptions[] = [
       {
         master: "m1",
-        children: [{ shape: { x: 50, y: 50, width: 400, height: 300, text: "S1" } }],
+        children: [{ shape: { x: 50, y: 50, width: 400, height: 300, textBody: { text: "S1" } } }],
       },
       {
         master: "m2",
-        children: [{ shape: { x: 50, y: 50, width: 400, height: 300, text: "S2" } }],
+        children: [{ shape: { x: 50, y: 50, width: 400, height: 300, textBody: { text: "S2" } } }],
       },
     ];
 

@@ -177,7 +177,7 @@ class NotesBodyPlaceholder extends XmlComponent {
     );
 
     const textBodyOptions = text
-      ? { paragraphs: [new Paragraph({ children: [new TextRun({ text })] })] }
+      ? { children: [new Paragraph({ children: [new TextRun({ text })] })] }
       : undefined;
     this.root.push(new TextBody(textBodyOptions));
   }

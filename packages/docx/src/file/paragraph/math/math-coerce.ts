@@ -64,7 +64,7 @@ export type MathJson =
       readonly fraction: {
         readonly numerator: readonly MathJson[];
         readonly denominator: readonly MathJson[];
-        readonly fractionType?: keyof typeof FractionType;
+        readonly fractionType?: (typeof FractionType)[keyof typeof FractionType];
       };
     }
   | {

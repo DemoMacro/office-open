@@ -75,7 +75,7 @@ export interface DocumentOptions {
  * ```
  */
 export class Document extends XmlComponent {
-  private readonly body: Body;
+  public readonly body: Body;
 
   public constructor(options: DocumentOptions) {
     super("w:document");
@@ -134,14 +134,5 @@ export class Document extends XmlComponent {
   public add(item: FileChild | ConcreteHyperlink): Document {
     this.body.push(item);
     return this;
-  }
-
-  /**
-   * Gets the document body element.
-   *
-   * @returns The Body instance containing all document content
-   */
-  public get Body(): Body {
-    return this.body;
   }
 }

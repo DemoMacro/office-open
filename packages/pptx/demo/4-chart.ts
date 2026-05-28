@@ -13,7 +13,7 @@ const pres = new Presentation({
           y: 30,
           width: 400,
           height: 60,
-          text: "Column Chart",
+          textBody: { text: "Column Chart" },
           fill: "4472C4",
         }),
         new ChartFrame({
@@ -41,7 +41,7 @@ const pres = new Presentation({
           y: 30,
           width: 400,
           height: 60,
-          text: "Pie Chart",
+          textBody: { text: "Pie Chart" },
           fill: "ED7D31",
         }),
         new ChartFrame({
@@ -63,7 +63,7 @@ const pres = new Presentation({
           y: 30,
           width: 400,
           height: 60,
-          text: "Line Chart",
+          textBody: { text: "Line Chart" },
           fill: "70AD47",
         }),
         new ChartFrame({

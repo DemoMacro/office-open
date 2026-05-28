@@ -253,7 +253,7 @@ export class Paragraph extends BaseXmlComponent implements FileChild {
     // Register numbering references (same logic as ParagraphProperties.prepForXml)
     if (!(context.viewWrapper instanceof FontWrapper)) {
       for (const reference of numberingReferences) {
-        context.file.Numbering.createConcreteNumberingInstance(
+        context.file.numbering.createConcreteNumberingInstance(
           reference.reference,
           reference.instance,
         );
@@ -296,7 +296,7 @@ export class Paragraph extends BaseXmlComponent implements FileChild {
           const concreteHyperlink = new ConcreteHyperlink(rawChild.options.children, uniqueId(), {
             tooltip: rawChild.options.tooltip as string | undefined,
           });
-          context.viewWrapper.Relationships.addRelationship(
+          context.viewWrapper.relationships.addRelationship(
             concreteHyperlink.linkId,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
             rawChild.options.link,
@@ -356,7 +356,7 @@ export class Paragraph extends BaseXmlComponent implements FileChild {
             const concrete = new ConcreteHyperlink(ext.options.children, uniqueId(), {
               tooltip: ext.options.tooltip as string | undefined,
             });
-            context.viewWrapper.Relationships.addRelationship(
+            context.viewWrapper.relationships.addRelationship(
               concrete.linkId,
               "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
               ext.options.link,

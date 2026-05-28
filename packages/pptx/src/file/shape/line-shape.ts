@@ -11,7 +11,7 @@ import { convertPixelsToEmu } from "@office-open/core";
  */
 export class LineShape extends Xc {
   private static nextId = 2;
-  private readonly shapeId: number;
+  public readonly shapeId: number;
 
   public constructor(options: LineShapeOptions = {}) {
     super("p:sp");
@@ -106,10 +106,6 @@ export class LineShape extends Xc {
       }),
     );
   }
-
-  public get ShapeId(): number {
-    return this.shapeId;
-  }
 }
 
 export interface LineShapeOptions {
@@ -130,7 +126,7 @@ export type ArrowheadType = "triangle" | "stealth" | "diamond" | "oval" | "open"
  */
 export class ConnectorShape extends Xc {
   private static nextId = 2;
-  private readonly shapeId: number;
+  public readonly shapeId: number;
 
   public constructor(options: ConnectorShapeOptions = {}) {
     super("p:cxnSp");
@@ -225,10 +221,6 @@ export class ConnectorShape extends Xc {
         children: spPrChildren,
       }),
     );
-  }
-
-  public get ShapeId(): number {
-    return this.shapeId;
   }
 }
 

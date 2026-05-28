@@ -37,31 +37,17 @@ You are a senior TypeScript developer.
 
 ## Code Conventions
 
+Full coding standards are in [CONTRIBUTING.md](./CONTRIBUTING.md). Key rules:
+
 - Path aliases in packages/docx: `@file/`, `@export/`, `@util/`
 - Classes extend `XmlComponent` for XML elements
 - Use `Formatter` to convert components to XML tree
-
-### Interface Naming
-
-Do **not** use the `I` prefix for interfaces. This aligns with modern TypeScript conventions (TypeScript official, Google, ts.dev style guides).
-
-- e.g., `PropertiesOptions`, `SectionOptions`, `ParagraphOptions`, `TableOptions`, `ImageOptions`
-- e.g., `OutlineOptions`, `SolidFillOptions`, `GradientFillOptions`, `ColorOptions`, `EffectListOptions`
-- e.g., `MediaData`, `MediaDataTransformation`, `Context`, `XmlableObject`, `GradientStop`
-
-### Property Naming vs XML Element Names
-
-Interface property names use **full English words**, even when the corresponding XML element uses XSD abbreviations:
-
-- `outline` → `a:ln`, `gradientFill` → `a:gradFill`, `outerShadow` → `a:outerShdw`
-
-Only use XSD abbreviations when the abbreviation IS the standard English term (e.g., `solidFill`, `noFill`, `glow`).
-
-**Best practices:**
-
-- Verify XML output structure matches OOXML spec
-- Test option combinations and edge cases
-- Descriptive test names explaining behavior
+- Use `as const` objects (not `enum`) with SCREAMING_SNAKE_CASE keys
+- Constant values: lowercase full English words; XSD abbreviations map to full words
+- Options interfaces: `*Options` suffix, no `I` prefix, all properties `readonly`
+- Loop patterns: `for...of` by default, `.map()` only when returning a new array
+- Getters/setters: camelCase
+- File names: kebab-case
 
 ## Behavioral Guidelines
 

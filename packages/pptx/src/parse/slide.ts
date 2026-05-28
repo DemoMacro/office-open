@@ -778,7 +778,7 @@ function parseTableCell(tc: Element): Record<string, unknown> {
 
     const anchor = attr(tcPr, "anchor");
     if (anchor) {
-      const anchorMap: Record<string, string> = { t: "TOP", ctr: "CENTER", b: "BOTTOM" };
+      const anchorMap: Record<string, string> = { t: "top", ctr: "center", b: "bottom" };
       if (anchor in anchorMap) opts.verticalAlign = anchorMap[anchor];
     }
 
@@ -943,18 +943,20 @@ function parseTextBody(
   opts: Record<string, unknown>,
   rels?: Map<string, string>,
 ): void {
+  const textBody: Record<string, unknown> = {};
+
   // a:bodyPr
   const bodyPr = findChild(txBody, "a:bodyPr");
   if (bodyPr) {
     const vert = attr(bodyPr, "vert");
-    if (vert) opts.textVertical = vert;
+    if (vert) textBody.vertical = vert;
     const anchor = attr(bodyPr, "anchor");
     if (anchor) {
-      const anchorMap: Record<string, string> = { t: "TOP", ctr: "CENTER", b: "BOTTOM" };
-      if (anchor in anchorMap) opts.textAnchor = anchorMap[anchor];
+      const anchorMap: Record<string, string> = { t: "top", ctr: "center", b: "bottom" };
+      if (anchor in anchorMap) textBody.anchor = anchorMap[anchor];
     }
     const wrap = attr(bodyPr, "wrap");
-    if (wrap) opts.textWrap = wrap;
+    if (wrap) textBody.wrap = wrap;
     const tIns = attrNum(bodyPr, "tIns");
     const bIns = attrNum(bodyPr, "bIns");
     const lIns = attrNum(bodyPr, "lIns");
@@ -964,17 +966,17 @@ function parseTextBody(
     if (bIns !== undefined) margins.bottom = bIns;
     if (lIns !== undefined) margins.left = lIns;
     if (rIns !== undefined) margins.right = rIns;
-    if (Object.keys(margins).length > 0) opts.textMargins = margins;
+    if (Object.keys(margins).length > 0) textBody.margins = margins;
 
     const numCol = attrNum(bodyPr, "numCol");
-    if (numCol !== undefined) opts.textColumns = numCol;
+    if (numCol !== undefined) textBody.columns = numCol;
     const spcCol = attrNum(bodyPr, "spcCol");
-    if (spcCol !== undefined) opts.textColumnSpacing = spcCol / 100;
+    if (spcCol !== undefined) textBody.columnSpacing = spcCol / 100;
 
     // AutoFit
-    if (findChild(bodyPr, "a:normAutofit")) opts.textAutoFit = "normal";
-    else if (findChild(bodyPr, "a:spAutoFit")) opts.textAutoFit = "shape";
-    else if (findChild(bodyPr, "a:noAutofit")) opts.textAutoFit = "none";
+    if (findChild(bodyPr, "a:normAutofit")) textBody.autoFit = "normal";
+    else if (findChild(bodyPr, "a:spAutoFit")) textBody.autoFit = "shape";
+    else if (findChild(bodyPr, "a:noAutofit")) textBody.autoFit = "none";
   }
 
   // Paragraphs
@@ -991,13 +993,15 @@ function parseTextBody(
           (k) => k !== "bullet" || (props[k] as Record<string, unknown>)?.type !== "none",
         );
       if (!hasNonTrivialProps) {
-        opts.text = p.text;
+        textBody.text = p.text;
+        opts.textBody = textBody;
         return;
       }
     }
   }
 
-  if (paragraphs.length > 0) opts.paragraphs = paragraphs;
+  if (paragraphs.length > 0) textBody.children = paragraphs;
+  if (Object.keys(textBody).length > 0) opts.textBody = textBody;
 }
 
 function parseParagraphsFromTxBody(txBody: Element, rels?: Map<string, string>): unknown[] {
@@ -1019,10 +1023,10 @@ function parseParagraph(el: Element, rels?: Map<string, string>): Record<string,
     const algn = attr(pPr, "algn");
     if (algn) {
       const alignMap: Record<string, string> = {
-        l: "LEFT",
-        ctr: "CENTER",
-        r: "RIGHT",
-        just: "JUSTIFY",
+        l: "left",
+        ctr: "center",
+        r: "right",
+        just: "justify",
       };
       if (algn in alignMap) props.alignment = alignMap[algn];
     }
@@ -1138,7 +1142,7 @@ function parseRun(el: Element, rels?: Map<string, string>): Record<string, unkno
 
     const u = attr(rPr, "u");
     if (u) {
-      const underlineMap: Record<string, string> = { sng: "SINGLE", dbl: "DOUBLE", none: "NONE" };
+      const underlineMap: Record<string, string> = { sng: "single", dbl: "double", none: "none" };
       if (u in underlineMap) opts.underline = underlineMap[u];
     }
 
@@ -1148,9 +1152,9 @@ function parseRun(el: Element, rels?: Map<string, string>): Record<string, unkno
     const strike = attr(rPr, "strike");
     if (strike) {
       const strikeMap: Record<string, string> = {
-        sngStrike: "SINGLE",
-        dblStrike: "DOUBLE",
-        noStrike: "NONE",
+        sngStrike: "sngStrike",
+        dblStrike: "dblStrike",
+        noStrike: "noStrike",
       };
       if (strike in strikeMap) opts.strike = strikeMap[strike];
     }
@@ -1160,7 +1164,7 @@ function parseRun(el: Element, rels?: Map<string, string>): Record<string, unkno
 
     const cap = attr(rPr, "cap");
     if (cap) {
-      const capMap: Record<string, string> = { none: "NONE", all: "ALL", small: "SMALL" };
+      const capMap: Record<string, string> = { none: "none", all: "all", small: "small" };
       if (cap in capMap) opts.capitalization = capMap[cap];
     }
 

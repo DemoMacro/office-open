@@ -7,6 +7,7 @@
  */
 import { BuilderElement } from "../../xml-components";
 import type { XmlComponent } from "../../xml-components";
+import { xsdRectAlignment } from "../../xsd-mappings";
 import { createColorElement } from "../color/solid-fill";
 import type { SolidFillOptions } from "../color/solid-fill";
 
@@ -14,15 +15,15 @@ import type { SolidFillOptions } from "../color/solid-fill";
  * Rectangle alignment for shadow positioning.
  */
 export const RectAlignment = {
-  TOP_LEFT: "tl",
-  TOP: "t",
-  TOP_RIGHT: "tr",
-  LEFT: "l",
-  CENTER: "ctr",
-  RIGHT: "r",
-  BOTTOM_LEFT: "bl",
-  BOTTOM: "b",
-  BOTTOM_RIGHT: "br",
+  TOP_LEFT: "topLeft",
+  TOP: "top",
+  TOP_RIGHT: "topRight",
+  LEFT: "left",
+  CENTER: "center",
+  RIGHT: "right",
+  BOTTOM_LEFT: "bottomLeft",
+  BOTTOM: "bottom",
+  BOTTOM_RIGHT: "bottomRight",
 } as const;
 
 /**
@@ -44,7 +45,7 @@ export interface OuterShadowEffectOptions {
   /** Vertical skew angle */
   readonly skewY?: number;
   /** Shadow alignment */
-  readonly alignment?: keyof typeof RectAlignment;
+  readonly alignment?: (typeof RectAlignment)[keyof typeof RectAlignment];
   /** Whether shadow rotates with shape */
   readonly rotWithShape?: boolean;
   /** Shadow color */
@@ -97,7 +98,7 @@ export const createOuterShadowEffect = (options: OuterShadowEffectOptions): XmlC
     attributes.ky = { key: "ky", value: options.skewY };
   }
   if (options.alignment !== undefined) {
-    attributes.algn = { key: "algn", value: RectAlignment[options.alignment] };
+    attributes.algn = { key: "algn", value: xsdRectAlignment.to(options.alignment) };
   }
   if (options.rotWithShape === false) {
     attributes.rotWithShape = { key: "rotWithShape", value: 0 };

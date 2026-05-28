@@ -27,10 +27,10 @@ describe("ParagraphProperties", () => {
       });
       const tree = new Formatter().format(properties, {
         file: {
-          Numbering: {
+          numbering: {
             createConcreteNumberingInstance: (_: string, __: number) => undefined,
           },
-        } as File,
+        } as unknown as File,
         stack: [],
         viewWrapper: new DocumentWrapper({ background: {} }),
       });

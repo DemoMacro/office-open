@@ -49,13 +49,11 @@ export interface DocumentFooter {
  */
 export class FooterWrapper implements ViewWrapper {
   private readonly footer: Footer;
-  private readonly relationships: Relationships;
+  public readonly relationships: Relationships;
+  public readonly media: Media;
 
-  public constructor(
-    private readonly media: Media,
-    referenceId: number,
-    initContent?: XmlComponent,
-  ) {
+  public constructor(media: Media, referenceId: number, initContent?: XmlComponent) {
+    this.media = media;
     this.footer = new Footer(referenceId, initContent);
     this.relationships = new Relationships();
   }
@@ -68,15 +66,7 @@ export class FooterWrapper implements ViewWrapper {
     this.footer.addChildElement(childElement);
   }
 
-  public get View(): Footer {
+  public get view(): Footer {
     return this.footer;
-  }
-
-  public get Relationships(): Relationships {
-    return this.relationships;
-  }
-
-  public get Media(): Media {
-    return this.media;
   }
 }

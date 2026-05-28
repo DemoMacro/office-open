@@ -1,10 +1,4 @@
-import {
-  createOutline,
-  PresetDash,
-  LineEndType,
-  LineEndWidth,
-  LineEndLength,
-} from "@office-open/core/drawingml";
+import { createOutline, PresetDash, LineEndType, LineEndWidth } from "@office-open/core/drawingml";
 import type {
   OutlineOptions as CoreOutlineOptions,
   LineEndOptions as CoreLineEndOptions,
@@ -21,34 +15,34 @@ export interface OutlineOptions {
 
 export type { CoreOutlineOptions as OutlineOptionsCore };
 
-const DASH_STYLE_MAP: Record<string, keyof typeof PresetDash> = {
-  solid: "SOLID",
-  dash: "DASH",
-  dashDot: "DASH_DOT",
-  lgDash: "LG_DASH",
-  sysDot: "SYS_DOT",
-  sysDash: "SYS_DASH",
+const DASH_STYLE_MAP: Record<string, (typeof PresetDash)[keyof typeof PresetDash]> = {
+  solid: "solid",
+  dash: "dash",
+  dashDot: "dashDot",
+  lgDash: "lgDash",
+  sysDot: "sysDot",
+  sysDash: "sysDash",
 };
 
-const ARROWHEAD_MAP: Record<string, keyof typeof LineEndType> = {
-  triangle: "TRIANGLE",
-  stealth: "STEALTH",
-  diamond: "DIAMOND",
-  oval: "OVAL",
-  open: "ARROW",
+const ARROWHEAD_MAP: Record<string, (typeof LineEndType)[keyof typeof LineEndType]> = {
+  triangle: "triangle",
+  stealth: "stealth",
+  diamond: "diamond",
+  oval: "oval",
+  open: "arrow",
 };
 
-const ARROWHEAD_SIZE_MAP: Record<string, keyof typeof LineEndWidth> = {
-  sm: "SMALL",
-  med: "MEDIUM",
-  lg: "LARGE",
+const ARROWHEAD_SIZE_MAP: Record<string, (typeof LineEndWidth)[keyof typeof LineEndWidth]> = {
+  sm: "small",
+  med: "medium",
+  lg: "large",
 };
 
 function toCoreLineEnd(type: string, width?: string, length?: string): CoreLineEndOptions {
   return {
-    type: ARROWHEAD_MAP[type] ?? "TRIANGLE",
-    ...(width ? { width: ARROWHEAD_SIZE_MAP[width] as keyof typeof LineEndWidth } : {}),
-    ...(length ? { length: ARROWHEAD_SIZE_MAP[length] as keyof typeof LineEndLength } : {}),
+    type: ARROWHEAD_MAP[type] ?? "triangle",
+    ...(width ? { width: ARROWHEAD_SIZE_MAP[width] } : {}),
+    ...(length ? { length: ARROWHEAD_SIZE_MAP[length] } : {}),
   };
 }
 
@@ -70,7 +64,7 @@ export const createOutlineCompat = (
       ? { type: "solidFill" as const, color: { value: options.color.replace("#", "") } }
       : { type: "noFill" as const }),
     ...(options.dashStyle && {
-      dash: DASH_STYLE_MAP[options.dashStyle] ?? "SOLID",
+      dash: DASH_STYLE_MAP[options.dashStyle] ?? "solid",
     }),
     ...(arrowheads?.endType
       ? { headEnd: toCoreLineEnd(arrowheads.endType, arrowheads.width, arrowheads.length) }

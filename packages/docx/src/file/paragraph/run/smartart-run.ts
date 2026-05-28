@@ -111,7 +111,7 @@ export class SmartArtRun extends Run {
       color: colorId,
     };
 
-    context.file.SmartArts.addSmartArt(this.smartArtKey, smartArtData);
+    context.file.smartArts.addSmartArt(this.smartArtKey, smartArtData);
 
     return super.prepForXml(context);
   }

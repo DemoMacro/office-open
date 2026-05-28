@@ -150,7 +150,7 @@ export const buildFill = (options: FillOptions): XmlComponent => {
             shade: { angle: options.angle * 60000, scaled: options.scaled ?? true },
           }),
         ...(options.path && {
-          shade: { path: options.path.toUpperCase() as "SHAPE" | "CIRCLE" | "RECT" },
+          shade: { path: options.path as "shape" | "circle" | "rect" },
         }),
       });
     case "blip": {

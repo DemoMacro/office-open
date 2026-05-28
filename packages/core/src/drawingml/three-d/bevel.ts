@@ -36,7 +36,7 @@ export interface BevelOptions {
   /** Bevel height in EMUs (default 76200) */
   readonly h?: number;
   /** Bevel preset type */
-  readonly prst?: keyof typeof BevelPresetType;
+  readonly prst?: (typeof BevelPresetType)[keyof typeof BevelPresetType];
 }
 
 /**
@@ -66,7 +66,7 @@ export const createBevel = (options?: BevelOptions) => {
     attributes.h = { key: "h", value: options.h };
   }
   if (options.prst !== undefined) {
-    attributes.prst = { key: "prst", value: BevelPresetType[options.prst] };
+    attributes.prst = { key: "prst", value: options.prst };
   }
 
   return new BuilderElement({
@@ -93,7 +93,7 @@ export const createBottomBevel = (options?: BevelOptions) => {
     attributes.h = { key: "h", value: options.h };
   }
   if (options.prst !== undefined) {
-    attributes.prst = { key: "prst", value: BevelPresetType[options.prst] };
+    attributes.prst = { key: "prst", value: options.prst };
   }
 
   return new BuilderElement({

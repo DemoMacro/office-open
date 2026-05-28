@@ -60,14 +60,14 @@ export class SubDoc extends XmlComponent implements FileChild {
         ? new TextEncoder().encode(this.options.data)
         : this.options.data;
 
-    context.viewWrapper.Relationships.addRelationship(relId, SUBDOC_RELATIONSHIP_TYPE, partPath);
+    context.viewWrapper.relationships.addRelationship(relId, SUBDOC_RELATIONSHIP_TYPE, partPath);
 
-    context.file.SubDocs.addSubDoc(relId, {
+    context.file.subDocs.addSubDoc(relId, {
       data,
       path: partPath,
     });
 
-    context.file.ContentTypes.addSubDoc(`/word/${partPath}`);
+    context.file.contentTypes.addSubDoc(`/word/${partPath}`);
 
     return super.prepForXml(context) as IXmlableObject;
   }

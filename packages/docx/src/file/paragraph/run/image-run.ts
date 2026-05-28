@@ -140,10 +140,10 @@ export class ImageRun extends Run {
   }
 
   public prepForXml(context: Context): IXmlableObject | undefined {
-    context.file.Media.addImage(this.imageData.fileName, this.imageData);
+    context.file.media.addImage(this.imageData.fileName, this.imageData);
 
     if (this.imageData.type === "svg") {
-      context.file.Media.addImage(this.imageData.fallback.fileName, this.imageData.fallback);
+      context.file.media.addImage(this.imageData.fallback.fileName, this.imageData.fallback);
     }
 
     return super.prepForXml(context);

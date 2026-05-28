@@ -50,7 +50,7 @@ export class Media {
     this.map.set(key, mediaData);
   }
 
-  public get Array(): readonly IMediaData[] {
+  public get array(): readonly IMediaData[] {
     return [...this.map.values()];
   }
 }

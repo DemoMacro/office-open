@@ -349,7 +349,7 @@ export class Numbering extends XmlComponent {
    *
    * @returns An array of all concrete numbering instances
    */
-  public get ConcreteNumbering(): readonly ConcreteNumbering[] {
+  public get concreteNumbering(): readonly ConcreteNumbering[] {
     return [...this.concreteNumberingMap.values()];
   }
 
@@ -358,7 +358,7 @@ export class Numbering extends XmlComponent {
    *
    * @returns An array of all numbering reference configurations
    */
-  public get ReferenceConfig(): readonly Record<string, any>[] {
+  public get referenceConfig(): readonly Record<string, any>[] {
     return [...this.referenceConfigMap.values()];
   }
 }

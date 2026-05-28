@@ -391,7 +391,7 @@ describe("createEffectDag", () => {
   it("should create an effectDag with multiple effects in XSD order", () => {
     const tree = new Formatter().format(
       createEffectDag({
-        type: "sib",
+        type: "sibling",
         blur: { radius: 40000 },
         glow: { radius: 50800, color: { value: "FF0000" } },
         outerShadow: { color: { value: "000000" } },
@@ -423,7 +423,7 @@ describe("createEffectDag", () => {
         type: "tree",
         containers: [
           {
-            type: "sib",
+            type: "sibling",
             glow: { color: { value: "FF0000" } },
             containers: [
               {

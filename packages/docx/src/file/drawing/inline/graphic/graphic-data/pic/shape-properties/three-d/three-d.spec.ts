@@ -14,7 +14,7 @@ describe("3D Shape Properties", () => {
     });
 
     it("should create bevel with all options", () => {
-      const tree = new Formatter().format(createBevel({ w: 76200, h: 152400, prst: "CIRCLE" }));
+      const tree = new Formatter().format(createBevel({ w: 76200, h: 152400, prst: "circle" }));
       expect(tree).to.deep.equal({
         "a:bevelT": {
           _attr: {
@@ -27,7 +27,7 @@ describe("3D Shape Properties", () => {
     });
 
     it("should create bottom bevel", () => {
-      const tree = new Formatter().format(createBottomBevel({ w: 50800, prst: "ANGLE" }));
+      const tree = new Formatter().format(createBottomBevel({ w: 50800, prst: "angle" }));
       expect(tree).to.deep.equal({
         "a:bevelB": {
           _attr: {
@@ -52,7 +52,7 @@ describe("3D Shape Properties", () => {
         createShape3D({
           z: 76200,
           extrusionH: 38100,
-          prstMaterial: "METAL",
+          prstMaterial: "metal",
         }),
       );
       expect(tree).to.deep.equal({
@@ -69,8 +69,8 @@ describe("3D Shape Properties", () => {
     it("should create sp3d with bevels and colors", () => {
       const tree = new Formatter().format(
         createShape3D({
-          bevelT: { w: 76200, h: 76200, prst: "CIRCLE" },
-          bevelB: { w: 50800, h: 50800, prst: "ANGLE" },
+          bevelT: { w: 76200, h: 76200, prst: "circle" },
+          bevelB: { w: 50800, h: 50800, prst: "angle" },
           extrusionColor: { value: "FF0000" },
           contourColor: { value: "0000FF" },
           contourW: 25400,
@@ -126,7 +126,7 @@ describe("3D Shape Properties", () => {
     it("should create sp3d with only bevels", () => {
       const tree = new Formatter().format(
         createShape3D({
-          bevelT: { prst: "CONVEX" },
+          bevelT: { prst: "convex" },
         }),
       );
       expect(tree).to.deep.equal({

@@ -48,18 +48,18 @@ export class Compiler {
 
     const mapping: XmlifyedFileMapping = {
       AppProperties: {
-        data: xml(this.formatter.format(file.AppProperties, context), { declaration }),
+        data: xml(this.formatter.format(file.appProperties, context), { declaration }),
         path: "docProps/app.xml",
       },
       Properties: {
-        data: xml(this.formatter.format(file.CoreProperties, context), {
+        data: xml(this.formatter.format(file.coreProperties, context), {
           declaration,
           indent,
         }),
         path: "docProps/core.xml",
       },
       FileRelationships: {
-        data: xml(this.formatter.format(file.FileRelationships, context), {
+        data: xml(this.formatter.format(file.fileRelationships, context), {
           declaration: false,
         }),
         path: "_rels/.rels",
@@ -68,7 +68,7 @@ export class Compiler {
 
     // Static singletons (ImportedXmlComponent.toXml uses sourceXml directly)
     // Themes (one per master)
-    const themes = file.Themes;
+    const themes = file.themes;
     for (let ti = 0; ti < themes.length; ti++) {
       mapping[`Theme${ti}`] = {
         data: this.formatter.formatToXml(themes[ti], context, declaration),
@@ -77,23 +77,23 @@ export class Compiler {
     }
 
     mapping["TableStyles"] = {
-      data: this.formatter.formatToXml(file.TableStyles, context, declaration),
+      data: this.formatter.formatToXml(file.tableStyles, context, declaration),
       path: "ppt/tableStyles.xml",
     };
 
     mapping["PresProps"] = {
-      data: this.formatter.formatToXml(file.PresProps, context, declaration),
+      data: this.formatter.formatToXml(file.presProps, context, declaration),
       path: "ppt/presProps.xml",
     };
 
     mapping["ViewProps"] = {
-      data: this.formatter.formatToXml(file.ViewProps, context, declaration),
+      data: this.formatter.formatToXml(file.viewProps, context, declaration),
       path: "ppt/viewProps.xml",
     };
 
     // Slide Masters
-    const masters = file.SlideMasters;
-    const masterRels = file.SlideMasterRelsArray;
+    const masters = file.slideMasters;
+    const masterRels = file.slideMasterRelsArray;
     for (let mi = 0; mi < masters.length; mi++) {
       mapping[`SlideMaster${mi}`] = {
         data: this.formatter.formatToXml(masters[mi], context, declaration),
@@ -108,8 +108,8 @@ export class Compiler {
     }
 
     // Slide Layouts
-    const layouts = file.AllLayouts;
-    const layoutRels = file.AllLayoutRelsArray;
+    const layouts = file.allLayouts;
+    const layoutRels = file.allLayoutRelsArray;
     for (let li = 0; li < layouts.length; li++) {
       mapping[`SlideLayout${li}`] = {
         data: this.formatter.formatToXml(layouts[li].layout, context, declaration),
@@ -125,18 +125,18 @@ export class Compiler {
 
     // Register layout content types
     for (let i = 0; i < layouts.length; i++) {
-      file.ContentTypes.addSlideLayout(i + 1);
+      file.contentTypes.addSlideLayout(i + 1);
     }
     // Register master + theme content types
     for (let mi = 0; mi < masters.length; mi++) {
-      file.ContentTypes.addSlideMaster(mi + 1);
-      file.ContentTypes.addTheme(mi + 1);
+      file.contentTypes.addSlideMaster(mi + 1);
+      file.contentTypes.addTheme(mi + 1);
     }
 
     // Notes Master — only when notes slides exist
-    if (file.NotesSlides.length > 0) {
-      file.PresentationWrapper.Relationships.addRelationship(
-        file.PresentationWrapper.Relationships.RelationshipCount + 1,
+    if (file.notesSlides.length > 0) {
+      file.presentationWrapper.relationships.addRelationship(
+        file.presentationWrapper.relationships.relationshipCount + 1,
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster",
         "notesMasters/notesMaster1.xml",
       );
@@ -148,7 +148,7 @@ export class Compiler {
         path: "ppt/notesMasters/notesMaster1.xml",
       };
       mapping["NotesMasterRelationships"] = {
-        data: xml(this.formatter.format(file.NotesMasterRelationships, context), {
+        data: xml(this.formatter.format(file.notesMasterRelationships, context), {
           declaration: false,
         }),
         path: "ppt/notesMasters/_rels/notesMaster1.xml.rels",
@@ -156,9 +156,9 @@ export class Compiler {
     }
 
     // Comment Authors — only when comments exist
-    if (file.CommentAuthorList) {
-      file.PresentationWrapper.Relationships.addRelationship(
-        file.PresentationWrapper.Relationships.RelationshipCount + 1,
+    if (file.commentAuthorList) {
+      file.presentationWrapper.relationships.addRelationship(
+        file.presentationWrapper.relationships.relationshipCount + 1,
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/commentAuthors",
         "commentAuthors.xml",
       );
@@ -166,16 +166,16 @@ export class Compiler {
 
     // Presentation + its relationships
     const presentationXml = this.formatter.formatToXml(
-      file.PresentationWrapper.View,
+      file.presentationWrapper.view,
       context,
       declaration,
     );
     let currentImageCount = 0;
 
-    const mediaData = getReferencedMedia(presentationXml, file.Media.Array);
-    const presImageOffset = file.PresentationWrapper.Relationships.RelationshipCount + 1;
+    const mediaData = getReferencedMedia(presentationXml, file.media.array);
+    const presImageOffset = file.presentationWrapper.relationships.relationshipCount + 1;
     mediaData.forEach((image, idx) => {
-      file.PresentationWrapper.Relationships.addRelationship(
+      file.presentationWrapper.relationships.addRelationship(
         presImageOffset + idx,
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
         `../media/${image.fileName}`,
@@ -195,21 +195,21 @@ export class Compiler {
     };
 
     mapping["PresentationRelationships"] = {
-      data: xml(this.formatter.format(file.PresentationWrapper.Relationships, context), {
+      data: xml(this.formatter.format(file.presentationWrapper.relationships, context), {
         declaration: false,
       }),
       path: "ppt/_rels/presentation.xml.rels",
     };
 
     // Slides — format BEFORE ContentTypes so ChartFrame.prepForXml() populates Charts
-    for (let i = 0; i < file.Slides.length; i++) {
-      const slideWrapper = file.SlideWrappers[i];
-      const slideXml = this.formatter.formatToXml(slideWrapper.View, context, declaration);
+    for (let i = 0; i < file.slides.length; i++) {
+      const slideWrapper = file.slideWrappers[i];
+      const slideXml = this.formatter.formatToXml(slideWrapper.view, context, declaration);
 
-      const slideMediaData = getReferencedMedia(slideXml, file.Media.Array);
-      const slideImageOffset = slideWrapper.Relationships.RelationshipCount + 1;
+      const slideMediaData = getReferencedMedia(slideXml, file.media.array);
+      const slideImageOffset = slideWrapper.relationships.relationshipCount + 1;
       slideMediaData.forEach((image, idx) => {
-        slideWrapper.Relationships.addRelationship(
+        slideWrapper.relationships.addRelationship(
           slideImageOffset + idx,
           "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
           `../media/${image.fileName}`,
@@ -224,8 +224,8 @@ export class Compiler {
         // Chart placeholder replacement
         const slideChartKeys = collectPlaceholderKeys(replacedSlideXml, "chart:");
         if (slideChartKeys.length > 0) {
-          const slideChartOffset = slideWrapper.Relationships.RelationshipCount + 1;
-          const slideCharts = file.Charts.Array.filter((c) => slideChartKeys.includes(c.key));
+          const slideChartOffset = slideWrapper.relationships.relationshipCount + 1;
+          const slideCharts = file.charts.array.filter((c) => slideChartKeys.includes(c.key));
 
           replacedSlideXml = replaceChartPlaceholders(
             replacedSlideXml,
@@ -234,8 +234,8 @@ export class Compiler {
           );
 
           slideCharts.forEach((chartData, ci) => {
-            const globalIndex = file.Charts.Array.indexOf(chartData);
-            slideWrapper.Relationships.addRelationship(
+            const globalIndex = file.charts.array.indexOf(chartData);
+            slideWrapper.relationships.addRelationship(
               slideChartOffset + ci,
               "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart",
               `../charts/chart${globalIndex + 1}.xml`,
@@ -246,10 +246,10 @@ export class Compiler {
         // SmartArt placeholder replacement
         const slideSmartArtKeys = collectPlaceholderKeys(replacedSlideXml, "smartart:");
         if (slideSmartArtKeys.length > 0) {
-          const slideSmartArts = file.SmartArts.Array.filter((s) =>
+          const slideSmartArts = file.smartArts.array.filter((s) =>
             slideSmartArtKeys.includes(s.key),
           );
-          const saOffset = slideWrapper.Relationships.RelationshipCount + 1;
+          const saOffset = slideWrapper.relationships.relationshipCount + 1;
 
           replacedSlideXml = replaceSmartArtPlaceholders(
             replacedSlideXml,
@@ -257,11 +257,11 @@ export class Compiler {
             saOffset,
           );
 
-          const saGlobalStart = file.SmartArts.Array.indexOf(slideSmartArts[0]);
+          const saGlobalStart = file.smartArts.array.indexOf(slideSmartArts[0]);
           addSmartArtRelationships(
             slideSmartArts.map((s) => s.key),
             (id, type, target) => {
-              slideWrapper.Relationships.addRelationship(id, type, target);
+              slideWrapper.relationships.addRelationship(id, type, target);
             },
             saOffset,
             saGlobalStart,
@@ -276,8 +276,8 @@ export class Compiler {
         // Hyperlink placeholder replacement
         const slideHlinkKeys = collectPlaceholderKeys(replacedSlideXml, "hlink:");
         if (slideHlinkKeys.length > 0) {
-          const slideHlinks = file.Hyperlinks.Array.filter((h) => slideHlinkKeys.includes(h.key));
-          const hlinkOffset = slideWrapper.Relationships.RelationshipCount + 1;
+          const slideHlinks = file.hyperlinks.array.filter((h) => slideHlinkKeys.includes(h.key));
+          const hlinkOffset = slideWrapper.relationships.relationshipCount + 1;
 
           replacedSlideXml = replaceHyperlinkPlaceholders(
             replacedSlideXml,
@@ -286,7 +286,7 @@ export class Compiler {
           );
 
           slideHlinks.forEach((hlink, hi) => {
-            slideWrapper.Relationships.addRelationship(
+            slideWrapper.relationships.addRelationship(
               hlinkOffset + hi,
               "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
               hlink.url,
@@ -296,11 +296,11 @@ export class Compiler {
         }
 
         // Media (video/audio) placeholder replacement
-        const slideMediaRefs = getMediaRefs(replacedSlideXml, file.Media.Array);
-        const slideVideoRefs = getVideoRefs(replacedSlideXml, file.Media.Array);
+        const slideMediaRefs = getMediaRefs(replacedSlideXml, file.media.array);
+        const slideVideoRefs = getVideoRefs(replacedSlideXml, file.media.array);
 
         if (slideMediaRefs.length > 0 || slideVideoRefs.length > 0) {
-          const mediaOffset = slideWrapper.Relationships.RelationshipCount + 1;
+          const mediaOffset = slideWrapper.relationships.relationshipCount + 1;
           const videoOffset = mediaOffset + slideMediaRefs.length;
 
           replacedSlideXml = replaceMediaPlaceholders(
@@ -316,7 +316,7 @@ export class Compiler {
           );
 
           slideMediaRefs.forEach((media, mi) => {
-            slideWrapper.Relationships.addRelationship(
+            slideWrapper.relationships.addRelationship(
               mediaOffset + mi,
               "http://schemas.microsoft.com/office/2007/relationships/media",
               `../media/${media.fileName}`,
@@ -324,7 +324,7 @@ export class Compiler {
           });
 
           slideVideoRefs.forEach((video, vi) => {
-            slideWrapper.Relationships.addRelationship(
+            slideWrapper.relationships.addRelationship(
               videoOffset + vi,
               "http://schemas.openxmlformats.org/officeDocument/2006/relationships/video",
               `../media/${video.fileName}`,
@@ -339,27 +339,27 @@ export class Compiler {
       };
 
       // Add comment relationship for this slide
-      const slideComments = file.SlideCommentLists[i];
+      const slideComments = file.slideCommentLists[i];
       if (slideComments) {
-        slideWrapper.Relationships.addRelationship(
-          slideWrapper.Relationships.RelationshipCount + 1,
+        slideWrapper.relationships.addRelationship(
+          slideWrapper.relationships.relationshipCount + 1,
           "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
           `../comments/comment${i + 1}.xml`,
         );
       }
 
       // Add notesSlide relationship for this slide (if it has notes)
-      const notesSlideIndex = file.NotesSlideIndexMap.get(i);
+      const notesSlideIndex = file.notesSlideIndexMap.get(i);
       if (notesSlideIndex !== undefined) {
-        slideWrapper.Relationships.addRelationship(
-          slideWrapper.Relationships.RelationshipCount + 1,
+        slideWrapper.relationships.addRelationship(
+          slideWrapper.relationships.relationshipCount + 1,
           "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide",
           `../notesSlides/notesSlide${notesSlideIndex + 1}.xml`,
         );
       }
 
       mapping[`SlideRelationships${i}`] = {
-        data: xml(this.formatter.format(slideWrapper.Relationships, context), {
+        data: xml(this.formatter.format(slideWrapper.relationships, context), {
           declaration: false,
         }),
         path: `ppt/slides/_rels/slide${i + 1}.xml.rels`,
@@ -367,18 +367,18 @@ export class Compiler {
     }
 
     // ContentTypes — AFTER slides so Charts.Array is populated
-    file.Charts.Array.forEach((_, i) => {
-      file.ContentTypes.addChart(i + 1);
+    file.charts.array.forEach((_, i) => {
+      file.contentTypes.addChart(i + 1);
     });
-    file.SmartArts.Array.forEach((_, i) => {
-      file.ContentTypes.addDiagramData(i + 1);
-      file.ContentTypes.addDiagramLayout(i + 1);
-      file.ContentTypes.addDiagramStyle(i + 1);
-      file.ContentTypes.addDiagramColors(i + 1);
-      file.ContentTypes.addDiagramDrawing(i + 1);
+    file.smartArts.array.forEach((_, i) => {
+      file.contentTypes.addDiagramData(i + 1);
+      file.contentTypes.addDiagramLayout(i + 1);
+      file.contentTypes.addDiagramStyle(i + 1);
+      file.contentTypes.addDiagramColors(i + 1);
+      file.contentTypes.addDiagramDrawing(i + 1);
     });
     mapping["ContentTypes"] = {
-      data: xml(this.formatter.format(file.ContentTypes, context), {
+      data: xml(this.formatter.format(file.contentTypes, context), {
         declaration: false,
       }),
       path: "[Content_Types].xml",
@@ -398,8 +398,8 @@ export class Compiler {
     }
 
     // Add chart parts
-    for (let i = 0; i < file.Charts.Array.length; i++) {
-      const chartData = file.Charts.Array[i];
+    for (let i = 0; i < file.charts.array.length; i++) {
+      const chartData = file.charts.array[i];
       files[`ppt/charts/chart${i + 1}.xml`] = textToUint8Array(
         xml(this.formatter.format(chartData.chartSpace, context), {
           declaration,
@@ -421,8 +421,8 @@ export class Compiler {
     }
 
     // Add SmartArt diagram parts
-    for (let i = 0; i < file.SmartArts.Array.length; i++) {
-      const smartArtData = file.SmartArts.Array[i];
+    for (let i = 0; i < file.smartArts.array.length; i++) {
+      const smartArtData = file.smartArts.array[i];
       files[`ppt/diagrams/data${i + 1}.xml`] = textToUint8Array(
         xml(this.formatter.format(smartArtData.dataModel, context), {
           declaration,
@@ -440,8 +440,8 @@ export class Compiler {
     }
 
     // Add notes slides
-    for (let i = 0; i < file.NotesSlides.length; i++) {
-      const notesSlide = file.NotesSlides[i];
+    for (let i = 0; i < file.notesSlides.length; i++) {
+      const notesSlide = file.notesSlides[i];
       files[`ppt/notesSlides/notesSlide${i + 1}.xml`] = textToUint8Array(
         xml(this.formatter.format(notesSlide, context), {
           declaration,
@@ -463,9 +463,9 @@ export class Compiler {
     }
 
     // Add comment authors
-    if (file.CommentAuthorList) {
+    if (file.commentAuthorList) {
       files["ppt/commentAuthors.xml"] = textToUint8Array(
-        xml(this.formatter.format(file.CommentAuthorList, context), {
+        xml(this.formatter.format(file.commentAuthorList, context), {
           declaration,
           indent,
         }),
@@ -473,7 +473,7 @@ export class Compiler {
     }
 
     // Add slide comments
-    const commentLists = file.SlideCommentLists;
+    const commentLists = file.slideCommentLists;
     for (let i = 0; i < commentLists.length; i++) {
       if (commentLists[i]) {
         files[`ppt/comments/comment${i + 1}.xml`] = textToUint8Array(
@@ -486,7 +486,7 @@ export class Compiler {
     }
 
     // Add media files (STORE — already-compressed formats)
-    for (const image of file.Media.Array) {
+    for (const image of file.media.array) {
       files[`ppt/media/${image.fileName}`] = [image.data, { level: ZIP_STORED_LEVEL }];
       if (image.type === "svg" && "fallback" in image) {
         const fallback = (

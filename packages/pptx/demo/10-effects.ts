@@ -13,7 +13,7 @@ const pres = new Presentation({
           y: 30,
           width: 500,
           height: 60,
-          text: "Shape Effects Demo",
+          textBody: { text: "Shape Effects Demo" },
           fill: "4472C4",
         }),
         new Shape({
@@ -21,7 +21,7 @@ const pres = new Presentation({
           y: 120,
           width: 200,
           height: 120,
-          text: "Outer Shadow",
+          textBody: { text: "Outer Shadow" },
           fill: "ED7D31",
           effects: {
             outerShadow: {
@@ -38,7 +38,7 @@ const pres = new Presentation({
           y: 120,
           width: 200,
           height: 120,
-          text: "Glow",
+          textBody: { text: "Glow" },
           fill: "70AD47",
           effects: {
             glow: { radius: 152400, color: "92D050", alpha: 60 },
@@ -49,7 +49,7 @@ const pres = new Presentation({
           y: 120,
           width: 200,
           height: 120,
-          text: "Reflection",
+          textBody: { text: "Reflection" },
           fill: "FFC000",
           effects: {
             reflection: {
@@ -66,7 +66,7 @@ const pres = new Presentation({
           y: 280,
           width: 200,
           height: 120,
-          text: "Inner Shadow",
+          textBody: { text: "Inner Shadow" },
           fill: "5B9BD5",
           effects: {
             innerShadow: {
@@ -83,7 +83,7 @@ const pres = new Presentation({
           y: 280,
           width: 200,
           height: 120,
-          text: "Soft Edge",
+          textBody: { text: "Soft Edge" },
           fill: "BF8F00",
           effects: {
             softEdge: { radius: 50800 },
@@ -94,7 +94,7 @@ const pres = new Presentation({
           y: 280,
           width: 200,
           height: 120,
-          text: "Shadow + Glow",
+          textBody: { text: "Shadow + Glow" },
           fill: "7030A0",
           effects: {
             outerShadow: {
@@ -117,7 +117,7 @@ const pres = new Presentation({
           y: 30,
           width: 500,
           height: 50,
-          text: "3D Rotation & Extrusion",
+          textBody: { text: "3D Rotation & Extrusion" },
           fill: "4472C4",
         }),
         new Shape({
@@ -125,7 +125,7 @@ const pres = new Presentation({
           y: 120,
           width: 200,
           height: 200,
-          text: "X=30 Y=0",
+          textBody: { text: "X=30 Y=0" },
           fill: "4472C4",
           effects: { rotation3D: { x: 30 } },
         }),
@@ -134,7 +134,7 @@ const pres = new Presentation({
           y: 120,
           width: 200,
           height: 200,
-          text: "X=0 Y=45",
+          textBody: { text: "X=0 Y=45" },
           fill: "ED7D31",
           effects: { rotation3D: { y: 45 } },
         }),
@@ -143,7 +143,7 @@ const pres = new Presentation({
           y: 120,
           width: 200,
           height: 200,
-          text: "X=20 Y=30 Z=10",
+          textBody: { text: "X=20 Y=30 Z=10" },
           fill: "70AD47",
           effects: { rotation3D: { x: 20, y: 30, z: 10, perspective: 500 } },
         }),
@@ -152,7 +152,7 @@ const pres = new Presentation({
           y: 370,
           width: 200,
           height: 150,
-          text: "Extruded",
+          textBody: { text: "Extruded" },
           fill: "FFC000",
           effects: {
             rotation3D: { x: 25, y: 15 },
@@ -165,7 +165,7 @@ const pres = new Presentation({
           y: 370,
           width: 200,
           height: 150,
-          text: "Bevel Top",
+          textBody: { text: "Bevel Top" },
           fill: "7030A0",
           effects: {
             rotation3D: { x: 20 },

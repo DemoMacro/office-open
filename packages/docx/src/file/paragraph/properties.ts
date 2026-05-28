@@ -828,7 +828,7 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
   public prepForXml(context: Context): IXmlableObject | undefined {
     if (!(context.viewWrapper instanceof FontWrapper)) {
       for (const reference of this.numberingReferences) {
-        context.file.Numbering.createConcreteNumberingInstance(
+        context.file.numbering.createConcreteNumberingInstance(
           reference.reference,
           reference.instance,
         );

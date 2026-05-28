@@ -51,7 +51,7 @@ describe("createFillOverlayEffect", () => {
       createFillOverlayEffect({
         blend: "over",
         patternFill: {
-          pattern: "pct50",
+          pattern: "percent50",
           foregroundColor: { value: "000000" },
           backgroundColor: { value: "FFFFFF" },
         },

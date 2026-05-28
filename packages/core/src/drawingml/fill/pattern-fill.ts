@@ -10,6 +10,7 @@
  */
 import { BuilderElement } from "../../xml-components";
 import type { XmlComponent } from "../../xml-components";
+import { xsdPattern } from "../../xsd-mappings";
 import type { SolidFillOptions } from "../color/solid-fill";
 import { createColorElement } from "../color/solid-fill";
 
@@ -29,97 +30,97 @@ import { createColorElement } from "../color/solid-fill";
  */
 export const PresetPattern = {
   /** 5% pattern */
-  PCT5: "pct5",
+  PCT5: "percent5",
   /** 10% pattern */
-  PCT10: "pct10",
+  PCT10: "percent10",
   /** 20% pattern */
-  PCT20: "pct20",
+  PCT20: "percent20",
   /** 25% pattern */
-  PCT25: "pct25",
+  PCT25: "percent25",
   /** 30% pattern */
-  PCT30: "pct30",
+  PCT30: "percent30",
   /** 40% pattern */
-  PCT40: "pct40",
+  PCT40: "percent40",
   /** 50% pattern */
-  PCT50: "pct50",
+  PCT50: "percent50",
   /** 60% pattern */
-  PCT60: "pct60",
+  PCT60: "percent60",
   /** 70% pattern */
-  PCT70: "pct70",
+  PCT70: "percent70",
   /** 75% pattern */
-  PCT75: "pct75",
+  PCT75: "percent75",
   /** 80% pattern */
-  PCT80: "pct80",
+  PCT80: "percent80",
   /** 90% pattern */
-  PCT90: "pct90",
+  PCT90: "percent90",
   /** Horizontal lines */
-  HORZ: "horz",
+  HORZ: "horizontal",
   /** Vertical lines */
-  VERT: "vert",
+  VERT: "vertical",
   /** Light horizontal lines */
-  LT_HORZ: "ltHorz",
+  LT_HORZ: "lightHorizontal",
   /** Light vertical lines */
-  LT_VERT: "ltVert",
+  LT_VERT: "lightVertical",
   /** Dark horizontal lines */
-  DK_HORZ: "dkHorz",
+  DK_HORZ: "darkHorizontal",
   /** Dark vertical lines */
-  DK_VERT: "dkVert",
+  DK_VERT: "darkVertical",
   /** Narrow horizontal lines */
-  NAR_HORZ: "narHorz",
+  NAR_HORZ: "narrowHorizontal",
   /** Narrow vertical lines */
-  NAR_VERT: "narVert",
+  NAR_VERT: "narrowVertical",
   /** Dashed horizontal lines */
-  DASH_HORZ: "dashHorz",
+  DASH_HORZ: "dashedHorizontal",
   /** Dashed vertical lines */
-  DASH_VERT: "dashVert",
+  DASH_VERT: "dashedVertical",
   /** Cross pattern (+) */
   CROSS: "cross",
   /** Downward diagonal lines (\) */
-  DN_DIAG: "dnDiag",
+  DN_DIAG: "downDiagonal",
   /** Upward diagonal lines (/) */
-  UP_DIAG: "upDiag",
+  UP_DIAG: "upDiagonal",
   /** Light downward diagonal lines */
-  LT_DN_DIAG: "ltDnDiag",
+  LT_DN_DIAG: "lightDownDiagonal",
   /** Light upward diagonal lines */
-  LT_UP_DIAG: "ltUpDiag",
+  LT_UP_DIAG: "lightUpDiagonal",
   /** Dark downward diagonal lines */
-  DK_DN_DIAG: "dkDnDiag",
+  DK_DN_DIAG: "darkDownDiagonal",
   /** Dark upward diagonal lines */
-  DK_UP_DIAG: "dkUpDiag",
+  DK_UP_DIAG: "darkUpDiagonal",
   /** Wide downward diagonal lines */
-  WD_DN_DIAG: "wdDnDiag",
+  WD_DN_DIAG: "wideDownDiagonal",
   /** Wide upward diagonal lines */
-  WD_UP_DIAG: "wdUpDiag",
+  WD_UP_DIAG: "wideUpDiagonal",
   /** Dashed downward diagonal lines */
-  DASH_DN_DIAG: "dashDnDiag",
+  DASH_DN_DIAG: "dashedDownDiagonal",
   /** Dashed upward diagonal lines */
-  DASH_UP_DIAG: "dashUpDiag",
+  DASH_UP_DIAG: "dashedUpDiagonal",
   /** Diagonal cross pattern (X) */
-  DIAG_CROSS: "diagCross",
+  DIAG_CROSS: "diagonalCross",
   /** Small checkerboard */
-  SM_CHECK: "smCheck",
+  SM_CHECK: "smallChecker",
   /** Large checkerboard */
-  LG_CHECK: "lgCheck",
+  LG_CHECK: "largeChecker",
   /** Small grid */
-  SM_GRID: "smGrid",
+  SM_GRID: "smallGrid",
   /** Large grid */
-  LG_GRID: "lgGrid",
+  LG_GRID: "largeGrid",
   /** Dot grid */
   DOT_GRID: "dotGrid",
   /** Small confetti */
-  SM_CONFETTI: "smConfetti",
+  SM_CONFETTI: "smallConfetti",
   /** Large confetti */
-  LG_CONFETTI: "lgConfetti",
+  LG_CONFETTI: "largeConfetti",
   /** Horizontal brick pattern */
-  HORZ_BRICK: "horzBrick",
+  HORZ_BRICK: "horizontalBrick",
   /** Diagonal brick pattern */
-  DIAG_BRICK: "diagBrick",
+  DIAG_BRICK: "diagonalBrick",
   /** Solid diamond */
-  SOLID_DMND: "solidDmnd",
+  SOLID_DMND: "solidDiamond",
   /** Open diamond */
-  OPEN_DMND: "openDmnd",
+  OPEN_DMND: "openDiamond",
   /** Dotted diamond */
-  DOT_DMND: "dotDmnd",
+  DOT_DMND: "dottedDiamond",
   /** Plaid pattern */
   PLAID: "plaid",
   /** Sphere pattern */
@@ -218,7 +219,7 @@ export const createPatternFill = (options: PatternFillOptions): XmlComponent => 
 
   return new BuilderElement<{ readonly prst?: string }>({
     attributes: {
-      prst: { key: "prst", value: options.pattern },
+      prst: { key: "prst", value: xsdPattern.to(options.pattern) },
     },
     children,
     name: "a:pattFill",

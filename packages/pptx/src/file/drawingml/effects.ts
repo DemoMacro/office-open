@@ -1,3 +1,4 @@
+import { xsdRectAlignment } from "@office-open/core";
 import {
   createEffectList,
   createScene3D,
@@ -6,21 +7,20 @@ import {
   type Scene3DOptions,
   type Shape3DOptions,
   type BevelOptions,
-  PresetMaterialType,
 } from "@office-open/core/drawingml";
 
 export type EffectType = "outerShadow" | "innerShadow" | "glow" | "reflection" | "softEdge";
 
 export const ReflectionAlignment = {
-  TOP_LEFT: "tl",
-  TOP: "t",
-  TOP_RIGHT: "tr",
-  LEFT: "l",
-  CENTER: "ctr",
-  RIGHT: "r",
-  BOTTOM_LEFT: "bl",
-  BOTTOM: "b",
-  BOTTOM_RIGHT: "br",
+  TOP_LEFT: "topLeft",
+  TOP: "top",
+  TOP_RIGHT: "topRight",
+  LEFT: "left",
+  CENTER: "center",
+  RIGHT: "right",
+  BOTTOM_LEFT: "bottomLeft",
+  BOTTOM: "bottom",
+  BOTTOM_RIGHT: "bottomRight",
 } as const;
 
 export interface ShadowOptions {
@@ -51,7 +51,7 @@ export interface ReflectionOptions {
   readonly scaleY?: number;
   readonly skewX?: number;
   readonly skewY?: number;
-  readonly alignment?: keyof typeof ReflectionAlignment;
+  readonly alignment?: (typeof ReflectionAlignment)[keyof typeof ReflectionAlignment];
   readonly rotateWithShape?: boolean;
 }
 
@@ -162,7 +162,7 @@ function toReflection(opts: ReflectionOptions) {
   if (opts.scaleY !== undefined) result.scaleY = opts.scaleY * 1000;
   if (opts.skewX !== undefined) result.skewX = opts.skewX * 60000;
   if (opts.skewY !== undefined) result.skewY = opts.skewY * 60000;
-  if (opts.alignment !== undefined) result.alignment = ReflectionAlignment[opts.alignment];
+  if (opts.alignment !== undefined) result.alignment = xsdRectAlignment.to(opts.alignment);
   if (opts.rotateWithShape === false) result.rotWithShape = 0;
   return result;
 }
@@ -215,17 +215,6 @@ export function buildScene3D(options: EffectsOptions): ReturnType<typeof createS
   });
 }
 
-/** Map PPTX material API value to PresetMaterialType key. */
-const MATERIAL_KEY_MAP: Record<string, keyof typeof PresetMaterialType> = {
-  matte: "MATTE",
-  plastic: "PLASTIC",
-  metal: "METAL",
-  warmMatte: "WARM_MATTE",
-  softEdge: "SOFT_EDGE",
-  flat: "FLAT",
-  powder: "POWDER",
-};
-
 /** Map PPTX EffectsOptions to core Shape3DOptions, or null if not needed. */
 export function buildShape3D(options: EffectsOptions): ReturnType<typeof createShape3D> | null {
   if (!options.extrusionH && !options.bevelTop && !options.bevelBottom && !options.material)
@@ -235,13 +224,7 @@ export function buildShape3D(options: EffectsOptions): ReturnType<typeof createS
     ...(options.bevelTop ? { bevelT: toBevel(options.bevelTop) } : {}),
     ...(options.bevelBottom ? { bevelB: toBevel(options.bevelBottom) } : {}),
     ...(options.extrusionH !== undefined ? { extrusionH: options.extrusionH } : {}),
-    ...(options.material
-      ? {
-          prstMaterial:
-            MATERIAL_KEY_MAP[options.material] ??
-            (options.material as keyof typeof PresetMaterialType),
-        }
-      : {}),
+    ...(options.material ? { prstMaterial: options.material } : {}),
   };
 
   return createShape3D(shape3dOpts);

@@ -276,7 +276,7 @@ const doc = new Document({
               fill: {
                 type: "gradient",
                 options: {
-                  shade: { path: "CIRCLE" },
+                  shade: { path: "circle" },
                   stops: [
                     { color: { value: "FFFFFF" }, position: 0 },
                     { color: { value: "4472C4" }, position: 100000 },
@@ -353,9 +353,9 @@ const doc = new Document({
                 }),
               ],
               shape3d: {
-                bevelT: { prst: "CIRCLE", w: 76200, h: 76200 },
+                bevelT: { prst: "circle", w: 76200, h: 76200 },
                 extrusionColor: { value: "2F5496" },
-                prstMaterial: "PLASTIC",
+                prstMaterial: "plastic",
                 z: 76200,
               },
               fill: "4472C4",
@@ -456,8 +456,8 @@ const doc = new Document({
               ],
               outline: {
                 color: { value: "C00000" },
-                dash: "DASH",
-                join: "ROUND",
+                dash: "dash",
+                join: "round",
                 type: "solidFill",
                 width: 25_400,
               },

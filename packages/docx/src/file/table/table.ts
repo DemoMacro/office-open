@@ -119,7 +119,7 @@ export class Table extends BaseXmlComponent implements FileChild {
 
     this.columnWidths =
       options.columnWidths ??
-      Array<number>(Math.max(...this.rows.map((row) => row.CellCount))).fill(100);
+      Array<number>(Math.max(...this.rows.map((row) => row.cellCount))).fill(100);
 
     // Register CONTINUE cells on subsequent rows for vertical merge
     this.rows.forEach((row, rowIndex) => {

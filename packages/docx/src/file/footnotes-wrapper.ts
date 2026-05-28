@@ -21,24 +21,20 @@ import { Relationships } from "./relationships";
  * @example
  * ```typescript
  * const wrapper = new FootnotesWrapper();
- * const footnotes = wrapper.View;
- * const relationships = wrapper.Relationships;
+ * const footnotes = wrapper.view;
+ * const relationships = wrapper.relationships;
  * ```
  */
 export class FootnotesWrapper implements ViewWrapper {
-  private readonly footnotess: FootNotes;
-  private readonly relationships: Relationships;
+  private readonly footnotes: FootNotes;
+  public readonly relationships: Relationships;
 
   public constructor() {
-    this.footnotess = new FootNotes();
+    this.footnotes = new FootNotes();
     this.relationships = new Relationships();
   }
 
-  public get View(): FootNotes {
-    return this.footnotess;
-  }
-
-  public get Relationships(): Relationships {
-    return this.relationships;
+  public get view(): FootNotes {
+    return this.footnotes;
   }
 }

@@ -24,7 +24,7 @@ export interface ChartFrameOptions extends ChartSpaceOptions {
  */
 export class ChartFrame extends XmlComponent {
   private readonly chartOptions: ChartSpaceOptions;
-  private readonly chartKey: string;
+  public readonly chartKey: string;
 
   public constructor(options: ChartFrameOptions) {
     super("p:graphicFrame");
@@ -47,19 +47,15 @@ export class ChartFrame extends XmlComponent {
   }
 
   public prepForXml(context: Context): IXmlableObject | undefined {
-    const file = context.fileData as { Charts: ChartCollection };
-    if (file?.Charts) {
-      file.Charts.addChart(this.chartKey, {
+    const file = context.fileData as { charts: ChartCollection };
+    if (file?.charts) {
+      file.charts.addChart(this.chartKey, {
         chartSpace: new ChartSpace(this.chartOptions),
         key: this.chartKey,
       });
     }
 
     return super.prepForXml(context);
-  }
-
-  public get ChartKey(): string {
-    return this.chartKey;
   }
 }
 

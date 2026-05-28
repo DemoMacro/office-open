@@ -7,6 +7,7 @@
  */
 import { BuilderElement } from "../../xml-components";
 import type { XmlComponent } from "../../xml-components";
+import { xsdPresetShadow } from "../../xsd-mappings";
 import { createColorElement } from "../color/solid-fill";
 import type { SolidFillOptions } from "../color/solid-fill";
 
@@ -16,26 +17,26 @@ import type { SolidFillOptions } from "../color/solid-fill";
  * Reference: ISO/IEC 29500-4, dml-main.xsd, ST_PresetShadowVal
  */
 export const PresetShadowVal = {
-  SHDW1: "shdw1",
-  SHDW2: "shdw2",
-  SHDW3: "shdw3",
-  SHDW4: "shdw4",
-  SHDW5: "shdw5",
-  SHDW6: "shdw6",
-  SHDW7: "shdw7",
-  SHDW8: "shdw8",
-  SHDW9: "shdw9",
-  SHDW10: "shdw10",
-  SHDW11: "shdw11",
-  SHDW12: "shdw12",
-  SHDW13: "shdw13",
-  SHDW14: "shdw14",
-  SHDW15: "shdw15",
-  SHDW16: "shdw16",
-  SHDW17: "shdw17",
-  SHDW18: "shdw18",
-  SHDW19: "shdw19",
-  SHDW20: "shdw20",
+  SHDW1: "shadow1",
+  SHDW2: "shadow2",
+  SHDW3: "shadow3",
+  SHDW4: "shadow4",
+  SHDW5: "shadow5",
+  SHDW6: "shadow6",
+  SHDW7: "shadow7",
+  SHDW8: "shadow8",
+  SHDW9: "shadow9",
+  SHDW10: "shadow10",
+  SHDW11: "shadow11",
+  SHDW12: "shadow12",
+  SHDW13: "shadow13",
+  SHDW14: "shadow14",
+  SHDW15: "shadow15",
+  SHDW16: "shadow16",
+  SHDW17: "shadow17",
+  SHDW18: "shadow18",
+  SHDW19: "shadow19",
+  SHDW20: "shadow20",
 } as const;
 
 /**
@@ -43,7 +44,7 @@ export const PresetShadowVal = {
  */
 export interface PresetShadowEffectOptions {
   /** Preset shadow type (required) */
-  readonly preset: keyof typeof PresetShadowVal;
+  readonly preset: (typeof PresetShadowVal)[keyof typeof PresetShadowVal];
   /** Distance from shape in EMUs */
   readonly distance?: number;
   /** Direction angle in 60,000ths of a degree */
@@ -69,7 +70,7 @@ export interface PresetShadowEffectOptions {
  */
 export const createPresetShadowEffect = (options: PresetShadowEffectOptions): XmlComponent => {
   const attributes: Record<string, { readonly key: string; readonly value: string | number }> = {
-    prst: { key: "prst", value: PresetShadowVal[options.preset] },
+    prst: { key: "prst", value: xsdPresetShadow.to(options.preset) },
   };
 
   if (options.distance !== undefined) {

@@ -9,6 +9,7 @@
  */
 import { BuilderElement } from "../../xml-components";
 import type { XmlComponent } from "../../xml-components";
+import { xsdLineEndSize } from "../../xsd-mappings";
 
 /**
  * Line end types (arrow head styles).
@@ -62,11 +63,11 @@ export const LineEndType = {
  */
 export const LineEndWidth = {
   /** Small width */
-  SMALL: "sm",
+  SMALL: "small",
   /** Medium width */
-  MEDIUM: "med",
+  MEDIUM: "medium",
   /** Large width */
-  LARGE: "lg",
+  LARGE: "large",
 } as const;
 
 /**
@@ -87,11 +88,11 @@ export const LineEndWidth = {
  */
 export const LineEndLength = {
   /** Small length */
-  SMALL: "sm",
+  SMALL: "small",
   /** Medium length */
-  MEDIUM: "med",
+  MEDIUM: "medium",
   /** Large length */
-  LARGE: "lg",
+  LARGE: "large",
 } as const;
 
 /**
@@ -108,11 +109,11 @@ export const LineEndLength = {
  */
 export interface LineEndOptions {
   /** Arrow/head type */
-  readonly type: keyof typeof LineEndType;
+  readonly type: (typeof LineEndType)[keyof typeof LineEndType];
   /** Arrow width */
-  readonly width?: keyof typeof LineEndWidth;
+  readonly width?: (typeof LineEndWidth)[keyof typeof LineEndWidth];
   /** Arrow length */
-  readonly length?: keyof typeof LineEndLength;
+  readonly length?: (typeof LineEndLength)[keyof typeof LineEndLength];
 }
 
 /**
@@ -129,9 +130,15 @@ export interface LineEndOptions {
 export const createLineEnd = (name: string, options: LineEndOptions): XmlComponent =>
   new BuilderElement<{ readonly type?: string; readonly w?: string; readonly len?: string }>({
     attributes: {
-      type: { key: "type", value: LineEndType[options.type] },
-      w: { key: "w", value: options.width ? LineEndWidth[options.width] : undefined },
-      len: { key: "len", value: options.length ? LineEndLength[options.length] : undefined },
+      type: { key: "type", value: options.type },
+      w: {
+        key: "w",
+        value: options.width ? xsdLineEndSize.to(options.width) : undefined,
+      },
+      len: {
+        key: "len",
+        value: options.length ? xsdLineEndSize.to(options.length) : undefined,
+      },
     },
     name,
   });

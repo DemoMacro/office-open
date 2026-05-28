@@ -68,7 +68,7 @@ export interface RubyOptions {
   /**
    * Ruby alignment (defaults to "center").
    */
-  readonly alignment?: keyof typeof RubyAlign;
+  readonly alignment?: (typeof RubyAlign)[keyof typeof RubyAlign];
   /**
    * Font size for the ruby annotation text in half-points (e.g., 20 = 10pt).
    *
@@ -151,7 +151,7 @@ const createRubyContent = (name: string, text: string): XmlComponent =>
  * ```
  */
 export const createRuby = (options: RubyOptions): XmlComponent => {
-  const align = options.alignment ?? "CENTER";
+  const align = options.alignment ?? "center";
   const hps = options.fontSize ?? 20;
   const hpsRaise = options.raise ?? 20;
   const hpsBaseText = options.baseFontSize ?? 40;
@@ -159,7 +159,7 @@ export const createRuby = (options: RubyOptions): XmlComponent => {
   const rubyPr = new BuilderElement({
     children: [
       new BuilderElement<{ readonly val: string }>({
-        attributes: { val: { key: "w:val", value: RubyAlign[align] } },
+        attributes: { val: { key: "w:val", value: align } },
         name: "w:rubyAlign",
       }),
       new BuilderElement<{ readonly val: number }>({

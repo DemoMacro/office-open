@@ -130,7 +130,7 @@ export class DocumentBackground extends XmlComponent {
   public prepForXml(context: Context): IXmlableObject | undefined {
     if (this.imageData) {
       // Register the image with the media collection for packaging
-      context.file.Media.addImage(this.imageData.fileName, {
+      context.file.media.addImage(this.imageData.fileName, {
         type: this.imageData.type as "jpg" | "png" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf",
         data: this.imageData.data,
         fileName: this.imageData.fileName,

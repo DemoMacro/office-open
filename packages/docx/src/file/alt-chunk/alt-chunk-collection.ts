@@ -37,7 +37,7 @@ export class AltChunkCollection {
     this.map.set(key, data);
   }
 
-  public get Array(): readonly AltChunkData[] {
+  public get array(): readonly AltChunkData[] {
     return [...this.map.values()];
   }
 }

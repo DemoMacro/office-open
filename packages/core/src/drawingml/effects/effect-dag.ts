@@ -11,6 +11,7 @@
  */
 import { BuilderElement } from "../../xml-components";
 import type { XmlComponent } from "../../xml-components";
+import { xsdBlendMode, xsdEffectContainer } from "../../xsd-mappings";
 import { createSolidFill } from "../color/solid-fill";
 import type { SolidFillOptions } from "../color/solid-fill";
 import { createColorElement } from "../color/solid-fill";
@@ -56,7 +57,7 @@ import { createSoftEdgeEffect } from "./soft-edge";
  * ```
  */
 export const EffectContainerType = {
-  SIB: "sib",
+  SIB: "sibling",
   TREE: "tree",
 } as const;
 
@@ -336,7 +337,7 @@ const createBiLevelEffect = (thresh: number): XmlComponent =>
 const createBlendEffect = (options: BlendEffectOptions): XmlComponent =>
   new BuilderElement<{ readonly blend: string }>({
     name: "a:blend",
-    attributes: { blend: { key: "blend", value: options.blend } },
+    attributes: { blend: { key: "blend", value: xsdBlendMode.to(options.blend) } },
     children: [createEffectContainer(options.container)],
   });
 
@@ -512,7 +513,7 @@ const createBlurEffect = (options: BlurEffectOptions): XmlComponent => {
  */
 const createEffectContainer = (options: EffectDagOptions, elementName = "a:cont"): XmlComponent => {
   const attrs = buildOptionalAttributes({
-    type: options.type,
+    type: options.type ? xsdEffectContainer.to(options.type) : undefined,
     name: options.name,
   });
 

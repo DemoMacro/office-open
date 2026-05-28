@@ -99,7 +99,7 @@ describe("Effects", () => {
           scaleY: 80000,
           skewX: 5400000,
           skewY: 2700000,
-          alignment: "BOTTOM_LEFT",
+          alignment: "bottomLeft",
           color: { value: "000000" },
         }),
       );
@@ -177,7 +177,7 @@ describe("Effects", () => {
     it("should create preset shadow with only prst and color", () => {
       const tree = new Formatter().format(
         createPresetShadowEffect({
-          preset: "SHDW2",
+          preset: "shadow2",
           color: { value: "000000" },
         }),
       );
@@ -196,7 +196,7 @@ describe("Effects", () => {
     it("should create preset shadow with prst, dist, dir and color", () => {
       const tree = new Formatter().format(
         createPresetShadowEffect({
-          preset: "SHDW2",
+          preset: "shadow2",
           distance: 38100,
           direction: 5400000,
           color: { value: "000000" },
@@ -374,7 +374,7 @@ describe("Effects", () => {
       const tree = new Formatter().format(
         createEffectList({
           presetShadow: {
-            preset: "SHDW5",
+            preset: "shadow5",
             distance: 38100,
             direction: 5400000,
             color: { value: "000000" },

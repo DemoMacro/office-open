@@ -43,7 +43,7 @@ describe("BlipFill", () => {
 
     it("should create tile with flip mode", () => {
       const blipFill = createBlipFill(createMockMediaData(), {
-        tile: { flip: "XY" },
+        tile: { flip: "xy" },
       });
       const tree = new Formatter().format(blipFill);
       const children = tree["pic:blipFill"] as unknown[];
@@ -55,7 +55,7 @@ describe("BlipFill", () => {
 
     it("should create tile with alignment", () => {
       const blipFill = createBlipFill(createMockMediaData(), {
-        tile: { align: "CENTER" },
+        tile: { align: "center" },
       });
       const tree = new Formatter().format(blipFill);
       const children = tree["pic:blipFill"] as unknown[];
@@ -67,7 +67,7 @@ describe("BlipFill", () => {
 
     it("should create tile with all options", () => {
       const blipFill = createBlipFill(createMockMediaData(), {
-        tile: { tx: 100000, ty: 50000, sx: 50, sy: 50, flip: "X", align: "TOP_LEFT" },
+        tile: { tx: 100000, ty: 50000, sx: 50, sy: 50, flip: "x", align: "topLeft" },
       });
       const tree = new Formatter().format(blipFill);
       const children = tree["pic:blipFill"] as unknown[];

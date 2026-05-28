@@ -64,7 +64,7 @@ const pres = new Presentation({
     {
       children: [
         new Shape({
-          text: "Hello World",
+          textBody: { text: "Hello World" },
           fill: "4472C4",
           x: 100,
           y: 100,
@@ -175,12 +175,55 @@ We welcome contributions! Here's how to get started:
 
 This project follows core principles:
 
-1. **OOXML Compliance**: Strict adherence to the ISO-IEC29500 OOXML specification
-2. **Type Safety**: Full TypeScript support with comprehensive types
-3. **Declarative API**: Simple, intuitive API for document generation
+1. **OOXML Compliance**: Strict adherence to the ISO/IEC 29500 OOXML specification
+2. **Type Safety**: Full TypeScript support with comprehensive types and autocomplete
+3. **Declarative API**: Simple, intuitive API for document generation — JSON or TypeScript
 4. **Modular Design**: Shared core infrastructure across DOCX, PPTX, XLSX
 5. **Performance**: Optimized for large documents and batch processing
-6. **User Experience**: Simple API with powerful configuration options
+6. **Cross-platform**: Works in Node.js and browsers. Export to Buffer, Blob, Base64, stream, or string
+
+## Parse Existing Files
+
+Read and inspect existing `.docx` and `.pptx` files into structured objects:
+
+```typescript
+// DOCX
+import { parseDocument } from "@office-open/docx";
+const opts = parseDocument(buffer);
+// opts.sections — document sections
+// opts.title, opts.creator — core properties
+
+// PPTX
+import { parsePresentation } from "@office-open/pptx";
+const opts = parsePresentation(buffer);
+// opts.slides — slide array
+// opts.size, opts.title — presentation properties
+```
+
+## JSON API
+
+Define documents as plain JSON objects — perfect for AI agents:
+
+```typescript
+// PPTX via JSON
+const pres = new Presentation({
+  slides: [
+    {
+      children: [
+        {
+          shape: {
+            x: 100,
+            y: 100,
+            width: 760,
+            height: 340,
+            textBody: { children: [{ text: "Hello, World!", fontSize: 32 }] },
+          },
+        },
+      ],
+    },
+  ],
+});
+```
 
 ## Support & Community
 

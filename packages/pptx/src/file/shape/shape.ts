@@ -8,7 +8,6 @@ import { XmlComponent as Xc } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
 import { emuPositionOptional } from "@util/position";
 
-import { Paragraph } from "./paragraph/paragraph";
 import { TextBody } from "./text-body";
 import type { TextBodyOptions } from "./text-body";
 
@@ -25,15 +24,7 @@ export interface ShapeOptions {
   readonly effects?: EffectsOptions;
   readonly flipHorizontal?: boolean;
   readonly rotation?: number;
-  readonly text?: string;
-  readonly paragraphs?: TextBodyOptions["paragraphs"];
-  readonly textVertical?: TextBodyOptions["vertical"];
-  readonly textAnchor?: TextBodyOptions["anchor"];
-  readonly textAutoFit?: TextBodyOptions["autoFit"];
-  readonly textWrap?: TextBodyOptions["wrap"];
-  readonly textMargins?: TextBodyOptions["margins"];
-  readonly textColumns?: TextBodyOptions["columns"];
-  readonly textColumnSpacing?: TextBodyOptions["columnSpacing"];
+  readonly textBody?: TextBodyOptions;
   readonly animation?: AnimationOptions;
   readonly placeholder?: "title" | "body" | "subTitle" | "sldNum" | "dt" | "ftr" | "hdr" | "obj";
   readonly placeholderIndex?: number;
@@ -56,8 +47,8 @@ function buildPlaceholder(type: string, index?: number): IXmlableObject {
  */
 export class Shape extends Xc {
   private static nextId = 2;
-  private readonly shapeId: number;
-  private readonly animationOptions?: AnimationOptions;
+  public readonly shapeId: number;
+  public readonly animation: AnimationOptions | undefined;
   private readonly options: ShapeOptions;
 
   public constructor(options: ShapeOptions = {}) {
@@ -65,16 +56,8 @@ export class Shape extends Xc {
 
     const id = options.id ?? Shape.nextId++;
     this.shapeId = id;
-    this.animationOptions = options.animation;
+    this.animation = options.animation;
     this.options = { ...options, id };
-  }
-
-  public get ShapeId(): number {
-    return this.shapeId;
-  }
-
-  public get Animation(): AnimationOptions | undefined {
-    return this.animationOptions;
   }
 
   public override prepForXml(context: Context): IXmlableObject | undefined {
@@ -111,17 +94,7 @@ export class Shape extends Xc {
     if (spPrObj) children.push(spPrObj);
 
     // txBody (TextBody)
-    const textBodyOptions: TextBodyOptions = {
-      paragraphs: opts.paragraphs ?? (opts.text ? [new Paragraph({ text: opts.text })] : undefined),
-      vertical: opts.textVertical,
-      anchor: opts.textAnchor,
-      autoFit: opts.textAutoFit,
-      wrap: opts.textWrap,
-      margins: opts.textMargins,
-      columns: opts.textColumns,
-      columnSpacing: opts.textColumnSpacing,
-    };
-    const txBody = new TextBody(textBodyOptions);
+    const txBody = new TextBody(opts.textBody ?? {});
     const txBodyObj = txBody.prepForXml(context);
     if (txBodyObj) children.push(txBodyObj);
 
