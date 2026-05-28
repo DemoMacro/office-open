@@ -6,6 +6,7 @@ import {
   type Scene3DOptions,
   type Shape3DOptions,
   type BevelOptions,
+  PresetMaterialType,
 } from "@office-open/core/drawingml";
 
 export type EffectType = "outerShadow" | "innerShadow" | "glow" | "reflection" | "softEdge";
@@ -214,6 +215,17 @@ export function buildScene3D(options: EffectsOptions): ReturnType<typeof createS
   });
 }
 
+/** Map PPTX material API value to PresetMaterialType key. */
+const MATERIAL_KEY_MAP: Record<string, keyof typeof PresetMaterialType> = {
+  matte: "MATTE",
+  plastic: "PLASTIC",
+  metal: "METAL",
+  warmMatte: "WARM_MATTE",
+  softEdge: "SOFT_EDGE",
+  flat: "FLAT",
+  powder: "POWDER",
+};
+
 /** Map PPTX EffectsOptions to core Shape3DOptions, or null if not needed. */
 export function buildShape3D(options: EffectsOptions): ReturnType<typeof createShape3D> | null {
   if (!options.extrusionH && !options.bevelTop && !options.bevelBottom && !options.material)
@@ -224,7 +236,11 @@ export function buildShape3D(options: EffectsOptions): ReturnType<typeof createS
     ...(options.bevelBottom ? { bevelB: toBevel(options.bevelBottom) } : {}),
     ...(options.extrusionH !== undefined ? { extrusionH: options.extrusionH } : {}),
     ...(options.material
-      ? { prstMaterial: options.material as Shape3DOptions["prstMaterial"] }
+      ? {
+          prstMaterial:
+            MATERIAL_KEY_MAP[options.material] ??
+            (options.material as keyof typeof PresetMaterialType),
+        }
       : {}),
   };
 

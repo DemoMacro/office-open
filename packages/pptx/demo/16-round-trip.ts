@@ -132,11 +132,29 @@ const slides: SlideOptions[] = [
           ],
         },
       },
+      // 3D effects (rotation, bevel, extrusion)
+      {
+        shape: {
+          x: 550,
+          y: 270,
+          width: 250,
+          height: 100,
+          text: "3D",
+          geometry: "roundRect",
+          fill: "70AD47",
+          effects: {
+            rotation3D: { x: 20, y: 10, z: 5 },
+            bevelTop: { width: 8, height: 8 },
+            extrusionH: 30000,
+            material: "plastic",
+          },
+        },
+      },
       // Alignment + line spacing + super/subscript
       {
         shape: {
           x: 420,
-          y: 270,
+          y: 390,
           width: 380,
           height: 160,
           paragraphs: [
@@ -507,6 +525,16 @@ assert(
   "s0 bullet shape has dashStyle",
   (s0bulletShape.shape.outline as Record<string, unknown>)?.dashStyle === "dash",
 );
+
+// Verify 3D effects (rotation3D, bevel, extrusion, material)
+const s03dShape = s0c[5] as unknown as { shape: Record<string, unknown> };
+const s03dEffects = s03dShape.shape.effects as Record<string, unknown> | undefined;
+assert("s0 3D shape has effects", !!s03dEffects);
+assert("s0 3D shape has rotation3D", !!s03dEffects?.rotation3D);
+assert("s0 3D rotation3D x", (s03dEffects?.rotation3D as Record<string, number>)?.x === 20);
+assert("s0 3D shape has bevelTop", !!s03dEffects?.bevelTop);
+assert("s0 3D shape has extrusionH", (s03dEffects?.extrusionH as number) === 30000);
+assert("s0 3D shape has material", s03dEffects?.material === "plastic");
 
 const s0shape2 = s0c[2] as unknown as { shape: Record<string, unknown> };
 assert("s0 shape 2 has gradient fill", typeof s0shape2.shape.fill === "object");
