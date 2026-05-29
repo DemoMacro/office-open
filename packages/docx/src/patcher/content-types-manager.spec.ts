@@ -1,6 +1,5 @@
+import { appendContentType } from "@office-open/core";
 import { describe, expect, it } from "vite-plus/test";
-
-import { appendContentType } from "./content-types-manager";
 
 describe("content-types-manager", () => {
   describe("appendContentType", () => {

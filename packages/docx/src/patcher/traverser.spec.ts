@@ -1,6 +1,7 @@
+import { DOCX_NS, createTraverser } from "@office-open/core";
 import { describe, expect, it } from "vite-plus/test";
 
-import { findLocationOfText } from "./traverser";
+const { findLocationOfText } = createTraverser(DOCX_NS);
 
 const MOCK_JSON = {
   elements: [

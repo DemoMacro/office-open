@@ -6,128 +6,92 @@ import { Media } from "@file/media";
 import { ConcreteHyperlink, ExternalHyperlink } from "@file/paragraph";
 import type { ParagraphChild } from "@file/paragraph";
 import { TargetModeType } from "@file/relationships/relationship/relationship";
-import type { Context } from "@file/xml-components";
-import { getReferencedMedia, replaceImagePlaceholders } from "@office-open/core";
-import { OoxmlMimeType, strFromU8, unzipSync, zipAndConvert } from "@office-open/core";
+import type { Context, XmlComponent } from "@file/xml-components";
+import {
+  DOCX_NS,
+  Formatter,
+  OoxmlMimeType,
+  appendContentType,
+  appendRelationship,
+  createReplacer,
+  getNextRelationshipIndex,
+  getReferencedMedia,
+  replaceImagePlaceholders,
+  strFromU8,
+  toJson,
+  unzipSync,
+  zipAndConvert,
+} from "@office-open/core";
 import type { OutputByType, OutputType } from "@office-open/core";
-import { js2xml } from "@office-open/xml";
+import { js2xml, xml } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { uniqueId } from "@util/convenience-functions";
+import { textToUint8Array, toUint8Array } from "undio";
+
 /**
  * Document patching module for modifying existing .docx files.
  *
- * This module provides functionality to patch existing Word documents by replacing
- * placeholder text with new content while preserving the original document structure.
- *
  * @module
  */
-import { textToUint8Array, toUint8Array } from "undio";
 
-import { appendContentType } from "./content-types-manager";
-import { appendRelationship, getNextRelationshipIndex } from "./relationship-manager";
-import { replacer } from "./replacer";
-import { toJson } from "./util";
+const formatter = new Formatter();
+
+const docxReplacer = createReplacer({
+  ns: DOCX_NS,
+  formatChild: (child: unknown, context: unknown): Element[] => {
+    const jsonObj = toJson(xml(formatter.format(child as XmlComponent, context as Context)));
+    return [jsonObj.elements![0]];
+  },
+});
 
 /**
  * Supported input data types for document patching.
- *
- * The patcher can accept documents in various formats including buffers,
- * arrays, and streams.
  */
 export type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob;
 
 /**
  * Patch type enumeration.
  *
- * Determines how the replacement content should be inserted into the document.
- *
  * @publicApi
  */
 export const PatchType = {
-  /** Replace entire file-level elements (e.g., whole paragraphs) */
   DOCUMENT: "file",
-  /** Replace content within paragraphs (inline replacement) */
   PARAGRAPH: "paragraph",
 } as const;
 
-/**
- * Patch definition for paragraph-level replacement.
- *
- * Replaces placeholder text with inline content (runs, hyperlinks, etc.)
- * while preserving the surrounding paragraph structure.
- */
 interface ParagraphPatch {
-  /** Indicates this is a paragraph-level patch */
   readonly type: typeof PatchType.PARAGRAPH;
-  /** Content to insert (runs, hyperlinks, images, etc.) */
   readonly children: readonly ParagraphChild[];
 }
 
-/**
- * Patch definition for document-level replacement.
- *
- * Replaces placeholder text with block-level content (entire paragraphs, tables, etc.).
- */
 interface FilePatch {
-  /** Indicates this is a document-level patch */
   readonly type: typeof PatchType.DOCUMENT;
-  /** Content to insert (paragraphs, tables, etc.) */
   readonly children: readonly FileChild[];
 }
 
-/**
- * Internal type for tracking image relationships that need to be added.
- */
 interface ImageRelationshipAddition {
   readonly key: string;
   readonly mediaDatas: readonly { readonly fileName: string }[];
 }
 
-/**
- * Internal type for tracking hyperlink relationships that need to be added.
- */
 interface HyperlinkRelationshipAddition {
-  /** XML file path where the hyperlink is used */
   readonly key: string;
-  /** Hyperlink relationship details */
   readonly hyperlink: { readonly id: string; readonly link: string };
 }
 
-/**
- * Union type representing all patch types.
- */
 export type IPatch = ParagraphPatch | FilePatch;
 
-/**
- * Output format types for patched documents.
- */
 export type PatchDocumentOutputType = OutputType;
 
-/**
- * Options for patching a document.
- *
- * @property outputType - Desired output format (buffer, blob, string, etc.)
- * @property data - The input document to patch
- * @property patches - Map of placeholder keys to patch definitions
- * @property keepOriginalStyles - Whether to preserve original text formatting
- * @property placeholderDelimiters - Custom delimiter characters for placeholders
- * @property recursive - Whether to search for multiple occurrences of placeholders
- */
 export interface PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocumentOutputType> {
-  /** Output format type */
   readonly outputType: T;
-  /** Input document data */
   readonly data: InputDataType;
-  /** Mapping of placeholder keys to patch content */
   readonly patches: Readonly<Record<string, IPatch>>;
-  /** Preserve original formatting of replaced text (default: true) */
   readonly keepOriginalStyles?: boolean;
-  /** Custom placeholder delimiters (default: {{ and }}) */
   readonly placeholderDelimiters?: Readonly<{
     readonly start: string;
     readonly end: string;
   }>;
-  /** Search for multiple occurrences after patching (default: true) */
   readonly recursive?: boolean;
 }
 
@@ -149,36 +113,6 @@ const compareByteArrays = (a: Uint8Array, b: Uint8Array): boolean => {
 /**
  * Patches an existing .docx document by replacing placeholders with new content.
  *
- * This function opens an existing Word document, searches for placeholder text
- * (e.g., {{name}}), and replaces it with the provided content while preserving
- * the original document structure and optionally the original formatting.
- *
- * @param options - Configuration options for patching
- * @returns A promise resolving to the patched document in the specified output format
- *
- * @example
- * ```typescript
- * // Patch with paragraph content
- * const buffer = await patchDocument({
- *   outputType: "nodebuffer",
- *   data: templateBuffer,
- *   patches: {
- *     name: {
- *       type: PatchType.PARAGRAPH,
- *       children: [new TextRun({ text: "John Doe", bold: true })],
- *     },
- *   },
- * });
- *
- * // Patch with custom delimiters
- * const buffer = await patchDocument({
- *   outputType: "nodebuffer",
- *   data: templateBuffer,
- *   patches: { ... },
- *   placeholderDelimiters: { start: "<<", end: ">>" },
- * });
- * ```
- *
  * @publicApi
  */
 export const patchDocument = async <T extends PatchDocumentOutputType = PatchDocumentOutputType>({
@@ -187,15 +121,12 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
   patches,
   keepOriginalStyles,
   placeholderDelimiters = { end: "}}", start: "{{" } as const,
-  /**
-   * Search for occurrences over patched document
-   */
   recursive = true,
 }: PatchDocumentOptions<T>): Promise<OutputByType[T]> => {
   const zipContent = unzipSync(toUint8Array(data));
   const contexts = new Map<string, Context>();
   const file = {
-    Media: new Media(),
+    media: new Media(),
   } as unknown as File;
 
   const map = new Map<string, Element>();
@@ -223,9 +154,6 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     if (key === "word/document.xml") {
       const document = json.elements?.find((i) => i.name === "w:document");
       if (document && document.attributes) {
-        // We could check all namespaces from Document, but we'll instead
-        // Check only those that may be used by our element types.
-
         for (const ns of ["mc", "wp", "r", "w15", "m"] as const) {
           document.attributes[`xmlns:${ns}`] = DocumentAttributeNamespaces[ns];
         }
@@ -240,7 +168,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
         file,
         stack: [],
         viewWrapper: {
-          Relationships: {
+          relationships: {
             addRelationship: (
               linkId: string,
               _: string,
@@ -268,21 +196,14 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
 
       for (const [patchKey, patchValue] of Object.entries(patches)) {
         const patchText = `${start}${patchKey}${end}`;
-        // TODO: mutates json. Make it immutable
-        // We need to loop through to catch every occurrence of the patch text
-        // It is possible that the patch text is in the same run
-        // This algorithm is limited to one patch per text run
-        // We break out of the loop once it cannot find any more occurrences
-        // https://github.com/dolanmiu/docx/issues/2267
         while (true) {
-          const { didFindOccurrence } = replacer({
+          const { didFindOccurrence } = docxReplacer({
             context,
             json,
             keepOriginalStyles,
             patch: {
               ...patchValue,
               children: patchValue.children.map((element) => {
-                // We need to replace external hyperlinks with concrete hyperlinks
                 if (element instanceof ExternalHyperlink) {
                   const concreteHyperlink = new ConcreteHyperlink(
                     element.options.children,
@@ -304,7 +225,6 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
             } as any,
             patchText,
           });
-          // What the reason doing that? Once document is patched - it search over patched json again, that takes too long if patched document has big and deep structure.
           if (!recursive || !didFindOccurrence) {
             break;
           }
@@ -382,8 +302,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
   const files: Record<string, Uint8Array> = {};
 
   for (const [key, value] of map) {
-    const output = toXml(value);
-    files[key] = textToUint8Array(output);
+    files[key] = textToUint8Array(js2xml(value));
   }
 
   for (const [key, value] of binaryContentMap) {
@@ -396,19 +315,6 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
   }
 
   return await zipAndConvert(files, outputType, OoxmlMimeType.DOCX);
-};
-
-const toXml = (jsonObj: Element): string => {
-  const output = js2xml(jsonObj, {
-    attributeValueFn: (str) =>
-      String(str)
-        .replace(/&(?!amp;|lt;|gt;|quot;|apos;)/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&apos;"), // Cspell:words apos
-  });
-  return output;
 };
 
 const createRelationshipFile = (): Element => ({

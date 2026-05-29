@@ -1,6 +1,10 @@
+import { DOCX_NS, createSplitInject, createTextElementContents } from "@office-open/core";
 import { describe, expect, it } from "vite-plus/test";
 
-import { findRunElementIndexWithToken, splitRunElement } from "./paragraph-split-inject";
+const { findRunElementIndexWithToken, splitRunElement } = createSplitInject(
+  DOCX_NS,
+  createTextElementContents,
+);
 
 describe("paragraph-split-inject", () => {
   describe("findRunElementIndexWithToken", () => {

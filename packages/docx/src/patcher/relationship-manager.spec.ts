@@ -1,7 +1,6 @@
 import { TargetModeType } from "@file/relationships/relationship/relationship";
+import { appendRelationship, getNextRelationshipIndex } from "@office-open/core";
 import { describe, expect, it } from "vite-plus/test";
-
-import { appendRelationship, getNextRelationshipIndex } from "./relationship-manager";
 
 describe("relationship-manager", () => {
   describe("getNextRelationshipIndex", () => {

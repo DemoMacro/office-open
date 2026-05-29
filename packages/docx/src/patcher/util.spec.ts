@@ -1,11 +1,10 @@
-import { describe, expect, it } from "vite-plus/test";
-
 import {
   createTextElementContents,
   getFirstLevelElements,
   patchSpaceAttribute,
   toJson,
-} from "./util";
+} from "@office-open/core";
+import { describe, expect, it } from "vite-plus/test";
 
 describe("util", () => {
   describe("toJson", () => {

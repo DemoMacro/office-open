@@ -1,6 +1,7 @@
+import { createTextElementContents, createTokenReplacer } from "@office-open/core";
 import { describe, expect, it } from "vite-plus/test";
 
-import { replaceTokenInParagraphElement } from "./paragraph-token-replacer";
+const replaceTokenInParagraphElement = createTokenReplacer(createTextElementContents);
 
 describe("paragraph-token-replacer", () => {
   describe("replaceTokenInParagraphElement", () => {

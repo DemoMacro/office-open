@@ -3,12 +3,10 @@
  *
  * @module
  */
-import { strFromU8, unzipSync } from "@office-open/core";
+import { DOCX_NS, createTraverser, strFromU8, toJson, unzipSync } from "@office-open/core";
 import { toUint8Array } from "undio";
 
 import type { InputDataType } from "./from-docx";
-import { traverse } from "./traverser";
-import { toJson } from "./util";
 
 /**
  * Options for patch detection.
@@ -54,6 +52,7 @@ export const patchDetector = async ({ data }: PatchDetectorOptions): Promise<rea
     }
     if (key.startsWith("word/") && !key.endsWith(".xml.rels")) {
       const json = toJson(strFromU8(value));
+      const { traverse } = createTraverser(DOCX_NS);
       traverse(json).forEach((p) => findPatchKeys(p.text).forEach((patch) => patches.add(patch)));
     }
   }

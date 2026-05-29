@@ -1,6 +1,7 @@
+import { DOCX_NS, createRunRenderer } from "@office-open/core";
 import { describe, expect, it } from "vite-plus/test";
 
-import { renderParagraphNode } from "./run-renderer";
+const renderParagraphNode = createRunRenderer(DOCX_NS);
 
 describe("run-renderer", () => {
   describe("renderParagraphNode", () => {
