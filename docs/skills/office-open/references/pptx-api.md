@@ -1,375 +1,597 @@
 # PPTX API Reference
 
-Complete API reference for `@office-open/pptx`.
+Complete API reference for `@office-open/pptx`. All examples show the options JSON structure.
 
 ## Presentation Structure
 
+```json
+{
+  "title": "string",
+  "creator": "string",
+  "subject": "string",
+  "description": "string",
+  "slides": [
+    {
+      "background": {},
+      "transition": {},
+      "children": []
+    }
+  ]
+}
 ```
-Presentation
-├── title, creator, subject, description
-├── slides: SlideOptions[]
-│   ├── children: (Shape | Table | Image | GroupShape | Connector)[]
-│   └── background?: FillOptions
-```
+
+Slide children types: shape, table, image, group, line, connector.
 
 ## Shapes
 
-### Basic Shape
+### Shape Options
 
-```ts
-import { Shape } from "@office-open/pptx";
-
-new Shape({
-  id: 1, // Optional, auto-assigned
-  name: "My Shape", // Optional display name
-  x: 50, // Position X (pixels)
-  y: 100, // Position Y (pixels)
-  width: 300, // Width (pixels)
-  height: 80, // Height (pixels)
-  text: "Hello World", // Simple text content
-  fill: "4472C4", // Solid fill shorthand
-});
+```json
+{
+  "id": 1,
+  "name": "My Shape",
+  "x": 50,
+  "y": 100,
+  "width": 300,
+  "height": 80,
+  "text": "Hello World",
+  "fill": "4472C4"
+}
 ```
 
-### Shape with Paragraphs
+| Property    | Type                    | Description                                           |
+| ----------- | ----------------------- | ----------------------------------------------------- |
+| `id`        | `number`                | Optional, auto-assigned                               |
+| `name`      | `string`                | Optional display name                                 |
+| `x`         | `number`                | Position X (pixels)                                   |
+| `y`         | `number`                | Position Y (pixels)                                   |
+| `width`     | `number`                | Width (pixels)                                        |
+| `height`    | `number`                | Height (pixels)                                       |
+| `text`      | `string`                | Simple text content (shorthand)                       |
+| `textBody`  | `object`                | Rich text body (see below)                            |
+| `fill`      | `string \| FillOptions` | Fill style. String `"4472C4"` = solid color shorthand |
+| `outline`   | `OutlineOptions`        | Outline/border                                        |
+| `effects`   | `EffectsOptions`        | Visual effects                                        |
+| `geometry`  | `string`                | Preset geometry                                       |
+| `rotation`  | `number`                | Rotation in degrees                                   |
+| `flipV`     | `boolean`               | Flip vertically                                       |
+| `flipH`     | `boolean`               | Flip horizontally                                     |
+| `animation` | `AnimationOptions`      | Animation settings                                    |
 
-```ts
-import { Shape, Paragraph, TextRun } from "@office-open/pptx";
+### Shape with Rich Text (textBody)
 
-new Shape({
-  x: 50,
-  y: 100,
-  width: 400,
-  height: 120,
-  textBody: {
-    children: [
-      new Paragraph({
-        children: [new TextRun({ text: "Bold title", bold: true, fontSize: 24, color: "FFFFFF" })],
-        alignment: "center",
-      }),
-      new Paragraph({
-        children: [new TextRun({ text: "Subtitle", fontSize: 16, color: "CCCCCC" })],
-      }),
-    ],
+```json
+{
+  "x": 50,
+  "y": 100,
+  "width": 400,
+  "height": 120,
+  "textBody": {
+    "children": [
+      {
+        "children": [{ "text": "Bold title", "bold": true, "fontSize": 24, "color": "FFFFFF" }],
+        "alignment": "center"
+      },
+      {
+        "children": [{ "text": "Subtitle", "fontSize": 16, "color": "CCCCCC" }]
+      }
+    ]
   },
-  fill: { type: "solid", color: "2E74B5" },
-});
+  "fill": { "type": "solid", "color": "2E74B5" }
+}
 ```
 
-### Shape Text Options
+### textBody Options
 
-```ts
-new Shape({
-  textBody: {
-    text: "Content",
-    anchor: "center", // "top" | "center" | "bottom"
-    vertical: "vert", // Vertical text direction
-    autoFit: "normal", // "none" | "normal" | "shape"
-    wrap: "square", // "square" | "none"
-    margins: {
-      // EMU values
-      top: 45720,
-      bottom: 45720,
-      left: 91440,
-      right: 91440,
-    },
-    columns: 2, // Number of text columns
-    columnSpacing: 45720, // Spacing between columns (EMU)
+```json
+{
+  "text": "Content",
+  "anchor": "center",
+  "vertical": "vert",
+  "autoFit": "normal",
+  "wrap": "square",
+  "margins": {
+    "top": 45720,
+    "bottom": 45720,
+    "left": 91440,
+    "right": 91440
   },
-});
+  "columns": 2,
+  "columnSpacing": 45720
+}
 ```
+
+| Property        | Type     | Values                              |
+| --------------- | -------- | ----------------------------------- |
+| `anchor`        | `string` | `"top"` \| `"center"` \| `"bottom"` |
+| `vertical`      | `string` | `"vert"` for vertical text          |
+| `autoFit`       | `string` | `"none"` \| `"normal"` \| `"shape"` |
+| `wrap`          | `string` | `"square"` \| `"none"`              |
+| `margins`       | `object` | EMU values                          |
+| `columns`       | `number` | Number of text columns              |
+| `columnSpacing` | `number` | Spacing between columns (EMU)       |
 
 ### Geometry Presets
 
-```ts
-new Shape({
-  geometry: "rect", // Default
-  // "roundRect", "ellipse", "triangle", "diamond", "hexagon",
-  // "star5", "star6", "arrow", "chevron", "cloud", "heart",
-  // "lightningBolt", "moon", "sun", and many more
-});
+```json
+{ "geometry": "rect" }
 ```
+
+Common values: `"rect"`, `"roundRect"`, `"ellipse"`, `"triangle"`, `"diamond"`, `"hexagon"`, `"star5"`, `"star6"`, `"arrow"`, `"chevron"`, `"cloud"`, `"heart"`, `"lightningBolt"`, `"moon"`, `"sun"`.
 
 ## Fills
 
 ### Solid Fill
 
-```ts
-fill: "4472C4"                                   // Shorthand
-fill: { type: "solid", color: "2E74B5" }         // Explicit
+```json
+{ "type": "solid", "color": "4472C4" }
 ```
+
+String shorthand: `fill: "4472C4"` is equivalent to the above.
 
 ### Gradient Fill
 
-```ts
-fill: {
-    type: "gradient",
-    stops: [
-        { position: 0, color: "0D47A1" },
-        { position: 50, color: "1976D2" },
-        { position: 100, color: "42A5F5" },
-    ],
-    angle: 45,                // Degrees
-    // path: "circle",        // For radial gradient
+```json
+{
+  "type": "gradient",
+  "stops": [
+    { "position": 0, "color": "0D47A1" },
+    { "position": 50, "color": "1976D2" },
+    { "position": 100, "color": "42A5F5" }
+  ],
+  "angle": 45
 }
 ```
 
+| Property | Type     | Description                           |
+| -------- | -------- | ------------------------------------- |
+| `stops`  | `array`  | Array of `{ position: 0-100, color }` |
+| `angle`  | `number` | Angle in degrees                      |
+| `path`   | `string` | `"circle"` for radial gradient        |
+
 ### Image Fill
 
-```ts
-import { readFileSync } from "node:fs";
-
-fill: {
-    type: "blip",
-    data: readFileSync("texture.png"),
-    imageType: "png",
+```json
+{
+  "type": "blip",
+  "data": "<Uint8Array>",
+  "imageType": "png"
 }
 ```
 
 ### No Fill
 
-```ts
-fill: {
-  type: "noFill";
-}
+```json
+{ "type": "noFill" }
 ```
 
 ## Outline
 
-```ts
-outline: {
-    color: "1565C0",
-    width: 2,                    // Points
-    dashStyle: "solid",          // "solid" | "dash" | "dashDot" | "dot" | "lgDash"
-    capStyle: "flat",            // "flat" | "round" | "square"
-    compound: "single",          // "single" | "double" | "thickThin"
+```json
+{
+  "color": "1565C0",
+  "width": 2,
+  "dashStyle": "solid",
+  "capStyle": "flat",
+  "compound": "single"
 }
 ```
+
+| Property    | Type     | Values                                                        |
+| ----------- | -------- | ------------------------------------------------------------- |
+| `color`     | `string` | Hex color without `#`                                         |
+| `width`     | `number` | Width in points                                               |
+| `dashStyle` | `string` | `"solid"` \| `"dash"` \| `"dashDot"` \| `"dot"` \| `"lgDash"` |
+| `capStyle`  | `string` | `"flat"` \| `"round"` \| `"square"`                           |
+| `compound`  | `string` | `"single"` \| `"double"` \| `"thickThin"`                     |
 
 ## Effects
 
 ### Outer Shadow
 
-```ts
-effects: {
-    outerShadow: {
-        blur: 50800,             // Blur radius (EMU)
-        distance: 38100,         // Offset distance (EMU)
-        direction: 5400000,      // Angle (60000ths of a degree)
-        color: "000000",
-        alpha: 50,               // Opacity (0-100)
-        rotateWithShape: true,
-    },
+```json
+{
+  "outerShadow": {
+    "blur": 50800,
+    "distance": 38100,
+    "direction": 5400000,
+    "color": "000000",
+    "alpha": 50,
+    "rotateWithShape": true
+  }
 }
 ```
 
 ### Inner Shadow
 
-```ts
-effects: {
-    innerShadow: {
-        blur: 40000,
-        distance: 30000,
-        direction: 5400000,
-        color: "000000",
-        alpha: 40,
-    },
+```json
+{
+  "innerShadow": {
+    "blur": 40000,
+    "distance": 30000,
+    "direction": 5400000,
+    "color": "000000",
+    "alpha": 40
+  }
 }
 ```
 
 ### Glow
 
-```ts
-effects: {
-    glow: {
-        radius: 152400,          // Glow radius (EMU)
-        color: "92D050",
-        alpha: 60,               // Opacity (0-100)
-    },
+```json
+{
+  "glow": {
+    "radius": 152400,
+    "color": "92D050",
+    "alpha": 60
+  }
 }
 ```
 
 ### Reflection
 
-```ts
-effects: {
-    reflection: {
-        blurRadius: 6350,
-        distance: 38100,
-        direction: 5400000,
-        startAlpha: 90,          // Start opacity (0-100)
-        endAlpha: 0,             // End opacity (0-100)
-        startPosition: 0,        // Start position (0-100)
-        endPosition: 100,        // End position (0-100)
-    },
+```json
+{
+  "reflection": {
+    "blurRadius": 6350,
+    "distance": 38100,
+    "direction": 5400000,
+    "startAlpha": 90,
+    "endAlpha": 0,
+    "startPosition": 0,
+    "endPosition": 100
+  }
 }
 ```
 
 ### Soft Edge
 
-```ts
-effects: {
-    softEdge: { radius: 50800 },
+```json
+{
+  "softEdge": { "radius": 50800 }
 }
 ```
 
 ### 3D Rotation
 
-```ts
-effects: {
-    rotation3D: {
-        x: 20,                   // X rotation (degrees)
-        y: 30,                   // Y rotation (degrees)
-        z: 10,                   // Z rotation (degrees)
-        perspective: 500,        // Perspective value
-    },
+```json
+{
+  "rotation3D": {
+    "x": 20,
+    "y": 30,
+    "z": 10,
+    "perspective": 500
+  }
 }
 ```
+
+| Property      | Type     | Description         |
+| ------------- | -------- | ------------------- |
+| `x`, `y`, `z` | `number` | Rotation in degrees |
+| `perspective` | `number` | Perspective value   |
 
 ### Extrusion & Bevel
 
-```ts
-effects: {
-    rotation3D: { x: 25, y: 15 },
-    extrusionH: 50000,           // Extrusion height (EMU)
-    material: "plastic",         // "plastic" | "metal" | "matte" | "warmMatte" | "flat" | "powder"
-    bevelTop: { width: 8, height: 8 },    // Bevel dimensions (points)
-    bevelBottom: { width: 5, height: 5 },
-    lighting: "threePt",         // "flat" | "threePt" | "balanced" | "soft" | "harsh" | ...
+```json
+{
+  "rotation3D": { "x": 25, "y": 15 },
+  "extrusionH": 50000,
+  "material": "plastic",
+  "bevelTop": { "width": 8, "height": 8 },
+  "bevelBottom": { "width": 5, "height": 5 },
+  "lighting": "threePt"
 }
 ```
 
+| Property      | Type                | Values                                                                           |
+| ------------- | ------------------- | -------------------------------------------------------------------------------- |
+| `extrusionH`  | `number`            | Extrusion height (EMU)                                                           |
+| `material`    | `string`            | `"plastic"` \| `"metal"` \| `"matte"` \| `"warmMatte"` \| `"flat"` \| `"powder"` |
+| `bevelTop`    | `{ width, height }` | Bevel dimensions in points                                                       |
+| `bevelBottom` | `{ width, height }` | Bevel dimensions in points                                                       |
+| `lighting`    | `string`            | `"flat"` \| `"threePt"` \| `"balanced"` \| `"soft"` \| `"harsh"`                 |
+
 ## Tables
 
-```ts
-import { Table, TableRow, TableCell } from "@office-open/pptx";
-
-new Table({
-  x: 50,
-  y: 200,
-  width: 600,
-  height: 200,
-  rows: [
-    new TableRow({
-      children: [
-        new TableCell({
-          text: "Header 1",
-          fill: "4472C4",
-          bold: true,
-          color: "FFFFFF",
-        }),
-        new TableCell({ text: "Header 2" }),
-      ],
-    }),
+```json
+{
+  "x": 50,
+  "y": 200,
+  "width": 600,
+  "height": 250,
+  "rows": [
+    {
+      "cells": [
+        { "text": "Name", "fill": "4472C4", "bold": true, "color": "FFFFFF" },
+        { "text": "Age" },
+        { "text": "City" }
+      ]
+    },
+    {
+      "cells": [{ "text": "Alice" }, { "text": "30" }, { "text": "Beijing" }]
+    }
   ],
-});
+  "columnWidths": [2000000, 1500000, 2500000],
+  "firstRow": true,
+  "bandRow": true
+}
 ```
+
+| Property       | Type       | Description                                            |
+| -------------- | ---------- | ------------------------------------------------------ |
+| `rows`         | `array`    | Each row has `cells` array and optional `height` (EMU) |
+| `columnWidths` | `number[]` | Column widths in EMU                                   |
+| `firstRow`     | `boolean`  | Apply header styling to first row                      |
+| `bandRow`      | `boolean`  | Banded row styling                                     |
+
+### Cell Options
+
+| Property        | Type                            | Description        |
+| --------------- | ------------------------------- | ------------------ |
+| `text`          | `string`                        | Cell text          |
+| `fill`          | `string`                        | Background color   |
+| `bold`          | `boolean`                       | Bold text          |
+| `color`         | `string`                        | Text color         |
+| `verticalAlign` | `"top" \| "center" \| "bottom"` | Vertical alignment |
+| `margins`       | `{ left, right, top, bottom }`  | Cell padding (EMU) |
+| `columnSpan`    | `number`                        | Column merge       |
+| `rowSpan`       | `number`                        | Row merge          |
 
 ## Images
 
-```ts
-import { Image } from "@office-open/pptx";
-
-new Image({
-  x: 100,
-  y: 100,
-  width: 300,
-  height: 200,
-  data: imageBuffer,
-  imageType: "png",
-});
+```json
+{
+  "x": 100,
+  "y": 100,
+  "width": 300,
+  "height": 200,
+  "data": "<Uint8Array>",
+  "imageType": "png"
+}
 ```
 
 ## Charts
 
 Charts are created via `@office-open/core` and embedded in slides.
 
-## Connectors & Lines
+## Lines & Connectors
 
-```ts
-import { Connector } from "@office-open/pptx";
+### Simple Line
 
-new Connector({
-  x: 100,
-  y: 100,
-  width: 200,
-  height: 0,
-  outline: { color: "000000", width: 2 },
-});
+```json
+{
+  "x1": 50,
+  "y1": 120,
+  "x2": 800,
+  "y2": 120,
+  "outline": { "color": "4472C4", "width": 2 }
+}
 ```
+
+### Connector (line with arrowheads)
+
+```json
+{
+  "x1": 50,
+  "y1": 130,
+  "x2": 400,
+  "y2": 130,
+  "outline": { "color": "4472C4", "width": 2 },
+  "endArrowhead": "triangle",
+  "beginArrowhead": "triangle"
+}
+```
+
+| Property          | Type     | Values                                                             |
+| ----------------- | -------- | ------------------------------------------------------------------ |
+| `beginArrowhead`  | `string` | `"triangle"` \| `"stealth"` \| `"diamond"` \| `"oval"` \| `"open"` |
+| `endArrowhead`    | `string` | Same as above                                                      |
+| `arrowheadWidth`  | `string` | `"sm"` \| `"med"` \| `"lg"`                                        |
+| `arrowheadLength` | `string` | `"sm"` \| `"med"` \| `"lg"`                                        |
 
 ## Group Shapes
 
-```ts
-import { GroupShape } from "@office-open/pptx";
-
-new GroupShape({
-  x: 50,
-  y: 50,
-  width: 500,
-  height: 300,
-  children: [
-    new Shape({ x: 0, y: 0, width: 240, height: 140, text: "A", fill: "4472C4" }),
-    new Shape({ x: 260, y: 0, width: 240, height: 140, text: "B", fill: "ED7D31" }),
-  ],
-});
+```json
+{
+  "x": 50,
+  "y": 50,
+  "width": 500,
+  "height": 300,
+  "rotation": 10,
+  "children": [
+    { "x": 0, "y": 0, "width": 240, "height": 140, "textBody": { "text": "A" }, "fill": "4472C4" },
+    { "x": 260, "y": 0, "width": 240, "height": 140, "textBody": { "text": "B" }, "fill": "ED7D31" }
+  ]
+}
 ```
 
-## Slide Layout & Background
+**Note**: Children coordinates are relative to the group. Supports nested groups.
 
-```ts
-new Presentation({
-    slides: [{
-        background: {
-            type: "solid",
-            color: "FFFFFF",
-        },
-        children: [...],
-    }],
-});
+## Slide Background
+
+```json
+{
+  "slides": [
+    {
+      "background": { "type": "solid", "color": "FFFFFF" },
+      "children": []
+    }
+  ]
+}
 ```
 
 ## Transitions
 
-```ts
-new Presentation({
-    slides: [{
-        transition: {
-            type: "fade",
-            duration: 1000,
-        },
-        children: [...],
-    }],
-});
+Transitions are set on slide options (not on shapes):
+
+```json
+{
+  "slides": [
+    {
+      "transition": {
+        "type": "fade",
+        "speed": "med"
+      },
+      "children": []
+    }
+  ]
+}
 ```
+
+```json
+{
+  "slides": [
+    {
+      "transition": {
+        "type": "push",
+        "direction": "right",
+        "speed": "slow"
+      },
+      "children": []
+    }
+  ]
+}
+```
+
+| Property           | Type                        | Description                                                                                                                    |
+| ------------------ | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `type`             | `string`                    | See values below                                                                                                               |
+| `speed`            | `"slow" \| "med" \| "fast"` | Transition speed                                                                                                               |
+| `advanceOnClick`   | `boolean`                   | Advance on click                                                                                                               |
+| `advanceAfterTime` | `number`                    | Auto-advance after ms                                                                                                          |
+| `direction`        | `string`                    | `"left"` \| `"up"` \| `"right"` \| `"down"` \| `"leftUp"` \| `"rightUp"` \| `"leftDown"` \| `"rightDown"` \| `"in"` \| `"out"` |
+| `orient`           | `"horz" \| "vert"`          | Orientation (for split, blinds, etc.)                                                                                          |
+| `spokes`           | `number`                    | Number of spokes for wheel transition                                                                                          |
+
+Transition types: `"fade"`, `"push"`, `"wipe"`, `"split"`, `"blinds"`, `"checker"`, `"comb"`, `"randomBar"`, `"cover"`, `"pull"`, `"strips"`, `"wheel"`, `"zoom"`, `"circle"`, `"dissolve"`, `"diamond"`, `"newsflash"`, `"plus"`, `"wedge"`, `"random"`, `"cut"`.
 
 ## Animations
 
-```ts
-new Shape({
-  x: 50,
-  y: 100,
-  width: 200,
-  height: 80,
-  text: "Animated",
-  animation: {
-    type: "appear",
-    trigger: "onClick",
-    delay: 0,
-    duration: 500,
-  },
-});
+Animations are set on Shape options:
+
+### Entrance/Exit Animations
+
+```json
+{
+  "animation": { "type": "fade", "duration": 800 }
+}
 ```
+
+```json
+{
+  "animation": { "type": "appear" }
+}
+```
+
+```json
+{
+  "animation": { "type": "fly", "direction": "left", "duration": 600 }
+}
+```
+
+```json
+{
+  "animation": { "type": "zoom" }
+}
+```
+
+```json
+{
+  "animation": { "type": "split", "direction": "horizontal" }
+}
+```
+
+### Exit Animations
+
+Add `class: "exit"`:
+
+```json
+{
+  "animation": { "type": "fade", "class": "exit", "duration": 800 }
+}
+```
+
+```json
+{
+  "animation": { "type": "fly", "class": "exit", "direction": "right", "duration": 600 }
+}
+```
+
+### Emphasis Animations
+
+```json
+{
+  "animation": { "class": "emph", "emphasisType": "growShrink", "duration": 800 }
+}
+```
+
+```json
+{
+  "animation": { "class": "emph", "emphasisType": "spin", "duration": 1000 }
+}
+```
+
+```json
+{
+  "animation": {
+    "class": "emph",
+    "emphasisType": "colorChange",
+    "color": "FF0000",
+    "duration": 800
+  }
+}
+```
+
+`emphasisType` values: `"growShrink"`, `"spin"`, `"growWithTurn"`, `"colorWave"`, `"colorChange"`, `"blink"`, `"transparency"`, `"boldFlash"`, `"wave"`, `"pulse"`.
+
+### Path Animations
+
+```json
+{
+  "animation": { "pathType": "line", "duration": 1000 }
+}
+```
+
+```json
+{
+  "animation": { "pathType": "circle", "duration": 1500 }
+}
+```
+
+```json
+{
+  "animation": {
+    "pathType": "customPath",
+    "path": "M 0 0 L 100 0 L 100 100 L 0 100 Z",
+    "duration": 1200
+  }
+}
+```
+
+`pathType` values: `"customPath"`, `"arc"`, `"bounce"`, `"circle"`, `"curve"`, `"figureEight"`, `"line"`, `"loop"`.
+
+### Animation Options Summary
+
+| Property       | Type      | Values                                                                                                                        | Description                                   |
+| -------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| `type`         | `string`  | `"appear"` \| `"fade"` \| `"fly"` \| `"wipe"` \| `"dissolve"` \| `"zoom"` \| `"cover"` \| `"push"` \| `"strips"` \| `"split"` | Entrance/exit type                            |
+| `trigger`      | `string`  | `"onClick"` \| `"withPrevious"` \| `"afterPrevious"`                                                                          | How animation triggers (default: `"onClick"`) |
+| `duration`     | `number`  | —                                                                                                                             | Duration in ms                                |
+| `delay`        | `number`  | —                                                                                                                             | Delay before start in ms                      |
+| `direction`    | `string`  | `"left"` \| `"right"` \| `"up"` \| `"down"` \| `"horizontal"` \| `"vertical"`                                                 | Animation direction                           |
+| `class`        | `string`  | `"entr"` \| `"exit"` \| `"emph"`                                                                                              | Animation category                            |
+| `emphasisType` | `string`  | See above                                                                                                                     | Required when `class: "emph"`                 |
+| `pathType`     | `string`  | See above                                                                                                                     | Path animation type                           |
+| `path`         | `string`  | SVG path syntax                                                                                                               | Custom path definition                        |
+| `color`        | `string`  | Hex color                                                                                                                     | For colorChange emphasis                      |
+| `speed`        | `number`  | —                                                                                                                             | Speed multiplier                              |
+| `repeatCount`  | `number`  | —                                                                                                                             | Number of repetitions                         |
+| `autoReverse`  | `boolean` | —                                                                                                                             | Auto-reverse animation                        |
 
 ## Parsing
 
-```ts
-import { parsePresentation, Presentation, Packer } from "@office-open/pptx";
-import { readFileSync } from "node:fs";
-
-const opts = parsePresentation(readFileSync("input.pptx"));
-
-// Modify and re-export
-const pres = new Presentation(opts);
-const buffer = await Packer.toBuffer(pres);
+```json
+// parsePresentation accepts Uint8Array, ArrayBuffer, DataView, number[], base64 string
+parsePresentation(readFileSync("input.pptx"))
+// Returns PresentationOptions — pass to new Presentation(opts) to modify and re-export
 ```

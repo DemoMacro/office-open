@@ -7,9 +7,9 @@ import { ChartCollection } from "./chart-collection";
 import type { ChartSpaceOptions } from "./chart-space";
 import { ChartSpace } from "./chart-space";
 
-let nextChartFrameId = 2048;
+let nextChartId = 2048;
 
-export interface ChartFrameOptions extends ChartSpaceOptions {
+export interface ChartOptions extends ChartSpaceOptions {
   readonly x?: number;
   readonly y?: number;
   readonly width?: number;
@@ -22,17 +22,17 @@ export interface ChartFrameOptions extends ChartSpaceOptions {
  * The chart is stored as a separate part (ppt/charts/chart{n}.xml)
  * and referenced via a relationship ID placeholder {chart:key}.
  */
-export class ChartFrame extends XmlComponent {
+export class Chart extends XmlComponent {
   private readonly chartOptions: ChartSpaceOptions;
   public readonly chartKey: string;
 
-  public constructor(options: ChartFrameOptions) {
+  public constructor(options: ChartOptions) {
     super("p:graphicFrame");
 
     this.chartOptions = options;
-    this.chartKey = `chart_${nextChartFrameId++}`;
+    this.chartKey = `chart_${nextChartId++}`;
 
-    const id = nextChartFrameId++;
+    const id = nextChartId++;
     this.root.push(new GraphicFrameNonVisual(id));
     this.root.push(
       new Transform2D(

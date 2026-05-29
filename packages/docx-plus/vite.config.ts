@@ -4,6 +4,7 @@ export default defineConfig({
   pack: {
     entry: ["src/index.ts"],
     format: ["esm", "cjs"],
+    platform: "neutral",
     shims: true,
   },
 });

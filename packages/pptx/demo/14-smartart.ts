@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Presentation, Packer, Shape, Paragraph, TextRun, SmartArtFrame } from "@office-open/pptx";
+import { Presentation, Packer, Shape, Paragraph, TextRun, SmartArt } from "@office-open/pptx";
 
 const pres = new Presentation({
   title: "SmartArt Demo",
@@ -23,7 +23,7 @@ const pres = new Presentation({
             ],
           },
         }),
-        new SmartArtFrame({
+        new SmartArt({
           x: 50,
           y: 120,
           width: 400,
@@ -37,7 +37,7 @@ const pres = new Presentation({
           style: "simple1",
           color: "accent1_2",
         }),
-        new SmartArtFrame({
+        new SmartArt({
           x: 480,
           y: 120,
           width: 400,
@@ -67,7 +67,7 @@ const pres = new Presentation({
             ],
           },
         }),
-        new SmartArtFrame({
+        new SmartArt({
           x: 50,
           y: 120,
           width: 850,
@@ -87,7 +87,7 @@ const pres = new Presentation({
     },
     {
       children: [
-        new SmartArtFrame({
+        new SmartArt({
           x: 50,
           y: 50,
           width: 850,
@@ -106,7 +106,7 @@ const pres = new Presentation({
     },
     {
       children: [
-        new SmartArtFrame({
+        new SmartArt({
           x: 50,
           y: 50,
           width: 850,
@@ -136,7 +136,7 @@ const pres = new Presentation({
             ],
           },
         }),
-        new SmartArtFrame({
+        new SmartArt({
           x: 50,
           y: 120,
           width: 400,
@@ -146,7 +146,7 @@ const pres = new Presentation({
           style: "cartoon1",
           color: "colorful1",
         }),
-        new SmartArtFrame({
+        new SmartArt({
           x: 480,
           y: 120,
           width: 400,
@@ -188,7 +188,7 @@ const pres = new Presentation({
             ],
           },
         }),
-        new SmartArtFrame({
+        new SmartArt({
           x: 50,
           y: 120,
           width: 600,
@@ -216,7 +216,7 @@ const pres = new Presentation({
     },
     {
       children: [
-        new SmartArtFrame({
+        new SmartArt({
           x: 50,
           y: 50,
           width: 600,
@@ -264,7 +264,7 @@ const pres = new Presentation({
             ],
           },
         }),
-        new SmartArtFrame({
+        new SmartArt({
           x: 50,
           y: 120,
           width: 400,
@@ -274,7 +274,7 @@ const pres = new Presentation({
           style: "burnt1",
           color: "accent6_2",
         }),
-        new SmartArtFrame({
+        new SmartArt({
           x: 480,
           y: 120,
           width: 400,
@@ -310,7 +310,7 @@ const pres = new Presentation({
             ],
           },
         }),
-        new SmartArtFrame({
+        new SmartArt({
           x: 50,
           y: 120,
           width: 400,
@@ -325,7 +325,7 @@ const pres = new Presentation({
           style: "moderate3",
           color: "accent2_2",
         }),
-        new SmartArtFrame({
+        new SmartArt({
           x: 480,
           y: 120,
           width: 400,
@@ -361,7 +361,7 @@ const pres = new Presentation({
             ],
           },
         }),
-        new SmartArtFrame({
+        new SmartArt({
           x: 50,
           y: 120,
           width: 400,
@@ -376,7 +376,7 @@ const pres = new Presentation({
           style: "professional3",
           color: "primary1",
         }),
-        new SmartArtFrame({
+        new SmartArt({
           x: 480,
           y: 120,
           width: 400,
@@ -390,7 +390,7 @@ const pres = new Presentation({
     },
     {
       children: [
-        new SmartArtFrame({
+        new SmartArt({
           x: 50,
           y: 50,
           width: 400,
@@ -400,7 +400,7 @@ const pres = new Presentation({
           style: "powdery2",
           color: "primary2",
         }),
-        new SmartArtFrame({
+        new SmartArt({
           x: 480,
           y: 50,
           width: 400,

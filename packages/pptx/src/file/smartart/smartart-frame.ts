@@ -11,9 +11,9 @@ import { emuPosition } from "@util/position";
 import type { SmartArtCollection } from "./smartart-collection";
 import { createDataModel, type TreeNode } from "./tree-to-model";
 
-let nextSmartArtFrameId = 1024;
+let nextSmartArtId = 1024;
 
-export interface SmartArtFrameOptions {
+export interface SmartArtOptions {
   readonly x?: number;
   readonly y?: number;
   readonly width?: number;
@@ -31,23 +31,23 @@ export interface SmartArtFrameOptions {
 /**
  * p:graphicFrame — Slide-level graphic frame wrapping a SmartArt diagram.
  */
-export class SmartArtFrame extends XmlComponent {
+export class SmartArt extends XmlComponent {
   private readonly smartArtKey: string;
   private readonly dataModel: ReturnType<typeof createDataModel>;
   private readonly layoutId: string;
   private readonly styleId: string;
   private readonly colorId: string;
 
-  public constructor(options: SmartArtFrameOptions) {
+  public constructor(options: SmartArtOptions) {
     super("p:graphicFrame");
 
-    this.smartArtKey = `smartart_${nextSmartArtFrameId++}`;
+    this.smartArtKey = `smartart_${nextSmartArtId++}`;
     this.layoutId = options.layout ?? "default";
     this.styleId = options.style ?? "simple1";
     this.colorId = options.color ?? "accent1_2";
     this.dataModel = createDataModel(options.nodes, this.layoutId, this.styleId, this.colorId);
 
-    const id = nextSmartArtFrameId++;
+    const id = nextSmartArtId++;
     const name = options.name ?? `Diagram ${id}`;
 
     this.root.push(new GraphicFrameNonVisual(id, name));

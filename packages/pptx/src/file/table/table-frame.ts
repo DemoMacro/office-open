@@ -4,10 +4,10 @@ import { emuPosition } from "@util/position";
 
 import { Graphic } from "./graphic";
 import { GraphicFrameNonVisual } from "./graphic-frame-non-visual";
-import type { TableOptions } from "./table";
-import { Table } from "./table";
+import type { DrawingTableOptions } from "./table";
+import { DrawingTable } from "./table";
 
-export interface TableFrameOptions extends TableOptions {
+export interface TableOptions extends DrawingTableOptions {
   readonly x?: number;
   readonly y?: number;
   readonly width?: number;
@@ -19,8 +19,8 @@ export interface TableFrameOptions extends TableOptions {
  *
  * x/y/width/height accept pixel values, converted to EMUs internally.
  */
-export class TableFrame extends XmlComponent {
-  public constructor(options: TableFrameOptions) {
+export class Table extends XmlComponent {
+  public constructor(options: TableOptions) {
     super("p:graphicFrame");
 
     this.root.push(new GraphicFrameNonVisual());
@@ -34,7 +34,7 @@ export class TableFrame extends XmlComponent {
       ),
     );
 
-    const table = new Table(options);
+    const table = new DrawingTable(options);
     this.root.push(new Graphic(table));
   }
 }

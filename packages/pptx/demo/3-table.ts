@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { Presentation, Packer, Shape, TableFrame } from "@office-open/pptx";
+import { Presentation, Packer, Shape, Table } from "@office-open/pptx";
 
 const pres = new Presentation({
   title: "Phase 3 Demo",
@@ -16,7 +16,7 @@ const pres = new Presentation({
           textBody: { text: "Table Demo" },
           fill: "4472C4",
         }),
-        new TableFrame({
+        new Table({
           x: 50,
           y: 120,
           width: 600,
@@ -51,7 +51,7 @@ const pres = new Presentation({
     {
       background: { fill: "F5F5F5" },
       children: [
-        new TableFrame({
+        new Table({
           x: 100,
           y: 80,
           width: 500,
@@ -87,7 +87,7 @@ const pres = new Presentation({
           textBody: { text: "Vertical Align & Cell Margins" },
           fill: "4472C4",
         }),
-        new TableFrame({
+        new Table({
           x: 50,
           y: 120,
           width: 600,
@@ -136,7 +136,7 @@ const pres = new Presentation({
           textBody: { text: "Merged Cells" },
           fill: "4472C4",
         }),
-        new TableFrame({
+        new Table({
           x: 50,
           y: 120,
           width: 600,

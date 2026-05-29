@@ -27,28 +27,28 @@
     "dist"
   ],
   "type": "module",
-  "main": "dist/index.mjs",
-  "types": "dist/index.d.mts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.mts",
-      "import": "./dist/index.mjs"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./values": {
-      "types": "./dist/values.d.mts",
-      "import": "./dist/values.mjs"
+      "types": "./dist/values.d.ts",
+      "import": "./dist/values.js"
     },
     "./smartart": {
-      "types": "./dist/smartart/index.d.mts",
-      "import": "./dist/smartart/index.mjs"
+      "types": "./dist/smartart/index.d.ts",
+      "import": "./dist/smartart/index.js"
     },
     "./chart": {
-      "types": "./dist/chart/index.d.mts",
-      "import": "./dist/chart/index.mjs"
+      "types": "./dist/chart/index.d.ts",
+      "import": "./dist/chart/index.js"
     },
     "./drawingml": {
-      "types": "./dist/drawingml/index.d.mts",
-      "import": "./dist/drawingml/index.mjs"
+      "types": "./dist/drawingml/index.d.ts",
+      "import": "./dist/drawingml/index.js"
     }
   },
   "scripts": {

@@ -31,71 +31,79 @@ pnpm add @office-open/xml       # XML parsing/serialization
 
 ## Quick Start — DOCX
 
-```ts
-import { Document, Packer, Paragraph, TextRun, HeadingLevel } from "@office-open/docx";
-
-const doc = new Document({
-  sections: [
+```json
+{
+  "sections": [
     {
-      properties: {},
-      children: [
-        new Paragraph({ text: "Title", heading: HeadingLevel.HEADING_1 }),
-        new Paragraph({
-          children: [
-            new TextRun({ text: "Bold", bold: true }),
-            new TextRun(" and "),
-            new TextRun({ text: "italic", italics: true }),
-          ],
-        }),
-      ],
-    },
-  ],
-});
+      "properties": {},
+      "children": [
+        { "text": "Title", "heading": "Heading1" },
+        {
+          "children": [
+            { "text": "Bold", "bold": true },
+            " and ",
+            { "text": "italic", "italics": true }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
 
+```ts
+import { Document, Packer } from "@office-open/docx";
+
+// The JSON above is the Document options — pass to constructor
+const doc = new Document({ sections: [...] });
 const buffer = await Packer.toBuffer(doc);
 ```
 
 ## Quick Start — PPTX
 
-```ts
-import { Presentation, Packer, Shape } from "@office-open/pptx";
-
-const pres = new Presentation({
-  title: "Demo",
-  slides: [
+```json
+{
+  "title": "Demo",
+  "slides": [
     {
-      children: [
-        new Shape({
-          x: 50,
-          y: 30,
-          width: 600,
-          height: 60,
-          text: "Title",
-          fill: "4472C4",
-        }),
-      ],
-    },
-  ],
-});
+      "children": [
+        {
+          "x": 50,
+          "y": 30,
+          "width": 600,
+          "height": 60,
+          "text": "Title",
+          "fill": "4472C4"
+        }
+      ]
+    }
+  ]
+}
+```
 
+```ts
+import { Presentation, Packer } from "@office-open/pptx";
+
+// Pass options to Presentation constructor
+const pres = new Presentation({ title: "Demo", slides: [...] });
 const buffer = await Packer.toBuffer(pres);
 ```
 
 ## Export Options
 
-```ts
-// Node.js
-const buffer = await Packer.toBuffer(doc);
+`Packer` provides multiple output formats:
 
-// Browser
-const blob = await Packer.toBlob(doc);
+| Method                | Returns                      | Environment |
+| --------------------- | ---------------------------- | ----------- |
+| `toBuffer(doc)`       | `Promise<Buffer>`            | Node.js     |
+| `toBlob(doc)`         | `Promise<Blob>`              | Browser     |
+| `toBase64String(doc)` | `Promise<string>`            | Any         |
+| `toBytes(doc)`        | `Promise<Uint8Array>`        | Any         |
+| `toArrayBuffer(doc)`  | `Promise<ArrayBuffer>`       | Any         |
+| `toString(doc)`       | `Promise<string>`            | Any         |
+| `toStream(doc)`       | `ReadableStream<Uint8Array>` | Any         |
 
-// Base64
-const base64 = await Packer.toBase64(doc);
-
-// Write to file system
-await Packer.toFile(doc, "output.docx");
-```
+Each async method has a sync counterpart: `toBufferSync`, `toBlobSync`, `toBase64StringSync`, etc.
 
 ## Parsing Existing Documents
 
@@ -103,13 +111,15 @@ await Packer.toFile(doc, "output.docx");
 import { parseDocument, Document, Packer } from "@office-open/docx";
 import { readFileSync } from "node:fs";
 
-// DOCX — accepts Uint8Array, ArrayBuffer, DataView, number[], base64 string, etc.
+// Accepts Uint8Array, ArrayBuffer, DataView, number[], base64 string
 const opts = parseDocument(readFileSync("input.docx"));
 const doc = new Document(opts);
 const buffer = await Packer.toBuffer(doc);
+```
 
-// PPTX — same flexible input types
+```ts
 import { parsePresentation, Presentation } from "@office-open/pptx";
+
 const presOpts = parsePresentation(readFileSync("input.pptx"));
 const pres = new Presentation(presOpts);
 const presBuffer = await Packer.toBuffer(pres);
@@ -119,180 +129,165 @@ const presBuffer = await Packer.toBuffer(pres);
 
 ### Sections & Page Layout
 
-```ts
-new Document({
-    sections: [{
-        properties: {
-            page: {
-                size: { width: 11906, height: 16838, orientation: "portrait" },
-                margins: { top: 1440, bottom: 1440, left: 1440, right: 1440 },
-            },
-        },
-        children: [...],
-    }],
-});
+```json
+{
+  "sections": [
+    {
+      "properties": {
+        "page": {
+          "size": { "width": 11906, "height": 16838, "orientation": "portrait" },
+          "margins": { "top": 1440, "bottom": 1440, "left": 1440, "right": 1440 }
+        }
+      },
+      "children": []
+    }
+  ]
+}
 ```
 
 ### Tables
 
-```ts
-import { Table, TableRow, TableCell, WidthType } from "@office-open/docx";
-
-new Table({
-  rows: [
-    new TableRow({
-      children: [
-        new TableCell({ children: [new Paragraph("Cell 1")] }),
-        new TableCell({ children: [new Paragraph("Cell 2")] }),
-      ],
-    }),
-  ],
-});
+```json
+{
+  "width": { "size": 100, "units": "pct" },
+  "rows": [
+    {
+      "children": [
+        { "children": [{ "text": "Cell 1" }], "shading": { "fill": "4472C4" } },
+        { "children": [{ "text": "Cell 2" }] }
+      ]
+    }
+  ]
+}
 ```
 
 ### Images with Effects
 
-```ts
-import { ImageRun } from "@office-open/docx";
-import { readFileSync } from "node:fs";
-
-new ImageRun({
-  type: "png",
-  data: readFileSync("photo.png"),
-  transformation: { width: 200, height: 150 },
-  blipEffects: {
-    grayscale: true,
-    // luminance: { bright: 30, contrast: -20 },
-    // duotone: { color1: { value: "002060" }, color2: { value: "D0CECE" } },
-    // tint: { hue: 6000000, amount: 40 },
-  },
-});
+```json
+{
+  "type": "png",
+  "data": "<Uint8Array>",
+  "transformation": { "width": 200, "height": 150 },
+  "blipEffects": {
+    "grayscale": true,
+    "luminance": { "bright": 30, "contrast": -20 },
+    "duotone": { "color1": { "value": "002060" }, "color2": { "value": "D0CECE" } },
+    "tint": { "hue": 6000000, "amount": 40 }
+  }
+}
 ```
 
 ### Headers & Footers
 
-```ts
-import { Header, Footer, PageNumber } from "@office-open/docx";
-
-new Document({
-    sections: [{
-        properties: {},
-        headers: {
-            default: new Header({
-                children: [new Paragraph("Header text")],
-            }),
-        },
-        footers: {
-            default: new Footer({
-                children: [
-                    new Paragraph({
-                        children: [PageNumber.CURRENT],
-                    }),
-                ],
-            }),
-        },
-        children: [...],
-    }],
-});
+```json
+{
+  "headers": {
+    "default": {
+      "children": [{ "text": "Header text" }]
+    }
+  },
+  "footers": {
+    "default": {
+      "children": [
+        {
+          "alignment": "center",
+          "children": ["Page ", "CURRENT", " of ", "TOTAL_PAGES"]
+        }
+      ]
+    }
+  }
+}
 ```
+
+Page number tokens (string values used in TextRun children arrays):
+
+- `"CURRENT"` — Current page number
+- `"TOTAL_PAGES"` — Total page count
+- `"TOTAL_PAGES_IN_SECTION"` — Section page count
+- `"SECTION"` — Current section page
 
 ### Math Equations
 
-```ts
-import { Math, MathRun, MathFraction, MathSuperScript, MathRadical } from "@office-open/docx";
+```json
+// Fraction: a/b
+{ "numerator": ["a"], "denominator": ["b"] }
 
-new Math({
-  children: [new MathFraction({ numerator: "a + b", denominator: "c" })],
-});
+// Superscript: x²
+{ "children": ["x"], "superScript": ["2"] }
 
-// E = mc²
-new Math({
-  children: [
-    new MathRun("E = m"),
-    new MathSuperScript({
-      children: [new MathRun("c")],
-      superScript: [new MathRun("2")],
-    }),
-  ],
-});
+// Square root: √(a+b)
+{ "children": ["a + b"] }
 ```
 
 ### Charts & SmartArt
 
-```ts
-import { ChartSpace } from "@office-open/core";
+Charts are created via `@office-open/core` and embedded in both docx and pptx.
 
-// Charts are created via @office-open/core and embedded in both docx and pptx
-const chart = ChartSpace.create({
-  type: "bar",
-  data: [
-    { category: "A", value: 10 },
-    { category: "B", value: 20 },
-  ],
-});
+```json
+{
+  "type": "bar",
+  "data": [
+    { "category": "A", "value": 10 },
+    { "category": "B", "value": 20 }
+  ]
+}
 ```
 
 ## PPTX Features
 
 ### Shapes with Text
 
-```ts
-new Shape({
-  x: 50,
-  y: 100,
-  width: 300,
-  height: 80,
-  text: "Hello",
-  fill: "4472C4",
-  outline: { color: "0D47A1", width: 2 },
-});
+```json
+{
+  "x": 50,
+  "y": 100,
+  "width": 300,
+  "height": 80,
+  "text": "Hello",
+  "fill": "4472C4",
+  "outline": { "color": "0D47A1", "width": 2 }
+}
 ```
 
 ### Shapes with Effects
 
-```ts
-new Shape({
-  x: 50,
-  y: 100,
-  width: 200,
-  height: 120,
-  text: "Shadow",
-  fill: "ED7D31",
-  effects: {
-    outerShadow: {
-      blur: 50800,
-      distance: 38100,
-      direction: 5400000,
-      color: "000000",
-      alpha: 50,
+```json
+{
+  "x": 50,
+  "y": 100,
+  "width": 200,
+  "height": 120,
+  "text": "Shadow",
+  "fill": "ED7D31",
+  "effects": {
+    "outerShadow": {
+      "blur": 50800,
+      "distance": 38100,
+      "direction": 5400000,
+      "color": "000000",
+      "alpha": 50
     },
-    glow: { radius: 152400, color: "92D050", alpha: 60 },
-    reflection: { blurRadius: 6350, distance: 38100, startAlpha: 90, endAlpha: 0 },
-    softEdge: { radius: 50800 },
-    rotation3D: { x: 20, y: 30, z: 10, perspective: 500 },
-    extrusionH: 50000,
-    material: "plastic",
-    bevelTop: { width: 8, height: 8 },
-  },
-});
+    "glow": { "radius": 152400, "color": "92D050", "alpha": 60 },
+    "reflection": { "blurRadius": 6350, "distance": 38100, "startAlpha": 90, "endAlpha": 0 },
+    "softEdge": { "radius": 50800 },
+    "rotation3D": { "x": 20, "y": 30, "z": 10, "perspective": 500 },
+    "extrusionH": 50000,
+    "material": "plastic",
+    "bevelTop": { "width": 8, "height": 8 }
+  }
+}
 ```
 
 ### Fill Types
 
-```ts
-// Solid
-fill: "4472C4"
-fill: { type: "solid", color: "4472C4" }
-
-// Gradient
-fill: { type: "gradient", stops: [{ position: 0, color: "1565C0" }, { position: 100, color: "42A5F5" }], angle: 45 }
-
-// Image
-fill: { type: "blip", data: imageBuffer, imageType: "png" }
-
-// None
-fill: { type: "noFill" }
+```json
+{ "type": "solid", "color": "4472C4" }
+{ "type": "gradient", "stops": [{ "position": 0, "color": "1565C0" }, { "position": 100, "color": "42A5F5" }], "angle": 45 }
+{ "type": "blip", "data": "<Uint8Array>", "imageType": "png" }
+{ "type": "noFill" }
 ```
+
+String shorthand: `fill: "4472C4"` is equivalent to `{ type: "solid", color: "4472C4" }`.
 
 ## Measurement Units
 

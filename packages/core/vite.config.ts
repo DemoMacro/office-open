@@ -10,6 +10,8 @@ export default defineConfig({
       "src/drawingml/index.ts",
       "src/patch/index.ts",
     ],
+    platform: "neutral",
+    shims: true,
   },
   test: {
     benchmark: {

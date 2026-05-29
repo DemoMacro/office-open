@@ -17,8 +17,8 @@ export interface PositionOptions {
 /**
  * Converts pixel position/size values to EMU, defaulting missing values to 0.
  *
- * Used by components that always need a transform (ChartFrame, Picture,
- * TableFrame, SmartArtFrame, MediaFrameBase, etc.).
+ * Used by components that always need a transform (Chart, Picture,
+ * Table, SmartArt, MediaFrameBase, etc.).
  */
 export function emuPosition(opts: PositionOptions): {
   x: number;

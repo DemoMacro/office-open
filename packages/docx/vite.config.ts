@@ -8,6 +8,7 @@ const src = path.resolve("src");
 export default defineConfig({
   pack: {
     entry: ["src/index.ts"],
+    platform: "neutral",
     plugins: [nodePolyfills()],
     shims: true,
   },

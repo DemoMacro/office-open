@@ -19,7 +19,7 @@ import {
 import type { Element } from "@office-open/xml";
 
 import type { BackgroundOptions } from "../file/background/background";
-import type { ChartFrameOptions } from "../file/chart/chart-frame";
+import type { ChartOptions } from "../file/chart/chart-frame";
 import type { SlideOptions } from "../file/file";
 import type { AudioFrameOptions } from "../file/media/audio-frame";
 import type { VideoFrameOptions } from "../file/media/video-frame";
@@ -32,8 +32,8 @@ import type {
 } from "../file/shape/line-shape";
 import type { ShapeOptions } from "../file/shape/shape";
 import type { SlideChild } from "../file/slide/slide-child";
-import type { SmartArtFrameOptions } from "../file/smartart/smartart-frame";
-import type { TableFrameOptions } from "../file/table/table-frame";
+import type { SmartArtOptions } from "../file/smartart/smartart-frame";
+import type { TableOptions } from "../file/table/table-frame";
 import type {
   TransitionOptions,
   TransitionDirection,
@@ -419,7 +419,7 @@ function parseGraphicFrame(el: Element, ctx: ParseContext): SlideChild | undefin
 
 // ── Chart frame parser ────────────────────────────────────────────────────────
 
-function parseChartFrame(el: Element, ctx: ParseContext): ChartFrameOptions {
+function parseChartFrame(el: Element, ctx: ParseContext): ChartOptions {
   const opts: Record<string, unknown> = {};
 
   // Position from p:xfrm
@@ -441,7 +441,7 @@ function parseChartFrame(el: Element, ctx: ParseContext): ChartFrameOptions {
     }
   }
 
-  return opts as unknown as ChartFrameOptions;
+  return opts as unknown as ChartOptions;
 }
 
 /**
@@ -565,7 +565,7 @@ function extractNumCache(parent: Element): number[] {
 
 // ── SmartArt frame parser ─────────────────────────────────────────────────────
 
-function parseSmartArtFrame(el: Element, ctx: ParseContext): SmartArtFrameOptions {
+function parseSmartArtFrame(el: Element, ctx: ParseContext): SmartArtOptions {
   const opts: Record<string, unknown> = {};
 
   // Position
@@ -596,7 +596,7 @@ function parseSmartArtFrame(el: Element, ctx: ParseContext): SmartArtFrameOption
     }
   }
 
-  return opts as unknown as SmartArtFrameOptions;
+  return opts as unknown as SmartArtOptions;
 }
 
 function parseSmartArtDataXml(el: Element, opts: Record<string, unknown>): void {
@@ -671,7 +671,7 @@ function buildSmartArtNode(
 
 // ── Table frame parser ────────────────────────────────────────────────────────
 
-function parseTableFrame(el: Element, tbl: Element): TableFrameOptions {
+function parseTableFrame(el: Element, tbl: Element): TableOptions {
   const opts: Record<string, unknown> = {};
 
   // Position
@@ -735,7 +735,7 @@ function parseTableFrame(el: Element, tbl: Element): TableFrameOptions {
   }
   opts.rows = rows;
 
-  return opts as unknown as TableFrameOptions;
+  return opts as unknown as TableOptions;
 }
 
 function parseTableCell(tc: Element): Record<string, unknown> {

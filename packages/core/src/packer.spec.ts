@@ -1,5 +1,3 @@
-import { Readable } from "stream";
-
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { createPacker, PrettifyType, type XmlifyedFile } from "./packer";
@@ -220,23 +218,34 @@ describe("createPacker", () => {
 
   // ── Stream ──
 
+  /** Helper: collect all chunks from a ReadableStream<Uint8Array>. */
+  const collectStream = async (stream: ReadableStream<Uint8Array>): Promise<Uint8Array> => {
+    const chunks: Uint8Array[] = [];
+    const reader = stream.getReader();
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+    }
+    const total = chunks.reduce((s, c) => s + c.length, 0);
+    const combined = new Uint8Array(total);
+    let offset = 0;
+    for (const c of chunks) {
+      combined.set(c, offset);
+      offset += c.length;
+    }
+    return combined;
+  };
+
   describe("#toStream()", () => {
-    it("should return a Readable stream", () => {
+    it("should return a ReadableStream", () => {
       const stream = Packer.toStream(mockFile);
-      expect(stream).toBeInstanceOf(Readable);
+      expect(stream).toBeInstanceOf(ReadableStream);
     });
 
     it("should emit ZIP magic bytes", async () => {
       const stream = Packer.toStream(mockFile);
-      const chunks: Buffer[] = [];
-
-      await new Promise<void>((resolve, reject) => {
-        stream.on("data", (chunk: Buffer) => chunks.push(chunk));
-        stream.on("end", () => resolve());
-        stream.on("error", (err: Error) => reject(err));
-      });
-
-      const combined = Buffer.concat(chunks);
+      const combined = await collectStream(stream);
       expect(combined.length).toBeGreaterThan(0);
       // ZIP magic: PK\x03\x04
       expect(combined[0]).toBe(0x50);
@@ -245,54 +254,49 @@ describe("createPacker", () => {
 
     it("should produce a valid ZIP with EOCD", async () => {
       const stream = Packer.toStream(mockFile);
-      const chunks: Buffer[] = [];
-
-      await new Promise<void>((resolve, reject) => {
-        stream.on("data", (chunk: Buffer) => chunks.push(chunk));
-        stream.on("end", () => resolve());
-        stream.on("error", (err: Error) => reject(err));
-      });
-
-      const data = Buffer.concat(chunks);
-      const eocd = data.indexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
-      expect(eocd).toBeGreaterThanOrEqual(0);
+      const data = await collectStream(stream);
+      const eocdSignature = new Uint8Array([0x50, 0x4b, 0x05, 0x06]);
+      let found = false;
+      for (let i = 0; i <= data.length - 4; i++) {
+        if (
+          data[i] === eocdSignature[0] &&
+          data[i + 1] === eocdSignature[1] &&
+          data[i + 2] === eocdSignature[2] &&
+          data[i + 3] === eocdSignature[3]
+        ) {
+          found = true;
+          break;
+        }
+      }
+      expect(found).toBe(true);
     });
 
-    it("should destroy the stream if compile throws", () => {
+    it("should error the stream if compile throws", async () => {
       compileMock.mockImplementation(() => {
         throw new Error("compile failed");
       });
 
       const stream = Packer.toStream(mockFile);
+      const reader = stream.getReader();
 
-      return new Promise<void>((resolve) => {
-        stream.on("error", (err: Error) => {
-          expect(err.message).toBe("compile failed");
-          resolve();
-        });
-        stream.on("end", () => {
-          assert.fail("stream should not end normally on error");
-        });
-      });
+      await expect(reader.read()).rejects.toThrow("compile failed");
     });
 
-    it("should wrap non-Error throws in Error", () => {
+    it("should wrap non-Error throws in Error", async () => {
       compileMock.mockImplementation(() => {
         throw "string error";
       });
 
       const stream = Packer.toStream(mockFile);
+      const reader = stream.getReader();
 
-      return new Promise<void>((resolve) => {
-        stream.on("error", (err: Error) => {
-          expect(err).toBeInstanceOf(Error);
-          expect(err.message).toBe("string error");
-          resolve();
-        });
-        stream.on("end", () => {
-          assert.fail("stream should not end normally on error");
-        });
-      });
+      try {
+        await reader.read();
+        assert.fail("should have thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(Error);
+        expect((err as Error).message).toBe("string error");
+      }
     });
 
     it("should handle STORED entries (level 0)", async () => {
@@ -302,15 +306,8 @@ describe("createPacker", () => {
       });
 
       const stream = Packer.toStream(mockFile);
-      const chunks: Buffer[] = [];
-
-      await new Promise<void>((resolve) => {
-        stream.on("data", (chunk: Buffer) => chunks.push(chunk));
-        stream.on("end", () => resolve());
-        stream.on("error", () => resolve());
-      });
-
-      expect(Buffer.concat(chunks).length).toBeGreaterThan(0);
+      const data = await collectStream(stream);
+      expect(data.length).toBeGreaterThan(0);
     });
 
     it("should handle DEFLATE entries with explicit level", async () => {
@@ -320,28 +317,14 @@ describe("createPacker", () => {
       });
 
       const stream = Packer.toStream(mockFile);
-      const chunks: Buffer[] = [];
-
-      await new Promise<void>((resolve) => {
-        stream.on("data", (chunk: Buffer) => chunks.push(chunk));
-        stream.on("end", () => resolve());
-        stream.on("error", () => resolve());
-      });
-
-      expect(Buffer.concat(chunks).length).toBeGreaterThan(0);
+      const data = await collectStream(stream);
+      expect(data.length).toBeGreaterThan(0);
     });
 
     it("should support prettify option", async () => {
       const stream = Packer.toStream(mockFile, PrettifyType.WITH_TAB);
-      const chunks: Buffer[] = [];
-
-      await new Promise<void>((resolve, reject) => {
-        stream.on("data", (chunk: Buffer) => chunks.push(chunk));
-        stream.on("end", () => resolve());
-        stream.on("error", (err: Error) => reject(err));
-      });
-
-      expect(chunks.length).toBeGreaterThan(0);
+      const data = await collectStream(stream);
+      expect(data.length).toBeGreaterThan(0);
     });
   });
 });

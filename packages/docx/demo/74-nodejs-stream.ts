@@ -1,6 +1,8 @@
 // Exporting the document as a stream
 
 import * as fs from "fs";
+import { Readable } from "stream";
+import type { ReadableStream as WebReadableStream } from "stream/web";
 
 import { Document, Packer, Paragraph, Tab, TextRun } from "@office-open/docx";
 
@@ -28,4 +30,6 @@ const doc = new Document({
 });
 
 const stream = Packer.toStream(doc);
-stream.pipe(fs.createWriteStream("My Document.docx"));
+Readable.fromWeb(stream as unknown as WebReadableStream).pipe(
+  fs.createWriteStream("My Document.docx"),
+);

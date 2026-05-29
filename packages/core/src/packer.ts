@@ -4,8 +4,6 @@
  * @module
  */
 
-import { Readable } from "stream";
-
 import {
   type AsyncZippable,
   type ZipOptions,
@@ -88,48 +86,46 @@ export const zipSyncAndConvert = <T extends OutputType>(
 };
 
 /**
- * Create a Node.js Readable stream from compressed file entries.
+ * Create a `ReadableStream<Uint8Array>` from compressed file entries.
  *
- * Uses fflate's AsyncZipDeflate for non-blocking DEFLATE compression via
- * Web Workers. STORED entries (media) pass through synchronously.
- * Chunks are emitted asynchronously as each file's compression completes.
+ * Uses fflate's `AsyncZipDeflate` for non-blocking DEFLATE compression.
+ * `STORED` entries (media) pass through synchronously.
+ * Works in both Node.js and browsers (Web Streams API).
  */
-export const createZipStream = (files: Zippable): Readable => {
-  const stream = new Readable({ read() {} });
+export const createZipStream = (files: Zippable): ReadableStream<Uint8Array> => {
+  return new ReadableStream<Uint8Array>({
+    start(controller) {
+      try {
+        const zip = new Zip((err, chunk, _final) => {
+          if (err) {
+            controller.error(err);
+            return;
+          }
+          controller.enqueue(chunk);
+          if (_final) {
+            controller.close();
+          }
+        });
 
-  try {
-    const zip = new Zip((err, chunk, final) => {
-      if (err) {
-        stream.destroy(err);
-        return;
+        for (const [name, data] of Object.entries(files)) {
+          const raw = Array.isArray(data) ? (data[0] as Uint8Array) : (data as Uint8Array);
+          const level = Array.isArray(data)
+            ? ((data[1] as ZipOptions).level ?? ZIP_DEFLATE_LEVEL)
+            : ZIP_DEFLATE_LEVEL;
+          const entry =
+            level === ZIP_STORED_LEVEL
+              ? new ZipPassThrough(name)
+              : new AsyncZipDeflate(name, { level });
+          zip.add(entry);
+          entry.push(raw, true);
+        }
+
+        zip.end();
+      } catch (err) {
+        controller.error(err instanceof Error ? err : new Error(String(err)));
       }
-      if (!stream.destroyed) {
-        stream.push(Buffer.from(chunk));
-      }
-      if (final) {
-        stream.push(null);
-      }
-    });
-
-    for (const [name, data] of Object.entries(files)) {
-      const raw = Array.isArray(data) ? (data[0] as Uint8Array) : (data as Uint8Array);
-      const level = Array.isArray(data)
-        ? ((data[1] as ZipOptions).level ?? ZIP_DEFLATE_LEVEL)
-        : ZIP_DEFLATE_LEVEL;
-      const entry =
-        level === ZIP_STORED_LEVEL
-          ? new ZipPassThrough(name)
-          : new AsyncZipDeflate(name, { level });
-      zip.add(entry);
-      entry.push(raw, true);
-    }
-
-    zip.end();
-  } catch (err) {
-    stream.destroy(err instanceof Error ? err : new Error(String(err)));
-  }
-
-  return stream;
+    },
+  });
 };
 
 // ── PrettifyType alias for convenience method signatures ──
@@ -251,12 +247,12 @@ export interface Packer<TFile> {
     overrides?: readonly XmlifyedFile[],
   ): ArrayBuffer;
 
-  /** Streaming output via Node.js Readable (truly async, uses Web Workers). */
+  /** Streaming output via `ReadableStream<Uint8Array>` (cross-platform, uses Web Workers). */
   toStream(
     file: TFile,
     prettify?: boolean | PrettifyValue,
     overrides?: readonly XmlifyedFile[],
-  ): Readable;
+  ): ReadableStream<Uint8Array>;
 }
 
 /**
@@ -385,9 +381,11 @@ export const createPacker = <TFile>(options: {
     try {
       files = compileFiles(file, prettify, overrides);
     } catch (err) {
-      const errorStream = new Readable({ read() {} });
-      errorStream.destroy(err instanceof Error ? err : new Error(String(err)));
-      return errorStream;
+      return new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.error(err instanceof Error ? err : new Error(String(err)));
+        },
+      });
     }
     return createZipStream(files);
   };

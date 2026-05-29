@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import { ChartFrame, Presentation, Packer, Shape } from "@office-open/pptx";
+import { Chart, Presentation, Packer, Shape } from "@office-open/pptx";
 
 const pres = new Presentation({
   title: "Phase 4 Demo - Charts",
@@ -16,7 +16,7 @@ const pres = new Presentation({
           textBody: { text: "Column Chart" },
           fill: "4472C4",
         }),
-        new ChartFrame({
+        new Chart({
           x: 50,
           y: 120,
           width: 600,
@@ -44,7 +44,7 @@ const pres = new Presentation({
           textBody: { text: "Pie Chart" },
           fill: "ED7D31",
         }),
-        new ChartFrame({
+        new Chart({
           x: 100,
           y: 120,
           width: 500,
@@ -66,7 +66,7 @@ const pres = new Presentation({
           textBody: { text: "Line Chart" },
           fill: "70AD47",
         }),
-        new ChartFrame({
+        new Chart({
           x: 50,
           y: 120,
           width: 600,

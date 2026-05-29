@@ -201,7 +201,7 @@ export class Compiler {
       path: "ppt/_rels/presentation.xml.rels",
     };
 
-    // Slides — format BEFORE ContentTypes so ChartFrame.prepForXml() populates Charts
+    // Slides — format BEFORE ContentTypes so Chart.prepForXml() populates Charts
     for (let i = 0; i < file.slides.length; i++) {
       const slideWrapper = file.slideWrappers[i];
       const slideXml = this.formatter.formatToXml(slideWrapper.view, context, declaration);

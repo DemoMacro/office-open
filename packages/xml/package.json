@@ -28,16 +28,16 @@
     "dist"
   ],
   "type": "module",
-  "main": "dist/index.mjs",
-  "types": "dist/index.d.mts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.mts",
-      "import": "./dist/index.mjs"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./utils": {
-      "types": "./dist/utils.d.mts",
-      "import": "./dist/utils.mjs"
+      "types": "./dist/utils.d.ts",
+      "import": "./dist/utils.js"
     }
   },
   "scripts": {

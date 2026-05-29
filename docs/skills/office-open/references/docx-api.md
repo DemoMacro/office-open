@@ -1,6 +1,6 @@
 # DOCX API Reference
 
-Complete API reference for `@office-open/docx`.
+Complete API reference for `@office-open/docx`. All examples show the options JSON structure. Pass these objects to constructors (e.g. `new TextRun({ ... })`) or as children arrays.
 
 ## Document Structure
 
@@ -9,7 +9,7 @@ Document
 ├── sections: SectionOptions[]
 │   ├── properties: SectionPropertiesOptionsBase
 │   │   ├── page: { size, margins, columns, borders }
-│   │   └── type: SectionType (CONTINUOUS | NEXT_PAGE | EVEN_PAGE | ODD_PAGE)
+│   │   └── type: "nextPage" | "continuous" | "evenPage" | "oddPage"
 │   ├── headers: { default, first, even, odd }
 │   ├── footers: { default, first, even, odd }
 │   └── children: (Paragraph | Table | ImageRun | ...)[]
@@ -19,373 +19,474 @@ Document
 
 ### TextRun Options
 
-```ts
-new TextRun({
-  text: "Hello",
-  bold: true,
-  italics: true,
-  underline: { type: "single", color: "FF0000" },
-  strike: "single", // "single" | "double" | "none"
-  doubleStrike: true,
-  subScript: true,
-  superScript: true,
-  font: "Calibri",
-  size: 24, // Half-points (24 = 12pt)
-  color: "FF0000",
-  highlight: "yellow", // Word highlight colors
-  shading: { type: "clear", fill: "E0E0E0" },
-  characterSpacing: 100,
-  break: 1, // Line breaks
-  tab: { type: "left", position: 1000 },
-  border: {
-    color: "000000",
-    style: "single",
-    space: 1,
-    size: 6,
-  },
-});
+```json
+{
+  "text": "Hello",
+  "bold": true,
+  "italics": true,
+  "underline": { "type": "single", "color": "FF0000" },
+  "strike": "single",
+  "doubleStrike": true,
+  "subScript": true,
+  "superScript": true,
+  "font": "Calibri",
+  "size": 24,
+  "color": "FF0000",
+  "highlight": "yellow",
+  "shading": { "type": "clear", "fill": "E0E0E0" },
+  "characterSpacing": 100,
+  "break": 1,
+  "tab": { "type": "left", "position": 1000 },
+  "border": {
+    "color": "000000",
+    "style": "single",
+    "space": 1,
+    "size": 6
+  }
+}
 ```
+
+| Property           | Type                             | Description                                                                          |
+| ------------------ | -------------------------------- | ------------------------------------------------------------------------------------ |
+| `text`             | `string`                         | Plain text content                                                                   |
+| `bold`             | `boolean`                        | Bold formatting                                                                      |
+| `italics`          | `boolean`                        | Italic formatting                                                                    |
+| `underline`        | `{ type, color? }`               | Underline style. Types: `"single"`, `"double"`, `"wave"`, `"dash"`, `"dotted"`, etc. |
+| `strike`           | `"single" \| "double" \| "none"` | Strikethrough                                                                        |
+| `size`             | `number`                         | Font size in half-points (24 = 12pt)                                                 |
+| `color`            | `string`                         | Hex color without `#`                                                                |
+| `font`             | `string`                         | Font family name                                                                     |
+| `highlight`        | `string`                         | Word highlight color name                                                            |
+| `shading`          | `{ type, fill }`                 | Background shading                                                                   |
+| `characterSpacing` | `number`                         | Character spacing in twips                                                           |
+| `break`            | `number`                         | Number of line breaks                                                                |
+| `tab`              | `{ type, position }`             | Tab stop                                                                             |
+| `children`         | `array`                          | Mixed content: strings, PageNumber tokens, Math elements, CommentReference, etc.     |
 
 ### Paragraph Options
 
-```ts
-new Paragraph({
-    text: "Simple text",        // Shorthand for single TextRun
-    heading: HeadingLevel.HEADING_1,
-    alignment: AlignmentType.CENTER,  // LEFT | CENTER | RIGHT | JUSTIFIED
-    spacing: {
-        before: 240,            // Twips
-        after: 240,
-        line: 360,              // Line spacing in 240ths of a line
-        lineRule: "auto",       // "auto" | "exact" | "atLeast"
-    },
-    indent: {
-        left: 720,              // Twips
-        right: 720,
-        firstLine: 360,
-        hanging: 360,
-    },
-    numbering: { reference: "my-numbering", level: 0 },
-    shading: { type: "clear", fill: "F0F0F0" },
-    border: {
-        top: { style: "single", size: 6, color: "000000", space: 1 },
-        bottom: { style: "single", size: 6, color: "000000", space: 1 },
-        left: { style: "single", size: 6, color: "000000", space: 1 },
-        right: { style: "single", size: 6, color: "000000", space: 1 },
-    },
-    children: [...],            // TextRun[], ImageRun[], etc.
-});
+```json
+{
+  "text": "Simple text",
+  "heading": "Heading1",
+  "alignment": "center",
+  "spacing": {
+    "before": 240,
+    "after": 240,
+    "line": 360,
+    "lineRule": "auto"
+  },
+  "indent": {
+    "left": 720,
+    "right": 720,
+    "firstLine": 360,
+    "hanging": 360
+  },
+  "numbering": { "reference": "my-numbering", "level": 0 },
+  "shading": { "type": "clear", "fill": "F0F0F0" },
+  "border": {
+    "top": { "style": "single", "size": 6, "color": "000000", "space": 1 },
+    "bottom": { "style": "single", "size": 6, "color": "000000", "space": 1 },
+    "left": { "style": "single", "size": 6, "color": "000000", "space": 1 },
+    "right": { "style": "single", "size": 6, "color": "000000", "space": 1 }
+  },
+  "children": []
+}
 ```
+
+| Property    | Type                                      | Description                                                        |
+| ----------- | ----------------------------------------- | ------------------------------------------------------------------ |
+| `text`      | `string`                                  | Shorthand for single TextRun child                                 |
+| `heading`   | `string`                                  | `"Heading1"` through `"Heading6"`                                  |
+| `alignment` | `string`                                  | `"start"` \| `"center"` \| `"end"` \| `"both"` \| `"distribute"`   |
+| `spacing`   | `{ before?, after?, line?, lineRule? }`   | Spacing in twips. `lineRule`: `"auto"` \| `"exact"` \| `"atLeast"` |
+| `indent`    | `{ left?, right?, firstLine?, hanging? }` | Indentation in twips                                               |
+| `numbering` | `{ reference, level }`                    | List reference and level                                           |
+| `children`  | `array`                                   | TextRun, ImageRun, Math, Bookmark, etc.                            |
 
 ## Images
 
-```ts
-import { ImageRun } from "@office-open/docx";
+### Basic Image
 
-// Basic
-new ImageRun({
-  type: "png",
-  data: imageBuffer,
-  transformation: { width: 200, height: 150 },
-});
+```json
+{
+  "type": "png",
+  "data": "<Uint8Array>",
+  "transformation": { "width": 200, "height": 150 }
+}
+```
 
-// With effects
-new ImageRun({
-  type: "jpg",
-  data: imageBuffer,
-  transformation: {
-    width: 200,
-    height: 150,
-    rotation: 45,
-    flip: { horizontal: true },
+### Image with Effects
+
+```json
+{
+  "type": "jpg",
+  "data": "<Uint8Array>",
+  "transformation": {
+    "width": 200,
+    "height": 150,
+    "rotation": 45,
+    "flip": { "horizontal": true }
   },
-  srcRect: { left: 1000, top: 1000, right: 1000, bottom: 1000 },
-  blipEffects: {
-    grayscale: true,
-    luminance: { bright: 30, contrast: -20 },
-    hsl: { hue: 0, saturation: 50, luminance: 0 },
-    tint: { hue: 6000000, amount: 40 },
-    duotone: { color1: { value: "002060" }, color2: { value: "D0CECE" } },
-    biLevel: { threshold: 50 },
-  },
-});
+  "srcRect": { "left": 1000, "top": 1000, "right": 1000, "bottom": 1000 },
+  "blipEffects": {
+    "grayscale": true,
+    "luminance": { "bright": 30, "contrast": -20 },
+    "hsl": { "hue": 0, "saturation": 50, "luminance": 0 },
+    "tint": { "hue": 6000000, "amount": 40 },
+    "duotone": { "color1": { "value": "002060" }, "color2": { "value": "D0CECE" } },
+    "biLevel": { "threshold": 50 }
+  }
+}
+```
 
-// Floating image
-new ImageRun({
-  type: "png",
-  data: imageBuffer,
-  transformation: { width: 150, height: 150 },
-  floating: {
-    horizontalPosition: { offset: 720000 },
-    verticalPosition: { offset: 720000 },
-    wrap: { type: "square" },
-  },
-});
+### Floating Image
 
-// SVG with fallback
-new ImageRun({
-  type: "svg",
-  data: svgBuffer,
-  transformation: { width: 200, height: 200 },
-  fallback: { type: "png", data: pngBuffer },
-});
+```json
+{
+  "type": "png",
+  "data": "<Uint8Array>",
+  "transformation": { "width": 150, "height": 150 },
+  "floating": {
+    "horizontalPosition": { "offset": 720000 },
+    "verticalPosition": { "offset": 720000 },
+    "wrap": { "type": "square" }
+  }
+}
+```
+
+### SVG with Fallback
+
+```json
+{
+  "type": "svg",
+  "data": "<Uint8Array>",
+  "transformation": { "width": 200, "height": 200 },
+  "fallback": { "type": "png", "data": "<Uint8Array>" }
+}
 ```
 
 Supported types: `"jpg"`, `"png"`, `"gif"`, `"bmp"`, `"svg"`, `"emf"`, `"wmf"`, `"tiff"`.
 
 ## Tables
 
-```ts
-import { Table, TableRow, TableCell, WidthType, VerticalAlign } from "@office-open/docx";
+### Table Options
 
-new Table({
-  width: { size: 100, units: WidthType.PERCENTAGE },
-  rows: [
-    new TableRow({
-      children: [
-        new TableCell({
-          width: { size: 50, units: WidthType.PERCENTAGE },
-          shading: { fill: "4472C4" },
-          children: [new Paragraph("Header 1")],
-        }),
-        new TableCell({
-          children: [new Paragraph("Header 2")],
-        }),
-      ],
-    }),
-  ],
-});
+```json
+{
+  "width": { "size": 100, "units": "pct" },
+  "rows": [
+    {
+      "children": [
+        {
+          "width": { "size": 50, "units": "pct" },
+          "shading": { "fill": "4472C4" },
+          "children": [{ "text": "Header 1" }]
+        },
+        {
+          "children": [{ "text": "Header 2" }]
+        }
+      ]
+    }
+  ]
+}
 ```
+
+| `width.units` values | Description                   |
+| -------------------- | ----------------------------- |
+| `"auto"`             | Automatic width               |
+| `"dxa"`              | Twips (twentieths of a point) |
+| `"pct"`              | Percentage (50 = 50%)         |
 
 ### Cell Options
 
-- `columnSpan`, `rowSpan` — Merging cells
-- `verticalAlign` — `VerticalAlign.TOP | CENTER | BOTTOM`
-- `borders` — Cell-level border overrides
-- `margins` — Cell padding `{ top, bottom, left, right }` in twips
+| Property        | Type                            | Description                 |
+| --------------- | ------------------------------- | --------------------------- |
+| `columnSpan`    | `number`                        | Horizontal merge            |
+| `rowSpan`       | `number`                        | Vertical merge              |
+| `verticalAlign` | `"top" \| "center" \| "bottom"` | Vertical alignment          |
+| `borders`       | `object`                        | Cell-level border overrides |
+| `margins`       | `{ top, bottom, left, right }`  | Cell padding in twips       |
 
 ## Headers & Footers
 
-```ts
-import { Header, Footer, PageNumber, NumberOfPages } from "@office-open/docx";
-
-new Document({
-    sections: [{
-        headers: {
-            default: new Header({
-                children: [new Paragraph("Header")],
-            }),
-            first: new Header({
-                children: [new Paragraph("First page header")],
-            }),
-        },
-        footers: {
-            default: new Footer({
-                children: [
-                    new Paragraph({
-                        alignment: AlignmentType.CENTER,
-                        children: [
-                            new TextRun("Page "),
-                            PageNumber.CURRENT,
-                            new TextRun(" of "),
-                            NumberOfPages.TOTAL_PAGES,
-                        ],
-                    }),
-                ],
-            }),
-        },
-        children: [...],
-    }],
-});
+```json
+{
+  "headers": {
+    "default": {
+      "children": [{ "text": "Header" }]
+    },
+    "first": {
+      "children": [{ "text": "First page header" }]
+    }
+  },
+  "footers": {
+    "default": {
+      "children": [
+        {
+          "alignment": "center",
+          "children": ["Page ", "CURRENT", " of ", "TOTAL_PAGES"]
+        }
+      ]
+    }
+  }
+}
 ```
+
+Page number tokens (used as string values in TextRun children):
+
+- `"CURRENT"` — Current page number
+- `"TOTAL_PAGES"` — Total page count
+- `"TOTAL_PAGES_IN_SECTION"` — Section page count
+- `"SECTION"` — Current section page
 
 ## Page Layout
 
-```ts
-new Document({
-    sections: [
-        // Portrait A4
-        {
-            properties: {
-                page: {
-                    size: { width: 11906, height: 16838, orientation: "portrait" },
-                    margins: {
-                        top: 1440, bottom: 1440, left: 1440, right: 1440,
-                        gutter: 0, header: 720, footer: 720,
-                    },
-                    columns: { count: 2, space: 708 },
-                    borders: {
-                        top: { style: "single", size: 6, color: "000000", space: 24 },
-                        bottom: { style: "single", size: 6, color: "000000", space: 24 },
-                        left: { style: "single", size: 6, color: "000000", space: 24 },
-                        right: { style: "single", size: 6, color: "000000", space: 24 },
-                    },
-                },
-                type: SectionType.NEXT_PAGE,
-            },
-            children: [...],
+```json
+{
+  "sections": [
+    {
+      "properties": {
+        "page": {
+          "size": { "width": 11906, "height": 16838, "orientation": "portrait" },
+          "margins": {
+            "top": 1440,
+            "bottom": 1440,
+            "left": 1440,
+            "right": 1440,
+            "gutter": 0,
+            "header": 720,
+            "footer": 720
+          },
+          "columns": { "count": 2, "space": 708 },
+          "borders": {
+            "top": { "style": "single", "size": 6, "color": "000000", "space": 24 },
+            "bottom": { "style": "single", "size": 6, "color": "000000", "space": 24 },
+            "left": { "style": "single", "size": 6, "color": "000000", "space": 24 },
+            "right": { "style": "single", "size": 6, "color": "000000", "space": 24 }
+          }
         },
-    ],
-});
+        "type": "nextPage"
+      },
+      "children": []
+    }
+  ]
+}
 ```
+
+| `type` values  | Description                      |
+| -------------- | -------------------------------- |
+| `"nextPage"`   | Section begins on the next page  |
+| `"continuous"` | Section continues on same page   |
+| `"evenPage"`   | Section begins on next even page |
+| `"oddPage"`    | Section begins on next odd page  |
 
 ## Math Equations
 
-```ts
-import {
-  Math,
-  MathRun,
-  MathFraction,
-  MathSubScript,
-  MathSuperScript,
-  MathRadical,
-  MathNary,
-  MathAccent,
-  MathBorderBox,
-  MathBox,
-  MathEqArr,
-  MathMatrix,
-  MathGroupChr,
-  MathPhant,
-} from "@office-open/docx";
+### Available Math Elements
 
-// Fraction
-new MathFraction({ numerator: "a", denominator: "b" });
+| Element                 | Key Properties                                                                |
+| ----------------------- | ----------------------------------------------------------------------------- |
+| `MathFraction`          | `{ numerator: [...], denominator: [...] }` — arrays of MathRun                |
+| `MathSuperScript`       | `{ children: [...], superScript: [...] }`                                     |
+| `MathSubScript`         | `{ children: [...], subScript: [...] }`                                       |
+| `MathSubSuperScript`    | `{ children: [...], subScript: [...], superScript: [...] }`                   |
+| `MathPreSubSuperScript` | `{ children: [...], subScript: [...], superScript: [...] }`                   |
+| `MathRadical`           | `{ children: [...], degree?: [...] }`                                         |
+| `MathSum`               | `{ children: [...], subScript?: [...], superScript?: [...] }`                 |
+| `MathIntegral`          | `{ children: [...], subScript?: [...], superScript?: [...] }`                 |
+| `MathFunction`          | `{ children: [...], name: [...] }`                                            |
+| `MathLimitUpper`        | `{ children: [...], limit: [...] }`                                           |
+| `MathLimitLower`        | `{ children: [...], limit: [...] }`                                           |
+| `MathRoundBrackets`     | `{ children: [...] }`                                                         |
+| `MathSquareBrackets`    | `{ children: [...] }`                                                         |
+| `MathCurlyBrackets`     | `{ children: [...] }`                                                         |
+| `MathAngledBrackets`    | `{ children: [...] }`                                                         |
+| `MathBorderBox`         | `{ children: [...], properties?: { hideTop, hideBottom, strikeHorizontal } }` |
+| `MathEqArr`             | `{ rows: [[...], [...]] }`                                                    |
+| `MathMatrix`            | `{ rows: [[...], [...]] }`                                                    |
+| `MathGroupChr`          | `{ children: [...], properties?: { chr, pos, vertJc } }`                      |
+| `MathPhant`             | `{ children: [...], properties?: { zeroAsc, zeroDesc } }`                     |
+| `MathBox`               | `{ children: [...], properties?: { opEmu } }`                                 |
+| `MathRun`               | `{ text: "content" }` or `"string content"`                                   |
+| `createMathAccent`      | `{ children: [...], accentCharacter?: string }` (factory function)            |
+
+### Examples
+
+```json
+// Fraction: a/b
+{ "numerator": ["a"], "denominator": ["b"] }
+
+// Fraction with type: "skw" (skewed), "lin" (linear), "noBar" (no fraction bar)
+{ "numerator": ["a"], "denominator": ["b"], "fractionType": "skw" }
 
 // Superscript: x²
-new MathSuperScript({ children: [new MathRun("x")], superScript: [new MathRun("2")] });
+{ "children": ["x"], "superScript": ["2"] }
 
-// Square root
-new MathRadical({ children: [new MathRun("a + b")] });
+// Square root: √(a+b)
+{ "children": ["a + b"] }
 
-// Summation
-new MathNary({ operator: "∑", children: [new MathRun("i=1..n")] });
+// Nth root: ³√(a+b)
+{ "children": ["a + b"], "degree": ["3"] }
+
+// Sum with limits: Σᵢˡ⁰
+{ "children": ["test"], "subScript": ["i"], "superScript": ["10"] }
+
+// Function: sin(100)
+{ "children": ["100"], "name": ["sin"] }
 
 // Border box with hidden borders
-new MathBorderBox({
-  children: [new MathRun("a")],
-  properties: { hideTop: true, hideBottom: true, strikeHorizontal: true },
-});
+{
+  "children": ["b"],
+  "properties": { "hideTop": true, "hideBottom": true }
+}
 
 // Equation array
-new MathEqArr({ rows: [[new MathRun("x + y = 1")], [new MathRun("2x - y = 3")]] });
+{ "rows": [["x + y = 1"], ["2x - y = 3"]] }
 
 // Matrix
-new MathMatrix({
-  rows: [
-    [new MathRun("1"), new MathRun("0")],
-    [new MathRun("0"), new MathRun("1")],
-  ],
-});
+{ "rows": [["1", "0"], ["0", "1"]] }
+
+// Accent (via factory function)
+{ "children": ["x"] }
+{ "children": ["y"], "accentCharacter": "\u0303" }
 ```
+
+**Note**: All `numerator`, `denominator`, `children`, `superScript`, `subScript`, etc. accept arrays of MathRun elements. String values are auto-wrapped as MathRun.
 
 ## Links & Bookmarks
 
-```ts
-import {
-  ExternalHyperlink,
-  InternalHyperlink,
-  BookmarkStart,
-  BookmarkEnd,
-} from "@office-open/docx";
+### External Hyperlink
 
-new ExternalHyperlink({
-  children: [new TextRun("Click here")],
-  link: "https://example.com",
-});
-
-new Paragraph({
-  children: [
-    new BookmarkStart("my-bookmark"),
-    new TextRun("Target text"),
-    new BookmarkEnd("my-bookmark"),
-  ],
-});
+```json
+{
+  "children": [{ "text": "Click here" }],
+  "link": "https://example.com"
+}
 ```
+
+### Bookmark
+
+```json
+{
+  "id": "myAnchorId",
+  "children": [{ "text": "Lorem Ipsum" }]
+}
+```
+
+### Internal Hyperlink (links to a Bookmark)
+
+```json
+{
+  "children": [{ "text": "Go to section", "bold": true }],
+  "anchor": "myAnchorId"
+}
+```
+
+### Page Reference (shows page number of a bookmark)
+
+```json
+"myAnchorId"
+```
+
+Used in TextRun children as a string — displays the page number where the referenced bookmark is located.
 
 ## Styles & Numbering
 
-```ts
-new Document({
-    styles: {
-        default: {
-            document: {
-                run: { font: "Calibri", size: 24 },
-            },
-        },
-        paragraphStyles: [
-            {
-                id: "myStyle",
-                name: "My Custom Style",
-                basedOn: "Normal",
-                run: { bold: true, color: "0000FF" },
-            },
-        ],
+```json
+{
+  "styles": {
+    "default": {
+      "document": {
+        "run": { "font": "Calibri", "size": 24 }
+      }
     },
-    numbering: {
-        config: [
-            {
-                reference: "my-list",
-                levels: [
-                    { level: 0, format: "decimal", text: "%1.", alignment: "left" },
-                ],
-            },
-        ],
-    },
-    sections: [...],
-});
+    "paragraphStyles": [
+      {
+        "id": "myStyle",
+        "name": "My Custom Style",
+        "basedOn": "Normal",
+        "run": { "bold": true, "color": "0000FF" }
+      }
+    ]
+  },
+  "numbering": {
+    "config": [
+      {
+        "reference": "my-list",
+        "levels": [
+          {
+            "level": 0,
+            "format": "decimal",
+            "text": "%1.",
+            "alignment": "left"
+          }
+        ]
+      }
+    ]
+  },
+  "sections": []
+}
 ```
 
 ## Shapes (WpsShapeRun)
 
-```ts
-import { WpsShapeRun } from "@office-open/docx";
-
-new WpsShapeRun({
-  children: [new Paragraph({ children: [new TextRun("Shape text")] })],
-  customGeometry: {
-    pathList: [
+```json
+{
+  "children": [{ "alignment": "center", "children": [{ "text": "Shape text" }] }],
+  "customGeometry": {
+    "pathList": [
       {
-        w: 100000,
-        h: 100000,
-        commands: [
-          { command: "moveTo", point: { x: "50000", y: "0" } },
-          { command: "lineTo", point: { x: "100000", y: "100000" } },
-          { command: "lineTo", point: { x: "0", y: "100000" } },
-          { command: "close" },
-        ],
-      },
-    ],
+        "w": 100000,
+        "h": 100000,
+        "commands": [
+          { "command": "moveTo", "point": { "x": "50000", "y": "0" } },
+          { "command": "lineTo", "point": { "x": "100000", "y": "100000" } },
+          { "command": "lineTo", "point": { "x": "0", "y": "100000" } },
+          { "command": "close" }
+        ]
+      }
+    ]
   },
-  fill: "4472C4",
-  transformation: { height: 150, width: 200 },
-  type: "wps",
-});
+  "fill": "4472C4",
+  "outline": { "color": { "value": "C00000" }, "type": "solidFill", "width": 12700 },
+  "transformation": { "height": 150, "width": 200 },
+  "type": "wps"
+}
 ```
+
+**Note**: `type: "wps"` is required. `children` contains Paragraph instances. Command types: `"moveTo"`, `"lineTo"`, `"arcTo"` (with `heightRadius`, `widthRadius`, `startAngle`, `sweepAngle`), `"close"`.
 
 ## Comments & Revisions
 
-```ts
-import { Comment, CommentReference } from "@office-open/docx";
-
-new Document({
-  comments: {
-    children: [
-      new Comment({
-        id: 0,
-        author: "User",
-        children: [new Paragraph("This is a comment")],
-      }),
-    ],
+```json
+{
+  "comments": {
+    "children": [
+      {
+        "id": 0,
+        "author": "User",
+        "date": "<Date object>",
+        "children": [{ "text": "This is a comment" }]
+      }
+    ]
   },
-  sections: [
+  "sections": [
     {
-      children: [
-        new Paragraph({
-          children: [new TextRun("Some text"), new CommentReference(0)],
-        }),
-      ],
-    },
-  ],
-});
+      "children": [
+        {
+          "children": [
+            "Some text",
+            { "commentRangeStart": 0 },
+            { "text": "commented text" },
+            { "commentRangeEnd": 0 },
+            { "children": [{ "commentReference": 0 }] }
+          ]
+        }
+      ]
+    }
+  ]
+}
 ```
+
+**Note**: In actual code, use `new CommentRangeStart(0)`, `new CommentRangeEnd(0)`, and `new CommentReference(0)` as separate elements in the children array. `CommentReference` goes inside a `TextRun`'s children.

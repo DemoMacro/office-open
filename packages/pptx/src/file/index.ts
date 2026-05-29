@@ -140,17 +140,17 @@ export { HeaderFooter, type SlideHeaderFooterOptions } from "./header-footer/hea
 export { PresentationWrapper, type ViewWrapper } from "./presentation/presentation-wrapper";
 export { Picture, type PictureOptions } from "./picture/picture";
 export { Background, type BackgroundOptions } from "./background/background";
-export { TableFrame, type TableFrameOptions } from "./table/table-frame";
-export { Table, type TableOptions } from "./table/table";
+export { Table, type TableOptions } from "./table/table-frame";
+export { DrawingTable } from "./table/table";
 export { TableRow, type TableRowOptions } from "./table/table-row";
 export { TableCell, VerticalAlignment, type TableCellOptions } from "./table/table-cell";
 export { TableProperties } from "./table/table-properties";
 export { TableCellProperties, type CellBorderOptions } from "./table/table-cell-properties";
-export { ChartFrame, type ChartFrameOptions } from "./chart/chart-frame";
+export { Chart, type ChartOptions } from "./chart/chart-frame";
 export { ChartCollection, type ChartData } from "./chart/chart-collection";
 export { ChartSpace, type ChartSpaceOptions, type ChartSeriesData } from "./chart/chart-space";
 export type { ChartType } from "./chart/chart-types/create-chart-type";
-export { SmartArtFrame, type SmartArtFrameOptions, type TreeNode } from "./smartart";
+export { SmartArt, type SmartArtOptions, type TreeNode } from "./smartart";
 export {
   Transition,
   type TransitionOptions,

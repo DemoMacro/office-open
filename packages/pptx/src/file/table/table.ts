@@ -6,7 +6,7 @@ import { TableGrid } from "./table-grid";
 import { TableProperties } from "./table-properties";
 import { TableRow, type TableRowOptions } from "./table-row";
 
-export interface TableOptions {
+export interface DrawingTableOptions {
   readonly rows: readonly TableRowOptions[];
   readonly columnWidths?: readonly number[];
   readonly firstRow?: boolean;
@@ -27,10 +27,10 @@ export interface TableOptions {
  * a:tbl — DrawingML table element.
  * Lazy: stores options, builds IXmlableObject in prepForXml.
  */
-export class Table extends BaseXmlComponent {
-  private readonly options: TableOptions;
+export class DrawingTable extends BaseXmlComponent {
+  private readonly options: DrawingTableOptions;
 
-  public constructor(options: TableOptions) {
+  public constructor(options: DrawingTableOptions) {
     super("a:tbl");
     this.options = options;
   }
