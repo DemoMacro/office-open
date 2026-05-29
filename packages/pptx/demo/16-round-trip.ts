@@ -1326,7 +1326,7 @@ const buffer = await Packer.toBuffer(pres);
 console.log(`Generated PPTX: ${buffer.length} bytes`);
 
 // ══════════════════════════════════════════════════════════════════════════════
-// 2. Low-level parsePptx verification (ParsedDocument API)
+// 2. Low-level parsePptx verification (ParsedArchive API)
 // ══════════════════════════════════════════════════════════════════════════════
 
 console.log("\n--- parsePptx (low-level) ---");

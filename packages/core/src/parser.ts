@@ -1,8 +1,6 @@
 import { xml2js, js2xml } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
-import { strFromU8, strToU8 } from "fflate";
-
-import { unzipToMap, zipToBuffer } from "./archive";
+import { unzipSync, zipSync, strFromU8, strToU8 } from "fflate";
 
 const XML_PARSE_OPTIONS = {
   nativeTypeAttributes: true,
@@ -10,18 +8,18 @@ const XML_PARSE_OPTIONS = {
 };
 
 /**
- * Parsed OOXML document backed by an unzipped ZIP map.
+ * Parsed OOXML archive backed by an unzipped ZIP map.
  *
  * Provides unstorage-style API (get/set/getRaw/setRaw/remove/has/keys)
  * for reading and modifying individual parts, then serializing back to a ZIP buffer.
  */
-export class ParsedDocument {
+export class ParsedArchive {
   private readonly zip: Map<string, Uint8Array>;
   private readonly modified = new Map<string, Uint8Array>();
   private readonly wrapperCache = new Map<string, Element>();
 
-  public constructor(zip: Map<string, Uint8Array>) {
-    this.zip = zip;
+  public constructor(data: Uint8Array) {
+    this.zip = new Map(Object.entries(unzipSync(data)));
   }
 
   /** Read an XML part as an Element tree. */
@@ -93,19 +91,18 @@ export class ParsedDocument {
 
   /** Serialize back to a ZIP buffer, merging original zip + modifications. */
   public save(): Uint8Array {
-    const files = new Map<string, Uint8Array | string>();
+    const files: Record<string, Uint8Array> = {};
     for (const [path, data] of this.zip) {
-      if (!this.modified.has(path)) files.set(path, data);
+      if (!this.modified.has(path)) files[path] = data;
     }
     for (const [path, data] of this.modified) {
-      files.set(path, data);
+      files[path] = data;
     }
-    return zipToBuffer(files);
+    return zipSync(files);
   }
 }
 
-/** Parse an OOXML archive (.docx, .pptx, .xlsx) into a ParsedDocument. */
-export function parseArchive(data: Uint8Array): ParsedDocument {
-  const zip = unzipToMap(data);
-  return new ParsedDocument(zip);
+/** Parse an OOXML archive (.docx, .pptx, .xlsx) into a ParsedArchive. */
+export function parseArchive(data: Uint8Array): ParsedArchive {
+  return new ParsedArchive(data);
 }

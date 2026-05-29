@@ -49,10 +49,6 @@
     "./drawingml": {
       "types": "./dist/drawingml/index.d.mts",
       "import": "./dist/drawingml/index.mjs"
-    },
-    "./archive": {
-      "types": "./dist/archive.d.mts",
-      "import": "./dist/archive.mjs"
     }
   },
   "scripts": {

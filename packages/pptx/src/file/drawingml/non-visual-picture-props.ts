@@ -1,11 +1,10 @@
 import { EmptyElement } from "@file/xml-components";
 
 /**
- * a:cNvPicPr — Non-visual picture drawing properties.
- * Uses a: prefix (DrawingML type) but referenced via p:cNvPicPr in PML context.
+ * p:cNvPicPr — Non-visual picture drawing properties (within p:pic context).
  */
 export class NonVisualPictureProperties extends EmptyElement {
   public constructor() {
-    super("a:cNvPicPr");
+    super("p:cNvPicPr");
   }
 }

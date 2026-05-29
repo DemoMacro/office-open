@@ -1,5 +1,5 @@
 import type { PropertiesOptions } from "@file/core-properties";
-import type { ParsedDocument } from "@office-open/core";
+import type { ParsedArchive } from "@office-open/core";
 import { parseArchive, parseCorePropsElement } from "@office-open/core";
 import { attr, attrNum } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
@@ -46,7 +46,7 @@ export interface DocxPartRefs {
 }
 
 export interface DocxDocument {
-  doc: ParsedDocument;
+  doc: ParsedArchive;
   /** word/document.xml → w:body element */
   body: Element;
   /** word/document.xml → w:background element */
@@ -76,7 +76,7 @@ function resolveRelsPath(target: string): string {
   return `word/${target}`;
 }
 
-function parseDocPartRefs(doc: ParsedDocument): DocxPartRefs {
+function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
   const refs: DocxPartRefs = {
     headers: new Map(),
     footers: new Map(),
@@ -128,7 +128,7 @@ function parseDocPartRefs(doc: ParsedDocument): DocxPartRefs {
   return refs;
 }
 
-function parseRootRels(doc: ParsedDocument): {
+function parseRootRels(doc: ParsedArchive): {
   coreProps?: string;
   appProps?: string;
   customProps?: string;

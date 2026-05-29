@@ -9,7 +9,7 @@ export class PictureNonVisual extends XmlComponent {
     super("p:nvPicPr");
     this.root.push(
       new BuilderElement({
-        name: "a:cNvPr",
+        name: "p:cNvPr",
         attributes: {
           id: { key: "id", value: id },
           name: { key: "name", value: name },

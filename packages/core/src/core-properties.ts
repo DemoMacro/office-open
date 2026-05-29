@@ -1,7 +1,6 @@
 import { textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
-import { readXmlFromZip } from "./archive";
 import type { IXmlableObject } from "./xml-components";
 
 export interface CoreProperties {
@@ -24,13 +23,6 @@ const FIELD_MAP: Array<{ name: string; key: keyof CoreProperties }> = [
   { name: "cp:keywords", key: "keywords" },
   { name: "cp:lastModifiedBy", key: "lastModifiedBy" },
 ];
-
-export function parseCoreProperties(zip: Map<string, Uint8Array>): CoreProperties {
-  const xml = readXmlFromZip(zip, "docProps/core.xml");
-  if (!xml) return {};
-
-  return parseCorePropsElement(xml);
-}
 
 /**
  * Parse core properties from an already-parsed XML element.

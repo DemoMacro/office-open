@@ -1,4 +1,4 @@
-import type { ParsedDocument } from "@office-open/core";
+import type { ParsedArchive } from "@office-open/core";
 import { parseArchive, parseCorePropsElement, convertEmuToPixels } from "@office-open/core";
 import type { Element } from "@office-open/xml";
 import { attr, attrNum, findChild, textOf } from "@office-open/xml";
@@ -40,7 +40,7 @@ export interface PptxPartRefs {
 }
 
 export interface PptxDocument {
-  doc: ParsedDocument;
+  doc: ParsedArchive;
   /** ppt/presentation.xml root element (p:presentation) */
   presentation?: Element;
   /** ppt/slides/slideN.xml */
@@ -82,7 +82,7 @@ function xmlKeys(keys: string[]): string[] {
   return keys.filter((k) => k.endsWith(".xml"));
 }
 
-function parseRootRels(doc: ParsedDocument): { coreProps?: string; appProps?: string } {
+function parseRootRels(doc: ParsedArchive): { coreProps?: string; appProps?: string } {
   const relsEl = doc.get("_rels/.rels");
   if (!relsEl) return {};
 
@@ -107,7 +107,7 @@ function parseRootRels(doc: ParsedDocument): { coreProps?: string; appProps?: st
   return { coreProps, appProps };
 }
 
-function parseSlideRels(doc: ParsedDocument, slidePaths: string[], refs: PptxPartRefs): void {
+function parseSlideRels(doc: ParsedArchive, slidePaths: string[], refs: PptxPartRefs): void {
   for (const slidePath of slidePaths) {
     const parts = slidePath.split("/");
     const fileName = parts.pop()!;
@@ -230,7 +230,7 @@ export function parsePptx(data: DataType): PptxDocument {
 /**
  * Parse a single slide's relationship file into a Map<rId, path>.
  */
-function parseSlideRelMap(doc: ParsedDocument, slidePath: string): Map<string, string> {
+function parseSlideRelMap(doc: ParsedArchive, slidePath: string): Map<string, string> {
   const rels = new Map<string, string>();
   const parts = slidePath.split("/");
   const fileName = parts.pop()!;
@@ -259,7 +259,7 @@ function parseSlideRelMap(doc: ParsedDocument, slidePath: string): Map<string, s
  * Build a map from each path to the rel target matching a predicate.
  */
 function resolveRelTargets(
-  doc: ParsedDocument,
+  doc: ParsedArchive,
   paths: readonly string[],
   predicate: (target: string) => boolean,
 ): Map<string, string> {

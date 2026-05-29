@@ -23,7 +23,7 @@ export class AudioFrame extends MediaFrameBase {
 
     super(options, id, mediaFileName, {
       extUri: MEDIA_EXT_URI,
-      cNvPrPrefix: "a",
+      cNvPrPrefix: "p",
     });
   }
 }

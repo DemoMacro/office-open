@@ -8,7 +8,6 @@ export default defineConfig({
       "src/smartart/index.ts",
       "src/chart/index.ts",
       "src/drawingml/index.ts",
-      "src/archive.ts",
     ],
   },
   test: {
