@@ -31,7 +31,7 @@ pnpm add @office-open/docx
 :::
 
 #title
-生成 Office Open XML :br 文档。
+生成 Office Open XML 文档。
 
 #description
 使用 JSON 或 TypeScript 创建 `.docx`、`.pptx` 和 `.xlsx` 文件。既适合 AI 代理，也适合传统开发工作流。
@@ -226,29 +226,37 @@ reverse: true
 :::code-group
 
 ```ts [DOCX]
-import { parseDocument } from "@office-open/docx";
+import { parseDocument, patchDocument, PatchType } from "@office-open/docx";
 
+// 解析现有文件
 const opts = parseDocument(buffer);
 // opts.sections — 文档节
 // opts.title, opts.creator — 核心属性
-```
 
-```ts [PPTX]
-import { parsePresentation } from "@office-open/pptx";
-
-const opts = parsePresentation(buffer);
-// opts.slides — 幻灯片数组
-// opts.size, opts.title — 演示文稿属性
-```
-
-```ts [补丁]
-import { patchDocument, PatchType } from "@office-open/docx";
-
+// 修补模板占位符
 const result = await patchDocument({
   outputType: "nodebuffer",
   data: buffer,
   patches: {
     name: { type: PatchType.PARAGRAPH, children: [new TextRun("John")] },
+  },
+});
+```
+
+```ts [PPTX]
+import { parsePresentation, patchPresentation, PatchType } from "@office-open/pptx";
+
+// 解析现有文件
+const opts = parsePresentation(buffer);
+// opts.slides — 幻灯片数组
+// opts.size, opts.title — 演示文稿属性
+
+// 修补模板占位符
+const result = await patchPresentation({
+  outputType: "nodebuffer",
+  data: buffer,
+  patches: {
+    title: { type: PatchType.PARAGRAPH, children: [new TextRun({ text: "已更新", bold: true })] },
   },
 });
 ```

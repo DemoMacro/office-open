@@ -31,7 +31,7 @@ pnpm add @office-open/docx
 :::
 
 #title
-Generate Office Open XML :br documents.
+Generate Office Open XML documents.
 
 #description
 Create `.docx`, `.pptx`, and `.xlsx` files with JSON or TypeScript. Ideal for AI agents and traditional workflows alike.
@@ -226,29 +226,37 @@ reverse: true
 :::code-group
 
 ```ts [DOCX]
-import { parseDocument } from "@office-open/docx";
+import { parseDocument, patchDocument, PatchType } from "@office-open/docx";
 
+// Parse existing file
 const opts = parseDocument(buffer);
 // opts.sections — document sections
 // opts.title, opts.creator — core properties
-```
 
-```ts [PPTX]
-import { parsePresentation } from "@office-open/pptx";
-
-const opts = parsePresentation(buffer);
-// opts.slides — slide array
-// opts.size, opts.title — presentation properties
-```
-
-```ts [Patch]
-import { patchDocument, PatchType } from "@office-open/docx";
-
+// Patch template placeholders
 const result = await patchDocument({
   outputType: "nodebuffer",
   data: buffer,
   patches: {
     name: { type: PatchType.PARAGRAPH, children: [new TextRun("John")] },
+  },
+});
+```
+
+```ts [PPTX]
+import { parsePresentation, patchPresentation, PatchType } from "@office-open/pptx";
+
+// Parse existing file
+const opts = parsePresentation(buffer);
+// opts.slides — slide array
+// opts.size, opts.title — presentation properties
+
+// Patch template placeholders
+const result = await patchPresentation({
+  outputType: "nodebuffer",
+  data: buffer,
+  patches: {
+    title: { type: PatchType.PARAGRAPH, children: [new TextRun({ text: "Updated", bold: true })] },
   },
 });
 ```
