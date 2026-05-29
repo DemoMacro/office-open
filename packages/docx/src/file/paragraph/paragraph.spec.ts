@@ -633,12 +633,12 @@ describe("Paragraph", () => {
   describe("#setNumbering", () => {
     const createNumberingContext = () => ({
       file: {
-        Numbering: {
+        numbering: {
           createConcreteNumberingInstance: (_: string, __: number) => undefined,
         },
       } as unknown as File,
       fileData: {
-        Numbering: {
+        numbering: {
           createConcreteNumberingInstance: (_: string, __: number) => undefined,
         },
       } as unknown as File,
@@ -991,7 +991,7 @@ describe("Paragraph", () => {
         ],
       });
       const viewWrapperMock = {
-        Relationships: {
+        relationships: {
           addRelationship: () => {},
         },
       } as unknown as ViewWrapper;

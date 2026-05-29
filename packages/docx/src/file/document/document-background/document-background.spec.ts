@@ -62,8 +62,8 @@ describe("DocumentBackground", () => {
     it("should register image with Media when image option is provided", () => {
       const addImage = vi.fn();
       const mockContext = {
-        file: { Media: { addImage } },
-        viewWrapper: { Relationships: { addRelationship: vi.fn() } },
+        file: { media: { addImage } },
+        viewWrapper: { relationships: { addRelationship: vi.fn() } },
         stack: [],
       } as unknown as Context;
 
@@ -88,8 +88,8 @@ describe("DocumentBackground", () => {
     it("should render v:background with v:fill after prepForXml", () => {
       const addImage = vi.fn();
       const mockContext = {
-        file: { Media: { addImage } },
-        viewWrapper: { Relationships: { addRelationship: vi.fn() } },
+        file: { media: { addImage } },
+        viewWrapper: { relationships: { addRelationship: vi.fn() } },
         stack: [],
       } as unknown as Context;
 

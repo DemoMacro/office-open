@@ -32,7 +32,7 @@ describe("WpgGroupRun", () => {
       const addImageMock = vi.fn();
       const tree = new Formatter().format(run, {
         file: {
-          Media: {
+          media: {
             addImage: addImageMock,
           },
         } as unknown as File,
@@ -67,7 +67,7 @@ describe("WpgGroupRun", () => {
 
       const tree = new Formatter().format(run, {
         file: {
-          Media: {},
+          media: {},
         } as unknown as File,
         stack: [],
         viewWrapper: {} as unknown as ViewWrapper,
@@ -112,7 +112,7 @@ describe("WpgGroupRun", () => {
       const addImageMock = vi.fn();
       const tree = new Formatter().format(run, {
         file: {
-          Media: {
+          media: {
             addImage: addImageMock,
           },
         } as unknown as File,
@@ -145,7 +145,7 @@ describe("WpgGroupRun", () => {
 
       const tree = new Formatter().format(run, {
         file: {
-          Media: {},
+          media: {},
         } as unknown as File,
         stack: [],
         viewWrapper: {} as unknown as ViewWrapper,
@@ -175,7 +175,7 @@ describe("WpgGroupRun", () => {
 
       const tree = new Formatter().format(run, {
         file: {
-          Media: {},
+          media: {},
         } as unknown as File,
         stack: [],
         viewWrapper: {} as unknown as ViewWrapper,
@@ -202,7 +202,7 @@ describe("WpgGroupRun", () => {
 
       const tree = new Formatter().format(run, {
         file: {
-          Media: {},
+          media: {},
         } as unknown as File,
         stack: [],
         viewWrapper: {} as unknown as ViewWrapper,
@@ -237,7 +237,7 @@ describe("WpgGroupRun", () => {
       const addImageMock = vi.fn();
       new Formatter().format(run, {
         file: {
-          Media: {
+          media: {
             addImage: addImageMock,
           },
         } as unknown as File,
@@ -272,7 +272,7 @@ describe("WpgGroupRun", () => {
       const addImageMock = vi.fn();
       new Formatter().format(run, {
         file: {
-          Media: {
+          media: {
             addImage: addImageMock,
           },
         } as unknown as File,
@@ -315,7 +315,7 @@ describe("WpgGroupRun", () => {
       const addImageMock = vi.fn();
       new Formatter().format(run, {
         file: {
-          Media: {
+          media: {
             addImage: addImageMock,
           },
         } as unknown as File,
@@ -361,7 +361,7 @@ describe("WpgGroupRun", () => {
       const addImageMock = vi.fn();
       new Formatter().format(run, {
         file: {
-          Media: {
+          media: {
             addImage: addImageMock,
           },
         } as unknown as File,
@@ -409,7 +409,7 @@ describe("WpgGroupRun", () => {
       const addImageMock = vi.fn();
       new Formatter().format(run, {
         file: {
-          Media: {
+          media: {
             addImage: addImageMock,
           },
         } as unknown as File,

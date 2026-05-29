@@ -34,7 +34,7 @@ describe("ImageRun", () => {
 
       const tree = new Formatter().format(currentImageRun, {
         file: {
-          Media: {
+          media: {
             addImage: vi.fn(),
           },
         } as unknown as File,
@@ -292,7 +292,7 @@ describe("ImageRun", () => {
 
       const tree = new Formatter().format(currentImageRun, {
         file: {
-          Media: {
+          media: {
             addImage: vi.fn(),
           },
         } as unknown as File,
@@ -552,7 +552,7 @@ describe("ImageRun", () => {
 
       const tree = new Formatter().format(currentImageRun, {
         file: {
-          Media: {
+          media: {
             addImage: vi.fn(),
           },
         } as unknown as File,
@@ -813,7 +813,7 @@ describe("ImageRun", () => {
 
       const tree = new Formatter().format(currentImageRun, {
         file: {
-          Media: {
+          media: {
             addImage: vi.fn(),
           },
         } as unknown as File,
@@ -1063,7 +1063,7 @@ describe("ImageRun", () => {
 
       const tree = new Formatter().format(currentImageRun, {
         file: {
-          Media: {
+          media: {
             addImage: vi.fn(),
           },
         } as unknown as File,
@@ -1089,7 +1089,7 @@ describe("ImageRun", () => {
 
       const tree = new Formatter().format(currentImageRun, {
         file: {
-          Media: {
+          media: {
             addImage: vi.fn(),
           },
         } as unknown as File,
@@ -1183,7 +1183,7 @@ describe("ImageRun", () => {
       const addImageSpy = vi.fn();
       const context = {
         file: {
-          Media: {
+          media: {
             addImage: addImageSpy,
           },
         } as unknown as File,

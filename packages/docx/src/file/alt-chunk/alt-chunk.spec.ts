@@ -25,11 +25,11 @@ describe("AltChunk", () => {
     const addAltChunkContentType = vi.fn();
     const mockContext = {
       file: {
-        AltChunks: { addAltChunk },
-        ContentTypes: { addAltChunk: addAltChunkContentType },
+        altChunks: { addAltChunk },
+        contentTypes: { addAltChunk: addAltChunkContentType },
       },
       viewWrapper: {
-        Relationships: { addRelationship },
+        relationships: { addRelationship },
       },
       stack: [],
     } as unknown as Context;
@@ -78,11 +78,11 @@ describe("AltChunk", () => {
     const addAltChunk = vi.fn();
     const mockContext = {
       file: {
-        AltChunks: { addAltChunk },
-        ContentTypes: { addAltChunk: vi.fn() },
+        altChunks: { addAltChunk },
+        contentTypes: { addAltChunk: vi.fn() },
       },
       viewWrapper: {
-        Relationships: { addRelationship: vi.fn() },
+        relationships: { addRelationship: vi.fn() },
       },
       stack: [],
     } as unknown as Context;
@@ -110,11 +110,11 @@ describe("AltChunk", () => {
     const addAltChunk = vi.fn();
     const mockContext = {
       file: {
-        AltChunks: { addAltChunk },
-        ContentTypes: { addAltChunk: vi.fn() },
+        altChunks: { addAltChunk },
+        contentTypes: { addAltChunk: vi.fn() },
       },
       viewWrapper: {
-        Relationships: { addRelationship: vi.fn() },
+        relationships: { addRelationship: vi.fn() },
       },
       stack: [],
     } as unknown as Context;
@@ -140,11 +140,11 @@ describe("AltChunk", () => {
 
     const mockContext = {
       file: {
-        AltChunks: { addAltChunk: vi.fn() },
-        ContentTypes: { addAltChunk: vi.fn() },
+        altChunks: { addAltChunk: vi.fn() },
+        contentTypes: { addAltChunk: vi.fn() },
       },
       viewWrapper: {
-        Relationships: { addRelationship: vi.fn() },
+        relationships: { addRelationship: vi.fn() },
       },
       stack: [],
     } as unknown as Context;

@@ -23,11 +23,11 @@ describe("SubDoc", () => {
     const addSubDocContentType = vi.fn();
     const mockContext = {
       file: {
-        SubDocs: { addSubDoc },
-        ContentTypes: { addSubDoc: addSubDocContentType },
+        subDocs: { addSubDoc },
+        contentTypes: { addSubDoc: addSubDocContentType },
       },
       viewWrapper: {
-        Relationships: { addRelationship },
+        relationships: { addRelationship },
       },
       stack: [],
     } as unknown as Context;
@@ -64,11 +64,11 @@ describe("SubDoc", () => {
     const addSubDoc = vi.fn();
     const mockContext = {
       file: {
-        SubDocs: { addSubDoc },
-        ContentTypes: { addSubDoc: vi.fn() },
+        subDocs: { addSubDoc },
+        contentTypes: { addSubDoc: vi.fn() },
       },
       viewWrapper: {
-        Relationships: { addRelationship: vi.fn() },
+        relationships: { addRelationship: vi.fn() },
       },
       stack: [],
     } as unknown as Context;

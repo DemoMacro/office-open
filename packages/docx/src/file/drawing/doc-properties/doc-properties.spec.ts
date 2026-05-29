@@ -7,7 +7,7 @@ const createMockContext = () =>
   ({
     stack: [],
     viewWrapper: {
-      Relationships: {
+      relationships: {
         addRelationship: () => {},
       },
     },
@@ -104,7 +104,7 @@ describe("DocProperties", () => {
     const context = {
       stack: [],
       viewWrapper: {
-        Relationships: {
+        relationships: {
           addRelationship: () => {
             addedRelationship = true;
           },
@@ -126,7 +126,7 @@ describe("DocProperties", () => {
     const context = {
       stack: [],
       viewWrapper: {
-        Relationships: {
+        relationships: {
           addRelationship: () => {
             addedCount++;
           },
