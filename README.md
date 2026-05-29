@@ -3,15 +3,29 @@
 ![GitHub](https://img.shields.io/github/license/DemoMacro/office-open)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](https://www.contributor-covenant.org/version/2/1/code_of_conduct/)
 
-Office Open XML monorepo - generate .docx, .pptx, .xlsx files with JS/TS.
+> Generate, parse, and patch Office Open XML documents (.docx, .pptx) with a declarative TypeScript API. Works in Node.js and browsers.
+
+## Features
+
+- 📝 **Document Generation** — Create .docx and .pptx files with a declarative JSON or TypeScript API
+- 📖 **Parsing** — Read existing files into structured objects for inspection and round-trip workflows
+- 🔧 **Template Patching** — Replace `{{placeholder}}` tokens in existing templates with new content
+- 🎨 **Rich Content** — Paragraphs, tables, images, charts, SmartArt, math equations, and more
+- ✨ **Effects & Animations** — Shadows, glow, 3D, transitions, entrance/exit animations (PPTX)
+- 📐 **OOXML Compliant** — Output validates against ISO/IEC 29500 XSD schemas
+- 🔒 **Type-safe** — Full TypeScript definitions and autocomplete, no `@types` needed
+- 🌐 **Cross-platform** — Node.js and browsers. Export to Buffer, Blob, Base64, stream, or string
+- ⚡ **Fast** — 1.5–9x faster than alternatives (see benchmarks in package READMEs)
+- 🤖 **AI-friendly** — JSON-first API ideal for LLM workflows and AI agents
 
 ## Packages
 
-- **[@office-open/core](./packages/core/README.md)** - Shared OOXML infrastructure
-- **[@office-open/xml](./packages/xml/README.md)** - XML parsing and serialization
-- **[@office-open/docx](./packages/docx/README.md)** - Generate .docx files with a declarative API
-- **[@office-open/xlsx](./packages/xlsx/README.md)** - Generate .xlsx files (WIP)
-- **[@office-open/pptx](./packages/pptx/README.md)** - Generate .pptx files with a declarative API
+| Package                                        | Version                                                | Description                                          |
+| ---------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------- |
+| [@office-open/docx](./packages/docx/README.md) | ![npm](https://img.shields.io/npm/v/@office-open/docx) | Word document generation, parsing, and patching      |
+| [@office-open/pptx](./packages/pptx/README.md) | ![npm](https://img.shields.io/npm/v/@office-open/pptx) | PowerPoint generation, parsing, and patching         |
+| [@office-open/core](./packages/core/README.md) |                                                        | Shared OOXML infrastructure, charts, unit converters |
+| [@office-open/xml](./packages/xml/README.md)   |                                                        | Low-level XML parsing and serialization              |
 
 ## Quick Start
 
@@ -79,6 +93,60 @@ const pres = new Presentation({
 const buffer = await Packer.toBuffer(pres);
 writeFileSync("presentation.pptx", buffer);
 ```
+
+## Parse Existing Files
+
+Read and inspect existing `.docx` and `.pptx` files into structured objects:
+
+```typescript
+// DOCX
+import { parseDocument } from "@office-open/docx";
+const opts = parseDocument(buffer);
+// opts.sections — document sections
+// opts.title, opts.creator — core properties
+
+// PPTX
+import { parsePresentation } from "@office-open/pptx";
+const opts = parsePresentation(buffer);
+// opts.slides — slide array
+// opts.size, opts.title — presentation properties
+```
+
+## JSON API
+
+Define documents as plain JSON objects — perfect for AI agents:
+
+```typescript
+// PPTX via JSON
+const pres = new Presentation({
+  slides: [
+    {
+      children: [
+        {
+          shape: {
+            x: 100,
+            y: 100,
+            width: 760,
+            height: 340,
+            textBody: { children: [{ text: "Hello, World!", fontSize: 32 }] },
+          },
+        },
+      ],
+    },
+  ],
+});
+```
+
+## Project Philosophy
+
+This project follows core principles:
+
+1. **OOXML Compliance**: Strict adherence to the ISO/IEC 29500 OOXML specification
+2. **Type Safety**: Full TypeScript support with comprehensive types and autocomplete
+3. **Declarative API**: Simple, intuitive API for document generation — JSON or TypeScript
+4. **Modular Design**: Shared core infrastructure across DOCX, PPTX, XLSX
+5. **Performance**: Optimized for large documents and batch processing
+6. **Cross-platform**: Works in Node.js and browsers. Export to Buffer, Blob, Base64, stream, or string
 
 ## Development
 
@@ -170,60 +238,6 @@ We welcome contributions! Here's how to get started:
 3. **Commit**: Use conventional commits (`feat:`, `fix:`, etc.)
 4. **Push**: Push to your fork
 5. **Submit**: Create a Pull Request to upstream repository
-
-## Project Philosophy
-
-This project follows core principles:
-
-1. **OOXML Compliance**: Strict adherence to the ISO/IEC 29500 OOXML specification
-2. **Type Safety**: Full TypeScript support with comprehensive types and autocomplete
-3. **Declarative API**: Simple, intuitive API for document generation — JSON or TypeScript
-4. **Modular Design**: Shared core infrastructure across DOCX, PPTX, XLSX
-5. **Performance**: Optimized for large documents and batch processing
-6. **Cross-platform**: Works in Node.js and browsers. Export to Buffer, Blob, Base64, stream, or string
-
-## Parse Existing Files
-
-Read and inspect existing `.docx` and `.pptx` files into structured objects:
-
-```typescript
-// DOCX
-import { parseDocument } from "@office-open/docx";
-const opts = parseDocument(buffer);
-// opts.sections — document sections
-// opts.title, opts.creator — core properties
-
-// PPTX
-import { parsePresentation } from "@office-open/pptx";
-const opts = parsePresentation(buffer);
-// opts.slides — slide array
-// opts.size, opts.title — presentation properties
-```
-
-## JSON API
-
-Define documents as plain JSON objects — perfect for AI agents:
-
-```typescript
-// PPTX via JSON
-const pres = new Presentation({
-  slides: [
-    {
-      children: [
-        {
-          shape: {
-            x: 100,
-            y: 100,
-            width: 760,
-            height: 340,
-            textBody: { children: [{ text: "Hello, World!", fontSize: 32 }] },
-          },
-        },
-      ],
-    },
-  ],
-});
-```
 
 ## Support & Community
 

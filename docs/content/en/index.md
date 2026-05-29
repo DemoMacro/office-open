@@ -241,13 +241,25 @@ const opts = parsePresentation(buffer);
 // opts.size, opts.title — presentation properties
 ```
 
+```ts [Patch]
+import { patchDocument, PatchType } from "@office-open/docx";
+
+const result = await patchDocument({
+  outputType: "nodebuffer",
+  data: buffer,
+  patches: {
+    name: { type: PatchType.PARAGRAPH, children: [new TextRun("John")] },
+  },
+});
+```
+
 :::
 
 #title
-Read and [inspect]{.text-(--ui-primary)} existing files
+Read and [modify]{.text-(--ui-primary)} existing files
 
 #description
-Parse existing `.docx` and `.pptx` files into structured objects. Inspect document content, extract data, or use as a foundation for modifications.
+Parse `.docx` and `.pptx` files into structured objects for inspection, or patch templates by replacing `{{placeholder}}` tokens with new content.
 
 #features
 :::u-page-feature
@@ -260,10 +272,10 @@ Read document structure, styles, and content
 
 :::u-page-feature
 ---
-icon: i-lucide-file-output
+icon: i-lucide-wrench
 ---
 #title{unwrap="p"}
-Support for both Node.js Buffer and browser File
+Patch template placeholders with new content
 :::
 
 :::u-page-feature

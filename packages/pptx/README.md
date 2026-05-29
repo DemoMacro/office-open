@@ -21,6 +21,7 @@
 - **Group Shapes** — Group multiple shapes together
 - **DrawingML** — Shapes with fills, outlines, shadows, glow, reflection, and 3D effects
 - **Parsing** — Parse existing .pptx files with `parsePresentation` for round-trip workflows
+- **Template Patching** — Patch existing PPTX templates via placeholder replacement
 
 ## Installation
 

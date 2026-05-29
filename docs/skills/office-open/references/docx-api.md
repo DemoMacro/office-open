@@ -490,3 +490,70 @@ Used in TextRun children as a string — displays the page number where the refe
 ```
 
 **Note**: In actual code, use `new CommentRangeStart(0)`, `new CommentRangeEnd(0)`, and `new CommentReference(0)` as separate elements in the children array. `CommentReference` goes inside a `TextRun`'s children.
+
+## Patching
+
+### patchDocument
+
+Modify an existing `.docx` template by replacing placeholders:
+
+```json
+// Replace a paragraph placeholder
+{
+  "type": "paragraph",
+  "children": [{ "text": "John Doe" }]
+}
+
+// Replace with block-level content
+{
+  "type": "file",
+  "children": [
+    { "children": [{ "text": "First paragraph" }] },
+    { "children": [{ "text": "Second paragraph" }] }
+  ]
+}
+```
+
+```ts
+import { patchDocument, PatchType, TextRun } from "@office-open/docx";
+
+const result = await patchDocument({
+  outputType: "nodebuffer",
+  data: templateBuffer,
+  patches: {
+    name: { type: PatchType.PARAGRAPH, children: [new TextRun("John Doe")] },
+    content: {
+      type: PatchType.DOCUMENT,
+      children: [new Paragraph("First"), new Paragraph("Second")],
+    },
+  },
+  placeholderDelimiters: { start: "{{", end: "}}" },
+  keepOriginalStyles: true,
+  recursive: true,
+});
+```
+
+| Option                  | Type                          | Default      | Description                                 |
+| ----------------------- | ----------------------------- | ------------ | ------------------------------------------- |
+| `outputType`            | `string`                      | —            | Output format                               |
+| `data`                  | `Buffer \| Uint8Array \| ...` | —            | Input .docx file                            |
+| `patches`               | `Record<string, IPatch>`      | —            | Placeholder name → patch content map        |
+| `keepOriginalStyles`    | `boolean`                     | `true`       | Preserve original run formatting properties |
+| `placeholderDelimiters` | `{ start, end }`              | `{ {{, }} }` | Custom delimiters                           |
+| `recursive`             | `boolean`                     | `true`       | Replace all occurrences                     |
+
+| PatchType             | Value         | Description                  |
+| --------------------- | ------------- | ---------------------------- |
+| `PatchType.PARAGRAPH` | `"paragraph"` | Inline run-level replacement |
+| `PatchType.DOCUMENT`  | `"file"`      | Block-level replacement      |
+
+### patchDetector
+
+Scan a template to discover all placeholder keys:
+
+```ts
+import { patchDetector } from "@office-open/docx";
+
+const placeholders = await patchDetector({ data: templateBuffer });
+// ["name", "title", "content", ...]
+```

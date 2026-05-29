@@ -119,7 +119,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
   outputType,
   data,
   patches,
-  keepOriginalStyles,
+  keepOriginalStyles = true,
   placeholderDelimiters = { end: "}}", start: "{{" } as const,
   recursive = true,
 }: PatchDocumentOptions<T>): Promise<OutputByType[T]> => {

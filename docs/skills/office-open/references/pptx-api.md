@@ -595,3 +595,41 @@ Add `class: "exit"`:
 parsePresentation(readFileSync("input.pptx"))
 // Returns PresentationOptions — pass to new Presentation(opts) to modify and re-export
 ```
+
+## Patching
+
+### patchPresentation
+
+Modify an existing `.pptx` template by replacing placeholders:
+
+```json
+{
+  "type": "paragraph",
+  "children": [{ "text": "Updated Title", "bold": true, "fontSize": 24 }]
+}
+```
+
+```ts
+import { patchPresentation, PatchType, TextRun } from "@office-open/pptx";
+
+const result = await patchPresentation({
+  outputType: "nodebuffer",
+  data: templateBuffer,
+  patches: {
+    title: { type: PatchType.PARAGRAPH, children: [new TextRun({ text: "Updated", bold: true })] },
+  },
+  placeholderDelimiters: { start: "{{", end: "}}" },
+});
+```
+
+| Option                  | Type                          | Default      | Description                                 |
+| ----------------------- | ----------------------------- | ------------ | ------------------------------------------- |
+| `outputType`            | `string`                      | —            | Output format                               |
+| `data`                  | `Buffer \| Uint8Array \| ...` | —            | Input .pptx file                            |
+| `patches`               | `Record<string, IPatch>`      | —            | Placeholder name → patch content map        |
+| `keepOriginalStyles`    | `boolean`                     | `true`       | Preserve original run formatting properties |
+| `placeholderDelimiters` | `{ start, end }`              | `{ {{, }} }` | Custom delimiters                           |
+
+| PatchType             | Value         | Description                  |
+| --------------------- | ------------- | ---------------------------- |
+| `PatchType.PARAGRAPH` | `"paragraph"` | Inline run-level replacement |

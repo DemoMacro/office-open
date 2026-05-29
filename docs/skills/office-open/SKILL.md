@@ -125,6 +125,48 @@ const pres = new Presentation(presOpts);
 const presBuffer = await Packer.toBuffer(pres);
 ```
 
+## Patching Existing Documents
+
+Replace `{{placeholder}}` tokens in existing templates with new content.
+
+### DOCX
+
+```ts
+import { patchDocument, PatchType, TextRun, Paragraph, Table } from "@office-open/docx";
+
+// Replace paragraph-level placeholder
+const result = await patchDocument({
+  outputType: "nodebuffer",
+  data: readFileSync("template.docx"),
+  patches: {
+    name: { type: PatchType.PARAGRAPH, children: [new TextRun("John Doe")] },
+    content: {
+      type: PatchType.DOCUMENT,
+      children: [new Paragraph("First"), new Table({ rows: [...] })],
+    },
+  },
+  keepOriginalStyles: true,
+  recursive: true,
+});
+```
+
+### PPTX
+
+```ts
+import { patchPresentation, PatchType, TextRun } from "@office-open/pptx";
+
+const result = await patchPresentation({
+  outputType: "nodebuffer",
+  data: readFileSync("template.pptx"),
+  patches: {
+    title: { type: PatchType.PARAGRAPH, children: [new TextRun({ text: "Updated", bold: true })] },
+  },
+  keepOriginalStyles: true,
+});
+```
+
+Both functions support custom `placeholderDelimiters` (default: `{{` and `}}`). DOCX also provides `patchDetector` to scan templates for placeholder keys.
+
 ## DOCX Features
 
 ### Sections & Page Layout

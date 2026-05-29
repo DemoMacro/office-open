@@ -241,13 +241,25 @@ const opts = parsePresentation(buffer);
 // opts.size, opts.title — 演示文稿属性
 ```
 
+```ts [补丁]
+import { patchDocument, PatchType } from "@office-open/docx";
+
+const result = await patchDocument({
+  outputType: "nodebuffer",
+  data: buffer,
+  patches: {
+    name: { type: PatchType.PARAGRAPH, children: [new TextRun("John")] },
+  },
+});
+```
+
 :::
 
 #title
-读取和[检查]{.text-(--ui-primary)}现有文件
+读取和[修改]{.text-(--ui-primary)}现有文件
 
 #description
-将现有的 `.docx` 和 `.pptx` 文件解析为结构化对象。检查文档内容、提取数据，或作为修改的基础。
+将 `.docx` 和 `.pptx` 文件解析为结构化对象进行检查，或通过替换 `{{占位符}}` 标记来修补模板。
 
 #features
 :::u-page-feature
@@ -260,10 +272,10 @@ icon: i-lucide-search
 
 :::u-page-feature
 ---
-icon: i-lucide-file-output
+icon: i-lucide-wrench
 ---
 #title{unwrap="p"}
-支持 Node.js Buffer 和浏览器 File
+替换模板占位符为新内容
 :::
 
 :::u-page-feature
