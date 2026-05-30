@@ -7,7 +7,7 @@
  * @module
  */
 import { BaseXmlComponent } from "@file/xml-components";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 import { escapeXml } from "@office-open/xml";
 
 export class SharedStrings extends BaseXmlComponent {
@@ -50,23 +50,5 @@ export class SharedStrings extends BaseXmlComponent {
     }
     p.push("</sst>");
     return p.join("");
-  }
-
-  public override prepForXml(_context: Context): IXmlableObject {
-    const children: IXmlableObject[] = [
-      {
-        _attr: {
-          xmlns: "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
-          count: this.strings.length,
-          uniqueCount: this.indexMap.size,
-        },
-      },
-    ];
-
-    for (const s of this.strings) {
-      children.push({ si: [{ t: [s] }] });
-    }
-
-    return { sst: children };
   }
 }

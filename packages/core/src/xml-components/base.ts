@@ -33,11 +33,15 @@ export abstract class BaseXmlComponent {
 
   /**
    * Prepares this component for XML serialization.
+   * Override in subclasses that build IXmlableObject trees.
+   * Classes overriding toXml() for direct string output do not need to override this.
    *
    * @param context - The serialization context
    * @returns The XML-serializable object, or undefined to exclude from output
    */
-  public abstract prepForXml(context: Context): IXmlableObject | undefined;
+  public prepForXml(context: Context): IXmlableObject | undefined {
+    return undefined;
+  }
 
   /**
    * Direct XML serialization. Override in subclasses for zero-allocation output.

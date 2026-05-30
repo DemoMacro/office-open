@@ -7,7 +7,7 @@
  * @module
  */
 import { BaseXmlComponent } from "@file/xml-components";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 
 export interface ImageOptions {
   /** 1-based column */
@@ -50,51 +50,6 @@ export class Drawing extends BaseXmlComponent {
     this.charts = charts;
   }
 
-  public override prepForXml(_context: Context): IXmlableObject {
-    const children: IXmlableObject[] = [
-      {
-        _attr: {
-          xmlns: XDR_NS,
-          "xmlns:a": A_NS,
-          "xmlns:r": R_NS,
-        },
-      },
-    ];
-
-    let nextId = 1;
-    for (const img of this.images) {
-      children.push(this.buildImageAnchor(img, nextId++));
-    }
-
-    for (const chart of this.charts) {
-      children.push(this.buildChartAnchor(chart, nextId++));
-    }
-
-    return { wsDr: children };
-  }
-
-  private buildFromAnchor(
-    col: number,
-    row: number,
-    colOffset?: number,
-    rowOffset?: number,
-  ): IXmlableObject {
-    return {
-      from: [
-        { col: [col - 1] },
-        { colOff: [colOffset ?? 0] },
-        { row: [row - 1] },
-        { rowOff: [rowOffset ?? 0] },
-      ],
-    };
-  }
-
-  private buildToAnchor(col: number, row: number): IXmlableObject {
-    return {
-      to: [{ col: [col] }, { colOff: [0] }, { row: [row] }, { rowOff: [0] }],
-    };
-  }
-
   public override toXml(_context: Context): string {
     const p: string[] = [`<wsDr xmlns="${XDR_NS}" xmlns:a="${A_NS}" xmlns:r="${R_NS}">`];
     let id = 1;
@@ -122,88 +77,5 @@ export class Drawing extends BaseXmlComponent {
     }
     p.push("</wsDr>");
     return p.join("");
-  }
-
-  private buildImageAnchor(img: ImageOptions, id: number): IXmlableObject {
-    return {
-      twoCellAnchor: [
-        { _attr: { editAs: "oneCell" } },
-        this.buildFromAnchor(img.col, img.row, img.colOffset, img.rowOffset),
-        this.buildToAnchor(img.col, img.row),
-        {
-          pic: [
-            {
-              nvPicPr: [
-                { cNvPr: { _attr: { id, name: `Picture ${id}` } } },
-                { cNvPicPr: [{ _attr: { preferRelativeResize: 1 } }] },
-              ],
-            },
-            {
-              blipFill: [
-                { "a:blip": { _attr: { "r:embed": img.rId } } },
-                { "a:stretch": [{ "a:fillRect": [] }] },
-              ],
-            },
-            {
-              spPr: [
-                {
-                  "a:xfrm": [
-                    { "a:off": { _attr: { x: 0, y: 0 } } },
-                    { "a:ext": { _attr: { cx: 400000, cy: 300000 } } },
-                  ],
-                },
-                { "a:prstGeom": [{ _attr: { prst: "rect" } }, { "a:avLst": [] }] },
-              ],
-            },
-          ],
-        },
-        { clientData: [] },
-      ],
-    };
-  }
-
-  private buildChartAnchor(chart: ChartAnchorOptions, id: number): IXmlableObject {
-    return {
-      twoCellAnchor: [
-        { _attr: { editAs: "oneCell" } },
-        this.buildFromAnchor(chart.col, chart.row, chart.colOffset, chart.rowOffset),
-        this.buildToAnchor(chart.col + 8, chart.row + 15),
-        {
-          graphicFrame: [
-            {
-              nvGraphicFramePr: [
-                { cNvPr: { _attr: { id, name: `Chart ${id}` } } },
-                { cNvGraphicFramePr: [{ "a:graphicFrameLocks": { _attr: { noGrp: 1 } } }] },
-              ],
-            },
-            {
-              xfrm: [
-                { "a:off": { _attr: { x: 0, y: 0 } } },
-                { "a:ext": { _attr: { cx: 0, cy: 0 } } },
-              ],
-            },
-            {
-              "a:graphic": [
-                {
-                  "a:graphicData": [
-                    { _attr: { uri: C_URI } },
-                    {
-                      "c:chart": {
-                        _attr: {
-                          "xmlns:c": "http://schemas.openxmlformats.org/drawingml/2006/chart",
-                          "xmlns:r": R_NS,
-                          "r:id": chart.rId,
-                        },
-                      },
-                    },
-                  ],
-                },
-              ],
-            },
-          ],
-        },
-        { clientData: [] },
-      ],
-    };
   }
 }

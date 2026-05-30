@@ -4,7 +4,7 @@
  * @module
  */
 import { BaseXmlComponent } from "@file/xml-components";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 
 const XLSX_MAIN = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml";
 const XLSX_WORKSHEET = "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml";
@@ -40,16 +40,6 @@ const STATIC_ENTRIES: readonly ContentEntry[] = [
     contentType: "application/vnd.openxmlformats-officedocument.extended-properties+xml",
     key: "/docProps/app.xml",
   },
-];
-
-const STATIC_CHILDREN: IXmlableObject[] = [
-  { _attr: { xmlns: "http://schemas.openxmlformats.org/package/2006/content-types" } },
-  ...STATIC_ENTRIES.map((e) => {
-    if (e.type === "Default") {
-      return { Default: { _attr: { ContentType: e.contentType, Extension: e.key } } };
-    }
-    return { Override: { _attr: { ContentType: e.contentType, PartName: e.key } } };
-  }),
 ];
 
 // Pre-compiled static XML fragment (module-level constant)
@@ -119,22 +109,6 @@ export class ContentTypes extends BaseXmlComponent {
     // Avoid duplicates
     if (this.dynamicEntries.some((e) => e.type === "Default" && e.key === extension)) return;
     this.dynamicEntries.push({ type: "Default", contentType, key: extension });
-  }
-
-  public override prepForXml(_context: Context): IXmlableObject {
-    const children = [...STATIC_CHILDREN];
-    for (const e of this.dynamicEntries) {
-      if (e.type === "Default") {
-        children.push({
-          Default: { _attr: { ContentType: e.contentType, Extension: e.key } },
-        });
-      } else {
-        children.push({
-          Override: { _attr: { ContentType: e.contentType, PartName: e.key } },
-        });
-      }
-    }
-    return { Types: children };
   }
 
   public override toXml(_context: Context): string {

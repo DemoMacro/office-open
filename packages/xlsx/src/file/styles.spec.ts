@@ -1,4 +1,3 @@
-import { Formatter } from "@export/formatter";
 import { describe, expect, it } from "vite-plus/test";
 
 import { Styles } from "./styles";
@@ -57,78 +56,22 @@ describe("Styles", () => {
     it("with alignment sets applyAlignment=1", () => {
       const styles = new Styles();
       styles.register({ alignment: { horizontal: "center" } });
-
-      const tree = new Formatter().format(styles);
-      const styleSheet = tree["styleSheet"] as any[];
-
-      // Find cellXfs
-      const cellXfs = styleSheet.find((c: any) => "cellXfs" in c)["cellXfs"] as any[];
-      // Default xf (index 0) + our xf (index 1)
-      const xf = cellXfs[2]; // _attr + first xf + our xf
-      expect(xf["xf"]).toBeDefined();
-      const xfChildren = xf["xf"] as any[];
-      const xfAttr = xfChildren.find((c: any) => "_attr" in c)["_attr"];
-      expect(xfAttr["applyAlignment"]).toBe(1);
+      const xml = styles.toXml(context);
+      expect(xml).toContain('applyAlignment="1"');
     });
 
     it("custom numFmt gets 164+ ID", () => {
       const styles = new Styles();
       styles.register({ numFmt: '0.00"€"' });
-
-      const tree = new Formatter().format(styles);
-      const styleSheet = tree["styleSheet"] as any[];
-
-      // numFmts section should be present
-      const numFmts = styleSheet.find((c: any) => "numFmts" in c);
-      expect(numFmts).toBeDefined();
+      const xml = styles.toXml(context);
+      expect(xml).toContain("<numFmts");
+      expect(xml).toContain('numFmtId="164"');
     });
 
     it("built-in numFmt does not create custom entry", () => {
       const styles = new Styles();
       const idx = styles.register({ numFmt: "0.00" });
-      // "0.00" is built-in (id=2), should return 0 for default font/fill/border
       expect(idx).toBeGreaterThan(0);
-    });
-  });
-
-  // ── prepForXml path ──
-
-  describe("prepForXml", () => {
-    it("default construction has required sections", () => {
-      const tree = new Formatter().format(new Styles());
-      const styleSheet = tree["styleSheet"] as any[];
-
-      const keys = styleSheet.map((c: any) => Object.keys(c)[0]);
-      expect(keys).toContain("fonts");
-      expect(keys).toContain("fills");
-      expect(keys).toContain("borders");
-      expect(keys).toContain("cellStyleXfs");
-      expect(keys).toContain("cellXfs");
-      expect(keys).toContain("cellStyles");
-    });
-
-    it("default fonts count is 1 (Calibri 11pt)", () => {
-      const tree = new Formatter().format(new Styles());
-      const styleSheet = tree["styleSheet"] as any[];
-      const fonts = styleSheet.find((c: any) => "fonts" in c)["fonts"] as any[];
-      expect(fonts[0]["_attr"]["count"]).toBe(1);
-    });
-
-    it("default fills count is 2 (none + gray125)", () => {
-      const tree = new Formatter().format(new Styles());
-      const styleSheet = tree["styleSheet"] as any[];
-      const fills = styleSheet.find((c: any) => "fills" in c)["fills"] as any[];
-      expect(fills[0]["_attr"]["count"]).toBe(2);
-    });
-
-    it("registering a font increases font count", () => {
-      const styles = new Styles();
-      styles.register({ font: { bold: true, size: 14 } });
-
-      const tree = new Formatter().format(styles);
-      const styleSheet = tree["styleSheet"] as any[];
-      const fonts = styleSheet.find((c: any) => "fonts" in c)["fonts"] as any[];
-      expect(fonts[0]["_attr"]["count"]).toBe(2);
     });
   });
 

@@ -9,7 +9,7 @@
  * @module
  */
 import { BaseXmlComponent } from "@file/xml-components";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 
 // Pre-serialized theme XML. Generated once via xml(buildThemeObj()) and inlined.
 // To regenerate: run `pnpm tsx scripts/gen-theme.ts` from packages/xlsx.
@@ -24,20 +24,5 @@ export class DefaultTheme extends BaseXmlComponent {
   /** Return pre-cached static theme XML — zero allocation. */
   public override toXml(_context: Context): string {
     return THEME_XML;
-  }
-
-  public override prepForXml(_context: Context): IXmlableObject {
-    // Re-expose the static XML as an IXmlableObject for backward compatibility.
-    // This is only used if someone calls prepForXml() directly.
-    return {
-      "a:theme": [
-        {
-          _attr: {
-            "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
-            name: "Office Theme",
-          },
-        },
-      ],
-    };
   }
 }
