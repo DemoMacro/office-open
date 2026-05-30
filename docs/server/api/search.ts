@@ -1,13 +1,87 @@
 import { createMCPClient } from "@ai-sdk/mcp";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { Document, Packer } from "@office-open/docx";
+import type { PropertiesOptions } from "@office-open/docx";
+import { Presentation, Packer as PptxPacker } from "@office-open/pptx";
+import type { PresentationOptions } from "@office-open/pptx";
+import { Workbook, Packer as XlsxPacker } from "@office-open/xlsx";
+import type { WorkbookOptions } from "@office-open/xlsx";
 import {
   streamText,
   convertToModelMessages,
   createUIMessageStream,
   createUIMessageStreamResponse,
+  tool,
 } from "ai";
-import type { UIMessageStreamWriter, ToolCallPart, ToolSet } from "ai";
+import type { UIMessageStreamWriter, ToolSet } from "ai";
 import type { H3Event } from "h3";
+import { z } from "zod";
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+const MIME_TYPES = {
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+} as const;
+
+async function generateDocument(type: "docx" | "pptx" | "xlsx", options: Record<string, unknown>) {
+  try {
+    let base64: string;
+
+    switch (type) {
+      case "docx": {
+        const doc = new Document(options as unknown as PropertiesOptions);
+        base64 = await Packer.toBase64String(doc);
+        break;
+      }
+      case "pptx": {
+        const pres = new Presentation(options as unknown as PresentationOptions);
+        base64 = await PptxPacker.toBase64String(pres);
+        break;
+      }
+      case "xlsx": {
+        const wb = new Workbook(options as unknown as WorkbookOptions);
+        base64 = await XlsxPacker.toBase64String(wb);
+        break;
+      }
+    }
+
+    const rawSize = Math.ceil((base64.length * 3) / 4);
+    if (rawSize > MAX_FILE_SIZE) {
+      return {
+        success: false,
+        error: `Generated file is ${(rawSize / 1024 / 1024).toFixed(1)}MB, exceeding the 5MB limit.`,
+      };
+    }
+
+    return {
+      success: true,
+      filename: `${(options.title as string) || "generated"}.${type}`,
+      base64,
+      mimeType: MIME_TYPES[type],
+      size: rawSize,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: `Failed to generate ${type}: ${err instanceof Error ? err.message : String(err)}`,
+    };
+  }
+}
+
+const generateDocumentTool = tool({
+  description:
+    "Generate a downloadable Office document (.docx, .pptx, or .xlsx). Use when the user asks to create, generate, or produce an Office document.",
+  inputSchema: z.object({
+    type: z.enum(["docx", "pptx", "xlsx"]).describe("Document type to generate"),
+    options: z.string().describe("Document options as a JSON string"),
+  }),
+  execute: async ({ type, options }: { type: "docx" | "pptx" | "xlsx"; options: string }) => {
+    const parsed = JSON.parse(options) as Record<string, unknown>;
+    return generateDocument(type, parsed);
+  },
+});
 
 const MAX_STEPS = 10;
 
@@ -52,7 +126,7 @@ function getSystemPrompt(siteName: string) {
 - Speak as a helpful guide, not as the documentation itself
 
 **Tool usage (CRITICAL):**
-- You have tools: list-pages (discover pages) and get-page (read a page)
+- You have tools: list-pages (discover pages), get-page (read a page), and generate-document (create Office files)
 - If a page title clearly matches the question, read it directly without listing first
 - ALWAYS respond with text after using tools - never end with just tool calls
 
@@ -77,7 +151,18 @@ function getSystemPrompt(siteName: string) {
 - Conversational but professional
 - "Here's how you can do that:" instead of "The documentation shows:"
 - "${siteName} supports TypeScript out of the box" instead of "I support TypeScript"
-- Provide actionable guidance, not just information dumps`;
+- Provide actionable guidance, not just information dumps
+
+**Document Generation:**
+- When a user asks to create/generate/build an Office document, ALWAYS read the relevant documentation pages FIRST to understand the correct JSON schema and options
+- Use get-page to read the docx/pptx/xlsx documentation before calling generate-document
+- For docx: use { sections: [{ properties: {}, children: [...] }] }
+- For pptx: use { title: "...", slides: [{ children: [...]] }
+- For xlsx: use { worksheets: [{ rows: [{ cells: [...] }] }]
+- The options parameter must be a JSON string, NOT a JSON object
+- Set the "title" field in options to customize the download filename without extension (e.g. "My Report")
+- ALWAYS describe what you generated after the tool completes
+- Keep generated documents focused and reasonable in size`;
 }
 
 export default defineEventHandler(async (event) => {
@@ -133,25 +218,38 @@ export default defineEventHandler(async (event) => {
         stopWhen: stopWhenResponseComplete,
         system: getSystemPrompt(siteName),
         messages: modelMessages,
-        tools: mcpTools as ToolSet,
-        onStepFinish: ({ toolCalls }: { toolCalls: ToolCallPart[] }) => {
-          if (toolCalls.length === 0) return;
-          writer.write({
-            id: toolCalls[0]?.toolCallId,
-            type: "data-tool-calls",
-            data: {
-              tools: toolCalls.map((tc: ToolCallPart) => {
-                const args = "args" in tc ? tc.args : "input" in tc ? tc.input : {};
-                return {
-                  toolName: tc.toolName,
-                  toolCallId: tc.toolCallId,
-                  args,
-                };
-              }),
-            },
-          });
+        tools: { ...mcpTools, "generate-document": generateDocumentTool } as ToolSet,
+        onStepFinish: ({ toolCalls, toolResults }) => {
+          if (toolCalls.length > 0) {
+            writer.write({
+              id: toolCalls[0]?.toolCallId,
+              type: "data-tool-calls",
+              data: {
+                tools: toolCalls.map((tc) => {
+                  const args = "args" in tc ? tc.args : "input" in tc ? tc.input : {};
+                  return {
+                    toolName: tc.toolName,
+                    toolCallId: tc.toolCallId,
+                    args,
+                  };
+                }),
+              },
+            });
+          }
+
+          for (const tr of toolResults) {
+            if (tr.toolName === "generate-document" && tr.output?.success === true) {
+              const { filename, base64, mimeType, size } = tr.output;
+              writer.write({
+                id: tr.toolCallId,
+                type: "data-document",
+                data: { filename, base64, mimeType, size },
+              });
+            }
+          }
         },
       });
+
       writer.merge(result.toUIMessageStream());
     },
     onFinish: async () => {

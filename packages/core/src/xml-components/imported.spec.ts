@@ -44,14 +44,14 @@ describe("ImportedXmlComponent", () => {
 
 describe("convertToXmlComponent", () => {
   it("should return undefined for invalid type", () => {
-    expect(convertToXmlComponent({ type: "comment" } as any)).toBeUndefined();
+    expect(convertToXmlComponent({ type: "comment" })).toBeUndefined();
   });
 
   it("should skip invalid children", () => {
     const element = {
       elements: [
         { text: "hello", type: "text" },
-        { comment: "skip", type: "comment" } as any,
+        { comment: "skip", type: "comment" },
         { elements: [], name: "w:r", type: "element" },
       ],
       name: "w:p",
