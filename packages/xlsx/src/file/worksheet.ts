@@ -32,6 +32,29 @@ export interface CellOptions {
   readonly styleIndex?: number;
   /** Style options (resolved to index at compile time) */
   readonly style?: StyleOptions;
+  /** Formula options. When set, value becomes the cached result. */
+  readonly formula?: FormulaOptions;
+}
+
+/** Cell formula type (maps to ST_CellFormulaType). */
+export const FormulaType = {
+  NORMAL: "normal",
+  ARRAY: "array",
+  SHARED: "shared",
+} as const;
+
+export type FormulaType = (typeof FormulaType)[keyof typeof FormulaType];
+
+/** Options for a cell formula (maps to CT_CellFormula). */
+export interface FormulaOptions {
+  /** Formula expression, e.g. "SUM(A1:B1)" */
+  readonly formula: string;
+  /** Formula type (default: "normal") */
+  readonly type?: FormulaType;
+  /** Reference range for array/shared formulas, e.g. "C1:C10" */
+  readonly reference?: string;
+  /** Shared formula group index (required for shared formulas) */
+  readonly sharedIndex?: number;
 }
 
 export interface MergeCellOptions {
@@ -532,6 +555,26 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
   }
 
   /**
+   * Build the <f> element string for a cell formula.
+   */
+  private buildFormulaString(fOpts: FormulaOptions): string {
+    const fAttrs: Record<string, string | number | boolean | undefined> = {};
+    if (fOpts.type && fOpts.type !== FormulaType.NORMAL) fAttrs.t = fOpts.type;
+    if (fOpts.reference) fAttrs.ref = fOpts.reference;
+    if (fOpts.sharedIndex !== undefined) fAttrs.si = fOpts.sharedIndex;
+
+    const hasContent = fOpts.formula !== undefined && fOpts.formula !== "";
+
+    if (hasContent) {
+      return `<f${attrs(fAttrs)}>${escapeXml(fOpts.formula)}</f>`;
+    }
+    if (Object.keys(fAttrs).length > 0) {
+      return selfCloseElement("f", attrs(fAttrs));
+    }
+    return "";
+  }
+
+  /**
    * Direct string serialization of a single cell — zero intermediate objects.
    */
   private buildCellString(
@@ -550,6 +593,31 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
     }
 
     const value = cell.value;
+
+    // Formula path — formula takes precedence; value is the cached result.
+    if (cell.formula) {
+      const fStr = this.buildFormulaString(cell.formula);
+      let vStr = "";
+      if (value === null || value === undefined) {
+        return `<c${attrs(cellAttrs)}>${fStr}</c>`;
+      }
+      if (typeof value === "number") {
+        vStr = `<v>${value}</v>`;
+      } else if (typeof value === "boolean") {
+        cellAttrs.t = "b";
+        vStr = `<v>${value ? 1 : 0}</v>`;
+      } else if (typeof value === "string") {
+        cellAttrs.t = "str";
+        vStr = `<v>${escapeXml(value)}</v>`;
+      } else if (value instanceof Date) {
+        vStr = `<v>${this.dateToSerialNumber(value)}</v>`;
+      }
+      if (vStr) {
+        return `<c${attrs(cellAttrs)}>${fStr}${vStr}</c>`;
+      }
+      return `<c${attrs(cellAttrs)}>${fStr}</c>`;
+    }
+
     if (value === null || value === undefined) {
       if (cell.styleIndex !== undefined) {
         return selfCloseElement("c", attrs(cellAttrs));
@@ -615,6 +683,45 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
     }
 
     const value = cell.value;
+
+    // Formula path — formula takes precedence; value is the cached result.
+    if (cell.formula) {
+      const children: IXmlableObject[] = [{ _attr: attrs }];
+
+      const fOpts = cell.formula;
+      const fAttrs: Record<string, string | number> = {};
+      if (fOpts.type && fOpts.type !== FormulaType.NORMAL) fAttrs.t = fOpts.type;
+      if (fOpts.reference) fAttrs.ref = fOpts.reference;
+      if (fOpts.sharedIndex !== undefined) fAttrs.si = fOpts.sharedIndex;
+
+      const hasContent = fOpts.formula !== undefined && fOpts.formula !== "";
+      if (hasContent) {
+        children.push({
+          f: [Object.keys(fAttrs).length > 0 ? { _attr: fAttrs } : undefined, fOpts.formula].filter(
+            Boolean,
+          ) as IXmlableObject[],
+        });
+      } else if (Object.keys(fAttrs).length > 0) {
+        children.push({ f: [{ _attr: fAttrs }] });
+      }
+
+      if (value !== null && value !== undefined) {
+        if (typeof value === "number") {
+          children.push({ v: [value] });
+        } else if (typeof value === "boolean") {
+          attrs.t = "b";
+          children.push({ v: [value ? 1 : 0] });
+        } else if (typeof value === "string") {
+          attrs.t = "str";
+          children.push({ v: [value] });
+        } else if (value instanceof Date) {
+          children.push({ v: [this.dateToSerialNumber(value)] });
+        }
+      }
+
+      return { c: children };
+    }
+
     if (value === null || value === undefined) {
       if (cell.styleIndex !== undefined) {
         return { c: [{ _attr: attrs }] };

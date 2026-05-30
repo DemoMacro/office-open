@@ -24,5 +24,6 @@ export type {
   WorksheetChartOptions,
   DataValidationOptions,
   ConditionalFormatOptions,
+  FormulaOptions,
 } from "./worksheet";
 export type { CorePropertiesOptions } from "./core-properties";
