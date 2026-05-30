@@ -22,7 +22,7 @@ export interface PictureOptions {
 /**
  * p:pic — A picture on a slide.
  *
- * Registers image with Media collection via prepForXml/toXml.
+ * Registers image with Media collection via toXml().
  * The ImageReplacer replaces `{fileName}` placeholder with actual rId.
  */
 export class Picture extends XmlComponent {

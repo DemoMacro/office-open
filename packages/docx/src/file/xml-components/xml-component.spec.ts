@@ -1,7 +1,7 @@
 import { Formatter } from "@export/formatter";
 import { describe, expect, it } from "vite-plus/test";
 
-import { Attributes, XmlComponent } from "./";
+import { XmlComponent } from "./";
 import type { BaseXmlComponent } from "./";
 
 class TestComponent extends XmlComponent {
@@ -22,11 +22,11 @@ describe("XmlComponent", () => {
     it("should handle children elements", () => {
       const xmlComponent = new TestComponent("w:test");
 
-      xmlComponent.push(
-        new Attributes({
-          val: "test",
-        }),
-      );
+      xmlComponent.root.push({
+        _attr: {
+          "w:val": "test",
+        },
+      });
 
       xmlComponent.push(new TestComponent("innerTest"));
 
@@ -47,11 +47,11 @@ describe("XmlComponent", () => {
     it("should hoist attrs if only attrs are present", () => {
       const xmlComponent = new TestComponent("w:test");
 
-      xmlComponent.push(
-        new Attributes({
-          val: "test",
-        }),
-      );
+      xmlComponent.root.push({
+        _attr: {
+          "w:val": "test",
+        },
+      });
 
       const tree = new Formatter().format(xmlComponent);
       expect(tree).to.deep.equal({

@@ -73,15 +73,26 @@ export class ImportedXmlComponent extends XmlComponent {
 
 /**
  * Represents attributes for imported root elements.
+ * The { _attr } in root is consumed by the parent's toXml() serialization.
  */
 export class ImportedRootElementAttributes extends XmlComponent {
   public constructor(private readonly _attr: any) {
     super("");
+    if (_attr) {
+      this.root.push({ _attr });
+    }
   }
 
-  public prepForXml(_: Context): IXmlableObject {
+  /**
+   * @deprecated Use `toXml()` instead.
+   */
+  public override prepForXml(_context: Context): IXmlableObject {
     return {
       _attr: this._attr,
     };
+  }
+
+  public override toXml(_context: Context): string {
+    return "";
   }
 }

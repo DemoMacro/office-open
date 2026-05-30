@@ -3,7 +3,7 @@ import type { Context } from "@file/xml-components";
 
 /**
  * a:graphic > a:graphicData — DrawingML graphic wrapper for table.
- * Lazy: stores table reference, builds IXmlableObject in prepForXml.
+ * Lazy: stores table reference, builds XML in toXml().
  */
 export class Graphic extends BaseXmlComponent {
   private readonly table: BaseXmlComponent;

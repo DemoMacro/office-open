@@ -1,4 +1,4 @@
-import { BuilderElement, NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { buildAttrObject, BuilderElement, XmlComponent } from "@file/xml-components";
 
 export interface AuthorEntry {
   readonly id: number;
@@ -15,11 +15,8 @@ export class CommentAuthorList extends XmlComponent {
   public constructor(authors: readonly AuthorEntry[]) {
     super("p:cmAuthorLst");
     this.root.push(
-      new NextAttributeComponent({
-        "xmlns:p": {
-          key: "xmlns:p",
-          value: "http://schemas.openxmlformats.org/presentationml/2006/main",
-        },
+      buildAttrObject({
+        "xmlns:p": "http://schemas.openxmlformats.org/presentationml/2006/main",
       }),
     );
     for (const author of authors) {

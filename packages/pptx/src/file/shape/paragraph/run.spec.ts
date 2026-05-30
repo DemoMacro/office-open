@@ -18,7 +18,7 @@ describe("TextRun", () => {
 
     it("options with bold produces rPr + t", () => {
       const xml = new TextRun({ text: "Bold", bold: true }).toXml(context);
-      expect(xml).toContain('<a:rPr b="true"/>');
+      expect(xml).toContain('<a:rPr b="1"/>');
       expect(xml).toContain("<a:t>Bold</a:t>");
     });
 
@@ -29,7 +29,7 @@ describe("TextRun", () => {
 
     it("properties without text produces rPr wrapped in a:r", () => {
       const xml = new TextRun({ bold: true }).toXml(context);
-      expect(xml).toContain('<a:rPr b="true"/>');
+      expect(xml).toContain('<a:rPr b="1"/>');
       expect(xml).toContain("<a:r>");
       expect(xml).toContain("</a:r>");
     });

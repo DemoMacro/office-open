@@ -1,4 +1,4 @@
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 import { BaseXmlComponent } from "@file/xml-components";
 
 const ORIENT_TYPES = new Set(["blinds", "checker", "comb", "randomBar"]);
@@ -72,40 +72,39 @@ function buildTransitionElement(
   orient?: string,
   thruBlk?: boolean,
   spokes?: number,
-): IXmlableObject {
-  const attrs: Record<string, string | number> = {};
+): string {
   const dir = direction ? DIRECTION_MAP[direction] : undefined;
+  const attrs: string[] = [];
 
   if (ORIENT_TYPES.has(type) && dir) {
-    attrs.dir = dir;
+    attrs.push(`dir="${dir}"`);
   } else if (SIDE_DIR_TYPES.has(type) && dir) {
-    attrs.dir = dir;
+    attrs.push(`dir="${dir}"`);
   } else if (EIGHT_DIR_TYPES.has(type) && dir) {
-    attrs.dir = dir;
+    attrs.push(`dir="${dir}"`);
   } else if (type === "strips" && dir) {
-    attrs.dir = dir;
+    attrs.push(`dir="${dir}"`);
   } else if ((type === "fade" || type === "cut") && thruBlk !== undefined) {
-    attrs.thruBlk = thruBlk ? 1 : 0;
+    attrs.push(`thruBlk="${thruBlk ? 1 : 0}"`);
   } else if (type === "split") {
-    attrs.orient = orient ?? "horz";
-    attrs.dir = dir ?? "out";
+    attrs.push(`orient="${orient ?? "horz"}"`, `dir="${dir ?? "out"}"`);
   } else if (type === "wheel") {
-    attrs.spokes = spokes ?? 4;
+    attrs.push(`spokes="${spokes ?? 4}"`);
   } else if (type === "zoom" && dir) {
-    attrs.dir = dir;
+    attrs.push(`dir="${dir}"`);
   }
 
-  return { [`p:${type}`]: Object.keys(attrs).length > 0 ? { _attr: attrs } : {} };
+  return attrs.length > 0 ? `<p:${type} ${attrs.join(" ")}/>` : `<p:${type}/>`;
 }
 
-export function buildTransition(options: TransitionOptions): IXmlableObject {
-  const children: IXmlableObject[] = [];
-  const attrs: Record<string, string | number> = {};
-  if (options.speed) attrs.spd = options.speed;
-  if (options.advanceOnClick !== undefined) attrs.advClick = options.advanceOnClick ? 1 : 0;
-  if (options.advanceAfterTime !== undefined) attrs.advTm = options.advanceAfterTime;
-  if (Object.keys(attrs).length > 0) children.push({ _attr: attrs });
+export function buildTransition(options: TransitionOptions): string {
+  const attrParts: string[] = [];
+  if (options.speed) attrParts.push(`spd="${options.speed}"`);
+  if (options.advanceOnClick !== undefined)
+    attrParts.push(`advClick="${options.advanceOnClick ? 1 : 0}"`);
+  if (options.advanceAfterTime !== undefined) attrParts.push(`advTm="${options.advanceAfterTime}"`);
 
+  const children: string[] = [];
   if (options.type) {
     children.push(
       buildTransitionElement(
@@ -118,12 +117,20 @@ export function buildTransition(options: TransitionOptions): IXmlableObject {
     );
   }
 
-  return { "p:transition": children.length === 0 ? {} : children };
+  if (attrParts.length === 0 && children.length === 0) {
+    return "<p:transition/>";
+  }
+
+  const attrStr = attrParts.length > 0 ? ` ${attrParts.join(" ")}` : "";
+  if (children.length === 0) {
+    return `<p:transition${attrStr}/>`;
+  }
+  return `<p:transition${attrStr}>${children.join("")}</p:transition>`;
 }
 
 /**
  * p:transition — Slide transition effect.
- * Lazy: stores options, builds XML object in prepForXml.
+ * Lazy: stores options, builds XML in toXml.
  */
 export class Transition extends BaseXmlComponent {
   private readonly options: TransitionOptions;
@@ -133,7 +140,7 @@ export class Transition extends BaseXmlComponent {
     this.options = options;
   }
 
-  public override prepForXml(_context: Context): IXmlableObject {
+  public override toXml(_context: Context): string {
     return buildTransition(this.options);
   }
 }

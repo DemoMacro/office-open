@@ -16,7 +16,7 @@ export interface GroupShapeOptions {
 
 /**
  * p:grpSp — Group shape containing child shapes.
- * Lazy: stores options, builds XML object in prepForXml.
+ * Lazy: stores options, builds XML in toXml().
  */
 export class GroupShape extends BaseXmlComponent {
   private static nextId = 100;

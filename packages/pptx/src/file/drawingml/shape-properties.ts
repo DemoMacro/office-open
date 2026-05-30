@@ -1,7 +1,6 @@
 import type { File } from "@file/file";
 import { BaseXmlComponent } from "@file/xml-components";
-import type { Context, IXmlableObject } from "@file/xml-components";
-import { xml } from "@office-open/xml";
+import type { Context } from "@file/xml-components";
 
 import { createPptxEffectList, buildScene3D, buildShape3D, type EffectsOptions } from "./effects";
 import { buildFill, extractBlipFillMedia } from "./fill";
@@ -33,7 +32,6 @@ export interface ShapePropertiesOptions {
 
 /**
  * p:spPr — Shape properties (transform, geometry, fill, outline, effects).
- * Lazy: stores options, builds XML object directly in prepForXml.
  */
 export class ShapeProperties extends BaseXmlComponent {
   private readonly options: ShapePropertiesOptions;
@@ -43,9 +41,9 @@ export class ShapeProperties extends BaseXmlComponent {
     this.options = options;
   }
 
-  public prepForXml(context: Context<File>): IXmlableObject | undefined {
+  public override toXml(context: Context<File>): string {
     const opts = this.options;
-    const children: IXmlableObject[] = [];
+    const parts: string[] = [];
 
     // Transform2D
     if (
@@ -56,15 +54,13 @@ export class ShapeProperties extends BaseXmlComponent {
       opts.flipHorizontal !== undefined ||
       opts.rotation !== undefined
     ) {
-      const xfrmObj = new Transform2D(opts).prepForXml(context);
-      if (xfrmObj) children.push(xfrmObj);
+      parts.push(new Transform2D(opts).toXml(context));
     }
 
     // PresetGeometry
-    const geomObj = new PresetGeometry({ preset: opts.geometry ?? "rect" }).prepForXml(context);
-    if (geomObj) children.push(geomObj);
+    parts.push(new PresetGeometry({ preset: opts.geometry ?? "rect" }).toXml(context));
 
-    // Fill (register blipFill media — B-level side effect)
+    // Fill (register blipFill media — side effect)
     const media = opts.fill ? extractBlipFillMedia(opts.fill) : undefined;
     if (media) {
       context.fileData?.media.addImage(media.fileName, {
@@ -76,52 +72,35 @@ export class ShapeProperties extends BaseXmlComponent {
     }
 
     const fillComponent = buildFill(opts.fill !== undefined ? opts.fill : { type: "none" });
-    const fillObj = fillComponent.prepForXml(context);
-    if (fillObj) children.push(fillObj);
+    parts.push(fillComponent.toXml(context));
 
     // Outline
     if (opts.outline) {
-      const outlineObj = createOutlineCompat(opts.outline).prepForXml(context);
-      if (outlineObj) children.push(outlineObj);
+      parts.push(createOutlineCompat(opts.outline).toXml(context));
     }
 
     // Effects
     if (opts.effects) {
       const effectObj = createPptxEffectList(opts.effects);
-      if (effectObj) {
-        const effectXmlObj = effectObj.prepForXml(context);
-        if (effectXmlObj) children.push(effectXmlObj);
-      }
+      if (effectObj) parts.push(effectObj.toXml(context));
 
       const scene3d = buildScene3D(opts.effects);
-      if (scene3d) {
-        const sceneObj = scene3d.prepForXml(context);
-        if (sceneObj) children.push(sceneObj);
-      }
+      if (scene3d) parts.push(scene3d.toXml(context));
 
       const shape3d = buildShape3D(opts.effects);
-      if (shape3d) {
-        const shapeObj = shape3d.prepForXml(context);
-        if (shapeObj) children.push(shapeObj);
-      }
+      if (shape3d) parts.push(shape3d.toXml(context));
     }
 
     // Connection sites
     if (opts.connectionSites && opts.connectionSites.length > 0) {
-      const cxnChildren: IXmlableObject[] = [];
+      const cxnParts: string[] = [];
       for (const site of opts.connectionSites) {
-        const siteAttrs: Record<string, string | number> = { pos: `${site.x} ${site.y}` };
-        if (site.angle !== undefined) siteAttrs.ang = site.angle;
-        cxnChildren.push({ "a:cxn": { _attr: siteAttrs } });
+        const ang = site.angle !== undefined ? ` ang="${site.angle}"` : "";
+        cxnParts.push(`<a:cxn pos="${site.x} ${site.y}"${ang}/>`);
       }
-      children.push({ "a:cxnLst": cxnChildren });
+      parts.push(`<a:cxnLst>${cxnParts.join("")}</a:cxnLst>`);
     }
 
-    return { "p:spPr": children };
-  }
-
-  public override toXml(context: Context<File>): string {
-    const obj = this.prepForXml(context);
-    return obj ? xml(obj) : "";
+    return `<p:spPr>${parts.join("")}</p:spPr>`;
   }
 }

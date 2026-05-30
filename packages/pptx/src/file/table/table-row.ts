@@ -10,7 +10,7 @@ export interface TableRowOptions {
 
 /**
  * a:tr — Table row containing cells.
- * Lazy: stores options, builds IXmlableObject in prepForXml.
+ * Lazy: stores options, builds XML in toXml().
  */
 export class TableRow extends BaseXmlComponent {
   private readonly options: TableRowOptions;

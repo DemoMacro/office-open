@@ -10,7 +10,7 @@ export function buildEndParagraphRunProperties(lang: string = "en-US"): IXmlable
 
 /**
  * a:endParaRPr — End paragraph run properties.
- * Lazy: stores lang, builds XML object in prepForXml.
+ * Lazy: stores lang, builds XML in toXml().
  */
 export class EndParagraphRunProperties extends BuilderElement<{
   readonly lang: string;

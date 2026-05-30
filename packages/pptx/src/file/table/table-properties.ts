@@ -3,7 +3,7 @@ import type { Context } from "@file/xml-components";
 
 /**
  * a:tblPr — Table properties (firstRow, bandRow, etc.).
- * Lazy: stores options, builds IXmlableObject in prepForXml.
+ * Lazy: stores options, builds XML in toXml().
  */
 export class TableProperties extends BaseXmlComponent {
   private readonly options?: {

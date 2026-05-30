@@ -35,9 +35,9 @@ export abstract class XmlComponent extends BaseXmlComponent {
   }
 
   /**
-   * Prepares this component and its children for XML serialization.
+   * @deprecated Use `toXml()` instead.
    */
-  public prepForXml(context: Context): IXmlableObject | undefined {
+  public override prepForXml(context: Context): IXmlableObject | undefined {
     context.stack.push(this);
 
     const children: (BaseXmlComponent | IXmlableObject | string | undefined)[] = [];
@@ -70,7 +70,7 @@ export abstract class XmlComponent extends BaseXmlComponent {
    * Direct XML serialization — traverses `root` and calls `toXml()` on
    * each child, concatenating the results into a single string.
    */
-  public toXml(context: Context): string {
+  public override toXml(context: Context): string {
     const childParts: string[] = [];
     const attrParts: string[] = [];
 
@@ -78,16 +78,6 @@ export abstract class XmlComponent extends BaseXmlComponent {
       if (child instanceof BaseXmlComponent) {
         const s = child.toXml(context);
         if (s) childParts.push(s);
-        // NextAttributeComponent.toXml() returns "" — extract attrs via prepForXml()
-        if (!s && child.constructor.name === "NextAttributeComponent") {
-          const prepped = child.prepForXml(context);
-          if (prepped && typeof prepped === "object" && "_attr" in prepped) {
-            const a = (prepped as { _attr: Record<string, unknown> })._attr;
-            for (const key of Object.keys(a)) {
-              attrParts.push(`${key}="${escapeXml(String(a[key]))}"`);
-            }
-          }
-        }
       } else if (typeof child === "string") {
         childParts.push(escapeXml(child));
       } else if (child != null && typeof child === "object") {
@@ -135,20 +125,15 @@ export abstract class IgnoreIfEmptyXmlComponent extends XmlComponent {
     this.includeIfEmpty = includeIfEmpty;
   }
 
-  public prepForXml(context: Context): IXmlableObject | undefined {
-    const result = super.prepForXml(context);
-
+  /**
+   * @deprecated Use `toXml()` instead.
+   */
+  public override prepForXml(context: Context): IXmlableObject | undefined {
     if (this.includeIfEmpty) {
-      return result;
+      return super.prepForXml(context);
     }
-    if (
-      result &&
-      (typeof result[this.rootKey] !== "object" || Object.keys(result[this.rootKey]).length)
-    ) {
-      return result;
-    }
-
-    return undefined;
+    const result = super.prepForXml(context);
+    return result && result[this.rootKey] === EMPTY_OBJECT ? undefined : result;
   }
 
   /**

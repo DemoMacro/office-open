@@ -8,7 +8,6 @@ import type { TransitionOptions } from "@file/transition/transition";
 import { buildTransition } from "@file/transition/transition";
 import { BaseXmlComponent, XmlComponent } from "@file/xml-components";
 import type { Context } from "@file/xml-components";
-import { xml } from "@office-open/xml";
 
 interface Animatable {
   readonly shapeId: number;
@@ -37,7 +36,7 @@ function collectAnimations(children: readonly BaseXmlComponent[]): Array<{
 
 /**
  * p:sld — A slide in a presentation.
- * Lazy: stores options, builds XML object in prepForXml.
+ * Lazy: stores options, builds XML in toXml().
  */
 export class Slide extends XmlComponent {
   private readonly children: readonly SlideChild[];
@@ -59,7 +58,7 @@ export class Slide extends XmlComponent {
   }
 
   // Direct XML serialization — builds the <p:sld> wrapper as string, but uses
-  // prepForXml for child components that have lazy root[] (empty) patterns.
+  // toXml() for child components that have lazy root[] (empty) patterns.
   public override toXml(context: Context): string {
     const parts: string[] = [];
 
@@ -71,8 +70,7 @@ export class Slide extends XmlComponent {
     // p:cSld — common slide data
     parts.push("<p:cSld>");
     if (this.background) {
-      const bgObj = this.background.prepForXml(context);
-      if (bgObj) parts.push(xml(bgObj));
+      parts.push(this.background.toXml(context));
     }
 
     // p:spTree — shape tree (fixed wrapper + dynamic children)
@@ -96,16 +94,14 @@ export class Slide extends XmlComponent {
 
     // p:transition (optional)
     if (this.transition) {
-      const transObj = buildTransition(this.transition);
-      if (transObj) parts.push(xml(transObj));
+      parts.push(buildTransition(this.transition));
     }
 
     // p:timing (animation)
     const animations = collectAnimations(coercedChildren);
     if (animations.length > 0) {
       const timing = new SlideTiming(animations);
-      const timingObj = timing.prepForXml(context);
-      if (timingObj) parts.push(xml(timingObj));
+      parts.push(timing.toXml(context));
     }
 
     parts.push("</p:sld>");

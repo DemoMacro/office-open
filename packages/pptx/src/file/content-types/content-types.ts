@@ -4,7 +4,8 @@
  * @module
  */
 import { BaseXmlComponent } from "@file/xml-components";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
+import { escapeXml } from "@office-open/xml";
 
 const PPTX_MAIN =
   "application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml";
@@ -62,15 +63,16 @@ const STATIC_ENTRIES: readonly ContentEntry[] = [
   { type: "Override", contentType: PPTX_TABLE_STYLES, key: "/ppt/tableStyles.xml" },
 ];
 
-const STATIC_CHILDREN: IXmlableObject[] = [
-  { _attr: { xmlns: "http://schemas.openxmlformats.org/package/2006/content-types" } },
-  ...STATIC_ENTRIES.map((e) => {
-    if (e.type === "Default") {
-      return { Default: { _attr: { ContentType: e.contentType, Extension: e.key } } };
-    }
-    return { Override: { _attr: { ContentType: e.contentType, PartName: e.key } } };
-  }),
-];
+function formatEntry(e: ContentEntry): string {
+  if (e.type === "Default") {
+    return `<Default ContentType="${escapeXml(e.contentType)}" Extension="${escapeXml(e.key)}"/>`;
+  }
+  return `<Override ContentType="${escapeXml(e.contentType)}" PartName="${escapeXml(e.key)}"/>`;
+}
+
+const STATIC_XML =
+  `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">` +
+  STATIC_ENTRIES.map(formatEntry).join("");
 
 export class ContentTypes extends BaseXmlComponent {
   private readonly dynamicEntries: ContentEntry[] = [];
@@ -185,19 +187,12 @@ export class ContentTypes extends BaseXmlComponent {
     }
   }
 
-  public override prepForXml(_context: Context): IXmlableObject {
-    const children = [...STATIC_CHILDREN];
+  public override toXml(_context: Context): string {
+    const parts: string[] = [STATIC_XML];
     for (const e of this.dynamicEntries) {
-      if (e.type === "Default") {
-        children.push({
-          Default: { _attr: { ContentType: e.contentType, Extension: e.key } },
-        });
-      } else {
-        children.push({
-          Override: { _attr: { ContentType: e.contentType, PartName: e.key } },
-        });
-      }
+      parts.push(formatEntry(e));
     }
-    return { Types: children };
+    parts.push("</Types>");
+    return parts.join("");
   }
 }

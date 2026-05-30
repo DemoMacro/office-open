@@ -2,8 +2,8 @@ import type { EffectsOptions } from "@file/drawingml/effects";
 import { createPptxEffectList } from "@file/drawingml/effects";
 import type { FillOptions } from "@file/drawingml/fill";
 import { buildFill } from "@file/drawingml/fill";
-import type { Context, IXmlableObject } from "@file/xml-components";
 import { XmlComponent } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 
 export interface BackgroundOptions {
   readonly fill?: FillOptions;
@@ -36,21 +36,13 @@ class BackgroundProperties extends XmlComponent {
     }
   }
 
-  public override prepForXml(context: Context): IXmlableObject | undefined {
-    const obj = super.prepForXml(context);
-    if (!obj) return undefined;
-    // shadeToTitle is an attribute of p:bgPr, not a child element
-    if (this.shadeToTitle && "p:bgPr" in obj) {
-      const children = (obj as Record<string, unknown>)["p:bgPr"] as Record<string, unknown>[];
-      for (const child of children) {
-        if ("_attr" in child) {
-          (child as { _attr: Record<string, unknown> })._attr.shadeToTitle = 1;
-          return obj;
-        }
-      }
-      // No _attr found — insert one
-      children.unshift({ _attr: { shadeToTitle: 1 } });
+  public override toXml(context: Context): string {
+    if (this.shadeToTitle) {
+      this.root.unshift({ _attr: { shadeToTitle: 1 } });
+      const result = super.toXml(context);
+      this.root.shift();
+      return result;
     }
-    return obj;
+    return super.toXml(context);
   }
 }

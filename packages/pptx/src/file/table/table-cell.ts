@@ -1,5 +1,5 @@
 import { BaseXmlComponent } from "@file/xml-components";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 import { xsdTextAnchor } from "@office-open/core";
 
 import type { FillOptions } from "../drawingml/fill";
@@ -37,7 +37,7 @@ export interface TableCellOptions {
 
 /**
  * a:tc — Table cell with text body and properties.
- * Lazy: stores options, builds IXmlableObject in prepForXml.
+ * Lazy: stores options, builds XML string in toXml.
  */
 export class TableCell extends BaseXmlComponent {
   private readonly options: TableCellOptions;
@@ -62,53 +62,6 @@ export class TableCell extends BaseXmlComponent {
             }),
           ]
         : undefined);
-  }
-
-  public override prepForXml(context: Context): IXmlableObject {
-    const opts = this.options;
-    const children: IXmlableObject[] = [];
-
-    // gridSpan and rowSpan attributes
-    const tcAttrs: Record<string, number> = {};
-    if (opts.columnSpan !== undefined && opts.columnSpan > 1) tcAttrs.gridSpan = opts.columnSpan;
-    if (opts.rowSpan !== undefined && opts.rowSpan > 1) tcAttrs.rowSpan = opts.rowSpan;
-    if (Object.keys(tcAttrs).length > 0) children.push({ _attr: tcAttrs });
-
-    // a:txBody
-    const txBodyChildren: IXmlableObject[] = [];
-    const margins = opts.margins;
-    const bodyPrAttrs: Record<string, number> = {};
-    if (margins?.top !== undefined) bodyPrAttrs.tIns = margins.top;
-    if (margins?.bottom !== undefined) bodyPrAttrs.bIns = margins.bottom;
-    if (margins?.left !== undefined) bodyPrAttrs.lIns = margins.left;
-    if (margins?.right !== undefined) bodyPrAttrs.rIns = margins.right;
-    txBodyChildren.push({
-      "a:bodyPr": Object.keys(bodyPrAttrs).length > 0 ? { _attr: bodyPrAttrs } : {},
-    });
-    txBodyChildren.push({ "a:lstStyle": {} });
-
-    if (this.paragraphs) {
-      for (const p of this.paragraphs) {
-        const pObj = p.prepForXml(context);
-        if (pObj) txBodyChildren.push(pObj);
-      }
-    } else {
-      txBodyChildren.push({ "a:p": [] });
-    }
-    children.push({ "a:txBody": txBodyChildren });
-
-    // a:tcPr
-    const tcPr = new TableCellProperties({
-      fill: opts.fill,
-      borders: opts.borders,
-      verticalAlign: opts.verticalAlign
-        ? (xsdTextAnchor.to(opts.verticalAlign) as "t" | "ctr" | "b")
-        : undefined,
-    });
-    const tcPrObj = tcPr.prepForXml(context);
-    if (tcPrObj) children.push(tcPrObj);
-
-    return { "a:tc": children };
   }
 
   public override toXml(context: Context): string {
@@ -143,7 +96,7 @@ export class TableCell extends BaseXmlComponent {
     }
     parts.push(`<a:txBody>${txParts.join("")}</a:txBody>`);
 
-    // a:tcPr (has fill needing context, uses prepForXml → xml internally)
+    // a:tcPr (has fill needing context, uses toXml() internally)
     const tcPr = new TableCellProperties({
       fill: opts.fill,
       borders: opts.borders,

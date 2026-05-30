@@ -16,7 +16,7 @@ export interface ParagraphOptions {
 
 /**
  * a:p — A paragraph in a text body.
- * Lazy: stores options, builds XML object in prepForXml.
+ * Lazy: stores options, builds XML in toXml().
  */
 export class Paragraph extends XmlComponent {
   private readonly options: ParagraphOptions;

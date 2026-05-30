@@ -113,7 +113,7 @@ function toUint8Array(data: Uint8Array | ArrayBuffer | Buffer): Uint8Array {
  * Returns undefined for non-blip fills.
  *
  * The returned data should be registered with the document's media store
- * during `prepForXml` so the packer can resolve the `{fileName}` placeholder.
+ * during serialization so the packer can resolve the `{fileName}` placeholder.
  */
 export const extractBlipFillMedia = (fill: FillOptions): BlipFillMediaData | undefined => {
   if (typeof fill === "string" || fill.type !== "blip") return undefined;

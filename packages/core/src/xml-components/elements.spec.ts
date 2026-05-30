@@ -166,9 +166,9 @@ describe("BuilderElement", () => {
 });
 
 describe("chartAttr", () => {
-  it("should create attributes with explicit keys", () => {
+  it("should create attribute object with explicit keys", () => {
     const attr = chartAttr({ "r:id": "rId1", "c:val": 42 });
-    expect(attr.prepForXml(emptyContext)).toEqual({
+    expect(attr).toEqual({
       _attr: { "r:id": "rId1", "c:val": 42 },
     });
   });

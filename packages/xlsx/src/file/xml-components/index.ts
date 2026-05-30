@@ -6,8 +6,7 @@
 export { BaseXmlComponent } from "@office-open/core";
 export type { Context, IXmlableObject } from "@office-open/core";
 export { XmlComponent, IgnoreIfEmptyXmlComponent, EMPTY_OBJECT } from "@office-open/core";
-export { XmlAttributeComponent, NextAttributeComponent } from "@office-open/core";
-export type { AttributeMap, AttributeData, AttributePayload } from "@office-open/core";
+export type { AttributePayload } from "@office-open/core";
 export {
   EmptyElement,
   BuilderElement,

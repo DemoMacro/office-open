@@ -3,7 +3,7 @@ import type { Context } from "@file/xml-components";
 
 /**
  * a:tblGrid — Table grid with column width definitions.
- * Lazy: stores widths, builds IXmlableObject in prepForXml.
+ * Lazy: stores widths, builds XML in toXml().
  */
 export class TableGrid extends BaseXmlComponent {
   private readonly columnWidths: readonly number[];

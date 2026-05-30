@@ -1,6 +1,6 @@
 import {
+  buildAttrObject,
   BuilderElement,
-  NextAttributeComponent,
   XmlComponent,
   stringContainerObj,
 } from "@file/xml-components";
@@ -23,17 +23,16 @@ export class HeaderFooter extends XmlComponent {
     super("p:hf");
 
     // Boolean visibility attributes
-    const attrs: Record<string, { readonly key: string; readonly value: number }> = {};
-    if (options.slideNumber !== false) attrs.sldNum = { key: "sldNum", value: 1 };
-    if (options.dateTime !== false) attrs.dt = { key: "dt", value: 1 };
+    const attrs: Record<string, number> = {};
+    if (options.slideNumber !== false) attrs.sldNum = 1;
+    if (options.dateTime !== false) attrs.dt = 1;
     // Only set hdr when explicitly true (no header placeholder in default slide master)
-    if (options.header === true) attrs.hdr = { key: "hdr", value: 1 };
+    if (options.header === true) attrs.hdr = 1;
     // Only set ftr when explicitly true or footer has string content
-    if (options.footer !== false && options.footer !== undefined)
-      attrs.ftr = { key: "ftr", value: 1 };
+    if (options.footer !== false && options.footer !== undefined) attrs.ftr = 1;
 
     if (Object.keys(attrs).length > 0) {
-      this.root.push(new NextAttributeComponent(attrs));
+      this.root.push(buildAttrObject(attrs));
     }
 
     // Footer text content as child element

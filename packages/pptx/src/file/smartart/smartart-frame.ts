@@ -1,10 +1,5 @@
 import { Transform2D } from "@file/drawingml/transform-2d";
-import {
-  BuilderElement,
-  NextAttributeComponent,
-  type Context,
-  XmlComponent,
-} from "@file/xml-components";
+import { buildAttrObject, BuilderElement, type Context, XmlComponent } from "@file/xml-components";
 import { emuPosition } from "@util/position";
 
 import type { SmartArtCollection } from "./smartart-collection";
@@ -119,11 +114,8 @@ class SmartArtGraphicData extends XmlComponent {
   public constructor(smartArtKey: string) {
     super("a:graphicData");
     this.root.push(
-      new NextAttributeComponent({
-        uri: {
-          key: "uri",
-          value: "http://schemas.openxmlformats.org/drawingml/2006/diagram",
-        },
+      buildAttrObject({
+        uri: "http://schemas.openxmlformats.org/drawingml/2006/diagram",
       }),
     );
     this.root.push(new DiagramRelIds(smartArtKey));
@@ -134,19 +126,13 @@ class DiagramRelIds extends XmlComponent {
   public constructor(smartArtKey: string) {
     super("dgm:relIds");
     this.root.push(
-      new NextAttributeComponent({
-        xmlnsDgm: {
-          key: "xmlns:dgm",
-          value: "http://schemas.openxmlformats.org/drawingml/2006/diagram",
-        },
-        xmlnsR: {
-          key: "xmlns:r",
-          value: "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
-        },
-        rDm: { key: "r:dm", value: `{smartart:${smartArtKey}}` },
-        rLo: { key: "r:lo", value: `{smartart-lo:${smartArtKey}}` },
-        rQs: { key: "r:qs", value: `{smartart-qs:${smartArtKey}}` },
-        rCs: { key: "r:cs", value: `{smartart-cs:${smartArtKey}}` },
+      buildAttrObject({
+        "xmlns:dgm": "http://schemas.openxmlformats.org/drawingml/2006/diagram",
+        "xmlns:r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+        "r:dm": `{smartart:${smartArtKey}}`,
+        "r:lo": `{smartart-lo:${smartArtKey}}`,
+        "r:qs": `{smartart-qs:${smartArtKey}}`,
+        "r:cs": `{smartart-cs:${smartArtKey}}`,
       }),
     );
   }

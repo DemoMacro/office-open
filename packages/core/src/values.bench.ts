@@ -63,7 +63,7 @@ describe("id generators", () => {
   });
 });
 
-describe("xml component prepForXml", () => {
+describe("xml component toXml", () => {
   bench("onOffObj (true)", () => {
     onOffObj("w:b", true);
   });
@@ -76,13 +76,13 @@ describe("xml component prepForXml", () => {
     new BuilderElement({
       name: "w:pPr",
       attributes: { style: { key: "w:val", value: "Heading1" } },
-    }).prepForXml(ctx);
+    }).toXml(ctx);
   });
 
   bench("BuilderElement with children", () => {
     new BuilderElement({
       name: "w:p",
       children: [stringContainerObj("w:t", "Hello World")],
-    }).prepForXml(ctx);
+    }).toXml(ctx);
   });
 });

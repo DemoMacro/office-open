@@ -1,4 +1,4 @@
-import { BuilderElement, NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { buildAttrObject, BuilderElement, XmlComponent } from "@file/xml-components";
 
 export interface CommentEntry {
   readonly authorId: number;
@@ -16,11 +16,8 @@ export class SlideCommentList extends XmlComponent {
   public constructor(comments: readonly CommentEntry[]) {
     super("p:cmLst");
     this.root.push(
-      new NextAttributeComponent({
-        "xmlns:p": {
-          key: "xmlns:p",
-          value: "http://schemas.openxmlformats.org/presentationml/2006/main",
-        },
+      buildAttrObject({
+        "xmlns:p": "http://schemas.openxmlformats.org/presentationml/2006/main",
       }),
     );
     for (const comment of comments) {

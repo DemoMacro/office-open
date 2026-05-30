@@ -41,7 +41,7 @@ const DEFAULT_TEXT_STYLE_XML = `<p:defaultTextStyle xmlns:a="http://schemas.open
 
 /**
  * p:presentation — Root element of a PPTX file.
- * Lazy: stores options, builds XML object directly in prepForXml.
+ * Lazy: stores options, builds XML in toXml().
  */
 export class Presentation extends XmlComponent {
   private readonly options: PresentationOptions;

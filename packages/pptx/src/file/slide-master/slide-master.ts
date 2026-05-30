@@ -5,7 +5,6 @@ import { coerceMasterChild } from "@file/slide/coerce";
 import type { Context } from "@file/xml-components";
 import { ImportedXmlComponent } from "@file/xml-components";
 import { convertPixelsToEmu } from "@office-open/core";
-import { xml } from "@office-open/xml";
 
 export interface MasterPlaceholderPosition {
   readonly x: number;
@@ -82,14 +81,11 @@ function footerBody(algn: string, fldType: string, fldId: string, fldText: strin
 function buildBackgroundXml(bg?: BackgroundOptions): string {
   if (!bg) return `<p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef>`;
   const { Background } = require("@file/background/background") as {
-    Background: new (o?: BackgroundOptions) => { prepForXml(ctx: Context): unknown };
+    Background: new (o?: BackgroundOptions) => { toXml(ctx: Context): string };
   };
   const bgObj = new Background(bg);
-  const obj = bgObj.prepForXml({ stack: [] });
-  if (!obj) return `<p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef>`;
-  // Background prepForXml returns { "p:bg": [...] }, xml() wraps it in <p:bg>.
+  const full = bgObj.toXml({ stack: [] } as Context);
   // Strip the outer <p:bg> since the caller already provides the wrapper.
-  const full = xml(obj);
   return full.replace(/^<p:bg[^>]*>/, "").replace(/<\/p:bg>$/, "");
 }
 

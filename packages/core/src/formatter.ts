@@ -6,6 +6,9 @@ const XML_DECL = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
  * Converts an XmlComponent tree into a serializable XML object or string.
  */
 export class Formatter {
+  /**
+   * @deprecated Use `component.toXml(context)` or `formatToXml()` instead.
+   */
   public format<T extends Context = Context>(
     input: BaseXmlComponent,
     context: T = { stack: [] } as unknown as T,

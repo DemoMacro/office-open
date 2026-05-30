@@ -33,7 +33,7 @@ export interface ShapeOptions {
 
 /**
  * p:sp — A shape on a slide.
- * Lazy: stores options, builds XML object in prepForXml.
+ * Lazy: stores options, builds XML in toXml().
  *
  * x/y/width/height accept pixel values and are internally converted to EMUs.
  */
@@ -69,7 +69,7 @@ export class Shape extends Xc {
       `<p:nvSpPr><p:cNvPr id="${id}" name="${escapeXml(name)}"/><p:cNvSpPr/>${nvPrContent}</p:nvSpPr>`,
     );
 
-    // p:spPr (ShapeProperties — has side effects, uses prepForXml → xml internally)
+    // p:spPr (ShapeProperties — has side effects, uses toXml() internally)
     const shapeProps: ShapePropertiesOptions = {
       ...emuPositionOptional(opts),
       geometry: opts.geometry,

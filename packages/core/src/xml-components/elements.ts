@@ -3,10 +3,11 @@
  *
  * @module
  */
-import { BaseXmlComponent, NextAttributeComponent, XmlComponent } from ".";
+import { BaseXmlComponent, XmlComponent } from ".";
 import { hpsMeasureValue } from "../values";
 import type { PositiveUniversalMeasure } from "../values";
 import type { AttributePayload } from "./attributes";
+import { EMPTY_OBJECT } from "./component";
 import type { IXmlableObject } from "./types";
 
 // ── Pure functions (zero-allocation) ──
@@ -110,7 +111,7 @@ export class BuilderElement<T = {}> extends XmlComponent {
 
     if (attributes) {
       // Build _attr object directly instead of creating NextAttributeComponent.
-      // This saves one class allocation and one prepForXml call per element.
+      // This saves one class allocation and one toXml() call per element.
       const attrs: Record<string, string | number | boolean> = {};
       const vals = Object.values(attributes) as readonly {
         readonly key: string;
@@ -132,17 +133,29 @@ export class BuilderElement<T = {}> extends XmlComponent {
 }
 
 /**
- * Creates a NextAttributeComponent with explicit XML attribute keys.
+ * Builds an attribute-only IXmlableObject from a plain key-value record.
  */
-export const chartAttr = (attrs: Record<string, string | number | boolean>): BaseXmlComponent =>
-  new NextAttributeComponent(
-    Object.fromEntries(Object.entries(attrs).map(([key, value]) => [key, { key, value }])),
-  );
+export function buildAttrObject(attrs: Record<string, string | number | boolean>): IXmlableObject {
+  const result: Record<string, string | number | boolean> = {};
+  for (const [key, value] of Object.entries(attrs)) {
+    if (value !== undefined) result[key] = value;
+  }
+  return Object.keys(result).length > 0 ? { _attr: result } : EMPTY_OBJECT;
+}
+
+/**
+ * Creates an attribute IXmlableObject for chart elements.
+ */
+export const chartAttr = (attrs: Record<string, string | number | boolean>): IXmlableObject =>
+  buildAttrObject(attrs);
 
 /**
  * Wraps a component in a named XmlComponent element.
  */
-export function wrapEl(elementName: string, child: BaseXmlComponent): XmlComponent {
+export function wrapEl(
+  elementName: string,
+  child: BaseXmlComponent | IXmlableObject,
+): XmlComponent {
   const el = new (class extends XmlComponent {
     public constructor(name: string) {
       super(name);

@@ -25,7 +25,7 @@ export interface DrawingTableOptions {
 
 /**
  * a:tbl — DrawingML table element.
- * Lazy: stores options, builds IXmlableObject in prepForXml.
+ * Lazy: stores options, builds XML in toXml().
  */
 export class DrawingTable extends BaseXmlComponent {
   private readonly options: DrawingTableOptions;

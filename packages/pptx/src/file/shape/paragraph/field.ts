@@ -1,5 +1,5 @@
 import {
-  NextAttributeComponent,
+  buildAttrObject,
   BuilderElement,
   XmlComponent,
   stringContainerObj,
@@ -15,9 +15,9 @@ export class Field extends XmlComponent {
     super("a:fld");
 
     this.root.push(
-      new NextAttributeComponent({
-        id: { key: "id", value: `{${crypto.randomUUID()}}` },
-        type: { key: "type", value: fieldType },
+      buildAttrObject({
+        id: `{${crypto.randomUUID()}}`,
+        type: fieldType,
       }),
     );
 

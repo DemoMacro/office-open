@@ -8,10 +8,9 @@ import {
 import type { FillOptions } from "@file/drawingml/fill";
 import { buildFill } from "@file/drawingml/fill";
 import { XmlComponent } from "@file/xml-components";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 import { xsdStrikeStyle, xsdTextCaps, xsdUnderlineStyle } from "@office-open/core";
 import { createEffectList, createOutline } from "@office-open/core/drawingml";
-import { xml } from "@office-open/xml";
 
 let nextHyperlinkId = 1;
 
@@ -60,96 +59,56 @@ export interface RunPropertiesOptions {
 }
 
 /**
- * Pure function: builds a:rPr XML object from options.
- * @param hyperlinkKey - pre-generated key for hyperlink placeholder
- * @param fillObject - pre-built fill IXmlableObject (from buildFill)
+ * Builds a:rPr attribute string.
  */
-export function buildRunProperties(
-  options: RunPropertiesOptions,
-  hyperlinkKey?: string,
-  fillObject?: IXmlableObject,
-  effectListObject?: IXmlableObject,
-  outlineObject?: IXmlableObject,
-): IXmlableObject | undefined {
-  const children: IXmlableObject[] = [];
+function buildAttrString(options: RunPropertiesOptions): string {
+  const attrs: string[] = [];
+  if (options.fontSize) attrs.push(`sz="${options.fontSize * 100}"`);
+  if (options.bold !== undefined) attrs.push(`b="${options.bold ? 1 : 0}"`);
+  if (options.italic !== undefined) attrs.push(`i="${options.italic ? 1 : 0}"`);
+  if (options.underline) attrs.push(`u="${xsdUnderlineStyle.to(options.underline)}"`);
+  if (options.lang) attrs.push(`lang="${options.lang}"`);
+  if (options.strike) attrs.push(`strike="${xsdStrikeStyle.to(options.strike)}"`);
+  if (options.baseline !== undefined) attrs.push(`baseline="${options.baseline}"`);
+  if (options.capitalization) attrs.push(`cap="${xsdTextCaps.to(options.capitalization)}"`);
+  if (options.spacing !== undefined) attrs.push(`spc="${options.spacing}"`);
+  if (options.noProof !== undefined) attrs.push(`noProof="${options.noProof ? 1 : 0}"`);
+  if (options.dirty !== undefined) attrs.push(`dirty="${options.dirty ? 1 : 0}"`);
+  return attrs.join(" ");
+}
 
-  const attrs: Record<string, string | number | boolean> = {};
-  if (options.fontSize) attrs.sz = options.fontSize * 100;
-  if (options.bold !== undefined) attrs.b = options.bold;
-  if (options.italic !== undefined) attrs.i = options.italic;
-  if (options.underline) attrs.u = xsdUnderlineStyle.to(options.underline);
-  if (options.lang) attrs.lang = options.lang;
-  if (options.strike) attrs.strike = xsdStrikeStyle.to(options.strike);
-  if (options.baseline !== undefined) attrs.baseline = options.baseline;
-  if (options.capitalization) attrs.cap = xsdTextCaps.to(options.capitalization);
-  if (options.spacing !== undefined) attrs.spc = options.spacing;
-  if (options.noProof !== undefined) attrs.noProof = options.noProof;
-  if (options.dirty !== undefined) attrs.dirty = options.dirty;
-  if (Object.keys(attrs).length > 0) children.push({ _attr: attrs });
-
-  // XSD order: ln → fill → effect → latin/ea → hlinkClick → rtl
-  if (outlineObject) {
-    children.push(outlineObject);
-  }
-
-  if (fillObject) {
-    children.push(fillObject);
-  }
-
-  if (effectListObject) {
-    children.push(effectListObject);
-  }
-
-  if (options.font) {
-    children.push({ "a:latin": { _attr: { typeface: options.font } } });
-    children.push({ "a:ea": { _attr: { typeface: options.font } } });
-  }
-
-  if (options.hyperlink && hyperlinkKey) {
-    const hlinkAttrs: Record<string, string> = { "r:id": `{hlink:${hyperlinkKey}}` };
-    if (options.hyperlink.tooltip) hlinkAttrs.tooltip = options.hyperlink.tooltip;
-    children.push({ "a:hlinkClick": { _attr: hlinkAttrs } });
-  }
-
-  if (options.rightToLeft !== undefined) {
-    children.push({ "a:rtl": { _attr: { val: options.rightToLeft ? 1 : 0 } } });
-  }
-
-  if (children.length === 0) return undefined;
-
-  return {
-    "a:rPr": children.length === 1 && "_attr" in children[0] ? children[0] : children,
-  };
+/**
+ * Checks if options have any settable properties.
+ */
+export function hasRunProperties(options: RunPropertiesOptions): boolean {
+  return !!(
+    options.fontSize ||
+    options.bold !== undefined ||
+    options.italic !== undefined ||
+    options.underline ||
+    options.font ||
+    options.lang ||
+    options.fill ||
+    options.hyperlink ||
+    options.strike ||
+    options.baseline !== undefined ||
+    options.spacing !== undefined ||
+    options.capitalization ||
+    options.shadow !== undefined ||
+    options.outline !== undefined ||
+    options.rightToLeft !== undefined ||
+    options.noProof !== undefined ||
+    options.dirty !== undefined
+  );
 }
 
 /**
  * a:rPr — Run properties (font, size, color, etc.).
- * Lazy: stores options, builds XML object in prepForXml.
  */
 export class RunProperties extends XmlComponent {
   private readonly options: RunPropertiesOptions;
 
-  public static hasProperties(options: RunPropertiesOptions): boolean {
-    return !!(
-      options.fontSize ||
-      options.bold !== undefined ||
-      options.italic !== undefined ||
-      options.underline ||
-      options.font ||
-      options.lang ||
-      options.fill ||
-      options.hyperlink ||
-      options.strike ||
-      options.baseline !== undefined ||
-      options.spacing !== undefined ||
-      options.capitalization ||
-      options.shadow !== undefined ||
-      options.outline !== undefined ||
-      options.rightToLeft !== undefined ||
-      options.noProof !== undefined ||
-      options.dirty !== undefined
-    );
-  }
+  public static hasProperties = hasRunProperties;
 
   public constructor(options: RunPropertiesOptions = {}) {
     super("a:rPr");
@@ -169,23 +128,24 @@ export class RunProperties extends XmlComponent {
       file?.hyperlinks?.addHyperlink(hyperlinkKey, opts.hyperlink.url, opts.hyperlink.tooltip);
     }
 
-    // fill / outline / shadow still need prepForXml (child components have own deps)
-    let fillObj: IXmlableObject | undefined;
-    if (opts.fill !== undefined) {
-      fillObj = buildFill(opts.fill).prepForXml(context) ?? undefined;
-    }
-    let outlineObj: IXmlableObject | undefined;
+    const parts: string[] = [];
+    const attrStr = buildAttrString(opts);
+
+    // XSD order: ln → fill → effect → latin/ea → hlinkClick → rtl
     if (opts.outline) {
-      outlineObj =
+      parts.push(
         createOutline({
           width: DEFAULT_OUTLINE_WIDTH,
           type: "solidFill",
           color: { value: "000000" },
-        }).prepForXml(context) ?? undefined;
+        }).toXml(context),
+      );
     }
-    let effectListObj: IXmlableObject | undefined;
+    if (opts.fill !== undefined) {
+      parts.push(buildFill(opts.fill).toXml(context));
+    }
     if (opts.shadow) {
-      effectListObj =
+      parts.push(
         createEffectList({
           outerShadow: {
             blurRadius: DEFAULT_SHADOW_BLUR_RADIUS,
@@ -193,10 +153,27 @@ export class RunProperties extends XmlComponent {
             direction: DEFAULT_SHADOW_DIRECTION,
             color: { value: "000000", transforms: { alpha: DEFAULT_SHADOW_ALPHA } },
           },
-        }).prepForXml(context) ?? undefined;
+        }).toXml(context),
+      );
     }
 
-    const obj = buildRunProperties(opts, hyperlinkKey, fillObj, effectListObj, outlineObj);
-    return obj ? xml(obj) : "";
+    if (opts.font) {
+      parts.push(`<a:latin typeface="${opts.font}"/>`);
+      parts.push(`<a:ea typeface="${opts.font}"/>`);
+    }
+
+    if (opts.hyperlink && hyperlinkKey) {
+      const tooltip = opts.hyperlink.tooltip ? ` tooltip="${opts.hyperlink.tooltip}"` : "";
+      parts.push(`<a:hlinkClick r:id="{hlink:${hyperlinkKey}}"${tooltip}/>`);
+    }
+
+    if (opts.rightToLeft !== undefined) {
+      parts.push(`<a:rtl val="${opts.rightToLeft ? 1 : 0}"/>`);
+    }
+
+    if (attrStr.length === 0 && parts.length === 0) return "";
+
+    if (parts.length === 0) return `<a:rPr ${attrStr}/>`;
+    return `<a:rPr ${attrStr}>${parts.join("")}</a:rPr>`;
   }
 }

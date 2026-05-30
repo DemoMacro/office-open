@@ -100,7 +100,7 @@ export function buildCorePropertiesXml(opts: {
 /**
  * Build a cp:coreProperties XML string directly (fast path).
  *
- * Shared by pptx and xlsx to bypass prepForXml → xml() pipeline.
+ * Shared by pptx and xlsx to bypass the toXml() → xml() pipeline.
  */
 export function buildCorePropertiesXmlString(opts: {
   readonly title?: string;

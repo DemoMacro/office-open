@@ -138,7 +138,7 @@ export function buildParagraphProperties(
 
 /**
  * a:pPr — Paragraph properties (alignment, indent, spacing).
- * Lazy: stores options, builds XML object in prepForXml.
+ * Lazy: stores options, builds XML in toXml().
  * Omitted from output when completely empty.
  */
 export class ParagraphProperties extends XmlComponent {

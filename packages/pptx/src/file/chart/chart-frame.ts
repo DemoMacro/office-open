@@ -1,5 +1,5 @@
 import { Transform2D } from "@file/drawingml/transform-2d";
-import { BuilderElement, NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { buildAttrObject, BuilderElement, XmlComponent } from "@file/xml-components";
 import type { Context } from "@file/xml-components";
 import { emuPosition } from "@util/position";
 
@@ -101,11 +101,8 @@ class ChartGraphicData extends XmlComponent {
   public constructor(chartKey: string) {
     super("a:graphicData");
     this.root.push(
-      new NextAttributeComponent({
-        uri: {
-          key: "uri",
-          value: "http://schemas.openxmlformats.org/drawingml/2006/chart",
-        },
+      buildAttrObject({
+        uri: "http://schemas.openxmlformats.org/drawingml/2006/chart",
       }),
     );
     this.root.push(new ChartRef(chartKey));
@@ -116,16 +113,10 @@ class ChartRef extends XmlComponent {
   public constructor(chartKey: string) {
     super("c:chart");
     this.root.push(
-      new NextAttributeComponent({
-        xmlnsC: {
-          key: "xmlns:c",
-          value: "http://schemas.openxmlformats.org/drawingml/2006/chart",
-        },
-        xmlnsR: {
-          key: "xmlns:r",
-          value: "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
-        },
-        rId: { key: "r:id", value: `{chart:${chartKey}}` },
+      buildAttrObject({
+        "xmlns:c": "http://schemas.openxmlformats.org/drawingml/2006/chart",
+        "xmlns:r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+        "r:id": `{chart:${chartKey}}`,
       }),
     );
   }

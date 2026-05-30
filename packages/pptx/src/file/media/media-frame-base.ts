@@ -53,7 +53,7 @@ function buildMediaData<T extends IMediaData["type"]>(
  *
  * Encapsulates the common structure: ID assignment, media data building,
  * p:spPr (Transform2D + PresetGeometry), p:blipFill, p:nvPicPr parts,
- * and media registration in prepForXml.
+ * and media registration in toXml().
  */
 export abstract class MediaFrameBase extends XmlComponent {
   public readonly shapeId: number;

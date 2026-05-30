@@ -1,6 +1,6 @@
 import { GroupShapeProperties } from "@file/drawingml/group-shape-properties";
 import { GroupShapeNonVisualProperties } from "@file/shape-tree/group-shape-non-visual";
-import { BuilderElement, NextAttributeComponent, XmlComponent } from "@file/xml-components";
+import { buildAttrObject, BuilderElement, XmlComponent } from "@file/xml-components";
 
 import { Paragraph } from "../shape/paragraph/paragraph";
 import { TextRun } from "../shape/paragraph/run";
@@ -20,19 +20,10 @@ export class NotesSlide extends XmlComponent {
     super("p:notes");
 
     this.root.push(
-      new NextAttributeComponent({
-        "xmlns:a": {
-          key: "xmlns:a",
-          value: "http://schemas.openxmlformats.org/drawingml/2006/main",
-        },
-        "xmlns:r": {
-          key: "xmlns:r",
-          value: "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
-        },
-        "xmlns:p": {
-          key: "xmlns:p",
-          value: "http://schemas.openxmlformats.org/presentationml/2006/main",
-        },
+      buildAttrObject({
+        "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+        "xmlns:r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+        "xmlns:p": "http://schemas.openxmlformats.org/presentationml/2006/main",
       }),
     );
 

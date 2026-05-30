@@ -63,7 +63,7 @@ function buildBodyPr(options: TextBodyOptions): IXmlableObject {
 
 /**
  * p:txBody — Text body within a shape.
- * Lazy: stores options, builds XML object in prepForXml.
+ * Lazy: stores options, builds XML in toXml().
  */
 export class TextBody extends XmlComponent {
   private readonly options: TextBodyOptions;
