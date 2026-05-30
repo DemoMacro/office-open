@@ -174,11 +174,30 @@ function writeElements(
 function writeText(text: string | number | boolean | undefined | null): string {
   if (text == null) return "";
   const str = String(text);
-  return str
-    .replace(/&amp;/g, "&")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  // Fast path: most text content doesn't contain XML-special characters.
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    if (c === 38 || c === 60 || c === 62) {
+      // & < >
+      let s = "";
+      let last = 0;
+      for (let j = i; j < str.length; j++) {
+        const cj = str.charCodeAt(j);
+        if (cj === 38) {
+          s += str.slice(last, j) + "&amp;";
+          last = j + 1;
+        } else if (cj === 60) {
+          s += str.slice(last, j) + "&lt;";
+          last = j + 1;
+        } else if (cj === 62) {
+          s += str.slice(last, j) + "&gt;";
+          last = j + 1;
+        }
+      }
+      return s + str.slice(last);
+    }
+  }
+  return str;
 }
 
 function writeCdata(cdata: string | undefined | null): string {

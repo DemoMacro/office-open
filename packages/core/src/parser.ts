@@ -94,18 +94,38 @@ export class ParsedArchive {
     const files: Zippable = {};
     for (const [path, data] of this.zip) {
       if (!this.modified.has(path)) {
-        files[path] = MEDIA_PATTERN.test(path) ? [data, { level: MEDIA_STORED_LEVEL }] : data;
+        files[path] = isMediaPath(path) ? [data, { level: MEDIA_STORED_LEVEL }] : data;
       }
     }
     for (const [path, data] of this.modified) {
-      files[path] = MEDIA_PATTERN.test(path) ? [data, { level: MEDIA_STORED_LEVEL }] : data;
+      files[path] = isMediaPath(path) ? [data, { level: MEDIA_STORED_LEVEL }] : data;
     }
     return zipSync(files);
   }
 }
 
-/** Regex to detect already-compressed media file extensions. */
-const MEDIA_PATTERN = /\.(png|jpe?g|gif|wmf|emf|tiff?|avi|mp4|mp3|wav)$/i;
+/** Set of already-compressed media file extensions (lowercase, with dot prefix). */
+const MEDIA_EXTENSIONS = new Set([
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".gif",
+  ".wmf",
+  ".emf",
+  ".tif",
+  ".tiff",
+  ".avi",
+  ".mp4",
+  ".mp3",
+  ".wav",
+]);
+
+/** Check if a file path has a media extension that should use STORE (no compression). */
+function isMediaPath(path: string): boolean {
+  const dot = path.lastIndexOf(".");
+  if (dot === -1) return false;
+  return MEDIA_EXTENSIONS.has(path.slice(dot).toLowerCase());
+}
 
 /** STORE level for already-compressed media formats. */
 const MEDIA_STORED_LEVEL = 0;

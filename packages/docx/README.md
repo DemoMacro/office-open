@@ -84,18 +84,18 @@ DEFLATE = compressed (default), STORE = no compression. Both libraries use DEFLA
 
 | Scenario                                                | DEFLATE sync |  STORE sync | DEFLATE async | STORE async |      docx |
 | ------------------------------------------------------- | -----------: | ----------: | ------------: | ----------: | --------: |
-| Simple (2 paragraphs)                                   |    395 ops/s | 3,024 ops/s |     414 ops/s | 3,078 ops/s | 201 ops/s |
-| Styled paragraphs (20)                                  |    597 ops/s | 2,315 ops/s |     604 ops/s | 2,453 ops/s | 247 ops/s |
-| Table (10×5)                                            |    460 ops/s | 1,984 ops/s |     597 ops/s | 1,961 ops/s | 212 ops/s |
-| Full featured (header/footer/headings/table/paragraphs) |    381 ops/s | 1,294 ops/s |     418 ops/s | 1,324 ops/s | 193 ops/s |
+| Simple (2 paragraphs)                                   |    300 ops/s | 2,370 ops/s |     367 ops/s | 2,577 ops/s | 153 ops/s |
+| Styled paragraphs (20)                                  |    449 ops/s | 2,145 ops/s |     520 ops/s | 2,047 ops/s | 208 ops/s |
+| Table (10×5)                                            |    522 ops/s | 1,850 ops/s |     451 ops/s | 1,818 ops/s | 196 ops/s |
+| Full featured (header/footer/headings/table/paragraphs) |    382 ops/s | 1,099 ops/s |     384 ops/s | 1,054 ops/s | 168 ops/s |
 
 **Large Files — Create + toBuffer**
 
 | Scenario                     | DEFLATE sync |  STORE sync | DEFLATE async | STORE async |       docx |
 | ---------------------------- | -----------: | ----------: | ------------: | ----------: | ---------: |
-| 2000 paragraphs              |   49.0 ops/s |  67.4 ops/s |    20.8 ops/s |  66.6 ops/s | 26.2 ops/s |
-| 200×10 table                 |   90.1 ops/s | 129.1 ops/s |    25.5 ops/s | 125.5 ops/s | 37.0 ops/s |
-| 20 sections × 100 paragraphs |   47.4 ops/s |  83.4 ops/s |    23.3 ops/s |  85.7 ops/s | 28.0 ops/s |
+| 2000 paragraphs              |   43.3 ops/s |  62.7 ops/s |    19.8 ops/s |  64.9 ops/s | 24.2 ops/s |
+| 200×10 table                 |   85.5 ops/s | 107.0 ops/s |    23.0 ops/s | 110.7 ops/s | 34.3 ops/s |
+| 20 sections × 100 paragraphs |   47.9 ops/s |  73.7 ops/s |    20.4 ops/s |  76.3 ops/s | 20.4 ops/s |
 
 **Large File (~100MB) — Mixed Content**
 
@@ -103,11 +103,11 @@ DEFLATE = compressed (default), STORE = no compression. Both libraries use DEFLA
 
 | Method        |      Speed |  Speedup |
 | ------------- | ---------: | -------: |
-| DEFLATE sync  | 0.35 ops/s | **1.2x** |
-| STORE sync    | 0.36 ops/s | **1.2x** |
-| DEFLATE async | 0.40 ops/s | **1.3x** |
-| STORE async   | 0.39 ops/s | **1.3x** |
-| docx          | 0.30 ops/s |          |
+| DEFLATE sync  | 0.34 ops/s | **1.1x** |
+| STORE sync    | 0.34 ops/s | **1.1x** |
+| DEFLATE async | 0.38 ops/s | **1.2x** |
+| STORE async   | 0.38 ops/s | **1.2x** |
+| docx          | 0.31 ops/s |          |
 
 ## License
 

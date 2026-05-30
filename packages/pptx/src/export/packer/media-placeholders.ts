@@ -1,4 +1,4 @@
-import { escapeRegex, formatId } from "@office-open/core";
+import { formatId } from "@office-open/core";
 
 export function replaceMediaPlaceholders(
   xml: string,
@@ -7,10 +7,7 @@ export function replaceMediaPlaceholders(
 ): string {
   let result = xml;
   mediaData.forEach((m, i) => {
-    result = result.replace(
-      new RegExp(`\\{media:${escapeRegex(m.fileName)}\\}`, "g"),
-      formatId(offset, i, "rId"),
-    );
+    result = result.replaceAll(`{media:${m.fileName}}`, formatId(offset, i, "rId"));
   });
   return result;
 }
@@ -22,10 +19,7 @@ export function replaceVideoPlaceholders(
 ): string {
   let result = xml;
   mediaData.forEach((m, i) => {
-    result = result.replace(
-      new RegExp(`\\{video:${escapeRegex(m.fileName)}\\}`, "g"),
-      formatId(offset, i, "rId"),
-    );
+    result = result.replaceAll(`{video:${m.fileName}}`, formatId(offset, i, "rId"));
   });
   return result;
 }
@@ -34,25 +28,29 @@ export function getMediaRefs(
   xml: string,
   mediaArray: readonly { readonly fileName: string }[],
 ): readonly { readonly fileName: string }[] {
-  return collectRefs(xml, "media:", mediaArray);
+  return collectRefs(xml, "{media:", mediaArray);
 }
 
 export function getVideoRefs(
   xml: string,
   mediaArray: readonly { readonly fileName: string }[],
 ): readonly { readonly fileName: string }[] {
-  return collectRefs(xml, "video:", mediaArray);
+  return collectRefs(xml, "{video:", mediaArray);
 }
 
 function collectRefs(
   xml: string,
-  prefix: string,
+  search: string,
   mediaArray: readonly { readonly fileName: string }[],
 ): readonly { readonly fileName: string }[] {
-  const pattern = new RegExp(`\\{${escapeRegex(prefix)}([^}]+)\\}`, "g");
   const keys = new Set<string>();
-  for (const match of xml.matchAll(pattern)) {
-    keys.add(match[1]);
+  let pos = 0;
+  while ((pos = xml.indexOf(search, pos)) !== -1) {
+    const keyStart = pos + search.length;
+    const keyEnd = xml.indexOf("}", keyStart);
+    if (keyEnd === -1) break;
+    keys.add(xml.substring(keyStart, keyEnd));
+    pos = keyEnd + 1;
   }
   return mediaArray.filter((m) => keys.has(m.fileName));
 }

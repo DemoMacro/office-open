@@ -11,10 +11,6 @@ export type IdFormat = "rId" | "plain";
 export const formatId = (offset: number, index: number, style: IdFormat): string =>
   style === "rId" ? `rId${offset + index}` : `${offset + index}`;
 
-export function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
 export function hasPlaceholders(xml: string): boolean {
   return xml.includes("{");
 }
@@ -47,10 +43,7 @@ export function replaceImagePlaceholders(
 ): string {
   let result = xml;
   mediaData.forEach((image, i) => {
-    result = result.replace(
-      new RegExp(`\\{${escapeRegex(image.fileName)}\\}`, "g"),
-      formatId(offset, i, idFormat),
-    );
+    result = result.replaceAll(`{${image.fileName}}`, formatId(offset, i, idFormat));
   });
   return result;
 }
@@ -70,10 +63,7 @@ export function replaceChartPlaceholders(
 ): string {
   let result = xml;
   chartKeys.forEach((key, i) => {
-    result = result.replace(
-      new RegExp(`\\{chart:${escapeRegex(key)}\\}`, "g"),
-      formatId(offset, i, idFormat),
-    );
+    result = result.replaceAll(`{chart:${key}}`, formatId(offset, i, idFormat));
   });
   return result;
 }
@@ -98,22 +88,10 @@ export function replaceSmartArtPlaceholders(
   const csOffset = qsOffset + count;
 
   keys.forEach((key, i) => {
-    result = result.replace(
-      new RegExp(`\\{smartart:${escapeRegex(key)}\\}`, "g"),
-      formatId(dataOffset, i, idFormat),
-    );
-    result = result.replace(
-      new RegExp(`\\{smartart-lo:${escapeRegex(key)}\\}`, "g"),
-      formatId(loOffset, i, idFormat),
-    );
-    result = result.replace(
-      new RegExp(`\\{smartart-qs:${escapeRegex(key)}\\}`, "g"),
-      formatId(qsOffset, i, idFormat),
-    );
-    result = result.replace(
-      new RegExp(`\\{smartart-cs:${escapeRegex(key)}\\}`, "g"),
-      formatId(csOffset, i, idFormat),
-    );
+    result = result.replaceAll(`{smartart:${key}}`, formatId(dataOffset, i, idFormat));
+    result = result.replaceAll(`{smartart-lo:${key}}`, formatId(loOffset, i, idFormat));
+    result = result.replaceAll(`{smartart-qs:${key}}`, formatId(qsOffset, i, idFormat));
+    result = result.replaceAll(`{smartart-cs:${key}}`, formatId(csOffset, i, idFormat));
   });
 
   return result;

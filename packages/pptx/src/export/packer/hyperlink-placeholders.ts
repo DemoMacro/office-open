@@ -1,4 +1,4 @@
-import { escapeRegex, formatId } from "@office-open/core";
+import { formatId } from "@office-open/core";
 
 export function replaceHyperlinkPlaceholders(
   xml: string,
@@ -7,10 +7,7 @@ export function replaceHyperlinkPlaceholders(
 ): string {
   let result = xml;
   hyperlinks.forEach((h, i) => {
-    result = result.replace(
-      new RegExp(`\\{hlink:${escapeRegex(h.key)}\\}`, "g"),
-      formatId(offset, i, "rId"),
-    );
+    result = result.replaceAll(`{hlink:${h.key}}`, formatId(offset, i, "rId"));
   });
   return result;
 }

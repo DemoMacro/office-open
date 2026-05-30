@@ -7,7 +7,7 @@ export function replaceNumberingPlaceholders(
   let result = xml;
 
   for (const { reference, instance, numId } of concreteNumberings) {
-    result = result.replace(new RegExp(`{${reference}-${instance}}`, "g"), numId.toString());
+    result = result.replaceAll(`{${reference}-${instance}}`, numId.toString());
   }
 
   return result;
