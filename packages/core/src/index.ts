@@ -20,3 +20,4 @@ export * from "./raw-passthrough";
 export * from "./placeholder";
 export * from "./xsd-mappings";
 export * from "./patch";
+export * from "./compiler-utils";

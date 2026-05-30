@@ -1,3 +1,5 @@
+import { escapeXml } from "@office-open/xml";
+
 import { BaseXmlComponent } from "../xml-components/base";
 import type { Context, IXmlableObject } from "../xml-components/base";
 
@@ -84,6 +86,24 @@ export class Relationships extends BaseXmlComponent {
 
   public get relationshipCount(): number {
     return this.entries.length;
+  }
+
+  /**
+   * Zero-allocation fast path: directly concatenate XML string.
+   * Bypasses the IXmlableObject intermediate tree entirely.
+   */
+  public override toXml(_context: Context): string {
+    const p: string[] = [
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">',
+    ];
+    for (const e of this.entries) {
+      const tm = e.targetMode ? ` TargetMode="${escapeXml(e.targetMode)}"` : "";
+      p.push(
+        `<Relationship Id="${escapeXml(e.id)}" Type="${escapeXml(e.type)}" Target="${escapeXml(e.target)}"${tm}/>`,
+      );
+    }
+    p.push("</Relationships>");
+    return p.join("");
   }
 
   public override prepForXml(_context: Context): IXmlableObject {

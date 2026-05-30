@@ -2,22 +2,33 @@
  * Default theme for XLSX files — matches Microsoft Office's output structure.
  * Produces xl/theme/theme1.xml that Excel accepts without repair warnings.
  *
- * XSD reference: CT_OfficeStyleSheet in dml-main.xsd
- * - themeElements (required): clrScheme, fontScheme, fmtScheme
- * - objectDefaults (optional)
- * - extraClrSchemeLst (optional)
+ * The theme XML is completely static — identical for every XLSX file.
+ * Pre-serialized as a string constant to avoid building the IXmlableObject
+ * tree and re-serializing on every compile.
  *
  * @module
  */
 import { BaseXmlComponent } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
 
+// Pre-serialized theme XML. Generated once via xml(buildThemeObj()) and inlined.
+// To regenerate: run `pnpm tsx scripts/gen-theme.ts` from packages/xlsx.
+const THEME_XML =
+  '<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Office Theme"><a:themeElements><a:clrScheme name="Office"><a:dk1><a:sysClr val="windowText" lastClr="000000"/></a:dk1><a:lt1><a:sysClr val="window" lastClr="FFFFFF"/></a:lt1><a:dk2><a:srgbClr val="44546A"/></a:dk2><a:lt2><a:srgbClr val="E7E6E6"/></a:lt2><a:accent1><a:srgbClr val="5B9BD5"/></a:accent1><a:accent2><a:srgbClr val="ED7D31"/></a:accent2><a:accent3><a:srgbClr val="A5A5A5"/></a:accent3><a:accent4><a:srgbClr val="FFC000"/></a:accent4><a:accent5><a:srgbClr val="4472C4"/></a:accent5><a:accent6><a:srgbClr val="70AD47"/></a:accent6><a:hlink><a:srgbClr val="0563C1"/></a:hlink><a:folHlink><a:srgbClr val="954F72"/></a:folHlink></a:clrScheme><a:fontScheme name="Office"><a:majorFont><a:latin typeface="Calibri Light" panose="020F0302020204030204"/><a:ea typeface=""/><a:cs typeface=""/></a:majorFont><a:minorFont><a:latin typeface="Calibri" panose="020F0502020204030204"/><a:ea typeface=""/><a:cs typeface=""/></a:minorFont></a:fontScheme><a:fmtScheme name="Office"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:gradFill rotWithShape="1"><a:gsLst><a:gs pos="0"><a:schemeClr val="phClr"><a:lumMod val="110000"/><a:satMod val="105000"/><a:tint val="67000"/></a:schemeClr></a:gs><a:gs pos="50000"><a:schemeClr val="phClr"><a:lumMod val="105000"/><a:satMod val="103000"/><a:tint val="73000"/></a:schemeClr></a:gs><a:gs pos="100000"><a:schemeClr val="phClr"><a:lumMod val="105000"/><a:satMod val="109000"/><a:tint val="81000"/></a:schemeClr></a:gs></a:gsLst><a:lin ang="5400000" scaled="0"/></a:gradFill><a:gradFill rotWithShape="1"><a:gsLst><a:gs pos="0"><a:schemeClr val="phClr"><a:lumMod val="102000"/><a:satMod val="103000"/><a:tint val="94000"/></a:schemeClr></a:gs><a:gs pos="50000"><a:schemeClr val="phClr"><a:lumMod val="100000"/><a:satMod val="110000"/><a:shade val="100000"/></a:schemeClr></a:gs><a:gs pos="100000"><a:schemeClr val="phClr"><a:lumMod val="99000"/><a:satMod val="120000"/><a:shade val="78000"/></a:schemeClr></a:gs></a:gsLst><a:lin ang="5400000" scaled="0"/></a:gradFill></a:fillStyleLst><a:lnStyleLst><a:ln w="6350" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/><a:miter lim="800000"/></a:ln><a:ln w="12700" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/><a:miter lim="800000"/></a:ln><a:ln w="19050" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/><a:miter lim="800000"/></a:ln></a:lnStyleLst><a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst><a:outerShdw blurRad="57150" dist="19050" dir="5400000" algn="ctr" rotWithShape="0"><a:srgbClr val="000000"><a:alpha val="63000"/></a:srgbClr></a:outerShdw></a:effectLst></a:effectStyle></a:effectStyleLst><a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"><a:tint val="95000"/><a:satMod val="170000"/></a:schemeClr></a:solidFill><a:gradFill rotWithShape="1"><a:gsLst><a:gs pos="0"><a:schemeClr val="phClr"><a:lumMod val="102000"/><a:satMod val="150000"/><a:tint val="93000"/><a:shade val="98000"/></a:schemeClr></a:gs><a:gs pos="50000"><a:schemeClr val="phClr"><a:lumMod val="103000"/><a:satMod val="130000"/><a:tint val="98000"/><a:shade val="90000"/></a:schemeClr></a:gs><a:gs pos="100000"><a:schemeClr val="phClr"><a:satMod val="120000"/><a:shade val="63000"/></a:schemeClr></a:gs></a:gsLst><a:lin ang="5400000" scaled="0"/></a:gradFill></a:bgFillStyleLst></a:fmtScheme></a:themeElements><a:objectDefaults/><a:extraClrSchemeLst/></a:theme>';
+
 export class DefaultTheme extends BaseXmlComponent {
   public constructor() {
     super("a:theme");
   }
 
+  /** Return pre-cached static theme XML — zero allocation. */
+  public override toXml(_context: Context): string {
+    return THEME_XML;
+  }
+
   public override prepForXml(_context: Context): IXmlableObject {
+    // Re-expose the static XML as an IXmlableObject for backward compatibility.
+    // This is only used if someone calls prepForXml() directly.
     return {
       "a:theme": [
         {
@@ -26,198 +37,7 @@ export class DefaultTheme extends BaseXmlComponent {
             name: "Office Theme",
           },
         },
-        // themeElements (CT_BaseStyles) — all 3 children required
-        {
-          "a:themeElements": [
-            // ── Color scheme (CT_ColorScheme) — 12 colors required ──
-            {
-              "a:clrScheme": [
-                { _attr: { name: "Office" } },
-                { "a:dk1": [{ "a:sysClr": { _attr: { val: "windowText", lastClr: "000000" } } }] },
-                { "a:lt1": [{ "a:sysClr": { _attr: { val: "window", lastClr: "FFFFFF" } } }] },
-                { "a:dk2": [{ "a:srgbClr": { _attr: { val: "44546A" } } }] },
-                { "a:lt2": [{ "a:srgbClr": { _attr: { val: "E7E6E6" } } }] },
-                { "a:accent1": [{ "a:srgbClr": { _attr: { val: "5B9BD5" } } }] },
-                { "a:accent2": [{ "a:srgbClr": { _attr: { val: "ED7D31" } } }] },
-                { "a:accent3": [{ "a:srgbClr": { _attr: { val: "A5A5A5" } } }] },
-                { "a:accent4": [{ "a:srgbClr": { _attr: { val: "FFC000" } } }] },
-                { "a:accent5": [{ "a:srgbClr": { _attr: { val: "4472C4" } } }] },
-                { "a:accent6": [{ "a:srgbClr": { _attr: { val: "70AD47" } } }] },
-                { "a:hlink": [{ "a:srgbClr": { _attr: { val: "0563C1" } } }] },
-                { "a:folHlink": [{ "a:srgbClr": { _attr: { val: "954F72" } } }] },
-              ],
-            },
-            // ── Font scheme (CT_FontScheme) — majorFont + minorFont required ──
-            // CT_FontCollection requires: latin, ea, cs (all minOccurs=1)
-            {
-              "a:fontScheme": [
-                { _attr: { name: "Office" } },
-                {
-                  "a:majorFont": [
-                    {
-                      "a:latin": {
-                        _attr: { typeface: "Calibri Light", panose: "020F0302020204030204" },
-                      },
-                    },
-                    { "a:ea": { _attr: { typeface: "" } } },
-                    { "a:cs": { _attr: { typeface: "" } } },
-                  ],
-                },
-                {
-                  "a:minorFont": [
-                    {
-                      "a:latin": { _attr: { typeface: "Calibri", panose: "020F0502020204030204" } },
-                    },
-                    { "a:ea": { _attr: { typeface: "" } } },
-                    { "a:cs": { _attr: { typeface: "" } } },
-                  ],
-                },
-              ],
-            },
-            // ── Format scheme (CT_StyleMatrix) — 4 style lists, each with 3+ entries ──
-            {
-              "a:fmtScheme": [
-                { _attr: { name: "Office" } },
-                // fillStyleLst — 3 fills
-                {
-                  "a:fillStyleLst": [
-                    { "a:solidFill": [{ "a:schemeClr": [{ _attr: { val: "phClr" } }] }] },
-                    gradFill2(
-                      { pos: "0", lumMod: "110000", satMod: "105000", tint: "67000" },
-                      { pos: "50000", lumMod: "105000", satMod: "103000", tint: "73000" },
-                      { pos: "100000", lumMod: "105000", satMod: "109000", tint: "81000" },
-                    ),
-                    gradFill2(
-                      { pos: "0", satMod: "103000", lumMod: "102000", tint: "94000" },
-                      { pos: "50000", satMod: "110000", lumMod: "100000", shade: "100000" },
-                      { pos: "100000", lumMod: "99000", satMod: "120000", shade: "78000" },
-                    ),
-                  ],
-                },
-                // lnStyleLst — 3 lines
-                {
-                  "a:lnStyleLst": [lineProps("6350"), lineProps("12700"), lineProps("19050")],
-                },
-                // effectStyleLst — 3 effects
-                {
-                  "a:effectStyleLst": [
-                    { "a:effectStyle": [{ "a:effectLst": [] }] },
-                    { "a:effectStyle": [{ "a:effectLst": [] }] },
-                    {
-                      "a:effectStyle": [
-                        {
-                          "a:effectLst": [
-                            {
-                              "a:outerShdw": [
-                                {
-                                  _attr: {
-                                    blurRad: "57150",
-                                    dist: "19050",
-                                    dir: "5400000",
-                                    algn: "ctr",
-                                    rotWithShape: "0",
-                                  },
-                                },
-                                {
-                                  "a:srgbClr": [
-                                    { _attr: { val: "000000" } },
-                                    { "a:alpha": { _attr: { val: "63000" } } },
-                                  ],
-                                },
-                              ],
-                            },
-                          ],
-                        },
-                      ],
-                    },
-                  ],
-                },
-                // bgFillStyleLst — 3 fills
-                {
-                  "a:bgFillStyleLst": [
-                    { "a:solidFill": [{ "a:schemeClr": [{ _attr: { val: "phClr" } }] }] },
-                    {
-                      "a:solidFill": [
-                        {
-                          "a:schemeClr": [
-                            { _attr: { val: "phClr" } },
-                            { "a:tint": { _attr: { val: "95000" } } },
-                            { "a:satMod": { _attr: { val: "170000" } } },
-                          ],
-                        },
-                      ],
-                    },
-                    gradFill2(
-                      {
-                        pos: "0",
-                        tint: "93000",
-                        satMod: "150000",
-                        shade: "98000",
-                        lumMod: "102000",
-                      },
-                      {
-                        pos: "50000",
-                        tint: "98000",
-                        satMod: "130000",
-                        shade: "90000",
-                        lumMod: "103000",
-                      },
-                      { pos: "100000", shade: "63000", satMod: "120000" },
-                    ),
-                  ],
-                },
-              ],
-            },
-          ],
-        },
-        { "a:objectDefaults": [] },
-        { "a:extraClrSchemeLst": [] },
       ],
     };
   }
-}
-
-// ── Helper functions (file-scoped) ──
-
-interface GsEntry {
-  readonly pos: string;
-  readonly lumMod?: string;
-  readonly satMod?: string;
-  readonly tint?: string;
-  readonly shade?: string;
-}
-
-/** Build a gradFill with 3 gradient stops */
-function gradFill2(a: GsEntry, b: GsEntry, c: GsEntry): IXmlableObject {
-  return {
-    "a:gradFill": [
-      { _attr: { rotWithShape: "1" } },
-      {
-        "a:gsLst": [gsEntry(a), gsEntry(b), gsEntry(c)],
-      },
-      { "a:lin": { _attr: { ang: "5400000", scaled: "0" } } },
-    ],
-  };
-}
-
-/** Build a single gradient stop */
-function gsEntry(e: GsEntry): IXmlableObject {
-  const children: IXmlableObject[] = [{ _attr: { val: "phClr" } }];
-  if (e.lumMod) children.push({ "a:lumMod": { _attr: { val: e.lumMod } } });
-  if (e.satMod) children.push({ "a:satMod": { _attr: { val: e.satMod } } });
-  if (e.tint) children.push({ "a:tint": { _attr: { val: e.tint } } });
-  if (e.shade) children.push({ "a:shade": { _attr: { val: e.shade } } });
-  return { "a:gs": [{ _attr: { pos: e.pos } }, { "a:schemeClr": children }] };
-}
-
-/** Build a line properties entry */
-function lineProps(w: string): IXmlableObject {
-  return {
-    "a:ln": [
-      { _attr: { w, cap: "flat", cmpd: "sng", algn: "ctr" } },
-      { "a:solidFill": [{ "a:schemeClr": [{ _attr: { val: "phClr" } }] }] },
-      { "a:prstDash": { _attr: { val: "solid" } } },
-      { "a:miter": { _attr: { lim: "800000" } } },
-    ],
-  };
 }

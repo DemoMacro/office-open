@@ -10,11 +10,10 @@ import type { Context } from "@file/xml-components";
 import {
   ChartSpace,
   Relationships,
-  ZIP_STORED_LEVEL,
+  compileMapping,
   type XmlifyedFile,
   type Zippable,
 } from "@office-open/core";
-import { textToUint8Array } from "undio";
 
 export class Compiler {
   private readonly formatter = new Formatter();
@@ -143,8 +142,11 @@ export class Compiler {
           path: `xl/drawings/_rels/drawing${drawingIdx}.xml.rels`,
         };
 
-        // Add drawing reference to worksheet
-        sheetXml = sheetXml.replace("</worksheet>", `<drawing r:id="rId${rid}"/></worksheet>`);
+        // Insert drawing reference before the closing </worksheet> tag.
+        // Use slice instead of replace to avoid O(n) full-string scan.
+        const closingTag = "</worksheet>";
+        sheetXml =
+          sheetXml.slice(0, -closingTag.length) + `<drawing r:id="rId${rid}"/>` + closingTag;
 
         // Worksheet needs its own rels for drawing reference
         const wsRels = new Relationships();
@@ -205,23 +207,11 @@ export class Compiler {
     };
 
     // Convert mapping to Zippable
-    const files: Zippable = {};
-    for (const key of Object.keys(mapping)) {
-      const entry = mapping[key];
-      files[entry.path] = textToUint8Array(entry.data);
-    }
+    const mediaFiles = file.media.array.map((img) => ({
+      data: img.data,
+      path: `xl/media/${img.fileName}`,
+    }));
 
-    // Add overrides
-    for (const override of overrides) {
-      files[override.path] =
-        override.data instanceof Uint8Array ? override.data : textToUint8Array(override.data);
-    }
-
-    // Add media files (STORE — already-compressed formats)
-    for (const img of file.media.array) {
-      files[`xl/media/${img.fileName}`] = [img.data, { level: ZIP_STORED_LEVEL }];
-    }
-
-    return files;
+    return compileMapping(mapping, overrides, mediaFiles);
   }
 }

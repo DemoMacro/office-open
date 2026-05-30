@@ -46,13 +46,17 @@ export const zipAndConvert = async <T extends OutputType>(
   level: number = ZIP_DEFLATE_LEVEL,
 ): Promise<OutputByType[T]> => {
   const zipped = await new Promise<Uint8Array>((resolve, reject) => {
-    zip(files as AsyncZippable, { level: level as ZipOptions["level"] }, (err, data) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(data);
-      }
-    });
+    zip(
+      files as AsyncZippable,
+      { level: level as ZipOptions["level"], consume: true },
+      (err, data) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(data);
+        }
+      },
+    );
   });
   return convertOutput(zipped, type, mimeType);
 };

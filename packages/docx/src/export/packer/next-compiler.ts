@@ -17,10 +17,13 @@ import {
 import type { Context, XmlifyedFile, Zippable } from "@office-open/core";
 import { ZIP_STORED_LEVEL } from "@office-open/core";
 import { xml } from "@office-open/xml";
-import { textToUint8Array, toUint8Array } from "undio";
+import { toUint8Array } from "undio";
 
 import { Formatter } from "../formatter";
 import { replaceNumberingPlaceholders } from "./numbering-placeholders";
+
+/** Reusable TextEncoder (stateless, safe to share). */
+const encoder = new TextEncoder();
 
 /** Extended context with docx-specific properties passed through the XML tree. */
 type DocxContext = Context & {
@@ -157,18 +160,18 @@ export class Compiler {
       if (Array.isArray(obj)) {
         for (const subFile of obj as readonly XmlifyedFile[]) {
           files[subFile.path] =
-            typeof subFile.data === "string" ? textToUint8Array(subFile.data) : subFile.data;
+            typeof subFile.data === "string" ? encoder.encode(subFile.data) : subFile.data;
         }
       } else {
         const fileObj = obj as XmlifyedFile;
         files[fileObj.path] =
-          typeof fileObj.data === "string" ? textToUint8Array(fileObj.data) : fileObj.data;
+          typeof fileObj.data === "string" ? encoder.encode(fileObj.data) : fileObj.data;
       }
     }
 
     for (const subFile of overrides) {
       files[subFile.path] =
-        typeof subFile.data === "string" ? textToUint8Array(subFile.data) : subFile.data;
+        typeof subFile.data === "string" ? encoder.encode(subFile.data) : subFile.data;
     }
 
     // Media files: use STORE for already-compressed formats (JPEG, PNG, GIF, etc.)

@@ -8,6 +8,7 @@
  */
 import { BaseXmlComponent } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
+import { attrs, escapeXml } from "@office-open/xml";
 
 // ── Sub-style option interfaces ──
 
@@ -59,15 +60,16 @@ export interface StyleOptions {
 // ── Style key helpers for deduplication ──
 
 function fontKey(f: FontOptions): string {
-  return JSON.stringify(f);
+  return `b${f.bold ? 1 : 0}i${f.italic ? 1 : 0}u${f.underline ? 1 : 0}s${f.strike ? 1 : 0}z${f.size ?? 0}c${f.color ?? ""}n${f.fontName ?? ""}`;
 }
 
 function fillKey(f: FillOptions): string {
-  return JSON.stringify(f);
+  return `t${f.type ?? ""}c${f.color ?? ""}p${f.patternType ?? ""}`;
 }
 
 function borderKey(b: BorderSideOptions): string {
-  return JSON.stringify(b);
+  const sk = (o?: BorderOptions) => `${o?.style ?? ""}_${o?.color ?? ""}`;
+  return `t${sk(b.top)}b${sk(b.bottom)}l${sk(b.left)}r${sk(b.right)}d${sk(b.diagonal)}`;
 }
 
 // ── Built-in number format IDs ──
@@ -227,10 +229,122 @@ export class Styles extends BaseXmlComponent {
     readonly numFmtId: number;
     readonly alignment?: AlignmentOptions;
   }): string {
-    return `${xf.fontId}|${xf.fillId}|${xf.borderId}|${xf.numFmtId}|${JSON.stringify(xf.alignment ?? null)}`;
+    const a = xf.alignment;
+    const ak = a
+      ? `h${a.horizontal ?? ""}v${a.vertical ?? ""}w${a.wrapText ? 1 : 0}r${a.textRotation ?? ""}i${a.indent ?? ""}`
+      : "";
+    return `${xf.fontId}|${xf.fillId}|${xf.borderId}|${xf.numFmtId}|${ak}`;
   }
 
   // ── XML generation ──
+
+  /**
+   * Zero-allocation fast path: directly concatenate XML string.
+   * Bypasses the IXmlableObject intermediate tree entirely.
+   */
+  public override toXml(_context: Context): string {
+    const p: string[] = [
+      '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">',
+    ];
+
+    // numFmts
+    if (this.customNumFmts.size > 0) {
+      p.push(`<numFmts count="${this.customNumFmts.size}">`);
+      for (const [fmt, id] of this.customNumFmts) {
+        p.push(`<numFmt numFmtId="${id}" formatCode="${escapeXml(fmt)}"/>`);
+      }
+      p.push("</numFmts>");
+    }
+
+    // fonts
+    p.push(`<fonts count="${this.fonts.length}">`);
+    for (const f of this.fonts) {
+      p.push(`<font>${this.fontXmlStr(f)}</font>`);
+    }
+    p.push("</fonts>");
+
+    // fills
+    p.push(`<fills count="${this.fills.length}">`);
+    for (const f of this.fills) {
+      const patternAttrs = attrs({ patternType: f.patternType ?? "solid" });
+      const fgColor = f.color ? `<fgColor rgb="FF${f.color}"/>` : "";
+      p.push(`<fill><patternFill${patternAttrs}>${fgColor}</patternFill></fill>`);
+    }
+    p.push("</fills>");
+
+    // borders
+    p.push(`<borders count="${this.borders.length}">`);
+    for (const b of this.borders) {
+      p.push(`<border>${this.borderXmlStr(b)}</border>`);
+    }
+    p.push("</borders>");
+
+    // cellStyleXfs
+    p.push(
+      '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>',
+    );
+
+    // cellXfs
+    p.push(`<cellXfs count="${this.cellXfs.length}">`);
+    for (const xf of this.cellXfs) {
+      const xAttrs: Record<string, string | number | boolean | undefined> = {
+        numFmtId: xf.numFmtId,
+        fontId: xf.fontId,
+        fillId: xf.fillId,
+        borderId: xf.borderId,
+      };
+      if (xf.alignment) xAttrs.applyAlignment = 1;
+      if (xf.fontId > 0) xAttrs.applyFont = 1;
+      if (xf.fillId > 0) xAttrs.applyFill = 1;
+      if (xf.borderId > 0) xAttrs.applyBorder = 1;
+
+      const alignStr = xf.alignment ? this.alignmentXmlStr(xf.alignment) : "";
+      p.push(`<xf${attrs(xAttrs)}>${alignStr}</xf>`);
+    }
+    p.push("</cellXfs>");
+
+    // cellStyles
+    p.push('<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>');
+
+    p.push("</styleSheet>");
+    return p.join("");
+  }
+
+  private fontXmlStr(f: FontOptions): string {
+    const parts: string[] = [];
+    if (f.bold) parts.push("<b/>");
+    if (f.italic) parts.push("<i/>");
+    if (f.underline) parts.push("<u/>");
+    if (f.strike) parts.push("<strike/>");
+    if (f.size) parts.push(`<sz val="${f.size}"/>`);
+    if (f.color) parts.push(`<color rgb="FF${f.color}"/>`);
+    if (f.fontName) parts.push(`<name val="${escapeXml(f.fontName)}"/>`);
+    return parts.join("");
+  }
+
+  private borderXmlStr(b: BorderSideOptions): string {
+    const parts: string[] = [];
+    for (const side of ["left", "right", "top", "bottom", "diagonal"] as const) {
+      const opts = b[side] as BorderOptions | undefined;
+      if (opts && opts.style && opts.style !== "none") {
+        const colorStr = opts.color ? `<color rgb="FF${opts.color}"/>` : "";
+        parts.push(`<${side} style="${opts.style}">${colorStr}</${side}>`);
+      } else {
+        parts.push(`<${side}/>`);
+      }
+    }
+    return parts.join("");
+  }
+
+  private alignmentXmlStr(a: AlignmentOptions): string {
+    const aAttrs: Record<string, string | number | boolean | undefined> = {};
+    if (a.horizontal) aAttrs.horizontal = a.horizontal;
+    if (a.vertical) aAttrs.vertical = a.vertical;
+    if (a.wrapText) aAttrs.wrapText = 1;
+    if (a.textRotation !== undefined) aAttrs.textRotation = a.textRotation;
+    if (a.indent !== undefined) aAttrs.indent = a.indent;
+    return `<alignment${attrs(aAttrs)}/>`;
+  }
 
   public override prepForXml(_context: Context): IXmlableObject {
     const children: IXmlableObject[] = [

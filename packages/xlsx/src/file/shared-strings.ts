@@ -8,6 +8,7 @@
  */
 import { BaseXmlComponent } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
+import { escapeXml } from "@office-open/xml";
 
 export class SharedStrings extends BaseXmlComponent {
   private readonly strings: string[] = [];
@@ -33,6 +34,22 @@ export class SharedStrings extends BaseXmlComponent {
 
   public get count(): number {
     return this.strings.length;
+  }
+
+  /**
+   * Zero-allocation fast path: directly concatenate XML string.
+   * Bypasses the IXmlableObject intermediate tree entirely.
+   */
+  public override toXml(_context: Context): string {
+    const p: string[] = [
+      '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"',
+      ` count="${this.strings.length}" uniqueCount="${this.indexMap.size}">`,
+    ];
+    for (const s of this.strings) {
+      p.push(`<si><t>${escapeXml(s)}</t></si>`);
+    }
+    p.push("</sst>");
+    return p.join("");
   }
 
   public override prepForXml(_context: Context): IXmlableObject {

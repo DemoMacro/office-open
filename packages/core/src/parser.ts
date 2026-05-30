@@ -1,6 +1,6 @@
 import { xml2js, js2xml } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
-import { unzipSync, zipSync, strFromU8, strToU8 } from "fflate";
+import { unzipSync, zipSync, strFromU8, strToU8, type Zippable } from "fflate";
 
 const XML_PARSE_OPTIONS = {
   nativeTypeAttributes: true,
@@ -91,16 +91,24 @@ export class ParsedArchive {
 
   /** Serialize back to a ZIP buffer, merging original zip + modifications. */
   public save(): Uint8Array {
-    const files: Record<string, Uint8Array> = {};
+    const files: Zippable = {};
     for (const [path, data] of this.zip) {
-      if (!this.modified.has(path)) files[path] = data;
+      if (!this.modified.has(path)) {
+        files[path] = MEDIA_PATTERN.test(path) ? [data, { level: MEDIA_STORED_LEVEL }] : data;
+      }
     }
     for (const [path, data] of this.modified) {
-      files[path] = data;
+      files[path] = MEDIA_PATTERN.test(path) ? [data, { level: MEDIA_STORED_LEVEL }] : data;
     }
     return zipSync(files);
   }
 }
+
+/** Regex to detect already-compressed media file extensions. */
+const MEDIA_PATTERN = /\.(png|jpe?g|gif|wmf|emf|tiff?|avi|mp4|mp3|wav)$/i;
+
+/** STORE level for already-compressed media formats. */
+const MEDIA_STORED_LEVEL = 0;
 
 /** Parse an OOXML archive (.docx, .pptx, .xlsx) into a ParsedArchive. */
 export function parseArchive(data: Uint8Array): ParsedArchive {

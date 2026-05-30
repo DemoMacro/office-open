@@ -125,7 +125,7 @@ export class DefaultTheme extends ImportedXmlComponent {
 
   public constructor(options?: ThemeOptions) {
     super("a:theme");
-    this.cacheKey = options ? JSON.stringify(options) : "";
+    this.cacheKey = options ? themeKey(options) : "";
     if (!DefaultTheme.cache.has(this.cacheKey)) {
       DefaultTheme.cache.set(
         this.cacheKey,
@@ -141,4 +141,10 @@ export class DefaultTheme extends ImportedXmlComponent {
   public override toXml(context: any): string {
     return DefaultTheme.cache.get(this.cacheKey)!.toXml(context);
   }
+}
+
+function themeKey(o: ThemeOptions): string {
+  const c = o.colors;
+  const f = o.fonts;
+  return `n${o.name ?? ""}c${c?.dark1 ?? ""}${c?.light1 ?? ""}${c?.dark2 ?? ""}${c?.light2 ?? ""}${c?.accent1 ?? ""}${c?.accent2 ?? ""}${c?.accent3 ?? ""}${c?.accent4 ?? ""}${c?.accent5 ?? ""}${c?.accent6 ?? ""}${c?.hyperlink ?? ""}${c?.followedHyperlink ?? ""}f${f?.majorFont ?? ""}${f?.minorFont ?? ""}${f?.majorFontAsian ?? ""}${f?.minorFontAsian ?? ""}`;
 }

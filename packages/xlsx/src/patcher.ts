@@ -11,7 +11,10 @@ import { OoxmlMimeType, unzipSync, zipAndConvert, strFromU8, toJson } from "@off
 import type { OutputByType, OutputType } from "@office-open/core";
 import { js2xml } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
-import { textToUint8Array, toUint8Array } from "undio";
+import { toUint8Array } from "undio";
+
+/** Reusable TextEncoder (stateless, safe to share). */
+const encoder = new TextEncoder();
 
 export type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob;
 
@@ -91,7 +94,7 @@ export const patchWorkbook = async <T extends PatchDocumentOutputType = PatchDoc
   // Rebuild ZIP
   const files: Record<string, Uint8Array> = {};
   for (const [key, value] of xmlMap) {
-    files[key] = textToUint8Array(js2xml(value));
+    files[key] = encoder.encode(js2xml(value));
   }
   for (const [key, value] of binaryMap) {
     files[key] = value;

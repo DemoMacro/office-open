@@ -13,6 +13,7 @@ import {
   ZIP_STORED_LEVEL,
   addSmartArtRelationships,
   collectPlaceholderKeys,
+  compileMapping,
   getReferencedMedia,
   hasPlaceholders,
   replaceChartPlaceholders,
@@ -21,7 +22,9 @@ import {
 } from "@office-open/core";
 import type { XmlifyedFile, Zippable } from "@office-open/core";
 import { xml } from "@office-open/xml";
-import { textToUint8Array } from "undio";
+
+/** Reusable TextEncoder (stateless, safe to share). */
+const encoder = new TextEncoder();
 
 interface XmlifyedFileMapping {
   [key: string]: { data: string; path: string };
@@ -361,25 +364,15 @@ export class Compiler {
     };
 
     // Convert mapping to Zippable (XML files use global DEFLATE default)
-    const files: Zippable = {};
-    for (const key of Object.keys(mapping)) {
-      const entry = mapping[key];
-      files[entry.path] = textToUint8Array(entry.data);
-    }
-
-    // Add overrides
-    for (const override of overrides) {
-      files[override.path] =
-        override.data instanceof Uint8Array ? override.data : textToUint8Array(override.data);
-    }
+    const files = compileMapping(mapping, overrides);
 
     // Add chart parts
     for (let i = 0; i < file.charts.array.length; i++) {
       const chartData = file.charts.array[i];
-      files[`ppt/charts/chart${i + 1}.xml`] = textToUint8Array(
+      files[`ppt/charts/chart${i + 1}.xml`] = encoder.encode(
         this.formatter.formatToXml(chartData.chartSpace, context, declaration),
       );
-      files[`ppt/charts/_rels/chart${i + 1}.xml.rels`] = textToUint8Array(
+      files[`ppt/charts/_rels/chart${i + 1}.xml.rels`] = encoder.encode(
         xml(
           {
             Relationships: {
@@ -396,26 +389,24 @@ export class Compiler {
     // Add SmartArt diagram parts
     for (let i = 0; i < file.smartArts.array.length; i++) {
       const smartArtData = file.smartArts.array[i];
-      files[`ppt/diagrams/data${i + 1}.xml`] = textToUint8Array(
+      files[`ppt/diagrams/data${i + 1}.xml`] = encoder.encode(
         this.formatter.formatToXml(smartArtData.dataModel, context, declaration),
       );
-      files[`ppt/diagrams/layout${i + 1}.xml`] = textToUint8Array(
-        getLayoutXml(smartArtData.layout),
-      );
-      files[`ppt/diagrams/quickStyle${i + 1}.xml`] = textToUint8Array(
+      files[`ppt/diagrams/layout${i + 1}.xml`] = encoder.encode(getLayoutXml(smartArtData.layout));
+      files[`ppt/diagrams/quickStyle${i + 1}.xml`] = encoder.encode(
         getStyleXml(smartArtData.style),
       );
-      files[`ppt/diagrams/colors${i + 1}.xml`] = textToUint8Array(getColorXml(smartArtData.color));
-      files[`ppt/diagrams/drawing${i + 1}.xml`] = textToUint8Array(DEFAULT_DRAWING_XML);
+      files[`ppt/diagrams/colors${i + 1}.xml`] = encoder.encode(getColorXml(smartArtData.color));
+      files[`ppt/diagrams/drawing${i + 1}.xml`] = encoder.encode(DEFAULT_DRAWING_XML);
     }
 
     // Add notes slides
     for (let i = 0; i < file.notesSlides.length; i++) {
       const notesSlide = file.notesSlides[i];
-      files[`ppt/notesSlides/notesSlide${i + 1}.xml`] = textToUint8Array(
+      files[`ppt/notesSlides/notesSlide${i + 1}.xml`] = encoder.encode(
         this.formatter.formatToXml(notesSlide, context, declaration),
       );
-      files[`ppt/notesSlides/_rels/notesSlide${i + 1}.xml.rels`] = textToUint8Array(
+      files[`ppt/notesSlides/_rels/notesSlide${i + 1}.xml.rels`] = encoder.encode(
         xml(
           {
             Relationships: {
@@ -431,7 +422,7 @@ export class Compiler {
 
     // Add comment authors
     if (file.commentAuthorList) {
-      files["ppt/commentAuthors.xml"] = textToUint8Array(
+      files["ppt/commentAuthors.xml"] = encoder.encode(
         this.formatter.formatToXml(file.commentAuthorList, context, declaration),
       );
     }
@@ -440,7 +431,7 @@ export class Compiler {
     const commentLists = file.slideCommentLists;
     for (let i = 0; i < commentLists.length; i++) {
       if (commentLists[i]) {
-        files[`ppt/comments/comment${i + 1}.xml`] = textToUint8Array(
+        files[`ppt/comments/comment${i + 1}.xml`] = encoder.encode(
           this.formatter.formatToXml(commentLists[i]!, context, declaration),
         );
       }

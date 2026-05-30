@@ -30,7 +30,7 @@ export class PresentationProperties extends ImportedXmlComponent {
 
   public constructor(showOptions?: ShowOptions) {
     super("p:presentationPr");
-    this.key = showOptions ? JSON.stringify(showOptions) : "";
+    this.key = showOptions ? presPropsKey(showOptions) : "";
     if (!PresentationProperties.cache.has(this.key)) {
       PresentationProperties.cache.set(
         this.key,
@@ -42,4 +42,8 @@ export class PresentationProperties extends ImportedXmlComponent {
   public prepForXml() {
     return PresentationProperties.cache.get(this.key)!.prepForXml({ stack: [] });
   }
+}
+
+function presPropsKey(o: ShowOptions): string {
+  return `l${o.loop ? 1 : 0}k${o.kiosk ? 1 : 0}n${o.showNarration ? 1 : 0}t${o.useTimings ? 1 : 0}`;
 }
