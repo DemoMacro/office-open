@@ -103,9 +103,9 @@ export class Drawing extends BaseXmlComponent {
         `<twoCellAnchor editAs="oneCell"><from><col>${img.col - 1}</col><colOff>${img.colOffset ?? 0}</colOff><row>${img.row - 1}</row><rowOff>${img.rowOffset ?? 0}</rowOff></from>`,
         `<to><col>${img.col}</col><colOff>0</colOff><row>${img.row}</row><rowOff>0</rowOff></to>`,
         `<pic><nvPicPr><cNvPr id="${id}" name="Picture ${id}"/><cNvPicPr preferRelativeResize="1"/></nvPicPr>`,
-        `<blipFill><a:blip r:embed="${img.rId}"/><a:stretch><a:fillRect></a:fillRect></a:stretch></blipFill>`,
-        `<spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="400000" cy="300000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst></a:avLst></a:prstGeom></spPr></pic>`,
-        `<clientData></clientData></twoCellAnchor>`,
+        `<blipFill><a:blip r:embed="${img.rId}"/><a:stretch><a:fillRect/></a:stretch></blipFill>`,
+        `<spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="400000" cy="300000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></spPr></pic>`,
+        `<clientData/></twoCellAnchor>`,
       );
       id++;
     }
@@ -113,10 +113,10 @@ export class Drawing extends BaseXmlComponent {
       p.push(
         `<twoCellAnchor editAs="oneCell"><from><col>${chart.col - 1}</col><colOff>${chart.colOffset ?? 0}</colOff><row>${chart.row - 1}</row><rowOff>${chart.rowOffset ?? 0}</rowOff></from>`,
         `<to><col>${chart.col + 8}</col><colOff>0</colOff><row>${chart.row + 15}</row><rowOff>0</rowOff></to>`,
-        `<graphicFrame><nvGraphicFramePr><cNvPr id="${id}" name="Chart ${id}"/><cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"></a:graphicFrameLocks></cNvGraphicFramePr></nvGraphicFramePr>`,
+        `<graphicFrame><nvGraphicFramePr><cNvPr id="${id}" name="Chart ${id}"/><cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></cNvGraphicFramePr></nvGraphicFramePr>`,
         `<xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xfrm>`,
         `<a:graphic><a:graphicData uri="${C_URI}"><c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:r="${R_NS}" r:id="${chart.rId}"/></a:graphicData></a:graphic></graphicFrame>`,
-        `<clientData></clientData></twoCellAnchor>`,
+        `<clientData/></twoCellAnchor>`,
       );
       id++;
     }

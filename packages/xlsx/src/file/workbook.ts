@@ -44,14 +44,26 @@ export class WorkbookXml extends BaseXmlComponent {
             "xmlns:r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
           },
         },
+        {
+          bookViews: [
+            {
+              workbookView: {
+                _attr: { xWindow: 0, yWindow: 0, windowWidth: 28800, windowHeight: 12300 },
+              },
+            },
+          ],
+        },
         { sheets: sheetElements },
+        { calcPr: { _attr: { calcId: 191029 } } },
       ],
     };
   }
 
   public override toXml(_context: Context): string {
     const p: string[] = [
-      '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>',
+      '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">',
+      '<bookViews><workbookView xWindow="0" yWindow="0" windowWidth="28800" windowHeight="12300"/></bookViews>',
+      "<sheets>",
     ];
     for (const s of this.sheets) {
       const stateAttr = s.state && s.state !== "visible" ? ` state="${s.state}"` : "";
@@ -59,7 +71,7 @@ export class WorkbookXml extends BaseXmlComponent {
         `<sheet name="${escapeXml(s.name)}" sheetId="${s.sheetId}" r:id="${s.rId}"${stateAttr}/>`,
       );
     }
-    p.push("</sheets></workbook>");
+    p.push('</sheets><calcPr calcId="191029"/></workbook>');
     return p.join("");
   }
 }

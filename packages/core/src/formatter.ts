@@ -19,24 +19,10 @@ export class Formatter {
 
   /**
    * Serialize a component directly to XML string via the toXml() fast path.
+   * Always includes XML declaration.
    */
-  public formatToXml(
-    input: BaseXmlComponent,
-    context: Context,
-    declaration?: boolean | { encoding?: string; standalone?: string },
-  ): string {
+  public formatToXml(input: BaseXmlComponent, context: Context): string {
     const body = input.toXml(context);
-
-    if (!body) return "";
-
-    if (declaration) {
-      const decl =
-        declaration === true
-          ? XML_DECL
-          : `<?xml version="1.0" encoding="${declaration.encoding || "UTF-8"}"${declaration.standalone ? ` standalone="${declaration.standalone}"` : ""}?>`;
-      return decl + body;
-    }
-
-    return body;
+    return body ? XML_DECL + body : "";
   }
 }

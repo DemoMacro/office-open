@@ -24,18 +24,17 @@ export class Compiler {
 
     const mapping: Record<string, { data: string; path: string }> = {};
 
-    const fmt = (component: any, declaration?: boolean | object) =>
-      f.formatToXml(component, context, declaration);
+    const fmt = (component: any) => f.formatToXml(component, context);
 
     // Core properties
     mapping["Properties"] = {
-      data: fmt(file.coreProperties, true),
+      data: fmt(file.coreProperties),
       path: "docProps/core.xml",
     };
 
     // App properties
     mapping["AppProperties"] = {
-      data: fmt(file.appProperties, true),
+      data: fmt(file.appProperties),
       path: "docProps/app.xml",
     };
 
@@ -47,7 +46,7 @@ export class Compiler {
 
     // Workbook
     mapping["Workbook"] = {
-      data: fmt(file.workbookXml, true),
+      data: fmt(file.workbookXml),
       path: "xl/workbook.xml",
     };
 
@@ -68,7 +67,7 @@ export class Compiler {
       const chartOpts = ws.charts;
 
       // Worksheet uses toXml() fast path (zero-allocation string concat)
-      let sheetXml = fmt(ws, true);
+      let sheetXml = fmt(ws);
 
       const hasMedia = imgOpts.length > 0 || chartOpts.length > 0;
 
@@ -132,7 +131,7 @@ export class Compiler {
         const drawing = new Drawing(drawingImages, drawingCharts);
         const drawingIdx = i + 1;
         mapping[`Drawing${i}`] = {
-          data: fmt(drawing, true),
+          data: fmt(drawing),
           path: `xl/drawings/drawing${drawingIdx}.xml`,
         };
 
@@ -173,20 +172,20 @@ export class Compiler {
     const sharedStrings = file.sharedStrings;
     if (sharedStrings.count > 0) {
       mapping["SharedStrings"] = {
-        data: fmt(sharedStrings, true),
+        data: fmt(sharedStrings),
         path: "xl/sharedStrings.xml",
       };
     }
 
     // Styles
     mapping["Styles"] = {
-      data: fmt(file.styles, true),
+      data: fmt(file.styles),
       path: "xl/styles.xml",
     };
 
     // Theme
     mapping["Theme"] = {
-      data: fmt(file.theme, true),
+      data: fmt(file.theme),
       path: "xl/theme/theme1.xml",
     };
 
@@ -194,10 +193,20 @@ export class Compiler {
     for (let i = 0; i < file.charts.array.length; i++) {
       const chartData = file.charts.array[i];
       mapping[`Chart${i}`] = {
-        data: fmt(chartData.chartSpace, true),
+        data: fmt(chartData.chartSpace),
         path: `xl/charts/chart${i + 1}.xml`,
       };
       file.contentTypes.addChart(i + 1);
+    }
+
+    // Register image content types
+    const imageExts = new Set<string>();
+    for (const img of file.media.array) {
+      const ext = img.fileName.endsWith(".png") ? "png" : "jpeg";
+      if (!imageExts.has(ext)) {
+        imageExts.add(ext);
+        file.contentTypes.addImageType(ext as "png" | "jpeg");
+      }
     }
 
     // Content Types — must be last

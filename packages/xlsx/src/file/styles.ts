@@ -268,7 +268,11 @@ export class Styles extends BaseXmlComponent {
     for (const f of this.fills) {
       const patternAttrs = attrs({ patternType: f.patternType ?? "solid" });
       const fgColor = f.color ? `<fgColor rgb="FF${f.color}"/>` : "";
-      p.push(`<fill><patternFill${patternAttrs}>${fgColor}</patternFill></fill>`);
+      p.push(
+        fgColor
+          ? `<fill><patternFill${patternAttrs}>${fgColor}</patternFill></fill>`
+          : `<fill><patternFill${patternAttrs}/></fill>`,
+      );
     }
     p.push("</fills>");
 
@@ -292,6 +296,7 @@ export class Styles extends BaseXmlComponent {
         fontId: xf.fontId,
         fillId: xf.fillId,
         borderId: xf.borderId,
+        xfId: 0,
       };
       if (xf.alignment) xAttrs.applyAlignment = 1;
       if (xf.fontId > 0) xAttrs.applyFont = 1;
@@ -299,12 +304,19 @@ export class Styles extends BaseXmlComponent {
       if (xf.borderId > 0) xAttrs.applyBorder = 1;
 
       const alignStr = xf.alignment ? this.alignmentXmlStr(xf.alignment) : "";
-      p.push(`<xf${attrs(xAttrs)}>${alignStr}</xf>`);
+      p.push(alignStr ? `<xf${attrs(xAttrs)}>${alignStr}</xf>` : `<xf${attrs(xAttrs)}/>`);
     }
     p.push("</cellXfs>");
 
     // cellStyles
     p.push('<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>');
+
+    // dxfs and tableStyles (required by Excel)
+    p.push('<dxfs count="0"/>');
+    p.push(
+      '<tableStyles count="0" defaultTableStyle="TableStyleMedium2" defaultPivotStyle="PivotStyleLight16"/>',
+    );
+    p.push("<extLst/>");
 
     p.push("</styleSheet>");
     return p.join("");
@@ -393,6 +405,19 @@ export class Styles extends BaseXmlComponent {
         { cellStyle: [{ _attr: { name: "Normal", xfId: 0, builtinId: 0 } }] },
       ],
     });
+
+    // dxfs, tableStyles, extLst (required by Excel)
+    children.push({ dxfs: { _attr: { count: 0 } } });
+    children.push({
+      tableStyles: {
+        _attr: {
+          count: 0,
+          defaultTableStyle: "TableStyleMedium2",
+          defaultPivotStyle: "PivotStyleLight16",
+        },
+      },
+    });
+    children.push({ extLst: [] });
 
     return { styleSheet: children };
   }

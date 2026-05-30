@@ -443,6 +443,10 @@ export class SlideLayout extends ImportedXmlComponent {
   public prepForXml() {
     return SlideLayout.cache.get(this.cacheKey)!.prepForXml({ stack: [] });
   }
+
+  public override toXml(context: Context): string {
+    return SlideLayout.cache.get(this.cacheKey)!.toXml(context);
+  }
 }
 
 export class DefaultSlideLayout extends SlideLayout {

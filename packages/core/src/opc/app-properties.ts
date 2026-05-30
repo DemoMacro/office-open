@@ -1,3 +1,4 @@
+import type { Context } from "../xml-components/base";
 import { ImportedXmlComponent } from "../xml-components/imported";
 
 const APP_PROPS_XML =
@@ -12,5 +13,9 @@ export class AppProperties extends ImportedXmlComponent {
 
   public override prepForXml() {
     return AppProperties.instance.prepForXml({ stack: [] } as any);
+  }
+
+  public override toXml(_context: Context): string {
+    return AppProperties.instance.toXml(_context);
   }
 }

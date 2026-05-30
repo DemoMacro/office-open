@@ -29,8 +29,6 @@ const STATIC_ENTRIES: readonly ContentEntry[] = [
     key: "rels",
   },
   { type: "Default", contentType: "application/xml", key: "xml" },
-  { type: "Default", contentType: "image/png", key: "png" },
-  { type: "Default", contentType: "image/jpeg", key: "jpeg" },
   { type: "Override", contentType: XLSX_MAIN, key: "/xl/workbook.xml" },
   {
     type: "Override",
@@ -114,6 +112,13 @@ export class ContentTypes extends BaseXmlComponent {
       contentType: "application/vnd.openxmlformats-officedocument.drawing+xml",
       key: `/xl/drawings/drawing${index}.xml`,
     });
+  }
+
+  public addImageType(extension: "png" | "jpeg"): void {
+    const contentType = extension === "png" ? "image/png" : "image/jpeg";
+    // Avoid duplicates
+    if (this.dynamicEntries.some((e) => e.type === "Default" && e.key === extension)) return;
+    this.dynamicEntries.push({ type: "Default", contentType, key: extension });
   }
 
   public override prepForXml(_context: Context): IXmlableObject {

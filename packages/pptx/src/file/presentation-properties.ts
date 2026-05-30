@@ -1,3 +1,4 @@
+import type { Context } from "@file/xml-components";
 import { ImportedXmlComponent } from "@file/xml-components";
 
 export interface ShowOptions {
@@ -41,6 +42,10 @@ export class PresentationProperties extends ImportedXmlComponent {
 
   public prepForXml() {
     return PresentationProperties.cache.get(this.key)!.prepForXml({ stack: [] });
+  }
+
+  public override toXml(context: Context): string {
+    return PresentationProperties.cache.get(this.key)!.toXml(context);
   }
 }
 

@@ -1,3 +1,4 @@
+import type { Context } from "@file/xml-components";
 import { ImportedXmlComponent } from "@file/xml-components";
 
 const NOTES_MASTER_XML = `<p:notesMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
@@ -35,5 +36,9 @@ export class DefaultNotesMaster extends ImportedXmlComponent {
 
   public prepForXml() {
     return DefaultNotesMaster.instance.prepForXml({ stack: [] });
+  }
+
+  public override toXml(context: Context): string {
+    return DefaultNotesMaster.instance.toXml(context);
   }
 }

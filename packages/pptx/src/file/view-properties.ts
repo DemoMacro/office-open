@@ -1,3 +1,4 @@
+import type { Context } from "@file/xml-components";
 import { ImportedXmlComponent } from "@file/xml-components";
 
 const VIEW_PROPS_XML = `<p:viewPr xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
@@ -32,5 +33,9 @@ export class ViewProperties extends ImportedXmlComponent {
 
   public prepForXml() {
     return ViewProperties.instance.prepForXml({ stack: [] });
+  }
+
+  public override toXml(context: Context): string {
+    return ViewProperties.instance.toXml(context);
   }
 }

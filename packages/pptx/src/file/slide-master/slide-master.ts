@@ -253,4 +253,8 @@ export class DefaultSlideMaster extends ImportedXmlComponent {
   public prepForXml() {
     return DefaultSlideMaster.cache.get(this.cacheKey)!.prepForXml({ stack: [] });
   }
+
+  public override toXml(context: Context): string {
+    return DefaultSlideMaster.cache.get(this.cacheKey)!.toXml(context);
+  }
 }

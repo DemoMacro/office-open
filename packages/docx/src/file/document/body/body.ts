@@ -100,6 +100,18 @@ export class Body extends XmlComponent {
   }
 
   /**
+   * Direct XML serialization — ensures section properties are appended
+   * before delegating to the default XmlComponent.toXml() traversal.
+   */
+  public override toXml(context: Context): string {
+    if (this.sections.length === 1) {
+      this.root.splice(0, 1);
+      this.root.push(this.sections.pop() as SectionProperties);
+    }
+    return super.toXml(context);
+  }
+
+  /**
    * Adds a block-level component to the body.
    *
    * This method is used internally by the Document class to add paragraphs,

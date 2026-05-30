@@ -78,6 +78,16 @@ export abstract class XmlComponent extends BaseXmlComponent {
       if (child instanceof BaseXmlComponent) {
         const s = child.toXml(context);
         if (s) childParts.push(s);
+        // NextAttributeComponent.toXml() returns "" — extract attrs via prepForXml()
+        if (!s && child.constructor.name === "NextAttributeComponent") {
+          const prepped = child.prepForXml(context);
+          if (prepped && typeof prepped === "object" && "_attr" in prepped) {
+            const a = (prepped as { _attr: Record<string, unknown> })._attr;
+            for (const key of Object.keys(a)) {
+              attrParts.push(`${key}="${escapeXml(String(a[key]))}"`);
+            }
+          }
+        }
       } else if (typeof child === "string") {
         childParts.push(escapeXml(child));
       } else if (child != null && typeof child === "object") {

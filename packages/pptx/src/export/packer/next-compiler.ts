@@ -42,16 +42,15 @@ export class Compiler {
   private readonly formatter = new Formatter();
 
   public compile(file: File, overrides: readonly XmlifyedFile[] = []): Zippable {
-    const declaration = true;
     const context: Context = { fileData: file, stack: [] };
 
     const mapping: XmlifyedFileMapping = {
       AppProperties: {
-        data: this.formatter.formatToXml(file.appProperties, context, declaration),
+        data: this.formatter.formatToXml(file.appProperties, context),
         path: "docProps/app.xml",
       },
       Properties: {
-        data: this.formatter.formatToXml(file.coreProperties, context, declaration),
+        data: this.formatter.formatToXml(file.coreProperties, context),
         path: "docProps/core.xml",
       },
       FileRelationships: {
@@ -65,23 +64,23 @@ export class Compiler {
     const themes = file.themes;
     for (let ti = 0; ti < themes.length; ti++) {
       mapping[`Theme${ti}`] = {
-        data: this.formatter.formatToXml(themes[ti], context, declaration),
+        data: this.formatter.formatToXml(themes[ti], context),
         path: `ppt/theme/theme${ti + 1}.xml`,
       };
     }
 
     mapping["TableStyles"] = {
-      data: this.formatter.formatToXml(file.tableStyles, context, declaration),
+      data: this.formatter.formatToXml(file.tableStyles, context),
       path: "ppt/tableStyles.xml",
     };
 
     mapping["PresProps"] = {
-      data: this.formatter.formatToXml(file.presProps, context, declaration),
+      data: this.formatter.formatToXml(file.presProps, context),
       path: "ppt/presProps.xml",
     };
 
     mapping["ViewProps"] = {
-      data: this.formatter.formatToXml(file.viewProps, context, declaration),
+      data: this.formatter.formatToXml(file.viewProps, context),
       path: "ppt/viewProps.xml",
     };
 
@@ -90,7 +89,7 @@ export class Compiler {
     const masterRels = file.slideMasterRelsArray;
     for (let mi = 0; mi < masters.length; mi++) {
       mapping[`SlideMaster${mi}`] = {
-        data: this.formatter.formatToXml(masters[mi], context, declaration),
+        data: this.formatter.formatToXml(masters[mi], context),
         path: `ppt/slideMasters/slideMaster${mi + 1}.xml`,
       };
       mapping[`SlideMasterRels${mi}`] = {
@@ -104,7 +103,7 @@ export class Compiler {
     const layoutRels = file.allLayoutRelsArray;
     for (let li = 0; li < layouts.length; li++) {
       mapping[`SlideLayout${li}`] = {
-        data: this.formatter.formatToXml(layouts[li].layout, context, declaration),
+        data: this.formatter.formatToXml(layouts[li].layout, context),
         path: `ppt/slideLayouts/slideLayout${li + 1}.xml`,
       };
       mapping[`SlideLayoutRels${li}`] = {
@@ -131,7 +130,7 @@ export class Compiler {
         "notesMasters/notesMaster1.xml",
       );
       mapping["NotesMaster"] = {
-        data: this.formatter.formatToXml(new DefaultNotesMaster(), context, declaration),
+        data: this.formatter.formatToXml(new DefaultNotesMaster(), context),
         path: "ppt/notesMasters/notesMaster1.xml",
       };
       mapping["NotesMasterRelationships"] = {
@@ -150,11 +149,7 @@ export class Compiler {
     }
 
     // Presentation + its relationships
-    const presentationXml = this.formatter.formatToXml(
-      file.presentationWrapper.view,
-      context,
-      declaration,
-    );
+    const presentationXml = this.formatter.formatToXml(file.presentationWrapper.view, context);
     let currentImageCount = 0;
 
     const mediaData = getReferencedMedia(presentationXml, file.media.array);
@@ -187,7 +182,7 @@ export class Compiler {
     // Slides — format BEFORE ContentTypes so Chart.prepForXml() populates Charts
     for (let i = 0; i < file.slides.length; i++) {
       const slideWrapper = file.slideWrappers[i];
-      const slideXml = this.formatter.formatToXml(slideWrapper.view, context, declaration);
+      const slideXml = this.formatter.formatToXml(slideWrapper.view, context);
 
       const slideMediaData = getReferencedMedia(slideXml, file.media.array);
       const slideImageOffset = slideWrapper.relationships.relationshipCount + 1;
@@ -372,7 +367,7 @@ export class Compiler {
     for (let i = 0; i < file.charts.array.length; i++) {
       const chartData = file.charts.array[i];
       files[`ppt/charts/chart${i + 1}.xml`] = encoder.encode(
-        this.formatter.formatToXml(chartData.chartSpace, context, declaration),
+        this.formatter.formatToXml(chartData.chartSpace, context),
       );
       files[`ppt/charts/_rels/chart${i + 1}.xml.rels`] = encoder.encode(
         xml(
@@ -392,7 +387,7 @@ export class Compiler {
     for (let i = 0; i < file.smartArts.array.length; i++) {
       const smartArtData = file.smartArts.array[i];
       files[`ppt/diagrams/data${i + 1}.xml`] = encoder.encode(
-        this.formatter.formatToXml(smartArtData.dataModel, context, declaration),
+        this.formatter.formatToXml(smartArtData.dataModel, context),
       );
       files[`ppt/diagrams/layout${i + 1}.xml`] = encoder.encode(getLayoutXml(smartArtData.layout));
       files[`ppt/diagrams/quickStyle${i + 1}.xml`] = encoder.encode(
@@ -406,7 +401,7 @@ export class Compiler {
     for (let i = 0; i < file.notesSlides.length; i++) {
       const notesSlide = file.notesSlides[i];
       files[`ppt/notesSlides/notesSlide${i + 1}.xml`] = encoder.encode(
-        this.formatter.formatToXml(notesSlide, context, declaration),
+        this.formatter.formatToXml(notesSlide, context),
       );
       files[`ppt/notesSlides/_rels/notesSlide${i + 1}.xml.rels`] = encoder.encode(
         xml(
@@ -425,7 +420,7 @@ export class Compiler {
     // Add comment authors
     if (file.commentAuthorList) {
       files["ppt/commentAuthors.xml"] = encoder.encode(
-        this.formatter.formatToXml(file.commentAuthorList, context, declaration),
+        this.formatter.formatToXml(file.commentAuthorList, context),
       );
     }
 
@@ -434,7 +429,7 @@ export class Compiler {
     for (let i = 0; i < commentLists.length; i++) {
       if (commentLists[i]) {
         files[`ppt/comments/comment${i + 1}.xml`] = encoder.encode(
-          this.formatter.formatToXml(commentLists[i]!, context, declaration),
+          this.formatter.formatToXml(commentLists[i]!, context),
         );
       }
     }

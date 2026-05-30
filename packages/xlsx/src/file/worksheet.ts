@@ -193,6 +193,17 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
       },
     ];
 
+    // Dimension — defines the used range of the sheet
+    const maxRow = this.rows.length;
+    let maxCol = 0;
+    for (const row of this.rows) {
+      if (row.cells && row.cells.length > maxCol) maxCol = row.cells.length;
+    }
+    if (maxRow > 0 && maxCol > 0) {
+      const dimRef = `A1:${this.defaultCellRef(maxRow, maxCol)}`;
+      children.push({ dimension: { _attr: { ref: dimRef } } });
+    }
+
     // Sheet views (freeze panes) — must come before cols per XSD sequence
     if (this.freezePanes) {
       const fp = this.freezePanes;
@@ -219,7 +230,13 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
           },
         ],
       });
+    } else {
+      children.push({
+        sheetViews: [{ sheetView: [{ _attr: { tabSelected: 1, workbookViewId: 0 } }] }],
+      });
     }
+
+    children.push({ sheetFormatPr: { _attr: { defaultRowHeight: 15 } } });
 
     // Column definitions (after sheetViews, before sheetData)
     if (this.columns.length > 0) {
@@ -337,6 +354,12 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
       children.push({ dataValidations: dvElements });
     }
 
+    children.push({
+      pageMargins: {
+        _attr: { left: 0.75, right: 0.75, top: 1, bottom: 1, header: 0.5, footer: 0.5 },
+      },
+    });
+
     return { worksheet: children };
   }
 
@@ -355,7 +378,18 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
       '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">',
     ];
 
-    // Sheet views (freeze panes)
+    // Dimension — defines the used range of the sheet
+    const maxRow = this.rows.length;
+    let maxCol = 0;
+    for (const row of this.rows) {
+      if (row.cells && row.cells.length > maxCol) maxCol = row.cells.length;
+    }
+    if (maxRow > 0 && maxCol > 0) {
+      const dimRef = `A1:${this.defaultCellRef(maxRow, maxCol)}`;
+      p.push(`<dimension ref="${dimRef}"/>`);
+    }
+
+    // Sheet views
     if (this.freezePanes) {
       const fp = this.freezePanes;
       const ySplit = fp.row ? fp.row : 0;
@@ -370,7 +404,13 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
         `<pane ySplit="${ySplit}" xSplit="${xSplit}" topLeftCell="${topLeftCell}" activePane="${activePane}" state="frozen"/>`,
         "</sheetView></sheetViews>",
       );
+    } else {
+      // Default sheetView (required by Excel)
+      p.push('<sheetViews><sheetView tabSelected="1" workbookViewId="0"/></sheetViews>');
     }
+
+    // Sheet format — default row height
+    p.push('<sheetFormatPr defaultRowHeight="15"/>');
 
     // Column definitions
     if (this.columns.length > 0) {
@@ -416,7 +456,7 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
         }
         p.push(`<row${attrs(rowAttrs)}>`, ...rowParts, "</row>");
       } else {
-        p.push(`<row${attrs(rowAttrs)}></row>`);
+        p.push(`<row${attrs(rowAttrs)}/>`);
       }
     }
     p.push("</sheetData>");
@@ -486,6 +526,7 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
       p.push("</dataValidations>");
     }
 
+    p.push('<pageMargins left="0.75" right="0.75" top="1" bottom="1" header="0.5" footer="0.5"/>');
     p.push("</worksheet>");
     return p.join("");
   }

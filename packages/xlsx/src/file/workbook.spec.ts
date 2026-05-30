@@ -10,16 +10,16 @@ describe("WorkbookXml", () => {
     const tree = new Formatter().format(new WorkbookXml(sheets));
 
     const workbook = tree["workbook"] as any[];
-    // _attr + sheets
-    expect(workbook).toHaveLength(2);
+    // _attr + bookViews + sheets + calcPr
+    expect(workbook).toHaveLength(4);
 
     // Check namespace
     expect(workbook[0]["_attr"]["xmlns"]).toBe(
       "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
     );
 
-    // Check sheet element
-    const sheetElements = workbook[1]["sheets"] as any[];
+    // Check sheet element (index 2: _attr=0, bookViews=1, sheets=2, calcPr=3)
+    const sheetElements = workbook[2]["sheets"] as any[];
     expect(sheetElements).toHaveLength(1);
     expect(sheetElements[0]).to.deep.equal({
       sheet: { _attr: { name: "Sheet1", sheetId: "1", "r:id": "rId1" } },
@@ -35,7 +35,7 @@ describe("WorkbookXml", () => {
     const tree = new Formatter().format(new WorkbookXml(sheets));
 
     const workbook = tree["workbook"] as any[];
-    const sheetElements = workbook[1]["sheets"] as any[];
+    const sheetElements = workbook[2]["sheets"] as any[];
     expect(sheetElements).toHaveLength(3);
   });
 
@@ -46,7 +46,7 @@ describe("WorkbookXml", () => {
     const tree = new Formatter().format(new WorkbookXml(sheets));
 
     const workbook = tree["workbook"] as any[];
-    const sheetElements = workbook[1]["sheets"] as any[];
+    const sheetElements = workbook[2]["sheets"] as any[];
     expect(sheetElements[0]["sheet"]["_attr"]["state"]).toBe("hidden");
   });
 
@@ -57,7 +57,7 @@ describe("WorkbookXml", () => {
     const tree = new Formatter().format(new WorkbookXml(sheets));
 
     const workbook = tree["workbook"] as any[];
-    const sheetElements = workbook[1]["sheets"] as any[];
+    const sheetElements = workbook[2]["sheets"] as any[];
     expect(sheetElements[0]["sheet"]["_attr"]["state"]).toBeUndefined();
   });
 });

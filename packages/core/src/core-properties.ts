@@ -87,7 +87,7 @@ export function buildCorePropertiesXml(opts: {
   if (opts.creator) children.push({ "dc:creator": [opts.creator] });
   if (opts.keywords) children.push({ "cp:keywords": [opts.keywords] });
   if (opts.description) children.push({ "dc:description": [opts.description] });
-  if (opts.lastModifiedBy) children.push({ "cp:lastModifiedBy": [opts.lastModifiedBy] });
+  children.push({ "cp:lastModifiedBy": [opts.lastModifiedBy || opts.creator || "Unknown"] });
   if (opts.revision) children.push({ "cp:revision": [String(opts.revision)] });
 
   const now = new Date().toISOString();
@@ -119,8 +119,9 @@ export function buildCorePropertiesXmlString(opts: {
   if (opts.creator) p.push(`<dc:creator>${escapeXml(opts.creator)}</dc:creator>`);
   if (opts.keywords) p.push(`<cp:keywords>${escapeXml(opts.keywords)}</cp:keywords>`);
   if (opts.description) p.push(`<dc:description>${escapeXml(opts.description)}</dc:description>`);
-  if (opts.lastModifiedBy)
-    p.push(`<cp:lastModifiedBy>${escapeXml(opts.lastModifiedBy)}</cp:lastModifiedBy>`);
+  p.push(
+    `<cp:lastModifiedBy>${escapeXml(opts.lastModifiedBy || opts.creator || "Unknown")}</cp:lastModifiedBy>`,
+  );
   if (opts.revision) p.push(`<cp:revision>${opts.revision}</cp:revision>`);
 
   const now = new Date().toISOString();

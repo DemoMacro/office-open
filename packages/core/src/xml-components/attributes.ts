@@ -71,4 +71,9 @@ export class NextAttributeComponent<T> extends BaseXmlComponent {
     }
     return { _attr: attrs };
   }
+
+  /** Attribute components produce no XML output — attrs are inlined by the parent. */
+  public override toXml(_context: Context): string {
+    return "";
+  }
 }
