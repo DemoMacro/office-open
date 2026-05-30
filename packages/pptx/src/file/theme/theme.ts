@@ -134,10 +134,6 @@ export class DefaultTheme extends ImportedXmlComponent {
     }
   }
 
-  public prepForXml() {
-    return DefaultTheme.cache.get(this.cacheKey)!.prepForXml({ stack: [] });
-  }
-
   public override toXml(context: any): string {
     return DefaultTheme.cache.get(this.cacheKey)!.toXml(context);
   }

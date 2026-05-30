@@ -1,7 +1,7 @@
 import { escapeXml } from "@office-open/xml";
 
 import { BaseXmlComponent } from "../xml-components/base";
-import type { Context, IXmlableObject } from "../xml-components/base";
+import type { Context } from "../xml-components/base";
 
 export type RelationshipType =
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"
@@ -64,10 +64,6 @@ interface RelationshipEntry {
   readonly targetMode?: string;
 }
 
-const RELS_ATTRS: IXmlableObject = {
-  _attr: { xmlns: "http://schemas.openxmlformats.org/package/2006/relationships" },
-};
-
 export class Relationships extends BaseXmlComponent {
   private entries: RelationshipEntry[] = [];
 
@@ -104,23 +100,5 @@ export class Relationships extends BaseXmlComponent {
     }
     p.push("</Relationships>");
     return p.join("");
-  }
-
-  public override prepForXml(_context: Context): IXmlableObject {
-    const children: IXmlableObject[] = [RELS_ATTRS];
-    for (const e of this.entries) {
-      const attrs: Record<string, string> = {
-        Id: e.id,
-        Type: e.type,
-        Target: e.target,
-      };
-      if (e.targetMode) attrs.TargetMode = e.targetMode;
-      children.push({ Relationship: { _attr: attrs } });
-    }
-    // Unwrap single _attr child (matches XmlComponent.prepForXml behavior)
-    if (children.length === 1 && "_attr" in children[0]) {
-      return { Relationships: children[0] };
-    }
-    return { Relationships: children };
   }
 }

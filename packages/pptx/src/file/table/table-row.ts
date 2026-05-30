@@ -1,5 +1,5 @@
 import { BaseXmlComponent } from "@file/xml-components";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 
 import { TableCell, type TableCellOptions } from "./table-cell";
 
@@ -18,19 +18,6 @@ export class TableRow extends BaseXmlComponent {
   public constructor(options: TableRowOptions) {
     super("a:tr");
     this.options = options;
-  }
-
-  public override prepForXml(context: Context): IXmlableObject {
-    const children: IXmlableObject[] = [];
-    children.push({ _attr: { h: this.options.height ?? 0 } });
-
-    for (const cell of this.options.cells) {
-      const tc = new TableCell(cell);
-      const obj = tc.prepForXml(context);
-      if (obj) children.push(obj);
-    }
-
-    return { "a:tr": children };
   }
 
   public override toXml(context: Context): string {

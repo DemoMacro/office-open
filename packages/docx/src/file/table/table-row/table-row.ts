@@ -5,8 +5,8 @@
  *
  * @module
  */
-import { BaseXmlComponent, EMPTY_OBJECT } from "@file/xml-components";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import { BaseXmlComponent } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 import { xml } from "@office-open/xml";
 
 import { StructuredDocumentTagCell } from "../../sdt";
@@ -138,36 +138,6 @@ export class TableRow extends BaseXmlComponent {
       colIdx += child instanceof TableCell ? child.options.columnSpan || 1 : 1;
     }
     return idx;
-  }
-
-  public prepForXml(context: Context): IXmlableObject | undefined {
-    const children: IXmlableObject[] = [];
-
-    if (this.options.propertyExceptions) {
-      const obj = new TablePropertyExceptions(this.options.propertyExceptions).prepForXml(context);
-      if (obj) children.push(obj);
-    }
-
-    const trPrObj = buildTableRowProperties(this.options);
-    if (trPrObj) children.push(trPrObj);
-
-    const prefixCount = children.length;
-
-    for (const child of this.coercedChildren) {
-      const obj = child.prepForXml(context);
-      if (obj) children.push(obj);
-    }
-
-    // Insert extra CONTINUE cells at their designated column positions
-    if (this.extraCells.length > 0) {
-      for (const { cell, columnIndex } of this.extraCells) {
-        const insertIdx = this.findInsertIndex(columnIndex, prefixCount);
-        const obj = cell.prepForXml(context);
-        if (obj) children.splice(insertIdx, 0, obj);
-      }
-    }
-
-    return { "w:tr": children.length ? children : EMPTY_OBJECT };
   }
 
   public override toXml(context: Context): string {

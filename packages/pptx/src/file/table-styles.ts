@@ -10,10 +10,6 @@ export class TableStyles extends ImportedXmlComponent {
     super("a:tblStyleLst");
   }
 
-  public prepForXml() {
-    return TableStyles.instance.prepForXml({ stack: [] });
-  }
-
   public override toXml(context: Context): string {
     return TableStyles.instance.toXml(context);
   }

@@ -1,5 +1,5 @@
 import { BaseXmlComponent } from "@file/xml-components";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 
 import type { CellBorderOptions } from "./table-cell-properties";
 import { TableGrid } from "./table-grid";
@@ -33,44 +33,6 @@ export class DrawingTable extends BaseXmlComponent {
   public constructor(options: DrawingTableOptions) {
     super("a:tbl");
     this.options = options;
-  }
-
-  public override prepForXml(context: Context): IXmlableObject {
-    const opts = this.options;
-    const children: IXmlableObject[] = [];
-
-    // a:tblPr
-    const tblPr = new TableProperties({
-      firstRow: opts.firstRow,
-      lastRow: opts.lastRow,
-      bandRow: opts.bandRow,
-      firstCol: opts.firstCol,
-      lastCol: opts.lastCol,
-      bandCol: opts.bandCol,
-    });
-    const tblPrObj = tblPr.prepForXml(context);
-    if (tblPrObj) children.push(tblPrObj);
-
-    // a:tblGrid
-    const colWidths =
-      opts.columnWidths && opts.columnWidths.length > 0
-        ? opts.columnWidths
-        : Array.from({ length: opts.rows[0]?.cells.length ?? 1 }, () => 0);
-    const grid = new TableGrid(colWidths);
-    const gridObj = grid.prepForXml(context);
-    if (gridObj) children.push(gridObj);
-
-    // a:tr rows — distribute table-level borders to edge cells
-    const rowCount = opts.rows.length;
-    for (let ri = 0; ri < rowCount; ri++) {
-      const row = opts.rows[ri];
-      const cells = this.distributeBorders(row, ri, rowCount, opts.borders);
-      const tr = new TableRow({ ...row, cells });
-      const trObj = tr.prepForXml(context);
-      if (trObj) children.push(trObj);
-    }
-
-    return { "a:tbl": children };
   }
 
   public override toXml(context: Context): string {

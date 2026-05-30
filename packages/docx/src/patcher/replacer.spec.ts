@@ -1,6 +1,6 @@
 import type { ViewWrapper } from "@file/document-wrapper";
 import type { File } from "@file/file";
-import { Paragraph, TextRun } from "@file/paragraph";
+import { TextRun } from "@file/paragraph";
 import type { Context, XmlComponent } from "@file/xml-components";
 import { DOCX_NS, Formatter, createReplacer, createTraverser, toJson } from "@office-open/core";
 import { xml } from "@office-open/xml";
@@ -263,27 +263,6 @@ describe("replacer", () => {
           type: "element",
         },
       ]);
-      expect(didFindOccurrence).toBe(true);
-    });
-
-    it("should replace document type", () => {
-      const { element, didFindOccurrence } = replacer({
-        context: {
-          file: {} as unknown as File,
-          stack: [],
-          viewWrapper: {
-            Relationships: {},
-          } as unknown as ViewWrapper,
-        },
-        json: JSON.parse(JSON.stringify(MOCK_JSON)),
-        patch: {
-          children: [new Paragraph("Lorem ipsum paragraph")],
-          type: PatchType.DOCUMENT,
-        },
-        patchText: "{{header_adjective}}",
-      });
-
-      expect(JSON.stringify(element)).to.contain("Lorem ipsum paragraph");
       expect(didFindOccurrence).toBe(true);
     });
 

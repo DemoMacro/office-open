@@ -5,7 +5,7 @@ import { ShapeProperties } from "@file/drawingml/shape-properties";
 import type { ShapePropertiesOptions } from "@file/drawingml/shape-properties";
 import type { File } from "@file/file";
 import { XmlComponent as Xc } from "@file/xml-components";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 import { escapeXml } from "@office-open/xml";
 import { emuPositionOptional } from "@util/position";
 
@@ -32,15 +32,6 @@ export interface ShapeOptions {
 }
 
 /**
- * Pure function: builds p:ph element for placeholder.
- */
-function buildPlaceholder(type: string, index?: number): IXmlableObject {
-  const attrs: Record<string, string | number> = { type };
-  if (index !== undefined) attrs.idx = index;
-  return { "p:ph": { _attr: attrs } };
-}
-
-/**
  * p:sp — A shape on a slide.
  * Lazy: stores options, builds XML object in prepForXml.
  *
@@ -59,47 +50,6 @@ export class Shape extends Xc {
     this.shapeId = id;
     this.animation = options.animation;
     this.options = { ...options, id };
-  }
-
-  public override prepForXml(context: Context): IXmlableObject | undefined {
-    const opts = this.options;
-    const id = this.shapeId;
-    const name = opts.name ?? `Shape ${id}`;
-    const children: IXmlableObject[] = [];
-
-    // nvSpPr
-    const nvPrChildren: IXmlableObject[] = [];
-    if (opts.placeholder) {
-      nvPrChildren.push(buildPlaceholder(opts.placeholder, opts.placeholderIndex));
-    }
-    children.push({
-      "p:nvSpPr": [
-        { "p:cNvPr": { _attr: { id, name } } },
-        { "p:cNvSpPr": {} },
-        { "p:nvPr": nvPrChildren.length > 0 ? nvPrChildren : {} },
-      ],
-    });
-
-    // spPr (ShapeProperties)
-    const shapeProps: ShapePropertiesOptions = {
-      ...emuPositionOptional(opts),
-      geometry: opts.geometry,
-      fill: opts.fill,
-      outline: opts.outline,
-      effects: opts.effects,
-      flipHorizontal: opts.flipHorizontal,
-      rotation: opts.rotation,
-    };
-    const spPr = new ShapeProperties(shapeProps);
-    const spPrObj = spPr.prepForXml(context as Context<File>);
-    if (spPrObj) children.push(spPrObj);
-
-    // txBody (TextBody)
-    const txBody = new TextBody(opts.textBody ?? {});
-    const txBodyObj = txBody.prepForXml(context);
-    if (txBodyObj) children.push(txBodyObj);
-
-    return { "p:sp": children };
   }
 
   public override toXml(context: Context): string {

@@ -34,10 +34,6 @@ export class DefaultNotesMaster extends ImportedXmlComponent {
     super("p:notesMaster");
   }
 
-  public prepForXml() {
-    return DefaultNotesMaster.instance.prepForXml({ stack: [] });
-  }
-
   public override toXml(context: Context): string {
     return DefaultNotesMaster.instance.toXml(context);
   }

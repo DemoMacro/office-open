@@ -1,8 +1,7 @@
 import { XmlComponent } from "@file/xml-components";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 import { xml } from "@office-open/xml";
 
-import { buildEndParagraphRunProperties } from "./end-paragraph-run";
 import type { ParagraphPropertiesOptions } from "./paragraph-properties";
 import { buildParagraphProperties } from "./paragraph-properties";
 import { TextRun } from "./run";
@@ -25,33 +24,6 @@ export class Paragraph extends XmlComponent {
   public constructor(options: string | ParagraphOptions = {}) {
     super("a:p");
     this.options = typeof options === "string" ? { text: options } : options;
-  }
-
-  public prepForXml(context: Context): IXmlableObject | undefined {
-    const children: IXmlableObject[] = [];
-
-    const pPr = buildParagraphProperties(this.options.properties ?? {});
-    if (pPr) children.push(pPr);
-
-    if (this.options.text) {
-      const obj = new TextRun(this.options.text).prepForXml(context);
-      if (obj) children.push(obj);
-    }
-
-    if (this.options.children) {
-      for (const rawChild of this.options.children) {
-        const child =
-          rawChild instanceof TextRun || rawChild instanceof XmlComponent
-            ? rawChild
-            : new TextRun(rawChild);
-        const obj = child.prepForXml(context);
-        if (obj) children.push(obj);
-      }
-    }
-
-    children.push(buildEndParagraphRunProperties());
-
-    return { "a:p": children };
   }
 
   public override toXml(context: Context): string {

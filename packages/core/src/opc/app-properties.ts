@@ -11,10 +11,6 @@ export class AppProperties extends ImportedXmlComponent {
     super("Properties");
   }
 
-  public override prepForXml() {
-    return AppProperties.instance.prepForXml({ stack: [] } as any);
-  }
-
   public override toXml(_context: Context): string {
     return AppProperties.instance.toXml(_context);
   }

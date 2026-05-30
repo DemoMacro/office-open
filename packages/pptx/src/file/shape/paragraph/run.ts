@@ -1,5 +1,5 @@
 import { XmlComponent } from "@file/xml-components";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 import { escapeXml, xml } from "@office-open/xml";
 
 import type { RunPropertiesOptions } from "./run-properties";
@@ -19,29 +19,6 @@ export class TextRun extends XmlComponent {
   public constructor(options: RunOptions | string = {}) {
     super("a:r");
     this.options = typeof options === "string" ? { text: options } : options;
-  }
-
-  public prepForXml(context: Context): IXmlableObject | undefined {
-    const children: IXmlableObject[] = [];
-
-    if (RunProperties.hasProperties(this.options)) {
-      const rPr = new RunProperties(this.options);
-      const rPrObj = rPr.prepForXml(context);
-      if (rPrObj) children.push(rPrObj);
-    }
-
-    if (this.options.text) {
-      children.push({ "a:t": [this.options.text] });
-    }
-
-    return {
-      "a:r":
-        children.length === 0
-          ? {}
-          : children.length === 1 && "_attr" in children[0]
-            ? children[0]
-            : children,
-    };
   }
 
   /**

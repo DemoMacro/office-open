@@ -149,10 +149,6 @@ export class ParagraphProperties extends XmlComponent {
     this.options = options;
   }
 
-  public prepForXml(_context: Context): IXmlableObject | undefined {
-    return buildParagraphProperties(this.options);
-  }
-
   public override toXml(_context: Context): string {
     const obj = buildParagraphProperties(this.options);
     return obj ? xml(obj) : "";

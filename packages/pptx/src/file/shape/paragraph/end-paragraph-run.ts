@@ -22,10 +22,6 @@ export class EndParagraphRunProperties extends BuilderElement<{
     this.lang = lang;
   }
 
-  public override prepForXml(_context: Context): IXmlableObject | undefined {
-    return buildEndParagraphRunProperties(this.lang);
-  }
-
   public override toXml(_context: Context): string {
     return `<a:endParaRPr lang="${this.lang}"/>`;
   }

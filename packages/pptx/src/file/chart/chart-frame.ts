@@ -1,6 +1,6 @@
 import { Transform2D } from "@file/drawingml/transform-2d";
 import { BuilderElement, NextAttributeComponent, XmlComponent } from "@file/xml-components";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 import { emuPosition } from "@util/position";
 
 import { ChartCollection } from "./chart-collection";
@@ -55,11 +55,6 @@ export class Chart extends XmlComponent {
         key: this.chartKey,
       });
     }
-  }
-
-  public prepForXml(context: Context): IXmlableObject | undefined {
-    this.registerChart(context);
-    return super.prepForXml(context);
   }
 
   public override toXml(context: Context): string {

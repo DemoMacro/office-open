@@ -74,11 +74,6 @@ export class Picture extends XmlComponent {
     (context.fileData as File)?.media.addImage(this.imageData.fileName, this.imageData);
   }
 
-  public override prepForXml(context: Context) {
-    this.registerMedia(context);
-    return super.prepForXml(context);
-  }
-
   public override toXml(context: Context): string {
     this.registerMedia(context);
     return super.toXml(context);

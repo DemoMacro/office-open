@@ -4,7 +4,6 @@ import { coerceMasterChild } from "@file/slide/coerce";
 import type { Context } from "@file/xml-components";
 import { ImportedXmlComponent } from "@file/xml-components";
 import { convertPixelsToEmu } from "@office-open/core";
-import { xml } from "@office-open/xml";
 
 export type SlideLayoutType =
   | "blank"
@@ -322,8 +321,8 @@ function buildChildrenXml(children?: readonly MasterChild[]): string {
   const ctx: Context = { stack: [] };
   let result = "";
   for (const child of children) {
-    const obj = coerceMasterChild(child).prepForXml(ctx);
-    if (obj) result += xml(obj);
+    const xmlStr = coerceMasterChild(child).toXml(ctx);
+    if (xmlStr) result += xmlStr;
   }
   return result;
 }
@@ -438,10 +437,6 @@ export class SlideLayout extends ImportedXmlComponent {
         );
       }
     }
-  }
-
-  public prepForXml() {
-    return SlideLayout.cache.get(this.cacheKey)!.prepForXml({ stack: [] });
   }
 
   public override toXml(context: Context): string {

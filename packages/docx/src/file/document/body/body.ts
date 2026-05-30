@@ -7,7 +7,7 @@
  */
 import { Paragraph } from "@file/paragraph";
 import { BaseXmlComponent, XmlComponent } from "@file/xml-components";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 
 import { SectionProperties } from "./section-properties/section-properties";
 import type { ISectionPropertiesOptions } from "./section-properties/section-properties";
@@ -79,24 +79,6 @@ export class Body extends XmlComponent {
     this.root.push(this.createSectionParagraph(currentSection));
 
     this.sections.push(new SectionProperties(options));
-  }
-
-  /**
-   * Prepares the body element for XML serialization.
-   *
-   * Ensures that the last section's properties are placed as a direct child of the body
-   * element, as required by the OOXML specification.
-   *
-   * @param context - The XML serialization context
-   * @returns The prepared XML object or undefined
-   */
-  public prepForXml(context: Context): IXmlableObject | undefined {
-    if (this.sections.length === 1) {
-      this.root.splice(0, 1);
-      this.root.push(this.sections.pop() as SectionProperties);
-    }
-
-    return super.prepForXml(context);
   }
 
   /**

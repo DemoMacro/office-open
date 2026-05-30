@@ -1,5 +1,5 @@
 import { XmlComponent } from "@file/xml-components";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 import {
   createGroupTransform2D,
   type GroupTransform2DOptions as CoreGroupTransform2DOptions,
@@ -18,10 +18,6 @@ export class GroupTransform2D extends XmlComponent {
   public constructor(options: IGroupTransform2DOptions, prefix: "a" | "p" = "a") {
     super(`${prefix}:xfrm`);
     this.core = createGroupTransform2D(options, `${prefix}:xfrm`);
-  }
-
-  public override prepForXml(context: Context): IXmlableObject | undefined {
-    return this.core["prepForXml"]?.(context);
   }
 
   public override toXml(context: Context): string {

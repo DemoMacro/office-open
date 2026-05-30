@@ -3,7 +3,6 @@ import {
   BuilderElement,
   NextAttributeComponent,
   type Context,
-  type IXmlableObject,
   XmlComponent,
 } from "@file/xml-components";
 import { emuPosition } from "@util/position";
@@ -74,11 +73,6 @@ export class SmartArt extends XmlComponent {
         color: this.colorId,
       });
     }
-  }
-
-  public prepForXml(context: Context): IXmlableObject | undefined {
-    this.registerSmartArt(context);
-    return super.prepForXml(context);
   }
 
   public override toXml(context: Context): string {

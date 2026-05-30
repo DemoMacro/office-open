@@ -31,10 +31,6 @@ export class ViewProperties extends ImportedXmlComponent {
     super("p:viewPr");
   }
 
-  public prepForXml() {
-    return ViewProperties.instance.prepForXml({ stack: [] });
-  }
-
   public override toXml(context: Context): string {
     return ViewProperties.instance.toXml(context);
   }

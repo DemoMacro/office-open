@@ -7,7 +7,7 @@
  */
 import type { FileChild } from "@file/file-child";
 import { BaseXmlComponent } from "@file/xml-components";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 
 import type { AlignmentType } from "../paragraph";
 import { StructuredDocumentTagRow } from "../sdt";
@@ -144,43 +144,6 @@ export class Table extends BaseXmlComponent implements FileChild {
         columnIndex += cell.options.columnSpan || 1;
       });
     });
-  }
-
-  public prepForXml(context: Context): IXmlableObject | undefined {
-    const children: IXmlableObject[] = [];
-
-    const tblPr = new TableProperties({
-      alignment: this.options.alignment,
-      borders: this.options.borders ?? {},
-      caption: this.options.caption,
-      cellMargin: this.options.margins,
-      cellSpacing: this.options.cellSpacing,
-      description: this.options.description,
-      float: this.options.float,
-      indent: this.options.indent,
-      layout: this.options.layout,
-      revision: this.options.revision,
-      style: this.options.style,
-      styleColBandSize: this.options.styleColBandSize,
-      styleRowBandSize: this.options.styleRowBandSize,
-      tableLook: this.options.tableLook,
-      visuallyRightToLeft: this.options.visuallyRightToLeft,
-      width: this.options.width ?? { size: 100 },
-    });
-    const tblPrObj = tblPr.prepForXml(context);
-    if (tblPrObj) children.push(tblPrObj);
-
-    const gridObj = new TableGrid(this.columnWidths, this.options.columnWidthsRevision).prepForXml(
-      context,
-    );
-    if (gridObj) children.push(gridObj);
-
-    for (const row of this.rows) {
-      const obj = row.prepForXml(context);
-      if (obj) children.push(obj);
-    }
-
-    return { "w:tbl": children };
   }
 
   public override toXml(context: Context): string {

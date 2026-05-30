@@ -8,7 +8,7 @@
 import type { FileChild } from "@file/file-child";
 import { Paragraph } from "@file/paragraph";
 import { BaseXmlComponent } from "@file/xml-components";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 import { xml } from "@office-open/xml";
 
 import type { StructuredDocumentTagCell } from "../../sdt";
@@ -71,30 +71,6 @@ export type TableCellOptions = {
 export class TableCell extends BaseXmlComponent {
   public constructor(public readonly options: TableCellOptions) {
     super("w:tc");
-  }
-
-  public prepForXml(context: Context): IXmlableObject | undefined {
-    const children: IXmlableObject[] = [];
-
-    const tPrObj = buildTableCellProperties(this.options);
-    if (tPrObj) children.push(tPrObj);
-
-    const coerced = this.options.children.map((c) =>
-      c instanceof BaseXmlComponent ? c : lazyCoerce(c),
-    );
-
-    for (const child of coerced) {
-      const obj = child.prepForXml(context);
-      if (obj) children.push(obj);
-    }
-
-    // Cells must end with a paragraph
-    const last = coerced[coerced.length - 1];
-    if (!(last instanceof Paragraph)) {
-      children.push(new Paragraph({}).prepForXml(context)!);
-    }
-
-    return { "w:tc": children };
   }
 
   public override toXml(context: Context): string {

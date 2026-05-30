@@ -40,10 +40,6 @@ export class PresentationProperties extends ImportedXmlComponent {
     }
   }
 
-  public prepForXml() {
-    return PresentationProperties.cache.get(this.key)!.prepForXml({ stack: [] });
-  }
-
   public override toXml(context: Context): string {
     return PresentationProperties.cache.get(this.key)!.toXml(context);
   }

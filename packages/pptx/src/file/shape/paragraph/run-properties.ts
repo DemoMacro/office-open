@@ -156,53 +156,6 @@ export class RunProperties extends XmlComponent {
     this.options = options;
   }
 
-  public prepForXml(context: Context): IXmlableObject | undefined {
-    const opts = this.options;
-
-    // Register hyperlinks (B-level: side effect on context)
-    let hyperlinkKey: string | undefined;
-    if (opts.hyperlink) {
-      hyperlinkKey = `hlink_${nextHyperlinkId++}`;
-      const file = context.fileData as {
-        hyperlinks?: { addHyperlink(key: string, url: string, tooltip?: string): void };
-      };
-      file?.hyperlinks?.addHyperlink(hyperlinkKey, opts.hyperlink.url, opts.hyperlink.tooltip);
-    }
-
-    // Handle fill (needs context for prepForXml)
-    let fillObj: IXmlableObject | undefined;
-    if (opts.fill !== undefined) {
-      fillObj = buildFill(opts.fill).prepForXml(context) ?? undefined;
-    }
-
-    // Handle outline
-    let outlineObj: IXmlableObject | undefined;
-    if (opts.outline) {
-      outlineObj =
-        createOutline({
-          width: DEFAULT_OUTLINE_WIDTH,
-          type: "solidFill",
-          color: { value: "000000" },
-        }).prepForXml(context) ?? undefined;
-    }
-
-    // Handle shadow
-    let effectListObj: IXmlableObject | undefined;
-    if (opts.shadow) {
-      effectListObj =
-        createEffectList({
-          outerShadow: {
-            blurRadius: DEFAULT_SHADOW_BLUR_RADIUS,
-            distance: DEFAULT_SHADOW_DISTANCE,
-            direction: DEFAULT_SHADOW_DIRECTION,
-            color: { value: "000000", transforms: { alpha: DEFAULT_SHADOW_ALPHA } },
-          },
-        }).prepForXml(context) ?? undefined;
-    }
-
-    return buildRunProperties(opts, hyperlinkKey, fillObj, effectListObj, outlineObj);
-  }
-
   public override toXml(context: Context): string {
     const opts = this.options;
 

@@ -1,5 +1,5 @@
 import { XmlComponent } from "@file/xml-components";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 import {
   createTransform2D,
   type Transform2DOptions as CoreTransform2DOptions,
@@ -17,10 +17,6 @@ export class Transform2D extends XmlComponent {
   public constructor(options: ITransform2DOptions, prefix: "a" | "p" = "a") {
     super(`${prefix}:xfrm`);
     this.core = createTransform2D(options, `${prefix}:xfrm`);
-  }
-
-  public override prepForXml(context: Context): IXmlableObject | undefined {
-    return this.core["prepForXml"]?.(context);
   }
 
   public override toXml(context: Context): string {

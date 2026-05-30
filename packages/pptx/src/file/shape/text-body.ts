@@ -73,36 +73,6 @@ export class TextBody extends XmlComponent {
     this.options = options;
   }
 
-  public prepForXml(context: Context): IXmlableObject | undefined {
-    const children: IXmlableObject[] = [];
-
-    children.push(buildBodyPr(this.options));
-    children.push({ "a:lstStyle": {} });
-
-    if (this.options.children) {
-      for (const p of this.options.children) {
-        const para =
-          typeof p === "string"
-            ? new Paragraph({ children: [new TextRun({ text: p })] })
-            : p instanceof Paragraph
-              ? p
-              : new Paragraph(p);
-        const obj = para.prepForXml(context);
-        if (obj) children.push(obj);
-      }
-    } else if (this.options.text !== undefined) {
-      const obj = new Paragraph({
-        children: [new TextRun({ text: this.options.text })],
-      }).prepForXml(context);
-      if (obj) children.push(obj);
-    } else {
-      const obj = new Paragraph().prepForXml(context);
-      if (obj) children.push(obj);
-    }
-
-    return { "p:txBody": children };
-  }
-
   public override toXml(context: Context): string {
     const parts: string[] = [];
 

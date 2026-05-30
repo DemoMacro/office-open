@@ -195,11 +195,6 @@ export abstract class MediaFrameBase extends XmlComponent {
     file?.media.addMedia(this.mediaData.fileName, this.mediaData);
   }
 
-  public override prepForXml(context: Context) {
-    this.registerMedia(context);
-    return super.prepForXml(context);
-  }
-
   public override toXml(context: Context): string {
     this.registerMedia(context);
     return super.toXml(context);

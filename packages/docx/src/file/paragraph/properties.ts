@@ -817,31 +817,7 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
   }
 
   /**
-   * Prepares the paragraph properties for XML serialization.
-   *
-   * This method creates concrete numbering instances for any numbering references
-   * before the properties are converted to XML.
-   *
-   * @param context - The XML context containing document and file information
-   * @returns The prepared XML object, or undefined if the component should be ignored
-   */
-  public prepForXml(context: Context): IXmlableObject | undefined {
-    if (!(context.viewWrapper instanceof FontWrapper)) {
-      for (const reference of this.numberingReferences) {
-        context.file.numbering.createConcreteNumberingInstance(
-          reference.reference,
-          reference.instance,
-        );
-      }
-    }
-
-    return super.prepForXml(context);
-  }
-
-  /**
    * Register numbering references (side effect) before serialization.
-   * toXml() bypasses prepForXml(), so numbering registration must be
-   * triggered explicitly here.
    */
   public override toXml(context: Context): string {
     // Trigger the same side effects as prepForXml() for numbering registration
