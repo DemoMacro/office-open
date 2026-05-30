@@ -12,6 +12,6 @@ import type { XmlComponent } from "@file/xml-components";
  */
 export const createPositionOffset = (offsetValue: number): XmlComponent =>
   new BuilderElement({
-    children: [offsetValue.toString() as any],
+    children: [offsetValue.toString()],
     name: "wp:posOffset",
   });

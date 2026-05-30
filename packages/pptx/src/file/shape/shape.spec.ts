@@ -1,18 +1,13 @@
-import { beforeEach, describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vite-plus/test";
 
 import { Shape } from "./shape";
 
-const context = { stack: [] } as any;
-
-// Shape uses a static nextId counter, so we reset it between tests
-beforeEach(() => {
-  (Shape as any).nextId = 2;
-});
+const context = { stack: [] };
 
 describe("Shape", () => {
   describe("toXml", () => {
     it("default constructor produces valid XML", () => {
-      const xml = new Shape().toXml(context);
+      const xml = new Shape({ id: 2 }).toXml(context);
       expect(xml).toContain("<p:sp>");
       expect(xml).toContain("</p:sp>");
       expect(xml).toContain('name="Shape 2"');

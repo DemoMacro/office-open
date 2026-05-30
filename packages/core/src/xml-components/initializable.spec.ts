@@ -25,7 +25,7 @@ describe("InitializableXmlComponent", () => {
     }
 
     const source = new TestEl();
-    (source as any).root.push("content");
+    source.root.push("content");
 
     const copy = new TestEl(source);
     expect(copy.prepForXml(emptyContext)).toEqual({ "w:p": ["content"] });

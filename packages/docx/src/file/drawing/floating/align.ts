@@ -18,6 +18,6 @@ export const createAlign = (
     | (typeof VerticalPositionAlign)[keyof typeof VerticalPositionAlign],
 ): XmlComponent =>
   new BuilderElement({
-    children: [value as any],
+    children: [value],
     name: "wp:align",
   });

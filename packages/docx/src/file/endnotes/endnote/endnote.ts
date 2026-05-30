@@ -28,7 +28,7 @@ export class Endnote extends XmlComponent {
       const child = options.children[i];
 
       if (i === 0 && "addRunToFront" in child) {
-        (child as any).addRunToFront(new EndnoteRefRun());
+        (child as { addRunToFront: (run: unknown) => void }).addRunToFront(new EndnoteRefRun());
       }
 
       this.root.push(child);

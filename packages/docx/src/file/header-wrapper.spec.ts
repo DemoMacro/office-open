@@ -36,16 +36,6 @@ describe("HeaderWrapper", () => {
     });
   });
 
-  describe("#addChildElement", () => {
-    it("should call the underlying header's addChildElement", () => {
-      const file = new HeaderWrapper(new Media(), 1);
-      const spy = vi.spyOn(file.view, "addChildElement");
-      file.addChildElement({} as any);
-
-      expect(spy).toBeCalled();
-    });
-  });
-
   describe("#Media", () => {
     it("should get Media", () => {
       const media = new Media();

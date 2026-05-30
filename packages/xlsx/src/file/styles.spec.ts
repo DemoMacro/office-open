@@ -2,7 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import { Styles } from "./styles";
 
-const context = { stack: [] } as any;
+const context = { stack: [] };
 
 describe("Styles", () => {
   // ── register() deduplication ──

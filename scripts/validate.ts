@@ -211,7 +211,7 @@ function validateXml(validator: XsdValidator, xml: string): { pass: boolean; err
     return { pass: true };
   } catch (e) {
     if (e instanceof Error && "details" in e) {
-      const details = (e as any).details as Array<{
+      const details = e.details as Array<{
         message: string;
         line: number;
         col: number;

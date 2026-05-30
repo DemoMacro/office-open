@@ -3,7 +3,7 @@ import { describe, expect, it } from "vite-plus/test";
 import { Paragraph } from "./paragraph";
 import { TextRun } from "./run";
 
-const context = { stack: [] } as any;
+const context = { stack: [] };
 
 describe("Paragraph", () => {
   describe("toXml", () => {

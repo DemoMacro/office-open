@@ -2,7 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import { DrawingTable } from "./table";
 
-const context = { stack: [] } as any;
+const context = { stack: [] };
 
 // Helper: minimal row with N text cells
 function makeRows(...cellTexts: string[][]) {

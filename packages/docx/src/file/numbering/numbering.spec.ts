@@ -9,7 +9,7 @@ describe("Numbering", () => {
         config: [],
       });
 
-      const xml = numbering.toXml({ stack: [], file: null!, viewWrapper: null! } as any);
+      const xml = numbering.toXml({ stack: [], file: null!, viewWrapper: null! });
 
       expect(xml).to.contain("<w:numbering");
       expect(xml).to.contain("<w:abstractNum");

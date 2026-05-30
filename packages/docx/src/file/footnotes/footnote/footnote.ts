@@ -92,7 +92,7 @@ export class Footnote extends XmlComponent {
       const child = options.children[i];
 
       if (i === 0 && "addRunToFront" in child) {
-        (child as any).addRunToFront(new FootnoteRefRun());
+        (child as { addRunToFront: (run: unknown) => void }).addRunToFront(new FootnoteRefRun());
       }
 
       this.root.push(child);

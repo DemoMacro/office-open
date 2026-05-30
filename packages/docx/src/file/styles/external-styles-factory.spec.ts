@@ -48,16 +48,18 @@ describe("External styles factory", () => {
 
   describe("#parse", () => {
     it("should parse w:styles attributes", () => {
-      const importedStyle = new ExternalStylesFactory().newInstance(externalStyles) as any;
+      const importedStyle = new ExternalStylesFactory().newInstance(externalStyles);
 
-      expect(importedStyle.initialStyles._attr).to.deep.equal({
+      expect(
+        (importedStyle.initialStyles as { _attr: Record<string, string> })._attr,
+      ).to.deep.equal({
         "xmlns:mc": "first",
         "xmlns:r": "second",
       });
     });
 
     it("should parse other child elements of w:styles", () => {
-      const importedStyle = new ExternalStylesFactory().newInstance(externalStyles) as any;
+      const importedStyle = new ExternalStylesFactory().newInstance(externalStyles);
       const importedStyles = importedStyle.importedStyles!;
 
       expect(JSON.parse(JSON.stringify(importedStyles[0]))).to.deep.equal({
@@ -152,13 +154,13 @@ describe("External styles factory", () => {
             <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
             <w:styles xmlns:mc="first" xmlns:r="second">
             </w:styles>`;
-      const importedStyle = new ExternalStylesFactory().newInstance(emptyStyles) as any;
+      const importedStyle = new ExternalStylesFactory().newInstance(emptyStyles);
 
       expect(importedStyle.importedStyles).to.deep.equal([]);
     });
 
     it("should parse styles elements", () => {
-      const importedStyle = new ExternalStylesFactory().newInstance(externalStyles) as any;
+      const importedStyle = new ExternalStylesFactory().newInstance(externalStyles);
       const importedStyles = importedStyle.importedStyles!;
 
       expect(importedStyles.length).to.equal(4);

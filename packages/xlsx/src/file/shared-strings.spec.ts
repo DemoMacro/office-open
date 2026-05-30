@@ -2,7 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import { SharedStrings } from "./shared-strings";
 
-const context = { stack: [] } as any;
+const context = { stack: [] };
 
 describe("SharedStrings", () => {
   it("register() returns incrementing indices", () => {
