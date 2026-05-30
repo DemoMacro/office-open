@@ -12,6 +12,7 @@ import type { FootnoteReferenceRun } from "@file/footnotes/footnote/run/referenc
 import type { FieldInstruction } from "@file/table-of-contents/field-instruction";
 import { BaseXmlComponent } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
+import { xml } from "@office-open/xml";
 
 import { createBreak } from "./break";
 import type {
@@ -218,5 +219,16 @@ export class Run extends BaseXmlComponent {
     }
 
     return { "w:r": children.length > 0 ? children : {} };
+  }
+
+  /**
+   * Fast path: pre-built object → xml() string. Slow path: prepForXml → xml.
+   */
+  public override toXml(context: Context): string {
+    if (this._prebuilt && this.extraChildren.length === 0) {
+      return xml(this._prebuilt);
+    }
+    const obj = this.prepForXml(context);
+    return obj ? xml(obj) : "";
   }
 }

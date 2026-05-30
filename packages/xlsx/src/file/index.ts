@@ -1,0 +1,28 @@
+/**
+ * File module — public exports for XLSX document components.
+ *
+ * @module
+ */
+export { File, type WorkbookOptions } from "./file";
+export { SharedStrings } from "./shared-strings";
+export { Styles } from "./styles";
+export type {
+  StyleOptions,
+  FontOptions,
+  FillOptions,
+  BorderSideOptions,
+  BorderOptions,
+  AlignmentOptions,
+} from "./styles";
+export type {
+  WorksheetOptions,
+  RowOptions,
+  CellOptions,
+  ColumnOptions,
+  MergeCellOptions,
+  FreezePaneOptions,
+  WorksheetChartOptions,
+  DataValidationOptions,
+  ConditionalFormatOptions,
+} from "./worksheet";
+export type { CorePropertiesOptions } from "./core-properties";

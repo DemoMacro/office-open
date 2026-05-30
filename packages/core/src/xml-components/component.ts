@@ -3,7 +3,7 @@
  *
  * @module
  */
-import { xml } from "@office-open/xml";
+import { escapeXml, xml } from "@office-open/xml";
 
 import { BaseXmlComponent } from "./base";
 import type { Context, IXmlableObject } from "./base";
@@ -17,6 +17,11 @@ export const EMPTY_OBJECT = Object.seal({});
 
 /**
  * Base class for all XML components in OOXML documents.
+ *
+ * `toXml()` traverses the `root` array and calls `toXml()` on each
+ * `BaseXmlComponent` child — this avoids building the intermediate
+ * `IXmlableObject` tree. Inline `IXmlableObject` children fall back to
+ * `xml()` for serialization.
  */
 export abstract class XmlComponent extends BaseXmlComponent {
   /**
@@ -62,12 +67,42 @@ export abstract class XmlComponent extends BaseXmlComponent {
   }
 
   /**
-   * Direct XML serialization. Override in subclasses for zero-allocation output.
-   * Default falls back to prepForXml() + xml().
+   * Direct XML serialization — traverses `root` and calls `toXml()` on
+   * each child, concatenating the results into a single string.
    */
   public toXml(context: Context): string {
-    const obj = this.prepForXml(context);
-    return obj ? xml(obj) : "";
+    const childParts: string[] = [];
+    const attrParts: string[] = [];
+
+    for (const child of this.root) {
+      if (child instanceof BaseXmlComponent) {
+        const s = child.toXml(context);
+        if (s) childParts.push(s);
+      } else if (typeof child === "string") {
+        childParts.push(escapeXml(child));
+      } else if (child != null && typeof child === "object") {
+        if ("_attr" in child) {
+          const a = (child as { _attr: Record<string, unknown> })._attr;
+          for (const key of Object.keys(a)) {
+            attrParts.push(`${key}="${escapeXml(String(a[key]))}"`);
+          }
+        } else if ("_attributes" in child) {
+          const a = (child as { _attributes: Record<string, unknown> })._attributes;
+          for (const key of Object.keys(a)) {
+            attrParts.push(`${key}="${escapeXml(String(a[key]))}"`);
+          }
+        } else {
+          childParts.push(xml(child as Record<string, any>));
+        }
+      }
+    }
+
+    const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
+    const body = childParts.join("");
+
+    return body.length === 0
+      ? `<${this.rootKey}${attrStr}/>`
+      : `<${this.rootKey}${attrStr}>${body}</${this.rootKey}>`;
   }
 
   /**
@@ -104,5 +139,19 @@ export abstract class IgnoreIfEmptyXmlComponent extends XmlComponent {
     }
 
     return undefined;
+  }
+
+  /**
+   * Suppress empty elements — super.toXml() produces a self-closing tag
+   * (`<tag/>`) when there are no child elements; IgnoreIfEmpty returns ""
+   * in that case. Child components that already override toXml() (e.g.
+   * Worksheet) are unaffected.
+   */
+  public override toXml(context: Context): string {
+    if (this.includeIfEmpty) {
+      return super.toXml(context);
+    }
+    const result = super.toXml(context);
+    return result.endsWith("/>") ? "" : result;
   }
 }

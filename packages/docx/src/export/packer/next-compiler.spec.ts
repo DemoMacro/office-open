@@ -115,7 +115,7 @@ describe("Compiler", () => {
         { data: subfileData1, path: "word/comments.xml" },
         { data: subfileData2, path: "word/commentsExtended.xml" },
       ];
-      const zipFile = compiler.compile(file, "", overrides);
+      const zipFile = compiler.compile(file, overrides);
       const fileNames = Object.keys(zipFile);
 
       expect(fileNames).is.an.instanceof(Array);
@@ -138,7 +138,7 @@ describe("Compiler", () => {
         ],
       });
 
-      const spy = vi.spyOn(compiler["formatter"], "format");
+      const spy = vi.spyOn(compiler["formatter"], "formatToXml");
 
       compiler.compile(file);
       expect(spy).toBeCalledTimes(18);

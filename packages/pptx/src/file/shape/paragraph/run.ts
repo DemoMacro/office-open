@@ -1,8 +1,9 @@
 import { XmlComponent } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
+import { escapeXml, xml } from "@office-open/xml";
 
 import type { RunPropertiesOptions } from "./run-properties";
-import { RunProperties } from "./run-properties";
+import { RunProperties, buildRunProperties } from "./run-properties";
 
 export interface RunOptions extends RunPropertiesOptions {
   readonly text?: string;
@@ -41,5 +42,31 @@ export class TextRun extends XmlComponent {
             ? children[0]
             : children,
     };
+  }
+
+  /**
+   * Fast path: simple properties (no hyperlink/fill/shadow/outline) skip
+   * RunProperties.prepForXml() side effects and serialize directly.
+   * Complex path falls back to prepForXml → xml.
+   */
+  public override toXml(context: Context): string {
+    const opts = this.options;
+    const hasRPr = RunProperties.hasProperties(opts);
+
+    // Simple path: no side-effect-requiring properties
+    if (!hasRPr || (!opts.hyperlink && !opts.fill && !opts.shadow && !opts.outline)) {
+      let body = "";
+      if (hasRPr) {
+        const rPrObj = buildRunProperties(opts);
+        if (rPrObj) body += xml(rPrObj);
+      }
+      if (opts.text) {
+        body += `<a:t>${escapeXml(opts.text)}</a:t>`;
+      }
+      return body.length === 0 ? "<a:r/>" : `<a:r>${body}</a:r>`;
+    }
+
+    // Complex path: fallback to prepForXml → xml (handles hyperlink registration etc.)
+    return super.toXml(context);
   }
 }

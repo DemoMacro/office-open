@@ -172,6 +172,21 @@ orientation: horizontal
 }
 ```
 
+```json [XLSX]
+{
+    "worksheets": [
+        {
+            "name": "Sheet1",
+            "children": [
+                { "cells": [{ "value": "Name" }, { "value": "Score" }] },
+                { "cells": [{ "value": "Alice" }, { "value": 95 }] },
+                { "cells": [{ "value": "Bob" }, { "value": 88 }] }
+            ]
+        }
+    ]
+}
+```
+
 :::
 
 #title
@@ -199,6 +214,14 @@ Create PowerPoint presentations with shapes, animations, and transitions
 
 :::u-page-feature
 ---
+icon: i-lucide-table-2
+---
+#title{unwrap="p"}
+Create Excel spreadsheets with styles, charts, and data validation
+:::
+
+:::u-page-feature
+---
 icon: i-lucide-download
 ---
 #title{unwrap="p"}
@@ -211,6 +234,16 @@ Export to Buffer, Blob, Base64, stream, or string
 color: neutral
 label: Explore @office-open/docx
 to: /en/docx
+trailingIcon: i-lucide-arrow-right
+variant: subtle
+---
+:::
+
+:::u-button
+---
+color: neutral
+label: Explore @office-open/xlsx
+to: /en/xlsx
 trailingIcon: i-lucide-arrow-right
 variant: subtle
 ---
@@ -261,13 +294,31 @@ const result = await patchPresentation({
 });
 ```
 
+```ts [XLSX]
+import { parseWorkbook, patchWorkbook, PatchType } from "@office-open/xlsx";
+
+// Parse existing file
+const opts = parseWorkbook(buffer);
+// opts.worksheets — worksheet array
+// opts.styles — style definitions
+
+// Patch template placeholders
+const result = await patchWorkbook({
+  outputType: "nodebuffer",
+  data: buffer,
+  patches: {
+    name: { type: PatchType.CELL, value: "John Doe" },
+  },
+});
+```
+
 :::
 
 #title
 Read and [modify]{.text-(--ui-primary)} existing files
 
 #description
-Parse `.docx` and `.pptx` files into structured objects for inspection, or patch templates by replacing `{{placeholder}}` tokens with new content.
+Parse `.docx`, `.pptx`, and `.xlsx` files into structured objects for inspection, or patch templates by replacing `{{placeholder}}` tokens with new content.
 
 #features
 :::u-page-feature
@@ -300,6 +351,16 @@ Parse, modify, and re-export in a pipeline
 color: neutral
 label: Explore @office-open/pptx
 to: /en/pptx
+trailingIcon: i-lucide-arrow-right
+variant: subtle
+---
+:::
+
+:::u-button
+---
+color: neutral
+label: Explore @office-open/xlsx
+to: /en/xlsx
 trailingIcon: i-lucide-arrow-right
 variant: subtle
 ---

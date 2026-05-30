@@ -32,17 +32,11 @@ const ARROWHEAD_MAP: Record<string, (typeof LineEndType)[keyof typeof LineEndTyp
   open: "arrow",
 };
 
-const ARROWHEAD_SIZE_MAP: Record<string, (typeof LineEndWidth)[keyof typeof LineEndWidth]> = {
-  sm: "small",
-  med: "medium",
-  lg: "large",
-};
-
 function toCoreLineEnd(type: string, width?: string, length?: string): CoreLineEndOptions {
   return {
     type: ARROWHEAD_MAP[type] ?? "triangle",
-    ...(width ? { width: ARROWHEAD_SIZE_MAP[width] } : {}),
-    ...(length ? { length: ARROWHEAD_SIZE_MAP[length] } : {}),
+    ...(width ? { width: width as (typeof LineEndWidth)[keyof typeof LineEndWidth] } : {}),
+    ...(length ? { length: length as (typeof LineEndWidth)[keyof typeof LineEndWidth] } : {}),
   };
 }
 

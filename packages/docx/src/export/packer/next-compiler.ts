@@ -14,13 +14,21 @@ import {
   replaceImagePlaceholders,
   replaceSmartArtPlaceholders,
 } from "@office-open/core";
-import type { PrettifyType, XmlifyedFile, Zippable } from "@office-open/core";
+import type { Context, XmlifyedFile, Zippable } from "@office-open/core";
 import { ZIP_STORED_LEVEL } from "@office-open/core";
 import { xml } from "@office-open/xml";
 import { textToUint8Array, toUint8Array } from "undio";
 
 import { Formatter } from "../formatter";
 import { replaceNumberingPlaceholders } from "./numbering-placeholders";
+
+/** Extended context with docx-specific properties passed through the XML tree. */
+type DocxContext = Context & {
+  file: File;
+  viewWrapper?: any;
+  headerFormattedViews?: Map<number, string>;
+  footerFormattedViews?: Map<number, string>;
+};
 
 /**
  * Complete mapping of all XML files in an OOXML document package.
@@ -103,7 +111,7 @@ interface XmlifyedFileMapping {
  * @example
  * ```typescript
  * const compiler = new Compiler();
- * const files = compiler.compile(file, PrettifyType.WITH_2_BLANKS);
+ * const files = compiler.compile(file);
  * ```
  */
 
@@ -128,15 +136,10 @@ export class Compiler {
    * DEFLATE compression set by the caller via zipSync options.
    *
    * @param file - The document to compile
-   * @param prettifyXml - Optional XML formatting style
    * @param overrides - Optional custom XML file overrides
    * @returns A Zippable object mapping file paths to their content
    */
-  public compile(
-    file: File,
-    prettifyXml?: (typeof PrettifyType)[keyof typeof PrettifyType],
-    overrides: readonly XmlifyedFile[] = [],
-  ): Zippable {
+  public compile(file: File, overrides: readonly XmlifyedFile[] = []): Zippable {
     const files: Zippable = {};
 
     // Cache format() results to avoid duplicate formatting of Header/Footer views.
@@ -145,12 +148,7 @@ export class Compiler {
     const headerFormattedViews = new Map<number, string>();
     const footerFormattedViews = new Map<number, string>();
 
-    const xmlifiedFileMapping = this.xmlifyFile(
-      file,
-      headerFormattedViews,
-      footerFormattedViews,
-      prettifyXml,
-    );
+    const xmlifiedFileMapping = this.xmlifyFile(file, headerFormattedViews, footerFormattedViews);
     const map = new Map<string, XmlifyedFile | readonly XmlifyedFile[]>(
       Object.entries(xmlifiedFileMapping),
     );
@@ -200,62 +198,34 @@ export class Compiler {
     file: File,
     headerFormattedViews: Map<number, string>,
     footerFormattedViews: Map<number, string>,
-    prettify?: (typeof PrettifyType)[keyof typeof PrettifyType],
   ): XmlifyedFileMapping {
+    // Factory to build typed context objects with docx-specific extensions.
+    const mkCtx = (viewWrapper?: DocxContext["viewWrapper"]): DocxContext => ({
+      fileData: file,
+      file,
+      stack: [],
+      viewWrapper,
+    });
+
     const documentRelationshipCount = file.document.relationships.relationshipCount + 1;
 
-    const documentXmlData = xml(
-      this.formatter.format(file.document.view, {
-        fileData: file,
-        file,
-        stack: [],
-        viewWrapper: file.document,
-      }),
-      {
-        declaration: {
-          encoding: "UTF-8",
-          standalone: "yes",
-        },
-        indent: prettify,
-      },
-    );
+    const documentXmlData = this.formatter.formatToXml(file.document.view, mkCtx(file.document), {
+      encoding: "UTF-8",
+      standalone: "yes",
+    });
 
     const commentRelationshipCount = file.comments.relationships.relationshipCount + 1;
-    const commentXmlData = xml(
-      this.formatter.format(file.comments, {
-        fileData: file,
-        file,
-        stack: [],
-        viewWrapper: {
-          relationships: file.comments.relationships,
-          view: file.comments,
-        },
-      }),
-      {
-        declaration: {
-          encoding: "UTF-8",
-          standalone: "yes",
-        },
-        indent: prettify,
-      },
+    const commentXmlData = this.formatter.formatToXml(
+      file.comments,
+      mkCtx({ relationships: file.comments.relationships, view: file.comments }),
+      { encoding: "UTF-8", standalone: "yes" },
     );
 
     const footnoteRelationshipCount = file.footNotes.relationships.relationshipCount + 1;
-    const footnoteXmlData = xml(
-      this.formatter.format(file.footNotes.view, {
-        fileData: file,
-        file,
-        stack: [],
-        viewWrapper: file.footNotes,
-      }),
-      {
-        declaration: {
-          encoding: "UTF-8",
-          standalone: "yes",
-        },
-        indent: prettify,
-      },
-    );
+    const footnoteXmlData = this.formatter.formatToXml(file.footNotes.view, mkCtx(file.footNotes), {
+      encoding: "UTF-8",
+      standalone: "yes",
+    });
 
     const documentMediaDatas = hasPlaceholders(documentXmlData)
       ? getReferencedMedia(documentXmlData, file.media.array)
@@ -269,15 +239,10 @@ export class Compiler {
 
     return {
       AppProperties: {
-        data: xml(
-          this.formatter.format(file.appProperties, {
-            fileData: file,
-            file,
-            stack: [],
-            viewWrapper: file.document,
-          } as any),
-          { declaration: { encoding: "UTF-8", standalone: "yes" } },
-        ),
+        data: this.formatter.formatToXml(file.appProperties, mkCtx(file.document), {
+          encoding: "UTF-8",
+          standalone: "yes",
+        }),
         path: "docProps/app.xml",
       },
       Comments: {
@@ -304,22 +269,13 @@ export class Compiler {
               `media/${mediaData.fileName}`,
             );
           });
-          return xml(
-            this.formatter.format(file.comments.relationships, {
-              fileData: file,
-              file,
-              stack: [],
-              viewWrapper: {
-                relationships: file.comments.relationships,
-                view: file.comments,
-              },
+          return this.formatter.formatToXml(
+            file.comments.relationships,
+            mkCtx({
+              relationships: file.comments.relationships,
+              view: file.comments,
             }),
-            {
-              declaration: {
-                encoding: "UTF-8",
-              },
-              indent: prettify,
-            },
+            { encoding: "UTF-8" },
           );
         })(),
         path: "word/_rels/comments.xml.rels",
@@ -337,39 +293,17 @@ export class Compiler {
             file.contentTypes.addDiagramColors(i + 1);
             file.contentTypes.addDiagramDrawing(i + 1);
           });
-          return xml(
-            this.formatter.format(file.contentTypes, {
-              fileData: file,
-              file,
-              stack: [],
-              viewWrapper: file.document,
-            }),
-            {
-              declaration: {
-                encoding: "UTF-8",
-              },
-              indent: prettify,
-            },
-          );
+          return this.formatter.formatToXml(file.contentTypes, mkCtx(file.document), {
+            encoding: "UTF-8",
+          });
         })(),
         path: "[Content_Types].xml",
       },
       CustomProperties: {
-        data: xml(
-          this.formatter.format(file.customProperties, {
-            fileData: file,
-            file,
-            stack: [],
-            viewWrapper: file.document,
-          }),
-          {
-            declaration: {
-              encoding: "UTF-8",
-              standalone: "yes",
-            },
-            indent: prettify,
-          },
-        ),
+        data: this.formatter.formatToXml(file.customProperties, mkCtx(file.document), {
+          encoding: "UTF-8",
+          standalone: "yes",
+        }),
         path: "docProps/custom.xml",
       },
       Document: {
@@ -408,90 +342,35 @@ export class Compiler {
         path: "word/document.xml",
       },
       Endnotes: {
-        data: xml(
-          this.formatter.format(file.endnotes.view, {
-            fileData: file,
-            file,
-            stack: [],
-            viewWrapper: file.endnotes,
-          }),
-          {
-            declaration: {
-              encoding: "UTF-8",
-            },
-            indent: prettify,
-          },
-        ),
+        data: this.formatter.formatToXml(file.endnotes.view, mkCtx(file.endnotes), {
+          encoding: "UTF-8",
+        }),
         path: "word/endnotes.xml",
       },
       EndnotesRelationships: {
-        data: xml(
-          this.formatter.format(file.endnotes.relationships, {
-            fileData: file,
-            file,
-            stack: [],
-            viewWrapper: file.endnotes,
-          }),
-          {
-            declaration: {
-              encoding: "UTF-8",
-            },
-            indent: prettify,
-          },
-        ),
+        data: this.formatter.formatToXml(file.endnotes.relationships, mkCtx(file.endnotes), {
+          encoding: "UTF-8",
+        }),
         path: "word/_rels/endnotes.xml.rels",
       },
       FileRelationships: {
-        data: xml(
-          this.formatter.format(file.fileRelationships, {
-            fileData: file,
-            file,
-            stack: [],
-            viewWrapper: file.document,
-          }),
-          {
-            declaration: {
-              encoding: "UTF-8",
-            },
-            indent: prettify,
-          },
-        ),
+        data: this.formatter.formatToXml(file.fileRelationships, mkCtx(file.document), {
+          encoding: "UTF-8",
+        }),
         path: "_rels/.rels",
       },
       FontTable: {
-        data: xml(
-          this.formatter.format(file.fontTable.view, {
-            fileData: file,
-            file,
-            stack: [],
-            viewWrapper: file.document,
-          }),
-          {
-            declaration: {
-              encoding: "UTF-8",
-              standalone: "yes",
-            },
-            indent: prettify,
-          },
-        ),
+        data: this.formatter.formatToXml(file.fontTable.view, mkCtx(file.document), {
+          encoding: "UTF-8",
+          standalone: "yes",
+        }),
         path: "word/fontTable.xml",
       },
       FontTableRelationships: {
         data: (() =>
-          xml(
-            this.formatter.format(file.fontTable.relationships, {
-              fileData: file,
-              file,
-              stack: [],
-              viewWrapper: file.document,
-            }),
-            {
-              declaration: {
-                encoding: "UTF-8",
-              },
-              indent: prettify,
-            },
-          ))(),
+          this.formatter.formatToXml(file.fontTable.relationships, mkCtx(file.document), {
+            encoding: "UTF-8",
+          }))(),
         path: "word/_rels/fontTable.xml.rels",
       },
       FootNotes: {
@@ -518,35 +397,15 @@ export class Compiler {
               `media/${mediaData.fileName}`,
             );
           });
-          return xml(
-            this.formatter.format(file.footNotes.relationships, {
-              fileData: file,
-              file,
-              stack: [],
-              viewWrapper: file.footNotes,
-            }),
-            {
-              declaration: {
-                encoding: "UTF-8",
-              },
-              indent: prettify,
-            },
-          );
+          return this.formatter.formatToXml(file.footNotes.relationships, mkCtx(file.footNotes), {
+            encoding: "UTF-8",
+          });
         })(),
         path: "word/_rels/footnotes.xml.rels",
       },
       FooterRelationships: file.footers.map((footerWrapper, index) => {
-        const formatted = this.formatter.format(footerWrapper.view, {
-          fileData: file,
-          file,
-          stack: [],
-          viewWrapper: footerWrapper,
-        });
-        const xmlData = xml(formatted, {
-          declaration: {
-            encoding: "UTF-8",
-          },
-          indent: prettify,
+        const xmlData = this.formatter.formatToXml(footerWrapper.view, mkCtx(footerWrapper), {
+          encoding: "UTF-8",
         });
         // Cache for reuse in Footers section
         footerFormattedViews.set(index, xmlData);
@@ -561,20 +420,9 @@ export class Compiler {
         });
 
         return {
-          data: xml(
-            this.formatter.format(footerWrapper.relationships, {
-              fileData: file,
-              file,
-              stack: [],
-              viewWrapper: footerWrapper,
-            }),
-            {
-              declaration: {
-                encoding: "UTF-8",
-              },
-              indent: prettify,
-            },
-          ),
+          data: this.formatter.formatToXml(footerWrapper.relationships, mkCtx(footerWrapper), {
+            encoding: "UTF-8",
+          }),
           path: `word/_rels/footer${index + 1}.xml.rels`,
         };
       }),
@@ -594,17 +442,8 @@ export class Compiler {
         };
       }),
       HeaderRelationships: file.headers.map((headerWrapper, index) => {
-        const formatted = this.formatter.format(headerWrapper.view, {
-          fileData: file,
-          file,
-          stack: [],
-          viewWrapper: headerWrapper,
-        });
-        const xmlData = xml(formatted, {
-          declaration: {
-            encoding: "UTF-8",
-          },
-          indent: prettify,
+        const xmlData = this.formatter.formatToXml(headerWrapper.view, mkCtx(headerWrapper), {
+          encoding: "UTF-8",
         });
         // Cache for reuse in Headers section
         headerFormattedViews.set(index, xmlData);
@@ -619,20 +458,9 @@ export class Compiler {
         });
 
         return {
-          data: xml(
-            this.formatter.format(headerWrapper.relationships, {
-              fileData: file,
-              file,
-              stack: [],
-              viewWrapper: headerWrapper,
-            }),
-            {
-              declaration: {
-                encoding: "UTF-8",
-              },
-              indent: prettify,
-            },
-          ),
+          data: this.formatter.formatToXml(headerWrapper.relationships, mkCtx(headerWrapper), {
+            encoding: "UTF-8",
+          }),
           path: `word/_rels/header${index + 1}.xml.rels`,
         };
       }),
@@ -652,39 +480,17 @@ export class Compiler {
         };
       }),
       Numbering: {
-        data: xml(
-          this.formatter.format(file.numbering, {
-            fileData: file,
-            file,
-            stack: [],
-            viewWrapper: file.document,
-          }),
-          {
-            declaration: {
-              encoding: "UTF-8",
-              standalone: "yes",
-            },
-            indent: prettify,
-          },
-        ),
+        data: this.formatter.formatToXml(file.numbering, mkCtx(file.document), {
+          encoding: "UTF-8",
+          standalone: "yes",
+        }),
         path: "word/numbering.xml",
       },
       Properties: {
-        data: xml(
-          this.formatter.format(file.coreProperties, {
-            fileData: file,
-            file,
-            stack: [],
-            viewWrapper: file.document,
-          }),
-          {
-            declaration: {
-              encoding: "UTF-8",
-              standalone: "yes",
-            },
-            indent: prettify,
-          },
-        ),
+        data: this.formatter.formatToXml(file.coreProperties, mkCtx(file.document), {
+          encoding: "UTF-8",
+          standalone: "yes",
+        }),
         path: "docProps/core.xml",
       },
       Relationships: {
@@ -727,58 +533,25 @@ export class Compiler {
             "fontTable.xml",
           );
 
-          return xml(
-            this.formatter.format(file.document.relationships, {
-              fileData: file,
-              file,
-              stack: [],
-              viewWrapper: file.document,
-            }),
-            {
-              declaration: {
-                encoding: "UTF-8",
-              },
-              indent: prettify,
-            },
-          );
+          return this.formatter.formatToXml(file.document.relationships, mkCtx(file.document), {
+            encoding: "UTF-8",
+          });
         })(),
         path: "word/_rels/document.xml.rels",
       },
       Settings: {
-        data: xml(
-          this.formatter.format(file.settings, {
-            fileData: file,
-            file,
-            stack: [],
-            viewWrapper: file.document,
-          }),
-          {
-            declaration: {
-              encoding: "UTF-8",
-              standalone: "yes",
-            },
-            indent: prettify,
-          },
-        ),
+        data: this.formatter.formatToXml(file.settings, mkCtx(file.document), {
+          encoding: "UTF-8",
+          standalone: "yes",
+        }),
         path: "word/settings.xml",
       },
       Styles: {
         data: (() => {
-          const xmlStyles = xml(
-            this.formatter.format(file.styles, {
-              fileData: file,
-              file,
-              stack: [],
-              viewWrapper: file.document,
-            }),
-            {
-              declaration: {
-                encoding: "UTF-8",
-                standalone: "yes",
-              },
-              indent: prettify,
-            },
-          );
+          const xmlStyles = this.formatter.formatToXml(file.styles, mkCtx(file.document), {
+            encoding: "UTF-8",
+            standalone: "yes",
+          });
           const referencedXmlStyles = replaceNumberingPlaceholders(
             xmlStyles,
             file.numbering.concreteNumbering,
@@ -790,23 +563,13 @@ export class Compiler {
       ...(file.bibliography
         ? {
             Bibliography: {
-              data: xml(
-                this.formatter.format(file.bibliography, {
-                  fileData: file,
-                  file,
-                  stack: [],
-                  viewWrapper: {
-                    relationships: file.bibliography.relationships,
-                    view: file.bibliography,
-                  },
+              data: this.formatter.formatToXml(
+                file.bibliography,
+                mkCtx({
+                  relationships: file.bibliography.relationships,
+                  view: file.bibliography,
                 }),
-                {
-                  declaration: {
-                    encoding: "UTF-8",
-                    standalone: "yes",
-                  },
-                  indent: prettify,
-                },
+                { encoding: "UTF-8", standalone: "yes" },
               ),
               path: "word/bibliography.xml",
             },
@@ -816,21 +579,10 @@ export class Compiler {
         ? {
             Charts: file.charts.array.flatMap((chartData, i) => [
               {
-                data: xml(
-                  this.formatter.format(chartData.chartSpace, {
-                    fileData: file,
-                    file,
-                    stack: [],
-                    viewWrapper: file.document,
-                  }),
-                  {
-                    declaration: {
-                      encoding: "UTF-8",
-                      standalone: "yes",
-                    },
-                    indent: prettify,
-                  },
-                ),
+                data: this.formatter.formatToXml(chartData.chartSpace, mkCtx(file.document), {
+                  encoding: "UTF-8",
+                  standalone: "yes",
+                }),
                 path: `word/charts/chart${i + 1}.xml`,
               },
               {
@@ -852,21 +604,10 @@ export class Compiler {
       ...(file.smartArts.array.length > 0
         ? {
             DiagramData: file.smartArts.array.map((smartArtData, i) => ({
-              data: xml(
-                this.formatter.format(smartArtData.dataModel, {
-                  fileData: file,
-                  file,
-                  stack: [],
-                  viewWrapper: file.document,
-                }),
-                {
-                  declaration: {
-                    encoding: "UTF-8",
-                    standalone: "yes",
-                  },
-                  indent: prettify,
-                },
-              ),
+              data: this.formatter.formatToXml(smartArtData.dataModel, mkCtx(file.document), {
+                encoding: "UTF-8",
+                standalone: "yes",
+              }),
               path: `word/diagrams/data${i + 1}.xml`,
             })),
             DiagramLayout: file.smartArts.array.map((smartArtData, i) => ({

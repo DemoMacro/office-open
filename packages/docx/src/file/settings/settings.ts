@@ -308,14 +308,11 @@ export class Settings extends XmlComponent {
       },
     });
 
-    // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_trackRevisions_topic_ID0EKXKY.html
-    if (options.trackRevisions !== undefined) {
-      this.root.push(onOffObj("w:trackRevisions", options.trackRevisions));
-    }
+    // Elements ordered per XSD CT_Settings sequence.
+    // Only elements actually used are included; all others are minOccurs="0".
 
-    // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_documentProtection_topic_ID0EKCBA.html
-    if (options.documentProtection !== undefined) {
-      this.root.push(new DocumentProtection(options.documentProtection));
+    if (options.writeProtection !== undefined) {
+      this.root.push(new WriteProtection(options.writeProtection));
     }
 
     if (options.view !== undefined) {
@@ -329,10 +326,6 @@ export class Settings extends XmlComponent {
           percent: options.zoom.percent ?? 100,
         }),
       );
-    }
-
-    if (options.writeProtection !== undefined) {
-      this.root.push(new WriteProtection(options.writeProtection));
     }
 
     if (options.displayBackgroundShape !== undefined) {
@@ -351,57 +344,37 @@ export class Settings extends XmlComponent {
       this.root.push(onOffObj("w:saveSubsetFonts", options.saveSubsetFonts));
     }
 
-    if (options.docVars !== undefined && options.docVars.length > 0) {
-      this.root.push(
-        new BuilderElement({
-          name: "w:docVars",
-          children: options.docVars.map(
-            (v) =>
-              new BuilderElement({
-                name: "w:docVar",
-                attributes: [
-                  { key: "w:name", value: v.name },
-                  { key: "w:val", value: v.val },
-                ],
-              }),
-          ),
-        }),
-      );
+    if (options.trackRevisions !== undefined) {
+      this.root.push(onOffObj("w:trackRevisions", options.trackRevisions));
     }
 
-    // http://officeopenxml.com/WPSectionFooterReference.php
-    // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_evenAndOddHeaders_topic_ID0ET1WU.html
-    if (options.evenAndOddHeaders !== undefined) {
-      this.root.push(onOffObj("w:evenAndOddHeaders", options.evenAndOddHeaders));
-    }
-
-    if (options.updateFields !== undefined) {
-      this.root.push(onOffObj("w:updateFields", options.updateFields));
+    if (options.documentProtection !== undefined) {
+      this.root.push(new DocumentProtection(options.documentProtection));
     }
 
     // https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_defaultTabStop_topic_ID0EIXSX.html
     this.root.push(numberValObj("w:defaultTabStop", options.defaultTabStop ?? 420));
 
-    // https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_autoHyphenation_topic_ID0EFUMX.html
     if (options.hyphenation?.autoHyphenation !== undefined) {
       this.root.push(onOffObj("w:autoHyphenation", options.hyphenation.autoHyphenation));
     }
 
-    // https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_hyphenationZone_topic_ID0ERI3X.html
-    if (options.hyphenation?.hyphenationZone !== undefined) {
-      this.root.push(numberValObj("w:hyphenationZone", options.hyphenation.hyphenationZone));
-    }
-
-    // https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_consecutiveHyphenLim_topic_ID0EQ6RX.html
     if (options.hyphenation?.consecutiveHyphenLimit !== undefined) {
       this.root.push(
         numberValObj("w:consecutiveHyphenLimit", options.hyphenation.consecutiveHyphenLimit),
       );
     }
 
-    // https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_doNotHyphenateCaps_topic_ID0EW4XX.html
+    if (options.hyphenation?.hyphenationZone !== undefined) {
+      this.root.push(numberValObj("w:hyphenationZone", options.hyphenation.hyphenationZone));
+    }
+
     if (options.hyphenation?.doNotHyphenateCaps !== undefined) {
       this.root.push(onOffObj("w:doNotHyphenateCaps", options.hyphenation.doNotHyphenateCaps));
+    }
+
+    if (options.evenAndOddHeaders !== undefined) {
+      this.root.push(onOffObj("w:evenAndOddHeaders", options.evenAndOddHeaders));
     }
 
     this.root.push(
@@ -411,8 +384,8 @@ export class Settings extends XmlComponent {
       ),
     );
 
-    if (options.colorSchemeMapping !== undefined) {
-      this.root.push(new ColorSchemeMapping(options.colorSchemeMapping));
+    if (options.updateFields !== undefined) {
+      this.root.push(onOffObj("w:updateFields", options.updateFields));
     }
 
     this.root.push(
@@ -433,6 +406,28 @@ export class Settings extends XmlComponent {
         doNotFlipMirrorIndents: options.compatibility?.doNotFlipMirrorIndents ?? true,
       }),
     );
+
+    if (options.docVars !== undefined && options.docVars.length > 0) {
+      this.root.push(
+        new BuilderElement({
+          name: "w:docVars",
+          children: options.docVars.map(
+            (v) =>
+              new BuilderElement({
+                name: "w:docVar",
+                attributes: [
+                  { key: "w:name", value: v.name },
+                  { key: "w:val", value: v.val },
+                ],
+              }),
+          ),
+        }),
+      );
+    }
+
+    if (options.colorSchemeMapping !== undefined) {
+      this.root.push(new ColorSchemeMapping(options.colorSchemeMapping));
+    }
   }
 }
 

@@ -235,6 +235,6 @@ export interface ConnectorShapeOptions {
   readonly outline?: OutlineOptions;
   readonly beginArrowhead?: ArrowheadType;
   readonly endArrowhead?: ArrowheadType;
-  readonly arrowheadWidth?: "sm" | "med" | "lg";
-  readonly arrowheadLength?: "sm" | "med" | "lg";
+  readonly arrowheadWidth?: "small" | "medium" | "large";
+  readonly arrowheadLength?: "small" | "medium" | "large";
 }

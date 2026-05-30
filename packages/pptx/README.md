@@ -78,35 +78,26 @@ writeFileSync("output.pptx", buffer);
 
 ## Performance
 
-Performance vs [PptxGenJS](https://github.com/gitbrent/PptxGenJS) (higher hz is better, Windows 11 / Node 22):
-
-**Object Creation (no pack)**
-
-| Scenario                  | @office-open/pptx |  PptxGenJS |  Speedup |
-| ------------------------- | ----------------: | ---------: | -------: |
-| Simple (2 shapes)         |       4.77M ops/s | 526K ops/s | **9.1x** |
-| Styled shapes (20 shapes) |        274K ops/s |  79K ops/s | **3.5x** |
-| Table (10x5)              |       2.17M ops/s |  27K ops/s |  **80x** |
-| Full featured             |        188K ops/s |  17K ops/s |  **11x** |
-
-**Create + toBuffer (end-to-end)**
+Performance vs [PptxGenJS](https://github.com/gitbrent/PptxGenJS) (higher hz is better, Windows 11 / Node 24).
 
 @office-open/pptx defaults to DEFLATE compression (smaller files). PptxGenJS always uses STORE (no compression). Speedup is based on same-compression (STORE vs STORE) comparison.
 
+**Create + toBuffer (end-to-end)**
+
 | Scenario                  | @office-open/pptx (DEFLATE) | @office-open/pptx (STORE) |   PptxGenJS |  Speedup |
 | ------------------------- | --------------------------: | ------------------------: | ----------: | -------: |
-| Simple (2 shapes)         |                   409 ops/s |               2,127 ops/s | 1,429 ops/s | **1.5x** |
-| Styled shapes (20 shapes) |                   383 ops/s |               1,599 ops/s | 1,127 ops/s | **1.4x** |
-| Table (10x5)              |                   420 ops/s |               1,886 ops/s |   943 ops/s | **2.0x** |
-| Full featured             |                   474 ops/s |               1,275 ops/s |   750 ops/s | **1.7x** |
+| Simple (2 shapes)         |                   505 ops/s |               6,213 ops/s | 1,033 ops/s | **6.0x** |
+| Styled shapes (20 shapes) |                   451 ops/s |               3,217 ops/s |   971 ops/s | **3.3x** |
+| Table (10x5)              |                   606 ops/s |               3,715 ops/s |   759 ops/s | **4.9x** |
+| Full featured             |                   513 ops/s |               1,882 ops/s |   607 ops/s | **3.1x** |
 
 **Large Files — Create + toBuffer**
 
-| Scenario              | @office-open/pptx (DEFLATE) | @office-open/pptx (STORE) | PptxGenJS |  Speedup |
-| --------------------- | --------------------------: | ------------------------: | --------: | -------: |
-| 30 slides × 20 shapes |                    73 ops/s |                 122 ops/s | 124 ops/s |     1.0x |
-| 100×10 table          |                   160 ops/s |                 242 ops/s | 129 ops/s | **1.9x** |
-| 50 slides full        |                    54 ops/s |                 138 ops/s | 111 ops/s | **1.2x** |
+| Scenario              | @office-open/pptx (DEFLATE) | @office-open/pptx (STORE) |  PptxGenJS |  Speedup |
+| --------------------- | --------------------------: | ------------------------: | ---------: | -------: |
+| 30 slides × 20 shapes |                  69.7 ops/s |                 129 ops/s |  109 ops/s | **1.2x** |
+| 100×10 table          |                   156 ops/s |                 235 ops/s |  116 ops/s | **2.0x** |
+| 50 slides full        |                  56.9 ops/s |                 143 ops/s | 95.8 ops/s | **1.5x** |
 
 **Large File (~100MB) — Mixed Content**
 
@@ -114,10 +105,10 @@ Performance vs [PptxGenJS](https://github.com/gitbrent/PptxGenJS) (higher hz is 
 
 | Method                            |      Speed |  Speedup |
 | --------------------------------- | ---------: | -------: |
-| @office-open/pptx (DEFLATE sync)  | 1.86 ops/s |     4.0x |
-| @office-open/pptx (DEFLATE async) | 3.45 ops/s | **7.3x** |
-| @office-open/pptx (STORE sync)    | 1.91 ops/s |     4.1x |
-| PptxGenJS                         | 0.47 ops/s |          |
+| @office-open/pptx (DEFLATE sync)  | 1.76 ops/s |     3.9x |
+| @office-open/pptx (DEFLATE async) | 3.29 ops/s | **7.3x** |
+| @office-open/pptx (STORE sync)    | 1.81 ops/s |     4.0x |
+| PptxGenJS                         | 0.45 ops/s |          |
 
 ## Examples
 

@@ -276,10 +276,7 @@ export class Compatibility extends XmlComponent {
   public constructor(options: CompatibilityOptions) {
     super("w:compat");
 
-    if (options.version) {
-      this.root.push(createCompatibilitySetting("compatibilityMode", options.version));
-    }
-
+    // All individual compat elements first (per XSD CT_Compat sequence)
     if (options.useSingleBorderforContiguousCells) {
       this.root.push(
         onOffObj("w:useSingleBorderforContiguousCells", options.useSingleBorderforContiguousCells),
@@ -566,6 +563,11 @@ export class Compatibility extends XmlComponent {
 
     if (options.cachedColumnBalance) {
       this.root.push(onOffObj("w:cachedColBalance", options.cachedColumnBalance));
+    }
+
+    // compatSetting must come last per XSD CT_Compat sequence
+    if (options.version) {
+      this.root.push(createCompatibilitySetting("compatibilityMode", options.version));
     }
 
     if (options.overrideTableStyleFontSizeAndJustification) {

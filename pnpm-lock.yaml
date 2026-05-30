@@ -34,6 +34,9 @@ importers:
       happy-dom:
         specifier: 20.9.0
         version: 20.9.0
+      hucre:
+        specifier: 0.6.0
+        version: 0.6.0
       inquirer:
         specifier: 13.4.3
         version: 13.4.3(@types/node@25.9.1)
@@ -64,9 +67,12 @@ importers:
       '@office-open/pptx':
         specifier: workspace:*
         version: link:../packages/pptx
+      '@office-open/xlsx':
+        specifier: workspace:*
+        version: link:../packages/xlsx
       docus:
         specifier: 5.11.0
-        version: 5.11.0(patch_hash=2cef2251c15fb42cfeed749d19692cc0b798cff69f72d817e82398869559acf1)(d5d29b10c847d4dd799c05c5c2ccc812)
+        version: 5.11.0(patch_hash=2cef2251c15fb42cfeed749d19692cc0b798cff69f72d817e82398869559acf1)(12f9fd0d85d60d5b70c6c07e7f41c16b)
       nuxt:
         specifier: 4.4.6
         version: 4.4.6(@babel/plugin-syntax-jsx@7.29.7(@babel/core@7.29.7))(@babel/plugin-syntax-typescript@7.29.7(@babel/core@7.29.7))(@parcel/watcher@2.5.6)(@types/node@25.9.1)(@vue/compiler-sfc@3.5.34)(better-sqlite3@12.10.0)(cac@6.7.14)(db0@0.3.4(better-sqlite3@12.10.0))(eslint@10.3.0(jiti@2.7.0))(ioredis@5.10.1)(lightningcss@1.32.0)(magicast@0.5.3)(optionator@0.9.4)(oxlint@1.63.0(oxlint-tsgolint@0.22.1))(rolldown@1.0.2)(rollup-plugin-visualizer@7.0.1(rolldown@1.0.2)(rollup@4.60.4))(rollup@4.60.4)(srvx@0.11.16)(terser@5.48.0)(tsx@4.22.3)(typescript@5.9.3)(vite@7.3.3(@types/node@25.9.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.22.3)(yaml@2.9.0))(yaml@2.9.0)
@@ -116,7 +122,17 @@ importers:
         specifier: 0.2.0
         version: 0.2.0
 
-  packages/xlsx: {}
+  packages/xlsx:
+    dependencies:
+      '@office-open/core':
+        specifier: workspace:*
+        version: link:../core
+      '@office-open/xml':
+        specifier: workspace:*
+        version: link:../xml
+      undio:
+        specifier: 0.2.0
+        version: 0.2.0
 
   packages/xml:
     devDependencies:
@@ -5403,6 +5419,10 @@ packages:
 
   httpxy@0.5.3:
     resolution: {integrity: sha512-SMS9V6Sn7VWaS11lYhoAr0ceoaiolTWf4jYdJn0NJhCdKMu9R2H9Fh0LBDWBHQF6HRLI1PmaePYsjanSpE5PEw==}
+
+  hucre@0.6.0:
+    resolution: {integrity: sha512-Osajs1c1Si0TaUIfminbkWkQI370ZCAEq9CUTQtbi7n80Fa6ejCo9NYTKdtqJV/4j+HPwqd7H7GOwkwI1X4gbw==}
+    hasBin: true
 
   human-signals@5.0.0:
     resolution: {integrity: sha512-AXcZb6vzzrFAUE61HnN4mpLqd/cSIwNQjtNWR0euPm6y0iqx3G4gOXaIDdtdDwZmhwe82LA6+zinmW4UBWVePQ==}
@@ -12430,7 +12450,7 @@ snapshots:
 
   diff@8.0.4: {}
 
-  docus@5.11.0(patch_hash=2cef2251c15fb42cfeed749d19692cc0b798cff69f72d817e82398869559acf1)(d5d29b10c847d4dd799c05c5c2ccc812):
+  docus@5.11.0(patch_hash=2cef2251c15fb42cfeed749d19692cc0b798cff69f72d817e82398869559acf1)(12f9fd0d85d60d5b70c6c07e7f41c16b):
     dependencies:
       '@ai-sdk/gateway': 3.0.120(zod@4.4.3)
       '@ai-sdk/mcp': 1.0.43(zod@4.4.3)
@@ -12460,7 +12480,7 @@ snapshots:
       motion-v: 2.2.1(@vueuse/core@14.3.0(vue@3.5.34(typescript@5.9.3)))(vue@3.5.34(typescript@5.9.3))
       nuxt: 4.4.6(@babel/plugin-syntax-jsx@7.29.7(@babel/core@7.29.7))(@babel/plugin-syntax-typescript@7.29.7(@babel/core@7.29.7))(@parcel/watcher@2.5.6)(@types/node@25.9.1)(@vue/compiler-sfc@3.5.34)(better-sqlite3@12.10.0)(cac@6.7.14)(db0@0.3.4(better-sqlite3@12.10.0))(eslint@10.3.0(jiti@2.7.0))(ioredis@5.10.1)(lightningcss@1.32.0)(magicast@0.5.3)(optionator@0.9.4)(oxlint@1.63.0(oxlint-tsgolint@0.22.1))(rolldown@1.0.2)(rollup-plugin-visualizer@7.0.1(rolldown@1.0.2)(rollup@4.60.4))(rollup@4.60.4)(srvx@0.11.16)(terser@5.48.0)(tsx@4.22.3)(typescript@5.9.3)(vite@7.3.3(@types/node@25.9.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.22.3)(yaml@2.9.0))(yaml@2.9.0)
       nuxt-llms: 0.2.0(magicast@0.5.3)
-      nuxt-og-image: 6.5.1(9db0e4a44bdde53d130d3eb50b369f18)
+      nuxt-og-image: 6.5.1(7af62b34b3f1aea0a2b4072dd47f15e9)
       pathe: 2.0.3
       pkg-types: 2.3.1
       scule: 1.3.0
@@ -13456,6 +13476,8 @@ snapshots:
   https@1.0.0: {}
 
   httpxy@0.5.3: {}
+
+  hucre@0.6.0: {}
 
   human-signals@5.0.0: {}
 
@@ -14468,6 +14490,112 @@ snapshots:
       - supports-color
       - uploadthing
 
+  nitropack@2.13.4(better-sqlite3@12.10.0)(oxc-parser@0.132.0)(rolldown@1.0.2)(srvx@0.11.16):
+    dependencies:
+      '@cloudflare/kv-asset-handler': 0.4.2
+      '@rollup/plugin-alias': 6.0.0(rollup@4.60.4)
+      '@rollup/plugin-commonjs': 29.0.2(rollup@4.60.4)
+      '@rollup/plugin-inject': 5.0.5(rollup@4.60.4)
+      '@rollup/plugin-json': 6.1.0(rollup@4.60.4)
+      '@rollup/plugin-node-resolve': 16.0.3(rollup@4.60.4)
+      '@rollup/plugin-replace': 6.0.3(rollup@4.60.4)
+      '@rollup/plugin-terser': 1.0.0(rollup@4.60.4)
+      '@vercel/nft': 1.5.0(rollup@4.60.4)
+      archiver: 7.0.1
+      c12: 3.3.4(magicast@0.5.3)
+      chokidar: 5.0.0
+      citty: 0.2.2
+      compatx: 0.2.0
+      confbox: 0.2.4
+      consola: 3.4.2
+      cookie-es: 2.0.1
+      croner: 10.0.1
+      crossws: 0.3.5
+      db0: 0.3.4(better-sqlite3@12.10.0)
+      defu: 6.1.7
+      destr: 2.0.5
+      dot-prop: 10.1.0
+      esbuild: 0.28.0
+      escape-string-regexp: 5.0.0
+      etag: 1.8.1
+      exsolve: 1.0.8
+      globby: 16.2.0
+      gzip-size: 7.0.0
+      h3: 1.15.11
+      hookable: 5.5.3
+      httpxy: 0.5.3
+      ioredis: 5.10.1
+      jiti: 2.7.0
+      klona: 2.0.6
+      knitwork: 1.3.0
+      listhen: 1.10.0(srvx@0.11.16)
+      magic-string: 0.30.21
+      magicast: 0.5.3
+      mime: 4.1.0
+      mlly: 1.8.2
+      node-fetch-native: 1.6.7
+      node-mock-http: 1.0.4
+      ofetch: 1.5.1
+      ohash: 2.0.11
+      pathe: 2.0.3
+      perfect-debounce: 2.1.0
+      pkg-types: 2.3.1
+      pretty-bytes: 7.1.0
+      radix3: 1.1.2
+      rollup: 4.60.4
+      rollup-plugin-visualizer: 7.0.1(rolldown@1.0.2)(rollup@4.60.4)
+      scule: 1.3.0
+      semver: 7.8.1
+      serve-placeholder: 2.0.2
+      serve-static: 2.2.1
+      source-map: 0.7.6
+      std-env: 4.1.0
+      ufo: 1.6.4
+      ultrahtml: 1.6.0
+      uncrypto: 0.1.3
+      unctx: 2.5.0
+      unenv: 2.0.0-rc.24
+      unimport: 6.3.0(oxc-parser@0.132.0)(rolldown@1.0.2)
+      unplugin-utils: 0.3.1
+      unstorage: 1.17.5(db0@0.3.4(better-sqlite3@12.10.0))(ioredis@5.10.1)
+      untyped: 2.0.0
+      unwasm: 0.5.3
+      youch: 4.1.1
+      youch-core: 0.3.3
+    transitivePeerDependencies:
+      - '@azure/app-configuration'
+      - '@azure/cosmos'
+      - '@azure/data-tables'
+      - '@azure/identity'
+      - '@azure/keyvault-secrets'
+      - '@azure/storage-blob'
+      - '@capacitor/preferences'
+      - '@deno/kv'
+      - '@electric-sql/pglite'
+      - '@libsql/client'
+      - '@netlify/blobs'
+      - '@planetscale/database'
+      - '@upstash/redis'
+      - '@vercel/blob'
+      - '@vercel/functions'
+      - '@vercel/kv'
+      - aws4fetch
+      - bare-abort-controller
+      - bare-buffer
+      - better-sqlite3
+      - drizzle-orm
+      - encoding
+      - idb-keyval
+      - mysql2
+      - oxc-parser
+      - react-native-b4a
+      - rolldown
+      - sqlite3
+      - srvx
+      - supports-color
+      - uploadthing
+    optional: true
+
   node-abi@3.92.0:
     dependencies:
       semver: 7.8.1
@@ -14535,7 +14663,7 @@ snapshots:
     transitivePeerDependencies:
       - magicast
 
-  nuxt-og-image@6.5.1(9db0e4a44bdde53d130d3eb50b369f18):
+  nuxt-og-image@6.5.1(7af62b34b3f1aea0a2b4072dd47f15e9):
     dependencies:
       '@clack/prompts': 1.4.0
       '@nuxt/kit': 4.4.6(magicast@0.5.3)
@@ -14575,7 +14703,7 @@ snapshots:
     optionalDependencies:
       '@takumi-rs/core': 1.5.1
       fontless: 0.2.1(db0@0.3.4(better-sqlite3@12.10.0))(ioredis@5.10.1)(vite@7.3.3(@types/node@25.9.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.22.3)(yaml@2.9.0))
-      nitropack: 2.13.4(better-sqlite3@12.10.0)(oxc-parser@0.131.0)(rolldown@1.0.2)(srvx@0.11.16)
+      nitropack: 2.13.4(better-sqlite3@12.10.0)(oxc-parser@0.132.0)(rolldown@1.0.2)(srvx@0.11.16)
       sharp: 0.34.5
       tailwindcss: 4.3.0
       unifont: 0.7.4
@@ -16412,6 +16540,27 @@ snapshots:
     optionalDependencies:
       oxc-parser: 0.131.0
       rolldown: 1.0.2
+
+  unimport@6.3.0(oxc-parser@0.132.0)(rolldown@1.0.2):
+    dependencies:
+      acorn: 8.16.0
+      escape-string-regexp: 5.0.0
+      estree-walker: 3.0.3
+      local-pkg: 1.2.1
+      magic-string: 0.30.21
+      mlly: 1.8.2
+      pathe: 2.0.3
+      picomatch: 4.0.4
+      pkg-types: 2.3.1
+      scule: 1.3.0
+      strip-literal: 3.1.0
+      tinyglobby: 0.2.16
+      unplugin: 3.0.0
+      unplugin-utils: 0.3.1
+    optionalDependencies:
+      oxc-parser: 0.132.0
+      rolldown: 1.0.2
+    optional: true
 
   unist-builder@4.0.0:
     dependencies:

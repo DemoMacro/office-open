@@ -424,7 +424,12 @@ describe("File", () => {
 
     const tree = new Formatter().format(doc.settings);
 
-    expect(tree["w:settings"][1]).to.deep.equal({ "w:evenAndOddHeaders": {} });
+    // Find evenAndOddHeaders by content, not by index (XSD order may change)
+    const settings = tree["w:settings"] as Record<string, unknown>[];
+    const hasEvenAndOdd = settings.some(
+      (el) => typeof el === "object" && el !== null && "w:evenAndOddHeaders" in el,
+    );
+    expect(hasEvenAndOdd).to.be.true;
   });
 
   describe("#comments", () => {

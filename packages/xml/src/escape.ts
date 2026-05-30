@@ -1,13 +1,3 @@
-const XML_CHAR_MAP: Record<string, string> = {
-  "&": "&amp;",
-  '"': "&quot;",
-  "'": "&apos;",
-  "<": "&lt;",
-  ">": "&gt;",
-};
-
-const XML_CHAR_PATTERN = /([&"<>'])/g;
-
 /** Escape text content for XML. Fast path returns original string when no special chars. */
 export function escapeXml(str: string): string {
   // Fast path: most text content doesn't contain XML-special characters.
@@ -17,23 +7,32 @@ export function escapeXml(str: string): string {
     const c = str.charCodeAt(i);
     if (c === 38 || c === 34 || c === 39 || c === 60 || c === 62) {
       // & " ' < >
-      return str.replace(XML_CHAR_PATTERN, (ch) => XML_CHAR_MAP[ch]);
+      // Slow path: slice-and-append avoids regex + temporary match objects.
+      let s = "";
+      let last = 0;
+      for (let j = i; j < str.length; j++) {
+        const cj = str.charCodeAt(j);
+        if (cj === 38) {
+          s += str.slice(last, j) + "&amp;";
+          last = j + 1;
+        } else if (cj === 34) {
+          s += str.slice(last, j) + "&quot;";
+          last = j + 1;
+        } else if (cj === 39) {
+          s += str.slice(last, j) + "&apos;";
+          last = j + 1;
+        } else if (cj === 60) {
+          s += str.slice(last, j) + "&lt;";
+          last = j + 1;
+        } else if (cj === 62) {
+          s += str.slice(last, j) + "&gt;";
+          last = j + 1;
+        }
+      }
+      return s + str.slice(last);
     }
   }
   return str;
-}
-
-/**
- * Escape attribute value matching xml-js's js2xml behavior.
- * Handles already-escaped entities to prevent double-escaping.
- */
-export function escapeAttributeValue(str: string): string {
-  return String(str)
-    .replace(/&(?!amp;|lt;|gt;|quot;|apos;)/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
 }
 
 /**
@@ -47,10 +46,20 @@ export function escapeAttributeValue(str: string): string {
  */
 export function attrs(record: Record<string, string | number | boolean | undefined>): string {
   let s = "";
-  for (const [k, v] of Object.entries(record)) {
+  const keys = Object.keys(record);
+  for (let i = 0; i < keys.length; i++) {
+    const v = record[keys[i]];
     if (v !== undefined) {
-      s += ` ${k}="${typeof v === "string" ? escapeXml(v) : v}"`;
+      s += ` ${keys[i]}="${typeof v === "string" ? escapeXml(v) : v}"`;
     }
   }
   return s;
+}
+
+/**
+ * Build a self-closing XML element: `<tag attrStr/>`.
+ * `attrStr` is a pre-serialized attribute string (from `attrs()`) or undefined.
+ */
+export function selfCloseElement(tag: string, attrStr?: string): string {
+  return attrStr ? `<${tag}${attrStr}/>` : `<${tag}/>`;
 }

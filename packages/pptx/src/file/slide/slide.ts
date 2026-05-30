@@ -8,6 +8,7 @@ import type { TransitionOptions } from "@file/transition/transition";
 import { buildTransition } from "@file/transition/transition";
 import { BaseXmlComponent, XmlComponent } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
+import { xml } from "@office-open/xml";
 
 interface Animatable {
   readonly shapeId: number;
@@ -125,5 +126,11 @@ export class Slide extends XmlComponent {
     }
 
     return { "p:sld": children };
+  }
+
+  // prepForXml() is fully custom (root is empty) — fallback to prepForXml → xml.
+  public override toXml(context: Context): string {
+    const obj = this.prepForXml(context);
+    return obj ? xml(obj) : "";
   }
 }

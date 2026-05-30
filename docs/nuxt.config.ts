@@ -7,6 +7,7 @@ export default defineNuxtConfig({
       include: [
         "@office-open/docx > @office-open/core",
         "@office-open/pptx > @office-open/core",
+        "@office-open/xlsx > @office-open/core",
         "@vue/devtools-core",
         "@vue/devtools-kit",
         "remark-emoji",

@@ -40,6 +40,11 @@ export class ChartSpace extends XmlComponent {
     this.root.push(wrapEl("c:lang", chartAttr({ val: "en-US" })));
     this.root.push(wrapEl("c:roundedCorners", chartAttr({ val: 0 })));
 
+    // style must come before chart per XSD CT_ChartSpace sequence
+    if (options.style !== undefined) {
+      this.root.push(new ChartStyle(options.style));
+    }
+
     const chart = new ChartContainer();
 
     if (options.title) {
@@ -78,10 +83,6 @@ export class ChartSpace extends XmlComponent {
     this.root.push(chart);
     this.root.push(createChartSpPr());
     this.root.push(createChartTxPr());
-
-    if (options.style !== undefined) {
-      this.root.push(new ChartStyle(options.style));
-    }
   }
 }
 

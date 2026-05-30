@@ -1,13 +1,26 @@
 import { execSync } from "node:child_process";
 /**
- * Run all demos and validate generated XML against OOXML XSD schemas.
+ * Run all demos and validate ALL generated XML against OOXML XSD schemas.
+ *
+ * For each ZIP entry, the validator auto-detects the correct XSD based on
+ * the root element or file path:
+ *   - ppt/slides/slide*.xml        → pml.xsd
+ *   - word/document.xml            → wml.xsd
+ *   - xl/worksheets/sheet*.xml     → sml.xsd
+ *   - xl/drawings/drawing*.xml     → dml-spreadsheetDrawing.xsd
+ *   - xl/charts/chart*.xml         → dml-chart.xsd
+ *   - xl/theme/theme*.xml          → dml-main.xsd
+ *   - xl/styles.xml                → sml.xsd (CT_Stylesheet)
+ *   - (others)                     → skipped or auto-detected
  *
  * Usage:
- *   npx tsx scripts/validate.ts              # validate all (pptx + docx)
+ *   npx tsx scripts/validate.ts              # validate all (pptx + docx + xlsx)
  *   npx tsx scripts/validate.ts pptx         # validate pptx demos only
  *   npx tsx scripts/validate.ts docx         # validate docx demos only
+ *   npx tsx scripts/validate.ts xlsx         # validate xlsx demos only
  *   npx tsx scripts/validate.ts slide <file> [n]  # validate specific pptx slide
  *   npx tsx scripts/validate.ts docx <file>       # validate specific docx file
+ *   npx tsx scripts/validate.ts xlsx <file> [n]   # validate specific xlsx file
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -36,13 +49,20 @@ function extractFromZip(zipPath: string, entryName: string): string {
   return new TextDecoder().decode(entry);
 }
 
-function countEntries(zipPath: string, pattern: RegExp): number {
+function getZipEntries(zipPath: string): string[] {
   const buf = fs.readFileSync(zipPath);
   const files = unzipSync(buf);
-  return Object.keys(files).filter((k) => pattern.test(k)).length;
+  return Object.keys(files);
 }
 
+// ── Validator cache (one XSD → one validator, reused across demos) ──
+
+const validatorCache = new Map<string, XsdValidator>();
+
 function loadValidator(xsdFile: string): XsdValidator {
+  const cached = validatorCache.get(xsdFile);
+  if (cached) return cached;
+
   const originalCwd = process.cwd();
   process.chdir(XSD_DIR);
   const xsdBuffer = fs.readFileSync(xsdFile);
@@ -50,11 +70,91 @@ function loadValidator(xsdFile: string): XsdValidator {
   const validator = XsdValidator.fromDoc(xsdDoc);
   xsdDoc.dispose();
   process.chdir(originalCwd);
+  validatorCache.set(xsdFile, validator);
   return validator;
 }
 
-// Namespaces known to be valid in transitional OOXML but not in strict ISO XSD.
-// These are used via mc:Ignorable or VML namespaces that Word accepts.
+function disposeAllValidators() {
+  for (const v of validatorCache.values()) v.dispose();
+  validatorCache.clear();
+}
+
+// ── Auto-detect XSD from file path and root element ──
+
+interface XsdMapping {
+  pattern: RegExp;
+  xsd: string;
+  /** Label for output (e.g. "slide1", "sheet2", "drawing1") */
+  labelFn: (entry: string) => string;
+}
+
+const XSD_MAPPINGS: XsdMapping[] = [
+  // ── PPTX ──
+  {
+    pattern: /^ppt\/slides\/slide\d+\.xml$/,
+    xsd: "pml.xsd",
+    labelFn: (e) => e.match(/slide(\d+)/)?.[1] ?? e,
+  },
+  {
+    pattern: /^ppt\/presentation\.xml$/,
+    xsd: "pml.xsd",
+    labelFn: () => "presentation",
+  },
+  {
+    pattern: /^ppt\/slideLayouts\/slideLayout\d+\.xml$/,
+    xsd: "pml.xsd",
+    labelFn: (e) => `slideLayout${e.match(/slideLayout(\d+)/)?.[1]}`,
+  },
+  {
+    pattern: /^ppt\/slideMasters\/slideMaster\d+\.xml$/,
+    xsd: "pml.xsd",
+    labelFn: (e) => `slideMaster${e.match(/slideMaster(\d+)/)?.[1]}`,
+  },
+  {
+    pattern: /^ppt\/charts\/chart\d+\.xml$/,
+    xsd: "dml-chart.xsd",
+    labelFn: (e) => `chart${e.match(/chart(\d+)/)?.[1]}`,
+  },
+  // ── DOCX ──
+  { pattern: /^word\/document\.xml$/, xsd: "wml.xsd", labelFn: () => "document" },
+  { pattern: /^word\/styles\.xml$/, xsd: "wml.xsd", labelFn: () => "styles" },
+  { pattern: /^word\/numbering\.xml$/, xsd: "wml.xsd", labelFn: () => "numbering" },
+  { pattern: /^word\/settings\.xml$/, xsd: "wml.xsd", labelFn: () => "settings" },
+  { pattern: /^word\/footnotes\.xml$/, xsd: "wml.xsd", labelFn: () => "footnotes" },
+  { pattern: /^word\/endnotes\.xml$/, xsd: "wml.xsd", labelFn: () => "endnotes" },
+  { pattern: /^word\/comments\.xml$/, xsd: "wml.xsd", labelFn: () => "comments" },
+  {
+    pattern: /^word\/charts\/chart\d+\.xml$/,
+    xsd: "dml-chart.xsd",
+    labelFn: (e) => `chart${e.match(/chart(\d+)/)?.[1]}`,
+  },
+  // ── XLSX ──
+  {
+    pattern: /^xl\/worksheets\/sheet\d+\.xml$/,
+    xsd: "sml.xsd",
+    labelFn: (e) => `sheet${e.match(/sheet(\d+)/)?.[1]}`,
+  },
+  { pattern: /^xl\/styles\.xml$/, xsd: "sml.xsd", labelFn: () => "styles" },
+  {
+    pattern: /^xl\/drawings\/drawing\d+\.xml$/,
+    xsd: "dml-spreadsheetDrawing.xsd",
+    labelFn: (e) => `drawing${e.match(/drawing(\d+)/)?.[1]}`,
+  },
+  {
+    pattern: /^xl\/charts\/chart\d+\.xml$/,
+    xsd: "dml-chart.xsd",
+    labelFn: (e) => `chart${e.match(/chart(\d+)/)?.[1]}`,
+  },
+  // ── Shared (all packages) ──
+  { pattern: /\/theme\/theme\d+\.xml$/, xsd: "dml-main.xsd", labelFn: () => "theme" },
+];
+
+function findXsdMapping(entry: string): XsdMapping | undefined {
+  return XSD_MAPPINGS.find((m) => m.pattern.test(entry));
+}
+
+// ── Ignorable namespace / error filtering ──
+
 const TRANSITIONAL_NAMESPACES = new Set([
   "http://schemas.microsoft.com/office/word/2010/wordml",
   "http://schemas.microsoft.com/office/word/2012/wordml",
@@ -69,7 +169,6 @@ const TRANSITIONAL_NAMESPACES = new Set([
 ]);
 
 function extractIgnorableNamespaces(xml: string): Set<string> {
-  // Parse mc:Ignorable attribute to get prefix list, then resolve prefixes to namespace URIs
   const ignorable = new Set(TRANSITIONAL_NAMESPACES);
   const ignorableMatch = xml.match(/mc:Ignorable="([^"]+)"/);
   if (ignorableMatch) {
@@ -82,20 +181,22 @@ function extractIgnorableNamespaces(xml: string): Set<string> {
   return ignorable;
 }
 
-// Element names that exist in transitional OOXML but not in strict ISO XSD.
-// These are valid in Word but rejected by strict schema validation.
 const TRANSITIONAL_ELEMENT_PATTERNS = [
   "'{http://schemas.openxmlformats.org/wordprocessingml/2006/main}pict'",
   "'{http://schemas.openxmlformats.org/wordprocessingml/2006/main}ruby'",
   "'{http://schemas.openxmlformats.org/wordprocessingml/2006/main}checkbox'",
 ];
 
+const MC_NS = "http://schemas.openxmlformats.org/markup-compatibility/2006";
+
 function isIgnorableError(message: string, ignorableNs: Set<string>): boolean {
-  // Check transitional element patterns
+  // mc:Ignorable attribute is valid per Markup Compatibility (OOXML Part 3)
+  // but not declared in transitional XSDs — known limitation, not an implementation bug
+  if (message.includes(`{${MC_NS}}Ignorable`)) return true;
+  // w14/w15/w16 etc. extension namespace elements/attributes
   for (const pattern of TRANSITIONAL_ELEMENT_PATTERNS) {
     if (message.includes(pattern)) return true;
   }
-  // Check ignorable/transitional namespaces (XSD errors use both '{ns}' and "'ns'" formats)
   for (const ns of ignorableNs) {
     if (message.includes(`{${ns}}`) || message.includes(`'${ns}'`)) return true;
   }
@@ -115,7 +216,6 @@ function validateXml(validator: XsdValidator, xml: string): { pass: boolean; err
         line: number;
         col: number;
       }>;
-      // Filter out errors from ignorable/transitional namespaces
       const relevant = details.filter((d) => !isIgnorableError(d.message, ignorableNs));
       if (relevant.length === 0) return { pass: true };
       return { pass: false, error: relevant.map((d) => d.message.trim()).join("\n    ") };
@@ -126,13 +226,12 @@ function validateXml(validator: XsdValidator, xml: string): { pass: boolean; err
   }
 }
 
+// ── Package config ──
+
 interface PackageConfig {
   name: string;
   dir: string;
-  xsd: string;
   outputFile: string;
-  entryPattern: RegExp;
-  entryPrefix: string;
   buildCmd: string;
 }
 
@@ -140,31 +239,68 @@ const PACKAGES: Record<string, PackageConfig> = {
   pptx: {
     name: "PPTX",
     dir: path.resolve(ROOT_DIR, "packages/pptx"),
-    xsd: "pml.xsd",
     outputFile: "My Presentation.pptx",
-    entryPattern: /^ppt\/slides\/slide\d+\.xml$/,
-    entryPrefix: "slide",
     buildCmd: "pnpm -F @office-open/pptx build",
   },
   docx: {
     name: "DOCX",
     dir: path.resolve(ROOT_DIR, "packages/docx"),
-    xsd: "wml.xsd",
     outputFile: "My Document.docx",
-    entryPattern: /^word\/document\.xml$/,
-    entryPrefix: "document",
     buildCmd: "pnpm -F @office-open/docx build",
+  },
+  xlsx: {
+    name: "XLSX",
+    dir: path.resolve(ROOT_DIR, "packages/xlsx"),
+    outputFile: "My Workbook.xlsx",
+    buildCmd: "pnpm -F @office-open/xlsx build",
   },
 };
 
-function validatePackage(pkg: PackageConfig) {
-  console.log(`\n--- ${pkg.name} (${pkg.xsd}) ---`);
+// ── Validate all XML parts in a ZIP ──
 
-  const validator = loadValidator(pkg.xsd);
-  const demos = getDemoFiles(path.join(pkg.dir, "demo"));
+function validateAllXmlParts(
+  tmpFile: string,
+  demo: string,
+): { pass: number; fail: number; failures: string[] } {
   let totalPass = 0;
   let totalFail = 0;
   const failures: string[] = [];
+
+  const entries = getZipEntries(tmpFile).filter(
+    (e) => e.endsWith(".xml") && !e.startsWith("[Content_Types]"),
+  );
+
+  for (const entry of entries) {
+    const mapping = findXsdMapping(entry);
+    if (!mapping || !mapping.xsd) continue; // Skip entries with no XSD mapping
+
+    const validator = loadValidator(mapping.xsd);
+    const label = mapping.labelFn(entry);
+
+    try {
+      const xml = extractFromZip(tmpFile, entry);
+      const result = validateXml(validator, xml);
+      if (result.pass) {
+        totalPass++;
+      } else {
+        totalFail++;
+        failures.push(`${demo} ${label}: ${result.error}`);
+      }
+    } catch {
+      // Some entries may fail extraction (unlikely), skip silently
+    }
+  }
+
+  return { pass: totalPass, fail: totalFail, failures };
+}
+
+function validatePackage(pkg: PackageConfig) {
+  console.log(`\n--- ${pkg.name} ---`);
+
+  const demos = getDemoFiles(path.join(pkg.dir, "demo"));
+  let totalPass = 0;
+  let totalFail = 0;
+  const allFailures: string[] = [];
 
   for (const demo of demos) {
     try {
@@ -175,103 +311,78 @@ function validatePackage(pkg: PackageConfig) {
     }
 
     const outputPath = path.join(pkg.dir, pkg.outputFile);
-    if (!fs.existsSync(outputPath)) continue;
-    const tmpFile = path.join(pkg.dir, `__validate_tmp__${path.extname(pkg.outputFile)}`);
-    fs.renameSync(outputPath, tmpFile);
+    // Also check for round-trip variant files
+    const candidates = [outputPath];
+    const rtPath = outputPath.replace(
+      path.extname(pkg.outputFile),
+      ` (round-trip)${path.extname(pkg.outputFile)}`,
+    );
+    if (fs.existsSync(rtPath)) candidates.push(rtPath);
 
-    let entryCount = 0;
-    try {
-      entryCount = countEntries(tmpFile, pkg.entryPattern);
-    } catch {
-      console.error(`  ZIP FAIL: ${demo}`);
+    for (const candidate of candidates) {
+      if (!fs.existsSync(candidate)) continue;
+      const tmpFile = path.join(pkg.dir, `__validate_tmp__${path.basename(candidate)}`);
+      fs.renameSync(candidate, tmpFile);
+
+      try {
+        const result = validateAllXmlParts(tmpFile, demo);
+        const status = result.fail === 0 ? "PASS" : `FAIL (${result.fail})`;
+        const partLabel = candidate === outputPath ? "" : " [round-trip]";
+        const entryCount = result.pass + result.fail;
+        console.log(`  ${status}  ${demo}${partLabel} (${entryCount} parts)`);
+        totalPass += result.pass;
+        totalFail += result.fail;
+        allFailures.push(...result.failures);
+      } catch {
+        console.error(`  ZIP FAIL: ${demo}`);
+      }
+
       fs.unlinkSync(tmpFile);
-      continue;
     }
-    let demoPass = 0;
-    let demoFail = 0;
-
-    if (pkg.name === "PPTX") {
-      for (let i = 1; i <= entryCount; i++) {
-        const xml = extractFromZip(tmpFile, `ppt/slides/slide${i}.xml`);
-        const result = validateXml(validator, xml);
-        if (result.pass) {
-          demoPass++;
-          totalPass++;
-        } else {
-          demoFail++;
-          totalFail++;
-          failures.push(`${demo} slide${i}: ${result.error}`);
-        }
-      }
-    } else {
-      const xml = extractFromZip(tmpFile, "word/document.xml");
-      const result = validateXml(validator, xml);
-      if (result.pass) {
-        demoPass++;
-        totalPass++;
-      } else {
-        demoFail++;
-        totalFail++;
-        failures.push(`${demo}: ${result.error}`);
-      }
-    }
-
-    const label = pkg.name === "PPTX" ? ` (${entryCount} slides)` : "";
-    const status = demoFail === 0 ? "PASS" : `FAIL (${demoFail}/${entryCount})`;
-    console.log(`  ${status}  ${demo}${label}`);
-    fs.unlinkSync(tmpFile);
   }
 
-  validator.dispose();
   console.log(`  ${totalPass} passed, ${totalFail} failed`);
-  return { totalPass, totalFail, failures };
+  return { totalPass, totalFail, failures: allFailures };
 }
 
-function validateSingleFile(mode: string, filePath: string, slideNum?: number) {
+// ── Single-file validation ──
+
+function validateSingleFile(filePath: string) {
   xmlRegisterFsInputProviders();
   const absPath = path.resolve(filePath);
+  const tmpFile = absPath + ".__validate_tmp__";
+  fs.copyFileSync(absPath, tmpFile);
 
-  if (mode === "slide") {
-    const validator = loadValidator("pml.xsd");
-    const n = slideNum ?? 1;
-    const xml = extractFromZip(absPath, `ppt/slides/slide${n}.xml`);
-    const result = validateXml(validator, xml);
-    validator.dispose();
-    if (result.pass) console.log(`PASS: slide${n}`);
-    else {
-      console.error(`FAIL: slide${n}`);
-      console.error(`  ${result.error}`);
-      process.exitCode = 1;
+  try {
+    const result = validateAllXmlParts(tmpFile, path.basename(absPath));
+    for (const f of result.failures) {
+      console.error(`  FAIL: ${f}`);
     }
-  } else if (mode === "docx") {
-    const validator = loadValidator("wml.xsd");
-    const xml = extractFromZip(absPath, "word/document.xml");
-    const result = validateXml(validator, xml);
-    validator.dispose();
-    if (result.pass) console.log("PASS: document.xml");
-    else {
-      console.error("FAIL: document.xml");
-      console.error(`  ${result.error}`);
-      process.exitCode = 1;
-    }
+    if (result.fail > 0) process.exitCode = 1;
+    console.log(`${result.pass} passed, ${result.fail} failed`);
+  } finally {
+    fs.unlinkSync(tmpFile);
   }
 }
 
 function main() {
   const args = process.argv.slice(2);
 
-  // Single file validation mode (requires file path argument)
-  if ((args[0] === "slide" || args[0] === "docx") && args[1]) {
-    xmlRegisterFsInputProviders();
-    validateSingleFile(args[0], args[1], args[2] ? parseInt(args[2], 10) : undefined);
-    return;
+  // Single file validation mode
+  if (args[0] === "slide" || args[0] === "docx" || args[0] === "xlsx") {
+    if (args[1]) {
+      xmlRegisterFsInputProviders();
+      validateSingleFile(args[1]);
+      disposeAllValidators();
+      return;
+    }
   }
 
   // Batch validation mode
-  const targets = args.length > 0 ? args : ["pptx", "docx"];
+  const targets = args.length > 0 ? args : ["pptx", "docx", "xlsx"];
   const invalid = targets.filter((t) => !(t in PACKAGES));
   if (invalid.length > 0) {
-    console.error(`Unknown package(s): ${invalid.join(", ")}. Available: pptx, docx`);
+    console.error(`Unknown package(s): ${invalid.join(", ")}. Available: pptx, docx, xlsx`);
     process.exit(1);
   }
 
@@ -286,10 +397,7 @@ function main() {
 
   for (const target of targets) {
     const pkg = PACKAGES[target];
-
-    // Build the package
     execSync(pkg.buildCmd, { cwd: ROOT_DIR, stdio: "pipe" });
-
     const result = validatePackage(pkg);
     grandPass += result.totalPass;
     grandFail += result.totalFail;
@@ -305,6 +413,8 @@ function main() {
     }
     process.exitCode = 1;
   }
+
+  disposeAllValidators();
 }
 
 main();

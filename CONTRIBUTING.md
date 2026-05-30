@@ -29,7 +29,7 @@ packages/
   xml/    - @office-open/xml (XML parsing/serialization)
   docx/   - @office-open/docx (DOCX generation)
   pptx/   - @office-open/pptx (PPTX generation)
-  xlsx/   - @office-open/xlsx (WIP)
+  xlsx/   - @office-open/xlsx (XLSX generation)
 
 ooxml-schemas/  - OOXML XSD schemas (the golden source of truth)
 ```
@@ -195,6 +195,9 @@ cd packages/docx && pnpm tsx demo/<demo-file>.ts
 
 # Pptx demos (run from packages/pptx)
 cd packages/pptx && pnpm tsx demo/<demo-file>.ts
+
+# Xlsx demos (run from packages/xlsx)
+cd packages/xlsx && pnpm tsx demo/<demo-file>.ts
 ```
 
 ## Validation
@@ -208,9 +211,11 @@ pnpm tsx scripts/validate.ts
 # Validate single package
 pnpm tsx scripts/validate.ts pptx
 pnpm tsx scripts/validate.ts docx
+pnpm tsx scripts/validate.ts xlsx
 
 # Validate specific file
 pnpm tsx scripts/validate.ts docx "packages/docx/My Document.docx"
+pnpm tsx scripts/validate.ts xlsx "packages/xlsx/My Workbook.xlsx"
 ```
 
 ## Pull Request Process

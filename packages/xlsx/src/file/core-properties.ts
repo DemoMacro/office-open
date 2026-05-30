@@ -1,0 +1,31 @@
+/**
+ * Core Properties module for SpreadsheetML documents.
+ *
+ * @module
+ */
+import { BaseXmlComponent } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
+import { buildCorePropertiesXml } from "@office-open/core";
+
+export interface CorePropertiesOptions {
+  readonly title?: string;
+  readonly subject?: string;
+  readonly creator?: string;
+  readonly keywords?: string;
+  readonly description?: string;
+  readonly lastModifiedBy?: string;
+  readonly revision?: number;
+}
+
+export class CoreProperties extends BaseXmlComponent {
+  private readonly options: CorePropertiesOptions;
+
+  public constructor(options: CorePropertiesOptions) {
+    super("cp:coreProperties");
+    this.options = options;
+  }
+
+  public override prepForXml(_context: Context): IXmlableObject {
+    return buildCorePropertiesXml(this.options);
+  }
+}

@@ -26,18 +26,6 @@ export interface XmlifyedFile {
   readonly data: string | Uint8Array;
 }
 
-export const PrettifyType = {
-  NONE: "",
-  WITH_2_BLANKS: "  ",
-  WITH_4_BLANKS: "    ",
-  WITH_TAB: "\t",
-} as const;
-
-export const convertPrettifyType = (
-  prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
-): (typeof PrettifyType)[keyof typeof PrettifyType] | undefined =>
-  prettify === true ? PrettifyType.WITH_2_BLANKS : prettify === false ? undefined : prettify;
-
 /** Default DEFLATE compression level matching Microsoft Office behavior. */
 export const ZIP_DEFLATE_LEVEL = 6;
 
@@ -128,20 +116,12 @@ export const createZipStream = (files: Zippable): ReadableStream<Uint8Array> => 
   });
 };
 
-// ── PrettifyType alias for convenience method signatures ──
-
-type PrettifyValue = (typeof PrettifyType)[keyof typeof PrettifyType];
-
 // ── Factory function ──
 
 /**
  * Compile function provided by each package to convert a file object into a Zippable map.
  */
-export type CompileFn<TFile> = (
-  file: TFile,
-  prettify?: PrettifyValue,
-  overrides?: readonly XmlifyedFile[],
-) => Zippable;
+export type CompileFn<TFile> = (file: TFile, overrides?: readonly XmlifyedFile[]) => Zippable;
 
 /**
  * Packer interface returned by {@link createPacker}.
@@ -158,101 +138,47 @@ export interface Packer<TFile> {
   pack<T extends OutputType>(
     file: TFile,
     type: T,
-    prettify?: boolean | PrettifyValue,
     overrides?: readonly XmlifyedFile[],
   ): Promise<OutputByType[T]>;
   /** Generic sync output — returns the requested OutputType. */
   packSync<T extends OutputType>(
     file: TFile,
     type: T,
-    prettify?: boolean | PrettifyValue,
     overrides?: readonly XmlifyedFile[],
   ): OutputByType[T];
 
   /** Async → `Promise<Uint8Array>` (like `Response.bytes()`). */
-  toBytes(
-    file: TFile,
-    prettify?: boolean | PrettifyValue,
-    overrides?: readonly XmlifyedFile[],
-  ): Promise<Uint8Array>;
+  toBytes(file: TFile, overrides?: readonly XmlifyedFile[]): Promise<Uint8Array>;
   /** Sync → `Uint8Array`. */
-  toBytesSync(
-    file: TFile,
-    prettify?: boolean | PrettifyValue,
-    overrides?: readonly XmlifyedFile[],
-  ): Uint8Array;
+  toBytesSync(file: TFile, overrides?: readonly XmlifyedFile[]): Uint8Array;
 
   /** Async → `Promise<string>` (raw ZIP content as string). */
-  toString(
-    file: TFile,
-    prettify?: boolean | PrettifyValue,
-    overrides?: readonly XmlifyedFile[],
-  ): Promise<string>;
+  toString(file: TFile, overrides?: readonly XmlifyedFile[]): Promise<string>;
   /** Sync → `string`. */
-  toStringSync(
-    file: TFile,
-    prettify?: boolean | PrettifyValue,
-    overrides?: readonly XmlifyedFile[],
-  ): string;
+  toStringSync(file: TFile, overrides?: readonly XmlifyedFile[]): string;
 
   /** Async → `Promise<Buffer>` (Node.js). */
-  toBuffer(
-    file: TFile,
-    prettify?: boolean | PrettifyValue,
-    overrides?: readonly XmlifyedFile[],
-  ): Promise<Buffer>;
+  toBuffer(file: TFile, overrides?: readonly XmlifyedFile[]): Promise<Buffer>;
   /** Sync → `Buffer` (Node.js). */
-  toBufferSync(
-    file: TFile,
-    prettify?: boolean | PrettifyValue,
-    overrides?: readonly XmlifyedFile[],
-  ): Buffer;
+  toBufferSync(file: TFile, overrides?: readonly XmlifyedFile[]): Buffer;
 
   /** Async → `Promise<string>` (base64-encoded). */
-  toBase64String(
-    file: TFile,
-    prettify?: boolean | PrettifyValue,
-    overrides?: readonly XmlifyedFile[],
-  ): Promise<string>;
+  toBase64String(file: TFile, overrides?: readonly XmlifyedFile[]): Promise<string>;
   /** Sync → `string` (base64-encoded). */
-  toBase64StringSync(
-    file: TFile,
-    prettify?: boolean | PrettifyValue,
-    overrides?: readonly XmlifyedFile[],
-  ): string;
+  toBase64StringSync(file: TFile, overrides?: readonly XmlifyedFile[]): string;
 
   /** Async → `Promise<Blob>` (browser). */
-  toBlob(
-    file: TFile,
-    prettify?: boolean | PrettifyValue,
-    overrides?: readonly XmlifyedFile[],
-  ): Promise<Blob>;
+  toBlob(file: TFile, overrides?: readonly XmlifyedFile[]): Promise<Blob>;
   /** Sync → `Blob`. */
-  toBlobSync(
-    file: TFile,
-    prettify?: boolean | PrettifyValue,
-    overrides?: readonly XmlifyedFile[],
-  ): Blob;
+  toBlobSync(file: TFile, overrides?: readonly XmlifyedFile[]): Blob;
 
   /** Async → `Promise<ArrayBuffer>`. */
-  toArrayBuffer(
-    file: TFile,
-    prettify?: boolean | PrettifyValue,
-    overrides?: readonly XmlifyedFile[],
-  ): Promise<ArrayBuffer>;
+  toArrayBuffer(file: TFile, overrides?: readonly XmlifyedFile[]): Promise<ArrayBuffer>;
   /** Sync → `ArrayBuffer`. */
-  toArrayBufferSync(
-    file: TFile,
-    prettify?: boolean | PrettifyValue,
-    overrides?: readonly XmlifyedFile[],
-  ): ArrayBuffer;
+  toArrayBufferSync(file: TFile, overrides?: readonly XmlifyedFile[]): ArrayBuffer;
 
   /** Streaming output via `ReadableStream<Uint8Array>` (cross-platform, uses Web Workers). */
-  toStream(
-    file: TFile,
-    prettify?: boolean | PrettifyValue,
-    overrides?: readonly XmlifyedFile[],
-  ): ReadableStream<Uint8Array>;
+  toStream(file: TFile, overrides?: readonly XmlifyedFile[]): ReadableStream<Uint8Array>;
 }
 
 /**
@@ -268,118 +194,73 @@ export const createPacker = <TFile>(options: {
 }): Packer<TFile> => {
   const { compile, mimeType } = options;
 
-  const compileFiles = (
-    file: TFile,
-    prettify?: boolean | PrettifyValue,
-    overrides: readonly XmlifyedFile[] = [],
-  ): Zippable => compile(file, convertPrettifyType(prettify), overrides);
+  const compileFiles = (file: TFile, overrides: readonly XmlifyedFile[] = []): Zippable =>
+    compile(file, overrides);
 
   // ── Async methods (fflate Web Workers) ──
 
   const pack = async <T extends OutputType>(
     file: TFile,
     type: T,
-    prettify?: boolean | PrettifyValue,
     overrides?: readonly XmlifyedFile[],
   ): Promise<OutputByType[T]> => {
-    const files = compileFiles(file, prettify, overrides);
+    const files = compileFiles(file, overrides);
     return zipAndConvert(files, type, mimeType);
   };
 
-  const toBytes = (
-    file: TFile,
-    prettify?: boolean | PrettifyValue,
-    overrides?: readonly XmlifyedFile[],
-  ) => pack(file, "uint8array", prettify, overrides);
+  const toBytes = (file: TFile, overrides?: readonly XmlifyedFile[]) =>
+    pack(file, "uint8array", overrides);
 
-  const toString = (
-    file: TFile,
-    prettify?: boolean | PrettifyValue,
-    overrides?: readonly XmlifyedFile[],
-  ) => pack(file, "string", prettify, overrides);
+  const toString = (file: TFile, overrides?: readonly XmlifyedFile[]) =>
+    pack(file, "string", overrides);
 
-  const toBuffer = (
-    file: TFile,
-    prettify?: boolean | PrettifyValue,
-    overrides?: readonly XmlifyedFile[],
-  ) => pack(file, "nodebuffer", prettify, overrides);
+  const toBuffer = (file: TFile, overrides?: readonly XmlifyedFile[]) =>
+    pack(file, "nodebuffer", overrides);
 
-  const toBase64String = (
-    file: TFile,
-    prettify?: boolean | PrettifyValue,
-    overrides?: readonly XmlifyedFile[],
-  ) => pack(file, "base64", prettify, overrides);
+  const toBase64String = (file: TFile, overrides?: readonly XmlifyedFile[]) =>
+    pack(file, "base64", overrides);
 
-  const toBlob = (
-    file: TFile,
-    prettify?: boolean | PrettifyValue,
-    overrides?: readonly XmlifyedFile[],
-  ) => pack(file, "blob", prettify, overrides);
+  const toBlob = (file: TFile, overrides?: readonly XmlifyedFile[]) =>
+    pack(file, "blob", overrides);
 
-  const toArrayBuffer = (
-    file: TFile,
-    prettify?: boolean | PrettifyValue,
-    overrides?: readonly XmlifyedFile[],
-  ) => pack(file, "arraybuffer", prettify, overrides);
+  const toArrayBuffer = (file: TFile, overrides?: readonly XmlifyedFile[]) =>
+    pack(file, "arraybuffer", overrides);
 
   // ── Sync methods (zipSync, maximum throughput) ──
 
   const packSync = <T extends OutputType>(
     file: TFile,
     type: T,
-    prettify?: boolean | PrettifyValue,
     overrides?: readonly XmlifyedFile[],
   ): OutputByType[T] => {
-    const files = compileFiles(file, prettify, overrides);
+    const files = compileFiles(file, overrides);
     return zipSyncAndConvert(files, type, mimeType);
   };
 
-  const toBytesSync = (
-    file: TFile,
-    prettify?: boolean | PrettifyValue,
-    overrides?: readonly XmlifyedFile[],
-  ) => packSync(file, "uint8array", prettify, overrides);
+  const toBytesSync = (file: TFile, overrides?: readonly XmlifyedFile[]) =>
+    packSync(file, "uint8array", overrides);
 
-  const toStringSync = (
-    file: TFile,
-    prettify?: boolean | PrettifyValue,
-    overrides?: readonly XmlifyedFile[],
-  ) => packSync(file, "string", prettify, overrides);
+  const toStringSync = (file: TFile, overrides?: readonly XmlifyedFile[]) =>
+    packSync(file, "string", overrides);
 
-  const toBufferSync = (
-    file: TFile,
-    prettify?: boolean | PrettifyValue,
-    overrides?: readonly XmlifyedFile[],
-  ) => packSync(file, "nodebuffer", prettify, overrides);
+  const toBufferSync = (file: TFile, overrides?: readonly XmlifyedFile[]) =>
+    packSync(file, "nodebuffer", overrides);
 
-  const toBase64StringSync = (
-    file: TFile,
-    prettify?: boolean | PrettifyValue,
-    overrides?: readonly XmlifyedFile[],
-  ) => packSync(file, "base64", prettify, overrides);
+  const toBase64StringSync = (file: TFile, overrides?: readonly XmlifyedFile[]) =>
+    packSync(file, "base64", overrides);
 
-  const toBlobSync = (
-    file: TFile,
-    prettify?: boolean | PrettifyValue,
-    overrides?: readonly XmlifyedFile[],
-  ) => packSync(file, "blob", prettify, overrides);
+  const toBlobSync = (file: TFile, overrides?: readonly XmlifyedFile[]) =>
+    packSync(file, "blob", overrides);
 
-  const toArrayBufferSync = (
-    file: TFile,
-    prettify?: boolean | PrettifyValue,
-    overrides?: readonly XmlifyedFile[],
-  ) => packSync(file, "arraybuffer", prettify, overrides);
+  const toArrayBufferSync = (file: TFile, overrides?: readonly XmlifyedFile[]) =>
+    packSync(file, "arraybuffer", overrides);
 
   // ── Stream ──
 
-  const toStream = (
-    file: TFile,
-    prettify?: boolean | PrettifyValue,
-    overrides?: readonly XmlifyedFile[],
-  ) => {
+  const toStream = (file: TFile, overrides?: readonly XmlifyedFile[]) => {
     let files: Zippable;
     try {
-      files = compileFiles(file, prettify, overrides);
+      files = compileFiles(file, overrides);
     } catch (err) {
       return new ReadableStream<Uint8Array>({
         start(controller) {

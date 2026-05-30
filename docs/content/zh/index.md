@@ -172,6 +172,21 @@ orientation: horizontal
 }
 ```
 
+```json [XLSX]
+{
+    "worksheets": [
+        {
+            "name": "Sheet1",
+            "children": [
+                { "cells": [{ "value": "Name" }, { "value": "Score" }] },
+                { "cells": [{ "value": "Alice" }, { "value": 95 }] },
+                { "cells": [{ "value": "Bob" }, { "value": 88 }] }
+            ]
+        }
+    ]
+}
+```
+
 :::
 
 #title
@@ -199,6 +214,14 @@ icon: i-lucide-presentation
 
 :::u-page-feature
 ---
+icon: i-lucide-table-2
+---
+#title{unwrap="p"}
+创建 Excel 电子表格，支持样式、图表和数据验证
+:::
+
+:::u-page-feature
+---
 icon: i-lucide-download
 ---
 #title{unwrap="p"}
@@ -211,6 +234,16 @@ icon: i-lucide-download
 color: neutral
 label: 了解 @office-open/docx
 to: /zh/docx/quickstart
+trailingIcon: i-lucide-arrow-right
+variant: subtle
+---
+:::
+
+:::u-button
+---
+color: neutral
+label: 了解 @office-open/xlsx
+to: /zh/xlsx/quickstart
 trailingIcon: i-lucide-arrow-right
 variant: subtle
 ---
@@ -261,13 +294,31 @@ const result = await patchPresentation({
 });
 ```
 
+```ts [XLSX]
+import { parseWorkbook, patchWorkbook, PatchType } from "@office-open/xlsx";
+
+// 解析现有文件
+const opts = parseWorkbook(buffer);
+// opts.worksheets — 工作表数组
+// opts.styles — 样式定义
+
+// 修补模板占位符
+const result = await patchWorkbook({
+  outputType: "nodebuffer",
+  data: buffer,
+  patches: {
+    name: { type: PatchType.CELL, value: "张三" },
+  },
+});
+```
+
 :::
 
 #title
 读取和[修改]{.text-(--ui-primary)}现有文件
 
 #description
-将 `.docx` 和 `.pptx` 文件解析为结构化对象进行检查，或通过替换 `{{占位符}}` 标记来修补模板。
+将 `.docx`、`.pptx` 和 `.xlsx` 文件解析为结构化对象进行检查，或通过替换 `{{占位符}}` 标记来修补模板。
 
 #features
 :::u-page-feature
@@ -300,6 +351,16 @@ icon: i-lucide-arrow-right-left
 color: neutral
 label: 了解 @office-open/pptx
 to: /zh/pptx/quickstart
+trailingIcon: i-lucide-arrow-right
+variant: subtle
+---
+:::
+
+:::u-button
+---
+color: neutral
+label: 了解 @office-open/xlsx
+to: /zh/xlsx/quickstart
 trailingIcon: i-lucide-arrow-right
 variant: subtle
 ---

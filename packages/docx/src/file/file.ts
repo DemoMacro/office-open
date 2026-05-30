@@ -236,9 +236,13 @@ export class File {
       const defaultStyles = defaultFactory.newInstance(options.styles?.default);
       const externalFactory = new ExternalStylesFactory();
       const externalStyles = externalFactory.newInstance(options.externalStyles);
+      // External styles already have docDefaults + latentStyles + styles in XSD order.
+      // Append only the style elements from default factory (skip its DocumentDefaults
+      // to avoid a second docDefaults after style elements, which violates XSD sequence).
+      const defaultStyleElements = defaultStyles.importedStyles!.slice(1);
       this.styles = new Styles({
         ...externalStyles,
-        importedStyles: [...defaultStyles.importedStyles!, ...externalStyles.importedStyles!],
+        importedStyles: [...externalStyles.importedStyles!, ...defaultStyleElements],
       });
     } else if (options.styles) {
       const stylesFactory = new DefaultStylesFactory();

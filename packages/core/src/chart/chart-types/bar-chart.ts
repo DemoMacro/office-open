@@ -29,9 +29,9 @@ class BarSeries extends XmlComponent {
     this.root.push(wrapEl("c:idx", chartAttr({ val: index })));
     this.root.push(wrapEl("c:order", chartAttr({ val: index })));
     this.root.push(new SeriesTx(series.name));
+    this.root.push(new EmptyElement("c:spPr"));
     this.root.push(new SeriesCat(categories));
     this.root.push(new SeriesVal(series.values));
-    this.root.push(new EmptyElement("c:spPr"));
   }
 }
 

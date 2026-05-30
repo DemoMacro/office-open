@@ -44,8 +44,8 @@ class NumRef extends XmlComponent {
 class NumCache extends XmlComponent {
   public constructor(values: readonly number[]) {
     super("c:numCache");
-    this.root.push(wrapEl("c:ptCount", chartAttr({ val: values.length })));
     this.root.push(new FormatCode("General"));
+    this.root.push(wrapEl("c:ptCount", chartAttr({ val: values.length })));
     for (let i = 0; i < values.length; i++) {
       this.root.push(new NumPt(i, values[i]));
     }

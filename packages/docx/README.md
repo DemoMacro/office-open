@@ -76,35 +76,26 @@ Check the [demo folder](./demo) for 100+ working examples covering every feature
 
 ## Benchmark
 
-Performance comparison against original `docx` (9.6.1) package (Windows 11 / Node 22):
-
-**Object Creation (no pack)**
-
-| Scenario                                                | @office-open/docx |       docx |  Speedup |
-| ------------------------------------------------------- | ----------------: | ---------: | -------: |
-| Simple document (2 paragraphs)                          |       20.0K ops/s | 6.2K ops/s | **3.2x** |
-| Styled paragraphs (20 paragraphs)                       |       11.4K ops/s | 4.6K ops/s | **2.5x** |
-| Table (10x5 cells)                                      |       10.1K ops/s | 3.7K ops/s | **2.7x** |
-| Full featured (header/footer/headings/table/paragraphs) |        5.5K ops/s | 2.8K ops/s | **2.0x** |
-
-**Create + toBuffer (end-to-end)**
+Performance comparison against original `docx` (9.6.1) package (Windows 11 / Node 24).
 
 Both libraries use DEFLATE compression.
 
+**Create + toBuffer (end-to-end)**
+
 | Scenario                                                | @office-open/docx |      docx |  Speedup |
 | ------------------------------------------------------- | ----------------: | --------: | -------: |
-| Simple document (2 paragraphs)                          |         388 ops/s | 194 ops/s | **2.0x** |
-| Styled paragraphs (20 paragraphs)                       |         402 ops/s | 232 ops/s | **1.7x** |
-| Table (10x5 cells)                                      |         463 ops/s | 238 ops/s | **1.9x** |
-| Full featured (header/footer/headings/table/paragraphs) |         346 ops/s | 179 ops/s | **1.9x** |
+| Simple document (2 paragraphs)                          |         341 ops/s | 173 ops/s | **2.0x** |
+| Styled paragraphs (20 paragraphs)                       |         341 ops/s | 210 ops/s | **1.6x** |
+| Table (10x5 cells)                                      |         419 ops/s | 216 ops/s | **1.9x** |
+| Full featured (header/footer/headings/table/paragraphs) |         369 ops/s | 168 ops/s | **2.2x** |
 
 **Large Files — Create + toBuffer**
 
 | Scenario                     | @office-open/docx |       docx |  Speedup |
 | ---------------------------- | ----------------: | ---------: | -------: |
-| 2000 paragraphs              |        42.2 ops/s | 27.7 ops/s | **1.5x** |
-| 200×10 table                 |        77.4 ops/s | 37.3 ops/s | **2.1x** |
-| 20 sections × 100 paragraphs |        47.0 ops/s | 30.9 ops/s | **1.5x** |
+| 2000 paragraphs              |        39.3 ops/s | 24.2 ops/s | **1.6x** |
+| 200×10 table                 |        78.1 ops/s | 30.5 ops/s | **2.6x** |
+| 20 sections × 100 paragraphs |        42.5 ops/s | 25.6 ops/s | **1.7x** |
 
 **Large File (~100MB) — Mixed Content**
 
@@ -112,9 +103,9 @@ Both libraries use DEFLATE compression.
 
 | Method                    |      Speed |  Speedup |
 | ------------------------- | ---------: | -------: |
-| @office-open/docx (sync)  | 0.36 ops/s |     1.2x |
-| @office-open/docx (async) | 0.40 ops/s | **1.3x** |
-| docx                      | 0.30 ops/s |          |
+| @office-open/docx (sync)  | 0.35 ops/s |     1.2x |
+| @office-open/docx (async) | 0.38 ops/s | **1.3x** |
+| docx                      | 0.29 ops/s |          |
 
 ## License
 

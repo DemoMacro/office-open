@@ -96,15 +96,15 @@ gen(); // → 1, 2, 3, ...
 
 | Operation                     | hz    |
 | ----------------------------- | ----- |
-| `decimalNumber`               | ~20M  |
-| `hexColorValue` (6-char hex)  | ~13M  |
-| `uniqueNumericIdCreator`      | ~20M  |
-| `uniqueId` (nanoid)           | ~3.2M |
-| `uniqueUuid`                  | ~1.8M |
-| `onOffObj` (true)             | ~19M  |
-| `onOffObj` (false)            | ~3.4M |
-| `BuilderElement` (attributes) | ~5M   |
-| `BuilderElement` (children)   | ~3.9M |
+| `decimalNumber`               | ~18M  |
+| `hexColorValue` (6-char hex)  | ~11M  |
+| `uniqueNumericIdCreator`      | ~18M  |
+| `uniqueId` (nanoid)           | ~3.0M |
+| `uniqueUuid`                  | ~1.7M |
+| `onOffObj` (true)             | ~16M  |
+| `onOffObj` (false)            | ~3.5M |
+| `BuilderElement` (attributes) | ~4.9M |
+| `BuilderElement` (children)   | ~3.6M |
 
 ## License
 

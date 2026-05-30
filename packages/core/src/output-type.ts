@@ -24,6 +24,7 @@ export type OutputType = keyof OutputByType;
 export const OoxmlMimeType = {
   DOCX: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   PPTX: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  XLSX: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 } as const;
 
 export const convertOutput = <T extends OutputType>(

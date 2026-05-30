@@ -5,7 +5,7 @@
  *
  * @module
  */
-import { convertEmuToPixels } from "@office-open/core";
+import { convertEmuToPixels, xsdLineEndSize } from "@office-open/core";
 import {
   attr,
   attrBool,
@@ -878,9 +878,9 @@ function parseConnector(el: Element): ConnectorShapeOptions {
         const type = attr(headEnd, "type");
         if (type) opts.endArrowhead = type as ArrowheadType;
         const len = attr(headEnd, "len");
-        if (len) opts.arrowheadLength = len as "sm" | "med" | "lg";
+        if (len) opts.arrowheadLength = xsdLineEndSize.from(len) as "small" | "medium" | "large";
         const w = attr(headEnd, "w");
-        if (w) opts.arrowheadWidth = w as "sm" | "med" | "lg";
+        if (w) opts.arrowheadWidth = xsdLineEndSize.from(w) as "small" | "medium" | "large";
       }
       const tailEnd = findChild(ln, "a:tailEnd");
       if (tailEnd) {

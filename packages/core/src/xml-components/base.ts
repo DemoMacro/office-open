@@ -3,6 +3,8 @@
  *
  * @module
  */
+import { xml } from "@office-open/xml";
+
 import type { IXmlableObject } from "./types";
 export type { IXmlableObject };
 
@@ -36,4 +38,13 @@ export abstract class BaseXmlComponent {
    * @returns The XML-serializable object, or undefined to exclude from output
    */
   public abstract prepForXml(context: Context): IXmlableObject | undefined;
+
+  /**
+   * Direct XML serialization. Override in subclasses for zero-allocation output.
+   * Default falls back to prepForXml() + xml().
+   */
+  public toXml(context: Context): string {
+    const obj = this.prepForXml(context);
+    return obj ? xml(obj) : "";
+  }
 }

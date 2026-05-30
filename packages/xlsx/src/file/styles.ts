@@ -1,0 +1,383 @@
+/**
+ * Styles component — generates xl/styles.xml.
+ *
+ * XLSX uses an index-based style system: cells reference style entries
+ * via the `s` attribute, which is an index into `cellXfs`.
+ *
+ * @module
+ */
+import { BaseXmlComponent } from "@file/xml-components";
+import type { Context, IXmlableObject } from "@file/xml-components";
+
+// ── Sub-style option interfaces ──
+
+export interface FontOptions {
+  readonly bold?: boolean;
+  readonly italic?: boolean;
+  readonly underline?: boolean;
+  readonly strike?: boolean;
+  readonly size?: number;
+  readonly color?: string;
+  readonly fontName?: string;
+}
+
+export interface FillOptions {
+  readonly type?: "solid" | "pattern";
+  readonly color?: string;
+  readonly patternType?: string;
+}
+
+export interface BorderOptions {
+  readonly style?: "thin" | "medium" | "thick" | "dotted" | "dashed" | "hair" | "none";
+  readonly color?: string;
+}
+
+export interface BorderSideOptions {
+  readonly top?: BorderOptions;
+  readonly bottom?: BorderOptions;
+  readonly left?: BorderOptions;
+  readonly right?: BorderOptions;
+  readonly diagonal?: BorderOptions;
+}
+
+export interface AlignmentOptions {
+  readonly horizontal?: "left" | "center" | "right" | "fill" | "justify";
+  readonly vertical?: "top" | "center" | "bottom";
+  readonly wrapText?: boolean;
+  readonly textRotation?: number;
+  readonly indent?: number;
+}
+
+export interface StyleOptions {
+  readonly font?: FontOptions;
+  readonly fill?: FillOptions;
+  readonly border?: BorderSideOptions;
+  readonly numFmt?: string;
+  readonly alignment?: AlignmentOptions;
+}
+
+// ── Style key helpers for deduplication ──
+
+function fontKey(f: FontOptions): string {
+  return JSON.stringify(f);
+}
+
+function fillKey(f: FillOptions): string {
+  return JSON.stringify(f);
+}
+
+function borderKey(b: BorderSideOptions): string {
+  return JSON.stringify(b);
+}
+
+// ── Built-in number format IDs ──
+
+const BUILTIN_NUMFMTS: Record<string, number> = {
+  General: 0,
+  "0": 1,
+  "0.00": 2,
+  "#,##0": 3,
+  "#,##0.00": 4,
+  "0%": 9,
+  "0.00%": 10,
+  "0.00E+00": 11,
+  "mm-dd-yy": 14,
+  "d-mmm-yy": 15,
+  "d-mmm": 16,
+  "mmm-yy": 17,
+  "h:mm AM/PM": 18,
+  "h:mm:ss AM/PM": 19,
+  "h:mm": 20,
+  "h:mm:ss": 21,
+  "m/d/yy h:mm": 22,
+  "#,##0 ;(#,##0)": 37,
+  "#,##0 ;[Red](#,##0)": 38,
+  "#,##0.00;(#,##0.00)": 39,
+  "#,##0.00;[Red](#,##0.00)": 40,
+  "mm:ss": 45,
+  "[h]:mm:ss": 46,
+  "mmss.0": 47,
+  "##0.0E+0": 48,
+  "@": 49,
+};
+
+export class Styles extends BaseXmlComponent {
+  private readonly fonts: FontOptions[] = [
+    { size: 11, fontName: "Calibri" }, // default font (index 0)
+  ];
+  private readonly fontKeys = new Map<string, number>();
+
+  private readonly fills: FillOptions[] = [
+    { patternType: "none" }, // default fill (index 0)
+    { patternType: "gray125" }, // required fill (index 1)
+  ];
+  private readonly fillKeys = new Map<string, number>();
+
+  private readonly borders: BorderSideOptions[] = [
+    {}, // default empty border (index 0)
+  ];
+  private readonly borderKeys = new Map<string, number>();
+
+  private readonly customNumFmts = new Map<string, number>();
+  private nextCustomNumFmtId = 164; // custom numFmts start at 164
+
+  private readonly cellXfs: Array<{
+    readonly fontId: number;
+    readonly fillId: number;
+    readonly borderId: number;
+    readonly numFmtId: number;
+    readonly alignment?: AlignmentOptions;
+  }> = [
+    { fontId: 0, fillId: 0, borderId: 0, numFmtId: 0 }, // default xf (index 0)
+  ];
+  private readonly cellXfKeys = new Map<string, number>();
+
+  public constructor() {
+    super("styleSheet");
+
+    // Pre-register default font/fill/border keys
+    this.fontKeys.set(fontKey(this.fonts[0]), 0);
+    this.fillKeys.set(fillKey(this.fills[0]), 0);
+    this.fillKeys.set(fillKey(this.fills[1]), 1);
+    this.borderKeys.set(borderKey(this.borders[0]), 0);
+    this.cellXfKeys.set(this.cellXfKey(this.cellXfs[0]), 0);
+  }
+
+  /**
+   * Register a style and return its index (for the cell `s` attribute).
+   * Deduplicates across fonts, fills, borders, numFmts, and cellXfs.
+   */
+  public register(opts: StyleOptions): number {
+    const fontId = this.registerFont(opts.font);
+    const fillId = this.registerFill(opts.fill);
+    const borderId = this.registerBorder(opts.border);
+    const numFmtId = this.registerNumFmt(opts.numFmt);
+
+    const xf = {
+      fontId,
+      fillId,
+      borderId,
+      numFmtId,
+      alignment: opts.alignment,
+    };
+
+    const key = this.cellXfKey(xf);
+    const existing = this.cellXfKeys.get(key);
+    if (existing !== undefined) return existing;
+
+    const idx = this.cellXfs.length;
+    this.cellXfs.push(xf);
+    this.cellXfKeys.set(key, idx);
+    return idx;
+  }
+
+  private registerFont(opts?: FontOptions): number {
+    if (!opts) return 0;
+    const key = fontKey(opts);
+    const existing = this.fontKeys.get(key);
+    if (existing !== undefined) return existing;
+
+    const idx = this.fonts.length;
+    this.fonts.push(opts);
+    this.fontKeys.set(key, idx);
+    return idx;
+  }
+
+  private registerFill(opts?: FillOptions): number {
+    if (!opts) return 0;
+    const key = fillKey(opts);
+    const existing = this.fillKeys.get(key);
+    if (existing !== undefined) return existing;
+
+    const idx = this.fills.length;
+    this.fills.push(opts);
+    this.fillKeys.set(key, idx);
+    return idx;
+  }
+
+  private registerBorder(opts?: BorderSideOptions): number {
+    if (!opts) return 0;
+    const key = borderKey(opts);
+    const existing = this.borderKeys.get(key);
+    if (existing !== undefined) return existing;
+
+    const idx = this.borders.length;
+    this.borders.push(opts);
+    this.borderKeys.set(key, idx);
+    return idx;
+  }
+
+  private registerNumFmt(fmt?: string): number {
+    if (!fmt) return 0;
+    const builtin = BUILTIN_NUMFMTS[fmt];
+    if (builtin !== undefined) return builtin;
+
+    const existing = this.customNumFmts.get(fmt);
+    if (existing !== undefined) return existing;
+
+    const id = this.nextCustomNumFmtId++;
+    this.customNumFmts.set(fmt, id);
+    return id;
+  }
+
+  private cellXfKey(xf: {
+    readonly fontId: number;
+    readonly fillId: number;
+    readonly borderId: number;
+    readonly numFmtId: number;
+    readonly alignment?: AlignmentOptions;
+  }): string {
+    return `${xf.fontId}|${xf.fillId}|${xf.borderId}|${xf.numFmtId}|${JSON.stringify(xf.alignment ?? null)}`;
+  }
+
+  // ── XML generation ──
+
+  public override prepForXml(_context: Context): IXmlableObject {
+    const children: IXmlableObject[] = [
+      {
+        _attr: {
+          xmlns: "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
+        },
+      },
+    ];
+
+    // numFmts
+    if (this.customNumFmts.size > 0) {
+      const fmtElements: IXmlableObject[] = [{ _attr: { count: this.customNumFmts.size } }];
+      for (const [fmt, id] of this.customNumFmts) {
+        fmtElements.push({
+          numFmt: { _attr: { numFmtId: id, formatCode: fmt } },
+        });
+      }
+      children.push({ numFmts: fmtElements });
+    }
+
+    // fonts
+    children.push(this.buildFonts());
+
+    // fills
+    children.push(this.buildFills());
+
+    // borders
+    children.push(this.buildBorders());
+
+    // cellStyleXfs
+    children.push({
+      cellStyleXfs: [
+        { _attr: { count: 1 } },
+        { xf: [{ _attr: { numFmtId: 0, fontId: 0, fillId: 0, borderId: 0 } }] },
+      ],
+    });
+
+    // cellXfs
+    children.push(this.buildCellXfs());
+
+    // cellStyles
+    children.push({
+      cellStyles: [
+        { _attr: { count: 1 } },
+        { cellStyle: [{ _attr: { name: "Normal", xfId: 0, builtinId: 0 } }] },
+      ],
+    });
+
+    return { styleSheet: children };
+  }
+
+  private buildFonts(): IXmlableObject {
+    const elements: IXmlableObject[] = [{ _attr: { count: this.fonts.length } }];
+    for (const f of this.fonts) {
+      elements.push({ font: this.fontXml(f) });
+    }
+    return { fonts: elements };
+  }
+
+  private fontXml(f: FontOptions): IXmlableObject[] {
+    const parts: IXmlableObject[] = [];
+    if (f.bold) parts.push({ b: [] });
+    if (f.italic) parts.push({ i: [] });
+    if (f.underline) parts.push({ u: [] });
+    if (f.strike) parts.push({ strike: [] });
+    if (f.size) parts.push({ sz: [{ _attr: { val: f.size } }] });
+    if (f.color) parts.push({ color: [{ _attr: { rgb: `FF${f.color}` } }] });
+    if (f.fontName) parts.push({ name: [{ _attr: { val: f.fontName } }] });
+    return parts;
+  }
+
+  private buildFills(): IXmlableObject {
+    const elements: IXmlableObject[] = [{ _attr: { count: this.fills.length } }];
+    for (const f of this.fills) {
+      elements.push({
+        fill: [
+          {
+            patternFill: [
+              { _attr: { patternType: f.patternType ?? "solid" } },
+              ...(f.color ? [{ fgColor: [{ _attr: { rgb: `FF${f.color}` } }] }] : []),
+            ],
+          },
+        ],
+      });
+    }
+    return { fills: elements };
+  }
+
+  private buildBorders(): IXmlableObject {
+    const elements: IXmlableObject[] = [{ _attr: { count: this.borders.length } }];
+    for (const b of this.borders) {
+      elements.push({ border: this.borderXml(b) });
+    }
+    return { borders: elements };
+  }
+
+  private borderXml(b: BorderSideOptions): IXmlableObject[] {
+    const parts: IXmlableObject[] = [];
+    for (const side of ["left", "right", "top", "bottom", "diagonal"] as const) {
+      const opts = b[side] as BorderOptions | undefined;
+      if (opts && opts.style && opts.style !== "none") {
+        const attrs: Record<string, string> = { style: opts.style };
+        const children: IXmlableObject[] = [{ _attr: attrs }];
+        if (opts.color) {
+          children.push({ color: [{ _attr: { rgb: `FF${opts.color}` } }] });
+        }
+        parts.push({ [side]: children });
+      } else {
+        parts.push({ [side]: [] });
+      }
+    }
+    return parts;
+  }
+
+  private buildCellXfs(): IXmlableObject {
+    const elements: IXmlableObject[] = [{ _attr: { count: this.cellXfs.length } }];
+    for (const xf of this.cellXfs) {
+      const attrs: Record<string, string | number> = {
+        numFmtId: xf.numFmtId,
+        fontId: xf.fontId,
+        fillId: xf.fillId,
+        borderId: xf.borderId,
+      };
+      if (xf.alignment) {
+        attrs.applyAlignment = 1;
+      }
+      if (xf.fontId > 0) attrs.applyFont = 1;
+      if (xf.fillId > 0) attrs.applyFill = 1;
+      if (xf.borderId > 0) attrs.applyBorder = 1;
+
+      const children: IXmlableObject[] = [{ _attr: attrs }];
+      if (xf.alignment) {
+        children.push(this.alignmentXml(xf.alignment));
+      }
+      elements.push({ xf: children });
+    }
+    return { cellXfs: elements };
+  }
+
+  private alignmentXml(a: AlignmentOptions): IXmlableObject {
+    const attrs: Record<string, string | number> = {};
+    if (a.horizontal) attrs.horizontal = a.horizontal;
+    if (a.vertical) attrs.vertical = a.vertical;
+    if (a.wrapText) attrs.wrapText = 1;
+    if (a.textRotation !== undefined) attrs.textRotation = a.textRotation;
+    if (a.indent !== undefined) attrs.indent = a.indent;
+    return { alignment: [{ _attr: attrs }] };
+  }
+}

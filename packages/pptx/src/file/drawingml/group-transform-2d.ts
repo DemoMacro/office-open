@@ -23,4 +23,8 @@ export class GroupTransform2D extends XmlComponent {
   public override prepForXml(context: Context): IXmlableObject | undefined {
     return this.core["prepForXml"]?.(context);
   }
+
+  public override toXml(context: Context): string {
+    return this.core.toXml(context);
+  }
 }

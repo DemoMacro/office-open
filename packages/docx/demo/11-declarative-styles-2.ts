@@ -241,7 +241,7 @@ const doc = new Document({
         name: "Normal Para",
         next: "Normal",
         paragraph: {
-          leftTabStop: 453.543_307_087,
+          leftTabStop: 454,
           rightTabStop: TabStopPosition.MAX,
           spacing: { after: 20 * 72 * 0.05, before: 20 * 72 * 0.1, line: 276 },
         },
@@ -295,7 +295,7 @@ const doc = new Document({
         name: "Numbered Para",
         next: "Normal",
         paragraph: {
-          leftTabStop: 453.543_307_087,
+          leftTabStop: 454,
           numbering: {
             instance: 0,
             level: 0,

@@ -27,17 +27,24 @@
     "dist"
   ],
   "type": "module",
-  "main": "dist/index.mjs",
-  "types": "dist/index.d.mts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.mts",
-      "import": "./dist/index.mjs"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     }
   },
   "scripts": {
     "dev": "basis build --stub",
     "build": "vp pack",
-    "prepack": "pnpm build"
+    "prepack": "pnpm build",
+    "test": "vp test run --coverage",
+    "check": "vp check --fix"
+  },
+  "dependencies": {
+    "@office-open/core": "workspace:*",
+    "@office-open/xml": "workspace:*",
+    "undio": "0.2.0"
   }
 }

@@ -3,11 +3,11 @@
 ![GitHub](https://img.shields.io/github/license/DemoMacro/office-open)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](https://www.contributor-covenant.org/version/2/1/code_of_conduct/)
 
-> Generate, parse, and patch Office Open XML documents (.docx, .pptx) with a declarative TypeScript API. Works in Node.js and browsers.
+> Generate, parse, and patch Office Open XML documents (.docx, .pptx, .xlsx) with a declarative TypeScript API. Works in Node.js and browsers.
 
 ## Features
 
-- 📝 **Document Generation** — Create .docx and .pptx files with a declarative JSON or TypeScript API
+- 📝 **Document Generation** — Create .docx, .pptx, and .xlsx files with a declarative JSON or TypeScript API
 - 📖 **Parsing** — Read existing files into structured objects for inspection and round-trip workflows
 - 🔧 **Template Patching** — Replace `{{placeholder}}` tokens in existing templates with new content
 - 🎨 **Rich Content** — Paragraphs, tables, images, charts, SmartArt, math equations, and more
@@ -24,8 +24,9 @@
 | ---------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------- |
 | [@office-open/docx](./packages/docx/README.md) | ![npm](https://img.shields.io/npm/v/@office-open/docx) | Word document generation, parsing, and patching      |
 | [@office-open/pptx](./packages/pptx/README.md) | ![npm](https://img.shields.io/npm/v/@office-open/pptx) | PowerPoint generation, parsing, and patching         |
-| [@office-open/core](./packages/core/README.md) |                                                        | Shared OOXML infrastructure, charts, unit converters |
-| [@office-open/xml](./packages/xml/README.md)   |                                                        | Low-level XML parsing and serialization              |
+| [@office-open/xlsx](./packages/xlsx/README.md) | ![npm](https://img.shields.io/npm/v/@office-open/xlsx) | Spreadsheet generation, parsing, and patching        |
+| [@office-open/core](./packages/core/README.md) | ![npm](https://img.shields.io/npm/v/@office-open/core) | Shared OOXML infrastructure, charts, unit converters |
+| [@office-open/xml](./packages/xml/README.md)   | ![npm](https://img.shields.io/npm/v/@office-open/xml)  | Low-level XML parsing and serialization              |
 
 ## Quick Start
 
@@ -94,9 +95,40 @@ const buffer = await Packer.toBuffer(pres);
 writeFileSync("presentation.pptx", buffer);
 ```
 
+### XLSX Generation
+
+```bash
+# Install with npm
+$ npm install @office-open/xlsx
+
+# Install with pnpm
+$ pnpm add @office-open/xlsx
+```
+
+```typescript
+import { Workbook, Packer } from "@office-open/xlsx";
+import { writeFileSync } from "node:fs";
+
+const wb = new Workbook({
+  worksheets: [
+    {
+      name: "Sheet1",
+      children: [
+        { cells: [{ value: "Name" }, { value: "Score" }] },
+        { cells: [{ value: "Alice" }, { value: 95 }] },
+        { cells: [{ value: "Bob" }, { value: 87 }] },
+      ],
+    },
+  ],
+});
+
+const buffer = await Packer.toBuffer(wb);
+writeFileSync("workbook.xlsx", buffer);
+```
+
 ## Parse Existing Files
 
-Read and inspect existing `.docx` and `.pptx` files into structured objects:
+Read and inspect existing `.docx`, `.pptx`, and `.xlsx` files into structured objects:
 
 ```typescript
 // DOCX
@@ -110,6 +142,12 @@ import { parsePresentation } from "@office-open/pptx";
 const opts = parsePresentation(buffer);
 // opts.slides — slide array
 // opts.size, opts.title — presentation properties
+
+// XLSX
+import { parseWorkbook } from "@office-open/xlsx";
+const opts = parseWorkbook(buffer);
+// opts.worksheets — worksheet array
+// opts.worksheets[0].children — row/cell data
 ```
 
 ## JSON API
@@ -144,7 +182,7 @@ This project follows core principles:
 1. **OOXML Compliance**: Strict adherence to the ISO/IEC 29500 OOXML specification
 2. **Type Safety**: Full TypeScript support with comprehensive types and autocomplete
 3. **Declarative API**: Simple, intuitive API for document generation — JSON or TypeScript
-4. **Modular Design**: Shared core infrastructure across DOCX, PPTX, XLSX
+4. **Modular Design**: Shared core infrastructure across DOCX, PPTX, and XLSX
 5. **Performance**: Optimized for large documents and batch processing
 6. **Cross-platform**: Works in Node.js and browsers. Export to Buffer, Blob, Base64, stream, or string
 

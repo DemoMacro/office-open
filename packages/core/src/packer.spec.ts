@@ -1,6 +1,6 @@
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
-import { createPacker, PrettifyType, type XmlifyedFile } from "./packer";
+import { createPacker, type XmlifyedFile } from "./packer";
 
 // Simple mock compile function for testing createPacker
 const compileMock = vi.fn();
@@ -23,39 +23,16 @@ describe("createPacker", () => {
     vi.restoreAllMocks();
   });
 
-  describe("prettify passthrough", () => {
-    it("should convert boolean true to WITH_2_BLANKS", async () => {
-      await Packer.toString(mockFile, true);
-      expect(compileMock).toHaveBeenCalledWith(
-        expect.anything(),
-        PrettifyType.WITH_2_BLANKS,
-        expect.anything(),
-      );
-    });
-
-    it("should pass PrettifyType value through", async () => {
-      await Packer.toString(mockFile, PrettifyType.WITH_4_BLANKS);
-      expect(compileMock).toHaveBeenCalledWith(
-        expect.anything(),
-        PrettifyType.WITH_4_BLANKS,
-        expect.anything(),
-      );
-    });
-
-    it("should convert boolean false to undefined", async () => {
-      await Packer.toString(mockFile, false);
-      expect(compileMock).toHaveBeenCalledWith(expect.anything(), undefined, expect.anything());
-    });
-
+  describe("compile passthrough", () => {
     it("should default overrides to empty array", async () => {
       await Packer.toString(mockFile);
-      expect(compileMock).toHaveBeenCalledWith(expect.anything(), undefined, []);
+      expect(compileMock).toHaveBeenCalledWith(expect.anything(), []);
     });
 
     it("should pass overrides through", async () => {
       const overrides: readonly XmlifyedFile[] = [{ data: "test", path: "test.xml" }];
-      await Packer.toString(mockFile, true, overrides);
-      expect(compileMock).toHaveBeenCalledWith(expect.anything(), expect.anything(), overrides);
+      await Packer.toString(mockFile, overrides);
+      expect(compileMock).toHaveBeenCalledWith(expect.anything(), overrides);
     });
   });
 
@@ -317,12 +294,6 @@ describe("createPacker", () => {
       });
 
       const stream = Packer.toStream(mockFile);
-      const data = await collectStream(stream);
-      expect(data.length).toBeGreaterThan(0);
-    });
-
-    it("should support prettify option", async () => {
-      const stream = Packer.toStream(mockFile, PrettifyType.WITH_TAB);
       const data = await collectStream(stream);
       expect(data.length).toBeGreaterThan(0);
     });

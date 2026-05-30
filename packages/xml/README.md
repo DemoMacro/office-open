@@ -103,31 +103,31 @@ Performance comparison against original `xml` (1.0.1) and `xml-js` (1.6.11) pack
 
 | Scenario                | @office-open/xml |        xml |   Speedup |
 | ----------------------- | ---------------: | ---------: | --------: |
-| Simple element          |     4,823,128 hz | 781,207 hz | **6.17x** |
-| Nested element          |       947,678 hz | 313,665 hz | **3.02x** |
-| Nested with declaration |       899,301 hz | 266,551 hz | **3.37x** |
+| Simple element          |     5,177,260 hz | 788,296 hz | **6.57x** |
+| Nested element          |       931,473 hz | 283,093 hz | **3.29x** |
+| Nested with declaration |       871,188 hz | 252,580 hz | **3.45x** |
 
 ### Parsing (xml2js)
 
-| Scenario           | @office-open/xml |     xml-js |    Speedup |
-| ------------------ | ---------------: | ---------: | ---------: |
-| Simple XML         |     1,083,833 hz | 100,053 hz | **10.83x** |
-| Complex OOXML      |       364,581 hz |  51,730 hz |  **7.05x** |
-| With captureSpaces |       375,042 hz |  51,373 hz |  **7.30x** |
+| Scenario           | @office-open/xml |    xml-js |    Speedup |
+| ------------------ | ---------------: | --------: | ---------: |
+| Simple XML         |     1,007,094 hz | 91,782 hz | **10.97x** |
+| Complex OOXML      |       340,595 hz | 49,733 hz |  **6.85x** |
+| With captureSpaces |       314,648 hz | 44,190 hz |  **7.12x** |
 
 ### Stringifying (js2xml)
 
 | Scenario       | @office-open/xml |     xml-js |   Speedup |
 | -------------- | ---------------: | ---------: | --------: |
-| Simple element |       767,535 hz | 194,930 hz | **3.94x** |
-| Complex OOXML  |       367,936 hz | 130,716 hz | **2.81x** |
+| Simple element |       712,314 hz | 182,865 hz | **3.90x** |
+| Complex OOXML  |       333,739 hz | 125,132 hz | **2.67x** |
 
 ### Direct Conversion (toElement vs bridge)
 
 | Scenario |   toElement() | xml() + xml2js() bridge |    Speedup |
 | -------- | ------------: | ----------------------: | ---------: |
-| Simple   | 15,895,382 hz |            1,079,249 hz | **14.72x** |
-| Nested   |  4,077,988 hz |              465,743 hz |  **8.76x** |
+| Simple   | 13,922,735 hz |            1,083,869 hz | **12.85x** |
+| Nested   |  3,799,372 hz |              436,241 hz |  **8.71x** |
 
 ## Bundle Size
 

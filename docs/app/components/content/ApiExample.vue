@@ -8,7 +8,7 @@ import { computed, ref, onBeforeUpdate } from "vue";
 
 const props = withDefaults(
   defineProps<{
-    type?: "docx" | "pptx";
+    type?: "docx" | "pptx" | "xlsx";
     defaultValue?: string;
   }>(),
   { defaultValue: "0" },
@@ -43,6 +43,7 @@ function parseExportable(code: string) {
     const data = JSON.parse(code);
     if (data.sections) return { data, type: "docx" as const };
     if (data.slides) return { data, type: "pptx" as const };
+    if (data.worksheets) return { data, type: "xlsx" as const };
   } catch {}
   return undefined;
 }
@@ -71,6 +72,12 @@ async function handleExport() {
       const doc = new Document(options);
       blob = await Packer.toBlob(doc);
       filename = "document.docx";
+    } else if (parsed.type === "xlsx" || props.type === "xlsx") {
+      const { Workbook, Packer } = await import("@office-open/xlsx");
+      const options = data.worksheets ? data : { worksheets: Array.isArray(data) ? data : [data] };
+      const wb = new Workbook(options);
+      blob = await Packer.toBlob(wb);
+      filename = "workbook.xlsx";
     } else {
       const { Presentation, Packer } = await import("@office-open/pptx");
       const options = data.slides ? data : { slides: Array.isArray(data) ? data : [data] };

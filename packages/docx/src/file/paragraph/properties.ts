@@ -837,6 +837,24 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
 
     return super.prepForXml(context);
   }
+
+  /**
+   * Register numbering references (side effect) before serialization.
+   * toXml() bypasses prepForXml(), so numbering registration must be
+   * triggered explicitly here.
+   */
+  public override toXml(context: Context): string {
+    // Trigger the same side effects as prepForXml() for numbering registration
+    if (!(context as any).viewWrapper || !((context as any).viewWrapper instanceof FontWrapper)) {
+      for (const reference of this.numberingReferences) {
+        (context as any).file?.numbering?.createConcreteNumberingInstance(
+          reference.reference,
+          reference.instance,
+        );
+      }
+    }
+    return super.toXml(context);
+  }
 }
 
 export class ParagraphPropertiesChange extends XmlComponent {

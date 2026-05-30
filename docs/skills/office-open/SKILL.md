@@ -1,21 +1,22 @@
 ---
 name: office-open
 description: >
-  Generate and parse Office Open XML documents (.docx, .pptx) with JavaScript/TypeScript.
-  Use when creating Word documents or PowerPoint presentations, working with paragraphs,
+  Generate and parse Office Open XML documents (.docx, .pptx, .xlsx) with JavaScript/TypeScript.
+  Use when creating Word documents, PowerPoint presentations, or Excel spreadsheets, working with paragraphs,
   tables, images, charts, shapes, math equations, headers, footers, styles, themes,
   effects, animations, or exporting to buffer/blob/base64.
 ---
 
 # Office Open XML
 
-Generate and parse OOXML documents (.docx, .pptx) with a declarative TypeScript API. Works in Node.js and browsers.
+Generate and parse OOXML documents (.docx, .pptx, .xlsx) with a declarative TypeScript API. Works in Node.js and browsers.
 
 ## Installation
 
 ```bash
 pnpm add @office-open/docx      # Word documents
 pnpm add @office-open/pptx      # PowerPoint presentations
+pnpm add @office-open/xlsx      # Excel spreadsheets
 pnpm add @office-open/core      # Shared utilities (usually not needed directly)
 pnpm add @office-open/xml       # XML parsing/serialization
 ```
@@ -26,6 +27,7 @@ pnpm add @office-open/xml       # XML parsing/serialization
 | ------------------- | ----------------------------------- |
 | `@office-open/docx` | Word document generation & parsing  |
 | `@office-open/pptx` | PowerPoint generation & parsing     |
+| `@office-open/xlsx` | Spreadsheet generation & parsing    |
 | `@office-open/core` | Shared XML components, converters   |
 | `@office-open/xml`  | Low-level XML parse/stringify/query |
 
@@ -89,6 +91,29 @@ const pres = new Presentation({ title: "Demo", slides: [...] });
 const buffer = await Packer.toBuffer(pres);
 ```
 
+## Quick Start — XLSX
+
+```json
+{
+  "worksheets": [
+    {
+      "rows": [
+        { "cells": [{ "value": "Name" }, { "value": "Score" }] },
+        { "cells": [{ "value": "Alice" }, { "value": 95 }] }
+      ]
+    }
+  ]
+}
+```
+
+```ts
+import { Workbook, Packer } from "@office-open/xlsx";
+
+// Pass options to Workbook constructor
+const wb = new Workbook({ worksheets: [...] });
+const buffer = await Packer.toBuffer(wb);
+```
+
 ## Export Options
 
 `Packer` provides multiple output formats:
@@ -123,6 +148,14 @@ import { parsePresentation, Presentation } from "@office-open/pptx";
 const presOpts = parsePresentation(readFileSync("input.pptx"));
 const pres = new Presentation(presOpts);
 const presBuffer = await Packer.toBuffer(pres);
+```
+
+```ts
+import { parseWorkbook, Workbook, Packer } from "@office-open/xlsx";
+
+const wbOpts = parseWorkbook(readFileSync("input.xlsx"));
+const wb = new Workbook(wbOpts);
+const wbBuffer = await Packer.toBuffer(wb);
 ```
 
 ## Patching Existing Documents
@@ -160,6 +193,21 @@ const result = await patchPresentation({
   data: readFileSync("template.pptx"),
   patches: {
     title: { type: PatchType.PARAGRAPH, children: [new TextRun({ text: "Updated", bold: true })] },
+  },
+  keepOriginalStyles: true,
+});
+```
+
+### XLSX
+
+```ts
+import { patchWorkbook, PatchType, TextRun } from "@office-open/xlsx";
+
+const result = await patchWorkbook({
+  outputType: "nodebuffer",
+  data: readFileSync("template.xlsx"),
+  patches: {
+    name: { type: PatchType.PARAGRAPH, children: [new TextRun("John Doe")] },
   },
   keepOriginalStyles: true,
 });

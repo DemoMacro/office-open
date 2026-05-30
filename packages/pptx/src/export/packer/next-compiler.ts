@@ -21,6 +21,7 @@ import {
 } from "@office-open/core";
 import type { XmlifyedFile, Zippable } from "@office-open/core";
 import { xml } from "@office-open/xml";
+import { textToUint8Array } from "undio";
 
 interface XmlifyedFileMapping {
   [key: string]: { data: string; path: string };
@@ -37,31 +38,21 @@ import {
 export class Compiler {
   private readonly formatter = new Formatter();
 
-  public compile(
-    file: File,
-    prettifyXml?: string,
-    overrides: readonly XmlifyedFile[] = [],
-  ): Zippable {
+  public compile(file: File, overrides: readonly XmlifyedFile[] = []): Zippable {
     const declaration = true;
-    const indent = prettifyXml;
     const context: Context = { fileData: file, stack: [] };
 
     const mapping: XmlifyedFileMapping = {
       AppProperties: {
-        data: xml(this.formatter.format(file.appProperties, context), { declaration }),
+        data: this.formatter.formatToXml(file.appProperties, context, declaration),
         path: "docProps/app.xml",
       },
       Properties: {
-        data: xml(this.formatter.format(file.coreProperties, context), {
-          declaration,
-          indent,
-        }),
+        data: this.formatter.formatToXml(file.coreProperties, context, declaration),
         path: "docProps/core.xml",
       },
       FileRelationships: {
-        data: xml(this.formatter.format(file.fileRelationships, context), {
-          declaration: false,
-        }),
+        data: this.formatter.formatToXml(file.fileRelationships, context),
         path: "_rels/.rels",
       },
     };
@@ -100,9 +91,7 @@ export class Compiler {
         path: `ppt/slideMasters/slideMaster${mi + 1}.xml`,
       };
       mapping[`SlideMasterRels${mi}`] = {
-        data: xml(this.formatter.format(masterRels[mi], context), {
-          declaration: false,
-        }),
+        data: this.formatter.formatToXml(masterRels[mi], context),
         path: `ppt/slideMasters/_rels/slideMaster${mi + 1}.xml.rels`,
       };
     }
@@ -116,9 +105,7 @@ export class Compiler {
         path: `ppt/slideLayouts/slideLayout${li + 1}.xml`,
       };
       mapping[`SlideLayoutRels${li}`] = {
-        data: xml(this.formatter.format(layoutRels[li], context), {
-          declaration: false,
-        }),
+        data: this.formatter.formatToXml(layoutRels[li], context),
         path: `ppt/slideLayouts/_rels/slideLayout${li + 1}.xml.rels`,
       };
     }
@@ -141,16 +128,11 @@ export class Compiler {
         "notesMasters/notesMaster1.xml",
       );
       mapping["NotesMaster"] = {
-        data: xml(this.formatter.format(new DefaultNotesMaster(), context), {
-          declaration,
-          indent,
-        }),
+        data: this.formatter.formatToXml(new DefaultNotesMaster(), context, declaration),
         path: "ppt/notesMasters/notesMaster1.xml",
       };
       mapping["NotesMasterRelationships"] = {
-        data: xml(this.formatter.format(file.notesMasterRelationships, context), {
-          declaration: false,
-        }),
+        data: this.formatter.formatToXml(file.notesMasterRelationships, context),
         path: "ppt/notesMasters/_rels/notesMaster1.xml.rels",
       };
     }
@@ -195,9 +177,7 @@ export class Compiler {
     };
 
     mapping["PresentationRelationships"] = {
-      data: xml(this.formatter.format(file.presentationWrapper.relationships, context), {
-        declaration: false,
-      }),
+      data: this.formatter.formatToXml(file.presentationWrapper.relationships, context),
       path: "ppt/_rels/presentation.xml.rels",
     };
 
@@ -359,9 +339,7 @@ export class Compiler {
       }
 
       mapping[`SlideRelationships${i}`] = {
-        data: xml(this.formatter.format(slideWrapper.relationships, context), {
-          declaration: false,
-        }),
+        data: this.formatter.formatToXml(slideWrapper.relationships, context),
         path: `ppt/slides/_rels/slide${i + 1}.xml.rels`,
       };
     }
@@ -378,9 +356,7 @@ export class Compiler {
       file.contentTypes.addDiagramDrawing(i + 1);
     });
     mapping["ContentTypes"] = {
-      data: xml(this.formatter.format(file.contentTypes, context), {
-        declaration: false,
-      }),
+      data: this.formatter.formatToXml(file.contentTypes, context),
       path: "[Content_Types].xml",
     };
 
@@ -401,10 +377,7 @@ export class Compiler {
     for (let i = 0; i < file.charts.array.length; i++) {
       const chartData = file.charts.array[i];
       files[`ppt/charts/chart${i + 1}.xml`] = textToUint8Array(
-        xml(this.formatter.format(chartData.chartSpace, context), {
-          declaration,
-          indent,
-        }),
+        this.formatter.formatToXml(chartData.chartSpace, context, declaration),
       );
       files[`ppt/charts/_rels/chart${i + 1}.xml.rels`] = textToUint8Array(
         xml(
@@ -424,10 +397,7 @@ export class Compiler {
     for (let i = 0; i < file.smartArts.array.length; i++) {
       const smartArtData = file.smartArts.array[i];
       files[`ppt/diagrams/data${i + 1}.xml`] = textToUint8Array(
-        xml(this.formatter.format(smartArtData.dataModel, context), {
-          declaration,
-          indent,
-        }),
+        this.formatter.formatToXml(smartArtData.dataModel, context, declaration),
       );
       files[`ppt/diagrams/layout${i + 1}.xml`] = textToUint8Array(
         getLayoutXml(smartArtData.layout),
@@ -443,10 +413,7 @@ export class Compiler {
     for (let i = 0; i < file.notesSlides.length; i++) {
       const notesSlide = file.notesSlides[i];
       files[`ppt/notesSlides/notesSlide${i + 1}.xml`] = textToUint8Array(
-        xml(this.formatter.format(notesSlide, context), {
-          declaration,
-          indent,
-        }),
+        this.formatter.formatToXml(notesSlide, context, declaration),
       );
       files[`ppt/notesSlides/_rels/notesSlide${i + 1}.xml.rels`] = textToUint8Array(
         xml(
@@ -465,10 +432,7 @@ export class Compiler {
     // Add comment authors
     if (file.commentAuthorList) {
       files["ppt/commentAuthors.xml"] = textToUint8Array(
-        xml(this.formatter.format(file.commentAuthorList, context), {
-          declaration,
-          indent,
-        }),
+        this.formatter.formatToXml(file.commentAuthorList, context, declaration),
       );
     }
 
@@ -477,10 +441,7 @@ export class Compiler {
     for (let i = 0; i < commentLists.length; i++) {
       if (commentLists[i]) {
         files[`ppt/comments/comment${i + 1}.xml`] = textToUint8Array(
-          xml(this.formatter.format(commentLists[i]!, context), {
-            declaration,
-            indent,
-          }),
+          this.formatter.formatToXml(commentLists[i]!, context, declaration),
         );
       }
     }
@@ -500,11 +461,4 @@ export class Compiler {
 
     return files;
   }
-}
-
-function textToUint8Array(data: string | Uint8Array): Uint8Array {
-  if (data instanceof Uint8Array) {
-    return data;
-  }
-  return new TextEncoder().encode(data);
 }
