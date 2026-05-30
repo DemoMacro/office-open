@@ -19,4 +19,9 @@ export class TableGrid extends BaseXmlComponent {
     }));
     return { "a:tblGrid": children };
   }
+
+  public override toXml(_context: Context): string {
+    const cols = this.columnWidths.map((w) => `<a:gridCol w="${w}"/>`).join("");
+    return `<a:tblGrid>${cols}</a:tblGrid>`;
+  }
 }

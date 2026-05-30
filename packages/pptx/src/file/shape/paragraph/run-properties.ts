@@ -11,6 +11,7 @@ import { XmlComponent } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
 import { xsdStrikeStyle, xsdTextCaps, xsdUnderlineStyle } from "@office-open/core";
 import { createEffectList, createOutline } from "@office-open/core/drawingml";
+import { xml } from "@office-open/xml";
 
 let nextHyperlinkId = 1;
 
@@ -200,5 +201,49 @@ export class RunProperties extends XmlComponent {
     }
 
     return buildRunProperties(opts, hyperlinkKey, fillObj, effectListObj, outlineObj);
+  }
+
+  public override toXml(context: Context): string {
+    const opts = this.options;
+
+    // Side-effect: register hyperlink
+    let hyperlinkKey: string | undefined;
+    if (opts.hyperlink) {
+      hyperlinkKey = `hlink_${nextHyperlinkId++}`;
+      const file = context.fileData as {
+        hyperlinks?: { addHyperlink(key: string, url: string, tooltip?: string): void };
+      };
+      file?.hyperlinks?.addHyperlink(hyperlinkKey, opts.hyperlink.url, opts.hyperlink.tooltip);
+    }
+
+    // fill / outline / shadow still need prepForXml (child components have own deps)
+    let fillObj: IXmlableObject | undefined;
+    if (opts.fill !== undefined) {
+      fillObj = buildFill(opts.fill).prepForXml(context) ?? undefined;
+    }
+    let outlineObj: IXmlableObject | undefined;
+    if (opts.outline) {
+      outlineObj =
+        createOutline({
+          width: DEFAULT_OUTLINE_WIDTH,
+          type: "solidFill",
+          color: { value: "000000" },
+        }).prepForXml(context) ?? undefined;
+    }
+    let effectListObj: IXmlableObject | undefined;
+    if (opts.shadow) {
+      effectListObj =
+        createEffectList({
+          outerShadow: {
+            blurRadius: DEFAULT_SHADOW_BLUR_RADIUS,
+            distance: DEFAULT_SHADOW_DISTANCE,
+            direction: DEFAULT_SHADOW_DIRECTION,
+            color: { value: "000000", transforms: { alpha: DEFAULT_SHADOW_ALPHA } },
+          },
+        }).prepForXml(context) ?? undefined;
+    }
+
+    const obj = buildRunProperties(opts, hyperlinkKey, fillObj, effectListObj, outlineObj);
+    return obj ? xml(obj) : "";
   }
 }

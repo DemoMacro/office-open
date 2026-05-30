@@ -1,6 +1,6 @@
 {
   "name": "@office-open/pptx",
-  "version": "0.6.5",
+  "version": "0.6.6",
   "description": "Generate .pptx files with JS/TS",
   "keywords": [
     "office-open",
@@ -39,7 +39,7 @@
     "dev": "basis build --stub",
     "build": "vp pack",
     "prepack": "pnpm build",
-    "test": "vp test run --coverage",
+    "test": "vp test run",
     "check": "vp check --fix"
   },
   "dependencies": {

@@ -15,7 +15,6 @@
 - 📐 **OOXML Compliant** — Output validates against ISO/IEC 29500 XSD schemas
 - 🔒 **Type-safe** — Full TypeScript definitions and autocomplete, no `@types` needed
 - 🌐 **Cross-platform** — Node.js and browsers. Export to Buffer, Blob, Base64, stream, or string
-- ⚡ **Fast** — 1.5–9x faster than alternatives (see benchmarks in package READMEs)
 - 🤖 **AI-friendly** — JSON-first API ideal for LLM workflows and AI agents
 
 ## Packages

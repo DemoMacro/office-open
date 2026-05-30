@@ -1,5 +1,6 @@
 import { BaseXmlComponent } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
+import { xml } from "@office-open/xml";
 
 import { buildFill } from "../drawingml/fill";
 import type { FillOptions } from "../drawingml/fill";
@@ -86,5 +87,10 @@ export class TableCellProperties extends BaseXmlComponent {
             ? children[0]
             : children,
     };
+  }
+
+  public override toXml(context: Context): string {
+    const obj = this.prepForXml(context);
+    return obj ? xml(obj) : "<a:tcPr/>";
   }
 }

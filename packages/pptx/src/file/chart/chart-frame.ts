@@ -46,7 +46,8 @@ export class Chart extends XmlComponent {
     this.root.push(new ChartGraphic(this.chartKey));
   }
 
-  public prepForXml(context: Context): IXmlableObject | undefined {
+  /** Register chart data with the File's Chart collection. */
+  private registerChart(context: Context): void {
     const file = context.fileData as { charts: ChartCollection };
     if (file?.charts) {
       file.charts.addChart(this.chartKey, {
@@ -54,8 +55,16 @@ export class Chart extends XmlComponent {
         key: this.chartKey,
       });
     }
+  }
 
+  public prepForXml(context: Context): IXmlableObject | undefined {
+    this.registerChart(context);
     return super.prepForXml(context);
+  }
+
+  public override toXml(context: Context): string {
+    this.registerChart(context);
+    return super.toXml(context);
   }
 }
 

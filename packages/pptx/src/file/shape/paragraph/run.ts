@@ -46,8 +46,8 @@ export class TextRun extends XmlComponent {
 
   /**
    * Fast path: simple properties (no hyperlink/fill/shadow/outline) skip
-   * RunProperties.prepForXml() side effects and serialize directly.
-   * Complex path falls back to prepForXml → xml.
+   * RunProperties side effects and serialize directly.
+   * Complex path uses RunProperties.toXml() + direct text serialization.
    */
   public override toXml(context: Context): string {
     const opts = this.options;
@@ -66,7 +66,11 @@ export class TextRun extends XmlComponent {
       return body.length === 0 ? "<a:r/>" : `<a:r>${body}</a:r>`;
     }
 
-    // Complex path: fallback to prepForXml → xml (handles hyperlink registration etc.)
-    return super.toXml(context);
+    // Complex path: use RunProperties.toXml() for side effects (hyperlink registration etc.)
+    let body = new RunProperties(opts).toXml(context);
+    if (opts.text) {
+      body += `<a:t>${escapeXml(opts.text)}</a:t>`;
+    }
+    return body ? `<a:r>${body}</a:r>` : "<a:r/>";
   }
 }

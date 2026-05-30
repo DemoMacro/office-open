@@ -79,4 +79,33 @@ export class GroupShape extends BaseXmlComponent {
 
     return { "p:grpSp": children };
   }
+
+  public override toXml(context: Context): string {
+    const opts = this.options;
+    const id = this.id;
+    const parts: string[] = [];
+
+    // p:nvGrpSpPr
+    parts.push(
+      `<p:nvGrpSpPr><p:cNvPr id="${id}" name="Group ${id}"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>`,
+    );
+
+    // p:grpSpPr
+    const xfrmAttrs: string[] = [];
+    if (opts.flipHorizontal !== undefined) xfrmAttrs.push(`flipH="${opts.flipHorizontal ? 1 : 0}"`);
+    if (opts.rotation !== undefined) xfrmAttrs.push(`rot="${opts.rotation}"`);
+    const xfrmAttrStr = xfrmAttrs.length > 0 ? ` ${xfrmAttrs.join(" ")}` : "";
+    parts.push(
+      `<p:grpSpPr><a:xfrm${xfrmAttrStr}><a:off x="${convertPixelsToEmu(opts.x ?? 0)}" y="${convertPixelsToEmu(opts.y ?? 0)}"/><a:ext cx="${convertPixelsToEmu(opts.width ?? 0)}" cy="${convertPixelsToEmu(opts.height ?? 0)}"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>`,
+    );
+
+    // Child shapes
+    for (const rawChild of opts.children) {
+      const child = coerceChild(rawChild);
+      const s = child.toXml(context);
+      if (s) parts.push(s);
+    }
+
+    return `<p:grpSp>${parts.join("")}</p:grpSp>`;
+  }
 }

@@ -845,9 +845,9 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
    */
   public override toXml(context: Context): string {
     // Trigger the same side effects as prepForXml() for numbering registration
-    if (!(context as any).viewWrapper || !((context as any).viewWrapper instanceof FontWrapper)) {
+    if (!(context.viewWrapper instanceof FontWrapper)) {
       for (const reference of this.numberingReferences) {
-        (context as any).file?.numbering?.createConcreteNumberingInstance(
+        context.file.numbering.createConcreteNumberingInstance(
           reference.reference,
           reference.instance,
         );

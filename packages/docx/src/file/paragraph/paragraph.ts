@@ -8,6 +8,7 @@ import type { FootnoteReferenceRun } from "@file/footnotes";
  */
 import { BaseXmlComponent } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
+import { xml } from "@office-open/xml";
 import { uniqueId } from "@util/convenience-functions";
 
 import type { AltChunk } from "../alt-chunk";
@@ -440,5 +441,198 @@ export class Paragraph extends BaseXmlComponent implements FileChild {
   /** @internal Used by Body to attach section properties for non-last sections. */
   public setSectionProperties(section: SectionProperties): void {
     this.sectionProperties = section;
+  }
+
+  /**
+   * Direct XML serialization — bypasses IXmlableObject tree construction.
+   * Coerces children and calls their toXml() methods for zero-allocation output.
+   */
+  public override toXml(context: Context): string {
+    const parts: string[] = [];
+
+    // 1. Numbering registration (side effect — same as prepForXml)
+    if (!(context.viewWrapper instanceof FontWrapper)) {
+      for (const reference of this._props.numberingReferences) {
+        context.file.numbering.createConcreteNumberingInstance(
+          reference.reference,
+          reference.instance,
+        );
+      }
+    }
+
+    // 2. Paragraph properties (pre-built IXmlableObject → xml())
+    let finalPPrObj = this._props.xml;
+    if (this.sectionProperties) {
+      const sectPrObj = this.sectionProperties.prepForXml(context);
+      if (sectPrObj) {
+        if (finalPPrObj) {
+          (finalPPrObj["w:pPr"] as IXmlableObject[]).push(sectPrObj);
+        } else {
+          finalPPrObj = { "w:pPr": [sectPrObj] };
+        }
+      }
+    }
+    if (finalPPrObj) {
+      parts.push(xml(finalPPrObj));
+    }
+
+    // 3. Front runs
+    for (const run of this.frontRuns) {
+      const s = run.toXml(context);
+      if (s) parts.push(s);
+    }
+
+    // 4. Pre-created textRun
+    if (this._textRun) {
+      const s = this._textRun.toXml(context);
+      if (s) parts.push(s);
+    }
+
+    // 5. Children
+    if (this.options.children) {
+      for (const rawChild of this.options.children) {
+        for (const s of this.serializeChild(rawChild, context)) {
+          if (s) parts.push(s);
+        }
+      }
+    }
+
+    const body = parts.join("");
+    return body ? `<w:p>${body}</w:p>` : "<w:p/>";
+  }
+
+  /**
+   * Serialize a single child element, handling all type coercions and side effects.
+   * Returns an array of XML strings (Bookmark yields 3 parts: start + children + end).
+   */
+  private serializeChild(
+    rawChild: ParagraphChild | RunOptions | IParagraphJsonChild | string,
+    context: Context,
+  ): string[] {
+    // ExternalHyperlink — side effect: register relationship
+    if (rawChild instanceof ExternalHyperlink) {
+      const concreteHyperlink = new ConcreteHyperlink(rawChild.options.children, uniqueId(), {
+        tooltip: rawChild.options.tooltip as string | undefined,
+      });
+      context.viewWrapper.relationships.addRelationship(
+        concreteHyperlink.linkId,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+        rawChild.options.link,
+        TargetModeType.EXTERNAL,
+      );
+      return [concreteHyperlink.toXml(context)];
+    }
+
+    // Bookmark — split into start + children + end
+    if (rawChild instanceof Bookmark) {
+      const parts: string[] = [];
+      parts.push(rawChild.start.toXml(context));
+      for (const textRun of rawChild.children) {
+        if (textRun instanceof BaseXmlComponent) {
+          parts.push(textRun.toXml(context));
+        }
+      }
+      parts.push(rawChild.end.toXml(context));
+      return parts;
+    }
+
+    // JSON hyperlink wrapper — side effect: register relationship
+    if (typeof rawChild === "object" && rawChild !== null && "hyperlink" in rawChild) {
+      const { hyperlink, ...runOpts } = rawChild as Record<string, unknown> & {
+        hyperlink: Record<string, unknown>;
+      };
+      const hlChildren = hyperlink.children as readonly (RunOptions | string)[] | undefined;
+      const textRuns: TextRun[] = [];
+      if (hlChildren && hlChildren.length > 0) {
+        for (const rc of hlChildren) {
+          textRuns.push(new TextRun(rc as RunOptions));
+        }
+      } else {
+        textRuns.push(new TextRun(runOpts as RunOptions));
+      }
+
+      if ("link" in hyperlink) {
+        const ext = new ExternalHyperlink({
+          link: hyperlink.link as string,
+          tooltip: hyperlink.tooltip as string | undefined,
+          children: textRuns,
+        });
+        const concrete = new ConcreteHyperlink(ext.options.children, uniqueId(), {
+          tooltip: ext.options.tooltip as string | undefined,
+        });
+        context.viewWrapper.relationships.addRelationship(
+          concrete.linkId,
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+          ext.options.link,
+          TargetModeType.EXTERNAL,
+        );
+        return [concrete.toXml(context)];
+      }
+      if ("anchor" in hyperlink) {
+        const internal = new InternalHyperlink({
+          anchor: hyperlink.anchor as string,
+          tooltip: hyperlink.tooltip as string | undefined,
+          children: textRuns,
+        });
+        return [internal.toXml(context)];
+      }
+      return [];
+    }
+
+    // bookmarkStart/bookmarkEnd JSON wrappers — direct serialization
+    if (typeof rawChild === "object" && rawChild !== null && "bookmarkStart" in rawChild) {
+      const startEl = new BookmarkStart(rawChild.bookmarkStart.name, rawChild.bookmarkStart.id);
+      return [startEl.toXml(context)];
+    }
+    if (typeof rawChild === "object" && rawChild !== null && "bookmarkEnd" in rawChild) {
+      const endEl = new BookmarkEnd(rawChild.bookmarkEnd);
+      return [endEl.toXml(context)];
+    }
+
+    // Coerce to BaseXmlComponent and serialize
+    const child = this.coerceChild(rawChild);
+    return child ? [child.toXml(context)] : [];
+  }
+
+  /** Coerce a raw child option into a BaseXmlComponent instance. */
+  private coerceChild(
+    rawChild: ParagraphChild | RunOptions | IParagraphJsonChild | string,
+  ): BaseXmlComponent | undefined {
+    if (typeof rawChild === "string") return new TextRun(rawChild);
+    if (rawChild instanceof BaseXmlComponent) return rawChild;
+    if ("chart" in rawChild) return new ChartRun(rawChild.chart);
+    if ("smartArt" in rawChild) return new SmartArtRun(rawChild.smartArt);
+    if ("image" in rawChild) return new ImageRun(rawChild.image);
+    if (
+      "math" in rawChild &&
+      typeof rawChild === "object" &&
+      rawChild !== null &&
+      typeof rawChild.math === "object" &&
+      rawChild.math !== null
+    ) {
+      const mathOpts = rawChild.math as Omit<MathOptions, "children"> & {
+        readonly children?: readonly MathJson[];
+      };
+      const coercedChildren = mathOpts.children?.map(coerceMathJson) as
+        | readonly MathComponent[]
+        | undefined;
+      return new MathCls(coercedChildren ? { children: coercedChildren } : { children: [] });
+    }
+    if ("symbolRun" in rawChild) return new SymbolRun(rawChild.symbolRun);
+    if ("footnoteReference" in rawChild) return new FootnoteRefCls(rawChild.footnoteReference);
+    if ("endnoteReference" in rawChild) return new EndnoteRefCls(rawChild.endnoteReference);
+    if ("pageBreak" in rawChild) return new PageBreakCls();
+    if ("columnBreak" in rawChild) return new ColumnBreakCls();
+    if ("commentRangeStart" in rawChild) return new CommentRangeStart(rawChild.commentRangeStart);
+    if ("commentRangeEnd" in rawChild) return new CommentRangeEnd(rawChild.commentRangeEnd);
+    if ("commentReference" in rawChild)
+      return new TextRun({ children: [new CommentReference(rawChild.commentReference)] });
+    if ("insertion" in rawChild) return new InsertedTextRun(rawChild.insertion);
+    if ("deletion" in rawChild) return new DeletedTextRun(rawChild.deletion);
+    // hyperlink/bookmarkStart/bookmarkEnd are handled in serializeChild
+    if ("hyperlink" in rawChild || "bookmarkStart" in rawChild || "bookmarkEnd" in rawChild) {
+      return undefined;
+    }
+    return new TextRun(rawChild as RunOptions);
   }
 }

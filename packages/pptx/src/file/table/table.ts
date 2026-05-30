@@ -83,4 +83,48 @@ export class DrawingTable extends BaseXmlComponent {
 
     return { "a:tbl": children };
   }
+
+  public override toXml(context: Context): string {
+    const opts = this.options;
+    const parts: string[] = [];
+
+    // a:tblPr
+    const tblPr = new TableProperties({
+      firstRow: opts.firstRow,
+      lastRow: opts.lastRow,
+      bandRow: opts.bandRow,
+      firstCol: opts.firstCol,
+      lastCol: opts.lastCol,
+      bandCol: opts.bandCol,
+    });
+    parts.push(tblPr.toXml(context));
+
+    // a:tblGrid
+    const colWidths =
+      opts.columnWidths && opts.columnWidths.length > 0
+        ? [...opts.columnWidths]
+        : Array.from({ length: opts.rows[0]?.cells.length ?? 1 }, () => 0);
+    parts.push(new TableGrid(colWidths).toXml(context));
+
+    // a:tr — distribute table-level borders to edge cells
+    const tb = opts.borders;
+    const rowCount = opts.rows.length;
+    for (let ri = 0; ri < rowCount; ri++) {
+      const row = opts.rows[ri];
+      const colCount = row.cells.length;
+      const cells = tb
+        ? row.cells.map((cell, ci) => {
+            const b = { ...cell.borders };
+            if (ri === 0 && tb.top && !b.top) b.top = tb.top;
+            if (ri === rowCount - 1 && tb.bottom && !b.bottom) b.bottom = tb.bottom;
+            if (ci === 0 && tb.left && !b.left) b.left = tb.left;
+            if (ci === colCount - 1 && tb.right && !b.right) b.right = tb.right;
+            return Object.keys(b).length === 0 ? cell : { ...cell, borders: b };
+          })
+        : row.cells;
+      parts.push(new TableRow({ ...row, cells }).toXml(context));
+    }
+
+    return `<a:tbl>${parts.join("")}</a:tbl>`;
+  }
 }

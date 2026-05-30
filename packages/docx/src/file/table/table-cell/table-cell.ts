@@ -9,6 +9,7 @@ import type { FileChild } from "@file/file-child";
 import { Paragraph } from "@file/paragraph";
 import { BaseXmlComponent } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
+import { xml } from "@office-open/xml";
 
 import type { StructuredDocumentTagCell } from "../../sdt";
 import type { SectionChild } from "../../section-child";
@@ -94,5 +95,28 @@ export class TableCell extends BaseXmlComponent {
     }
 
     return { "w:tc": children };
+  }
+
+  public override toXml(context: Context): string {
+    const parts: string[] = [];
+
+    const tPrObj = buildTableCellProperties(this.options);
+    if (tPrObj) parts.push(xml(tPrObj));
+
+    const coerced = this.options.children.map((c) =>
+      c instanceof BaseXmlComponent ? c : lazyCoerce(c),
+    );
+
+    for (const child of coerced) {
+      parts.push(child.toXml(context));
+    }
+
+    // Cells must end with a paragraph
+    const last = coerced[coerced.length - 1];
+    if (!(last instanceof Paragraph)) {
+      parts.push(new Paragraph({}).toXml(context));
+    }
+
+    return `<w:tc>${parts.join("")}</w:tc>`;
   }
 }

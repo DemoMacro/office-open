@@ -23,4 +23,9 @@ export class Graphic extends BaseXmlComponent {
       "a:graphic": [{ "a:graphicData": graphicDataChildren }],
     };
   }
+
+  public override toXml(context: Context): string {
+    const tableXml = this.table.toXml(context);
+    return `<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table">${tableXml}</a:graphicData></a:graphic>`;
+  }
 }

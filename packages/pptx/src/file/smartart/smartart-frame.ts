@@ -62,7 +62,8 @@ export class SmartArt extends XmlComponent {
     this.root.push(new SmartArtGraphic(this.smartArtKey));
   }
 
-  public prepForXml(context: Context): IXmlableObject | undefined {
+  /** Register SmartArt data with the File's SmartArt collection. */
+  private registerSmartArt(context: Context): void {
     const file = context.fileData as { smartArts: SmartArtCollection };
     if (file?.smartArts) {
       file.smartArts.addSmartArt(this.smartArtKey, {
@@ -73,7 +74,16 @@ export class SmartArt extends XmlComponent {
         color: this.colorId,
       });
     }
+  }
+
+  public prepForXml(context: Context): IXmlableObject | undefined {
+    this.registerSmartArt(context);
     return super.prepForXml(context);
+  }
+
+  public override toXml(context: Context): string {
+    this.registerSmartArt(context);
+    return super.toXml(context);
   }
 }
 

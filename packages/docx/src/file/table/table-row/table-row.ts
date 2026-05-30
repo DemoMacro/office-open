@@ -7,6 +7,7 @@
  */
 import { BaseXmlComponent, EMPTY_OBJECT } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
+import { xml } from "@office-open/xml";
 
 import { StructuredDocumentTagCell } from "../../sdt";
 import { StructuredDocumentTagRow } from "../../sdt";
@@ -167,6 +168,33 @@ export class TableRow extends BaseXmlComponent {
     }
 
     return { "w:tr": children.length ? children : EMPTY_OBJECT };
+  }
+
+  public override toXml(context: Context): string {
+    const parts: string[] = [];
+
+    if (this.options.propertyExceptions) {
+      parts.push(new TablePropertyExceptions(this.options.propertyExceptions).toXml(context));
+    }
+
+    const trPrObj = buildTableRowProperties(this.options);
+    if (trPrObj) parts.push(xml(trPrObj));
+
+    const prefixCount = parts.length;
+
+    for (const child of this.coercedChildren) {
+      parts.push(child.toXml(context));
+    }
+
+    // Insert extra CONTINUE cells at their designated column positions
+    if (this.extraCells.length > 0) {
+      for (const { cell, columnIndex } of this.extraCells) {
+        const insertIdx = this.findInsertIndex(columnIndex, prefixCount);
+        parts.splice(insertIdx, 0, cell.toXml(context));
+      }
+    }
+
+    return parts.length ? `<w:tr>${parts.join("")}</w:tr>` : "<w:tr/>";
   }
 
   private findInsertIndex(columnIndex: number, prefixCount: number): number {

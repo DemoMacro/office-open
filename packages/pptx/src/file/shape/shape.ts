@@ -6,6 +6,7 @@ import type { ShapePropertiesOptions } from "@file/drawingml/shape-properties";
 import type { File } from "@file/file";
 import { XmlComponent as Xc } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
+import { escapeXml } from "@office-open/xml";
 import { emuPositionOptional } from "@util/position";
 
 import { TextBody } from "./text-body";
@@ -99,5 +100,43 @@ export class Shape extends Xc {
     if (txBodyObj) children.push(txBodyObj);
 
     return { "p:sp": children };
+  }
+
+  public override toXml(context: Context): string {
+    const opts = this.options;
+    const id = this.shapeId;
+    const name = opts.name ?? `Shape ${id}`;
+    const parts: string[] = [];
+
+    // p:nvSpPr
+    let nvPrContent = "<p:nvPr/>";
+    if (opts.placeholder) {
+      const phAttrs: string[] = [`type="${opts.placeholder}"`];
+      if (opts.placeholderIndex !== undefined) phAttrs.push(`idx="${opts.placeholderIndex}"`);
+      nvPrContent = `<p:nvPr><p:ph ${phAttrs.join(" ")}/></p:nvPr>`;
+    }
+    parts.push(
+      `<p:nvSpPr><p:cNvPr id="${id}" name="${escapeXml(name)}"/><p:cNvSpPr/>${nvPrContent}</p:nvSpPr>`,
+    );
+
+    // p:spPr (ShapeProperties — has side effects, uses prepForXml → xml internally)
+    const shapeProps: ShapePropertiesOptions = {
+      ...emuPositionOptional(opts),
+      geometry: opts.geometry,
+      fill: opts.fill,
+      outline: opts.outline,
+      effects: opts.effects,
+      flipHorizontal: opts.flipHorizontal,
+      rotation: opts.rotation,
+    };
+    const spPr = new ShapeProperties(shapeProps);
+    const spPrXml = spPr.toXml(context as Context<File>);
+    if (spPrXml) parts.push(spPrXml);
+
+    // p:txBody (TextBody — has toXml)
+    const txBody = new TextBody(opts.textBody ?? {});
+    parts.push(txBody.toXml(context));
+
+    return `<p:sp>${parts.join("")}</p:sp>`;
   }
 }

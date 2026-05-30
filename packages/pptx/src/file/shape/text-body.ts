@@ -1,6 +1,7 @@
 import { XmlComponent } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
 import { xsdTextAnchor } from "@office-open/core";
+import { xml } from "@office-open/xml";
 
 import { VerticalAlignment } from "../table/table-cell";
 import { Paragraph } from "./paragraph/paragraph";
@@ -100,5 +101,34 @@ export class TextBody extends XmlComponent {
     }
 
     return { "p:txBody": children };
+  }
+
+  public override toXml(context: Context): string {
+    const parts: string[] = [];
+
+    parts.push(xml(buildBodyPr(this.options)));
+    parts.push("<a:lstStyle/>");
+
+    if (this.options.children) {
+      for (const p of this.options.children) {
+        const para =
+          typeof p === "string"
+            ? new Paragraph({ children: [new TextRun({ text: p })] })
+            : p instanceof Paragraph
+              ? p
+              : new Paragraph(p);
+        parts.push(para.toXml(context));
+      }
+    } else if (this.options.text !== undefined) {
+      parts.push(
+        new Paragraph({
+          children: [new TextRun({ text: this.options.text })],
+        }).toXml(context),
+      );
+    } else {
+      parts.push(new Paragraph().toXml(context));
+    }
+
+    return `<p:txBody>${parts.join("")}</p:txBody>`;
   }
 }

@@ -41,4 +41,17 @@ export class TableProperties extends BaseXmlComponent {
 
     return { "a:tblPr": Object.keys(attrs).length > 0 ? { _attr: attrs } : {} };
   }
+
+  public override toXml(_context: Context): string {
+    if (!this.options) return "<a:tblPr/>";
+    const opts = this.options;
+    const attrs: string[] = [];
+    if (opts.firstRow !== undefined) attrs.push(`firstRow="${opts.firstRow ? 1 : 0}"`);
+    if (opts.lastRow !== undefined) attrs.push(`lastRow="${opts.lastRow ? 1 : 0}"`);
+    if (opts.bandRow !== undefined) attrs.push(`bandRow="${opts.bandRow ? 1 : 0}"`);
+    if (opts.firstCol !== undefined) attrs.push(`firstCol="${opts.firstCol ? 1 : 0}"`);
+    if (opts.lastCol !== undefined) attrs.push(`lastCol="${opts.lastCol ? 1 : 0}"`);
+    if (opts.bandCol !== undefined) attrs.push(`bandCol="${opts.bandCol ? 1 : 0}"`);
+    return attrs.length === 0 ? "<a:tblPr/>" : `<a:tblPr ${attrs.join(" ")}/>`;
+  }
 }

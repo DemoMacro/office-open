@@ -182,4 +182,36 @@ export class Table extends BaseXmlComponent implements FileChild {
 
     return { "w:tbl": children };
   }
+
+  public override toXml(context: Context): string {
+    const parts: string[] = [];
+
+    const tblPr = new TableProperties({
+      alignment: this.options.alignment,
+      borders: this.options.borders ?? {},
+      caption: this.options.caption,
+      cellMargin: this.options.margins,
+      cellSpacing: this.options.cellSpacing,
+      description: this.options.description,
+      float: this.options.float,
+      indent: this.options.indent,
+      layout: this.options.layout,
+      revision: this.options.revision,
+      style: this.options.style,
+      styleColBandSize: this.options.styleColBandSize,
+      styleRowBandSize: this.options.styleRowBandSize,
+      tableLook: this.options.tableLook,
+      visuallyRightToLeft: this.options.visuallyRightToLeft,
+      width: this.options.width ?? { size: 100 },
+    });
+    parts.push(tblPr.toXml(context));
+
+    parts.push(new TableGrid(this.columnWidths, this.options.columnWidthsRevision).toXml(context));
+
+    for (const row of this.rows) {
+      parts.push(row.toXml(context));
+    }
+
+    return `<w:tbl>${parts.join("")}</w:tbl>`;
+  }
 }

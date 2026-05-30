@@ -1,6 +1,7 @@
 import { XmlComponent } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
 import { xsdTextAlign } from "@office-open/core";
+import { xml } from "@office-open/xml";
 
 export const TextAlignment = {
   LEFT: "left",
@@ -150,5 +151,10 @@ export class ParagraphProperties extends XmlComponent {
 
   public prepForXml(_context: Context): IXmlableObject | undefined {
     return buildParagraphProperties(this.options);
+  }
+
+  public override toXml(_context: Context): string {
+    const obj = buildParagraphProperties(this.options);
+    return obj ? xml(obj) : "";
   }
 }

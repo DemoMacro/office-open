@@ -32,4 +32,13 @@ export class TableRow extends BaseXmlComponent {
 
     return { "a:tr": children };
   }
+
+  public override toXml(context: Context): string {
+    const h = this.options.height ?? 0;
+    const parts: string[] = [];
+    for (const cell of this.options.cells) {
+      parts.push(new TableCell(cell).toXml(context));
+    }
+    return `<a:tr h="${h}">${parts.join("")}</a:tr>`;
+  }
 }

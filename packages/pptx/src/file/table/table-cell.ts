@@ -110,4 +110,49 @@ export class TableCell extends BaseXmlComponent {
 
     return { "a:tc": children };
   }
+
+  public override toXml(context: Context): string {
+    const opts = this.options;
+    const parts: string[] = [];
+
+    // gridSpan / rowSpan attributes
+    const tcAttrs: string[] = [];
+    if (opts.columnSpan !== undefined && opts.columnSpan > 1)
+      tcAttrs.push(`gridSpan="${opts.columnSpan}"`);
+    if (opts.rowSpan !== undefined && opts.rowSpan > 1) tcAttrs.push(`rowSpan="${opts.rowSpan}"`);
+    const tcAttrStr = tcAttrs.length > 0 ? ` ${tcAttrs.join(" ")}` : "";
+
+    // a:txBody
+    const txParts: string[] = [];
+    const margins = opts.margins;
+    const bodyPrAttrs: string[] = [];
+    if (margins?.top !== undefined) bodyPrAttrs.push(`tIns="${margins.top}"`);
+    if (margins?.bottom !== undefined) bodyPrAttrs.push(`bIns="${margins.bottom}"`);
+    if (margins?.left !== undefined) bodyPrAttrs.push(`lIns="${margins.left}"`);
+    if (margins?.right !== undefined) bodyPrAttrs.push(`rIns="${margins.right}"`);
+    const bodyPrStr = bodyPrAttrs.length > 0 ? ` ${bodyPrAttrs.join(" ")}` : "";
+    txParts.push(`<a:bodyPr${bodyPrStr}/>`);
+    txParts.push("<a:lstStyle/>");
+
+    if (this.paragraphs) {
+      for (const p of this.paragraphs) {
+        txParts.push(p.toXml(context));
+      }
+    } else {
+      txParts.push("<a:p/>");
+    }
+    parts.push(`<a:txBody>${txParts.join("")}</a:txBody>`);
+
+    // a:tcPr (has fill needing context, uses prepForXml → xml internally)
+    const tcPr = new TableCellProperties({
+      fill: opts.fill,
+      borders: opts.borders,
+      verticalAlign: opts.verticalAlign
+        ? (xsdTextAnchor.to(opts.verticalAlign) as "t" | "ctr" | "b")
+        : undefined,
+    });
+    parts.push(tcPr.toXml(context));
+
+    return `<a:tc${tcAttrStr}>${parts.join("")}</a:tc>`;
+  }
 }

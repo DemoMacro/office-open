@@ -1,6 +1,7 @@
 import type { File } from "@file/file";
 import { BaseXmlComponent } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
+import { xml } from "@office-open/xml";
 
 import { createPptxEffectList, buildScene3D, buildShape3D, type EffectsOptions } from "./effects";
 import { buildFill, extractBlipFillMedia } from "./fill";
@@ -117,5 +118,10 @@ export class ShapeProperties extends BaseXmlComponent {
     }
 
     return { "p:spPr": children };
+  }
+
+  public override toXml(context: Context<File>): string {
+    const obj = this.prepForXml(context);
+    return obj ? xml(obj) : "";
   }
 }

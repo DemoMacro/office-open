@@ -1,5 +1,6 @@
 import { XmlComponent } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
+import { xml } from "@office-open/xml";
 
 import { buildEndParagraphRunProperties } from "./end-paragraph-run";
 import type { ParagraphPropertiesOptions } from "./paragraph-properties";
@@ -51,5 +52,31 @@ export class Paragraph extends XmlComponent {
     children.push(buildEndParagraphRunProperties());
 
     return { "a:p": children };
+  }
+
+  public override toXml(context: Context): string {
+    const parts: string[] = [];
+
+    const pPr = buildParagraphProperties(this.options.properties ?? {});
+    if (pPr) parts.push(xml(pPr));
+
+    if (this.options.text) {
+      parts.push(new TextRun(this.options.text).toXml(context));
+    }
+
+    if (this.options.children) {
+      for (const rawChild of this.options.children) {
+        const child =
+          rawChild instanceof TextRun || rawChild instanceof XmlComponent
+            ? rawChild
+            : new TextRun(rawChild);
+        parts.push(child.toXml(context));
+      }
+    }
+
+    parts.push('<a:endParaRPr lang="en-US"/>');
+
+    const body = parts.join("");
+    return body ? `<a:p>${body}</a:p>` : "<a:p/>";
   }
 }
