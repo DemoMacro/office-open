@@ -159,13 +159,13 @@ export class Compiler {
 
     const mediaData = getReferencedMedia(presentationXml, file.media.array);
     const presImageOffset = file.presentationWrapper.relationships.relationshipCount + 1;
-    mediaData.forEach((image, idx) => {
+    for (let idx = 0; idx < mediaData.length; idx++) {
       file.presentationWrapper.relationships.addRelationship(
         presImageOffset + idx,
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-        `../media/${image.fileName}`,
+        `../media/${mediaData[idx].fileName}`,
       );
-    });
+    }
 
     const replacedPresentationXml = replaceImagePlaceholders(
       presentationXml,
@@ -191,13 +191,13 @@ export class Compiler {
 
       const slideMediaData = getReferencedMedia(slideXml, file.media.array);
       const slideImageOffset = slideWrapper.relationships.relationshipCount + 1;
-      slideMediaData.forEach((image, idx) => {
+      for (let idx = 0; idx < slideMediaData.length; idx++) {
         slideWrapper.relationships.addRelationship(
           slideImageOffset + idx,
           "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-          `../media/${image.fileName}`,
+          `../media/${slideMediaData[idx].fileName}`,
         );
-      });
+      }
 
       let replacedSlideXml = replaceImagePlaceholders(slideXml, slideMediaData, slideImageOffset);
       currentImageCount += slideMediaData.length;
@@ -208,7 +208,8 @@ export class Compiler {
         const slideChartKeys = collectPlaceholderKeys(replacedSlideXml, "chart:");
         if (slideChartKeys.length > 0) {
           const slideChartOffset = slideWrapper.relationships.relationshipCount + 1;
-          const slideCharts = file.charts.array.filter((c) => slideChartKeys.includes(c.key));
+          const slideChartKeySet = new Set(slideChartKeys);
+          const slideCharts = file.charts.array.filter((c) => slideChartKeySet.has(c.key));
 
           replacedSlideXml = replaceChartPlaceholders(
             replacedSlideXml,
@@ -216,22 +217,22 @@ export class Compiler {
             slideChartOffset,
           );
 
-          slideCharts.forEach((chartData, ci) => {
+          for (let ci = 0; ci < slideCharts.length; ci++) {
+            const chartData = slideCharts[ci];
             const globalIndex = file.charts.array.indexOf(chartData);
             slideWrapper.relationships.addRelationship(
               slideChartOffset + ci,
               "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart",
               `../charts/chart${globalIndex + 1}.xml`,
             );
-          });
+          }
         }
 
         // SmartArt placeholder replacement
         const slideSmartArtKeys = collectPlaceholderKeys(replacedSlideXml, "smartart:");
         if (slideSmartArtKeys.length > 0) {
-          const slideSmartArts = file.smartArts.array.filter((s) =>
-            slideSmartArtKeys.includes(s.key),
-          );
+          const slideSmartArtKeySet = new Set(slideSmartArtKeys);
+          const slideSmartArts = file.smartArts.array.filter((s) => slideSmartArtKeySet.has(s.key));
           const saOffset = slideWrapper.relationships.relationshipCount + 1;
 
           replacedSlideXml = replaceSmartArtPlaceholders(
@@ -259,7 +260,8 @@ export class Compiler {
         // Hyperlink placeholder replacement
         const slideHlinkKeys = collectPlaceholderKeys(replacedSlideXml, "hlink:");
         if (slideHlinkKeys.length > 0) {
-          const slideHlinks = file.hyperlinks.array.filter((h) => slideHlinkKeys.includes(h.key));
+          const slideHlinkKeySet = new Set(slideHlinkKeys);
+          const slideHlinks = file.hyperlinks.array.filter((h) => slideHlinkKeySet.has(h.key));
           const hlinkOffset = slideWrapper.relationships.relationshipCount + 1;
 
           replacedSlideXml = replaceHyperlinkPlaceholders(
@@ -268,14 +270,14 @@ export class Compiler {
             hlinkOffset,
           );
 
-          slideHlinks.forEach((hlink, hi) => {
+          for (let hi = 0; hi < slideHlinks.length; hi++) {
             slideWrapper.relationships.addRelationship(
               hlinkOffset + hi,
               "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
-              hlink.url,
+              slideHlinks[hi].url,
               "External",
             );
-          });
+          }
         }
 
         // Media (video/audio) placeholder replacement
@@ -298,21 +300,21 @@ export class Compiler {
             videoOffset,
           );
 
-          slideMediaRefs.forEach((media, mi) => {
+          for (let mi = 0; mi < slideMediaRefs.length; mi++) {
             slideWrapper.relationships.addRelationship(
               mediaOffset + mi,
               "http://schemas.microsoft.com/office/2007/relationships/media",
-              `../media/${media.fileName}`,
+              `../media/${slideMediaRefs[mi].fileName}`,
             );
-          });
+          }
 
-          slideVideoRefs.forEach((video, vi) => {
+          for (let vi = 0; vi < slideVideoRefs.length; vi++) {
             slideWrapper.relationships.addRelationship(
               videoOffset + vi,
               "http://schemas.openxmlformats.org/officeDocument/2006/relationships/video",
-              `../media/${video.fileName}`,
+              `../media/${slideVideoRefs[vi].fileName}`,
             );
-          });
+          }
         }
       }
 
@@ -348,16 +350,16 @@ export class Compiler {
     }
 
     // ContentTypes — AFTER slides so Charts.Array is populated
-    file.charts.array.forEach((_, i) => {
+    for (let i = 0; i < file.charts.array.length; i++) {
       file.contentTypes.addChart(i + 1);
-    });
-    file.smartArts.array.forEach((_, i) => {
+    }
+    for (let i = 0; i < file.smartArts.array.length; i++) {
       file.contentTypes.addDiagramData(i + 1);
       file.contentTypes.addDiagramLayout(i + 1);
       file.contentTypes.addDiagramStyle(i + 1);
       file.contentTypes.addDiagramColors(i + 1);
       file.contentTypes.addDiagramDrawing(i + 1);
-    });
+    }
     mapping["ContentTypes"] = {
       data: this.formatter.formatToXml(file.contentTypes, context),
       path: "[Content_Types].xml",

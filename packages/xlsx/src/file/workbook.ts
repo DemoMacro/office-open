@@ -5,6 +5,7 @@
  */
 import { BaseXmlComponent } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
+import { escapeXml } from "@office-open/xml";
 
 export interface SheetDefinition {
   readonly name: string;
@@ -46,5 +47,19 @@ export class WorkbookXml extends BaseXmlComponent {
         { sheets: sheetElements },
       ],
     };
+  }
+
+  public override toXml(_context: Context): string {
+    const p: string[] = [
+      '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>',
+    ];
+    for (const s of this.sheets) {
+      const stateAttr = s.state && s.state !== "visible" ? ` state="${s.state}"` : "";
+      p.push(
+        `<sheet name="${escapeXml(s.name)}" sheetId="${s.sheetId}" r:id="${s.rId}"${stateAttr}/>`,
+      );
+    }
+    p.push("</sheets></workbook>");
+    return p.join("");
   }
 }

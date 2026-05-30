@@ -207,10 +207,10 @@ export class Compiler {
     };
 
     // Convert mapping to Zippable
-    const mediaFiles = file.media.array.map((img) => ({
-      data: img.data,
-      path: `xl/media/${img.fileName}`,
-    }));
+    const mediaFiles: Array<{ data: Uint8Array; path: string }> = [];
+    for (const img of file.media.array) {
+      mediaFiles.push({ data: img.data, path: `xl/media/${img.fileName}` });
+    }
 
     return compileMapping(mapping, overrides, mediaFiles);
   }

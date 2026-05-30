@@ -54,28 +54,17 @@ export class DrawingTable extends BaseXmlComponent {
     // a:tblGrid
     const colWidths =
       opts.columnWidths && opts.columnWidths.length > 0
-        ? [...opts.columnWidths]
+        ? opts.columnWidths
         : Array.from({ length: opts.rows[0]?.cells.length ?? 1 }, () => 0);
     const grid = new TableGrid(colWidths);
     const gridObj = grid.prepForXml(context);
     if (gridObj) children.push(gridObj);
 
     // a:tr rows — distribute table-level borders to edge cells
-    const tb = opts.borders;
     const rowCount = opts.rows.length;
     for (let ri = 0; ri < rowCount; ri++) {
       const row = opts.rows[ri];
-      const colCount = row.cells.length;
-      const cells = tb
-        ? row.cells.map((cell, ci) => {
-            const b = { ...cell.borders };
-            if (ri === 0 && tb.top && !b.top) b.top = tb.top;
-            if (ri === rowCount - 1 && tb.bottom && !b.bottom) b.bottom = tb.bottom;
-            if (ci === 0 && tb.left && !b.left) b.left = tb.left;
-            if (ci === colCount - 1 && tb.right && !b.right) b.right = tb.right;
-            return Object.keys(b).length === 0 ? cell : { ...cell, borders: b };
-          })
-        : row.cells;
+      const cells = this.distributeBorders(row, ri, rowCount, opts.borders);
       const tr = new TableRow({ ...row, cells });
       const trObj = tr.prepForXml(context);
       if (trObj) children.push(trObj);
@@ -102,29 +91,44 @@ export class DrawingTable extends BaseXmlComponent {
     // a:tblGrid
     const colWidths =
       opts.columnWidths && opts.columnWidths.length > 0
-        ? [...opts.columnWidths]
+        ? opts.columnWidths
         : Array.from({ length: opts.rows[0]?.cells.length ?? 1 }, () => 0);
     parts.push(new TableGrid(colWidths).toXml(context));
 
     // a:tr — distribute table-level borders to edge cells
-    const tb = opts.borders;
     const rowCount = opts.rows.length;
     for (let ri = 0; ri < rowCount; ri++) {
       const row = opts.rows[ri];
-      const colCount = row.cells.length;
-      const cells = tb
-        ? row.cells.map((cell, ci) => {
-            const b = { ...cell.borders };
-            if (ri === 0 && tb.top && !b.top) b.top = tb.top;
-            if (ri === rowCount - 1 && tb.bottom && !b.bottom) b.bottom = tb.bottom;
-            if (ci === 0 && tb.left && !b.left) b.left = tb.left;
-            if (ci === colCount - 1 && tb.right && !b.right) b.right = tb.right;
-            return Object.keys(b).length === 0 ? cell : { ...cell, borders: b };
-          })
-        : row.cells;
+      const cells = this.distributeBorders(row, ri, rowCount, opts.borders);
       parts.push(new TableRow({ ...row, cells }).toXml(context));
     }
 
     return `<a:tbl>${parts.join("")}</a:tbl>`;
+  }
+
+  /** Distribute table-level borders to edge cells only when needed. */
+  private distributeBorders(
+    row: TableRowOptions,
+    ri: number,
+    rowCount: number,
+    tb: DrawingTableOptions["borders"],
+  ): TableRowOptions["cells"] {
+    if (!tb) return row.cells;
+    const colCount = row.cells.length;
+    return row.cells.map((cell, ci) => {
+      const needTop = ri === 0 && !!tb.top && !cell.borders?.top;
+      const needBottom = ri === rowCount - 1 && !!tb.bottom && !cell.borders?.bottom;
+      const needLeft = ci === 0 && !!tb.left && !cell.borders?.left;
+      const needRight = ci === colCount - 1 && !!tb.right && !cell.borders?.right;
+      if (!needTop && !needBottom && !needLeft && !needRight) return cell;
+      const borders = {
+        ...cell.borders,
+        ...(needTop && { top: tb.top }),
+        ...(needBottom && { bottom: tb.bottom }),
+        ...(needLeft && { left: tb.left }),
+        ...(needRight && { right: tb.right }),
+      };
+      return { ...cell, borders };
+    });
   }
 }

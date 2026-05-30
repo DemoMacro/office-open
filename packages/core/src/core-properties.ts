@@ -1,4 +1,4 @@
-import { textOf } from "@office-open/xml";
+import { textOf, escapeXml } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import type { IXmlableObject } from "./xml-components";
@@ -95,4 +95,37 @@ export function buildCorePropertiesXml(opts: {
   children.push({ "dcterms:modified": [W3CDTF_ATTR, now] });
 
   return { "cp:coreProperties": children };
+}
+
+/**
+ * Build a cp:coreProperties XML string directly (fast path).
+ *
+ * Shared by pptx and xlsx to bypass prepForXml → xml() pipeline.
+ */
+export function buildCorePropertiesXmlString(opts: {
+  readonly title?: string;
+  readonly subject?: string;
+  readonly creator?: string;
+  readonly keywords?: string;
+  readonly description?: string;
+  readonly lastModifiedBy?: string;
+  readonly revision?: number;
+}): string {
+  const p: string[] = [
+    '<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">',
+  ];
+  if (opts.title) p.push(`<dc:title>${escapeXml(opts.title)}</dc:title>`);
+  if (opts.subject) p.push(`<dc:subject>${escapeXml(opts.subject)}</dc:subject>`);
+  if (opts.creator) p.push(`<dc:creator>${escapeXml(opts.creator)}</dc:creator>`);
+  if (opts.keywords) p.push(`<cp:keywords>${escapeXml(opts.keywords)}</cp:keywords>`);
+  if (opts.description) p.push(`<dc:description>${escapeXml(opts.description)}</dc:description>`);
+  if (opts.lastModifiedBy)
+    p.push(`<cp:lastModifiedBy>${escapeXml(opts.lastModifiedBy)}</cp:lastModifiedBy>`);
+  if (opts.revision) p.push(`<cp:revision>${opts.revision}</cp:revision>`);
+
+  const now = new Date().toISOString();
+  p.push(`<dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created>`);
+  p.push(`<dcterms:modified xsi:type="dcterms:W3CDTF">${now}</dcterms:modified>`);
+  p.push("</cp:coreProperties>");
+  return p.join("");
 }

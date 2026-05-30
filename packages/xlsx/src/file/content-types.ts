@@ -54,6 +54,13 @@ const STATIC_CHILDREN: IXmlableObject[] = [
   }),
 ];
 
+// Pre-compiled static XML fragment (module-level constant)
+const STATIC_XML = STATIC_ENTRIES.map((e) =>
+  e.type === "Default"
+    ? `<Default ContentType="${e.contentType}" Extension="${e.key}"/>`
+    : `<Override ContentType="${e.contentType}" PartName="${e.key}"/>`,
+).join("");
+
 export class ContentTypes extends BaseXmlComponent {
   private readonly dynamicEntries: ContentEntry[] = [];
 
@@ -123,5 +130,21 @@ export class ContentTypes extends BaseXmlComponent {
       }
     }
     return { Types: children };
+  }
+
+  public override toXml(_context: Context): string {
+    const p: string[] = [
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">',
+      STATIC_XML,
+    ];
+    for (const e of this.dynamicEntries) {
+      if (e.type === "Default") {
+        p.push(`<Default ContentType="${e.contentType}" Extension="${e.key}"/>`);
+      } else {
+        p.push(`<Override ContentType="${e.contentType}" PartName="${e.key}"/>`);
+      }
+    }
+    p.push("</Types>");
+    return p.join("");
   }
 }

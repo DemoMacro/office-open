@@ -7,7 +7,7 @@
  */
 import { BaseXmlComponent } from "@file/xml-components";
 import type { Context, IXmlableObject } from "@file/xml-components";
-import { buildCorePropertiesXml } from "@office-open/core";
+import { buildCorePropertiesXml, buildCorePropertiesXmlString } from "@office-open/core";
 
 export interface CorePropertiesOptions {
   readonly title?: string;
@@ -29,5 +29,9 @@ export class CoreProperties extends BaseXmlComponent {
 
   public override prepForXml(_context: Context): IXmlableObject {
     return buildCorePropertiesXml(this.options);
+  }
+
+  public override toXml(_context: Context): string {
+    return buildCorePropertiesXmlString(this.options);
   }
 }
