@@ -34,15 +34,9 @@ describe("AltChunk", () => {
       stack: [],
     } as unknown as Context;
 
-    const result = altChunk.prepForXml(mockContext);
+    const result = altChunk.toXml(mockContext);
 
-    expect(result).to.deep.equal({
-      "w:altChunk": {
-        _attr: {
-          "r:id": "rId1",
-        },
-      },
-    });
+    expect(result).to.contain('r:id="rId1"');
 
     expect(addRelationship).toHaveBeenCalledWith(
       "1",
@@ -70,7 +64,7 @@ describe("AltChunk", () => {
 
   it("should not double-wrap an already complete HTML document", () => {
     const altChunk = new AltChunk({
-      data: '<!DOCTYPE html>\n<html><head><meta charset="utf-8"></head>\n<body><p>Already full</p></body></html>',
+      data: '<!DOCTYPE html>\n<html><head><meta charset="utf-8"></head><n<body><p>Already full</p></body></html>',
       contentType: "text/html",
       extension: "html",
     });
@@ -87,11 +81,11 @@ describe("AltChunk", () => {
       stack: [],
     } as unknown as Context;
 
-    altChunk.prepForXml(mockContext);
+    altChunk.toXml(mockContext);
 
     // Data should remain unchanged (no double wrapping)
     const originalHtml =
-      '<!DOCTYPE html>\n<html><head><meta charset="utf-8"></head>\n<body><p>Already full</p></body></html>';
+      '<!DOCTYPE html>\n<html><head><meta charset="utf-8"></head><n<body><p>Already full</p></body></html>';
     expect(addAltChunk).toHaveBeenCalledWith(
       "1",
       expect.objectContaining({
@@ -119,7 +113,7 @@ describe("AltChunk", () => {
       stack: [],
     } as unknown as Context;
 
-    altChunk.prepForXml(mockContext);
+    altChunk.toXml(mockContext);
 
     // RTF should remain unchanged
     expect(addAltChunk).toHaveBeenCalledWith(
@@ -149,23 +143,10 @@ describe("AltChunk", () => {
       stack: [],
     } as unknown as Context;
 
-    const result = altChunk.prepForXml(mockContext);
+    const result = altChunk.toXml(mockContext);
 
-    expect(result).to.deep.equal({
-      "w:altChunk": [
-        {
-          _attr: {
-            "r:id": "rId1",
-          },
-        },
-        {
-          "w:altChunkPr": [
-            {
-              "w:matchSrc": {},
-            },
-          ],
-        },
-      ],
-    });
+    expect(result).to.contain('r:id="rId1"');
+    expect(result).to.contain("w:altChunkPr");
+    expect(result).to.contain("w:matchSrc");
   });
 });

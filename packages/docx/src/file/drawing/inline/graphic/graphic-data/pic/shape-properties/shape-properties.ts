@@ -10,7 +10,7 @@
  * @module
  */
 import type { MediaDataTransformation } from "@file/media";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 import { XmlComponent } from "@file/xml-components";
 import {
   buildFill,
@@ -146,7 +146,7 @@ export class ShapeProperties extends XmlComponent {
     }
   }
 
-  public override prepForXml(context: Context): IXmlableObject | undefined {
+  public override toXml(context: Context): string {
     const media = this.fillOptions ? extractBlipFillMedia(this.fillOptions) : undefined;
     if (media) {
       context.file.media.addImage(media.fileName, {
@@ -156,6 +156,6 @@ export class ShapeProperties extends XmlComponent {
         transformation: { pixels: { x: 0, y: 0 }, emus: { x: 0, y: 0 } },
       });
     }
-    return super.prepForXml(context);
+    return super.toXml(context);
   }
 }

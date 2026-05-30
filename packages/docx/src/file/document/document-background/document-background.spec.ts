@@ -1,4 +1,3 @@
-import { Formatter } from "@export/formatter";
 import type { Context } from "@file/xml-components";
 import * as convenienceFunctions from "@util/convenience-functions";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
@@ -17,24 +16,22 @@ describe("DocumentBackground", () => {
   describe("#constructor()", () => {
     it("should create a DocumentBackground with no options", () => {
       const documentBackground = new DocumentBackground({});
-      const tree = new Formatter().format(documentBackground);
-      expect(tree).to.deep.equal({
-        "w:background": {
-          _attr: {},
-        },
-      });
+      const xml = documentBackground.toXml({
+        stack: [],
+        file: null!,
+        viewWrapper: null!,
+      } as unknown as Context);
+      expect(xml).to.equal("<w:background/>");
     });
 
     it("should create a DocumentBackground with color", () => {
       const documentBackground = new DocumentBackground({ color: "ffff00" });
-      const tree = new Formatter().format(documentBackground);
-      expect(tree).to.deep.equal({
-        "w:background": {
-          _attr: {
-            "w:color": "ffff00",
-          },
-        },
-      });
+      const xml = documentBackground.toXml({
+        stack: [],
+        file: null!,
+        viewWrapper: null!,
+      } as unknown as Context);
+      expect(xml).to.contain('w:color="ffff00"');
     });
 
     it("should create a DocumentBackground with all theme options", () => {
@@ -44,21 +41,19 @@ describe("DocumentBackground", () => {
         themeShade: "0A",
         themeTint: "0B",
       });
-      const tree = new Formatter().format(documentBackground);
-      expect(tree).to.deep.equal({
-        "w:background": {
-          _attr: {
-            "w:color": "ffff00",
-            "w:themeColor": "test",
-            "w:themeShade": "0A",
-            "w:themeTint": "0B",
-          },
-        },
-      });
+      const xml = documentBackground.toXml({
+        stack: [],
+        file: null!,
+        viewWrapper: null!,
+      } as unknown as Context);
+      expect(xml).to.contain('w:color="ffff00"');
+      expect(xml).to.contain('w:themeColor="test"');
+      expect(xml).to.contain('w:themeShade="0A"');
+      expect(xml).to.contain('w:themeTint="0B"');
     });
   });
 
-  describe("#prepForXml() with image", () => {
+  describe("#toXml() with image", () => {
     it("should register image with Media when image option is provided", () => {
       const addImage = vi.fn();
       const mockContext = {
@@ -74,7 +69,7 @@ describe("DocumentBackground", () => {
         },
       });
 
-      documentBackground.prepForXml(mockContext);
+      documentBackground.toXml(mockContext);
 
       expect(addImage).toHaveBeenCalledWith(
         "abc123.png",
@@ -85,7 +80,7 @@ describe("DocumentBackground", () => {
       );
     });
 
-    it("should render v:background with v:fill after prepForXml", () => {
+    it("should render v:background with v:fill", () => {
       const addImage = vi.fn();
       const mockContext = {
         file: { media: { addImage } },
@@ -100,32 +95,23 @@ describe("DocumentBackground", () => {
         },
       });
 
-      const tree = new Formatter().format(documentBackground, mockContext);
+      const xml = documentBackground.toXml(mockContext);
 
-      expect(tree).to.have.property("w:background");
-      const bg = tree["w:background"];
-      expect(bg).to.be.an("array");
-
-      // Should contain v:background with v:fill
-      const vBg = bg.find((el: Record<string, unknown>) => el["v:background"]);
-      expect(vBg).to.exist;
-      const vBgContent = vBg["v:background"];
-      expect(vBgContent).to.be.an("array");
-      const vFill = vBgContent.find((el: Record<string, unknown>) => el["v:fill"]);
-      expect(vFill).to.exist;
+      expect(xml).to.contain("v:background");
+      expect(xml).to.contain("v:fill");
     });
 
     it("should not add v:background when no image option is provided", () => {
       const documentBackground = new DocumentBackground({ color: "FF0000" });
-      const tree = new Formatter().format(documentBackground);
+      const xml = documentBackground.toXml({
+        stack: [],
+        file: null!,
+        viewWrapper: null!,
+      } as unknown as Context);
 
-      expect(tree).to.deep.equal({
-        "w:background": {
-          _attr: {
-            "w:color": "FF0000",
-          },
-        },
-      });
+      expect(xml).to.contain('w:color="FF0000"');
+      expect(xml).not.to.contain("v:background");
+      expect(xml).not.to.contain("v:fill");
     });
   });
 });

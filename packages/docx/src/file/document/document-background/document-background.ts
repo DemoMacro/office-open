@@ -14,7 +14,7 @@
  */
 import { BuilderElement } from "@file/xml-components";
 import { XmlComponent } from "@file/xml-components";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 import { hashedId } from "@util/convenience-functions";
 import { hexColorValue, uCharHexNumber } from "@util/values";
 import type { DataType } from "undio";
@@ -127,7 +127,7 @@ export class DocumentBackground extends XmlComponent {
     }
   }
 
-  public prepForXml(context: Context): IXmlableObject | undefined {
+  public override toXml(context: Context): string {
     if (this.imageData) {
       // Register the image with the media collection for packaging
       context.file.media.addImage(this.imageData.fileName, {
@@ -169,6 +169,6 @@ export class DocumentBackground extends XmlComponent {
       );
     }
 
-    return super.prepForXml(context);
+    return super.toXml(context);
   }
 }

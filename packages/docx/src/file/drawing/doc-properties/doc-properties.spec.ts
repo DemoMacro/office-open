@@ -1,9 +1,10 @@
 import { Formatter } from "@export/formatter";
+import type { Context } from "@file/xml-components";
 import { describe, expect, it } from "vite-plus/test";
 
 import { DocProperties } from "./doc-properties";
 
-const createMockContext = () =>
+const createMockContext = (): Context =>
   ({
     stack: [],
     viewWrapper: {
@@ -56,12 +57,9 @@ describe("DocProperties", () => {
       name: "test",
       hyperlink: { click: "https://example.com" },
     });
-    const tree = new Formatter().format(dp, createMockContext());
-    const children = tree["wp:docPr"] as unknown[];
-    const hlinkClick = children.find(
-      (c) => c && typeof c === "object" && "a:hlinkClick" in (c as Record<string, unknown>),
-    );
-    expect(hlinkClick).toBeDefined();
+    const xml = dp.toXml(createMockContext());
+    expect(xml).to.contain("a:hlinkClick");
+    expect(xml).to.contain('xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"');
   });
 
   it("should add hlinkHover when hyperlink.hover is specified", () => {
@@ -70,12 +68,8 @@ describe("DocProperties", () => {
       name: "test",
       hyperlink: { hover: "https://example.com/hover" },
     });
-    const tree = new Formatter().format(dp, createMockContext());
-    const children = tree["wp:docPr"] as unknown[];
-    const hlinkHover = children.find(
-      (c) => c && typeof c === "object" && "a:hlinkHover" in (c as Record<string, unknown>),
-    );
-    expect(hlinkHover).toBeDefined();
+    const xml = dp.toXml(createMockContext());
+    expect(xml).to.contain("a:hlinkHover");
   });
 
   it("should add both hlinkClick and hlinkHover when both are specified", () => {
@@ -87,21 +81,14 @@ describe("DocProperties", () => {
         hover: "https://example.com/hover",
       },
     });
-    const tree = new Formatter().format(dp, createMockContext());
-    const children = tree["wp:docPr"] as unknown[];
-    const hasClick = children.some(
-      (c) => c && typeof c === "object" && "a:hlinkClick" in (c as Record<string, unknown>),
-    );
-    const hasHover = children.some(
-      (c) => c && typeof c === "object" && "a:hlinkHover" in (c as Record<string, unknown>),
-    );
-    expect(hasClick).toBe(true);
-    expect(hasHover).toBe(true);
+    const xml = dp.toXml(createMockContext());
+    expect(xml).to.contain("a:hlinkClick");
+    expect(xml).to.contain("a:hlinkHover");
   });
 
   it("should register relationship for explicit click hyperlink", () => {
     let addedRelationship = false;
-    const context = {
+    const context: Context = {
       stack: [],
       viewWrapper: {
         relationships: {
@@ -117,13 +104,13 @@ describe("DocProperties", () => {
       name: "test",
       hyperlink: { click: "https://example.com" },
     });
-    new Formatter().format(dp, context);
+    dp.toXml(context);
     expect(addedRelationship).toBe(true);
   });
 
   it("should register relationship for explicit hover hyperlink", () => {
     let addedCount = 0;
-    const context = {
+    const context: Context = {
       stack: [],
       viewWrapper: {
         relationships: {
@@ -142,7 +129,7 @@ describe("DocProperties", () => {
         hover: "https://example.com/hover",
       },
     });
-    new Formatter().format(dp, context);
+    dp.toXml(context);
     expect(addedCount).toBe(2);
   });
 });

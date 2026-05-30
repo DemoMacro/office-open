@@ -16,7 +16,7 @@ import {
 import { ConcreteHyperlink } from "@file/paragraph/links/hyperlink";
 import { TargetModeType } from "@file/relationships/relationship/relationship";
 import { XmlComponent } from "@file/xml-components";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 
 const HYPERLINK_RELATIONSHIP_TYPE =
@@ -62,7 +62,9 @@ export class NonVisualProperties extends XmlComponent {
     this.root.push({ _attr: { id: 0, name: "", descr: "" } });
   }
 
-  public prepForXml(context: Context): IXmlableObject | undefined {
+  public override toXml(context: Context): string {
+    const start = this.root.length;
+
     // Stack-based detection (backward compatible with ConcreteHyperlink wrapping)
     let hasStackClick = false;
     for (let i = context.stack.length - 1; i >= 0; i--) {
@@ -102,6 +104,8 @@ export class NonVisualProperties extends XmlComponent {
       }
     }
 
-    return super.prepForXml(context);
+    const result = super.toXml(context);
+    this.root.length = start;
+    return result;
   }
 }

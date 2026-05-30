@@ -8,7 +8,6 @@
  * @module
  */
 import { XmlComponent } from "@file/xml-components";
-import type { Context, IXmlableObject } from "@file/xml-components";
 
 import { CustomProperty } from "./custom-property";
 import type { CustomPropertyOptions } from "./custom-property";
@@ -61,12 +60,9 @@ export class CustomProperties extends XmlComponent {
     }
   }
 
-  public prepForXml(context: Context): IXmlableObject | undefined {
-    this.properties.forEach((x) => this.root.push(x));
-    return super.prepForXml(context);
-  }
-
   public addCustomProperty(property: CustomPropertyOptions): void {
-    this.properties.push(new CustomProperty(this.nextId++, property));
+    const prop = new CustomProperty(this.nextId++, property);
+    this.properties.push(prop);
+    this.root.push(prop);
   }
 }

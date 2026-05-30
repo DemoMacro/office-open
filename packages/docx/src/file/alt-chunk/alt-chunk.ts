@@ -1,6 +1,6 @@
 import type { FileChild } from "@file/file-child";
 import { EmptyElement, XmlComponent } from "@file/xml-components";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 /**
  * Alternative format chunk module for WordprocessingML documents.
@@ -64,12 +64,9 @@ export class AltChunk extends XmlComponent implements FileChild {
     }
   }
 
-  public prepForXml(context: Context): IXmlableObject {
+  public override toXml(context: Context): string {
     const relId = uniqueId();
     const extension = this.options.extension;
-
-    this.root.splice(0, 0, { _attr: { "r:id": `rId${relId}` } });
-
     const partPath = `afchunks/afchunk${relId}.${extension}`;
     const rawData =
       typeof this.options.data === "string"
@@ -92,7 +89,10 @@ export class AltChunk extends XmlComponent implements FileChild {
 
     context.file.contentTypes.addAltChunk(`/word/${partPath}`, this.options.contentType, extension);
 
-    return super.prepForXml(context) as IXmlableObject;
+    this.root.splice(0, 0, { _attr: { "r:id": `rId${relId}` } });
+    const result = super.toXml(context);
+    this.root.splice(0, 1);
+    return result;
   }
 }
 

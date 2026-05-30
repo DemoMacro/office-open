@@ -11,7 +11,7 @@
  */
 import type { FileChild } from "@file/file-child";
 import { XmlComponent } from "@file/xml-components";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 
 const SUBDOC_RELATIONSHIP_TYPE =
@@ -49,11 +49,9 @@ export class SubDoc extends XmlComponent implements FileChild {
     this.options = options;
   }
 
-  public prepForXml(context: Context): IXmlableObject {
+  public override toXml(context: Context): string {
     const relId = uniqueId();
     const partPath = `subdocs/subdoc${relId}.docx`;
-
-    this.root.splice(0, 0, { _attr: { "r:id": `rId${relId}` } });
 
     const data =
       typeof this.options.data === "string"
@@ -69,6 +67,9 @@ export class SubDoc extends XmlComponent implements FileChild {
 
     context.file.contentTypes.addSubDoc(`/word/${partPath}`);
 
-    return super.prepForXml(context) as IXmlableObject;
+    this.root.splice(0, 0, { _attr: { "r:id": `rId${relId}` } });
+    const result = super.toXml(context);
+    this.root.splice(0, 1);
+    return result;
   }
 }

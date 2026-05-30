@@ -11,7 +11,7 @@
  */
 import { AlignmentType } from "@file/paragraph";
 import { XmlComponent } from "@file/xml-components";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 import {
   abstractNumUniqueNumericIdGen,
   concreteNumUniqueNumericIdGen,
@@ -278,23 +278,17 @@ export class Numbering extends XmlComponent {
     }
   }
 
-  /**
-   * Prepares the numbering definitions for XML serialization.
-   *
-   * Adds all abstract and concrete numbering definitions to the XML tree.
-   *
-   * @param context - The XML context
-   * @returns The prepared XML object
-   */
-  public prepForXml(context: Context): IXmlableObject | undefined {
+  public override toXml(context: Context): string {
+    const start = this.root.length;
     for (const numbering of this.abstractNumberingMap.values()) {
       this.root.push(numbering);
     }
-
     for (const numbering of this.concreteNumberingMap.values()) {
       this.root.push(numbering);
     }
-    return super.prepForXml(context);
+    const result = super.toXml(context);
+    this.root.length = start;
+    return result;
   }
 
   /**

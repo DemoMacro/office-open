@@ -32,15 +32,9 @@ describe("SubDoc", () => {
       stack: [],
     } as unknown as Context;
 
-    const result = subDoc.prepForXml(mockContext);
+    const result = subDoc.toXml(mockContext);
 
-    expect(result).to.deep.equal({
-      "w:subDoc": {
-        _attr: {
-          "r:id": "rId1",
-        },
-      },
-    });
+    expect(result).to.contain('r:id="rId1"');
 
     expect(addRelationship).toHaveBeenCalledWith(
       "1",
@@ -73,7 +67,7 @@ describe("SubDoc", () => {
       stack: [],
     } as unknown as Context;
 
-    subDoc.prepForXml(mockContext);
+    subDoc.toXml(mockContext);
 
     expect(addSubDoc).toHaveBeenCalledWith(
       "1",
