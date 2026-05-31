@@ -53,15 +53,15 @@ export function createRunRenderer(ns: XmlNamespaceConfig) {
 
     let currentRunStringLength = 0;
 
-    const runs = node.element.elements
-      .map((element, i) => ({ element, i }))
-      .filter(({ element }) => element.name === ns.run)
-      .map(({ element, i }) => {
+    const runs: IRenderedRunNode[] = [];
+    for (let i = 0; i < node.element.elements.length; i++) {
+      const element = node.element.elements[i];
+      if (element.name === ns.run) {
         const renderedRunNode = renderRunNode(element, i, currentRunStringLength);
         currentRunStringLength += renderedRunNode.text.length;
-        return renderedRunNode;
-      })
-      .filter((e) => Boolean(e));
+        runs.push(renderedRunNode);
+      }
+    }
 
     const text = runs.reduce((acc, curr) => acc + curr.text, "");
 
@@ -90,23 +90,17 @@ export function createRunRenderer(ns: XmlNamespaceConfig) {
 
     let currentTextStringIndex = currentRunStringIndex;
 
-    const parts = node.elements
-      .map((element, i: number) =>
-        element.name === ns.text && element.elements && element.elements.length > 0
-          ? (() => {
-              const partStart = currentTextStringIndex;
-              currentTextStringIndex += (element.elements[0].text?.toString() ?? "").length;
-              return {
-                end: currentTextStringIndex - 1,
-                index: i,
-                start: partStart,
-                text: element.elements[0].text?.toString() ?? "",
-              };
-            })()
-          : undefined,
-      )
-      .filter((e) => Boolean(e))
-      .map((e) => e as IParts);
+    const parts: IParts[] = [];
+    for (let i = 0; i < node.elements.length; i++) {
+      const element = node.elements[i];
+      if (element.name === ns.text && element.elements && element.elements.length > 0) {
+        const text = element.elements[0].text ?? "";
+        const textStr = String(text);
+        const partStart = currentTextStringIndex;
+        currentTextStringIndex += textStr.length;
+        parts.push({ end: currentTextStringIndex - 1, index: i, start: partStart, text: textStr });
+      }
+    }
 
     const text = parts.reduce((acc, curr) => acc + curr.text, "");
 

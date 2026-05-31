@@ -67,7 +67,7 @@ export const createScRgbColor = (options: ScRgbColorOptions): XmlComponent => {
         value: options.b,
       },
     },
-    children: [...transforms],
+    children: transforms,
     name: "a:scrgbClr",
   });
 };

@@ -51,7 +51,7 @@ export const createHslColor = (options: HslColorOptions): XmlComponent => {
       lum: { key: "lum", value: options.luminance },
       sat: { key: "sat", value: options.saturation },
     },
-    children: [...transforms],
+    children: transforms,
     name: "a:hslClr",
   });
 };

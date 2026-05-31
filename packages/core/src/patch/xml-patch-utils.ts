@@ -29,4 +29,4 @@ export const patchSpaceAttribute = (element: Element): Element => ({
 });
 
 export const getFirstLevelElements = (relationships: Element, id: string): Element[] =>
-  relationships.elements?.filter((e) => e.name === id)[0].elements ?? [];
+  relationships.elements?.find((e) => e.name === id)?.elements ?? [];

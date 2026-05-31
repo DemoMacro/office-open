@@ -207,7 +207,7 @@ export const createPresetColor = (options: PresetColorOptions): XmlComponent => 
     attributes: {
       value: { key: "val", value: options.value },
     },
-    children: [...transforms],
+    children: transforms,
     name: "a:prstClr",
   });
 };

@@ -4,6 +4,6 @@ import type { XmlComponent } from "@file/xml-components";
 
 export const createTextBoxContent = (children: readonly FileChild[]): XmlComponent =>
   new BuilderElement({
-    children: [...children],
+    children: children,
     name: "wps:txbxContent",
   });

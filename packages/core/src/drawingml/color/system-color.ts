@@ -95,7 +95,7 @@ export const createSystemColor = (options: SystemColorOptions): XmlComponent => 
       lastClr: { key: "lastClr", value: options.lastClr },
       value: { key: "val", value: options.value },
     },
-    children: [...transforms],
+    children: transforms,
     name: "a:sysClr",
   });
 };

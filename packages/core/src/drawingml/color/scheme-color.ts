@@ -123,7 +123,7 @@ export const createSchemeColor = (options: SchemeColorOptions): XmlComponent => 
         value: options.value,
       },
     },
-    children: [...transforms],
+    children: transforms,
     name: "a:schemeClr",
   });
 };
