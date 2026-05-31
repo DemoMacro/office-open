@@ -70,6 +70,8 @@ export const xsdTextAnchor = bidi({
   top: "t",
   center: "ctr",
   bottom: "b",
+  justify: "just",
+  distribute: "dist",
 } as const);
 
 // ---------------------------------------------------------------------------

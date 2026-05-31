@@ -1,0 +1,269 @@
+{
+  "title": "Comprehensive Document",
+  "creator": "office-open",
+  "description": "A feature-rich document demonstrating JSON API capabilities",
+  "evenAndOddHeaderAndFooters": true,
+  "background": { "color": "FFFFFF" },
+  "styles": {
+    "default": {
+      "document": {
+        "run": { "font": "Calibri", "size": 22 }
+      }
+    },
+    "paragraphStyles": [
+      {
+        "id": "CustomHeading",
+        "name": "Custom Heading",
+        "basedOn": "Normal",
+        "run": { "bold": true, "size": 32, "color": "1F4E79" }
+      }
+    ]
+  },
+  "numbering": {
+    "config": [
+      {
+        "reference": "custom-list",
+        "levels": [
+          {
+            "level": 0,
+            "format": "decimal",
+            "text": "%1.",
+            "alignment": "start",
+            "start": 1
+          }
+        ]
+      }
+    ]
+  },
+  "footnotes": {
+    "1": { "children": ["This is a footnote."] }
+  },
+  "endnotes": {
+    "1": { "children": ["This is an endnote."] }
+  },
+  "sections": [
+    {
+      "headers": {
+        "default": [{ "paragraph": { "children": [{ "text": "Header", "bold": true }] } }]
+      },
+      "footers": {
+        "default": [{ "paragraph": { "children": ["Footer text"] } }]
+      },
+      "properties": {
+        "page": {
+          "size": { "width": 11900, "height": 16840 },
+          "margin": { "top": 1440, "bottom": 1440, "left": 1440, "right": 1440 }
+        }
+      },
+      "children": [
+        {
+          "paragraph": {
+            "heading": "Heading1",
+            "children": [{ "text": "Document Title", "bold": true, "size": 56, "color": "1F4E79" }]
+          }
+        },
+        {
+          "paragraph": {
+            "alignment": "center",
+            "spacing": { "after": 200 },
+            "children": [
+              { "text": "Generated from JSON", "italic": true, "color": "666666", "size": 24 }
+            ]
+          }
+        },
+        { "paragraph": { "text": "" } },
+        {
+          "paragraph": {
+            "heading": "Heading2",
+            "children": [{ "text": "Rich Text Formatting", "bold": true, "size": 32 }]
+          }
+        },
+        {
+          "paragraph": {
+            "spacing": { "after": 200 },
+            "children": [
+              { "text": "Bold", "bold": true },
+              " text | ",
+              { "text": "Italic", "italic": true },
+              " text | ",
+              { "text": "Underline", "underline": { "type": "single" } },
+              " text | ",
+              { "text": "Double Strike", "doubleStrike": true },
+              " text | ",
+              { "text": "SubScript", "subScript": true },
+              " text | ",
+              { "text": "SuperScript", "superScript": true },
+              " text | ",
+              { "text": "Highlight", "highlight": "yellow" }
+            ]
+          }
+        },
+        {
+          "paragraph": {
+            "spacing": { "after": 200 },
+            "children": [
+              { "text": "Small Caps", "smallCaps": true },
+              " text | ",
+              { "text": "All Caps", "allCaps": true },
+              " text | ",
+              { "text": "Shadow", "shadow": true }
+            ]
+          }
+        },
+        { "paragraph": { "text": "" } },
+        {
+          "paragraph": {
+            "heading": "Heading2",
+            "children": [{ "text": "Hyperlinks and References", "bold": true, "size": 32 }]
+          }
+        },
+        {
+          "paragraph": {
+            "spacing": { "after": 200 },
+            "children": [
+              "Visit ",
+              {
+                "hyperlink": {
+                  "link": "https://example.com",
+                  "tooltip": "Example Website",
+                  "children": [
+                    { "text": "our website", "color": "0563C1", "underline": { "type": "single" } }
+                  ]
+                }
+              },
+              " for more information."
+            ]
+          }
+        },
+        {
+          "paragraph": {
+            "spacing": { "after": 100 },
+            "children": [
+              "See footnote",
+              { "footnoteReference": 1 },
+              " and endnote",
+              { "endnoteReference": 1 },
+              "."
+            ]
+          }
+        },
+        { "paragraph": { "text": "" } },
+        {
+          "paragraph": {
+            "heading": "Heading2",
+            "children": [{ "text": "Numbered List", "bold": true, "size": 32 }]
+          }
+        },
+        {
+          "paragraph": {
+            "numbering": { "reference": "custom-list", "level": 0 },
+            "children": ["First item"]
+          }
+        },
+        {
+          "paragraph": {
+            "numbering": { "reference": "custom-list", "level": 0 },
+            "children": ["Second item"]
+          }
+        },
+        {
+          "paragraph": {
+            "numbering": { "reference": "custom-list", "level": 0 },
+            "children": ["Third item"]
+          }
+        },
+        { "paragraph": { "text": "" } },
+        {
+          "paragraph": {
+            "heading": "Heading2",
+            "children": [{ "text": "Table", "bold": true, "size": 32 }]
+          }
+        },
+        {
+          "table": {
+            "width": { "size": 5000, "type": "pct" },
+            "rows": [
+              {
+                "cells": [
+                  {
+                    "children": [
+                      { "paragraph": { "children": [{ "text": "Name", "bold": true }] } }
+                    ]
+                  },
+                  {
+                    "children": [
+                      { "paragraph": { "children": [{ "text": "Score", "bold": true }] } }
+                    ]
+                  },
+                  {
+                    "children": [
+                      { "paragraph": { "children": [{ "text": "Grade", "bold": true }] } }
+                    ]
+                  }
+                ]
+              },
+              {
+                "cells": [
+                  { "children": [{ "paragraph": "Alice" }] },
+                  { "children": [{ "paragraph": "95" }] },
+                  {
+                    "children": [
+                      { "paragraph": { "children": [{ "text": "A+", "color": "00B050" }] } }
+                    ]
+                  }
+                ]
+              },
+              {
+                "cells": [
+                  { "children": [{ "paragraph": "Bob" }] },
+                  { "children": [{ "paragraph": "87" }] },
+                  {
+                    "children": [
+                      { "paragraph": { "children": [{ "text": "B+", "color": "00B050" }] } }
+                    ]
+                  }
+                ]
+              },
+              {
+                "cells": [
+                  { "children": [{ "paragraph": "Charlie" }] },
+                  { "children": [{ "paragraph": "72" }] },
+                  {
+                    "children": [
+                      { "paragraph": { "children": [{ "text": "C-", "color": "FF0000" }] } }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        { "paragraph": { "text": "" } },
+        {
+          "paragraph": {
+            "heading": "Heading2",
+            "children": [{ "text": "Borders and Shading", "bold": true, "size": 32 }]
+          }
+        },
+        {
+          "paragraph": {
+            "border": { "left": { "style": "single", "size": 6, "color": "1F4E79" } },
+            "shading": { "fill": "F2F2F2" },
+            "spacing": { "before": 200, "after": 200 },
+            "indent": { "left": 720 },
+            "children": ["This paragraph has a left border, background shading, and indentation."]
+          }
+        },
+        { "paragraph": { "text": "" } },
+        { "paragraph": { "thematicBreak": true } },
+        { "paragraph": { "text": "" } },
+        {
+          "paragraph": {
+            "alignment": "center",
+            "children": [{ "text": "End of Document", "italic": true, "color": "999999" }]
+          }
+        }
+      ]
+    }
+  ]
+}

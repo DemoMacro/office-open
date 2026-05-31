@@ -3,12 +3,7 @@ import type { Context, IXmlableObject } from "@file/xml-components";
 import { xsdTextAlign } from "@office-open/core";
 import { xml } from "@office-open/xml";
 
-export const TextAlignment = {
-  LEFT: "left",
-  CENTER: "center",
-  RIGHT: "right",
-  JUSTIFY: "justify",
-} as const;
+export type TextAlignment = "left" | "center" | "right" | "justify";
 
 export type BulletCharOptions = {
   readonly type: "char";
@@ -32,7 +27,7 @@ export type BulletNoneOption = {
 export type BulletOptions = BulletCharOptions | BulletAutoNumOptions | BulletNoneOption;
 
 export interface ParagraphPropertiesOptions {
-  readonly alignment?: (typeof TextAlignment)[keyof typeof TextAlignment];
+  readonly alignment?: TextAlignment;
   readonly indentLevel?: number;
   readonly marginBottom?: number;
   readonly marginTop?: number;

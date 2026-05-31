@@ -327,15 +327,20 @@ export class File {
     if (!this._contentTypes) {
       this._contentTypes = new ContentTypes();
       let hasComments = false;
+      let notesSlideIdx = 0;
       for (let i = 0; i < this.slideOptions.length; i++) {
         this._contentTypes.addSlide(i + 1);
         if (this.slideOptions[i].notes) {
-          this._contentTypes.addNotesSlide(i + 1);
+          this._contentTypes.addNotesSlide(notesSlideIdx + 1);
+          notesSlideIdx++;
         }
         if (this.slideOptions[i].comments && this.slideOptions[i].comments!.length > 0) {
           this._contentTypes.addComments(i + 1);
           hasComments = true;
         }
+      }
+      if (notesSlideIdx > 0) {
+        this._contentTypes.addNotesMaster();
       }
       if (hasComments) {
         this._contentTypes.addCommentAuthors();

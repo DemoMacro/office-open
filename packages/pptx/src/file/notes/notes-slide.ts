@@ -1,4 +1,3 @@
-import { GroupShapeProperties } from "@file/drawingml/group-shape-properties";
 import { GroupShapeNonVisualProperties } from "@file/shape-tree/group-shape-non-visual";
 import { buildAttrObject, BuilderElement, XmlComponent } from "@file/xml-components";
 
@@ -10,11 +9,6 @@ export interface NotesSlideOptions {
   readonly text?: string;
 }
 
-/**
- * p:notes — A notes slide associated with a presentation slide.
- *
- * Contains a slide image placeholder and a body text area for speaker notes.
- */
 export class NotesSlide extends XmlComponent {
   public constructor(options: NotesSlideOptions = {}) {
     super("p:notes");
@@ -48,7 +42,34 @@ class NotesShapeTree extends XmlComponent {
   public constructor(text?: string) {
     super("p:spTree");
     this.root.push(new GroupShapeNonVisualProperties());
-    this.root.push(new GroupShapeProperties());
+    this.root.push(
+      new BuilderElement({
+        name: "p:grpSpPr",
+        children: [
+          new BuilderElement({
+            name: "a:xfrm",
+            children: [
+              new BuilderElement({
+                name: "a:off",
+                attributes: { x: { key: "x", value: 0 }, y: { key: "y", value: 0 } },
+              }),
+              new BuilderElement({
+                name: "a:ext",
+                attributes: { cx: { key: "cx", value: 0 }, cy: { key: "cy", value: 0 } },
+              }),
+              new BuilderElement({
+                name: "a:chOff",
+                attributes: { x: { key: "x", value: 0 }, y: { key: "y", value: 0 } },
+              }),
+              new BuilderElement({
+                name: "a:chExt",
+                attributes: { cx: { key: "cx", value: 0 }, cy: { key: "cy", value: 0 } },
+              }),
+            ],
+          }),
+        ],
+      }),
+    );
     this.root.push(new SlideImagePlaceholder());
     this.root.push(new NotesBodyPlaceholder(text));
   }
@@ -68,7 +89,19 @@ class SlideImagePlaceholder extends XmlComponent {
               name: { key: "name", value: "Slide Image Placeholder 1" },
             },
           }),
-          new BuilderElement({ name: "p:cNvSpPr" }),
+          new BuilderElement({
+            name: "p:cNvSpPr",
+            children: [
+              new BuilderElement({
+                name: "a:spLocks",
+                attributes: {
+                  noGrp: { key: "noGrp", value: 1 },
+                  noRot: { key: "noRot", value: 1 },
+                  noChangeAspect: { key: "noChangeAspect", value: 1 },
+                },
+              }),
+            ],
+          }),
           new BuilderElement({
             name: "p:nvPr",
             children: [
@@ -124,7 +157,15 @@ class NotesBodyPlaceholder extends XmlComponent {
               name: { key: "name", value: "Notes Placeholder 1" },
             },
           }),
-          new BuilderElement({ name: "p:cNvSpPr" }),
+          new BuilderElement({
+            name: "p:cNvSpPr",
+            children: [
+              new BuilderElement({
+                name: "a:spLocks",
+                attributes: { noGrp: { key: "noGrp", value: 1 } },
+              }),
+            ],
+          }),
           new BuilderElement({
             name: "p:nvPr",
             children: [

@@ -6,6 +6,7 @@ export interface PresentationOptions {
   readonly slideHeight?: number;
   readonly slideIds: readonly number[];
   readonly masterCount: number;
+  readonly notesMasterRId?: number;
 }
 
 const DEFAULT_TEXT_STYLE_XML = `<p:defaultTextStyle xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
@@ -44,11 +45,15 @@ const DEFAULT_TEXT_STYLE_XML = `<p:defaultTextStyle xmlns:a="http://schemas.open
  * Lazy: stores options, builds XML in toXml().
  */
 export class Presentation extends XmlComponent {
-  private readonly options: PresentationOptions;
+  private options: PresentationOptions;
 
   public constructor(options: PresentationOptions) {
     super("p:presentation");
     this.options = options;
+  }
+
+  public setNotesMasterRId(rId: number): void {
+    this.options = { ...this.options, notesMasterRId: rId };
   }
 
   public toXml(_context: Context): string {
@@ -63,6 +68,9 @@ export class Presentation extends XmlComponent {
       s += `<p:sldMasterId id="${2147483648 + mi * 12}" r:id="rId${mi + 1}"/>`;
     }
     s += "</p:sldMasterIdLst>";
+    if (opts.notesMasterRId) {
+      s += `<p:notesMasterIdLst><p:notesMasterId r:id="rId${opts.notesMasterRId}"/></p:notesMasterIdLst>`;
+    }
     s += "<p:sldIdLst>";
     const sRidOff = opts.masterCount + 1;
     for (let i = 0; i < opts.slideIds.length; i++) {

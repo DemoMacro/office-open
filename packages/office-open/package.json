@@ -80,9 +80,9 @@
     "prepack": "pnpm build",
     "test": "vp test run",
     "check": "vp check --fix",
-    "demo:docx": "node dist/cli.mjs docx demo/1-basic-docx.json \"My Document.docx\"",
-    "demo:pptx": "node dist/cli.mjs pptx demo/1-basic-pptx.json \"My Presentation.pptx\"",
-    "demo:xlsx": "node dist/cli.mjs xlsx demo/1-basic-xlsx.json \"My Workbook.xlsx\""
+    "demo:docx": "node dist/cli.mjs docx demo/1-docx.json \"My Document.docx\"",
+    "demo:pptx": "node dist/cli.mjs pptx demo/2-pptx.json \"My Presentation.pptx\"",
+    "demo:xlsx": "node dist/cli.mjs xlsx demo/3-xlsx.json \"My Workbook.xlsx\""
   },
   "dependencies": {
     "@office-open/core": "workspace:*",

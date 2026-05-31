@@ -76,21 +76,22 @@ function buildTransitionElement(
   const dir = direction ? DIRECTION_MAP[direction] : undefined;
   const attrs: string[] = [];
 
-  if (ORIENT_TYPES.has(type) && dir) {
+  if (ORIENT_TYPES.has(type) && dir && dir !== "horz") {
     attrs.push(`dir="${dir}"`);
-  } else if (SIDE_DIR_TYPES.has(type) && dir) {
+  } else if (SIDE_DIR_TYPES.has(type) && dir && dir !== "l") {
     attrs.push(`dir="${dir}"`);
-  } else if (EIGHT_DIR_TYPES.has(type) && dir) {
+  } else if (EIGHT_DIR_TYPES.has(type) && dir && dir !== "l") {
     attrs.push(`dir="${dir}"`);
-  } else if (type === "strips" && dir) {
+  } else if (type === "strips" && dir && dir !== "lu") {
     attrs.push(`dir="${dir}"`);
   } else if ((type === "fade" || type === "cut") && thruBlk !== undefined) {
     attrs.push(`thruBlk="${thruBlk ? 1 : 0}"`);
   } else if (type === "split") {
-    attrs.push(`orient="${orient ?? "horz"}"`, `dir="${dir ?? "out"}"`);
+    if (orient && orient !== "horz") attrs.push(`orient="${orient}"`);
+    if (dir && dir !== "out") attrs.push(`dir="${dir}"`);
   } else if (type === "wheel") {
-    attrs.push(`spokes="${spokes ?? 4}"`);
-  } else if (type === "zoom" && dir) {
+    if (spokes !== undefined && spokes !== 4) attrs.push(`spokes="${spokes}"`);
+  } else if (type === "zoom" && dir && dir !== "in") {
     attrs.push(`dir="${dir}"`);
   }
 

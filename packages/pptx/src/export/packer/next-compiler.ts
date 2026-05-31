@@ -2,12 +2,14 @@ import { Formatter } from "@export/formatter";
 import type { File } from "@file/file";
 import type { IMediaData } from "@file/media/data";
 import { DefaultNotesMaster } from "@file/notes-master/notes-master";
+import { Relationships } from "@file/relationships/relationships";
 import {
   DEFAULT_DRAWING_XML,
   getColorXml,
   getLayoutXml,
   getStyleXml,
 } from "@file/smartart/built-in-definitions";
+import { DefaultTheme } from "@file/theme/theme";
 import type { Context } from "@file/xml-components";
 import {
   ZIP_STORED_LEVEL,
@@ -124,17 +126,32 @@ export class Compiler {
 
     // Notes Master — only when notes slides exist
     if (file.notesSlides.length > 0) {
+      const notesMasterRId = file.presentationWrapper.relationships.relationshipCount + 1;
       file.presentationWrapper.relationships.addRelationship(
-        file.presentationWrapper.relationships.relationshipCount + 1,
+        notesMasterRId,
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster",
         "notesMasters/notesMaster1.xml",
       );
+      file.presentationWrapper.view.setNotesMasterRId(notesMasterRId);
+      const notesMasterThemeIndex = themes.length + 1;
       mapping["NotesMaster"] = {
         data: this.formatter.formatToXml(new DefaultNotesMaster(), context),
         path: "ppt/notesMasters/notesMaster1.xml",
       };
+      const notesMasterTheme = new DefaultTheme();
+      mapping["NotesMasterTheme"] = {
+        data: this.formatter.formatToXml(notesMasterTheme, context),
+        path: `ppt/theme/theme${notesMasterThemeIndex}.xml`,
+      };
+      file.contentTypes.addTheme(notesMasterThemeIndex);
+      const notesMasterRels = new Relationships();
+      notesMasterRels.addRelationship(
+        1,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
+        `../theme/theme${notesMasterThemeIndex}.xml`,
+      );
       mapping["NotesMasterRelationships"] = {
-        data: this.formatter.formatToXml(file.notesMasterRelationships, context),
+        data: this.formatter.formatToXml(notesMasterRels, context),
         path: "ppt/notesMasters/_rels/notesMaster1.xml.rels",
       };
     }
@@ -398,22 +415,29 @@ export class Compiler {
     }
 
     // Add notes slides
+    const notesSlideToSlide = new Map<number, number>();
+    for (const [slideIdx, notesIdx] of file.notesSlideIndexMap) {
+      notesSlideToSlide.set(notesIdx, slideIdx);
+    }
     for (let i = 0; i < file.notesSlides.length; i++) {
       const notesSlide = file.notesSlides[i];
       files[`ppt/notesSlides/notesSlide${i + 1}.xml`] = encoder.encode(
         this.formatter.formatToXml(notesSlide, context),
       );
+      const slideIdx = notesSlideToSlide.get(i) ?? 0;
+      const nsRels = new Relationships();
+      nsRels.addRelationship(
+        1,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster",
+        "../notesMasters/notesMaster1.xml",
+      );
+      nsRels.addRelationship(
+        2,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide",
+        `../slides/slide${slideIdx + 1}.xml`,
+      );
       files[`ppt/notesSlides/_rels/notesSlide${i + 1}.xml.rels`] = encoder.encode(
-        xml(
-          {
-            Relationships: {
-              _attr: {
-                xmlns: "http://schemas.openxmlformats.org/package/2006/relationships",
-              },
-            },
-          },
-          { declaration: { encoding: "UTF-8", standalone: "yes" } },
-        ),
+        this.formatter.formatToXml(nsRels, context),
       );
     }
 

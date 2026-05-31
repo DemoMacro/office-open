@@ -1,0 +1,390 @@
+{
+  "title": "Comprehensive Presentation",
+  "creator": "office-open",
+  "size": "16:9",
+  "slides": [
+    {
+      "background": { "fill": "1B2A4A" },
+      "children": [
+        {
+          "shape": {
+            "x": 80,
+            "y": 120,
+            "width": 720,
+            "height": 80,
+            "textBody": {
+              "children": [
+                {
+                  "properties": { "alignment": "center" },
+                  "children": [
+                    {
+                      "text": "JSON-Friendly API",
+                      "fontSize": 44,
+                      "bold": true,
+                      "fill": "FFFFFF",
+                      "font": "Calibri"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "shape": {
+            "x": 180,
+            "y": 240,
+            "width": 460,
+            "height": 40,
+            "textBody": {
+              "children": [
+                {
+                  "properties": { "alignment": "center" },
+                  "children": [
+                    {
+                      "text": "Generated from JSON via office-open",
+                      "fontSize": 18,
+                      "fill": "B0C4DE"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "children": [
+        {
+          "shape": {
+            "x": 50,
+            "y": 40,
+            "width": 820,
+            "height": 60,
+            "textBody": {
+              "children": [
+                {
+                  "properties": { "alignment": "center" },
+                  "children": [
+                    {
+                      "text": "Shapes with Fill and Effects",
+                      "fontSize": 32,
+                      "bold": true,
+                      "fill": "4472C4"
+                    }
+                  ]
+                }
+              ]
+            },
+            "fill": "4472C4",
+            "outline": { "color": "2F5496", "width": 1 }
+          }
+        },
+        {
+          "shape": {
+            "x": 80,
+            "y": 140,
+            "width": 200,
+            "height": 140,
+            "textBody": {
+              "text": "Solid",
+              "children": [
+                {
+                  "properties": { "alignment": "center" },
+                  "children": [{ "text": "Solid Fill", "fontSize": 20, "fill": "FFFFFF" }]
+                }
+              ]
+            },
+            "fill": "ED7D31"
+          }
+        },
+        {
+          "shape": {
+            "x": 320,
+            "y": 140,
+            "width": 200,
+            "height": 140,
+            "textBody": {
+              "text": "Gradient",
+              "children": [
+                {
+                  "properties": { "alignment": "center" },
+                  "children": [{ "text": "Gradient Fill", "fontSize": 20, "fill": "FFFFFF" }]
+                }
+              ]
+            },
+            "fill": {
+              "type": "gradient",
+              "stops": [
+                { "position": 0, "color": "4472C4" },
+                { "position": 1, "color": "ED7D31" }
+              ]
+            }
+          }
+        },
+        {
+          "shape": {
+            "x": 560,
+            "y": 140,
+            "width": 200,
+            "height": 140,
+            "textBody": {
+              "text": "No Fill",
+              "children": [
+                {
+                  "properties": { "alignment": "center" },
+                  "children": [{ "text": "No Fill", "fontSize": 20, "fill": "4472C4" }]
+                }
+              ]
+            },
+            "outline": { "color": "4472C4", "width": 2 }
+          }
+        },
+        {
+          "line": {
+            "x1": 80,
+            "y1": 340,
+            "x2": 760,
+            "y2": 340,
+            "outline": { "color": "B0C4DE", "width": 1 }
+          }
+        }
+      ]
+    },
+    {
+      "children": [
+        {
+          "shape": {
+            "x": 50,
+            "y": 40,
+            "width": 820,
+            "height": 60,
+            "textBody": {
+              "children": [
+                {
+                  "properties": { "alignment": "center" },
+                  "children": [
+                    {
+                      "text": "Tables and Connectors",
+                      "fontSize": 32,
+                      "bold": true,
+                      "fill": "4472C4"
+                    }
+                  ]
+                }
+              ]
+            },
+            "fill": "4472C4",
+            "outline": { "color": "2F5496", "width": 1 }
+          }
+        },
+        {
+          "table": {
+            "x": 50,
+            "y": 140,
+            "width": 450,
+            "height": 260,
+            "rows": [
+              {
+                "cells": [
+                  { "text": "Feature", "fill": "4472C4" },
+                  { "text": "Status", "fill": "4472C4" },
+                  { "text": "Priority", "fill": "4472C4" }
+                ]
+              },
+              {
+                "cells": [{ "text": "Tables" }, { "text": "Done" }, { "text": "High" }]
+              },
+              {
+                "cells": [{ "text": "Charts" }, { "text": "In Progress" }, { "text": "Medium" }]
+              },
+              {
+                "cells": [{ "text": "Animations" }, { "text": "Planned" }, { "text": "Low" }]
+              }
+            ],
+            "columnWidths": [2000000, 2500000, 2500000],
+            "firstRow": true,
+            "bandRow": true
+          }
+        },
+        {
+          "connector": {
+            "x1": 300,
+            "y1": 200,
+            "x2": 550,
+            "y2": 200,
+            "beginArrowhead": "oval",
+            "endArrowhead": "triangle",
+            "outline": { "color": "FFC000", "width": 2 }
+          }
+        },
+        {
+          "connector": {
+            "x1": 550,
+            "y1": 200,
+            "x2": 550,
+            "y2": 380,
+            "endArrowhead": "triangle",
+            "outline": { "color": "FFC000", "width": 2 }
+          }
+        }
+      ]
+    },
+    {
+      "children": [
+        {
+          "shape": {
+            "x": 50,
+            "y": 40,
+            "width": 820,
+            "height": 60,
+            "textBody": {
+              "children": [
+                {
+                  "properties": { "alignment": "center" },
+                  "children": [
+                    {
+                      "text": "Group Shapes",
+                      "fontSize": 32,
+                      "bold": true,
+                      "fill": "4472C4"
+                    }
+                  ]
+                }
+              ]
+            },
+            "fill": "4472C4",
+            "outline": { "color": "2F5496", "width": 1 }
+          }
+        },
+        {
+          "group": {
+            "x": 50,
+            "y": 140,
+            "width": 400,
+            "height": 260,
+            "children": [
+              {
+                "shape": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 180,
+                  "height": 120,
+                  "textBody": {
+                    "text": "Shape A",
+                    "children": [
+                      {
+                        "properties": { "alignment": "center" },
+                        "children": [
+                          { "text": "A", "fontSize": 36, "bold": true, "fill": "FFFFFF" }
+                        ]
+                      }
+                    ]
+                  },
+                  "fill": "4472C4"
+                }
+              },
+              {
+                "shape": {
+                  "x": 210,
+                  "y": 0,
+                  "width": 180,
+                  "height": 120,
+                  "textBody": {
+                    "text": "Shape B",
+                    "children": [
+                      {
+                        "properties": { "alignment": "center" },
+                        "children": [
+                          { "text": "B", "fontSize": 36, "bold": true, "fill": "FFFFFF" }
+                        ]
+                      }
+                    ]
+                  },
+                  "fill": "ED7D31"
+                }
+              },
+              {
+                "shape": {
+                  "x": 0,
+                  "y": 140,
+                  "width": 390,
+                  "height": 120,
+                  "textBody": {
+                    "text": "Wide Shape",
+                    "children": [
+                      {
+                        "properties": { "alignment": "center" },
+                        "children": [
+                          { "text": "Wide", "fontSize": 36, "bold": true, "fill": "FFFFFF" }
+                        ]
+                      }
+                    ]
+                  },
+                  "fill": "70AD47"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "transition": { "type": "push", "speed": "med", "direction": "left" }
+    },
+    {
+      "children": [
+        {
+          "shape": {
+            "x": 50,
+            "y": 40,
+            "width": 820,
+            "height": 60,
+            "textBody": {
+              "children": [
+                {
+                  "properties": { "alignment": "center" },
+                  "children": [
+                    {
+                      "text": "Slide with Notes",
+                      "fontSize": 32,
+                      "bold": true,
+                      "fill": "4472C4"
+                    }
+                  ]
+                }
+              ]
+            },
+            "fill": "4472C4",
+            "outline": { "color": "2F5496", "width": 1 }
+          }
+        },
+        {
+          "shape": {
+            "x": 150,
+            "y": 180,
+            "width": 550,
+            "height": 200,
+            "textBody": {
+              "anchor": "center",
+              "children": [
+                {
+                  "properties": { "alignment": "center" },
+                  "children": [
+                    {
+                      "text": "Thank you!",
+                      "fontSize": 44,
+                      "bold": true,
+                      "fill": "1F4E79"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "notes": "Presenter notes: thank the audience for their attention.",
+      "transition": { "type": "fade", "speed": "slow" }
+    }
+  ]
+}

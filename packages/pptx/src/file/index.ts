@@ -26,7 +26,7 @@ export {
 } from "./shape/paragraph/run-properties";
 export {
   ParagraphProperties,
-  TextAlignment,
+  type TextAlignment,
   type ParagraphPropertiesOptions,
 } from "./shape/paragraph/paragraph-properties";
 export { EndParagraphRunProperties } from "./shape/paragraph/end-paragraph-run";
@@ -143,7 +143,7 @@ export { Background, type BackgroundOptions } from "./background/background";
 export { Table, type TableOptions } from "./table/table-frame";
 export { DrawingTable } from "./table/table";
 export { TableRow, type TableRowOptions } from "./table/table-row";
-export { TableCell, VerticalAlignment, type TableCellOptions } from "./table/table-cell";
+export { TableCell, type VerticalAlignment, type TableCellOptions } from "./table/table-cell";
 export { TableProperties } from "./table/table-properties";
 export { TableCellProperties, type CellBorderOptions } from "./table/table-cell-properties";
 export { Chart, type ChartOptions } from "./chart/chart-frame";

@@ -8,11 +8,7 @@ import type { ParagraphOptions } from "../shape/paragraph/paragraph";
 import { TextRun } from "../shape/paragraph/run";
 import { TableCellProperties, type CellBorderOptions } from "./table-cell-properties";
 
-export const VerticalAlignment = {
-  TOP: "top",
-  CENTER: "center",
-  BOTTOM: "bottom",
-} as const;
+export type VerticalAlignment = "top" | "center" | "bottom" | "justify" | "distribute";
 
 export interface TableCellOptions {
   readonly text?: string;
@@ -26,7 +22,7 @@ export interface TableCellOptions {
   };
   readonly columnSpan?: number;
   readonly rowSpan?: number;
-  readonly verticalAlign?: (typeof VerticalAlignment)[keyof typeof VerticalAlignment];
+  readonly verticalAlign?: VerticalAlignment;
   readonly margins?: {
     readonly top?: number;
     readonly bottom?: number;

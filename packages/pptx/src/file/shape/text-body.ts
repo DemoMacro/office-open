@@ -3,7 +3,7 @@ import type { Context, IXmlableObject } from "@file/xml-components";
 import { xsdTextAnchor } from "@office-open/core";
 import { xml } from "@office-open/xml";
 
-import { VerticalAlignment } from "../table/table-cell";
+import type { VerticalAlignment } from "../table/table-cell";
 import { Paragraph } from "./paragraph/paragraph";
 import type { ParagraphOptions } from "./paragraph/paragraph";
 import { TextRun } from "./paragraph/run";
@@ -11,8 +11,15 @@ import { TextRun } from "./paragraph/run";
 export interface TextBodyOptions {
   readonly text?: string;
   readonly children?: readonly (Paragraph | ParagraphOptions | string)[];
-  readonly vertical?: "vert" | "vert270" | "horz" | "wordArtVert";
-  readonly anchor?: (typeof VerticalAlignment)[keyof typeof VerticalAlignment];
+  readonly vertical?:
+    | "horz"
+    | "vert"
+    | "vert270"
+    | "wordArtVert"
+    | "eaVert"
+    | "mongolianVert"
+    | "wordArtVertRtl";
+  readonly anchor?: VerticalAlignment;
   readonly autoFit?: "normal" | "shape" | "none";
   readonly wrap?: "square" | "none";
   readonly margins?: {

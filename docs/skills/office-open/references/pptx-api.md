@@ -101,15 +101,15 @@ Slide children types: shape, table, image, group, line, connector.
 }
 ```
 
-| Property        | Type     | Values                              |
-| --------------- | -------- | ----------------------------------- |
-| `anchor`        | `string` | `"top"` \| `"center"` \| `"bottom"` |
-| `vertical`      | `string` | `"vert"` for vertical text          |
-| `autoFit`       | `string` | `"none"` \| `"normal"` \| `"shape"` |
-| `wrap`          | `string` | `"square"` \| `"none"`              |
-| `margins`       | `object` | EMU values                          |
-| `columns`       | `number` | Number of text columns              |
-| `columnSpacing` | `number` | Spacing between columns (EMU)       |
+| Property        | Type     | Values                                                                                                                    |
+| --------------- | -------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `anchor`        | `string` | `"top"` \| `"center"` \| `"bottom"` \| `"justify"` \| `"distribute"`                                                      |
+| `vertical`      | `string` | `"horz"` (default) \| `"vert"` \| `"vert270"` \| `"wordArtVert"` \| `"eaVert"` \| `"mongolianVert"` \| `"wordArtVertRtl"` |
+| `autoFit`       | `string` | `"none"` \| `"normal"` \| `"shape"`                                                                                       |
+| `wrap`          | `string` | `"square"` \| `"none"`                                                                                                    |
+| `margins`       | `object` | EMU values                                                                                                                |
+| `columns`       | `number` | Number of text columns                                                                                                    |
+| `columnSpacing` | `number` | Spacing between columns (EMU)                                                                                             |
 
 ### Geometry Presets
 
