@@ -41,13 +41,15 @@ pnpm add office-open             # Umbrella: all packages + CLI + AI tools
     {
       "properties": {},
       "children": [
-        { "text": "Title", "heading": "Heading1" },
+        { "paragraph": { "text": "Title", "heading": "Heading1" } },
         {
-          "children": [
-            { "text": "Bold", "bold": true },
-            " and ",
-            { "text": "italic", "italics": true }
-          ]
+          "paragraph": {
+            "children": [
+              { "text": "Bold", "bold": true },
+              " and ",
+              { "text": "italic", "italics": true }
+            ]
+          }
         }
       ]
     }
@@ -77,7 +79,7 @@ const buffer = await Packer.toBuffer(doc);
             "y": 30,
             "width": 600,
             "height": 60,
-            "text": "Title",
+            "textBody": { "text": "Title" },
             "fill": "4472C4"
           }
         }
@@ -230,7 +232,7 @@ Both functions support custom `placeholderDelimiters` (default: `{{` and `}}`). 
       "properties": {
         "page": {
           "size": { "width": 11906, "height": 16838, "orientation": "portrait" },
-          "margins": { "top": 1440, "bottom": 1440, "left": 1440, "right": 1440 }
+          "margin": { "top": 1440, "bottom": 1440, "left": 1440, "right": 1440 }
         }
       },
       "children": []
@@ -243,12 +245,12 @@ Both functions support custom `placeholderDelimiters` (default: `{{` and `}}`). 
 
 ```json
 {
-  "width": { "size": 100, "units": "pct" },
+  "width": { "size": 100, "type": "pct" },
   "rows": [
     {
       "children": [
-        { "children": [{ "text": "Cell 1" }], "shading": { "fill": "4472C4" } },
-        { "children": [{ "text": "Cell 2" }] }
+        { "children": [{ "paragraph": { "text": "Cell 1" } }], "shading": { "fill": "4472C4" } },
+        { "children": [{ "paragraph": { "text": "Cell 2" } }] }
       ]
     }
   ]
@@ -277,15 +279,17 @@ Both functions support custom `placeholderDelimiters` (default: `{{` and `}}`). 
 {
   "headers": {
     "default": {
-      "children": [{ "text": "Header text" }]
+      "children": [{ "paragraph": { "text": "Header text" } }]
     }
   },
   "footers": {
     "default": {
       "children": [
         {
-          "alignment": "center",
-          "children": ["Page ", "CURRENT", " of ", "TOTAL_PAGES"]
+          "paragraph": {
+            "alignment": "center",
+            "children": ["Page ", "CURRENT", " of ", "TOTAL_PAGES"]
+          }
         }
       ]
     }
@@ -304,13 +308,13 @@ Page number tokens (string values used in TextRun children arrays):
 
 ```json
 // Fraction: a/b
-{ "numerator": ["a"], "denominator": ["b"] }
+{ "fraction": { "numerator": ["a"], "denominator": ["b"] } }
 
 // Superscript: x²
-{ "children": ["x"], "superScript": ["2"] }
+{ "superScript": { "children": ["x"], "superScript": ["2"] } }
 
 // Square root: √(a+b)
-{ "children": ["a + b"] }
+{ "radical": { "children": ["a + b"] } }
 ```
 
 ### Charts & SmartArt
@@ -320,10 +324,8 @@ Charts are created via `@office-open/core` and embedded in both docx and pptx.
 ```json
 {
   "type": "bar",
-  "data": [
-    { "category": "A", "value": 10 },
-    { "category": "B", "value": 20 }
-  ]
+  "categories": ["A", "B"],
+  "series": [{ "name": "Series1", "values": [10, 20] }]
 }
 ```
 
@@ -338,9 +340,9 @@ Charts are created via `@office-open/core` and embedded in both docx and pptx.
     "y": 100,
     "width": 300,
     "height": 80,
-    "text": "Hello",
+    "textBody": { "text": "Hello" },
     "fill": "4472C4",
-    "outline": { "color": "0D47A1", "width": 2 },
+    "outline": { "color": "0D47A1", "width": 12700 },
     "geometry": "rect"
   }
 }
@@ -350,27 +352,29 @@ Charts are created via `@office-open/core` and embedded in both docx and pptx.
 
 ```json
 {
-  "x": 50,
-  "y": 100,
-  "width": 200,
-  "height": 120,
-  "text": "Shadow",
-  "fill": "ED7D31",
-  "effects": {
-    "outerShadow": {
-      "blur": 50800,
-      "distance": 38100,
-      "direction": 5400000,
-      "color": "000000",
-      "alpha": 50
-    },
-    "glow": { "radius": 152400, "color": "92D050", "alpha": 60 },
-    "reflection": { "blurRadius": 6350, "distance": 38100, "startAlpha": 90, "endAlpha": 0 },
-    "softEdge": { "radius": 50800 },
-    "rotation3D": { "x": 20, "y": 30, "z": 10, "perspective": 500 },
-    "extrusionH": 50000,
-    "material": "plastic",
-    "bevelTop": { "width": 8, "height": 8 }
+  "shape": {
+    "x": 50,
+    "y": 100,
+    "width": 200,
+    "height": 120,
+    "textBody": { "text": "Shadow" },
+    "fill": "ED7D31",
+    "effects": {
+      "outerShadow": {
+        "blur": 50800,
+        "distance": 38100,
+        "direction": 5400000,
+        "color": "000000",
+        "alpha": 50
+      },
+      "glow": { "radius": 152400, "color": "92D050", "alpha": 60 },
+      "reflection": { "blurRadius": 6350, "distance": 38100, "startAlpha": 90, "endAlpha": 0 },
+      "softEdge": { "radius": 50800 },
+      "rotation3D": { "x": 20, "y": 30, "z": 10, "perspective": 500 },
+      "extrusionH": 50000,
+      "material": "plastic",
+      "bevelTop": { "width": 8, "height": 8 }
+    }
   }
 }
 ```
@@ -381,7 +385,7 @@ Charts are created via `@office-open/core` and embedded in both docx and pptx.
 { "type": "solid", "color": "4472C4" }
 { "type": "gradient", "stops": [{ "position": 0, "color": "1565C0" }, { "position": 100, "color": "42A5F5" }], "angle": 45 }
 { "type": "blip", "data": "<Uint8Array>", "imageType": "png" }
-{ "type": "noFill" }
+{ "type": "none" }
 ```
 
 String shorthand: `fill: "4472C4"` is equivalent to `{ type: "solid", color: "4472C4" }`.

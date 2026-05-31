@@ -32,7 +32,7 @@ function createConvertCommand(type: string, defaultExt: string) {
       },
     },
     async run({ args }) {
-      const jsonInput = args.input as string;
+      const jsonInput = (args.input ?? args["input-file"]) as string;
       const outputPath = (args.output ?? args["output-file"] ?? `output.${defaultExt}`) as string;
       const docType = type as "docx" | "pptx" | "xlsx";
 
