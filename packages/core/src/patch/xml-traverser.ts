@@ -8,35 +8,35 @@ import type { Element } from "@office-open/xml";
 import { createRunRenderer, type ElementWrapper, type RenderedParagraphNode } from "./run-renderer";
 import type { XmlNamespaceConfig } from "./xml-namespace";
 
-const elementsToWrapper = (wrapper: ElementWrapper): readonly ElementWrapper[] =>
-  wrapper.element.elements?.map((e, i) => ({
-    element: e,
-    index: i,
-    parent: wrapper,
-  })) ?? [];
-
 export function createTraverser(ns: XmlNamespaceConfig) {
   const renderParagraphNode = createRunRenderer(ns);
 
   const traverse = (node: Element): readonly RenderedParagraphNode[] => {
-    let renderedParagraphs: readonly RenderedParagraphNode[] = [];
+    const renderedParagraphs: RenderedParagraphNode[] = [];
+    const queue: ElementWrapper[] = [];
 
-    const queue: ElementWrapper[] = [
-      ...elementsToWrapper({
-        element: node,
-        index: 0,
-        parent: undefined,
-      }),
-    ];
-
-    let currentNode: ElementWrapper | undefined;
-    while (queue.length > 0) {
-      currentNode = queue.shift()!;
-
-      if (currentNode.element.name === ns.paragraph) {
-        renderedParagraphs = [...renderedParagraphs, renderParagraphNode(currentNode)];
+    // Seed with root-level children — single push, no spread
+    const rootChildren = node.elements;
+    if (rootChildren) {
+      for (let i = 0; i < rootChildren.length; i++) {
+        queue.push({ element: rootChildren[i], index: i, parent: undefined });
       }
-      queue.push(...elementsToWrapper(currentNode));
+    }
+
+    let qi = 0;
+    while (qi < queue.length) {
+      const current = queue[qi++];
+
+      if (current.element.name === ns.paragraph) {
+        renderedParagraphs.push(renderParagraphNode(current));
+      }
+
+      const children = current.element.elements;
+      if (children) {
+        for (let i = 0; i < children.length; i++) {
+          queue.push({ element: children[i], index: i, parent: current });
+        }
+      }
     }
 
     return renderedParagraphs;

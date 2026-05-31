@@ -122,5 +122,13 @@ export function createRunRenderer(ns: XmlNamespaceConfig) {
   return renderParagraphNode;
 }
 
-const buildNodePath = (node: ElementWrapper): readonly number[] =>
-  node.parent ? [...buildNodePath(node.parent), node.index] : [node.index];
+const buildNodePath = (node: ElementWrapper): readonly number[] => {
+  const path: number[] = [];
+  let current: ElementWrapper | undefined = node;
+  while (current) {
+    path.push(current.index);
+    current = current.parent;
+  }
+  path.reverse();
+  return path;
+};

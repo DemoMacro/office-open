@@ -81,13 +81,14 @@ export abstract class XmlComponent extends BaseXmlComponent {
       } else if (typeof child === "string") {
         childParts.push(escapeXml(child));
       } else if (child != null && typeof child === "object") {
-        if ("_attr" in child) {
-          const a = (child as { _attr: Record<string, unknown> })._attr;
-          for (const key of Object.keys(a)) {
-            attrParts.push(`${key}="${escapeXml(String(a[key]))}"`);
-          }
-        } else if ("_attributes" in child) {
-          const a = (child as { _attributes: Record<string, unknown> })._attributes;
+        const a =
+          "_attr" in child
+            ? (child as { _attr: Record<string, unknown> })._attr
+            : "_attributes" in child
+              ? (child as { _attributes: Record<string, unknown> })._attributes
+              : null;
+
+        if (a) {
           for (const key of Object.keys(a)) {
             attrParts.push(`${key}="${escapeXml(String(a[key]))}"`);
           }

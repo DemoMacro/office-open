@@ -78,12 +78,12 @@ export function createSplitInject(
         .flat() ?? [];
 
     const leftRunElement: Element = {
-      ...structuredClone(runElement),
+      ...runElement,
       elements: splitElements.slice(0, splitIndex + 1),
     };
 
     const rightRunElement: Element = {
-      ...structuredClone(runElement),
+      ...runElement,
       elements: splitElements.slice(splitIndex + 1),
     };
 
