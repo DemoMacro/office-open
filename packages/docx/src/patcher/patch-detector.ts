@@ -34,7 +34,7 @@ interface PatchDetectorOptions {
  *
  * // Use detected placeholders to create patches
  * const patches = {};
- * placeholders.forEach(key => {
+ * for (const key of placeholders) {
  *   patches[key] = {
  *     type: PatchType.PARAGRAPH,
  *     children: [new TextRun(getUserData(key))],
@@ -53,7 +53,11 @@ export const patchDetector = async ({ data }: PatchDetectorOptions): Promise<rea
     if (key.startsWith("word/") && !key.endsWith(".xml.rels")) {
       const json = toJson(strFromU8(value));
       const { traverse } = createTraverser(DOCX_NS);
-      traverse(json).forEach((p) => findPatchKeys(p.text).forEach((patch) => patches.add(patch)));
+      for (const p of traverse(json)) {
+        for (const patch of findPatchKeys(p.text)) {
+          patches.add(patch);
+        }
+      }
     }
   }
   return [...patches];

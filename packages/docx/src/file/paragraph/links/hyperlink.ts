@@ -137,9 +137,9 @@ export class ConcreteHyperlink extends XmlComponent {
       attr["w:tgtFrame"] = props.tgtFrame;
     }
     this.root.push({ _attr: attr });
-    children.forEach((child) => {
+    for (const child of children) {
       this.root.push(child);
-    });
+    }
   }
 }
 

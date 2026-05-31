@@ -42,9 +42,9 @@ export function replaceImagePlaceholders(
   idFormat: IdFormat = "rId",
 ): string {
   let result = xml;
-  mediaData.forEach((image, i) => {
-    result = result.replaceAll(`{${image.fileName}}`, formatId(offset, i, idFormat));
-  });
+  for (let i = 0; i < mediaData.length; i++) {
+    result = result.replaceAll(`{${mediaData[i].fileName}}`, formatId(offset, i, idFormat));
+  }
   return result;
 }
 
@@ -62,9 +62,9 @@ export function replaceChartPlaceholders(
   idFormat: IdFormat = "rId",
 ): string {
   let result = xml;
-  chartKeys.forEach((key, i) => {
-    result = result.replaceAll(`{chart:${key}}`, formatId(offset, i, idFormat));
-  });
+  for (let i = 0; i < chartKeys.length; i++) {
+    result = result.replaceAll(`{chart:${chartKeys[i]}}`, formatId(offset, i, idFormat));
+  }
   return result;
 }
 
@@ -87,12 +87,12 @@ export function replaceSmartArtPlaceholders(
   const qsOffset = loOffset + count;
   const csOffset = qsOffset + count;
 
-  keys.forEach((key, i) => {
-    result = result.replaceAll(`{smartart:${key}}`, formatId(dataOffset, i, idFormat));
-    result = result.replaceAll(`{smartart-lo:${key}}`, formatId(loOffset, i, idFormat));
-    result = result.replaceAll(`{smartart-qs:${key}}`, formatId(qsOffset, i, idFormat));
-    result = result.replaceAll(`{smartart-cs:${key}}`, formatId(csOffset, i, idFormat));
-  });
+  for (let i = 0; i < keys.length; i++) {
+    result = result.replaceAll(`{smartart:${keys[i]}}`, formatId(dataOffset, i, idFormat));
+    result = result.replaceAll(`{smartart-lo:${keys[i]}}`, formatId(loOffset, i, idFormat));
+    result = result.replaceAll(`{smartart-qs:${keys[i]}}`, formatId(qsOffset, i, idFormat));
+    result = result.replaceAll(`{smartart-cs:${keys[i]}}`, formatId(csOffset, i, idFormat));
+  }
 
   return result;
 }
@@ -110,7 +110,7 @@ export function addSmartArtRelationships(
   const qsOffset = loOffset + count;
   const csOffset = qsOffset + count;
 
-  keys.forEach((_key, i) => {
+  for (let i = 0; i < keys.length; i++) {
     const gi = globalStartIndex + i;
     addRel(
       baseOffset + i,
@@ -134,5 +134,5 @@ export function addSmartArtRelationships(
       "http://schemas.microsoft.com/office/2007/relationships/diagramDrawing",
       `${pathPrefix}diagrams/drawing${gi + 1}.xml`,
     );
-  });
+  }
 }

@@ -54,13 +54,13 @@ export class WpgGroupRun extends Run {
   }
 
   public prepForXml(context: Context): IXmlableObject | undefined {
-    this.mediaDatas.forEach((child) => {
+    for (const child of this.mediaDatas) {
       context.file.media.addImage(child.fileName, child);
 
       if (child.type === "svg") {
         context.file.media.addImage(child.fallback.fileName, child.fallback);
       }
-    });
+    }
     return super.prepForXml(context);
   }
 }

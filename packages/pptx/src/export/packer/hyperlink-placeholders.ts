@@ -6,8 +6,8 @@ export function replaceHyperlinkPlaceholders(
   offset: number,
 ): string {
   let result = xml;
-  hyperlinks.forEach((h, i) => {
-    result = result.replaceAll(`{hlink:${h.key}}`, formatId(offset, i, "rId"));
-  });
+  for (let i = 0; i < hyperlinks.length; i++) {
+    result = result.replaceAll(`{hlink:${hyperlinks[i].key}}`, formatId(offset, i, "rId"));
+  }
   return result;
 }

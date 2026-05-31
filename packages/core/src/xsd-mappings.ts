@@ -11,8 +11,8 @@
 /** Invert a Record<K, V> into Record<V, K>. */
 export function invertMap<K extends string, V extends string>(map: Record<K, V>): Record<V, K> {
   const result = {} as Record<V, K>;
-  for (const key in map) {
-    result[map[key as K]] = key as K;
+  for (const key of Object.keys(map) as K[]) {
+    result[map[key]] = key;
   }
   return result;
 }

@@ -6,9 +6,9 @@ export function replaceMediaPlaceholders(
   offset: number,
 ): string {
   let result = xml;
-  mediaData.forEach((m, i) => {
-    result = result.replaceAll(`{media:${m.fileName}}`, formatId(offset, i, "rId"));
-  });
+  for (let i = 0; i < mediaData.length; i++) {
+    result = result.replaceAll(`{media:${mediaData[i].fileName}}`, formatId(offset, i, "rId"));
+  }
   return result;
 }
 
@@ -18,9 +18,9 @@ export function replaceVideoPlaceholders(
   offset: number,
 ): string {
   let result = xml;
-  mediaData.forEach((m, i) => {
-    result = result.replaceAll(`{video:${m.fileName}}`, formatId(offset, i, "rId"));
-  });
+  for (let i = 0; i < mediaData.length; i++) {
+    result = result.replaceAll(`{video:${mediaData[i].fileName}}`, formatId(offset, i, "rId"));
+  }
   return result;
 }
 

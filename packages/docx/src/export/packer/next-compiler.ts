@@ -255,13 +255,13 @@ export class Compiler {
       },
       CommentsRelationships: {
         data: (() => {
-          commentMediaDatas.forEach((mediaData, i) => {
+          for (let i = 0; i < commentMediaDatas.length; i++) {
             file.comments.relationships.addRelationship(
               commentRelationshipCount + i,
               "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-              `media/${mediaData.fileName}`,
+              `media/${commentMediaDatas[i].fileName}`,
             );
-          });
+          }
           return this.formatter.formatToXml(
             file.comments.relationships,
             mkCtx({
@@ -275,16 +275,16 @@ export class Compiler {
       ContentTypes: {
         data: (() => {
           // Register chart and diagram content types BEFORE serialization
-          file.charts.array.forEach((_, i) => {
+          for (let i = 0; i < file.charts.array.length; i++) {
             file.contentTypes.addChart(i + 1);
-          });
-          file.smartArts.array.forEach((_, i) => {
+          }
+          for (let i = 0; i < file.smartArts.array.length; i++) {
             file.contentTypes.addDiagramData(i + 1);
             file.contentTypes.addDiagramLayout(i + 1);
             file.contentTypes.addDiagramStyle(i + 1);
             file.contentTypes.addDiagramColors(i + 1);
             file.contentTypes.addDiagramDrawing(i + 1);
-          });
+          }
           return this.formatter.formatToXml(file.contentTypes, mkCtx(file.document));
         })(),
         path: "[Content_Types].xml",
@@ -366,13 +366,13 @@ export class Compiler {
       },
       FootNotesRelationships: {
         data: (() => {
-          footnoteMediaDatas.forEach((mediaData, i) => {
+          for (let i = 0; i < footnoteMediaDatas.length; i++) {
             file.footNotes.relationships.addRelationship(
               footnoteRelationshipCount + i,
               "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-              `media/${mediaData.fileName}`,
+              `media/${footnoteMediaDatas[i].fileName}`,
             );
-          });
+          }
           return this.formatter.formatToXml(file.footNotes.relationships, mkCtx(file.footNotes));
         })(),
         path: "word/_rels/footnotes.xml.rels",
@@ -383,13 +383,13 @@ export class Compiler {
         footerFormattedViews.set(index, xmlData);
         const mediaDatas = getReferencedMedia(xmlData, file.media.array);
 
-        mediaDatas.forEach((mediaData, i) => {
+        for (let i = 0; i < mediaDatas.length; i++) {
           footerWrapper.relationships.addRelationship(
             i,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-            `media/${mediaData.fileName}`,
+            `media/${mediaDatas[i].fileName}`,
           );
-        });
+        }
 
         return {
           data: this.formatter.formatToXml(footerWrapper.relationships, mkCtx(footerWrapper)),
@@ -417,13 +417,13 @@ export class Compiler {
         headerFormattedViews.set(index, xmlData);
         const mediaDatas = getReferencedMedia(xmlData, file.media.array);
 
-        mediaDatas.forEach((mediaData, i) => {
+        for (let i = 0; i < mediaDatas.length; i++) {
           headerWrapper.relationships.addRelationship(
             i,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-            `media/${mediaData.fileName}`,
+            `media/${mediaDatas[i].fileName}`,
           );
-        });
+        }
 
         return {
           data: this.formatter.formatToXml(headerWrapper.relationships, mkCtx(headerWrapper)),
@@ -455,23 +455,23 @@ export class Compiler {
       },
       Relationships: {
         data: (() => {
-          documentMediaDatas.forEach((mediaData, i) => {
+          for (let i = 0; i < documentMediaDatas.length; i++) {
             file.document.relationships.addRelationship(
               documentRelationshipCount + i,
               "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-              `media/${mediaData.fileName}`,
+              `media/${documentMediaDatas[i].fileName}`,
             );
-          });
+          }
 
           // Chart relationships
           const chartOffset = documentRelationshipCount + documentMediaDatas.length;
-          file.charts.array.forEach((_chartData, i) => {
+          for (let i = 0; i < file.charts.array.length; i++) {
             file.document.relationships.addRelationship(
               chartOffset + i,
               "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart",
               `charts/chart${i + 1}.xml`,
             );
-          });
+          }
 
           // SmartArt relationships (data + layout/style/color internal)
           addSmartArtRelationships(

@@ -122,12 +122,12 @@ export class Table extends BaseXmlComponent implements FileChild {
       Array<number>(Math.max(...this.rows.map((row) => row.cellCount))).fill(100);
 
     // Register CONTINUE cells on subsequent rows for vertical merge
-    this.rows.forEach((row, rowIndex) => {
-      if (rowIndex === this.rows.length - 1) return;
-      if (!(row instanceof TableRow)) return;
+    for (let rowIndex = 0; rowIndex < this.rows.length - 1; rowIndex++) {
+      const row = this.rows[rowIndex];
+      if (!(row instanceof TableRow)) continue;
 
       let columnIndex = 0;
-      row.cells.forEach((cell) => {
+      for (const cell of row.cells) {
         if (cell.options.rowSpan && cell.options.rowSpan > 1) {
           const nextRow = this.rows[rowIndex + 1];
           if (nextRow instanceof TableRow) {
@@ -142,8 +142,8 @@ export class Table extends BaseXmlComponent implements FileChild {
           }
         }
         columnIndex += cell.options.columnSpan || 1;
-      });
-    });
+      }
+    }
   }
 
   public override toXml(context: Context): string {
