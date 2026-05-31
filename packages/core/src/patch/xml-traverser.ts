@@ -15,11 +15,12 @@ export function createTraverser(ns: XmlNamespaceConfig) {
     const renderedParagraphs: RenderedParagraphNode[] = [];
     const queue: ElementWrapper[] = [];
 
-    // Seed with root-level children — single push, no spread
+    // Seed with root as virtual wrapper so paths include the root level
     const rootChildren = node.elements;
     if (rootChildren) {
+      const root: ElementWrapper = { element: node, index: 0, parent: undefined };
       for (let i = 0; i < rootChildren.length; i++) {
-        queue.push({ element: rootChildren[i], index: i, parent: undefined });
+        queue.push({ element: rootChildren[i], index: i, parent: root });
       }
     }
 
