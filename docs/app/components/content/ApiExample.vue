@@ -67,19 +67,19 @@ async function handleExport() {
     let filename: string;
 
     if (isDocx) {
-      const { Document, Packer } = await import("@office-open/docx");
+      const { Document, Packer } = await import("office-open/docx");
       const options = data.sections ? data : { sections: Array.isArray(data) ? data : [data] };
       const doc = new Document(options);
       blob = await Packer.toBlob(doc);
       filename = "document.docx";
     } else if (parsed.type === "xlsx" || props.type === "xlsx") {
-      const { Workbook, Packer } = await import("@office-open/xlsx");
+      const { Workbook, Packer } = await import("office-open/xlsx");
       const options = data.worksheets ? data : { worksheets: Array.isArray(data) ? data : [data] };
       const wb = new Workbook(options);
       blob = await Packer.toBlob(wb);
       filename = "workbook.xlsx";
     } else {
-      const { Presentation, Packer } = await import("@office-open/pptx");
+      const { Presentation, Packer } = await import("office-open/pptx");
       const options = data.slides ? data : { slides: Array.isArray(data) ? data : [data] };
       const pres = new Presentation(options);
       blob = await Packer.toBlob(pres);

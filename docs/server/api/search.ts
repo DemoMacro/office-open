@@ -1,11 +1,5 @@
 import { createMCPClient } from "@ai-sdk/mcp";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import { Document, Packer } from "@office-open/docx";
-import type { PropertiesOptions } from "@office-open/docx";
-import { Presentation, Packer as PptxPacker } from "@office-open/pptx";
-import type { PresentationOptions } from "@office-open/pptx";
-import { Workbook, Packer as XlsxPacker } from "@office-open/xlsx";
-import type { WorkbookOptions } from "@office-open/xlsx";
 import {
   streamText,
   convertToModelMessages,
@@ -15,9 +9,10 @@ import {
 } from "ai";
 import type { UIMessageStreamWriter, ToolSet } from "ai";
 import type { H3Event } from "h3";
+import { generate } from "office-open/generate";
+import type { GenerateType } from "office-open/generate";
+import { validateDocumentInput } from "office-open/schemas";
 import { z } from "zod";
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 const MIME_TYPES = {
   docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -25,65 +20,41 @@ const MIME_TYPES = {
   xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 } as const;
 
-async function generateDocument(type: "docx" | "pptx" | "xlsx", options: Record<string, unknown>) {
-  try {
-    let base64: string;
-
-    switch (type) {
-      case "docx": {
-        const doc = new Document(options as unknown as PropertiesOptions);
-        base64 = await Packer.toBase64String(doc);
-        break;
-      }
-      case "pptx": {
-        const pres = new Presentation(options as unknown as PresentationOptions);
-        base64 = await PptxPacker.toBase64String(pres);
-        break;
-      }
-      case "xlsx": {
-        const wb = new Workbook(options as unknown as WorkbookOptions);
-        base64 = await XlsxPacker.toBase64String(wb);
-        break;
-      }
-    }
-
-    const rawSize = Math.ceil((base64.length * 3) / 4);
-    if (rawSize > MAX_FILE_SIZE) {
-      return {
-        success: false,
-        error: `Generated file is ${(rawSize / 1024 / 1024).toFixed(1)}MB, exceeding the 5MB limit.`,
-      };
-    }
-
-    return {
-      success: true,
-      filename: `${(options.title as string) || "generated"}.${type}`,
-      base64,
-      mimeType: MIME_TYPES[type],
-      size: rawSize,
-    };
-  } catch (err) {
-    return {
-      success: false,
-      error: `Failed to generate ${type}: ${err instanceof Error ? err.message : String(err)}`,
-    };
-  }
+async function generateDocument(type: GenerateType, options: Record<string, unknown>) {
+  const validated = validateDocumentInput(type, options);
+  const base64 = (await generate({ type, options: validated, outputType: "base64" })) as string;
+  return {
+    filename: `${(options.title as string) || "generated"}.${type}`,
+    base64,
+    mimeType: MIME_TYPES[type],
+    size: Math.ceil((base64.length * 3) / 4),
+  };
 }
 
 const generateDocumentTool = tool({
   description:
-    "Generate a downloadable Office document (.docx, .pptx, or .xlsx). Use when the user asks to create, generate, or produce an Office document.",
+    "Generate a downloadable Office document (.docx, .pptx, or .xlsx). " +
+    "Pass type and options as separate parameters. " +
+    "options is a JSON object (NOT a string) containing the document structure directly. " +
+    "For docx, options must include 'sections'. For pptx, options must include 'slides'. For xlsx, options must include 'worksheets'.",
   inputSchema: z.object({
     type: z.enum(["docx", "pptx", "xlsx"]).describe("Document type to generate"),
-    options: z.string().describe("Document options as a JSON string"),
+    options: z
+      .object({})
+      .passthrough()
+      .describe(
+        "Document options object. " +
+          "docx: { sections: [{ children: [...] }] }, " +
+          "pptx: { title: '...', slides: [{ children: [...] }] }, " +
+          "xlsx: { worksheets: [{ children: [{ cells: [...] }] }] }",
+      ),
   }),
-  execute: async ({ type, options }: { type: "docx" | "pptx" | "xlsx"; options: string }) => {
-    const parsed = JSON.parse(options) as Record<string, unknown>;
-    return generateDocument(type, parsed);
+  execute: async ({ type, options }: { type: GenerateType; options: Record<string, unknown> }) => {
+    return generateDocument(type, options);
   },
 });
 
-const MAX_STEPS = 10;
+const MAX_STEPS = 8;
 
 function createLocalFetch(event: H3Event): typeof fetch {
   const origin = getRequestURL(event).origin;
@@ -154,13 +125,15 @@ function getSystemPrompt(siteName: string) {
 - Provide actionable guidance, not just information dumps
 
 **Document Generation:**
-- When a user asks to create/generate/build an Office document, ALWAYS read the relevant documentation pages FIRST to understand the correct JSON schema and options
+- When a user asks to create/generate/build an Office document, ALWAYS read the relevant documentation pages FIRST to understand the correct JSON structure
 - Use get-page to read the docx/pptx/xlsx documentation before calling generate-document
-- For docx: use { sections: [{ properties: {}, children: [...] }] }
-- For pptx: use { title: "...", slides: [{ children: [...]] }
-- For xlsx: use { worksheets: [{ rows: [{ cells: [...] }] }]
-- The options parameter must be a JSON string, NOT a JSON object
+- Call generate-document with two parameters: type ("docx"/"pptx"/"xlsx") and options (a JSON object, NOT a string)
+- The entire options object is the document definition — pass it directly as an object with proper nesting
+- For docx: { type: "docx", options: { sections: [{ properties: {}, children: [...] }] } }
+- For pptx: { type: "pptx", options: { title: "...", slides: [{ children: [...]] } }
+- For xlsx: { type: "xlsx", options: { worksheets: [{ children: [{ cells: [...] }] }] } }
 - Set the "title" field in options to customize the download filename without extension (e.g. "My Report")
+- Call generate-document exactly ONCE — never retry or call it multiple times for the same request
 - ALWAYS describe what you generated after the tool completes
 - Keep generated documents focused and reasonable in size`;
 }
@@ -238,7 +211,7 @@ export default defineEventHandler(async (event) => {
           }
 
           for (const tr of toolResults) {
-            if (tr.toolName === "generate-document" && tr.output?.success === true) {
+            if (tr.toolName === "generate-document" && tr.output?.base64) {
               const { filename, base64, mimeType, size } = tr.output;
               writer.write({
                 id: tr.toolCallId,

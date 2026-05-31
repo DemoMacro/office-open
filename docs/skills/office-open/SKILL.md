@@ -19,17 +19,19 @@ pnpm add @office-open/pptx      # PowerPoint presentations
 pnpm add @office-open/xlsx      # Excel spreadsheets
 pnpm add @office-open/core      # Shared utilities (usually not needed directly)
 pnpm add @office-open/xml       # XML parsing/serialization
+pnpm add office-open             # Umbrella: all packages + CLI + AI tools
 ```
 
 ## Packages
 
-| Package             | Purpose                             |
-| ------------------- | ----------------------------------- |
-| `@office-open/docx` | Word document generation & parsing  |
-| `@office-open/pptx` | PowerPoint generation & parsing     |
-| `@office-open/xlsx` | Spreadsheet generation & parsing    |
-| `@office-open/core` | Shared XML components, converters   |
-| `@office-open/xml`  | Low-level XML parse/stringify/query |
+| Package             | Purpose                                 |
+| ------------------- | --------------------------------------- |
+| `@office-open/docx` | Word document generation & parsing      |
+| `@office-open/pptx` | PowerPoint generation & parsing         |
+| `@office-open/xlsx` | Spreadsheet generation & parsing        |
+| `@office-open/core` | Shared XML components, converters       |
+| `@office-open/xml`  | Low-level XML parse/stringify/query     |
+| `office-open`       | Umbrella: all packages + CLI + AI tools |
 
 ## Quick Start — DOCX
 
@@ -70,12 +72,14 @@ const buffer = await Packer.toBuffer(doc);
     {
       "children": [
         {
-          "x": 50,
-          "y": 30,
-          "width": 600,
-          "height": 60,
-          "text": "Title",
-          "fill": "4472C4"
+          "shape": {
+            "x": 50,
+            "y": 30,
+            "width": 600,
+            "height": 60,
+            "text": "Title",
+            "fill": "4472C4"
+          }
         }
       ]
     }
@@ -97,7 +101,7 @@ const buffer = await Packer.toBuffer(pres);
 {
   "worksheets": [
     {
-      "rows": [
+      "children": [
         { "cells": [{ "value": "Name" }, { "value": "Score" }] },
         { "cells": [{ "value": "Alice" }, { "value": 95 }] }
       ]
@@ -329,13 +333,16 @@ Charts are created via `@office-open/core` and embedded in both docx and pptx.
 
 ```json
 {
-  "x": 50,
-  "y": 100,
-  "width": 300,
-  "height": 80,
-  "text": "Hello",
-  "fill": "4472C4",
-  "outline": { "color": "0D47A1", "width": 2 }
+  "shape": {
+    "x": 50,
+    "y": 100,
+    "width": 300,
+    "height": 80,
+    "text": "Hello",
+    "fill": "4472C4",
+    "outline": { "color": "0D47A1", "width": 2 },
+    "geometry": "rect"
+  }
 }
 ```
 

@@ -1,0 +1,44 @@
+{
+  "title": "Basic Presentation",
+  "creator": "office-open",
+  "slides": [
+    {
+      "children": [
+        {
+          "shape": {
+            "x": 100,
+            "y": 120,
+            "width": 620,
+            "height": 80,
+            "textBody": {
+              "children": [
+                {
+                  "properties": { "alignment": "center" },
+                  "children": [{ "text": "Hello World", "fontSize": 44, "bold": true }]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "shape": {
+            "x": 180,
+            "y": 240,
+            "width": 460,
+            "height": 40,
+            "textBody": {
+              "children": [
+                {
+                  "properties": { "alignment": "center" },
+                  "children": [
+                    { "text": "Generated from JSON via office-open CLI", "fontSize": 18 }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

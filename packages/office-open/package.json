@@ -1,0 +1,104 @@
+{
+  "name": "office-open",
+  "version": "0.6.8",
+  "description": "Generate Office files (.docx, .pptx, .xlsx) from JSON — CLI, AI SDK tools, and unified re-exports",
+  "keywords": [
+    "ai",
+    "cli",
+    "docx",
+    "llm",
+    "office",
+    "office-open",
+    "ooxml",
+    "pptx",
+    "xlsx"
+  ],
+  "homepage": "https://www.office-open.com",
+  "bugs": {
+    "url": "https://github.com/DemoMacro/office-open/issues"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Demo Macro",
+    "email": "abc@imst.xyz",
+    "url": "https://imst.xyz/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DemoMacro/office-open.git"
+  },
+  "bin": {
+    "office-open": "dist/cli.mjs"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "dist/index.mjs",
+  "types": "dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    },
+    "./docx": {
+      "types": "./dist/docx.d.mts",
+      "import": "./dist/docx.mjs"
+    },
+    "./pptx": {
+      "types": "./dist/pptx.d.mts",
+      "import": "./dist/pptx.mjs"
+    },
+    "./xlsx": {
+      "types": "./dist/xlsx.d.mts",
+      "import": "./dist/xlsx.mjs"
+    },
+    "./core": {
+      "types": "./dist/core.d.mts",
+      "import": "./dist/core.mjs"
+    },
+    "./xml": {
+      "types": "./dist/xml.d.mts",
+      "import": "./dist/xml.mjs"
+    },
+    "./ai": {
+      "types": "./dist/ai/index.d.mts",
+      "import": "./dist/ai/index.mjs"
+    },
+    "./generate": {
+      "types": "./dist/generate.d.mts",
+      "import": "./dist/generate.mjs"
+    },
+    "./schemas": {
+      "types": "./dist/schemas/index.d.mts",
+      "import": "./dist/schemas/index.mjs"
+    }
+  },
+  "scripts": {
+    "dev": "basis build --stub",
+    "build": "vp pack",
+    "prepack": "pnpm build",
+    "test": "vp test run",
+    "check": "vp check --fix",
+    "demo:docx": "node dist/cli.mjs docx demo/1-basic-docx.json \"My Document.docx\"",
+    "demo:pptx": "node dist/cli.mjs pptx demo/1-basic-pptx.json \"My Presentation.pptx\"",
+    "demo:xlsx": "node dist/cli.mjs xlsx demo/1-basic-xlsx.json \"My Workbook.xlsx\""
+  },
+  "dependencies": {
+    "@office-open/core": "workspace:*",
+    "@office-open/docx": "workspace:*",
+    "@office-open/pptx": "workspace:*",
+    "@office-open/xlsx": "workspace:*",
+    "@office-open/xml": "workspace:*",
+    "citty": "0.2.2",
+    "zod": "4.4.3"
+  },
+  "peerDependencies": {
+    "ai": "^6.0.0"
+  },
+  "peerDependenciesMeta": {
+    "ai": {
+      "optional": true
+    }
+  }
+}

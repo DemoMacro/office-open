@@ -25,7 +25,7 @@ orientation: horizontal
 ```
 
 ```bash [Terminal]
-pnpm add @office-open/docx
+pnpm add office-open
 ```
 
 :::
@@ -242,8 +242,8 @@ variant: subtle
 :::u-button
 ---
 color: neutral
-label: 了解 @office-open/xlsx
-to: /zh/xlsx/quickstart
+label: 了解 @office-open/pptx
+to: /zh/pptx/quickstart
 trailingIcon: i-lucide-arrow-right
 variant: subtle
 ---
@@ -346,16 +346,6 @@ icon: i-lucide-arrow-right-left
 :::
 
 #links
-:::u-button
----
-color: neutral
-label: 了解 @office-open/pptx
-to: /zh/pptx/quickstart
-trailingIcon: i-lucide-arrow-right
-variant: subtle
----
-:::
-
 :::u-button
 ---
 color: neutral

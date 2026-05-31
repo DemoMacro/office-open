@@ -46,16 +46,16 @@
     "@rolldown/plugin-node-polyfills": "1.0.3",
     "@types/node": "25.9.1",
     "@vitest/coverage-v8": "4.1.7",
-    "docx": "9.7.0",
+    "docx": "9.7.1",
     "execa": "9.6.1",
     "happy-dom": "20.9.0",
     "hucre": "0.6.0",
-    "inquirer": "13.4.3",
+    "inquirer": "14.0.1",
     "libxml2-wasm": "0.7.1",
     "pptxgenjs": "4.0.1",
     "tsx": "4.22.3",
     "typedoc": "0.28.19",
-    "vite-plus": "0.1.22"
+    "vite-plus": "0.1.23"
   },
   "packageManager": "pnpm@10.33.0"
 }

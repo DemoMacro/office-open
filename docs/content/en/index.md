@@ -25,7 +25,7 @@ orientation: horizontal
 ```
 
 ```bash [Terminal]
-pnpm add @office-open/docx
+pnpm add office-open
 ```
 
 :::
@@ -242,8 +242,8 @@ variant: subtle
 :::u-button
 ---
 color: neutral
-label: Explore @office-open/xlsx
-to: /en/xlsx
+label: Explore @office-open/pptx
+to: /en/pptx
 trailingIcon: i-lucide-arrow-right
 variant: subtle
 ---
@@ -346,16 +346,6 @@ Parse, modify, and re-export in a pipeline
 :::
 
 #links
-:::u-button
----
-color: neutral
-label: Explore @office-open/pptx
-to: /en/pptx
-trailingIcon: i-lucide-arrow-right
-variant: subtle
----
-:::
-
 :::u-button
 ---
 color: neutral

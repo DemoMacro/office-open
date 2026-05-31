@@ -9,10 +9,8 @@
   },
   "devDependencies": {
     "@ai-sdk/openai-compatible": "2.0.48",
-    "@office-open/docx": "workspace:*",
-    "@office-open/pptx": "workspace:*",
-    "@office-open/xlsx": "workspace:*",
     "docus": "5.11.0",
-    "nuxt": "4.4.6"
+    "nuxt": "4.4.6",
+    "office-open": "workspace:*"
   }
 }
