@@ -69,27 +69,27 @@ DEFLATE = compressed (default), STORE = no compression.
 
 | Scenario         | DEFLATE sync |   STORE sync | DEFLATE async |  STORE async |     hucre |
 | ---------------- | -----------: | -----------: | ------------: | -----------: | --------: |
-| Simple (3 rows)  |    457 ops/s | 10,016 ops/s |     500 ops/s | 11,637 ops/s | 689 ops/s |
-| Styled rows (20) |    472 ops/s | 10,504 ops/s |     627 ops/s |  9,479 ops/s | 862 ops/s |
-| Table (10×5)     |    675 ops/s | 10,518 ops/s |     681 ops/s | 10,241 ops/s | 877 ops/s |
+| Simple (3 rows)  |    551 ops/s | 12,909 ops/s |     597 ops/s | 14,019 ops/s | 773 ops/s |
+| Styled rows (20) |    759 ops/s | 11,510 ops/s |     857 ops/s | 11,225 ops/s | 877 ops/s |
+| Table (10×5)     |    868 ops/s | 12,101 ops/s |     937 ops/s | 10,705 ops/s | 949 ops/s |
 
 **Large Files — Create + toBuffer**
 
 | Scenario             | DEFLATE sync |  STORE sync | DEFLATE async | STORE async |       hucre |
 | -------------------- | -----------: | ----------: | ------------: | ----------: | ----------: |
-| 2000 rows            |   47.3 ops/s | 164.9 ops/s |    19.0 ops/s | 162.9 ops/s |  82.8 ops/s |
-| 200×10 table         |  148.2 ops/s | 510.5 ops/s |   160.7 ops/s | 691.7 ops/s | 226.4 ops/s |
-| 20 sheets × 100 rows |   81.3 ops/s | 179.5 ops/s |    87.8 ops/s | 223.5 ops/s |  79.9 ops/s |
+| 2000 rows            |   58.0 ops/s | 192.5 ops/s |    21.2 ops/s | 201.5 ops/s |  80.3 ops/s |
+| 200×10 table         |  178.4 ops/s | 589.1 ops/s |   196.6 ops/s | 811.0 ops/s | 213.7 ops/s |
+| 20 sheets × 100 rows |   89.8 ops/s | 192.9 ops/s |    93.4 ops/s | 243.5 ops/s |  83.1 ops/s |
 
 **Large Data — 100,000 rows × 20 columns (2M cells)**
 
 | Method        |       Speed |   Speedup |
 | ------------- | ----------: | --------: |
-| DEFLATE sync  | 0.250 ops/s |     0.68x |
-| STORE sync    | 0.516 ops/s | **1.40x** |
-| DEFLATE async | 0.270 ops/s |     0.73x |
-| STORE async   | 0.664 ops/s | **1.80x** |
-| hucre         | 0.369 ops/s |           |
+| DEFLATE sync  | 0.290 ops/s |     0.75x |
+| STORE sync    | 0.537 ops/s | **1.39x** |
+| DEFLATE async | 0.322 ops/s |     0.83x |
+| STORE async   | 0.649 ops/s | **1.68x** |
+| hucre         | 0.386 ops/s |           |
 
 ## License
 

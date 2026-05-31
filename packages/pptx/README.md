@@ -86,18 +86,18 @@ DEFLATE = compressed (default), STORE = no compression. PptxGenJS always uses ST
 
 | Scenario           | DEFLATE sync |  STORE sync | DEFLATE async | STORE async |   PptxGenJS |
 | ------------------ | -----------: | ----------: | ------------: | ----------: | ----------: |
-| Simple (2 shapes)  |    405 ops/s | 6,826 ops/s |     442 ops/s | 5,447 ops/s | 1,173 ops/s |
-| Styled shapes (20) |    442 ops/s | 3,145 ops/s |     651 ops/s | 3,190 ops/s |   944 ops/s |
-| Table (10×5)       |    642 ops/s | 4,719 ops/s |     830 ops/s | 5,072 ops/s |   765 ops/s |
-| Full featured      |    448 ops/s | 2,305 ops/s |     621 ops/s | 2,543 ops/s |   601 ops/s |
+| Simple (2 shapes)  |    400 ops/s | 5,057 ops/s |     526 ops/s | 5,691 ops/s | 1,192 ops/s |
+| Styled shapes (20) |    548 ops/s | 3,497 ops/s |     703 ops/s | 3,319 ops/s |   989 ops/s |
+| Table (10×5)       |    692 ops/s | 4,199 ops/s |     696 ops/s | 4,075 ops/s |   840 ops/s |
+| Full featured      |    597 ops/s | 2,584 ops/s |     620 ops/s | 2,546 ops/s |   683 ops/s |
 
 **Large Files — Create + toBuffer**
 
 | Scenario              | DEFLATE sync |  STORE sync | DEFLATE async | STORE async |   PptxGenJS |
 | --------------------- | -----------: | ----------: | ------------: | ----------: | ----------: |
-| 30 slides × 20 shapes |   65.9 ops/s | 123.7 ops/s |    75.0 ops/s | 147.2 ops/s | 111.4 ops/s |
-| 100×10 table          |  207.3 ops/s | 418.6 ops/s |    27.9 ops/s | 500.0 ops/s | 107.6 ops/s |
-| 50 slides full        |   62.6 ops/s | 157.7 ops/s |    66.6 ops/s | 163.0 ops/s |  94.3 ops/s |
+| 30 slides × 20 shapes |   70.0 ops/s | 172.6 ops/s |    91.5 ops/s | 214.5 ops/s | 101.2 ops/s |
+| 100×10 table          |  201.3 ops/s | 491.4 ops/s |    31.1 ops/s | 555.2 ops/s | 117.4 ops/s |
+| 50 slides full        |   76.1 ops/s | 220.5 ops/s |    71.2 ops/s | 203.9 ops/s |  79.8 ops/s |
 
 **Large File (~100MB) — Mixed Content**
 
@@ -105,11 +105,11 @@ DEFLATE = compressed (default), STORE = no compression. PptxGenJS always uses ST
 
 | Method        |      Speed |  Speedup |
 | ------------- | ---------: | -------: |
-| DEFLATE sync  | 1.63 ops/s |     4.1x |
-| STORE sync    | 1.64 ops/s |     4.1x |
-| DEFLATE async | 3.21 ops/s |     8.0x |
-| STORE async   | 3.59 ops/s | **9.0x** |
-| PptxGenJS     | 0.40 ops/s |          |
+| DEFLATE sync  | 1.79 ops/s |     3.4x |
+| STORE sync    | 1.87 ops/s |     3.6x |
+| DEFLATE async | 3.87 ops/s |     7.4x |
+| STORE async   | 4.09 ops/s | **7.9x** |
+| PptxGenJS     | 0.52 ops/s |          |
 
 ## Examples
 
