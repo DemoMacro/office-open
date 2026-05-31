@@ -34,7 +34,7 @@ export function createSplitInject(
             continue;
           }
 
-          if ((text.elements[0].text as string)?.includes(token)) {
+          if ((text.elements[0].text as string).includes(token)) {
             return i;
           }
         }

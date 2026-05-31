@@ -135,40 +135,40 @@ function writeElements(
   depth: number,
   firstLine: boolean,
 ): string {
-  let result = "";
+  const parts: string[] = [];
   for (let i = 0; i < elements.length; i++) {
     const element = elements[i];
     const isFirst = firstLine && i === 0;
     switch (element.type) {
       case "element":
-        result += writeIndentation(opts.spaces, depth, isFirst);
-        result += writeElement(element, opts, depth);
+        parts.push(writeIndentation(opts.spaces, depth, isFirst));
+        parts.push(writeElement(element, opts, depth));
         break;
       case "text":
         if (opts.ignoreText) continue;
-        if (opts.indentText) result += writeIndentation(opts.spaces, depth, isFirst);
-        result += writeText(element.text);
+        if (opts.indentText) parts.push(writeIndentation(opts.spaces, depth, isFirst));
+        parts.push(writeText(element.text));
         break;
       case "cdata":
         if (opts.ignoreCdata) continue;
-        if (opts.indentCdata) result += writeIndentation(opts.spaces, depth, isFirst);
-        result += writeCdata(element.cdata);
+        if (opts.indentCdata) parts.push(writeIndentation(opts.spaces, depth, isFirst));
+        parts.push(writeCdata(element.cdata));
         break;
       case "comment":
         if (opts.ignoreComment) continue;
-        result += writeIndentation(opts.spaces, depth, isFirst);
-        result += writeComment(element.comment);
+        parts.push(writeIndentation(opts.spaces, depth, isFirst));
+        parts.push(writeComment(element.comment));
         break;
       case "doctype":
         if (opts.ignoreDoctype) continue;
-        result += writeIndentation(opts.spaces, depth, isFirst);
-        result += writeDoctype(element.doctype);
+        parts.push(writeIndentation(opts.spaces, depth, isFirst));
+        parts.push(writeDoctype(element.doctype));
         break;
       default:
         break;
     }
   }
-  return result;
+  return parts.join("");
 }
 
 function writeText(text: string | number | boolean | undefined | null): string {

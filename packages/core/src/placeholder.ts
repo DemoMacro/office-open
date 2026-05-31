@@ -16,7 +16,7 @@ export function hasPlaceholders(xml: string): boolean {
 }
 
 export function collectPlaceholderKeys(xml: string, prefix: string): string[] {
-  const keys: string[] = [];
+  const keys = new Set<string>();
   const search = `{${prefix}`;
   let pos = 0;
 
@@ -26,13 +26,11 @@ export function collectPlaceholderKeys(xml: string, prefix: string): string[] {
     if (keyEnd === -1) break;
 
     const key = xml.substring(keyStart, keyEnd);
-    if (key.length > 0 && !keys.includes(key)) {
-      keys.push(key);
-    }
+    if (key.length > 0) keys.add(key);
     pos = keyEnd + 1;
   }
 
-  return keys;
+  return [...keys];
 }
 
 export function replaceImagePlaceholders(

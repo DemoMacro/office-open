@@ -606,7 +606,7 @@ export class File {
     }
 
     if (authorMap.size > 0) {
-      const authors: AuthorEntry[] = [...authorMap.values()].map((a) => ({
+      const authors: AuthorEntry[] = Array.from(authorMap.values(), (a) => ({
         id: a.id,
         name: a.name,
         initials: a.initials,

@@ -108,6 +108,11 @@ function parseRootRels(doc: ParsedArchive): { coreProps?: string; appProps?: str
 }
 
 function parseSlideRels(doc: ParsedArchive, slidePaths: string[], refs: PptxPartRefs): void {
+  const commentsSet = new Set(refs.comments);
+  const chartsSet = new Set(refs.charts);
+  const diagramDataSet = new Set(refs.diagramData);
+  const mediaSet = new Set(refs.media);
+
   for (const slidePath of slidePaths) {
     const parts = slidePath.split("/");
     const fileName = parts.pop()!;
@@ -125,16 +130,21 @@ function parseSlideRels(doc: ParsedArchive, slidePaths: string[], refs: PptxPart
       const path = resolveRelsPath(target);
 
       if (type.includes("/comments") && !type.includes("commentAuthors")) {
-        if (!refs.comments.includes(path)) refs.comments.push(path);
+        commentsSet.add(path);
       } else if (type.includes("/chart")) {
-        if (!refs.charts.includes(path)) refs.charts.push(path);
+        chartsSet.add(path);
       } else if (type.includes("/diagramData")) {
-        if (!refs.diagramData.includes(path)) refs.diagramData.push(path);
+        diagramDataSet.add(path);
       } else if (type.includes("/image") || type.includes("/video") || type.includes("/media")) {
-        if (!refs.media.includes(path)) refs.media.push(path);
+        mediaSet.add(path);
       }
     }
   }
+
+  refs.comments = [...commentsSet];
+  refs.charts = [...chartsSet];
+  refs.diagramData = [...diagramDataSet];
+  refs.media = [...mediaSet];
 }
 
 export function parsePptx(data: DataType): PptxDocument {

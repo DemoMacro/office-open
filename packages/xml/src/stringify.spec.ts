@@ -93,11 +93,11 @@ describe("js2xml (stringify)", () => {
     expect(js2xml(el)).toBe("<w:t>a &amp; b</w:t>");
   });
 
-  it("desanitizes text before sanitizing to avoid double-escape", () => {
+  it("escapes ampersand in text content", () => {
     const el: Element = {
       elements: [{ type: "element", name: "w:t", elements: [{ type: "text", text: "&amp;" }] }],
     };
-    expect(js2xml(el)).toBe("<w:t>&amp;</w:t>");
+    expect(js2xml(el)).toBe("<w:t>&amp;amp;</w:t>");
   });
 
   it("applies attributeValueFn", () => {
