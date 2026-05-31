@@ -6,7 +6,7 @@ const wb = new Workbook({
   worksheets: [
     {
       name: "Merge & Size",
-      children: [
+      rows: [
         // Row 1: merged title
         {
           cells: [{ value: "Quarterly Report", style: { font: { bold: true, size: 14 } } }],

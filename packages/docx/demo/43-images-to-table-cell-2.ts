@@ -18,7 +18,7 @@ const imageBase64Data = `iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAMAAAD04JH5AAACzVBMVEU
 const table = new Table({
   rows: [
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [],
         }),
@@ -47,7 +47,7 @@ const table = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [],
         }),
@@ -77,7 +77,7 @@ const table = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [],
         }),
@@ -93,7 +93,7 @@ const table = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [],
         }),

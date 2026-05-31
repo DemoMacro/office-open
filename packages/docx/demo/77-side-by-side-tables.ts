@@ -19,7 +19,7 @@ const table1 = new Table({
   columnWidths: [3505, 5505],
   rows: [
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("Hello")],
           width: {
@@ -37,7 +37,7 @@ const table1 = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [],
           width: {
@@ -61,7 +61,7 @@ const table2 = new Table({
   columnWidths: [3505, 5505],
   rows: [
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("Foo")],
           width: {
@@ -79,7 +79,7 @@ const table2 = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [],
           width: {
@@ -103,7 +103,7 @@ const noBorderTable = new Table({
   borders: TableBorders.NONE,
   rows: [
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [table1],
         }),

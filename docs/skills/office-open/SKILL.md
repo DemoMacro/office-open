@@ -103,7 +103,7 @@ const buffer = await Packer.toBuffer(pres);
 {
   "worksheets": [
     {
-      "children": [
+      "rows": [
         { "cells": [{ "value": "Name" }, { "value": "Score" }] },
         { "cells": [{ "value": "Alice" }, { "value": 95 }] }
       ]
@@ -248,7 +248,7 @@ Both functions support custom `placeholderDelimiters` (default: `{{` and `}}`). 
   "width": { "size": 100, "type": "pct" },
   "rows": [
     {
-      "children": [
+      "cells": [
         { "children": [{ "paragraph": { "text": "Cell 1" } }], "shading": { "fill": "4472C4" } },
         { "children": [{ "paragraph": { "text": "Cell 2" } }] }
       ]

@@ -199,14 +199,14 @@ async function main() {
           table: {
             rows: [
               {
-                children: [
+                cells: [
                   { children: [{ paragraph: "A1" }] },
                   { children: [{ paragraph: "B1" }] },
                   { children: [{ paragraph: "C1" }] },
                 ],
               },
               {
-                children: [
+                cells: [
                   {
                     children: [
                       { paragraph: { children: [{ text: "Underlined", underline: {} }] } },
@@ -231,7 +231,7 @@ async function main() {
           table: {
             rows: [
               {
-                children: [
+                cells: [
                   {
                     children: [
                       { paragraph: "Outer cell" },
@@ -239,7 +239,7 @@ async function main() {
                         table: {
                           rows: [
                             {
-                              children: [
+                              cells: [
                                 { children: [{ paragraph: "Inner A" }] },
                                 { children: [{ paragraph: "Inner B" }] },
                               ],
@@ -686,7 +686,7 @@ async function main() {
           table: {
             rows: [
               {
-                children: [
+                cells: [
                   {
                     children: [{ paragraph: "Header 1" }],
                     shading: { fill: "4472C4", type: "clear" },
@@ -702,7 +702,7 @@ async function main() {
                 ],
               },
               {
-                children: [
+                cells: [
                   {
                     children: [{ paragraph: "RowSpan 2" }],
                     rowSpan: 2,
@@ -717,7 +717,7 @@ async function main() {
                 ],
               },
               {
-                children: [
+                cells: [
                   // A2 merged with A1 (rowSpan)
                   {
                     children: [{ paragraph: "Cell B2" }],
@@ -727,7 +727,7 @@ async function main() {
                 ],
               },
               {
-                children: [
+                cells: [
                   {
                     children: [{ paragraph: "ColSpan 2" }],
                     columnSpan: 2,

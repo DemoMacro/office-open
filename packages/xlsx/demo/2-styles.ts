@@ -8,7 +8,7 @@ const wb = new Workbook({
   worksheets: [
     {
       name: "Styles",
-      children: [
+      rows: [
         // Header row with bold + background
         {
           cells: [

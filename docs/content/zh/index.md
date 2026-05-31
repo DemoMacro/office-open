@@ -143,9 +143,9 @@ orientation: horizontal
                 {
                     "table": {
                         "rows": [
-                            { "children": [{ "children": [{ "paragraph": "Name" }] }, { "children": [{ "paragraph": "Role" }] }] },
-                            { "children": [{ "children": [{ "paragraph": "Alice" }] }, { "children": [{ "paragraph": "Engineer" }] }] },
-                            { "children": [{ "children": [{ "paragraph": "Bob" }] }, { "children": [{ "paragraph": "Designer" }] }] }
+                            { "cells": [{ "children": [{ "paragraph": "Name" }] }, { "children": [{ "paragraph": "Role" }] }] },
+                            { "cells": [{ "children": [{ "paragraph": "Alice" }] }, { "children": [{ "paragraph": "Engineer" }] }] },
+                            { "cells": [{ "children": [{ "paragraph": "Bob" }] }, { "children": [{ "paragraph": "Designer" }] }] }
                         ]
                     }
                 }
@@ -177,7 +177,7 @@ orientation: horizontal
     "worksheets": [
         {
             "name": "Sheet1",
-            "children": [
+            "rows": [
                 { "cells": [{ "value": "Name" }, { "value": "Score" }] },
                 { "cells": [{ "value": "Alice" }, { "value": 95 }] },
                 { "cells": [{ "value": "Bob" }, { "value": 88 }] }

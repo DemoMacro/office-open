@@ -102,7 +102,7 @@ function printDiffs(diffs: Diff[]): void {
 const sheets: WorksheetOptions[] = [
   {
     name: "Data",
-    children: [
+    rows: [
       { cells: [{ value: "Name" }, { value: "Score" }, { value: "Pass" }] },
       { cells: [{ value: "Alice" }, { value: 95 }, { value: true }] },
       { cells: [{ value: "Bob" }, { value: 87 }, { value: true }] },
@@ -115,7 +115,7 @@ const sheets: WorksheetOptions[] = [
   },
   {
     name: "Numbers",
-    children: [
+    rows: [
       { cells: [{ value: 100 }, { value: 200 }, { value: 300 }] },
       { cells: [{ value: 400 }, { value: 500 }, { value: 600 }] },
     ],
@@ -159,7 +159,7 @@ assert("title preserved", parsed.title === "Round Trip Test");
 assert("creator preserved", parsed.creator === "XLSX Parser");
 
 const sheet1 = parsed.worksheets![0];
-assert("sheet 1 has 4 rows", sheet1.children!.length === 4);
+assert("sheet 1 has 4 rows", sheet1.rows!.length === 4);
 assert("sheet 1 has columns", sheet1.columns!.length === 1);
 assert("sheet 1 has mergeCells", sheet1.mergeCells!.length === 1);
 assert("sheet 1 has freezePanes", !!sheet1.freezePanes);

@@ -256,7 +256,7 @@ function parseWorksheetElement(wsEl: Element, strings: string[]): WorksheetOptio
       rows.push(rowOpts as RowOptions);
     }
   }
-  opts.children = rows;
+  opts.rows = rows;
 
   // Merge cells
   const mergeCellsEl = findChildByLocalName(wsEl, "mergeCells");

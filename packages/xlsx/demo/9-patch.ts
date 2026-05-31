@@ -8,7 +8,7 @@ const template = new Workbook({
   worksheets: [
     {
       name: "Invoice",
-      children: [
+      rows: [
         { cells: [{ value: "Invoice" }, { value: "{{number}}" }] },
         { cells: [{ value: "Customer" }, { value: "{{customer}}" }] },
         { cells: [{ value: "Amount" }, { value: "{{amount}}" }] },

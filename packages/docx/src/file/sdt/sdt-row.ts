@@ -34,7 +34,7 @@ export interface SdtRowOptions {
  * new StructuredDocumentTagRow({
  *   properties: { alias: "Controlled Row" },
  *   children: [
- *     new TableRow({ children: [new TableCell({ children: [new Paragraph("Cell")] })] }),
+ *     new TableRow({ cells: [new TableCell({ children: [new Paragraph("Cell")] })] }),
  *   ],
  * });
  * ```

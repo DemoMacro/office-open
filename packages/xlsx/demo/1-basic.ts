@@ -6,7 +6,7 @@ const wb = new Workbook({
   worksheets: [
     {
       name: "Sheet1",
-      children: [
+      rows: [
         {
           cells: [{ value: "Name" }, { value: "Age" }, { value: "City" }],
         },
@@ -23,7 +23,7 @@ const wb = new Workbook({
     },
     {
       name: "Sheet2",
-      children: [
+      rows: [
         {
           cells: [{ value: "Hello" }, { value: 42 }],
         },

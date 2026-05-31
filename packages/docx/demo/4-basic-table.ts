@@ -16,7 +16,7 @@ const table = new Table({
   columnWidths: [3505, 5505],
   rows: [
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("Hello")],
           width: {
@@ -34,7 +34,7 @@ const table = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [],
           width: {
@@ -58,7 +58,7 @@ const table2 = new Table({
   columnWidths: [4505, 4505],
   rows: [
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("Hello")],
           width: {
@@ -76,7 +76,7 @@ const table2 = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [],
           width: {
@@ -99,7 +99,7 @@ const table2 = new Table({
 const table3 = new Table({
   rows: [
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("Hello")],
         }),
@@ -109,7 +109,7 @@ const table3 = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [],
         }),
@@ -134,7 +134,7 @@ const table4 = new Table({
       gridBefore: 1,
       gridAfter: 0,
       rowAlignment: "center" as const,
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("Header A")],
           noWrap: true,
@@ -150,7 +150,7 @@ const table4 = new Table({
     new TableRow({
       widthBefore: { size: 100, type: WidthType.DXA },
       widthAfter: { size: 100, type: WidthType.DXA },
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("Cell with long text that should not wrap")],
           noWrap: true,
@@ -162,7 +162,7 @@ const table4 = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("Restart merge")],
           horizontalMerge: "restart",

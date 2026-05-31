@@ -6,7 +6,7 @@ const wb = new Workbook({
   worksheets: [
     {
       name: "Validation",
-      children: [
+      rows: [
         { cells: [{ value: "Status" }, { value: "Score" }] },
         { cells: [{ value: "Yes" }, { value: 85 }] },
         { cells: [{ value: "No" }, { value: 150 }] },

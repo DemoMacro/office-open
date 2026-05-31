@@ -82,7 +82,7 @@ const doc = new Document({
         new Table({
           rows: [
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({
                   children: [new Paragraph("שלום עולם")],
                 }),
@@ -92,7 +92,7 @@ const doc = new Document({
               ],
             }),
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({
                   children: [],
                 }),

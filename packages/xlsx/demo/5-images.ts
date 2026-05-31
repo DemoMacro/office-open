@@ -9,7 +9,7 @@ const wb = new Workbook({
   worksheets: [
     {
       name: "Images",
-      children: [
+      rows: [
         { cells: [{ value: "Name" }, { value: "Type" }] },
         { cells: [{ value: "Dog" }, { value: "PNG" }] },
         { cells: [{ value: "Cat" }, { value: "JPEG" }] },

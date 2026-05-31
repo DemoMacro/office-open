@@ -99,7 +99,7 @@ const generateRows = (prices: StockPrice[]): TableRow[] =>
   prices.map(
     ({ date, ticker, price }) =>
       new TableRow({
-        children: [
+        cells: [
           new TableCell({
             children: [new Paragraph(date.toString())],
             textDirection: TextDirection.LEFT_TO_RIGHT_TOP_TO_BOTTOM,
@@ -126,7 +126,7 @@ const doc = new Document({
         new Table({
           rows: [
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({
                   children: [
                     new Paragraph({

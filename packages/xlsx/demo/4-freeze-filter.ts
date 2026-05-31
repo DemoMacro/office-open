@@ -8,7 +8,7 @@ const wb = new Workbook({
       name: "Freeze & Filter",
       freezePanes: { row: 1 },
       autoFilter: "A1:D5",
-      children: [
+      rows: [
         {
           cells: [
             { value: "Name", style: { font: { bold: true } } },

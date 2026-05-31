@@ -43,7 +43,7 @@ export interface DocumentHeader {
  * const headerWrapper = new HeaderWrapper(media, 1);
  * headerWrapper.add(new Paragraph("Page Header"));
  * headerWrapper.add(new Table({
- *   rows: [new TableRow({ children: [new TableCell({ children: [new Paragraph("Cell")] })] })],
+ *   rows: [new TableRow({ cells: [new TableCell({ children: [new Paragraph("Cell")] })] })],
  * }));
  * ```
  */

@@ -19,7 +19,7 @@ import {
 const table = new Table({
   rows: [
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           borders: {
             bottom: {
@@ -51,7 +51,7 @@ const table = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [],
         }),
@@ -100,7 +100,7 @@ const noBorderTable = new Table({
   borders: TableBorders.NONE,
   rows: [
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph({}), new Paragraph({})],
           verticalAlign: VerticalAlignTable.CENTER,
@@ -120,7 +120,7 @@ const noBorderTable = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [
             new Paragraph({

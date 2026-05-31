@@ -21,7 +21,7 @@ import {
 const table = new Table({
   rows: [
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("Hello")],
           columnSpan: 2,
@@ -29,7 +29,7 @@ const table = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [],
         }),
@@ -46,7 +46,7 @@ const table2 = new Table({
   columnWidths: [convertInchesToTwip(0.69), convertInchesToTwip(0.69), convertInchesToTwip(0.69)],
   rows: [
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("World")],
           columnSpan: 3,
@@ -60,7 +60,7 @@ const table2 = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [],
         }),
@@ -89,7 +89,7 @@ const table3 = new Table({
   },
   rows: [
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("Foo")],
         }),
@@ -100,7 +100,7 @@ const table3 = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("Bar1")],
           shading: {
@@ -145,7 +145,7 @@ const table3 = new Table({
 const table4 = new Table({
   rows: [
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("0,0")],
           columnSpan: 2,
@@ -153,7 +153,7 @@ const table4 = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("1,0")],
         }),
@@ -163,7 +163,7 @@ const table4 = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("2,0")],
           columnSpan: 2,
@@ -180,7 +180,7 @@ const table4 = new Table({
 const table5 = new Table({
   rows: [
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("0,0")],
         }),
@@ -194,7 +194,7 @@ const table5 = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("1,0")],
         }),
@@ -205,7 +205,7 @@ const table5 = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("2,0")],
         }),
@@ -247,7 +247,7 @@ const borders = {
 const table6 = new Table({
   rows: [
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           borders,
           children: [new Paragraph("0,0")],
@@ -260,7 +260,7 @@ const table6 = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           borders,
           children: [new Paragraph("1,1")],
@@ -269,7 +269,7 @@ const table6 = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           borders,
           children: [new Paragraph("2,0")],
@@ -286,7 +286,7 @@ const table6 = new Table({
 const table7 = new Table({
   rows: [
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("0,0")],
         }),
@@ -304,7 +304,7 @@ const table7 = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("1,0")],
           columnSpan: 2,
@@ -312,7 +312,7 @@ const table7 = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("2,0")],
           columnSpan: 2,
@@ -324,7 +324,7 @@ const table7 = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("3,0")],
         }),
@@ -346,7 +346,7 @@ const table7 = new Table({
 const table8 = new Table({
   rows: [
     new TableRow({
-      children: [
+      cells: [
         new TableCell({ children: [new Paragraph("1,1")] }),
         new TableCell({ children: [new Paragraph("1,2")] }),
         new TableCell({ children: [new Paragraph("1,3")] }),
@@ -354,20 +354,20 @@ const table8 = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({ children: [new Paragraph("2,1")] }),
         new TableCell({ children: [new Paragraph("2,2")] }),
         new TableCell({ children: [new Paragraph("2,3")], rowSpan: 3 }),
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({ children: [new Paragraph("3,1")] }),
         new TableCell({ children: [new Paragraph("3,2")], rowSpan: 2 }),
       ],
     }),
     new TableRow({
-      children: [new TableCell({ children: [new Paragraph("4,1")] })],
+      cells: [new TableCell({ children: [new Paragraph("4,1")] })],
     }),
   ],
   width: {

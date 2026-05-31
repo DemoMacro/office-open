@@ -22,7 +22,7 @@ describe("HeaderWrapper", () => {
         new Table({
           rows: [
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({
                   children: [new Paragraph("hello")],
                 }),

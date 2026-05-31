@@ -22,28 +22,28 @@ import {
 const table = new Table({
   rows: [
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("Test cell 1.")],
         }),
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("Test cell 2.")],
         }),
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("Test cell 3.")],
         }),
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("Test cell 4.")],
         }),

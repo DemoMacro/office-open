@@ -8,7 +8,7 @@ Complete API reference for `@office-open/xlsx`. All examples show the options JS
 Workbook
 ├── worksheets: WorksheetOptions[]
 │   ├── name: string
-│   ├── children: RowOptions[]
+│   ├── rows: RowOptions[]
 │   │   ├── cells: CellOptions[]
 │   │   │   ├── value: string | number | boolean | Date | null
 │   │   │   └── style: StyleOptions

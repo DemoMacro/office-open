@@ -62,13 +62,13 @@ const doc = new Document({
           layout: "fixed",
           rows: [
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({ children: [new Paragraph("Cell 1")] }),
                 new TableCell({ children: [new Paragraph("Cell 2")] }),
               ],
             }),
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({
                   children: [
                     new Paragraph({
@@ -105,7 +105,7 @@ const doc = new Document({
               },
             }),
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({
                   children: [
                     new Paragraph({
@@ -153,7 +153,7 @@ const doc = new Document({
           layout: "fixed",
           rows: [
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({
                   children: [
                     new Paragraph({
@@ -184,7 +184,7 @@ const doc = new Document({
               ],
             }),
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({
                   children: [
                     new Paragraph({
@@ -226,7 +226,7 @@ const doc = new Document({
           layout: "fixed",
           rows: [
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({ children: [new Paragraph("Cell")] }),
                 new TableCell({
                   children: [
@@ -257,7 +257,7 @@ const doc = new Document({
               ],
             }),
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({ children: [new Paragraph("Cell")] }),
                 new TableCell({
                   children: [
@@ -298,7 +298,7 @@ const doc = new Document({
           columnWidths: [2000, 2000],
           rows: [
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({
                   width: { size: 4000, type: WidthType.DXA },
                   shading: {
@@ -333,7 +333,7 @@ const doc = new Document({
               height: { rule: HeightRule.EXACT, value: 600 },
             }),
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({
                   children: [new Paragraph("Cell 3")],
                   revision: {
@@ -369,7 +369,7 @@ const doc = new Document({
           rows: [
             new TableRow({
               cantSplit: true,
-              children: [
+              cells: [
                 new TableCell({ children: [new Paragraph("Cell 1")] }),
                 new TableCell({ children: [new Paragraph("Cell 2")] }),
               ],
@@ -384,7 +384,7 @@ const doc = new Document({
               tableHeader: true,
             }),
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({ children: [new Paragraph("Cell 3")] }),
                 new TableCell({ children: [new Paragraph("Cell 4")] }),
               ],
@@ -447,13 +447,13 @@ const doc = new Document({
           },
           rows: [
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({ children: [new Paragraph("Cell 1")] }),
                 new TableCell({ children: [new Paragraph("Cell 2")] }),
               ],
             }),
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({ children: [new Paragraph("Cell 3")] }),
                 new TableCell({ children: [new Paragraph("Cell 4")] }),
               ],

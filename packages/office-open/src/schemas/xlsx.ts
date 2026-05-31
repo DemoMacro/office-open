@@ -9,7 +9,7 @@ export const xlsxSchema = z
         z
           .object({
             name: z.string().optional().describe("Sheet display name"),
-            children: z
+            rows: z
               .array(
                 z
                   .object({
@@ -23,7 +23,7 @@ export const xlsxSchema = z
                   .passthrough(),
               )
               .optional()
-              .describe('Worksheet rows, each with "cells" array. NOTE: use "children" not "rows"'),
+              .describe('Worksheet rows, each with "cells" array'),
             columns: z.array(anyObject).optional(),
             mergeCells: z.array(anyObject).optional(),
             freezePanes: anyObject.optional(),

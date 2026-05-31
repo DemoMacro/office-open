@@ -18,7 +18,7 @@ const styles = fs.readFileSync("./demo/assets/custom-styles.xml", "utf8");
 const table = new Table({
   rows: [
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("Header Colum 1")],
         }),
@@ -28,7 +28,7 @@ const table = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("Column Content 3")],
         }),

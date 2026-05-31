@@ -156,7 +156,7 @@ export interface ConditionalFormatOptions {
 
 export interface WorksheetOptions {
   readonly name?: string;
-  readonly children?: readonly RowOptions[];
+  readonly rows?: readonly RowOptions[];
   readonly columns?: readonly ColumnOptions[];
   readonly mergeCells?: readonly MergeCellOptions[];
   readonly freezePanes?: FreezePaneOptions;
@@ -181,7 +181,7 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
 
   public constructor(options: WorksheetOptions) {
     super("worksheet");
-    this.rows = options.children ?? [];
+    this.rows = options.rows ?? [];
     this.columns = options.columns ?? [];
     this.mergeCells = options.mergeCells ?? [];
     this.freezePanes = options.freezePanes;

@@ -21,7 +21,7 @@ const doc = new Document({
         new Table({
           rows: [
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({
                   children: [new Paragraph({}), new Paragraph({})],
                   verticalAlign: VerticalAlignTable.CENTER,
@@ -41,7 +41,7 @@ const doc = new Document({
               ],
             }),
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({
                   children: [
                     new Paragraph({

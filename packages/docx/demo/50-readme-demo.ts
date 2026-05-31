@@ -17,7 +17,7 @@ import {
 const table = new Table({
   rows: [
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [
             new Paragraph({
@@ -47,7 +47,7 @@ const table = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [
             new Paragraph({

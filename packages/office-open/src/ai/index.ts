@@ -54,7 +54,7 @@ export const xlsxTool = tool({
   description:
     "Generate a .xlsx Excel spreadsheet. " +
     "The input is the document options directly — must include a 'worksheets' array. " +
-    "Each worksheet has 'children' (NOT 'rows') — an array of row objects, each with 'cells'. " +
+    "Each worksheet has 'rows' — an array of row objects, each with 'cells'. " +
     "Cell values: string, number, boolean. Use 'style' for formatting. " +
     "Optional: columns, mergeCells, freezePanes, autoFilter, images, charts, dataValidations, conditionalFormats.",
   inputSchema: xlsxSchema,

@@ -25,7 +25,7 @@ import type { ITableRowPropertiesOptions } from "./table-row-properties";
  */
 export type TableRowOptions = {
   /** Array of TableCell elements or plain options that make up the row */
-  readonly children: readonly (
+  readonly cells: readonly (
     | TableCell
     | StructuredDocumentTagCell
     | StructuredDocumentTagRow
@@ -63,7 +63,7 @@ export type TableRowOptions = {
  * @example
  * ```typescript
  * new TableRow({
- *   children: [
+ *   cells: [
  *     new TableCell({ children: [new Paragraph("Cell 1")] }),
  *     new TableCell({ children: [new Paragraph("Cell 2")] }),
  *   ],
@@ -83,7 +83,7 @@ export class TableRow extends BaseXmlComponent {
 
   public constructor(private readonly options: TableRowOptions) {
     super("w:tr");
-    this.coercedChildren = options.children.map((child) =>
+    this.coercedChildren = options.cells.map((child) =>
       child instanceof TableCell ||
       child instanceof StructuredDocumentTagCell ||
       child instanceof StructuredDocumentTagRow

@@ -7,7 +7,7 @@ const wb = new Workbook({
   worksheets: [
     {
       name: "Normal & Shared",
-      children: [
+      rows: [
         // Row 1: Headers
         {
           cells: [
@@ -102,7 +102,7 @@ const wb = new Workbook({
     },
     {
       name: "Array Formula",
-      children: [
+      rows: [
         // Row 1: Headers
         {
           cells: [{ value: "X" }, { value: "Y" }, { value: "X*Y (array)" }],

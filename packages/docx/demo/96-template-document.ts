@@ -98,7 +98,7 @@ const doc = await patchDocument({
         new Table({
           rows: [
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({
                   children: [new Paragraph({}), new Paragraph({})],
                   verticalAlign: VerticalAlignTable.CENTER,
@@ -118,7 +118,7 @@ const doc = await patchDocument({
               ],
             }),
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({
                   children: [
                     new Paragraph({

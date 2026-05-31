@@ -7,7 +7,7 @@ import { Document, Packer, Paragraph, Table, TableCell, TableRow } from "@office
 const table = new Table({
   rows: [
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("0,0")],
         }),
@@ -25,7 +25,7 @@ const table = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("1,0")],
           columnSpan: 2,
@@ -41,7 +41,7 @@ const table = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("2,0")],
         }),
@@ -59,7 +59,7 @@ const table = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("3,0")],
         }),
@@ -81,7 +81,7 @@ const table = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("4,0")],
           columnSpan: 5,
@@ -92,7 +92,7 @@ const table = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [],
         }),
@@ -119,7 +119,7 @@ const table = new Table({
 const table2 = new Table({
   rows: [
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("0,0")],
         }),
@@ -142,7 +142,7 @@ const table2 = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("1,0")],
         }),
@@ -161,7 +161,7 @@ const table2 = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("2,0")],
         }),
@@ -183,7 +183,7 @@ const table2 = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("3,0")],
         }),
@@ -205,7 +205,7 @@ const table2 = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("4,0")],
         }),
@@ -227,7 +227,7 @@ const table2 = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [],
         }),

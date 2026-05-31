@@ -186,7 +186,7 @@ const doc = new Document({
           columnWidths: [3000, 3000],
           rows: [
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({
                   children: [new Paragraph("Normal cell")],
                 }),
@@ -223,7 +223,7 @@ const doc = new Document({
           columnWidths: [3000, 3000],
           rows: [
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({
                   children: [new Paragraph("Normal row - cell 1")],
                 }),
@@ -239,7 +239,7 @@ const doc = new Document({
               },
               children: [
                 new TableRow({
-                  children: [
+                  cells: [
                     new TableCell({
                       children: [new Paragraph("Controlled row - cell 1")],
                     }),

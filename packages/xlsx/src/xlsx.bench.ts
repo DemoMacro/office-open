@@ -46,7 +46,7 @@ const buildSimpleWb = () =>
   new Workbook({
     worksheets: [
       {
-        children: SIMPLE_ROWS.map((row) => ({
+        rows: SIMPLE_ROWS.map((row) => ({
           cells: row.map((v) => ({ value: v })),
         })),
       },
@@ -57,7 +57,7 @@ const buildStyledWb = () =>
   new Workbook({
     worksheets: [
       {
-        children: STYLED_ROWS.map((r) => ({
+        rows: STYLED_ROWS.map((r) => ({
           cells: [{ value: r.name }, { value: r.score }, { value: r.active }],
         })),
       },
@@ -68,7 +68,7 @@ const buildTableWb = () =>
   new Workbook({
     worksheets: [
       {
-        children: TABLE_ROWS.map((row) => ({
+        rows: TABLE_ROWS.map((row) => ({
           cells: row.map((v) => ({ value: v })),
         })),
       },
@@ -227,7 +227,7 @@ const buildLargeRowsWb = () =>
   new Workbook({
     worksheets: [
       {
-        children: LARGE_ROWS.map((row) => ({
+        rows: LARGE_ROWS.map((row) => ({
           cells: row.map((v) => ({ value: v })),
         })),
       },
@@ -238,7 +238,7 @@ const buildLargeTableWb = () =>
   new Workbook({
     worksheets: [
       {
-        children: LARGE_TABLE_ROWS.map((row) => ({
+        rows: LARGE_TABLE_ROWS.map((row) => ({
           cells: row.map((v) => ({ value: v })),
         })),
       },
@@ -249,7 +249,7 @@ const buildLargeSheetsWb = () =>
   new Workbook({
     worksheets: Array.from({ length: 20 }, (_, si) => ({
       name: `Sheet${si + 1}`,
-      children: Array.from({ length: 100 }, (_, ri) => ({
+      rows: Array.from({ length: 100 }, (_, ri) => ({
         cells: [
           { value: `S${si + 1}R${ri + 1}` },
           { value: ri * 10 + si },
@@ -422,7 +422,7 @@ const buildData100kWb = () =>
   new Workbook({
     worksheets: [
       {
-        children: DATA_100K_ROWS.map((row) => ({
+        rows: DATA_100K_ROWS.map((row) => ({
           cells: row.map((v) => ({ value: v })),
         })),
       },

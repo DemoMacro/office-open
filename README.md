@@ -19,13 +19,14 @@
 
 ## Packages
 
-| Package                                        | Version                                                | Description                                          |
-| ---------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------- |
-| [@office-open/docx](./packages/docx/README.md) | ![npm](https://img.shields.io/npm/v/@office-open/docx) | Word document generation, parsing, and patching      |
-| [@office-open/pptx](./packages/pptx/README.md) | ![npm](https://img.shields.io/npm/v/@office-open/pptx) | PowerPoint generation, parsing, and patching         |
-| [@office-open/xlsx](./packages/xlsx/README.md) | ![npm](https://img.shields.io/npm/v/@office-open/xlsx) | Spreadsheet generation, parsing, and patching        |
-| [@office-open/core](./packages/core/README.md) | ![npm](https://img.shields.io/npm/v/@office-open/core) | Shared OOXML infrastructure, charts, unit converters |
-| [@office-open/xml](./packages/xml/README.md)   | ![npm](https://img.shields.io/npm/v/@office-open/xml)  | Low-level XML parsing and serialization              |
+| Package                                         | Version                                                | Description                                          |
+| ----------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------- |
+| [@office-open/docx](./packages/docx/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/docx) | Word document generation, parsing, and patching      |
+| [@office-open/pptx](./packages/pptx/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/pptx) | PowerPoint generation, parsing, and patching         |
+| [@office-open/xlsx](./packages/xlsx/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/xlsx) | Spreadsheet generation, parsing, and patching        |
+| [@office-open/core](./packages/core/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/core) | Shared OOXML infrastructure, charts, unit converters |
+| [@office-open/xml](./packages/xml/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/xml)  | Low-level XML parsing and serialization              |
+| [office-open](./packages/office-open/README.md) | ![npm](https://img.shields.io/npm/v/office-open)       | Umbrella: all packages + CLI + AI SDK tools          |
 
 ## Quick Start
 
@@ -112,7 +113,7 @@ const wb = new Workbook({
   worksheets: [
     {
       name: "Sheet1",
-      children: [
+      rows: [
         { cells: [{ value: "Name" }, { value: "Score" }] },
         { cells: [{ value: "Alice" }, { value: 95 }] },
         { cells: [{ value: "Bob" }, { value: 87 }] },
@@ -123,6 +124,33 @@ const wb = new Workbook({
 
 const buffer = await Packer.toBuffer(wb);
 writeFileSync("workbook.xlsx", buffer);
+```
+
+### Umbrella Package
+
+Install all packages at once with CLI, AI SDK tools, and schemas:
+
+```bash
+pnpm add office-open
+```
+
+```typescript
+import { generate } from "office-open/generate";
+import { writeFileSync } from "node:fs";
+
+const buffer = await generate({
+  type: "xlsx",
+  options: {
+    worksheets: [{ rows: [{ cells: [{ value: "Hello" }] }] }],
+  },
+  outputType: "nodebuffer",
+});
+writeFileSync("output.xlsx", buffer);
+```
+
+```bash
+# CLI usage
+npx office-open xlsx input.json "output.xlsx"
 ```
 
 ## Parse Existing Files
@@ -146,7 +174,7 @@ const opts = parsePresentation(buffer);
 import { parseWorkbook } from "@office-open/xlsx";
 const opts = parseWorkbook(buffer);
 // opts.worksheets — worksheet array
-// opts.worksheets[0].children — row/cell data
+// opts.worksheets[0].rows — row/cell data
 ```
 
 ## JSON API

@@ -26,28 +26,28 @@ const doc = new Document({
         new Table({
           rows: [
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({ children: [new Paragraph("Header 1")] }),
                 new TableCell({ children: [new Paragraph("Header 2")] }),
                 new TableCell({ children: [new Paragraph("Header 3")] }),
               ],
             }),
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({ children: [new Paragraph("Row 1, Col 1")] }),
                 new TableCell({ children: [new Paragraph("Row 1, Col 2")] }),
                 new TableCell({ children: [new Paragraph("Row 1, Col 3")] }),
               ],
             }),
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({ children: [new Paragraph("Row 2, Col 1")] }),
                 new TableCell({ children: [new Paragraph("Row 2, Col 2")] }),
                 new TableCell({ children: [new Paragraph("Row 2, Col 3")] }),
               ],
             }),
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({ children: [new Paragraph("Row 3, Col 1")] }),
                 new TableCell({ children: [new Paragraph("Row 3, Col 2")] }),
                 new TableCell({ children: [new Paragraph("Row 3, Col 3")] }),
@@ -74,28 +74,28 @@ const doc = new Document({
         new Table({
           rows: [
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({ children: [new Paragraph("Header 1")] }),
                 new TableCell({ children: [new Paragraph("Header 2")] }),
                 new TableCell({ children: [new Paragraph("Header 3")] }),
               ],
             }),
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({ children: [new Paragraph("Row 1, Col 1")] }),
                 new TableCell({ children: [new Paragraph("Row 1, Col 2")] }),
                 new TableCell({ children: [new Paragraph("Row 1, Col 3")] }),
               ],
             }),
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({ children: [new Paragraph("Row 2, Col 1")] }),
                 new TableCell({ children: [new Paragraph("Row 2, Col 2")] }),
                 new TableCell({ children: [new Paragraph("Row 2, Col 3")] }),
               ],
             }),
             new TableRow({
-              children: [
+              cells: [
                 new TableCell({ children: [new Paragraph("Row 3, Col 1")] }),
                 new TableCell({ children: [new Paragraph("Row 3, Col 2")] }),
                 new TableCell({ children: [new Paragraph("Row 3, Col 3")] }),

@@ -32,7 +32,7 @@ const table = new Table({
   layout: TableLayoutType.FIXED,
   rows: [
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [new Paragraph("Hello")],
           columnSpan: 2,
@@ -40,7 +40,7 @@ const table = new Table({
       ],
     }),
     new TableRow({
-      children: [
+      cells: [
         new TableCell({
           children: [],
         }),

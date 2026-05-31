@@ -8,7 +8,7 @@ describe("TableRow", () => {
   describe("#rootIndexToColumnIndex", () => {
     it("should get the correct virtual column index by root index", () => {
       const tableRow = new TableRow({
-        children: [
+        cells: [
           new TableCell({
             children: [new Paragraph("test")],
             columnSpan: 3,
@@ -43,7 +43,7 @@ describe("TableRow", () => {
   describe("#columnIndexToRootIndex", () => {
     it("should get the correct root index by virtual column index", () => {
       const tableRow = new TableRow({
-        children: [
+        cells: [
           new TableCell({
             children: [new Paragraph("test")],
             columnSpan: 3,
@@ -82,7 +82,7 @@ describe("TableRow", () => {
 
     it("should allow end new cell index", () => {
       const tableRow = new TableRow({
-        children: [
+        cells: [
           new TableCell({
             children: [new Paragraph("test")],
             columnSpan: 3,

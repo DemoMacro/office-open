@@ -46,7 +46,7 @@ const generateDocumentTool = tool({
         "Document options object. " +
           "docx: { sections: [{ children: [...] }] }, " +
           "pptx: { title: '...', slides: [{ children: [...] }] }, " +
-          "xlsx: { worksheets: [{ children: [{ cells: [...] }] }] }",
+          "xlsx: { worksheets: [{ rows: [{ cells: [...] }] }] }",
       ),
   }),
   execute: async ({ type, options }: { type: GenerateType; options: Record<string, unknown> }) => {
@@ -131,7 +131,7 @@ function getSystemPrompt(siteName: string) {
 - The entire options object is the document definition — pass it directly as an object with proper nesting
 - For docx: { type: "docx", options: { sections: [{ properties: {}, children: [...] }] } }
 - For pptx: { type: "pptx", options: { title: "...", slides: [{ children: [...]] } }
-- For xlsx: { type: "xlsx", options: { worksheets: [{ children: [{ cells: [...] }] }] } }
+- For xlsx: { type: "xlsx", options: { worksheets: [{ rows: [{ cells: [...] }] }] } }
 - Set the "title" field in options to customize the download filename without extension (e.g. "My Report")
 - Call generate-document exactly ONCE — never retry or call it multiple times for the same request
 - ALWAYS describe what you generated after the tool completes

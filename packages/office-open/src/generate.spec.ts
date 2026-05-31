@@ -9,9 +9,9 @@ describe("parseInput", () => {
   });
 
   it("should parse a JSON string with nested objects", async () => {
-    const input = JSON.stringify({ worksheets: [{ children: [{ cells: [{ value: 1 }] }] }] });
+    const input = JSON.stringify({ worksheets: [{ rows: [{ cells: [{ value: 1 }] }] }] });
     const result = await parseInput(input);
-    expect(result).toEqual({ worksheets: [{ children: [{ cells: [{ value: 1 }] }] }] });
+    expect(result).toEqual({ worksheets: [{ rows: [{ cells: [{ value: 1 }] }] }] });
   });
 
   it("should parse a JSON string starting with [", async () => {

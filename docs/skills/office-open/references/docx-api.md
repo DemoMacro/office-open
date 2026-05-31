@@ -177,7 +177,7 @@ Supported types: `"jpg"`, `"png"`, `"gif"`, `"bmp"`, `"svg"`, `"emf"`, `"wmf"`, 
   "width": { "size": 100, "units": "pct" },
   "rows": [
     {
-      "children": [
+      "cells": [
         {
           "width": { "size": 50, "units": "pct" },
           "shading": { "fill": "4472C4" },

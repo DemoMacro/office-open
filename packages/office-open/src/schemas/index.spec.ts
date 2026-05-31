@@ -71,21 +71,21 @@ describe("pptxSchema", () => {
 describe("xlsxSchema", () => {
   it("should accept valid minimal input", () => {
     const result = xlsxSchema.safeParse({
-      worksheets: [{ children: [] }],
+      worksheets: [{ rows: [] }],
     });
     expect(result.success).toBe(true);
   });
 
   it("should accept worksheets with cells", () => {
     const result = xlsxSchema.safeParse({
-      worksheets: [{ children: [{ cells: [{ value: "Hello" }, { value: 42 }] }] }],
+      worksheets: [{ rows: [{ cells: [{ value: "Hello" }, { value: 42 }] }] }],
     });
     expect(result.success).toBe(true);
   });
 
   it("should accept boolean cell values", () => {
     const result = xlsxSchema.safeParse({
-      worksheets: [{ children: [{ cells: [{ value: true }] }] }],
+      worksheets: [{ rows: [{ cells: [{ value: true }] }] }],
     });
     expect(result.success).toBe(true);
   });
@@ -110,7 +110,7 @@ describe("validateDocumentInput", () => {
   });
 
   it("should return parsed data for valid xlsx input", () => {
-    const input = { worksheets: [{ children: [] }] };
+    const input = { worksheets: [{ rows: [] }] };
     const result = validateDocumentInput("xlsx", input);
     expect(result).toEqual(input);
   });

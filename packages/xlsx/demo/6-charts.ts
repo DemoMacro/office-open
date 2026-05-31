@@ -6,7 +6,7 @@ const wb = new Workbook({
   worksheets: [
     {
       name: "Data",
-      children: [
+      rows: [
         { cells: [{ value: "Quarter" }, { value: "2023" }, { value: "2024" }] },
         { cells: [{ value: "Q1" }, { value: 100 }, { value: 120 }] },
         { cells: [{ value: "Q2" }, { value: 150 }, { value: 170 }] },

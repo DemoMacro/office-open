@@ -104,7 +104,7 @@ const buildTableDoc = () =>
             rows: TABLE_ROWS.map(
               (row) =>
                 new TableRow({
-                  children: row.cells.map(
+                  cells: row.cells.map(
                     (cell) =>
                       new TableCell({
                         width: {
@@ -178,7 +178,7 @@ const buildFullFeaturedDoc = () =>
             rows: TABLE_ROWS.map(
               (row) =>
                 new TableRow({
-                  children: row.cells.map(
+                  cells: row.cells.map(
                     (cell) =>
                       new TableCell({
                         width: {
@@ -572,7 +572,7 @@ const buildLargeTableDoc = () =>
             rows: LARGE_TABLE_ROWS.map(
               (row) =>
                 new TableRow({
-                  children: row.cells.map(
+                  cells: row.cells.map(
                     (cell) =>
                       new TableCell({
                         width: {
@@ -896,7 +896,7 @@ const buildMixed100MbDoc = () =>
               { length: 100 },
               (_, rowIdx) =>
                 new TableRow({
-                  children: Array.from(
+                  cells: Array.from(
                     { length: 10 },
                     (_, colIdx) =>
                       new TableCell({

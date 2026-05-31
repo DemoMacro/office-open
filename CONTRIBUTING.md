@@ -165,6 +165,35 @@ This aligns with the XSD structure where related attributes are grouped under a 
 
 For internal helper functions with all-required parameters, prefer positional parameters even if there are more than 3.
 
+### Container Field Naming
+
+Options interfaces use two patterns for container fields:
+
+| Pattern           | Field Name  | When to use                           | Example                                                |
+| ----------------- | ----------- | ------------------------------------- | ------------------------------------------------------ |
+| **Heterogeneous** | `children`  | Container holds mixed element types   | `SectionOptions.children` — paragraphs, tables, images |
+| **Homogeneous**   | Domain name | Container holds a single element type | `TableOptions.rows` — TableRow only                    |
+
+Domain names follow the XSD element name: `rows` for `w:tr`/`x:row`, `cells` for `w:tc`/`x:c`.
+
+```typescript
+// Heterogeneous — use "children"
+interface SectionOptions {
+  readonly children: readonly (Paragraph | Table | ImageOptions)[];
+}
+
+// Homogeneous — use domain name
+interface TableOptions {
+  readonly rows: readonly TableRow[];
+}
+interface TableRowOptions {
+  readonly cells: readonly TableCell[];
+}
+interface WorksheetOptions {
+  readonly rows: readonly RowOptions[];
+}
+```
+
 ## Loop Patterns
 
 | Scenario                                                    | Use                 | Reason                                          |
