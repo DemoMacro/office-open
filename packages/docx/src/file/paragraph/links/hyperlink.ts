@@ -1,3 +1,4 @@
+import { XmlComponent } from "@file/xml-components";
 /**
  * Hyperlink module for WordprocessingML documents.
  *
@@ -7,7 +8,7 @@
  *
  * @module
  */
-import { XmlComponent } from "@file/xml-components";
+import type { BaseXmlComponent } from "@file/xml-components/base";
 import { uniqueId } from "@util/convenience-functions";
 
 import type { ParagraphChild } from "../paragraph";
@@ -138,7 +139,7 @@ export class ConcreteHyperlink extends XmlComponent {
     }
     this.root.push({ _attr: attr });
     for (const child of children) {
-      this.root.push(child);
+      this.root.push(child as BaseXmlComponent);
     }
   }
 }

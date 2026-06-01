@@ -1,2 +1,7 @@
 export * from "./packer/packer";
-export type { OutputType, OutputByType } from "@office-open/core";
+export type {
+  CompressionOptions,
+  OutputType,
+  OutputByType,
+  PackerOptions,
+} from "@office-open/core";

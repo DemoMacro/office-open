@@ -104,7 +104,7 @@ export class ParsedArchive {
   }
 }
 
-/** Set of already-compressed media file extensions (lowercase, with dot prefix). */
+/** Media file extensions that should use STORE (no compression). */
 const MEDIA_EXTENSIONS = new Set([
   ".png",
   ".jpg",

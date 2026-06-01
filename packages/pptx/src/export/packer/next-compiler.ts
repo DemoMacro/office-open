@@ -12,7 +12,6 @@ import {
 import { DefaultTheme } from "@file/theme/theme";
 import type { Context } from "@file/xml-components";
 import {
-  ZIP_STORED_LEVEL,
   addSmartArtRelationships,
   collectPlaceholderKeys,
   compileMapping,
@@ -22,7 +21,7 @@ import {
   replaceImagePlaceholders,
   replaceSmartArtPlaceholders,
 } from "@office-open/core";
-import type { XmlifyedFile, Zippable } from "@office-open/core";
+import type { XmlifyedFile, ZipOptions, Zippable } from "@office-open/core";
 import { xml } from "@office-open/xml";
 
 /** Reusable TextEncoder (stateless, safe to share). */
@@ -43,7 +42,11 @@ import {
 export class Compiler {
   private readonly formatter = new Formatter();
 
-  public compile(file: File, overrides: readonly XmlifyedFile[] = []): Zippable {
+  public compile(
+    file: File,
+    overrides: readonly XmlifyedFile[] = [],
+    mediaLevel: number = 0,
+  ): Zippable {
     const context: Context = { fileData: file, stack: [] };
 
     const mapping: XmlifyedFileMapping = {
@@ -458,16 +461,22 @@ export class Compiler {
       }
     }
 
-    // Add media files (STORE — already-compressed formats)
+    // Add media files
     for (const image of file.media.array) {
-      files[`ppt/media/${image.fileName}`] = [image.data, { level: ZIP_STORED_LEVEL }];
+      files[`ppt/media/${image.fileName}`] = [
+        image.data,
+        { level: mediaLevel as ZipOptions["level"] },
+      ];
       if (image.type === "svg" && "fallback" in image) {
         const fallback = (
           image as IMediaData & {
             readonly fallback: { readonly fileName: string; readonly data: Uint8Array };
           }
         ).fallback;
-        files[`ppt/media/${fallback.fileName}`] = [fallback.data, { level: ZIP_STORED_LEVEL }];
+        files[`ppt/media/${fallback.fileName}`] = [
+          fallback.data,
+          { level: mediaLevel as ZipOptions["level"] },
+        ];
       }
     }
 

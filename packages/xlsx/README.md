@@ -63,33 +63,38 @@ Check the [demo folder](./demo) for working examples covering every feature.
 
 Performance comparison against [hucre](https://github.com/nicolo-ribaudo/hucre) (0.6.0) (higher ops/s is better, Windows 11 / Node 24).
 
-DEFLATE = compressed (default), STORE = no compression.
+**Default** = XML DEFLATE level 1 (SuperFast, matching MS Office) + media STORE. **All STORE** = no compression (`{ compression: { xml: 0 } }`). **hucre** (async only) uses `CompressionStream("deflate-raw")` when available, falls back to STORE per-entry when compression doesn't reduce size.
+
+```typescript
+// Default (matches MS Office)
+await Packer.toBuffer(wb);
+// All STORE (no compression)
+await Packer.toBuffer(wb, { compression: { xml: 0 } });
+```
 
 **Create + toBuffer (end-to-end)**
 
-| Scenario         | DEFLATE sync |   STORE sync | DEFLATE async |  STORE async |     hucre |
-| ---------------- | -----------: | -----------: | ------------: | -----------: | --------: |
-| Simple (3 rows)  |    551 ops/s | 12,909 ops/s |     597 ops/s | 14,019 ops/s | 773 ops/s |
-| Styled rows (20) |    759 ops/s | 11,510 ops/s |     857 ops/s | 11,225 ops/s | 877 ops/s |
-| Table (10×5)     |    868 ops/s | 12,101 ops/s |     937 ops/s | 10,705 ops/s | 949 ops/s |
+| Scenario         | Default sync | Default async | All STORE sync | All STORE async |       hucre |
+| ---------------- | -----------: | ------------: | -------------: | --------------: | ----------: |
+| Simple (3 rows)  |  3,528 ops/s |   1,266 ops/s |   17,759 ops/s |    17,193 ops/s |   949 ops/s |
+| Styled rows (20) |  3,403 ops/s |   1,289 ops/s |   16,516 ops/s |    13,811 ops/s |   971 ops/s |
+| Table (10x5)     |  3,449 ops/s |   1,414 ops/s |   16,036 ops/s |    13,475 ops/s | 1,031 ops/s |
 
 **Large Files — Create + toBuffer**
 
-| Scenario             | DEFLATE sync |  STORE sync | DEFLATE async | STORE async |       hucre |
-| -------------------- | -----------: | ----------: | ------------: | ----------: | ----------: |
-| 2000 rows            |   58.0 ops/s | 192.5 ops/s |    21.2 ops/s | 201.5 ops/s |  80.3 ops/s |
-| 200×10 table         |  178.4 ops/s | 589.1 ops/s |   196.6 ops/s | 811.0 ops/s | 213.7 ops/s |
-| 20 sheets × 100 rows |   89.8 ops/s | 192.9 ops/s |    93.4 ops/s | 243.5 ops/s |  83.1 ops/s |
+| Scenario                      | Default sync | Default async | All STORE sync | All STORE async |      hucre |
+| ----------------------------- | -----------: | ------------: | -------------: | --------------: | ---------: |
+| 2000 rows + 10 images         |   87.5 ops/s |    79.7 ops/s |    101.0 ops/s |     101.2 ops/s | 46.4 ops/s |
+| 200x10 table                  |    754 ops/s |     517 ops/s |    1,049 ops/s |       963 ops/s |  226 ops/s |
+| 20 sheets x 100 rows + 20 img |   60.9 ops/s |    49.9 ops/s |     76.8 ops/s |      77.5 ops/s | 25.3 ops/s |
 
-**Large Data — 100,000 rows × 20 columns (2M cells)**
+**Large Data — 100,000 rows x 20 columns (2M cells)**
 
-| Method        |       Speed |   Speedup |
-| ------------- | ----------: | --------: |
-| DEFLATE sync  | 0.290 ops/s |     0.75x |
-| STORE sync    | 0.537 ops/s | **1.39x** |
-| DEFLATE async | 0.322 ops/s |     0.83x |
-| STORE async   | 0.649 ops/s | **1.68x** |
-| hucre         | 0.386 ops/s |           |
+| Method    |      Speed |  Speedup |
+| --------- | ---------: | -------: |
+| All STORE | 0.74 ops/s | **1.9x** |
+| Default   | 0.66 ops/s |     1.7x |
+| hucre     | 0.40 ops/s |          |
 
 ## License
 

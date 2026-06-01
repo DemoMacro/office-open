@@ -26,13 +26,52 @@ describe("createPacker", () => {
   describe("compile passthrough", () => {
     it("should default overrides to empty array", async () => {
       await Packer.toString(mockFile);
-      expect(compileMock).toHaveBeenCalledWith(expect.anything(), []);
+      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 0);
     });
 
     it("should pass overrides through", async () => {
       const overrides: readonly XmlifyedFile[] = [{ data: "test", path: "test.xml" }];
-      await Packer.toString(mockFile, overrides);
-      expect(compileMock).toHaveBeenCalledWith(expect.anything(), overrides);
+      await Packer.toString(mockFile, { overrides });
+      expect(compileMock).toHaveBeenCalledWith(expect.anything(), overrides, 0);
+    });
+  });
+
+  describe("compression options", () => {
+    it("should default to mediaLevel 0 (STORE) when no options", async () => {
+      await Packer.toBuffer(mockFile);
+      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 0);
+    });
+
+    it("should pass mediaLevel 0 when xml option is set", async () => {
+      await Packer.toBuffer(mockFile, { compression: { xml: 9 } });
+      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 0);
+    });
+
+    it("should pass custom mediaLevel", async () => {
+      await Packer.toBuffer(mockFile, { compression: { media: 6 } });
+      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 6);
+    });
+
+    it("should pass both xml and media options", async () => {
+      await Packer.toBuffer(mockFile, { compression: { xml: 9, media: 4 } });
+      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 4);
+    });
+
+    it("should work with sync methods", () => {
+      Packer.toBufferSync(mockFile, { compression: { xml: 6, media: 0 } });
+      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 0);
+    });
+
+    it("should produce valid output with custom compression", async () => {
+      const result = await Packer.toBuffer(mockFile, { compression: { xml: 9 } });
+      expect(result).toBeInstanceOf(Buffer);
+      expect(result.byteLength).toBeGreaterThan(0);
+    });
+
+    it("should produce valid output with xml=0 (all STORE)", async () => {
+      const result = await Packer.toBuffer(mockFile, { compression: { xml: 0 } });
+      expect(result).toBeInstanceOf(Buffer);
+      expect(result.byteLength).toBeGreaterThan(0);
     });
   });
 

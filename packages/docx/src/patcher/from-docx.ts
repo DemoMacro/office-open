@@ -226,7 +226,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                   return element;
                 }
               }),
-            } as any,
+            } as ParagraphPatch,
             patchText,
           });
           if (!recursive || !didFindOccurrence) {

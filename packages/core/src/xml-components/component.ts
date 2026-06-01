@@ -8,6 +8,14 @@ import { escapeXml, xml } from "@office-open/xml";
 import { BaseXmlComponent } from "./base";
 import type { Context, IXmlableObject } from "./base";
 
+function formatAttrs(a: Record<string, unknown>): string {
+  let s = "";
+  for (const key of Object.keys(a)) {
+    s += (s ? " " : "") + `${key}="${escapeXml(String(a[key]))}"`;
+  }
+  return s;
+}
+
 /**
  * Empty object singleton used for empty XML elements.
  *
@@ -71,10 +79,43 @@ export abstract class XmlComponent extends BaseXmlComponent {
    * each child, concatenating the results into a single string.
    */
   public override toXml(context: Context): string {
+    const root = this.root;
+    const len = root.length;
+
+    if (len === 0) return `<${this.rootKey}/>`;
+
+    // Fast path: single child — avoid array allocation
+    if (len === 1) {
+      const child = root[0];
+      if (child instanceof BaseXmlComponent) {
+        const s = child.toXml(context);
+        return s ? `<${this.rootKey}>${s}</${this.rootKey}>` : `<${this.rootKey}/>`;
+      }
+      if (typeof child === "string") {
+        return `<${this.rootKey}>${escapeXml(child)}</${this.rootKey}>`;
+      }
+      if (child != null && typeof child === "object") {
+        const a =
+          "_attr" in child
+            ? (child as { _attr: Record<string, unknown> })._attr
+            : "_attributes" in child
+              ? (child as { _attributes: Record<string, unknown> })._attributes
+              : null;
+        if (a) {
+          const attrStr = formatAttrs(a);
+          return `<${this.rootKey}${attrStr ? " " + attrStr : ""}/>`;
+        }
+        return `<${this.rootKey}>${xml(child as Record<string, any>)}</${this.rootKey}>`;
+      }
+      return `<${this.rootKey}/>`;
+    }
+
+    // General case: multiple children — use array join
     const childParts: string[] = [];
     const attrParts: string[] = [];
 
-    for (const child of this.root) {
+    for (let i = 0; i < len; i++) {
+      const child = root[i];
       if (child instanceof BaseXmlComponent) {
         const s = child.toXml(context);
         if (s) childParts.push(s);

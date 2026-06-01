@@ -27,7 +27,7 @@ export interface Element {
 }
 
 export interface ElementCompact {
-  [key: string]: any;
+  [key: string]: unknown;
   _declaration?: {
     _attributes?: DeclarationAttributes;
   };

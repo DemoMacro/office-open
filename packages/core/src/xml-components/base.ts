@@ -15,7 +15,7 @@ export interface Context<TFileData = unknown> {
   /** The root file data object being serialized (format-specific). */
   readonly fileData?: TFileData;
   /** Current traversal stack of components (mutable for performance). */
-  readonly stack: IXmlableObject[];
+  readonly stack: BaseXmlComponent[];
 }
 
 /**

@@ -48,7 +48,12 @@ export const convertOutput = <T extends OutputType>(
     case "uint8array":
       return data as OutputByType[T];
     case "base64":
-      return btoa(strFromU8(data, true)) as OutputByType[T];
+      // Use Buffer in Node.js (more robust), btoa as browser fallback
+      return (
+        typeof Buffer !== "undefined"
+          ? Buffer.from(data).toString("base64")
+          : btoa(strFromU8(data, true))
+      ) as OutputByType[T];
     case "string":
     case "text":
     case "binarystring":

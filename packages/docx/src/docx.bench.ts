@@ -1,10 +1,4 @@
 import {
-  OoxmlMimeType,
-  ZIP_STORED_LEVEL,
-  zipAndConvert,
-  zipSyncAndConvert,
-} from "@office-open/core";
-import {
   AlignmentType as AlignmentTypeOrig,
   Document as DocumentOrig,
   Footer as FooterOrig,
@@ -40,17 +34,24 @@ import {
   WidthType,
 } from "./index";
 
-// STORE sync: compile + zip with STORE (no compression)
-const toBufferStore = (doc: Document) => {
-  const files = Packer.compile(doc);
-  return zipSyncAndConvert(files, "nodebuffer", OoxmlMimeType.DOCX, ZIP_STORED_LEVEL);
+// Bench modes:
+//   "ours default"  = XML DEFLATE level 1 (SuperFast, MS Office), media STORE — no options passed.
+//   "ours all-store" = all entries STORE — { compression: { xml: 0 } }.
+//
+// docx (JSZip): async (Packer.toBuffer). Hardcoded global DEFLATE for ALL entries,
+// including images (redundant compression). No STORE option.
+
+// ── Image generation ──
+
+const makeImage = (seed: number, sizeKB: number): Uint8Array => {
+  const size = sizeKB * 1024;
+  const buf = new Uint8Array(size);
+  for (let i = 0; i < size; i++) buf[i] = (i * 7 + seed * 13 + 37) & 0xff;
+  return buf;
 };
 
-// STORE async: compile + zip async with STORE
-const toBufferStoreAsync = async (doc: Document) => {
-  const files = Packer.compile(doc);
-  return await zipAndConvert(files, "nodebuffer", OoxmlMimeType.DOCX, ZIP_STORED_LEVEL);
-};
+const SMALL_IMAGES = Array.from({ length: 3 }, (_, i) => makeImage(i, 200));
+const LARGE_IMAGES = Array.from({ length: 20 }, (_, i) => makeImage(i, 500));
 
 // ── Shared fixture data ──
 
@@ -76,6 +77,15 @@ const buildSimpleDoc = () =>
         children: [
           new Paragraph({ children: [new TextRun("Hello World")] }),
           new Paragraph({ children: [new TextRun("Second paragraph")] }),
+          new Paragraph({
+            children: [
+              new ImageRun({
+                data: SMALL_IMAGES[0],
+                transformation: { width: 400, height: 300 },
+                type: "jpg",
+              }),
+            ],
+          }),
         ],
       },
     ],
@@ -85,12 +95,23 @@ const buildStyledDoc = () =>
   new Document({
     sections: [
       {
-        children: PARAGRAPH_CHILDREN.map(
-          (p) =>
-            new Paragraph({
-              children: [new TextRun({ text: p.text, bold: p.bold, italics: p.italics })],
-            }),
-        ),
+        children: [
+          ...PARAGRAPH_CHILDREN.map(
+            (p) =>
+              new Paragraph({
+                children: [new TextRun({ text: p.text, bold: p.bold, italics: p.italics })],
+              }),
+          ),
+          new Paragraph({
+            children: [
+              new ImageRun({
+                data: SMALL_IMAGES[1],
+                transformation: { width: 400, height: 300 },
+                type: "jpg",
+              }),
+            ],
+          }),
+        ],
       },
     ],
   });
@@ -162,6 +183,15 @@ const buildFullFeaturedDoc = () =>
             heading: HeadingLevel.HEADING_2,
             children: [new TextRun("Section 1")],
           }),
+          new Paragraph({
+            children: [
+              new ImageRun({
+                data: SMALL_IMAGES[0],
+                transformation: { width: 400, height: 300 },
+                type: "jpg",
+              }),
+            ],
+          }),
           ...PARAGRAPH_CHILDREN.map(
             (p) =>
               new Paragraph({
@@ -174,6 +204,15 @@ const buildFullFeaturedDoc = () =>
                 ],
               }),
           ),
+          new Paragraph({
+            children: [
+              new ImageRun({
+                data: SMALL_IMAGES[2],
+                transformation: { width: 400, height: 300 },
+                type: "jpg",
+              }),
+            ],
+          }),
           new Table({
             rows: TABLE_ROWS.map(
               (row) =>
@@ -209,6 +248,15 @@ const buildSimpleDocCompetitor = () =>
         children: [
           new ParagraphOrig({ children: [new TextRunOrig("Hello World")] }),
           new ParagraphOrig({ children: [new TextRunOrig("Second paragraph")] }),
+          new ParagraphOrig({
+            children: [
+              new ImageRunOrig({
+                data: SMALL_IMAGES[0],
+                transformation: { width: 400, height: 300 },
+                type: "jpg",
+              }),
+            ],
+          }),
         ],
       },
     ],
@@ -218,18 +266,29 @@ const buildStyledDocCompetitor = () =>
   new DocumentOrig({
     sections: [
       {
-        children: PARAGRAPH_CHILDREN.map(
-          (p) =>
-            new ParagraphOrig({
-              children: [
-                new TextRunOrig({
-                  text: p.text,
-                  bold: p.bold,
-                  italics: p.italics,
-                }),
-              ],
-            }),
-        ),
+        children: [
+          ...PARAGRAPH_CHILDREN.map(
+            (p) =>
+              new ParagraphOrig({
+                children: [
+                  new TextRunOrig({
+                    text: p.text,
+                    bold: p.bold,
+                    italics: p.italics,
+                  }),
+                ],
+              }),
+          ),
+          new ParagraphOrig({
+            children: [
+              new ImageRunOrig({
+                data: SMALL_IMAGES[1],
+                transformation: { width: 400, height: 300 },
+                type: "jpg",
+              }),
+            ],
+          }),
+        ],
       },
     ],
   });
@@ -301,6 +360,15 @@ const buildFullFeaturedDocCompetitor = () =>
             heading: HeadingLevelOrig.HEADING_2,
             children: [new TextRunOrig("Section 1")],
           }),
+          new ParagraphOrig({
+            children: [
+              new ImageRunOrig({
+                data: SMALL_IMAGES[0],
+                transformation: { width: 400, height: 300 },
+                type: "jpg",
+              }),
+            ],
+          }),
           ...PARAGRAPH_CHILDREN.map(
             (p) =>
               new ParagraphOrig({
@@ -313,6 +381,15 @@ const buildFullFeaturedDocCompetitor = () =>
                 ],
               }),
           ),
+          new ParagraphOrig({
+            children: [
+              new ImageRunOrig({
+                data: SMALL_IMAGES[2],
+                transformation: { width: 400, height: 300 },
+                type: "jpg",
+              }),
+            ],
+          }),
           new TableOrig({
             rows: TABLE_ROWS.map(
               (row) =>
@@ -341,11 +418,9 @@ const buildFullFeaturedDocCompetitor = () =>
 
 // ── Benchmarks ──
 
-// Both libraries use DEFLATE compression for a fair comparison.
-// Our Packer uses fflate zipSync() for maximum throughput; docx uses JSZip.
 describe("DOCX: Create + toBuffer", () => {
   bench(
-    "ours DEFLATE sync — simple + toBufferSync",
+    "ours default sync — simple (2p + 1 img) + toBufferSync",
     () => {
       Packer.toBufferSync(buildSimpleDoc());
     },
@@ -353,15 +428,15 @@ describe("DOCX: Create + toBuffer", () => {
   );
 
   bench(
-    "ours STORE sync — simple + toBufferStore",
+    "ours all-store sync — simple (2p + 1 img) + toBufferStore",
     () => {
-      toBufferStore(buildSimpleDoc());
+      Packer.toBufferSync(buildSimpleDoc(), { compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
 
   bench(
-    "ours DEFLATE async — simple + toBuffer",
+    "ours default async — simple (2p + 1 img) + toBuffer",
     async () => {
       await Packer.toBuffer(buildSimpleDoc());
     },
@@ -369,15 +444,15 @@ describe("DOCX: Create + toBuffer", () => {
   );
 
   bench(
-    "ours STORE async — simple + toBufferStoreAsync",
+    "ours all-store async — simple (2p + 1 img) + toBufferStoreAsync",
     async () => {
-      await toBufferStoreAsync(buildSimpleDoc());
+      await Packer.toBuffer(buildSimpleDoc(), { compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
 
   bench(
-    "docx — simple + toBuffer",
+    "docx — simple (2p + 1 img) + toBuffer",
     async () => {
       await PackerOrig.toBuffer(buildSimpleDocCompetitor());
     },
@@ -385,7 +460,7 @@ describe("DOCX: Create + toBuffer", () => {
   );
 
   bench(
-    "ours DEFLATE sync — styled paragraphs (20) + toBufferSync",
+    "ours default sync — styled paragraphs (20) + 1 img + toBufferSync",
     () => {
       Packer.toBufferSync(buildStyledDoc());
     },
@@ -393,15 +468,15 @@ describe("DOCX: Create + toBuffer", () => {
   );
 
   bench(
-    "ours STORE sync — styled paragraphs (20) + toBufferStore",
+    "ours all-store sync — styled paragraphs (20) + 1 img + toBufferStore",
     () => {
-      toBufferStore(buildStyledDoc());
+      Packer.toBufferSync(buildStyledDoc(), { compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
 
   bench(
-    "ours DEFLATE async — styled paragraphs (20) + toBuffer",
+    "ours default async — styled paragraphs (20) + 1 img + toBuffer",
     async () => {
       await Packer.toBuffer(buildStyledDoc());
     },
@@ -409,15 +484,15 @@ describe("DOCX: Create + toBuffer", () => {
   );
 
   bench(
-    "ours STORE async — styled paragraphs (20) + toBufferStoreAsync",
+    "ours all-store async — styled paragraphs (20) + 1 img + toBufferStoreAsync",
     async () => {
-      await toBufferStoreAsync(buildStyledDoc());
+      await Packer.toBuffer(buildStyledDoc(), { compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
 
   bench(
-    "docx — styled paragraphs (20) + toBuffer",
+    "docx — styled paragraphs (20) + 1 img + toBuffer",
     async () => {
       await PackerOrig.toBuffer(buildStyledDocCompetitor());
     },
@@ -425,7 +500,7 @@ describe("DOCX: Create + toBuffer", () => {
   );
 
   bench(
-    "ours DEFLATE sync — table (10x5) + toBufferSync",
+    "ours default sync — table (10x5) + toBufferSync",
     () => {
       Packer.toBufferSync(buildTableDoc());
     },
@@ -433,15 +508,15 @@ describe("DOCX: Create + toBuffer", () => {
   );
 
   bench(
-    "ours STORE sync — table (10x5) + toBufferStore",
+    "ours all-store sync — table (10x5) + toBufferStore",
     () => {
-      toBufferStore(buildTableDoc());
+      Packer.toBufferSync(buildTableDoc(), { compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
 
   bench(
-    "ours DEFLATE async — table (10x5) + toBuffer",
+    "ours default async — table (10x5) + toBuffer",
     async () => {
       await Packer.toBuffer(buildTableDoc());
     },
@@ -449,9 +524,9 @@ describe("DOCX: Create + toBuffer", () => {
   );
 
   bench(
-    "ours STORE async — table (10x5) + toBufferStoreAsync",
+    "ours all-store async — table (10x5) + toBufferStoreAsync",
     async () => {
-      await toBufferStoreAsync(buildTableDoc());
+      await Packer.toBuffer(buildTableDoc(), { compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
@@ -465,7 +540,7 @@ describe("DOCX: Create + toBuffer", () => {
   );
 
   bench(
-    "ours DEFLATE sync — full featured + toBufferSync",
+    "ours default sync — full featured + 2 imgs + toBufferSync",
     () => {
       Packer.toBufferSync(buildFullFeaturedDoc());
     },
@@ -473,15 +548,15 @@ describe("DOCX: Create + toBuffer", () => {
   );
 
   bench(
-    "ours STORE sync — full featured + toBufferStore",
+    "ours all-store sync — full featured + 2 imgs + toBufferStore",
     () => {
-      toBufferStore(buildFullFeaturedDoc());
+      Packer.toBufferSync(buildFullFeaturedDoc(), { compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
 
   bench(
-    "ours DEFLATE async — full featured + toBuffer",
+    "ours default async — full featured + 2 imgs + toBuffer",
     async () => {
       await Packer.toBuffer(buildFullFeaturedDoc());
     },
@@ -489,15 +564,15 @@ describe("DOCX: Create + toBuffer", () => {
   );
 
   bench(
-    "ours STORE async — full featured + toBufferStoreAsync",
+    "ours all-store async — full featured + 2 imgs + toBufferStoreAsync",
     async () => {
-      await toBufferStoreAsync(buildFullFeaturedDoc());
+      await Packer.toBuffer(buildFullFeaturedDoc(), { compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
 
   bench(
-    "docx — full featured + toBuffer",
+    "docx — full featured + 2 imgs + toBuffer",
     async () => {
       await PackerOrig.toBuffer(buildFullFeaturedDocCompetitor());
     },
@@ -537,6 +612,21 @@ const buildLargeParagraphsDoc = () =>
                 }),
               ],
             }),
+        ).flatMap((para, pi) =>
+          pi > 0 && pi % 100 === 0
+            ? [
+                para,
+                new Paragraph({
+                  children: [
+                    new ImageRun({
+                      data: LARGE_IMAGES[(pi / 100 - 1) % LARGE_IMAGES.length],
+                      transformation: { width: 400, height: 300 },
+                      type: "jpg",
+                    }),
+                  ],
+                }),
+              ]
+            : [para],
         ),
       },
     ],
@@ -558,6 +648,21 @@ const buildLargeParagraphsDocCompetitor = () =>
                 }),
               ],
             }),
+        ).flatMap((para, pi) =>
+          pi > 0 && pi % 100 === 0
+            ? [
+                para,
+                new ParagraphOrig({
+                  children: [
+                    new ImageRunOrig({
+                      data: LARGE_IMAGES[(pi / 100 - 1) % LARGE_IMAGES.length],
+                      transformation: { width: 400, height: 300 },
+                      type: "jpg",
+                    }),
+                  ],
+                }),
+              ]
+            : [para],
         ),
       },
     ],
@@ -652,23 +757,43 @@ const buildLargeSectionsDoc = () =>
           ],
         }),
       },
-      children: Array.from({ length: 100 }, (_, pi) => {
-        return new Paragraph({
-          heading:
-            pi === 0 ? HeadingLevel.HEADING_1 : pi === 1 ? HeadingLevel.HEADING_2 : undefined,
+      children: [
+        ...Array.from({ length: 100 }, (_, pi) => {
+          return new Paragraph({
+            heading:
+              pi === 0 ? HeadingLevel.HEADING_1 : pi === 1 ? HeadingLevel.HEADING_2 : undefined,
+            children: [
+              new TextRun({
+                text:
+                  pi === 0
+                    ? `Chapter ${si + 1} Title`
+                    : pi === 1
+                      ? `Section ${si + 1}.${1} Subtitle`
+                      : `Chapter ${si + 1} paragraph ${pi} body content for realistic document simulation with enough text.`,
+                bold: pi <= 1,
+              }),
+            ],
+          });
+        }),
+        new Paragraph({
           children: [
-            new TextRun({
-              text:
-                pi === 0
-                  ? `Chapter ${si + 1} Title`
-                  : pi === 1
-                    ? `Section ${si + 1}.${1} Subtitle`
-                    : `Chapter ${si + 1} paragraph ${pi} body content for realistic document simulation with enough text.`,
-              bold: pi <= 1,
+            new ImageRun({
+              data: LARGE_IMAGES[(si * 2) % LARGE_IMAGES.length],
+              transformation: { width: 400, height: 300 },
+              type: "jpg",
             }),
           ],
-        });
-      }),
+        }),
+        new Paragraph({
+          children: [
+            new ImageRun({
+              data: LARGE_IMAGES[(si * 2 + 1) % LARGE_IMAGES.length],
+              transformation: { width: 400, height: 300 },
+              type: "jpg",
+            }),
+          ],
+        }),
+      ],
     })),
   });
 
@@ -699,33 +824,53 @@ const buildLargeSectionsDocCompetitor = () =>
           ],
         }),
       },
-      children: Array.from({ length: 100 }, (_, pi) => {
-        return new ParagraphOrig({
-          heading:
-            pi === 0
-              ? HeadingLevelOrig.HEADING_1
-              : pi === 1
-                ? HeadingLevelOrig.HEADING_2
-                : undefined,
+      children: [
+        ...Array.from({ length: 100 }, (_, pi) => {
+          return new ParagraphOrig({
+            heading:
+              pi === 0
+                ? HeadingLevelOrig.HEADING_1
+                : pi === 1
+                  ? HeadingLevelOrig.HEADING_2
+                  : undefined,
+            children: [
+              new TextRunOrig({
+                text:
+                  pi === 0
+                    ? `Chapter ${si + 1} Title`
+                    : pi === 1
+                      ? `Section ${si + 1}.${1} Subtitle`
+                      : `Chapter ${si + 1} paragraph ${pi} body content for realistic document simulation with enough text.`,
+                bold: pi <= 1,
+              }),
+            ],
+          });
+        }),
+        new ParagraphOrig({
           children: [
-            new TextRunOrig({
-              text:
-                pi === 0
-                  ? `Chapter ${si + 1} Title`
-                  : pi === 1
-                    ? `Section ${si + 1}.${1} Subtitle`
-                    : `Chapter ${si + 1} paragraph ${pi} body content for realistic document simulation with enough text.`,
-              bold: pi <= 1,
+            new ImageRunOrig({
+              data: LARGE_IMAGES[(si * 2) % LARGE_IMAGES.length],
+              transformation: { width: 400, height: 300 },
+              type: "jpg",
             }),
           ],
-        });
-      }),
+        }),
+        new ParagraphOrig({
+          children: [
+            new ImageRunOrig({
+              data: LARGE_IMAGES[(si * 2 + 1) % LARGE_IMAGES.length],
+              transformation: { width: 400, height: 300 },
+              type: "jpg",
+            }),
+          ],
+        }),
+      ],
     })),
   });
 
 describe("DOCX: Large Files — Create + toBuffer", () => {
   bench(
-    "ours DEFLATE sync — 2000 paragraphs + toBufferSync",
+    "ours default sync — 2000p + 20 img + toBufferSync",
     () => {
       Packer.toBufferSync(buildLargeParagraphsDoc());
     },
@@ -733,15 +878,15 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   );
 
   bench(
-    "ours STORE sync — 2000 paragraphs + toBufferStore",
+    "ours all-store sync — 2000p + 20 img + toBufferStore",
     () => {
-      toBufferStore(buildLargeParagraphsDoc());
+      Packer.toBufferSync(buildLargeParagraphsDoc(), { compression: { xml: 0 } });
     },
     { iterations: 10 },
   );
 
   bench(
-    "ours DEFLATE async — 2000 paragraphs + toBuffer",
+    "ours default async — 2000p + 20 img + toBuffer",
     async () => {
       await Packer.toBuffer(buildLargeParagraphsDoc());
     },
@@ -749,15 +894,15 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   );
 
   bench(
-    "ours STORE async — 2000 paragraphs + toBufferStoreAsync",
+    "ours all-store async — 2000p + 20 img + toBufferStoreAsync",
     async () => {
-      await toBufferStoreAsync(buildLargeParagraphsDoc());
+      await Packer.toBuffer(buildLargeParagraphsDoc(), { compression: { xml: 0 } });
     },
     { iterations: 10 },
   );
 
   bench(
-    "docx — 2000 paragraphs + toBuffer",
+    "docx — 2000p + 20 img + toBuffer",
     async () => {
       await PackerOrig.toBuffer(buildLargeParagraphsDocCompetitor());
     },
@@ -765,7 +910,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   );
 
   bench(
-    "ours DEFLATE sync — 200x10 table + toBufferSync",
+    "ours default sync — 200x10 table + toBufferSync",
     () => {
       Packer.toBufferSync(buildLargeTableDoc());
     },
@@ -773,15 +918,15 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   );
 
   bench(
-    "ours STORE sync — 200x10 table + toBufferStore",
+    "ours all-store sync — 200x10 table + toBufferStore",
     () => {
-      toBufferStore(buildLargeTableDoc());
+      Packer.toBufferSync(buildLargeTableDoc(), { compression: { xml: 0 } });
     },
     { iterations: 10 },
   );
 
   bench(
-    "ours DEFLATE async — 200x10 table + toBuffer",
+    "ours default async — 200x10 table + toBuffer",
     async () => {
       await Packer.toBuffer(buildLargeTableDoc());
     },
@@ -789,9 +934,9 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   );
 
   bench(
-    "ours STORE async — 200x10 table + toBufferStoreAsync",
+    "ours all-store async — 200x10 table + toBufferStoreAsync",
     async () => {
-      await toBufferStoreAsync(buildLargeTableDoc());
+      await Packer.toBuffer(buildLargeTableDoc(), { compression: { xml: 0 } });
     },
     { iterations: 10 },
   );
@@ -805,7 +950,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   );
 
   bench(
-    "ours DEFLATE sync — 20 sections × 100 paragraphs + toBufferSync",
+    "ours default sync — 20 sec × 100p + 40 img + toBufferSync",
     () => {
       Packer.toBufferSync(buildLargeSectionsDoc());
     },
@@ -813,15 +958,15 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   );
 
   bench(
-    "ours STORE sync — 20 sections × 100 paragraphs + toBufferStore",
+    "ours all-store sync — 20 sec × 100p + 40 img + toBufferStore",
     () => {
-      toBufferStore(buildLargeSectionsDoc());
+      Packer.toBufferSync(buildLargeSectionsDoc(), { compression: { xml: 0 } });
     },
     { iterations: 10 },
   );
 
   bench(
-    "ours DEFLATE async — 20 sections × 100 paragraphs + toBuffer",
+    "ours default async — 20 sec × 100p + 40 img + toBuffer",
     async () => {
       await Packer.toBuffer(buildLargeSectionsDoc());
     },
@@ -829,15 +974,15 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   );
 
   bench(
-    "ours STORE async — 20 sections × 100 paragraphs + toBufferStoreAsync",
+    "ours all-store async — 20 sec × 100p + 40 img + toBufferStoreAsync",
     async () => {
-      await toBufferStoreAsync(buildLargeSectionsDoc());
+      await Packer.toBuffer(buildLargeSectionsDoc(), { compression: { xml: 0 } });
     },
     { iterations: 10 },
   );
 
   bench(
-    "docx — 20 sections × 100 paragraphs + toBuffer",
+    "docx — 20 sec × 100p + 40 img + toBuffer",
     async () => {
       await PackerOrig.toBuffer(buildLargeSectionsDocCompetitor());
     },
@@ -847,24 +992,22 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
 
 // ── Large file ~100MB mixed benchmarks ──
 
-// Generate a unique 500KB fake image per seed — different seeds produce different
-// byte patterns, so images have unique hashes and won't be deduplicated by the packer.
-const makeImage = (seed: number): Uint8Array => {
-  const size = 500 * 1024;
-  const buf = new Uint8Array(size);
-  for (let i = 0; i < size; i++) buf[i] = (i * 7 + seed * 13 + 37) & 0xff;
-  return buf;
-};
-
-const MIXED_IMAGES = Array.from({ length: 200 }, (_, i) => makeImage(i));
+// Mixed-size image pool: 1MB×10 + 2MB×10 + 3MB×10 + 5MB×8 = 100MB, 38 unique images
+const MIXED_IMAGE_SIZES = [
+  ...Array(10).fill(1024), // 1MB × 10
+  ...Array(10).fill(2048), // 2MB × 10
+  ...Array(10).fill(3072), // 3MB × 10
+  ...Array(8).fill(5120), // 5MB × 8
+];
+const MIXED_IMAGES = MIXED_IMAGE_SIZES.map((sizeKB, i) => makeImage(i, sizeKB));
 
 const buildMixed100MbDoc = () =>
   new Document({
     sections: [
       {
         children: [
-          // 2000 paragraphs (bold/italic alternating)
-          ...LARGE_PARAGRAPHS.map(
+          // 500 styled paragraphs
+          ...LARGE_PARAGRAPHS.slice(0, 500).map(
             (p) =>
               new Paragraph({
                 children: [
@@ -877,7 +1020,7 @@ const buildMixed100MbDoc = () =>
                 ],
               }),
           ),
-          // 200 unique images (500KB each)
+          // 38 mixed-size images
           ...MIXED_IMAGES.map(
             (img) =>
               new Paragraph({
@@ -890,10 +1033,10 @@ const buildMixed100MbDoc = () =>
                 ],
               }),
           ),
-          // 100×10 table
+          // 50×10 table
           new Table({
             rows: Array.from(
-              { length: 100 },
+              { length: 50 },
               (_, rowIdx) =>
                 new TableRow({
                   cells: Array.from(
@@ -918,7 +1061,7 @@ const buildMixed100MbDoc = () =>
 
 describe("DOCX: Large File (~100MB) — Mixed + async vs sync", () => {
   bench(
-    "ours DEFLATE sync — mixed (2kp+200img+100x10) + toBufferSync",
+    "ours default sync — mixed (500p, 38img, 50x10) + toBufferSync",
     () => {
       Packer.toBufferSync(buildMixed100MbDoc());
     },
@@ -926,15 +1069,15 @@ describe("DOCX: Large File (~100MB) — Mixed + async vs sync", () => {
   );
 
   bench(
-    "ours STORE sync — mixed (2kp+200img+100x10) + toBufferStore",
+    "ours all-store sync — mixed (500p, 38img, 50x10) + toBufferStore",
     () => {
-      toBufferStore(buildMixed100MbDoc());
+      Packer.toBufferSync(buildMixed100MbDoc(), { compression: { xml: 0 } });
     },
     { iterations: 3 },
   );
 
   bench(
-    "ours DEFLATE async — mixed (2kp+200img+100x10) + toBuffer",
+    "ours default async — mixed (500p, 38img, 50x10) + toBuffer",
     async () => {
       await Packer.toBuffer(buildMixed100MbDoc());
     },
@@ -942,22 +1085,22 @@ describe("DOCX: Large File (~100MB) — Mixed + async vs sync", () => {
   );
 
   bench(
-    "ours STORE async — mixed (2kp+200img+100x10) + toBufferStoreAsync",
+    "ours all-store async — mixed (500p, 38img, 50x10) + toBufferStoreAsync",
     async () => {
-      await toBufferStoreAsync(buildMixed100MbDoc());
+      await Packer.toBuffer(buildMixed100MbDoc(), { compression: { xml: 0 } });
     },
     { iterations: 3 },
   );
 
   bench(
-    "docx — mixed (2kp+200img+100x10) + toBuffer",
+    "docx — mixed (500p, 38img, 50x10) + toBuffer",
     async () => {
       const doc = new DocumentOrig({
         sections: [
           {
             children: [
-              // 2000 paragraphs
-              ...LARGE_PARAGRAPHS.map(
+              // 500 styled paragraphs
+              ...LARGE_PARAGRAPHS.slice(0, 500).map(
                 (p) =>
                   new ParagraphOrig({
                     children: [
@@ -970,7 +1113,7 @@ describe("DOCX: Large File (~100MB) — Mixed + async vs sync", () => {
                     ],
                   }),
               ),
-              // 200 unique images (500KB each)
+              // 38 mixed-size images
               ...MIXED_IMAGES.map(
                 (img) =>
                   new ParagraphOrig({
@@ -983,10 +1126,10 @@ describe("DOCX: Large File (~100MB) — Mixed + async vs sync", () => {
                     ],
                   }),
               ),
-              // 100×10 table
+              // 50×10 table
               new TableOrig({
                 rows: Array.from(
-                  { length: 100 },
+                  { length: 50 },
                   (_, rowIdx) =>
                     new TableRowOrig({
                       children: Array.from(

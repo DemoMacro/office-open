@@ -4,10 +4,7 @@
  * @module
  */
 
-import type { XmlifyedFile, Zippable } from "./packer";
-
-/** Default STORE level for already-compressed media formats. */
-const ZIP_STORED_LEVEL = 0;
+import type { XmlifyedFile, ZipOptions, Zippable } from "./packer";
 
 /** Reusable TextEncoder instance (stateless, safe to share). */
 const encoder = new TextEncoder();
@@ -21,6 +18,7 @@ export function compileMapping(
   mapping: Record<string, { data: string; path: string }>,
   overrides?: readonly XmlifyedFile[],
   media?: readonly { data: Uint8Array; path: string }[],
+  mediaLevel: number = 0,
 ): Zippable {
   const files: Zippable = {};
   for (const entry of Object.values(mapping)) {
@@ -33,7 +31,7 @@ export function compileMapping(
   }
   if (media) {
     for (const m of media) {
-      files[m.path] = [m.data, { level: ZIP_STORED_LEVEL }];
+      files[m.path] = [m.data, { level: mediaLevel as ZipOptions["level"] }];
     }
   }
   return files;

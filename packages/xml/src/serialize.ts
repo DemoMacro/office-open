@@ -3,7 +3,7 @@ import { escapeXml } from "./escape";
 const DEFAULT_INDENT = "    ";
 
 export function xml(
-  input: Record<string, any> | Record<string, any>[],
+  input: Record<string, unknown> | Record<string, unknown>[],
   options?:
     | boolean
     | string
@@ -60,7 +60,7 @@ function normalizeOptions(options?: boolean | string | XmlInputOptions): {
  * Single-pass XML formatter: directly converts IXmlableObject to string,
  * eliminating the intermediate ResolvedElement tree.
  */
-function formatElement(name: string, values: any, indent: string, depth: number): string {
+function formatElement(name: string, values: unknown, indent: string, depth: number): string {
   const attrParts: string[] = [];
   const textParts: string[] = [];
   const elemParts: string[] = [];
@@ -73,18 +73,21 @@ function formatElement(name: string, values: any, indent: string, depth: number)
   }
 
   if (typeof values === "object") {
-    if (values._attr) {
-      for (const key of Object.keys(values._attr)) {
-        attrParts.push(`${key}="${escapeXml(String(values._attr[key]))}"`);
+    const obj = values as Record<string, unknown>;
+    if (obj._attr) {
+      const attr = obj._attr as Record<string, unknown>;
+      for (const key of Object.keys(attr)) {
+        attrParts.push(`${key}="${escapeXml(String(attr[key]))}"`);
       }
     }
-    if (values._attributes) {
-      for (const key of Object.keys(values._attributes)) {
-        attrParts.push(`${key}="${escapeXml(String(values._attributes[key]))}"`);
+    if (obj._attributes) {
+      const attr = obj._attributes as Record<string, unknown>;
+      for (const key of Object.keys(attr)) {
+        attrParts.push(`${key}="${escapeXml(String(attr[key]))}"`);
       }
     }
-    if (values._cdata) {
-      const escaped = String(values._cdata).replace(/\]\]>/g, "]]]]><![CDATA[>");
+    if (obj._cdata) {
+      const escaped = String(obj._cdata as string).replace(/\]\]>/g, "]]]]><![CDATA[>");
       textParts.push(`<![CDATA[${escaped}]]>`);
     }
     if (Array.isArray(values)) {
@@ -93,16 +96,25 @@ function formatElement(name: string, values: any, indent: string, depth: number)
       } else {
         for (const value of values) {
           if (value && typeof value === "object" && "_attr" in value) {
-            for (const key of Object.keys(value._attr)) {
-              attrParts.push(`${key}="${escapeXml(String(value._attr[key]))}"`);
+            const attr = (value as Record<string, unknown>)._attr as Record<string, unknown>;
+            for (const key of Object.keys(attr)) {
+              attrParts.push(`${key}="${escapeXml(String(attr[key]))}"`);
             }
           } else if (value && typeof value === "object" && "_attributes" in value) {
-            for (const key of Object.keys(value._attributes)) {
-              attrParts.push(`${key}="${escapeXml(String(value._attributes[key]))}"`);
+            const attr = (value as Record<string, unknown>)._attributes as Record<string, unknown>;
+            for (const key of Object.keys(attr)) {
+              attrParts.push(`${key}="${escapeXml(String(attr[key]))}"`);
             }
           } else if (value && typeof value === "object") {
             const childKeys = Object.keys(value);
-            elemParts.push(formatElement(childKeys[0], value[childKeys[0]], indent, depth + 1));
+            elemParts.push(
+              formatElement(
+                childKeys[0],
+                (value as Record<string, unknown>)[childKeys[0]],
+                indent,
+                depth + 1,
+              ),
+            );
           } else if (value != null) {
             textParts.push(escapeXml(String(value)));
           }
@@ -110,7 +122,7 @@ function formatElement(name: string, values: any, indent: string, depth: number)
       }
     }
   } else {
-    textParts.push(escapeXml(String(values)));
+    textParts.push(escapeXml(String(values as string | number | boolean)));
   }
 
   const ind = indent ? indent.repeat(depth) : "";

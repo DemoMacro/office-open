@@ -80,36 +80,42 @@ writeFileSync("output.pptx", buffer);
 
 Performance vs [PptxGenJS](https://github.com/gitbrent/PptxGenJS) (higher ops/s is better, Windows 11 / Node 24).
 
-DEFLATE = compressed (default), STORE = no compression. PptxGenJS always uses STORE.
+**Default** = XML DEFLATE level 1 (SuperFast, matching MS Office) + media STORE. **All STORE** = no compression (`{ compression: { xml: 0 } }`). **PptxGenJS** (async only) defaults to STORE (via JSZip), supports DEFLATE via `compression: true` (applies to ALL entries including images).
+
+```typescript
+// Default (matches MS Office)
+await Packer.toBuffer(pres);
+// All STORE (no compression)
+await Packer.toBuffer(pres, { compression: { xml: 0 } });
+```
 
 **Create + toBuffer (end-to-end)**
 
-| Scenario           | DEFLATE sync |  STORE sync | DEFLATE async | STORE async |   PptxGenJS |
-| ------------------ | -----------: | ----------: | ------------: | ----------: | ----------: |
-| Simple (2 shapes)  |    400 ops/s | 5,057 ops/s |     526 ops/s | 5,691 ops/s | 1,192 ops/s |
-| Styled shapes (20) |    548 ops/s | 3,497 ops/s |     703 ops/s | 3,319 ops/s |   989 ops/s |
-| Table (10×5)       |    692 ops/s | 4,199 ops/s |     696 ops/s | 4,075 ops/s |   840 ops/s |
-| Full featured      |    597 ops/s | 2,584 ops/s |     620 ops/s | 2,546 ops/s |   683 ops/s |
+| Scenario           | Default sync | Default async | All STORE sync | All STORE async | PptxGenJS |
+| ------------------ | -----------: | ------------: | -------------: | --------------: | --------: |
+| Simple (2 shapes)  |  1,154 ops/s |     561 ops/s |    2,788 ops/s |     2,236 ops/s | 176 ops/s |
+| Styled shapes (20) |    944 ops/s |     563 ops/s |    2,274 ops/s |     2,379 ops/s | 143 ops/s |
+| Table (10x5)       |  1,747 ops/s |     659 ops/s |    5,305 ops/s |     5,196 ops/s | 659 ops/s |
+| Full featured      |    762 ops/s |     482 ops/s |    1,605 ops/s |     1,451 ops/s |  75 ops/s |
 
 **Large Files — Create + toBuffer**
 
-| Scenario              | DEFLATE sync |  STORE sync | DEFLATE async | STORE async |   PptxGenJS |
-| --------------------- | -----------: | ----------: | ------------: | ----------: | ----------: |
-| 30 slides × 20 shapes |   70.0 ops/s | 172.6 ops/s |    91.5 ops/s | 214.5 ops/s | 101.2 ops/s |
-| 100×10 table          |  201.3 ops/s | 491.4 ops/s |    31.1 ops/s | 555.2 ops/s | 117.4 ops/s |
-| 50 slides full        |   76.1 ops/s | 220.5 ops/s |    71.2 ops/s | 203.9 ops/s |  79.8 ops/s |
+| Scenario              | Default sync | Default async | All STORE sync | All STORE async |  PptxGenJS |
+| --------------------- | -----------: | ------------: | -------------: | --------------: | ---------: |
+| 30 slides x 20 shapes |    133 ops/s |      85 ops/s |      211 ops/s |       242 ops/s |   91 ops/s |
+| 30 slides x 10 images |   10.1 ops/s |    9.88 ops/s |     10.2 ops/s |      10.1 ops/s | 0.35 ops/s |
+| 100x10 table          |    502 ops/s |     369 ops/s |      698 ops/s |       704 ops/s |  119 ops/s |
+| 50 slides full        |   25.1 ops/s |    20.3 ops/s |     26.9 ops/s |      26.1 ops/s | 1.02 ops/s |
 
 **Large File (~100MB) — Mixed Content**
 
-100 slides × (5 shapes + 2 unique images + 5×5 table). Speedup is vs PptxGenJS.
+40 slides x (2 shapes + 2 mixed-size images + 3x3 table). Speedup is vs PptxGenJS.
 
-| Method        |      Speed |  Speedup |
-| ------------- | ---------: | -------: |
-| DEFLATE sync  | 1.79 ops/s |     3.4x |
-| STORE sync    | 1.87 ops/s |     3.6x |
-| DEFLATE async | 3.87 ops/s |     7.4x |
-| STORE async   | 4.09 ops/s | **7.9x** |
-| PptxGenJS     | 0.52 ops/s |          |
+| Method    |      Speed | Speedup |
+| --------- | ---------: | ------: |
+| Default   |  8.0 ops/s |   26.7x |
+| All STORE |  8.2 ops/s |   27.4x |
+| PptxGenJS | 0.30 ops/s |         |
 
 ## Examples
 

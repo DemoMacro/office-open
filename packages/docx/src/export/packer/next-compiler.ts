@@ -14,8 +14,7 @@ import {
   replaceImagePlaceholders,
   replaceSmartArtPlaceholders,
 } from "@office-open/core";
-import type { Context, XmlifyedFile, Zippable } from "@office-open/core";
-import { ZIP_STORED_LEVEL } from "@office-open/core";
+import type { Context, XmlifyedFile, ZipOptions, Zippable } from "@office-open/core";
 import { xml } from "@office-open/xml";
 import { toUint8Array } from "undio";
 
@@ -142,7 +141,11 @@ export class Compiler {
    * @param overrides - Optional custom XML file overrides
    * @returns A Zippable object mapping file paths to their content
    */
-  public compile(file: File, overrides: readonly XmlifyedFile[] = []): Zippable {
+  public compile(
+    file: File,
+    overrides: readonly XmlifyedFile[] = [],
+    mediaLevel: number = 0,
+  ): Zippable {
     const files: Zippable = {};
 
     // Cache format() results to avoid duplicate formatting of Header/Footer views.
@@ -174,16 +177,16 @@ export class Compiler {
         typeof subFile.data === "string" ? encoder.encode(subFile.data) : subFile.data;
     }
 
-    // Media files: use STORE for already-compressed formats (JPEG, PNG, GIF, etc.)
+    // Media files
     for (const mediaData of file.media.array) {
       files[`word/media/${mediaData.fileName}`] = [
         toUint8Array(mediaData.data),
-        { level: ZIP_STORED_LEVEL },
+        { level: mediaLevel as ZipOptions["level"] },
       ];
       if (mediaData.type === "svg") {
         files[`word/media/${mediaData.fallback.fileName}`] = [
           toUint8Array(mediaData.fallback.data),
-          { level: ZIP_STORED_LEVEL },
+          { level: mediaLevel as ZipOptions["level"] },
         ];
       }
     }

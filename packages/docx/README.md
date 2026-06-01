@@ -78,36 +78,41 @@ Check the [demo folder](./demo) for 100+ working examples covering every feature
 
 Performance comparison against original `docx` (9.6.1) package (higher ops/s is better, Windows 11 / Node 24).
 
-DEFLATE = compressed (default), STORE = no compression. Both libraries use DEFLATE.
+**Default** = XML DEFLATE level 1 (SuperFast, matching MS Office) + media STORE. **All STORE** = no compression (`{ compression: { xml: 0 } }`). **docx** (async) always uses DEFLATE for ALL entries including images (via JSZip, hardcoded, no STORE option).
+
+```typescript
+// Default (matches MS Office)
+await Packer.toBuffer(doc);
+// All STORE (no compression)
+await Packer.toBuffer(doc, { compression: { xml: 0 } });
+```
 
 **Create + toBuffer (end-to-end)**
 
-| Scenario                                                | DEFLATE sync |  STORE sync | DEFLATE async | STORE async |      docx |
-| ------------------------------------------------------- | -----------: | ----------: | ------------: | ----------: | --------: |
-| Simple (2 paragraphs)                                   |    349 ops/s | 2,085 ops/s |     379 ops/s | 2,495 ops/s | 192 ops/s |
-| Styled paragraphs (20)                                  |    477 ops/s | 1,983 ops/s |     511 ops/s | 1,918 ops/s | 236 ops/s |
-| Table (10×5)                                            |    448 ops/s | 1,505 ops/s |     480 ops/s | 1,565 ops/s | 203 ops/s |
-| Full featured (header/footer/headings/table/paragraphs) |    326 ops/s |   992 ops/s |     380 ops/s | 1,100 ops/s | 163 ops/s |
+| Scenario                       | Default sync | Default async | All STORE sync | All STORE async |      docx |
+| ------------------------------ | -----------: | ------------: | -------------: | --------------: | --------: |
+| Simple (2p + 1 img)            |    174 ops/s |     155 ops/s |      202 ops/s |       203 ops/s |  82 ops/s |
+| Styled paragraphs (20) + 1 img |    179 ops/s |     146 ops/s |      198 ops/s |       198 ops/s |  86 ops/s |
+| Table (10x5)                   |    949 ops/s |     565 ops/s |    1,830 ops/s |     1,867 ops/s | 190 ops/s |
+| Full featured + 2 imgs         |     94 ops/s |      89 ops/s |      102 ops/s |       100 ops/s |  57 ops/s |
 
 **Large Files — Create + toBuffer**
 
-| Scenario                     | DEFLATE sync |  STORE sync | DEFLATE async | STORE async |       docx |
-| ---------------------------- | -----------: | ----------: | ------------: | ----------: | ---------: |
-| 2000 paragraphs              |   43.6 ops/s |  53.4 ops/s |    17.7 ops/s |  53.8 ops/s | 20.0 ops/s |
-| 200×10 table                 |   78.0 ops/s | 106.6 ops/s |    24.1 ops/s | 109.6 ops/s | 30.0 ops/s |
-| 20 sections × 100 paragraphs |   44.0 ops/s |  70.9 ops/s |    21.6 ops/s |  75.9 ops/s | 22.9 ops/s |
+| Scenario                       | Default sync | Default async | All STORE sync | All STORE async |       docx |
+| ------------------------------ | -----------: | ------------: | -------------: | --------------: | ---------: |
+| 2000 paragraphs + 20 images    |   4.68 ops/s |    3.13 ops/s |     3.50 ops/s |      3.08 ops/s | 2.07 ops/s |
+| 200x10 table                   |   64.9 ops/s |    62.6 ops/s |     69.7 ops/s |      72.6 ops/s | 19.5 ops/s |
+| 20 sections x 100p + 40 images |   1.58 ops/s |    1.69 ops/s |     1.79 ops/s |      1.65 ops/s | 1.16 ops/s |
 
 **Large File (~100MB) — Mixed Content**
 
-2000 paragraphs + 200 unique images (500KB each) + 100×10 table. Speedup is vs docx.
+500 styled paragraphs + 38 mixed-size images (1-5MB, 100MB total) + 50x10 table. Speedup is vs docx.
 
-| Method        |      Speed |  Speedup |
-| ------------- | ---------: | -------: |
-| DEFLATE sync  | 0.37 ops/s | **1.8x** |
-| STORE sync    | 0.37 ops/s | **1.7x** |
-| DEFLATE async | 0.41 ops/s | **2.0x** |
-| STORE async   | 0.42 ops/s | **2.0x** |
-| docx          | 0.21 ops/s |          |
+| Method    |      Speed |  Speedup |
+| --------- | ---------: | -------: |
+| All STORE | 0.42 ops/s | **1.4x** |
+| Default   | 0.31 ops/s |     1.1x |
+| docx      | 0.29 ops/s |          |
 
 ## License
 

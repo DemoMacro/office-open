@@ -17,6 +17,6 @@ const compiler = new Compiler();
  * ```
  */
 export const Packer = createPacker<File>({
-  compile: (file, overrides) => compiler.compile(file, overrides),
+  compile: (file, overrides, mediaLevel) => compiler.compile(file, overrides, mediaLevel),
   mimeType: OoxmlMimeType.DOCX,
 });

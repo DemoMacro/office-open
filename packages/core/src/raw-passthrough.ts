@@ -8,7 +8,7 @@ import { BaseXmlComponent } from "./xml-components";
  * Always wraps in a named key so the element name is preserved even for empty elements.
  */
 export function elementToCompact(el: Element): IXmlableObject {
-  const inner: Record<string, any> = {};
+  const inner: Record<string, unknown> = {};
 
   if (el.attributes && Object.keys(el.attributes).length > 0) {
     inner._attributes = el.attributes;
@@ -28,7 +28,7 @@ export function elementToCompact(el: Element): IXmlableObject {
         if (!Array.isArray(inner[key])) {
           inner[key] = [inner[key]];
         }
-        inner[key].push(compactChild);
+        (inner[key] as unknown[]).push(compactChild);
       } else {
         inner[key] = compactChild;
       }

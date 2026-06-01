@@ -6,7 +6,7 @@
 import { Formatter } from "@export/formatter";
 import { Drawing, type ImageOptions, type ChartAnchorOptions } from "@file/drawing/drawing";
 import type { File } from "@file/file";
-import type { Context } from "@file/xml-components";
+import type { BaseXmlComponent, Context } from "@file/xml-components";
 import {
   ChartSpace,
   Relationships,
@@ -18,13 +18,17 @@ import {
 export class Compiler {
   private readonly formatter = new Formatter();
 
-  public compile(file: File, overrides: readonly XmlifyedFile[] = []): Zippable {
+  public compile(
+    file: File,
+    overrides: readonly XmlifyedFile[] = [],
+    mediaLevel: number = 0,
+  ): Zippable {
     const context: Context = { fileData: file, stack: [] };
     const f = this.formatter;
 
     const mapping: Record<string, { data: string; path: string }> = {};
 
-    const fmt = (component: any) => f.formatToXml(component, context);
+    const fmt = (component: BaseXmlComponent) => f.formatToXml(component, context);
 
     // Core properties
     mapping["Properties"] = {
@@ -221,6 +225,6 @@ export class Compiler {
       mediaFiles.push({ data: img.data, path: `xl/media/${img.fileName}` });
     }
 
-    return compileMapping(mapping, overrides, mediaFiles);
+    return compileMapping(mapping, overrides, mediaFiles, mediaLevel);
   }
 }

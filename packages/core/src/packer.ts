@@ -17,6 +17,7 @@ import {
 
 import { convertOutput } from "./output-type";
 import type { OutputByType, OutputType } from "./output-type";
+import { hasNativeDeflate, nativeZip, nativeZipAsync } from "./zip-native";
 
 export type { Zippable, ZipOptions } from "fflate";
 export { strFromU8, unzipSync } from "fflate";
@@ -26,11 +27,27 @@ export interface XmlifyedFile {
   readonly data: string | Uint8Array;
 }
 
-/** Default DEFLATE compression level matching Microsoft Office behavior. */
-export const ZIP_DEFLATE_LEVEL = 6;
+/** Default DEFLATE level for XML entries (SuperFast, matching MS Office). */
+export const ZIP_DEFLATE_LEVEL = 1;
 
-/** STORE level for already-compressed media formats (JPEG, PNG, GIF, etc.). */
+/** Default level for media entries (STORE — no compression). */
 export const ZIP_STORED_LEVEL = 0;
+
+/** Compression options for ZIP output (zlib levels 0-9, matching fflate). */
+export interface CompressionOptions {
+  /** DEFLATE level for XML files. Default: 1 (SuperFast, matching MS Office). */
+  readonly xml?: number;
+  /** DEFLATE level for media files. Default: 0 (STORE, no compression). */
+  readonly media?: number;
+}
+
+/** Options for Packer output methods. */
+export interface PackerOptions {
+  /** Custom XML/ZIP file overrides. */
+  readonly overrides?: readonly XmlifyedFile[];
+  /** Compression levels for ZIP entries. */
+  readonly compression?: CompressionOptions;
+}
 
 /**
  * Asynchronously compress files and convert to the requested output format.
@@ -45,19 +62,18 @@ export const zipAndConvert = async <T extends OutputType>(
   mimeType: string,
   level: number = ZIP_DEFLATE_LEVEL,
 ): Promise<OutputByType[T]> => {
-  const zipped = await new Promise<Uint8Array>((resolve, reject) => {
-    zip(
-      files as AsyncZippable,
-      { level: level as ZipOptions["level"], consume: true },
-      (err, data) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(data);
-        }
-      },
-    );
-  });
+  const zipped = hasNativeDeflate()
+    ? await nativeZipAsync(files, level)
+    : await new Promise<Uint8Array>((resolve, reject) => {
+        zip(
+          files as AsyncZippable,
+          { level: level as ZipOptions["level"], consume: true },
+          (err, data) => {
+            if (err) reject(err);
+            else resolve(data);
+          },
+        );
+      });
   return convertOutput(zipped, type, mimeType);
 };
 
@@ -73,7 +89,9 @@ export const zipSyncAndConvert = <T extends OutputType>(
   mimeType: string,
   level: number = ZIP_DEFLATE_LEVEL,
 ): OutputByType[T] => {
-  const zipped = zipSync(files, { level: level as ZipOptions["level"] });
+  const zipped = hasNativeDeflate()
+    ? nativeZip(files, level)
+    : zipSync(files, { level: level as ZipOptions["level"] });
   return convertOutput(zipped, type, mimeType);
 };
 
@@ -84,7 +102,10 @@ export const zipSyncAndConvert = <T extends OutputType>(
  * `STORED` entries (media) pass through synchronously.
  * Works in both Node.js and browsers (Web Streams API).
  */
-export const createZipStream = (files: Zippable): ReadableStream<Uint8Array> => {
+export const createZipStream = (
+  files: Zippable,
+  defaultLevel: number = ZIP_DEFLATE_LEVEL,
+): ReadableStream<Uint8Array> => {
   return new ReadableStream<Uint8Array>({
     start(controller) {
       try {
@@ -102,12 +123,12 @@ export const createZipStream = (files: Zippable): ReadableStream<Uint8Array> => 
         for (const [name, data] of Object.entries(files)) {
           const raw = Array.isArray(data) ? (data[0] as Uint8Array) : (data as Uint8Array);
           const level = Array.isArray(data)
-            ? ((data[1] as ZipOptions).level ?? ZIP_DEFLATE_LEVEL)
-            : ZIP_DEFLATE_LEVEL;
+            ? ((data[1] as ZipOptions).level ?? defaultLevel)
+            : defaultLevel;
           const entry =
             level === ZIP_STORED_LEVEL
               ? new ZipPassThrough(name)
-              : new AsyncZipDeflate(name, { level });
+              : new AsyncZipDeflate(name, { level: level as ZipOptions["level"] });
           zip.add(entry);
           entry.push(raw, true);
         }
@@ -125,7 +146,11 @@ export const createZipStream = (files: Zippable): ReadableStream<Uint8Array> => 
 /**
  * Compile function provided by each package to convert a file object into a Zippable map.
  */
-export type CompileFn<TFile> = (file: TFile, overrides?: readonly XmlifyedFile[]) => Zippable;
+export type CompileFn<TFile> = (
+  file: TFile,
+  overrides?: readonly XmlifyedFile[],
+  mediaLevel?: number,
+) => Zippable;
 
 /**
  * Packer interface returned by {@link createPacker}.
@@ -142,47 +167,43 @@ export interface Packer<TFile> {
   pack<T extends OutputType>(
     file: TFile,
     type: T,
-    overrides?: readonly XmlifyedFile[],
+    options?: PackerOptions,
   ): Promise<OutputByType[T]>;
   /** Generic sync output — returns the requested OutputType. */
-  packSync<T extends OutputType>(
-    file: TFile,
-    type: T,
-    overrides?: readonly XmlifyedFile[],
-  ): OutputByType[T];
+  packSync<T extends OutputType>(file: TFile, type: T, options?: PackerOptions): OutputByType[T];
 
   /** Async → `Promise<Uint8Array>` (like `Response.bytes()`). */
-  toBytes(file: TFile, overrides?: readonly XmlifyedFile[]): Promise<Uint8Array>;
+  toBytes(file: TFile, options?: PackerOptions): Promise<Uint8Array>;
   /** Sync → `Uint8Array`. */
-  toBytesSync(file: TFile, overrides?: readonly XmlifyedFile[]): Uint8Array;
+  toBytesSync(file: TFile, options?: PackerOptions): Uint8Array;
 
   /** Async → `Promise<string>` (raw ZIP content as string). */
-  toString(file: TFile, overrides?: readonly XmlifyedFile[]): Promise<string>;
+  toString(file: TFile, options?: PackerOptions): Promise<string>;
   /** Sync → `string`. */
-  toStringSync(file: TFile, overrides?: readonly XmlifyedFile[]): string;
+  toStringSync(file: TFile, options?: PackerOptions): string;
 
   /** Async → `Promise<Buffer>` (Node.js). */
-  toBuffer(file: TFile, overrides?: readonly XmlifyedFile[]): Promise<Buffer>;
+  toBuffer(file: TFile, options?: PackerOptions): Promise<Buffer>;
   /** Sync → `Buffer` (Node.js). */
-  toBufferSync(file: TFile, overrides?: readonly XmlifyedFile[]): Buffer;
+  toBufferSync(file: TFile, options?: PackerOptions): Buffer;
 
   /** Async → `Promise<string>` (base64-encoded). */
-  toBase64String(file: TFile, overrides?: readonly XmlifyedFile[]): Promise<string>;
+  toBase64String(file: TFile, options?: PackerOptions): Promise<string>;
   /** Sync → `string` (base64-encoded). */
-  toBase64StringSync(file: TFile, overrides?: readonly XmlifyedFile[]): string;
+  toBase64StringSync(file: TFile, options?: PackerOptions): string;
 
   /** Async → `Promise<Blob>` (browser). */
-  toBlob(file: TFile, overrides?: readonly XmlifyedFile[]): Promise<Blob>;
+  toBlob(file: TFile, options?: PackerOptions): Promise<Blob>;
   /** Sync → `Blob`. */
-  toBlobSync(file: TFile, overrides?: readonly XmlifyedFile[]): Blob;
+  toBlobSync(file: TFile, options?: PackerOptions): Blob;
 
   /** Async → `Promise<ArrayBuffer>`. */
-  toArrayBuffer(file: TFile, overrides?: readonly XmlifyedFile[]): Promise<ArrayBuffer>;
+  toArrayBuffer(file: TFile, options?: PackerOptions): Promise<ArrayBuffer>;
   /** Sync → `ArrayBuffer`. */
-  toArrayBufferSync(file: TFile, overrides?: readonly XmlifyedFile[]): ArrayBuffer;
+  toArrayBufferSync(file: TFile, options?: PackerOptions): ArrayBuffer;
 
   /** Streaming output via `ReadableStream<Uint8Array>` (cross-platform, uses Web Workers). */
-  toStream(file: TFile, overrides?: readonly XmlifyedFile[]): ReadableStream<Uint8Array>;
+  toStream(file: TFile, options?: PackerOptions): ReadableStream<Uint8Array>;
 }
 
 /**
@@ -198,73 +219,56 @@ export const createPacker = <TFile>(options: {
 }): Packer<TFile> => {
   const { compile, mimeType } = options;
 
-  const compileFiles = (file: TFile, overrides: readonly XmlifyedFile[] = []): Zippable =>
-    compile(file, overrides);
-
-  // ── Async methods (fflate Web Workers) ──
-
   const pack = async <T extends OutputType>(
     file: TFile,
     type: T,
-    overrides?: readonly XmlifyedFile[],
+    opts?: PackerOptions,
   ): Promise<OutputByType[T]> => {
-    const files = compileFiles(file, overrides);
-    return zipAndConvert(files, type, mimeType);
+    const files = compile(
+      file,
+      opts?.overrides ?? [],
+      opts?.compression?.media ?? ZIP_STORED_LEVEL,
+    );
+    return zipAndConvert(files, type, mimeType, opts?.compression?.xml ?? ZIP_DEFLATE_LEVEL);
   };
 
-  const toBytes = (file: TFile, overrides?: readonly XmlifyedFile[]) =>
-    pack(file, "uint8array", overrides);
-
-  const toString = (file: TFile, overrides?: readonly XmlifyedFile[]) =>
-    pack(file, "string", overrides);
-
-  const toBuffer = (file: TFile, overrides?: readonly XmlifyedFile[]) =>
-    pack(file, "nodebuffer", overrides);
-
-  const toBase64String = (file: TFile, overrides?: readonly XmlifyedFile[]) =>
-    pack(file, "base64", overrides);
-
-  const toBlob = (file: TFile, overrides?: readonly XmlifyedFile[]) =>
-    pack(file, "blob", overrides);
-
-  const toArrayBuffer = (file: TFile, overrides?: readonly XmlifyedFile[]) =>
-    pack(file, "arraybuffer", overrides);
+  const toBytes = (file: TFile, opts?: PackerOptions) => pack(file, "uint8array", opts);
+  const toString = (file: TFile, opts?: PackerOptions) => pack(file, "string", opts);
+  const toBuffer = (file: TFile, opts?: PackerOptions) => pack(file, "nodebuffer", opts);
+  const toBase64String = (file: TFile, opts?: PackerOptions) => pack(file, "base64", opts);
+  const toBlob = (file: TFile, opts?: PackerOptions) => pack(file, "blob", opts);
+  const toArrayBuffer = (file: TFile, opts?: PackerOptions) => pack(file, "arraybuffer", opts);
 
   // ── Sync methods (zipSync, maximum throughput) ──
 
   const packSync = <T extends OutputType>(
     file: TFile,
     type: T,
-    overrides?: readonly XmlifyedFile[],
+    opts?: PackerOptions,
   ): OutputByType[T] => {
-    const files = compileFiles(file, overrides);
-    return zipSyncAndConvert(files, type, mimeType);
+    const files = compile(
+      file,
+      opts?.overrides ?? [],
+      opts?.compression?.media ?? ZIP_STORED_LEVEL,
+    );
+    return zipSyncAndConvert(files, type, mimeType, opts?.compression?.xml ?? ZIP_DEFLATE_LEVEL);
   };
 
-  const toBytesSync = (file: TFile, overrides?: readonly XmlifyedFile[]) =>
-    packSync(file, "uint8array", overrides);
-
-  const toStringSync = (file: TFile, overrides?: readonly XmlifyedFile[]) =>
-    packSync(file, "string", overrides);
-
-  const toBufferSync = (file: TFile, overrides?: readonly XmlifyedFile[]) =>
-    packSync(file, "nodebuffer", overrides);
-
-  const toBase64StringSync = (file: TFile, overrides?: readonly XmlifyedFile[]) =>
-    packSync(file, "base64", overrides);
-
-  const toBlobSync = (file: TFile, overrides?: readonly XmlifyedFile[]) =>
-    packSync(file, "blob", overrides);
-
-  const toArrayBufferSync = (file: TFile, overrides?: readonly XmlifyedFile[]) =>
-    packSync(file, "arraybuffer", overrides);
+  const toBytesSync = (file: TFile, opts?: PackerOptions) => packSync(file, "uint8array", opts);
+  const toStringSync = (file: TFile, opts?: PackerOptions) => packSync(file, "string", opts);
+  const toBufferSync = (file: TFile, opts?: PackerOptions) => packSync(file, "nodebuffer", opts);
+  const toBase64StringSync = (file: TFile, opts?: PackerOptions) => packSync(file, "base64", opts);
+  const toBlobSync = (file: TFile, opts?: PackerOptions) => packSync(file, "blob", opts);
+  const toArrayBufferSync = (file: TFile, opts?: PackerOptions) =>
+    packSync(file, "arraybuffer", opts);
 
   // ── Stream ──
 
-  const toStream = (file: TFile, overrides?: readonly XmlifyedFile[]) => {
+  const toStream = (file: TFile, opts?: PackerOptions) => {
+    const mediaLevel = opts?.compression?.media ?? ZIP_STORED_LEVEL;
     let files: Zippable;
     try {
-      files = compileFiles(file, overrides);
+      files = compile(file, opts?.overrides ?? [], mediaLevel);
     } catch (err) {
       return new ReadableStream<Uint8Array>({
         start(controller) {
@@ -272,7 +276,7 @@ export const createPacker = <TFile>(options: {
         },
       });
     }
-    return createZipStream(files);
+    return createZipStream(files, opts?.compression?.xml ?? ZIP_DEFLATE_LEVEL);
   };
 
   return {

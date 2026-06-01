@@ -1,3 +1,4 @@
+import type { Context } from "@file/xml-components";
 import { ImportedXmlComponent } from "@file/xml-components";
 
 export interface ColorSchemeOptions {
@@ -134,7 +135,7 @@ export class DefaultTheme extends ImportedXmlComponent {
     }
   }
 
-  public override toXml(context: any): string {
+  public override toXml(context: Context): string {
     return DefaultTheme.cache.get(this.cacheKey)!.toXml(context);
   }
 }

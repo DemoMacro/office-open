@@ -4,7 +4,7 @@
  * @module
  */
 import { xml2js } from "@office-open/xml";
-import type { Element as XmlElement } from "@office-open/xml";
+import type { Attributes, Element as XmlElement } from "@office-open/xml";
 
 import { XmlComponent } from ".";
 import type { Context, IXmlableObject } from "./base";
@@ -59,7 +59,7 @@ export class ImportedXmlComponent extends XmlComponent {
     return this._sourceXml ?? super.toXml(_context);
   }
 
-  public constructor(rootKey: string, _attr?: any) {
+  public constructor(rootKey: string, _attr?: Attributes) {
     super(rootKey);
     if (_attr) {
       this.root.push({ _attr });
@@ -76,7 +76,7 @@ export class ImportedXmlComponent extends XmlComponent {
  * The { _attr } in root is consumed by the parent's toXml() serialization.
  */
 export class ImportedRootElementAttributes extends XmlComponent {
-  public constructor(private readonly _attr: any) {
+  public constructor(private readonly _attr?: Attributes) {
     super("");
     if (_attr) {
       this.root.push({ _attr });

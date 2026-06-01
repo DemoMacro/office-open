@@ -1,3 +1,4 @@
+import { XmlComponent } from "@file/xml-components";
 /**
  * Bidirectional text override elements for WordprocessingML documents.
  *
@@ -8,7 +9,7 @@
  *
  * @module
  */
-import { XmlComponent } from "@file/xml-components";
+import type { BaseXmlComponent } from "@file/xml-components/base";
 
 import type { ParagraphChild } from "../paragraph";
 
@@ -40,7 +41,7 @@ export class Dir extends XmlComponent {
     super("w:dir");
     this.root.push({ _attr: { "w:val": options.val } });
     for (const child of options.children) {
-      this.root.push(child);
+      this.root.push(child as BaseXmlComponent);
     }
   }
 }
@@ -63,7 +64,7 @@ export class Bdo extends XmlComponent {
     super("w:bdo");
     this.root.push({ _attr: { "w:val": options.val } });
     for (const child of options.children) {
-      this.root.push(child);
+      this.root.push(child as BaseXmlComponent);
     }
   }
 }
