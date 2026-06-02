@@ -1,6 +1,6 @@
 {
   "name": "office-open",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Generate Office files (.docx, .pptx, .xlsx) from JSON — CLI, AI SDK tools, and unified re-exports",
   "keywords": [
     "ai",

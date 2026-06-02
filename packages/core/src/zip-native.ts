@@ -38,9 +38,12 @@ let _nativeCrc32: Crc32Fn | undefined;
 
 try {
   // top-level await — ESM standard.
-  // In Node.js: resolves to zlib module.
-  // In browsers: import("node:zlib") throws → caught → fflate fallback.
+  // In Node.js: resolves to zlib module with deflateRawSync.
+  // In browsers: import("node:zlib") may throw, or resolve to a stub
+  // without deflateRawSync (e.g. incomplete polyfills) — either way we
+  // fall back to fflate.
   const zlib = await import("node:zlib");
+  if (typeof zlib.deflateRawSync !== "function") throw new Error("no native deflate");
   _nativeDeflate = (data: Uint8Array, level: number): Uint8Array =>
     zlib.deflateRawSync(data, { level });
   _nativeDeflateAsync = (data: Uint8Array, level: number): Promise<Uint8Array> =>
@@ -50,7 +53,8 @@ try {
         else resolve(result);
       }),
     );
-  _nativeCrc32 = zlib.crc32 ? (data: Uint8Array) => zlib.crc32(data) : computeCrc32;
+  _nativeCrc32 =
+    typeof zlib.crc32 === "function" ? (data: Uint8Array) => zlib.crc32(data) : computeCrc32;
 } catch {
   // Browser or Node.js without zlib — fflate fallback
 }
