@@ -15,8 +15,8 @@ import {
   replaceSmartArtPlaceholders,
 } from "@office-open/core";
 import type { Context, XmlifyedFile, ZipOptions, Zippable } from "@office-open/core";
+import { toUint8Array } from "@office-open/core";
 import { xml } from "@office-open/xml";
-import { toUint8Array } from "undio";
 
 import { Formatter } from "../formatter";
 import { replaceNumberingPlaceholders } from "./numbering-placeholders";

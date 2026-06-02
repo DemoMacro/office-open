@@ -21,6 +21,8 @@ import { hasNativeDeflate, nativeZip, nativeZipAsync } from "./zip-native";
 
 export type { Zippable, ZipOptions } from "fflate";
 export { strFromU8, unzipSync } from "fflate";
+export { toUint8Array } from "undio";
+export type { DataType } from "undio";
 
 export interface XmlifyedFile {
   readonly path: string;

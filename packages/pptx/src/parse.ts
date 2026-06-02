@@ -1,9 +1,9 @@
 import type { ParsedArchive } from "@office-open/core";
 import { parseArchive, parseCorePropsElement, convertEmuToPixels } from "@office-open/core";
+import type { DataType } from "@office-open/core";
+import { toUint8Array } from "@office-open/core";
 import type { Element } from "@office-open/xml";
 import { attr, attrNum, findChild, textOf } from "@office-open/xml";
-import type { DataType } from "undio";
-import { toUint8Array } from "undio";
 
 import type { SlideChild } from "./file/slide/slide-child";
 import { ParseContext } from "./parse/context";

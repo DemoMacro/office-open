@@ -1,3 +1,4 @@
+import nodePolyfills from "@rolldown/plugin-node-polyfills";
 import { defineConfig } from "vite-plus";
 
 export default defineConfig({
@@ -10,6 +11,7 @@ export default defineConfig({
       "src/drawingml/index.ts",
       "src/patch/index.ts",
     ],
+    plugins: [nodePolyfills()],
     shims: true,
   },
   test: {

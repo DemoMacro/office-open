@@ -62,6 +62,7 @@
     "@office-open/xml": "workspace:*",
     "fflate": "0.8.3",
     "hash.js": "1.1.7",
-    "nanoid": "5.1.11"
+    "nanoid": "5.1.11",
+    "undio": "0.2.0"
   }
 }

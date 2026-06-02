@@ -44,7 +44,6 @@
   },
   "dependencies": {
     "@office-open/core": "workspace:*",
-    "@office-open/xml": "workspace:*",
-    "undio": "0.2.0"
+    "@office-open/xml": "workspace:*"
   }
 }

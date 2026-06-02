@@ -15,10 +15,10 @@
 import { BuilderElement } from "@file/xml-components";
 import { XmlComponent } from "@file/xml-components";
 import type { Context } from "@file/xml-components";
+import type { DataType } from "@office-open/core";
+import { toUint8Array } from "@office-open/core";
 import { hashedId } from "@util/convenience-functions";
 import { hexColorValue, uCharHexNumber } from "@util/values";
-import type { DataType } from "undio";
-import { toUint8Array } from "undio";
 
 /**
  * Image options for document background.

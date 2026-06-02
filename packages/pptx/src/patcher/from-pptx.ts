@@ -11,9 +11,9 @@ import {
   zipAndConvert,
 } from "@office-open/core";
 import type { OutputByType, OutputType } from "@office-open/core";
+import { toUint8Array } from "@office-open/core";
 import { js2xml, xml2js } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
-import { toUint8Array } from "undio";
 
 /** Reusable TextEncoder (stateless, safe to share). */
 const encoder = new TextEncoder();

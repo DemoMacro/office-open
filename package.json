@@ -45,17 +45,17 @@
     "@funish/basis": "0.3.0",
     "@rolldown/plugin-node-polyfills": "1.0.3",
     "@types/node": "25.9.1",
-    "@vitest/coverage-v8": "4.1.7",
+    "@vitest/coverage-v8": "4.1.8",
     "docx": "9.7.1",
     "execa": "9.6.1",
     "happy-dom": "20.9.0",
     "hucre": "0.6.0",
-    "inquirer": "14.0.1",
+    "inquirer": "14.0.2",
     "libxml2-wasm": "0.7.1",
     "pptxgenjs": "4.0.1",
-    "tsx": "4.22.3",
+    "tsx": "4.22.4",
     "typedoc": "0.28.19",
-    "vite-plus": "0.1.23"
+    "vite-plus": "0.1.24"
   },
   "packageManager": "pnpm@10.33.0"
 }

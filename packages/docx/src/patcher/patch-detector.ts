@@ -4,7 +4,7 @@
  * @module
  */
 import { DOCX_NS, createTraverser, strFromU8, toJson, unzipSync } from "@office-open/core";
-import { toUint8Array } from "undio";
+import { toUint8Array } from "@office-open/core";
 
 import type { InputDataType } from "./from-docx";
 

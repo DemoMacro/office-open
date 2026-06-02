@@ -9,10 +9,10 @@
  */
 import type { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
 import type { Context, IXmlableObject } from "@file/xml-components";
+import type { DataType } from "@office-open/core";
+import { toUint8Array } from "@office-open/core";
 import type { FillOptions } from "@office-open/core/drawingml";
 import { hashedId } from "@util/convenience-functions";
-import type { DataType } from "undio";
-import { toUint8Array } from "undio";
 
 import { Drawing } from "../../drawing";
 import type { Floating } from "../../drawing";

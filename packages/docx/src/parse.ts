@@ -1,10 +1,10 @@
 import type { PropertiesOptions } from "@file/core-properties";
 import type { ParsedArchive } from "@office-open/core";
 import { parseArchive, parseCorePropsElement } from "@office-open/core";
+import type { DataType } from "@office-open/core";
+import { toUint8Array } from "@office-open/core";
 import { attr, attrNum } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
-import type { DataType } from "undio";
-import { toUint8Array } from "undio";
 
 import { parseParagraph } from "./file/paragraph/paragraph-parse";
 import { parseBody } from "./parse/body";

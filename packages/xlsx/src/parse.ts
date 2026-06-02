@@ -5,10 +5,10 @@
  */
 import { parseArchive, parseCorePropsElement } from "@office-open/core";
 import type { ParsedArchive } from "@office-open/core";
+import { toUint8Array } from "@office-open/core";
+import type { DataType } from "@office-open/core";
 import type { Element } from "@office-open/xml";
 import { attr, attrNum, findChild, textOf } from "@office-open/xml";
-import { toUint8Array } from "undio";
-import type { DataType } from "undio";
 
 import type { WorkbookOptions } from "./file/file";
 import type {
