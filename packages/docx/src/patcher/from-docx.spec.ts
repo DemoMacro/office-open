@@ -643,7 +643,7 @@ describe("from-docx", () => {
             name: { children: [new TextRun("World")], type: PatchType.PARAGRAPH },
           },
         });
-        expect(Buffer.isBuffer(output)).toBe(true);
+        expect(output instanceof Uint8Array).toBe(true);
       });
 
       it("should export to blob", async () => {
