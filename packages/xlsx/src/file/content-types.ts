@@ -123,9 +123,34 @@ export class ContentTypes extends BaseXmlComponent {
 
   public addImageType(extension: "png" | "jpeg"): void {
     const contentType = extension === "png" ? "image/png" : "image/jpeg";
-    // Avoid duplicates
     if (this.dynamicEntries.some((e) => e.type === "Default" && e.key === extension)) return;
     this.dynamicEntries.push({ type: "Default", contentType, key: extension });
+  }
+
+  public addPivotTable(index: number): void {
+    this.dynamicEntries.push({
+      type: "Override",
+      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.pivotTable+xml",
+      key: `/xl/pivotTables/pivotTable${index}.xml`,
+    });
+  }
+
+  public addPivotCacheDefinition(index: number): void {
+    this.dynamicEntries.push({
+      type: "Override",
+      contentType:
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.pivotCacheDefinition+xml",
+      key: `/xl/pivotCache/pivotCacheDefinition${index}.xml`,
+    });
+  }
+
+  public addPivotCacheRecords(index: number): void {
+    this.dynamicEntries.push({
+      type: "Override",
+      contentType:
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.pivotCacheRecords+xml",
+      key: `/xl/pivotCache/pivotCacheRecords${index}.xml`,
+    });
   }
 
   public override toXml(_context: Context): string {

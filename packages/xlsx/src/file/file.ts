@@ -5,7 +5,7 @@ import { SharedStrings } from "@file/shared-strings";
 import { Styles } from "@file/styles";
 import type { DxfOptions } from "@file/styles";
 import { DefaultTheme } from "@file/theme";
-import { WorkbookXml, type SheetDefinition } from "@file/workbook";
+import { WorkbookXml, type SheetDefinition, type PivotCacheReference } from "@file/workbook";
 import { Worksheet, type WorksheetOptions } from "@file/worksheet";
 /**
  * File class (exported as Workbook) — the top-level container for XLSX documents.
@@ -38,6 +38,7 @@ export class File {
   private _fileRels?: Relationships;
   private _workbookRels?: Relationships;
   private _charts?: ChartCollection;
+  private _pivotCacheRefs: PivotCacheReference[] = [];
 
   public constructor(options: WorkbookOptions) {
     this.worksheetOptions = options.worksheets ?? [];
@@ -91,7 +92,7 @@ export class File {
         sheetId: i + 1,
         rId: `rId${i + 1}`,
       }));
-      this._workbookXml = new WorkbookXml(sheets);
+      this._workbookXml = new WorkbookXml(sheets, this._pivotCacheRefs);
     }
     return this._workbookXml;
   }
@@ -110,6 +111,18 @@ export class File {
 
   public get dxfEntries(): readonly DxfOptions[] {
     return this.dxfOptions;
+  }
+
+  public get pivotCacheRefs(): readonly PivotCacheReference[] {
+    return this._pivotCacheRefs;
+  }
+
+  public registerPivotCache(cacheId: number, rId: string): void {
+    this._pivotCacheRefs.push({ cacheId, rId });
+  }
+
+  public get worksheetConfigs(): readonly WorksheetOptions[] {
+    return this.worksheetOptions;
   }
 
   public get worksheets(): readonly Worksheet[] {

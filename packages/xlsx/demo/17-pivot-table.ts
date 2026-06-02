@@ -1,0 +1,59 @@
+import { writeFileSync } from "node:fs";
+
+import { Workbook, Packer } from "@office-open/xlsx";
+
+const funcs = [
+  "sum",
+  "average",
+  "count",
+  "countNums",
+  "max",
+  "min",
+  "product",
+  "stdDev",
+  "stdDevp",
+  "var",
+  "varp",
+] as const;
+
+const pivotTables = funcs.map((f, i) => {
+  const col = (i % 3) * 3;
+  const row = Math.floor(i / 3) * 8 + 3;
+  const colLetter = String.fromCharCode(65 + col);
+  const label = f.charAt(0).toUpperCase() + f.slice(1);
+  return {
+    name: `PivotTable_${label}`,
+    source: "A1:C9",
+    sourceSheet: "Data",
+    location: `${colLetter}${row}`,
+    rows: ["City"],
+    data: [{ field: "Revenue", summarize: f, name: `${label} of Revenue` }],
+  };
+});
+
+const wb = new Workbook({
+  worksheets: [
+    {
+      name: "Data",
+      rows: [
+        { cells: [{ value: "City" }, { value: "Category" }, { value: "Revenue" }] },
+        { cells: [{ value: "Beijing" }, { value: "Food" }, { value: 320 }] },
+        { cells: [{ value: "Beijing" }, { value: "Tech" }, { value: 580 }] },
+        { cells: [{ value: "Shanghai" }, { value: "Food" }, { value: 410 }] },
+        { cells: [{ value: "Shanghai" }, { value: "Tech" }, { value: 720 }] },
+        { cells: [{ value: "Guangzhou" }, { value: "Food" }, { value: 260 }] },
+        { cells: [{ value: "Guangzhou" }, { value: "Tech" }, { value: 390 }] },
+        { cells: [{ value: "Shenzhen" }, { value: "Food" }, { value: 195 }] },
+        { cells: [{ value: "Shenzhen" }, { value: "Tech" }, { value: 850 }] },
+      ],
+    },
+    {
+      name: "Pivot",
+      rows: [],
+      pivotTables,
+    },
+  ],
+});
+
+const buffer = await Packer.toBuffer(wb);
+writeFileSync("My Workbook.xlsx", buffer);

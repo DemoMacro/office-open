@@ -14,12 +14,22 @@ export interface SheetDefinition {
   readonly state?: "visible" | "hidden" | "veryHidden";
 }
 
+export interface PivotCacheReference {
+  readonly cacheId: number;
+  readonly rId: string;
+}
+
 export class WorkbookXml extends BaseXmlComponent {
   private readonly sheets: readonly SheetDefinition[];
+  private readonly pivotCaches: readonly PivotCacheReference[];
 
-  public constructor(sheets: readonly SheetDefinition[]) {
+  public constructor(
+    sheets: readonly SheetDefinition[],
+    pivotCaches?: readonly PivotCacheReference[],
+  ) {
     super("workbook");
     this.sheets = sheets;
+    this.pivotCaches = pivotCaches ?? [];
   }
 
   public override toXml(_context: Context): string {
@@ -47,6 +57,14 @@ export class WorkbookXml extends BaseXmlComponent {
     p.push("</sheets>");
 
     p.push('<calcPr calcId="162913"/>');
+
+    if (this.pivotCaches.length > 0) {
+      p.push("<pivotCaches>");
+      for (const pc of this.pivotCaches) {
+        p.push(`<pivotCache cacheId="${pc.cacheId}" r:id="${pc.rId}"/>`);
+      }
+      p.push("</pivotCaches>");
+    }
 
     p.push("</workbook>");
     return p.join("");

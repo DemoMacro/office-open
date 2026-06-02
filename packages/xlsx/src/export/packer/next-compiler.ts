@@ -7,6 +7,13 @@ import { Formatter } from "@export/formatter";
 import { Comments } from "@file/comments";
 import { Drawing, type ImageOptions, type ChartAnchorOptions } from "@file/drawing/drawing";
 import type { File } from "@file/file";
+import {
+  PivotCacheDefinitionXml,
+  PivotCacheRecordsXml,
+  PivotTableXml,
+  aggregate,
+} from "@file/pivot";
+import type { PivotSourceData, PivotTableOptions } from "@file/pivot";
 import { VmlNotes } from "@file/vml-notes";
 import type { BaseXmlComponent, Context } from "@file/xml-components";
 import {
@@ -54,12 +61,16 @@ export class Compiler {
     const worksheets = file.worksheets;
     let globalMediaIdx = 0;
     let globalChartIdx = 0;
+    let globalPivotIdx = 0;
+    let globalPivotCacheIdx = 0;
+    const pivotCacheDataMap = new Map<string, { cacheId: number; cacheIdx: number }>();
 
     for (let i = 0; i < worksheets.length; i++) {
       const ws = worksheets[i];
       const imgOpts = ws.imageOptions;
       const chartOpts = ws.charts;
       const hlOpts = ws.hyperlinkOptions;
+      const sheetName = file.worksheetConfigs[i]?.name ?? `Sheet${i + 1}`;
 
       // Worksheet uses toXml() fast path (zero-allocation string concat)
       let sheetXml = fmt(ws);
@@ -68,12 +79,14 @@ export class Compiler {
       const hasExternalHyperlinks = hlOpts.some((h) => h.target.type === "external");
       const commentOpts = ws.commentOptions;
       const hasComments = commentOpts.length > 0;
+      const pivotOpts = ws.pivotTables;
+      const hasPivots = pivotOpts.length > 0;
 
       // Worksheet-level relationships
       let wsRels: Relationships | undefined;
       let nextRid = 0;
 
-      if (hasMedia || hasExternalHyperlinks || hasComments) {
+      if (hasMedia || hasExternalHyperlinks || hasComments || hasPivots) {
         wsRels = new Relationships();
       }
 
@@ -221,6 +234,135 @@ export class Compiler {
         file.contentTypes.addVmlDrawing();
       }
 
+      // Pivot tables
+      if (hasPivots) {
+        for (const pt of pivotOpts) {
+          globalPivotIdx++;
+          const pivotIdx = globalPivotIdx;
+
+          // Extract source data from source sheet
+          const sourceSheet = pt.sourceSheet ?? sheetName;
+          const sourceWsIdx = file.worksheetConfigs.findIndex(
+            (ws) => (ws.name ?? `Sheet${file.worksheetConfigs.indexOf(ws) + 1}`) === sourceSheet,
+          );
+          if (sourceWsIdx === -1) continue;
+
+          const sourceWs = worksheets[sourceWsIdx];
+          const sourceData = extractPivotSourceData(sourceWs.worksheetRows, pt.source);
+
+          // Deduplicate pivot caches by source reference
+          const cacheKey = `${sourceSheet}:${pt.source}`;
+          let cacheId: number;
+          let cacheIdx: number;
+          const existing = pivotCacheDataMap.get(cacheKey);
+          if (existing) {
+            cacheId = existing.cacheId;
+            cacheIdx = existing.cacheIdx;
+          } else {
+            globalPivotCacheIdx++;
+            cacheIdx = globalPivotCacheIdx;
+            cacheId = cacheIdx - 1;
+            pivotCacheDataMap.set(cacheKey, { cacheId, cacheIdx });
+
+            // Generate pivotCacheDefinition
+            const cacheDefRels = new Relationships();
+            cacheDefRels.addRelationship(
+              1,
+              "http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotCacheRecords",
+              "pivotCacheRecords1.xml",
+            );
+
+            const cacheDef = new PivotCacheDefinitionXml(
+              cacheIdx,
+              pt.source.split(":")[0] ? pt.source : "A1",
+              sourceSheet,
+              sourceData,
+              "rId1",
+            );
+
+            mapping[`PivotCacheDef${cacheIdx}`] = {
+              data: fmt(cacheDef),
+              path: `xl/pivotCache/pivotCacheDefinition${cacheIdx}.xml`,
+            };
+            mapping[`PivotCacheDefRels${cacheIdx}`] = {
+              data: fmt(cacheDefRels),
+              path: `xl/pivotCache/_rels/pivotCacheDefinition${cacheIdx}.xml.rels`,
+            };
+
+            // Generate pivotCacheRecords
+            const cacheRecords = new PivotCacheRecordsXml(sourceData);
+            mapping[`PivotCacheRecords${cacheIdx}`] = {
+              data: fmt(cacheRecords),
+              path: `xl/pivotCache/pivotCacheRecords${cacheIdx}.xml`,
+            };
+
+            // Content types
+            file.contentTypes.addPivotCacheDefinition(cacheIdx);
+            file.contentTypes.addPivotCacheRecords(cacheIdx);
+
+            // Register in workbook
+            const wbPivotRid = file.workbookRelationships.relationshipCount + 1;
+            file.workbookRelationships.addRelationship(
+              wbPivotRid,
+              "http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotCacheDefinition",
+              `pivotCache/pivotCacheDefinition${cacheIdx}.xml`,
+            );
+            file.registerPivotCache(cacheId, `rId${wbPivotRid}`);
+          }
+
+          // Generate pivotTable
+          const pivotTable = new PivotTableXml(pt, sourceData, cacheId);
+          mapping[`PivotTable${pivotIdx}`] = {
+            data: fmt(pivotTable),
+            path: `xl/pivotTables/pivotTable${pivotIdx}.xml`,
+          };
+
+          // pivotTable rels → cacheDefinition
+          const ptRels = new Relationships();
+          ptRels.addRelationship(
+            1,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotCacheDefinition",
+            `../pivotCache/pivotCacheDefinition${cacheIdx}.xml`,
+          );
+          mapping[`PivotTableRels${pivotIdx}`] = {
+            data: fmt(ptRels),
+            path: `xl/pivotTables/_rels/pivotTable${pivotIdx}.xml.rels`,
+          };
+
+          // Worksheet rels → pivotTable
+          const ptRid = ++nextRid;
+          wsRels!.addRelationship(
+            ptRid,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotTable",
+            `../pivotTables/pivotTable${pivotIdx}.xml`,
+          );
+
+          file.contentTypes.addPivotTable(pivotIdx);
+        }
+      }
+
+      // Pre-render pivot table data into sheetData
+      if (hasPivots) {
+        const rendered = renderPivotSheetData(
+          pivotOpts,
+          worksheets,
+          file.sharedStrings,
+          file.worksheetConfigs,
+          sheetName,
+        );
+        if (rendered.sheetData.length > 0) {
+          // Replace empty <sheetData/> or <sheetData></sheetData> with rendered data
+          sheetXml = sheetXml.replace(/<sheetData\/>|<sheetData><\/sheetData>/, rendered.sheetData);
+          // Inject <dimension> before <sheetViews> (XSD sequence order: dimension before sheetViews)
+          if (!sheetXml.includes("<dimension")) {
+            sheetXml = sheetXml.replace(
+              "<sheetViews",
+              `<dimension ref="${rendered.dimensionRef}"/><sheetViews`,
+            );
+          }
+        }
+      }
+
       // Write worksheet rels if needed
       if (wsRels) {
         mapping[`WorksheetRels${i}`] = {
@@ -307,4 +449,231 @@ export class Compiler {
 
     return compileMapping(mapping, overrides, mediaFiles, mediaLevel);
   }
+}
+
+/**
+ * Extract source data from worksheet rows for pivot cache generation.
+ */
+function extractPivotSourceData(
+  rows: readonly import("@file/worksheet").RowOptions[],
+  sourceRef: string,
+): PivotSourceData {
+  // Parse source range like "A1:D11"
+  const parts = sourceRef.split(":");
+  const startMatch = parts[0]?.match(/^([A-Z]+)(\d+)$/);
+  const endMatch = parts[1]?.match(/^([A-Z]+)(\d+)$/);
+  if (!startMatch) {
+    return { fieldNames: [], records: [] };
+  }
+
+  const startRow = parseInt(startMatch[2], 10) - 1;
+  const endRow = endMatch ? parseInt(endMatch[2], 10) - 1 : startRow;
+  const startCol = colLetterToIndex(startMatch[1]);
+  const endCol = endMatch ? colLetterToIndex(endMatch[1]) : startCol;
+  const colCount = endCol - startCol + 1;
+
+  // First row is headers
+  const headerRow = rows[startRow];
+  const fieldNames: string[] = [];
+  if (headerRow?.cells) {
+    for (let c = startCol; c <= endCol && c < headerRow.cells.length; c++) {
+      fieldNames.push(String(headerRow.cells[c]?.value ?? `Col${c}`));
+    }
+  }
+
+  // Remaining rows are data
+  const records: (string | number)[][] = [];
+  for (let r = startRow + 1; r <= endRow; r++) {
+    const row = rows[r];
+    if (!row?.cells) continue;
+    const record: (string | number)[] = [];
+    for (let c = startCol; c <= endCol; c++) {
+      const val = row.cells[c]?.value;
+      if (typeof val === "number") {
+        record.push(val);
+      } else if (val instanceof Date) {
+        record.push(val.getTime());
+      } else {
+        record.push(String(val ?? ""));
+      }
+    }
+    if (record.length === colCount) {
+      records.push(record);
+    }
+  }
+
+  return { fieldNames, records };
+}
+
+function colLetterToIndex(letters: string): number {
+  let col = 0;
+  for (let i = 0; i < letters.length; i++) {
+    col = col * 26 + (letters.charCodeAt(i) - 64);
+  }
+  return col - 1;
+}
+
+/**
+ * Pre-render pivot table output as sheetData cells.
+ * Excel requires this so the pivot table is visible on open without manual refresh.
+ */
+function renderPivotSheetData(
+  pivotOpts: readonly PivotTableOptions[],
+  worksheets: readonly import("@file/worksheet").Worksheet[],
+  sharedStrings: import("@file/shared-strings").SharedStrings,
+  worksheetConfigs: readonly import("@file/worksheet").WorksheetOptions[],
+  currentSheetName: string,
+): { sheetData: string; dimensionRef: string } {
+  // Collect cells by row number to merge cells from different pivot tables on the same row
+  const rowCells = new Map<number, string[]>();
+  let maxRow = 0;
+  let maxCol = 0;
+  let minRow = Infinity;
+  let minCol = Infinity;
+
+  for (const pt of pivotOpts) {
+    const location = pt.location ?? "A3";
+    const locMatch = location.match(/^([A-Z]+)(\d+)$/);
+    if (!locMatch) continue;
+
+    const startCol = colLetterToIndex(locMatch[1]);
+    const startRow = parseInt(locMatch[2], 10);
+    const rowFieldNames = pt.rows;
+    const dataFields = pt.data;
+
+    const sourceSheetName = pt.sourceSheet ?? currentSheetName;
+    const sourceWsIdx = worksheetConfigs.findIndex(
+      (ws) => (ws.name ?? `Sheet${worksheetConfigs.indexOf(ws) + 1}`) === sourceSheetName,
+    );
+    if (sourceWsIdx === -1) continue;
+
+    const sourceRows = worksheets[sourceWsIdx]?.worksheetRows ?? [];
+    const sourceData = extractPivotSourceData(sourceRows, pt.source);
+    if (sourceData.fieldNames.length === 0) continue;
+
+    const fields = sourceData.fieldNames;
+    const rowFieldIndices = rowFieldNames.map((n) => fields.indexOf(n));
+    const dataFieldIndices = dataFields.map((df) => fields.indexOf(df.field));
+
+    if (rowFieldIndices.some((idx) => idx === -1)) continue;
+    if (dataFieldIndices.some((idx) => idx === -1)) continue;
+
+    // Group records by row field values
+    const groupMap = new Map<string, { keys: (string | number)[]; values: number[][] }>();
+    for (const record of sourceData.records) {
+      const groupKey = rowFieldIndices.map((fi) => String(record[fi])).join("|");
+      let group = groupMap.get(groupKey);
+      if (!group) {
+        group = {
+          keys: rowFieldIndices.map((fi) => record[fi]),
+          values: dataFieldIndices.map(() => []),
+        };
+        groupMap.set(groupKey, group);
+      }
+      for (let di = 0; di < dataFieldIndices.length; di++) {
+        const val = record[dataFieldIndices[di]];
+        if (typeof val === "number") {
+          group.values[di].push(val);
+        }
+      }
+    }
+
+    const endCol = startCol + rowFieldNames.length + dataFields.length - 1;
+    minCol = Math.min(minCol, startCol);
+    maxCol = Math.max(maxCol, endCol);
+
+    // Helper to add cells to a row
+    const addCells = (rowIdx: number, cells: string[]) => {
+      let arr = rowCells.get(rowIdx);
+      if (!arr) {
+        arr = [];
+        rowCells.set(rowIdx, arr);
+      }
+      arr.push(...cells);
+      minRow = Math.min(minRow, rowIdx);
+      maxRow = Math.max(maxRow, rowIdx);
+    };
+
+    // Header row
+    const headerCells: string[] = [];
+    for (const rfName of rowFieldNames) {
+      const cellRef = colIndexToLetterCompiler(startCol + headerCells.length) + startRow;
+      const strIdx = sharedStrings.register(rfName);
+      headerCells.push(`<c r="${cellRef}" t="s"><v>${strIdx}</v></c>`);
+    }
+    for (const df of dataFields) {
+      const cellRef = colIndexToLetterCompiler(startCol + headerCells.length) + startRow;
+      const subtotal = df.summarize ?? "sum";
+      const dfName = df.name ?? `${subtotal === "sum" ? "Sum" : subtotal} of ${df.field}`;
+      const strIdx = sharedStrings.register(dfName);
+      headerCells.push(`<c r="${cellRef}" t="s"><v>${strIdx}</v></c>`);
+    }
+    addCells(startRow, headerCells);
+
+    // Data rows
+    let currentRow = startRow + 1;
+    for (const [, group] of groupMap) {
+      const cells: string[] = [];
+      for (let ri = 0; ri < group.keys.length; ri++) {
+        const cellRef = colIndexToLetterCompiler(startCol + ri) + currentRow;
+        const strIdx = sharedStrings.register(String(group.keys[ri]));
+        cells.push(`<c r="${cellRef}" t="s"><v>${strIdx}</v></c>`);
+      }
+      for (let di = 0; di < dataFields.length; di++) {
+        const colOffset = rowFieldNames.length + di;
+        const cellRef = colIndexToLetterCompiler(startCol + colOffset) + currentRow;
+        const subtotal = dataFields[di].summarize ?? "sum";
+        const result = aggregate(group.values[di], subtotal);
+        cells.push(`<c r="${cellRef}"><v>${result}</v></c>`);
+      }
+      addCells(currentRow, cells);
+      currentRow++;
+    }
+
+    // Grand total row
+    const gtCells: string[] = [];
+    const gtStrIdx = sharedStrings.register("Grand Total");
+    gtCells.push(
+      `<c r="${colIndexToLetterCompiler(startCol)}${currentRow}" t="s"><v>${gtStrIdx}</v></c>`,
+    );
+    for (let di = 0; di < dataFields.length; di++) {
+      const colOffset = rowFieldNames.length + di;
+      const cellRef = colIndexToLetterCompiler(startCol + colOffset) + currentRow;
+      const subtotal = dataFields[di].summarize ?? "sum";
+      const allValues = sourceData.records
+        .map((r) => r[dataFieldIndices[di]])
+        .filter((v): v is number => typeof v === "number");
+      const result = aggregate(allValues, subtotal);
+      gtCells.push(`<c r="${cellRef}"><v>${result}</v></c>`);
+    }
+    addCells(currentRow, gtCells);
+  }
+
+  if (rowCells.size === 0) return { sheetData: "", dimensionRef: "" };
+
+  // Build sheetData — rows must be sorted by row number
+  const parts: string[] = ["<sheetData>"];
+  const sortedRows = [...rowCells.entries()].sort((a, b) => a[0] - b[0]);
+  for (const [rowIdx, cells] of sortedRows) {
+    parts.push(`<row r="${rowIdx}" x14ac:dyDescent="0.25">`);
+    parts.push(...cells);
+    parts.push("</row>");
+  }
+  parts.push("</sheetData>");
+
+  const dimStartCol = colIndexToLetterCompiler(minCol === Infinity ? 0 : minCol);
+  const dimStartRow = minRow === Infinity ? 1 : minRow;
+  const dimensionRef = `${dimStartCol}${dimStartRow}:${colIndexToLetterCompiler(maxCol)}${maxRow}`;
+  return { sheetData: parts.join(""), dimensionRef };
+}
+
+function colIndexToLetterCompiler(col: number): string {
+  let result = "";
+  let n = col + 1; // 0-indexed to 1-indexed
+  while (n > 0) {
+    n--;
+    result = String.fromCharCode(65 + (n % 26)) + result;
+    n = Math.floor(n / 26);
+  }
+  return result;
 }

@@ -27,3 +27,4 @@ export type {
   FormulaOptions,
 } from "./worksheet";
 export type { CorePropertiesOptions } from "./core-properties";
+export type { PivotTableOptions, PivotDataField, ConsolidateFunction } from "./pivot";

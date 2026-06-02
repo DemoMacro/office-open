@@ -10,6 +10,8 @@ import type { Context } from "@file/xml-components";
 import type { ChartSpaceOptions } from "@office-open/core";
 import { attrs, escapeXml, selfCloseElement } from "@office-open/xml";
 
+import type { PivotTableOptions } from "./pivot";
+
 export interface ColumnOptions {
   readonly min: number;
   readonly max: number;
@@ -298,6 +300,7 @@ export interface WorksheetOptions {
   readonly pageSetup?: PageSetupOptions;
   readonly tabColor?: TabColorOptions;
   readonly sheetView?: SheetViewOptions;
+  readonly pivotTables?: readonly PivotTableOptions[];
 }
 
 export class Worksheet extends IgnoreIfEmptyXmlComponent {
@@ -317,6 +320,7 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
   private readonly pageSetup?: PageSetupOptions;
   private readonly tabColor?: TabColorOptions;
   private readonly sheetView?: SheetViewOptions;
+  private readonly pivotTableOptions: readonly PivotTableOptions[];
 
   public constructor(options: WorksheetOptions) {
     super("worksheet");
@@ -336,6 +340,7 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
     this.pageSetup = options.pageSetup;
     this.tabColor = options.tabColor;
     this.sheetView = options.sheetView;
+    this.pivotTableOptions = options.pivotTables ?? [];
   }
 
   public get imageOptions(): readonly WorksheetImageOptions[] {
@@ -356,6 +361,10 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
 
   public get commentOptions(): readonly CommentOptions[] {
     return this.comments;
+  }
+
+  public get pivotTables(): readonly PivotTableOptions[] {
+    return this.pivotTableOptions;
   }
 
   /**
