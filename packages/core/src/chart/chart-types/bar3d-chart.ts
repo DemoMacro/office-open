@@ -2,34 +2,37 @@ import { EmptyElement, XmlComponent, chartAttr, wrapEl } from "../../xml-compone
 import type { ChartSeriesData } from "../create-chart-type";
 import { createStrRef, createNumRef } from "../series/series-data";
 
-interface ScatterChartOptions {
+interface Bar3DChartOptions {
+  readonly barDirection: "col" | "bar";
   readonly categories: readonly string[];
   readonly series: readonly ChartSeriesData[];
 }
 
-export class ScatterChart extends XmlComponent {
-  public constructor(options: ScatterChartOptions) {
-    super("c:scatterChart");
-    this.root.push(wrapEl("c:scatterStyle", chartAttr({ val: "line" })));
+export class Bar3DChart extends XmlComponent {
+  public constructor(options: Bar3DChartOptions) {
+    super("c:bar3DChart");
+    this.root.push(wrapEl("c:barDir", chartAttr({ val: options.barDirection })));
+    this.root.push(wrapEl("c:grouping", chartAttr({ val: "clustered" })));
 
     for (let i = 0; i < options.series.length; i++) {
-      this.root.push(new ScatterSeries(i, options.series[i], options.categories));
+      this.root.push(new Bar3DSeries(i, options.series[i], options.categories));
     }
 
     this.root.push(wrapEl("c:axId", chartAttr({ val: 10 })));
     this.root.push(wrapEl("c:axId", chartAttr({ val: 20 })));
+    this.root.push(wrapEl("c:axId", chartAttr({ val: 30 })));
   }
 }
 
-class ScatterSeries extends XmlComponent {
+class Bar3DSeries extends XmlComponent {
   public constructor(index: number, series: ChartSeriesData, categories: readonly string[]) {
     super("c:ser");
     this.root.push(wrapEl("c:idx", chartAttr({ val: index })));
     this.root.push(wrapEl("c:order", chartAttr({ val: index })));
     this.root.push(new SeriesTx(series.name));
     this.root.push(new EmptyElement("c:spPr"));
-    this.root.push(new SeriesXVal(categories));
-    this.root.push(new SeriesYVal(series.values));
+    this.root.push(new SeriesCat(categories));
+    this.root.push(new SeriesVal(series.values));
   }
 }
 
@@ -40,16 +43,16 @@ class SeriesTx extends XmlComponent {
   }
 }
 
-class SeriesXVal extends XmlComponent {
+class SeriesCat extends XmlComponent {
   public constructor(categories: readonly string[]) {
-    super("c:xVal");
+    super("c:cat");
     this.root.push(createStrRef(categories));
   }
 }
 
-class SeriesYVal extends XmlComponent {
+class SeriesVal extends XmlComponent {
   public constructor(values: readonly number[]) {
-    super("c:yVal");
+    super("c:val");
     this.root.push(createNumRef(values));
   }
 }

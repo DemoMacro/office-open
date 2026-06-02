@@ -4,8 +4,10 @@
  * @module
  */
 import { Formatter } from "@export/formatter";
+import { Comments } from "@file/comments";
 import { Drawing, type ImageOptions, type ChartAnchorOptions } from "@file/drawing/drawing";
 import type { File } from "@file/file";
+import { VmlNotes } from "@file/vml-notes";
 import type { BaseXmlComponent, Context } from "@file/xml-components";
 import {
   ChartSpace,
@@ -48,18 +50,6 @@ export class Compiler {
       path: "_rels/.rels",
     };
 
-    // Workbook
-    mapping["Workbook"] = {
-      data: fmt(file.workbookXml),
-      path: "xl/workbook.xml",
-    };
-
-    // Workbook relationships
-    mapping["WorkbookRelationships"] = {
-      data: fmt(file.workbookRelationships),
-      path: "xl/_rels/workbook.xml.rels",
-    };
-
     // Worksheets — formatted BEFORE SharedStrings so strings are registered
     const worksheets = file.worksheets;
     let globalMediaIdx = 0;
@@ -69,11 +59,36 @@ export class Compiler {
       const ws = worksheets[i];
       const imgOpts = ws.imageOptions;
       const chartOpts = ws.charts;
+      const hlOpts = ws.hyperlinkOptions;
 
       // Worksheet uses toXml() fast path (zero-allocation string concat)
       let sheetXml = fmt(ws);
 
       const hasMedia = imgOpts.length > 0 || chartOpts.length > 0;
+      const hasExternalHyperlinks = hlOpts.some((h) => h.target.type === "external");
+      const commentOpts = ws.commentOptions;
+      const hasComments = commentOpts.length > 0;
+
+      // Worksheet-level relationships
+      let wsRels: Relationships | undefined;
+      let nextRid = 0;
+
+      if (hasMedia || hasExternalHyperlinks || hasComments) {
+        wsRels = new Relationships();
+      }
+
+      if (hasExternalHyperlinks) {
+        for (const hl of hlOpts) {
+          if (hl.target.type !== "external") continue;
+          const rid = ++nextRid;
+          wsRels!.addRelationship(
+            rid,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+            hl.target.url,
+            "External",
+          );
+        }
+      }
 
       if (hasMedia) {
         const drawingImages: ImageOptions[] = [];
@@ -146,24 +161,72 @@ export class Compiler {
         };
 
         // Insert drawing reference before the closing </worksheet> tag.
-        // Use slice instead of replace to avoid O(n) full-string scan.
+        const drawingRid = ++nextRid;
         const closingTag = "</worksheet>";
         sheetXml =
-          sheetXml.slice(0, -closingTag.length) + `<drawing r:id="rId${rid}"/>` + closingTag;
+          sheetXml.slice(0, -closingTag.length) + `<drawing r:id="rId${drawingRid}"/>` + closingTag;
 
-        // Worksheet needs its own rels for drawing reference
-        const wsRels = new Relationships();
-        wsRels.addRelationship(
-          rid,
+        // Add drawing relationship to worksheet rels
+        wsRels!.addRelationship(
+          drawingRid,
           "http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing",
           `../drawings/drawing${drawingIdx}.xml`,
         );
+
+        file.contentTypes.addDrawing(drawingIdx);
+      }
+
+      // Comments
+      if (hasComments) {
+        const commentsIdx = i + 1;
+
+        // Comments XML
+        const commentsXml = new Comments(commentOpts);
+        mapping[`Comments${i}`] = {
+          data: fmt(commentsXml),
+          path: `xl/comments${commentsIdx}.xml`,
+        };
+
+        // VML drawing (required by Excel for legacy comment rendering)
+        const vmlNotes = new VmlNotes(commentOpts);
+        mapping[`VmlDrawing${i}`] = {
+          data: vmlNotes.toXml(),
+          path: `xl/drawings/vmlDrawing${commentsIdx}.vml`,
+        };
+
+        // Worksheet rels: comments → comments XML, legacyDrawing → VML file
+        const commentsRid = ++nextRid;
+        wsRels!.addRelationship(
+          commentsRid,
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
+          `../comments${commentsIdx}.xml`,
+        );
+
+        const vmlRid = ++nextRid;
+        wsRels!.addRelationship(
+          vmlRid,
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/vmlDrawing",
+          `../drawings/vmlDrawing${commentsIdx}.vml`,
+        );
+
+        // Insert legacyDrawing reference before closing </worksheet>
+        const closingTag = "</worksheet>";
+        sheetXml =
+          sheetXml.slice(0, -closingTag.length) +
+          `<legacyDrawing r:id="rId${vmlRid}"/>` +
+          closingTag;
+
+        // Register content types
+        file.contentTypes.addComments(commentsIdx);
+        file.contentTypes.addVmlDrawing();
+      }
+
+      // Write worksheet rels if needed
+      if (wsRels) {
         mapping[`WorksheetRels${i}`] = {
           data: fmt(wsRels),
           path: `xl/worksheets/_rels/sheet${i + 1}.xml.rels`,
         };
-
-        file.contentTypes.addDrawing(drawingIdx);
       }
 
       mapping[`Worksheet${i}`] = {
@@ -172,6 +235,18 @@ export class Compiler {
       };
     }
 
+    // Workbook XML
+    mapping["Workbook"] = {
+      data: fmt(file.workbookXml),
+      path: "xl/workbook.xml",
+    };
+
+    // Workbook relationships
+    mapping["WorkbookRelationships"] = {
+      data: fmt(file.workbookRelationships),
+      path: "xl/_rels/workbook.xml.rels",
+    };
+
     // Shared Strings — AFTER worksheets so all strings are collected
     const sharedStrings = file.sharedStrings;
     if (sharedStrings.count > 0) {
@@ -179,6 +254,11 @@ export class Compiler {
         data: fmt(sharedStrings),
         path: "xl/sharedStrings.xml",
       };
+    }
+
+    // Register predefined DXFs before styles XML is generated
+    for (const dxf of file.dxfEntries) {
+      file.registerDxf(dxf);
     }
 
     // Styles

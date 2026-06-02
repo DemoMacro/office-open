@@ -104,6 +104,23 @@ export class ContentTypes extends BaseXmlComponent {
     });
   }
 
+  public addComments(index: number): void {
+    this.dynamicEntries.push({
+      type: "Override",
+      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.comments+xml",
+      key: `/xl/comments${index}.xml`,
+    });
+  }
+
+  public addVmlDrawing(): void {
+    if (this.dynamicEntries.some((e) => e.type === "Default" && e.key === "vml")) return;
+    this.dynamicEntries.push({
+      type: "Default",
+      contentType: "application/vnd.openxmlformats-officedocument.vmlDrawing",
+      key: "vml",
+    });
+  }
+
   public addImageType(extension: "png" | "jpeg"): void {
     const contentType = extension === "png" ? "image/png" : "image/jpeg";
     // Avoid duplicates

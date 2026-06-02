@@ -107,4 +107,44 @@ describe("Styles", () => {
       expect(xml).toContain('numFmtId="164"');
     });
   });
+
+  // ── DXFs (differential formats) ──
+
+  describe("registerDxf", () => {
+    it("returns incrementing indices starting at 0", () => {
+      const styles = new Styles();
+      const id1 = styles.registerDxf({ font: { bold: true } });
+      const id2 = styles.registerDxf({ fill: { color: "FF0000" } });
+      expect(id1).toBe(0);
+      expect(id2).toBe(1);
+    });
+
+    it("outputs dxfs with count when registered", () => {
+      const styles = new Styles();
+      styles.registerDxf({ font: { bold: true, color: "FF0000" } });
+      const xml = styles.toXml(context);
+      expect(xml).toContain('<dxfs count="1">');
+      expect(xml).toContain("<dxf>");
+      expect(xml).toContain("<b/>");
+    });
+
+    it("outputs dxfs count=0 when none registered", () => {
+      const xml = new Styles().toXml(context);
+      expect(xml).toContain('dxfs count="0"');
+    });
+
+    it("includes fill bgColor for dxf", () => {
+      const styles = new Styles();
+      styles.registerDxf({ fill: { color: "00FF00" } });
+      const xml = styles.toXml(context);
+      expect(xml).toContain('bgColor rgb="FF00FF00"');
+    });
+
+    it("includes numFmt in dxf", () => {
+      const styles = new Styles();
+      styles.registerDxf({ numFmt: "0.00" });
+      const xml = styles.toXml(context);
+      expect(xml).toContain('formatCode="0.00"');
+    });
+  });
 });

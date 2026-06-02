@@ -7,6 +7,7 @@
  * @module
  */
 import { ChartSpace } from "@file/chart/chart-space";
+import type { ChartType, ChartSeriesData } from "@file/chart/chart-space";
 import { Drawing } from "@file/drawing";
 import type { Floating } from "@file/drawing";
 import type { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
@@ -16,6 +17,8 @@ import type { Context, IXmlableObject } from "@file/xml-components";
 
 import { Run } from "../run";
 
+let nextChartId = 1;
+
 /**
  * Options for creating a ChartRun.
  *
@@ -23,12 +26,14 @@ import { Run } from "../run";
  */
 export interface ChartOptions {
   /** Chart type */
-  readonly type: "column" | "bar" | "line" | "pie" | "area" | "scatter";
-  /** Chart data */
+  readonly type: ChartType;
+  /** Chart data — for bubble charts, series must include xValues/yValues/bubbleSize instead of values */
   readonly data: {
-    readonly categories: readonly string[];
-    readonly series: readonly { name: string; values: readonly number[] }[];
+    readonly categories?: readonly string[];
+    readonly series: readonly ChartSeriesData[];
   };
+  /** Enable 3D rendering for applicable chart types */
+  readonly threeD?: boolean;
   /** Display dimensions */
   readonly transformation: MediaTransformation;
   /** Floating positioning */
@@ -71,9 +76,7 @@ export class ChartRun extends Run {
     super({});
     this.chartOptions = options;
 
-    // Generate a unique key based on chart data
-    const hash = this.hashChartData(options);
-    this.chartKey = `chart_${hash}`;
+    this.chartKey = `chart_${nextChartId++}`;
 
     // Create media data for the drawing system
     const mediaData = {
@@ -99,6 +102,7 @@ export class ChartRun extends Run {
       style: this.chartOptions.style,
       title: this.chartOptions.title,
       type: this.chartOptions.type,
+      threeD: this.chartOptions.threeD,
     });
 
     context.file.charts.addChart(this.chartKey, {
@@ -107,15 +111,5 @@ export class ChartRun extends Run {
     });
 
     return super.prepForXml(context);
-  }
-
-  private hashChartData(options: ChartOptions): number {
-    const data = `${options.type}:${JSON.stringify(options.data)}`;
-    let hash = 0;
-    for (let i = 0; i < data.length; i++) {
-      const char = data.charCodeAt(i);
-      hash = ((hash << 5) - hash + char) | 0;
-    }
-    return Math.abs(hash);
   }
 }

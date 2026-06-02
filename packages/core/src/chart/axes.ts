@@ -53,3 +53,18 @@ export class ValAx extends XmlComponent {
     this.root.push(wrapEl("c:crosses", chartAttr({ val: "autoZero" })));
   }
 }
+
+export class SerAx extends XmlComponent {
+  public constructor(axId: number, crossAx: number) {
+    super("c:serAx");
+    this.root.push(wrapEl("c:axId", chartAttr({ val: axId })));
+    this.root.push(new Scaling());
+    this.root.push(wrapEl("c:delete", chartAttr({ val: 0 })));
+    this.root.push(wrapEl("c:axPos", chartAttr({ val: "b" })));
+    this.root.push(wrapEl("c:numFmt", chartAttr({ formatCode: "General", sourceLinked: 1 })));
+    this.root.push(new BuilderElement({ name: "c:spPr" }));
+    this.root.push(wrapEl("c:crossAx", chartAttr({ val: crossAx })));
+    this.root.push(wrapEl("c:crosses", chartAttr({ val: "autoZero" })));
+    this.root.push(wrapEl("c:tickLblSkip", chartAttr({ val: 1 })));
+  }
+}

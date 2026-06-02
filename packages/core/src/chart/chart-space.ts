@@ -6,19 +6,22 @@
  * @module
  */
 import { BuilderElement, XmlComponent, chartAttr, wrapEl } from "../xml-components";
-import { CatAx, ValAx } from "./axes";
+import { CatAx, SerAx, ValAx } from "./axes";
+import type { BubbleSeriesData } from "./chart-types/bubble-chart";
 import { createChartType } from "./create-chart-type";
 import type { ChartType } from "./create-chart-type";
 import type { ChartSeriesData } from "./create-chart-type";
+import type { AllChartTypeOptions } from "./create-chart-type";
 import { ChartTitle } from "./title";
 
 export interface ChartSpaceOptions {
   readonly title?: string;
   readonly type: ChartType;
-  readonly categories: readonly string[];
-  readonly series: readonly ChartSeriesData[];
+  readonly categories?: readonly string[];
+  readonly series: readonly ChartSeriesData[] | readonly BubbleSeriesData[];
   readonly showLegend?: boolean;
   readonly style?: number;
+  readonly threeD?: boolean;
 }
 
 /**
@@ -58,19 +61,32 @@ export class ChartSpace extends XmlComponent {
 
     plotArea["root"].push(
       createChartType({
-        categories: options.categories,
+        categories: options.categories ?? [],
         series: options.series,
         type: options.type,
-      }),
+        threeD: options.threeD,
+      } as AllChartTypeOptions),
     );
 
-    if (options.type !== "pie") {
-      if (options.type === "scatter") {
+    const noAxes = options.type === "pie" || options.type === "doughnut";
+
+    if (!noAxes) {
+      if (options.type === "scatter" || options.type === "bubble") {
         plotArea["root"].push(new ValAx(10, 20));
         plotArea["root"].push(new ValAx(20, 10));
+      } else if (options.type === "stock") {
+        plotArea["root"].push(new CatAx(10, 20));
+        plotArea["root"].push(new ValAx(20, 10));
+      } else if (options.type === "surface") {
+        plotArea["root"].push(new CatAx(10, 20));
+        plotArea["root"].push(new ValAx(20, 10));
+        plotArea["root"].push(new SerAx(30, 10));
       } else {
         plotArea["root"].push(new CatAx(10, 20));
         plotArea["root"].push(new ValAx(20, 10));
+        if (options.threeD) {
+          plotArea["root"].push(new CatAx(30, 10));
+        }
       }
     }
 

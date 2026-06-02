@@ -3,6 +3,7 @@ import { CoreProperties, type CorePropertiesOptions } from "@file/core-propertie
 import { Media } from "@file/media/media";
 import { SharedStrings } from "@file/shared-strings";
 import { Styles } from "@file/styles";
+import type { DxfOptions } from "@file/styles";
 import { DefaultTheme } from "@file/theme";
 import { WorkbookXml, type SheetDefinition } from "@file/workbook";
 import { Worksheet, type WorksheetOptions } from "@file/worksheet";
@@ -15,11 +16,14 @@ import { AppProperties, ChartCollection, Relationships } from "@office-open/core
 
 export interface WorkbookOptions extends CorePropertiesOptions {
   readonly worksheets?: readonly WorksheetOptions[];
+  /** Pre-defined differential formats for conditional formatting */
+  readonly dxfs?: readonly DxfOptions[];
 }
 
 export class File {
   private readonly worksheetOptions: readonly WorksheetOptions[];
   private readonly corePropsOptions: CorePropertiesOptions;
+  private readonly dxfOptions: readonly DxfOptions[];
 
   // Lazy components
   private _coreProperties?: CoreProperties;
@@ -38,6 +42,7 @@ export class File {
   public constructor(options: WorkbookOptions) {
     this.worksheetOptions = options.worksheets ?? [];
     this.corePropsOptions = options;
+    this.dxfOptions = options.dxfs ?? [];
   }
 
   // ── Lazy getters ──
@@ -67,6 +72,14 @@ export class File {
     return (this._styles ??= new Styles());
   }
 
+  /**
+   * Register a differential format and return its dxfId.
+   * Call this before generating XML to use the ID in conditional formatting rules.
+   */
+  public registerDxf(opts: DxfOptions): number {
+    return this.styles.registerDxf(opts);
+  }
+
   public get theme(): DefaultTheme {
     return (this._theme ??= new DefaultTheme());
   }
@@ -93,6 +106,10 @@ export class File {
 
   public get charts(): ChartCollection {
     return (this._charts ??= new ChartCollection());
+  }
+
+  public get dxfEntries(): readonly DxfOptions[] {
+    return this.dxfOptions;
   }
 
   public get worksheets(): readonly Worksheet[] {

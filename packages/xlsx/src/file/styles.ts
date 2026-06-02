@@ -57,6 +57,14 @@ export interface StyleOptions {
   readonly alignment?: AlignmentOptions;
 }
 
+/** Differential format — used by conditional formatting to specify what changes. */
+export interface DxfOptions {
+  readonly font?: FontOptions;
+  readonly fill?: FillOptions;
+  readonly border?: BorderSideOptions;
+  readonly numFmt?: string;
+}
+
 // ── Style key helpers for deduplication ──
 
 function fontKey(f: FontOptions): string {
@@ -134,6 +142,8 @@ export class Styles extends BaseXmlComponent {
   ];
   private readonly cellXfKeys = new Map<string, number>();
 
+  private readonly dxfs: DxfOptions[] = [];
+
   public constructor() {
     super("styleSheet");
 
@@ -170,6 +180,16 @@ export class Styles extends BaseXmlComponent {
     const idx = this.cellXfs.length;
     this.cellXfs.push(xf);
     this.cellXfKeys.set(key, idx);
+    return idx;
+  }
+
+  /**
+   * Register a differential format and return its index (dxfId).
+   * Used by conditional formatting rules.
+   */
+  public registerDxf(opts: DxfOptions): number {
+    const idx = this.dxfs.length;
+    this.dxfs.push(opts);
     return idx;
   }
 
@@ -311,8 +331,28 @@ export class Styles extends BaseXmlComponent {
     // cellStyles
     p.push('<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>');
 
-    // dxfs and tableStyles (required by Excel)
-    p.push('<dxfs count="0"/>');
+    // dxfs
+    if (this.dxfs.length > 0) {
+      p.push(`<dxfs count="${this.dxfs.length}">`);
+      for (const dxf of this.dxfs) {
+        const dParts: string[] = [];
+        if (dxf.font) dParts.push(`<font>${this.fontXmlStr(dxf.font)}</font>`);
+        if (dxf.fill) {
+          const bgColor = dxf.fill.color ? `<bgColor rgb="FF${dxf.fill.color}"/>` : "";
+          const patAttrs = attrs({ patternType: dxf.fill.patternType ?? "solid" });
+          dParts.push(`<fill><patternFill${patAttrs}>${bgColor}</patternFill></fill>`);
+        }
+        if (dxf.numFmt) dParts.push(`<numFmt formatCode="${escapeXml(dxf.numFmt)}"/>`);
+        if (dParts.length > 0) {
+          p.push(`<dxf>${dParts.join("")}</dxf>`);
+        } else {
+          p.push("<dxf/>");
+        }
+      }
+      p.push("</dxfs>");
+    } else {
+      p.push('<dxfs count="0"/>');
+    }
     p.push(
       '<tableStyles count="0" defaultTableStyle="TableStyleMedium2" defaultPivotStyle="PivotStyleLight16"/>',
     );

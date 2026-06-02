@@ -51,7 +51,11 @@ export type RelationshipType =
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/calcChain"
-  | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing";
+  | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing"
+  | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/vmlDrawing"
+  | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotTable"
+  | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotCacheDefinition"
+  | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotCacheRecords";
 
 export const TargetModeType = {
   EXTERNAL: "External",
