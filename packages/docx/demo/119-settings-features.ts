@@ -1,5 +1,5 @@
 // Document settings features: view, zoom, write protection, display background shape,
-// font embedding, document variables, mail merge
+// font embedding, document variables
 
 import * as fs from "fs";
 
@@ -21,27 +21,6 @@ const doc = new Document({
     { name: "Version", val: "1.0" },
     { name: "Author", val: "Test User" },
   ],
-  mailMerge: {
-    mainDocumentType: "formLetters",
-    dataType: "spreadsheet",
-    connectString: "DSN=Excel Files;DBQ=data.xlsx",
-    query: "SELECT * FROM `Sheet1$`",
-    dataSource: "data.xlsx",
-    destination: "newDocument",
-    addressFieldName: "Email",
-    mailSubject: "Monthly Report",
-    linkToQuery: true,
-    doNotSuppressBlankLines: true,
-    odso: {
-      udl: "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=data.xlsx",
-      table: "Sheet1$",
-      type: "database",
-      fieldMapData: [
-        { type: "dbColumn", name: "FirstName", mappedName: "First Name", column: 0 },
-        { type: "dbColumn", name: "LastName", mappedName: "Last Name", column: 1 },
-      ],
-    },
-  },
   sections: [
     {
       children: [
@@ -65,9 +44,6 @@ const doc = new Document({
           children: [
             new TextRun("Document variables (Title, Version, Author) are stored in settings.xml."),
           ],
-        }),
-        new Paragraph({
-          children: [new TextRun("Mail merge is configured to use a spreadsheet data source.")],
         }),
       ],
     },

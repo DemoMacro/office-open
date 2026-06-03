@@ -32,7 +32,29 @@ const wb = new Workbook({
   worksheets: [
     {
       name: "Summary",
-      rows: [{ cells: [{ value: "External Data Reference" }, { value: "Source: data.xlsx" }] }],
+      rows: [
+        {
+          cells: [{ value: "External Data from data.xlsx" }],
+        },
+        {
+          cells: [
+            { value: "Product:" },
+            { formula: { formula: "'[data.xlsx]Sheet1'!A1" }, value: "Product" },
+          ],
+        },
+        {
+          cells: [
+            { value: "Value:" },
+            { formula: { formula: "'[data.xlsx]Sheet1'!B1" }, value: 100 },
+          ],
+        },
+        {
+          cells: [
+            { value: "Total Revenue:" },
+            { formula: { formula: "data.xlsx!TotalRevenue" }, value: 0 },
+          ],
+        },
+      ],
     },
   ],
 });

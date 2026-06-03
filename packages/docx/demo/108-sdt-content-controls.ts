@@ -2,8 +2,6 @@
 import * as fs from "fs";
 
 import {
-  CustomXmlBlock,
-  CustomXmlRun,
   Document,
   Packer,
   Paragraph,
@@ -251,63 +249,6 @@ const doc = new Document({
                   ],
                 }),
               ],
-            }),
-          ],
-        }),
-
-        new Paragraph({ children: [new TextRun("")] }),
-
-        // Custom XML run (inline)
-        new Paragraph({
-          children: [
-            new TextRun({
-              bold: true,
-              text: "9. Custom XML Run (inline)",
-              size: 28,
-            }),
-          ],
-          spacing: { after: 200 },
-        }),
-        new Paragraph({
-          children: [
-            new TextRun("Price: "),
-            new CustomXmlRun({
-              element: "price",
-              uri: "http://example.com/ns",
-              children: [new TextRun("99.99")],
-            }),
-          ],
-        }),
-
-        new Paragraph({ children: [new TextRun("")] }),
-
-        // Custom XML block (section child)
-        new Paragraph({
-          children: [
-            new TextRun({
-              bold: true,
-              text: "10. Custom XML Block (section child)",
-              size: 28,
-            }),
-          ],
-          spacing: { after: 200 },
-        }),
-        new CustomXmlBlock({
-          element: "invoiceItems",
-          uri: "http://example.com/ns",
-          customXmlPr: {
-            placeholder: "Invoice items go here",
-            attributes: [
-              { name: "status", val: "draft" },
-              { name: "version", val: "1.0", uri: "http://example.com/ns" },
-            ],
-          },
-          children: [
-            new Paragraph({
-              children: [new TextRun("Item 1: Widget A - $50.00")],
-            }),
-            new Paragraph({
-              children: [new TextRun("Item 2: Widget B - $49.99")],
             }),
           ],
         }),
