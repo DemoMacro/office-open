@@ -21,3 +21,4 @@ export * from "./placeholder";
 export * from "./xsd-mappings";
 export * from "./patch";
 export * from "./compiler-utils";
+export * from "./theme";

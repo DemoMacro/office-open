@@ -6,6 +6,7 @@ export default defineConfig({
     entry: [
       "src/index.ts",
       "src/values.ts",
+      "src/theme/index.ts",
       "src/smartart/index.ts",
       "src/chart/index.ts",
       "src/drawingml/index.ts",
