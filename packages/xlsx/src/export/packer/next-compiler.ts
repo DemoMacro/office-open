@@ -6,6 +6,7 @@
 import { Formatter } from "@export/formatter";
 import { Comments } from "@file/comments";
 import { Drawing, type ImageOptions, type ChartAnchorOptions } from "@file/drawing/drawing";
+import { ExternalLinkXml } from "@file/external-link";
 import type { File } from "@file/file";
 import {
   PivotCacheDefinitionXml,
@@ -21,6 +22,7 @@ import type { BaseXmlComponent, Context } from "@file/xml-components";
 import {
   ChartSpace,
   Relationships,
+  TargetModeType,
   compileMapping,
   type XmlifyedFile,
   type Zippable,
@@ -423,8 +425,60 @@ export class Compiler {
     }
 
     // Workbook XML
+    let workbookXml = fmt(file.workbookXml);
+
+    // External links — generate XML files and inject externalReferences into workbook
+    const extLinks = file.externalLinks;
+    if (extLinks.length > 0) {
+      const extRefs: { rId: string }[] = [];
+      for (let ei = 0; ei < extLinks.length; ei++) {
+        const elIdx = ei + 1;
+        const elRid = file.workbookRelationships.relationshipCount + 1;
+        file.workbookRelationships.addRelationship(
+          elRid,
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/externalLink",
+          `externalLinks/externalLink${elIdx}.xml`,
+        );
+
+        // Create the rels file for this external link (points to the external workbook)
+        const elOpts = extLinks[ei];
+        let bookRId: string | undefined;
+        if (elOpts.externalBook?.target) {
+          const elRels = new Relationships();
+          elRels.addRelationship(
+            1,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/externalLinkPath",
+            elOpts.externalBook.target,
+            TargetModeType.EXTERNAL,
+          );
+          bookRId = "rId1";
+          mapping[`ExternalLinkRels${elIdx}`] = {
+            data: fmt(elRels),
+            path: `xl/externalLinks/_rels/externalLink${elIdx}.xml.rels`,
+          };
+        }
+
+        // Generate the external link XML
+        const elXml = new ExternalLinkXml({ ...elOpts, bookRId });
+        mapping[`ExternalLink${elIdx}`] = {
+          data: fmt(elXml),
+          path: `xl/externalLinks/externalLink${elIdx}.xml`,
+        };
+
+        extRefs.push({ rId: `rId${elRid}` });
+        file.contentTypes.addExternalLink(elIdx);
+      }
+
+      // Inject externalReferences into workbook XML (replace the placeholder)
+      const extRefsXml = WorkbookXml.buildExternalReferencesXml(extRefs);
+      workbookXml = workbookXml.replace("<!--EXTERNAL_REFS-->", extRefsXml);
+    } else {
+      // Remove the placeholder if no external links
+      workbookXml = workbookXml.replace("<!--EXTERNAL_REFS-->", "");
+    }
+
     mapping["Workbook"] = {
-      data: fmt(file.workbookXml),
+      data: workbookXml,
       path: "xl/workbook.xml",
     };
 

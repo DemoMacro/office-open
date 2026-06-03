@@ -19,12 +19,16 @@ import { Worksheet, type WorksheetOptions } from "@file/worksheet";
  */
 import { AppProperties, ChartCollection, Relationships } from "@office-open/core";
 
+import type { ExternalLinkOptions } from "./external-link";
+
 export interface WorkbookOptions extends CorePropertiesOptions {
   readonly worksheets?: readonly WorksheetOptions[];
   /** Pre-defined differential formats for conditional formatting */
   readonly dxfs?: readonly DxfOptions[];
   /** Workbook-level protection */
   readonly workbookProtection?: WorkbookProtectionOptions;
+  /** External link definitions */
+  readonly externalLinks?: readonly ExternalLinkOptions[];
 }
 
 export class File {
@@ -32,6 +36,7 @@ export class File {
   private readonly corePropsOptions: CorePropertiesOptions;
   private readonly dxfOptions: readonly DxfOptions[];
   private readonly protectionOptions?: WorkbookProtectionOptions;
+  private readonly externalLinkOptions: readonly ExternalLinkOptions[];
 
   // Lazy components
   private _coreProperties?: CoreProperties;
@@ -53,6 +58,7 @@ export class File {
     this.corePropsOptions = options;
     this.dxfOptions = options.dxfs ?? [];
     this.protectionOptions = options.workbookProtection;
+    this.externalLinkOptions = options.externalLinks ?? [];
   }
 
   // ── Lazy getters ──
@@ -128,6 +134,10 @@ export class File {
 
   public registerPivotCache(cacheId: number, rId: string): void {
     this._pivotCacheRefs.push({ cacheId, rId });
+  }
+
+  public get externalLinks(): readonly ExternalLinkOptions[] {
+    return this.externalLinkOptions;
   }
 
   public get worksheetConfigs(): readonly WorksheetOptions[] {

@@ -161,6 +161,14 @@ export class ContentTypes extends BaseXmlComponent {
     });
   }
 
+  public addExternalLink(index: number): void {
+    this.dynamicEntries.push({
+      type: "Override",
+      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.externalLink+xml",
+      key: `/xl/externalLinks/externalLink${index}.xml`,
+    });
+  }
+
   public override toXml(_context: Context): string {
     const p: string[] = [
       '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">',

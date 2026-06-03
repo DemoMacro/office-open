@@ -141,6 +141,11 @@ const XSD_MAPPINGS: XsdMapping[] = [
     labelFn: (e) => `table${e.match(/table(\d+)/)?.[1]}`,
   },
   {
+    pattern: /^xl\/externalLinks\/externalLink\d+\.xml$/,
+    xsd: "sml.xsd",
+    labelFn: (e) => `externalLink${e.match(/externalLink(\d+)/)?.[1]}`,
+  },
+  {
     pattern: /^xl\/drawings\/drawing\d+\.xml$/,
     xsd: "dml-spreadsheetDrawing.xsd",
     labelFn: (e) => `drawing${e.match(/drawing(\d+)/)?.[1]}`,

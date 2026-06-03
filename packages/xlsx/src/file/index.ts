@@ -39,3 +39,9 @@ export type { PivotTableOptions, PivotDataField, ConsolidateFunction } from "./p
 export type { TableOptions, TableColumnOptions, TableStyleInfoOptions } from "./table";
 export { TotalsRowFunction, TableType } from "./table";
 export type { WorkbookProtectionOptions } from "./workbook";
+export type {
+  ExternalLinkOptions,
+  ExternalBookOptions,
+  ExternalDefinedNameOptions,
+  ExternalSheetDataOptions,
+} from "./external-link";

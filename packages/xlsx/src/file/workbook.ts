@@ -127,6 +127,9 @@ export class WorkbookXml extends BaseXmlComponent {
     }
     p.push("</sheets>");
 
+    // externalReferences placeholder — compiler injects the XML here if needed
+    p.push("<!--EXTERNAL_REFS-->");
+
     p.push('<calcPr calcId="162913"/>');
 
     if (this.pivotCaches.length > 0) {
@@ -152,6 +155,20 @@ export class WorkbookXml extends BaseXmlComponent {
       parts.push(`<tablePart r:id="${tp.rId}"/>`);
     }
     parts.push("</tableParts>");
+    return parts.join("");
+  }
+
+  /**
+   * Generate externalReferences XML fragment for embedding in the workbook.
+   * This is called by the compiler to insert external reference entries.
+   */
+  public static buildExternalReferencesXml(refs: readonly { rId: string }[]): string {
+    if (refs.length === 0) return "";
+    const parts: string[] = ["<externalReferences>"];
+    for (const ref of refs) {
+      parts.push(`<externalReference r:id="${ref.rId}"/>`);
+    }
+    parts.push("</externalReferences>");
     return parts.join("");
   }
 

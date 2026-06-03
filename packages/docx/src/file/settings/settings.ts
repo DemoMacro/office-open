@@ -678,11 +678,21 @@ class MailMerge extends XmlComponent {
     }
 
     if (options.dataSource !== undefined) {
-      this.root.push(stringValObj("w:dataSource", options.dataSource));
+      this.root.push(
+        new BuilderElement({
+          name: "w:dataSource",
+          attributes: [{ key: "r:id", value: options.dataSource }],
+        }),
+      );
     }
 
     if (options.headerSource !== undefined) {
-      this.root.push(stringValObj("w:headerSource", options.headerSource));
+      this.root.push(
+        new BuilderElement({
+          name: "w:headerSource",
+          attributes: [{ key: "r:id", value: options.headerSource }],
+        }),
+      );
     }
 
     if (options.doNotSuppressBlankLines !== undefined) {
@@ -737,7 +747,12 @@ class Odso extends XmlComponent {
       this.root.push(stringValObj("w:table", options.table));
     }
     if (options.src !== undefined) {
-      this.root.push(stringValObj("w:src", options.src));
+      this.root.push(
+        new BuilderElement({
+          name: "w:src",
+          attributes: [{ key: "r:id", value: options.src }],
+        }),
+      );
     }
     if (options.colDelim !== undefined) {
       this.root.push(numberValObj("w:colDelim", options.colDelim));
@@ -757,7 +772,12 @@ class Odso extends XmlComponent {
 
     if (options.recipientData !== undefined) {
       for (const rd of options.recipientData) {
-        this.root.push(stringValObj("w:recipientData", rd));
+        this.root.push(
+          new BuilderElement({
+            name: "w:recipientData",
+            attributes: [{ key: "r:id", value: rd }],
+          }),
+        );
       }
     }
   }
