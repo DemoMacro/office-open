@@ -135,6 +135,7 @@ export {
 } from "./slide-master/slide-master";
 export { DefaultSlideLayout, SlideLayout, type SlideLayoutType } from "./slide-layout/slide-layout";
 export { DefaultNotesMaster } from "./notes-master/notes-master";
+export { DefaultHandoutMaster } from "./handout-master/handout-master";
 export { NotesSlide, type NotesSlideOptions } from "./notes/notes-slide";
 export { HeaderFooter, type SlideHeaderFooterOptions } from "./header-footer/header-footer";
 export { PresentationWrapper, type ViewWrapper } from "./presentation/presentation-wrapper";

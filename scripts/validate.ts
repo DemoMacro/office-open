@@ -111,6 +111,16 @@ const XSD_MAPPINGS: XsdMapping[] = [
     labelFn: (e) => `slideMaster${e.match(/slideMaster(\d+)/)?.[1]}`,
   },
   {
+    pattern: /^ppt\/notesMasters\/notesMaster\d+\.xml$/,
+    xsd: "pml.xsd",
+    labelFn: () => "notesMaster",
+  },
+  {
+    pattern: /^ppt\/handoutMasters\/handoutMaster\d+\.xml$/,
+    xsd: "pml.xsd",
+    labelFn: () => "handoutMaster",
+  },
+  {
     pattern: /^ppt\/charts\/chart\d+\.xml$/,
     xsd: "dml-chart.xsd",
     labelFn: (e) => `chart${e.match(/chart(\d+)/)?.[1]}`,

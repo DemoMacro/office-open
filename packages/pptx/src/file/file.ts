@@ -91,6 +91,7 @@ export interface PresentationOptions extends CorePropertiesOptions {
   readonly masters?: readonly MasterDefinition[];
   readonly slides?: readonly SlideOptions[];
   readonly show?: ShowOptions;
+  readonly includeHandoutMaster?: boolean;
 }
 
 interface RelEntry {
@@ -146,6 +147,7 @@ export class File {
   private readonly slideWidthEmus: number;
   private readonly slideHeightEmus: number;
   private readonly masterDefs: readonly MasterDefinition[];
+  private readonly includeHandout: boolean;
 
   // Lazy components
   private _coreProperties?: CoreProperties;
@@ -181,6 +183,7 @@ export class File {
     this.corePropsOptions = options;
     this.showOptions = options.show;
     this.masterDefs = options.masters ?? [];
+    this.includeHandout = options.includeHandoutMaster ?? false;
     const sz = resolveSlideSize(options.size);
     this.slideWidthEmus = sz.width;
     this.slideHeightEmus = sz.height;
@@ -344,6 +347,9 @@ export class File {
       }
       if (hasComments) {
         this._contentTypes.addCommentAuthors();
+      }
+      if (this.includeHandout) {
+        this._contentTypes.addHandoutMaster();
       }
     }
     return this._contentTypes;
@@ -542,6 +548,10 @@ export class File {
 
   public get notesMasterRelationships(): Relationships {
     return (this._notesMasterRels ??= new Relationships());
+  }
+
+  public get hasHandoutMaster(): boolean {
+    return this.includeHandout;
   }
 
   public get commentAuthorList(): CommentAuthorList | undefined {

@@ -1,5 +1,6 @@
 import { Formatter } from "@export/formatter";
 import type { File } from "@file/file";
+import { DefaultHandoutMaster } from "@file/handout-master/handout-master";
 import type { IMediaData } from "@file/media/data";
 import { DefaultNotesMaster } from "@file/notes-master/notes-master";
 import { Relationships } from "@file/relationships/relationships";
@@ -156,6 +157,39 @@ export class Compiler {
       mapping["NotesMasterRelationships"] = {
         data: this.formatter.formatToXml(notesMasterRels, context),
         path: "ppt/notesMasters/_rels/notesMaster1.xml.rels",
+      };
+    }
+
+    // Handout Master — only when explicitly requested
+    if (file.hasHandoutMaster) {
+      const handoutMasterRId = file.presentationWrapper.relationships.relationshipCount + 1;
+      file.presentationWrapper.relationships.addRelationship(
+        handoutMasterRId,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/handoutMaster",
+        "handoutMasters/handoutMaster1.xml",
+      );
+      file.presentationWrapper.view.setHandoutMasterRId(handoutMasterRId);
+      // Theme index: themes (masters) + 1 (notes master theme if exists)
+      const handoutMasterThemeIndex = themes.length + (file.notesSlides.length > 0 ? 2 : 1);
+      mapping["HandoutMaster"] = {
+        data: this.formatter.formatToXml(new DefaultHandoutMaster(), context),
+        path: "ppt/handoutMasters/handoutMaster1.xml",
+      };
+      const handoutMasterTheme = new DefaultTheme();
+      mapping["HandoutMasterTheme"] = {
+        data: this.formatter.formatToXml(handoutMasterTheme, context),
+        path: `ppt/theme/theme${handoutMasterThemeIndex}.xml`,
+      };
+      file.contentTypes.addTheme(handoutMasterThemeIndex);
+      const handoutMasterRels = new Relationships();
+      handoutMasterRels.addRelationship(
+        1,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
+        `../theme/theme${handoutMasterThemeIndex}.xml`,
+      );
+      mapping["HandoutMasterRelationships"] = {
+        data: this.formatter.formatToXml(handoutMasterRels, context),
+        path: "ppt/handoutMasters/_rels/handoutMaster1.xml.rels",
       };
     }
 

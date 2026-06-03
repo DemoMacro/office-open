@@ -44,6 +44,7 @@ export type RelationshipType =
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/viewProps"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster"
+  | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/handoutMaster"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/commentAuthors"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/video"
   | "http://schemas.microsoft.com/office/2007/relationships/media"

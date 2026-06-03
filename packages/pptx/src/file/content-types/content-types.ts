@@ -18,6 +18,8 @@ const PPTX_THEME = "application/vnd.openxmlformats-officedocument.theme+xml";
 const PPTX_NOTES = "application/vnd.openxmlformats-officedocument.presentationml.notesSlide+xml";
 const PPTX_NOTES_MASTER =
   "application/vnd.openxmlformats-officedocument.presentationml.notesMaster+xml";
+const PPTX_HANDOUT_MASTER =
+  "application/vnd.openxmlformats-officedocument.presentationml.handoutMaster+xml";
 const PPTX_COMMENTS = "application/vnd.openxmlformats-officedocument.presentationml.comments+xml";
 const PPTX_COMMENT_AUTHORS =
   "application/vnd.openxmlformats-officedocument.presentationml.commentAuthors+xml";
@@ -104,6 +106,14 @@ export class ContentTypes extends BaseXmlComponent {
       type: "Override",
       contentType: PPTX_NOTES_MASTER,
       key: "/ppt/notesMasters/notesMaster1.xml",
+    });
+  }
+
+  public addHandoutMaster(): void {
+    this.dynamicEntries.push({
+      type: "Override",
+      contentType: PPTX_HANDOUT_MASTER,
+      key: "/ppt/handoutMasters/handoutMaster1.xml",
     });
   }
 
