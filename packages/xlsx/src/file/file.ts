@@ -32,6 +32,8 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   readonly workbookProtection?: WorkbookProtectionOptions;
   /** External link definitions */
   readonly externalLinks?: readonly ExternalLinkOptions[];
+  /** Custom workbook views */
+  readonly customWorkbookViews?: readonly import("./workbook").CustomWorkbookViewOptions[];
 }
 
 export class File {
@@ -41,6 +43,7 @@ export class File {
   private readonly dxfOptions: readonly DxfOptions[];
   private readonly protectionOptions?: WorkbookProtectionOptions;
   private readonly externalLinkOptions: readonly ExternalLinkOptions[];
+  private readonly customViewOptions?: readonly import("./workbook").CustomWorkbookViewOptions[];
 
   // Lazy components
   private _coreProperties?: CoreProperties;
@@ -64,6 +67,7 @@ export class File {
     this.dxfOptions = options.dxfs ?? [];
     this.protectionOptions = options.workbookProtection;
     this.externalLinkOptions = options.externalLinks ?? [];
+    this.customViewOptions = options.customWorkbookViews;
   }
 
   // ── Lazy getters ──
@@ -124,7 +128,12 @@ export class File {
           rId: `rId${rId++}`,
         });
       }
-      this._workbookXml = new WorkbookXml(sheets, this._pivotCacheRefs, this.protectionOptions);
+      this._workbookXml = new WorkbookXml(
+        sheets,
+        this._pivotCacheRefs,
+        this.protectionOptions,
+        this.customViewOptions,
+      );
     }
     return this._workbookXml;
   }

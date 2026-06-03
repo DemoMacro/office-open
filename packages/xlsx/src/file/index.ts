@@ -41,7 +41,7 @@ export type { CorePropertiesOptions } from "./core-properties";
 export type { PivotTableOptions, PivotDataField, ConsolidateFunction } from "./pivot";
 export type { TableOptions, TableColumnOptions, TableStyleInfoOptions } from "./table";
 export { TotalsRowFunction, TableType } from "./table";
-export type { WorkbookProtectionOptions } from "./workbook";
+export type { WorkbookProtectionOptions, CustomWorkbookViewOptions } from "./workbook";
 export type {
   ExternalLinkOptions,
   ExternalBookOptions,

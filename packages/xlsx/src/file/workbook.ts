@@ -23,6 +23,46 @@ export interface TablePartReference {
   readonly rId: string;
 }
 
+/** Custom workbook view for storing display preferences. */
+export interface CustomWorkbookViewOptions {
+  /** View name */
+  readonly name: string;
+  /** GUID (e.g. "{00000000-0000-0000-0000-000000000000}") */
+  readonly guid: string;
+  /** Window width in twips */
+  readonly windowWidth: number;
+  /** Window height in twips */
+  readonly windowHeight: number;
+  /** Active sheet ID (1-based sheetId) */
+  readonly activeSheetId: number;
+  /** X position of the window */
+  readonly xWindow?: number;
+  /** Y position of the window */
+  readonly yWindow?: number;
+  /** Show formula bar (default true) */
+  readonly showFormulaBar?: boolean;
+  /** Show status bar (default true) */
+  readonly showStatusbar?: boolean;
+  /** Show horizontal scroll (default true) */
+  readonly showHorizontalScroll?: boolean;
+  /** Show vertical scroll (default true) */
+  readonly showVerticalScroll?: boolean;
+  /** Show sheet tabs (default true) */
+  readonly showSheetTabs?: boolean;
+  /** Tab ratio (default 600) */
+  readonly tabRatio?: number;
+  /** Include hidden rows/columns (default true) */
+  readonly includeHiddenRowCol?: boolean;
+  /** Include print settings (default true) */
+  readonly includePrintSettings?: boolean;
+  /** Personal view (default false) */
+  readonly personalView?: boolean;
+  /** Maximized (default false) */
+  readonly maximized?: boolean;
+  /** Minimized (default false) */
+  readonly minimized?: boolean;
+}
+
 export interface WorkbookProtectionOptions {
   /** Lock workbook structure (add/delete/rename/move sheets) */
   readonly lockStructure?: boolean;
@@ -56,16 +96,19 @@ export class WorkbookXml extends BaseXmlComponent {
   private readonly sheets: readonly SheetDefinition[];
   private readonly pivotCaches: readonly PivotCacheReference[];
   private readonly protection?: WorkbookProtectionOptions;
+  private readonly customViews?: readonly CustomWorkbookViewOptions[];
 
   public constructor(
     sheets: readonly SheetDefinition[],
     pivotCaches?: readonly PivotCacheReference[],
     protection?: WorkbookProtectionOptions,
+    customViews?: readonly CustomWorkbookViewOptions[],
   ) {
     super("workbook");
     this.sheets = sheets;
     this.pivotCaches = pivotCaches ?? [];
     this.protection = protection;
+    this.customViews = customViews;
   }
 
   public override toXml(_context: Context): string {
@@ -131,6 +174,35 @@ export class WorkbookXml extends BaseXmlComponent {
     p.push("<!--EXTERNAL_REFS-->");
 
     p.push('<calcPr calcId="162913"/>');
+
+    // Custom workbook views (after calcPr, before pivotCaches per XSD)
+    if (this.customViews && this.customViews.length > 0) {
+      p.push("<customWorkbookViews>");
+      for (const v of this.customViews) {
+        const vAttrs: string[] = [
+          `name="${escapeXml(v.name)}"`,
+          `guid="${escapeXml(v.guid)}"`,
+          `windowWidth="${v.windowWidth}"`,
+          `windowHeight="${v.windowHeight}"`,
+          `activeSheetId="${v.activeSheetId}"`,
+        ];
+        if (v.xWindow !== undefined) vAttrs.push(`xWindow="${v.xWindow}"`);
+        if (v.yWindow !== undefined) vAttrs.push(`yWindow="${v.yWindow}"`);
+        if (v.showFormulaBar === false) vAttrs.push('showFormulaBar="0"');
+        if (v.showStatusbar === false) vAttrs.push('showStatusbar="0"');
+        if (v.showHorizontalScroll === false) vAttrs.push('showHorizontalScroll="0"');
+        if (v.showVerticalScroll === false) vAttrs.push('showVerticalScroll="0"');
+        if (v.showSheetTabs === false) vAttrs.push('showSheetTabs="0"');
+        if (v.tabRatio !== undefined) vAttrs.push(`tabRatio="${v.tabRatio}"`);
+        if (v.includeHiddenRowCol === false) vAttrs.push('includeHiddenRowCol="0"');
+        if (v.includePrintSettings === false) vAttrs.push('includePrintSettings="0"');
+        if (v.personalView) vAttrs.push('personalView="1"');
+        if (v.maximized) vAttrs.push('maximized="1"');
+        if (v.minimized) vAttrs.push('minimized="1"');
+        p.push(`<customWorkbookView ${vAttrs.join(" ")}/>`);
+      }
+      p.push("</customWorkbookViews>");
+    }
 
     if (this.pivotCaches.length > 0) {
       p.push("<pivotCaches>");
