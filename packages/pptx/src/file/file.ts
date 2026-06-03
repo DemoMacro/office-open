@@ -81,9 +81,19 @@ export interface SlideOptions {
 
 export interface ShowOptions {
   readonly loop?: boolean;
-  readonly kiosk?: boolean;
+  /** Show type: "present" (default), "browse", or "kiosk" */
+  readonly type?: "present" | "browse" | "kiosk";
+  /** Browse mode: show scrollbar (default true) */
+  readonly showScrollbar?: boolean;
+  /** Kiosk mode: restart interval in ms (default 300000) */
+  readonly restart?: number;
   readonly showNarration?: boolean;
+  readonly showAnimation?: boolean;
   readonly useTimings?: boolean;
+  /** Slide range for show (1-based start/end) */
+  readonly slideRange?: { readonly start: number; readonly end: number };
+  /** Pen color (hex ARGB, e.g. "FFFF0000" for red) */
+  readonly penColor?: string;
 }
 
 export interface PresentationOptions extends CorePropertiesOptions {
@@ -91,6 +101,7 @@ export interface PresentationOptions extends CorePropertiesOptions {
   readonly masters?: readonly MasterDefinition[];
   readonly slides?: readonly SlideOptions[];
   readonly show?: ShowOptions;
+  readonly view?: import("@file/view-properties").ViewPropertiesOptions;
   readonly includeHandoutMaster?: boolean;
   readonly tableStyles?: import("@office-open/core").TableStyleListOptions;
 }
@@ -150,6 +161,7 @@ export class File {
   private readonly masterDefs: readonly MasterDefinition[];
   private readonly includeHandout: boolean;
   private readonly tableStylesOpts?: import("@office-open/core").TableStyleListOptions;
+  private readonly viewOpts?: import("@file/view-properties").ViewPropertiesOptions;
 
   // Lazy components
   private _coreProperties?: CoreProperties;
@@ -187,6 +199,7 @@ export class File {
     this.masterDefs = options.masters ?? [];
     this.includeHandout = options.includeHandoutMaster ?? false;
     this.tableStylesOpts = options.tableStyles;
+    this.viewOpts = options.view;
     const sz = resolveSlideSize(options.size);
     this.slideWidthEmus = sz.width;
     this.slideHeightEmus = sz.height;
@@ -464,7 +477,7 @@ export class File {
   }
 
   public get viewProps(): ViewProperties {
-    return (this._viewProps ??= new ViewProperties());
+    return (this._viewProps ??= new ViewProperties(this.viewOpts));
   }
 
   public get slideMasters(): readonly DefaultSlideMaster[] {

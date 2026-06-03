@@ -1,6 +1,7 @@
 export {
   File,
   type PresentationOptions,
+  type ShowOptions,
   type SlideOptions,
   type SlideCommentOptions,
   type MasterDefinition,
@@ -9,6 +10,7 @@ export {
   type MasterChild,
   type SlideSize,
 } from "./file";
+export type { ViewPropertiesOptions } from "./view-properties";
 export { Presentation } from "./presentation/presentation";
 export type { PresentationOptions as IPresentationXmlOptions } from "./presentation/presentation";
 export { Shape, type ShapeOptions } from "./shape/shape";

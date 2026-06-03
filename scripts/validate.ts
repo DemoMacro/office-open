@@ -130,6 +130,16 @@ const XSD_MAPPINGS: XsdMapping[] = [
     xsd: "dml-main.xsd",
     labelFn: () => "tableStyles",
   },
+  {
+    pattern: /^ppt\/viewProps\.xml$/,
+    xsd: "pml.xsd",
+    labelFn: () => "viewProps",
+  },
+  {
+    pattern: /^ppt\/presProps\.xml$/,
+    xsd: "pml.xsd",
+    labelFn: () => "presProps",
+  },
   // ── DOCX ──
   { pattern: /^word\/document\.xml$/, xsd: "wml.xsd", labelFn: () => "document" },
   { pattern: /^word\/styles\.xml$/, xsd: "wml.xsd", labelFn: () => "styles" },
