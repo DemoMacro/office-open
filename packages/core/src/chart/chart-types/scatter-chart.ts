@@ -1,5 +1,6 @@
 import { EmptyElement, XmlComponent, chartAttr, wrapEl } from "../../xml-components";
 import type { ChartSeriesData } from "../create-chart-type";
+import { DataLabels, ErrorBars, Trendline } from "../extensions";
 import { createStrRef, createNumRef } from "../series/series-data";
 
 interface ScatterChartOptions {
@@ -28,6 +29,18 @@ class ScatterSeries extends XmlComponent {
     this.root.push(wrapEl("c:order", chartAttr({ val: index })));
     this.root.push(new SeriesTx(series.name));
     this.root.push(new EmptyElement("c:spPr"));
+    // XSD order: dLbls, trendline, errBars BEFORE xVal/yVal
+    if (series.dataLabels) {
+      this.root.push(new DataLabels(series.dataLabels));
+    }
+    if (series.trendlines) {
+      for (const tl of series.trendlines) {
+        this.root.push(new Trendline(tl));
+      }
+    }
+    if (series.errorBars) {
+      this.root.push(new ErrorBars(series.errorBars));
+    }
     this.root.push(new SeriesXVal(categories));
     this.root.push(new SeriesYVal(series.values));
   }

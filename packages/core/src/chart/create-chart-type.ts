@@ -14,10 +14,17 @@ import { RadarChart } from "./chart-types/radar-chart";
 import { ScatterChart } from "./chart-types/scatter-chart";
 import { StockChart } from "./chart-types/stock-chart";
 import { SurfaceChart } from "./chart-types/surface-chart";
+import type { TrendlineOptions, ErrorBarOptions, DataLabelsOptions } from "./extensions";
 
 export interface ChartSeriesData {
   readonly name: string;
   readonly values: readonly number[];
+  /** Trendlines for this series */
+  readonly trendlines?: readonly TrendlineOptions[];
+  /** Error bars for this series */
+  readonly errorBars?: ErrorBarOptions;
+  /** Data labels for this series */
+  readonly dataLabels?: DataLabelsOptions;
 }
 
 export type ChartType =

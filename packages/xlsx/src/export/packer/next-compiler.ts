@@ -14,7 +14,9 @@ import {
   aggregate,
 } from "@file/pivot";
 import type { PivotSourceData, PivotTableOptions } from "@file/pivot";
+import { TableXml } from "@file/table";
 import { VmlNotes } from "@file/vml-notes";
+import { WorkbookXml, type TablePartReference } from "@file/workbook";
 import type { BaseXmlComponent, Context } from "@file/xml-components";
 import {
   ChartSpace,
@@ -63,7 +65,9 @@ export class Compiler {
     let globalChartIdx = 0;
     let globalPivotIdx = 0;
     let globalPivotCacheIdx = 0;
+    let globalTableIdx = 0;
     const pivotCacheDataMap = new Map<string, { cacheId: number; cacheIdx: number }>();
+    const allTableParts: TablePartReference[] = [];
 
     for (let i = 0; i < worksheets.length; i++) {
       const ws = worksheets[i];
@@ -81,12 +85,14 @@ export class Compiler {
       const hasComments = commentOpts.length > 0;
       const pivotOpts = ws.pivotTables;
       const hasPivots = pivotOpts.length > 0;
+      const tableOpts = ws.tables;
+      const hasTables = tableOpts.length > 0;
 
       // Worksheet-level relationships
       let wsRels: Relationships | undefined;
       let nextRid = 0;
 
-      if (hasMedia || hasExternalHyperlinks || hasComments || hasPivots) {
+      if (hasMedia || hasExternalHyperlinks || hasComments || hasPivots || hasTables) {
         wsRels = new Relationships();
       }
 
@@ -341,6 +347,38 @@ export class Compiler {
         }
       }
 
+      // Tables (list objects)
+      const wsTableParts: TablePartReference[] = [];
+      if (hasTables) {
+        for (const tbl of tableOpts) {
+          globalTableIdx++;
+          const tableIdx = globalTableIdx;
+
+          // Generate table XML
+          const tableXml = new TableXml({
+            ...tbl,
+            id: tbl.id ?? tableIdx,
+          });
+          mapping[`Table${tableIdx}`] = {
+            data: fmt(tableXml),
+            path: `xl/tables/table${tableIdx}.xml`,
+          };
+
+          // Worksheet rels → table
+          const tblRid = ++nextRid;
+          wsRels!.addRelationship(
+            tblRid,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/table",
+            `../tables/table${tableIdx}.xml`,
+          );
+
+          wsTableParts.push({ rId: `rId${tblRid}` });
+          allTableParts.push({ rId: `rId${tblRid}` });
+
+          file.contentTypes.addTable(tableIdx);
+        }
+      }
+
       // Pre-render pivot table data into sheetData
       if (hasPivots) {
         const rendered = renderPivotSheetData(
@@ -361,6 +399,13 @@ export class Compiler {
             );
           }
         }
+      }
+
+      // Insert tableParts before closing </worksheet> tag
+      if (wsTableParts.length > 0) {
+        const tablePartsXml = WorkbookXml.buildTablePartsXml(wsTableParts);
+        const closingTag = "</worksheet>";
+        sheetXml = sheetXml.slice(0, -closingTag.length) + tablePartsXml + closingTag;
       }
 
       // Write worksheet rels if needed

@@ -153,6 +153,14 @@ export class ContentTypes extends BaseXmlComponent {
     });
   }
 
+  public addTable(index: number): void {
+    this.dynamicEntries.push({
+      type: "Override",
+      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml",
+      key: `/xl/tables/table${index}.xml`,
+    });
+  }
+
   public override toXml(_context: Context): string {
     const p: string[] = [
       '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">',

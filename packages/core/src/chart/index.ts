@@ -2,6 +2,7 @@ export * from "./axes";
 export * from "./chart-space";
 export * from "./chart-collection";
 export * from "./create-chart-type";
+export * from "./extensions";
 export * from "./series/series-data";
 export * from "./title";
 export { AreaChart } from "./chart-types/area-chart";

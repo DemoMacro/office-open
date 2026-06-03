@@ -19,6 +19,10 @@ export interface PivotCacheReference {
   readonly rId: string;
 }
 
+export interface TablePartReference {
+  readonly rId: string;
+}
+
 export class WorkbookXml extends BaseXmlComponent {
   private readonly sheets: readonly SheetDefinition[];
   private readonly pivotCaches: readonly PivotCacheReference[];
@@ -68,5 +72,19 @@ export class WorkbookXml extends BaseXmlComponent {
 
     p.push("</workbook>");
     return p.join("");
+  }
+
+  /**
+   * Generate tableParts XML fragment for embedding in a worksheet.
+   * This is called by the compiler to insert table references into the worksheet XML.
+   */
+  public static buildTablePartsXml(tableParts: readonly TablePartReference[]): string {
+    if (tableParts.length === 0) return "";
+    const parts: string[] = [`<tableParts count="${tableParts.length}">`];
+    for (const tp of tableParts) {
+      parts.push(`<tablePart r:id="${tp.rId}"/>`);
+    }
+    parts.push("</tableParts>");
+    return parts.join("");
   }
 }

@@ -128,6 +128,93 @@ const wb = new Workbook({
         },
       ],
     },
+    {
+      name: "AdvancedCharts",
+      rows: [
+        { cells: [{ value: "Month" }, { value: "Sales" }, { value: "Target" }] },
+        { cells: [{ value: "Jan" }, { value: 120 }, { value: 100 }] },
+        { cells: [{ value: "Feb" }, { value: 145 }, { value: 110 }] },
+        { cells: [{ value: "Mar" }, { value: 160 }, { value: 120 }] },
+        { cells: [{ value: "Apr" }, { value: 135 }, { value: 130 }] },
+        { cells: [{ value: "May" }, { value: 180 }, { value: 140 }] },
+        { cells: [{ value: "Jun" }, { value: 210 }, { value: 150 }] },
+      ],
+      charts: [
+        // Line chart with trendline, error bars, and data labels
+        {
+          type: "line",
+          title: "Sales with Trendline",
+          categories: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+          series: [
+            {
+              name: "Sales",
+              values: [120, 145, 160, 135, 180, 210],
+              trendlines: [{ type: "linear", dispRSqr: true, dispEq: true }],
+              errorBars: {
+                direction: "y",
+                barType: "both",
+                valueType: "stdErr",
+              },
+              dataLabels: {
+                showVal: true,
+                position: "t",
+              },
+            },
+            {
+              name: "Target",
+              values: [100, 110, 120, 130, 140, 150],
+              trendlines: [{ type: "poly", order: 2 }],
+            },
+          ],
+          col: 5,
+          row: 1,
+        },
+        // Bar chart with data labels and moving average trendline
+        {
+          type: "column",
+          title: "Sales vs Target",
+          categories: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+          series: [
+            {
+              name: "Sales",
+              values: [120, 145, 160, 135, 180, 210],
+              dataLabels: {
+                showVal: true,
+                position: "outEnd",
+              },
+            },
+            {
+              name: "Target",
+              values: [100, 110, 120, 130, 140, 150],
+              trendlines: [{ type: "movingAvg", period: 2 }],
+            },
+          ],
+          col: 5,
+          row: 18,
+        },
+        // Scatter chart with linear trendline and fixed error bars
+        {
+          type: "scatter",
+          title: "Sales Scatter with Trend",
+          categories: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+          series: [
+            {
+              name: "Sales",
+              values: [120, 145, 160, 135, 180, 210],
+              trendlines: [{ type: "linear", forward: 2 }],
+              errorBars: {
+                direction: "y",
+                barType: "both",
+                valueType: "fixedVal",
+                value: 10,
+              },
+            },
+          ],
+          col: 5,
+          row: 35,
+        },
+      ],
+    },
   ],
 });
 

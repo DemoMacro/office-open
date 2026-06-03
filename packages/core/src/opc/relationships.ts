@@ -55,7 +55,8 @@ export type RelationshipType =
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/vmlDrawing"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotTable"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotCacheDefinition"
-  | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotCacheRecords";
+  | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotCacheRecords"
+  | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/table";
 
 export const TargetModeType = {
   EXTERNAL: "External",

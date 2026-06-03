@@ -11,6 +11,7 @@ import type { ChartSpaceOptions } from "@office-open/core";
 import { attrs, escapeXml, selfCloseElement } from "@office-open/xml";
 
 import type { PivotTableOptions } from "./pivot";
+import type { TableOptions } from "./table";
 
 export interface ColumnOptions {
   readonly min: number;
@@ -215,7 +216,10 @@ export type ConditionalFormatType =
   | "containsText"
   | "expression"
   | "top10"
-  | "aboveAverage";
+  | "aboveAverage"
+  | "colorScale"
+  | "dataBar"
+  | "iconSet";
 export type ConditionalFormatOperator =
   | "lessThan"
   | "lessThanOrEqual"
@@ -230,6 +234,73 @@ export type ConditionalFormatOperator =
   | "beginsWith"
   | "endsWith";
 
+/** Conditional format value object type (ST_CfvoType) */
+export type CfvoType = "num" | "percent" | "max" | "min" | "formula" | "percentile";
+
+/** Conditional format value object */
+export interface CfvoOptions {
+  readonly type: CfvoType;
+  readonly val?: string | number;
+  /** Greater than or equal (default: true) */
+  readonly gte?: boolean;
+}
+
+/** Icon set type (ST_IconSetType) */
+export type IconSetType =
+  | "3Arrows"
+  | "3ArrowsGray"
+  | "3Flags"
+  | "3TrafficLights1"
+  | "3TrafficLights2"
+  | "3Signs"
+  | "3Symbols"
+  | "3Symbols2"
+  | "4Arrows"
+  | "4ArrowsGray"
+  | "4RedToBlack"
+  | "4Rating"
+  | "4TrafficLights"
+  | "5Arrows"
+  | "5ArrowsGray"
+  | "5Rating"
+  | "5Quarters";
+
+/** Color scale rule configuration */
+export interface ColorScaleOptions {
+  /** Conditional format values (minimum 2, typically 2 or 3) */
+  readonly cfvo: readonly CfvoOptions[];
+  /** Colors for each value (same count as cfvo) — RGB hex without alpha, e.g. "FF0000" */
+  readonly colors: readonly string[];
+}
+
+/** Data bar rule configuration */
+export interface DataBarOptions {
+  /** Minimum and maximum value objects (exactly 2) */
+  readonly cfvo: readonly [CfvoOptions, CfvoOptions];
+  /** Bar color — RGB hex without alpha, e.g. "638EC6" */
+  readonly color: string;
+  /** Minimum bar length as percentage (default: 10) */
+  readonly minLength?: number;
+  /** Maximum bar length as percentage (default: 90) */
+  readonly maxLength?: number;
+  /** Whether to show cell values (default: true) */
+  readonly showValue?: boolean;
+}
+
+/** Icon set rule configuration */
+export interface IconSetOptions {
+  /** Conditional format values (minimum 2) */
+  readonly cfvo: readonly CfvoOptions[];
+  /** Icon set type (default: "3TrafficLights1") */
+  readonly iconSet?: IconSetType;
+  /** Whether to show cell values (default: true) */
+  readonly showValue?: boolean;
+  /** Whether values are percentages (default: true) */
+  readonly percent?: boolean;
+  /** Whether to reverse icon order (default: false) */
+  readonly reverse?: boolean;
+}
+
 export interface ConditionalFormatRule {
   readonly type: ConditionalFormatType;
   readonly operator?: ConditionalFormatOperator;
@@ -238,6 +309,12 @@ export interface ConditionalFormatRule {
   readonly priority?: number;
   /** Reference to a dxf (differential format) in the styles table */
   readonly dxfId?: number;
+  /** Color scale configuration (when type is "colorScale") */
+  readonly colorScale?: ColorScaleOptions;
+  /** Data bar configuration (when type is "dataBar") */
+  readonly dataBar?: DataBarOptions;
+  /** Icon set configuration (when type is "iconSet") */
+  readonly iconSet?: IconSetOptions;
 }
 
 export interface ConditionalFormatOptions {
@@ -301,6 +378,8 @@ export interface WorksheetOptions {
   readonly tabColor?: TabColorOptions;
   readonly sheetView?: SheetViewOptions;
   readonly pivotTables?: readonly PivotTableOptions[];
+  /** Tables (list objects) for this worksheet */
+  readonly tables?: readonly TableOptions[];
 }
 
 export class Worksheet extends IgnoreIfEmptyXmlComponent {
@@ -321,6 +400,7 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
   private readonly tabColor?: TabColorOptions;
   private readonly sheetView?: SheetViewOptions;
   private readonly pivotTableOptions: readonly PivotTableOptions[];
+  private readonly tableOptions: readonly TableOptions[];
 
   public constructor(options: WorksheetOptions) {
     super("worksheet");
@@ -341,6 +421,7 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
     this.tabColor = options.tabColor;
     this.sheetView = options.sheetView;
     this.pivotTableOptions = options.pivotTables ?? [];
+    this.tableOptions = options.tables ?? [];
   }
 
   public get imageOptions(): readonly WorksheetImageOptions[] {
@@ -365,6 +446,10 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
 
   public get pivotTables(): readonly PivotTableOptions[] {
     return this.pivotTableOptions;
+  }
+
+  public get tables(): readonly TableOptions[] {
+    return this.tableOptions;
   }
 
   /**
@@ -595,11 +680,64 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
           };
           if (rule.operator) ruleAttrs.operator = rule.operator;
           if (rule.dxfId !== undefined) ruleAttrs.dxfId = rule.dxfId;
-          if (rule.formulas && rule.formulas.length > 0) {
-            const formulaParts = rule.formulas.map((f) => `<formula>${escapeXml(f)}</formula>`);
-            p.push(`<cfRule${attrs(ruleAttrs)}>`, ...formulaParts, "</cfRule>");
-          } else {
-            p.push(selfCloseElement("cfRule", attrs(ruleAttrs)));
+
+          // Color scale
+          if (rule.type === "colorScale" && rule.colorScale) {
+            const cs = rule.colorScale;
+            const inner: string[] = [];
+            for (const v of cs.cfvo) {
+              inner.push(this.buildCfvoXml(v));
+            }
+            for (const c of cs.colors) {
+              inner.push(`<color rgb="FF${c}"/>`);
+            }
+            p.push(
+              `<cfRule${attrs(ruleAttrs)}><colorScale>${inner.join("")}</colorScale></cfRule>`,
+            );
+          }
+          // Data bar
+          else if (rule.type === "dataBar" && rule.dataBar) {
+            const db = rule.dataBar;
+            const inner: string[] = [];
+            for (const v of db.cfvo) {
+              inner.push(this.buildCfvoXml(v));
+            }
+            inner.push(`<color rgb="FF${db.color}"/>`);
+            const dbAttrs: Record<string, string | number | boolean | undefined> = {};
+            if (db.minLength !== undefined && db.minLength !== 10) dbAttrs.minLength = db.minLength;
+            if (db.maxLength !== undefined && db.maxLength !== 90) dbAttrs.maxLength = db.maxLength;
+            if (db.showValue === false) dbAttrs.showValue = 0;
+            const attrStr = Object.keys(dbAttrs).length > 0 ? attrs(dbAttrs) : "";
+            p.push(
+              `<cfRule${attrs(ruleAttrs)}><dataBar${attrStr}>${inner.join("")}</dataBar></cfRule>`,
+            );
+          }
+          // Icon set
+          else if (rule.type === "iconSet" && rule.iconSet) {
+            const is = rule.iconSet;
+            const inner: string[] = [];
+            for (const v of is.cfvo) {
+              inner.push(this.buildCfvoXml(v));
+            }
+            const isAttrs: Record<string, string | number | boolean | undefined> = {};
+            if (is.iconSet !== undefined && is.iconSet !== "3TrafficLights1")
+              isAttrs.iconSet = is.iconSet;
+            if (is.showValue === false) isAttrs.showValue = 0;
+            if (is.percent === false) isAttrs.percent = 0;
+            if (is.reverse) isAttrs.reverse = 1;
+            const attrStr = Object.keys(isAttrs).length > 0 ? attrs(isAttrs) : "";
+            p.push(
+              `<cfRule${attrs(ruleAttrs)}><iconSet${attrStr}>${inner.join("")}</iconSet></cfRule>`,
+            );
+          }
+          // Standard rules (cellIs, containsText, expression, top10, aboveAverage)
+          else {
+            if (rule.formulas && rule.formulas.length > 0) {
+              const formulaParts = rule.formulas.map((f) => `<formula>${escapeXml(f)}</formula>`);
+              p.push(`<cfRule${attrs(ruleAttrs)}>`, ...formulaParts, "</cfRule>");
+            } else {
+              p.push(selfCloseElement("cfRule", attrs(ruleAttrs)));
+            }
           }
         }
         p.push("</conditionalFormatting>");
@@ -690,6 +828,16 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
 
     p.push("</worksheet>");
     return p.join("");
+  }
+
+  /**
+   * Build a <cfvo> element string for conditional formatting.
+   */
+  private buildCfvoXml(cfvo: CfvoOptions): string {
+    const a: Record<string, string | number | boolean | undefined> = { type: cfvo.type };
+    if (cfvo.val !== undefined) a.val = cfvo.val;
+    if (cfvo.gte === false) a.gte = 0;
+    return `<cfvo${attrs(a)}/>`;
   }
 
   private buildSheetViewAttrs(): string {
