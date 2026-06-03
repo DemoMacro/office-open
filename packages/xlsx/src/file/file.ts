@@ -19,10 +19,13 @@ import { Worksheet, type WorksheetOptions } from "@file/worksheet";
  */
 import { AppProperties, ChartCollection, Relationships } from "@office-open/core";
 
+import type { ChartsheetOptions } from "./chartsheet";
 import type { ExternalLinkOptions } from "./external-link";
 
 export interface WorkbookOptions extends CorePropertiesOptions {
   readonly worksheets?: readonly WorksheetOptions[];
+  /** Chart-only sheets (no cells, just a chart) */
+  readonly chartsheets?: readonly ChartsheetOptions[];
   /** Pre-defined differential formats for conditional formatting */
   readonly dxfs?: readonly DxfOptions[];
   /** Workbook-level protection */
@@ -33,6 +36,7 @@ export interface WorkbookOptions extends CorePropertiesOptions {
 
 export class File {
   private readonly worksheetOptions: readonly WorksheetOptions[];
+  private readonly chartsheetOptions: readonly ChartsheetOptions[];
   private readonly corePropsOptions: CorePropertiesOptions;
   private readonly dxfOptions: readonly DxfOptions[];
   private readonly protectionOptions?: WorkbookProtectionOptions;
@@ -55,6 +59,7 @@ export class File {
 
   public constructor(options: WorkbookOptions) {
     this.worksheetOptions = options.worksheets ?? [];
+    this.chartsheetOptions = options.chartsheets ?? [];
     this.corePropsOptions = options;
     this.dxfOptions = options.dxfs ?? [];
     this.protectionOptions = options.workbookProtection;
@@ -102,11 +107,23 @@ export class File {
 
   public get workbookXml(): WorkbookXml {
     if (!this._workbookXml) {
-      const sheets: SheetDefinition[] = this.worksheetOptions.map((ws, i) => ({
-        name: ws.name ?? `Sheet${i + 1}`,
-        sheetId: i + 1,
-        rId: `rId${i + 1}`,
-      }));
+      const sheets: SheetDefinition[] = [];
+      let sheetId = 1;
+      let rId = 1;
+      for (const ws of this.worksheetOptions) {
+        sheets.push({
+          name: ws.name ?? `Sheet${sheetId}`,
+          sheetId: sheetId++,
+          rId: `rId${rId++}`,
+        });
+      }
+      for (const cs of this.chartsheetOptions) {
+        sheets.push({
+          name: cs.name ?? `Chart${sheetId}`,
+          sheetId: sheetId++,
+          rId: `rId${rId++}`,
+        });
+      }
       this._workbookXml = new WorkbookXml(sheets, this._pivotCacheRefs, this.protectionOptions);
     }
     return this._workbookXml;
@@ -142,6 +159,10 @@ export class File {
 
   public get worksheetConfigs(): readonly WorksheetOptions[] {
     return this.worksheetOptions;
+  }
+
+  public get chartsheetConfigs(): readonly ChartsheetOptions[] {
+    return this.chartsheetOptions;
   }
 
   public get worksheets(): readonly Worksheet[] {
@@ -182,6 +203,13 @@ export class File {
           rid++,
           "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet",
           `worksheets/sheet${i + 1}.xml`,
+        );
+      }
+      for (let i = 0; i < this.chartsheetOptions.length; i++) {
+        this._workbookRels.addRelationship(
+          rid++,
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chartsheet",
+          `chartsheets/sheet${i + 1}.xml`,
         );
       }
       this._workbookRels.addRelationship(

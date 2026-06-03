@@ -45,3 +45,4 @@ export type {
   ExternalDefinedNameOptions,
   ExternalSheetDataOptions,
 } from "./external-link";
+export type { ChartsheetOptions } from "./chartsheet";

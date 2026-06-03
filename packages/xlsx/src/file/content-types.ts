@@ -8,6 +8,8 @@ import type { Context } from "@file/xml-components";
 
 const XLSX_MAIN = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml";
 const XLSX_WORKSHEET = "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml";
+const XLSX_CHARTSHEET =
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.chartsheet+xml";
 const XLSX_STYLES = "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml";
 const XLSX_SHARED_STRINGS =
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml";
@@ -61,6 +63,14 @@ export class ContentTypes extends BaseXmlComponent {
       type: "Override",
       contentType: XLSX_WORKSHEET,
       key: `/xl/worksheets/sheet${index}.xml`,
+    });
+  }
+
+  public addChartsheet(index: number): void {
+    this.dynamicEntries.push({
+      type: "Override",
+      contentType: XLSX_CHARTSHEET,
+      key: `/xl/chartsheets/sheet${index}.xml`,
     });
   }
 

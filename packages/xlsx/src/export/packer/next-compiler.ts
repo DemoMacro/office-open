@@ -4,6 +4,7 @@
  * @module
  */
 import { Formatter } from "@export/formatter";
+import { Chartsheet } from "@file/chartsheet";
 import { Comments } from "@file/comments";
 import { Drawing, type ImageOptions, type ChartAnchorOptions } from "@file/drawing/drawing";
 import { ExternalLinkXml } from "@file/external-link";
@@ -422,6 +423,88 @@ export class Compiler {
         data: sheetXml,
         path: `xl/worksheets/sheet${i + 1}.xml`,
       };
+    }
+
+    // Chartsheets — chart-only sheets
+    const chartsheetConfigs = file.chartsheetConfigs;
+    for (let i = 0; i < chartsheetConfigs.length; i++) {
+      const csOpts = chartsheetConfigs[i];
+      const chartsheet = new Chartsheet(csOpts);
+
+      // Register chart in the charts collection
+      const chartDef = csOpts.chart;
+      const csChartGlobalIdx = file.charts.array.length;
+      const csChartKey = `cs_chart_${csChartGlobalIdx}`;
+      file.charts.addChart(csChartKey, {
+        key: csChartKey,
+        chartSpace: new ChartSpace({
+          type: chartDef.type as
+            | "column"
+            | "bar"
+            | "line"
+            | "pie"
+            | "doughnut"
+            | "area"
+            | "scatter"
+            | "bubble",
+          title: chartDef.title,
+          categories: chartDef.categories,
+          series: chartDef.series,
+        }),
+      });
+
+      // Chartsheet relationships: drawing (required)
+      const csRels = new Relationships();
+      const csDrawingIdx = i + 1;
+      csRels.addRelationship(
+        1,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing",
+        `../drawings/drawing${csDrawingIdx}.xml`,
+      );
+      chartsheet.setDrawingRId("rId1");
+
+      // Drawing rels: chart reference
+      const csDrawingRels = new Relationships();
+      csDrawingRels.addRelationship(
+        1,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart",
+        `../charts/chart${csChartGlobalIdx + 1}.xml`,
+      );
+
+      // Minimal drawing XML with chart anchor (XSD: absoluteAnchor → pos, ext, graphicFrame, clientData)
+      const csDrawingXml =
+        `<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
+        `<xdr:absoluteAnchor>` +
+        `<xdr:pos x="0" y="0"/>` +
+        `<xdr:ext cx="9308969" cy="6096000"/>` +
+        `<xdr:graphicFrame>` +
+        `<xdr:nvGraphicFramePr><xdr:cNvPr id="1" name="Chart ${i + 1}"/><xdr:cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></xdr:cNvGraphicFramePr></xdr:nvGraphicFramePr>` +
+        `<xdr:xfrm><a:off x="0" y="0"/><a:ext cx="9308969" cy="6096000"/></xdr:xfrm>` +
+        `<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" r:id="rId1"/></a:graphicData></a:graphic>` +
+        `</xdr:graphicFrame>` +
+        `<xdr:clientData/>` +
+        `</xdr:absoluteAnchor>` +
+        `</xdr:wsDr>`;
+
+      mapping[`ChartsheetDrawing${i}`] = {
+        data: csDrawingXml,
+        path: `xl/drawings/drawing${csDrawingIdx}.xml`,
+      };
+      mapping[`ChartsheetDrawingRels${i}`] = {
+        data: fmt(csDrawingRels),
+        path: `xl/drawings/_rels/drawing${csDrawingIdx}.xml.rels`,
+      };
+      file.contentTypes.addDrawing(csDrawingIdx);
+
+      mapping[`ChartsheetRels${i}`] = {
+        data: fmt(csRels),
+        path: `xl/chartsheets/_rels/sheet${i + 1}.xml.rels`,
+      };
+      mapping[`Chartsheet${i}`] = {
+        data: chartsheet.toXml(context),
+        path: `xl/chartsheets/sheet${i + 1}.xml`,
+      };
+      file.contentTypes.addChartsheet(i + 1);
     }
 
     // Workbook XML

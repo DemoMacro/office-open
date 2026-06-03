@@ -149,6 +149,11 @@ const XSD_MAPPINGS: XsdMapping[] = [
     xsd: "sml.xsd",
     labelFn: (e) => `sheet${e.match(/sheet(\d+)/)?.[1]}`,
   },
+  {
+    pattern: /^xl\/chartsheets\/sheet\d+\.xml$/,
+    xsd: "sml.xsd",
+    labelFn: (e) => `chartsheet${e.match(/sheet(\d+)/)?.[1]}`,
+  },
   { pattern: /^xl\/styles\.xml$/, xsd: "sml.xsd", labelFn: () => "styles" },
   {
     pattern: /^xl\/tables\/table\d+\.xml$/,
