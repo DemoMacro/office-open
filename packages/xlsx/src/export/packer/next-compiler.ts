@@ -4,6 +4,7 @@
  * @module
  */
 import { Formatter } from "@export/formatter";
+import { CalcChain } from "@file/calc-chain";
 import { Chartsheet } from "@file/chartsheet";
 import { Comments } from "@file/comments";
 import { Drawing, type ImageOptions, type ChartAnchorOptions } from "@file/drawing/drawing";
@@ -70,6 +71,7 @@ export class Compiler {
     let globalPivotCacheIdx = 0;
     let globalTableIdx = 0;
     const pivotCacheDataMap = new Map<string, { cacheId: number; cacheIdx: number }>();
+    const calcChain = new CalcChain();
     const allTableParts: TablePartReference[] = [];
 
     for (let i = 0; i < worksheets.length; i++) {
@@ -81,6 +83,25 @@ export class Compiler {
 
       // Worksheet uses toXml() fast path (zero-allocation string concat)
       let sheetXml = fmt(ws);
+
+      // Collect formula cells for calcChain
+      const sheetIdx = i + 1;
+      const wsRows = ws.worksheetRows;
+      for (let ri = 0; ri < wsRows.length; ri++) {
+        const rowOpts = wsRows[ri];
+        const rowNumber = rowOpts.rowNumber ?? ri + 1;
+        if (!rowOpts.cells) continue;
+        for (let ci = 0; ci < rowOpts.cells.length; ci++) {
+          const cell = rowOpts.cells[ci];
+          if (!cell.formula) continue;
+          const ref = cell.reference ?? columnToLetter(ci + 1) + rowNumber;
+          calcChain.addCell({
+            r: ref,
+            i: sheetIdx,
+            a: cell.formula.type === "array",
+          });
+        }
+      }
 
       const hasMedia = imgOpts.length > 0 || chartOpts.length > 0;
       const hasExternalHyperlinks = hlOpts.some((h) => h.target.type === "external");
@@ -607,6 +628,21 @@ export class Compiler {
       file.contentTypes.addChart(i + 1);
     }
 
+    // Calculation chain — auto-generated from formula cells
+    if (calcChain.count > 0) {
+      mapping["CalcChain"] = {
+        data: calcChain.toXml(context),
+        path: "xl/calcChain.xml",
+      };
+      file.contentTypes.addCalcChain();
+      const calcChainRid = file.workbookRelationships.relationshipCount + 1;
+      file.workbookRelationships.addRelationship(
+        calcChainRid,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/calcChain",
+        "calcChain.xml",
+      );
+    }
+
     // Register image content types
     const imageExts = new Set<string>();
     for (const img of file.media.array) {
@@ -856,6 +892,17 @@ function colIndexToLetterCompiler(col: number): string {
     n--;
     result = String.fromCharCode(65 + (n % 26)) + result;
     n = Math.floor(n / 26);
+  }
+  return result;
+}
+
+function columnToLetter(col: number): string {
+  let result = "";
+  let n = col;
+  while (n > 0) {
+    const remainder = (n - 1) % 26;
+    result = String.fromCharCode(65 + remainder) + result;
+    n = Math.floor((n - 1) / 26);
   }
   return result;
 }

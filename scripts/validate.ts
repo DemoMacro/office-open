@@ -155,6 +155,7 @@ const XSD_MAPPINGS: XsdMapping[] = [
     labelFn: (e) => `chartsheet${e.match(/sheet(\d+)/)?.[1]}`,
   },
   { pattern: /^xl\/styles\.xml$/, xsd: "sml.xsd", labelFn: () => "styles" },
+  { pattern: /^xl\/calcChain\.xml$/, xsd: "sml.xsd", labelFn: () => "calcChain" },
   {
     pattern: /^xl\/tables\/table\d+\.xml$/,
     xsd: "sml.xsd",

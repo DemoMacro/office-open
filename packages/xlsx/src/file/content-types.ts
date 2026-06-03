@@ -179,6 +179,14 @@ export class ContentTypes extends BaseXmlComponent {
     });
   }
 
+  public addCalcChain(): void {
+    this.dynamicEntries.push({
+      type: "Override",
+      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.calcChain+xml",
+      key: "/xl/calcChain.xml",
+    });
+  }
+
   public override toXml(_context: Context): string {
     const p: string[] = [
       '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">',
