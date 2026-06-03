@@ -32,6 +32,9 @@ export type {
   IconSetOptions,
   CfvoOptions,
   FormulaOptions,
+  ScenarioOptions,
+  ScenarioDefinition,
+  ScenarioCellOptions,
 } from "./worksheet";
 export type { IconSetType, CfvoType } from "./worksheet";
 export type { CorePropertiesOptions } from "./core-properties";

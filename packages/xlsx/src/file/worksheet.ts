@@ -62,6 +62,44 @@ export interface FormulaOptions {
   readonly sharedIndex?: number;
 }
 
+/** Input cell for a what-if scenario (maps to CT_InputCells). */
+export interface ScenarioCellOptions {
+  /** Cell reference, e.g. "B2" */
+  readonly r: string;
+  /** Cell value for this scenario */
+  readonly val: string | number;
+  /** Whether the value is deleted */
+  readonly deleted?: boolean;
+}
+
+/** A single what-if scenario (maps to CT_Scenario). */
+export interface ScenarioDefinition {
+  /** Scenario name */
+  readonly name: string;
+  /** Input cells with their values for this scenario */
+  readonly inputCells: readonly ScenarioCellOptions[];
+  /** Sort/order count */
+  readonly count?: number;
+  /** Creator user name */
+  readonly user?: string;
+  /** Comment */
+  readonly comment?: string;
+  /** Whether the scenario is hidden */
+  readonly hidden?: boolean;
+  /** Whether the scenario is locked */
+  readonly locked?: boolean;
+}
+
+/** Scenarios for what-if analysis (maps to CT_Scenarios). */
+export interface ScenarioOptions {
+  /** Named scenarios */
+  readonly scenarios: readonly ScenarioDefinition[];
+  /** Current scenario index (0-based) */
+  readonly current?: number;
+  /** Show scenario index (0-based) */
+  readonly show?: number;
+}
+
 export interface MergeCellOptions {
   readonly from: { readonly row: number; readonly col: number };
   readonly to: { readonly row: number; readonly col: number };
@@ -395,6 +433,8 @@ export interface WorksheetOptions {
   readonly protection?: SheetProtectionOptions;
   /** Named protected ranges within this sheet */
   readonly protectedRanges?: readonly ProtectedRangeOptions[];
+  /** What-if scenarios */
+  readonly scenarios?: ScenarioOptions;
   /** Auto-filter configuration */
   readonly autoFilter?: string | AutoFilterOptions;
   readonly images?: readonly WorksheetImageOptions[];
@@ -419,6 +459,7 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
   private readonly freezePanes?: FreezePaneOptions;
   private readonly protection?: SheetProtectionOptions;
   private readonly protectedRanges: readonly ProtectedRangeOptions[];
+  private readonly scenarioOpts?: ScenarioOptions;
   private readonly autoFilter?: string | AutoFilterOptions;
   private readonly images: readonly WorksheetImageOptions[];
   private readonly chartOptions: readonly WorksheetChartOptions[];
@@ -441,6 +482,7 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
     this.freezePanes = options.freezePanes;
     this.protection = options.protection;
     this.protectedRanges = options.protectedRanges ?? [];
+    this.scenarioOpts = options.scenarios;
     this.autoFilter = options.autoFilter;
     this.images = options.images ?? [];
     this.chartOptions = options.charts ?? [];
@@ -667,6 +709,40 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
       }
       prParts.push("</protectedRanges>");
       p.push(prParts.join(""));
+    }
+
+    // Scenarios (what-if analysis)
+    if (this.scenarioOpts) {
+      const scParts: string[] = ["<scenarios"];
+      const scAttrs: Record<string, string | number> = {};
+      if (this.scenarioOpts.current !== undefined) scAttrs.current = this.scenarioOpts.current;
+      if (this.scenarioOpts.show !== undefined) scAttrs.show = this.scenarioOpts.show;
+      scParts[0] = `<scenarios${attrs(scAttrs)}>`;
+
+      for (const scenario of this.scenarioOpts.scenarios) {
+        const sAttrs: Record<string, string | number | boolean | undefined> = {
+          name: scenario.name,
+        };
+        if (scenario.count !== undefined) sAttrs.count = scenario.count;
+        if (scenario.user) sAttrs.user = scenario.user;
+        if (scenario.comment) sAttrs.comment = scenario.comment;
+        if (scenario.hidden) sAttrs.hidden = true;
+        if (scenario.locked) sAttrs.locked = true;
+
+        const sParts: string[] = [`<scenario${attrs(sAttrs)}>`];
+        for (const cell of scenario.inputCells) {
+          const icAttrs: Record<string, string | number | boolean | undefined> = {
+            r: cell.r,
+            val: String(cell.val),
+          };
+          if (cell.deleted) icAttrs.deleted = true;
+          sParts.push(`<inputCells${attrs(icAttrs)}/>`);
+        }
+        sParts.push("</scenario>");
+        scParts.push(sParts.join(""));
+      }
+      scParts.push("</scenarios>");
+      p.push(scParts.join(""));
     }
 
     // Auto filter
