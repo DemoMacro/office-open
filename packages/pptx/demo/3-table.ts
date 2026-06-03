@@ -2,9 +2,31 @@ import * as fs from "fs";
 
 import { Presentation, Packer, Shape, Table } from "@office-open/pptx";
 
+const CUSTOM_STYLE_ID = "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}";
+
 const pres = new Presentation({
   title: "Phase 3 Demo",
   creator: "Demo",
+  tableStyles: {
+    defaultStyleId: CUSTOM_STYLE_ID,
+    styles: [
+      {
+        styleId: CUSTOM_STYLE_ID,
+        styleName: "Custom Blue Stripe",
+        regions: {
+          wholeTbl: {
+            text: { bold: "off" },
+          },
+          firstRow: {
+            text: { bold: "on" },
+          },
+          band1H: {
+            text: { bold: "off" },
+          },
+        },
+      },
+    ],
+  },
   slides: [
     {
       children: [
@@ -170,6 +192,43 @@ const pres = new Presentation({
               cells: [{ text: "K" }, { text: "L" }],
             },
           ],
+        }),
+      ],
+    },
+    // Slide 5: Custom table style
+    {
+      children: [
+        new Shape({
+          x: 50,
+          y: 30,
+          width: 600,
+          height: 50,
+          textBody: { text: "Custom Table Style" },
+          fill: "4472C4",
+        }),
+        new Table({
+          x: 50,
+          y: 120,
+          width: 600,
+          height: 250,
+          rows: [
+            {
+              cells: [{ text: "Product" }, { text: "Q1" }, { text: "Q2" }],
+            },
+            {
+              cells: [{ text: "Widget" }, { text: "120" }, { text: "150" }],
+            },
+            {
+              cells: [{ text: "Gadget" }, { text: "80" }, { text: "95" }],
+            },
+            {
+              cells: [{ text: "Doohickey" }, { text: "200" }, { text: "180" }],
+            },
+          ],
+          columnWidths: [2500000, 1750000, 1750000],
+          firstRow: true,
+          bandRow: true,
+          tableStyleId: CUSTOM_STYLE_ID,
         }),
       ],
     },

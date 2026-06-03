@@ -301,6 +301,46 @@ const pres = new Presentation({
         }),
       ],
     },
+    // Slide 7: Shape locking
+    {
+      children: [
+        new Shape({
+          x: 50,
+          y: 50,
+          width: 600,
+          height: 50,
+          textBody: { text: "Shape Locking" },
+          fill: "4472C4",
+        }),
+        // Locked shape: cannot select, move, resize, or edit text
+        new Shape({
+          x: 50,
+          y: 120,
+          width: 350,
+          height: 100,
+          textBody: { text: "Locked: no select, move, resize, text edit" },
+          outline: { color: "ED7D31", width: 1 },
+          locking: {
+            noSelect: true,
+            noMove: true,
+            noResize: true,
+            noTextEdit: true,
+          },
+        }),
+        // Aspect-locked shape: can move/resize but ratio is fixed
+        new Shape({
+          x: 430,
+          y: 120,
+          width: 350,
+          height: 100,
+          textBody: { text: "Aspect locked: ratio is fixed" },
+          outline: { color: "70AD47", width: 1 },
+          locking: {
+            noChangeAspect: true,
+          },
+        }),
+      ],
+    },
   ],
 });
 
