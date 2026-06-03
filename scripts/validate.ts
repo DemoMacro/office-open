@@ -125,6 +125,11 @@ const XSD_MAPPINGS: XsdMapping[] = [
     xsd: "dml-chart.xsd",
     labelFn: (e) => `chart${e.match(/chart(\d+)/)?.[1]}`,
   },
+  {
+    pattern: /^ppt\/tableStyles\.xml$/,
+    xsd: "dml-main.xsd",
+    labelFn: () => "tableStyles",
+  },
   // ── DOCX ──
   { pattern: /^word\/document\.xml$/, xsd: "wml.xsd", labelFn: () => "document" },
   { pattern: /^word\/styles\.xml$/, xsd: "wml.xsd", labelFn: () => "styles" },

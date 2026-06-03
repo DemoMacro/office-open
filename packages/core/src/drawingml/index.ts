@@ -125,3 +125,19 @@ export type { Transform2DOptions, GroupTransform2DOptions } from "./transform";
 // Media transformation
 export { createTransformation } from "./media/transformation";
 export type { MediaTransformation, MediaDataTransformation } from "./media/transformation";
+
+// Table Style
+export {
+  createTableStyle,
+  createTableStyleList,
+  type TableStyleOptions,
+  type TableStyleListOptions,
+  type TablePartStyleOptions,
+  type TableTextStyleOptions,
+  type TableCellStyleOptions,
+  type TableCellBorderOptions,
+  type ThemeableLineStyleOptions,
+  type StyleMatrixReferenceOptions,
+  type TableStyleRegion,
+  type OnOffStyleType,
+} from "./table-style";

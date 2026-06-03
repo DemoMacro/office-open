@@ -92,6 +92,7 @@ export interface PresentationOptions extends CorePropertiesOptions {
   readonly slides?: readonly SlideOptions[];
   readonly show?: ShowOptions;
   readonly includeHandoutMaster?: boolean;
+  readonly tableStyles?: import("@office-open/core").TableStyleListOptions;
 }
 
 interface RelEntry {
@@ -148,6 +149,7 @@ export class File {
   private readonly slideHeightEmus: number;
   private readonly masterDefs: readonly MasterDefinition[];
   private readonly includeHandout: boolean;
+  private readonly tableStylesOpts?: import("@office-open/core").TableStyleListOptions;
 
   // Lazy components
   private _coreProperties?: CoreProperties;
@@ -184,6 +186,7 @@ export class File {
     this.showOptions = options.show;
     this.masterDefs = options.masters ?? [];
     this.includeHandout = options.includeHandoutMaster ?? false;
+    this.tableStylesOpts = options.tableStyles;
     const sz = resolveSlideSize(options.size);
     this.slideWidthEmus = sz.width;
     this.slideHeightEmus = sz.height;
@@ -453,7 +456,7 @@ export class File {
   }
 
   public get tableStyles(): TableStyles {
-    return (this._tableStyles ??= new TableStyles());
+    return (this._tableStyles ??= new TableStyles(this.tableStylesOpts));
   }
 
   public get presProps(): PresentationProperties {
