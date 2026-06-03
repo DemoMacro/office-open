@@ -11,9 +11,12 @@ export type {
   PivotDataField,
   PivotSourceData,
   ConsolidateFunction,
+  PivotFilterOptions,
+  PivotFilterType,
 } from "./pivot-utils";
 export {
   ConsolidateFunction as ConsolidateFunctionType,
+  PivotFilterType as PivotFilterTypeValue,
   collectUniqueValues,
   isNumericField,
   aggregate,

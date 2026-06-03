@@ -31,6 +31,104 @@ export interface PivotDataField {
   readonly name?: string;
 }
 
+/** Pivot filter type (ST_PivotFilterType) */
+export const PivotFilterType = {
+  UNKNOWN: "unknown",
+  COUNT: "count",
+  PERCENT: "percent",
+  SUM: "sum",
+  CAPTION_EQUAL: "captionEqual",
+  CAPTION_NOT_EQUAL: "captionNotEqual",
+  CAPTION_BEGINS_WITH: "captionBeginsWith",
+  CAPTION_NOT_BEGINS_WITH: "captionNotBeginsWith",
+  CAPTION_ENDS_WITH: "captionEndsWith",
+  CAPTION_NOT_ENDS_WITH: "captionNotEndsWith",
+  CAPTION_CONTAINS: "captionContains",
+  CAPTION_NOT_CONTAINS: "captionNotContains",
+  CAPTION_GREATER_THAN: "captionGreaterThan",
+  CAPTION_GREATER_THAN_OR_EQUAL: "captionGreaterThanOrEqual",
+  CAPTION_LESS_THAN: "captionLessThan",
+  CAPTION_LESS_THAN_OR_EQUAL: "captionLessThanOrEqual",
+  CAPTION_BETWEEN: "captionBetween",
+  CAPTION_NOT_BETWEEN: "captionNotBetween",
+  VALUE_EQUAL: "valueEqual",
+  VALUE_NOT_EQUAL: "valueNotEqual",
+  VALUE_GREATER_THAN: "valueGreaterThan",
+  VALUE_GREATER_THAN_OR_EQUAL: "valueGreaterThanOrEqual",
+  VALUE_LESS_THAN: "valueLessThan",
+  VALUE_LESS_THAN_OR_EQUAL: "valueLessThanOrEqual",
+  VALUE_BETWEEN: "valueBetween",
+  VALUE_NOT_BETWEEN: "valueNotBetween",
+  DATE_EQUAL: "dateEqual",
+  DATE_NOT_EQUAL: "dateNotEqual",
+  DATE_OLDER_THAN: "dateOlderThan",
+  DATE_OLDER_THAN_OR_EQUAL: "dateOlderThanOrEqual",
+  DATE_NEWER_THAN: "dateNewerThan",
+  DATE_NEWER_THAN_OR_EQUAL: "dateNewerThanOrEqual",
+  DATE_BETWEEN: "dateBetween",
+  DATE_NOT_BETWEEN: "dateNotBetween",
+  TOMORROW: "tomorrow",
+  TODAY: "today",
+  YESTERDAY: "yesterday",
+  NEXT_WEEK: "nextWeek",
+  THIS_WEEK: "thisWeek",
+  LAST_WEEK: "lastWeek",
+  NEXT_MONTH: "nextMonth",
+  THIS_MONTH: "thisMonth",
+  LAST_MONTH: "lastMonth",
+  NEXT_QUARTER: "nextQuarter",
+  THIS_QUARTER: "thisQuarter",
+  LAST_QUARTER: "lastQuarter",
+  NEXT_YEAR: "nextYear",
+  THIS_YEAR: "thisYear",
+  LAST_YEAR: "lastYear",
+  YEAR_TO_DATE: "yearToDate",
+  Q1: "Q1",
+  Q2: "Q2",
+  Q3: "Q3",
+  Q4: "Q4",
+  M1: "M1",
+  M2: "M2",
+  M3: "M3",
+  M4: "M4",
+  M5: "M5",
+  M6: "M6",
+  M7: "M7",
+  M8: "M8",
+  M9: "M9",
+  M10: "M10",
+  M11: "M11",
+  M12: "M12",
+} as const;
+
+export type PivotFilterType = (typeof PivotFilterType)[keyof typeof PivotFilterType];
+
+/** A single pivot filter (CT_PivotFilter) */
+export interface PivotFilterOptions {
+  /** Field index to filter on (required) */
+  readonly fld: number;
+  /** Filter type (required) */
+  readonly type: PivotFilterType;
+  /** Filter ID — unique within this pivot table (required) */
+  readonly id: number;
+  /** Measure field index for OLAP filters */
+  readonly mpFld?: number;
+  /** Evaluation order */
+  readonly evalOrder?: number;
+  /** Measure hierarchy */
+  readonly iMeasureHier?: number;
+  /** Measure field */
+  readonly iMeasureFld?: number;
+  /** Filter name */
+  readonly name?: string;
+  /** Filter description */
+  readonly description?: string;
+  /** First string value for caption/date filters */
+  readonly stringValue1?: string;
+  /** Second string value for between filters */
+  readonly stringValue2?: string;
+}
+
 /** Options for a single pivot table on a worksheet. */
 export interface PivotTableOptions {
   /** Pivot table name (default: "PivotTable{N}") */
@@ -49,6 +147,8 @@ export interface PivotTableOptions {
   readonly data: readonly PivotDataField[];
   /** Pivot style name (default: "PivotStyleLight16") */
   readonly style?: string;
+  /** Pivot filters (CT_PivotFilters) */
+  readonly filters?: readonly PivotFilterOptions[];
 }
 
 /** Parsed source data for pivot cache generation. */

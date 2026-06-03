@@ -8,10 +8,10 @@
  */
 import { BaseXmlComponent } from "@file/xml-components";
 import type { Context } from "@file/xml-components";
-import { escapeXml } from "@office-open/xml";
+import { attrs, escapeXml } from "@office-open/xml";
 
 import type { PivotSourceData } from "./pivot-utils";
-import type { PivotTableOptions, PivotDataField } from "./pivot-utils";
+import type { PivotTableOptions, PivotDataField, PivotFilterOptions } from "./pivot-utils";
 import { collectUniqueValues } from "./pivot-utils";
 
 export class PivotTableXml extends BaseXmlComponent {
@@ -110,6 +110,11 @@ export class PivotTableXml extends BaseXmlComponent {
     p.push(
       `<pivotTableStyleInfo name="${escapeXml(style)}" showRowHeaders="1" showColHeaders="1" showRowStripes="0" showColStripes="0" showLastColumn="1"/>`,
     );
+
+    // filters (after pivotTableStyleInfo per XSD sequence)
+    if (o.filters && o.filters.length > 0) {
+      p.push(this.buildFilters(o.filters));
+    }
 
     p.push("</pivotTableDefinition>");
     return p.join("");
@@ -293,6 +298,28 @@ export class PivotTableXml extends BaseXmlComponent {
     const endRow = startRow + rowCount - 1;
 
     return `${startCol}${startRow}:${endCol}${endRow}`;
+  }
+
+  private buildFilters(filters: readonly PivotFilterOptions[]): string {
+    const parts: string[] = [`<filters count="${filters.length}">`];
+    for (const f of filters) {
+      const fAttrs: Record<string, string | number | boolean | undefined> = {
+        fld: f.fld,
+        type: f.type,
+        id: f.id,
+      };
+      if (f.mpFld !== undefined) fAttrs.mpFld = f.mpFld;
+      if (f.evalOrder !== undefined) fAttrs.evalOrder = f.evalOrder;
+      if (f.iMeasureHier !== undefined) fAttrs.iMeasureHier = f.iMeasureHier;
+      if (f.iMeasureFld !== undefined) fAttrs.iMeasureFld = f.iMeasureFld;
+      if (f.name !== undefined) fAttrs.name = f.name;
+      if (f.description !== undefined) fAttrs.description = f.description;
+      if (f.stringValue1 !== undefined) fAttrs.stringValue1 = f.stringValue1;
+      if (f.stringValue2 !== undefined) fAttrs.stringValue2 = f.stringValue2;
+      parts.push(`<filter${attrs(fAttrs)}><autoFilter/></filter>`);
+    }
+    parts.push("</filters>");
+    return parts.join("");
   }
 }
 

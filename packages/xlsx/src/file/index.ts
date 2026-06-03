@@ -39,7 +39,13 @@ export type {
 } from "./worksheet";
 export type { IconSetType, CfvoType } from "./worksheet";
 export type { CorePropertiesOptions } from "./core-properties";
-export type { PivotTableOptions, PivotDataField, ConsolidateFunction } from "./pivot";
+export type {
+  PivotTableOptions,
+  PivotDataField,
+  ConsolidateFunction,
+  PivotFilterOptions,
+  PivotFilterType,
+} from "./pivot";
 export type { TableOptions, TableColumnOptions, TableStyleInfoOptions } from "./table";
 export { TotalsRowFunction, TableType } from "./table";
 export type { WorkbookProtectionOptions, CustomWorkbookViewOptions } from "./workbook";
