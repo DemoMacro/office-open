@@ -18,9 +18,12 @@ export interface ExternalDefinedNameOptions {
 }
 
 export interface ExternalCellOptions {
-  readonly r: string;
-  readonly t?: string;
-  readonly v?: string;
+  /** Cell reference, e.g. "A1" */
+  readonly reference: string;
+  /** Cell data type */
+  readonly type?: string;
+  /** Cell value */
+  readonly value?: string;
 }
 
 export interface ExternalBookOptions {
@@ -35,7 +38,8 @@ export interface ExternalBookOptions {
 }
 
 export interface ExternalRowOptions {
-  readonly r: number;
+  /** Row number (1-based) */
+  readonly rowNumber: number;
   readonly cells?: readonly ExternalCellOptions[];
 }
 
@@ -43,17 +47,6 @@ export interface ExternalSheetDataOptions {
   readonly sheetId: number;
   readonly refreshError?: boolean;
   readonly rows?: readonly ExternalRowOptions[];
-}
-
-export interface ExternalBookOptions {
-  /** Target path of the external workbook */
-  readonly target?: string;
-  /** Sheet names from the external workbook */
-  readonly sheetNames?: readonly string[];
-  /** Defined names from the external workbook */
-  readonly definedNames?: readonly ExternalDefinedNameOptions[];
-  /** Cached sheet data from the external workbook */
-  readonly sheetDataSet?: readonly ExternalSheetDataOptions[];
 }
 
 export interface ExternalLinkOptions {
@@ -115,14 +108,17 @@ export class ExternalLinkXml extends BaseXmlComponent {
 
           if (sd.rows) {
             for (const row of sd.rows) {
-              bookParts.push(`<row r="${row.r}">`);
+              bookParts.push(`<row r="${row.rowNumber}">`);
               if (row.cells) {
                 for (const cell of row.cells) {
-                  const cellAttrs: Record<string, string | number | undefined> = {};
-                  if (cell.r !== undefined) cellAttrs.r = cell.r;
-                  if (cell.t !== undefined) cellAttrs.t = cell.t;
-                  if (cell.v !== undefined) {
-                    bookParts.push(`<cell${attrs(cellAttrs)}><v>${escapeXml(cell.v)}</v></cell>`);
+                  const cellAttrs: Record<string, string | number | undefined> = {
+                    r: cell.reference,
+                  };
+                  if (cell.type !== undefined) cellAttrs.t = cell.type;
+                  if (cell.value !== undefined) {
+                    bookParts.push(
+                      `<cell${attrs(cellAttrs)}><v>${escapeXml(cell.value)}</v></cell>`,
+                    );
                   } else {
                     bookParts.push(`<cell${attrs(cellAttrs)}/>`);
                   }

@@ -96,9 +96,9 @@ export class Compiler {
           if (!cell.formula) continue;
           const ref = cell.reference ?? columnToLetter(ci + 1) + rowNumber;
           calcChain.addCell({
-            r: ref,
-            i: sheetIdx,
-            a: cell.formula.type === "array",
+            reference: ref,
+            sheetIndex: sheetIdx,
+            array: cell.formula.type === "array",
           });
         }
       }

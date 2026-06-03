@@ -176,7 +176,7 @@ export class WorkbookXml extends BaseXmlComponent {
   }
 
   public override toXml(_context: Context): string {
-    const p: string[] = [
+    const parts: string[] = [
       '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"' +
         ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"' +
         ' xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"' +
@@ -191,22 +191,23 @@ export class WorkbookXml extends BaseXmlComponent {
 
     // File sharing (after fileVersion, before workbookPr per XSD sequence)
     if (this.fileSharing) {
-      const fs = this.fileSharing;
+      const fileSharing = this.fileSharing;
       const fsAttrs: string[] = [];
-      if (fs.readOnlyRecommended) fsAttrs.push('readOnlyRecommended="1"');
-      if (fs.userName) fsAttrs.push(`userName="${escapeXml(fs.userName)}"`);
-      if (fs.reservationPassword)
-        fsAttrs.push(`reservationPassword="${escapeXml(fs.reservationPassword)}"`);
-      if (fs.algorithmName) fsAttrs.push(`algorithmName="${escapeXml(fs.algorithmName)}"`);
-      if (fs.hashValue) fsAttrs.push(`hashValue="${escapeXml(fs.hashValue)}"`);
-      if (fs.saltValue) fsAttrs.push(`saltValue="${escapeXml(fs.saltValue)}"`);
-      if (fs.spinCount !== undefined) fsAttrs.push(`spinCount="${fs.spinCount}"`);
+      if (fileSharing.readOnlyRecommended) fsAttrs.push('readOnlyRecommended="1"');
+      if (fileSharing.userName) fsAttrs.push(`userName="${escapeXml(fileSharing.userName)}"`);
+      if (fileSharing.reservationPassword)
+        fsAttrs.push(`reservationPassword="${escapeXml(fileSharing.reservationPassword)}"`);
+      if (fileSharing.algorithmName)
+        fsAttrs.push(`algorithmName="${escapeXml(fileSharing.algorithmName)}"`);
+      if (fileSharing.hashValue) fsAttrs.push(`hashValue="${escapeXml(fileSharing.hashValue)}"`);
+      if (fileSharing.saltValue) fsAttrs.push(`saltValue="${escapeXml(fileSharing.saltValue)}"`);
+      if (fileSharing.spinCount !== undefined) fsAttrs.push(`spinCount="${fileSharing.spinCount}"`);
       if (fsAttrs.length > 0) {
-        p.push(`<fileSharing ${fsAttrs.join(" ")}/>`);
+        parts.push(`<fileSharing ${fsAttrs.join(" ")}/>`);
       }
     }
 
-    p.push("<workbookPr/>");
+    parts.push("<workbookPr/>");
 
     // Workbook protection (after workbookPr, before bookViews per XSD sequence)
     if (this.protection) {
@@ -236,40 +237,40 @@ export class WorkbookXml extends BaseXmlComponent {
       if (prot.revisionsSpinCount !== undefined)
         protAttrs.push(`revisionsSpinCount="${prot.revisionsSpinCount}"`);
       if (protAttrs.length > 0) {
-        p.push(`<workbookProtection ${protAttrs.join(" ")}/>`);
+        parts.push(`<workbookProtection ${protAttrs.join(" ")}/>`);
       }
     }
 
-    p.push(
+    parts.push(
       '<bookViews><workbookView xWindow="0" yWindow="0" windowWidth="28800" windowHeight="12300"/></bookViews>',
       "<sheets>",
     );
     for (const s of this.sheets) {
       const stateAttr = s.state && s.state !== "visible" ? ` state="${s.state}"` : "";
-      p.push(
+      parts.push(
         `<sheet name="${escapeXml(s.name)}" sheetId="${s.sheetId}" r:id="${s.rId}"${stateAttr}/>`,
       );
     }
-    p.push("</sheets>");
+    parts.push("</sheets>");
 
     // Function groups (after sheets, before externalReferences per XSD)
     if (this.functionGroupNames.length > 0) {
-      const fgParts: string[] = [`<functionGroups builtInGroupCount="16">`];
+      const functionGroupParts: string[] = [`<functionGroups builtInGroupCount="16">`];
       for (const name of this.functionGroupNames) {
-        fgParts.push(`<functionGroup name="${escapeXml(name)}"/>`);
+        functionGroupParts.push(`<functionGroup name="${escapeXml(name)}"/>`);
       }
-      fgParts.push("</functionGroups>");
-      p.push(fgParts.join(""));
+      functionGroupParts.push("</functionGroups>");
+      parts.push(functionGroupParts.join(""));
     }
 
     // externalReferences placeholder — compiler injects the XML here if needed
-    p.push("<!--EXTERNAL_REFS-->");
+    parts.push("<!--EXTERNAL_REFS-->");
 
-    p.push('<calcPr calcId="162913"/>');
+    parts.push('<calcPr calcId="162913"/>');
 
     // Custom workbook views (after calcPr, before pivotCaches per XSD)
     if (this.customViews && this.customViews.length > 0) {
-      p.push("<customWorkbookViews>");
+      parts.push("<customWorkbookViews>");
       for (const v of this.customViews) {
         const vAttrs: string[] = [
           `name="${escapeXml(v.name)}"`,
@@ -291,51 +292,54 @@ export class WorkbookXml extends BaseXmlComponent {
         if (v.personalView) vAttrs.push('personalView="1"');
         if (v.maximized) vAttrs.push('maximized="1"');
         if (v.minimized) vAttrs.push('minimized="1"');
-        p.push(`<customWorkbookView ${vAttrs.join(" ")}/>`);
+        parts.push(`<customWorkbookView ${vAttrs.join(" ")}/>`);
       }
-      p.push("</customWorkbookViews>");
+      parts.push("</customWorkbookViews>");
     }
 
     if (this.pivotCaches.length > 0) {
-      p.push("<pivotCaches>");
+      parts.push("<pivotCaches>");
       for (const pc of this.pivotCaches) {
-        p.push(`<pivotCache cacheId="${pc.cacheId}" r:id="${pc.rId}"/>`);
+        parts.push(`<pivotCache cacheId="${pc.cacheId}" r:id="${pc.rId}"/>`);
       }
-      p.push("</pivotCaches>");
+      parts.push("</pivotCaches>");
     }
 
     // Web publishing (after pivotCaches, before fileRecoveryPr per XSD sequence)
     if (this.webPublishing) {
-      const wp = this.webPublishing;
+      const webPublishing = this.webPublishing;
       const wpAttrs: string[] = [];
-      if (wp.css === false) wpAttrs.push('css="0"');
-      if (wp.thicket === false) wpAttrs.push('thicket="0"');
-      if (wp.longFileNames === false) wpAttrs.push('longFileNames="0"');
-      if (wp.vml) wpAttrs.push('vml="1"');
-      if (wp.allowPng) wpAttrs.push('allowPng="1"');
-      if (wp.targetScreenSize && wp.targetScreenSize !== "800x600")
-        wpAttrs.push(`targetScreenSize="${wp.targetScreenSize}"`);
-      if (wp.dpi !== undefined && wp.dpi !== 96) wpAttrs.push(`dpi="${wp.dpi}"`);
-      if (wp.codePage !== undefined) wpAttrs.push(`codePage="${wp.codePage}"`);
-      if (wp.characterSet) wpAttrs.push(`characterSet="${escapeXml(wp.characterSet)}"`);
-      p.push(`<webPublishing ${wpAttrs.join(" ")}/>`);
+      if (webPublishing.css === false) wpAttrs.push('css="0"');
+      if (webPublishing.thicket === false) wpAttrs.push('thicket="0"');
+      if (webPublishing.longFileNames === false) wpAttrs.push('longFileNames="0"');
+      if (webPublishing.vml) wpAttrs.push('vml="1"');
+      if (webPublishing.allowPng) wpAttrs.push('allowPng="1"');
+      if (webPublishing.targetScreenSize && webPublishing.targetScreenSize !== "800x600")
+        wpAttrs.push(`targetScreenSize="${webPublishing.targetScreenSize}"`);
+      if (webPublishing.dpi !== undefined && webPublishing.dpi !== 96)
+        wpAttrs.push(`dpi="${webPublishing.dpi}"`);
+      if (webPublishing.codePage !== undefined)
+        wpAttrs.push(`codePage="${webPublishing.codePage}"`);
+      if (webPublishing.characterSet)
+        wpAttrs.push(`characterSet="${escapeXml(webPublishing.characterSet)}"`);
+      parts.push(`<webPublishing ${wpAttrs.join(" ")}/>`);
     }
 
     // File recovery properties (after webPublishing per XSD sequence)
     if (this.fileRecoveryPr) {
-      const frp = this.fileRecoveryPr;
+      const fileRecovery = this.fileRecoveryPr;
       const frpAttrs: string[] = [];
-      if (frp.autoRecover === false) frpAttrs.push('autoRecover="0"');
-      if (frp.crashSave) frpAttrs.push('crashSave="1"');
-      if (frp.dataExtractLoad) frpAttrs.push('dataExtractLoad="1"');
-      if (frp.repairLoad) frpAttrs.push('repairLoad="1"');
+      if (fileRecovery.autoRecover === false) frpAttrs.push('autoRecover="0"');
+      if (fileRecovery.crashSave) frpAttrs.push('crashSave="1"');
+      if (fileRecovery.dataExtractLoad) frpAttrs.push('dataExtractLoad="1"');
+      if (fileRecovery.repairLoad) frpAttrs.push('repairLoad="1"');
       if (frpAttrs.length > 0) {
-        p.push(`<fileRecoveryPr ${frpAttrs.join(" ")}/>`);
+        parts.push(`<fileRecoveryPr ${frpAttrs.join(" ")}/>`);
       }
     }
 
-    p.push("</workbook>");
-    return p.join("");
+    parts.push("</workbook>");
+    return parts.join("");
   }
 
   /**

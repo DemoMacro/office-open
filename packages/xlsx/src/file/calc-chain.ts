@@ -14,11 +14,11 @@ import { attrs } from "@office-open/xml";
 
 export interface CalcCell {
   /** Cell reference, e.g. "A1" */
-  readonly r: string;
+  readonly reference: string;
   /** Sheet index (1-based) */
-  readonly i: number;
+  readonly sheetIndex: number;
   /** Array formula */
-  readonly a?: boolean;
+  readonly array?: boolean;
 }
 
 export class CalcChain extends BaseXmlComponent {
@@ -41,8 +41,11 @@ export class CalcChain extends BaseXmlComponent {
       '<calcChain xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">',
     ];
     for (const cell of this.cells) {
-      const cellAttrs: Record<string, string | number | boolean> = { r: cell.r, i: cell.i };
-      if (cell.a) cellAttrs.a = true;
+      const cellAttrs: Record<string, string | number | boolean> = {
+        r: cell.reference,
+        i: cell.sheetIndex,
+      };
+      if (cell.array) cellAttrs.a = true;
       parts.push(`<c${attrs(cellAttrs)}/>`);
     }
     parts.push("</calcChain>");

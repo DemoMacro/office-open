@@ -165,14 +165,14 @@ export class ErrorBars extends XmlComponent {
 
 export const DataLabelPosition = {
   BEST_FIT: "bestFit",
-  B: "b",
-  CTR: "ctr",
+  BOTTOM: "b",
+  CENTER: "ctr",
   IN_BASE: "inBase",
   IN_END: "inEnd",
-  L: "l",
+  LEFT: "l",
   OUT_END: "outEnd",
-  R: "r",
-  T: "t",
+  RIGHT: "r",
+  TOP: "t",
 } as const;
 
 export type DataLabelPosition = (typeof DataLabelPosition)[keyof typeof DataLabelPosition];
@@ -298,11 +298,11 @@ export interface View3DOptions {
   /** Y rotation in degrees (0 to 360, default: 0) */
   readonly rotY?: number;
   /** Height percentage (5 to 500) */
-  readonly hPercent?: number;
+  readonly heightPercent?: number;
   /** Depth percentage (20 to 2000, default: 100) */
   readonly depthPercent?: number;
   /** Right angle axes */
-  readonly rAngAx?: boolean;
+  readonly rightAngleAxes?: boolean;
   /** Perspective (0 to 240) */
   readonly perspective?: number;
 }
@@ -315,24 +315,24 @@ export interface View3DOptions {
 export class View3D extends XmlComponent {
   public constructor(options?: View3DOptions) {
     super("c:view3D");
-    const o = options ?? {};
-    if (o.rotX !== undefined) {
-      this.root.push(wrapEl("c:rotX", chartAttr({ val: o.rotX })));
+    const opts = options ?? {};
+    if (opts.rotX !== undefined) {
+      this.root.push(wrapEl("c:rotX", chartAttr({ val: opts.rotX })));
     }
-    if (o.hPercent !== undefined) {
-      this.root.push(wrapEl("c:hPercent", chartAttr({ val: o.hPercent })));
+    if (opts.heightPercent !== undefined) {
+      this.root.push(wrapEl("c:hPercent", chartAttr({ val: opts.heightPercent })));
     }
-    if (o.rotY !== undefined) {
-      this.root.push(wrapEl("c:rotY", chartAttr({ val: o.rotY })));
+    if (opts.rotY !== undefined) {
+      this.root.push(wrapEl("c:rotY", chartAttr({ val: opts.rotY })));
     }
-    if (o.depthPercent !== undefined) {
-      this.root.push(wrapEl("c:depthPercent", chartAttr({ val: o.depthPercent })));
+    if (opts.depthPercent !== undefined) {
+      this.root.push(wrapEl("c:depthPercent", chartAttr({ val: opts.depthPercent })));
     }
-    if (o.rAngAx !== undefined) {
-      this.root.push(wrapEl("c:rAngAx", chartAttr({ val: o.rAngAx ? 1 : 0 })));
+    if (opts.rightAngleAxes !== undefined) {
+      this.root.push(wrapEl("c:rAngAx", chartAttr({ val: opts.rightAngleAxes ? 1 : 0 })));
     }
-    if (o.perspective !== undefined) {
-      this.root.push(wrapEl("c:perspective", chartAttr({ val: o.perspective })));
+    if (opts.perspective !== undefined) {
+      this.root.push(wrapEl("c:perspective", chartAttr({ val: opts.perspective })));
     }
   }
 }
