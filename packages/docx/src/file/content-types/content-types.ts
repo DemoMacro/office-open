@@ -139,6 +139,18 @@ export class ContentTypes extends XmlComponent {
   }
 
   /**
+   * Registers a glossary document part in the content types.
+   */
+  public addGlossary(): void {
+    this.root.push(
+      createOverride(
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.glossary+xml",
+        "/word/glossary/document.xml",
+      ),
+    );
+  }
+
+  /**
    * Registers a footer part in the content types.
    *
    * @param index - Footer index number (e.g., 1 for footer1.xml)

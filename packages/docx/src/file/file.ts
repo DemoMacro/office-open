@@ -23,6 +23,7 @@ import { FontWrapper } from "./fonts/font-wrapper";
 import { FooterWrapper } from "./footer-wrapper";
 import type { DocumentFooter } from "./footer-wrapper";
 import { FootnotesWrapper } from "./footnotes-wrapper";
+import type { GlossaryDocumentOptions } from "./glossary/glossary-document";
 import { Footer, Header } from "./header";
 import { HeaderWrapper } from "./header-wrapper";
 import type { DocumentHeader } from "./header-wrapper";
@@ -178,6 +179,7 @@ export class File {
   public readonly comments: Comments;
   public readonly bibliography: Bibliography | undefined;
   public readonly fontTable: FontWrapper;
+  public readonly glossaryOptions: GlossaryDocumentOptions | undefined;
 
   public constructor(options: PropertiesOptions) {
     this.coreProperties = new CoreProperties({
@@ -286,6 +288,17 @@ export class File {
     }
 
     this.fontTable = new FontWrapper(options.fonts ?? []);
+    this.glossaryOptions = options.glossary;
+
+    // Register glossary document content type and relationship
+    if (options.glossary) {
+      this.contentTypes.addGlossary();
+      this.document.relationships.addRelationship(
+        this._currentRelationshipId++,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/glossaryDocument",
+        "glossary/document.xml",
+      );
+    }
   }
 
   private addSection({ headers = {}, footers = {}, children, properties }: SectionOptions): void {

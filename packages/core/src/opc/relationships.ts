@@ -32,6 +32,7 @@ export type RelationshipType =
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/bibliography"
+  | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/glossaryDocument"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/font"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/aFChunk"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/subDocument"

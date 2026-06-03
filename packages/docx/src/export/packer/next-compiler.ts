@@ -101,6 +101,8 @@ interface XmlifyedFileMapping {
   readonly AltChunks?: readonly XmlifyedFile[];
   /** SubDoc parts (word/subdocs/subdoc{n}.docx) */
   readonly SubDocs?: readonly XmlifyedFile[];
+  /** Glossary document (word/glossary/document.xml) */
+  readonly Glossary?: XmlifyedFile;
 }
 
 /**
@@ -589,6 +591,87 @@ export class Compiler {
             })),
           }
         : {}),
+      ...(file.glossaryOptions
+        ? {
+            Glossary: {
+              data: buildGlossaryXml(file.glossaryOptions, this.formatter, mkCtx),
+              path: "word/glossary/document.xml",
+            },
+          }
+        : {}),
     };
   }
+}
+
+/**
+ * Build glossary document XML from options.
+ * Generates <w:glossaryDocument><w:docParts>...</w:docParts></w:glossaryDocument>.
+ */
+function buildGlossaryXml(
+  opts: import("@file/glossary/glossary-document").GlossaryDocumentOptions,
+  formatter: Formatter,
+  mkCtx: (viewWrapper?: any) => DocxContext,
+): string {
+  const escapeAttr = (text: string): string =>
+    text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+  const partsXml = opts.parts
+    .map((part) => {
+      const prParts: string[] = [];
+      prParts.push(
+        `<w:name w:val="${escapeAttr(part.name)}"${part.decorated ? ' w:decorated="1"' : ""}/>`,
+      );
+      if (part.category || part.gallery) {
+        const catParts: string[] = [];
+        if (part.category) {
+          catParts.push(`<w:name w:val="${escapeAttr(part.category)}"/>`);
+        }
+        catParts.push(`<w:gallery w:val="${part.gallery}"/>`);
+        prParts.push(`<w:category>${catParts.join("")}</w:category>`);
+      }
+      if (part.types && part.types.length > 0) {
+        const typeXml = part.types.map((t) => `<w:type w:val="${t}"/>`).join("");
+        prParts.push(`<w:types>${typeXml}</w:types>`);
+      }
+      if (part.behaviors && part.behaviors.length > 0) {
+        const behaviorXml = part.behaviors.map((b) => `<w:behavior w:val="${b}"/>`).join("");
+        prParts.push(`<w:behaviors>${behaviorXml}</w:behaviors>`);
+      }
+      if (part.description) {
+        prParts.push(`<w:description w:val="${escapeAttr(part.description)}"/>`);
+      }
+      if (part.guid) {
+        prParts.push(`<w:guid w:val="${escapeAttr(part.guid)}"/>`);
+      }
+
+      const bodyContent = part.children
+        .map((child) => formatter.formatToXml(child, mkCtx(undefined)))
+        .join("");
+
+      return (
+        `<w:docPart><w:docPartPr>${prParts.join("")}</w:docPartPr>` +
+        `<w:docPartBody>${bodyContent}</w:docPartBody></w:docPart>`
+      );
+    })
+    .join("");
+
+  return (
+    `<w:glossaryDocument ` +
+    `xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" ` +
+    `xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" ` +
+    `xmlns:o="urn:schemas-microsoft-com:office:office" ` +
+    `xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ` +
+    `xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" ` +
+    `xmlns:v="urn:schemas-microsoft-com:vml" ` +
+    `xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ` +
+    `xmlns:w10="urn:schemas-microsoft-com:office:word" ` +
+    `xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ` +
+    `xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" ` +
+    `xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" ` +
+    `xmlns:wpi="http://schemas.microsoft.com/office/word/2010/wordprocessingInk" ` +
+    `xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml" ` +
+    `xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape">` +
+    `<w:docParts>${partsXml}</w:docParts>` +
+    `</w:glossaryDocument>`
+  );
 }

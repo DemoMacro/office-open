@@ -123,6 +123,8 @@ export interface PropertiesOptions {
   readonly colorSchemeMapping?: SettingsOptions["colorSchemeMapping"];
   /** Mail merge configuration */
   readonly mailMerge?: SettingsOptions["mailMerge"];
+  /** Glossary document — building blocks (Quick Parts) */
+  readonly glossary?: import("../glossary/glossary-document").GlossaryDocumentOptions;
 }
 
 /**
