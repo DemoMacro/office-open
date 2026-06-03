@@ -70,6 +70,14 @@ export interface MergeCellOptions {
 export interface SheetProtectionOptions {
   /** Plain-text password — legacy Excel hash is computed automatically */
   readonly password?: string;
+  /** Modern encryption: algorithm name (e.g. "SHA-512") */
+  readonly algorithmName?: string;
+  /** Modern encryption: base64-encoded hash value */
+  readonly hashValue?: string;
+  /** Modern encryption: base64-encoded salt value */
+  readonly saltValue?: string;
+  /** Modern encryption: spin count for hash iteration */
+  readonly spinCount?: number;
   /** Set true to enable sheet protection (required for protection flags to take effect) */
   readonly sheet?: boolean;
   readonly objects?: boolean;
@@ -87,6 +95,26 @@ export interface SheetProtectionOptions {
   readonly autoFilter?: boolean;
   readonly pivotTables?: boolean;
   readonly selectUnlockedCells?: boolean;
+}
+
+/** A named protected range within a sheet (CT_ProtectedRange) */
+export interface ProtectedRangeOptions {
+  /** Range reference (required), e.g. "A1:C10" */
+  readonly sqref: string;
+  /** Range name (required) */
+  readonly name: string;
+  /** Plain-text password — legacy hash computed automatically */
+  readonly password?: string;
+  /** Modern encryption: algorithm name */
+  readonly algorithmName?: string;
+  /** Modern encryption: base64-encoded hash value */
+  readonly hashValue?: string;
+  /** Modern encryption: base64-encoded salt value */
+  readonly saltValue?: string;
+  /** Modern encryption: spin count */
+  readonly spinCount?: number;
+  /** Security descriptor (SID string) */
+  readonly securityDescriptor?: string;
 }
 
 export interface FreezePaneOptions {
@@ -365,6 +393,8 @@ export interface WorksheetOptions {
   readonly mergeCells?: readonly MergeCellOptions[];
   readonly freezePanes?: FreezePaneOptions;
   readonly protection?: SheetProtectionOptions;
+  /** Named protected ranges within this sheet */
+  readonly protectedRanges?: readonly ProtectedRangeOptions[];
   /** Auto-filter configuration */
   readonly autoFilter?: string | AutoFilterOptions;
   readonly images?: readonly WorksheetImageOptions[];
@@ -388,6 +418,7 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
   private readonly mergeCells: readonly MergeCellOptions[];
   private readonly freezePanes?: FreezePaneOptions;
   private readonly protection?: SheetProtectionOptions;
+  private readonly protectedRanges: readonly ProtectedRangeOptions[];
   private readonly autoFilter?: string | AutoFilterOptions;
   private readonly images: readonly WorksheetImageOptions[];
   private readonly chartOptions: readonly WorksheetChartOptions[];
@@ -409,6 +440,7 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
     this.mergeCells = options.mergeCells ?? [];
     this.freezePanes = options.freezePanes;
     this.protection = options.protection;
+    this.protectedRanges = options.protectedRanges ?? [];
     this.autoFilter = options.autoFilter;
     this.images = options.images ?? [];
     this.chartOptions = options.charts ?? [];
@@ -583,11 +615,15 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
     }
     p.push("</sheetData>");
 
-    // Sheet protection (before autoFilter per XSD sequence)
+    // Sheet protection (after sheetData, before protectedRanges per XSD sequence)
     if (this.protection) {
       const prot = this.protection;
       const protAttrs: Record<string, string | number | boolean | undefined> = {};
       if (prot.password) protAttrs.password = this.hashPassword(prot.password);
+      if (prot.algorithmName) protAttrs.algorithmName = prot.algorithmName;
+      if (prot.hashValue) protAttrs.hashValue = prot.hashValue;
+      if (prot.saltValue) protAttrs.saltValue = prot.saltValue;
+      if (prot.spinCount !== undefined) protAttrs.spinCount = prot.spinCount;
       if (prot.sheet) protAttrs.sheet = 1;
       if (prot.objects) protAttrs.objects = 1;
       if (prot.scenarios) protAttrs.scenarios = 1;
@@ -605,6 +641,32 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
       if (prot.pivotTables === false) protAttrs.pivotTables = 0;
       if (prot.selectUnlockedCells) protAttrs.selectUnlockedCells = 1;
       p.push(selfCloseElement("sheetProtection", attrs(protAttrs)));
+    }
+
+    // Protected ranges (after sheetProtection per XSD sequence)
+    if (this.protectedRanges.length > 0) {
+      const prParts: string[] = ["<protectedRanges>"];
+      for (const pr of this.protectedRanges) {
+        const prAttrs: Record<string, string | number | boolean | undefined> = {
+          name: pr.name,
+          sqref: pr.sqref,
+        };
+        if (pr.password) prAttrs.password = this.hashPassword(pr.password);
+        if (pr.algorithmName) prAttrs.algorithmName = pr.algorithmName;
+        if (pr.hashValue) prAttrs.hashValue = pr.hashValue;
+        if (pr.saltValue) prAttrs.saltValue = pr.saltValue;
+        if (pr.spinCount !== undefined) prAttrs.spinCount = pr.spinCount;
+        const hasSecurityDescriptor = !!pr.securityDescriptor;
+        if (hasSecurityDescriptor) {
+          prParts.push(
+            `<protectedRange${attrs(prAttrs)}><securityDescriptor>${escapeXml(pr.securityDescriptor!)}</securityDescriptor></protectedRange>`,
+          );
+        } else {
+          prParts.push(selfCloseElement("protectedRange", attrs(prAttrs)));
+        }
+      }
+      prParts.push("</protectedRanges>");
+      p.push(prParts.join(""));
     }
 
     // Auto filter

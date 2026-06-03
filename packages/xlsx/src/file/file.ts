@@ -5,7 +5,12 @@ import { SharedStrings } from "@file/shared-strings";
 import { Styles } from "@file/styles";
 import type { DxfOptions } from "@file/styles";
 import { DefaultTheme } from "@file/theme";
-import { WorkbookXml, type SheetDefinition, type PivotCacheReference } from "@file/workbook";
+import {
+  WorkbookXml,
+  type SheetDefinition,
+  type PivotCacheReference,
+  type WorkbookProtectionOptions,
+} from "@file/workbook";
 import { Worksheet, type WorksheetOptions } from "@file/worksheet";
 /**
  * File class (exported as Workbook) — the top-level container for XLSX documents.
@@ -18,12 +23,15 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   readonly worksheets?: readonly WorksheetOptions[];
   /** Pre-defined differential formats for conditional formatting */
   readonly dxfs?: readonly DxfOptions[];
+  /** Workbook-level protection */
+  readonly workbookProtection?: WorkbookProtectionOptions;
 }
 
 export class File {
   private readonly worksheetOptions: readonly WorksheetOptions[];
   private readonly corePropsOptions: CorePropertiesOptions;
   private readonly dxfOptions: readonly DxfOptions[];
+  private readonly protectionOptions?: WorkbookProtectionOptions;
 
   // Lazy components
   private _coreProperties?: CoreProperties;
@@ -44,6 +52,7 @@ export class File {
     this.worksheetOptions = options.worksheets ?? [];
     this.corePropsOptions = options;
     this.dxfOptions = options.dxfs ?? [];
+    this.protectionOptions = options.workbookProtection;
   }
 
   // ── Lazy getters ──
@@ -92,7 +101,7 @@ export class File {
         sheetId: i + 1,
         rId: `rId${i + 1}`,
       }));
-      this._workbookXml = new WorkbookXml(sheets, this._pivotCacheRefs);
+      this._workbookXml = new WorkbookXml(sheets, this._pivotCacheRefs, this.protectionOptions);
     }
     return this._workbookXml;
   }

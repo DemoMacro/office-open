@@ -3,6 +3,11 @@ import { writeFileSync } from "node:fs";
 import { Workbook, Packer } from "@office-open/xlsx";
 
 const wb = new Workbook({
+  workbookProtection: {
+    lockStructure: true,
+    lockWindows: true,
+    workbookPassword: "admin",
+  },
   worksheets: [
     {
       name: "Protected",
@@ -22,6 +27,31 @@ const wb = new Workbook({
         sort: false,
         selectLockedCells: true,
         selectUnlockedCells: true,
+      },
+      protectedRanges: [
+        {
+          name: "EditableRange",
+          sqref: "B2:C5",
+          password: "range1",
+        },
+      ],
+    },
+    {
+      name: "ModernCrypto",
+      rows: [
+        { cells: [{ value: "Item" }, { value: "Value" }] },
+        { cells: [{ value: "A" }, { value: 10 }] },
+        { cells: [{ value: "B" }, { value: 20 }] },
+      ],
+      protection: {
+        sheet: true,
+        algorithmName: "SHA-512",
+        hashValue: "dGVzdA==",
+        saltValue: "c2FsdA==",
+        spinCount: 100000,
+        formatCells: false,
+        formatColumns: false,
+        formatRows: false,
       },
     },
     {
