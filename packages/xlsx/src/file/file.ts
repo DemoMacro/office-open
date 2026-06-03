@@ -11,6 +11,7 @@ import {
   type PivotCacheReference,
   type WorkbookProtectionOptions,
   type FileRecoveryPrOptions,
+  type WebPublishingOptions,
 } from "@file/workbook";
 import { Worksheet, type WorksheetOptions } from "@file/worksheet";
 /**
@@ -39,6 +40,8 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   readonly fileRecoveryPr?: FileRecoveryPrOptions;
   /** Custom VBA function group names */
   readonly functionGroups?: readonly string[];
+  /** Web publishing properties */
+  readonly webPublishing?: WebPublishingOptions;
 }
 
 export class File {
@@ -51,6 +54,7 @@ export class File {
   private readonly customViewOptions?: readonly import("./workbook").CustomWorkbookViewOptions[];
   private readonly fileRecoveryPrOpts?: FileRecoveryPrOptions;
   private readonly functionGroupOpts?: readonly string[];
+  private readonly webPublishingOpts?: WebPublishingOptions;
 
   // Lazy components
   private _coreProperties?: CoreProperties;
@@ -77,6 +81,7 @@ export class File {
     this.customViewOptions = options.customWorkbookViews;
     this.fileRecoveryPrOpts = options.fileRecoveryPr;
     this.functionGroupOpts = options.functionGroups;
+    this.webPublishingOpts = options.webPublishing;
   }
 
   // ── Lazy getters ──
@@ -144,6 +149,7 @@ export class File {
         this.customViewOptions,
         this.fileRecoveryPrOpts,
         this.functionGroupOpts,
+        this.webPublishingOpts,
       );
     }
     return this._workbookXml;

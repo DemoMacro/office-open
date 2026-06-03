@@ -104,6 +104,28 @@ export interface FileRecoveryPrOptions {
   readonly repairLoad?: boolean;
 }
 
+/** Web publishing properties (CT_WebPublishing) */
+export interface WebPublishingOptions {
+  /** Use CSS (default true) */
+  readonly css?: boolean;
+  /** Use thicket format (default true) */
+  readonly thicket?: boolean;
+  /** Use long file names (default true) */
+  readonly longFileNames?: boolean;
+  /** Use VML (default false) */
+  readonly vml?: boolean;
+  /** Allow PNG (default false) */
+  readonly allowPng?: boolean;
+  /** Target screen size (default "800x600") */
+  readonly targetScreenSize?: string;
+  /** DPI (default 96) */
+  readonly dpi?: number;
+  /** Code page */
+  readonly codePage?: number;
+  /** Character set */
+  readonly characterSet?: string;
+}
+
 export class WorkbookXml extends BaseXmlComponent {
   private readonly sheets: readonly SheetDefinition[];
   private readonly pivotCaches: readonly PivotCacheReference[];
@@ -111,6 +133,7 @@ export class WorkbookXml extends BaseXmlComponent {
   private readonly customViews?: readonly CustomWorkbookViewOptions[];
   private readonly fileRecoveryPr?: FileRecoveryPrOptions;
   private readonly functionGroupNames: readonly string[];
+  private readonly webPublishing?: WebPublishingOptions;
 
   public constructor(
     sheets: readonly SheetDefinition[],
@@ -119,6 +142,7 @@ export class WorkbookXml extends BaseXmlComponent {
     customViews?: readonly CustomWorkbookViewOptions[],
     fileRecoveryPr?: FileRecoveryPrOptions,
     functionGroups?: readonly string[],
+    webPublishing?: WebPublishingOptions,
   ) {
     super("workbook");
     this.sheets = sheets;
@@ -127,6 +151,7 @@ export class WorkbookXml extends BaseXmlComponent {
     this.customViews = customViews;
     this.fileRecoveryPr = fileRecoveryPr;
     this.functionGroupNames = functionGroups ?? [];
+    this.webPublishing = webPublishing;
   }
 
   public override toXml(_context: Context): string {
@@ -240,7 +265,24 @@ export class WorkbookXml extends BaseXmlComponent {
       p.push("</pivotCaches>");
     }
 
-    // File recovery properties (after pivotCaches per XSD sequence)
+    // Web publishing (after pivotCaches, before fileRecoveryPr per XSD sequence)
+    if (this.webPublishing) {
+      const wp = this.webPublishing;
+      const wpAttrs: string[] = [];
+      if (wp.css === false) wpAttrs.push('css="0"');
+      if (wp.thicket === false) wpAttrs.push('thicket="0"');
+      if (wp.longFileNames === false) wpAttrs.push('longFileNames="0"');
+      if (wp.vml) wpAttrs.push('vml="1"');
+      if (wp.allowPng) wpAttrs.push('allowPng="1"');
+      if (wp.targetScreenSize && wp.targetScreenSize !== "800x600")
+        wpAttrs.push(`targetScreenSize="${wp.targetScreenSize}"`);
+      if (wp.dpi !== undefined && wp.dpi !== 96) wpAttrs.push(`dpi="${wp.dpi}"`);
+      if (wp.codePage !== undefined) wpAttrs.push(`codePage="${wp.codePage}"`);
+      if (wp.characterSet) wpAttrs.push(`characterSet="${escapeXml(wp.characterSet)}"`);
+      p.push(`<webPublishing ${wpAttrs.join(" ")}/>`);
+    }
+
+    // File recovery properties (after webPublishing per XSD sequence)
     if (this.fileRecoveryPr) {
       const frp = this.fileRecoveryPr;
       const frpAttrs: string[] = [];
