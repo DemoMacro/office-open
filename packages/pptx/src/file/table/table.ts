@@ -15,6 +15,7 @@ export interface DrawingTableOptions {
   readonly firstCol?: boolean;
   readonly lastCol?: boolean;
   readonly bandCol?: boolean;
+  readonly tableStyleId?: string;
   readonly borders?: {
     readonly top?: CellBorderOptions;
     readonly bottom?: CellBorderOptions;
@@ -47,6 +48,7 @@ export class DrawingTable extends BaseXmlComponent {
       firstCol: opts.firstCol,
       lastCol: opts.lastCol,
       bandCol: opts.bandCol,
+      tableStyleId: opts.tableStyleId,
     });
     parts.push(tblPr.toXml(context));
 

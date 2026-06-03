@@ -13,6 +13,7 @@ export class TableProperties extends BaseXmlComponent {
     readonly firstCol?: boolean;
     readonly lastCol?: boolean;
     readonly bandCol?: boolean;
+    readonly tableStyleId?: string;
   };
 
   public constructor(options?: {
@@ -22,6 +23,7 @@ export class TableProperties extends BaseXmlComponent {
     readonly firstCol?: boolean;
     readonly lastCol?: boolean;
     readonly bandCol?: boolean;
+    readonly tableStyleId?: string;
   }) {
     super("a:tblPr");
     this.options = options;
@@ -37,6 +39,10 @@ export class TableProperties extends BaseXmlComponent {
     if (opts.firstCol !== undefined) attrs.push(`firstCol="${opts.firstCol ? 1 : 0}"`);
     if (opts.lastCol !== undefined) attrs.push(`lastCol="${opts.lastCol ? 1 : 0}"`);
     if (opts.bandCol !== undefined) attrs.push(`bandCol="${opts.bandCol ? 1 : 0}"`);
-    return attrs.length === 0 ? "<a:tblPr/>" : `<a:tblPr ${attrs.join(" ")}/>`;
+    if (attrs.length === 0 && !opts.tableStyleId) return "<a:tblPr/>";
+    const styleId = opts.tableStyleId
+      ? `<a:tableStyleId>${opts.tableStyleId}</a:tableStyleId>`
+      : "";
+    return `<a:tblPr ${attrs.join(" ")}>${styleId}</a:tblPr>`;
   }
 }

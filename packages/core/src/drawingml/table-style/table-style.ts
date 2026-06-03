@@ -181,12 +181,12 @@ function buildCellStyle(opts: TableCellStyleOptions): BuilderElement {
   });
 }
 
-function buildPartStyle(opts: TablePartStyleOptions): BuilderElement {
+function buildPartStyle(elementName: string, opts: TablePartStyleOptions): BuilderElement {
   const children: XmlComponent[] = [];
   if (opts.text) children.push(buildTextStyle(opts.text));
   if (opts.cell) children.push(buildCellStyle(opts.cell));
   return new BuilderElement({
-    name: "a:wholeTbl", // placeholder, replaced per region
+    name: elementName,
     children,
   });
 }
@@ -236,9 +236,7 @@ export function createTableStyle(opts: TableStyleOptions): BuilderElement {
     for (const region of REGION_ORDER) {
       const part = opts.regions[region];
       if (!part) continue;
-      const partEl = buildPartStyle(part);
-      // Override the element name to the correct region
-      (partEl as unknown as { root: { name: string } }).root.name = REGION_ELEMENTS[region];
+      const partEl = buildPartStyle(REGION_ELEMENTS[region], part);
       children.push(partEl);
     }
   }

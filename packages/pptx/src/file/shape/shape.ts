@@ -6,6 +6,7 @@ import type { ShapePropertiesOptions } from "@file/drawingml/shape-properties";
 import type { File } from "@file/file";
 import { XmlComponent as Xc } from "@file/xml-components";
 import type { Context } from "@file/xml-components";
+import type { ShapeLockingOptions } from "@office-open/core";
 import { escapeXml } from "@office-open/xml";
 import { emuPositionOptional } from "@util/position";
 
@@ -27,6 +28,7 @@ export interface ShapeOptions {
   readonly rotation?: number;
   readonly textBody?: TextBodyOptions;
   readonly animation?: AnimationOptions;
+  readonly locking?: ShapeLockingOptions;
   readonly placeholder?: "title" | "body" | "subTitle" | "sldNum" | "dt" | "ftr" | "hdr" | "obj";
   readonly placeholderIndex?: number;
 }
@@ -65,8 +67,16 @@ export class Shape extends Xc {
       if (opts.placeholderIndex !== undefined) phAttrs.push(`idx="${opts.placeholderIndex}"`);
       nvPrContent = `<p:nvPr><p:ph ${phAttrs.join(" ")}/></p:nvPr>`;
     }
+    // a:spLocks inside p:cNvSpPr
+    let cNvSpPrContent = "<p:cNvSpPr/>";
+    if (opts.locking) {
+      const lockAttrs = buildLockAttrs(opts.locking);
+      if (lockAttrs.length > 0) {
+        cNvSpPrContent = `<p:cNvSpPr><a:spLocks ${lockAttrs.join(" ")}/></p:cNvSpPr>`;
+      }
+    }
     parts.push(
-      `<p:nvSpPr><p:cNvPr id="${id}" name="${escapeXml(name)}"/><p:cNvSpPr/>${nvPrContent}</p:nvSpPr>`,
+      `<p:nvSpPr><p:cNvPr id="${id}" name="${escapeXml(name)}"/>${cNvSpPrContent}${nvPrContent}</p:nvSpPr>`,
     );
 
     // p:spPr (ShapeProperties — has side effects, uses toXml() internally)
@@ -89,4 +99,27 @@ export class Shape extends Xc {
 
     return `<p:sp>${parts.join("")}</p:sp>`;
   }
+}
+
+/** Build locking attribute string[] from ShapeLockingOptions. */
+function buildLockAttrs(opts: ShapeLockingOptions): string[] {
+  const attrs: string[] = [];
+  const keys = [
+    "noGrp",
+    "noSelect",
+    "noRot",
+    "noChangeAspect",
+    "noMove",
+    "noResize",
+    "noEditPoints",
+    "noAdjustHandles",
+    "noChangeArrowheads",
+    "noChangeShapeType",
+    "noTextEdit",
+  ] as const;
+  for (const key of keys) {
+    const val = opts[key];
+    if (val !== undefined) attrs.push(`${key}="${val ? 1 : 0}"`);
+  }
+  return attrs;
 }
