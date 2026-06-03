@@ -9,6 +9,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pres = new Presentation({
   title: "My Presentation",
   creator: "Demo",
+  show: {
+    type: "present",
+    loop: false,
+    penColor: "FF0000",
+  },
+  view: {
+    lastView: "sldSorterView",
+    gridSpacing: { cx: 50800, cy: 50800 },
+  },
   slides: [
     // Slide 1: Basic shapes
     {

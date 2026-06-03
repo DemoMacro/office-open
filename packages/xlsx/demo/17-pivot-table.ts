@@ -1,6 +1,6 @@
 import { writeFileSync } from "node:fs";
 
-import { Workbook, Packer } from "@office-open/xlsx";
+import { Workbook, Packer, PivotFilterTypeValue } from "@office-open/xlsx";
 
 const funcs = [
   "sum",
@@ -51,6 +51,29 @@ const wb = new Workbook({
       name: "Pivot",
       rows: [],
       pivotTables,
+    },
+    {
+      name: "Filtered",
+      rows: [],
+      pivotTables: [
+        {
+          name: "FilteredPivot",
+          source: "A1:C9",
+          sourceSheet: "Data",
+          location: "A3",
+          rows: ["City"],
+          data: [{ field: "Revenue", summarize: "sum" }],
+          filters: [
+            {
+              fld: 0,
+              type: PivotFilterTypeValue.CAPTION_NOT_EQUAL,
+              id: 1,
+              stringValue1: "Guangzhou",
+              name: "ExcludeGuangzhou",
+            },
+          ],
+        },
+      ],
     },
   ],
 });

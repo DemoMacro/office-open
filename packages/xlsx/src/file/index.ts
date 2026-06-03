@@ -46,8 +46,8 @@ export type {
   PivotDataField,
   ConsolidateFunction,
   PivotFilterOptions,
-  PivotFilterType,
 } from "./pivot";
+export { PivotFilterTypeValue } from "./pivot";
 export type { TableOptions, TableColumnOptions, TableStyleInfoOptions } from "./table";
 export { TotalsRowFunction, TableType } from "./table";
 export type {

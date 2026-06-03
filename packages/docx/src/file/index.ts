@@ -44,4 +44,5 @@ export * from "./textbox";
 export * from "./bibliography";
 export * from "./chart";
 export * from "./smartart";
+export * from "./glossary";
 export { type PropertiesOptions } from "./core-properties";

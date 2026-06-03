@@ -444,7 +444,7 @@ export interface PhoneticPrOptions {
   /** Font ID from the styles table (required) */
   readonly fontId: number;
   /** Phonetic type (default: "fullwidthKatakana") */
-  readonly type?: "fullwidthKatakana" | "halfwidthKatakana" | "hiragana" | "noConversion";
+  readonly type?: "fullwidthKatakana" | "halfwidthKatakana" | "Hiragana" | "noConversion";
   /** Alignment (default: "left") */
   readonly alignment?: "left" | "center" | "distributed";
 }

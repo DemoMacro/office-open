@@ -111,12 +111,13 @@ export class Compiler {
       const hasPivots = pivotOpts.length > 0;
       const tableOpts = ws.tables;
       const hasTables = tableOpts.length > 0;
+      const bgImg = ws.background;
 
       // Worksheet-level relationships
       let wsRels: Relationships | undefined;
       let nextRid = 0;
 
-      if (hasMedia || hasExternalHyperlinks || hasComments || hasPivots || hasTables) {
+      if (hasMedia || hasExternalHyperlinks || hasComments || hasPivots || hasTables || bgImg) {
         wsRels = new Relationships();
       }
 
@@ -265,7 +266,6 @@ export class Compiler {
       }
 
       // Background picture
-      const bgImg = ws.background;
       if (bgImg) {
         const ext = bgImg.type === "jpg" ? "jpeg" : bgImg.type;
         const mediaKey = `bg_${i}`;
