@@ -135,6 +135,12 @@ export interface SettingsOptions {
   readonly evenAndOddHeaders?: boolean;
   /** Enable track changes (revision marking) */
   readonly trackRevisions?: boolean;
+  /** Do not track formatting changes when trackRevisions is on */
+  readonly doNotTrackFormatting?: boolean;
+  /** Do not track move changes when trackRevisions is on */
+  readonly doNotTrackMoves?: boolean;
+  /** Controls which types of revisions are visible */
+  readonly revisionView?: RevisionViewOptions;
   /** Update fields when document is opened */
   readonly updateFields?: boolean;
   /** Compatibility settings for older Word versions */
@@ -158,6 +164,8 @@ export interface SettingsOptions {
   readonly writeProtection?: WriteProtectionOptions;
   /** Whether to display the background shape in print layout */
   readonly displayBackgroundShape?: boolean;
+  /** Whether to display page boundaries between pages */
+  readonly doNotDisplayPageBoundaries?: boolean;
   /** Whether to embed TrueType fonts in the document */
   readonly embedTrueTypeFonts?: boolean;
   /** Whether to embed system fonts in the document */
@@ -183,6 +191,30 @@ export interface SettingsOptions {
     readonly hyperlink?: string;
     readonly followedHyperlink?: string;
   };
+  /** Relationship ID to the attached template document */
+  readonly attachedTemplate?: string;
+  /** Theme font language (BCP-47 tag, e.g. "en-US", "ja-JP") */
+  readonly themeFontLang?: string;
+  /** Hide spelling errors in the document */
+  readonly hideSpellingErrors?: boolean;
+  /** Hide grammatical errors in the document */
+  readonly hideGrammaticalErrors?: boolean;
+  /** Disable punctuation kerning (CJK) */
+  readonly noPunctuationKerning?: boolean;
+}
+
+/**
+ * Controls which types of revisions are visible in the document.
+ */
+export interface RevisionViewOptions {
+  /** Show markup for insertions */
+  readonly markup?: boolean;
+  /** Show comments */
+  readonly comments?: boolean;
+  /** Show ink annotations */
+  readonly insDel?: boolean;
+  /** Show formatting changes */
+  readonly formatting?: boolean;
 }
 
 /**
@@ -433,6 +465,10 @@ export class Settings extends XmlComponent {
       this.root.push(onOffObj("w:displayBackgroundShape", options.displayBackgroundShape));
     }
 
+    if (options.doNotDisplayPageBoundaries !== undefined) {
+      this.root.push(onOffObj("w:doNotDisplayPageBoundaries", options.doNotDisplayPageBoundaries));
+    }
+
     if (options.embedTrueTypeFonts !== undefined) {
       this.root.push(onOffObj("w:embedTrueTypeFonts", options.embedTrueTypeFonts));
     }
@@ -445,8 +481,37 @@ export class Settings extends XmlComponent {
       this.root.push(onOffObj("w:saveSubsetFonts", options.saveSubsetFonts));
     }
 
+    if (options.hideSpellingErrors !== undefined) {
+      this.root.push(onOffObj("w:hideSpellingErrors", options.hideSpellingErrors));
+    }
+
+    if (options.hideGrammaticalErrors !== undefined) {
+      this.root.push(onOffObj("w:hideGrammaticalErrors", options.hideGrammaticalErrors));
+    }
+
+    if (options.attachedTemplate !== undefined) {
+      this.root.push(
+        new BuilderElement({
+          name: "w:attachedTemplate",
+          attributes: [{ key: "r:id", value: options.attachedTemplate }],
+        }),
+      );
+    }
+
     if (options.trackRevisions !== undefined) {
       this.root.push(onOffObj("w:trackRevisions", options.trackRevisions));
+    }
+
+    if (options.revisionView !== undefined) {
+      this.root.push(new RevisionView(options.revisionView));
+    }
+
+    if (options.doNotTrackMoves !== undefined) {
+      this.root.push(onOffObj("w:doNotTrackMoves", options.doNotTrackMoves));
+    }
+
+    if (options.doNotTrackFormatting !== undefined) {
+      this.root.push(onOffObj("w:doNotTrackFormatting", options.doNotTrackFormatting));
     }
 
     if (options.mailMerge !== undefined) {
@@ -488,6 +553,10 @@ export class Settings extends XmlComponent {
         options.characterSpacingControl ?? "compressPunctuation",
       ),
     );
+
+    if (options.noPunctuationKerning !== undefined) {
+      this.root.push(onOffObj("w:noPunctuationKerning", options.noPunctuationKerning));
+    }
 
     if (options.updateFields !== undefined) {
       this.root.push(onOffObj("w:updateFields", options.updateFields));
@@ -532,6 +601,15 @@ export class Settings extends XmlComponent {
 
     if (options.colorSchemeMapping !== undefined) {
       this.root.push(new ColorSchemeMapping(options.colorSchemeMapping));
+    }
+
+    if (options.themeFontLang !== undefined) {
+      this.root.push(
+        new BuilderElement({
+          name: "w:themeFontLang",
+          attributes: [{ key: "w:val", value: options.themeFontLang }],
+        }),
+      );
     }
   }
 }
@@ -641,6 +719,23 @@ class ColorSchemeMapping extends XmlComponent {
     if (options.hyperlink !== undefined) attr["w:hyperlink"] = options.hyperlink;
     if (options.followedHyperlink !== undefined)
       attr["w:followedHyperlink"] = options.followedHyperlink;
+    this.root.push({ _attr: attr });
+  }
+}
+
+/**
+ * Revision view settings (CT_TrackChangesView).
+ * Controls which types of revisions are visible in the document.
+ */
+class RevisionView extends XmlComponent {
+  public constructor(options: RevisionViewOptions) {
+    super("w:revisionView");
+    const attr: Record<string, string> = {};
+    if (options.markup !== undefined) attr["w:markup"] = options.markup ? "true" : "false";
+    if (options.comments !== undefined) attr["w:comments"] = options.comments ? "true" : "false";
+    if (options.insDel !== undefined) attr["w:insDel"] = options.insDel ? "true" : "false";
+    if (options.formatting !== undefined)
+      attr["w:formatting"] = options.formatting ? "true" : "false";
     this.root.push({ _attr: attr });
   }
 }
