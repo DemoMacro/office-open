@@ -10,7 +10,7 @@
   "devDependencies": {
     "@ai-sdk/openai-compatible": "2.0.48",
     "docus": "5.11.0",
-    "nuxt": "4.4.7",
+    "nuxt": "4.4.6",
     "office-open": "workspace:*"
   }
 }
