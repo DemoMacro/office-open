@@ -17,10 +17,10 @@ const wb = new Workbook({
             sheetId: 0,
             rows: [
               {
-                r: 1,
+                rowNumber: 1,
                 cells: [
-                  { r: "A1", t: "s", v: "Product" },
-                  { r: "B1", t: "n", v: "100" },
+                  { reference: "A1", type: "s", value: "Product" },
+                  { reference: "B1", type: "n", value: "100" },
                 ],
               },
             ],
