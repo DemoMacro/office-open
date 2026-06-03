@@ -264,6 +264,29 @@ export class Compiler {
         file.contentTypes.addVmlDrawing();
       }
 
+      // Background picture
+      const bgImg = ws.background;
+      if (bgImg) {
+        const ext = bgImg.type === "jpg" ? "jpeg" : bgImg.type;
+        const mediaKey = `bg_${i}`;
+        const mediaIdx = globalMediaIdx + 1;
+        file.media.addImage(mediaKey, {
+          fileName: `image${mediaIdx}.${ext}`,
+          type: ext,
+          data: bgImg.data,
+          width: 0,
+          height: 0,
+        });
+        globalMediaIdx++;
+        const bgRid = ++nextRid;
+        wsRels!.addRelationship(
+          bgRid,
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+          `../media/image${mediaIdx}.${ext}`,
+        );
+        sheetXml = sheetXml.replace("<!--BACKGROUND_PICTURE-->", `<picture r:id="rId${bgRid}"/>`);
+      }
+
       // Pivot tables
       if (hasPivots) {
         for (const pt of pivotOpts) {

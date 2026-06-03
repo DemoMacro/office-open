@@ -92,23 +92,38 @@ export interface WorkbookProtectionOptions {
   readonly revisionsSpinCount?: number;
 }
 
+/** File recovery properties (CT_FileRecoveryPr) */
+export interface FileRecoveryPrOptions {
+  /** Enable auto-recover (default true) */
+  readonly autoRecover?: boolean;
+  /** Crash save (default false) */
+  readonly crashSave?: boolean;
+  /** Data extract load (default false) */
+  readonly dataExtractLoad?: boolean;
+  /** Repair load (default false) */
+  readonly repairLoad?: boolean;
+}
+
 export class WorkbookXml extends BaseXmlComponent {
   private readonly sheets: readonly SheetDefinition[];
   private readonly pivotCaches: readonly PivotCacheReference[];
   private readonly protection?: WorkbookProtectionOptions;
   private readonly customViews?: readonly CustomWorkbookViewOptions[];
+  private readonly fileRecoveryPr?: FileRecoveryPrOptions;
 
   public constructor(
     sheets: readonly SheetDefinition[],
     pivotCaches?: readonly PivotCacheReference[],
     protection?: WorkbookProtectionOptions,
     customViews?: readonly CustomWorkbookViewOptions[],
+    fileRecoveryPr?: FileRecoveryPrOptions,
   ) {
     super("workbook");
     this.sheets = sheets;
     this.pivotCaches = pivotCaches ?? [];
     this.protection = protection;
     this.customViews = customViews;
+    this.fileRecoveryPr = fileRecoveryPr;
   }
 
   public override toXml(_context: Context): string {
@@ -210,6 +225,19 @@ export class WorkbookXml extends BaseXmlComponent {
         p.push(`<pivotCache cacheId="${pc.cacheId}" r:id="${pc.rId}"/>`);
       }
       p.push("</pivotCaches>");
+    }
+
+    // File recovery properties (after pivotCaches per XSD sequence)
+    if (this.fileRecoveryPr) {
+      const frp = this.fileRecoveryPr;
+      const frpAttrs: string[] = [];
+      if (frp.autoRecover === false) frpAttrs.push('autoRecover="0"');
+      if (frp.crashSave) frpAttrs.push('crashSave="1"');
+      if (frp.dataExtractLoad) frpAttrs.push('dataExtractLoad="1"');
+      if (frp.repairLoad) frpAttrs.push('repairLoad="1"');
+      if (frpAttrs.length > 0) {
+        p.push(`<fileRecoveryPr ${frpAttrs.join(" ")}/>`);
+      }
     }
 
     p.push("</workbook>");

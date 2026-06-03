@@ -10,6 +10,7 @@ import {
   type SheetDefinition,
   type PivotCacheReference,
   type WorkbookProtectionOptions,
+  type FileRecoveryPrOptions,
 } from "@file/workbook";
 import { Worksheet, type WorksheetOptions } from "@file/worksheet";
 /**
@@ -34,6 +35,8 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   readonly externalLinks?: readonly ExternalLinkOptions[];
   /** Custom workbook views */
   readonly customWorkbookViews?: readonly import("./workbook").CustomWorkbookViewOptions[];
+  /** File recovery properties */
+  readonly fileRecoveryPr?: FileRecoveryPrOptions;
 }
 
 export class File {
@@ -44,6 +47,7 @@ export class File {
   private readonly protectionOptions?: WorkbookProtectionOptions;
   private readonly externalLinkOptions: readonly ExternalLinkOptions[];
   private readonly customViewOptions?: readonly import("./workbook").CustomWorkbookViewOptions[];
+  private readonly fileRecoveryPrOpts?: FileRecoveryPrOptions;
 
   // Lazy components
   private _coreProperties?: CoreProperties;
@@ -68,6 +72,7 @@ export class File {
     this.protectionOptions = options.workbookProtection;
     this.externalLinkOptions = options.externalLinks ?? [];
     this.customViewOptions = options.customWorkbookViews;
+    this.fileRecoveryPrOpts = options.fileRecoveryPr;
   }
 
   // ── Lazy getters ──
@@ -133,6 +138,7 @@ export class File {
         this._pivotCacheRefs,
         this.protectionOptions,
         this.customViewOptions,
+        this.fileRecoveryPrOpts,
       );
     }
     return this._workbookXml;

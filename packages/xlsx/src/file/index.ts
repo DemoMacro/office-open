@@ -36,6 +36,8 @@ export type {
   ScenarioDefinition,
   ScenarioCellOptions,
   IgnoredErrorOptions,
+  PhoneticPrOptions,
+  SheetBackgroundImageOptions,
 } from "./worksheet";
 export type { IconSetType, CfvoType } from "./worksheet";
 export type { CorePropertiesOptions } from "./core-properties";
@@ -48,7 +50,11 @@ export type {
 } from "./pivot";
 export type { TableOptions, TableColumnOptions, TableStyleInfoOptions } from "./table";
 export { TotalsRowFunction, TableType } from "./table";
-export type { WorkbookProtectionOptions, CustomWorkbookViewOptions } from "./workbook";
+export type {
+  WorkbookProtectionOptions,
+  CustomWorkbookViewOptions,
+  FileRecoveryPrOptions,
+} from "./workbook";
 export type {
   ExternalLinkOptions,
   ExternalBookOptions,

@@ -439,6 +439,22 @@ export interface IgnoredErrorOptions {
   readonly calculatedColumn?: boolean;
 }
 
+/** Phonetic properties for CJK text (CT_PhoneticPr) */
+export interface PhoneticPrOptions {
+  /** Font ID from the styles table (required) */
+  readonly fontId: number;
+  /** Phonetic type (default: "fullwidthKatakana") */
+  readonly type?: "fullwidthKatakana" | "halfwidthKatakana" | "hiragana" | "noConversion";
+  /** Alignment (default: "left") */
+  readonly alignment?: "left" | "center" | "distributed";
+}
+
+/** Background image for a worksheet */
+export interface SheetBackgroundImageOptions {
+  readonly data: Uint8Array;
+  readonly type: "png" | "jpeg" | "jpg";
+}
+
 export interface WorksheetOptions {
   readonly name?: string;
   readonly rows?: readonly RowOptions[];
@@ -467,6 +483,10 @@ export interface WorksheetOptions {
   readonly tables?: readonly TableOptions[];
   /** Ignored errors — suppress specific Excel error checks for cell ranges */
   readonly ignoredErrors?: readonly IgnoredErrorOptions[];
+  /** Phonetic properties for CJK text */
+  readonly phoneticPr?: PhoneticPrOptions;
+  /** Background image for the worksheet */
+  readonly backgroundImage?: SheetBackgroundImageOptions;
 }
 
 export class Worksheet extends IgnoreIfEmptyXmlComponent {
@@ -491,6 +511,8 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
   private readonly pivotTableOptions: readonly PivotTableOptions[];
   private readonly tableOptions: readonly TableOptions[];
   private readonly ignoredErrors: readonly IgnoredErrorOptions[];
+  private readonly phoneticPr?: PhoneticPrOptions;
+  private readonly backgroundImage?: SheetBackgroundImageOptions;
 
   public constructor(options: WorksheetOptions) {
     super("worksheet");
@@ -515,6 +537,8 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
     this.pivotTableOptions = options.pivotTables ?? [];
     this.tableOptions = options.tables ?? [];
     this.ignoredErrors = options.ignoredErrors ?? [];
+    this.phoneticPr = options.phoneticPr;
+    this.backgroundImage = options.backgroundImage;
   }
 
   public get imageOptions(): readonly WorksheetImageOptions[] {
@@ -543,6 +567,10 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
 
   public get tables(): readonly TableOptions[] {
     return this.tableOptions;
+  }
+
+  public get background(): SheetBackgroundImageOptions | undefined {
+    return this.backgroundImage;
   }
 
   /**
@@ -825,6 +853,15 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
       p.push("</mergeCells>");
     }
 
+    // Phonetic properties (after mergeCells per XSD sequence)
+    if (this.phoneticPr) {
+      const pp = this.phoneticPr;
+      const ppAttrs: Record<string, string | number> = { fontId: pp.fontId };
+      if (pp.type && pp.type !== "fullwidthKatakana") ppAttrs.type = pp.type;
+      if (pp.alignment && pp.alignment !== "left") ppAttrs.alignment = pp.alignment;
+      p.push(selfCloseElement("phoneticPr", attrs(ppAttrs)));
+    }
+
     // Conditional formatting
     if (this.conditionalFormats.length > 0) {
       for (const cf of this.conditionalFormats) {
@@ -1003,6 +1040,11 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
       }
       ieParts.push("</ignoredErrors>");
       p.push(ieParts.join(""));
+    }
+
+    // Background picture placeholder — compiler replaces with <picture r:id="rIdN"/>
+    if (this.backgroundImage) {
+      p.push("<!--BACKGROUND_PICTURE-->");
     }
 
     p.push("</worksheet>");
