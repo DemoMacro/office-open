@@ -223,6 +223,7 @@ export class File {
       saveSubsetFonts: options.saveSubsetFonts,
       docVars: options.docVars,
       colorSchemeMapping: options.colorSchemeMapping,
+      mailMerge: options.mailMerge,
     });
 
     this.media = new Media();

@@ -166,6 +166,8 @@ export interface SettingsOptions {
   readonly saveSubsetFonts?: boolean;
   /** Document variables (key-value pairs stored in the document) */
   readonly docVars?: readonly { readonly name: string; readonly val: string }[];
+  /** Mail merge configuration */
+  readonly mailMerge?: MailMergeOptions;
   /** Theme color scheme remapping */
   readonly colorSchemeMapping?: {
     readonly bg1?: string;
@@ -219,6 +221,105 @@ export interface WriteProtectionOptions {
   readonly algorithmName?: string;
   /** Whether write protection is recommended (default true when options provided) */
   readonly recommended?: boolean;
+}
+
+// ── Mail Merge types ──
+
+/** Mail merge main document type (ST_MailMergeDocType) */
+export type MailMergeDocType =
+  | "catalog"
+  | "envelopes"
+  | "mailingLabels"
+  | "formLetters"
+  | "email"
+  | "fax";
+
+/** Mail merge destination (ST_MailMergeDest) */
+export type MailMergeDest = "newDocument" | "printer" | "email" | "fax";
+
+/** Mail merge data source type (ST_MailMergeDataType) */
+export type MailMergeDataType =
+  | "textFile"
+  | "database"
+  | "spreadsheet"
+  | "email"
+  | "odbc"
+  | "native"
+  | "addressBook"
+  | "legacy"
+  | "master";
+
+/** Mail merge source type for ODSO (ST_MailMergeSourceType) */
+export type MailMergeSourceType =
+  | "database"
+  | "addressBook"
+  | "document1"
+  | "document2"
+  | "text"
+  | "email"
+  | "native"
+  | "legacy"
+  | "master";
+
+/** ODSO field map type (ST_MailMergeOdsoFMDFieldType) */
+export type OdsoFieldType = "null" | "dbColumn";
+
+/** Field mapping for ODSO (CT_OdsoFieldMapData) */
+export interface OdsoFieldMapDataOptions {
+  readonly type?: OdsoFieldType;
+  readonly name?: string;
+  readonly mappedName?: string;
+  readonly column?: number;
+  readonly lid?: string;
+  readonly dynamicAddress?: boolean;
+}
+
+/** Office Data Source Object (CT_Odso) */
+export interface OdsoOptions {
+  readonly udl?: string;
+  readonly table?: string;
+  readonly src?: string;
+  readonly colDelim?: number;
+  readonly type?: MailMergeSourceType;
+  readonly fHdr?: boolean;
+  readonly fieldMapData?: readonly OdsoFieldMapDataOptions[];
+  readonly recipientData?: readonly string[];
+}
+
+/** Mail merge configuration (CT_MailMerge) */
+export interface MailMergeOptions {
+  /** Main document type (required) */
+  readonly mainDocumentType: MailMergeDocType;
+  /** Data source type (required) */
+  readonly dataType: MailMergeDataType;
+  /** Destination for merged documents */
+  readonly destination?: MailMergeDest;
+  /** Database connection string */
+  readonly connectString?: string;
+  /** SQL query to select data */
+  readonly query?: string;
+  /** Path to data source (relationship ID) */
+  readonly dataSource?: string;
+  /** Path to header source (relationship ID) */
+  readonly headerSource?: string;
+  /** Do not suppress blank lines */
+  readonly doNotSuppressBlankLines?: boolean;
+  /** Address field name for email merge */
+  readonly addressFieldName?: string;
+  /** Email subject line */
+  readonly mailSubject?: string;
+  /** Send as email attachment */
+  readonly mailAsAttachment?: boolean;
+  /** View merged data in document */
+  readonly viewMergedData?: boolean;
+  /** Active record index */
+  readonly activeRecord?: number;
+  /** Check errors mode */
+  readonly checkErrors?: number;
+  /** Link to query in data source */
+  readonly linkToQuery?: boolean;
+  /** Office Data Source Object configuration */
+  readonly odso?: OdsoOptions;
 }
 
 /**
@@ -346,6 +447,10 @@ export class Settings extends XmlComponent {
 
     if (options.trackRevisions !== undefined) {
       this.root.push(onOffObj("w:trackRevisions", options.trackRevisions));
+    }
+
+    if (options.mailMerge !== undefined) {
+      this.root.push(new MailMerge(options.mailMerge));
     }
 
     if (options.documentProtection !== undefined) {
@@ -537,5 +642,151 @@ class ColorSchemeMapping extends XmlComponent {
     if (options.followedHyperlink !== undefined)
       attr["w:followedHyperlink"] = options.followedHyperlink;
     this.root.push({ _attr: attr });
+  }
+}
+
+/**
+ * Mail merge configuration (CT_MailMerge).
+ *
+ * Generates the w:mailMerge element in document settings with
+ * mainDocumentType, dataType, connectString, query, ODSO, etc.
+ *
+ * Reference: ISO/IEC 29500-4, wml.xsd, CT_MailMerge
+ */
+class MailMerge extends XmlComponent {
+  public constructor(options: MailMergeOptions) {
+    super("w:mailMerge");
+
+    // XSD sequence order: mainDocumentType, linkToQuery, dataType, connectString,
+    // query, dataSource, headerSource, doNotSuppressBlankLines, destination,
+    // addressFieldName, mailSubject, mailAsAttachment, viewMergedData,
+    // activeRecord, checkErrors, odso
+    this.root.push(stringValObj("w:mainDocumentType", options.mainDocumentType));
+
+    if (options.linkToQuery !== undefined) {
+      this.root.push(onOffObj("w:linkToQuery", options.linkToQuery));
+    }
+
+    this.root.push(stringValObj("w:dataType", options.dataType));
+
+    if (options.connectString !== undefined) {
+      this.root.push(stringValObj("w:connectString", options.connectString));
+    }
+
+    if (options.query !== undefined) {
+      this.root.push(stringValObj("w:query", options.query));
+    }
+
+    if (options.dataSource !== undefined) {
+      this.root.push(stringValObj("w:dataSource", options.dataSource));
+    }
+
+    if (options.headerSource !== undefined) {
+      this.root.push(stringValObj("w:headerSource", options.headerSource));
+    }
+
+    if (options.doNotSuppressBlankLines !== undefined) {
+      this.root.push(onOffObj("w:doNotSuppressBlankLines", options.doNotSuppressBlankLines));
+    }
+
+    if (options.destination !== undefined) {
+      this.root.push(stringValObj("w:destination", options.destination));
+    }
+
+    if (options.addressFieldName !== undefined) {
+      this.root.push(stringValObj("w:addressFieldName", options.addressFieldName));
+    }
+
+    if (options.mailSubject !== undefined) {
+      this.root.push(stringValObj("w:mailSubject", options.mailSubject));
+    }
+
+    if (options.mailAsAttachment !== undefined) {
+      this.root.push(onOffObj("w:mailAsAttachment", options.mailAsAttachment));
+    }
+
+    if (options.viewMergedData !== undefined) {
+      this.root.push(onOffObj("w:viewMergedData", options.viewMergedData));
+    }
+
+    if (options.activeRecord !== undefined) {
+      this.root.push(numberValObj("w:activeRecord", options.activeRecord));
+    }
+
+    if (options.checkErrors !== undefined) {
+      this.root.push(numberValObj("w:checkErrors", options.checkErrors));
+    }
+
+    if (options.odso !== undefined) {
+      this.root.push(new Odso(options.odso));
+    }
+  }
+}
+
+/**
+ * Office Data Source Object (CT_Odso).
+ */
+class Odso extends XmlComponent {
+  public constructor(options: OdsoOptions) {
+    super("w:odso");
+
+    if (options.udl !== undefined) {
+      this.root.push(stringValObj("w:udl", options.udl));
+    }
+    if (options.table !== undefined) {
+      this.root.push(stringValObj("w:table", options.table));
+    }
+    if (options.src !== undefined) {
+      this.root.push(stringValObj("w:src", options.src));
+    }
+    if (options.colDelim !== undefined) {
+      this.root.push(numberValObj("w:colDelim", options.colDelim));
+    }
+    if (options.type !== undefined) {
+      this.root.push(stringValObj("w:type", options.type));
+    }
+    if (options.fHdr !== undefined) {
+      this.root.push(onOffObj("w:fHdr", options.fHdr));
+    }
+
+    if (options.fieldMapData !== undefined) {
+      for (const fm of options.fieldMapData) {
+        this.root.push(new OdsoFieldMapData(fm));
+      }
+    }
+
+    if (options.recipientData !== undefined) {
+      for (const rd of options.recipientData) {
+        this.root.push(stringValObj("w:recipientData", rd));
+      }
+    }
+  }
+}
+
+/**
+ * ODSO field map data (CT_OdsoFieldMapData).
+ */
+class OdsoFieldMapData extends XmlComponent {
+  public constructor(options: OdsoFieldMapDataOptions) {
+    super("w:fieldMapData");
+
+    if (options.type !== undefined) {
+      this.root.push(stringValObj("w:type", options.type));
+    }
+    if (options.name !== undefined) {
+      this.root.push(stringValObj("w:name", options.name));
+    }
+    if (options.mappedName !== undefined) {
+      this.root.push(stringValObj("w:mappedName", options.mappedName));
+    }
+    if (options.column !== undefined) {
+      this.root.push(numberValObj("w:column", options.column));
+    }
+    if (options.lid !== undefined) {
+      this.root.push(stringValObj("w:lid", options.lid));
+    }
+    if (options.dynamicAddress !== undefined) {
+      this.root.push(onOffObj("w:dynamicAddress", options.dynamicAddress));
+    }
   }
 }

@@ -121,6 +121,8 @@ export interface PropertiesOptions {
   readonly docVars?: readonly { readonly name: string; readonly val: string }[];
   /** Theme color scheme remapping */
   readonly colorSchemeMapping?: SettingsOptions["colorSchemeMapping"];
+  /** Mail merge configuration */
+  readonly mailMerge?: SettingsOptions["mailMerge"];
 }
 
 /**

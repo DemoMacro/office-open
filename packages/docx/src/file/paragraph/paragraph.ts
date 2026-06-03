@@ -13,6 +13,7 @@ import { uniqueId } from "@util/convenience-functions";
 
 import type { AltChunk } from "../alt-chunk";
 import type { CheckBox } from "../checkbox";
+import type { CustomXmlRun } from "../custom-xml";
 import type { SectionProperties } from "../document/body/section-properties/section-properties";
 import type { FileChild } from "../file-child";
 import { FontWrapper } from "../fonts/font-wrapper";
@@ -116,7 +117,8 @@ export type ParagraphChild =
   | Dir
   | Bdo
   | AltChunk
-  | SubDoc;
+  | SubDoc
+  | CustomXmlRun;
 
 /** JSON-friendly wrapper for ChartRun options in paragraph children. */
 export interface ChartChild {

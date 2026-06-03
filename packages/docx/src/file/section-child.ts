@@ -7,6 +7,7 @@
  * @module
  */
 import type { AltChunkOptions } from "./alt-chunk/alt-chunk";
+import type { CustomXmlBlockOptions } from "./custom-xml";
 import type { ParagraphOptions } from "./paragraph/paragraph";
 import type { SubDocOptions } from "./sub-doc/sub-doc";
 import type { SdtPropertiesOptions } from "./table-of-contents";
@@ -29,6 +30,7 @@ import type { BaseXmlComponent } from "./xml-components";
  * - `{ sdt: … }`         → `StructuredDocumentTagBlock`
  * - `{ altChunk: … }`    → `AltChunk`
  * - `{ subDoc: … }`      → `SubDoc`
+ * - `{ customXml: … }`   → `CustomXmlBlock`
  */
 export type SectionChild =
   | BaseXmlComponent
@@ -48,4 +50,5 @@ export type SectionChild =
       };
     }
   | { altChunk: AltChunkOptions }
-  | { subDoc: SubDocOptions };
+  | { subDoc: SubDocOptions }
+  | { customXml: CustomXmlBlockOptions };

@@ -7,6 +7,7 @@
  * @module
  */
 import { AltChunk } from "./alt-chunk/alt-chunk";
+import { CustomXmlBlock } from "./custom-xml";
 import type { FileChild } from "./file-child";
 import { Paragraph } from "./paragraph/paragraph";
 import { StructuredDocumentTagBlock } from "./sdt/sdt";
@@ -44,5 +45,6 @@ export function coerceSectionChild(child: SectionChild): FileChild {
   }
   if ("altChunk" in child) return new AltChunk(child.altChunk);
   if ("subDoc" in child) return new SubDoc(child.subDoc);
+  if ("customXml" in child) return new CustomXmlBlock(child.customXml);
   throw new Error("Unknown section child type");
 }
