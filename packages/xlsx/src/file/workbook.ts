@@ -110,6 +110,7 @@ export class WorkbookXml extends BaseXmlComponent {
   private readonly protection?: WorkbookProtectionOptions;
   private readonly customViews?: readonly CustomWorkbookViewOptions[];
   private readonly fileRecoveryPr?: FileRecoveryPrOptions;
+  private readonly functionGroupNames: readonly string[];
 
   public constructor(
     sheets: readonly SheetDefinition[],
@@ -117,6 +118,7 @@ export class WorkbookXml extends BaseXmlComponent {
     protection?: WorkbookProtectionOptions,
     customViews?: readonly CustomWorkbookViewOptions[],
     fileRecoveryPr?: FileRecoveryPrOptions,
+    functionGroups?: readonly string[],
   ) {
     super("workbook");
     this.sheets = sheets;
@@ -124,6 +126,7 @@ export class WorkbookXml extends BaseXmlComponent {
     this.protection = protection;
     this.customViews = customViews;
     this.fileRecoveryPr = fileRecoveryPr;
+    this.functionGroupNames = functionGroups ?? [];
   }
 
   public override toXml(_context: Context): string {
@@ -184,6 +187,16 @@ export class WorkbookXml extends BaseXmlComponent {
       );
     }
     p.push("</sheets>");
+
+    // Function groups (after sheets, before externalReferences per XSD)
+    if (this.functionGroupNames.length > 0) {
+      const fgParts: string[] = [`<functionGroups builtInGroupCount="16">`];
+      for (const name of this.functionGroupNames) {
+        fgParts.push(`<functionGroup name="${escapeXml(name)}"/>`);
+      }
+      fgParts.push("</functionGroups>");
+      p.push(fgParts.join(""));
+    }
 
     // externalReferences placeholder — compiler injects the XML here if needed
     p.push("<!--EXTERNAL_REFS-->");

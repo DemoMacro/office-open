@@ -37,6 +37,8 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   readonly customWorkbookViews?: readonly import("./workbook").CustomWorkbookViewOptions[];
   /** File recovery properties */
   readonly fileRecoveryPr?: FileRecoveryPrOptions;
+  /** Custom VBA function group names */
+  readonly functionGroups?: readonly string[];
 }
 
 export class File {
@@ -48,6 +50,7 @@ export class File {
   private readonly externalLinkOptions: readonly ExternalLinkOptions[];
   private readonly customViewOptions?: readonly import("./workbook").CustomWorkbookViewOptions[];
   private readonly fileRecoveryPrOpts?: FileRecoveryPrOptions;
+  private readonly functionGroupOpts?: readonly string[];
 
   // Lazy components
   private _coreProperties?: CoreProperties;
@@ -73,6 +76,7 @@ export class File {
     this.externalLinkOptions = options.externalLinks ?? [];
     this.customViewOptions = options.customWorkbookViews;
     this.fileRecoveryPrOpts = options.fileRecoveryPr;
+    this.functionGroupOpts = options.functionGroups;
   }
 
   // ── Lazy getters ──
@@ -139,6 +143,7 @@ export class File {
         this.protectionOptions,
         this.customViewOptions,
         this.fileRecoveryPrOpts,
+        this.functionGroupOpts,
       );
     }
     return this._workbookXml;
