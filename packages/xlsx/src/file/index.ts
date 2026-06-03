@@ -35,6 +35,7 @@ export type {
   ScenarioOptions,
   ScenarioDefinition,
   ScenarioCellOptions,
+  IgnoredErrorOptions,
 } from "./worksheet";
 export type { IconSetType, CfvoType } from "./worksheet";
 export type { CorePropertiesOptions } from "./core-properties";

@@ -424,6 +424,21 @@ export interface AutoFilterOptions {
   readonly sort?: readonly SortCondition[];
 }
 
+/** An ignored error entry — suppresses specific Excel error checks for a range. */
+export interface IgnoredErrorOptions {
+  /** Cell range, e.g. "A1:A10" (required) */
+  readonly sqref: string;
+  readonly evalError?: boolean;
+  readonly twoDigitTextYear?: boolean;
+  readonly numberStoredAsText?: boolean;
+  readonly formula?: boolean;
+  readonly formulaRange?: boolean;
+  readonly unlockedFormula?: boolean;
+  readonly emptyCellReference?: boolean;
+  readonly listDataValidation?: boolean;
+  readonly calculatedColumn?: boolean;
+}
+
 export interface WorksheetOptions {
   readonly name?: string;
   readonly rows?: readonly RowOptions[];
@@ -450,6 +465,8 @@ export interface WorksheetOptions {
   readonly pivotTables?: readonly PivotTableOptions[];
   /** Tables (list objects) for this worksheet */
   readonly tables?: readonly TableOptions[];
+  /** Ignored errors — suppress specific Excel error checks for cell ranges */
+  readonly ignoredErrors?: readonly IgnoredErrorOptions[];
 }
 
 export class Worksheet extends IgnoreIfEmptyXmlComponent {
@@ -473,6 +490,7 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
   private readonly sheetView?: SheetViewOptions;
   private readonly pivotTableOptions: readonly PivotTableOptions[];
   private readonly tableOptions: readonly TableOptions[];
+  private readonly ignoredErrors: readonly IgnoredErrorOptions[];
 
   public constructor(options: WorksheetOptions) {
     super("worksheet");
@@ -496,6 +514,7 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
     this.sheetView = options.sheetView;
     this.pivotTableOptions = options.pivotTables ?? [];
     this.tableOptions = options.tables ?? [];
+    this.ignoredErrors = options.ignoredErrors ?? [];
   }
 
   public get imageOptions(): readonly WorksheetImageOptions[] {
@@ -962,6 +981,28 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
       } else if (hfAttrs.differentOddEven || hfAttrs.differentFirst) {
         p.push(selfCloseElement("headerFooter", attrs(hfAttrs)));
       }
+    }
+
+    // Ignored errors (after headerFooter per XSD sequence)
+    if (this.ignoredErrors.length > 0) {
+      const ieParts: string[] = ["<ignoredErrors>"];
+      for (const ie of this.ignoredErrors) {
+        const ieAttrs: Record<string, string | number | boolean | undefined> = {
+          sqref: ie.sqref,
+        };
+        if (ie.evalError) ieAttrs.evalError = 1;
+        if (ie.twoDigitTextYear) ieAttrs.twoDigitTextYear = 1;
+        if (ie.numberStoredAsText) ieAttrs.numberStoredAsText = 1;
+        if (ie.formula) ieAttrs.formula = 1;
+        if (ie.formulaRange) ieAttrs.formulaRange = 1;
+        if (ie.unlockedFormula) ieAttrs.unlockedFormula = 1;
+        if (ie.emptyCellReference) ieAttrs.emptyCellReference = 1;
+        if (ie.listDataValidation) ieAttrs.listDataValidation = 1;
+        if (ie.calculatedColumn) ieAttrs.calculatedColumn = 1;
+        ieParts.push(selfCloseElement("ignoredError", attrs(ieAttrs)));
+      }
+      ieParts.push("</ignoredErrors>");
+      p.push(ieParts.join(""));
     }
 
     p.push("</worksheet>");
