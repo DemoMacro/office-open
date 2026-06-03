@@ -12,6 +12,7 @@ import {
   type WorkbookProtectionOptions,
   type FileRecoveryPrOptions,
   type WebPublishingOptions,
+  type FileSharingOptions,
 } from "@file/workbook";
 import { Worksheet, type WorksheetOptions } from "@file/worksheet";
 /**
@@ -42,6 +43,8 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   readonly functionGroups?: readonly string[];
   /** Web publishing properties */
   readonly webPublishing?: WebPublishingOptions;
+  /** File sharing / read-only recommendation */
+  readonly fileSharing?: FileSharingOptions;
 }
 
 export class File {
@@ -55,6 +58,7 @@ export class File {
   private readonly fileRecoveryPrOpts?: FileRecoveryPrOptions;
   private readonly functionGroupOpts?: readonly string[];
   private readonly webPublishingOpts?: WebPublishingOptions;
+  private readonly fileSharingOpts?: FileSharingOptions;
 
   // Lazy components
   private _coreProperties?: CoreProperties;
@@ -82,6 +86,7 @@ export class File {
     this.fileRecoveryPrOpts = options.fileRecoveryPr;
     this.functionGroupOpts = options.functionGroups;
     this.webPublishingOpts = options.webPublishing;
+    this.fileSharingOpts = options.fileSharing;
   }
 
   // ── Lazy getters ──
@@ -150,6 +155,7 @@ export class File {
         this.fileRecoveryPrOpts,
         this.functionGroupOpts,
         this.webPublishingOpts,
+        this.fileSharingOpts,
       );
     }
     return this._workbookXml;

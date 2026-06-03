@@ -54,6 +54,8 @@ export type {
   WorkbookProtectionOptions,
   CustomWorkbookViewOptions,
   FileRecoveryPrOptions,
+  WebPublishingOptions,
+  FileSharingOptions,
 } from "./workbook";
 export type {
   ExternalLinkOptions,

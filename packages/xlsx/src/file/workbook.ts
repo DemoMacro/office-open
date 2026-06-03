@@ -126,6 +126,24 @@ export interface WebPublishingOptions {
   readonly characterSet?: string;
 }
 
+/** File sharing properties (CT_FileSharing) */
+export interface FileSharingOptions {
+  /** Recommend read-only mode (default false) */
+  readonly readOnlyRecommended?: boolean;
+  /** User name who has the file locked */
+  readonly userName?: string;
+  /** Legacy reservation password (hex) */
+  readonly reservationPassword?: string;
+  /** Modern encryption: algorithm name */
+  readonly algorithmName?: string;
+  /** Modern encryption: base64 hash value */
+  readonly hashValue?: string;
+  /** Modern encryption: base64 salt value */
+  readonly saltValue?: string;
+  /** Modern encryption: spin count */
+  readonly spinCount?: number;
+}
+
 export class WorkbookXml extends BaseXmlComponent {
   private readonly sheets: readonly SheetDefinition[];
   private readonly pivotCaches: readonly PivotCacheReference[];
@@ -134,6 +152,7 @@ export class WorkbookXml extends BaseXmlComponent {
   private readonly fileRecoveryPr?: FileRecoveryPrOptions;
   private readonly functionGroupNames: readonly string[];
   private readonly webPublishing?: WebPublishingOptions;
+  private readonly fileSharing?: FileSharingOptions;
 
   public constructor(
     sheets: readonly SheetDefinition[],
@@ -143,6 +162,7 @@ export class WorkbookXml extends BaseXmlComponent {
     fileRecoveryPr?: FileRecoveryPrOptions,
     functionGroups?: readonly string[],
     webPublishing?: WebPublishingOptions,
+    fileSharing?: FileSharingOptions,
   ) {
     super("workbook");
     this.sheets = sheets;
@@ -152,6 +172,7 @@ export class WorkbookXml extends BaseXmlComponent {
     this.fileRecoveryPr = fileRecoveryPr;
     this.functionGroupNames = functionGroups ?? [];
     this.webPublishing = webPublishing;
+    this.fileSharing = fileSharing;
   }
 
   public override toXml(_context: Context): string {
@@ -166,8 +187,26 @@ export class WorkbookXml extends BaseXmlComponent {
         ' xmlns:xr10="http://schemas.microsoft.com/office/spreadsheetml/2016/revision10"' +
         ' xmlns:xr2="http://schemas.microsoft.com/office/spreadsheetml/2015/revision2">',
       '<fileVersion appName="xl" lastEdited="7" lowestEdited="6" rupBuild="29929"/>',
-      "<workbookPr/>",
     ];
+
+    // File sharing (after fileVersion, before workbookPr per XSD sequence)
+    if (this.fileSharing) {
+      const fs = this.fileSharing;
+      const fsAttrs: string[] = [];
+      if (fs.readOnlyRecommended) fsAttrs.push('readOnlyRecommended="1"');
+      if (fs.userName) fsAttrs.push(`userName="${escapeXml(fs.userName)}"`);
+      if (fs.reservationPassword)
+        fsAttrs.push(`reservationPassword="${escapeXml(fs.reservationPassword)}"`);
+      if (fs.algorithmName) fsAttrs.push(`algorithmName="${escapeXml(fs.algorithmName)}"`);
+      if (fs.hashValue) fsAttrs.push(`hashValue="${escapeXml(fs.hashValue)}"`);
+      if (fs.saltValue) fsAttrs.push(`saltValue="${escapeXml(fs.saltValue)}"`);
+      if (fs.spinCount !== undefined) fsAttrs.push(`spinCount="${fs.spinCount}"`);
+      if (fsAttrs.length > 0) {
+        p.push(`<fileSharing ${fsAttrs.join(" ")}/>`);
+      }
+    }
+
+    p.push("<workbookPr/>");
 
     // Workbook protection (after workbookPr, before bookViews per XSD sequence)
     if (this.protection) {
