@@ -79,4 +79,22 @@ export interface AnimationOptions {
   // Text-level animation target
   readonly charRange?: readonly [number, number];
   readonly paragraphRange?: readonly [number, number];
+
+  // Generic set behavior (p:set) — instant property change
+  readonly setBehavior?: {
+    readonly attributeName: string;
+    readonly toValue: string;
+    readonly toType?: "string" | "number";
+  };
+
+  // Command behavior (p:cmd) — extended command types
+  readonly commandType?: "call" | "evt" | "verb";
+  readonly command?: string;
+
+  // Iterate container (p:iterate) — text-level iteration
+  readonly iterate?: {
+    readonly type?: "el" | "wd" | "lt";
+    readonly interval?: number;
+    readonly backwards?: boolean;
+  };
 }

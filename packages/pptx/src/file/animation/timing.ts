@@ -623,6 +623,118 @@ function buildMediaPlayCommand(
 }
 
 /**
+ * Build generic p:cmd with configurable type (call/evt/verb).
+ */
+function buildCommand(options: AnimationOptions, spid: number, ids: { cmd: number }): XmlComponent {
+  const cmdType = options.commandType ?? "call";
+  const cmdStr = options.command ?? "";
+
+  return new BuilderElement({
+    name: "p:cmd",
+    attributes: {
+      type: { key: "type", value: cmdType },
+      cmd: { key: "cmd", value: cmdStr },
+    },
+    children: [
+      new BuilderElement({
+        name: "p:cBhvr",
+        children: [
+          new BuilderElement({
+            name: "p:cTn",
+            attributes: {
+              id: { key: "id", value: ids.cmd },
+              dur: { key: "dur", value: String(options.duration ?? 1000) },
+              fill: { key: "fill", value: "hold" },
+            },
+          }),
+          buildTargetElement(spid),
+        ],
+      }),
+    ],
+  });
+}
+
+/**
+ * Build p:set for an instant property change (setBehavior).
+ */
+function buildSetBehavior(
+  setOptions: NonNullable<AnimationOptions["setBehavior"]>,
+  spid: number,
+  ids: { set: number },
+): XmlComponent {
+  const toValName = setOptions.toType === "number" ? "p:numVal" : "p:strVal";
+
+  return new BuilderElement({
+    name: "p:set",
+    children: [
+      new BuilderElement({
+        name: "p:cBhvr",
+        children: [
+          new BuilderElement({
+            name: "p:cTn",
+            attributes: {
+              id: { key: "id", value: ids.set },
+              dur: { key: "dur", value: "1" },
+              fill: { key: "fill", value: "hold" },
+            },
+            children: [
+              new BuilderElement({
+                name: "p:stCondLst",
+                children: [
+                  new BuilderElement({
+                    name: "p:cond",
+                    attributes: { delay: { key: "delay", value: "0" } },
+                  }),
+                ],
+              }),
+            ],
+          }),
+          buildTargetElement(spid),
+          new BuilderElement({
+            name: "p:attrNameLst",
+            children: [stringContainerObj("p:attrName", setOptions.attributeName)],
+          }),
+        ],
+      }),
+      new BuilderElement({
+        name: "p:to",
+        children: [
+          new BuilderElement({
+            name: toValName,
+            attributes: { val: { key: "val", value: setOptions.toValue } },
+          }),
+        ],
+      }),
+    ],
+  });
+}
+
+/**
+ * Build p:iterate for text-level animation iteration.
+ */
+function buildIterate(iterate: NonNullable<AnimationOptions["iterate"]>): XmlComponent {
+  const attrs: Record<string, { key: string; value: string | number }> = {};
+  if (iterate.type) attrs.type = { key: "type", value: iterate.type };
+  if (iterate.backwards) attrs.backwards = { key: "backwards", value: 1 };
+
+  const iterChildren: XmlComponent[] = [];
+  if (iterate.interval !== undefined) {
+    iterChildren.push(
+      new BuilderElement({
+        name: "p:tmAbs",
+        attributes: { val: { key: "val", value: iterate.interval } },
+      }),
+    );
+  }
+
+  return new BuilderElement({
+    name: "p:iterate",
+    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
+    children: iterChildren.length > 0 ? iterChildren : undefined,
+  });
+}
+
+/**
  * Build p:video/p:audio with p:cMediaNode (goes as sibling of p:seq).
  * This is the media state controller, separate from the play command.
  */
@@ -840,7 +952,9 @@ export class SlideTiming extends XmlComponent {
       // Build effect children based on animation class
       let effectChildren: XmlComponent[];
 
-      if (options.mediaType) {
+      if (options.commandType) {
+        effectChildren = [buildCommand(options, spid, { cmd: effectCtnId2 })];
+      } else if (options.mediaType) {
         effectChildren = [buildMediaPlayCommand(options, spid, { cmd: effectCtnId2 })];
         // Generate media state node (p:video/p:audio) as sibling of p:seq
         const mediaStateId = id++;
@@ -862,6 +976,15 @@ export class SlideTiming extends XmlComponent {
           set: setCtnId,
           effect: effectCtnId2,
         });
+      }
+
+      // Prepend a p:set for setBehavior (if specified)
+      if (options.setBehavior) {
+        const setBehId = id++;
+        effectChildren = [
+          buildSetBehavior(options.setBehavior, spid, { set: setBehId }),
+          ...effectChildren,
+        ];
       }
 
       // Build cTn attributes with optional speed/repeatCount/autoReverse
@@ -886,26 +1009,36 @@ export class SlideTiming extends XmlComponent {
       if (options.autoReverse) cTnAttrs.autoRev = { key: "autoRev", value: 1 };
 
       // Build effect cTn
+      const effectCtnChildren: XmlComponent[] = [
+        new BuilderElement({
+          name: "p:stCondLst",
+          children: [
+            new BuilderElement({
+              name: "p:cond",
+              attributes: {
+                delay: { key: "delay", value: String(options.delay ?? 0) },
+              },
+            }),
+          ],
+        }),
+      ];
+
+      // Add iterate container if specified
+      if (options.iterate) {
+        effectCtnChildren.push(buildIterate(options.iterate));
+      }
+
+      effectCtnChildren.push(
+        new BuilderElement({
+          name: "p:childTnLst",
+          children: effectChildren,
+        }),
+      );
+
       const effectCtn = new BuilderElement({
         name: "p:cTn",
         attributes: cTnAttrs,
-        children: [
-          new BuilderElement({
-            name: "p:stCondLst",
-            children: [
-              new BuilderElement({
-                name: "p:cond",
-                attributes: {
-                  delay: { key: "delay", value: String(options.delay ?? 0) },
-                },
-              }),
-            ],
-          }),
-          new BuilderElement({
-            name: "p:childTnLst",
-            children: effectChildren,
-          }),
-        ],
+        children: effectCtnChildren,
       });
 
       // Wrap in inner par
