@@ -139,13 +139,17 @@ export class ImageRun extends Run {
     this.extraChildren.push(drawing);
   }
 
-  public prepForXml(context: Context): IXmlableObject | undefined {
+  protected override registerResources(context: Context): void {
     context.file.media.addImage(this.imageData.fileName, this.imageData);
 
     if (this.imageData.type === "svg") {
       context.file.media.addImage(this.imageData.fallback.fileName, this.imageData.fallback);
     }
+  }
 
+  /** @deprecated Only called via deprecated Formatter.format() */
+  public override prepForXml(context: Context): IXmlableObject | undefined {
+    this.registerResources(context);
     return super.prepForXml(context);
   }
 }

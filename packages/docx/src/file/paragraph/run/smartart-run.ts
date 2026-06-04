@@ -96,7 +96,7 @@ export class SmartArtRun extends Run {
     this.extraChildren.push(drawing);
   }
 
-  public prepForXml(context: Context): IXmlableObject | undefined {
+  protected override registerResources(context: Context): void {
     const layoutId = this.smartArtOptions.layout ?? "default";
     const styleId = this.smartArtOptions.style ?? "simple1";
     const colorId = this.smartArtOptions.color ?? "accent1_2";
@@ -112,7 +112,11 @@ export class SmartArtRun extends Run {
     };
 
     context.file.smartArts.addSmartArt(this.smartArtKey, smartArtData);
+  }
 
+  /** @deprecated Only called via deprecated Formatter.format() */
+  public override prepForXml(context: Context): IXmlableObject | undefined {
+    this.registerResources(context);
     return super.prepForXml(context);
   }
 

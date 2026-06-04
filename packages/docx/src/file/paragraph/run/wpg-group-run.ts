@@ -53,7 +53,7 @@ export class WpgGroupRun extends Run {
     this.extraChildren.push(drawing);
   }
 
-  public prepForXml(context: Context): IXmlableObject | undefined {
+  protected override registerResources(context: Context): void {
     for (const child of this.mediaDatas) {
       context.file.media.addImage(child.fileName, child);
 
@@ -61,6 +61,11 @@ export class WpgGroupRun extends Run {
         context.file.media.addImage(child.fallback.fileName, child.fallback);
       }
     }
+  }
+
+  /** @deprecated Only called via deprecated Formatter.format() */
+  public override prepForXml(context: Context): IXmlableObject | undefined {
+    this.registerResources(context);
     return super.prepForXml(context);
   }
 }

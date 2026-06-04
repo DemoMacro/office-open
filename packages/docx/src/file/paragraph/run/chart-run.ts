@@ -93,7 +93,7 @@ export class ChartRun extends Run {
     this.extraChildren.push(drawing);
   }
 
-  public prepForXml(context: Context): IXmlableObject | undefined {
+  protected override registerResources(context: Context): void {
     // Register chart with the file's chart collection
     const chartSpace = new ChartSpace({
       categories: this.chartOptions.data.categories,
@@ -109,7 +109,11 @@ export class ChartRun extends Run {
       chartSpace,
       key: this.chartKey,
     });
+  }
 
+  /** @deprecated Only called via deprecated Formatter.format() */
+  public override prepForXml(context: Context): IXmlableObject | undefined {
+    this.registerResources(context);
     return super.prepForXml(context);
   }
 }

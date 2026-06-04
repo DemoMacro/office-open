@@ -129,7 +129,6 @@ export class Run extends BaseXmlComponent {
 
     // Pre-build the entire IXmlableObject for the simple case:
     // text-only (no children array, no break, no extra children).
-    // This eliminates all object allocation in prepForXml for the hot path.
     if (!options.children && !options.break) {
       const rPr = buildRunProperties(options);
       const text = options.text !== undefined ? buildText(options.text) : undefined;
@@ -142,12 +141,103 @@ export class Run extends BaseXmlComponent {
     }
   }
 
+  /**
+   * Hook for subclasses to register resources before serialization.
+   * Called once per run during toXml().
+   */
+  protected registerResources(_context: Context): void {
+    // Override in subclasses (ImageRun, ChartRun, etc.)
+  }
+
+  public override toXml(context: Context): string {
+    // Fast path: pre-built object, no extra children
+    if (this._prebuilt && this.extraChildren.length === 0) {
+      return xml(this._prebuilt);
+    }
+
+    // Let subclasses register their resources (media, charts, smartArts)
+    this.registerResources(context);
+
+    // Build child XML parts
+    const parts: string[] = [];
+
+    const rPr = buildRunProperties(this.options);
+    if (rPr) parts.push(xml(rPr));
+
+    if (this.options.break) {
+      for (let i = 0; i < this.options.break; i++) {
+        parts.push(createBreak().toXml(context));
+      }
+    }
+
+    if (this.options.children) {
+      for (const child of this.options.children) {
+        if (typeof child === "string") {
+          switch (child) {
+            case PageNumber.CURRENT:
+              parts.push(createBegin().toXml(context));
+              parts.push(xml(buildPage()));
+              parts.push(createSeparate().toXml(context));
+              parts.push(createEnd().toXml(context));
+              break;
+            case PageNumber.TOTAL_PAGES:
+              parts.push(createBegin().toXml(context));
+              parts.push(xml(buildNumberOfPages()));
+              parts.push(createSeparate().toXml(context));
+              parts.push(createEnd().toXml(context));
+              break;
+            case PageNumber.TOTAL_PAGES_IN_SECTION:
+              parts.push(createBegin().toXml(context));
+              parts.push(xml(buildNumberOfPagesSection()));
+              parts.push(createSeparate().toXml(context));
+              parts.push(createEnd().toXml(context));
+              break;
+            case PageNumber.CURRENT_SECTION:
+              parts.push(createBegin().toXml(context));
+              parts.push(xml(buildCurrentSection()));
+              parts.push(createSeparate().toXml(context));
+              parts.push(createEnd().toXml(context));
+              break;
+            default:
+              parts.push(xml(buildText(child)));
+              break;
+          }
+          continue;
+        }
+
+        if (child instanceof BaseXmlComponent) {
+          const s = child.toXml(context);
+          if (s) parts.push(s);
+        } else {
+          parts.push(xml(child));
+        }
+      }
+    } else if (this.options.text !== undefined) {
+      parts.push(xml(buildText(this.options.text)));
+    }
+
+    for (const child of this.extraChildren) {
+      if (child instanceof BaseXmlComponent) {
+        const s = child.toXml(context);
+        if (s) parts.push(s);
+      } else {
+        parts.push(xml(child));
+      }
+    }
+
+    const body = parts.join("");
+    return body.length === 0 ? "<w:r/>" : `<w:r>${body}</w:r>`;
+  }
+
+  /**
+   * @deprecated Only called via deprecated Formatter.format().
+   * Production code uses toXml() which bypasses this entirely.
+   */
   public prepForXml(context: Context): IXmlableObject | undefined {
     // Fast path: return pre-built object (zero allocation).
-    // Only valid when no extraChildren were added by subclasses.
     if (this._prebuilt && this.extraChildren.length === 0) return this._prebuilt;
 
-    // Slow path: complex children, breaks, or extra children.
+    // Slow path: build IXmlableObject tree for deprecated format() path.
     const rPr = buildRunProperties(this.options);
     const children: IXmlableObject[] = [];
     if (rPr) children.push(rPr);
@@ -219,16 +309,5 @@ export class Run extends BaseXmlComponent {
     }
 
     return { "w:r": children.length > 0 ? children : {} };
-  }
-
-  /**
-   * Fast path: pre-built object → xml() string. Slow path: prepForXml → xml.
-   */
-  public override toXml(context: Context): string {
-    if (this._prebuilt && this.extraChildren.length === 0) {
-      return xml(this._prebuilt);
-    }
-    const obj = this.prepForXml(context);
-    return obj ? xml(obj) : "";
   }
 }
