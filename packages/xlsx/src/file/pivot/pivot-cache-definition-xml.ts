@@ -10,7 +10,7 @@ import { BaseXmlComponent } from "@file/xml-components";
 import type { Context } from "@file/xml-components";
 import { escapeXml } from "@office-open/xml";
 
-import type { PivotSourceData } from "./pivot-utils";
+import type { PivotSourceData, OlapPrOptions } from "./pivot-utils";
 import { collectUniqueValues, isNumericField } from "./pivot-utils";
 
 export class PivotCacheDefinitionXml extends BaseXmlComponent {
@@ -18,6 +18,7 @@ export class PivotCacheDefinitionXml extends BaseXmlComponent {
   private readonly sourceSheet: string;
   private readonly sourceData: PivotSourceData;
   private readonly recordsRid: string;
+  private readonly olapPr?: OlapPrOptions;
 
   public constructor(
     _cacheIdx: number,
@@ -25,12 +26,14 @@ export class PivotCacheDefinitionXml extends BaseXmlComponent {
     sourceSheet: string,
     sourceData: PivotSourceData,
     recordsRid: string,
+    olapPr?: OlapPrOptions,
   ) {
     super("pivotCacheDefinition");
     this.sourceRef = sourceRef;
     this.sourceSheet = sourceSheet;
     this.sourceData = sourceData;
     this.recordsRid = recordsRid;
+    this.olapPr = olapPr;
   }
 
   public override toXml(_context: Context): string {
@@ -98,6 +101,23 @@ export class PivotCacheDefinitionXml extends BaseXmlComponent {
     }
 
     p.push("</cacheFields>");
+
+    // olapPr (optional)
+    if (this.olapPr) {
+      const olAttrs: string[] = [];
+      if (this.olapPr.local) olAttrs.push(` local="${escapeXml(this.olapPr.local)}"`);
+      if (this.olapPr.localConnection)
+        olAttrs.push(` localConnection="${escapeXml(this.olapPr.localConnection)}"`);
+      if (this.olapPr.sendLocale) olAttrs.push(` sendLocale="1"`);
+      if (this.olapPr.rowDrillCount !== undefined)
+        olAttrs.push(` rowDrillCount="${this.olapPr.rowDrillCount}"`);
+      if (this.olapPr.colDrillCount !== undefined)
+        olAttrs.push(` colDrillCount="${this.olapPr.colDrillCount}"`);
+      if (olAttrs.length > 0) {
+        p.push(`<olapPr${olAttrs.join("")}/>`);
+      }
+    }
+
     p.push("</pivotCacheDefinition>");
 
     return p.join("");

@@ -149,6 +149,22 @@ export interface PivotTableOptions {
   readonly style?: string;
   /** Pivot filters (CT_PivotFilters) */
   readonly filters?: readonly PivotFilterOptions[];
+  /** Field names to use as page/report filters */
+  readonly pages?: readonly string[];
+}
+
+/** OLAP properties for pivot cache (CT_OlapPr) */
+export interface OlapPrOptions {
+  /** Local cube connection string */
+  readonly local?: string;
+  /** Local connection string */
+  readonly localConnection?: string;
+  /** Send locale info to OLAP server */
+  readonly sendLocale?: boolean;
+  /** Row dimensions */
+  readonly rowDrillCount?: number;
+  /** Column dimensions */
+  readonly colDrillCount?: number;
 }
 
 /** Parsed source data for pivot cache generation. */

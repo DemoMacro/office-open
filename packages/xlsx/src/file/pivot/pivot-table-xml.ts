@@ -41,13 +41,19 @@ export class PivotTableXml extends BaseXmlComponent {
     const rowFieldIndices = rowFieldNames.map((n) => fields.indexOf(n));
     const colFieldIndices = colFieldNames.map((n) => fields.indexOf(n));
     const dataFieldIndices = dataFields.map((df) => fields.indexOf(df.field));
+    const pageFieldNames = o.pages ?? [];
+    const pageFieldIndices = pageFieldNames.map((n) => fields.indexOf(n));
 
     // Build pivotFields
     const pivotFieldsXml = this.buildPivotFields(
       rowFieldIndices,
       colFieldIndices,
       dataFieldIndices,
+      pageFieldIndices,
     );
+
+    // Build pageFields (if any)
+    const pageFieldsXml = this.buildPageFields(pageFieldIndices);
 
     // Build rowFields + rowItems
     const rowFieldsXml = this.buildRowFields(rowFieldIndices);
@@ -87,6 +93,11 @@ export class PivotTableXml extends BaseXmlComponent {
     // pivotFields
     p.push(pivotFieldsXml);
 
+    // pageFields (before rowFields per XSD sequence)
+    if (pageFieldIndices.length > 0) {
+      p.push(pageFieldsXml);
+    }
+
     // rowFields
     p.push(rowFieldsXml);
 
@@ -124,6 +135,7 @@ export class PivotTableXml extends BaseXmlComponent {
     rowIndices: readonly number[],
     colIndices: readonly number[],
     dataIndices: readonly number[],
+    pageIndices: readonly number[],
   ): string {
     const fields = this.sourceData.fieldNames;
     const parts: string[] = [`<pivotFields count="${fields.length}">`];
@@ -132,6 +144,7 @@ export class PivotTableXml extends BaseXmlComponent {
       const isRow = rowIndices.includes(i);
       const isCol = colIndices.includes(i);
       const isData = dataIndices.includes(i);
+      const isPage = pageIndices.includes(i);
 
       if (isData) {
         parts.push(`<pivotField dataField="1" showAll="0"/>`);
@@ -153,12 +166,31 @@ export class PivotTableXml extends BaseXmlComponent {
         }
         parts.push(`<item t="default"/>`);
         parts.push("</items></pivotField>");
+      } else if (isPage) {
+        const uniqueVals = collectUniqueValues(this.sourceData.records, i);
+        parts.push(`<pivotField axis="axisPage" showAll="0">`);
+        parts.push(`<items count="${uniqueVals.length + 1}">`);
+        for (let j = 0; j < uniqueVals.length; j++) {
+          parts.push(`<item x="${j}"/>`);
+        }
+        parts.push(`<item t="default"/>`);
+        parts.push("</items></pivotField>");
       } else {
         parts.push(`<pivotField showAll="0"/>`);
       }
     }
 
     parts.push("</pivotFields>");
+    return parts.join("");
+  }
+
+  private buildPageFields(pageIndices: readonly number[]): string {
+    if (pageIndices.length === 0) return "";
+    const parts: string[] = [`<pageFields count="${pageIndices.length}">`];
+    for (let i = 0; i < pageIndices.length; i++) {
+      parts.push(`<pageField fld="${pageIndices[i]}" hier="${i}"/>`);
+    }
+    parts.push("</pageFields>");
     return parts.join("");
   }
 
