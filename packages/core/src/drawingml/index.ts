@@ -157,6 +157,113 @@ export {
 // Locked Canvas
 export { LockedCanvas, type LockedCanvasOptions } from "./locked-canvas";
 
+// Chart Drawing (cdr: elements)
+export {
+  createCdrX,
+  createCdrY,
+  createCdrFrom,
+  createCdrTo,
+  createCdrExt,
+  createCdrCNvPr,
+  createCdrCNvSpPr,
+  createCdrCNvCxnSpPr,
+  createCdrCNvPicPr,
+  createCdrCNvGrpSpPr,
+  createCdrCNvGraphicFramePr,
+  createCdrNvSpPr,
+  createCdrNvCxnSpPr,
+  createCdrNvPicPr,
+  createCdrNvGrpSpPr,
+  createCdrNvGraphicFramePr,
+  createCdrSp,
+  createCdrCxnSp,
+  createCdrPic,
+  createCdrGrpSp,
+  createCdrGraphicFrame,
+  createCdrSpPr,
+  createCdrGrpSpPr,
+  createCdrStyle,
+  createCdrTxBody,
+  createCdrBlipFill,
+  createCdrXfrm,
+  createCdrRelSizeAnchor,
+  createCdrAbsSizeAnchor,
+} from "./chart-drawing";
+
+// Spreadsheet Drawing (xdr: elements)
+export {
+  createXdrCol,
+  createXdrColOff,
+  createXdrRow,
+  createXdrRowOff,
+  createXdrFrom,
+  createXdrTo,
+  createXdrCNvPr,
+  createXdrCNvSpPr,
+  createXdrCNvCxnSpPr,
+  createXdrCNvPicPr,
+  createXdrCNvGrpSpPr,
+  createXdrNvSpPr,
+  createXdrNvCxnSpPr,
+  createXdrNvPicPr,
+  createXdrNvGrpSpPr,
+  createXdrSp,
+  createXdrCxnSp,
+  createXdrPic,
+  createXdrGrpSp,
+  createXdrSpPr,
+  createXdrGrpSpPr,
+  createXdrStyle,
+  createXdrTxBody,
+  createXdrBlipFill,
+  createXdrContentPart,
+  createXdrTwoCellAnchor,
+  createXdrOneCellAnchor,
+} from "./spreadsheet-drawing";
+export type {
+  XdrMarkerOptions,
+  XdrShapeAttributes,
+  XdrTwoCellAnchorOptions,
+} from "./spreadsheet-drawing";
+
+// Wordprocessing Drawing (wp: elements)
+export {
+  createWpCNvPr,
+  createWpCNvSpPr,
+  createWpCNvCnPr,
+  createWpCNvFrPr,
+  createWpCNvGrpSpPr,
+  createWpCNvContentPartPr,
+  createWpSp,
+  createWpSpPr,
+  createWpGrpSpPr,
+  createWpStyle,
+  createWpXfrm,
+  createWpBodyPr,
+  createWpTxbx,
+  createWpTxbxContent,
+  createWpLinkedTxbx,
+  createWpExtLst,
+  createWpGraphicFrame,
+  createWpContentPart,
+  createWpNvContentPartPr,
+  createWpGrpSp,
+  createWpNestedGrpSp,
+  createWpCanvas,
+  createWpBg,
+  createWpWhole,
+} from "./wordprocessing-drawing";
+export type {
+  WpNonVisualDrawingPropsOptions,
+  WpShapeOptions,
+  WpTextboxOptions,
+  WpLinkedTextboxOptions,
+  WpGraphicFrameOptions,
+  WpContentPartOptions,
+  WpGroupOptions,
+  WpCanvasOptions,
+} from "./wordprocessing-drawing";
+
 // Diagram (SmartArt dgm: elements)
 export {
   // Layout variable property set
