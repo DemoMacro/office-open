@@ -1,3 +1,7 @@
+import {
+  FootnotePositionType,
+  EndnotePositionType,
+} from "@file/document/body/section-properties/properties/footnote-endnote-properties";
 /**
  * Settings module for WordprocessingML documents.
  *
@@ -201,6 +205,106 @@ export interface SettingsOptions {
   readonly hideGrammaticalErrors?: boolean;
   /** Disable punctuation kerning (CJK) */
   readonly noPunctuationKerning?: boolean;
+  /** Remove personal information when saving */
+  readonly removePersonalInformation?: boolean;
+  /** Remove date and time metadata when saving */
+  readonly removeDateAndTime?: boolean;
+  /** Print PostScript codes over text */
+  readonly printPostScriptOverText?: boolean;
+  /** Print using fractional character widths */
+  readonly printFractionalCharacterWidth?: boolean;
+  /** Print only form field data */
+  readonly printFormsData?: boolean;
+  /** Save only form field data */
+  readonly saveFormsData?: boolean;
+  /** Use mirror margins for facing pages */
+  readonly mirrorMargins?: boolean;
+  /** Align document borders and edges with page edges */
+  readonly alignBordersAndEdges?: boolean;
+  /** Page borders do not surround header content */
+  readonly bordersDoNotSurroundHeader?: boolean;
+  /** Page borders do not surround footer content */
+  readonly bordersDoNotSurroundFooter?: boolean;
+  /** Position gutter at top of page */
+  readonly gutterAtTop?: boolean;
+  /** Document is in forms design mode */
+  readonly formsDesign?: boolean;
+  /** Link styles from attached template */
+  readonly linkStyles?: boolean;
+  /** Allow auto-format overrides */
+  readonly autoFormatOverride?: boolean;
+  /** Lock document theme styles */
+  readonly styleLockTheme?: boolean;
+  /** Lock quick format style set */
+  readonly styleLockQFSet?: boolean;
+  /** Show envelope content in the document */
+  readonly showEnvelope?: boolean;
+  /** Print two pages on one sheet */
+  readonly printTwoOnOne?: boolean;
+  /** Enforce strict first and last character rules (CJK) */
+  readonly strictFirstAndLastChars?: boolean;
+  /** Save a preview picture in the document */
+  readonly savePreviewPicture?: boolean;
+  /** Do not validate custom XML against schema */
+  readonly doNotValidateAgainstSchema?: boolean;
+  /** Save invalid XML markup */
+  readonly saveInvalidXml?: boolean;
+  /** Ignore mixed content in custom XML */
+  readonly ignoreMixedContent?: boolean;
+  /** Always show placeholder text for custom XML */
+  readonly alwaysShowPlaceholderText?: boolean;
+  /** Do not demarcate invalid XML regions */
+  readonly doNotDemarcateInvalidXml?: boolean;
+  /** Save only XML data (no formatting) */
+  readonly saveXmlDataOnly?: boolean;
+  /** Use XSLT when saving */
+  readonly useXSLTWhenSaving?: boolean;
+  /** Do not embed smart tags */
+  readonly doNotEmbedSmartTags?: boolean;
+  /** Do not auto-compress pictures */
+  readonly doNotAutoCompressPictures?: boolean;
+  /** Do not include subdocuments in word count */
+  readonly doNotIncludeSubdocsInStats?: boolean;
+  /** Enable book fold printing */
+  readonly bookFoldPrinting?: boolean;
+  /** Enable book fold reverse printing */
+  readonly bookFoldRevPrinting?: boolean;
+  /** Default table style name */
+  readonly defaultTableStyle?: string;
+  /** Decimal symbol for numeric fields */
+  readonly decimalSymbol?: string;
+  /** List separator character */
+  readonly listSeparator?: string;
+  /** Click and type paragraph style name */
+  readonly clickAndTypeStyle?: string;
+  /** Summary length percentage (0-100) */
+  readonly summaryLength?: number;
+  /** Number of sheets per booklet in book fold printing */
+  readonly bookFoldPrintingSheets?: number;
+  /** Horizontal spacing for the drawing grid (twips) */
+  readonly drawingGridHorizontalSpacing?: number;
+  /** Vertical spacing for the drawing grid (twips) */
+  readonly drawingGridVerticalSpacing?: number;
+  /** Display horizontal gridlines every N units */
+  readonly displayHorizontalDrawingGridEvery?: number;
+  /** Display vertical gridlines every N units */
+  readonly displayVerticalDrawingGridEvery?: number;
+  /** Horizontal origin for the drawing grid (twips) */
+  readonly drawingGridHorizontalOrigin?: number;
+  /** Vertical origin for the drawing grid (twips) */
+  readonly drawingGridVerticalOrigin?: number;
+  /** Document-level footnote properties (CT_FtnDocProps) */
+  readonly footnotePr?: FootnotePropertiesOptions;
+  /** Document-level endnote properties (CT_EdnDocProps) */
+  readonly endnotePr?: EndnotePropertiesOptions;
+  /** Document revision save IDs (CT_DocRsids) */
+  readonly rsids?: RsidsOptions;
+  /** Reading mode ink lock-down settings */
+  readonly readModeInkLockDown?: ReadModeInkLockDownOptions;
+  /** Caption configuration (CT_Captions) */
+  readonly captions?: CaptionsOptions;
+  /** Math properties (m:mathPr) */
+  readonly mathPr?: MathPropertiesOptions;
 }
 
 /**
@@ -371,6 +475,118 @@ export interface HyphenationOptions {
 }
 
 /**
+ * Footnote properties for document-level settings (CT_FtnDocProps).
+ */
+export interface FootnotePropertiesOptions {
+  /** Footnote placement */
+  readonly pos?: (typeof FootnotePositionType)[keyof typeof FootnotePositionType];
+  /** Number format */
+  readonly numFmt?: string;
+  /** Custom number format string */
+  readonly format?: string;
+  /** Starting number */
+  readonly numStart?: number;
+  /** When to restart numbering */
+  readonly numRestart?: string;
+}
+
+/**
+ * Endnote properties for document-level settings (CT_EdnDocProps).
+ */
+export interface EndnotePropertiesOptions {
+  /** Endnote placement */
+  readonly pos?: (typeof EndnotePositionType)[keyof typeof EndnotePositionType];
+  /** Number format */
+  readonly numFmt?: string;
+  /** Custom number format string */
+  readonly format?: string;
+  /** Starting number */
+  readonly numStart?: number;
+  /** When to restart numbering */
+  readonly numRestart?: string;
+}
+
+/** Document revision save IDs (CT_DocRsids) */
+export interface RsidsOptions {
+  /** Root revision save ID (8 hex characters) */
+  readonly rsidRoot?: string;
+  /** List of revision save IDs */
+  readonly rsids?: readonly string[];
+}
+
+/** Reading mode ink lock-down (CT_ReadingModeInkLockDown) */
+export interface ReadModeInkLockDownOptions {
+  /** Use actual page dimensions */
+  readonly actualPg?: boolean;
+  /** Page width in pixels */
+  readonly w: number;
+  /** Page height in pixels */
+  readonly h: number;
+  /** Font size (percentage or points) */
+  readonly fontSz: number;
+}
+
+/** Caption definition (CT_Caption) */
+export interface CaptionOptions {
+  /** Caption style name */
+  readonly name: string;
+  /** Caption position */
+  readonly pos?: "above" | "below";
+  /** Include chapter number */
+  readonly chapNum?: boolean;
+  /** Heading level for chapter number */
+  readonly heading?: number;
+  /** Exclude label */
+  readonly noLabel?: boolean;
+  /** Number format */
+  readonly numFmt?: string;
+  /** Chapter separator */
+  readonly sep?: "hyphen" | "period" | "colon" | "emDash" | "enDash";
+}
+
+/** Auto-caption (CT_AutoCaption) */
+export interface AutoCaptionOptions {
+  /** Object type name */
+  readonly name: string;
+  /** Caption style name to apply */
+  readonly caption: string;
+}
+
+/** Captions configuration (CT_Captions) */
+export interface CaptionsOptions {
+  /** Caption definitions */
+  readonly captions: readonly CaptionOptions[];
+  /** Auto-caption definitions */
+  readonly autoCaptions?: readonly AutoCaptionOptions[];
+}
+
+/** Math properties (CT_MathPr) */
+export interface MathPropertiesOptions {
+  /** Default math font */
+  readonly mathFont?: string;
+  /** Binary operator break style ("before" | "after" | "repeat") */
+  readonly brkBin?: string;
+  /** Subtraction binary operator break ("--" | "-+" | "+-") */
+  readonly brkBinSub?: string;
+  /** Use small fractions */
+  readonly smallFrac?: boolean;
+  /** Use display defaults */
+  readonly dispDef?: boolean;
+  /** Left margin (twips) */
+  readonly lMargin?: number;
+  /** Right margin (twips) */
+  readonly rMargin?: number;
+  /** Default justification ("centerGroup" | "center") */
+  readonly defJc?: string;
+  /** Wrap indent (twips) */
+  readonly wrapIndent?: number;
+  /** Integral limit location ("subSup" | "undOvr") */
+  readonly intLim?: string;
+  /** N-ary limit location ("subSup" | "undOvr") */
+  readonly naryLim?: string;
+}
+
+/**
  * Represents document settings in a WordprocessingML document.
  *
  * Settings contain document-wide configuration options such as
@@ -461,12 +677,34 @@ export class Settings extends XmlComponent {
       );
     }
 
+    if (options.removePersonalInformation !== undefined) {
+      this.root.push(onOffObj("w:removePersonalInformation", options.removePersonalInformation));
+    }
+
+    if (options.removeDateAndTime !== undefined) {
+      this.root.push(onOffObj("w:removeDateAndTime", options.removeDateAndTime));
+    }
+
     if (options.displayBackgroundShape !== undefined) {
       this.root.push(onOffObj("w:displayBackgroundShape", options.displayBackgroundShape));
     }
 
     if (options.doNotDisplayPageBoundaries !== undefined) {
       this.root.push(onOffObj("w:doNotDisplayPageBoundaries", options.doNotDisplayPageBoundaries));
+    }
+
+    if (options.printPostScriptOverText !== undefined) {
+      this.root.push(onOffObj("w:printPostScriptOverText", options.printPostScriptOverText));
+    }
+
+    if (options.printFractionalCharacterWidth !== undefined) {
+      this.root.push(
+        onOffObj("w:printFractionalCharacterWidth", options.printFractionalCharacterWidth),
+      );
+    }
+
+    if (options.printFormsData !== undefined) {
+      this.root.push(onOffObj("w:printFormsData", options.printFormsData));
     }
 
     if (options.embedTrueTypeFonts !== undefined) {
@@ -481,12 +719,40 @@ export class Settings extends XmlComponent {
       this.root.push(onOffObj("w:saveSubsetFonts", options.saveSubsetFonts));
     }
 
+    if (options.saveFormsData !== undefined) {
+      this.root.push(onOffObj("w:saveFormsData", options.saveFormsData));
+    }
+
+    if (options.mirrorMargins !== undefined) {
+      this.root.push(onOffObj("w:mirrorMargins", options.mirrorMargins));
+    }
+
+    if (options.alignBordersAndEdges !== undefined) {
+      this.root.push(onOffObj("w:alignBordersAndEdges", options.alignBordersAndEdges));
+    }
+
+    if (options.bordersDoNotSurroundHeader !== undefined) {
+      this.root.push(onOffObj("w:bordersDoNotSurroundHeader", options.bordersDoNotSurroundHeader));
+    }
+
+    if (options.bordersDoNotSurroundFooter !== undefined) {
+      this.root.push(onOffObj("w:bordersDoNotSurroundFooter", options.bordersDoNotSurroundFooter));
+    }
+
+    if (options.gutterAtTop !== undefined) {
+      this.root.push(onOffObj("w:gutterAtTop", options.gutterAtTop));
+    }
+
     if (options.hideSpellingErrors !== undefined) {
       this.root.push(onOffObj("w:hideSpellingErrors", options.hideSpellingErrors));
     }
 
     if (options.hideGrammaticalErrors !== undefined) {
       this.root.push(onOffObj("w:hideGrammaticalErrors", options.hideGrammaticalErrors));
+    }
+
+    if (options.formsDesign !== undefined) {
+      this.root.push(onOffObj("w:formsDesign", options.formsDesign));
     }
 
     if (options.attachedTemplate !== undefined) {
@@ -496,6 +762,10 @@ export class Settings extends XmlComponent {
           attributes: [{ key: "r:id", value: options.attachedTemplate }],
         }),
       );
+    }
+
+    if (options.linkStyles !== undefined) {
+      this.root.push(onOffObj("w:linkStyles", options.linkStyles));
     }
 
     if (options.trackRevisions !== undefined) {
@@ -522,6 +792,18 @@ export class Settings extends XmlComponent {
       this.root.push(new DocumentProtection(options.documentProtection));
     }
 
+    if (options.autoFormatOverride !== undefined) {
+      this.root.push(onOffObj("w:autoFormatOverride", options.autoFormatOverride));
+    }
+
+    if (options.styleLockTheme !== undefined) {
+      this.root.push(onOffObj("w:styleLockTheme", options.styleLockTheme));
+    }
+
+    if (options.styleLockQFSet !== undefined) {
+      this.root.push(onOffObj("w:styleLockQFSet", options.styleLockQFSet));
+    }
+
     // https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_defaultTabStop_topic_ID0EIXSX.html
     this.root.push(numberValObj("w:defaultTabStop", options.defaultTabStop ?? 420));
 
@@ -543,8 +825,75 @@ export class Settings extends XmlComponent {
       this.root.push(onOffObj("w:doNotHyphenateCaps", options.hyphenation.doNotHyphenateCaps));
     }
 
+    if (options.showEnvelope !== undefined) {
+      this.root.push(onOffObj("w:showEnvelope", options.showEnvelope));
+    }
+
+    if (options.summaryLength !== undefined) {
+      this.root.push(numberValObj("w:summaryLength", options.summaryLength));
+    }
+
+    if (options.clickAndTypeStyle !== undefined) {
+      this.root.push(stringValObj("w:clickAndTypeStyle", options.clickAndTypeStyle));
+    }
+
+    if (options.defaultTableStyle !== undefined) {
+      this.root.push(stringValObj("w:defaultTableStyle", options.defaultTableStyle));
+    }
+
     if (options.evenAndOddHeaders !== undefined) {
       this.root.push(onOffObj("w:evenAndOddHeaders", options.evenAndOddHeaders));
+    }
+
+    if (options.bookFoldRevPrinting !== undefined) {
+      this.root.push(onOffObj("w:bookFoldRevPrinting", options.bookFoldRevPrinting));
+    }
+
+    if (options.bookFoldPrinting !== undefined) {
+      this.root.push(onOffObj("w:bookFoldPrinting", options.bookFoldPrinting));
+    }
+
+    if (options.bookFoldPrintingSheets !== undefined) {
+      this.root.push(numberValObj("w:bookFoldPrintingSheets", options.bookFoldPrintingSheets));
+    }
+
+    if (options.drawingGridHorizontalSpacing !== undefined) {
+      this.root.push(
+        numberValObj("w:drawingGridHorizontalSpacing", options.drawingGridHorizontalSpacing),
+      );
+    }
+
+    if (options.drawingGridVerticalSpacing !== undefined) {
+      this.root.push(
+        numberValObj("w:drawingGridVerticalSpacing", options.drawingGridVerticalSpacing),
+      );
+    }
+
+    if (options.displayHorizontalDrawingGridEvery !== undefined) {
+      this.root.push(
+        numberValObj(
+          "w:displayHorizontalDrawingGridEvery",
+          options.displayHorizontalDrawingGridEvery,
+        ),
+      );
+    }
+
+    if (options.displayVerticalDrawingGridEvery !== undefined) {
+      this.root.push(
+        numberValObj("w:displayVerticalDrawingGridEvery", options.displayVerticalDrawingGridEvery),
+      );
+    }
+
+    if (options.drawingGridHorizontalOrigin !== undefined) {
+      this.root.push(
+        numberValObj("w:drawingGridHorizontalOrigin", options.drawingGridHorizontalOrigin),
+      );
+    }
+
+    if (options.drawingGridVerticalOrigin !== undefined) {
+      this.root.push(
+        numberValObj("w:drawingGridVerticalOrigin", options.drawingGridVerticalOrigin),
+      );
     }
 
     this.root.push(
@@ -558,8 +907,56 @@ export class Settings extends XmlComponent {
       this.root.push(onOffObj("w:noPunctuationKerning", options.noPunctuationKerning));
     }
 
+    if (options.printTwoOnOne !== undefined) {
+      this.root.push(onOffObj("w:printTwoOnOne", options.printTwoOnOne));
+    }
+
+    if (options.strictFirstAndLastChars !== undefined) {
+      this.root.push(onOffObj("w:strictFirstAndLastChars", options.strictFirstAndLastChars));
+    }
+
+    if (options.savePreviewPicture !== undefined) {
+      this.root.push(onOffObj("w:savePreviewPicture", options.savePreviewPicture));
+    }
+
+    if (options.doNotValidateAgainstSchema !== undefined) {
+      this.root.push(onOffObj("w:doNotValidateAgainstSchema", options.doNotValidateAgainstSchema));
+    }
+
+    if (options.saveInvalidXml !== undefined) {
+      this.root.push(onOffObj("w:saveInvalidXml", options.saveInvalidXml));
+    }
+
+    if (options.ignoreMixedContent !== undefined) {
+      this.root.push(onOffObj("w:ignoreMixedContent", options.ignoreMixedContent));
+    }
+
+    if (options.alwaysShowPlaceholderText !== undefined) {
+      this.root.push(onOffObj("w:alwaysShowPlaceholderText", options.alwaysShowPlaceholderText));
+    }
+
+    if (options.doNotDemarcateInvalidXml !== undefined) {
+      this.root.push(onOffObj("w:doNotDemarcateInvalidXml", options.doNotDemarcateInvalidXml));
+    }
+
+    if (options.saveXmlDataOnly !== undefined) {
+      this.root.push(onOffObj("w:saveXmlDataOnly", options.saveXmlDataOnly));
+    }
+
+    if (options.useXSLTWhenSaving !== undefined) {
+      this.root.push(onOffObj("w:useXSLTWhenSaving", options.useXSLTWhenSaving));
+    }
+
     if (options.updateFields !== undefined) {
       this.root.push(onOffObj("w:updateFields", options.updateFields));
+    }
+
+    if (options.footnotePr !== undefined) {
+      this.root.push(new FootnotePrElement(options.footnotePr));
+    }
+
+    if (options.endnotePr !== undefined) {
+      this.root.push(new EndnotePrElement(options.endnotePr));
     }
 
     this.root.push(
@@ -599,6 +996,14 @@ export class Settings extends XmlComponent {
       );
     }
 
+    if (options.rsids !== undefined) {
+      this.root.push(new RsidsElement(options.rsids));
+    }
+
+    if (options.mathPr !== undefined) {
+      this.root.push(new MathPrElement(options.mathPr));
+    }
+
     if (options.colorSchemeMapping !== undefined) {
       this.root.push(new ColorSchemeMapping(options.colorSchemeMapping));
     }
@@ -610,6 +1015,34 @@ export class Settings extends XmlComponent {
           attributes: [{ key: "w:val", value: options.themeFontLang }],
         }),
       );
+    }
+
+    if (options.doNotIncludeSubdocsInStats !== undefined) {
+      this.root.push(onOffObj("w:doNotIncludeSubdocsInStats", options.doNotIncludeSubdocsInStats));
+    }
+
+    if (options.doNotAutoCompressPictures !== undefined) {
+      this.root.push(onOffObj("w:doNotAutoCompressPictures", options.doNotAutoCompressPictures));
+    }
+
+    if (options.captions !== undefined) {
+      this.root.push(new CaptionsElement(options.captions));
+    }
+
+    if (options.readModeInkLockDown !== undefined) {
+      this.root.push(new ReadModeInkLockDownElement(options.readModeInkLockDown));
+    }
+
+    if (options.doNotEmbedSmartTags !== undefined) {
+      this.root.push(onOffObj("w:doNotEmbedSmartTags", options.doNotEmbedSmartTags));
+    }
+
+    if (options.decimalSymbol !== undefined) {
+      this.root.push(stringValObj("w:decimalSymbol", options.decimalSymbol));
+    }
+
+    if (options.listSeparator !== undefined) {
+      this.root.push(stringValObj("w:listSeparator", options.listSeparator));
     }
   }
 }
@@ -902,6 +1335,226 @@ class OdsoFieldMapData extends XmlComponent {
     }
     if (options.dynamicAddress !== undefined) {
       this.root.push(onOffObj("w:dynamicAddress", options.dynamicAddress));
+    }
+  }
+}
+
+// ── Batch C: Complex substructure elements ──
+
+/** Document-level footnote properties (CT_FtnDocProps) */
+class FootnotePrElement extends XmlComponent {
+  public constructor(options: FootnotePropertiesOptions) {
+    super("w:footnotePr");
+
+    if (options.pos !== undefined) {
+      this.root.push(
+        new BuilderElement({
+          name: "w:pos",
+          attributes: [{ key: "w:val", value: options.pos }],
+        }),
+      );
+    }
+
+    if (options.numFmt !== undefined || options.format !== undefined) {
+      const attrs: { key: string; value: string }[] = [];
+      if (options.numFmt !== undefined) attrs.push({ key: "w:val", value: options.numFmt });
+      if (options.format !== undefined) attrs.push({ key: "w:format", value: options.format });
+      this.root.push(new BuilderElement({ name: "w:numFmt", attributes: attrs }));
+    }
+
+    if (options.numStart !== undefined) {
+      this.root.push(numberValObj("w:numStart", options.numStart));
+    }
+
+    if (options.numRestart !== undefined) {
+      this.root.push(stringValObj("w:numRestart", options.numRestart));
+    }
+  }
+}
+
+/** Document-level endnote properties (CT_EdnDocProps) */
+class EndnotePrElement extends XmlComponent {
+  public constructor(options: EndnotePropertiesOptions) {
+    super("w:endnotePr");
+
+    if (options.pos !== undefined) {
+      this.root.push(
+        new BuilderElement({
+          name: "w:pos",
+          attributes: [{ key: "w:val", value: options.pos }],
+        }),
+      );
+    }
+
+    if (options.numFmt !== undefined || options.format !== undefined) {
+      const attrs: { key: string; value: string }[] = [];
+      if (options.numFmt !== undefined) attrs.push({ key: "w:val", value: options.numFmt });
+      if (options.format !== undefined) attrs.push({ key: "w:format", value: options.format });
+      this.root.push(new BuilderElement({ name: "w:numFmt", attributes: attrs }));
+    }
+
+    if (options.numStart !== undefined) {
+      this.root.push(numberValObj("w:numStart", options.numStart));
+    }
+
+    if (options.numRestart !== undefined) {
+      this.root.push(stringValObj("w:numRestart", options.numRestart));
+    }
+  }
+}
+
+/** Document revision save IDs (CT_DocRsids) */
+class RsidsElement extends XmlComponent {
+  public constructor(options: RsidsOptions) {
+    super("w:rsids");
+
+    if (options.rsidRoot !== undefined) {
+      this.root.push(
+        new BuilderElement({
+          name: "w:rsidRoot",
+          attributes: [{ key: "w:val", value: options.rsidRoot }],
+        }),
+      );
+    }
+
+    if (options.rsids !== undefined) {
+      for (const rsid of options.rsids) {
+        this.root.push(
+          new BuilderElement({
+            name: "w:rsid",
+            attributes: [{ key: "w:val", value: rsid }],
+          }),
+        );
+      }
+    }
+  }
+}
+
+/** Reading mode ink lock-down (CT_ReadingModeInkLockDown) */
+class ReadModeInkLockDownElement extends XmlComponent {
+  public constructor(options: ReadModeInkLockDownOptions) {
+    super("w:readModeInkLockDown");
+    const attrs: Record<string, string | number> = {
+      "w:actualPg": options.actualPg === false ? "0" : "1",
+      "w:w": options.w,
+      "w:h": options.h,
+      "w:fontSz": options.fontSz,
+    };
+    this.root.push({ _attr: attrs });
+  }
+}
+
+/** Captions (CT_Captions) */
+class CaptionsElement extends XmlComponent {
+  public constructor(options: CaptionsOptions) {
+    super("w:captions");
+
+    for (const cap of options.captions) {
+      const attrs: { key: string; value: string | number }[] = [{ key: "w:name", value: cap.name }];
+      if (cap.pos !== undefined) attrs.push({ key: "w:pos", value: cap.pos });
+      if (cap.chapNum !== undefined)
+        attrs.push({ key: "w:chapNum", value: cap.chapNum ? "1" : "0" });
+      if (cap.heading !== undefined) attrs.push({ key: "w:heading", value: cap.heading });
+      if (cap.noLabel !== undefined)
+        attrs.push({ key: "w:noLabel", value: cap.noLabel ? "1" : "0" });
+      if (cap.numFmt !== undefined) attrs.push({ key: "w:numFmt", value: cap.numFmt });
+      if (cap.sep !== undefined) attrs.push({ key: "w:sep", value: cap.sep });
+      this.root.push(new BuilderElement({ name: "w:caption", attributes: attrs }));
+    }
+
+    if (options.autoCaptions !== undefined && options.autoCaptions.length > 0) {
+      const autoCapChildren = options.autoCaptions.map(
+        (ac) =>
+          new BuilderElement({
+            name: "w:autoCaption",
+            attributes: [
+              { key: "w:name", value: ac.name },
+              { key: "w:caption", value: ac.caption },
+            ],
+          }),
+      );
+      this.root.push(new BuilderElement({ name: "w:autoCaptions", children: autoCapChildren }));
+    }
+  }
+}
+
+/** Math properties (m:mathPr) — uses math namespace */
+class MathPrElement extends XmlComponent {
+  public constructor(options: MathPropertiesOptions) {
+    super("m:mathPr");
+
+    if (options.mathFont !== undefined) {
+      this.root.push(
+        new BuilderElement({
+          name: "m:mathFont",
+          attributes: [{ key: "m:val", value: options.mathFont }],
+        }),
+      );
+    }
+
+    if (options.brkBin !== undefined) {
+      this.root.push(
+        new BuilderElement({
+          name: "m:brkBin",
+          attributes: [{ key: "m:val", value: options.brkBin }],
+        }),
+      );
+    }
+
+    if (options.brkBinSub !== undefined) {
+      this.root.push(
+        new BuilderElement({
+          name: "m:brkBinSub",
+          attributes: [{ key: "m:val", value: options.brkBinSub }],
+        }),
+      );
+    }
+
+    if (options.smallFrac !== undefined) {
+      this.root.push(onOffObj("m:smallFrac", options.smallFrac));
+    }
+
+    if (options.dispDef !== undefined) {
+      this.root.push(onOffObj("m:dispDef", options.dispDef));
+    }
+
+    if (options.lMargin !== undefined) {
+      this.root.push(numberValObj("m:lMargin", options.lMargin));
+    }
+
+    if (options.rMargin !== undefined) {
+      this.root.push(numberValObj("m:rMargin", options.rMargin));
+    }
+
+    if (options.defJc !== undefined) {
+      this.root.push(
+        new BuilderElement({
+          name: "m:defJc",
+          attributes: [{ key: "m:val", value: options.defJc }],
+        }),
+      );
+    }
+
+    if (options.wrapIndent !== undefined) {
+      this.root.push(numberValObj("m:wrapIndent", options.wrapIndent));
+    }
+
+    if (options.intLim !== undefined) {
+      this.root.push(
+        new BuilderElement({
+          name: "m:intLim",
+          attributes: [{ key: "m:val", value: options.intLim }],
+        }),
+      );
+    }
+
+    if (options.naryLim !== undefined) {
+      this.root.push(
+        new BuilderElement({
+          name: "m:naryLim",
+          attributes: [{ key: "m:val", value: options.naryLim }],
+        }),
+      );
     }
   }
 }

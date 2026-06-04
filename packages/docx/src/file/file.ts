@@ -226,6 +226,7 @@ export class File {
       docVars: options.docVars,
       colorSchemeMapping: options.colorSchemeMapping,
       mailMerge: options.mailMerge,
+      ...options.settings,
     });
 
     this.media = new Media();

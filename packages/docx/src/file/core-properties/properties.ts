@@ -125,6 +125,8 @@ export interface PropertiesOptions {
   readonly mailMerge?: SettingsOptions["mailMerge"];
   /** Glossary document — building blocks (Quick Parts) */
   readonly glossary?: import("../glossary/glossary-document").GlossaryDocumentOptions;
+  /** Additional document settings passed through to the settings.xml part */
+  readonly settings?: import("../settings/settings").SettingsOptions;
 }
 
 /**
