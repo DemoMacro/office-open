@@ -15,6 +15,16 @@ import type { BuilderChild, XmlComponent } from "@file/xml-components";
  *
  * @see {@link createMathMatrixProperties}
  */
+/**
+ * Options for a matrix column (CT_MC).
+ */
+export interface MathMatrixColumnOptions {
+  /** Number of columns this entry spans (1–255) */
+  readonly count?: number;
+  /** Column justification */
+  readonly mcJc?: "left" | "center" | "right" | "inside" | "outside";
+}
+
 export interface MathMatrixPropertiesOptions {
   /** Base justification (vertical alignment of cells) */
   readonly baseJc?: "top" | "bot" | "center";
@@ -30,6 +40,8 @@ export interface MathMatrixPropertiesOptions {
   readonly cSp?: number;
   /** Column group spacing */
   readonly cGp?: number;
+  /** Matrix column definitions */
+  readonly mcs?: readonly MathMatrixColumnOptions[];
 }
 
 /**
@@ -103,6 +115,35 @@ export const createMathMatrixProperties = (options: MathMatrixPropertiesOptions)
       new BuilderElement({
         attributes: { val: { key: "m:val", value: options.cGp } },
         name: "m:cGp",
+      }),
+    );
+  }
+
+  if (options.mcs !== undefined && options.mcs.length > 0) {
+    children.push(
+      new BuilderElement({
+        children: options.mcs.map((mc) => {
+          const mcPrChildren: BuilderChild[] = [];
+          if (mc.count !== undefined) {
+            mcPrChildren.push(
+              new BuilderElement({
+                attributes: { val: { key: "m:val", value: mc.count } },
+                name: "m:count",
+              }),
+            );
+          }
+          if (mc.mcJc !== undefined) {
+            mcPrChildren.push(
+              new BuilderElement({
+                attributes: { val: { key: "m:val", value: mc.mcJc } },
+                name: "m:mcJc",
+              }),
+            );
+          }
+          const mcPr = new BuilderElement({ children: mcPrChildren, name: "m:mcPr" });
+          return new BuilderElement({ children: [mcPr], name: "m:mc" });
+        }),
+        name: "m:mcs",
       }),
     );
   }

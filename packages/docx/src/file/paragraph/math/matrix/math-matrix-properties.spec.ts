@@ -57,4 +57,37 @@ describe("createMathMatrixProperties", () => {
       "m:mPr": [{ "m:cGp": { _attr: { "m:val": 300 } } }],
     });
   });
+
+  it("should create matrix properties with mcs", () => {
+    const tree = new Formatter().format(
+      createMathMatrixProperties({
+        mcs: [{ count: 2, mcJc: "center" }, { mcJc: "left" }],
+      }),
+    );
+    expect(tree).to.deep.equal({
+      "m:mPr": [
+        {
+          "m:mcs": [
+            {
+              "m:mc": [
+                {
+                  "m:mcPr": [
+                    { "m:count": { _attr: { "m:val": 2 } } },
+                    { "m:mcJc": { _attr: { "m:val": "center" } } },
+                  ],
+                },
+              ],
+            },
+            {
+              "m:mc": [
+                {
+                  "m:mcPr": [{ "m:mcJc": { _attr: { "m:val": "left" } } }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+  });
 });
