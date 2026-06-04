@@ -13,7 +13,7 @@ import type { Floating } from "@file/drawing";
 import type { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
 import type { MediaTransformation } from "@file/media";
 import { createTransformation } from "@file/media";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 
 import { Run } from "../run";
 
@@ -109,11 +109,5 @@ export class ChartRun extends Run {
       chartSpace,
       key: this.chartKey,
     });
-  }
-
-  /** @deprecated Only called via deprecated Formatter.format() */
-  public override prepForXml(context: Context): IXmlableObject | undefined {
-    this.registerResources(context);
-    return super.prepForXml(context);
   }
 }

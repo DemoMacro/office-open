@@ -1,5 +1,5 @@
 import type { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 
 import { Run } from ".";
 import { Drawing } from "../../drawing";
@@ -61,11 +61,5 @@ export class WpgGroupRun extends Run {
         context.file.media.addImage(child.fallback.fileName, child.fallback);
       }
     }
-  }
-
-  /** @deprecated Only called via deprecated Formatter.format() */
-  public override prepForXml(context: Context): IXmlableObject | undefined {
-    this.registerResources(context);
-    return super.prepForXml(context);
   }
 }

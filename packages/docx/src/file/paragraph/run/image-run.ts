@@ -8,7 +8,7 @@
  * @module
  */
 import type { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 import type { DataType } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
 import type { FillOptions } from "@office-open/core/drawingml";
@@ -145,11 +145,5 @@ export class ImageRun extends Run {
     if (this.imageData.type === "svg") {
       context.file.media.addImage(this.imageData.fallback.fileName, this.imageData.fallback);
     }
-  }
-
-  /** @deprecated Only called via deprecated Formatter.format() */
-  public override prepForXml(context: Context): IXmlableObject | undefined {
-    this.registerResources(context);
-    return super.prepForXml(context);
   }
 }

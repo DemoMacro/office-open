@@ -3,7 +3,6 @@ import type { File } from "@file/file";
 import { TextRun } from "@file/paragraph";
 import type { Context, XmlComponent } from "@file/xml-components";
 import { DOCX_NS, Formatter, createReplacer, createTraverser, toJson } from "@office-open/core";
-import { xml } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { describe, expect, it, vi } from "vite-plus/test";
 
@@ -14,7 +13,8 @@ const formatter = new Formatter();
 const replacer = createReplacer({
   ns: DOCX_NS,
   formatChild: (child: unknown, context: unknown): Element[] => {
-    const jsonObj = toJson(xml(formatter.format(child as XmlComponent, context as Context)));
+    const xmlStr = formatter.formatToXml(child as XmlComponent, context as Context);
+    const jsonObj = toJson(xmlStr);
     return [jsonObj.elements![0]];
   },
 });

@@ -13,7 +13,7 @@ import type { MediaTransformation } from "@file/media";
 import { createTransformation } from "@file/media";
 import type { SmartArtData } from "@file/smartart/smartart-collection";
 import { createDataModel } from "@file/smartart/tree-to-model";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 
 import { Run } from "../run";
 
@@ -112,12 +112,6 @@ export class SmartArtRun extends Run {
     };
 
     context.file.smartArts.addSmartArt(this.smartArtKey, smartArtData);
-  }
-
-  /** @deprecated Only called via deprecated Formatter.format() */
-  public override prepForXml(context: Context): IXmlableObject | undefined {
-    this.registerResources(context);
-    return super.prepForXml(context);
   }
 
   private hashSmartArtData(options: SmartArtOptions): number {
