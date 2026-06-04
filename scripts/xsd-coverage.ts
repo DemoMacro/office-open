@@ -271,12 +271,15 @@ function extractUsedNamesFromCode(config: XsdConfig): Set<string> {
         }
       } else {
         // bare mode (xlsx/sml): match "word" in string literals and <word in XML strings
+        // SML has many single-char elements (b, c, d, e, f, i, k, m, n, p, r, s, t, u, v, x)
+        // so the regex allows single-char names in XML tag context only (not quoted strings,
+        // where single-char matches would produce too many false positives).
         const quotedRe = /"([a-zA-Z][a-zA-Z0-9]+)"/g;
         let m: RegExpExecArray | null;
         while ((m = quotedRe.exec(content)) !== null) {
           found.add(m[1]);
         }
-        const tagRe = /<([a-zA-Z][a-zA-Z0-9]+)[\s>\/"]/g;
+        const tagRe = /<([a-zA-Z][a-zA-Z0-9]*)[\s>\/"]/g;
         while ((m = tagRe.exec(content)) !== null) {
           found.add(m[1]);
         }
