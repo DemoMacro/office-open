@@ -122,7 +122,7 @@ const doc = new Document({
 
         new Paragraph({ children: [new TextRun("")] }),
 
-        // 5. Matrix
+        // 5. Matrix (with column properties: baseJc, plcHide, rSpRule)
         new Paragraph({
           children: [new TextRun({ bold: true, text: "5. Matrix", size: 28 })],
           spacing: { after: 200 },
@@ -136,6 +136,26 @@ const doc = new Document({
                     [new MathRun("1"), new MathRun("0")],
                     [new MathRun("0"), new MathRun("1")],
                   ],
+                }),
+              ],
+            }),
+          ],
+        }),
+        new Paragraph({
+          children: [
+            new TextRun("With properties: "),
+            new Math({
+              children: [
+                new MathMatrix({
+                  rows: [
+                    [new MathRun("a"), new MathRun("b")],
+                    [new MathRun("c"), new MathRun("d")],
+                  ],
+                  properties: {
+                    baseJc: "center",
+                    plcHide: true,
+                    rSpRule: 2,
+                  },
                 }),
               ],
             }),

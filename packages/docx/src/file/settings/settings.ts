@@ -867,12 +867,12 @@ export class Settings extends XmlComponent {
       this.root.push(stringValObj("w:documentType", options.documentType));
     }
 
-    if (options.trackRevisions !== undefined) {
-      this.root.push(onOffObj("w:trackRevisions", options.trackRevisions));
-    }
-
     if (options.revisionView !== undefined) {
       this.root.push(new RevisionView(options.revisionView));
+    }
+
+    if (options.trackRevisions !== undefined) {
+      this.root.push(onOffObj("w:trackRevisions", options.trackRevisions));
     }
 
     if (options.doNotTrackMoves !== undefined) {

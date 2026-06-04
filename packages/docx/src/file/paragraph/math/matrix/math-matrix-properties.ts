@@ -30,10 +30,10 @@ export interface MathMatrixPropertiesOptions {
   readonly baseJc?: "top" | "bot" | "center";
   /** Hide place holders */
   readonly plcHide?: boolean;
-  /** Row spacing rule */
-  readonly rSpRule?: "single" | "1.5" | "double" | "exactly" | "multiple";
-  /** Column gap rule */
-  readonly cGpRule?: "single" | "1.5" | "double" | "exactly" | "multiple";
+  /** Row spacing rule (0=single, 1=1.5 lines, 2=double, 3=exactly, 4=multiple) */
+  readonly rSpRule?: 0 | 1 | 2 | 3 | 4;
+  /** Column gap rule (0=single, 1=1.5 lines, 2=double, 3=exactly, 4=multiple) */
+  readonly cGpRule?: 0 | 1 | 2 | 3 | 4;
   /** Row spacing */
   readonly rSp?: number;
   /** Column spacing */

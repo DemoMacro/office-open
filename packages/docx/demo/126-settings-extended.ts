@@ -70,6 +70,17 @@ const doc = new Document({
       intLim: "subSup",
       naryLim: "subSup",
     },
+
+    // Batch D: Revision tracking
+    trackRevisions: true,
+    doNotTrackFormatting: true,
+    doNotTrackMoves: false,
+    revisionView: {
+      markup: true,
+      comments: true,
+      insDel: true,
+      formatting: true,
+    },
   },
 
   sections: [

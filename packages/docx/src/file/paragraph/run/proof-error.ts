@@ -46,6 +46,6 @@ export type ProofErrorTypeValue = (typeof ProofErrorType)[keyof typeof ProofErro
 export class ProofError extends XmlComponent {
   public constructor(type: ProofErrorTypeValue) {
     super("w:proofErr");
-    this.root.push({ _attr: { "w:val": type } });
+    this.root.push({ _attr: { "w:type": type } });
   }
 }

@@ -56,6 +56,18 @@ const doc = new Document({
             }),
           ],
         }),
+        // Bar border: vertical line on the left side (common in legal documents)
+        new Paragraph({
+          border: {
+            bar: {
+              color: "FF0000",
+              size: 6,
+              space: 4,
+              style: BorderStyle.SINGLE,
+            },
+          },
+          children: [new TextRun("This paragraph has a red bar border on the left side.")],
+        }),
       ],
     },
   ],

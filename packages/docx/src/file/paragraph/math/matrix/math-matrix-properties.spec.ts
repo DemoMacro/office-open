@@ -24,16 +24,16 @@ describe("createMathMatrixProperties", () => {
   });
 
   it("should create matrix properties with rSpRule", () => {
-    const tree = new Formatter().format(createMathMatrixProperties({ rSpRule: "single" }));
+    const tree = new Formatter().format(createMathMatrixProperties({ rSpRule: 0 }));
     expect(tree).to.deep.equal({
-      "m:mPr": [{ "m:rSpRule": { _attr: { "m:val": "single" } } }],
+      "m:mPr": [{ "m:rSpRule": { _attr: { "m:val": 0 } } }],
     });
   });
 
   it("should create matrix properties with cGpRule", () => {
-    const tree = new Formatter().format(createMathMatrixProperties({ cGpRule: "double" }));
+    const tree = new Formatter().format(createMathMatrixProperties({ cGpRule: 2 }));
     expect(tree).to.deep.equal({
-      "m:mPr": [{ "m:cGpRule": { _attr: { "m:val": "double" } } }],
+      "m:mPr": [{ "m:cGpRule": { _attr: { "m:val": 2 } } }],
     });
   });
 

@@ -104,6 +104,49 @@ const doc = new Document({
                 }),
               ],
             }),
+            // Row with diagonal cell borders
+            new TableRow({
+              cells: [
+                new TableCell({
+                  borders: {
+                    topLeftToBottomRight: {
+                      color: "000000",
+                      size: 4,
+                      style: BorderStyle.SINGLE,
+                    },
+                  },
+                  children: [new Paragraph("tl2br")],
+                }),
+                new TableCell({
+                  borders: {
+                    topRightToBottomLeft: {
+                      color: "0000FF",
+                      size: 4,
+                      style: BorderStyle.SINGLE,
+                    },
+                  },
+                  children: [new Paragraph("tr2bl")],
+                }),
+                new TableCell({
+                  borders: {
+                    topLeftToBottomRight: {
+                      color: "FF0000",
+                      size: 4,
+                      style: BorderStyle.SINGLE,
+                    },
+                    topRightToBottomLeft: {
+                      color: "0000FF",
+                      size: 4,
+                      style: BorderStyle.SINGLE,
+                    },
+                  },
+                  children: [new Paragraph("X")],
+                }),
+                new TableCell({
+                  children: [],
+                }),
+              ],
+            }),
           ],
         }),
       ],
