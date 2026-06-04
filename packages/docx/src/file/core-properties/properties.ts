@@ -127,6 +127,8 @@ export interface PropertiesOptions {
   readonly glossary?: import("../glossary/glossary-document").GlossaryDocumentOptions;
   /** Additional document settings passed through to the settings.xml part */
   readonly settings?: import("../settings/settings").SettingsOptions;
+  /** Web settings for browser rendering (word/webSettings.xml) */
+  readonly webSettings?: import("../web-settings/web-settings").WebSettingsOptions;
 }
 
 /**

@@ -40,6 +40,10 @@ export interface TableCellBordersOptions {
   readonly end?: BorderOptions;
   /** Border for the right edge of the cell */
   readonly right?: BorderOptions;
+  /** Diagonal border from top-left to bottom-right */
+  readonly topLeftToBottomRight?: BorderOptions;
+  /** Diagonal border from top-right to bottom-left */
+  readonly topRightToBottomLeft?: BorderOptions;
 }
 
 /**
@@ -90,6 +94,10 @@ export function buildTableCellBorders(
   if (options.bottom) children.push(buildBorderObj("w:bottom", options.bottom));
   if (options.end) children.push(buildBorderObj("w:end", options.end));
   if (options.right) children.push(buildBorderObj("w:right", options.right));
+  if (options.topLeftToBottomRight)
+    children.push(buildBorderObj("w:tl2br", options.topLeftToBottomRight));
+  if (options.topRightToBottomLeft)
+    children.push(buildBorderObj("w:tr2bl", options.topRightToBottomLeft));
 
   return children.length > 0 ? { "w:tcBorders": children } : undefined;
 }
@@ -115,6 +123,12 @@ export class TableCellBorders extends IgnoreIfEmptyXmlComponent {
     }
     if (options.right) {
       this.root.push(createBorderElement("w:right", options.right));
+    }
+    if (options.topLeftToBottomRight) {
+      this.root.push(createBorderElement("w:tl2br", options.topLeftToBottomRight));
+    }
+    if (options.topRightToBottomLeft) {
+      this.root.push(createBorderElement("w:tr2bl", options.topRightToBottomLeft));
     }
   }
 }

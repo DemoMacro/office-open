@@ -23,6 +23,7 @@ export function buildParagraphBorders(options: BordersOptions): IXmlableObject |
   if (options.bottom) children.push(buildBorderObj("w:bottom", options.bottom));
   if (options.right) children.push(buildBorderObj("w:right", options.right));
   if (options.between) children.push(buildBorderObj("w:between", options.between));
+  if (options.bar) children.push(buildBorderObj("w:bar", options.bar));
 
   return children.length > 0 ? { "w:pBdr": children } : undefined;
 }
@@ -65,6 +66,8 @@ export interface BordersOptions {
   readonly right?: BorderOptions;
   /** Border between consecutive paragraphs with the same border settings */
   readonly between?: BorderOptions;
+  /** Bar border (paragraph-level bar, rendered at left of paragraph) */
+  readonly bar?: BorderOptions;
 }
 
 /**
@@ -121,6 +124,10 @@ export class Border extends IgnoreIfEmptyXmlComponent {
 
     if (options.between) {
       this.root.push(createBorderElement("w:between", options.between));
+    }
+
+    if (options.bar) {
+      this.root.push(createBorderElement("w:bar", options.bar));
     }
   }
 }

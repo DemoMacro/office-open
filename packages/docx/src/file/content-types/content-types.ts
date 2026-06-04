@@ -151,6 +151,18 @@ export class ContentTypes extends XmlComponent {
   }
 
   /**
+   * Registers a web settings part in the content types.
+   */
+  public addWebSettings(): void {
+    this.root.push(
+      createOverride(
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.webSettings+xml",
+        "/word/webSettings.xml",
+      ),
+    );
+  }
+
+  /**
    * Registers a footer part in the content types.
    *
    * @param index - Footer index number (e.g., 1 for footer1.xml)

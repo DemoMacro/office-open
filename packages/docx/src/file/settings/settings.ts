@@ -305,6 +305,65 @@ export interface SettingsOptions {
   readonly captions?: CaptionsOptions;
   /** Math properties (m:mathPr) */
   readonly mathPr?: MathPropertiesOptions;
+  /** Active writing style checking language/grammar settings */
+  readonly activeWritingStyle?: readonly {
+    readonly lang?: string;
+    readonly vendorID?: string;
+    readonly dllVersion?: string;
+    readonly nlCheck?: boolean;
+    readonly checkStyle?: boolean;
+    readonly appCheck?: string;
+  }[];
+  /** Proofing state (spelling/grammar check status) */
+  readonly proofState?: {
+    readonly spelling?: "clean" | "dirty";
+    readonly grammar?: "clean" | "dirty";
+  };
+  /** Style pane format filter (which styles to show) */
+  readonly stylePaneFormatFilter?:
+    | "all"
+    | "custom"
+    | "available"
+    | "recommended"
+    | "inUse"
+    | "heading"
+    | "table"
+    | "paragraph"
+    | "character"
+    | "linked"
+    | "latent";
+  /** Style pane sort method */
+  readonly stylePaneSortMethod?: "name" | "priority" | "default" | "font";
+  /** Document type classification */
+  readonly documentType?: "letter" | "eMail" | "notSpecified";
+  /** Do not use margins for drawing grid origin */
+  readonly doNotUseMarginsForDrawingGridOrigin?: boolean;
+  /** Do not shade form data fields */
+  readonly doNotShadeFormData?: boolean;
+  /** Custom kinsoku line break characters after which line breaks are not allowed */
+  readonly noLineBreaksAfter?: { readonly lang?: string; readonly val?: string };
+  /** Custom kinsoku line break characters before which line breaks are not allowed */
+  readonly noLineBreaksBefore?: { readonly lang?: string; readonly val?: string };
+  /** Save through XSLT transform */
+  readonly saveThroughXslt?: { readonly id?: string; readonly val?: string };
+  /** Show XML tags in document */
+  readonly showXMLTags?: boolean;
+  /** Always merge empty namespace */
+  readonly alwaysMergeEmptyNamespace?: boolean;
+  /** Header shape defaults */
+  readonly hdrShapeDefaults?: boolean;
+  /** Attached schema references */
+  readonly attachedSchema?: readonly string[];
+  /** Force schema upgrade */
+  readonly forceUpgrade?: boolean;
+  /** Smart tag type definitions */
+  readonly smartTagType?: readonly {
+    readonly namespace?: string;
+    readonly name?: string;
+    readonly url?: string;
+  }[];
+  /** Shape defaults */
+  readonly shapeDefaults?: boolean;
 }
 
 /**
@@ -751,6 +810,28 @@ export class Settings extends XmlComponent {
       this.root.push(onOffObj("w:hideGrammaticalErrors", options.hideGrammaticalErrors));
     }
 
+    if (options.activeWritingStyle !== undefined) {
+      for (const ws of options.activeWritingStyle) {
+        const attrs: { key: string; value: string | boolean | number }[] = [];
+        if (ws.lang !== undefined) attrs.push({ key: "w:lang", value: ws.lang });
+        if (ws.vendorID !== undefined) attrs.push({ key: "w:vendorID", value: ws.vendorID });
+        if (ws.dllVersion !== undefined) attrs.push({ key: "w:dllVersion", value: ws.dllVersion });
+        if (ws.nlCheck !== undefined) attrs.push({ key: "w:nlCheck", value: ws.nlCheck });
+        if (ws.checkStyle !== undefined) attrs.push({ key: "w:checkStyle", value: ws.checkStyle });
+        if (ws.appCheck !== undefined) attrs.push({ key: "w:appCheck", value: ws.appCheck });
+        this.root.push(new BuilderElement({ name: "w:activeWritingStyle", attributes: attrs }));
+      }
+    }
+
+    if (options.proofState !== undefined) {
+      const attrs: { key: string; value: string }[] = [];
+      if (options.proofState.spelling !== undefined)
+        attrs.push({ key: "w:spelling", value: options.proofState.spelling });
+      if (options.proofState.grammar !== undefined)
+        attrs.push({ key: "w:grammar", value: options.proofState.grammar });
+      this.root.push(new BuilderElement({ name: "w:proofState", attributes: attrs }));
+    }
+
     if (options.formsDesign !== undefined) {
       this.root.push(onOffObj("w:formsDesign", options.formsDesign));
     }
@@ -766,6 +847,18 @@ export class Settings extends XmlComponent {
 
     if (options.linkStyles !== undefined) {
       this.root.push(onOffObj("w:linkStyles", options.linkStyles));
+    }
+
+    if (options.stylePaneFormatFilter !== undefined) {
+      this.root.push(stringValObj("w:stylePaneFormatFilter", options.stylePaneFormatFilter));
+    }
+
+    if (options.stylePaneSortMethod !== undefined) {
+      this.root.push(stringValObj("w:stylePaneSortMethod", options.stylePaneSortMethod));
+    }
+
+    if (options.documentType !== undefined) {
+      this.root.push(stringValObj("w:documentType", options.documentType));
     }
 
     if (options.trackRevisions !== undefined) {
@@ -896,6 +989,19 @@ export class Settings extends XmlComponent {
       );
     }
 
+    if (options.doNotUseMarginsForDrawingGridOrigin !== undefined) {
+      this.root.push(
+        onOffObj(
+          "w:doNotUseMarginsForDrawingGridOrigin",
+          options.doNotUseMarginsForDrawingGridOrigin,
+        ),
+      );
+    }
+
+    if (options.doNotShadeFormData !== undefined) {
+      this.root.push(onOffObj("w:doNotShadeFormData", options.doNotShadeFormData));
+    }
+
     this.root.push(
       stringValObj(
         "w:characterSpacingControl",
@@ -913,6 +1019,24 @@ export class Settings extends XmlComponent {
 
     if (options.strictFirstAndLastChars !== undefined) {
       this.root.push(onOffObj("w:strictFirstAndLastChars", options.strictFirstAndLastChars));
+    }
+
+    if (options.noLineBreaksAfter !== undefined) {
+      const attrs: { key: string; value: string }[] = [];
+      if (options.noLineBreaksAfter.lang !== undefined)
+        attrs.push({ key: "w:lang", value: options.noLineBreaksAfter.lang });
+      if (options.noLineBreaksAfter.val !== undefined)
+        attrs.push({ key: "w:val", value: options.noLineBreaksAfter.val });
+      this.root.push(new BuilderElement({ name: "w:noLineBreaksAfter", attributes: attrs }));
+    }
+
+    if (options.noLineBreaksBefore !== undefined) {
+      const attrs: { key: string; value: string }[] = [];
+      if (options.noLineBreaksBefore.lang !== undefined)
+        attrs.push({ key: "w:lang", value: options.noLineBreaksBefore.lang });
+      if (options.noLineBreaksBefore.val !== undefined)
+        attrs.push({ key: "w:val", value: options.noLineBreaksBefore.val });
+      this.root.push(new BuilderElement({ name: "w:noLineBreaksBefore", attributes: attrs }));
     }
 
     if (options.savePreviewPicture !== undefined) {
@@ -947,8 +1071,29 @@ export class Settings extends XmlComponent {
       this.root.push(onOffObj("w:useXSLTWhenSaving", options.useXSLTWhenSaving));
     }
 
+    if (options.saveThroughXslt !== undefined) {
+      const attrs: { key: string; value: string }[] = [];
+      if (options.saveThroughXslt.id !== undefined)
+        attrs.push({ key: "r:id", value: options.saveThroughXslt.id });
+      if (options.saveThroughXslt.val !== undefined)
+        attrs.push({ key: "w:val", value: options.saveThroughXslt.val });
+      this.root.push(new BuilderElement({ name: "w:saveThroughXslt", attributes: attrs }));
+    }
+
+    if (options.showXMLTags !== undefined) {
+      this.root.push(onOffObj("w:showXMLTags", options.showXMLTags));
+    }
+
+    if (options.alwaysMergeEmptyNamespace !== undefined) {
+      this.root.push(onOffObj("w:alwaysMergeEmptyNamespace", options.alwaysMergeEmptyNamespace));
+    }
+
     if (options.updateFields !== undefined) {
       this.root.push(onOffObj("w:updateFields", options.updateFields));
+    }
+
+    if (options.hdrShapeDefaults !== undefined) {
+      this.root.push(new BuilderElement({ name: "w:hdrShapeDefaults" }));
     }
 
     if (options.footnotePr !== undefined) {
@@ -1004,6 +1149,12 @@ export class Settings extends XmlComponent {
       this.root.push(new MathPrElement(options.mathPr));
     }
 
+    if (options.attachedSchema !== undefined) {
+      for (const schema of options.attachedSchema) {
+        this.root.push(stringValObj("w:attachedSchema", schema));
+      }
+    }
+
     if (options.colorSchemeMapping !== undefined) {
       this.root.push(new ColorSchemeMapping(options.colorSchemeMapping));
     }
@@ -1025,6 +1176,10 @@ export class Settings extends XmlComponent {
       this.root.push(onOffObj("w:doNotAutoCompressPictures", options.doNotAutoCompressPictures));
     }
 
+    if (options.forceUpgrade !== undefined) {
+      this.root.push(new BuilderElement({ name: "w:forceUpgrade" }));
+    }
+
     if (options.captions !== undefined) {
       this.root.push(new CaptionsElement(options.captions));
     }
@@ -1033,8 +1188,22 @@ export class Settings extends XmlComponent {
       this.root.push(new ReadModeInkLockDownElement(options.readModeInkLockDown));
     }
 
+    if (options.smartTagType !== undefined) {
+      for (const st of options.smartTagType) {
+        const attrs: { key: string; value: string }[] = [];
+        if (st.namespace !== undefined) attrs.push({ key: "w:namespace", value: st.namespace });
+        if (st.name !== undefined) attrs.push({ key: "w:name", value: st.name });
+        if (st.url !== undefined) attrs.push({ key: "w:url", value: st.url });
+        this.root.push(new BuilderElement({ name: "w:smartTagType", attributes: attrs }));
+      }
+    }
+
     if (options.doNotEmbedSmartTags !== undefined) {
       this.root.push(onOffObj("w:doNotEmbedSmartTags", options.doNotEmbedSmartTags));
+    }
+
+    if (options.shapeDefaults !== undefined) {
+      this.root.push(new BuilderElement({ name: "w:shapeDefaults" }));
     }
 
     if (options.decimalSymbol !== undefined) {

@@ -98,6 +98,18 @@ export interface StyleOptions {
   readonly unhideWhenUsed?: boolean;
   /** Whether the style appears in the quick format gallery */
   readonly quickFormat?: boolean;
+  /** Alternative names for the style (comma-separated) */
+  readonly aliases?: string;
+  /** Whether the style is automatically redefined when formatting changes */
+  readonly autoRedefine?: boolean;
+  /** Whether the style is locked and cannot be modified */
+  readonly locked?: boolean;
+  /** Whether this is a personal e-mail style */
+  readonly personal?: boolean;
+  /** Whether this is a personal e-mail compose style */
+  readonly personalCompose?: boolean;
+  /** Whether this is a personal e-mail reply style */
+  readonly personalReply?: boolean;
   /**
    * Table style overrides for specific table regions.
    *
@@ -172,6 +184,10 @@ export class Style extends XmlComponent {
       this.root.push(new Name(options.name));
     }
 
+    if (options.aliases) {
+      this.root.push(stringValObj("w:aliases", options.aliases));
+    }
+
     if (options.basedOn) {
       this.root.push(stringValObj("w:basedOn", options.basedOn));
     }
@@ -182,6 +198,10 @@ export class Style extends XmlComponent {
 
     if (options.link) {
       this.root.push(stringValObj("w:link", options.link));
+    }
+
+    if (options.autoRedefine !== undefined) {
+      this.root.push(onOffObj("w:autoRedefine", options.autoRedefine));
     }
 
     if (options.uiPriority !== undefined) {
@@ -198,6 +218,22 @@ export class Style extends XmlComponent {
 
     if (options.quickFormat !== undefined) {
       this.root.push(onOffObj("w:qFormat", options.quickFormat));
+    }
+
+    if (options.locked !== undefined) {
+      this.root.push(onOffObj("w:locked", options.locked));
+    }
+
+    if (options.personal !== undefined) {
+      this.root.push(onOffObj("w:personal", options.personal));
+    }
+
+    if (options.personalCompose !== undefined) {
+      this.root.push(onOffObj("w:personalCompose", options.personalCompose));
+    }
+
+    if (options.personalReply !== undefined) {
+      this.root.push(onOffObj("w:personalReply", options.personalReply));
     }
 
     if (options.tableStyleOverrides) {

@@ -39,6 +39,7 @@ import { Styles } from "./styles";
 import { ExternalStylesFactory } from "./styles/external-styles-factory";
 import { DefaultStylesFactory } from "./styles/factory";
 import { SubDocCollection } from "./sub-doc/sub-doc-collection";
+import { WebSettings } from "./web-settings";
 
 /**
  * Options for a document section.
@@ -180,6 +181,7 @@ export class File {
   public readonly bibliography: Bibliography | undefined;
   public readonly fontTable: FontWrapper;
   public readonly glossaryOptions: GlossaryDocumentOptions | undefined;
+  public readonly webSettings: WebSettings | undefined;
 
   public constructor(options: PropertiesOptions) {
     this.coreProperties = new CoreProperties({
@@ -290,6 +292,7 @@ export class File {
 
     this.fontTable = new FontWrapper(options.fonts ?? []);
     this.glossaryOptions = options.glossary;
+    this.webSettings = options.webSettings ? new WebSettings(options.webSettings) : undefined;
 
     // Register glossary document content type and relationship
     if (options.glossary) {
@@ -298,6 +301,16 @@ export class File {
         this._currentRelationshipId++,
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/glossaryDocument",
         "glossary/document.xml",
+      );
+    }
+
+    // Register web settings content type and relationship
+    if (this.webSettings) {
+      this.contentTypes.addWebSettings();
+      this.document.relationships.addRelationship(
+        this._currentRelationshipId++,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/webSettings",
+        "webSettings.xml",
       );
     }
   }

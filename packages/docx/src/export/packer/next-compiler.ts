@@ -103,6 +103,8 @@ interface XmlifyedFileMapping {
   readonly SubDocs?: readonly XmlifyedFile[];
   /** Glossary document (word/glossary/document.xml) */
   readonly Glossary?: XmlifyedFile;
+  /** Web settings (word/webSettings.xml) */
+  readonly WebSettings?: XmlifyedFile;
 }
 
 /**
@@ -596,6 +598,14 @@ export class Compiler {
             Glossary: {
               data: buildGlossaryXml(file.glossaryOptions, this.formatter, mkCtx),
               path: "word/glossary/document.xml",
+            },
+          }
+        : {}),
+      ...(file.webSettings
+        ? {
+            WebSettings: {
+              data: this.formatter.formatToXml(file.webSettings, mkCtx(file.document)),
+              path: "word/webSettings.xml",
             },
           }
         : {}),
