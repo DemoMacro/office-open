@@ -340,7 +340,7 @@ function analyzeXsd(config: XsdConfig): CoverageResult {
         const content = readFileCached(file);
         // Match patterns like: key: "attrName", name: "attrName", { attrName: ... }
         // Specifically: `key: "word"` pattern (most common in this codebase)
-        const bareAttrRe = /key:\s*"([a-zA-Z][a-zA-Z0-9]+)"/g;
+        const bareAttrRe = /key:\s*"([a-zA-Z][a-zA-Z0-9]*)"/g;
         let m: RegExpExecArray | null;
         while ((m = bareAttrRe.exec(content)) !== null) {
           usedAttrNames.add(m[1]);
@@ -359,6 +359,8 @@ function analyzeXsd(config: XsdConfig): CoverageResult {
     "count",
     "index",
     "text",
+    "l",
+    "b",
     "style",
     "title",
     "lang",
