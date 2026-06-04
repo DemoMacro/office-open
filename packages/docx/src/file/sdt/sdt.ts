@@ -22,6 +22,19 @@ import {
 import type { SdtPropertiesOptions } from "../table-of-contents";
 
 /**
+ * End properties for a Structured Document Tag (CT_SdtEndPr).
+ *
+ * Contains run properties that define the appearance of the SDT end marker.
+ *
+ * Reference: ISO/IEC 29500-4, wml.xsd, CT_SdtEndPr
+ */
+class StructuredDocumentTagEndProperties extends XmlComponent {
+  public constructor() {
+    super("w:sdtEndPr");
+  }
+}
+
+/**
  * Options for creating an inline Structured Document Tag (CT_SdtRun).
  */
 export interface SdtRunOptions {
@@ -29,6 +42,8 @@ export interface SdtRunOptions {
   readonly properties: SdtPropertiesOptions;
   /** Content children (runs, text runs, etc.) to place inside the SDT */
   readonly children?: readonly BaseXmlComponent[];
+  /** End properties (w:sdtEndPr) for the SDT */
+  readonly endProperties?: readonly BaseXmlComponent[];
 }
 
 /**
@@ -70,6 +85,13 @@ export class StructuredDocumentTagRun extends XmlComponent {
   public constructor(options: SdtRunOptions) {
     super("w:sdt");
     this.root.push(new StructuredDocumentTagProperties(options.properties));
+    if (options.endProperties && options.endProperties.length > 0) {
+      const endPr = new StructuredDocumentTagEndProperties();
+      for (const child of options.endProperties) {
+        endPr.addChildElement(child);
+      }
+      this.root.push(endPr);
+    }
     if (options.children && options.children.length > 0) {
       const content = new StructuredDocumentTagContent();
       for (const child of options.children) {
@@ -88,6 +110,8 @@ export interface SdtBlockOptions {
   readonly properties: SdtPropertiesOptions;
   /** Content children (paragraphs, tables, etc.) to place inside the SDT */
   readonly children?: readonly FileChild[];
+  /** End properties (w:sdtEndPr) for the SDT */
+  readonly endProperties?: readonly BaseXmlComponent[];
 }
 
 /**
@@ -120,6 +144,13 @@ export class StructuredDocumentTagBlock extends XmlComponent implements FileChil
   public constructor(options: SdtBlockOptions) {
     super("w:sdt");
     this.root.push(new StructuredDocumentTagProperties(options.properties));
+    if (options.endProperties && options.endProperties.length > 0) {
+      const endPr = new StructuredDocumentTagEndProperties();
+      for (const child of options.endProperties) {
+        endPr.addChildElement(child);
+      }
+      this.root.push(endPr);
+    }
     if (options.children && options.children.length > 0) {
       const content = new StructuredDocumentTagContent();
       for (const child of options.children) {

@@ -194,6 +194,17 @@ export type IParagraphStylePropertiesOptions = {
         readonly instance?: number;
         /** Whether this is a custom numbering definition */
         readonly custom?: boolean;
+        /** Numbering change tracking (CT_TrackChangeNumbering) */
+        readonly numberingChange?: {
+          /** Original numbering value */
+          readonly original: string;
+          /** Revision ID */
+          readonly id: string;
+          /** Author of the change */
+          readonly author: string;
+          /** Date of the change */
+          readonly date?: string;
+        };
       }
     | false;
 } & LevelParagraphStylePropertiesOptions;
@@ -313,6 +324,7 @@ export function buildParagraphProperties(
       buildNumberProperties(
         `${options.numbering.reference}-${options.numbering.instance ?? 0}`,
         options.numbering.level,
+        options.numbering.numberingChange,
       ),
     );
   } else if (options.numbering === false) {
@@ -646,6 +658,7 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
         new NumberProperties(
           `${options.numbering.reference}-${options.numbering.instance ?? 0}`,
           options.numbering.level,
+          options.numbering.numberingChange,
         ),
       );
     } else if (options.numbering === false) {

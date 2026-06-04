@@ -54,8 +54,12 @@ const createFieldChar = (
   type: (typeof FieldCharacterType)[keyof typeof FieldCharacterType],
   dirty?: boolean,
   ffData?: XmlComponent,
+  fldData?: string,
 ): XmlComponent => {
   const children: BuilderChild[] = [];
+  if (fldData !== undefined) {
+    children.push({ "w:fldData": [{ _attr: { "xml:space": "preserve" } }, fldData] });
+  }
   if (ffData) {
     children.push(ffData);
   }

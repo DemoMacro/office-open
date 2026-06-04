@@ -71,6 +71,8 @@ import { Comment, CommentRangeEnd, CommentRangeStart, CommentReference } from ".
 import type { Comments } from "./run/comment-run";
 import { ImageRun } from "./run/image-run";
 import type { IImageOptions } from "./run/image-run";
+import type { ProofError } from "./run/proof-error";
+import type { SmartTagRun } from "./run/smart-tag-run";
 import { SmartArtRun } from "./run/smartart-run";
 import type { SmartArtOptions } from "./run/smartart-run";
 import { SymbolRun } from "./run/symbol-run";
@@ -118,7 +120,9 @@ export type ParagraphChild =
   | Bdo
   | AltChunk
   | SubDoc
-  | CustomXmlRun;
+  | CustomXmlRun
+  | SmartTagRun
+  | ProofError;
 
 /** JSON-friendly wrapper for ChartRun options in paragraph children. */
 export interface ChartChild {

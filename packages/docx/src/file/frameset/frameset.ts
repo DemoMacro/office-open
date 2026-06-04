@@ -30,6 +30,8 @@ export interface FrameOptions {
   readonly noResizeAllowed?: boolean;
   /** Linked to file */
   readonly linkedToFile?: boolean;
+  /** Long description relationship ID */
+  readonly longDescRId?: string;
 }
 
 export interface FramesetSplitbarOptions {
@@ -95,6 +97,9 @@ class FrameElement extends XmlComponent {
     }
     if (options.linkedToFile) {
       this.root.push(new OnOffElement("w:linkedToFile"));
+    }
+    if (options.longDescRId !== undefined) {
+      this.root.push(new RelElement("w:longDesc", options.longDescRId));
     }
   }
 }

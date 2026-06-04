@@ -479,6 +479,8 @@ export interface OdsoOptions {
   readonly fHdr?: boolean;
   readonly fieldMapData?: readonly OdsoFieldMapDataOptions[];
   readonly recipientData?: readonly string[];
+  /** Unique tag for identifying the data source (w:uniqueTag) */
+  readonly uniqueTag?: string;
 }
 
 /** Mail merge configuration (CT_MailMerge) */
@@ -515,6 +517,10 @@ export interface MailMergeOptions {
   readonly linkToQuery?: boolean;
   /** Office Data Source Object configuration */
   readonly odso?: OdsoOptions;
+  /** Whether this mail merge is the active one (w:active) */
+  readonly active?: boolean;
+  /** Recipients data reference (w:recipients r:id) */
+  readonly recipients?: string;
 }
 
 /**
@@ -1427,6 +1433,19 @@ class MailMerge extends XmlComponent {
     if (options.odso !== undefined) {
       this.root.push(new Odso(options.odso));
     }
+
+    if (options.active !== undefined) {
+      this.root.push(onOffObj("w:active", options.active));
+    }
+
+    if (options.recipients !== undefined) {
+      this.root.push(
+        new BuilderElement({
+          name: "w:recipients",
+          attributes: [{ key: "r:id", value: options.recipients }],
+        }),
+      );
+    }
   }
 }
 
@@ -1476,6 +1495,10 @@ class Odso extends XmlComponent {
           }),
         );
       }
+    }
+
+    if (options.uniqueTag !== undefined) {
+      this.root.push(stringValObj("w:uniqueTag", options.uniqueTag));
     }
   }
 }

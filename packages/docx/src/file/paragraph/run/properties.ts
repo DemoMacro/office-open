@@ -216,6 +216,8 @@ export interface RunStylePropertiesOptions {
   readonly fitText?: number;
   readonly complexScript?: boolean;
   readonly eastAsianLayout?: EastAsianLayoutOptions;
+  /** Relationship ID for a content part (w:contentPart with r:id) */
+  readonly contentPartRId?: string;
 }
 
 /**
@@ -475,6 +477,10 @@ export function buildRunProperties(options?: RunPropertiesOptions): IXmlableObje
 
   if (options.eastAsianLayout) {
     children.push(buildEastAsianLayoutObj(options.eastAsianLayout));
+  }
+
+  if (options.contentPartRId) {
+    children.push({ "w:contentPart": { _attr: { "r:id": options.contentPartRId } } });
   }
 
   if (options.revision) {

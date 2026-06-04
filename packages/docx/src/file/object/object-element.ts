@@ -9,7 +9,7 @@ import type { VmlShapeStyle } from "@file/textbox/shape/shape";
  *
  * @module
  */
-import { BuilderElement, XmlComponent } from "@file/xml-components";
+import { BuilderElement, XmlComponent, stringValObj } from "@file/xml-components";
 
 // ── Options ──
 
@@ -46,6 +46,10 @@ export interface ObjectElementOptions {
   readonly embed?: ObjectEmbedOptions;
   /** Linked OLE object */
   readonly link?: ObjectLinkOptions;
+  /** ActiveX control reference */
+  readonly control?: { readonly name?: string; readonly shapeid?: string; readonly rId?: string };
+  /** Movie reference */
+  readonly movie?: string;
 }
 
 // ── Style formatting ──
@@ -160,6 +164,23 @@ export class ObjectElement extends XmlComponent implements FileChild {
       this.root.push(new ObjectEmbed(options.embed));
     } else if (options.link) {
       this.root.push(new ObjectLink(options.link));
+    }
+
+    // ActiveX control
+    if (options.control) {
+      const controlAttrs: { key: string; value: string }[] = [];
+      if (options.control.name !== undefined)
+        controlAttrs.push({ key: "w:name", value: options.control.name });
+      if (options.control.shapeid !== undefined)
+        controlAttrs.push({ key: "w:shapeid", value: options.control.shapeid });
+      if (options.control.rId !== undefined)
+        controlAttrs.push({ key: "r:id", value: options.control.rId });
+      this.root.push(new BuilderElement({ name: "w:control", attributes: controlAttrs }));
+    }
+
+    // Movie reference
+    if (options.movie !== undefined) {
+      this.root.push(stringValObj("w:movie", options.movie));
     }
   }
 }

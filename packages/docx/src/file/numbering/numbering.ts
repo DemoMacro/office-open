@@ -10,13 +10,14 @@
  * @module
  */
 import { AlignmentType } from "@file/paragraph";
-import { XmlComponent } from "@file/xml-components";
+import { XmlComponent, numberValObj } from "@file/xml-components";
 import type { Context } from "@file/xml-components";
 import {
   abstractNumUniqueNumericIdGen,
   concreteNumUniqueNumericIdGen,
   convertInchesToTwip,
 } from "@util/convenience-functions";
+import { decimalNumber } from "@util/values";
 
 import { buildDocumentAttributes } from "../document/document-attributes";
 import { AbstractNumbering } from "./abstract-numbering";
@@ -38,6 +39,15 @@ export interface NumberingOptions {
     readonly levels: readonly LevelsOptions[];
     /** Unique reference name for this numbering configuration. */
     readonly reference: string;
+  }[];
+  /** Numbering cleanup ID (w:numIdMacAtCleanup) */
+  readonly numIdMacAtCleanup?: number;
+  /** Picture bullet definitions for numbering (w:numPicBullet) */
+  readonly numPicBullets?: readonly {
+    /** Unique ID for this picture bullet */
+    readonly numPicBulletId: number;
+    /** Pict content as inline XML or reference */
+    readonly pict?: string;
   }[];
 }
 
@@ -108,6 +118,11 @@ export class Numbering extends XmlComponent {
   private readonly referenceConfigMap = new Map<string, Record<string, any>>();
   private readonly abstractNumUniqueNumericId = abstractNumUniqueNumericIdGen();
   private readonly concreteNumUniqueNumericId = concreteNumUniqueNumericIdGen();
+  private readonly _numIdMacAtCleanup?: number;
+  private readonly _numPicBullets?: readonly {
+    readonly numPicBulletId: number;
+    readonly pict?: string;
+  }[];
 
   /**
    * Creates a new numbering definition collection.
@@ -119,6 +134,8 @@ export class Numbering extends XmlComponent {
    */
   public constructor(options: NumberingOptions) {
     super("w:numbering");
+    this._numIdMacAtCleanup = options.numIdMacAtCleanup;
+    this._numPicBullets = options.numPicBullets;
     this.root.push(
       buildDocumentAttributes(
         [
@@ -280,11 +297,22 @@ export class Numbering extends XmlComponent {
 
   public override toXml(context: Context): string {
     const start = this.root.length;
+
+    // numPicBullet elements come first (XSD order)
+    if (this._numPicBullets) {
+      for (const bullet of this._numPicBullets) {
+        this.root.push(new NumPicBullet(bullet.numPicBulletId, bullet.pict));
+      }
+    }
+
     for (const numbering of this.abstractNumberingMap.values()) {
       this.root.push(numbering);
     }
     for (const numbering of this.concreteNumberingMap.values()) {
       this.root.push(numbering);
+    }
+    if (this._numIdMacAtCleanup !== undefined) {
+      this.root.push(numberValObj("w:numIdMacAtCleanup", decimalNumber(this._numIdMacAtCleanup)));
     }
     const result = super.toXml(context);
     this.root.length = start;
@@ -354,5 +382,23 @@ export class Numbering extends XmlComponent {
    */
   public get referenceConfig(): readonly Record<string, any>[] {
     return [...this.referenceConfigMap.values()];
+  }
+}
+
+/**
+ * Picture bullet definition (CT_NumPicBullet).
+ *
+ * Defines a picture to be used as a bullet in a numbering definition.
+ *
+ * Reference: ISO/IEC 29500-4, wml.xsd, CT_NumPicBullet
+ */
+class NumPicBullet extends XmlComponent {
+  public constructor(id: number, pict?: string) {
+    super("w:numPicBullet");
+    this.root.push(numberValObj("w:numPicBulletId", id));
+    if (pict) {
+      // pict is a raw XML string for w:pict content
+      this.root.push({ _raw: pict } as any);
+    }
   }
 }

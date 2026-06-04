@@ -55,24 +55,52 @@ import type { IXmlableObject } from "@file/xml-components";
 export function buildNumberProperties(
   numberId: number | string,
   indentLevel: number,
+  numberingChange?: {
+    readonly original: string;
+    readonly id: string;
+    readonly author: string;
+    readonly date?: string;
+  },
 ): IXmlableObject {
-  return {
-    "w:numPr": [
-      { "w:ilvl": { _attr: { "w:val": Math.min(indentLevel, 9) } } },
-      {
-        "w:numId": {
-          _attr: { "w:val": typeof numberId === "string" ? `{${numberId}}` : numberId },
-        },
+  const children: IXmlableObject[] = [
+    { "w:ilvl": { _attr: { "w:val": Math.min(indentLevel, 9) } } },
+    {
+      "w:numId": {
+        _attr: { "w:val": typeof numberId === "string" ? `{${numberId}}` : numberId },
       },
-    ],
-  };
+    },
+  ];
+
+  if (numberingChange) {
+    const changeAttrs: Record<string, string> = {
+      "w:original": numberingChange.original,
+      "w:id": numberingChange.id,
+      "w:author": numberingChange.author,
+    };
+    if (numberingChange.date !== undefined) changeAttrs["w:date"] = numberingChange.date;
+    children.push({ "w:numberingChange": { _attr: changeAttrs } });
+  }
+
+  return { "w:numPr": children };
 }
 
 export class NumberProperties extends XmlComponent {
-  public constructor(numberId: number | string, indentLevel: number) {
+  public constructor(
+    numberId: number | string,
+    indentLevel: number,
+    numberingChange?: {
+      readonly original: string;
+      readonly id: string;
+      readonly author: string;
+      readonly date?: string;
+    },
+  ) {
     super("w:numPr");
     this.root.push(new IndentLevel(indentLevel));
     this.root.push(new NumberId(numberId));
+    if (numberingChange) {
+      this.root.push(new NumberingChange(numberingChange));
+    }
   }
 }
 
@@ -102,5 +130,30 @@ class NumberId extends XmlComponent {
   public constructor(id: number | string) {
     super("w:numId");
     this.root.push({ _attr: { "w:val": typeof id === "string" ? `{${id}}` : id } });
+  }
+}
+
+/**
+ * Numbering change tracking (CT_TrackChangeNumbering).
+ *
+ * Records a revision to numbering properties.
+ *
+ * @internal
+ */
+class NumberingChange extends XmlComponent {
+  public constructor(options: {
+    readonly original: string;
+    readonly id: string;
+    readonly author: string;
+    readonly date?: string;
+  }) {
+    super("w:numberingChange");
+    const attrs: Record<string, string> = {
+      "w:original": options.original,
+      "w:id": options.id,
+      "w:author": options.author,
+    };
+    if (options.date !== undefined) attrs["w:date"] = options.date;
+    this.root.push({ _attr: attrs });
   }
 }

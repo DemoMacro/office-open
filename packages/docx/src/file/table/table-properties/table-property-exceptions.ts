@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { IgnoreIfEmptyXmlComponent } from "@file/xml-components";
+import { BuilderElement, IgnoreIfEmptyXmlComponent } from "@file/xml-components";
 
 import { createAlignment } from "../../paragraph";
 import type { AlignmentType } from "../../paragraph";
@@ -43,6 +43,8 @@ export interface TablePropertyExOptions {
   readonly cellMargin?: TableCellMarginOptions;
   readonly tableLook?: TableLookOptions;
   readonly cellSpacing?: TableCellSpacingProperties;
+  /** Table property exceptions change tracking */
+  readonly tblPrExChange?: { readonly author: string; readonly date?: string; readonly id: string };
 }
 
 /**
@@ -93,6 +95,16 @@ export class TablePropertyExceptions extends IgnoreIfEmptyXmlComponent {
 
     if (options.tableLook) {
       this.root.push(createTableLook(options.tableLook));
+    }
+
+    if (options.tblPrExChange) {
+      const change = options.tblPrExChange;
+      const attrs: { key: string; value: string }[] = [
+        { key: "w:author", value: change.author },
+        { key: "w:id", value: change.id },
+      ];
+      if (change.date !== undefined) attrs.push({ key: "w:date", value: change.date });
+      this.root.push(new BuilderElement({ name: "w:tblPrExChange", attributes: attrs }));
     }
   }
 }
