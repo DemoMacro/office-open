@@ -1,6 +1,7 @@
 import type { ChartOptions } from "@file/chart/chart-frame";
 import type { AudioFrameOptions } from "@file/media/audio-frame";
 import type { VideoFrameOptions } from "@file/media/video-frame";
+import type { OleOptions } from "@file/ole/ole-frame";
 import type { PictureOptions } from "@file/picture/picture";
 import type { GroupShapeOptions } from "@file/shape/group-shape";
 import type { ConnectorShapeOptions, LineShapeOptions } from "@file/shape/line-shape";
@@ -24,4 +25,5 @@ export type SlideChild =
   | { video: VideoFrameOptions }
   | { audio: AudioFrameOptions }
   | { group: GroupShapeOptions }
-  | { smartart: SmartArtOptions };
+  | { smartart: SmartArtOptions }
+  | { ole: OleOptions };

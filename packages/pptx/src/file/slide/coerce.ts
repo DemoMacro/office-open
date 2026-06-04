@@ -2,6 +2,7 @@ import { Chart } from "@file/chart/chart-frame";
 import type { MasterChild } from "@file/file";
 import { AudioFrame } from "@file/media/audio-frame";
 import { VideoFrame } from "@file/media/video-frame";
+import { OleFrame } from "@file/ole/ole-frame";
 import { Picture } from "@file/picture/picture";
 import { GroupShape } from "@file/shape/group-shape";
 import { ConnectorShape, LineShape } from "@file/shape/line-shape";
@@ -23,6 +24,7 @@ export function coerceChild(child: SlideChild): BaseXmlComponent {
   if ("audio" in child) return new AudioFrame(child.audio);
   if ("group" in child) return new GroupShape(child.group);
   if ("smartart" in child) return new SmartArt(child.smartart);
+  if ("ole" in child) return new OleFrame(child.ole);
   throw new Error("Unknown slide child type");
 }
 
