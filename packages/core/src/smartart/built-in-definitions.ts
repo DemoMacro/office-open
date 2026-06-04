@@ -80,10 +80,30 @@ export function getLayoutXml(layoutId: string): string {
 }
 
 /**
- * Returns style stub XML with the given uniqueId.
+ * Returns style XML with basic style definitions (fillClrLst, linClrLst, etc.)
+ * that allow PowerPoint to correctly render SmartArt colors and effects.
  */
 export function getStyleXml(styleId: string): string {
   const cat = STYLE_CATEGORIES[styleId] ?? "simple";
+
+  // Basic style content: fill color list + line color list + effect + font color
+  const styleContent =
+    "<dgm:fillClrLst>" +
+    '<a:solidFill><a:schemeClr val="accent1"/></a:solidFill>' +
+    '<a:solidFill><a:schemeClr val="accent2"/></a:solidFill>' +
+    '<a:solidFill><a:schemeClr val="accent3"/></a:solidFill>' +
+    '<a:solidFill><a:schemeClr val="accent4"/></a:solidFill>' +
+    '<a:solidFill><a:schemeClr val="accent5"/></a:solidFill>' +
+    '<a:solidFill><a:schemeClr val="accent6"/></a:solidFill>' +
+    "</dgm:fillClrLst>" +
+    '<dgm:linClrLst><a:solidFill><a:schemeClr val="tx1"/></a:solidFill></dgm:linClrLst>' +
+    '<dgm:effectClrLst><a:solidFill><a:schemeClr val="tx1"/></a:solidFill></dgm:effectClrLst>' +
+    "<dgm:fontClrLst>" +
+    '<a:solidFill><a:schemeClr val="tx1"/></a:solidFill>' +
+    '<a:solidFill><a:schemeClr val="tx1"/></a:solidFill>' +
+    '<a:solidFill><a:schemeClr val="tx1"/></a:solidFill>' +
+    "</dgm:fontClrLst>";
+
   return (
     XML_DECL +
     '<dgm:styleDef xmlns:dgm="' +
@@ -98,15 +118,73 @@ export function getStyleXml(styleId: string): string {
     cat +
     '" pri="10100"/></dgm:catLst>' +
     '<dgm:scene3d><a:camera prst="orthographicFront"/><a:lightRig rig="threePt" dir="t"/></dgm:scene3d>' +
+    styleContent +
     "</dgm:styleDef>"
   );
 }
 
 /**
- * Returns color stub XML with the given uniqueId.
+ * Returns color XML with basic color definitions (fillLst, linLst, etc.)
+ * that allow PowerPoint to correctly render SmartArt with the specified color scheme.
  */
 export function getColorXml(colorId: string): string {
   const cat = COLOR_CATEGORIES[colorId] ?? "accent1";
+
+  // Resolve the accent color index from colorId (e.g., "accent1_2" → "accent1")
+  const accentMatch = colorId.match(/^(accent\d)/);
+  const accentVal = accentMatch ? accentMatch[1] : "accent1";
+
+  // Build color content based on colorId patterns
+  let colorContent: string;
+  if (colorId.startsWith("accent")) {
+    // Accent-based: fill with the specified accent color
+    colorContent =
+      "<dgm:fillLst>" +
+      `<a:solidFill><a:schemeClr val="${accentVal}"/></a:solidFill>` +
+      "</dgm:fillLst>" +
+      '<dgm:linLst><a:solidFill><a:schemeClr val="tx1"><a:tint val="75000"/></a:schemeClr></a:solidFill></dgm:linLst>' +
+      '<dgm:effectLst><a:solidFill><a:schemeClr val="tx1"/></a:solidFill></dgm:effectLst>' +
+      '<dgm:txFillLst><a:solidFill><a:schemeClr val="tx1"/></a:solidFill></dgm:txFillLst>' +
+      '<dgm:txLinLst><a:solidFill><a:schemeClr val="tx1"><a:tint val="75000"/></a:schemeClr></a:solidFill></dgm:txLinLst>' +
+      '<dgm:txEffectLst><a:solidFill><a:schemeClr val="tx1"/></a:solidFill></dgm:txEffectLst>';
+  } else if (colorId.startsWith("colorful")) {
+    // Colorful: cycle through all accent colors
+    colorContent =
+      "<dgm:fillLst>" +
+      '<a:solidFill><a:schemeClr val="accent1"/></a:solidFill>' +
+      '<a:solidFill><a:schemeClr val="accent2"/></a:solidFill>' +
+      '<a:solidFill><a:schemeClr val="accent3"/></a:solidFill>' +
+      '<a:solidFill><a:schemeClr val="accent4"/></a:solidFill>' +
+      '<a:solidFill><a:schemeClr val="accent5"/></a:solidFill>' +
+      "</dgm:fillLst>" +
+      '<dgm:linLst><a:solidFill><a:schemeClr val="lt1"/></a:solidFill></dgm:linLst>' +
+      '<dgm:effectLst><a:solidFill><a:schemeClr val="lt1"/></a:solidFill></dgm:effectLst>' +
+      '<dgm:txFillLst><a:solidFill><a:schemeClr val="tx1"/></a:solidFill></dgm:txFillLst>' +
+      "<dgm:txLinLst/>" +
+      "<dgm:txEffectLst/>";
+  } else if (colorId.startsWith("dark")) {
+    // Dark: dark backgrounds
+    colorContent =
+      "<dgm:fillLst>" +
+      '<a:solidFill><a:schemeClr val="dk1"/></a:solidFill>' +
+      '<a:solidFill><a:schemeClr val="dk2"/></a:solidFill>' +
+      "</dgm:fillLst>" +
+      '<dgm:linLst><a:solidFill><a:schemeClr val="lt1"/></a:solidFill></dgm:linLst>' +
+      '<dgm:effectLst><a:solidFill><a:schemeClr val="lt1"/></a:solidFill></dgm:effectLst>' +
+      '<dgm:txFillLst><a:solidFill><a:schemeClr val="lt1"/></a:solidFill></dgm:txFillLst>' +
+      "<dgm:txLinLst/>" +
+      "<dgm:txEffectLst/>";
+  } else {
+    // Default/primary/gray: use accent color
+    colorContent =
+      '<dgm:fillLst><a:solidFill><a:schemeClr val="accent1"/></a:solidFill></dgm:fillLst>' +
+      '<dgm:linLst><a:solidFill><a:schemeClr val="tx1"/></a:solidFill></dgm:linLst>' +
+      '<dgm:effectLst><a:solidFill><a:schemeClr val="tx1"/></a:solidFill></dgm:effectLst>' +
+      '<dgm:txFillLst><a:solidFill><a:schemeClr val="tx1"/></a:solidFill></dgm:txFillLst>' +
+      "<dgm:txLinLst/>" +
+      "<dgm:txEffectLst/>";
+  }
+
   return (
     XML_DECL +
     '<dgm:colorsDef xmlns:dgm="' +
@@ -120,6 +198,7 @@ export function getColorXml(colorId: string): string {
     '<dgm:catLst><dgm:cat type="' +
     cat +
     '" pri="11200"/></dgm:catLst>' +
+    colorContent +
     "</dgm:colorsDef>"
   );
 }
