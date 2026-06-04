@@ -23,21 +23,25 @@ import { Frameset } from "../frameset/frameset";
  * Border options for div elements.
  */
 export interface DivBorderOptions {
-  readonly top?: { readonly style?: string; readonly color?: string; readonly size?: number };
-  readonly left?: { readonly style?: string; readonly color?: string; readonly size?: number };
-  readonly bottom?: { readonly style?: string; readonly color?: string; readonly size?: number };
-  readonly right?: { readonly style?: string; readonly color?: string; readonly size?: number };
+  readonly top?: { readonly style: string; readonly color?: string; readonly size?: number };
+  readonly left?: { readonly style: string; readonly color?: string; readonly size?: number };
+  readonly bottom?: { readonly style: string; readonly color?: string; readonly size?: number };
+  readonly right?: { readonly style: string; readonly color?: string; readonly size?: number };
 }
 
 /**
  * Options for a div element (CT_Div).
  */
 export interface DivOptions {
+  /** Unique div identifier (required by CT_Div/@id) */
+  readonly id: number;
   readonly marginLeft: number;
   readonly marginRight: number;
   readonly marginTop: number;
   readonly marginBottom: number;
+  /** Mark as HTML blockquote element */
   readonly blockQuote?: boolean;
+  /** Mark as HTML body element */
   readonly bodyDiv?: boolean;
   readonly border?: DivBorderOptions;
   readonly children?: readonly DivOptions[];
@@ -52,8 +56,12 @@ export const TargetScreenSize = {
   SIZE_720X512: "720x512",
   SIZE_800X600: "800x600",
   SIZE_1024X768: "1024x768",
-  SIZE_1152X862: "1152x862",
-  SIZE_1792X1344: "1792x1344",
+  SIZE_1152X882: "1152x882",
+  SIZE_1152X900: "1152x900",
+  SIZE_1280X1024: "1280x1024",
+  SIZE_1600X1200: "1600x1200",
+  SIZE_1800X1440: "1800x1440",
+  SIZE_1920X1200: "1920x1200",
 } as const;
 
 /**
@@ -95,28 +103,28 @@ function buildDivBorder(options: DivBorderOptions): BuilderElement {
   const children: BuilderElement[] = [];
   if (options.top) {
     const attrs: { key: string; value: string | number }[] = [];
-    if (options.top.style) attrs.push({ key: "w:val", value: options.top.style });
+    attrs.push({ key: "w:val", value: options.top.style });
     if (options.top.color) attrs.push({ key: "w:color", value: options.top.color });
     if (options.top.size !== undefined) attrs.push({ key: "w:sz", value: options.top.size });
     children.push(new BuilderElement({ name: "w:top", attributes: attrs }));
   }
   if (options.left) {
     const attrs: { key: string; value: string | number }[] = [];
-    if (options.left.style) attrs.push({ key: "w:val", value: options.left.style });
+    attrs.push({ key: "w:val", value: options.left.style });
     if (options.left.color) attrs.push({ key: "w:color", value: options.left.color });
     if (options.left.size !== undefined) attrs.push({ key: "w:sz", value: options.left.size });
     children.push(new BuilderElement({ name: "w:left", attributes: attrs }));
   }
   if (options.bottom) {
     const attrs: { key: string; value: string | number }[] = [];
-    if (options.bottom.style) attrs.push({ key: "w:val", value: options.bottom.style });
+    attrs.push({ key: "w:val", value: options.bottom.style });
     if (options.bottom.color) attrs.push({ key: "w:color", value: options.bottom.color });
     if (options.bottom.size !== undefined) attrs.push({ key: "w:sz", value: options.bottom.size });
     children.push(new BuilderElement({ name: "w:bottom", attributes: attrs }));
   }
   if (options.right) {
     const attrs: { key: string; value: string | number }[] = [];
-    if (options.right.style) attrs.push({ key: "w:val", value: options.right.style });
+    attrs.push({ key: "w:val", value: options.right.style });
     if (options.right.color) attrs.push({ key: "w:color", value: options.right.color });
     if (options.right.size !== undefined) attrs.push({ key: "w:sz", value: options.right.size });
     children.push(new BuilderElement({ name: "w:right", attributes: attrs }));
@@ -131,10 +139,10 @@ function buildDiv(options: DivOptions): BuilderElement {
   const children: (BuilderElement | ReturnType<typeof numberValObj>)[] = [];
 
   if (options.blockQuote !== undefined) {
-    children.push(onOffObj("w:blockQuote", options.blockQuote));
+    children.push(stringValObj("w:blockQuote", options.blockQuote ? "on" : "off"));
   }
   if (options.bodyDiv !== undefined) {
-    children.push(onOffObj("w:bodyDiv", options.bodyDiv));
+    children.push(stringValObj("w:bodyDiv", options.bodyDiv ? "on" : "off"));
   }
   children.push(numberValObj("w:marLeft", options.marginLeft));
   children.push(numberValObj("w:marRight", options.marginRight));
@@ -152,7 +160,11 @@ function buildDiv(options: DivOptions): BuilderElement {
     );
   }
 
-  return new BuilderElement({ name: "w:div", children });
+  return new BuilderElement({
+    name: "w:div",
+    attributes: { id: { key: "w:id", value: options.id } },
+    children,
+  });
 }
 
 /**

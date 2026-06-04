@@ -15,6 +15,7 @@ const doc = new Document({
     targetScreenSz: "1024x768",
     divs: [
       {
+        id: 100,
         marginLeft: 100,
         marginRight: 100,
         marginTop: 50,
