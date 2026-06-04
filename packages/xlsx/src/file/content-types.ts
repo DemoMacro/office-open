@@ -187,6 +187,47 @@ export class ContentTypes extends BaseXmlComponent {
     });
   }
 
+  public addDialogsheet(index: number): void {
+    this.dynamicEntries.push({
+      type: "Override",
+      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.dialogsheet+xml",
+      key: `/xl/dialogsheets/sheet${index}.xml`,
+    });
+  }
+
+  public addRevisionHeaders(): void {
+    this.dynamicEntries.push({
+      type: "Override",
+      contentType:
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.revisionHeaders+xml",
+      key: "/xl/revisionHeaders.xml",
+    });
+  }
+
+  public addRevisionLog(index: number): void {
+    this.dynamicEntries.push({
+      type: "Override",
+      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.revisionLog+xml",
+      key: `/xl/revisions/revision${index}.xml`,
+    });
+  }
+
+  public addQueryTable(index: number): void {
+    this.dynamicEntries.push({
+      type: "Override",
+      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.queryTable+xml",
+      key: `/xl/queryTables/queryTable${index}.xml`,
+    });
+  }
+
+  public addMetadata(): void {
+    this.dynamicEntries.push({
+      type: "Override",
+      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheetMetadata+xml",
+      key: "/xl/metadata.xml",
+    });
+  }
+
   public override toXml(_context: Context): string {
     const p: string[] = [
       '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">',

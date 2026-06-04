@@ -64,3 +64,24 @@ export type {
   ExternalSheetDataOptions,
 } from "./external-link";
 export type { ChartsheetOptions } from "./chartsheet";
+export type { DialogsheetOptions } from "./dialogsheet";
+export type { QueryTableOptions } from "./query-table";
+export type {
+  MetadataOptions,
+  MetadataTypeOptions,
+  MetadataStringOptions,
+  FutureMetadataOptions,
+} from "./metadata";
+export type {
+  RevisionHeadersOptions,
+  RevisionHeaderEntry,
+  RevisionEntry,
+  RevisionRowColumnOptions,
+  RevisionCellChangeOptions,
+  RevisionMoveOptions,
+  RevisionFormattingOptions,
+  RevisionInsertSheetOptions,
+  RevisionCommentOptions,
+  RevisionDefinedNameOptions,
+  RevisionLogOptions,
+} from "./revision-log";
