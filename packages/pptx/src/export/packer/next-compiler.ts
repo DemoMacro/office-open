@@ -139,7 +139,7 @@ export class Compiler {
       file.presentationWrapper.view.setNotesMasterRId(notesMasterRId);
       const notesMasterThemeIndex = themes.length + 1;
       mapping["NotesMaster"] = {
-        data: this.formatter.formatToXml(new DefaultNotesMaster(), context),
+        data: this.formatter.formatToXml(new DefaultNotesMaster(file.notesMasterOptions), context),
         path: "ppt/notesMasters/notesMaster1.xml",
       };
       const notesMasterTheme = new DefaultTheme();
@@ -172,7 +172,10 @@ export class Compiler {
       // Theme index: themes (masters) + 1 (notes master theme if exists)
       const handoutMasterThemeIndex = themes.length + (file.notesSlides.length > 0 ? 2 : 1);
       mapping["HandoutMaster"] = {
-        data: this.formatter.formatToXml(new DefaultHandoutMaster(), context),
+        data: this.formatter.formatToXml(
+          new DefaultHandoutMaster(file.handoutMasterOptions),
+          context,
+        ),
         path: "ppt/handoutMasters/handoutMaster1.xml",
       };
       const handoutMasterTheme = new DefaultTheme();

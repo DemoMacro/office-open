@@ -107,6 +107,17 @@ export class Chartsheet extends BaseXmlComponent {
     // sheetViews (required)
     p.push('<sheetViews><sheetView workbookViewId="0"/></sheetViews>');
 
+    // sheetProtection (optional, XSD: after sheetViews, before pageMargins)
+    if (this.opts.sheetProtection) {
+      const sp = this.opts.sheetProtection;
+      const spAttrs: string[] = [];
+      if (sp.content) spAttrs.push(` content="1"`);
+      if (sp.objects) spAttrs.push(` objects="1"`);
+      if (spAttrs.length > 0) {
+        p.push(`<sheetProtection${spAttrs.join("")}/>`);
+      }
+    }
+
     // pageMargins (optional)
     if (this.opts.pageMargins) {
       const pm = this.opts.pageMargins;
@@ -150,17 +161,6 @@ export class Chartsheet extends BaseXmlComponent {
 
     // drawing (required)
     p.push(`<drawing r:id="${escapeXml(this.drawingRId)}"/>`);
-
-    // sheetProtection (optional)
-    if (this.opts.sheetProtection) {
-      const sp = this.opts.sheetProtection;
-      const spAttrs: string[] = [];
-      if (sp.content) spAttrs.push(` content="1"`);
-      if (sp.objects) spAttrs.push(` objects="1"`);
-      if (spAttrs.length > 0) {
-        p.push(`<sheetProtection${spAttrs.join("")}/>`);
-      }
-    }
 
     p.push("</chartsheet>");
     return p.join("");

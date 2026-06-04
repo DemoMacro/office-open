@@ -65,13 +65,16 @@ export type {
 } from "./external-link";
 export type { ChartsheetOptions } from "./chartsheet";
 export type { DialogsheetOptions } from "./dialogsheet";
+export { Dialogsheet } from "./dialogsheet";
 export type { QueryTableOptions } from "./query-table";
+export { QueryTableXml } from "./query-table";
 export type {
   MetadataOptions,
   MetadataTypeOptions,
   MetadataStringOptions,
   FutureMetadataOptions,
 } from "./metadata";
+export { MetadataXml } from "./metadata";
 export type {
   RevisionHeadersOptions,
   RevisionHeaderEntry,
@@ -85,3 +88,4 @@ export type {
   RevisionDefinedNameOptions,
   RevisionLogOptions,
 } from "./revision-log";
+export { RevisionHeadersXml, RevisionLogXml } from "./revision-log";

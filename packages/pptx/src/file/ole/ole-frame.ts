@@ -174,24 +174,15 @@ class OleObjectElement extends XmlComponent {
       this.root.push(
         new BuilderElement({
           name: "p:embed",
-          attributes: {
-            "r:id": { key: "r:id", value: options.embed.rId },
-          },
         }),
       );
     } else if (options.link) {
-      const linkAttrs: Record<string, string | number> = {
-        "r:id": options.link.rId,
-      };
-      if (options.link.autoUpdate) {
-        linkAttrs["updateMode"] = "r:always";
-      }
       this.root.push(
         new BuilderElement({
           name: "p:link",
-          attributes: Object.fromEntries(
-            Object.entries(linkAttrs).map(([k, v]) => [k, { key: k, value: v }]),
-          ),
+          attributes: options.link.autoUpdate
+            ? { updateAutomatic: { key: "updateAutomatic", value: 1 } }
+            : undefined,
         }),
       );
     }

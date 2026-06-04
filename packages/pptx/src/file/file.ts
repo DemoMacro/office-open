@@ -103,6 +103,12 @@ export interface PresentationOptions extends CorePropertiesOptions {
   readonly show?: ShowOptions;
   readonly view?: import("@file/view-properties").ViewPropertiesOptions;
   readonly includeHandoutMaster?: boolean;
+  /** Include notes master (auto-enabled when slides have notes) */
+  readonly includeNotesMaster?: boolean;
+  /** Handout master customization options */
+  readonly handoutMasterOptions?: import("@file/handout-master/handout-master").HandoutMasterOptions;
+  /** Notes master customization options */
+  readonly notesMasterOptions?: import("@file/notes-master/notes-master").NotesMasterOptions;
   readonly tableStyles?: import("@office-open/core").TableStyleListOptions;
 }
 
@@ -162,6 +168,8 @@ export class File {
   private readonly includeHandout: boolean;
   private readonly tableStylesOpts?: import("@office-open/core").TableStyleListOptions;
   private readonly viewOpts?: import("@file/view-properties").ViewPropertiesOptions;
+  private readonly handoutMasterOpts?: import("@file/handout-master/handout-master").HandoutMasterOptions;
+  private readonly notesMasterOpts?: import("@file/notes-master/notes-master").NotesMasterOptions;
 
   // Lazy components
   private _coreProperties?: CoreProperties;
@@ -200,6 +208,8 @@ export class File {
     this.includeHandout = options.includeHandoutMaster ?? false;
     this.tableStylesOpts = options.tableStyles;
     this.viewOpts = options.view;
+    this.handoutMasterOpts = options.handoutMasterOptions;
+    this.notesMasterOpts = options.notesMasterOptions;
     const sz = resolveSlideSize(options.size);
     this.slideWidthEmus = sz.width;
     this.slideHeightEmus = sz.height;
@@ -568,6 +578,18 @@ export class File {
 
   public get hasHandoutMaster(): boolean {
     return this.includeHandout;
+  }
+
+  public get handoutMasterOptions():
+    | import("@file/handout-master/handout-master").HandoutMasterOptions
+    | undefined {
+    return this.handoutMasterOpts;
+  }
+
+  public get notesMasterOptions():
+    | import("@file/notes-master/notes-master").NotesMasterOptions
+    | undefined {
+    return this.notesMasterOpts;
   }
 
   public get commentAuthorList(): CommentAuthorList | undefined {

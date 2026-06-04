@@ -27,6 +27,30 @@ const wb = new Workbook({
     {
       name: "Sales Chart",
       tabColor: "FF4472C4",
+      // Chartsheet extensions: pageMargins, pageSetup, headerFooter, sheetProtection
+      pageMargins: {
+        left: 0.5,
+        right: 0.5,
+        top: 0.75,
+        bottom: 0.75,
+        header: 0.3,
+        footer: 0.3,
+      },
+      pageSetup: {
+        paperSize: 9, // A4
+        orientation: "landscape",
+        horizontalDpi: 300,
+        verticalDpi: 300,
+      },
+      headerFooter: {
+        differentFirst: true,
+        oddHeader: "&CChartsheet Demo",
+        oddFooter: "&CPage &P of &N",
+      },
+      sheetProtection: {
+        content: true,
+        objects: true,
+      },
       chart: {
         type: "column",
         title: "Monthly Sales vs Expenses",

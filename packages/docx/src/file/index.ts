@@ -45,4 +45,6 @@ export * from "./bibliography";
 export * from "./chart";
 export * from "./smartart";
 export * from "./glossary";
+export * from "./frameset";
+export * from "./object";
 export { type PropertiesOptions } from "./core-properties";
