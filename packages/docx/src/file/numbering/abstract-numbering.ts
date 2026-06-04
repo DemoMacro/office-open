@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { XmlComponent } from "@file/xml-components";
+import { XmlComponent, stringValObj } from "@file/xml-components";
 import { decimalNumber } from "@util/values";
 
 import { Level } from "./level";
@@ -16,11 +16,23 @@ import type { LevelsOptions } from "./level";
 import { MultiLevelType } from "./multi-level-type";
 
 /**
+ * Options for abstract numbering definitions.
+ */
+export interface AbstractNumberingOptions {
+  /** Unique hex identifier for this numbering set */
+  readonly nsid?: string;
+  /** Template hex identifier */
+  readonly tmpl?: string;
+  /** Name of the numbering definition */
+  readonly name?: string;
+  /** Paragraph style that references this numbering */
+  readonly styleLink?: string;
+  /** Numbering style to inherit from */
+  readonly numStyleLink?: string;
+}
+
+/**
  * Represents an abstract numbering definition in a WordprocessingML document.
- *
- * Abstract numbering definitions define the formatting and style of numbered or
- * bulleted lists that can be referenced by concrete numbering instances.
- * Each abstract definition can contain up to 9 levels.
  *
  * Reference: http://officeopenxml.com/WPnumbering.php
  *
@@ -39,25 +51,6 @@ import { MultiLevelType } from "./multi-level-type";
  *   <xsd:attribute name="abstractNumId" type="ST_DecimalNumber" use="required"/>
  * </xsd:complexType>
  * ```
- *
- * @example
- * ```typescript
- * // Create an abstract numbering definition with multiple levels
- * const abstractNumbering = new AbstractNumbering(1, [
- *   {
- *     level: 0,
- *     format: LevelFormat.DECIMAL,
- *     text: "%1.",
- *     alignment: AlignmentType.LEFT,
- *   },
- *   {
- *     level: 1,
- *     format: LevelFormat.LOWER_LETTER,
- *     text: "%2)",
- *     alignment: AlignmentType.LEFT,
- *   },
- * ]);
- * ```
  */
 export class AbstractNumbering extends XmlComponent {
   /** The unique identifier for this abstract numbering definition. */
@@ -65,11 +58,12 @@ export class AbstractNumbering extends XmlComponent {
 
   /**
    * Creates a new abstract numbering definition.
-   *
-   * @param id - Unique identifier for this abstract numbering definition
-   * @param levelOptions - Array of level definitions (up to 9 levels)
    */
-  public constructor(id: number, levelOptions: readonly LevelsOptions[]) {
+  public constructor(
+    id: number,
+    levelOptions: readonly LevelsOptions[],
+    extraOptions?: AbstractNumberingOptions,
+  ) {
     super("w:abstractNum");
     this.root.push({
       _attr: {
@@ -77,8 +71,26 @@ export class AbstractNumbering extends XmlComponent {
         "w15:restartNumberingAfterBreak": 0,
       },
     });
-    this.root.push(new MultiLevelType("hybridMultilevel"));
     this.id = id;
+
+    if (extraOptions?.nsid !== undefined) {
+      this.root.push(stringValObj("w:nsid", extraOptions.nsid));
+    }
+
+    this.root.push(new MultiLevelType("hybridMultilevel"));
+
+    if (extraOptions?.tmpl !== undefined) {
+      this.root.push(stringValObj("w:tmpl", extraOptions.tmpl));
+    }
+    if (extraOptions?.name !== undefined) {
+      this.root.push(stringValObj("w:name", extraOptions.name));
+    }
+    if (extraOptions?.styleLink !== undefined) {
+      this.root.push(stringValObj("w:styleLink", extraOptions.styleLink));
+    }
+    if (extraOptions?.numStyleLink !== undefined) {
+      this.root.push(stringValObj("w:numStyleLink", extraOptions.numStyleLink));
+    }
 
     for (const option of levelOptions) {
       this.root.push(new Level(option));

@@ -9,6 +9,7 @@
  * @module
  */
 import { XmlComponent, numberValObj } from "@file/xml-components";
+import { BuilderElement } from "@file/xml-components";
 import { decimalNumber } from "@util/values";
 
 import { AlignmentType } from "../paragraph/formatting";
@@ -258,6 +259,12 @@ export interface LevelsOptions {
   readonly suffix?: (typeof LevelSuffix)[keyof typeof LevelSuffix];
   /** Use legal numbering style (e.g., 1.1.1). */
   readonly isLegalNumberingStyle?: boolean;
+  /** Restart numbering after this level (0-based level index). */
+  readonly lvlRestart?: number;
+  /** Picture bullet ID reference. */
+  readonly lvlPicBulletId?: number;
+  /** Legacy spacing/indent settings. */
+  readonly legacy?: { readonly space?: number; readonly indent?: number };
   /** Run and paragraph style properties. */
   readonly style?: {
     /** Run style properties for the numbering text. */
@@ -343,6 +350,9 @@ export class LevelBase extends XmlComponent {
     style,
     suffix,
     isLegalNumberingStyle,
+    lvlRestart,
+    lvlPicBulletId,
+    legacy,
   }: LevelsOptions) {
     super("w:lvl");
 
@@ -350,6 +360,10 @@ export class LevelBase extends XmlComponent {
 
     if (format) {
       this.root.push(new NumberFormat(format));
+    }
+
+    if (lvlRestart !== undefined) {
+      this.root.push(numberValObj("w:lvlRestart", decimalNumber(lvlRestart)));
     }
 
     if (suffix) {
@@ -362,6 +376,21 @@ export class LevelBase extends XmlComponent {
 
     if (text) {
       this.root.push(new LevelText(text));
+    }
+
+    if (lvlPicBulletId !== undefined) {
+      this.root.push(numberValObj("w:lvlPicBulletId", decimalNumber(lvlPicBulletId)));
+    }
+
+    if (legacy !== undefined) {
+      const attrs: { key: string; value: string | number }[] = [];
+      if (legacy.space !== undefined) {
+        attrs.push({ key: "w:legacySpace", value: legacy.space });
+      }
+      if (legacy.indent !== undefined) {
+        attrs.push({ key: "w:legacyIndent", value: legacy.indent });
+      }
+      this.root.push(new BuilderElement({ attributes: attrs, name: "w:legacy" }));
     }
 
     this.root.push(new LevelJc(alignment));
