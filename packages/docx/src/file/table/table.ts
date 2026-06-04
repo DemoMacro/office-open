@@ -9,6 +9,7 @@ import type { FileChild } from "@file/file-child";
 import { BaseXmlComponent } from "@file/xml-components";
 import type { Context } from "@file/xml-components";
 
+import { CustomXmlRow } from "../custom-xml";
 import type { AlignmentType } from "../paragraph";
 import { StructuredDocumentTagRow } from "../sdt";
 import { TableGrid } from "./grid";
@@ -43,7 +44,7 @@ import type { TableWidthProperties } from "./table-width";
  * @see {@link Table}
  */
 export interface TableOptions {
-  readonly rows: readonly (TableRow | StructuredDocumentTagRow | TableRowOptions)[];
+  readonly rows: readonly (TableRow | StructuredDocumentTagRow | CustomXmlRow | TableRowOptions)[];
   readonly width?: TableWidthProperties;
   readonly columnWidths?: readonly number[];
   readonly columnWidthsRevision?: TableGridChangeOptions;
@@ -106,7 +107,7 @@ export class Table extends BaseXmlComponent implements FileChild {
   private readonly options: TableOptions;
   private readonly columnWidths: readonly number[];
   // Coerced rows: plain TableRowOptions are converted to TableRow instances
-  private readonly rows: readonly (TableRow | StructuredDocumentTagRow)[];
+  private readonly rows: readonly (TableRow | StructuredDocumentTagRow | CustomXmlRow)[];
 
   public constructor(options: TableOptions) {
     super("w:tbl");
@@ -114,7 +115,11 @@ export class Table extends BaseXmlComponent implements FileChild {
 
     // Coerce plain TableRowOptions objects into TableRow instances
     this.rows = options.rows.map((row) =>
-      row instanceof TableRow || row instanceof StructuredDocumentTagRow ? row : new TableRow(row),
+      row instanceof TableRow ||
+      row instanceof StructuredDocumentTagRow ||
+      row instanceof CustomXmlRow
+        ? row
+        : new TableRow(row),
     );
 
     this.columnWidths =

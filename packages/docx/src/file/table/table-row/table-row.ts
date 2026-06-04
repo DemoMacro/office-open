@@ -9,6 +9,7 @@ import { BaseXmlComponent } from "@file/xml-components";
 import type { Context } from "@file/xml-components";
 import { xml } from "@office-open/xml";
 
+import { CustomXmlCell } from "../../custom-xml";
 import { StructuredDocumentTagCell } from "../../sdt";
 import { StructuredDocumentTagRow } from "../../sdt";
 import { TableCell } from "../table-cell";
@@ -29,6 +30,7 @@ export type TableRowOptions = {
     | TableCell
     | StructuredDocumentTagCell
     | StructuredDocumentTagRow
+    | CustomXmlCell
     | TableCellOptions
   )[];
   /** Table property exceptions for this row (override table-level properties) */
@@ -79,6 +81,7 @@ export class TableRow extends BaseXmlComponent {
     | TableCell
     | StructuredDocumentTagCell
     | StructuredDocumentTagRow
+    | CustomXmlCell
   )[];
 
   public constructor(private readonly options: TableRowOptions) {
@@ -86,7 +89,8 @@ export class TableRow extends BaseXmlComponent {
     this.coercedChildren = options.cells.map((child) =>
       child instanceof TableCell ||
       child instanceof StructuredDocumentTagCell ||
-      child instanceof StructuredDocumentTagRow
+      child instanceof StructuredDocumentTagRow ||
+      child instanceof CustomXmlCell
         ? child
         : new TableCell(child),
     );

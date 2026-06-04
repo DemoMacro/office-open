@@ -1,9 +1,13 @@
 export {
   CustomXmlBlock,
+  CustomXmlCell,
+  CustomXmlRow,
   CustomXmlRun,
   type CustomXmlBlockOptions,
-  type CustomXmlRunOptions,
+  type CustomXmlCellOptions,
   type CustomXmlDataBindingOptions,
-  type CustomXmlAttributeOptions,
   type CustomXmlPrOptions,
+  type CustomXmlRowOptions,
+  type CustomXmlRunOptions,
+  type CustomXmlAttributeOptions,
 } from "./custom-xml";
