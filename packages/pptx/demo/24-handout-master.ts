@@ -4,6 +4,14 @@ import { Packer, Presentation } from "@office-open/pptx";
 
 const pres = new Presentation({
   includeHandoutMaster: true,
+  handoutMasterOptions: {
+    headerFooter: {
+      date: true,
+      header: true,
+      footer: true,
+      slideNumber: true,
+    },
+  },
   slides: [
     {
       children: [
