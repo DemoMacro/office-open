@@ -156,3 +156,73 @@ export {
 
 // Locked Canvas
 export { LockedCanvas, type LockedCanvasOptions } from "./locked-canvas";
+
+// Diagram (SmartArt dgm: elements)
+export {
+  // Layout variable property set
+  createAdj,
+  createAdjLst,
+  createAnimLvl,
+  createAnimOne,
+  createChMax,
+  createChPref,
+  createOrgChart,
+  createHierBranch,
+  createPresLayoutVars,
+  AnimLevelValue,
+  AnimOneValue,
+  HierBranchStyle,
+  // Definition headers
+  createColorsDefHdr,
+  createColorsDefHdrLst,
+  createLayoutDefHdr,
+  createLayoutDefHdrLst,
+  createStyleDefHdr,
+  createStyleDefHdrLst,
+  // Style and color lists
+  createDiagramStyle,
+  createFillClrLst,
+  createLinClrLst,
+  createEffectClrLst,
+  createTxFillClrLst,
+  createTxLinClrLst,
+  createTxEffectClrLst,
+  createStyleLbl,
+  ColorMethod,
+  HueDirection,
+  StyleMatrixIndex,
+  FontCollectionIndex,
+  // Relationship IDs
+  createDiagramRelIds,
+  // Extension list, sp3d, txPr
+  createDiagramExtLst,
+  createDiagramSp3d,
+  createDiagramTxPr,
+} from "./diagram";
+export type {
+  AdjOptions,
+  AdjLstOptions,
+  AnimLvlOptions,
+  AnimOneOptions,
+  ChMaxOptions,
+  ChPrefOptions,
+  OrgChartOptions,
+  HierBranchOptions,
+  PresLayoutVarsOptions,
+  DiagramNameOptions,
+  DiagramDescriptionOptions,
+  DiagramCategoryOptions,
+  ColorsDefHdrOptions,
+  ColorsDefHdrLstOptions,
+  LayoutDefHdrOptions,
+  LayoutDefHdrLstOptions,
+  StyleDefHdrOptions,
+  StyleDefHdrLstOptions,
+  DiagramStyleOptions,
+  ColorListOptions,
+  DiagramStyleLblOptions,
+  DiagramRelIdsOptions,
+  DiagramExtLstOptions,
+  DiagramExtensionOptions,
+  DiagramTextPropsOptions,
+} from "./diagram";
