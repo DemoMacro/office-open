@@ -328,24 +328,44 @@ function analyzeXsd(config: XsdConfig): CoverageResult {
   const elementNames = [...elements].sort();
   const missingElements = elementNames.filter((e) => !usedNames.has(e));
 
-  // Attributes: same extraction works for prefix:name patterns.
-  // Additionally, for prefix mode, search bare attribute names via key/value patterns
-  // like `key: "attrName"` or `name: "attrName"` in attribute object construction.
+  // Attributes: search for bare attribute names using diverse code patterns.
+  // Unlike elements (which consistently appear as "prefix:name" strings),
+  // attributes appear as bare object keys, property accesses, template attrs, etc.
   const attrNames = [...attributes].sort();
   const usedAttrNames = new Set(usedNames);
 
-  // For prefix mode, also search for bare attribute names in attribute-like contexts
-  if (config.searchMode === "prefix") {
-    for (const dir of config.searchDirs) {
-      const absDir = path.resolve(ROOT_DIR, dir);
-      const files = collectTsFiles(absDir);
-      for (const file of files) {
-        const content = readFileCached(file);
-        // Match patterns like: key: "attrName", name: "attrName", { attrName: ... }
-        // Specifically: `key: "word"` pattern (most common in this codebase)
-        const bareAttrRe = /key:\s*"([a-zA-Z][a-zA-Z0-9]*)"/g;
-        let m: RegExpExecArray | null;
-        while ((m = bareAttrRe.exec(content)) !== null) {
+  for (const dir of config.searchDirs) {
+    const absDir = path.resolve(ROOT_DIR, dir);
+    const files = collectTsFiles(absDir);
+    for (const file of files) {
+      const content = readFileCached(file);
+      let m: RegExpExecArray | null;
+
+      // Object key: allowOverlap: "1", showGridLines: false
+      const objKeyRe = /\b([a-zA-Z][a-zA-Z0-9]{1,})\s*:/g;
+      while ((m = objKeyRe.exec(content)) !== null) {
+        usedAttrNames.add(m[1]);
+      }
+
+      // Property access: svMap.showGridLines, obj.applyFont
+      const propRe = /\.([a-zA-Z][a-zA-Z0-9]{1,})/g;
+      while ((m = propRe.exec(content)) !== null) {
+        usedAttrNames.add(m[1]);
+      }
+
+      // XML attribute in template literal: showGridLines="${...}"
+      const xmlAttrRe = /\b([a-zA-Z][a-zA-Z0-9]+)=["`]/g;
+      while ((m = xmlAttrRe.exec(content)) !== null) {
+        usedAttrNames.add(m[1]);
+      }
+
+      // For prefix mode: "prefix:name" in attribute objects (e.g., { _attr: { "w:val": ... } })
+      if (config.searchMode === "prefix" && config.prefix) {
+        const prefixAttrRe = new RegExp(
+          `["']${escapeRegExp(config.prefix)}([a-zA-Z][a-zA-Z0-9]+)["']`,
+          "g",
+        );
+        while ((m = prefixAttrRe.exec(content)) !== null) {
           usedAttrNames.add(m[1]);
         }
       }

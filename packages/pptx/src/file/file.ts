@@ -11,6 +11,7 @@ import { HyperlinkCollection } from "@file/hyperlink-collection";
 import { Media } from "@file/media/media";
 import { NotesSlide } from "@file/notes/notes-slide";
 import { PresentationProperties } from "@file/presentation-properties";
+import type { PresentationPropertiesFullOptions } from "@file/presentation-properties";
 import { PresentationWrapper } from "@file/presentation/presentation-wrapper";
 import { Relationships } from "@file/relationships/relationships";
 import type { ShapeOptions } from "@file/shape/shape";
@@ -110,6 +111,23 @@ export interface PresentationOptions extends CorePropertiesOptions {
   /** Notes master customization options */
   readonly notesMasterOptions?: import("@file/notes-master/notes-master").NotesMasterOptions;
   readonly tableStyles?: import("@office-open/core").TableStyleListOptions;
+  readonly web?: import("@file/presentation-properties").WebPropertiesOptions;
+  readonly print?: import("@file/presentation-properties").PrintPropertiesOptions;
+  readonly htmlPublish?: import("@file/presentation-properties").HtmlPublishPropertiesOptions;
+  readonly serverZoom?: string;
+  readonly firstSlideNum?: number;
+  readonly showSpecialPlsOnTitleSld?: boolean;
+  readonly rtl?: boolean;
+  readonly removePersonalInfoOnSave?: boolean;
+  readonly compatMode?: boolean;
+  readonly strictFirstAndLastChars?: boolean;
+  readonly embedTrueTypeFonts?: boolean;
+  readonly saveSubsetFonts?: boolean;
+  readonly autoCompressPictures?: boolean;
+  readonly bookmarkIdSeed?: number;
+  readonly conformance?: "strict" | "transitional";
+  readonly photoAlbum?: import("./presentation/presentation").PhotoAlbumOptions;
+  readonly modifyVerifier?: import("./presentation/presentation").ModifyVerifierOptions;
 }
 
 interface RelEntry {
@@ -170,6 +188,26 @@ export class File {
   private readonly viewOpts?: import("@file/view-properties").ViewPropertiesOptions;
   private readonly handoutMasterOpts?: import("@file/handout-master/handout-master").HandoutMasterOptions;
   private readonly notesMasterOpts?: import("@file/notes-master/notes-master").NotesMasterOptions;
+  private readonly presPropsFullOpts?: PresentationPropertiesFullOptions;
+  private readonly presAttrOpts?: Partial<
+    Pick<
+      import("./presentation/presentation").PresentationOptions,
+      | "serverZoom"
+      | "firstSlideNum"
+      | "showSpecialPlsOnTitleSld"
+      | "rtl"
+      | "removePersonalInfoOnSave"
+      | "compatMode"
+      | "strictFirstAndLastChars"
+      | "embedTrueTypeFonts"
+      | "saveSubsetFonts"
+      | "autoCompressPictures"
+      | "bookmarkIdSeed"
+      | "conformance"
+      | "photoAlbum"
+      | "modifyVerifier"
+    >
+  >;
 
   // Lazy components
   private _coreProperties?: CoreProperties;
@@ -213,6 +251,40 @@ export class File {
     const sz = resolveSlideSize(options.size);
     this.slideWidthEmus = sz.width;
     this.slideHeightEmus = sz.height;
+    // Pass presentation attributes through to Presentation
+    if (
+      options.serverZoom ||
+      options.firstSlideNum !== undefined ||
+      options.showSpecialPlsOnTitleSld !== undefined ||
+      options.rtl !== undefined ||
+      options.removePersonalInfoOnSave !== undefined ||
+      options.compatMode !== undefined ||
+      options.strictFirstAndLastChars !== undefined ||
+      options.embedTrueTypeFonts !== undefined ||
+      options.saveSubsetFonts !== undefined ||
+      options.autoCompressPictures !== undefined ||
+      options.bookmarkIdSeed !== undefined ||
+      options.conformance !== undefined ||
+      options.photoAlbum !== undefined ||
+      options.modifyVerifier !== undefined
+    ) {
+      this.presAttrOpts = {
+        serverZoom: options.serverZoom,
+        firstSlideNum: options.firstSlideNum,
+        showSpecialPlsOnTitleSld: options.showSpecialPlsOnTitleSld,
+        rtl: options.rtl,
+        removePersonalInfoOnSave: options.removePersonalInfoOnSave,
+        compatMode: options.compatMode,
+        strictFirstAndLastChars: options.strictFirstAndLastChars,
+        embedTrueTypeFonts: options.embedTrueTypeFonts,
+        saveSubsetFonts: options.saveSubsetFonts,
+        autoCompressPictures: options.autoCompressPictures,
+        bookmarkIdSeed: options.bookmarkIdSeed,
+        conformance: options.conformance,
+        photoAlbum: options.photoAlbum,
+        modifyVerifier: options.modifyVerifier,
+      };
+    }
   }
 
   // ── Master / Layout resolution ──
@@ -428,6 +500,7 @@ export class File {
         slideHeight: this.slideHeightEmus,
         slideIds: this.slideOptions.map((_, i) => 256 + i),
         masterCount: masters.length,
+        ...this.presAttrOpts,
       });
       const presRels = this._presentationWrapper.relationships;
       let rid = 1;
@@ -483,7 +556,12 @@ export class File {
   }
 
   public get presProps(): PresentationProperties {
-    return (this._presProps ??= new PresentationProperties(this.showOptions));
+    return (this._presProps ??= new PresentationProperties({
+      show: this.showOptions,
+      web: this.presPropsFullOpts?.web,
+      print: this.presPropsFullOpts?.print,
+      htmlPublish: this.presPropsFullOpts?.htmlPublish,
+    }));
   }
 
   public get viewProps(): ViewProperties {

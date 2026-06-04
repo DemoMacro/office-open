@@ -15,7 +15,7 @@ const pres = new Presentation({
     penColor: "FF0000",
   },
   view: {
-    lastView: "sldSorterView",
+    lastView: "slideSorterView",
     gridSpacing: { cx: 50800, cy: 50800 },
   },
   slides: [

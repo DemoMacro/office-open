@@ -1,6 +1,39 @@
 import { XmlComponent } from "@file/xml-components";
 import type { Context } from "@file/xml-components";
 
+export interface PhotoAlbumOptions {
+  readonly blackWhite?: boolean;
+  readonly showCaptions?: boolean;
+  readonly layout?: "fitToSlide" | "1Photo" | "2Photo" | "4Photo";
+  readonly frame?:
+    | "frameStyle1"
+    | "frameStyle2"
+    | "frameStyle3"
+    | "frameStyle4"
+    | "frameStyle5"
+    | "frameStyle6"
+    | "none";
+}
+
+export interface ModifyVerifierOptions {
+  readonly algorithmName?: string;
+  readonly hashValue?: string;
+  readonly saltValue?: string;
+  readonly spinValue?: number;
+  readonly cryptProviderType?: string;
+  readonly cryptAlgorithmClass?: string;
+  readonly cryptAlgorithmType?: string;
+  readonly cryptAlgorithmSid?: number;
+  readonly spinCount?: number;
+  readonly saltData?: string;
+  readonly hashData?: string;
+  readonly cryptProvider?: string;
+  readonly algorithmIdExtension?: number;
+  readonly algorithmIdExtensionSource?: string;
+  readonly cryptProviderTypeExtension?: number;
+  readonly cryptProviderTypeExtensionSource?: string;
+}
+
 export interface PresentationOptions {
   readonly slideWidth?: number;
   readonly slideHeight?: number;
@@ -8,6 +41,20 @@ export interface PresentationOptions {
   readonly masterCount: number;
   readonly notesMasterRId?: number;
   readonly handoutMasterRId?: number;
+  readonly serverZoom?: string;
+  readonly firstSlideNum?: number;
+  readonly showSpecialPlsOnTitleSld?: boolean;
+  readonly rtl?: boolean;
+  readonly removePersonalInfoOnSave?: boolean;
+  readonly compatMode?: boolean;
+  readonly strictFirstAndLastChars?: boolean;
+  readonly embedTrueTypeFonts?: boolean;
+  readonly saveSubsetFonts?: boolean;
+  readonly autoCompressPictures?: boolean;
+  readonly bookmarkIdSeed?: number;
+  readonly conformance?: "strict" | "transitional";
+  readonly photoAlbum?: PhotoAlbumOptions;
+  readonly modifyVerifier?: ModifyVerifierOptions;
 }
 
 const DEFAULT_TEXT_STYLE_XML = `<p:defaultTextStyle xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
@@ -67,7 +114,23 @@ export class Presentation extends XmlComponent {
     const cx = opts.slideWidth ?? 12192000;
     const cy = opts.slideHeight ?? 6858000;
 
-    let s = `<p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">`;
+    // Root attributes
+    const rootAttrs: string[] = [];
+    if (opts.serverZoom) rootAttrs.push(` serverZoom="${opts.serverZoom}"`);
+    if (opts.firstSlideNum !== undefined) rootAttrs.push(` firstSlideNum="${opts.firstSlideNum}"`);
+    if (opts.showSpecialPlsOnTitleSld === false) rootAttrs.push(' showSpecialPlsOnTitleSld="0"');
+    if (opts.rtl) rootAttrs.push(' rtl="1"');
+    if (opts.removePersonalInfoOnSave) rootAttrs.push(' removePersonalInfoOnSave="1"');
+    if (opts.compatMode) rootAttrs.push(' compatMode="1"');
+    if (opts.strictFirstAndLastChars === false) rootAttrs.push(' strictFirstAndLastChars="0"');
+    if (opts.embedTrueTypeFonts) rootAttrs.push(' embedTrueTypeFonts="1"');
+    if (opts.saveSubsetFonts) rootAttrs.push(' saveSubsetFonts="1"');
+    if (opts.autoCompressPictures === false) rootAttrs.push(' autoCompressPictures="0"');
+    if (opts.bookmarkIdSeed !== undefined)
+      rootAttrs.push(` bookmarkIdSeed="${opts.bookmarkIdSeed}"`);
+    if (opts.conformance) rootAttrs.push(` conformance="${opts.conformance}"`);
+
+    let s = `<p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"${rootAttrs.join("")}>`;
     s += "<p:sldMasterIdLst>";
     for (let mi = 0; mi < opts.masterCount; mi++) {
       s += `<p:sldMasterId id="${2147483648 + mi * 12}" r:id="rId${mi + 1}"/>`;
@@ -87,7 +150,45 @@ export class Presentation extends XmlComponent {
     s += "</p:sldIdLst>";
     s += `<p:sldSz cx="${cx}" cy="${cy}"/>`;
     s += '<p:notesSz cx="6858000" cy="9144000"/>';
+
+    if (opts.photoAlbum) {
+      const pa = opts.photoAlbum;
+      const paAttrs: string[] = [];
+      if (pa.blackWhite) paAttrs.push(' bw="1"');
+      if (pa.showCaptions) paAttrs.push(' showCaptions="1"');
+      if (pa.layout) paAttrs.push(` layout="${pa.layout}"`);
+      if (pa.frame) paAttrs.push(` frame="${pa.frame}"`);
+      s += `<p:photoAlbum${paAttrs.join("")}/>`;
+    }
+
     s += DEFAULT_TEXT_STYLE_XML;
+
+    if (opts.modifyVerifier) {
+      const mv = opts.modifyVerifier;
+      const mvAttrs: string[] = [];
+      if (mv.algorithmName) mvAttrs.push(` algorithmName="${mv.algorithmName}"`);
+      if (mv.hashValue) mvAttrs.push(` hashValue="${mv.hashValue}"`);
+      if (mv.saltValue) mvAttrs.push(` saltValue="${mv.saltValue}"`);
+      if (mv.spinValue !== undefined) mvAttrs.push(` spinValue="${mv.spinValue}"`);
+      if (mv.cryptProviderType) mvAttrs.push(` cryptProviderType="${mv.cryptProviderType}"`);
+      if (mv.cryptAlgorithmClass) mvAttrs.push(` cryptAlgorithmClass="${mv.cryptAlgorithmClass}"`);
+      if (mv.cryptAlgorithmType) mvAttrs.push(` cryptAlgorithmType="${mv.cryptAlgorithmType}"`);
+      if (mv.cryptAlgorithmSid !== undefined)
+        mvAttrs.push(` cryptAlgorithmSid="${mv.cryptAlgorithmSid}"`);
+      if (mv.spinCount !== undefined) mvAttrs.push(` spinCount="${mv.spinCount}"`);
+      if (mv.saltData) mvAttrs.push(` saltData="${mv.saltData}"`);
+      if (mv.hashData) mvAttrs.push(` hashData="${mv.hashData}"`);
+      if (mv.cryptProvider) mvAttrs.push(` cryptProvider="${mv.cryptProvider}"`);
+      if (mv.algorithmIdExtension !== undefined)
+        mvAttrs.push(` algIdExt="${mv.algorithmIdExtension}"`);
+      if (mv.algorithmIdExtensionSource)
+        mvAttrs.push(` algIdExtSource="${mv.algorithmIdExtensionSource}"`);
+      if (mv.cryptProviderTypeExtension !== undefined)
+        mvAttrs.push(` cryptProviderTypeExt="${mv.cryptProviderTypeExtension}"`);
+      if (mv.cryptProviderTypeExtensionSource)
+        mvAttrs.push(` cryptProviderTypeExtSource="${mv.cryptProviderTypeExtensionSource}"`);
+      s += `<p:modifyVerifier${mvAttrs.join("")}/>`;
+    }
     s += "</p:presentation>";
     return s;
   }
