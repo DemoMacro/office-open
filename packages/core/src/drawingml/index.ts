@@ -153,3 +153,6 @@ export {
   type GroupLockingOptions,
   type GraphicFrameLockingOptions,
 } from "./locking";
+
+// Locked Canvas
+export { LockedCanvas, type LockedCanvasOptions } from "./locked-canvas";

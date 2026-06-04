@@ -253,22 +253,29 @@ function extractUsedNamesFromCode(config: XsdConfig): Set<string> {
       const content = readFileCached(file);
 
       if (config.searchMode === "prefix" && prefixStr) {
-        // Match "prefix:word" patterns (e.g., "w:p", "a:solidFill")
+        // Pattern 1: literal "prefix:word" strings (e.g., "w:p", "a:solidFill")
         const re = new RegExp(`${escapeRegExp(prefixStr)}[a-zA-Z][a-zA-Z0-9]*`, "g");
         let m: RegExpExecArray | null;
         while ((m = re.exec(content)) !== null) {
           const bareName = m[0].slice(prefixStr.length);
           if (bareName) found.add(bareName);
         }
+
+        // Pattern 2: template string dynamic prefix like `${element}:spPr`
+        // Matches `}:word` which indicates dynamic prefix + static suffix
+        const tmplRe = /\}(:[a-zA-Z][a-zA-Z0-9]*)/g;
+        while ((m = tmplRe.exec(content)) !== null) {
+          // m[1] is like ":spPr" — the suffix
+          const suffix = m[1].slice(1);
+          if (suffix) found.add(suffix);
+        }
       } else {
         // bare mode (xlsx/sml): match "word" in string literals and <word in XML strings
-        // Pattern 1: quoted identifiers like super("worksheet") → "worksheet"
         const quotedRe = /"([a-zA-Z][a-zA-Z0-9]+)"/g;
         let m: RegExpExecArray | null;
         while ((m = quotedRe.exec(content)) !== null) {
           found.add(m[1]);
         }
-        // Pattern 2: XML-like tags in string concatenation: <worksheet
         const tagRe = /<([a-zA-Z][a-zA-Z0-9]+)[\s>\/"]/g;
         while ((m = tagRe.exec(content)) !== null) {
           found.add(m[1]);
