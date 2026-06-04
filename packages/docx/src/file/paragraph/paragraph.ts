@@ -7,7 +7,7 @@ import type { FootnoteReferenceRun } from "@file/footnotes";
  * @module
  */
 import { BaseXmlComponent } from "@file/xml-components";
-import type { Context, IXmlableObject } from "@file/xml-components";
+import type { Context } from "@file/xml-components";
 import { xml } from "@office-open/xml";
 import { uniqueId } from "@util/convenience-functions";
 
@@ -279,19 +279,25 @@ export class Paragraph extends BaseXmlComponent implements FileChild {
     }
 
     // 2. Paragraph properties (pre-built IXmlableObject → xml())
-    let finalPPrObj = this._props.xml;
-    if (this.sectionProperties) {
-      const sectPrObj = this.sectionProperties.prepForXml(context);
-      if (sectPrObj) {
-        if (finalPPrObj) {
-          (finalPPrObj["w:pPr"] as IXmlableObject[]).push(sectPrObj);
+    const pPrObj = this._props.xml;
+    if (pPrObj) {
+      if (this.sectionProperties) {
+        const sectPrXml = this.sectionProperties.toXml(context);
+        if (sectPrXml) {
+          // Insert sectPr before closing </w:pPr>
+          const pPrXml = xml(pPrObj);
+          parts.push(pPrXml.replace("</w:pPr>", sectPrXml + "</w:pPr>"));
         } else {
-          finalPPrObj = { "w:pPr": [sectPrObj] };
+          parts.push(xml(pPrObj));
         }
+      } else {
+        parts.push(xml(pPrObj));
       }
-    }
-    if (finalPPrObj) {
-      parts.push(xml(finalPPrObj));
+    } else if (this.sectionProperties) {
+      const sectPrXml = this.sectionProperties.toXml(context);
+      if (sectPrXml) {
+        parts.push("<w:pPr>" + sectPrXml + "</w:pPr>");
+      }
     }
 
     // 3. Front runs

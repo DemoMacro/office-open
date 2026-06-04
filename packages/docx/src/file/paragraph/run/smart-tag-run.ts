@@ -8,7 +8,6 @@
  *
  * @module
  */
-import type { IXmlableObject } from "@file/xml-components";
 import {
   BaseXmlComponent as BaseXmlComp,
   BuilderElement,
@@ -52,11 +51,8 @@ export interface SmartTagRunOptions {
  * ```
  */
 export class SmartTagRun extends XmlComponent {
-  private readonly options: SmartTagRunOptions;
-
   public constructor(options: SmartTagRunOptions) {
     super("w:smartTag");
-    this.options = options;
 
     const attrs: Record<string, string> = {};
     if (options.uri !== undefined) attrs["w:uri"] = options.uri;
@@ -68,38 +64,14 @@ export class SmartTagRun extends XmlComponent {
     if (options.properties && options.properties.length > 0) {
       this.root.push(new SmartTagProperties(options.properties));
     }
-  }
 
-  public override prepForXml(
-    context: import("@file/xml-components").Context,
-  ): IXmlableObject | undefined {
-    const attrs: Record<string, string> = {};
-    if (this.options.uri !== undefined) attrs["w:uri"] = this.options.uri;
-    if (this.options.element !== undefined) attrs["w:element"] = this.options.element;
-
-    const inner: (IXmlableObject | { _attr: Record<string, string> })[] = [];
-    if (Object.keys(attrs).length > 0) inner.push({ _attr: attrs });
-
-    if (this.options.properties && this.options.properties.length > 0) {
-      const attrChildren: IXmlableObject[] = [];
-      for (const a of this.options.properties) {
-        attrChildren.push({
-          "w:attr": { _attr: { "w:uri": a.uri, "w:name": a.name, "w:val": a.val } },
-        });
-      }
-      inner.push({ "w:smartTagPr": attrChildren });
-    }
-
-    if (this.options.children) {
-      for (const child of this.options.children) {
+    if (options.children) {
+      for (const child of options.children) {
         if (child instanceof BaseXmlComp) {
-          const obj = child.prepForXml(context);
-          if (obj) inner.push(obj);
+          this.root.push(child);
         }
       }
     }
-
-    return inner.length > 0 ? { "w:smartTag": inner } : { "w:smartTag": {} };
   }
 }
 

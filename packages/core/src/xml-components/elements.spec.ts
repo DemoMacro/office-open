@@ -112,34 +112,30 @@ describe("attrObj", () => {
 describe("EmptyElement (CT_Empty)", () => {
   it("should produce an empty element", () => {
     const el = new EmptyElement("w:bookmarkStart");
-    expect(el.prepForXml(emptyContext)).toEqual({ "w:bookmarkStart": {} });
+    expect(el.toXml(emptyContext)).toEqual("<w:bookmarkStart/>");
   });
 });
 
 describe("BuilderElement", () => {
   it("should create an element with no attributes or children", () => {
     const el = new BuilderElement({ name: "w:p" });
-    expect(el.prepForXml(emptyContext)).toEqual({ "w:p": {} });
+    expect(el.toXml(emptyContext)).toEqual("<w:p/>");
   });
 
-  it("should create an element with attributes (single attr unwrapped)", () => {
+  it("should create an element with attributes", () => {
     const el = new BuilderElement({
       name: "w:pPr",
       attributes: {
         style: { key: "w:val", value: "Test" },
       },
     });
-    expect(el.prepForXml(emptyContext)).toEqual({
-      "w:pPr": { _attr: { "w:val": "Test" } },
-    });
+    expect(el.toXml(emptyContext)).toEqual('<w:pPr w:val="Test"/>');
   });
 
   it("should create an element with children", () => {
     const child = new EmptyElement("w:r");
     const el = new BuilderElement({ name: "w:p", children: [child] });
-    expect(el.prepForXml(emptyContext)).toEqual({
-      "w:p": [{ "w:r": {} }],
-    });
+    expect(el.toXml(emptyContext)).toEqual("<w:p><w:r/></w:p>");
   });
 
   it("should create an element with both attributes and children", () => {
@@ -149,9 +145,7 @@ describe("BuilderElement", () => {
       attributes: { lang: { key: "xml:lang", value: "en-US" } },
       children: [child],
     });
-    expect(el.prepForXml(emptyContext)).toEqual({
-      "w:r": [{ _attr: { "xml:lang": "en-US" } }, { "w:t": ["text"] }],
-    });
+    expect(el.toXml(emptyContext)).toEqual('<w:r xml:lang="en-US"><w:t>text</w:t></w:r>');
   });
 
   it("should accept IXmlableObject children directly", () => {
@@ -159,9 +153,7 @@ describe("BuilderElement", () => {
       name: "w:pPr",
       children: [onOffObj("w:b", true), stringValObj("w:pStyle", "Heading1")],
     });
-    expect(el.prepForXml(emptyContext)).toEqual({
-      "w:pPr": [{ "w:b": {} }, { "w:pStyle": { _attr: { "w:val": "Heading1" } } }],
-    });
+    expect(el.toXml(emptyContext)).toEqual('<w:pPr><w:b/><w:pStyle w:val="Heading1"/></w:pPr>');
   });
 });
 
@@ -178,8 +170,6 @@ describe("wrapEl", () => {
   it("should wrap a component in a named element", () => {
     const inner = new EmptyElement("w:r");
     const wrapped = wrapEl("w:r", inner);
-    expect(wrapped.prepForXml(emptyContext)).toEqual({
-      "w:r": [{ "w:r": {} }],
-    });
+    expect(wrapped.toXml(emptyContext)).toEqual("<w:r><w:r/></w:r>");
   });
 });

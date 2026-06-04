@@ -12,7 +12,7 @@ describe("XmlComponent", () => {
         super("w:p");
       }
     })();
-    expect(el.prepForXml(emptyContext)).toEqual({ "w:p": {} });
+    expect(el.toXml(emptyContext)).toEqual("<w:p/>");
   });
 
   it("should nest child components", () => {
@@ -30,9 +30,7 @@ describe("XmlComponent", () => {
     }
 
     const el = new TestEl();
-    expect(el.prepForXml(emptyContext)).toEqual({
-      "w:p": [{ "w:r": {} }],
-    });
+    expect(el.toXml(emptyContext)).toEqual("<w:p><w:r/></w:p>");
   });
 
   it("should include text content", () => {
@@ -44,7 +42,7 @@ describe("XmlComponent", () => {
     }
 
     const el = new TestEl();
-    expect(el.prepForXml(emptyContext)).toEqual({ "w:t": ["Hello World"] });
+    expect(el.toXml(emptyContext)).toEqual("<w:t>Hello World</w:t>");
   });
 });
 
@@ -58,7 +56,7 @@ describe("IgnoreIfEmptyXmlComponent", () => {
     }
 
     const el = new TestEl();
-    expect(el.prepForXml(emptyContext)).toEqual({ "w:p": ["content"] });
+    expect(el.toXml(emptyContext)).toEqual("<w:p>content</w:p>");
   });
 
   it("should exclude element when empty", () => {
@@ -69,7 +67,7 @@ describe("IgnoreIfEmptyXmlComponent", () => {
     }
 
     const el = new TestEl();
-    expect(el.prepForXml(emptyContext)).toBeUndefined();
+    expect(el.toXml(emptyContext)).toEqual("");
   });
 
   it("should include element when includeIfEmpty is true", () => {
@@ -80,7 +78,7 @@ describe("IgnoreIfEmptyXmlComponent", () => {
     }
 
     const el = new TestEl();
-    expect(el.prepForXml(emptyContext)).toEqual({ "w:p": {} });
+    expect(el.toXml(emptyContext)).toEqual("<w:p/>");
   });
 });
 

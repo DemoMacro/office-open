@@ -1,4 +1,3 @@
-import { EMPTY_OBJECT } from "@file/xml-components";
 import {
   ImportedRootElementAttributes,
   ImportedXmlComponent,
@@ -53,22 +52,10 @@ describe("ImportedXmlComponent", () => {
     importedXmlComponent.push(new ImportedXmlComponent("w:child"));
   });
 
-  describe("#prepForXml()", () => {
-    it("should transform for xml", () => {
-      const converted = importedXmlComponent.prepForXml({ stack: [] } as unknown as Context);
-      expect(JSON.parse(JSON.stringify(converted))).to.deep.equal({
-        "w:test": [
-          {
-            _attr: {
-              otherAttr: "2",
-              someAttr: "1",
-            },
-          },
-          {
-            "w:child": EMPTY_OBJECT,
-          },
-        ],
-      });
+  describe("#toXml()", () => {
+    it("should serialize to XML string", () => {
+      const result = importedXmlComponent.toXml({ stack: [] } as unknown as Context);
+      expect(result).toEqual('<w:test otherAttr="2" someAttr="1"><w:child/></w:test>');
     });
   });
 
@@ -120,12 +107,10 @@ describe("ImportedRootElementAttributes", () => {
     attributes = new ImportedRootElementAttributes({});
   });
 
-  describe("#prepForXml()", () => {
-    it("should work", () => {
-      const converted = attributes.prepForXml({} as Context);
-      expect(converted).to.deep.equal({
-        _attr: {},
-      });
+  describe("#toXml()", () => {
+    it("should produce empty string (attributes merged into parent)", () => {
+      const result = attributes.toXml({} as Context);
+      expect(result).toEqual("");
     });
   });
 });

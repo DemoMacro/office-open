@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 
 import type { Context } from "./base";
-import { EMPTY_OBJECT } from "./component";
 import {
   ImportedXmlComponent,
   ImportedRootElementAttributes,
@@ -16,29 +15,25 @@ describe("ImportedXmlComponent", () => {
     const component = ImportedXmlComponent.fromXmlString(xml);
     expect(component).toBeDefined();
 
-    const result = component.prepForXml(emptyContext);
-    expect(result).toBeDefined();
-    // rootKey comes from the XML root element
-    const keys = Object.keys(result!);
-    expect(keys).toContain("w:p");
+    const result = component.toXml(emptyContext);
+    expect(result).toContain("<w:p");
+    expect(result).toContain("Text");
   });
 
   it("should handle attributes", () => {
     const component = new ImportedXmlComponent("w:test", { attr1: "value1", attr2: "value2" });
     component.push(new ImportedXmlComponent("w:child"));
 
-    const result = component.prepForXml(emptyContext);
-    expect(result).toEqual({
-      "w:test": [{ _attr: { attr1: "value1", attr2: "value2" } }, { "w:child": EMPTY_OBJECT }],
-    });
+    const result = component.toXml(emptyContext);
+    expect(result).toEqual('<w:test attr1="value1" attr2="value2"><w:child/></w:test>');
   });
 
   it("should handle text nodes", () => {
     const component = new ImportedXmlComponent("w:p");
     component.push("Hello");
 
-    const result = component.prepForXml(emptyContext);
-    expect(result).toEqual({ "w:p": ["Hello"] });
+    const result = component.toXml(emptyContext);
+    expect(result).toEqual("<w:p>Hello</w:p>");
   });
 });
 
@@ -65,8 +60,8 @@ describe("convertToXmlComponent", () => {
 });
 
 describe("ImportedRootElementAttributes", () => {
-  it("should produce _attr output", () => {
+  it("should produce empty string (attributes merged into parent)", () => {
     const attrs = new ImportedRootElementAttributes({ key: "value" });
-    expect(attrs.prepForXml(emptyContext as Context)).toEqual({ _attr: { key: "value" } });
+    expect(attrs.toXml(emptyContext)).toEqual("");
   });
 });

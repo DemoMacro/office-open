@@ -14,7 +14,7 @@ describe("InitializableXmlComponent", () => {
     }
 
     const el = new TestEl();
-    expect(el.prepForXml(emptyContext)).toEqual({ "w:p": {} });
+    expect(el.toXml(emptyContext)).toEqual("<w:p/>");
   });
 
   it("should copy root from init component", () => {
@@ -28,6 +28,6 @@ describe("InitializableXmlComponent", () => {
     source.root.push("content");
 
     const copy = new TestEl(source);
-    expect(copy.prepForXml(emptyContext)).toEqual({ "w:p": ["content"] });
+    expect(copy.toXml(emptyContext)).toEqual("<w:p>content</w:p>");
   });
 });
