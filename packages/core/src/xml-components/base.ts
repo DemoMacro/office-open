@@ -30,13 +30,6 @@ export abstract class BaseXmlComponent {
   }
 
   /**
-   * @deprecated Use `toXml()` instead.
-   */
-  public prepForXml(_context: Context): IXmlableObject | undefined {
-    return undefined;
-  }
-
-  /**
    * Direct XML serialization. Override in subclasses for zero-allocation output.
    */
   public toXml(_context: Context): string {

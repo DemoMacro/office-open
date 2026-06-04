@@ -1,3 +1,4 @@
+import { xml } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import type { Context, IXmlableObject } from "./xml-components";
@@ -52,7 +53,7 @@ export class RawPassthrough extends BaseXmlComponent {
     super(element.name ?? "unknown");
   }
 
-  public prepForXml(_context: Context): IXmlableObject {
-    return elementToCompact(this.element);
+  public override toXml(_context: Context): string {
+    return xml(elementToCompact(this.element));
   }
 }

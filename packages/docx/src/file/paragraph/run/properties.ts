@@ -318,7 +318,7 @@ export class RunPropertiesChange extends XmlComponent {
 
 /**
  * Build run properties (w:rPr) as IXmlableObject without allocating XmlComponent tree.
- * Used by Run.prepForXml for O(1) construction.
+ * Used by Run.toXml for O(1) construction.
  */
 export function buildRunProperties(options?: RunPropertiesOptions): IXmlableObject | undefined {
   if (!options) return undefined;

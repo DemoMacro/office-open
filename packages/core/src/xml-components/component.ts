@@ -43,38 +43,6 @@ export abstract class XmlComponent extends BaseXmlComponent {
   }
 
   /**
-   * @deprecated Use `toXml()` instead.
-   */
-  public override prepForXml(context: Context): IXmlableObject | undefined {
-    context.stack.push(this);
-
-    const children: (BaseXmlComponent | IXmlableObject | string | undefined)[] = [];
-    for (const comp of this.root) {
-      if (comp instanceof BaseXmlComponent) {
-        const prepared = comp.prepForXml(context);
-        if (prepared !== undefined) {
-          children.push(prepared);
-        }
-      } else {
-        children.push(comp);
-      }
-    }
-
-    context.stack.pop();
-
-    return {
-      [this.rootKey]: children.length
-        ? children.length === 1 &&
-          children[0] &&
-          typeof children[0] === "object" &&
-          "_attr" in children[0]
-          ? children[0]
-          : children
-        : EMPTY_OBJECT,
-    };
-  }
-
-  /**
    * Direct XML serialization — traverses `root` and calls `toXml()` on
    * each child, concatenating the results into a single string.
    */
@@ -148,7 +116,7 @@ export abstract class XmlComponent extends BaseXmlComponent {
   }
 
   /**
-   * @deprecated Internal use only.
+   * @internal
    */
   public addChildElement(child: BaseXmlComponent | string): XmlComponent {
     this.root.push(child);
@@ -165,17 +133,6 @@ export abstract class IgnoreIfEmptyXmlComponent extends XmlComponent {
   public constructor(rootKey: string, includeIfEmpty?: boolean) {
     super(rootKey);
     this.includeIfEmpty = includeIfEmpty;
-  }
-
-  /**
-   * @deprecated Use `toXml()` instead.
-   */
-  public override prepForXml(context: Context): IXmlableObject | undefined {
-    if (this.includeIfEmpty) {
-      return super.prepForXml(context);
-    }
-    const result = super.prepForXml(context);
-    return result && result[this.rootKey] === EMPTY_OBJECT ? undefined : result;
   }
 
   /**

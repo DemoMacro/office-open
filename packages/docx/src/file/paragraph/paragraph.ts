@@ -235,7 +235,7 @@ export class Paragraph extends BaseXmlComponent implements FileChild {
 
   // Cached at construction time — options never change.
   private readonly _props: ReturnType<typeof buildParagraphProperties>;
-  // Pre-created TextRun for options.text shorthand (avoids allocation in prepForXml).
+  // Pre-created TextRun for options.text shorthand (avoids allocation in toXml).
   private readonly _textRun: TextRun | undefined;
 
   public constructor(options: string | ParagraphOptions) {
@@ -268,7 +268,7 @@ export class Paragraph extends BaseXmlComponent implements FileChild {
   public override toXml(context: Context): string {
     const parts: string[] = [];
 
-    // 1. Numbering registration (side effect — same as prepForXml)
+    // 1. Numbering registration (side effect)
     if (!(context.viewWrapper instanceof FontWrapper)) {
       for (const reference of this._props.numberingReferences) {
         context.file.numbering.createConcreteNumberingInstance(

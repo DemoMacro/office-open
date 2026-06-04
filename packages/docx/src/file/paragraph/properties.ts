@@ -833,7 +833,7 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
    * Register numbering references (side effect) before serialization.
    */
   public override toXml(context: Context): string {
-    // Trigger the same side effects as prepForXml() for numbering registration
+    // Trigger numbering registration side effects
     if (!(context.viewWrapper instanceof FontWrapper)) {
       for (const reference of this.numberingReferences) {
         context.file.numbering.createConcreteNumberingInstance(

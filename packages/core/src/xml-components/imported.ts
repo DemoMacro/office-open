@@ -7,7 +7,7 @@ import { xml2js } from "@office-open/xml";
 import type { Attributes, Element as XmlElement } from "@office-open/xml";
 
 import { XmlComponent } from ".";
-import type { Context, IXmlableObject } from "./base";
+import type { Context } from "./base";
 
 /**
  * Converts an xml-js Element into an XmlComponent tree.
@@ -81,15 +81,6 @@ export class ImportedRootElementAttributes extends XmlComponent {
     if (_attr) {
       this.root.push({ _attr });
     }
-  }
-
-  /**
-   * @deprecated Use `toXml()` instead.
-   */
-  public override prepForXml(_context: Context): IXmlableObject {
-    return {
-      _attr: this._attr,
-    };
   }
 
   public override toXml(_context: Context): string {
