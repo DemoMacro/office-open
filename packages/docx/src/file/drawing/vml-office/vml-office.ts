@@ -61,6 +61,8 @@ export interface OShapeDefaultsOptions {
   readonly fill?: string;
   readonly stroke?: string;
   readonly allowInCell?: boolean;
+  readonly fillColor?: string;
+  readonly strokeColor?: string;
 }
 
 /**
@@ -80,6 +82,10 @@ export const createOShapedefaults = (options?: OShapeDefaultsOptions): XmlCompon
   if (options?.stroke !== undefined) attrs.stroke = { key: "stroke", value: options.stroke };
   if (options?.allowInCell !== undefined)
     attrs.allowInCell = { key: "allowincell", value: options.allowInCell ? "t" : "f" };
+  if (options?.fillColor !== undefined)
+    attrs.fillColor = { key: "fillcolor", value: options.fillColor };
+  if (options?.strokeColor !== undefined)
+    attrs.strokeColor = { key: "strokecolor", value: options.strokeColor };
   return new BuilderElement({
     name: "o:shapedefaults",
     attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
@@ -120,7 +126,30 @@ export const createOColormru = (options?: OColorMruOptions): XmlComponent =>
  * <xsd:element name="colormenu" type="CT_ColorMenu"/>
  * ```
  */
-export const createOColormenu = (): XmlComponent => new BuilderElement({ name: "o:colormenu" });
+export interface OColorMenuOptions {
+  readonly ext?: string;
+  readonly strokeColor?: string;
+  readonly fillColor?: string;
+  readonly shadowColor?: string;
+  readonly extrusionColor?: string;
+}
+
+export const createOColormenu = (options?: OColorMenuOptions): XmlComponent => {
+  const attrs: Record<string, { key: string; value: string }> = {};
+  if (options?.ext !== undefined) attrs.ext = { key: "v:ext", value: options.ext };
+  if (options?.strokeColor !== undefined)
+    attrs.strokeColor = { key: "strokecolor", value: options.strokeColor };
+  if (options?.fillColor !== undefined)
+    attrs.fillColor = { key: "fillcolor", value: options.fillColor };
+  if (options?.shadowColor !== undefined)
+    attrs.shadowColor = { key: "shadowcolor", value: options.shadowColor };
+  if (options?.extrusionColor !== undefined)
+    attrs.extrusionColor = { key: "extrusioncolor", value: options.extrusionColor };
+  return new BuilderElement({
+    name: "o:colormenu",
+    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
+  });
+};
 
 // ── Lock ──
 
@@ -138,6 +167,7 @@ export interface OLockOptions {
   readonly aspectRatio?: boolean;
   readonly formatting?: boolean;
   readonly locking?: boolean;
+  readonly shapeType?: boolean;
 }
 
 /**
@@ -162,6 +192,7 @@ export const createOLock = (options?: OLockOptions): XmlComponent => {
     { prop: "aspectRatio", xmlKey: "aspectratio" },
     { prop: "formatting", xmlKey: "formatting" },
     { prop: "locking", xmlKey: "locking" },
+    { prop: "shapeType", xmlKey: "shapetype" },
   ];
   const attrs: Record<string, { key: string; value: string }> = {};
   if (options?.ext !== undefined) attrs.ext = { key: "v:ext", value: options.ext };
@@ -208,6 +239,9 @@ export interface OExtrusionOptions {
   readonly rotationAngle?: string;
   readonly rotationCenter?: string;
   readonly colorMode?: "auto" | "custom";
+  readonly lockRotationCenter?: boolean;
+  readonly specularity?: string;
+  readonly diffusity?: string;
 }
 
 /**
@@ -275,6 +309,15 @@ export const createOExtrusion = (options?: OExtrusionOptions): XmlComponent => {
     attrs.rotationCenter = { key: "rotationcenter", value: options.rotationCenter };
   if (options?.colorMode !== undefined)
     attrs.colorMode = { key: "colormode", value: options.colorMode };
+  if (options?.lockRotationCenter !== undefined)
+    attrs.lockRotationCenter = {
+      key: "lockrotationcenter",
+      value: options.lockRotationCenter ? "t" : "f",
+    };
+  if (options?.specularity !== undefined)
+    attrs.specularity = { key: "specularity", value: options.specularity };
+  if (options?.diffusity !== undefined)
+    attrs.diffusity = { key: "diffusity", value: options.diffusity };
   return new BuilderElement({
     name: "o:extrusion",
     attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
@@ -297,6 +340,9 @@ export interface OCalloutOptions {
   readonly accentBar?: boolean;
   readonly border?: boolean;
   readonly button?: boolean;
+  readonly textBorder?: boolean;
+  readonly minusX?: boolean;
+  readonly minusY?: boolean;
 }
 
 /**
@@ -328,6 +374,12 @@ export const createOCallout = (options?: OCalloutOptions): XmlComponent => {
     attrs.border = { key: "border", value: options.border ? "t" : "f" };
   if (options?.button !== undefined)
     attrs.button = { key: "button", value: options.button ? "t" : "f" };
+  if (options?.textBorder !== undefined)
+    attrs.textBorder = { key: "textborder", value: options.textBorder ? "t" : "f" };
+  if (options?.minusX !== undefined)
+    attrs.minusX = { key: "minusx", value: options.minusX ? "t" : "f" };
+  if (options?.minusY !== undefined)
+    attrs.minusY = { key: "minusy", value: options.minusY ? "t" : "f" };
   return new BuilderElement({
     name: "o:callout",
     attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
@@ -380,6 +432,8 @@ export interface ODiagramOptions {
   readonly diagramLayout?: string;
   readonly diagramLayoutMru?: string;
   readonly diagramNodeKind?: number;
+  readonly reverse?: boolean;
+  readonly constrainBounds?: string;
 }
 
 /**
@@ -414,6 +468,10 @@ export const createODiagram = (options?: ODiagramOptions): XmlComponent => {
     attrs.diagramLayoutMru = { key: "dgmlayoutmru", value: options.diagramLayoutMru };
   if (options?.diagramNodeKind !== undefined)
     attrs.diagramNodeKind = { key: "dgmnodekind", value: options.diagramNodeKind };
+  if (options?.reverse !== undefined)
+    attrs.reverse = { key: "reverse", value: options.reverse ? "t" : "f" };
+  if (options?.constrainBounds !== undefined)
+    attrs.constrainBounds = { key: "constrainbounds", value: options.constrainBounds };
   return new BuilderElement({
     name: "o:diagram",
     attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
@@ -430,7 +488,24 @@ export const createODiagram = (options?: ODiagramOptions): XmlComponent => {
  * <xsd:element name="ink" type="CT_Ink"/>
  * ```
  */
-export const createOInk = (): XmlComponent => new BuilderElement({ name: "o:ink" });
+export interface OInkOptions {
+  readonly i?: string;
+  readonly annotation?: boolean;
+  readonly contentType?: string;
+}
+
+export const createOInk = (options?: OInkOptions): XmlComponent => {
+  const attrs: Record<string, { key: string; value: string }> = {};
+  if (options?.i !== undefined) attrs.i = { key: "i", value: options.i };
+  if (options?.annotation !== undefined)
+    attrs.annotation = { key: "annotation", value: options.annotation ? "t" : "f" };
+  if (options?.contentType !== undefined)
+    attrs.contentType = { key: "contentType", value: options.contentType };
+  return new BuilderElement({
+    name: "o:ink",
+    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
+  });
+};
 
 // ── Equation XML ──
 
@@ -442,7 +517,19 @@ export const createOInk = (): XmlComponent => new BuilderElement({ name: "o:ink"
  * <xsd:element name="equationxml" type="CT_EquationXml"/>
  * ```
  */
-export const createOEquationxml = (): XmlComponent => new BuilderElement({ name: "o:equationxml" });
+export interface OEquationXmlOptions {
+  readonly contentType?: string;
+}
+
+export const createOEquationxml = (options?: OEquationXmlOptions): XmlComponent => {
+  const attrs: Record<string, { key: string; value: string }> = {};
+  if (options?.contentType !== undefined)
+    attrs.contentType = { key: "contentType", value: options.contentType };
+  return new BuilderElement({
+    name: "o:equationxml",
+    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
+  });
+};
 
 // ── Signature Line ──
 
@@ -462,6 +549,7 @@ export interface OSignatureLineOptions {
   readonly additionalXml?: string;
   readonly provision?: string;
   readonly button?: boolean;
+  readonly sigProvUrl?: string;
 }
 
 /**
@@ -491,8 +579,23 @@ export const createOSignatureline = (options?: OSignatureLineOptions): XmlCompon
     attrs.showSignDate = { key: "showsigndate", value: options.showSignDate ? "t" : "f" };
   if (options?.signatureLine !== undefined)
     attrs.signatureLine = { key: "signatureline", value: options.signatureLine ? "t" : "f" };
+  if (options?.suggestedSigner !== undefined)
+    attrs.suggestedSigner = { key: "suggestedsigner", value: options.suggestedSigner };
+  if (options?.suggestedSigner2 !== undefined)
+    attrs.suggestedSigner2 = { key: "suggestedsigner2", value: options.suggestedSigner2 };
+  if (options?.suggestedSignerEmail !== undefined)
+    attrs.suggestedSignerEmail = {
+      key: "suggestedsigneremail",
+      value: options.suggestedSignerEmail,
+    };
+  if (options?.signingInstructions !== undefined)
+    attrs.signingInstructions = { key: "signinginstructions", value: options.signingInstructions };
   if (options?.additionalXml !== undefined)
     attrs.additionalXml = { key: "addlxml", value: options.additionalXml };
+  if (options?.provision !== undefined)
+    attrs.provision = { key: "provid", value: options.provision };
+  if (options?.sigProvUrl !== undefined)
+    attrs.sigProvUrl = { key: "sigprovurl", value: options.sigProvUrl };
   if (options?.button !== undefined)
     attrs.button = { key: "button", value: options.button ? "t" : "f" };
   return new BuilderElement({
@@ -563,6 +666,20 @@ export interface OStrokeChildOptions {
   readonly insetPen?: boolean;
   readonly endCap?: "flat" | "square" | "round";
   readonly joinStyle?: "round" | "bevel" | "miter";
+  readonly color2?: string;
+  readonly opacity?: string;
+  readonly fillType?: "solid" | "tile" | "pattern" | "frame";
+  readonly src?: string;
+  readonly imageAspect?: "ignore" | "atMost" | "atLeast";
+  readonly imageSize?: string;
+  readonly imageAlignShape?: boolean;
+  readonly startArrow?: "none" | "block" | "classic" | "oval" | "diamond" | "open";
+  readonly startArrowWidth?: "narrow" | "medium" | "wide";
+  readonly startArrowLength?: "short" | "medium" | "long";
+  readonly endArrow?: "none" | "block" | "classic" | "oval" | "diamond" | "open";
+  readonly endArrowWidth?: "narrow" | "medium" | "wide";
+  readonly endArrowLength?: "short" | "medium" | "long";
+  readonly forceDash?: boolean;
 }
 
 function buildStrokeChildAttrs(
@@ -585,6 +702,32 @@ function buildStrokeChildAttrs(
   if (options.endCap !== undefined) attrs.endCap = { key: "endcap", value: options.endCap };
   if (options.joinStyle !== undefined)
     attrs.joinStyle = { key: "joinstyle", value: options.joinStyle };
+  if (options.color2 !== undefined) attrs.color2 = { key: "color2", value: options.color2 };
+  if (options.opacity !== undefined) attrs.opacity = { key: "opacity", value: options.opacity };
+  if (options.fillType !== undefined) attrs.fillType = { key: "filltype", value: options.fillType };
+  if (options.src !== undefined) attrs.src = { key: "src", value: options.src };
+  if (options.imageAspect !== undefined)
+    attrs.imageAspect = { key: "imageaspect", value: options.imageAspect };
+  if (options.imageSize !== undefined)
+    attrs.imageSize = { key: "imagesize", value: options.imageSize };
+  if (options.imageAlignShape !== undefined)
+    attrs.imageAlignShape = {
+      key: "imagealignshape",
+      value: options.imageAlignShape ? "t" : "f",
+    };
+  if (options.startArrow !== undefined)
+    attrs.startArrow = { key: "startarrow", value: options.startArrow };
+  if (options.startArrowWidth !== undefined)
+    attrs.startArrowWidth = { key: "startarrowwidth", value: options.startArrowWidth };
+  if (options.startArrowLength !== undefined)
+    attrs.startArrowLength = { key: "startarrowlength", value: options.startArrowLength };
+  if (options.endArrow !== undefined) attrs.endArrow = { key: "endarrow", value: options.endArrow };
+  if (options.endArrowWidth !== undefined)
+    attrs.endArrowWidth = { key: "endarrowwidth", value: options.endArrowWidth };
+  if (options.endArrowLength !== undefined)
+    attrs.endArrowLength = { key: "endarrowlength", value: options.endArrowLength };
+  if (options.forceDash !== undefined)
+    attrs.forceDash = { key: "forcedash", value: options.forceDash ? "t" : "f" };
   return Object.keys(attrs).length > 0 ? attrs : undefined;
 }
 
@@ -664,7 +807,20 @@ export const createORegrouptable = (): XmlComponent =>
  * <xsd:element name="entry" type="CT_Entry"/>
  * ```
  */
-export const createOEntry = (): XmlComponent => new BuilderElement({ name: "o:entry" });
+export interface OEntryOptions {
+  readonly newType?: number;
+  readonly oldType?: number;
+}
+
+export const createOEntry = (options?: OEntryOptions): XmlComponent => {
+  const attrs: Record<string, { key: string; value: number }> = {};
+  if (options?.newType !== undefined) attrs.newType = { key: "new", value: options.newType };
+  if (options?.oldType !== undefined) attrs.oldType = { key: "old", value: options.oldType };
+  return new BuilderElement({
+    name: "o:entry",
+    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
+  });
+};
 
 // ── Rules ──
 
@@ -686,7 +842,24 @@ export const createORules = (): XmlComponent => new BuilderElement({ name: "o:ru
  * <xsd:element name="r" type="CT_R"/>
  * ```
  */
-export const createOR = (): XmlComponent => new BuilderElement({ name: "o:r" });
+export interface ORuleOptions {
+  readonly id?: string;
+  readonly type?: string;
+  readonly how?: string;
+  readonly idref?: string;
+}
+
+export const createOR = (options?: ORuleOptions): XmlComponent => {
+  const attrs: Record<string, { key: string; value: string }> = {};
+  if (options?.id !== undefined) attrs.id = { key: "id", value: options.id };
+  if (options?.type !== undefined) attrs.type = { key: "type", value: options.type };
+  if (options?.how !== undefined) attrs.how = { key: "how", value: options.how };
+  if (options?.idref !== undefined) attrs.idref = { key: "idref", value: options.idref };
+  return new BuilderElement({
+    name: "o:r",
+    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
+  });
+};
 
 /**
  * Creates an o:proxy element (Rule Proxy).
@@ -696,7 +869,26 @@ export const createOR = (): XmlComponent => new BuilderElement({ name: "o:r" });
  * <xsd:element name="proxy" type="CT_Proxy"/>
  * ```
  */
-export const createOProxy = (): XmlComponent => new BuilderElement({ name: "o:proxy" });
+export interface OProxyOptions {
+  readonly start?: boolean;
+  readonly end?: boolean;
+  readonly idref?: string;
+  readonly connectLoc?: number;
+}
+
+export const createOProxy = (options?: OProxyOptions): XmlComponent => {
+  const attrs: Record<string, { key: string; value: string | number }> = {};
+  if (options?.start !== undefined)
+    attrs.start = { key: "start", value: options.start ? "t" : "f" };
+  if (options?.end !== undefined) attrs.end = { key: "end", value: options.end ? "t" : "f" };
+  if (options?.idref !== undefined) attrs.idref = { key: "idref", value: options.idref };
+  if (options?.connectLoc !== undefined)
+    attrs.connectLoc = { key: "connectloc", value: options.connectLoc };
+  return new BuilderElement({
+    name: "o:proxy",
+    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
+  });
+};
 
 // ── Relation Table ──
 
@@ -719,7 +911,22 @@ export const createORelationtable = (): XmlComponent =>
  * <xsd:element name="rel" type="CT_Rel"/>
  * ```
  */
-export const createORel = (): XmlComponent => new BuilderElement({ name: "o:rel" });
+export interface ORelOptions {
+  readonly idSrc?: string;
+  readonly idDest?: string;
+  readonly idCntr?: string;
+}
+
+export const createORel = (options?: ORelOptions): XmlComponent => {
+  const attrs: Record<string, { key: string; value: string }> = {};
+  if (options?.idSrc !== undefined) attrs.idSrc = { key: "idsrc", value: options.idSrc };
+  if (options?.idDest !== undefined) attrs.idDest = { key: "iddest", value: options.idDest };
+  if (options?.idCntr !== undefined) attrs.idCntr = { key: "idcntr", value: options.idCntr };
+  return new BuilderElement({
+    name: "o:rel",
+    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
+  });
+};
 
 // ── OLE Object Children ──
 
@@ -752,3 +959,171 @@ export const createOLockedField = (): XmlComponent => new BuilderElement({ name:
  * ```
  */
 export const createOFieldCodes = (): XmlComponent => new BuilderElement({ name: "o:FieldCodes" });
+
+// ── Global o: Shape Attributes ──
+// These attributes (from vml-officeDrawing.xsd global declarations)
+// can appear on any VML shape element (v:shape, v:shapetype, v:group, etc.)
+// as o:-prefixed XML attributes.
+
+export interface OGlobalShapeAttributes {
+  readonly spid?: string;
+  readonly shapeTypeIndex?: number;
+  readonly oneDimensional?: boolean;
+  readonly regroupId?: number;
+  readonly doubleClickNotify?: boolean;
+  readonly userHidden?: boolean;
+  readonly bullet?: boolean;
+  readonly horizontalRule?: boolean;
+  readonly horizontalRuleStandard?: boolean;
+  readonly horizontalRuleNoShade?: boolean;
+  readonly horizontalRulePercent?: number;
+  readonly horizontalRuleAlign?: "left" | "center" | "right";
+  readonly allowOverlap?: boolean;
+  readonly userDrawn?: boolean;
+  readonly borderTopColor?: string;
+  readonly borderLeftColor?: string;
+  readonly borderBottomColor?: string;
+  readonly borderRightColor?: string;
+  readonly connectorType?: "none" | "straight" | "elbow" | "curved";
+  readonly blackWhiteMode?:
+    | "color"
+    | "auto"
+    | "gray"
+    | "lightGray"
+    | "inverseGray"
+    | "grayOutline"
+    | "highContrast"
+    | "black"
+    | "white"
+    | "hide"
+    | "undrawn";
+  readonly blackWhiteNormal?: string;
+  readonly blackWhitePure?: string;
+  readonly forceDash?: boolean;
+  readonly oleIcon?: boolean;
+  readonly ole?: boolean;
+  readonly preferRelative?: boolean;
+  readonly clipToWrap?: boolean;
+  readonly clip?: boolean;
+  readonly master?: string;
+  readonly extrusionOk?: boolean;
+  readonly altHref?: string;
+  readonly oleId?: number;
+  readonly detectMouseClick?: boolean;
+  readonly targetScreenSize?:
+    | "544x376"
+    | "640x480"
+    | "720x512"
+    | "800x600"
+    | "1024x768"
+    | "1152x862"
+    | "1280x1024";
+  readonly insetMode?: "auto" | "custom";
+  readonly connectType?: "none" | "rect" | "segments" | "custom";
+  readonly connectLocs?: string;
+  readonly connectAngles?: string;
+  readonly tableProperties?: string;
+  readonly tableLimits?: string;
+  readonly opacity2?: string;
+  readonly relId?: string;
+}
+
+/**
+ * Builds o:-prefixed global shape attributes for VML shape elements.
+ * Returns attribute entries suitable for merging into BuilderElement attributes.
+ */
+export const buildOGlobalShapeAttrs = (
+  options?: OGlobalShapeAttributes,
+): Record<string, { key: string; value: string | number }> => {
+  if (!options) return {};
+  const attrs: Record<string, { key: string; value: string | number }> = {};
+  if (options.spid !== undefined) attrs.spid = { key: "spid", value: options.spid };
+  if (options.shapeTypeIndex !== undefined)
+    attrs.shapeTypeIndex = { key: "spt", value: options.shapeTypeIndex };
+  if (options.oneDimensional !== undefined)
+    attrs.oneDimensional = { key: "oned", value: options.oneDimensional ? "t" : "f" };
+  if (options.regroupId !== undefined)
+    attrs.regroupId = { key: "regroupid", value: options.regroupId };
+  if (options.doubleClickNotify !== undefined)
+    attrs.doubleClickNotify = {
+      key: "doubleclicknotify",
+      value: options.doubleClickNotify ? "t" : "f",
+    };
+  if (options.userHidden !== undefined)
+    attrs.userHidden = { key: "userhidden", value: options.userHidden ? "t" : "f" };
+  if (options.bullet !== undefined)
+    attrs.bullet = { key: "bullet", value: options.bullet ? "t" : "f" };
+  if (options.horizontalRule !== undefined)
+    attrs.horizontalRule = { key: "hr", value: options.horizontalRule ? "t" : "f" };
+  if (options.horizontalRuleStandard !== undefined)
+    attrs.horizontalRuleStandard = {
+      key: "hrstd",
+      value: options.horizontalRuleStandard ? "t" : "f",
+    };
+  if (options.horizontalRuleNoShade !== undefined)
+    attrs.horizontalRuleNoShade = {
+      key: "hrnoshade",
+      value: options.horizontalRuleNoShade ? "t" : "f",
+    };
+  if (options.horizontalRulePercent !== undefined)
+    attrs.horizontalRulePercent = { key: "hrpct", value: options.horizontalRulePercent };
+  if (options.horizontalRuleAlign !== undefined)
+    attrs.horizontalRuleAlign = { key: "hralign", value: options.horizontalRuleAlign };
+  if (options.allowOverlap !== undefined)
+    attrs.allowOverlap = { key: "allowoverlap", value: options.allowOverlap ? "t" : "f" };
+  if (options.userDrawn !== undefined)
+    attrs.userDrawn = { key: "userdrawn", value: options.userDrawn ? "t" : "f" };
+  if (options.borderTopColor !== undefined)
+    attrs.borderTopColor = { key: "bordertopcolor", value: options.borderTopColor };
+  if (options.borderLeftColor !== undefined)
+    attrs.borderLeftColor = { key: "borderleftcolor", value: options.borderLeftColor };
+  if (options.borderBottomColor !== undefined)
+    attrs.borderBottomColor = { key: "borderbottomcolor", value: options.borderBottomColor };
+  if (options.borderRightColor !== undefined)
+    attrs.borderRightColor = { key: "borderrightcolor", value: options.borderRightColor };
+  if (options.connectorType !== undefined)
+    attrs.connectorType = { key: "connectortype", value: options.connectorType };
+  if (options.blackWhiteMode !== undefined)
+    attrs.blackWhiteMode = { key: "bwmode", value: options.blackWhiteMode };
+  if (options.blackWhiteNormal !== undefined)
+    attrs.blackWhiteNormal = { key: "bwnormal", value: options.blackWhiteNormal };
+  if (options.blackWhitePure !== undefined)
+    attrs.blackWhitePure = { key: "bwpure", value: options.blackWhitePure };
+  if (options.forceDash !== undefined)
+    attrs.forceDash = { key: "forcedash", value: options.forceDash ? "t" : "f" };
+  if (options.oleIcon !== undefined)
+    attrs.oleIcon = { key: "oleicon", value: options.oleIcon ? "t" : "f" };
+  if (options.ole !== undefined) attrs.ole = { key: "ole", value: options.ole ? "t" : "f" };
+  if (options.preferRelative !== undefined)
+    attrs.preferRelative = { key: "preferrelative", value: options.preferRelative ? "t" : "f" };
+  if (options.clipToWrap !== undefined)
+    attrs.clipToWrap = { key: "cliptowrap", value: options.clipToWrap ? "t" : "f" };
+  if (options.clip !== undefined) attrs.clip = { key: "clip", value: options.clip ? "t" : "f" };
+  if (options.master !== undefined) attrs.master = { key: "master", value: options.master };
+  if (options.extrusionOk !== undefined)
+    attrs.extrusionOk = { key: "extrusionok", value: options.extrusionOk ? "t" : "f" };
+  if (options.altHref !== undefined) attrs.altHref = { key: "althref", value: options.altHref };
+  if (options.oleId !== undefined) attrs.oleId = { key: "oleid", value: options.oleId };
+  if (options.detectMouseClick !== undefined)
+    attrs.detectMouseClick = {
+      key: "detectmouseclick",
+      value: options.detectMouseClick ? "t" : "f",
+    };
+  if (options.targetScreenSize !== undefined)
+    attrs.targetScreenSize = { key: "targetscreensize", value: options.targetScreenSize };
+  if (options.insetMode !== undefined)
+    attrs.insetMode = { key: "insetmode", value: options.insetMode };
+  if (options.connectType !== undefined)
+    attrs.connectType = { key: "connecttype", value: options.connectType };
+  if (options.connectLocs !== undefined)
+    attrs.connectLocs = { key: "connectlocs", value: options.connectLocs };
+  if (options.connectAngles !== undefined)
+    attrs.connectAngles = { key: "connectangles", value: options.connectAngles };
+  if (options.tableProperties !== undefined)
+    attrs.tableProperties = { key: "tableproperties", value: options.tableProperties };
+  if (options.tableLimits !== undefined)
+    attrs.tableLimits = { key: "tablelimits", value: options.tableLimits };
+  if (options.opacity2 !== undefined) attrs.opacity2 = { key: "opacity2", value: options.opacity2 };
+  if (options.relId !== undefined) attrs.relId = { key: "relid", value: options.relId };
+  return attrs;
+};

@@ -157,6 +157,10 @@ interface ShapeOptions {
   readonly path?: string;
   /** Arc size for rounded rectangles, e.g. "10923f" (VML: arcsize) */
   readonly arcSize?: string;
+  /** Whether the shape is printed (VML: print) */
+  readonly print?: boolean;
+  /** Equation XML content for the shape (VML: equationxml) */
+  readonly equationXml?: string;
 }
 
 /**
@@ -219,6 +223,8 @@ export const createShape = ({
   adjustment,
   path,
   arcSize,
+  print,
+  equationXml,
 }: ShapeOptions): XmlComponent =>
   new BuilderElement({
     name: "v:shape",
@@ -278,6 +284,14 @@ export const createShape = ({
       arcSize: {
         key: "arcsize",
         value: arcSize,
+      },
+      print: {
+        key: "print",
+        value: print !== undefined ? (print ? "true" : "false") : undefined,
+      },
+      equationXml: {
+        key: "equationxml",
+        value: equationXml,
       },
     },
     children: [createVmlTextbox({ children, style: "mso-fit-shape-to-text:t;" })],

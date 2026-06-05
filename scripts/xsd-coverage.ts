@@ -367,6 +367,13 @@ function analyzeXsd(config: XsdConfig): CoverageResult {
         usedAttrNames.add(m[1]);
       }
 
+      // xmlKey mapping in lookup arrays: xmlKey: "verticies", xmlKey: "adjusthandles", etc.
+      // Used by OLock boolMap and similar patterns where key values are indirect.
+      const xmlKeyRe = /xmlKey:\s*["']([a-zA-Z][a-zA-Z0-9]+)["']/g;
+      while ((m = xmlKeyRe.exec(content)) !== null) {
+        usedAttrNames.add(m[1]);
+      }
+
       // For prefix mode: "prefix:name" in attribute objects (e.g., { _attr: { "w:val": ... } })
       if (config.searchMode === "prefix" && config.prefix) {
         const prefixAttrRe = new RegExp(
@@ -433,6 +440,8 @@ function analyzeXsd(config: XsdConfig): CoverageResult {
     "fillId",
     "borderId",
     "xfId",
+    "v",
+    "UpdateMode",
   ]);
 
   const missingAttributes = attrNames.filter((a) => {
