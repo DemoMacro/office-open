@@ -147,9 +147,16 @@ export const createRound = (): XmlComponent => new BuilderElement({ name: "a:rou
 export const createStart = (children?: readonly IXmlableObject[]): XmlComponent =>
   new BuilderElement({ children, name: "a:start" });
 
-/** Creates an a:end element (Connection End Time). */
-export const createEnd = (children?: readonly IXmlableObject[]): XmlComponent =>
-  new BuilderElement({ children, name: "a:end" });
+/** Creates an a:end element (Audio CD End Time). */
+export const createEnd = (options?: AudioCdTimeOptions): XmlComponent => {
+  const attrs: Record<string, { key: string; value: number }> = {};
+  if (options?.track !== undefined) attrs.track = { key: "track", value: options.track };
+  if (options?.time !== undefined) attrs.time = { key: "time", value: options.time };
+  return new BuilderElement({
+    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
+    name: "a:end",
+  });
+};
 
 /** Creates an a:stCxn element (Start Connection). */
 export const createStCxn = (children?: readonly IXmlableObject[]): XmlComponent =>
@@ -280,13 +287,39 @@ export const createWavAudioFile = (children?: readonly IXmlableObject[]): XmlCom
 
 // ── Animation Build ──────────────────────────────────────────────────
 
+export interface BuildChartOptions {
+  readonly build?: string;
+  readonly animateBackground?: boolean;
+}
+
 /** Creates an a:bldChart element (Build Chart). */
-export const createBldChart = (children?: readonly IXmlableObject[]): XmlComponent =>
-  new BuilderElement({ children, name: "a:bldChart" });
+export const createBldChart = (options?: BuildChartOptions): XmlComponent => {
+  const attrs: Record<string, { key: string; value: string }> = {};
+  if (options?.build !== undefined) attrs.build = { key: "bld", value: options.build };
+  if (options?.animateBackground !== undefined)
+    attrs.animateBackground = { key: "animBg", value: options.animateBackground ? "1" : "0" };
+  return new BuilderElement({
+    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
+    name: "a:bldChart",
+  });
+};
+
+export interface BuildDiagramOptions {
+  readonly build?: string;
+  readonly reverse?: boolean;
+}
 
 /** Creates an a:bldDgm element (Build Diagram). */
-export const createBldDgm = (children?: readonly IXmlableObject[]): XmlComponent =>
-  new BuilderElement({ children, name: "a:bldDgm" });
+export const createBldDgm = (options?: BuildDiagramOptions): XmlComponent => {
+  const attrs: Record<string, { key: string; value: string }> = {};
+  if (options?.build !== undefined) attrs.build = { key: "bld", value: options.build };
+  if (options?.reverse !== undefined)
+    attrs.reverse = { key: "rev", value: options.reverse ? "1" : "0" };
+  return new BuilderElement({
+    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
+    name: "a:bldDgm",
+  });
+};
 
 // ── Other ────────────────────────────────────────────────────────────
 
@@ -294,13 +327,43 @@ export const createBldDgm = (children?: readonly IXmlableObject[]): XmlComponent
 export const createBevelElement = (children?: readonly IXmlableObject[]): XmlComponent =>
   new BuilderElement({ children, name: "a:bevel" });
 
+export interface ChartAnimationOptions {
+  readonly seriesIndex?: number;
+  readonly categoryIndex?: number;
+  readonly buildStep?: string;
+}
+
 /** Creates an a:chart element (Animation Chart Element). */
-export const createChart = (children?: readonly IXmlableObject[]): XmlComponent =>
-  new BuilderElement({ children, name: "a:chart" });
+export const createChart = (options?: ChartAnimationOptions): XmlComponent => {
+  const attrs: Record<string, { key: string; value: string | number }> = {};
+  if (options?.seriesIndex !== undefined)
+    attrs.seriesIndex = { key: "seriesIdx", value: options.seriesIndex };
+  if (options?.categoryIndex !== undefined)
+    attrs.categoryIndex = { key: "categoryIdx", value: options.categoryIndex };
+  if (options?.buildStep !== undefined)
+    attrs.buildStep = { key: "bldStep", value: options.buildStep };
+  return new BuilderElement({
+    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
+    name: "a:chart",
+  });
+};
+
+export interface DiagramAnimationOptions {
+  readonly id?: string;
+  readonly buildStep?: string;
+}
 
 /** Creates an a:dgm element (Animation Diagram Element). */
-export const createDgm = (children?: readonly IXmlableObject[]): XmlComponent =>
-  new BuilderElement({ children, name: "a:dgm" });
+export const createDgm = (options?: DiagramAnimationOptions): XmlComponent => {
+  const attrs: Record<string, { key: string; value: string }> = {};
+  if (options?.id !== undefined) attrs.id = { key: "id", value: options.id };
+  if (options?.buildStep !== undefined)
+    attrs.buildStep = { key: "bldStep", value: options.buildStep };
+  return new BuilderElement({
+    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
+    name: "a:dgm",
+  });
+};
 
 /** Creates an a:headers element (Headers). */
 export const createHeaders = (children?: readonly IXmlableObject[]): XmlComponent =>
@@ -314,9 +377,21 @@ export const createHeader = (children?: readonly IXmlableObject[]): XmlComponent
 export const createHlinkMouseOver = (children?: readonly IXmlableObject[]): XmlComponent =>
   new BuilderElement({ children, name: "a:hlinkMouseOver" });
 
+export interface AudioCdTimeOptions {
+  readonly track?: number;
+  readonly time?: number;
+}
+
 /** Creates an a:st element (Audio CD Start Time). */
-export const createSt = (children?: readonly IXmlableObject[]): XmlComponent =>
-  new BuilderElement({ children, name: "a:st" });
+export const createSt = (options?: AudioCdTimeOptions): XmlComponent => {
+  const attrs: Record<string, { key: string; value: number }> = {};
+  if (options?.track !== undefined) attrs.track = { key: "track", value: options.track };
+  if (options?.time !== undefined) attrs.time = { key: "time", value: options.time };
+  return new BuilderElement({
+    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
+    name: "a:st",
+  });
+};
 
 /** Creates an a:style element (Shape Style). */
 export const createStyleElement = (children?: readonly IXmlableObject[]): XmlComponent =>

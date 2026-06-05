@@ -97,8 +97,19 @@ export const createWpCNvGrpSpPr = (): XmlComponent => new BuilderElement({ name:
  * <xsd:element name="cNvContentPartPr" type="a:CT_NonVisualContentPartProperties"/>
  * ```
  */
-export const createWpCNvContentPartPr = (): XmlComponent =>
-  new BuilderElement({ name: "wp:cNvContentPartPr" });
+export interface ContentPartPropertiesOptions {
+  readonly isComment?: boolean;
+}
+
+export const createWpCNvContentPartPr = (options?: ContentPartPropertiesOptions): XmlComponent => {
+  const attrs: Record<string, { key: string; value: string }> = {};
+  if (options?.isComment !== undefined)
+    attrs.isComment = { key: "isComment", value: options.isComment ? "1" : "0" };
+  return new BuilderElement({
+    name: "wp:cNvContentPartPr",
+    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
+  });
+};
 
 // ── Wordprocessing Shape ──
 

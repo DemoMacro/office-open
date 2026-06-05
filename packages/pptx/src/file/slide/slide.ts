@@ -43,18 +43,24 @@ export class Slide extends XmlComponent {
   private readonly background?: Background;
   private readonly transition?: TransitionOptions;
   public readonly HeaderFooter?: SlideHeaderFooterOptions;
+  private readonly showMasterSp?: boolean;
+  private readonly showMasterPhAnim?: boolean;
 
   public constructor(
     children: readonly SlideChild[],
     background?: Background,
     transition?: TransitionOptions,
     headerFooter?: SlideHeaderFooterOptions,
+    showMasterSp?: boolean,
+    showMasterPhAnim?: boolean,
   ) {
     super("p:sld");
     this.children = children;
     this.background = background;
     this.transition = transition;
     this.HeaderFooter = headerFooter;
+    this.showMasterSp = showMasterSp;
+    this.showMasterPhAnim = showMasterPhAnim;
   }
 
   // Direct XML serialization — builds the <p:sld> wrapper as string, but uses
@@ -63,8 +69,11 @@ export class Slide extends XmlComponent {
     const parts: string[] = [];
 
     // Opening tag with namespace declarations
+    const sldAttrs: string[] = [];
+    if (this.showMasterSp === false) sldAttrs.push(' showMasterSp="0"');
+    if (this.showMasterPhAnim === false) sldAttrs.push(' showMasterPhAnim="0"');
     parts.push(
-      '<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">',
+      `<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"${sldAttrs.join("")}>`,
     );
 
     // p:cSld — common slide data

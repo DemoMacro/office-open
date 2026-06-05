@@ -35,6 +35,14 @@ export type TableRowOptions = {
   )[];
   /** Table property exceptions for this row (override table-level properties) */
   readonly propertyExceptions?: TablePropertyExOptions;
+  /** Revision save ID for row properties (hex string, e.g. "00123456"). */
+  readonly rsidRPr?: string;
+  /** Revision save ID for the row (hex string). */
+  readonly rsidR?: string;
+  /** Revision save ID when row was deleted (hex string). */
+  readonly rsidDel?: string;
+  /** Revision save ID for table row (hex string). */
+  readonly rsidTr?: string;
 } & ITableRowPropertiesOptions;
 
 /**
@@ -168,7 +176,19 @@ export class TableRow extends BaseXmlComponent {
       }
     }
 
-    return parts.length ? `<w:tr>${parts.join("")}</w:tr>` : "<w:tr/>";
+    // Build rsid attributes on <w:tr>
+    const rsidAttrs: string[] = [];
+    if (this.options.rsidRPr) rsidAttrs.push(` w:rsidRPr="${this.options.rsidRPr}"`);
+    if (this.options.rsidR) rsidAttrs.push(` w:rsidR="${this.options.rsidR}"`);
+    if (this.options.rsidDel) rsidAttrs.push(` w:rsidDel="${this.options.rsidDel}"`);
+    if (this.options.rsidTr) rsidAttrs.push(` w:rsidTr="${this.options.rsidTr}"`);
+    const attr = rsidAttrs.join("");
+
+    return parts.length
+      ? `<w:tr${attr}>${parts.join("")}</w:tr>`
+      : attr
+        ? `<w:tr${attr}/>`
+        : "<w:tr/>";
   }
 
   private findInsertIndex(columnIndex: number, prefixCount: number): number {

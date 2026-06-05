@@ -641,7 +641,8 @@ function buildGlossaryXml(
       }
       if (part.types && part.types.length > 0) {
         const typeXml = part.types.map((t) => `<w:type w:val="${t}"/>`).join("");
-        prParts.push(`<w:types>${typeXml}</w:types>`);
+        const allAttr = part.allTypes ? ' w:all="1"' : "";
+        prParts.push(`<w:types${allAttr}>${typeXml}</w:types>`);
       }
       if (part.behaviors && part.behaviors.length > 0) {
         const behaviorXml = part.behaviors.map((b) => `<w:behavior w:val="${b}"/>`).join("");

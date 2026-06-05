@@ -50,6 +50,7 @@ export interface LayoutPlaceholderOptions {
 export interface LayoutDefinition {
   readonly type?: SlideLayoutType;
   readonly name?: string;
+  readonly matchingName?: string;
   readonly placeholders?: LayoutPlaceholderOptions;
   readonly children?: readonly MasterChild[];
 }
@@ -78,6 +79,8 @@ export interface SlideOptions {
   readonly comments?: readonly SlideCommentOptions[];
   readonly layout?: SlideLayoutType | string;
   readonly master?: string;
+  readonly showMasterShapes?: boolean;
+  readonly showMasterPlaceholderAnimations?: boolean;
 }
 
 export interface ShowOptions {
@@ -596,6 +599,8 @@ export class File {
             s.background ? new Background(s.background) : undefined,
             s.transition,
             s.headerFooter,
+            s.showMasterShapes,
+            s.showMasterPlaceholderAnimations,
           ),
         );
       }

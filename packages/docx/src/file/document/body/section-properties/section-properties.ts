@@ -99,6 +99,14 @@ export interface HeaderFooterGroup<T> {
 }
 
 export interface SectionPropertiesOptionsBase {
+  /** Revision save ID for section properties (hex string, e.g. "00123456"). */
+  readonly rsidRPr?: string;
+  /** Revision save ID when section was deleted (hex string). */
+  readonly rsidDel?: string;
+  /** Revision save ID for the section (hex string). */
+  readonly rsidR?: string;
+  /** Revision save ID for the section (hex string). */
+  readonly rsidSect?: string;
   /** Page-level settings including size, margins, borders, and text direction */
   readonly page?: {
     /** Page size and orientation */
@@ -312,8 +320,20 @@ export class SectionProperties extends XmlComponent {
     footnotePr,
     endnotePr,
     printerSettingsId,
+    rsidRPr,
+    rsidDel,
+    rsidR,
+    rsidSect,
   }: ISectionPropertiesOptions = {}) {
     super("w:sectPr");
+
+    // rsid attributes on <w:sectPr>
+    const sectAttrs: Record<string, string> = {};
+    if (rsidRPr !== undefined) sectAttrs["w:rsidRPr"] = rsidRPr;
+    if (rsidDel !== undefined) sectAttrs["w:rsidDel"] = rsidDel;
+    if (rsidR !== undefined) sectAttrs["w:rsidR"] = rsidR;
+    if (rsidSect !== undefined) sectAttrs["w:rsidSect"] = rsidSect;
+    if (Object.keys(sectAttrs).length > 0) this.root.push({ _attr: sectAttrs });
 
     this.addHeaderFooterGroup(HeaderFooterType.HEADER, headerWrapperGroup);
     this.addHeaderFooterGroup(HeaderFooterType.FOOTER, footerWrapperGroup);

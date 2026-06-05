@@ -342,7 +342,8 @@ function analyzeXsd(config: XsdConfig): CoverageResult {
       let m: RegExpExecArray | null;
 
       // Object key: allowOverlap: "1", showGridLines: false
-      const objKeyRe = /\b([a-zA-Z][a-zA-Z0-9]{1,})\s*:/g;
+      // Also matches TypeScript optional property syntax: noSelect?:
+      const objKeyRe = /\b([a-zA-Z][a-zA-Z0-9]{1,})\??\s*:/g;
       while ((m = objKeyRe.exec(content)) !== null) {
         usedAttrNames.add(m[1]);
       }
@@ -356,6 +357,13 @@ function analyzeXsd(config: XsdConfig): CoverageResult {
       // XML attribute in template literal: showGridLines="${...}"
       const xmlAttrRe = /\b([a-zA-Z][a-zA-Z0-9]+)=["`]/g;
       while ((m = xmlAttrRe.exec(content)) !== null) {
+        usedAttrNames.add(m[1]);
+      }
+
+      // BuilderElement key mapping: key: "bld", key: "prevAc", etc.
+      // This catches XSD attribute names used as XML key values in BuilderElement attributes.
+      const keyValueRe = /key:\s*["']([a-zA-Z][a-zA-Z0-9]+)["']/g;
+      while ((m = keyValueRe.exec(content)) !== null) {
         usedAttrNames.add(m[1]);
       }
 
@@ -404,6 +412,16 @@ function analyzeXsd(config: XsdConfig): CoverageResult {
     "c",
     "t",
     "s",
+    "d",
+    "g",
+    "h",
+    "i",
+    "n",
+    "u",
+    "w",
+    "x",
+    "y",
+    "z",
     "ref",
     "min",
     "max",

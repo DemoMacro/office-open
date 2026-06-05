@@ -283,13 +283,16 @@ function buildEntrOrExitEffects(
 
     const transition = cls === "exit" ? "out" : "in";
 
+    const animEffectAttrs: Record<string, { key: string; value: string }> = {
+      transition: { key: "transition", value: transition },
+      filter: { key: "filter", value: filter },
+    };
+    if (options.propertyList) animEffectAttrs.prLst = { key: "prLst", value: options.propertyList };
+
     children.push(
       new BuilderElement({
         name: "p:animEffect",
-        attributes: {
-          transition: { key: "transition", value: transition },
-          filter: { key: "filter", value: filter },
-        },
+        attributes: animEffectAttrs,
         children: [
           new BuilderElement({
             name: "p:cBhvr",
@@ -548,13 +551,17 @@ function buildPathEffects(
   const pathStr = options.path ?? PATH_STRINGS[options.pathType ?? "customPath"] ?? "";
   const dur = String(options.duration ?? 1000);
 
+  const animMotionAttrs: Record<string, { key: string; value: string }> = {
+    origin: { key: "origin", value: "layout" },
+    path: { key: "path", value: pathStr },
+  };
+  if (options.pointsTypes)
+    animMotionAttrs.ptsTypes = { key: "ptsTypes", value: options.pointsTypes };
+
   return [
     new BuilderElement({
       name: "p:animMotion",
-      attributes: {
-        origin: { key: "origin", value: "layout" },
-        path: { key: "path", value: pathStr },
-      },
+      attributes: animMotionAttrs,
       children: [
         new BuilderElement({
           name: "p:cBhvr",
@@ -763,6 +770,9 @@ function buildMediaStateNode(
   if (options.mute) {
     cMediaNodeAttrs.mute = { key: "mute", value: 1 };
   }
+  if (options.numberOfSlides !== undefined) {
+    cMediaNodeAttrs.numSld = { key: "numSld", value: options.numberOfSlides };
+  }
 
   return new BuilderElement({
     name: elementName,
@@ -811,6 +821,10 @@ function buildPropertyAnimation(
   if (options.from !== undefined) attrs.from = { key: "from", value: options.from };
   if (options.to !== undefined) attrs.to = { key: "to", value: options.to };
   if (options.animBy !== undefined) attrs.by = { key: "by", value: options.animBy };
+  if (options.formula !== undefined) attrs.fmla = { key: "fmla", value: options.formula };
+  if (options.colorSpace !== undefined) attrs.clrSpc = { key: "clrSpc", value: options.colorSpace };
+  if (options.rotationAngle !== undefined)
+    attrs.rAng = { key: "rAng", value: String(options.rotationAngle) };
 
   const cBhvrChildren: XmlComponent[] = [
     new BuilderElement({
@@ -833,9 +847,22 @@ function buildPropertyAnimation(
     );
   }
 
+  const cBhvrAttrs: Record<string, { key: string; value: string | number }> = {};
+  if (options.additive !== undefined)
+    cBhvrAttrs.additive = { key: "additive", value: options.additive };
+  if (options.accumulate !== undefined)
+    cBhvrAttrs.accumulate = { key: "accumulate", value: options.accumulate };
+  if (options.transformType !== undefined)
+    cBhvrAttrs.xfrmType = { key: "xfrmType", value: options.transformType };
+  if (options.runtimeContext !== undefined)
+    cBhvrAttrs.rctx = { key: "rctx", value: options.runtimeContext };
+  if (options.override !== undefined)
+    cBhvrAttrs.override = { key: "override", value: options.override };
+
   const animChildren: XmlComponent[] = [
     new BuilderElement({
       name: "p:cBhvr",
+      attributes: Object.keys(cBhvrAttrs).length > 0 ? cBhvrAttrs : undefined,
       children: cBhvrChildren,
     }),
   ];
@@ -1007,6 +1034,40 @@ export class SlideTiming extends XmlComponent {
       if (options.repeatCount !== undefined)
         cTnAttrs.repeatCount = { key: "repeatCount", value: String(options.repeatCount) };
       if (options.autoReverse) cTnAttrs.autoRev = { key: "autoRev", value: 1 };
+      if (options.repeatDuration !== undefined)
+        cTnAttrs.repeatDur = { key: "repeatDur", value: options.repeatDuration };
+      if (options.acceleration !== undefined)
+        cTnAttrs.accel = { key: "accel", value: options.acceleration };
+      if (options.deceleration !== undefined)
+        cTnAttrs.decel = { key: "decel", value: options.deceleration };
+      if (options.restart !== undefined)
+        cTnAttrs.restart = { key: "restart", value: options.restart };
+      if (options.syncBehavior !== undefined)
+        cTnAttrs.syncBehavior = { key: "syncBehavior", value: options.syncBehavior };
+      if (options.timeFilter !== undefined)
+        cTnAttrs.tmFilter = { key: "tmFilter", value: options.timeFilter };
+      if (options.eventFilter !== undefined)
+        cTnAttrs.evtFilter = { key: "evtFilter", value: options.eventFilter };
+      if (options.display !== undefined)
+        cTnAttrs.display = { key: "display", value: options.display ? 1 : 0 };
+      if (options.masterRelation !== undefined)
+        cTnAttrs.masterRel = { key: "masterRel", value: options.masterRelation };
+      if (options.buildLevel !== undefined)
+        cTnAttrs.bldLvl = { key: "bldLvl", value: options.buildLevel };
+      if (options.groupId !== undefined) cTnAttrs.grpId = { key: "grpId", value: options.groupId };
+      if (options.afterEffect !== undefined)
+        cTnAttrs.afterEffect = { key: "afterEffect", value: options.afterEffect ? 1 : 0 };
+      if (options.nodePlaceholder !== undefined)
+        cTnAttrs.nodePh = { key: "nodePh", value: options.nodePlaceholder ? 1 : 0 };
+      if (options.advanceAfterTime !== undefined)
+        cTnAttrs.advAuto = { key: "advAuto", value: options.advanceAfterTime };
+      if (options.animateBackground !== undefined)
+        cTnAttrs.animBg = { key: "animBg", value: options.animateBackground ? 1 : 0 };
+      if (options.autoUpdateAnimationBackground !== undefined)
+        cTnAttrs.autoUpdateAnimBg = {
+          key: "autoUpdateAnimBg",
+          value: options.autoUpdateAnimationBackground ? 1 : 0,
+        };
 
       // Build effect cTn
       const effectCtnChildren: XmlComponent[] = [

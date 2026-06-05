@@ -20,6 +20,10 @@ export interface ImageOptions {
   readonly rowOffset?: number;
   /** Relationship ID for the image */
   readonly rId: string;
+  /** Lock anchor with sheet (default true) */
+  readonly locksWithSheet?: boolean;
+  /** Print with sheet (default true) */
+  readonly printsWithSheet?: boolean;
 }
 
 export interface ChartAnchorOptions {
@@ -33,6 +37,10 @@ export interface ChartAnchorOptions {
   readonly rowOffset?: number;
   /** Relationship ID for the chart */
   readonly rId: string;
+  /** Lock anchor with sheet (default true) */
+  readonly locksWithSheet?: boolean;
+  /** Print with sheet (default true) */
+  readonly printsWithSheet?: boolean;
 }
 
 const XDR_NS = "http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing";
@@ -60,7 +68,7 @@ export class Drawing extends BaseXmlComponent {
         `<pic><nvPicPr><cNvPr id="${id}" name="Picture ${id}"/><cNvPicPr preferRelativeResize="1"/></nvPicPr>`,
         `<blipFill><a:blip r:embed="${img.rId}"/><a:stretch><a:fillRect/></a:stretch></blipFill>`,
         `<spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="400000" cy="300000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></spPr></pic>`,
-        `<clientData/></twoCellAnchor>`,
+        `<clientData fLocksWithSheet="${img.locksWithSheet !== false ? 1 : 0}" fPrintsWithSheet="${img.printsWithSheet !== false ? 1 : 0}"/></twoCellAnchor>`,
       );
       id++;
     }
@@ -71,7 +79,7 @@ export class Drawing extends BaseXmlComponent {
         `<graphicFrame><nvGraphicFramePr><cNvPr id="${id}" name="Chart ${id}"/><cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></cNvGraphicFramePr></nvGraphicFramePr>`,
         `<xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xfrm>`,
         `<a:graphic><a:graphicData uri="${C_URI}"><c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:r="${R_NS}" r:id="${chart.rId}"/></a:graphicData></a:graphic></graphicFrame>`,
-        `<clientData/></twoCellAnchor>`,
+        `<clientData fLocksWithSheet="${chart.locksWithSheet !== false ? 1 : 0}" fPrintsWithSheet="${chart.printsWithSheet !== false ? 1 : 0}"/></twoCellAnchor>`,
       );
       id++;
     }

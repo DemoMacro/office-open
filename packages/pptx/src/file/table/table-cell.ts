@@ -22,6 +22,8 @@ export interface TableCellOptions {
   };
   readonly columnSpan?: number;
   readonly rowSpan?: number;
+  readonly horizontalMerge?: "continue" | "restart";
+  readonly verticalMerge?: "continue" | "restart";
   readonly verticalAlign?: VerticalAlignment;
   readonly margins?: {
     readonly top?: number;
@@ -69,6 +71,10 @@ export class TableCell extends BaseXmlComponent {
     if (opts.columnSpan !== undefined && opts.columnSpan > 1)
       tcAttrs.push(`gridSpan="${opts.columnSpan}"`);
     if (opts.rowSpan !== undefined && opts.rowSpan > 1) tcAttrs.push(`rowSpan="${opts.rowSpan}"`);
+    if (opts.horizontalMerge)
+      tcAttrs.push(`hMerge="${opts.horizontalMerge === "restart" ? "1" : "0"}"`);
+    if (opts.verticalMerge)
+      tcAttrs.push(`vMerge="${opts.verticalMerge === "restart" ? "1" : "0"}"`);
     const tcAttrStr = tcAttrs.length > 0 ? ` ${tcAttrs.join(" ")}` : "";
 
     // a:txBody

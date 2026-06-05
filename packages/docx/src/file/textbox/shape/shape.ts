@@ -135,6 +135,28 @@ interface ShapeOptions {
   readonly type?: string;
   /** Styling properties for the shape */
   readonly style?: VmlShapeStyle;
+  /** Fill color for the shape (VML: fillcolor) */
+  readonly fillColor?: string;
+  /** Stroke color for the shape (VML: strokecolor) */
+  readonly strokeColor?: string;
+  /** Stroke weight for the shape (VML: strokeweight) */
+  readonly strokeWeight?: string;
+  /** Whether the shape is filled (VML: filled) */
+  readonly filled?: boolean;
+  /** Whether the shape is stroked (VML: stroked) */
+  readonly stroked?: boolean;
+  /** Coordinate origin, e.g. "0,0" (VML: coordorigin) */
+  readonly coordOrigin?: string;
+  /** Coordinate size, e.g. "21600,21600" (VML: coordsize) */
+  readonly coordSize?: string;
+  /** Inset pen mode (VML: insetpen) */
+  readonly insetPen?: boolean;
+  /** Adjustment values for the shape (VML: adj) */
+  readonly adjustment?: string;
+  /** Path definition for the shape (VML: path) */
+  readonly path?: string;
+  /** Arc size for rounded rectangles, e.g. "10923f" (VML: arcsize) */
+  readonly arcSize?: string;
 }
 
 /**
@@ -186,12 +208,20 @@ export const createShape = ({
   children,
   type = SHAPE_TYPE,
   style,
+  fillColor,
+  strokeColor,
+  strokeWeight,
+  filled,
+  stroked,
+  coordOrigin,
+  coordSize,
+  insetPen,
+  adjustment,
+  path,
+  arcSize,
 }: ShapeOptions): XmlComponent =>
-  new BuilderElement<
-    Pick<ShapeOptions, "id" | "type"> & {
-      readonly style?: string;
-    }
-  >({
+  new BuilderElement({
+    name: "v:shape",
     attributes: {
       id: {
         key: "id",
@@ -205,7 +235,50 @@ export const createShape = ({
         key: "type",
         value: type,
       },
+      fillColor: {
+        key: "fillcolor",
+        value: fillColor,
+      },
+      strokeColor: {
+        key: "strokecolor",
+        value: strokeColor,
+      },
+      strokeWeight: {
+        key: "strokeweight",
+        value: strokeWeight,
+      },
+      filled: {
+        key: "filled",
+        value: filled !== undefined ? (filled ? "true" : "false") : undefined,
+      },
+      stroked: {
+        key: "stroked",
+        value: stroked !== undefined ? (stroked ? "true" : "false") : undefined,
+      },
+      coordOrigin: {
+        key: "coordorigin",
+        value: coordOrigin,
+      },
+      coordSize: {
+        key: "coordsize",
+        value: coordSize,
+      },
+      insetPen: {
+        key: "insetpen",
+        value: insetPen !== undefined ? (insetPen ? "true" : "false") : undefined,
+      },
+      adjustment: {
+        key: "adj",
+        value: adjustment,
+      },
+      path: {
+        key: "path",
+        value: path,
+      },
+      arcSize: {
+        key: "arcsize",
+        value: arcSize,
+      },
     },
     children: [createVmlTextbox({ children, style: "mso-fit-shape-to-text:t;" })],
-    name: "v:shape",
   });

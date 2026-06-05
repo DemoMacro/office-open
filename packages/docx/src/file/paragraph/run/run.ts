@@ -83,7 +83,13 @@ interface RunOptionsBase {
  *
  * @see {@link Run}
  */
-export type RunOptions = RunOptionsBase & RunPropertiesOptions;
+export type RunOptions = RunOptionsBase &
+  RunPropertiesOptions & {
+    /** Revision save ID for run properties (hex string, e.g. "00123456"). */
+    readonly rsidRPr?: string;
+    /** Revision save ID when run was deleted (hex string). */
+    readonly rsidDel?: string;
+  };
 
 export type IParagraphRunOptions = RunOptionsBase & IParagraphRunPropertiesOptions;
 
@@ -128,8 +134,8 @@ export class Run extends BaseXmlComponent {
     this.options = options;
 
     // Pre-build the entire IXmlableObject for the simple case:
-    // text-only (no children array, no break, no extra children).
-    if (!options.children && !options.break) {
+    // text-only (no children array, no break, no extra children, no rsid attrs).
+    if (!options.children && !options.break && !options.rsidRPr && !options.rsidDel) {
       const rPr = buildRunProperties(options);
       const text = options.text !== undefined ? buildText(options.text) : undefined;
       if (rPr || text) {
@@ -226,6 +232,13 @@ export class Run extends BaseXmlComponent {
     }
 
     const body = parts.join("");
-    return body.length === 0 ? "<w:r/>" : `<w:r>${body}</w:r>`;
+
+    // Build rsid attributes on <w:r>
+    const rsidAttrs: string[] = [];
+    if (this.options.rsidRPr) rsidAttrs.push(` w:rsidRPr="${this.options.rsidRPr}"`);
+    if (this.options.rsidDel) rsidAttrs.push(` w:rsidDel="${this.options.rsidDel}"`);
+    const attr = rsidAttrs.join("");
+
+    return body.length === 0 ? (attr ? `<w:r${attr}/>` : "<w:r/>") : `<w:r${attr}>${body}</w:r>`;
   }
 }

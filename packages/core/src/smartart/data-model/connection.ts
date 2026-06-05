@@ -13,12 +13,14 @@ export class Connection extends XmlComponent {
     destOrd: number = 0,
     parTransId?: string,
     sibTransId?: string,
+    presId?: string,
   ) {
     super("dgm:cxn");
     const attrs: Record<string, string | number> = { modelId, srcId, destId, srcOrd, destOrd };
     if (type) attrs.type = type;
     if (parTransId) attrs.parTransId = parTransId;
     if (sibTransId) attrs.sibTransId = sibTransId;
+    if (presId) attrs.presId = presId;
     this.root.push(chartAttr(attrs));
   }
 }

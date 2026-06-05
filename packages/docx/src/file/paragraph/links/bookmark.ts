@@ -109,10 +109,12 @@ export class Bookmark {
  * ```
  */
 export class BookmarkStart extends XmlComponent {
-  public constructor(id: string, linkId: number) {
+  public constructor(id: string, linkId: number, displacedByCustomXml?: "before" | "after") {
     super("w:bookmarkStart");
 
-    this.root.push({ _attr: { "w:id": linkId, "w:name": id } });
+    const attrs: Record<string, string | number> = { "w:id": linkId, "w:name": id };
+    if (displacedByCustomXml !== undefined) attrs["w:displacedByCustomXml"] = displacedByCustomXml;
+    this.root.push({ _attr: attrs });
   }
 }
 
@@ -143,9 +145,11 @@ export class BookmarkStart extends XmlComponent {
  * ```
  */
 export class BookmarkEnd extends XmlComponent {
-  public constructor(linkId: number) {
+  public constructor(linkId: number, displacedByCustomXml?: "before" | "after") {
     super("w:bookmarkEnd");
 
-    this.root.push({ _attr: { "w:id": linkId } });
+    const attrs: Record<string, string | number> = { "w:id": linkId };
+    if (displacedByCustomXml !== undefined) attrs["w:displacedByCustomXml"] = displacedByCustomXml;
+    this.root.push({ _attr: attrs });
   }
 }

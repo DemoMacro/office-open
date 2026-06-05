@@ -44,9 +44,32 @@ import type { LatentStyleException } from "./exceptions";
  * );
  * ```
  */
+export interface LatentStylesOptions {
+  readonly defaultLockedState?: boolean;
+  readonly defaultUIPriority?: number;
+  readonly defaultSemiHidden?: boolean;
+  readonly defaultUnhideWhenUsed?: boolean;
+  readonly defaultQuickFormat?: boolean;
+}
+
 export class LatentStyles extends XmlComponent {
-  public constructor(latentException?: LatentStyleException) {
+  public constructor(latentException?: LatentStyleException, options?: LatentStylesOptions) {
     super("w:latentStyles");
+
+    if (options) {
+      const attr: Record<string, string | number> = {};
+      if (options.defaultLockedState !== undefined)
+        attr["w:defLockedState"] = options.defaultLockedState ? "1" : "0";
+      if (options.defaultUIPriority !== undefined)
+        attr["w:defUIPriority"] = options.defaultUIPriority;
+      if (options.defaultSemiHidden !== undefined)
+        attr["w:defSemiHidden"] = options.defaultSemiHidden ? "1" : "0";
+      if (options.defaultUnhideWhenUsed !== undefined)
+        attr["w:defUnhideWhenUsed"] = options.defaultUnhideWhenUsed ? "1" : "0";
+      if (options.defaultQuickFormat !== undefined)
+        attr["w:defQFormat"] = options.defaultQuickFormat ? "1" : "0";
+      if (Object.keys(attr).length > 0) this.root.push({ _attr: attr });
+    }
 
     if (latentException) {
       this.root.push(latentException);

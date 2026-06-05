@@ -313,6 +313,7 @@ export interface SettingsOptions {
     readonly nlCheck?: boolean;
     readonly checkStyle?: boolean;
     readonly appCheck?: string;
+    readonly appName?: string;
   }[];
   /** Proofing state (spelling/grammar check status) */
   readonly proofState?: {
@@ -320,18 +321,22 @@ export interface SettingsOptions {
     readonly grammar?: "clean" | "dirty";
   };
   /** Style pane format filter (which styles to show) */
-  readonly stylePaneFormatFilter?:
-    | "all"
-    | "custom"
-    | "available"
-    | "recommended"
-    | "inUse"
-    | "heading"
-    | "table"
-    | "paragraph"
-    | "character"
-    | "linked"
-    | "latent";
+  readonly stylePaneFormatFilter?: {
+    readonly allStyles?: boolean;
+    readonly customStyles?: boolean;
+    readonly stylesInUse?: boolean;
+    readonly headingStyles?: boolean;
+    readonly numberingStyles?: boolean;
+    readonly tableStyles?: boolean;
+    readonly directFormattingOnRuns?: boolean;
+    readonly directFormattingOnParagraphs?: boolean;
+    readonly directFormattingOnNumbering?: boolean;
+    readonly directFormattingOnTables?: boolean;
+    readonly clearFormatting?: boolean;
+    readonly top3HeadingStyles?: boolean;
+    readonly visibleStyles?: boolean;
+    readonly alternateStyleNames?: boolean;
+  };
   /** Style pane sort method */
   readonly stylePaneSortMethod?: "name" | "priority" | "default" | "font";
   /** Document type classification */
@@ -345,7 +350,11 @@ export interface SettingsOptions {
   /** Custom kinsoku line break characters before which line breaks are not allowed */
   readonly noLineBreaksBefore?: { readonly lang?: string; readonly val?: string };
   /** Save through XSLT transform */
-  readonly saveThroughXslt?: { readonly id?: string; readonly val?: string };
+  readonly saveThroughXslt?: {
+    readonly id?: string;
+    readonly val?: string;
+    readonly solutionID?: string;
+  };
   /** Show XML tags in document */
   readonly showXMLTags?: boolean;
   /** Always merge empty namespace */
@@ -359,6 +368,7 @@ export interface SettingsOptions {
   /** Smart tag type definitions */
   readonly smartTagType?: readonly {
     readonly namespace?: string;
+    readonly namespaceuri?: string;
     readonly name?: string;
     readonly url?: string;
   }[];
@@ -374,10 +384,12 @@ export interface RevisionViewOptions {
   readonly markup?: boolean;
   /** Show comments */
   readonly comments?: boolean;
-  /** Show ink annotations */
+  /** Show insertions and deletions */
   readonly insDel?: boolean;
   /** Show formatting changes */
   readonly formatting?: boolean;
+  /** Show ink annotations */
+  readonly inkAnnotations?: boolean;
 }
 
 /**
@@ -394,10 +406,34 @@ export interface DocumentProtectionOptions {
   readonly hashValue?: string;
   /** Password salt (base64) */
   readonly saltValue?: string;
+  /** Legacy password hash (Transitional XSD: w:hash) */
+  readonly hash?: string;
+  /** Legacy password salt (Transitional XSD: w:salt) */
+  readonly salt?: string;
   /** Password spin count */
   readonly spinCount?: number;
   /** Password algorithm name */
   readonly algorithmName?: string;
+  /** Cryptographic algorithm class */
+  readonly cryptographicAlgorithmClass?: string;
+  /** Cryptographic algorithm SID */
+  readonly cryptographicAlgorithmSid?: number;
+  /** Cryptographic algorithm type */
+  readonly cryptographicAlgorithmType?: string;
+  /** Cryptographic provider */
+  readonly cryptographicProvider?: string;
+  /** Cryptographic provider type */
+  readonly cryptographicProviderType?: string;
+  /** Cryptographic provider type extension */
+  readonly cryptographicProviderTypeExtension?: number;
+  /** Cryptographic provider type extension source */
+  readonly cryptographicProviderTypeExtensionSource?: string;
+  /** Algorithm extension ID */
+  readonly algorithmExtensionId?: number;
+  /** Algorithm extension source */
+  readonly algorithmExtensionSource?: string;
+  /** Legacy cryptographic spin count (AG_TransitionalPassword) */
+  readonly cryptSpinCount?: number;
 }
 
 /**
@@ -410,12 +446,36 @@ export interface WriteProtectionOptions {
   readonly hashValue?: string;
   /** Salt value for the hash (base64) */
   readonly saltValue?: string;
+  /** Legacy password hash (Transitional XSD: w:hash) */
+  readonly hash?: string;
+  /** Legacy password salt (Transitional XSD: w:salt) */
+  readonly salt?: string;
   /** Password spin count */
   readonly spinCount?: number;
   /** Password algorithm name */
   readonly algorithmName?: string;
   /** Whether write protection is recommended (default true when options provided) */
   readonly recommended?: boolean;
+  /** Cryptographic algorithm class */
+  readonly cryptographicAlgorithmClass?: string;
+  /** Cryptographic algorithm SID */
+  readonly cryptographicAlgorithmSid?: number;
+  /** Cryptographic algorithm type */
+  readonly cryptographicAlgorithmType?: string;
+  /** Cryptographic provider */
+  readonly cryptographicProvider?: string;
+  /** Cryptographic provider type */
+  readonly cryptographicProviderType?: string;
+  /** Cryptographic provider type extension */
+  readonly cryptographicProviderTypeExtension?: number;
+  /** Cryptographic provider type extension source */
+  readonly cryptographicProviderTypeExtensionSource?: string;
+  /** Algorithm extension ID */
+  readonly algorithmExtensionId?: number;
+  /** Algorithm extension source */
+  readonly algorithmExtensionSource?: string;
+  /** Legacy cryptographic spin count (AG_TransitionalPassword) */
+  readonly cryptSpinCount?: number;
 }
 
 // ── Mail Merge types ──
@@ -825,6 +885,7 @@ export class Settings extends XmlComponent {
         if (ws.nlCheck !== undefined) attrs.push({ key: "w:nlCheck", value: ws.nlCheck });
         if (ws.checkStyle !== undefined) attrs.push({ key: "w:checkStyle", value: ws.checkStyle });
         if (ws.appCheck !== undefined) attrs.push({ key: "w:appCheck", value: ws.appCheck });
+        if (ws.appName !== undefined) attrs.push({ key: "w:appName", value: ws.appName });
         this.root.push(new BuilderElement({ name: "w:activeWritingStyle", attributes: attrs }));
       }
     }
@@ -856,7 +917,28 @@ export class Settings extends XmlComponent {
     }
 
     if (options.stylePaneFormatFilter !== undefined) {
-      this.root.push(stringValObj("w:stylePaneFormatFilter", options.stylePaneFormatFilter));
+      const f = options.stylePaneFormatFilter;
+      const attrs: { key: string; value: string }[] = [];
+      const boolFlags: readonly { readonly prop: keyof typeof f; readonly xmlKey: string }[] = [
+        { prop: "allStyles", xmlKey: "w:allStyles" },
+        { prop: "customStyles", xmlKey: "w:customStyles" },
+        { prop: "stylesInUse", xmlKey: "w:stylesInUse" },
+        { prop: "headingStyles", xmlKey: "w:headingStyles" },
+        { prop: "numberingStyles", xmlKey: "w:numberingStyles" },
+        { prop: "tableStyles", xmlKey: "w:tableStyles" },
+        { prop: "directFormattingOnRuns", xmlKey: "w:directFormattingOnRuns" },
+        { prop: "directFormattingOnParagraphs", xmlKey: "w:directFormattingOnParagraphs" },
+        { prop: "directFormattingOnNumbering", xmlKey: "w:directFormattingOnNumbering" },
+        { prop: "directFormattingOnTables", xmlKey: "w:directFormattingOnTables" },
+        { prop: "clearFormatting", xmlKey: "w:clearFormatting" },
+        { prop: "top3HeadingStyles", xmlKey: "w:top3HeadingStyles" },
+        { prop: "visibleStyles", xmlKey: "w:visibleStyles" },
+        { prop: "alternateStyleNames", xmlKey: "w:alternateStyleNames" },
+      ];
+      for (const { prop, xmlKey } of boolFlags) {
+        if (f[prop] !== undefined) attrs.push({ key: xmlKey, value: f[prop] ? "1" : "0" });
+      }
+      this.root.push(new BuilderElement({ name: "w:stylePaneFormatFilter", attributes: attrs }));
     }
 
     if (options.stylePaneSortMethod !== undefined) {
@@ -1083,6 +1165,8 @@ export class Settings extends XmlComponent {
         attrs.push({ key: "r:id", value: options.saveThroughXslt.id });
       if (options.saveThroughXslt.val !== undefined)
         attrs.push({ key: "w:val", value: options.saveThroughXslt.val });
+      if (options.saveThroughXslt.solutionID !== undefined)
+        attrs.push({ key: "w:solutionID", value: options.saveThroughXslt.solutionID });
       this.root.push(new BuilderElement({ name: "w:saveThroughXslt", attributes: attrs }));
     }
 
@@ -1198,6 +1282,8 @@ export class Settings extends XmlComponent {
       for (const st of options.smartTagType) {
         const attrs: { key: string; value: string }[] = [];
         if (st.namespace !== undefined) attrs.push({ key: "w:namespace", value: st.namespace });
+        if (st.namespaceuri !== undefined)
+          attrs.push({ key: "w:namespaceuri", value: st.namespaceuri });
         if (st.name !== undefined) attrs.push({ key: "w:name", value: st.name });
         if (st.url !== undefined) attrs.push({ key: "w:url", value: st.url });
         this.root.push(new BuilderElement({ name: "w:smartTagType", attributes: attrs }));
@@ -1249,8 +1335,44 @@ class DocumentProtection extends XmlComponent {
     if (options.saltValue !== undefined) {
       attr["w:saltValue"] = options.saltValue;
     }
+    if (options.hash !== undefined) {
+      attr["w:hash"] = options.hash;
+    }
+    if (options.salt !== undefined) {
+      attr["w:salt"] = options.salt;
+    }
     if (options.spinCount !== undefined) {
       attr["w:spinCount"] = options.spinCount;
+    }
+    if (options.cryptographicAlgorithmClass !== undefined) {
+      attr["w:cryptAlgorithmClass"] = options.cryptographicAlgorithmClass;
+    }
+    if (options.cryptographicAlgorithmSid !== undefined) {
+      attr["w:cryptAlgorithmSid"] = options.cryptographicAlgorithmSid;
+    }
+    if (options.cryptographicAlgorithmType !== undefined) {
+      attr["w:cryptAlgorithmType"] = options.cryptographicAlgorithmType;
+    }
+    if (options.cryptographicProvider !== undefined) {
+      attr["w:cryptProvider"] = options.cryptographicProvider;
+    }
+    if (options.cryptographicProviderType !== undefined) {
+      attr["w:cryptProviderType"] = options.cryptographicProviderType;
+    }
+    if (options.cryptographicProviderTypeExtension !== undefined) {
+      attr["w:cryptProviderTypeExt"] = options.cryptographicProviderTypeExtension;
+    }
+    if (options.cryptographicProviderTypeExtensionSource !== undefined) {
+      attr["w:cryptProviderTypeExtSource"] = options.cryptographicProviderTypeExtensionSource;
+    }
+    if (options.algorithmExtensionId !== undefined) {
+      attr["w:algIdExt"] = options.algorithmExtensionId;
+    }
+    if (options.algorithmExtensionSource !== undefined) {
+      attr["w:algIdExtSource"] = options.algorithmExtensionSource;
+    }
+    if (options.cryptSpinCount !== undefined) {
+      attr["w:cryptSpinCount"] = options.cryptSpinCount;
     }
     this.root.push({ _attr: attr });
   }
@@ -1287,11 +1409,47 @@ class WriteProtection extends XmlComponent {
     if (options.saltValue !== undefined) {
       attr["w:saltValue"] = options.saltValue;
     }
+    if (options.hash !== undefined) {
+      attr["w:hash"] = options.hash;
+    }
+    if (options.salt !== undefined) {
+      attr["w:salt"] = options.salt;
+    }
     if (options.spinCount !== undefined) {
       attr["w:spinCount"] = options.spinCount;
     }
     if (options.algorithmName !== undefined) {
       attr["w:algorithmName"] = options.algorithmName;
+    }
+    if (options.cryptographicAlgorithmClass !== undefined) {
+      attr["w:cryptAlgorithmClass"] = options.cryptographicAlgorithmClass;
+    }
+    if (options.cryptographicAlgorithmSid !== undefined) {
+      attr["w:cryptAlgorithmSid"] = options.cryptographicAlgorithmSid;
+    }
+    if (options.cryptographicAlgorithmType !== undefined) {
+      attr["w:cryptAlgorithmType"] = options.cryptographicAlgorithmType;
+    }
+    if (options.cryptographicProvider !== undefined) {
+      attr["w:cryptProvider"] = options.cryptographicProvider;
+    }
+    if (options.cryptographicProviderType !== undefined) {
+      attr["w:cryptProviderType"] = options.cryptographicProviderType;
+    }
+    if (options.algorithmExtensionId !== undefined) {
+      attr["w:algIdExt"] = options.algorithmExtensionId;
+    }
+    if (options.algorithmExtensionSource !== undefined) {
+      attr["w:algIdExtSource"] = options.algorithmExtensionSource;
+    }
+    if (options.cryptographicProviderTypeExtension !== undefined) {
+      attr["w:cryptProviderTypeExt"] = options.cryptographicProviderTypeExtension;
+    }
+    if (options.cryptographicProviderTypeExtensionSource !== undefined) {
+      attr["w:cryptProviderTypeExtSource"] = options.cryptographicProviderTypeExtensionSource;
+    }
+    if (options.cryptSpinCount !== undefined) {
+      attr["w:cryptSpinCount"] = options.cryptSpinCount;
     }
     this.root.push({ _attr: attr });
   }
@@ -1344,6 +1502,8 @@ class RevisionView extends XmlComponent {
     if (options.insDel !== undefined) attr["w:insDel"] = options.insDel ? "true" : "false";
     if (options.formatting !== undefined)
       attr["w:formatting"] = options.formatting ? "true" : "false";
+    if (options.inkAnnotations !== undefined)
+      attr["w:inkAnnotations"] = options.inkAnnotations ? "true" : "false";
     this.root.push({ _attr: attr });
   }
 }

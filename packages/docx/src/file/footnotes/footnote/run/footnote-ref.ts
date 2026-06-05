@@ -19,13 +19,19 @@ import { XmlComponent } from "@file/xml-components";
  *
  * ## XSD Schema
  * ```xml
- * <xsd:element name="footnoteRef" type="CT_Empty" minOccurs="0"/>
+ * <xsd:complexType name="CT_FtnEdnRef">
+ *   <xsd:attribute name="customMarkFollows" type="s:ST_OnOff" use="optional"/>
+ *   <xsd:attribute name="id" use="required" type="ST_DecimalNumber"/>
+ * </xsd:complexType>
  * ```
  *
  * @internal
  */
 export class FootnoteRef extends XmlComponent {
-  public constructor() {
+  public constructor(options?: { readonly customMarkFollows?: boolean }) {
     super("w:footnoteRef");
+    if (options?.customMarkFollows !== undefined) {
+      this.root.push({ _attr: { "w:customMarkFollows": options.customMarkFollows ? "1" : "0" } });
+    }
   }
 }

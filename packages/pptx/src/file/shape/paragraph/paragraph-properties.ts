@@ -37,6 +37,7 @@ export interface ParagraphPropertiesOptions {
   readonly marginIndent?: number;
   readonly marginRight?: number;
   readonly defTabSize?: number;
+  readonly fontAlignment?: "auto" | "t" | "ctr" | "b" | "base";
 }
 
 function buildBulletChildren(options: BulletOptions): IXmlableObject[] {
@@ -94,6 +95,7 @@ export function buildParagraphProperties(
   if (options.marginIndent !== undefined) attrs.marL = options.marginIndent;
   if (options.marginRight !== undefined) attrs.marR = options.marginRight;
   if (options.defTabSize !== undefined) attrs.defTabSz = options.defTabSize;
+  if (options.fontAlignment) attrs.fontAlgn = options.fontAlignment;
   if (Object.keys(attrs).length > 0) children.push({ _attr: attrs });
 
   if (options.lineSpacing !== undefined) {

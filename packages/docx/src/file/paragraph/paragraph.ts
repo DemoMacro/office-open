@@ -188,6 +188,16 @@ export type ParagraphOptions = {
    *  strings (coerced to TextRun), or JSON-friendly wrappers
    *  ({ chart }, { smartArt }, { image }, { math }, { symbolRun }, etc.). */
   readonly children?: readonly (ParagraphChild | RunOptions | IParagraphJsonChild | string)[];
+  /** Revision save ID for the paragraph mark (hex string, e.g. "00123456"). */
+  readonly rsidR?: string;
+  /** Revision save ID for the paragraph properties (hex string). */
+  readonly rsidRPr?: string;
+  /** Revision save ID for the default run properties (hex string). */
+  readonly rsidRDefault?: string;
+  /** Revision save ID when paragraph was deleted (hex string). */
+  readonly rsidDel?: string;
+  /** Revision save ID for the paragraph (hex string). */
+  readonly rsidP?: string;
 } & ParagraphPropertiesOptions;
 
 /**
@@ -322,7 +332,17 @@ export class Paragraph extends BaseXmlComponent implements FileChild {
     }
 
     const body = parts.join("");
-    return body ? `<w:p>${body}</w:p>` : "<w:p/>";
+
+    // Build rsid attributes on <w:p>
+    const rsidAttrs: string[] = [];
+    if (this.options.rsidR) rsidAttrs.push(` w:rsidR="${this.options.rsidR}"`);
+    if (this.options.rsidRPr) rsidAttrs.push(` w:rsidRPr="${this.options.rsidRPr}"`);
+    if (this.options.rsidRDefault) rsidAttrs.push(` w:rsidRDefault="${this.options.rsidRDefault}"`);
+    if (this.options.rsidDel) rsidAttrs.push(` w:rsidDel="${this.options.rsidDel}"`);
+    if (this.options.rsidP) rsidAttrs.push(` w:rsidP="${this.options.rsidP}"`);
+    const attr = rsidAttrs.join("");
+
+    return body ? `<w:p${attr}>${body}</w:p>` : attr ? `<w:p${attr}/>` : "<w:p/>";
   }
 
   /**

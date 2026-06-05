@@ -28,6 +28,8 @@ export interface TextBodyOptions {
     readonly left?: number;
     readonly right?: number;
   };
+  readonly marginTop?: number;
+  readonly marginBottom?: number;
   readonly columns?: number;
   readonly columnSpacing?: number;
 }
@@ -54,6 +56,8 @@ function buildBodyPr(options: TextBodyOptions): IXmlableObject {
   if (options.margins?.right !== undefined) attrs.rIns = options.margins.right;
   if (options.columns !== undefined) attrs.numCol = options.columns;
   if (options.columnSpacing !== undefined) attrs.spcCol = options.columnSpacing * 100;
+  if (options.marginTop !== undefined) attrs.marT = options.marginTop;
+  if (options.marginBottom !== undefined) attrs.marB = options.marginBottom;
   if (Object.keys(attrs).length > 0) bodyPrContent.push({ _attr: attrs });
 
   bodyPrContent.push(...bodyPrChildren);

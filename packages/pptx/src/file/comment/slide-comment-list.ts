@@ -4,6 +4,7 @@ export interface CommentEntry {
   readonly authorId: number;
   readonly idx: number;
   readonly date?: string;
+  readonly modified?: boolean;
   readonly x: number;
   readonly y: number;
   readonly text: string;
@@ -28,6 +29,9 @@ export class SlideCommentList extends XmlComponent {
             authorId: { key: "authorId", value: comment.authorId },
             idx: { key: "idx", value: comment.idx },
             ...(comment.date != null ? { dt: { key: "dt", value: comment.date } } : {}),
+            ...(comment.modified !== undefined
+              ? { mod: { key: "mod", value: comment.modified ? "1" : "0" } }
+              : {}),
           },
           children: [
             new BuilderElement({

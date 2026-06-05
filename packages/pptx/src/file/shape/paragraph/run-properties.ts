@@ -35,6 +35,10 @@ export const TextCapitalization = {
 export interface HyperlinkOptions {
   readonly url: string;
   readonly tooltip?: string;
+  readonly action?: string;
+  readonly highlightClick?: boolean;
+  readonly endSound?: boolean;
+  readonly invalidUrl?: boolean;
 }
 
 export interface RunPropertiesOptions {
@@ -56,6 +60,16 @@ export interface RunPropertiesOptions {
   readonly rightToLeft?: boolean;
   readonly noProof?: boolean;
   readonly dirty?: boolean;
+  /** East Asian line break. When true, can break East Asian words. */
+  readonly kumimoji?: boolean;
+  /** Alternate language for the text run. */
+  readonly alternateLanguage?: string;
+  /** Normalize height. When true, normalize the height of text. */
+  readonly normalizeHeight?: boolean;
+  /** Bookmark mark identifier. */
+  readonly bookmarkMark?: string;
+  /** Smart tag ID. */
+  readonly smartTagId?: string;
 }
 
 /**
@@ -74,6 +88,12 @@ function buildAttrString(options: RunPropertiesOptions): string {
   if (options.spacing !== undefined) attrs.push(`spc="${options.spacing}"`);
   if (options.noProof !== undefined) attrs.push(`noProof="${options.noProof ? 1 : 0}"`);
   if (options.dirty !== undefined) attrs.push(`dirty="${options.dirty ? 1 : 0}"`);
+  if (options.kumimoji !== undefined) attrs.push(`kumimoji="${options.kumimoji ? 1 : 0}"`);
+  if (options.alternateLanguage) attrs.push(`altLang="${options.alternateLanguage}"`);
+  if (options.normalizeHeight !== undefined)
+    attrs.push(`normalizeH="${options.normalizeHeight ? 1 : 0}"`);
+  if (options.bookmarkMark) attrs.push(`bmk="${options.bookmarkMark}"`);
+  if (options.smartTagId) attrs.push(`smtId="${options.smartTagId}"`);
   return attrs.join(" ");
 }
 
@@ -98,7 +118,12 @@ export function hasRunProperties(options: RunPropertiesOptions): boolean {
     options.outline !== undefined ||
     options.rightToLeft !== undefined ||
     options.noProof !== undefined ||
-    options.dirty !== undefined
+    options.dirty !== undefined ||
+    options.kumimoji !== undefined ||
+    options.alternateLanguage !== undefined ||
+    options.normalizeHeight !== undefined ||
+    options.bookmarkMark !== undefined ||
+    options.smartTagId !== undefined
   );
 }
 
@@ -163,8 +188,14 @@ export class RunProperties extends XmlComponent {
     }
 
     if (opts.hyperlink && hyperlinkKey) {
-      const tooltip = opts.hyperlink.tooltip ? ` tooltip="${opts.hyperlink.tooltip}"` : "";
-      parts.push(`<a:hlinkClick r:id="{hlink:${hyperlinkKey}}"${tooltip}/>`);
+      const hl = opts.hyperlink;
+      const hlAttrs: string[] = [`r:id="{hlink:${hyperlinkKey}}"`];
+      if (hl.tooltip) hlAttrs.push(`tooltip="${hl.tooltip}"`);
+      if (hl.action) hlAttrs.push(`action="${hl.action}"`);
+      if (hl.highlightClick) hlAttrs.push('highlightClick="1"');
+      if (hl.endSound) hlAttrs.push('endSnd="1"');
+      if (hl.invalidUrl) hlAttrs.push('invalidUrl="1"');
+      parts.push(`<a:hlinkClick ${hlAttrs.join(" ")}/>`);
     }
 
     if (opts.rightToLeft !== undefined) {

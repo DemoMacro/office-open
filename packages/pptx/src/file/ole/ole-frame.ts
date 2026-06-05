@@ -55,6 +55,8 @@ export interface OleOptions {
   readonly link?: OleLinkOptions;
   /** Relationship ID for the preview/icon image */
   readonly imgRId?: string;
+  /** Follow color scheme: "none", "full", or "textAndBackground" */
+  readonly followColorScheme?: "none" | "full" | "textAndBackground";
 }
 
 // ── Component ──
@@ -165,6 +167,7 @@ class OleObjectElement extends XmlComponent {
     if (options.imgW) attrs.imgW = options.imgW;
     if (options.imgH) attrs.imgH = options.imgH;
     if (options.progId) attrs.progId = options.progId;
+    if (options.followColorScheme) attrs.followColorScheme = options.followColorScheme;
     const rId = options.embed?.rId ?? options.link?.rId;
     if (rId) attrs["r:id"] = rId;
     this.root.push(buildAttrObject(attrs));

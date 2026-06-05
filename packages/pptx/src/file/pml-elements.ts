@@ -1,3 +1,6 @@
+import { BuilderElement } from "@file/xml-components";
+import type { XmlComponent } from "@file/xml-components";
+
 /**
  * PresentationML (p:) element name constants.
  *
@@ -243,3 +246,162 @@ export const KINSOKU = "p:kinsoku";
 
 /** p:progress — Progress element */
 export const PROGRESS = "p:progress";
+
+// ── Factory functions for elements with attributes ──
+
+export interface SlideSyncPropertiesOptions {
+  readonly serverSlideId?: string;
+  readonly serverSlideModifiedTime?: string;
+  readonly clientInsertedTime?: string;
+}
+
+/** Creates a p:sldSyncPr element (Slide Sync Properties). */
+export const createSlideSyncProperties = (options?: SlideSyncPropertiesOptions): XmlComponent => {
+  const attrs: Record<string, { key: string; value: string }> = {};
+  if (options?.serverSlideId !== undefined)
+    attrs.serverSlideId = { key: "serverSldId", value: options.serverSlideId };
+  if (options?.serverSlideModifiedTime !== undefined)
+    attrs.serverSlideModifiedTime = {
+      key: "serverSldModifiedTime",
+      value: options.serverSlideModifiedTime,
+    };
+  if (options?.clientInsertedTime !== undefined)
+    attrs.clientInsertedTime = { key: "clientInsertedTime", value: options.clientInsertedTime };
+  return new BuilderElement({
+    name: "p:sldSyncPr",
+    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
+  });
+};
+
+export interface OutlineViewPropertiesOptions {
+  readonly showFormatting?: boolean;
+}
+
+/** Creates a p:outlineViewPr element (Outline View Properties). */
+export const createOutlineViewProperties = (
+  options?: OutlineViewPropertiesOptions,
+): XmlComponent => {
+  const attrs: Record<string, { key: string; value: string }> = {};
+  if (options?.showFormatting !== undefined)
+    attrs.showFormatting = { key: "showFormatting", value: options.showFormatting ? "1" : "0" };
+  return new BuilderElement({
+    name: "p:outlineViewPr",
+    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
+  });
+};
+
+export interface OutlineViewSlideEntryOptions {
+  readonly collapse?: boolean;
+}
+
+/** Creates a p:sld element for outline view (OutlineViewSlideEntry). */
+export const createOutlineViewSlideEntry = (
+  options?: OutlineViewSlideEntryOptions,
+): XmlComponent => {
+  const attrs: Record<string, { key: string; value: string }> = {};
+  if (options?.collapse !== undefined)
+    attrs.collapse = { key: "collapse", value: options.collapse ? "1" : "0" };
+  return new BuilderElement({
+    name: "p:sld",
+    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
+  });
+};
+
+export interface KinsokuOptions {
+  readonly invalidStartCharacters?: string;
+  readonly invalidEndCharacters?: string;
+}
+
+/** Creates a p:kinsoku element (Kinsoku Line Breaking). */
+export const createKinsoku = (options?: KinsokuOptions): XmlComponent => {
+  const attrs: Record<string, { key: string; value: string }> = {};
+  if (options?.invalidStartCharacters !== undefined)
+    attrs.invalidStartCharacters = { key: "invalStChars", value: options.invalidStartCharacters };
+  if (options?.invalidEndCharacters !== undefined)
+    attrs.invalidEndCharacters = { key: "invalEndChars", value: options.invalidEndCharacters };
+  return new BuilderElement({
+    name: "p:kinsoku",
+    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
+  });
+};
+
+export interface ExclusiveTimingOptions {
+  readonly previousAction?: "none" | "skipTimed";
+}
+
+/** Creates a p:excl element (Exclusive Timing). */
+export const createExclusiveTiming = (options?: ExclusiveTimingOptions): XmlComponent => {
+  const attrs: Record<string, { key: string; value: string }> = {};
+  if (options?.previousAction !== undefined)
+    attrs.previousAction = { key: "prevAc", value: options.previousAction };
+  return new BuilderElement({
+    name: "p:excl",
+    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
+  });
+};
+
+export interface BuildParagraphOptions {
+  readonly build?: "whole" | "allAtOnce" | "p" | "cust";
+  readonly uiExpand?: boolean;
+}
+
+/** Creates a p:bldP element (Build Paragraph). */
+export const createBuildParagraph = (options?: BuildParagraphOptions): XmlComponent => {
+  const attrs: Record<string, { key: string; value: string }> = {};
+  if (options?.build !== undefined) attrs.build = { key: "build", value: options.build };
+  if (options?.uiExpand !== undefined)
+    attrs.uiExpand = { key: "uiExpand", value: options.uiExpand ? "1" : "0" };
+  return new BuilderElement({
+    name: "p:bldP",
+    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
+  });
+};
+
+export interface BuildDiagramOptions {
+  readonly build?: "whole" | "allAtOnce" | "cust" | "sp" | "bg";
+  readonly uiExpand?: boolean;
+}
+
+/** Creates a p:bldDgm element (Build Diagram). */
+export const createBuildDiagram = (options?: BuildDiagramOptions): XmlComponent => {
+  const attrs: Record<string, { key: string; value: string }> = {};
+  if (options?.build !== undefined) attrs.build = { key: "bld", value: options.build };
+  if (options?.uiExpand !== undefined)
+    attrs.uiExpand = { key: "uiExpand", value: options.uiExpand ? "1" : "0" };
+  return new BuilderElement({
+    name: "p:bldDgm",
+    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
+  });
+};
+
+export interface BuildOleChartOptions {
+  readonly build?: "allAtOnce" | "series" | "category" | "seriesEl" | "categoryEl";
+  readonly uiExpand?: boolean;
+}
+
+/** Creates a p:bldOleChart element (Build OLE Chart). */
+export const createBuildOleChart = (options?: BuildOleChartOptions): XmlComponent => {
+  const attrs: Record<string, { key: string; value: string }> = {};
+  if (options?.build !== undefined) attrs.build = { key: "bld", value: options.build };
+  if (options?.uiExpand !== undefined)
+    attrs.uiExpand = { key: "uiExpand", value: options.uiExpand ? "1" : "0" };
+  return new BuilderElement({
+    name: "p:bldOleChart",
+    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
+  });
+};
+
+export interface BuildGraphicOptions {
+  readonly uiExpand?: boolean;
+}
+
+/** Creates a p:bldGraphic element (Build Graphic). */
+export const createBuildGraphic = (options?: BuildGraphicOptions): XmlComponent => {
+  const attrs: Record<string, { key: string; value: string }> = {};
+  if (options?.uiExpand !== undefined)
+    attrs.uiExpand = { key: "uiExpand", value: options.uiExpand ? "1" : "0" };
+  return new BuilderElement({
+    name: "p:bldGraphic",
+    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
+  });
+};

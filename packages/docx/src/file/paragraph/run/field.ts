@@ -30,6 +30,7 @@ const FieldCharacterType = {
 interface FieldCharAttributes {
   readonly type: (typeof FieldCharacterType)[keyof typeof FieldCharacterType];
   readonly dirty?: boolean;
+  readonly fieldLock?: boolean;
 }
 
 /**
@@ -55,6 +56,7 @@ const createFieldChar = (
   dirty?: boolean,
   ffData?: XmlComponent,
   fldData?: string,
+  fieldLock?: boolean,
 ): XmlComponent => {
   const children: BuilderChild[] = [];
   if (fldData !== undefined) {
@@ -66,6 +68,7 @@ const createFieldChar = (
   return new BuilderElement<FieldCharAttributes>({
     attributes: {
       dirty: { key: "w:dirty", value: dirty },
+      fieldLock: { key: "w:fldLock", value: fieldLock },
       type: { key: "w:fldCharType", value: type },
     },
     children: children.length > 0 ? children : undefined,
@@ -96,11 +99,17 @@ const createFieldChar = (
  * });
  * ```
  */
-export const createBegin = (dirty?: boolean, formField?: FormFieldOptions): XmlComponent =>
+export const createBegin = (
+  dirty?: boolean,
+  formField?: FormFieldOptions,
+  fieldLock?: boolean,
+): XmlComponent =>
   createFieldChar(
     FieldCharacterType.BEGIN,
     dirty,
     formField ? createFormFieldData(formField) : undefined,
+    undefined,
+    fieldLock,
   );
 
 /**

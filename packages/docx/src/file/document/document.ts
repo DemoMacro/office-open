@@ -24,6 +24,8 @@ import type { DocumentBackgroundOptions } from "./document-background";
 export interface DocumentOptions {
   /** Optional background settings for the document */
   readonly background?: DocumentBackgroundOptions;
+  /** Conformance class for the document ("strict" or "transitional"). */
+  readonly conformance?: "strict" | "transitional";
 }
 
 /**
@@ -118,6 +120,9 @@ export class Document extends XmlComponent {
         "w14 w15 wp14",
       ),
     );
+    if (options.conformance) {
+      this.root.push({ _attr: { "w:conformance": options.conformance } });
+    }
     this.body = new Body();
     if (options.background) {
       this.root.push(new DocumentBackground(options.background));

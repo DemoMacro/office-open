@@ -84,6 +84,8 @@ export interface DocPartOptions {
   readonly category?: string;
   /** Building block types */
   readonly types?: readonly DocPartType[];
+  /** Whether all building block types are included (w:all attribute) */
+  readonly allTypes?: boolean;
   /** Insertion behaviors */
   readonly behaviors?: readonly DocPartBehavior[];
   /** Description */

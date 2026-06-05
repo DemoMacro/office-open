@@ -31,6 +31,23 @@ export interface ShapeOptions {
   readonly locking?: ShapeLockingOptions;
   readonly placeholder?: "title" | "body" | "subTitle" | "sldNum" | "dt" | "ftr" | "hdr" | "obj";
   readonly placeholderIndex?: number;
+  readonly useBackgroundFill?: boolean;
+  readonly isPhoto?: boolean;
+  readonly userDrawn?: boolean;
+  readonly hasCustomPrompt?: boolean;
+  /** Black-and-white mode for the shape. */
+  readonly blackWhiteMode?:
+    | "clr"
+    | "auto"
+    | "gray"
+    | "ltGray"
+    | "invGray"
+    | "grayWhite"
+    | "blackGray"
+    | "blackWhite"
+    | "black"
+    | "white"
+    | "hidden";
 }
 
 /**
@@ -65,7 +82,13 @@ export class Shape extends Xc {
     if (opts.placeholder) {
       const phAttrs: string[] = [`type="${opts.placeholder}"`];
       if (opts.placeholderIndex !== undefined) phAttrs.push(`idx="${opts.placeholderIndex}"`);
+      if (opts.hasCustomPrompt) phAttrs.push('hasCustomPrompt="1"');
       nvPrContent = `<p:nvPr><p:ph ${phAttrs.join(" ")}/></p:nvPr>`;
+    } else if (opts.isPhoto || opts.userDrawn) {
+      const nvPrAttrs: string[] = [];
+      if (opts.isPhoto) nvPrAttrs.push('isPhoto="1"');
+      if (opts.userDrawn) nvPrAttrs.push('userDrawn="1"');
+      nvPrContent = `<p:nvPr ${nvPrAttrs.join(" ")}/>`;
     }
     // a:spLocks inside p:cNvSpPr
     let cNvSpPrContent = "<p:cNvSpPr/>";
@@ -97,7 +120,10 @@ export class Shape extends Xc {
     const txBody = new TextBody(opts.textBody ?? {});
     parts.push(txBody.toXml(context));
 
-    return `<p:sp>${parts.join("")}</p:sp>`;
+    const spAttrs: string[] = [];
+    if (opts.useBackgroundFill) spAttrs.push(' useBgFill="1"');
+    if (opts.blackWhiteMode) spAttrs.push(` bwMode="${opts.blackWhiteMode}"`);
+    return `<p:sp${spAttrs.join("")}>${parts.join("")}</p:sp>`;
   }
 }
 

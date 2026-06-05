@@ -400,7 +400,8 @@ function buildCustomLayoutXml(def: LayoutDefinition): string {
     shapes.push(childrenXml.replace(/ id="(\d+)"/g, (_, n) => ` id="${parseInt(n) + offset}"`));
   }
 
-  return `<p:sldLayout ${NS} type="${layoutType}" preserve="1"><p:cSld name="${displayName}"><p:spTree>${SP_TREE_HEADER}${shapes.join("")}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`;
+  const matchingAttr = def.matchingName !== undefined ? ` matchingName="${def.matchingName}"` : "";
+  return `<p:sldLayout ${NS} type="${layoutType}" preserve="1"${matchingAttr}><p:cSld name="${displayName}"><p:spTree>${SP_TREE_HEADER}${shapes.join("")}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`;
 }
 
 export class SlideLayout extends ImportedXmlComponent {

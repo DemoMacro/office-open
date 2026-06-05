@@ -188,9 +188,11 @@ class NumberFormat extends XmlComponent {
  * numbering from different levels.
  */
 class LevelText extends XmlComponent {
-  public constructor(value: string) {
+  public constructor(value: string, nullAttribute?: boolean) {
     super("w:lvlText");
-    this.root.push({ _attr: { "w:val": value } });
+    const attrs: Record<string, string> = { "w:val": value };
+    if (nullAttribute !== undefined) attrs["w:null"] = nullAttribute ? "1" : "0";
+    this.root.push({ _attr: attrs });
   }
 }
 
@@ -263,6 +265,10 @@ export interface LevelsOptions {
   readonly lvlRestart?: number;
   /** Picture bullet ID reference. */
   readonly lvlPicBulletId?: number;
+  /** Template code for the level. */
+  readonly templateCode?: string;
+  /** Whether this level is tentative. */
+  readonly tentative?: boolean;
   /** Legacy spacing/indent settings. */
   readonly legacy?: { readonly space?: number; readonly indent?: number };
   /** Run and paragraph style properties. */
@@ -353,8 +359,17 @@ export class LevelBase extends XmlComponent {
     lvlRestart,
     lvlPicBulletId,
     legacy,
+    templateCode,
+    tentative,
   }: LevelsOptions) {
     super("w:lvl");
+
+    if (templateCode !== undefined) {
+      this.root.push({ _attr: { "w:tplc": templateCode } });
+    }
+    if (tentative !== undefined) {
+      this.root.push({ _attr: { "w:tentative": tentative ? 1 : 0 } });
+    }
 
     this.root.push(numberValObj("w:start", decimalNumber(start)));
 
