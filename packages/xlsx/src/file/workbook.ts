@@ -61,6 +61,16 @@ export interface CustomWorkbookViewOptions {
   readonly maximized?: boolean;
   /** Minimized (default false) */
   readonly minimized?: boolean;
+  /** Auto update (CT_CustomWorkbookView @autoUpdate) */
+  readonly autoUpdate?: boolean;
+  /** Merge interval (CT_CustomWorkbookView @mergeInterval) */
+  readonly mergeInterval?: number;
+  /** Changes saved in window (CT_CustomWorkbookView @changesSavedWin) */
+  readonly changesSavedWin?: boolean;
+  /** Only sync (CT_CustomWorkbookView @onlySync) */
+  readonly onlySync?: boolean;
+  /** Show comments (CT_CustomWorkbookView @showComments) */
+  readonly showComments?: string;
 }
 
 export interface WorkbookProtectionOptions {
@@ -144,6 +154,102 @@ export interface FileSharingOptions {
   readonly spinCount?: number;
 }
 
+/** Workbook properties (CT_WorkbookPr) */
+export interface WorkbookPrOptions {
+  /** Use 1904 date system (default false) */
+  readonly date1904?: boolean;
+  /** Default theme version */
+  readonly defaultThemeVersion?: number;
+  /** Show objects: "all" | "placeholders" | "none" */
+  readonly showObjects?: string;
+  /** Hide pivot field list (default false) */
+  readonly hidePivotFieldList?: boolean;
+  /** Allow refresh queries (default false) */
+  readonly allowRefreshQuery?: boolean;
+  /** Filter privacy (default false) */
+  readonly filterPrivacy?: boolean;
+  /** Backup file (default false) */
+  readonly backupFile?: boolean;
+  /** Code name */
+  readonly codeName?: string;
+  /** Show border unselected tables (CT_WorkbookPr @showBorderUnselectedTables) */
+  readonly showBorderUnselectedTables?: boolean;
+  /** Prompted solutions (CT_WorkbookPr @promptedSolutions) */
+  readonly promptedSolutions?: boolean;
+  /** Show ink annotation (CT_WorkbookPr @showInkAnnotation) */
+  readonly showInkAnnotation?: boolean;
+  /** Save external link values (CT_WorkbookPr @saveExternalLinkValues) */
+  readonly saveExternalLinkValues?: boolean;
+  /** Update links mode (CT_WorkbookPr @updateLinks) */
+  readonly updateLinks?: string;
+  /** Show pivot chart filter (CT_WorkbookPr @showPivotChartFilter) */
+  readonly showPivotChartFilter?: boolean;
+  /** Publish items (CT_WorkbookPr @publishItems) */
+  readonly publishItems?: boolean;
+  /** Check compatibility (CT_WorkbookPr @checkCompatibility) */
+  readonly checkCompatibility?: boolean;
+  /** Auto compress pictures (CT_WorkbookPr @autoCompressPictures) */
+  readonly autoCompressPictures?: boolean;
+  /** Refresh all connections (CT_WorkbookPr @refreshAllConnections) */
+  readonly refreshAllConnections?: boolean;
+}
+
+/** Calculation properties (CT_CalcPr) */
+export interface CalcPrOptions {
+  /** Calculation mode: "manual" | "auto" | "autoNoTable" */
+  readonly calcMode?: string;
+  /** Calc ID (default 162913) */
+  readonly calcId?: number;
+  /** Full calc on load (default false) */
+  readonly fullCalcOnLoad?: boolean;
+  /** Calc on save (default true) */
+  readonly calcOnSave?: boolean;
+  /** Force full calc */
+  readonly forceFullCalc?: boolean;
+  /** Concurrent calc (default true) */
+  readonly concurrentCalc?: boolean;
+  /** Concurrent manual count */
+  readonly concurrentManualCount?: number;
+  /** Iterate (default false) */
+  readonly iterate?: boolean;
+  /** Iterate count (default 100) */
+  readonly iterateCount?: number;
+  /** Iterate delta (default 0.001) */
+  readonly iterateDelta?: number;
+  /** Reference mode: "A1" | "R1C1" */
+  readonly refMode?: string;
+  /** Full precision (default true) */
+  readonly fullPrecision?: boolean;
+  /** Calc completed (CT_CalcPr @calcCompleted) */
+  readonly calcCompleted?: boolean;
+}
+
+/** Workbook view options (CT_BookView) */
+export interface WorkbookViewOptions {
+  /** Active tab index (0-based) */
+  readonly activeTab?: number;
+  /** Auto filter date grouping (default true) */
+  readonly autoFilterDateGrouping?: boolean;
+  /** First sheet tab */
+  readonly firstSheet?: number;
+  /** Show horizontal scroll (default true) */
+  readonly showHorizontalScroll?: boolean;
+  /** Show sheet tabs (default true) */
+  readonly showSheetTabs?: boolean;
+  /** Show vertical scroll (default true) */
+  readonly showVerticalScroll?: boolean;
+  /** Tab ratio (default 600) */
+  readonly tabRatio?: number;
+  /** Window width in twips */
+  readonly windowWidth?: number;
+  /** Window height in twips */
+  readonly windowHeight?: number;
+  /** X position of the window */
+  readonly xWindow?: number;
+  /** Y position of the window */
+  readonly yWindow?: number;
+}
+
 export class WorkbookXml extends BaseXmlComponent {
   private readonly sheets: readonly SheetDefinition[];
   private readonly pivotCaches: readonly PivotCacheReference[];
@@ -153,6 +259,9 @@ export class WorkbookXml extends BaseXmlComponent {
   private readonly functionGroupNames: readonly string[];
   private readonly webPublishing?: WebPublishingOptions;
   private readonly fileSharing?: FileSharingOptions;
+  private readonly workbookPr?: WorkbookPrOptions;
+  private readonly calcPr?: CalcPrOptions;
+  private readonly bookView?: WorkbookViewOptions;
 
   public constructor(
     sheets: readonly SheetDefinition[],
@@ -163,6 +272,9 @@ export class WorkbookXml extends BaseXmlComponent {
     functionGroups?: readonly string[],
     webPublishing?: WebPublishingOptions,
     fileSharing?: FileSharingOptions,
+    workbookPr?: WorkbookPrOptions,
+    calcPr?: CalcPrOptions,
+    bookView?: WorkbookViewOptions,
   ) {
     super("workbook");
     this.sheets = sheets;
@@ -173,6 +285,9 @@ export class WorkbookXml extends BaseXmlComponent {
     this.functionGroupNames = functionGroups ?? [];
     this.webPublishing = webPublishing;
     this.fileSharing = fileSharing;
+    this.workbookPr = workbookPr;
+    this.calcPr = calcPr;
+    this.bookView = bookView;
   }
 
   public override toXml(_context: Context): string {
@@ -207,7 +322,33 @@ export class WorkbookXml extends BaseXmlComponent {
       }
     }
 
-    parts.push("<workbookPr/>");
+    // Workbook properties
+    if (this.workbookPr) {
+      const wbPr = this.workbookPr;
+      const wbPrAttrs: string[] = [];
+      if (wbPr.date1904) wbPrAttrs.push('date1904="1"');
+      if (wbPr.defaultThemeVersion !== undefined)
+        wbPrAttrs.push(`defaultThemeVersion="${wbPr.defaultThemeVersion}"`);
+      if (wbPr.showObjects) wbPrAttrs.push(`showObjects="${escapeXml(wbPr.showObjects)}"`);
+      if (wbPr.hidePivotFieldList) wbPrAttrs.push('hidePivotFieldList="1"');
+      if (wbPr.allowRefreshQuery) wbPrAttrs.push('allowRefreshQuery="1"');
+      if (wbPr.filterPrivacy) wbPrAttrs.push('filterPrivacy="1"');
+      if (wbPr.backupFile) wbPrAttrs.push('backupFile="1"');
+      if (wbPr.codeName) wbPrAttrs.push(`codeName="${escapeXml(wbPr.codeName)}"`);
+      if (wbPr.showBorderUnselectedTables) wbPrAttrs.push('showBorderUnselectedTables="1"');
+      if (wbPr.promptedSolutions) wbPrAttrs.push('promptedSolutions="1"');
+      if (wbPr.showInkAnnotation === false) wbPrAttrs.push('showInkAnnotation="0"');
+      if (wbPr.saveExternalLinkValues === false) wbPrAttrs.push('saveExternalLinkValues="0"');
+      if (wbPr.updateLinks) wbPrAttrs.push(`updateLinks="${escapeXml(wbPr.updateLinks)}"`);
+      if (wbPr.showPivotChartFilter) wbPrAttrs.push('showPivotChartFilter="1"');
+      if (wbPr.publishItems) wbPrAttrs.push('publishItems="1"');
+      if (wbPr.checkCompatibility) wbPrAttrs.push('checkCompatibility="1"');
+      if (wbPr.autoCompressPictures === false) wbPrAttrs.push('autoCompressPictures="0"');
+      if (wbPr.refreshAllConnections) wbPrAttrs.push('refreshAllConnections="1"');
+      parts.push(`<workbookPr${wbPrAttrs.length > 0 ? ` ${wbPrAttrs.join(" ")}` : ""}/>`);
+    } else {
+      parts.push("<workbookPr/>");
+    }
 
     // Workbook protection (after workbookPr, before bookViews per XSD sequence)
     if (this.protection) {
@@ -241,10 +382,32 @@ export class WorkbookXml extends BaseXmlComponent {
       }
     }
 
-    parts.push(
-      '<bookViews><workbookView xWindow="0" yWindow="0" windowWidth="28800" windowHeight="12300"/></bookViews>',
-      "<sheets>",
-    );
+    // Book views
+    if (this.bookView) {
+      const bv = this.bookView;
+      const bvAttrs: string[] = [];
+      if (bv.xWindow !== undefined) bvAttrs.push(`xWindow="${bv.xWindow}"`);
+      else bvAttrs.push('xWindow="0"');
+      if (bv.yWindow !== undefined) bvAttrs.push(`yWindow="${bv.yWindow}"`);
+      else bvAttrs.push('yWindow="0"');
+      if (bv.windowWidth !== undefined) bvAttrs.push(`windowWidth="${bv.windowWidth}"`);
+      else bvAttrs.push('windowWidth="28800"');
+      if (bv.windowHeight !== undefined) bvAttrs.push(`windowHeight="${bv.windowHeight}"`);
+      else bvAttrs.push('windowHeight="12300"');
+      if (bv.activeTab !== undefined) bvAttrs.push(`activeTab="${bv.activeTab}"`);
+      if (bv.autoFilterDateGrouping === false) bvAttrs.push('autoFilterDateGrouping="0"');
+      if (bv.firstSheet !== undefined) bvAttrs.push(`firstSheet="${bv.firstSheet}"`);
+      if (bv.showHorizontalScroll === false) bvAttrs.push('showHorizontalScroll="0"');
+      if (bv.showSheetTabs === false) bvAttrs.push('showSheetTabs="0"');
+      if (bv.showVerticalScroll === false) bvAttrs.push('showVerticalScroll="0"');
+      if (bv.tabRatio !== undefined) bvAttrs.push(`tabRatio="${bv.tabRatio}"`);
+      parts.push(`<bookViews><workbookView ${bvAttrs.join(" ")}/></bookViews>`);
+    } else {
+      parts.push(
+        '<bookViews><workbookView xWindow="0" yWindow="0" windowWidth="28800" windowHeight="12300"/></bookViews>',
+      );
+    }
+    parts.push("<sheets>");
     for (const s of this.sheets) {
       const stateAttr = s.state && s.state !== "visible" ? ` state="${s.state}"` : "";
       parts.push(
@@ -266,7 +429,28 @@ export class WorkbookXml extends BaseXmlComponent {
     // externalReferences placeholder — compiler injects the XML here if needed
     parts.push("<!--EXTERNAL_REFS-->");
 
-    parts.push('<calcPr calcId="162913"/>');
+    // Calculation properties
+    if (this.calcPr) {
+      const cp = this.calcPr;
+      const cpAttrs: string[] = [];
+      cpAttrs.push(`calcId="${cp.calcId ?? 162913}"`);
+      if (cp.calcMode) cpAttrs.push(`calcMode="${escapeXml(cp.calcMode)}"`);
+      if (cp.fullCalcOnLoad) cpAttrs.push('fullCalcOnLoad="1"');
+      if (cp.calcOnSave === false) cpAttrs.push('calcOnSave="0"');
+      if (cp.forceFullCalc) cpAttrs.push('forceFullCalc="1"');
+      if (cp.concurrentCalc === false) cpAttrs.push('concurrentCalc="0"');
+      if (cp.concurrentManualCount !== undefined)
+        cpAttrs.push(`concurrentManualCount="${cp.concurrentManualCount}"`);
+      if (cp.iterate) cpAttrs.push('iterate="1"');
+      if (cp.iterateCount !== undefined) cpAttrs.push(`iterateCount="${cp.iterateCount}"`);
+      if (cp.iterateDelta !== undefined) cpAttrs.push(`iterateDelta="${cp.iterateDelta}"`);
+      if (cp.refMode) cpAttrs.push(`refMode="${escapeXml(cp.refMode)}"`);
+      if (cp.fullPrecision === false) cpAttrs.push('fullPrecision="0"');
+      if (cp.calcCompleted) cpAttrs.push('calcCompleted="1"');
+      parts.push(`<calcPr ${cpAttrs.join(" ")}/>`);
+    } else {
+      parts.push('<calcPr calcId="162913"/>');
+    }
 
     // Custom workbook views (after calcPr, before pivotCaches per XSD)
     if (this.customViews && this.customViews.length > 0) {
@@ -292,6 +476,11 @@ export class WorkbookXml extends BaseXmlComponent {
         if (v.personalView) vAttrs.push('personalView="1"');
         if (v.maximized) vAttrs.push('maximized="1"');
         if (v.minimized) vAttrs.push('minimized="1"');
+        if (v.autoUpdate) vAttrs.push('autoUpdate="1"');
+        if (v.mergeInterval !== undefined) vAttrs.push(`mergeInterval="${v.mergeInterval}"`);
+        if (v.changesSavedWin) vAttrs.push('changesSavedWin="1"');
+        if (v.onlySync) vAttrs.push('onlySync="1"');
+        if (v.showComments) vAttrs.push(`showComments="${escapeXml(v.showComments)}"`);
         parts.push(`<customWorkbookView ${vAttrs.join(" ")}/>`);
       }
       parts.push("</customWorkbookViews>");

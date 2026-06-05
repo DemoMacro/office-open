@@ -66,6 +66,10 @@ export interface ChartsheetOptions {
   readonly headerFooter?: ChartsheetHeaderFooterOptions;
   /** Sheet protection */
   readonly sheetProtection?: ChartsheetProtectionOptions;
+  /** Published to server (CT_ChartsheetPr @published) */
+  readonly published?: boolean;
+  /** Zoom to fit (CT_ChartsheetView @zoomToFit) */
+  readonly zoomToFit?: boolean;
   /** Chart definition (type, title, series, etc.) */
   readonly chart: {
     readonly type: string;
@@ -100,12 +104,17 @@ export class Chartsheet extends BaseXmlComponent {
     ];
 
     // sheetPr (optional)
-    if (this.opts.tabColor) {
-      p.push(`<sheetPr><tabColor${attrs({ rgb: this.opts.tabColor })}/></sheetPr>`);
+    if (this.opts.tabColor || this.opts.published) {
+      const prAttrs: string[] = [];
+      if (this.opts.tabColor) prAttrs.push(`<tabColor${attrs({ rgb: this.opts.tabColor })}/>`);
+      const spAttr = this.opts.published ? ' published="1"' : "";
+      p.push(`<sheetPr${spAttr}>${prAttrs.join("")}</sheetPr>`);
     }
 
     // sheetViews (required)
-    p.push('<sheetViews><sheetView workbookViewId="0"/></sheetViews>');
+    const svAttrs: string[] = ['workbookViewId="0"'];
+    if (this.opts.zoomToFit) svAttrs.push('zoomToFit="1"');
+    p.push(`<sheetViews><sheetView ${svAttrs.join(" ")}/></sheetViews>`);
 
     // sheetProtection (optional, XSD: after sheetViews, before pageMargins)
     if (this.opts.sheetProtection) {

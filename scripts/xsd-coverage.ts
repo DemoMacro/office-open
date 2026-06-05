@@ -442,6 +442,8 @@ function analyzeXsd(config: XsdConfig): CoverageResult {
     "xfId",
     "v",
     "UpdateMode",
+    "a",
+    "o",
   ]);
 
   const missingAttributes = attrNames.filter((a) => {

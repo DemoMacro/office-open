@@ -75,14 +75,74 @@ export class PivotTableXml extends BaseXmlComponent {
     );
 
     const p: string[] = [];
+    const defAttrs: string[] = [
+      `name="${escapeXml(name)}"`,
+      `cacheId="${this.cacheId}"`,
+      'dataCaption="Values"',
+      'updatedVersion="6"',
+      'minRefreshableVersion="3"',
+      'createdVersion="6"',
+      'applyNumberFormats="0"',
+      'applyBorderFormats="0"',
+      'applyFontFormats="0"',
+      'applyPatternFormats="0"',
+      'applyAlignmentFormats="0"',
+      'applyWidthHeightFormats="1"',
+      'autoFormatId="0"',
+      'useAutoFormatting="1"',
+      'itemPrintTitles="1"',
+      'indent="0"',
+      'outline="1"',
+      'outlineData="1"',
+      'compact="1"',
+      'compactData="1"',
+      'rowGrandTotals="1"',
+      'colGrandTotals="1"',
+    ];
+    // Optional pivot table definition attributes
+    if (o.dataOnRows) defAttrs.push('dataOnRows="1"');
+    if (o.grandTotalCaption) defAttrs.push(`grandTotalCaption="${escapeXml(o.grandTotalCaption)}"`);
+    if (o.errorCaption) defAttrs.push(`errorCaption="${escapeXml(o.errorCaption)}"`);
+    if (o.showError) defAttrs.push('showError="1"');
+    if (o.missingCaption) defAttrs.push(`missingCaption="${escapeXml(o.missingCaption)}"`);
+    if (o.showMissing === false) defAttrs.push('showMissing="0"');
+    if (o.pageStyle) defAttrs.push(`pageStyle="${escapeXml(o.pageStyle)}"`);
+    if (o.pivotTableStyle) defAttrs.push(`pivotTableStyle="${escapeXml(o.pivotTableStyle)}"`);
+    if (o.tag) defAttrs.push(`tag="${escapeXml(o.tag)}"`);
+    if (o.showItems === false) defAttrs.push('showItems="0"');
+    if (o.editData) defAttrs.push('editData="1"');
+    if (o.disableFieldList) defAttrs.push('disableFieldList="1"');
+    if (o.showCalcMbrs === false) defAttrs.push('showCalcMbrs="0"');
+    if (o.visualTotals) defAttrs.push('visualTotals="1"');
+    if (o.showMultipleLabel === false) defAttrs.push('showMultipleLabel="0"');
+    if (o.showDataDropDown === false) defAttrs.push('showDataDropDown="0"');
+    if (o.showDrill === false) defAttrs.push('showDrill="0"');
+    if (o.printDrill) defAttrs.push('printDrill="1"');
+    if (o.showMemberPropertyTips) defAttrs.push('showMemberPropertyTips="1"');
+    if (o.showDataTips === false) defAttrs.push('showDataTips="0"');
+    if (o.enableWizard === false) defAttrs.push('enableWizard="0"');
+    if (o.enableDrill === false) defAttrs.push('enableDrill="0"');
+    if (o.enableFieldProperties === false) defAttrs.push('enableFieldProperties="0"');
+    if (o.pageWrap !== undefined) defAttrs.push(`pageWrap="${o.pageWrap}"`);
+    if (o.pageOverThenDown) defAttrs.push('pageOverThenDown="1"');
+    if (o.subtotalHiddenItems) defAttrs.push('subtotalHiddenItems="1"');
+    if (o.fieldPrintTitles) defAttrs.push('fieldPrintTitles="1"');
+    if (o.mergeItem) defAttrs.push('mergeItem="1"');
+    if (o.showDropZones === false) defAttrs.push('showDropZones="0"');
+    if (o.showEmptyRow) defAttrs.push('showEmptyRow="1"');
+    if (o.showEmptyCol) defAttrs.push('showEmptyCol="1"');
+    if (o.showHeaders === false) defAttrs.push('showHeaders="0"');
+    if (o.published) defAttrs.push('published="1"');
+    if (o.gridDropZones === false) defAttrs.push('gridDropZones="0"');
+    if (o.multipleFieldFilters === false) defAttrs.push('multipleFieldFilters="0"');
+    if (o.rowHeaderCaption) defAttrs.push(`rowHeaderCaption="${escapeXml(o.rowHeaderCaption)}"`);
+    if (o.colHeaderCaption) defAttrs.push(`colHeaderCaption="${escapeXml(o.colHeaderCaption)}"`);
+    if (o.fieldListSortAscending) defAttrs.push('fieldListSortAscending="1"');
+    if (o.mdxSubqueries) defAttrs.push('mdxSubqueries="1"');
+    if (o.customListSort === false) defAttrs.push('customListSort="0"');
+
     p.push(
-      `<pivotTableDefinition xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"` +
-        ` name="${escapeXml(name)}" cacheId="${this.cacheId}"` +
-        ` dataCaption="Values" updatedVersion="6" minRefreshableVersion="3" createdVersion="6"` +
-        ` applyNumberFormats="0" applyBorderFormats="0" applyFontFormats="0"` +
-        ` applyPatternFormats="0" applyAlignmentFormats="0" applyWidthHeightFormats="1"` +
-        ` autoFormatId="0" useAutoFormatting="1" itemPrintTitles="1" indent="0"` +
-        ` outline="1" outlineData="1" compact="1" compactData="1" rowGrandTotals="1" colGrandTotals="1">`,
+      `<pivotTableDefinition xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ${defAttrs.join(" ")}>`,
     );
 
     // location
@@ -289,9 +349,15 @@ export class PivotTableXml extends BaseXmlComponent {
       const df = dataFields[i];
       const subtotal = df.summarize ?? "sum";
       const name = df.name ?? `${subtotal === "sum" ? "Sum" : subtotal} of ${df.field}`;
-      parts.push(
-        `<dataField name="${escapeXml(name)}" fld="${dataFieldIndices[i]}" subtotal="${subtotal}"/>`,
-      );
+      const dfAttrs: string[] = [
+        `name="${escapeXml(name)}"`,
+        `fld="${dataFieldIndices[i]}"`,
+        `subtotal="${subtotal}"`,
+      ];
+      if (df.showDataAs) dfAttrs.push(`showDataAs="${df.showDataAs}"`);
+      if (df.baseField !== undefined) dfAttrs.push(`baseField="${df.baseField}"`);
+      if (df.baseItem !== undefined) dfAttrs.push(`baseItem="${df.baseItem}"`);
+      parts.push(`<dataField ${dfAttrs.join(" ")}/>`);
     }
     parts.push("</dataFields>");
     return parts.join("");

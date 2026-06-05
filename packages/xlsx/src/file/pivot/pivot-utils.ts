@@ -29,6 +29,12 @@ export interface PivotDataField {
   readonly summarize?: ConsolidateFunction;
   /** Custom name for the data field (default: "Sum of {field}") */
   readonly name?: string;
+  /** Show data as (CT_DataField @showDataAs) */
+  readonly showDataAs?: string;
+  /** Base field index for "show data as" calculations */
+  readonly baseField?: number;
+  /** Base item index for "show data as" calculations */
+  readonly baseItem?: number;
 }
 
 /** Pivot filter type (ST_PivotFilterType) */
@@ -151,6 +157,86 @@ export interface PivotTableOptions {
   readonly filters?: readonly PivotFilterOptions[];
   /** Field names to use as page/report filters */
   readonly pages?: readonly string[];
+  /** Data fields on rows instead of columns (CT_PivotTableDefinition @dataOnRows) */
+  readonly dataOnRows?: boolean;
+  /** Grand total caption text */
+  readonly grandTotalCaption?: string;
+  /** Error caption text */
+  readonly errorCaption?: string;
+  /** Show error messages */
+  readonly showError?: boolean;
+  /** Missing caption text */
+  readonly missingCaption?: string;
+  /** Show missing items */
+  readonly showMissing?: boolean;
+  /** Custom page style name */
+  readonly pageStyle?: string;
+  /** Custom pivot table style name */
+  readonly pivotTableStyle?: string;
+  /** Tag string */
+  readonly tag?: string;
+  /** Show items with no data */
+  readonly showItems?: boolean;
+  /** Edit data in-place */
+  readonly editData?: boolean;
+  /** Disable field list */
+  readonly disableFieldList?: boolean;
+  /** Show calculated members */
+  readonly showCalcMbrs?: boolean;
+  /** Visual totals */
+  readonly visualTotals?: boolean;
+  /** Show multiple labels */
+  readonly showMultipleLabel?: boolean;
+  /** Show data drop-down */
+  readonly showDataDropDown?: boolean;
+  /** Show drill indicators */
+  readonly showDrill?: boolean;
+  /** Print drill indicators */
+  readonly printDrill?: boolean;
+  /** Show member property tips */
+  readonly showMemberPropertyTips?: boolean;
+  /** Show data tips */
+  readonly showDataTips?: boolean;
+  /** Enable layout wizard */
+  readonly enableWizard?: boolean;
+  /** Enable drill-down */
+  readonly enableDrill?: boolean;
+  /** Enable field properties */
+  readonly enableFieldProperties?: boolean;
+  /** Number of page fields per row/column */
+  readonly pageWrap?: number;
+  /** Page layout over then down */
+  readonly pageOverThenDown?: boolean;
+  /** Subtotal hidden items */
+  readonly subtotalHiddenItems?: boolean;
+  /** Field print titles */
+  readonly fieldPrintTitles?: boolean;
+  /** Merge item labels */
+  readonly mergeItem?: boolean;
+  /** Show drop zones */
+  readonly showDropZones?: boolean;
+  /** Show empty row */
+  readonly showEmptyRow?: boolean;
+  /** Show empty column */
+  readonly showEmptyCol?: boolean;
+  /** Show headers */
+  readonly showHeaders?: boolean;
+  /** Published to server */
+  readonly published?: boolean;
+  /** Grid drop zones */
+  readonly gridDropZones?: boolean;
+  /** Multiple field filters */
+  readonly multipleFieldFilters?: boolean;
+  /** Row header caption */
+  readonly rowHeaderCaption?: string;
+  /** Column header caption */
+  readonly colHeaderCaption?: string;
+  /** Sort field list ascending */
+  readonly fieldListSortAscending?: boolean;
+  /** MDX subqueries enabled */
+  readonly mdxSubqueries?: boolean;
+  /** Custom list sort */
+  readonly customListSort?: boolean;
 }
 
 /** OLAP properties for pivot cache (CT_OlapPr) */
@@ -165,6 +251,16 @@ export interface OlapPrOptions {
   readonly rowDrillCount?: number;
   /** Column dimensions */
   readonly colDrillCount?: number;
+  /** Local refresh (CT_OlapPr @localRefresh) */
+  readonly localRefresh?: boolean;
+  /** Use server fill formatting */
+  readonly serverFill?: boolean;
+  /** Use server number formatting */
+  readonly serverNumberFormat?: boolean;
+  /** Use server font formatting */
+  readonly serverFont?: boolean;
+  /** Use server font color */
+  readonly serverFontColor?: boolean;
 }
 
 /** Parsed source data for pivot cache generation. */

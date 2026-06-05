@@ -21,6 +21,10 @@ export interface ColumnOptions {
   readonly customWidth?: boolean;
   readonly outlineLevel?: number;
   readonly collapsed?: boolean;
+  /** Best-fit column width (CT_Col @bestFit) */
+  readonly bestFit?: boolean;
+  /** Phonetic text for CJK (CT_Col @phonetic) */
+  readonly phonetic?: boolean;
 }
 
 export interface RowOptions {
@@ -28,6 +32,16 @@ export interface RowOptions {
   readonly height?: number;
   readonly hidden?: boolean;
   readonly rowNumber?: number;
+  /** Spans for the row, e.g. "1:15" (CT_Row @spans) */
+  readonly spans?: string;
+  /** Custom format applied (CT_Row @customFormat) */
+  readonly customFormat?: boolean;
+  /** Thick top border (CT_Row @thickTop) */
+  readonly thickTop?: boolean;
+  /** Thick bottom border (CT_Row @thickBot) */
+  readonly thickBot?: boolean;
+  /** Phonetic text (CT_Row @ph) */
+  readonly ph?: boolean;
 }
 
 export interface CellOptions {
@@ -60,6 +74,24 @@ export interface FormulaOptions {
   readonly reference?: string;
   /** Shared formula group index (required for shared formulas) */
   readonly sharedIndex?: number;
+  /** Always calculate array (CT_CellFormula @aca) */
+  readonly aca?: boolean;
+  /** 2-D data table (CT_CellFormula @dt2D) */
+  readonly dt2D?: boolean;
+  /** Data table row (CT_CellFormula @dtr) */
+  readonly dtr?: boolean;
+  /** Delete input cell 1 (CT_CellFormula @del1) */
+  readonly del1?: boolean;
+  /** Delete input cell 2 (CT_CellFormula @del2) */
+  readonly del2?: boolean;
+  /** Input cell 1 reference (CT_CellFormula @r1) */
+  readonly r1?: string;
+  /** Input cell 2 reference (CT_CellFormula @r2) */
+  readonly r2?: string;
+  /** Calculate cell (CT_CellFormula @ca) */
+  readonly ca?: boolean;
+  /** Array formula context (CT_CellFormula @bx) */
+  readonly bx?: boolean;
 }
 
 /** Input cell for a what-if scenario (maps to CT_InputCells). */
@@ -183,6 +215,28 @@ export interface SheetViewOptions {
   readonly zoomScale?: number;
   readonly tabSelected?: boolean;
   readonly rightToLeft?: boolean;
+  /** Window protection (CT_SheetView @windowProtection) */
+  readonly windowProtection?: boolean;
+  /** Show formulas instead of values (CT_SheetView @showFormulas) */
+  readonly showFormulas?: boolean;
+  /** Show ruler (CT_SheetView @showRuler) */
+  readonly showRuler?: boolean;
+  /** Show outline symbols (CT_SheetView @showOutlineSymbols) */
+  readonly showOutlineSymbols?: boolean;
+  /** Default grid color (CT_SheetView @defaultGridColor) */
+  readonly defaultGridColor?: boolean;
+  /** Show white space (CT_SheetView @showWhiteSpace) */
+  readonly showWhiteSpace?: boolean;
+  /** View type (CT_SheetView @view) */
+  readonly view?: "normal" | "pageBreakPreview" | "pageLayout";
+  /** Tab color ID (CT_SheetView @colorId) */
+  readonly colorId?: number;
+  /** Zoom scale for normal view (CT_SheetView @zoomScaleNormal) */
+  readonly zoomScaleNormal?: number;
+  /** Zoom scale for sheet layout view (CT_SheetView @zoomScaleSheetLayoutView) */
+  readonly zoomScaleSheetLayoutView?: number;
+  /** Zoom scale for page layout view (CT_SheetView @zoomScalePageLayoutView) */
+  readonly zoomScalePageLayoutView?: number;
 }
 
 export type HyperlinkTarget =
@@ -209,6 +263,10 @@ export interface HeaderFooterOptions {
   readonly firstFooter?: string;
   readonly differentOddEven?: boolean;
   readonly differentFirst?: boolean;
+  /** Scale header/footer with document (CT_HeaderFooter @scaleWithDoc) */
+  readonly scaleWithDoc?: boolean;
+  /** Align with page margins (CT_HeaderFooter @alignWithMargins) */
+  readonly alignWithMargins?: boolean;
 }
 
 export type PageOrientation = "default" | "portrait" | "landscape";
@@ -222,6 +280,20 @@ export interface PageSetupOptions {
   readonly pageOrder?: "downThenOver" | "overThenDown";
   readonly useFirstPageNumber?: boolean;
   readonly firstPageNumber?: number;
+  /** Paper height (CT_PageSetup @paperHeight) */
+  readonly paperHeight?: number;
+  /** Paper width (CT_PageSetup @paperWidth) */
+  readonly paperWidth?: number;
+  /** Use printer defaults (CT_PageSetup @usePrinterDefaults) */
+  readonly usePrinterDefaults?: boolean;
+  /** Black and white printing (CT_PageSetup @blackAndWhite) */
+  readonly blackAndWhite?: boolean;
+  /** Draft quality printing (CT_PageSetup @draft) */
+  readonly draft?: boolean;
+  /** Print cell comments mode (CT_PageSetup @cellComments) */
+  readonly cellComments?: "none" | "asDisplayed" | "atEnd";
+  /** Print error display mode (CT_PageSetup @errors) */
+  readonly errors?: "displayed" | "blank" | "dash" | "NA";
 }
 
 export interface TabColorOptions {
@@ -275,6 +347,23 @@ export interface DataValidationOptions {
   readonly showInputMessage?: boolean;
   readonly promptTitle?: string;
   readonly prompt?: string;
+  /** Error style (CT_DataValidation @errorStyle) */
+  readonly errorStyle?: "stop" | "warning" | "information";
+  /** IME mode (CT_DataValidation @imeMode) */
+  readonly imeMode?:
+    | "noControl"
+    | "on"
+    | "off"
+    | "disabled"
+    | "hiragana"
+    | "fullKatakana"
+    | "halfKatakana"
+    | "fullAlpha"
+    | "halfAlpha"
+    | "fullHangul"
+    | "halfHangul";
+  /** Show drop-down (CT_DataValidation @showDropDown — note inverted semantics in OOXML) */
+  readonly showDropDown?: boolean;
 }
 
 export type ConditionalFormatType =
@@ -381,6 +470,24 @@ export interface ConditionalFormatRule {
   readonly dataBar?: DataBarOptions;
   /** Icon set configuration (when type is "iconSet") */
   readonly iconSet?: IconSetOptions;
+  /** Stop if true — skip remaining rules (CT_CfRule @stopIfTrue) */
+  readonly stopIfTrue?: boolean;
+  /** Time period for date-based highlighting (CT_CfRule @timePeriod) */
+  readonly timePeriod?:
+    | "today"
+    | "yesterday"
+    | "tomorrow"
+    | "last7Days"
+    | "thisMonth"
+    | "lastMonth"
+    | "nextMonth"
+    | "thisWeek"
+    | "lastWeek"
+    | "nextWeek";
+  /** Rank for top/bottom rules (CT_CfRule @rank) */
+  readonly rank?: number;
+  /** Equal average flag (CT_CfRule @equalAverage) */
+  readonly equalAverage?: boolean;
 }
 
 export interface ConditionalFormatOptions {
@@ -414,6 +521,12 @@ export interface SortCondition {
   /** Cell reference for the sort column, e.g. "B1" */
   readonly ref: string;
   readonly descending?: boolean;
+  /** Sort by (CT_SortCondition @sortBy) */
+  readonly sortBy?: "value" | "cellColor" | "fontColor" | "icon";
+  /** Custom sort list (CT_SortCondition @customList) */
+  readonly customList?: string;
+  /** Icon set index (CT_SortCondition @iconId) */
+  readonly iconId?: number;
 }
 
 export interface AutoFilterOptions {
@@ -422,6 +535,76 @@ export interface AutoFilterOptions {
   readonly top10?: readonly Top10FilterOptions[];
   readonly customFilters?: readonly CustomFilterOptions[];
   readonly sort?: readonly SortCondition[];
+  /** Sort state options */
+  readonly sortState?: SortStateOptions;
+}
+
+/** Sort state configuration (CT_SortState) */
+export interface SortStateOptions {
+  /** Column sort mode (CT_SortState @columnSort) */
+  readonly columnSort?: boolean;
+  /** Case sensitive sorting (CT_SortState @caseSensitive) */
+  readonly caseSensitive?: boolean;
+  /** Sort method (CT_SortState @sortMethod) */
+  readonly sortMethod?: "pinYin" | "stroke";
+}
+
+/** Print options (CT_PrintOptions) */
+export interface PrintOptions {
+  /** Center horizontally on page */
+  readonly horizontalCentered?: boolean;
+  /** Center vertically on page */
+  readonly verticalCentered?: boolean;
+  /** Print row/column headings */
+  readonly headings?: boolean;
+  /** Print grid lines */
+  readonly gridLines?: boolean;
+  /** Grid lines set flag */
+  readonly gridLinesSet?: boolean;
+}
+
+/** Sheet format properties (CT_SheetFormatPr) */
+export interface SheetFormatPrOptions {
+  /** Base column width (CT_SheetFormatPr @baseColWidth) */
+  readonly baseColWidth?: number;
+  /** Default column width (CT_SheetFormatPr @defaultColWidth) */
+  readonly defaultColWidth?: number;
+  /** Default row height */
+  readonly defaultRowHeight?: number;
+  /** Zero height rows hidden (CT_SheetFormatPr @zeroHeight) */
+  readonly zeroHeight?: boolean;
+  /** Thick top borders (CT_SheetFormatPr @thickTop) */
+  readonly thickTop?: boolean;
+  /** Thick bottom borders (CT_SheetFormatPr @thickBottom) */
+  readonly thickBottom?: boolean;
+  /** Outline level row (CT_SheetFormatPr @outlineLevelRow) */
+  readonly outlineLevelRow?: number;
+  /** Outline level column (CT_SheetFormatPr @outlineLevelCol) */
+  readonly outlineLevelCol?: number;
+}
+
+/** Sheet properties extended options (CT_SheetPr attributes) */
+export interface SheetPrOptions {
+  /** Sync horizontal scroll (CT_SheetPr @syncHorizontal) */
+  readonly syncHorizontal?: boolean;
+  /** Sync vertical scroll (CT_SheetPr @syncVertical) */
+  readonly syncVertical?: boolean;
+  /** Sync reference (CT_SheetPr @syncRef) */
+  readonly syncRef?: string;
+  /** Transition evaluation mode (CT_SheetPr @transitionEvaluation) */
+  readonly transitionEvaluation?: boolean;
+  /** Transition entry mode (CT_SheetPr @transitionEntry) */
+  readonly transitionEntry?: boolean;
+  /** Published to server (CT_SheetPr @published) */
+  readonly published?: boolean;
+  /** Filter mode (CT_SheetPr @filterMode) */
+  readonly filterMode?: boolean;
+  /** Enable format conditions calculation (CT_SheetPr @enableFormatConditionsCalculation) */
+  readonly enableFormatConditionsCalculation?: boolean;
+  /** Outline apply styles (CT_OutlinePr @applyStyles) */
+  readonly outlineApplyStyles?: boolean;
+  /** Outline show symbols (CT_OutlinePr @showOutlineSymbols) */
+  readonly outlineShowSymbols?: boolean;
 }
 
 /** An ignored error entry — suppresses specific Excel error checks for a range. */
@@ -487,6 +670,12 @@ export interface WorksheetOptions {
   readonly phoneticPr?: PhoneticPrOptions;
   /** Background image for the worksheet */
   readonly backgroundImage?: SheetBackgroundImageOptions;
+  /** Print options (CT_PrintOptions) */
+  readonly printOptions?: PrintOptions;
+  /** Sheet format properties (CT_SheetFormatPr) */
+  readonly sheetFormatPr?: SheetFormatPrOptions;
+  /** Sheet extended properties (CT_SheetPr attributes) */
+  readonly sheetPr?: SheetPrOptions;
 }
 
 export class Worksheet extends IgnoreIfEmptyXmlComponent {
@@ -513,6 +702,9 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
   private readonly ignoredErrors: readonly IgnoredErrorOptions[];
   private readonly phoneticPr?: PhoneticPrOptions;
   private readonly backgroundImage?: SheetBackgroundImageOptions;
+  private readonly printOptions?: PrintOptions;
+  private readonly sheetFormatPr?: SheetFormatPrOptions;
+  private readonly sheetPr?: SheetPrOptions;
 
   public constructor(options: WorksheetOptions) {
     super("worksheet");
@@ -539,6 +731,9 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
     this.ignoredErrors = options.ignoredErrors ?? [];
     this.phoneticPr = options.phoneticPr;
     this.backgroundImage = options.backgroundImage;
+    this.printOptions = options.printOptions;
+    this.sheetFormatPr = options.sheetFormatPr;
+    this.sheetPr = options.sheetPr;
   }
 
   public get imageOptions(): readonly WorksheetImageOptions[] {
@@ -598,8 +793,28 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
     // Sheet properties (tabColor, outlinePr go here)
     const hasTabColor = !!this.tabColor;
     const hasOutline = this.columns.some((c) => c.outlineLevel !== undefined);
-    if (hasTabColor || hasOutline) {
+    const sp = this.sheetPr;
+    const hasSheetPrAttrs =
+      sp &&
+      (sp.syncHorizontal ||
+        sp.syncVertical ||
+        sp.syncRef ||
+        sp.transitionEvaluation ||
+        sp.transitionEntry ||
+        sp.published ||
+        sp.filterMode ||
+        sp.enableFormatConditionsCalculation);
+    if (hasTabColor || hasOutline || hasSheetPrAttrs) {
       const prParts: string[] = [];
+      const prAttrs: Record<string, string | number | boolean | undefined> = {};
+      if (sp?.syncHorizontal) prAttrs.syncHorizontal = 1;
+      if (sp?.syncVertical) prAttrs.syncVertical = 1;
+      if (sp?.syncRef) prAttrs.syncRef = sp.syncRef;
+      if (sp?.transitionEvaluation) prAttrs.transitionEvaluation = 1;
+      if (sp?.transitionEntry) prAttrs.transitionEntry = 1;
+      if (sp?.published) prAttrs.published = 1;
+      if (sp?.filterMode) prAttrs.filterMode = 1;
+      if (sp?.enableFormatConditionsCalculation) prAttrs.enableFormatConditionsCalculation = 1;
       if (this.tabColor) {
         const tc = this.tabColor;
         const tcAttrs: Record<string, string | number | boolean | undefined> = {};
@@ -609,9 +824,16 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
         prParts.push(`<tabColor${attrs(tcAttrs)}/>`);
       }
       if (hasOutline) {
-        prParts.push('<outlinePr summaryBelow="1" summaryRight="1"/>');
+        const outAttrs: Record<string, string | number | boolean | undefined> = {
+          summaryBelow: 1,
+          summaryRight: 1,
+        };
+        if (sp?.outlineApplyStyles) outAttrs.applyStyles = 1;
+        if (sp?.outlineShowSymbols === false) outAttrs.showOutlineSymbols = 0;
+        prParts.push(`<outlinePr${attrs(outAttrs)}/>`);
       }
-      p.push(`<sheetPr>${prParts.join("")}</sheetPr>`);
+      const prAttrStr = Object.keys(prAttrs).length > 0 ? attrs(prAttrs) : "";
+      p.push(`<sheetPr${prAttrStr}>${prParts.join("")}</sheetPr>`);
     }
 
     // Dimension — defines the used range of the sheet
@@ -647,7 +869,21 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
     }
 
     // Sheet format — default row height
-    p.push('<sheetFormatPr defaultRowHeight="15"/>');
+    if (this.sheetFormatPr) {
+      const sfp = this.sheetFormatPr;
+      const sfpAttrs: Record<string, string | number | boolean | undefined> = {};
+      if (sfp.baseColWidth !== undefined) sfpAttrs.baseColWidth = sfp.baseColWidth;
+      if (sfp.defaultColWidth !== undefined) sfpAttrs.defaultColWidth = sfp.defaultColWidth;
+      sfpAttrs.defaultRowHeight = sfp.defaultRowHeight ?? 15;
+      if (sfp.zeroHeight) sfpAttrs.zeroHeight = 1;
+      if (sfp.thickTop) sfpAttrs.thickTop = 1;
+      if (sfp.thickBottom) sfpAttrs.thickBottom = 1;
+      if (sfp.outlineLevelRow !== undefined) sfpAttrs.outlineLevelRow = sfp.outlineLevelRow;
+      if (sfp.outlineLevelCol !== undefined) sfpAttrs.outlineLevelCol = sfp.outlineLevelCol;
+      p.push(`<sheetFormatPr${attrs(sfpAttrs)}/>`);
+    } else {
+      p.push('<sheetFormatPr defaultRowHeight="15"/>');
+    }
 
     // Column definitions
     if (this.columns.length > 0) {
@@ -670,6 +906,12 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
         if (col.collapsed) {
           colAttrs.collapsed = 1;
         }
+        if (col.bestFit) {
+          colAttrs.bestFit = 1;
+        }
+        if (col.phonetic) {
+          colAttrs.phonetic = 1;
+        }
         p.push(selfCloseElement("col", attrs(colAttrs)));
       }
       p.push("</cols>");
@@ -688,6 +930,11 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
       if (rowOpts.hidden) {
         rowAttrs.hidden = 1;
       }
+      if (rowOpts.spans) rowAttrs.spans = rowOpts.spans;
+      if (rowOpts.customFormat) rowAttrs.customFormat = 1;
+      if (rowOpts.thickTop) rowAttrs.thickTop = 1;
+      if (rowOpts.thickBot) rowAttrs.thickBot = 1;
+      if (rowOpts.ph) rowAttrs.ph = 1;
 
       if (rowOpts.cells) {
         const rowParts: string[] = [];
@@ -874,6 +1121,10 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
           };
           if (rule.operator) ruleAttrs.operator = rule.operator;
           if (rule.dxfId !== undefined) ruleAttrs.dxfId = rule.dxfId;
+          if (rule.stopIfTrue) ruleAttrs.stopIfTrue = 1;
+          if (rule.timePeriod) ruleAttrs.timePeriod = rule.timePeriod;
+          if (rule.rank !== undefined) ruleAttrs.rank = rule.rank;
+          if (rule.equalAverage) ruleAttrs.equalAverage = 1;
 
           // Color scale
           if (rule.type === "colorScale" && rule.colorScale) {
@@ -952,6 +1203,9 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
         if (dv.error) dvAttrs.error = dv.error;
         if (dv.promptTitle) dvAttrs.promptTitle = dv.promptTitle;
         if (dv.prompt) dvAttrs.prompt = dv.prompt;
+        if (dv.errorStyle) dvAttrs.errorStyle = dv.errorStyle;
+        if (dv.imeMode) dvAttrs.imeMode = dv.imeMode;
+        if (dv.showDropDown) dvAttrs.showDropDown = 1;
         const inner: string[] = [];
         if (dv.formula1 !== undefined) inner.push(`<formula1>${escapeXml(dv.formula1)}</formula1>`);
         if (dv.formula2 !== undefined) inner.push(`<formula2>${escapeXml(dv.formula2)}</formula2>`);
@@ -983,6 +1237,18 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
       p.push("</hyperlinks>");
     }
 
+    // Print options
+    if (this.printOptions) {
+      const po = this.printOptions;
+      const poAttrs: Record<string, string | number | boolean | undefined> = {};
+      if (po.horizontalCentered) poAttrs.horizontalCentered = 1;
+      if (po.verticalCentered) poAttrs.verticalCentered = 1;
+      if (po.headings) poAttrs.headings = 1;
+      if (po.gridLines) poAttrs.gridLines = 1;
+      if (po.gridLinesSet === false) poAttrs.gridLinesSet = 0;
+      p.push(selfCloseElement("printOptions", attrs(poAttrs)));
+    }
+
     p.push('<pageMargins left="0.75" right="0.75" top="1" bottom="1" header="0.5" footer="0.5"/>');
 
     // Page setup
@@ -997,6 +1263,13 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
       if (ps.pageOrder && ps.pageOrder !== "downThenOver") psAttrs.pageOrder = ps.pageOrder;
       if (ps.useFirstPageNumber) psAttrs.useFirstPageNumber = 1;
       if (ps.firstPageNumber !== undefined) psAttrs.firstPageNumber = ps.firstPageNumber;
+      if (ps.paperHeight !== undefined) psAttrs.paperHeight = ps.paperHeight;
+      if (ps.paperWidth !== undefined) psAttrs.paperWidth = ps.paperWidth;
+      if (ps.usePrinterDefaults) psAttrs.usePrinterDefaults = 1;
+      if (ps.blackAndWhite) psAttrs.blackAndWhite = 1;
+      if (ps.draft) psAttrs.draft = 1;
+      if (ps.cellComments && ps.cellComments !== "none") psAttrs.cellComments = ps.cellComments;
+      if (ps.errors && ps.errors !== "displayed") psAttrs.errors = ps.errors;
       p.push(selfCloseElement("pageSetup", attrs(psAttrs)));
     }
 
@@ -1006,6 +1279,8 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
       const hfAttrs: Record<string, string | number | boolean | undefined> = {};
       if (hf.differentOddEven) hfAttrs.differentOddEven = 1;
       if (hf.differentFirst) hfAttrs.differentFirst = 1;
+      if (hf.scaleWithDoc === false) hfAttrs.scaleWithDoc = 0;
+      if (hf.alignWithMargins === false) hfAttrs.alignWithMargins = 0;
       const inner: string[] = [];
       if (hf.oddHeader) inner.push(`<oddHeader>${escapeXml(hf.oddHeader)}</oddHeader>`);
       if (hf.oddFooter) inner.push(`<oddFooter>${escapeXml(hf.oddFooter)}</oddFooter>`);
@@ -1073,6 +1348,19 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
     if (sv?.showZeros === false) svMap.showZeros = 0;
     if (sv?.zoomScale !== undefined) svMap.zoomScale = sv.zoomScale;
     if (sv?.rightToLeft) svMap.rightToLeft = 1;
+    if (sv?.windowProtection) svMap.windowProtection = 1;
+    if (sv?.showFormulas) svMap.showFormulas = 1;
+    if (sv?.showRuler === false) svMap.showRuler = 0;
+    if (sv?.showOutlineSymbols === false) svMap.showOutlineSymbols = 0;
+    if (sv?.defaultGridColor === false) svMap.defaultGridColor = 0;
+    if (sv?.showWhiteSpace === false) svMap.showWhiteSpace = 0;
+    if (sv?.view) svMap.view = sv.view;
+    if (sv?.colorId !== undefined) svMap.colorId = sv.colorId;
+    if (sv?.zoomScaleNormal !== undefined) svMap.zoomScaleNormal = sv.zoomScaleNormal;
+    if (sv?.zoomScaleSheetLayoutView !== undefined)
+      svMap.zoomScaleSheetLayoutView = sv.zoomScaleSheetLayoutView;
+    if (sv?.zoomScalePageLayoutView !== undefined)
+      svMap.zoomScalePageLayoutView = sv.zoomScalePageLayoutView;
     return attrs(svMap);
   }
 
@@ -1102,6 +1390,15 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
     if (fOpts.type && fOpts.type !== FormulaType.NORMAL) fAttrs.t = fOpts.type;
     if (fOpts.reference) fAttrs.ref = fOpts.reference;
     if (fOpts.sharedIndex !== undefined) fAttrs.si = fOpts.sharedIndex;
+    if (fOpts.aca) fAttrs.aca = 1;
+    if (fOpts.dt2D) fAttrs.dt2D = 1;
+    if (fOpts.dtr) fAttrs.dtr = 1;
+    if (fOpts.del1) fAttrs.del1 = 1;
+    if (fOpts.del2) fAttrs.del2 = 1;
+    if (fOpts.r1) fAttrs.r1 = fOpts.r1;
+    if (fOpts.r2) fAttrs.r2 = fOpts.r2;
+    if (fOpts.ca) fAttrs.ca = 1;
+    if (fOpts.bx) fAttrs.bx = 1;
 
     const hasContent = fOpts.formula !== undefined && fOpts.formula !== "";
 

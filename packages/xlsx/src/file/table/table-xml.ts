@@ -56,6 +56,22 @@ export interface TableColumnOptions {
   readonly totalsRowLabel?: string;
   /** Calculated column formula */
   readonly calculatedColumnFormula?: string;
+  /** Unique column name for structured references (CT_TableColumn @uniqueName) */
+  readonly uniqueName?: string;
+  /** Query table field ID (CT_TableColumn @queryTableFieldId) */
+  readonly queryTableFieldId?: number;
+  /** Header row differential format index */
+  readonly headerRowDxfId?: number;
+  /** Data differential format index */
+  readonly dataDxfId?: number;
+  /** Totals row differential format index */
+  readonly totalsRowDxfId?: number;
+  /** Header row cell style name */
+  readonly headerRowCellStyle?: string;
+  /** Data cell style name */
+  readonly dataCellStyle?: string;
+  /** Totals row cell style name */
+  readonly totalsRowCellStyle?: string;
 }
 
 export interface TableOptions {
@@ -81,6 +97,28 @@ export interface TableOptions {
   readonly style?: TableStyleInfoOptions;
   /** Auto-filter reference (defaults to ref) */
   readonly autoFilter?: string;
+  /** Insert row shifts existing rows (CT_Table @insertRowShift) */
+  readonly insertRowShift?: boolean;
+  /** Published to server (CT_Table @published) */
+  readonly published?: boolean;
+  /** Header row differential format index */
+  readonly headerRowDxfId?: number;
+  /** Data differential format index */
+  readonly dataDxfId?: number;
+  /** Totals row differential format index */
+  readonly totalsRowDxfId?: number;
+  /** Header row border differential format index */
+  readonly headerRowBorderDxfId?: number;
+  /** Table border differential format index */
+  readonly tableBorderDxfId?: number;
+  /** Totals row border differential format index */
+  readonly totalsRowBorderDxfId?: number;
+  /** Header row cell style name */
+  readonly headerRowCellStyle?: string;
+  /** Data cell style name */
+  readonly dataCellStyle?: string;
+  /** Totals row cell style name */
+  readonly totalsRowCellStyle?: string;
 }
 
 /**
@@ -120,6 +158,19 @@ export class TableXml extends BaseXmlComponent {
     if (o.totalsRowShown === false) {
       rootAttrs.totalsRowShown = 0;
     }
+    if (o.insertRowShift) rootAttrs.insertRowShift = 1;
+    if (o.published) rootAttrs.published = 1;
+    if (o.headerRowDxfId !== undefined) rootAttrs.headerRowDxfId = o.headerRowDxfId;
+    if (o.dataDxfId !== undefined) rootAttrs.dataDxfId = o.dataDxfId;
+    if (o.totalsRowDxfId !== undefined) rootAttrs.totalsRowDxfId = o.totalsRowDxfId;
+    if (o.headerRowBorderDxfId !== undefined)
+      rootAttrs.headerRowBorderDxfId = o.headerRowBorderDxfId;
+    if (o.tableBorderDxfId !== undefined) rootAttrs.tableBorderDxfId = o.tableBorderDxfId;
+    if (o.totalsRowBorderDxfId !== undefined)
+      rootAttrs.totalsRowBorderDxfId = o.totalsRowBorderDxfId;
+    if (o.headerRowCellStyle) rootAttrs.headerRowCellStyle = o.headerRowCellStyle;
+    if (o.dataCellStyle) rootAttrs.dataCellStyle = o.dataCellStyle;
+    if (o.totalsRowCellStyle) rootAttrs.totalsRowCellStyle = o.totalsRowCellStyle;
 
     p.push(
       `<table xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"` +
@@ -163,6 +214,14 @@ export class TableXml extends BaseXmlComponent {
       if (col.totalsRowLabel !== undefined) {
         colAttrs.totalsRowLabel = col.totalsRowLabel;
       }
+      if (col.uniqueName) colAttrs.uniqueName = col.uniqueName;
+      if (col.queryTableFieldId !== undefined) colAttrs.queryTableFieldId = col.queryTableFieldId;
+      if (col.headerRowDxfId !== undefined) colAttrs.headerRowDxfId = col.headerRowDxfId;
+      if (col.dataDxfId !== undefined) colAttrs.dataDxfId = col.dataDxfId;
+      if (col.totalsRowDxfId !== undefined) colAttrs.totalsRowDxfId = col.totalsRowDxfId;
+      if (col.headerRowCellStyle) colAttrs.headerRowCellStyle = col.headerRowCellStyle;
+      if (col.dataCellStyle) colAttrs.dataCellStyle = col.dataCellStyle;
+      if (col.totalsRowCellStyle) colAttrs.totalsRowCellStyle = col.totalsRowCellStyle;
 
       if (inner.length > 0) {
         p.push(`<tableColumn${this.buildAttrs(colAttrs)}>${inner.join("")}</tableColumn>`);

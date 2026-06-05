@@ -96,6 +96,18 @@ export interface RevisionCellChangeOptions {
   readonly formula?: string;
   /** Number format id */
   readonly numFmtId?: number;
+  /** XF differential format (CT_RevisionCellChange @xfDxf) */
+  readonly xfDxf?: number;
+  /** Quote prefix (CT_RevisionCellChange @quotePrefix) */
+  readonly quotePrefix?: boolean;
+  /** Old quote prefix */
+  readonly oldQuotePrefix?: boolean;
+  /** Phonetic (CT_RevisionCellChange @ph) */
+  readonly ph?: boolean;
+  /** Old phonetic */
+  readonly oldPh?: boolean;
+  /** End of list formula update */
+  readonly endOfListFormulaUpdate?: boolean;
 }
 
 export interface RevisionMoveOptions {
@@ -107,6 +119,8 @@ export interface RevisionMoveOptions {
   readonly destination: string;
   /** Sheet index (0-based) */
   readonly sheetIndex?: number;
+  /** Source sheet ID (CT_RevisionMove @sourceSheetId) */
+  readonly sourceSheetId?: number;
 }
 
 export interface RevisionFormattingOptions {
@@ -118,6 +132,8 @@ export interface RevisionFormattingOptions {
   readonly sheetIndex?: number;
   /** Style index */
   readonly s?: number;
+  /** XF differential format (CT_RevisionFormatting @xfDxf) */
+  readonly xfDxf?: number;
 }
 
 export interface RevisionInsertSheetOptions {
@@ -127,6 +143,8 @@ export interface RevisionInsertSheetOptions {
   readonly name: string;
   /** Sheet index */
   readonly sheetIndex?: number;
+  /** Sheet position (CT_RevisionInsertSheet @sheetPosition) */
+  readonly sheetPosition?: number;
 }
 
 export interface RevisionCommentOptions {
@@ -140,6 +158,18 @@ export interface RevisionCommentOptions {
   readonly text?: string;
   /** Author */
   readonly author?: string;
+  /** Always show comment (CT_RevisionComment @alwaysShow) */
+  readonly alwaysShow?: boolean;
+  /** Old comment flag */
+  readonly old?: boolean;
+  /** Hidden row */
+  readonly hiddenRow?: boolean;
+  /** Hidden column */
+  readonly hiddenColumn?: boolean;
+  /** Old text length */
+  readonly oldLength?: number;
+  /** New text length */
+  readonly newLength?: number;
 }
 
 export interface RevisionDefinedNameOptions {
@@ -151,6 +181,38 @@ export interface RevisionDefinedNameOptions {
   readonly value?: string;
   /** Local sheet ID (-1 for global) */
   readonly localSheetId?: number;
+  /** Custom view (CT_RevisionDefinedName @customView) */
+  readonly customView?: boolean;
+  /** Is function (CT_RevisionDefinedName @function) */
+  readonly function?: boolean;
+  /** Old function flag */
+  readonly oldFunction?: boolean;
+  /** Function group ID */
+  readonly functionGroupId?: number;
+  /** Old function group ID */
+  readonly oldFunctionGroupId?: number;
+  /** Shortcut key */
+  readonly shortcutKey?: string;
+  /** Old shortcut key */
+  readonly oldShortcutKey?: string;
+  /** Old hidden flag */
+  readonly oldHidden?: boolean;
+  /** Custom menu */
+  readonly customMenu?: string;
+  /** Old custom menu */
+  readonly oldCustomMenu?: string;
+  /** Old description */
+  readonly oldDescription?: string;
+  /** Help text */
+  readonly help?: string;
+  /** Old help text */
+  readonly oldHelp?: string;
+  /** Status bar text */
+  readonly statusBar?: string;
+  /** Old status bar text */
+  readonly oldStatusBar?: string;
+  /** Old comment */
+  readonly oldComment?: string;
 }
 
 /** Union type for all revision entries */

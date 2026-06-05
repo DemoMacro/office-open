@@ -31,6 +31,10 @@ export interface FillOptions {
 export interface BorderOptions {
   readonly style?: "thin" | "medium" | "thick" | "dotted" | "dashed" | "hair" | "none";
   readonly color?: string;
+  /** Diagonal up (CT_Border @diagonalUp) — on the parent border element */
+  readonly diagonalUp?: boolean;
+  /** Diagonal down (CT_Border @diagonalDown) — on the parent border element */
+  readonly diagonalDown?: boolean;
 }
 
 export interface BorderSideOptions {
@@ -47,6 +51,14 @@ export interface AlignmentOptions {
   readonly wrapText?: boolean;
   readonly textRotation?: number;
   readonly indent?: number;
+  /** Relative indent (CT_CellAlignment @relativeIndent) */
+  readonly relativeIndent?: number;
+  /** Justify last line (CT_CellAlignment @justifyLastLine) */
+  readonly justifyLastLine?: boolean;
+  /** Shrink to fit (CT_CellAlignment @shrinkToFit) */
+  readonly shrinkToFit?: boolean;
+  /** Reading order (CT_CellAlignment @readingOrder) */
+  readonly readingOrder?: number;
 }
 
 export interface StyleOptions {
@@ -55,6 +67,10 @@ export interface StyleOptions {
   readonly border?: BorderSideOptions;
   readonly numFmt?: string;
   readonly alignment?: AlignmentOptions;
+  /** Quote prefix (CT_Xf @quotePrefix) */
+  readonly quotePrefix?: boolean;
+  /** Pivot button (CT_Xf @pivotButton) */
+  readonly pivotButton?: boolean;
 }
 
 /** Differential format — used by conditional formatting to specify what changes. */
@@ -137,6 +153,8 @@ export class Styles extends BaseXmlComponent {
     readonly borderId: number;
     readonly numFmtId: number;
     readonly alignment?: AlignmentOptions;
+    readonly quotePrefix?: boolean;
+    readonly pivotButton?: boolean;
   }> = [
     { fontId: 0, fillId: 0, borderId: 0, numFmtId: 0 }, // default xf (index 0)
   ];
@@ -171,6 +189,8 @@ export class Styles extends BaseXmlComponent {
       borderId,
       numFmtId,
       alignment: opts.alignment,
+      quotePrefix: opts.quotePrefix,
+      pivotButton: opts.pivotButton,
     };
 
     const key = this.cellXfKey(xf);
@@ -248,12 +268,14 @@ export class Styles extends BaseXmlComponent {
     readonly borderId: number;
     readonly numFmtId: number;
     readonly alignment?: AlignmentOptions;
+    readonly quotePrefix?: boolean;
+    readonly pivotButton?: boolean;
   }): string {
     const a = xf.alignment;
     const ak = a
-      ? `h${a.horizontal ?? ""}v${a.vertical ?? ""}w${a.wrapText ? 1 : 0}r${a.textRotation ?? ""}i${a.indent ?? ""}`
+      ? `h${a.horizontal ?? ""}v${a.vertical ?? ""}w${a.wrapText ? 1 : 0}r${a.textRotation ?? ""}i${a.indent ?? ""}ri${a.relativeIndent ?? ""}jl${a.justifyLastLine ? 1 : 0}st${a.shrinkToFit ? 1 : 0}ro${a.readingOrder ?? ""}`
       : "";
-    return `${xf.fontId}|${xf.fillId}|${xf.borderId}|${xf.numFmtId}|${ak}`;
+    return `${xf.fontId}|${xf.fillId}|${xf.borderId}|${xf.numFmtId}|${ak}|qp${xf.quotePrefix ? 1 : 0}|pb${xf.pivotButton ? 1 : 0}`;
   }
 
   // ── XML generation ──
@@ -322,6 +344,9 @@ export class Styles extends BaseXmlComponent {
       if (xf.fontId > 0) xAttrs.applyFont = 1;
       if (xf.fillId > 0) xAttrs.applyFill = 1;
       if (xf.borderId > 0) xAttrs.applyBorder = 1;
+      if (xf.numFmtId > 0) xAttrs.applyNumberFormat = 1;
+      if (xf.quotePrefix) xAttrs.quotePrefix = 1;
+      if (xf.pivotButton) xAttrs.pivotButton = 1;
 
       const alignStr = xf.alignment ? this.alignmentXmlStr(xf.alignment) : "";
       p.push(alignStr ? `<xf${attrs(xAttrs)}>${alignStr}</xf>` : `<xf${attrs(xAttrs)}/>`);
@@ -395,6 +420,10 @@ export class Styles extends BaseXmlComponent {
     if (a.wrapText) aAttrs.wrapText = 1;
     if (a.textRotation !== undefined) aAttrs.textRotation = a.textRotation;
     if (a.indent !== undefined) aAttrs.indent = a.indent;
+    if (a.relativeIndent !== undefined) aAttrs.relativeIndent = a.relativeIndent;
+    if (a.justifyLastLine) aAttrs.justifyLastLine = 1;
+    if (a.shrinkToFit) aAttrs.shrinkToFit = 1;
+    if (a.readingOrder !== undefined) aAttrs.readingOrder = a.readingOrder;
     return `<alignment${attrs(aAttrs)}/>`;
   }
 }
