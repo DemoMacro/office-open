@@ -20,12 +20,52 @@ export interface FontOptions {
   readonly size?: number;
   readonly color?: string;
   readonly fontName?: string;
+  /** Character set (CT_Font/charset @val) */
+  readonly charset?: number;
+  /** Font family (CT_Font/family @val) */
+  readonly family?: number;
+  /** Condense (macOS, CT_Font/condense) */
+  readonly condense?: boolean;
+  /** Extend (macOS, CT_Font/extend) */
+  readonly extend?: boolean;
+  /** Vertical alignment: superscript/subscript (CT_Font/vertAlign @val) */
+  readonly vertAlign?: "superscript" | "subscript" | "baseline";
+  /** Font scheme (CT_Font/scheme @val) */
+  readonly scheme?: "major" | "minor" | "none";
+  /** Font shadow (CT_Font/shadow) */
+  readonly shadow?: boolean;
+  /** Font outline (CT_Font/outline) */
+  readonly outline?: boolean;
+}
+
+/** Gradient stop (CT_GradientStop) */
+export interface GradientStopOptions {
+  /** Position (0.0–1.0) */
+  readonly position: number;
+  /** RGB color hex without alpha, e.g. "FF0000" */
+  readonly color: string;
 }
 
 export interface FillOptions {
-  readonly type?: "solid" | "pattern";
+  readonly type?: "solid" | "pattern" | "gradient";
   readonly color?: string;
   readonly patternType?: string;
+  /** Background color for pattern fill (CT_PatternFill/bgColor) */
+  readonly bgColor?: string;
+  /** Gradient stops (CT_GradientFill/stop) */
+  readonly stops?: readonly GradientStopOptions[];
+  /** Gradient type (CT_GradientFill @type) */
+  readonly gradientType?: "linear" | "path";
+  /** Gradient degree for linear (CT_GradientFill @degree) */
+  readonly gradientDegree?: number;
+  /** Gradient left position for path (CT_GradientFill @left) */
+  readonly gradientLeft?: number;
+  /** Gradient right position for path (CT_GradientFill @right) */
+  readonly gradientRight?: number;
+  /** Gradient top position for path (CT_GradientFill @top) */
+  readonly gradientTop?: number;
+  /** Gradient bottom position for path (CT_GradientFill @bottom) */
+  readonly gradientBottom?: number;
 }
 
 export interface BorderOptions {
@@ -43,6 +83,14 @@ export interface BorderSideOptions {
   readonly left?: BorderOptions;
   readonly right?: BorderOptions;
   readonly diagonal?: BorderOptions;
+  /** Leading edge border (CT_Border/start, for RTL support) */
+  readonly start?: BorderOptions;
+  /** Trailing edge border (CT_Border/end, for RTL support) */
+  readonly end?: BorderOptions;
+  /** Vertical inner border (CT_Border/vertical, for cell range borders) */
+  readonly vertical?: BorderOptions;
+  /** Horizontal inner border (CT_Border/horizontal, for cell range borders) */
+  readonly horizontal?: BorderOptions;
 }
 
 export interface AlignmentOptions {
@@ -71,6 +119,30 @@ export interface StyleOptions {
   readonly quotePrefix?: boolean;
   /** Pivot button (CT_Xf @pivotButton) */
   readonly pivotButton?: boolean;
+  /** Cell protection (CT_CellProtection) */
+  readonly protection?: CellProtectionOptions;
+}
+
+/** Cell-level protection settings (CT_CellProtection) */
+export interface CellProtectionOptions {
+  /** Cell is locked (CT_CellProtection @locked) */
+  readonly locked?: boolean;
+  /** Cell formula is hidden (CT_CellProtection @hidden) */
+  readonly hidden?: boolean;
+}
+
+/** Indexed color entry (CT_RgbColor) */
+export interface IndexedColorOptions {
+  /** RGB hex value, e.g. "FF000000" */
+  readonly rgb: string;
+}
+
+/** Colors palette (CT_Colors) */
+export interface ColorsOptions {
+  /** Indexed color palette (CT_IndexedColors) */
+  readonly indexedColors?: readonly IndexedColorOptions[];
+  /** Most recently used colors (CT_MRUColors) */
+  readonly mruColors?: readonly string[];
 }
 
 /** Differential format — used by conditional formatting to specify what changes. */
@@ -84,16 +156,16 @@ export interface DxfOptions {
 // ── Style key helpers for deduplication ──
 
 function fontKey(f: FontOptions): string {
-  return `b${f.bold ? 1 : 0}i${f.italic ? 1 : 0}u${f.underline ? 1 : 0}s${f.strike ? 1 : 0}z${f.size ?? 0}c${f.color ?? ""}n${f.fontName ?? ""}`;
+  return `b${f.bold ? 1 : 0}i${f.italic ? 1 : 0}u${f.underline ? 1 : 0}s${f.strike ? 1 : 0}z${f.size ?? 0}c${f.color ?? ""}n${f.fontName ?? ""}cs${f.charset ?? ""}fm${f.family ?? ""}co${f.condense ? 1 : 0}ex${f.extend ? 1 : 0}va${f.vertAlign ?? ""}sc${f.scheme ?? ""}sh${f.shadow ? 1 : 0}ol${f.outline ? 1 : 0}`;
 }
 
 function fillKey(f: FillOptions): string {
-  return `t${f.type ?? ""}c${f.color ?? ""}p${f.patternType ?? ""}`;
+  return `t${f.type ?? ""}c${f.color ?? ""}p${f.patternType ?? ""}bg${f.bgColor ?? ""}g${f.stops?.map((s) => `${s.position}_${s.color}`).join("|") ?? ""}`;
 }
 
 function borderKey(b: BorderSideOptions): string {
   const sk = (o?: BorderOptions) => `${o?.style ?? ""}_${o?.color ?? ""}`;
-  return `t${sk(b.top)}b${sk(b.bottom)}l${sk(b.left)}r${sk(b.right)}d${sk(b.diagonal)}`;
+  return `t${sk(b.top)}b${sk(b.bottom)}l${sk(b.left)}r${sk(b.right)}d${sk(b.diagonal)}st${sk(b.start)}en${sk(b.end)}v${sk(b.vertical)}h${sk(b.horizontal)}`;
 }
 
 // ── Built-in number format IDs ──
@@ -155,12 +227,15 @@ export class Styles extends BaseXmlComponent {
     readonly alignment?: AlignmentOptions;
     readonly quotePrefix?: boolean;
     readonly pivotButton?: boolean;
+    readonly protection?: CellProtectionOptions;
   }> = [
     { fontId: 0, fillId: 0, borderId: 0, numFmtId: 0 }, // default xf (index 0)
   ];
   private readonly cellXfKeys = new Map<string, number>();
 
   private readonly dxfs: DxfOptions[] = [];
+
+  private colors?: ColorsOptions;
 
   public constructor() {
     super("styleSheet");
@@ -191,6 +266,7 @@ export class Styles extends BaseXmlComponent {
       alignment: opts.alignment,
       quotePrefix: opts.quotePrefix,
       pivotButton: opts.pivotButton,
+      protection: opts.protection,
     };
 
     const key = this.cellXfKey(xf);
@@ -211,6 +287,13 @@ export class Styles extends BaseXmlComponent {
     const idx = this.dxfs.length;
     this.dxfs.push(opts);
     return idx;
+  }
+
+  /**
+   * Set color palette (indexed colors and MRU colors).
+   */
+  public setColors(opts: ColorsOptions): void {
+    this.colors = opts;
   }
 
   private registerFont(opts?: FontOptions): number {
@@ -270,12 +353,15 @@ export class Styles extends BaseXmlComponent {
     readonly alignment?: AlignmentOptions;
     readonly quotePrefix?: boolean;
     readonly pivotButton?: boolean;
+    readonly protection?: CellProtectionOptions;
   }): string {
     const a = xf.alignment;
     const ak = a
       ? `h${a.horizontal ?? ""}v${a.vertical ?? ""}w${a.wrapText ? 1 : 0}r${a.textRotation ?? ""}i${a.indent ?? ""}ri${a.relativeIndent ?? ""}jl${a.justifyLastLine ? 1 : 0}st${a.shrinkToFit ? 1 : 0}ro${a.readingOrder ?? ""}`
       : "";
-    return `${xf.fontId}|${xf.fillId}|${xf.borderId}|${xf.numFmtId}|${ak}|qp${xf.quotePrefix ? 1 : 0}|pb${xf.pivotButton ? 1 : 0}`;
+    const pr = xf.protection;
+    const pk = pr ? `l${pr.locked ?? ""}h${pr.hidden ?? ""}` : "";
+    return `${xf.fontId}|${xf.fillId}|${xf.borderId}|${xf.numFmtId}|${ak}|qp${xf.quotePrefix ? 1 : 0}|pb${xf.pivotButton ? 1 : 0}|${pk}`;
   }
 
   // ── XML generation ──
@@ -308,13 +394,29 @@ export class Styles extends BaseXmlComponent {
     // fills
     p.push(`<fills count="${this.fills.length}">`);
     for (const f of this.fills) {
-      const patternAttrs = attrs({ patternType: f.patternType ?? "solid" });
-      const fgColor = f.color ? `<fgColor rgb="FF${f.color}"/>` : "";
-      p.push(
-        fgColor
-          ? `<fill><patternFill${patternAttrs}>${fgColor}</patternFill></fill>`
-          : `<fill><patternFill${patternAttrs}/></fill>`,
-      );
+      if (f.type === "gradient" && f.stops && f.stops.length > 0) {
+        const gfAttrs: Record<string, string | number | boolean | undefined> = {};
+        if (f.gradientType && f.gradientType !== "linear") gfAttrs.type = f.gradientType;
+        if (f.gradientDegree !== undefined) gfAttrs.degree = f.gradientDegree;
+        if (f.gradientLeft !== undefined) gfAttrs.left = f.gradientLeft;
+        if (f.gradientRight !== undefined) gfAttrs.right = f.gradientRight;
+        if (f.gradientTop !== undefined) gfAttrs.top = f.gradientTop;
+        if (f.gradientBottom !== undefined) gfAttrs.bottom = f.gradientBottom;
+        const stopParts = f.stops
+          .map((s) => `<stop position="${s.position}"><color rgb="FF${s.color}"/></stop>`)
+          .join("");
+        p.push(`<fill><gradientFill${attrs(gfAttrs)}>${stopParts}</gradientFill></fill>`);
+      } else {
+        const patternAttrs = attrs({ patternType: f.patternType ?? "solid" });
+        const fgColor = f.color ? `<fgColor rgb="FF${f.color}"/>` : "";
+        const bgColor = f.bgColor ? `<bgColor rgb="FF${f.bgColor}"/>` : "";
+        const colorContent = fgColor + bgColor;
+        p.push(
+          colorContent
+            ? `<fill><patternFill${patternAttrs}>${colorContent}</patternFill></fill>`
+            : `<fill><patternFill${patternAttrs}/></fill>`,
+        );
+      }
     }
     p.push("</fills>");
 
@@ -349,7 +451,9 @@ export class Styles extends BaseXmlComponent {
       if (xf.pivotButton) xAttrs.pivotButton = 1;
 
       const alignStr = xf.alignment ? this.alignmentXmlStr(xf.alignment) : "";
-      p.push(alignStr ? `<xf${attrs(xAttrs)}>${alignStr}</xf>` : `<xf${attrs(xAttrs)}/>`);
+      const protStr = xf.protection ? this.protectionXmlStr(xf.protection) : "";
+      const inner = alignStr + protStr;
+      p.push(inner ? `<xf${attrs(xAttrs)}>${inner}</xf>` : `<xf${attrs(xAttrs)}/>`);
     }
     p.push("</cellXfs>");
 
@@ -381,6 +485,29 @@ export class Styles extends BaseXmlComponent {
     p.push(
       '<tableStyles count="0" defaultTableStyle="TableStyleMedium2" defaultPivotStyle="PivotStyleLight16"/>',
     );
+
+    // colors (optional color palette)
+    if (this.colors) {
+      const c = this.colors;
+      const colorParts: string[] = ["<colors>"];
+      if (c.indexedColors && c.indexedColors.length > 0) {
+        colorParts.push("<indexedColors>");
+        for (const ic of c.indexedColors) {
+          colorParts.push(`<rgbColor rgb="${ic.rgb}"/>`);
+        }
+        colorParts.push("</indexedColors>");
+      }
+      if (c.mruColors && c.mruColors.length > 0) {
+        colorParts.push("<mruColors>");
+        for (const mc of c.mruColors) {
+          colorParts.push(`<color rgb="FF${mc}"/>`);
+        }
+        colorParts.push("</mruColors>");
+      }
+      colorParts.push("</colors>");
+      p.push(colorParts.join(""));
+    }
+
     p.push("<extLst/>");
 
     p.push("</styleSheet>");
@@ -393,22 +520,42 @@ export class Styles extends BaseXmlComponent {
     if (f.italic) parts.push("<i/>");
     if (f.underline) parts.push("<u/>");
     if (f.strike) parts.push("<strike/>");
+    if (f.outline) parts.push("<outline/>");
+    if (f.shadow) parts.push("<shadow/>");
+    if (f.condense) parts.push("<condense/>");
+    if (f.extend) parts.push("<extend/>");
     if (f.size) parts.push(`<sz val="${f.size}"/>`);
     if (f.color) parts.push(`<color rgb="FF${f.color}"/>`);
     if (f.fontName) parts.push(`<name val="${escapeXml(f.fontName)}"/>`);
+    if (f.charset !== undefined) parts.push(`<charset val="${f.charset}"/>`);
+    if (f.family !== undefined) parts.push(`<family val="${f.family}"/>`);
+    if (f.vertAlign) parts.push(`<vertAlign val="${f.vertAlign}"/>`);
+    if (f.scheme) parts.push(`<scheme val="${f.scheme}"/>`);
     return parts.join("");
   }
 
   private borderXmlStr(b: BorderSideOptions): string {
     const parts: string[] = [];
-    for (const side of ["left", "right", "top", "bottom", "diagonal"] as const) {
-      const opts = b[side] as BorderOptions | undefined;
+    const renderSide = (name: string, opts: BorderOptions | undefined) => {
       if (opts && opts.style && opts.style !== "none") {
         const colorStr = opts.color ? `<color rgb="FF${opts.color}"/>` : "";
-        parts.push(`<${side} style="${opts.style}">${colorStr}</${side}>`);
+        parts.push(`<${name} style="${opts.style}">${colorStr}</${name}>`);
       } else {
-        parts.push(`<${side}/>`);
+        parts.push(`<${name}/>`);
       }
+    };
+    for (const side of [
+      "left",
+      "right",
+      "top",
+      "bottom",
+      "diagonal",
+      "start",
+      "end",
+      "vertical",
+      "horizontal",
+    ] as const) {
+      renderSide(side, b[side] as BorderOptions | undefined);
     }
     return parts.join("");
   }
@@ -425,5 +572,12 @@ export class Styles extends BaseXmlComponent {
     if (a.shrinkToFit) aAttrs.shrinkToFit = 1;
     if (a.readingOrder !== undefined) aAttrs.readingOrder = a.readingOrder;
     return `<alignment${attrs(aAttrs)}/>`;
+  }
+
+  private protectionXmlStr(pr: CellProtectionOptions): string {
+    const prAttrs: Record<string, string | number | boolean | undefined> = {};
+    if (pr.locked !== undefined) prAttrs.locked = pr.locked ? 1 : 0;
+    if (pr.hidden !== undefined) prAttrs.hidden = pr.hidden ? 1 : 0;
+    return `<protection${attrs(prAttrs)}/>`;
   }
 }

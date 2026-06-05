@@ -56,6 +56,12 @@ export interface TableColumnOptions {
   readonly totalsRowLabel?: string;
   /** Calculated column formula */
   readonly calculatedColumnFormula?: string;
+  /** Totals row formula (CT_TableColumn/totalsRowFormula, used when totalsRowFunction is "custom") */
+  readonly totalsRowFormula?: string;
+  /** Whether totals row formula is array (CT_TableFormula @array) */
+  readonly totalsRowFormulaArray?: boolean;
+  /** Whether calculated column formula is array (CT_TableFormula @array) */
+  readonly calculatedColumnFormulaArray?: boolean;
   /** Unique column name for structured references (CT_TableColumn @uniqueName) */
   readonly uniqueName?: string;
   /** Query table field ID (CT_TableColumn @queryTableFieldId) */
@@ -198,8 +204,17 @@ export class TableXml extends BaseXmlComponent {
 
       // calculatedColumnFormula
       if (col.calculatedColumnFormula !== undefined) {
+        const fAttrs = col.calculatedColumnFormulaArray ? ' array="1"' : "";
         inner.push(
-          `<calculatedColumnFormula>${escapeXml(col.calculatedColumnFormula)}</calculatedColumnFormula>`,
+          `<calculatedColumnFormula${fAttrs}>${escapeXml(col.calculatedColumnFormula)}</calculatedColumnFormula>`,
+        );
+      }
+
+      // totalsRowFormula (when totalsRowFunction is "custom")
+      if (col.totalsRowFormula !== undefined) {
+        const fAttrs = col.totalsRowFormulaArray ? ' array="1"' : "";
+        inner.push(
+          `<totalsRowFormula${fAttrs}>${escapeXml(col.totalsRowFormula)}</totalsRowFormula>`,
         );
       }
 

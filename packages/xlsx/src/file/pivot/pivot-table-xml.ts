@@ -11,7 +11,17 @@ import type { Context } from "@file/xml-components";
 import { attrs, escapeXml } from "@office-open/xml";
 
 import type { PivotSourceData } from "./pivot-utils";
-import type { PivotTableOptions, PivotDataField, PivotFilterOptions } from "./pivot-utils";
+import type {
+  PivotTableOptions,
+  PivotDataField,
+  PivotFilterOptions,
+  CalculatedItemOptions,
+  CalculatedMemberOptions,
+  PivotHierarchyOptions,
+  PivotConditionalFormatOptions,
+  ChartFormatOptions,
+  PivotAreaOptions,
+} from "./pivot-utils";
 import { collectUniqueValues } from "./pivot-utils";
 
 export class PivotTableXml extends BaseXmlComponent {
@@ -153,6 +163,11 @@ export class PivotTableXml extends BaseXmlComponent {
     // pivotFields
     p.push(pivotFieldsXml);
 
+    // pivotHierarchies (after pivotFields per XSD sequence)
+    if (o.pivotHierarchies && o.pivotHierarchies.length > 0) {
+      p.push(this.buildPivotHierarchies(o.pivotHierarchies));
+    }
+
     // pageFields (before rowFields per XSD sequence)
     if (pageFieldIndices.length > 0) {
       p.push(pageFieldsXml);
@@ -187,6 +202,26 @@ export class PivotTableXml extends BaseXmlComponent {
       p.push(this.buildFilters(o.filters));
     }
 
+    // calculatedItems (after filters per XSD sequence)
+    if (o.calculatedItems && o.calculatedItems.length > 0) {
+      p.push(this.buildCalculatedItems(o.calculatedItems));
+    }
+
+    // calculatedMembers
+    if (o.calculatedMembers && o.calculatedMembers.length > 0) {
+      p.push(this.buildCalculatedMembers(o.calculatedMembers));
+    }
+
+    // conditionalFormats (pivot-specific)
+    if (o.pivotConditionalFormats && o.pivotConditionalFormats.length > 0) {
+      p.push(this.buildPivotConditionalFormats(o.pivotConditionalFormats));
+    }
+
+    // chartFormats
+    if (o.chartFormats && o.chartFormats.length > 0) {
+      p.push(this.buildChartFormats(o.chartFormats));
+    }
+
     p.push("</pivotTableDefinition>");
     return p.join("");
   }
@@ -198,6 +233,7 @@ export class PivotTableXml extends BaseXmlComponent {
     pageIndices: readonly number[],
   ): string {
     const fields = this.sourceData.fieldNames;
+    const o = this.options;
     const parts: string[] = [`<pivotFields count="${fields.length}">`];
 
     for (let i = 0; i < fields.length; i++) {
@@ -207,7 +243,21 @@ export class PivotTableXml extends BaseXmlComponent {
       const isPage = pageIndices.includes(i);
 
       if (isData) {
-        parts.push(`<pivotField dataField="1" showAll="0"/>`);
+        const dataFieldIdx = dataIndices.indexOf(i);
+        const df = o.data[dataFieldIdx];
+        const dfAttrs: string[] = ['dataField="1"', 'showAll="0"'];
+        if (df?.showDataAs) dfAttrs.push(`showDataAs="${df.showDataAs}"`);
+        if (df?.baseField !== undefined) dfAttrs.push(`baseField="${df.baseField}"`);
+        if (df?.baseItem !== undefined) dfAttrs.push(`baseItem="${df.baseItem}"`);
+        // autoSortScope for data fields
+        if (o.autoSortScope) {
+          const inner = this.buildPivotAreaXml(o.autoSortScope);
+          parts.push(
+            `<pivotField ${dfAttrs.join(" ")}><autoSortScope>${inner}</autoSortScope></pivotField>`,
+          );
+        } else {
+          parts.push(`<pivotField ${dfAttrs.join(" ")}/>`);
+        }
       } else if (isRow) {
         const uniqueVals = collectUniqueValues(this.sourceData.records, i);
         parts.push(`<pivotField axis="axisRow" showAll="0">`);
@@ -417,6 +467,144 @@ export class PivotTableXml extends BaseXmlComponent {
       parts.push(`<filter${attrs(fAttrs)}><autoFilter/></filter>`);
     }
     parts.push("</filters>");
+    return parts.join("");
+  }
+
+  private buildPivotHierarchies(hierarchies: readonly PivotHierarchyOptions[]): string {
+    const parts: string[] = [`<pivotHierarchies count="${hierarchies.length}">`];
+    for (const h of hierarchies) {
+      const hAttrs: string[] = [];
+      if (h.outline) hAttrs.push('outline="1"');
+      if (h.multipleItemSelectionAllowed) hAttrs.push('multipleItemSelectionAllowed="1"');
+      if (h.subtotalTop) hAttrs.push('subtotalTop="1"');
+      if (h.showInFieldList === false) hAttrs.push('showInFieldList="0"');
+      if (h.dragToRow === false) hAttrs.push('dragToRow="0"');
+      if (h.dragToCol === false) hAttrs.push('dragToCol="0"');
+      if (h.dragToPage === false) hAttrs.push('dragToPage="0"');
+      if (h.dragToData) hAttrs.push('dragToData="1"');
+      if (h.dragOff === false) hAttrs.push('dragOff="0"');
+      if (h.includeNewItemsInFilter) hAttrs.push('includeNewItemsInFilter="1"');
+      if (h.caption) hAttrs.push(`caption="${escapeXml(h.caption)}"`);
+      const membersXml = h.members
+        ? `<members count="${h.members.length}">${h.members.map((m) => `<member name="${escapeXml(m.name)}"/>`).join("")}</members>`
+        : "";
+      if (membersXml) {
+        parts.push(`<pivotHierarchy ${hAttrs.join(" ")}>${membersXml}</pivotHierarchy>`);
+      } else {
+        parts.push(`<pivotHierarchy ${hAttrs.join(" ")}/>`);
+      }
+    }
+    parts.push("</pivotHierarchies>");
+    return parts.join("");
+  }
+
+  private buildCalculatedItems(items: readonly CalculatedItemOptions[]): string {
+    const parts: string[] = [`<calculatedItems count="${items.length}">`];
+    for (const item of items) {
+      const ciAttrs: string[] = [];
+      if (item.field !== undefined) ciAttrs.push(`field="${item.field}"`);
+      if (item.formula) ciAttrs.push(`formula="${escapeXml(item.formula)}"`);
+      const inner = item.pivotArea ? this.buildPivotAreaXml(item.pivotArea) : "";
+      if (inner) {
+        parts.push(`<calculatedItem ${ciAttrs.join(" ")}>${inner}</calculatedItem>`);
+      } else {
+        parts.push(`<calculatedItem ${ciAttrs.join(" ")}/>`);
+      }
+    }
+    parts.push("</calculatedItems>");
+    return parts.join("");
+  }
+
+  private buildCalculatedMembers(members: readonly CalculatedMemberOptions[]): string {
+    const parts: string[] = [`<calculatedMembers count="${members.length}">`];
+    for (const m of members) {
+      const mAttrs: string[] = [`name="${escapeXml(m.name)}"`, `mdx="${escapeXml(m.mdx)}"`];
+      if (m.memberName) mAttrs.push(`memberName="${escapeXml(m.memberName)}"`);
+      if (m.hierarchy) mAttrs.push(`hierarchy="${escapeXml(m.hierarchy)}"`);
+      if (m.parent) mAttrs.push(`parent="${escapeXml(m.parent)}"`);
+      if (m.solveOrder !== undefined) mAttrs.push(`solveOrder="${m.solveOrder}"`);
+      if (m.set) mAttrs.push('set="1"');
+      parts.push(`<calculatedMember ${mAttrs.join(" ")}/>`);
+    }
+    parts.push("</calculatedMembers>");
+    return parts.join("");
+  }
+
+  private buildPivotConditionalFormats(formats: readonly PivotConditionalFormatOptions[]): string {
+    const parts: string[] = [`<conditionalFormats count="${formats.length}">`];
+    for (const cf of formats) {
+      const cfAttrs: string[] = [`priority="${cf.priority}"`];
+      if (cf.scope && cf.scope !== "selection") cfAttrs.push(`scope="${cf.scope}"`);
+      if (cf.type && cf.type !== "none") cfAttrs.push(`type="${cf.type}"`);
+      const areasXml = cf.pivotAreas?.map((a) => this.buildPivotAreaXml(a)).join("") ?? "";
+      parts.push(`<conditionalFormat ${cfAttrs.join(" ")}>${areasXml}</conditionalFormat>`);
+    }
+    parts.push("</conditionalFormats>");
+    return parts.join("");
+  }
+
+  private buildChartFormats(formats: readonly ChartFormatOptions[]): string {
+    const parts: string[] = [`<chartFormats count="${formats.length}">`];
+    for (const cf of formats) {
+      const cfAttrs: string[] = [`chart="${cf.chart}"`, `format="${cf.format}"`];
+      if (cf.series) cfAttrs.push('series="1"');
+      const areaXml = cf.pivotArea ? this.buildPivotAreaXml(cf.pivotArea) : "";
+      if (areaXml) {
+        parts.push(`<chartFormat ${cfAttrs.join(" ")}>${areaXml}</chartFormat>`);
+      } else {
+        parts.push(`<chartFormat ${cfAttrs.join(" ")}/>`);
+      }
+    }
+    parts.push("</chartFormats>");
+    return parts.join("");
+  }
+
+  private buildPivotAreaXml(area: PivotAreaOptions): string {
+    const aAttrs: string[] = [];
+    if (area.field !== undefined) aAttrs.push(`field="${area.field}"`);
+    if (area.type) aAttrs.push(`type="${area.type}"`);
+    if (area.dataOnly === false) aAttrs.push('dataOnly="0"');
+    if (area.labelOnly) aAttrs.push('labelOnly="1"');
+    if (area.grandRow) aAttrs.push('grandRow="1"');
+    if (area.grandCol) aAttrs.push('grandCol="1"');
+    if (area.cacheIndex) aAttrs.push('cacheIndex="1"');
+    if (area.outline === false) aAttrs.push('outline="0"');
+    if (area.offset) aAttrs.push(`offset="${escapeXml(area.offset)}"`);
+    if (area.collapsedLevelsAreSubtotals) aAttrs.push('collapsedLevelsAreSubtotals="1"');
+    if (area.axis) aAttrs.push(`axis="${area.axis}"`);
+    if (area.fieldPosition !== undefined) aAttrs.push(`fieldPosition="${area.fieldPosition}"`);
+    const refsXml = area.references ? this.buildPivotAreaReferences(area.references) : "";
+    if (refsXml) {
+      return `<pivotArea ${aAttrs.join(" ")}>${refsXml}</pivotArea>`;
+    }
+    return `<pivotArea ${aAttrs.join(" ")}/>`;
+  }
+
+  private buildPivotAreaReferences(
+    refs: readonly import("./pivot-utils").PivotAreaReferenceOptions[],
+  ): string {
+    const parts: string[] = [`<references count="${refs.length}">`];
+    for (const ref of refs) {
+      const rAttrs: string[] = [];
+      if (ref.field !== undefined) rAttrs.push(`field="${ref.field}"`);
+      if (ref.count !== undefined) rAttrs.push(`count="${ref.count}"`);
+      if (ref.selected === false) rAttrs.push('selected="0"');
+      if (ref.byPosition) rAttrs.push('byPosition="1"');
+      if (ref.relative) rAttrs.push('relative="1"');
+      if (ref.defaultSubtotal) rAttrs.push('defaultSubtotal="1"');
+      if (ref.sumSubtotal) rAttrs.push('sumSubtotal="1"');
+      if (ref.countASubtotal) rAttrs.push('countASubtotal="1"');
+      if (ref.avgSubtotal) rAttrs.push('avgSubtotal="1"');
+      if (ref.maxSubtotal) rAttrs.push('maxSubtotal="1"');
+      if (ref.minSubtotal) rAttrs.push('minSubtotal="1"');
+      const xXml = ref.x ? ref.x.map((v) => `<x v="${v}"/>`).join("") : "";
+      if (xXml) {
+        parts.push(`<reference ${rAttrs.join(" ")}>${xXml}</reference>`);
+      } else {
+        parts.push(`<reference ${rAttrs.join(" ")}/>`);
+      }
+    }
+    parts.push("</references>");
     return parts.join("");
   }
 }

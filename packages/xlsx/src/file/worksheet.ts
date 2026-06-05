@@ -537,6 +537,101 @@ export interface AutoFilterOptions {
   readonly sort?: readonly SortCondition[];
   /** Sort state options */
   readonly sortState?: SortStateOptions;
+  /** Color filters (CT_ColorFilter) */
+  readonly colorFilters?: readonly ColorFilterOptions[];
+  /** Icon filters (CT_IconFilter) */
+  readonly iconFilters?: readonly IconFilterOptions[];
+  /** Dynamic filters (CT_DynamicFilter) */
+  readonly dynamicFilters?: readonly DynamicFilterOptions[];
+  /** Date group items in filters (CT_DateGroupItem) */
+  readonly dateGroupItems?: readonly DateGroupFilterOptions[];
+}
+
+/** Color filter (CT_ColorFilter) */
+export interface ColorFilterOptions {
+  /** Column ID */
+  readonly colId: number;
+  /** Cell color RGB (dxfId used if not set) */
+  readonly dxfId?: number;
+  /** Filter by cell color (CT_ColorFilter @cellColor) */
+  readonly cellColor?: boolean;
+}
+
+/** Icon filter (CT_IconFilter) */
+export interface IconFilterOptions {
+  /** Column ID */
+  readonly colId: number;
+  /** Icon set index (CT_IconFilter @iconSet) */
+  readonly iconSet: number;
+  /** Icon ID within set (CT_IconFilter @iconId) */
+  readonly iconId?: number;
+}
+
+/** Dynamic filter (CT_DynamicFilter) */
+export interface DynamicFilterOptions {
+  /** Column ID */
+  readonly colId: number;
+  /** Dynamic filter type (CT_DynamicFilter @type) */
+  readonly type:
+    | "null"
+    | "aboveAverage"
+    | "belowAverage"
+    | "tomorrow"
+    | "today"
+    | "yesterday"
+    | "nextWeek"
+    | "thisWeek"
+    | "lastWeek"
+    | "nextMonth"
+    | "thisMonth"
+    | "lastMonth"
+    | "nextQuarter"
+    | "thisQuarter"
+    | "lastQuarter"
+    | "nextYear"
+    | "thisYear"
+    | "lastYear"
+    | "yearToDate"
+    | "Q1"
+    | "Q2"
+    | "Q3"
+    | "Q4"
+    | "M1"
+    | "M2"
+    | "M3"
+    | "M4"
+    | "M5"
+    | "M6"
+    | "M7"
+    | "M8"
+    | "M9"
+    | "M10"
+    | "M11"
+    | "M12";
+  /** Max value (CT_DynamicFilter @val) */
+  readonly val?: number;
+  /** Max value as date ISO string (CT_DynamicFilter @maxVal) */
+  readonly maxVal?: number;
+}
+
+/** Date group filter item (CT_DateGroupItem) */
+export interface DateGroupFilterOptions {
+  /** Column ID */
+  readonly colId: number;
+  /** Date grouping level (CT_DateGroupItem @dateTimeGrouping) */
+  readonly dateTimeGrouping: "year" | "month" | "day" | "hour" | "minute" | "second";
+  /** Year (CT_DateGroupItem @year) */
+  readonly year?: number;
+  /** Month (1-12, CT_DateGroupItem @month) */
+  readonly month?: number;
+  /** Day (1-31, CT_DateGroupItem @day) */
+  readonly day?: number;
+  /** Hour (0-23, CT_DateGroupItem @hour) */
+  readonly hour?: number;
+  /** Minute (0-59, CT_DateGroupItem @minute) */
+  readonly minute?: number;
+  /** Second (0-59, CT_DateGroupItem @second) */
+  readonly second?: number;
 }
 
 /** Sort state configuration (CT_SortState) */
@@ -638,6 +733,145 @@ export interface SheetBackgroundImageOptions {
   readonly type: "png" | "jpeg" | "jpg";
 }
 
+/** Page break entry (CT_Break) */
+export interface PageBreakOptions {
+  /** Row or column ID (1-based) */
+  readonly id: number;
+  /** Min value (CT_Break @min) */
+  readonly min?: number;
+  /** Max value (CT_Break @max) */
+  readonly max?: number;
+  /** Manual break (CT_Break @man) */
+  readonly manual?: boolean;
+  /** Pivot break (CT_Break @pt) */
+  readonly pivot?: boolean;
+}
+
+/** Selection in sheet view (CT_Selection) */
+export interface SelectionOptions {
+  /** Pane (CT_Selection @pane) */
+  readonly pane?: "bottomRight" | "topRight" | "bottomLeft" | "topLeft";
+  /** Active cell (CT_Selection @activeCell) */
+  readonly activeCell?: string;
+  /** Active cell index (CT_Selection @activeCellId) */
+  readonly activeCellId?: number;
+  /** Selected range (CT_Selection @sqref) */
+  readonly sqref?: string;
+}
+
+/** Custom sheet view (CT_CustomSheetView) */
+export interface CustomSheetViewOptions {
+  /** GUID identifier (required, CT_CustomSheetView @guid) */
+  readonly guid: string;
+  /** Zoom scale (CT_CustomSheetView @scale) */
+  readonly scale?: number;
+  /** Show page breaks (CT_CustomSheetView @showPageBreaks) */
+  readonly showPageBreaks?: boolean;
+  /** Show formulas (CT_CustomSheetView @showFormulas) */
+  readonly showFormulas?: boolean;
+  /** Show grid lines (CT_CustomSheetView @showGridLines) */
+  readonly showGridLines?: boolean;
+  /** Show row/column headers (CT_CustomSheetView @showRowCol) */
+  readonly showRowColHeaders?: boolean;
+  /** Show outline symbols (CT_CustomSheetView @outlineSymbols) */
+  readonly outlineSymbols?: boolean;
+  /** Show zero values (CT_CustomSheetView @zeroValues) */
+  readonly zeroValues?: boolean;
+  /** Fit to page (CT_CustomSheetView @fitToPage) */
+  readonly fitToPage?: boolean;
+  /** Print area (CT_CustomSheetView @printArea) */
+  readonly printArea?: boolean;
+  /** Filter applied (CT_CustomSheetView @filter) */
+  readonly filter?: boolean;
+  /** Show auto filter (CT_CustomSheetView @showAutoFilter) */
+  readonly showAutoFilter?: boolean;
+  /** Hidden rows (CT_CustomSheetView @hiddenRows) */
+  readonly hiddenRows?: boolean;
+  /** Hidden columns (CT_CustomSheetView @hiddenColumns) */
+  readonly hiddenColumns?: boolean;
+  /** Sheet state (CT_CustomSheetView @state) */
+  readonly state?: "visible" | "hidden" | "veryHidden";
+  /** Filter unique (CT_CustomSheetView @filterUnique) */
+  readonly filterUnique?: boolean;
+  /** View type (CT_CustomSheetView @view) */
+  readonly view?: "normal" | "pageBreakPreview" | "pageLayout";
+}
+
+/** Cell watch entry (CT_CellWatch) */
+export interface CellWatchOptions {
+  /** Cell reference, e.g. "A1" */
+  readonly r: string;
+}
+
+/** Data consolidation (CT_DataConsolidate) */
+export interface DataConsolidateOptions {
+  /** Consolidation function (CT_DataConsolidate @function) */
+  readonly function?:
+    | "average"
+    | "count"
+    | "countNums"
+    | "max"
+    | "min"
+    | "product"
+    | "stdDev"
+    | "stdDevp"
+    | "sum"
+    | "var"
+    | "varp";
+  /** Use top row labels (CT_DataConsolidate @startLabels) */
+  readonly topLabels?: boolean;
+  /** Use left column labels (CT_DataConsolidate @leftLabels) */
+  readonly leftLabels?: boolean;
+  /** Use labels in first row (CT_DataConsolidate @startLabels alias) */
+  readonly startLabels?: boolean;
+  /** Link to source data (CT_DataConsolidate @link) */
+  readonly link?: boolean;
+  /** Source data references */
+  readonly refs?: readonly string[];
+}
+
+/** Drawing in header/footer (CT_DrawingHF) */
+export interface DrawingHfOptions {
+  /** Relationship ID for the drawing (required) */
+  readonly rId: string;
+  /** Left header odd (CT_DrawingHF @lho) */
+  readonly lho?: number;
+  /** Left header even (CT_DrawingHF @lhe) */
+  readonly lhe?: number;
+  /** Left header first (CT_DrawingHF @lhf) */
+  readonly lhf?: number;
+  /** Center header odd (CT_DrawingHF @cho) */
+  readonly cho?: number;
+  /** Center header even (CT_DrawingHF @che) */
+  readonly che?: number;
+  /** Center header first (CT_DrawingHF @chf) */
+  readonly chf?: number;
+  /** Right header odd (CT_DrawingHF @rho) */
+  readonly rho?: number;
+  /** Right header even (CT_DrawingHF @rhe) */
+  readonly rhe?: number;
+  /** Right header first (CT_DrawingHF @rhf) */
+  readonly rhf?: number;
+  /** Left footer odd (CT_DrawingHF @lfo) */
+  readonly lfo?: number;
+  /** Left footer even (CT_DrawingHF @lfe) */
+  readonly lfe?: number;
+  /** Left footer first (CT_DrawingHF @lff) */
+  readonly lff?: number;
+  /** Center footer odd (CT_DrawingHF @cfo) */
+  readonly cfo?: number;
+  /** Center footer even (CT_DrawingHF @cfe) */
+  readonly cfe?: number;
+  /** Center footer first (CT_DrawingHF @cff) */
+  readonly cff?: number;
+  /** Right footer odd (CT_DrawingHF @rfo) */
+  readonly rfo?: number;
+  /** Right footer even (CT_DrawingHF @rfe) */
+  readonly rfe?: number;
+  /** Right footer first (CT_DrawingHF @rff) */
+  readonly rff?: number;
+}
+
 export interface WorksheetOptions {
   readonly name?: string;
   readonly rows?: readonly RowOptions[];
@@ -676,6 +910,24 @@ export interface WorksheetOptions {
   readonly sheetFormatPr?: SheetFormatPrOptions;
   /** Sheet extended properties (CT_SheetPr attributes) */
   readonly sheetPr?: SheetPrOptions;
+  /** Row page breaks (CT_PageBreaks) */
+  readonly rowBreaks?: readonly PageBreakOptions[];
+  /** Column page breaks (CT_PageBreaks) */
+  readonly colBreaks?: readonly PageBreakOptions[];
+  /** Custom sheet views (CT_CustomSheetViews) */
+  readonly customSheetViews?: readonly CustomSheetViewOptions[];
+  /** Cell watches (CT_CellWatches) */
+  readonly cellWatches?: readonly CellWatchOptions[];
+  /** Data consolidation (CT_DataConsolidate) */
+  readonly dataConsolidate?: DataConsolidateOptions;
+  /** OLE embedded range (CT_OleSize) */
+  readonly oleSize?: string;
+  /** Drawing in header/footer (CT_DrawingHF) */
+  readonly drawingHF?: DrawingHfOptions;
+  /** Legacy drawing for header/footer r:id (CT_LegacyDrawingHF) */
+  readonly legacyDrawingHF?: string;
+  /** Selection in sheet view (CT_Selection) */
+  readonly selection?: SelectionOptions;
 }
 
 export class Worksheet extends IgnoreIfEmptyXmlComponent {
@@ -705,6 +957,15 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
   private readonly printOptions?: PrintOptions;
   private readonly sheetFormatPr?: SheetFormatPrOptions;
   private readonly sheetPr?: SheetPrOptions;
+  private readonly rowBreaks: readonly PageBreakOptions[];
+  private readonly colBreaks: readonly PageBreakOptions[];
+  private readonly customSheetViews: readonly CustomSheetViewOptions[];
+  private readonly cellWatches: readonly CellWatchOptions[];
+  private readonly dataConsolidate?: DataConsolidateOptions;
+  private readonly oleSize?: string;
+  private readonly drawingHF?: DrawingHfOptions;
+  private readonly legacyDrawingHF?: string;
+  private readonly selection?: SelectionOptions;
 
   public constructor(options: WorksheetOptions) {
     super("worksheet");
@@ -734,6 +995,15 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
     this.printOptions = options.printOptions;
     this.sheetFormatPr = options.sheetFormatPr;
     this.sheetPr = options.sheetPr;
+    this.rowBreaks = options.rowBreaks ?? [];
+    this.colBreaks = options.colBreaks ?? [];
+    this.customSheetViews = options.customSheetViews ?? [];
+    this.cellWatches = options.cellWatches ?? [];
+    this.dataConsolidate = options.dataConsolidate;
+    this.oleSize = options.oleSize;
+    this.drawingHF = options.drawingHF;
+    this.legacyDrawingHF = options.legacyDrawingHF;
+    this.selection = options.selection;
   }
 
   public get imageOptions(): readonly WorksheetImageOptions[] {
@@ -832,6 +1102,10 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
         if (sp?.outlineShowSymbols === false) outAttrs.showOutlineSymbols = 0;
         prParts.push(`<outlinePr${attrs(outAttrs)}/>`);
       }
+      // pageSetUpPr (inside sheetPr when fitToPage or autoPageBreaks needed)
+      if (this.pageSetup?.fitToWidth || this.pageSetup?.fitToHeight) {
+        prParts.push('<pageSetUpPr fitToPage="1"/>');
+      }
       const prAttrStr = Object.keys(prAttrs).length > 0 ? attrs(prAttrs) : "";
       p.push(`<sheetPr${prAttrStr}>${prParts.join("")}</sheetPr>`);
     }
@@ -861,11 +1135,19 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
       p.push(
         `<sheetViews><sheetView${svAttrs}>`,
         `<pane ySplit="${ySplit}" xSplit="${xSplit}" topLeftCell="${topLeftCell}" activePane="${activePane}" state="frozen"/>`,
+        this.selection ? this.buildSelectionXml(this.selection) : "",
         "</sheetView></sheetViews>",
       );
     } else {
       const svAttrs = this.buildSheetViewAttrs();
-      p.push(`<sheetViews><sheetView${svAttrs}/></sheetViews>`);
+      const selStr = this.selection
+        ? `>${this.buildSelectionXml(this.selection)}</sheetView>`
+        : "/>";
+      if (selStr.startsWith(">")) {
+        p.push(`<sheetViews><sheetView${svAttrs}${selStr}</sheetViews>`);
+      } else {
+        p.push(`<sheetViews><sheetView${svAttrs}/></sheetViews>`);
+      }
     }
 
     // Sheet format — default row height
@@ -950,6 +1232,92 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
       }
     }
     p.push("</sheetData>");
+
+    // Row breaks (after sheetData per XSD sequence)
+    if (this.rowBreaks.length > 0) {
+      const brkParts = this.rowBreaks.map((b) => {
+        const bAttrs: Record<string, string | number | boolean | undefined> = { id: b.id };
+        if (b.min !== undefined) bAttrs.min = b.min;
+        if (b.max !== undefined) bAttrs.max = b.max;
+        if (b.manual) bAttrs.man = 1;
+        if (b.pivot) bAttrs.pt = 1;
+        return `<brk${attrs(bAttrs)}/>`;
+      });
+      p.push(
+        `<rowBreaks count="${this.rowBreaks.length}" manualBreakCount="${this.rowBreaks.filter((b) => b.manual).length}">${brkParts.join("")}</rowBreaks>`,
+      );
+    }
+
+    // Column breaks
+    if (this.colBreaks.length > 0) {
+      const brkParts = this.colBreaks.map((b) => {
+        const bAttrs: Record<string, string | number | boolean | undefined> = { id: b.id };
+        if (b.min !== undefined) bAttrs.min = b.min;
+        if (b.max !== undefined) bAttrs.max = b.max;
+        if (b.manual) bAttrs.man = 1;
+        if (b.pivot) bAttrs.pt = 1;
+        return `<brk${attrs(bAttrs)}/>`;
+      });
+      p.push(
+        `<colBreaks count="${this.colBreaks.length}" manualBreakCount="${this.colBreaks.filter((b) => b.manual).length}">${brkParts.join("")}</colBreaks>`,
+      );
+    }
+
+    // OLE size
+    if (this.oleSize) {
+      p.push(`<oleSize ref="${escapeXml(this.oleSize)}"/>`);
+    }
+
+    // Custom sheet views (after oleSize per XSD sequence)
+    if (this.customSheetViews.length > 0) {
+      p.push("<customSheetViews>");
+      for (const csv of this.customSheetViews) {
+        const csvAttrs: Record<string, string | number | boolean | undefined> = { guid: csv.guid };
+        if (csv.scale !== undefined) csvAttrs.scale = csv.scale;
+        if (csv.showPageBreaks) csvAttrs.showPageBreaks = 1;
+        if (csv.showFormulas) csvAttrs.showFormulas = 1;
+        if (csv.showGridLines === false) csvAttrs.showGridLines = 0;
+        if (csv.showRowColHeaders === false) csvAttrs.showRowCol = 0;
+        if (csv.outlineSymbols === false) csvAttrs.outlineSymbols = 0;
+        if (csv.zeroValues === false) csvAttrs.zeroValues = 0;
+        if (csv.fitToPage) csvAttrs.fitToPage = 1;
+        if (csv.printArea) csvAttrs.printArea = 1;
+        if (csv.filter) csvAttrs.filter = 1;
+        if (csv.showAutoFilter) csvAttrs.showAutoFilter = 1;
+        if (csv.hiddenRows) csvAttrs.hiddenRows = 1;
+        if (csv.hiddenColumns) csvAttrs.hiddenColumns = 1;
+        if (csv.state && csv.state !== "visible") csvAttrs.state = csv.state;
+        if (csv.filterUnique) csvAttrs.filterUnique = 1;
+        if (csv.view && csv.view !== "normal") csvAttrs.view = csv.view;
+        p.push(`<customSheetView${attrs(csvAttrs)}/>`);
+      }
+      p.push("</customSheetViews>");
+    }
+
+    // Cell watches
+    if (this.cellWatches.length > 0) {
+      p.push("<cellWatches>");
+      for (const cw of this.cellWatches) {
+        p.push(`<cellWatch r="${escapeXml(cw.r)}"/>`);
+      }
+      p.push("</cellWatches>");
+    }
+
+    // Data consolidation
+    if (this.dataConsolidate) {
+      const dc = this.dataConsolidate;
+      const dcAttrs: Record<string, string | number | boolean | undefined> = {};
+      if (dc.function && dc.function !== "sum") dcAttrs.function = dc.function;
+      if (dc.topLabels) dcAttrs.topLabels = 1;
+      if (dc.leftLabels) dcAttrs.leftLabels = 1;
+      if (dc.startLabels) dcAttrs.startLabels = 1;
+      if (dc.link) dcAttrs.link = 1;
+      const refsInner = dc.refs?.map((r) => `<dataRef ref="${escapeXml(r)}"/>`).join("") ?? "";
+      const refsXml = refsInner ? `<dataRefs>${refsInner}</dataRefs>` : "";
+      if (refsXml || Object.keys(dcAttrs).length > 0) {
+        p.push(`<dataConsolidate${attrs(dcAttrs)}>${refsXml}</dataConsolidate>`);
+      }
+    }
 
     // Sheet protection (after sheetData, before protectedRanges per XSD sequence)
     if (this.protection) {
@@ -1077,9 +1445,59 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
           for (const sc of af.sort) {
             const scAttrs: Record<string, string | number | boolean | undefined> = { ref: sc.ref };
             if (sc.descending) scAttrs.descending = 1;
+            if (sc.sortBy) scAttrs.sortBy = sc.sortBy;
+            if (sc.customList) scAttrs.customList = sc.customList;
+            if (sc.iconId !== undefined) scAttrs.iconId = sc.iconId;
             sortParts.push(selfCloseElement("sortCondition", attrs(scAttrs)));
           }
-          inner.push(`<sortState ref="${af.ref}">${sortParts.join("")}</sortState>`);
+          const ssAttrs: Record<string, string | number | boolean | undefined> = { ref: af.ref };
+          if (af.sortState?.columnSort) ssAttrs.columnSort = 1;
+          if (af.sortState?.caseSensitive) ssAttrs.caseSensitive = 1;
+          if (af.sortState?.sortMethod) ssAttrs.sortMethod = af.sortState.sortMethod;
+          inner.push(`<sortState${attrs(ssAttrs)}>${sortParts.join("")}</sortState>`);
+        }
+        // Color filters
+        for (const cf of af.colorFilters ?? []) {
+          const cfAttrs: Record<string, string | number | boolean | undefined> = {};
+          if (cf.dxfId !== undefined) cfAttrs.dxfId = cf.dxfId;
+          if (cf.cellColor === false) cfAttrs.cellColor = 0;
+          inner.push(
+            `<filterColumn colId="${cf.colId}"><colorFilter${attrs(cfAttrs)}/></filterColumn>`,
+          );
+        }
+        // Icon filters
+        for (const if_ of af.iconFilters ?? []) {
+          const ifAttrs: Record<string, string | number | boolean | undefined> = {
+            iconSet: if_.iconSet,
+          };
+          if (if_.iconId !== undefined) ifAttrs.iconId = if_.iconId;
+          inner.push(
+            `<filterColumn colId="${if_.colId}"><iconFilter${attrs(ifAttrs)}/></filterColumn>`,
+          );
+        }
+        // Dynamic filters
+        for (const df of af.dynamicFilters ?? []) {
+          const dfAttrs: Record<string, string | number | boolean | undefined> = { type: df.type };
+          if (df.val !== undefined) dfAttrs.val = df.val;
+          if (df.maxVal !== undefined) dfAttrs.maxVal = df.maxVal;
+          inner.push(
+            `<filterColumn colId="${df.colId}"><dynamicFilter${attrs(dfAttrs)}/></filterColumn>`,
+          );
+        }
+        // Date group filters
+        for (const dg of af.dateGroupItems ?? []) {
+          const dgAttrs: Record<string, string | number | boolean | undefined> = {
+            dateTimeGrouping: dg.dateTimeGrouping,
+          };
+          if (dg.year !== undefined) dgAttrs.year = dg.year;
+          if (dg.month !== undefined) dgAttrs.month = dg.month;
+          if (dg.day !== undefined) dgAttrs.day = dg.day;
+          if (dg.hour !== undefined) dgAttrs.hour = dg.hour;
+          if (dg.minute !== undefined) dgAttrs.minute = dg.minute;
+          if (dg.second !== undefined) dgAttrs.second = dg.second;
+          inner.push(
+            `<filterColumn colId="${dg.colId}"><dateGroupItem${attrs(dgAttrs)}/></filterColumn>`,
+          );
         }
         if (inner.length > 0) {
           p.push(`<autoFilter ref="${af.ref}">`, ...inner, "</autoFilter>");
@@ -1295,6 +1713,36 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
       }
     }
 
+    // Drawing in header/footer (after headerFooter per XSD sequence)
+    if (this.drawingHF) {
+      const dhf = this.drawingHF;
+      const dhfAttrs: Record<string, string | number | boolean | undefined> = { "r:id": dhf.rId };
+      if (dhf.lho !== undefined) dhfAttrs.lho = dhf.lho;
+      if (dhf.lhe !== undefined) dhfAttrs.lhe = dhf.lhe;
+      if (dhf.lhf !== undefined) dhfAttrs.lhf = dhf.lhf;
+      if (dhf.cho !== undefined) dhfAttrs.cho = dhf.cho;
+      if (dhf.che !== undefined) dhfAttrs.che = dhf.che;
+      if (dhf.chf !== undefined) dhfAttrs.chf = dhf.chf;
+      if (dhf.rho !== undefined) dhfAttrs.rho = dhf.rho;
+      if (dhf.rhe !== undefined) dhfAttrs.rhe = dhf.rhe;
+      if (dhf.rhf !== undefined) dhfAttrs.rhf = dhf.rhf;
+      if (dhf.lfo !== undefined) dhfAttrs.lfo = dhf.lfo;
+      if (dhf.lfe !== undefined) dhfAttrs.lfe = dhf.lfe;
+      if (dhf.lff !== undefined) dhfAttrs.lff = dhf.lff;
+      if (dhf.cfo !== undefined) dhfAttrs.cfo = dhf.cfo;
+      if (dhf.cfe !== undefined) dhfAttrs.cfe = dhf.cfe;
+      if (dhf.cff !== undefined) dhfAttrs.cff = dhf.cff;
+      if (dhf.rfo !== undefined) dhfAttrs.rfo = dhf.rfo;
+      if (dhf.rfe !== undefined) dhfAttrs.rfe = dhf.rfe;
+      if (dhf.rff !== undefined) dhfAttrs.rff = dhf.rff;
+      p.push(selfCloseElement("drawingHF", attrs(dhfAttrs)));
+    }
+
+    // Legacy drawing in header/footer
+    if (this.legacyDrawingHF) {
+      p.push(`<legacyDrawingHF r:id="${escapeXml(this.legacyDrawingHF)}"/>`);
+    }
+
     // Ignored errors (after headerFooter per XSD sequence)
     if (this.ignoredErrors.length > 0) {
       const ieParts: string[] = ["<ignoredErrors>"];
@@ -1362,6 +1810,15 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
     if (sv?.zoomScalePageLayoutView !== undefined)
       svMap.zoomScalePageLayoutView = sv.zoomScalePageLayoutView;
     return attrs(svMap);
+  }
+
+  private buildSelectionXml(sel: SelectionOptions): string {
+    const selAttrs: Record<string, string | number | boolean | undefined> = {};
+    if (sel.pane) selAttrs.pane = sel.pane;
+    if (sel.activeCell) selAttrs.activeCell = sel.activeCell;
+    if (sel.activeCellId !== undefined) selAttrs.activeCellId = sel.activeCellId;
+    if (sel.sqref) selAttrs.sqref = sel.sqref;
+    return `<selection${attrs(selAttrs)}/>`;
   }
 
   /**
