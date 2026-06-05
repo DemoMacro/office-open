@@ -335,6 +335,21 @@ function extractUsedNamesFromCode(config: XsdConfig): Set<string> {
           const suffix = m[1].slice(1);
           if (suffix) found.add(suffix);
         }
+
+        // Pattern 3: template string prefix + variable like `<p:${type}/>`
+        // When found, extract string literal values from the same file that
+        // could be the variable's value (union type members, as const values).
+        const dynamicElemRe = new RegExp(
+          `<${escapeRegExp(prefixStr)}\\$\\{[a-zA-Z][a-zA-Z0-9]*\\}`,
+          "g",
+        );
+        if (dynamicElemRe.test(content)) {
+          // Extract quoted string values like "word" that could be element names
+          const strLitRe = /"([a-zA-Z][a-zA-Z0-9]+)"/g;
+          while ((m = strLitRe.exec(content)) !== null) {
+            found.add(m[1]);
+          }
+        }
       } else {
         // bare mode (xlsx/sml): match "word" in string literals and <word in XML strings
         // SML has many single-char elements (b, c, d, e, f, i, k, m, n, p, r, s, t, u, v, x)
