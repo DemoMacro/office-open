@@ -251,6 +251,18 @@ export interface PivotTableOptions {
   readonly autoSortScope?: PivotAreaOptions;
   /** Member properties per field (CT_MemberProperties → mps/mp) */
   readonly memberProperties?: readonly MemberPropertyOptions[];
+  /** Pivot format areas (CT_Formats → format) */
+  readonly formats?: readonly PivotFormatOptions[];
+}
+
+/** Pivot format (CT_Format). */
+export interface PivotFormatOptions {
+  /** Action type (default: "formatting") */
+  readonly action?: "formatting" | "drill" | "formula" | "blank" | "subtotal" | "report";
+  /** Differential format index */
+  readonly dxfId?: number;
+  /** Pivot area */
+  readonly pivotArea: PivotAreaOptions;
 }
 
 /** Calculated item in a pivot table (CT_CalculatedItem) */
@@ -568,6 +580,62 @@ export interface PivotDimensionOptions {
   readonly caption: string;
 }
 
+/** Range set for consolidation source (CT_RangeSet) */
+export interface RangeSetOptions {
+  /** Index for page field 1 */
+  readonly i1?: number;
+  /** Index for page field 2 */
+  readonly i2?: number;
+  /** Index for page field 3 */
+  readonly i3?: number;
+  /** Index for page field 4 */
+  readonly i4?: number;
+  /** Cell reference */
+  readonly ref?: string;
+  /** Named range */
+  readonly name?: string;
+  /** Sheet name */
+  readonly sheet?: string;
+  /** Relationship ID to external workbook */
+  readonly rId?: string;
+}
+
+/** Page item for consolidation (CT_PageItem) */
+export interface ConsolidationPageItemOptions {
+  /** Page item name */
+  readonly name: string;
+}
+
+/** Page for consolidation (CT_PCDSCPage) */
+export interface ConsolidationPageOptions {
+  /** Page items */
+  readonly items?: readonly ConsolidationPageItemOptions[];
+}
+
+/** Consolidation source (CT_Consolidation) */
+export interface ConsolidationOptions {
+  /** Auto page (default: true) */
+  readonly autoPage?: boolean;
+  /** Pages (max 4) */
+  readonly pages?: readonly ConsolidationPageOptions[];
+  /** Range sets (required) */
+  readonly rangeSets: readonly RangeSetOptions[];
+}
+
+/** Tuple cache entry (CT_PCDSDTCEntries choice: m/n/e/s) */
+export interface TupleCacheEntryOptions {
+  /** Entry type */
+  readonly type: "m" | "n" | "e" | "s";
+  /** Value (required for n/e/s) */
+  readonly value?: number | string;
+}
+
+/** Deleted field (CT_DeletedField) */
+export interface DeletedFieldOptions {
+  /** Field name */
+  readonly name: string;
+}
+
 /** OLAP properties for pivot cache (CT_OlapPr) */
 export interface OlapPrOptions {
   /** Local cube connection string */
@@ -595,21 +663,21 @@ export interface OlapPrOptions {
 /** Parsed source data for pivot cache generation. */
 export interface PivotSourceData {
   readonly fieldNames: readonly string[];
-  readonly records: readonly (string | number)[][];
+  readonly records: readonly (string | number | null | Date)[][];
 }
 
 /**
  * Extract unique values from source data for a given field index.
  */
 export function collectUniqueValues(
-  records: readonly (string | number)[][],
+  records: readonly (string | number | null | Date)[][],
   fieldIdx: number,
-): (string | number)[] {
+): (string | number | null | Date)[] {
   const seen = new Set<string>();
-  const result: (string | number)[] = [];
+  const result: (string | number | null | Date)[] = [];
   for (const row of records) {
     const val = row[fieldIdx];
-    const key = String(val);
+    const key = val instanceof Date ? val.toISOString() : String(val);
     if (!seen.has(key)) {
       seen.add(key);
       result.push(val);
@@ -621,7 +689,10 @@ export function collectUniqueValues(
 /**
  * Check if a field is numeric (all non-empty values are numbers).
  */
-export function isNumericField(records: readonly (string | number)[][], fieldIdx: number): boolean {
+export function isNumericField(
+  records: readonly (string | number | null | Date)[][],
+  fieldIdx: number,
+): boolean {
   for (const row of records) {
     const val = row[fieldIdx];
     if (typeof val === "string" && val !== "") return false;

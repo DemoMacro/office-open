@@ -718,7 +718,14 @@ function extractPivotSourceData(
   const fieldNames: string[] = [];
   if (headerRow?.cells) {
     for (let c = startCol; c <= endCol && c < headerRow.cells.length; c++) {
-      fieldNames.push(String(headerRow.cells[c]?.value ?? `Col${c}`));
+      const hv = headerRow.cells[c]?.value;
+      fieldNames.push(
+        typeof hv === "string"
+          ? hv
+          : typeof hv === "number" || typeof hv === "boolean"
+            ? String(hv)
+            : `Col${c}`,
+      );
     }
   }
 
@@ -735,7 +742,7 @@ function extractPivotSourceData(
       } else if (val instanceof Date) {
         record.push(val.getTime());
       } else {
-        record.push(String(val ?? ""));
+        record.push(typeof val === "string" ? val : typeof val === "boolean" ? String(val) : "");
       }
     }
     if (record.length === colCount) {
@@ -806,7 +813,10 @@ function renderPivotSheetData(
       let group = groupMap.get(groupKey);
       if (!group) {
         group = {
-          keys: rowFieldIndices.map((fi) => record[fi]),
+          keys: rowFieldIndices.map((fi) => {
+            const v = record[fi];
+            return typeof v === "string" || typeof v === "number" ? v : String(v ?? "");
+          }),
           values: dataFieldIndices.map(() => []),
         };
         groupMap.set(groupKey, group);

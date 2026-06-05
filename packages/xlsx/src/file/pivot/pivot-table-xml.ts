@@ -212,6 +212,21 @@ export class PivotTableXml extends BaseXmlComponent {
       p.push(this.buildCalculatedMembers(o.calculatedMembers));
     }
 
+    // formats (CT_Formats, after dataFields per XSD sequence)
+    if (o.formats && o.formats.length > 0) {
+      const fmtParts: string[] = [`<formats count="${o.formats.length}">`];
+      for (const fmt of o.formats) {
+        const fmtAttrs: string[] = [];
+        if (fmt.action && fmt.action !== "formatting") fmtAttrs.push(`action="${fmt.action}"`);
+        if (fmt.dxfId !== undefined) fmtAttrs.push(`dxfId="${fmt.dxfId}"`);
+        fmtParts.push(
+          `<format${fmtAttrs.length ? " " + fmtAttrs.join(" ") : ""}>${this.buildPivotAreaXml(fmt.pivotArea)}</format>`,
+        );
+      }
+      fmtParts.push("</formats>");
+      p.push(fmtParts.join(""));
+    }
+
     // conditionalFormats (pivot-specific)
     if (o.pivotConditionalFormats && o.pivotConditionalFormats.length > 0) {
       p.push(this.buildPivotConditionalFormats(o.pivotConditionalFormats));

@@ -1,4 +1,5 @@
 import type { SharedStrings } from "@file/shared-strings";
+import { buildRstXml } from "@file/shared-strings";
 import type { Styles, StyleOptions } from "@file/styles";
 /**
  * Worksheet component — generates xl/worksheets/sheet{n}.xml.
@@ -44,8 +45,70 @@ export interface RowOptions {
   readonly ph?: boolean;
 }
 
+/** Rich text run properties (CT_RPrElt). */
+export interface RichTextRunPrOptions {
+  /** Font name (CT_FontName → rFont) */
+  readonly font?: string;
+  /** Character set (CT_IntProperty) */
+  readonly charset?: number;
+  /** Font family (CT_IntProperty) */
+  readonly family?: number;
+  /** Bold */
+  readonly bold?: boolean;
+  /** Italic */
+  readonly italic?: boolean;
+  /** Strikethrough */
+  readonly strike?: boolean;
+  /** Outline */
+  readonly outline?: boolean;
+  /** Shadow */
+  readonly shadow?: boolean;
+  /** Condense */
+  readonly condense?: boolean;
+  /** Extend */
+  readonly extend?: boolean;
+  /** Font color (hex RGB, e.g. "FF0000") */
+  readonly color?: string;
+  /** Font size in points */
+  readonly size?: number;
+  /** Underline type */
+  readonly underline?: "single" | "double" | "singleAccounting" | "doubleAccounting" | "none";
+  /** Vertical alignment */
+  readonly vertAlign?: "superscript" | "subscript" | "baseline";
+  /** Font scheme */
+  readonly scheme?: "major" | "minor" | "none";
+}
+
+/** A single rich text run (CT_RElt). */
+export interface RichTextRunOptions {
+  /** Run properties (optional = inherits from parent) */
+  readonly properties?: RichTextRunPrOptions;
+  /** Run text content */
+  readonly text: string;
+}
+
+/** Phonetics run for CJK (CT_PhoneticRun → rPh). */
+export interface PhoneticRunOptions {
+  /** Start byte offset in base text */
+  readonly sb: number;
+  /** End byte offset in base text */
+  readonly eb: number;
+  /** Phonetic text */
+  readonly text: string;
+}
+
+/** Rich text content (CT_Rst). Either plain text or rich runs. */
+export interface RichTextOptions {
+  /** Plain text (mutually exclusive with runs) */
+  readonly text?: string;
+  /** Rich text runs (mutually exclusive with text) */
+  readonly runs?: readonly RichTextRunOptions[];
+  /** Phonetic runs for CJK (CT_PhoneticRun) */
+  readonly phonetics?: readonly PhoneticRunOptions[];
+}
+
 export interface CellOptions {
-  readonly value?: string | number | boolean | Date | null;
+  readonly value?: string | number | boolean | Date | RichTextOptions | null;
   readonly reference?: string;
   /** Direct style index (for pre-resolved styles) */
   readonly styleIndex?: number;
@@ -305,13 +368,53 @@ export interface TabColorOptions {
   readonly tint?: number;
 }
 
+/** Object anchor (CT_ObjectAnchor). */
+export interface ObjectAnchorOptions {
+  /** Move with cells (default: false) */
+  readonly moveWithCells?: boolean;
+  /** Size with cells (default: false) */
+  readonly sizeWithCells?: boolean;
+}
+
+/** Comment property (CT_CommentPr). */
+export interface CommentPrOptions {
+  /** Locked */
+  readonly locked?: boolean;
+  /** Default size */
+  readonly defaultSize?: boolean;
+  /** Print */
+  readonly print?: boolean;
+  /** Disabled */
+  readonly disabled?: boolean;
+  /** Auto fill */
+  readonly autoFill?: boolean;
+  /** Auto line */
+  readonly autoLine?: boolean;
+  /** Alt text */
+  readonly altText?: string;
+  /** Text horizontal alignment */
+  readonly textHAlign?: "left" | "center" | "right" | "justify" | "distributed";
+  /** Text vertical alignment */
+  readonly textVAlign?: "top" | "center" | "bottom" | "justify" | "distributed";
+  /** Lock text */
+  readonly lockText?: boolean;
+  /** Justify last line */
+  readonly justLastX?: boolean;
+  /** Auto scale */
+  readonly autoScale?: boolean;
+  /** Object anchor position */
+  readonly anchor?: ObjectAnchorOptions;
+}
+
 export interface CommentOptions {
   /** Cell reference, e.g. "A1" */
   readonly cell: string;
   /** Author name */
   readonly author: string;
-  /** Comment text */
-  readonly text: string;
+  /** Comment text (plain string or rich text) */
+  readonly text: string | RichTextOptions;
+  /** Comment properties (CT_CommentPr) */
+  readonly commentPr?: CommentPrOptions;
 }
 
 export type DataValidationType =
@@ -928,6 +1031,122 @@ export interface WorksheetOptions {
   readonly legacyDrawingHF?: string;
   /** Selection in sheet view (CT_Selection) */
   readonly selection?: SelectionOptions;
+  /** Sheet calc properties (CT_SheetCalcPr) */
+  readonly sheetCalcPr?: SheetCalcPrOptions;
+  /** Extension list (extLst) */
+  readonly ext?: string;
+  /** Control objects (CT_Controls) */
+  readonly controls?: readonly ControlOptions[];
+  /** Custom sheet properties (CT_CustomProperties) */
+  readonly customProperties?: readonly CustomPropertyOptions[];
+  /** OLE objects (CT_OleObjects) */
+  readonly oleObjects?: readonly OleObjectOptions[];
+  /** Web publish items (CT_WebPublishItems) */
+  readonly webPublishItems?: readonly WebPublishItemOptions[];
+}
+
+/** Sheet calc properties (CT_SheetCalcPr) */
+export interface SheetCalcPrOptions {
+  /** Full calc on load (CT_SheetCalcPr @fullCalcOnLoad) */
+  readonly fullCalcOnLoad?: boolean;
+}
+
+/** Form control object (CT_Control) */
+export interface ControlOptions {
+  /** Shape ID (CT_Control @shapeId) */
+  readonly shapeId: number;
+  /** Control r:id (CT_ControlPr @r:id) */
+  readonly rId: string;
+  /** Control name (CT_ControlPr @name) */
+  readonly name?: string;
+  /** Locked (CT_ControlPr @locked) */
+  readonly locked?: boolean;
+  /** UI-locked (CT_ControlPr @uiObject) */
+  readonly uiObject?: boolean;
+}
+
+/** Custom property (CT_CustomProperty) */
+export interface CustomPropertyOptions {
+  /** Property name */
+  readonly name: string;
+  /** Relationship ID to binary data */
+  readonly rId: string;
+}
+
+/** OLE object (CT_OleObject) */
+export interface OleObjectOptions {
+  /** Program ID (CT_OleObject @progId) */
+  readonly progId?: string;
+  /** Display aspect (CT_OleObject @dvAspect) */
+  readonly dvAspect?: "DVASPECT_CONTENT" | "DVASPECT_ICON";
+  /** Linked source (CT_OleObject @link) */
+  readonly link?: string;
+  /** OLE update mode (CT_OleObject @oleUpdate) */
+  readonly oleUpdate?: "OLEUPDATE_ALWAYS" | "OLEUPDATE_ONCALL";
+  /** Auto load (CT_OleObject @autoLoad) */
+  readonly autoLoad?: boolean;
+  /** Shape ID (CT_OleObject @shapeId) */
+  readonly shapeId: number;
+  /** Relationship ID (CT_OleObject @r:id) */
+  readonly rId?: string;
+  /** Object properties (CT_ObjectPr) */
+  readonly objectPr?: OleObjectPrOptions;
+}
+
+/** OLE object properties (CT_ObjectPr) */
+export interface OleObjectPrOptions {
+  /** Locked */
+  readonly locked?: boolean;
+  /** Default size */
+  readonly defaultSize?: boolean;
+  /** Print */
+  readonly print?: boolean;
+  /** Disabled */
+  readonly disabled?: boolean;
+  /** UI object */
+  readonly uiObject?: boolean;
+  /** Auto fill */
+  readonly autoFill?: boolean;
+  /** Auto line */
+  readonly autoLine?: boolean;
+  /** Auto picture */
+  readonly autoPict?: boolean;
+  /** Macro */
+  readonly macro?: string;
+  /** Alt text */
+  readonly altText?: string;
+  /** DDE */
+  readonly dde?: boolean;
+  /** Relationship ID */
+  readonly rId?: string;
+}
+
+/** Web publish item (CT_WebPublishItem) */
+export interface WebPublishItemOptions {
+  /** Item ID */
+  readonly id: number;
+  /** HTML div ID */
+  readonly divId: string;
+  /** Source type */
+  readonly sourceType:
+    | "sheet"
+    | "printArea"
+    | "autoFilter"
+    | "range"
+    | "chart"
+    | "pivotTable"
+    | "query"
+    | "label";
+  /** Source cell reference */
+  readonly sourceRef?: string;
+  /** Source object name */
+  readonly sourceObject?: string;
+  /** Destination file path */
+  readonly destinationFile: string;
+  /** Title */
+  readonly title?: string;
+  /** Auto republish */
+  readonly autoRepublish?: boolean;
 }
 
 export class Worksheet extends IgnoreIfEmptyXmlComponent {
@@ -966,6 +1185,12 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
   private readonly drawingHF?: DrawingHfOptions;
   private readonly legacyDrawingHF?: string;
   private readonly selection?: SelectionOptions;
+  private readonly sheetCalcPr?: SheetCalcPrOptions;
+  private readonly ext?: string;
+  private readonly controls: readonly ControlOptions[];
+  private readonly customProperties: readonly CustomPropertyOptions[];
+  private readonly oleObjects: readonly OleObjectOptions[];
+  private readonly webPublishItems: readonly WebPublishItemOptions[];
 
   public constructor(options: WorksheetOptions) {
     super("worksheet");
@@ -1004,6 +1229,12 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
     this.drawingHF = options.drawingHF;
     this.legacyDrawingHF = options.legacyDrawingHF;
     this.selection = options.selection;
+    this.sheetCalcPr = options.sheetCalcPr;
+    this.ext = options.ext;
+    this.controls = options.controls ?? [];
+    this.customProperties = options.customProperties ?? [];
+    this.oleObjects = options.oleObjects ?? [];
+    this.webPublishItems = options.webPublishItems ?? [];
   }
 
   public get imageOptions(): readonly WorksheetImageOptions[] {
@@ -1233,7 +1464,14 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
     }
     p.push("</sheetData>");
 
-    // Row breaks (after sheetData per XSD sequence)
+    // Sheet calc properties (after sheetData per XSD sequence)
+    if (this.sheetCalcPr) {
+      const scAttrs: string[] = [];
+      if (this.sheetCalcPr.fullCalcOnLoad) scAttrs.push('fullCalcOnLoad="1"');
+      p.push(`<sheetCalcPr${scAttrs.length ? " " + scAttrs.join(" ") : ""}/>`);
+    }
+
+    // Row breaks (after sheetCalcPr per XSD sequence)
     if (this.rowBreaks.length > 0) {
       const brkParts = this.rowBreaks.map((b) => {
         const bAttrs: Record<string, string | number | boolean | undefined> = { id: b.id };
@@ -1261,6 +1499,16 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
       p.push(
         `<colBreaks count="${this.colBreaks.length}" manualBreakCount="${this.colBreaks.filter((b) => b.manual).length}">${brkParts.join("")}</colBreaks>`,
       );
+    }
+
+    // Custom properties (CT_CustomProperties, after colBreaks per XSD sequence)
+    if (this.customProperties.length > 0) {
+      const cpParts: string[] = ["<customProperties>"];
+      for (const cp of this.customProperties) {
+        cpParts.push(`<customPr name="${escapeXml(cp.name)}" r:id="${escapeXml(cp.rId)}"/>`);
+      }
+      cpParts.push("</customProperties>");
+      p.push(cpParts.join(""));
     }
 
     // OLE size
@@ -1770,6 +2018,92 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
       p.push("<!--BACKGROUND_PICTURE-->");
     }
 
+    // OLE objects (CT_OleObjects, after picture per XSD sequence)
+    if (this.oleObjects.length > 0) {
+      const oleParts: string[] = ["<oleObjects>"];
+      for (const ole of this.oleObjects) {
+        const oleAttrs: string[] = [`shapeId="${ole.shapeId}"`];
+        if (ole.progId) oleAttrs.push(`progId="${escapeXml(ole.progId)}"`);
+        if (ole.dvAspect && ole.dvAspect !== "DVASPECT_CONTENT")
+          oleAttrs.push(`dvAspect="${ole.dvAspect}"`);
+        if (ole.link) oleAttrs.push(`link="${escapeXml(ole.link)}"`);
+        if (ole.oleUpdate) oleAttrs.push(`oleUpdate="${ole.oleUpdate}"`);
+        if (ole.autoLoad) oleAttrs.push('autoLoad="1"');
+        if (ole.rId) oleAttrs.push(`r:id="${escapeXml(ole.rId)}"`);
+        // objectPr (CT_ObjectPr, optional child)
+        if (ole.objectPr) {
+          const opr = ole.objectPr;
+          const oprAttrs: string[] = [];
+          if (opr.locked === false) oprAttrs.push('locked="0"');
+          if (opr.defaultSize === false) oprAttrs.push('defaultSize="0"');
+          if (opr.print === false) oprAttrs.push('print="0"');
+          if (opr.disabled) oprAttrs.push('disabled="1"');
+          if (opr.uiObject) oprAttrs.push('uiObject="1"');
+          if (opr.autoFill === false) oprAttrs.push('autoFill="0"');
+          if (opr.autoLine === false) oprAttrs.push('autoLine="0"');
+          if (opr.autoPict === false) oprAttrs.push('autoPict="0"');
+          if (opr.macro) oprAttrs.push(`macro="${escapeXml(opr.macro)}"`);
+          if (opr.altText) oprAttrs.push(`altText="${escapeXml(opr.altText)}"`);
+          if (opr.dde) oprAttrs.push('dde="1"');
+          if (opr.rId) oprAttrs.push(`r:id="${escapeXml(opr.rId)}"`);
+          oleParts.push(
+            `<oleObject ${oleAttrs.join(" ")}><objectPr${oprAttrs.length ? " " + oprAttrs.join(" ") : ""}/></oleObject>`,
+          );
+        } else {
+          oleParts.push(`<oleObject ${oleAttrs.join(" ")}/>`);
+        }
+      }
+      oleParts.push("</oleObjects>");
+      p.push(oleParts.join(""));
+    }
+
+    // Controls (CT_Controls, after oleObjects per XSD sequence)
+    if (this.controls.length > 0) {
+      const ctrlParts: string[] = ["<controls>"];
+      for (const c of this.controls) {
+        const cAttrs: string[] = [`shapeId="${c.shapeId}"`, `r:id="${escapeXml(c.rId)}"`];
+        if (c.name) cAttrs.push(`name="${escapeXml(c.name)}"`);
+        // controlPr (optional)
+        const prAttrs: string[] = [];
+        if (c.locked === false) prAttrs.push('locked="0"');
+        if (c.uiObject) prAttrs.push('uiObject="1"');
+        if (prAttrs.length > 0) {
+          ctrlParts.push(
+            `<control ${cAttrs.join(" ")}><controlPr${prAttrs.length ? " " + prAttrs.join(" ") : ""}/></control>`,
+          );
+        } else {
+          ctrlParts.push(`<control ${cAttrs.join(" ")}/>`);
+        }
+      }
+      ctrlParts.push("</controls>");
+      p.push(ctrlParts.join(""));
+    }
+
+    // Web publish items (CT_WebPublishItems, after controls per XSD sequence)
+    if (this.webPublishItems.length > 0) {
+      const wpParts: string[] = [`<webPublishItems count="${this.webPublishItems.length}">`];
+      for (const wpi of this.webPublishItems) {
+        const wpiAttrs: string[] = [
+          `id="${wpi.id}"`,
+          `divId="${escapeXml(wpi.divId)}"`,
+          `sourceType="${wpi.sourceType}"`,
+          `destinationFile="${escapeXml(wpi.destinationFile)}"`,
+        ];
+        if (wpi.sourceRef) wpiAttrs.push(`sourceRef="${escapeXml(wpi.sourceRef)}"`);
+        if (wpi.sourceObject) wpiAttrs.push(`sourceObject="${escapeXml(wpi.sourceObject)}"`);
+        if (wpi.title) wpiAttrs.push(`title="${escapeXml(wpi.title)}"`);
+        if (wpi.autoRepublish) wpiAttrs.push('autoRepublish="1"');
+        wpParts.push(`<webPublishItem ${wpiAttrs.join(" ")}/>`);
+      }
+      wpParts.push("</webPublishItems>");
+      p.push(wpParts.join(""));
+    }
+
+    // Extension list (extLst, last per XSD sequence)
+    if (this.ext) {
+      p.push(this.ext);
+    }
+
     p.push("</worksheet>");
     return p.join("");
   }
@@ -1917,6 +2251,17 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
         return selfCloseElement("c", attrs(cellAttrs));
       }
       return "";
+    }
+
+    // Rich text value (RichTextOptions)
+    if (typeof value === "object" && !(value instanceof Date)) {
+      if (sharedStrings) {
+        cellAttrs.t = "s";
+        const idx = sharedStrings.registerRich(value);
+        return `<c${attrs(cellAttrs)}><v>${idx}</v></c>`;
+      }
+      cellAttrs.t = "inlineStr";
+      return `<c${attrs(cellAttrs)}><is>${buildRstXml(value)}</is></c>`;
     }
 
     if (typeof value === "string") {

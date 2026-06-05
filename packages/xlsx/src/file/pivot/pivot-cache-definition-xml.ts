@@ -20,6 +20,8 @@ import type {
   ServerFormatOptions,
   PivotDimensionOptions,
   FieldGroupOptions,
+  ConsolidationOptions,
+  TupleCacheEntryOptions,
 } from "./pivot-utils";
 import { collectUniqueValues, isNumericField } from "./pivot-utils";
 
@@ -62,6 +64,10 @@ export interface PivotCacheDefinitionOptions {
   readonly serverFormats?: readonly ServerFormatOptions[];
   /** Field groups per field index (CT_FieldGroup inside cacheField) */
   readonly fieldGroups?: ReadonlyMap<number, FieldGroupOptions>;
+  /** Consolidation source (alternative to worksheetSource) */
+  readonly consolidation?: ConsolidationOptions;
+  /** Tuple cache entries (CT_PCDSDTCEntries) */
+  readonly entries?: readonly TupleCacheEntryOptions[];
 }
 
 export class PivotCacheDefinitionXml extends BaseXmlComponent {
@@ -125,12 +131,48 @@ export class PivotCacheDefinitionXml extends BaseXmlComponent {
 
     p.push(`<pivotCacheDefinition ${rootAttrs.join(" ")}>`);
 
-    // cacheSource
-    p.push(
-      `<cacheSource type="worksheet">` +
-        `<worksheetSource ref="${escapeXml(this.sourceRef)}" sheet="${escapeXml(this.sourceSheet)}"/>` +
-        `</cacheSource>`,
-    );
+    // cacheSource (worksheetSource or consolidation)
+    if (this.cacheDefOpts?.consolidation) {
+      const con = this.cacheDefOpts.consolidation;
+      const conParts: string[] = ['<cacheSource type="consolidation"><consolidation'];
+      if (con.autoPage === false) conParts.push(' autoPage="0"');
+      conParts.push(">");
+      // pages (optional, max 4)
+      if (con.pages && con.pages.length > 0) {
+        conParts.push(`<pages count="${con.pages.length}">`);
+        for (const pg of con.pages) {
+          const pgItems = pg.items ?? [];
+          conParts.push(`<page${pgItems.length ? ` count="${pgItems.length}"` : ""}>`);
+          for (const pi of pgItems) {
+            conParts.push(`<pageItem name="${escapeXml(pi.name)}"/>`);
+          }
+          conParts.push("</page>");
+        }
+        conParts.push("</pages>");
+      }
+      // rangeSets (required)
+      conParts.push(`<rangeSets count="${con.rangeSets.length}">`);
+      for (const rs of con.rangeSets) {
+        const rsAttrs: string[] = [];
+        if (rs.i1 !== undefined) rsAttrs.push(`i1="${rs.i1}"`);
+        if (rs.i2 !== undefined) rsAttrs.push(`i2="${rs.i2}"`);
+        if (rs.i3 !== undefined) rsAttrs.push(`i3="${rs.i3}"`);
+        if (rs.i4 !== undefined) rsAttrs.push(`i4="${rs.i4}"`);
+        if (rs.ref) rsAttrs.push(`ref="${escapeXml(rs.ref)}"`);
+        if (rs.name) rsAttrs.push(`name="${escapeXml(rs.name)}"`);
+        if (rs.sheet) rsAttrs.push(`sheet="${escapeXml(rs.sheet)}"`);
+        if (rs.rId) rsAttrs.push(`r:id="${escapeXml(rs.rId)}"`);
+        conParts.push(`<rangeSet ${rsAttrs.join(" ")}/>`);
+      }
+      conParts.push("</rangeSets></consolidation></cacheSource>");
+      p.push(conParts.join(""));
+    } else {
+      p.push(
+        `<cacheSource type="worksheet">` +
+          `<worksheetSource ref="${escapeXml(this.sourceRef)}" sheet="${escapeXml(this.sourceSheet)}"/>` +
+          `</cacheSource>`,
+      );
+    }
 
     // cacheFields
     const fields = this.sourceData.fieldNames;
@@ -167,14 +209,74 @@ export class PivotCacheDefinitionXml extends BaseXmlComponent {
             `</cacheField>`,
         );
       } else {
-        // String/categorical field: list unique values in sharedItems
+        // String/categorical/mixed field: list unique values in sharedItems
+        // Detect if field contains dates or nulls for correct metadata attributes
+        let hasDate = false;
+        let hasMissing = false;
+        for (const v of uniqueVals) {
+          if (v instanceof Date) hasDate = true;
+          if (v === null) hasMissing = true;
+        }
+        const siAttrs: string[] = [`count="${uniqueVals.length}"`];
+        if (hasDate) siAttrs.push('containsDate="1"');
+        if (hasMissing) siAttrs.push('containsBlank="1"');
+
         p.push(
-          `<cacheField name="${escapeXml(fieldName)}" numFmtId="0"><sharedItems count="${uniqueVals.length}">`,
+          `<cacheField name="${escapeXml(fieldName)}" numFmtId="0"><sharedItems ${siAttrs.join(" ")}>`,
         );
         for (const v of uniqueVals) {
-          p.push(`<s v="${escapeXml(String(v))}"/>`);
+          if (v === null) {
+            p.push("<m/>");
+          } else if (v instanceof Date) {
+            p.push(`<d v="${v.toISOString().replace(/\.\d{3}Z$/, "Z")}"/>`);
+          } else {
+            p.push(`<s v="${escapeXml(String(v))}"/>`);
+          }
         }
-        p.push("</sharedItems></cacheField>");
+        p.push("</sharedItems>");
+
+        // fieldGroup (CT_FieldGroup, after sharedItems per XSD sequence)
+        const fg = this.cacheDefOpts?.fieldGroups?.get(i);
+        if (fg) {
+          const fgParts: string[] = ["<fieldGroup"];
+          if (fg.parent !== undefined) fgParts.push(` par="${fg.parent}"`);
+          if (fg.base !== undefined) fgParts.push(` base="${fg.base}"`);
+          fgParts.push(">");
+          // rangePr (CT_RangePr)
+          if (fg.rangePr) {
+            const rp = fg.rangePr;
+            const rpAttrs: string[] = [];
+            if (rp.autoStart === false) rpAttrs.push('autoStart="0"');
+            if (rp.autoEnd === false) rpAttrs.push('autoEnd="0"');
+            if (rp.groupBy && rp.groupBy !== "range") rpAttrs.push(`groupBy="${rp.groupBy}"`);
+            if (rp.startNum !== undefined) rpAttrs.push(`startNum="${rp.startNum}"`);
+            if (rp.endNum !== undefined) rpAttrs.push(`endNum="${rp.endNum}"`);
+            if (rp.startDate) rpAttrs.push(`startDate="${escapeXml(rp.startDate)}"`);
+            if (rp.endDate) rpAttrs.push(`endDate="${escapeXml(rp.endDate)}"`);
+            if (rp.groupInterval !== undefined) rpAttrs.push(`groupInterval="${rp.groupInterval}"`);
+            fgParts.push(`<rangePr${rpAttrs.length ? " " + rpAttrs.join(" ") : ""}/>`);
+          }
+          // discretePr (CT_DiscretePr)
+          if (fg.discretePr && fg.discretePr.length > 0) {
+            fgParts.push(`<discretePr count="${fg.discretePr.length}">`);
+            for (const idx of fg.discretePr) {
+              fgParts.push(`<x v="${idx}"/>`);
+            }
+            fgParts.push("</discretePr>");
+          }
+          // groupItems (CT_GroupItems)
+          if (fg.groupItems && fg.groupItems.length > 0) {
+            fgParts.push(`<groupItems count="${fg.groupItems.length}">`);
+            for (const gi of fg.groupItems) {
+              fgParts.push(`<s v="${escapeXml(gi)}"/>`);
+            }
+            fgParts.push("</groupItems>");
+          }
+          fgParts.push("</fieldGroup>");
+          p.push(fgParts.join(""));
+        }
+
+        p.push("</cacheField>");
       }
     }
 
@@ -283,12 +385,26 @@ export class PivotCacheDefinitionXml extends BaseXmlComponent {
       p.push("</dimensions>");
     }
 
-    // tupleCache with sets and serverFormats (optional)
+    // tupleCache with entries, sets and serverFormats (optional)
     const cd = this.cacheDefOpts;
+    const hasEntries = cd?.entries && cd.entries.length > 0;
     const hasSets = cd?.sets && cd.sets.length > 0;
     const hasServerFormats = cd?.serverFormats && cd.serverFormats.length > 0;
-    if (hasSets || hasServerFormats) {
+    if (hasEntries || hasSets || hasServerFormats) {
       p.push("<tupleCache>");
+      // entries (CT_PCDSDTCEntries)
+      if (hasEntries) {
+        const entParts: string[] = [`<entries count="${cd!.entries!.length}">`];
+        for (const ent of cd!.entries!) {
+          if (ent.type === "m") {
+            entParts.push("<m/>");
+          } else if (ent.value !== undefined) {
+            entParts.push(`<${ent.type} v="${ent.value}"/>`);
+          }
+        }
+        entParts.push("</entries>");
+        p.push(entParts.join(""));
+      }
       if (hasSets) {
         p.push(`<sets count="${cd!.sets!.length}">`);
         for (const s of cd!.sets!) {

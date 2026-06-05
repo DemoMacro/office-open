@@ -45,7 +45,11 @@ export class PivotCacheRecordsXml extends BaseXmlComponent {
       p.push("<r>");
       for (let i = 0; i < row.length; i++) {
         const val = row[i];
-        if (this.numericFields[i]) {
+        if (val === null) {
+          p.push("<m/>");
+        } else if (val instanceof Date) {
+          p.push(`<d v="${val.toISOString().replace(/\.\d{3}Z$/, "Z")}"/>`);
+        } else if (this.numericFields[i]) {
           p.push(`<n v="${val}"/>`);
         } else {
           const idx = this.fieldIndexMaps[i].get(String(val)) ?? 0;

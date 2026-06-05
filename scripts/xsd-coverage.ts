@@ -279,7 +279,7 @@ function extractUsedNamesFromCode(config: XsdConfig): Set<string> {
         while ((m = quotedRe.exec(content)) !== null) {
           found.add(m[1]);
         }
-        const tagRe = /<([a-zA-Z][a-zA-Z0-9]*)[\s>\/"]/g;
+        const tagRe = /<([a-zA-Z][a-zA-Z0-9]*)[\s>\/"$]/g;
         while ((m = tagRe.exec(content)) !== null) {
           found.add(m[1]);
         }

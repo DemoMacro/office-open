@@ -199,6 +199,57 @@ const BUILTIN_NUMFMTS: Record<string, number> = {
   "@": 49,
 };
 
+/** Table style element type (ST_TableStyleType). */
+export type TableStyleElementType =
+  | "wholeTable"
+  | "headerRow"
+  | "totalRow"
+  | "firstColumn"
+  | "lastColumn"
+  | "firstRowStripe"
+  | "secondRowStripe"
+  | "firstColumnStripe"
+  | "secondColumnStripe"
+  | "firstHeaderCell"
+  | "lastHeaderCell"
+  | "firstTotalCell"
+  | "lastTotalCell"
+  | "subtotalRow1"
+  | "subtotalRow2"
+  | "subtotalRow3"
+  | "subtotalColumn1"
+  | "subtotalColumn2"
+  | "subtotalColumn3"
+  | "blankRow"
+  | "firstColumnSubheading"
+  | "secondColumnSubheading"
+  | "thirdColumnSubheading"
+  | "firstRowSubheading"
+  | "secondRowSubheading"
+  | "thirdRowSubheading"
+  | "pageFieldLabels"
+  | "pageFieldValues";
+
+/** Table style element (CT_TableStyleElement). */
+export interface TableStyleElementOptions {
+  /** Element type */
+  readonly type: TableStyleElementType;
+  /** Differential format index (dxf) */
+  readonly dxfId?: number;
+  /** Button style (for pivot tables) */
+  readonly button?: boolean;
+}
+
+/** Custom table/pivot table style (CT_TableStyle). */
+export interface CustomTableStyleOptions {
+  /** Style name (must be unique) */
+  readonly name: string;
+  /** Pivot style (vs table style) */
+  readonly pivot?: boolean;
+  /** Table style elements */
+  readonly elements?: readonly TableStyleElementOptions[];
+}
+
 export class Styles extends BaseXmlComponent {
   private readonly fonts: FontOptions[] = [
     { size: 11, fontName: "Calibri" }, // default font (index 0)
@@ -236,6 +287,7 @@ export class Styles extends BaseXmlComponent {
   private readonly dxfs: DxfOptions[] = [];
 
   private colors?: ColorsOptions;
+  private tableStyles?: readonly CustomTableStyleOptions[];
 
   public constructor() {
     super("styleSheet");
@@ -294,6 +346,10 @@ export class Styles extends BaseXmlComponent {
    */
   public setColors(opts: ColorsOptions): void {
     this.colors = opts;
+  }
+
+  public setTableStyles(styles: readonly CustomTableStyleOptions[]): void {
+    this.tableStyles = styles;
   }
 
   private registerFont(opts?: FontOptions): number {
@@ -482,9 +538,34 @@ export class Styles extends BaseXmlComponent {
     } else {
       p.push('<dxfs count="0"/>');
     }
-    p.push(
-      '<tableStyles count="0" defaultTableStyle="TableStyleMedium2" defaultPivotStyle="PivotStyleLight16"/>',
-    );
+    // tableStyles (CT_TableStyles)
+    if (this.tableStyles && this.tableStyles.length > 0) {
+      const tsParts: string[] = [
+        `<tableStyles count="${this.tableStyles.length}" defaultTableStyle="TableStyleMedium2" defaultPivotStyle="PivotStyleLight16">`,
+      ];
+      for (const ts of this.tableStyles) {
+        const tsAttrs: string[] = [`name="${escapeXml(ts.name)}"`];
+        if (ts.pivot) tsAttrs.push('pivot="1"');
+        if (ts.elements && ts.elements.length > 0) {
+          tsParts.push(`<tableStyle ${tsAttrs.join(" ")}>`);
+          for (const el of ts.elements) {
+            const elAttrs: string[] = [`type="${el.type}"`];
+            if (el.dxfId !== undefined) elAttrs.push(`dxfId="${el.dxfId}"`);
+            if (el.button) elAttrs.push('button="1"');
+            tsParts.push(`<tableStyleElement ${elAttrs.join(" ")}/>`);
+          }
+          tsParts.push("</tableStyle>");
+        } else {
+          tsParts.push(`<tableStyle ${tsAttrs.join(" ")}/>`);
+        }
+      }
+      tsParts.push("</tableStyles>");
+      p.push(tsParts.join(""));
+    } else {
+      p.push(
+        '<tableStyles count="0" defaultTableStyle="TableStyleMedium2" defaultPivotStyle="PivotStyleLight16"/>',
+      );
+    }
 
     // colors (optional color palette)
     if (this.colors) {
