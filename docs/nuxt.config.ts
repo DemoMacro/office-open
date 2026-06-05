@@ -32,7 +32,7 @@ export default defineNuxtConfig({
     domain: "https://www.office-open.com",
     title: "Office Open",
     description:
-      "Generate Office Open XML documents (.docx, .pptx, .xlsx) with JavaScript/TypeScript",
+      "TypeScript toolkit for Office documents — generate, parse, and patch .docx, .pptx, .xlsx with spec-compliant OOXML output",
     full: {
       title: "Office Open — Full Documentation",
       description:

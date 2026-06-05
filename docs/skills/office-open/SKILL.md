@@ -1,7 +1,7 @@
 ---
 name: office-open
 description: >
-  Generate and parse Office Open XML documents (.docx, .pptx, .xlsx) with JavaScript/TypeScript.
+  Generate, parse, and patch Office Open XML documents (.docx, .pptx, .xlsx) with TypeScript.
   Use when creating Word documents, PowerPoint presentations, or Excel spreadsheets, working with paragraphs,
   tables, images, charts, shapes, math equations, headers, footers, styles, themes,
   effects, animations, or exporting to buffer/blob/base64.
@@ -9,17 +9,33 @@ description: >
 
 # Office Open XML
 
-Generate and parse OOXML documents (.docx, .pptx, .xlsx) with a declarative TypeScript API. Works in Node.js and browsers.
+The all-in-one TypeScript toolkit for Office documents. Generate, parse, and patch .docx, .pptx, .xlsx files — fully typed, spec-compliant, and works everywhere. Compatible with Microsoft Office, WPS Office, LibreOffice, and Google Workspace.
 
 ## Installation
 
 ```bash
+# pnpm
 pnpm add @office-open/docx      # Word documents
 pnpm add @office-open/pptx      # PowerPoint presentations
 pnpm add @office-open/xlsx      # Excel spreadsheets
 pnpm add @office-open/core      # Shared utilities (usually not needed directly)
 pnpm add @office-open/xml       # XML parsing/serialization
 pnpm add office-open             # Umbrella: all packages + CLI + AI tools
+
+# npm
+npm install @office-open/docx
+npm install @office-open/pptx
+npm install @office-open/xlsx
+
+# yarn
+yarn add @office-open/docx
+yarn add @office-open/pptx
+yarn add @office-open/xlsx
+
+# bun
+bun add @office-open/docx
+bun add @office-open/pptx
+bun add @office-open/xlsx
 ```
 
 ## Packages

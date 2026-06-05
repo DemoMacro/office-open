@@ -4,7 +4,7 @@
 ![npm downloads](https://img.shields.io/npm/dw/@office-open/core)
 ![npm license](https://img.shields.io/npm/l/@office-open/core)
 
-> Shared OOXML infrastructure: XmlComponent, value validators, unit converters, chart types, and SmartArt definitions.
+> Shared OOXML infrastructure — XML components, validators, converters, charts, SmartArt, and password hashing.
 
 ## Features
 
@@ -19,11 +19,17 @@
 ## Installation
 
 ```bash
-# Install with npm
-$ npm install @office-open/core
+# pnpm
+pnpm add @office-open/core
 
-# Install with pnpm
-$ pnpm add @office-open/core
+# npm
+npm install @office-open/core
+
+# yarn
+yarn add @office-open/core
+
+# bun
+bun add @office-open/core
 ```
 
 ## Quick Start
@@ -85,12 +91,15 @@ gen(); // → 1, 2, 3, ...
 
 ## Exports
 
-| Path                         | Contents                                            |
-| ---------------------------- | --------------------------------------------------- |
-| `@office-open/core`          | XmlComponent, validators, converters, ID generators |
-| `@office-open/core/values`   | Validators + ThemeColor/ThemeFont only              |
-| `@office-open/core/chart`    | Chart types, series data, chart collection, title   |
-| `@office-open/core/smartart` | SmartArt data model, tree-to-model, definitions     |
+| Path                          | Contents                                                              |
+| ----------------------------- | --------------------------------------------------------------------- |
+| `@office-open/core`           | XmlComponent, validators, converters, ID generators, password hashing |
+| `@office-open/core/values`    | Validators + ThemeColor/ThemeFont only                                |
+| `@office-open/core/chart`     | Chart types, series data, chart collection, title                     |
+| `@office-open/core/smartart`  | SmartArt data model, tree-to-model, definitions                       |
+| `@office-open/core/drawingml` | DrawingML fills, outlines, effects, geometry, text body               |
+| `@office-open/core/patch`     | Template patching utilities (replacer, traverser, token replacer)     |
+| `@office-open/core/theme`     | Theme definitions and color schemes                                   |
 
 ## Benchmark
 

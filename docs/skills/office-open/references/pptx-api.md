@@ -20,7 +20,7 @@ Complete API reference for `@office-open/pptx`. All examples show the options JS
 }
 ```
 
-Slide children types: shape, table, image, group, line, connector.
+Slide children types: shape, picture, table, chart, group, line, connector, video, audio, smartart, ole.
 
 ## Shapes
 
@@ -34,7 +34,7 @@ Slide children types: shape, table, image, group, line, connector.
   "y": 100,
   "width": 300,
   "height": 80,
-  "text": "Hello World",
+  "textBody": { "text": "Hello World" },
   "fill": "4472C4"
 }
 ```
@@ -47,8 +47,7 @@ Slide children types: shape, table, image, group, line, connector.
 | `y`         | `number`                | Position Y (pixels)                                   |
 | `width`     | `number`                | Width (pixels)                                        |
 | `height`    | `number`                | Height (pixels)                                       |
-| `text`      | `string`                | Simple text content (shorthand)                       |
-| `textBody`  | `object`                | Rich text body (see below)                            |
+| `textBody`  | `object`                | Text body (see below)                                 |
 | `fill`      | `string \| FillOptions` | Fill style. String `"4472C4"` = solid color shorthand |
 | `outline`   | `OutlineOptions`        | Outline/border                                        |
 | `effects`   | `EffectsOptions`        | Visual effects                                        |
@@ -162,7 +161,7 @@ String shorthand: `fill: "4472C4"` is equivalent to the above.
 ### No Fill
 
 ```json
-{ "type": "noFill" }
+{ "type": "none" }
 ```
 
 ## Outline

@@ -1,7 +1,7 @@
 {
   "name": "docx-plus",
-  "version": "0.7.1",
-  "description": "Easily generate .docx files with JS/TS with a nice declarative API. Works for Node and on the Browser.",
+  "version": "0.8.0",
+  "description": "Enhanced fork of docx — backward-compatible re-export of @office-open/docx",
   "keywords": [
     "clippy",
     "create",

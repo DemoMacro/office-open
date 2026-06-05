@@ -17,11 +17,17 @@
 ## Installation
 
 ```bash
-# Install with npm
-$ npm install office-open
+# pnpm
+pnpm add office-open
 
-# Install with pnpm
-$ pnpm add office-open
+# npm
+npm install office-open
+
+# yarn
+yarn add office-open
+
+# bun
+bun add office-open
 ```
 
 ## Quick Start

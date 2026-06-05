@@ -24,8 +24,20 @@ orientation: horizontal
 }
 ```
 
-```bash [Terminal]
+```bash [pnpm]
 pnpm add office-open
+```
+
+```bash [npm]
+npm install office-open
+```
+
+```bash [yarn]
+yarn add office-open
+```
+
+```bash [bun]
+bun add office-open
 ```
 
 :::
@@ -90,7 +102,7 @@ icon: i-simple-icons-typescript
 Type-safe
 
 #description{unwrap="p"}
-Full type definitions and autocomplete out of the box. No additional `@types` packages needed.
+Complete TypeScript definitions with full autocomplete and type safety.
 ::::
 
 ::::u-page-feature

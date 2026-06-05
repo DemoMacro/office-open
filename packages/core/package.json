@@ -1,7 +1,7 @@
 {
   "name": "@office-open/core",
-  "version": "0.7.1",
-  "description": "Shared OOXML infrastructure: XmlComponent, value validators, unit converters",
+  "version": "0.8.0",
+  "description": "Shared OOXML infrastructure — XML components, validators, converters, charts, and SmartArt",
   "keywords": [
     "core",
     "office-open",
@@ -49,6 +49,10 @@
     "./drawingml": {
       "types": "./dist/drawingml/index.d.mts",
       "import": "./dist/drawingml/index.mjs"
+    },
+    "./patch": {
+      "types": "./dist/patch/index.d.mts",
+      "import": "./dist/patch/index.mjs"
     },
     "./theme": {
       "types": "./dist/theme/index.d.mts",

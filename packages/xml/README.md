@@ -20,11 +20,17 @@
 ## Installation
 
 ```bash
-# Install with npm
-$ npm install @office-open/xml
+# pnpm
+pnpm add @office-open/xml
 
-# Install with pnpm
-$ pnpm add @office-open/xml
+# npm
+npm install @office-open/xml
+
+# yarn
+yarn add @office-open/xml
+
+# bun
+bun add @office-open/xml
 ```
 
 ## Migration from xml + xml-js

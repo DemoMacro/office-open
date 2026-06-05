@@ -64,7 +64,10 @@ import {
   convertInchesToTwip,
   convertPixelsToEmu,
   convertEmuToPixels,
-  convertTwipToEMU,
+  convertInchesToEmu,
+  convertEmuToInches,
+  convertPointsToEmu,
+  convertEmuToPoints,
 } from "@office-open/core";
 
 // mm → twips
@@ -75,6 +78,9 @@ const indent = convertInchesToTwip(1); // 1440
 
 // pixels → EMU
 const emu = convertPixelsToEmu(200); // Used for shape/image dimensions
+
+// points → EMU
+const ptEmu = convertPointsToEmu(12); // Font size to EMU
 ```
 
 ## Pixel to EMU Conversion

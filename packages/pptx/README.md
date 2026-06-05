@@ -1,6 +1,6 @@
 # @office-open/pptx
 
-> Generate and parse .pptx files with JS/TS with a declarative API.
+> Generate and parse .pptx presentations with a declarative TypeScript API. Works in Node.js and browsers.
 
 ## Features
 
@@ -26,17 +26,23 @@
 ## Installation
 
 ```bash
+# pnpm
+pnpm add @office-open/pptx
+
 # npm
 npm install @office-open/pptx
 
-# pnpm
-pnpm add @office-open/pptx
+# yarn
+yarn add @office-open/pptx
+
+# bun
+bun add @office-open/pptx
 ```
 
 ## Quick Start
 
 ```typescript
-import { Presentation, Shape, Packer, Paragraph, Run } from "@office-open/pptx";
+import { Presentation, Shape, Packer, Paragraph, TextRun } from "@office-open/pptx";
 import { writeFileSync } from "node:fs";
 
 const pres = new Presentation({
@@ -44,7 +50,7 @@ const pres = new Presentation({
     {
       children: [
         new Shape({
-          text: "Hello World",
+          textBody: { children: [new Paragraph({ children: [new TextRun("Hello World")] })] },
           fill: "4472C4",
           x: 100,
           y: 100,
@@ -62,16 +68,16 @@ writeFileSync("presentation.pptx", buffer);
 
 ## Parsing
 
-Read existing `.pptx` files and re-create them as `ISlideOptions[]`:
+Read existing `.pptx` files and re-create them as `PresentationOptions`:
 
 ```typescript
 import { parsePresentation, Presentation, Packer } from "@office-open/pptx";
 import { readFileSync, writeFileSync } from "node:fs";
 
-const slides = parsePresentation(new Uint8Array(readFileSync("input.pptx")));
+const opts = parsePresentation(new Uint8Array(readFileSync("input.pptx")));
 
 // Modify parsed data, then re-generate
-const pres = new Presentation({ slides });
+const pres = new Presentation(opts);
 const buffer = await Packer.toBuffer(pres);
 writeFileSync("output.pptx", buffer);
 ```

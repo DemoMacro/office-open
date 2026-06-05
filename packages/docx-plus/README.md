@@ -4,7 +4,7 @@
 ![npm downloads](https://img.shields.io/npm/dw/docx-plus)
 ![npm license](https://img.shields.io/npm/l/docx-plus)
 
-> Easily generate .docx files with JS/TS with a nice declarative API. Works for Node and on the Browser.
+> Enhanced fork of docx — backward-compatible re-export of @office-open/docx. Works in Node.js and browsers.
 
 **docx-plus** is an enhanced fork of [docx](https://github.com/dolanmiu/docx) by Dolan Miu — a TypeScript/JavaScript library for generating and modifying Word documents (.docx) programmatically with a declarative API. We extend our sincere gratitude to the original author and all contributors for their foundational work.
 
@@ -65,11 +65,17 @@ This package re-exports everything from `@office-open/docx` for backward compati
 ## Installation
 
 ```bash
-# Install with npm
-$ npm install docx-plus
+# pnpm
+pnpm add docx-plus
 
-# Install with pnpm
-$ pnpm add docx-plus
+# npm
+npm install docx-plus
+
+# yarn
+yarn add docx-plus
+
+# bun
+bun add docx-plus
 ```
 
 ## Quick Start

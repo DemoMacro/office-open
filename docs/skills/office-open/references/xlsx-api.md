@@ -372,7 +372,7 @@ const blob = await Packer.toBlob(wb);
 const base64 = await Packer.toBase64String(wb);
 
 // Uint8Array
-const uint8 = await Packer.toUint8Array(wb);
+const uint8 = await Packer.toBytes(wb);
 
 // With formatting options
 const pretty = await Packer.toBuffer(wb, { prettify: true });

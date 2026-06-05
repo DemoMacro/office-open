@@ -4,7 +4,7 @@
 ![npm downloads](https://img.shields.io/npm/dw/@office-open/xlsx)
 ![npm license](https://img.shields.io/npm/l/@office-open/xlsx)
 
-> Generate and parse .xlsx files with JS/TS with a declarative API.
+> Generate and parse .xlsx spreadsheets with a declarative TypeScript API. Works in Node.js and browsers.
 
 ## Features
 
@@ -19,17 +19,26 @@
 - 📈 **Charts** — Bar, line, pie, area, and scatter charts with customization
 - ✅ **Data Validation** — List, whole number, decimal, date, and custom validations
 - 🎯 **Conditional Formatting** — Cell value-based rules with formatting
+- 📊 **Pivot Tables** — Create pivot tables with various aggregation functions
+- 💬 **Comments** — Cell comments with author tracking and rich text support
+- 🔒 **Sheet & Workbook Protection** — Password-protect worksheets and workbook structure
 - 📖 **Parsing** — Parse existing .xlsx files with `parseWorkbook` for round-trip workflows
 - 🔧 **Template Patching** — Patch existing XLSX templates via placeholder replacement
 
 ## Installation
 
 ```bash
-# Install with npm
-$ npm install @office-open/xlsx
+# pnpm
+pnpm add @office-open/xlsx
 
-# Install with pnpm
-$ pnpm add @office-open/xlsx
+# npm
+npm install @office-open/xlsx
+
+# yarn
+yarn add @office-open/xlsx
+
+# bun
+bun add @office-open/xlsx
 ```
 
 ## Quick Start
@@ -42,7 +51,7 @@ const wb = new Workbook({
   worksheets: [
     {
       name: "Sheet1",
-      children: [
+      rows: [
         { cells: [{ value: "Name" }, { value: "Score" }] },
         { cells: [{ value: "Alice" }, { value: 95 }] },
         { cells: [{ value: "Bob" }, { value: 87 }] },

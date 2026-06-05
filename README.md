@@ -3,19 +3,19 @@
 ![GitHub](https://img.shields.io/github/license/DemoMacro/office-open)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](https://www.contributor-covenant.org/version/2/1/code_of_conduct/)
 
-> Generate, parse, and patch Office Open XML documents (.docx, .pptx, .xlsx) with a declarative TypeScript API. Works in Node.js and browsers.
+> The all-in-one TypeScript toolkit for Office documents.
+> Generate, parse, and patch .docx, .pptx, .xlsx files — fully typed, spec-compliant, and works everywhere. Compatible with Microsoft Office, WPS Office, LibreOffice, and Google Workspace.
 
 ## Features
 
-- 📝 **Document Generation** — Create .docx, .pptx, and .xlsx files with a declarative JSON or TypeScript API
-- 📖 **Parsing** — Read existing files into structured objects for inspection and round-trip workflows
-- 🔧 **Template Patching** — Replace `{{placeholder}}` tokens in existing templates with new content
-- 🎨 **Rich Content** — Paragraphs, tables, images, charts, SmartArt, math equations, and more
-- ✨ **Effects & Animations** — Shadows, glow, 3D, transitions, entrance/exit animations (PPTX)
-- 📐 **OOXML Compliant** — Output validates against ISO/IEC 29500 XSD schemas
-- 🔒 **Type-safe** — Full TypeScript definitions and autocomplete, no `@types` needed
-- 🌐 **Cross-platform** — Node.js and browsers. Export to Buffer, Blob, Base64, stream, or string
-- 🤖 **AI-friendly** — JSON-first API ideal for LLM workflows and AI agents
+- 📄 **All-in-One** — Word (.docx), Excel (.xlsx), and PowerPoint (.pptx) in one cohesive API, no Office dependency
+- 📐 **Spec-Compliant** — Output validates against OOXML Transitional XSD schemas (ISO/IEC 29500), compatible with Microsoft Office, WPS Office, LibreOffice, and Google Workspace
+- 🔒 **Fully Typed** — Complete TypeScript definitions with full autocomplete and type safety
+- 🎯 **Declarative API** — Define documents as plain JSON or TypeScript objects, ideal for AI agents
+- 🔄 **Parse & Patch** — Read existing .docx, .pptx, .xlsx files for round-trip workflows, or patch templates by placeholder replacement
+- 🎨 **Rich Content** — Paragraphs, tables, images, charts, SmartArt, math equations, effects, animations, and more
+- ⚡ **High Performance** — Optimized for large documents and batch processing with native zlib compression
+- 🌐 **Cross-Platform** — Node.js, browsers, Deno, Bun. Export to Buffer, Blob, Base64, stream, or string
 
 ## Packages
 
@@ -33,11 +33,17 @@
 ### DOCX Generation
 
 ```bash
-# Install with npm
-$ npm install @office-open/docx
+# pnpm
+pnpm add @office-open/docx
 
-# Install with pnpm
-$ pnpm add @office-open/docx
+# npm
+npm install @office-open/docx
+
+# yarn
+yarn add @office-open/docx
+
+# bun
+bun add @office-open/docx
 ```
 
 ```typescript
@@ -63,11 +69,17 @@ writeFileSync("document.docx", buffer);
 ### PPTX Generation
 
 ```bash
-# Install with npm
-$ npm install @office-open/pptx
+# pnpm
+pnpm add @office-open/pptx
 
-# Install with pnpm
-$ pnpm add @office-open/pptx
+# npm
+npm install @office-open/pptx
+
+# yarn
+yarn add @office-open/pptx
+
+# bun
+bun add @office-open/pptx
 ```
 
 ```typescript
@@ -98,11 +110,17 @@ writeFileSync("presentation.pptx", buffer);
 ### XLSX Generation
 
 ```bash
-# Install with npm
-$ npm install @office-open/xlsx
+# pnpm
+pnpm add @office-open/xlsx
 
-# Install with pnpm
-$ pnpm add @office-open/xlsx
+# npm
+npm install @office-open/xlsx
+
+# yarn
+yarn add @office-open/xlsx
+
+# bun
+bun add @office-open/xlsx
 ```
 
 ```typescript
@@ -131,7 +149,17 @@ writeFileSync("workbook.xlsx", buffer);
 Install all packages at once with CLI, AI SDK tools, and schemas:
 
 ```bash
+# pnpm
 pnpm add office-open
+
+# npm
+npm install office-open
+
+# yarn
+yarn add office-open
+
+# bun
+bun add office-open
 ```
 
 ```typescript

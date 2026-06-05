@@ -24,8 +24,20 @@ orientation: horizontal
 }
 ```
 
-```bash [Terminal]
+```bash [pnpm]
 pnpm add office-open
+```
+
+```bash [npm]
+npm install office-open
+```
+
+```bash [yarn]
+yarn add office-open
+```
+
+```bash [bun]
+bun add office-open
 ```
 
 :::
@@ -90,7 +102,7 @@ icon: i-simple-icons-typescript
 类型安全
 
 #description{unwrap="p"}
-完整的类型定义和自动补全，开箱即用。无需额外安装 `@types` 包。
+完整的 TypeScript 类型定义，支持自动补全和类型安全。
 ::::
 
 ::::u-page-feature

@@ -4,7 +4,7 @@
 ![npm downloads](https://img.shields.io/npm/dw/@office-open/docx)
 ![npm license](https://img.shields.io/npm/l/@office-open/docx)
 
-> Easily generate .docx files with JS/TS with a nice declarative API. Works for Node and on the Browser.
+> Generate, parse, and patch .docx documents with a declarative TypeScript API. Works in Node.js and browsers.
 
 ## Features
 
@@ -19,7 +19,7 @@
 - 📖 **Table of Contents** — Auto-generated table of contents with custom styling
 - 📝 **Footnotes & Endnotes** — Comprehensive footnote and endnote support
 - 📈 **Charts** — Bar, line, pie, area, and scatter charts with customization
-- 🔢 **Math Equations** — Full mathematical equation support via MathML
+- 🔢 **Math Equations** — Full mathematical equation support via Office MathML (OMML)
 - 🧩 **SmartArt** — Built-in SmartArt graphic generation
 - 📚 **Bibliography** — Source management and citation support
 - 💬 **Comments** — Document comments with author and date tracking
@@ -35,11 +35,17 @@
 ## Installation
 
 ```bash
-# Install with npm
-$ npm install @office-open/docx
+# pnpm
+pnpm add @office-open/docx
 
-# Install with pnpm
-$ pnpm add @office-open/docx
+# npm
+npm install @office-open/docx
+
+# yarn
+yarn add @office-open/docx
+
+# bun
+bun add @office-open/docx
 ```
 
 ## Quick Start

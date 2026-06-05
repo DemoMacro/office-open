@@ -1,7 +1,7 @@
 {
   "name": "@office-open/pptx",
-  "version": "0.7.1",
-  "description": "Generate .pptx files with JS/TS",
+  "version": "0.8.0",
+  "description": "Generate, parse, and patch .pptx presentations with a declarative TypeScript API",
   "keywords": [
     "office-open",
     "ooxml",

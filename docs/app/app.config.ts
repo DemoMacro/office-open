@@ -6,7 +6,7 @@ export default defineAppConfig({
     titleTemplate: "%s - Office Open",
     title: "Office Open",
     description:
-      "Generate Office Open XML documents (.docx, .pptx, .xlsx) with JavaScript/TypeScript",
+      "TypeScript toolkit for Office documents — generate, parse, and patch .docx, .pptx, .xlsx with spec-compliant OOXML output",
   },
   github: {
     url: "https://github.com/DemoMacro/office-open",
