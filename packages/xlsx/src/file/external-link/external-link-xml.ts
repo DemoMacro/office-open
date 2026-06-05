@@ -54,6 +54,24 @@ export interface ExternalLinkOptions {
   readonly externalBook?: ExternalBookOptions;
   /** Relationship ID for the external book (set by compiler) */
   readonly bookRId?: string;
+  /** OLE link configuration (CT_OleLink) */
+  readonly oleLink?: OleLinkOptions;
+  /** Relationship ID for the OLE link (set by compiler) */
+  readonly oleRId?: string;
+}
+
+export interface OleItemOptions {
+  /** OLE item name (required) */
+  readonly name: string;
+  /** Whether to advise events */
+  readonly advise?: boolean;
+  /** Whether preferred */
+  readonly prefer?: boolean;
+}
+
+export interface OleLinkOptions {
+  /** OLE items */
+  readonly oleItems?: readonly OleItemOptions[];
 }
 
 // ── Component ──
@@ -136,6 +154,28 @@ export class ExternalLinkXml extends BaseXmlComponent {
       p.push(
         `<externalBook${ridAttr}${bookParts.length > 0 ? `>${bookParts.join("")}</externalBook>` : "/>"}`,
       );
+    }
+
+    // oleLink (CT_OleLink)
+    if (this.opts.oleLink) {
+      const oleRId = this.opts.oleRId ? ` r:id="${escapeXml(this.opts.oleRId)}"` : "";
+      const oleChildren: string[] = [];
+      if (this.opts.oleLink.oleItems && this.opts.oleLink.oleItems.length > 0) {
+        const itemParts: string[] = [`<oleItems>`];
+        for (const item of this.opts.oleLink.oleItems) {
+          const itemAttrs: string[] = [`name="${escapeXml(item.name)}"`];
+          if (item.advise) itemAttrs.push('advise="1"');
+          if (item.prefer) itemAttrs.push('prefer="1"');
+          itemParts.push(`<oleItem ${itemAttrs.join(" ")}/>`);
+        }
+        itemParts.push("</oleItems>");
+        oleChildren.push(itemParts.join(""));
+      }
+      if (oleChildren.length > 0) {
+        p.push(`<oleLink${oleRId}>${oleChildren.join("")}</oleLink>`);
+      } else {
+        p.push(`<oleLink${oleRId}/>`);
+      }
     }
 
     p.push("</externalLink>");

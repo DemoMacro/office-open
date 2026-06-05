@@ -45,6 +45,10 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   readonly webPublishing?: WebPublishingOptions;
   /** File sharing / read-only recommendation */
   readonly fileSharing?: FileSharingOptions;
+  /** Volatile dependencies (CT_VolTypes) */
+  readonly volTypes?: readonly import("./workbook").VolTypeOptions[];
+  /** Web publish objects (CT_WebPublishItems) */
+  readonly webPublishObjects?: readonly import("./workbook").WebPublishObjectOptions[];
 }
 
 export class File {
@@ -59,6 +63,8 @@ export class File {
   private readonly functionGroupOpts?: readonly string[];
   private readonly webPublishingOpts?: WebPublishingOptions;
   private readonly fileSharingOpts?: FileSharingOptions;
+  private readonly volTypeOpts?: readonly import("./workbook").VolTypeOptions[];
+  private readonly webPublishObjectOpts?: readonly import("./workbook").WebPublishObjectOptions[];
 
   // Lazy components
   private _coreProperties?: CoreProperties;
@@ -87,6 +93,8 @@ export class File {
     this.functionGroupOpts = options.functionGroups;
     this.webPublishingOpts = options.webPublishing;
     this.fileSharingOpts = options.fileSharing;
+    this.volTypeOpts = options.volTypes;
+    this.webPublishObjectOpts = options.webPublishObjects;
   }
 
   // ── Lazy getters ──
@@ -156,6 +164,11 @@ export class File {
         this.functionGroupOpts,
         this.webPublishingOpts,
         this.fileSharingOpts,
+        undefined, // workbookPr
+        undefined, // calcPr
+        undefined, // bookView
+        this.volTypeOpts,
+        this.webPublishObjectOpts,
       );
     }
     return this._workbookXml;

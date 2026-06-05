@@ -215,15 +215,55 @@ function readFileCached(filePath: string): string {
 
 // ── XSD Parsing ──
 
+/**
+ * Deprecated/removed OOXML elements to exclude from coverage analysis.
+ * These are features Microsoft has removed from Office or disabled by default:
+ *
+ * Smart Tags: Removed from Office 2010. Recognized data types and offered
+ * contextual actions. UI completely removed, elements retained in XSD for
+ * backward compatibility only.
+ *
+ * DDE (Dynamic Data Exchange): Disabled by default since 2017 due to security
+ * risks (malicious document attacks). Microsoft recommends disabling entirely.
+ * These elements model DDE links in external workbooks.
+ */
+const DEPRECATED_ELEMENTS = new Set([
+  // Smart Tags (removed Office 2010)
+  "cellSmartTag",
+  "cellSmartTagPr",
+  "cellSmartTags",
+  "smartTagPr",
+  "smartTagType",
+  "smartTagTypes",
+  "smartTags",
+  // DDE (disabled by default, security risk)
+  "ddeLink",
+  "ddeItems",
+  "ddeItem",
+  "values", // CT_DdeValues — DDE-specific
+  "val", // CT_DdeValue — DDE-specific element (not attribute)
+]);
+
+/** Elements only deprecated in SML (val appears in dml-chart, pml too) */
+const DEPRECATED_ELEMENTS_SML_ONLY = new Set(["val"]);
+
 function parseXsd(xsdPath: string): { elements: Set<string>; attributes: Set<string> } {
   const content = fs.readFileSync(xsdPath, "utf-8");
   const elements = new Set<string>();
   const attributes = new Set<string>();
 
+  const isSml = xsdPath.includes("sml.xsd");
+  const globalDeprecated = DEPRECATED_ELEMENTS;
+  const deprecated = isSml
+    ? new Set([...DEPRECATED_ELEMENTS, ...DEPRECATED_ELEMENTS_SML_ONLY])
+    : globalDeprecated;
+
   const elementRe = /<xsd:element\s+name="([^"]+)"/g;
   let match: RegExpExecArray | null;
   while ((match = elementRe.exec(content)) !== null) {
-    elements.add(match[1]);
+    if (!deprecated.has(match[1])) {
+      elements.add(match[1]);
+    }
   }
 
   const attrRe = /<xsd:attribute\s+name="([^"]+)"/g;

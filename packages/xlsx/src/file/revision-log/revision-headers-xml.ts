@@ -9,16 +9,18 @@ import { BaseXmlComponent } from "@file/xml-components";
 import type { Context } from "@file/xml-components";
 import { attrs, escapeXml } from "@office-open/xml";
 
-import type { RevisionHeadersOptions } from "./revision-types";
+import type { RevisionHeadersOptions, UsersOptions } from "./revision-types";
 
 // ── Component ──
 
 export class RevisionHeadersXml extends BaseXmlComponent {
   private readonly opts: RevisionHeadersOptions;
+  private readonly users?: UsersOptions;
 
-  public constructor(options: RevisionHeadersOptions) {
+  public constructor(options: RevisionHeadersOptions, users?: UsersOptions) {
     super("headers");
     this.opts = options;
+    this.users = users;
   }
 
   public override toXml(_context: Context): string {
@@ -72,5 +74,26 @@ export class RevisionHeadersXml extends BaseXmlComponent {
 
     p.push("</headers>");
     return p.join("");
+  }
+
+  /** Build users XML (CT_Users) — separate file xl/users.xml */
+  public buildUsersXml(): string {
+    if (!this.users?.users || this.users.users.length === 0) return "";
+    const u = this.users.users;
+    const parts: string[] = [
+      '<users xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"',
+      ` count="${u.length}">`,
+    ];
+    for (const user of u) {
+      const uAttrs: Record<string, string | number | undefined> = {
+        guid: user.guid,
+        name: user.name,
+        id: user.id,
+        dateTime: user.dateTime,
+      };
+      parts.push(`<userInfo${attrs(uAttrs)}/>`);
+    }
+    parts.push("</users>");
+    return parts.join("");
   }
 }

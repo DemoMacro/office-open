@@ -75,6 +75,52 @@ const wb = new Workbook({
         },
       ],
     },
+    {
+      name: "AdvancedPivot",
+      rows: [],
+      pivotTables: [
+        {
+          name: "Pivot_Advanced",
+          source: "A1:C9",
+          sourceSheet: "Data",
+          location: "A3",
+          rows: ["City"],
+          columns: ["Category"],
+          data: [
+            {
+              field: "Revenue",
+              summarize: "sum",
+              name: "Total Revenue",
+              sortByTupleItems: [0],
+            },
+          ],
+          pivotConditionalFormats: [
+            {
+              priority: 1,
+              scope: "data",
+              type: "all",
+              pivotAreas: [
+                {
+                  field: 2,
+                  type: "data",
+                  outline: true,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      sheetView: {
+        tabSelected: true,
+        pivotSelections: [
+          {
+            pane: "topLeft",
+            axis: "axisRow",
+            activeRow: 3,
+          },
+        ],
+      },
+    },
   ],
 });
 

@@ -9,7 +9,7 @@
  */
 import { BaseXmlComponent } from "@file/xml-components";
 import type { Context } from "@file/xml-components";
-import { attrs } from "@office-open/xml";
+import { attrs, escapeXml } from "@office-open/xml";
 
 // ── Options ──
 
@@ -88,6 +88,18 @@ export interface FutureMetadataOptions {
   readonly type: string;
 }
 
+export interface MetadataRecordOptions {
+  /** Metadata type index (required) */
+  readonly t: number;
+  /** Metadata value index (required) */
+  readonly v: number;
+}
+
+export interface MetadataBlockOptions {
+  /** Metadata records */
+  readonly records?: readonly MetadataRecordOptions[];
+}
+
 export interface MetadataOptions {
   /** Metadata types */
   readonly types?: readonly MetadataTypeOptions[];
@@ -95,6 +107,54 @@ export interface MetadataOptions {
   readonly strings?: readonly MetadataStringOptions[];
   /** Future metadata */
   readonly futureMetadata?: readonly FutureMetadataOptions[];
+  /** MDX metadata (CT_MdxMetadata) */
+  readonly mdxMetadata?: readonly MdxOptions[];
+  /** Cell metadata blocks */
+  readonly cellMetadataBlocks?: readonly MetadataBlockOptions[];
+  /** Value metadata blocks */
+  readonly valueMetadataBlocks?: readonly MetadataBlockOptions[];
+}
+
+/** MDX query entry (CT_Mdx) */
+export interface MdxOptions {
+  /** MDX function type: "m"|"v"|"s"|"c"|"r"|"p"|"k" */
+  readonly f: string;
+  /** Name index (required) */
+  readonly n: number;
+  /** MDX tuple */
+  readonly tuple?: MdxTupleOptions;
+  /** MDX set */
+  readonly set?: MdxSetOptions;
+  /** MDX member property */
+  readonly memberProp?: MdxMemberPropOptions;
+  /** MDX KPI */
+  readonly kpi?: MdxKpiOptions;
+}
+
+export interface MdxTupleOptions {
+  /** Tuple count */
+  readonly c?: number;
+}
+
+export interface MdxSetOptions {
+  /** Namespace count (required) */
+  readonly ns: number;
+}
+
+export interface MdxMemberPropOptions {
+  /** Name index (required) */
+  readonly n: number;
+  /** Name pair index (required) */
+  readonly np: number;
+}
+
+export interface MdxKpiOptions {
+  /** Name index (required) */
+  readonly n: number;
+  /** Name pair index (required) */
+  readonly np: number;
+  /** KPI property (required) */
+  readonly p: string;
 }
 
 // ── Component ──
@@ -172,9 +232,71 @@ export class MetadataXml extends BaseXmlComponent {
       }
     }
 
-    // cellMetadata & valueMetadata (empty containers)
-    p.push('<cellMetadata count="0"/>');
-    p.push('<valueMetadata count="0"/>');
+    // cellMetadata
+    const cmBlocks = this.opts.cellMetadataBlocks ?? [];
+    if (cmBlocks.length > 0) {
+      p.push(`<cellMetadata count="${cmBlocks.length}">`);
+      for (const blk of cmBlocks) {
+        const records = blk.records ?? [];
+        if (records.length > 0) {
+          const rcParts = records.map((r) => `<rc t="${r.t}" v="${r.v}"/>`);
+          p.push(`<bk>${rcParts.join("")}</bk>`);
+        } else {
+          p.push("<bk/>");
+        }
+      }
+      p.push("</cellMetadata>");
+    } else {
+      p.push('<cellMetadata count="0"/>');
+    }
+
+    // valueMetadata
+    const vmBlocks = this.opts.valueMetadataBlocks ?? [];
+    if (vmBlocks.length > 0) {
+      p.push(`<valueMetadata count="${vmBlocks.length}">`);
+      for (const blk of vmBlocks) {
+        const records = blk.records ?? [];
+        if (records.length > 0) {
+          const rcParts = records.map((r) => `<rc t="${r.t}" v="${r.v}"/>`);
+          p.push(`<bk>${rcParts.join("")}</bk>`);
+        } else {
+          p.push("<bk/>");
+        }
+      }
+      p.push("</valueMetadata>");
+    } else {
+      p.push('<valueMetadata count="0"/>');
+    }
+
+    // mdxMetadata (CT_MdxMetadata)
+    const mdxMeta = this.opts.mdxMetadata;
+    if (mdxMeta && mdxMeta.length > 0) {
+      p.push(`<mdxMetadata count="${mdxMeta.length}">`);
+      for (const m of mdxMeta) {
+        const mAttrs: Record<string, string | number | undefined> = {
+          n: m.n,
+          f: m.f,
+        };
+        let child = "";
+        if (m.tuple) {
+          const tAttrs: Record<string, string | number | undefined> = {};
+          if (m.tuple.c !== undefined) tAttrs.c = m.tuple.c;
+          child = `<t${attrs(tAttrs)}/>`;
+        } else if (m.set) {
+          child = `<ms ns="${m.set.ns}"/>`;
+        } else if (m.memberProp) {
+          child = `<p n="${m.memberProp.n}" np="${m.memberProp.np}"/>`;
+        } else if (m.kpi) {
+          child = `<k n="${m.kpi.n}" np="${m.kpi.np}" p="${escapeXml(m.kpi.p)}"/>`;
+        }
+        if (child) {
+          p.push(`<mdx${attrs(mAttrs)}>${child}</mdx>`);
+        } else {
+          p.push(`<mdx${attrs(mAttrs)}/>`);
+        }
+      }
+      p.push("</mdxMetadata>");
+    }
 
     p.push("</metadata>");
     return p.join("");

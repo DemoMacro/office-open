@@ -5,6 +5,7 @@
  */
 import { BaseXmlComponent } from "@file/xml-components";
 import type { Context } from "@file/xml-components";
+import { derivePasswordHash } from "@office-open/core";
 import { escapeXml } from "@office-open/xml";
 
 export interface SheetDefinition {
@@ -194,6 +195,58 @@ export interface WorkbookPrOptions {
   readonly refreshAllConnections?: boolean;
 }
 
+/** Volatile type entry (CT_VolType) */
+export interface VolTypeOptions {
+  /** Type of volatile dependency (default: "realTimeData") */
+  readonly type?: "realTimeData" | "olapFunctions";
+  /** Main volatile dependencies (CT_VolMain, required) */
+  readonly mains?: readonly VolMainOptions[];
+}
+
+/** Main volatile dependency (CT_VolMain) */
+export interface VolMainOptions {
+  /** First reference (required) */
+  readonly first: string;
+  /** Volatile topics (CT_VolTopic) */
+  readonly topics?: readonly VolTopicOptions[];
+}
+
+/** Volatile topic (CT_VolTopic) */
+export interface VolTopicOptions {
+  /** Topic value (required) */
+  readonly value: string;
+  /** Value type (default: "n") */
+  readonly valueType?: string;
+  /** String topics (stp elements) */
+  readonly stringTopics?: readonly string[];
+  /** Topic references (CT_VolTopicRef) */
+  readonly refs?: readonly VolTopicRefOptions[];
+}
+
+/** Volatile topic reference (CT_VolTopicRef) */
+export interface VolTopicRefOptions {
+  /** Cell reference (required) */
+  readonly reference: string;
+  /** Sheet index (required) */
+  readonly sheetIndex: number;
+}
+
+/** Web publish object (CT_WebPublishObject) */
+export interface WebPublishObjectOptions {
+  /** Relationship ID to the published item */
+  readonly rId: string;
+  /** Destination file name */
+  readonly destinationFile?: string;
+  /** Auto republish (default: false) */
+  readonly autoRepublish?: boolean;
+  /** Title of the published item */
+  readonly title?: string;
+  /** Source object reference */
+  readonly sourceObject?: string;
+  /** App name (default: "Excel") */
+  readonly appName?: string;
+}
+
 /** Calculation properties (CT_CalcPr) */
 export interface CalcPrOptions {
   /** Calculation mode: "manual" | "auto" | "autoNoTable" */
@@ -262,6 +315,8 @@ export class WorkbookXml extends BaseXmlComponent {
   private readonly workbookPr?: WorkbookPrOptions;
   private readonly calcPr?: CalcPrOptions;
   private readonly bookView?: WorkbookViewOptions;
+  private readonly volTypes?: readonly VolTypeOptions[];
+  private readonly webPublishObjects?: readonly WebPublishObjectOptions[];
 
   public constructor(
     sheets: readonly SheetDefinition[],
@@ -275,6 +330,8 @@ export class WorkbookXml extends BaseXmlComponent {
     workbookPr?: WorkbookPrOptions,
     calcPr?: CalcPrOptions,
     bookView?: WorkbookViewOptions,
+    volTypes?: readonly VolTypeOptions[],
+    webPublishObjects?: readonly WebPublishObjectOptions[],
   ) {
     super("workbook");
     this.sheets = sheets;
@@ -288,6 +345,8 @@ export class WorkbookXml extends BaseXmlComponent {
     this.workbookPr = workbookPr;
     this.calcPr = calcPr;
     this.bookView = bookView;
+    this.volTypes = volTypes;
+    this.webPublishObjects = webPublishObjects;
   }
 
   public override toXml(_context: Context): string {
@@ -310,8 +369,17 @@ export class WorkbookXml extends BaseXmlComponent {
       const fsAttrs: string[] = [];
       if (fileSharing.readOnlyRecommended) fsAttrs.push('readOnlyRecommended="1"');
       if (fileSharing.userName) fsAttrs.push(`userName="${escapeXml(fileSharing.userName)}"`);
-      if (fileSharing.reservationPassword)
+      if (fileSharing.reservationPassword) {
         fsAttrs.push(`reservationPassword="${escapeXml(fileSharing.reservationPassword)}"`);
+        // Auto-derive modern hash when reservationPassword provided without explicit hashValue
+        if (fileSharing.hashValue === undefined) {
+          const derived = derivePasswordHash(fileSharing.reservationPassword);
+          fsAttrs.push(`algorithmName="${escapeXml(derived.algorithmName)}"`);
+          fsAttrs.push(`hashValue="${escapeXml(derived.hashValue)}"`);
+          fsAttrs.push(`saltValue="${escapeXml(derived.saltValue)}"`);
+          fsAttrs.push(`spinCount="${derived.spinCount}"`);
+        }
+      }
       if (fileSharing.algorithmName)
         fsAttrs.push(`algorithmName="${escapeXml(fileSharing.algorithmName)}"`);
       if (fileSharing.hashValue) fsAttrs.push(`hashValue="${escapeXml(fileSharing.hashValue)}"`);
@@ -357,8 +425,17 @@ export class WorkbookXml extends BaseXmlComponent {
       if (prot.lockStructure) protAttrs.push('lockStructure="1"');
       if (prot.lockWindows) protAttrs.push('lockWindows="1"');
       if (prot.lockRevision) protAttrs.push('lockRevision="1"');
-      if (prot.workbookPassword)
+      if (prot.workbookPassword) {
         protAttrs.push(`workbookPassword="${this.hashPassword(prot.workbookPassword)}"`);
+        // Auto-derive modern hash when workbookPassword provided without explicit workbookHashValue
+        if (prot.workbookHashValue === undefined) {
+          const wbDerived = derivePasswordHash(prot.workbookPassword);
+          protAttrs.push(`workbookAlgorithmName="${escapeXml(wbDerived.algorithmName)}"`);
+          protAttrs.push(`workbookHashValue="${escapeXml(wbDerived.hashValue)}"`);
+          protAttrs.push(`workbookSaltValue="${escapeXml(wbDerived.saltValue)}"`);
+          protAttrs.push(`workbookSpinCount="${wbDerived.spinCount}"`);
+        }
+      }
       if (prot.workbookAlgorithmName)
         protAttrs.push(`workbookAlgorithmName="${escapeXml(prot.workbookAlgorithmName)}"`);
       if (prot.workbookHashValue)
@@ -367,8 +444,17 @@ export class WorkbookXml extends BaseXmlComponent {
         protAttrs.push(`workbookSaltValue="${escapeXml(prot.workbookSaltValue)}"`);
       if (prot.workbookSpinCount !== undefined)
         protAttrs.push(`workbookSpinCount="${prot.workbookSpinCount}"`);
-      if (prot.revisionsPassword)
+      if (prot.revisionsPassword) {
         protAttrs.push(`revisionsPassword="${this.hashPassword(prot.revisionsPassword)}"`);
+        // Auto-derive modern hash when revisionsPassword provided without explicit revisionsHashValue
+        if (prot.revisionsHashValue === undefined) {
+          const revDerived = derivePasswordHash(prot.revisionsPassword);
+          protAttrs.push(`revisionsAlgorithmName="${escapeXml(revDerived.algorithmName)}"`);
+          protAttrs.push(`revisionsHashValue="${escapeXml(revDerived.hashValue)}"`);
+          protAttrs.push(`revisionsSaltValue="${escapeXml(revDerived.saltValue)}"`);
+          protAttrs.push(`revisionsSpinCount="${revDerived.spinCount}"`);
+        }
+      }
       if (prot.revisionsAlgorithmName)
         protAttrs.push(`revisionsAlgorithmName="${escapeXml(prot.revisionsAlgorithmName)}"`);
       if (prot.revisionsHashValue)
@@ -525,6 +611,57 @@ export class WorkbookXml extends BaseXmlComponent {
       if (frpAttrs.length > 0) {
         parts.push(`<fileRecoveryPr ${frpAttrs.join(" ")}/>`);
       }
+    }
+
+    // Web publish objects (after fileRecoveryPr per XSD sequence)
+    if (this.webPublishObjects && this.webPublishObjects.length > 0) {
+      const wpoParts: string[] = [`<webPublishObjects count="${this.webPublishObjects.length}">`];
+      for (const wpo of this.webPublishObjects) {
+        const wpoAttrs: string[] = [`r:id="${escapeXml(wpo.rId)}"`];
+        if (wpo.destinationFile)
+          wpoAttrs.push(`destinationFile="${escapeXml(wpo.destinationFile)}"`);
+        if (wpo.autoRepublish) wpoAttrs.push('autoRepublish="1"');
+        if (wpo.title) wpoAttrs.push(`title="${escapeXml(wpo.title)}"`);
+        if (wpo.sourceObject) wpoAttrs.push(`sourceObject="${escapeXml(wpo.sourceObject)}"`);
+        wpoParts.push(`<webPublishObject ${wpoAttrs.join(" ")}/>`);
+      }
+      wpoParts.push("</webPublishObjects>");
+      parts.push(wpoParts.join(""));
+    }
+
+    // Volatile dependencies (volTypes)
+    if (this.volTypes && this.volTypes.length > 0) {
+      const vtParts: string[] = [`<volTypes count="${this.volTypes.length}">`];
+      for (const vt of this.volTypes) {
+        const vtType = vt.type ?? "realTimeData";
+        const mains = vt.mains ?? [];
+        if (mains.length > 0) {
+          const mainParts: string[] = [];
+          for (const m of mains) {
+            const tpParts: string[] = [];
+            for (const topic of m.topics ?? []) {
+              let tpInner = `<v>${escapeXml(topic.value)}</v>`;
+              for (const stp of topic.stringTopics ?? []) {
+                tpInner += `<stp>${escapeXml(stp)}</stp>`;
+              }
+              for (const tr of topic.refs ?? []) {
+                tpInner += `<tr r="${escapeXml(tr.reference)}" s="${tr.sheetIndex}"/>`;
+              }
+              const tpAttr =
+                topic.valueType && topic.valueType !== "n"
+                  ? ` t="${escapeXml(topic.valueType)}"`
+                  : "";
+              tpParts.push(`<tp${tpAttr}>${tpInner}</tp>`);
+            }
+            mainParts.push(`<main first="${escapeXml(m.first)}">${tpParts.join("")}</main>`);
+          }
+          vtParts.push(`<volType type="${vtType}">${mainParts.join("")}</volType>`);
+        } else {
+          vtParts.push(`<volType type="${vtType}"/>`);
+        }
+      }
+      vtParts.push("</volTypes>");
+      parts.push(vtParts.join(""));
     }
 
     parts.push("</workbook>");

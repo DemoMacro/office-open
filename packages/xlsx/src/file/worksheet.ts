@@ -9,6 +9,7 @@ import type { Styles, StyleOptions } from "@file/styles";
 import { IgnoreIfEmptyXmlComponent } from "@file/xml-components";
 import type { Context } from "@file/xml-components";
 import type { ChartSpaceOptions } from "@office-open/core";
+import { derivePasswordHash } from "@office-open/core";
 import { attrs, escapeXml, selfCloseElement } from "@office-open/xml";
 
 import type { PivotTableOptions } from "./pivot";
@@ -300,6 +301,46 @@ export interface SheetViewOptions {
   readonly zoomScaleSheetLayoutView?: number;
   /** Zoom scale for page layout view (CT_SheetView @zoomScalePageLayoutView) */
   readonly zoomScalePageLayoutView?: number;
+  /** Pivot selections (CT_PivotSelection) */
+  readonly pivotSelections?: readonly PivotSelectionOptions[];
+}
+
+/** Pivot selection in sheet view (CT_PivotSelection) */
+export interface PivotSelectionOptions {
+  /** Pane (default: "topLeft") */
+  readonly pane?: "bottomRight" | "topRight" | "bottomLeft" | "topLeft";
+  /** Show header (default: false) */
+  readonly showHeader?: boolean;
+  /** Label selected (default: false) */
+  readonly label?: boolean;
+  /** Data selected (default: false) */
+  readonly data?: boolean;
+  /** Extendable (default: false) */
+  readonly extendable?: boolean;
+  /** Selection count */
+  readonly count?: number;
+  /** Axis */
+  readonly axis?: "axisRow" | "axisCol" | "axisPage" | "axisValues";
+  /** Dimension */
+  readonly dimension?: number;
+  /** Start index */
+  readonly start?: number;
+  /** Min index */
+  readonly min?: number;
+  /** Max index */
+  readonly max?: number;
+  /** Active row */
+  readonly activeRow?: number;
+  /** Active column */
+  readonly activeCol?: number;
+  /** Previous row */
+  readonly previousRow?: number;
+  /** Previous column */
+  readonly previousCol?: number;
+  /** Clicked row */
+  readonly click?: number;
+  /** Relationship ID (maps to r:id in XML) */
+  readonly rId?: string;
 }
 
 export type HyperlinkTarget =
@@ -1353,6 +1394,9 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
     }
 
     // Sheet views
+    const pivotSelXml = this.sheetView?.pivotSelections
+      ? this.sheetView.pivotSelections.map((ps) => this.buildPivotSelectionXml(ps)).join("")
+      : "";
     if (this.freezePanes) {
       const fp = this.freezePanes;
       const ySplit = fp.row ? fp.row : 0;
@@ -1367,15 +1411,14 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
         `<sheetViews><sheetView${svAttrs}>`,
         `<pane ySplit="${ySplit}" xSplit="${xSplit}" topLeftCell="${topLeftCell}" activePane="${activePane}" state="frozen"/>`,
         this.selection ? this.buildSelectionXml(this.selection) : "",
+        pivotSelXml,
         "</sheetView></sheetViews>",
       );
     } else {
       const svAttrs = this.buildSheetViewAttrs();
-      const selStr = this.selection
-        ? `>${this.buildSelectionXml(this.selection)}</sheetView>`
-        : "/>";
-      if (selStr.startsWith(">")) {
-        p.push(`<sheetViews><sheetView${svAttrs}${selStr}</sheetViews>`);
+      const innerXml = (this.selection ? this.buildSelectionXml(this.selection) : "") + pivotSelXml;
+      if (innerXml) {
+        p.push(`<sheetViews><sheetView${svAttrs}>${innerXml}</sheetView></sheetViews>`);
       } else {
         p.push(`<sheetViews><sheetView${svAttrs}/></sheetViews>`);
       }
@@ -1572,10 +1615,16 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
       const prot = this.protection;
       const protAttrs: Record<string, string | number | boolean | undefined> = {};
       if (prot.password) protAttrs.password = this.hashPassword(prot.password);
-      if (prot.algorithmName) protAttrs.algorithmName = prot.algorithmName;
-      if (prot.hashValue) protAttrs.hashValue = prot.hashValue;
-      if (prot.saltValue) protAttrs.saltValue = prot.saltValue;
+      // Auto-derive modern hash when password provided without explicit hashValue
+      let derived: ReturnType<typeof derivePasswordHash> | undefined;
+      if (prot.password !== undefined && prot.hashValue === undefined) {
+        derived = derivePasswordHash(prot.password);
+      }
+      protAttrs.algorithmName = prot.algorithmName ?? derived?.algorithmName;
+      protAttrs.hashValue = prot.hashValue ?? derived?.hashValue;
+      protAttrs.saltValue = prot.saltValue ?? derived?.saltValue;
       if (prot.spinCount !== undefined) protAttrs.spinCount = prot.spinCount;
+      else if (derived) protAttrs.spinCount = derived.spinCount;
       if (prot.sheet) protAttrs.sheet = 1;
       if (prot.objects) protAttrs.objects = 1;
       if (prot.scenarios) protAttrs.scenarios = 1;
@@ -1604,10 +1653,16 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
           sqref: pr.sqref,
         };
         if (pr.password) prAttrs.password = this.hashPassword(pr.password);
-        if (pr.algorithmName) prAttrs.algorithmName = pr.algorithmName;
-        if (pr.hashValue) prAttrs.hashValue = pr.hashValue;
-        if (pr.saltValue) prAttrs.saltValue = pr.saltValue;
+        // Auto-derive modern hash when password provided without explicit hashValue
+        let prDerived: ReturnType<typeof derivePasswordHash> | undefined;
+        if (pr.password !== undefined && pr.hashValue === undefined) {
+          prDerived = derivePasswordHash(pr.password);
+        }
+        prAttrs.algorithmName = pr.algorithmName ?? prDerived?.algorithmName;
+        prAttrs.hashValue = pr.hashValue ?? prDerived?.hashValue;
+        prAttrs.saltValue = pr.saltValue ?? prDerived?.saltValue;
         if (pr.spinCount !== undefined) prAttrs.spinCount = pr.spinCount;
+        else if (prDerived) prAttrs.spinCount = prDerived.spinCount;
         const hasSecurityDescriptor = !!pr.securityDescriptor;
         if (hasSecurityDescriptor) {
           prParts.push(
@@ -2101,7 +2156,7 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
 
     // Extension list (extLst, last per XSD sequence)
     if (this.ext) {
-      p.push(this.ext);
+      p.push(`<extLst>${this.ext}</extLst>`);
     }
 
     p.push("</worksheet>");
@@ -2153,6 +2208,29 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
     if (sel.activeCellId !== undefined) selAttrs.activeCellId = sel.activeCellId;
     if (sel.sqref) selAttrs.sqref = sel.sqref;
     return `<selection${attrs(selAttrs)}/>`;
+  }
+
+  private buildPivotSelectionXml(ps: PivotSelectionOptions): string {
+    const psAttrs: Record<string, string | number | boolean | undefined> = {};
+    if (ps.pane) psAttrs.pane = ps.pane;
+    if (ps.showHeader) psAttrs.showHeader = 1;
+    if (ps.label) psAttrs.label = 1;
+    if (ps.data) psAttrs.data = 1;
+    if (ps.extendable) psAttrs.extendable = 1;
+    if (ps.count !== undefined) psAttrs.count = ps.count;
+    if (ps.axis) psAttrs.axis = ps.axis;
+    if (ps.dimension !== undefined) psAttrs.dimension = ps.dimension;
+    if (ps.start !== undefined) psAttrs.start = ps.start;
+    if (ps.min !== undefined) psAttrs.min = ps.min;
+    if (ps.max !== undefined) psAttrs.max = ps.max;
+    if (ps.activeRow !== undefined) psAttrs.activeRow = ps.activeRow;
+    if (ps.activeCol !== undefined) psAttrs.activeCol = ps.activeCol;
+    if (ps.previousRow !== undefined) psAttrs.previousRow = ps.previousRow;
+    if (ps.previousCol !== undefined) psAttrs.previousCol = ps.previousCol;
+    if (ps.click !== undefined) psAttrs.click = ps.click;
+    if (ps.rId) psAttrs["r:id"] = ps.rId;
+    // CT_PivotSelection requires a pivotArea child
+    return `<pivotSelection${attrs(psAttrs)}><pivotArea/></pivotSelection>`;
   }
 
   /**

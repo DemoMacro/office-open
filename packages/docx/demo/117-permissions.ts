@@ -19,11 +19,7 @@ const doc = new Document({
     trackRevisions: true,
     documentProtection: {
       edit: "readOnly",
-      hashValue:
-        "OnpmSDysb0NPnL/m//Xu3LuX3K1Tg0hxqTZmTIPOi86G/mlRwOXhcd4DOppG/LwyZi9BxWrn+N7Os3DQBbjuQA==",
-      saltValue: "E3ilFmh48B4vQPAQpIuZXA==",
-      spinCount: 100000,
-      algorithmName: "SHA-512",
+      password: "123",
     },
   },
   sections: [

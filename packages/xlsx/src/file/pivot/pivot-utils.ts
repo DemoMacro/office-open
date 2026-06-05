@@ -35,6 +35,8 @@ export interface PivotDataField {
   readonly baseField?: number;
   /** Base item index for "show data as" calculations */
   readonly baseItem?: number;
+  /** Sort by tuple items (CT_Tuples in sortByTuple) */
+  readonly sortByTupleItems?: readonly number[];
 }
 
 /** Pivot filter type (ST_PivotFilterType) */
@@ -253,6 +255,10 @@ export interface PivotTableOptions {
   readonly memberProperties?: readonly MemberPropertyOptions[];
   /** Pivot format areas (CT_Formats → format) */
   readonly formats?: readonly PivotFormatOptions[];
+  /** Row hierarchy usage (CT_RowHierarchiesUsage) */
+  readonly rowHierarchiesUsage?: readonly HierarchyUsageOptions[];
+  /** Column hierarchy usage (CT_ColHierarchiesUsage) */
+  readonly colHierarchiesUsage?: readonly HierarchyUsageOptions[];
 }
 
 /** Pivot format (CT_Format). */
@@ -319,6 +325,8 @@ export interface PivotHierarchyOptions {
   readonly caption?: string;
   /** Members */
   readonly members?: readonly MemberOptions[];
+  /** Member properties (CT_MemberProperties → mps/mp) */
+  readonly memberProperties?: readonly MemberPropertyOptions[];
 }
 
 /** Member in pivot hierarchy (CT_Member) */
@@ -461,6 +469,10 @@ export interface CacheHierarchyOptions {
   readonly oneField?: boolean;
   /** Hidden (default: false) */
   readonly hidden?: boolean;
+  /** Group levels (CT_GroupLevels) */
+  readonly groupLevels?: readonly GroupLevelOptions[];
+  /** Fields usage (CT_FieldsUsage) */
+  readonly fieldsUsage?: readonly FieldUsageOptions[];
 }
 
 /** KPI definition for pivot cache (CT_PCDKPI) */
@@ -626,7 +638,7 @@ export interface ConsolidationOptions {
 export interface TupleCacheEntryOptions {
   /** Entry type */
   readonly type: "m" | "n" | "e" | "s";
-  /** Value (required for n/e/s) */
+  /** Value (required for n/s, optional for e) */
   readonly value?: number | string;
 }
 
@@ -634,6 +646,84 @@ export interface TupleCacheEntryOptions {
 export interface DeletedFieldOptions {
   /** Field name */
   readonly name: string;
+}
+
+/** Group member (CT_GroupMember) */
+export interface GroupMemberOptions {
+  /** Unique name (required) */
+  readonly uniqueName: string;
+  /** Is group */
+  readonly group?: boolean;
+}
+
+/** Level group (CT_LevelGroup) */
+export interface LevelGroupOptions {
+  /** Name (required) */
+  readonly name: string;
+  /** Unique name (required) */
+  readonly uniqueName: string;
+  /** Caption (required) */
+  readonly caption: string;
+  /** Unique parent */
+  readonly uniqueParent?: string;
+  /** Group ID */
+  readonly id?: number;
+  /** Members */
+  readonly members: readonly GroupMemberOptions[];
+}
+
+/** Group level (CT_GroupLevel) */
+export interface GroupLevelOptions {
+  /** Unique name (required) */
+  readonly uniqueName: string;
+  /** Caption (required) */
+  readonly caption: string;
+  /** User-defined */
+  readonly user?: boolean;
+  /** Custom roll-up */
+  readonly customRollUp?: boolean;
+  /** Groups */
+  readonly groups?: readonly LevelGroupOptions[];
+}
+
+/** Field usage (CT_FieldUsage) */
+export interface FieldUsageOptions {
+  /** Field index */
+  readonly value: number;
+}
+
+/** Hierarchy usage (CT_HierarchyUsage) */
+export interface HierarchyUsageOptions {
+  /** Hierarchy usage value (required) */
+  readonly hierarchyUsage: number;
+}
+
+/** Query cache entry (CT_Query) */
+export interface QueryCacheEntryOptions {
+  /** MDX query string (required) */
+  readonly mdx: string;
+  /** Tuples */
+  readonly tpls?: readonly TupleOptions[];
+}
+
+/** Tuple (CT_Tuple) */
+export interface TupleOptions {
+  /** Tuple items (field indices) */
+  readonly items?: readonly number[];
+}
+
+/** Member property map (CT_X, used as mpMap child) */
+export interface MpMapOptions {
+  /** Field index */
+  readonly x: number;
+}
+
+/** Measure dimension map (CT_MeasureDimensionMap) */
+export interface MeasureDimensionMapOptions {
+  /** Measure group index */
+  readonly measureGroup?: number;
+  /** Dimension index */
+  readonly dimension?: number;
 }
 
 /** OLAP properties for pivot cache (CT_OlapPr) */

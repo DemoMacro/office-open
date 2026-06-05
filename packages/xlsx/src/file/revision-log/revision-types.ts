@@ -215,6 +215,66 @@ export interface RevisionDefinedNameOptions {
   readonly oldComment?: string;
 }
 
+/** Reviewed revision (CT_Reviewed) */
+export interface RevisionReviewedOptions {
+  /** Revision ID */
+  readonly rId: number;
+}
+
+/** Undo revision (CT_Undo) — wraps inner revision entries that were undone */
+export interface RevisionUndoOptions {
+  /** Revision ID of the undo action */
+  readonly rId: number;
+}
+
+/** Auto formatting revision (CT_RevisionAutoFormatting) */
+export interface RevisionAutoFormattingOptions {
+  /** Revision ID */
+  readonly rId: number;
+  /** Sheet index */
+  readonly sheetIndex?: number;
+  /** Cell reference */
+  readonly ref?: string;
+}
+
+/** Custom view revision (CT_RevisionCustomView) */
+export interface RevisionCustomViewOptions {
+  /** Revision ID */
+  readonly rId: number;
+  /** GUID */
+  readonly guid?: string;
+}
+
+/** Sheet rename revision (CT_RevisionSheetRename) */
+export interface RevisionSheetRenameOptions {
+  /** Revision ID */
+  readonly rId: number;
+  /** Sheet index */
+  readonly sheetIndex?: number;
+  /** Old sheet name */
+  readonly oldName?: string;
+  /** New sheet name */
+  readonly newName?: string;
+}
+
+/** Query table field revision (CT_RevisionQueryTableField) */
+export interface RevisionQueryTableFieldOptions {
+  /** Revision ID */
+  readonly rId: number;
+  /** Sheet index */
+  readonly sheetIndex?: number;
+  /** Field ID */
+  readonly fieldId?: number;
+}
+
+/** Conflict revision (CT_RevisionConflict) */
+export interface RevisionConflictOptions {
+  /** Revision ID */
+  readonly rId: number;
+  /** Sheet index */
+  readonly sheetIndex?: number;
+}
+
 /** Union type for all revision entries */
 export type RevisionEntry =
   | { readonly type: "rowColumn"; readonly data: RevisionRowColumnOptions }
@@ -223,9 +283,34 @@ export type RevisionEntry =
   | { readonly type: "formatting"; readonly data: RevisionFormattingOptions }
   | { readonly type: "insertSheet"; readonly data: RevisionInsertSheetOptions }
   | { readonly type: "comment"; readonly data: RevisionCommentOptions }
-  | { readonly type: "definedName"; readonly data: RevisionDefinedNameOptions };
+  | { readonly type: "definedName"; readonly data: RevisionDefinedNameOptions }
+  | { readonly type: "reviewed"; readonly data: RevisionReviewedOptions }
+  | { readonly type: "undo"; readonly data: RevisionUndoOptions }
+  | { readonly type: "autoFormatting"; readonly data: RevisionAutoFormattingOptions }
+  | { readonly type: "customView"; readonly data: RevisionCustomViewOptions }
+  | { readonly type: "sheetRename"; readonly data: RevisionSheetRenameOptions }
+  | { readonly type: "queryTableField"; readonly data: RevisionQueryTableFieldOptions }
+  | { readonly type: "conflict"; readonly data: RevisionConflictOptions };
 
 export interface RevisionLogOptions {
   /** Revision entries */
   readonly revisions?: readonly RevisionEntry[];
+}
+
+/** Shared user info (CT_SharedUser) */
+export interface SharedUserOptions {
+  /** GUID (required) */
+  readonly guid: string;
+  /** User name (required) */
+  readonly name: string;
+  /** User ID (required) */
+  readonly id: number;
+  /** Date of last edit */
+  readonly dateTime?: string;
+}
+
+/** Users collection (CT_Users) */
+export interface UsersOptions {
+  /** User entries */
+  readonly users?: readonly SharedUserOptions[];
 }

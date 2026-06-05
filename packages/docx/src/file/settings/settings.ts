@@ -2,6 +2,13 @@ import {
   FootnotePositionType,
   EndnotePositionType,
 } from "@file/document/body/section-properties/properties/footnote-endnote-properties";
+import {
+  BuilderElement,
+  XmlComponent,
+  numberValObj,
+  onOffObj,
+  stringValObj,
+} from "@file/xml-components";
 /**
  * Settings module for WordprocessingML documents.
  *
@@ -12,13 +19,7 @@ import {
  *
  * @module
  */
-import {
-  BuilderElement,
-  XmlComponent,
-  numberValObj,
-  onOffObj,
-  stringValObj,
-} from "@file/xml-components";
+import { derivePasswordHash } from "@office-open/core";
 
 import { Compatibility } from "./compatibility";
 import type { CompatibilityOptions } from "./compatibility";
@@ -402,6 +403,8 @@ export interface DocumentProtectionOptions {
   readonly edit?: "none" | "readOnly" | "comments" | "trackedChanges" | "forms";
   /** Whether formatting is restricted */
   readonly formatting?: boolean;
+  /** Plaintext password — automatically hashed to hashValue/saltValue when provided */
+  readonly password?: string;
   /** Password hash (SHA-512 base64) */
   readonly hashValue?: string;
   /** Password salt (base64) */
@@ -415,25 +418,25 @@ export interface DocumentProtectionOptions {
   /** Password algorithm name */
   readonly algorithmName?: string;
   /** Cryptographic algorithm class */
-  readonly cryptographicAlgorithmClass?: string;
+  readonly cryptoAlgorithmClass?: string;
   /** Cryptographic algorithm SID */
-  readonly cryptographicAlgorithmSid?: number;
+  readonly cryptoAlgorithmSid?: number;
   /** Cryptographic algorithm type */
-  readonly cryptographicAlgorithmType?: string;
+  readonly cryptoAlgorithmType?: string;
   /** Cryptographic provider */
-  readonly cryptographicProvider?: string;
+  readonly cryptoProvider?: string;
   /** Cryptographic provider type */
-  readonly cryptographicProviderType?: string;
+  readonly cryptoProviderType?: string;
   /** Cryptographic provider type extension */
-  readonly cryptographicProviderTypeExtension?: number;
+  readonly cryptoProviderTypeExtension?: number;
   /** Cryptographic provider type extension source */
-  readonly cryptographicProviderTypeExtensionSource?: string;
+  readonly cryptoProviderTypeExtensionSource?: string;
   /** Algorithm extension ID */
   readonly algorithmExtensionId?: number;
   /** Algorithm extension source */
   readonly algorithmExtensionSource?: string;
   /** Legacy cryptographic spin count (AG_TransitionalPassword) */
-  readonly cryptSpinCount?: number;
+  readonly cryptoSpinCount?: number;
 }
 
 /**
@@ -442,6 +445,8 @@ export interface DocumentProtectionOptions {
  * Reference: ISO/IEC 29500-4, wml.xsd, CT_WriteProtection
  */
 export interface WriteProtectionOptions {
+  /** Plaintext password — automatically hashed to hashValue/saltValue when provided */
+  readonly password?: string;
   /** Cryptographic hash of the password */
   readonly hashValue?: string;
   /** Salt value for the hash (base64) */
@@ -457,25 +462,25 @@ export interface WriteProtectionOptions {
   /** Whether write protection is recommended (default true when options provided) */
   readonly recommended?: boolean;
   /** Cryptographic algorithm class */
-  readonly cryptographicAlgorithmClass?: string;
+  readonly cryptoAlgorithmClass?: string;
   /** Cryptographic algorithm SID */
-  readonly cryptographicAlgorithmSid?: number;
+  readonly cryptoAlgorithmSid?: number;
   /** Cryptographic algorithm type */
-  readonly cryptographicAlgorithmType?: string;
+  readonly cryptoAlgorithmType?: string;
   /** Cryptographic provider */
-  readonly cryptographicProvider?: string;
+  readonly cryptoProvider?: string;
   /** Cryptographic provider type */
-  readonly cryptographicProviderType?: string;
+  readonly cryptoProviderType?: string;
   /** Cryptographic provider type extension */
-  readonly cryptographicProviderTypeExtension?: number;
+  readonly cryptoProviderTypeExtension?: number;
   /** Cryptographic provider type extension source */
-  readonly cryptographicProviderTypeExtensionSource?: string;
+  readonly cryptoProviderTypeExtensionSource?: string;
   /** Algorithm extension ID */
   readonly algorithmExtensionId?: number;
   /** Algorithm extension source */
   readonly algorithmExtensionSource?: string;
   /** Legacy cryptographic spin count (AG_TransitionalPassword) */
-  readonly cryptSpinCount?: number;
+  readonly cryptoSpinCount?: number;
 }
 
 // ── Mail Merge types ──
@@ -1326,14 +1331,23 @@ class DocumentProtection extends XmlComponent {
     if (options.formatting !== undefined) {
       attr["w:formatting"] = options.formatting ? "1" : "0";
     }
-    if (options.algorithmName !== undefined) {
-      attr["w:algorithmName"] = options.algorithmName;
+    // Auto-derive hash from plaintext password
+    let derived: ReturnType<typeof derivePasswordHash> | undefined;
+    if (options.password !== undefined && options.hashValue === undefined) {
+      derived = derivePasswordHash(options.password);
     }
-    if (options.hashValue !== undefined) {
-      attr["w:hashValue"] = options.hashValue;
+    const hashValue = options.hashValue ?? derived?.hashValue;
+    const saltValue = options.saltValue ?? derived?.saltValue;
+    const spinCount = options.spinCount ?? derived?.spinCount;
+    const algorithmName = options.algorithmName ?? derived?.algorithmName;
+    if (algorithmName !== undefined) {
+      attr["w:algorithmName"] = algorithmName;
     }
-    if (options.saltValue !== undefined) {
-      attr["w:saltValue"] = options.saltValue;
+    if (hashValue !== undefined) {
+      attr["w:hashValue"] = hashValue;
+    }
+    if (saltValue !== undefined) {
+      attr["w:saltValue"] = saltValue;
     }
     if (options.hash !== undefined) {
       attr["w:hash"] = options.hash;
@@ -1341,29 +1355,29 @@ class DocumentProtection extends XmlComponent {
     if (options.salt !== undefined) {
       attr["w:salt"] = options.salt;
     }
-    if (options.spinCount !== undefined) {
-      attr["w:spinCount"] = options.spinCount;
+    if (spinCount !== undefined) {
+      attr["w:spinCount"] = spinCount;
     }
-    if (options.cryptographicAlgorithmClass !== undefined) {
-      attr["w:cryptAlgorithmClass"] = options.cryptographicAlgorithmClass;
+    if (options.cryptoAlgorithmClass !== undefined) {
+      attr["w:cryptAlgorithmClass"] = options.cryptoAlgorithmClass;
     }
-    if (options.cryptographicAlgorithmSid !== undefined) {
-      attr["w:cryptAlgorithmSid"] = options.cryptographicAlgorithmSid;
+    if (options.cryptoAlgorithmSid !== undefined) {
+      attr["w:cryptAlgorithmSid"] = options.cryptoAlgorithmSid;
     }
-    if (options.cryptographicAlgorithmType !== undefined) {
-      attr["w:cryptAlgorithmType"] = options.cryptographicAlgorithmType;
+    if (options.cryptoAlgorithmType !== undefined) {
+      attr["w:cryptAlgorithmType"] = options.cryptoAlgorithmType;
     }
-    if (options.cryptographicProvider !== undefined) {
-      attr["w:cryptProvider"] = options.cryptographicProvider;
+    if (options.cryptoProvider !== undefined) {
+      attr["w:cryptProvider"] = options.cryptoProvider;
     }
-    if (options.cryptographicProviderType !== undefined) {
-      attr["w:cryptProviderType"] = options.cryptographicProviderType;
+    if (options.cryptoProviderType !== undefined) {
+      attr["w:cryptProviderType"] = options.cryptoProviderType;
     }
-    if (options.cryptographicProviderTypeExtension !== undefined) {
-      attr["w:cryptProviderTypeExt"] = options.cryptographicProviderTypeExtension;
+    if (options.cryptoProviderTypeExtension !== undefined) {
+      attr["w:cryptProviderTypeExt"] = options.cryptoProviderTypeExtension;
     }
-    if (options.cryptographicProviderTypeExtensionSource !== undefined) {
-      attr["w:cryptProviderTypeExtSource"] = options.cryptographicProviderTypeExtensionSource;
+    if (options.cryptoProviderTypeExtensionSource !== undefined) {
+      attr["w:cryptProviderTypeExtSource"] = options.cryptoProviderTypeExtensionSource;
     }
     if (options.algorithmExtensionId !== undefined) {
       attr["w:algIdExt"] = options.algorithmExtensionId;
@@ -1371,8 +1385,8 @@ class DocumentProtection extends XmlComponent {
     if (options.algorithmExtensionSource !== undefined) {
       attr["w:algIdExtSource"] = options.algorithmExtensionSource;
     }
-    if (options.cryptSpinCount !== undefined) {
-      attr["w:cryptSpinCount"] = options.cryptSpinCount;
+    if (options.cryptoSpinCount !== undefined) {
+      attr["w:cryptSpinCount"] = options.cryptoSpinCount;
     }
     this.root.push({ _attr: attr });
   }
@@ -1403,11 +1417,20 @@ class WriteProtection extends XmlComponent {
     if (options.recommended !== undefined) {
       attr["w:recommended"] = options.recommended ? "1" : "0";
     }
-    if (options.hashValue !== undefined) {
-      attr["w:hashValue"] = options.hashValue;
+    // Auto-derive hash from plaintext password
+    let derived: ReturnType<typeof derivePasswordHash> | undefined;
+    if (options.password !== undefined && options.hashValue === undefined) {
+      derived = derivePasswordHash(options.password);
     }
-    if (options.saltValue !== undefined) {
-      attr["w:saltValue"] = options.saltValue;
+    const hashValue = options.hashValue ?? derived?.hashValue;
+    const saltValue = options.saltValue ?? derived?.saltValue;
+    const spinCount = options.spinCount ?? derived?.spinCount;
+    const algorithmName = options.algorithmName ?? derived?.algorithmName;
+    if (hashValue !== undefined) {
+      attr["w:hashValue"] = hashValue;
+    }
+    if (saltValue !== undefined) {
+      attr["w:saltValue"] = saltValue;
     }
     if (options.hash !== undefined) {
       attr["w:hash"] = options.hash;
@@ -1415,26 +1438,26 @@ class WriteProtection extends XmlComponent {
     if (options.salt !== undefined) {
       attr["w:salt"] = options.salt;
     }
-    if (options.spinCount !== undefined) {
-      attr["w:spinCount"] = options.spinCount;
+    if (spinCount !== undefined) {
+      attr["w:spinCount"] = spinCount;
     }
-    if (options.algorithmName !== undefined) {
-      attr["w:algorithmName"] = options.algorithmName;
+    if (algorithmName !== undefined) {
+      attr["w:algorithmName"] = algorithmName;
     }
-    if (options.cryptographicAlgorithmClass !== undefined) {
-      attr["w:cryptAlgorithmClass"] = options.cryptographicAlgorithmClass;
+    if (options.cryptoAlgorithmClass !== undefined) {
+      attr["w:cryptAlgorithmClass"] = options.cryptoAlgorithmClass;
     }
-    if (options.cryptographicAlgorithmSid !== undefined) {
-      attr["w:cryptAlgorithmSid"] = options.cryptographicAlgorithmSid;
+    if (options.cryptoAlgorithmSid !== undefined) {
+      attr["w:cryptAlgorithmSid"] = options.cryptoAlgorithmSid;
     }
-    if (options.cryptographicAlgorithmType !== undefined) {
-      attr["w:cryptAlgorithmType"] = options.cryptographicAlgorithmType;
+    if (options.cryptoAlgorithmType !== undefined) {
+      attr["w:cryptAlgorithmType"] = options.cryptoAlgorithmType;
     }
-    if (options.cryptographicProvider !== undefined) {
-      attr["w:cryptProvider"] = options.cryptographicProvider;
+    if (options.cryptoProvider !== undefined) {
+      attr["w:cryptProvider"] = options.cryptoProvider;
     }
-    if (options.cryptographicProviderType !== undefined) {
-      attr["w:cryptProviderType"] = options.cryptographicProviderType;
+    if (options.cryptoProviderType !== undefined) {
+      attr["w:cryptProviderType"] = options.cryptoProviderType;
     }
     if (options.algorithmExtensionId !== undefined) {
       attr["w:algIdExt"] = options.algorithmExtensionId;
@@ -1442,14 +1465,14 @@ class WriteProtection extends XmlComponent {
     if (options.algorithmExtensionSource !== undefined) {
       attr["w:algIdExtSource"] = options.algorithmExtensionSource;
     }
-    if (options.cryptographicProviderTypeExtension !== undefined) {
-      attr["w:cryptProviderTypeExt"] = options.cryptographicProviderTypeExtension;
+    if (options.cryptoProviderTypeExtension !== undefined) {
+      attr["w:cryptProviderTypeExt"] = options.cryptoProviderTypeExtension;
     }
-    if (options.cryptographicProviderTypeExtensionSource !== undefined) {
-      attr["w:cryptProviderTypeExtSource"] = options.cryptographicProviderTypeExtensionSource;
+    if (options.cryptoProviderTypeExtensionSource !== undefined) {
+      attr["w:cryptProviderTypeExtSource"] = options.cryptoProviderTypeExtensionSource;
     }
-    if (options.cryptSpinCount !== undefined) {
-      attr["w:cryptSpinCount"] = options.cryptSpinCount;
+    if (options.cryptoSpinCount !== undefined) {
+      attr["w:cryptSpinCount"] = options.cryptoSpinCount;
     }
     this.root.push({ _attr: attr });
   }

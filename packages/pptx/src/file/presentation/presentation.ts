@@ -1,10 +1,18 @@
 import { XmlComponent } from "@file/xml-components";
 import type { Context } from "@file/xml-components";
+import { derivePasswordHash } from "@office-open/core";
 
 export interface PhotoAlbumOptions {
   readonly blackWhite?: boolean;
   readonly showCaptions?: boolean;
-  readonly layout?: "fitToSlide" | "1Photo" | "2Photo" | "4Photo";
+  readonly layout?:
+    | "fitToSlide"
+    | "1pic"
+    | "2pic"
+    | "4pic"
+    | "1picTitle"
+    | "2picTitle"
+    | "4picTitle";
   readonly frame?:
     | "frameStyle1"
     | "frameStyle2"
@@ -12,26 +20,29 @@ export interface PhotoAlbumOptions {
     | "frameStyle4"
     | "frameStyle5"
     | "frameStyle6"
+    | "frameStyle7"
     | "none";
 }
 
 export interface ModifyVerifierOptions {
+  /** Plaintext password — automatically hashed to hashValue/saltValue when provided */
+  readonly password?: string;
   readonly algorithmName?: string;
   readonly hashValue?: string;
   readonly saltValue?: string;
   readonly spinValue?: number;
-  readonly cryptProviderType?: string;
-  readonly cryptAlgorithmClass?: string;
-  readonly cryptAlgorithmType?: string;
-  readonly cryptAlgorithmSid?: number;
+  readonly cryptoProviderType?: string;
+  readonly cryptoAlgorithmClass?: string;
+  readonly cryptoAlgorithmType?: string;
+  readonly cryptoAlgorithmSid?: number;
   readonly spinCount?: number;
   readonly saltData?: string;
   readonly hashData?: string;
-  readonly cryptProvider?: string;
-  readonly algorithmIdExtension?: number;
-  readonly algorithmIdExtensionSource?: string;
-  readonly cryptProviderTypeExtension?: number;
-  readonly cryptProviderTypeExtensionSource?: string;
+  readonly cryptoProvider?: string;
+  readonly algorithmExtensionId?: number;
+  readonly algorithmExtensionSource?: string;
+  readonly cryptoProviderTypeExtension?: number;
+  readonly cryptoProviderTypeExtensionSource?: string;
 }
 
 export interface PresentationOptions {
@@ -165,28 +176,38 @@ export class Presentation extends XmlComponent {
 
     if (opts.modifyVerifier) {
       const mv = opts.modifyVerifier;
+      // Auto-derive hash from plaintext password
+      let derived: ReturnType<typeof derivePasswordHash> | undefined;
+      if (mv.password !== undefined && mv.hashValue === undefined) {
+        derived = derivePasswordHash(mv.password);
+      }
+      const hashValue = mv.hashValue ?? derived?.hashValue;
+      const saltValue = mv.saltValue ?? derived?.saltValue;
+      const spinCount = mv.spinCount ?? derived?.spinCount;
+      const algorithmName = mv.algorithmName ?? derived?.algorithmName;
       const mvAttrs: string[] = [];
-      if (mv.algorithmName) mvAttrs.push(` algorithmName="${mv.algorithmName}"`);
-      if (mv.hashValue) mvAttrs.push(` hashValue="${mv.hashValue}"`);
-      if (mv.saltValue) mvAttrs.push(` saltValue="${mv.saltValue}"`);
+      if (algorithmName) mvAttrs.push(` algorithmName="${algorithmName}"`);
+      if (hashValue) mvAttrs.push(` hashValue="${hashValue}"`);
+      if (saltValue) mvAttrs.push(` saltValue="${saltValue}"`);
       if (mv.spinValue !== undefined) mvAttrs.push(` spinValue="${mv.spinValue}"`);
-      if (mv.cryptProviderType) mvAttrs.push(` cryptProviderType="${mv.cryptProviderType}"`);
-      if (mv.cryptAlgorithmClass) mvAttrs.push(` cryptAlgorithmClass="${mv.cryptAlgorithmClass}"`);
-      if (mv.cryptAlgorithmType) mvAttrs.push(` cryptAlgorithmType="${mv.cryptAlgorithmType}"`);
-      if (mv.cryptAlgorithmSid !== undefined)
-        mvAttrs.push(` cryptAlgorithmSid="${mv.cryptAlgorithmSid}"`);
-      if (mv.spinCount !== undefined) mvAttrs.push(` spinCount="${mv.spinCount}"`);
+      if (mv.cryptoProviderType) mvAttrs.push(` cryptProviderType="${mv.cryptoProviderType}"`);
+      if (mv.cryptoAlgorithmClass)
+        mvAttrs.push(` cryptAlgorithmClass="${mv.cryptoAlgorithmClass}"`);
+      if (mv.cryptoAlgorithmType) mvAttrs.push(` cryptAlgorithmType="${mv.cryptoAlgorithmType}"`);
+      if (mv.cryptoAlgorithmSid !== undefined)
+        mvAttrs.push(` cryptAlgorithmSid="${mv.cryptoAlgorithmSid}"`);
+      if (spinCount !== undefined) mvAttrs.push(` spinCount="${spinCount}"`);
       if (mv.saltData) mvAttrs.push(` saltData="${mv.saltData}"`);
       if (mv.hashData) mvAttrs.push(` hashData="${mv.hashData}"`);
-      if (mv.cryptProvider) mvAttrs.push(` cryptProvider="${mv.cryptProvider}"`);
-      if (mv.algorithmIdExtension !== undefined)
-        mvAttrs.push(` algIdExt="${mv.algorithmIdExtension}"`);
-      if (mv.algorithmIdExtensionSource)
-        mvAttrs.push(` algIdExtSource="${mv.algorithmIdExtensionSource}"`);
-      if (mv.cryptProviderTypeExtension !== undefined)
-        mvAttrs.push(` cryptProviderTypeExt="${mv.cryptProviderTypeExtension}"`);
-      if (mv.cryptProviderTypeExtensionSource)
-        mvAttrs.push(` cryptProviderTypeExtSource="${mv.cryptProviderTypeExtensionSource}"`);
+      if (mv.cryptoProvider) mvAttrs.push(` cryptProvider="${mv.cryptoProvider}"`);
+      if (mv.algorithmExtensionId !== undefined)
+        mvAttrs.push(` algIdExt="${mv.algorithmExtensionId}"`);
+      if (mv.algorithmExtensionSource)
+        mvAttrs.push(` algIdExtSource="${mv.algorithmExtensionSource}"`);
+      if (mv.cryptoProviderTypeExtension !== undefined)
+        mvAttrs.push(` cryptProviderTypeExt="${mv.cryptoProviderTypeExtension}"`);
+      if (mv.cryptoProviderTypeExtensionSource)
+        mvAttrs.push(` cryptProviderTypeExtSource="${mv.cryptoProviderTypeExtensionSource}"`);
       s += `<p:modifyVerifier${mvAttrs.join("")}/>`;
     }
     s += "</p:presentation>";

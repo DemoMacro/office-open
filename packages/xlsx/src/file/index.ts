@@ -89,3 +89,16 @@ export type {
   RevisionLogOptions,
 } from "./revision-log";
 export { RevisionHeadersXml, RevisionLogXml } from "./revision-log";
+export { ConnectionsXml } from "./connection";
+export type { ConnectionOptions, DbPrOptions, WebPrOptions, ParameterOptions } from "./connection";
+export { MapInfoXml, SingleXmlCellsXml, XmlColumnPrXml } from "./xml-mapping";
+export type {
+  MapInfoOptions,
+  SchemaOptions,
+  MapOptions,
+  DataBindingOptions,
+  XmlPrOptions,
+  XmlCellPrOptions,
+  SingleXmlCellOptions,
+  XmlColumnPrOptions,
+} from "./xml-mapping";

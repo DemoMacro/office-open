@@ -22,6 +22,9 @@ import type {
   FieldGroupOptions,
   ConsolidationOptions,
   TupleCacheEntryOptions,
+  QueryCacheEntryOptions,
+  MpMapOptions,
+  MeasureDimensionMapOptions,
 } from "./pivot-utils";
 import { collectUniqueValues, isNumericField } from "./pivot-utils";
 
@@ -68,6 +71,12 @@ export interface PivotCacheDefinitionOptions {
   readonly consolidation?: ConsolidationOptions;
   /** Tuple cache entries (CT_PCDSDTCEntries) */
   readonly entries?: readonly TupleCacheEntryOptions[];
+  /** Query cache (CT_QueryCache in tupleCache) */
+  readonly queryCache?: readonly QueryCacheEntryOptions[];
+  /** Member property map per cache field (mpMap) */
+  readonly mpMaps?: readonly MpMapOptions[];
+  /** Measure dimension maps (CT_MeasureDimensionMaps) */
+  readonly measureDimensionMaps?: readonly MeasureDimensionMapOptions[];
 }
 
 export class PivotCacheDefinitionXml extends BaseXmlComponent {
@@ -282,6 +291,13 @@ export class PivotCacheDefinitionXml extends BaseXmlComponent {
 
     p.push("</cacheFields>");
 
+    // mpMap elements — rendered once outside cacheFields (CT_PivotCacheDefinition sequence)
+    if (this.cacheDefOpts?.mpMaps) {
+      for (const mp of this.cacheDefOpts.mpMaps) {
+        p.push(`<mpMap x="${mp.x}"/>`);
+      }
+    }
+
     // olapPr (optional)
     if (this.olapPr) {
       const olAttrs: string[] = [];
@@ -331,7 +347,66 @@ export class PivotCacheDefinitionXml extends BaseXmlComponent {
         if (ch.measures) chAttrs.push('measures="1"');
         if (ch.oneField) chAttrs.push('oneField="1"');
         if (ch.hidden) chAttrs.push('hidden="1"');
-        p.push(`<cacheHierarchy ${chAttrs.join(" ")}/>`);
+
+        // groupLevels and fieldsUsage (optional children)
+        const hasGroupLevels = ch.groupLevels && ch.groupLevels.length > 0;
+        const hasFieldsUsage = ch.fieldsUsage && ch.fieldsUsage.length > 0;
+
+        if (hasGroupLevels || hasFieldsUsage) {
+          p.push(`<cacheHierarchy ${chAttrs.join(" ")}>`);
+          // fieldsUsage (CT_FieldsUsage)
+          if (hasFieldsUsage) {
+            const fuParts = [`<fieldsUsage count="${ch.fieldsUsage!.length}">`];
+            for (const fu of ch.fieldsUsage!) {
+              fuParts.push(`<fieldUsage v="${fu.value}"/>`);
+            }
+            fuParts.push("</fieldsUsage>");
+            p.push(fuParts.join(""));
+          }
+          // groupLevels (CT_GroupLevels)
+          if (hasGroupLevels) {
+            const glParts = [`<groupLevels count="${ch.groupLevels!.length}">`];
+            for (const gl of ch.groupLevels!) {
+              const glAttrs = [
+                `uniqueName="${escapeXml(gl.uniqueName)}"`,
+                `caption="${escapeXml(gl.caption)}"`,
+              ];
+              if (gl.user) glAttrs.push('user="1"');
+              if (gl.customRollUp) glAttrs.push('customRollUp="1"');
+              if (gl.groups && gl.groups.length > 0) {
+                glParts.push(
+                  `<groupLevel ${glAttrs.join(" ")}><groups count="${gl.groups.length}">`,
+                );
+                for (const lg of gl.groups) {
+                  const lgAttrs = [
+                    `name="${escapeXml(lg.name)}"`,
+                    `uniqueName="${escapeXml(lg.uniqueName)}"`,
+                    `caption="${escapeXml(lg.caption)}"`,
+                  ];
+                  if (lg.uniqueParent) lgAttrs.push(`uniqueParent="${escapeXml(lg.uniqueParent)}"`);
+                  if (lg.id !== undefined) lgAttrs.push(`id="${lg.id}"`);
+                  glParts.push(
+                    `<group ${lgAttrs.join(" ")}><groupMembers count="${lg.members.length}">`,
+                  );
+                  for (const gm of lg.members) {
+                    const gmAttrs = [`uniqueName="${escapeXml(gm.uniqueName)}"`];
+                    if (gm.group) gmAttrs.push('group="1"');
+                    glParts.push(`<groupMember ${gmAttrs.join(" ")}/>`);
+                  }
+                  glParts.push("</groupMembers></group>");
+                }
+                glParts.push("</groups></groupLevel>");
+              } else {
+                glParts.push(`<groupLevel ${glAttrs.join(" ")}/>`);
+              }
+            }
+            glParts.push("</groupLevels>");
+            p.push(glParts.join(""));
+          }
+          p.push("</cacheHierarchy>");
+        } else {
+          p.push(`<cacheHierarchy ${chAttrs.join(" ")}/>`);
+        }
       }
       p.push("</cacheHierarchies>");
     }
@@ -369,6 +444,22 @@ export class PivotCacheDefinitionXml extends BaseXmlComponent {
       p.push("</measureGroups>");
     }
 
+    // maps (CT_MeasureDimensionMaps, after measureGroups per XSD)
+    if (
+      this.cacheDefOpts?.measureDimensionMaps &&
+      this.cacheDefOpts.measureDimensionMaps.length > 0
+    ) {
+      const mdm = this.cacheDefOpts.measureDimensionMaps;
+      p.push(`<maps count="${mdm.length}">`);
+      for (const m of mdm) {
+        const mAttrs: string[] = [];
+        if (m.measureGroup !== undefined) mAttrs.push(`measureGroup="${m.measureGroup}"`);
+        if (m.dimension !== undefined) mAttrs.push(`dimension="${m.dimension}"`);
+        p.push(`<map ${mAttrs.join(" ")}/>`);
+      }
+      p.push("</maps>");
+    }
+
     // dimensions (optional)
     if (this.cacheDefOpts?.dimensions && this.cacheDefOpts.dimensions.length > 0) {
       const dims = this.cacheDefOpts.dimensions;
@@ -390,7 +481,8 @@ export class PivotCacheDefinitionXml extends BaseXmlComponent {
     const hasEntries = cd?.entries && cd.entries.length > 0;
     const hasSets = cd?.sets && cd.sets.length > 0;
     const hasServerFormats = cd?.serverFormats && cd.serverFormats.length > 0;
-    if (hasEntries || hasSets || hasServerFormats) {
+    const hasQueryCache = cd?.queryCache && cd.queryCache.length > 0;
+    if (hasEntries || hasSets || hasServerFormats || hasQueryCache) {
       p.push("<tupleCache>");
       // entries (CT_PCDSDTCEntries)
       if (hasEntries) {
@@ -398,6 +490,8 @@ export class PivotCacheDefinitionXml extends BaseXmlComponent {
         for (const ent of cd!.entries!) {
           if (ent.type === "m") {
             entParts.push("<m/>");
+          } else if (ent.type === "e" && ent.value !== undefined) {
+            entParts.push(`<e v="${ent.value}"/>`);
           } else if (ent.value !== undefined) {
             entParts.push(`<${ent.type} v="${ent.value}"/>`);
           }
@@ -429,6 +523,32 @@ export class PivotCacheDefinitionXml extends BaseXmlComponent {
         }
         p.push("</serverFormats>");
       }
+      // queryCache (CT_QueryCache)
+      if (hasQueryCache) {
+        const qc = cd!.queryCache!;
+        p.push(`<queryCache count="${qc.length}">`);
+        for (const q of qc) {
+          let qInner = "";
+          if (q.tpls && q.tpls.length > 0) {
+            qInner = `<tpls count="${q.tpls.length}">`;
+            for (const tpl of q.tpls) {
+              if (tpl.items && tpl.items.length > 0) {
+                qInner += `<tpl>${tpl.items.map((i) => `<x v="${i}"/>`).join("")}</tpl>`;
+              } else {
+                qInner += "<tpl/>";
+              }
+            }
+            qInner += "</tpls>";
+          }
+          if (qInner) {
+            p.push(`<query mdx="${escapeXml(q.mdx)}">${qInner}</query>`);
+          } else {
+            p.push(`<query mdx="${escapeXml(q.mdx)}"/>`);
+          }
+        }
+        p.push("</queryCache>");
+      }
+
       p.push("</tupleCache>");
     }
 

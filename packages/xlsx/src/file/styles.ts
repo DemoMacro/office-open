@@ -241,6 +241,14 @@ export interface TableStyleElementOptions {
 }
 
 /** Custom table/pivot table style (CT_TableStyle). */
+/** Style sheet extension (CT_Extension) */
+export interface StyleExtensionOptions {
+  /** Extension URI (required) */
+  readonly uri: string;
+  /** Extension content (raw XML fragment) */
+  readonly content?: string;
+}
+
 export interface CustomTableStyleOptions {
   /** Style name (must be unique) */
   readonly name: string;
@@ -288,6 +296,8 @@ export class Styles extends BaseXmlComponent {
 
   private colors?: ColorsOptions;
   private tableStyles?: readonly CustomTableStyleOptions[];
+  /** Style sheet extensions (CT_ExtensionList) */
+  private styleExtensions?: readonly StyleExtensionOptions[];
 
   public constructor() {
     super("styleSheet");
@@ -350,6 +360,10 @@ export class Styles extends BaseXmlComponent {
 
   public setTableStyles(styles: readonly CustomTableStyleOptions[]): void {
     this.tableStyles = styles;
+  }
+
+  public setExtensions(extensions: readonly StyleExtensionOptions[]): void {
+    this.styleExtensions = extensions;
   }
 
   private registerFont(opts?: FontOptions): number {
@@ -589,7 +603,21 @@ export class Styles extends BaseXmlComponent {
       p.push(colorParts.join(""));
     }
 
-    p.push("<extLst/>");
+    // extLst — style sheet extensions
+    if (this.styleExtensions && this.styleExtensions.length > 0) {
+      const extParts: string[] = ["<extLst>"];
+      for (const ext of this.styleExtensions) {
+        if (ext.content) {
+          extParts.push(`<ext uri="${ext.uri}">${ext.content}</ext>`);
+        } else {
+          extParts.push(`<ext uri="${ext.uri}"/>`);
+        }
+      }
+      extParts.push("</extLst>");
+      p.push(extParts.join(""));
+    } else {
+      p.push("<extLst/>");
+    }
 
     p.push("</styleSheet>");
     return p.join("");
@@ -617,11 +645,11 @@ export class Styles extends BaseXmlComponent {
 
   private borderXmlStr(b: BorderSideOptions): string {
     const parts: string[] = [];
-    const renderSide = (name: string, opts: BorderOptions | undefined) => {
+    const renderSide = (name: string, opts: BorderOptions | undefined, required = true) => {
       if (opts && opts.style && opts.style !== "none") {
         const colorStr = opts.color ? `<color rgb="FF${opts.color}"/>` : "";
         parts.push(`<${name} style="${opts.style}">${colorStr}</${name}>`);
-      } else {
+      } else if (required) {
         parts.push(`<${name}/>`);
       }
     };
@@ -631,13 +659,14 @@ export class Styles extends BaseXmlComponent {
       "top",
       "bottom",
       "diagonal",
-      "start",
-      "end",
       "vertical",
       "horizontal",
     ] as const) {
       renderSide(side, b[side] as BorderOptions | undefined);
     }
+    // start/end not in transitional XSD — only emit when styled
+    renderSide("start", b.start, false);
+    renderSide("end", b.end, false);
     return parts.join("");
   }
 
