@@ -1,12 +1,5 @@
 import { BuilderElement } from "@file/xml-components";
-import type { Context, IXmlableObject } from "@file/xml-components";
-
-/**
- * Pure function: builds a:endParaRPr XML object.
- */
-export function buildEndParagraphRunProperties(lang: string = "en-US"): IXmlableObject {
-  return { "a:endParaRPr": { _attr: { lang } } };
-}
+import type { Context } from "@file/xml-components";
 
 /**
  * a:endParaRPr — End paragraph run properties.

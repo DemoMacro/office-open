@@ -218,11 +218,6 @@ export class TableXml extends BaseXmlComponent {
         );
       }
 
-      // totalsRowFormula (only when totalsRowFunction is "custom")
-      if (col.totalsRowFunction === TotalsRowFunction.CUSTOM && col.totalsRowLabel) {
-        // Use totalsRowLabel for custom display
-      }
-
       if (col.totalsRowFunction !== undefined && col.totalsRowFunction !== TotalsRowFunction.NONE) {
         colAttrs.totalsRowFunction = col.totalsRowFunction;
       }

@@ -98,42 +98,10 @@ function buildAttrString(options: RunPropertiesOptions): string {
 }
 
 /**
- * Checks if options have any settable properties.
- */
-export function hasRunProperties(options: RunPropertiesOptions): boolean {
-  return !!(
-    options.fontSize ||
-    options.bold !== undefined ||
-    options.italic !== undefined ||
-    options.underline ||
-    options.font ||
-    options.lang ||
-    options.fill ||
-    options.hyperlink ||
-    options.strike ||
-    options.baseline !== undefined ||
-    options.spacing !== undefined ||
-    options.capitalization ||
-    options.shadow !== undefined ||
-    options.outline !== undefined ||
-    options.rightToLeft !== undefined ||
-    options.noProof !== undefined ||
-    options.dirty !== undefined ||
-    options.kumimoji !== undefined ||
-    options.alternateLanguage !== undefined ||
-    options.normalizeHeight !== undefined ||
-    options.bookmarkMark !== undefined ||
-    options.smartTagId !== undefined
-  );
-}
-
-/**
  * a:rPr — Run properties (font, size, color, etc.).
  */
 export class RunProperties extends XmlComponent {
   private readonly options: RunPropertiesOptions;
-
-  public static hasProperties = hasRunProperties;
 
   public constructor(options: RunPropertiesOptions = {}) {
     super("a:rPr");

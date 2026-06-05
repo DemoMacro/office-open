@@ -25,9 +25,22 @@ export interface BackgroundOptions {
  * p:bg — Slide background.
  */
 export class Background extends XmlComponent {
+  private readonly blackWhiteMode?: string;
+
   public constructor(options: BackgroundOptions = {}) {
     super("p:bg");
+    this.blackWhiteMode = options.blackWhiteMode;
     this.root.push(new BackgroundProperties(options));
+  }
+
+  public override toXml(context: Context): string {
+    if (this.blackWhiteMode) {
+      this.root.unshift({ _attr: { "p:bwMode": this.blackWhiteMode } });
+      const result = super.toXml(context);
+      this.root.shift();
+      return result;
+    }
+    return super.toXml(context);
   }
 }
 
