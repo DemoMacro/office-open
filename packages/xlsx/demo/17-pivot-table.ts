@@ -94,6 +94,11 @@ const wb = new Workbook({
               sortByTupleItems: [0],
             },
           ],
+          // Per-field overrides: hide detail for City field
+          fieldOverrides: [{ field: "City", defaultItemSd: false }],
+          // Additional definition attributes
+          asteriskTotals: true,
+          immersive: true,
           pivotConditionalFormats: [
             {
               priority: 1,

@@ -21,6 +21,7 @@ import type {
   PivotConditionalFormatOptions,
   ChartFormatOptions,
   PivotAreaOptions,
+  PivotFieldOverrideOptions,
 } from "./pivot-utils";
 import { collectUniqueValues } from "./pivot-utils";
 
@@ -150,15 +151,27 @@ export class PivotTableXml extends BaseXmlComponent {
     if (o.fieldListSortAscending) defAttrs.push('fieldListSortAscending="1"');
     if (o.mdxSubqueries) defAttrs.push('mdxSubqueries="1"');
     if (o.customListSort === false) defAttrs.push('customListSort="0"');
+    if (o.asteriskTotals) defAttrs.push('asteriskTotals="1"');
+    if (o.dataPosition !== undefined) defAttrs.push(`dataPosition="${o.dataPosition}"`);
+    if (o.immersive) defAttrs.push('immersive="1"');
+    if (o.vacatedStyle) defAttrs.push(`vacatedStyle="${escapeXml(o.vacatedStyle)}"`);
 
     p.push(
       `<pivotTableDefinition xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ${defAttrs.join(" ")}>`,
     );
 
     // location
-    p.push(
-      `<location ref="${escapeXml(locationRef)}" firstHeaderRow="1" firstDataRow="${colFieldIndices.length + 1}" firstDataCol="${rowFieldIndices.length}"/>`,
-    );
+    const locAttrs: string[] = [
+      `ref="${escapeXml(locationRef)}"`,
+      `firstHeaderRow="1"`,
+      `firstDataRow="${colFieldIndices.length + 1}"`,
+      `firstDataCol="${rowFieldIndices.length}"`,
+    ];
+    if (o.locationColPageCount !== undefined)
+      locAttrs.push(`colPageCount="${o.locationColPageCount}"`);
+    if (o.locationRowPageCount !== undefined)
+      locAttrs.push(`rowPageCount="${o.locationRowPageCount}"`);
+    p.push(`<location ${locAttrs.join(" ")}/>`);
 
     // pivotFields
     p.push(pivotFieldsXml);
@@ -257,6 +270,37 @@ export class PivotTableXml extends BaseXmlComponent {
     return p.join("");
   }
 
+  private buildFieldOverrideAttrs(fo: PivotFieldOverrideOptions): string {
+    const a: string[] = [];
+    if (fo.allDrilled) a.push('allDrilled="1"');
+    if (fo.autoShow) a.push('autoShow="1"');
+    if (fo.countSubtotal) a.push('countSubtotal="1"');
+    if (fo.dataSourceSort) a.push('dataSourceSort="1"');
+    if (fo.defaultAttributeDrillState) a.push('defaultAttributeDrillState="1"');
+    if (fo.hiddenLevel) a.push('hiddenLevel="1"');
+    if (fo.hideNewItems) a.push('hideNewItems="1"');
+    if (fo.insertBlankRow) a.push('insertBlankRow="1"');
+    if (fo.insertPageBreak) a.push('insertPageBreak="1"');
+    if (fo.itemPageCount) a.push('itemPageCount="1"');
+    if (fo.measureFilter) a.push('measureFilter="1"');
+    if (fo.nonAutoSortDefault) a.push('nonAutoSortDefault="1"');
+    if (fo.productSubtotal) a.push('productSubtotal="1"');
+    if (fo.rankBy !== undefined) a.push(`rankBy="${fo.rankBy}"`);
+    if (fo.serverField) a.push('serverField="1"');
+    if (fo.showDropDowns) a.push('showDropDowns="1"');
+    if (fo.showPropAsCaption) a.push('showPropAsCaption="1"');
+    if (fo.showPropCell) a.push('showPropCell="1"');
+    if (fo.showPropTip) a.push('showPropTip="1"');
+    if (fo.stdDevPSubtotal) a.push('stdDevPSubtotal="1"');
+    if (fo.stdDevSubtotal) a.push('stdDevSubtotal="1"');
+    if (fo.subtotalCaption) a.push(`subtotalCaption="${escapeXml(fo.subtotalCaption)}"`);
+    if (fo.topAutoShow) a.push('topAutoShow="1"');
+    if (fo.uniqueMemberProperty) a.push('uniqueMemberProperty="1"');
+    if (fo.varPSubtotal) a.push('varPSubtotal="1"');
+    if (fo.varSubtotal) a.push('varSubtotal="1"');
+    return a.join(" ");
+  }
+
   private buildPivotFields(
     rowIndices: readonly number[],
     colIndices: readonly number[],
@@ -272,11 +316,14 @@ export class PivotTableXml extends BaseXmlComponent {
       const isCol = colIndices.includes(i);
       const isData = dataIndices.includes(i);
       const isPage = pageIndices.includes(i);
+      const override = o.fieldOverrides?.find((fo) => fo.field === fields[i]);
+      const extraAttrs = override ? this.buildFieldOverrideAttrs(override) : "";
 
       if (isData) {
         const dataFieldIdx = dataIndices.indexOf(i);
         const df = o.data[dataFieldIdx];
         const dfAttrs: string[] = ['dataField="1"', 'showAll="0"'];
+        if (extraAttrs) dfAttrs.push(extraAttrs);
         if (df?.showDataAs) dfAttrs.push(`showDataAs="${df.showDataAs}"`);
         if (df?.baseField !== undefined) dfAttrs.push(`baseField="${df.baseField}"`);
         if (df?.baseItem !== undefined) dfAttrs.push(`baseItem="${df.baseItem}"`);
@@ -298,33 +345,43 @@ export class PivotTableXml extends BaseXmlComponent {
         }
       } else if (isRow) {
         const uniqueVals = collectUniqueValues(this.sourceData.records, i);
-        parts.push(`<pivotField axis="axisRow" showAll="0">`);
+        const rAttrs = extraAttrs
+          ? ` axis="axisRow" showAll="0" ${extraAttrs}`
+          : ' axis="axisRow" showAll="0"';
+        parts.push(`<pivotField${rAttrs}>`);
         parts.push(`<items count="${uniqueVals.length + 1}">`);
         for (let j = 0; j < uniqueVals.length; j++) {
           parts.push(`<item x="${j}"/>`);
         }
-        parts.push(`<item t="default"/>`);
+        parts.push(`<item t="default"${override?.defaultItemSd === false ? ' sd="0"' : ""}/>`);
         parts.push("</items></pivotField>");
       } else if (isCol) {
         const uniqueVals = collectUniqueValues(this.sourceData.records, i);
-        parts.push(`<pivotField axis="axisCol" showAll="0">`);
+        const cAttrs = extraAttrs
+          ? ` axis="axisCol" showAll="0" ${extraAttrs}`
+          : ' axis="axisCol" showAll="0"';
+        parts.push(`<pivotField${cAttrs}>`);
         parts.push(`<items count="${uniqueVals.length + 1}">`);
         for (let j = 0; j < uniqueVals.length; j++) {
           parts.push(`<item x="${j}"/>`);
         }
-        parts.push(`<item t="default"/>`);
+        parts.push(`<item t="default"${override?.defaultItemSd === false ? ' sd="0"' : ""}/>`);
         parts.push("</items></pivotField>");
       } else if (isPage) {
         const uniqueVals = collectUniqueValues(this.sourceData.records, i);
-        parts.push(`<pivotField axis="axisPage" showAll="0">`);
+        const pAttrs = extraAttrs
+          ? ` axis="axisPage" showAll="0" ${extraAttrs}`
+          : ' axis="axisPage" showAll="0"';
+        parts.push(`<pivotField${pAttrs}>`);
         parts.push(`<items count="${uniqueVals.length + 1}">`);
         for (let j = 0; j < uniqueVals.length; j++) {
           parts.push(`<item x="${j}"/>`);
         }
-        parts.push(`<item t="default"/>`);
+        parts.push(`<item t="default"${override?.defaultItemSd === false ? ' sd="0"' : ""}/>`);
         parts.push("</items></pivotField>");
       } else {
-        parts.push(`<pivotField showAll="0"/>`);
+        const nAttrs = extraAttrs ? ` showAll="0" ${extraAttrs}` : ' showAll="0"';
+        parts.push(`<pivotField${nAttrs}/>`);
       }
     }
 
@@ -334,9 +391,12 @@ export class PivotTableXml extends BaseXmlComponent {
 
   private buildPageFields(pageIndices: readonly number[]): string {
     if (pageIndices.length === 0) return "";
+    const o = this.options;
     const parts: string[] = [`<pageFields count="${pageIndices.length}">`];
     for (let i = 0; i < pageIndices.length; i++) {
-      parts.push(`<pageField fld="${pageIndices[i]}" hier="${i}"/>`);
+      const cap = o.pageCaptions?.[i];
+      const capAttr = cap ? ` cap="${escapeXml(cap)}"` : "";
+      parts.push(`<pageField fld="${pageIndices[i]}" hier="${i}"${capAttr}/>`);
     }
     parts.push("</pageFields>");
     return parts.join("");
@@ -530,12 +590,21 @@ export class PivotTableXml extends BaseXmlComponent {
               if (mp.name !== undefined) mpAttrs.push(`name="${escapeXml(mp.name)}"`);
               if (mp.showCell) mpAttrs.push('showCell="1"');
               if (mp.showTip) mpAttrs.push('showTip="1"');
+              if (mp.showAsCaption) mpAttrs.push('showAsCaption="1"');
+              if (mp.nameLen !== undefined) mpAttrs.push(`nameLen="${mp.nameLen}"`);
+              if (mp.pPos !== undefined) mpAttrs.push(`pPos="${mp.pPos}"`);
+              if (mp.pLen !== undefined) mpAttrs.push(`pLen="${mp.pLen}"`);
               return `<mp ${mpAttrs.join(" ")}/>`;
             })
             .join("")}</mps>`
         : "";
       const membersXml = h.members
-        ? `<members count="${h.members.length}">${h.members.map((m) => `<member name="${escapeXml(m.name)}"/>`).join("")}</members>`
+        ? `<members count="${h.members.length}">${h.members
+            .map((m) => {
+              const levelAttr = m.level !== undefined ? ` level="${m.level}"` : "";
+              return `<member name="${escapeXml(m.name)}"${levelAttr}/>`;
+            })
+            .join("")}</members>`
         : "";
       const inner = mpsXml + membersXml;
       if (inner) {
@@ -648,6 +717,12 @@ export class PivotTableXml extends BaseXmlComponent {
       if (ref.avgSubtotal) rAttrs.push('avgSubtotal="1"');
       if (ref.maxSubtotal) rAttrs.push('maxSubtotal="1"');
       if (ref.minSubtotal) rAttrs.push('minSubtotal="1"');
+      if (ref.countSubtotal) rAttrs.push('countSubtotal="1"');
+      if (ref.productSubtotal) rAttrs.push('productSubtotal="1"');
+      if (ref.stdDevPSubtotal) rAttrs.push('stdDevPSubtotal="1"');
+      if (ref.stdDevSubtotal) rAttrs.push('stdDevSubtotal="1"');
+      if (ref.varPSubtotal) rAttrs.push('varPSubtotal="1"');
+      if (ref.varSubtotal) rAttrs.push('varSubtotal="1"');
       const xXml = ref.x ? ref.x.map((v) => `<x v="${v}"/>`).join("") : "";
       if (xXml) {
         parts.push(`<reference ${rAttrs.join(" ")}>${xXml}</reference>`);

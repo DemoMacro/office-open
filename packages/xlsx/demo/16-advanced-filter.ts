@@ -16,7 +16,7 @@ const wb = new Workbook({
       ],
       autoFilter: {
         ref: "A1:C6",
-        customFilters: [{ colId: 1, operator: "greaterThan", val: "200" }],
+        customFilters: [{ colId: 1, operator: "greaterThan", val: "200", hiddenButton: true }],
         sort: [{ ref: "B1", descending: true }],
       },
     },
@@ -32,7 +32,7 @@ const wb = new Workbook({
       ],
       autoFilter: {
         ref: "A1:B6",
-        top10: [{ colId: 1, val: 3 }],
+        top10: [{ colId: 1, val: 3, filterVal: 65 }],
       },
     },
   ],

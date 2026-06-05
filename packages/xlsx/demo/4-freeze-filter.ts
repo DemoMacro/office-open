@@ -7,7 +7,11 @@ const wb = new Workbook({
     {
       name: "Freeze & Filter",
       freezePanes: { row: 1 },
-      autoFilter: "A1:D5",
+      autoFilter: {
+        ref: "A1:D5",
+        // Simple value filters with calendar type
+        filters: [{ colId: 2, values: ["NYC", "London"], calendarType: "gregorian" }],
+      },
       rows: [
         {
           cells: [

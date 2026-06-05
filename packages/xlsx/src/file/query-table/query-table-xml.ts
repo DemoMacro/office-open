@@ -39,6 +39,8 @@ export interface QueryTableFieldOptions {
   readonly width?: number;
   /** CLipped */
   readonly clipped?: boolean;
+  /** Data bound (CT_QueryTableField @dataBound) */
+  readonly dataBound?: boolean;
 }
 
 export interface QueryTableRefreshOptions {
@@ -60,6 +62,16 @@ export interface QueryTableRefreshOptions {
   readonly queryTableFields?: readonly QueryTableFieldOptions[];
   /** Row count */
   readonly rowCount?: number;
+  /** Field ID wrapped (CT_QueryTableRefresh @fieldIdWrapped) */
+  readonly fieldIdWrapped?: boolean;
+  /** Headers in last refresh (CT_QueryTableRefresh @headersInLastRefresh) */
+  readonly headersInLastRefresh?: boolean;
+  /** Preserve sort/filter layout (CT_QueryTableRefresh @preserveSortFilterLayout) */
+  readonly preserveSortFilterLayout?: boolean;
+  /** Unbound columns left (CT_QueryTableRefresh @unboundColumnsLeft) */
+  readonly unboundColumnsLeft?: number;
+  /** Unbound columns right (CT_QueryTableRefresh @unboundColumnsRight) */
+  readonly unboundColumnsRight?: number;
 }
 
 export interface QueryTableOptions {
@@ -150,6 +162,11 @@ function buildQueryTableRefresh(opts: QueryTableRefreshOptions): string {
   if (opts.refreshOnLoad) a.refreshOnLoad = 1;
   if (opts.backgroundRefresh) a.backgroundRefresh = 1;
   if (opts.rowCount !== undefined) a.rowCount = opts.rowCount;
+  if (opts.fieldIdWrapped) a.fieldIdWrapped = 1;
+  if (opts.headersInLastRefresh) a.headersInLastRefresh = 1;
+  if (opts.preserveSortFilterLayout) a.preserveSortFilterLayout = 1;
+  if (opts.unboundColumnsLeft !== undefined) a.unboundColumnsLeft = opts.unboundColumnsLeft;
+  if (opts.unboundColumnsRight !== undefined) a.unboundColumnsRight = opts.unboundColumnsRight;
 
   const children: string[] = [];
 
@@ -175,6 +192,7 @@ function buildQueryTableRefresh(opts: QueryTableRefreshOptions): string {
       if (f.borderFormatting) fAttrs.borderFormatting = 1;
       if (f.width !== undefined) fAttrs.width = f.width;
       if (f.clipped) fAttrs.clipped = 1;
+      if (f.dataBound !== undefined) fAttrs.dataBound = f.dataBound ? 1 : 0;
       fParts.push(`<queryTableField${attrs(fAttrs)}/>`);
     }
     fParts.push("</queryTableFields>");

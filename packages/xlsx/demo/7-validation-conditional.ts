@@ -14,6 +14,8 @@ const wb = new Workbook({
         { cells: [{ value: "No" }, { value: 200 }] },
       ],
       // Data validation: dropdown list for A2:A5
+      // Data validation: disable input prompts for this sheet
+      dataValidationsDisablePrompts: true,
       dataValidations: [
         {
           sqref: "A2:A5",

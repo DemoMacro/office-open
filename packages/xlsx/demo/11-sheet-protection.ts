@@ -28,6 +28,11 @@ const wb = new Workbook({
         selectLockedCells: true,
         selectUnlockedCells: true,
       },
+      pageSetup: {
+        fitToWidth: 1,
+        fitToHeight: 0,
+        autoPageBreaks: true,
+      },
       protectedRanges: [
         {
           name: "EditableRange",

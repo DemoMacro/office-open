@@ -57,12 +57,14 @@ const connections = new ConnectionsXml([
     name: "NorthwindDB",
     type: 3,
     refreshedVersion: 6,
+    interval: 300,
+    keepAlive: true,
     dbPr: {
       connection: "Provider=SQLOLEDB.1;Data Source=server;Initial Catalog=Northwind",
       command: "SELECT * FROM Products",
       commandType: 2,
     },
-    parameters: [{ name: "MinPrice", parameterType: "value", integerValue: 10 }],
+    parameters: [{ name: "MinPrice", parameterType: "value", integerValue: 10, integer: true }],
   },
   {
     id: 2,
@@ -72,6 +74,7 @@ const connections = new ConnectionsXml([
     webPr: {
       url: "https://example.com/data.csv",
       htmlFormat: "rtf",
+      firstRow: true,
       textFields: [
         { type: 1, dataType: "text" },
         { type: 2, dataType: "text" },
@@ -89,9 +92,10 @@ const qt = new QueryTableXml({
   queryTableRefresh: {
     nextId: 100,
     preserveFormatting: true,
+    preserveSortFilterLayout: true,
     queryTableFields: [
       { id: 1, name: "Product" },
-      { id: 2, name: "Price", numberFormatting: true },
+      { id: 2, name: "Price", numberFormatting: true, dataBound: true },
     ],
   },
 });

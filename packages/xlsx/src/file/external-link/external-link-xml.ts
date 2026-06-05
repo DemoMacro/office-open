@@ -15,6 +15,14 @@ export interface ExternalDefinedNameOptions {
   readonly name: string;
   readonly refersTo?: string;
   readonly sheetId?: number;
+  /** Publish to server (CT_DefinedName @publishToServer) */
+  readonly publishToServer?: boolean;
+  /** VBA procedure (CT_DefinedName @vbProcedure) */
+  readonly vbProcedure?: boolean;
+  /** Workbook parameter (CT_DefinedName @workbookParameter) */
+  readonly workbookParameter?: boolean;
+  /** XLM macro (CT_DefinedName @xlm) */
+  readonly xlm?: boolean;
 }
 
 export interface ExternalCellOptions {
@@ -107,9 +115,13 @@ export class ExternalLinkXml extends BaseXmlComponent {
       if (book.definedNames && book.definedNames.length > 0) {
         bookParts.push("<definedNames>");
         for (const dn of book.definedNames) {
-          const dnAttrs: Record<string, string | number | undefined> = { name: dn.name };
+          const dnAttrs: Record<string, string | number | boolean | undefined> = { name: dn.name };
           if (dn.refersTo !== undefined) dnAttrs.refersTo = dn.refersTo;
           if (dn.sheetId !== undefined) dnAttrs.sheetId = dn.sheetId;
+          if (dn.publishToServer) dnAttrs.publishToServer = 1;
+          if (dn.vbProcedure) dnAttrs.vbProcedure = 1;
+          if (dn.workbookParameter) dnAttrs.workbookParameter = 1;
+          if (dn.xlm) dnAttrs.xlm = 1;
           bookParts.push(`<definedName${attrs(dnAttrs)}/>`);
         }
         bookParts.push("</definedNames>");

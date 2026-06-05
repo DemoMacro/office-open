@@ -166,6 +166,8 @@ export interface ScenarioCellOptions {
   readonly val: string | number;
   /** Whether the value is deleted */
   readonly deleted?: boolean;
+  /** Whether undone (CT_InputCells @undone) */
+  readonly undone?: boolean;
 }
 
 /** A single what-if scenario (maps to CT_Scenario). */
@@ -398,6 +400,8 @@ export interface PageSetupOptions {
   readonly cellComments?: "none" | "asDisplayed" | "atEnd";
   /** Print error display mode (CT_PageSetup @errors) */
   readonly errors?: "displayed" | "blank" | "dash" | "NA";
+  /** Auto page breaks (CT_PageSetUpPr @autoPageBreaks) */
+  readonly autoPageBreaks?: boolean;
 }
 
 export interface TabColorOptions {
@@ -407,6 +411,8 @@ export interface TabColorOptions {
   readonly theme?: number;
   /** Tint value (-1.0 to 1.0) */
   readonly tint?: number;
+  /** Indexed color (CT_Color @indexed) */
+  readonly indexed?: number;
 }
 
 /** Object anchor (CT_ObjectAnchor). */
@@ -645,6 +651,12 @@ export interface Top10FilterOptions {
   readonly top?: boolean;
   readonly percent?: boolean;
   readonly val: number;
+  /** Filter value (CT_Top10 @filterVal) */
+  readonly filterVal?: number;
+  /** Hide auto-filter button (CT_FilterColumn @hiddenButton) */
+  readonly hiddenButton?: boolean;
+  /** Show filter button (CT_FilterColumn @showButton) */
+  readonly showButton?: boolean;
 }
 
 export interface CustomFilterOptions {
@@ -659,6 +671,10 @@ export interface CustomFilterOptions {
   readonly val?: string;
   readonly and?: boolean;
   readonly val2?: string;
+  /** Hide auto-filter button (CT_FilterColumn @hiddenButton) */
+  readonly hiddenButton?: boolean;
+  /** Show filter button (CT_FilterColumn @showButton) */
+  readonly showButton?: boolean;
 }
 
 export interface SortCondition {
@@ -689,6 +705,8 @@ export interface AutoFilterOptions {
   readonly dynamicFilters?: readonly DynamicFilterOptions[];
   /** Date group items in filters (CT_DateGroupItem) */
   readonly dateGroupItems?: readonly DateGroupFilterOptions[];
+  /** Simple filters with values (CT_Filters) */
+  readonly filters?: readonly FilterItemsOptions[];
 }
 
 /** Color filter (CT_ColorFilter) */
@@ -709,6 +727,18 @@ export interface IconFilterOptions {
   readonly iconSet: number;
   /** Icon ID within set (CT_IconFilter @iconId) */
   readonly iconId?: number;
+}
+
+/** Filter items (CT_Filters) */
+export interface FilterItemsOptions {
+  /** Column ID */
+  readonly colId: number;
+  /** Blank filter (CT_Filters @blank) */
+  readonly blank?: boolean;
+  /** Calendar type (CT_Filters @calendarType) */
+  readonly calendarType?: string;
+  /** Filter values */
+  readonly values?: readonly string[];
 }
 
 /** Dynamic filter (CT_DynamicFilter) */
@@ -756,6 +786,10 @@ export interface DynamicFilterOptions {
   readonly val?: number;
   /** Max value as date ISO string (CT_DynamicFilter @maxVal) */
   readonly maxVal?: number;
+  /** Value ISO date string (CT_DynamicFilter @valIso) */
+  readonly valIso?: string;
+  /** Max value ISO date string (CT_DynamicFilter @maxValIso) */
+  readonly maxValIso?: string;
 }
 
 /** Date group filter item (CT_DateGroupItem) */
@@ -1032,6 +1066,8 @@ export interface WorksheetOptions {
   readonly images?: readonly WorksheetImageOptions[];
   readonly charts?: readonly WorksheetChartOptions[];
   readonly dataValidations?: readonly DataValidationOptions[];
+  /** Disable data validation prompts (CT_DataValidations @disablePrompts) */
+  readonly dataValidationsDisablePrompts?: boolean;
   readonly conditionalFormats?: readonly ConditionalFormatOptions[];
   readonly hyperlinks?: readonly HyperlinkOptions[];
   readonly comments?: readonly CommentOptions[];
@@ -1104,6 +1140,14 @@ export interface ControlOptions {
   readonly locked?: boolean;
   /** UI-locked (CT_ControlPr @uiObject) */
   readonly uiObject?: boolean;
+  /** Recalc always (CT_ControlPr @recalcAlways) */
+  readonly recalcAlways?: boolean;
+  /** Linked cell (CT_ControlPr @linkedCell) */
+  readonly linkedCell?: string;
+  /** List fill range (CT_ControlPr @listFillRange) */
+  readonly listFillRange?: string;
+  /** Control formula (CT_ControlPr @cf) */
+  readonly cf?: string;
 }
 
 /** Custom property (CT_CustomProperty) */
@@ -1202,6 +1246,7 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
   private readonly images: readonly WorksheetImageOptions[];
   private readonly chartOptions: readonly WorksheetChartOptions[];
   private readonly dataValidations: readonly DataValidationOptions[];
+  private readonly dataValidationsDisablePrompts?: boolean;
   private readonly conditionalFormats: readonly ConditionalFormatOptions[];
   private readonly hyperlinks: readonly HyperlinkOptions[];
   private readonly comments: readonly CommentOptions[];
@@ -1246,6 +1291,7 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
     this.images = options.images ?? [];
     this.chartOptions = options.charts ?? [];
     this.dataValidations = options.dataValidations ?? [];
+    this.dataValidationsDisablePrompts = options.dataValidationsDisablePrompts;
     this.conditionalFormats = options.conditionalFormats ?? [];
     this.hyperlinks = options.hyperlinks ?? [];
     this.comments = options.comments ?? [];
@@ -1363,6 +1409,7 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
         if (tc.rgb) tcAttrs.rgb = tc.rgb;
         if (tc.theme !== undefined) tcAttrs.theme = tc.theme;
         if (tc.tint !== undefined) tcAttrs.tint = tc.tint;
+        if (tc.indexed !== undefined) tcAttrs.indexed = tc.indexed;
         prParts.push(`<tabColor${attrs(tcAttrs)}/>`);
       }
       if (hasOutline) {
@@ -1375,8 +1422,15 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
         prParts.push(`<outlinePr${attrs(outAttrs)}/>`);
       }
       // pageSetUpPr (inside sheetPr when fitToPage or autoPageBreaks needed)
-      if (this.pageSetup?.fitToWidth || this.pageSetup?.fitToHeight) {
-        prParts.push('<pageSetUpPr fitToPage="1"/>');
+      if (
+        this.pageSetup?.fitToWidth ||
+        this.pageSetup?.fitToHeight ||
+        this.pageSetup?.autoPageBreaks
+      ) {
+        const psupAttrs: Record<string, string | number | boolean | undefined> = {};
+        if (this.pageSetup?.fitToWidth || this.pageSetup?.fitToHeight) psupAttrs.fitToPage = 1;
+        if (this.pageSetup?.autoPageBreaks) psupAttrs.autoPageBreaks = 1;
+        prParts.push(`<pageSetUpPr${attrs(psupAttrs)}/>`);
       }
       const prAttrStr = Object.keys(prAttrs).length > 0 ? attrs(prAttrs) : "";
       p.push(`<sheetPr${prAttrStr}>${prParts.join("")}</sheetPr>`);
@@ -1701,6 +1755,7 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
             val: String(cell.val),
           };
           if (cell.deleted) icAttrs.deleted = true;
+          if (cell.undone) icAttrs.undone = true;
           sParts.push(`<inputCells${attrs(icAttrs)}/>`);
         }
         sParts.push("</scenario>");
@@ -1718,14 +1773,23 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
         const af = this.autoFilter;
         const inner: string[] = [];
         for (const t10 of af.top10 ?? []) {
+          const fcAttrs: Record<string, string | number | boolean | undefined> = {
+            colId: t10.colId,
+          };
+          if (t10.hiddenButton) fcAttrs.hiddenButton = 1;
+          if (t10.showButton === false) fcAttrs.showButton = 0;
           const t10Attrs: Record<string, string | number | boolean | undefined> = { val: t10.val };
           if (t10.top === false) t10Attrs.top = 0;
           if (t10.percent) t10Attrs.percent = 1;
-          inner.push(
-            `<filterColumn colId="${t10.colId}"><top10${attrs(t10Attrs)}/></filterColumn>`,
-          );
+          if (t10.filterVal !== undefined) t10Attrs.filterVal = t10.filterVal;
+          inner.push(`<filterColumn${attrs(fcAttrs)}><top10${attrs(t10Attrs)}/></filterColumn>`);
         }
         for (const cf of af.customFilters ?? []) {
+          const fcAttrs: Record<string, string | number | boolean | undefined> = {
+            colId: cf.colId,
+          };
+          if (cf.hiddenButton) fcAttrs.hiddenButton = 1;
+          if (cf.showButton === false) fcAttrs.showButton = 0;
           const cfAttrs: Record<string, string | number | boolean | undefined> = {};
           if (cf.and) cfAttrs.and = 1;
           const filters: string[] = [];
@@ -1739,9 +1803,22 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
           }
           if (filters.length > 0) {
             inner.push(
-              `<filterColumn colId="${cf.colId}"><customFilters${attrs(cfAttrs)}>${filters.join("")}</customFilters></filterColumn>`,
+              `<filterColumn${attrs(fcAttrs)}><customFilters${attrs(cfAttrs)}>${filters.join("")}</customFilters></filterColumn>`,
             );
           }
+        }
+        // Simple filters (CT_Filters)
+        for (const fi of af.filters ?? []) {
+          const fcAttrs: Record<string, string | number | boolean | undefined> = {
+            colId: fi.colId,
+          };
+          const filtersAttrs: Record<string, string | number | boolean | undefined> = {};
+          if (fi.blank) filtersAttrs.blank = 1;
+          if (fi.calendarType) filtersAttrs.calendarType = fi.calendarType;
+          const valParts = (fi.values ?? []).map((v) => `<filter val="${escapeXml(v)}"/>`);
+          inner.push(
+            `<filterColumn${attrs(fcAttrs)}><filters${attrs(filtersAttrs)}>${valParts.join("")}</filters></filterColumn>`,
+          );
         }
         if (af.sort && af.sort.length > 0) {
           const sortParts: string[] = [];
@@ -1783,6 +1860,8 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
           const dfAttrs: Record<string, string | number | boolean | undefined> = { type: df.type };
           if (df.val !== undefined) dfAttrs.val = df.val;
           if (df.maxVal !== undefined) dfAttrs.maxVal = df.maxVal;
+          if (df.valIso !== undefined) dfAttrs.valIso = df.valIso;
+          if (df.maxValIso !== undefined) dfAttrs.maxValIso = df.maxValIso;
           inner.push(
             `<filterColumn colId="${df.colId}"><dynamicFilter${attrs(dfAttrs)}/></filterColumn>`,
           );
@@ -1912,7 +1991,11 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
 
     // Data validations
     if (this.dataValidations.length > 0) {
-      p.push(`<dataValidations count="${this.dataValidations.length}">`);
+      const dvContainerAttrs: Record<string, string | number | boolean | undefined> = {
+        count: this.dataValidations.length,
+      };
+      if (this.dataValidationsDisablePrompts) dvContainerAttrs.disablePrompts = 1;
+      p.push(`<dataValidations${attrs(dvContainerAttrs)}>`);
       for (const dv of this.dataValidations) {
         const dvAttrs: Record<string, string | number | boolean | undefined> = { sqref: dv.sqref };
         if (dv.type && dv.type !== "none") dvAttrs.type = dv.type;
@@ -2122,6 +2205,10 @@ export class Worksheet extends IgnoreIfEmptyXmlComponent {
         const prAttrs: string[] = [];
         if (c.locked === false) prAttrs.push('locked="0"');
         if (c.uiObject) prAttrs.push('uiObject="1"');
+        if (c.recalcAlways) prAttrs.push('recalcAlways="1"');
+        if (c.linkedCell) prAttrs.push(`linkedCell="${escapeXml(c.linkedCell)}"`);
+        if (c.listFillRange) prAttrs.push(`listFillRange="${escapeXml(c.listFillRange)}"`);
+        if (c.cf) prAttrs.push(`cf="${escapeXml(c.cf)}"`);
         if (prAttrs.length > 0) {
           ctrlParts.push(
             `<control ${cAttrs.join(" ")}><controlPr${prAttrs.length ? " " + prAttrs.join(" ") : ""}/></control>`,

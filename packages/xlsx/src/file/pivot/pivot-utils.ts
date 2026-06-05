@@ -39,6 +39,66 @@ export interface PivotDataField {
   readonly sortByTupleItems?: readonly number[];
 }
 
+/** Per-field overrides for pivotField XML attributes (CT_PivotField). */
+export interface PivotFieldOverrideOptions {
+  /** Field name to match (required) */
+  readonly field: string;
+  /** All drilled (CT_PivotField @allDrilled) */
+  readonly allDrilled?: boolean;
+  /** Auto show (CT_PivotField @autoShow) */
+  readonly autoShow?: boolean;
+  /** Count subtotal (CT_PivotField @countSubtotal) */
+  readonly countSubtotal?: boolean;
+  /** Data source sort (CT_PivotField @dataSourceSort) */
+  readonly dataSourceSort?: boolean;
+  /** Default attribute drill state (CT_PivotField @defaultAttributeDrillState) */
+  readonly defaultAttributeDrillState?: boolean;
+  /** Hidden level (CT_PivotField @hiddenLevel) */
+  readonly hiddenLevel?: boolean;
+  /** Hide new items (CT_PivotField @hideNewItems) */
+  readonly hideNewItems?: boolean;
+  /** Insert blank row (CT_PivotField @insertBlankRow) */
+  readonly insertBlankRow?: boolean;
+  /** Insert page break (CT_PivotField @insertPageBreak) */
+  readonly insertPageBreak?: boolean;
+  /** Item page count (CT_PivotField @itemPageCount) */
+  readonly itemPageCount?: boolean;
+  /** Measure filter (CT_PivotField @measureFilter) */
+  readonly measureFilter?: boolean;
+  /** Non auto sort default (CT_PivotField @nonAutoSortDefault) */
+  readonly nonAutoSortDefault?: boolean;
+  /** Product subtotal (CT_PivotField @productSubtotal) */
+  readonly productSubtotal?: boolean;
+  /** Rank by (CT_PivotField @rankBy) */
+  readonly rankBy?: number;
+  /** Server field (CT_PivotField @serverField) */
+  readonly serverField?: boolean;
+  /** Show drop downs (CT_PivotField @showDropDowns) */
+  readonly showDropDowns?: boolean;
+  /** Show property as caption (CT_PivotField @showPropAsCaption) */
+  readonly showPropAsCaption?: boolean;
+  /** Show property cell (CT_PivotField @showPropCell) */
+  readonly showPropCell?: boolean;
+  /** Show property tip (CT_PivotField @showPropTip) */
+  readonly showPropTip?: boolean;
+  /** StdDevP subtotal (CT_PivotField @stdDevPSubtotal) */
+  readonly stdDevPSubtotal?: boolean;
+  /** StdDev subtotal (CT_PivotField @stdDevSubtotal) */
+  readonly stdDevSubtotal?: boolean;
+  /** Subtotal caption (CT_PivotField @subtotalCaption) */
+  readonly subtotalCaption?: string;
+  /** Top auto show (CT_PivotField @topAutoShow) */
+  readonly topAutoShow?: boolean;
+  /** Unique member property (CT_PivotField @uniqueMemberProperty) */
+  readonly uniqueMemberProperty?: boolean;
+  /** VarP subtotal (CT_PivotField @varPSubtotal) */
+  readonly varPSubtotal?: boolean;
+  /** Var subtotal (CT_PivotField @varSubtotal) */
+  readonly varSubtotal?: boolean;
+  /** Show detail for default item (CT_Item @sd) */
+  readonly defaultItemSd?: boolean;
+}
+
 /** Pivot filter type (ST_PivotFilterType) */
 export const PivotFilterType = {
   UNKNOWN: "unknown",
@@ -159,6 +219,8 @@ export interface PivotTableOptions {
   readonly filters?: readonly PivotFilterOptions[];
   /** Field names to use as page/report filters */
   readonly pages?: readonly string[];
+  /** Page field captions (maps by index to pages array) */
+  readonly pageCaptions?: readonly string[];
   /** Data fields on rows instead of columns (CT_PivotTableDefinition @dataOnRows) */
   readonly dataOnRows?: boolean;
   /** Grand total caption text */
@@ -239,6 +301,14 @@ export interface PivotTableOptions {
   readonly mdxSubqueries?: boolean;
   /** Custom list sort */
   readonly customListSort?: boolean;
+  /** Asterisk totals (CT_PivotTableDefinition @asteriskTotals) */
+  readonly asteriskTotals?: boolean;
+  /** Data position (CT_PivotTableDefinition @dataPosition) */
+  readonly dataPosition?: number;
+  /** Immersive (CT_PivotTableDefinition @immersive) */
+  readonly immersive?: boolean;
+  /** Vacated style (CT_PivotTableDefinition @vacatedStyle) */
+  readonly vacatedStyle?: string;
   /** Calculated items (CT_CalculatedItems) */
   readonly calculatedItems?: readonly CalculatedItemOptions[];
   /** Calculated members (CT_CalculatedMembers) */
@@ -259,6 +329,12 @@ export interface PivotTableOptions {
   readonly rowHierarchiesUsage?: readonly HierarchyUsageOptions[];
   /** Column hierarchy usage (CT_ColHierarchiesUsage) */
   readonly colHierarchiesUsage?: readonly HierarchyUsageOptions[];
+  /** Location column page count (CT_Location @colPageCount) */
+  readonly locationColPageCount?: number;
+  /** Location row page count (CT_Location @rowPageCount) */
+  readonly locationRowPageCount?: number;
+  /** Per-field overrides for pivotField (CT_PivotField attributes) */
+  readonly fieldOverrides?: readonly PivotFieldOverrideOptions[];
 }
 
 /** Pivot format (CT_Format). */
@@ -333,6 +409,8 @@ export interface PivotHierarchyOptions {
 export interface MemberOptions {
   /** Member name (required) */
   readonly name: string;
+  /** Level (CT_Member @level) */
+  readonly level?: number;
 }
 
 /** Member property (CT_MemberProperty) */
@@ -345,6 +423,14 @@ export interface MemberPropertyOptions {
   readonly showCell?: boolean;
   /** Show tip? */
   readonly showTip?: boolean;
+  /** Show as caption (CT_MemberProperty @showAsCaption) */
+  readonly showAsCaption?: boolean;
+  /** Name length (CT_MemberProperty @nameLen) */
+  readonly nameLen?: number;
+  /** Property position (CT_MemberProperty @pPos) */
+  readonly pPos?: number;
+  /** Property length (CT_MemberProperty @pLen) */
+  readonly pLen?: number;
 }
 
 /** Pivot area for conditional formats, chart formats, etc. (CT_PivotArea) */
@@ -401,6 +487,18 @@ export interface PivotAreaReferenceOptions {
   readonly maxSubtotal?: boolean;
   /** Min subtotal */
   readonly minSubtotal?: boolean;
+  /** Count subtotal (CT_Reference @countSubtotal) */
+  readonly countSubtotal?: boolean;
+  /** Product subtotal (CT_Reference @productSubtotal) */
+  readonly productSubtotal?: boolean;
+  /** StdDevP subtotal (CT_Reference @stdDevPSubtotal) */
+  readonly stdDevPSubtotal?: boolean;
+  /** StdDev subtotal (CT_Reference @stdDevSubtotal) */
+  readonly stdDevSubtotal?: boolean;
+  /** VarP subtotal (CT_Reference @varPSubtotal) */
+  readonly varPSubtotal?: boolean;
+  /** Var subtotal (CT_Reference @varSubtotal) */
+  readonly varSubtotal?: boolean;
   /** X indices */
   readonly x?: readonly number[];
 }
@@ -469,6 +567,12 @@ export interface CacheHierarchyOptions {
   readonly oneField?: boolean;
   /** Hidden (default: false) */
   readonly hidden?: boolean;
+  /** Member value datatype (CT_CacheHierarchy @memberValueDatatype) */
+  readonly memberValueDatatype?: "string" | "number" | "integer" | "boolean" | "error";
+  /** Unbalanced (CT_CacheHierarchy @unbalanced) */
+  readonly unbalanced?: boolean;
+  /** Unbalanced group (CT_CacheHierarchy @unbalancedGroup) */
+  readonly unbalancedGroup?: boolean;
   /** Group levels (CT_GroupLevels) */
   readonly groupLevels?: readonly GroupLevelOptions[];
   /** Fields usage (CT_FieldsUsage) */

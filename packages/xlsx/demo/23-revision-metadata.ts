@@ -76,6 +76,7 @@ console.log("Metadata XML:", metadata.toXml(context).slice(0, 200) + "...");
 // Revision Log
 const revisionHeaders = new RevisionHeadersXml({
   guid: "00000000-0000-0000-0000-000000000001",
+  diskRevisions: true,
   headers: [
     {
       guid: "10000000-0000-0000-0000-000000000001",

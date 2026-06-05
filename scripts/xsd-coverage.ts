@@ -244,6 +244,32 @@ const DEPRECATED_ELEMENTS = new Set([
   "val", // CT_DdeValue — DDE-specific element (not attribute)
 ]);
 
+/**
+ * Deprecated/removed OOXML attributes to exclude from coverage analysis.
+ * These are attributes on deprecated elements (Smart Tags, DDE) that
+ * should not count against coverage.
+ */
+const DEPRECATED_ATTRIBUTES = new Set([
+  // Smart Tags (removed Office 2010)
+  "xmlBased", // cellSmartTag
+  "namespaceUri", // smartTagType
+  // DDE (disabled by default, security risk)
+  "ddeService", // ddeLink
+  "ddeTopic", // ddeLink
+  "ole", // ddeItem (DDE-specific)
+  "preferPic", // ddeItem + oleItem (OLE/DDE cross)
+  // OLAP-only attributes (CT_Missing/CT_Number/CT_String/CT_MdxTuple)
+  // These formatting attributes only appear in OLAP pivot cache shared items
+  // and MDX tuple metadata. A non-OLAP spreadsheet library will never generate these.
+  "bc", // background color (OLAP shared item format)
+  "fc", // foreground color (OLAP shared item format)
+  "in", // indent level (OLAP shared item format)
+  "st", // strikethrough (OLAP shared item format)
+  "un", // underline (OLAP shared item format)
+  "ct", // culture name (CT_MdxTuple, OLAP only)
+  "fi", // font index (CT_MdxTuple, OLAP only)
+]);
+
 /** Elements only deprecated in SML (val appears in dml-chart, pml too) */
 const DEPRECATED_ELEMENTS_SML_ONLY = new Set(["val"]);
 
@@ -489,6 +515,7 @@ function analyzeXsd(config: XsdConfig): CoverageResult {
   const missingAttributes = attrNames.filter((a) => {
     if (usedAttrNames.has(a)) return false;
     if (genericAttrs.has(a)) return false;
+    if (DEPRECATED_ATTRIBUTES.has(a)) return false;
     return true;
   });
 

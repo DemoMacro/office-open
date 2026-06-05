@@ -119,6 +119,8 @@ export interface XmlColumnPrOptions {
   readonly xmlDataType: string;
   /** Associated map ID (required) */
   readonly mapId: number;
+  /** Denormalized (CT_XmlColumnPr @denormalized) */
+  readonly denormalized?: boolean;
 }
 
 // ── Helper functions ──
@@ -264,6 +266,7 @@ export class XmlColumnPrXml extends BaseXmlComponent {
       xpath: this.options.xpath,
       xmlDataType: this.options.xmlDataType,
       mapId: this.options.mapId,
+      denormalized: this.options.denormalized ? 1 : undefined,
     };
     return `<xmlColumnPr${attrs(a)}/>`;
   }

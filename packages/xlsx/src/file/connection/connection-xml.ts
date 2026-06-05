@@ -39,6 +39,16 @@ export interface WebPrOptions {
   readonly parsePre?: boolean;
   /** Same row dates */
   readonly xl2000?: boolean;
+  /** Edit page URL (CT_WebPr @editPage) */
+  readonly editPage?: string;
+  /** First row headers (CT_WebPr @firstRow) */
+  readonly firstRow?: boolean;
+  /** POST request (CT_WebPr @post) */
+  readonly post?: boolean;
+  /** Text dates (CT_WebPr @textDates) */
+  readonly textDates?: boolean;
+  /** XL97 format (CT_WebPr @xl97) */
+  readonly xl97?: boolean;
   /** Text fields configuration */
   readonly textFields?: readonly TextFieldOptions[];
 }
@@ -70,6 +80,14 @@ export interface TextPrOptions {
   readonly thousands?: string;
   /** Trailing minus */
   readonly trailingMinus?: boolean;
+  /** Delimiter character (CT_TextPr @delimiter) */
+  readonly delimiter?: string;
+  /** File type (CT_TextPr @fileType) */
+  readonly fileType?: "mac" | "win" | "dos";
+  /** First row headers (CT_TextPr @firstRow) */
+  readonly firstRow?: boolean;
+  /** Qualifier (CT_TextPr @qualifier) */
+  readonly qualifier?: "doubleQuote" | "singleQuote" | "none";
 }
 
 export interface TextFieldOptions {
@@ -96,6 +114,8 @@ export interface ParameterOptions {
   readonly refreshOnChange?: boolean;
   /** Prompt user */
   readonly prompt?: boolean;
+  /** Integer parameter (CT_Parameter @integer) */
+  readonly integer?: boolean;
   /** Cell reference for parameter value */
   readonly reference?: string;
   /** Parameter type: "prompt" | "value" | "cell" */
@@ -123,6 +143,20 @@ export interface ConnectionOptions {
   readonly description?: string;
   /** Credentials method: "integrated" | "none" | "stored" | "prompt" */
   readonly credentials?: string;
+  /** Refresh interval (CT_Connection @interval) */
+  readonly interval?: number;
+  /** Keep alive (CT_Connection @keepAlive) */
+  readonly keepAlive?: boolean;
+  /** New connection (CT_Connection @new) */
+  readonly new?: boolean;
+  /** ODC file path (CT_Connection @odcFile) */
+  readonly odcFile?: string;
+  /** Only use connection file (CT_Connection @onlyUseConnectionFile) */
+  readonly onlyUseConnectionFile?: boolean;
+  /** Reconnection method (CT_Connection @reconnectionMethod) */
+  readonly reconnectionMethod?: number;
+  /** Single sign-on ID (CT_Connection @singleSignOnId) */
+  readonly singleSignOnId?: string;
   /** OLE DB properties */
   readonly dbPr?: DbPrOptions;
   /** Web query properties */
@@ -162,6 +196,13 @@ export class ConnectionsXml extends BaseXmlComponent {
       if (c.savePassword) cAttrs.savePassword = 1;
       if (c.description !== undefined) cAttrs.description = c.description;
       if (c.credentials !== undefined) cAttrs.credentials = c.credentials;
+      if (c.interval !== undefined) cAttrs.interval = c.interval;
+      if (c.keepAlive) cAttrs.keepAlive = 1;
+      if (c.new) cAttrs.new = 1;
+      if (c.odcFile !== undefined) cAttrs.odcFile = c.odcFile;
+      if (c.onlyUseConnectionFile) cAttrs.onlyUseConnectionFile = 1;
+      if (c.reconnectionMethod !== undefined) cAttrs.reconnectionMethod = c.reconnectionMethod;
+      if (c.singleSignOnId !== undefined) cAttrs.singleSignOnId = c.singleSignOnId;
 
       const children: string[] = [];
 
@@ -187,6 +228,11 @@ export class ConnectionsXml extends BaseXmlComponent {
         if (c.webPr.firstRowHeader) wpAttrs.firstRowHeader = 1;
         if (c.webPr.parsePre) wpAttrs.parsePre = 1;
         if (c.webPr.xl2000) wpAttrs.xl2000 = 1;
+        if (c.webPr.editPage !== undefined) wpAttrs.editPage = c.webPr.editPage;
+        if (c.webPr.firstRow) wpAttrs.firstRow = 1;
+        if (c.webPr.post) wpAttrs.post = 1;
+        if (c.webPr.textDates) wpAttrs.textDates = 1;
+        if (c.webPr.xl97) wpAttrs.xl97 = 1;
 
         const wpChildren: string[] = [];
         if (c.webPr.htmlTables && c.webPr.htmlTables.length > 0) {
@@ -220,6 +266,10 @@ export class ConnectionsXml extends BaseXmlComponent {
         if (c.textPr.thousands !== undefined) tpAttrs.thousands = c.textPr.thousands;
         if (c.textPr.trailingMinus !== undefined)
           tpAttrs.trailingMinus = c.textPr.trailingMinus ? 1 : 0;
+        if (c.textPr.delimiter !== undefined) tpAttrs.delimiter = c.textPr.delimiter;
+        if (c.textPr.fileType !== undefined) tpAttrs.fileType = c.textPr.fileType;
+        if (c.textPr.firstRow) tpAttrs.firstRow = 1;
+        if (c.textPr.qualifier !== undefined) tpAttrs.qualifier = c.textPr.qualifier;
 
         const tpChildren: string[] = [];
         if (c.textPr.textFields && c.textPr.textFields.length > 0) {
@@ -247,6 +297,7 @@ export class ConnectionsXml extends BaseXmlComponent {
             paramAttrs.booleanValue = param.booleanValue ? 1 : 0;
           if (param.refreshOnChange) paramAttrs.refreshOnChange = 1;
           if (param.prompt) paramAttrs.prompt = 1;
+          if (param.integer) paramAttrs.integer = 1;
           if (param.reference !== undefined) paramAttrs.reference = param.reference;
           if (param.parameterType !== undefined) paramAttrs.parameterType = param.parameterType;
           paramParts.push(`<parameter${attrs(paramAttrs)}/>`);

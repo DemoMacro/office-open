@@ -41,6 +41,8 @@ export class RevisionHeadersXml extends BaseXmlComponent {
       keepChangeHistory: this.opts.keepChangeHistory,
       protected: this.opts.protected,
       preserveHistory: this.opts.preserveHistory,
+      diskRevisions: this.opts.diskRevisions,
+      exclusive: this.opts.exclusive,
     };
     p.push(`${attrs(rootAttrs)}>`);
 

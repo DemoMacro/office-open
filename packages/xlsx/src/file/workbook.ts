@@ -101,7 +101,14 @@ export interface WorkbookProtectionOptions {
   readonly revisionsSaltValue?: string;
   /** Revisions modern encryption: spin count */
   readonly revisionsSpinCount?: number;
+  /** Workbook password character set (CT_WorkbookProtection @workbookPasswordCharacterSet) */
+  readonly workbookPasswordCharacterSet?: string;
+  /** Revisions password character set (CT_WorkbookProtection @revisionsPasswordCharacterSet) */
+  readonly revisionsPasswordCharacterSet?: string;
 }
+
+/** Workbook conformance level (CT_Workbook @conformance) */
+export type WorkbookConformance = "strict" | "transitional";
 
 /** File recovery properties (CT_FileRecoveryPr) */
 export interface FileRecoveryPrOptions {
@@ -317,6 +324,7 @@ export class WorkbookXml extends BaseXmlComponent {
   private readonly bookView?: WorkbookViewOptions;
   private readonly volTypes?: readonly VolTypeOptions[];
   private readonly webPublishObjects?: readonly WebPublishObjectOptions[];
+  private readonly conformance?: WorkbookConformance;
 
   public constructor(
     sheets: readonly SheetDefinition[],
@@ -332,6 +340,7 @@ export class WorkbookXml extends BaseXmlComponent {
     bookView?: WorkbookViewOptions,
     volTypes?: readonly VolTypeOptions[],
     webPublishObjects?: readonly WebPublishObjectOptions[],
+    conformance?: WorkbookConformance,
   ) {
     super("workbook");
     this.sheets = sheets;
@@ -347,9 +356,11 @@ export class WorkbookXml extends BaseXmlComponent {
     this.bookView = bookView;
     this.volTypes = volTypes;
     this.webPublishObjects = webPublishObjects;
+    this.conformance = conformance;
   }
 
   public override toXml(_context: Context): string {
+    const confAttr = this.conformance ? ` conformance="${this.conformance}"` : "";
     const parts: string[] = [
       '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"' +
         ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"' +
@@ -359,7 +370,7 @@ export class WorkbookXml extends BaseXmlComponent {
         ' xmlns:xr="http://schemas.microsoft.com/office/spreadsheetml/2014/revision"' +
         ' xmlns:xr6="http://schemas.microsoft.com/office/spreadsheetml/2016/revision6"' +
         ' xmlns:xr10="http://schemas.microsoft.com/office/spreadsheetml/2016/revision10"' +
-        ' xmlns:xr2="http://schemas.microsoft.com/office/spreadsheetml/2015/revision2">',
+        ` xmlns:xr2="http://schemas.microsoft.com/office/spreadsheetml/2015/revision2"${confAttr}>`,
       '<fileVersion appName="xl" lastEdited="7" lowestEdited="6" rupBuild="29929"/>',
     ];
 
@@ -463,6 +474,14 @@ export class WorkbookXml extends BaseXmlComponent {
         protAttrs.push(`revisionsSaltValue="${escapeXml(prot.revisionsSaltValue)}"`);
       if (prot.revisionsSpinCount !== undefined)
         protAttrs.push(`revisionsSpinCount="${prot.revisionsSpinCount}"`);
+      if (prot.workbookPasswordCharacterSet)
+        protAttrs.push(
+          `workbookPasswordCharacterSet="${escapeXml(prot.workbookPasswordCharacterSet)}"`,
+        );
+      if (prot.revisionsPasswordCharacterSet)
+        protAttrs.push(
+          `revisionsPasswordCharacterSet="${escapeXml(prot.revisionsPasswordCharacterSet)}"`,
+        );
       if (protAttrs.length > 0) {
         parts.push(`<workbookProtection ${protAttrs.join(" ")}/>`);
       }

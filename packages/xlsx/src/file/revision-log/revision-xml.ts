@@ -39,6 +39,9 @@ function buildRowColumn(opts: RevisionRowColumnOptions): string {
     action: actionMap[opts.action],
     sId: opts.sheetIndex,
     edge: opts.edge ? 1 : undefined,
+    ra: opts.ra,
+    ua: opts.ua,
+    eol: opts.eol ? 1 : undefined,
   };
   if (opts.action.includes("Row")) {
     a.row = opts.row;
@@ -56,6 +59,8 @@ function buildCellChange(opts: RevisionCellChangeOptions): string {
     oldQuotePrefix: opts.oldQuotePrefix ? 1 : undefined,
     ph: opts.ph ? 1 : undefined,
     oldPh: opts.oldPh ? 1 : undefined,
+    ra: opts.ra,
+    ua: opts.ua,
   };
 
   const children: string[] = [];
@@ -66,16 +71,20 @@ function buildCellChange(opts: RevisionCellChangeOptions): string {
     if (opts.formula) {
       children.push(`<f>${escapeXml(opts.formula)}</f>`);
     }
-    children.push(
-      `<oc${attrs({ t: oldType, vm: opts.numFmtId })}>` +
-        `<v>${escapeXml(String(opts.oldValue))}</v></oc>`,
-    );
+    const ocAttrs: Record<string, string | number | boolean | undefined> = {
+      t: oldType,
+      vm: opts.numFmtId,
+    };
+    if (opts.oldCellMeta !== undefined) ocAttrs.cm = opts.oldCellMeta;
+    children.push(`<oc${attrs(ocAttrs)}>` + `<v>${escapeXml(String(opts.oldValue))}</v></oc>`);
   }
 
   // New value
   if (opts.newValue !== undefined) {
     const newType = opts.newType ?? (typeof opts.newValue === "number" ? "n" : "s");
-    children.push(`<nc${attrs({ t: newType })}><v>${escapeXml(String(opts.newValue))}</v></nc>`);
+    const ncAttrs: Record<string, string | number | boolean | undefined> = { t: newType };
+    if (opts.newCellMeta !== undefined) ncAttrs.cm = opts.newCellMeta;
+    children.push(`<nc${attrs(ncAttrs)}><v>${escapeXml(String(opts.newValue))}</v></nc>`);
   }
 
   // ndxf/odxf — differential format (CT_Dxf placeholder)
@@ -94,6 +103,8 @@ function buildMove(opts: RevisionMoveOptions): string {
     source: opts.source,
     destination: opts.destination,
     sourceSheetId: opts.sourceSheetId,
+    ra: opts.ra,
+    ua: opts.ua,
   };
   return `<rm${attrs(a)}/>`;
 }
@@ -115,6 +126,8 @@ function buildInsertSheet(opts: RevisionInsertSheetOptions): string {
     sId: opts.sheetIndex,
     name: opts.name,
     sheetPosition: opts.sheetPosition,
+    ra: opts.ra,
+    ua: opts.ua,
   };
   return `<ris${attrs(a)}/>`;
 }
@@ -164,6 +177,8 @@ function buildDefinedName(opts: RevisionDefinedNameOptions): string {
     oldHelp: opts.oldHelp,
     statusBar: opts.statusBar,
     oldStatusBar: opts.oldStatusBar,
+    ra: opts.ra,
+    ua: opts.ua,
   };
   const children: string[] = [];
   if (opts.value) {
@@ -198,6 +213,8 @@ function buildSheetRename(opts: RevisionSheetRenameOptions): string {
     sId: opts.sheetIndex,
     oldName: opts.oldName,
     newName: opts.newName,
+    ra: opts.ra,
+    ua: opts.ua,
   };
   return `<rsnm${attrs(a)}/>`;
 }
@@ -207,6 +224,8 @@ function buildQueryTableField(opts: RevisionQueryTableFieldOptions): string {
     rId: opts.rId,
     sId: opts.sheetIndex,
     fieldId: opts.fieldId,
+    ra: opts.ra,
+    ua: opts.ua,
   };
   return `<rqt${attrs(a)}/>`;
 }
@@ -215,6 +234,8 @@ function buildConflict(opts: RevisionConflictOptions): string {
   const a: Record<string, string | number | undefined> = {
     rId: opts.rId,
     sId: opts.sheetIndex,
+    ra: opts.ra,
+    ua: opts.ua,
   };
   return `<rcft${attrs(a)}/>`;
 }
@@ -264,9 +285,66 @@ export class RevisionLogXml extends BaseXmlComponent {
           localReviewedList.push(`<reviewed rId="${entry.data.rId}"/>`);
           p.push(`<reviewed rId="${entry.data.rId}"/>`);
           break;
-        case "undo":
-          p.push(`<undo rId="${entry.data.rId}"/>`);
+        case "undo": {
+          const undoAttrs: Record<string, string | number | boolean | undefined> = {
+            rId: entry.data.rId,
+            cs: entry.data.cs ? 1 : undefined,
+            dn: entry.data.dn ? 1 : undefined,
+            exp: entry.data.exp ? 1 : undefined,
+            nf: entry.data.nf ? 1 : undefined,
+            ref3D: entry.data.ref3D ? 1 : undefined,
+          };
+          if (entry.data.revisions && entry.data.revisions.length > 0) {
+            const innerParts: string[] = [];
+            for (const inner of entry.data.revisions) {
+              switch (inner.type) {
+                case "rowColumn":
+                  innerParts.push(buildRowColumn(inner.data));
+                  break;
+                case "cellChange":
+                  innerParts.push(buildCellChange(inner.data));
+                  break;
+                case "move":
+                  innerParts.push(buildMove(inner.data));
+                  break;
+                case "formatting":
+                  innerParts.push(buildFormatting(inner.data));
+                  break;
+                case "insertSheet":
+                  innerParts.push(buildInsertSheet(inner.data));
+                  break;
+                case "comment":
+                  innerParts.push(buildComment(inner.data));
+                  break;
+                case "definedName":
+                  innerParts.push(buildDefinedName(inner.data));
+                  break;
+                case "reviewed":
+                  innerParts.push(`<reviewed rId="${inner.data.rId}"/>`);
+                  break;
+                case "autoFormatting":
+                  innerParts.push(buildAutoFormatting(inner.data));
+                  break;
+                case "customView":
+                  innerParts.push(buildCustomView(inner.data));
+                  break;
+                case "sheetRename":
+                  innerParts.push(buildSheetRename(inner.data));
+                  break;
+                case "queryTableField":
+                  innerParts.push(buildQueryTableField(inner.data));
+                  break;
+                case "conflict":
+                  innerParts.push(buildConflict(inner.data));
+                  break;
+              }
+            }
+            p.push(`<undo${attrs(undoAttrs)}>${innerParts.join("")}</undo>`);
+          } else {
+            p.push(`<undo${attrs(undoAttrs)}/>`);
+          }
           break;
+        }
         case "autoFormatting":
           p.push(buildAutoFormatting(entry.data));
           break;

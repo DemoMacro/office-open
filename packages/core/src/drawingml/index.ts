@@ -154,9 +154,6 @@ export {
   type GraphicFrameLockingOptions,
 } from "./locking";
 
-// Locked Canvas
-export { LockedCanvas, type LockedCanvasOptions } from "./locked-canvas";
-
 // Chart Drawing (cdr: elements)
 export {
   createCdrX,

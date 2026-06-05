@@ -28,6 +28,34 @@ import type {
 } from "./pivot-utils";
 import { collectUniqueValues, isNumericField } from "./pivot-utils";
 
+/** Extra attributes for CT_CacheField element. */
+export interface CacheFieldExtraAttrs {
+  /** Database field (CT_CacheField @databaseField) */
+  readonly databaseField?: boolean;
+  /** Level (CT_CacheField @level) */
+  readonly level?: number;
+  /** Mapping count (CT_CacheField @mappingCount) */
+  readonly mappingCount?: number;
+  /** Member property field (CT_CacheField @memberPropertyField) */
+  readonly memberPropertyField?: number;
+  /** Property name (CT_CacheField @propertyName) */
+  readonly propertyName?: string;
+  /** Server field (CT_CacheField @serverField) */
+  readonly serverField?: boolean;
+  /** Unique list (CT_CacheField @uniqueList) */
+  readonly uniqueList?: boolean;
+  /** Shared items contains mixed types (CT_SharedItems @containsMixedTypes) */
+  readonly containsMixedTypes?: boolean;
+  /** Shared items contains non-date (CT_SharedItems @containsNonDate) */
+  readonly containsNonDate?: boolean;
+  /** Shared items long text (CT_SharedItems @longText) */
+  readonly longText?: boolean;
+  /** Shared items max date (CT_SharedItems @maxDate) */
+  readonly maxDate?: string;
+  /** Shared items min date (CT_SharedItems @minDate) */
+  readonly minDate?: string;
+}
+
 export interface PivotCacheDefinitionOptions {
   /** Cache is invalid (CT_PivotCacheDefinition @invalid) */
   readonly invalid?: boolean;
@@ -77,6 +105,8 @@ export interface PivotCacheDefinitionOptions {
   readonly mpMaps?: readonly MpMapOptions[];
   /** Measure dimension maps (CT_MeasureDimensionMaps) */
   readonly measureDimensionMaps?: readonly MeasureDimensionMapOptions[];
+  /** Per-field cache field overrides (mapped by field index) */
+  readonly cacheFieldOverrides?: ReadonlyMap<number, CacheFieldExtraAttrs>;
 }
 
 export class PivotCacheDefinitionXml extends BaseXmlComponent {
@@ -210,11 +240,32 @@ export class PivotCacheDefinitionXml extends BaseXmlComponent {
         const allInteger = this.sourceData.records.every(
           (row) => typeof row[i] === "number" && Number.isInteger(row[i]),
         );
+        // Build extra cacheField and sharedItems attributes from override
+        const cfOverride = this.cacheDefOpts?.cacheFieldOverrides?.get(i);
+        const cfExtraAttrs: string[] = [];
+        const siExtraAttrs: string[] = [];
+        if (cfOverride) {
+          if (cfOverride.databaseField) cfExtraAttrs.push('databaseField="1"');
+          if (cfOverride.level !== undefined) cfExtraAttrs.push(`level="${cfOverride.level}"`);
+          if (cfOverride.mappingCount !== undefined)
+            cfExtraAttrs.push(`mappingCount="${cfOverride.mappingCount}"`);
+          if (cfOverride.memberPropertyField !== undefined)
+            cfExtraAttrs.push(`memberPropertyField="${cfOverride.memberPropertyField}"`);
+          if (cfOverride.propertyName)
+            cfExtraAttrs.push(`propertyName="${escapeXml(cfOverride.propertyName)}"`);
+          if (cfOverride.serverField) cfExtraAttrs.push('serverField="1"');
+          if (cfOverride.uniqueList) cfExtraAttrs.push('uniqueList="1"');
+          if (cfOverride.containsMixedTypes) siExtraAttrs.push('containsMixedTypes="1"');
+          if (cfOverride.containsNonDate) siExtraAttrs.push('containsNonDate="1"');
+          if (cfOverride.longText) siExtraAttrs.push('longText="1"');
+          if (cfOverride.maxDate) siExtraAttrs.push(`maxDate="${escapeXml(cfOverride.maxDate)}"`);
+          if (cfOverride.minDate) siExtraAttrs.push(`minDate="${escapeXml(cfOverride.minDate)}"`);
+        }
         p.push(
-          `<cacheField name="${escapeXml(fieldName)}" numFmtId="0">` +
+          `<cacheField name="${escapeXml(fieldName)}" ${cfExtraAttrs.length ? cfExtraAttrs.join(" ") + " " : ""}numFmtId="0">` +
             `<sharedItems containsSemiMixedTypes="0" containsString="0"` +
             ` containsNumber="1" containsInteger="${allInteger ? "1" : "0"}"` +
-            ` minValue="${min}" maxValue="${max}" count="${uniqueVals.length}"/>` +
+            ` minValue="${min}" maxValue="${max}" count="${uniqueVals.length}"${siExtraAttrs.length ? " " + siExtraAttrs.join(" ") : ""}/>` +
             `</cacheField>`,
         );
       } else {
@@ -230,8 +281,29 @@ export class PivotCacheDefinitionXml extends BaseXmlComponent {
         if (hasDate) siAttrs.push('containsDate="1"');
         if (hasMissing) siAttrs.push('containsBlank="1"');
 
+        // Build extra cacheField and sharedItems attributes from override
+        const cfOverride = this.cacheDefOpts?.cacheFieldOverrides?.get(i);
+        const cfExtraAttrs: string[] = [];
+        if (cfOverride) {
+          if (cfOverride.databaseField) cfExtraAttrs.push('databaseField="1"');
+          if (cfOverride.level !== undefined) cfExtraAttrs.push(`level="${cfOverride.level}"`);
+          if (cfOverride.mappingCount !== undefined)
+            cfExtraAttrs.push(`mappingCount="${cfOverride.mappingCount}"`);
+          if (cfOverride.memberPropertyField !== undefined)
+            cfExtraAttrs.push(`memberPropertyField="${cfOverride.memberPropertyField}"`);
+          if (cfOverride.propertyName)
+            cfExtraAttrs.push(`propertyName="${escapeXml(cfOverride.propertyName)}"`);
+          if (cfOverride.serverField) cfExtraAttrs.push('serverField="1"');
+          if (cfOverride.uniqueList) cfExtraAttrs.push('uniqueList="1"');
+          if (cfOverride.containsMixedTypes) siAttrs.push('containsMixedTypes="1"');
+          if (cfOverride.containsNonDate) siAttrs.push('containsNonDate="1"');
+          if (cfOverride.longText) siAttrs.push('longText="1"');
+          if (cfOverride.maxDate) siAttrs.push(`maxDate="${escapeXml(cfOverride.maxDate)}"`);
+          if (cfOverride.minDate) siAttrs.push(`minDate="${escapeXml(cfOverride.minDate)}"`);
+        }
+
         p.push(
-          `<cacheField name="${escapeXml(fieldName)}" numFmtId="0"><sharedItems ${siAttrs.join(" ")}>`,
+          `<cacheField name="${escapeXml(fieldName)}" ${cfExtraAttrs.length ? cfExtraAttrs.join(" ") + " " : ""}numFmtId="0"><sharedItems ${siAttrs.join(" ")}>`,
         );
         for (const v of uniqueVals) {
           if (v === null) {
@@ -347,6 +419,9 @@ export class PivotCacheDefinitionXml extends BaseXmlComponent {
         if (ch.measures) chAttrs.push('measures="1"');
         if (ch.oneField) chAttrs.push('oneField="1"');
         if (ch.hidden) chAttrs.push('hidden="1"');
+        if (ch.memberValueDatatype) chAttrs.push(`memberValueDatatype="${ch.memberValueDatatype}"`);
+        if (ch.unbalanced) chAttrs.push('unbalanced="1"');
+        if (ch.unbalancedGroup) chAttrs.push('unbalancedGroup="1"');
 
         // groupLevels and fieldsUsage (optional children)
         const hasGroupLevels = ch.groupLevels && ch.groupLevels.length > 0;

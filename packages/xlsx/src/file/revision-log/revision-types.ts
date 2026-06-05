@@ -55,6 +55,10 @@ export interface RevisionHeadersOptions {
   readonly protected?: boolean;
   /** Preserve history days */
   readonly preserveHistory?: number;
+  /** Disk revisions (CT_Headers @diskRevisions) */
+  readonly diskRevisions?: boolean;
+  /** Exclusive (CT_Headers @exclusive) */
+  readonly exclusive?: boolean;
 }
 
 // ── Revision Log Options ──
@@ -75,6 +79,12 @@ export interface RevisionRowColumnOptions {
   readonly sheetIndex?: number;
   /** Edge (for insert edge tracking) */
   readonly edge?: boolean;
+  /** Rejected (CT_RevisionRowColumn @ra) */
+  readonly ra?: string;
+  /** Undo action (CT_RevisionRowColumn @ua) */
+  readonly ua?: string;
+  /** End of list (CT_RevisionRowColumn @eol) */
+  readonly eol?: boolean;
 }
 
 export interface RevisionCellChangeOptions {
@@ -108,6 +118,14 @@ export interface RevisionCellChangeOptions {
   readonly oldPh?: boolean;
   /** End of list formula update */
   readonly endOfListFormulaUpdate?: boolean;
+  /** Rejected (CT_RevisionCellChange @ra) */
+  readonly ra?: string;
+  /** Undo action (CT_RevisionCellChange @ua) */
+  readonly ua?: string;
+  /** Cell metadata for new cell (nc @cm) */
+  readonly newCellMeta?: number;
+  /** Cell metadata for old cell (oc @cm) */
+  readonly oldCellMeta?: number;
 }
 
 export interface RevisionMoveOptions {
@@ -121,6 +139,10 @@ export interface RevisionMoveOptions {
   readonly sheetIndex?: number;
   /** Source sheet ID (CT_RevisionMove @sourceSheetId) */
   readonly sourceSheetId?: number;
+  /** Rejected (CT_RevisionMove @ra) */
+  readonly ra?: string;
+  /** Undo action (CT_RevisionMove @ua) */
+  readonly ua?: string;
 }
 
 export interface RevisionFormattingOptions {
@@ -145,6 +167,10 @@ export interface RevisionInsertSheetOptions {
   readonly sheetIndex?: number;
   /** Sheet position (CT_RevisionInsertSheet @sheetPosition) */
   readonly sheetPosition?: number;
+  /** Rejected (CT_RevisionInsertSheet @ra) */
+  readonly ra?: string;
+  /** Undo action (CT_RevisionInsertSheet @ua) */
+  readonly ua?: string;
 }
 
 export interface RevisionCommentOptions {
@@ -213,6 +239,10 @@ export interface RevisionDefinedNameOptions {
   readonly oldStatusBar?: string;
   /** Old comment */
   readonly oldComment?: string;
+  /** Rejected (CT_RevisionDefinedName @ra) */
+  readonly ra?: string;
+  /** Undo action (CT_RevisionDefinedName @ua) */
+  readonly ua?: string;
 }
 
 /** Reviewed revision (CT_Reviewed) */
@@ -225,6 +255,18 @@ export interface RevisionReviewedOptions {
 export interface RevisionUndoOptions {
   /** Revision ID of the undo action */
   readonly rId: number;
+  /** Revision entries wrapped by undo */
+  readonly revisions?: readonly import("./revision-types").RevisionEntry[];
+  /** Cell style (CT_Undo @cs) */
+  readonly cs?: boolean;
+  /** Defined name (CT_Undo @dn) */
+  readonly dn?: boolean;
+  /** Expansion (CT_Undo @exp) */
+  readonly exp?: boolean;
+  /** Number format (CT_Undo @nf) */
+  readonly nf?: boolean;
+  /** 3D reference (CT_Undo @ref3D) */
+  readonly ref3D?: boolean;
 }
 
 /** Auto formatting revision (CT_RevisionAutoFormatting) */
@@ -255,6 +297,10 @@ export interface RevisionSheetRenameOptions {
   readonly oldName?: string;
   /** New sheet name */
   readonly newName?: string;
+  /** Rejected (CT_RevisionSheetRename @ra) */
+  readonly ra?: string;
+  /** Undo action (CT_RevisionSheetRename @ua) */
+  readonly ua?: string;
 }
 
 /** Query table field revision (CT_RevisionQueryTableField) */
@@ -265,6 +311,10 @@ export interface RevisionQueryTableFieldOptions {
   readonly sheetIndex?: number;
   /** Field ID */
   readonly fieldId?: number;
+  /** Rejected (CT_RevisionQueryTableField @ra) */
+  readonly ra?: string;
+  /** Undo action (CT_RevisionQueryTableField @ua) */
+  readonly ua?: string;
 }
 
 /** Conflict revision (CT_RevisionConflict) */
@@ -273,6 +323,10 @@ export interface RevisionConflictOptions {
   readonly rId: number;
   /** Sheet index */
   readonly sheetIndex?: number;
+  /** Rejected (CT_RevisionConflict @ra) */
+  readonly ra?: string;
+  /** Undo action (CT_RevisionConflict @ua) */
+  readonly ua?: string;
 }
 
 /** Union type for all revision entries */

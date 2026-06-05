@@ -52,6 +52,8 @@ export interface FillOptions {
   readonly patternType?: string;
   /** Background color for pattern fill (CT_PatternFill/bgColor) */
   readonly bgColor?: string;
+  /** Background color indexed (CT_Color @indexed) */
+  readonly colorIndexed?: number;
   /** Gradient stops (CT_GradientFill/stop) */
   readonly stops?: readonly GradientStopOptions[];
   /** Gradient type (CT_GradientFill @type) */
@@ -71,10 +73,6 @@ export interface FillOptions {
 export interface BorderOptions {
   readonly style?: "thin" | "medium" | "thick" | "dotted" | "dashed" | "hair" | "none";
   readonly color?: string;
-  /** Diagonal up (CT_Border @diagonalUp) — on the parent border element */
-  readonly diagonalUp?: boolean;
-  /** Diagonal down (CT_Border @diagonalDown) — on the parent border element */
-  readonly diagonalDown?: boolean;
 }
 
 export interface BorderSideOptions {
@@ -83,6 +81,10 @@ export interface BorderSideOptions {
   readonly left?: BorderOptions;
   readonly right?: BorderOptions;
   readonly diagonal?: BorderOptions;
+  /** Diagonal up (CT_Border @diagonalUp) — on the parent border element */
+  readonly diagonalUp?: boolean;
+  /** Diagonal down (CT_Border @diagonalDown) — on the parent border element */
+  readonly diagonalDown?: boolean;
   /** Leading edge border (CT_Border/start, for RTL support) */
   readonly start?: BorderOptions;
   /** Trailing edge border (CT_Border/end, for RTL support) */
@@ -119,6 +121,8 @@ export interface StyleOptions {
   readonly quotePrefix?: boolean;
   /** Pivot button (CT_Xf @pivotButton) */
   readonly pivotButton?: boolean;
+  /** Apply protection (CT_Xf @applyProtection) */
+  readonly applyProtection?: boolean;
   /** Cell protection (CT_CellProtection) */
   readonly protection?: CellProtectionOptions;
 }
@@ -165,7 +169,7 @@ function fillKey(f: FillOptions): string {
 
 function borderKey(b: BorderSideOptions): string {
   const sk = (o?: BorderOptions) => `${o?.style ?? ""}_${o?.color ?? ""}`;
-  return `t${sk(b.top)}b${sk(b.bottom)}l${sk(b.left)}r${sk(b.right)}d${sk(b.diagonal)}st${sk(b.start)}en${sk(b.end)}v${sk(b.vertical)}h${sk(b.horizontal)}`;
+  return `t${sk(b.top)}b${sk(b.bottom)}l${sk(b.left)}r${sk(b.right)}d${sk(b.diagonal)}du${b.diagonalUp ? 1 : 0}dd${b.diagonalDown ? 1 : 0}st${sk(b.start)}en${sk(b.end)}v${sk(b.vertical)}h${sk(b.horizontal)}`;
 }
 
 // ── Built-in number format IDs ──
@@ -258,6 +262,22 @@ export interface CustomTableStyleOptions {
   readonly elements?: readonly TableStyleElementOptions[];
 }
 
+/** Custom cell style (CT_CellStyle) */
+export interface CustomCellStyleOptions {
+  /** Style name */
+  readonly name: string;
+  /** XF index to apply */
+  readonly xfId: number;
+  /** Built-in ID */
+  readonly builtinId?: number;
+  /** Custom built-in (CT_CellStyle @customBuiltin) */
+  readonly customBuiltin?: boolean;
+  /** Outline level (CT_CellStyle @iLevel) */
+  readonly iLevel?: number;
+  /** Hidden style (CT_CellStyle @hidden) */
+  readonly hidden?: boolean;
+}
+
 export class Styles extends BaseXmlComponent {
   private readonly fonts: FontOptions[] = [
     { size: 11, fontName: "Calibri" }, // default font (index 0)
@@ -286,6 +306,7 @@ export class Styles extends BaseXmlComponent {
     readonly alignment?: AlignmentOptions;
     readonly quotePrefix?: boolean;
     readonly pivotButton?: boolean;
+    readonly applyProtection?: boolean;
     readonly protection?: CellProtectionOptions;
   }> = [
     { fontId: 0, fillId: 0, borderId: 0, numFmtId: 0 }, // default xf (index 0)
@@ -296,6 +317,8 @@ export class Styles extends BaseXmlComponent {
 
   private colors?: ColorsOptions;
   private tableStyles?: readonly CustomTableStyleOptions[];
+  /** Custom cell styles (CT_CellStyles) */
+  private customCellStyles?: readonly CustomCellStyleOptions[];
   /** Style sheet extensions (CT_ExtensionList) */
   private styleExtensions?: readonly StyleExtensionOptions[];
 
@@ -328,6 +351,7 @@ export class Styles extends BaseXmlComponent {
       alignment: opts.alignment,
       quotePrefix: opts.quotePrefix,
       pivotButton: opts.pivotButton,
+      applyProtection: opts.applyProtection,
       protection: opts.protection,
     };
 
@@ -364,6 +388,10 @@ export class Styles extends BaseXmlComponent {
 
   public setExtensions(extensions: readonly StyleExtensionOptions[]): void {
     this.styleExtensions = extensions;
+  }
+
+  public setCustomCellStyles(styles: readonly CustomCellStyleOptions[]): void {
+    this.customCellStyles = styles;
   }
 
   private registerFont(opts?: FontOptions): number {
@@ -423,6 +451,7 @@ export class Styles extends BaseXmlComponent {
     readonly alignment?: AlignmentOptions;
     readonly quotePrefix?: boolean;
     readonly pivotButton?: boolean;
+    readonly applyProtection?: boolean;
     readonly protection?: CellProtectionOptions;
   }): string {
     const a = xf.alignment;
@@ -478,7 +507,11 @@ export class Styles extends BaseXmlComponent {
         p.push(`<fill><gradientFill${attrs(gfAttrs)}>${stopParts}</gradientFill></fill>`);
       } else {
         const patternAttrs = attrs({ patternType: f.patternType ?? "solid" });
-        const fgColor = f.color ? `<fgColor rgb="FF${f.color}"/>` : "";
+        const fgColor = f.color
+          ? `<fgColor rgb="FF${f.color}"/>`
+          : f.colorIndexed !== undefined
+            ? `<fgColor indexed="${f.colorIndexed}"/>`
+            : "";
         const bgColor = f.bgColor ? `<bgColor rgb="FF${f.bgColor}"/>` : "";
         const colorContent = fgColor + bgColor;
         p.push(
@@ -493,7 +526,11 @@ export class Styles extends BaseXmlComponent {
     // borders
     p.push(`<borders count="${this.borders.length}">`);
     for (const b of this.borders) {
-      p.push(`<border>${this.borderXmlStr(b)}</border>`);
+      const bAttrs: string[] = [];
+      if (b.diagonalUp) bAttrs.push('diagonalUp="1"');
+      if (b.diagonalDown) bAttrs.push('diagonalDown="1"');
+      const bAttr = bAttrs.length ? ` ${bAttrs.join(" ")}` : "";
+      p.push(`<border${bAttr}>${this.borderXmlStr(b)}</border>`);
     }
     p.push("</borders>");
 
@@ -519,6 +556,8 @@ export class Styles extends BaseXmlComponent {
       if (xf.numFmtId > 0) xAttrs.applyNumberFormat = 1;
       if (xf.quotePrefix) xAttrs.quotePrefix = 1;
       if (xf.pivotButton) xAttrs.pivotButton = 1;
+      if (xf.applyProtection) xAttrs.applyProtection = 1;
+      if (xf.protection) xAttrs.applyProtection = xAttrs.applyProtection ?? 1;
 
       const alignStr = xf.alignment ? this.alignmentXmlStr(xf.alignment) : "";
       const protStr = xf.protection ? this.protectionXmlStr(xf.protection) : "";
@@ -528,7 +567,25 @@ export class Styles extends BaseXmlComponent {
     p.push("</cellXfs>");
 
     // cellStyles
-    p.push('<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>');
+    if (this.customCellStyles && this.customCellStyles.length > 0) {
+      const csAttrs: string[] = [`count="${this.customCellStyles.length + 1}"`];
+      const csParts: string[] = [`<cellStyles ${csAttrs.join(" ")}>`];
+      csParts.push('<cellStyle name="Normal" xfId="0" builtinId="0"/>');
+      for (const cs of this.customCellStyles) {
+        const attrs: string[] = [`name="${escapeXml(cs.name)}"`, `xfId="${cs.xfId}"`];
+        if (cs.builtinId !== undefined) attrs.push(`builtinId="${cs.builtinId}"`);
+        if (cs.customBuiltin) attrs.push('customBuiltin="1"');
+        if (cs.iLevel !== undefined) attrs.push(`iLevel="${cs.iLevel}"`);
+        if (cs.hidden) attrs.push('hidden="1"');
+        csParts.push(`<cellStyle ${attrs.join(" ")}/>`);
+      }
+      csParts.push("</cellStyles>");
+      p.push(csParts.join(""));
+    } else {
+      p.push(
+        '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>',
+      );
+    }
 
     // dxfs
     if (this.dxfs.length > 0) {
@@ -542,6 +599,7 @@ export class Styles extends BaseXmlComponent {
           dParts.push(`<fill><patternFill${patAttrs}>${bgColor}</patternFill></fill>`);
         }
         if (dxf.numFmt) dParts.push(`<numFmt formatCode="${escapeXml(dxf.numFmt)}"/>`);
+        if (dxf.border) dParts.push(`<border>${this.borderXmlStr(dxf.border)}</border>`);
         if (dParts.length > 0) {
           p.push(`<dxf>${dParts.join("")}</dxf>`);
         } else {
