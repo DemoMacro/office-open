@@ -14,4 +14,15 @@ export default defineAppConfig({
     rootDir: "docs",
   },
   navigation: { sub: "header" },
+  ui: {
+    prose: {
+      codeIcon: {
+        json: "i-vscode-icons-file-type-json",
+        class: "i-vscode-icons-file-type-typescript",
+        docx: "i-vscode-icons-file-type-word",
+        pptx: "i-vscode-icons-file-type-powerpoint",
+        xlsx: "i-vscode-icons-file-type-excel",
+      },
+    },
+  },
 });
