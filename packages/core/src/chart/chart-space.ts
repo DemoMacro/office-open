@@ -68,7 +68,10 @@ export class ChartSpace extends XmlComponent {
       } as AllChartTypeOptions),
     );
 
-    const noAxes = options.type === "pie" || options.type === "doughnut";
+    // Pie and doughnut charts (including 3D variants) have no axes.
+    // Add future no-axis types (e.g. ofPie) here.
+    const NO_AXES_TYPES: ReadonlySet<string> = new Set(["pie", "doughnut"]);
+    const noAxes = NO_AXES_TYPES.has(options.type);
 
     if (!noAxes) {
       if (options.type === "scatter" || options.type === "bubble") {
