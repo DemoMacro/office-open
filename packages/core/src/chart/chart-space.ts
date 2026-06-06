@@ -97,7 +97,7 @@ export class ChartSpace extends XmlComponent {
     }
 
     this.root.push(chart);
-    this.root.push(createChartSpPr());
+    this.root.push(createNoFillSpPr());
     this.root.push(createChartTxPr());
   }
 }
@@ -129,37 +129,6 @@ function createLegend(): XmlComponent {
 }
 
 function createNoFillSpPr(): XmlComponent {
-  const spPr = new (class extends XmlComponent {
-    public constructor() {
-      super("c:spPr");
-    }
-  })();
-  spPr["root"].push(
-    new (class extends XmlComponent {
-      public constructor() {
-        super("a:noFill");
-      }
-    })(),
-  );
-  spPr["root"].push(
-    new (class extends XmlComponent {
-      public constructor() {
-        super("a:ln");
-        this.root.push(
-          new (class extends XmlComponent {
-            public constructor() {
-              super("a:noFill");
-            }
-          })(),
-        );
-      }
-    })(),
-  );
-  spPr["root"].push(new BuilderElement({ name: "a:effectLst" }));
-  return spPr;
-}
-
-function createChartSpPr(): XmlComponent {
   const spPr = new (class extends XmlComponent {
     public constructor() {
       super("c:spPr");
