@@ -2,10 +2,10 @@ import type { BackgroundOptions } from "@file/background/background";
 import { DEFAULT_COLOR_MAP, SP_TREE_HEADER } from "@file/constants";
 import type { MasterChild } from "@file/file";
 import type { SlideHeaderFooterOptions } from "@file/header-footer/header-footer";
-import { coerceMasterChild } from "@file/slide/coerce";
+import { buildMasterChildrenXml } from "@file/slide/coerce";
 import type { Context } from "@file/xml-components";
 import { ImportedXmlComponent } from "@file/xml-components";
-import { convertPixelsToEmu } from "@office-open/core";
+import { convertPositionToEmu } from "@office-open/core";
 
 export interface MasterPlaceholderPosition {
   readonly x: number;
@@ -38,14 +38,7 @@ const REF_DATE = { x: 838200, y: 6356350, cx: 2743200, cy: 365125 };
 const REF_FOOTER = { x: 4038600, y: 6356350, cx: 4114800, cy: 365125 };
 const REF_SLDNUM = { x: 8610600, y: 6356350, cx: 2743200, cy: 365125 };
 
-function toEmu(pos: MasterPlaceholderPosition) {
-  return {
-    x: convertPixelsToEmu(pos.x),
-    y: convertPixelsToEmu(pos.y),
-    cx: convertPixelsToEmu(pos.width),
-    cy: convertPixelsToEmu(pos.height),
-  };
-}
+const toEmu = convertPositionToEmu;
 
 function resolvePos(
   opt: boolean | MasterPlaceholderPosition | undefined,
@@ -88,17 +81,6 @@ function buildBackgroundXml(bg?: BackgroundOptions): string {
   const full = bgObj.toXml({ stack: [] } as Context);
   // Strip the outer <p:bg> since the caller already provides the wrapper.
   return full.replace(/^<p:bg[^>]*>/, "").replace(/<\/p:bg>$/, "");
-}
-
-function buildChildrenXml(children?: readonly MasterChild[]): string {
-  if (!children || children.length === 0) return "";
-  const ctx: Context = { stack: [] };
-  let result = "";
-  for (const child of children) {
-    const xmlStr = coerceMasterChild(child).toXml(ctx);
-    if (xmlStr) result += xmlStr;
-  }
-  return result;
 }
 
 function buildSlideMasterXml(
@@ -212,7 +194,7 @@ function buildSlideMasterXml(
   }
 
   // Custom children shapes — shift ids to avoid conflicts with placeholder ids
-  const childrenXml = buildChildrenXml(masterOptions?.children);
+  const childrenXml = buildMasterChildrenXml(masterOptions?.children);
   if (childrenXml) {
     const offset = nextId - 1;
     shapes.push(childrenXml.replace(/ id="(\d+)"/g, (_, n) => ` id="${parseInt(n) + offset}"`));

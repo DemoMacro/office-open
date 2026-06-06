@@ -53,3 +53,33 @@ export const convertPointsToEmu = (points: number): number => Math.round(points 
  * Converts EMU to points.
  */
 export const convertEmuToPoints = (emus: number): number => emus / 12700;
+
+// ---------------------------------------------------------------------------
+// Position conversion (pixel-based position to EMU coordinates)
+// ---------------------------------------------------------------------------
+
+/** A rectangular position in pixels. */
+export interface PixelPosition {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+}
+
+/** An EMU-based rectangular position. */
+export interface EmuPosition {
+  readonly x: number;
+  readonly y: number;
+  readonly cx: number;
+  readonly cy: number;
+}
+
+/**
+ * Converts a pixel-based position to EMU coordinates.
+ */
+export const convertPositionToEmu = (pos: PixelPosition): EmuPosition => ({
+  x: convertPixelsToEmu(pos.x),
+  y: convertPixelsToEmu(pos.y),
+  cx: convertPixelsToEmu(pos.width),
+  cy: convertPixelsToEmu(pos.height),
+});

@@ -1,9 +1,8 @@
-import type { LayoutDefinition, MasterChild } from "@file/file";
-import type { MasterPlaceholderPosition } from "@file/slide-master/slide-master";
-import { coerceMasterChild } from "@file/slide/coerce";
+import type { LayoutDefinition } from "@file/file";
+import { buildMasterChildrenXml } from "@file/slide/coerce";
 import type { Context } from "@file/xml-components";
 import { ImportedXmlComponent } from "@file/xml-components";
-import { convertPixelsToEmu } from "@office-open/core";
+import { convertPositionToEmu } from "@office-open/core";
 
 export type SlideLayoutType =
   | "blank"
@@ -246,15 +245,6 @@ function buildLayoutXml(layoutType: SlideLayoutType, slideWidth: number = SW_REF
 
 // ── Custom layout builder ──
 
-function posToEmu(pos: MasterPlaceholderPosition) {
-  return {
-    x: convertPixelsToEmu(pos.x),
-    y: convertPixelsToEmu(pos.y),
-    cx: convertPixelsToEmu(pos.width),
-    cy: convertPixelsToEmu(pos.height),
-  };
-}
-
 function positionedTitlePlaceholder(
   id: number,
   x: number,
@@ -316,17 +306,6 @@ function positionedSldNumPlaceholder(
   return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="Slide Number Placeholder ${id - 1}"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="sldNum" sz="quarter" idx="12"/></p:nvPr></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:fld id="{C1FF6DA9-008F-8B48-92A6-B652298478BF}" type="slidenum"><a:rPr lang="en-US" smtClean="0"/><a:t>‹#›</a:t></a:fld><a:endParaRPr lang="en-US"/></a:p></p:txBody></p:sp>`;
 }
 
-function buildChildrenXml(children?: readonly MasterChild[]): string {
-  if (!children || children.length === 0) return "";
-  const ctx: Context = { stack: [] };
-  let result = "";
-  for (const child of children) {
-    const xmlStr = coerceMasterChild(child).toXml(ctx);
-    if (xmlStr) result += xmlStr;
-  }
-  return result;
-}
-
 function buildCustomLayoutXml(def: LayoutDefinition): string {
   const ph = def.placeholders ?? {};
   const layoutType = def.type ?? "blank";
@@ -337,7 +316,7 @@ function buildCustomLayoutXml(def: LayoutDefinition): string {
 
   // Content placeholders
   if (ph.title !== false) {
-    const titlePos = ph.title ? posToEmu(ph.title) : null;
+    const titlePos = ph.title ? convertPositionToEmu(ph.title) : null;
     if (titlePos) {
       shapes.push(
         positionedTitlePlaceholder(nextId++, titlePos.x, titlePos.y, titlePos.cx, titlePos.cy),
@@ -348,12 +327,12 @@ function buildCustomLayoutXml(def: LayoutDefinition): string {
   }
 
   if (ph.subtitle !== false && ph.subtitle !== undefined) {
-    const subPos = posToEmu(ph.subtitle);
+    const subPos = convertPositionToEmu(ph.subtitle);
     shapes.push(positionedSubtitlePlaceholder(nextId++, subPos.x, subPos.y, subPos.cx, subPos.cy));
   }
 
   if (ph.body !== false && ph.body !== undefined) {
-    const bodyPos = ph.body ? posToEmu(ph.body) : null;
+    const bodyPos = ph.body ? convertPositionToEmu(ph.body) : null;
     if (bodyPos) {
       shapes.push(
         positionedBodyPlaceholder(nextId++, 1, bodyPos.x, bodyPos.y, bodyPos.cx, bodyPos.cy),
@@ -365,7 +344,7 @@ function buildCustomLayoutXml(def: LayoutDefinition): string {
 
   // Footer placeholders
   if (ph.date !== false && ph.date !== undefined) {
-    const datePos = ph.date ? posToEmu(ph.date) : null;
+    const datePos = ph.date ? convertPositionToEmu(ph.date) : null;
     if (datePos) {
       shapes.push(
         positionedDatePlaceholder(nextId++, datePos.x, datePos.y, datePos.cx, datePos.cy),
@@ -376,7 +355,7 @@ function buildCustomLayoutXml(def: LayoutDefinition): string {
   }
 
   if (ph.footer !== false && ph.footer !== undefined) {
-    const ftrPos = ph.footer ? posToEmu(ph.footer) : null;
+    const ftrPos = ph.footer ? convertPositionToEmu(ph.footer) : null;
     if (ftrPos) {
       shapes.push(positionedFooterPlaceholder(nextId++, ftrPos.x, ftrPos.y, ftrPos.cx, ftrPos.cy));
     } else {
@@ -385,7 +364,7 @@ function buildCustomLayoutXml(def: LayoutDefinition): string {
   }
 
   if (ph.slideNumber !== false && ph.slideNumber !== undefined) {
-    const sldPos = ph.slideNumber ? posToEmu(ph.slideNumber) : null;
+    const sldPos = ph.slideNumber ? convertPositionToEmu(ph.slideNumber) : null;
     if (sldPos) {
       shapes.push(positionedSldNumPlaceholder(nextId++, sldPos.x, sldPos.y, sldPos.cx, sldPos.cy));
     } else {
@@ -394,7 +373,7 @@ function buildCustomLayoutXml(def: LayoutDefinition): string {
   }
 
   // Children shapes — shift ids
-  const childrenXml = buildChildrenXml(def.children);
+  const childrenXml = buildMasterChildrenXml(def.children);
   if (childrenXml) {
     const offset = nextId - 1;
     shapes.push(childrenXml.replace(/ id="(\d+)"/g, (_, n) => ` id="${parseInt(n) + offset}"`));
