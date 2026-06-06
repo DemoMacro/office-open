@@ -22,7 +22,10 @@ import {
   type SlideMasterOptions,
 } from "@file/slide-master/slide-master";
 import { Slide } from "@file/slide/slide";
+import type { ControlOptions } from "@file/slide/slide";
 import type { SlideChild } from "@file/slide/slide-child";
+import type { SlideSyncOptions } from "@file/slide/slide-sync-properties";
+import { SlideSyncProperties } from "@file/slide/slide-sync-properties";
 import { SmartArtCollection } from "@file/smartart/smartart-collection";
 import { TableStyles } from "@file/table-styles";
 import { DefaultTheme, type ThemeOptions } from "@file/theme/theme";
@@ -81,6 +84,9 @@ export interface SlideOptions {
   readonly master?: string;
   readonly showMasterShapes?: boolean;
   readonly showMasterPlaceholderAnimations?: boolean;
+  readonly controls?: readonly ControlOptions[];
+  readonly customerData?: readonly { readonly rId: string }[];
+  readonly slideSync?: SlideSyncOptions;
 }
 
 export interface ShowOptions {
@@ -131,6 +137,11 @@ export interface PresentationOptions extends CorePropertiesOptions {
   readonly conformance?: "strict" | "transitional";
   readonly photoAlbum?: import("./presentation/presentation").PhotoAlbumOptions;
   readonly modifyVerifier?: import("./presentation/presentation").ModifyVerifierOptions;
+  readonly embeddedFonts?: import("./presentation/presentation").EmbeddedFontOptions[];
+  readonly customShows?: import("./presentation/presentation").CustomShowOptions[];
+  readonly kinsoku?: import("./presentation/presentation").KinsokuOptions[];
+  readonly customerData?: import("./presentation/presentation").CustomerDataOptions;
+  readonly colorMru?: readonly string[];
 }
 
 interface RelEntry {
@@ -209,6 +220,10 @@ export class File {
       | "conformance"
       | "photoAlbum"
       | "modifyVerifier"
+      | "embeddedFonts"
+      | "customShows"
+      | "kinsoku"
+      | "customerData"
     >
   >;
 
@@ -237,6 +252,8 @@ export class File {
   private _notesSlides?: NotesSlide[];
   private _commentAuthorList?: CommentAuthorList;
   private _slideCommentLists?: (SlideCommentList | undefined)[];
+  private _slideSyncProperties?: SlideSyncProperties[];
+  private _slideSyncIndexMap?: Map<number, number>;
 
   // Lazy relationship data
   private _fileRels?: Relationships;
@@ -249,6 +266,15 @@ export class File {
     this.includeHandout = options.includeHandoutMaster ?? false;
     this.tableStylesOpts = options.tableStyles;
     this.viewOpts = options.view;
+    this.presPropsFullOpts =
+      options.web || options.print || options.htmlPublish || options.colorMru
+        ? {
+            web: options.web,
+            print: options.print,
+            htmlPublish: options.htmlPublish,
+            colorMru: options.colorMru,
+          }
+        : undefined;
     this.handoutMasterOpts = options.handoutMasterOptions;
     this.notesMasterOpts = options.notesMasterOptions;
     const sz = resolveSlideSize(options.size);
@@ -269,7 +295,11 @@ export class File {
       options.bookmarkIdSeed !== undefined ||
       options.conformance !== undefined ||
       options.photoAlbum !== undefined ||
-      options.modifyVerifier !== undefined
+      options.modifyVerifier !== undefined ||
+      options.embeddedFonts !== undefined ||
+      options.customShows !== undefined ||
+      options.kinsoku !== undefined ||
+      options.customerData !== undefined
     ) {
       this.presAttrOpts = {
         serverZoom: options.serverZoom,
@@ -286,6 +316,10 @@ export class File {
         conformance: options.conformance,
         photoAlbum: options.photoAlbum,
         modifyVerifier: options.modifyVerifier,
+        embeddedFonts: options.embeddedFonts,
+        customShows: options.customShows,
+        kinsoku: options.kinsoku,
+        customerData: options.customerData,
       };
     }
   }
@@ -432,6 +466,7 @@ export class File {
       this._contentTypes = new ContentTypes();
       let hasComments = false;
       let notesSlideIdx = 0;
+      let slideSyncIdx = 0;
       for (let i = 0; i < this.slideOptions.length; i++) {
         this._contentTypes.addSlide(i + 1);
         if (this.slideOptions[i].notes) {
@@ -441,6 +476,10 @@ export class File {
         if (this.slideOptions[i].comments && this.slideOptions[i].comments!.length > 0) {
           this._contentTypes.addComments(i + 1);
           hasComments = true;
+        }
+        if (this.slideOptions[i].slideSync) {
+          this._contentTypes.addSlideSyncPr(slideSyncIdx + 1);
+          slideSyncIdx++;
         }
       }
       if (notesSlideIdx > 0) {
@@ -564,6 +603,7 @@ export class File {
       web: this.presPropsFullOpts?.web,
       print: this.presPropsFullOpts?.print,
       htmlPublish: this.presPropsFullOpts?.htmlPublish,
+      colorMru: this.presPropsFullOpts?.colorMru,
     }));
   }
 
@@ -601,6 +641,10 @@ export class File {
             s.headerFooter,
             s.showMasterShapes,
             s.showMasterPlaceholderAnimations,
+            {
+              controls: s.controls,
+              customerData: s.customerData,
+            },
           ),
         );
       }
@@ -659,8 +703,48 @@ export class File {
     return (this._notesMasterRels ??= new Relationships());
   }
 
+  public get slideSyncProperties(): readonly SlideSyncProperties[] {
+    if (!this._slideSyncProperties) {
+      this._slideSyncProperties = [];
+      for (const s of this.slideOptions) {
+        if (s.slideSync) {
+          this._slideSyncProperties.push(new SlideSyncProperties(s.slideSync));
+        }
+      }
+    }
+    return this._slideSyncProperties;
+  }
+
+  /** Map from slide index → slideSyncPr index (0-based) for slides that have slideSync. */
+  public get slideSyncIndexMap(): Map<number, number> {
+    if (!this._slideSyncIndexMap) {
+      this._slideSyncIndexMap = new Map();
+      let syncIdx = 0;
+      for (let i = 0; i < this.slideOptions.length; i++) {
+        if (this.slideOptions[i].slideSync) {
+          this._slideSyncIndexMap.set(i, syncIdx++);
+        }
+      }
+    }
+    return this._slideSyncIndexMap;
+  }
+
   public get hasHandoutMaster(): boolean {
     return this.includeHandout;
+  }
+
+  public get hasOutlineViewSlides(): boolean {
+    return !!this.viewOpts?.outlineView?.slides && this.viewOpts.outlineView.slides.length > 0;
+  }
+
+  public get slideCount(): number {
+    return this.slideOptions.length;
+  }
+
+  /** HTML publish target info (for creating presProps.xml.rels) */
+  public get htmlPublishInfo(): { readonly rId: string; readonly target?: string } | undefined {
+    const hp = this.presPropsFullOpts?.htmlPublish;
+    return hp?.rId ? { rId: hp.rId, target: hp.target } : undefined;
   }
 
   public get handoutMasterOptions():

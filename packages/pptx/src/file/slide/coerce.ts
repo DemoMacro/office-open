@@ -10,7 +10,21 @@ import { Shape } from "@file/shape/shape";
 import type { SlideChild } from "@file/slide/slide-child";
 import { SmartArt } from "@file/smartart/smartart-frame";
 import { Table } from "@file/table/table-frame";
+import type { Context } from "@file/xml-components";
 import { BaseXmlComponent } from "@file/xml-components";
+
+class ContentPart extends BaseXmlComponent {
+  private readonly rId: string;
+
+  public constructor(rId: string) {
+    super("p:contentPart");
+    this.rId = rId;
+  }
+
+  public override toXml(_context: Context): string {
+    return `<p:contentPart r:id="${this.rId}"/>`;
+  }
+}
 
 export function coerceChild(child: SlideChild): BaseXmlComponent {
   if (child instanceof BaseXmlComponent) return child;
@@ -25,6 +39,9 @@ export function coerceChild(child: SlideChild): BaseXmlComponent {
   if ("group" in child) return new GroupShape(child.group);
   if ("smartart" in child) return new SmartArt(child.smartart);
   if ("ole" in child) return new OleFrame(child.ole);
+  if ("contentPart" in child) {
+    return new ContentPart(child.contentPart.rId);
+  }
   throw new Error("Unknown slide child type");
 }
 

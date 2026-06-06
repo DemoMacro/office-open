@@ -41,6 +41,20 @@ export interface ViewPropertiesOptions {
   readonly zoomScaleDenominator?: number;
   readonly normalView?: NormalViewOptions;
   readonly slideView?: SlideViewOptions;
+  readonly guides?: readonly {
+    readonly orient?: "vert" | "horz";
+    readonly pos?: number;
+  }[];
+  readonly outlineView?: {
+    readonly slides?: readonly {
+      readonly rId: string;
+      readonly collapse?: boolean;
+    }[];
+  };
+  readonly sorterView?: {
+    readonly showFormatting?: boolean;
+  };
+  readonly notesView?: boolean;
 }
 
 function buildNormalViewPrXml(opts?: NormalViewOptions): string {
@@ -58,22 +72,43 @@ function buildNormalViewPrXml(opts?: NormalViewOptions): string {
   );
 }
 
-function buildCSldViewPrXml(opts?: SlideViewOptions, zoomN = 90, zoomD = 100): string {
+function buildCViewPrXml(zoomN: number, zoomD: number, varScale = false): string {
+  const cViewPrAttr = varScale ? ' varScale="1"' : "";
+  return (
+    `<p:cViewPr${cViewPrAttr}>` +
+    `<p:scale><a:sx n="${zoomN}" d="${zoomD}"/><a:sy n="${zoomN}" d="${zoomD}"/></p:scale>` +
+    '<p:origin x="1200" y="72"/>' +
+    "</p:cViewPr>"
+  );
+}
+
+function buildCSldViewPrXml(
+  opts?: SlideViewOptions,
+  zoomN = 90,
+  zoomD = 100,
+  guides?: ViewPropertiesOptions["guides"],
+): string {
   const attrs: string[] = [];
   if (opts?.snapToGrid === false) attrs.push(' snapToGrid="0"');
   if (opts?.snapToObjects) attrs.push(' snapToObjects="1"');
   if (opts?.showGuides) attrs.push(' showGuides="1"');
 
-  const varScale = opts?.varScale !== false;
-  const cViewPrAttr = varScale ? ' varScale="1"' : "";
+  // Build guideLst with optional guides
+  let guideLstXml = "<p:guideLst/>";
+  if (guides && guides.length > 0) {
+    const guideXmls = guides.map((g) => {
+      const gAttrs: string[] = [];
+      if (g.orient) gAttrs.push(` orient="${g.orient}"`);
+      if (g.pos !== undefined) gAttrs.push(` pos="${g.pos}"`);
+      return `<p:guide${gAttrs.join("")}/>`;
+    });
+    guideLstXml = `<p:guideLst>${guideXmls.join("")}</p:guideLst>`;
+  }
 
   return (
     `<p:cSldViewPr${attrs.join("")}>` +
-    `<p:cViewPr${cViewPrAttr}>` +
-    `<p:scale><a:sx n="${zoomN}" d="${zoomD}"/><a:sy n="${zoomN}" d="${zoomD}"/></p:scale>` +
-    '<p:origin x="1200" y="72"/>' +
-    "</p:cViewPr>" +
-    "<p:guideLst/>" +
+    buildCViewPrXml(zoomN, zoomD, opts?.varScale !== false) +
+    guideLstXml +
     "</p:cSldViewPr>"
   );
 }
@@ -98,14 +133,49 @@ function buildViewPropsXml(opts?: ViewPropertiesOptions): string {
   parts.push(`<p:viewPr ${ns}${rootAttrs}>`);
   parts.push(buildNormalViewPrXml(opts?.normalView));
   parts.push("<p:slideViewPr>");
-  parts.push(buildCSldViewPrXml(opts?.slideView, zoomN, zoomD));
+  parts.push(buildCSldViewPrXml(opts?.slideView, zoomN, zoomD, opts?.guides));
   parts.push("</p:slideViewPr>");
+
+  // outlineViewPr (D) — sequence: cViewPr, sldLst
+  if (opts?.outlineView) {
+    let outlineXml = "<p:outlineViewPr>";
+    outlineXml += buildCViewPrXml(zoomN, zoomD);
+    if (opts.outlineView.slides && opts.outlineView.slides.length > 0) {
+      outlineXml += "<p:sldLst>";
+      for (const sl of opts.outlineView.slides) {
+        const slAttrs: string[] = [`r:id="${sl.rId}"`];
+        if (sl.collapse) slAttrs.push(' collapse="1"');
+        outlineXml += `<p:sld ${slAttrs.join(" ")}/>`;
+      }
+      outlineXml += "</p:sldLst>";
+    }
+    outlineXml += "</p:outlineViewPr>";
+    parts.push(outlineXml);
+  }
+
   parts.push("<p:notesTextViewPr>");
   parts.push("<p:cViewPr>");
   parts.push('<p:scale><a:sx n="1" d="1"/><a:sy n="1" d="1"/></p:scale>');
   parts.push('<p:origin x="0" y="0"/>');
   parts.push("</p:cViewPr>");
   parts.push("</p:notesTextViewPr>");
+
+  // sorterViewPr (D) — sequence: cViewPr (not cSldViewPr!)
+  if (opts?.sorterView) {
+    const sorterAttrs: string[] = [];
+    if (opts.sorterView.showFormatting) sorterAttrs.push(' showFormatting="1"');
+    parts.push(`<p:sorterViewPr${sorterAttrs.join("")}>`);
+    parts.push(buildCViewPrXml(zoomN, zoomD));
+    parts.push("</p:sorterViewPr>");
+  }
+
+  // notesViewPr (D) — sequence: cSldViewPr
+  if (opts?.notesView) {
+    parts.push("<p:notesViewPr>");
+    parts.push(buildCSldViewPrXml(undefined, zoomN, zoomD));
+    parts.push("</p:notesViewPr>");
+  }
+
   parts.push(`<p:gridSpacing cx="${gridCx}" cy="${gridCy}"/>`);
   parts.push("</p:viewPr>");
   return parts.join("");

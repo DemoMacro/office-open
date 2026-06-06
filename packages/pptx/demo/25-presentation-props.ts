@@ -23,15 +23,28 @@ const pres = new Presentation({
     frame: "frameStyle1",
   },
 
-  // Modify verifier (encryption)
+  // Modify verifier (write protection)
+  // cryptAlgorithmSid: 14 = SHA-512 (12 = SHA-256, 13 = SHA-384)
   modifyVerifier: {
     password: "secret",
-    spinValue: 100000,
     cryptoProviderType: "rsaAES",
     cryptoAlgorithmClass: "hash",
     cryptoAlgorithmType: "typeAny",
-    cryptoAlgorithmSid: 12,
+    cryptoAlgorithmSid: 14,
   },
+
+  // Embedded fonts — font definition without embedding (rId omitted, valid per XSD minOccurs=0)
+  // To embed actual font data, provide regular/bold/italic/boldItalic rId references
+  // pointing to real font part relationships (similar to docx font embedding).
+  embeddedFonts: [
+    {
+      font: { typeface: "Calibri", panose: "020F0502020204030204", pitchFamily: 34, charset: 0 },
+    },
+  ],
+
+  // Custom shows — rId values reference slide relationship IDs from presentation.xml.rels
+  // With 1 master: rId1=master, rId2=slide1, rId3=slide2, rId4=presProps, ...
+  customShows: [{ name: "Quick Show", id: 1, slides: [{ rId: "rId2" }, { rId: "rId3" }] }],
 
   // View properties
   view: {
@@ -51,6 +64,21 @@ const pres = new Presentation({
       showGuides: true,
       varScale: true,
     },
+    // Guides
+    guides: [
+      { orient: "horz", pos: 3429000 },
+      { orient: "vert", pos: 4572000 },
+    ],
+    // Outline view — rId values reference slides via auto-generated viewProps.xml.rels
+    outlineView: {
+      slides: [{ rId: "rId1" }, { rId: "rId2", collapse: true }],
+    },
+    // Sorter view
+    sorterView: {
+      showFormatting: true,
+    },
+    // Notes view
+    notesView: true,
   },
 
   // Presentation properties (presPr): web, print, show
@@ -85,6 +113,8 @@ const pres = new Presentation({
     title: "Published Slides",
     rId: "rId1",
   },
+  // Color MRU (recent colors)
+  colorMru: ["FF0000", "00FF00", "0000FF"],
 
   slides: [
     {
@@ -112,6 +142,12 @@ const pres = new Presentation({
           },
         }),
       ],
+      // Slide sync properties (standalone part, not inside p:sld per transitional XSD)
+      slideSync: {
+        serverSldId: "abc123",
+        serverSldModifiedTime: "2025-01-01T00:00:00Z",
+        clientInsertedTime: "2025-01-02T00:00:00Z",
+      },
     },
   ],
 });

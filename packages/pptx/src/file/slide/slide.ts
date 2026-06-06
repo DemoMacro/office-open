@@ -14,6 +14,15 @@ interface Animatable {
   readonly animation?: AnimationOptions;
 }
 
+export interface ControlOptions {
+  readonly shapeId?: number;
+  readonly name?: string;
+  readonly showAsIcon?: boolean;
+  readonly rId?: string;
+  readonly imageWidth?: number;
+  readonly imageHeight?: number;
+}
+
 function isAnimatable(child: BaseXmlComponent): child is BaseXmlComponent & Animatable {
   return "shapeId" in child && "animation" in child;
 }
@@ -45,6 +54,8 @@ export class Slide extends XmlComponent {
   public readonly HeaderFooter?: SlideHeaderFooterOptions;
   private readonly showMasterSp?: boolean;
   private readonly showMasterPhAnim?: boolean;
+  private readonly controls?: readonly ControlOptions[];
+  private readonly customerData?: readonly { readonly rId: string }[];
 
   public constructor(
     children: readonly SlideChild[],
@@ -53,6 +64,10 @@ export class Slide extends XmlComponent {
     headerFooter?: SlideHeaderFooterOptions,
     showMasterSp?: boolean,
     showMasterPhAnim?: boolean,
+    extra?: {
+      readonly controls?: readonly ControlOptions[];
+      readonly customerData?: readonly { readonly rId: string }[];
+    },
   ) {
     super("p:sld");
     this.children = children;
@@ -61,6 +76,8 @@ export class Slide extends XmlComponent {
     this.HeaderFooter = headerFooter;
     this.showMasterSp = showMasterSp;
     this.showMasterPhAnim = showMasterPhAnim;
+    this.controls = extra?.controls;
+    this.customerData = extra?.customerData;
   }
 
   // Direct XML serialization — builds the <p:sld> wrapper as string, but uses
@@ -96,6 +113,30 @@ export class Slide extends XmlComponent {
     }
 
     parts.push("</p:spTree>");
+
+    // custDataLst (E2)
+    if (this.customerData && this.customerData.length > 0) {
+      const cdItems = this.customerData.map((d) => `<p:custData r:id="${d.rId}"/>`).join("");
+      parts.push(`<p:custDataLst>${cdItems}</p:custDataLst>`);
+    }
+
+    // controls (E1)
+    if (this.controls && this.controls.length > 0) {
+      const ctrlItems = this.controls
+        .map((c) => {
+          const attrs: string[] = [];
+          if (c.shapeId !== undefined) attrs.push(`spid="${c.shapeId}"`);
+          if (c.name) attrs.push(`name="${c.name}"`);
+          if (c.showAsIcon) attrs.push('showAsIcon="1"');
+          if (c.rId) attrs.push(`r:id="${c.rId}"`);
+          if (c.imageWidth !== undefined) attrs.push(`imgW="${c.imageWidth}"`);
+          if (c.imageHeight !== undefined) attrs.push(`imgH="${c.imageHeight}"`);
+          return `<p:control ${attrs.join(" ")}/>`;
+        })
+        .join("");
+      parts.push(`<p:controls>${ctrlItems}</p:controls>`);
+    }
+
     parts.push("</p:cSld>");
 
     // p:clrMapOvr

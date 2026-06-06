@@ -45,6 +45,36 @@ export interface ModifyVerifierOptions {
   readonly cryptoProviderTypeExtensionSource?: string;
 }
 
+export interface EmbeddedFontOptions {
+  readonly font: {
+    readonly typeface: string;
+    readonly panose?: string;
+    readonly pitchFamily?: number;
+    readonly charset?: number;
+  };
+  readonly regular?: string;
+  readonly bold?: string;
+  readonly italic?: string;
+  readonly boldItalic?: string;
+}
+
+export interface CustomShowOptions {
+  readonly name: string;
+  readonly id: number;
+  readonly slides: readonly { readonly rId: string }[];
+}
+
+export interface KinsokuOptions {
+  readonly lang?: string;
+  readonly invalStChars: string;
+  readonly invalEndChars: string;
+}
+
+export interface CustomerDataOptions {
+  readonly data?: readonly { readonly rId: string }[];
+  readonly tags?: { readonly rId: string };
+}
+
 export interface PresentationOptions {
   readonly slideWidth?: number;
   readonly slideHeight?: number;
@@ -66,6 +96,10 @@ export interface PresentationOptions {
   readonly conformance?: "strict" | "transitional";
   readonly photoAlbum?: PhotoAlbumOptions;
   readonly modifyVerifier?: ModifyVerifierOptions;
+  readonly embeddedFonts?: readonly EmbeddedFontOptions[];
+  readonly customShows?: readonly CustomShowOptions[];
+  readonly kinsoku?: readonly KinsokuOptions[];
+  readonly customerData?: CustomerDataOptions;
 }
 
 const DEFAULT_TEXT_STYLE_XML = `<p:defaultTextStyle xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
@@ -162,6 +196,41 @@ export class Presentation extends XmlComponent {
     s += `<p:sldSz cx="${cx}" cy="${cy}"/>`;
     s += '<p:notesSz cx="6858000" cy="9144000"/>';
 
+    // embeddedFontLst (C1)
+    if (opts.embeddedFonts && opts.embeddedFonts.length > 0) {
+      s += "<p:embeddedFontLst>";
+      for (const ef of opts.embeddedFonts) {
+        const fontAttrs: string[] = [`typeface="${ef.font.typeface}"`];
+        if (ef.font.panose) fontAttrs.push(`panose="${ef.font.panose}"`);
+        if (ef.font.pitchFamily !== undefined)
+          fontAttrs.push(`pitchFamily="${ef.font.pitchFamily}"`);
+        if (ef.font.charset !== undefined) fontAttrs.push(`charset="${ef.font.charset}"`);
+        s += `<p:embeddedFont>`;
+        s += `<p:font ${fontAttrs.join(" ")}/>`;
+        if (ef.regular) s += `<p:regular r:id="${ef.regular}"/>`;
+        if (ef.bold) s += `<p:bold r:id="${ef.bold}"/>`;
+        if (ef.italic) s += `<p:italic r:id="${ef.italic}"/>`;
+        if (ef.boldItalic) s += `<p:boldItalic r:id="${ef.boldItalic}"/>`;
+        s += "</p:embeddedFont>";
+      }
+      s += "</p:embeddedFontLst>";
+    }
+
+    // custShowLst (C2)
+    if (opts.customShows && opts.customShows.length > 0) {
+      s += "<p:custShowLst>";
+      for (const cs of opts.customShows) {
+        s += `<p:custShow name="${cs.name}" id="${cs.id}">`;
+        s += "<p:sldLst>";
+        for (const sl of cs.slides) {
+          s += `<p:sld r:id="${sl.rId}"/>`;
+        }
+        s += "</p:sldLst>";
+        s += "</p:custShow>";
+      }
+      s += "</p:custShowLst>";
+    }
+
     if (opts.photoAlbum) {
       const pa = opts.photoAlbum;
       const paAttrs: string[] = [];
@@ -172,42 +241,81 @@ export class Presentation extends XmlComponent {
       s += `<p:photoAlbum${paAttrs.join("")}/>`;
     }
 
+    // custDataLst (C4)
+    if (opts.customerData) {
+      const cdParts: string[] = [];
+      if (opts.customerData.data) {
+        for (const d of opts.customerData.data) {
+          cdParts.push(`<p:custData r:id="${d.rId}"/>`);
+        }
+      }
+      if (opts.customerData.tags) {
+        cdParts.push(`<p:tags r:id="${opts.customerData.tags.rId}"/>`);
+      }
+      if (cdParts.length > 0) {
+        s += `<p:custDataLst>${cdParts.join("")}</p:custDataLst>`;
+      }
+    }
+
+    // kinsoku (C3)
+    if (opts.kinsoku && opts.kinsoku.length > 0) {
+      for (const k of opts.kinsoku) {
+        const kAttrs: string[] = [];
+        if (k.lang) kAttrs.push(` lang="${k.lang}"`);
+        kAttrs.push(` invalStChars="${k.invalStChars}"`);
+        kAttrs.push(` invalEndChars="${k.invalEndChars}"`);
+        s += `<p:kinsoku${kAttrs.join("")}/>`;
+      }
+    }
+
     s += DEFAULT_TEXT_STYLE_XML;
 
     if (opts.modifyVerifier) {
       const mv = opts.modifyVerifier;
       // Auto-derive hash from plaintext password
       let derived: ReturnType<typeof derivePasswordHash> | undefined;
-      if (mv.password !== undefined && mv.hashValue === undefined) {
+      if (mv.password !== undefined && mv.hashValue === undefined && mv.hashData === undefined) {
         derived = derivePasswordHash(mv.password);
       }
-      const hashValue = mv.hashValue ?? derived?.hashValue;
-      const saltValue = mv.saltValue ?? derived?.saltValue;
-      const spinCount = mv.spinCount ?? derived?.spinCount;
-      const algorithmName = mv.algorithmName ?? derived?.algorithmName;
+      // Determine mode: transitional (crypt* + hashData/saltData) vs strict (algorithmName + hashValue/saltValue)
+      const useTransitional =
+        mv.cryptoProviderType !== undefined || mv.cryptoAlgorithmSid !== undefined;
       const mvAttrs: string[] = [];
-      if (algorithmName) mvAttrs.push(` algorithmName="${algorithmName}"`);
-      if (hashValue) mvAttrs.push(` hashValue="${hashValue}"`);
-      if (saltValue) mvAttrs.push(` saltValue="${saltValue}"`);
-      if (mv.spinValue !== undefined) mvAttrs.push(` spinValue="${mv.spinValue}"`);
-      if (mv.cryptoProviderType) mvAttrs.push(` cryptProviderType="${mv.cryptoProviderType}"`);
-      if (mv.cryptoAlgorithmClass)
-        mvAttrs.push(` cryptAlgorithmClass="${mv.cryptoAlgorithmClass}"`);
-      if (mv.cryptoAlgorithmType) mvAttrs.push(` cryptAlgorithmType="${mv.cryptoAlgorithmType}"`);
-      if (mv.cryptoAlgorithmSid !== undefined)
-        mvAttrs.push(` cryptAlgorithmSid="${mv.cryptoAlgorithmSid}"`);
-      if (spinCount !== undefined) mvAttrs.push(` spinCount="${spinCount}"`);
-      if (mv.saltData) mvAttrs.push(` saltData="${mv.saltData}"`);
-      if (mv.hashData) mvAttrs.push(` hashData="${mv.hashData}"`);
-      if (mv.cryptoProvider) mvAttrs.push(` cryptProvider="${mv.cryptoProvider}"`);
-      if (mv.algorithmExtensionId !== undefined)
-        mvAttrs.push(` algIdExt="${mv.algorithmExtensionId}"`);
-      if (mv.algorithmExtensionSource)
-        mvAttrs.push(` algIdExtSource="${mv.algorithmExtensionSource}"`);
-      if (mv.cryptoProviderTypeExtension !== undefined)
-        mvAttrs.push(` cryptProviderTypeExt="${mv.cryptoProviderTypeExtension}"`);
-      if (mv.cryptoProviderTypeExtensionSource)
-        mvAttrs.push(` cryptProviderTypeExtSource="${mv.cryptoProviderTypeExtensionSource}"`);
+
+      if (useTransitional) {
+        // Transitional mode — matches real PPTX files from PowerPoint
+        const hashData = mv.hashData ?? derived?.hashValue;
+        const saltData = mv.saltData ?? derived?.saltValue;
+        const spinCount = mv.spinCount ?? derived?.spinCount;
+        if (mv.cryptoProviderType) mvAttrs.push(` cryptProviderType="${mv.cryptoProviderType}"`);
+        if (mv.cryptoAlgorithmClass)
+          mvAttrs.push(` cryptAlgorithmClass="${mv.cryptoAlgorithmClass}"`);
+        if (mv.cryptoAlgorithmType) mvAttrs.push(` cryptAlgorithmType="${mv.cryptoAlgorithmType}"`);
+        if (mv.cryptoAlgorithmSid !== undefined)
+          mvAttrs.push(` cryptAlgorithmSid="${mv.cryptoAlgorithmSid}"`);
+        if (spinCount !== undefined) mvAttrs.push(` spinCount="${spinCount}"`);
+        if (saltData) mvAttrs.push(` saltData="${saltData}"`);
+        if (hashData) mvAttrs.push(` hashData="${hashData}"`);
+        if (mv.cryptoProvider) mvAttrs.push(` cryptProvider="${mv.cryptoProvider}"`);
+        if (mv.algorithmExtensionId !== undefined)
+          mvAttrs.push(` algIdExt="${mv.algorithmExtensionId}"`);
+        if (mv.algorithmExtensionSource)
+          mvAttrs.push(` algIdExtSource="${mv.algorithmExtensionSource}"`);
+        if (mv.cryptoProviderTypeExtension !== undefined)
+          mvAttrs.push(` cryptProviderTypeExt="${mv.cryptoProviderTypeExtension}"`);
+        if (mv.cryptoProviderTypeExtensionSource)
+          mvAttrs.push(` cryptProviderTypeExtSource="${mv.cryptoProviderTypeExtensionSource}"`);
+      } else {
+        // Strict/ISO mode — uses algorithmName + hashValue/saltValue
+        const hashValue = mv.hashValue ?? derived?.hashValue;
+        const saltValue = mv.saltValue ?? derived?.saltValue;
+        const algorithmName = mv.algorithmName ?? derived?.algorithmName;
+        if (algorithmName) mvAttrs.push(` algorithmName="${algorithmName}"`);
+        if (hashValue) mvAttrs.push(` hashValue="${hashValue}"`);
+        if (saltValue) mvAttrs.push(` saltValue="${saltValue}"`);
+        if (mv.spinValue !== undefined) mvAttrs.push(` spinValue="${mv.spinValue}"`);
+      }
+
       s += `<p:modifyVerifier${mvAttrs.join("")}/>`;
     }
     s += "</p:presentation>";

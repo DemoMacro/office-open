@@ -110,6 +110,34 @@ const pres = new Presentation({
       ],
       transition: { type: "random" },
     },
+    // Transition with start sound
+    {
+      children: [
+        new Shape({
+          x: 100,
+          y: 150,
+          width: 500,
+          height: 100,
+          textBody: { text: "Fade with Sound" },
+          fill: "4472C4",
+        }),
+      ],
+      transition: { type: "fade", speed: "med", startSound: { rId: "rId1", loop: true } },
+    },
+    // Transition with stop previous sound
+    {
+      children: [
+        new Shape({
+          x: 100,
+          y: 150,
+          width: 500,
+          height: 100,
+          textBody: { text: "Push (Stop Sound)" },
+          fill: "ED7D31",
+        }),
+      ],
+      transition: { type: "push", direction: "right", stopPreviousSound: true },
+    },
   ],
 });
 

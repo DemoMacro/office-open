@@ -26,4 +26,5 @@ export type SlideChild =
   | { audio: AudioFrameOptions }
   | { group: GroupShapeOptions }
   | { smartart: SmartArtOptions }
-  | { ole: OleOptions };
+  | { ole: OleOptions }
+  | { contentPart: { readonly rId: string } };

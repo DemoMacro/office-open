@@ -395,6 +395,16 @@ export class Compiler {
         );
       }
 
+      // Add slideSyncPr relationship for this slide (if it has sync properties)
+      const slideSyncIndex = file.slideSyncIndexMap.get(i);
+      if (slideSyncIndex !== undefined) {
+        slideWrapper.relationships.addRelationship(
+          slideWrapper.relationships.relationshipCount + 1,
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideSyncProperties",
+          `../slideSyncPr/slideSyncPr${slideSyncIndex + 1}.xml`,
+        );
+      }
+
       mapping[`SlideRelationships${i}`] = {
         data: this.formatter.formatToXml(slideWrapper.relationships, context),
         path: `ppt/slides/_rels/slide${i + 1}.xml.rels`,
@@ -454,6 +464,36 @@ export class Compiler {
       files[`ppt/diagrams/drawing${i + 1}.xml`] = encoder.encode(DEFAULT_DRAWING_XML);
     }
 
+    // Add viewProps relationships (for outlineView slide references)
+    if (file.hasOutlineViewSlides) {
+      const vpRels = new Relationships();
+      for (let i = 0; i < file.slideCount; i++) {
+        vpRels.addRelationship(
+          i + 1,
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide",
+          `slides/slide${i + 1}.xml`,
+        );
+      }
+      files["ppt/_rels/viewProps.xml.rels"] = encoder.encode(
+        this.formatter.formatToXml(vpRels, context),
+      );
+    }
+
+    // Add presProps relationships (for htmlPubPr r:id reference)
+    const htmlPubInfo = file.htmlPublishInfo;
+    if (htmlPubInfo) {
+      const presPropsRels = new Relationships();
+      presPropsRels.addRelationship(
+        htmlPubInfo.rId.replace("rId", ""),
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+        htmlPubInfo.target ?? "presentation.htm",
+        "External",
+      );
+      files["ppt/_rels/presProps.xml.rels"] = encoder.encode(
+        this.formatter.formatToXml(presPropsRels, context),
+      );
+    }
+
     // Add notes slides
     const notesSlideToSlide = new Map<number, number>();
     for (const [slideIdx, notesIdx] of file.notesSlideIndexMap) {
@@ -478,6 +518,14 @@ export class Compiler {
       );
       files[`ppt/notesSlides/_rels/notesSlide${i + 1}.xml.rels`] = encoder.encode(
         this.formatter.formatToXml(nsRels, context),
+      );
+    }
+
+    // Add slide sync properties parts
+    const slideSyncProps = file.slideSyncProperties;
+    for (let i = 0; i < slideSyncProps.length; i++) {
+      files[`ppt/slideSyncPr/slideSyncPr${i + 1}.xml`] = encoder.encode(
+        this.formatter.formatToXml(slideSyncProps[i], context),
       );
     }
 

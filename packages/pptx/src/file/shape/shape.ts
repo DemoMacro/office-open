@@ -13,6 +13,13 @@ import { emuPositionOptional } from "@util/position";
 import { TextBody } from "./text-body";
 import type { TextBodyOptions } from "./text-body";
 
+export interface ShapeStyleOptions {
+  readonly lineReference?: { readonly index: number; readonly color?: string };
+  readonly fillReference?: { readonly index: number; readonly color?: string };
+  readonly effectReference?: { readonly index: number; readonly color?: string };
+  readonly fontReference?: { readonly index: number; readonly color?: string };
+}
+
 export interface ShapeOptions {
   readonly id?: number;
   readonly name?: string;
@@ -35,6 +42,7 @@ export interface ShapeOptions {
   readonly isPhoto?: boolean;
   readonly userDrawn?: boolean;
   readonly hasCustomPrompt?: boolean;
+  readonly style?: ShapeStyleOptions;
   /** Black-and-white mode for the shape. */
   readonly blackWhiteMode?:
     | "clr"
@@ -115,6 +123,43 @@ export class Shape extends Xc {
     const spPr = new ShapeProperties(shapeProps);
     const spPrXml = spPr.toXml(context as Context<File>);
     if (spPrXml) parts.push(spPrXml);
+
+    // p:style (a:CT_ShapeStyle) — optional
+    if (opts.style) {
+      const styleParts: string[] = [];
+      const st = opts.style;
+      if (st.lineReference) {
+        const lrAttrs = [`idx="${st.lineReference.index}"`];
+        if (st.lineReference.color) lrAttrs.push(`<a:srgbClr val="${st.lineReference.color}"/>`);
+        const colorChild = st.lineReference.color
+          ? `<a:srgbClr val="${st.lineReference.color}"/>`
+          : "";
+        styleParts.push(`<a:lnRef idx="${st.lineReference.index}">${colorChild}</a:lnRef>`);
+      }
+      if (st.fillReference) {
+        const colorChild = st.fillReference.color
+          ? `<a:srgbClr val="${st.fillReference.color}"/>`
+          : "";
+        styleParts.push(`<a:fillRef idx="${st.fillReference.index}">${colorChild}</a:fillRef>`);
+      }
+      if (st.effectReference) {
+        const colorChild = st.effectReference.color
+          ? `<a:srgbClr val="${st.effectReference.color}"/>`
+          : "";
+        styleParts.push(
+          `<a:effectRef idx="${st.effectReference.index}">${colorChild}</a:effectRef>`,
+        );
+      }
+      if (st.fontReference) {
+        const colorChild = st.fontReference.color
+          ? `<a:solidFill><a:srgbClr val="${st.fontReference.color}"/></a:solidFill>`
+          : "";
+        styleParts.push(`<a:fontRef idx="${st.fontReference.index}">${colorChild}</a:fontRef>`);
+      }
+      if (styleParts.length > 0) {
+        parts.push(`<p:style>${styleParts.join("")}</p:style>`);
+      }
+    }
 
     // p:txBody (TextBody — has toXml)
     const txBody = new TextBody(opts.textBody ?? {});

@@ -64,6 +64,12 @@ export interface TransitionOptions {
   readonly orient?: "horz" | "vert";
   readonly thruBlk?: boolean;
   readonly spokes?: number;
+  readonly startSound?: {
+    readonly rId: string;
+    readonly name?: string;
+    readonly loop?: boolean;
+  };
+  readonly stopPreviousSound?: boolean;
 }
 
 function buildTransitionElement(
@@ -116,6 +122,21 @@ export function buildTransition(options: TransitionOptions): string {
         options.spokes,
       ),
     );
+  }
+
+  // Sound action (sndAc: stSnd | endSnd)
+  if (options.startSound) {
+    const sndAttrs: string[] = [`r:embed="${options.startSound.rId}"`];
+    if (options.startSound.name) sndAttrs.push(` name="${options.startSound.name}"`);
+    const stSndAttrs: string[] = [];
+    if (options.startSound.loop) stSndAttrs.push(' loop="1"');
+    children.push(
+      `<p:sndAc><p:stSnd${stSndAttrs.join("")}>` +
+        `<p:snd ${sndAttrs.join(" ")}/>` +
+        `</p:stSnd></p:sndAc>`,
+    );
+  } else if (options.stopPreviousSound) {
+    children.push("<p:sndAc><p:endSnd/></p:sndAc>");
   }
 
   if (attrParts.length === 0 && children.length === 0) {

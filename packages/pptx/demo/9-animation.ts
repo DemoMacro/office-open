@@ -335,6 +335,109 @@ const pres = new Presentation({
         }),
       ],
     },
+
+    // Slide 6: Build animations, sub-time nodes, end conditions, variant values
+    {
+      children: [
+        new Shape({
+          x: 50,
+          y: 30,
+          width: 600,
+          height: 60,
+          textBody: { text: "Build / Sub-Time / Variant Values" },
+          fill: "2F5496",
+          animation: {
+            type: "fade",
+            duration: 500,
+            // Build list: paragraph build for shape 2
+            builds: [
+              { type: "paragraph", spid: 3, grpId: 1, build: "p" },
+              { type: "diagram", spid: 4, grpId: 2, diagramBuild: "depthByNode" },
+            ],
+          },
+        }),
+        // Color change with colorFrom/colorTo and colorByRgb
+        new Shape({
+          x: 50,
+          y: 120,
+          width: 300,
+          height: 80,
+          textBody: { text: "Color From/To" },
+          fill: "ED7D31",
+          animation: {
+            class: "emph",
+            emphasisType: "colorChange",
+            colorFrom: "FFC000",
+            colorTo: "FF0000",
+            colorByRgb: { r: "-100%", g: "0%", b: "-100%" },
+            duration: 800,
+          },
+        }),
+        // Motion path with from/rCtr
+        new Shape({
+          x: 400,
+          y: 120,
+          width: 200,
+          height: 80,
+          textBody: { text: "Motion From/RCtr" },
+          fill: "70AD47",
+          animation: {
+            pathType: "arc",
+            duration: 1000,
+            motionFrom: { x: "0", y: "0" },
+            motionRotationCenter: { x: "50000", y: "50000" },
+          },
+        }),
+        // Property animation with variant values (boolVal, intVal, fltVal)
+        new Shape({
+          x: 50,
+          y: 240,
+          width: 300,
+          height: 80,
+          textBody: { text: "Variant Int" },
+          fill: "5B9BD5",
+          animation: {
+            attributeName: "style.width",
+            calcMode: "lin",
+            variantInt: 1,
+            from: "0",
+            to: "100000",
+            duration: 600,
+          },
+        }),
+        // Animation with endConditions and subTimeNodes
+        new Shape({
+          x: 400,
+          y: 240,
+          width: 300,
+          height: 80,
+          textBody: { text: "End Cond / SubTN" },
+          fill: "BF8F00",
+          animation: {
+            type: "fade",
+            duration: 500,
+            endConditions: [{ delay: "5000" }],
+            endSyncCondition: { event: "onNext", delay: "0" },
+            subTimeNodes: [{ duration: 300, delay: 100 }],
+          },
+        }),
+        // Animation with exclusive mode and iterate percentage
+        new Shape({
+          x: 50,
+          y: 360,
+          width: 300,
+          height: 80,
+          textBody: { text: "Excl + tmPct" },
+          fill: "7030A0",
+          animation: {
+            type: "fade",
+            duration: 500,
+            exclusiveMode: true,
+            iterate: { type: "el", iteratePercentage: 50000 },
+          },
+        }),
+      ],
+    },
   ],
 });
 

@@ -1,10 +1,13 @@
 import { BuilderElement, XmlComponent, stringContainerObj } from "@file/xml-components";
 
 import type {
+  AnimationBuildOptions,
   AnimationClass,
-  AnimationType,
-  EmphasisType,
   AnimationOptions,
+  AnimationType,
+  AnimationVariantOptions,
+  EmphasisType,
+  EndConditionOptions,
   PathAnimationType,
 } from "./types";
 
@@ -156,6 +159,31 @@ function resolvePresetSubtype(options: AnimationOptions): number {
 }
 
 function buildTargetElement(spid: number, options?: AnimationOptions): XmlComponent {
+  // Target element type selection
+  if (options?.inkTargetShapeId !== undefined) {
+    return new BuilderElement({
+      name: "p:tgtEl",
+      children: [
+        new BuilderElement({
+          name: "p:inkTgt",
+          attributes: { spid: { key: "spid", value: options.inkTargetShapeId } },
+        }),
+      ],
+    });
+  }
+
+  if (options?.soundTarget !== undefined) {
+    return new BuilderElement({
+      name: "p:tgtEl",
+      children: [
+        new BuilderElement({
+          name: "p:sndTgt",
+          attributes: { "r:id": { key: "r:id", value: options.soundTarget } },
+        }),
+      ],
+    });
+  }
+
   const spTgtChildren: XmlComponent[] = [];
   if (options?.charRange) {
     spTgtChildren.push(
@@ -185,6 +213,38 @@ function buildTargetElement(spid: number, options?: AnimationOptions): XmlCompon
             },
           }),
         ],
+      }),
+    );
+  } else if (options?.subShapeId !== undefined) {
+    spTgtChildren.push(
+      new BuilderElement({
+        name: "p:subSp",
+        attributes: { spid: { key: "spid", value: options.subShapeId } },
+      }),
+    );
+  } else if (options?.graphicElementType !== undefined) {
+    spTgtChildren.push(
+      new BuilderElement({
+        name: "p:graphicEl",
+        children: [
+          new BuilderElement({
+            name: "a:graphicEl",
+            attributes: { type: { key: "type", value: options.graphicElementType } },
+          }),
+        ],
+      }),
+    );
+  } else if (options?.oleChartElementType !== undefined) {
+    const oleChartAttrs: Record<string, { key: string; value: string | number }> = {
+      type: { key: "type", value: options.oleChartElementType },
+    };
+    if (options.oleChartElementLevel !== undefined) {
+      oleChartAttrs.lvl = { key: "lvl", value: options.oleChartElementLevel };
+    }
+    spTgtChildren.push(
+      new BuilderElement({
+        name: "p:oleChartEl",
+        attributes: oleChartAttrs,
       }),
     );
   }
@@ -289,34 +349,46 @@ function buildEntrOrExitEffects(
     };
     if (options.propertyList) animEffectAttrs.prLst = { key: "prLst", value: options.propertyList };
 
-    children.push(
+    const animEffectChildren: XmlComponent[] = [
       new BuilderElement({
-        name: "p:animEffect",
-        attributes: animEffectAttrs,
+        name: "p:cBhvr",
         children: [
           new BuilderElement({
-            name: "p:cBhvr",
+            name: "p:cTn",
+            attributes: {
+              id: { key: "id", value: ids.effect },
+              dur: { key: "dur", value: String(options.duration ?? 500) },
+              fill: { key: "fill", value: "hold" },
+            },
+          }),
+          new BuilderElement({
+            name: "p:tgtEl",
             children: [
               new BuilderElement({
-                name: "p:cTn",
-                attributes: {
-                  id: { key: "id", value: ids.effect },
-                  dur: { key: "dur", value: String(options.duration ?? 500) },
-                  fill: { key: "fill", value: "hold" },
-                },
-              }),
-              new BuilderElement({
-                name: "p:tgtEl",
-                children: [
-                  new BuilderElement({
-                    name: "p:spTgt",
-                    attributes: { spid: { key: "spid", value: spid } },
-                  }),
-                ],
+                name: "p:spTgt",
+                attributes: { spid: { key: "spid", value: spid } },
               }),
             ],
           }),
         ],
+      }),
+    ];
+
+    // Add progress if specified (CT_TLAnimateEffectBehavior progress)
+    if (options.effectProgress) {
+      animEffectChildren.push(
+        new BuilderElement({
+          name: "p:progress",
+          children: [buildVariantValue(options.effectProgress)],
+        }),
+      );
+    }
+
+    children.push(
+      new BuilderElement({
+        name: "p:animEffect",
+        attributes: animEffectAttrs,
+        children: animEffectChildren,
       }),
     );
   }
@@ -430,49 +502,96 @@ function buildEmphasisEffects(
 
     case "colorChange": {
       const color = options.color ?? "FF0000";
-      children.push(
+      const animClrChildren: XmlComponent[] = [
         new BuilderElement({
-          name: "p:animClr",
+          name: "p:cBhvr",
           children: [
             new BuilderElement({
-              name: "p:cBhvr",
+              name: "p:cTn",
+              attributes: {
+                id: { key: "id", value: ids.effect },
+                dur: { key: "dur", value: dur },
+                fill: { key: "fill", value: "hold" },
+              },
               children: [
                 new BuilderElement({
-                  name: "p:cTn",
-                  attributes: {
-                    id: { key: "id", value: ids.effect },
-                    dur: { key: "dur", value: dur },
-                    fill: { key: "fill", value: "hold" },
-                  },
+                  name: "p:stCondLst",
                   children: [
                     new BuilderElement({
-                      name: "p:stCondLst",
-                      children: [
-                        new BuilderElement({
-                          name: "p:cond",
-                          attributes: {
-                            delay: { key: "delay", value: "0" },
-                          },
-                        }),
-                      ],
+                      name: "p:cond",
+                      attributes: {
+                        delay: { key: "delay", value: "0" },
+                      },
                     }),
                   ],
                 }),
-                tgtEl,
               ],
             }),
+            tgtEl,
+          ],
+        }),
+      ];
+      // p:by (color animation by value — rgb or hsl)
+      if (options.colorByRgb) {
+        animClrChildren.push(
+          new BuilderElement({
+            name: "p:by",
+            children: [
+              new BuilderElement({
+                name: "p:rgb",
+                attributes: {
+                  r: { key: "r", value: options.colorByRgb.r },
+                  g: { key: "g", value: options.colorByRgb.g },
+                  b: { key: "b", value: options.colorByRgb.b },
+                },
+              }),
+            ],
+          }),
+        );
+      } else if (options.colorByHsl) {
+        animClrChildren.push(
+          new BuilderElement({
+            name: "p:by",
+            children: [
+              new BuilderElement({
+                name: "p:hsl",
+                attributes: {
+                  h: { key: "h", value: options.colorByHsl.h },
+                  s: { key: "s", value: options.colorByHsl.s },
+                  l: { key: "l", value: options.colorByHsl.l },
+                },
+              }),
+            ],
+          }),
+        );
+      }
+      // p:from (color animation from value)
+      if (options.colorFrom) {
+        animClrChildren.push(
+          new BuilderElement({
+            name: "p:from",
+            children: [
+              new BuilderElement({
+                name: "a:srgbClr",
+                attributes: { val: { key: "val", value: options.colorFrom } },
+              }),
+            ],
+          }),
+        );
+      }
+      // p:to (color animation to value)
+      animClrChildren.push(
+        new BuilderElement({
+          name: "p:to",
+          children: [
             new BuilderElement({
-              name: "p:to",
-              children: [
-                new BuilderElement({
-                  name: "a:srgbClr",
-                  attributes: { val: { key: "val", value: color } },
-                }),
-              ],
+              name: "a:srgbClr",
+              attributes: { val: { key: "val", value: options.colorTo ?? color } },
             }),
           ],
         }),
       );
+      children.push(new BuilderElement({ name: "p:animClr", children: animClrChildren }));
       break;
     }
 
@@ -558,37 +677,63 @@ function buildPathEffects(
   if (options.pointsTypes)
     animMotionAttrs.ptsTypes = { key: "ptsTypes", value: options.pointsTypes };
 
+  const animMotionChildren: XmlComponent[] = [
+    new BuilderElement({
+      name: "p:cBhvr",
+      children: [
+        new BuilderElement({
+          name: "p:cTn",
+          attributes: {
+            id: { key: "id", value: ids.effect },
+            dur: { key: "dur", value: dur },
+            fill: { key: "fill", value: "hold" },
+          },
+          children: [
+            new BuilderElement({
+              name: "p:stCondLst",
+              children: [
+                new BuilderElement({
+                  name: "p:cond",
+                  attributes: { delay: { key: "delay", value: "0" } },
+                }),
+              ],
+            }),
+          ],
+        }),
+        buildTargetElement(spid, options),
+      ],
+    }),
+  ];
+
+  // Motion path from/rCtr (A5)
+  if (options.motionFrom) {
+    animMotionChildren.push(
+      new BuilderElement({
+        name: "p:from",
+        attributes: {
+          x: { key: "x", value: options.motionFrom.x },
+          y: { key: "y", value: options.motionFrom.y },
+        },
+      }),
+    );
+  }
+  if (options.motionRotationCenter) {
+    animMotionChildren.push(
+      new BuilderElement({
+        name: "p:rCtr",
+        attributes: {
+          x: { key: "x", value: options.motionRotationCenter.x },
+          y: { key: "y", value: options.motionRotationCenter.y },
+        },
+      }),
+    );
+  }
+
   return [
     new BuilderElement({
       name: "p:animMotion",
       attributes: animMotionAttrs,
-      children: [
-        new BuilderElement({
-          name: "p:cBhvr",
-          children: [
-            new BuilderElement({
-              name: "p:cTn",
-              attributes: {
-                id: { key: "id", value: ids.effect },
-                dur: { key: "dur", value: dur },
-                fill: { key: "fill", value: "hold" },
-              },
-              children: [
-                new BuilderElement({
-                  name: "p:stCondLst",
-                  children: [
-                    new BuilderElement({
-                      name: "p:cond",
-                      attributes: { delay: { key: "delay", value: "0" } },
-                    }),
-                  ],
-                }),
-              ],
-            }),
-            buildTargetElement(spid, options),
-          ],
-        }),
-      ],
+      children: animMotionChildren,
     }),
   ];
 }
@@ -725,7 +870,14 @@ function buildIterate(iterate: NonNullable<AnimationOptions["iterate"]>): XmlCom
   if (iterate.backwards) attrs.backwards = { key: "backwards", value: 1 };
 
   const iterChildren: XmlComponent[] = [];
-  if (iterate.interval !== undefined) {
+  if (iterate.iteratePercentage !== undefined) {
+    iterChildren.push(
+      new BuilderElement({
+        name: "p:tmPct",
+        attributes: { val: { key: "val", value: iterate.iteratePercentage } },
+      }),
+    );
+  } else if (iterate.interval !== undefined) {
     iterChildren.push(
       new BuilderElement({
         name: "p:tmAbs",
@@ -738,6 +890,78 @@ function buildIterate(iterate: NonNullable<AnimationOptions["iterate"]>): XmlCom
     name: "p:iterate",
     attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
     children: iterChildren.length > 0 ? iterChildren : undefined,
+  });
+}
+
+/**
+ * Build p:animVariant value child (boolVal|intVal|fltVal|strVal|clrVal).
+ */
+function buildVariantValue(variant: AnimationVariantOptions): XmlComponent {
+  if (variant.bool !== undefined) {
+    return new BuilderElement({
+      name: "p:boolVal",
+      attributes: { val: { key: "val", value: variant.bool ? 1 : 0 } },
+    });
+  }
+  if (variant.int !== undefined) {
+    return new BuilderElement({
+      name: "p:intVal",
+      attributes: { val: { key: "val", value: variant.int } },
+    });
+  }
+  if (variant.float !== undefined) {
+    return new BuilderElement({
+      name: "p:fltVal",
+      attributes: { val: { key: "val", value: variant.float } },
+    });
+  }
+  if (variant.color !== undefined) {
+    return new BuilderElement({
+      name: "p:clrVal",
+      children: [
+        new BuilderElement({
+          name: "a:srgbClr",
+          attributes: { val: { key: "val", value: variant.color } },
+        }),
+      ],
+    });
+  }
+  // string fallback
+  return new BuilderElement({
+    name: "p:strVal",
+    attributes: { val: { key: "val", value: variant.string ?? "" } },
+  });
+}
+
+/**
+ * Build a condition element (p:cond) from EndConditionOptions.
+ */
+function buildCondition(cond: EndConditionOptions): XmlComponent {
+  const attrs: Record<string, { key: string; value: string | number }> = {};
+  if (cond.delay !== undefined) attrs.delay = { key: "delay", value: cond.delay };
+  if (cond.event !== undefined) attrs.evt = { key: "evt", value: cond.event };
+
+  const children: XmlComponent[] = [];
+  if (cond.timeNodeId !== undefined) {
+    children.push(
+      new BuilderElement({
+        name: "p:tn",
+        attributes: { val: { key: "val", value: cond.timeNodeId } },
+      }),
+    );
+  } else if (cond.runtimeNode !== undefined) {
+    children.push(
+      new BuilderElement({
+        name: "p:rtn",
+        attributes: { val: { key: "val", value: cond.runtimeNode } },
+      }),
+    );
+  }
+
+  return new BuilderElement({
+    name: "p:cond",
+    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
+    children: children.length > 0 ? children : undefined,
   });
 }
 
@@ -867,10 +1091,53 @@ function buildPropertyAnimation(
     }),
   ];
 
-  // Build tavLst if from/to are specified
-  if (options.from !== undefined || options.to !== undefined) {
+  // Build tavLst if from/to are specified (support variant value types)
+  if (
+    options.from !== undefined ||
+    options.to !== undefined ||
+    options.colorFrom ||
+    options.colorTo
+  ) {
     const tavList: XmlComponent[] = [];
-    if (options.from !== undefined) {
+
+    // Build variant child for p:val
+    const buildVariantChild = (val: string, isColor?: boolean): XmlComponent => {
+      if (isColor) {
+        return new BuilderElement({
+          name: "p:clrVal",
+          children: [
+            new BuilderElement({
+              name: "a:srgbClr",
+              attributes: { val: { key: "val", value: val } },
+            }),
+          ],
+        });
+      }
+      if (options.variantInt !== undefined) {
+        return new BuilderElement({
+          name: "p:intVal",
+          attributes: { val: { key: "val", value: Number(val) } },
+        });
+      }
+      if (options.variantFloat !== undefined) {
+        return new BuilderElement({
+          name: "p:fltVal",
+          attributes: { val: { key: "val", value: Number(val) } },
+        });
+      }
+      if (options.variantBool !== undefined) {
+        return new BuilderElement({
+          name: "p:boolVal",
+          attributes: { val: { key: "val", value: val === "true" ? 1 : 0 } },
+        });
+      }
+      return new BuilderElement({
+        name: "p:strVal",
+        attributes: { val: { key: "val", value: val } },
+      });
+    };
+
+    if (options.colorFrom) {
       tavList.push(
         new BuilderElement({
           name: "p:tav",
@@ -878,18 +1145,23 @@ function buildPropertyAnimation(
           children: [
             new BuilderElement({
               name: "p:val",
-              children: [
-                new BuilderElement({
-                  name: "p:strVal",
-                  attributes: { val: { key: "val", value: options.from } },
-                }),
-              ],
+              children: [buildVariantChild(options.colorFrom, true)],
             }),
           ],
         }),
       );
+    } else if (options.from !== undefined) {
+      tavList.push(
+        new BuilderElement({
+          name: "p:tav",
+          attributes: { tm: { key: "tm", value: "0" } },
+          children: [
+            new BuilderElement({ name: "p:val", children: [buildVariantChild(options.from)] }),
+          ],
+        }),
+      );
     }
-    if (options.to !== undefined) {
+    if (options.colorTo) {
       tavList.push(
         new BuilderElement({
           name: "p:tav",
@@ -897,24 +1169,24 @@ function buildPropertyAnimation(
           children: [
             new BuilderElement({
               name: "p:val",
-              children: [
-                new BuilderElement({
-                  name: "p:strVal",
-                  attributes: { val: { key: "val", value: options.to } },
-                }),
-              ],
+              children: [buildVariantChild(options.colorTo, true)],
             }),
+          ],
+        }),
+      );
+    } else if (options.to !== undefined) {
+      tavList.push(
+        new BuilderElement({
+          name: "p:tav",
+          attributes: { tm: { key: "tm", value: "100000" } },
+          children: [
+            new BuilderElement({ name: "p:val", children: [buildVariantChild(options.to)] }),
           ],
         }),
       );
     }
     if (tavList.length > 0) {
-      animChildren.push(
-        new BuilderElement({
-          name: "p:tavLst",
-          children: tavList,
-        }),
-      );
+      animChildren.push(new BuilderElement({ name: "p:tavLst", children: tavList }));
     }
   }
 
@@ -923,6 +1195,100 @@ function buildPropertyAnimation(
     attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
     children: animChildren,
   });
+}
+
+// --- Build list (bldLst) ---
+
+function buildBuildList(
+  builds: readonly AnimationBuildOptions[],
+  nextId: () => number,
+): XmlComponent {
+  const bldChildren: XmlComponent[] = [];
+
+  for (const bld of builds) {
+    const bldAttrs: Record<string, { key: string; value: string | number }> = {
+      spid: { key: "spid", value: bld.spid },
+      grpId: { key: "grpId", value: bld.grpId },
+    };
+    if (bld.uiExpand) bldAttrs.uiExpand = { key: "uiExpand", value: 1 };
+
+    let elementName: string;
+    const bldChildrenInner: XmlComponent[] = [];
+
+    switch (bld.type) {
+      case "paragraph": {
+        elementName = "p:bldP";
+        if (bld.build) bldAttrs.build = { key: "build", value: bld.build };
+        if (bld.bldLvl !== undefined) bldAttrs.bldLvl = { key: "bldLvl", value: bld.bldLvl };
+        if (bld.animBg !== undefined)
+          bldAttrs.animBg = { key: "animBg", value: bld.animBg ? 1 : 0 };
+        if (bld.autoUpdateAnimBg !== undefined)
+          bldAttrs.autoUpdateAnimBg = {
+            key: "autoUpdateAnimBg",
+            value: bld.autoUpdateAnimBg ? 1 : 0,
+          };
+        if (bld.rev) bldAttrs.rev = { key: "rev", value: 1 };
+        if (bld.advAuto !== undefined) bldAttrs.advAuto = { key: "advAuto", value: bld.advAuto };
+        // Templates (tmplLst)
+        if (bld.templates && bld.templates.length > 0) {
+          const tmplChildren = bld.templates.map((tmpl) => {
+            const tmplAttrs: Record<string, { key: string; value: string | number }> = {};
+            if (tmpl.lvl !== undefined) tmplAttrs.lvl = { key: "lvl", value: tmpl.lvl };
+            const tnLstChildren = tmpl.children.map(() => {
+              const tid = nextId();
+              return new BuilderElement({
+                name: "p:par",
+                children: [
+                  new BuilderElement({
+                    name: "p:cTn",
+                    attributes: { id: { key: "id", value: tid } },
+                  }),
+                ],
+              });
+            });
+            return new BuilderElement({
+              name: "p:tmpl",
+              attributes: Object.keys(tmplAttrs).length > 0 ? tmplAttrs : undefined,
+              children: [new BuilderElement({ name: "p:tnLst", children: tnLstChildren })],
+            });
+          });
+          bldChildrenInner.push(new BuilderElement({ name: "p:tmplLst", children: tmplChildren }));
+        }
+        break;
+      }
+      case "diagram": {
+        elementName = "p:bldDgm";
+        if (bld.diagramBuild) bldAttrs.bld = { key: "bld", value: bld.diagramBuild };
+        break;
+      }
+      case "oleChart": {
+        elementName = "p:bldOleChart";
+        if (bld.oleChartBuild) bldAttrs.bld = { key: "bld", value: bld.oleChartBuild };
+        if (bld.oleChartAnimBg !== undefined)
+          bldAttrs.animBg = { key: "animBg", value: bld.oleChartAnimBg ? 1 : 0 };
+        break;
+      }
+      case "graphic": {
+        elementName = "p:bldGraphic";
+        if (bld.graphicBuildAsOne) {
+          bldChildrenInner.push(new BuilderElement({ name: "p:bldAsOne" }));
+        } else {
+          bldChildrenInner.push(new BuilderElement({ name: "p:bldSub" }));
+        }
+        break;
+      }
+    }
+
+    bldChildren.push(
+      new BuilderElement({
+        name: elementName,
+        attributes: bldAttrs,
+        children: bldChildrenInner.length > 0 ? bldChildrenInner : undefined,
+      }),
+    );
+  }
+
+  return new BuilderElement({ name: "p:bldLst", children: bldChildren });
 }
 
 // --- Main class ---
@@ -944,6 +1310,10 @@ export class SlideTiming extends XmlComponent {
     let id = 1;
     const rootCtnId = id++;
     const seqCtnId = id++;
+
+    // Check for builds from first entry
+    const builds = entries[0]?.options.builds;
+    const previousAction = entries[0]?.options.previousAction;
 
     const animationNodes: XmlComponent[] = [];
     const mediaStateNodes: XmlComponent[] = [];
@@ -1089,12 +1459,114 @@ export class SlideTiming extends XmlComponent {
         effectCtnChildren.push(buildIterate(options.iterate));
       }
 
+      // Add endCondLst (A2)
+      if (options.endConditions && options.endConditions.length > 0) {
+        effectCtnChildren.push(
+          new BuilderElement({
+            name: "p:endCondLst",
+            children: options.endConditions.map(buildCondition),
+          }),
+        );
+      }
+
+      // Add endSync (A2) — directly CT_TLTimeCondition, no cond wrapper
+      if (options.endSyncCondition) {
+        const syncAttrs: Record<string, { key: string; value: string }> = {};
+        if (options.endSyncCondition.delay !== undefined)
+          syncAttrs.delay = { key: "delay", value: options.endSyncCondition.delay };
+        if (options.endSyncCondition.event !== undefined)
+          syncAttrs.evt = { key: "evt", value: options.endSyncCondition.event };
+
+        const syncChildren: XmlComponent[] = [];
+        if (options.endSyncCondition.timeNodeId !== undefined) {
+          syncChildren.push(
+            new BuilderElement({
+              name: "p:tn",
+              attributes: { val: { key: "val", value: options.endSyncCondition.timeNodeId } },
+            }),
+          );
+        } else if (options.endSyncCondition.runtimeNode !== undefined) {
+          syncChildren.push(
+            new BuilderElement({
+              name: "p:rtn",
+              attributes: { val: { key: "val", value: options.endSyncCondition.runtimeNode } },
+            }),
+          );
+        }
+
+        effectCtnChildren.push(
+          new BuilderElement({
+            name: "p:endSync",
+            attributes: Object.keys(syncAttrs).length > 0 ? syncAttrs : undefined,
+            children: syncChildren.length > 0 ? syncChildren : undefined,
+          }),
+        );
+      }
+
+      // Add childTnLst with possible excl wrapper
+      const childTnListChildren = options.exclusiveMode
+        ? [
+            new BuilderElement({
+              name: "p:excl",
+              children: [
+                new BuilderElement({
+                  name: "p:cTn",
+                  attributes: { id: { key: "id", value: id++ } },
+                  children: [
+                    new BuilderElement({
+                      name: "p:childTnLst",
+                      children: effectChildren,
+                    }),
+                  ],
+                }),
+              ],
+            }),
+          ]
+        : effectChildren;
+
       effectCtnChildren.push(
         new BuilderElement({
           name: "p:childTnLst",
-          children: effectChildren,
+          children: childTnListChildren,
         }),
       );
+
+      // Add subTnLst (A2)
+      if (options.subTimeNodes && options.subTimeNodes.length > 0) {
+        effectCtnChildren.push(
+          new BuilderElement({
+            name: "p:subTnLst",
+            children: options.subTimeNodes.map((subOpts) => {
+              const subId = id++;
+              return new BuilderElement({
+                name: "p:par",
+                children: [
+                  new BuilderElement({
+                    name: "p:cTn",
+                    attributes: {
+                      id: { key: "id", value: subId },
+                      dur: { key: "dur", value: String(subOpts.duration ?? 0) },
+                    },
+                    children: [
+                      new BuilderElement({
+                        name: "p:stCondLst",
+                        children: [
+                          new BuilderElement({
+                            name: "p:cond",
+                            attributes: {
+                              delay: { key: "delay", value: String(subOpts.delay ?? 0) },
+                            },
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
+                ],
+              });
+            }),
+          }),
+        );
+      }
 
       const effectCtn = new BuilderElement({
         name: "p:cTn",
@@ -1165,6 +1637,9 @@ export class SlideTiming extends XmlComponent {
                         attributes: {
                           concurrent: { key: "concurrent", value: 1 },
                           nextAc: { key: "nextAc", value: "seek" },
+                          ...(previousAction !== undefined
+                            ? { prevAc: { key: "prevAc", value: previousAction } }
+                            : {}),
                         },
                         children: [
                           new BuilderElement({
@@ -1255,5 +1730,10 @@ export class SlideTiming extends XmlComponent {
         ],
       }),
     );
+
+    // bldLst — sibling of tnLst in p:timing (CT_SlideTiming: tnLst → bldLst → extLst)
+    if (builds) {
+      this.root.push(buildBuildList(builds, () => id++));
+    }
   }
 }

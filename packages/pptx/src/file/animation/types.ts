@@ -46,6 +46,48 @@ export type AnimationCalcMode = "discrete" | "lin" | "fmla";
 
 export type AnimationValueType = "str" | "num" | "clr";
 
+export interface AnimationVariantOptions {
+  readonly bool?: boolean;
+  readonly int?: number;
+  readonly float?: number;
+  readonly string?: string;
+  readonly color?: string;
+}
+
+export interface EndConditionOptions {
+  readonly event?: string;
+  readonly delay?: string;
+  readonly timeNodeId?: number;
+  readonly runtimeNode?: "first" | "last" | "all";
+}
+
+export interface AnimationBuildOptions {
+  readonly type: "paragraph" | "diagram" | "oleChart" | "graphic";
+  readonly spid: number;
+  readonly grpId: number;
+  readonly uiExpand?: boolean;
+  // paragraph-specific
+  readonly build?: "allAtOnce" | "p" | "cust" | "whole";
+  readonly bldLvl?: number;
+  readonly animBg?: boolean;
+  readonly autoUpdateAnimBg?: boolean;
+  readonly rev?: boolean;
+  readonly advAuto?: number;
+  readonly templates?: readonly AnimationTemplateOptions[];
+  // diagram-specific
+  readonly diagramBuild?: string;
+  // oleChart-specific
+  readonly oleChartBuild?: string;
+  readonly oleChartAnimBg?: boolean;
+  // graphic-specific
+  readonly graphicBuildAsOne?: boolean;
+}
+
+export interface AnimationTemplateOptions {
+  readonly lvl?: number;
+  readonly children: readonly AnimationOptions[];
+}
+
 export interface AnimationOptions {
   readonly type?: AnimationType;
   readonly duration?: number;
@@ -96,6 +138,7 @@ export interface AnimationOptions {
     readonly type?: "el" | "wd" | "lt";
     readonly interval?: number;
     readonly backwards?: boolean;
+    readonly iteratePercentage?: number;
   };
 
   // cTn advanced time node attributes
@@ -167,4 +210,57 @@ export interface AnimationOptions {
   readonly numberOfSlides?: number;
   /** Property list. */
   readonly propertyList?: string;
+
+  // cTn time node extensions (A2)
+  /** End conditions list (p:endCondLst). */
+  readonly endConditions?: readonly EndConditionOptions[];
+  /** End sync condition (p:endSync). */
+  readonly endSyncCondition?: EndConditionOptions;
+  /** Sub time nodes (p:subTnLst). */
+  readonly subTimeNodes?: readonly AnimationOptions[];
+  /** Exclusive mode wrapper (p:excl). */
+  readonly exclusiveMode?: boolean;
+
+  // Animation target extensions (A3)
+  /** Ink target shape ID (p:inkTgt @spid). */
+  readonly inkTargetShapeId?: number;
+  /** Sound target r:id (p:sndTgt). */
+  readonly soundTarget?: string;
+  /** Sub-shape ID (p:subSp @spid). */
+  readonly subShapeId?: number;
+  /** Graphic element type (p:graphicEl). */
+  readonly graphicElementType?: string;
+  /** OLE chart element type (p:oleChartEl @type). */
+  readonly oleChartElementType?: string;
+  /** OLE chart element level (p:oleChartEl @lvl). */
+  readonly oleChartElementLevel?: number;
+
+  // Animation variant values (A4)
+  /** Variant boolean value (p:boolVal). */
+  readonly variantBool?: boolean;
+  /** Variant integer value (p:intVal). */
+  readonly variantInt?: number;
+  /** Variant float value (p:fltVal). */
+  readonly variantFloat?: number;
+  /** Variant color value (p:clrVal → a:srgbClr). */
+  readonly variantColor?: string;
+  /** Color animation from (a:srgbClr hex). */
+  readonly colorFrom?: string;
+  /** Color animation to (a:srgbClr hex). */
+  readonly colorTo?: string;
+  /** Color by RGB transform (p:by → p:rgb). */
+  readonly colorByRgb?: { readonly r: string; readonly g: string; readonly b: string };
+  /** Color by HSL transform (p:by → p:hsl). */
+  readonly colorByHsl?: { readonly h: string; readonly s: string; readonly l: string };
+  /** Effect progress (p:progress). */
+  readonly effectProgress?: AnimationVariantOptions;
+
+  // Motion path extensions (A5)
+  /** Motion path from point (p:from). */
+  readonly motionFrom?: { readonly x: string; readonly y: string };
+  /** Motion path rotation center (p:rCtr). */
+  readonly motionRotationCenter?: { readonly x: string; readonly y: string };
+
+  // Build animations (A1) — top-level timing container
+  readonly builds?: readonly AnimationBuildOptions[];
 }

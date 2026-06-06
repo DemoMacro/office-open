@@ -44,6 +44,7 @@ export interface PresentationPropertiesFullOptions {
   readonly web?: WebPropertiesOptions;
   readonly print?: PrintPropertiesOptions;
   readonly htmlPublish?: HtmlPublishPropertiesOptions;
+  readonly colorMru?: readonly string[];
 }
 
 const COLOR_MODE_XSD: Record<string, string> = {
@@ -133,6 +134,11 @@ function buildPresPropsXml(opts?: PresentationPropertiesFullOptions): string {
   if (opts.web) children.push(buildWebPrXml(opts.web));
   if (opts.print) children.push(buildPrnPrXml(opts.print));
   if (opts.show) children.push(buildShowPrXml(opts.show));
+  if (opts.colorMru && opts.colorMru.length > 0) {
+    children.push(
+      `<p:clrMru>${opts.colorMru.map((c) => `<a:srgbClr val="${c}"/>`).join("")}</p:clrMru>`,
+    );
+  }
 
   if (children.length === 0) {
     return `<p:presentationPr ${ns}/>`;

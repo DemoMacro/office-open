@@ -30,6 +30,8 @@ const PPTX_VIEW_PROPS =
   "application/vnd.openxmlformats-officedocument.presentationml.viewProps+xml";
 const PPTX_TABLE_STYLES =
   "application/vnd.openxmlformats-officedocument.presentationml.tableStyles+xml";
+const PPTX_SLIDE_SYNC =
+  "application/vnd.openxmlformats-officedocument.presentationml.slideSyncProperties+xml";
 
 type EntryType = "Default" | "Override";
 
@@ -194,6 +196,14 @@ export class ContentTypes extends BaseXmlComponent {
       type: "Override",
       contentType: PPTX_SLIDE_MASTER,
       key: `/ppt/slideMasters/slideMaster${index}.xml`,
+    });
+  }
+
+  public addSlideSyncPr(index: number): void {
+    this.dynamicEntries.push({
+      type: "Override",
+      contentType: PPTX_SLIDE_SYNC,
+      key: `/ppt/slideSyncPr/slideSyncPr${index}.xml`,
     });
   }
 

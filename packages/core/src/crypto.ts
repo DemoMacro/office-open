@@ -2,6 +2,7 @@
  * Password hashing utilities for OOXML document protection.
  *
  * Implements ECMA-376 Agile Encryption password derivation.
+ * Passwords are encoded as UTF-16LE per the OOXML specification.
  *
  * @module
  */
@@ -15,6 +16,20 @@ function toBase64(bytes: Uint8Array): string {
   // btoa is available in Node.js 16+ and all browsers
   const binary = String.fromCharCode(...bytes);
   return btoa(binary);
+}
+
+/**
+ * Encodes a string as UTF-16LE (no BOM, no null terminator).
+ * Per ECMA-376 Part 2 §14.2.5, passwords SHALL be encoded as UTF-16LE.
+ */
+function utf16leEncode(str: string): Uint8Array {
+  const bytes = new Uint8Array(str.length * 2);
+  for (let i = 0; i < str.length; i++) {
+    const code = str.charCodeAt(i);
+    bytes[i * 2] = code & 0xff;
+    bytes[i * 2 + 1] = (code >> 8) & 0xff;
+  }
+  return bytes;
 }
 
 /**
@@ -38,11 +53,11 @@ export function randomBytes(length: number): Uint8Array {
 /**
  * Computes the ECMA-376 Agile Encryption hash for a password.
  *
- * Algorithm: SHA-512(salt + UTF-8(password)), then iterate SHA-512(hash + i.toUint32LE()) spinCount times.
+ * Algorithm: SHA-512(salt + UTF-16LE(password)), then iterate SHA-512(hash + i.toUint32LE()) spinCount times.
  */
 export function hashPasswordAgile(password: string, salt: Uint8Array, spinCount: number): string {
-  // h = SHA-512(salt + password)
-  let h = hash.sha512().update(salt).update(new TextEncoder().encode(password)).digest();
+  // h = SHA-512(salt + password_utf16le)
+  let h = hash.sha512().update(salt).update(utf16leEncode(password)).digest();
 
   // Iterate: h = SHA-512(h + i as uint32LE)
   for (let i = 0; i < spinCount; i++) {
