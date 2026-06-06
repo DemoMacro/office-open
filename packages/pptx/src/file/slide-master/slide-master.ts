@@ -1,4 +1,4 @@
-import type { BackgroundOptions } from "@file/background/background";
+import { Background, type BackgroundOptions } from "@file/background/background";
 import { DEFAULT_COLOR_MAP, SP_TREE_HEADER } from "@file/constants";
 import type { MasterChild } from "@file/file";
 import type { SlideHeaderFooterOptions } from "@file/header-footer/header-footer";
@@ -38,15 +38,13 @@ const REF_DATE = { x: 838200, y: 6356350, cx: 2743200, cy: 365125 };
 const REF_FOOTER = { x: 4038600, y: 6356350, cx: 4114800, cy: 365125 };
 const REF_SLDNUM = { x: 8610600, y: 6356350, cx: 2743200, cy: 365125 };
 
-const toEmu = convertPositionToEmu;
-
 function resolvePos(
   opt: boolean | MasterPlaceholderPosition | undefined,
   ref: { x: number; y: number; cx: number; cy: number },
 ): { x: number; y: number; cx: number; cy: number } | null {
   if (opt === false) return null;
   if (opt === undefined || opt === true) return ref;
-  return toEmu(opt);
+  return convertPositionToEmu(opt);
 }
 
 function phSp(
@@ -74,13 +72,12 @@ function footerBody(algn: string, fldType: string, fldId: string, fldText: strin
 
 function buildBackgroundXml(bg?: BackgroundOptions): string {
   if (!bg) return `<p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef>`;
-  const { Background } = require("@file/background/background") as {
-    Background: new (o?: BackgroundOptions) => { toXml(ctx: Context): string };
-  };
   const bgObj = new Background(bg);
   const full = bgObj.toXml({ stack: [] } as Context);
-  // Strip the outer <p:bg> since the caller already provides the wrapper.
-  return full.replace(/^<p:bg[^>]*>/, "").replace(/<\/p:bg>$/, "");
+  // Strip the outer <p:bg> tag — caller provides its own wrapper.
+  const openEnd = full.indexOf(">");
+  const closeStart = full.lastIndexOf("</p:bg>");
+  return full.slice(openEnd + 1, closeStart);
 }
 
 function buildSlideMasterXml(
