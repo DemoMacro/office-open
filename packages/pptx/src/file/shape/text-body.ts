@@ -73,15 +73,19 @@ function buildBodyPr(options: TextBodyOptions): IXmlableObject {
 }
 
 /**
- * p:txBody — Text body within a shape.
+ * p:txBody / a:txBody — Text body within a shape.
  * Lazy: stores options, builds XML in toXml().
+ * @param ns - Namespace prefix for the wrapper tag. Defaults to "p" (PresentationML).
+ *             Use "a" for DrawingML contexts (e.g., locked canvas).
  */
 export class TextBody extends XmlComponent {
   private readonly options: TextBodyOptions;
+  private readonly ns: "p" | "a";
 
-  public constructor(options: TextBodyOptions = {}) {
-    super("p:txBody");
+  public constructor(options: TextBodyOptions = {}, ns: "p" | "a" = "p") {
+    super(`${ns}:txBody`);
     this.options = options;
+    this.ns = ns;
   }
 
   public override toXml(context: Context): string {
@@ -110,6 +114,6 @@ export class TextBody extends XmlComponent {
       parts.push(new Paragraph().toXml(context));
     }
 
-    return `<p:txBody>${parts.join("")}</p:txBody>`;
+    return `<${this.ns}:txBody>${parts.join("")}</${this.ns}:txBody>`;
   }
 }

@@ -1,5 +1,6 @@
 import { Chart } from "@file/chart/chart-frame";
 import type { MasterChild } from "@file/file";
+import { LockedCanvasFrame } from "@file/locked-canvas/locked-canvas-frame";
 import { AudioFrame } from "@file/media/audio-frame";
 import { VideoFrame } from "@file/media/video-frame";
 import { OleFrame } from "@file/ole/ole-frame";
@@ -38,6 +39,7 @@ export function coerceChild(child: SlideChild): BaseXmlComponent {
   if ("audio" in child) return new AudioFrame(child.audio);
   if ("group" in child) return new GroupShape(child.group);
   if ("smartart" in child) return new SmartArt(child.smartart);
+  if ("lockedCanvas" in child) return new LockedCanvasFrame(child.lockedCanvas);
   if ("ole" in child) return new OleFrame(child.ole);
   if ("contentPart" in child) {
     return new ContentPart(child.contentPart.rId);

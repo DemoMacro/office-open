@@ -155,6 +155,10 @@ export { ChartSpace, type ChartSpaceOptions, type ChartSeriesData } from "./char
 export type { ChartType } from "./chart/chart-types/create-chart-type";
 export { SmartArt, type SmartArtOptions, type TreeNode } from "./smartart";
 export {
+  LockedCanvasFrame,
+  type LockedCanvasFrameOptions,
+} from "./locked-canvas/locked-canvas-frame";
+export {
   Transition,
   type TransitionOptions,
   type TransitionType,

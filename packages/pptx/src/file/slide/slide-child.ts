@@ -1,4 +1,5 @@
 import type { ChartOptions } from "@file/chart/chart-frame";
+import type { LockedCanvasFrameOptions } from "@file/locked-canvas/locked-canvas-frame";
 import type { AudioFrameOptions } from "@file/media/audio-frame";
 import type { VideoFrameOptions } from "@file/media/video-frame";
 import type { OleOptions } from "@file/ole/ole-frame";
@@ -26,5 +27,6 @@ export type SlideChild =
   | { audio: AudioFrameOptions }
   | { group: GroupShapeOptions }
   | { smartart: SmartArtOptions }
+  | { lockedCanvas: LockedCanvasFrameOptions }
   | { ole: OleOptions }
   | { contentPart: { readonly rId: string } };
