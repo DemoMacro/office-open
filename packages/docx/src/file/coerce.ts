@@ -54,7 +54,10 @@ export function coerceSectionChild(child: SectionChild): FileChild {
   }
   if ("altChunk" in child) return new AltChunk(child.altChunk);
   if ("subDoc" in child) return new SubDoc(child.subDoc);
-  if ("customXml" in child) return new CustomXmlBlock(child.customXml);
+  if ("customXml" in child) {
+    const { children, ...rest } = child.customXml;
+    return new CustomXmlBlock({ ...rest, children: children?.map(coerceSectionChild) });
+  }
   throw new Error("Unknown section child type");
 }
 
@@ -75,6 +78,7 @@ function preCoerceTableRow(
     row instanceof CustomXmlRow
   )
     return row;
+  if (!row.cells) return row;
   return { ...row, cells: row.cells.map(preCoerceTableCell) };
 }
 

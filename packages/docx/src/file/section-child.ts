@@ -51,4 +51,8 @@ export type SectionChild =
     }
   | { altChunk: AltChunkOptions }
   | { subDoc: SubDocOptions }
-  | { customXml: CustomXmlBlockOptions };
+  | {
+      customXml: Omit<CustomXmlBlockOptions, "children"> & {
+        readonly children?: readonly SectionChild[];
+      };
+    };

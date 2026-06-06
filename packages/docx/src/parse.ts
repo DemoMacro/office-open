@@ -13,6 +13,7 @@ import { parseCustomProperties } from "./parse/custom-properties";
 import { parseNumberingDefinitions } from "./parse/numbering";
 import { parseSettings } from "./parse/settings";
 import { buildStyleCache, buildNumberingCache, parseStyleDefinitions } from "./parse/styles";
+import { parseWebSettings } from "./parse/web-settings";
 
 export { parseArchive };
 
@@ -203,6 +204,12 @@ export function parseDocument(data: DataType): PropertiesOptions {
   // Settings
   if (docx.settings) {
     Object.assign(opts, parseSettings(docx.settings));
+  }
+
+  // Web settings
+  if (docx.webSettings) {
+    const wsOpts = parseWebSettings(docx.webSettings);
+    if (Object.keys(wsOpts).length > 0) opts.webSettings = wsOpts;
   }
 
   // Custom properties

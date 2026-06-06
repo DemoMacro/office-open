@@ -301,7 +301,7 @@ export function parseTableRow(
     }
   }
 
-  opts.children = childCells;
+  opts.cells = childCells;
   return opts as unknown as TableRowOptions;
 }
 

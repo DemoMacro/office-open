@@ -13,6 +13,7 @@ import { attr, attrBool, attrNum, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import { parseAltChunk } from "../file/alt-chunk/alt-chunk-parse";
+import { parseCustomXmlBlock } from "../file/custom-xml/custom-xml-parse";
 import { parseParagraph } from "../file/paragraph/paragraph-parse";
 import { parseSdtBlock } from "../file/sdt/sdt-parse";
 import { parseSubDoc } from "../file/sub-doc/sub-doc-parse";
@@ -28,6 +29,17 @@ import { ParseContext } from "./context";
  */
 function parseSectionProperties(el: Element, ctx: ParseContext): ISectionPropertiesOptions {
   const opts: Record<string, unknown> = {};
+
+  // rsid attributes on w:sectPr element
+  for (const [attrName, optKey] of [
+    ["w:rsidR", "rsidR"],
+    ["w:rsidRPr", "rsidRPr"],
+    ["w:rsidDel", "rsidDel"],
+    ["w:rsidSect", "rsidSect"],
+  ] as const) {
+    const val = attr(el, attrName);
+    if (val) opts[optKey] = val;
+  }
 
   // Page size
   const pgSz = findChild(el, "w:pgSz");
@@ -184,6 +196,67 @@ function parseSectionProperties(el: Element, ctx: ParseContext): ISectionPropert
     if (val) opts.verticalAlign = val;
   }
 
+  // Text direction
+  const textDirection = findChild(el, "w:textDirection");
+  if (textDirection) {
+    const val = attr(textDirection, "w:val");
+    if (val) {
+      const page = (opts.page ?? {}) as Record<string, unknown>;
+      page.textDirection = val;
+      opts.page = page;
+    }
+  }
+
+  // Footnote properties
+  const footnotePr = findChild(el, "w:footnotePr");
+  if (footnotePr) {
+    opts.footnotePr = parseNoteProperties(footnotePr);
+  }
+
+  // Endnote properties
+  const endnotePr = findChild(el, "w:endnotePr");
+  if (endnotePr) {
+    opts.endnotePr = parseNoteProperties(endnotePr);
+  }
+
+  // Paper source
+  const paperSrc = findChild(el, "w:paperSrc");
+  if (paperSrc) {
+    const ps: Record<string, unknown> = {};
+    const first = attrNum(paperSrc, "w:first");
+    if (first !== undefined) ps.first = first;
+    const other = attrNum(paperSrc, "w:other");
+    if (other !== undefined) ps.other = other;
+    if (Object.keys(ps).length > 0) opts.paperSrc = ps;
+  }
+
+  // Printer settings
+  const printerSettings = findChild(el, "w:printerSettings");
+  if (printerSettings) {
+    const rId = attr(printerSettings, "r:id");
+    if (rId) opts.printerSettingsId = rId;
+  }
+
+  // Section properties change (revision)
+  const sectPrChange = findChild(el, "w:sectPrChange");
+  if (sectPrChange) {
+    const rev: Record<string, unknown> = {};
+    const author = attr(sectPrChange, "w:author");
+    if (author) rev.author = author;
+    const date = attr(sectPrChange, "w:date");
+    if (date) rev.date = date;
+    const id = attrNum(sectPrChange, "w:id");
+    if (id !== undefined) rev.id = id;
+
+    // Parse nested sectPr (without header/footer references for safety)
+    const nestedSectPr = findChild(sectPrChange, "w:sectPr");
+    if (nestedSectPr) {
+      Object.assign(rev, parseSectionProperties(nestedSectPr, ctx));
+    }
+
+    opts.revision = rev;
+  }
+
   // Headers/footers - parse from references and store in a separate field
   const headerRefs: Record<string, unknown> = {};
   const footerRefs: Record<string, unknown> = {};
@@ -280,6 +353,8 @@ export function parseSectionChild(el: Element, ctx: ParseContext): SectionChild 
       return { altChunk: parseAltChunk(el, ctx) };
     case "w:subDoc":
       return { subDoc: parseSubDoc(el, ctx) };
+    case "w:customXml":
+      return { customXml: parseCustomXmlBlock(el, ctx, parseSectionChild) };
     default:
       return new RawPassthrough(el);
   }
@@ -393,4 +468,45 @@ export function parseBody(body: Element, ctx: ParseContext): SectionOptions[] {
  */
 function parseSectionChildrenElements(elements: Element[], ctx: ParseContext): SectionChild[] {
   return elements.map((el) => parseSectionChild(el, ctx));
+}
+
+/**
+ * Parse footnote/endnote properties (w:footnotePr / w:endnotePr).
+ *
+ * Returns an object with shared fields: pos, formatType, format, numStart, numRestart.
+ */
+function parseNoteProperties(el: Element): Record<string, unknown> {
+  const opts: Record<string, unknown> = {};
+
+  // Position
+  const posEl = findChild(el, "w:pos");
+  if (posEl) {
+    const val = attr(posEl, "w:val");
+    if (val) opts.pos = val;
+  }
+
+  // Number format
+  const numFmt = findChild(el, "w:numFmt");
+  if (numFmt) {
+    const fmt = attr(numFmt, "w:fmt");
+    if (fmt) opts.formatType = fmt;
+    const format = attr(numFmt, "w:format");
+    if (format) opts.format = format;
+  }
+
+  // Number start
+  const numStart = findChild(el, "w:numStart");
+  if (numStart) {
+    const val = attrNum(numStart, "w:val");
+    if (val !== undefined) opts.numStart = val;
+  }
+
+  // Number restart
+  const numRestart = findChild(el, "w:numRestart");
+  if (numRestart) {
+    const val = attr(numRestart, "w:val");
+    if (val) opts.numRestart = val;
+  }
+
+  return opts;
 }

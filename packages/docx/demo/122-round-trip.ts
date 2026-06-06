@@ -867,6 +867,30 @@ async function main() {
         },
       ],
     },
+
+    // Section 15: customXml block + textDirection
+    {
+      properties: {
+        page: {
+          margin: { top: 1440, bottom: 1440, left: 1440, right: 1440 },
+          textDirection: "lrTb",
+        },
+      },
+      children: [
+        { paragraph: { heading: "Heading1", children: ["Custom XML Block"] } },
+        {
+          customXml: {
+            element: "myElement",
+            uri: "http://example.com/ns",
+            customXmlPr: {
+              placeholder: "Enter value",
+              attributes: [{ name: "status", val: "draft" }],
+            },
+            children: [{ paragraph: { children: ["Inside customXml block"] } }],
+          },
+        },
+      ],
+    },
   ];
 
   const sectionCount = sections.length;
@@ -939,6 +963,7 @@ async function main() {
     features: {
       trackRevisions: true,
     },
+    webSettings: { optimizeForBrowser: true, allowPNG: true, pixelsPerInch: 96 },
     sections,
   });
   const buffer = await Packer.toBuffer(doc);
@@ -951,6 +976,33 @@ async function main() {
   // 4. Basic verification
   console.log("\n--- Verification ---");
   assert(`section count = ${sectionCount}`, parsed.sections!.length === sectionCount);
+
+  // Verify customXml (section 15)
+  const sec15 = parsed.sections![14];
+  const customXmlChild = sec15.children!.find((c: any) => "customXml" in c) as any;
+  assert("customXml element parsed", customXmlChild?.customXml?.element === "myElement");
+  assert("customXml uri parsed", customXmlChild?.customXml?.uri === "http://example.com/ns");
+  assert(
+    "customXml placeholder parsed",
+    customXmlChild?.customXml?.customXmlPr?.placeholder === "Enter value",
+  );
+  assert(
+    "customXml attributes parsed",
+    customXmlChild?.customXml?.customXmlPr?.attributes?.[0]?.name === "status",
+  );
+
+  // Verify section properties textDirection
+  const sec15Props = sec15.properties as any;
+  assert("textDirection parsed", sec15Props?.page?.textDirection === "lrTb");
+
+  // Verify webSettings
+  assert("webSettings parsed", (parsed as any).webSettings !== undefined);
+  assert(
+    "webSettings.optimizeForBrowser parsed",
+    (parsed as any).webSettings?.optimizeForBrowser === true,
+  );
+  assert("webSettings.allowPNG parsed", (parsed as any).webSettings?.allowPNG === true);
+  assert("webSettings.pixelsPerInch parsed", (parsed as any).webSettings?.pixelsPerInch === 96);
 
   // 5. Round-trip: re-generate from parsed data → compare ZIPs
   console.log("\n--- Round-trip ZIP comparison ---");
