@@ -1,6 +1,7 @@
 import { SlideTiming } from "@file/animation/timing";
 import type { AnimationOptions } from "@file/animation/types";
 import type { Background } from "@file/background/background";
+import { SP_TREE_HEADER } from "@file/constants";
 import type { SlideHeaderFooterOptions } from "@file/header-footer/header-footer";
 import { coerceChild } from "@file/slide/coerce";
 import type { SlideChild } from "@file/slide/slide-child";
@@ -101,10 +102,7 @@ export class Slide extends XmlComponent {
 
     // p:spTree — shape tree (fixed wrapper + dynamic children)
     parts.push("<p:spTree>");
-    parts.push('<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>');
-    parts.push(
-      '<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>',
-    );
+    parts.push(SP_TREE_HEADER);
 
     const coercedChildren = this.children.map(coerceChild);
     for (const child of coercedChildren) {
