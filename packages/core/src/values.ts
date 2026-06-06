@@ -97,8 +97,8 @@ export type RelativeMeasure = `${"-" | ""}${number}${"em" | "ex"}`;
  * ```
  */
 export const decimalNumber = (val: number): number => {
-  if (isNaN(val)) {
-    throw new Error(`Invalid value '${val}' specified. Must be an integer.`);
+  if (!Number.isFinite(val)) {
+    throw new Error(`Invalid value '${val}' specified. Must be a finite number.`);
   }
   return Math.floor(val);
 };
