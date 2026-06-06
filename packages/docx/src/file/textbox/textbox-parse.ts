@@ -10,15 +10,6 @@ import type { Element } from "@office-open/xml";
 
 import type { ParseContext } from "../../parse/context";
 
-// Forward declaration
-let _parseSectionChildren: ((elements: Element[], ctx: ParseContext) => unknown[]) | undefined;
-
-export function setTextboxSectionChildrenParser(
-  fn: (elements: Element[], ctx: ParseContext) => unknown[],
-): void {
-  _parseSectionChildren = fn;
-}
-
 /**
  * Parse VML shape style string into VmlShapeStyle-like object.
  */
@@ -38,6 +29,7 @@ function parseVmlStyle(styleStr: string): Record<string, string> {
 export function parseTextbox(
   el: Element,
   ctx: ParseContext,
+  parseChildren: (elements: Element[], ctx: ParseContext) => unknown[],
 ): {
   style?: Record<string, string>;
   children?: unknown[];
@@ -57,8 +49,8 @@ export function parseTextbox(
   const textbox = findDeep(shape, "v:textbox")[0];
   if (textbox) {
     const txbxContent = findChild(textbox, "w:txbxContent");
-    if (txbxContent && _parseSectionChildren) {
-      const childList = _parseSectionChildren(txbxContent.elements ?? [], ctx);
+    if (txbxContent) {
+      const childList = parseChildren(txbxContent.elements ?? [], ctx);
       if (childList.length > 0) opts.children = childList;
     }
   }

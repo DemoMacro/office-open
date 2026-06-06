@@ -14,11 +14,11 @@ import type { Element } from "@office-open/xml";
 
 import { parseAltChunk } from "../file/alt-chunk/alt-chunk-parse";
 import { parseParagraph } from "../file/paragraph/paragraph-parse";
-import { parseSdtBlock, setSectionChildrenParser } from "../file/sdt/sdt-parse";
+import { parseSdtBlock } from "../file/sdt/sdt-parse";
 import { parseSubDoc } from "../file/sub-doc/sub-doc-parse";
 import { parseToc } from "../file/table-of-contents/toc-parse";
-import { parseTable, setSectionChildParser } from "../file/table/table-parse";
-import { setTextboxSectionChildrenParser, parseTextbox } from "../file/textbox/textbox-parse";
+import { parseTable } from "../file/table/table-parse";
+import { parseTextbox } from "../file/textbox/textbox-parse";
 import { ParseContext } from "./context";
 
 // ── Section properties parser ────────────────────────────────────────────────
@@ -252,7 +252,7 @@ export function parseSectionChild(el: Element, ctx: ParseContext): SectionChild 
       if (pict) {
         const textbox = findDeepElement(pict, "v:textbox");
         if (textbox) {
-          const textboxOpts = parseTextbox(pict, ctx);
+          const textboxOpts = parseTextbox(pict, ctx, parseSectionChildrenElements);
           return { textbox: textboxOpts as SectionChild extends { textbox: infer T } ? T : never };
         }
       }
@@ -260,7 +260,7 @@ export function parseSectionChild(el: Element, ctx: ParseContext): SectionChild 
       return { paragraph: parseParagraph(el, ctx) };
     }
     case "w:tbl":
-      return { table: parseTable(el, ctx) };
+      return { table: parseTable(el, ctx, parseSectionChild) };
     case "w:sdt": {
       // Try TOC first
       const tocResult = parseToc(el, ctx);
@@ -268,7 +268,7 @@ export function parseSectionChild(el: Element, ctx: ParseContext): SectionChild 
         return { toc: tocResult };
       }
       // Otherwise parse as generic SDT block
-      const sdtResult = parseSdtBlock(el, ctx);
+      const sdtResult = parseSdtBlock(el, ctx, parseSectionChildrenElements);
       return {
         sdt: {
           properties: sdtResult.properties,
@@ -307,11 +307,6 @@ function findDeepElement(parent: Element, name: string): Element | undefined {
  * Previous w:sectPr elements appear inside w:pPr elements.
  */
 export function parseBody(body: Element, ctx: ParseContext): SectionOptions[] {
-  // Wire up circular dependencies
-  setSectionChildParser(parseSectionChild);
-  setSectionChildrenParser(parseSectionChildrenElements);
-  setTextboxSectionChildrenParser(parseSectionChildrenElements);
-
   // Collect body children and detect section breaks
   interface SectionBoundary {
     index: number;

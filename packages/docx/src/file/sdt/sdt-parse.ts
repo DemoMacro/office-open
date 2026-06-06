@@ -18,15 +18,6 @@ import type { Element } from "@office-open/xml";
 
 import type { ParseContext } from "../../parse/context";
 
-// Forward declaration for circular dependency
-let _parseSectionChildren: ((elements: Element[], ctx: ParseContext) => unknown[]) | undefined;
-
-export function setSectionChildrenParser(
-  fn: (elements: Element[], ctx: ParseContext) => unknown[],
-): void {
-  _parseSectionChildren = fn;
-}
-
 /**
  * Parse w:sdtPr element into SdtPropertiesOptions.
  */
@@ -166,6 +157,7 @@ function parseSdtProperties(el: Element): SdtPropertiesOptions {
 export function parseSdtBlock(
   el: Element,
   ctx: ParseContext,
+  parseChildren: (elements: Element[], ctx: ParseContext) => unknown[],
 ): {
   properties: SdtPropertiesOptions;
   children?: unknown[];
@@ -175,8 +167,8 @@ export function parseSdtBlock(
 
   const sdtContent = findChild(el, "w:sdtContent");
   let childList: unknown[] | undefined;
-  if (sdtContent && _parseSectionChildren) {
-    childList = _parseSectionChildren(sdtContent.elements ?? [], ctx);
+  if (sdtContent) {
+    childList = parseChildren(sdtContent.elements ?? [], ctx);
     if (childList.length === 0) childList = undefined;
   }
 

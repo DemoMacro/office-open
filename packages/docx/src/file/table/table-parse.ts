@@ -13,7 +13,6 @@ import { attr, attrBool, attrNum, children, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import type { ParseContext } from "../../parse/context";
-import { parseParagraph } from "../paragraph/paragraph-parse";
 
 /**
  * Parse w:tblPr into table properties.
@@ -245,20 +244,14 @@ function parseTableCellProperties(el: Element): Record<string, unknown> {
   return opts;
 }
 
-// Forward declaration to handle circular reference
-let _parseSectionChild: ((el: Element, ctx: ParseContext) => SectionChild) | undefined;
-
-/**
- * Set the section child parser function (called by parse-body to resolve circular dependency).
- */
-export function setSectionChildParser(fn: (el: Element, ctx: ParseContext) => SectionChild): void {
-  _parseSectionChild = fn;
-}
-
 /**
  * Parse w:tc element into TableCellOptions.
  */
-export function parseTableCell(el: Element, ctx: ParseContext): TableCellOptions {
+export function parseTableCell(
+  el: Element,
+  ctx: ParseContext,
+  parseChild: (el: Element, ctx: ParseContext) => SectionChild,
+): TableCellOptions {
   const opts: Record<string, unknown> = {};
 
   const tcPr = findChild(el, "w:tcPr");
@@ -272,18 +265,10 @@ export function parseTableCell(el: Element, ctx: ParseContext): TableCellOptions
       case "w:tcPr":
         break;
       case "w:p":
-        if (_parseSectionChild) {
-          childElements.push(_parseSectionChild(child, ctx));
-        } else {
-          childElements.push({ paragraph: parseParagraph(child, ctx) });
-        }
+        childElements.push(parseChild(child, ctx));
         break;
       case "w:tbl":
-        if (_parseSectionChild) {
-          childElements.push(_parseSectionChild(child, ctx));
-        } else {
-          childElements.push({ table: parseTable(child, ctx) });
-        }
+        childElements.push(parseChild(child, ctx));
         break;
       default:
         break;
@@ -297,7 +282,11 @@ export function parseTableCell(el: Element, ctx: ParseContext): TableCellOptions
 /**
  * Parse w:tr element into TableRowOptions.
  */
-export function parseTableRow(el: Element, ctx: ParseContext): TableRowOptions {
+export function parseTableRow(
+  el: Element,
+  ctx: ParseContext,
+  parseChild: (el: Element, ctx: ParseContext) => SectionChild,
+): TableRowOptions {
   const opts: Record<string, unknown> = {};
 
   const trPr = findChild(el, "w:trPr");
@@ -308,7 +297,7 @@ export function parseTableRow(el: Element, ctx: ParseContext): TableRowOptions {
   const childCells: TableCellOptions[] = [];
   for (const child of el.elements ?? []) {
     if (child.name === "w:tc") {
-      childCells.push(parseTableCell(child, ctx));
+      childCells.push(parseTableCell(child, ctx, parseChild));
     }
   }
 
@@ -319,7 +308,11 @@ export function parseTableRow(el: Element, ctx: ParseContext): TableRowOptions {
 /**
  * Parse w:tbl element into TableOptions.
  */
-export function parseTable(el: Element, ctx: ParseContext): TableOptions {
+export function parseTable(
+  el: Element,
+  ctx: ParseContext,
+  parseChild: (el: Element, ctx: ParseContext) => SectionChild,
+): TableOptions {
   const opts: Record<string, unknown> = {};
 
   const tblPr = findChild(el, "w:tblPr");
@@ -337,7 +330,7 @@ export function parseTable(el: Element, ctx: ParseContext): TableOptions {
   const rows: TableRowOptions[] = [];
   for (const child of el.elements ?? []) {
     if (child.name === "w:tr") {
-      rows.push(parseTableRow(child, ctx));
+      rows.push(parseTableRow(child, ctx, parseChild));
     }
   }
 

@@ -16,18 +16,6 @@ import type { SectionChild } from "../../section-child";
 import { buildTableCellProperties } from "./table-cell-properties";
 import type { ITableCellPropertiesOptions } from "./table-cell-properties";
 
-// Lazy import to avoid circular dependency: coerce.ts → Table → TableRow → TableCell → coerce.ts
-type CoerceFn = (child: SectionChild) => FileChild;
-let _coerce: CoerceFn | undefined;
-
-function lazyCoerce(child: SectionChild): FileChild {
-  if (!_coerce) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    _coerce = require("../../coerce").coerceSectionChild;
-  }
-  return _coerce!(child);
-}
-
 /**
  * Options for creating a TableCell element.
  *
@@ -79,16 +67,16 @@ export class TableCell extends BaseXmlComponent {
     const tPrObj = buildTableCellProperties(this.options);
     if (tPrObj) parts.push(xml(tPrObj));
 
-    const coerced = this.options.children.map((c) =>
-      c instanceof BaseXmlComponent ? c : lazyCoerce(c),
-    );
+    // Children are pre-coerced by coerceSectionChild, so all should be instances.
+    // Cast is safe: plain objects are converted before reaching this point.
+    const children = this.options.children as readonly (FileChild | StructuredDocumentTagCell)[];
 
-    for (const child of coerced) {
+    for (const child of children) {
       parts.push(child.toXml(context));
     }
 
     // Cells must end with a paragraph
-    const last = coerced[coerced.length - 1];
+    const last = children[children.length - 1];
     if (!(last instanceof Paragraph)) {
       parts.push(new Paragraph({}).toXml(context));
     }

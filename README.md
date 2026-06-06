@@ -328,7 +328,7 @@ We welcome contributions! Here's how to get started:
 
 1. **Code**: Follow our project standards
 2. **Test**: `pnpm build && pnpm test`
-3. **Commit**: Use conventional commits (`feat:`, `fix:`, etc.)
+3. **Commit**: Use conventional commits (`feat:`, `fix:`, `docs:`, `style:`, `refactor:`, `perf:`, `test:`, `build:`, `ci:`, `chore:`, `revert:`)
 4. **Push**: Push to your fork
 5. **Submit**: Create a Pull Request to upstream repository
 
