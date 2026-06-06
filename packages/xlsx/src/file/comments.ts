@@ -17,8 +17,12 @@ export class Comments extends BaseXmlComponent {
 
   public override toXml(_context: Context): string {
     const authors = this.collectAuthors();
+    const hasCommentPr = this.entries.some((e) => e.commentPr);
+    const nsAttrs = hasCommentPr
+      ? ' xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing"'
+      : "";
     const p: string[] = [
-      '<comments xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">',
+      `<comments xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"${nsAttrs}>`,
       `<authors>`,
     ];
 
@@ -34,30 +38,7 @@ export class Comments extends BaseXmlComponent {
         typeof entry.text === "string"
           ? `<t>${escapeXml(entry.text)}</t>`
           : buildRstXml(entry.text);
-      // commentPr (CT_CommentPr, optional)
-      let commentPrXml = "";
-      if (entry.commentPr) {
-        const cp = entry.commentPr;
-        const cpAttrs: string[] = [];
-        if (cp.locked === false) cpAttrs.push('locked="0"');
-        if (cp.defaultSize === false) cpAttrs.push('defaultSize="0"');
-        if (cp.print === false) cpAttrs.push('print="0"');
-        if (cp.disabled) cpAttrs.push('disabled="1"');
-        if (cp.autoFill === false) cpAttrs.push('autoFill="0"');
-        if (cp.autoLine === false) cpAttrs.push('autoLine="0"');
-        if (cp.altText) cpAttrs.push(`altText="${escapeXml(cp.altText)}"`);
-        if (cp.textHAlign && cp.textHAlign !== "left")
-          cpAttrs.push(`textHAlign="${cp.textHAlign}"`);
-        if (cp.textVAlign && cp.textVAlign !== "top") cpAttrs.push(`textVAlign="${cp.textVAlign}"`);
-        if (cp.lockText === false) cpAttrs.push('lockText="0"');
-        if (cp.justLastX) cpAttrs.push('justLastX="1"');
-        if (cp.autoScale) cpAttrs.push('autoScale="1"');
-        // anchor (CT_ObjectAnchor, required child of commentPr)
-        const anchorAttrs: string[] = [];
-        if (cp.anchor?.moveWithCells) anchorAttrs.push('moveWithCells="1"');
-        if (cp.anchor?.sizeWithCells) anchorAttrs.push('sizeWithCells="1"');
-        commentPrXml = `<commentPr${cpAttrs.length ? " " + cpAttrs.join(" ") : ""}><anchor${anchorAttrs.length ? " " + anchorAttrs.join(" ") : ""}/></commentPr>`;
-      }
+      const commentPrXml = this.buildCommentPrXml(entry);
       p.push(
         `<comment ref="${entry.cell}" authorId="${authorId}"><text>${textXml}</text>${commentPrXml}</comment>`,
       );
@@ -65,6 +46,55 @@ export class Comments extends BaseXmlComponent {
 
     p.push("</commentList></comments>");
     return p.join("");
+  }
+
+  /** Build CT_CommentPr XML. Returns empty string if commentPr is not set. */
+  private buildCommentPrXml(entry: CommentOptions): string {
+    const cp = entry.commentPr;
+    if (!cp) return "";
+
+    const attrs: string[] = [];
+    if (cp.locked === false) attrs.push('locked="0"');
+    if (cp.defaultSize === false) attrs.push('defaultSize="0"');
+    if (cp.print === false) attrs.push('print="0"');
+    if (cp.disabled) attrs.push('disabled="1"');
+    if (cp.autoFill === false) attrs.push('autoFill="0"');
+    if (cp.autoLine === false) attrs.push('autoLine="0"');
+    if (cp.altText) attrs.push(`altText="${escapeXml(cp.altText)}"`);
+    if (cp.textHAlign && cp.textHAlign !== "left") attrs.push(`textHAlign="${cp.textHAlign}"`);
+    if (cp.textVAlign && cp.textVAlign !== "top") attrs.push(`textVAlign="${cp.textVAlign}"`);
+    if (cp.lockText === false) attrs.push('lockText="0"');
+    if (cp.justLastX) attrs.push('justLastX="1"');
+    if (cp.autoScale) attrs.push('autoScale="1"');
+
+    // CT_ObjectAnchor requires xdr:from and xdr:to children.
+    // Derive position from the cell reference (same as VML).
+    const anchorXml = this.buildAnchorXml(entry.cell, cp.anchor);
+    const attrStr = attrs.length ? ` ${attrs.join(" ")}` : "";
+    return `<commentPr${attrStr}>${anchorXml}</commentPr>`;
+  }
+
+  /** Build CT_ObjectAnchor with required xdr:from/xdr:to markers. */
+  private buildAnchorXml(
+    cell: string,
+    anchor: NonNullable<CommentOptions["commentPr"]>["anchor"],
+  ): string {
+    const col = cell.charCodeAt(0) - 65;
+    const row = parseInt(cell.slice(1), 10) - 1;
+    // Default anchor: from the comment cell to 2 cols/rows right/down
+    const toCol = col + 2;
+    const toRow = row + 2;
+
+    const anchorAttrs: string[] = [];
+    if (anchor?.moveWithCells) anchorAttrs.push(' moveWithCells="1"');
+    if (anchor?.sizeWithCells) anchorAttrs.push(' sizeWithCells="1"');
+
+    return (
+      `<anchor${anchorAttrs.join("")}>` +
+      `<xdr:from><xdr:col>${col}</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>${row}</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>` +
+      `<xdr:to><xdr:col>${toCol}</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>${toRow}</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to>` +
+      `</anchor>`
+    );
   }
 
   private collectAuthors(): string[] {

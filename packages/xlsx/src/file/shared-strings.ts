@@ -34,7 +34,12 @@ export function buildRPrXml(
   if (pr.shadow) parts.push("<shadow/>");
   if (pr.condense) parts.push("<condense/>");
   if (pr.extend) parts.push("<extend/>");
-  if (pr.color) parts.push(`<color rgb="${escapeXml(pr.color)}"/>`);
+  if (pr.color) {
+    // ST_UnsignedIntHex requires 8 hex chars (AARRGGBB).
+    // Auto-prefix FF (fully opaque) when user provides 6-char RGB.
+    const rgb = pr.color.length === 6 ? `FF${pr.color}` : pr.color;
+    parts.push(`<color rgb="${escapeXml(rgb)}"/>`);
+  }
   if (pr.size !== undefined) parts.push(`<sz val="${pr.size}"/>`);
   if (pr.underline) {
     if (pr.underline === "none") {
