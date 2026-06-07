@@ -2,7 +2,7 @@ import { formatId } from "@office-open/core";
 
 export function replaceHyperlinkPlaceholders(
   xml: string,
-  hyperlinks: readonly { readonly key: string }[],
+  hyperlinks: { key: string }[],
   offset: number,
 ): string {
   let result = xml;

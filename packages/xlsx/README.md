@@ -44,10 +44,10 @@ bun add @office-open/xlsx
 ## Quick Start
 
 ```typescript
-import { Workbook, Packer } from "@office-open/xlsx";
+import { generate } from "@office-open/xlsx";
 import { writeFileSync } from "node:fs";
 
-const wb = new Workbook({
+const buffer = await generate({
   worksheets: [
     {
       name: "Sheet1",
@@ -60,7 +60,6 @@ const wb = new Workbook({
   ],
 });
 
-const buffer = await Packer.toBuffer(wb);
 writeFileSync("workbook.xlsx", buffer);
 ```
 
@@ -70,41 +69,39 @@ Check the [demo folder](./demo) for working examples covering every feature.
 
 ## Benchmark
 
-Performance comparison against [hucre](https://github.com/nicolo-ribaudo/hucre) (0.6.0) (higher ops/s is better, Windows 11 / Node 24).
+Performance comparison against [hucre](https://github.com/nicolo-ribaudo/hucre) (higher ops/s is better, Windows 11 / Node 24).
 
 **Default** = XML DEFLATE level 1 (SuperFast, matching MS Office) + media STORE. **All STORE** = no compression (`{ compression: { xml: 0 } }`). **hucre** (async only) uses `CompressionStream("deflate-raw")` when available, falls back to STORE per-entry when compression doesn't reduce size.
 
 ```typescript
 // Default (matches MS Office)
-await Packer.toBuffer(wb);
+await generate({ worksheets: [...] });
 // All STORE (no compression)
-await Packer.toBuffer(wb, { compression: { xml: 0 } });
+await generate({ worksheets: [...] }, { compression: { xml: 0 } });
 ```
 
 **Create + toBuffer (end-to-end)**
 
 | Scenario         | Default sync | Default async | All STORE sync | All STORE async |       hucre |
 | ---------------- | -----------: | ------------: | -------------: | --------------: | ----------: |
-| Simple (3 rows)  |  3,528 ops/s |   1,266 ops/s |   17,759 ops/s |    17,193 ops/s |   949 ops/s |
-| Styled rows (20) |  3,403 ops/s |   1,289 ops/s |   16,516 ops/s |    13,811 ops/s |   971 ops/s |
-| Table (10x5)     |  3,449 ops/s |   1,414 ops/s |   16,036 ops/s |    13,475 ops/s | 1,031 ops/s |
+| Simple (3 rows)  |  2,117 ops/s |   1,123 ops/s |   14,387 ops/s |    15,646 ops/s |   996 ops/s |
+| Styled rows (20) |  2,174 ops/s |   1,044 ops/s |   13,924 ops/s |    13,195 ops/s | 1,012 ops/s |
+| Table (10x5)     |  2,176 ops/s |   1,215 ops/s |   14,467 ops/s |    14,201 ops/s |   947 ops/s |
 
 **Large Files — Create + toBuffer**
 
-| Scenario                      | Default sync | Default async | All STORE sync | All STORE async |      hucre |
-| ----------------------------- | -----------: | ------------: | -------------: | --------------: | ---------: |
-| 2000 rows + 10 images         |   87.5 ops/s |    79.7 ops/s |    101.0 ops/s |     101.2 ops/s | 46.4 ops/s |
-| 200x10 table                  |    754 ops/s |     517 ops/s |    1,049 ops/s |       963 ops/s |  226 ops/s |
-| 20 sheets x 100 rows + 20 img |   60.9 ops/s |    49.9 ops/s |     76.8 ops/s |      77.5 ops/s | 25.3 ops/s |
+| Scenario                      | Default sync | Default async | All STORE sync | All STORE async |     hucre |
+| ----------------------------- | -----------: | ------------: | -------------: | --------------: | --------: |
+| 2000 rows + 10 images         |     69 ops/s |      66 ops/s |       75 ops/s |        77 ops/s |  42 ops/s |
+| 200x10 table                  |    690 ops/s |     555 ops/s |      956 ops/s |       977 ops/s | 257 ops/s |
+| 20 sheets × 100 rows + 20 img |     43 ops/s |      35 ops/s |       55 ops/s |        57 ops/s |  23 ops/s |
 
-**Large Data — 100,000 rows x 20 columns (2M cells)**
+**Large Data — 100,000 rows × 20 columns (2M cells)**
 
-| Method    |      Speed |  Speedup |
-| --------- | ---------: | -------: |
-| All STORE | 0.74 ops/s | **1.9x** |
-| Default   | 0.66 ops/s |     1.7x |
-| hucre     | 0.40 ops/s |          |
+| Scenario  | Default sync | Default async | All STORE sync | All STORE async |      hucre |
+| --------- | -----------: | ------------: | -------------: | --------------: | ---------: |
+| 100k × 20 |   0.75 ops/s |    0.71 ops/s |     0.86 ops/s |      0.84 ops/s | 0.37 ops/s |
 
 ## License
 
-- [MIT](LICENSE) &copy; [Demo Macro](https://imst.xyz/)
+- [MIT](LICENSE) &copy; [Demo Macro](https://www.demomacro.com/)

@@ -33,15 +33,15 @@ export type EditGroup = (typeof EditGroupType)[keyof typeof EditGroupType];
  */
 export interface PermStartOptions {
   /** Unique identifier for this permission range (typically a number) */
-  readonly id: string | number;
+  id: string | number;
   /** Editing group that can edit this range */
-  readonly edGroup?: EditGroup;
+  edGroup?: EditGroup;
   /** Individual user who can edit this range */
-  readonly ed?: string;
+  ed?: string;
   /** First column this range covers (for table cells) */
-  readonly colFirst?: number;
+  colFirst?: number;
   /** Last column this range covers (for table cells) */
-  readonly colLast?: number;
+  colLast?: number;
 }
 
 /**

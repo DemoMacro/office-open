@@ -36,22 +36,22 @@ import { XmlComponent } from "@file/xml-components";
  * @property institution - Institution (for theses, reports)
  */
 export interface SourceTypeOptions {
-  readonly type?: string;
-  readonly title?: string;
-  readonly author?: string;
-  readonly year?: string;
-  readonly month?: string;
-  readonly day?: string;
-  readonly bookTitle?: string;
-  readonly journal?: string;
-  readonly volume?: string;
-  readonly issue?: string;
-  readonly pages?: string;
-  readonly publisher?: string;
-  readonly city?: string;
-  readonly url?: string;
-  readonly edition?: string;
-  readonly institution?: string;
+  type?: string;
+  title?: string;
+  author?: string;
+  year?: string;
+  month?: string;
+  day?: string;
+  bookTitle?: string;
+  journal?: string;
+  volume?: string;
+  issue?: string;
+  pages?: string;
+  publisher?: string;
+  city?: string;
+  url?: string;
+  edition?: string;
+  institution?: string;
 }
 
 /**
@@ -61,8 +61,8 @@ export interface SourceTypeOptions {
  * @property styleName - Bibliography style name (e.g., "APA", "Chicago", "IEEE")
  */
 export interface BibliographyOptions {
-  readonly sources: readonly SourceTypeOptions[];
-  readonly styleName?: string;
+  sources: SourceTypeOptions[];
+  styleName?: string;
 }
 
 /**
@@ -158,7 +158,7 @@ class Source extends XmlComponent {
  * ```
  */
 export class Bibliography extends XmlComponent {
-  public readonly relationships: Relationships;
+  public relationships: Relationships;
 
   public constructor(options: BibliographyOptions) {
     super("b:Sources");

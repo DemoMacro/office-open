@@ -2,38 +2,38 @@ import { DEFAULT_COLOR_MAP, SP_TREE_HEADER } from "./constants";
 
 /** Color map entry for handout/notes master */
 export interface ColorMapOptions {
-  readonly bg1?: string;
-  readonly tx1?: string;
-  readonly bg2?: string;
-  readonly tx2?: string;
-  readonly accent1?: string;
-  readonly accent2?: string;
-  readonly accent3?: string;
-  readonly accent4?: string;
-  readonly accent5?: string;
-  readonly accent6?: string;
-  readonly hlink?: string;
-  readonly folHlink?: string;
+  bg1?: string;
+  tx1?: string;
+  bg2?: string;
+  tx2?: string;
+  accent1?: string;
+  accent2?: string;
+  accent3?: string;
+  accent4?: string;
+  accent5?: string;
+  accent6?: string;
+  hlink?: string;
+  folHlink?: string;
 }
 
 /** Header/footer options for handout/notes master */
 export interface HeaderFooterOptions {
   /** Show date/time */
-  readonly date?: boolean;
+  date?: boolean;
   /** Show header */
-  readonly header?: boolean;
+  header?: boolean;
   /** Show footer */
-  readonly footer?: boolean;
+  footer?: boolean;
   /** Show slide number */
-  readonly slideNumber?: boolean;
+  slideNumber?: boolean;
 }
 
 /** Options for handout master parameterization */
 export interface HandoutMasterOptions {
   /** Color map overrides */
-  readonly colorMap?: ColorMapOptions;
+  colorMap?: ColorMapOptions;
   /** Header/footer settings */
-  readonly headerFooter?: HeaderFooterOptions;
+  headerFooter?: HeaderFooterOptions;
 }
 
 const HANDOUT_MASTER_XML = `<p:handoutMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">

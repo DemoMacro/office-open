@@ -23,7 +23,7 @@ import {
  */
 export interface MathFunctionPropertiesOptions {
   /** Control properties (tracking changes) */
-  readonly controlProperties?: MathControlPropertiesOptions;
+  controlProperties?: MathControlPropertiesOptions;
 }
 
 /**

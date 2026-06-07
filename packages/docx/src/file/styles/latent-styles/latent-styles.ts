@@ -45,11 +45,11 @@ import type { LatentStyleException } from "./exceptions";
  * ```
  */
 export interface LatentStylesOptions {
-  readonly defaultLockedState?: boolean;
-  readonly defaultUIPriority?: number;
-  readonly defaultSemiHidden?: boolean;
-  readonly defaultUnhideWhenUsed?: boolean;
-  readonly defaultQuickFormat?: boolean;
+  defaultLockedState?: boolean;
+  defaultUIPriority?: number;
+  defaultSemiHidden?: boolean;
+  defaultUnhideWhenUsed?: boolean;
+  defaultQuickFormat?: boolean;
 }
 
 export class LatentStyles extends XmlComponent {

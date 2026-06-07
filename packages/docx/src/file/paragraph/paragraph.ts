@@ -126,24 +126,24 @@ export type ParagraphChild =
 
 /** JSON-friendly wrapper for ChartRun options in paragraph children. */
 export interface ChartChild {
-  readonly chart: ChartOptions;
+  chart: ChartOptions;
 }
 
 /** JSON-friendly wrapper for SmartArtRun options in paragraph children. */
 export interface SmartArtChild {
-  readonly smartArt: SmartArtOptions;
+  smartArt: SmartArtOptions;
 }
 
 /** JSON-friendly wrapper for ImageRun options in paragraph children. */
 export interface ImageChild {
-  readonly image: IImageOptions;
+  image: IImageOptions;
 }
 
 /** JSON-friendly wrapper for Math options in paragraph children.
  *  Unlike MathOptions, children accept recursive JSON objects via {@link MathJson}. */
 export interface MathChild {
-  readonly math: Omit<MathOptions, "children"> & {
-    readonly children?: readonly MathJson[];
+  math: Omit<MathOptions, "children"> & {
+    children?: MathJson[];
   };
 }
 
@@ -153,26 +153,26 @@ export type IParagraphJsonChild =
   | SmartArtChild
   | ImageChild
   | MathChild
-  | { readonly symbolRun: ISymbolRunOptions }
-  | { readonly footnoteReference: number }
-  | { readonly endnoteReference: number }
-  | { readonly pageBreak: true }
-  | { readonly columnBreak: true }
-  | { readonly commentRangeStart: number }
-  | { readonly commentRangeEnd: number }
-  | { readonly commentReference: number }
-  | { readonly insertion: RunOptions & ChangedAttributesProperties }
-  | { readonly deletion: RunOptions & ChangedAttributesProperties }
+  | { symbolRun: ISymbolRunOptions }
+  | { footnoteReference: number }
+  | { endnoteReference: number }
+  | { pageBreak: true }
+  | { columnBreak: true }
+  | { commentRangeStart: number }
+  | { commentRangeEnd: number }
+  | { commentReference: number }
+  | { insertion: RunOptions & ChangedAttributesProperties }
+  | { deletion: RunOptions & ChangedAttributesProperties }
   | {
-      readonly hyperlink: {
-        readonly link?: string;
-        readonly anchor?: string;
-        readonly tooltip?: string;
-        readonly children?: readonly (RunOptions | string)[];
+      hyperlink: {
+        link?: string;
+        anchor?: string;
+        tooltip?: string;
+        children?: (RunOptions | string)[];
       };
     }
-  | { readonly bookmarkStart: { readonly id: number; readonly name: string } }
-  | { readonly bookmarkEnd: number };
+  | { bookmarkStart: { id: number; name: string } }
+  | { bookmarkEnd: number };
 
 /**
  * Options for creating a Paragraph element.
@@ -182,22 +182,22 @@ export type IParagraphJsonChild =
  */
 export type ParagraphOptions = {
   /** Simple text content for the paragraph. Creates a single TextRun. */
-  readonly text?: string;
+  text?: string;
   /** Array of child elements such as TextRun, ImageRun, Hyperlink, Bookmark, etc.
    *  Accepts class instances, plain RunOptions objects (coerced to TextRun),
    *  strings (coerced to TextRun), or JSON-friendly wrappers
    *  ({ chart }, { smartArt }, { image }, { math }, { symbolRun }, etc.). */
-  readonly children?: readonly (ParagraphChild | RunOptions | IParagraphJsonChild | string)[];
+  children?: (ParagraphChild | RunOptions | IParagraphJsonChild | string)[];
   /** Revision save ID for the paragraph mark (hex string, e.g. "00123456"). */
-  readonly rsidR?: string;
+  rsidR?: string;
   /** Revision save ID for the paragraph properties (hex string). */
-  readonly rsidRPr?: string;
+  rsidRPr?: string;
   /** Revision save ID for the default run properties (hex string). */
-  readonly rsidRDefault?: string;
+  rsidRDefault?: string;
   /** Revision save ID when paragraph was deleted (hex string). */
-  readonly rsidDel?: string;
+  rsidDel?: string;
   /** Revision save ID for the paragraph (hex string). */
-  readonly rsidP?: string;
+  rsidP?: string;
 } & ParagraphPropertiesOptions;
 
 /**
@@ -238,15 +238,15 @@ export type ParagraphOptions = {
  * ```
  */
 export class Paragraph extends BaseXmlComponent implements FileChild {
-  public readonly fileChild = Symbol();
-  private readonly options: ParagraphOptions;
+  public fileChild = Symbol();
+  private options: ParagraphOptions;
   private frontRuns: Run[] = [];
   private sectionProperties?: SectionProperties;
 
   // Cached at construction time — options never change.
-  private readonly _props: ReturnType<typeof buildParagraphProperties>;
+  private _props: ReturnType<typeof buildParagraphProperties>;
   // Pre-created TextRun for options.text shorthand (avoids allocation in toXml).
-  private readonly _textRun: TextRun | undefined;
+  private _textRun: TextRun | undefined;
 
   public constructor(options: string | ParagraphOptions) {
     super("w:p");
@@ -385,7 +385,7 @@ export class Paragraph extends BaseXmlComponent implements FileChild {
       const { hyperlink, ...runOpts } = rawChild as Record<string, unknown> & {
         hyperlink: Record<string, unknown>;
       };
-      const hlChildren = hyperlink.children as readonly (RunOptions | string)[] | undefined;
+      const hlChildren = hyperlink.children as (RunOptions | string)[] | undefined;
       const textRuns: TextRun[] = [];
       if (hlChildren && hlChildren.length > 0) {
         for (const rc of hlChildren) {
@@ -455,11 +455,9 @@ export class Paragraph extends BaseXmlComponent implements FileChild {
       rawChild.math !== null
     ) {
       const mathOpts = rawChild.math as Omit<MathOptions, "children"> & {
-        readonly children?: readonly MathJson[];
+        children?: MathJson[];
       };
-      const coercedChildren = mathOpts.children?.map(coerceMathJson) as
-        | readonly MathComponent[]
-        | undefined;
+      const coercedChildren = mathOpts.children?.map(coerceMathJson) as MathComponent[] | undefined;
       return new MathCls(coercedChildren ? { children: coercedChildren } : { children: [] });
     }
     if ("symbolRun" in rawChild) return new SymbolRun(rawChild.symbolRun);

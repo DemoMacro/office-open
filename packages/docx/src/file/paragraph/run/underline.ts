@@ -87,11 +87,11 @@ export const UnderlineType = {
 } as const;
 
 interface UnderlineAttributes {
-  readonly val: (typeof UnderlineType)[keyof typeof UnderlineType];
-  readonly color?: string;
-  readonly themeColor?: (typeof ThemeColor)[keyof typeof ThemeColor];
-  readonly themeTint?: string;
-  readonly themeShade?: string;
+  val: (typeof UnderlineType)[keyof typeof UnderlineType];
+  color?: string;
+  themeColor?: (typeof ThemeColor)[keyof typeof ThemeColor];
+  themeTint?: string;
+  themeShade?: string;
 }
 
 /**

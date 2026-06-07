@@ -21,11 +21,11 @@ import type { XmlComponent } from "@file/xml-components";
  */
 export interface FontRelationshipOptions {
   /** Relationship to Part */
-  readonly id: string;
+  id: string;
   /** Embedded Font Obfuscation Key (GUID) */
-  readonly fontKey?: string;
+  fontKey?: string;
   /** Whether the embedded font is subsetted */
-  readonly subsetted?: boolean;
+  subsetted?: boolean;
 }
 
 /**
@@ -76,42 +76,42 @@ export const CharacterSet = {
  */
 export interface FontEntry {
   /** Font name (required) */
-  readonly name: string;
+  name: string;
   /** Alternative font name */
-  readonly altName?: string;
+  altName?: string;
   /** PANOSE-1 classification */
-  readonly panose1?: string;
+  panose1?: string;
   /** Character set identifier */
-  readonly charset?: (typeof CharacterSet)[keyof typeof CharacterSet];
+  charset?: (typeof CharacterSet)[keyof typeof CharacterSet];
   /** Font family */
-  readonly family?: string;
+  family?: string;
   /** Whether this is not a TrueType font */
-  readonly notTrueType?: boolean;
+  notTrueType?: boolean;
   /** Font pitch */
-  readonly pitch?: string;
+  pitch?: string;
   /** Font signature (Unicode and code page ranges) */
-  readonly sig?: {
+  sig?: {
     /** Unicode Subset Bitfield 0 */
-    readonly usb0: string;
+    usb0: string;
     /** Unicode Subset Bitfield 1 */
-    readonly usb1: string;
+    usb1: string;
     /** Unicode Subset Bitfield 2 */
-    readonly usb2: string;
+    usb2: string;
     /** Unicode Subset Bitfield 3 */
-    readonly usb3: string;
+    usb3: string;
     /** Code Page Bitfield 0 */
-    readonly csb0: string;
+    csb0: string;
     /** Code Page Bitfield 1 */
-    readonly csb1: string;
+    csb1: string;
   };
   /** Embedded regular font relationship */
-  readonly embedRegular?: FontRelationshipOptions;
+  embedRegular?: FontRelationshipOptions;
   /** Embedded bold font relationship */
-  readonly embedBold?: FontRelationshipOptions;
+  embedBold?: FontRelationshipOptions;
   /** Embedded italic font relationship */
-  readonly embedItalic?: FontRelationshipOptions;
+  embedItalic?: FontRelationshipOptions;
   /** Embedded bold-italic font relationship */
-  readonly embedBoldItalic?: FontRelationshipOptions;
+  embedBoldItalic?: FontRelationshipOptions;
 }
 
 /**

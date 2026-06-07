@@ -22,10 +22,10 @@ import { StructuredDocumentTagProperties } from "./sdt-properties";
 import type { TableOfContentsOptions } from "./table-of-contents-properties";
 
 interface ToCEntry {
-  readonly title: string;
-  readonly level: number;
-  readonly page?: number;
-  readonly href?: string;
+  title: string;
+  level: number;
+  page?: number;
+  href?: string;
 }
 
 /**
@@ -58,7 +58,7 @@ interface ToCEntry {
  * ```
  */
 export class TableOfContents extends XmlComponent implements FileChild {
-  public readonly fileChild = Symbol();
+  public fileChild = Symbol();
   public constructor(
     alias: string = "Table of Contents",
     {
@@ -67,14 +67,14 @@ export class TableOfContents extends XmlComponent implements FileChild {
       beginDirty = true,
       ...properties
     }: TableOfContentsOptions & {
-      readonly contentChildren?: readonly (BaseXmlComponent | string)[];
+      contentChildren?: (BaseXmlComponent | string)[];
       /**
        * Use this to provide pre-generated entries for the Table of Contents.
        *
        * Note that indentation should come from the paragraph styles defined on the document. By default the styles are TOC1, TOC2, etc. These can be overridden with stylesWithLevels (\t)
        */
-      readonly cachedEntries?: readonly ToCEntry[];
-      readonly beginDirty?: boolean;
+      cachedEntries?: ToCEntry[];
+      beginDirty?: boolean;
     } = {},
   ) {
     super("w:sdt");
@@ -155,10 +155,7 @@ export class TableOfContents extends XmlComponent implements FileChild {
     this.root.push(content);
   }
 
-  private getTabStopsForLevel(
-    level: number,
-    pageWidth: number = 9025,
-  ): readonly TabStopDefinition[] {
+  private getTabStopsForLevel(level: number, pageWidth: number = 9025): TabStopDefinition[] {
     const levelSpace = 240;
     const levelPosition = pageWidth + 1 - (level - 1) * levelSpace; // TODO: should be equal to page width + 1 - level margin
     return [

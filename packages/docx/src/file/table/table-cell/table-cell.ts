@@ -23,7 +23,7 @@ import type { ITableCellPropertiesOptions } from "./table-cell-properties";
  */
 export type TableCellOptions = {
   /** Array of Paragraph, Table, or plain objects that make up the cell content */
-  readonly children: readonly (SectionChild | StructuredDocumentTagCell)[];
+  children: (SectionChild | StructuredDocumentTagCell)[];
 } & ITableCellPropertiesOptions;
 
 /**
@@ -57,7 +57,7 @@ export type TableCellOptions = {
  * ```
  */
 export class TableCell extends BaseXmlComponent {
-  public constructor(public readonly options: TableCellOptions) {
+  public constructor(public options: TableCellOptions) {
     super("w:tc");
   }
 
@@ -69,7 +69,7 @@ export class TableCell extends BaseXmlComponent {
 
     // Children are pre-coerced by coerceSectionChild, so all should be instances.
     // Cast is safe: plain objects are converted before reaching this point.
-    const children = this.options.children as readonly (FileChild | StructuredDocumentTagCell)[];
+    const children = this.options.children as (FileChild | StructuredDocumentTagCell)[];
 
     for (const child of children) {
       parts.push(child.toXml(context));

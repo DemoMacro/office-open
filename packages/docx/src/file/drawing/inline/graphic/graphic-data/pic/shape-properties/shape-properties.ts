@@ -70,7 +70,7 @@ import type { Shape3DOptions } from "./three-d/shape-3d";
  * ```
  */
 export class ShapeProperties extends XmlComponent {
-  private readonly fillOptions?: FillOptions;
+  private fillOptions?: FillOptions;
 
   public constructor({
     element,
@@ -84,18 +84,18 @@ export class ShapeProperties extends XmlComponent {
     shape3d,
     transform,
   }: {
-    readonly element: string;
-    readonly outline?: OutlineOptions;
-    readonly fill?: FillOptions;
-    readonly presetGeometry?: PresetGeometryOptions;
+    element: string;
+    outline?: OutlineOptions;
+    fill?: FillOptions;
+    presetGeometry?: PresetGeometryOptions;
     /** Custom geometry (mutually exclusive with presetGeometry). */
-    readonly customGeometry?: CustomGeometryOptions;
+    customGeometry?: CustomGeometryOptions;
     /** Effect DAG container (mutually exclusive with effects). */
-    readonly effectDag?: EffectDagOptions;
-    readonly effects?: EffectListOptions;
-    readonly scene3d?: Scene3DOptions;
-    readonly shape3d?: Shape3DOptions;
-    readonly transform: MediaDataTransformation;
+    effectDag?: EffectDagOptions;
+    effects?: EffectListOptions;
+    scene3d?: Scene3DOptions;
+    shape3d?: Shape3DOptions;
+    transform: MediaDataTransformation;
   }) {
     super(`${element}:spPr`);
 

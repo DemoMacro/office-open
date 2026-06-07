@@ -25,11 +25,11 @@ import { createMathPreSubSuperScriptProperties } from "./math-pre-sub-super-scri
  */
 export interface MathPreSubSuperScriptOptions {
   /** The base expression */
-  readonly children: readonly MathComponent[];
+  children: MathComponent[];
   /** The pre-subscript expression (appears lower-left of base) */
-  readonly subScript: readonly MathComponent[];
+  subScript: MathComponent[];
   /** The pre-superscript expression (appears upper-left of base) */
-  readonly superScript: readonly MathComponent[];
+  superScript: MathComponent[];
 }
 
 /**

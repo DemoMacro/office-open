@@ -10,9 +10,9 @@ export const EndnoteType = {
 } as const;
 
 export interface EndnoteOptions {
-  readonly id: number;
-  readonly type?: (typeof EndnoteType)[keyof typeof EndnoteType];
-  readonly children: readonly FileChild[];
+  id: number;
+  type?: (typeof EndnoteType)[keyof typeof EndnoteType];
+  children: FileChild[];
 }
 
 export class Endnote extends XmlComponent {

@@ -22,9 +22,9 @@ export interface MathAccentOptions {
    * Accent character (e.g., "\u0302" for hat, "\u0303" for tilde, "\u0307" for dot).
    * If not specified, defaults to hat accent.
    */
-  readonly accentCharacter?: string;
+  accentCharacter?: string;
   /** Content to place the accent over */
-  readonly children: readonly MathComponent[];
+  children: MathComponent[];
 }
 
 /**

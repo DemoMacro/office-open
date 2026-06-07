@@ -124,7 +124,7 @@ export class FootNotes extends XmlComponent {
    * @param id - Unique numeric identifier for the footnote
    * @param paragraph - Array of paragraphs that make up the footnote content
    */
-  public createFootNote(id: number, paragraph: readonly Paragraph[]): void {
+  public createFootNote(id: number, paragraph: Paragraph[]): void {
     const footnote = new Footnote({
       children: paragraph,
       id: id,

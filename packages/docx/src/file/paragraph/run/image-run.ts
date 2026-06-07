@@ -30,29 +30,29 @@ import { Run } from "../run";
  * Core options for image configuration.
  */
 interface CoreImageOptions {
-  readonly transformation: MediaTransformation;
-  readonly floating?: Floating;
-  readonly altText?: DocPropertiesOptions;
-  readonly outline?: OutlineOptions;
-  readonly fill?: FillOptions;
-  readonly effects?: EffectListOptions;
-  readonly blipEffects?: BlipEffectsOptions;
-  readonly srcRect?: SourceRectangleOptions;
-  readonly tile?: TileOptions;
+  transformation: MediaTransformation;
+  floating?: Floating;
+  altText?: DocPropertiesOptions;
+  outline?: OutlineOptions;
+  fill?: FillOptions;
+  effects?: EffectListOptions;
+  blipEffects?: BlipEffectsOptions;
+  srcRect?: SourceRectangleOptions;
+  tile?: TileOptions;
 }
 
 interface RegularImageOptions {
-  readonly type: "jpg" | "png" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
-  readonly data: DataType;
+  type: "jpg" | "png" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
+  data: DataType;
 }
 
 interface SvgMediaOptions {
-  readonly type: "svg";
-  readonly data: DataType;
+  type: "svg";
+  data: DataType;
   /**
    * Required in case the Word processor does not support SVG.
    */
-  readonly fallback: RegularImageOptions;
+  fallback: RegularImageOptions;
 }
 
 /**
@@ -97,7 +97,7 @@ const createImageData = (
  * ```
  */
 export class ImageRun extends Run {
-  private readonly imageData: IMediaData;
+  private imageData: IMediaData;
 
   public constructor(options: IImageOptions) {
     super({});

@@ -9,38 +9,38 @@ import type { WpsShapeCoreOptions } from "@file/drawing/inline/graphic/graphic-d
 import type { FillOptions } from "@office-open/core/drawingml";
 
 export interface MediaDataTransformation {
-  readonly offset?: {
-    readonly pixels: {
-      readonly x: number;
-      readonly y: number;
+  offset?: {
+    pixels: {
+      x: number;
+      y: number;
     };
-    readonly emus?: {
-      readonly x: number;
-      readonly y: number;
+    emus?: {
+      x: number;
+      y: number;
     };
   };
-  readonly pixels: {
+  pixels: {
     /** Width in pixels */
-    readonly x: number;
+    x: number;
     /** Height in pixels */
-    readonly y: number;
+    y: number;
   };
   /** Display dimensions in EMUs (English Metric Units) */
-  readonly emus: {
+  emus: {
     /** Width in EMUs (1 inch = 914400 EMUs) */
-    readonly x: number;
+    x: number;
     /** Height in EMUs (1 inch = 914400 EMUs) */
-    readonly y: number;
+    y: number;
   };
   /** Optional flip transformations */
-  readonly flip?: {
+  flip?: {
     /** Whether to flip the image vertically */
-    readonly vertical?: boolean;
+    vertical?: boolean;
     /** Whether to flip the image horizontally */
-    readonly horizontal?: boolean;
+    horizontal?: boolean;
   };
   /** Optional rotation angle in degrees */
-  readonly rotation?: number;
+  rotation?: number;
 }
 
 /**
@@ -48,13 +48,13 @@ export interface MediaDataTransformation {
  */
 interface CoreMediaData {
   /** File name for the media in the package */
-  readonly fileName: string;
+  fileName: string;
   /** Transformation settings for display */
-  readonly transformation: MediaDataTransformation;
+  transformation: MediaDataTransformation;
   /** Raw image data */
-  readonly data: Uint8Array;
+  data: Uint8Array;
   /** Source rectangle for image cropping */
-  readonly srcRect?: SourceRectangleOptions;
+  srcRect?: SourceRectangleOptions;
 }
 
 /**
@@ -62,7 +62,7 @@ interface CoreMediaData {
  */
 interface RegularMediaData {
   /** Image format type */
-  readonly type: "jpg" | "png" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
+  type: "jpg" | "png" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
 }
 
 /**
@@ -70,57 +70,57 @@ interface RegularMediaData {
  */
 interface SvgMediaData {
   /** SVG image type */
-  readonly type: "svg";
+  type: "svg";
   /**
    * Fallback image for Word processors that do not support SVG.
    * This ensures the document displays correctly in all viewers.
    */
-  readonly fallback: RegularMediaData & CoreMediaData;
+  fallback: RegularMediaData & CoreMediaData;
 }
 
 export interface WpsMediaData {
-  readonly type: "wps";
-  readonly transformation: MediaDataTransformation;
-  readonly data: WpsShapeCoreOptions;
+  type: "wps";
+  transformation: MediaDataTransformation;
+  data: WpsShapeCoreOptions;
 }
 
 export interface WpgCommonMediaData {
-  readonly outline?: OutlineOptions;
-  readonly fill?: FillOptions;
+  outline?: OutlineOptions;
+  fill?: FillOptions;
 }
 
 export type IGroupChildMediaData = (WpsMediaData | IMediaData) & WpgCommonMediaData;
 
 export interface WpgMediaData {
-  readonly type: "wpg";
-  readonly transformation: MediaDataTransformation;
-  readonly children: readonly IGroupChildMediaData[];
+  type: "wpg";
+  transformation: MediaDataTransformation;
+  children: IGroupChildMediaData[];
   /** Child coordinate offset */
-  readonly chOff?: ChildOffset;
+  chOff?: ChildOffset;
   /** Child coordinate extent */
-  readonly chExt?: ChildExtent;
+  chExt?: ChildExtent;
   /** Group fill */
-  readonly fill?: FillOptions;
+  fill?: FillOptions;
   /** Group effects */
-  readonly effects?: EffectListOptions;
+  effects?: EffectListOptions;
 }
 
 /**
  * Chart media data — references a chart part via placeholder.
  */
 export interface ChartMediaData {
-  readonly type: "chart";
-  readonly transformation: MediaDataTransformation;
-  readonly chartKey: string;
+  type: "chart";
+  transformation: MediaDataTransformation;
+  chartKey: string;
 }
 
 /**
  * SmartArt media data — references a diagram data part via placeholder.
  */
 export interface SmartArtMediaData {
-  readonly type: "smartart";
-  readonly transformation: MediaDataTransformation;
-  readonly smartArtKey: string;
+  type: "smartart";
+  transformation: MediaDataTransformation;
+  smartArtKey: string;
 }
 
 export type IExtendedMediaData =

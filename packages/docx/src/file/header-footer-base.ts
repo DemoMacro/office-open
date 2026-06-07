@@ -16,7 +16,7 @@ import type { FileChild } from "./file-child";
  * Namespace keys used by header elements.
  * @internal
  */
-export const HEADER_NAMESPACES: readonly DocumentAttributeNamespace[] = [
+export const HEADER_NAMESPACES: DocumentAttributeNamespace[] = [
   "cx",
   "cx1",
   "cx2",
@@ -50,7 +50,7 @@ export const HEADER_NAMESPACES: readonly DocumentAttributeNamespace[] = [
  * Namespace keys used by footer elements.
  * @internal
  */
-export const FOOTER_NAMESPACES: readonly DocumentAttributeNamespace[] = [
+export const FOOTER_NAMESPACES: DocumentAttributeNamespace[] = [
   "m",
   "mc",
   "o",
@@ -77,12 +77,12 @@ export const FOOTER_NAMESPACES: readonly DocumentAttributeNamespace[] = [
  * duplication between Header and Footer internal implementations.
  */
 export abstract class HeaderFooterBase extends InitializableXmlComponent {
-  private readonly refId: number;
+  private refId: number;
 
   protected constructor(
     tagName: string,
     referenceNumber: number,
-    namespaces: readonly DocumentAttributeNamespace[],
+    namespaces: DocumentAttributeNamespace[],
     initContent?: XmlComponent,
   ) {
     super(tagName, initContent);

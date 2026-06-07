@@ -100,76 +100,76 @@ export const TextboxTightWrapType = {
  */
 export interface LevelParagraphStylePropertiesOptions {
   /** Paragraph text alignment (left, right, center, justified, etc.) */
-  readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
+  alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
   /** Whether to render text right-to-left for bidirectional languages */
-  readonly bidirectional?: boolean;
+  bidirectional?: boolean;
   /** Whether to insert a page break before this paragraph */
-  readonly pageBreakBefore?: boolean;
+  pageBreakBefore?: boolean;
   /** Custom tab stop positions and alignments */
-  readonly tabStops?: readonly TabStopDefinition[];
+  tabStops?: TabStopDefinition[];
   /** Whether to display a horizontal line (thematic break) below the paragraph */
-  readonly thematicBreak?: boolean;
+  thematicBreak?: boolean;
   /** Whether to prevent single lines at top/bottom of page (widow/orphan control), defaults to true */
-  readonly widowControl?: boolean;
+  widowControl?: boolean;
   /** Whether to ignore spacing before/after when adjacent paragraphs have the same style */
-  readonly contextualSpacing?: boolean;
+  contextualSpacing?: boolean;
   /** Position in twips for a right-aligned tab stop */
-  readonly rightTabStop?: number;
+  rightTabStop?: number;
   /** Position in twips for a left-aligned tab stop */
-  readonly leftTabStop?: number;
+  leftTabStop?: number;
   /** Indentation settings for the paragraph */
-  readonly indent?: IndentAttributesProperties;
+  indent?: IndentAttributesProperties;
   /** Spacing before/after paragraph and between lines */
-  readonly spacing?: SpacingProperties;
+  spacing?: SpacingProperties;
   /**
    * Specifies that the paragraph (or at least part of it) should be rendered on the same page as the next paragraph when possible. If multiple paragraphs are to be kept together but they exceed a page, then the set of paragraphs begin on a new page and page breaks are used thereafter as needed.
    */
-  readonly keepNext?: boolean;
+  keepNext?: boolean;
   /**
    * Specifies that all lines of the paragraph are to be kept on a single page when possible.
    */
-  readonly keepLines?: boolean;
+  keepLines?: boolean;
   /** Frame properties for positioning the paragraph */
-  readonly frame?: IFrameOptions;
+  frame?: IFrameOptions;
   /** Whether to suppress line numbers for this paragraph */
-  readonly suppressLineNumbers?: boolean;
+  suppressLineNumbers?: boolean;
   /** Whether to allow word wrapping */
-  readonly wordWrap?: boolean;
+  wordWrap?: boolean;
   /** Whether to allow punctuation to extend beyond text margins */
-  readonly overflowPunctuation?: boolean;
+  overflowPunctuation?: boolean;
   /**
    * This element specifies whether inter-character spacing shall automatically be adjusted between regions of numbers and regions of East Asian text in the current paragraph. These regions shall be determined by the Unicode character values of the text content within the paragraph.
    * This only works in Microsoft Word. It is not part of the ECMA-376 OOXML standard.
    */
-  readonly autoSpaceEastAsianText?: boolean;
+  autoSpaceEastAsianText?: boolean;
   /** Whether to prevent text frames from overlapping */
-  readonly suppressOverlap?: boolean;
+  suppressOverlap?: boolean;
   /** Whether to disable automatic hyphenation for this paragraph */
-  readonly suppressAutoHyphens?: boolean;
+  suppressAutoHyphens?: boolean;
   /** Whether to automatically adjust right indent for document grid */
-  readonly adjustRightInd?: boolean;
+  adjustRightInd?: boolean;
   /** Whether to snap the current paragraph to the document grid */
-  readonly snapToGrid?: boolean;
+  snapToGrid?: boolean;
   /** Whether to swap left and right indent positions on odd pages for mirrored layouts */
-  readonly mirrorIndents?: boolean;
+  mirrorIndents?: boolean;
   /** Whether to use Kinsoku forbidden character overflow rules */
-  readonly kinsoku?: boolean;
+  kinsoku?: boolean;
   /** Whether to compress punctuation at the start of a line */
-  readonly topLinePunct?: boolean;
+  topLinePunct?: boolean;
   /** Whether to automatically add space between East Asian and Latin text */
-  readonly autoSpaceDE?: boolean;
+  autoSpaceDE?: boolean;
   /** Vertical text alignment within the paragraph */
-  readonly textAlignment?: (typeof TextAlignmentType)[keyof typeof TextAlignmentType];
+  textAlignment?: (typeof TextAlignmentType)[keyof typeof TextAlignmentType];
   /** Textbox tight wrap setting */
-  readonly textboxTightWrap?: (typeof TextboxTightWrapType)[keyof typeof TextboxTightWrapType];
+  textboxTightWrap?: (typeof TextboxTightWrapType)[keyof typeof TextboxTightWrapType];
   /** Text direction for the paragraph (lr, rl, tb, tbV, rlV, lrV) */
-  readonly textDirection?: "lr" | "rl" | "tb" | "tbV" | "rlV" | "lrV";
+  textDirection?: "lr" | "rl" | "tb" | "tbV" | "rlV" | "lrV";
   /** Outline level for table of contents and document outline (0-9) */
-  readonly outlineLevel?: number;
+  outlineLevel?: number;
   /** HTML div ID reference */
-  readonly divId?: number;
+  divId?: number;
   /** Conditional formatting style for table rows/cells */
-  readonly cnfStyle?: CnfConditionalOptions;
+  cnfStyle?: CnfConditionalOptions;
 }
 
 /**
@@ -180,30 +180,30 @@ export interface LevelParagraphStylePropertiesOptions {
  */
 export type IParagraphStylePropertiesOptions = {
   /** Border settings for the paragraph */
-  readonly border?: BordersOptions;
+  border?: BordersOptions;
   /** Background shading/fill color for the paragraph */
-  readonly shading?: ShadingAttributesProperties;
+  shading?: ShadingAttributesProperties;
   /** Numbering configuration for lists, or false to remove numbering */
-  readonly numbering?:
+  numbering?:
     | {
         /** Reference ID of the numbering definition to use */
-        readonly reference: string;
+        reference: string;
         /** Level in the numbering hierarchy (0-8) */
-        readonly level: number;
+        level: number;
         /** Instance number for multiple lists with same reference */
-        readonly instance?: number;
+        instance?: number;
         /** Whether this is a custom numbering definition */
-        readonly custom?: boolean;
+        custom?: boolean;
         /** Numbering change tracking (CT_TrackChangeNumbering) */
-        readonly numberingChange?: {
+        numberingChange?: {
           /** Original numbering value */
-          readonly original: string;
+          original: string;
           /** Revision ID */
-          readonly id: string;
+          id: string;
           /** Author of the change */
-          readonly author: string;
+          author: string;
           /** Date of the change */
-          readonly date?: string;
+          date?: string;
         };
       }
     | false;
@@ -211,19 +211,19 @@ export type IParagraphStylePropertiesOptions = {
 
 export type IParagraphPropertiesOptionsBase = {
   /** Heading level (Heading1, Heading2, etc.) - applies predefined heading style */
-  readonly heading?: (typeof HeadingLevel)[keyof typeof HeadingLevel];
+  heading?: (typeof HeadingLevel)[keyof typeof HeadingLevel];
   /** Style ID to apply to this paragraph */
-  readonly style?: string;
+  style?: string;
   /** Bullet list configuration */
-  readonly bullet?: {
+  bullet?: {
     /** Indentation level for the bullet (0-8) */
-    readonly level: number;
+    level: number;
   };
   /**
    * Run properties to apply to all runs in the paragraph.
    * Reference: ECMA-376, 3rd Edition (June, 2011), Fundamentals and Markup Language Reference § 17.3.1.29.
    */
-  readonly run?: IParagraphRunOptions;
+  run?: IParagraphRunOptions;
 } & IParagraphStylePropertiesOptions;
 
 export type IParagraphPropertiesChangeOptions = ChangedAttributesProperties &
@@ -238,8 +238,8 @@ export type IParagraphPropertiesChangeOptions = ChangedAttributesProperties &
  * Reference: http://officeopenxml.com/WPparagraphProperties.php
  */
 export type ParagraphPropertiesOptions = {
-  readonly revision?: IParagraphPropertiesChangeOptions;
-  readonly includeIfEmpty?: boolean;
+  revision?: IParagraphPropertiesChangeOptions;
+  includeIfEmpty?: boolean;
 } & IParagraphPropertiesOptionsBase;
 
 /**
@@ -247,10 +247,10 @@ export type ParagraphPropertiesOptions = {
  * Includes the XML object and any numbering references that need to be registered.
  */
 export interface ParagraphPropertiesResult {
-  readonly xml: IXmlableObject | undefined;
-  readonly numberingReferences: readonly {
-    readonly reference: string;
-    readonly instance: number;
+  xml: IXmlableObject | undefined;
+  numberingReferences: {
+    reference: string;
+    instance: number;
   }[];
 }
 
@@ -352,7 +352,7 @@ export function buildParagraphProperties(
     children.push(onOffObj("w:overflowPunct", options.overflowPunctuation));
   }
 
-  const tabDefinitions: readonly TabStopDefinition[] = [
+  const tabDefinitions: TabStopDefinition[] = [
     ...(options.rightTabStop !== undefined
       ? [{ position: options.rightTabStop, type: TabStopType.RIGHT }]
       : []),
@@ -592,9 +592,9 @@ export function buildParagraphProperties(
  * ```
  */
 export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
-  private readonly numberingReferences: {
-    readonly reference: string;
-    readonly instance: number;
+  private numberingReferences: {
+    reference: string;
+    instance: number;
   }[] = [];
 
   public constructor(options?: ParagraphPropertiesOptions) {
@@ -689,7 +689,7 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
      * FIX: Multitab support for Libre Writer
      * Ensure there is only one w:tabs tag with multiple w:tab
      */
-    const tabDefinitions: readonly TabStopDefinition[] = [
+    const tabDefinitions: TabStopDefinition[] = [
       ...(options.rightTabStop !== undefined
         ? [{ position: options.rightTabStop, type: TabStopType.RIGHT }]
         : []),
@@ -776,7 +776,7 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
 
     if (options.textAlignment !== undefined) {
       this.root.push(
-        new BuilderElement<{ readonly val: string }>({
+        new BuilderElement<{ val: string }>({
           attributes: {
             val: { key: "w:val", value: options.textAlignment },
           },
@@ -787,7 +787,7 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
 
     if (options.textboxTightWrap !== undefined) {
       this.root.push(
-        new BuilderElement<{ readonly val: string }>({
+        new BuilderElement<{ val: string }>({
           attributes: {
             val: { key: "w:val", value: options.textboxTightWrap },
           },
@@ -798,7 +798,7 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
 
     if (options.textDirection !== undefined) {
       this.root.push(
-        new BuilderElement<{ readonly val: string }>({
+        new BuilderElement<{ val: string }>({
           attributes: {
             val: { key: "w:val", value: options.textDirection },
           },

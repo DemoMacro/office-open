@@ -47,23 +47,23 @@ import type { ThemeColor } from "@util/values";
  * @property space - Spacing offset from the content in points
  */
 export interface BorderOptions {
-  readonly style: (typeof BorderStyle)[keyof typeof BorderStyle];
+  style: (typeof BorderStyle)[keyof typeof BorderStyle];
   /** Border color, in hex (eg 'FF00AA') */
-  readonly color?: string;
+  color?: string;
   /** Theme color reference */
-  readonly themeColor?: (typeof ThemeColor)[keyof typeof ThemeColor];
+  themeColor?: (typeof ThemeColor)[keyof typeof ThemeColor];
   /** Theme color tint (2-char hex) */
-  readonly themeTint?: string;
+  themeTint?: string;
   /** Theme color shade (2-char hex) */
-  readonly themeShade?: string;
+  themeShade?: string;
   /** Border shadow */
-  readonly shadow?: boolean;
+  shadow?: boolean;
   /** Border frame */
-  readonly frame?: boolean;
+  frame?: boolean;
   /** Size of the border in 1/8 pt */
-  readonly size?: number;
+  size?: number;
   /** Spacing offset. Values are specified in pt */
-  readonly space?: number;
+  space?: number;
 }
 
 /**

@@ -215,10 +215,10 @@ const MOCK_XML = `
  * violations on OOXML file paths like "word/document.xml".
  */
 const createMockUnzipped = (
-  entries: readonly (readonly [string, string | Uint8Array])[],
+  entries: [string, string | Uint8Array][],
 ): Record<string, Uint8Array<ArrayBuffer>> =>
   Object.fromEntries(
-    entries.map(([key, value]): readonly [string, Uint8Array<ArrayBuffer>] => [
+    entries.map(([key, value]): [string, Uint8Array<ArrayBuffer>] => [
       key,
       typeof value === "string"
         ? new TextEncoder().encode(value)

@@ -26,74 +26,74 @@ const FILE_CHILD = Symbol("fileChild");
 /** Data binding configuration (CT_DataBinding) */
 export interface CustomXmlDataBindingOptions {
   /** XPath expression for the data binding */
-  readonly xpath: string;
+  xpath: string;
   /** Store item ID for the data binding */
-  readonly storeItemID: string;
+  storeItemID: string;
   /** Namespace prefix mappings */
-  readonly prefixMappings?: string;
+  prefixMappings?: string;
 }
 
 /** Custom attribute (CT_Attr) */
 export interface CustomXmlAttributeOptions {
-  readonly name: string;
-  readonly val: string;
-  readonly uri?: string;
+  name: string;
+  val: string;
+  uri?: string;
 }
 
 /** Custom XML properties (CT_CustomXmlPr) */
 export interface CustomXmlPrOptions {
   /** Placeholder text */
-  readonly placeholder?: string;
+  placeholder?: string;
   /** Custom attributes */
-  readonly attributes?: readonly CustomXmlAttributeOptions[];
+  attributes?: CustomXmlAttributeOptions[];
 }
 
 /** Options for inline custom XML (CT_CustomXmlRun) */
 export interface CustomXmlRunOptions {
   /** XML element name (required) */
-  readonly element: string;
+  element: string;
   /** Namespace URI */
-  readonly uri?: string;
+  uri?: string;
   /** Properties (placeholder, data binding, attributes) */
-  readonly customXmlPr?: CustomXmlPrOptions;
+  customXmlPr?: CustomXmlPrOptions;
   /** Inline content (runs, hyperlinks, etc.) */
-  readonly children?: readonly BaseXmlComponent[];
+  children?: BaseXmlComponent[];
 }
 
 /** Options for block-level custom XML (CT_CustomXmlBlock) */
 export interface CustomXmlBlockOptions {
   /** XML element name (required) */
-  readonly element: string;
+  element: string;
   /** Namespace URI */
-  readonly uri?: string;
+  uri?: string;
   /** Properties (placeholder, data binding, attributes) */
-  readonly customXmlPr?: CustomXmlPrOptions;
+  customXmlPr?: CustomXmlPrOptions;
   /** Block content (paragraphs, tables, etc.) */
-  readonly children?: readonly FileChild[];
+  children?: FileChild[];
 }
 
 /** Options for row-level custom XML (CT_CustomXmlRow) */
 export interface CustomXmlRowOptions {
   /** XML element name (required) */
-  readonly element: string;
+  element: string;
   /** Namespace URI */
-  readonly uri?: string;
+  uri?: string;
   /** Properties (placeholder, attributes) */
-  readonly customXmlPr?: CustomXmlPrOptions;
+  customXmlPr?: CustomXmlPrOptions;
   /** Row content (TableRow children) */
-  readonly children?: readonly TableRow[];
+  children?: TableRow[];
 }
 
 /** Options for cell-level custom XML (CT_CustomXmlCell) */
 export interface CustomXmlCellOptions {
   /** XML element name (required) */
-  readonly element: string;
+  element: string;
   /** Namespace URI */
-  readonly uri?: string;
+  uri?: string;
   /** Properties (placeholder, attributes) */
-  readonly customXmlPr?: CustomXmlPrOptions;
+  customXmlPr?: CustomXmlPrOptions;
   /** Cell content (TableCell or SdtCell children) */
-  readonly children?: readonly (TableCell | StructuredDocumentTagCell)[];
+  children?: (TableCell | StructuredDocumentTagCell)[];
 }
 
 // ── Components ──
@@ -155,7 +155,7 @@ export class CustomXmlRun extends XmlComponent {
  * ```
  */
 export class CustomXmlBlock extends XmlComponent {
-  public readonly fileChild = FILE_CHILD;
+  public fileChild = FILE_CHILD;
 
   public constructor(options: CustomXmlBlockOptions) {
     super("w:customXml");
@@ -197,7 +197,7 @@ export class CustomXmlBlock extends XmlComponent {
  * ```
  */
 export class CustomXmlRow extends XmlComponent {
-  private readonly rows: readonly TableRow[];
+  private rows: TableRow[];
 
   public constructor(options: CustomXmlRowOptions) {
     super("w:customXml");
@@ -222,7 +222,7 @@ export class CustomXmlRow extends XmlComponent {
     return Math.max(...this.rows.map((r) => r.cellCount), 0);
   }
 
-  public get cells(): readonly TableCell[] {
+  public get cells(): TableCell[] {
     return this.rows.flatMap((r) => r.cells);
   }
 

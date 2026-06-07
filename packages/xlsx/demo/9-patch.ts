@@ -1,9 +1,9 @@
 import { writeFileSync, readFileSync } from "node:fs";
 
-import { Workbook, Packer, patchWorkbook } from "@office-open/xlsx";
+import { generate, patchWorkbook } from "@office-open/xlsx";
 
 // Step 1: Create a template workbook with placeholders
-const template = new Workbook({
+const buffer = await generate({
   title: "Template",
   worksheets: [
     {
@@ -18,7 +18,6 @@ const template = new Workbook({
   ],
 });
 
-const buffer = await Packer.toBuffer(template);
 writeFileSync("My Workbook.xlsx", buffer);
 
 // Step 2: Patch the placeholders

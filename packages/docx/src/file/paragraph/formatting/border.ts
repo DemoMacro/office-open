@@ -57,17 +57,17 @@ export function buildThematicBreakObj(): IXmlableObject {
  */
 export interface BordersOptions {
   /** Border for the top edge of the paragraph */
-  readonly top?: BorderOptions;
+  top?: BorderOptions;
   /** Border for the bottom edge of the paragraph */
-  readonly bottom?: BorderOptions;
+  bottom?: BorderOptions;
   /** Border for the left edge of the paragraph */
-  readonly left?: BorderOptions;
+  left?: BorderOptions;
   /** Border for the right edge of the paragraph */
-  readonly right?: BorderOptions;
+  right?: BorderOptions;
   /** Border between consecutive paragraphs with the same border settings */
-  readonly between?: BorderOptions;
+  between?: BorderOptions;
   /** Bar border (paragraph-level bar, rendered at left of paragraph) */
-  readonly bar?: BorderOptions;
+  bar?: BorderOptions;
 }
 
 /**

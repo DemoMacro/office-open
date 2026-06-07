@@ -17,10 +17,10 @@ import type { OutlineOptions } from "./inline/graphic/graphic-data/pic/shape-pro
  * Specifies the margins around a drawing element.
  */
 export interface Distance {
-  readonly distT?: number;
-  readonly distB?: number;
-  readonly distL?: number;
-  readonly distR?: number;
+  distT?: number;
+  distB?: number;
+  distL?: number;
+  distR?: number;
 }
 
 /**
@@ -29,13 +29,13 @@ export interface Distance {
  * @see {@link Drawing}
  */
 export interface DrawingOptions {
-  readonly floating?: Floating;
-  readonly docProperties?: DocPropertiesOptions;
-  readonly outline?: OutlineOptions;
-  readonly fill?: FillOptions;
-  readonly effects?: EffectListOptions;
-  readonly blipEffects?: BlipEffectsOptions;
-  readonly tile?: TileOptions;
+  floating?: Floating;
+  docProperties?: DocPropertiesOptions;
+  outline?: OutlineOptions;
+  fill?: FillOptions;
+  effects?: EffectListOptions;
+  blipEffects?: BlipEffectsOptions;
+  tile?: TileOptions;
 }
 
 /**

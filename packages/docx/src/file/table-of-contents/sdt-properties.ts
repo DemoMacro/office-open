@@ -56,9 +56,9 @@ export const SdtLock = {
  */
 export interface SdtListItem {
   /** Display text shown in the UI */
-  readonly displayText?: string;
+  displayText?: string;
   /** Underlying value */
-  readonly value?: string;
+  value?: string;
 }
 
 /**
@@ -78,9 +78,9 @@ export interface SdtListItem {
  */
 export interface SdtComboBoxOptions {
   /** List items */
-  readonly items?: readonly SdtListItem[];
+  items?: SdtListItem[];
   /** Last selected value */
-  readonly lastValue?: string;
+  lastValue?: string;
 }
 
 /**
@@ -100,9 +100,9 @@ export interface SdtComboBoxOptions {
  */
 export interface SdtDropDownListOptions {
   /** List items */
-  readonly items?: readonly SdtListItem[];
+  items?: SdtListItem[];
   /** Last selected value */
-  readonly lastValue?: string;
+  lastValue?: string;
 }
 
 /**
@@ -143,15 +143,15 @@ export const SdtDateMappingType = {
  */
 export interface SdtDateOptions {
   /** Date format string (e.g., "yyyy-MM-dd") */
-  readonly dateFormat?: string;
+  dateFormat?: string;
   /** Language ID (e.g., "en-US") */
-  readonly languageId?: string;
+  languageId?: string;
   /** How the date value is stored */
-  readonly storeMappedDataAs?: (typeof SdtDateMappingType)[keyof typeof SdtDateMappingType];
+  storeMappedDataAs?: (typeof SdtDateMappingType)[keyof typeof SdtDateMappingType];
   /** Calendar type */
-  readonly calendar?: string;
+  calendar?: string;
   /** Full date value (ISO 8601) */
-  readonly fullDate?: string;
+  fullDate?: string;
 }
 
 /**
@@ -166,7 +166,7 @@ export interface SdtDateOptions {
  */
 export interface SdtTextOptions {
   /** Whether the text control supports multiple lines */
-  readonly multiLine?: boolean;
+  multiLine?: boolean;
 }
 
 /**
@@ -183,11 +183,11 @@ export interface SdtTextOptions {
  */
 export interface SdtDataBindingOptions {
   /** XML namespace prefix mappings */
-  readonly prefixMappings?: string;
+  prefixMappings?: string;
   /** XPath expression (required) */
-  readonly xpath: string;
+  xpath: string;
   /** Custom XML store item ID (required) */
-  readonly storeItemID: string;
+  storeItemID: string;
 }
 
 /**
@@ -199,7 +199,7 @@ export interface SdtDataBindingOptions {
  */
 export interface SdtPropertiesOptions {
   /** Display name */
-  readonly alias?: string;
+  alias?: string;
   /**
    * Application-specific tag.
    *
@@ -207,60 +207,60 @@ export interface SdtPropertiesOptions {
    * for SDTs to function correctly. Omitting it may cause the
    * document to fail to open in Word.
    */
-  readonly tag?: string;
+  tag?: string;
   /** Unique ID */
-  readonly id?: number;
+  id?: number;
   /** Lock behavior */
-  readonly lock?: (typeof SdtLock)[keyof typeof SdtLock];
+  lock?: (typeof SdtLock)[keyof typeof SdtLock];
   /** Whether the control is temporary */
-  readonly temporary?: boolean;
+  temporary?: boolean;
   /** Whether the placeholder text is currently shown */
-  readonly showingPlaceholder?: boolean;
+  showingPlaceholder?: boolean;
   /** Placeholder content (block-level content: paragraphs, tables, etc.) */
-  readonly placeholder?: XmlComponent[];
+  placeholder?: XmlComponent[];
   /** Data binding to custom XML */
-  readonly dataBinding?: SdtDataBindingOptions;
+  dataBinding?: SdtDataBindingOptions;
   /** Numeric label */
-  readonly label?: number;
+  label?: number;
   /** Tab order index */
-  readonly tabIndex?: number;
+  tabIndex?: number;
   /** SDT content run properties (rPr) */
-  readonly runProperties?: XmlComponent;
+  runProperties?: XmlComponent;
 
   // ─── Type discriminators (xsd:choice, at most one) ───
 
   /** Equation SDT */
-  readonly equation?: boolean;
+  equation?: boolean;
   /** ComboBox SDT (allows free-text entry) */
-  readonly comboBox?: SdtComboBoxOptions;
+  comboBox?: SdtComboBoxOptions;
   /** Date SDT */
-  readonly date?: SdtDateOptions;
+  date?: SdtDateOptions;
   /** Document part object SDT */
-  readonly docPartObj?: {
-    readonly gallery?: string;
-    readonly category?: string;
-    readonly unique?: boolean;
+  docPartObj?: {
+    gallery?: string;
+    category?: string;
+    unique?: boolean;
   };
   /** Document part list SDT */
-  readonly docPartList?: {
-    readonly gallery?: string;
-    readonly category?: string;
-    readonly unique?: boolean;
+  docPartList?: {
+    gallery?: string;
+    category?: string;
+    unique?: boolean;
   };
   /** DropDownList SDT (selection only) */
-  readonly dropDownList?: SdtDropDownListOptions;
+  dropDownList?: SdtDropDownListOptions;
   /** Picture SDT */
-  readonly picture?: boolean;
+  picture?: boolean;
   /** Rich text SDT */
-  readonly richText?: boolean;
+  richText?: boolean;
   /** Plain text SDT */
-  readonly text?: SdtTextOptions;
+  text?: SdtTextOptions;
   /** Citation SDT */
-  readonly citation?: boolean;
+  citation?: boolean;
   /** Group SDT */
-  readonly group?: boolean;
+  group?: boolean;
   /** Bibliography SDT */
-  readonly bibliography?: boolean;
+  bibliography?: boolean;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -272,7 +272,7 @@ export interface SdtPropertiesOptions {
  * it defaults to displayText.
  */
 const createListItem = (item: SdtListItem, forceValue?: boolean): XmlComponent => {
-  const attrs: Record<string, { readonly key: string; readonly value: string }> = {};
+  const attrs: Record<string, { key: string; value: string }> = {};
   if (item.displayText !== undefined) {
     attrs.displayText = { key: "w:displayText", value: item.displayText };
   }
@@ -286,7 +286,7 @@ const createListItem = (item: SdtListItem, forceValue?: boolean): XmlComponent =
 /** Creates a comboBox or dropDownList element. */
 const createListType = (
   name: string,
-  options: { readonly items?: readonly SdtListItem[]; readonly lastValue?: string },
+  options: { items?: SdtListItem[]; lastValue?: string },
 ): XmlComponent => {
   const children: BuilderChild[] = [];
   if (options.items) {
@@ -294,7 +294,7 @@ const createListType = (
       children.push(createListItem(item, name === "w:dropDownList"));
     }
   }
-  const attrs: Record<string, { readonly key: string; readonly value: string }> = {};
+  const attrs: Record<string, { key: string; value: string }> = {};
   if (options.lastValue !== undefined) {
     attrs.lastValue = { key: "w:lastValue", value: options.lastValue };
   }
@@ -316,7 +316,7 @@ const createDate = (options: SdtDateOptions): XmlComponent => {
   }
   if (options.storeMappedDataAs !== undefined) {
     children.push(
-      new BuilderElement<{ readonly val: string }>({
+      new BuilderElement<{ val: string }>({
         name: "w:storeMappedDataAs",
         attributes: { val: { key: "w:val", value: options.storeMappedDataAs } },
       }),
@@ -324,13 +324,13 @@ const createDate = (options: SdtDateOptions): XmlComponent => {
   }
   if (options.calendar !== undefined) {
     children.push(
-      new BuilderElement<{ readonly val: string }>({
+      new BuilderElement<{ val: string }>({
         name: "w:calendar",
         attributes: { val: { key: "w:val", value: options.calendar } },
       }),
     );
   }
-  const attrs: Record<string, { readonly key: string; readonly value: string }> = {};
+  const attrs: Record<string, { key: string; value: string }> = {};
   if (options.fullDate !== undefined) {
     attrs.fullDate = { key: "w:fullDate", value: options.fullDate };
   }
@@ -343,7 +343,7 @@ const createDate = (options: SdtDateOptions): XmlComponent => {
 
 /** Creates a dataBinding element (w:dataBinding). */
 const createDataBinding = (options: SdtDataBindingOptions): XmlComponent => {
-  const attrs: Record<string, { readonly key: string; readonly value: string }> = {
+  const attrs: Record<string, { key: string; value: string }> = {
     xpath: { key: "w:xpath", value: options.xpath },
     storeItemID: { key: "w:storeItemID", value: options.storeItemID },
   };
@@ -356,7 +356,7 @@ const createDataBinding = (options: SdtDataBindingOptions): XmlComponent => {
 /** Creates a docPart element (w:docPartObj or w:docPartList). */
 const createDocPart = (
   name: string,
-  options: { readonly gallery?: string; readonly category?: string; readonly unique?: boolean },
+  options: { gallery?: string; category?: string; unique?: boolean },
 ): XmlComponent => {
   const children: BuilderChild[] = [];
   if (options.gallery !== undefined) {
@@ -448,7 +448,7 @@ export class StructuredDocumentTagProperties extends XmlComponent {
     }
     if (options.id !== undefined) {
       this.root.push(
-        new BuilderElement<{ readonly val: number }>({
+        new BuilderElement<{ val: number }>({
           name: "w:id",
           attributes: { val: { key: "w:val", value: options.id } },
         }),
@@ -456,7 +456,7 @@ export class StructuredDocumentTagProperties extends XmlComponent {
     }
     if (options.lock !== undefined) {
       this.root.push(
-        new BuilderElement<{ readonly val: string }>({
+        new BuilderElement<{ val: string }>({
           name: "w:lock",
           attributes: { val: { key: "w:val", value: options.lock } },
         }),
@@ -485,7 +485,7 @@ export class StructuredDocumentTagProperties extends XmlComponent {
     }
     if (options.label !== undefined) {
       this.root.push(
-        new BuilderElement<{ readonly val: number }>({
+        new BuilderElement<{ val: number }>({
           name: "w:label",
           attributes: { val: { key: "w:val", value: options.label } },
         }),
@@ -493,7 +493,7 @@ export class StructuredDocumentTagProperties extends XmlComponent {
     }
     if (options.tabIndex !== undefined) {
       this.root.push(
-        new BuilderElement<{ readonly val: number }>({
+        new BuilderElement<{ val: number }>({
           name: "w:tabIndex",
           attributes: { val: { key: "w:val", value: options.tabIndex } },
         }),
@@ -518,8 +518,7 @@ export class StructuredDocumentTagProperties extends XmlComponent {
     } else if (options.richText) {
       this.root.push(new BuilderElement({ name: "w:richText" }));
     } else if (options.text !== undefined) {
-      const textAttrs: Record<string, { readonly key: string; readonly value: string | boolean }> =
-        {};
+      const textAttrs: Record<string, { key: string; value: string | boolean }> = {};
       if (options.text.multiLine !== undefined) {
         textAttrs.multiLine = { key: "w:multiLine", value: options.text.multiLine };
       } else {

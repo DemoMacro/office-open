@@ -9,9 +9,9 @@ import type { RunOptions } from "./run";
 
 export interface ParagraphOptions {
   /** Simple text content for the paragraph. Creates a single TextRun. */
-  readonly text?: string;
-  readonly properties?: ParagraphPropertiesOptions;
-  readonly children?: readonly (TextRun | RunOptions | XmlComponent)[];
+  text?: string;
+  properties?: ParagraphPropertiesOptions;
+  children?: (TextRun | RunOptions | XmlComponent)[];
 }
 
 /**
@@ -19,7 +19,7 @@ export interface ParagraphOptions {
  * Lazy: stores options, builds XML in toXml().
  */
 export class Paragraph extends XmlComponent {
-  private readonly options: ParagraphOptions;
+  private options: ParagraphOptions;
 
   public constructor(options: string | ParagraphOptions = {}) {
     super("a:p");

@@ -20,15 +20,15 @@ import { MultiLevelType } from "./multi-level-type";
  */
 export interface AbstractNumberingOptions {
   /** Unique hex identifier for this numbering set */
-  readonly nsid?: string;
+  nsid?: string;
   /** Template hex identifier */
-  readonly tmpl?: string;
+  tmpl?: string;
   /** Name of the numbering definition */
-  readonly name?: string;
+  name?: string;
   /** Paragraph style that references this numbering */
-  readonly styleLink?: string;
+  styleLink?: string;
   /** Numbering style to inherit from */
-  readonly numStyleLink?: string;
+  numStyleLink?: string;
 }
 
 /**
@@ -54,14 +54,14 @@ export interface AbstractNumberingOptions {
  */
 export class AbstractNumbering extends XmlComponent {
   /** The unique identifier for this abstract numbering definition. */
-  public readonly id: number;
+  public id: number;
 
   /**
    * Creates a new abstract numbering definition.
    */
   public constructor(
     id: number,
-    levelOptions: readonly LevelsOptions[],
+    levelOptions: LevelsOptions[],
     extraOptions?: AbstractNumberingOptions,
   ) {
     super("w:abstractNum");

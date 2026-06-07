@@ -64,7 +64,7 @@ import type { XmlComponent } from "@file/xml-components";
  */
 export const createBreak = (options?: {
   /** How text reflows after the break: "none", "left", "right", or "all" */
-  readonly clear?: "none" | "left" | "right" | "all";
+  clear?: "none" | "left" | "right" | "all";
 }): XmlComponent =>
   new BuilderElement({
     name: "w:br",

@@ -1,18 +1,18 @@
 type SplitterBarState = "restored" | "maximized" | "minimized";
 
 export interface NormalViewOptions {
-  readonly showOutlineIcons?: boolean;
-  readonly snapVertSplitter?: boolean;
-  readonly vertBarState?: SplitterBarState;
-  readonly horzBarState?: SplitterBarState;
-  readonly preferSingleView?: boolean;
+  showOutlineIcons?: boolean;
+  snapVertSplitter?: boolean;
+  vertBarState?: SplitterBarState;
+  horzBarState?: SplitterBarState;
+  preferSingleView?: boolean;
 }
 
 export interface SlideViewOptions {
-  readonly snapToGrid?: boolean;
-  readonly snapToObjects?: boolean;
-  readonly showGuides?: boolean;
-  readonly varScale?: boolean;
+  snapToGrid?: boolean;
+  snapToObjects?: boolean;
+  showGuides?: boolean;
+  varScale?: boolean;
 }
 
 const LAST_VIEW_XSD: Record<string, string> = {
@@ -25,33 +25,33 @@ const LAST_VIEW_XSD: Record<string, string> = {
 };
 
 export interface ViewPropertiesOptions {
-  readonly lastView?:
+  lastView?:
     | "slideView"
     | "slideMasterView"
     | "notesView"
     | "handoutView"
     | "outlineView"
     | "slideSorterView";
-  readonly showComments?: boolean;
-  readonly gridSpacing?: { readonly cx: number; readonly cy: number };
-  readonly zoomScaleNumerator?: number;
-  readonly zoomScaleDenominator?: number;
-  readonly normalView?: NormalViewOptions;
-  readonly slideView?: SlideViewOptions;
-  readonly guides?: readonly {
-    readonly orient?: "vert" | "horz";
-    readonly pos?: number;
+  showComments?: boolean;
+  gridSpacing?: { cx: number; cy: number };
+  zoomScaleNumerator?: number;
+  zoomScaleDenominator?: number;
+  normalView?: NormalViewOptions;
+  slideView?: SlideViewOptions;
+  guides?: {
+    orient?: "vert" | "horz";
+    pos?: number;
   }[];
-  readonly outlineView?: {
-    readonly slides?: readonly {
-      readonly rId: string;
-      readonly collapse?: boolean;
+  outlineView?: {
+    slides?: {
+      rId: string;
+      collapse?: boolean;
     }[];
   };
-  readonly sorterView?: {
-    readonly showFormatting?: boolean;
+  sorterView?: {
+    showFormatting?: boolean;
   };
-  readonly notesView?: boolean;
+  notesView?: boolean;
 }
 
 function buildNormalViewPrXml(opts?: NormalViewOptions): string {

@@ -122,4 +122,4 @@ await Packer.toBuffer(doc, { compression: { xml: 0 } });
 
 ## License
 
-- [MIT](LICENSE) &copy; [Demo Macro](https://imst.xyz/)
+- [MIT](LICENSE) &copy; [Demo Macro](https://www.demomacro.com/)

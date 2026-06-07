@@ -9,15 +9,15 @@
  */
 export interface AltChunkData {
   /** Unique key for this alt chunk (e.g., relId) */
-  readonly key: string;
+  key: string;
   /** Raw content data */
-  readonly data: Uint8Array;
+  data: Uint8Array;
   /** Part sub-path within word/ (e.g., "afchunks/afchunk1.html") */
-  readonly path: string;
+  path: string;
   /** File extension (e.g., "html", "rtf", "txt") */
-  readonly extension: string;
+  extension: string;
   /** MIME content type (e.g., "text/html", "application/rtf") */
-  readonly contentType: string;
+  contentType: string;
 }
 
 /**
@@ -27,7 +27,7 @@ export interface AltChunkData {
  * serialized into separate parts in the DOCX package.
  */
 export class AltChunkCollection {
-  private readonly map: Map<string, AltChunkData>;
+  private map: Map<string, AltChunkData>;
 
   public constructor() {
     this.map = new Map<string, AltChunkData>();
@@ -37,7 +37,7 @@ export class AltChunkCollection {
     this.map.set(key, data);
   }
 
-  public get array(): readonly AltChunkData[] {
+  public get array(): AltChunkData[] {
     return [...this.map.values()];
   }
 }

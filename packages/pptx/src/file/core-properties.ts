@@ -5,11 +5,11 @@
  */
 
 export interface CorePropertiesOptions {
-  readonly title?: string;
-  readonly subject?: string;
-  readonly creator?: string;
-  readonly keywords?: string;
-  readonly description?: string;
-  readonly lastModifiedBy?: string;
-  readonly revision?: number;
+  title?: string;
+  subject?: string;
+  creator?: string;
+  keywords?: string;
+  description?: string;
+  lastModifiedBy?: string;
+  revision?: number;
 }

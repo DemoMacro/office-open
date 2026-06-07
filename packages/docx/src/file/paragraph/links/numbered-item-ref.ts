@@ -36,12 +36,12 @@ export interface NumberedItemReferenceOptions {
    * \h option - Creates a hyperlink to the bookmarked paragraph.
    * @default true
    */
-  readonly hyperlink?: boolean;
+  hyperlink?: boolean;
   /**
    * Which switch to use for the reference format
    * @default NumberedItemReferenceFormat.FULL_CONTEXT
    */
-  readonly referenceFormat?: NumberedItemReferenceFormat;
+  referenceFormat?: NumberedItemReferenceFormat;
 }
 
 type Switch = "\\h" | "\\r" | "\\n" | "\\w";
@@ -82,7 +82,7 @@ export class NumberedItemReference extends SimpleField {
       options;
     const baseInstruction = `REF ${bookmarkId}`;
 
-    const switches: readonly Switch[] = [
+    const switches: Switch[] = [
       ...(hyperlink ? ["\\h" as Switch] : []),
       ...[SWITCH_MAP[referenceFormat]].filter((a): a is Switch => Boolean(a)),
     ];

@@ -20,9 +20,9 @@ import { createMathSuperScriptProperties } from "./math-super-script-function-pr
  */
 export interface MathSuperScriptOptions {
   /** The base expression */
-  readonly children: readonly MathComponent[];
+  children: MathComponent[];
   /** The superscript (exponent) expression */
-  readonly superScript: readonly MathComponent[];
+  superScript: MathComponent[];
 }
 
 /**

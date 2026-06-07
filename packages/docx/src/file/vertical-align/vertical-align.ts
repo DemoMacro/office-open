@@ -65,7 +65,7 @@ export const createVerticalAlign = (
   value: TableVerticalAlign | SectionVerticalAlign,
 ): XmlComponent =>
   new BuilderElement<{
-    readonly verticalAlign: TableVerticalAlign | SectionVerticalAlign;
+    verticalAlign: TableVerticalAlign | SectionVerticalAlign;
   }>({
     attributes: {
       verticalAlign: { key: "w:val", value },

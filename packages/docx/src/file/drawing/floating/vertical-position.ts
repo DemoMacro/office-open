@@ -60,7 +60,7 @@ export const createVerticalPosition = ({
 }: VerticalPositionOptions): XmlComponent =>
   new BuilderElement<{
     /** Vertical Position Relative Base */
-    readonly relativeFrom: (typeof VerticalPositionRelativeFrom)[keyof typeof VerticalPositionRelativeFrom];
+    relativeFrom: (typeof VerticalPositionRelativeFrom)[keyof typeof VerticalPositionRelativeFrom];
   }>({
     attributes: {
       relativeFrom: {

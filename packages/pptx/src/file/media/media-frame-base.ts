@@ -6,13 +6,13 @@ import type { IMediaData } from "@file/media/data";
  * @internal
  */
 export interface MediaFrameBaseOptions {
-  readonly id?: number;
-  readonly x?: number;
-  readonly y?: number;
-  readonly width?: number;
-  readonly height?: number;
-  readonly data: Uint8Array;
-  readonly type: IMediaData["type"];
-  readonly name?: string;
-  readonly animation?: AnimationOptions;
+  id?: number;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  data: Uint8Array;
+  type: IMediaData["type"];
+  name?: string;
+  animation?: AnimationOptions;
 }

@@ -17,7 +17,7 @@ import type { MathComponent } from "../math-component";
  */
 interface MathSuperScriptElementOptions {
   /** The content of the superscript */
-  readonly children: readonly MathComponent[];
+  children: MathComponent[];
 }
 
 /**

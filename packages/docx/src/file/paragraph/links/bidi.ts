@@ -18,9 +18,9 @@ import type { ParagraphChild } from "../paragraph";
  */
 export interface DirOptions {
   /** Array of paragraph children inside the direction override */
-  readonly children: readonly ParagraphChild[];
+  children: ParagraphChild[];
   /** Text direction: "ltr" or "rtl" */
-  readonly val: "ltr" | "rtl";
+  val: "ltr" | "rtl";
 }
 
 /**

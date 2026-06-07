@@ -21,11 +21,11 @@ import type { IXmlableObject, XmlComponent } from "@file/xml-components";
  */
 export interface TabStopDefinition {
   /** The type of tab stop alignment */
-  readonly type: (typeof TabStopType)[keyof typeof TabStopType];
+  type: (typeof TabStopType)[keyof typeof TabStopType];
   /** The position of the tab stop in twips */
-  readonly position: number | (typeof TabStopPosition)[keyof typeof TabStopPosition];
+  position: number | (typeof TabStopPosition)[keyof typeof TabStopPosition];
   /** Optional leader character to fill space before the tab */
-  readonly leader?: (typeof LeaderType)[keyof typeof LeaderType];
+  leader?: (typeof LeaderType)[keyof typeof LeaderType];
 }
 
 /**
@@ -104,9 +104,9 @@ export const TabStopPosition = {
  */
 export const createTabStopItem = ({ type, position, leader }: TabStopDefinition): XmlComponent =>
   new BuilderElement<{
-    readonly val: (typeof TabStopType)[keyof typeof TabStopType];
-    readonly pos: string | number;
-    readonly leader?: (typeof LeaderType)[keyof typeof LeaderType];
+    val: (typeof TabStopType)[keyof typeof TabStopType];
+    pos: string | number;
+    leader?: (typeof LeaderType)[keyof typeof LeaderType];
   }>({
     attributes: {
       leader: { key: "w:leader", value: leader },
@@ -144,13 +144,13 @@ export const createTabStopItem = ({ type, position, leader }: TabStopDefinition)
  * });
  * ```
  */
-export const createTabStop = (tabDefinitions: readonly TabStopDefinition[]): XmlComponent =>
+export const createTabStop = (tabDefinitions: TabStopDefinition[]): XmlComponent =>
   new BuilderElement({
     children: tabDefinitions.map((tabDefinition) => createTabStopItem(tabDefinition)),
     name: "w:tabs",
   });
 
-export const buildTabStopObj = (tabDefinitions: readonly TabStopDefinition[]): IXmlableObject => ({
+export const buildTabStopObj = (tabDefinitions: TabStopDefinition[]): IXmlableObject => ({
   "w:tabs": tabDefinitions.map(({ type, position, leader }) =>
     attrObj("w:tab", {
       "w:val": type,

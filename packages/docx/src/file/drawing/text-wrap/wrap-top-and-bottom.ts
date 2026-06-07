@@ -14,8 +14,8 @@ import type { XmlComponent } from "@file/xml-components";
 import type { Margins } from "../floating";
 
 interface WrapTopAndBottomAttributes {
-  readonly distT?: number;
-  readonly distB?: number;
+  distT?: number;
+  distB?: number;
 }
 
 /**

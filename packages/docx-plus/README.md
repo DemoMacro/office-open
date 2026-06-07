@@ -112,4 +112,4 @@ Check the [demo folder](../docx/demo) for 100+ working examples covering every f
 
 ## License
 
-- [MIT](LICENSE) &copy; [Demo Macro](https://imst.xyz/)
+- [MIT](LICENSE) &copy; [Demo Macro](https://www.demomacro.com/)

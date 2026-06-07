@@ -9,9 +9,9 @@ import type { ParagraphOptions } from "./paragraph/paragraph";
 import { TextRun } from "./paragraph/run";
 
 export interface TextBodyOptions {
-  readonly text?: string;
-  readonly children?: readonly (Paragraph | ParagraphOptions | string)[];
-  readonly vertical?:
+  text?: string;
+  children?: (Paragraph | ParagraphOptions | string)[];
+  vertical?:
     | "horz"
     | "vert"
     | "vert270"
@@ -19,19 +19,19 @@ export interface TextBodyOptions {
     | "eaVert"
     | "mongolianVert"
     | "wordArtVertRtl";
-  readonly anchor?: VerticalAlignment;
-  readonly autoFit?: "normal" | "shape" | "none";
-  readonly wrap?: "square" | "none";
-  readonly margins?: {
-    readonly top?: number;
-    readonly bottom?: number;
-    readonly left?: number;
-    readonly right?: number;
+  anchor?: VerticalAlignment;
+  autoFit?: "normal" | "shape" | "none";
+  wrap?: "square" | "none";
+  margins?: {
+    top?: number;
+    bottom?: number;
+    left?: number;
+    right?: number;
   };
-  readonly marginTop?: number;
-  readonly marginBottom?: number;
-  readonly columns?: number;
-  readonly columnSpacing?: number;
+  marginTop?: number;
+  marginBottom?: number;
+  columns?: number;
+  columnSpacing?: number;
 }
 
 /**
@@ -79,8 +79,8 @@ function buildBodyPr(options: TextBodyOptions): IXmlableObject {
  *             Use "a" for DrawingML contexts (e.g., locked canvas).
  */
 export class TextBody extends XmlComponent {
-  private readonly options: TextBodyOptions;
-  private readonly ns: "p" | "a";
+  private options: TextBodyOptions;
+  private ns: "p" | "a";
 
   public constructor(options: TextBodyOptions = {}, ns: "p" | "a" = "p") {
     super(`${ns}:txBody`);

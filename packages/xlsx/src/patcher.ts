@@ -26,18 +26,18 @@ export const PatchType = {
 
 export interface CellPatch {
   /** Replacement value (string, number, boolean, or Date) */
-  readonly value: string | number | boolean | Date;
+  value: string | number | boolean | Date;
 }
 
 export type IPatch = CellPatch;
 
 export interface PatchWorkbookOptions<T extends PatchDocumentOutputType = PatchDocumentOutputType> {
-  readonly outputType: T;
-  readonly data: InputDataType;
-  readonly patches: Readonly<Record<string, IPatch>>;
-  readonly placeholderDelimiters?: Readonly<{
-    readonly start: string;
-    readonly end: string;
+  outputType: T;
+  data: InputDataType;
+  patches: Readonly<Record<string, IPatch>>;
+  placeholderDelimiters?: Readonly<{
+    start: string;
+    end: string;
   }>;
 }
 

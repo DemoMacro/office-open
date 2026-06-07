@@ -74,9 +74,9 @@ export function buildRstXml(rst: RichTextOptions): string {
 }
 
 export class SharedStrings extends BaseXmlComponent {
-  private readonly entries: SstEntry[] = [];
+  private entries: SstEntry[] = [];
   /** Dedup map for plain strings only. Rich text is not deduped. */
-  private readonly indexMap = new Map<string, number>();
+  private indexMap = new Map<string, number>();
 
   public constructor() {
     super("sst");
@@ -108,6 +108,11 @@ export class SharedStrings extends BaseXmlComponent {
 
   public get count(): number {
     return this.entries.length;
+  }
+
+  /** Return a serializable snapshot for the descriptor. */
+  public toDescriptorOptions(): { entries: SstEntry[]; uniqueCount: number } {
+    return { entries: this.entries, uniqueCount: this.indexMap.size };
   }
 
   /**

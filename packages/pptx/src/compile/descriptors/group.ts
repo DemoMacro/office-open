@@ -22,7 +22,7 @@ export interface GroupShapeDescriptorOptions {
   height?: number;
   rotation?: number;
   flipHorizontal?: boolean;
-  children?: readonly LegacySlideChild[];
+  children?: LegacySlideChild[];
 }
 
 // ── ID counter ──

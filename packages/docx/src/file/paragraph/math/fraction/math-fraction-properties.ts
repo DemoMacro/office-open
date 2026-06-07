@@ -44,7 +44,7 @@ export const FractionType = {
  */
 export interface MathFractionPropertiesOptions {
   /** Fraction type (bar, skewed, linear, or no bar) */
-  readonly fractionType?: (typeof FractionType)[keyof typeof FractionType];
+  fractionType?: (typeof FractionType)[keyof typeof FractionType];
 }
 
 /**
@@ -67,7 +67,7 @@ export const createMathFractionProperties = (
 
   if (options.fractionType) {
     children.push(
-      new BuilderElement<{ readonly val: string }>({
+      new BuilderElement<{ val: string }>({
         attributes: {
           val: { key: "m:val", value: options.fractionType },
         },

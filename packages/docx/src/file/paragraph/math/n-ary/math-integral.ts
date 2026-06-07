@@ -22,11 +22,11 @@ import { createMathSuperScriptElement } from "./math-super-script";
  */
 export interface MathIntegralOptions {
   /** The integrand expression */
-  readonly children: readonly MathComponent[];
+  children: MathComponent[];
   /** Optional lower bound of integration */
-  readonly subScript?: readonly MathComponent[];
+  subScript?: MathComponent[];
   /** Optional upper bound of integration */
-  readonly superScript?: readonly MathComponent[];
+  superScript?: MathComponent[];
 }
 
 /**

@@ -62,7 +62,7 @@ export const HeadingLevel = {
  * ```
  */
 export const createParagraphStyle = (styleId: string): XmlComponent =>
-  new BuilderElement<{ readonly val: string }>({
+  new BuilderElement<{ val: string }>({
     attributes: {
       val: { key: "w:val", value: styleId },
     },

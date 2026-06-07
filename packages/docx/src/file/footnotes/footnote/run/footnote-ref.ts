@@ -28,7 +28,7 @@ import { XmlComponent } from "@file/xml-components";
  * @internal
  */
 export class FootnoteRef extends XmlComponent {
-  public constructor(options?: { readonly customMarkFollows?: boolean }) {
+  public constructor(options?: { customMarkFollows?: boolean }) {
     super("w:footnoteRef");
     if (options?.customMarkFollows !== undefined) {
       this.root.push({ _attr: { "w:customMarkFollows": options.customMarkFollows ? "1" : "0" } });

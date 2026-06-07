@@ -17,13 +17,13 @@ import type { BuilderChild, XmlComponent } from "@file/xml-components";
  */
 export interface MathBoxPropertiesOptions {
   /** Operator emulation */
-  readonly opEmu?: boolean;
+  opEmu?: boolean;
   /** No break */
-  readonly noBreak?: boolean;
+  noBreak?: boolean;
   /** Differential */
-  readonly diff?: boolean;
+  diff?: boolean;
   /** Alignment */
-  readonly aln?: boolean;
+  aln?: boolean;
 }
 
 /**

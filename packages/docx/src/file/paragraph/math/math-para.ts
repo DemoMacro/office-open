@@ -27,9 +27,9 @@ export type MathJustification = "left" | "right" | "center" | "centerGroup";
  */
 export interface MathParagraphOptions {
   /** Justification for the math paragraph */
-  readonly justification?: MathJustification;
+  justification?: MathJustification;
   /** Math equations in this paragraph */
-  readonly children: readonly MathOptions[];
+  children: MathOptions[];
 }
 
 /**

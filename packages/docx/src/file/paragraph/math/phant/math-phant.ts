@@ -22,9 +22,9 @@ import type { MathPhantPropertiesOptions } from "./math-phant-properties";
  */
 export interface MathPhantOptions {
   /** Phantom properties */
-  readonly properties?: MathPhantPropertiesOptions;
+  properties?: MathPhantPropertiesOptions;
   /** Content to be made invisible */
-  readonly children: readonly MathComponent[];
+  children: MathComponent[];
 }
 
 /**

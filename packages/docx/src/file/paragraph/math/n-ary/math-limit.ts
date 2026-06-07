@@ -33,7 +33,7 @@ import type { MathComponent } from "../math-component";
  * @internal
  */
 export class MathLimit extends XmlComponent {
-  public constructor(children: readonly MathComponent[]) {
+  public constructor(children: MathComponent[]) {
     super("m:lim");
 
     for (const child of children) {

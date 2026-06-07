@@ -26,7 +26,7 @@ import type { ITableRowPropertiesOptions } from "./table-row-properties";
  */
 export type TableRowOptions = {
   /** Array of TableCell elements or plain options that make up the row */
-  readonly cells: readonly (
+  cells: (
     | TableCell
     | StructuredDocumentTagCell
     | StructuredDocumentTagRow
@@ -34,15 +34,15 @@ export type TableRowOptions = {
     | TableCellOptions
   )[];
   /** Table property exceptions for this row (override table-level properties) */
-  readonly propertyExceptions?: TablePropertyExOptions;
+  propertyExceptions?: TablePropertyExOptions;
   /** Revision save ID for row properties (hex string, e.g. "00123456"). */
-  readonly rsidRPr?: string;
+  rsidRPr?: string;
   /** Revision save ID for the row (hex string). */
-  readonly rsidR?: string;
+  rsidR?: string;
   /** Revision save ID when row was deleted (hex string). */
-  readonly rsidDel?: string;
+  rsidDel?: string;
   /** Revision save ID for table row (hex string). */
-  readonly rsidTr?: string;
+  rsidTr?: string;
 } & ITableRowPropertiesOptions;
 
 /**
@@ -85,14 +85,14 @@ export class TableRow extends BaseXmlComponent {
   private extraCells: { cell: TableCell; columnIndex: number }[] = [];
 
   // Coerced children: plain TableCellOptions are converted to TableCell instances
-  private readonly coercedChildren: readonly (
+  private coercedChildren: (
     | TableCell
     | StructuredDocumentTagCell
     | StructuredDocumentTagRow
     | CustomXmlCell
   )[];
 
-  public constructor(private readonly options: TableRowOptions) {
+  public constructor(private options: TableRowOptions) {
     super("w:tr");
     this.coercedChildren = options.cells.map((child) =>
       child instanceof TableCell ||
@@ -108,7 +108,7 @@ export class TableRow extends BaseXmlComponent {
     return this.coercedChildren.length;
   }
 
-  public get cells(): readonly TableCell[] {
+  public get cells(): TableCell[] {
     return this.coercedChildren.filter((child): child is TableCell => child instanceof TableCell);
   }
 

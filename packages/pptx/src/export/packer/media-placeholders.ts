@@ -2,7 +2,7 @@ import { formatId } from "@office-open/core";
 
 export function replaceMediaPlaceholders(
   xml: string,
-  mediaData: readonly { readonly fileName: string }[],
+  mediaData: { fileName: string }[],
   offset: number,
 ): string {
   let result = xml;
@@ -14,7 +14,7 @@ export function replaceMediaPlaceholders(
 
 export function replaceVideoPlaceholders(
   xml: string,
-  mediaData: readonly { readonly fileName: string }[],
+  mediaData: { fileName: string }[],
   offset: number,
 ): string {
   let result = xml;
@@ -26,23 +26,23 @@ export function replaceVideoPlaceholders(
 
 export function getMediaRefs(
   xml: string,
-  mediaArray: readonly { readonly fileName: string }[],
-): readonly { readonly fileName: string }[] {
+  mediaArray: { fileName: string }[],
+): { fileName: string }[] {
   return collectRefs(xml, "{media:", mediaArray);
 }
 
 export function getVideoRefs(
   xml: string,
-  mediaArray: readonly { readonly fileName: string }[],
-): readonly { readonly fileName: string }[] {
+  mediaArray: { fileName: string }[],
+): { fileName: string }[] {
   return collectRefs(xml, "{video:", mediaArray);
 }
 
 function collectRefs(
   xml: string,
   search: string,
-  mediaArray: readonly { readonly fileName: string }[],
-): readonly { readonly fileName: string }[] {
+  mediaArray: { fileName: string }[],
+): { fileName: string }[] {
   const keys = new Set<string>();
   let pos = 0;
   while ((pos = xml.indexOf(search, pos)) !== -1) {

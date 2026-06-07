@@ -26,8 +26,8 @@ import { Relationships } from "./relationships";
  * ```
  */
 export class FootnotesWrapper implements ViewWrapper {
-  private readonly footnotes: FootNotes;
-  public readonly relationships: Relationships;
+  private footnotes: FootNotes;
+  public relationships: Relationships;
 
   public constructor() {
     this.footnotes = new FootNotes();

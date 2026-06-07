@@ -18,7 +18,7 @@ import type { EmbeddedFontOptions } from "./font-table";
 /**
  * Font options extended with a unique font key.
  */
-export type EmbeddedFontOptionsWithKey = EmbeddedFontOptions & { readonly fontKey: string };
+export type EmbeddedFontOptionsWithKey = EmbeddedFontOptions & { fontKey: string };
 
 /**
  * Wrapper class for managing the font table and its relationships.
@@ -34,11 +34,11 @@ export type EmbeddedFontOptionsWithKey = EmbeddedFontOptions & { readonly fontKe
  * ```
  */
 export class FontWrapper implements ViewWrapper {
-  private readonly fontTable: XmlComponent;
-  public readonly relationships: Relationships;
-  public readonly fontOptionsWithKey: readonly EmbeddedFontOptionsWithKey[] = [];
+  private fontTable: XmlComponent;
+  public relationships: Relationships;
+  public fontOptionsWithKey: EmbeddedFontOptionsWithKey[] = [];
 
-  public constructor(public readonly options: readonly EmbeddedFontOptions[]) {
+  public constructor(public options: EmbeddedFontOptions[]) {
     this.fontOptionsWithKey = options.map((o) => ({ ...o, fontKey: uniqueUuid() }));
     this.fontTable = createFontTable(this.fontOptionsWithKey);
     this.relationships = new Relationships();

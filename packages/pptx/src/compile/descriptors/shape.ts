@@ -41,7 +41,7 @@ export interface ShapeStyleDescriptorOptions {
 
 export interface TextBodyDescriptorOptions {
   text?: string;
-  children?: readonly (ParagraphOptions | string)[];
+  children?: (ParagraphOptions | string)[];
   vertical?:
     | "horz"
     | "vert"

@@ -1,16 +1,9 @@
-import type { File } from "@file/file";
-/**
- * Packer module — export API for XLSX files.
- *
- * @module
- */
+import type { WorkbookOptions } from "@file/file";
 import { createPacker, OoxmlMimeType } from "@office-open/core";
 
-import { Compiler } from "./next-compiler";
+import { compileWorkbook } from "../../compile/compiler";
 
-const compiler = new Compiler();
-
-export const Packer = createPacker<File>({
-  compile: (file, overrides, mediaLevel) => compiler.compile(file, overrides, mediaLevel),
+export const Packer = createPacker<WorkbookOptions>({
+  compile: (options, overrides, mediaLevel) => compileWorkbook(options, overrides, mediaLevel),
   mimeType: OoxmlMimeType.XLSX,
 });

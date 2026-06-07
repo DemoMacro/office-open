@@ -65,8 +65,8 @@ export const createTableRowHeight = (
   rule: (typeof HeightRule)[keyof typeof HeightRule],
 ): XmlComponent =>
   new BuilderElement<{
-    readonly value: number | string;
-    readonly rule: (typeof HeightRule)[keyof typeof HeightRule];
+    value: number | string;
+    rule: (typeof HeightRule)[keyof typeof HeightRule];
   }>({
     attributes: {
       rule: { key: "w:hRule", value: rule },

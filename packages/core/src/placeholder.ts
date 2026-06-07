@@ -35,7 +35,7 @@ export function collectPlaceholderKeys(xml: string, prefix: string): string[] {
 
 export function replaceImagePlaceholders(
   xml: string,
-  mediaData: readonly { readonly fileName: string }[],
+  mediaData: { fileName: string }[],
   offset: number,
   idFormat: IdFormat = "rId",
 ): string {
@@ -48,14 +48,14 @@ export function replaceImagePlaceholders(
 
 export function getReferencedMedia(
   xml: string,
-  mediaArray: readonly { readonly fileName: string }[],
-): readonly { readonly fileName: string }[] {
+  mediaArray: { fileName: string }[],
+): { fileName: string }[] {
   return mediaArray.filter((image) => xml.includes(`{${image.fileName}}`));
 }
 
 export function replaceChartPlaceholders(
   xml: string,
-  chartKeys: readonly string[],
+  chartKeys: string[],
   offset: number,
   idFormat: IdFormat = "rId",
 ): string {
@@ -69,13 +69,13 @@ export function replaceChartPlaceholders(
 import type { RelationshipType } from "./opc/relationships";
 
 export interface SmartArtRelOptions {
-  readonly pathPrefix: string;
-  readonly styleRelType: RelationshipType;
+  pathPrefix: string;
+  styleRelType: RelationshipType;
 }
 
 export function replaceSmartArtPlaceholders(
   xml: string,
-  keys: readonly string[],
+  keys: string[],
   dataOffset: number,
   idFormat: IdFormat = "rId",
 ): string {
@@ -96,7 +96,7 @@ export function replaceSmartArtPlaceholders(
 }
 
 export function addSmartArtRelationships(
-  keys: readonly string[],
+  keys: string[],
   addRel: (id: number, type: RelationshipType, target: string, targetMode?: string) => void,
   baseOffset: number,
   globalStartIndex: number,

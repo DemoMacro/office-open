@@ -48,15 +48,15 @@ export const CombineBracketsType = {
  */
 export interface EastAsianLayoutOptions {
   /** Character combination ID (referencing a combined character entry) */
-  readonly id?: number;
+  id?: number;
   /** Whether to combine characters */
-  readonly combine?: boolean;
+  combine?: boolean;
   /** Bracket type for combined characters */
-  readonly combineBrackets?: (typeof CombineBracketsType)[keyof typeof CombineBracketsType];
+  combineBrackets?: (typeof CombineBracketsType)[keyof typeof CombineBracketsType];
   /** Whether to render text vertically */
-  readonly vert?: boolean;
+  vert?: boolean;
   /** Whether to compress characters in vertical text */
-  readonly vertCompress?: boolean;
+  vertCompress?: boolean;
 }
 
 /**

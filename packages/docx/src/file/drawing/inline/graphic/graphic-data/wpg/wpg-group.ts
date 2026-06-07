@@ -14,32 +14,32 @@ export type GroupChild = XmlComponent;
  * Child coordinate offset (CT_Point2D).
  */
 export interface ChildOffset {
-  readonly x: number;
-  readonly y: number;
+  x: number;
+  y: number;
 }
 
 /**
  * Child coordinate extent (CT_PositiveSize2D).
  */
 export interface ChildExtent {
-  readonly cx: number;
-  readonly cy: number;
+  cx: number;
+  cy: number;
 }
 
 export interface WpgGroupCoreOptions {
-  readonly children: readonly GroupChild[];
+  children: GroupChild[];
 }
 
 export type WpgGroupOptions = WpgGroupCoreOptions & {
-  readonly transformation: MediaDataTransformation;
+  transformation: MediaDataTransformation;
   /** Child coordinate offset (chOff) */
-  readonly chOff?: ChildOffset;
+  chOff?: ChildOffset;
   /** Child coordinate extent (chExt) */
-  readonly chExt?: ChildExtent;
+  chExt?: ChildExtent;
   /** Group fill */
-  readonly fill?: FillOptions;
+  fill?: FillOptions;
   /** Group effects */
-  readonly effects?: EffectListOptions;
+  effects?: EffectListOptions;
 };
 
 /**
@@ -75,7 +75,7 @@ const createGroupForm = (
 
   if (chOff) {
     children.push(
-      new BuilderElement<{ readonly x: number; readonly y: number }>({
+      new BuilderElement<{ x: number; y: number }>({
         attributes: {
           x: { key: "x", value: chOff.x },
           y: { key: "y", value: chOff.y },
@@ -87,7 +87,7 @@ const createGroupForm = (
 
   if (chExt) {
     children.push(
-      new BuilderElement<{ readonly cx: number; readonly cy: number }>({
+      new BuilderElement<{ cx: number; cy: number }>({
         attributes: {
           cx: { key: "cx", value: chExt.cx },
           cy: { key: "cy", value: chExt.cy },

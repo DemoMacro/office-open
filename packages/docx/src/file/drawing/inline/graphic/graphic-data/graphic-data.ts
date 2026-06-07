@@ -47,7 +47,7 @@ import { createWpgGroup } from "./wpg/wpg-group";
  * ```
  */
 export class GraphicData extends XmlComponent {
-  // Private readonly pic: Pic;
+  // Private pic: Pic;
 
   public constructor({
     mediaData,
@@ -59,14 +59,14 @@ export class GraphicData extends XmlComponent {
     tile,
     hyperlink,
   }: {
-    readonly mediaData: IExtendedMediaData;
-    readonly transform: MediaDataTransformation;
-    readonly outline?: OutlineOptions;
-    readonly fill?: FillOptions;
-    readonly effects?: EffectListOptions;
-    readonly blipEffects?: BlipEffectsOptions;
-    readonly tile?: TileOptions;
-    readonly hyperlink?: HyperlinkOptions;
+    mediaData: IExtendedMediaData;
+    transform: MediaDataTransformation;
+    outline?: OutlineOptions;
+    fill?: FillOptions;
+    effects?: EffectListOptions;
+    blipEffects?: BlipEffectsOptions;
+    tile?: TileOptions;
+    hyperlink?: HyperlinkOptions;
   }) {
     super("a:graphicData");
 

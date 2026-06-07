@@ -20,28 +20,28 @@ import type { BuilderChild, XmlComponent } from "@file/xml-components";
  */
 export interface MathMatrixColumnOptions {
   /** Number of columns this entry spans (1–255) */
-  readonly count?: number;
+  count?: number;
   /** Column justification */
-  readonly mcJc?: "left" | "center" | "right" | "inside" | "outside";
+  mcJc?: "left" | "center" | "right" | "inside" | "outside";
 }
 
 export interface MathMatrixPropertiesOptions {
   /** Base justification (vertical alignment of cells) */
-  readonly baseJc?: "top" | "bot" | "center";
+  baseJc?: "top" | "bot" | "center";
   /** Hide place holders */
-  readonly plcHide?: boolean;
+  plcHide?: boolean;
   /** Row spacing rule (0=single, 1=1.5 lines, 2=double, 3=exactly, 4=multiple) */
-  readonly rSpRule?: 0 | 1 | 2 | 3 | 4;
+  rSpRule?: 0 | 1 | 2 | 3 | 4;
   /** Column gap rule (0=single, 1=1.5 lines, 2=double, 3=exactly, 4=multiple) */
-  readonly cGpRule?: 0 | 1 | 2 | 3 | 4;
+  cGpRule?: 0 | 1 | 2 | 3 | 4;
   /** Row spacing */
-  readonly rSp?: number;
+  rSp?: number;
   /** Column spacing */
-  readonly cSp?: number;
+  cSp?: number;
   /** Column group spacing */
-  readonly cGp?: number;
+  cGp?: number;
   /** Matrix column definitions */
-  readonly mcs?: readonly MathMatrixColumnOptions[];
+  mcs?: MathMatrixColumnOptions[];
 }
 
 /**

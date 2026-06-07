@@ -28,9 +28,9 @@ import { hexColorValue, uCharHexNumber } from "@util/values";
  */
 export interface BackgroundImageOptions {
   /** Raw image data (Uint8Array, base64 string, etc.) */
-  readonly data: DataType;
+  data: DataType;
   /** Image format type */
-  readonly type: "jpg" | "png" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
+  type: "jpg" | "png" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
 }
 
 /**
@@ -40,21 +40,21 @@ export interface BackgroundImageOptions {
  */
 export interface DocumentBackgroundOptions {
   /** Background color in hex format (e.g., "FF0000" for red) */
-  readonly color?: string;
+  color?: string;
   /** Theme color name (e.g., "accent1", "dark1") */
-  readonly themeColor?: string;
+  themeColor?: string;
   /** Theme shade value (darkens the theme color) */
-  readonly themeShade?: string;
+  themeShade?: string;
   /** Theme tint value (lightens the theme color) */
-  readonly themeTint?: string;
+  themeTint?: string;
   /** Background image rendered as a full-page VML fill */
-  readonly image?: BackgroundImageOptions;
+  image?: BackgroundImageOptions;
 }
 
 interface ImageData {
-  readonly fileName: string;
-  readonly data: Uint8Array;
-  readonly type: string;
+  fileName: string;
+  data: Uint8Array;
+  type: string;
 }
 
 /**
@@ -96,7 +96,7 @@ interface ImageData {
  * ```
  */
 export class DocumentBackground extends XmlComponent {
-  private readonly imageData?: ImageData;
+  private imageData?: ImageData;
 
   public constructor(options: DocumentBackgroundOptions) {
     super("w:background");

@@ -24,11 +24,11 @@ import {
  */
 export interface MathLimitLowerOptions {
   /** Properties for the lower limit structure */
-  readonly properties?: MathLimitLowPropertiesOptions;
+  properties?: MathLimitLowPropertiesOptions;
   /** The base expression */
-  readonly children: readonly MathComponent[];
+  children: MathComponent[];
   /** The limit expression that appears below the base */
-  readonly limit: readonly MathComponent[];
+  limit: MathComponent[];
 }
 
 /**

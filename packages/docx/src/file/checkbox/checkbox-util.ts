@@ -16,9 +16,9 @@ import { XmlComponent } from "@file/xml-components";
  */
 export interface CheckboxSymbolProperties {
   /** Hexadecimal character code for the symbol (e.g., "2612" for ☒). */
-  readonly value?: string;
+  value?: string;
   /** Font family to use for rendering the symbol. */
-  readonly font?: string;
+  font?: string;
 }
 
 /**
@@ -31,13 +31,13 @@ export interface CheckboxSymbolProperties {
  */
 export interface CheckboxSymbolOptions {
   /** Display name for the checkbox control. */
-  readonly alias?: string;
+  alias?: string;
   /** Whether the checkbox is initially checked. */
-  readonly checked?: boolean;
+  checked?: boolean;
   /** Symbol properties for the checked state. */
-  readonly checkedState?: CheckboxSymbolProperties;
+  checkedState?: CheckboxSymbolProperties;
   /** Symbol properties for the unchecked state. */
-  readonly uncheckedState?: CheckboxSymbolProperties;
+  uncheckedState?: CheckboxSymbolProperties;
 }
 
 /**
@@ -75,9 +75,9 @@ export interface CheckboxSymbolOptions {
  * ```
  */
 export class CheckBoxUtil extends XmlComponent {
-  private readonly DEFAULT_UNCHECKED_SYMBOL: string = "2610";
-  private readonly DEFAULT_CHECKED_SYMBOL: string = "2612";
-  private readonly DEFAULT_FONT: string = "MS Gothic";
+  private DEFAULT_UNCHECKED_SYMBOL: string = "2610";
+  private DEFAULT_CHECKED_SYMBOL: string = "2612";
+  private DEFAULT_FONT: string = "MS Gothic";
   public constructor(options?: CheckboxSymbolOptions) {
     super("w14:checkbox");
 

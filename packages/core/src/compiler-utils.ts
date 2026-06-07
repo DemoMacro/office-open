@@ -16,8 +16,8 @@ const encoder = new TextEncoder();
  */
 export function compileMapping(
   mapping: Record<string, { data: string; path: string }>,
-  overrides?: readonly XmlifyedFile[],
-  media?: readonly { data: Uint8Array; path: string }[],
+  overrides?: XmlifyedFile[],
+  media?: { data: Uint8Array; path: string }[],
   mediaLevel: number = 0,
 ): Zippable {
   const files: Zippable = {};

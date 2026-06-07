@@ -19,8 +19,8 @@ import { TableCell } from "../table/table-cell/table-cell";
  * Options for creating a row-level Structured Document Tag (CT_SdtRow).
  */
 export interface SdtRowOptions {
-  readonly properties: SdtPropertiesOptions;
-  readonly children?: readonly TableRow[];
+  properties: SdtPropertiesOptions;
+  children?: TableRow[];
 }
 
 /**
@@ -40,7 +40,7 @@ export interface SdtRowOptions {
  * ```
  */
 export class StructuredDocumentTagRow extends XmlComponent {
-  private readonly rows: readonly TableRow[];
+  private rows: TableRow[];
 
   public constructor(options: SdtRowOptions) {
     super("w:sdt");
@@ -59,7 +59,7 @@ export class StructuredDocumentTagRow extends XmlComponent {
     return Math.max(...this.rows.map((r) => r.cellCount), 0);
   }
 
-  public get cells(): readonly TableCell[] {
+  public get cells(): TableCell[] {
     return this.rows.flatMap((r) => r.cells);
   }
 

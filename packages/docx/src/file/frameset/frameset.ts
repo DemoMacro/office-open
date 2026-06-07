@@ -13,49 +13,49 @@ import { XmlComponent } from "@file/xml-components";
 
 export interface FrameOptions {
   /** Frame size (e.g., "50%") */
-  readonly size?: string;
+  size?: string;
   /** Frame name */
-  readonly name?: string;
+  name?: string;
   /** Frame title */
-  readonly title?: string;
+  title?: string;
   /** Source file link rId */
-  readonly sourceRId?: string;
+  sourceRId?: string;
   /** Margin width in pixels */
-  readonly marginWidth?: number;
+  marginWidth?: number;
   /** Margin height in pixels */
-  readonly marginHeight?: number;
+  marginHeight?: number;
   /** Scrollbar mode */
-  readonly scrollbar?: "on" | "off" | "auto";
+  scrollbar?: "on" | "off" | "auto";
   /** No resize allowed */
-  readonly noResizeAllowed?: boolean;
+  noResizeAllowed?: boolean;
   /** Linked to file */
-  readonly linkedToFile?: boolean;
+  linkedToFile?: boolean;
   /** Long description relationship ID */
-  readonly longDescRId?: string;
+  longDescRId?: string;
 }
 
 export interface FramesetSplitbarOptions {
   /** Splitbar width in twips */
-  readonly width?: number;
+  width?: number;
   /** Splitbar color (hex, e.g., "auto") */
-  readonly color?: string;
+  color?: string;
   /** No border */
-  readonly noBorder?: boolean;
+  noBorder?: boolean;
   /** Flat borders */
-  readonly flatBorders?: boolean;
+  flatBorders?: boolean;
 }
 
 export interface FramesetOptions {
   /** Frameset size (e.g., "100%") */
-  readonly size?: string;
+  size?: string;
   /** Splitbar configuration */
-  readonly splitbar?: FramesetSplitbarOptions;
+  splitbar?: FramesetSplitbarOptions;
   /** Layout direction */
-  readonly layout?: "rows" | "cols";
+  layout?: "rows" | "cols";
   /** Frameset title */
-  readonly title?: string;
+  title?: string;
   /** Child framesets and frames (in order) */
-  readonly children?: readonly (FramesetOptions | FrameOptions)[];
+  children?: (FramesetOptions | FrameOptions)[];
 }
 
 // ── Components ──

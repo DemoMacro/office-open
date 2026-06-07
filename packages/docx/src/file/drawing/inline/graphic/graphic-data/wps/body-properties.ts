@@ -108,9 +108,9 @@ export const TextBodyWrappingType = {
  */
 export interface NormalAutofitOptions {
   /** Font scale percentage (e.g., 100000 = 100%) */
-  readonly fontScale?: number;
+  fontScale?: number;
   /** Line spacing reduction percentage */
-  readonly lnSpcReduction?: number;
+  lnSpcReduction?: number;
 }
 
 /**
@@ -118,9 +118,9 @@ export interface NormalAutofitOptions {
  */
 export interface PresetTextShapeOptions {
   /** Preset shape type (e.g., "textArchUp", "textCircle") */
-  readonly preset: string;
+  preset: string;
   /** Optional adjustment values */
-  readonly adjustments?: readonly { readonly name: string; readonly formula: string }[];
+  adjustments?: { name: string; formula: string }[];
 }
 
 /**
@@ -128,7 +128,7 @@ export interface PresetTextShapeOptions {
  */
 export interface FlatTextOptions {
   /** Z-offset in EMUs */
-  readonly z?: number;
+  z?: number;
 }
 
 // ─── Main Options ───────────────────────────────────────────────────────────
@@ -153,81 +153,80 @@ export interface BodyPropertiesOptions {
   // ── Attributes ──
 
   /** Text rotation angle in 60,000ths of a degree */
-  readonly rotation?: number;
+  rotation?: number;
   /** Whether to use spcFirstLastPara behavior */
-  readonly spcFirstLastPara?: boolean;
+  spcFirstLastPara?: boolean;
   /** Vertical text overflow behavior */
-  readonly vertOverflow?: (typeof TextVertOverflowType)[keyof typeof TextVertOverflowType];
+  vertOverflow?: (typeof TextVertOverflowType)[keyof typeof TextVertOverflowType];
   /** Horizontal text overflow behavior */
-  readonly horzOverflow?: (typeof TextHorzOverflowType)[keyof typeof TextHorzOverflowType];
+  horzOverflow?: (typeof TextHorzOverflowType)[keyof typeof TextHorzOverflowType];
   /** Text vertical direction */
-  readonly vert?: (typeof TextVerticalType)[keyof typeof TextVerticalType];
+  vert?: (typeof TextVerticalType)[keyof typeof TextVerticalType];
   /** Text wrapping type */
-  readonly wrap?: (typeof TextBodyWrappingType)[keyof typeof TextBodyWrappingType];
+  wrap?: (typeof TextBodyWrappingType)[keyof typeof TextBodyWrappingType];
   /** Left inset in EMUs */
-  readonly lIns?: number;
+  lIns?: number;
   /** Top inset in EMUs */
-  readonly tIns?: number;
+  tIns?: number;
   /** Right inset in EMUs */
-  readonly rIns?: number;
+  rIns?: number;
   /** Bottom inset in EMUs */
-  readonly bIns?: number;
+  bIns?: number;
   /** Number of text columns (1-16) */
-  readonly numCol?: number;
+  numCol?: number;
   /** Spacing between columns in EMUs */
-  readonly spcCol?: number;
+  spcCol?: number;
   /** Whether columns are right-to-left */
-  readonly rtlCol?: boolean;
+  rtlCol?: boolean;
   /** Whether text is from WordArt */
-  readonly fromWordArt?: boolean;
+  fromWordArt?: boolean;
   /** Text anchor position */
-  readonly anchor?: (typeof VerticalAnchor)[keyof typeof VerticalAnchor];
+  anchor?: (typeof VerticalAnchor)[keyof typeof VerticalAnchor];
   /** Whether to anchor at center */
-  readonly anchorCtr?: boolean;
+  anchorCtr?: boolean;
   /** Whether to force anti-aliasing */
-  readonly forceAA?: boolean;
+  forceAA?: boolean;
   /** Whether text is upright (default false) */
-  readonly upright?: boolean;
+  upright?: boolean;
   /** Whether to use compatible line spacing */
-  readonly compatLnSpc?: boolean;
+  compatLnSpc?: boolean;
 
   // ── Convenience aliases (backward compatible) ──
 
   /** Vertical anchor position (alias for `anchor`) */
-  readonly verticalAnchor?: VerticalAnchor;
+  verticalAnchor?: VerticalAnchor;
   /** Margins shorthand */
-  readonly margins?: {
-    readonly top?: number;
-    readonly bottom?: number;
-    readonly left?: number;
-    readonly right?: number;
+  margins?: {
+    top?: number;
+    bottom?: number;
+    left?: number;
+    right?: number;
   };
 
   // ── Child elements ──
 
   /** Preset text warp shape */
-  readonly prstTxWarp?: PresetTextShapeOptions;
+  prstTxWarp?: PresetTextShapeOptions;
   /** Disable autofit (EG_TextAutofit choice) */
-  readonly noAutoFit?: boolean;
+  noAutoFit?: boolean;
   /** Normal autofit (EG_TextAutofit choice) */
-  readonly normAutofit?: NormalAutofitOptions;
+  normAutofit?: NormalAutofitOptions;
   /** Shape autofit (EG_TextAutofit choice) */
-  readonly spAutoFit?: boolean;
+  spAutoFit?: boolean;
   /** 3D scene */
-  readonly scene3d?: Scene3DOptions;
+  scene3d?: Scene3DOptions;
   /** 3D shape properties (EG_Text3D choice) */
-  readonly sp3d?: Shape3DOptions;
+  sp3d?: Shape3DOptions;
   /** Flat text (EG_Text3D choice) */
-  readonly flatTx?: FlatTextOptions;
+  flatTx?: FlatTextOptions;
 }
 
 // ─── Internal Helpers ───────────────────────────────────────────────────────
 
 const buildOptionalAttributes = (
   options: Record<string, unknown>,
-): Record<string, { readonly key: string; readonly value: string | number | boolean }> => {
-  const attrs: Record<string, { readonly key: string; readonly value: string | number | boolean }> =
-    {};
+): Record<string, { key: string; value: string | number | boolean }> => {
+  const attrs: Record<string, { key: string; value: string | number | boolean }> = {};
   for (const [key, value] of Object.entries(options)) {
     if (value !== undefined) {
       attrs[key] = { key, value: value as string | number | boolean };
@@ -243,10 +242,10 @@ const createPresetTextShape = (options: PresetTextShapeOptions): XmlComponent =>
   if (options.adjustments) {
     for (const adj of options.adjustments) {
       children.push(
-        new BuilderElement<{ readonly name: string; readonly fmla: string }>({
+        new BuilderElement<{ name: string; fmla: string }>({
           name: "a:avLst",
           children: [
-            new BuilderElement<{ readonly name: string; readonly fmla: string }>({
+            new BuilderElement<{ name: string; fmla: string }>({
               name: "a:gd",
               attributes: {
                 name: { key: "name", value: adj.name },
@@ -259,7 +258,7 @@ const createPresetTextShape = (options: PresetTextShapeOptions): XmlComponent =>
     }
   }
 
-  return new BuilderElement<{ readonly prst: string }>({
+  return new BuilderElement<{ prst: string }>({
     name: "a:prstTxWarp",
     attributes: { prst: { key: "prst", value: options.preset } },
     children: children.length > 0 ? children : undefined,

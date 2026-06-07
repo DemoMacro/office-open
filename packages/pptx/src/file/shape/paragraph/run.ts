@@ -6,14 +6,14 @@ import { RunProperties } from "./run-properties";
 import type { RunPropertiesOptions } from "./run-properties";
 
 export interface RunOptions extends RunPropertiesOptions {
-  readonly text?: string;
+  text?: string;
 }
 
 /**
  * a:r — A run of text with properties.
  */
 export class TextRun extends XmlComponent {
-  private readonly options: RunOptions;
+  private options: RunOptions;
 
   public constructor(options: RunOptions | string = {}) {
     super("a:r");

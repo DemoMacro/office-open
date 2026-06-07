@@ -52,7 +52,7 @@ export const TableLayoutType = {
 export const createTableLayout = (
   type: (typeof TableLayoutType)[keyof typeof TableLayoutType],
 ): XmlComponent =>
-  new BuilderElement<{ readonly type: (typeof TableLayoutType)[keyof typeof TableLayoutType] }>({
+  new BuilderElement<{ type: (typeof TableLayoutType)[keyof typeof TableLayoutType] }>({
     attributes: {
       type: { key: "w:type", value: type },
     },

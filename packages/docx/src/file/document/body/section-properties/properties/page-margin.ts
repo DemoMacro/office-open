@@ -27,19 +27,19 @@ import type { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
  */
 export interface PageMarginAttributes {
   /** Top margin in twips or universal measure */
-  readonly top?: number | UniversalMeasure;
+  top?: number | UniversalMeasure;
   /** Right margin in twips or universal measure */
-  readonly right?: number | PositiveUniversalMeasure;
+  right?: number | PositiveUniversalMeasure;
   /** Bottom margin in twips or universal measure */
-  readonly bottom?: number | UniversalMeasure;
+  bottom?: number | UniversalMeasure;
   /** Left margin in twips or universal measure */
-  readonly left?: number | PositiveUniversalMeasure;
+  left?: number | PositiveUniversalMeasure;
   /** Header margin (distance from top of page to header) in twips or universal measure */
-  readonly header?: number | PositiveUniversalMeasure;
+  header?: number | PositiveUniversalMeasure;
   /** Footer margin (distance from bottom of page to footer) in twips or universal measure */
-  readonly footer?: number | PositiveUniversalMeasure;
+  footer?: number | PositiveUniversalMeasure;
   /** Gutter margin for binding in twips or universal measure */
-  readonly gutter?: number | PositiveUniversalMeasure;
+  gutter?: number | PositiveUniversalMeasure;
 }
 
 /**

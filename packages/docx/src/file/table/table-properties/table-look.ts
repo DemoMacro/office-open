@@ -50,42 +50,42 @@ export interface TableLookOptions {
    * When true, the first row of the table uses the special formatting
    * defined for header rows in the table style.
    */
-  readonly firstRow?: boolean;
+  firstRow?: boolean;
 
   /**
    * Apply last row conditional formatting.
    * When true, the last row of the table uses the special formatting
    * defined for total/footer rows in the table style.
    */
-  readonly lastRow?: boolean;
+  lastRow?: boolean;
 
   /**
    * Apply first column conditional formatting.
    * When true, the first column of the table uses the special formatting
    * defined for first columns in the table style.
    */
-  readonly firstColumn?: boolean;
+  firstColumn?: boolean;
 
   /**
    * Apply last column conditional formatting.
    * When true, the last column of the table uses the special formatting
    * defined for last columns in the table style.
    */
-  readonly lastColumn?: boolean;
+  lastColumn?: boolean;
 
   /**
    * Disable horizontal row banding.
    * When true, horizontal banding (alternating row colors) is disabled.
    * When false or undefined, horizontal banding is enabled if defined in the table style.
    */
-  readonly noHBand?: boolean;
+  noHBand?: boolean;
 
   /**
    * Disable vertical column banding.
    * When true, vertical banding (alternating column colors) is disabled.
    * When false or undefined, vertical banding is enabled if defined in the table style.
    */
-  readonly noVBand?: boolean;
+  noVBand?: boolean;
 }
 
 /**

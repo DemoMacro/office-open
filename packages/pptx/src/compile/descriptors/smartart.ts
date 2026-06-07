@@ -30,7 +30,7 @@ export interface SmartArtDescriptorOptions {
   /** Pre-generated SmartArt key (e.g. "smartart_1024"). If omitted, auto-generated. */
   smartArtKey?: string;
   /** Tree nodes for the diagram content. */
-  nodes?: readonly TreeNode[];
+  nodes?: TreeNode[];
   /** Layout ID (e.g. "default", "process1", "hierarchy1"). */
   layout?: string;
   /** Quick style ID (e.g. "simple1", "moderate1"). */

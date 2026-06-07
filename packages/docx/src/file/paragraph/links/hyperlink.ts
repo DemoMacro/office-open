@@ -14,12 +14,12 @@ import { uniqueId } from "@util/convenience-functions";
 import type { ParagraphChild } from "../paragraph";
 
 interface HyperlinkAttributesProperties {
-  readonly id?: string;
-  readonly anchor?: string;
-  readonly history: number;
-  readonly tooltip?: string;
-  readonly tgtFrame?: string;
-  readonly docLocation?: string;
+  id?: string;
+  anchor?: string;
+  history: number;
+  tooltip?: string;
+  tgtFrame?: string;
+  docLocation?: string;
 }
 
 /**
@@ -44,11 +44,11 @@ export const HyperlinkType = {
  */
 export interface InternalHyperlinkOptions {
   /** Array of paragraph children that form the hyperlink text */
-  readonly children: readonly ParagraphChild[];
+  children: ParagraphChild[];
   /** Name of the bookmark to link to within the document */
-  readonly anchor: string;
+  anchor: string;
   /** Screen tip text shown when hovering over the hyperlink */
-  readonly tooltip?: string;
+  tooltip?: string;
 }
 
 /**
@@ -61,13 +61,13 @@ export interface InternalHyperlinkOptions {
  */
 export interface ExternalHyperlinkOptions {
   /** Array of paragraph children that form the hyperlink text */
-  readonly children: readonly ParagraphChild[];
+  children: ParagraphChild[];
   /** URL to link to outside the document */
-  readonly link: string;
+  link: string;
   /** Screen tip text shown when hovering over the hyperlink */
-  readonly tooltip?: string;
+  tooltip?: string;
   /** Target frame for the hyperlink (e.g., "_blank", "_self") */
-  readonly tgtFrame?: string;
+  tgtFrame?: string;
 }
 
 /**
@@ -94,16 +94,16 @@ export interface ExternalHyperlinkOptions {
  * ```
  */
 export interface ConcreteHyperlinkOptions {
-  readonly anchor?: string;
-  readonly tooltip?: string;
-  readonly tgtFrame?: string;
+  anchor?: string;
+  tooltip?: string;
+  tgtFrame?: string;
 }
 
 export class ConcreteHyperlink extends XmlComponent {
-  public readonly linkId: string;
+  public linkId: string;
 
   public constructor(
-    children: readonly ParagraphChild[],
+    children: ParagraphChild[],
     relationshipId: string,
     options?: ConcreteHyperlinkOptions,
   ) {
@@ -217,7 +217,7 @@ export class InternalHyperlink extends ConcreteHyperlink {
  * ```
  */
 export class ExternalHyperlink extends XmlComponent {
-  public constructor(public readonly options: ExternalHyperlinkOptions) {
+  public constructor(public options: ExternalHyperlinkOptions) {
     super("w:externalHyperlink");
   }
 }

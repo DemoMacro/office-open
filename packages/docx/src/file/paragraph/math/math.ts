@@ -19,7 +19,7 @@ import type { MathComponent } from "./math-component";
  */
 export interface MathOptions {
   /** Array of math components (fractions, radicals, runs, etc.) */
-  readonly children: readonly MathComponent[];
+  children: MathComponent[];
 }
 
 /**

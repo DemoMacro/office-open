@@ -8,10 +8,10 @@ import { convertPixelsToEmu } from "@office-open/core";
  * Pixel position options accepted by most positioned components.
  */
 export interface PositionOptions {
-  readonly x?: number;
-  readonly y?: number;
-  readonly width?: number;
-  readonly height?: number;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
 }
 
 /**

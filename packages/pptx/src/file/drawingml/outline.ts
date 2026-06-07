@@ -8,9 +8,9 @@ import type {
  * PPTX-specific outline options (backward-compatible API).
  */
 export interface OutlineOptions {
-  readonly width?: number;
-  readonly color?: string;
-  readonly dashStyle?: "solid" | "dash" | "dashDot" | "lgDash" | "sysDot" | "sysDash";
+  width?: number;
+  color?: string;
+  dashStyle?: "solid" | "dash" | "dashDot" | "lgDash" | "sysDot" | "sysDash";
 }
 
 export type { CoreOutlineOptions as OutlineOptionsCore };
@@ -46,10 +46,10 @@ function toCoreLineEnd(type: string, width?: string, length?: string): CoreLineE
 export const createOutlineCompat = (
   options: OutlineOptions = {},
   arrowheads?: {
-    readonly beginType?: string;
-    readonly endType?: string;
-    readonly width?: string;
-    readonly length?: string;
+    beginType?: string;
+    endType?: string;
+    width?: string;
+    length?: string;
   },
 ) =>
   createOutline({

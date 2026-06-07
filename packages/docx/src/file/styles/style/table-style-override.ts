@@ -89,37 +89,37 @@ export interface TableStyleOverrideOptions {
   /**
    * The table region this override applies to.
    */
-  readonly type: (typeof TableStyleOverrideType)[keyof typeof TableStyleOverrideType];
+  type: (typeof TableStyleOverrideType)[keyof typeof TableStyleOverrideType];
   /**
    * Paragraph properties for this region.
    *
    * Accepts any XmlComponent (e.g., ParagraphProperties instance).
    */
-  readonly paragraphProperties?: XmlComponent;
+  paragraphProperties?: XmlComponent;
   /**
    * Run (character) properties for this region.
    *
    * Accepts any XmlComponent (e.g., RunProperties instance).
    */
-  readonly runProperties?: XmlComponent;
+  runProperties?: XmlComponent;
   /**
    * Table properties for this region.
    *
    * Accepts any XmlComponent (e.g., TableProperties instance).
    */
-  readonly tableProperties?: XmlComponent;
+  tableProperties?: XmlComponent;
   /**
    * Table row properties for this region.
    *
    * Accepts any XmlComponent (e.g., TableRowProperties instance).
    */
-  readonly rowProperties?: XmlComponent;
+  rowProperties?: XmlComponent;
   /**
    * Table cell properties for this region.
    *
    * Accepts any XmlComponent (e.g., TableCellProperties instance).
    */
-  readonly cellProperties?: XmlComponent;
+  cellProperties?: XmlComponent;
 }
 
 /**
@@ -179,7 +179,7 @@ export const createTableStyleOverride = (options: TableStyleOverrideOptions): Xm
     children.push(options.cellProperties);
   }
 
-  return new BuilderElement<{ readonly type: string }>({
+  return new BuilderElement<{ type: string }>({
     attributes: {
       type: { key: "w:type", value: options.type },
     },

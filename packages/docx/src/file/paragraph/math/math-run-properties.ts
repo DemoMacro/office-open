@@ -45,17 +45,17 @@ export type MathStyleType = "p" | "b" | "i" | "bi";
  */
 export interface MathRunPropertiesOptions {
   /** Whether the text is displayed in literal form */
-  readonly lit?: boolean;
+  lit?: boolean;
   /** Use normal text rendering instead of math italic */
-  readonly normal?: boolean;
+  normal?: boolean;
   /** Script type for the text */
-  readonly script?: MathScriptType;
+  script?: MathScriptType;
   /** Style type for the text */
-  readonly style?: MathStyleType;
+  style?: MathStyleType;
   /** Alignment point for manual break (1-255) */
-  readonly breakAlignment?: number;
+  breakAlignment?: number;
   /** Whether the text is aligned */
-  readonly align?: boolean;
+  align?: boolean;
 }
 
 /**

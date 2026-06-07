@@ -6,21 +6,21 @@ export type { ColorMapOptions, HeaderFooterOptions };
 /** Notes style level override */
 export interface NotesLevelProperties {
   /** Font size in hundredths of a point (e.g., 1200 = 12pt) */
-  readonly fontSize?: number;
+  fontSize?: number;
   /** Left margin in EMU */
-  readonly marginLeft?: number;
+  marginLeft?: number;
   /** Alignment ("l" | "ctr" | "r" | "just") */
-  readonly alignment?: string;
+  alignment?: string;
 }
 
 /** Options for notes master parameterization */
 export interface NotesMasterOptions {
   /** Color map overrides */
-  readonly colorMap?: ColorMapOptions;
+  colorMap?: ColorMapOptions;
   /** Header/footer settings */
-  readonly headerFooter?: HeaderFooterOptions;
+  headerFooter?: HeaderFooterOptions;
   /** Notes style overrides (levels 1-9) */
-  readonly notesStyle?: readonly NotesLevelProperties[];
+  notesStyle?: NotesLevelProperties[];
 }
 
 const NOTES_MASTER_XML = `<p:notesMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
@@ -110,7 +110,7 @@ function buildHfAttrs(opts?: HeaderFooterOptions): string {
   return `dt="${opts.date ? 1 : 0}" hdr="${opts.header ? 1 : 0}" ftr="${opts.footer ? 1 : 0}" sldNum="${opts.slideNumber ? 1 : 0}"`;
 }
 
-function buildNotesStyleXml(levels?: readonly NotesLevelProperties[]): string {
+function buildNotesStyleXml(levels?: NotesLevelProperties[]): string {
   const parts: string[] = ["<p:notesStyle>"];
   for (let i = 0; i < 9; i++) {
     const level = levels?.[i];

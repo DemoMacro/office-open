@@ -17,7 +17,7 @@ import type { BuilderChild, XmlComponent } from "@file/xml-components";
  */
 export interface MathSubSuperScriptPropertiesOptions {
   /** Align scripts to the same vertical position */
-  readonly alignScripts?: boolean;
+  alignScripts?: boolean;
 }
 
 /**

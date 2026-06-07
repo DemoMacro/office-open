@@ -22,7 +22,7 @@ export { BaseXmlComponent } from "@office-open/core";
  */
 export interface Context extends CoreContext<File> {
   /** The root File object being serialized. */
-  readonly file: File;
+  file: File;
   /** Access to document relationships and other document parts. */
-  readonly viewWrapper: ViewWrapper;
+  viewWrapper: ViewWrapper;
 }

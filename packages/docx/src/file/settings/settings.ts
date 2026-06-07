@@ -135,246 +135,246 @@ import type { CompatibilityOptions } from "./compatibility";
  */
 export interface SettingsOptions {
   /** @deprecated Use compatibility.version instead */
-  readonly compatibilityModeVersion?: number;
+  compatibilityModeVersion?: number;
   /** Enable different headers/footers for even and odd pages */
-  readonly evenAndOddHeaders?: boolean;
+  evenAndOddHeaders?: boolean;
   /** Enable track changes (revision marking) */
-  readonly trackRevisions?: boolean;
+  trackRevisions?: boolean;
   /** Do not track formatting changes when trackRevisions is on */
-  readonly doNotTrackFormatting?: boolean;
+  doNotTrackFormatting?: boolean;
   /** Do not track move changes when trackRevisions is on */
-  readonly doNotTrackMoves?: boolean;
+  doNotTrackMoves?: boolean;
   /** Controls which types of revisions are visible */
-  readonly revisionView?: RevisionViewOptions;
+  revisionView?: RevisionViewOptions;
   /** Update fields when document is opened */
-  readonly updateFields?: boolean;
+  updateFields?: boolean;
   /** Compatibility settings for older Word versions */
-  readonly compatibility?: CompatibilityOptions;
+  compatibility?: CompatibilityOptions;
   /** Default distance between tab stops in twips */
-  readonly defaultTabStop?: number;
+  defaultTabStop?: number;
   /** Hyphenation settings */
-  readonly hyphenation?: HyphenationOptions;
+  hyphenation?: HyphenationOptions;
   /** Controls whether punctuation is compressed at line ends */
-  readonly characterSpacingControl?: "compressPunctuation" | "doNotCompress";
+  characterSpacingControl?: "compressPunctuation" | "doNotCompress";
   /** Document protection settings */
-  readonly documentProtection?: DocumentProtectionOptions;
+  documentProtection?: DocumentProtectionOptions;
   /** Default document view mode */
-  readonly view?: "none" | "print" | "outline" | "masterPages" | "normal" | "web";
+  view?: "none" | "print" | "outline" | "masterPages" | "normal" | "web";
   /** Default zoom level (percentage) and type */
-  readonly zoom?: {
-    readonly percent?: number;
-    readonly val?: "none" | "fullPage" | "bestFit" | "textFit";
+  zoom?: {
+    percent?: number;
+    val?: "none" | "fullPage" | "bestFit" | "textFit";
   };
   /** Write protection recommendation (not enforcement) */
-  readonly writeProtection?: WriteProtectionOptions;
+  writeProtection?: WriteProtectionOptions;
   /** Whether to display the background shape in print layout */
-  readonly displayBackgroundShape?: boolean;
+  displayBackgroundShape?: boolean;
   /** Whether to display page boundaries between pages */
-  readonly doNotDisplayPageBoundaries?: boolean;
+  doNotDisplayPageBoundaries?: boolean;
   /** Whether to embed TrueType fonts in the document */
-  readonly embedTrueTypeFonts?: boolean;
+  embedTrueTypeFonts?: boolean;
   /** Whether to embed system fonts in the document */
-  readonly embedSystemFonts?: boolean;
+  embedSystemFonts?: boolean;
   /** Whether to save only a subset of the embedded fonts */
-  readonly saveSubsetFonts?: boolean;
+  saveSubsetFonts?: boolean;
   /** Document variables (key-value pairs stored in the document) */
-  readonly docVars?: readonly { readonly name: string; readonly val: string }[];
+  docVars?: { name: string; val: string }[];
   /** Mail merge configuration */
-  readonly mailMerge?: MailMergeOptions;
+  mailMerge?: MailMergeOptions;
   /** Theme color scheme remapping */
-  readonly colorSchemeMapping?: {
-    readonly bg1?: string;
-    readonly t1?: string;
-    readonly bg2?: string;
-    readonly t2?: string;
-    readonly accent1?: string;
-    readonly accent2?: string;
-    readonly accent3?: string;
-    readonly accent4?: string;
-    readonly accent5?: string;
-    readonly accent6?: string;
-    readonly hyperlink?: string;
-    readonly followedHyperlink?: string;
+  colorSchemeMapping?: {
+    bg1?: string;
+    t1?: string;
+    bg2?: string;
+    t2?: string;
+    accent1?: string;
+    accent2?: string;
+    accent3?: string;
+    accent4?: string;
+    accent5?: string;
+    accent6?: string;
+    hyperlink?: string;
+    followedHyperlink?: string;
   };
   /** Relationship ID to the attached template document */
-  readonly attachedTemplate?: string;
+  attachedTemplate?: string;
   /** Theme font language (BCP-47 tag, e.g. "en-US", "ja-JP") */
-  readonly themeFontLang?: string;
+  themeFontLang?: string;
   /** Hide spelling errors in the document */
-  readonly hideSpellingErrors?: boolean;
+  hideSpellingErrors?: boolean;
   /** Hide grammatical errors in the document */
-  readonly hideGrammaticalErrors?: boolean;
+  hideGrammaticalErrors?: boolean;
   /** Disable punctuation kerning (CJK) */
-  readonly noPunctuationKerning?: boolean;
+  noPunctuationKerning?: boolean;
   /** Remove personal information when saving */
-  readonly removePersonalInformation?: boolean;
+  removePersonalInformation?: boolean;
   /** Remove date and time metadata when saving */
-  readonly removeDateAndTime?: boolean;
+  removeDateAndTime?: boolean;
   /** Print PostScript codes over text */
-  readonly printPostScriptOverText?: boolean;
+  printPostScriptOverText?: boolean;
   /** Print using fractional character widths */
-  readonly printFractionalCharacterWidth?: boolean;
+  printFractionalCharacterWidth?: boolean;
   /** Print only form field data */
-  readonly printFormsData?: boolean;
+  printFormsData?: boolean;
   /** Save only form field data */
-  readonly saveFormsData?: boolean;
+  saveFormsData?: boolean;
   /** Use mirror margins for facing pages */
-  readonly mirrorMargins?: boolean;
+  mirrorMargins?: boolean;
   /** Align document borders and edges with page edges */
-  readonly alignBordersAndEdges?: boolean;
+  alignBordersAndEdges?: boolean;
   /** Page borders do not surround header content */
-  readonly bordersDoNotSurroundHeader?: boolean;
+  bordersDoNotSurroundHeader?: boolean;
   /** Page borders do not surround footer content */
-  readonly bordersDoNotSurroundFooter?: boolean;
+  bordersDoNotSurroundFooter?: boolean;
   /** Position gutter at top of page */
-  readonly gutterAtTop?: boolean;
+  gutterAtTop?: boolean;
   /** Document is in forms design mode */
-  readonly formsDesign?: boolean;
+  formsDesign?: boolean;
   /** Link styles from attached template */
-  readonly linkStyles?: boolean;
+  linkStyles?: boolean;
   /** Allow auto-format overrides */
-  readonly autoFormatOverride?: boolean;
+  autoFormatOverride?: boolean;
   /** Lock document theme styles */
-  readonly styleLockTheme?: boolean;
+  styleLockTheme?: boolean;
   /** Lock quick format style set */
-  readonly styleLockQFSet?: boolean;
+  styleLockQFSet?: boolean;
   /** Show envelope content in the document */
-  readonly showEnvelope?: boolean;
+  showEnvelope?: boolean;
   /** Print two pages on one sheet */
-  readonly printTwoOnOne?: boolean;
+  printTwoOnOne?: boolean;
   /** Enforce strict first and last character rules (CJK) */
-  readonly strictFirstAndLastChars?: boolean;
+  strictFirstAndLastChars?: boolean;
   /** Save a preview picture in the document */
-  readonly savePreviewPicture?: boolean;
+  savePreviewPicture?: boolean;
   /** Do not validate custom XML against schema */
-  readonly doNotValidateAgainstSchema?: boolean;
+  doNotValidateAgainstSchema?: boolean;
   /** Save invalid XML markup */
-  readonly saveInvalidXml?: boolean;
+  saveInvalidXml?: boolean;
   /** Ignore mixed content in custom XML */
-  readonly ignoreMixedContent?: boolean;
+  ignoreMixedContent?: boolean;
   /** Always show placeholder text for custom XML */
-  readonly alwaysShowPlaceholderText?: boolean;
+  alwaysShowPlaceholderText?: boolean;
   /** Do not demarcate invalid XML regions */
-  readonly doNotDemarcateInvalidXml?: boolean;
+  doNotDemarcateInvalidXml?: boolean;
   /** Save only XML data (no formatting) */
-  readonly saveXmlDataOnly?: boolean;
+  saveXmlDataOnly?: boolean;
   /** Use XSLT when saving */
-  readonly useXSLTWhenSaving?: boolean;
+  useXSLTWhenSaving?: boolean;
   /** Do not embed smart tags */
-  readonly doNotEmbedSmartTags?: boolean;
+  doNotEmbedSmartTags?: boolean;
   /** Do not auto-compress pictures */
-  readonly doNotAutoCompressPictures?: boolean;
+  doNotAutoCompressPictures?: boolean;
   /** Do not include subdocuments in word count */
-  readonly doNotIncludeSubdocsInStats?: boolean;
+  doNotIncludeSubdocsInStats?: boolean;
   /** Enable book fold printing */
-  readonly bookFoldPrinting?: boolean;
+  bookFoldPrinting?: boolean;
   /** Enable book fold reverse printing */
-  readonly bookFoldRevPrinting?: boolean;
+  bookFoldRevPrinting?: boolean;
   /** Default table style name */
-  readonly defaultTableStyle?: string;
+  defaultTableStyle?: string;
   /** Decimal symbol for numeric fields */
-  readonly decimalSymbol?: string;
+  decimalSymbol?: string;
   /** List separator character */
-  readonly listSeparator?: string;
+  listSeparator?: string;
   /** Click and type paragraph style name */
-  readonly clickAndTypeStyle?: string;
+  clickAndTypeStyle?: string;
   /** Summary length percentage (0-100) */
-  readonly summaryLength?: number;
+  summaryLength?: number;
   /** Number of sheets per booklet in book fold printing */
-  readonly bookFoldPrintingSheets?: number;
+  bookFoldPrintingSheets?: number;
   /** Horizontal spacing for the drawing grid (twips) */
-  readonly drawingGridHorizontalSpacing?: number;
+  drawingGridHorizontalSpacing?: number;
   /** Vertical spacing for the drawing grid (twips) */
-  readonly drawingGridVerticalSpacing?: number;
+  drawingGridVerticalSpacing?: number;
   /** Display horizontal gridlines every N units */
-  readonly displayHorizontalDrawingGridEvery?: number;
+  displayHorizontalDrawingGridEvery?: number;
   /** Display vertical gridlines every N units */
-  readonly displayVerticalDrawingGridEvery?: number;
+  displayVerticalDrawingGridEvery?: number;
   /** Horizontal origin for the drawing grid (twips) */
-  readonly drawingGridHorizontalOrigin?: number;
+  drawingGridHorizontalOrigin?: number;
   /** Vertical origin for the drawing grid (twips) */
-  readonly drawingGridVerticalOrigin?: number;
+  drawingGridVerticalOrigin?: number;
   /** Document-level footnote properties (CT_FtnDocProps) */
-  readonly footnotePr?: FootnotePropertiesOptions;
+  footnotePr?: FootnotePropertiesOptions;
   /** Document-level endnote properties (CT_EdnDocProps) */
-  readonly endnotePr?: EndnotePropertiesOptions;
+  endnotePr?: EndnotePropertiesOptions;
   /** Document revision save IDs (CT_DocRsids) */
-  readonly rsids?: RsidsOptions;
+  rsids?: RsidsOptions;
   /** Reading mode ink lock-down settings */
-  readonly readModeInkLockDown?: ReadModeInkLockDownOptions;
+  readModeInkLockDown?: ReadModeInkLockDownOptions;
   /** Caption configuration (CT_Captions) */
-  readonly captions?: CaptionsOptions;
+  captions?: CaptionsOptions;
   /** Math properties (m:mathPr) */
-  readonly mathPr?: MathPropertiesOptions;
+  mathPr?: MathPropertiesOptions;
   /** Active writing style checking language/grammar settings */
-  readonly activeWritingStyle?: readonly {
-    readonly lang?: string;
-    readonly vendorID?: string;
-    readonly dllVersion?: string;
-    readonly nlCheck?: boolean;
-    readonly checkStyle?: boolean;
-    readonly appCheck?: string;
-    readonly appName?: string;
+  activeWritingStyle?: {
+    lang?: string;
+    vendorID?: string;
+    dllVersion?: string;
+    nlCheck?: boolean;
+    checkStyle?: boolean;
+    appCheck?: string;
+    appName?: string;
   }[];
   /** Proofing state (spelling/grammar check status) */
-  readonly proofState?: {
-    readonly spelling?: "clean" | "dirty";
-    readonly grammar?: "clean" | "dirty";
+  proofState?: {
+    spelling?: "clean" | "dirty";
+    grammar?: "clean" | "dirty";
   };
   /** Style pane format filter (which styles to show) */
-  readonly stylePaneFormatFilter?: {
-    readonly allStyles?: boolean;
-    readonly customStyles?: boolean;
-    readonly stylesInUse?: boolean;
-    readonly headingStyles?: boolean;
-    readonly numberingStyles?: boolean;
-    readonly tableStyles?: boolean;
-    readonly directFormattingOnRuns?: boolean;
-    readonly directFormattingOnParagraphs?: boolean;
-    readonly directFormattingOnNumbering?: boolean;
-    readonly directFormattingOnTables?: boolean;
-    readonly clearFormatting?: boolean;
-    readonly top3HeadingStyles?: boolean;
-    readonly visibleStyles?: boolean;
-    readonly alternateStyleNames?: boolean;
+  stylePaneFormatFilter?: {
+    allStyles?: boolean;
+    customStyles?: boolean;
+    stylesInUse?: boolean;
+    headingStyles?: boolean;
+    numberingStyles?: boolean;
+    tableStyles?: boolean;
+    directFormattingOnRuns?: boolean;
+    directFormattingOnParagraphs?: boolean;
+    directFormattingOnNumbering?: boolean;
+    directFormattingOnTables?: boolean;
+    clearFormatting?: boolean;
+    top3HeadingStyles?: boolean;
+    visibleStyles?: boolean;
+    alternateStyleNames?: boolean;
   };
   /** Style pane sort method */
-  readonly stylePaneSortMethod?: "name" | "priority" | "default" | "font";
+  stylePaneSortMethod?: "name" | "priority" | "default" | "font";
   /** Document type classification */
-  readonly documentType?: "letter" | "eMail" | "notSpecified";
+  documentType?: "letter" | "eMail" | "notSpecified";
   /** Do not use margins for drawing grid origin */
-  readonly doNotUseMarginsForDrawingGridOrigin?: boolean;
+  doNotUseMarginsForDrawingGridOrigin?: boolean;
   /** Do not shade form data fields */
-  readonly doNotShadeFormData?: boolean;
+  doNotShadeFormData?: boolean;
   /** Custom kinsoku line break characters after which line breaks are not allowed */
-  readonly noLineBreaksAfter?: { readonly lang?: string; readonly val?: string };
+  noLineBreaksAfter?: { lang?: string; val?: string };
   /** Custom kinsoku line break characters before which line breaks are not allowed */
-  readonly noLineBreaksBefore?: { readonly lang?: string; readonly val?: string };
+  noLineBreaksBefore?: { lang?: string; val?: string };
   /** Save through XSLT transform */
-  readonly saveThroughXslt?: {
-    readonly id?: string;
-    readonly val?: string;
-    readonly solutionID?: string;
+  saveThroughXslt?: {
+    id?: string;
+    val?: string;
+    solutionID?: string;
   };
   /** Show XML tags in document */
-  readonly showXMLTags?: boolean;
+  showXMLTags?: boolean;
   /** Always merge empty namespace */
-  readonly alwaysMergeEmptyNamespace?: boolean;
+  alwaysMergeEmptyNamespace?: boolean;
   /** Header shape defaults */
-  readonly hdrShapeDefaults?: boolean;
+  hdrShapeDefaults?: boolean;
   /** Attached schema references */
-  readonly attachedSchema?: readonly string[];
+  attachedSchema?: string[];
   /** Force schema upgrade */
-  readonly forceUpgrade?: boolean;
+  forceUpgrade?: boolean;
   /** Smart tag type definitions */
-  readonly smartTagType?: readonly {
-    readonly namespace?: string;
-    readonly namespaceuri?: string;
-    readonly name?: string;
-    readonly url?: string;
+  smartTagType?: {
+    namespace?: string;
+    namespaceuri?: string;
+    name?: string;
+    url?: string;
   }[];
   /** Shape defaults */
-  readonly shapeDefaults?: boolean;
+  shapeDefaults?: boolean;
 }
 
 /**
@@ -382,15 +382,15 @@ export interface SettingsOptions {
  */
 export interface RevisionViewOptions {
   /** Show markup for insertions */
-  readonly markup?: boolean;
+  markup?: boolean;
   /** Show comments */
-  readonly comments?: boolean;
+  comments?: boolean;
   /** Show insertions and deletions */
-  readonly insDel?: boolean;
+  insDel?: boolean;
   /** Show formatting changes */
-  readonly formatting?: boolean;
+  formatting?: boolean;
   /** Show ink annotations */
-  readonly inkAnnotations?: boolean;
+  inkAnnotations?: boolean;
 }
 
 /**
@@ -400,43 +400,43 @@ export interface RevisionViewOptions {
  */
 export interface DocumentProtectionOptions {
   /** Type of editing restriction */
-  readonly edit?: "none" | "readOnly" | "comments" | "trackedChanges" | "forms";
+  edit?: "none" | "readOnly" | "comments" | "trackedChanges" | "forms";
   /** Whether formatting is restricted */
-  readonly formatting?: boolean;
+  formatting?: boolean;
   /** Plaintext password — automatically hashed to hashValue/saltValue when provided */
-  readonly password?: string;
+  password?: string;
   /** Password hash (SHA-512 base64) */
-  readonly hashValue?: string;
+  hashValue?: string;
   /** Password salt (base64) */
-  readonly saltValue?: string;
+  saltValue?: string;
   /** Legacy password hash (Transitional XSD: w:hash) */
-  readonly hash?: string;
+  hash?: string;
   /** Legacy password salt (Transitional XSD: w:salt) */
-  readonly salt?: string;
+  salt?: string;
   /** Password spin count */
-  readonly spinCount?: number;
+  spinCount?: number;
   /** Password algorithm name */
-  readonly algorithmName?: string;
+  algorithmName?: string;
   /** Cryptographic algorithm class */
-  readonly cryptoAlgorithmClass?: string;
+  cryptoAlgorithmClass?: string;
   /** Cryptographic algorithm SID */
-  readonly cryptoAlgorithmSid?: number;
+  cryptoAlgorithmSid?: number;
   /** Cryptographic algorithm type */
-  readonly cryptoAlgorithmType?: string;
+  cryptoAlgorithmType?: string;
   /** Cryptographic provider */
-  readonly cryptoProvider?: string;
+  cryptoProvider?: string;
   /** Cryptographic provider type */
-  readonly cryptoProviderType?: string;
+  cryptoProviderType?: string;
   /** Cryptographic provider type extension */
-  readonly cryptoProviderTypeExtension?: number;
+  cryptoProviderTypeExtension?: number;
   /** Cryptographic provider type extension source */
-  readonly cryptoProviderTypeExtensionSource?: string;
+  cryptoProviderTypeExtensionSource?: string;
   /** Algorithm extension ID */
-  readonly algorithmExtensionId?: number;
+  algorithmExtensionId?: number;
   /** Algorithm extension source */
-  readonly algorithmExtensionSource?: string;
+  algorithmExtensionSource?: string;
   /** Legacy cryptographic spin count (AG_TransitionalPassword) */
-  readonly cryptoSpinCount?: number;
+  cryptoSpinCount?: number;
 }
 
 /**
@@ -446,41 +446,41 @@ export interface DocumentProtectionOptions {
  */
 export interface WriteProtectionOptions {
   /** Plaintext password — automatically hashed to hashValue/saltValue when provided */
-  readonly password?: string;
+  password?: string;
   /** Cryptographic hash of the password */
-  readonly hashValue?: string;
+  hashValue?: string;
   /** Salt value for the hash (base64) */
-  readonly saltValue?: string;
+  saltValue?: string;
   /** Legacy password hash (Transitional XSD: w:hash) */
-  readonly hash?: string;
+  hash?: string;
   /** Legacy password salt (Transitional XSD: w:salt) */
-  readonly salt?: string;
+  salt?: string;
   /** Password spin count */
-  readonly spinCount?: number;
+  spinCount?: number;
   /** Password algorithm name */
-  readonly algorithmName?: string;
+  algorithmName?: string;
   /** Whether write protection is recommended (default true when options provided) */
-  readonly recommended?: boolean;
+  recommended?: boolean;
   /** Cryptographic algorithm class */
-  readonly cryptoAlgorithmClass?: string;
+  cryptoAlgorithmClass?: string;
   /** Cryptographic algorithm SID */
-  readonly cryptoAlgorithmSid?: number;
+  cryptoAlgorithmSid?: number;
   /** Cryptographic algorithm type */
-  readonly cryptoAlgorithmType?: string;
+  cryptoAlgorithmType?: string;
   /** Cryptographic provider */
-  readonly cryptoProvider?: string;
+  cryptoProvider?: string;
   /** Cryptographic provider type */
-  readonly cryptoProviderType?: string;
+  cryptoProviderType?: string;
   /** Cryptographic provider type extension */
-  readonly cryptoProviderTypeExtension?: number;
+  cryptoProviderTypeExtension?: number;
   /** Cryptographic provider type extension source */
-  readonly cryptoProviderTypeExtensionSource?: string;
+  cryptoProviderTypeExtensionSource?: string;
   /** Algorithm extension ID */
-  readonly algorithmExtensionId?: number;
+  algorithmExtensionId?: number;
   /** Algorithm extension source */
-  readonly algorithmExtensionSource?: string;
+  algorithmExtensionSource?: string;
   /** Legacy cryptographic spin count (AG_TransitionalPassword) */
-  readonly cryptoSpinCount?: number;
+  cryptoSpinCount?: number;
 }
 
 // ── Mail Merge types ──
@@ -526,66 +526,66 @@ export type OdsoFieldType = "null" | "dbColumn";
 
 /** Field mapping for ODSO (CT_OdsoFieldMapData) */
 export interface OdsoFieldMapDataOptions {
-  readonly type?: OdsoFieldType;
-  readonly name?: string;
-  readonly mappedName?: string;
-  readonly column?: number;
-  readonly lid?: string;
-  readonly dynamicAddress?: boolean;
+  type?: OdsoFieldType;
+  name?: string;
+  mappedName?: string;
+  column?: number;
+  lid?: string;
+  dynamicAddress?: boolean;
 }
 
 /** Office Data Source Object (CT_Odso) */
 export interface OdsoOptions {
-  readonly udl?: string;
-  readonly table?: string;
-  readonly src?: string;
-  readonly colDelim?: number;
-  readonly type?: MailMergeSourceType;
-  readonly fHdr?: boolean;
-  readonly fieldMapData?: readonly OdsoFieldMapDataOptions[];
-  readonly recipientData?: readonly string[];
+  udl?: string;
+  table?: string;
+  src?: string;
+  colDelim?: number;
+  type?: MailMergeSourceType;
+  fHdr?: boolean;
+  fieldMapData?: OdsoFieldMapDataOptions[];
+  recipientData?: string[];
   /** Unique tag for identifying the data source (w:uniqueTag) */
-  readonly uniqueTag?: string;
+  uniqueTag?: string;
 }
 
 /** Mail merge configuration (CT_MailMerge) */
 export interface MailMergeOptions {
   /** Main document type (required) */
-  readonly mainDocumentType: MailMergeDocType;
+  mainDocumentType: MailMergeDocType;
   /** Data source type (required) */
-  readonly dataType: MailMergeDataType;
+  dataType: MailMergeDataType;
   /** Destination for merged documents */
-  readonly destination?: MailMergeDest;
+  destination?: MailMergeDest;
   /** Database connection string */
-  readonly connectString?: string;
+  connectString?: string;
   /** SQL query to select data */
-  readonly query?: string;
+  query?: string;
   /** Path to data source (relationship ID) */
-  readonly dataSource?: string;
+  dataSource?: string;
   /** Path to header source (relationship ID) */
-  readonly headerSource?: string;
+  headerSource?: string;
   /** Do not suppress blank lines */
-  readonly doNotSuppressBlankLines?: boolean;
+  doNotSuppressBlankLines?: boolean;
   /** Address field name for email merge */
-  readonly addressFieldName?: string;
+  addressFieldName?: string;
   /** Email subject line */
-  readonly mailSubject?: string;
+  mailSubject?: string;
   /** Send as email attachment */
-  readonly mailAsAttachment?: boolean;
+  mailAsAttachment?: boolean;
   /** View merged data in document */
-  readonly viewMergedData?: boolean;
+  viewMergedData?: boolean;
   /** Active record index */
-  readonly activeRecord?: number;
+  activeRecord?: number;
   /** Check errors mode */
-  readonly checkErrors?: number;
+  checkErrors?: number;
   /** Link to query in data source */
-  readonly linkToQuery?: boolean;
+  linkToQuery?: boolean;
   /** Office Data Source Object configuration */
-  readonly odso?: OdsoOptions;
+  odso?: OdsoOptions;
   /** Whether this mail merge is the active one (w:active) */
-  readonly active?: boolean;
+  active?: boolean;
   /** Recipients data reference (w:recipients r:id) */
-  readonly recipients?: string;
+  recipients?: string;
 }
 
 /**
@@ -595,13 +595,13 @@ export interface MailMergeOptions {
  */
 export interface HyphenationOptions {
   /** Specifies whether the application automatically hyphenates words as they are typed in the document. */
-  readonly autoHyphenation?: boolean;
+  autoHyphenation?: boolean;
   /** Specifies the minimum number of characters at the beginning of a word before a hyphen can be inserted. */
-  readonly hyphenationZone?: number;
+  hyphenationZone?: number;
   /** Specifies the maximum number of consecutive lines that can end with a hyphenated word. */
-  readonly consecutiveHyphenLimit?: number;
+  consecutiveHyphenLimit?: number;
   /** Specifies whether to hyphenate words in all capital letters. */
-  readonly doNotHyphenateCaps?: boolean;
+  doNotHyphenateCaps?: boolean;
 }
 
 /**
@@ -609,15 +609,15 @@ export interface HyphenationOptions {
  */
 export interface FootnotePropertiesOptions {
   /** Footnote placement */
-  readonly pos?: (typeof FootnotePositionType)[keyof typeof FootnotePositionType];
+  pos?: (typeof FootnotePositionType)[keyof typeof FootnotePositionType];
   /** Number format */
-  readonly numFmt?: string;
+  numFmt?: string;
   /** Custom number format string */
-  readonly format?: string;
+  format?: string;
   /** Starting number */
-  readonly numStart?: number;
+  numStart?: number;
   /** When to restart numbering */
-  readonly numRestart?: string;
+  numRestart?: string;
 }
 
 /**
@@ -625,95 +625,95 @@ export interface FootnotePropertiesOptions {
  */
 export interface EndnotePropertiesOptions {
   /** Endnote placement */
-  readonly pos?: (typeof EndnotePositionType)[keyof typeof EndnotePositionType];
+  pos?: (typeof EndnotePositionType)[keyof typeof EndnotePositionType];
   /** Number format */
-  readonly numFmt?: string;
+  numFmt?: string;
   /** Custom number format string */
-  readonly format?: string;
+  format?: string;
   /** Starting number */
-  readonly numStart?: number;
+  numStart?: number;
   /** When to restart numbering */
-  readonly numRestart?: string;
+  numRestart?: string;
 }
 
 /** Document revision save IDs (CT_DocRsids) */
 export interface RsidsOptions {
   /** Root revision save ID (8 hex characters) */
-  readonly rsidRoot?: string;
+  rsidRoot?: string;
   /** List of revision save IDs */
-  readonly rsids?: readonly string[];
+  rsids?: string[];
 }
 
 /** Reading mode ink lock-down (CT_ReadingModeInkLockDown) */
 export interface ReadModeInkLockDownOptions {
   /** Use actual page dimensions */
-  readonly actualPg?: boolean;
+  actualPg?: boolean;
   /** Page width in pixels */
-  readonly w: number;
+  w: number;
   /** Page height in pixels */
-  readonly h: number;
+  h: number;
   /** Font size (percentage or points) */
-  readonly fontSz: number;
+  fontSz: number;
 }
 
 /** Caption definition (CT_Caption) */
 export interface CaptionOptions {
   /** Caption style name */
-  readonly name: string;
+  name: string;
   /** Caption position */
-  readonly pos?: "above" | "below";
+  pos?: "above" | "below";
   /** Include chapter number */
-  readonly chapNum?: boolean;
+  chapNum?: boolean;
   /** Heading level for chapter number */
-  readonly heading?: number;
+  heading?: number;
   /** Exclude label */
-  readonly noLabel?: boolean;
+  noLabel?: boolean;
   /** Number format */
-  readonly numFmt?: string;
+  numFmt?: string;
   /** Chapter separator */
-  readonly sep?: "hyphen" | "period" | "colon" | "emDash" | "enDash";
+  sep?: "hyphen" | "period" | "colon" | "emDash" | "enDash";
 }
 
 /** Auto-caption (CT_AutoCaption) */
 export interface AutoCaptionOptions {
   /** Object type name */
-  readonly name: string;
+  name: string;
   /** Caption style name to apply */
-  readonly caption: string;
+  caption: string;
 }
 
 /** Captions configuration (CT_Captions) */
 export interface CaptionsOptions {
   /** Caption definitions */
-  readonly captions: readonly CaptionOptions[];
+  captions: CaptionOptions[];
   /** Auto-caption definitions */
-  readonly autoCaptions?: readonly AutoCaptionOptions[];
+  autoCaptions?: AutoCaptionOptions[];
 }
 
 /** Math properties (CT_MathPr) */
 export interface MathPropertiesOptions {
   /** Default math font */
-  readonly mathFont?: string;
+  mathFont?: string;
   /** Binary operator break style ("before" | "after" | "repeat") */
-  readonly brkBin?: string;
+  brkBin?: string;
   /** Subtraction binary operator break ("--" | "-+" | "+-") */
-  readonly brkBinSub?: string;
+  brkBinSub?: string;
   /** Use small fractions */
-  readonly smallFrac?: boolean;
+  smallFrac?: boolean;
   /** Use display defaults */
-  readonly dispDef?: boolean;
+  dispDef?: boolean;
   /** Left margin (twips) */
-  readonly lMargin?: number;
+  lMargin?: number;
   /** Right margin (twips) */
-  readonly rMargin?: number;
+  rMargin?: number;
   /** Default justification ("centerGroup" | "center") */
-  readonly defJc?: string;
+  defJc?: string;
   /** Wrap indent (twips) */
-  readonly wrapIndent?: number;
+  wrapIndent?: number;
   /** Integral limit location ("subSup" | "undOvr") */
-  readonly intLim?: string;
+  intLim?: string;
   /** N-ary limit location ("subSup" | "undOvr") */
-  readonly naryLim?: string;
+  naryLim?: string;
 }
 
 /**
@@ -924,7 +924,7 @@ export class Settings extends XmlComponent {
     if (options.stylePaneFormatFilter !== undefined) {
       const f = options.stylePaneFormatFilter;
       const attrs: { key: string; value: string }[] = [];
-      const boolFlags: readonly { readonly prop: keyof typeof f; readonly xmlKey: string }[] = [
+      const boolFlags: { prop: keyof typeof f; xmlKey: string }[] = [
         { prop: "allStyles", xmlKey: "w:allStyles" },
         { prop: "customStyles", xmlKey: "w:customStyles" },
         { prop: "stylesInUse", xmlKey: "w:stylesInUse" },
@@ -1480,18 +1480,18 @@ class WriteProtection extends XmlComponent {
 
 class ColorSchemeMapping extends XmlComponent {
   public constructor(options: {
-    readonly bg1?: string;
-    readonly t1?: string;
-    readonly bg2?: string;
-    readonly t2?: string;
-    readonly accent1?: string;
-    readonly accent2?: string;
-    readonly accent3?: string;
-    readonly accent4?: string;
-    readonly accent5?: string;
-    readonly accent6?: string;
-    readonly hyperlink?: string;
-    readonly followedHyperlink?: string;
+    bg1?: string;
+    t1?: string;
+    bg2?: string;
+    t2?: string;
+    accent1?: string;
+    accent2?: string;
+    accent3?: string;
+    accent4?: string;
+    accent5?: string;
+    accent6?: string;
+    hyperlink?: string;
+    followedHyperlink?: string;
   }) {
     super("w:clrSchemeMapping");
     const attr: Record<string, string> = {};

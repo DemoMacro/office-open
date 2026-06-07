@@ -24,65 +24,65 @@ export const ReflectionAlignment = {
 } as const;
 
 export interface ShadowOptions {
-  readonly blur?: number;
-  readonly distance?: number;
-  readonly direction?: number;
-  readonly color?: string;
-  readonly alpha?: number;
-  readonly rotateWithShape?: boolean;
+  blur?: number;
+  distance?: number;
+  direction?: number;
+  color?: string;
+  alpha?: number;
+  rotateWithShape?: boolean;
 }
 
 export interface GlowOptions {
-  readonly radius?: number;
-  readonly color?: string;
-  readonly alpha?: number;
+  radius?: number;
+  color?: string;
+  alpha?: number;
 }
 
 export interface ReflectionOptions {
-  readonly blurRadius?: number;
-  readonly distance?: number;
-  readonly direction?: number;
-  readonly startAlpha?: number;
-  readonly startPosition?: number;
-  readonly endAlpha?: number;
-  readonly endPosition?: number;
-  readonly fadeDirection?: number;
-  readonly scaleX?: number;
-  readonly scaleY?: number;
-  readonly skewX?: number;
-  readonly skewY?: number;
-  readonly alignment?: (typeof ReflectionAlignment)[keyof typeof ReflectionAlignment];
-  readonly rotateWithShape?: boolean;
+  blurRadius?: number;
+  distance?: number;
+  direction?: number;
+  startAlpha?: number;
+  startPosition?: number;
+  endAlpha?: number;
+  endPosition?: number;
+  fadeDirection?: number;
+  scaleX?: number;
+  scaleY?: number;
+  skewX?: number;
+  skewY?: number;
+  alignment?: (typeof ReflectionAlignment)[keyof typeof ReflectionAlignment];
+  rotateWithShape?: boolean;
 }
 
 export interface SoftEdgeOptions {
-  readonly radius?: number;
+  radius?: number;
 }
 
 export interface PPTXBevelOptions {
-  readonly width?: number;
-  readonly height?: number;
+  width?: number;
+  height?: number;
 }
 
 export interface Rotation3DOptions {
-  readonly x?: number;
-  readonly y?: number;
-  readonly z?: number;
-  readonly perspective?: number;
+  x?: number;
+  y?: number;
+  z?: number;
+  perspective?: number;
 }
 
 export interface EffectsOptions {
-  readonly outerShadow?: ShadowOptions;
-  readonly innerShadow?: ShadowOptions;
-  readonly glow?: GlowOptions;
-  readonly reflection?: ReflectionOptions;
-  readonly softEdge?: SoftEdgeOptions;
-  readonly rotation3D?: Rotation3DOptions;
-  readonly bevelTop?: PPTXBevelOptions;
-  readonly bevelBottom?: PPTXBevelOptions;
-  readonly extrusionH?: number;
-  readonly material?: "plastic" | "metal" | "matte" | "warmMatte" | "softEdge" | "flat" | "powder";
-  readonly lighting?:
+  outerShadow?: ShadowOptions;
+  innerShadow?: ShadowOptions;
+  glow?: GlowOptions;
+  reflection?: ReflectionOptions;
+  softEdge?: SoftEdgeOptions;
+  rotation3D?: Rotation3DOptions;
+  bevelTop?: PPTXBevelOptions;
+  bevelBottom?: PPTXBevelOptions;
+  extrusionH?: number;
+  material?: "plastic" | "metal" | "matte" | "warmMatte" | "softEdge" | "flat" | "powder";
+  lighting?:
     | "flat"
     | "legacyFlat1"
     | "legacyFlat2"

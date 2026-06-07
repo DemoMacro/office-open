@@ -23,9 +23,9 @@ import type { MathMatrixPropertiesOptions } from "./math-matrix-properties";
  */
 export interface MathMatrixOptions {
   /** Matrix properties */
-  readonly properties?: MathMatrixPropertiesOptions;
+  properties?: MathMatrixPropertiesOptions;
   /** Matrix rows (each row is an array of math components) */
-  readonly rows: readonly (readonly MathComponent[])[];
+  rows: MathComponent[][];
 }
 
 /**

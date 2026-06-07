@@ -10,30 +10,30 @@ import type { OutlineOptions } from "./outline";
 import { Transform2D } from "./transform-2d";
 
 export interface ConnectionSiteOptions {
-  readonly x: number;
-  readonly y: number;
-  readonly angle?: number;
+  x: number;
+  y: number;
+  angle?: number;
 }
 
 export interface ShapePropertiesOptions {
-  readonly x?: number;
-  readonly y?: number;
-  readonly width?: number;
-  readonly height?: number;
-  readonly flipHorizontal?: boolean;
-  readonly rotation?: number;
-  readonly geometry?: string;
-  readonly fill?: FillOptions;
-  readonly outline?: OutlineOptions;
-  readonly effects?: EffectsOptions;
-  readonly connectionSites?: readonly ConnectionSiteOptions[];
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  flipHorizontal?: boolean;
+  rotation?: number;
+  geometry?: string;
+  fill?: FillOptions;
+  outline?: OutlineOptions;
+  effects?: EffectsOptions;
+  connectionSites?: ConnectionSiteOptions[];
 }
 
 /**
  * p:spPr — Shape properties (transform, geometry, fill, outline, effects).
  */
 export class ShapeProperties extends BaseXmlComponent {
-  private readonly options: ShapePropertiesOptions;
+  private options: ShapePropertiesOptions;
 
   public constructor(options: ShapePropertiesOptions) {
     super("p:spPr");

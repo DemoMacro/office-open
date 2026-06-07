@@ -16,9 +16,9 @@ import { TextWrappingSide } from "./text-wrapping";
 import type { TextWrapping } from "./text-wrapping";
 
 interface WrapThroughAttributes {
-  readonly wrapText: (typeof TextWrappingSide)[keyof typeof TextWrappingSide];
-  readonly distL?: number;
-  readonly distR?: number;
+  wrapText: (typeof TextWrappingSide)[keyof typeof TextWrappingSide];
+  distL?: number;
+  distR?: number;
 }
 
 /**

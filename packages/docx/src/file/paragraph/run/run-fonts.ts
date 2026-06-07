@@ -28,23 +28,23 @@ import type { ThemeFont } from "@util/values";
  */
 export interface FontAttributesProperties {
   /** Font for ASCII characters (0x00-0x7F) */
-  readonly ascii?: string;
+  ascii?: string;
   /** Font for complex script characters */
-  readonly cs?: string;
+  cs?: string;
   /** Font for East Asian characters */
-  readonly eastAsia?: string;
+  eastAsia?: string;
   /** Font for high ANSI characters (0x80-0xFF) */
-  readonly hAnsi?: string;
+  hAnsi?: string;
   /** Hint for font selection algorithm */
-  readonly hint?: string;
+  hint?: string;
   /** Theme font for ASCII characters */
-  readonly asciiTheme?: (typeof ThemeFont)[keyof typeof ThemeFont];
+  asciiTheme?: (typeof ThemeFont)[keyof typeof ThemeFont];
   /** Theme font for high ANSI characters */
-  readonly hAnsiTheme?: (typeof ThemeFont)[keyof typeof ThemeFont];
+  hAnsiTheme?: (typeof ThemeFont)[keyof typeof ThemeFont];
   /** Theme font for East Asian characters */
-  readonly eastAsiaTheme?: (typeof ThemeFont)[keyof typeof ThemeFont];
+  eastAsiaTheme?: (typeof ThemeFont)[keyof typeof ThemeFont];
   /** Theme font for complex script characters */
-  readonly cstheme?: (typeof ThemeFont)[keyof typeof ThemeFont];
+  cstheme?: (typeof ThemeFont)[keyof typeof ThemeFont];
 }
 
 /**

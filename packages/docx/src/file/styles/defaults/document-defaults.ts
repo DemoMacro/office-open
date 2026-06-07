@@ -20,9 +20,9 @@ import { RunPropertiesDefaults } from "./run-properties";
  */
 export interface DocumentDefaultsOptions {
   /** Default paragraph properties applied to all paragraphs */
-  readonly paragraph?: IParagraphStylePropertiesOptions;
+  paragraph?: IParagraphStylePropertiesOptions;
   /** Default run properties applied to all text runs */
-  readonly run?: RunStylePropertiesOptions;
+  run?: RunStylePropertiesOptions;
 }
 
 /**
@@ -58,8 +58,8 @@ export interface DocumentDefaultsOptions {
  * ```
  */
 export class DocumentDefaults extends XmlComponent {
-  private readonly runPropertiesDefaults: RunPropertiesDefaults;
-  private readonly paragraphPropertiesDefaults: ParagraphPropertiesDefaults;
+  private runPropertiesDefaults: RunPropertiesDefaults;
+  private paragraphPropertiesDefaults: ParagraphPropertiesDefaults;
 
   public constructor(options: DocumentDefaultsOptions) {
     super("w:docDefaults");

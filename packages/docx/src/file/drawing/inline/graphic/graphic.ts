@@ -36,7 +36,7 @@ import type { OutlineOptions } from "./graphic-data/pic/shape-properties/outline
  * ```
  */
 export class Graphic extends XmlComponent {
-  private readonly data: GraphicData;
+  private data: GraphicData;
 
   public constructor({
     mediaData,
@@ -48,14 +48,14 @@ export class Graphic extends XmlComponent {
     tile,
     hyperlink,
   }: {
-    readonly mediaData: IExtendedMediaData;
-    readonly transform: MediaDataTransformation;
-    readonly outline?: OutlineOptions;
-    readonly fill?: FillOptions;
-    readonly effects?: EffectListOptions;
-    readonly blipEffects?: BlipEffectsOptions;
-    readonly tile?: TileOptions;
-    readonly hyperlink?: HyperlinkOptions;
+    mediaData: IExtendedMediaData;
+    transform: MediaDataTransformation;
+    outline?: OutlineOptions;
+    fill?: FillOptions;
+    effects?: EffectListOptions;
+    blipEffects?: BlipEffectsOptions;
+    tile?: TileOptions;
+    hyperlink?: HyperlinkOptions;
   }) {
     super("a:graphic");
     this.root.push({

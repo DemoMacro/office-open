@@ -23,7 +23,7 @@ import {
  */
 export interface MathLimitLowPropertiesOptions {
   /** Control properties (tracking changes) */
-  readonly controlProperties?: MathControlPropertiesOptions;
+  controlProperties?: MathControlPropertiesOptions;
 }
 
 /**

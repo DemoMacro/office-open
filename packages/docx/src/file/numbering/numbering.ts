@@ -34,20 +34,20 @@ import { ConcreteNumbering } from "./num";
  */
 export interface NumberingOptions {
   /** Array of numbering configurations, each with levels and a reference name. */
-  readonly config: readonly {
+  config: {
     /** Array of level definitions for this numbering configuration. */
-    readonly levels: readonly LevelsOptions[];
+    levels: LevelsOptions[];
     /** Unique reference name for this numbering configuration. */
-    readonly reference: string;
+    reference: string;
   }[];
   /** Numbering cleanup ID (w:numIdMacAtCleanup) */
-  readonly numIdMacAtCleanup?: number;
+  numIdMacAtCleanup?: number;
   /** Picture bullet definitions for numbering (w:numPicBullet) */
-  readonly numPicBullets?: readonly {
+  numPicBullets?: {
     /** Unique ID for this picture bullet */
-    readonly numPicBulletId: number;
+    numPicBulletId: number;
     /** Pict content as inline XML or reference */
-    readonly pict?: string;
+    pict?: string;
   }[];
 }
 
@@ -113,15 +113,15 @@ export interface NumberingOptions {
  * ```
  */
 export class Numbering extends XmlComponent {
-  private readonly abstractNumberingMap = new Map<string, AbstractNumbering>();
-  private readonly concreteNumberingMap = new Map<string, ConcreteNumbering>();
-  private readonly referenceConfigMap = new Map<string, Record<string, any>>();
-  private readonly abstractNumUniqueNumericId = abstractNumUniqueNumericIdGen();
-  private readonly concreteNumUniqueNumericId = concreteNumUniqueNumericIdGen();
-  private readonly _numIdMacAtCleanup?: number;
-  private readonly _numPicBullets?: readonly {
-    readonly numPicBulletId: number;
-    readonly pict?: string;
+  private abstractNumberingMap = new Map<string, AbstractNumbering>();
+  private concreteNumberingMap = new Map<string, ConcreteNumbering>();
+  private referenceConfigMap = new Map<string, Record<string, any>>();
+  private abstractNumUniqueNumericId = abstractNumUniqueNumericIdGen();
+  private concreteNumUniqueNumericId = concreteNumUniqueNumericIdGen();
+  private _numIdMacAtCleanup?: number;
+  private _numPicBullets?: {
+    numPicBulletId: number;
+    pict?: string;
   }[];
 
   /**
@@ -371,7 +371,7 @@ export class Numbering extends XmlComponent {
    *
    * @returns An array of all concrete numbering instances
    */
-  public get concreteNumbering(): readonly ConcreteNumbering[] {
+  public get concreteNumbering(): ConcreteNumbering[] {
     return [...this.concreteNumberingMap.values()];
   }
 
@@ -380,7 +380,7 @@ export class Numbering extends XmlComponent {
    *
    * @returns An array of all numbering reference configurations
    */
-  public get referenceConfig(): readonly Record<string, any>[] {
+  public get referenceConfig(): Record<string, any>[] {
     return [...this.referenceConfigMap.values()];
   }
 }

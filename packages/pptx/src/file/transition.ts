@@ -53,20 +53,20 @@ const DIRECTION_MAP: Record<TransitionDirection, string> = {
 };
 
 export interface TransitionOptions {
-  readonly type?: TransitionType;
-  readonly speed?: "slow" | "med" | "fast";
-  readonly advanceOnClick?: boolean;
-  readonly advanceAfterTime?: number;
-  readonly direction?: TransitionDirection;
-  readonly orient?: "horz" | "vert";
-  readonly thruBlk?: boolean;
-  readonly spokes?: number;
-  readonly startSound?: {
-    readonly rId: string;
-    readonly name?: string;
-    readonly loop?: boolean;
+  type?: TransitionType;
+  speed?: "slow" | "med" | "fast";
+  advanceOnClick?: boolean;
+  advanceAfterTime?: number;
+  direction?: TransitionDirection;
+  orient?: "horz" | "vert";
+  thruBlk?: boolean;
+  spokes?: number;
+  startSound?: {
+    rId: string;
+    name?: string;
+    loop?: boolean;
   };
-  readonly stopPreviousSound?: boolean;
+  stopPreviousSound?: boolean;
 }
 
 function buildTransitionElement(

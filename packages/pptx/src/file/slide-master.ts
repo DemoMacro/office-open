@@ -8,24 +8,24 @@ import { buildMasterChildrenXml } from "@file/slide/coerce";
 import { convertPositionToEmu } from "@office-open/core";
 
 export interface MasterPlaceholderPosition {
-  readonly x: number;
-  readonly y: number;
-  readonly width: number;
-  readonly height: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 export interface MasterPlaceholderOptions {
-  readonly title?: boolean | MasterPlaceholderPosition;
-  readonly body?: boolean | MasterPlaceholderPosition;
-  readonly date?: boolean | MasterPlaceholderPosition;
-  readonly footer?: boolean | MasterPlaceholderPosition;
-  readonly slideNumber?: boolean | MasterPlaceholderPosition;
+  title?: boolean | MasterPlaceholderPosition;
+  body?: boolean | MasterPlaceholderPosition;
+  date?: boolean | MasterPlaceholderPosition;
+  footer?: boolean | MasterPlaceholderPosition;
+  slideNumber?: boolean | MasterPlaceholderPosition;
 }
 
 export interface SlideMasterOptions {
-  readonly background?: BackgroundOptions;
-  readonly children?: readonly MasterChild[];
-  readonly placeholders?: MasterPlaceholderOptions;
+  background?: BackgroundOptions;
+  children?: MasterChild[];
+  placeholders?: MasterPlaceholderOptions;
 }
 
 // Reference positions (16:9 master, slideWidth = 12192000 EMU)

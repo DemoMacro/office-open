@@ -42,7 +42,7 @@ type Mutable<T> = { -readonly [K in keyof T]?: T[K] };
 export interface ParagraphDescriptorOptions {
   text?: string;
   properties?: ParagraphPropertiesOptions;
-  children?: readonly RunOptions[];
+  children?: RunOptions[];
 }
 
 // ── Hyperlink ID counter (module-scoped) ──

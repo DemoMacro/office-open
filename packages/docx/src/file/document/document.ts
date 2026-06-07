@@ -23,9 +23,9 @@ import type { DocumentBackgroundOptions } from "./document-background";
  */
 export interface DocumentOptions {
   /** Optional background settings for the document */
-  readonly background?: DocumentBackgroundOptions;
+  background?: DocumentBackgroundOptions;
   /** Conformance class for the document ("strict" or "transitional"). */
-  readonly conformance?: "strict" | "transitional";
+  conformance?: "strict" | "transitional";
 }
 
 /**
@@ -77,7 +77,7 @@ export interface DocumentOptions {
  * ```
  */
 export class Document extends XmlComponent {
-  public readonly body: Body;
+  public body: Body;
 
   public constructor(options: DocumentOptions) {
     super("w:document");

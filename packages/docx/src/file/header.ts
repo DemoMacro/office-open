@@ -18,7 +18,7 @@ import type { SectionChild } from "./section-child";
  */
 export interface HeaderOptions {
   /** The content elements (paragraphs, tables, etc.) for the header/footer */
-  readonly children: readonly SectionChild[];
+  children: SectionChild[];
 }
 
 /**
@@ -39,7 +39,7 @@ export interface HeaderOptions {
  * ```
  */
 export class Header {
-  public readonly options: HeaderOptions;
+  public options: HeaderOptions;
 
   public constructor(options: HeaderOptions = { children: [] }) {
     this.options = options;
@@ -64,7 +64,7 @@ export class Header {
  * ```
  */
 export class Footer {
-  public readonly options: HeaderOptions;
+  public options: HeaderOptions;
 
   public constructor(options: HeaderOptions = { children: [] }) {
     this.options = options;

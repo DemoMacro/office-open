@@ -76,27 +76,27 @@ const XML_DECL = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
 // ── Helper types ──
 
 interface RelEntry {
-  readonly id: number | string;
-  readonly type: RelationshipType;
-  readonly target: string;
-  readonly mode?: string;
+  id: number | string;
+  type: RelationshipType;
+  target: string;
+  mode?: string;
 }
 
 interface LayoutInfo {
-  readonly key: string;
-  readonly index: number;
-  readonly masterIndex: number;
-  readonly layout: string;
+  key: string;
+  index: number;
+  masterIndex: number;
+  layout: string;
 }
 
 interface MasterInfo {
-  readonly name: string;
-  readonly index: number;
-  readonly master: string;
-  readonly theme: DefaultTheme;
-  readonly layouts: LayoutInfo[];
-  readonly masterRels: Relationships;
-  readonly layoutRels: Relationships[];
+  name: string;
+  index: number;
+  master: string;
+  theme: DefaultTheme;
+  layouts: LayoutInfo[];
+  masterRels: Relationships;
+  layoutRels: Relationships[];
 }
 
 interface XmlifyedFileMapping {
@@ -105,7 +105,7 @@ interface XmlifyedFileMapping {
 
 // ── Pure helper functions (extracted from File class) ──
 
-function buildRels(entries: readonly RelEntry[]): Relationships {
+function buildRels(entries: RelEntry[]): Relationships {
   const rels = new Relationships();
   for (const e of entries) {
     rels.addRelationship(e.id, e.type, e.target, e.mode as "External" | undefined);
@@ -127,8 +127,8 @@ function deriveInitials(name: string): string {
 }
 
 function buildMasterMap(
-  masterDefs: readonly MasterDefinition[],
-  slides: readonly SlideOptions[],
+  masterDefs: MasterDefinition[],
+  slides: SlideOptions[],
   slideWidth: number,
 ): MasterInfo[] {
   const defs = masterDefs.length > 0 ? masterDefs : [{} as MasterDefinition];
@@ -152,7 +152,7 @@ function buildMasterMap(
     const name = def.name ?? `master${mi + 1}`;
 
     const layoutDefs = def.layouts;
-    let layoutKeys: readonly string[];
+    let layoutKeys: string[];
     if (layoutDefs && layoutDefs.length > 0) {
       layoutKeys = layoutDefs.map(
         (ld) => ld.type ?? ld.name ?? `layout${mi}_${layoutDefs.indexOf(ld)}`,
@@ -232,8 +232,8 @@ function buildMasterMap(
 }
 
 function findLayoutForSlide(
-  masters: readonly MasterInfo[],
-  slides: readonly SlideOptions[],
+  masters: MasterInfo[],
+  slides: SlideOptions[],
   slideIndex: number,
 ): LayoutInfo {
   const opts = slides[slideIndex];
@@ -250,10 +250,7 @@ function findLayoutForSlide(
   return li ?? master.layouts[0];
 }
 
-function buildSlideRels(
-  masters: readonly MasterInfo[],
-  slides: readonly SlideOptions[],
-): Relationships[] {
+function buildSlideRels(masters: MasterInfo[], slides: SlideOptions[]): Relationships[] {
   const rels: Relationships[] = [];
   for (let i = 0; i < slides.length; i++) {
     const layout = findLayoutForSlide(masters, slides, i);
@@ -270,7 +267,7 @@ function buildSlideRels(
   return rels;
 }
 
-function buildCommentData(slides: readonly SlideOptions[]): {
+function buildCommentData(slides: SlideOptions[]): {
   authors: AuthorEntry[] | undefined;
   perSlide: (CommentEntry[] | undefined)[];
 } {
@@ -330,7 +327,7 @@ function buildCommentData(slides: readonly SlideOptions[]): {
   return { authors, perSlide };
 }
 
-function initContentTypes(slides: readonly SlideOptions[], includeHandout: boolean): ContentTypes {
+function initContentTypes(slides: SlideOptions[], includeHandout: boolean): ContentTypes {
   const ct = new ContentTypes();
   let hasComments = false;
   let notesSlideIdx = 0;
@@ -376,7 +373,7 @@ function buildFileRels(): Relationships {
   ]);
 }
 
-function initPresRels(masters: readonly MasterInfo[], slideCount: number): Relationships {
+function initPresRels(masters: MasterInfo[], slideCount: number): Relationships {
   const rels = new Relationships();
   let rid = 1;
   for (let mi = 0; mi < masters.length; mi++) {
@@ -558,7 +555,7 @@ function stringifySlide(slideOpts: SlideOptions, ctx: PptxWriteContext): string 
 
 export function compilePresentation(
   options: PresentationOptions,
-  overrides: readonly XmlifyedFile[] = [],
+  overrides: XmlifyedFile[] = [],
   mediaLevel: number = 0,
 ): Zippable {
   const descCtx = new PptxWriteContext();
@@ -1110,7 +1107,7 @@ export function compilePresentation(
     if (image.type === "svg" && "fallback" in image) {
       const fallback = (
         image as IMediaData & {
-          readonly fallback: { readonly fileName: string; readonly data: Uint8Array };
+          fallback: { fileName: string; data: Uint8Array };
         }
       ).fallback;
       files[`ppt/media/${fallback.fileName}`] = [
@@ -1125,8 +1122,8 @@ export function compilePresentation(
 
 function getChartGlobalIndex(
   key: string,
-  legacyCharts: readonly { readonly key: string }[],
-  descCharts: readonly { readonly key: string }[],
+  legacyCharts: { key: string }[],
+  descCharts: { key: string }[],
 ): number {
   const legacyIdx = legacyCharts.findIndex((c) => c.key === key);
   if (legacyIdx >= 0) return legacyIdx;
@@ -1135,8 +1132,8 @@ function getChartGlobalIndex(
 
 function computeSmartArtGlobalStart(
   firstKey: string,
-  legacySmartArts: readonly { readonly key: string }[],
-  descSmartArts: readonly { readonly key: string }[],
+  legacySmartArts: { key: string }[],
+  descSmartArts: { key: string }[],
 ): number {
   const legacyIdx = legacySmartArts.findIndex((s) => s.key === firstKey);
   if (legacyIdx >= 0) return legacyIdx;

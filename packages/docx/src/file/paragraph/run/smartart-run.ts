@@ -21,8 +21,8 @@ import { Run } from "../run";
  * A tree node for SmartArt data.
  */
 export interface SmartArtNode {
-  readonly text: string;
-  readonly children?: readonly SmartArtNode[];
+  text: string;
+  children?: SmartArtNode[];
 }
 
 /**
@@ -32,21 +32,21 @@ export interface SmartArtNode {
  */
 export interface SmartArtOptions {
   /** Tree-shaped data for the diagram */
-  readonly data: {
-    readonly nodes: readonly SmartArtNode[];
+  data: {
+    nodes: SmartArtNode[];
   };
   /** Display dimensions */
-  readonly transformation: MediaTransformation;
+  transformation: MediaTransformation;
   /** Floating positioning */
-  readonly floating?: Floating;
+  floating?: Floating;
   /** Alternative text for accessibility */
-  readonly altText?: DocPropertiesOptions;
+  altText?: DocPropertiesOptions;
   /** Layout ID (e.g. "default", "process1", "hierarchy1") */
-  readonly layout?: string;
+  layout?: string;
   /** Quick style ID (e.g. "simple1", "moderate1") */
-  readonly style?: string;
+  style?: string;
   /** Color transform ID (e.g. "accent1_2", "colorful1") */
-  readonly color?: string;
+  color?: string;
 }
 
 /**
@@ -70,8 +70,8 @@ export interface SmartArtOptions {
  * ```
  */
 export class SmartArtRun extends Run {
-  private readonly smartArtOptions: SmartArtOptions;
-  private readonly smartArtKey: string;
+  private smartArtOptions: SmartArtOptions;
+  private smartArtKey: string;
 
   public constructor(options: SmartArtOptions) {
     super({});

@@ -8,7 +8,7 @@
 import { escapeXml } from "@office-open/xml";
 
 export interface NotesSlideOptions {
-  readonly text?: string;
+  text?: string;
 }
 
 /**

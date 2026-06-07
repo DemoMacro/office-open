@@ -36,23 +36,23 @@ export type SectionChild =
   | BaseXmlComponent
   | { paragraph: string | ParagraphOptions }
   | { table: TableOptions }
-  | { toc: TableOfContentsOptions & { readonly alias?: string } }
+  | { toc: TableOfContentsOptions & { alias?: string } }
   | {
       textbox: Omit<ParagraphOptions, "style" | "children"> & {
-        readonly style?: VmlShapeStyle;
-        readonly children?: readonly SectionChild[];
+        style?: VmlShapeStyle;
+        children?: SectionChild[];
       };
     }
   | {
       sdt: {
-        readonly properties: SdtPropertiesOptions;
-        readonly children?: readonly SectionChild[];
+        properties: SdtPropertiesOptions;
+        children?: SectionChild[];
       };
     }
   | { altChunk: AltChunkOptions }
   | { subDoc: SubDocOptions }
   | {
       customXml: Omit<CustomXmlBlockOptions, "children"> & {
-        readonly children?: readonly SectionChild[];
+        children?: SectionChild[];
       };
     };

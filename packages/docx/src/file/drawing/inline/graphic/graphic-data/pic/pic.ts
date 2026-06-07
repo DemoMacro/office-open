@@ -61,14 +61,14 @@ export class Pic extends XmlComponent {
     tile,
     hyperlink,
   }: {
-    readonly mediaData: IMediaData;
-    readonly transform: MediaDataTransformation;
-    readonly outline?: OutlineOptions;
-    readonly fill?: FillOptions;
-    readonly effects?: EffectListOptions;
-    readonly blipEffects?: BlipEffectsOptions;
-    readonly tile?: TileOptions;
-    readonly hyperlink?: HyperlinkOptions;
+    mediaData: IMediaData;
+    transform: MediaDataTransformation;
+    outline?: OutlineOptions;
+    fill?: FillOptions;
+    effects?: EffectListOptions;
+    blipEffects?: BlipEffectsOptions;
+    tile?: TileOptions;
+    hyperlink?: HyperlinkOptions;
   }) {
     super("pic:pic");
 

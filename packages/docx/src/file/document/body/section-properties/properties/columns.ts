@@ -25,15 +25,15 @@ import type { Column } from "./column";
  */
 export interface ColumnsAttributes {
   /** Spacing between columns in twips (default: 720) */
-  readonly space?: number | PositiveUniversalMeasure;
+  space?: number | PositiveUniversalMeasure;
   /** Number of columns (default: 1) */
-  readonly count?: number;
+  count?: number;
   /** Whether to draw vertical separator lines between columns */
-  readonly separate?: boolean;
+  separate?: boolean;
   /** Whether all columns have equal width */
-  readonly equalWidth?: boolean;
+  equalWidth?: boolean;
   /** Individual column definitions (used when equalWidth is false, max: 45) */
-  readonly children?: readonly Column[];
+  children?: Column[];
 }
 
 /**

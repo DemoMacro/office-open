@@ -52,7 +52,7 @@ const HYPERLINK_RELATIONSHIP_TYPE =
  * ```
  */
 export class NonVisualProperties extends XmlComponent {
-  private readonly hyperlink?: HyperlinkOptions;
+  private hyperlink?: HyperlinkOptions;
 
   public constructor(hyperlink?: HyperlinkOptions) {
     super("pic:cNvPr");

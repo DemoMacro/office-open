@@ -81,26 +81,26 @@ import { createTableLook } from "./table-look";
 import type { TableLookOptions } from "./table-look";
 
 export interface TablePropertiesOptionsBase {
-  readonly width?: TableWidthProperties;
-  readonly indent?: TableWidthProperties;
-  readonly layout?: (typeof TableLayoutType)[keyof typeof TableLayoutType];
-  readonly borders?: TableBordersOptions;
-  readonly float?: TableFloatOptions;
-  readonly shading?: ShadingAttributesProperties;
-  readonly style?: string;
-  readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
-  readonly cellMargin?: TableCellMarginOptions;
-  readonly visuallyRightToLeft?: boolean;
-  readonly tableLook?: TableLookOptions;
-  readonly cellSpacing?: TableCellSpacingProperties;
+  width?: TableWidthProperties;
+  indent?: TableWidthProperties;
+  layout?: (typeof TableLayoutType)[keyof typeof TableLayoutType];
+  borders?: TableBordersOptions;
+  float?: TableFloatOptions;
+  shading?: ShadingAttributesProperties;
+  style?: string;
+  alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
+  cellMargin?: TableCellMarginOptions;
+  visuallyRightToLeft?: boolean;
+  tableLook?: TableLookOptions;
+  cellSpacing?: TableCellSpacingProperties;
   /** Number of rows in each band for table style (tblStyleRowBandSize) */
-  readonly styleRowBandSize?: number;
+  styleRowBandSize?: number;
   /** Number of columns in each band for table style (tblStyleColBandSize) */
-  readonly styleColBandSize?: number;
+  styleColBandSize?: number;
   /** Table caption for accessibility (tblCaption) */
-  readonly caption?: string;
+  caption?: string;
   /** Table description for accessibility (tblDescription) */
-  readonly description?: string;
+  description?: string;
 }
 
 export type ITablePropertiesChangeOptions = ITablePropertiesOptions & ChangedAttributesProperties;
@@ -111,8 +111,8 @@ export type ITablePropertiesChangeOptions = ITablePropertiesOptions & ChangedAtt
  * @see {@link TableProperties}
  */
 export type ITablePropertiesOptions = {
-  readonly revision?: ITablePropertiesChangeOptions;
-  readonly includeIfEmpty?: boolean;
+  revision?: ITablePropertiesChangeOptions;
+  includeIfEmpty?: boolean;
 } & TablePropertiesOptionsBase;
 
 /**
@@ -258,7 +258,7 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
 
     if (options.styleRowBandSize !== undefined) {
       this.root.push(
-        new BuilderElement<{ readonly val: number }>({
+        new BuilderElement<{ val: number }>({
           name: "w:tblStyleRowBandSize",
           attributes: { val: { key: "w:val", value: options.styleRowBandSize } },
         }),
@@ -267,7 +267,7 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
 
     if (options.styleColBandSize !== undefined) {
       this.root.push(
-        new BuilderElement<{ readonly val: number }>({
+        new BuilderElement<{ val: number }>({
           name: "w:tblStyleColBandSize",
           attributes: { val: { key: "w:val", value: options.styleColBandSize } },
         }),

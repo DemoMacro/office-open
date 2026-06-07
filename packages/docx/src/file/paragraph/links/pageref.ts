@@ -22,7 +22,7 @@ export interface PageReferenceOptions {
   /**
    * \h option - Creates a hyperlink to the bookmarked paragraph.
    */
-  readonly hyperlink?: boolean;
+  hyperlink?: boolean;
   /**
    * \p option - Causes the field to display its position relative to the source
    *  bookmark. If the PAGEREF field is on the same page as the
@@ -30,7 +30,7 @@ export interface PageReferenceOptions {
    *  only. If the PAGEREF field is not on the same page as the
    *  bookmark, the string "on page #" is used.
    */
-  readonly useRelativePosition?: boolean;
+  useRelativePosition?: boolean;
 }
 
 /**

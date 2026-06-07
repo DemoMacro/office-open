@@ -26,9 +26,9 @@ import type { VmlShapeStyle } from "./shape/shape";
  */
 export type ITextboxOptions = Omit<ParagraphOptions, "style" | "children"> & {
   /** VML shape style properties for the textbox (positioning, sizing, wrapping, etc.) */
-  readonly style?: VmlShapeStyle;
+  style?: VmlShapeStyle;
   /** Array of block-level content elements (paragraphs, tables, etc.) */
-  readonly children?: readonly FileChild[];
+  children?: FileChild[];
 };
 
 /**
@@ -80,7 +80,7 @@ export type ITextboxOptions = Omit<ParagraphOptions, "style" | "children"> & {
  * ```
  */
 export class Textbox extends XmlComponent implements FileChild {
-  public readonly fileChild = Symbol();
+  public fileChild = Symbol();
   public constructor({ style, children, ...rest }: ITextboxOptions) {
     super("w:p");
     this.root.push(new ParagraphProperties(rest));

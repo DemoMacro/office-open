@@ -13,37 +13,37 @@ import { TextBody } from "./text-body";
 import type { TextBodyOptions } from "./text-body";
 
 export interface ShapeStyleOptions {
-  readonly lineReference?: { readonly index: number; readonly color?: string };
-  readonly fillReference?: { readonly index: number; readonly color?: string };
-  readonly effectReference?: { readonly index: number; readonly color?: string };
-  readonly fontReference?: { readonly index: number; readonly color?: string };
+  lineReference?: { index: number; color?: string };
+  fillReference?: { index: number; color?: string };
+  effectReference?: { index: number; color?: string };
+  fontReference?: { index: number; color?: string };
 }
 
 export interface ShapeOptions {
-  readonly id?: number;
-  readonly name?: string;
-  readonly x?: number;
-  readonly y?: number;
-  readonly width?: number;
-  readonly height?: number;
-  readonly geometry?: string;
-  readonly fill?: ShapePropertiesOptions["fill"];
-  readonly outline?: OutlineOptions;
-  readonly effects?: EffectsOptions;
-  readonly flipHorizontal?: boolean;
-  readonly rotation?: number;
-  readonly textBody?: TextBodyOptions;
-  readonly animation?: AnimationOptions;
-  readonly locking?: ShapeLockingOptions;
-  readonly placeholder?: "title" | "body" | "subTitle" | "sldNum" | "dt" | "ftr" | "hdr" | "obj";
-  readonly placeholderIndex?: number;
-  readonly useBackgroundFill?: boolean;
-  readonly isPhoto?: boolean;
-  readonly userDrawn?: boolean;
-  readonly hasCustomPrompt?: boolean;
-  readonly style?: ShapeStyleOptions;
+  id?: number;
+  name?: string;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  geometry?: string;
+  fill?: ShapePropertiesOptions["fill"];
+  outline?: OutlineOptions;
+  effects?: EffectsOptions;
+  flipHorizontal?: boolean;
+  rotation?: number;
+  textBody?: TextBodyOptions;
+  animation?: AnimationOptions;
+  locking?: ShapeLockingOptions;
+  placeholder?: "title" | "body" | "subTitle" | "sldNum" | "dt" | "ftr" | "hdr" | "obj";
+  placeholderIndex?: number;
+  useBackgroundFill?: boolean;
+  isPhoto?: boolean;
+  userDrawn?: boolean;
+  hasCustomPrompt?: boolean;
+  style?: ShapeStyleOptions;
   /** Black-and-white mode for the shape. */
-  readonly blackWhiteMode?:
+  blackWhiteMode?:
     | "clr"
     | "auto"
     | "gray"
@@ -65,9 +65,9 @@ export interface ShapeOptions {
  */
 export class Shape extends Xc {
   private static nextId = 2;
-  public readonly shapeId: number;
-  public readonly animation: AnimationOptions | undefined;
-  private readonly options: ShapeOptions;
+  public shapeId: number;
+  public animation: AnimationOptions | undefined;
+  private options: ShapeOptions;
 
   public constructor(options: ShapeOptions = {}) {
     super("p:sp");

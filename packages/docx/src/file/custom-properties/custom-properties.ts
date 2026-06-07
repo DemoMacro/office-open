@@ -39,9 +39,9 @@ import type { CustomPropertyOptions } from "./custom-property";
  */
 export class CustomProperties extends XmlComponent {
   private nextId: number;
-  private readonly properties: CustomProperty[] = [];
+  private properties: CustomProperty[] = [];
 
-  public constructor(properties: readonly CustomPropertyOptions[]) {
+  public constructor(properties: CustomPropertyOptions[]) {
     super("Properties");
 
     this.root.push({

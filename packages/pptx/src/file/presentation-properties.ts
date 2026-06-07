@@ -1,19 +1,19 @@
 import type { ShowOptions } from "./file";
 
 export interface WebPropertiesOptions {
-  readonly showAnimation?: boolean;
-  readonly resizeGraphics?: boolean;
-  readonly allowPng?: boolean;
-  readonly relyOnVml?: boolean;
-  readonly organizeInFolders?: boolean;
-  readonly useLongFilenames?: boolean;
-  readonly imageSize?: string;
-  readonly encoding?: string;
-  readonly color?: string;
+  showAnimation?: boolean;
+  resizeGraphics?: boolean;
+  allowPng?: boolean;
+  relyOnVml?: boolean;
+  organizeInFolders?: boolean;
+  useLongFilenames?: boolean;
+  imageSize?: string;
+  encoding?: string;
+  color?: string;
 }
 
 export interface PrintPropertiesOptions {
-  readonly printWhat?:
+  printWhat?:
     | "slides"
     | "handouts1"
     | "handouts2"
@@ -23,25 +23,25 @@ export interface PrintPropertiesOptions {
     | "handouts9"
     | "notes"
     | "outline";
-  readonly colorMode?: "blackWhite" | "gray" | "color";
-  readonly hiddenSlides?: boolean;
-  readonly scaleToFitPaper?: boolean;
-  readonly frameSlides?: boolean;
+  colorMode?: "blackWhite" | "gray" | "color";
+  hiddenSlides?: boolean;
+  scaleToFitPaper?: boolean;
+  frameSlides?: boolean;
 }
 
 export interface HtmlPublishPropertiesOptions {
-  readonly showSpeakerNotes?: boolean;
-  readonly target?: string;
-  readonly title?: string;
-  readonly rId?: string;
+  showSpeakerNotes?: boolean;
+  target?: string;
+  title?: string;
+  rId?: string;
 }
 
 export interface PresentationPropertiesFullOptions {
-  readonly show?: ShowOptions;
-  readonly web?: WebPropertiesOptions;
-  readonly print?: PrintPropertiesOptions;
-  readonly htmlPublish?: HtmlPublishPropertiesOptions;
-  readonly colorMru?: readonly string[];
+  show?: ShowOptions;
+  web?: WebPropertiesOptions;
+  print?: PrintPropertiesOptions;
+  htmlPublish?: HtmlPublishPropertiesOptions;
+  colorMru?: string[];
 }
 
 const COLOR_MODE_XSD: Record<string, string> = {

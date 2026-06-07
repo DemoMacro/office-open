@@ -30,7 +30,7 @@ interface ExtentAttributes {
    *
    * The possible values for this attribute are defined by the `ST_PositiveCoordinate` simple type (§5.1.12.42).
    */
-  readonly x?: number;
+  x?: number;
   /**
    * ## Extent Width
    *
@@ -46,7 +46,7 @@ interface ExtentAttributes {
    *
    * The possible values for this attribute are defined by the `ST_PositiveCoordinate` simple type (§5.1.12.42).
    */
-  readonly y?: number;
+  y?: number;
 }
 
 /**

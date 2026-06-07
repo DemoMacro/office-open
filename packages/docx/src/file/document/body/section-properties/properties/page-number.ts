@@ -52,13 +52,13 @@ export const PageNumberSeparator = {
  */
 export interface PageNumberTypeAttributes {
   /** Starting page number for the section */
-  readonly start?: number;
+  start?: number;
   /** Number format (decimal, roman, letter, etc., default: decimal) */
-  readonly formatType?: (typeof NumberFormat)[keyof typeof NumberFormat];
+  formatType?: (typeof NumberFormat)[keyof typeof NumberFormat];
   /** Separator between chapter and page number (default: hyphen) */
-  readonly separator?: (typeof PageNumberSeparator)[keyof typeof PageNumberSeparator];
+  separator?: (typeof PageNumberSeparator)[keyof typeof PageNumberSeparator];
   /** Heading style ID for chapter numbering */
-  readonly chapStyle?: number;
+  chapStyle?: number;
 }
 
 /**

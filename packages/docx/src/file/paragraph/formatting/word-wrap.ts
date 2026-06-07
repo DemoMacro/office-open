@@ -19,7 +19,7 @@ import type { XmlComponent } from "@file/xml-components";
  * for the paragraph.
  */
 export const createWordWrap = (): XmlComponent =>
-  new BuilderElement<{ readonly val: 0 }>({
+  new BuilderElement<{ val: 0 }>({
     attributes: {
       val: { key: "w:val", value: 0 },
     },

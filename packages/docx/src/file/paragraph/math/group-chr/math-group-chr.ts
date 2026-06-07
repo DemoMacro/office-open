@@ -22,9 +22,9 @@ import type { MathGroupChrPropertiesOptions } from "./math-group-chr-properties"
  */
 export interface MathGroupChrOptions {
   /** Group character properties */
-  readonly properties?: MathGroupChrPropertiesOptions;
+  properties?: MathGroupChrPropertiesOptions;
   /** Content under/over the group character */
-  readonly children: readonly MathComponent[];
+  children: MathComponent[];
 }
 
 /**

@@ -64,23 +64,23 @@ export const PatchType = {
 } as const;
 
 interface ParagraphPatch {
-  readonly type: typeof PatchType.PARAGRAPH;
-  readonly children: readonly ParagraphChild[];
+  type: typeof PatchType.PARAGRAPH;
+  children: ParagraphChild[];
 }
 
 interface FilePatch {
-  readonly type: typeof PatchType.DOCUMENT;
-  readonly children: readonly FileChild[];
+  type: typeof PatchType.DOCUMENT;
+  children: FileChild[];
 }
 
 interface ImageRelationshipAddition {
-  readonly key: string;
-  readonly mediaDatas: readonly { readonly fileName: string }[];
+  key: string;
+  mediaDatas: { fileName: string }[];
 }
 
 interface HyperlinkRelationshipAddition {
-  readonly key: string;
-  readonly hyperlink: { readonly id: string; readonly link: string };
+  key: string;
+  hyperlink: { id: string; link: string };
 }
 
 export type IPatch = ParagraphPatch | FilePatch;
@@ -88,15 +88,15 @@ export type IPatch = ParagraphPatch | FilePatch;
 export type PatchDocumentOutputType = OutputType;
 
 export interface PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocumentOutputType> {
-  readonly outputType: T;
-  readonly data: InputDataType;
-  readonly patches: Readonly<Record<string, IPatch>>;
-  readonly keepOriginalStyles?: boolean;
-  readonly placeholderDelimiters?: Readonly<{
-    readonly start: string;
-    readonly end: string;
+  outputType: T;
+  data: InputDataType;
+  patches: Readonly<Record<string, IPatch>>;
+  keepOriginalStyles?: boolean;
+  placeholderDelimiters?: Readonly<{
+    start: string;
+    end: string;
   }>;
-  readonly recursive?: boolean;
+  recursive?: boolean;
 }
 
 const UTF16LE = new Uint8Array([0xff, 0xfe]);

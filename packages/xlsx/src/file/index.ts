@@ -3,7 +3,7 @@
  *
  * @module
  */
-export { File, type WorkbookOptions } from "./file";
+export { type WorkbookOptions } from "./file";
 export { SharedStrings } from "./shared-strings";
 export { Styles } from "./styles";
 export type {
@@ -50,6 +50,7 @@ export type {
 export { PivotFilterTypeValue } from "./pivot";
 export type { TableOptions, TableColumnOptions, TableStyleInfoOptions } from "./table";
 export { TotalsRowFunction, TableType } from "./table";
+
 export type {
   WorkbookProtectionOptions,
   CustomWorkbookViewOptions,
@@ -62,19 +63,26 @@ export type {
   ExternalBookOptions,
   ExternalDefinedNameOptions,
   ExternalSheetDataOptions,
+  ExternalRowOptions,
+  ExternalCellOptions,
+  OleLinkOptions,
+  OleItemOptions,
 } from "./external-link";
-export type { ChartsheetOptions } from "./chartsheet";
+export type {
+  ChartsheetOptions,
+  ChartsheetPageMargins,
+  ChartsheetPageSetup,
+  ChartsheetProtectionOptions,
+  ChartsheetHeaderFooterOptions,
+} from "./chartsheet";
 export type { DialogsheetOptions } from "./dialogsheet";
-export { Dialogsheet } from "./dialogsheet";
 export type { QueryTableOptions } from "./query-table";
-export { QueryTableXml } from "./query-table";
 export type {
   MetadataOptions,
   MetadataTypeOptions,
   MetadataStringOptions,
   FutureMetadataOptions,
 } from "./metadata";
-export { MetadataXml } from "./metadata";
 export type {
   RevisionHeadersOptions,
   RevisionHeaderEntry,
@@ -88,10 +96,7 @@ export type {
   RevisionDefinedNameOptions,
   RevisionLogOptions,
 } from "./revision-log";
-export { RevisionHeadersXml, RevisionLogXml } from "./revision-log";
-export { ConnectionsXml } from "./connection";
 export type { ConnectionOptions, DbPrOptions, WebPrOptions, ParameterOptions } from "./connection";
-export { MapInfoXml, SingleXmlCellsXml, XmlColumnPrXml } from "./xml-mapping";
 export type {
   MapInfoOptions,
   SchemaOptions,

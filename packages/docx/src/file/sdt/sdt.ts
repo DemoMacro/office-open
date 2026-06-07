@@ -39,11 +39,11 @@ class StructuredDocumentTagEndProperties extends XmlComponent {
  */
 export interface SdtRunOptions {
   /** SDT properties (alias, tag, type discriminator, etc.) */
-  readonly properties: SdtPropertiesOptions;
+  properties: SdtPropertiesOptions;
   /** Content children (runs, text runs, etc.) to place inside the SDT */
-  readonly children?: readonly BaseXmlComponent[];
+  children?: BaseXmlComponent[];
   /** End properties (w:sdtEndPr) for the SDT */
-  readonly endProperties?: readonly BaseXmlComponent[];
+  endProperties?: BaseXmlComponent[];
 }
 
 /**
@@ -107,11 +107,11 @@ export class StructuredDocumentTagRun extends XmlComponent {
  */
 export interface SdtBlockOptions {
   /** SDT properties */
-  readonly properties: SdtPropertiesOptions;
+  properties: SdtPropertiesOptions;
   /** Content children (paragraphs, tables, etc.) to place inside the SDT */
-  readonly children?: readonly FileChild[];
+  children?: FileChild[];
   /** End properties (w:sdtEndPr) for the SDT */
-  readonly endProperties?: readonly BaseXmlComponent[];
+  endProperties?: BaseXmlComponent[];
 }
 
 /**
@@ -140,7 +140,7 @@ export interface SdtBlockOptions {
  * ```
  */
 export class StructuredDocumentTagBlock extends XmlComponent implements FileChild {
-  public readonly fileChild = Symbol();
+  public fileChild = Symbol();
   public constructor(options: SdtBlockOptions) {
     super("w:sdt");
     this.root.push(new StructuredDocumentTagProperties(options.properties));

@@ -35,7 +35,7 @@ import type { IXmlableObject, XmlComponent } from "@file/xml-components";
  * ```
  */
 export const createOutlineLevel = (level: number): XmlComponent =>
-  new BuilderElement<{ readonly val: number }>({
+  new BuilderElement<{ val: number }>({
     attributes: {
       val: { key: "w:val", value: level },
     },

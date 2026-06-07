@@ -53,36 +53,36 @@ import type { StylesOptions } from "./styles";
  */
 export interface DefaultStylesOptions {
   /** Document-wide default formatting */
-  readonly document?: DocumentDefaultsOptions;
+  document?: DocumentDefaultsOptions;
   /** Title paragraph style options */
-  readonly title?: IBaseParagraphStyleOptions;
+  title?: IBaseParagraphStyleOptions;
   /** Heading 1 paragraph style options */
-  readonly heading1?: IBaseParagraphStyleOptions;
+  heading1?: IBaseParagraphStyleOptions;
   /** Heading 2 paragraph style options */
-  readonly heading2?: IBaseParagraphStyleOptions;
+  heading2?: IBaseParagraphStyleOptions;
   /** Heading 3 paragraph style options */
-  readonly heading3?: IBaseParagraphStyleOptions;
+  heading3?: IBaseParagraphStyleOptions;
   /** Heading 4 paragraph style options */
-  readonly heading4?: IBaseParagraphStyleOptions;
+  heading4?: IBaseParagraphStyleOptions;
   /** Heading 5 paragraph style options */
-  readonly heading5?: IBaseParagraphStyleOptions;
+  heading5?: IBaseParagraphStyleOptions;
   /** Heading 6 paragraph style options */
-  readonly heading6?: IBaseParagraphStyleOptions;
+  heading6?: IBaseParagraphStyleOptions;
   /** Strong paragraph style options */
-  readonly strong?: IBaseParagraphStyleOptions;
+  strong?: IBaseParagraphStyleOptions;
   /** List paragraph style options */
-  readonly listParagraph?: IBaseParagraphStyleOptions;
+  listParagraph?: IBaseParagraphStyleOptions;
   /** Hyperlink character style options */
-  readonly hyperlink?: IBaseCharacterStyleOptions;
+  hyperlink?: IBaseCharacterStyleOptions;
   /** Footnote reference character style options */
-  readonly footnoteReference?: IBaseCharacterStyleOptions;
+  footnoteReference?: IBaseCharacterStyleOptions;
   /** Footnote text paragraph style options */
-  readonly footnoteText?: IBaseParagraphStyleOptions;
+  footnoteText?: IBaseParagraphStyleOptions;
   /** Footnote text character style options */
-  readonly footnoteTextChar?: IBaseCharacterStyleOptions;
-  readonly endnoteReference?: IBaseCharacterStyleOptions;
-  readonly endnoteText?: IBaseParagraphStyleOptions;
-  readonly endnoteTextChar?: IBaseCharacterStyleOptions;
+  footnoteTextChar?: IBaseCharacterStyleOptions;
+  endnoteReference?: IBaseCharacterStyleOptions;
+  endnoteText?: IBaseParagraphStyleOptions;
+  endnoteTextChar?: IBaseCharacterStyleOptions;
 }
 
 let cachedDefaultStyles: StylesOptions | null = null;

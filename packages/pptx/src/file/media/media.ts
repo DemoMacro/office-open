@@ -9,17 +9,17 @@ import type { MediaDataTransformation } from "./data";
 import type { IMediaData } from "./data";
 
 export interface MediaTransformation {
-  readonly offset?: {
-    readonly top?: number;
-    readonly left?: number;
+  offset?: {
+    top?: number;
+    left?: number;
   };
-  readonly width: number;
-  readonly height: number;
-  readonly flip?: {
-    readonly vertical?: boolean;
-    readonly horizontal?: boolean;
+  width: number;
+  height: number;
+  flip?: {
+    vertical?: boolean;
+    horizontal?: boolean;
   };
-  readonly rotation?: number;
+  rotation?: number;
 }
 
 export const createTransformation = (options: MediaTransformation): MediaDataTransformation => ({
@@ -36,7 +36,7 @@ export const createTransformation = (options: MediaTransformation): MediaDataTra
 });
 
 export class Media {
-  private readonly map: Map<string, IMediaData>;
+  private map: Map<string, IMediaData>;
 
   public constructor() {
     this.map = new Map<string, IMediaData>();
@@ -50,7 +50,7 @@ export class Media {
     this.map.set(key, mediaData);
   }
 
-  public get array(): readonly IMediaData[] {
+  public get array(): IMediaData[] {
     return [...this.map.values()];
   }
 }

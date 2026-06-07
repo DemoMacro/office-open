@@ -33,12 +33,8 @@ import type { XmlComponent } from "@file/xml-components";
  * });
  * ```
  */
-export const createTextboxContent = ({
-  children = [],
-}: {
-  readonly children?: readonly FileChild[];
-}): XmlComponent =>
-  new BuilderElement<{ readonly style?: string }>({
+export const createTextboxContent = ({ children = [] }: { children?: FileChild[] }): XmlComponent =>
+  new BuilderElement<{ style?: string }>({
     children,
     name: "w:txbxContent",
   });

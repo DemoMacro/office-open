@@ -36,12 +36,12 @@ const PPTX_SLIDE_SYNC =
 type EntryType = "Default" | "Override";
 
 interface ContentEntry {
-  readonly type: EntryType;
-  readonly contentType: string;
-  readonly key: string;
+  type: EntryType;
+  contentType: string;
+  key: string;
 }
 
-const STATIC_ENTRIES: readonly ContentEntry[] = [
+const STATIC_ENTRIES: ContentEntry[] = [
   {
     type: "Default",
     contentType: "application/vnd.openxmlformats-package.relationships+xml",
@@ -82,7 +82,7 @@ const STATIC_XML =
 
 /** Pure data builder for [Content_Types].xml entries. */
 export class ContentTypes {
-  private readonly entries: ContentEntry[] = [];
+  private entries: ContentEntry[] = [];
 
   public addSlide(index: number): void {
     this.entries.push({

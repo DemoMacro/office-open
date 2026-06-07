@@ -94,143 +94,143 @@ import { createCompatibilitySetting } from "./compatibility-setting/compatibilit
  */
 export interface CompatibilityOptions {
   /** Word compatibility mode version (e.g., 15 for Word 2013+) */
-  readonly version?: number;
+  version?: number;
   /** Use Simplified Rules For Table Border Conflicts */
-  readonly useSingleBorderforContiguousCells?: boolean;
+  useSingleBorderforContiguousCells?: boolean;
   /** Emulate WordPerfect 6.x Paragraph Justification */
-  readonly wordPerfectJustification?: boolean;
+  wordPerfectJustification?: boolean;
   /** Do Not Create Custom Tab Stop for Hanging Indent */
-  readonly noTabStopForHangingIndent?: boolean;
+  noTabStopForHangingIndent?: boolean;
   /** Do Not Add Leading Between Lines of Text */
-  readonly noLeading?: boolean;
+  noLeading?: boolean;
   /** Add Additional Space Below Baseline For Underlined East Asian Text */
-  readonly spaceForUnderline?: boolean;
+  spaceForUnderline?: boolean;
   /** Do Not Balance Text Columns within a Section */
-  readonly noColumnBalance?: boolean;
+  noColumnBalance?: boolean;
   /** Balance Single Byte and Double Byte Characters */
-  readonly balanceSingleByteDoubleByteWidth?: boolean;
+  balanceSingleByteDoubleByteWidth?: boolean;
   /** Do Not Center Content on Lines With Exact Line Height */
-  readonly noExtraLineSpacing?: boolean;
+  noExtraLineSpacing?: boolean;
   /** Convert Backslash To Yen Sign When Entered */
-  readonly doNotLeaveBackslashAlone?: boolean;
+  doNotLeaveBackslashAlone?: boolean;
   /** Underline All Trailing Spaces */
-  readonly underlineTrailingSpaces?: boolean;
+  underlineTrailingSpaces?: boolean;
   /** Don't Justify Lines Ending in Soft Line Break */
-  readonly doNotExpandShiftReturn?: boolean;
+  doNotExpandShiftReturn?: boolean;
   /** Only Expand/Condense Text By Whole Points */
-  readonly spacingInWholePoints?: boolean;
+  spacingInWholePoints?: boolean;
   /** Emulate Word 6.0 Line Wrapping for East Asian Text */
-  readonly lineWrapLikeWord6?: boolean;
+  lineWrapLikeWord6?: boolean;
   /** Print Body Text before Header/Footer Contents */
-  readonly printBodyTextBeforeHeader?: boolean;
+  printBodyTextBeforeHeader?: boolean;
   /** Print Colors as Black And White without Dithering */
-  readonly printColorsBlack?: boolean;
+  printColorsBlack?: boolean;
   /** Space width */
-  readonly spaceWidth?: boolean;
+  spaceWidth?: boolean;
   /** Display Page/Column Breaks Present in Frames */
-  readonly showBreaksInFrames?: boolean;
+  showBreaksInFrames?: boolean;
   /** Increase Priority Of Font Size During Font Substitution */
-  readonly subFontBySize?: boolean;
+  subFontBySize?: boolean;
   /** Ignore Exact Line Height for Last Line on Page */
-  readonly suppressBottomSpacing?: boolean;
+  suppressBottomSpacing?: boolean;
   /** Ignore Minimum and Exact Line Height for First Line on Page */
-  readonly suppressTopSpacing?: boolean;
+  suppressTopSpacing?: boolean;
   /** Ignore Minimum Line Height for First Line on Page */
-  readonly suppressSpacingAtTopOfPage?: boolean;
+  suppressSpacingAtTopOfPage?: boolean;
   /** Emulate WordPerfect 5.x Line Spacing */
-  readonly suppressTopSpacingWP?: boolean;
+  suppressTopSpacingWP?: boolean;
   /** Do Not Use Space Before On First Line After a Page Break */
-  readonly suppressSpBfAfterPgBrk?: boolean;
+  suppressSpBfAfterPgBrk?: boolean;
   /** Swap Paragraph Borders on Odd Numbered Pages */
-  readonly swapBordersFacingPages?: boolean;
+  swapBordersFacingPages?: boolean;
   /** Treat Backslash Quotation Delimiter as Two Quotation Marks */
-  readonly convertMailMergeEsc?: boolean;
+  convertMailMergeEsc?: boolean;
   /** Emulate WordPerfect 6.x Font Height Calculation */
-  readonly truncateFontHeightsLikeWP6?: boolean;
+  truncateFontHeightsLikeWP6?: boolean;
   /** Emulate Word 5.x for the Macintosh Small Caps Formatting */
-  readonly macWordSmallCaps?: boolean;
+  macWordSmallCaps?: boolean;
   /** Use Printer Metrics To Display Documents */
-  readonly usePrinterMetrics?: boolean;
+  usePrinterMetrics?: boolean;
   /** Do Not Suppress Paragraph Borders Next To Frames */
-  readonly doNotSuppressParagraphBorders?: boolean;
+  doNotSuppressParagraphBorders?: boolean;
   /** Line Wrap Trailing Spaces */
-  readonly wrapTrailSpaces?: boolean;
+  wrapTrailSpaces?: boolean;
   /** Emulate Word 6.x/95/97 Footnote Placement */
-  readonly footnoteLayoutLikeWW8?: boolean;
+  footnoteLayoutLikeWW8?: boolean;
   /** Emulate Word 97 Text Wrapping Around Floating Objects */
-  readonly shapeLayoutLikeWW8?: boolean;
+  shapeLayoutLikeWW8?: boolean;
   /** Align Table Rows Independently */
-  readonly alignTablesRowByRow?: boolean;
+  alignTablesRowByRow?: boolean;
   /** Ignore Width of Last Tab Stop When Aligning Paragraph If It Is Not Left Aligned */
-  readonly forgetLastTabAlignment?: boolean;
+  forgetLastTabAlignment?: boolean;
   /** Add Document Grid Line Pitch To Lines in Table Cells */
-  readonly adjustLineHeightInTable?: boolean;
+  adjustLineHeightInTable?: boolean;
   /** Emulate Word 95 Full-Width Character Spacing */
-  readonly autoSpaceLikeWord95?: boolean;
+  autoSpaceLikeWord95?: boolean;
   /** Do Not Increase Line Height for Raised/Lowered Text */
-  readonly noSpaceRaiseLower?: boolean;
+  noSpaceRaiseLower?: boolean;
   /** Use Fixed Paragraph Spacing for HTML Auto Setting */
-  readonly doNotUseHTMLParagraphAutoSpacing?: boolean;
+  doNotUseHTMLParagraphAutoSpacing?: boolean;
   /** Ignore Space Before Table When Deciding If Table Should Wrap Floating Object */
-  readonly layoutRawTableWidth?: boolean;
+  layoutRawTableWidth?: boolean;
   /** Allow Table Rows to Wrap Inline Objects Independently */
-  readonly layoutTableRowsApart?: boolean;
+  layoutTableRowsApart?: boolean;
   /** Emulate Word 97 East Asian Line Breaking */
-  readonly useWord97LineBreakRules?: boolean;
+  useWord97LineBreakRules?: boolean;
   /** Do Not Allow Floating Tables To Break Across Pages */
-  readonly doNotBreakWrappedTables?: boolean;
+  doNotBreakWrappedTables?: boolean;
   /** Do Not Snap to Document Grid in Table Cells with Objects */
-  readonly doNotSnapToGridInCell?: boolean;
+  doNotSnapToGridInCell?: boolean;
   /** Select Field When First or Last Character Is Selected */
-  readonly selectFieldWithFirstOrLastCharacter?: boolean;
+  selectFieldWithFirstOrLastCharacter?: boolean;
   /** Use Legacy Ethiopic and Amharic Line Breaking Rules */
-  readonly applyBreakingRules?: boolean;
+  applyBreakingRules?: boolean;
   /** Do Not Allow Hanging Punctuation With Character Grid */
-  readonly doNotWrapTextWithPunctuation?: boolean;
+  doNotWrapTextWithPunctuation?: boolean;
   /** Do Not Compress Compressible Characters When Using Document Grid */
-  readonly doNotUseEastAsianBreakRules?: boolean;
+  doNotUseEastAsianBreakRules?: boolean;
   /** Emulate Word 2002 Table Style Rules */
-  readonly useWord2002TableStyleRules?: boolean;
+  useWord2002TableStyleRules?: boolean;
   /** Allow Tables to AutoFit Into Page Margins */
-  readonly growAutofit?: boolean;
+  growAutofit?: boolean;
   /** Do Not Bypass East Asian/Complex Script Layout Code */
-  readonly useFELayout?: boolean;
+  useFELayout?: boolean;
   /** Do Not Automatically Apply List Paragraph Style To Bulleted/Numbered Text */
-  readonly useNormalStyleForList?: boolean;
+  useNormalStyleForList?: boolean;
   /** Ignore Hanging Indent When Creating Tab Stop After Numbering */
-  readonly doNotUseIndentAsNumberingTabStop?: boolean;
+  doNotUseIndentAsNumberingTabStop?: boolean;
   /** Use Alternate Set of East Asian Line Breaking Rules */
-  readonly useAlternateEastAsianLineBreakRules?: boolean;
+  useAlternateEastAsianLineBreakRules?: boolean;
   /** Allow Contextual Spacing of Paragraphs in Tables */
-  readonly allowSpaceOfSameStyleInTable?: boolean;
+  allowSpaceOfSameStyleInTable?: boolean;
   /** Do Not Ignore Floating Objects When Calculating Paragraph Indentation */
-  readonly doNotSuppressIndentation?: boolean;
+  doNotSuppressIndentation?: boolean;
   /** Do Not AutoFit Tables To Fit Next To Wrapped Objects */
-  readonly doNotAutofitConstrainedTables?: boolean;
+  doNotAutofitConstrainedTables?: boolean;
   /** Allow Table Columns To Exceed Preferred Widths of Constituent Cells */
-  readonly autofitToFirstFixedWidthCell?: boolean;
+  autofitToFirstFixedWidthCell?: boolean;
   /** Underline Following Character Following Numbering */
-  readonly underlineTabInNumberingList?: boolean;
+  underlineTabInNumberingList?: boolean;
   /** Always Use Fixed Width for Hangul Characters */
-  readonly displayHangulFixedWidth?: boolean;
+  displayHangulFixedWidth?: boolean;
   /** Always Move Paragraph Mark to Page after a Page Break */
-  readonly splitPgBreakAndParaMark?: boolean;
+  splitPgBreakAndParaMark?: boolean;
   /** Don't Vertically Align Cells Containing Floating Objects */
-  readonly doNotVerticallyAlignCellWithSp?: boolean;
+  doNotVerticallyAlignCellWithSp?: boolean;
   /** Don't Break Table Rows Around Floating Tables */
-  readonly doNotBreakConstrainedForcedTable?: boolean;
+  doNotBreakConstrainedForcedTable?: boolean;
   /** Ignore Vertical Alignment in Textboxes */
-  readonly ignoreVerticalAlignmentInTextboxes?: boolean;
+  ignoreVerticalAlignmentInTextboxes?: boolean;
   /** Use ANSI Kerning Pairs from Fonts */
-  readonly useAnsiKerningPairs?: boolean;
+  useAnsiKerningPairs?: boolean;
   /** Use Cached Paragraph Information for Column Balancing */
-  readonly cachedColumnBalance?: boolean;
+  cachedColumnBalance?: boolean;
   /** Override Table Style Font Size and Justification */
-  readonly overrideTableStyleFontSizeAndJustification?: boolean;
+  overrideTableStyleFontSizeAndJustification?: boolean;
   /** Enable OpenType Features */
-  readonly enableOpenTypeFeatures?: boolean;
+  enableOpenTypeFeatures?: boolean;
   /** Do Not Flip Mirror Indents */
-  readonly doNotFlipMirrorIndents?: boolean;
+  doNotFlipMirrorIndents?: boolean;
 }
 
 /**

@@ -27,9 +27,9 @@ import type { PositiveUniversalMeasure } from "@util/values";
  */
 export interface ColumnAttributes {
   /** Column width in twips or universal measure */
-  readonly width: number | PositiveUniversalMeasure;
+  width: number | PositiveUniversalMeasure;
   /** Space after column in twips or universal measure (default: 0) */
-  readonly space?: number | PositiveUniversalMeasure;
+  space?: number | PositiveUniversalMeasure;
 }
 
 /**

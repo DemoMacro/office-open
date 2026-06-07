@@ -22,9 +22,9 @@ import type { MathBorderBoxPropertiesOptions } from "./math-border-box-propertie
  */
 export interface MathBorderBoxOptions {
   /** Border box properties */
-  readonly properties?: MathBorderBoxPropertiesOptions;
+  properties?: MathBorderBoxPropertiesOptions;
   /** Content to be bordered */
-  readonly children: readonly MathComponent[];
+  children: MathComponent[];
 }
 
 /**

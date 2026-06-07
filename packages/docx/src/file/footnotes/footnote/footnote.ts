@@ -38,11 +38,11 @@ export const FootnoteType = {
  */
 export interface FootnoteOptions {
   /** Unique numeric identifier for this footnote */
-  readonly id: number;
+  id: number;
   /** Type of footnote (separator or continuation separator) */
-  readonly type?: (typeof FootnoteType)[keyof typeof FootnoteType];
+  type?: (typeof FootnoteType)[keyof typeof FootnoteType];
   /** Content of the footnote (paragraphs, tables, etc.) */
-  readonly children: readonly FileChild[];
+  children: FileChild[];
 }
 
 /**

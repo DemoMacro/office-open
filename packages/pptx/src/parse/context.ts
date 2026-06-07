@@ -7,8 +7,8 @@ import type { PptxDocument } from "../parse";
 
 export class ParseContext {
   constructor(
-    readonly pptx: PptxDocument,
+    public pptx: PptxDocument,
     /** Slide relationship ID → path, parsed from slide's _rels file */
-    readonly slideRels: Map<string, string>,
+    public slideRels: Map<string, string>,
   ) {}
 }

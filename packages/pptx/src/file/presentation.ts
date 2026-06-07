@@ -105,6 +105,6 @@ export interface PresentationOptions {
 // ── Legacy types ──
 
 export interface ViewWrapper {
-  readonly view: { readonly currentOptions: unknown };
-  readonly relationships: Relationships;
+  view: { currentOptions: unknown };
+  relationships: Relationships;
 }

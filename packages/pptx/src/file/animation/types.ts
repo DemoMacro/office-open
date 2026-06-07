@@ -47,220 +47,220 @@ export type AnimationCalcMode = "discrete" | "lin" | "fmla";
 export type AnimationValueType = "str" | "num" | "clr";
 
 export interface AnimationVariantOptions {
-  readonly bool?: boolean;
-  readonly int?: number;
-  readonly float?: number;
-  readonly string?: string;
-  readonly color?: string;
+  bool?: boolean;
+  int?: number;
+  float?: number;
+  string?: string;
+  color?: string;
 }
 
 export interface EndConditionOptions {
-  readonly event?: string;
-  readonly delay?: string;
-  readonly timeNodeId?: number;
-  readonly runtimeNode?: "first" | "last" | "all";
+  event?: string;
+  delay?: string;
+  timeNodeId?: number;
+  runtimeNode?: "first" | "last" | "all";
 }
 
 export interface AnimationBuildOptions {
-  readonly type: "paragraph" | "diagram" | "oleChart" | "graphic";
-  readonly spid: number;
-  readonly grpId: number;
-  readonly uiExpand?: boolean;
+  type: "paragraph" | "diagram" | "oleChart" | "graphic";
+  spid: number;
+  grpId: number;
+  uiExpand?: boolean;
   // paragraph-specific
-  readonly build?: "allAtOnce" | "p" | "cust" | "whole";
-  readonly bldLvl?: number;
-  readonly animBg?: boolean;
-  readonly autoUpdateAnimBg?: boolean;
-  readonly rev?: boolean;
-  readonly advAuto?: number;
-  readonly templates?: readonly AnimationTemplateOptions[];
+  build?: "allAtOnce" | "p" | "cust" | "whole";
+  bldLvl?: number;
+  animBg?: boolean;
+  autoUpdateAnimBg?: boolean;
+  rev?: boolean;
+  advAuto?: number;
+  templates?: AnimationTemplateOptions[];
   // diagram-specific
-  readonly diagramBuild?: string;
+  diagramBuild?: string;
   // oleChart-specific
-  readonly oleChartBuild?: string;
-  readonly oleChartAnimBg?: boolean;
+  oleChartBuild?: string;
+  oleChartAnimBg?: boolean;
   // graphic-specific
-  readonly graphicBuildAsOne?: boolean;
+  graphicBuildAsOne?: boolean;
 }
 
 export interface AnimationTemplateOptions {
-  readonly lvl?: number;
-  readonly children: readonly AnimationOptions[];
+  lvl?: number;
+  children: AnimationOptions[];
 }
 
 export interface AnimationOptions {
-  readonly type?: AnimationType;
-  readonly duration?: number;
-  readonly delay?: number;
-  readonly trigger?: AnimationTrigger;
-  readonly direction?: AnimationDirection;
-  readonly class?: AnimationClass;
-  readonly emphasisType?: EmphasisType;
-  readonly pathType?: PathAnimationType;
-  readonly path?: string;
-  readonly speed?: number;
-  readonly repeatCount?: number;
-  readonly autoReverse?: boolean;
-  readonly color?: string;
+  type?: AnimationType;
+  duration?: number;
+  delay?: number;
+  trigger?: AnimationTrigger;
+  direction?: AnimationDirection;
+  class?: AnimationClass;
+  emphasisType?: EmphasisType;
+  pathType?: PathAnimationType;
+  path?: string;
+  speed?: number;
+  repeatCount?: number;
+  autoReverse?: boolean;
+  color?: string;
 
   // Media playback animation
-  readonly mediaType?: MediaAnimationType;
-  readonly isNarration?: boolean;
-  readonly fullScreen?: boolean;
-  readonly volume?: number;
-  readonly mute?: boolean;
+  mediaType?: MediaAnimationType;
+  isNarration?: boolean;
+  fullScreen?: boolean;
+  volume?: number;
+  mute?: boolean;
 
   // Generic property animation (p:anim)
-  readonly attributeName?: string;
-  readonly calcMode?: AnimationCalcMode;
-  readonly valueType?: AnimationValueType;
-  readonly from?: string;
-  readonly to?: string;
-  readonly animBy?: string;
+  attributeName?: string;
+  calcMode?: AnimationCalcMode;
+  valueType?: AnimationValueType;
+  from?: string;
+  to?: string;
+  animBy?: string;
 
   // Text-level animation target
-  readonly charRange?: readonly [number, number];
-  readonly paragraphRange?: readonly [number, number];
+  charRange?: [number, number];
+  paragraphRange?: [number, number];
 
   // Generic set behavior (p:set) — instant property change
-  readonly setBehavior?: {
-    readonly attributeName: string;
-    readonly toValue: string;
-    readonly toType?: "string" | "number";
+  setBehavior?: {
+    attributeName: string;
+    toValue: string;
+    toType?: "string" | "number";
   };
 
   // Command behavior (p:cmd) — extended command types
-  readonly commandType?: "call" | "evt" | "verb";
-  readonly command?: string;
+  commandType?: "call" | "evt" | "verb";
+  command?: string;
 
   // Iterate container (p:iterate) — text-level iteration
-  readonly iterate?: {
-    readonly type?: "el" | "wd" | "lt";
-    readonly interval?: number;
-    readonly backwards?: boolean;
-    readonly iteratePercentage?: number;
+  iterate?: {
+    type?: "el" | "wd" | "lt";
+    interval?: number;
+    backwards?: boolean;
+    iteratePercentage?: number;
   };
 
   // cTn advanced time node attributes
   /** Repeat duration ("indefinite" or milliseconds). */
-  readonly repeatDuration?: string;
+  repeatDuration?: string;
   /** Acceleration percentage (0–100000, default 0). */
-  readonly acceleration?: number;
+  acceleration?: number;
   /** Deceleration percentage (0–100000, default 0). */
-  readonly deceleration?: number;
+  deceleration?: number;
   /** Restart behavior: "always", "whenNotActive", "never". */
-  readonly restart?: "always" | "whenNotActive" | "never";
+  restart?: "always" | "whenNotActive" | "never";
   /** Sync behavior: "canSlip", "isLocked", "stoppable". */
-  readonly syncBehavior?: "canSlip" | "isLocked" | "stoppable";
+  syncBehavior?: "canSlip" | "isLocked" | "stoppable";
   /** Time filter string. */
-  readonly timeFilter?: string;
+  timeFilter?: string;
   /** Event filter string. */
-  readonly eventFilter?: string;
+  eventFilter?: string;
   /** Display state. */
-  readonly display?: boolean;
+  display?: boolean;
   /** Master relationship: "clearConn", "keepConn", "resume". */
-  readonly masterRelation?: "clearConn" | "keepConn" | "resume";
+  masterRelation?: "clearConn" | "keepConn" | "resume";
   /** Build level for animation. */
-  readonly buildLevel?: number;
+  buildLevel?: number;
   /** Group ID. */
-  readonly groupId?: number;
+  groupId?: number;
   /** Whether this is an after-effect node. */
-  readonly afterEffect?: boolean;
+  afterEffect?: boolean;
   /** Node placeholder. */
-  readonly nodePlaceholder?: boolean;
+  nodePlaceholder?: boolean;
   /** Automatically advance time. */
-  readonly advanceAfterTime?: string;
+  advanceAfterTime?: string;
   /** Animate background. */
-  readonly animateBackground?: boolean;
+  animateBackground?: boolean;
   /** Auto-update animation background. */
-  readonly autoUpdateAnimationBackground?: boolean;
+  autoUpdateAnimationBackground?: boolean;
 
   // cBhvr behavior attributes
   /** Additive mode: "base", "sum", "repl", "mult", "none". */
-  readonly additive?: "base" | "sum" | "repl" | "mult" | "none";
+  additive?: "base" | "sum" | "repl" | "mult" | "none";
   /** Accumulate mode: "none", "always". */
-  readonly accumulate?: "none" | "always";
+  accumulate?: "none" | "always";
   /** Transform type: "pt", "img". */
-  readonly transformType?: "pt" | "img";
+  transformType?: "pt" | "img";
   /** Runtime context string. */
-  readonly runtimeContext?: string;
+  runtimeContext?: string;
   /** Override mode: "normal", "childStyle". */
-  readonly override?: "normal" | "childStyle";
+  override?: "normal" | "childStyle";
 
   // Animation build and formula
   /** Paragraph build type: "whole", "allAtOnce", "p", "cust". */
-  readonly paragraphBuild?: "whole" | "allAtOnce" | "p" | "cust";
+  paragraphBuild?: "whole" | "allAtOnce" | "p" | "cust";
   /** Formula for animation. */
-  readonly formula?: string;
+  formula?: string;
   /** Color space for color animation. */
-  readonly colorSpace?: "rgb" | "hsl";
+  colorSpace?: "rgb" | "hsl";
   /** Path edit mode. */
-  readonly pathEditMode?: "relative" | "fixed" | "none";
+  pathEditMode?: "relative" | "fixed" | "none";
   /** Previous action. */
-  readonly previousAction?: "none" | "skipTimed";
+  previousAction?: "none" | "skipTimed";
   /** Points types. */
-  readonly pointsTypes?: string;
+  pointsTypes?: string;
   /** Rotation angle. */
-  readonly rotationAngle?: number;
+  rotationAngle?: number;
   /** Zoom contents. */
-  readonly zoomContents?: boolean;
+  zoomContents?: boolean;
   /** Show when stopped (for media). */
-  readonly showWhenStopped?: boolean;
+  showWhenStopped?: boolean;
   /** Number of slides. */
-  readonly numberOfSlides?: number;
+  numberOfSlides?: number;
   /** Property list. */
-  readonly propertyList?: string;
+  propertyList?: string;
 
   // cTn time node extensions (A2)
   /** End conditions list (p:endCondLst). */
-  readonly endConditions?: readonly EndConditionOptions[];
+  endConditions?: EndConditionOptions[];
   /** End sync condition (p:endSync). */
-  readonly endSyncCondition?: EndConditionOptions;
+  endSyncCondition?: EndConditionOptions;
   /** Sub time nodes (p:subTnLst). */
-  readonly subTimeNodes?: readonly AnimationOptions[];
+  subTimeNodes?: AnimationOptions[];
   /** Exclusive mode wrapper (p:excl). */
-  readonly exclusiveMode?: boolean;
+  exclusiveMode?: boolean;
 
   // Animation target extensions (A3)
   /** Ink target shape ID (p:inkTgt @spid). */
-  readonly inkTargetShapeId?: number;
+  inkTargetShapeId?: number;
   /** Sound target r:id (p:sndTgt). */
-  readonly soundTarget?: string;
+  soundTarget?: string;
   /** Sub-shape ID (p:subSp @spid). */
-  readonly subShapeId?: number;
+  subShapeId?: number;
   /** Graphic element type (p:graphicEl). */
-  readonly graphicElementType?: string;
+  graphicElementType?: string;
   /** OLE chart element type (p:oleChartEl @type). */
-  readonly oleChartElementType?: string;
+  oleChartElementType?: string;
   /** OLE chart element level (p:oleChartEl @lvl). */
-  readonly oleChartElementLevel?: number;
+  oleChartElementLevel?: number;
 
   // Animation variant values (A4)
   /** Variant boolean value (p:boolVal). */
-  readonly variantBool?: boolean;
+  variantBool?: boolean;
   /** Variant integer value (p:intVal). */
-  readonly variantInt?: number;
+  variantInt?: number;
   /** Variant float value (p:fltVal). */
-  readonly variantFloat?: number;
+  variantFloat?: number;
   /** Variant color value (p:clrVal → a:srgbClr). */
-  readonly variantColor?: string;
+  variantColor?: string;
   /** Color animation from (a:srgbClr hex). */
-  readonly colorFrom?: string;
+  colorFrom?: string;
   /** Color animation to (a:srgbClr hex). */
-  readonly colorTo?: string;
+  colorTo?: string;
   /** Color by RGB transform (p:by → p:rgb). */
-  readonly colorByRgb?: { readonly r: string; readonly g: string; readonly b: string };
+  colorByRgb?: { r: string; g: string; b: string };
   /** Color by HSL transform (p:by → p:hsl). */
-  readonly colorByHsl?: { readonly h: string; readonly s: string; readonly l: string };
+  colorByHsl?: { h: string; s: string; l: string };
   /** Effect progress (p:progress). */
-  readonly effectProgress?: AnimationVariantOptions;
+  effectProgress?: AnimationVariantOptions;
 
   // Motion path extensions (A5)
   /** Motion path from point (p:from). */
-  readonly motionFrom?: { readonly x: string; readonly y: string };
+  motionFrom?: { x: string; y: string };
   /** Motion path rotation center (p:rCtr). */
-  readonly motionRotationCenter?: { readonly x: string; readonly y: string };
+  motionRotationCenter?: { x: string; y: string };
 
   // Build animations (A1) — top-level timing container
-  readonly builds?: readonly AnimationBuildOptions[];
+  builds?: AnimationBuildOptions[];
 }

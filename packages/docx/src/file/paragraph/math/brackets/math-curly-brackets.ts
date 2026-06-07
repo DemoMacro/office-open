@@ -28,7 +28,7 @@ import { createMathBracketProperties } from "./math-bracket-properties";
  * ```
  */
 export class MathCurlyBrackets extends XmlComponent {
-  public constructor(options: { readonly children: readonly MathComponent[] }) {
+  public constructor(options: { children: MathComponent[] }) {
     super("m:d");
 
     this.root.push(

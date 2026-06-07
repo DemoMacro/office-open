@@ -46,8 +46,8 @@ import { buildUnderlineObj } from "./underline";
 import type { UnderlineType } from "./underline";
 
 interface RunFontReference {
-  readonly name: string;
-  readonly hint?: string;
+  name: string;
+  hint?: string;
 }
 
 /**
@@ -170,54 +170,54 @@ export const HighlightColor = {
  * Reference: http://officeopenxml.com/WPtextFormatting.php
  */
 export interface RunStylePropertiesOptions {
-  readonly noProof?: boolean;
-  readonly bold?: boolean;
-  readonly boldComplexScript?: boolean;
-  readonly italics?: boolean;
-  readonly italicsComplexScript?: boolean;
-  readonly underline?: {
-    readonly color?: string;
-    readonly type?: (typeof UnderlineType)[keyof typeof UnderlineType];
+  noProof?: boolean;
+  bold?: boolean;
+  boldComplexScript?: boolean;
+  italics?: boolean;
+  italicsComplexScript?: boolean;
+  underline?: {
+    color?: string;
+    type?: (typeof UnderlineType)[keyof typeof UnderlineType];
   };
-  readonly effect?: (typeof TextEffect)[keyof typeof TextEffect];
-  readonly emphasisMark?: {
-    readonly type?: (typeof EmphasisMarkType)[keyof typeof EmphasisMarkType];
+  effect?: (typeof TextEffect)[keyof typeof TextEffect];
+  emphasisMark?: {
+    type?: (typeof EmphasisMarkType)[keyof typeof EmphasisMarkType];
   };
-  readonly color?: string | ColorOptions;
-  readonly kern?: number | PositiveUniversalMeasure;
-  readonly position?: UniversalMeasure;
-  readonly size?: number | PositiveUniversalMeasure;
-  readonly sizeComplexScript?: boolean | number | PositiveUniversalMeasure;
-  readonly rightToLeft?: boolean;
-  readonly smallCaps?: boolean;
-  readonly allCaps?: boolean;
-  readonly strike?: boolean;
-  readonly doubleStrike?: boolean;
-  readonly subScript?: boolean;
-  readonly superScript?: boolean;
-  readonly font?: string | RunFontReference | FontAttributesProperties;
-  readonly highlight?: (typeof HighlightColor)[keyof typeof HighlightColor];
-  readonly highlightComplexScript?: boolean | string;
-  readonly characterSpacing?: number;
-  readonly shading?: ShadingAttributesProperties;
-  readonly emboss?: boolean;
-  readonly imprint?: boolean;
-  readonly revision?: IRunPropertiesChangeOptions;
-  readonly language?: LanguageOptions;
-  readonly border?: BorderOptions;
-  readonly snapToGrid?: boolean;
-  readonly vanish?: boolean;
-  readonly specVanish?: boolean;
-  readonly scale?: number;
-  readonly math?: boolean;
-  readonly outline?: boolean;
-  readonly shadow?: boolean;
-  readonly webHidden?: boolean;
-  readonly fitText?: number;
-  readonly complexScript?: boolean;
-  readonly eastAsianLayout?: EastAsianLayoutOptions;
+  color?: string | ColorOptions;
+  kern?: number | PositiveUniversalMeasure;
+  position?: UniversalMeasure;
+  size?: number | PositiveUniversalMeasure;
+  sizeComplexScript?: boolean | number | PositiveUniversalMeasure;
+  rightToLeft?: boolean;
+  smallCaps?: boolean;
+  allCaps?: boolean;
+  strike?: boolean;
+  doubleStrike?: boolean;
+  subScript?: boolean;
+  superScript?: boolean;
+  font?: string | RunFontReference | FontAttributesProperties;
+  highlight?: (typeof HighlightColor)[keyof typeof HighlightColor];
+  highlightComplexScript?: boolean | string;
+  characterSpacing?: number;
+  shading?: ShadingAttributesProperties;
+  emboss?: boolean;
+  imprint?: boolean;
+  revision?: IRunPropertiesChangeOptions;
+  language?: LanguageOptions;
+  border?: BorderOptions;
+  snapToGrid?: boolean;
+  vanish?: boolean;
+  specVanish?: boolean;
+  scale?: number;
+  math?: boolean;
+  outline?: boolean;
+  shadow?: boolean;
+  webHidden?: boolean;
+  fitText?: number;
+  complexScript?: boolean;
+  eastAsianLayout?: EastAsianLayoutOptions;
   /** Relationship ID for a content part (w:contentPart with r:id) */
-  readonly contentPartRId?: string;
+  contentPartRId?: string;
 }
 
 /**
@@ -227,7 +227,7 @@ export interface RunStylePropertiesOptions {
  */
 export type RunPropertiesOptions = {
   /** Reference to a character style by name */
-  readonly style?: string;
+  style?: string;
 } & RunStylePropertiesOptions;
 
 /**
@@ -238,8 +238,8 @@ export type RunPropertiesOptions = {
 export type IRunPropertiesChangeOptions = {} & RunPropertiesOptions & ChangedAttributesProperties;
 
 export type IParagraphRunPropertiesOptions = {
-  readonly insertion?: ChangedAttributesProperties;
-  readonly deletion?: ChangedAttributesProperties;
+  insertion?: ChangedAttributesProperties;
+  deletion?: ChangedAttributesProperties;
 } & RunPropertiesOptions;
 
 /**

@@ -22,10 +22,10 @@ import type { ThemeColor, UniversalMeasure } from "@util/values";
  * @property themeShade - Theme color shade (2-char hex, e.g., "BF")
  */
 export interface ColorOptions {
-  readonly val?: string;
-  readonly themeColor?: (typeof ThemeColor)[keyof typeof ThemeColor];
-  readonly themeTint?: string;
-  readonly themeShade?: string;
+  val?: string;
+  themeColor?: (typeof ThemeColor)[keyof typeof ThemeColor];
+  themeTint?: string;
+  themeShade?: string;
 }
 
 /**

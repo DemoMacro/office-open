@@ -25,11 +25,11 @@ import type { EmbeddedFontOptionsWithKey } from "./font-wrapper";
  */
 export interface EmbeddedFontOptions {
   /** Font family name */
-  readonly name: string;
+  name: string;
   /** Font file data (TTF, OTF, etc.) */
-  readonly data: Buffer;
+  data: Buffer;
   /** Character set/encoding for the font */
-  readonly characterSet?: (typeof CharacterSet)[keyof typeof CharacterSet];
+  characterSet?: (typeof CharacterSet)[keyof typeof CharacterSet];
 }
 
 /**
@@ -49,7 +49,7 @@ export interface EmbeddedFontOptions {
  * </xsd:complexType>
  * ```
  */
-export const createFontTable = (fonts: readonly EmbeddedFontOptionsWithKey[]): XmlComponent =>
+export const createFontTable = (fonts: EmbeddedFontOptionsWithKey[]): XmlComponent =>
   // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_Font_topic_ID0ERNCU.html
   // http://www.datypic.com/sc/ooxml/e-w_fonts.html
   new BuilderElement({

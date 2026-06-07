@@ -22,9 +22,9 @@ import type { XmlComponent } from "@file/xml-components";
 // </xsd:complexType>
 
 interface CompatibilitySettingAttributes {
-  readonly name: string;
-  readonly uri: string;
-  readonly val: string | number;
+  name: string;
+  uri: string;
+  val: string | number;
 }
 
 /**

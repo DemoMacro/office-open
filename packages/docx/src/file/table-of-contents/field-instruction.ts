@@ -41,7 +41,7 @@ import type { TableOfContentsOptions } from "./table-of-contents-properties";
  * ```
  */
 export class FieldInstruction extends XmlComponent {
-  private readonly properties: TableOfContentsOptions;
+  private properties: TableOfContentsOptions;
 
   public constructor(properties: TableOfContentsOptions = {}) {
     super("w:instrText");

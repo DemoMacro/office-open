@@ -77,29 +77,29 @@ export type DocPartBehavior = (typeof DocPartBehavior)[keyof typeof DocPartBehav
 /** A single building block (CT_DocPart) */
 export interface DocPartOptions {
   /** Building block name (required) */
-  readonly name: string;
+  name: string;
   /** Gallery category (required) */
-  readonly gallery: DocPartGallery;
+  gallery: DocPartGallery;
   /** Category name within the gallery */
-  readonly category?: string;
+  category?: string;
   /** Building block types */
-  readonly types?: readonly DocPartType[];
+  types?: DocPartType[];
   /** Whether all building block types are included (w:all attribute) */
-  readonly allTypes?: boolean;
+  allTypes?: boolean;
   /** Insertion behaviors */
-  readonly behaviors?: readonly DocPartBehavior[];
+  behaviors?: DocPartBehavior[];
   /** Description */
-  readonly description?: string;
+  description?: string;
   /** GUID for this building block */
-  readonly guid?: string;
+  guid?: string;
   /** Whether the name is decorated (built-in) */
-  readonly decorated?: boolean;
+  decorated?: boolean;
   /** Body content — paragraphs, tables, etc. */
-  readonly children: readonly FileChild[];
+  children: FileChild[];
 }
 
 /** Glossary document options */
 export interface GlossaryDocumentOptions {
   /** Building blocks */
-  readonly parts: readonly DocPartOptions[];
+  parts: DocPartOptions[];
 }

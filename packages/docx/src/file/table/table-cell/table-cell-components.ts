@@ -29,21 +29,21 @@ import { decimalNumber } from "@util/values";
  */
 export interface TableCellBordersOptions {
   /** Border for the top edge of the cell */
-  readonly top?: BorderOptions;
+  top?: BorderOptions;
   /** Border for the start edge (left in LTR, right in RTL) */
-  readonly start?: BorderOptions;
+  start?: BorderOptions;
   /** Border for the left edge of the cell */
-  readonly left?: BorderOptions;
+  left?: BorderOptions;
   /** Border for the bottom edge of the cell */
-  readonly bottom?: BorderOptions;
+  bottom?: BorderOptions;
   /** Border for the end edge (right in LTR, left in RTL) */
-  readonly end?: BorderOptions;
+  end?: BorderOptions;
   /** Border for the right edge of the cell */
-  readonly right?: BorderOptions;
+  right?: BorderOptions;
   /** Diagonal border from top-left to bottom-right */
-  readonly topLeftToBottomRight?: BorderOptions;
+  topLeftToBottomRight?: BorderOptions;
   /** Diagonal border from top-right to bottom-left */
-  readonly topRightToBottomLeft?: BorderOptions;
+  topRightToBottomLeft?: BorderOptions;
 }
 
 /**

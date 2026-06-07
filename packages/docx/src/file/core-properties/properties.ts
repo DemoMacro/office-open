@@ -56,79 +56,79 @@ import type { StylesOptions } from "../styles";
  * @property hyphenation - Hyphenation settings
  */
 export interface PropertiesOptions {
-  readonly sections: readonly SectionOptions[];
-  readonly title?: string;
-  readonly subject?: string;
-  readonly creator?: string;
-  readonly keywords?: string;
-  readonly description?: string;
-  readonly lastModifiedBy?: string;
-  readonly revision?: number;
-  readonly externalStyles?: string;
-  readonly styles?: StylesOptions;
-  readonly numbering?: NumberingOptions;
-  readonly comments?: CommentsOptions;
-  readonly bibliography?: BibliographyOptions;
-  readonly footnotes?: Readonly<
+  sections: SectionOptions[];
+  title?: string;
+  subject?: string;
+  creator?: string;
+  keywords?: string;
+  description?: string;
+  lastModifiedBy?: string;
+  revision?: number;
+  externalStyles?: string;
+  styles?: StylesOptions;
+  numbering?: NumberingOptions;
+  comments?: CommentsOptions;
+  bibliography?: BibliographyOptions;
+  footnotes?: Readonly<
     Record<
       string,
       {
-        readonly children: readonly (Paragraph | ParagraphOptions | string)[];
+        children: (Paragraph | ParagraphOptions | string)[];
       }
     >
   >;
-  readonly endnotes?: Readonly<
+  endnotes?: Readonly<
     Record<
       string,
       {
-        readonly children: readonly (Paragraph | ParagraphOptions | string)[];
+        children: (Paragraph | ParagraphOptions | string)[];
       }
     >
   >;
-  readonly background?: DocumentBackgroundOptions;
-  readonly features?: {
-    readonly trackRevisions?: boolean;
-    readonly updateFields?: boolean;
-    readonly documentProtection?: DocumentProtectionOptions;
+  background?: DocumentBackgroundOptions;
+  features?: {
+    trackRevisions?: boolean;
+    updateFields?: boolean;
+    documentProtection?: DocumentProtectionOptions;
   };
-  readonly compatabilityModeVersion?: number;
-  readonly compatibility?: CompatibilityOptions;
-  readonly customProperties?: readonly CustomPropertyOptions[];
-  readonly evenAndOddHeaderAndFooters?: boolean;
-  readonly defaultTabStop?: number;
-  readonly fonts?: readonly EmbeddedFontOptions[];
-  readonly hyphenation?: HyphenationOptions;
+  compatabilityModeVersion?: number;
+  compatibility?: CompatibilityOptions;
+  customProperties?: CustomPropertyOptions[];
+  evenAndOddHeaderAndFooters?: boolean;
+  defaultTabStop?: number;
+  fonts?: EmbeddedFontOptions[];
+  hyphenation?: HyphenationOptions;
   /** Controls whether punctuation is compressed at line ends */
-  readonly characterSpacingControl?: "compressPunctuation" | "doNotCompress";
+  characterSpacingControl?: "compressPunctuation" | "doNotCompress";
   /** Default document view mode */
-  readonly view?: "none" | "print" | "outline" | "masterPages" | "normal" | "web";
+  view?: "none" | "print" | "outline" | "masterPages" | "normal" | "web";
   /** Default zoom level (percentage) and type */
-  readonly zoom?: {
-    readonly percent?: number;
-    readonly val?: "none" | "fullPage" | "bestFit" | "textFit";
+  zoom?: {
+    percent?: number;
+    val?: "none" | "fullPage" | "bestFit" | "textFit";
   };
   /** Write protection recommendation (not enforcement) */
-  readonly writeProtection?: WriteProtectionOptions;
+  writeProtection?: WriteProtectionOptions;
   /** Whether to display the background shape in print layout */
-  readonly displayBackgroundShape?: boolean;
+  displayBackgroundShape?: boolean;
   /** Whether to embed TrueType fonts in the document */
-  readonly embedTrueTypeFonts?: boolean;
+  embedTrueTypeFonts?: boolean;
   /** Whether to embed system fonts in the document */
-  readonly embedSystemFonts?: boolean;
+  embedSystemFonts?: boolean;
   /** Whether to save only a subset of the embedded fonts */
-  readonly saveSubsetFonts?: boolean;
+  saveSubsetFonts?: boolean;
   /** Document variables (key-value pairs stored in the document) */
-  readonly docVars?: readonly { readonly name: string; readonly val: string }[];
+  docVars?: { name: string; val: string }[];
   /** Theme color scheme remapping */
-  readonly colorSchemeMapping?: SettingsOptions["colorSchemeMapping"];
+  colorSchemeMapping?: SettingsOptions["colorSchemeMapping"];
   /** Mail merge configuration */
-  readonly mailMerge?: SettingsOptions["mailMerge"];
+  mailMerge?: SettingsOptions["mailMerge"];
   /** Glossary document — building blocks (Quick Parts) */
-  readonly glossary?: import("../glossary/glossary-document").GlossaryDocumentOptions;
+  glossary?: import("../glossary/glossary-document").GlossaryDocumentOptions;
   /** Additional document settings passed through to the settings.xml part */
-  readonly settings?: import("../settings/settings").SettingsOptions;
+  settings?: import("../settings/settings").SettingsOptions;
   /** Web settings for browser rendering (word/webSettings.xml) */
-  readonly webSettings?: import("../web-settings/web-settings").WebSettingsOptions;
+  webSettings?: import("../web-settings/web-settings").WebSettingsOptions;
 }
 
 /**

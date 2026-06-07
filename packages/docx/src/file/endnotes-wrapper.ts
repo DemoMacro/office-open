@@ -3,8 +3,8 @@ import { Endnotes } from "./endnotes/endnotes";
 import { Relationships } from "./relationships";
 
 export class EndnotesWrapper implements ViewWrapper {
-  private readonly endnotes: Endnotes;
-  public readonly relationships: Relationships;
+  private endnotes: Endnotes;
+  public relationships: Relationships;
 
   public constructor() {
     this.endnotes = new Endnotes();

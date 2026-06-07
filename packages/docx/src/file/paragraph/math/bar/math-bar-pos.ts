@@ -15,7 +15,7 @@ import type { XmlComponent } from "@file/xml-components";
  */
 interface MathBarPosOptions {
   /** Position value: "top" for overline, "bot" for underline */
-  readonly val: string;
+  val: string;
 }
 
 /**

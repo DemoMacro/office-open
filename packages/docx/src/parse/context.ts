@@ -12,8 +12,8 @@ import type { DocxDocument } from "../parse";
 
 export class ParseContext {
   constructor(
-    readonly docx: DocxDocument,
-    readonly styleCache: Map<string, Element>,
-    readonly numberingCache: Map<string, Element>,
+    public docx: DocxDocument,
+    public styleCache: Map<string, Element>,
+    public numberingCache: Map<string, Element>,
   ) {}
 }

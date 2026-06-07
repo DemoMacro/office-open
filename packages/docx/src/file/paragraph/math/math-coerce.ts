@@ -59,139 +59,137 @@ import { MathSubScript, MathSubSuperScript, MathSuperScript } from "./script";
 export type MathJson =
   | MathComponent
   | string
-  | { readonly text: string; readonly properties?: MathRunPropertiesOptions }
+  | { text: string; properties?: MathRunPropertiesOptions }
   | {
-      readonly fraction: {
-        readonly numerator: readonly MathJson[];
-        readonly denominator: readonly MathJson[];
-        readonly fractionType?: (typeof FractionType)[keyof typeof FractionType];
+      fraction: {
+        numerator: MathJson[];
+        denominator: MathJson[];
+        fractionType?: (typeof FractionType)[keyof typeof FractionType];
       };
     }
   | {
-      readonly superScript: {
-        readonly children: readonly MathJson[];
-        readonly superScript: readonly MathJson[];
+      superScript: {
+        children: MathJson[];
+        superScript: MathJson[];
       };
     }
   | {
-      readonly subScript: {
-        readonly children: readonly MathJson[];
-        readonly subScript: readonly MathJson[];
+      subScript: {
+        children: MathJson[];
+        subScript: MathJson[];
       };
     }
   | {
-      readonly subSuperScript: {
-        readonly children: readonly MathJson[];
-        readonly subScript: readonly MathJson[];
-        readonly superScript: readonly MathJson[];
+      subSuperScript: {
+        children: MathJson[];
+        subScript: MathJson[];
+        superScript: MathJson[];
       };
     }
   | {
-      readonly radical: {
-        readonly children: readonly MathJson[];
-        readonly degree?: readonly MathJson[];
+      radical: {
+        children: MathJson[];
+        degree?: MathJson[];
       };
     }
   | {
-      readonly sum: {
-        readonly children: readonly MathJson[];
-        readonly subScript?: readonly MathJson[];
-        readonly superScript?: readonly MathJson[];
+      sum: {
+        children: MathJson[];
+        subScript?: MathJson[];
+        superScript?: MathJson[];
       };
     }
   | {
-      readonly integral: {
-        readonly children: readonly MathJson[];
-        readonly subScript?: readonly MathJson[];
-        readonly superScript?: readonly MathJson[];
+      integral: {
+        children: MathJson[];
+        subScript?: MathJson[];
+        superScript?: MathJson[];
       };
     }
   | {
-      readonly limitLower: {
-        readonly children: readonly MathJson[];
-        readonly limit: readonly MathJson[];
-        readonly properties?: MathLimitLowPropertiesOptions;
+      limitLower: {
+        children: MathJson[];
+        limit: MathJson[];
+        properties?: MathLimitLowPropertiesOptions;
       };
     }
   | {
-      readonly limitUpper: {
-        readonly children: readonly MathJson[];
-        readonly limit: readonly MathJson[];
-        readonly properties?: MathLimitUpperPropertiesOptions;
+      limitUpper: {
+        children: MathJson[];
+        limit: MathJson[];
+        properties?: MathLimitUpperPropertiesOptions;
       };
     }
   | {
-      readonly function: {
-        readonly children: readonly MathJson[];
-        readonly name: readonly MathJson[];
-        readonly properties?: MathFunctionPropertiesOptions;
+      function: {
+        children: MathJson[];
+        name: MathJson[];
+        properties?: MathFunctionPropertiesOptions;
       };
     }
   | {
-      readonly matrix: {
-        readonly rows: readonly (readonly MathJson[])[];
-        readonly properties?: MathMatrixPropertiesOptions;
+      matrix: {
+        rows: MathJson[][];
+        properties?: MathMatrixPropertiesOptions;
       };
     }
-  | { readonly roundBrackets: readonly MathJson[] | { readonly children: readonly MathJson[] } }
-  | { readonly curlyBrackets: readonly MathJson[] | { readonly children: readonly MathJson[] } }
-  | { readonly angledBrackets: readonly MathJson[] | { readonly children: readonly MathJson[] } }
-  | { readonly squareBrackets: readonly MathJson[] | { readonly children: readonly MathJson[] } }
+  | { roundBrackets: MathJson[] | { children: MathJson[] } }
+  | { curlyBrackets: MathJson[] | { children: MathJson[] } }
+  | { angledBrackets: MathJson[] | { children: MathJson[] } }
+  | { squareBrackets: MathJson[] | { children: MathJson[] } }
   | {
-      readonly borderBox: {
-        readonly children: readonly MathJson[];
-        readonly properties?: MathBorderBoxPropertiesOptions;
-      };
-    }
-  | {
-      readonly box: {
-        readonly children: readonly MathJson[];
-        readonly properties?: MathBoxPropertiesOptions;
+      borderBox: {
+        children: MathJson[];
+        properties?: MathBorderBoxPropertiesOptions;
       };
     }
   | {
-      readonly groupChr: {
-        readonly children: readonly MathJson[];
-        readonly properties?: MathGroupChrPropertiesOptions;
+      box: {
+        children: MathJson[];
+        properties?: MathBoxPropertiesOptions;
       };
     }
   | {
-      readonly phant: {
-        readonly children: readonly MathJson[];
-        readonly properties?: MathPhantPropertiesOptions;
+      groupChr: {
+        children: MathJson[];
+        properties?: MathGroupChrPropertiesOptions;
       };
     }
   | {
-      readonly eqArr: {
-        readonly rows: readonly (readonly MathJson[])[];
-        readonly properties?: MathEqArrPropertiesOptions;
+      phant: {
+        children: MathJson[];
+        properties?: MathPhantPropertiesOptions;
       };
     }
   | {
-      readonly accent: {
-        readonly children: readonly MathJson[];
-        readonly accentCharacter?: string;
+      eqArr: {
+        rows: MathJson[][];
+        properties?: MathEqArrPropertiesOptions;
       };
     }
   | {
-      readonly bar: {
-        readonly children: readonly MathJson[];
-        readonly type: "top" | "bot";
+      accent: {
+        children: MathJson[];
+        accentCharacter?: string;
+      };
+    }
+  | {
+      bar: {
+        children: MathJson[];
+        type: "top" | "bot";
       };
     };
 
 /** Coerce an array of MathJson values to MathComponent instances. */
-function coerceArray(items: readonly MathJson[] | undefined): readonly MathComponent[] {
+function coerceArray(items: MathJson[] | undefined): MathComponent[] {
   if (!items) return [];
-  return items.map((v) => coerceMathJson(v)) as readonly MathComponent[];
+  return items.map((v) => coerceMathJson(v)) as MathComponent[];
 }
 
 /** Coerce bracket shorthand to children array. */
-function bracketChildren(
-  v: readonly MathJson[] | { readonly children: readonly MathJson[] },
-): readonly MathComponent[] {
+function bracketChildren(v: MathJson[] | { children: MathJson[] }): MathComponent[] {
   if (Array.isArray(v)) return coerceArray(v);
-  return coerceArray((v as { readonly children: readonly MathJson[] }).children);
+  return coerceArray((v as { children: MathJson[] }).children);
 }
 
 /**
@@ -299,7 +297,7 @@ export function coerceMathJson(value: MathJson): XmlComponent {
   if ("matrix" in value) {
     const opts = value.matrix;
     return new MathMatrix({
-      rows: opts.rows.map((row) => coerceArray(row)) as readonly (readonly MathComponent[])[],
+      rows: opts.rows.map((row) => coerceArray(row)) as MathComponent[][],
       ...(opts.properties ? { properties: opts.properties } : {}),
     });
   }
@@ -356,7 +354,7 @@ export function coerceMathJson(value: MathJson): XmlComponent {
   if ("eqArr" in value) {
     const opts = value.eqArr;
     return new MathEqArr({
-      rows: opts.rows.map((row) => coerceArray(row)) as readonly (readonly MathComponent[])[],
+      rows: opts.rows.map((row) => coerceArray(row)) as MathComponent[][],
       ...(opts.properties ? { properties: opts.properties } : {}),
     });
   }
@@ -364,7 +362,7 @@ export function coerceMathJson(value: MathJson): XmlComponent {
   if ("accent" in value) {
     const opts = value.accent;
     return createMathAccent({
-      children: coerceArray(opts.children) as readonly MathComponent[],
+      children: coerceArray(opts.children) as MathComponent[],
       ...(opts.accentCharacter ? { accentCharacter: opts.accentCharacter } : {}),
     });
   }
@@ -372,7 +370,7 @@ export function coerceMathJson(value: MathJson): XmlComponent {
   if ("bar" in value) {
     const opts = value.bar;
     return createMathBar({
-      children: coerceArray(opts.children) as readonly MathComponent[],
+      children: coerceArray(opts.children) as MathComponent[],
       type: opts.type,
     });
   }

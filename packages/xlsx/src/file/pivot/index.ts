@@ -1,12 +1,13 @@
 /**
- * Pivot table module — exports all pivot table types and XML generators.
+ * Pivot table module — exports all pivot table types and utilities.
+ *
+ * XML generation has been migrated to descriptors (compile/descriptors/).
  *
  * @module
  */
-export { PivotCacheDefinitionXml } from "./pivot-cache-definition-xml";
-export { PivotCacheRecordsXml } from "./pivot-cache-records-xml";
-export { PivotTableXml } from "./pivot-table-xml";
 export type {
+  PivotCacheDefinitionOptions,
+  CacheFieldExtraAttrs,
   PivotTableOptions,
   PivotDataField,
   PivotSourceData,

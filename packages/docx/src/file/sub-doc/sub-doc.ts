@@ -22,7 +22,7 @@ const SUBDOC_RELATIONSHIP_TYPE =
  */
 export interface SubDocOptions {
   /** The sub-document data (raw bytes of a .docx file) */
-  readonly data: Uint8Array | string;
+  data: Uint8Array | string;
 }
 
 /**
@@ -41,8 +41,8 @@ export interface SubDocOptions {
  * ```
  */
 export class SubDoc extends XmlComponent implements FileChild {
-  public readonly fileChild = Symbol();
-  private readonly options: SubDocOptions;
+  public fileChild = Symbol();
+  private options: SubDocOptions;
 
   public constructor(options: SubDocOptions) {
     super("w:subDoc");

@@ -91,13 +91,13 @@ export const NumberRestartType = {
  */
 interface NumberPropertiesOptions {
   /** Number format (decimal, roman, letter, etc.) */
-  readonly formatType?: (typeof NumberFormat)[keyof typeof NumberFormat];
+  formatType?: (typeof NumberFormat)[keyof typeof NumberFormat];
   /** Custom number format string (overrides formatType when specified) */
-  readonly format?: string;
+  format?: string;
   /** Starting number */
-  readonly numStart?: number;
+  numStart?: number;
   /** When to restart numbering */
-  readonly numRestart?: (typeof NumberRestartType)[keyof typeof NumberRestartType];
+  numRestart?: (typeof NumberRestartType)[keyof typeof NumberRestartType];
 }
 
 /**
@@ -105,7 +105,7 @@ interface NumberPropertiesOptions {
  */
 export interface FootnotePropertiesOptions extends NumberPropertiesOptions {
   /** Footnote placement */
-  readonly pos?: (typeof FootnotePositionType)[keyof typeof FootnotePositionType];
+  pos?: (typeof FootnotePositionType)[keyof typeof FootnotePositionType];
 }
 
 /**
@@ -113,7 +113,7 @@ export interface FootnotePropertiesOptions extends NumberPropertiesOptions {
  */
 export interface EndnotePropertiesOptions extends NumberPropertiesOptions {
   /** Endnote placement */
-  readonly pos?: (typeof EndnotePositionType)[keyof typeof EndnotePositionType];
+  pos?: (typeof EndnotePositionType)[keyof typeof EndnotePositionType];
 }
 
 /**
@@ -141,7 +141,7 @@ export const createFootnoteProperties = ({
 
   if (pos !== undefined) {
     container.addChildElement(
-      new BuilderElement<{ readonly val: string }>({
+      new BuilderElement<{ val: string }>({
         attributes: { val: { key: "w:val", value: pos } },
         name: "w:pos",
       }),
@@ -150,7 +150,7 @@ export const createFootnoteProperties = ({
 
   if (formatType !== undefined || format !== undefined) {
     container.addChildElement(
-      new BuilderElement<{ readonly val?: string; readonly format?: string }>({
+      new BuilderElement<{ val?: string; format?: string }>({
         attributes: {
           format: { key: "w:format", value: format },
           val: { key: "w:fmt", value: formatType },
@@ -162,7 +162,7 @@ export const createFootnoteProperties = ({
 
   if (numStart !== undefined) {
     container.addChildElement(
-      new BuilderElement<{ readonly val: number }>({
+      new BuilderElement<{ val: number }>({
         attributes: {
           val: { key: "w:val", value: decimalNumber(numStart) },
         },
@@ -173,7 +173,7 @@ export const createFootnoteProperties = ({
 
   if (numRestart !== undefined) {
     container.addChildElement(
-      new BuilderElement<{ readonly val: string }>({
+      new BuilderElement<{ val: string }>({
         attributes: { val: { key: "w:val", value: numRestart } },
         name: "w:numRestart",
       }),
@@ -217,7 +217,7 @@ export const createEndnoteProperties = ({
 
   if (pos !== undefined) {
     container.addChildElement(
-      new BuilderElement<{ readonly val: string }>({
+      new BuilderElement<{ val: string }>({
         attributes: { val: { key: "w:val", value: pos } },
         name: "w:pos",
       }),
@@ -226,7 +226,7 @@ export const createEndnoteProperties = ({
 
   if (formatType !== undefined || format !== undefined) {
     container.addChildElement(
-      new BuilderElement<{ readonly val?: string; readonly format?: string }>({
+      new BuilderElement<{ val?: string; format?: string }>({
         attributes: {
           format: { key: "w:format", value: format },
           val: { key: "w:fmt", value: formatType },
@@ -238,7 +238,7 @@ export const createEndnoteProperties = ({
 
   if (numStart !== undefined) {
     container.addChildElement(
-      new BuilderElement<{ readonly val: number }>({
+      new BuilderElement<{ val: number }>({
         attributes: {
           val: { key: "w:val", value: decimalNumber(numStart) },
         },
@@ -249,7 +249,7 @@ export const createEndnoteProperties = ({
 
   if (numRestart !== undefined) {
     container.addChildElement(
-      new BuilderElement<{ readonly val: string }>({
+      new BuilderElement<{ val: string }>({
         attributes: { val: { key: "w:val", value: numRestart } },
         name: "w:numRestart",
       }),

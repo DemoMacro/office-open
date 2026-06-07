@@ -15,7 +15,7 @@ import type { MathComponent } from "../math-component";
  * @internal
  */
 export class MathDenominator extends XmlComponent {
-  public constructor(children: readonly MathComponent[]) {
+  public constructor(children: MathComponent[]) {
     super("m:den");
 
     for (const child of children) {

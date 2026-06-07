@@ -17,15 +17,15 @@ import type { BuilderChild, XmlComponent } from "@file/xml-components";
  */
 export interface MathEqArrPropertiesOptions {
   /** Base justification (vertical alignment) */
-  readonly baseJc?: "top" | "bot" | "center";
+  baseJc?: "top" | "bot" | "center";
   /** Maximum distance between equations */
-  readonly maxDist?: boolean;
+  maxDist?: boolean;
   /** Object distance */
-  readonly objDist?: boolean;
+  objDist?: boolean;
   /** Row spacing rule */
-  readonly rSpRule?: "single" | "1.5" | "double" | "exactly" | "multiple";
+  rSpRule?: "single" | "1.5" | "double" | "exactly" | "multiple";
   /** Row spacing value */
-  readonly rSp?: number;
+  rSp?: number;
 }
 
 /**

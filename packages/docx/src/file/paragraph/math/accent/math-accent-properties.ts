@@ -29,7 +29,7 @@ export interface MathAccentPropertiesOptions {
    * - `\u0306` - breve: x̆
    * - `\u030A` - ring above: x̊
    */
-  readonly accentCharacter: string;
+  accentCharacter: string;
 }
 
 /**
@@ -48,7 +48,7 @@ export interface MathAccentPropertiesOptions {
 export const createMathAccentProperties = (options: MathAccentPropertiesOptions): XmlComponent =>
   new BuilderElement({
     children: [
-      new BuilderElement<{ readonly val: string }>({
+      new BuilderElement<{ val: string }>({
         attributes: {
           val: { key: "m:val", value: options.accentCharacter },
         },

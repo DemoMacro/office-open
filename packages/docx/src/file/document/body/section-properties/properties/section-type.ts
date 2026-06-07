@@ -44,7 +44,7 @@ export const SectionType = {
 } as const;
 
 interface SectionTypeAttributes {
-  readonly val: (typeof SectionType)[keyof typeof SectionType];
+  val: (typeof SectionType)[keyof typeof SectionType];
 }
 
 /**

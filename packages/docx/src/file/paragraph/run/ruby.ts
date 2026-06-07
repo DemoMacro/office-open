@@ -62,39 +62,39 @@ export const RubyAlign = {
  */
 export interface RubyOptions {
   /** Ruby annotation text (e.g., furigana, pinyin) */
-  readonly text: string;
+  text: string;
   /** Base text being annotated */
-  readonly base: string;
+  base: string;
   /**
    * Ruby alignment (defaults to "center").
    */
-  readonly alignment?: (typeof RubyAlign)[keyof typeof RubyAlign];
+  alignment?: (typeof RubyAlign)[keyof typeof RubyAlign];
   /**
    * Font size for the ruby annotation text in half-points (e.g., 20 = 10pt).
    *
    * Defaults to half the base text size if not specified.
    */
-  readonly fontSize?: number;
+  fontSize?: number;
   /**
    * Vertical offset for the ruby annotation in half-points.
    *
    * How far the annotation is raised above (or below) the base text.
    */
-  readonly raise?: number;
+  raise?: number;
   /**
    * Font size for the base text in half-points.
    *
    * Used to calculate the ruby annotation positioning.
    */
-  readonly baseFontSize?: number;
+  baseFontSize?: number;
   /**
    * Language identifier for the ruby annotation (e.g., "ja-JP").
    */
-  readonly languageId?: string;
+  languageId?: string;
   /**
    * Whether the ruby annotation is dirty (needs recalculation).
    */
-  readonly dirty?: boolean;
+  dirty?: boolean;
 }
 
 /**
@@ -158,23 +158,23 @@ export const createRuby = (options: RubyOptions): XmlComponent => {
 
   const rubyPr = new BuilderElement({
     children: [
-      new BuilderElement<{ readonly val: string }>({
+      new BuilderElement<{ val: string }>({
         attributes: { val: { key: "w:val", value: align } },
         name: "w:rubyAlign",
       }),
-      new BuilderElement<{ readonly val: number }>({
+      new BuilderElement<{ val: number }>({
         attributes: { val: { key: "w:val", value: hps } },
         name: "w:hps",
       }),
-      new BuilderElement<{ readonly val: number }>({
+      new BuilderElement<{ val: number }>({
         attributes: { val: { key: "w:val", value: hpsRaise } },
         name: "w:hpsRaise",
       }),
-      new BuilderElement<{ readonly val: number }>({
+      new BuilderElement<{ val: number }>({
         attributes: { val: { key: "w:val", value: hpsBaseText } },
         name: "w:hpsBaseText",
       }),
-      new BuilderElement<{ readonly val: string }>({
+      new BuilderElement<{ val: string }>({
         attributes: {
           val: {
             key: "w:val",

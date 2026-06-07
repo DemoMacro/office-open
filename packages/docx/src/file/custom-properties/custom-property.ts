@@ -17,9 +17,9 @@ import { XmlComponent } from "@file/xml-components";
  */
 export interface CustomPropertyOptions {
   /** The property name */
-  readonly name: string;
+  name: string;
   /** The property value (as string) */
-  readonly value: string;
+  value: string;
 }
 
 /**

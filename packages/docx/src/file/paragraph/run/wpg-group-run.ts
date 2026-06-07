@@ -15,23 +15,23 @@ import { createTransformation } from "../../media";
 export * from "@file/drawing/inline/graphic/graphic-data/wps/body-properties";
 
 interface CoreGroupOptions {
-  readonly children: readonly IGroupChildMediaData[];
-  readonly transformation: MediaTransformation;
-  readonly floating?: Floating;
-  readonly altText?: DocPropertiesOptions;
+  children: IGroupChildMediaData[];
+  transformation: MediaTransformation;
+  floating?: Floating;
+  altText?: DocPropertiesOptions;
 }
 
 /**
  * @publicApi
  */
-export type IWpgGroupOptions = { readonly type: "wpg" } & CoreGroupOptions;
+export type IWpgGroupOptions = { type: "wpg" } & CoreGroupOptions;
 
 /**
  * @publicApi
  */
 export class WpgGroupRun extends Run {
-  private readonly wpgGroupData: WpgMediaData;
-  private readonly mediaDatas: readonly IMediaData[];
+  private wpgGroupData: WpgMediaData;
+  private mediaDatas: IMediaData[];
 
   public constructor(options: IWpgGroupOptions) {
     super({});

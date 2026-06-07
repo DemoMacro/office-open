@@ -10,21 +10,21 @@ import { Run } from "../run";
 export * from "@file/drawing/inline/graphic/graphic-data/wps/body-properties";
 
 interface CoreShapeOptions {
-  readonly transformation: MediaTransformation;
-  readonly floating?: Floating;
-  readonly altText?: DocPropertiesOptions;
+  transformation: MediaTransformation;
+  floating?: Floating;
+  altText?: DocPropertiesOptions;
 }
 
 /**
  * @publicApi
  */
-export type IWpsShapeOptions = WpsShapeCoreOptions & { readonly type: "wps" } & CoreShapeOptions;
+export type IWpsShapeOptions = WpsShapeCoreOptions & { type: "wps" } & CoreShapeOptions;
 
 /**
  * @publicApi
  */
 export class WpsShapeRun extends Run {
-  private readonly wpsShapeData: WpsMediaData;
+  private wpsShapeData: WpsMediaData;
 
   public constructor(options: IWpsShapeOptions) {
     super({});

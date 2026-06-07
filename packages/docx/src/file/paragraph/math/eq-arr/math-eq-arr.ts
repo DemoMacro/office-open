@@ -22,9 +22,9 @@ import type { MathEqArrPropertiesOptions } from "./math-eq-arr-properties";
  */
 export interface MathEqArrOptions {
   /** Equation array properties */
-  readonly properties?: MathEqArrPropertiesOptions;
+  properties?: MathEqArrPropertiesOptions;
   /** Equations to stack (each row becomes an m:e element) */
-  readonly rows: readonly (readonly MathComponent[])[];
+  rows: MathComponent[][];
 }
 
 /**

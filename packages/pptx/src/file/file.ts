@@ -33,105 +33,105 @@ import type { TableStyleListOptions } from "@office-open/core";
 
 export type MasterChild = BaseXmlComponent | { shape: ShapeOptions };
 
-export type SlideSize = "16:9" | "4:3" | { readonly width: number; readonly height: number };
+export type SlideSize = "16:9" | "4:3" | { width: number; height: number };
 
 export interface LayoutPlaceholderOptions {
-  readonly title?: MasterPlaceholderPosition | false;
-  readonly body?: MasterPlaceholderPosition | false;
-  readonly subtitle?: MasterPlaceholderPosition | false;
-  readonly date?: MasterPlaceholderPosition | false;
-  readonly footer?: MasterPlaceholderPosition | false;
-  readonly slideNumber?: MasterPlaceholderPosition | false;
+  title?: MasterPlaceholderPosition | false;
+  body?: MasterPlaceholderPosition | false;
+  subtitle?: MasterPlaceholderPosition | false;
+  date?: MasterPlaceholderPosition | false;
+  footer?: MasterPlaceholderPosition | false;
+  slideNumber?: MasterPlaceholderPosition | false;
 }
 
 export interface LayoutDefinition {
-  readonly type?: SlideLayoutType;
-  readonly name?: string;
-  readonly matchingName?: string;
-  readonly placeholders?: LayoutPlaceholderOptions;
-  readonly children?: readonly MasterChild[];
+  type?: SlideLayoutType;
+  name?: string;
+  matchingName?: string;
+  placeholders?: LayoutPlaceholderOptions;
+  children?: MasterChild[];
 }
 
 export interface MasterDefinition extends SlideMasterOptions {
-  readonly name?: string;
-  readonly theme?: ThemeOptions;
-  readonly layouts?: readonly LayoutDefinition[];
+  name?: string;
+  theme?: ThemeOptions;
+  layouts?: LayoutDefinition[];
 }
 
 export interface SlideCommentOptions {
-  readonly author: string;
-  readonly text: string;
-  readonly x: number;
-  readonly y: number;
-  readonly initials?: string;
-  readonly date?: string;
+  author: string;
+  text: string;
+  x: number;
+  y: number;
+  initials?: string;
+  date?: string;
 }
 
 export interface SlideAnimation {
-  readonly shapeId: number;
-  readonly options: AnimationOptions;
+  shapeId: number;
+  options: AnimationOptions;
 }
 
 export interface SlideOptions {
-  readonly children?: readonly SlideChild[];
-  readonly background?: BackgroundOptions;
-  readonly notes?: string;
-  readonly transition?: TransitionOptions;
-  readonly headerFooter?: SlideHeaderFooterOptions;
-  readonly comments?: readonly SlideCommentOptions[];
-  readonly layout?: SlideLayoutType | string;
-  readonly master?: string;
-  readonly showMasterShapes?: boolean;
-  readonly showMasterPlaceholderAnimations?: boolean;
-  readonly controls?: readonly ControlOptions[];
-  readonly customerData?: readonly { readonly rId: string }[];
-  readonly slideSync?: SlideSyncOptions;
-  readonly animations?: readonly SlideAnimation[];
+  children?: SlideChild[];
+  background?: BackgroundOptions;
+  notes?: string;
+  transition?: TransitionOptions;
+  headerFooter?: SlideHeaderFooterOptions;
+  comments?: SlideCommentOptions[];
+  layout?: SlideLayoutType | string;
+  master?: string;
+  showMasterShapes?: boolean;
+  showMasterPlaceholderAnimations?: boolean;
+  controls?: ControlOptions[];
+  customerData?: { rId: string }[];
+  slideSync?: SlideSyncOptions;
+  animations?: SlideAnimation[];
 }
 
 export interface ShowOptions {
-  readonly loop?: boolean;
-  readonly type?: "present" | "browse" | "kiosk";
-  readonly showScrollbar?: boolean;
-  readonly restart?: number;
-  readonly showNarration?: boolean;
-  readonly showAnimation?: boolean;
-  readonly useTimings?: boolean;
-  readonly slideRange?: { readonly start: number; readonly end: number };
-  readonly penColor?: string;
+  loop?: boolean;
+  type?: "present" | "browse" | "kiosk";
+  showScrollbar?: boolean;
+  restart?: number;
+  showNarration?: boolean;
+  showAnimation?: boolean;
+  useTimings?: boolean;
+  slideRange?: { start: number; end: number };
+  penColor?: string;
 }
 
 export interface PresentationOptions extends CorePropertiesOptions {
-  readonly size?: SlideSize;
-  readonly masters?: readonly MasterDefinition[];
-  readonly slides?: readonly SlideOptions[];
-  readonly show?: ShowOptions;
-  readonly view?: ViewPropertiesOptions;
-  readonly includeHandoutMaster?: boolean;
-  readonly includeNotesMaster?: boolean;
-  readonly handoutMasterOptions?: HandoutMasterOptions;
-  readonly notesMasterOptions?: NotesMasterOptions;
-  readonly tableStyles?: TableStyleListOptions;
-  readonly web?: WebPropertiesOptions;
-  readonly print?: PrintPropertiesOptions;
-  readonly htmlPublish?: HtmlPublishPropertiesOptions;
-  readonly serverZoom?: string;
-  readonly firstSlideNum?: number;
-  readonly showSpecialPlsOnTitleSld?: boolean;
-  readonly rtl?: boolean;
-  readonly removePersonalInfoOnSave?: boolean;
-  readonly compatMode?: boolean;
-  readonly strictFirstAndLastChars?: boolean;
-  readonly embedTrueTypeFonts?: boolean;
-  readonly saveSubsetFonts?: boolean;
-  readonly autoCompressPictures?: boolean;
-  readonly bookmarkIdSeed?: number;
-  readonly conformance?: "strict" | "transitional";
-  readonly photoAlbum?: PhotoAlbumOptions;
-  readonly modifyVerifier?: ModifyVerifierOptions;
-  readonly embeddedFonts?: EmbeddedFontOptions[];
-  readonly customShows?: CustomShowOptions[];
-  readonly kinsoku?: KinsokuOptions[];
-  readonly customerData?: CustomerDataOptions;
-  readonly colorMru?: readonly string[];
+  size?: SlideSize;
+  masters?: MasterDefinition[];
+  slides?: SlideOptions[];
+  show?: ShowOptions;
+  view?: ViewPropertiesOptions;
+  includeHandoutMaster?: boolean;
+  includeNotesMaster?: boolean;
+  handoutMasterOptions?: HandoutMasterOptions;
+  notesMasterOptions?: NotesMasterOptions;
+  tableStyles?: TableStyleListOptions;
+  web?: WebPropertiesOptions;
+  print?: PrintPropertiesOptions;
+  htmlPublish?: HtmlPublishPropertiesOptions;
+  serverZoom?: string;
+  firstSlideNum?: number;
+  showSpecialPlsOnTitleSld?: boolean;
+  rtl?: boolean;
+  removePersonalInfoOnSave?: boolean;
+  compatMode?: boolean;
+  strictFirstAndLastChars?: boolean;
+  embedTrueTypeFonts?: boolean;
+  saveSubsetFonts?: boolean;
+  autoCompressPictures?: boolean;
+  bookmarkIdSeed?: number;
+  conformance?: "strict" | "transitional";
+  photoAlbum?: PhotoAlbumOptions;
+  modifyVerifier?: ModifyVerifierOptions;
+  embeddedFonts?: EmbeddedFontOptions[];
+  customShows?: CustomShowOptions[];
+  kinsoku?: KinsokuOptions[];
+  customerData?: CustomerDataOptions;
+  colorMru?: string[];
 }

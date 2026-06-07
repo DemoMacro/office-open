@@ -76,7 +76,7 @@ const buildSimplePres = (): PresentationOptions => ({
             width: 300,
             height: 200,
             data: SMALL_IMAGES[0],
-            type: "jpg" as const,
+            type: "jpg",
           },
         },
       ],
@@ -113,7 +113,7 @@ const buildStyledPres = (): PresentationOptions => ({
                   ],
                 },
               },
-            }) as const,
+            }) as SlideChild,
         ),
         {
           picture: {
@@ -122,7 +122,7 @@ const buildStyledPres = (): PresentationOptions => ({
             width: 300,
             height: 200,
             data: SMALL_IMAGES[1],
-            type: "jpg" as const,
+            type: "jpg",
           },
         },
       ],
@@ -203,7 +203,7 @@ const buildFullFeaturedPres = (): PresentationOptions => ({
                   ],
                 },
               },
-            }) as const,
+            }) as SlideChild,
         ),
         {
           picture: {
@@ -212,9 +212,9 @@ const buildFullFeaturedPres = (): PresentationOptions => ({
             width: 300,
             height: 200,
             data: SMALL_IMAGES[0],
-            type: "jpg" as const,
+            type: "jpg",
           },
-        },
+        } satisfies SlideChild,
         {
           picture: {
             x: 600,
@@ -222,9 +222,9 @@ const buildFullFeaturedPres = (): PresentationOptions => ({
             width: 300,
             height: 200,
             data: SMALL_IMAGES[2],
-            type: "jpg" as const,
+            type: "jpg",
           },
-        },
+        } satisfies SlideChild,
         {
           table: {
             rows: TABLE_ROWS.map((row) => ({
@@ -668,7 +668,7 @@ const build50SlidesFull = (): PresentationOptions => ({
           width: 350,
           height: 250,
           data: LARGE_IMAGES[(si * 2 + pi) % LARGE_IMAGES.length],
-          type: "jpg" as const,
+          type: "jpg",
         },
       })),
       // 3×3 table
@@ -682,7 +682,7 @@ const build50SlidesFull = (): PresentationOptions => ({
           })),
         },
       },
-    ] as readonly SlideChild[],
+    ] as SlideChild[],
   })),
 });
 
@@ -718,10 +718,10 @@ const build30Slides10Images = (): PresentationOptions => ({
           width: 150,
           height: 110,
           data: LARGE_IMAGES[(si * 10 + pi) % LARGE_IMAGES.length],
-          type: "jpg" as const,
+          type: "jpg",
         },
       })),
-    ] as readonly SlideChild[],
+    ] as SlideChild[],
   })),
 });
 
@@ -1168,7 +1168,7 @@ const buildMixed100MbPres = (): PresentationOptions => ({
           width: 350,
           height: 280,
           data: MIXED_IMAGES[(si * 2 + pi) % MIXED_IMAGES.length],
-          type: "jpg" as const,
+          type: "jpg",
         },
       })),
       // 3×3 table
@@ -1182,7 +1182,7 @@ const buildMixed100MbPres = (): PresentationOptions => ({
           })),
         },
       },
-    ] as readonly SlideChild[],
+    ] as SlideChild[],
   })),
 });
 

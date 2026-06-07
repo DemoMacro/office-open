@@ -60,7 +60,7 @@ export const createHorizontalPosition = ({
 }: HorizontalPositionOptions): XmlComponent =>
   new BuilderElement<{
     /** Horizontal Position Relative Base */
-    readonly relativeFrom: (typeof HorizontalPositionRelativeFrom)[keyof typeof HorizontalPositionRelativeFrom];
+    relativeFrom: (typeof HorizontalPositionRelativeFrom)[keyof typeof HorizontalPositionRelativeFrom];
   }>({
     attributes: {
       relativeFrom: {

@@ -93,19 +93,19 @@ export const PageBorderZOrder = {
  */
 export interface PageBordersOptions {
   /** Which pages display the border */
-  readonly display?: (typeof PageBorderDisplay)[keyof typeof PageBorderDisplay];
+  display?: (typeof PageBorderDisplay)[keyof typeof PageBorderDisplay];
   /** Whether border is positioned relative to page or text (default: text) */
-  readonly offsetFrom?: (typeof PageBorderOffsetFrom)[keyof typeof PageBorderOffsetFrom];
+  offsetFrom?: (typeof PageBorderOffsetFrom)[keyof typeof PageBorderOffsetFrom];
   /** Whether border appears in front or behind page contents (default: front) */
-  readonly zOrder?: (typeof PageBorderZOrder)[keyof typeof PageBorderZOrder];
+  zOrder?: (typeof PageBorderZOrder)[keyof typeof PageBorderZOrder];
   /** Top border styling */
-  readonly top?: BorderOptions;
+  top?: BorderOptions;
   /** Right border styling */
-  readonly right?: BorderOptions;
+  right?: BorderOptions;
   /** Bottom border styling */
-  readonly bottom?: BorderOptions;
+  bottom?: BorderOptions;
   /** Left border styling */
-  readonly left?: BorderOptions;
+  left?: BorderOptions;
 }
 
 /**

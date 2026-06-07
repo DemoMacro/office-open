@@ -18,11 +18,11 @@ import type { BuilderChild, XmlComponent } from "@file/xml-components";
  */
 export interface MathGroupChrPropertiesOptions {
   /** Character to display (e.g., "\u23DF" for bottom curly bracket) */
-  readonly chr?: string;
+  chr?: string;
   /** Position of the character: "top" or "bot" */
-  readonly pos?: "top" | "bot";
+  pos?: "top" | "bot";
   /** Vertical justification: "top" or "bot" */
-  readonly vertJc?: "top" | "bot";
+  vertJc?: "top" | "bot";
 }
 
 /**

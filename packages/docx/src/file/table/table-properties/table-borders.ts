@@ -19,12 +19,12 @@ import { XmlComponent } from "@file/xml-components";
  * and inside lines (insideHorizontal, insideVertical) of the table.
  */
 export interface TableBordersOptions {
-  readonly top?: BorderOptions;
-  readonly bottom?: BorderOptions;
-  readonly left?: BorderOptions;
-  readonly right?: BorderOptions;
-  readonly insideHorizontal?: BorderOptions;
-  readonly insideVertical?: BorderOptions;
+  top?: BorderOptions;
+  bottom?: BorderOptions;
+  left?: BorderOptions;
+  right?: BorderOptions;
+  insideHorizontal?: BorderOptions;
+  insideVertical?: BorderOptions;
 }
 
 const NONE_BORDER: BorderOptions = {
@@ -76,7 +76,7 @@ export function buildTableBorders(options: TableBordersOptions): IXmlableObject 
 }
 
 export class TableBorders extends XmlComponent {
-  public static readonly NONE: TableBordersOptions = {
+  public static NONE: TableBordersOptions = {
     bottom: NONE_BORDER,
     insideHorizontal: NONE_BORDER,
     insideVertical: NONE_BORDER,

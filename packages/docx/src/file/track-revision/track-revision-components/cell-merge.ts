@@ -19,8 +19,8 @@ export const VerticalMergeRevisionType = {
 } as const;
 
 export type ICellMergeAttributes = ChangedAttributesProperties & {
-  readonly verticalMerge?: (typeof VerticalMergeRevisionType)[keyof typeof VerticalMergeRevisionType];
-  readonly verticalMergeOriginal?: (typeof VerticalMergeRevisionType)[keyof typeof VerticalMergeRevisionType];
+  verticalMerge?: (typeof VerticalMergeRevisionType)[keyof typeof VerticalMergeRevisionType];
+  verticalMergeOriginal?: (typeof VerticalMergeRevisionType)[keyof typeof VerticalMergeRevisionType];
 };
 
 export function buildCellMergeObj(options: ICellMergeAttributes): IXmlableObject {

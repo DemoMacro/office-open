@@ -15,7 +15,7 @@ import type { XmlComponent } from "@file/xml-components";
  */
 interface MathBeginningCharacterOptions {
   /** The opening bracket character */
-  readonly character: string;
+  character: string;
 }
 
 /**

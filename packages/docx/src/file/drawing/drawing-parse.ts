@@ -16,9 +16,9 @@ import type { ParseContext } from "../../parse/context";
 
 /** Union type for parsed drawing child wrappers. */
 export type DrawingChild =
-  | { readonly image: IImageOptions }
-  | { readonly chart: ChartOptions }
-  | { readonly smartArt: SmartArtOptions };
+  | { image: IImageOptions }
+  | { chart: ChartOptions }
+  | { smartArt: SmartArtOptions };
 
 /**
  * Parse a w:drawing element and dispatch to the correct parser
@@ -76,7 +76,7 @@ function imageTypeFromPath(
 export function parseImageRun(
   el: Element,
   ctx: ParseContext,
-): { readonly image: IImageOptions } | undefined {
+): { image: IImageOptions } | undefined {
   // Try inline first, then anchor
   const inline = findDeep(el, "wp:inline")[0];
   const anchor = inline ? undefined : findDeep(el, "wp:anchor")[0];
@@ -213,10 +213,7 @@ function lookupRId(map: Map<string, string>, rId: string | undefined): string | 
   return undefined;
 }
 
-function parseChartDrawing(
-  el: Element,
-  ctx: ParseContext,
-): { readonly chart: ChartOptions } | undefined {
+function parseChartDrawing(el: Element, ctx: ParseContext): { chart: ChartOptions } | undefined {
   const chartRef = findDeep(el, "c:chart")[0];
   if (!chartRef) return undefined;
 
@@ -378,7 +375,7 @@ function extractNumCache(parent: Element): number[] {
 function parseSmartArtDrawing(
   el: Element,
   ctx: ParseContext,
-): { readonly smartArt: SmartArtOptions } | undefined {
+): { smartArt: SmartArtOptions } | undefined {
   const relIds = findDeep(el, "dgm:relIds")[0];
   if (!relIds) return undefined;
 

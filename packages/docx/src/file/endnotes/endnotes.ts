@@ -66,7 +66,7 @@ export class Endnotes extends XmlComponent {
     this.root.push(spacing);
   }
 
-  public createEndnote(id: number, paragraph: readonly Paragraph[]): void {
+  public createEndnote(id: number, paragraph: Paragraph[]): void {
     const endnote = new Endnote({
       children: paragraph,
       id: id,

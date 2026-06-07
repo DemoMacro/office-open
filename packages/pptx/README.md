@@ -127,4 +127,4 @@ Check the [demo folder](./demo) for working examples covering every feature.
 
 ## License
 
-- [MIT](LICENSE) &copy; [Demo Macro](https://imst.xyz/)
+- [MIT](LICENSE) &copy; [Demo Macro](https://www.demomacro.com/)

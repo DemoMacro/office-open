@@ -34,15 +34,15 @@ export interface AnimationDescriptorOptions {
 }
 
 export interface SlideDescriptorOptions {
-  children?: readonly SlideChild[];
+  children?: SlideChild[];
   background?: BackgroundDescriptorOptions;
   transition?: TransitionDescriptorOptions;
   showMasterSp?: boolean;
   showMasterPhAnim?: boolean;
-  controls?: readonly ControlDescriptorOptions[];
-  customerData?: readonly { readonly rId: string }[];
+  controls?: ControlDescriptorOptions[];
+  customerData?: { rId: string }[];
   headerFooter?: HeaderFooterDescriptorOptions;
-  animations?: readonly AnimationDescriptorOptions[];
+  animations?: AnimationDescriptorOptions[];
 }
 
 /** Discriminated union for slide children (JSON-friendly). */
@@ -50,7 +50,7 @@ export type SlideChild =
   | { shape: ShapeDescriptorOptions }
   | { picture: PictureDescriptorOptions }
   | { text: TextBodyDescriptorOptions }
-  | { contentPart: { readonly rId: string } };
+  | { contentPart: { rId: string } };
 
 export interface BackgroundDescriptorOptions {
   color?: string;

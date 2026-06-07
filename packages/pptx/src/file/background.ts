@@ -2,10 +2,10 @@ import type { EffectsOptions } from "@file/drawingml/effects";
 import type { FillOptions } from "@file/drawingml/fill";
 
 export interface BackgroundOptions {
-  readonly fill?: FillOptions;
-  readonly effects?: EffectsOptions;
-  readonly shadeToTitle?: boolean;
-  readonly blackWhiteMode?:
+  fill?: FillOptions;
+  effects?: EffectsOptions;
+  shadeToTitle?: boolean;
+  blackWhiteMode?:
     | "clr"
     | "gray"
     | "ltGray"

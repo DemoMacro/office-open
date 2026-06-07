@@ -96,7 +96,7 @@ export const AlignmentType = {
 export const createAlignment = (
   type: (typeof AlignmentType)[keyof typeof AlignmentType],
 ): XmlComponent =>
-  new BuilderElement<{ readonly val: (typeof AlignmentType)[keyof typeof AlignmentType] }>({
+  new BuilderElement<{ val: (typeof AlignmentType)[keyof typeof AlignmentType] }>({
     attributes: {
       val: { key: "w:val", value: type },
     },

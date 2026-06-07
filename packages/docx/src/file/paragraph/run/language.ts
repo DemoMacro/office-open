@@ -32,11 +32,11 @@ import type { IXmlableObject, XmlComponent } from "@file/xml-components";
  */
 export interface LanguageOptions {
   /** Language for Latin and complex script text (RFC 1766 format, e.g., "en-US") */
-  readonly value?: string;
+  value?: string;
   /** Language for East Asian text (RFC 1766 format, e.g., "ja-JP") */
-  readonly eastAsia?: string;
+  eastAsia?: string;
   /** Language for bidirectional text (RFC 1766 format, e.g., "ar-SA") */
-  readonly bidirectional?: string;
+  bidirectional?: string;
 }
 
 /**
@@ -65,9 +65,9 @@ export interface LanguageOptions {
  */
 export const createLanguageComponent = (options: LanguageOptions): XmlComponent =>
   new BuilderElement<{
-    readonly value?: string;
-    readonly eastAsia?: string;
-    readonly bidirectional?: string;
+    value?: string;
+    eastAsia?: string;
+    bidirectional?: string;
   }>({
     attributes: {
       bidirectional: {

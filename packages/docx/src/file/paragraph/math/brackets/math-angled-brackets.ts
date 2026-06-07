@@ -17,7 +17,7 @@ import { createMathBracketProperties } from "./math-bracket-properties";
  * Options for MathAngledBrackets.
  */
 interface MathAngledBracketsOptions {
-  readonly children: readonly MathComponent[];
+  children: MathComponent[];
 }
 
 /**

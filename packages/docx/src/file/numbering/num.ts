@@ -30,9 +30,9 @@ class AbstractNumId extends XmlComponent {
  */
 interface OverrideLevel {
   /** The level number to override (0-8). */
-  readonly num: number;
+  num: number;
   /** The starting number for this level. */
-  readonly start?: number;
+  start?: number;
 }
 
 /**
@@ -46,15 +46,15 @@ interface OverrideLevel {
  */
 export interface ConcreteNumberingOptions {
   /** Unique identifier for this numbering instance. */
-  readonly numId: number;
+  numId: number;
   /** ID of the abstract numbering definition to reference. */
-  readonly abstractNumId: number;
+  abstractNumId: number;
   /** Reference name for this numbering instance. */
-  readonly reference: string;
+  reference: string;
   /** Instance number for tracking multiple uses. */
-  readonly instance: number;
+  instance: number;
   /** Array of level overrides to customize specific levels. */
-  readonly overrideLevels?: readonly OverrideLevel[];
+  overrideLevels?: OverrideLevel[];
 }
 
 /**
@@ -96,11 +96,11 @@ export interface ConcreteNumberingOptions {
  */
 export class ConcreteNumbering extends XmlComponent {
   /** The unique identifier for this numbering instance. */
-  public readonly numId: number;
+  public numId: number;
   /** The reference name for this numbering instance. */
-  public readonly reference: string;
+  public reference: string;
   /** The instance number for tracking multiple uses. */
-  public readonly instance: number;
+  public instance: number;
 
   /**
    * Creates a new concrete numbering instance.

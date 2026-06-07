@@ -28,19 +28,19 @@ import type { LengthUnit } from "../types";
  */
 export interface VTextboxOptions {
   /** CSS-style string for textbox styling */
-  readonly style?: string;
+  style?: string;
   /** Array of block-level children to include in the textbox */
-  readonly children?: readonly FileChild[];
+  children?: FileChild[];
   /** Custom inset margins for the textbox content (top, left, bottom, right) */
-  readonly inset?: {
+  inset?: {
     /** Top inset margin */
-    readonly top: LengthUnit;
+    top: LengthUnit;
     /** Left inset margin */
-    readonly left: LengthUnit;
+    left: LengthUnit;
     /** Bottom inset margin */
-    readonly bottom: LengthUnit;
+    bottom: LengthUnit;
     /** Right inset margin */
-    readonly right: LengthUnit;
+    right: LengthUnit;
   };
 }
 
@@ -84,9 +84,9 @@ export interface VTextboxOptions {
  */
 export const createVmlTextbox = ({ style, children, inset }: VTextboxOptions): XmlComponent =>
   new BuilderElement<{
-    readonly style?: string;
-    readonly inset?: string;
-    readonly insetMode?: InsetMode;
+    style?: string;
+    inset?: string;
+    insetMode?: InsetMode;
   }>({
     attributes: {
       inset: {

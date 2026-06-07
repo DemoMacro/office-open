@@ -25,8 +25,8 @@ import { Relationships } from "./relationships";
  * @property type - The header type (default, first page, even pages)
  */
 export interface DocumentHeader {
-  readonly header: HeaderWrapper;
-  readonly type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType];
+  header: HeaderWrapper;
+  type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType];
 }
 
 /**
@@ -48,9 +48,9 @@ export interface DocumentHeader {
  * ```
  */
 export class HeaderWrapper implements ViewWrapper {
-  private readonly header: Header;
-  public readonly relationships: Relationships;
-  public readonly media: Media;
+  private header: Header;
+  public relationships: Relationships;
+  public media: Media;
 
   public constructor(media: Media, referenceId: number, initContent?: XmlComponent) {
     this.media = media;

@@ -19,9 +19,9 @@ import type { BuilderChild, XmlComponent } from "@file/xml-components";
  */
 export interface MathControlPropertiesOptions {
   /** Insertion tracking reference */
-  readonly insertionReference?: string;
+  insertionReference?: string;
   /** Deletion tracking reference */
-  readonly deletionReference?: string;
+  deletionReference?: string;
 }
 
 /**

@@ -15,7 +15,7 @@ import type { XmlComponent } from "@file/xml-components";
  */
 interface MathAccentCharacterOptions {
   /** The n-ary operator character (e.g., "∑", "∫", "∏") */
-  readonly accent: string;
+  accent: string;
 }
 
 /**

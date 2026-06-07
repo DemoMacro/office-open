@@ -17,15 +17,15 @@ import type { BuilderChild, XmlComponent } from "@file/xml-components";
  */
 export interface MathPhantPropertiesOptions {
   /** Show the phantom content */
-  readonly show?: boolean;
+  show?: boolean;
   /** Zero width */
-  readonly zeroWid?: boolean;
+  zeroWid?: boolean;
   /** Zero ascent */
-  readonly zeroAsc?: boolean;
+  zeroAsc?: boolean;
   /** Zero descent */
-  readonly zeroDesc?: boolean;
+  zeroDesc?: boolean;
   /** Transparent */
-  readonly transp?: boolean;
+  transp?: boolean;
 }
 
 /**

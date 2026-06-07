@@ -46,7 +46,7 @@ export const EmphasisMarkType = {
 } as const;
 
 interface EmphasisMarkAttributes {
-  readonly val: (typeof EmphasisMarkType)[keyof typeof EmphasisMarkType];
+  val: (typeof EmphasisMarkType)[keyof typeof EmphasisMarkType];
 }
 
 /**

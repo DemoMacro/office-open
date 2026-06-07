@@ -33,9 +33,9 @@ import { buildHyperlinkClickObj, buildHyperlinkHoverObj } from "./doc-properties
  */
 export interface HyperlinkOptions {
   /** URL for click hyperlink */
-  readonly click?: string;
+  click?: string;
   /** URL for hover hyperlink */
-  readonly hover?: string;
+  hover?: string;
 }
 
 /**
@@ -45,14 +45,14 @@ export interface HyperlinkOptions {
  */
 export interface DocPropertiesOptions {
   /** Name of the drawing element (used for identification) */
-  readonly name: string;
+  name: string;
   /** Description/alt text for accessibility */
-  readonly description?: string;
+  description?: string;
   /** Title of the drawing element */
-  readonly title?: string;
-  readonly id?: string;
+  title?: string;
+  id?: string;
   /** Hyperlink options for click and hover actions */
-  readonly hyperlink?: HyperlinkOptions;
+  hyperlink?: HyperlinkOptions;
 }
 
 const HYPERLINK_RELATIONSHIP_TYPE =
@@ -89,7 +89,7 @@ export const resetDocPropertiesIdGen = (): void => {
 };
 
 export class DocProperties extends XmlComponent {
-  private readonly hyperlink?: HyperlinkOptions;
+  private hyperlink?: HyperlinkOptions;
 
   public constructor(
     { name, description, title, id, hyperlink }: DocPropertiesOptions = {

@@ -9,8 +9,8 @@ import { SpaceType } from "@file/shared";
 import type { IXmlableObject } from "@file/xml-components";
 
 interface TextOptions {
-  readonly space?: (typeof SpaceType)[keyof typeof SpaceType];
-  readonly text?: string;
+  space?: (typeof SpaceType)[keyof typeof SpaceType];
+  text?: string;
 }
 
 /**

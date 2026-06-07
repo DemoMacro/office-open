@@ -29,7 +29,7 @@ export interface LockedCanvasDescriptorOptions {
   y?: number;
   width?: number;
   height?: number;
-  children?: readonly LockedCanvasShapeDescriptorOptions[];
+  children?: LockedCanvasShapeDescriptorOptions[];
 }
 
 // ── ID counters ──
@@ -85,9 +85,7 @@ export const lockedCanvasDesc: CustomDescriptor<LockedCanvasDescriptorOptions> =
   },
 };
 
-function buildCanvasChildren(
-  children: readonly LockedCanvasShapeDescriptorOptions[] | undefined,
-): string {
+function buildCanvasChildren(children: LockedCanvasShapeDescriptorOptions[] | undefined): string {
   if (!children || children.length === 0) return "";
 
   const parts: string[] = [];

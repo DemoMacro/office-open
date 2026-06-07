@@ -5,7 +5,7 @@
  */
 
 export interface SlideSyncOptions {
-  readonly serverSldId: string;
-  readonly serverSldModifiedTime: string;
-  readonly clientInsertedTime: string;
+  serverSldId: string;
+  serverSldModifiedTime: string;
+  clientInsertedTime: string;
 }

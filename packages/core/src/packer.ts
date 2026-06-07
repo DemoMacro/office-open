@@ -25,8 +25,8 @@ export { toUint8Array } from "undio";
 export type { DataType } from "undio";
 
 export interface XmlifyedFile {
-  readonly path: string;
-  readonly data: string | Uint8Array;
+  path: string;
+  data: string | Uint8Array;
 }
 
 /** Default DEFLATE level for XML entries (SuperFast, matching MS Office). */
@@ -38,19 +38,19 @@ export const ZIP_STORED_LEVEL = 0;
 /** Compression options for ZIP output (zlib levels 0-9, matching fflate). */
 export interface CompressionOptions {
   /** DEFLATE level for XML files. Default: 1 (SuperFast, matching MS Office). */
-  readonly xml?: number;
+  xml?: number;
   /** DEFLATE level for media files. Default: 0 (STORE, no compression). */
-  readonly media?: number;
+  media?: number;
 }
 
 /** Options for Packer output methods. */
 export interface PackerOptions<T extends OutputType = "nodebuffer"> {
   /** Output format. Defaults to `"nodebuffer"` (Node.js Buffer). */
-  readonly type?: T;
+  type?: T;
   /** Custom XML/ZIP file overrides. */
-  readonly overrides?: readonly XmlifyedFile[];
+  overrides?: XmlifyedFile[];
   /** Compression levels for ZIP entries. */
-  readonly compression?: CompressionOptions;
+  compression?: CompressionOptions;
 }
 
 /**
@@ -152,7 +152,7 @@ export const createZipStream = (
  */
 export type CompileFn<TFile> = (
   file: TFile,
-  overrides?: readonly XmlifyedFile[],
+  overrides?: XmlifyedFile[],
   mediaLevel?: number,
 ) => Zippable;
 

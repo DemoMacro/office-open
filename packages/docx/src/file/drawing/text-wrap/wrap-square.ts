@@ -17,7 +17,7 @@ import { TextWrappingSide } from "./text-wrapping";
 import type { TextWrapping } from "./text-wrapping";
 
 type IWrapSquareAttributes = {
-  readonly wrapText?: (typeof TextWrappingSide)[keyof typeof TextWrappingSide];
+  wrapText?: (typeof TextWrappingSide)[keyof typeof TextWrappingSide];
 } & Distance;
 
 /**

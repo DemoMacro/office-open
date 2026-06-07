@@ -22,15 +22,15 @@ import { createMathSuperScriptHide } from "./math-super-script-hide";
  */
 export interface MathNAryPropertiesOptions {
   /** The n-ary operator character (e.g., "∑" for sum, "∫" for integral) */
-  readonly accent: string;
+  accent: string;
   /** Whether the n-ary has a superscript (upper limit) */
-  readonly hasSuperScript: boolean;
+  hasSuperScript: boolean;
   /** Whether the n-ary has a subscript (lower limit) */
-  readonly hasSubScript: boolean;
+  hasSubScript: boolean;
   /** Location of limits: "undOvr" (under/over) or "subSup" (subscript/superscript) */
-  readonly limitLocationVal?: string;
+  limitLocationVal?: string;
   /** Whether the operator grows to match its content */
-  readonly grow?: boolean;
+  grow?: boolean;
 }
 
 /**

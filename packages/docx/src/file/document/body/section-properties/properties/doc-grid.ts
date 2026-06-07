@@ -49,7 +49,7 @@ export interface DocGridAttributesProperties {
    *
    * The grid can define a grid which snaps all East Asian characters to grid positions, but leaves Latin text with its default spacing; a grid which adds the specified character pitch to each character on each row; or a grid which affects only the line pitch for the current section.
    */
-  readonly type?: (typeof DocumentGridType)[keyof typeof DocumentGridType];
+  type?: (typeof DocumentGridType)[keyof typeof DocumentGridType];
   /**
    * Specifies the number of lines to be allowed on the document grid for the current page assuming all lines have equal line pitch applied to them. This line pitch shall not be added to any line which appears within a table cell unless the <adjustLineHeightInTable> element (§2.15.3.1) is present in the document's compatibility settings.
    *
@@ -69,7 +69,7 @@ export interface DocGridAttributesProperties {
    *
    * The possible values for this attribute are defined by the ST_DecimalNumber simple type (§2.18.16).
    */
-  readonly linePitch: number;
+  linePitch: number;
   /**
    * Specifies the number of characters to be allowed on the document grid for each line in this section.
    *
@@ -86,7 +86,7 @@ export interface DocGridAttributesProperties {
    *
    * The possible values for this attribute are defined by the `ST_DecimalNumber` simple type (§2.18.16).
    */
-  readonly charSpace?: number;
+  charSpace?: number;
 }
 
 /**

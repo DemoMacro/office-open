@@ -26,16 +26,16 @@ import { XmlComponent } from "@file/xml-components";
  */
 export interface CommentOptions {
   /** Unique identifier for the comment */
-  readonly id: number;
+  id: number;
   /** Content of the comment (typically paragraphs).
    *  Accepts class instances, plain ParagraphOptions objects, or strings (coerced to Paragraph). */
-  readonly children: readonly (FileChild | ParagraphOptions | string)[];
+  children: (FileChild | ParagraphOptions | string)[];
   /** Initials of the comment author */
-  readonly initials?: string;
+  initials?: string;
   /** Name of the comment author */
-  readonly author?: string;
+  author?: string;
   /** Date and time the comment was created. Accepts Date or ISO string. */
-  readonly date?: Date | string;
+  date?: Date | string;
 }
 
 /**
@@ -45,7 +45,7 @@ export interface CommentOptions {
  */
 export interface CommentsOptions {
   /** Array of comment definitions */
-  readonly children: readonly CommentOptions[];
+  children: CommentOptions[];
 }
 
 /**
@@ -232,7 +232,7 @@ export class Comment extends XmlComponent {
  * ```
  */
 export class Comments extends XmlComponent {
-  public readonly relationships: Relationships;
+  public relationships: Relationships;
 
   public constructor({ children }: CommentsOptions) {
     super("w:comments");

@@ -59,27 +59,27 @@ import { WebSettings } from "./web-settings";
  */
 export interface SectionOptions {
   /** Optional header definitions for the section. */
-  readonly headers?: {
+  headers?: {
     /** Default header for all pages (when first/even not specified). */
-    readonly default?: Header | readonly SectionChild[];
+    default?: Header | SectionChild[];
     /** Header for the first page of the section. */
-    readonly first?: Header | readonly SectionChild[];
+    first?: Header | SectionChild[];
     /** Header for even-numbered pages. */
-    readonly even?: Header | readonly SectionChild[];
+    even?: Header | SectionChild[];
   };
   /** Optional footer definitions for the section. */
-  readonly footers?: {
+  footers?: {
     /** Default footer for all pages (when first/even not specified). */
-    readonly default?: Footer | readonly SectionChild[];
+    default?: Footer | SectionChild[];
     /** Footer for the first page of the section. */
-    readonly first?: Footer | readonly SectionChild[];
+    first?: Footer | SectionChild[];
     /** Footer for even-numbered pages. */
-    readonly even?: Footer | readonly SectionChild[];
+    even?: Footer | SectionChild[];
   };
   /** Section properties such as page size, margins, and orientation. */
-  readonly properties?: ISectionPropertiesOptions;
+  properties?: ISectionPropertiesOptions;
   /** Array of content elements (paragraphs, tables, etc.) for this section. */
-  readonly children: readonly SectionChild[];
+  children: SectionChild[];
 }
 
 /**
@@ -159,29 +159,29 @@ export interface SectionOptions {
 export class File {
   private _currentRelationshipId: number = 1;
 
-  public readonly document: DocumentWrapper;
-  private readonly _headers: DocumentHeader[] = [];
-  private readonly _footers: DocumentFooter[] = [];
-  public readonly coreProperties: CoreProperties;
-  public readonly numbering: Numbering;
-  public readonly media: Media;
-  public readonly charts: ChartCollection;
-  public readonly smartArts: SmartArtCollection;
-  public readonly altChunks: AltChunkCollection;
-  public readonly subDocs: SubDocCollection;
-  public readonly fileRelationships: Relationships;
-  public readonly footNotes: FootnotesWrapper;
-  public readonly endnotes: EndnotesWrapper;
-  public readonly settings: Settings;
-  public readonly contentTypes: ContentTypes;
-  public readonly customProperties: CustomProperties;
-  public readonly appProperties: AppProperties;
-  public readonly styles: Styles;
-  public readonly comments: Comments;
-  public readonly bibliography: Bibliography | undefined;
-  public readonly fontTable: FontWrapper;
-  public readonly glossaryOptions: GlossaryDocumentOptions | undefined;
-  public readonly webSettings: WebSettings | undefined;
+  public document: DocumentWrapper;
+  private _headers: DocumentHeader[] = [];
+  private _footers: DocumentFooter[] = [];
+  public coreProperties: CoreProperties;
+  public numbering: Numbering;
+  public media: Media;
+  public charts: ChartCollection;
+  public smartArts: SmartArtCollection;
+  public altChunks: AltChunkCollection;
+  public subDocs: SubDocCollection;
+  public fileRelationships: Relationships;
+  public footNotes: FootnotesWrapper;
+  public endnotes: EndnotesWrapper;
+  public settings: Settings;
+  public contentTypes: ContentTypes;
+  public customProperties: CustomProperties;
+  public appProperties: AppProperties;
+  public styles: Styles;
+  public comments: Comments;
+  public bibliography: Bibliography | undefined;
+  public fontTable: FontWrapper;
+  public glossaryOptions: GlossaryDocumentOptions | undefined;
+  public webSettings: WebSettings | undefined;
 
   public constructor(options: PropertiesOptions) {
     this.coreProperties = new CoreProperties({
@@ -335,7 +335,7 @@ export class File {
     }
   }
 
-  private createHeader(header: Header | readonly SectionChild[]): HeaderWrapper {
+  private createHeader(header: Header | SectionChild[]): HeaderWrapper {
     const wrapper = new HeaderWrapper(this.media, this._currentRelationshipId++);
 
     const children = header instanceof Header ? header.options.children : header;
@@ -347,7 +347,7 @@ export class File {
     return wrapper;
   }
 
-  private createFooter(footer: Footer | readonly SectionChild[]): FooterWrapper {
+  private createFooter(footer: Footer | SectionChild[]): FooterWrapper {
     const wrapper = new FooterWrapper(this.media, this._currentRelationshipId++);
 
     const children = footer instanceof Footer ? footer.options.children : footer;
@@ -446,11 +446,11 @@ export class File {
     }
   }
 
-  public get headers(): readonly HeaderWrapper[] {
+  public get headers(): HeaderWrapper[] {
     return this._headers.map((item) => item.header);
   }
 
-  public get footers(): readonly FooterWrapper[] {
+  public get footers(): FooterWrapper[] {
     return this._footers.map((item) => item.footer);
   }
 }

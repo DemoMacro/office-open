@@ -89,41 +89,41 @@ import type { HeightRule } from "./table-row-height";
  */
 export interface CnfStyleOptions {
   /** Conditional format string (required) */
-  readonly val: string;
+  val: string;
   /** Whether the property was changed */
-  readonly changed?: boolean;
+  changed?: boolean;
 }
 
 export interface TableRowPropertiesOptionsBase {
   /** Conditional formatting style (cnfStyle) */
-  readonly cnfStyle?: CnfStyleOptions;
+  cnfStyle?: CnfStyleOptions;
   /** Whether the row can be split across pages (cantSplit) */
-  readonly cantSplit?: boolean;
+  cantSplit?: boolean;
   /** Whether the row should be repeated as a header row on each page (tblHeader) */
-  readonly tableHeader?: boolean;
+  tableHeader?: boolean;
   /** Row height configuration (trHeight) */
-  readonly height?: {
+  height?: {
     /** Height value in twips or as a PositiveUniversalMeasure */
-    readonly value: number | PositiveUniversalMeasure;
+    value: number | PositiveUniversalMeasure;
     /** Height rule determining how the height value is applied */
-    readonly rule: (typeof HeightRule)[keyof typeof HeightRule];
+    rule: (typeof HeightRule)[keyof typeof HeightRule];
   };
   /** Spacing between cells in the row (tblCellSpacing) */
-  readonly cellSpacing?: TableCellSpacingProperties;
+  cellSpacing?: TableCellSpacingProperties;
   /** div ID for HTML compatibility (divId) */
-  readonly divId?: number;
+  divId?: number;
   /** Number of grid columns before the first cell (gridBefore) */
-  readonly gridBefore?: number;
+  gridBefore?: number;
   /** Number of grid columns after the last cell (gridAfter) */
-  readonly gridAfter?: number;
+  gridAfter?: number;
   /** Preferred width before the row (wBefore) */
-  readonly widthBefore?: TableWidthProperties;
+  widthBefore?: TableWidthProperties;
   /** Preferred width after the row (wAfter) */
-  readonly widthAfter?: TableWidthProperties;
+  widthAfter?: TableWidthProperties;
   /** Row alignment (jc) */
-  readonly rowAlignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
+  rowAlignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
   /** Whether the row is hidden (hidden) */
-  readonly hidden?: boolean;
+  hidden?: boolean;
 }
 
 /**
@@ -132,10 +132,10 @@ export interface TableRowPropertiesOptionsBase {
  * @see {@link TableRowProperties}
  */
 export type ITableRowPropertiesOptions = TableRowPropertiesOptionsBase & {
-  readonly insertion?: ChangedAttributesProperties;
-  readonly deletion?: ChangedAttributesProperties;
-  readonly revision?: ITableRowPropertiesChangeOptions;
-  readonly includeIfEmpty?: boolean;
+  insertion?: ChangedAttributesProperties;
+  deletion?: ChangedAttributesProperties;
+  revision?: ITableRowPropertiesChangeOptions;
+  includeIfEmpty?: boolean;
 };
 
 export type ITableRowPropertiesChangeOptions = TableRowPropertiesOptionsBase &
@@ -270,7 +270,7 @@ export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
     super("w:trPr", options.includeIfEmpty);
 
     if (options.cnfStyle !== undefined) {
-      const attrs: Record<string, { readonly key: string; readonly value: string | boolean }> = {
+      const attrs: Record<string, { key: string; value: string | boolean }> = {
         val: { key: "w:val", value: options.cnfStyle.val },
       };
       if (options.cnfStyle.changed !== undefined) {
@@ -281,7 +281,7 @@ export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
 
     if (options.divId !== undefined) {
       this.root.push(
-        new BuilderElement<{ readonly val: number }>({
+        new BuilderElement<{ val: number }>({
           name: "w:divId",
           attributes: { val: { key: "w:val", value: options.divId } },
         }),
@@ -290,7 +290,7 @@ export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
 
     if (options.gridBefore !== undefined) {
       this.root.push(
-        new BuilderElement<{ readonly val: number }>({
+        new BuilderElement<{ val: number }>({
           name: "w:gridBefore",
           attributes: { val: { key: "w:val", value: options.gridBefore } },
         }),
@@ -299,7 +299,7 @@ export class TableRowProperties extends IgnoreIfEmptyXmlComponent {
 
     if (options.gridAfter !== undefined) {
       this.root.push(
-        new BuilderElement<{ readonly val: number }>({
+        new BuilderElement<{ val: number }>({
           name: "w:gridAfter",
           attributes: { val: { key: "w:val", value: options.gridAfter } },
         }),

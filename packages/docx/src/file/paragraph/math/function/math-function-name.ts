@@ -33,7 +33,7 @@ import type { MathComponent } from "../math-component";
  * @internal
  */
 export class MathFunctionName extends XmlComponent {
-  public constructor(children: readonly MathComponent[]) {
+  public constructor(children: MathComponent[]) {
     super("m:fName");
 
     for (const child of children) {

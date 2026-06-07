@@ -43,10 +43,10 @@ export const createRegularFont = ({
   fontKey,
   characterSet,
 }: {
-  readonly name: string;
-  readonly index: number;
-  readonly fontKey: string;
-  readonly characterSet?: (typeof CharacterSet)[keyof typeof CharacterSet];
+  name: string;
+  index: number;
+  fontKey: string;
+  characterSet?: (typeof CharacterSet)[keyof typeof CharacterSet];
 }): XmlComponent =>
   createFont({
     charset: characterSet,

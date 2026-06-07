@@ -30,7 +30,7 @@ import type { IXmlableObject, XmlComponent } from "@file/xml-components";
  * ```
  */
 export const createDivId = (id: number): XmlComponent =>
-  new BuilderElement<{ readonly val: number }>({
+  new BuilderElement<{ val: number }>({
     attributes: {
       val: { key: "w:val", value: id },
     },

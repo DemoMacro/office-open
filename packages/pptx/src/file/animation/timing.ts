@@ -1199,10 +1199,7 @@ function buildPropertyAnimation(
 
 // --- Build list (bldLst) ---
 
-function buildBuildList(
-  builds: readonly AnimationBuildOptions[],
-  nextId: () => number,
-): XmlComponent {
+function buildBuildList(builds: AnimationBuildOptions[], nextId: () => number): XmlComponent {
   const bldChildren: XmlComponent[] = [];
 
   for (const bld of builds) {
@@ -1294,15 +1291,15 @@ function buildBuildList(
 // --- Main class ---
 
 export interface AnimationEntry {
-  readonly spid: number;
-  readonly options: AnimationOptions;
+  spid: number;
+  options: AnimationOptions;
 }
 
 /**
  * p:timing — Slide timing for shape animations.
  */
 export class SlideTiming extends XmlComponent {
-  public constructor(entries: readonly AnimationEntry[]) {
+  public constructor(entries: AnimationEntry[]) {
     super("p:timing");
 
     if (entries.length === 0) return;

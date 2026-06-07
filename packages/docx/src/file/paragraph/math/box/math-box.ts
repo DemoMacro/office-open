@@ -22,9 +22,9 @@ import type { MathBoxPropertiesOptions } from "./math-box-properties";
  */
 export interface MathBoxOptions {
   /** Box properties */
-  readonly properties?: MathBoxPropertiesOptions;
+  properties?: MathBoxPropertiesOptions;
   /** Content to be boxed */
-  readonly children: readonly MathComponent[];
+  children: MathComponent[];
 }
 
 /**

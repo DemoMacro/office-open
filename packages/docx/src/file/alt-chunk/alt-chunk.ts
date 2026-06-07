@@ -19,13 +19,13 @@ import { uniqueId } from "@util/convenience-functions";
  */
 export interface AltChunkOptions {
   /** Content data to embed (string or binary) */
-  readonly data: Uint8Array | string;
+  data: Uint8Array | string;
   /** MIME content type of the data */
-  readonly contentType: "text/html" | "application/rtf" | "text/plain";
+  contentType: "text/html" | "application/rtf" | "text/plain";
   /** File extension for the part */
-  readonly extension: "html" | "rtf" | "txt";
+  extension: "html" | "rtf" | "txt";
   /** Whether to match source formatting */
-  readonly matchSrc?: boolean;
+  matchSrc?: boolean;
 }
 
 const ALTCHUNK_RELATIONSHIP_TYPE =
@@ -50,8 +50,8 @@ const ALTCHUNK_RELATIONSHIP_TYPE =
  * ```
  */
 export class AltChunk extends XmlComponent implements FileChild {
-  public readonly fileChild = Symbol();
-  private readonly options: AltChunkOptions;
+  public fileChild = Symbol();
+  private options: AltChunkOptions;
 
   public constructor(options: AltChunkOptions) {
     super("w:altChunk");

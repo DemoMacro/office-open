@@ -26,8 +26,8 @@ import type { XmlComponent } from "./xml-components";
  * @property relationships - The relationships associated with this view
  */
 export interface ViewWrapper {
-  readonly view: Document | Footer | Header | FootNotes | Endnotes | XmlComponent;
-  readonly relationships: Relationships;
+  view: Document | Footer | Header | FootNotes | Endnotes | XmlComponent;
+  relationships: Relationships;
 }
 
 /**
@@ -47,8 +47,8 @@ export interface ViewWrapper {
  * ```
  */
 export class DocumentWrapper implements ViewWrapper {
-  private readonly document: Document;
-  public readonly relationships: Relationships;
+  private document: Document;
+  public relationships: Relationships;
 
   public constructor(options: DocumentOptions) {
     this.document = new Document(options);

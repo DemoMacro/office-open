@@ -21,9 +21,9 @@ import type { ParagraphChild } from "../paragraph";
  */
 export interface BookmarkOptions {
   /** The bookmark name used for reference */
-  readonly id: string;
+  id: string;
   /** Array of paragraph children contained within the bookmark range */
-  readonly children: readonly ParagraphChild[];
+  children: ParagraphChild[];
 }
 
 /**
@@ -67,11 +67,11 @@ export interface BookmarkOptions {
  * ```
  */
 export class Bookmark {
-  private readonly bookmarkUniqueNumericId = bookmarkUniqueNumericIdGen();
+  private bookmarkUniqueNumericId = bookmarkUniqueNumericIdGen();
 
-  public readonly start: BookmarkStart;
-  public readonly children: readonly ParagraphChild[];
-  public readonly end: BookmarkEnd;
+  public start: BookmarkStart;
+  public children: ParagraphChild[];
+  public end: BookmarkEnd;
 
   public constructor(options: BookmarkOptions) {
     const linkId = this.bookmarkUniqueNumericId();

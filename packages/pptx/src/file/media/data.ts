@@ -1,40 +1,40 @@
 export interface MediaDataTransformation {
-  readonly pixels: {
-    readonly x: number;
-    readonly y: number;
+  pixels: {
+    x: number;
+    y: number;
   };
-  readonly emus: {
-    readonly x: number;
-    readonly y: number;
+  emus: {
+    x: number;
+    y: number;
   };
-  readonly flip?: {
-    readonly vertical?: boolean;
-    readonly horizontal?: boolean;
+  flip?: {
+    vertical?: boolean;
+    horizontal?: boolean;
   };
-  readonly rotation?: number;
+  rotation?: number;
 }
 
 interface CoreMediaData {
-  readonly fileName: string;
-  readonly transformation: MediaDataTransformation;
-  readonly data: Uint8Array;
+  fileName: string;
+  transformation: MediaDataTransformation;
+  data: Uint8Array;
 }
 
 interface RegularMediaData {
-  readonly type: "jpg" | "png" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
+  type: "jpg" | "png" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
 }
 
 interface SvgMediaData {
-  readonly type: "svg";
-  readonly fallback: RegularMediaData & CoreMediaData;
+  type: "svg";
+  fallback: RegularMediaData & CoreMediaData;
 }
 
 interface VideoMediaData {
-  readonly type: "mp4" | "mov" | "wmv" | "avi";
+  type: "mp4" | "mov" | "wmv" | "avi";
 }
 
 interface AudioMediaData {
-  readonly type: "mp3" | "wav" | "wma" | "aac";
+  type: "mp3" | "wav" | "wma" | "aac";
 }
 
 export type IMediaData = (RegularMediaData | SvgMediaData | VideoMediaData | AudioMediaData) &

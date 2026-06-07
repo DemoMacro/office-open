@@ -19,18 +19,18 @@ import type { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
  * Values can be specified as numbers (in twips) or as universal measures (e.g., "1in", "2.5cm").
  */
 export interface IndentAttributesProperties {
-  readonly start?: number | UniversalMeasure;
-  readonly startChars?: number;
-  readonly end?: number | UniversalMeasure;
-  readonly endChars?: number;
-  readonly left?: number | UniversalMeasure;
-  readonly leftChars?: number;
-  readonly right?: number | UniversalMeasure;
-  readonly rightChars?: number;
-  readonly hanging?: number | PositiveUniversalMeasure;
-  readonly hangingChars?: number;
-  readonly firstLine?: number | PositiveUniversalMeasure;
-  readonly firstLineChars?: number;
+  start?: number | UniversalMeasure;
+  startChars?: number;
+  end?: number | UniversalMeasure;
+  endChars?: number;
+  left?: number | UniversalMeasure;
+  leftChars?: number;
+  right?: number | UniversalMeasure;
+  rightChars?: number;
+  hanging?: number | PositiveUniversalMeasure;
+  hangingChars?: number;
+  firstLine?: number | PositiveUniversalMeasure;
+  firstLineChars?: number;
 }
 
 /**

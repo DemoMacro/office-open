@@ -28,20 +28,15 @@ import type { IParagraphStyleOptions } from "./style/paragraph-style";
  */
 export interface StylesOptions {
   /** Default styles for document, headings, and common elements */
-  readonly default?: DefaultStylesOptions;
+  default?: DefaultStylesOptions;
   /** Initial base XML component for styles root element */
-  readonly initialStyles?: BaseXmlComponent | IXmlableObject;
+  initialStyles?: BaseXmlComponent | IXmlableObject;
   /** Array of custom paragraph style definitions */
-  readonly paragraphStyles?: readonly IParagraphStyleOptions[];
+  paragraphStyles?: IParagraphStyleOptions[];
   /** Array of custom character style definitions */
-  readonly characterStyles?: readonly ICharacterStyleOptions[];
+  characterStyles?: ICharacterStyleOptions[];
   /** Array of styles imported from external sources */
-  readonly importedStyles?: readonly (
-    | XmlComponent
-    | StyleForParagraph
-    | StyleForCharacter
-    | ImportedXmlComponent
-  )[];
+  importedStyles?: (XmlComponent | StyleForParagraph | StyleForCharacter | ImportedXmlComponent)[];
 }
 
 /**

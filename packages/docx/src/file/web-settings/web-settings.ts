@@ -23,10 +23,10 @@ import { Frameset } from "../frameset/frameset";
  * Border options for div elements.
  */
 export interface DivBorderOptions {
-  readonly top?: { readonly style: string; readonly color?: string; readonly size?: number };
-  readonly left?: { readonly style: string; readonly color?: string; readonly size?: number };
-  readonly bottom?: { readonly style: string; readonly color?: string; readonly size?: number };
-  readonly right?: { readonly style: string; readonly color?: string; readonly size?: number };
+  top?: { style: string; color?: string; size?: number };
+  left?: { style: string; color?: string; size?: number };
+  bottom?: { style: string; color?: string; size?: number };
+  right?: { style: string; color?: string; size?: number };
 }
 
 /**
@@ -34,17 +34,17 @@ export interface DivBorderOptions {
  */
 export interface DivOptions {
   /** Unique div identifier (required by CT_Div/@id) */
-  readonly id: number;
-  readonly marginLeft: number;
-  readonly marginRight: number;
-  readonly marginTop: number;
-  readonly marginBottom: number;
+  id: number;
+  marginLeft: number;
+  marginRight: number;
+  marginTop: number;
+  marginBottom: number;
   /** Mark as HTML blockquote element */
-  readonly blockQuote?: boolean;
+  blockQuote?: boolean;
   /** Mark as HTML body element */
-  readonly bodyDiv?: boolean;
-  readonly border?: DivBorderOptions;
-  readonly children?: readonly DivOptions[];
+  bodyDiv?: boolean;
+  border?: DivBorderOptions;
+  children?: DivOptions[];
 }
 
 /**
@@ -69,31 +69,31 @@ export const TargetScreenSize = {
  */
 export interface WebSettingsOptions {
   /** Frameset definition for web layout */
-  readonly frameset?: FramesetOptions;
+  frameset?: FramesetOptions;
   /** Div elements for HTML div formatting */
-  readonly divs?: readonly DivOptions[];
+  divs?: DivOptions[];
   /** Character encoding for web output */
-  readonly encoding?: string;
+  encoding?: string;
   /** Optimize document rendering for web browser */
-  readonly optimizeForBrowser?: boolean;
+  optimizeForBrowser?: boolean;
   /** Rely on VML for graphics display */
-  readonly relyOnVML?: boolean;
+  relyOnVML?: boolean;
   /** Allow PNG image format in web output */
-  readonly allowPNG?: boolean;
+  allowPNG?: boolean;
   /** Do not rely on CSS for formatting */
-  readonly doNotRelyOnCSS?: boolean;
+  doNotRelyOnCSS?: boolean;
   /** Do not save as single web file */
-  readonly doNotSaveAsSingleFile?: boolean;
+  doNotSaveAsSingleFile?: boolean;
   /** Do not organize supporting files in folders */
-  readonly doNotOrganizeInFolder?: boolean;
+  doNotOrganizeInFolder?: boolean;
   /** Do not use long file names for supporting files */
-  readonly doNotUseLongFileNames?: boolean;
+  doNotUseLongFileNames?: boolean;
   /** Pixels per inch for web output */
-  readonly pixelsPerInch?: number;
+  pixelsPerInch?: number;
   /** Target screen size */
-  readonly targetScreenSz?: (typeof TargetScreenSize)[keyof typeof TargetScreenSize] | string;
+  targetScreenSz?: (typeof TargetScreenSize)[keyof typeof TargetScreenSize] | string;
   /** Save smart tags as XML */
-  readonly saveSmartTagsAsXml?: boolean;
+  saveSmartTagsAsXml?: boolean;
 }
 
 /**
@@ -170,7 +170,7 @@ function buildDiv(options: DivOptions): BuilderElement {
 /**
  * Build divs container (CT_Divs).
  */
-function buildDivs(divs: readonly DivOptions[]): BuilderElement {
+function buildDivs(divs: DivOptions[]): BuilderElement {
   return new BuilderElement({
     name: "w:divs",
     children: divs.map(buildDiv),

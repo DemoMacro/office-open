@@ -18,20 +18,20 @@ import type { NonVisualShapePropertiesOptions } from "./non-visual-shape-propert
 import { createWpsTextBox } from "./wps-text-box";
 
 export interface WpsShapeCoreOptions {
-  readonly children: readonly Paragraph[];
-  readonly nonVisualProperties?: NonVisualShapePropertiesOptions;
-  readonly bodyProperties?: BodyPropertiesOptions;
-  readonly outline?: OutlineOptions;
-  readonly fill?: FillOptions;
-  readonly customGeometry?: CustomGeometryOptions;
-  readonly effectDag?: EffectDagOptions;
-  readonly effects?: EffectListOptions;
-  readonly scene3d?: Scene3DOptions;
-  readonly shape3d?: Shape3DOptions;
+  children: Paragraph[];
+  nonVisualProperties?: NonVisualShapePropertiesOptions;
+  bodyProperties?: BodyPropertiesOptions;
+  outline?: OutlineOptions;
+  fill?: FillOptions;
+  customGeometry?: CustomGeometryOptions;
+  effectDag?: EffectDagOptions;
+  effects?: EffectListOptions;
+  scene3d?: Scene3DOptions;
+  shape3d?: Shape3DOptions;
 }
 
 export type WpsShapeOptions = WpsShapeCoreOptions & {
-  readonly transformation: MediaDataTransformation;
+  transformation: MediaDataTransformation;
 };
 
 export const createWpsShape = (options: WpsShapeOptions): XmlComponent =>

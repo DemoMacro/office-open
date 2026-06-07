@@ -28,9 +28,9 @@ const FieldCharacterType = {
 } as const;
 
 interface FieldCharAttributes {
-  readonly type: (typeof FieldCharacterType)[keyof typeof FieldCharacterType];
-  readonly dirty?: boolean;
-  readonly fieldLock?: boolean;
+  type: (typeof FieldCharacterType)[keyof typeof FieldCharacterType];
+  dirty?: boolean;
+  fieldLock?: boolean;
 }
 
 /**

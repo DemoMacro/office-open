@@ -4,7 +4,7 @@ import type { XmlComponent } from "@file/xml-components";
 
 import { createTextBoxContent } from "./text-box-content";
 
-export const createWpsTextBox = (children: readonly Paragraph[]): XmlComponent =>
+export const createWpsTextBox = (children: Paragraph[]): XmlComponent =>
   new BuilderElement({
     children: [createTextBoxContent(children)],
     name: "wps:txbx",

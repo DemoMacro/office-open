@@ -30,7 +30,7 @@ describe("createPacker", () => {
     });
 
     it("should pass overrides through", async () => {
-      const overrides: readonly XmlifyedFile[] = [{ data: "test", path: "test.xml" }];
+      const overrides: XmlifyedFile[] = [{ data: "test", path: "test.xml" }];
       await Packer.toString(mockFile, { overrides });
       expect(compileMock).toHaveBeenCalledWith(expect.anything(), overrides, 0);
     });

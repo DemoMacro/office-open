@@ -29,11 +29,11 @@ let nextChartId = 1;
  */
 export interface ChartOptions extends ChartSpaceOptions {
   /** Display dimensions */
-  readonly transformation: MediaTransformation;
+  transformation: MediaTransformation;
   /** Floating positioning */
-  readonly floating?: Floating;
+  floating?: Floating;
   /** Alternative text for accessibility */
-  readonly altText?: DocPropertiesOptions;
+  altText?: DocPropertiesOptions;
 }
 
 /**
@@ -55,8 +55,8 @@ export interface ChartOptions extends ChartSpaceOptions {
  * ```
  */
 export class ChartRun extends Run {
-  private readonly chartOptions: ChartOptions;
-  private readonly chartKey: string;
+  private chartOptions: ChartOptions;
+  private chartKey: string;
 
   public constructor(options: ChartOptions) {
     super({});

@@ -54,13 +54,13 @@ import { createTableStyleOverride } from "./table-style-override";
  */
 export interface StyleAttributes {
   /** Type of style (paragraph, character, table, numbering) */
-  readonly type?: string;
+  type?: string;
   /** Unique identifier for the style */
-  readonly styleId?: string;
+  styleId?: string;
   /** Whether this is the default style for its type */
-  readonly default?: boolean;
+  default?: boolean;
   /** Whether this is a custom user-defined style */
-  readonly customStyle?: string;
+  customStyle?: string;
 }
 
 /**
@@ -77,7 +77,7 @@ export interface StyleAttributes {
  */
 export interface StyleOptions {
   /** Display name of the style */
-  readonly name?: string;
+  name?: string;
   /**
    * Specifies the style upon which the current style is based-that is, the style from which the current style inherits. It is the mechanism for implementing style inheritance.
    * Note that if the type of the current style must match the type of the style upon which it is based or the basedOn element will be ignored.
@@ -85,38 +85,38 @@ export interface StyleOptions {
    *
    * **WARNING**: You cannot set `basedOn` to be the same as `name`. This is akin to inheriting from itself. This creates a cyclic dependency and cause undesirable behavior.
    */
-  readonly basedOn?: string;
+  basedOn?: string;
   /** Style to automatically apply to the next paragraph */
-  readonly next?: string;
+  next?: string;
   /** Linked style ID for paragraph/character style pairing */
-  readonly link?: string;
+  link?: string;
   /** Priority for displaying in the UI (lower numbers appear first) */
-  readonly uiPriority?: number;
+  uiPriority?: number;
   /** Whether the style is semi-hidden in the UI */
-  readonly semiHidden?: boolean;
+  semiHidden?: boolean;
   /** Whether the style should unhide when used */
-  readonly unhideWhenUsed?: boolean;
+  unhideWhenUsed?: boolean;
   /** Whether the style appears in the quick format gallery */
-  readonly quickFormat?: boolean;
+  quickFormat?: boolean;
   /** Alternative names for the style (comma-separated) */
-  readonly aliases?: string;
+  aliases?: string;
   /** Whether the style is automatically redefined when formatting changes */
-  readonly autoRedefine?: boolean;
+  autoRedefine?: boolean;
   /** Whether the style is locked and cannot be modified */
-  readonly locked?: boolean;
+  locked?: boolean;
   /** Whether this is a personal e-mail style */
-  readonly personal?: boolean;
+  personal?: boolean;
   /** Whether this is a personal e-mail compose style */
-  readonly personalCompose?: boolean;
+  personalCompose?: boolean;
   /** Whether this is a personal e-mail reply style */
-  readonly personalReply?: boolean;
+  personalReply?: boolean;
   /**
    * Table style overrides for specific table regions.
    *
    * Each override applies formatting to a specific region (first row,
    * last column, banding, etc.) within a table style.
    */
-  readonly tableStyleOverrides?: readonly TableStyleOverrideOptions[];
+  tableStyleOverrides?: TableStyleOverrideOptions[];
 }
 
 /**

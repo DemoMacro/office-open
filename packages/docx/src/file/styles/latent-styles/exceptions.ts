@@ -11,15 +11,15 @@ import { XmlComponent } from "@file/xml-components";
  */
 export interface LatentStyleExceptionAttributesProperties {
   /** The name of the style for this exception */
-  readonly name?: string;
+  name?: string;
   /** UI priority for displaying the style */
-  readonly uiPriority?: string;
+  uiPriority?: string;
   /** Whether this style should appear in the quick format gallery */
-  readonly qFormat?: string;
+  qFormat?: string;
   /** Whether the style is semi-hidden in the UI */
-  readonly semiHidden?: string;
+  semiHidden?: string;
   /** Whether the style should unhide when used */
-  readonly unhideWhenUsed?: string;
+  unhideWhenUsed?: string;
 }
 
 /**

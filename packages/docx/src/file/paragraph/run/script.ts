@@ -26,7 +26,7 @@ import { BuilderElement } from "@file/xml-components";
 import type { XmlComponent } from "@file/xml-components";
 
 interface VerticalAlignAttributes {
-  readonly val: string;
+  val: string;
 }
 
 /**

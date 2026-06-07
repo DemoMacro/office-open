@@ -12,7 +12,7 @@ export type ITransform2DOptions = CoreTransform2DOptions;
  * Delegates to core createTransform2D.
  */
 export class Transform2D extends XmlComponent {
-  private readonly core: XmlComponent;
+  private core: XmlComponent;
 
   public constructor(options: ITransform2DOptions, prefix: "a" | "p" = "a") {
     super(`${prefix}:xfrm`);

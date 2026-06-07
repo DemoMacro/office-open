@@ -45,13 +45,13 @@ export const HeaderFooterReferenceType = {
 // </xsd:complexType>
 
 export interface HeaderFooterReferenceOptions {
-  readonly type?: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType];
-  readonly id?: number;
+  type?: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType];
+  id?: number;
 }
 
 interface HeaderFooterReferenceAttributes {
-  readonly type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType];
-  readonly id: string;
+  type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType];
+  id: string;
 }
 
 export const HeaderFooterType = {

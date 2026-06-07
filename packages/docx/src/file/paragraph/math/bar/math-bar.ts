@@ -19,9 +19,9 @@ import { createMathBarProperties } from "./math-bar-properties";
  */
 interface MathBarOptions {
   /** Position of the bar: "top" for overline, "bot" for underline */
-  readonly type: "top" | "bot";
+  type: "top" | "bot";
   /** Content under/over the bar */
-  readonly children: readonly MathComponent[];
+  children: MathComponent[];
 }
 
 /**

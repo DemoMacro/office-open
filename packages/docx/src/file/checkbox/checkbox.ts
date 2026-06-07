@@ -57,9 +57,9 @@ import type { CheckboxSymbolOptions } from "./checkbox-util";
  */
 export class CheckBox extends XmlComponent {
   // Default values per Microsoft
-  private readonly DEFAULT_UNCHECKED_SYMBOL: string = "2610";
-  private readonly DEFAULT_CHECKED_SYMBOL: string = "2612";
-  private readonly DEFAULT_FONT: string = "MS Gothic";
+  private DEFAULT_UNCHECKED_SYMBOL: string = "2610";
+  private DEFAULT_CHECKED_SYMBOL: string = "2612";
+  private DEFAULT_FONT: string = "MS Gothic";
   public constructor(options?: CheckboxSymbolOptions) {
     super("w:sdt");
 

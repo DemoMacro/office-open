@@ -16,9 +16,9 @@ import { buildSymbol } from "./run-components/symbol";
  */
 export type ISymbolRunOptions = {
   /** The Unicode character code for the symbol */
-  readonly char: string;
+  char: string;
   /** The font to use for the symbol (e.g., "Wingdings", "Symbol") */
-  readonly symbolfont?: string;
+  symbolfont?: string;
 } & RunOptions;
 
 /**

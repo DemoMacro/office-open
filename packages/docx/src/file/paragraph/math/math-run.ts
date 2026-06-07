@@ -19,9 +19,9 @@ import { MathText } from "./math-text";
  */
 export interface MathRunOptions {
   /** The text content */
-  readonly text: string;
+  text: string;
   /** Optional run properties */
-  readonly properties?: MathRunPropertiesOptions;
+  properties?: MathRunPropertiesOptions;
 }
 
 /**

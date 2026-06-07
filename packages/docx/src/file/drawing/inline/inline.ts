@@ -19,14 +19,14 @@ import type { OutlineOptions } from "./graphic/graphic-data/pic/shape-properties
  * Options for creating an inline drawing element.
  */
 interface InlineOptions {
-  readonly mediaData: IExtendedMediaData;
-  readonly transform: MediaDataTransformation;
-  readonly docProperties?: DocPropertiesOptions;
-  readonly outline?: OutlineOptions;
-  readonly fill?: FillOptions;
-  readonly effects?: EffectListOptions;
-  readonly blipEffects?: BlipEffectsOptions;
-  readonly tile?: TileOptions;
+  mediaData: IExtendedMediaData;
+  transform: MediaDataTransformation;
+  docProperties?: DocPropertiesOptions;
+  outline?: OutlineOptions;
+  fill?: FillOptions;
+  effects?: EffectListOptions;
+  blipEffects?: BlipEffectsOptions;
+  tile?: TileOptions;
 }
 
 // <xsd:complexType name="CT_Inline">

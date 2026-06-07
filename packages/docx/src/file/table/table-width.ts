@@ -52,8 +52,8 @@ export const WidthType = {
  * ```
  */
 export interface TableWidthProperties {
-  readonly size: number | Percentage | UniversalMeasure;
-  readonly type?: (typeof WidthType)[keyof typeof WidthType];
+  size: number | Percentage | UniversalMeasure;
+  type?: (typeof WidthType)[keyof typeof WidthType];
 }
 
 /**

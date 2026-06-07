@@ -24,79 +24,79 @@ export type ConsolidateFunction = (typeof ConsolidateFunction)[keyof typeof Cons
 /** A data field definition for pivot table aggregation. */
 export interface PivotDataField {
   /** Source column name to aggregate */
-  readonly field: string;
+  field: string;
   /** Aggregation function (default: "sum") */
-  readonly summarize?: ConsolidateFunction;
+  summarize?: ConsolidateFunction;
   /** Custom name for the data field (default: "Sum of {field}") */
-  readonly name?: string;
+  name?: string;
   /** Show data as (CT_DataField @showDataAs) */
-  readonly showDataAs?: string;
+  showDataAs?: string;
   /** Base field index for "show data as" calculations */
-  readonly baseField?: number;
+  baseField?: number;
   /** Base item index for "show data as" calculations */
-  readonly baseItem?: number;
+  baseItem?: number;
   /** Sort by tuple items (CT_Tuples in sortByTuple) */
-  readonly sortByTupleItems?: readonly number[];
+  sortByTupleItems?: number[];
 }
 
 /** Per-field overrides for pivotField XML attributes (CT_PivotField). */
 export interface PivotFieldOverrideOptions {
   /** Field name to match (required) */
-  readonly field: string;
+  field: string;
   /** All drilled (CT_PivotField @allDrilled) */
-  readonly allDrilled?: boolean;
+  allDrilled?: boolean;
   /** Auto show (CT_PivotField @autoShow) */
-  readonly autoShow?: boolean;
+  autoShow?: boolean;
   /** Count subtotal (CT_PivotField @countSubtotal) */
-  readonly countSubtotal?: boolean;
+  countSubtotal?: boolean;
   /** Data source sort (CT_PivotField @dataSourceSort) */
-  readonly dataSourceSort?: boolean;
+  dataSourceSort?: boolean;
   /** Default attribute drill state (CT_PivotField @defaultAttributeDrillState) */
-  readonly defaultAttributeDrillState?: boolean;
+  defaultAttributeDrillState?: boolean;
   /** Hidden level (CT_PivotField @hiddenLevel) */
-  readonly hiddenLevel?: boolean;
+  hiddenLevel?: boolean;
   /** Hide new items (CT_PivotField @hideNewItems) */
-  readonly hideNewItems?: boolean;
+  hideNewItems?: boolean;
   /** Insert blank row (CT_PivotField @insertBlankRow) */
-  readonly insertBlankRow?: boolean;
+  insertBlankRow?: boolean;
   /** Insert page break (CT_PivotField @insertPageBreak) */
-  readonly insertPageBreak?: boolean;
+  insertPageBreak?: boolean;
   /** Item page count (CT_PivotField @itemPageCount) */
-  readonly itemPageCount?: boolean;
+  itemPageCount?: boolean;
   /** Measure filter (CT_PivotField @measureFilter) */
-  readonly measureFilter?: boolean;
+  measureFilter?: boolean;
   /** Non auto sort default (CT_PivotField @nonAutoSortDefault) */
-  readonly nonAutoSortDefault?: boolean;
+  nonAutoSortDefault?: boolean;
   /** Product subtotal (CT_PivotField @productSubtotal) */
-  readonly productSubtotal?: boolean;
+  productSubtotal?: boolean;
   /** Rank by (CT_PivotField @rankBy) */
-  readonly rankBy?: number;
+  rankBy?: number;
   /** Server field (CT_PivotField @serverField) */
-  readonly serverField?: boolean;
+  serverField?: boolean;
   /** Show drop downs (CT_PivotField @showDropDowns) */
-  readonly showDropDowns?: boolean;
+  showDropDowns?: boolean;
   /** Show property as caption (CT_PivotField @showPropAsCaption) */
-  readonly showPropAsCaption?: boolean;
+  showPropAsCaption?: boolean;
   /** Show property cell (CT_PivotField @showPropCell) */
-  readonly showPropCell?: boolean;
+  showPropCell?: boolean;
   /** Show property tip (CT_PivotField @showPropTip) */
-  readonly showPropTip?: boolean;
+  showPropTip?: boolean;
   /** StdDevP subtotal (CT_PivotField @stdDevPSubtotal) */
-  readonly stdDevPSubtotal?: boolean;
+  stdDevPSubtotal?: boolean;
   /** StdDev subtotal (CT_PivotField @stdDevSubtotal) */
-  readonly stdDevSubtotal?: boolean;
+  stdDevSubtotal?: boolean;
   /** Subtotal caption (CT_PivotField @subtotalCaption) */
-  readonly subtotalCaption?: string;
+  subtotalCaption?: string;
   /** Top auto show (CT_PivotField @topAutoShow) */
-  readonly topAutoShow?: boolean;
+  topAutoShow?: boolean;
   /** Unique member property (CT_PivotField @uniqueMemberProperty) */
-  readonly uniqueMemberProperty?: boolean;
+  uniqueMemberProperty?: boolean;
   /** VarP subtotal (CT_PivotField @varPSubtotal) */
-  readonly varPSubtotal?: boolean;
+  varPSubtotal?: boolean;
   /** Var subtotal (CT_PivotField @varSubtotal) */
-  readonly varSubtotal?: boolean;
+  varSubtotal?: boolean;
   /** Show detail for default item (CT_Item @sd) */
-  readonly defaultItemSd?: boolean;
+  defaultItemSd?: boolean;
 }
 
 /** Pivot filter type (ST_PivotFilterType) */
@@ -174,455 +174,455 @@ export type PivotFilterType = (typeof PivotFilterType)[keyof typeof PivotFilterT
 /** A single pivot filter (CT_PivotFilter) */
 export interface PivotFilterOptions {
   /** Field index to filter on (required) */
-  readonly fld: number;
+  fld: number;
   /** Filter type (required) */
-  readonly type: PivotFilterType;
+  type: PivotFilterType;
   /** Filter ID — unique within this pivot table (required) */
-  readonly id: number;
+  id: number;
   /** Measure field index for OLAP filters */
-  readonly mpFld?: number;
+  mpFld?: number;
   /** Evaluation order */
-  readonly evalOrder?: number;
+  evalOrder?: number;
   /** Measure hierarchy */
-  readonly iMeasureHier?: number;
+  iMeasureHier?: number;
   /** Measure field */
-  readonly iMeasureFld?: number;
+  iMeasureFld?: number;
   /** Filter name */
-  readonly name?: string;
+  name?: string;
   /** Filter description */
-  readonly description?: string;
+  description?: string;
   /** First string value for caption/date filters */
-  readonly stringValue1?: string;
+  stringValue1?: string;
   /** Second string value for between filters */
-  readonly stringValue2?: string;
+  stringValue2?: string;
 }
 
 /** Options for a single pivot table on a worksheet. */
 export interface PivotTableOptions {
   /** Pivot table name (default: "PivotTable{N}") */
-  readonly name?: string;
+  name?: string;
   /** Source data range, e.g. "A1:D11" — must be on the same or a different sheet */
-  readonly source: string;
+  source: string;
   /** Source sheet name (default: current sheet) */
-  readonly sourceSheet?: string;
+  sourceSheet?: string;
   /** Target cell for the pivot table output (default: "A3") */
-  readonly location?: string;
+  location?: string;
   /** Field names to use as row labels */
-  readonly rows: readonly string[];
+  rows: string[];
   /** Field names to use as column labels */
-  readonly columns?: readonly string[];
+  columns?: string[];
   /** Data fields with aggregation settings */
-  readonly data: readonly PivotDataField[];
+  data: PivotDataField[];
   /** Pivot style name (default: "PivotStyleLight16") */
-  readonly style?: string;
+  style?: string;
   /** Pivot filters (CT_PivotFilters) */
-  readonly filters?: readonly PivotFilterOptions[];
+  filters?: PivotFilterOptions[];
   /** Field names to use as page/report filters */
-  readonly pages?: readonly string[];
+  pages?: string[];
   /** Page field captions (maps by index to pages array) */
-  readonly pageCaptions?: readonly string[];
+  pageCaptions?: string[];
   /** Data fields on rows instead of columns (CT_PivotTableDefinition @dataOnRows) */
-  readonly dataOnRows?: boolean;
+  dataOnRows?: boolean;
   /** Grand total caption text */
-  readonly grandTotalCaption?: string;
+  grandTotalCaption?: string;
   /** Error caption text */
-  readonly errorCaption?: string;
+  errorCaption?: string;
   /** Show error messages */
-  readonly showError?: boolean;
+  showError?: boolean;
   /** Missing caption text */
-  readonly missingCaption?: string;
+  missingCaption?: string;
   /** Show missing items */
-  readonly showMissing?: boolean;
+  showMissing?: boolean;
   /** Custom page style name */
-  readonly pageStyle?: string;
+  pageStyle?: string;
   /** Custom pivot table style name */
-  readonly pivotTableStyle?: string;
+  pivotTableStyle?: string;
   /** Tag string */
-  readonly tag?: string;
+  tag?: string;
   /** Show items with no data */
-  readonly showItems?: boolean;
+  showItems?: boolean;
   /** Edit data in-place */
-  readonly editData?: boolean;
+  editData?: boolean;
   /** Disable field list */
-  readonly disableFieldList?: boolean;
+  disableFieldList?: boolean;
   /** Show calculated members */
-  readonly showCalcMbrs?: boolean;
+  showCalcMbrs?: boolean;
   /** Visual totals */
-  readonly visualTotals?: boolean;
+  visualTotals?: boolean;
   /** Show multiple labels */
-  readonly showMultipleLabel?: boolean;
+  showMultipleLabel?: boolean;
   /** Show data drop-down */
-  readonly showDataDropDown?: boolean;
+  showDataDropDown?: boolean;
   /** Show drill indicators */
-  readonly showDrill?: boolean;
+  showDrill?: boolean;
   /** Print drill indicators */
-  readonly printDrill?: boolean;
+  printDrill?: boolean;
   /** Show member property tips */
-  readonly showMemberPropertyTips?: boolean;
+  showMemberPropertyTips?: boolean;
   /** Show data tips */
-  readonly showDataTips?: boolean;
+  showDataTips?: boolean;
   /** Enable layout wizard */
-  readonly enableWizard?: boolean;
+  enableWizard?: boolean;
   /** Enable drill-down */
-  readonly enableDrill?: boolean;
+  enableDrill?: boolean;
   /** Enable field properties */
-  readonly enableFieldProperties?: boolean;
+  enableFieldProperties?: boolean;
   /** Number of page fields per row/column */
-  readonly pageWrap?: number;
+  pageWrap?: number;
   /** Page layout over then down */
-  readonly pageOverThenDown?: boolean;
+  pageOverThenDown?: boolean;
   /** Subtotal hidden items */
-  readonly subtotalHiddenItems?: boolean;
+  subtotalHiddenItems?: boolean;
   /** Field print titles */
-  readonly fieldPrintTitles?: boolean;
+  fieldPrintTitles?: boolean;
   /** Merge item labels */
-  readonly mergeItem?: boolean;
+  mergeItem?: boolean;
   /** Show drop zones */
-  readonly showDropZones?: boolean;
+  showDropZones?: boolean;
   /** Show empty row */
-  readonly showEmptyRow?: boolean;
+  showEmptyRow?: boolean;
   /** Show empty column */
-  readonly showEmptyCol?: boolean;
+  showEmptyCol?: boolean;
   /** Show headers */
-  readonly showHeaders?: boolean;
+  showHeaders?: boolean;
   /** Published to server */
-  readonly published?: boolean;
+  published?: boolean;
   /** Grid drop zones */
-  readonly gridDropZones?: boolean;
+  gridDropZones?: boolean;
   /** Multiple field filters */
-  readonly multipleFieldFilters?: boolean;
+  multipleFieldFilters?: boolean;
   /** Row header caption */
-  readonly rowHeaderCaption?: string;
+  rowHeaderCaption?: string;
   /** Column header caption */
-  readonly colHeaderCaption?: string;
+  colHeaderCaption?: string;
   /** Sort field list ascending */
-  readonly fieldListSortAscending?: boolean;
+  fieldListSortAscending?: boolean;
   /** MDX subqueries enabled */
-  readonly mdxSubqueries?: boolean;
+  mdxSubqueries?: boolean;
   /** Custom list sort */
-  readonly customListSort?: boolean;
+  customListSort?: boolean;
   /** Asterisk totals (CT_PivotTableDefinition @asteriskTotals) */
-  readonly asteriskTotals?: boolean;
+  asteriskTotals?: boolean;
   /** Data position (CT_PivotTableDefinition @dataPosition) */
-  readonly dataPosition?: number;
+  dataPosition?: number;
   /** Immersive (CT_PivotTableDefinition @immersive) */
-  readonly immersive?: boolean;
+  immersive?: boolean;
   /** Vacated style (CT_PivotTableDefinition @vacatedStyle) */
-  readonly vacatedStyle?: string;
+  vacatedStyle?: string;
   /** Calculated items (CT_CalculatedItems) */
-  readonly calculatedItems?: readonly CalculatedItemOptions[];
+  calculatedItems?: CalculatedItemOptions[];
   /** Calculated members (CT_CalculatedMembers) */
-  readonly calculatedMembers?: readonly CalculatedMemberOptions[];
+  calculatedMembers?: CalculatedMemberOptions[];
   /** Pivot hierarchies (CT_PivotHierarchies) */
-  readonly pivotHierarchies?: readonly PivotHierarchyOptions[];
+  pivotHierarchies?: PivotHierarchyOptions[];
   /** Conditional formats (CT_ConditionalFormats for pivot) */
-  readonly pivotConditionalFormats?: readonly PivotConditionalFormatOptions[];
+  pivotConditionalFormats?: PivotConditionalFormatOptions[];
   /** Chart formats (CT_ChartFormats) */
-  readonly chartFormats?: readonly ChartFormatOptions[];
+  chartFormats?: ChartFormatOptions[];
   /** Auto sort scope (CT_AutoSortScope) */
-  readonly autoSortScope?: PivotAreaOptions;
+  autoSortScope?: PivotAreaOptions;
   /** Member properties per field (CT_MemberProperties → mps/mp) */
-  readonly memberProperties?: readonly MemberPropertyOptions[];
+  memberProperties?: MemberPropertyOptions[];
   /** Pivot format areas (CT_Formats → format) */
-  readonly formats?: readonly PivotFormatOptions[];
+  formats?: PivotFormatOptions[];
   /** Row hierarchy usage (CT_RowHierarchiesUsage) */
-  readonly rowHierarchiesUsage?: readonly HierarchyUsageOptions[];
+  rowHierarchiesUsage?: HierarchyUsageOptions[];
   /** Column hierarchy usage (CT_ColHierarchiesUsage) */
-  readonly colHierarchiesUsage?: readonly HierarchyUsageOptions[];
+  colHierarchiesUsage?: HierarchyUsageOptions[];
   /** Location column page count (CT_Location @colPageCount) */
-  readonly locationColPageCount?: number;
+  locationColPageCount?: number;
   /** Location row page count (CT_Location @rowPageCount) */
-  readonly locationRowPageCount?: number;
+  locationRowPageCount?: number;
   /** Per-field overrides for pivotField (CT_PivotField attributes) */
-  readonly fieldOverrides?: readonly PivotFieldOverrideOptions[];
+  fieldOverrides?: PivotFieldOverrideOptions[];
 }
 
 /** Pivot format (CT_Format). */
 export interface PivotFormatOptions {
   /** Action type (default: "formatting") */
-  readonly action?: "formatting" | "drill" | "formula" | "blank" | "subtotal" | "report";
+  action?: "formatting" | "drill" | "formula" | "blank" | "subtotal" | "report";
   /** Differential format index */
-  readonly dxfId?: number;
+  dxfId?: number;
   /** Pivot area */
-  readonly pivotArea: PivotAreaOptions;
+  pivotArea: PivotAreaOptions;
 }
 
 /** Calculated item in a pivot table (CT_CalculatedItem) */
 export interface CalculatedItemOptions {
   /** Field index */
-  readonly field?: number;
+  field?: number;
   /** Formula */
-  readonly formula?: string;
+  formula?: string;
   /** Pivot area reference */
-  readonly pivotArea?: PivotAreaOptions;
+  pivotArea?: PivotAreaOptions;
 }
 
 /** Calculated member in a pivot table (CT_CalculatedMember) */
 export interface CalculatedMemberOptions {
   /** Name (required) */
-  readonly name: string;
+  name: string;
   /** MDX expression (required) */
-  readonly mdx: string;
+  mdx: string;
   /** Member name */
-  readonly memberName?: string;
+  memberName?: string;
   /** Hierarchy */
-  readonly hierarchy?: string;
+  hierarchy?: string;
   /** Parent member */
-  readonly parent?: string;
+  parent?: string;
   /** Solve order (default: 0) */
-  readonly solveOrder?: number;
+  solveOrder?: number;
   /** Is a set (default: false) */
-  readonly set?: boolean;
+  set?: boolean;
 }
 
 /** Pivot hierarchy (CT_PivotHierarchy) */
 export interface PivotHierarchyOptions {
   /** Outline mode (default: false) */
-  readonly outline?: boolean;
+  outline?: boolean;
   /** Allow multiple item selection (default: false) */
-  readonly multipleItemSelectionAllowed?: boolean;
+  multipleItemSelectionAllowed?: boolean;
   /** Subtotal on top (default: false) */
-  readonly subtotalTop?: boolean;
+  subtotalTop?: boolean;
   /** Show in field list (default: true) */
-  readonly showInFieldList?: boolean;
+  showInFieldList?: boolean;
   /** Drag to row (default: true) */
-  readonly dragToRow?: boolean;
+  dragToRow?: boolean;
   /** Drag to column (default: true) */
-  readonly dragToCol?: boolean;
+  dragToCol?: boolean;
   /** Drag to page (default: true) */
-  readonly dragToPage?: boolean;
+  dragToPage?: boolean;
   /** Drag to data (default: false) */
-  readonly dragToData?: boolean;
+  dragToData?: boolean;
   /** Drag off (default: true) */
-  readonly dragOff?: boolean;
+  dragOff?: boolean;
   /** Include new items in filter (default: false) */
-  readonly includeNewItemsInFilter?: boolean;
+  includeNewItemsInFilter?: boolean;
   /** Caption */
-  readonly caption?: string;
+  caption?: string;
   /** Members */
-  readonly members?: readonly MemberOptions[];
+  members?: MemberOptions[];
   /** Member properties (CT_MemberProperties → mps/mp) */
-  readonly memberProperties?: readonly MemberPropertyOptions[];
+  memberProperties?: MemberPropertyOptions[];
 }
 
 /** Member in pivot hierarchy (CT_Member) */
 export interface MemberOptions {
   /** Member name (required) */
-  readonly name: string;
+  name: string;
   /** Level (CT_Member @level) */
-  readonly level?: number;
+  level?: number;
 }
 
 /** Member property (CT_MemberProperty) */
 export interface MemberPropertyOptions {
   /** Field index */
-  readonly field: number;
+  field: number;
   /** Property name */
-  readonly name?: string;
+  name?: string;
   /** Show cell? */
-  readonly showCell?: boolean;
+  showCell?: boolean;
   /** Show tip? */
-  readonly showTip?: boolean;
+  showTip?: boolean;
   /** Show as caption (CT_MemberProperty @showAsCaption) */
-  readonly showAsCaption?: boolean;
+  showAsCaption?: boolean;
   /** Name length (CT_MemberProperty @nameLen) */
-  readonly nameLen?: number;
+  nameLen?: number;
   /** Property position (CT_MemberProperty @pPos) */
-  readonly pPos?: number;
+  pPos?: number;
   /** Property length (CT_MemberProperty @pLen) */
-  readonly pLen?: number;
+  pLen?: number;
 }
 
 /** Pivot area for conditional formats, chart formats, etc. (CT_PivotArea) */
 export interface PivotAreaOptions {
   /** Field index */
-  readonly field?: number;
+  field?: number;
   /** Area type (default: "normal") */
-  readonly type?: "none" | "normal" | "data" | "all" | "origin" | "button" | "topEnd" | "topRight";
+  type?: "none" | "normal" | "data" | "all" | "origin" | "button" | "topEnd" | "topRight";
   /** Data only (default: true) */
-  readonly dataOnly?: boolean;
+  dataOnly?: boolean;
   /** Label only (default: false) */
-  readonly labelOnly?: boolean;
+  labelOnly?: boolean;
   /** Grand row (default: false) */
-  readonly grandRow?: boolean;
+  grandRow?: boolean;
   /** Grand column (default: false) */
-  readonly grandCol?: boolean;
+  grandCol?: boolean;
   /** Cache index (default: false) */
-  readonly cacheIndex?: boolean;
+  cacheIndex?: boolean;
   /** Outline (default: true) */
-  readonly outline?: boolean;
+  outline?: boolean;
   /** Offset reference */
-  readonly offset?: string;
+  offset?: string;
   /** Collapsed levels are subtotals (default: false) */
-  readonly collapsedLevelsAreSubtotals?: boolean;
+  collapsedLevelsAreSubtotals?: boolean;
   /** Axis */
-  readonly axis?: "axisRow" | "axisCol" | "axisPage" | "axisValues";
+  axis?: "axisRow" | "axisCol" | "axisPage" | "axisValues";
   /** Field position */
-  readonly fieldPosition?: number;
+  fieldPosition?: number;
   /** References */
-  readonly references?: readonly PivotAreaReferenceOptions[];
+  references?: PivotAreaReferenceOptions[];
 }
 
 /** Pivot area reference (CT_PivotAreaReference) */
 export interface PivotAreaReferenceOptions {
   /** Field index */
-  readonly field?: number;
+  field?: number;
   /** Count */
-  readonly count?: number;
+  count?: number;
   /** Selected (default: true) */
-  readonly selected?: boolean;
+  selected?: boolean;
   /** By position (default: false) */
-  readonly byPosition?: boolean;
+  byPosition?: boolean;
   /** Relative (default: false) */
-  readonly relative?: boolean;
+  relative?: boolean;
   /** Default subtotal */
-  readonly defaultSubtotal?: boolean;
+  defaultSubtotal?: boolean;
   /** Sum subtotal */
-  readonly sumSubtotal?: boolean;
+  sumSubtotal?: boolean;
   /** CountA subtotal */
-  readonly countASubtotal?: boolean;
+  countASubtotal?: boolean;
   /** Average subtotal */
-  readonly avgSubtotal?: boolean;
+  avgSubtotal?: boolean;
   /** Max subtotal */
-  readonly maxSubtotal?: boolean;
+  maxSubtotal?: boolean;
   /** Min subtotal */
-  readonly minSubtotal?: boolean;
+  minSubtotal?: boolean;
   /** Count subtotal (CT_Reference @countSubtotal) */
-  readonly countSubtotal?: boolean;
+  countSubtotal?: boolean;
   /** Product subtotal (CT_Reference @productSubtotal) */
-  readonly productSubtotal?: boolean;
+  productSubtotal?: boolean;
   /** StdDevP subtotal (CT_Reference @stdDevPSubtotal) */
-  readonly stdDevPSubtotal?: boolean;
+  stdDevPSubtotal?: boolean;
   /** StdDev subtotal (CT_Reference @stdDevSubtotal) */
-  readonly stdDevSubtotal?: boolean;
+  stdDevSubtotal?: boolean;
   /** VarP subtotal (CT_Reference @varPSubtotal) */
-  readonly varPSubtotal?: boolean;
+  varPSubtotal?: boolean;
   /** Var subtotal (CT_Reference @varSubtotal) */
-  readonly varSubtotal?: boolean;
+  varSubtotal?: boolean;
   /** X indices */
-  readonly x?: readonly number[];
+  x?: number[];
 }
 
 /** Pivot conditional format (CT_ConditionalFormat for pivot) */
 export interface PivotConditionalFormatOptions {
   /** Scope (default: "selection") */
-  readonly scope?: "selection" | "data" | "field";
+  scope?: "selection" | "data" | "field";
   /** Type (default: "none") */
-  readonly type?: "none" | "all" | "row" | "column";
+  type?: "none" | "all" | "row" | "column";
   /** Priority (required) */
-  readonly priority: number;
+  priority: number;
   /** Pivot areas */
-  readonly pivotAreas?: readonly PivotAreaOptions[];
+  pivotAreas?: PivotAreaOptions[];
 }
 
 /** Chart format for pivot table (CT_ChartFormat) */
 export interface ChartFormatOptions {
   /** Chart index (required) */
-  readonly chart: number;
+  chart: number;
   /** Format index (required) */
-  readonly format: number;
+  format: number;
   /** Is series (default: false) */
-  readonly series?: boolean;
+  series?: boolean;
   /** Pivot area */
-  readonly pivotArea?: PivotAreaOptions;
+  pivotArea?: PivotAreaOptions;
 }
 
 /** Cache hierarchy for OLAP pivot caches (CT_CacheHierarchy) */
 export interface CacheHierarchyOptions {
   /** Unique name (required) */
-  readonly uniqueName: string;
+  uniqueName: string;
   /** Caption */
-  readonly caption?: string;
+  caption?: string;
   /** Is measure (default: false) */
-  readonly measure?: boolean;
+  measure?: boolean;
   /** Is set (default: false) */
-  readonly set?: boolean;
+  set?: boolean;
   /** Parent set index */
-  readonly parentSet?: number;
+  parentSet?: number;
   /** Icon set (default: 0) */
-  readonly iconSet?: number;
+  iconSet?: number;
   /** Is attribute (default: false) */
-  readonly attribute?: boolean;
+  attribute?: boolean;
   /** Is time dimension (default: false) */
-  readonly time?: boolean;
+  time?: boolean;
   /** Key attribute (default: false) */
-  readonly keyAttribute?: boolean;
+  keyAttribute?: boolean;
   /** Default member unique name */
-  readonly defaultMemberUniqueName?: string;
+  defaultMemberUniqueName?: string;
   /** All unique name */
-  readonly allUniqueName?: string;
+  allUniqueName?: string;
   /** All caption */
-  readonly allCaption?: string;
+  allCaption?: string;
   /** Dimension unique name */
-  readonly dimensionUniqueName?: string;
+  dimensionUniqueName?: string;
   /** Display folder */
-  readonly displayFolder?: string;
+  displayFolder?: string;
   /** Measure group */
-  readonly measureGroup?: string;
+  measureGroup?: string;
   /** Is measures (default: false) */
-  readonly measures?: boolean;
+  measures?: boolean;
   /** Count (required) */
-  readonly count: number;
+  count: number;
   /** One field (default: false) */
-  readonly oneField?: boolean;
+  oneField?: boolean;
   /** Hidden (default: false) */
-  readonly hidden?: boolean;
+  hidden?: boolean;
   /** Member value datatype (CT_CacheHierarchy @memberValueDatatype) */
-  readonly memberValueDatatype?: "string" | "number" | "integer" | "boolean" | "error";
+  memberValueDatatype?: "string" | "number" | "integer" | "boolean" | "error";
   /** Unbalanced (CT_CacheHierarchy @unbalanced) */
-  readonly unbalanced?: boolean;
+  unbalanced?: boolean;
   /** Unbalanced group (CT_CacheHierarchy @unbalancedGroup) */
-  readonly unbalancedGroup?: boolean;
+  unbalancedGroup?: boolean;
   /** Group levels (CT_GroupLevels) */
-  readonly groupLevels?: readonly GroupLevelOptions[];
+  groupLevels?: GroupLevelOptions[];
   /** Fields usage (CT_FieldsUsage) */
-  readonly fieldsUsage?: readonly FieldUsageOptions[];
+  fieldsUsage?: FieldUsageOptions[];
 }
 
 /** KPI definition for pivot cache (CT_PCDKPI) */
 export interface KpiOptions {
   /** Unique name (required) */
-  readonly uniqueName: string;
+  uniqueName: string;
   /** Caption */
-  readonly caption?: string;
+  caption?: string;
   /** Display folder */
-  readonly displayFolder?: string;
+  displayFolder?: string;
   /** Measure group */
-  readonly measureGroup?: string;
+  measureGroup?: string;
   /** Parent */
-  readonly parent?: string;
+  parent?: string;
   /** Value expression (required) */
-  readonly value: string;
+  value: string;
   /** Goal expression */
-  readonly goal?: string;
+  goal?: string;
   /** Status expression */
-  readonly status?: string;
+  status?: string;
   /** Trend expression */
-  readonly trend?: string;
+  trend?: string;
   /** Weight expression */
-  readonly weight?: string;
+  weight?: string;
   /** Time expression */
-  readonly time?: string;
+  time?: string;
 }
 
 /** Measure group (CT_MeasureGroup) */
 export interface MeasureGroupOptions {
   /** Name (required) */
-  readonly name: string;
+  name: string;
   /** Caption (required) */
-  readonly caption: string;
+  caption: string;
 }
 
 /** Set definition (CT_Set) */
 export interface SetOptions {
   /** Count */
-  readonly count?: number;
+  count?: number;
   /** Max rank (required) */
-  readonly maxRank: number;
+  maxRank: number;
   /** Set definition MDX (required) */
-  readonly setDefinition: string;
+  setDefinition: string;
   /** Sort type (default: "none") */
-  readonly sortType?:
+  sortType?:
     | "none"
     | "ascending"
     | "descending"
@@ -631,240 +631,232 @@ export interface SetOptions {
     | "ascendingNatural"
     | "descendingNatural";
   /** Query failed (default: false) */
-  readonly queryFailed?: boolean;
+  queryFailed?: boolean;
 }
 
 /** Server format (CT_ServerFormat) */
 export interface ServerFormatOptions {
   /** Culture */
-  readonly culture?: string;
+  culture?: string;
   /** Format string */
-  readonly format?: string;
+  format?: string;
 }
 
 /** Field group for pivot cache (CT_FieldGroup) */
 export interface FieldGroupOptions {
   /** Parent field index */
-  readonly parent?: number;
+  parent?: number;
   /** Base field index */
-  readonly base?: number;
+  base?: number;
   /** Range properties */
-  readonly rangePr?: RangePrOptions;
+  rangePr?: RangePrOptions;
   /** Discrete properties */
-  readonly discretePr?: readonly number[];
+  discretePr?: number[];
   /** Group items names */
-  readonly groupItems?: readonly string[];
+  groupItems?: string[];
 }
 
 /** Range properties for field grouping (CT_RangePr) */
 export interface RangePrOptions {
   /** Auto start (default: true) */
-  readonly autoStart?: boolean;
+  autoStart?: boolean;
   /** Auto end (default: true) */
-  readonly autoEnd?: boolean;
+  autoEnd?: boolean;
   /** Group by (default: "range") */
-  readonly groupBy?:
-    | "range"
-    | "seconds"
-    | "minutes"
-    | "hours"
-    | "days"
-    | "months"
-    | "quarters"
-    | "years";
+  groupBy?: "range" | "seconds" | "minutes" | "hours" | "days" | "months" | "quarters" | "years";
   /** Start number */
-  readonly startNum?: number;
+  startNum?: number;
   /** End number */
-  readonly endNum?: number;
+  endNum?: number;
   /** Start date ISO string */
-  readonly startDate?: string;
+  startDate?: string;
   /** End date ISO string */
-  readonly endDate?: string;
+  endDate?: string;
   /** Group interval (default: 1) */
-  readonly groupInterval?: number;
+  groupInterval?: number;
 }
 
 /** Pivot dimension (CT_PivotDimension) */
 export interface PivotDimensionOptions {
   /** Is measure (default: false) */
-  readonly measure?: boolean;
+  measure?: boolean;
   /** Name (required) */
-  readonly name: string;
+  name: string;
   /** Unique name (required) */
-  readonly uniqueName: string;
+  uniqueName: string;
   /** Caption (required) */
-  readonly caption: string;
+  caption: string;
 }
 
 /** Range set for consolidation source (CT_RangeSet) */
 export interface RangeSetOptions {
   /** Index for page field 1 */
-  readonly i1?: number;
+  i1?: number;
   /** Index for page field 2 */
-  readonly i2?: number;
+  i2?: number;
   /** Index for page field 3 */
-  readonly i3?: number;
+  i3?: number;
   /** Index for page field 4 */
-  readonly i4?: number;
+  i4?: number;
   /** Cell reference */
-  readonly ref?: string;
+  ref?: string;
   /** Named range */
-  readonly name?: string;
+  name?: string;
   /** Sheet name */
-  readonly sheet?: string;
+  sheet?: string;
   /** Relationship ID to external workbook */
-  readonly rId?: string;
+  rId?: string;
 }
 
 /** Page item for consolidation (CT_PageItem) */
 export interface ConsolidationPageItemOptions {
   /** Page item name */
-  readonly name: string;
+  name: string;
 }
 
 /** Page for consolidation (CT_PCDSCPage) */
 export interface ConsolidationPageOptions {
   /** Page items */
-  readonly items?: readonly ConsolidationPageItemOptions[];
+  items?: ConsolidationPageItemOptions[];
 }
 
 /** Consolidation source (CT_Consolidation) */
 export interface ConsolidationOptions {
   /** Auto page (default: true) */
-  readonly autoPage?: boolean;
+  autoPage?: boolean;
   /** Pages (max 4) */
-  readonly pages?: readonly ConsolidationPageOptions[];
+  pages?: ConsolidationPageOptions[];
   /** Range sets (required) */
-  readonly rangeSets: readonly RangeSetOptions[];
+  rangeSets: RangeSetOptions[];
 }
 
 /** Tuple cache entry (CT_PCDSDTCEntries choice: m/n/e/s) */
 export interface TupleCacheEntryOptions {
   /** Entry type */
-  readonly type: "m" | "n" | "e" | "s";
+  type: "m" | "n" | "e" | "s";
   /** Value (required for n/s, optional for e) */
-  readonly value?: number | string;
+  value?: number | string;
 }
 
 /** Deleted field (CT_DeletedField) */
 export interface DeletedFieldOptions {
   /** Field name */
-  readonly name: string;
+  name: string;
 }
 
 /** Group member (CT_GroupMember) */
 export interface GroupMemberOptions {
   /** Unique name (required) */
-  readonly uniqueName: string;
+  uniqueName: string;
   /** Is group */
-  readonly group?: boolean;
+  group?: boolean;
 }
 
 /** Level group (CT_LevelGroup) */
 export interface LevelGroupOptions {
   /** Name (required) */
-  readonly name: string;
+  name: string;
   /** Unique name (required) */
-  readonly uniqueName: string;
+  uniqueName: string;
   /** Caption (required) */
-  readonly caption: string;
+  caption: string;
   /** Unique parent */
-  readonly uniqueParent?: string;
+  uniqueParent?: string;
   /** Group ID */
-  readonly id?: number;
+  id?: number;
   /** Members */
-  readonly members: readonly GroupMemberOptions[];
+  members: GroupMemberOptions[];
 }
 
 /** Group level (CT_GroupLevel) */
 export interface GroupLevelOptions {
   /** Unique name (required) */
-  readonly uniqueName: string;
+  uniqueName: string;
   /** Caption (required) */
-  readonly caption: string;
+  caption: string;
   /** User-defined */
-  readonly user?: boolean;
+  user?: boolean;
   /** Custom roll-up */
-  readonly customRollUp?: boolean;
+  customRollUp?: boolean;
   /** Groups */
-  readonly groups?: readonly LevelGroupOptions[];
+  groups?: LevelGroupOptions[];
 }
 
 /** Field usage (CT_FieldUsage) */
 export interface FieldUsageOptions {
   /** Field index */
-  readonly value: number;
+  value: number;
 }
 
 /** Hierarchy usage (CT_HierarchyUsage) */
 export interface HierarchyUsageOptions {
   /** Hierarchy usage value (required) */
-  readonly hierarchyUsage: number;
+  hierarchyUsage: number;
 }
 
 /** Query cache entry (CT_Query) */
 export interface QueryCacheEntryOptions {
   /** MDX query string (required) */
-  readonly mdx: string;
+  mdx: string;
   /** Tuples */
-  readonly tpls?: readonly TupleOptions[];
+  tpls?: TupleOptions[];
 }
 
 /** Tuple (CT_Tuple) */
 export interface TupleOptions {
   /** Tuple items (field indices) */
-  readonly items?: readonly number[];
+  items?: number[];
 }
 
 /** Member property map (CT_X, used as mpMap child) */
 export interface MpMapOptions {
   /** Field index */
-  readonly x: number;
+  x: number;
 }
 
 /** Measure dimension map (CT_MeasureDimensionMap) */
 export interface MeasureDimensionMapOptions {
   /** Measure group index */
-  readonly measureGroup?: number;
+  measureGroup?: number;
   /** Dimension index */
-  readonly dimension?: number;
+  dimension?: number;
 }
 
 /** OLAP properties for pivot cache (CT_OlapPr) */
 export interface OlapPrOptions {
   /** Local cube connection string */
-  readonly local?: string;
+  local?: string;
   /** Local connection string */
-  readonly localConnection?: string;
+  localConnection?: string;
   /** Send locale info to OLAP server */
-  readonly sendLocale?: boolean;
+  sendLocale?: boolean;
   /** Row dimensions */
-  readonly rowDrillCount?: number;
+  rowDrillCount?: number;
   /** Column dimensions */
-  readonly colDrillCount?: number;
+  colDrillCount?: number;
   /** Local refresh (CT_OlapPr @localRefresh) */
-  readonly localRefresh?: boolean;
+  localRefresh?: boolean;
   /** Use server fill formatting */
-  readonly serverFill?: boolean;
+  serverFill?: boolean;
   /** Use server number formatting */
-  readonly serverNumberFormat?: boolean;
+  serverNumberFormat?: boolean;
   /** Use server font formatting */
-  readonly serverFont?: boolean;
+  serverFont?: boolean;
   /** Use server font color */
-  readonly serverFontColor?: boolean;
+  serverFontColor?: boolean;
 }
 
 /** Parsed source data for pivot cache generation. */
 export interface PivotSourceData {
-  readonly fieldNames: readonly string[];
-  readonly records: readonly (string | number | null | Date)[][];
+  fieldNames: string[];
+  records: (string | number | null | Date)[][];
 }
 
 /**
  * Extract unique values from source data for a given field index.
  */
 export function collectUniqueValues(
-  records: readonly (string | number | null | Date)[][],
+  records: (string | number | null | Date)[][],
   fieldIdx: number,
 ): (string | number | null | Date)[] {
   const seen = new Set<string>();
@@ -884,7 +876,7 @@ export function collectUniqueValues(
  * Check if a field is numeric (all non-empty values are numbers).
  */
 export function isNumericField(
-  records: readonly (string | number | null | Date)[][],
+  records: (string | number | null | Date)[][],
   fieldIdx: number,
 ): boolean {
   for (const row of records) {
@@ -897,7 +889,7 @@ export function isNumericField(
 /**
  * Aggregate values using the specified function.
  */
-export function aggregate(values: readonly number[], func: ConsolidateFunction): number {
+export function aggregate(values: number[], func: ConsolidateFunction): number {
   if (values.length === 0) return 0;
   switch (func) {
     case "sum":
@@ -926,13 +918,97 @@ export function aggregate(values: readonly number[], func: ConsolidateFunction):
   }
 }
 
-function populationVariance(values: readonly number[]): number {
+function populationVariance(values: number[]): number {
   const mean = values.reduce((a, b) => a + b, 0) / values.length;
   return values.reduce((sum, v) => sum + (v - mean) ** 2, 0) / values.length;
 }
 
-function sampleVariance(values: readonly number[]): number {
+function sampleVariance(values: number[]): number {
   if (values.length < 2) return 0;
   const mean = values.reduce((a, b) => a + b, 0) / values.length;
   return values.reduce((sum, v) => sum + (v - mean) ** 2, 0) / (values.length - 1);
+}
+
+// ── PivotCacheDefinition types (extracted from pivot-cache-definition-xml) ──
+
+export interface CacheFieldExtraAttrs {
+  /** Database field (CT_CacheField @databaseField) */
+  databaseField?: boolean;
+  /** Level (CT_CacheField @level) */
+  level?: number;
+  /** Mapping count (CT_CacheField @mappingCount) */
+  mappingCount?: number;
+  /** Member property field (CT_CacheField @memberPropertyField) */
+  memberPropertyField?: number;
+  /** Property name (CT_CacheField @propertyName) */
+  propertyName?: string;
+  /** Server field (CT_CacheField @serverField) */
+  serverField?: boolean;
+  /** Unique list (CT_CacheField @uniqueList) */
+  uniqueList?: boolean;
+  /** Shared items contains mixed types (CT_SharedItems @containsMixedTypes) */
+  containsMixedTypes?: boolean;
+  /** Shared items contains non-date (CT_SharedItems @containsNonDate) */
+  containsNonDate?: boolean;
+  /** Shared items long text (CT_SharedItems @longText) */
+  longText?: boolean;
+  /** Shared items max date (CT_SharedItems @maxDate) */
+  maxDate?: string;
+  /** Shared items min date (CT_SharedItems @minDate) */
+  minDate?: string;
+}
+
+export interface PivotCacheDefinitionOptions {
+  /** Cache is invalid (CT_PivotCacheDefinition @invalid) */
+  invalid?: boolean;
+  /** Save data with cache (CT_PivotCacheDefinition @saveData) */
+  saveData?: boolean;
+  /** Optimize memory usage (CT_PivotCacheDefinition @optimizeMemory) */
+  optimizeMemory?: boolean;
+  /** Enable refresh (CT_PivotCacheDefinition @enableRefresh) */
+  enableRefresh?: boolean;
+  /** User who last refreshed */
+  refreshedBy?: string;
+  /** Date of last refresh (decimal) */
+  refreshedDate?: number;
+  /** Date of last refresh (ISO 8601) */
+  refreshedDateIso?: string;
+  /** Background query (CT_PivotCacheDefinition @backgroundQuery) */
+  backgroundQuery?: boolean;
+  /** Missing items limit */
+  missingItemsLimit?: number;
+  /** Upgrade on refresh */
+  upgradeOnRefresh?: boolean;
+  /** Support subquery */
+  supportSubquery?: boolean;
+  /** Support advanced drill */
+  supportAdvancedDrill?: boolean;
+  /** Cache hierarchies (CT_CacheHierarchies) */
+  cacheHierarchies?: CacheHierarchyOptions[];
+  /** KPIs (CT_PCDKPIs) */
+  kpis?: KpiOptions[];
+  /** Measure groups (CT_MeasureGroups) */
+  measureGroups?: MeasureGroupOptions[];
+  /** Dimensions (CT_Dimensions) */
+  dimensions?: PivotDimensionOptions[];
+  /** Sets (CT_Sets in tupleCache) */
+  sets?: SetOptions[];
+  /** Server formats (CT_ServerFormats) */
+  serverFormats?: ServerFormatOptions[];
+  /** Field groups per field index (CT_FieldGroup inside cacheField) */
+  fieldGroups?: ReadonlyMap<number, FieldGroupOptions>;
+  /** Consolidation source (alternative to worksheetSource) */
+  consolidation?: ConsolidationOptions;
+  /** Tuple cache entries (CT_PCDSDTCEntries) */
+  entries?: TupleCacheEntryOptions[];
+  /** Query cache (CT_QueryCache in tupleCache) */
+  queryCache?: QueryCacheEntryOptions[];
+  /** Member property map per cache field (mpMap) */
+  mpMaps?: MpMapOptions[];
+  /** Measure dimension maps (CT_MeasureDimensionMaps) */
+  measureDimensionMaps?: MeasureDimensionMapOptions[];
+  /** Per-field cache field overrides (mapped by field index) */
+  cacheFieldOverrides?: ReadonlyMap<number, CacheFieldExtraAttrs>;
+  /** OLAP properties (CT_OlapPr) */
+  olapPr?: OlapPrOptions;
 }

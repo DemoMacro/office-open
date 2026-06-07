@@ -33,8 +33,8 @@ import { twipsMeasureValue } from "@util/values";
 import type { PositiveUniversalMeasure } from "@util/values";
 
 export interface TableGridChangeOptions {
-  readonly id: number;
-  readonly columnWidths: readonly number[] | readonly PositiveUniversalMeasure[];
+  id: number;
+  columnWidths: number[] | PositiveUniversalMeasure[];
 }
 
 /**
@@ -43,7 +43,7 @@ export interface TableGridChangeOptions {
  * The gridCol element specifies the width of a single column.
  */
 export const createGridCol = (width?: number | PositiveUniversalMeasure): XmlComponent =>
-  new BuilderElement<{ readonly width?: number | PositiveUniversalMeasure }>({
+  new BuilderElement<{ width?: number | PositiveUniversalMeasure }>({
     attributes:
       width !== undefined
         ? {
@@ -62,7 +62,7 @@ export const createGridCol = (width?: number | PositiveUniversalMeasure): XmlCom
  */
 export class TableGrid extends XmlComponent {
   public constructor(
-    widths: readonly number[] | readonly PositiveUniversalMeasure[],
+    widths: number[] | PositiveUniversalMeasure[],
     revision?: TableGridChangeOptions,
   ) {
     super("w:tblGrid");

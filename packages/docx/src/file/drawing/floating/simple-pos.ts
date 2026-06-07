@@ -37,7 +37,7 @@ export const createSimplePos = (): XmlComponent =>
      *
      * The possible values for this attribute are defined by the `ST_Coordinate` simple type (§5.1.12.16).
      */
-    readonly x: number;
+    x: number;
     /**
      * ## Y-Axis Coordinate
      *
@@ -52,7 +52,7 @@ export const createSimplePos = (): XmlComponent =>
      *
      * The possible values for this attribute are defined by the `ST_Coordinate` simple type (§5.1.12.16).
      */
-    readonly y: number;
+    y: number;
   }>({
     name: "wp:simplePos",
     // NOTE: It's not fully supported in Microsoft Word, but this element is needed anyway

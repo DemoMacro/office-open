@@ -29,4 +29,4 @@ export type SlideChild =
   | { smartart: SmartArtOptions }
   | { lockedCanvas: LockedCanvasFrameOptions }
   | { ole: OleOptions }
-  | { contentPart: { readonly rId: string } };
+  | { contentPart: { rId: string } };

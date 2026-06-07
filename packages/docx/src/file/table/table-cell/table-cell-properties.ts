@@ -51,38 +51,38 @@ import type { TableCellBordersOptions, TextDirection } from "./table-cell-compon
 
 export interface TableCellPropertiesOptionsBase {
   /** Conditional formatting style (cnfStyle) */
-  readonly cnfStyle?: CnfStyleOptions;
+  cnfStyle?: CnfStyleOptions;
   /** Shading (background color/pattern) for the cell */
-  readonly shading?: ShadingAttributesProperties;
+  shading?: ShadingAttributesProperties;
   /** Cell margins (padding) for the cell content */
-  readonly margins?: TableCellMarginOptions;
+  margins?: TableCellMarginOptions;
   /** Vertical alignment of content within the cell */
-  readonly verticalAlign?: TableVerticalAlign;
+  verticalAlign?: TableVerticalAlign;
   /** Text direction/flow within the cell */
-  readonly textDirection?: (typeof TextDirection)[keyof typeof TextDirection];
+  textDirection?: (typeof TextDirection)[keyof typeof TextDirection];
   /** Vertical merge setting for the cell */
-  readonly verticalMerge?: (typeof VerticalMergeType)[keyof typeof VerticalMergeType];
+  verticalMerge?: (typeof VerticalMergeType)[keyof typeof VerticalMergeType];
   /** Width specification for the cell */
-  readonly width?: TableWidthProperties;
+  width?: TableWidthProperties;
   /** Number of columns this cell spans (horizontal merge) */
-  readonly columnSpan?: number;
+  columnSpan?: number;
   /** Number of rows this cell spans (vertical merge) */
-  readonly rowSpan?: number;
+  rowSpan?: number;
   /** Border settings for the cell edges */
-  readonly borders?: TableCellBordersOptions;
+  borders?: TableCellBordersOptions;
   /** Horizontal merge setting (hMerge) */
-  readonly horizontalMerge?: "continue" | "restart";
+  horizontalMerge?: "continue" | "restart";
   /** Whether the cell content does not wrap (noWrap) */
-  readonly noWrap?: boolean;
+  noWrap?: boolean;
   /** Whether text is auto-fit to cell width (tcFitText) */
-  readonly fitText?: boolean;
+  fitText?: boolean;
   /** Whether the cell end mark is hidden (hideMark) */
-  readonly hideMark?: boolean;
+  hideMark?: boolean;
   /** Header cells associated with this cell (headers) */
-  readonly headers?: string[];
-  readonly insertion?: ChangedAttributesProperties;
-  readonly deletion?: ChangedAttributesProperties;
-  readonly cellMerge?: ICellMergeAttributes;
+  headers?: string[];
+  insertion?: ChangedAttributesProperties;
+  deletion?: ChangedAttributesProperties;
+  cellMerge?: ICellMergeAttributes;
 }
 
 /**
@@ -91,8 +91,8 @@ export interface TableCellPropertiesOptionsBase {
  * @see {@link TableCellProperties}
  */
 export type ITableCellPropertiesOptions = {
-  readonly revision?: ITableCellPropertiesChangeOptions;
-  readonly includeIfEmpty?: boolean;
+  revision?: ITableCellPropertiesChangeOptions;
+  includeIfEmpty?: boolean;
 } & TableCellPropertiesOptionsBase;
 
 export type ITableCellPropertiesChangeOptions = TableCellPropertiesOptionsBase &
@@ -301,7 +301,7 @@ export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
     super("w:tcPr", options.includeIfEmpty);
 
     if (options.cnfStyle !== undefined) {
-      const attrs: Record<string, { readonly key: string; readonly value: string | boolean }> = {
+      const attrs: Record<string, { key: string; value: string | boolean }> = {
         val: { key: "w:val", value: options.cnfStyle.val },
       };
       if (options.cnfStyle.changed !== undefined) {
@@ -349,7 +349,7 @@ export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
     }
 
     if (options.horizontalMerge !== undefined) {
-      const attrs: Record<string, { readonly key: string; readonly value: string }> = {};
+      const attrs: Record<string, { key: string; value: string }> = {};
       if (options.horizontalMerge === "restart") {
         attrs.val = { key: "w:val", value: "restart" };
       }
@@ -376,7 +376,7 @@ export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
     if (options.headers !== undefined) {
       const children = options.headers.map(
         (h) =>
-          new BuilderElement<{ readonly val: string }>({
+          new BuilderElement<{ val: string }>({
             name: "w:header",
             attributes: { val: { key: "w:val", value: h } },
           }),

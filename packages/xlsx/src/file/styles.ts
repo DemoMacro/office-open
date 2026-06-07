@@ -13,148 +13,148 @@ import { attrs, escapeXml } from "@office-open/xml";
 // ── Sub-style option interfaces ──
 
 export interface FontOptions {
-  readonly bold?: boolean;
-  readonly italic?: boolean;
-  readonly underline?: boolean;
-  readonly strike?: boolean;
-  readonly size?: number;
-  readonly color?: string;
-  readonly fontName?: string;
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+  strike?: boolean;
+  size?: number;
+  color?: string;
+  fontName?: string;
   /** Character set (CT_Font/charset @val) */
-  readonly charset?: number;
+  charset?: number;
   /** Font family (CT_Font/family @val) */
-  readonly family?: number;
+  family?: number;
   /** Condense (macOS, CT_Font/condense) */
-  readonly condense?: boolean;
+  condense?: boolean;
   /** Extend (macOS, CT_Font/extend) */
-  readonly extend?: boolean;
+  extend?: boolean;
   /** Vertical alignment: superscript/subscript (CT_Font/vertAlign @val) */
-  readonly vertAlign?: "superscript" | "subscript" | "baseline";
+  vertAlign?: "superscript" | "subscript" | "baseline";
   /** Font scheme (CT_Font/scheme @val) */
-  readonly scheme?: "major" | "minor" | "none";
+  scheme?: "major" | "minor" | "none";
   /** Font shadow (CT_Font/shadow) */
-  readonly shadow?: boolean;
+  shadow?: boolean;
   /** Font outline (CT_Font/outline) */
-  readonly outline?: boolean;
+  outline?: boolean;
 }
 
 /** Gradient stop (CT_GradientStop) */
 export interface GradientStopOptions {
   /** Position (0.0–1.0) */
-  readonly position: number;
+  position: number;
   /** RGB color hex without alpha, e.g. "FF0000" */
-  readonly color: string;
+  color: string;
 }
 
 export interface FillOptions {
-  readonly type?: "solid" | "pattern" | "gradient";
-  readonly color?: string;
-  readonly patternType?: string;
+  type?: "solid" | "pattern" | "gradient";
+  color?: string;
+  patternType?: string;
   /** Background color for pattern fill (CT_PatternFill/bgColor) */
-  readonly bgColor?: string;
+  bgColor?: string;
   /** Background color indexed (CT_Color @indexed) */
-  readonly colorIndexed?: number;
+  colorIndexed?: number;
   /** Gradient stops (CT_GradientFill/stop) */
-  readonly stops?: readonly GradientStopOptions[];
+  stops?: GradientStopOptions[];
   /** Gradient type (CT_GradientFill @type) */
-  readonly gradientType?: "linear" | "path";
+  gradientType?: "linear" | "path";
   /** Gradient degree for linear (CT_GradientFill @degree) */
-  readonly gradientDegree?: number;
+  gradientDegree?: number;
   /** Gradient left position for path (CT_GradientFill @left) */
-  readonly gradientLeft?: number;
+  gradientLeft?: number;
   /** Gradient right position for path (CT_GradientFill @right) */
-  readonly gradientRight?: number;
+  gradientRight?: number;
   /** Gradient top position for path (CT_GradientFill @top) */
-  readonly gradientTop?: number;
+  gradientTop?: number;
   /** Gradient bottom position for path (CT_GradientFill @bottom) */
-  readonly gradientBottom?: number;
+  gradientBottom?: number;
 }
 
 export interface BorderOptions {
-  readonly style?: "thin" | "medium" | "thick" | "dotted" | "dashed" | "hair" | "none";
-  readonly color?: string;
+  style?: "thin" | "medium" | "thick" | "dotted" | "dashed" | "hair" | "none";
+  color?: string;
 }
 
 export interface BorderSideOptions {
-  readonly top?: BorderOptions;
-  readonly bottom?: BorderOptions;
-  readonly left?: BorderOptions;
-  readonly right?: BorderOptions;
-  readonly diagonal?: BorderOptions;
+  top?: BorderOptions;
+  bottom?: BorderOptions;
+  left?: BorderOptions;
+  right?: BorderOptions;
+  diagonal?: BorderOptions;
   /** Diagonal up (CT_Border @diagonalUp) — on the parent border element */
-  readonly diagonalUp?: boolean;
+  diagonalUp?: boolean;
   /** Diagonal down (CT_Border @diagonalDown) — on the parent border element */
-  readonly diagonalDown?: boolean;
+  diagonalDown?: boolean;
   /** Leading edge border (CT_Border/start, for RTL support) */
-  readonly start?: BorderOptions;
+  start?: BorderOptions;
   /** Trailing edge border (CT_Border/end, for RTL support) */
-  readonly end?: BorderOptions;
+  end?: BorderOptions;
   /** Vertical inner border (CT_Border/vertical, for cell range borders) */
-  readonly vertical?: BorderOptions;
+  vertical?: BorderOptions;
   /** Horizontal inner border (CT_Border/horizontal, for cell range borders) */
-  readonly horizontal?: BorderOptions;
+  horizontal?: BorderOptions;
 }
 
 export interface AlignmentOptions {
-  readonly horizontal?: "left" | "center" | "right" | "fill" | "justify";
-  readonly vertical?: "top" | "center" | "bottom";
-  readonly wrapText?: boolean;
-  readonly textRotation?: number;
-  readonly indent?: number;
+  horizontal?: "left" | "center" | "right" | "fill" | "justify";
+  vertical?: "top" | "center" | "bottom";
+  wrapText?: boolean;
+  textRotation?: number;
+  indent?: number;
   /** Relative indent (CT_CellAlignment @relativeIndent) */
-  readonly relativeIndent?: number;
+  relativeIndent?: number;
   /** Justify last line (CT_CellAlignment @justifyLastLine) */
-  readonly justifyLastLine?: boolean;
+  justifyLastLine?: boolean;
   /** Shrink to fit (CT_CellAlignment @shrinkToFit) */
-  readonly shrinkToFit?: boolean;
+  shrinkToFit?: boolean;
   /** Reading order (CT_CellAlignment @readingOrder) */
-  readonly readingOrder?: number;
+  readingOrder?: number;
 }
 
 export interface StyleOptions {
-  readonly font?: FontOptions;
-  readonly fill?: FillOptions;
-  readonly border?: BorderSideOptions;
-  readonly numFmt?: string;
-  readonly alignment?: AlignmentOptions;
+  font?: FontOptions;
+  fill?: FillOptions;
+  border?: BorderSideOptions;
+  numFmt?: string;
+  alignment?: AlignmentOptions;
   /** Quote prefix (CT_Xf @quotePrefix) */
-  readonly quotePrefix?: boolean;
+  quotePrefix?: boolean;
   /** Pivot button (CT_Xf @pivotButton) */
-  readonly pivotButton?: boolean;
+  pivotButton?: boolean;
   /** Apply protection (CT_Xf @applyProtection) */
-  readonly applyProtection?: boolean;
+  applyProtection?: boolean;
   /** Cell protection (CT_CellProtection) */
-  readonly protection?: CellProtectionOptions;
+  protection?: CellProtectionOptions;
 }
 
 /** Cell-level protection settings (CT_CellProtection) */
 export interface CellProtectionOptions {
   /** Cell is locked (CT_CellProtection @locked) */
-  readonly locked?: boolean;
+  locked?: boolean;
   /** Cell formula is hidden (CT_CellProtection @hidden) */
-  readonly hidden?: boolean;
+  hidden?: boolean;
 }
 
 /** Indexed color entry (CT_RgbColor) */
 export interface IndexedColorOptions {
   /** RGB hex value, e.g. "FF000000" */
-  readonly rgb: string;
+  rgb: string;
 }
 
 /** Colors palette (CT_Colors) */
 export interface ColorsOptions {
   /** Indexed color palette (CT_IndexedColors) */
-  readonly indexedColors?: readonly IndexedColorOptions[];
+  indexedColors?: IndexedColorOptions[];
   /** Most recently used colors (CT_MRUColors) */
-  readonly mruColors?: readonly string[];
+  mruColors?: string[];
 }
 
 /** Differential format — used by conditional formatting to specify what changes. */
 export interface DxfOptions {
-  readonly font?: FontOptions;
-  readonly fill?: FillOptions;
-  readonly border?: BorderSideOptions;
-  readonly numFmt?: string;
+  font?: FontOptions;
+  fill?: FillOptions;
+  border?: BorderSideOptions;
+  numFmt?: string;
 }
 
 // ── Style key helpers for deduplication ──
@@ -237,90 +237,117 @@ export type TableStyleElementType =
 /** Table style element (CT_TableStyleElement). */
 export interface TableStyleElementOptions {
   /** Element type */
-  readonly type: TableStyleElementType;
+  type: TableStyleElementType;
   /** Differential format index (dxf) */
-  readonly dxfId?: number;
+  dxfId?: number;
   /** Button style (for pivot tables) */
-  readonly button?: boolean;
+  button?: boolean;
 }
 
 /** Custom table/pivot table style (CT_TableStyle). */
 /** Style sheet extension (CT_Extension) */
 export interface StyleExtensionOptions {
   /** Extension URI (required) */
-  readonly uri: string;
+  uri: string;
   /** Extension content (raw XML fragment) */
-  readonly content?: string;
+  content?: string;
 }
 
 export interface CustomTableStyleOptions {
   /** Style name (must be unique) */
-  readonly name: string;
+  name: string;
   /** Pivot style (vs table style) */
-  readonly pivot?: boolean;
+  pivot?: boolean;
   /** Table style elements */
-  readonly elements?: readonly TableStyleElementOptions[];
+  elements?: TableStyleElementOptions[];
 }
 
 /** Custom cell style (CT_CellStyle) */
 export interface CustomCellStyleOptions {
   /** Style name */
-  readonly name: string;
+  name: string;
   /** XF index to apply */
-  readonly xfId: number;
+  xfId: number;
   /** Built-in ID */
-  readonly builtinId?: number;
+  builtinId?: number;
   /** Custom built-in (CT_CellStyle @customBuiltin) */
-  readonly customBuiltin?: boolean;
+  customBuiltin?: boolean;
   /** Outline level (CT_CellStyle @iLevel) */
-  readonly iLevel?: number;
+  iLevel?: number;
   /** Hidden style (CT_CellStyle @hidden) */
-  readonly hidden?: boolean;
+  hidden?: boolean;
+}
+
+/** Cell XF entry exposed by Styles.toDescriptorOptions(). */
+export interface CellXfEntry {
+  fontId: number;
+  fillId: number;
+  borderId: number;
+  numFmtId: number;
+  alignment?: AlignmentOptions;
+  quotePrefix?: boolean;
+  pivotButton?: boolean;
+  applyProtection?: boolean;
+  protection?: CellProtectionOptions;
+}
+
+/** Snapshot of Styles internal state for descriptor-based XML generation. */
+export interface StylesState {
+  customNumFmts: ReadonlyMap<string, number>;
+  fonts: FontOptions[];
+  fills: FillOptions[];
+  borders: BorderSideOptions[];
+  cellXfs: CellXfEntry[];
+  dxfs: DxfOptions[];
+  colors?: ColorsOptions;
+  tableStyles?: CustomTableStyleOptions[];
+  customCellStyles?: CustomCellStyleOptions[];
+  styleExtensions?: StyleExtensionOptions[];
 }
 
 export class Styles extends BaseXmlComponent {
-  private readonly fonts: FontOptions[] = [
+  private fonts: FontOptions[] = [
     { size: 11, fontName: "Calibri" }, // default font (index 0)
   ];
-  private readonly fontKeys = new Map<string, number>();
+  private fontKeys = new Map<string, number>();
 
-  private readonly fills: FillOptions[] = [
+  private fills: FillOptions[] = [
     { patternType: "none" }, // default fill (index 0)
     { patternType: "gray125" }, // required fill (index 1)
   ];
-  private readonly fillKeys = new Map<string, number>();
+  private fillKeys = new Map<string, number>();
 
-  private readonly borders: BorderSideOptions[] = [
+  private borders: BorderSideOptions[] = [
     {}, // default empty border (index 0)
   ];
-  private readonly borderKeys = new Map<string, number>();
+  private borderKeys = new Map<string, number>();
 
-  private readonly customNumFmts = new Map<string, number>();
+  private customNumFmts = new Map<string, number>();
   private nextCustomNumFmtId = 164; // custom numFmts start at 164
 
-  private readonly cellXfs: Array<{
-    readonly fontId: number;
-    readonly fillId: number;
-    readonly borderId: number;
-    readonly numFmtId: number;
-    readonly alignment?: AlignmentOptions;
-    readonly quotePrefix?: boolean;
-    readonly pivotButton?: boolean;
-    readonly applyProtection?: boolean;
-    readonly protection?: CellProtectionOptions;
+  private cellXfs: Array<{
+    fontId: number;
+    fillId: number;
+    borderId: number;
+    numFmtId: number;
+    alignment?: AlignmentOptions;
+    quotePrefix?: boolean;
+    pivotButton?: boolean;
+    applyProtection?: boolean;
+    protection?: CellProtectionOptions;
   }> = [
     { fontId: 0, fillId: 0, borderId: 0, numFmtId: 0 }, // default xf (index 0)
   ];
-  private readonly cellXfKeys = new Map<string, number>();
+  private cellXfKeys = new Map<string, number>();
 
-  private readonly dxfs: DxfOptions[] = [];
+  private dxfs: DxfOptions[] = [];
 
   private colors?: ColorsOptions;
-  private tableStyles?: readonly CustomTableStyleOptions[];
+  private tableStyles?: CustomTableStyleOptions[];
   /** Custom cell styles (CT_CellStyles) */
-  private customCellStyles?: readonly CustomCellStyleOptions[];
+  private customCellStyles?: CustomCellStyleOptions[];
   /** Style sheet extensions (CT_ExtensionList) */
-  private styleExtensions?: readonly StyleExtensionOptions[];
+  private styleExtensions?: StyleExtensionOptions[];
 
   public constructor() {
     super("styleSheet");
@@ -382,16 +409,35 @@ export class Styles extends BaseXmlComponent {
     this.colors = opts;
   }
 
-  public setTableStyles(styles: readonly CustomTableStyleOptions[]): void {
+  public setTableStyles(styles: CustomTableStyleOptions[]): void {
     this.tableStyles = styles;
   }
 
-  public setExtensions(extensions: readonly StyleExtensionOptions[]): void {
+  public setExtensions(extensions: StyleExtensionOptions[]): void {
     this.styleExtensions = extensions;
   }
 
-  public setCustomCellStyles(styles: readonly CustomCellStyleOptions[]): void {
+  public setCustomCellStyles(styles: CustomCellStyleOptions[]): void {
     this.customCellStyles = styles;
+  }
+
+  /**
+   * Expose internal state for descriptor-based XML generation.
+   * The descriptor reads this snapshot to produce xl/styles.xml.
+   */
+  public toDescriptorOptions(): StylesState {
+    return {
+      customNumFmts: new Map(this.customNumFmts),
+      fonts: [...this.fonts],
+      fills: [...this.fills],
+      borders: [...this.borders],
+      cellXfs: [...this.cellXfs],
+      dxfs: [...this.dxfs],
+      colors: this.colors,
+      tableStyles: this.tableStyles,
+      customCellStyles: this.customCellStyles,
+      styleExtensions: this.styleExtensions,
+    };
   }
 
   private registerFont(opts?: FontOptions): number {
@@ -444,15 +490,15 @@ export class Styles extends BaseXmlComponent {
   }
 
   private cellXfKey(xf: {
-    readonly fontId: number;
-    readonly fillId: number;
-    readonly borderId: number;
-    readonly numFmtId: number;
-    readonly alignment?: AlignmentOptions;
-    readonly quotePrefix?: boolean;
-    readonly pivotButton?: boolean;
-    readonly applyProtection?: boolean;
-    readonly protection?: CellProtectionOptions;
+    fontId: number;
+    fillId: number;
+    borderId: number;
+    numFmtId: number;
+    alignment?: AlignmentOptions;
+    quotePrefix?: boolean;
+    pivotButton?: boolean;
+    applyProtection?: boolean;
+    protection?: CellProtectionOptions;
   }): string {
     const a = xf.alignment;
     const ak = a
@@ -469,7 +515,7 @@ export class Styles extends BaseXmlComponent {
    * Zero-allocation fast path: directly concatenate XML string.
    * Bypasses the IXmlableObject intermediate tree entirely.
    */
-  public override toXml(_context: Context): string {
+  public override toXml(_context?: Context): string {
     const p: string[] = [
       '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">',
     ];

@@ -44,25 +44,25 @@ import type { TableWidthProperties } from "./table-width";
  * @see {@link Table}
  */
 export interface TableOptions {
-  readonly rows: readonly (TableRow | StructuredDocumentTagRow | CustomXmlRow | TableRowOptions)[];
-  readonly width?: TableWidthProperties;
-  readonly columnWidths?: readonly number[];
-  readonly columnWidthsRevision?: TableGridChangeOptions;
-  readonly margins?: TableCellMarginOptions;
-  readonly indent?: TableWidthProperties;
-  readonly float?: TableFloatOptions;
-  readonly layout?: (typeof TableLayoutType)[keyof typeof TableLayoutType];
-  readonly style?: string;
-  readonly borders?: TableBordersOptions;
-  readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
-  readonly visuallyRightToLeft?: boolean;
-  readonly tableLook?: TableLookOptions;
-  readonly cellSpacing?: TableCellSpacingProperties;
-  readonly styleRowBandSize?: number;
-  readonly styleColBandSize?: number;
-  readonly caption?: string;
-  readonly description?: string;
-  readonly revision?: ITablePropertiesChangeOptions;
+  rows: (TableRow | StructuredDocumentTagRow | CustomXmlRow | TableRowOptions)[];
+  width?: TableWidthProperties;
+  columnWidths?: number[];
+  columnWidthsRevision?: TableGridChangeOptions;
+  margins?: TableCellMarginOptions;
+  indent?: TableWidthProperties;
+  float?: TableFloatOptions;
+  layout?: (typeof TableLayoutType)[keyof typeof TableLayoutType];
+  style?: string;
+  borders?: TableBordersOptions;
+  alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
+  visuallyRightToLeft?: boolean;
+  tableLook?: TableLookOptions;
+  cellSpacing?: TableCellSpacingProperties;
+  styleRowBandSize?: number;
+  styleColBandSize?: number;
+  caption?: string;
+  description?: string;
+  revision?: ITablePropertiesChangeOptions;
 }
 
 /**
@@ -102,12 +102,12 @@ export interface TableOptions {
  * ```
  */
 export class Table extends BaseXmlComponent implements FileChild {
-  public readonly fileChild = Symbol();
+  public fileChild = Symbol();
 
-  private readonly options: TableOptions;
-  private readonly columnWidths: readonly number[];
+  private options: TableOptions;
+  private columnWidths: number[];
   // Coerced rows: plain TableRowOptions are converted to TableRow instances
-  private readonly rows: readonly (TableRow | StructuredDocumentTagRow | CustomXmlRow)[];
+  private rows: (TableRow | StructuredDocumentTagRow | CustomXmlRow)[];
 
   public constructor(options: TableOptions) {
     super("w:tbl");

@@ -28,7 +28,7 @@ export interface CellBorderDescriptorOptions {
 
 export interface TableCellDescriptorOptions {
   text?: string;
-  children?: readonly (ParagraphDescriptorOptions | string)[];
+  children?: (ParagraphDescriptorOptions | string)[];
   fill?: FillOptions;
   borders?: {
     top?: CellBorderDescriptorOptions;
@@ -51,7 +51,7 @@ export interface TableCellDescriptorOptions {
 
 export interface TableRowDescriptorOptions {
   height?: number;
-  cells: readonly TableCellDescriptorOptions[];
+  cells: TableCellDescriptorOptions[];
 }
 
 export interface TableDescriptorOptions {
@@ -61,8 +61,8 @@ export interface TableDescriptorOptions {
   y?: number;
   width?: number;
   height?: number;
-  rows: readonly TableRowDescriptorOptions[];
-  columnWidths?: readonly number[];
+  rows: TableRowDescriptorOptions[];
+  columnWidths?: number[];
   firstRow?: boolean;
   lastRow?: boolean;
   bandRow?: boolean;
@@ -370,7 +370,7 @@ function distributeBorders(
   ri: number,
   rowCount: number,
   tb: TableDescriptorOptions["borders"],
-): readonly TableCellDescriptorOptions[] {
+): TableCellDescriptorOptions[] {
   if (!tb) return row.cells;
   const colCount = row.cells.length;
   return row.cells.map((cell, ci) => {

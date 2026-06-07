@@ -39,21 +39,21 @@ import type { ThemeColor } from "@util/values";
  * @property type - Shading pattern type
  */
 export interface ShadingAttributesProperties {
-  readonly fill?: string;
-  readonly color?: string;
-  readonly type?: (typeof ShadingType)[keyof typeof ShadingType];
+  fill?: string;
+  color?: string;
+  type?: (typeof ShadingType)[keyof typeof ShadingType];
   /** Theme color reference */
-  readonly themeColor?: (typeof ThemeColor)[keyof typeof ThemeColor];
+  themeColor?: (typeof ThemeColor)[keyof typeof ThemeColor];
   /** Theme color tint (2-char hex) */
-  readonly themeTint?: string;
+  themeTint?: string;
   /** Theme color shade (2-char hex) */
-  readonly themeShade?: string;
+  themeShade?: string;
   /** Theme fill color reference */
-  readonly themeFill?: (typeof ThemeColor)[keyof typeof ThemeColor];
+  themeFill?: (typeof ThemeColor)[keyof typeof ThemeColor];
   /** Theme fill tint (2-char hex) */
-  readonly themeFillTint?: string;
+  themeFillTint?: string;
   /** Theme fill shade (2-char hex) */
-  readonly themeFillShade?: string;
+  themeFillShade?: string;
 }
 
 /**

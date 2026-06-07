@@ -17,21 +17,21 @@ import type { BuilderChild, XmlComponent } from "@file/xml-components";
  */
 export interface MathBorderBoxPropertiesOptions {
   /** Hide top border */
-  readonly hideTop?: boolean;
+  hideTop?: boolean;
   /** Hide bottom border */
-  readonly hideBottom?: boolean;
+  hideBottom?: boolean;
   /** Hide left border */
-  readonly hideLeft?: boolean;
+  hideLeft?: boolean;
   /** Hide right border */
-  readonly hideRight?: boolean;
+  hideRight?: boolean;
   /** Horizontal strike-through */
-  readonly strikeHorizontal?: boolean;
+  strikeHorizontal?: boolean;
   /** Vertical strike-through */
-  readonly strikeVertical?: boolean;
+  strikeVertical?: boolean;
   /** Bottom-left to top-right diagonal strike */
-  readonly strikeDiagonalUp?: boolean;
+  strikeDiagonalUp?: boolean;
   /** Top-left to bottom-right diagonal strike */
-  readonly strikeDiagonalDown?: boolean;
+  strikeDiagonalDown?: boolean;
 }
 
 /**

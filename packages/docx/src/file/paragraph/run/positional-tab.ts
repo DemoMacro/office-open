@@ -103,11 +103,11 @@ export const PositionalTabLeader = {
  */
 export interface PositionalTabOptions {
   /** How text is aligned at the tab stop */
-  readonly alignment: (typeof PositionalTabAlignment)[keyof typeof PositionalTabAlignment];
+  alignment: (typeof PositionalTabAlignment)[keyof typeof PositionalTabAlignment];
   /** What the tab position is relative to */
-  readonly relativeTo: (typeof PositionalTabRelativeTo)[keyof typeof PositionalTabRelativeTo];
+  relativeTo: (typeof PositionalTabRelativeTo)[keyof typeof PositionalTabRelativeTo];
   /** Character used to fill space before the tab */
-  readonly leader: (typeof PositionalTabLeader)[keyof typeof PositionalTabLeader];
+  leader: (typeof PositionalTabLeader)[keyof typeof PositionalTabLeader];
 }
 
 /**

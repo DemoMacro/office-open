@@ -8,50 +8,50 @@
 
 export interface OleEmbedOptions {
   /** Relationship ID for the embedded OLE data */
-  readonly rId: string;
+  rId: string;
   /** Last update in document (ISO 8601) */
-  readonly lastEdited?: string;
+  lastEdited?: string;
 }
 
 export interface OleLinkOptions {
   /** Relationship ID for the linked OLE data */
-  readonly rId: string;
+  rId: string;
   /** Last update in document (ISO 8601) */
-  readonly updateLastEdited?: string;
+  updateLastEdited?: string;
   /** Automatic or manual update */
-  readonly autoUpdate?: boolean;
+  autoUpdate?: boolean;
 }
 
 export interface OleOptions {
   /** Position and size */
-  readonly x?: number;
-  readonly y?: number;
-  readonly width?: number;
-  readonly height?: number;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
   /** OLE program ID (e.g., "Excel.Sheet.12") */
-  readonly progId?: string;
+  progId?: string;
   /** Shape ID */
-  readonly spid?: string;
+  spid?: string;
   /** Object name */
-  readonly name?: string;
+  name?: string;
   /** Show as icon */
-  readonly showAsIcon?: boolean;
+  showAsIcon?: boolean;
   /** Image width (EMU) for icon/preview */
-  readonly imgW?: number;
+  imgW?: number;
   /** Image height (EMU) for icon/preview */
-  readonly imgH?: number;
+  imgH?: number;
   /** Embed mode (provides rId for embedded OLE) */
-  readonly embed?: OleEmbedOptions;
+  embed?: OleEmbedOptions;
   /** Link mode (provides rId for linked OLE) */
-  readonly link?: OleLinkOptions;
+  link?: OleLinkOptions;
   /** Relationship ID for the preview/icon image */
-  readonly imgRId?: string;
+  imgRId?: string;
   /** Follow color scheme: "none", "full", or "textAndBackground" */
-  readonly followColorScheme?: "none" | "full" | "textAndBackground";
+  followColorScheme?: "none" | "full" | "textAndBackground";
 }
 
 export interface OleData {
-  readonly key: string;
-  readonly rId: string;
-  readonly progId?: string;
+  key: string;
+  rId: string;
+  progId?: string;
 }

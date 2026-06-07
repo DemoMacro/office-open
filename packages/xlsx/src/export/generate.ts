@@ -5,7 +5,6 @@
  */
 
 import type { WorkbookOptions } from "@file/file";
-import { File } from "@file/file";
 import type { OutputByType, OutputType, PackerOptions } from "@office-open/core";
 
 import { Packer } from "./packer/packer";
@@ -32,8 +31,7 @@ export function generate<T extends OutputType = "nodebuffer">(
   options: WorkbookOptions,
   packerOptions?: PackerOptions<T>,
 ): Promise<OutputByType[T]> {
-  const workbook = new File(options);
-  return Packer.pack(workbook, packerOptions) as Promise<OutputByType[T]>;
+  return Packer.pack(options, packerOptions) as Promise<OutputByType[T]>;
 }
 
 /**
@@ -43,8 +41,7 @@ export function generateSync<T extends OutputType = "nodebuffer">(
   options: WorkbookOptions,
   packerOptions?: PackerOptions<T>,
 ): OutputByType[T] {
-  const workbook = new File(options);
-  return Packer.packSync(workbook, packerOptions) as OutputByType[T];
+  return Packer.packSync(options, packerOptions) as OutputByType[T];
 }
 
 /**
@@ -54,6 +51,5 @@ export function generateStream(
   options: WorkbookOptions,
   packerOptions?: PackerOptions,
 ): ReadableStream<Uint8Array> {
-  const workbook = new File(options);
-  return Packer.toStream(workbook, packerOptions);
+  return Packer.toStream(options, packerOptions);
 }

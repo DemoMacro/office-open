@@ -20,9 +20,9 @@ import { createMathSubScriptProperties } from "./math-sub-script-function-proper
  */
 export interface MathSubScriptOptions {
   /** The base expression */
-  readonly children: readonly MathComponent[];
+  children: MathComponent[];
   /** The subscript expression */
-  readonly subScript: readonly MathComponent[];
+  subScript: MathComponent[];
 }
 
 /**

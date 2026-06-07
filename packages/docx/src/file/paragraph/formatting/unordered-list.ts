@@ -56,10 +56,10 @@ export function buildNumberProperties(
   numberId: number | string,
   indentLevel: number,
   numberingChange?: {
-    readonly original: string;
-    readonly id: string;
-    readonly author: string;
-    readonly date?: string;
+    original: string;
+    id: string;
+    author: string;
+    date?: string;
   },
 ): IXmlableObject {
   const children: IXmlableObject[] = [
@@ -89,10 +89,10 @@ export class NumberProperties extends XmlComponent {
     numberId: number | string,
     indentLevel: number,
     numberingChange?: {
-      readonly original: string;
-      readonly id: string;
-      readonly author: string;
-      readonly date?: string;
+      original: string;
+      id: string;
+      author: string;
+      date?: string;
     },
   ) {
     super("w:numPr");
@@ -141,12 +141,7 @@ class NumberId extends XmlComponent {
  * @internal
  */
 class NumberingChange extends XmlComponent {
-  public constructor(options: {
-    readonly original: string;
-    readonly id: string;
-    readonly author: string;
-    readonly date?: string;
-  }) {
+  public constructor(options: { original: string; id: string; author: string; date?: string }) {
     super("w:numberingChange");
     const attrs: Record<string, string> = {
       "w:original": options.original,

@@ -16,7 +16,7 @@ const buildMoveBookmarkAttr = (
   name?: string,
   author?: string,
   date?: string,
-): { readonly _attr: Record<string, string | number> } => {
+): { _attr: Record<string, string | number> } => {
   const attrs: Record<string, string | number> = { "w:id": id };
   if (name !== undefined) attrs["w:name"] = name;
   if (author !== undefined) attrs["w:author"] = author;

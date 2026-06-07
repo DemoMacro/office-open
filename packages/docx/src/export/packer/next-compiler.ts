@@ -40,71 +40,71 @@ type DocxContext = Context & {
  */
 interface XmlifyedFileMapping {
   /** Main document content (word/document.xml) */
-  readonly Document: XmlifyedFile;
+  Document: XmlifyedFile;
   /** Style definitions (word/styles.xml) */
-  readonly Styles: XmlifyedFile;
+  Styles: XmlifyedFile;
   /** Core document properties (docProps/core.xml) */
-  readonly Properties: XmlifyedFile;
+  Properties: XmlifyedFile;
   /** Numbering definitions (word/numbering.xml) */
-  readonly Numbering: XmlifyedFile;
+  Numbering: XmlifyedFile;
   /** Document relationships (word/_rels/document.xml.rels) */
-  readonly Relationships: XmlifyedFile;
+  Relationships: XmlifyedFile;
   /** Package-level relationships (_rels/.rels) */
-  readonly FileRelationships: XmlifyedFile;
+  FileRelationships: XmlifyedFile;
   /** Header content files */
-  readonly Headers: readonly XmlifyedFile[];
+  Headers: XmlifyedFile[];
   /** Footer content files */
-  readonly Footers: readonly XmlifyedFile[];
+  Footers: XmlifyedFile[];
   /** Header relationship files */
-  readonly HeaderRelationships: readonly XmlifyedFile[];
+  HeaderRelationships: XmlifyedFile[];
   /** Footer relationship files */
-  readonly FooterRelationships: readonly XmlifyedFile[];
+  FooterRelationships: XmlifyedFile[];
   /** Content types mapping ([Content_Types].xml) */
-  readonly ContentTypes: XmlifyedFile;
+  ContentTypes: XmlifyedFile;
   /** Custom document properties (docProps/custom.xml) */
-  readonly CustomProperties: XmlifyedFile;
+  CustomProperties: XmlifyedFile;
   /** Application properties (docProps/app.xml) */
-  readonly AppProperties: XmlifyedFile;
+  AppProperties: XmlifyedFile;
   /** Footnotes content (word/footnotes.xml) */
-  readonly FootNotes: XmlifyedFile;
+  FootNotes: XmlifyedFile;
   /** Footnotes relationships (word/_rels/footnotes.xml.rels) */
-  readonly FootNotesRelationships: XmlifyedFile;
+  FootNotesRelationships: XmlifyedFile;
   /** Endnotes content (word/endnotes.xml) */
-  readonly Endnotes: XmlifyedFile;
+  Endnotes: XmlifyedFile;
   /** Endnotes relationships (word/_rels/endnotes.xml.rels) */
-  readonly EndnotesRelationships: XmlifyedFile;
+  EndnotesRelationships: XmlifyedFile;
   /** Document settings (word/settings.xml) */
-  readonly Settings: XmlifyedFile;
+  Settings: XmlifyedFile;
   /** Comments content (word/comments.xml) */
-  readonly Comments?: XmlifyedFile;
+  Comments?: XmlifyedFile;
   /** Comments relationships (word/_rels/comments.xml.rels) */
-  readonly CommentsRelationships?: XmlifyedFile;
+  CommentsRelationships?: XmlifyedFile;
   /** Font table (word/fontTable.xml) */
-  readonly FontTable?: XmlifyedFile;
+  FontTable?: XmlifyedFile;
   /** Font table relationships (word/_rels/fontTable.xml.rels) */
-  readonly FontTableRelationships?: XmlifyedFile;
+  FontTableRelationships?: XmlifyedFile;
   /** Bibliography content (word/bibliography.xml) */
-  readonly Bibliography?: XmlifyedFile;
+  Bibliography?: XmlifyedFile;
   /** Chart XML parts (word/charts/chart{n}.xml) */
-  readonly Charts?: readonly XmlifyedFile[];
+  Charts?: XmlifyedFile[];
   /** Diagram data XML parts (word/diagrams/data{n}.xml) */
-  readonly DiagramData?: readonly XmlifyedFile[];
+  DiagramData?: XmlifyedFile[];
   /** Diagram layout XML parts (word/diagrams/layout{n}.xml) */
-  readonly DiagramLayout?: readonly XmlifyedFile[];
+  DiagramLayout?: XmlifyedFile[];
   /** Diagram style XML parts (word/diagrams/quickStyle{n}.xml) */
-  readonly DiagramStyle?: readonly XmlifyedFile[];
+  DiagramStyle?: XmlifyedFile[];
   /** Diagram colors XML parts (word/diagrams/colors{n}.xml) */
-  readonly DiagramColors?: readonly XmlifyedFile[];
+  DiagramColors?: XmlifyedFile[];
   /** Diagram drawing XML parts (word/diagrams/drawing{n}.xml) */
-  readonly DiagramDrawing?: readonly XmlifyedFile[];
+  DiagramDrawing?: XmlifyedFile[];
   /** AltChunk parts (word/afchunks/afchunk{n}.{ext}) */
-  readonly AltChunks?: readonly XmlifyedFile[];
+  AltChunks?: XmlifyedFile[];
   /** SubDoc parts (word/subdocs/subdoc{n}.docx) */
-  readonly SubDocs?: readonly XmlifyedFile[];
+  SubDocs?: XmlifyedFile[];
   /** Glossary document (word/glossary/document.xml) */
-  readonly Glossary?: XmlifyedFile;
+  Glossary?: XmlifyedFile;
   /** Web settings (word/webSettings.xml) */
-  readonly WebSettings?: XmlifyedFile;
+  WebSettings?: XmlifyedFile;
 }
 
 /**
@@ -122,7 +122,7 @@ interface XmlifyedFileMapping {
  */
 
 export class Compiler {
-  private readonly formatter: Formatter;
+  private formatter: Formatter;
 
   public constructor() {
     this.formatter = new Formatter();
@@ -145,11 +145,7 @@ export class Compiler {
    * @param overrides - Optional custom XML file overrides
    * @returns A Zippable object mapping file paths to their content
    */
-  public compile(
-    file: File,
-    overrides: readonly XmlifyedFile[] = [],
-    mediaLevel: number = 0,
-  ): Zippable {
+  public compile(file: File, overrides: XmlifyedFile[] = [], mediaLevel: number = 0): Zippable {
     const files: Zippable = {};
 
     // Cache format() results to avoid duplicate formatting of Header/Footer views.
@@ -159,13 +155,11 @@ export class Compiler {
     const footerFormattedViews = new Map<number, string>();
 
     const xmlifiedFileMapping = this.xmlifyFile(file, headerFormattedViews, footerFormattedViews);
-    const map = new Map<string, XmlifyedFile | readonly XmlifyedFile[]>(
-      Object.entries(xmlifiedFileMapping),
-    );
+    const map = new Map<string, XmlifyedFile | XmlifyedFile[]>(Object.entries(xmlifiedFileMapping));
 
     for (const [, obj] of map) {
       if (Array.isArray(obj)) {
-        for (const subFile of obj as readonly XmlifyedFile[]) {
+        for (const subFile of obj as XmlifyedFile[]) {
           files[subFile.path] =
             typeof subFile.data === "string" ? encoder.encode(subFile.data) : subFile.data;
         }

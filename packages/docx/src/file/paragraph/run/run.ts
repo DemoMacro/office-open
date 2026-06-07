@@ -46,7 +46,7 @@ import type { IParagraphRunPropertiesOptions, RunPropertiesOptions } from "./pro
 import { buildText } from "./run-components/text";
 
 interface RunOptionsBase {
-  readonly children?: readonly (
+  children?: (
     | FieldInstruction
     | (typeof PageNumber)[keyof typeof PageNumber]
     | FootnoteReferenceRun
@@ -71,8 +71,8 @@ interface RunOptionsBase {
     | BaseXmlComponent
     | IXmlableObject
   )[];
-  readonly break?: number;
-  readonly text?: string;
+  break?: number;
+  text?: string;
 }
 
 /**
@@ -86,9 +86,9 @@ interface RunOptionsBase {
 export type RunOptions = RunOptionsBase &
   RunPropertiesOptions & {
     /** Revision save ID for run properties (hex string, e.g. "00123456"). */
-    readonly rsidRPr?: string;
+    rsidRPr?: string;
     /** Revision save ID when run was deleted (hex string). */
-    readonly rsidDel?: string;
+    rsidDel?: string;
   };
 
 export type IParagraphRunOptions = RunOptionsBase & IParagraphRunPropertiesOptions;
@@ -123,11 +123,11 @@ export const PageNumber = {
  * allocation during serialization.
  */
 export class Run extends BaseXmlComponent {
-  private readonly options: RunOptions;
+  private options: RunOptions;
   protected extraChildren: (BaseXmlComponent | IXmlableObject)[] = [];
 
   // Cached at construction time — options never change.
-  private readonly _prebuilt: IXmlableObject | undefined;
+  private _prebuilt: IXmlableObject | undefined;
 
   public constructor(options: RunOptions) {
     super("w:r");

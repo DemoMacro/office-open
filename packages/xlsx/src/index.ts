@@ -3,7 +3,6 @@
  *
  * @module
  */
-export { File as Workbook } from "./file";
 export * from "./file";
 export * from "./export";
 export * from "./util";

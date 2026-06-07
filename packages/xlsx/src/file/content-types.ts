@@ -19,12 +19,12 @@ const XLSX_CHART = "application/vnd.openxmlformats-officedocument.drawingml.char
 type EntryType = "Default" | "Override";
 
 interface ContentEntry {
-  readonly type: EntryType;
-  readonly contentType: string;
-  readonly key: string;
+  type: EntryType;
+  contentType: string;
+  key: string;
 }
 
-const STATIC_ENTRIES: readonly ContentEntry[] = [
+const STATIC_ENTRIES: ContentEntry[] = [
   {
     type: "Default",
     contentType: "application/vnd.openxmlformats-package.relationships+xml",
@@ -52,7 +52,7 @@ const STATIC_XML = STATIC_ENTRIES.map((e) =>
 ).join("");
 
 export class ContentTypes extends BaseXmlComponent {
-  private readonly dynamicEntries: ContentEntry[] = [];
+  private dynamicEntries: ContentEntry[] = [];
 
   public constructor() {
     super("Types");

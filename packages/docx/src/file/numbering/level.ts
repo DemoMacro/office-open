@@ -248,35 +248,35 @@ export const LevelSuffix = {
  */
 export interface LevelsOptions {
   /** Level index (0-8). */
-  readonly level: number;
+  level: number;
   /** Number format type (decimal, roman, letter, bullet, etc.). */
-  readonly format?: (typeof LevelFormat)[keyof typeof LevelFormat];
+  format?: (typeof LevelFormat)[keyof typeof LevelFormat];
   /** Level text template with placeholders like %1, %2. */
-  readonly text?: string;
+  text?: string;
   /** Text alignment for the numbering. */
-  readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
+  alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
   /** Starting number for this level. */
-  readonly start?: number;
+  start?: number;
   /** Character(s) following the numbering. */
-  readonly suffix?: (typeof LevelSuffix)[keyof typeof LevelSuffix];
+  suffix?: (typeof LevelSuffix)[keyof typeof LevelSuffix];
   /** Use legal numbering style (e.g., 1.1.1). */
-  readonly isLegalNumberingStyle?: boolean;
+  isLegalNumberingStyle?: boolean;
   /** Restart numbering after this level (0-based level index). */
-  readonly lvlRestart?: number;
+  lvlRestart?: number;
   /** Picture bullet ID reference. */
-  readonly lvlPicBulletId?: number;
+  lvlPicBulletId?: number;
   /** Template code for the level. */
-  readonly templateCode?: string;
+  templateCode?: string;
   /** Whether this level is tentative. */
-  readonly tentative?: boolean;
+  tentative?: boolean;
   /** Legacy spacing/indent settings. */
-  readonly legacy?: { readonly space?: number; readonly indent?: number };
+  legacy?: { space?: number; indent?: number };
   /** Run and paragraph style properties. */
-  readonly style?: {
+  style?: {
     /** Run style properties for the numbering text. */
-    readonly run?: RunStylePropertiesOptions;
+    run?: RunStylePropertiesOptions;
     /** Paragraph style properties for the level. */
-    readonly paragraph?: LevelParagraphStylePropertiesOptions;
+    paragraph?: LevelParagraphStylePropertiesOptions;
   };
 }
 
@@ -338,8 +338,8 @@ class IsLegalNumberingStyle extends XmlComponent {
  * ```
  */
 export class LevelBase extends XmlComponent {
-  private readonly paragraphProperties: ParagraphProperties;
-  private readonly runProperties: RunProperties;
+  private paragraphProperties: ParagraphProperties;
+  private runProperties: RunProperties;
 
   /**
    * Creates a new numbering level.

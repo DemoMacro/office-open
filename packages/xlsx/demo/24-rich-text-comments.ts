@@ -2,9 +2,9 @@
 
 import { writeFileSync } from "node:fs";
 
-import { Workbook, Packer } from "@office-open/xlsx";
+import { generate } from "@office-open/xlsx";
 
-const wb = new Workbook({
+const buffer = await generate({
   worksheets: [
     {
       name: "Rich Text",
@@ -75,5 +75,4 @@ const wb = new Workbook({
   ],
 });
 
-const buffer = await Packer.toBuffer(wb);
 writeFileSync("My Workbook.xlsx", buffer);

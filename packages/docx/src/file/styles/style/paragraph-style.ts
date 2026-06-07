@@ -22,9 +22,9 @@ import type { StyleOptions } from "./style";
  */
 export type IBaseParagraphStyleOptions = {
   /** Paragraph properties (alignment, spacing, indentation, etc.) */
-  readonly paragraph?: IParagraphStylePropertiesOptions;
+  paragraph?: IParagraphStylePropertiesOptions;
   /** Run properties that apply to text within this paragraph style */
-  readonly run?: RunStylePropertiesOptions;
+  run?: RunStylePropertiesOptions;
 } & StyleOptions;
 
 /**
@@ -34,7 +34,7 @@ export type IBaseParagraphStyleOptions = {
  */
 export type IParagraphStyleOptions = {
   /** Unique identifier for the paragraph style */
-  readonly id: string;
+  id: string;
 } & IBaseParagraphStyleOptions;
 
 /**
@@ -79,8 +79,8 @@ export type IParagraphStyleOptions = {
  * ```
  */
 export class StyleForParagraph extends Style {
-  private readonly paragraphProperties: ParagraphProperties;
-  private readonly runProperties: RunProperties;
+  private paragraphProperties: ParagraphProperties;
+  private runProperties: RunProperties;
 
   public constructor(options: IParagraphStyleOptions) {
     super({ styleId: options.id, type: "paragraph" }, options);

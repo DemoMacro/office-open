@@ -59,7 +59,7 @@ export interface LineNumberAttributes {
    *
    * The possible values for this attribute are defined by the ST_DecimalNumber simple type (§2.18.16).
    */
-  readonly countBy?: number;
+  countBy?: number;
   /**
    * ## Line Numbering Starting Value
    *
@@ -75,7 +75,7 @@ export interface LineNumberAttributes {
    *
    * The possible values for this attribute are defined by the ST_DecimalNumber simple type (§2.18.16).
    */
-  readonly start?: number;
+  start?: number;
   /**
    * ## Line Numbering Restart Setting
    *
@@ -96,7 +96,7 @@ export interface LineNumberAttributes {
    *
    * The possible values for this attribute are defined by the ST_LineNumberRestart simple type (§2.18.54).
    */
-  readonly restart?: (typeof LineNumberRestartFormat)[keyof typeof LineNumberRestartFormat];
+  restart?: (typeof LineNumberRestartFormat)[keyof typeof LineNumberRestartFormat];
   /**
    * Specifies the distance between the text margin and the edge of any line numbers appearing in that section.
    *
@@ -106,7 +106,7 @@ export interface LineNumberAttributes {
    *
    * The possible values for this attribute are defined by the ST_TwipsMeasure simple type (§2.18.105).
    */
-  readonly distance?: number | PositiveUniversalMeasure;
+  distance?: number | PositiveUniversalMeasure;
 }
 
 /**

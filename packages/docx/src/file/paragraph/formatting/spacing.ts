@@ -44,21 +44,21 @@ export const LineRuleType = {
  */
 export interface SpacingProperties {
   /** Spacing after the paragraph in twips */
-  readonly after?: number;
+  after?: number;
   /** Spacing before the paragraph in twips */
-  readonly before?: number;
+  before?: number;
   /** Line spacing value in twips (interpretation depends on lineRule) */
-  readonly line?: number;
+  line?: number;
   /** How to interpret the line spacing value */
-  readonly lineRule?: (typeof LineRuleType)[keyof typeof LineRuleType];
+  lineRule?: (typeof LineRuleType)[keyof typeof LineRuleType];
   /** Use automatic spacing before the paragraph */
-  readonly beforeAutoSpacing?: boolean;
+  beforeAutoSpacing?: boolean;
   /** Use automatic spacing after the paragraph */
-  readonly afterAutoSpacing?: boolean;
+  afterAutoSpacing?: boolean;
   /** Spacing before the paragraph in line units */
-  readonly beforeLines?: number;
+  beforeLines?: number;
   /** Spacing after the paragraph in line units */
-  readonly afterLines?: number;
+  afterLines?: number;
 }
 
 /**

@@ -80,7 +80,7 @@ type IDeletedRunOptions = RunOptions & ChangedAttributesProperties;
  * ```
  */
 export class DeletedTextRun extends XmlComponent {
-  protected readonly deletedTextRunWrapper: DeletedTextRunWrapper;
+  protected deletedTextRunWrapper: DeletedTextRunWrapper;
 
   public constructor(options: IDeletedRunOptions) {
     super("w:del");

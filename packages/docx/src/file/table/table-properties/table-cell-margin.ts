@@ -57,31 +57,31 @@ export interface TableCellMarginOptions {
    *
    * @default WidthType.DXA
    */
-  readonly marginUnitType?: (typeof WidthType)[keyof typeof WidthType];
+  marginUnitType?: (typeof WidthType)[keyof typeof WidthType];
 
   /**
    * Top margin (padding above cell content).
    * Value is in units specified by `marginUnitType`.
    */
-  readonly top?: number;
+  top?: number;
 
   /**
    * Bottom margin (padding below cell content).
    * Value is in units specified by `marginUnitType`.
    */
-  readonly bottom?: number;
+  bottom?: number;
 
   /**
    * Left margin (padding to the left of cell content).
    * Value is in units specified by `marginUnitType`.
    */
-  readonly left?: number;
+  left?: number;
 
   /**
    * Right margin (padding to the right of cell content).
    * Value is in units specified by `marginUnitType`.
    */
-  readonly right?: number;
+  right?: number;
 }
 
 /**
@@ -95,7 +95,7 @@ const buildMarginChildren = ({
   left,
   bottom,
   right,
-}: TableCellMarginOptions): readonly XmlComponent[] =>
+}: TableCellMarginOptions): XmlComponent[] =>
   (
     [
       { name: "w:top", size: top },
@@ -104,10 +104,7 @@ const buildMarginChildren = ({
       { name: "w:right", size: right },
     ] as const
   )
-    .filter(
-      (entry): entry is { readonly name: typeof entry.name; readonly size: number } =>
-        entry.size !== undefined,
-    )
+    .filter((entry): entry is { name: typeof entry.name; size: number } => entry.size !== undefined)
     .map(({ name, size }) => createTableWidthElement(name, { size, type: marginUnitType }));
 
 /**

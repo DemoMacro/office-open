@@ -73,7 +73,7 @@ const attrsCache = new Map<string, IXmlableObject>();
  * @internal
  */
 export function buildDocumentAttributes(
-  ns: readonly DocumentAttributeNamespace[],
+  ns: DocumentAttributeNamespace[],
   Ignorable?: string,
 ): IXmlableObject {
   const cacheKey = `${ns.join(",")}:${Ignorable ?? ""}`;

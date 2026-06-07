@@ -20,18 +20,18 @@ import { createMathEndingCharacter } from "./math-ending-char";
  */
 export interface MathBracketPropertiesOptions {
   /** Optional custom characters for bracket delimiters */
-  readonly characters?: {
+  characters?: {
     /** The opening/beginning bracket character */
-    readonly beginningCharacter: string;
+    beginningCharacter: string;
     /** The closing/ending bracket character */
-    readonly endingCharacter: string;
+    endingCharacter: string;
   };
   /** Separator character for multiple arguments */
-  readonly separatorCharacter?: string;
+  separatorCharacter?: string;
   /** Whether the delimiters grow to match their content */
-  readonly grow?: boolean;
+  grow?: boolean;
   /** Delimiter shape: "centered" or "match" */
-  readonly shape?: "centered" | "match";
+  shape?: "centered" | "match";
 }
 
 /**

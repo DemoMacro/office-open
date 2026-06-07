@@ -52,7 +52,7 @@ export interface PageSizeAttributes {
    *
    * The possible values for this attribute are defined by the ST_TwipsMeasure simple type (§2.18.105).
    */
-  readonly width: number | PositiveUniversalMeasure;
+  width: number | PositiveUniversalMeasure;
   /**
    * ## Page Height
    *
@@ -68,7 +68,7 @@ export interface PageSizeAttributes {
    *
    * The possible values for this attribute are defined by the `ST_TwipsMeasure` simple type (§2.18.105).
    */
-  readonly height: number | PositiveUniversalMeasure;
+  height: number | PositiveUniversalMeasure;
   /**
    * ## Page Orientation
    *
@@ -88,7 +88,7 @@ export interface PageSizeAttributes {
    *
    * The possible values for this attribute are defined by the `ST_PageOrientation` simple type (§2.18.71).
    */
-  readonly orientation?: (typeof PageOrientation)[keyof typeof PageOrientation];
+  orientation?: (typeof PageOrientation)[keyof typeof PageOrientation];
   /**
    * ## Printer Paper Code
    *
@@ -102,7 +102,7 @@ export interface PageSizeAttributes {
    *
    * The possible values for this attribute are defined by the `ST_DecimalNumber` simple type (§2.18.16).
    */
-  readonly code?: number;
+  code?: number;
 }
 
 /**

@@ -26,7 +26,7 @@ import type { XmlComponent } from "@file/xml-components";
  * ```
  */
 export const createMathSuperScriptHide = (): XmlComponent =>
-  new BuilderElement<{ readonly hide: number }>({
+  new BuilderElement<{ hide: number }>({
     attributes: {
       hide: { key: "m:val", value: 1 },
     },

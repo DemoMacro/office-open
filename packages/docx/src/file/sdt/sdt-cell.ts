@@ -18,8 +18,8 @@ import type { SdtPropertiesOptions } from "../table-of-contents";
  * Options for creating a cell-level Structured Document Tag (CT_SdtCell).
  */
 export interface SdtCellOptions {
-  readonly properties: SdtPropertiesOptions;
-  readonly children?: readonly TableCell[];
+  properties: SdtPropertiesOptions;
+  children?: TableCell[];
 }
 
 /**
@@ -37,7 +37,7 @@ export interface SdtCellOptions {
  * ```
  */
 export class StructuredDocumentTagCell extends XmlComponent {
-  public readonly options: TableCellOptions;
+  public options: TableCellOptions;
 
   public constructor(sdtOptions: SdtCellOptions) {
     super("w:sdt");

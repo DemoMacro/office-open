@@ -17,7 +17,7 @@ import type { MathComponent } from "../math-component";
  */
 interface MathSubScriptElementOptions {
   /** The content of the subscript */
-  readonly children: readonly MathComponent[];
+  children: MathComponent[];
 }
 
 /**

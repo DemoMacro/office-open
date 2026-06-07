@@ -6,38 +6,38 @@ import { xml } from "@office-open/xml";
 export type TextAlignment = "left" | "center" | "right" | "justify";
 
 export type BulletCharOptions = {
-  readonly type: "char";
-  readonly char?: string;
-  readonly color?: string;
-  readonly size?: number;
+  type: "char";
+  char?: string;
+  color?: string;
+  size?: number;
 };
 
 export type BulletAutoNumOptions = {
-  readonly type: "autoNum";
-  readonly format?: string;
-  readonly startAt?: number;
-  readonly color?: string;
-  readonly size?: number;
+  type: "autoNum";
+  format?: string;
+  startAt?: number;
+  color?: string;
+  size?: number;
 };
 
 export type BulletNoneOption = {
-  readonly type: "none";
+  type: "none";
 };
 
 export type BulletOptions = BulletCharOptions | BulletAutoNumOptions | BulletNoneOption;
 
 export interface ParagraphPropertiesOptions {
-  readonly alignment?: TextAlignment;
-  readonly indentLevel?: number;
-  readonly marginBottom?: number;
-  readonly marginTop?: number;
-  readonly bullet?: BulletOptions;
-  readonly lineSpacing?: number;
-  readonly lineSpacingPoints?: number;
-  readonly marginIndent?: number;
-  readonly marginRight?: number;
-  readonly defTabSize?: number;
-  readonly fontAlignment?: "auto" | "t" | "ctr" | "b" | "base";
+  alignment?: TextAlignment;
+  indentLevel?: number;
+  marginBottom?: number;
+  marginTop?: number;
+  bullet?: BulletOptions;
+  lineSpacing?: number;
+  lineSpacingPoints?: number;
+  marginIndent?: number;
+  marginRight?: number;
+  defTabSize?: number;
+  fontAlignment?: "auto" | "t" | "ctr" | "b" | "base";
 }
 
 function buildBulletChildren(options: BulletOptions): IXmlableObject[] {
@@ -139,7 +139,7 @@ export function buildParagraphProperties(
  * Omitted from output when completely empty.
  */
 export class ParagraphProperties extends XmlComponent {
-  private readonly options: ParagraphPropertiesOptions;
+  private options: ParagraphPropertiesOptions;
 
   public constructor(options: ParagraphPropertiesOptions = {}) {
     super("a:pPr");

@@ -9,7 +9,7 @@ function coerceMasterChild(child: MasterChild): BaseXmlComponent {
   throw new Error("Unknown master child type");
 }
 
-export function buildMasterChildrenXml(children?: readonly MasterChild[]): string {
+export function buildMasterChildrenXml(children?: MasterChild[]): string {
   if (!children || children.length === 0) return "";
   const ctx: Context = { stack: [] };
   let result = "";

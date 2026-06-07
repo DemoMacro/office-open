@@ -22,11 +22,11 @@ import { createMathSuperScriptElement } from "./math-super-script";
  */
 export interface MathSumOptions {
   /** The expression being summed */
-  readonly children: readonly MathComponent[];
+  children: MathComponent[];
   /** Optional lower bound (subscript) of the sum */
-  readonly subScript?: readonly MathComponent[];
+  subScript?: MathComponent[];
   /** Optional upper bound (superscript) of the sum */
-  readonly superScript?: readonly MathComponent[];
+  superScript?: MathComponent[];
 }
 
 /**

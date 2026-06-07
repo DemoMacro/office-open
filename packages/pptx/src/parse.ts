@@ -271,7 +271,7 @@ function parseSlideRelMap(doc: ParsedArchive, slidePath: string): Map<string, st
  */
 function resolveRelTargets(
   doc: ParsedArchive,
-  paths: readonly string[],
+  paths: string[],
   predicate: (target: string) => boolean,
 ): Map<string, string> {
   const map = new Map<string, string>();

@@ -15,41 +15,41 @@ import { BuilderElement, XmlComponent, stringValObj } from "@file/xml-components
 
 export interface ObjectEmbedOptions {
   /** Relationship ID for the embedded object */
-  readonly rId: string;
+  rId: string;
   /** OLE program ID (e.g., "Excel.Sheet.12") */
-  readonly progId?: string;
+  progId?: string;
   /** Draw aspect ("content" | "icon") */
-  readonly drawAspect?: string;
+  drawAspect?: string;
   /** Shape ID */
-  readonly shapeId?: string;
+  shapeId?: string;
   /** Field codes */
-  readonly fieldCodes?: string;
+  fieldCodes?: string;
 }
 
 export interface ObjectLinkOptions extends ObjectEmbedOptions {
   /** Update mode ("always" | "onCall") */
-  readonly updateMode: string;
+  updateMode: string;
   /** Locked field */
-  readonly lockedField?: boolean;
+  lockedField?: boolean;
 }
 
 export interface ObjectElementOptions {
   /** VML shape style */
-  readonly style?: VmlShapeStyle;
+  style?: VmlShapeStyle;
   /** Shape ID */
-  readonly shapeId?: string;
+  shapeId?: string;
   /** Original width in twips */
-  readonly dxaOrig?: number;
+  dxaOrig?: number;
   /** Original height in twips */
-  readonly dyaOrig?: number;
+  dyaOrig?: number;
   /** Embedded OLE object */
-  readonly embed?: ObjectEmbedOptions;
+  embed?: ObjectEmbedOptions;
   /** Linked OLE object */
-  readonly link?: ObjectLinkOptions;
+  link?: ObjectLinkOptions;
   /** ActiveX control reference */
-  readonly control?: { readonly name?: string; readonly shapeid?: string; readonly rId?: string };
+  control?: { name?: string; shapeid?: string; rId?: string };
   /** Movie reference */
-  readonly movie?: string;
+  movie?: string;
 }
 
 // ── Style formatting ──
@@ -102,7 +102,7 @@ class ObjectLink extends XmlComponent {
 
 /** Creates a w:object element with VML shape and optional embed/link */
 export class ObjectElement extends XmlComponent implements FileChild {
-  public readonly fileChild = Symbol();
+  public fileChild = Symbol();
 
   public constructor(options: ObjectElementOptions) {
     super("w:object");

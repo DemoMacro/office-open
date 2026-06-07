@@ -15,7 +15,7 @@ import type { XmlComponent } from "@file/xml-components";
  */
 interface MathEndingCharacterOptions {
   /** The closing bracket character */
-  readonly character: string;
+  character: string;
 }
 
 /**

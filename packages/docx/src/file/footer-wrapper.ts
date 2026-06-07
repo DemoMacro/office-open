@@ -25,8 +25,8 @@ import { Relationships } from "./relationships";
  * @property type - The footer type (default, first page, even pages)
  */
 export interface DocumentFooter {
-  readonly footer: FooterWrapper;
-  readonly type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType];
+  footer: FooterWrapper;
+  type: (typeof HeaderFooterReferenceType)[keyof typeof HeaderFooterReferenceType];
 }
 
 /**
@@ -48,9 +48,9 @@ export interface DocumentFooter {
  * ```
  */
 export class FooterWrapper implements ViewWrapper {
-  private readonly footer: Footer;
-  public readonly relationships: Relationships;
-  public readonly media: Media;
+  private footer: Footer;
+  public relationships: Relationships;
+  public media: Media;
 
   public constructor(media: Media, referenceId: number, initContent?: XmlComponent) {
     this.media = media;

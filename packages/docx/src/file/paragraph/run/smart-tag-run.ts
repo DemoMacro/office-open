@@ -21,17 +21,17 @@ import type { ParagraphChild } from "../paragraph";
  */
 export interface SmartTagRunOptions {
   /** Namespace URI of the smart tag */
-  readonly uri?: string;
+  uri?: string;
   /** Element name within the namespace */
-  readonly element: string;
+  element: string;
   /** Attributes for w:smartTagPr (namespace:uri, name:val pairs) */
-  readonly properties?: readonly {
-    readonly uri: string;
-    readonly name: string;
-    readonly val: string;
+  properties?: {
+    uri: string;
+    name: string;
+    val: string;
   }[];
   /** Inline content children */
-  readonly children?: readonly ParagraphChild[];
+  children?: ParagraphChild[];
 }
 
 /**
@@ -81,9 +81,7 @@ export class SmartTagRun extends XmlComponent {
  * Contains w:attr children mapping namespace/name/value triples.
  */
 class SmartTagProperties extends XmlComponent {
-  public constructor(
-    attrs?: readonly { readonly uri: string; readonly name: string; readonly val: string }[],
-  ) {
+  public constructor(attrs?: { uri: string; name: string; val: string }[]) {
     super("w:smartTagPr");
 
     if (attrs) {

@@ -20,7 +20,7 @@ import type { StyleOptions } from "./style";
  */
 export type IBaseCharacterStyleOptions = {
   /** Run properties (font, size, color, etc.) for this character style */
-  readonly run?: RunStylePropertiesOptions;
+  run?: RunStylePropertiesOptions;
 } & StyleOptions;
 
 /**
@@ -30,7 +30,7 @@ export type IBaseCharacterStyleOptions = {
  */
 export type ICharacterStyleOptions = {
   /** Unique identifier for the character style */
-  readonly id: string;
+  id: string;
 } & IBaseCharacterStyleOptions;
 
 /**
@@ -68,7 +68,7 @@ export type ICharacterStyleOptions = {
  * ```
  */
 export class StyleForCharacter extends Style {
-  private readonly runProperties: RunProperties;
+  private runProperties: RunProperties;
 
   public constructor(options: ICharacterStyleOptions) {
     super(

@@ -17,22 +17,22 @@ import type { IMediaData } from "./data";
  * Specifies how an image should be transformed when displayed in the document.
  */
 export interface MediaTransformation {
-  readonly offset?: {
-    readonly top?: number;
-    readonly left?: number;
+  offset?: {
+    top?: number;
+    left?: number;
   };
-  readonly width: number;
+  width: number;
   /** Display height in pixels */
-  readonly height: number;
+  height: number;
   /** Optional flip transformations */
-  readonly flip?: {
+  flip?: {
     /** Whether to flip the image vertically */
-    readonly vertical?: boolean;
+    vertical?: boolean;
     /** Whether to flip the image horizontally */
-    readonly horizontal?: boolean;
+    horizontal?: boolean;
   };
   /** Optional rotation angle in degrees */
-  readonly rotation?: number;
+  rotation?: number;
 }
 
 /**
@@ -88,7 +88,7 @@ export const createTransformation = (options: MediaTransformation): MediaDataTra
  * ```
  */
 export class Media {
-  private readonly map: Map<string, IMediaData>;
+  private map: Map<string, IMediaData>;
 
   public constructor() {
     this.map = new Map<string, IMediaData>();
@@ -109,7 +109,7 @@ export class Media {
    *
    * @returns Read-only array of all media data in the collection
    */
-  public get array(): readonly IMediaData[] {
+  public get array(): IMediaData[] {
     return [...this.map.values()];
   }
 }

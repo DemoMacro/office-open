@@ -170,11 +170,11 @@ export const VerticalPositionRelativeFrom = {
  */
 export interface HorizontalPositionOptions {
   /** The base from which horizontal position is calculated */
-  readonly relative?: (typeof HorizontalPositionRelativeFrom)[keyof typeof HorizontalPositionRelativeFrom];
+  relative?: (typeof HorizontalPositionRelativeFrom)[keyof typeof HorizontalPositionRelativeFrom];
   /** Alignment relative to the horizontal base */
-  readonly align?: (typeof HorizontalPositionAlign)[keyof typeof HorizontalPositionAlign];
+  align?: (typeof HorizontalPositionAlign)[keyof typeof HorizontalPositionAlign];
   /** Offset in EMUs from the horizontal base */
-  readonly offset?: number;
+  offset?: number;
 }
 
 /**
@@ -182,21 +182,21 @@ export interface HorizontalPositionOptions {
  */
 export interface VerticalPositionOptions {
   /** The base from which vertical position is calculated */
-  readonly relative?: (typeof VerticalPositionRelativeFrom)[keyof typeof VerticalPositionRelativeFrom];
+  relative?: (typeof VerticalPositionRelativeFrom)[keyof typeof VerticalPositionRelativeFrom];
   /** Alignment relative to the vertical base */
-  readonly align?: (typeof VerticalPositionAlign)[keyof typeof VerticalPositionAlign];
+  align?: (typeof VerticalPositionAlign)[keyof typeof VerticalPositionAlign];
   /** Offset in EMUs from the vertical base */
-  readonly offset?: number;
+  offset?: number;
 }
 
 /**
  * Margin distances around a floating drawing in EMUs.
  */
 export interface Margins {
-  readonly left?: number;
-  readonly bottom?: number;
-  readonly top?: number;
-  readonly right?: number;
+  left?: number;
+  bottom?: number;
+  top?: number;
+  right?: number;
 }
 
 /**
@@ -205,13 +205,13 @@ export interface Margins {
  * @see {@link Anchor}
  */
 export interface Floating {
-  readonly horizontalPosition: HorizontalPositionOptions;
-  readonly verticalPosition: VerticalPositionOptions;
-  readonly allowOverlap?: boolean;
-  readonly lockAnchor?: boolean;
-  readonly behindDocument?: boolean;
-  readonly layoutInCell?: boolean;
-  readonly margins?: Margins;
-  readonly wrap?: TextWrapping;
-  readonly zIndex?: number;
+  horizontalPosition: HorizontalPositionOptions;
+  verticalPosition: VerticalPositionOptions;
+  allowOverlap?: boolean;
+  lockAnchor?: boolean;
+  behindDocument?: boolean;
+  layoutInCell?: boolean;
+  margins?: Margins;
+  wrap?: TextWrapping;
+  zIndex?: number;
 }

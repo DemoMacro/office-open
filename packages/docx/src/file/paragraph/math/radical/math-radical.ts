@@ -21,9 +21,9 @@ import { MathRadicalProperties } from "./math-radical-properties";
  */
 export interface MathRadicalOptions {
   /** The content under the radical sign */
-  readonly children: readonly MathComponent[];
+  children: MathComponent[];
   /** Optional degree of the root (e.g., 3 for cube root). If omitted, square root is assumed. */
-  readonly degree?: readonly MathComponent[];
+  degree?: MathComponent[];
 }
 
 /**

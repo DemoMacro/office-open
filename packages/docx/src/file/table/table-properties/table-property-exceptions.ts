@@ -34,17 +34,17 @@ import type { TableLookOptions } from "./table-look";
  * styleRowBandSize, styleColBandSize, caption, description.
  */
 export interface TablePropertyExOptions {
-  readonly width?: TableWidthProperties;
-  readonly indent?: TableWidthProperties;
-  readonly layout?: (typeof TableLayoutType)[keyof typeof TableLayoutType];
-  readonly borders?: TableBordersOptions;
-  readonly shading?: ShadingAttributesProperties;
-  readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
-  readonly cellMargin?: TableCellMarginOptions;
-  readonly tableLook?: TableLookOptions;
-  readonly cellSpacing?: TableCellSpacingProperties;
+  width?: TableWidthProperties;
+  indent?: TableWidthProperties;
+  layout?: (typeof TableLayoutType)[keyof typeof TableLayoutType];
+  borders?: TableBordersOptions;
+  shading?: ShadingAttributesProperties;
+  alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
+  cellMargin?: TableCellMarginOptions;
+  tableLook?: TableLookOptions;
+  cellSpacing?: TableCellSpacingProperties;
   /** Table property exceptions change tracking */
-  readonly tblPrExChange?: { readonly author: string; readonly date?: string; readonly id: string };
+  tblPrExChange?: { author: string; date?: string; id: string };
 }
 
 /**

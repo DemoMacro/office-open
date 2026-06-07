@@ -143,4 +143,4 @@ Performance comparison against original `xml` (1.0.1) and `xml-js` (1.6.11) pack
 
 ## License
 
-- [MIT](LICENSE) &copy; [Demo Macro](https://imst.xyz/)
+- [MIT](LICENSE) &copy; [Demo Macro](https://www.demomacro.com/)

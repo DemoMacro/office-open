@@ -76,7 +76,7 @@ export interface TableFloatOptions {
    * If omitted, the value is assumed to be page.
    */
   /* CSpell:enable */
-  readonly horizontalAnchor?: (typeof TableAnchorType)[keyof typeof TableAnchorType];
+  horizontalAnchor?: (typeof TableAnchorType)[keyof typeof TableAnchorType];
 
   /**
    * Specifies an absolute horizontal position for the table, relative to the horizontalAnchor.
@@ -85,7 +85,7 @@ export interface TableFloatOptions {
    * If relativeHorizontalPosition is also specified, then the absoluteHorizontalPosition attribute is ignored.
    * If the attribute is omitted, the value is assumed to be zero.
    */
-  readonly absoluteHorizontalPosition?: number | UniversalMeasure;
+  absoluteHorizontalPosition?: number | UniversalMeasure;
 
   /**
    * Specifies a relative horizontal position for the table, relative to the horizontalAnchor attribute.
@@ -97,7 +97,7 @@ export interface TableFloatOptions {
    * outside - the table should be outside of the anchor
    * right - the table should be right aligned with respect to the anchor
    */
-  readonly relativeHorizontalPosition?: (typeof RelativeHorizontalPosition)[keyof typeof RelativeHorizontalPosition];
+  relativeHorizontalPosition?: (typeof RelativeHorizontalPosition)[keyof typeof RelativeHorizontalPosition];
 
   /**
    * Specifies the vertical anchor or the base object from which the vertical positioning
@@ -107,7 +107,7 @@ export interface TableFloatOptions {
    * text - relative to the horizontal edge of the text margin for the column in which the anchor paragraph is located
    * If omitted, the value is assumed to be page.
    */
-  readonly verticalAnchor?: (typeof TableAnchorType)[keyof typeof TableAnchorType];
+  verticalAnchor?: (typeof TableAnchorType)[keyof typeof TableAnchorType];
 
   /**
    * Specifies an absolute vertical position for the table, relative to the verticalAnchor anchor.
@@ -116,7 +116,7 @@ export interface TableFloatOptions {
    * If relativeVerticalPosition is also specified, then the absoluteVerticalPosition attribute is ignored.
    * If the attribute is omitted, the value is assumed to be zero.
    */
-  readonly absoluteVerticalPosition?: number | UniversalMeasure;
+  absoluteVerticalPosition?: number | UniversalMeasure;
 
   /**
    * Specifies a relative vertical position for the table, relative to the verticalAnchor attribute.
@@ -128,32 +128,32 @@ export interface TableFloatOptions {
    * inline - the table should be vertically aligned in line with the surrounding text (so as to not allow any text wrapping around it)
    * top - the table should be vertically aligned to the top edge of the anchor
    */
-  readonly relativeVerticalPosition?: (typeof RelativeVerticalPosition)[keyof typeof RelativeVerticalPosition];
+  relativeVerticalPosition?: (typeof RelativeVerticalPosition)[keyof typeof RelativeVerticalPosition];
 
   /**
    * Specifies the minimum distance to be maintained between the table and the top of text in the paragraph
    * below the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
    */
-  readonly bottomFromText?: number | PositiveUniversalMeasure;
+  bottomFromText?: number | PositiveUniversalMeasure;
 
   /**
    * Specifies the minimum distance to be maintained between the table and the bottom edge of text in the paragraph
    * above the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
    */
-  readonly topFromText?: number | PositiveUniversalMeasure;
+  topFromText?: number | PositiveUniversalMeasure;
 
   /**
    * Specifies the minimum distance to be maintained between the table and the edge of text in the paragraph
    * to the left of the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
    */
-  readonly leftFromText?: number | PositiveUniversalMeasure;
+  leftFromText?: number | PositiveUniversalMeasure;
 
   /**
    * Specifies the minimum distance to be maintained between the table and the edge of text in the paragraph
    * to the right of the table. The value is in twentieths of a point. If omitted, the value is assumed to be zero.
    */
-  readonly rightFromText?: number | PositiveUniversalMeasure;
-  readonly overlap?: (typeof OverlapType)[keyof typeof OverlapType];
+  rightFromText?: number | PositiveUniversalMeasure;
+  overlap?: (typeof OverlapType)[keyof typeof OverlapType];
 }
 
 /**
@@ -164,7 +164,7 @@ export interface TableFloatOptions {
 const createOverlapElement = (
   overlap: (typeof OverlapType)[keyof typeof OverlapType],
 ): XmlComponent =>
-  new BuilderElement<{ readonly val: (typeof OverlapType)[keyof typeof OverlapType] }>({
+  new BuilderElement<{ val: (typeof OverlapType)[keyof typeof OverlapType] }>({
     attributes: {
       val: { key: "w:val", value: overlap },
     },

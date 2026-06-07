@@ -86,9 +86,9 @@ export class Anchor extends XmlComponent {
     transform,
     drawingOptions,
   }: {
-    readonly mediaData: IExtendedMediaData;
-    readonly transform: MediaDataTransformation;
-    readonly drawingOptions: DrawingOptions;
+    mediaData: IExtendedMediaData;
+    transform: MediaDataTransformation;
+    drawingOptions: DrawingOptions;
   }) {
     super("wp:anchor");
 

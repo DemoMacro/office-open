@@ -14,7 +14,7 @@ import type { InputDataType } from "./from-docx";
  * @property data - The document template to scan for placeholders
  */
 interface PatchDetectorOptions {
-  readonly data: InputDataType;
+  data: InputDataType;
 }
 
 /**
@@ -42,7 +42,7 @@ interface PatchDetectorOptions {
  * });
  * ```
  */
-export const patchDetector = async ({ data }: PatchDetectorOptions): Promise<readonly string[]> => {
+export const patchDetector = async ({ data }: PatchDetectorOptions): Promise<string[]> => {
   const zipContent = unzipSync(toUint8Array(data));
   const patches = new Set<string>();
 
@@ -69,7 +69,7 @@ export const patchDetector = async ({ data }: PatchDetectorOptions): Promise<rea
  * @param text - Text to search for placeholders
  * @returns Array of placeholder keys (without delimiters)
  */
-const findPatchKeys = (text: string): readonly string[] => {
+const findPatchKeys = (text: string): string[] => {
   const pattern = /(?<=\{\{).+?(?=\}\})/gs;
   return text.match(pattern) ?? [];
 };

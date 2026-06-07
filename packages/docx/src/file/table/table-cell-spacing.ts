@@ -40,9 +40,9 @@ export const CellSpacingType = {
  */
 export interface TableCellSpacingProperties {
   /** The spacing value (in twips, percentage, or universal measure) */
-  readonly value: number | Percentage | UniversalMeasure;
+  value: number | Percentage | UniversalMeasure;
   /** The type of measurement (defaults to DXA/twips) */
-  readonly type?: (typeof CellSpacingType)[keyof typeof CellSpacingType];
+  type?: (typeof CellSpacingType)[keyof typeof CellSpacingType];
 }
 
 /**

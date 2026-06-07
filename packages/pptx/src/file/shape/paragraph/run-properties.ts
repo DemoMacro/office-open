@@ -33,43 +33,43 @@ export const TextCapitalization = {
 } as const;
 
 export interface HyperlinkOptions {
-  readonly url: string;
-  readonly tooltip?: string;
-  readonly action?: string;
-  readonly highlightClick?: boolean;
-  readonly endSound?: boolean;
-  readonly invalidUrl?: boolean;
+  url: string;
+  tooltip?: string;
+  action?: string;
+  highlightClick?: boolean;
+  endSound?: boolean;
+  invalidUrl?: boolean;
 }
 
 export interface RunPropertiesOptions {
   /** Font size in points. Serialized as OOXML `a:sz` (hundredths of a point). */
-  readonly fontSize?: number;
-  readonly bold?: boolean;
-  readonly italic?: boolean;
-  readonly underline?: (typeof UnderlineStyle)[keyof typeof UnderlineStyle];
-  readonly font?: string;
-  readonly lang?: string;
-  readonly fill?: FillOptions;
-  readonly hyperlink?: HyperlinkOptions;
-  readonly strike?: (typeof StrikeStyle)[keyof typeof StrikeStyle];
-  readonly baseline?: number;
-  readonly spacing?: number;
-  readonly capitalization?: (typeof TextCapitalization)[keyof typeof TextCapitalization];
-  readonly shadow?: boolean;
-  readonly outline?: boolean;
-  readonly rightToLeft?: boolean;
-  readonly noProof?: boolean;
-  readonly dirty?: boolean;
+  fontSize?: number;
+  bold?: boolean;
+  italic?: boolean;
+  underline?: (typeof UnderlineStyle)[keyof typeof UnderlineStyle];
+  font?: string;
+  lang?: string;
+  fill?: FillOptions;
+  hyperlink?: HyperlinkOptions;
+  strike?: (typeof StrikeStyle)[keyof typeof StrikeStyle];
+  baseline?: number;
+  spacing?: number;
+  capitalization?: (typeof TextCapitalization)[keyof typeof TextCapitalization];
+  shadow?: boolean;
+  outline?: boolean;
+  rightToLeft?: boolean;
+  noProof?: boolean;
+  dirty?: boolean;
   /** East Asian line break. When true, can break East Asian words. */
-  readonly kumimoji?: boolean;
+  kumimoji?: boolean;
   /** Alternate language for the text run. */
-  readonly alternateLanguage?: string;
+  alternateLanguage?: string;
   /** Normalize height. When true, normalize the height of text. */
-  readonly normalizeHeight?: boolean;
+  normalizeHeight?: boolean;
   /** Bookmark mark identifier. */
-  readonly bookmarkMark?: string;
+  bookmarkMark?: string;
   /** Smart tag ID. */
-  readonly smartTagId?: string;
+  smartTagId?: string;
 }
 
 /**
@@ -101,7 +101,7 @@ function buildAttrString(options: RunPropertiesOptions): string {
  * a:rPr — Run properties (font, size, color, etc.).
  */
 export class RunProperties extends XmlComponent {
-  private readonly options: RunPropertiesOptions;
+  private options: RunPropertiesOptions;
 
   public constructor(options: RunPropertiesOptions = {}) {
     super("a:rPr");

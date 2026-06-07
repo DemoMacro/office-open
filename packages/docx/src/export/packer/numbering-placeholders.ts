@@ -2,7 +2,7 @@ import type { ConcreteNumbering } from "@file/numbering";
 
 export function replaceNumberingPlaceholders(
   xml: string,
-  concreteNumberings: readonly ConcreteNumbering[],
+  concreteNumberings: ConcreteNumbering[],
 ): string {
   let result = xml;
 

@@ -7,7 +7,7 @@ import { Document, Packer as DocxPacker } from "@office-open/docx";
 import type { PropertiesOptions } from "@office-open/docx";
 import { generate as pptxGenerate } from "@office-open/pptx";
 import type { PresentationOptions } from "@office-open/pptx";
-import { Workbook, Packer as XlsxPacker } from "@office-open/xlsx";
+import { generate as xlsxGenerate } from "@office-open/xlsx";
 import type { WorkbookOptions } from "@office-open/xlsx";
 
 export type GenerateType = "docx" | "pptx" | "xlsx";
@@ -32,10 +32,8 @@ export async function generate(options: GenerateOptions): Promise<unknown> {
         docOptions as PresentationOptions,
         packerOpts as PackerOptions<"nodebuffer">,
       );
-    case "xlsx": {
-      const file = new Workbook(docOptions as unknown as WorkbookOptions);
-      return XlsxPacker.pack(file, packerOpts as PackerOptions<"nodebuffer">);
-    }
+    case "xlsx":
+      return xlsxGenerate(docOptions as WorkbookOptions, packerOpts as PackerOptions<"nodebuffer">);
   }
 }
 

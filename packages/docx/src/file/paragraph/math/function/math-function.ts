@@ -24,11 +24,11 @@ import {
  */
 export interface MathFunctionOptions {
   /** Properties for the function structure */
-  readonly properties?: MathFunctionPropertiesOptions;
+  properties?: MathFunctionPropertiesOptions;
   /** The function argument (e.g., the expression inside sin(...)) */
-  readonly children: readonly MathComponent[];
+  children: MathComponent[];
   /** The function name (e.g., "sin", "cos", "log") */
-  readonly name: readonly MathComponent[];
+  name: MathComponent[];
 }
 
 /**

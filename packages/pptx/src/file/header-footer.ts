@@ -5,8 +5,8 @@
  */
 
 export interface SlideHeaderFooterOptions {
-  readonly slideNumber?: boolean;
-  readonly dateTime?: boolean;
-  readonly footer?: string | boolean;
-  readonly header?: boolean;
+  slideNumber?: boolean;
+  dateTime?: boolean;
+  footer?: string | boolean;
+  header?: boolean;
 }

@@ -19,5 +19,5 @@ import type { BaseXmlComponent } from "@file/xml-components";
  */
 export interface FileChild extends BaseXmlComponent {
   /** Marker property identifying this as a FileChild */
-  readonly fileChild: symbol;
+  fileChild: symbol;
 }

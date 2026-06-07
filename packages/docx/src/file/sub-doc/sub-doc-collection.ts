@@ -9,16 +9,16 @@
  */
 export interface SubDocData {
   /** Raw document data (.docx bytes) */
-  readonly data: Uint8Array;
+  data: Uint8Array;
   /** Part sub-path within word/ (e.g., "subdocs/subdoc1.docx") */
-  readonly path: string;
+  path: string;
 }
 
 /**
  * Manages sub-document parts in a document.
  */
 export class SubDocCollection {
-  private readonly map: Map<string, SubDocData>;
+  private map: Map<string, SubDocData>;
 
   public constructor() {
     this.map = new Map<string, SubDocData>();
@@ -28,7 +28,7 @@ export class SubDocCollection {
     this.map.set(key, data);
   }
 
-  public get array(): readonly SubDocData[] {
+  public get array(): SubDocData[] {
     return [...this.map.values()];
   }
 }

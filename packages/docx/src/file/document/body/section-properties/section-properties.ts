@@ -91,72 +91,72 @@ import type { SectionType } from "./properties/section-type";
  */
 export interface HeaderFooterGroup<T> {
   /** Header/footer for default pages (odd pages when even headers are used) */
-  readonly default?: T;
+  default?: T;
   /** Header/footer for first page (requires titlePage setting) */
-  readonly first?: T;
+  first?: T;
   /** Header/footer for even pages (requires evenAndOddHeaders setting) */
-  readonly even?: T;
+  even?: T;
 }
 
 export interface SectionPropertiesOptionsBase {
   /** Revision save ID for section properties (hex string, e.g. "00123456"). */
-  readonly rsidRPr?: string;
+  rsidRPr?: string;
   /** Revision save ID when section was deleted (hex string). */
-  readonly rsidDel?: string;
+  rsidDel?: string;
   /** Revision save ID for the section (hex string). */
-  readonly rsidR?: string;
+  rsidR?: string;
   /** Revision save ID for the section (hex string). */
-  readonly rsidSect?: string;
+  rsidSect?: string;
   /** Page-level settings including size, margins, borders, and text direction */
-  readonly page?: {
+  page?: {
     /** Page size and orientation */
-    readonly size?: Partial<PageSizeAttributes>;
+    size?: Partial<PageSizeAttributes>;
     /** Page margins (top, bottom, left, right, header, footer, gutter) */
-    readonly margin?: PageMarginAttributes;
+    margin?: PageMarginAttributes;
     /** Page numbering format and starting value */
-    readonly pageNumbers?: PageNumberTypeAttributes;
+    pageNumbers?: PageNumberTypeAttributes;
     /** Page border settings */
-    readonly borders?: PageBordersOptions;
+    borders?: PageBordersOptions;
     /** Text flow direction (horizontal or vertical) */
-    readonly textDirection?: (typeof PageTextDirectionType)[keyof typeof PageTextDirectionType];
+    textDirection?: (typeof PageTextDirectionType)[keyof typeof PageTextDirectionType];
   };
   /** Document grid settings for precise East Asian character layout */
-  readonly grid?: Partial<DocGridAttributesProperties>;
+  grid?: Partial<DocGridAttributesProperties>;
   /** Header definitions for default, first, and even pages */
-  readonly headerWrapperGroup?: HeaderFooterGroup<HeaderWrapper>;
+  headerWrapperGroup?: HeaderFooterGroup<HeaderWrapper>;
   /** Footer definitions for default, first, and even pages */
-  readonly footerWrapperGroup?: HeaderFooterGroup<FooterWrapper>;
+  footerWrapperGroup?: HeaderFooterGroup<FooterWrapper>;
   /** Line numbering settings for the section */
-  readonly lineNumbers?: LineNumberAttributes;
+  lineNumbers?: LineNumberAttributes;
   /** Whether first page has different header/footer */
-  readonly titlePage?: boolean;
+  titlePage?: boolean;
   /** Vertical alignment of text on page (top, center, bottom, justified) */
-  readonly verticalAlign?: SectionVerticalAlign;
+  verticalAlign?: SectionVerticalAlign;
   /** Column layout settings (count, spacing, equal width) */
-  readonly column?: ColumnsAttributes;
+  column?: ColumnsAttributes;
   /** Section break type (next page, continuous, even page, odd page) */
-  readonly type?: (typeof SectionType)[keyof typeof SectionType];
+  type?: (typeof SectionType)[keyof typeof SectionType];
   /** Whether to suppress endnotes in this section */
-  readonly noEndnote?: boolean;
+  noEndnote?: boolean;
   /** Whether form protection is enabled for this section */
-  readonly formProtection?: boolean;
+  formProtection?: boolean;
   /** Whether text direction is right-to-left for this section */
-  readonly bidi?: boolean;
+  bidi?: boolean;
   /** Whether gutter is on the right side for right-to-left sections */
-  readonly rtlGutter?: boolean;
+  rtlGutter?: boolean;
   /** Paper source settings for the section */
-  readonly paperSrc?: {
+  paperSrc?: {
     /** Paper tray for the first page */
-    readonly first?: number;
+    first?: number;
     /** Paper tray for subsequent pages */
-    readonly other?: number;
+    other?: number;
   };
   /** Footnote properties for the section */
-  readonly footnotePr?: FootnotePropertiesOptions;
+  footnotePr?: FootnotePropertiesOptions;
   /** Endnote properties for the section */
-  readonly endnotePr?: EndnotePropertiesOptions;
+  endnotePr?: EndnotePropertiesOptions;
   /** Printer settings reference ID */
-  readonly printerSettingsId?: string;
+  printerSettingsId?: string;
 }
 
 export type ISectionPropertiesChangeOptions = ChangedAttributesProperties &
@@ -181,7 +181,7 @@ export type ISectionPropertiesChangeOptions = ChangedAttributesProperties &
  * @see {@link SectionProperties}
  */
 export type ISectionPropertiesOptions = {
-  readonly revision?: ISectionPropertiesChangeOptions;
+  revision?: ISectionPropertiesChangeOptions;
 } & SectionPropertiesOptionsBase;
 
 /**
@@ -397,7 +397,7 @@ export class SectionProperties extends XmlComponent {
 
     if (paperSrc) {
       this.root.push(
-        new BuilderElement<{ readonly first?: number; readonly other?: number }>({
+        new BuilderElement<{ first?: number; other?: number }>({
           attributes: {
             first: {
               key: "w:first",

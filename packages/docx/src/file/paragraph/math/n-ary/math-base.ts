@@ -18,7 +18,7 @@ import type { MathComponent } from "../math-component";
  */
 export interface MathArgPropertiesOptions {
   /** Argument size (-2 to 2) */
-  readonly argSz?: number;
+  argSz?: number;
 }
 
 /**
@@ -26,9 +26,9 @@ export interface MathArgPropertiesOptions {
  */
 export interface MathBaseOptions {
   /** The content of the base */
-  readonly children: readonly MathComponent[];
+  children: MathComponent[];
   /** Argument properties */
-  readonly argPr?: MathArgPropertiesOptions;
+  argPr?: MathArgPropertiesOptions;
 }
 
 /**

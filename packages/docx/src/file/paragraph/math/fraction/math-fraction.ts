@@ -22,11 +22,11 @@ import { MathNumerator } from "./math-numerator";
  */
 export interface MathFractionOptions {
   /** Math components for the numerator (top) of the fraction */
-  readonly numerator: readonly MathComponent[];
+  numerator: MathComponent[];
   /** Math components for the denominator (bottom) of the fraction */
-  readonly denominator: readonly MathComponent[];
+  denominator: MathComponent[];
   /** Fraction type (bar, skewed, linear, or no bar) */
-  readonly fractionType?: MathFractionPropertiesOptions["fractionType"];
+  fractionType?: MathFractionPropertiesOptions["fractionType"];
 }
 
 /**

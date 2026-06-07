@@ -45,37 +45,37 @@ export type MathPropertiesJustification = "left" | "right" | "center" | "centerG
  */
 export interface MathPropertiesOptions {
   /** Math font name */
-  readonly mathFont?: string;
+  mathFont?: string;
   /** Binary operator break position */
-  readonly breakBin?: MathBreakBin;
+  breakBin?: MathBreakBin;
   /** Binary operator subtraction break position */
-  readonly breakBinSub?: MathBreakBinSub;
+  breakBinSub?: MathBreakBinSub;
   /** Use small fractions */
-  readonly smallFrac?: boolean;
+  smallFrac?: boolean;
   /** Display default */
-  readonly displayDefault?: boolean;
+  displayDefault?: boolean;
   /** Left margin in twips */
-  readonly leftMargin?: number;
+  leftMargin?: number;
   /** Right margin in twips */
-  readonly rightMargin?: number;
+  rightMargin?: number;
   /** Default justification */
-  readonly defaultJustification?: MathPropertiesJustification;
+  defaultJustification?: MathPropertiesJustification;
   /** Pre-spacing in twips */
-  readonly preSpacing?: number;
+  preSpacing?: number;
   /** Post-spacing in twips */
-  readonly postSpacing?: number;
+  postSpacing?: number;
   /** Inter-spacing in twips */
-  readonly interSpacing?: number;
+  interSpacing?: number;
   /** Intra-spacing in twips */
-  readonly intraSpacing?: number;
+  intraSpacing?: number;
   /** Wrap indent in twips */
-  readonly wrapIndent?: number;
+  wrapIndent?: number;
   /** Wrap right */
-  readonly wrapRight?: boolean;
+  wrapRight?: boolean;
   /** Integral limit location: "undOvr" (under/over) or "subSup" (subscript/superscript) */
-  readonly integralLimitLocation?: string;
+  integralLimitLocation?: string;
   /** N-ary limit location: "undOvr" (under/over) or "subSup" (subscript/superscript) */
-  readonly naryLimitLocation?: string;
+  naryLimitLocation?: string;
 }
 
 /**

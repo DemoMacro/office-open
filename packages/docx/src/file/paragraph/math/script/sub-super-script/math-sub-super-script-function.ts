@@ -24,11 +24,11 @@ import { createMathSubSuperScriptProperties } from "./math-sub-super-script-func
  */
 export interface MathSubSuperScriptOptions {
   /** The base expression */
-  readonly children: readonly MathComponent[];
+  children: MathComponent[];
   /** The subscript expression */
-  readonly subScript: readonly MathComponent[];
+  subScript: MathComponent[];
   /** The superscript expression */
-  readonly superScript: readonly MathComponent[];
+  superScript: MathComponent[];
 }
 
 /**

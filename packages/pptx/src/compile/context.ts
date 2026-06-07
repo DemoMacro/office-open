@@ -11,33 +11,33 @@ import type { ParseContext } from "../parse/context";
 // ── Resource entries ──
 
 export interface MediaEntry {
-  readonly key: string;
-  readonly fileName: string;
-  readonly data: Uint8Array;
-  readonly type: string;
-  readonly transformation: {
-    readonly pixels: { readonly x: number; readonly y: number };
-    readonly emus: { readonly x: number; readonly y: number };
+  key: string;
+  fileName: string;
+  data: Uint8Array;
+  type: string;
+  transformation: {
+    pixels: { x: number; y: number };
+    emus: { x: number; y: number };
   };
 }
 
 export interface ChartEntry {
-  readonly key: string;
-  readonly chartSpaceXml: string;
+  key: string;
+  chartSpaceXml: string;
 }
 
 export interface SmartArtEntry {
-  readonly key: string;
-  readonly dataModelXml: string;
-  readonly layout: string;
-  readonly style: string;
-  readonly color: string;
+  key: string;
+  dataModelXml: string;
+  layout: string;
+  style: string;
+  color: string;
 }
 
 export interface HyperlinkEntry {
-  readonly key: string;
-  readonly url: string;
-  readonly tooltip?: string;
+  key: string;
+  url: string;
+  tooltip?: string;
 }
 
 // ── Context ──
@@ -50,11 +50,11 @@ export interface HyperlinkEntry {
  * generic `WriteContext` to this type to access PPTX-specific features.
  */
 export class PptxWriteContext implements WriteContext {
-  private readonly _media = new Map<string, MediaEntry>();
-  private readonly _charts = new Map<string, ChartEntry>();
-  private readonly _smartArts = new Map<string, SmartArtEntry>();
-  private readonly _hyperlinks = new Map<string, HyperlinkEntry>();
-  private readonly _contentTypes = new Map<string, string>();
+  private _media = new Map<string, MediaEntry>();
+  private _charts = new Map<string, ChartEntry>();
+  private _smartArts = new Map<string, SmartArtEntry>();
+  private _hyperlinks = new Map<string, HyperlinkEntry>();
+  private _contentTypes = new Map<string, string>();
   private _nextRelId = 1;
   private _nextMediaId = 1;
   private _nextChartId = 1;
@@ -103,19 +103,19 @@ export class PptxWriteContext implements WriteContext {
 
   // ── Getters ──
 
-  public get media(): readonly MediaEntry[] {
+  public get media(): MediaEntry[] {
     return [...this._media.values()];
   }
 
-  public get charts(): readonly ChartEntry[] {
+  public get charts(): ChartEntry[] {
     return [...this._charts.values()];
   }
 
-  public get smartArts(): readonly SmartArtEntry[] {
+  public get smartArts(): SmartArtEntry[] {
     return [...this._smartArts.values()];
   }
 
-  public get hyperlinks(): readonly HyperlinkEntry[] {
+  public get hyperlinks(): HyperlinkEntry[] {
     return [...this._hyperlinks.values()];
   }
 
@@ -133,7 +133,7 @@ export class PptxWriteContext implements WriteContext {
  * interface used by the descriptor parse pipeline.
  */
 export class PptxReadContext implements ReadContext {
-  constructor(private readonly _parseCtx: ParseContext) {}
+  constructor(private _parseCtx: ParseContext) {}
 
   public resolveRelationship(rId: string): string | undefined {
     return this._parseCtx.slideRels.get(rId);

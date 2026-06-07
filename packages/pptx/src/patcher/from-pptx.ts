@@ -27,8 +27,8 @@ export const PatchType = {
 export type PatchDocumentOutputType = OutputType;
 
 interface ParagraphPatch {
-  readonly type: typeof PatchType.PARAGRAPH;
-  readonly children: readonly unknown[];
+  type: typeof PatchType.PARAGRAPH;
+  children: unknown[];
 }
 
 export type IPatch = ParagraphPatch;
@@ -36,13 +36,13 @@ export type IPatch = ParagraphPatch;
 export interface PatchPresentationOptions<
   T extends PatchDocumentOutputType = PatchDocumentOutputType,
 > {
-  readonly outputType: T;
-  readonly data: InputDataType;
-  readonly patches: Readonly<Record<string, IPatch>>;
-  readonly keepOriginalStyles?: boolean;
-  readonly placeholderDelimiters?: Readonly<{
-    readonly start: string;
-    readonly end: string;
+  outputType: T;
+  data: InputDataType;
+  patches: Readonly<Record<string, IPatch>>;
+  keepOriginalStyles?: boolean;
+  placeholderDelimiters?: Readonly<{
+    start: string;
+    end: string;
   }>;
 }
 
@@ -58,7 +58,7 @@ const pptxReplacer = createReplacer({
   preserveSpace: false,
 });
 
-const IMAGE_CONTENT_TYPES: ReadonlyArray<readonly [string, string]> = [
+const IMAGE_CONTENT_TYPES: ReadonlyArray<[string, string]> = [
   ["image/png", "png"],
   ["image/jpeg", "jpeg"],
   ["image/jpeg", "jpg"],

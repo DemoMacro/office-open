@@ -19,29 +19,29 @@ import type { IXmlableObject, XmlComponent } from "@file/xml-components";
  */
 export interface CnfConditionalOptions {
   /** Whether this is the first row in the table */
-  readonly firstRow?: boolean;
+  firstRow?: boolean;
   /** Whether this is the last row in the table */
-  readonly lastRow?: boolean;
+  lastRow?: boolean;
   /** Whether this is the first column in the table */
-  readonly firstColumn?: boolean;
+  firstColumn?: boolean;
   /** Whether this is the last column in the table */
-  readonly lastColumn?: boolean;
+  lastColumn?: boolean;
   /** Whether this is an odd vertical band */
-  readonly oddVBand?: boolean;
+  oddVBand?: boolean;
   /** Whether this is an even vertical band */
-  readonly evenVBand?: boolean;
+  evenVBand?: boolean;
   /** Whether this is an odd horizontal band */
-  readonly oddHBand?: boolean;
+  oddHBand?: boolean;
   /** Whether this is an even horizontal band */
-  readonly evenHBand?: boolean;
+  evenHBand?: boolean;
   /** Whether this is the first row and first column (top-left corner) */
-  readonly firstRowFirstColumn?: boolean;
+  firstRowFirstColumn?: boolean;
   /** Whether this is the first row and last column (top-right corner) */
-  readonly firstRowLastColumn?: boolean;
+  firstRowLastColumn?: boolean;
   /** Whether this is the last row and first column (bottom-left corner) */
-  readonly lastRowFirstColumn?: boolean;
+  lastRowFirstColumn?: boolean;
   /** Whether this is the last row and last column (bottom-right corner) */
-  readonly lastRowLastColumn?: boolean;
+  lastRowLastColumn?: boolean;
 }
 
 /**

@@ -15,7 +15,7 @@ import type { XmlComponent } from "@file/xml-components";
  */
 interface MathLimitLocationOptions {
   /** Location: "undOvr" (under/over) or "subSup" (subscript/superscript). Defaults to "undOvr". */
-  readonly value?: string;
+  value?: string;
 }
 
 /**

@@ -20,9 +20,9 @@
  */
 export interface ChangedAttributesProperties {
   /** Unique identifier for this change (must be unique within the document) */
-  readonly id: number;
+  id: number;
   /** Name of the author who made the change */
-  readonly author: string;
+  author: string;
   /** Date and time when the change was made (ISO 8601 format) */
-  readonly date: string;
+  date: string;
 }
