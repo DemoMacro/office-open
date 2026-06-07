@@ -13,62 +13,62 @@ import { BuilderElement } from "../../xml-components";
 
 export interface BaseLockingOptions {
   /** Prevent grouping */
-  readonly noGrp?: boolean;
+  noGrp?: boolean;
   /** Prevent selection */
-  readonly noSelect?: boolean;
+  noSelect?: boolean;
   /** Prevent rotation */
-  readonly noRot?: boolean;
+  noRot?: boolean;
   /** Prevent aspect ratio change */
-  readonly noChangeAspect?: boolean;
+  noChangeAspect?: boolean;
   /** Prevent moving */
-  readonly noMove?: boolean;
+  noMove?: boolean;
   /** Prevent resizing */
-  readonly noResize?: boolean;
+  noResize?: boolean;
   /** Prevent edit points */
-  readonly noEditPoints?: boolean;
+  noEditPoints?: boolean;
   /** Prevent adjust handles */
-  readonly noAdjustHandles?: boolean;
+  noAdjustHandles?: boolean;
   /** Prevent changing arrowheads */
-  readonly noChangeArrowheads?: boolean;
+  noChangeArrowheads?: boolean;
   /** Prevent changing shape type */
-  readonly noChangeShapeType?: boolean;
+  noChangeShapeType?: boolean;
 }
 
 // ── Shape locking (CT_ShapeLocking) ──
 
 export interface ShapeLockingOptions extends BaseLockingOptions {
   /** Prevent text editing */
-  readonly noTextEdit?: boolean;
+  noTextEdit?: boolean;
 }
 
 // ── Picture locking (CT_PictureLocking) ──
 
 export interface PictureLockingOptions extends BaseLockingOptions {
   /** Prevent cropping */
-  readonly noCrop?: boolean;
+  noCrop?: boolean;
 }
 
 // ── Group locking (CT_GroupLocking) ──
 
 export interface GroupLockingOptions {
-  readonly noGrp?: boolean;
-  readonly noUngrp?: boolean;
-  readonly noSelect?: boolean;
-  readonly noRot?: boolean;
-  readonly noChangeAspect?: boolean;
-  readonly noMove?: boolean;
-  readonly noResize?: boolean;
+  noGrp?: boolean;
+  noUngrp?: boolean;
+  noSelect?: boolean;
+  noRot?: boolean;
+  noChangeAspect?: boolean;
+  noMove?: boolean;
+  noResize?: boolean;
 }
 
 // ── Graphic frame locking (CT_GraphicalObjectFrameLocking) ──
 
 export interface GraphicFrameLockingOptions {
-  readonly noGrp?: boolean;
-  readonly noDrilldown?: boolean;
-  readonly noSelect?: boolean;
-  readonly noChangeAspect?: boolean;
-  readonly noMove?: boolean;
-  readonly noResize?: boolean;
+  noGrp?: boolean;
+  noDrilldown?: boolean;
+  noSelect?: boolean;
+  noChangeAspect?: boolean;
+  noMove?: boolean;
+  noResize?: boolean;
 }
 
 // ── Factory functions ──

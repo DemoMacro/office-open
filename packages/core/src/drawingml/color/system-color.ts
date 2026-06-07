@@ -65,11 +65,11 @@ export const SystemColor = {
  */
 export interface SystemColorOptions {
   /** System color value */
-  readonly value: (typeof SystemColor)[keyof typeof SystemColor];
+  value: (typeof SystemColor)[keyof typeof SystemColor];
   /** Last known RGB color value (optional fallback) */
-  readonly lastClr?: string;
+  lastClr?: string;
   /** Optional color transforms */
-  readonly transforms?: ColorTransformOptions;
+  transforms?: ColorTransformOptions;
 }
 
 /**

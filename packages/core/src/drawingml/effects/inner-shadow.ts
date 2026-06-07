@@ -15,13 +15,13 @@ import type { SolidFillOptions } from "../color/solid-fill";
  */
 export interface InnerShadowEffectOptions {
   /** Blur radius in EMUs */
-  readonly blurRadius?: number;
+  blurRadius?: number;
   /** Distance from shape edge in EMUs */
-  readonly distance?: number;
+  distance?: number;
   /** Direction angle in 60,000ths of a degree */
-  readonly direction?: number;
+  direction?: number;
   /** Shadow color */
-  readonly color: SolidFillOptions;
+  color: SolidFillOptions;
 }
 
 /**

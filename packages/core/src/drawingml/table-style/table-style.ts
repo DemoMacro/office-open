@@ -33,70 +33,70 @@ export type OnOffStyleType = "on" | "off" | "def";
 
 export interface TablePartStyleOptions {
   /** Cell text style */
-  readonly text?: TableTextStyleOptions;
+  text?: TableTextStyleOptions;
   /** Cell style (fill, borders, 3D) */
-  readonly cell?: TableCellStyleOptions;
+  cell?: TableCellStyleOptions;
 }
 
 export interface TableTextStyleOptions {
   /** Bold style */
-  readonly bold?: OnOffStyleType;
+  bold?: OnOffStyleType;
   /** Italic style */
-  readonly italic?: OnOffStyleType;
+  italic?: OnOffStyleType;
   /** Font reference (themeable) */
-  readonly fontRef?: StyleMatrixReferenceOptions;
+  fontRef?: StyleMatrixReferenceOptions;
   /** Color element */
-  readonly color?: XmlComponent;
+  color?: XmlComponent;
 }
 
 export interface TableCellStyleOptions {
   /** Cell borders */
-  readonly borders?: TableCellBorderOptions;
+  borders?: TableCellBorderOptions;
   /** Fill reference (themeable) */
-  readonly fillRef?: StyleMatrixReferenceOptions;
+  fillRef?: StyleMatrixReferenceOptions;
   /** Direct fill */
-  readonly fill?: XmlComponent;
+  fill?: XmlComponent;
 }
 
 export interface TableCellBorderOptions {
-  readonly left?: ThemeableLineStyleOptions;
-  readonly right?: ThemeableLineStyleOptions;
-  readonly top?: ThemeableLineStyleOptions;
-  readonly bottom?: ThemeableLineStyleOptions;
-  readonly insideH?: ThemeableLineStyleOptions;
-  readonly insideV?: ThemeableLineStyleOptions;
+  left?: ThemeableLineStyleOptions;
+  right?: ThemeableLineStyleOptions;
+  top?: ThemeableLineStyleOptions;
+  bottom?: ThemeableLineStyleOptions;
+  insideH?: ThemeableLineStyleOptions;
+  insideV?: ThemeableLineStyleOptions;
 }
 
 export interface ThemeableLineStyleOptions {
   /** Line width in EMUs */
-  readonly width?: number;
+  width?: number;
   /** Fill color component */
-  readonly color?: XmlComponent;
+  color?: XmlComponent;
   /** Line reference index into theme style matrix */
-  readonly lineRefIdx?: number;
+  lineRefIdx?: number;
 }
 
 export interface StyleMatrixReferenceOptions {
   /** Index into the theme style matrix */
-  readonly idx: number;
+  idx: number;
   /** Color component */
-  readonly color?: XmlComponent;
+  color?: XmlComponent;
 }
 
 export interface TableStyleOptions {
   /** Unique GUID for this style */
-  readonly styleId: string;
+  styleId: string;
   /** Display name */
-  readonly styleName: string;
+  styleName: string;
   /** Style regions */
-  readonly regions?: Partial<Record<TableStyleRegion, TablePartStyleOptions>>;
+  regions?: Partial<Record<TableStyleRegion, TablePartStyleOptions>>;
 }
 
 export interface TableStyleListOptions {
   /** Default style GUID */
-  readonly defaultStyleId: string;
+  defaultStyleId: string;
   /** Custom table styles */
-  readonly styles?: readonly TableStyleOptions[];
+  styles?: readonly TableStyleOptions[];
 }
 
 // ── Helpers ──

@@ -7,7 +7,7 @@
  * @module
  */
 import { ChartSpace } from "@file/chart/chart-space";
-import type { ChartType, ChartSeriesData } from "@file/chart/chart-space";
+import type { ChartSpaceOptions } from "@file/chart/chart-space";
 import { Drawing } from "@file/drawing";
 import type { Floating } from "@file/drawing";
 import type { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-properties";
@@ -22,30 +22,18 @@ let nextChartId = 1;
 /**
  * Options for creating a ChartRun.
  *
+ * Extends `ChartSpaceOptions` from `@office-open/core` with DOCX-specific
+ * positioning and layout properties.
+ *
  * @publicApi
  */
-export interface ChartOptions {
-  /** Chart type */
-  readonly type: ChartType;
-  /** Chart data — for bubble charts, series must include xValues/yValues/bubbleSize instead of values */
-  readonly data: {
-    readonly categories?: readonly string[];
-    readonly series: readonly ChartSeriesData[];
-  };
-  /** Enable 3D rendering for applicable chart types */
-  readonly threeD?: boolean;
+export interface ChartOptions extends ChartSpaceOptions {
   /** Display dimensions */
   readonly transformation: MediaTransformation;
   /** Floating positioning */
   readonly floating?: Floating;
   /** Alternative text for accessibility */
   readonly altText?: DocPropertiesOptions;
-  /** Chart title */
-  readonly title?: string;
-  /** Show legend (default: true) */
-  readonly showLegend?: boolean;
-  /** Chart style preset (2-48) */
-  readonly style?: number;
 }
 
 /**
@@ -57,12 +45,10 @@ export interface ChartOptions {
  * ```typescript
  * new ChartRun({
  *   type: "column",
- *   data: {
- *     categories: ["Q1", "Q2", "Q3", "Q4"],
- *     series: [
- *       { name: "Sales", values: [100, 200, 300, 400] },
- *     ],
- *   },
+ *   categories: ["Q1", "Q2", "Q3", "Q4"],
+ *   series: [
+ *     { name: "Sales", values: [100, 200, 300, 400] },
+ *   ],
  *   transformation: { width: 500, height: 300 },
  *   title: "Quarterly Sales",
  * });
@@ -96,8 +82,8 @@ export class ChartRun extends Run {
   protected override registerResources(context: Context): void {
     // Register chart with the file's chart collection
     const chartSpace = new ChartSpace({
-      categories: this.chartOptions.data.categories,
-      series: this.chartOptions.data.series,
+      categories: this.chartOptions.categories,
+      series: this.chartOptions.series,
       showLegend: this.chartOptions.showLegend,
       style: this.chartOptions.style,
       title: this.chartOptions.title,

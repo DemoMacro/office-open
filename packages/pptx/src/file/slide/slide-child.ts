@@ -1,13 +1,13 @@
-import type { ChartOptions } from "@file/chart/chart-frame";
-import type { LockedCanvasFrameOptions } from "@file/locked-canvas/locked-canvas-frame";
+import type { ChartOptions } from "@file/chart-frame";
+import type { LockedCanvasFrameOptions } from "@file/locked-canvas-frame";
 import type { AudioFrameOptions } from "@file/media/audio-frame";
 import type { VideoFrameOptions } from "@file/media/video-frame";
-import type { OleOptions } from "@file/ole/ole-frame";
-import type { PictureOptions } from "@file/picture/picture";
+import type { OleOptions } from "@file/ole-frame";
+import type { PictureOptions } from "@file/picture";
 import type { GroupShapeOptions } from "@file/shape/group-shape";
 import type { ConnectorShapeOptions, LineShapeOptions } from "@file/shape/line-shape";
 import type { ShapeOptions } from "@file/shape/shape";
-import type { SmartArtOptions } from "@file/smartart/smartart-frame";
+import type { SmartArtOptions } from "@file/smartart";
 import type { TableOptions } from "@file/table/table-frame";
 import type { BaseXmlComponent } from "@file/xml-components";
 

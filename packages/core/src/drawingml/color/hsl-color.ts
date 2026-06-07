@@ -17,13 +17,13 @@ import { createColorTransforms } from "./color-transform";
  */
 export interface HslColorOptions {
   /** Hue angle in 60,000ths of a degree (0-21600000) */
-  readonly hue: number;
+  hue: number;
   /** Saturation in 1/1000th of a percent (0-100000) */
-  readonly saturation: number;
+  saturation: number;
   /** Luminance in 1/1000th of a percent (0-100000) */
-  readonly luminance: number;
+  luminance: number;
   /** Optional color transforms */
-  readonly transforms?: ColorTransformOptions;
+  transforms?: ColorTransformOptions;
 }
 
 /**

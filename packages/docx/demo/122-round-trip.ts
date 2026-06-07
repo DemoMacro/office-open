@@ -308,13 +308,11 @@ async function main() {
               {
                 chart: {
                   type: "column",
-                  data: {
-                    categories: ["Q1", "Q2", "Q3", "Q4"],
-                    series: [
-                      { name: "2024", values: [120, 150, 180, 200] },
-                      { name: "2025", values: [140, 170, 210, 250] },
-                    ],
-                  },
+                  categories: ["Q1", "Q2", "Q3", "Q4"],
+                  series: [
+                    { name: "2024", values: [120, 150, 180, 200] },
+                    { name: "2025", values: [140, 170, 210, 250] },
+                  ],
                   title: "Quarterly Revenue",
                   transformation: { width: 500, height: 300 },
                 },

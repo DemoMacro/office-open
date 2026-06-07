@@ -1,4 +1,4 @@
-export { AppProperties } from "./app-properties";
+export { AppProperties, APP_PROPS_XML } from "./app-properties";
 export { Relationships, TargetModeType } from "./relationships";
 export type { RelationshipType } from "./relationships";
 export { createDefault, createOverride } from "./content-types";

@@ -14,10 +14,10 @@ import type { XmlComponent, IXmlableObject } from "../../xml-components";
 // ── Cell Marker ──
 
 export interface XdrMarkerOptions {
-  readonly col: number;
-  readonly colOff: number;
-  readonly row: number;
-  readonly rowOff: number;
+  col: number;
+  colOff: number;
+  row: number;
+  rowOff: number;
 }
 
 /**
@@ -124,10 +124,7 @@ export const createXdrTo = (options: XdrMarkerOptions): XmlComponent =>
  * <xsd:element name="cNvPr" type="a:CT_NonVisualDrawingProps"/>
  * ```
  */
-export const createXdrCNvPr = (options: {
-  readonly id?: number;
-  readonly name?: string;
-}): XmlComponent =>
+export const createXdrCNvPr = (options: { id?: number; name?: string }): XmlComponent =>
   new BuilderElement({
     attributes: {
       ...(options.id !== undefined ? { id: { key: "id", value: options.id } } : {}),
@@ -165,9 +162,7 @@ export const createXdrCNvCxnSpPr = (): XmlComponent =>
  * <xsd:element name="cNvPicPr" type="a:CT_NonVisualPictureProperties"/>
  * ```
  */
-export const createXdrCNvPicPr = (options?: {
-  readonly preferRelativeResize?: boolean;
-}): XmlComponent =>
+export const createXdrCNvPicPr = (options?: { preferRelativeResize?: boolean }): XmlComponent =>
   new BuilderElement({
     attributes:
       options?.preferRelativeResize !== undefined
@@ -241,10 +236,10 @@ export const createXdrNvGrpSpPr = (children?: readonly IXmlableObject[]): XmlCom
 // ── Shape / Connector / Picture / Group ──
 
 export interface XdrShapeAttributes {
-  readonly macro?: string;
-  readonly textlink?: string;
-  readonly fLocksText?: boolean;
-  readonly fPublished?: boolean;
+  macro?: string;
+  textlink?: string;
+  fLocksText?: boolean;
+  fPublished?: boolean;
 }
 
 /**
@@ -256,8 +251,8 @@ export interface XdrShapeAttributes {
  * ```
  */
 export const createXdrSp = (options?: {
-  readonly attributes?: XdrShapeAttributes;
-  readonly children?: readonly IXmlableObject[];
+  attributes?: XdrShapeAttributes;
+  children?: readonly IXmlableObject[];
 }): XmlComponent =>
   new BuilderElement({
     attributes: options?.attributes
@@ -396,8 +391,8 @@ export const createXdrContentPart = (rId?: string): XmlComponent =>
 // ── Anchors ──
 
 export interface XdrTwoCellAnchorOptions {
-  readonly editAs?: "twoCell" | "oneCell" | "absolute";
-  readonly children?: readonly IXmlableObject[];
+  editAs?: "twoCell" | "oneCell" | "absolute";
+  children?: readonly IXmlableObject[];
 }
 
 /**

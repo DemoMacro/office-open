@@ -1,8 +1,9 @@
 import { writeFileSync } from "node:fs";
 
-import { Packer, Presentation } from "@office-open/pptx";
+import type { PresentationOptions } from "@file/file";
+import { generate } from "@office-open/pptx";
 
-const pres = new Presentation({
+const options: PresentationOptions = {
   includeHandoutMaster: true,
   handoutMasterOptions: {
     headerFooter: {
@@ -32,7 +33,7 @@ const pres = new Presentation({
       ],
     },
   ],
-});
+};
 
-const buffer = await Packer.toBuffer(pres);
+const buffer = await generate(options);
 writeFileSync("My Presentation.pptx", buffer);

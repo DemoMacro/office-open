@@ -154,33 +154,33 @@ export const LineJoin = {
  */
 export interface OutlineAttributes {
   /** Line width in EMUs (English Metric Units) */
-  readonly width?: number;
+  width?: number;
   /** Line cap style */
-  readonly cap?: (typeof LineCap)[keyof typeof LineCap];
+  cap?: (typeof LineCap)[keyof typeof LineCap];
   /** Compound line type */
-  readonly compoundLine?: (typeof CompoundLine)[keyof typeof CompoundLine];
+  compoundLine?: (typeof CompoundLine)[keyof typeof CompoundLine];
   /** Pen alignment */
-  readonly align?: (typeof PenAlignment)[keyof typeof PenAlignment];
+  align?: (typeof PenAlignment)[keyof typeof PenAlignment];
   /**
    * Preset dash style.
    *
    * Mutually exclusive with `customDash` — only one can be specified.
    */
-  readonly dash?: (typeof PresetDash)[keyof typeof PresetDash];
+  dash?: (typeof PresetDash)[keyof typeof PresetDash];
   /**
    * Custom dash pattern (list of dash/space stops).
    *
    * Mutually exclusive with `dash` — only one can be specified.
    */
-  readonly customDash?: readonly DashStop[];
+  customDash?: readonly DashStop[];
   /** Line join style */
-  readonly join?: (typeof LineJoin)[keyof typeof LineJoin];
+  join?: (typeof LineJoin)[keyof typeof LineJoin];
   /** Miter limit (only when join is MITER) */
-  readonly miterLimit?: number;
+  miterLimit?: number;
   /** Line start arrow/head */
-  readonly headEnd?: LineEndOptions;
+  headEnd?: LineEndOptions;
   /** Line end arrow/tail */
-  readonly tailEnd?: LineEndOptions;
+  tailEnd?: LineEndOptions;
 }
 
 /**
@@ -191,13 +191,13 @@ export interface OutlineAttributes {
  */
 export interface OutlineFillProperties {
   /** Fill type */
-  readonly type?: "noFill" | "solidFill" | "gradFill" | "pattFill";
+  type?: "noFill" | "solidFill" | "gradFill" | "pattFill";
   /** Color definition (required when type is "solidFill") */
-  readonly color?: SolidFillOptions;
+  color?: SolidFillOptions;
   /** Gradient fill options (required when type is "gradFill") */
-  readonly gradientFill?: GradientFillOptions;
+  gradientFill?: GradientFillOptions;
   /** Pattern fill options (required when type is "pattFill") */
-  readonly patternFill?: PatternFillOptions;
+  patternFill?: PatternFillOptions;
 }
 
 /**

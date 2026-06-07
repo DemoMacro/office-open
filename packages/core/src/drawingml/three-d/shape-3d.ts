@@ -41,21 +41,21 @@ export const PresetMaterialType = {
  */
 export interface Shape3DOptions {
   /** Top bevel options */
-  readonly bevelT?: BevelOptions;
+  bevelT?: BevelOptions;
   /** Bottom bevel options */
-  readonly bevelB?: BevelOptions;
+  bevelB?: BevelOptions;
   /** Extrusion color (CT_Color / EG_ColorChoice) */
-  readonly extrusionColor?: SolidFillOptions;
+  extrusionColor?: SolidFillOptions;
   /** Contour color (CT_Color / EG_ColorChoice) */
-  readonly contourColor?: SolidFillOptions;
+  contourColor?: SolidFillOptions;
   /** Depth in EMUs (default 0) */
-  readonly z?: number;
+  z?: number;
   /** Extrusion height in EMUs (default 0) */
-  readonly extrusionH?: number;
+  extrusionH?: number;
   /** Contour width in EMUs (default 0) */
-  readonly contourW?: number;
+  contourW?: number;
   /** Material preset type */
-  readonly prstMaterial?: (typeof PresetMaterialType)[keyof typeof PresetMaterialType];
+  prstMaterial?: (typeof PresetMaterialType)[keyof typeof PresetMaterialType];
 }
 
 /**

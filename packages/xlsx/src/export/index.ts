@@ -1,4 +1,5 @@
 export * from "./packer/packer";
+export { generate, generateSync, generateStream } from "./generate";
 export type {
   CompressionOptions,
   OutputType,

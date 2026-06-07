@@ -15,12 +15,12 @@ import { createShape3D } from "../three-d/shape-3d";
 
 export interface DiagramExtLstOptions {
   /** Extension URIs */
-  readonly extensions?: readonly DiagramExtensionOptions[];
+  extensions?: readonly DiagramExtensionOptions[];
 }
 
 export interface DiagramExtensionOptions {
-  readonly uri: string;
-  readonly content?: string;
+  uri: string;
+  content?: string;
 }
 
 /**
@@ -60,7 +60,7 @@ export const createDiagramSp3d = (options: Shape3DOptions): XmlComponent => crea
 
 export interface DiagramTextPropsOptions {
   /** 3D text properties (flat text, no 3D) — empty element */
-  readonly flat?: boolean;
+  flat?: boolean;
 }
 
 /**

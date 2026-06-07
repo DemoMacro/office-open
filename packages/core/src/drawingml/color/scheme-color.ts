@@ -18,9 +18,9 @@ import { createColorTransforms } from "./color-transform";
  */
 export interface SchemeColorOptions {
   /** Scheme color value */
-  readonly value: (typeof SchemeColor)[keyof typeof SchemeColor];
+  value: (typeof SchemeColor)[keyof typeof SchemeColor];
   /** Optional color transforms */
-  readonly transforms?: ColorTransformOptions;
+  transforms?: ColorTransformOptions;
 }
 
 // <xsd:simpleType name="ST_SchemeColorVal">

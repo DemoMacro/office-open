@@ -15,33 +15,33 @@ import { xsdRectAlignment } from "../../xsd-mappings";
  */
 export interface ReflectionEffectOptions {
   /** Blur radius in EMUs */
-  readonly blurRadius?: number;
+  blurRadius?: number;
   /** Start opacity (fixed percentage, e.g., 100000 = 100%) */
-  readonly startAlpha?: number;
+  startAlpha?: number;
   /** Start position (fixed percentage) */
-  readonly startPosition?: number;
+  startPosition?: number;
   /** End opacity (fixed percentage) */
-  readonly endAlpha?: number;
+  endAlpha?: number;
   /** End position (fixed percentage) */
-  readonly endPosition?: number;
+  endPosition?: number;
   /** Distance from shape in EMUs */
-  readonly distance?: number;
+  distance?: number;
   /** Direction angle in 60,000ths of a degree */
-  readonly direction?: number;
+  direction?: number;
   /** Fade direction angle in 60,000ths of a degree */
-  readonly fadeDirection?: number;
+  fadeDirection?: number;
   /** Horizontal scale percentage */
-  readonly scaleX?: number;
+  scaleX?: number;
   /** Vertical scale percentage */
-  readonly scaleY?: number;
+  scaleY?: number;
   /** Horizontal skew angle */
-  readonly skewX?: number;
+  skewX?: number;
   /** Vertical skew angle */
-  readonly skewY?: number;
+  skewY?: number;
   /** Alignment */
-  readonly alignment?: string;
+  alignment?: string;
   /** Whether reflection rotates with shape */
-  readonly rotWithShape?: boolean;
+  rotWithShape?: boolean;
 }
 
 /**

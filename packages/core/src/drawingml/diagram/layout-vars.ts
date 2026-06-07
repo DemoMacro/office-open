@@ -14,9 +14,9 @@ import { BuilderElement, type XmlComponent } from "../../xml-components";
 
 export interface AdjOptions {
   /** 1-based index (required) */
-  readonly idx: number;
+  idx: number;
   /** Adjustment value (required) */
-  readonly val: number;
+  val: number;
 }
 
 /** Creates a dgm:adj element. */
@@ -40,7 +40,7 @@ export const AnimLevelValue = {
 } as const;
 
 export interface AnimLvlOptions {
-  readonly val?: (typeof AnimLevelValue)[keyof typeof AnimLevelValue];
+  val?: (typeof AnimLevelValue)[keyof typeof AnimLevelValue];
 }
 
 /** Creates a dgm:animLvl element. */
@@ -62,7 +62,7 @@ export const AnimOneValue = {
 } as const;
 
 export interface AnimOneOptions {
-  readonly val?: (typeof AnimOneValue)[keyof typeof AnimOneValue];
+  val?: (typeof AnimOneValue)[keyof typeof AnimOneValue];
 }
 
 /** Creates a dgm:animOne element. */
@@ -78,7 +78,7 @@ export const createAnimOne = (options?: AnimOneOptions): XmlComponent =>
 // ---------------------------------------------------------------------------
 
 export interface ChMaxOptions {
-  readonly val?: number;
+  val?: number;
 }
 
 /** Creates a dgm:chMax element. */
@@ -94,7 +94,7 @@ export const createChMax = (options?: ChMaxOptions): XmlComponent =>
 // ---------------------------------------------------------------------------
 
 export interface ChPrefOptions {
-  readonly val?: number;
+  val?: number;
 }
 
 /** Creates a dgm:chPref element. */
@@ -110,7 +110,7 @@ export const createChPref = (options?: ChPrefOptions): XmlComponent =>
 // ---------------------------------------------------------------------------
 
 export interface OrgChartOptions {
-  readonly val?: boolean;
+  val?: boolean;
 }
 
 /** Creates a dgm:orgChart element. */
@@ -134,7 +134,7 @@ export const HierBranchStyle = {
 } as const;
 
 export interface HierBranchOptions {
-  readonly val?: (typeof HierBranchStyle)[keyof typeof HierBranchStyle];
+  val?: (typeof HierBranchStyle)[keyof typeof HierBranchStyle];
 }
 
 /** Creates a dgm:hierBranch element. */
@@ -150,12 +150,12 @@ export const createHierBranch = (options?: HierBranchOptions): XmlComponent =>
 // ---------------------------------------------------------------------------
 
 export interface PresLayoutVarsOptions {
-  readonly orgChart?: OrgChartOptions;
-  readonly chMax?: ChMaxOptions;
-  readonly chPref?: ChPrefOptions;
-  readonly animOne?: AnimOneOptions;
-  readonly animLvl?: AnimLvlOptions;
-  readonly hierBranch?: HierBranchOptions;
+  orgChart?: OrgChartOptions;
+  chMax?: ChMaxOptions;
+  chPref?: ChPrefOptions;
+  animOne?: AnimOneOptions;
+  animLvl?: AnimLvlOptions;
+  hierBranch?: HierBranchOptions;
 }
 
 /**
@@ -195,7 +195,7 @@ export const createPresLayoutVars = (options?: PresLayoutVarsOptions): XmlCompon
 // ---------------------------------------------------------------------------
 
 export interface AdjLstOptions {
-  readonly adj?: readonly AdjOptions[];
+  adj?: readonly AdjOptions[];
 }
 
 /** Creates a dgm:adjLst element containing dgm:adj children. */

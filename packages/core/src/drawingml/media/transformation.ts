@@ -12,38 +12,38 @@ import { convertPixelsToEmu } from "../../converters";
  * Internal media data transformation with both pixel and EMU values.
  */
 export interface MediaDataTransformation {
-  readonly offset?: {
-    readonly pixels: {
-      readonly x: number;
-      readonly y: number;
+  offset?: {
+    pixels: {
+      x: number;
+      y: number;
     };
-    readonly emus?: {
-      readonly x: number;
-      readonly y: number;
+    emus?: {
+      x: number;
+      y: number;
     };
   };
-  readonly pixels: {
+  pixels: {
     /** Width in pixels */
-    readonly x: number;
+    x: number;
     /** Height in pixels */
-    readonly y: number;
+    y: number;
   };
   /** Display dimensions in EMUs (English Metric Units) */
-  readonly emus: {
+  emus: {
     /** Width in EMUs (1 inch = 914400 EMUs) */
-    readonly x: number;
+    x: number;
     /** Height in EMUs (1 inch = 914400 EMUs) */
-    readonly y: number;
+    y: number;
   };
   /** Optional flip transformations */
-  readonly flip?: {
+  flip?: {
     /** Whether to flip the image vertically */
-    readonly vertical?: boolean;
+    vertical?: boolean;
     /** Whether to flip the image horizontally */
-    readonly horizontal?: boolean;
+    horizontal?: boolean;
   };
   /** Optional rotation angle in degrees */
-  readonly rotation?: number;
+  rotation?: number;
 }
 
 /**
@@ -52,22 +52,22 @@ export interface MediaDataTransformation {
  * Specifies how an image should be transformed when displayed in the document.
  */
 export interface MediaTransformation {
-  readonly offset?: {
-    readonly top?: number;
-    readonly left?: number;
+  offset?: {
+    top?: number;
+    left?: number;
   };
-  readonly width: number;
+  width: number;
   /** Display height in pixels */
-  readonly height: number;
+  height: number;
   /** Optional flip transformations */
-  readonly flip?: {
+  flip?: {
     /** Whether to flip the image vertically */
-    readonly vertical?: boolean;
+    vertical?: boolean;
     /** Whether to flip the image horizontally */
-    readonly horizontal?: boolean;
+    horizontal?: boolean;
   };
   /** Optional rotation angle in degrees */
-  readonly rotation?: number;
+  rotation?: number;
 }
 
 /**

@@ -17,13 +17,13 @@ import { createColorTransforms } from "./color-transform";
  */
 export interface ScRgbColorOptions {
   /** Red percentage (e.g., "50%" or "100%") */
-  readonly r: string;
+  r: string;
   /** Green percentage (e.g., "50%" or "100%") */
-  readonly g: string;
+  g: string;
   /** Blue percentage (e.g., "50%" or "100%") */
-  readonly b: string;
+  b: string;
   /** Optional color transforms */
-  readonly transforms?: ColorTransformOptions;
+  transforms?: ColorTransformOptions;
 }
 
 /**

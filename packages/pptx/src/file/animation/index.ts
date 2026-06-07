@@ -1,5 +1,5 @@
-export { SlideTiming } from "./timing";
 export type {
+  AnimationOptions,
   AnimationType,
   AnimationTrigger,
   AnimationDirection,
@@ -9,5 +9,4 @@ export type {
   MediaAnimationType,
   AnimationCalcMode,
   AnimationValueType,
-  AnimationOptions,
 } from "./types";

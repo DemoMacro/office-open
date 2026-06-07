@@ -3,9 +3,10 @@
 
 import { writeFileSync } from "node:fs";
 
-import { Packer, Presentation, Shape } from "@office-open/pptx";
+import type { PresentationOptions } from "@file/file";
+import { generate } from "@office-open/pptx";
 
-const pres = new Presentation({
+const options: PresentationOptions = {
   includeHandoutMaster: true,
   includeNotesMaster: true,
   handoutMasterOptions: {
@@ -39,14 +40,16 @@ const pres = new Presentation({
   slides: [
     {
       children: [
-        new Shape({
-          x: 50,
-          y: 50,
-          width: 600,
-          height: 60,
-          textBody: { text: "Parameterized Master Demo" },
-          fill: "4472C4",
-        }),
+        {
+          shape: {
+            x: 50,
+            y: 50,
+            width: 600,
+            height: 60,
+            textBody: { text: "Parameterized Master Demo" },
+            fill: "4472C4",
+          },
+        },
       ],
       notes: "This slide has notes that render using the custom notes master style.",
     },
@@ -68,7 +71,7 @@ const pres = new Presentation({
       notes: "Second slide notes.",
     },
   ],
-});
+};
 
-const buffer = await Packer.toBuffer(pres);
+const buffer = await generate(options);
 writeFileSync("My Presentation.pptx", buffer);

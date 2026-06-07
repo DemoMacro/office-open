@@ -17,13 +17,13 @@ import { BuilderElement } from "../../xml-components";
  */
 export interface SourceRectangleOptions {
   /** Left inset percentage (0-100000) */
-  readonly left?: number;
+  left?: number;
   /** Top inset percentage (0-100000) */
-  readonly top?: number;
+  top?: number;
   /** Right inset percentage (0-100000) */
-  readonly right?: number;
+  right?: number;
   /** Bottom inset percentage (0-100000) */
-  readonly bottom?: number;
+  bottom?: number;
 }
 
 /**

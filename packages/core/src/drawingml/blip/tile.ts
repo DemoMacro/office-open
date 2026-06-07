@@ -60,17 +60,17 @@ export const TileAlignment = {
  */
 export interface TileOptions {
   /** Horizontal offset for the tile origin (in EMUs) */
-  readonly tx?: number;
+  tx?: number;
   /** Vertical offset for the tile origin (in EMUs) */
-  readonly ty?: number;
+  ty?: number;
   /** Horizontal scale factor as percentage (e.g., 50 = 50%) */
-  readonly sx?: number;
+  sx?: number;
   /** Vertical scale factor as percentage (e.g., 50 = 50%) */
-  readonly sy?: number;
+  sy?: number;
   /** Flip mode for alternating tiles */
-  readonly flip?: (typeof TileFlipMode)[keyof typeof TileFlipMode];
+  flip?: (typeof TileFlipMode)[keyof typeof TileFlipMode];
   /** Alignment of the first tile within the shape */
-  readonly align?: (typeof TileAlignment)[keyof typeof TileAlignment];
+  align?: (typeof TileAlignment)[keyof typeof TileAlignment];
 }
 
 /**

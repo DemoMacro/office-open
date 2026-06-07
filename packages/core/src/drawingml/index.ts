@@ -546,3 +546,18 @@ export type {
   DiagramExtensionOptions,
   DiagramTextPropsOptions,
 } from "./diagram";
+
+// ── Descriptors (new descriptor-based serialization) ──
+
+export * from "./color/color-descriptors";
+export * from "./fill/fill-descriptors";
+export * from "./outline/outline-descriptors";
+export * from "./effects/effect-descriptors";
+export * from "./locking/locking-descriptors";
+export * from "./geometry/geometry-descriptors";
+export * from "./transform-descriptors";
+export * from "./three-d/three-d-descriptors";
+export * from "./blip/blip-descriptors";
+export * from "./diagram/diagram-descriptors";
+export * from "./wordprocessing-drawing/wordprocessing-drawing-descriptors";
+export * from "./spreadsheet-drawing/spreadsheet-drawing-descriptors";

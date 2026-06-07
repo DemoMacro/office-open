@@ -51,17 +51,17 @@ export const BlendMode = {
  */
 export interface FillOverlayEffectOptions {
   /** Blend mode (required) */
-  readonly blend: (typeof BlendMode)[keyof typeof BlendMode];
+  blend: (typeof BlendMode)[keyof typeof BlendMode];
   /** Solid fill color */
-  readonly solidFill?: SolidFillOptions;
+  solidFill?: SolidFillOptions;
   /** Gradient fill */
-  readonly gradientFill?: GradientFillOptions;
+  gradientFill?: GradientFillOptions;
   /** Pattern fill */
-  readonly patternFill?: PatternFillOptions;
+  patternFill?: PatternFillOptions;
   /** Group fill (inherit from parent) */
-  readonly groupFill?: boolean;
+  groupFill?: boolean;
   /** No fill */
-  readonly noFill?: boolean;
+  noFill?: boolean;
 }
 
 /**

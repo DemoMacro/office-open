@@ -24,15 +24,15 @@ import type { TileOptions } from "./tile";
  */
 export interface BlipFillOptions {
   /** DPI of the image */
-  readonly dpi?: number;
+  dpi?: number;
   /** Whether the fill rotates with the shape */
-  readonly rotWithShape?: boolean;
+  rotWithShape?: boolean;
   /** Image adjustment effects (brightness, contrast, grayscale, etc.) */
-  readonly blipEffects?: BlipEffectsOptions;
+  blipEffects?: BlipEffectsOptions;
   /** Source rectangle for cropping */
-  readonly srcRect?: SourceRectangleOptions;
+  srcRect?: SourceRectangleOptions;
   /** Tile fill mode (if omitted, defaults to stretch) */
-  readonly tile?: TileOptions;
+  tile?: TileOptions;
 }
 
 /**

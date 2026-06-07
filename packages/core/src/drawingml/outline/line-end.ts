@@ -109,11 +109,11 @@ export const LineEndLength = {
  */
 export interface LineEndOptions {
   /** Arrow/head type */
-  readonly type: (typeof LineEndType)[keyof typeof LineEndType];
+  type: (typeof LineEndType)[keyof typeof LineEndType];
   /** Arrow width */
-  readonly width?: (typeof LineEndWidth)[keyof typeof LineEndWidth];
+  width?: (typeof LineEndWidth)[keyof typeof LineEndWidth];
   /** Arrow length */
-  readonly length?: (typeof LineEndLength)[keyof typeof LineEndLength];
+  length?: (typeof LineEndLength)[keyof typeof LineEndLength];
 }
 
 /**

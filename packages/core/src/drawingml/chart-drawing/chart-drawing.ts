@@ -97,10 +97,7 @@ export const createCdrExt = (options: { readonly cx: number; readonly cy: number
  * <xsd:element name="cNvPr" type="a:CT_NonVisualDrawingProps"/>
  * ```
  */
-export const createCdrCNvPr = (options: {
-  readonly id?: number;
-  readonly name?: string;
-}): XmlComponent =>
+export const createCdrCNvPr = (options: { id?: number; name?: string }): XmlComponent =>
   new BuilderElement({
     attributes: {
       ...(options.id !== undefined ? { id: { key: "id", value: options.id } } : {}),

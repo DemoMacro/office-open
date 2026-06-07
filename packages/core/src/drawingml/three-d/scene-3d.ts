@@ -29,11 +29,11 @@ import type { XmlComponent } from "../../xml-components";
  */
 export interface SphereCoords {
   /** Latitude angle (0 to 21600000, in 1/60000 degree units) */
-  readonly lat: number;
+  lat: number;
   /** Longitude angle (0 to 21600000) */
-  readonly lon: number;
+  lon: number;
   /** Revolution angle (0 to 21600000) */
-  readonly rev: number;
+  rev: number;
 }
 
 const createSphereCoords = (coords: SphereCoords): XmlComponent =>
@@ -67,13 +67,13 @@ const createSphereCoords = (coords: SphereCoords): XmlComponent =>
  */
 export interface CameraOptions {
   /** Preset camera type (e.g., "perspectiveFront", "isometricTopUp") */
-  readonly preset: string;
+  preset: string;
   /** Field of view angle (0 to 10800000, in 1/60000 degree units, max 180°) */
-  readonly fov?: number;
+  fov?: number;
   /** Zoom percentage (e.g., "100%") */
-  readonly zoom?: string;
+  zoom?: string;
   /** Camera rotation */
-  readonly rotation?: SphereCoords;
+  rotation?: SphereCoords;
 }
 
 const createCamera = (options: CameraOptions): XmlComponent => {
@@ -115,11 +115,11 @@ const createCamera = (options: CameraOptions): XmlComponent => {
  */
 export interface LightRigOptions {
   /** Light rig type (e.g., "threePt", "balanced", "soft") */
-  readonly rig: string;
+  rig: string;
   /** Light direction (e.g., "tl", "t", "tr", "l", "r", "bl", "b", "br") */
-  readonly direction: string;
+  direction: string;
   /** Light rig rotation */
-  readonly rotation?: SphereCoords;
+  rotation?: SphereCoords;
 }
 
 const createLightRig = (options: LightRigOptions): XmlComponent => {
@@ -144,18 +144,18 @@ const createLightRig = (options: LightRigOptions): XmlComponent => {
  * 3D point (CT_Point3D).
  */
 export interface Point3D {
-  readonly x: number;
-  readonly y: number;
-  readonly z: number;
+  x: number;
+  y: number;
+  z: number;
 }
 
 /**
  * 3D vector (CT_Vector3D).
  */
 export interface Vector3D {
-  readonly dx: number;
-  readonly dy: number;
-  readonly dz: number;
+  dx: number;
+  dy: number;
+  dz: number;
 }
 
 /**
@@ -176,11 +176,11 @@ export interface Vector3D {
  */
 export interface BackdropOptions {
   /** Anchor point */
-  readonly anchor: Point3D;
+  anchor: Point3D;
   /** Normal vector */
-  readonly normal: Vector3D;
+  normal: Vector3D;
   /** Up vector */
-  readonly up: Vector3D;
+  up: Vector3D;
 }
 
 const createPoint3D = (name: string, point: Point3D): XmlComponent =>
@@ -241,11 +241,11 @@ const createBackdrop = (options: BackdropOptions): XmlComponent =>
  */
 export interface Scene3DOptions {
   /** Camera settings (required) */
-  readonly camera: CameraOptions;
+  camera: CameraOptions;
   /** Light rig settings (required) */
-  readonly lightRig: LightRigOptions;
+  lightRig: LightRigOptions;
   /** Backdrop settings (optional) */
-  readonly backdrop?: BackdropOptions;
+  backdrop?: BackdropOptions;
 }
 
 /**

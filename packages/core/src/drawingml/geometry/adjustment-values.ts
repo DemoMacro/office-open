@@ -35,9 +35,9 @@ import type { XmlComponent } from "../../xml-components";
  */
 export interface GeometryGuide {
   /** Guide name (identifier) */
-  readonly name: string;
+  name: string;
   /** Guide formula (e.g., "val 16667") */
-  readonly formula: string;
+  formula: string;
 }
 
 /**

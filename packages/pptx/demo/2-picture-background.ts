@@ -1,39 +1,44 @@
 import * as fs from "fs";
 
-import { Presentation, Packer, Shape } from "@office-open/pptx";
+import type { PresentationOptions } from "@file/file";
+import { generate } from "@office-open/pptx";
 
-const pres = new Presentation({
+const options: PresentationOptions = {
   title: "Phase 2 Demo",
   creator: "Demo",
   slides: [
     {
       background: { fill: "F2F2F2" },
       children: [
-        new Shape({
-          x: 50,
-          y: 50,
-          width: 400,
-          height: 100,
-          textBody: { text: "With Outline" },
-          geometry: "roundRect",
-          fill: "FFFFFF",
-          outline: { width: 25400, color: "4472C4", dashStyle: "dash" },
-        }),
-        new Shape({
-          x: 500,
-          y: 50,
-          width: 400,
-          height: 100,
-          textBody: { text: "Gradient Fill" },
-          fill: {
-            type: "gradient",
-            angle: 0,
-            stops: [
-              { position: 0, color: "4472C4" },
-              { position: 100, color: "ED7D31" },
-            ],
+        {
+          shape: {
+            x: 50,
+            y: 50,
+            width: 400,
+            height: 100,
+            textBody: { text: "With Outline" },
+            geometry: "roundRect",
+            fill: "FFFFFF",
+            outline: { width: 25400, color: "4472C4", dashStyle: "dash" },
           },
-        }),
+        },
+        {
+          shape: {
+            x: 500,
+            y: 50,
+            width: 400,
+            height: 100,
+            textBody: { text: "Gradient Fill" },
+            fill: {
+              type: "gradient",
+              angle: 0,
+              stops: [
+                { position: 0, color: "4472C4" },
+                { position: 100, color: "ED7D31" },
+              ],
+            },
+          },
+        },
       ],
     },
     {
@@ -48,15 +53,17 @@ const pres = new Presentation({
         },
       },
       children: [
-        new Shape({
-          x: 100,
-          y: 200,
-          width: 300,
-          height: 200,
-          textBody: { text: "On Gradient BG" },
-          fill: "FFFFFF",
-          outline: { width: 12700, color: "FFC000" },
-        }),
+        {
+          shape: {
+            x: 100,
+            y: 200,
+            width: 300,
+            height: 200,
+            textBody: { text: "On Gradient BG" },
+            fill: "FFFFFF",
+            outline: { width: 12700, color: "FFC000" },
+          },
+        },
       ],
     },
     {
@@ -73,14 +80,16 @@ const pres = new Presentation({
         },
       },
       children: [
-        new Shape({
-          x: 100,
-          y: 100,
-          width: 500,
-          height: 80,
-          textBody: { text: "Background with Shadow Effect" },
-          fill: "4472C4",
-        }),
+        {
+          shape: {
+            x: 100,
+            y: 100,
+            width: 500,
+            height: 80,
+            textBody: { text: "Background with Shadow Effect" },
+            fill: "4472C4",
+          },
+        },
       ],
     },
     {
@@ -96,18 +105,20 @@ const pres = new Presentation({
         shadeToTitle: true,
       },
       children: [
-        new Shape({
-          x: 100,
-          y: 100,
-          width: 500,
-          height: 80,
-          textBody: { text: "Background with shadeToTitle" },
-          fill: "FFFFFF",
-        }),
+        {
+          shape: {
+            x: 100,
+            y: 100,
+            width: 500,
+            height: 80,
+            textBody: { text: "Background with shadeToTitle" },
+            fill: "FFFFFF",
+          },
+        },
       ],
     },
   ],
-});
+};
 
-const buffer = await Packer.toBuffer(pres);
+const buffer = await generate(options);
 fs.writeFileSync("My Presentation.pptx", buffer);

@@ -2,23 +2,26 @@
 
 import { writeFileSync } from "node:fs";
 
-import { Packer, Presentation, Shape } from "@office-open/pptx";
+import type { PresentationOptions } from "@file/file";
+import { generate } from "@office-open/pptx";
 
 // PPTX: OLE Object on a slide
 // Note: This generates the XML structure; a real OLE embed would need
 // actual OLE binary data registered via relationships.
-const pres = new Presentation({
+const options: PresentationOptions = {
   slides: [
     {
       children: [
-        new Shape({
-          x: 50,
-          y: 20,
-          width: 600,
-          height: 40,
-          textBody: { text: "OLE Object Demo" },
-          fill: "4472C4",
-        }),
+        {
+          shape: {
+            x: 50,
+            y: 20,
+            width: 600,
+            height: 40,
+            textBody: { text: "OLE Object Demo" },
+            fill: "4472C4",
+          },
+        },
         {
           ole: {
             x: 100,
@@ -37,7 +40,7 @@ const pres = new Presentation({
       ],
     },
   ],
-});
+};
 
-const buffer = await Packer.toBuffer(pres);
+const buffer = await generate(options);
 writeFileSync("My Presentation.pptx", buffer);

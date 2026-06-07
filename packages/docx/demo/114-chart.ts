@@ -20,13 +20,11 @@ const doc = new Document({
           children: [
             new ChartRun({
               type: "column",
-              data: {
-                categories: ["Q1", "Q2", "Q3", "Q4"],
-                series: [
-                  { name: "2024", values: [120, 150, 180, 200] },
-                  { name: "2025", values: [140, 170, 210, 250] },
-                ],
-              },
+              categories: ["Q1", "Q2", "Q3", "Q4"],
+              series: [
+                { name: "2024", values: [120, 150, 180, 200] },
+                { name: "2025", values: [140, 170, 210, 250] },
+              ],
               title: "Quarterly Revenue",
               transformation: { width: 500, height: 300 },
             }),
@@ -42,10 +40,8 @@ const doc = new Document({
           children: [
             new ChartRun({
               type: "pie",
-              data: {
-                categories: ["Chrome", "Safari", "Firefox", "Edge", "Other"],
-                series: [{ name: "Browser", values: [65, 18, 3, 5, 9] }],
-              },
+              categories: ["Chrome", "Safari", "Firefox", "Edge", "Other"],
+              series: [{ name: "Browser", values: [65, 18, 3, 5, 9] }],
               title: "Market Share",
               transformation: { width: 400, height: 300 },
             }),
@@ -61,13 +57,11 @@ const doc = new Document({
           children: [
             new ChartRun({
               type: "line",
-              data: {
-                categories: ["Jan", "Feb", "Mar", "Apr", "May"],
-                series: [
-                  { name: "2024", values: [10, 15, 13, 20, 25] },
-                  { name: "2025", values: [12, 18, 16, 22, 28] },
-                ],
-              },
+              categories: ["Jan", "Feb", "Mar", "Apr", "May"],
+              series: [
+                { name: "2024", values: [10, 15, 13, 20, 25] },
+                { name: "2025", values: [12, 18, 16, 22, 28] },
+              ],
               title: "Monthly Revenue",
               transformation: { width: 500, height: 300 },
               style: 2,
@@ -84,13 +78,11 @@ const doc = new Document({
           children: [
             new ChartRun({
               type: "area",
-              data: {
-                categories: ["Q1", "Q2", "Q3", "Q4"],
-                series: [
-                  { name: "2024", values: [100, 200, 300, 400] },
-                  { name: "2025", values: [120, 220, 350, 500] },
-                ],
-              },
+              categories: ["Q1", "Q2", "Q3", "Q4"],
+              series: [
+                { name: "2024", values: [100, 200, 300, 400] },
+                { name: "2025", values: [120, 220, 350, 500] },
+              ],
               transformation: { width: 500, height: 300 },
             }),
           ],
@@ -105,10 +97,8 @@ const doc = new Document({
           children: [
             new ChartRun({
               type: "scatter",
-              data: {
-                categories: ["A", "B", "C", "D"],
-                series: [{ name: "Data", values: [160, 175, 155, 170] }],
-              },
+              categories: ["A", "B", "C", "D"],
+              series: [{ name: "Data", values: [160, 175, 155, 170] }],
               title: "Height vs Weight",
               transformation: { width: 500, height: 300 },
             }),
@@ -124,10 +114,8 @@ const doc = new Document({
           children: [
             new ChartRun({
               type: "doughnut",
-              data: {
-                categories: ["North", "South", "East", "West"],
-                series: [{ name: "Revenue", values: [35, 25, 22, 18] }],
-              },
+              categories: ["North", "South", "East", "West"],
+              series: [{ name: "Revenue", values: [35, 25, 22, 18] }],
               title: "Revenue by Region",
               transformation: { width: 400, height: 300 },
             }),
@@ -143,13 +131,11 @@ const doc = new Document({
           children: [
             new ChartRun({
               type: "radar",
-              data: {
-                categories: ["Speed", "Strength", "Agility", "Endurance", "Strategy"],
-                series: [
-                  { name: "Team A", values: [85, 70, 90, 60, 80] },
-                  { name: "Team B", values: [70, 90, 65, 85, 75] },
-                ],
-              },
+              categories: ["Speed", "Strength", "Agility", "Endurance", "Strategy"],
+              series: [
+                { name: "Team A", values: [85, 70, 90, 60, 80] },
+                { name: "Team B", values: [70, 90, 65, 85, 75] },
+              ],
               title: "Team Skills",
               transformation: { width: 400, height: 300 },
             }),
@@ -165,14 +151,12 @@ const doc = new Document({
           children: [
             new ChartRun({
               type: "stock",
-              data: {
-                categories: ["Mon", "Tue", "Wed", "Thu", "Fri"],
-                series: [
-                  { name: "High", values: [105, 108, 112, 110, 115] },
-                  { name: "Low", values: [98, 103, 106, 105, 110] },
-                  { name: "Close", values: [103, 106, 110, 108, 113] },
-                ],
-              },
+              categories: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+              series: [
+                { name: "High", values: [105, 108, 112, 110, 115] },
+                { name: "Low", values: [98, 103, 106, 105, 110] },
+                { name: "Close", values: [103, 106, 110, 108, 113] },
+              ],
               title: "Daily Stock",
               transformation: { width: 500, height: 300 },
             }),
@@ -188,13 +172,11 @@ const doc = new Document({
           children: [
             new ChartRun({
               type: "surface",
-              data: {
-                categories: ["Jan", "Feb", "Mar", "Apr", "May"],
-                series: [
-                  { name: "North", values: [5, 8, 15, 20, 25] },
-                  { name: "South", values: [20, 22, 25, 30, 35] },
-                ],
-              },
+              categories: ["Jan", "Feb", "Mar", "Apr", "May"],
+              series: [
+                { name: "North", values: [5, 8, 15, 20, 25] },
+                { name: "South", values: [20, 22, 25, 30, 35] },
+              ],
               title: "Temperature Surface",
               transformation: { width: 500, height: 300 },
             }),
@@ -211,13 +193,11 @@ const doc = new Document({
             new ChartRun({
               type: "column",
               threeD: true,
-              data: {
-                categories: ["Q1", "Q2", "Q3", "Q4"],
-                series: [
-                  { name: "2024", values: [120, 150, 180, 200] },
-                  { name: "2025", values: [140, 170, 210, 250] },
-                ],
-              },
+              categories: ["Q1", "Q2", "Q3", "Q4"],
+              series: [
+                { name: "2024", values: [120, 150, 180, 200] },
+                { name: "2025", values: [140, 170, 210, 250] },
+              ],
               title: "Quarterly Revenue (3D)",
               transformation: { width: 500, height: 300 },
               style: 2,
@@ -235,10 +215,8 @@ const doc = new Document({
             new ChartRun({
               type: "pie",
               threeD: true,
-              data: {
-                categories: ["Chrome", "Safari", "Firefox", "Edge", "Other"],
-                series: [{ name: "Browser", values: [65, 18, 3, 5, 9] }],
-              },
+              categories: ["Chrome", "Safari", "Firefox", "Edge", "Other"],
+              series: [{ name: "Browser", values: [65, 18, 3, 5, 9] }],
               title: "Market Share (3D)",
               transformation: { width: 400, height: 300 },
             }),

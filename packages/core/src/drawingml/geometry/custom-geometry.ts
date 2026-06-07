@@ -70,9 +70,9 @@ export const PathFillMode = {
  */
 export interface AdjPoint {
   /** X coordinate (absolute value or guide name) */
-  readonly x: string;
+  x: string;
   /** Y coordinate (absolute value or guide name) */
-  readonly y: string;
+  y: string;
 }
 
 const createAdjPoint = (name: string, point: AdjPoint): XmlComponent =>
@@ -93,40 +93,40 @@ const createAdjPoint = (name: string, point: AdjPoint): XmlComponent =>
 
 /** Move-to path command (CT_Path2DMoveTo). */
 export interface PathMoveTo {
-  readonly command: "moveTo";
-  readonly point: AdjPoint;
+  command: "moveTo";
+  point: AdjPoint;
 }
 
 /** Line-to path command (CT_Path2DLineTo). */
 export interface PathLineTo {
-  readonly command: "lineTo";
-  readonly point: AdjPoint;
+  command: "lineTo";
+  point: AdjPoint;
 }
 
 /** Arc-to path command (CT_Path2DArcTo). */
 export interface PathArcTo {
-  readonly command: "arcTo";
-  readonly widthRadius: string;
-  readonly heightRadius: string;
-  readonly startAngle: string;
-  readonly sweepAngle: string;
+  command: "arcTo";
+  widthRadius: string;
+  heightRadius: string;
+  startAngle: string;
+  sweepAngle: string;
 }
 
 /** Quadratic Bezier-to path command (CT_Path2DQuadBezierTo). */
 export interface PathQuadBezTo {
-  readonly command: "quadBezTo";
-  readonly points: readonly [AdjPoint, AdjPoint];
+  command: "quadBezTo";
+  points: readonly [AdjPoint, AdjPoint];
 }
 
 /** Cubic Bezier-to path command (CT_Path2DCubicBezierTo). */
 export interface PathCubicBezTo {
-  readonly command: "cubicBezTo";
-  readonly points: readonly [AdjPoint, AdjPoint, AdjPoint];
+  command: "cubicBezTo";
+  points: readonly [AdjPoint, AdjPoint, AdjPoint];
 }
 
 /** Close path command (CT_Path2DClose). */
 export interface PathClose {
-  readonly command: "close";
+  command: "close";
 }
 
 /** A path command within a custom geometry path. */
@@ -146,10 +146,10 @@ const createPathCommand = (cmd: PathCommand): XmlComponent => {
       return createAdjPoint("a:lnTo", cmd.point);
     case "arcTo":
       return new BuilderElement<{
-        readonly wR: string;
-        readonly hR: string;
-        readonly stAng: string;
-        readonly swAng: string;
+        wR: string;
+        hR: string;
+        stAng: string;
+        swAng: string;
       }>({
         name: "a:arcTo",
         attributes: {
@@ -218,17 +218,17 @@ const createPathCommand = (cmd: PathCommand): XmlComponent => {
  */
 export interface PathOptions {
   /** Path width (coordinate value, default 0 = use shape width) */
-  readonly w?: number;
+  w?: number;
   /** Path height (coordinate value, default 0 = use shape height) */
-  readonly h?: number;
+  h?: number;
   /** Fill mode for this path */
-  readonly fill?: (typeof PathFillMode)[keyof typeof PathFillMode];
+  fill?: (typeof PathFillMode)[keyof typeof PathFillMode];
   /** Whether to stroke the path */
-  readonly stroke?: boolean;
+  stroke?: boolean;
   /** Whether extrusion is allowed */
-  readonly extrusionOk?: boolean;
+  extrusionOk?: boolean;
   /** Path commands (moveTo, lineTo, arcTo, etc.) */
-  readonly commands: readonly PathCommand[];
+  commands: readonly PathCommand[];
 }
 
 const createPath = (options: PathOptions): XmlComponent => {
@@ -255,8 +255,8 @@ const createPath = (options: PathOptions): XmlComponent => {
  * A position reference for adjust handles and connection sites.
  */
 export interface AdjustHandlePosition {
-  readonly x: string;
-  readonly y: string;
+  x: string;
+  y: string;
 }
 
 /**
@@ -265,14 +265,14 @@ export interface AdjustHandlePosition {
  * Allows the user to drag a handle in X/Y directions.
  */
 export interface XYAdjustHandle {
-  readonly type: "xy";
-  readonly guideRefX?: string;
-  readonly minX?: string;
-  readonly maxX?: string;
-  readonly guideRefY?: string;
-  readonly minY?: string;
-  readonly maxY?: string;
-  readonly position: AdjustHandlePosition;
+  type: "xy";
+  guideRefX?: string;
+  minX?: string;
+  maxX?: string;
+  guideRefY?: string;
+  minY?: string;
+  maxY?: string;
+  position: AdjustHandlePosition;
 }
 
 /**
@@ -281,14 +281,14 @@ export interface XYAdjustHandle {
  * Allows the user to drag a handle in radius/angle directions.
  */
 export interface PolarAdjustHandle {
-  readonly type: "polar";
-  readonly guideRefRadius?: string;
-  readonly minRadius?: string;
-  readonly maxRadius?: string;
-  readonly guideRefAngle?: string;
-  readonly minAngle?: string;
-  readonly maxAngle?: string;
-  readonly position: AdjustHandlePosition;
+  type: "polar";
+  guideRefRadius?: string;
+  minRadius?: string;
+  maxRadius?: string;
+  guideRefAngle?: string;
+  minAngle?: string;
+  maxAngle?: string;
+  position: AdjustHandlePosition;
 }
 
 /** An adjust handle (XY or Polar). */
@@ -346,9 +346,9 @@ const createPolarAdjustHandle = (handle: PolarAdjustHandle): XmlComponent => {
  */
 export interface ConnectionSite {
   /** Angle (absolute value or guide name) */
-  readonly angle: string;
+  angle: string;
   /** Position */
-  readonly position: AdjustHandlePosition;
+  position: AdjustHandlePosition;
 }
 
 const createConnectionSite = (site: ConnectionSite): XmlComponent =>
@@ -367,18 +367,18 @@ const createConnectionSite = (site: ConnectionSite): XmlComponent =>
  * Coordinates can be absolute values or references to geometry guide names.
  */
 export interface GeomRect {
-  readonly left: string;
-  readonly top: string;
-  readonly right: string;
-  readonly bottom: string;
+  left: string;
+  top: string;
+  right: string;
+  bottom: string;
 }
 
 const createGeomRect = (rect: GeomRect): XmlComponent =>
   new BuilderElement<{
-    readonly l: string;
-    readonly t: string;
-    readonly r: string;
-    readonly b: string;
+    l: string;
+    t: string;
+    r: string;
+    b: string;
   }>({
     name: "a:rect",
     attributes: {
@@ -427,17 +427,17 @@ const createGeomRect = (rect: GeomRect): XmlComponent =>
  */
 export interface CustomGeometryOptions {
   /** Adjustment value guides (a:avLst) */
-  readonly adjustmentValues?: readonly GeometryGuide[];
+  adjustmentValues?: readonly GeometryGuide[];
   /** Geometry guide formulas (a:gdLst) */
-  readonly guides?: readonly GeometryGuide[];
+  guides?: readonly GeometryGuide[];
   /** Adjust handles (a:ahLst) */
-  readonly adjustHandles?: readonly AdjustHandle[];
+  adjustHandles?: readonly AdjustHandle[];
   /** Connection sites (a:cxnLst) */
-  readonly connectionSites?: readonly ConnectionSite[];
+  connectionSites?: readonly ConnectionSite[];
   /** Text insertion rectangle (a:rect) */
-  readonly textRect?: GeomRect;
+  textRect?: GeomRect;
   /** Path definitions (a:pathLst) — required */
-  readonly pathList: readonly PathOptions[];
+  pathList: readonly PathOptions[];
 }
 
 /**

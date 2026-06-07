@@ -26,9 +26,9 @@ import { createSoftEdgeEffect } from "./soft-edge";
  */
 export interface BlurEffectOptions {
   /** Blur radius in EMUs */
-  readonly radius?: number;
+  radius?: number;
   /** Whether to grow the shape boundary */
-  readonly grow?: boolean;
+  grow?: boolean;
 }
 
 /**
@@ -39,21 +39,21 @@ export interface BlurEffectOptions {
  */
 export interface EffectListOptions {
   /** Blur effect */
-  readonly blur?: BlurEffectOptions;
+  blur?: BlurEffectOptions;
   /** Fill overlay effect */
-  readonly fillOverlay?: FillOverlayEffectOptions;
+  fillOverlay?: FillOverlayEffectOptions;
   /** Glow effect */
-  readonly glow?: GlowEffectOptions;
+  glow?: GlowEffectOptions;
   /** Inner shadow effect */
-  readonly innerShadow?: InnerShadowEffectOptions;
+  innerShadow?: InnerShadowEffectOptions;
   /** Outer shadow effect */
-  readonly outerShadow?: OuterShadowEffectOptions;
+  outerShadow?: OuterShadowEffectOptions;
   /** Preset shadow effect */
-  readonly presetShadow?: PresetShadowEffectOptions;
+  presetShadow?: PresetShadowEffectOptions;
   /** Reflection effect (pass object for attributes, or true for defaults) */
-  readonly reflection?: ReflectionEffectOptions | true;
+  reflection?: ReflectionEffectOptions | true;
   /** Soft edge radius in EMUs */
-  readonly softEdge?: number;
+  softEdge?: number;
 }
 
 /**

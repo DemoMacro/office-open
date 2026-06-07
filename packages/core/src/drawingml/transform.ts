@@ -22,13 +22,13 @@ import type { XmlComponent } from "../xml-components";
 // </xsd:complexType>
 
 export interface Transform2DOptions {
-  readonly x?: number;
-  readonly y?: number;
-  readonly width?: number;
-  readonly height?: number;
-  readonly flipHorizontal?: boolean;
-  readonly flipVertical?: boolean;
-  readonly rotation?: number;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  flipHorizontal?: boolean;
+  flipVertical?: boolean;
+  rotation?: number;
 }
 
 // <xsd:complexType name="CT_GroupTransform2D">
@@ -43,10 +43,10 @@ export interface Transform2DOptions {
 // </xsd:complexType>
 
 export interface GroupTransform2DOptions extends Transform2DOptions {
-  readonly childOffsetX?: number;
-  readonly childOffsetY?: number;
-  readonly childExtentWidth?: number;
-  readonly childExtentHeight?: number;
+  childOffsetX?: number;
+  childOffsetY?: number;
+  childExtentWidth?: number;
+  childExtentHeight?: number;
 }
 
 function buildXfrmAttrs(options: Transform2DOptions) {

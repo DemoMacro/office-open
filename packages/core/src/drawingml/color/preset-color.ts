@@ -181,9 +181,9 @@ export const PresetColor = {
  */
 export interface PresetColorOptions {
   /** Preset color value */
-  readonly value: (typeof PresetColor)[keyof typeof PresetColor];
+  value: (typeof PresetColor)[keyof typeof PresetColor];
   /** Optional color transforms */
-  readonly transforms?: ColorTransformOptions;
+  transforms?: ColorTransformOptions;
 }
 
 /**

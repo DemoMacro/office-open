@@ -19,8 +19,8 @@ import { createPatternFill } from "./pattern-fill";
  * Position is 0-100 (percentage), color is a hex string or SolidFillOptions.
  */
 export interface GradientStopOptions {
-  readonly position: number;
-  readonly color: string | SolidFillOptions;
+  position: number;
+  color: string | SolidFillOptions;
 }
 
 /**
@@ -28,28 +28,28 @@ export interface GradientStopOptions {
  */
 export interface BlipFillConfigOptions {
   /** Image data (raw bytes) */
-  readonly data: Uint8Array | ArrayBuffer | Buffer;
+  data: Uint8Array | ArrayBuffer | Buffer;
   /** Image type */
-  readonly imageType: "png" | "jpg" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
+  imageType: "png" | "jpg" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
   /** DPI of the image */
-  readonly dpi?: number;
+  dpi?: number;
   /** Whether the fill rotates with the shape */
-  readonly rotWithShape?: boolean;
+  rotWithShape?: boolean;
   /** Image adjustment effects (brightness, contrast, grayscale, etc.) */
-  readonly blipEffects?: BlipEffectsOptions;
+  blipEffects?: BlipEffectsOptions;
   /** Source rectangle for cropping */
-  readonly srcRect?: SourceRectangleOptions;
+  srcRect?: SourceRectangleOptions;
   /** Tile fill mode (if omitted, defaults to stretch) */
-  readonly tile?: TileOptions;
+  tile?: TileOptions;
 }
 
 /**
  * Media data extracted from a blip fill, for registration with the document's media store.
  */
 export interface BlipFillMediaData {
-  readonly fileName: string;
-  readonly data: Uint8Array;
-  readonly type: string;
+  fileName: string;
+  data: Uint8Array;
+  type: string;
 }
 
 /**
@@ -81,24 +81,24 @@ export interface BlipFillMediaData {
  */
 export type FillOptions =
   | string
-  | { readonly type: "solid"; readonly color: string | SolidFillOptions }
-  | { readonly type: "none" }
+  | { type: "solid"; color: string | SolidFillOptions }
+  | { type: "none" }
   | {
-      readonly type: "gradient";
-      readonly angle?: number;
-      readonly scaled?: boolean;
-      readonly path?: "shape" | "circle" | "rect";
-      readonly stops: readonly GradientStopOptions[];
+      type: "gradient";
+      angle?: number;
+      scaled?: boolean;
+      path?: "shape" | "circle" | "rect";
+      stops: readonly GradientStopOptions[];
     }
-  | { readonly type: "gradient"; readonly options: GradientFillOptions }
-  | ({ readonly type: "blip" } & BlipFillConfigOptions)
+  | { type: "gradient"; options: GradientFillOptions }
+  | ({ type: "blip" } & BlipFillConfigOptions)
   | {
-      readonly type: "pattern";
-      readonly pattern: string;
-      readonly foregroundColor?: string | SolidFillOptions;
-      readonly backgroundColor?: string | SolidFillOptions;
+      type: "pattern";
+      pattern: string;
+      foregroundColor?: string | SolidFillOptions;
+      backgroundColor?: string | SolidFillOptions;
     }
-  | { readonly type: "group" };
+  | { type: "group" };
 
 function normalizeColor(color: string | SolidFillOptions): SolidFillOptions {
   return typeof color === "string" ? { value: color.replace("#", "") } : color;
@@ -167,8 +167,8 @@ export const buildFill = (options: FillOptions): XmlComponent => {
         blipChildren.push(...createBlipEffects(options.blipEffects));
       }
       const blip = new BuilderElement<{
-        readonly embed: string;
-        readonly cstate: string;
+        embed: string;
+        cstate: string;
       }>({
         attributes: {
           cstate: { key: "cstate", value: "none" },

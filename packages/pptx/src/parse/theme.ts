@@ -1,7 +1,7 @@
 import { attr, colorAttr, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
-import type { ColorSchemeOptions, FontSchemeOptions, ThemeOptions } from "../file/theme/theme";
+import type { ColorSchemeOptions, FontSchemeOptions, ThemeOptions } from "../file/theme";
 
 // Mapping: XML element name → ColorSchemeOptions key
 const COLOR_MAP: Record<string, keyof ColorSchemeOptions> = {

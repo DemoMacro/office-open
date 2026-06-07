@@ -8,7 +8,10 @@
       "@export/*": ["../src/export/*"],
       "@file/*": ["../src/file/*"],
       "tests/*": ["../src/tests/*"],
-      "@office-open/docx": ["../src/index.ts"]
+      "@office-open/docx": ["../src/index.ts"],
+      "@office-open/core": ["../../core/src/index.ts"],
+      "@office-open/core/*": ["../../core/src/*/index.ts"],
+      "@office-open/xml": ["../../xml/src/index.ts"]
     }
   },
   "include": ["**/*.ts"]

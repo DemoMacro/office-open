@@ -35,4 +35,15 @@ export abstract class BaseXmlComponent {
   public toXml(_context: Context): string {
     return "";
   }
+
+  /**
+   * Context-free XML serialization.
+   *
+   * For components that do not depend on `Context`, this provides a
+   * clean alternative to `toXml({ stack: [] })`.
+   * The default implementation passes a dummy context.
+   */
+  public serialize(): string {
+    return this.toXml({ stack: [] });
+  }
 }

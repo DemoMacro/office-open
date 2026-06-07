@@ -1,6 +1,3 @@
-import type { Context } from "@file/xml-components";
-import { ImportedXmlComponent } from "@file/xml-components";
-
 type SplitterBarState = "restored" | "maximized" | "minimized";
 
 export interface NormalViewOptions {
@@ -113,7 +110,7 @@ function buildCSldViewPrXml(
   );
 }
 
-function buildViewPropsXml(opts?: ViewPropertiesOptions): string {
+export function buildViewPropsXml(opts?: ViewPropertiesOptions): string {
   const ns =
     'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
     'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
@@ -179,24 +176,4 @@ function buildViewPropsXml(opts?: ViewPropertiesOptions): string {
   parts.push(`<p:gridSpacing cx="${gridCx}" cy="${gridCy}"/>`);
   parts.push("</p:viewPr>");
   return parts.join("");
-}
-
-export class ViewProperties extends ImportedXmlComponent {
-  private static cache = new Map<string, ImportedXmlComponent>();
-  private readonly key: string;
-
-  public constructor(opts?: ViewPropertiesOptions) {
-    super("p:viewPr");
-    this.key = opts ? JSON.stringify(opts) : "";
-    if (!ViewProperties.cache.has(this.key)) {
-      ViewProperties.cache.set(
-        this.key,
-        ImportedXmlComponent.fromXmlString(buildViewPropsXml(opts)),
-      );
-    }
-  }
-
-  public override toXml(context: Context): string {
-    return ViewProperties.cache.get(this.key)!.toXml(context);
-  }
 }

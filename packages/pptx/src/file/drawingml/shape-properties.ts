@@ -1,13 +1,13 @@
 import type { File } from "@file/file";
 import { BaseXmlComponent } from "@file/xml-components";
 import type { Context } from "@file/xml-components";
+import { PresetGeometry } from "@office-open/core/drawingml";
 
 import { createPptxEffectList, buildScene3D, buildShape3D, type EffectsOptions } from "./effects";
 import { buildFill, extractBlipFillMedia } from "./fill";
 import type { FillOptions } from "./fill";
 import { createOutlineCompat } from "./outline";
 import type { OutlineOptions } from "./outline";
-import { PresetGeometry } from "./preset-geometry";
 import { Transform2D } from "./transform-2d";
 
 export interface ConnectionSiteOptions {

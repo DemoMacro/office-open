@@ -45,4 +45,9 @@ export class DefaultTheme extends BaseXmlComponent {
   public override toXml(_context: Context): string {
     return this.xml;
   }
+
+  /** Context-free serialization — returns pre-computed XML string. */
+  public override serialize(): string {
+    return this.xml;
+  }
 }

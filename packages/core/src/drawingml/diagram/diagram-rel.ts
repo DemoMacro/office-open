@@ -13,13 +13,13 @@ import { BuilderElement, type XmlComponent } from "../../xml-components";
 
 export interface DiagramRelIdsOptions {
   /** Relationship to data model part */
-  readonly dm: string;
+  dm: string;
   /** Relationship to layout definition part */
-  readonly lo: string;
+  lo: string;
   /** Relationship to quick style part */
-  readonly qs: string;
+  qs: string;
   /** Relationship to color transform part */
-  readonly cs: string;
+  cs: string;
 }
 
 /**

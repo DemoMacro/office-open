@@ -66,127 +66,127 @@ export const EffectContainerType = {
 /** Alpha bi-level effect — clips alpha to threshold (CT_AlphaBiLevelEffect). */
 export interface AlphaBiLevelEffectOptions {
   /** Alpha threshold (fixed percentage, required) */
-  readonly threshold: number;
+  threshold: number;
 }
 
 /** Alpha inverse effect — inverts alpha, optionally with color (CT_AlphaInverseEffect). */
 export interface AlphaInverseEffectOptions {
   /** Optional color to apply inverse to */
-  readonly color?: SolidFillOptions;
+  color?: SolidFillOptions;
 }
 
 /** Alpha modulate fixed effect (CT_AlphaModulateFixedEffect). */
 export interface AlphaModulateFixedEffectOptions {
   /** Amount percentage (default 100%) */
-  readonly amount?: number;
+  amount?: number;
 }
 
 /** Alpha outset effect (CT_AlphaOutsetEffect). */
 export interface AlphaOutsetEffectOptions {
   /** Outset radius */
-  readonly radius?: number;
+  radius?: number;
 }
 
 /** Alpha replace effect — replaces alpha value (CT_AlphaReplaceEffect). */
 export interface AlphaReplaceEffectOptions {
   /** New alpha value (fixed percentage, required) */
-  readonly alpha: number;
+  alpha: number;
 }
 
 /** Blend effect — blends with nested container (CT_BlendEffect). */
 export interface BlendEffectOptions {
   /** Blend mode (required) */
-  readonly blend: (typeof BlendMode)[keyof typeof BlendMode];
+  blend: (typeof BlendMode)[keyof typeof BlendMode];
   /** Nested effect container */
-  readonly container: EffectDagOptions;
+  container: EffectDagOptions;
 }
 
 /** Color change effect — maps one color to another (CT_ColorChangeEffect). */
 export interface ColorChangeEffectOptions {
   /** Source color to replace */
-  readonly from: SolidFillOptions;
+  from: SolidFillOptions;
   /** Target color */
-  readonly to: SolidFillOptions;
+  to: SolidFillOptions;
   /** Whether to use alpha channel (default true) */
-  readonly useA?: boolean;
+  useA?: boolean;
 }
 
 /** Duotone effect — two-color tone mapping (CT_DuotoneEffect). */
 export interface DuotoneEffectOptions {
   /** First color */
-  readonly color1: SolidFillOptions;
+  color1: SolidFillOptions;
   /** Second color */
-  readonly color2: SolidFillOptions;
+  color2: SolidFillOptions;
 }
 
 /** Fill effect — applies a fill as an effect (CT_FillEffect). */
 export interface FillEffectOptions {
   /** Solid fill */
-  readonly solidFill?: SolidFillOptions;
+  solidFill?: SolidFillOptions;
   /** Gradient fill */
-  readonly gradientFill?: GradientFillOptions;
+  gradientFill?: GradientFillOptions;
   /** Pattern fill */
-  readonly patternFill?: PatternFillOptions;
+  patternFill?: PatternFillOptions;
   /** Group fill (inherit from parent) */
-  readonly groupFill?: boolean;
+  groupFill?: boolean;
   /** No fill */
-  readonly noFill?: boolean;
+  noFill?: boolean;
 }
 
 /** HSL effect — adjusts hue, saturation, luminance (CT_HSLEffect). */
 export interface HSLEffectOptions {
   /** Hue angle in 60,000ths of a degree (default 0) */
-  readonly hue?: number;
+  hue?: number;
   /** Saturation percentage (default 0%) */
-  readonly saturation?: number;
+  saturation?: number;
   /** Luminance percentage (default 0%) */
-  readonly luminance?: number;
+  luminance?: number;
 }
 
 /** Luminance effect — adjusts brightness and contrast (CT_LuminanceEffect). */
 export interface LuminanceEffectOptions {
   /** Brightness percentage (default 0%) */
-  readonly bright?: number;
+  bright?: number;
   /** Contrast percentage (default 0%) */
-  readonly contrast?: number;
+  contrast?: number;
 }
 
 /** Tint effect — applies tint with hue and amount (CT_TintEffect). */
 export interface TintEffectOptions {
   /** Hue angle in 60,000ths of a degree (default 0) */
-  readonly hue?: number;
+  hue?: number;
   /** Tint amount percentage (default 0%) */
-  readonly amount?: number;
+  amount?: number;
 }
 
 /** Relative offset effect (CT_RelativeOffsetEffect). */
 export interface RelativeOffsetEffectOptions {
   /** Horizontal offset percentage (default 0%) */
-  readonly translateX?: number;
+  translateX?: number;
   /** Vertical offset percentage (default 0%) */
-  readonly translateY?: number;
+  translateY?: number;
 }
 
 /** Transform effect — scale, skew, translate (CT_TransformEffect). */
 export interface TransformEffectOptions {
   /** Horizontal scale percentage (default 100%) */
-  readonly scaleX?: number;
+  scaleX?: number;
   /** Vertical scale percentage (default 100%) */
-  readonly scaleY?: number;
+  scaleY?: number;
   /** Horizontal skew angle (default 0) */
-  readonly skewX?: number;
+  skewX?: number;
   /** Vertical skew angle (default 0) */
-  readonly skewY?: number;
+  skewY?: number;
   /** Horizontal translation */
-  readonly translateX?: number;
+  translateX?: number;
   /** Vertical translation */
-  readonly translateY?: number;
+  translateY?: number;
 }
 
 /** Effect reference — references an effect by ID (CT_EffectReference). */
 export interface EffectReferenceOptions {
   /** Reference ID (required) */
-  readonly ref: string;
+  ref: string;
 }
 
 // ─── Effect Container Options ───────────────────────────────────────────────
@@ -207,65 +207,65 @@ export interface EffectReferenceOptions {
  */
 export interface EffectDagOptions {
   /** Container type: "sib" (parallel) or "tree" (sequential) */
-  readonly type?: (typeof EffectContainerType)[keyof typeof EffectContainerType];
+  type?: (typeof EffectContainerType)[keyof typeof EffectContainerType];
   /** Container name */
-  readonly name?: string;
+  name?: string;
 
   // ── Existing effects (also in CT_EffectList) ──
-  readonly blur?: BlurEffectOptions;
-  readonly fillOverlay?: FillOverlayEffectOptions;
-  readonly glow?: GlowEffectOptions;
-  readonly innerShadow?: InnerShadowEffectOptions;
-  readonly outerShadow?: OuterShadowEffectOptions;
-  readonly presetShadow?: PresetShadowEffectOptions;
-  readonly reflection?: ReflectionEffectOptions | true;
-  readonly softEdge?: number;
+  blur?: BlurEffectOptions;
+  fillOverlay?: FillOverlayEffectOptions;
+  glow?: GlowEffectOptions;
+  innerShadow?: InnerShadowEffectOptions;
+  outerShadow?: OuterShadowEffectOptions;
+  presetShadow?: PresetShadowEffectOptions;
+  reflection?: ReflectionEffectOptions | true;
+  softEdge?: number;
 
   // ── New effects for CT_EffectContainer ──
   /** Nested effect containers */
-  readonly containers?: readonly EffectDagOptions[];
+  containers?: readonly EffectDagOptions[];
   /** Effect references */
-  readonly effectRefs?: readonly EffectReferenceOptions[];
+  effectRefs?: readonly EffectReferenceOptions[];
   /** Alpha bi-level effect */
-  readonly alphaBiLevel?: AlphaBiLevelEffectOptions;
+  alphaBiLevel?: AlphaBiLevelEffectOptions;
   /** Alpha ceiling effect (empty element) */
-  readonly alphaCeiling?: boolean;
+  alphaCeiling?: boolean;
   /** Alpha floor effect (empty element) */
-  readonly alphaFloor?: boolean;
+  alphaFloor?: boolean;
   /** Alpha inverse effect */
-  readonly alphaInverse?: AlphaInverseEffectOptions;
+  alphaInverse?: AlphaInverseEffectOptions;
   /** Alpha modulate effect (requires nested container) */
-  readonly alphaModulate?: EffectDagOptions;
+  alphaModulate?: EffectDagOptions;
   /** Alpha modulate fixed effect */
-  readonly alphaModulateFixed?: AlphaModulateFixedEffectOptions;
+  alphaModulateFixed?: AlphaModulateFixedEffectOptions;
   /** Alpha outset effect */
-  readonly alphaOutset?: AlphaOutsetEffectOptions;
+  alphaOutset?: AlphaOutsetEffectOptions;
   /** Alpha replace effect */
-  readonly alphaReplace?: AlphaReplaceEffectOptions;
+  alphaReplace?: AlphaReplaceEffectOptions;
   /** Bi-level effect (threshold) */
-  readonly biLevel?: { readonly threshold: number };
+  biLevel?: { threshold: number };
   /** Blend effect (requires nested container) */
-  readonly blend?: BlendEffectOptions;
+  blend?: BlendEffectOptions;
   /** Color change effect */
-  readonly colorChange?: ColorChangeEffectOptions;
+  colorChange?: ColorChangeEffectOptions;
   /** Color replace effect */
-  readonly colorReplace?: SolidFillOptions;
+  colorReplace?: SolidFillOptions;
   /** Duotone effect */
-  readonly duotone?: DuotoneEffectOptions;
+  duotone?: DuotoneEffectOptions;
   /** Fill effect */
-  readonly fill?: FillEffectOptions;
+  fill?: FillEffectOptions;
   /** Grayscale effect (empty element) */
-  readonly grayscale?: boolean;
+  grayscale?: boolean;
   /** HSL effect */
-  readonly hsl?: HSLEffectOptions;
+  hsl?: HSLEffectOptions;
   /** Luminance effect */
-  readonly luminance?: LuminanceEffectOptions;
+  luminance?: LuminanceEffectOptions;
   /** Tint effect */
-  readonly tint?: TintEffectOptions;
+  tint?: TintEffectOptions;
   /** Relative offset effect */
-  readonly relativeOffset?: RelativeOffsetEffectOptions;
+  relativeOffset?: RelativeOffsetEffectOptions;
   /** Transform effect */
-  readonly transform?: TransformEffectOptions;
+  transform?: TransformEffectOptions;
 }
 
 // ─── Internal Helpers ───────────────────────────────────────────────────────

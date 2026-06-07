@@ -1,12 +1,7 @@
 import * as fs from "fs";
 
-import {
-  Presentation,
-  Packer,
-  parsePresentation,
-  parsePptx,
-  parseArchive,
-} from "@office-open/pptx";
+import type { PresentationOptions } from "@file/file";
+import { generate, parsePresentation, parsePptx, parseArchive } from "@office-open/pptx";
 import type { SlideOptions } from "@office-open/pptx";
 import { findChild, attrNum, xml2js, js2xml } from "@office-open/xml";
 import { strFromU8 } from "fflate";
@@ -544,37 +539,42 @@ const slides: SlideOptions[] = [
       },
       {
         shape: {
+          id: 2,
           x: 100,
           y: 120,
           width: 250,
           height: 100,
           textBody: { text: "Fly In" },
           fill: "4472C4",
-          animation: { type: "fly", class: "entr", direction: "left", duration: 500 },
         },
       },
       {
         shape: {
+          id: 3,
           x: 400,
           y: 120,
           width: 250,
           height: 100,
           textBody: { text: "Appear" },
           fill: "70AD47",
-          animation: { type: "appear", class: "entr", trigger: "afterPrevious" },
         },
       },
       {
         shape: {
+          id: 4,
           x: 250,
           y: 280,
           width: 250,
           height: 100,
           textBody: { text: "Fade Exit" },
           fill: "ED7D31",
-          animation: { type: "fade", class: "exit", duration: 750 },
         },
       },
+    ],
+    animations: [
+      { shapeId: 2, options: { type: "fly", class: "entr", direction: "left", duration: 500 } },
+      { shapeId: 3, options: { type: "appear", class: "entr", trigger: "afterPrevious" } },
+      { shapeId: 4, options: { type: "fade", class: "exit", duration: 750 } },
     ],
   },
 
@@ -999,48 +999,57 @@ const slides: SlideOptions[] = [
       },
       {
         shape: {
+          id: 2,
           x: 50,
           y: 100,
           width: 200,
           height: 100,
           textBody: { text: "Grow" },
           fill: "4472C4",
-          animation: { class: "emph", emphasisType: "growShrink", duration: 800 },
         },
       },
       {
         shape: {
+          id: 3,
           x: 300,
           y: 100,
           width: 200,
           height: 100,
           textBody: { text: "Spin" },
           fill: "70AD47",
-          animation: { class: "emph", emphasisType: "spin", duration: 1000 },
         },
       },
       {
         shape: {
+          id: 4,
           x: 550,
           y: 100,
           width: 200,
           height: 100,
           textBody: { text: "Color" },
           fill: "ED7D31",
-          animation: { class: "emph", emphasisType: "colorChange", color: "FF0000", duration: 800 },
         },
       },
       {
         shape: {
+          id: 5,
           x: 300,
           y: 260,
           width: 200,
           height: 100,
           textBody: { text: "Pulse" },
           fill: "7030A0",
-          animation: { class: "emph", emphasisType: "pulse", duration: 500 },
         },
       },
+    ],
+    animations: [
+      { shapeId: 2, options: { class: "emph", emphasisType: "growShrink", duration: 800 } },
+      { shapeId: 3, options: { class: "emph", emphasisType: "spin", duration: 1000 } },
+      {
+        shapeId: 4,
+        options: { class: "emph", emphasisType: "colorChange", color: "FF0000", duration: 800 },
+      },
+      { shapeId: 5, options: { class: "emph", emphasisType: "pulse", duration: 500 } },
     ],
   },
 
@@ -1266,7 +1275,7 @@ const slides: SlideOptions[] = [
   },
 ];
 
-const pres = new Presentation({
+const options: PresentationOptions = {
   title: "Round-trip Feature Showcase",
   subject: "Comprehensive PPTX round-trip test",
   creator: "Parser Demo",
@@ -1320,9 +1329,9 @@ const pres = new Presentation({
     },
   ],
   slides,
-});
+};
 
-const buffer = await Packer.toBuffer(pres);
+const buffer = await generate(options);
 console.log(`Generated PPTX: ${buffer.length} bytes`);
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1373,8 +1382,7 @@ assert("size is 16:9", parsed.size === "16:9");
 
 console.log("\n--- Round-trip ZIP comparison ---");
 
-const pres2 = new Presentation(parsed);
-const buffer2 = await Packer.toBuffer(pres2);
+const buffer2 = await generate(parsed);
 console.log(`Re-generated PPTX: ${buffer2.length} bytes`);
 
 const ignorePaths = new Set(["docProps/core.xml"]);

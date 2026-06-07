@@ -11,13 +11,20 @@ export {
   type SlideSize,
 } from "./file";
 export type { ViewPropertiesOptions } from "./view-properties";
-export { Presentation } from "./presentation/presentation";
-export type { PresentationOptions as IPresentationXmlOptions } from "./presentation/presentation";
+export type {
+  PresentationOptions as IPresentationXmlOptions,
+  PhotoAlbumOptions,
+  ModifyVerifierOptions,
+  EmbeddedFontOptions,
+  CustomShowOptions,
+  KinsokuOptions,
+  CustomerDataOptions,
+  ViewWrapper,
+} from "./presentation";
 export { Shape, type ShapeOptions } from "./shape/shape";
 export { TextBody, type TextBodyOptions } from "./shape/text-body";
 export { Paragraph, type ParagraphOptions } from "./shape/paragraph/paragraph";
 export { TextRun, type RunOptions } from "./shape/paragraph/run";
-export { Text } from "./shape/paragraph/text";
 export {
   RunProperties,
   UnderlineStyle,
@@ -31,8 +38,6 @@ export {
   type TextAlignment,
   type ParagraphPropertiesOptions,
 } from "./shape/paragraph/paragraph-properties";
-export { EndParagraphRunProperties } from "./shape/paragraph/end-paragraph-run";
-export { Field, SlideNumberField, DateTimeField } from "./shape/paragraph/field";
 
 // DrawingML — re-exports from core
 export {
@@ -82,9 +87,8 @@ export {
 export { createOutlineCompat, type OutlineOptions } from "./drawingml/outline";
 
 // DrawingML — local implementations (pptx-specific)
-export { BlipFill } from "./drawingml/blip-fill";
 export { Transform2D, type ITransform2DOptions } from "./drawingml/transform-2d";
-export { PresetGeometry } from "./drawingml/preset-geometry";
+export { PresetGeometry } from "@office-open/core/drawingml";
 export { ShapeProperties, type ShapePropertiesOptions } from "./drawingml/shape-properties";
 export {
   createPptxEffectList,
@@ -95,75 +99,59 @@ export {
   type ReflectionOptions,
   type SoftEdgeOptions,
 } from "./drawingml/effects";
-export { NonVisualDrawingProperties } from "./drawingml/non-visual-drawing-props";
-export { NonVisualShapeProperties } from "./drawingml/non-visual-shape-props";
-export { NonVisualPictureProperties } from "./drawingml/non-visual-picture-props";
-export { GroupShapeProperties } from "./drawingml/group-shape-properties";
-export { GroupTransform2D, type IGroupTransform2DOptions } from "./drawingml/group-transform-2d";
 
-export { GroupShape, type GroupShapeOptions } from "./shape/group-shape";
-export { LineShape, type LineShapeOptions } from "./shape/line-shape";
-export { ConnectorShape, type ConnectorShapeOptions } from "./shape/line-shape";
+// Shape types (classes stripped, interfaces only)
+export type { GroupShapeOptions } from "./shape/group-shape";
+export type { LineShapeOptions, ConnectorShapeOptions } from "./shape/line-shape";
 export { Media } from "./media/media";
 export { createTransformation, type MediaTransformation } from "./media/media";
 export type { IMediaData, MediaDataTransformation } from "./media/data";
-export {
-  VideoFrame,
-  type VideoFrameOptions,
-  type VideoType,
-  type PosterType,
-} from "./media/video-frame";
-export { AudioFrame, type AudioFrameOptions, type AudioType } from "./media/audio-frame";
-export { CoreProperties, type CorePropertiesOptions } from "./core-properties/properties";
-export { AppProperties } from "./app-properties/app-properties";
-export { ContentTypes } from "./content-types/content-types";
-export { Relationships } from "./relationships/relationships";
-export { type RelationshipType } from "./relationships/relationship/relationship";
-export { Slide } from "./slide/slide";
+export type { VideoFrameOptions, VideoType, PosterType } from "./media/video-frame";
+export type { AudioFrameOptions, AudioType } from "./media/audio-frame";
+export type { CorePropertiesOptions } from "./core-properties";
+export { AppProperties } from "@office-open/core";
+export { ContentTypes } from "./content-types";
+export { Relationships } from "@office-open/core";
+export { type RelationshipType } from "@office-open/core";
 export { type SlideChild } from "./slide/slide-child";
-export { coerceChild } from "./slide/coerce";
-export { ShapeTree } from "./shape-tree/shape-tree";
 export {
   DefaultTheme,
   type ThemeOptions,
   type ColorSchemeOptions,
   type FontSchemeOptions,
-} from "./theme/theme";
+} from "./theme";
 export {
   DefaultSlideMaster,
   type SlideMasterOptions,
   type MasterPlaceholderOptions,
   type MasterPlaceholderPosition,
-} from "./slide-master/slide-master";
-export { DefaultSlideLayout, SlideLayout, type SlideLayoutType } from "./slide-layout/slide-layout";
-export { DefaultNotesMaster } from "./notes-master/notes-master";
-export { DefaultHandoutMaster } from "./handout-master/handout-master";
-export { NotesSlide, type NotesSlideOptions } from "./notes/notes-slide";
-export { HeaderFooter, type SlideHeaderFooterOptions } from "./header-footer/header-footer";
-export { PresentationWrapper, type ViewWrapper } from "./presentation/presentation-wrapper";
-export { Picture, type PictureOptions } from "./picture/picture";
-export { Background, type BackgroundOptions } from "./background/background";
-export { Table, type TableOptions } from "./table/table-frame";
-export { DrawingTable } from "./table/table";
-export { TableRow, type TableRowOptions } from "./table/table-row";
-export { TableCell, type VerticalAlignment, type TableCellOptions } from "./table/table-cell";
-export { TableProperties } from "./table/table-properties";
-export { TableCellProperties, type CellBorderOptions } from "./table/table-cell-properties";
-export { Chart, type ChartOptions } from "./chart/chart-frame";
-export { ChartCollection, type ChartData } from "./chart/chart-collection";
-export { ChartSpace, type ChartSpaceOptions, type ChartSeriesData } from "./chart/chart-space";
-export type { ChartType } from "./chart/chart-types/create-chart-type";
-export { SmartArt, type SmartArtOptions, type TreeNode } from "./smartart";
+} from "./slide-master";
+export { DefaultSlideLayout, SlideLayout, type SlideLayoutType } from "./slide-layout";
+export { DefaultNotesMaster } from "./notes-master";
+export { DefaultHandoutMaster } from "./handout-master";
+export { buildNotesSlideXml, type NotesSlideOptions } from "./notes-slide";
+export type { SlideHeaderFooterOptions } from "./header-footer";
+export type { PictureOptions } from "./picture";
+export { Background, type BackgroundOptions } from "./background";
+export type { TableOptions } from "./table/table-frame";
+export type { TableRowOptions } from "./table/table-row";
+export type { VerticalAlignment, TableCellOptions } from "./table/table-cell";
+export type { CellBorderOptions } from "./table/table-cell-properties";
+export type { ChartOptions } from "./chart-frame";
+export { ChartCollection, type ChartData } from "@office-open/core/chart";
+export { ChartSpace, type ChartSpaceOptions, type ChartSeriesData } from "@office-open/core/chart";
+export type { ChartType } from "@office-open/core/chart";
+export { SmartArtCollection, type SmartArtData } from "@office-open/core/smartart";
+export { createDataModel } from "@office-open/core/smartart";
+export type { SmartArtOptions } from "./smartart";
+export type { TreeNode } from "@office-open/core/smartart";
+export type { LockedCanvasFrameOptions } from "./locked-canvas-frame";
 export {
-  LockedCanvasFrame,
-  type LockedCanvasFrameOptions,
-} from "./locked-canvas/locked-canvas-frame";
-export {
-  Transition,
+  buildTransition,
   type TransitionOptions,
   type TransitionType,
   type TransitionDirection,
-} from "./transition/transition";
+} from "./transition";
 export {
   type AnimationType,
   type AnimationTrigger,

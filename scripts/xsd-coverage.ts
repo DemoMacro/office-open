@@ -350,6 +350,16 @@ function extractUsedNamesFromCode(config: XsdConfig): Set<string> {
             found.add(m[1]);
           }
         }
+
+        // Pattern 4: descriptor builder — element("prefix:name"), .child(k, "prefix:name")
+        // The tag string is a literal "prefix:name" already caught by Pattern 1,
+        // but this also captures tags in builder chain calls where the prefix may
+        // differ from the primary search prefix (cross-namespace references).
+        const builderRe =
+          /(?:element|\.child|\.children)\([^)]*"([a-z]+:)?([a-zA-Z][a-zA-Z0-9]+)"/g;
+        while ((m = builderRe.exec(content)) !== null) {
+          found.add(m[2]);
+        }
       } else {
         // bare mode (xlsx/sml): match "word" in string literals and <word in XML strings
         // SML has many single-char elements (b, c, d, e, f, i, k, m, n, p, r, s, t, u, v, x)
@@ -368,6 +378,39 @@ function extractUsedNamesFromCode(config: XsdConfig): Set<string> {
     }
   }
 
+  return found;
+}
+
+/**
+ * Cross-namespace fallback: some elements defined in one XSD namespace (e.g. a:cNvPicPr)
+ * appear in code under a different prefix (e.g. p:cNvPicPr, pic:cNvPicPr, xdr:cNvPicPr).
+ *
+ * This function checks if a bare element name appears under ANY namespace prefix
+ * in the source directories, and returns the subset of names that are found.
+ */
+function findCrossNamespace(
+  bareNames: readonly string[],
+  searchDirs: readonly string[],
+): Set<string> {
+  if (bareNames.length === 0) return new Set();
+  const found = new Set<string>();
+  const nameSet = new Set(bareNames);
+  // Match any "prefix:name" where name is in our target set
+  const re = /[a-z]+:([a-zA-Z][a-zA-Z0-9]+)/g;
+
+  for (const dir of searchDirs) {
+    const absDir = path.resolve(ROOT_DIR, dir);
+    const files = collectTsFiles(absDir);
+    for (const file of files) {
+      const content = readFileCached(file);
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(content)) !== null) {
+        if (nameSet.has(m[1])) {
+          found.add(m[1]);
+        }
+      }
+    }
+  }
   return found;
 }
 
@@ -407,7 +450,16 @@ function analyzeXsd(config: XsdConfig): CoverageResult {
 
   // Elements: a name is "implemented" if it appears anywhere in source
   const elementNames = [...elements].sort();
-  const missingElements = elementNames.filter((e) => !usedNames.has(e));
+  let missingElements = elementNames.filter((e) => !usedNames.has(e));
+
+  // Cross-namespace fallback: check if missing elements appear under a different prefix
+  // (e.g. a:cNvPicPr → p:cNvPicPr, pic:cNvPicPr)
+  if (missingElements.length > 0 && config.searchMode === "prefix") {
+    const crossNs = findCrossNamespace(missingElements, config.searchDirs);
+    if (crossNs.size > 0) {
+      missingElements = missingElements.filter((e) => !crossNs.has(e));
+    }
+  }
 
   // Attributes: search for bare attribute names using diverse code patterns.
   // Unlike elements (which consistently appear as "prefix:name" strings),
@@ -464,6 +516,12 @@ function analyzeXsd(config: XsdConfig): CoverageResult {
         while ((m = prefixAttrRe.exec(content)) !== null) {
           usedAttrNames.add(m[1]);
         }
+      }
+
+      // Descriptor builder .attr(key, "xmlName") — second arg is the XML attribute name
+      const builderAttrRe = /\.attr\([^,]+,\s*["']([a-zA-Z][a-zA-Z0-9]+)["']/g;
+      while ((m = builderAttrRe.exec(content)) !== null) {
+        usedAttrNames.add(m[1]);
       }
     }
   }

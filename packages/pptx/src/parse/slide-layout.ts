@@ -1,7 +1,7 @@
 import { attr, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
-import type { SlideLayoutType } from "../file/slide-layout/slide-layout";
+import type { SlideLayoutType } from "../file/slide-layout";
 
 // Display name → SlideLayoutType mapping (from LAYOUT_DEFS in slide-layout.ts)
 const NAME_TO_TYPE: Record<string, SlideLayoutType> = {

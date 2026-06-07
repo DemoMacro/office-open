@@ -32,11 +32,11 @@ export const BevelPresetType = {
  */
 export interface BevelOptions {
   /** Bevel width in EMUs (default 76200) */
-  readonly w?: number;
+  w?: number;
   /** Bevel height in EMUs (default 76200) */
-  readonly h?: number;
+  h?: number;
   /** Bevel preset type */
-  readonly prst?: (typeof BevelPresetType)[keyof typeof BevelPresetType];
+  prst?: (typeof BevelPresetType)[keyof typeof BevelPresetType];
 }
 
 /**

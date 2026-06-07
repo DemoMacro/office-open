@@ -1,9 +1,10 @@
 import { writeFileSync } from "node:fs";
 
-import { patchPresentation, PatchType, Presentation, Packer, TextRun } from "@office-open/pptx";
+import type { PresentationOptions } from "@file/file";
+import { generate, patchPresentation, PatchType, TextRun } from "@office-open/pptx";
 
 // Step 1: Create a template PPTX with placeholders
-const templatePres = new Presentation({
+const options: PresentationOptions = {
   title: "Patch Demo",
   creator: "Demo",
   slides: [
@@ -27,9 +28,9 @@ const templatePres = new Presentation({
       ],
     },
   ],
-});
+};
 
-const templateBuffer = await Packer.toBuffer(templatePres);
+const templateBuffer = await generate(options);
 
 // Step 2: Patch the template — replace {{name}} with bold "World"
 const patchedBuffer = await patchPresentation({

@@ -50,6 +50,10 @@
       "types": "./dist/drawingml/index.d.mts",
       "import": "./dist/drawingml/index.mjs"
     },
+    "./descriptor": {
+      "types": "./dist/descriptor/index.d.mts",
+      "import": "./dist/descriptor/index.mjs"
+    },
     "./patch": {
       "types": "./dist/patch/index.d.mts",
       "import": "./dist/patch/index.mjs"

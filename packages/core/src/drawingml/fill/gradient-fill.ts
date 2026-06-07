@@ -17,9 +17,9 @@ import { createColorElement } from "../color/solid-fill";
  */
 export interface GradientStop {
   /** Position of the color stop (0-100000) */
-  readonly position: number;
+  position: number;
   /** Color at this stop */
-  readonly color: SolidFillOptions;
+  color: SolidFillOptions;
 }
 
 /**
@@ -65,9 +65,9 @@ export const TileFlipMode = {
  */
 export interface LinearShadeOptions {
   /** Angle in 60,000ths of a degree (e.g., 5400000 = 90°) */
-  readonly angle?: number;
+  angle?: number;
   /** Whether the angle scales with the shape */
-  readonly scaled?: boolean;
+  scaled?: boolean;
 }
 
 /**
@@ -85,13 +85,13 @@ export interface LinearShadeOptions {
  */
 export interface RelativeRect {
   /** Left offset percentage (e.g., "0%") */
-  readonly left?: string;
+  left?: string;
   /** Top offset percentage (e.g., "0%") */
-  readonly top?: string;
+  top?: string;
   /** Right offset percentage (e.g., "0%") */
-  readonly right?: string;
+  right?: string;
   /** Bottom offset percentage (e.g., "0%") */
-  readonly bottom?: string;
+  bottom?: string;
 }
 
 /**
@@ -99,13 +99,13 @@ export interface RelativeRect {
  */
 export interface PathShadeOptions {
   /** Path type */
-  readonly path?: (typeof PathShadeType)[keyof typeof PathShadeType];
+  path?: (typeof PathShadeType)[keyof typeof PathShadeType];
   /**
    * Fill-to rectangle for path gradient.
    *
    * Defines the rectangle to which the gradient fills.
    */
-  readonly fillToRect?: RelativeRect;
+  fillToRect?: RelativeRect;
 }
 
 /**
@@ -131,23 +131,23 @@ export type GradientShadeOptions = LinearShadeOptions | PathShadeOptions;
  */
 export interface GradientFillOptions {
   /** Gradient color stops (minimum 2) */
-  readonly stops: readonly GradientStop[];
+  stops: readonly GradientStop[];
   /** Shade type (linear or path) */
-  readonly shade?: GradientShadeOptions;
+  shade?: GradientShadeOptions;
   /**
    * Tile flip mode.
    *
    * Controls how the gradient is flipped when tiled.
    */
-  readonly flip?: (typeof TileFlipMode)[keyof typeof TileFlipMode];
+  flip?: (typeof TileFlipMode)[keyof typeof TileFlipMode];
   /**
    * Tile rectangle for gradient tiling.
    *
    * Defines the rectangle used for gradient tiling.
    */
-  readonly tileRect?: RelativeRect;
+  tileRect?: RelativeRect;
   /** Whether gradient rotates with the shape */
-  readonly rotateWithShape?: boolean;
+  rotateWithShape?: boolean;
 }
 
 /**
@@ -173,10 +173,10 @@ export const createGradientStop = (stop: GradientStop): XmlComponent =>
  */
 const createRelativeRect = (name: string, rect?: RelativeRect): XmlComponent =>
   new BuilderElement<{
-    readonly l?: string;
-    readonly t?: string;
-    readonly r?: string;
-    readonly b?: string;
+    l?: string;
+    t?: string;
+    r?: string;
+    b?: string;
   }>({
     attributes: {
       l: { key: "l", value: rect?.left },
@@ -267,8 +267,8 @@ export const createGradientFill = (options: GradientFillOptions): XmlComponent =
   }
 
   return new BuilderElement<{
-    readonly flip?: string;
-    readonly rotWithShape?: boolean;
+    flip?: string;
+    rotWithShape?: boolean;
   }>({
     attributes: {
       flip: {

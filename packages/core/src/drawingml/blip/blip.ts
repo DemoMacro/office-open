@@ -19,11 +19,11 @@ import { createExtentionList } from "./blip-extentions";
  */
 export interface BlipOptions {
   /** File name used as placeholder; the packer's ImageReplacer replaces `{referenceId}` with `rId{N}` */
-  readonly referenceId: string;
+  referenceId: string;
   /** Image type for SVG detection */
-  readonly type?: "svg" | string;
+  type?: "svg" | string;
   /** For SVG images, the fallback image file name */
-  readonly fallbackFileName?: string;
+  fallbackFileName?: string;
 }
 
 /**
@@ -85,8 +85,8 @@ export const createBlip = (
   }
 
   return new BuilderElement<{
-    readonly embed: string;
-    readonly cstate: string;
+    embed: string;
+    cstate: string;
   }>({
     attributes: {
       cstate: {

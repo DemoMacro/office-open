@@ -21,61 +21,61 @@ import type { XmlComponent } from "../../xml-components";
  */
 export interface ColorTransformOptions {
   /** Tint: moves color toward white (0-100000) */
-  readonly tint?: number;
+  tint?: number;
   /** Shade: moves color toward black (0-100000) */
-  readonly shade?: number;
+  shade?: number;
   /** Complement: inverts the color (no value) */
-  readonly comp?: boolean;
+  comp?: boolean;
   /** Inverse: inverts the color (no value) */
-  readonly inv?: boolean;
+  inv?: boolean;
   /** Grayscale: converts to grayscale (no value) */
-  readonly gray?: boolean;
+  gray?: boolean;
   /** Alpha: sets transparency (0-100000) */
-  readonly alpha?: number;
+  alpha?: number;
   /** Alpha offset: adjusts alpha by fixed amount (-100000 to 100000) */
-  readonly alphaOff?: number;
+  alphaOff?: number;
   /** Alpha modulation: scales alpha by percentage (0-100000) */
-  readonly alphaMod?: number;
+  alphaMod?: number;
   /** Hue: sets hue angle (0-21600000) */
-  readonly hue?: number;
+  hue?: number;
   /** Hue offset: adjusts hue by angle (-5400000 to 5400000) */
-  readonly hueOff?: number;
+  hueOff?: number;
   /** Hue modulation: scales hue by percentage (0-100000) */
-  readonly hueMod?: number;
+  hueMod?: number;
   /** Saturation: sets saturation (-100000 to 100000) */
-  readonly sat?: number;
+  sat?: number;
   /** Saturation offset: adjusts saturation (-100000 to 100000) */
-  readonly satOff?: number;
+  satOff?: number;
   /** Saturation modulation: scales saturation (0-100000) */
-  readonly satMod?: number;
+  satMod?: number;
   /** Luminance: sets luminance (-100000 to 100000) */
-  readonly lum?: number;
+  lum?: number;
   /** Luminance offset: adjusts luminance (-100000 to 100000) */
-  readonly lumOff?: number;
+  lumOff?: number;
   /** Luminance modulation: scales luminance (0-100000) */
-  readonly lumMod?: number;
+  lumMod?: number;
   /** Red: sets red channel (-100000 to 100000) */
-  readonly red?: number;
+  red?: number;
   /** Red offset: adjusts red channel (-100000 to 100000) */
-  readonly redOff?: number;
+  redOff?: number;
   /** Red modulation: scales red channel (0-100000) */
-  readonly redMod?: number;
+  redMod?: number;
   /** Green: sets green channel (-100000 to 100000) */
-  readonly green?: number;
+  green?: number;
   /** Green offset: adjusts green channel (-100000 to 100000) */
-  readonly greenOff?: number;
+  greenOff?: number;
   /** Green modulation: scales green channel (0-100000) */
-  readonly greenMod?: number;
+  greenMod?: number;
   /** Blue: sets blue channel (-100000 to 100000) */
-  readonly blue?: number;
+  blue?: number;
   /** Blue offset: adjusts blue channel (-100000 to 100000) */
-  readonly blueOff?: number;
+  blueOff?: number;
   /** Blue modulation: scales blue channel (0-100000) */
-  readonly blueMod?: number;
+  blueMod?: number;
   /** Gamma correction (no value) */
-  readonly gamma?: boolean;
+  gamma?: boolean;
   /** Inverse gamma correction (no value) */
-  readonly invGamma?: boolean;
+  invGamma?: boolean;
 }
 
 /**

@@ -14,18 +14,18 @@ import { BuilderElement, type XmlComponent } from "../../xml-components";
 // ---------------------------------------------------------------------------
 
 export interface DiagramNameOptions {
-  readonly lang?: string;
-  readonly val: string;
+  lang?: string;
+  val: string;
 }
 
 export interface DiagramDescriptionOptions {
-  readonly lang?: string;
-  readonly val: string;
+  lang?: string;
+  val: string;
 }
 
 export interface DiagramCategoryOptions {
-  readonly type: string;
-  readonly pri: number;
+  type: string;
+  pri: number;
 }
 
 const createNameEl = (tag: string, options: DiagramNameOptions): XmlComponent => {
@@ -76,12 +76,12 @@ const createCatLst = (categories?: readonly DiagramCategoryOptions[]): XmlCompon
 // ---------------------------------------------------------------------------
 
 export interface ColorsDefHdrOptions {
-  readonly uniqueId: string;
-  readonly minVer?: string;
-  readonly resId?: number;
-  readonly title: readonly DiagramNameOptions[];
-  readonly desc: readonly DiagramDescriptionOptions[];
-  readonly categories?: readonly DiagramCategoryOptions[];
+  uniqueId: string;
+  minVer?: string;
+  resId?: number;
+  title: readonly DiagramNameOptions[];
+  desc: readonly DiagramDescriptionOptions[];
+  categories?: readonly DiagramCategoryOptions[];
 }
 
 /**
@@ -124,7 +124,7 @@ export const createColorsDefHdr = (options: ColorsDefHdrOptions): XmlComponent =
 // ---------------------------------------------------------------------------
 
 export interface ColorsDefHdrLstOptions {
-  readonly headers?: readonly ColorsDefHdrOptions[];
+  headers?: readonly ColorsDefHdrOptions[];
 }
 
 /** Creates a dgm:colorsDefHdrLst element. */
@@ -143,13 +143,13 @@ export const createColorsDefHdrLst = (options?: ColorsDefHdrLstOptions): XmlComp
 // ---------------------------------------------------------------------------
 
 export interface LayoutDefHdrOptions {
-  readonly uniqueId: string;
-  readonly minVer?: string;
-  readonly defStyle?: string;
-  readonly resId?: number;
-  readonly title: readonly DiagramNameOptions[];
-  readonly desc: readonly DiagramDescriptionOptions[];
-  readonly categories?: readonly DiagramCategoryOptions[];
+  uniqueId: string;
+  minVer?: string;
+  defStyle?: string;
+  resId?: number;
+  title: readonly DiagramNameOptions[];
+  desc: readonly DiagramDescriptionOptions[];
+  categories?: readonly DiagramCategoryOptions[];
 }
 
 /**
@@ -196,7 +196,7 @@ export const createLayoutDefHdr = (options: LayoutDefHdrOptions): XmlComponent =
 // ---------------------------------------------------------------------------
 
 export interface LayoutDefHdrLstOptions {
-  readonly headers?: readonly LayoutDefHdrOptions[];
+  headers?: readonly LayoutDefHdrOptions[];
 }
 
 /** Creates a dgm:layoutDefHdrLst element. */
@@ -215,12 +215,12 @@ export const createLayoutDefHdrLst = (options?: LayoutDefHdrLstOptions): XmlComp
 // ---------------------------------------------------------------------------
 
 export interface StyleDefHdrOptions {
-  readonly uniqueId: string;
-  readonly minVer?: string;
-  readonly resId?: number;
-  readonly title: readonly DiagramNameOptions[];
-  readonly desc: readonly DiagramDescriptionOptions[];
-  readonly categories?: readonly DiagramCategoryOptions[];
+  uniqueId: string;
+  minVer?: string;
+  resId?: number;
+  title: readonly DiagramNameOptions[];
+  desc: readonly DiagramDescriptionOptions[];
+  categories?: readonly DiagramCategoryOptions[];
 }
 
 /**
@@ -263,7 +263,7 @@ export const createStyleDefHdr = (options: StyleDefHdrOptions): XmlComponent => 
 // ---------------------------------------------------------------------------
 
 export interface StyleDefHdrLstOptions {
-  readonly headers?: readonly StyleDefHdrOptions[];
+  headers?: readonly StyleDefHdrOptions[];
 }
 
 /** Creates a dgm:styleDefHdrLst element. */

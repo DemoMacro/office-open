@@ -44,13 +44,13 @@ export const PresetShadowVal = {
  */
 export interface PresetShadowEffectOptions {
   /** Preset shadow type (required) */
-  readonly preset: (typeof PresetShadowVal)[keyof typeof PresetShadowVal];
+  preset: (typeof PresetShadowVal)[keyof typeof PresetShadowVal];
   /** Distance from shape in EMUs */
-  readonly distance?: number;
+  distance?: number;
   /** Direction angle in 60,000ths of a degree */
-  readonly direction?: number;
+  direction?: number;
   /** Shadow color */
-  readonly color: SolidFillOptions;
+  color: SolidFillOptions;
 }
 
 /**

@@ -27,9 +27,9 @@ import type { SolidFillOptions } from "../color/solid-fill";
  */
 export interface LuminanceEffectOptions {
   /** Brightness adjustment in percentage points (-100 to 100). Default 0. */
-  readonly bright?: number;
+  bright?: number;
   /** Contrast adjustment in percentage points (-100 to 100). Default 0. */
-  readonly contrast?: number;
+  contrast?: number;
 }
 
 /**
@@ -44,11 +44,11 @@ export interface LuminanceEffectOptions {
  */
 export interface HSLEffectOptions {
   /** Hue rotation in 60000ths of a degree. Default 0. */
-  readonly hue?: number;
+  hue?: number;
   /** Saturation adjustment in percentage points (-100 to 100). Default 0. */
-  readonly saturation?: number;
+  saturation?: number;
   /** Luminance adjustment in percentage points (-100 to 100). Default 0. */
-  readonly luminance?: number;
+  luminance?: number;
 }
 
 /**
@@ -62,9 +62,9 @@ export interface HSLEffectOptions {
  */
 export interface TintEffectOptions {
   /** Hue in 60000ths of a degree. Default 0. */
-  readonly hue?: number;
+  hue?: number;
   /** Amount in percentage points (0 to 100). Default 0. */
-  readonly amount?: number;
+  amount?: number;
 }
 
 /**
@@ -77,9 +77,9 @@ export interface TintEffectOptions {
  */
 export interface DuotoneEffectOptions {
   /** First color (dark). */
-  readonly color1: SolidFillOptions;
+  color1: SolidFillOptions;
   /** Second color (light). */
-  readonly color2: SolidFillOptions;
+  color2: SolidFillOptions;
 }
 
 /**
@@ -92,7 +92,7 @@ export interface DuotoneEffectOptions {
  */
 export interface BiLevelEffectOptions {
   /** Threshold percentage (0 to 100). Pixels above are white, below are black. */
-  readonly threshold: number;
+  threshold: number;
 }
 
 /**
@@ -105,7 +105,7 @@ export interface BiLevelEffectOptions {
  */
 export interface AlphaReplaceEffectOptions {
   /** Alpha percentage (0 = fully transparent, 100 = fully opaque). */
-  readonly amount: number;
+  amount: number;
 }
 
 /**
@@ -118,7 +118,7 @@ export interface AlphaReplaceEffectOptions {
  */
 export interface AlphaBiLevelEffectOptions {
   /** Threshold percentage (0 to 100). Alpha above is fully opaque, below is fully transparent. */
-  readonly threshold: number;
+  threshold: number;
 }
 
 /**
@@ -131,7 +131,7 @@ export interface AlphaBiLevelEffectOptions {
  */
 export interface AlphaModulateFixedEffectOptions {
   /** Alpha amount in percentage (0 to 100). Default 100. */
-  readonly amount?: number;
+  amount?: number;
 }
 
 /**
@@ -146,11 +146,11 @@ export interface AlphaModulateFixedEffectOptions {
  */
 export interface ColorChangeEffectOptions {
   /** Source color to change from. */
-  readonly from: SolidFillOptions;
+  from: SolidFillOptions;
   /** Target color to change to. */
-  readonly to: SolidFillOptions;
+  to: SolidFillOptions;
   /** Whether to use alpha channel. Default true. */
-  readonly useAlpha?: boolean;
+  useAlpha?: boolean;
 }
 
 /**
@@ -163,7 +163,7 @@ export interface ColorChangeEffectOptions {
  */
 export interface ColorReplaceEffectOptions {
   /** Replacement color. */
-  readonly color: SolidFillOptions;
+  color: SolidFillOptions;
 }
 
 /**
@@ -177,9 +177,9 @@ export interface ColorReplaceEffectOptions {
  */
 export interface BlipBlurEffectOptions {
   /** Blur radius in EMUs. Default 0. */
-  readonly radius?: number;
+  radius?: number;
   /** Whether to grow the blur boundary. Default true. */
-  readonly grow?: boolean;
+  grow?: boolean;
 }
 
 /**
@@ -187,35 +187,35 @@ export interface BlipBlurEffectOptions {
  */
 export interface BlipEffectsOptions {
   /** Grayscale effect (no options needed). */
-  readonly grayscale?: boolean;
+  grayscale?: boolean;
   /** Luminance (brightness/contrast) effect. */
-  readonly luminance?: LuminanceEffectOptions;
+  luminance?: LuminanceEffectOptions;
   /** HSL adjustment effect. */
-  readonly hsl?: HSLEffectOptions;
+  hsl?: HSLEffectOptions;
   /** Tint effect. */
-  readonly tint?: TintEffectOptions;
+  tint?: TintEffectOptions;
   /** Duotone effect (two-color mapping). */
-  readonly duotone?: DuotoneEffectOptions;
+  duotone?: DuotoneEffectOptions;
   /** Black & white threshold effect. */
-  readonly biLevel?: BiLevelEffectOptions;
+  biLevel?: BiLevelEffectOptions;
   /** Alpha ceiling effect (no options needed). */
-  readonly alphaCeiling?: boolean;
+  alphaCeiling?: boolean;
   /** Alpha floor effect (no options needed). */
-  readonly alphaFloor?: boolean;
+  alphaFloor?: boolean;
   /** Alpha inverse effect (with optional color). */
-  readonly alphaInverse?: SolidFillOptions;
+  alphaInverse?: SolidFillOptions;
   /** Alpha modulate fixed effect. */
-  readonly alphaModFix?: AlphaModulateFixedEffectOptions;
+  alphaModFix?: AlphaModulateFixedEffectOptions;
   /** Alpha replace effect. */
-  readonly alphaRepl?: AlphaReplaceEffectOptions;
+  alphaRepl?: AlphaReplaceEffectOptions;
   /** Alpha bi-level effect. */
-  readonly alphaBiLevel?: AlphaBiLevelEffectOptions;
+  alphaBiLevel?: AlphaBiLevelEffectOptions;
   /** Color change effect. */
-  readonly colorChange?: ColorChangeEffectOptions;
+  colorChange?: ColorChangeEffectOptions;
   /** Color replace effect. */
-  readonly colorRepl?: ColorReplaceEffectOptions;
+  colorRepl?: ColorReplaceEffectOptions;
   /** Blur effect on blip. */
-  readonly blur?: BlipBlurEffectOptions;
+  blur?: BlipBlurEffectOptions;
 }
 
 // ─── Factory functions ───────────────────────────────────────────────

@@ -318,7 +318,8 @@ function parseChartXml(el: Element): Record<string, unknown> | undefined {
     series.push({ name: nameParts[0] ?? "", values: vals });
   }
 
-  opts.data = { categories: categories ?? [], series };
+  opts.categories = categories ?? [];
+  opts.series = series;
 
   // Legend
   opts.showLegend = findChild(chart, "c:legend") !== undefined;

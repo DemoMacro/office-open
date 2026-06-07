@@ -15,9 +15,9 @@ import type { SolidFillOptions } from "../color/solid-fill";
  */
 export interface GlowEffectOptions {
   /** Glow radius in EMUs */
-  readonly radius?: number;
+  radius?: number;
   /** Glow color */
-  readonly color: SolidFillOptions;
+  color: SolidFillOptions;
 }
 
 /**

@@ -15,10 +15,10 @@ import type { XmlComponent, IXmlableObject } from "../../xml-components";
 // ── Non-Visual Properties ──
 
 export interface WpNonVisualDrawingPropsOptions {
-  readonly id?: number;
-  readonly name?: string;
-  readonly descr?: string;
-  readonly hidden?: boolean;
+  id?: number;
+  name?: string;
+  descr?: string;
+  hidden?: boolean;
 }
 
 /**
@@ -98,7 +98,7 @@ export const createWpCNvGrpSpPr = (): XmlComponent => new BuilderElement({ name:
  * ```
  */
 export interface ContentPartPropertiesOptions {
-  readonly isComment?: boolean;
+  isComment?: boolean;
 }
 
 export const createWpCNvContentPartPr = (options?: ContentPartPropertiesOptions): XmlComponent => {
@@ -114,9 +114,9 @@ export const createWpCNvContentPartPr = (options?: ContentPartPropertiesOptions)
 // ── Wordprocessing Shape ──
 
 export interface WpShapeOptions {
-  readonly cNvPr?: WpNonVisualDrawingPropsOptions;
-  readonly normalEastAsianFlow?: boolean;
-  readonly children?: readonly IXmlableObject[];
+  cNvPr?: WpNonVisualDrawingPropsOptions;
+  normalEastAsianFlow?: boolean;
+  children?: readonly IXmlableObject[];
 }
 
 /**
@@ -200,8 +200,8 @@ export const createWpBodyPr = (): XmlComponent => new BuilderElement({ name: "wp
 // ── Textbox ──
 
 export interface WpTextboxOptions {
-  readonly id?: number;
-  readonly children?: readonly IXmlableObject[];
+  id?: number;
+  children?: readonly IXmlableObject[];
 }
 
 /**
@@ -231,8 +231,8 @@ export const createWpTxbxContent = (children?: readonly IXmlableObject[]): XmlCo
   new BuilderElement({ children, name: "wp:txbxContent" });
 
 export interface WpLinkedTextboxOptions {
-  readonly id: number;
-  readonly seq: number;
+  id: number;
+  seq: number;
 }
 
 /**
@@ -268,7 +268,7 @@ export const createWpExtLst = (children?: readonly IXmlableObject[]): XmlCompone
 // ── Graphic Frame ──
 
 export interface WpGraphicFrameOptions {
-  readonly children?: readonly IXmlableObject[];
+  children?: readonly IXmlableObject[];
 }
 
 /**
@@ -285,8 +285,8 @@ export const createWpGraphicFrame = (options?: WpGraphicFrameOptions): XmlCompon
 // ── Content Part ──
 
 export interface WpContentPartOptions {
-  readonly bwMode?: string;
-  readonly rId?: string;
+  bwMode?: string;
+  rId?: string;
 }
 
 /**
@@ -322,7 +322,7 @@ export const createWpNvContentPartPr = (children?: readonly IXmlableObject[]): X
 // ── Group Shape ──
 
 export interface WpGroupOptions {
-  readonly children?: readonly IXmlableObject[];
+  children?: readonly IXmlableObject[];
 }
 
 /**
@@ -350,7 +350,7 @@ export const createWpNestedGrpSp = (options?: WpGroupOptions): XmlComponent =>
 // ── Canvas ──
 
 export interface WpCanvasOptions {
-  readonly children?: readonly IXmlableObject[];
+  children?: readonly IXmlableObject[];
 }
 
 /**

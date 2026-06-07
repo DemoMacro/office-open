@@ -17,9 +17,9 @@ import { createColorTransforms } from "./color-transform";
  */
 export interface RgbColorOptions {
   /** Hex color value (e.g., "FF0000" for red) */
-  readonly value: string;
+  value: string;
   /** Optional color transforms */
-  readonly transforms?: ColorTransformOptions;
+  transforms?: ColorTransformOptions;
 }
 
 /**

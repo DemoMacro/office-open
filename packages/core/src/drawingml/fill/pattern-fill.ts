@@ -155,11 +155,11 @@ export const PresetPattern = {
  */
 export interface PatternFillOptions {
   /** Preset pattern type */
-  readonly pattern: (typeof PresetPattern)[keyof typeof PresetPattern];
+  pattern: (typeof PresetPattern)[keyof typeof PresetPattern];
   /** Foreground color */
-  readonly foregroundColor?: SolidFillOptions;
+  foregroundColor?: SolidFillOptions;
   /** Background color */
-  readonly backgroundColor?: SolidFillOptions;
+  backgroundColor?: SolidFillOptions;
 }
 
 /**

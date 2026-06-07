@@ -21,13 +21,13 @@ export interface PresetGeometryOptions {
    *
    * Defaults to `"rect"` if not specified.
    */
-  readonly preset?: string;
+  preset?: string;
   /**
    * Adjustment values that modify the base shape.
    *
    * Each guide has a name and formula (e.g., `{ name: "adj", formula: "val 16667" }`).
    */
-  readonly adjustmentValues?: readonly GeometryGuide[];
+  adjustmentValues?: readonly GeometryGuide[];
 }
 
 /**

@@ -31,25 +31,25 @@ export const RectAlignment = {
  */
 export interface OuterShadowEffectOptions {
   /** Blur radius in EMUs */
-  readonly blurRadius?: number;
+  blurRadius?: number;
   /** Distance from shape in EMUs */
-  readonly distance?: number;
+  distance?: number;
   /** Direction angle in 60,000ths of a degree */
-  readonly direction?: number;
+  direction?: number;
   /** Horizontal scale percentage (e.g., 100000 = 100%) */
-  readonly scaleX?: number;
+  scaleX?: number;
   /** Vertical scale percentage */
-  readonly scaleY?: number;
+  scaleY?: number;
   /** Horizontal skew angle in 60,000ths of a degree */
-  readonly skewX?: number;
+  skewX?: number;
   /** Vertical skew angle */
-  readonly skewY?: number;
+  skewY?: number;
   /** Shadow alignment */
-  readonly alignment?: (typeof RectAlignment)[keyof typeof RectAlignment];
+  alignment?: (typeof RectAlignment)[keyof typeof RectAlignment];
   /** Whether shadow rotates with shape */
-  readonly rotWithShape?: boolean;
+  rotWithShape?: boolean;
   /** Shadow color */
-  readonly color: SolidFillOptions;
+  color: SolidFillOptions;
 }
 
 /**

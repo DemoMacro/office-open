@@ -34,9 +34,9 @@ import type { XmlComponent } from "../../xml-components";
  */
 export interface DashStop {
   /** Dash length as a percentage of line width (e.g., "500%") */
-  readonly d: string;
+  d: string;
   /** Space length as a percentage of line width (e.g., "200%") */
-  readonly sp: string;
+  sp: string;
 }
 
 /**

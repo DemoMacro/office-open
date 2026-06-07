@@ -199,8 +199,8 @@ export const createYMode = (val: string): XmlComponent =>
 // ── CT_NumFmt (formatCode + sourceLinked attrs) ──
 
 export interface NumFmtOptions {
-  readonly formatCode: string;
-  readonly sourceLinked?: boolean;
+  formatCode: string;
+  sourceLinked?: boolean;
 }
 
 export const createNumFmt = (options: NumFmtOptions): XmlComponent =>
@@ -304,9 +304,9 @@ export const createFloor = (
 export const createFormatting = (): XmlComponent => new BuilderElement({ name: "c:formatting" });
 
 export interface HeaderFooterOptions {
-  readonly alignWithMargins?: boolean;
-  readonly differentOddEven?: boolean;
-  readonly differentFirst?: boolean;
+  alignWithMargins?: boolean;
+  differentOddEven?: boolean;
+  differentFirst?: boolean;
 }
 
 export const createHeaderFooter = (
@@ -393,12 +393,12 @@ export const createOfPieChart = (
 ): XmlComponent => new BuilderElement({ name: "c:ofPieChart", children });
 
 export interface PageMarginsOptions {
-  readonly l: number;
-  readonly r: number;
-  readonly t: number;
-  readonly b: number;
-  readonly header: number;
-  readonly footer: number;
+  l: number;
+  r: number;
+  t: number;
+  b: number;
+  header: number;
+  footer: number;
 }
 
 export const createPageMargins = (options: PageMarginsOptions): XmlComponent =>
@@ -415,17 +415,17 @@ export const createPageMargins = (options: PageMarginsOptions): XmlComponent =>
   });
 
 export interface PageSetupOptions {
-  readonly paperSize?: number;
-  readonly paperHeight?: string;
-  readonly paperWidth?: string;
-  readonly firstPageNumber?: number;
-  readonly orientation?: string;
-  readonly blackAndWhite?: boolean;
-  readonly draft?: boolean;
-  readonly useFirstPageNumber?: boolean;
-  readonly horizontalDpi?: number;
-  readonly verticalDpi?: number;
-  readonly copies?: number;
+  paperSize?: number;
+  paperHeight?: string;
+  paperWidth?: string;
+  firstPageNumber?: number;
+  orientation?: string;
+  blackAndWhite?: boolean;
+  draft?: boolean;
+  useFirstPageNumber?: boolean;
+  horizontalDpi?: number;
+  verticalDpi?: number;
+  copies?: number;
 }
 
 export const createPageSetup = (options?: PageSetupOptions): XmlComponent =>

@@ -1293,7 +1293,7 @@ function buildBuildList(
 
 // --- Main class ---
 
-interface AnimationEntry {
+export interface AnimationEntry {
   readonly spid: number;
   readonly options: AnimationOptions;
 }

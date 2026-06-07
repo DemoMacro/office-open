@@ -1,6 +1,6 @@
 import type { Element, Js2XmlOptions } from "./types";
 
-export function js2xml(js: Element, options?: Js2XmlOptions): string {
+export function stringify(js: Element, options?: Js2XmlOptions): string {
   const opts = normalizeOptions(options);
   const parts: string[] = [];
 
@@ -15,9 +15,12 @@ export function js2xml(js: Element, options?: Js2XmlOptions): string {
   return parts.join("");
 }
 
-/** Alias for js2xml — xml-js compatible export */
+/** @deprecated Use `stringify` instead. xml-js compatible alias. */
+export { stringify as js2xml };
+
+/** @deprecated Use `stringify` instead. xml-js compatible alias. */
 export function json2xml(json: Element, options?: Js2XmlOptions): string {
-  return js2xml(json, options);
+  return stringify(json, options);
 }
 
 function normalizeOptions(options?: Js2XmlOptions): {

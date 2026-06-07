@@ -29,13 +29,13 @@ export const FontCollectionIndex = {
 
 export interface DiagramStyleOptions {
   /** Line style matrix reference index */
-  readonly lnIdx?: number;
+  lnIdx?: number;
   /** Fill style matrix reference index */
-  readonly fillIdx?: number;
+  fillIdx?: number;
   /** Effect style matrix reference index */
-  readonly effectIdx?: number;
+  effectIdx?: number;
   /** Font reference collection index */
-  readonly fontIdx?: string;
+  fontIdx?: string;
 }
 
 /**
@@ -105,11 +105,11 @@ export const HueDirection = {
 
 export interface ColorListOptions {
   /** Color method (default: span) */
-  readonly meth?: (typeof ColorMethod)[keyof typeof ColorMethod];
+  meth?: (typeof ColorMethod)[keyof typeof ColorMethod];
   /** Hue direction (default: cw) */
-  readonly hueDir?: (typeof HueDirection)[keyof typeof HueDirection];
+  hueDir?: (typeof HueDirection)[keyof typeof HueDirection];
   /** Colors (EG_ColorChoice items) */
-  readonly colors?: readonly SolidFillOptions[];
+  colors?: readonly SolidFillOptions[];
 }
 
 /** Creates a generic CT_Colors element with the given tag. */
@@ -165,13 +165,13 @@ export const createTxEffectClrLst = (options?: ColorListOptions): XmlComponent =
 
 export interface DiagramStyleLblOptions {
   /** Label name (required) */
-  readonly name: string;
-  readonly fillClrLst?: ColorListOptions;
-  readonly linClrLst?: ColorListOptions;
-  readonly effectClrLst?: ColorListOptions;
-  readonly txFillClrLst?: ColorListOptions;
-  readonly txLinClrLst?: ColorListOptions;
-  readonly txEffectClrLst?: ColorListOptions;
+  name: string;
+  fillClrLst?: ColorListOptions;
+  linClrLst?: ColorListOptions;
+  effectClrLst?: ColorListOptions;
+  txFillClrLst?: ColorListOptions;
+  txLinClrLst?: ColorListOptions;
+  txEffectClrLst?: ColorListOptions;
 }
 
 /**

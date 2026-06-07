@@ -1,2 +1,8 @@
 export * from "./packer/packer";
-export type { CompressionOptions, PackerOptions } from "@office-open/core";
+export { generate, generateSync, generateStream } from "./generate";
+export type {
+  CompressionOptions,
+  OutputType,
+  OutputByType,
+  PackerOptions,
+} from "@office-open/core";

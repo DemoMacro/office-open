@@ -288,8 +288,8 @@ export const createWavAudioFile = (children?: readonly IXmlableObject[]): XmlCom
 // ── Animation Build ──────────────────────────────────────────────────
 
 export interface BuildChartOptions {
-  readonly build?: string;
-  readonly animateBackground?: boolean;
+  build?: string;
+  animateBackground?: boolean;
 }
 
 /** Creates an a:bldChart element (Build Chart). */
@@ -305,8 +305,8 @@ export const createBldChart = (options?: BuildChartOptions): XmlComponent => {
 };
 
 export interface BuildDiagramOptions {
-  readonly build?: string;
-  readonly reverse?: boolean;
+  build?: string;
+  reverse?: boolean;
 }
 
 /** Creates an a:bldDgm element (Build Diagram). */
@@ -328,9 +328,9 @@ export const createBevelElement = (children?: readonly IXmlableObject[]): XmlCom
   new BuilderElement({ children, name: "a:bevel" });
 
 export interface ChartAnimationOptions {
-  readonly seriesIndex?: number;
-  readonly categoryIndex?: number;
-  readonly buildStep?: string;
+  seriesIndex?: number;
+  categoryIndex?: number;
+  buildStep?: string;
 }
 
 /** Creates an a:chart element (Animation Chart Element). */
@@ -349,8 +349,8 @@ export const createChart = (options?: ChartAnimationOptions): XmlComponent => {
 };
 
 export interface DiagramAnimationOptions {
-  readonly id?: string;
-  readonly buildStep?: string;
+  id?: string;
+  buildStep?: string;
 }
 
 /** Creates an a:dgm element (Animation Diagram Element). */
@@ -378,8 +378,8 @@ export const createHlinkMouseOver = (children?: readonly IXmlableObject[]): XmlC
   new BuilderElement({ children, name: "a:hlinkMouseOver" });
 
 export interface AudioCdTimeOptions {
-  readonly track?: number;
-  readonly time?: number;
+  track?: number;
+  time?: number;
 }
 
 /** Creates an a:st element (Audio CD Start Time). */

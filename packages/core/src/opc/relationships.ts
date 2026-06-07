@@ -100,6 +100,11 @@ export class Relationships extends BaseXmlComponent {
    * Bypasses the IXmlableObject intermediate tree entirely.
    */
   public override toXml(_context: Context): string {
+    return this.serialize();
+  }
+
+  /** Context-free serialization — directly builds XML string. */
+  public override serialize(): string {
     const p: string[] = [
       '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">',
     ];

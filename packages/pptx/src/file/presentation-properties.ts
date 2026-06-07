@@ -1,6 +1,3 @@
-import type { Context } from "@file/xml-components";
-import { ImportedXmlComponent } from "@file/xml-components";
-
 import type { ShowOptions } from "./file";
 
 export interface WebPropertiesOptions {
@@ -119,7 +116,7 @@ function buildShowPrXml(showOptions: ShowOptions): string {
   return `<p:showPr${showPrAttrs.join("")}>${showTypeXml}${slideListXml}${penClrXml}</p:showPr>`;
 }
 
-function buildPresPropsXml(opts?: PresentationPropertiesFullOptions): string {
+export function buildPresPropsXml(opts?: PresentationPropertiesFullOptions): string {
   const ns =
     'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
     'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
@@ -145,24 +142,4 @@ function buildPresPropsXml(opts?: PresentationPropertiesFullOptions): string {
   }
 
   return `<p:presentationPr ${ns}>${children.join("")}</p:presentationPr>`;
-}
-
-export class PresentationProperties extends ImportedXmlComponent {
-  private static cache = new Map<string, ImportedXmlComponent>();
-  private readonly key: string;
-
-  public constructor(opts?: PresentationPropertiesFullOptions) {
-    super("p:presentationPr");
-    this.key = opts ? JSON.stringify(opts) : "";
-    if (!PresentationProperties.cache.has(this.key)) {
-      PresentationProperties.cache.set(
-        this.key,
-        ImportedXmlComponent.fromXmlString(buildPresPropsXml(opts)),
-      );
-    }
-  }
-
-  public override toXml(context: Context): string {
-    return PresentationProperties.cache.get(this.key)!.toXml(context);
-  }
 }

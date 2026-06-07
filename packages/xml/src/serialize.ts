@@ -2,6 +2,11 @@ import { escapeXml } from "./escape";
 
 const DEFAULT_INDENT = "    ";
 
+/**
+ * Serialize IXmlableObject to XML string.
+ * @deprecated Use `stringify` (Element → string) instead. This IXmlableObject path
+ * will be removed once the Descriptor migration is complete.
+ */
 export function xml(
   input: Record<string, unknown> | Record<string, unknown>[],
   options?:
