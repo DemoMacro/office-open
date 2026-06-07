@@ -4,14 +4,13 @@
  * @module
  */
 
-import type { DefaultSlideMaster } from "@file/slide-master";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 
 // ── Types ──
 
 export interface SlideMasterDescriptorOptions {
-  /** Pre-built slide master object from File. */
-  master: DefaultSlideMaster;
+  /** Pre-built slide master XML string. */
+  master: string;
 }
 
 // ── Descriptor ──
@@ -20,7 +19,7 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
-    return opts.master.serialize();
+    return opts.master;
   },
 
   parse(_el, _ctx) {

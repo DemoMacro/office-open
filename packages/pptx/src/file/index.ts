@@ -1,5 +1,4 @@
 export {
-  File,
   type PresentationOptions,
   type ShowOptions,
   type SlideOptions,
@@ -121,18 +120,18 @@ export {
   type FontSchemeOptions,
 } from "./theme";
 export {
-  DefaultSlideMaster,
+  buildSlideMasterXml,
   type SlideMasterOptions,
   type MasterPlaceholderOptions,
   type MasterPlaceholderPosition,
 } from "./slide-master";
-export { DefaultSlideLayout, SlideLayout, type SlideLayoutType } from "./slide-layout";
-export { DefaultNotesMaster } from "./notes-master";
-export { DefaultHandoutMaster } from "./handout-master";
+export { buildLayoutXml, buildCustomLayoutXml, type SlideLayoutType } from "./slide-layout";
+export { buildNotesMasterXml } from "./notes-master";
+export { buildHandoutMasterXml } from "./handout-master";
 export { buildNotesSlideXml, type NotesSlideOptions } from "./notes-slide";
 export type { SlideHeaderFooterOptions } from "./header-footer";
 export type { PictureOptions } from "./picture";
-export { Background, type BackgroundOptions } from "./background";
+export { type BackgroundOptions } from "./background";
 export type { TableOptions } from "./table/table-frame";
 export type { TableRowOptions } from "./table/table-row";
 export type { VerticalAlignment, TableCellOptions } from "./table/table-cell";

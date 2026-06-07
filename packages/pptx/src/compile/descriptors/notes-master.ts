@@ -4,7 +4,7 @@
  * @module
  */
 
-import { DefaultNotesMaster } from "@file/notes-master";
+import { buildNotesMasterXml } from "@file/notes-master";
 import type { NotesMasterOptions } from "@file/notes-master";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 
@@ -20,8 +20,7 @@ export const notesMasterDesc: CustomDescriptor<NotesMasterDescriptorOptions> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
-    const master = new DefaultNotesMaster(opts.options);
-    return master.serialize();
+    return buildNotesMasterXml(opts.options);
   },
 
   parse(_el, _ctx) {

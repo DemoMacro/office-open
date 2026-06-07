@@ -4,14 +4,13 @@
  * @module
  */
 
-import type { SlideLayout } from "@file/slide-layout";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 
 // ── Types ──
 
 export interface SlideLayoutDescriptorOptions {
-  /** Pre-built slide layout object from File. */
-  layout: SlideLayout;
+  /** Pre-built slide layout XML string. */
+  layout: string;
 }
 
 // ── Descriptor ──
@@ -20,7 +19,7 @@ export const slideLayoutDesc: CustomDescriptor<SlideLayoutDescriptorOptions> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
-    return opts.layout.serialize();
+    return opts.layout;
   },
 
   parse(_el, _ctx) {

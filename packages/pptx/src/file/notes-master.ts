@@ -1,6 +1,3 @@
-import type { Context } from "@file/xml-components";
-import { ImportedXmlComponent } from "@file/xml-components";
-
 import { DEFAULT_COLOR_MAP, SP_TREE_HEADER } from "./constants";
 import type { ColorMapOptions, HeaderFooterOptions } from "./handout-master";
 
@@ -130,36 +127,20 @@ function buildNotesStyleXml(levels?: readonly NotesLevelProperties[]): string {
   return parts.join("");
 }
 
-export class DefaultNotesMaster extends ImportedXmlComponent {
-  private static instance = ImportedXmlComponent.fromXmlString(NOTES_MASTER_XML);
-  private readonly options?: NotesMasterOptions;
-
-  public constructor(options?: NotesMasterOptions) {
-    super("p:notesMaster");
-    this.options = options;
-  }
-
-  public override toXml(context: Context): string {
-    // No options → use fast static XML
-    if (!this.options) {
-      return DefaultNotesMaster.instance.toXml(context);
-    }
-
-    // Build dynamic XML with custom options
-    const colorMap = buildColorMapAttrs(this.options.colorMap);
-    const hf = buildHfAttrs(this.options.headerFooter);
-    const notesStyle = buildNotesStyleXml(this.options.notesStyle);
-
-    return (
-      '<p:notesMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
-      'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
-      'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">' +
-      '<p:cSld><p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg>' +
-      `<p:spTree>${SP_TREE_HEADER}</p:spTree></p:cSld>` +
-      `<p:clrMap ${colorMap}/>` +
-      `<p:hf ${hf}/>` +
-      notesStyle +
-      "</p:notesMaster>"
-    );
-  }
+export function buildNotesMasterXml(options?: NotesMasterOptions): string {
+  if (!options) return NOTES_MASTER_XML;
+  const colorMap = buildColorMapAttrs(options.colorMap);
+  const hf = buildHfAttrs(options.headerFooter);
+  const notesStyle = buildNotesStyleXml(options.notesStyle);
+  return (
+    '<p:notesMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+    'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+    'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">' +
+    '<p:cSld><p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg>' +
+    `<p:spTree>${SP_TREE_HEADER}</p:spTree></p:cSld>` +
+    `<p:clrMap ${colorMap}/>` +
+    `<p:hf ${hf}/>` +
+    notesStyle +
+    "</p:notesMaster>"
+  );
 }

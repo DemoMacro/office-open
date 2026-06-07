@@ -5,7 +5,6 @@
  */
 
 import type { PresentationOptions } from "@file/file";
-import { File } from "@file/file";
 import type { OutputByType, OutputType, PackerOptions } from "@office-open/core";
 
 import { Packer } from "./packer/packer";
@@ -13,29 +12,26 @@ import { Packer } from "./packer/packer";
 /**
  * Generate a PPTX file from pure JSON options.
  *
- * Supports all output types via the `type` parameter (default: `"nodebuffer"` → Buffer).
+ * The output format is controlled by `packerOptions.type` (default: `"nodebuffer"` → Buffer).
  * For synchronous generation, use {@link generateSync}. For streaming, use {@link generateStream}.
  *
- * @param options - Presentation options (slides, masters, theme, etc.)
- * @param type - Output format (default: `"nodebuffer"`)
- * @param packerOptions - Optional packer configuration (compression, overrides, etc.)
+ * @param options - Presentation options (slides, masters, themes, etc.)
+ * @param packerOptions - Optional packer configuration (type, compression, overrides, etc.)
  *
  * @example
  * ```typescript
  * import { generate } from "@office-open/pptx";
  *
  * const buffer = await generate({ slides: [...] });
- * const bytes = await generate({ slides: [...] }, "uint8array");
- * const blob = await generate({ slides: [...] }, "blob");
+ * const bytes = await generate({ slides: [...] }, { type: "uint8array" });
+ * const blob = await generate({ slides: [...] }, { type: "blob" });
  * ```
  */
 export function generate<T extends OutputType = "nodebuffer">(
   options: PresentationOptions,
-  type?: T,
-  packerOptions?: PackerOptions,
+  packerOptions?: PackerOptions<T>,
 ): Promise<OutputByType[T]> {
-  const pres = new File(options);
-  return Packer.pack(pres, type ?? "nodebuffer", packerOptions) as Promise<OutputByType[T]>;
+  return Packer.pack(options, packerOptions) as Promise<OutputByType[T]>;
 }
 
 /**
@@ -43,11 +39,9 @@ export function generate<T extends OutputType = "nodebuffer">(
  */
 export function generateSync<T extends OutputType = "nodebuffer">(
   options: PresentationOptions,
-  type?: T,
-  packerOptions?: PackerOptions,
+  packerOptions?: PackerOptions<T>,
 ): OutputByType[T] {
-  const pres = new File(options);
-  return Packer.packSync(pres, type ?? "nodebuffer", packerOptions) as OutputByType[T];
+  return Packer.packSync(options, packerOptions) as OutputByType[T];
 }
 
 /**
@@ -57,6 +51,5 @@ export function generateStream(
   options: PresentationOptions,
   packerOptions?: PackerOptions,
 ): ReadableStream<Uint8Array> {
-  const pres = new File(options);
-  return Packer.toStream(pres, packerOptions);
+  return Packer.toStream(options, packerOptions);
 }

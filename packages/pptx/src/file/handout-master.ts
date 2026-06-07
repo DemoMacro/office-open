@@ -1,6 +1,3 @@
-import type { Context } from "@file/xml-components";
-import { ImportedXmlComponent } from "@file/xml-components";
-
 import { DEFAULT_COLOR_MAP, SP_TREE_HEADER } from "./constants";
 
 /** Color map entry for handout/notes master */
@@ -93,34 +90,18 @@ function buildHfAttrs(opts?: HeaderFooterOptions): string {
   return `dt="${opts.date ? 1 : 0}" hdr="${opts.header ? 1 : 0}" ftr="${opts.footer ? 1 : 0}" sldNum="${opts.slideNumber ? 1 : 0}"`;
 }
 
-export class DefaultHandoutMaster extends ImportedXmlComponent {
-  private static instance = ImportedXmlComponent.fromXmlString(HANDOUT_MASTER_XML);
-  private readonly options?: HandoutMasterOptions;
-
-  public constructor(options?: HandoutMasterOptions) {
-    super("p:handoutMaster");
-    this.options = options;
-  }
-
-  public override toXml(context: Context): string {
-    // No options → use fast static XML
-    if (!this.options) {
-      return DefaultHandoutMaster.instance.toXml(context);
-    }
-
-    // Build dynamic XML with custom colorMap and headerFooter
-    const colorMap = buildColorMapAttrs(this.options.colorMap);
-    const hf = buildHfAttrs(this.options.headerFooter);
-
-    return (
-      '<p:handoutMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
-      'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
-      'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">' +
-      '<p:cSld><p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg>' +
-      `<p:spTree>${SP_TREE_HEADER}</p:spTree></p:cSld>` +
-      `<p:clrMap ${colorMap}/>` +
-      `<p:hf ${hf}/>` +
-      "</p:handoutMaster>"
-    );
-  }
+export function buildHandoutMasterXml(options?: HandoutMasterOptions): string {
+  if (!options) return HANDOUT_MASTER_XML;
+  const colorMap = buildColorMapAttrs(options.colorMap);
+  const hf = buildHfAttrs(options.headerFooter);
+  return (
+    '<p:handoutMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+    'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+    'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">' +
+    '<p:cSld><p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg>' +
+    `<p:spTree>${SP_TREE_HEADER}</p:spTree></p:cSld>` +
+    `<p:clrMap ${colorMap}/>` +
+    `<p:hf ${hf}/>` +
+    "</p:handoutMaster>"
+  );
 }

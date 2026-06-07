@@ -1,9 +1,9 @@
-import type { File } from "@file/file";
+import type { PresentationOptions } from "@file/file";
 import { createPacker, OoxmlMimeType } from "@office-open/core";
 
 import { compilePresentation } from "../../compile/compiler";
 
-export const Packer = createPacker<File>({
-  compile: (file, overrides, mediaLevel) => compilePresentation(file, overrides, mediaLevel),
+export const Packer = createPacker<PresentationOptions>({
+  compile: (options, overrides, mediaLevel) => compilePresentation(options, overrides, mediaLevel),
   mimeType: OoxmlMimeType.PPTX,
 });

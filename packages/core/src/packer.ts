@@ -44,7 +44,9 @@ export interface CompressionOptions {
 }
 
 /** Options for Packer output methods. */
-export interface PackerOptions {
+export interface PackerOptions<T extends OutputType = "nodebuffer"> {
+  /** Output format. Defaults to `"nodebuffer"` (Node.js Buffer). */
+  readonly type?: T;
   /** Custom XML/ZIP file overrides. */
   readonly overrides?: readonly XmlifyedFile[];
   /** Compression levels for ZIP entries. */
@@ -166,13 +168,15 @@ export interface Packer<TFile> {
   compile: CompileFn<TFile>;
 
   /** Generic async output — returns the requested OutputType. */
-  pack<T extends OutputType>(
+  pack<T extends OutputType = "nodebuffer">(
     file: TFile,
-    type: T,
-    options?: PackerOptions,
+    options?: PackerOptions<T>,
   ): Promise<OutputByType[T]>;
   /** Generic sync output — returns the requested OutputType. */
-  packSync<T extends OutputType>(file: TFile, type: T, options?: PackerOptions): OutputByType[T];
+  packSync<T extends OutputType = "nodebuffer">(
+    file: TFile,
+    options?: PackerOptions<T>,
+  ): OutputByType[T];
 
   /** Async → `Promise<Uint8Array>` (like `Response.bytes()`). */
   toBytes(file: TFile, options?: PackerOptions): Promise<Uint8Array>;
@@ -221,11 +225,11 @@ export const createPacker = <TFile>(options: {
 }): Packer<TFile> => {
   const { compile, mimeType } = options;
 
-  const pack = async <T extends OutputType>(
+  const pack = async <T extends OutputType = "nodebuffer">(
     file: TFile,
-    type: T,
-    opts?: PackerOptions,
+    opts?: PackerOptions<T>,
   ): Promise<OutputByType[T]> => {
+    const type = opts?.type ?? ("nodebuffer" as T);
     const files = compile(
       file,
       opts?.overrides ?? [],
@@ -234,20 +238,24 @@ export const createPacker = <TFile>(options: {
     return zipAndConvert(files, type, mimeType, opts?.compression?.xml ?? ZIP_DEFLATE_LEVEL);
   };
 
-  const toBytes = (file: TFile, opts?: PackerOptions) => pack(file, "uint8array", opts);
-  const toString = (file: TFile, opts?: PackerOptions) => pack(file, "string", opts);
-  const toBuffer = (file: TFile, opts?: PackerOptions) => pack(file, "nodebuffer", opts);
-  const toBase64String = (file: TFile, opts?: PackerOptions) => pack(file, "base64", opts);
-  const toBlob = (file: TFile, opts?: PackerOptions) => pack(file, "blob", opts);
-  const toArrayBuffer = (file: TFile, opts?: PackerOptions) => pack(file, "arraybuffer", opts);
+  const toBytes = (file: TFile, opts?: PackerOptions) =>
+    pack(file, { ...opts, type: "uint8array" });
+  const toString = (file: TFile, opts?: PackerOptions) => pack(file, { ...opts, type: "string" });
+  const toBuffer = (file: TFile, opts?: PackerOptions) =>
+    pack(file, { ...opts, type: "nodebuffer" });
+  const toBase64String = (file: TFile, opts?: PackerOptions) =>
+    pack(file, { ...opts, type: "base64" });
+  const toBlob = (file: TFile, opts?: PackerOptions) => pack(file, { ...opts, type: "blob" });
+  const toArrayBuffer = (file: TFile, opts?: PackerOptions) =>
+    pack(file, { ...opts, type: "arraybuffer" });
 
   // ── Sync methods (zipSync, maximum throughput) ──
 
-  const packSync = <T extends OutputType>(
+  const packSync = <T extends OutputType = "nodebuffer">(
     file: TFile,
-    type: T,
-    opts?: PackerOptions,
+    opts?: PackerOptions<T>,
   ): OutputByType[T] => {
+    const type = opts?.type ?? ("nodebuffer" as T);
     const files = compile(
       file,
       opts?.overrides ?? [],
@@ -256,13 +264,18 @@ export const createPacker = <TFile>(options: {
     return zipSyncAndConvert(files, type, mimeType, opts?.compression?.xml ?? ZIP_DEFLATE_LEVEL);
   };
 
-  const toBytesSync = (file: TFile, opts?: PackerOptions) => packSync(file, "uint8array", opts);
-  const toStringSync = (file: TFile, opts?: PackerOptions) => packSync(file, "string", opts);
-  const toBufferSync = (file: TFile, opts?: PackerOptions) => packSync(file, "nodebuffer", opts);
-  const toBase64StringSync = (file: TFile, opts?: PackerOptions) => packSync(file, "base64", opts);
-  const toBlobSync = (file: TFile, opts?: PackerOptions) => packSync(file, "blob", opts);
+  const toBytesSync = (file: TFile, opts?: PackerOptions) =>
+    packSync(file, { ...opts, type: "uint8array" });
+  const toStringSync = (file: TFile, opts?: PackerOptions) =>
+    packSync(file, { ...opts, type: "string" });
+  const toBufferSync = (file: TFile, opts?: PackerOptions) =>
+    packSync(file, { ...opts, type: "nodebuffer" });
+  const toBase64StringSync = (file: TFile, opts?: PackerOptions) =>
+    packSync(file, { ...opts, type: "base64" });
+  const toBlobSync = (file: TFile, opts?: PackerOptions) =>
+    packSync(file, { ...opts, type: "blob" });
   const toArrayBufferSync = (file: TFile, opts?: PackerOptions) =>
-    packSync(file, "arraybuffer", opts);
+    packSync(file, { ...opts, type: "arraybuffer" });
 
   // ── Stream ──
 

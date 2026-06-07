@@ -3,7 +3,6 @@ import type { EffectsOptions } from "@file/drawingml/effects";
 import type { OutlineOptions } from "@file/drawingml/outline";
 import { ShapeProperties } from "@file/drawingml/shape-properties";
 import type { ShapePropertiesOptions } from "@file/drawingml/shape-properties";
-import type { File } from "@file/file";
 import { XmlComponent as Xc } from "@file/xml-components";
 import type { Context } from "@file/xml-components";
 import type { ShapeLockingOptions } from "@office-open/core";
@@ -121,7 +120,7 @@ export class Shape extends Xc {
       rotation: opts.rotation,
     };
     const spPr = new ShapeProperties(shapeProps);
-    const spPrXml = spPr.toXml(context as Context<File>);
+    const spPrXml = spPr.toXml(context as Context);
     if (spPrXml) parts.push(spPrXml);
 
     // p:style (a:CT_ShapeStyle) — optional

@@ -1,11 +1,11 @@
 import { readFile, writeFile } from "node:fs/promises";
 
-import type { OutputType } from "@office-open/core";
+import type { OutputType, PackerOptions } from "@office-open/core";
 export { type OutputType } from "@office-open/core";
 
 import { Document, Packer as DocxPacker } from "@office-open/docx";
 import type { PropertiesOptions } from "@office-open/docx";
-import { Presentation, Packer as PptxPacker } from "@office-open/pptx";
+import { generate as pptxGenerate } from "@office-open/pptx";
 import type { PresentationOptions } from "@office-open/pptx";
 import { Workbook, Packer as XlsxPacker } from "@office-open/xlsx";
 import type { WorkbookOptions } from "@office-open/xlsx";
@@ -18,32 +18,25 @@ export interface GenerateOptions {
   readonly outputType?: OutputType;
 }
 
-const PACKERS = {
-  docx: {
-    newFile: (opts: unknown) => new Document(opts as unknown as PropertiesOptions),
-    pack: (file: unknown, type: OutputType) => DocxPacker.pack(file as Document, type),
-  },
-  pptx: {
-    newFile: (opts: unknown) => new Presentation(opts as unknown as PresentationOptions),
-    pack: (file: unknown, type: OutputType) => PptxPacker.pack(file as Presentation, type),
-  },
-  xlsx: {
-    newFile: (opts: unknown) => new Workbook(opts as unknown as WorkbookOptions),
-    pack: (file: unknown, type: OutputType) => XlsxPacker.pack(file as Workbook, type),
-  },
-} as const satisfies Record<
-  GenerateType,
-  {
-    newFile: (opts: unknown) => unknown;
-    pack: (file: unknown, type: OutputType) => Promise<unknown>;
-  }
->;
-
 export async function generate(options: GenerateOptions): Promise<unknown> {
   const { type, options: docOptions, outputType = "nodebuffer" as OutputType } = options;
-  const { newFile, pack } = PACKERS[type];
-  const file = newFile(docOptions);
-  return pack(file, outputType);
+  const packerOpts = { type: outputType } as PackerOptions<OutputType>;
+
+  switch (type) {
+    case "docx": {
+      const file = new Document(docOptions as unknown as PropertiesOptions);
+      return DocxPacker.pack(file, packerOpts as PackerOptions<"nodebuffer">);
+    }
+    case "pptx":
+      return pptxGenerate(
+        docOptions as PresentationOptions,
+        packerOpts as PackerOptions<"nodebuffer">,
+      );
+    case "xlsx": {
+      const file = new Workbook(docOptions as unknown as WorkbookOptions);
+      return XlsxPacker.pack(file, packerOpts as PackerOptions<"nodebuffer">);
+    }
+  }
 }
 
 export async function parseInput(input: string): Promise<Record<string, unknown>> {

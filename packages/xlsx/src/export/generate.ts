@@ -13,29 +13,27 @@ import { Packer } from "./packer/packer";
 /**
  * Generate an XLSX file from pure JSON options.
  *
- * Supports all output types via the `type` parameter (default: `"nodebuffer"` → Buffer).
+ * The output format is controlled by `packerOptions.type` (default: `"nodebuffer"` → Buffer).
  * For synchronous generation, use {@link generateSync}. For streaming, use {@link generateStream}.
  *
  * @param options - Workbook options (worksheets, styles, etc.)
- * @param type - Output format (default: `"nodebuffer"`)
- * @param packerOptions - Optional packer configuration (compression, overrides, etc.)
+ * @param packerOptions - Optional packer configuration (type, compression, overrides, etc.)
  *
  * @example
  * ```typescript
  * import { generate } from "@office-open/xlsx";
  *
  * const buffer = await generate({ worksheets: [...] });
- * const bytes = await generate({ worksheets: [...] }, "uint8array");
- * const blob = await generate({ worksheets: [...] }, "blob");
+ * const bytes = await generate({ worksheets: [...] }, { type: "uint8array" });
+ * const blob = await generate({ worksheets: [...] }, { type: "blob" });
  * ```
  */
 export function generate<T extends OutputType = "nodebuffer">(
   options: WorkbookOptions,
-  type?: T,
-  packerOptions?: PackerOptions,
+  packerOptions?: PackerOptions<T>,
 ): Promise<OutputByType[T]> {
   const workbook = new File(options);
-  return Packer.pack(workbook, type ?? "nodebuffer", packerOptions) as Promise<OutputByType[T]>;
+  return Packer.pack(workbook, packerOptions) as Promise<OutputByType[T]>;
 }
 
 /**
@@ -43,11 +41,10 @@ export function generate<T extends OutputType = "nodebuffer">(
  */
 export function generateSync<T extends OutputType = "nodebuffer">(
   options: WorkbookOptions,
-  type?: T,
-  packerOptions?: PackerOptions,
+  packerOptions?: PackerOptions<T>,
 ): OutputByType[T] {
   const workbook = new File(options);
-  return Packer.packSync(workbook, type ?? "nodebuffer", packerOptions) as OutputByType[T];
+  return Packer.packSync(workbook, packerOptions) as OutputByType[T];
 }
 
 /**

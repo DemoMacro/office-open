@@ -1,7 +1,5 @@
 import type { LayoutDefinition } from "@file/file";
 import { buildMasterChildrenXml } from "@file/slide/coerce";
-import type { Context } from "@file/xml-components";
-import { ImportedXmlComponent } from "@file/xml-components";
 import { convertPositionToEmu } from "@office-open/core";
 
 export type SlideLayoutType =
@@ -228,7 +226,7 @@ const LAYOUT_DEFS: Record<SlideLayoutType, LayoutDef> = {
   },
 };
 
-function buildLayoutXml(layoutType: SlideLayoutType, slideWidth: number = SW_REF): string {
+export function buildLayoutXml(layoutType: SlideLayoutType, slideWidth: number = SW_REF): string {
   const def = LAYOUT_DEFS[layoutType];
   const contentShapes = def.buildShapes(slideWidth);
   // Count content shapes to determine starting ID for footer placeholders
@@ -306,7 +304,7 @@ function positionedSldNumPlaceholder(
   return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="Slide Number Placeholder ${id - 1}"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="sldNum" sz="quarter" idx="12"/></p:nvPr></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:fld id="{C1FF6DA9-008F-8B48-92A6-B652298478BF}" type="slidenum"><a:rPr lang="en-US" smtClean="0"/><a:t>‹#›</a:t></a:fld><a:endParaRPr lang="en-US"/></a:p></p:txBody></p:sp>`;
 }
 
-function buildCustomLayoutXml(def: LayoutDefinition): string {
+export function buildCustomLayoutXml(def: LayoutDefinition): string {
   const ph = def.placeholders ?? {};
   const layoutType = def.type ?? "blank";
   const displayName = def.name ?? LAYOUT_DEFS[layoutType]?.name ?? layoutType;
@@ -381,51 +379,4 @@ function buildCustomLayoutXml(def: LayoutDefinition): string {
 
   const matchingAttr = def.matchingName !== undefined ? ` matchingName="${def.matchingName}"` : "";
   return `<p:sldLayout ${NS} type="${layoutType}" preserve="1"${matchingAttr}><p:cSld name="${displayName}"><p:spTree>${SP_TREE_HEADER}${shapes.join("")}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`;
-}
-
-export class SlideLayout extends ImportedXmlComponent {
-  private static cache = new Map<string, ImportedXmlComponent>();
-  public readonly layoutType: SlideLayoutType;
-  private readonly cacheKey: string;
-
-  public constructor(
-    layoutType: SlideLayoutType = "blank",
-    slideWidth: number = SW_REF,
-    definition?: LayoutDefinition,
-  ) {
-    super("p:sldLayout");
-    this.layoutType = layoutType;
-
-    const hasCustom =
-      definition &&
-      (definition.placeholders !== undefined ||
-        (definition.children !== undefined && definition.children.length > 0));
-
-    if (hasCustom) {
-      // Custom layouts are not cached (may contain dynamic children)
-      this.cacheKey = `custom:${layoutType}:${slideWidth}:${Date.now()}:${Math.random()}`;
-      SlideLayout.cache.set(
-        this.cacheKey,
-        ImportedXmlComponent.fromXmlString(buildCustomLayoutXml(definition!)),
-      );
-    } else {
-      this.cacheKey = `${layoutType}:${slideWidth}`;
-      if (!SlideLayout.cache.has(this.cacheKey)) {
-        SlideLayout.cache.set(
-          this.cacheKey,
-          ImportedXmlComponent.fromXmlString(buildLayoutXml(layoutType, slideWidth)),
-        );
-      }
-    }
-  }
-
-  public override toXml(context: Context): string {
-    return SlideLayout.cache.get(this.cacheKey)!.toXml(context);
-  }
-}
-
-export class DefaultSlideLayout extends SlideLayout {
-  public constructor() {
-    super("blank");
-  }
 }

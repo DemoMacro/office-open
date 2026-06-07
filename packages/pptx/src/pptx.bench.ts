@@ -254,7 +254,7 @@ describe("PPTX: Create + toBuffer", () => {
   bench(
     "ours all-store sync — simple (2 shapes + 1 img) + toBuffer",
     () => {
-      generateSync(buildSimplePres(), "nodebuffer", { compression: { xml: 0 } });
+      generateSync(buildSimplePres(), { type: "nodebuffer", compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
@@ -270,7 +270,7 @@ describe("PPTX: Create + toBuffer", () => {
   bench(
     "ours all-store async — simple (2 shapes + 1 img) + toBuffer",
     async () => {
-      await generate(buildSimplePres(), "nodebuffer", { compression: { xml: 0 } });
+      await generate(buildSimplePres(), { type: "nodebuffer", compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
@@ -312,7 +312,7 @@ describe("PPTX: Create + toBuffer", () => {
   bench(
     "ours all-store sync — styled shapes (20) + 1 img + toBuffer",
     () => {
-      generateSync(buildStyledPres(), "nodebuffer", { compression: { xml: 0 } });
+      generateSync(buildStyledPres(), { type: "nodebuffer", compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
@@ -328,7 +328,7 @@ describe("PPTX: Create + toBuffer", () => {
   bench(
     "ours all-store async — styled shapes (20) + 1 img + toBuffer",
     async () => {
-      await generate(buildStyledPres(), "nodebuffer", { compression: { xml: 0 } });
+      await generate(buildStyledPres(), { type: "nodebuffer", compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
@@ -388,7 +388,7 @@ describe("PPTX: Create + toBuffer", () => {
   bench(
     "ours all-store sync — table (10x5) + toBuffer",
     () => {
-      generateSync(buildTablePres(), "nodebuffer", { compression: { xml: 0 } });
+      generateSync(buildTablePres(), { type: "nodebuffer", compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
@@ -404,7 +404,7 @@ describe("PPTX: Create + toBuffer", () => {
   bench(
     "ours all-store async — table (10x5) + toBuffer",
     async () => {
-      await generate(buildTablePres(), "nodebuffer", { compression: { xml: 0 } });
+      await generate(buildTablePres(), { type: "nodebuffer", compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
@@ -458,7 +458,7 @@ describe("PPTX: Create + toBuffer", () => {
   bench(
     "ours all-store sync — full featured + 2 imgs + toBuffer",
     () => {
-      generateSync(buildFullFeaturedPres(), "nodebuffer", { compression: { xml: 0 } });
+      generateSync(buildFullFeaturedPres(), { type: "nodebuffer", compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
@@ -474,7 +474,7 @@ describe("PPTX: Create + toBuffer", () => {
   bench(
     "ours all-store async — full featured + 2 imgs + toBuffer",
     async () => {
-      await generate(buildFullFeaturedPres(), "nodebuffer", { compression: { xml: 0 } });
+      await generate(buildFullFeaturedPres(), { type: "nodebuffer", compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
@@ -737,7 +737,7 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store sync — 30 slides × 20 shapes + toBuffer",
     () => {
-      generateSync(build30Slides20Shapes(), "nodebuffer", { compression: { xml: 0 } });
+      generateSync(build30Slides20Shapes(), { type: "nodebuffer", compression: { xml: 0 } });
     },
     { iterations: 10 },
   );
@@ -753,7 +753,7 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store async — 30 slides × 20 shapes + toBuffer",
     async () => {
-      await generate(build30Slides20Shapes(), "nodebuffer", { compression: { xml: 0 } });
+      await generate(build30Slides20Shapes(), { type: "nodebuffer", compression: { xml: 0 } });
     },
     { iterations: 10 },
   );
@@ -819,7 +819,7 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store sync — 30 slides × 10 images + toBuffer",
     () => {
-      generateSync(build30Slides10Images(), "nodebuffer", { compression: { xml: 0 } });
+      generateSync(build30Slides10Images(), { type: "nodebuffer", compression: { xml: 0 } });
     },
     { iterations: 10 },
   );
@@ -835,7 +835,7 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store async — 30 slides × 10 images + toBuffer",
     async () => {
-      await generate(build30Slides10Images(), "nodebuffer", { compression: { xml: 0 } });
+      await generate(build30Slides10Images(), { type: "nodebuffer", compression: { xml: 0 } });
     },
     { iterations: 10 },
   );
@@ -919,7 +919,7 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store sync — 100x10 table + toBuffer",
     () => {
-      generateSync(build100x10Table(), "nodebuffer", { compression: { xml: 0 } });
+      generateSync(build100x10Table(), { type: "nodebuffer", compression: { xml: 0 } });
     },
     { iterations: 10 },
   );
@@ -935,7 +935,7 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store async — 100x10 table + toBuffer",
     async () => {
-      await generate(build100x10Table(), "nodebuffer", { compression: { xml: 0 } });
+      await generate(build100x10Table(), { type: "nodebuffer", compression: { xml: 0 } });
     },
     { iterations: 10 },
   );
@@ -989,7 +989,7 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store sync — 50 slides full + toBuffer",
     () => {
-      generateSync(build50SlidesFull(), "nodebuffer", { compression: { xml: 0 } });
+      generateSync(build50SlidesFull(), { type: "nodebuffer", compression: { xml: 0 } });
     },
     { iterations: 10 },
   );
@@ -1005,7 +1005,7 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store async — 50 slides full + toBuffer",
     async () => {
-      await generate(build50SlidesFull(), "nodebuffer", { compression: { xml: 0 } });
+      await generate(build50SlidesFull(), { type: "nodebuffer", compression: { xml: 0 } });
     },
     { iterations: 10 },
   );
@@ -1198,7 +1198,7 @@ describe("PPTX: Large File (~100MB) — Mixed + async vs sync", () => {
   bench(
     "ours all-store sync — mixed (40sl, 38img) + toBuffer",
     () => {
-      generateSync(buildMixed100MbPres(), "nodebuffer", { compression: { xml: 0 } });
+      generateSync(buildMixed100MbPres(), { type: "nodebuffer", compression: { xml: 0 } });
     },
     { iterations: 3 },
   );
@@ -1214,7 +1214,7 @@ describe("PPTX: Large File (~100MB) — Mixed + async vs sync", () => {
   bench(
     "ours all-store async — mixed (40sl, 38img) + toBuffer",
     async () => {
-      await generate(buildMixed100MbPres(), "nodebuffer", { compression: { xml: 0 } });
+      await generate(buildMixed100MbPres(), { type: "nodebuffer", compression: { xml: 0 } });
     },
     { iterations: 3 },
   );

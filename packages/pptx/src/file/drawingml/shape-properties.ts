@@ -1,4 +1,3 @@
-import type { File } from "@file/file";
 import { BaseXmlComponent } from "@file/xml-components";
 import type { Context } from "@file/xml-components";
 import { PresetGeometry } from "@office-open/core/drawingml";
@@ -41,7 +40,7 @@ export class ShapeProperties extends BaseXmlComponent {
     this.options = options;
   }
 
-  public override toXml(context: Context<File>): string {
+  public override toXml(context: Context): string {
     const opts = this.options;
     const parts: string[] = [];
 
@@ -63,7 +62,8 @@ export class ShapeProperties extends BaseXmlComponent {
     // Fill (register blipFill media — side effect)
     const media = opts.fill ? extractBlipFillMedia(opts.fill) : undefined;
     if (media) {
-      context.fileData?.media.addImage(media.fileName, {
+      const fd = context.fileData as { media?: { addImage(key: string, entry: unknown): void } };
+      fd?.media?.addImage(media.fileName, {
         data: media.data,
         fileName: media.fileName,
         type: media.type as "png",

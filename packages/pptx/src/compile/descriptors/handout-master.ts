@@ -4,7 +4,7 @@
  * @module
  */
 
-import { DefaultHandoutMaster } from "@file/handout-master";
+import { buildHandoutMasterXml } from "@file/handout-master";
 import type { HandoutMasterOptions } from "@file/handout-master";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 
@@ -20,8 +20,7 @@ export const handoutMasterDesc: CustomDescriptor<HandoutMasterDescriptorOptions>
   kind: "custom",
 
   stringify(opts, _ctx) {
-    const master = new DefaultHandoutMaster(opts.options);
-    return master.serialize();
+    return buildHandoutMasterXml(opts.options);
   },
 
   parse(_el, _ctx) {
