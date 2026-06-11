@@ -38,6 +38,18 @@
     ".": {
       "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs"
+    },
+    "./generate": {
+      "types": "./dist/generate.d.mts",
+      "import": "./dist/generate.mjs"
+    },
+    "./parse": {
+      "types": "./dist/parse.d.mts",
+      "import": "./dist/parse.mjs"
+    },
+    "./patch": {
+      "types": "./dist/patch/index.d.mts",
+      "import": "./dist/patch/index.mjs"
     }
   },
   "scripts": {
