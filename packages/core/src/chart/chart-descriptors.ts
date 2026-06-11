@@ -111,7 +111,7 @@ function chartTypeHeader(opts: ChartSpaceOptions): string {
       headerParts.push(valEl("c:scatterStyle", "line"));
       break;
     case "radar":
-      headerParts.push(valEl("c:radarStyle", "marker"));
+      headerParts.push(valEl("c:radarStyle", "standard"));
       break;
     case "pie":
     case "doughnut":

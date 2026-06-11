@@ -212,7 +212,7 @@ function xmlifyContext(
 
   return {
     AppProperties: {
-      data: APP_PROPS_XML,
+      data: XML_DECL + APP_PROPS_XML,
       path: "docProps/app.xml",
     },
     Comments: {
@@ -231,13 +231,14 @@ function xmlifyContext(
             `media/${commentMedia.referenced[i].fileName}`,
           );
         }
-        return ctx.comments.relationships.serialize();
+        return XML_DECL + ctx.comments.relationships.serialize();
       })(),
       path: "word/_rels/comments.xml.rels",
     },
     ContentTypes: {
       data:
-        contentTypesDesc.stringify(
+        XML_DECL +
+        (contentTypesDesc.stringify(
           buildContentTypes({
             headerCount: ctx.headers.length,
             footerCount: ctx.footers.length,
@@ -253,13 +254,14 @@ function xmlifyContext(
             subDocs: ctx.subDocs.array.map((sd) => ({ path: `/word/${sd.path}` })),
           }),
           ctx,
-        ) ?? "",
+        ) ?? ""),
       path: "[Content_Types].xml",
     },
     CustomProperties: {
       data:
-        customPropertiesDesc.stringify({ properties: ctx._options.customProperties ?? [] }, ctx) ??
-        "",
+        XML_DECL +
+        (customPropertiesDesc.stringify({ properties: ctx._options.customProperties ?? [] }, ctx) ??
+          ""),
       path: "docProps/custom.xml",
     },
     Document: {
@@ -330,11 +332,11 @@ function xmlifyContext(
       path: "word/endnotes.xml",
     },
     EndnotesRelationships: {
-      data: ctx.endnotes.relationships.serialize(),
+      data: XML_DECL + ctx.endnotes.relationships.serialize(),
       path: "word/_rels/endnotes.xml.rels",
     },
     FileRelationships: {
-      data: ctx.fileRelationships.serialize(),
+      data: XML_DECL + ctx.fileRelationships.serialize(),
       path: "_rels/.rels",
     },
     FontTable: {
@@ -344,7 +346,7 @@ function xmlifyContext(
       path: "word/fontTable.xml",
     },
     FontTableRelationships: {
-      data: ctx.fontTable.relationships.serialize(),
+      data: XML_DECL + ctx.fontTable.relationships.serialize(),
       path: "word/_rels/fontTable.xml.rels",
     },
     FootNotes: {
@@ -363,7 +365,7 @@ function xmlifyContext(
             `media/${footnoteMedia.referenced[i].fileName}`,
           );
         }
-        return ctx.footNotes.relationships.serialize();
+        return XML_DECL + ctx.footNotes.relationships.serialize();
       })(),
       path: "word/_rels/footnotes.xml.rels",
     },
@@ -383,7 +385,7 @@ function xmlifyContext(
       }
 
       return {
-        data: entry.relationships.serialize(),
+        data: XML_DECL + entry.relationships.serialize(),
         path: `word/_rels/footer${index + 1}.xml.rels`,
       };
     }),
@@ -413,7 +415,7 @@ function xmlifyContext(
       }
 
       return {
-        data: entry.relationships.serialize(),
+        data: XML_DECL + entry.relationships.serialize(),
         path: `word/_rels/header${index + 1}.xml.rels`,
       };
     }),
@@ -473,7 +475,7 @@ function xmlifyContext(
           "fontTable.xml",
         );
 
-        return ctx.document.relationships.serialize();
+        return XML_DECL + ctx.document.relationships.serialize();
       })(),
       path: "word/_rels/document.xml.rels",
     },

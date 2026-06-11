@@ -1,5 +1,5 @@
 import type { UniversalMeasure } from "@office-open/core";
-import { convertToEmu } from "@office-open/core";
+import { convertPixelsToEmu, convertUniversalMeasureToEmu } from "@office-open/core";
 
 /**
  * Media module for WordprocessingML documents.
@@ -47,14 +47,26 @@ export interface MediaTransformation {
  */
 export const createTransformation = (options: MediaTransformation): MediaDataTransformation => ({
   emus: {
-    x: convertToEmu(options.width),
-    y: convertToEmu(options.height),
+    x:
+      typeof options.width === "string"
+        ? convertUniversalMeasureToEmu(options.width)
+        : convertPixelsToEmu(options.width),
+    y:
+      typeof options.height === "string"
+        ? convertUniversalMeasureToEmu(options.height)
+        : convertPixelsToEmu(options.height),
   },
   flip: options.flip,
   offset: {
     emus: {
-      x: convertToEmu(options.offset?.left ?? 0),
-      y: convertToEmu(options.offset?.top ?? 0),
+      x:
+        typeof options.offset?.left === "string"
+          ? convertUniversalMeasureToEmu(options.offset.left)
+          : convertPixelsToEmu(options.offset?.left ?? 0),
+      y:
+        typeof options.offset?.top === "string"
+          ? convertUniversalMeasureToEmu(options.offset.top)
+          : convertPixelsToEmu(options.offset?.top ?? 0),
     },
     pixels: {
       x: typeof options.offset?.left === "number" ? Math.round(options.offset.left) : 0,

@@ -155,8 +155,9 @@ function registerHyperlinks(
 
 function buildHyperlinkChildren(ids: HyperlinkIds): string {
   const parts: string[] = [];
-  if (ids.clickId) parts.push(`<a:hlinkClick r:id="${ids.clickId}"/>`);
-  if (ids.hoverId) parts.push(`<a:hlinkHover r:id="${ids.hoverId}"/>`);
+  const aNs = 'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"';
+  if (ids.clickId) parts.push(`<a:hlinkClick r:id="${ids.clickId}" ${aNs}/>`);
+  if (ids.hoverId) parts.push(`<a:hlinkHover r:id="${ids.hoverId}" ${aNs}/>`);
   return parts.join("");
 }
 
@@ -667,7 +668,7 @@ function stringifyInline(
     `<wp:extent cx="${cx}" cy="${cy}"/>` +
     `<wp:effectExtent l="${effectExtent.l}" t="${effectExtent.t}" r="${effectExtent.r}" b="${effectExtent.b}"/>` +
     stringifyDocPr(docProperties, hlIds) +
-    `<wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr>` +
+    `<wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"/></wp:cNvGraphicFramePr>` +
     `<a:graphic ${GRAPHIC_NS}>${graphicDataXml}</a:graphic>` +
     `</wp:inline></w:drawing>`
   );
@@ -736,7 +737,7 @@ function stringifyAnchor(
     '<wp:effectExtent l="0" t="0" r="0" b="0"/>' +
     wrapXml +
     stringifyDocPr(docProperties, hlIds) +
-    '<wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr>' +
+    '<wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"/></wp:cNvGraphicFramePr>' +
     `<a:graphic ${GRAPHIC_NS}>${graphicDataXml}</a:graphic>` +
     `</wp:anchor></w:drawing>`
   );
