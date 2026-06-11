@@ -51,7 +51,7 @@ const LARGE_IMAGES = Array.from({ length: 20 }, (_, i) => makeImage(i, 500));
 const PARAGRAPH_CHILDREN = Array.from({ length: 20 }, (_, i) => ({
   text: `Paragraph text line ${i + 1} with some content`,
   bold: i % 3 === 0,
-  italics: i % 5 === 0,
+  italic: i % 5 === 0,
 }));
 
 const TABLE_ROWS = Array.from({ length: 10 }, (_, rowIdx) => ({
@@ -92,7 +92,7 @@ const buildStyledDoc = (): DocumentOptions => ({
     {
       children: [
         ...PARAGRAPH_CHILDREN.map((p) => ({
-          paragraph: { children: [{ text: p.text, bold: p.bold, italics: p.italics }] },
+          paragraph: { children: [{ text: p.text, bold: p.bold, italic: p.italic }] },
         })),
         {
           paragraph: {
@@ -164,7 +164,7 @@ const buildFullFeaturedDoc = (): DocumentOptions => ({
           },
         },
         ...PARAGRAPH_CHILDREN.map((p) => ({
-          paragraph: { children: [{ text: p.text, bold: p.bold, italics: p.italics }] },
+          paragraph: { children: [{ text: p.text, bold: p.bold, italic: p.italic }] },
         })),
         {
           paragraph: {
@@ -229,7 +229,7 @@ const buildStyledDocCompetitor = () =>
                   new TextRunOrig({
                     text: p.text,
                     bold: p.bold,
-                    italics: p.italics,
+                    italics: p.italic,
                   }),
                 ],
               }),
@@ -331,7 +331,7 @@ const buildFullFeaturedDocCompetitor = () =>
                   new TextRunOrig({
                     text: p.text,
                     bold: p.bold,
-                    italics: p.italics,
+                    italics: p.italic,
                   }),
                 ],
               }),
@@ -540,7 +540,7 @@ describe("DOCX: Create + toBuffer", () => {
 const LARGE_PARAGRAPHS = Array.from({ length: 2000 }, (_, i) => ({
   text: `This is paragraph ${i + 1} with sample content to simulate real document generation. Each paragraph contains enough text to represent a realistic scenario for stress testing large file creation.`,
   bold: i % 3 === 0,
-  italics: i % 5 === 0,
+  italic: i % 5 === 0,
   underline: i % 7 === 0,
 }));
 
@@ -562,7 +562,7 @@ const buildLargeParagraphsDoc = (): DocumentOptions => ({
                 {
                   text: p.text,
                   bold: p.bold,
-                  italics: p.italics,
+                  italic: p.italic,
                   underline: { type: UnderlineType.SINGLE },
                 },
               ],
@@ -603,7 +603,7 @@ const buildLargeParagraphsDocCompetitor = () =>
                 new TextRunOrig({
                   text: p.text,
                   bold: p.bold,
-                  italics: p.italics,
+                  italics: p.italic,
                   underline: { type: UnderlineTypeOrig.SINGLE },
                 }),
               ],
@@ -957,7 +957,7 @@ const buildMixed100MbDoc = (): DocumentOptions => ({
               {
                 text: p.text,
                 bold: p.bold,
-                italics: p.italics,
+                italic: p.italic,
                 underline: { type: UnderlineType.SINGLE },
               },
             ],
@@ -1035,7 +1035,7 @@ describe("DOCX: Large File (~100MB) — Mixed + async vs sync", () => {
                       new TextRunOrig({
                         text: p.text,
                         bold: p.bold,
-                        italics: p.italics,
+                        italics: p.italic,
                         underline: { type: UnderlineTypeOrig.SINGLE },
                       }),
                     ],

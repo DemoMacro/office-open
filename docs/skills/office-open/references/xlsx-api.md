@@ -46,7 +46,7 @@ Workbook
   "reference": "B3",
   "styleIndex": 2,
   "style": {
-    "font": { "bold": true, "italic": true, "size": 14, "color": "FF0000", "fontName": "Arial" },
+    "font": { "bold": true, "italic": true, "size": 14, "color": "FF0000", "font": "Arial" },
     "fill": { "color": "4472C4" },
     "border": {
       "top": { "style": "thin", "color": "000000" },
@@ -79,7 +79,7 @@ Workbook
   "strike": true,
   "size": 14,
   "color": "FF0000",
-  "fontName": "Arial"
+  "font": "Arial"
 }
 ```
 
@@ -91,7 +91,7 @@ Workbook
 | `strike`    | `boolean` | Strikethrough         |
 | `size`      | `number`  | Font size in points   |
 | `color`     | `string`  | Hex color without `#` |
-| `fontName`  | `string`  | Font family name      |
+| `font`      | `string`  | Font family name      |
 
 ### Fill Options
 

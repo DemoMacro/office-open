@@ -42,7 +42,7 @@ const buffer = await generateDocument({
         name: "My Wonky Style",
         run: {
           color: "990000",
-          italics: true,
+          italic: true,
         },
       },
       {

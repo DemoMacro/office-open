@@ -5,14 +5,14 @@ import { generateDocument } from "@office-open/docx";
 
 const heading = (text: string) => ({
   paragraph: {
-    children: [{ text, bold: true, size: 32 }],
+    children: [{ text, bold: true, size: 16 }],
     spacing: { after: 200 },
   },
 });
 
 const subheading = (text: string) => ({
   paragraph: {
-    children: [{ text, bold: true, size: 24, color: "4472C4" }],
+    children: [{ text, bold: true, size: 12, color: "4472C4" }],
     spacing: { before: 300, after: 100 },
   },
 });
@@ -22,9 +22,9 @@ const note = () => ({
     children: [
       {
         text: "Note: Open this document in Microsoft Word to see the SmartArt rendered.",
-        italics: true,
+        italic: true,
         color: "888888",
-        size: 18,
+        size: 9,
       },
     ],
     spacing: { before: 600 },

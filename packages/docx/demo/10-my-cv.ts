@@ -325,7 +325,7 @@ class DocumentCreator {
       paragraph: {
         children: [
           {
-            italics: true,
+            italic: true,
             text: roleText,
           },
         ],

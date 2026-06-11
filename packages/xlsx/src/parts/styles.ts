@@ -19,7 +19,7 @@ export interface FontOptions {
   strike?: boolean;
   size?: number;
   color?: string;
-  fontName?: string;
+  font?: string;
   /** Character set (CT_Font/charset @val) */
   charset?: number;
   /** Font family (CT_Font/family @val) */
@@ -160,7 +160,7 @@ export interface DxfOptions {
 // ── Style key helpers for deduplication ──
 
 function fontKey(f: FontOptions): string {
-  return `b${f.bold ? 1 : 0}i${f.italic ? 1 : 0}u${f.underline ? 1 : 0}s${f.strike ? 1 : 0}z${f.size ?? 0}c${f.color ?? ""}n${f.fontName ?? ""}cs${f.charset ?? ""}fm${f.family ?? ""}co${f.condense ? 1 : 0}ex${f.extend ? 1 : 0}va${f.vertAlign ?? ""}sc${f.scheme ?? ""}sh${f.shadow ? 1 : 0}ol${f.outline ? 1 : 0}`;
+  return `b${f.bold ? 1 : 0}i${f.italic ? 1 : 0}u${f.underline ? 1 : 0}s${f.strike ? 1 : 0}z${f.size ?? 0}c${f.color ?? ""}n${f.font ?? ""}cs${f.charset ?? ""}fm${f.family ?? ""}co${f.condense ? 1 : 0}ex${f.extend ? 1 : 0}va${f.vertAlign ?? ""}sc${f.scheme ?? ""}sh${f.shadow ? 1 : 0}ol${f.outline ? 1 : 0}`;
 }
 
 function fillKey(f: FillOptions): string {
@@ -307,7 +307,7 @@ export interface StylesState {
 
 export class Styles {
   private fonts: FontOptions[] = [
-    { size: 11, fontName: "Calibri" }, // default font (index 0)
+    { size: 11, font: "Calibri" }, // default font (index 0)
   ];
   private fontKeys = new Map<string, number>();
 
@@ -738,7 +738,7 @@ export class Styles {
     if (f.extend) parts.push("<extend/>");
     if (f.size) parts.push(`<sz val="${f.size}"/>`);
     if (f.color) parts.push(`<color rgb="FF${f.color}"/>`);
-    if (f.fontName) parts.push(`<name val="${escapeXml(f.fontName)}"/>`);
+    if (f.font) parts.push(`<name val="${escapeXml(f.font)}"/>`);
     if (f.charset !== undefined) parts.push(`<charset val="${f.charset}"/>`);
     if (f.family !== undefined) parts.push(`<family val="${f.family}"/>`);
     if (f.vertAlign) parts.push(`<vertAlign val="${f.vertAlign}"/>`);
@@ -933,7 +933,7 @@ function parseFont(el: XmlElement): FontOptions {
         result.color = parseColorHex(child);
         break;
       case "name":
-        result.fontName = attr(child, "val") ?? undefined;
+        result.font = attr(child, "val") ?? undefined;
         break;
       case "charset":
         result.charset = attrNum(child, "val");

@@ -128,7 +128,7 @@ const buffer = await generateDocument({
                             {
                               text: "Date",
                               bold: true,
-                              size: 40,
+                              size: 20,
                             },
                           ],
                         },
@@ -146,7 +146,7 @@ const buffer = await generateDocument({
                             {
                               text: "Ticker",
                               bold: true,
-                              size: 40,
+                              size: 20,
                             },
                           ],
                         },
@@ -164,7 +164,7 @@ const buffer = await generateDocument({
                             {
                               text: "Price",
                               bold: true,
-                              size: 40,
+                              size: 20,
                             },
                           ],
                         },

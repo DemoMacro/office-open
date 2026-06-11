@@ -18,7 +18,7 @@ const buffer = await generateDocument({
       children: [
         {
           paragraph: {
-            children: [{ text: "Endnotes Demo Document", bold: true, size: 28 }],
+            children: [{ text: "Endnotes Demo Document", bold: true, size: 14 }],
             spacing: { after: 400 },
           },
         },
@@ -66,7 +66,7 @@ const buffer = await generateDocument({
       children: [
         {
           paragraph: {
-            children: [{ text: "Second Section", bold: true, size: 24 }],
+            children: [{ text: "Second Section", bold: true, size: 12 }],
             spacing: { after: 200 },
           },
         },
@@ -92,7 +92,7 @@ const buffer = await generateDocument({
       children: [
         {
           paragraph: {
-            children: [{ text: "Third Section", bold: true, size: 24 }],
+            children: [{ text: "Third Section", bold: true, size: 12 }],
             spacing: { after: 200 },
           },
         },

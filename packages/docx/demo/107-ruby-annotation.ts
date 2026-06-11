@@ -9,7 +9,7 @@ const buffer = await generateDocument({
       children: [
         {
           paragraph: {
-            children: [{ text: "Ruby Annotation Demo", bold: true, size: 32 }],
+            children: [{ text: "Ruby Annotation Demo", bold: true, size: 16 }],
             spacing: { after: 400 },
           },
         },
@@ -17,7 +17,7 @@ const buffer = await generateDocument({
         // Japanese furigana
         {
           paragraph: {
-            children: [{ bold: true, text: "Japanese Furigana", size: 28 }],
+            children: [{ bold: true, text: "Japanese Furigana", size: 14 }],
             spacing: { after: 200 },
           },
         },
@@ -45,7 +45,7 @@ const buffer = await generateDocument({
         // Chinese pinyin
         {
           paragraph: {
-            children: [{ bold: true, text: "Chinese Pinyin", size: 28 }],
+            children: [{ bold: true, text: "Chinese Pinyin", size: 14 }],
             spacing: { after: 200 },
           },
         },
@@ -73,7 +73,7 @@ const buffer = await generateDocument({
         // Alignment options
         {
           paragraph: {
-            children: [{ bold: true, text: "Alignment Options", size: 28 }],
+            children: [{ bold: true, text: "Alignment Options", size: 14 }],
             spacing: { after: 200 },
           },
         },

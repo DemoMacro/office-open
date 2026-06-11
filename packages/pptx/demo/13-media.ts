@@ -30,7 +30,7 @@ const options: PresentationOptions = {
                   children: [
                     {
                       text: "Video Embedding Demo",
-                      fontSize: 32,
+                      size: 32,
                       bold: true,
                     },
                   ],
@@ -65,7 +65,7 @@ const options: PresentationOptions = {
                   children: [
                     {
                       text: "Video: Big Buck Bunny (360p, 10s, ~1MB MP4)",
-                      fontSize: 14,
+                      size: 14,
                       fill: "666666",
                     },
                   ],

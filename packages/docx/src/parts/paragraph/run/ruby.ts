@@ -81,17 +81,17 @@ export interface RubyOptions {
   /** Ruby alignment (defaults to "center"). */
   alignment?: (typeof RubyAlign)[keyof typeof RubyAlign];
   /**
-   * Font size for the ruby annotation text in half-points (e.g., 20 = 10pt).
+   * Font size for the ruby annotation text in points (e.g., 10 = 10pt).
    * Defaults to half the base text size if not specified.
    */
   fontSize?: number;
   /**
-   * Vertical offset for the ruby annotation in half-points.
+   * Vertical offset for the ruby annotation in points.
    * How far the annotation is raised above (or below) the base text.
    */
   raise?: number;
   /**
-   * Font size for the base text in half-points.
+   * Font size for the base text in points.
    * Used to calculate the ruby annotation positioning.
    */
   baseFontSize?: number;

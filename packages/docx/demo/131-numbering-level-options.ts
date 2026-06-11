@@ -54,7 +54,7 @@ const buffer = await generateDocument({
               {
                 bold: true,
                 text: "Numbering with Level Restart and Legacy Options",
-                size: 32,
+                size: 16,
               },
             ],
           },

@@ -19,7 +19,7 @@ const options: PresentationOptions = {
               children: [
                 {
                   properties: { alignment: "center", bullet: { type: "none" } },
-                  children: [{ text: "Locked Canvas Demo", fontSize: 32, bold: true }],
+                  children: [{ text: "Locked Canvas Demo", size: 32, bold: true }],
                 },
               ],
             },
@@ -45,7 +45,7 @@ const options: PresentationOptions = {
                       children: [
                         {
                           text: "Locked Shape 1",
-                          fontSize: 18,
+                          size: 18,
                           bold: true,
                           fill: "FFFFFF",
                         },
@@ -67,7 +67,7 @@ const options: PresentationOptions = {
                       children: [
                         {
                           text: "Locked Shape 2",
-                          fontSize: 18,
+                          size: 18,
                           bold: true,
                           fill: "FFFFFF",
                         },

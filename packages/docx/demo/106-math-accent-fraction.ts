@@ -11,7 +11,7 @@ const buffer = await generateDocument({
         // ===== Math Accent =====
         {
           paragraph: {
-            children: [{ text: "Math Accent Demo", bold: true, size: 28 }],
+            children: [{ text: "Math Accent Demo", bold: true, size: 14 }],
           },
         },
         {
@@ -70,7 +70,7 @@ const buffer = await generateDocument({
         // ===== Fraction Types =====
         {
           paragraph: {
-            children: [{ text: "Fraction Types Demo", bold: true, size: 28 }],
+            children: [{ text: "Fraction Types Demo", bold: true, size: 14 }],
           },
         },
         {

@@ -103,8 +103,8 @@ export interface RunStylePropertiesOptions {
   noProof?: boolean;
   bold?: boolean;
   boldComplexScript?: boolean;
-  italics?: boolean;
-  italicsComplexScript?: boolean;
+  italic?: boolean;
+  italicComplexScript?: boolean;
   underline?: {
     color?: string;
     type?: (typeof UnderlineType)[keyof typeof UnderlineType];
@@ -116,6 +116,7 @@ export interface RunStylePropertiesOptions {
   color?: string | ColorOptions;
   kern?: number;
   position?: string;
+  /** Font size in points. Internally stored as half-points in XML (×2). */
   size?: number;
   sizeComplexScript?: boolean | number;
   rightToLeft?: boolean;

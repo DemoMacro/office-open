@@ -45,7 +45,7 @@ const buffer = await generateDocument({
               {
                 text: "Bibliography Demo",
                 bold: true,
-                size: 32,
+                size: 16,
               },
             ],
             spacing: { after: 400 },
@@ -59,7 +59,7 @@ const buffer = await generateDocument({
               {
                 bold: true,
                 text: "Bibliography (APA style)",
-                size: 28,
+                size: 14,
               },
             ],
             spacing: { after: 200 },
@@ -90,7 +90,7 @@ const buffer = await generateDocument({
             children: [
               {
                 text: "Note: Open this document in Microsoft Word to see the bibliography rendered.",
-                italics: true,
+                italic: true,
                 color: "888888",
               },
             ],

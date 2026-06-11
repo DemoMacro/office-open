@@ -61,7 +61,7 @@ const options: PresentationOptions = {
                         url: "https://www.iso.org/standard/71691.html",
                         tooltip: "ISO/IEC 29500",
                       },
-                      fontSize: 14,
+                      size: 14,
                     },
                   ],
                 },

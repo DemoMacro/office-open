@@ -40,7 +40,7 @@ const buffer = await generateDocument({
                     fill: "FF0000",
                     type: ShadingType.REVERSE_DIAGONAL_STRIPE,
                   },
-                  size: 24,
+                  size: 12,
                   text: "Hello World",
                 },
               ],

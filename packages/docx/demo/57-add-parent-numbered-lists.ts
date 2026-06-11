@@ -33,7 +33,7 @@ const buffer = await generateDocument({
               run: {
                 bold: true,
                 font: "Times New Roman",
-                size: 18,
+                size: 9,
               },
             },
             text: "%1.%2",

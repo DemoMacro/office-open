@@ -11,7 +11,7 @@ const buffer = await generateDocument({
       children: [
         {
           paragraph: {
-            children: [{ bold: true, text: "Smart Tags and Proof Errors", size: 32 }],
+            children: [{ bold: true, text: "Smart Tags and Proof Errors", size: 16 }],
           },
         },
 

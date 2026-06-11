@@ -89,7 +89,7 @@ const buffer = await generateDocument({
                   text: "in order",
                   color: "ff0000",
                   bold: true,
-                  size: 24,
+                  size: 12,
                   font: {
                     name: "Garamond",
                   },

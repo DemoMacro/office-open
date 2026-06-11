@@ -48,7 +48,7 @@ const buffer = await generateDocument({
         next: "Normal",
         run: {
           color: "999999",
-          italics: true,
+          italic: true,
           language: {
             value: "fr-FR",
           },

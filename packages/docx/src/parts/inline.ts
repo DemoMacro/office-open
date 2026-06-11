@@ -292,9 +292,9 @@ export function stringifyJsonChild(
   if ("ruby" in child && typeof child.ruby === "object" && child.ruby !== null) {
     const r = child.ruby as import("@parts/paragraph/run/ruby").RubyOptions;
     const align = r.alignment ?? "center";
-    const hps = r.fontSize ?? 20;
-    const hpsRaise = r.raise ?? 20;
-    const hpsBaseText = r.baseFontSize ?? 40;
+    const hps = (r.fontSize ?? 10) * 2;
+    const hpsRaise = (r.raise ?? 10) * 2;
+    const hpsBaseText = (r.baseFontSize ?? 20) * 2;
     const lid = r.languageId ?? "ja-JP";
 
     const prParts = [

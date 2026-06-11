@@ -14,7 +14,7 @@ const buffer = await generateDocument({
               "Hello World",
               {
                 bold: true,
-                size: 40,
+                size: 20,
                 text: "Foo Bar",
               },
               {

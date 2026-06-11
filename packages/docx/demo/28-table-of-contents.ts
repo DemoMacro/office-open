@@ -68,7 +68,7 @@ const buffer = await generateDocument({
         quickFormat: true,
         run: {
           color: "990000",
-          italics: true,
+          italic: true,
         },
       },
       {

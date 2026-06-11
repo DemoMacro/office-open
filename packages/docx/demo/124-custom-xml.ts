@@ -21,7 +21,7 @@ const buffer = await generateDocument({
               {
                 bold: true,
                 text: "Custom XML Elements",
-                size: 32,
+                size: 16,
               },
             ],
             spacing: { after: 200 },
@@ -51,7 +51,7 @@ const buffer = await generateDocument({
               {
                 bold: true,
                 text: "Block-level custom XML:",
-                size: 28,
+                size: 14,
               },
             ],
             spacing: { after: 200 },

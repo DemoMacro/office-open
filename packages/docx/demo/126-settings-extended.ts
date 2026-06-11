@@ -92,7 +92,7 @@ const buffer = await generateDocument({
               {
                 bold: true,
                 text: "Extended Settings Demo",
-                size: 32,
+                size: 16,
               },
             ],
           },

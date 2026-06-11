@@ -9,7 +9,7 @@ const buffer = await generateDocument({
       children: [
         {
           paragraph: {
-            children: [{ text: "Custom Geometry Demo", bold: true, size: 32 }],
+            children: [{ text: "Custom Geometry Demo", bold: true, size: 16 }],
             spacing: { after: 400 },
           },
         },
@@ -17,7 +17,7 @@ const buffer = await generateDocument({
         // 1. Simple triangle
         {
           paragraph: {
-            children: [{ bold: true, text: "1. Triangle", size: 28 }],
+            children: [{ bold: true, text: "1. Triangle", size: 14 }],
             spacing: { after: 200 },
           },
         },
@@ -62,7 +62,7 @@ const buffer = await generateDocument({
         // 2. Diamond
         {
           paragraph: {
-            children: [{ bold: true, text: "2. Diamond", size: 28 }],
+            children: [{ bold: true, text: "2. Diamond", size: 14 }],
             spacing: { after: 200 },
           },
         },
@@ -116,7 +116,7 @@ const buffer = await generateDocument({
         // 3. Shape with arc
         {
           paragraph: {
-            children: [{ bold: true, text: "3. Shape with Arc", size: 28 }],
+            children: [{ bold: true, text: "3. Shape with Arc", size: 14 }],
             spacing: { after: 200 },
           },
         },

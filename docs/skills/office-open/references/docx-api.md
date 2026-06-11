@@ -23,14 +23,14 @@ DocumentOptions
 {
   "text": "Hello",
   "bold": true,
-  "italics": true,
+  "italic": true,
   "underline": { "type": "single", "color": "FF0000" },
   "strike": "single",
   "doubleStrike": true,
   "subScript": true,
   "superScript": true,
   "font": "Calibri",
-  "size": 24,
+  "size": 12,
   "color": "FF0000",
   "highlight": "yellow",
   "shading": { "type": "clear", "fill": "E0E0E0" },
@@ -50,10 +50,10 @@ DocumentOptions
 | ------------------ | -------------------------------- | ------------------------------------------------------------------------------------ |
 | `text`             | `string`                         | Plain text content                                                                   |
 | `bold`             | `boolean`                        | Bold formatting                                                                      |
-| `italics`          | `boolean`                        | Italic formatting                                                                    |
+| `italic`           | `boolean`                        | Italic formatting                                                                    |
 | `underline`        | `{ type, color? }`               | Underline style. Types: `"single"`, `"double"`, `"wave"`, `"dash"`, `"dotted"`, etc. |
 | `strike`           | `"single" \| "double" \| "none"` | Strikethrough                                                                        |
-| `size`             | `number`                         | Font size in half-points (24 = 12pt)                                                 |
+| `size`             | `number`                         | Font size in points (12 = 12pt)                                                      |
 | `color`            | `string`                         | Hex color without `#`                                                                |
 | `font`             | `string`                         | Font family name                                                                     |
 | `highlight`        | `string`                         | Word highlight color name                                                            |
@@ -398,7 +398,7 @@ Used in TextRun children as a string — displays the page number where the refe
   "styles": {
     "default": {
       "document": {
-        "run": { "font": "Calibri", "size": 24 }
+        "run": { "font": "Calibri", "size": 12 }
       }
     },
     "paragraphStyles": [

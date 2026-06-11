@@ -9,7 +9,7 @@ const buffer = await generateDocument({
       children: [
         {
           paragraph: {
-            children: [{ text: "3D Scene Demo", bold: true, size: 32 }],
+            children: [{ text: "3D Scene Demo", bold: true, size: 16 }],
             spacing: { after: 400 },
           },
         },
@@ -21,7 +21,7 @@ const buffer = await generateDocument({
               {
                 bold: true,
                 text: "1. Isometric Camera + Three-Point Light",
-                size: 28,
+                size: 14,
               },
             ],
             spacing: { after: 200 },
@@ -65,7 +65,7 @@ const buffer = await generateDocument({
               {
                 bold: true,
                 text: "2. Perspective Camera + Morning Light",
-                size: 28,
+                size: 14,
               },
             ],
             spacing: { after: 200 },
@@ -120,7 +120,7 @@ const buffer = await generateDocument({
               {
                 bold: true,
                 text: "3. Rotated Camera",
-                size: 28,
+                size: 14,
               },
             ],
             spacing: { after: 200 },

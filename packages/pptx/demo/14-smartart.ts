@@ -20,7 +20,7 @@ const options: PresentationOptions = {
               children: [
                 {
                   properties: { alignment: "center", bullet: { type: "none" } },
-                  children: [{ text: "List Layouts", fontSize: 32, bold: true }],
+                  children: [{ text: "List Layouts", size: 32, bold: true }],
                 },
               ],
             },
@@ -70,7 +70,7 @@ const options: PresentationOptions = {
               children: [
                 {
                   properties: { alignment: "center", bullet: { type: "none" } },
-                  children: [{ text: "Process Layouts", fontSize: 32, bold: true }],
+                  children: [{ text: "Process Layouts", size: 32, bold: true }],
                 },
               ],
             },
@@ -152,7 +152,7 @@ const options: PresentationOptions = {
               children: [
                 {
                   properties: { alignment: "center", bullet: { type: "none" } },
-                  children: [{ text: "Cycle Layouts", fontSize: 32, bold: true }],
+                  children: [{ text: "Cycle Layouts", size: 32, bold: true }],
                 },
               ],
             },
@@ -212,7 +212,7 @@ const options: PresentationOptions = {
                   children: [
                     {
                       text: "Hierarchy Layouts",
-                      fontSize: 32,
+                      size: 32,
                       bold: true,
                     },
                   ],
@@ -294,7 +294,7 @@ const options: PresentationOptions = {
                   children: [
                     {
                       text: "Relationship / Other Layouts",
-                      fontSize: 32,
+                      size: 32,
                       bold: true,
                     },
                   ],
@@ -349,7 +349,7 @@ const options: PresentationOptions = {
               children: [
                 {
                   properties: { alignment: "center", bullet: { type: "none" } },
-                  children: [{ text: "Pyramid Layouts", fontSize: 32, bold: true }],
+                  children: [{ text: "Pyramid Layouts", size: 32, bold: true }],
                 },
               ],
             },
@@ -403,7 +403,7 @@ const options: PresentationOptions = {
                   children: [
                     {
                       text: "Matrix / Radial / Other Layouts",
-                      fontSize: 32,
+                      size: 32,
                       bold: true,
                     },
                   ],

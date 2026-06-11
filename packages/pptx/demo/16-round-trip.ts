@@ -149,7 +149,7 @@ const slides: SlideOptions[] = [
               {
                 properties: { alignment: "center", bullet: { type: "none" } },
                 children: [
-                  { text: "Round-trip Feature Showcase", fontSize: 32, bold: true, fill: "FFFFFF" },
+                  { text: "Round-trip Feature Showcase", size: 32, bold: true, fill: "FFFFFF" },
                 ],
               },
             ],
@@ -210,13 +210,13 @@ const slides: SlideOptions[] = [
               {
                 properties: { bullet: { type: "none" } },
                 children: [
-                  { text: "Bold", bold: true, fontSize: 14 },
+                  { text: "Bold", bold: true, size: 14 },
                   { text: " " },
-                  { text: "Italic", italic: true, fontSize: 14 },
+                  { text: "Italic", italic: true, size: 14 },
                   { text: "\n" },
-                  { text: "Underline", underline: "single", fontSize: 14 },
+                  { text: "Underline", underline: "single", size: 14 },
                   { text: " " },
-                  { text: "Strike", strike: "sngStrike", fontSize: 14, fill: "FF0000" },
+                  { text: "Strike", strike: "sngStrike", size: 14, fill: "FF0000" },
                 ],
               },
             ],
@@ -279,10 +279,10 @@ const slides: SlideOptions[] = [
               {
                 properties: { alignment: "center", bullet: { type: "none" }, lineSpacing: 1.5 },
                 children: [
-                  { text: "H", fontSize: 20 },
-                  { text: "2", fontSize: 12, baseline: -25000 },
-                  { text: "O  \u2014  E=mc", fontSize: 20 },
-                  { text: "2", fontSize: 12, baseline: 30000 },
+                  { text: "H", size: 20 },
+                  { text: "2", size: 12, baseline: -25000 },
+                  { text: "O  \u2014  E=mc", size: 20 },
+                  { text: "2", size: 12, baseline: 30000 },
                 ],
               },
               {
@@ -516,7 +516,7 @@ const slides: SlideOptions[] = [
                 children: [
                   {
                     text: "Gradient Background + Fade Transition",
-                    fontSize: 24,
+                    size: 24,
                     bold: true,
                     fill: "FFFFFF",
                   },
@@ -635,7 +635,7 @@ const slides: SlideOptions[] = [
             children: [
               {
                 properties: { bullet: { type: "none" } },
-                children: [{ text: "Dark theme slide", fill: "FFFFFF", fontSize: 24 }],
+                children: [{ text: "Dark theme slide", fill: "FFFFFF", size: 24 }],
               },
             ],
           },

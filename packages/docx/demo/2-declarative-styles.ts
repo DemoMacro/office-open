@@ -86,7 +86,7 @@ const buffer = await generateDocument({
         {
           paragraph: {
             style: "aside",
-            text: "An aside, in light gray italics and indented",
+            text: "An aside, in light gray italic and indented",
           },
         },
         {
@@ -211,7 +211,7 @@ const buffer = await generateDocument({
         },
         run: {
           font: "Calibri",
-          size: 22,
+          size: 11,
         },
       },
       heading1: {
@@ -223,8 +223,8 @@ const buffer = await generateDocument({
         run: {
           bold: true,
           color: "FF0000",
-          italics: true,
-          size: 28,
+          italic: true,
+          size: 14,
         },
       },
       heading2: {
@@ -236,7 +236,7 @@ const buffer = await generateDocument({
         },
         run: {
           bold: true,
-          size: 26,
+          size: 13,
           underline: {
             color: "FF0000",
             type: UnderlineType.DOUBLE,
@@ -265,7 +265,7 @@ const buffer = await generateDocument({
         },
         run: {
           color: "999999",
-          italics: true,
+          italic: true,
         },
       },
       {

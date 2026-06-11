@@ -39,7 +39,7 @@ const patchedBuffer = await patchPresentation({
   patches: {
     name: {
       type: PatchType.PARAGRAPH,
-      children: [{ text: "World", bold: true, fontSize: 24 }],
+      children: [{ text: "World", bold: true, size: 24 }],
     },
   },
 });

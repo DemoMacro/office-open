@@ -12,7 +12,7 @@ const buffer = await generateDocument({
             children: [
               {
                 bold: true,
-                size: 32,
+                size: 16,
                 text: "DrawingML Advanced Features",
               },
             ],

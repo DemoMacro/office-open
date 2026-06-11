@@ -9,7 +9,7 @@ const buffer = await generateDocument({
       children: [
         {
           paragraph: {
-            children: [{ text: "Advanced Math Elements Demo", bold: true, size: 32 }],
+            children: [{ text: "Advanced Math Elements Demo", bold: true, size: 16 }],
             spacing: { after: 400 },
           },
         },
@@ -17,7 +17,7 @@ const buffer = await generateDocument({
         // 1. MathBox
         {
           paragraph: {
-            children: [{ bold: true, text: "1. MathBox", size: 28 }],
+            children: [{ bold: true, text: "1. MathBox", size: 14 }],
             spacing: { after: 200 },
           },
         },
@@ -42,7 +42,7 @@ const buffer = await generateDocument({
         // 2. MathBorderBox
         {
           paragraph: {
-            children: [{ bold: true, text: "2. MathBorderBox", size: 28 }],
+            children: [{ bold: true, text: "2. MathBorderBox", size: 14 }],
             spacing: { after: 200 },
           },
         },
@@ -72,7 +72,7 @@ const buffer = await generateDocument({
         // 3. Equation Array
         {
           paragraph: {
-            children: [{ bold: true, text: "3. Equation Array", size: 28 }],
+            children: [{ bold: true, text: "3. Equation Array", size: 14 }],
             spacing: { after: 200 },
           },
         },
@@ -93,7 +93,7 @@ const buffer = await generateDocument({
         // 4. Group Character
         {
           paragraph: {
-            children: [{ bold: true, text: "4. Group Character (brace)", size: 28 }],
+            children: [{ bold: true, text: "4. Group Character (brace)", size: 14 }],
             spacing: { after: 200 },
           },
         },
@@ -125,7 +125,7 @@ const buffer = await generateDocument({
         // 5. Matrix (with column properties: baseJc, plcHide, rSpRule)
         {
           paragraph: {
-            children: [{ bold: true, text: "5. Matrix", size: 28 }],
+            children: [{ bold: true, text: "5. Matrix", size: 14 }],
             spacing: { after: 200 },
           },
         },
@@ -185,7 +185,7 @@ const buffer = await generateDocument({
               {
                 bold: true,
                 text: "6. Phantom (invisible placeholder)",
-                size: 28,
+                size: 14,
               },
             ],
             spacing: { after: 200 },
@@ -223,7 +223,7 @@ const buffer = await generateDocument({
         // 7. SuperScript
         {
           paragraph: {
-            children: [{ bold: true, text: "7. SuperScript (E = mc²)", size: 28 }],
+            children: [{ bold: true, text: "7. SuperScript (E = mc²)", size: 14 }],
             spacing: { after: 200 },
           },
         },

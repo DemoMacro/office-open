@@ -501,12 +501,12 @@ export function stringifyRunPropertiesInner(opts?: RunPropertiesOptions): string
     (opts.boldComplexScript === undefined && opts.bold !== undefined) || opts.boldComplexScript;
   if (bCs !== undefined) parts.push(onOff("w:bCs", opts.boldComplexScript ?? opts.bold!));
 
-  // Italics
-  if (opts.italics !== undefined) parts.push(onOff("w:i", opts.italics));
+  // Italic
+  if (opts.italic !== undefined) parts.push(onOff("w:i", opts.italic));
   const iCs =
-    (opts.italicsComplexScript === undefined && opts.italics !== undefined) ||
-    opts.italicsComplexScript;
-  if (iCs !== undefined) parts.push(onOff("w:iCs", opts.italicsComplexScript ?? opts.italics!));
+    (opts.italicComplexScript === undefined && opts.italic !== undefined) ||
+    opts.italicComplexScript;
+  if (iCs !== undefined) parts.push(onOff("w:iCs", opts.italicComplexScript ?? opts.italic!));
 
   // Caps
   if (opts.smallCaps !== undefined) {
@@ -544,13 +544,13 @@ export function stringifyRunPropertiesInner(opts?: RunPropertiesOptions): string
   // Position
   if (opts.position) parts.push(`<w:position w:val="${opts.position}"/>`);
 
-  // Size
-  if (opts.size !== undefined) parts.push(`<w:sz w:val="${hpsMeasureValue(opts.size)}"/>`);
+  // Size (points → half-points)
+  if (opts.size !== undefined) parts.push(`<w:sz w:val="${hpsMeasureValue(opts.size * 2)}"/>`);
   const szCs =
     opts.sizeComplexScript === undefined || opts.sizeComplexScript === true
       ? opts.size
       : opts.sizeComplexScript;
-  if (szCs) parts.push(`<w:szCs w:val="${hpsMeasureValue(szCs)}"/>`);
+  if (szCs) parts.push(`<w:szCs w:val="${hpsMeasureValue((szCs as number) * 2)}"/>`);
 
   // Highlight
   if (opts.highlight) parts.push(`<w:highlight w:val="${opts.highlight}"/>`);

@@ -9,7 +9,7 @@ const buffer = await generateDocument({
       children: [
         {
           paragraph: {
-            children: [{ text: "Effect DAG Demo", bold: true, size: 32 }],
+            children: [{ text: "Effect DAG Demo", bold: true, size: 16 }],
             spacing: { after: 400 },
           },
         },
@@ -21,7 +21,7 @@ const buffer = await generateDocument({
               {
                 bold: true,
                 text: "1. Glow + Outer Shadow",
-                size: 28,
+                size: 14,
               },
             ],
             spacing: { after: 200 },
@@ -66,7 +66,7 @@ const buffer = await generateDocument({
         // 2. Alpha effects
         {
           paragraph: {
-            children: [{ bold: true, text: "2. Luminance + Tint", size: 28 }],
+            children: [{ bold: true, text: "2. Luminance + Tint", size: 14 }],
             spacing: { after: 200 },
           },
         },
@@ -102,7 +102,7 @@ const buffer = await generateDocument({
               {
                 bold: true,
                 text: "3. Multiple Effects (sib type)",
-                size: 28,
+                size: 14,
               },
             ],
             spacing: { after: 200 },
@@ -162,7 +162,7 @@ const buffer = await generateDocument({
               {
                 bold: true,
                 text: "4. Nested Container (tree type)",
-                size: 28,
+                size: 14,
               },
             ],
             spacing: { after: 200 },

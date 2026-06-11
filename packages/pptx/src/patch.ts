@@ -59,7 +59,7 @@ const pptxReplacer = createReplacer({
         if (obj.bold) attrs.push(' b="1"');
         if (obj.italic) attrs.push(' i="1"');
         if (obj.underline) attrs.push(` u="${escapeXml(String(obj.underline as string))}"`);
-        if (obj.fontSize) attrs.push(` sz="${Number(obj.fontSize) * 100}"`);
+        if (obj.size) attrs.push(` sz="${Number(obj.size) * 100}"`);
         const attrStr = attrs.join("");
         const latinChild = obj.font ? `<a:latin typeface="${escapeXml(obj.font as string)}"/>` : "";
         const rPr = attrStr || latinChild ? `<a:rPr${attrStr}>${latinChild}</a:rPr>` : "";

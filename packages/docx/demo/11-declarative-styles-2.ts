@@ -227,7 +227,7 @@ const buffer = await generateDocument({
           bold: true,
           color: "000000",
           font: "Calibri",
-          size: 52,
+          size: 26,
           underline: {
             color: "000000",
             type: UnderlineType.SINGLE,
@@ -241,7 +241,7 @@ const buffer = await generateDocument({
         run: {
           bold: true,
           font: "Calibri",
-          size: 26,
+          size: 13,
         },
       },
       heading3: {
@@ -251,7 +251,7 @@ const buffer = await generateDocument({
         run: {
           bold: true,
           font: "Calibri",
-          size: 26,
+          size: 13,
         },
       },
       heading4: {
@@ -261,7 +261,7 @@ const buffer = await generateDocument({
         run: {
           bold: true,
           font: "Calibri",
-          size: 26,
+          size: 13,
         },
       },
     },
@@ -280,7 +280,7 @@ const buffer = await generateDocument({
         run: {
           bold: true,
           font: "Calibri",
-          size: 26,
+          size: 13,
         },
       },
       {
@@ -295,7 +295,7 @@ const buffer = await generateDocument({
         quickFormat: true,
         run: {
           font: "Calibri",
-          size: 26,
+          size: 13,
         },
       },
       {
@@ -309,7 +309,7 @@ const buffer = await generateDocument({
         },
         run: {
           color: "999999",
-          italics: true,
+          italic: true,
         },
       },
       {
@@ -339,7 +339,7 @@ const buffer = await generateDocument({
         run: {
           bold: true,
           font: "Calibri",
-          size: 26,
+          size: 13,
         },
       },
     ],

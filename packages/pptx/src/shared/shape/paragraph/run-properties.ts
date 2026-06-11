@@ -38,7 +38,7 @@ export interface HyperlinkOptions {
 
 export interface RunPropertiesOptions {
   /** Font size in points. Serialized as OOXML `a:sz` (hundredths of a point). */
-  fontSize?: number;
+  size?: number;
   bold?: boolean;
   italic?: boolean;
   underline?: (typeof UnderlineStyle)[keyof typeof UnderlineStyle];

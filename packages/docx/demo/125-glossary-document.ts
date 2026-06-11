@@ -21,7 +21,7 @@ const buffer = await generateDocument({
               children: [
                 {
                   text: "CONFIDENTIAL: This document contains proprietary information.",
-                  italics: true,
+                  italic: true,
                   color: "808080",
                 },
               ],
@@ -53,10 +53,10 @@ const buffer = await generateDocument({
           {
             paragraph: {
               children: [
-                { text: "Page ", size: 18 },
-                { text: "1", size: 18 },
-                { text: " of ", size: 18 },
-                { text: "[Total]", size: 18 },
+                { text: "Page ", size: 9 },
+                { text: "1", size: 9 },
+                { text: " of ", size: 9 },
+                { text: "[Total]", size: 9 },
               ],
             },
           },
@@ -69,7 +69,7 @@ const buffer = await generateDocument({
       children: [
         {
           paragraph: {
-            children: [{ text: "Glossary Document Demo", bold: true, size: 32 }],
+            children: [{ text: "Glossary Document Demo", bold: true, size: 16 }],
           },
         },
         {

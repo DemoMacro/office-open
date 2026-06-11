@@ -11,7 +11,7 @@ const buffer = await generateDocument({
       children: [
         {
           paragraph: {
-            children: [{ bold: true, text: "Custom XML Range Markers", size: 32 }],
+            children: [{ bold: true, text: "Custom XML Range Markers", size: 16 }],
           },
         },
 

@@ -17,7 +17,7 @@ const buffer = await generateDocument({
               {
                 text: "AltChunk (Alternative Format Content) Demo",
                 bold: true,
-                size: 32,
+                size: 16,
               },
             ],
             spacing: { after: 400 },
@@ -26,7 +26,7 @@ const buffer = await generateDocument({
 
         {
           paragraph: {
-            children: [{ bold: true, text: "1. Embedded HTML Content", size: 28 }],
+            children: [{ bold: true, text: "1. Embedded HTML Content", size: 14 }],
             spacing: { after: 200 },
           },
         },
@@ -53,7 +53,7 @@ const buffer = await generateDocument({
               {
                 bold: true,
                 text: "2. HTML Table with Match Source Formatting",
-                size: 28,
+                size: 14,
               },
             ],
             spacing: { after: 200 },
@@ -90,7 +90,7 @@ const buffer = await generateDocument({
               {
                 bold: true,
                 text: "3. RTF Content",
-                size: 28,
+                size: 14,
               },
             ],
             spacing: { after: 200 },

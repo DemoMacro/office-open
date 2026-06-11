@@ -27,7 +27,7 @@ const pres: PresentationOptions = {
                   children: [
                     {
                       text: "JSON-Friendly API",
-                      fontSize: 44,
+                      size: 44,
                       bold: true,
                       fill: "FFFFFF",
                       font: "Calibri",
@@ -51,7 +51,7 @@ const pres: PresentationOptions = {
                   children: [
                     {
                       text: "Pure objects, no class instantiation needed",
-                      fontSize: 18,
+                      size: 18,
                       fill: "B0C4DE",
                     },
                   ],
@@ -295,7 +295,7 @@ const pres: PresentationOptions = {
               children: [
                 {
                   properties: { alignment: "center", bullet: { type: "none" } },
-                  children: [{ text: "Rich Text (Plain Objects)", fontSize: 28, bold: true }],
+                  children: [{ text: "Rich Text (Plain Objects)", size: 28, bold: true }],
                 },
               ],
             },
@@ -313,15 +313,15 @@ const pres: PresentationOptions = {
                 {
                   properties: { bullet: { type: "none" } },
                   children: [
-                    { text: "Bold", bold: true, fontSize: 18 },
+                    { text: "Bold", bold: true, size: 18 },
                     { text: " | " },
-                    { text: "Italic", italic: true, fontSize: 18 },
+                    { text: "Italic", italic: true, size: 18 },
                     { text: " | " },
-                    { text: "Underline", underline: "single", fontSize: 18 },
+                    { text: "Underline", underline: "single", size: 18 },
                     { text: " | " },
-                    { text: "Red", fill: "FF0000", fontSize: 18 },
+                    { text: "Red", fill: "FF0000", size: 18 },
                     { text: " " },
-                    { text: "Blue", fill: "4472C4", fontSize: 18 },
+                    { text: "Blue", fill: "4472C4", size: 18 },
                   ],
                 },
               ],
@@ -340,11 +340,11 @@ const pres: PresentationOptions = {
                 {
                   properties: { bullet: { type: "none" } },
                   children: [
-                    { text: "E = mc", fontSize: 20 },
-                    { text: "2", fontSize: 14, baseline: 30000 },
-                    { text: "    H", fontSize: 20 },
-                    { text: "2", fontSize: 14, baseline: -25000 },
-                    { text: "O", fontSize: 20 },
+                    { text: "E = mc", size: 20 },
+                    { text: "2", size: 14, baseline: 30000 },
+                    { text: "    H", size: 20 },
+                    { text: "2", size: 14, baseline: -25000 },
+                    { text: "O", size: 20 },
                   ],
                 },
               ],

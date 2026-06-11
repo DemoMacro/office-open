@@ -19,7 +19,7 @@ const buffer = await generateDocument({
       children: [
         {
           paragraph: {
-            children: [{ text: "Permission Ranges Demo", bold: true, size: 32 }],
+            children: [{ text: "Permission Ranges Demo", bold: true, size: 16 }],
             spacing: { after: 400 },
           },
         },
@@ -33,7 +33,7 @@ const buffer = await generateDocument({
 
         {
           paragraph: {
-            children: [{ bold: true, text: "1. Everyone Editable Range", size: 28 }],
+            children: [{ bold: true, text: "1. Everyone Editable Range", size: 14 }],
             spacing: { after: 200 },
           },
         },
@@ -65,7 +65,7 @@ const buffer = await generateDocument({
               {
                 bold: true,
                 text: "2. Single User Editable Range",
-                size: 28,
+                size: 14,
               },
             ],
             spacing: { after: 200 },
@@ -85,7 +85,7 @@ const buffer = await generateDocument({
 
         {
           paragraph: {
-            children: [{ bold: true, text: "3. Editors Group Range", size: 28 }],
+            children: [{ bold: true, text: "3. Editors Group Range", size: 14 }],
             spacing: { after: 200 },
           },
         },
@@ -103,7 +103,7 @@ const buffer = await generateDocument({
 
         {
           paragraph: {
-            children: [{ bold: true, text: "4. Current User Only Range", size: 28 }],
+            children: [{ bold: true, text: "4. Current User Only Range", size: 14 }],
             spacing: { after: 200 },
           },
         },

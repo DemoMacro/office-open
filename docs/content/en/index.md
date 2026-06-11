@@ -175,7 +175,7 @@ orientation: horizontal
                 {
                     "shape": {
                         "x": 100, "y": 100, "width": 760, "height": 340,
-                        "textBody": { "children": [{ "text": "Hello, World!", "fontSize": 32 }] }
+                        "textBody": { "children": [{ "text": "Hello, World!", "size": 32 }] }
                     }
                 }
             ]

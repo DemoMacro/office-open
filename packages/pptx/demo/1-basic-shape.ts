@@ -87,7 +87,7 @@ const options: PresentationOptions = {
                   children: [
                     {
                       text: "Vertical Text (top to bottom)",
-                      fontSize: 14,
+                      size: 14,
                     },
                   ],
                 },
@@ -107,7 +107,7 @@ const options: PresentationOptions = {
               children: [
                 {
                   properties: { bullet: { type: "none" } },
-                  children: [{ text: "Rotated 270 (bottom to top)", fontSize: 14 }],
+                  children: [{ text: "Rotated 270 (bottom to top)", size: 14 }],
                 },
               ],
             },
@@ -125,7 +125,7 @@ const options: PresentationOptions = {
               children: [
                 {
                   properties: { bullet: { type: "none" } },
-                  children: [{ text: "Horizontal (default)", fontSize: 14 }],
+                  children: [{ text: "Horizontal (default)", size: 14 }],
                 },
               ],
             },
@@ -235,7 +235,7 @@ const options: PresentationOptions = {
                   children: [
                     {
                       text: "Default margins (no extra padding)",
-                      fontSize: 12,
+                      size: 12,
                     },
                   ],
                 },
@@ -258,7 +258,7 @@ const options: PresentationOptions = {
                   children: [
                     {
                       text: "Wide margins (extra padding all around)",
-                      fontSize: 12,
+                      size: 12,
                     },
                   ],
                 },
@@ -283,7 +283,7 @@ const options: PresentationOptions = {
                   children: [
                     {
                       text: "This is column 1 text. The shape is divided into 2 columns with spacing between them.",
-                      fontSize: 12,
+                      size: 12,
                     },
                   ],
                 },

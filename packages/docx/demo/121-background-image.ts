@@ -21,7 +21,7 @@ const buffer = await generateDocument({
               {
                 text: "This document has a background image.",
                 bold: true,
-                size: 28,
+                size: 14,
               },
             ],
           },

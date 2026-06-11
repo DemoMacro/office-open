@@ -9,14 +9,14 @@ const buffer = await generateDocument({
       children: [
         {
           paragraph: {
-            children: [{ text: "Chart Demo", bold: true, size: 32 }],
+            children: [{ text: "Chart Demo", bold: true, size: 16 }],
             spacing: { after: 400 },
           },
         },
 
         {
           paragraph: {
-            children: [{ bold: true, text: "Column Chart", size: 28 }],
+            children: [{ bold: true, text: "Column Chart", size: 14 }],
             spacing: { after: 200 },
           },
         },
@@ -42,7 +42,7 @@ const buffer = await generateDocument({
 
         {
           paragraph: {
-            children: [{ bold: true, text: "Pie Chart", size: 28 }],
+            children: [{ bold: true, text: "Pie Chart", size: 14 }],
             spacing: { after: 200 },
           },
         },
@@ -65,7 +65,7 @@ const buffer = await generateDocument({
 
         {
           paragraph: {
-            children: [{ bold: true, text: "Line Chart", size: 28 }],
+            children: [{ bold: true, text: "Line Chart", size: 14 }],
             spacing: { after: 200 },
           },
         },
@@ -92,7 +92,7 @@ const buffer = await generateDocument({
 
         {
           paragraph: {
-            children: [{ bold: true, text: "Area Chart", size: 28 }],
+            children: [{ bold: true, text: "Area Chart", size: 14 }],
             spacing: { after: 200 },
           },
         },
@@ -117,7 +117,7 @@ const buffer = await generateDocument({
 
         {
           paragraph: {
-            children: [{ bold: true, text: "Scatter Chart", size: 28 }],
+            children: [{ bold: true, text: "Scatter Chart", size: 14 }],
             spacing: { after: 200 },
           },
         },
@@ -140,7 +140,7 @@ const buffer = await generateDocument({
 
         {
           paragraph: {
-            children: [{ bold: true, text: "Doughnut Chart", size: 28 }],
+            children: [{ bold: true, text: "Doughnut Chart", size: 14 }],
             spacing: { after: 200 },
           },
         },
@@ -163,7 +163,7 @@ const buffer = await generateDocument({
 
         {
           paragraph: {
-            children: [{ bold: true, text: "Radar Chart", size: 28 }],
+            children: [{ bold: true, text: "Radar Chart", size: 14 }],
             spacing: { after: 200 },
           },
         },
@@ -189,7 +189,7 @@ const buffer = await generateDocument({
 
         {
           paragraph: {
-            children: [{ bold: true, text: "Stock Chart", size: 28 }],
+            children: [{ bold: true, text: "Stock Chart", size: 14 }],
             spacing: { after: 200 },
           },
         },
@@ -216,7 +216,7 @@ const buffer = await generateDocument({
 
         {
           paragraph: {
-            children: [{ bold: true, text: "Surface Chart", size: 28 }],
+            children: [{ bold: true, text: "Surface Chart", size: 14 }],
             spacing: { after: 200 },
           },
         },
@@ -242,7 +242,7 @@ const buffer = await generateDocument({
 
         {
           paragraph: {
-            children: [{ bold: true, text: "3D Column Chart", size: 28 }],
+            children: [{ bold: true, text: "3D Column Chart", size: 14 }],
             spacing: { after: 200 },
           },
         },
@@ -270,7 +270,7 @@ const buffer = await generateDocument({
 
         {
           paragraph: {
-            children: [{ bold: true, text: "3D Pie Chart", size: 28 }],
+            children: [{ bold: true, text: "3D Pie Chart", size: 14 }],
             spacing: { after: 200 },
           },
         },
@@ -297,7 +297,7 @@ const buffer = await generateDocument({
             children: [
               {
                 text: "Note: Open this document in Microsoft Word to see the charts rendered.",
-                italics: true,
+                italic: true,
                 color: "888888",
               },
             ],

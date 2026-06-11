@@ -39,7 +39,7 @@ const buffer = await generateDocument({
         },
         run: {
           color: "990000",
-          italics: true,
+          italic: true,
         },
       },
       {
@@ -56,7 +56,7 @@ const buffer = await generateDocument({
         quickFormat: true,
         run: {
           bold: true,
-          size: 26,
+          size: 13,
           underline: {
             color: "FF0000",
             type: UnderlineType.DOUBLE,

@@ -68,11 +68,11 @@ Slide children types: shape, picture, table, chart, group, line, connector, vide
   "textBody": {
     "children": [
       {
-        "children": [{ "text": "Bold title", "bold": true, "fontSize": 24, "color": "FFFFFF" }],
+        "children": [{ "text": "Bold title", "bold": true, "size": 24, "color": "FFFFFF" }],
         "alignment": "center"
       },
       {
-        "children": [{ "text": "Subtitle", "fontSize": 16, "color": "CCCCCC" }]
+        "children": [{ "text": "Subtitle", "size": 16, "color": "CCCCCC" }]
       }
     ]
   },
@@ -604,7 +604,7 @@ Modify an existing `.pptx` template by replacing placeholders:
 ```json
 {
   "type": "paragraph",
-  "children": [{ "text": "Updated Title", "bold": true, "fontSize": 24 }]
+  "children": [{ "text": "Updated Title", "bold": true, "size": 24 }]
 }
 ```
 

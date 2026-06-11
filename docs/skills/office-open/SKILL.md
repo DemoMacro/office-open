@@ -125,7 +125,7 @@ For detailed options, property tables, and complete examples, read the relevant 
             "children": [
               { "text": "Bold", "bold": true },
               " and ",
-              { "text": "italic", "italics": true }
+              { "text": "italic", "italic": true }
             ]
           }
         }
@@ -177,7 +177,7 @@ For detailed options, property tables, and complete examples, read the relevant 
 
 - **String shorthand for text** — a plain string `"text"` in a children array is equivalent to `{ text: "text" }`.
 - **Color format** — always hex without `#` prefix: `"FF0000"`, not `"#FF0000"`.
-- **Font sizes** — DOCX uses half-points (size 24 = 12pt). PPTX uses points directly. XLSX uses points.
+- **Font sizes** — Font sizes are in points across all formats. DOCX internally converts to half-points. PPTX and XLSX use points directly.
 - **Position units** — PPTX shape positions (`x`, `y`, `width`, `height`) are in pixels, internally converted to EMU. DOCX uses twips for margins/spacing.
 - **Date values in XLSX** — `Date` objects are serialized as serial numbers (days since 1899-12-30), not formatted strings. Apply `numFmt` for display formatting.
 - **Charts** — chart types are defined in `@office-open/core` (`ChartSpaceOptions`), shared across docx and pptx.

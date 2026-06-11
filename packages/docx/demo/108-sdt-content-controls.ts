@@ -9,7 +9,7 @@ const buffer = await generateDocument({
       children: [
         {
           paragraph: {
-            children: [{ text: "SDT Content Controls Demo", bold: true, size: 32 }],
+            children: [{ text: "SDT Content Controls Demo", bold: true, size: 16 }],
             spacing: { after: 400 },
           },
         },
@@ -17,7 +17,7 @@ const buffer = await generateDocument({
         // Plain text SDT (block-level)
         {
           paragraph: {
-            children: [{ bold: true, text: "1. Plain Text SDT", size: 28 }],
+            children: [{ bold: true, text: "1. Plain Text SDT", size: 14 }],
             spacing: { after: 200 },
           },
         },
@@ -37,7 +37,7 @@ const buffer = await generateDocument({
         // Multi-line text SDT (block-level)
         {
           paragraph: {
-            children: [{ bold: true, text: "2. Multi-line Text SDT", size: 28 }],
+            children: [{ bold: true, text: "2. Multi-line Text SDT", size: 14 }],
             spacing: { after: 200 },
           },
         },
@@ -57,7 +57,7 @@ const buffer = await generateDocument({
         // ComboBox SDT (block-level)
         {
           paragraph: {
-            children: [{ bold: true, text: "3. ComboBox SDT", size: 28 }],
+            children: [{ bold: true, text: "3. ComboBox SDT", size: 14 }],
             spacing: { after: 200 },
           },
         },
@@ -84,7 +84,7 @@ const buffer = await generateDocument({
         // DropDownList SDT (block-level)
         {
           paragraph: {
-            children: [{ bold: true, text: "4. DropDownList SDT", size: 28 }],
+            children: [{ bold: true, text: "4. DropDownList SDT", size: 14 }],
             spacing: { after: 200 },
           },
         },
@@ -107,7 +107,7 @@ const buffer = await generateDocument({
         // Date SDT (block-level)
         {
           paragraph: {
-            children: [{ bold: true, text: "5. Date SDT", size: 28 }],
+            children: [{ bold: true, text: "5. Date SDT", size: 14 }],
             spacing: { after: 200 },
           },
         },
@@ -135,7 +135,7 @@ const buffer = await generateDocument({
               {
                 bold: true,
                 text: "6. Block-level SDT (section child)",
-                size: 28,
+                size: 14,
               },
             ],
             spacing: { after: 200 },
@@ -168,7 +168,7 @@ const buffer = await generateDocument({
               {
                 bold: true,
                 text: "7. SDT wrapping a table (block-level)",
-                size: 28,
+                size: 14,
               },
             ],
             spacing: { after: 200 },
@@ -208,7 +208,7 @@ const buffer = await generateDocument({
               {
                 bold: true,
                 text: "8. SDT wrapping multiple blocks",
-                size: 28,
+                size: 14,
               },
             ],
             spacing: { after: 200 },

@@ -68,7 +68,7 @@ export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
     }
 
     const attrParts: string[] = [];
-    if (opts.fontSize) attrParts.push(`sz="${opts.fontSize * 100}"`);
+    if (opts.size) attrParts.push(`sz="${opts.size * 100}"`);
     if (opts.bold !== undefined) attrParts.push(`b="${opts.bold ? 1 : 0}"`);
     if (opts.italic !== undefined) attrParts.push(`i="${opts.italic ? 1 : 0}"`);
     if (opts.underline) attrParts.push(`u="${xsdUnderlineStyle.to(opts.underline)}"`);
@@ -151,7 +151,7 @@ export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
     const result: Mutable<RunPropertiesOptions> = {};
 
     if (el.attributes) {
-      if (el.attributes["sz"] !== undefined) result.fontSize = Number(el.attributes["sz"]) / 100;
+      if (el.attributes["sz"] !== undefined) result.size = Number(el.attributes["sz"]) / 100;
       if (el.attributes["b"] !== undefined) result.bold = el.attributes["b"] === "1";
       if (el.attributes["i"] !== undefined) result.italic = el.attributes["i"] === "1";
       if (el.attributes["u"] !== undefined)

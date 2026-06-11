@@ -35,7 +35,7 @@ const SHAPE_TEXTS = Array.from({ length: 20 }, (_, i) => ({
   text: `Shape text line ${i + 1} with some content`,
   bold: i % 3 === 0,
   italic: i % 5 === 0,
-  fontSize: 14 + (i % 4) * 2,
+  size: 14 + (i % 4) * 2,
 }));
 
 const TABLE_ROWS = Array.from({ length: 10 }, (_, rowIdx) => ({
@@ -106,7 +106,7 @@ const buildStyledPres = (): PresentationOptions => ({
                           text: s.text,
                           bold: s.bold,
                           italic: s.italic,
-                          fontSize: s.fontSize,
+                          size: s.size,
                         },
                       ],
                     },
@@ -167,7 +167,7 @@ const buildFullFeaturedPres = (): PresentationOptions => ({
                   children: [
                     {
                       text: "Title Slide",
-                      fontSize: 28,
+                      size: 28,
                       bold: true,
                     },
                   ],
@@ -196,7 +196,7 @@ const buildFullFeaturedPres = (): PresentationOptions => ({
                           text: s.text,
                           bold: s.bold,
                           italic: s.italic,
-                          fontSize: s.fontSize,
+                          size: s.size,
                         },
                       ],
                     },
@@ -349,7 +349,7 @@ describe("PPTX: Create + toBuffer", () => {
           [
             {
               text: s.text,
-              options: { bold: s.bold, italic: s.italic, fontSize: s.fontSize },
+              options: { bold: s.bold, italic: s.italic, fontSize: s.size },
             },
           ],
           { x: 1, y: 1, w: 4, h: 2, fill: s.bold ? { color: "4472C4" } : undefined },
@@ -371,7 +371,7 @@ describe("PPTX: Create + toBuffer", () => {
           [
             {
               text: s.text,
-              options: { bold: s.bold, italic: s.italic, fontSize: s.fontSize },
+              options: { bold: s.bold, italic: s.italic, fontSize: s.size },
             },
           ],
           { x: 1, y: 1, w: 4, h: 2, fill: s.bold ? { color: "4472C4" } : undefined },
@@ -498,14 +498,21 @@ describe("PPTX: Create + toBuffer", () => {
       const slide = pptx.addSlide();
       slide.addText(
         [{ text: "Title Slide", options: { fontSize: 28, bold: true, color: "FFFFFF" } }],
-        { x: 1, y: 0.5, w: 8, h: 0.6, fill: { color: "4472C4" }, align: "center" },
+        {
+          x: 1,
+          y: 0.5,
+          w: 8,
+          h: 0.6,
+          fill: { color: "4472C4" },
+          align: "center",
+        },
       );
       for (const s of SHAPE_TEXTS) {
         slide.addText(
           [
             {
               text: s.text,
-              options: { bold: s.bold, italic: s.italic, fontSize: s.fontSize },
+              options: { bold: s.bold, italic: s.italic, fontSize: s.size },
             },
           ],
           { x: 1, y: 1, w: 4, h: 2, fill: s.bold ? { color: "4472C4" } : undefined },
@@ -534,14 +541,21 @@ describe("PPTX: Create + toBuffer", () => {
       const slide = pptx.addSlide();
       slide.addText(
         [{ text: "Title Slide", options: { fontSize: 28, bold: true, color: "FFFFFF" } }],
-        { x: 1, y: 0.5, w: 8, h: 0.6, fill: { color: "4472C4" }, align: "center" },
+        {
+          x: 1,
+          y: 0.5,
+          w: 8,
+          h: 0.6,
+          fill: { color: "4472C4" },
+          align: "center",
+        },
       );
       for (const s of SHAPE_TEXTS) {
         slide.addText(
           [
             {
               text: s.text,
-              options: { bold: s.bold, italic: s.italic, fontSize: s.fontSize },
+              options: { bold: s.bold, italic: s.italic, fontSize: s.size },
             },
           ],
           { x: 1, y: 1, w: 4, h: 2, fill: s.bold ? { color: "4472C4" } : undefined },
@@ -570,7 +584,7 @@ const LARGE_SHAPES = Array.from({ length: 600 }, (_, i) => ({
   text: `Shape ${i + 1} text content with sample data for realistic presentation simulation and stress testing.`,
   bold: i % 3 === 0,
   italic: i % 5 === 0,
-  fontSize: 12 + (i % 6) * 2,
+  size: 12 + (i % 6) * 2,
   fill: i % 4 === 0 ? "4472C4" : undefined,
 }));
 
@@ -601,7 +615,7 @@ const build30Slides20Shapes = (): PresentationOptions => ({
                     text: s.text,
                     bold: s.bold,
                     italic: s.italic,
-                    fontSize: s.fontSize,
+                    size: s.size,
                   },
                 ],
               },
@@ -646,7 +660,7 @@ const build50SlidesFull = (): PresentationOptions => ({
             children: [
               {
                 properties: { alignment: "center", bullet: { type: "none" } },
-                children: [{ text: `Slide ${si + 1} Title`, fontSize: 28, bold: true }],
+                children: [{ text: `Slide ${si + 1} Title`, size: 28, bold: true }],
               },
             ],
           },
@@ -665,7 +679,7 @@ const build50SlidesFull = (): PresentationOptions => ({
               children: [
                 {
                   properties: { bullet: { type: "none" } },
-                  children: [{ text: s.text, bold: s.bold, italic: s.italic, fontSize: 14 }],
+                  children: [{ text: s.text, bold: s.bold, italic: s.italic, size: 14 }],
                 },
               ],
             },
@@ -715,7 +729,7 @@ const build30Slides10Images = (): PresentationOptions => ({
               children: [
                 {
                   properties: { bullet: { type: "none" } },
-                  children: [{ text: s.text, bold: s.bold, italic: s.italic, fontSize: 14 }],
+                  children: [{ text: s.text, bold: s.bold, italic: s.italic, size: 14 }],
                 },
               ],
             },
@@ -785,7 +799,7 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
         for (let shi = 0; shi < 20; shi++) {
           const s = LARGE_SHAPES[(si * 20 + shi) % LARGE_SHAPES.length];
           slide.addText(
-            [{ text: s.text, options: { bold: s.bold, italic: s.italic, fontSize: s.fontSize } }],
+            [{ text: s.text, options: { bold: s.bold, italic: s.italic, fontSize: s.size } }],
             {
               x: 0.5 + (shi % 4) * 2.3,
               y: 0.5 + Math.floor(shi / 4) * 1.1,
@@ -810,7 +824,7 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
         for (let shi = 0; shi < 20; shi++) {
           const s = LARGE_SHAPES[(si * 20 + shi) % LARGE_SHAPES.length];
           slide.addText(
-            [{ text: s.text, options: { bold: s.bold, italic: s.italic, fontSize: s.fontSize } }],
+            [{ text: s.text, options: { bold: s.bold, italic: s.italic, fontSize: s.size } }],
             {
               x: 0.5 + (shi % 4) * 2.3,
               y: 0.5 + Math.floor(shi / 4) * 1.1,
@@ -873,7 +887,7 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
         for (let shi = 0; shi < 2; shi++) {
           const s = LARGE_SHAPES[(si * 2 + shi) % LARGE_SHAPES.length];
           slide.addText(
-            [{ text: s.text, options: { bold: s.bold, italic: s.italic, fontSize: s.fontSize } }],
+            [{ text: s.text, options: { bold: s.bold, italic: s.italic, fontSize: s.size } }],
             {
               x: 0.5 + shi * 4,
               y: 0.5,
@@ -907,7 +921,7 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
         for (let shi = 0; shi < 2; shi++) {
           const s = LARGE_SHAPES[(si * 2 + shi) % LARGE_SHAPES.length];
           slide.addText(
-            [{ text: s.text, options: { bold: s.bold, italic: s.italic, fontSize: s.fontSize } }],
+            [{ text: s.text, options: { bold: s.bold, italic: s.italic, fontSize: s.size } }],
             {
               x: 0.5 + shi * 4,
               y: 0.5,
@@ -1184,7 +1198,7 @@ const buildMixed100MbPres = (): PresentationOptions => ({
                       text: s.text,
                       bold: s.bold,
                       italic: s.italic,
-                      fontSize: s.fontSize,
+                      size: s.size,
                     },
                   ],
                 },
@@ -1268,7 +1282,7 @@ describe("PPTX: Large File (~100MB) — Mixed + async vs sync", () => {
         for (let shi = 0; shi < 2; shi++) {
           const s = LARGE_SHAPES[(si * 2 + shi) % LARGE_SHAPES.length];
           slide.addText(
-            [{ text: s.text, options: { bold: s.bold, italic: s.italic, fontSize: s.fontSize } }],
+            [{ text: s.text, options: { bold: s.bold, italic: s.italic, fontSize: s.size } }],
             {
               x: 0.5 + shi * 3.8,
               y: 0.5,
@@ -1314,7 +1328,7 @@ describe("PPTX: Large File (~100MB) — Mixed + async vs sync", () => {
         for (let shi = 0; shi < 2; shi++) {
           const s = LARGE_SHAPES[(si * 2 + shi) % LARGE_SHAPES.length];
           slide.addText(
-            [{ text: s.text, options: { bold: s.bold, italic: s.italic, fontSize: s.fontSize } }],
+            [{ text: s.text, options: { bold: s.bold, italic: s.italic, fontSize: s.size } }],
             {
               x: 0.5 + shi * 3.8,
               y: 0.5,

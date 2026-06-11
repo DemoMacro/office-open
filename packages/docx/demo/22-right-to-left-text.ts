@@ -36,7 +36,7 @@ const buffer = await generateDocument({
             bidirectional: true,
             children: [
               {
-                italics: true,
+                italic: true,
                 rightToLeft: true,
                 text: "שלום עולם",
               },

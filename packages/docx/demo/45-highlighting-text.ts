@@ -21,7 +21,7 @@ const buffer = await generateDocument({
                     name: "Garamond",
                   },
                   highlight: "yellow",
-                  size: 24,
+                  size: 12,
                   text: "Hello World",
                 },
               ],

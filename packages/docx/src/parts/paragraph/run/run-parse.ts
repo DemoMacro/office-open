@@ -47,11 +47,11 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
   const boldCs = findChild(el, "w:bCs");
   if (boldCs) opts.boldComplexScript = attrBool(boldCs, "w:val") ?? true;
 
-  const italics = findChild(el, "w:i");
-  if (italics) opts.italics = attrBool(italics, "w:val") ?? true;
+  const italic = findChild(el, "w:i");
+  if (italic) opts.italic = attrBool(italic, "w:val") ?? true;
 
-  const italicsCs = findChild(el, "w:iCs");
-  if (italicsCs) opts.italicsComplexScript = attrBool(italicsCs, "w:val") ?? true;
+  const italicCs = findChild(el, "w:iCs");
+  if (italicCs) opts.italicComplexScript = attrBool(italicCs, "w:val") ?? true;
 
   const underline = findChild(el, "w:u");
   if (underline) {
@@ -95,13 +95,13 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
   const sz = findChild(el, "w:sz");
   if (sz) {
     const halfPts = attrNum(sz, "w:val");
-    if (halfPts !== undefined) opts.size = halfPts;
+    if (halfPts !== undefined) opts.size = halfPts / 2;
   }
 
   const szCs = findChild(el, "w:szCs");
   if (szCs) {
     const halfPts = attrNum(szCs, "w:val");
-    if (halfPts !== undefined) opts.sizeComplexScript = halfPts;
+    if (halfPts !== undefined) opts.sizeComplexScript = halfPts / 2;
   }
 
   const highlight = findChild(el, "w:highlight");

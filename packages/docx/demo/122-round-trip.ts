@@ -133,7 +133,7 @@ async function main() {
             children: [
               "String child",
               { text: " + bold", bold: true },
-              { text: " + italic", italics: true },
+              { text: " + italic", italic: true },
             ],
           },
         },
@@ -142,7 +142,7 @@ async function main() {
         {
           paragraph: {
             alignment: "center",
-            children: [{ text: "Centered text", bold: true, size: 32 }],
+            children: [{ text: "Centered text", bold: true, size: 16 }],
           },
         },
 
@@ -301,7 +301,7 @@ async function main() {
     // Section 2: chart
     {
       children: [
-        { paragraph: { children: [{ text: "Chart (JSON API)", bold: true, size: 28 }] } },
+        { paragraph: { children: [{ text: "Chart (JSON API)", bold: true, size: 14 }] } },
         {
           paragraph: {
             children: [
@@ -326,7 +326,7 @@ async function main() {
     // Section 3: smartArt
     {
       children: [
-        { paragraph: { children: [{ text: "SmartArt (JSON API)", bold: true, size: 28 }] } },
+        { paragraph: { children: [{ text: "SmartArt (JSON API)", bold: true, size: 14 }] } },
         {
           paragraph: {
             children: [
@@ -354,7 +354,7 @@ async function main() {
     // Section 4: altChunk
     {
       children: [
-        { paragraph: { children: [{ text: "AltChunk (JSON API)", bold: true, size: 28 }] } },
+        { paragraph: { children: [{ text: "AltChunk (JSON API)", bold: true, size: 14 }] } },
         {
           altChunk: {
             data: "<html><body><p>This is <b>embedded HTML</b> via JSON API.</p></body></html>",
@@ -368,7 +368,7 @@ async function main() {
     // Section 5: image (inline + floating)
     {
       children: [
-        { paragraph: { children: [{ text: "Images (JSON API)", bold: true, size: 28 }] } },
+        { paragraph: { children: [{ text: "Images (JSON API)", bold: true, size: 14 }] } },
         // Inline image
         {
           paragraph: {
@@ -606,7 +606,7 @@ async function main() {
               {
                 text: "Multi-font",
                 font: { ascii: "Calibri", eastAsia: "SimSun", hAnsi: "Arial" },
-                size: 24,
+                size: 12,
               },
             ],
           },
@@ -915,7 +915,7 @@ async function main() {
     styles: {
       default: {
         document: {
-          run: { font: "Calibri", size: 22 },
+          run: { font: "Calibri", size: 11 },
         },
       },
       paragraphStyles: [
@@ -925,7 +925,7 @@ async function main() {
           basedOn: "Normal",
           next: "Normal",
           quickFormat: true,
-          run: { bold: true, size: 32, color: "1F4E79" },
+          run: { bold: true, size: 16, color: "1F4E79" },
         },
       ],
       characterStyles: [

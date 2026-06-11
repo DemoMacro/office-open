@@ -170,7 +170,7 @@ const buffer = await generateDocument({
               {
                 bold: true,
                 text: "6. Image Fill (blipFill)",
-                size: 28,
+                size: 14,
               },
             ],
             spacing: { after: 200 },
@@ -206,7 +206,7 @@ const buffer = await generateDocument({
               {
                 bold: true,
                 text: "7. Radial Gradient (path)",
-                size: 28,
+                size: 14,
               },
             ],
             spacing: { after: 200 },
