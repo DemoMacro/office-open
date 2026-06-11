@@ -6,7 +6,7 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "../../xml-components";
+import { element } from "@office-open/xml";
 
 // ---------------------------------------------------------------------------
 // dgm:adj — adjustment handle (CT_Adj)
@@ -14,20 +14,14 @@ import { BuilderElement, type XmlComponent } from "../../xml-components";
 
 export interface AdjOptions {
   /** 1-based index (required) */
-  readonly idx: number;
+  idx: number;
   /** Adjustment value (required) */
-  readonly val: number;
+  val: number;
 }
 
 /** Creates a dgm:adj element. */
-export const createAdj = (options: AdjOptions): XmlComponent =>
-  new BuilderElement({
-    name: "dgm:adj",
-    attributes: {
-      idx: { key: "idx", value: options.idx },
-      val: { key: "val", value: options.val },
-    },
-  });
+export const createAdj = (options: AdjOptions): string =>
+  `<dgm:adj idx="${options.idx}" val="${options.val}"/>`;
 
 // ---------------------------------------------------------------------------
 // dgm:animLvl — animation level (CT_AnimLvl)
@@ -40,16 +34,12 @@ export const AnimLevelValue = {
 } as const;
 
 export interface AnimLvlOptions {
-  readonly val?: (typeof AnimLevelValue)[keyof typeof AnimLevelValue];
+  val?: (typeof AnimLevelValue)[keyof typeof AnimLevelValue];
 }
 
 /** Creates a dgm:animLvl element. */
-export const createAnimLvl = (options?: AnimLvlOptions): XmlComponent =>
-  new BuilderElement({
-    name: "dgm:animLvl",
-    attributes:
-      options?.val !== undefined ? { val: { key: "val", value: options.val } } : undefined,
-  });
+export const createAnimLvl = (options?: AnimLvlOptions): string =>
+  options?.val !== undefined ? `<dgm:animLvl val="${options.val}"/>` : "<dgm:animLvl/>";
 
 // ---------------------------------------------------------------------------
 // dgm:animOne — animation one-by-one (CT_AnimOne)
@@ -62,64 +52,48 @@ export const AnimOneValue = {
 } as const;
 
 export interface AnimOneOptions {
-  readonly val?: (typeof AnimOneValue)[keyof typeof AnimOneValue];
+  val?: (typeof AnimOneValue)[keyof typeof AnimOneValue];
 }
 
 /** Creates a dgm:animOne element. */
-export const createAnimOne = (options?: AnimOneOptions): XmlComponent =>
-  new BuilderElement({
-    name: "dgm:animOne",
-    attributes:
-      options?.val !== undefined ? { val: { key: "val", value: options.val } } : undefined,
-  });
+export const createAnimOne = (options?: AnimOneOptions): string =>
+  options?.val !== undefined ? `<dgm:animOne val="${options.val}"/>` : "<dgm:animOne/>";
 
 // ---------------------------------------------------------------------------
 // dgm:chMax — max children constraint (CT_ChildMax)
 // ---------------------------------------------------------------------------
 
 export interface ChMaxOptions {
-  readonly val?: number;
+  val?: number;
 }
 
 /** Creates a dgm:chMax element. */
-export const createChMax = (options?: ChMaxOptions): XmlComponent =>
-  new BuilderElement({
-    name: "dgm:chMax",
-    attributes:
-      options?.val !== undefined ? { val: { key: "val", value: options.val } } : undefined,
-  });
+export const createChMax = (options?: ChMaxOptions): string =>
+  options?.val !== undefined ? `<dgm:chMax val="${options.val}"/>` : "<dgm:chMax/>";
 
 // ---------------------------------------------------------------------------
 // dgm:chPref — preferred children count (CT_ChildPref)
 // ---------------------------------------------------------------------------
 
 export interface ChPrefOptions {
-  readonly val?: number;
+  val?: number;
 }
 
 /** Creates a dgm:chPref element. */
-export const createChPref = (options?: ChPrefOptions): XmlComponent =>
-  new BuilderElement({
-    name: "dgm:chPref",
-    attributes:
-      options?.val !== undefined ? { val: { key: "val", value: options.val } } : undefined,
-  });
+export const createChPref = (options?: ChPrefOptions): string =>
+  options?.val !== undefined ? `<dgm:chPref val="${options.val}"/>` : "<dgm:chPref/>";
 
 // ---------------------------------------------------------------------------
 // dgm:orgChart — organization chart flag (CT_OrgChart)
 // ---------------------------------------------------------------------------
 
 export interface OrgChartOptions {
-  readonly val?: boolean;
+  val?: boolean;
 }
 
 /** Creates a dgm:orgChart element. */
-export const createOrgChart = (options?: OrgChartOptions): XmlComponent =>
-  new BuilderElement({
-    name: "dgm:orgChart",
-    attributes:
-      options?.val !== undefined ? { val: { key: "val", value: options.val } } : undefined,
-  });
+export const createOrgChart = (options?: OrgChartOptions): string =>
+  options?.val !== undefined ? `<dgm:orgChart val="${options.val}"/>` : "<dgm:orgChart/>";
 
 // ---------------------------------------------------------------------------
 // dgm:hierBranch — hierarchy branch style (CT_HierBranchStyle)
@@ -134,28 +108,24 @@ export const HierBranchStyle = {
 } as const;
 
 export interface HierBranchOptions {
-  readonly val?: (typeof HierBranchStyle)[keyof typeof HierBranchStyle];
+  val?: (typeof HierBranchStyle)[keyof typeof HierBranchStyle];
 }
 
 /** Creates a dgm:hierBranch element. */
-export const createHierBranch = (options?: HierBranchOptions): XmlComponent =>
-  new BuilderElement({
-    name: "dgm:hierBranch",
-    attributes:
-      options?.val !== undefined ? { val: { key: "val", value: options.val } } : undefined,
-  });
+export const createHierBranch = (options?: HierBranchOptions): string =>
+  options?.val !== undefined ? `<dgm:hierBranch val="${options.val}"/>` : "<dgm:hierBranch/>";
 
 // ---------------------------------------------------------------------------
 // dgm:presLayoutVars — presentation layout variables (CT_LayoutVariablePropertySet)
 // ---------------------------------------------------------------------------
 
 export interface PresLayoutVarsOptions {
-  readonly orgChart?: OrgChartOptions;
-  readonly chMax?: ChMaxOptions;
-  readonly chPref?: ChPrefOptions;
-  readonly animOne?: AnimOneOptions;
-  readonly animLvl?: AnimLvlOptions;
-  readonly hierBranch?: HierBranchOptions;
+  orgChart?: OrgChartOptions;
+  chMax?: ChMaxOptions;
+  chPref?: ChPrefOptions;
+  animOne?: AnimOneOptions;
+  animLvl?: AnimLvlOptions;
+  hierBranch?: HierBranchOptions;
 }
 
 /**
@@ -178,8 +148,8 @@ export interface PresLayoutVarsOptions {
  * </xsd:complexType>
  * ```
  */
-export const createPresLayoutVars = (options?: PresLayoutVarsOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+export const createPresLayoutVars = (options?: PresLayoutVarsOptions): string => {
+  const children: string[] = [];
   if (options?.orgChart) children.push(createOrgChart(options.orgChart));
   if (options?.chMax) children.push(createChMax(options.chMax));
   if (options?.chPref) children.push(createChPref(options.chPref));
@@ -187,7 +157,7 @@ export const createPresLayoutVars = (options?: PresLayoutVarsOptions): XmlCompon
   if (options?.animLvl) children.push(createAnimLvl(options.animLvl));
   if (options?.hierBranch) children.push(createHierBranch(options.hierBranch));
 
-  return new BuilderElement({ name: "dgm:presLayoutVars", children });
+  return element("dgm:presLayoutVars", undefined, children);
 };
 
 // ---------------------------------------------------------------------------
@@ -195,16 +165,16 @@ export const createPresLayoutVars = (options?: PresLayoutVarsOptions): XmlCompon
 // ---------------------------------------------------------------------------
 
 export interface AdjLstOptions {
-  readonly adj?: readonly AdjOptions[];
+  adj?: readonly AdjOptions[];
 }
 
 /** Creates a dgm:adjLst element containing dgm:adj children. */
-export const createAdjLst = (options?: AdjLstOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+export const createAdjLst = (options?: AdjLstOptions): string => {
+  const children: string[] = [];
   if (options?.adj) {
     for (const a of options.adj) {
       children.push(createAdj(a));
     }
   }
-  return new BuilderElement({ name: "dgm:adjLst", children });
+  return element("dgm:adjLst", undefined, children);
 };

@@ -1,166 +1,166 @@
 // Add custom borders and no-borders to the table itself
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
 import {
   BorderStyle,
-  Document,
   HeadingLevel,
-  Packer,
-  Paragraph,
-  Table,
-  TableBorders,
-  TableCell,
-  TableRow,
+  TABLE_BORDERS_NONE,
   TextDirection,
   VerticalAlignTable,
+  generateDocument,
 } from "@office-open/docx";
 
-const table = new Table({
-  rows: [
-    new TableRow({
-      cells: [
-        new TableCell({
-          borders: {
-            bottom: {
-              color: "ff0000",
-              size: 1,
-              style: BorderStyle.DASH_SMALL_GAP,
-            },
-            left: {
-              color: "ff0000",
-              size: 1,
-              style: BorderStyle.DASH_SMALL_GAP,
-            },
-            right: {
-              color: "ff0000",
-              size: 1,
-              style: BorderStyle.DASH_SMALL_GAP,
-            },
-            top: {
-              color: "ff0000",
-              size: 1,
-              style: BorderStyle.DASH_SMALL_GAP,
-            },
+const buffer = await generateDocument({
+  sections: [
+    {
+      children: [
+        {
+          table: {
+            rows: [
+              {
+                cells: [
+                  {
+                    borders: {
+                      bottom: {
+                        color: "ff0000",
+                        size: 1,
+                        style: BorderStyle.DASH_SMALL_GAP,
+                      },
+                      left: {
+                        color: "ff0000",
+                        size: 1,
+                        style: BorderStyle.DASH_SMALL_GAP,
+                      },
+                      right: {
+                        color: "ff0000",
+                        size: 1,
+                        style: BorderStyle.DASH_SMALL_GAP,
+                      },
+                      top: {
+                        color: "ff0000",
+                        size: 1,
+                        style: BorderStyle.DASH_SMALL_GAP,
+                      },
+                    },
+                    children: [{ paragraph: "Hello" }],
+                  },
+                  { children: [] },
+                ],
+              },
+              {
+                cells: [{ children: [] }, { children: [{ paragraph: "World" }] }],
+              },
+            ],
           },
-          children: [new Paragraph("Hello")],
-        }),
-        new TableCell({
-          children: [],
-        }),
+        },
+        { paragraph: "Hello" },
+        // Using the no-border convenience object. It is the same as writing this manually:
+        // Const borders = {
+        //     Top: {
+        //         Style: BorderStyle.NONE,
+        //         Size: 0,
+        //         Color: "auto",
+        //     },
+        //     Bottom: {
+        //         Style: BorderStyle.NONE,
+        //         Size: 0,
+        //         Color: "auto",
+        //     },
+        //     Left: {
+        //         Style: BorderStyle.NONE,
+        //         Size: 0,
+        //         Color: "auto",
+        //     },
+        //     Right: {
+        //         Style: BorderStyle.NONE,
+        //         Size: 0,
+        //         Color: "auto",
+        //     },
+        //     InsideHorizontal: {
+        //         Style: BorderStyle.NONE,
+        //         Size: 0,
+        //         Color: "auto",
+        //     },
+        //     InsideVertical: {
+        //         Style: BorderStyle.NONE,
+        //         Size: 0,
+        //         Color: "auto",
+        //     },
+        // };
+        {
+          table: {
+            borders: TABLE_BORDERS_NONE,
+            rows: [
+              {
+                cells: [
+                  {
+                    children: [{ paragraph: {} }, { paragraph: {} }],
+                    verticalAlign: VerticalAlignTable.CENTER,
+                  },
+                  {
+                    children: [{ paragraph: {} }, { paragraph: {} }],
+                    verticalAlign: VerticalAlignTable.CENTER,
+                  },
+                  {
+                    children: [{ paragraph: { text: "bottom to top" } }, { paragraph: {} }],
+                    textDirection: TextDirection.BOTTOM_TO_TOP_LEFT_TO_RIGHT,
+                  },
+                  {
+                    children: [{ paragraph: { text: "top to bottom" } }, { paragraph: {} }],
+                    textDirection: TextDirection.TOP_TO_BOTTOM_RIGHT_TO_LEFT,
+                  },
+                ],
+              },
+              {
+                cells: [
+                  {
+                    children: [
+                      {
+                        paragraph: {
+                          heading: HeadingLevel.HEADING_1,
+                          text: "Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah",
+                        },
+                      },
+                    ],
+                  },
+                  {
+                    children: [
+                      {
+                        paragraph: {
+                          text: "This text should be in the middle of the cell",
+                        },
+                      },
+                    ],
+                    verticalAlign: VerticalAlignTable.CENTER,
+                  },
+                  {
+                    children: [
+                      {
+                        paragraph: {
+                          text: "Text above should be vertical from bottom to top",
+                        },
+                      },
+                    ],
+                    verticalAlign: VerticalAlignTable.CENTER,
+                  },
+                  {
+                    children: [
+                      {
+                        paragraph: {
+                          text: "Text above should be vertical from top to bottom",
+                        },
+                      },
+                    ],
+                    verticalAlign: VerticalAlignTable.CENTER,
+                  },
+                ],
+              },
+            ],
+          },
+        },
       ],
-    }),
-    new TableRow({
-      cells: [
-        new TableCell({
-          children: [],
-        }),
-        new TableCell({
-          children: [new Paragraph("World")],
-        }),
-      ],
-    }),
+    },
   ],
 });
-
-// Using the no-border convenience object. It is the same as writing this manually:
-// Const borders = {
-//     Top: {
-//         Style: BorderStyle.NONE,
-//         Size: 0,
-//         Color: "auto",
-//     },
-//     Bottom: {
-//         Style: BorderStyle.NONE,
-//         Size: 0,
-//         Color: "auto",
-//     },
-//     Left: {
-//         Style: BorderStyle.NONE,
-//         Size: 0,
-//         Color: "auto",
-//     },
-//     Right: {
-//         Style: BorderStyle.NONE,
-//         Size: 0,
-//         Color: "auto",
-//     },
-//     InsideHorizontal: {
-//         Style: BorderStyle.NONE,
-//         Size: 0,
-//         Color: "auto",
-//     },
-//     InsideVertical: {
-//         Style: BorderStyle.NONE,
-//         Size: 0,
-//         Color: "auto",
-//     },
-// };
-const noBorderTable = new Table({
-  borders: TableBorders.NONE,
-  rows: [
-    new TableRow({
-      cells: [
-        new TableCell({
-          children: [new Paragraph({}), new Paragraph({})],
-          verticalAlign: VerticalAlignTable.CENTER,
-        }),
-        new TableCell({
-          children: [new Paragraph({}), new Paragraph({})],
-          verticalAlign: VerticalAlignTable.CENTER,
-        }),
-        new TableCell({
-          children: [new Paragraph({ text: "bottom to top" }), new Paragraph({})],
-          textDirection: TextDirection.BOTTOM_TO_TOP_LEFT_TO_RIGHT,
-        }),
-        new TableCell({
-          children: [new Paragraph({ text: "top to bottom" }), new Paragraph({})],
-          textDirection: TextDirection.TOP_TO_BOTTOM_RIGHT_TO_LEFT,
-        }),
-      ],
-    }),
-    new TableRow({
-      cells: [
-        new TableCell({
-          children: [
-            new Paragraph({
-              heading: HeadingLevel.HEADING_1,
-              text: "Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah",
-            }),
-          ],
-        }),
-        new TableCell({
-          children: [
-            new Paragraph({
-              text: "This text should be in the middle of the cell",
-            }),
-          ],
-          verticalAlign: VerticalAlignTable.CENTER,
-        }),
-        new TableCell({
-          children: [
-            new Paragraph({
-              text: "Text above should be vertical from bottom to top",
-            }),
-          ],
-          verticalAlign: VerticalAlignTable.CENTER,
-        }),
-        new TableCell({
-          children: [
-            new Paragraph({
-              text: "Text above should be vertical from top to bottom",
-            }),
-          ],
-          verticalAlign: VerticalAlignTable.CENTER,
-        }),
-      ],
-    }),
-  ],
-});
-
-const doc = new Document({
-  sections: [{ children: [table, new Paragraph("Hello"), noBorderTable] }],
-});
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

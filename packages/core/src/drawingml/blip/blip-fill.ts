@@ -8,14 +8,13 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import type { XmlComponent } from "../../xml-components";
+import { element } from "@office-open/xml";
+
 import { createBlip } from "./blip";
 import type { BlipOptions } from "./blip";
 import type { BlipEffectsOptions } from "./blip-effects";
 import { createSourceRectangle } from "./source-rectangle";
 import type { SourceRectangleOptions } from "./source-rectangle";
-import { Stretch } from "./stretch";
 import { createTileInfo } from "./tile";
 import type { TileOptions } from "./tile";
 
@@ -24,15 +23,15 @@ import type { TileOptions } from "./tile";
  */
 export interface BlipFillOptions {
   /** DPI of the image */
-  readonly dpi?: number;
+  dpi?: number;
   /** Whether the fill rotates with the shape */
-  readonly rotWithShape?: boolean;
+  rotWithShape?: boolean;
   /** Image adjustment effects (brightness, contrast, grayscale, etc.) */
-  readonly blipEffects?: BlipEffectsOptions;
+  blipEffects?: BlipEffectsOptions;
   /** Source rectangle for cropping */
-  readonly srcRect?: SourceRectangleOptions;
+  srcRect?: SourceRectangleOptions;
   /** Tile fill mode (if omitted, defaults to stretch) */
-  readonly tile?: TileOptions;
+  tile?: TileOptions;
 }
 
 /**
@@ -58,12 +57,10 @@ export interface BlipFillOptions {
  *
  * @param blipOptions - Blip options including referenceId and type
  * @param fillOptions - Optional blip fill options
+ * @returns An XML string representing the blip fill element
  */
-export const createBlipFill = (
-  blipOptions: BlipOptions,
-  fillOptions?: BlipFillOptions,
-): XmlComponent => {
-  const children: XmlComponent[] = [];
+export const createBlipFill = (blipOptions: BlipOptions, fillOptions?: BlipFillOptions): string => {
+  const children: string[] = [];
 
   children.push(createBlip(blipOptions, fillOptions?.blipEffects));
   children.push(createSourceRectangle(fillOptions?.srcRect));
@@ -71,24 +68,16 @@ export const createBlipFill = (
   if (fillOptions?.tile) {
     children.push(createTileInfo(fillOptions.tile));
   } else {
-    children.push(new Stretch());
+    children.push("<a:stretch><a:fillRect/></a:stretch>");
   }
 
-  const attributes: Record<string, { readonly key: string; readonly value: number }> = {};
-
+  const attrs: Record<string, string | number | undefined> = {};
   if (fillOptions?.dpi !== undefined) {
-    attributes.dpi = { key: "dpi", value: fillOptions.dpi };
+    attrs.dpi = fillOptions.dpi;
   }
   if (fillOptions?.rotWithShape !== undefined) {
-    attributes.rotWithShape = {
-      key: "rotWithShape",
-      value: fillOptions.rotWithShape ? 1 : 0,
-    };
+    attrs.rotWithShape = fillOptions.rotWithShape ? 1 : 0;
   }
 
-  return new BuilderElement({
-    attributes: Object.keys(attributes).length > 0 ? (attributes as never) : undefined,
-    children,
-    name: "pic:blipFill",
-  });
+  return element("pic:blipFill", attrs, children);
 };

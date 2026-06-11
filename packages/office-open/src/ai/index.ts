@@ -1,3 +1,6 @@
+import type { DocumentOptions } from "@office-open/docx";
+import type { PresentationOptions } from "@office-open/pptx";
+import type { WorkbookOptions } from "@office-open/xlsx";
 import { tool } from "ai";
 
 import { generate } from "../generate";
@@ -18,7 +21,7 @@ export const docxTool = tool({
     const validated = validateDocumentInput("docx", options);
     const base64 = (await generate({
       type: "docx",
-      options: validated,
+      options: validated as unknown as DocumentOptions,
       outputType: "base64",
     })) as string;
     return {
@@ -40,7 +43,7 @@ export const pptxTool = tool({
     const validated = validateDocumentInput("pptx", options);
     const base64 = (await generate({
       type: "pptx",
-      options: validated,
+      options: validated as PresentationOptions,
       outputType: "base64",
     })) as string;
     return {
@@ -62,7 +65,7 @@ export const xlsxTool = tool({
     const validated = validateDocumentInput("xlsx", options);
     const base64 = (await generate({
       type: "xlsx",
-      options: validated,
+      options: validated as WorkbookOptions,
       outputType: "base64",
     })) as string;
     return {

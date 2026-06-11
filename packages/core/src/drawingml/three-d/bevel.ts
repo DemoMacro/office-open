@@ -5,7 +5,7 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
+import { element } from "@office-open/xml";
 
 /**
  * Bevel preset types (12 variations).
@@ -32,11 +32,11 @@ export const BevelPresetType = {
  */
 export interface BevelOptions {
   /** Bevel width in EMUs (default 76200) */
-  readonly w?: number;
+  w?: number;
   /** Bevel height in EMUs (default 76200) */
-  readonly h?: number;
+  h?: number;
   /** Bevel preset type */
-  readonly prst?: (typeof BevelPresetType)[keyof typeof BevelPresetType];
+  prst?: (typeof BevelPresetType)[keyof typeof BevelPresetType];
 }
 
 /**
@@ -51,53 +51,45 @@ export interface BevelOptions {
  * </xsd:complexType>
  * ```
  */
-export const createBevel = (options?: BevelOptions) => {
+export const createBevel = (options?: BevelOptions): string => {
   if (!options) {
-    return new BuilderElement({ name: "a:bevelT" });
+    return `<a:bevelT/>`;
   }
 
-  const attributes: Record<string, { readonly key: string; readonly value: string | number }> =
-    {} as Record<string, { readonly key: string; readonly value: string | number }>;
+  const attrs: Record<string, string | number> = {};
 
   if (options.w !== undefined) {
-    attributes.w = { key: "w", value: options.w };
+    attrs.w = options.w;
   }
   if (options.h !== undefined) {
-    attributes.h = { key: "h", value: options.h };
+    attrs.h = options.h;
   }
   if (options.prst !== undefined) {
-    attributes.prst = { key: "prst", value: options.prst };
+    attrs.prst = options.prst;
   }
 
-  return new BuilderElement({
-    attributes: attributes as never,
-    name: "a:bevelT",
-  });
+  return element("a:bevelT", attrs);
 };
 
 /**
  * Creates a bottom bevel element (a:bevelB).
  */
-export const createBottomBevel = (options?: BevelOptions) => {
+export const createBottomBevel = (options?: BevelOptions): string => {
   if (!options) {
-    return new BuilderElement({ name: "a:bevelB" });
+    return `<a:bevelB/>`;
   }
 
-  const attributes: Record<string, { readonly key: string; readonly value: string | number }> =
-    {} as Record<string, { readonly key: string; readonly value: string | number }>;
+  const attrs: Record<string, string | number> = {};
 
   if (options.w !== undefined) {
-    attributes.w = { key: "w", value: options.w };
+    attrs.w = options.w;
   }
   if (options.h !== undefined) {
-    attributes.h = { key: "h", value: options.h };
+    attrs.h = options.h;
   }
   if (options.prst !== undefined) {
-    attributes.prst = { key: "prst", value: options.prst };
+    attrs.prst = options.prst;
   }
 
-  return new BuilderElement({
-    attributes: attributes as never,
-    name: "a:bevelB",
-  });
+  return element("a:bevelB", attrs);
 };

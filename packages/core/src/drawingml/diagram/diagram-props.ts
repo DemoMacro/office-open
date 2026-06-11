@@ -5,7 +5,8 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "../../xml-components";
+import { element } from "@office-open/xml";
+
 import type { Shape3DOptions } from "../three-d/shape-3d";
 import { createShape3D } from "../three-d/shape-3d";
 
@@ -15,12 +16,12 @@ import { createShape3D } from "../three-d/shape-3d";
 
 export interface DiagramExtLstOptions {
   /** Extension URIs */
-  readonly extensions?: readonly DiagramExtensionOptions[];
+  extensions?: readonly DiagramExtensionOptions[];
 }
 
 export interface DiagramExtensionOptions {
-  readonly uri: string;
-  readonly content?: string;
+  uri: string;
+  content?: string;
 }
 
 /**
@@ -28,19 +29,14 @@ export interface DiagramExtensionOptions {
  *
  * Generic extension list pattern used across OOXML.
  */
-export const createDiagramExtLst = (options?: DiagramExtLstOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+export const createDiagramExtLst = (options?: DiagramExtLstOptions): string => {
+  const children: string[] = [];
   if (options?.extensions) {
     for (const ext of options.extensions) {
-      children.push(
-        new BuilderElement({
-          name: "a:ext",
-          attributes: { uri: { key: "uri", value: ext.uri } },
-        }),
-      );
+      children.push(`<a:ext uri="${ext.uri}"/>`);
     }
   }
-  return new BuilderElement({ name: "dgm:extLst", children });
+  return element("dgm:extLst", undefined, children);
 };
 
 // ---------------------------------------------------------------------------
@@ -52,7 +48,7 @@ export const createDiagramExtLst = (options?: DiagramExtLstOptions): XmlComponen
  *
  * Delegates to the shared createShape3D factory but wraps in dgm: namespace context.
  */
-export const createDiagramSp3d = (options: Shape3DOptions): XmlComponent => createShape3D(options);
+export const createDiagramSp3d = (options: Shape3DOptions): string => createShape3D(options);
 
 // ---------------------------------------------------------------------------
 // dgm:txPr — text properties (CT_TextProps)
@@ -60,7 +56,7 @@ export const createDiagramSp3d = (options: Shape3DOptions): XmlComponent => crea
 
 export interface DiagramTextPropsOptions {
   /** 3D text properties (flat text, no 3D) — empty element */
-  readonly flat?: boolean;
+  flat?: boolean;
 }
 
 /**
@@ -75,5 +71,4 @@ export interface DiagramTextPropsOptions {
  * </xsd:complexType>
  * ```
  */
-export const createDiagramTxPr = (_options?: DiagramTextPropsOptions): XmlComponent =>
-  new BuilderElement({ name: "dgm:txPr" });
+export const createDiagramTxPr = (_options?: DiagramTextPropsOptions): string => "<dgm:txPr/>";

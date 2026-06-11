@@ -1,8 +1,8 @@
 import { writeFileSync } from "node:fs";
 
-import { Workbook, Packer } from "@office-open/xlsx";
+import { generateWorkbook } from "@office-open/xlsx";
 
-const wb = new Workbook({
+const buffer = await generateWorkbook({
   externalLinks: [
     {
       externalBook: {
@@ -59,5 +59,4 @@ const wb = new Workbook({
   ],
 });
 
-const buffer = await Packer.toBuffer(wb);
 writeFileSync("My Workbook.xlsx", buffer);

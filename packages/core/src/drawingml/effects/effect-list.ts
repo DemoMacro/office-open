@@ -5,8 +5,8 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import type { XmlComponent } from "../../xml-components";
+import { element } from "@office-open/xml";
+
 import type { FillOverlayEffectOptions } from "./fill-overlay";
 import { createFillOverlayEffect } from "./fill-overlay";
 import type { GlowEffectOptions } from "./glow";
@@ -22,13 +22,100 @@ import { createReflectionEffect } from "./reflection";
 import { createSoftEdgeEffect } from "./soft-edge";
 
 /**
+ * Effect extent calculation result.
+ * Represents the additional space needed on each edge (in EMUs).
+ */
+export interface EffectExtent {
+  /** Left edge extension */
+  l: number;
+  /** Top edge extension */
+  t: number;
+  /** Right edge extension */
+  r: number;
+  /** Bottom edge extension */
+  b: number;
+}
+
+/**
+ * Calculates the effect extent for a given set of effects.
+ *
+ * The effectExtent specifies the additional extent which shall be added to each edge
+ * of the image (top, bottom, left, right) in order to compensate for any drawing effects
+ * applied to the DrawingML object.
+ *
+ * Reference: CT_EffectExtent in dml-wordprocessingDrawing.xsd
+ *
+ * @param options - Effect list options
+ * @returns The calculated effect extent in EMUs
+ */
+export const calculateEffectExtent = (options?: EffectListOptions): EffectExtent => {
+  if (!options) {
+    return { l: 0, t: 0, r: 0, b: 0 };
+  }
+
+  let l = 0,
+    t = 0,
+    r = 0,
+    b = 0;
+
+  // Outer shadow: distance + blurRadius extends in the shadow direction
+  if (options.outerShadow) {
+    const dist = options.outerShadow.distance ?? 0;
+    const blur = options.outerShadow.blurRadius ?? 0;
+    const dir = options.outerShadow.direction ?? 0;
+
+    // Direction is in 60,000ths of a degree, convert to radians
+    const radians = (dir / 60000) * (Math.PI / 180);
+    const dx = Math.cos(radians) * dist;
+    const dy = Math.sin(radians) * dist;
+
+    // Shadow extends in direction + blur radius in all directions
+    const extend = Math.abs(dx) + blur;
+    const extendY = Math.abs(dy) + blur;
+
+    if (dx > 0) r = Math.max(r, extend);
+    else l = Math.max(l, extend);
+
+    if (dy > 0) b = Math.max(b, extendY);
+    else t = Math.max(t, extendY);
+  }
+
+  // Glow: radius extends equally in all directions
+  if (options.glow) {
+    const radius = options.glow.radius ?? 0;
+    l = Math.max(l, radius);
+    t = Math.max(t, radius);
+    r = Math.max(r, radius);
+    b = Math.max(b, radius);
+  }
+
+  // Reflection: typically extends downward
+  if (options.reflection && options.reflection !== true) {
+    const dist = options.reflection.distance ?? 0;
+    const blur = options.reflection.blurRadius ?? 0;
+    // Reflection typically extends downward
+    b = Math.max(b, dist + blur);
+  }
+
+  // Soft edge: radius extends equally in all directions
+  if (options.softEdge !== undefined) {
+    l = Math.max(l, options.softEdge);
+    t = Math.max(t, options.softEdge);
+    r = Math.max(r, options.softEdge);
+    b = Math.max(b, options.softEdge);
+  }
+
+  return { l, t, r, b };
+};
+
+/**
  * Blur effect options.
  */
 export interface BlurEffectOptions {
   /** Blur radius in EMUs */
-  readonly radius?: number;
+  radius?: number;
   /** Whether to grow the shape boundary */
-  readonly grow?: boolean;
+  grow?: boolean;
 }
 
 /**
@@ -39,21 +126,21 @@ export interface BlurEffectOptions {
  */
 export interface EffectListOptions {
   /** Blur effect */
-  readonly blur?: BlurEffectOptions;
+  blur?: BlurEffectOptions;
   /** Fill overlay effect */
-  readonly fillOverlay?: FillOverlayEffectOptions;
+  fillOverlay?: FillOverlayEffectOptions;
   /** Glow effect */
-  readonly glow?: GlowEffectOptions;
+  glow?: GlowEffectOptions;
   /** Inner shadow effect */
-  readonly innerShadow?: InnerShadowEffectOptions;
+  innerShadow?: InnerShadowEffectOptions;
   /** Outer shadow effect */
-  readonly outerShadow?: OuterShadowEffectOptions;
+  outerShadow?: OuterShadowEffectOptions;
   /** Preset shadow effect */
-  readonly presetShadow?: PresetShadowEffectOptions;
+  presetShadow?: PresetShadowEffectOptions;
   /** Reflection effect (pass object for attributes, or true for defaults) */
-  readonly reflection?: ReflectionEffectOptions | true;
+  reflection?: ReflectionEffectOptions | true;
   /** Soft edge radius in EMUs */
-  readonly softEdge?: number;
+  softEdge?: number;
 }
 
 /**
@@ -67,26 +154,12 @@ export interface EffectListOptions {
  * </xsd:complexType>
  * ```
  */
-const createBlurEffect = (options: BlurEffectOptions): XmlComponent => {
-  const hasAttributes = options.radius !== undefined || options.grow === false;
+const createBlurEffect = (options: BlurEffectOptions): string => {
+  const attrs: Record<string, number> = {};
+  if (options.radius !== undefined) attrs.rad = options.radius;
+  if (options.grow === false) attrs.grow = 0;
 
-  if (!hasAttributes) {
-    return new BuilderElement({ name: "a:blur" });
-  }
-
-  const attributePayload = {
-    ...(options.radius !== undefined && {
-      rad: { key: "rad", value: options.radius },
-    }),
-    ...(options.grow === false && {
-      grow: { key: "grow", value: 0 },
-    }),
-  };
-
-  return new BuilderElement({
-    attributes: attributePayload as never,
-    name: "a:blur",
-  });
+  return Object.keys(attrs).length > 0 ? element("a:blur", attrs) : element("a:blur");
 };
 
 /**
@@ -111,8 +184,8 @@ const createBlurEffect = (options: BlurEffectOptions): XmlComponent => {
  * </xsd:complexType>
  * ```
  */
-export const createEffectList = (options: EffectListOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+export const createEffectList = (options: EffectListOptions): string => {
+  const children: string[] = [];
 
   if (options.blur) {
     children.push(createBlurEffect(options.blur));
@@ -141,8 +214,5 @@ export const createEffectList = (options: EffectListOptions): XmlComponent => {
     children.push(createSoftEdgeEffect(options.softEdge));
   }
 
-  return new BuilderElement({
-    children,
-    name: "a:effectLst",
-  });
+  return element("a:effectLst", undefined, children);
 };

@@ -1,129 +1,160 @@
 // Demo: New OOXML features - Math accent, Fraction types
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import {
-  createMathAccent,
-  Document,
-  Math,
-  MathFraction,
-  MathRun,
-  Packer,
-  Paragraph,
-  TextRun,
-} from "@office-open/docx";
+import { generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
         // ===== Math Accent =====
-        new Paragraph({
-          children: [new TextRun({ text: "Math Accent Demo", bold: true, size: 28 })],
-        }),
-        new Paragraph({
-          children: [
-            new Math({
-              children: [
-                createMathAccent({
-                  children: [new MathRun("x")],
-                }),
-                new MathRun(" + "),
-                createMathAccent({
-                  accentCharacter: "\u0303",
-                  children: [new MathRun("y")],
-                }),
-                new MathRun(" + "),
-                createMathAccent({
-                  accentCharacter: "\u0307",
-                  children: [new MathRun("z")],
-                }),
-              ],
-            }),
-          ],
-        }),
-        new Paragraph({
-          children: [
-            new Math({
-              children: [
-                createMathAccent({
-                  accentCharacter: "\u20D7",
-                  children: [new MathRun("AB")],
-                }),
-                new MathRun(" = "),
-                createMathAccent({
-                  accentCharacter: "\u0305",
-                  children: [new MathRun("CD")],
-                }),
-              ],
-            }),
-          ],
-        }),
+        {
+          paragraph: {
+            children: [{ text: "Math Accent Demo", bold: true, size: 28 }],
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              {
+                math: {
+                  children: [
+                    { accent: { children: ["x"] } },
+                    " + ",
+                    {
+                      accent: {
+                        accentCharacter: "̃",
+                        children: ["y"],
+                      },
+                    },
+                    " + ",
+                    {
+                      accent: {
+                        accentCharacter: "̇",
+                        children: ["z"],
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              {
+                math: {
+                  children: [
+                    {
+                      accent: {
+                        accentCharacter: "⃗",
+                        children: ["AB"],
+                      },
+                    },
+                    " = ",
+                    {
+                      accent: {
+                        accentCharacter: "̅",
+                        children: ["CD"],
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
 
         // ===== Fraction Types =====
-        new Paragraph({
-          children: [new TextRun({ text: "Fraction Types Demo", bold: true, size: 28 })],
-        }),
-        new Paragraph({
-          children: [
-            new TextRun("Standard bar fraction: "),
-            new Math({
-              children: [
-                new MathFraction({
-                  numerator: [new MathRun("a")],
-                  denominator: [new MathRun("b")],
-                }),
-              ],
-            }),
-          ],
-        }),
-        new Paragraph({
-          children: [
-            new TextRun("Skewed fraction: "),
-            new Math({
-              children: [
-                new MathFraction({
-                  numerator: [new MathRun("a")],
-                  denominator: [new MathRun("b")],
-                  fractionType: "skw",
-                }),
-              ],
-            }),
-          ],
-        }),
-        new Paragraph({
-          children: [
-            new TextRun("Linear fraction: "),
-            new Math({
-              children: [
-                new MathFraction({
-                  numerator: [new MathRun("a")],
-                  denominator: [new MathRun("b")],
-                  fractionType: "lin",
-                }),
-              ],
-            }),
-          ],
-        }),
-        new Paragraph({
-          children: [
-            new TextRun("No-bar fraction: "),
-            new Math({
-              children: [
-                new MathFraction({
-                  numerator: [new MathRun("a")],
-                  denominator: [new MathRun("b")],
-                  fractionType: "noBar",
-                }),
-              ],
-            }),
-          ],
-        }),
+        {
+          paragraph: {
+            children: [{ text: "Fraction Types Demo", bold: true, size: 28 }],
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              "Standard bar fraction: ",
+              {
+                math: {
+                  children: [
+                    {
+                      fraction: {
+                        numerator: ["a"],
+                        denominator: ["b"],
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              "Skewed fraction: ",
+              {
+                math: {
+                  children: [
+                    {
+                      fraction: {
+                        numerator: ["a"],
+                        denominator: ["b"],
+                        fractionType: "skw",
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              "Linear fraction: ",
+              {
+                math: {
+                  children: [
+                    {
+                      fraction: {
+                        numerator: ["a"],
+                        denominator: ["b"],
+                        fractionType: "lin",
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              "No-bar fraction: ",
+              {
+                math: {
+                  children: [
+                    {
+                      fraction: {
+                        numerator: ["a"],
+                        denominator: ["b"],
+                        fractionType: "noBar",
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
       ],
       properties: {},
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

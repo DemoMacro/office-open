@@ -1,17 +1,10 @@
 // Numbering with level restart, legacy spacing/indent, and abstract numbering options.
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import {
-  AlignmentType,
-  Document,
-  LevelFormat,
-  Packer,
-  Paragraph,
-  TextRun,
-} from "@office-open/docx";
+import { AlignmentType, LevelFormat, generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   numbering: {
     config: [
       {
@@ -55,40 +48,50 @@ const doc = new Document({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [
-            new TextRun({
-              bold: true,
-              text: "Numbering with Level Restart and Legacy Options",
-              size: 32,
-            }),
-          ],
-        }),
+        {
+          paragraph: {
+            children: [
+              {
+                bold: true,
+                text: "Numbering with Level Restart and Legacy Options",
+                size: 32,
+              },
+            ],
+          },
+        },
 
-        new Paragraph({
-          numbering: { reference: "decimal-with-restart", level: 0 },
-          children: [new TextRun("First item")],
-        }),
-        new Paragraph({
-          numbering: { reference: "decimal-with-restart", level: 1 },
-          children: [new TextRun("Sub-item a")],
-        }),
-        new Paragraph({
-          numbering: { reference: "decimal-with-restart", level: 1 },
-          children: [new TextRun("Sub-item b")],
-        }),
-        new Paragraph({
-          numbering: { reference: "decimal-with-restart", level: 0 },
-          children: [new TextRun("Second item")],
-        }),
-        new Paragraph({
-          numbering: { reference: "decimal-with-restart", level: 1 },
-          children: [new TextRun("Sub-item a (restarted)")],
-        }),
+        {
+          paragraph: {
+            numbering: { reference: "decimal-with-restart", level: 0 },
+            children: ["First item"],
+          },
+        },
+        {
+          paragraph: {
+            numbering: { reference: "decimal-with-restart", level: 1 },
+            children: ["Sub-item a"],
+          },
+        },
+        {
+          paragraph: {
+            numbering: { reference: "decimal-with-restart", level: 1 },
+            children: ["Sub-item b"],
+          },
+        },
+        {
+          paragraph: {
+            numbering: { reference: "decimal-with-restart", level: 0 },
+            children: ["Second item"],
+          },
+        },
+        {
+          paragraph: {
+            numbering: { reference: "decimal-with-restart", level: 1 },
+            children: ["Sub-item a (restarted)"],
+          },
+        },
       ],
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

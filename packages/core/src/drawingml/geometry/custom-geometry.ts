@@ -8,9 +8,9 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import type { XmlComponent } from "../../xml-components";
-import { xsdPathFillMode } from "../../xsd-mappings";
+import { element } from "@office-open/xml";
+
+import { xsdPathFillMode } from "../../util/mappings";
 import type { GeometryGuide } from "./adjustment-values";
 
 /**
@@ -19,18 +19,9 @@ import type { GeometryGuide } from "./adjustment-values";
  * Both CT_GeomGuideList types share the same structure — a list of `a:gd` children.
  * The only difference is the wrapper element name.
  */
-const createGuideList = (name: string, guides: readonly GeometryGuide[]): XmlComponent => {
-  const children: XmlComponent[] = guides.map(
-    (guide) =>
-      new BuilderElement<{ readonly name: string; readonly fmla: string }>({
-        attributes: {
-          name: { key: "name", value: guide.name },
-          fmla: { key: "fmla", value: guide.formula },
-        },
-        name: "a:gd",
-      }),
-  );
-  return new BuilderElement({ name, children });
+const createGuideList = (name: string, guides: readonly GeometryGuide[]): string => {
+  const children = guides.map((guide) => `<a:gd name="${guide.name}" fmla="${guide.formula}"/>`);
+  return element(name, undefined, children);
 };
 
 // ─── Path Fill Mode ─────────────────────────────────────────────────────────
@@ -70,63 +61,52 @@ export const PathFillMode = {
  */
 export interface AdjPoint {
   /** X coordinate (absolute value or guide name) */
-  readonly x: string;
+  x: string;
   /** Y coordinate (absolute value or guide name) */
-  readonly y: string;
+  y: string;
 }
 
-const createAdjPoint = (name: string, point: AdjPoint): XmlComponent =>
-  new BuilderElement({
-    name,
-    children: [
-      new BuilderElement<{ readonly x: string; readonly y: string }>({
-        name: "a:pt",
-        attributes: {
-          x: { key: "x", value: point.x },
-          y: { key: "y", value: point.y },
-        },
-      }),
-    ],
-  });
+const createAdjPoint = (name: string, point: AdjPoint): string =>
+  element(name, undefined, [`<a:pt x="${point.x}" y="${point.y}"/>`]);
 
 // ─── Path Commands ──────────────────────────────────────────────────────────
 
 /** Move-to path command (CT_Path2DMoveTo). */
 export interface PathMoveTo {
-  readonly command: "moveTo";
-  readonly point: AdjPoint;
+  command: "moveTo";
+  point: AdjPoint;
 }
 
 /** Line-to path command (CT_Path2DLineTo). */
 export interface PathLineTo {
-  readonly command: "lineTo";
-  readonly point: AdjPoint;
+  command: "lineTo";
+  point: AdjPoint;
 }
 
 /** Arc-to path command (CT_Path2DArcTo). */
 export interface PathArcTo {
-  readonly command: "arcTo";
-  readonly widthRadius: string;
-  readonly heightRadius: string;
-  readonly startAngle: string;
-  readonly sweepAngle: string;
+  command: "arcTo";
+  widthRadius: string;
+  heightRadius: string;
+  startAngle: string;
+  sweepAngle: string;
 }
 
 /** Quadratic Bezier-to path command (CT_Path2DQuadBezierTo). */
 export interface PathQuadBezTo {
-  readonly command: "quadBezTo";
-  readonly points: readonly [AdjPoint, AdjPoint];
+  command: "quadBezTo";
+  points: readonly [AdjPoint, AdjPoint];
 }
 
 /** Cubic Bezier-to path command (CT_Path2DCubicBezierTo). */
 export interface PathCubicBezTo {
-  readonly command: "cubicBezTo";
-  readonly points: readonly [AdjPoint, AdjPoint, AdjPoint];
+  command: "cubicBezTo";
+  points: readonly [AdjPoint, AdjPoint, AdjPoint];
 }
 
 /** Close path command (CT_Path2DClose). */
 export interface PathClose {
-  readonly command: "close";
+  command: "close";
 }
 
 /** A path command within a custom geometry path. */
@@ -138,57 +118,28 @@ export type PathCommand =
   | PathCubicBezTo
   | PathClose;
 
-const createPathCommand = (cmd: PathCommand): XmlComponent => {
+const createPathCommand = (cmd: PathCommand): string => {
   switch (cmd.command) {
     case "moveTo":
       return createAdjPoint("a:moveTo", cmd.point);
     case "lineTo":
       return createAdjPoint("a:lnTo", cmd.point);
     case "arcTo":
-      return new BuilderElement<{
-        readonly wR: string;
-        readonly hR: string;
-        readonly stAng: string;
-        readonly swAng: string;
-      }>({
-        name: "a:arcTo",
-        attributes: {
-          wR: { key: "wR", value: cmd.widthRadius },
-          hR: { key: "hR", value: cmd.heightRadius },
-          stAng: { key: "stAng", value: cmd.startAngle },
-          swAng: { key: "swAng", value: cmd.sweepAngle },
-        },
-      });
+      return `<a:arcTo wR="${cmd.widthRadius}" hR="${cmd.heightRadius}" stAng="${cmd.startAngle}" swAng="${cmd.sweepAngle}"/>`;
     case "quadBezTo":
-      return new BuilderElement({
-        name: "a:quadBezTo",
-        children: cmd.points.map(
-          (pt) =>
-            new BuilderElement<{ readonly x: string; readonly y: string }>({
-              name: "a:pt",
-              attributes: {
-                x: { key: "x", value: pt.x },
-                y: { key: "y", value: pt.y },
-              },
-            }),
-        ),
-      });
+      return element(
+        "a:quadBezTo",
+        undefined,
+        cmd.points.map((pt) => `<a:pt x="${pt.x}" y="${pt.y}"/>`),
+      );
     case "cubicBezTo":
-      return new BuilderElement({
-        name: "a:cubicBezTo",
-        children: cmd.points.map(
-          (pt) =>
-            new BuilderElement<{ readonly x: string; readonly y: string }>({
-              name: "a:pt",
-              attributes: {
-                x: { key: "x", value: pt.x },
-                y: { key: "y", value: pt.y },
-              },
-            }),
-        ),
-      });
+      return element(
+        "a:cubicBezTo",
+        undefined,
+        cmd.points.map((pt) => `<a:pt x="${pt.x}" y="${pt.y}"/>`),
+      );
     case "close":
-      return new BuilderElement({ name: "a:close" });
+      return "<a:close/>";
   }
 };
 
@@ -218,35 +169,28 @@ const createPathCommand = (cmd: PathCommand): XmlComponent => {
  */
 export interface PathOptions {
   /** Path width (coordinate value, default 0 = use shape width) */
-  readonly w?: number;
+  w?: number;
   /** Path height (coordinate value, default 0 = use shape height) */
-  readonly h?: number;
+  h?: number;
   /** Fill mode for this path */
-  readonly fill?: (typeof PathFillMode)[keyof typeof PathFillMode];
+  fill?: (typeof PathFillMode)[keyof typeof PathFillMode];
   /** Whether to stroke the path */
-  readonly stroke?: boolean;
+  stroke?: boolean;
   /** Whether extrusion is allowed */
-  readonly extrusionOk?: boolean;
+  extrusionOk?: boolean;
   /** Path commands (moveTo, lineTo, arcTo, etc.) */
-  readonly commands: readonly PathCommand[];
+  commands: readonly PathCommand[];
 }
 
-const createPath = (options: PathOptions): XmlComponent => {
-  const attrs: Record<string, { readonly key: string; readonly value: string | number | boolean }> =
-    {};
-  if (options.w !== undefined) attrs.w = { key: "w", value: options.w };
-  if (options.h !== undefined) attrs.h = { key: "h", value: options.h };
-  if (options.fill !== undefined)
-    attrs.fill = { key: "fill", value: xsdPathFillMode.to(options.fill) };
-  if (options.stroke !== undefined) attrs.stroke = { key: "stroke", value: options.stroke };
-  if (options.extrusionOk !== undefined)
-    attrs.extrusionOk = { key: "extrusionOk", value: options.extrusionOk };
+const createPath = (options: PathOptions): string => {
+  const attrs: Record<string, string | number | boolean | undefined> = {};
+  if (options.w !== undefined) attrs.w = options.w;
+  if (options.h !== undefined) attrs.h = options.h;
+  if (options.fill !== undefined) attrs.fill = xsdPathFillMode.to(options.fill);
+  if (options.stroke !== undefined) attrs.stroke = options.stroke;
+  if (options.extrusionOk !== undefined) attrs.extrusionOk = options.extrusionOk;
 
-  return new BuilderElement({
-    name: "a:path",
-    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
-    children: options.commands.map(createPathCommand),
-  });
+  return element("a:path", attrs, options.commands.map(createPathCommand));
 };
 
 // ─── Adjust Handle ──────────────────────────────────────────────────────────
@@ -255,8 +199,8 @@ const createPath = (options: PathOptions): XmlComponent => {
  * A position reference for adjust handles and connection sites.
  */
 export interface AdjustHandlePosition {
-  readonly x: string;
-  readonly y: string;
+  x: string;
+  y: string;
 }
 
 /**
@@ -265,14 +209,14 @@ export interface AdjustHandlePosition {
  * Allows the user to drag a handle in X/Y directions.
  */
 export interface XYAdjustHandle {
-  readonly type: "xy";
-  readonly guideRefX?: string;
-  readonly minX?: string;
-  readonly maxX?: string;
-  readonly guideRefY?: string;
-  readonly minY?: string;
-  readonly maxY?: string;
-  readonly position: AdjustHandlePosition;
+  type: "xy";
+  guideRefX?: string;
+  minX?: string;
+  maxX?: string;
+  guideRefY?: string;
+  minY?: string;
+  maxY?: string;
+  position: AdjustHandlePosition;
 }
 
 /**
@@ -281,60 +225,44 @@ export interface XYAdjustHandle {
  * Allows the user to drag a handle in radius/angle directions.
  */
 export interface PolarAdjustHandle {
-  readonly type: "polar";
-  readonly guideRefRadius?: string;
-  readonly minRadius?: string;
-  readonly maxRadius?: string;
-  readonly guideRefAngle?: string;
-  readonly minAngle?: string;
-  readonly maxAngle?: string;
-  readonly position: AdjustHandlePosition;
+  type: "polar";
+  guideRefRadius?: string;
+  minRadius?: string;
+  maxRadius?: string;
+  guideRefAngle?: string;
+  minAngle?: string;
+  maxAngle?: string;
+  position: AdjustHandlePosition;
 }
 
 /** An adjust handle (XY or Polar). */
 export type AdjustHandle = XYAdjustHandle | PolarAdjustHandle;
 
-const createAdjustHandlePos = (position: AdjustHandlePosition): XmlComponent =>
-  new BuilderElement<{ readonly x: string; readonly y: string }>({
-    name: "a:pos",
-    attributes: {
-      x: { key: "x", value: position.x },
-      y: { key: "y", value: position.y },
-    },
-  });
+const createAdjustHandlePos = (position: AdjustHandlePosition): string =>
+  `<a:pos x="${position.x}" y="${position.y}"/>`;
 
-const createXYAdjustHandle = (handle: XYAdjustHandle): XmlComponent => {
-  const attrs: Record<string, { readonly key: string; readonly value: string }> = {};
-  if (handle.guideRefX !== undefined) attrs.gdRefX = { key: "gdRefX", value: handle.guideRefX };
-  if (handle.minX !== undefined) attrs.minX = { key: "minX", value: handle.minX };
-  if (handle.maxX !== undefined) attrs.maxX = { key: "maxX", value: handle.maxX };
-  if (handle.guideRefY !== undefined) attrs.gdRefY = { key: "gdRefY", value: handle.guideRefY };
-  if (handle.minY !== undefined) attrs.minY = { key: "minY", value: handle.minY };
-  if (handle.maxY !== undefined) attrs.maxY = { key: "maxY", value: handle.maxY };
+const createXYAdjustHandle = (handle: XYAdjustHandle): string => {
+  const attrs: Record<string, string | undefined> = {};
+  if (handle.guideRefX !== undefined) attrs.gdRefX = handle.guideRefX;
+  if (handle.minX !== undefined) attrs.minX = handle.minX;
+  if (handle.maxX !== undefined) attrs.maxX = handle.maxX;
+  if (handle.guideRefY !== undefined) attrs.gdRefY = handle.guideRefY;
+  if (handle.minY !== undefined) attrs.minY = handle.minY;
+  if (handle.maxY !== undefined) attrs.maxY = handle.maxY;
 
-  return new BuilderElement({
-    name: "a:ahXY",
-    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
-    children: [createAdjustHandlePos(handle.position)],
-  });
+  return element("a:ahXY", attrs, [createAdjustHandlePos(handle.position)]);
 };
 
-const createPolarAdjustHandle = (handle: PolarAdjustHandle): XmlComponent => {
-  const attrs: Record<string, { readonly key: string; readonly value: string }> = {};
-  if (handle.guideRefRadius !== undefined)
-    attrs.gdRefR = { key: "gdRefR", value: handle.guideRefRadius };
-  if (handle.minRadius !== undefined) attrs.minR = { key: "minR", value: handle.minRadius };
-  if (handle.maxRadius !== undefined) attrs.maxR = { key: "maxR", value: handle.maxRadius };
-  if (handle.guideRefAngle !== undefined)
-    attrs.gdRefAng = { key: "gdRefAng", value: handle.guideRefAngle };
-  if (handle.minAngle !== undefined) attrs.minAng = { key: "minAng", value: handle.minAngle };
-  if (handle.maxAngle !== undefined) attrs.maxAng = { key: "maxAng", value: handle.maxAngle };
+const createPolarAdjustHandle = (handle: PolarAdjustHandle): string => {
+  const attrs: Record<string, string | undefined> = {};
+  if (handle.guideRefRadius !== undefined) attrs.gdRefR = handle.guideRefRadius;
+  if (handle.minRadius !== undefined) attrs.minR = handle.minRadius;
+  if (handle.maxRadius !== undefined) attrs.maxR = handle.maxRadius;
+  if (handle.guideRefAngle !== undefined) attrs.gdRefAng = handle.guideRefAngle;
+  if (handle.minAngle !== undefined) attrs.minAng = handle.minAngle;
+  if (handle.maxAngle !== undefined) attrs.maxAng = handle.maxAngle;
 
-  return new BuilderElement({
-    name: "a:ahPolar",
-    attributes: Object.keys(attrs).length > 0 ? attrs : undefined,
-    children: [createAdjustHandlePos(handle.position)],
-  });
+  return element("a:ahPolar", attrs, [createAdjustHandlePos(handle.position)]);
 };
 
 // ─── Connection Site ────────────────────────────────────────────────────────
@@ -346,17 +274,13 @@ const createPolarAdjustHandle = (handle: PolarAdjustHandle): XmlComponent => {
  */
 export interface ConnectionSite {
   /** Angle (absolute value or guide name) */
-  readonly angle: string;
+  angle: string;
   /** Position */
-  readonly position: AdjustHandlePosition;
+  position: AdjustHandlePosition;
 }
 
-const createConnectionSite = (site: ConnectionSite): XmlComponent =>
-  new BuilderElement<{ readonly ang: string }>({
-    name: "a:cxn",
-    attributes: { ang: { key: "ang", value: site.angle } },
-    children: [createAdjustHandlePos(site.position)],
-  });
+const createConnectionSite = (site: ConnectionSite): string =>
+  element("a:cxn", { ang: site.angle }, [createAdjustHandlePos(site.position)]);
 
 // ─── Geometry Rectangle ─────────────────────────────────────────────────────
 
@@ -367,27 +291,14 @@ const createConnectionSite = (site: ConnectionSite): XmlComponent =>
  * Coordinates can be absolute values or references to geometry guide names.
  */
 export interface GeomRect {
-  readonly left: string;
-  readonly top: string;
-  readonly right: string;
-  readonly bottom: string;
+  left: string;
+  top: string;
+  right: string;
+  bottom: string;
 }
 
-const createGeomRect = (rect: GeomRect): XmlComponent =>
-  new BuilderElement<{
-    readonly l: string;
-    readonly t: string;
-    readonly r: string;
-    readonly b: string;
-  }>({
-    name: "a:rect",
-    attributes: {
-      l: { key: "l", value: rect.left },
-      t: { key: "t", value: rect.top },
-      r: { key: "r", value: rect.right },
-      b: { key: "b", value: rect.bottom },
-    },
-  });
+const createGeomRect = (rect: GeomRect): string =>
+  `<a:rect l="${rect.left}" t="${rect.top}" r="${rect.right}" b="${rect.bottom}"/>`;
 
 // ─── Custom Geometry ────────────────────────────────────────────────────────
 
@@ -427,21 +338,21 @@ const createGeomRect = (rect: GeomRect): XmlComponent =>
  */
 export interface CustomGeometryOptions {
   /** Adjustment value guides (a:avLst) */
-  readonly adjustmentValues?: readonly GeometryGuide[];
+  adjustmentValues?: readonly GeometryGuide[];
   /** Geometry guide formulas (a:gdLst) */
-  readonly guides?: readonly GeometryGuide[];
+  guides?: readonly GeometryGuide[];
   /** Adjust handles (a:ahLst) */
-  readonly adjustHandles?: readonly AdjustHandle[];
+  adjustHandles?: readonly AdjustHandle[];
   /** Connection sites (a:cxnLst) */
-  readonly connectionSites?: readonly ConnectionSite[];
+  connectionSites?: readonly ConnectionSite[];
   /** Text insertion rectangle (a:rect) */
-  readonly textRect?: GeomRect;
+  textRect?: GeomRect;
   /** Path definitions (a:pathLst) — required */
-  readonly pathList: readonly PathOptions[];
+  pathList: readonly PathOptions[];
 }
 
 /**
- * Creates a custom 2D geometry element (a:custGeom).
+ * Creates a custom 2D geometry element as an XML string (a:custGeom).
  *
  * @example
  * ```typescript
@@ -460,8 +371,8 @@ export interface CustomGeometryOptions {
  * });
  * ```
  */
-export const createCustomGeometry = (options: CustomGeometryOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+export const createCustomGeometry = (options: CustomGeometryOptions): string => {
+  const children: string[] = [];
 
   // a:avLst
   if (options.adjustmentValues) {
@@ -476,22 +387,20 @@ export const createCustomGeometry = (options: CustomGeometryOptions): XmlCompone
   // a:ahLst
   if (options.adjustHandles && options.adjustHandles.length > 0) {
     children.push(
-      new BuilderElement({
-        name: "a:ahLst",
-        children: options.adjustHandles.map((h) =>
+      element(
+        "a:ahLst",
+        undefined,
+        options.adjustHandles.map((h) =>
           h.type === "xy" ? createXYAdjustHandle(h) : createPolarAdjustHandle(h),
         ),
-      }),
+      ),
     );
   }
 
   // a:cxnLst
   if (options.connectionSites && options.connectionSites.length > 0) {
     children.push(
-      new BuilderElement({
-        name: "a:cxnLst",
-        children: options.connectionSites.map(createConnectionSite),
-      }),
+      element("a:cxnLst", undefined, options.connectionSites.map(createConnectionSite)),
     );
   }
 
@@ -501,12 +410,7 @@ export const createCustomGeometry = (options: CustomGeometryOptions): XmlCompone
   }
 
   // a:pathLst (required)
-  children.push(
-    new BuilderElement({
-      name: "a:pathLst",
-      children: options.pathList.map(createPath),
-    }),
-  );
+  children.push(element("a:pathLst", undefined, options.pathList.map(createPath)));
 
-  return new BuilderElement({ name: "a:custGeom", children });
+  return element("a:custGeom", undefined, children);
 };

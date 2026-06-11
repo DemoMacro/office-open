@@ -7,9 +7,9 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import type { XmlComponent } from "../../xml-components";
-import { xsdLineEndSize } from "../../xsd-mappings";
+import { element } from "@office-open/xml";
+
+import { xsdLineEndSize } from "../../util/mappings";
 
 /**
  * Line end types (arrow head styles).
@@ -89,7 +89,7 @@ export const LineEndWidth = {
 export const LineEndLength = {
   /** Small length */
   SMALL: "small",
-  /** Medium length */
+  /** MEDIUM length */
   MEDIUM: "medium",
   /** Large length */
   LARGE: "large",
@@ -109,11 +109,11 @@ export const LineEndLength = {
  */
 export interface LineEndOptions {
   /** Arrow/head type */
-  readonly type: (typeof LineEndType)[keyof typeof LineEndType];
+  type: (typeof LineEndType)[keyof typeof LineEndType];
   /** Arrow width */
-  readonly width?: (typeof LineEndWidth)[keyof typeof LineEndWidth];
+  width?: (typeof LineEndWidth)[keyof typeof LineEndWidth];
   /** Arrow length */
-  readonly length?: (typeof LineEndLength)[keyof typeof LineEndLength];
+  length?: (typeof LineEndLength)[keyof typeof LineEndLength];
 }
 
 /**
@@ -127,18 +127,9 @@ export interface LineEndOptions {
  * createLineEnd("a:tailEnd", { type: "TRIANGLE" });
  * ```
  */
-export const createLineEnd = (name: string, options: LineEndOptions): XmlComponent =>
-  new BuilderElement<{ readonly type?: string; readonly w?: string; readonly len?: string }>({
-    attributes: {
-      type: { key: "type", value: options.type },
-      w: {
-        key: "w",
-        value: options.width ? xsdLineEndSize.to(options.width) : undefined,
-      },
-      len: {
-        key: "len",
-        value: options.length ? xsdLineEndSize.to(options.length) : undefined,
-      },
-    },
-    name,
+export const createLineEnd = (name: string, options: LineEndOptions): string =>
+  element(name, {
+    type: options.type,
+    w: options.width ? xsdLineEndSize.to(options.width) : undefined,
+    len: options.length ? xsdLineEndSize.to(options.length) : undefined,
   });

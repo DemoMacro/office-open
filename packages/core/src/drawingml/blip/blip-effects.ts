@@ -9,8 +9,8 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import type { XmlComponent } from "../../xml-components";
+import { element } from "@office-open/xml";
+
 import { createColorElement } from "../color/solid-fill";
 import type { SolidFillOptions } from "../color/solid-fill";
 
@@ -27,9 +27,9 @@ import type { SolidFillOptions } from "../color/solid-fill";
  */
 export interface LuminanceEffectOptions {
   /** Brightness adjustment in percentage points (-100 to 100). Default 0. */
-  readonly bright?: number;
+  bright?: number;
   /** Contrast adjustment in percentage points (-100 to 100). Default 0. */
-  readonly contrast?: number;
+  contrast?: number;
 }
 
 /**
@@ -44,11 +44,11 @@ export interface LuminanceEffectOptions {
  */
 export interface HSLEffectOptions {
   /** Hue rotation in 60000ths of a degree. Default 0. */
-  readonly hue?: number;
+  hue?: number;
   /** Saturation adjustment in percentage points (-100 to 100). Default 0. */
-  readonly saturation?: number;
+  saturation?: number;
   /** Luminance adjustment in percentage points (-100 to 100). Default 0. */
-  readonly luminance?: number;
+  luminance?: number;
 }
 
 /**
@@ -62,9 +62,9 @@ export interface HSLEffectOptions {
  */
 export interface TintEffectOptions {
   /** Hue in 60000ths of a degree. Default 0. */
-  readonly hue?: number;
+  hue?: number;
   /** Amount in percentage points (0 to 100). Default 0. */
-  readonly amount?: number;
+  amount?: number;
 }
 
 /**
@@ -77,9 +77,9 @@ export interface TintEffectOptions {
  */
 export interface DuotoneEffectOptions {
   /** First color (dark). */
-  readonly color1: SolidFillOptions;
+  color1: SolidFillOptions;
   /** Second color (light). */
-  readonly color2: SolidFillOptions;
+  color2: SolidFillOptions;
 }
 
 /**
@@ -92,7 +92,7 @@ export interface DuotoneEffectOptions {
  */
 export interface BiLevelEffectOptions {
   /** Threshold percentage (0 to 100). Pixels above are white, below are black. */
-  readonly threshold: number;
+  threshold: number;
 }
 
 /**
@@ -105,7 +105,7 @@ export interface BiLevelEffectOptions {
  */
 export interface AlphaReplaceEffectOptions {
   /** Alpha percentage (0 = fully transparent, 100 = fully opaque). */
-  readonly amount: number;
+  amount: number;
 }
 
 /**
@@ -118,7 +118,7 @@ export interface AlphaReplaceEffectOptions {
  */
 export interface AlphaBiLevelEffectOptions {
   /** Threshold percentage (0 to 100). Alpha above is fully opaque, below is fully transparent. */
-  readonly threshold: number;
+  threshold: number;
 }
 
 /**
@@ -131,7 +131,7 @@ export interface AlphaBiLevelEffectOptions {
  */
 export interface AlphaModulateFixedEffectOptions {
   /** Alpha amount in percentage (0 to 100). Default 100. */
-  readonly amount?: number;
+  amount?: number;
 }
 
 /**
@@ -146,11 +146,11 @@ export interface AlphaModulateFixedEffectOptions {
  */
 export interface ColorChangeEffectOptions {
   /** Source color to change from. */
-  readonly from: SolidFillOptions;
+  from: SolidFillOptions;
   /** Target color to change to. */
-  readonly to: SolidFillOptions;
+  to: SolidFillOptions;
   /** Whether to use alpha channel. Default true. */
-  readonly useAlpha?: boolean;
+  useAlpha?: boolean;
 }
 
 /**
@@ -163,7 +163,7 @@ export interface ColorChangeEffectOptions {
  */
 export interface ColorReplaceEffectOptions {
   /** Replacement color. */
-  readonly color: SolidFillOptions;
+  color: SolidFillOptions;
 }
 
 /**
@@ -177,9 +177,9 @@ export interface ColorReplaceEffectOptions {
  */
 export interface BlipBlurEffectOptions {
   /** Blur radius in EMUs. Default 0. */
-  readonly radius?: number;
+  radius?: number;
   /** Whether to grow the blur boundary. Default true. */
-  readonly grow?: boolean;
+  grow?: boolean;
 }
 
 /**
@@ -187,35 +187,35 @@ export interface BlipBlurEffectOptions {
  */
 export interface BlipEffectsOptions {
   /** Grayscale effect (no options needed). */
-  readonly grayscale?: boolean;
+  grayscale?: boolean;
   /** Luminance (brightness/contrast) effect. */
-  readonly luminance?: LuminanceEffectOptions;
+  luminance?: LuminanceEffectOptions;
   /** HSL adjustment effect. */
-  readonly hsl?: HSLEffectOptions;
+  hsl?: HSLEffectOptions;
   /** Tint effect. */
-  readonly tint?: TintEffectOptions;
+  tint?: TintEffectOptions;
   /** Duotone effect (two-color mapping). */
-  readonly duotone?: DuotoneEffectOptions;
+  duotone?: DuotoneEffectOptions;
   /** Black & white threshold effect. */
-  readonly biLevel?: BiLevelEffectOptions;
+  biLevel?: BiLevelEffectOptions;
   /** Alpha ceiling effect (no options needed). */
-  readonly alphaCeiling?: boolean;
+  alphaCeiling?: boolean;
   /** Alpha floor effect (no options needed). */
-  readonly alphaFloor?: boolean;
+  alphaFloor?: boolean;
   /** Alpha inverse effect (with optional color). */
-  readonly alphaInverse?: SolidFillOptions;
+  alphaInverse?: SolidFillOptions;
   /** Alpha modulate fixed effect. */
-  readonly alphaModFix?: AlphaModulateFixedEffectOptions;
+  alphaModFix?: AlphaModulateFixedEffectOptions;
   /** Alpha replace effect. */
-  readonly alphaRepl?: AlphaReplaceEffectOptions;
+  alphaRepl?: AlphaReplaceEffectOptions;
   /** Alpha bi-level effect. */
-  readonly alphaBiLevel?: AlphaBiLevelEffectOptions;
+  alphaBiLevel?: AlphaBiLevelEffectOptions;
   /** Color change effect. */
-  readonly colorChange?: ColorChangeEffectOptions;
+  colorChange?: ColorChangeEffectOptions;
   /** Color replace effect. */
-  readonly colorRepl?: ColorReplaceEffectOptions;
+  colorRepl?: ColorReplaceEffectOptions;
   /** Blur effect on blip. */
-  readonly blur?: BlipBlurEffectOptions;
+  blur?: BlipBlurEffectOptions;
 }
 
 // ─── Factory functions ───────────────────────────────────────────────
@@ -223,164 +223,119 @@ export interface BlipEffectsOptions {
 /**
  * Creates blip effect elements from BlipEffectsOptions.
  *
- * @returns Array of XML components representing blip effects
+ * @returns Array of XML strings representing blip effects
  */
-export const createBlipEffects = (options: BlipEffectsOptions): XmlComponent[] => {
-  const children: XmlComponent[] = [];
+export const createBlipEffects = (options: BlipEffectsOptions): string[] => {
+  const children: string[] = [];
 
   if (options.grayscale) {
-    children.push(new BuilderElement({ name: "a:grayscl" }));
+    children.push(`<a:grayscl/>`);
   }
 
   if (options.luminance) {
-    const attrs: Record<string, { readonly key: string; readonly value: string }> = {};
+    const attrs: Record<string, string | number | undefined> = {};
     if (options.luminance.bright !== undefined) {
-      attrs.bright = { key: "bright", value: `${options.luminance.bright}%` };
+      attrs.bright = `${options.luminance.bright}%`;
     }
     if (options.luminance.contrast !== undefined) {
-      attrs.contrast = { key: "contrast", value: `${options.luminance.contrast}%` };
+      attrs.contrast = `${options.luminance.contrast}%`;
     }
-    children.push(new BuilderElement({ attributes: attrs as never, name: "a:lum" }));
+    children.push(element("a:lum", attrs));
   }
 
   if (options.hsl) {
-    const attrs: Record<string, { readonly key: string; readonly value: string }> = {};
+    const attrs: Record<string, string | number | undefined> = {};
     if (options.hsl.hue !== undefined) {
-      attrs.hue = { key: "hue", value: String(options.hsl.hue) };
+      attrs.hue = String(options.hsl.hue);
     }
     if (options.hsl.saturation !== undefined) {
-      attrs.sat = { key: "sat", value: `${options.hsl.saturation}%` };
+      attrs.sat = `${options.hsl.saturation}%`;
     }
     if (options.hsl.luminance !== undefined) {
-      attrs.lum = { key: "lum", value: `${options.hsl.luminance}%` };
+      attrs.lum = `${options.hsl.luminance}%`;
     }
-    children.push(new BuilderElement({ attributes: attrs as never, name: "a:hsl" }));
+    children.push(element("a:hsl", attrs));
   }
 
   if (options.tint) {
-    const attrs: Record<string, { readonly key: string; readonly value: string }> = {};
+    const attrs: Record<string, string | number | undefined> = {};
     if (options.tint.hue !== undefined) {
-      attrs.hue = { key: "hue", value: String(options.tint.hue) };
+      attrs.hue = String(options.tint.hue);
     }
     if (options.tint.amount !== undefined) {
-      attrs.amt = { key: "amt", value: `${options.tint.amount}%` };
+      attrs.amt = `${options.tint.amount}%`;
     }
-    children.push(new BuilderElement({ attributes: attrs as never, name: "a:tint" }));
+    children.push(element("a:tint", attrs));
   }
 
   if (options.duotone) {
     children.push(
-      new BuilderElement({
-        children: [
-          createColorElement(options.duotone.color1),
-          createColorElement(options.duotone.color2),
-        ],
-        name: "a:duotone",
-      }),
+      element("a:duotone", undefined, [
+        createColorElement(options.duotone.color1),
+        createColorElement(options.duotone.color2),
+      ]),
     );
   }
 
   if (options.biLevel) {
-    children.push(
-      new BuilderElement({
-        attributes: { thresh: { key: "thresh", value: `${options.biLevel.threshold}%` } },
-        name: "a:biLevel",
-      }),
-    );
+    children.push(`<a:biLevel thresh="${options.biLevel.threshold}%"/>`);
   }
 
   if (options.alphaCeiling) {
-    children.push(new BuilderElement({ name: "a:alphaCeiling" }));
+    children.push(`<a:alphaCeiling/>`);
   }
 
   if (options.alphaFloor) {
-    children.push(new BuilderElement({ name: "a:alphaFloor" }));
+    children.push(`<a:alphaFloor/>`);
   }
 
   if (options.alphaInverse !== undefined) {
     if (typeof options.alphaInverse === "boolean") {
-      children.push(new BuilderElement({ name: "a:alphaInv" }));
+      children.push(`<a:alphaInv/>`);
     } else {
-      children.push(
-        new BuilderElement({
-          children: [createColorElement(options.alphaInverse)],
-          name: "a:alphaInv",
-        }),
-      );
+      children.push(element("a:alphaInv", undefined, [createColorElement(options.alphaInverse)]));
     }
   }
 
   if (options.alphaModFix) {
     const amt = options.alphaModFix.amount ?? 100;
-    children.push(
-      new BuilderElement({
-        attributes: { amt: { key: "amt", value: `${amt}%` } },
-        name: "a:alphaModFix",
-      }),
-    );
+    children.push(`<a:alphaModFix amt="${amt}%"/>`);
   }
 
   if (options.alphaRepl) {
-    children.push(
-      new BuilderElement({
-        attributes: { a: { key: "a", value: `${options.alphaRepl.amount}%` } },
-        name: "a:alphaRepl",
-      }),
-    );
+    children.push(`<a:alphaRepl a="${options.alphaRepl.amount}%"/>`);
   }
 
   if (options.alphaBiLevel) {
-    children.push(
-      new BuilderElement({
-        attributes: {
-          thresh: { key: "thresh", value: `${options.alphaBiLevel.threshold}%` },
-        },
-        name: "a:alphaBiLevel",
-      }),
-    );
+    children.push(`<a:alphaBiLevel thresh="${options.alphaBiLevel.threshold}%"/>`);
   }
 
   if (options.colorChange) {
-    const attrs: Record<string, { readonly key: string; readonly value: string }> = {};
+    const attrs: Record<string, string | number | undefined> = {};
     if (options.colorChange.useAlpha === false) {
-      attrs.useA = { key: "useA", value: "0" };
+      attrs.useA = "0";
     }
     children.push(
-      new BuilderElement({
-        attributes: attrs as never,
-        children: [
-          new BuilderElement({
-            children: [createColorElement(options.colorChange.from)],
-            name: "a:clrFrom",
-          }),
-          new BuilderElement({
-            children: [createColorElement(options.colorChange.to)],
-            name: "a:clrTo",
-          }),
-        ],
-        name: "a:clrChange",
-      }),
+      element("a:clrChange", attrs, [
+        element("a:clrFrom", undefined, [createColorElement(options.colorChange.from)]),
+        element("a:clrTo", undefined, [createColorElement(options.colorChange.to)]),
+      ]),
     );
   }
 
   if (options.colorRepl) {
-    children.push(
-      new BuilderElement({
-        children: [createColorElement(options.colorRepl.color)],
-        name: "a:clrRepl",
-      }),
-    );
+    children.push(element("a:clrRepl", undefined, [createColorElement(options.colorRepl.color)]));
   }
 
   if (options.blur) {
-    const attrs: Record<string, { readonly key: string; readonly value: string | number }> = {};
+    const attrs: Record<string, string | number | undefined> = {};
     if (options.blur.radius !== undefined) {
-      attrs.rad = { key: "rad", value: options.blur.radius };
+      attrs.rad = options.blur.radius;
     }
     if (options.blur.grow === false) {
-      attrs.grow = { key: "grow", value: 0 };
+      attrs.grow = 0;
     }
-    children.push(new BuilderElement({ attributes: attrs as never, name: "a:blur" }));
+    children.push(element("a:blur", attrs));
   }
 
   return children;

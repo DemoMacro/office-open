@@ -117,4 +117,4 @@ gen(); // → 1, 2, 3, ...
 
 ## License
 
-- [MIT](LICENSE) &copy; [Demo Macro](https://imst.xyz/)
+- [MIT](LICENSE) &copy; [Demo Macro](https://www.demomacro.com/)

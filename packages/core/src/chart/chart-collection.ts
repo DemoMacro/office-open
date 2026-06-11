@@ -1,12 +1,16 @@
-import type { XmlComponent } from "../xml-components";
+/**
+ * Chart data and collection for document generation.
+ *
+ * @module
+ */
 
 export interface ChartData {
-  readonly key: string;
-  readonly chartSpace: XmlComponent;
+  key: string;
+  chartSpaceXml: string;
 }
 
 export class ChartCollection {
-  private readonly map: Map<string, ChartData>;
+  private map: Map<string, ChartData>;
 
   public constructor() {
     this.map = new Map<string, ChartData>();
@@ -16,7 +20,7 @@ export class ChartCollection {
     this.map.set(key, chartData);
   }
 
-  public get array(): readonly ChartData[] {
+  public get array(): ChartData[] {
     return [...this.map.values()];
   }
 }

@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
+import { element } from "@office-open/xml";
 
 /**
  * Options for source rectangle cropping.
@@ -17,13 +17,13 @@ import { BuilderElement } from "../../xml-components";
  */
 export interface SourceRectangleOptions {
   /** Left inset percentage (0-100000) */
-  readonly left?: number;
+  left?: number;
   /** Top inset percentage (0-100000) */
-  readonly top?: number;
+  top?: number;
   /** Right inset percentage (0-100000) */
-  readonly right?: number;
+  right?: number;
   /** Bottom inset percentage (0-100000) */
-  readonly bottom?: number;
+  bottom?: number;
 }
 
 /**
@@ -50,28 +50,16 @@ export interface SourceRectangleOptions {
  * createSourceRectangle({ left: 10000, right: 10000 });
  * ```
  */
-export const createSourceRectangle = (options?: SourceRectangleOptions) => {
+export const createSourceRectangle = (options?: SourceRectangleOptions): string => {
   if (!options) {
-    return new BuilderElement({ name: "a:srcRect" });
+    return element("a:srcRect");
   }
 
-  const attributes: Record<string, { readonly key: string; readonly value: number }> = {};
+  const attrs: Record<string, string | number | undefined> = {};
+  if (options.left !== undefined) attrs.l = options.left;
+  if (options.top !== undefined) attrs.t = options.top;
+  if (options.right !== undefined) attrs.r = options.right;
+  if (options.bottom !== undefined) attrs.b = options.bottom;
 
-  if (options.left !== undefined) {
-    attributes.l = { key: "l", value: options.left };
-  }
-  if (options.top !== undefined) {
-    attributes.t = { key: "t", value: options.top };
-  }
-  if (options.right !== undefined) {
-    attributes.r = { key: "r", value: options.right };
-  }
-  if (options.bottom !== undefined) {
-    attributes.b = { key: "b", value: options.bottom };
-  }
-
-  return new BuilderElement({
-    attributes: attributes as never,
-    name: "a:srcRect",
-  });
+  return element("a:srcRect", attrs);
 };

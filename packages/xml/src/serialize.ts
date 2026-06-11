@@ -2,6 +2,11 @@ import { escapeXml } from "./escape";
 
 const DEFAULT_INDENT = "    ";
 
+/**
+ * Serialize IXmlableObject to XML string.
+ * @deprecated Use `stringify` (Element → string) instead. This IXmlableObject path
+ * will be removed once the Descriptor migration is complete.
+ */
 export function xml(
   input: Record<string, unknown> | Record<string, unknown>[],
   options?:
@@ -19,10 +24,10 @@ export function xml(
     const declOpts = opts.declaration === true ? {} : opts.declaration;
     const enc = declOpts.encoding || "UTF-8";
     const sa = declOpts.standalone;
-    let decl = '<?xml version="1.0" encoding="' + enc + '"';
-    if (sa) decl += ' standalone="' + sa + '"';
-    decl += "?>";
-    parts.push(decl);
+    const declParts: string[] = [`<?xml version="1.0" encoding="${enc}"`];
+    if (sa) declParts.push(` standalone="${sa}"`);
+    declParts.push("?>");
+    parts.push(declParts.join(""));
     if (opts.indent) parts.push("\n");
   }
 

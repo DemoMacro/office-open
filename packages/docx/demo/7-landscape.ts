@@ -1,13 +1,13 @@
 // Example of how to set the document to landscape
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import { Document, Packer, PageOrientation, Paragraph } from "@office-open/docx";
+import { generateDocument, PageOrientation } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
-      children: [new Paragraph("Hello World")],
+      children: [{ paragraph: "Hello World" }],
       properties: {
         page: {
           size: {
@@ -18,6 +18,4 @@ const doc = new Document({
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

@@ -1,17 +1,17 @@
 // Patch a document with patches
 
-import * as fs from "fs";
+import { readFileSync, writeFileSync } from "node:fs";
 
-import { PatchType, TextRun, patchDocument } from "@office-open/docx";
+import { PatchType, patchDocument } from "@office-open/docx";
 
 const doc = await patchDocument({
-  data: fs.readFileSync("demo/assets/simple-template-2.docx"),
+  data: readFileSync("demo/assets/simple-template-2.docx"),
   outputType: "nodebuffer",
   patches: {
     name: {
-      children: [new TextRun("Max")],
+      children: ["Max"],
       type: PatchType.PARAGRAPH,
     },
   },
 });
-fs.writeFileSync("My Document.docx", doc);
+writeFileSync("My Document.docx", doc);

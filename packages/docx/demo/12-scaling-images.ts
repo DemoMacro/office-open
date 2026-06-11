@@ -1,66 +1,80 @@
 // Scaling images
 
-import * as fs from "fs";
+import { readFileSync, writeFileSync } from "node:fs";
 
-import { Document, ImageRun, Packer, Paragraph } from "@office-open/docx";
+import { generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Paragraph("Hello World"),
-        new Paragraph({
-          children: [
-            new ImageRun({
-              data: fs.readFileSync("./demo/images/pizza.gif"),
-              transformation: {
-                height: 50,
-                width: 50,
+        { paragraph: "Hello World" },
+        {
+          paragraph: {
+            children: [
+              {
+                image: {
+                  data: readFileSync("./demo/images/pizza.gif"),
+                  transformation: {
+                    height: 50,
+                    width: 50,
+                  },
+                  type: "gif",
+                },
               },
-              type: "gif",
-            }),
-          ],
-        }),
-        new Paragraph({
-          children: [
-            new ImageRun({
-              data: fs.readFileSync("./demo/images/pizza.gif"),
-              transformation: {
-                height: 100,
-                width: 100,
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              {
+                image: {
+                  data: readFileSync("./demo/images/pizza.gif"),
+                  transformation: {
+                    height: 100,
+                    width: 100,
+                  },
+                  type: "gif",
+                },
               },
-              type: "gif",
-            }),
-          ],
-        }),
-        new Paragraph({
-          children: [
-            new ImageRun({
-              data: fs.readFileSync("./demo/images/pizza.gif"),
-              transformation: {
-                height: 250,
-                width: 250,
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              {
+                image: {
+                  data: readFileSync("./demo/images/pizza.gif"),
+                  transformation: {
+                    height: 250,
+                    width: 250,
+                  },
+                  type: "gif",
+                },
               },
-              type: "gif",
-            }),
-          ],
-        }),
-        new Paragraph({
-          children: [
-            new ImageRun({
-              data: fs.readFileSync("./demo/images/pizza.gif"),
-              transformation: {
-                height: 400,
-                width: 400,
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              {
+                image: {
+                  data: readFileSync("./demo/images/pizza.gif"),
+                  transformation: {
+                    height: 400,
+                    width: 400,
+                  },
+                  type: "gif",
+                },
               },
-              type: "gif",
-            }),
-          ],
-        }),
+            ],
+          },
+        },
       ],
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

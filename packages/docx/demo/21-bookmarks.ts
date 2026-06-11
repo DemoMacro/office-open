@@ -1,92 +1,90 @@
 // This demo shows how to create bookmarks then link to them with internal hyperlinks
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import {
-  Bookmark,
-  Document,
-  Footer,
-  HeadingLevel,
-  InternalHyperlink,
-  Packer,
-  PageBreak,
-  PageReference,
-  Paragraph,
-  TextRun,
-} from "@office-open/docx";
+import { HeadingLevel, generateDocument } from "@office-open/docx";
 
 const LOREM_IPSUM =
   /* Cspell:disable-next-line */
   "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam mi velit, convallis convallis scelerisque nec, faucibus nec leo. Phasellus at posuere mauris, tempus dignissim velit. Integer et tortor dolor. Duis auctor efficitur mattis. Vivamus ut metus accumsan tellus auctor sollicitudin venenatis et nibh. Cras quis massa ac metus fringilla venenatis. Proin rutrum mauris purus, ut suscipit magna consectetur id. Integer consectetur sollicitudin ante, vitae faucibus neque efficitur in. Praesent ultricies nibh lectus. Mauris pharetra id odio eget iaculis. Duis dictum, risus id pellentesque rutrum, lorem quam malesuada massa, quis ullamcorper turpis urna a diam. Cras vulputate metus vel massa porta ullamcorper. Etiam porta condimentum nulla nec tristique. Sed nulla urna, pharetra non tortor sed, sollicitudin molestie diam. Maecenas enim leo, feugiat eget vehicula id, sollicitudin vitae ante.";
 
-const doc = new Document({
+const buffer = await generateDocument({
   creator: "Clippy",
   description: "A brief example of using docx with bookmarks and internal hyperlinks",
   sections: [
     {
       children: [
-        new Paragraph({
-          heading: HeadingLevel.HEADING_1,
-          children: [
-            new Bookmark({
-              id: "myAnchorId",
-              children: [new TextRun("Lorem Ipsum")],
-            }),
-          ],
-        }),
-        new Paragraph("\n"),
-        new Paragraph(LOREM_IPSUM),
-        new Paragraph({
-          children: [new PageBreak()],
-        }),
-        new Paragraph({
-          children: [
-            new InternalHyperlink({
-              children: [
-                new TextRun({
-                  text: "Styled",
-                  bold: true,
-                  style: "Hyperlink",
-                }),
-                new TextRun({
-                  text: " Anchor Text",
-                  style: "Hyperlink",
-                }),
-              ],
-              anchor: "myAnchorId",
-            }),
-          ],
-        }),
-        new Paragraph({
-          children: [
-            new TextRun("The bookmark can be seen on page "),
-            new PageReference("myAnchorId"),
-          ],
-        }),
-      ],
-      footers: {
-        default: new Footer({
-          children: [
-            new Paragraph({
-              children: [
-                new InternalHyperlink({
+        {
+          paragraph: {
+            heading: HeadingLevel.HEADING_1,
+            children: [
+              { bookmarkStart: { id: 0, name: "myAnchorId" } },
+              "Lorem Ipsum",
+              { bookmarkEnd: 0 },
+            ],
+          },
+        },
+        { paragraph: "\n" },
+        { paragraph: LOREM_IPSUM },
+        {
+          paragraph: {
+            children: [{ pageBreak: true }],
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              {
+                hyperlink: {
                   children: [
-                    new TextRun({
-                      text: "Click here!",
+                    {
+                      text: "Styled",
+                      bold: true,
                       style: "Hyperlink",
-                    }),
+                    },
+                    {
+                      text: " Anchor Text",
+                      style: "Hyperlink",
+                    },
                   ],
                   anchor: "myAnchorId",
-                }),
+                },
+              },
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              "The bookmark can be seen on page ",
+              { pageReference: { bookmarkId: "myAnchorId" } },
+            ],
+          },
+        },
+      ],
+      footers: {
+        default: [
+          {
+            paragraph: {
+              children: [
+                {
+                  hyperlink: {
+                    children: [
+                      {
+                        text: "Click here!",
+                        style: "Hyperlink",
+                      },
+                    ],
+                    anchor: "myAnchorId",
+                  },
+                },
               ],
-            }),
-          ],
-        }),
+            },
+          },
+        ],
       },
     },
   ],
   title: "Sample Document",
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

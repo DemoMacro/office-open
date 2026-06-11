@@ -5,8 +5,7 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import type { XmlComponent } from "../../xml-components";
+import { element } from "@office-open/xml";
 
 /**
  * Creates a no-fill element.
@@ -23,4 +22,4 @@ import type { XmlComponent } from "../../xml-components";
  * const noFill = createNoFill();
  * ```
  */
-export const createNoFill = (): XmlComponent => new BuilderElement({ name: "a:noFill" });
+export const createNoFill = (): string => element("a:noFill");

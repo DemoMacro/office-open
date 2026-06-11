@@ -30,9 +30,10 @@
     "declarationMap": true,
     "esModuleInterop": true,
     "paths": {
+      "@parts/*": ["./src/parts/*"],
+      "@shared/*": ["./src/shared/*"],
       "@util/*": ["./src/util/*"],
-      "@export/*": ["./src/export/*"],
-      "@file/*": ["./src/file/*"]
+      "@export/*": ["./src/export/*"]
     }
   },
   "include": ["src", "demo"]

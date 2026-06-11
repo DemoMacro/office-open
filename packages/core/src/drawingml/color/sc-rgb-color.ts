@@ -7,8 +7,8 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import type { XmlComponent } from "../../xml-components";
+import { element } from "@office-open/xml";
+
 import type { ColorTransformOptions } from "./color-transform";
 import { createColorTransforms } from "./color-transform";
 
@@ -17,17 +17,17 @@ import { createColorTransforms } from "./color-transform";
  */
 export interface ScRgbColorOptions {
   /** Red percentage (e.g., "50%" or "100%") */
-  readonly r: string;
+  r: string;
   /** Green percentage (e.g., "50%" or "100%") */
-  readonly g: string;
+  g: string;
   /** Blue percentage (e.g., "50%" or "100%") */
-  readonly b: string;
+  b: string;
   /** Optional color transforms */
-  readonly transforms?: ColorTransformOptions;
+  transforms?: ColorTransformOptions;
 }
 
 /**
- * Creates an scRGB color element.
+ * Creates an scRGB color element as an XML string.
  *
  * Specifies a color using percentage-based RGB values.
  *
@@ -50,24 +50,7 @@ export interface ScRgbColorOptions {
  * const semiRed = createScRgbColor({ r: "100%", g: "0%", b: "0%", transforms: { alpha: 50000 } });
  * ```
  */
-export const createScRgbColor = (options: ScRgbColorOptions): XmlComponent => {
+export const createScRgbColor = (options: ScRgbColorOptions): string => {
   const transforms = options.transforms ? createColorTransforms(options.transforms) : [];
-  return new BuilderElement<ScRgbColorOptions>({
-    attributes: {
-      r: {
-        key: "r",
-        value: options.r,
-      },
-      g: {
-        key: "g",
-        value: options.g,
-      },
-      b: {
-        key: "b",
-        value: options.b,
-      },
-    },
-    children: transforms,
-    name: "a:scrgbClr",
-  });
+  return element("a:scrgbClr", { r: options.r, g: options.g, b: options.b }, transforms);
 };

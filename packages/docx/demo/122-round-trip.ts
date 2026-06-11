@@ -1,8 +1,8 @@
 // Round-trip demo — one document with all content types, export → parse → verify → re-export.
 
-import * as fs from "fs";
+import { readFileSync, writeFileSync } from "node:fs";
 
-import { Document, Packer, parseDocument, parseArchive } from "@office-open/docx";
+import { generateDocument, parseDocument, parseArchive } from "@office-open/docx";
 import type { SectionOptions } from "@office-open/docx";
 import { xml2js, js2xml } from "@office-open/xml";
 import { strFromU8 } from "fflate";
@@ -111,7 +111,7 @@ function printDiffs(diffs: Diff[]): void {
 // ─── Main ──────────────────────────────────────────────────────────────────
 
 async function main() {
-  const imageData = fs.readFileSync("./demo/images/dog.png");
+  const imageData = readFileSync("./demo/images/dog.png");
 
   // 1. Build a single document with every content type
   const sections: SectionOptions[] = [
@@ -308,13 +308,11 @@ async function main() {
               {
                 chart: {
                   type: "column",
-                  data: {
-                    categories: ["Q1", "Q2", "Q3", "Q4"],
-                    series: [
-                      { name: "2024", values: [120, 150, 180, 200] },
-                      { name: "2025", values: [140, 170, 210, 250] },
-                    ],
-                  },
+                  categories: ["Q1", "Q2", "Q3", "Q4"],
+                  series: [
+                    { name: "2024", values: [120, 150, 180, 200] },
+                    { name: "2025", values: [140, 170, 210, 250] },
+                  ],
                   title: "Quarterly Revenue",
                   transformation: { width: 500, height: 300 },
                 },
@@ -896,7 +894,7 @@ async function main() {
   const sectionCount = sections.length;
 
   // 2. Create document and export
-  const doc = new Document({
+  const buffer = await generateDocument({
     background: { color: "FFFFFF" },
     footnotes: {
       "1": { children: ["This is a footnote."] },
@@ -966,7 +964,6 @@ async function main() {
     webSettings: { optimizeForBrowser: true, allowPNG: true, pixelsPerInch: 96 },
     sections,
   });
-  const buffer = await Packer.toBuffer(doc);
   console.log(`Generated DOCX: ${buffer.length} bytes`);
 
   // 3. Parse it back
@@ -1006,8 +1003,7 @@ async function main() {
 
   // 5. Round-trip: re-generate from parsed data → compare ZIPs
   console.log("\n--- Round-trip ZIP comparison ---");
-  const doc2 = new Document(parsed);
-  const buffer2 = await Packer.toBuffer(doc2);
+  const buffer2 = await generateDocument(parsed);
   console.log(`Re-exported DOCX: ${buffer2.length} bytes`);
 
   const ignorePaths = new Set(["docProps/core.xml"]);
@@ -1016,8 +1012,8 @@ async function main() {
   assert("round-trip ZIPs match", diffs.length === 0);
 
   // Save
-  fs.writeFileSync("My Document.docx", buffer);
-  fs.writeFileSync("My Document (round-trip).docx", buffer2);
+  writeFileSync("My Document.docx", buffer);
+  writeFileSync("My Document (round-trip).docx", buffer2);
 
   console.log(`\n=== Results: ${pass} passed, ${fail} failed ===`);
   if (fail > 0) process.exit(1);

@@ -1,35 +1,21 @@
 // Multiple sections and headers
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import {
-  Document,
-  Footer,
-  Header,
-  NumberFormat,
-  Packer,
-  PageNumber,
-  PageOrientation,
-  Paragraph,
-  TextRun,
-} from "@office-open/docx";
+import { NumberFormat, PageNumber, PageOrientation, generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
-      children: [new Paragraph("Hello World")],
+      children: [{ paragraph: "Hello World" }],
     },
     {
-      children: [new Paragraph("hello")],
+      children: [{ paragraph: "hello" }],
       footers: {
-        default: new Footer({
-          children: [new Paragraph("Footer on another page")],
-        }),
+        default: [{ paragraph: "Footer on another page" }],
       },
       headers: {
-        default: new Header({
-          children: [new Paragraph("First Default Header on another page")],
-        }),
+        default: [{ paragraph: "First Default Header on another page" }],
       },
 
       properties: {
@@ -42,16 +28,12 @@ const doc = new Document({
       },
     },
     {
-      children: [new Paragraph("hello in landscape")],
+      children: [{ paragraph: "hello in landscape" }],
       footers: {
-        default: new Footer({
-          children: [new Paragraph("Footer on another page")],
-        }),
+        default: [{ paragraph: "Footer on another page" }],
       },
       headers: {
-        default: new Header({
-          children: [new Paragraph("Second Default Header on another page")],
-        }),
+        default: [{ paragraph: "Second Default Header on another page" }],
       },
       properties: {
         page: {
@@ -67,22 +49,23 @@ const doc = new Document({
     },
     {
       children: [
-        new Paragraph(
-          "Page number in the header must be 2, because it continues from the previous section.",
-        ),
+        {
+          paragraph:
+            "Page number in the header must be 2, because it continues from the previous section.",
+        },
       ],
       headers: {
-        default: new Header({
-          children: [
-            new Paragraph({
+        default: [
+          {
+            paragraph: {
               children: [
-                new TextRun({
+                {
                   children: ["Page number: ", PageNumber.CURRENT],
-                }),
+                },
               ],
-            }),
-          ],
-        }),
+            },
+          },
+        ],
       },
 
       properties: {
@@ -95,22 +78,23 @@ const doc = new Document({
     },
     {
       children: [
-        new Paragraph(
-          "Page number in the header must be III, because it continues from the previous section, but is defined as upper roman.",
-        ),
+        {
+          paragraph:
+            "Page number in the header must be III, because it continues from the previous section, but is defined as upper roman.",
+        },
       ],
       headers: {
-        default: new Header({
-          children: [
-            new Paragraph({
+        default: [
+          {
+            paragraph: {
               children: [
-                new TextRun({
+                {
                   children: ["Page number: ", PageNumber.CURRENT],
-                }),
+                },
               ],
-            }),
-          ],
-        }),
+            },
+          },
+        ],
       },
       properties: {
         page: {
@@ -125,22 +109,23 @@ const doc = new Document({
     },
     {
       children: [
-        new Paragraph(
-          "Page number in the header must be 25, because it is defined to start at 25 and to be decimal in this section.",
-        ),
+        {
+          paragraph:
+            "Page number in the header must be 25, because it is defined to start at 25 and to be decimal in this section.",
+        },
       ],
       headers: {
-        default: new Header({
-          children: [
-            new Paragraph({
+        default: [
+          {
+            paragraph: {
               children: [
-                new TextRun({
+                {
                   children: ["Page number: ", PageNumber.CURRENT],
-                }),
+                },
               ],
-            }),
-          ],
-        }),
+            },
+          },
+        ],
       },
       properties: {
         page: {
@@ -156,6 +141,4 @@ const doc = new Document({
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

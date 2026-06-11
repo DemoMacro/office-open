@@ -1,7 +1,7 @@
 import { writeFileSync } from "node:fs";
 
 import { parseArchive } from "@office-open/core";
-import { Workbook, Packer, parseWorkbook, parseXlsx } from "@office-open/xlsx";
+import { generateWorkbook, parseWorkbook, parseXlsx } from "@office-open/xlsx";
 import type { WorksheetOptions } from "@office-open/xlsx";
 import { xml2js, js2xml } from "@office-open/xml";
 import { strFromU8 } from "fflate";
@@ -122,13 +122,13 @@ const sheets: WorksheetOptions[] = [
   },
 ];
 
-const original = new Workbook({
+const originalOpts = {
   title: "Round Trip Test",
   creator: "XLSX Parser",
   worksheets: sheets,
-});
+};
 
-const buffer = await Packer.toBuffer(original);
+const buffer = await generateWorkbook(originalOpts);
 console.log(`Generated XLSX: ${buffer.length} bytes`);
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -171,8 +171,8 @@ assert("sheet 1 has autoFilter", sheet1.autoFilter === "A1:C4");
 
 console.log("\n--- Round-trip ZIP comparison ---");
 
-const roundTripped = new Workbook(parsed);
-const buffer2 = await Packer.toBuffer(roundTripped);
+const roundTripped = await generateWorkbook(parsed);
+const buffer2 = roundTripped;
 console.log(`Re-generated XLSX: ${buffer2.length} bytes`);
 
 const ignorePaths = new Set(["docProps/core.xml"]);

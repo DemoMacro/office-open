@@ -13,8 +13,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@file": path.resolve(src, "file"),
-      "@export": path.resolve(src, "export"),
+      "@parts": path.resolve(src, "parts"),
+      "@shared": path.resolve(src, "shared"),
       "@util": path.resolve(src, "util"),
       tests: path.resolve(src, "tests"),
     },

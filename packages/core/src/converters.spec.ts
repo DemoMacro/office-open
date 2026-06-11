@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import { convertInchesToTwip, convertMillimetersToTwip } from "./converters";
+import { convertInchesToTwip, convertMillimetersToTwip } from "./util/converters";
 
 describe("convertMillimetersToTwip", () => {
   it("should convert 25.4mm to 1440 twips (1 inch)", () => {

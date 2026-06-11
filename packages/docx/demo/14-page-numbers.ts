@@ -1,83 +1,75 @@
 // Page numbers
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import {
-  AlignmentType,
-  Document,
-  Footer,
-  Header,
-  Packer,
-  PageBreak,
-  PageNumber,
-  Paragraph,
-  TextRun,
-} from "@office-open/docx";
+import { AlignmentType, PageNumber, generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [new TextRun("First Page"), new PageBreak()],
-        }),
-        new Paragraph("Second Page"),
+        {
+          paragraph: {
+            children: ["First Page", { pageBreak: true }],
+          },
+        },
+        { paragraph: "Second Page" },
       ],
       footers: {
-        default: new Footer({
-          children: [
-            new Paragraph({
+        default: [
+          {
+            paragraph: {
               alignment: AlignmentType.RIGHT,
               children: [
-                new TextRun("My Title "),
-                new TextRun({
+                "My Title ",
+                {
                   children: ["Footer - Page ", PageNumber.CURRENT, " of ", PageNumber.TOTAL_PAGES],
-                }),
+                },
               ],
-            }),
-          ],
-        }),
-        first: new Footer({
-          children: [
-            new Paragraph({
+            },
+          },
+        ],
+        first: [
+          {
+            paragraph: {
               alignment: AlignmentType.RIGHT,
               children: [
-                new TextRun("First Page Footer "),
-                new TextRun({
+                "First Page Footer ",
+                {
                   children: ["Page ", PageNumber.CURRENT],
-                }),
+                },
               ],
-            }),
-          ],
-        }),
+            },
+          },
+        ],
       },
       headers: {
-        default: new Header({
-          children: [
-            new Paragraph({
+        default: [
+          {
+            paragraph: {
               alignment: AlignmentType.RIGHT,
               children: [
-                new TextRun("My Title "),
-                new TextRun({
+                "My Title ",
+                {
                   children: ["Page ", PageNumber.CURRENT],
-                }),
+                },
               ],
-            }),
-          ],
-        }),
-        first: new Header({
-          children: [
-            new Paragraph({
+            },
+          },
+        ],
+        first: [
+          {
+            paragraph: {
               alignment: AlignmentType.RIGHT,
               children: [
-                new TextRun("First Page Header "),
-                new TextRun({
+                "First Page Header ",
+                {
                   children: ["Page ", PageNumber.CURRENT],
-                }),
+                },
               ],
-            }),
-          ],
-        }),
+            },
+          },
+        ],
       },
       properties: {
         titlePage: true,
@@ -85,6 +77,4 @@ const doc = new Document({
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

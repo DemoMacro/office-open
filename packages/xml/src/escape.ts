@@ -45,15 +45,15 @@ export function escapeXml(str: string): string {
  * // => ' id="1" name="foo"'
  */
 export function attrs(record: Record<string, string | number | boolean | undefined>): string {
-  let s = "";
+  const parts: string[] = [];
   const keys = Object.keys(record);
   for (let i = 0; i < keys.length; i++) {
     const v = record[keys[i]];
     if (v !== undefined) {
-      s += ` ${keys[i]}="${typeof v === "string" ? escapeXml(v) : v}"`;
+      parts.push(` ${keys[i]}="${typeof v === "string" ? escapeXml(v) : v}"`);
     }
   }
-  return s;
+  return parts.join("");
 }
 
 /**
@@ -62,4 +62,33 @@ export function attrs(record: Record<string, string | number | boolean | undefin
  */
 export function selfCloseElement(tag: string, attrStr?: string): string {
   return attrStr ? `<${tag}${attrStr}/>` : `<${tag}/>`;
+}
+
+/**
+ * Build a complete XML element string from name, optional attributes, and string children.
+ *
+ * Replaces `new BuilderElement({...})` + `.toXml()` / `.serialize()` with a
+ * single function call returning a string — zero object allocation.
+ *
+ * @param name  Element tag name (e.g. `"a:srgbClr"`)
+ * @param attrRecord  Optional flat attribute map; `undefined` values are skipped
+ * @param children  Optional pre-serialized child XML strings
+ *
+ * @example
+ * ```ts
+ * element("a:solidFill", undefined, [element("a:srgbClr", { val: "FF0000" })])
+ * // => '<a:solidFill><a:srgbClr val="FF0000"/></a:solidFill>'
+ * ```
+ */
+export function element(
+  name: string,
+  attrRecord?: Readonly<Record<string, string | number | boolean | undefined>>,
+  children?: readonly string[],
+): string {
+  const attrStr = attrRecord ? attrs(attrRecord) : undefined;
+  if (!children || children.length === 0) return selfCloseElement(name, attrStr);
+  const body = children.join("");
+  return body.length === 0
+    ? selfCloseElement(name, attrStr)
+    : `<${name}${attrStr ?? ""}>${body}</${name}>`;
 }

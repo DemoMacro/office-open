@@ -1,59 +1,61 @@
 // Simple example apply positional tabs to a document
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
 import {
-  Document,
-  Packer,
-  Paragraph,
-  PositionalTab,
+  generateDocument,
   PositionalTabAlignment,
   PositionalTabLeader,
   PositionalTabRelativeTo,
-  TextRun,
 } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [
-            new TextRun("Full name"),
-            new TextRun({
-              bold: true,
-              children: [
-                new PositionalTab({
-                  alignment: PositionalTabAlignment.RIGHT,
-                  relativeTo: PositionalTabRelativeTo.MARGIN,
-                  leader: PositionalTabLeader.DOT,
-                }),
-                "John Doe",
-              ],
-            }),
-          ],
-        }),
-        new Paragraph({
-          children: [
-            new TextRun("Hello World"),
-            new TextRun({
-              bold: true,
-              children: [
-                new PositionalTab({
-                  alignment: PositionalTabAlignment.CENTER,
-                  relativeTo: PositionalTabRelativeTo.INDENT,
-                  leader: PositionalTabLeader.HYPHEN,
-                }),
-                "Foo bar",
-              ],
-            }),
-          ],
-        }),
+        {
+          paragraph: {
+            children: [
+              "Full name",
+              {
+                bold: true,
+                children: [
+                  {
+                    positionalTab: {
+                      alignment: PositionalTabAlignment.RIGHT,
+                      relativeTo: PositionalTabRelativeTo.MARGIN,
+                      leader: PositionalTabLeader.DOT,
+                    },
+                  },
+                  "John Doe",
+                ],
+              },
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              "Hello World",
+              {
+                bold: true,
+                children: [
+                  {
+                    positionalTab: {
+                      alignment: PositionalTabAlignment.CENTER,
+                      relativeTo: PositionalTabRelativeTo.INDENT,
+                      leader: PositionalTabLeader.HYPHEN,
+                    },
+                  },
+                  "Foo bar",
+                ],
+              },
+            ],
+          },
+        },
       ],
       properties: {},
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

@@ -8,8 +8,8 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import type { XmlComponent } from "../../xml-components";
+import { element } from "@office-open/xml";
+
 import type { ColorTransformOptions } from "./color-transform";
 import { createColorTransforms } from "./color-transform";
 
@@ -18,9 +18,9 @@ import { createColorTransforms } from "./color-transform";
  */
 export interface SchemeColorOptions {
   /** Scheme color value */
-  readonly value: (typeof SchemeColor)[keyof typeof SchemeColor];
+  value: (typeof SchemeColor)[keyof typeof SchemeColor];
   /** Optional color transforms */
-  readonly transforms?: ColorTransformOptions;
+  transforms?: ColorTransformOptions;
 }
 
 // <xsd:simpleType name="ST_SchemeColorVal">
@@ -90,7 +90,7 @@ export const SchemeColor = {
 } as const;
 
 /**
- * Creates a scheme color element.
+ * Creates a scheme color element as an XML string.
  *
  * Specifies a color using a theme color scheme reference.
  *
@@ -114,16 +114,7 @@ export const SchemeColor = {
  * });
  * ```
  */
-export const createSchemeColor = (options: SchemeColorOptions): XmlComponent => {
+export const createSchemeColor = (options: SchemeColorOptions): string => {
   const transforms = options.transforms ? createColorTransforms(options.transforms) : [];
-  return new BuilderElement<SchemeColorOptions>({
-    attributes: {
-      value: {
-        key: "val",
-        value: options.value,
-      },
-    },
-    children: transforms,
-    name: "a:schemeClr",
-  });
+  return element("a:schemeClr", { val: options.value }, transforms);
 };

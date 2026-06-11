@@ -7,8 +7,8 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import type { XmlComponent } from "../../xml-components";
+import { element } from "@office-open/xml";
+
 import type { ColorTransformOptions } from "./color-transform";
 import { createColorTransforms } from "./color-transform";
 
@@ -181,13 +181,13 @@ export const PresetColor = {
  */
 export interface PresetColorOptions {
   /** Preset color value */
-  readonly value: (typeof PresetColor)[keyof typeof PresetColor];
+  value: (typeof PresetColor)[keyof typeof PresetColor];
   /** Optional color transforms */
-  readonly transforms?: ColorTransformOptions;
+  transforms?: ColorTransformOptions;
 }
 
 /**
- * Creates a preset color element.
+ * Creates a preset color element as an XML string.
  *
  * Specifies a color using a named preset (CSS named color).
  *
@@ -201,13 +201,7 @@ export interface PresetColorOptions {
  * </xsd:complexType>
  * ```
  */
-export const createPresetColor = (options: PresetColorOptions): XmlComponent => {
+export const createPresetColor = (options: PresetColorOptions): string => {
   const transforms = options.transforms ? createColorTransforms(options.transforms) : [];
-  return new BuilderElement({
-    attributes: {
-      value: { key: "val", value: options.value },
-    },
-    children: transforms,
-    name: "a:prstClr",
-  });
+  return element("a:prstClr", { val: options.value }, transforms);
 };

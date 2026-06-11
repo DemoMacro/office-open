@@ -1,91 +1,90 @@
 // Page numbers - Start from 0 on a new section
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
 import {
   AlignmentType,
-  Document,
-  Header,
-  Packer,
-  PageBreak,
   PageNumber,
   PageNumberSeparator,
-  Paragraph,
-  TextRun,
+  generateDocument,
 } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [new TextRun("First Page"), new PageBreak()],
-        }),
-        new Paragraph("Second Page"),
+        {
+          paragraph: {
+            children: ["First Page", { pageBreak: true }],
+          },
+        },
+        { paragraph: "Second Page" },
       ],
       headers: {
-        default: new Header({
-          children: [
-            new Paragraph({
+        default: [
+          {
+            paragraph: {
               alignment: AlignmentType.RIGHT,
               children: [
-                new TextRun("My Title "),
-                new TextRun({
+                "My Title ",
+                {
                   children: ["Page ", PageNumber.CURRENT],
-                }),
+                },
               ],
-            }),
-          ],
-        }),
-        first: new Header({
-          children: [
-            new Paragraph({
+            },
+          },
+        ],
+        first: [
+          {
+            paragraph: {
               alignment: AlignmentType.RIGHT,
               children: [
-                new TextRun("First Page Header "),
-                new TextRun({
+                "First Page Header ",
+                {
                   children: ["Page ", PageNumber.CURRENT],
-                }),
+                },
               ],
-            }),
-          ],
-        }),
+            },
+          },
+        ],
       },
     },
     {
       children: [
-        new Paragraph({
-          children: [new TextRun("Third Page"), new PageBreak()],
-        }),
-        new Paragraph("Fourth Page"),
+        {
+          paragraph: {
+            children: ["Third Page", { pageBreak: true }],
+          },
+        },
+        { paragraph: "Fourth Page" },
       ],
       headers: {
-        default: new Header({
-          children: [
-            new Paragraph({
+        default: [
+          {
+            paragraph: {
               alignment: AlignmentType.RIGHT,
               children: [
-                new TextRun("My Title "),
-                new TextRun({
+                "My Title ",
+                {
                   children: ["Page ", PageNumber.CURRENT],
-                }),
+                },
               ],
-            }),
-          ],
-        }),
-        first: new Header({
-          children: [
-            new Paragraph({
+            },
+          },
+        ],
+        first: [
+          {
+            paragraph: {
               alignment: AlignmentType.RIGHT,
               children: [
-                new TextRun("First Page Header of Second section"),
-                new TextRun({
+                "First Page Header of Second section",
+                {
                   children: ["Page ", PageNumber.CURRENT],
-                }),
+                },
               ],
-            }),
-          ],
-        }),
+            },
+          },
+        ],
       },
       properties: {
         page: {
@@ -98,6 +97,4 @@ const doc = new Document({
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

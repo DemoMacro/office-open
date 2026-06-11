@@ -2,19 +2,11 @@
 // Demonstrates PermStart and PermEnd for defining editable regions.
 // Note: documentProtection must be enabled in features for permissions to take effect.
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import {
-  Document,
-  EditGroupType,
-  Packer,
-  Paragraph,
-  PermEnd,
-  PermStart,
-  TextRun,
-} from "@office-open/docx";
+import { EditGroupType, generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   features: {
     trackRevisions: true,
     documentProtection: {
@@ -25,85 +17,107 @@ const doc = new Document({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [new TextRun({ text: "Permission Ranges Demo", bold: true, size: 32 })],
-          spacing: { after: 400 },
-        }),
-        new Paragraph({
-          children: [new TextRun("Password: 123 | Protection: Read-only (with editable ranges)")],
-        }),
+        {
+          paragraph: {
+            children: [{ text: "Permission Ranges Demo", bold: true, size: 32 }],
+            spacing: { after: 400 },
+          },
+        },
+        {
+          paragraph: {
+            children: ["Password: 123 | Protection: Read-only (with editable ranges)"],
+          },
+        },
 
-        new Paragraph({ text: "" }),
+        { paragraph: "" },
 
-        new Paragraph({
-          children: [new TextRun({ bold: true, text: "1. Everyone Editable Range", size: 28 })],
-          spacing: { after: 200 },
-        }),
-        new Paragraph({
-          children: [new TextRun("This text is read-only (protected).")],
-        }),
-        new Paragraph({
-          children: [
-            new PermStart({ id: 0, edGroup: EditGroupType.EVERYONE }),
-            new TextRun("Everyone can edit this text."),
-            new PermEnd(0),
-          ],
-        }),
-        new Paragraph({
-          children: [new TextRun("This text is read-only again.")],
-        }),
+        {
+          paragraph: {
+            children: [{ bold: true, text: "1. Everyone Editable Range", size: 28 }],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          paragraph: {
+            children: ["This text is read-only (protected)."],
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              { permStart: { id: 0, editGroup: EditGroupType.EVERYONE } },
+              "Everyone can edit this text.",
+              { permEnd: 0 },
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: ["This text is read-only again."],
+          },
+        },
 
-        new Paragraph({ text: "" }),
+        { paragraph: "" },
 
-        new Paragraph({
-          children: [
-            new TextRun({
-              bold: true,
-              text: "2. Single User Editable Range",
-              size: 28,
-            }),
-          ],
-          spacing: { after: 200 },
-        }),
-        new Paragraph({
-          children: [
-            new PermStart({ id: 1, ed: "john@example.com" }),
-            new TextRun("Only john@example.com can edit this text."),
-            new PermEnd(1),
-          ],
-        }),
+        {
+          paragraph: {
+            children: [
+              {
+                bold: true,
+                text: "2. Single User Editable Range",
+                size: 28,
+              },
+            ],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              { permStart: { id: 1, ed: "john@example.com" } },
+              "Only john@example.com can edit this text.",
+              { permEnd: 1 },
+            ],
+          },
+        },
 
-        new Paragraph({ text: "" }),
+        { paragraph: "" },
 
-        new Paragraph({
-          children: [new TextRun({ bold: true, text: "3. Editors Group Range", size: 28 })],
-          spacing: { after: 200 },
-        }),
-        new Paragraph({
-          children: [
-            new PermStart({ id: 2, edGroup: EditGroupType.EDITORS }),
-            new TextRun("Only editors can modify this content."),
-            new PermEnd(2),
-          ],
-        }),
+        {
+          paragraph: {
+            children: [{ bold: true, text: "3. Editors Group Range", size: 28 }],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              { permStart: { id: 2, editGroup: EditGroupType.EDITORS } },
+              "Only editors can modify this content.",
+              { permEnd: 2 },
+            ],
+          },
+        },
 
-        new Paragraph({ text: "" }),
+        { paragraph: "" },
 
-        new Paragraph({
-          children: [new TextRun({ bold: true, text: "4. Current User Only Range", size: 28 })],
-          spacing: { after: 200 },
-        }),
-        new Paragraph({
-          children: [
-            new PermStart({ id: 3, edGroup: EditGroupType.CURRENT }),
-            new TextRun("Only the current user can edit this."),
-            new PermEnd(3),
-          ],
-        }),
+        {
+          paragraph: {
+            children: [{ bold: true, text: "4. Current User Only Range", size: 28 }],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              { permStart: { id: 3, editGroup: EditGroupType.CURRENT } },
+              "Only the current user can edit this.",
+              { permEnd: 3 },
+            ],
+          },
+        },
       ],
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

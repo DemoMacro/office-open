@@ -1,22 +1,22 @@
 // Page break before example
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import { Document, Packer, Paragraph } from "@office-open/docx";
+import { generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Paragraph("Hello World"),
-        new Paragraph({
-          pageBreakBefore: true,
-          text: "Hello World on another page",
-        }),
+        { paragraph: "Hello World" },
+        {
+          paragraph: {
+            pageBreakBefore: true,
+            text: "Hello World on another page",
+          },
+        },
       ],
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

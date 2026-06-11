@@ -1,6 +1,6 @@
 import type { Element, Js2XmlOptions } from "./types";
 
-export function js2xml(js: Element, options?: Js2XmlOptions): string {
+export function stringify(js: Element, options?: Js2XmlOptions): string {
   const opts = normalizeOptions(options);
   const parts: string[] = [];
 
@@ -15,9 +15,12 @@ export function js2xml(js: Element, options?: Js2XmlOptions): string {
   return parts.join("");
 }
 
-/** Alias for js2xml — xml-js compatible export */
+/** @deprecated Use `stringify` instead. xml-js compatible alias. */
+export { stringify as js2xml };
+
+/** @deprecated Use `stringify` instead. xml-js compatible alias. */
 export function json2xml(json: Element, options?: Js2XmlOptions): string {
-  return js2xml(json, options);
+  return stringify(json, options);
 }
 
 function normalizeOptions(options?: Js2XmlOptions): {
@@ -71,10 +74,10 @@ function writeDeclaration(declaration: NonNullable<Element["declaration"]>): str
   const attrs = declaration.attributes;
   if (!attrs) return '<?xml version="1.0"?>';
 
-  let result = '<?xml version="1.0"';
-  if (attrs.encoding) result += ` encoding="${attrs.encoding}"`;
-  if (attrs.standalone) result += ` standalone="${attrs.standalone}"`;
-  return result + "?>";
+  const parts: string[] = [`<?xml version="1.0"`];
+  if (attrs.encoding) parts.push(` encoding="${attrs.encoding}"`);
+  if (attrs.standalone) parts.push(` standalone="${attrs.standalone}"`);
+  return parts.join("") + "?>";
 }
 
 function writeAttributes(

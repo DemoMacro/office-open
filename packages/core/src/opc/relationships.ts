@@ -1,8 +1,5 @@
 import { escapeXml } from "@office-open/xml";
 
-import { BaseXmlComponent } from "../xml-components/base";
-import type { Context } from "../xml-components/base";
-
 export type RelationshipType =
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme"
@@ -75,12 +72,14 @@ interface RelationshipEntry {
   readonly targetMode?: string;
 }
 
-export class Relationships extends BaseXmlComponent {
+/**
+ * Manages OOXML relationship entries and serializes to XML.
+ *
+ * Standalone class — no XmlComponent inheritance.
+ * Pure string concatenation for zero-allocation XML output.
+ */
+export class Relationships {
   private entries: RelationshipEntry[] = [];
-
-  public constructor() {
-    super("Relationships");
-  }
 
   public addRelationship(
     id: number | string,
@@ -95,11 +94,8 @@ export class Relationships extends BaseXmlComponent {
     return this.entries.length;
   }
 
-  /**
-   * Zero-allocation fast path: directly concatenate XML string.
-   * Bypasses the IXmlableObject intermediate tree entirely.
-   */
-  public override toXml(_context: Context): string {
+  /** Directly builds XML string — zero intermediate tree allocation. */
+  public serialize(): string {
     const p: string[] = [
       '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">',
     ];

@@ -1,20 +1,22 @@
 // Section with 2 columns including a column break
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import { ColumnBreak, Document, Packer, Paragraph, TextRun } from "@office-open/docx";
+import { generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [
-            new TextRun("This text will be in the first column."),
-            new ColumnBreak(),
-            new TextRun("This text will be in the second column."),
-          ],
-        }),
+        {
+          paragraph: {
+            children: [
+              "This text will be in the first column.",
+              { columnBreak: true },
+              "This text will be in the second column.",
+            ],
+          },
+        },
       ],
       properties: {
         column: {
@@ -25,6 +27,4 @@ const doc = new Document({
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

@@ -5,17 +5,17 @@
  * in both Node.js and browser environments. The library generates documents
  * compliant with the OOXML (Office Open XML) specification.
  *
- * The primary export is the `Document` class (internally named `File`), which
- * serves as the main entry point for creating Word documents.
+ * The primary API is `generateDocument()`, which accepts a `DocumentOptions` object
+ * and produces a DOCX file directly — no intermediate class required.
  *
  * @module
  *
  * @example
  * ```typescript
- * import { Document, Paragraph, TextRun, Packer } from "docx-plus";
+ * import { generateDocument, Paragraph, TextRun } from "@office-open/docx";
  *
- * // Create a document
- * const doc = new Document({
+ * // Generate a document buffer
+ * const buffer = await generateDocument({
  *   sections: [{
  *     children: [
  *       new Paragraph({
@@ -26,17 +26,18 @@
  *     ],
  *   }],
  * });
- *
- * // Export to buffer
- * const buffer = await Packer.toBuffer(doc);
  * ```
  */
 
-// Internally, the wrapper is a 'File', but export to the end user as a 'Document'
-// Use of 'File' also works
-export { File as Document } from "./file";
-export * from "./file";
-export * from "./export";
-export * from "./util";
-export * from "./patcher";
+export * from "./parts";
+export * from "./shared";
+export * from "./patch";
 export * from "./parse";
+export { generateDocument, generateDocumentSync, generateDocumentStream } from "./generate";
+export type {
+  CompressionOptions,
+  OutputType,
+  OutputByType,
+  PackerOptions,
+} from "@office-open/core";
+export { framesetXml, frameXml } from "./parts/web-settings";

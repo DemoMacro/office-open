@@ -18,21 +18,14 @@ import { bench, describe } from "vite-plus/test";
 
 import {
   AlignmentType,
-  Document,
-  Footer,
-  Header,
   HeadingLevel,
-  ImageRun,
   PageNumber,
-  Packer,
-  Paragraph,
-  Table,
-  TableCell,
-  TableRow,
-  TextRun,
+  generateDocument,
+  generateDocumentSync,
   UnderlineType,
   WidthType,
 } from "./index";
+import type { DocumentOptions, SectionChild } from "./index";
 
 // Bench modes:
 //   "ours default"  = XML DEFLATE level 1 (SuperFast, MS Office), media STORE — no options passed.
@@ -68,176 +61,138 @@ const TABLE_ROWS = Array.from({ length: 10 }, (_, rowIdx) => ({
   })),
 }));
 
-// ── Fixture helpers (ours) ──
+// ── Fixture helpers (ours — pure JSON API) ──
 
-const buildSimpleDoc = () =>
-  new Document({
-    sections: [
-      {
-        children: [
-          new Paragraph({ children: [new TextRun("Hello World")] }),
-          new Paragraph({ children: [new TextRun("Second paragraph")] }),
-          new Paragraph({
+const buildSimpleDoc = (): DocumentOptions => ({
+  sections: [
+    {
+      children: [
+        { paragraph: "Hello World" },
+        { paragraph: "Second paragraph" },
+        {
+          paragraph: {
             children: [
-              new ImageRun({
-                data: SMALL_IMAGES[0],
-                transformation: { width: 400, height: 300 },
-                type: "jpg",
-              }),
+              {
+                image: {
+                  data: SMALL_IMAGES[0],
+                  transformation: { width: 400, height: 300 },
+                  type: "jpg",
+                },
+              },
             ],
-          }),
-        ],
-      },
-    ],
-  });
-
-const buildStyledDoc = () =>
-  new Document({
-    sections: [
-      {
-        children: [
-          ...PARAGRAPH_CHILDREN.map(
-            (p) =>
-              new Paragraph({
-                children: [new TextRun({ text: p.text, bold: p.bold, italics: p.italics })],
-              }),
-          ),
-          new Paragraph({
-            children: [
-              new ImageRun({
-                data: SMALL_IMAGES[1],
-                transformation: { width: 400, height: 300 },
-                type: "jpg",
-              }),
-            ],
-          }),
-        ],
-      },
-    ],
-  });
-
-const buildTableDoc = () =>
-  new Document({
-    sections: [
-      {
-        children: [
-          new Table({
-            rows: TABLE_ROWS.map(
-              (row) =>
-                new TableRow({
-                  cells: row.cells.map(
-                    (cell) =>
-                      new TableCell({
-                        width: {
-                          size: cell.width.size,
-                          type: cell.width.type,
-                        },
-                        children: [
-                          new Paragraph({
-                            children: [new TextRun(cell.text)],
-                          }),
-                        ],
-                      }),
-                  ),
-                }),
-            ),
-          }),
-        ],
-      },
-    ],
-  });
-
-const buildFullFeaturedDoc = () =>
-  new Document({
-    sections: [
-      {
-        headers: {
-          default: new Header({
-            children: [
-              new Paragraph({
-                alignment: AlignmentType.RIGHT,
-                children: [
-                  new TextRun("Header text"),
-                  new TextRun({ children: [PageNumber.CURRENT] }),
-                ],
-              }),
-            ],
-          }),
+          },
         },
-        footers: {
-          default: new Footer({
+      ],
+    },
+  ],
+});
+
+const buildStyledDoc = (): DocumentOptions => ({
+  sections: [
+    {
+      children: [
+        ...PARAGRAPH_CHILDREN.map((p) => ({
+          paragraph: { children: [{ text: p.text, bold: p.bold, italics: p.italics }] },
+        })),
+        {
+          paragraph: {
             children: [
-              new Paragraph({
-                alignment: AlignmentType.CENTER,
-                children: [new TextRun("Footer")],
-              }),
+              {
+                image: {
+                  data: SMALL_IMAGES[1],
+                  transformation: { width: 400, height: 300 },
+                  type: "jpg",
+                },
+              },
             ],
-          }),
+          },
         },
-        children: [
-          new Paragraph({
-            heading: HeadingLevel.HEADING_1,
-            children: [new TextRun("Document Title")],
-          }),
-          new Paragraph({
-            heading: HeadingLevel.HEADING_2,
-            children: [new TextRun("Section 1")],
-          }),
-          new Paragraph({
-            children: [
-              new ImageRun({
-                data: SMALL_IMAGES[0],
-                transformation: { width: 400, height: 300 },
-                type: "jpg",
-              }),
-            ],
-          }),
-          ...PARAGRAPH_CHILDREN.map(
-            (p) =>
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: p.text,
-                    bold: p.bold,
-                    italics: p.italics,
-                  }),
-                ],
-              }),
-          ),
-          new Paragraph({
-            children: [
-              new ImageRun({
-                data: SMALL_IMAGES[2],
-                transformation: { width: 400, height: 300 },
-                type: "jpg",
-              }),
-            ],
-          }),
-          new Table({
-            rows: TABLE_ROWS.map(
-              (row) =>
-                new TableRow({
-                  cells: row.cells.map(
-                    (cell) =>
-                      new TableCell({
-                        width: {
-                          size: cell.width.size,
-                          type: cell.width.type,
-                        },
-                        children: [
-                          new Paragraph({
-                            children: [new TextRun(cell.text)],
-                          }),
-                        ],
-                      }),
-                  ),
-                }),
-            ),
-          }),
+      ],
+    },
+  ],
+});
+
+const buildTableDoc = (): DocumentOptions => ({
+  sections: [
+    {
+      children: [
+        {
+          table: {
+            rows: TABLE_ROWS.map((row) => ({
+              cells: row.cells.map((cell) => ({
+                width: { size: cell.width.size, type: cell.width.type },
+                children: [{ paragraph: cell.text }],
+              })),
+            })),
+          },
+        },
+      ],
+    },
+  ],
+});
+
+const buildFullFeaturedDoc = (): DocumentOptions => ({
+  sections: [
+    {
+      headers: {
+        default: [
+          {
+            paragraph: {
+              alignment: AlignmentType.RIGHT,
+              children: ["Header text", { children: [PageNumber.CURRENT] }],
+            },
+          },
         ],
       },
-    ],
-  });
+      footers: {
+        default: [{ paragraph: { alignment: AlignmentType.CENTER, children: ["Footer"] } }],
+      },
+      children: [
+        { paragraph: { heading: HeadingLevel.HEADING_1, children: ["Document Title"] } },
+        { paragraph: { heading: HeadingLevel.HEADING_2, children: ["Section 1"] } },
+        {
+          paragraph: {
+            children: [
+              {
+                image: {
+                  data: SMALL_IMAGES[0],
+                  transformation: { width: 400, height: 300 },
+                  type: "jpg",
+                },
+              },
+            ],
+          },
+        },
+        ...PARAGRAPH_CHILDREN.map((p) => ({
+          paragraph: { children: [{ text: p.text, bold: p.bold, italics: p.italics }] },
+        })),
+        {
+          paragraph: {
+            children: [
+              {
+                image: {
+                  data: SMALL_IMAGES[2],
+                  transformation: { width: 400, height: 300 },
+                  type: "jpg",
+                },
+              },
+            ],
+          },
+        },
+        {
+          table: {
+            rows: TABLE_ROWS.map((row) => ({
+              cells: row.cells.map((cell) => ({
+                width: { size: cell.width.size, type: cell.width.type },
+                children: [{ paragraph: cell.text }],
+              })),
+            })),
+          },
+        },
+      ],
+    },
+  ],
+});
 
 // ── Fixture helpers (competitor) ──
 
@@ -422,7 +377,7 @@ describe("DOCX: Create + toBuffer", () => {
   bench(
     "ours default sync — simple (2p + 1 img) + toBufferSync",
     () => {
-      Packer.toBufferSync(buildSimpleDoc());
+      generateDocumentSync(buildSimpleDoc());
     },
     { iterations: 50 },
   );
@@ -430,7 +385,7 @@ describe("DOCX: Create + toBuffer", () => {
   bench(
     "ours all-store sync — simple (2p + 1 img) + toBufferStore",
     () => {
-      Packer.toBufferSync(buildSimpleDoc(), { compression: { xml: 0 } });
+      generateDocumentSync(buildSimpleDoc(), { compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
@@ -438,7 +393,7 @@ describe("DOCX: Create + toBuffer", () => {
   bench(
     "ours default async — simple (2p + 1 img) + toBuffer",
     async () => {
-      await Packer.toBuffer(buildSimpleDoc());
+      await generateDocument(buildSimpleDoc());
     },
     { iterations: 50 },
   );
@@ -446,7 +401,7 @@ describe("DOCX: Create + toBuffer", () => {
   bench(
     "ours all-store async — simple (2p + 1 img) + toBufferStoreAsync",
     async () => {
-      await Packer.toBuffer(buildSimpleDoc(), { compression: { xml: 0 } });
+      await generateDocument(buildSimpleDoc(), { compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
@@ -462,7 +417,7 @@ describe("DOCX: Create + toBuffer", () => {
   bench(
     "ours default sync — styled paragraphs (20) + 1 img + toBufferSync",
     () => {
-      Packer.toBufferSync(buildStyledDoc());
+      generateDocumentSync(buildStyledDoc());
     },
     { iterations: 50 },
   );
@@ -470,7 +425,7 @@ describe("DOCX: Create + toBuffer", () => {
   bench(
     "ours all-store sync — styled paragraphs (20) + 1 img + toBufferStore",
     () => {
-      Packer.toBufferSync(buildStyledDoc(), { compression: { xml: 0 } });
+      generateDocumentSync(buildStyledDoc(), { compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
@@ -478,7 +433,7 @@ describe("DOCX: Create + toBuffer", () => {
   bench(
     "ours default async — styled paragraphs (20) + 1 img + toBuffer",
     async () => {
-      await Packer.toBuffer(buildStyledDoc());
+      await generateDocument(buildStyledDoc());
     },
     { iterations: 50 },
   );
@@ -486,7 +441,7 @@ describe("DOCX: Create + toBuffer", () => {
   bench(
     "ours all-store async — styled paragraphs (20) + 1 img + toBufferStoreAsync",
     async () => {
-      await Packer.toBuffer(buildStyledDoc(), { compression: { xml: 0 } });
+      await generateDocument(buildStyledDoc(), { compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
@@ -502,7 +457,7 @@ describe("DOCX: Create + toBuffer", () => {
   bench(
     "ours default sync — table (10x5) + toBufferSync",
     () => {
-      Packer.toBufferSync(buildTableDoc());
+      generateDocumentSync(buildTableDoc());
     },
     { iterations: 50 },
   );
@@ -510,7 +465,7 @@ describe("DOCX: Create + toBuffer", () => {
   bench(
     "ours all-store sync — table (10x5) + toBufferStore",
     () => {
-      Packer.toBufferSync(buildTableDoc(), { compression: { xml: 0 } });
+      generateDocumentSync(buildTableDoc(), { compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
@@ -518,7 +473,7 @@ describe("DOCX: Create + toBuffer", () => {
   bench(
     "ours default async — table (10x5) + toBuffer",
     async () => {
-      await Packer.toBuffer(buildTableDoc());
+      await generateDocument(buildTableDoc());
     },
     { iterations: 50 },
   );
@@ -526,7 +481,7 @@ describe("DOCX: Create + toBuffer", () => {
   bench(
     "ours all-store async — table (10x5) + toBufferStoreAsync",
     async () => {
-      await Packer.toBuffer(buildTableDoc(), { compression: { xml: 0 } });
+      await generateDocument(buildTableDoc(), { compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
@@ -542,7 +497,7 @@ describe("DOCX: Create + toBuffer", () => {
   bench(
     "ours default sync — full featured + 2 imgs + toBufferSync",
     () => {
-      Packer.toBufferSync(buildFullFeaturedDoc());
+      generateDocumentSync(buildFullFeaturedDoc());
     },
     { iterations: 50 },
   );
@@ -550,7 +505,7 @@ describe("DOCX: Create + toBuffer", () => {
   bench(
     "ours all-store sync — full featured + 2 imgs + toBufferStore",
     () => {
-      Packer.toBufferSync(buildFullFeaturedDoc(), { compression: { xml: 0 } });
+      generateDocumentSync(buildFullFeaturedDoc(), { compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
@@ -558,7 +513,7 @@ describe("DOCX: Create + toBuffer", () => {
   bench(
     "ours default async — full featured + 2 imgs + toBuffer",
     async () => {
-      await Packer.toBuffer(buildFullFeaturedDoc());
+      await generateDocument(buildFullFeaturedDoc());
     },
     { iterations: 50 },
   );
@@ -566,7 +521,7 @@ describe("DOCX: Create + toBuffer", () => {
   bench(
     "ours all-store async — full featured + 2 imgs + toBufferStoreAsync",
     async () => {
-      await Packer.toBuffer(buildFullFeaturedDoc(), { compression: { xml: 0 } });
+      await generateDocument(buildFullFeaturedDoc(), { compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
@@ -596,41 +551,46 @@ const LARGE_TABLE_ROWS = Array.from({ length: 200 }, (_, rowIdx) => ({
   })),
 }));
 
-const buildLargeParagraphsDoc = () =>
-  new Document({
-    sections: [
-      {
-        children: LARGE_PARAGRAPHS.map(
-          (p) =>
-            new Paragraph({
+const buildLargeParagraphsDoc = (): DocumentOptions => ({
+  sections: [
+    {
+      children: LARGE_PARAGRAPHS.map(
+        (p) =>
+          ({
+            paragraph: {
               children: [
-                new TextRun({
+                {
                   text: p.text,
                   bold: p.bold,
                   italics: p.italics,
                   underline: { type: UnderlineType.SINGLE },
-                }),
+                },
               ],
-            }),
-        ).flatMap((para, pi) =>
-          pi > 0 && pi % 100 === 0
-            ? [
-                para,
-                new Paragraph({
+            },
+          }) as SectionChild,
+      ).flatMap((para, pi) =>
+        pi > 0 && pi % 100 === 0
+          ? [
+              para,
+              {
+                paragraph: {
                   children: [
-                    new ImageRun({
-                      data: LARGE_IMAGES[(pi / 100 - 1) % LARGE_IMAGES.length],
-                      transformation: { width: 400, height: 300 },
-                      type: "jpg",
-                    }),
+                    {
+                      image: {
+                        data: LARGE_IMAGES[(pi / 100 - 1) % LARGE_IMAGES.length],
+                        transformation: { width: 400, height: 300 },
+                        type: "jpg",
+                      },
+                    },
                   ],
-                }),
-              ]
-            : [para],
-        ),
-      },
-    ],
-  });
+                },
+              },
+            ]
+          : [para],
+      ),
+    },
+  ],
+});
 
 const buildLargeParagraphsDocCompetitor = () =>
   new DocumentOrig({
@@ -668,36 +628,24 @@ const buildLargeParagraphsDocCompetitor = () =>
     ],
   });
 
-const buildLargeTableDoc = () =>
-  new Document({
-    sections: [
-      {
-        children: [
-          new Table({
-            rows: LARGE_TABLE_ROWS.map(
-              (row) =>
-                new TableRow({
-                  cells: row.cells.map(
-                    (cell) =>
-                      new TableCell({
-                        width: {
-                          size: cell.width.size,
-                          type: cell.width.type,
-                        },
-                        children: [
-                          new Paragraph({
-                            children: [new TextRun(cell.text)],
-                          }),
-                        ],
-                      }),
-                  ),
-                }),
-            ),
-          }),
-        ],
-      },
-    ],
-  });
+const buildLargeTableDoc = (): DocumentOptions => ({
+  sections: [
+    {
+      children: [
+        {
+          table: {
+            rows: LARGE_TABLE_ROWS.map((row) => ({
+              cells: row.cells.map((cell) => ({
+                width: { size: cell.width.size, type: cell.width.type },
+                children: [{ paragraph: cell.text }],
+              })),
+            })),
+          },
+        },
+      ],
+    },
+  ],
+});
 
 const buildLargeTableDocCompetitor = () =>
   new DocumentOrig({
@@ -730,72 +678,69 @@ const buildLargeTableDocCompetitor = () =>
     ],
   });
 
-const buildLargeSectionsDoc = () =>
-  new Document({
-    sections: Array.from({ length: 20 }, (_, si) => ({
-      properties: { page: { margin: { top: 1440, bottom: 1440 } } },
-      headers: {
-        default: new Header({
-          children: [
-            new Paragraph({
-              alignment: AlignmentType.RIGHT,
-              children: [
-                new TextRun(`Chapter ${si + 1}`),
-                new TextRun({ children: [PageNumber.CURRENT] }),
-              ],
-            }),
-          ],
-        }),
-      },
-      footers: {
-        default: new Footer({
-          children: [
-            new Paragraph({
-              alignment: AlignmentType.CENTER,
-              children: [new TextRun("Footer text")],
-            }),
-          ],
-        }),
-      },
-      children: [
-        ...Array.from({ length: 100 }, (_, pi) => {
-          return new Paragraph({
-            heading:
-              pi === 0 ? HeadingLevel.HEADING_1 : pi === 1 ? HeadingLevel.HEADING_2 : undefined,
-            children: [
-              new TextRun({
-                text:
-                  pi === 0
-                    ? `Chapter ${si + 1} Title`
-                    : pi === 1
-                      ? `Section ${si + 1}.${1} Subtitle`
-                      : `Chapter ${si + 1} paragraph ${pi} body content for realistic document simulation with enough text.`,
-                bold: pi <= 1,
-              }),
-            ],
-          });
-        }),
-        new Paragraph({
-          children: [
-            new ImageRun({
-              data: LARGE_IMAGES[(si * 2) % LARGE_IMAGES.length],
-              transformation: { width: 400, height: 300 },
-              type: "jpg",
-            }),
-          ],
-        }),
-        new Paragraph({
-          children: [
-            new ImageRun({
-              data: LARGE_IMAGES[(si * 2 + 1) % LARGE_IMAGES.length],
-              transformation: { width: 400, height: 300 },
-              type: "jpg",
-            }),
-          ],
-        }),
+const buildLargeSectionsDoc = (): DocumentOptions => ({
+  sections: Array.from({ length: 20 }, (_, si) => ({
+    properties: { page: { margin: { top: 1440, bottom: 1440 } } },
+    headers: {
+      default: [
+        {
+          paragraph: {
+            alignment: AlignmentType.RIGHT,
+            children: [`Chapter ${si + 1}`, { children: [PageNumber.CURRENT] }],
+          },
+        },
       ],
-    })),
-  });
+    },
+    footers: {
+      default: [{ paragraph: { alignment: AlignmentType.CENTER, children: ["Footer text"] } }],
+    },
+    children: [
+      ...Array.from({ length: 100 }, (_, pi) => ({
+        paragraph: {
+          heading:
+            pi === 0 ? HeadingLevel.HEADING_1 : pi === 1 ? HeadingLevel.HEADING_2 : undefined,
+          children: [
+            {
+              text:
+                pi === 0
+                  ? `Chapter ${si + 1} Title`
+                  : pi === 1
+                    ? `Section ${si + 1}.${1} Subtitle`
+                    : `Chapter ${si + 1} paragraph ${pi} body content for realistic document simulation with enough text.`,
+              bold: pi <= 1,
+            },
+          ],
+        },
+      })),
+      {
+        paragraph: {
+          children: [
+            {
+              image: {
+                data: LARGE_IMAGES[(si * 2) % LARGE_IMAGES.length],
+                transformation: { width: 400, height: 300 },
+                type: "jpg",
+              },
+            },
+          ],
+        },
+      },
+      {
+        paragraph: {
+          children: [
+            {
+              image: {
+                data: LARGE_IMAGES[(si * 2 + 1) % LARGE_IMAGES.length],
+                transformation: { width: 400, height: 300 },
+                type: "jpg",
+              },
+            },
+          ],
+        },
+      },
+    ],
+  })),
+});
 
 const buildLargeSectionsDocCompetitor = () =>
   new DocumentOrig({
@@ -872,7 +817,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   bench(
     "ours default sync — 2000p + 20 img + toBufferSync",
     () => {
-      Packer.toBufferSync(buildLargeParagraphsDoc());
+      generateDocumentSync(buildLargeParagraphsDoc());
     },
     { iterations: 10 },
   );
@@ -880,7 +825,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store sync — 2000p + 20 img + toBufferStore",
     () => {
-      Packer.toBufferSync(buildLargeParagraphsDoc(), { compression: { xml: 0 } });
+      generateDocumentSync(buildLargeParagraphsDoc(), { compression: { xml: 0 } });
     },
     { iterations: 10 },
   );
@@ -888,7 +833,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   bench(
     "ours default async — 2000p + 20 img + toBuffer",
     async () => {
-      await Packer.toBuffer(buildLargeParagraphsDoc());
+      await generateDocument(buildLargeParagraphsDoc());
     },
     { iterations: 10 },
   );
@@ -896,7 +841,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store async — 2000p + 20 img + toBufferStoreAsync",
     async () => {
-      await Packer.toBuffer(buildLargeParagraphsDoc(), { compression: { xml: 0 } });
+      await generateDocument(buildLargeParagraphsDoc(), { compression: { xml: 0 } });
     },
     { iterations: 10 },
   );
@@ -912,7 +857,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   bench(
     "ours default sync — 200x10 table + toBufferSync",
     () => {
-      Packer.toBufferSync(buildLargeTableDoc());
+      generateDocumentSync(buildLargeTableDoc());
     },
     { iterations: 10 },
   );
@@ -920,7 +865,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store sync — 200x10 table + toBufferStore",
     () => {
-      Packer.toBufferSync(buildLargeTableDoc(), { compression: { xml: 0 } });
+      generateDocumentSync(buildLargeTableDoc(), { compression: { xml: 0 } });
     },
     { iterations: 10 },
   );
@@ -928,7 +873,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   bench(
     "ours default async — 200x10 table + toBuffer",
     async () => {
-      await Packer.toBuffer(buildLargeTableDoc());
+      await generateDocument(buildLargeTableDoc());
     },
     { iterations: 10 },
   );
@@ -936,7 +881,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store async — 200x10 table + toBufferStoreAsync",
     async () => {
-      await Packer.toBuffer(buildLargeTableDoc(), { compression: { xml: 0 } });
+      await generateDocument(buildLargeTableDoc(), { compression: { xml: 0 } });
     },
     { iterations: 10 },
   );
@@ -952,7 +897,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   bench(
     "ours default sync — 20 sec × 100p + 40 img + toBufferSync",
     () => {
-      Packer.toBufferSync(buildLargeSectionsDoc());
+      generateDocumentSync(buildLargeSectionsDoc());
     },
     { iterations: 10 },
   );
@@ -960,7 +905,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store sync — 20 sec × 100p + 40 img + toBufferStore",
     () => {
-      Packer.toBufferSync(buildLargeSectionsDoc(), { compression: { xml: 0 } });
+      generateDocumentSync(buildLargeSectionsDoc(), { compression: { xml: 0 } });
     },
     { iterations: 10 },
   );
@@ -968,7 +913,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   bench(
     "ours default async — 20 sec × 100p + 40 img + toBuffer",
     async () => {
-      await Packer.toBuffer(buildLargeSectionsDoc());
+      await generateDocument(buildLargeSectionsDoc());
     },
     { iterations: 10 },
   );
@@ -976,7 +921,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store async — 20 sec × 100p + 40 img + toBufferStoreAsync",
     async () => {
-      await Packer.toBuffer(buildLargeSectionsDoc(), { compression: { xml: 0 } });
+      await generateDocument(buildLargeSectionsDoc(), { compression: { xml: 0 } });
     },
     { iterations: 10 },
   );
@@ -1001,69 +946,52 @@ const MIXED_IMAGE_SIZES = [
 ];
 const MIXED_IMAGES = MIXED_IMAGE_SIZES.map((sizeKB, i) => makeImage(i, sizeKB));
 
-const buildMixed100MbDoc = () =>
-  new Document({
-    sections: [
-      {
-        children: [
-          // 500 styled paragraphs
-          ...LARGE_PARAGRAPHS.slice(0, 500).map(
-            (p) =>
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: p.text,
-                    bold: p.bold,
-                    italics: p.italics,
-                    underline: { type: UnderlineType.SINGLE },
-                  }),
-                ],
-              }),
-          ),
-          // 38 mixed-size images
-          ...MIXED_IMAGES.map(
-            (img) =>
-              new Paragraph({
-                children: [
-                  new ImageRun({
-                    data: img,
-                    transformation: { width: 400, height: 300 },
-                    type: "jpg",
-                  }),
-                ],
-              }),
-          ),
-          // 50×10 table
-          new Table({
-            rows: Array.from(
-              { length: 50 },
-              (_, rowIdx) =>
-                new TableRow({
-                  cells: Array.from(
-                    { length: 10 },
-                    (_, colIdx) =>
-                      new TableCell({
-                        width: { size: 1000, type: WidthType.PERCENTAGE },
-                        children: [
-                          new Paragraph({
-                            children: [new TextRun(`R${rowIdx + 1}C${colIdx + 1} data content`)],
-                          }),
-                        ],
-                      }),
-                  ),
-                }),
-            ),
-          }),
-        ],
-      },
-    ],
-  });
+const buildMixed100MbDoc = (): DocumentOptions => ({
+  sections: [
+    {
+      children: [
+        // 500 styled paragraphs
+        ...(LARGE_PARAGRAPHS.slice(0, 500).map((p) => ({
+          paragraph: {
+            children: [
+              {
+                text: p.text,
+                bold: p.bold,
+                italics: p.italics,
+                underline: { type: UnderlineType.SINGLE },
+              },
+            ],
+          },
+        })) as SectionChild[]),
+        // 38 mixed-size images
+        ...(MIXED_IMAGES.map((img) => ({
+          paragraph: {
+            children: [
+              { image: { data: img, transformation: { width: 400, height: 300 }, type: "jpg" } },
+            ],
+          },
+        })) as SectionChild[]),
+        // 50×10 table
+        {
+          table: {
+            rows: Array.from({ length: 50 }, (_, rowIdx) => ({
+              cells: Array.from({ length: 10 }, (_, colIdx) => ({
+                width: { size: 1000, type: WidthType.PERCENTAGE },
+                children: [{ paragraph: `R${rowIdx + 1}C${colIdx + 1} data content` }],
+              })),
+            })),
+          },
+        },
+      ],
+    },
+  ],
+});
 
 describe("DOCX: Large File (~100MB) — Mixed + async vs sync", () => {
   bench(
     "ours default sync — mixed (500p, 38img, 50x10) + toBufferSync",
     () => {
-      Packer.toBufferSync(buildMixed100MbDoc());
+      generateDocumentSync(buildMixed100MbDoc());
     },
     { iterations: 3 },
   );
@@ -1071,7 +999,7 @@ describe("DOCX: Large File (~100MB) — Mixed + async vs sync", () => {
   bench(
     "ours all-store sync — mixed (500p, 38img, 50x10) + toBufferStore",
     () => {
-      Packer.toBufferSync(buildMixed100MbDoc(), { compression: { xml: 0 } });
+      generateDocumentSync(buildMixed100MbDoc(), { compression: { xml: 0 } });
     },
     { iterations: 3 },
   );
@@ -1079,7 +1007,7 @@ describe("DOCX: Large File (~100MB) — Mixed + async vs sync", () => {
   bench(
     "ours default async — mixed (500p, 38img, 50x10) + toBuffer",
     async () => {
-      await Packer.toBuffer(buildMixed100MbDoc());
+      await generateDocument(buildMixed100MbDoc());
     },
     { iterations: 3 },
   );
@@ -1087,7 +1015,7 @@ describe("DOCX: Large File (~100MB) — Mixed + async vs sync", () => {
   bench(
     "ours all-store async — mixed (500p, 38img, 50x10) + toBufferStoreAsync",
     async () => {
-      await Packer.toBuffer(buildMixed100MbDoc(), { compression: { xml: 0 } });
+      await generateDocument(buildMixed100MbDoc(), { compression: { xml: 0 } });
     },
     { iterations: 3 },
   );

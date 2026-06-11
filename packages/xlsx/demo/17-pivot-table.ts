@@ -1,6 +1,6 @@
 import { writeFileSync } from "node:fs";
 
-import { Workbook, Packer, PivotFilterTypeValue } from "@office-open/xlsx";
+import { generateWorkbook, PivotFilterTypeValue } from "@office-open/xlsx";
 
 const funcs = [
   "sum",
@@ -31,7 +31,7 @@ const pivotTables = funcs.map((f, i) => {
   };
 });
 
-const wb = new Workbook({
+const buffer = await generateWorkbook({
   worksheets: [
     {
       name: "Data",
@@ -129,5 +129,4 @@ const wb = new Workbook({
   ],
 });
 
-const buffer = await Packer.toBuffer(wb);
 writeFileSync("My Workbook.xlsx", buffer);

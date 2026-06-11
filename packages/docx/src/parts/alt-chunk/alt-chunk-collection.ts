@@ -1,0 +1,43 @@
+/**
+ * AltChunk collection module for managing alternative format content parts.
+ *
+ * @module
+ */
+
+/**
+ * Stores alternative format chunk data for later serialization by the compiler.
+ */
+export interface AltChunkData {
+  /** Unique key for this alt chunk (e.g., relId) */
+  key: string;
+  /** Raw content data */
+  data: Uint8Array;
+  /** Part sub-path within word/ (e.g., "afchunks/afchunk1.html") */
+  path: string;
+  /** File extension (e.g., "html", "rtf", "txt") */
+  extension: string;
+  /** MIME content type (e.g., "text/html", "application/rtf") */
+  contentType: string;
+}
+
+/**
+ * Manages alternative format chunk parts in a document.
+ *
+ * Stores external content (HTML, RTF, plain text) that will be
+ * serialized into separate parts in the DOCX package.
+ */
+export class AltChunkCollection {
+  private map: Map<string, AltChunkData>;
+
+  public constructor() {
+    this.map = new Map<string, AltChunkData>();
+  }
+
+  public addAltChunk(key: string, data: AltChunkData): void {
+    this.map.set(key, data);
+  }
+
+  public get array(): AltChunkData[] {
+    return [...this.map.values()];
+  }
+}

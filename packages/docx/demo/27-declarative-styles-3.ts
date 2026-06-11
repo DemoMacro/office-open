@@ -1,28 +1,24 @@
+import { writeFileSync } from "node:fs";
 // Custom styles using JavaScript configuration
 
-import * as fs from "fs";
+import { HeadingLevel, UnderlineType, generateDocument } from "@office-open/docx";
 
-import {
-  Document,
-  HeadingLevel,
-  Packer,
-  Paragraph,
-  UnderlineType,
-  convertInchesToTwip,
-} from "@office-open/docx";
-
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Paragraph({
-          style: "myWonkyStyle",
-          text: "Hello",
-        }),
-        new Paragraph({
-          heading: HeadingLevel.HEADING_2,
-          text: "World",
-        }),
+        {
+          paragraph: {
+            style: "myWonkyStyle",
+            text: "Hello",
+          },
+        },
+        {
+          paragraph: {
+            heading: HeadingLevel.HEADING_2,
+            text: "World",
+          },
+        },
       ],
     },
   ],
@@ -35,7 +31,7 @@ const doc = new Document({
         next: "Normal",
         paragraph: {
           indent: {
-            left: convertInchesToTwip(0.5),
+            left: "0.5in",
           },
           spacing: {
             line: 276,
@@ -70,6 +66,4 @@ const doc = new Document({
     ],
   },
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

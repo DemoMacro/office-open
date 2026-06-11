@@ -7,8 +7,8 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import type { XmlComponent } from "../../xml-components";
+import { element } from "@office-open/xml";
+
 import type { ColorTransformOptions } from "./color-transform";
 import { createColorTransforms } from "./color-transform";
 
@@ -17,17 +17,17 @@ import { createColorTransforms } from "./color-transform";
  */
 export interface HslColorOptions {
   /** Hue angle in 60,000ths of a degree (0-21600000) */
-  readonly hue: number;
+  hue: number;
   /** Saturation in 1/1000th of a percent (0-100000) */
-  readonly saturation: number;
+  saturation: number;
   /** Luminance in 1/1000th of a percent (0-100000) */
-  readonly luminance: number;
+  luminance: number;
   /** Optional color transforms */
-  readonly transforms?: ColorTransformOptions;
+  transforms?: ColorTransformOptions;
 }
 
 /**
- * Creates an HSL color element.
+ * Creates an HSL color element as an XML string.
  *
  * Specifies a color using Hue, Saturation, and Luminance values.
  *
@@ -43,15 +43,11 @@ export interface HslColorOptions {
  * </xsd:complexType>
  * ```
  */
-export const createHslColor = (options: HslColorOptions): XmlComponent => {
+export const createHslColor = (options: HslColorOptions): string => {
   const transforms = options.transforms ? createColorTransforms(options.transforms) : [];
-  return new BuilderElement({
-    attributes: {
-      hue: { key: "hue", value: options.hue },
-      lum: { key: "lum", value: options.luminance },
-      sat: { key: "sat", value: options.saturation },
-    },
-    children: transforms,
-    name: "a:hslClr",
-  });
+  return element(
+    "a:hslClr",
+    { hue: options.hue, sat: options.saturation, lum: options.luminance },
+    transforms,
+  );
 };

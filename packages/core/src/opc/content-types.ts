@@ -8,8 +8,6 @@
  *
  * @module
  */
-import { BuilderElement } from "../xml-components";
-import type { XmlComponent } from "../xml-components";
 
 export interface DefaultAttributes {
   readonly contentType: string;
@@ -19,14 +17,10 @@ export interface DefaultAttributes {
 /**
  * Creates a Default element mapping a file extension to a MIME content type.
  */
-export const createDefault = (contentType: string, extension?: string): XmlComponent =>
-  new BuilderElement<DefaultAttributes>({
-    attributes: {
-      contentType: { key: "ContentType", value: contentType },
-      extension: { key: "Extension", value: extension },
-    },
-    name: "Default",
-  });
+export const createDefault = (contentType: string, extension?: string): string =>
+  extension !== undefined
+    ? `<Default ContentType="${contentType}" Extension="${extension}"/>`
+    : `<Default ContentType="${contentType}"/>`;
 
 export interface OverrideAttributes {
   readonly contentType: string;
@@ -36,11 +30,7 @@ export interface OverrideAttributes {
 /**
  * Creates an Override element mapping a specific part path to a MIME content type.
  */
-export const createOverride = (contentType: string, partName?: string): XmlComponent =>
-  new BuilderElement<OverrideAttributes>({
-    attributes: {
-      contentType: { key: "ContentType", value: contentType },
-      partName: { key: "PartName", value: partName },
-    },
-    name: "Override",
-  });
+export const createOverride = (contentType: string, partName?: string): string =>
+  partName !== undefined
+    ? `<Override ContentType="${contentType}" PartName="${partName}"/>`
+    : `<Override ContentType="${contentType}"/>`;

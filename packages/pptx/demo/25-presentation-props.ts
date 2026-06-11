@@ -2,9 +2,10 @@
 
 import * as fs from "fs";
 
-import { Presentation, Shape, Packer, Paragraph, TextRun } from "@office-open/pptx";
+import { generatePresentation } from "@office-open/pptx";
+import type { PresentationOptions } from "@office-open/pptx";
 
-const pres = new Presentation({
+const options: PresentationOptions = {
   title: "Presentation Properties Demo",
   creator: "Demo",
 
@@ -119,28 +120,32 @@ const pres = new Presentation({
   slides: [
     {
       children: [
-        new Shape({
-          x: 100,
-          y: 100,
-          width: 600,
-          height: 200,
-          textBody: {
-            text: "Presentation Properties Demo",
+        {
+          shape: {
+            x: 100,
+            y: 100,
+            width: 600,
+            height: 200,
+            textBody: {
+              text: "Presentation Properties Demo",
+            },
           },
-        }),
+        },
       ],
     },
     {
       children: [
-        new Shape({
-          x: 100,
-          y: 100,
-          width: 600,
-          height: 200,
-          textBody: {
-            children: [new Paragraph({ children: [new TextRun("Slide with full props")] })],
+        {
+          shape: {
+            x: 100,
+            y: 100,
+            width: 600,
+            height: 200,
+            textBody: {
+              children: [{ children: [{ text: "Slide with full props" }] }],
+            },
           },
-        }),
+        },
       ],
       // Slide sync properties (standalone part, not inside p:sld per transitional XSD)
       slideSync: {
@@ -150,7 +155,7 @@ const pres = new Presentation({
       },
     },
   ],
-});
+};
 
-const buffer = await Packer.toBuffer(pres);
+const buffer = await generatePresentation(options);
 fs.writeFileSync("My Presentation.pptx", buffer);

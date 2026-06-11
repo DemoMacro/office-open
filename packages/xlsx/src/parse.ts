@@ -8,17 +8,12 @@ import type { ParsedArchive } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
 import type { DataType } from "@office-open/core";
 import type { Element } from "@office-open/xml";
-import { attr, attrNum, findChild, textOf } from "@office-open/xml";
+import { attr, findChild, textOf } from "@office-open/xml";
+import { worksheetDesc } from "@parts/worksheet";
+import type { WorksheetOptions } from "@parts/worksheet";
+import type { WorkbookOptions } from "@shared/file";
 
-import type { WorkbookOptions } from "./file/file";
-import type {
-  WorksheetOptions,
-  RowOptions,
-  CellOptions,
-  ColumnOptions,
-  MergeCellOptions,
-} from "./file/worksheet";
-import { letterToColumn } from "./util";
+import { XlsxReadContext } from "./context";
 
 export { parseArchive };
 
@@ -146,159 +141,6 @@ function parseSharedStrings(el: Element | undefined): string[] {
   return strings;
 }
 
-// ── Cell reference helpers ──
-
-function colFromRef(ref: string): number {
-  const match = ref.match(/^([A-Z]+)/);
-  return match ? letterToColumn(match[1]) : 1;
-}
-
-function rowFromRef(ref: string): number {
-  const match = ref.match(/(\d+)$/);
-  return match ? parseInt(match[1], 10) : 1;
-}
-
-// ── Worksheet parsing ──
-
-function parseWorksheetElement(wsEl: Element, strings: string[]): WorksheetOptions {
-  const opts: Record<string, unknown> = {};
-
-  // Sheet name from the parent workbook's sheet element (not available here)
-  // Caller should set it
-
-  // Columns
-  // Elements might be prefixed or unprefixed depending on how the XML parser handles default namespaces.
-  const colsEl = findChild(wsEl, "cols") ?? findChildByLocalName(wsEl, "cols");
-  if (colsEl) {
-    const columns: ColumnOptions[] = [];
-    for (const col of colsEl.elements ?? []) {
-      if (localName(col) !== "col") continue;
-      const min = attrNum(col, "min");
-      const max = attrNum(col, "max");
-      if (min === undefined || max === undefined) continue;
-      const colOpts: Record<string, unknown> = { min, max };
-      const width = attrNum(col, "width");
-      if (width !== undefined) colOpts.width = width;
-      if (attr(col, "hidden") === "1") colOpts.hidden = true;
-      columns.push(colOpts as unknown as ColumnOptions);
-    }
-    if (columns.length > 0) opts.columns = columns;
-  }
-
-  // Freeze panes
-  const sheetViews = findChildByLocalName(wsEl, "sheetViews");
-  if (sheetViews) {
-    const sheetView = findChildByLocalName(sheetViews, "sheetView");
-    if (sheetView) {
-      const pane = findChildByLocalName(sheetView, "pane");
-      if (pane) {
-        const state = attr(pane, "state");
-        if (state === "frozen") {
-          const freezePanes: Record<string, unknown> = {};
-          const ySplit = attrNum(pane, "ySplit");
-          const xSplit = attrNum(pane, "xSplit");
-          if (ySplit && ySplit > 0) freezePanes.row = ySplit;
-          if (xSplit && xSplit > 0) freezePanes.col = xSplit;
-          if (Object.keys(freezePanes).length > 0) opts.freezePanes = freezePanes;
-        }
-      }
-    }
-  }
-
-  // Sheet data (rows)
-  const sheetData = findChildByLocalName(wsEl, "sheetData");
-  const rows: RowOptions[] = [];
-  if (sheetData) {
-    for (const rowEl of sheetData.elements ?? []) {
-      if (localName(rowEl) !== "row") continue;
-      const rowNumber = attrNum(rowEl, "r");
-      const rowOpts: Record<string, unknown> = {};
-      if (rowNumber !== undefined) rowOpts.rowNumber = rowNumber;
-
-      const ht = attrNum(rowEl, "ht");
-      if (ht !== undefined) rowOpts.height = ht;
-      if (attr(rowEl, "hidden") === "1") rowOpts.hidden = true;
-
-      const cells: CellOptions[] = [];
-      for (const cellEl of rowEl.elements ?? []) {
-        if (localName(cellEl) !== "c") continue;
-        const ref = attr(cellEl, "r");
-        const type = attr(cellEl, "t");
-        const cellOpts: Record<string, unknown> = {};
-        if (ref) cellOpts.reference = ref;
-
-        const styleIdx = attrNum(cellEl, "s");
-        if (styleIdx !== undefined) cellOpts.styleIndex = styleIdx;
-
-        // Cell value
-        const vEl = findChildByLocalName(cellEl, "v");
-        const isEl = findChildByLocalName(cellEl, "is");
-
-        if (type === "s" && vEl) {
-          // Shared string
-          const idx = parseInt(textOf(vEl) ?? "", 10);
-          cellOpts.value = strings[idx] ?? "";
-        } else if (type === "b" && vEl) {
-          cellOpts.value = textOf(vEl) === "1";
-        } else if (type === "inlineStr" && isEl) {
-          const t = findChildByLocalName(isEl, "t");
-          cellOpts.value = textOf(t) ?? "";
-        } else if (vEl) {
-          const raw = textOf(vEl) ?? "";
-          const num = Number(raw);
-          cellOpts.value = isNaN(num) ? raw : num;
-        }
-
-        cells.push(cellOpts as CellOptions);
-      }
-
-      rowOpts.cells = cells;
-      rows.push(rowOpts as RowOptions);
-    }
-  }
-  opts.rows = rows;
-
-  // Merge cells
-  const mergeCellsEl = findChildByLocalName(wsEl, "mergeCells");
-  if (mergeCellsEl) {
-    const mergeCells: MergeCellOptions[] = [];
-    for (const mc of mergeCellsEl.elements ?? []) {
-      if (localName(mc) !== "mergeCell") continue;
-      const ref = attr(mc, "ref");
-      if (!ref) continue;
-      const parts = ref.split(":");
-      if (parts.length === 2) {
-        mergeCells.push({
-          from: { row: rowFromRef(parts[0]), col: colFromRef(parts[0]) },
-          to: { row: rowFromRef(parts[1]), col: colFromRef(parts[1]) },
-        });
-      }
-    }
-    if (mergeCells.length > 0) opts.mergeCells = mergeCells;
-  }
-
-  // Auto filter
-  const autoFilterEl = findChildByLocalName(wsEl, "autoFilter");
-  if (autoFilterEl) {
-    const ref = attr(autoFilterEl, "ref");
-    if (ref) opts.autoFilter = ref;
-  }
-
-  return opts as WorksheetOptions;
-}
-
-// ── Helpers ──
-
-function localName(el: Element): string {
-  const name = el.name ?? "";
-  const colonIdx = name.indexOf(":");
-  return colonIdx >= 0 ? name.slice(colonIdx + 1) : name;
-}
-
-function findChildByLocalName(parent: Element, name: string): Element | undefined {
-  return (parent.elements ?? []).find((el) => localName(el) === name);
-}
-
 /**
  * Parse a .xlsx file and convert it into WorkbookOptions.
  *
@@ -327,26 +169,29 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
   // Shared strings
   const strings = parseSharedStrings(xlsx.sharedStrings);
 
+  // Create read context for descriptor pipeline
+  const readContext = new XlsxReadContext(xlsx, strings);
+
   // Sheet names from workbook
   const sheetNames: string[] = [];
   if (xlsx.workbook) {
-    const sheetsEl = findChildByLocalName(xlsx.workbook, "sheets");
+    const sheetsEl = findChild(xlsx.workbook, "sheets");
     if (sheetsEl) {
       for (const s of sheetsEl.elements ?? []) {
-        if (localName(s) !== "sheet") continue;
+        if (s.name !== "sheet") continue;
         sheetNames.push(attr(s, "name") ?? "");
       }
     }
   }
 
-  // Parse worksheets
+  // Parse worksheets using descriptor pipeline
   const worksheets: WorksheetOptions[] = [];
   for (let i = 0; i < xlsx.worksheets.length; i++) {
     const wsPath = xlsx.worksheets[i];
     const wsEl = xlsx.doc.get(wsPath);
     if (!wsEl) continue;
 
-    const wsOpts = parseWorksheetElement(wsEl, strings) as Record<string, unknown>;
+    const wsOpts = worksheetDesc.parse(wsEl, readContext) as Record<string, unknown>;
     if (sheetNames[i]) wsOpts.name = sheetNames[i];
     worksheets.push(wsOpts as WorksheetOptions);
   }

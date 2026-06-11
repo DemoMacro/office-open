@@ -1,27 +1,27 @@
 // Simple example to add text to a document
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import { AlignmentType, Document, Packer, Paragraph, TextRun } from "@office-open/docx";
+import { AlignmentType, generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Paragraph({
-          alignment: AlignmentType.THAI_DISTRIBUTE,
-          children: [
-            new TextRun({
-              size: 36,
-              text: "บริษัท บิสกิด จำกัด (บริษัทฯ) ได้จดทะเบียนจัดตั้งขึ้นเป็นบริษัทจำกัดตามประมวลกฎหมายแพ่งและพาณิชย์ของประเทศไทย เมื่อวันที่ 30 พฤษภาคม 2561 ทะเบียนนิติบุคคลเลขที่ 0845561005665",
-            }),
-          ],
-        }),
+        {
+          paragraph: {
+            alignment: AlignmentType.THAI_DISTRIBUTE,
+            children: [
+              {
+                size: 36,
+                text: "บริษัท บิสกิด จำกัด (บริษัทฯ) ได้จดทะเบียนจัดตั้งขึ้นเป็นบริษัทจำกัดตามประมวลกฎหมายแพ่งและพาณิชย์ของประเทศไทย เมื่อวันที่ 30 พฤษภาคม 2561 ทะเบียนนิติบุคคลเลขที่ 0845561005665",
+              },
+            ],
+          },
+        },
       ],
       properties: {},
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

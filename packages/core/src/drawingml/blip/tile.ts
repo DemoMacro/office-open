@@ -7,8 +7,9 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import { xsdRectAlignment } from "../../xsd-mappings";
+import { element } from "@office-open/xml";
+
+import { xsdRectAlignment } from "../../util/mappings";
 
 /**
  * Tile flip mode for tiling images.
@@ -60,17 +61,17 @@ export const TileAlignment = {
  */
 export interface TileOptions {
   /** Horizontal offset for the tile origin (in EMUs) */
-  readonly tx?: number;
+  tx?: number;
   /** Vertical offset for the tile origin (in EMUs) */
-  readonly ty?: number;
+  ty?: number;
   /** Horizontal scale factor as percentage (e.g., 50 = 50%) */
-  readonly sx?: number;
+  sx?: number;
   /** Vertical scale factor as percentage (e.g., 50 = 50%) */
-  readonly sy?: number;
+  sy?: number;
   /** Flip mode for alternating tiles */
-  readonly flip?: (typeof TileFlipMode)[keyof typeof TileFlipMode];
+  flip?: (typeof TileFlipMode)[keyof typeof TileFlipMode];
   /** Alignment of the first tile within the shape */
-  readonly align?: (typeof TileAlignment)[keyof typeof TileAlignment];
+  align?: (typeof TileAlignment)[keyof typeof TileAlignment];
 }
 
 /**
@@ -102,37 +103,18 @@ export interface TileOptions {
  * createTileInfo({ flip: "XY", align: "CENTER" });
  * ```
  */
-export const createTileInfo = (options?: TileOptions) => {
+export const createTileInfo = (options?: TileOptions): string => {
   if (!options) {
-    return new BuilderElement({ name: "a:tile" });
+    return `<a:tile/>`;
   }
 
-  const attributes: Record<string, { readonly key: string; readonly value: string | number }> = {};
+  const attrs: Record<string, string | number | undefined> = {};
+  if (options.tx !== undefined) attrs.tx = options.tx;
+  if (options.ty !== undefined) attrs.ty = options.ty;
+  if (options.sx !== undefined) attrs.sx = options.sx;
+  if (options.sy !== undefined) attrs.sy = options.sy;
+  if (options.flip !== undefined) attrs.flip = options.flip;
+  if (options.align !== undefined) attrs.algn = xsdRectAlignment.to(options.align);
 
-  if (options.tx !== undefined) {
-    attributes.tx = { key: "tx", value: options.tx };
-  }
-  if (options.ty !== undefined) {
-    attributes.ty = { key: "ty", value: options.ty };
-  }
-  if (options.sx !== undefined) {
-    attributes.sx = { key: "sx", value: options.sx };
-  }
-  if (options.sy !== undefined) {
-    attributes.sy = { key: "sy", value: options.sy };
-  }
-  if (options.flip !== undefined) {
-    attributes.flip = { key: "flip", value: options.flip };
-  }
-  if (options.align !== undefined) {
-    attributes.algn = {
-      key: "algn",
-      value: xsdRectAlignment.to(options.align),
-    };
-  }
-
-  return new BuilderElement({
-    attributes: Object.keys(attributes).length > 0 ? (attributes as never) : undefined,
-    name: "a:tile",
-  });
+  return element("a:tile", attrs);
 };

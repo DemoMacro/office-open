@@ -8,9 +8,11 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import type { XmlComponent } from "../../xml-components";
-import { xsdCompoundLine, xsdLineCap, xsdPenAlignment } from "../../xsd-mappings";
+import type { UniversalMeasure } from "@office-open/core";
+import { convertToEmu } from "@office-open/core";
+import { element } from "@office-open/xml";
+
+import { xsdCompoundLine, xsdLineCap, xsdPenAlignment } from "../../util/mappings";
 import { createSolidFill } from "../color/solid-fill";
 import type { SolidFillOptions } from "../color/solid-fill";
 import { createGradientFill } from "../fill/gradient-fill";
@@ -153,34 +155,34 @@ export const LineJoin = {
  * Attributes for configuring outline properties.
  */
 export interface OutlineAttributes {
-  /** Line width in EMUs (English Metric Units) */
-  readonly width?: number;
+  /** Line width in EMUs (English Metric Units) or universal measure (e.g., "1pt", "2mm") */
+  width?: number | UniversalMeasure;
   /** Line cap style */
-  readonly cap?: (typeof LineCap)[keyof typeof LineCap];
+  cap?: (typeof LineCap)[keyof typeof LineCap];
   /** Compound line type */
-  readonly compoundLine?: (typeof CompoundLine)[keyof typeof CompoundLine];
+  compoundLine?: (typeof CompoundLine)[keyof typeof CompoundLine];
   /** Pen alignment */
-  readonly align?: (typeof PenAlignment)[keyof typeof PenAlignment];
+  align?: (typeof PenAlignment)[keyof typeof PenAlignment];
   /**
    * Preset dash style.
    *
    * Mutually exclusive with `customDash` — only one can be specified.
    */
-  readonly dash?: (typeof PresetDash)[keyof typeof PresetDash];
+  dash?: (typeof PresetDash)[keyof typeof PresetDash];
   /**
    * Custom dash pattern (list of dash/space stops).
    *
    * Mutually exclusive with `dash` — only one can be specified.
    */
-  readonly customDash?: readonly DashStop[];
+  customDash?: readonly DashStop[];
   /** Line join style */
-  readonly join?: (typeof LineJoin)[keyof typeof LineJoin];
+  join?: (typeof LineJoin)[keyof typeof LineJoin];
   /** Miter limit (only when join is MITER) */
-  readonly miterLimit?: number;
+  miterLimit?: number;
   /** Line start arrow/head */
-  readonly headEnd?: LineEndOptions;
+  headEnd?: LineEndOptions;
   /** Line end arrow/tail */
-  readonly tailEnd?: LineEndOptions;
+  tailEnd?: LineEndOptions;
 }
 
 /**
@@ -191,13 +193,13 @@ export interface OutlineAttributes {
  */
 export interface OutlineFillProperties {
   /** Fill type */
-  readonly type?: "noFill" | "solidFill" | "gradFill" | "pattFill";
+  type?: "noFill" | "solidFill" | "gradFill" | "pattFill";
   /** Color definition (required when type is "solidFill") */
-  readonly color?: SolidFillOptions;
+  color?: SolidFillOptions;
   /** Gradient fill options (required when type is "gradFill") */
-  readonly gradientFill?: GradientFillOptions;
+  gradientFill?: GradientFillOptions;
   /** Pattern fill options (required when type is "pattFill") */
-  readonly patternFill?: PatternFillOptions;
+  patternFill?: PatternFillOptions;
 }
 
 /**
@@ -212,7 +214,7 @@ export type OutlineOptions = OutlineAttributes & OutlineFillProperties;
  *
  * Returns null when no fill type is specified (OOXML allows outline without fill).
  */
-const createOutlineFill = (options: OutlineOptions): XmlComponent | null => {
+const createOutlineFill = (options: OutlineOptions): string | null => {
   if (options.type === "noFill") {
     return createNoFill();
   }
@@ -260,8 +262,8 @@ const createOutlineFill = (options: OutlineOptions): XmlComponent | null => {
  * });
  * ```
  */
-export const createOutline = (options: OutlineOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+export const createOutline = (options: OutlineOptions): string => {
+  const children: string[] = [];
 
   // Fill (optional per OOXML spec)
   const fill = createOutlineFill(options);
@@ -273,33 +275,15 @@ export const createOutline = (options: OutlineOptions): XmlComponent => {
   if (options.customDash !== undefined) {
     children.push(createCustomDash(options.customDash));
   } else if (options.dash !== undefined) {
-    children.push(
-      new BuilderElement<{ readonly val: string }>({
-        attributes: {
-          val: { key: "val", value: options.dash },
-        },
-        name: "a:prstDash",
-      }),
-    );
+    children.push(`<a:prstDash val="${options.dash}"/>`);
   }
 
   // Join
   if (options.join !== undefined) {
     if (options.join === "miter" && options.miterLimit !== undefined) {
-      children.push(
-        new BuilderElement<{ readonly lim: number }>({
-          attributes: {
-            lim: { key: "lim", value: options.miterLimit },
-          },
-          name: "a:miter",
-        }),
-      );
+      children.push(`<a:miter lim="${options.miterLimit}"/>`);
     } else {
-      children.push(
-        new BuilderElement({
-          name: `a:${options.join}`,
-        }),
-      );
+      children.push(`<a:${options.join}/>`);
     }
   }
 
@@ -311,26 +295,14 @@ export const createOutline = (options: OutlineOptions): XmlComponent => {
     children.push(createLineEnd("a:tailEnd", options.tailEnd));
   }
 
-  return new BuilderElement({
-    attributes: {
-      align: {
-        key: "algn",
-        value: options.align ? xsdPenAlignment.to(options.align) : undefined,
-      },
-      cap: {
-        key: "cap",
-        value: options.cap ? xsdLineCap.to(options.cap) : undefined,
-      },
-      compoundLine: {
-        key: "cmpd",
-        value: options.compoundLine ? xsdCompoundLine.to(options.compoundLine) : undefined,
-      },
-      width: {
-        key: "w",
-        value: options.width,
-      },
+  return element(
+    "a:ln",
+    {
+      algn: options.align ? xsdPenAlignment.to(options.align) : undefined,
+      cap: options.cap ? xsdLineCap.to(options.cap) : undefined,
+      cmpd: options.compoundLine ? xsdCompoundLine.to(options.compoundLine) : undefined,
+      w: options.width !== undefined ? convertToEmu(options.width) : undefined,
     },
     children,
-    name: "a:ln",
-  });
+  );
 };

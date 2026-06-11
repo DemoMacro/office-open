@@ -5,9 +5,9 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import type { XmlComponent } from "../../xml-components";
-import { xsdMaterialType } from "../../xsd-mappings";
+import { element } from "@office-open/xml";
+
+import { xsdMaterialType } from "../../util/mappings";
 import { createColorElement } from "../color/solid-fill";
 import type { SolidFillOptions } from "../color/solid-fill";
 import { createBevel, createBottomBevel } from "./bevel";
@@ -41,21 +41,21 @@ export const PresetMaterialType = {
  */
 export interface Shape3DOptions {
   /** Top bevel options */
-  readonly bevelT?: BevelOptions;
+  bevelT?: BevelOptions;
   /** Bottom bevel options */
-  readonly bevelB?: BevelOptions;
+  bevelB?: BevelOptions;
   /** Extrusion color (CT_Color / EG_ColorChoice) */
-  readonly extrusionColor?: SolidFillOptions;
+  extrusionColor?: SolidFillOptions;
   /** Contour color (CT_Color / EG_ColorChoice) */
-  readonly contourColor?: SolidFillOptions;
+  contourColor?: SolidFillOptions;
   /** Depth in EMUs (default 0) */
-  readonly z?: number;
+  z?: number;
   /** Extrusion height in EMUs (default 0) */
-  readonly extrusionH?: number;
+  extrusionH?: number;
   /** Contour width in EMUs (default 0) */
-  readonly contourW?: number;
+  contourW?: number;
   /** Material preset type */
-  readonly prstMaterial?: (typeof PresetMaterialType)[keyof typeof PresetMaterialType];
+  prstMaterial?: (typeof PresetMaterialType)[keyof typeof PresetMaterialType];
 }
 
 /**
@@ -77,8 +77,8 @@ export interface Shape3DOptions {
  * </xsd:complexType>
  * ```
  */
-export const createShape3D = (options: Shape3DOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+export const createShape3D = (options: Shape3DOptions): string => {
+  const children: string[] = [];
 
   if (options.bevelT) {
     children.push(createBevel(options.bevelT));
@@ -88,48 +88,19 @@ export const createShape3D = (options: Shape3DOptions): XmlComponent => {
   }
   if (options.extrusionColor) {
     children.push(
-      new BuilderElement({
-        children: [createColorElement(options.extrusionColor)],
-        name: "a:extrusionClr",
-      }),
+      element("a:extrusionClr", undefined, [createColorElement(options.extrusionColor)]),
     );
   }
   if (options.contourColor) {
-    children.push(
-      new BuilderElement({
-        children: [createColorElement(options.contourColor)],
-        name: "a:contourClr",
-      }),
-    );
+    children.push(element("a:contourClr", undefined, [createColorElement(options.contourColor)]));
   }
 
-  const hasAttributes =
-    options.z !== undefined ||
-    options.extrusionH !== undefined ||
-    options.contourW !== undefined ||
-    options.prstMaterial !== undefined;
+  const attrs: Record<string, string | number> = {};
+  if (options.z !== undefined) attrs.z = options.z;
+  if (options.extrusionH !== undefined) attrs.extrusionH = options.extrusionH;
+  if (options.contourW !== undefined) attrs.contourW = options.contourW;
+  if (options.prstMaterial !== undefined)
+    attrs.prstMaterial = xsdMaterialType.to(options.prstMaterial);
 
-  const attributePayload = hasAttributes
-    ? {
-        ...(options.z !== undefined && { z: { key: "z", value: options.z } }),
-        ...(options.extrusionH !== undefined && {
-          extrusionH: { key: "extrusionH", value: options.extrusionH },
-        }),
-        ...(options.contourW !== undefined && {
-          contourW: { key: "contourW", value: options.contourW },
-        }),
-        ...(options.prstMaterial !== undefined && {
-          prstMaterial: {
-            key: "prstMaterial",
-            value: xsdMaterialType.to(options.prstMaterial),
-          },
-        }),
-      }
-    : undefined;
-
-  return new BuilderElement({
-    attributes: attributePayload as never,
-    children,
-    name: "a:sp3d",
-  });
+  return element("a:sp3d", attrs, children);
 };

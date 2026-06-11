@@ -1,8 +1,9 @@
 import * as fs from "fs";
 
-import { Presentation, Shape, Packer } from "@office-open/pptx";
+import { generatePresentation } from "@office-open/pptx";
+import type { PresentationOptions } from "@office-open/pptx";
 
-const pres = new Presentation({
+const options: PresentationOptions = {
   title: "Theme Demo",
   creator: "Demo",
   masters: [
@@ -31,28 +32,32 @@ const pres = new Presentation({
   slides: [
     {
       children: [
-        new Shape({
-          x: 100,
-          y: 100,
-          width: 600,
-          height: 300,
-          textBody: { text: "Custom Theme" },
-          geometry: "rect",
-          fill: "0F3460",
-        }),
-        new Shape({
-          x: 100,
-          y: 450,
-          width: 600,
-          height: 100,
-          textBody: { text: "Accent2 highlight" },
-          geometry: "rect",
-          fill: "E94560",
-        }),
+        {
+          shape: {
+            x: 100,
+            y: 100,
+            width: 600,
+            height: 300,
+            textBody: { text: "Custom Theme" },
+            geometry: "rect",
+            fill: "0F3460",
+          },
+        },
+        {
+          shape: {
+            x: 100,
+            y: 450,
+            width: 600,
+            height: 100,
+            textBody: { text: "Accent2 highlight" },
+            geometry: "rect",
+            fill: "E94560",
+          },
+        },
       ],
     },
   ],
-});
+};
 
-const buffer = await Packer.toBuffer(pres);
+const buffer = await generatePresentation(options);
 fs.writeFileSync("My Presentation.pptx", buffer);

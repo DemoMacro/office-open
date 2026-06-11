@@ -1,17 +1,14 @@
 // Generate a CV
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
+import type { DocumentOptions, SectionChild } from "@office-open/docx";
 import {
   AlignmentType,
-  Document,
   HeadingLevel,
-  Packer,
-  Paragraph,
-  Tab,
   TabStopPosition,
   TabStopType,
-  TextRun,
+  generateDocument,
 } from "@office-open/docx";
 
 const PHONE_NUMBER = "07534563401";
@@ -181,20 +178,22 @@ class DocumentCreator {
     Education[],
     Skill[],
     Achievement[],
-  ]): Document {
-    const document = new Document({
+  ]): DocumentOptions {
+    return {
       sections: [
         {
           children: [
-            new Paragraph({
-              heading: HeadingLevel.TITLE,
-              text: "Dolan Miu",
-            }),
+            {
+              paragraph: {
+                heading: HeadingLevel.TITLE,
+                text: "Dolan Miu",
+              },
+            },
             this.createContactInfo(PHONE_NUMBER, PROFILE_URL, EMAIL),
             this.createHeading("Education"),
             ...educations
               .map((education) => {
-                const arr: Paragraph[] = [];
+                const arr: SectionChild[] = [];
                 arr.push(
                   this.createInstitutionHeader(
                     education.schoolName,
@@ -214,7 +213,7 @@ class DocumentCreator {
             this.createHeading("Experience"),
             ...experiences
               .map((position) => {
-                const arr: Paragraph[] = [];
+                const arr: SectionChild[] = [];
 
                 arr.push(
                   this.createInstitutionHeader(
@@ -247,113 +246,132 @@ class DocumentCreator {
               "Programming, Technology, Music Production, Web Design, 3D Modelling, Dancing.",
             ),
             this.createHeading("References"),
-            new Paragraph(
-              "Dr. Dean Mohamedally Director of Postgraduate Studies Department of Computer Science, University College London Malet Place, Bloomsbury, London WC1E d.mohamedally@ucl.ac.uk",
-            ),
-            new Paragraph("More references upon request"),
-            new Paragraph({
-              alignment: AlignmentType.CENTER,
-              text: "This CV was generated in real-time based on my Linked-In profile from my personal website www.dolan.bio.",
-            }),
+            {
+              paragraph:
+                "Dr. Dean Mohamedally Director of Postgraduate Studies Department of Computer Science, University College London Malet Place, Bloomsbury, London WC1E d.mohamedally@ucl.ac.uk",
+            },
+            { paragraph: "More references upon request" },
+            {
+              paragraph: {
+                alignment: AlignmentType.CENTER,
+                text: "This CV was generated in real-time based on my Linked-In profile from my personal website www.dolan.bio.",
+              },
+            },
           ],
         },
       ],
-    });
-
-    return document;
+    };
   }
 
-  public createContactInfo(phoneNumber: string, profileUrl: string, email: string): Paragraph {
-    return new Paragraph({
-      alignment: AlignmentType.CENTER,
-      children: [
-        new TextRun(`Mobile: ${phoneNumber} | LinkedIn: ${profileUrl} | Email: ${email}`),
-        new TextRun({
-          break: 1,
-          text: "Address: 58 Elm Avenue, Kent ME4 6ER, UK",
-        }),
-      ],
-    });
-  }
-
-  public createHeading(text: string): Paragraph {
-    return new Paragraph({
-      heading: HeadingLevel.HEADING_1,
-      text: text,
-      thematicBreak: true,
-    });
-  }
-
-  public createSubHeading(text: string): Paragraph {
-    return new Paragraph({
-      heading: HeadingLevel.HEADING_2,
-      text: text,
-    });
-  }
-
-  public createInstitutionHeader(institutionName: string, dateText: string): Paragraph {
-    return new Paragraph({
-      children: [
-        new TextRun({
-          bold: true,
-          text: institutionName,
-        }),
-        new TextRun({
-          bold: true,
-          children: [new Tab(), dateText],
-        }),
-      ],
-      tabStops: [
-        {
-          position: TabStopPosition.MAX,
-          type: TabStopType.RIGHT,
-        },
-      ],
-    });
-  }
-
-  public createRoleText(roleText: string): Paragraph {
-    return new Paragraph({
-      children: [
-        new TextRun({
-          italics: true,
-          text: roleText,
-        }),
-      ],
-    });
-  }
-
-  public createBullet(text: string): Paragraph {
-    return new Paragraph({
-      bullet: {
-        level: 0,
+  public createContactInfo(phoneNumber: string, profileUrl: string, email: string): SectionChild {
+    return {
+      paragraph: {
+        alignment: AlignmentType.CENTER,
+        children: [
+          `Mobile: ${phoneNumber} | LinkedIn: ${profileUrl} | Email: ${email}`,
+          {
+            break: 1,
+            text: "Address: 58 Elm Avenue, Kent ME4 6ER, UK",
+          },
+        ],
       },
-      text: text,
-    });
+    };
   }
 
-  public createSkillList(skills: any[]): Paragraph {
-    return new Paragraph({
-      children: [new TextRun(skills.map((skill) => skill.name).join(", ") + ".")],
-    });
+  public createHeading(text: string): SectionChild {
+    return {
+      paragraph: {
+        heading: HeadingLevel.HEADING_1,
+        text: text,
+        thematicBreak: true,
+      },
+    };
   }
 
-  public createAchievementsList(achievements: any[]): Paragraph[] {
+  public createSubHeading(text: string): SectionChild {
+    return {
+      paragraph: {
+        heading: HeadingLevel.HEADING_2,
+        text: text,
+      },
+    };
+  }
+
+  public createInstitutionHeader(institutionName: string, dateText: string): SectionChild {
+    return {
+      paragraph: {
+        children: [
+          {
+            bold: true,
+            text: institutionName,
+          },
+          {
+            bold: true,
+            children: [{ tab: true }, dateText],
+          },
+        ],
+        tabStops: [
+          {
+            position: TabStopPosition.MAX,
+            type: TabStopType.RIGHT,
+          },
+        ],
+      },
+    };
+  }
+
+  public createRoleText(roleText: string): SectionChild {
+    return {
+      paragraph: {
+        children: [
+          {
+            italics: true,
+            text: roleText,
+          },
+        ],
+      },
+    };
+  }
+
+  public createBullet(text: string): SectionChild {
+    return {
+      paragraph: {
+        bullet: {
+          level: 0,
+        },
+        text: text,
+      },
+    };
+  }
+
+  public createSkillList(skills: any[]): SectionChild {
+    return {
+      paragraph: {
+        children: [skills.map((skill) => skill.name).join(", ") + "."],
+      },
+    };
+  }
+
+  public createAchievementsList(achievements: any[]): SectionChild[] {
     return achievements.map(
       (achievement) =>
-        new Paragraph({
-          bullet: {
-            level: 0,
+        ({
+          paragraph: {
+            bullet: {
+              level: 0,
+            },
+            text: achievement.name,
           },
-          text: achievement.name,
-        }),
+        }) as SectionChild,
     );
   }
 
-  public createInterests(interests: string): Paragraph {
-    return new Paragraph({
-      children: [new TextRun(interests)],
-    });
+  public createInterests(interests: string): SectionChild {
+    return {
+      paragraph: {
+        children: [interests],
+      },
+    };
   }
 
   public splitParagraphIntoBullets(text: string): string[] {
@@ -416,7 +434,7 @@ class DocumentCreator {
 
 const documentCreator = new DocumentCreator();
 
-const doc = documentCreator.create([experiences, education, skills, achievements]);
+const options = documentCreator.create([experiences, education, skills, achievements]);
 
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+const buffer = await generateDocument(options);
+writeFileSync("My Document.docx", buffer);

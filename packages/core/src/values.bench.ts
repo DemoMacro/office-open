@@ -1,12 +1,13 @@
+import { element } from "@office-open/xml";
 import { describe, bench } from "vite-plus/test";
 
-import { convertMillimetersToTwip, convertInchesToTwip } from "./converters";
-import { uniqueId, uniqueUuid, hashedId, uniqueNumericIdCreator } from "./id-generators";
-import { decimalNumber, hexColorValue, hpsMeasureValue, universalMeasureValue } from "./values";
-import type { Context } from "./xml-components/base";
-import { BuilderElement, stringContainerObj, onOffObj } from "./xml-components/elements";
-
-const ctx: Context = { stack: [] };
+import { uniqueId, uniqueUuid, hashedId, uniqueNumericIdCreator } from "./util/generators";
+import {
+  decimalNumber,
+  hexColorValue,
+  hpsMeasureValue,
+  universalMeasureValue,
+} from "./util/values";
 
 describe("values validators", () => {
   bench("decimalNumber", () => {
@@ -28,20 +29,6 @@ describe("values validators", () => {
   bench("hpsMeasureValue (number)", () => {
     hpsMeasureValue(24);
   });
-
-  bench("hpsMeasureValue (string)", () => {
-    hpsMeasureValue("12pt");
-  });
-});
-
-describe("converters", () => {
-  bench("convertMillimetersToTwip", () => {
-    convertMillimetersToTwip(25.4);
-  });
-
-  bench("convertInchesToTwip", () => {
-    convertInchesToTwip(1);
-  });
 });
 
 describe("id generators", () => {
@@ -57,32 +44,22 @@ describe("id generators", () => {
     hashedId("benchmark-test-input");
   });
 
-  bench("uniqueNumericIdCreator", () => {
-    const gen = uniqueNumericIdCreator();
-    gen();
+  const numericId = uniqueNumericIdCreator();
+  bench("uniqueNumericId", () => {
+    numericId();
   });
 });
 
-describe("xml component toXml", () => {
-  bench("onOffObj (true)", () => {
-    onOffObj("w:b", true);
+describe("xml element builder", () => {
+  bench("element self-closing", () => {
+    element("w:b");
   });
 
-  bench("onOffObj (false)", () => {
-    onOffObj("w:b", false);
+  bench("element with attributes", () => {
+    element("w:pPr", { "w:val": "Heading1" });
   });
 
-  bench("BuilderElement with attributes", () => {
-    new BuilderElement({
-      name: "w:pPr",
-      attributes: { style: { key: "w:val", value: "Heading1" } },
-    }).toXml(ctx);
-  });
-
-  bench("BuilderElement with children", () => {
-    new BuilderElement({
-      name: "w:p",
-      children: [stringContainerObj("w:t", "Hello World")],
-    }).toXml(ctx);
+  bench("element with children", () => {
+    element("w:p", undefined, ["Hello World"]);
   });
 });

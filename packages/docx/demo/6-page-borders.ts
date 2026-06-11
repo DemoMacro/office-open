@@ -1,32 +1,36 @@
 // Example of how to change page borders
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import { Document, HeadingLevel, Packer, Paragraph, Tab, TextRun } from "@office-open/docx";
+import { generateDocument, HeadingLevel } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [
-            new TextRun("Hello World"),
-            new TextRun({
-              bold: true,
-              text: "Foo bar",
-            }),
-            new TextRun({
-              bold: true,
-              children: [new Tab(), "Github is the best"],
-            }),
-          ],
-        }),
-        new Paragraph({
-          heading: HeadingLevel.HEADING_1,
-          text: "Hello World",
-        }),
-        new Paragraph("Foo bar"),
-        new Paragraph("Github is the best"),
+        {
+          paragraph: {
+            children: [
+              "Hello World",
+              {
+                bold: true,
+                text: "Foo bar",
+              },
+              {
+                bold: true,
+                children: [{ tab: true }, "Github is the best"],
+              },
+            ],
+          },
+        },
+        {
+          paragraph: {
+            heading: HeadingLevel.HEADING_1,
+            text: "Hello World",
+          },
+        },
+        { paragraph: "Foo bar" },
+        { paragraph: "Github is the best" },
       ],
       properties: {
         page: {
@@ -41,6 +45,4 @@ const doc = new Document({
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

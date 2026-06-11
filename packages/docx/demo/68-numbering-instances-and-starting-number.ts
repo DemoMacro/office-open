@@ -1,8 +1,8 @@
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import { Document, LevelFormat, Packer, Paragraph } from "@office-open/docx";
+import { LevelFormat, generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   numbering: {
     config: [
       {
@@ -31,58 +31,68 @@ const doc = new Document({
   sections: [
     {
       children: [
-        new Paragraph({
-          numbering: {
-            instance: 0,
-            level: 0,
-            reference: "ref1",
+        {
+          paragraph: {
+            numbering: {
+              instance: 0,
+              level: 0,
+              reference: "ref1",
+            },
+            text: "REF1 - inst:0 - lvl:0",
           },
-          text: "REF1 - inst:0 - lvl:0",
-        }),
-        new Paragraph({
-          numbering: {
-            instance: 0,
-            level: 0,
-            reference: "ref1",
+        },
+        {
+          paragraph: {
+            numbering: {
+              instance: 0,
+              level: 0,
+              reference: "ref1",
+            },
+            text: "REF1 - inst:0 - lvl:0",
           },
-          text: "REF1 - inst:0 - lvl:0",
-        }),
-        new Paragraph({
-          numbering: {
-            instance: 1,
-            level: 0,
-            reference: "ref1",
+        },
+        {
+          paragraph: {
+            numbering: {
+              instance: 1,
+              level: 0,
+              reference: "ref1",
+            },
+            text: "REF1 - inst:1 - lvl:0",
           },
-          text: "REF1 - inst:1 - lvl:0",
-        }),
-        new Paragraph({
-          numbering: {
-            instance: 1,
-            level: 0,
-            reference: "ref1",
+        },
+        {
+          paragraph: {
+            numbering: {
+              instance: 1,
+              level: 0,
+              reference: "ref1",
+            },
+            text: "REF1 - inst:1 - lvl:0",
           },
-          text: "REF1 - inst:1 - lvl:0",
-        }),
-        new Paragraph({
-          numbering: {
-            instance: 1,
-            level: 0,
-            reference: "ref2",
+        },
+        {
+          paragraph: {
+            numbering: {
+              instance: 1,
+              level: 0,
+              reference: "ref2",
+            },
+            text: "REF2 - inst:0 - lvl:0",
           },
-          text: "REF2 - inst:0 - lvl:0",
-        }),
-        new Paragraph({
-          numbering: {
-            instance: 1,
-            level: 0,
-            reference: "ref2",
+        },
+        {
+          paragraph: {
+            numbering: {
+              instance: 1,
+              level: 0,
+              reference: "ref2",
+            },
+            text: "REF2 - inst:0 - lvl:0",
           },
-          text: "REF2 - inst:0 - lvl:0",
-        }),
+        },
       ],
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

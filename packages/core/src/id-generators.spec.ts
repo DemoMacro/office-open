@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import { hashedId, uniqueId, uniqueNumericIdCreator, uniqueUuid } from "./id-generators";
+import { hashedId, uniqueId, uniqueNumericIdCreator, uniqueUuid } from "./util/generators";
 
 describe("uniqueNumericIdCreator", () => {
   it("should start from 1 by default", () => {

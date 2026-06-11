@@ -3,11 +3,11 @@
 // To the document in Word after the document has been generated. Standard properties (such as creator, title
 // And subject) cover typical use cases, but sometimes custom properties are required.
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import { Document, Packer } from "@office-open/docx";
+import { generateDocument } from "@office-open/docx";
 
-const doc = new Document(
+const buffer = await generateDocument(
   // Standard properties
   {
     creator: "Creator",
@@ -21,6 +21,4 @@ const doc = new Document(
     title: "Title",
   },
 );
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

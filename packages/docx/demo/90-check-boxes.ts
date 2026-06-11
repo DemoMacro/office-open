@@ -1,47 +1,45 @@
-// Simple example to add check boxes to a document
-import * as fs from "fs";
+// NOTE: The CheckBox class (w14:checkbox SDT content control) has been removed.
+// This demo now renders static checkbox symbols using symbolRun instead of
+// interactive checkboxes. For form field checkboxes, see form-field.ts.
+import { writeFileSync } from "node:fs";
 
-import { CheckBox, Document, Packer, Paragraph, TextRun } from "@office-open/docx";
+import { generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [
-            new TextRun("Hello World"),
-            new TextRun({ break: 1 }),
-            new CheckBox(),
-            new TextRun({ break: 1 }),
-            new CheckBox({ checked: true }),
-            new TextRun({ break: 1 }),
-            new CheckBox({ checked: true, checkedState: { value: "2611" } }),
-            new TextRun({ break: 1 }),
-            new CheckBox({
-              checked: true,
-              checkedState: { font: "MS Gothic", value: "2611" },
-            }),
-            new TextRun({ break: 1 }),
-            new CheckBox({
-              checked: true,
-              checkedState: { font: "MS Gothic", value: "2611" },
-              uncheckedState: { font: "MS Gothic", value: "2610" },
-            }),
-            new TextRun({ break: 1 }),
-            new CheckBox({
-              checked: true,
-              checkedState: { font: "MS Gothic", value: "2611" },
-              uncheckedState: { font: "MS Gothic", value: "2610" },
-            }),
-            new TextRun({ break: 1, text: "Are you ok?" }),
-            new CheckBox({ alias: "Are you ok?", checked: true }),
-          ],
-        }),
+        {
+          paragraph: {
+            children: [
+              "Hello World",
+              { break: 1 },
+              // Unchecked (default symbol: ☐ 2610, MS Gothic)
+              { symbolRun: { char: "2610", symbolfont: "MS Gothic" } },
+              { break: 1 },
+              // Checked (default symbol: ☒ 2612, MS Gothic)
+              { symbolRun: { char: "2612", symbolfont: "MS Gothic" } },
+              { break: 1 },
+              // Checked with custom checkedState value 2611 (☑)
+              { symbolRun: { char: "2611", symbolfont: "MS Gothic" } },
+              { break: 1 },
+              // Checked with custom font + value
+              { symbolRun: { char: "2611", symbolfont: "MS Gothic" } },
+              { break: 1 },
+              // Checked with custom checked + unchecked state symbols
+              { symbolRun: { char: "2611", symbolfont: "MS Gothic" } },
+              { break: 1 },
+              // Checked with same symbols as above
+              { symbolRun: { char: "2611", symbolfont: "MS Gothic" } },
+              { break: 1, text: "Are you ok?" },
+              // Checked checkbox with alias
+              { symbolRun: { char: "2612", symbolfont: "MS Gothic" } },
+            ],
+          },
+        },
       ],
       properties: {},
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

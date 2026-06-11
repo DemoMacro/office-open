@@ -1,53 +1,37 @@
 // Multiple sections with total number of pages in each section
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import {
-  AlignmentType,
-  Document,
-  Footer,
-  Header,
-  NumberFormat,
-  Packer,
-  PageBreak,
-  PageNumber,
-  Paragraph,
-  TextRun,
-} from "@office-open/docx";
+import { AlignmentType, NumberFormat, PageNumber, generateDocument } from "@office-open/docx";
 
-const header = new Header({
-  children: [
-    new Paragraph({
+const header = [
+  {
+    paragraph: {
       alignment: AlignmentType.CENTER,
       children: [
-        new TextRun("Header on another page"),
-        new TextRun({
+        "Header on another page",
+        {
           children: ["Page number: ", PageNumber.CURRENT],
-        }),
-        new TextRun({
+        },
+        {
           children: [" to ", PageNumber.TOTAL_PAGES_IN_SECTION],
-        }),
+        },
       ],
-    }),
-  ],
-});
+    },
+  },
+];
 
-const footer = new Footer({
-  children: [new Paragraph("Foo Bar corp. ")],
-});
+const footer = [{ paragraph: "Foo Bar corp. " }];
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [
-            new TextRun("Section 1"),
-            new PageBreak(),
-            new TextRun("Section 1"),
-            new PageBreak(),
-          ],
-        }),
+        {
+          paragraph: {
+            children: ["Section 1", { pageBreak: true }, "Section 1", { pageBreak: true }],
+          },
+        },
       ],
       footers: {
         default: footer,
@@ -66,14 +50,11 @@ const doc = new Document({
     },
     {
       children: [
-        new Paragraph({
-          children: [
-            new TextRun("Section 2"),
-            new PageBreak(),
-            new TextRun("Section 2"),
-            new PageBreak(),
-          ],
-        }),
+        {
+          paragraph: {
+            children: ["Section 2", { pageBreak: true }, "Section 2", { pageBreak: true }],
+          },
+        },
       ],
       footers: {
         default: footer,
@@ -92,6 +73,4 @@ const doc = new Document({
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

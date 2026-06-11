@@ -32,7 +32,8 @@
     "paths": {
       "@util/*": ["./src/util/*"],
       "@export/*": ["./src/export/*"],
-      "@file/*": ["./src/file/*"],
+      "@parts/*": ["./src/parts/*"],
+      "@shared/*": ["./src/shared/*"],
       "tests/*": ["./src/tests/*"]
     }
   },

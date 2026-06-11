@@ -1,32 +1,36 @@
 // Custom character styles using JavaScript configuration
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import { Document, Packer, Paragraph, TextRun } from "@office-open/docx";
+import { generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [
-            new TextRun({
-              style: "myRedStyle",
-              text: "Foo bar",
-            }),
-          ],
-        }),
-        new Paragraph({
-          children: [
-            new TextRun({
-              style: "strong",
-              text: "First Word",
-            }),
-            new TextRun({
-              text: " - Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-            }),
-          ],
-        }),
+        {
+          paragraph: {
+            children: [
+              {
+                style: "myRedStyle",
+                text: "Foo bar",
+              },
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              {
+                style: "strong",
+                text: "First Word",
+              },
+              {
+                text: " - Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+              },
+            ],
+          },
+        },
       ],
     },
   ],
@@ -52,6 +56,4 @@ const doc = new Document({
     ],
   },
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

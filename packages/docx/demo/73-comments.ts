@@ -1,51 +1,44 @@
 // Simple example to add comments to a document
 
-import * as fs from "fs";
+import { readFileSync, writeFileSync } from "node:fs";
 
-import {
-  CommentRangeEnd,
-  CommentRangeStart,
-  CommentReference,
-  Document,
-  ImageRun,
-  Packer,
-  Paragraph,
-  TextRun,
-} from "@office-open/docx";
+import { generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   comments: {
     children: [
       {
         author: "Ray Chen",
         children: [
-          new Paragraph({
+          {
             children: [
-              new TextRun({
+              {
                 text: "some initial text content",
-              }),
+              },
             ],
-          }),
-          new Paragraph({
+          },
+          {
             children: [
-              new ImageRun({
-                data: fs.readFileSync("./demo/images/cat.jpg"),
-                transformation: {
-                  height: 100,
-                  width: 100,
+              {
+                image: {
+                  data: readFileSync("./demo/images/cat.jpg"),
+                  transformation: {
+                    height: 100,
+                    width: 100,
+                  },
+                  type: "jpg",
                 },
-                type: "jpg",
-              }),
-              new TextRun({
+              },
+              {
                 text: "comment text content",
-              }),
-              new TextRun({ break: 1, text: "" }),
-              new TextRun({
+              },
+              { break: 1, text: "" },
+              {
                 bold: true,
                 text: "More text here",
-              }),
+              },
             ],
-          }),
+          },
         ],
         date: new Date(),
         id: 0,
@@ -53,20 +46,20 @@ const doc = new Document({
       {
         author: "Bob Ross",
         children: [
-          new Paragraph({
+          {
             children: [
-              new TextRun({
+              {
                 text: "Some initial text content",
-              }),
+              },
             ],
-          }),
-          new Paragraph({
+          },
+          {
             children: [
-              new TextRun({
+              {
                 text: "comment text content",
-              }),
+              },
             ],
-          }),
+          },
         ],
         date: new Date(),
         id: 1,
@@ -74,13 +67,13 @@ const doc = new Document({
       {
         author: "John Doe",
         children: [
-          new Paragraph({
+          {
             children: [
-              new TextRun({
+              {
                 text: "Hello World",
-              }),
+              },
             ],
-          }),
+          },
         ],
         date: new Date(),
         id: 2,
@@ -88,13 +81,13 @@ const doc = new Document({
       {
         author: "Beatriz",
         children: [
-          new Paragraph({
+          {
             children: [
-              new TextRun({
+              {
                 text: "Another reply",
-              }),
+              },
             ],
-          }),
+          },
         ],
         date: new Date(),
         id: 3,
@@ -104,52 +97,54 @@ const doc = new Document({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [
-            new TextRun("Hello World"),
-            new CommentRangeStart(0),
-            new TextRun({
-              bold: true,
-              text: "Foo Bar",
-            }),
-            new CommentRangeEnd(0),
-            new TextRun({
-              bold: true,
-              children: [new CommentReference(0)],
-            }),
-          ],
-        }),
-        new Paragraph({
-          children: [
-            new CommentRangeStart(1),
-            new CommentRangeStart(2),
-            new CommentRangeStart(3),
-            new TextRun({
-              bold: true,
-              text: "Some text which need commenting",
-            }),
-            new CommentRangeEnd(1),
-            new TextRun({
-              bold: true,
-              children: [new CommentReference(1)],
-            }),
-            new CommentRangeEnd(2),
-            new TextRun({
-              bold: true,
-              children: [new CommentReference(2)],
-            }),
-            new CommentRangeEnd(3),
-            new TextRun({
-              bold: true,
-              children: [new CommentReference(3)],
-            }),
-          ],
-        }),
+        {
+          paragraph: {
+            children: [
+              "Hello World",
+              { commentRangeStart: 0 },
+              {
+                bold: true,
+                text: "Foo Bar",
+              },
+              { commentRangeEnd: 0 },
+              {
+                bold: true,
+                children: [{ commentReference: 0 }],
+              },
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              { commentRangeStart: 1 },
+              { commentRangeStart: 2 },
+              { commentRangeStart: 3 },
+              {
+                bold: true,
+                text: "Some text which need commenting",
+              },
+              { commentRangeEnd: 1 },
+              {
+                bold: true,
+                children: [{ commentReference: 1 }],
+              },
+              { commentRangeEnd: 2 },
+              {
+                bold: true,
+                children: [{ commentReference: 2 }],
+              },
+              { commentRangeEnd: 3 },
+              {
+                bold: true,
+                children: [{ commentReference: 3 }],
+              },
+            ],
+          },
+        },
       ],
       properties: {},
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

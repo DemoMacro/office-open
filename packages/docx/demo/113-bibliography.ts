@@ -1,15 +1,9 @@
 // Demo: Bibliography - citation management
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import {
-  Document,
-  Packer,
-  Paragraph,
-  TextRun,
-  StructuredDocumentTagBlock,
-} from "@office-open/docx";
+import { generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   bibliography: {
     styleName: "APA",
     sources: [
@@ -45,57 +39,65 @@ const doc = new Document({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "Bibliography Demo",
-              bold: true,
-              size: 32,
-            }),
-          ],
-          spacing: { after: 400 },
-        }),
+        {
+          paragraph: {
+            children: [
+              {
+                text: "Bibliography Demo",
+                bold: true,
+                size: 32,
+              },
+            ],
+            spacing: { after: 400 },
+          },
+        },
 
         // Bibliography SDT
-        new Paragraph({
-          children: [
-            new TextRun({
-              bold: true,
-              text: "Bibliography (APA style)",
-              size: 28,
-            }),
-          ],
-          spacing: { after: 200 },
-        }),
-
-        new StructuredDocumentTagBlock({
-          properties: {
-            bibliography: true,
-            alias: "Bibliography",
-            tag: "bibliography-sdt",
+        {
+          paragraph: {
+            children: [
+              {
+                bold: true,
+                text: "Bibliography (APA style)",
+                size: 28,
+              },
+            ],
+            spacing: { after: 200 },
           },
-          children: [
-            new Paragraph({
-              children: [new TextRun("Citations will be rendered here by Word.")],
-            }),
-          ],
-        }),
+        },
 
-        new Paragraph({ children: [new TextRun("")] }),
+        {
+          sdt: {
+            properties: {
+              bibliography: true,
+              alias: "Bibliography",
+              tag: "bibliography-sdt",
+            },
+            children: [
+              {
+                paragraph: {
+                  children: ["Citations will be rendered here by Word."],
+                },
+              },
+            ],
+          },
+        },
 
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "Note: Open this document in Microsoft Word to see the bibliography rendered.",
-              italics: true,
-              color: "888888",
-            }),
-          ],
-        }),
+        { paragraph: { children: [""] } },
+
+        {
+          paragraph: {
+            children: [
+              {
+                text: "Note: Open this document in Microsoft Word to see the bibliography rendered.",
+                italics: true,
+                color: "888888",
+              },
+            ],
+          },
+        },
       ],
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

@@ -1,58 +1,51 @@
+import { readFileSync, writeFileSync } from "node:fs";
 // Setting styles with JavaScript configuration
-
-import * as fs from "fs";
 
 import {
   AlignmentType,
-  Document,
-  Footer,
   HeadingLevel,
-  ImageRun,
   LevelFormat,
-  Packer,
-  Paragraph,
   TabStopPosition,
-  Table,
-  TableCell,
-  TableRow,
   UnderlineType,
-  convertInchesToTwip,
+  generateDocument,
 } from "@office-open/docx";
 
-const table = new Table({
-  rows: [
-    new TableRow({
-      cells: [
-        new TableCell({
-          children: [new Paragraph("Test cell 1.")],
-        }),
-      ],
-    }),
-    new TableRow({
-      cells: [
-        new TableCell({
-          children: [new Paragraph("Test cell 2.")],
-        }),
-      ],
-    }),
-    new TableRow({
-      cells: [
-        new TableCell({
-          children: [new Paragraph("Test cell 3.")],
-        }),
-      ],
-    }),
-    new TableRow({
-      cells: [
-        new TableCell({
-          children: [new Paragraph("Test cell 4.")],
-        }),
-      ],
-    }),
-  ],
-});
+const table = {
+  table: {
+    rows: [
+      {
+        cells: [
+          {
+            children: [{ paragraph: "Test cell 1." }],
+          },
+        ],
+      },
+      {
+        cells: [
+          {
+            children: [{ paragraph: "Test cell 2." }],
+          },
+        ],
+      },
+      {
+        cells: [
+          {
+            children: [{ paragraph: "Test cell 3." }],
+          },
+        ],
+      },
+      {
+        cells: [
+          {
+            children: [{ paragraph: "Test cell 4." }],
+          },
+        ],
+      },
+    ],
+  },
+};
 
-const doc = new Document({
+const buffer = await generateDocument({
   numbering: {
     config: [
       {
@@ -71,107 +64,145 @@ const doc = new Document({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [
-            new ImageRun({
-              data: fs.readFileSync("./demo/images/pizza.gif"),
-              transformation: {
-                width: 100,
-                height: 100,
+        {
+          paragraph: {
+            children: [
+              {
+                image: {
+                  data: readFileSync("./demo/images/pizza.gif"),
+                  transformation: {
+                    width: 100,
+                    height: 100,
+                  },
+                  type: "gif",
+                },
               },
-              type: "gif",
-            }),
-          ],
-        }),
-        new Paragraph({
-          text: "HEADING",
-          heading: HeadingLevel.HEADING_1,
-          alignment: AlignmentType.CENTER,
-        }),
-        new Paragraph({
-          text: "Ref. :",
-          style: "normalPara",
-        }),
-        new Paragraph({
-          text: "Date :",
-          style: "normalPara",
-        }),
-        new Paragraph({
-          text: "To,",
-          style: "normalPara",
-        }),
-        new Paragraph({
-          text: "The Superindenting Engineer,(O &M)",
-          style: "normalPara",
-        }),
-        new Paragraph({
-          text: "Sub : ",
-          style: "normalPara",
-        }),
-        new Paragraph({
-          text: "Ref. : ",
-          style: "normalPara",
-        }),
-        new Paragraph({
-          text: "Sir,",
-          style: "normalPara",
-        }),
-        new Paragraph({
-          text: "BRIEF DESCRIPTION",
-          style: "normalPara",
-        }),
+            ],
+          },
+        },
+        {
+          paragraph: {
+            text: "HEADING",
+            heading: HeadingLevel.HEADING_1,
+            alignment: AlignmentType.CENTER,
+          },
+        },
+        {
+          paragraph: {
+            text: "Ref. :",
+            style: "normalPara",
+          },
+        },
+        {
+          paragraph: {
+            text: "Date :",
+            style: "normalPara",
+          },
+        },
+        {
+          paragraph: {
+            text: "To,",
+            style: "normalPara",
+          },
+        },
+        {
+          paragraph: {
+            text: "The Superindenting Engineer,(O &M)",
+            style: "normalPara",
+          },
+        },
+        {
+          paragraph: {
+            text: "Sub : ",
+            style: "normalPara",
+          },
+        },
+        {
+          paragraph: {
+            text: "Ref. : ",
+            style: "normalPara",
+          },
+        },
+        {
+          paragraph: {
+            text: "Sir,",
+            style: "normalPara",
+          },
+        },
+        {
+          paragraph: {
+            text: "BRIEF DESCRIPTION",
+            style: "normalPara",
+          },
+        },
         table,
-        new Paragraph({
-          children: [
-            new ImageRun({
-              data: fs.readFileSync("./demo/images/pizza.gif"),
-              transformation: {
-                width: 100,
-                height: 100,
+        {
+          paragraph: {
+            children: [
+              {
+                image: {
+                  data: readFileSync("./demo/images/pizza.gif"),
+                  transformation: {
+                    width: 100,
+                    height: 100,
+                  },
+                  type: "gif",
+                },
               },
-              type: "gif",
-            }),
-          ],
-        }),
-        new Paragraph({
-          text: "Test",
-          style: "normalPara2",
-        }),
-        new Paragraph({
-          children: [
-            new ImageRun({
-              data: fs.readFileSync("./demo/images/pizza.gif"),
-              transformation: {
-                width: 100,
-                height: 100,
+            ],
+          },
+        },
+        {
+          paragraph: {
+            text: "Test",
+            style: "normalPara2",
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              {
+                image: {
+                  data: readFileSync("./demo/images/pizza.gif"),
+                  transformation: {
+                    width: 100,
+                    height: 100,
+                  },
+                  type: "gif",
+                },
               },
-              type: "gif",
-            }),
-          ],
-        }),
-        new Paragraph({
-          text: "Test 2",
-          style: "normalPara2",
-        }),
-        new Paragraph({
-          text: "Numbered paragraph that has numbering attached to custom styles",
-          style: "numberedPara",
-        }),
-        new Paragraph({
-          text: "Numbered para would show up in the styles pane at Word",
-          style: "numberedPara",
-        }),
+            ],
+          },
+        },
+        {
+          paragraph: {
+            text: "Test 2",
+            style: "normalPara2",
+          },
+        },
+        {
+          paragraph: {
+            text: "Numbered paragraph that has numbering attached to custom styles",
+            style: "numberedPara",
+          },
+        },
+        {
+          paragraph: {
+            text: "Numbered para would show up in the styles pane at Word",
+            style: "numberedPara",
+          },
+        },
       ],
       footers: {
-        default: new Footer({
-          children: [
-            new Paragraph({
+        default: [
+          {
+            paragraph: {
               text: "1",
               style: "normalPara",
               alignment: AlignmentType.RIGHT,
-            }),
-          ],
-        }),
+            },
+          },
+        ],
       },
       properties: {
         page: {
@@ -273,7 +304,7 @@ const doc = new Document({
         name: "Aside",
         next: "Normal",
         paragraph: {
-          indent: { left: convertInchesToTwip(0.5) },
+          indent: { left: "0.5in" },
           spacing: { line: 276 },
         },
         run: {
@@ -314,6 +345,4 @@ const doc = new Document({
     ],
   },
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

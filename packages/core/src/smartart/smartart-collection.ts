@@ -1,18 +1,22 @@
-import type { DataModel } from "./data-model/data-model";
+/**
+ * SmartArt data and collection for document generation.
+ *
+ * @module
+ */
 
 export interface SmartArtData {
-  readonly key: string;
-  readonly dataModel: DataModel;
-  readonly layout: string;
-  readonly style: string;
-  readonly color: string;
+  key: string;
+  dataModelXml: string;
+  layout: string;
+  style: string;
+  color: string;
 }
 
 /**
  * Manages SmartArt parts in a document.
  */
 export class SmartArtCollection {
-  private readonly map: Map<string, SmartArtData>;
+  private map: Map<string, SmartArtData>;
 
   public constructor() {
     this.map = new Map<string, SmartArtData>();
@@ -22,7 +26,7 @@ export class SmartArtCollection {
     this.map.set(key, data);
   }
 
-  public get array(): readonly SmartArtData[] {
+  public get array(): SmartArtData[] {
     return [...this.map.values()];
   }
 }

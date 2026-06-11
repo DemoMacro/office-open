@@ -1,17 +1,14 @@
 // Example of using tab stops
 
-import * as fs from "fs";
+import { createWriteStream } from "node:fs";
 import { Readable } from "stream";
 import type { ReadableStream as WebReadableStream } from "stream/web";
 
 import {
-  Document,
   HeadingLevel,
-  Packer,
-  Paragraph,
   TabStopPosition,
   TabStopType,
-  TextRun,
+  generateDocumentStream,
 } from "@office-open/docx";
 
 const columnWidth = Math.floor(TabStopPosition.MAX / 4);
@@ -28,67 +25,80 @@ const receiptTabStops = [
 ];
 const twoTabStops = [{ position: TabStopPosition.MAX, type: TabStopType.RIGHT }];
 
-const doc = new Document({
+const stream = generateDocumentStream({
   defaultTabStop: 0,
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [new TextRun("Receipt 001")],
-          heading: HeadingLevel.HEADING_1,
-        }),
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "To Bob.\tBy Alice.",
-              bold: true,
-            }),
-          ],
-          tabStops: twoTabStops,
-        }),
-        new Paragraph({
-          children: [new TextRun("Foo Inc\tBar Inc")],
-          tabStops: twoTabStops,
-        }),
-        new Paragraph({ text: "" }),
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "Item\tPrice\tQuantity\tSub-total",
-              bold: true,
-            }),
-          ],
-
-          tabStops: receiptTabStops,
-        }),
-        new Paragraph({
-          tabStops: receiptTabStops,
-          text: "Item 3\t10\t5\t50",
-        }),
-        new Paragraph({
-          tabStops: receiptTabStops,
-          text: "Item 3\t10\t5\t50",
-        }),
-        new Paragraph({
-          tabStops: receiptTabStops,
-          text: "Item 3\t10\t5\t50",
-        }),
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "\t\t\tTotal: 200",
-              bold: true,
-            }),
-          ],
-          tabStops: receiptTabStops,
-        }),
+        {
+          paragraph: {
+            children: ["Receipt 001"],
+            heading: HeadingLevel.HEADING_1,
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              {
+                text: "To Bob.\tBy Alice.",
+                bold: true,
+              },
+            ],
+            tabStops: twoTabStops,
+          },
+        },
+        {
+          paragraph: {
+            children: ["Foo Inc\tBar Inc"],
+            tabStops: twoTabStops,
+          },
+        },
+        { paragraph: { text: "" } },
+        {
+          paragraph: {
+            children: [
+              {
+                text: "Item\tPrice\tQuantity\tSub-total",
+                bold: true,
+              },
+            ],
+            tabStops: receiptTabStops,
+          },
+        },
+        {
+          paragraph: {
+            tabStops: receiptTabStops,
+            text: "Item 3\t10\t5\t50",
+          },
+        },
+        {
+          paragraph: {
+            tabStops: receiptTabStops,
+            text: "Item 3\t10\t5\t50",
+          },
+        },
+        {
+          paragraph: {
+            tabStops: receiptTabStops,
+            text: "Item 3\t10\t5\t50",
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              {
+                text: "\t\t\tTotal: 200",
+                bold: true,
+              },
+            ],
+            tabStops: receiptTabStops,
+          },
+        },
       ],
       properties: {},
     },
   ],
 });
-
-const stream = Packer.toStream(doc);
 Readable.fromWeb(stream as unknown as WebReadableStream).pipe(
-  fs.createWriteStream("My Document.docx"),
+  createWriteStream("My Document.docx"),
 );

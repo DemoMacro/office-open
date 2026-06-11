@@ -1,6 +1,6 @@
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
-import { createPacker, type XmlifyedFile } from "./packer";
+import { createPacker, type XmlifyedFile } from "./opc/packer";
 
 // Simple mock compile function for testing createPacker
 const compileMock = vi.fn();
@@ -30,7 +30,7 @@ describe("createPacker", () => {
     });
 
     it("should pass overrides through", async () => {
-      const overrides: readonly XmlifyedFile[] = [{ data: "test", path: "test.xml" }];
+      const overrides: XmlifyedFile[] = [{ data: "test", path: "test.xml" }];
       await Packer.toString(mockFile, { overrides });
       expect(compileMock).toHaveBeenCalledWith(expect.anything(), overrides, 0);
     });
@@ -133,17 +133,17 @@ describe("createPacker", () => {
 
   describe("#pack()", () => {
     it("should export to uint8array", async () => {
-      const result = await Packer.pack(mockFile, "uint8array");
+      const result = await Packer.pack(mockFile, { type: "uint8array" });
       expect(result).toBeInstanceOf(Uint8Array);
     });
 
     it("should export to binarystring", async () => {
-      const result = await Packer.pack(mockFile, "binarystring");
+      const result = await Packer.pack(mockFile, { type: "binarystring" });
       expect(typeof result).toBe("string");
     });
 
     it("should export to array", async () => {
-      const result = await Packer.pack(mockFile, "array");
+      const result = await Packer.pack(mockFile, { type: "array" });
       expect(Array.isArray(result)).toBe(true);
     });
   });
@@ -206,12 +206,12 @@ describe("createPacker", () => {
 
   describe("#packSync()", () => {
     it("should export to uint8array synchronously", () => {
-      const result = Packer.packSync(mockFile, "uint8array");
+      const result = Packer.packSync(mockFile, { type: "uint8array" });
       expect(result).toBeInstanceOf(Uint8Array);
     });
 
     it("should export to nodebuffer synchronously", () => {
-      const result = Packer.packSync(mockFile, "nodebuffer");
+      const result = Packer.packSync(mockFile, { type: "nodebuffer" });
       expect(result).toBeInstanceOf(Buffer);
     });
   });

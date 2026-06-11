@@ -1,61 +1,30 @@
-import { XmlComponent, chartAttr } from "../xml-components";
+import { escapeXml } from "@office-open/xml";
+
 import { COLOR_CATEGORIES, LAYOUT_CATEGORIES, STYLE_CATEGORIES } from "./categories";
-import { Connection } from "./data-model/connection";
-import { DataModel } from "./data-model/data-model";
-import { Point, TransPoint } from "./data-model/point";
+import { stringifyConnection } from "./data-model/connection";
+import { stringifyDataModel } from "./data-model/data-model";
+import { stringifyPoint, stringifyTransPoint } from "./data-model/point";
 
 export interface TreeNode {
   readonly text: string;
   readonly children?: readonly TreeNode[];
 }
 
-function createDocPoint(layout: string, style: string, color: string): XmlComponent {
-  const pt = new (class extends XmlComponent {
-    public constructor() {
-      super("dgm:pt");
-    }
-  })();
-  pt["root"].push(chartAttr({ modelId: 0, type: "doc" }));
+function stringifyDocPoint(layout: string, style: string, color: string): string {
+  const loTypeId = `urn:microsoft.com/office/officeart/2005/8/layout/${layout}`;
+  const loCatId = LAYOUT_CATEGORIES[layout] ?? "list";
+  const qsTypeId = `urn:microsoft.com/office/officeart/2005/8/quickstyle/${style}`;
+  const qsCatId = STYLE_CATEGORIES[style] ?? "simple";
+  const csTypeId = `urn:microsoft.com/office/officeart/2005/8/colors/${color}`;
+  const csCatId = COLOR_CATEGORIES[color] ?? "accent1";
 
-  const prSet = new (class extends XmlComponent {
-    public constructor() {
-      super("dgm:prSet");
-    }
-  })();
-  prSet["root"].push(
-    chartAttr({
-      loTypeId: `urn:microsoft.com/office/officeart/2005/8/layout/${layout}`,
-      loCatId: LAYOUT_CATEGORIES[layout] ?? "list",
-      qsTypeId: `urn:microsoft.com/office/officeart/2005/8/quickstyle/${style}`,
-      qsCatId: STYLE_CATEGORIES[style] ?? "simple",
-      csTypeId: `urn:microsoft.com/office/officeart/2005/8/colors/${color}`,
-      csCatId: COLOR_CATEGORIES[color] ?? "accent1",
-      phldr: "0",
-    }),
-  );
-  pt["root"].push(prSet);
-  pt["root"].push(new EmptyElement("dgm:spPr"));
-  pt["root"].push(createEmptyTextBody());
-
-  return pt;
-}
-
-function createEmptyTextBody(): XmlComponent {
-  const t = new (class extends XmlComponent {
-    public constructor() {
-      super("dgm:t");
-    }
-  })();
-  t["root"].push(new EmptyElement("a:bodyPr"));
-  t["root"].push(new EmptyElement("a:lstStyle"));
-  t["root"].push(new EmptyElement("a:p"));
-  return t;
-}
-
-class EmptyElement extends XmlComponent {
-  public constructor(tag: string) {
-    super(tag);
-  }
+  return [
+    '<dgm:pt modelId="0" type="doc">',
+    `<dgm:prSet loTypeId="${escapeXml(loTypeId)}" loCatId="${escapeXml(loCatId)}" qsTypeId="${escapeXml(qsTypeId)}" qsCatId="${escapeXml(qsCatId)}" csTypeId="${escapeXml(csTypeId)}" csCatId="${escapeXml(csCatId)}" phldr="0"/>`,
+    "<dgm:spPr/>",
+    "<dgm:t><a:bodyPr/><a:lstStyle/><a:p/></dgm:t>",
+    "</dgm:pt>",
+  ].join("");
 }
 
 function uuid(): string {
@@ -63,18 +32,19 @@ function uuid(): string {
 }
 
 /**
- * Creates a DataModel from tree nodes with layout/style/color settings.
+ * Creates SmartArt data model XML from tree nodes with layout/style/color settings.
+ * Returns the XML string body (no XML declaration).
  */
 export const createDataModel = (
   nodes: readonly TreeNode[],
   layout: string = "default",
   style: string = "simple1",
   color: string = "accent1_2",
-): DataModel => {
-  const points: XmlComponent[] = [];
-  const connections: Connection[] = [];
+): string => {
+  const pointStrs: string[] = [];
+  const connectionStrs: string[] = [];
 
-  points.push(createDocPoint(layout, style, color));
+  pointStrs.push(stringifyDocPoint(layout, style, color));
 
   for (let i = 0; i < nodes.length; i++) {
     const walk = (node: TreeNode, parentUuid: string, srcOrd: number): void => {
@@ -83,21 +53,20 @@ export const createDataModel = (
       const sibTransUuid = uuid();
       const cxnUuid = uuid();
 
-      points.push(new TransPoint(parTransUuid, "parTrans", cxnUuid));
-      points.push(new TransPoint(sibTransUuid, "sibTrans", cxnUuid));
-      points.push(new Point(nodeUuid, node.text));
+      pointStrs.push(stringifyTransPoint(parTransUuid, "parTrans", cxnUuid));
+      pointStrs.push(stringifyTransPoint(sibTransUuid, "sibTrans", cxnUuid));
+      pointStrs.push(stringifyPoint(nodeUuid, node.text));
 
-      connections.push(
-        new Connection(
-          parTransUuid,
-          parentUuid,
-          nodeUuid,
-          undefined,
+      connectionStrs.push(
+        stringifyConnection({
+          modelId: parTransUuid,
+          srcId: parentUuid,
+          destId: nodeUuid,
           srcOrd,
-          0,
-          parTransUuid,
-          sibTransUuid,
-        ),
+          destOrd: 0,
+          parTransId: parTransUuid,
+          sibTransId: sibTransUuid,
+        }),
       );
 
       if (node.children) {
@@ -109,5 +78,5 @@ export const createDataModel = (
     walk(nodes[i], "0", i);
   }
 
-  return new DataModel(points, connections);
+  return stringifyDataModel(pointStrs, connectionStrs);
 };

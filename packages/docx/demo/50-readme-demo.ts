@@ -1,107 +1,113 @@
 // The demo on the README.md
 
-import * as fs from "fs";
+import { readFileSync, writeFileSync } from "node:fs";
 
-import {
-  Document,
-  HeadingLevel,
-  ImageRun,
-  Packer,
-  Paragraph,
-  Table,
-  TableCell,
-  TableRow,
-  VerticalAlignTable,
-} from "@office-open/docx";
+import { HeadingLevel, VerticalAlignTable, generateDocument } from "@office-open/docx";
 
-const table = new Table({
-  rows: [
-    new TableRow({
-      cells: [
-        new TableCell({
-          children: [
-            new Paragraph({
-              children: [
-                new ImageRun({
-                  data: fs.readFileSync("./demo/images/image1.jpeg"),
-                  transformation: {
-                    height: 100,
-                    width: 100,
-                  },
-                  type: "jpg",
-                }),
-              ],
-            }),
-          ],
-          verticalAlign: VerticalAlignTable.CENTER,
-        }),
-        new TableCell({
-          children: [
-            new Paragraph({
-              heading: HeadingLevel.HEADING_1,
-              text: "Hello",
-            }),
-          ],
-          verticalAlign: VerticalAlignTable.CENTER,
-        }),
-      ],
-    }),
-    new TableRow({
-      cells: [
-        new TableCell({
-          children: [
-            new Paragraph({
-              heading: HeadingLevel.HEADING_1,
-              text: "World",
-            }),
-          ],
-        }),
-        new TableCell({
-          children: [
-            new Paragraph({
-              children: [
-                new ImageRun({
-                  data: fs.readFileSync("./demo/images/image1.jpeg"),
-                  transformation: {
-                    height: 100,
-                    width: 100,
-                  },
-                  type: "jpg",
-                }),
-              ],
-            }),
-          ],
-        }),
-      ],
-    }),
-  ],
-});
-
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Paragraph({
-          heading: HeadingLevel.HEADING_1,
-          text: "Hello World",
-        }),
-        table,
-        new Paragraph({
-          children: [
-            new ImageRun({
-              data: fs.readFileSync("./demo/images/pizza.gif"),
-              transformation: {
-                height: 100,
-                width: 100,
+        {
+          paragraph: {
+            heading: HeadingLevel.HEADING_1,
+            text: "Hello World",
+          },
+        },
+        {
+          table: {
+            rows: [
+              {
+                cells: [
+                  {
+                    children: [
+                      {
+                        paragraph: {
+                          children: [
+                            {
+                              image: {
+                                data: readFileSync("./demo/images/image1.jpeg"),
+                                transformation: {
+                                  height: 100,
+                                  width: 100,
+                                },
+                                type: "jpg",
+                              },
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                    verticalAlign: VerticalAlignTable.CENTER,
+                  },
+                  {
+                    children: [
+                      {
+                        paragraph: {
+                          heading: HeadingLevel.HEADING_1,
+                          text: "Hello",
+                        },
+                      },
+                    ],
+                    verticalAlign: VerticalAlignTable.CENTER,
+                  },
+                ],
               },
-              type: "gif",
-            }),
-          ],
-        }),
+              {
+                cells: [
+                  {
+                    children: [
+                      {
+                        paragraph: {
+                          heading: HeadingLevel.HEADING_1,
+                          text: "World",
+                        },
+                      },
+                    ],
+                  },
+                  {
+                    children: [
+                      {
+                        paragraph: {
+                          children: [
+                            {
+                              image: {
+                                data: readFileSync("./demo/images/image1.jpeg"),
+                                transformation: {
+                                  height: 100,
+                                  width: 100,
+                                },
+                                type: "jpg",
+                              },
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              {
+                image: {
+                  data: readFileSync("./demo/images/pizza.gif"),
+                  transformation: {
+                    height: 100,
+                    width: 100,
+                  },
+                  type: "gif",
+                },
+              },
+            ],
+          },
+        },
       ],
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

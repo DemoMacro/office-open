@@ -1,0 +1,188 @@
+/**
+ * Empty children module for WordprocessingML run elements.
+ *
+ * This module provides type markers for various empty (self-closing) elements
+ * that can appear within a run. These represent special characters, references,
+ * and separators that don't require additional content.
+ *
+ * Reference: http://officeopenxml.com/WPrun.php
+ *
+ * @module
+ */
+
+// XSD Schema reference for EG_RunInnerContent group:
+// <xsd:group name="EG_RunInnerContent">
+//   <xsd:element name="noBreakHyphen" type="CT_Empty"/>
+//   <xsd:element name="softHyphen" type="CT_Empty" minOccurs="0" />
+//   <xsd:element name="dayShort" type="CT_Empty" minOccurs="0" />
+//   <xsd:element name="monthShort" type="CT_Empty" minOccurs="0" />
+//   <xsd:element name="yearShort" type="CT_Empty" minOccurs="0" />
+//   <xsd:element name="dayLong" type="CT_Empty" minOccurs="0" />
+//   <xsd:element name="monthLong" type="CT_Empty" minOccurs="0" />
+//   <xsd:element name="yearLong" type="CT_Empty" minOccurs="0" />
+//   <xsd:element name="annotationRef" type="CT_Empty" minOccurs="0" />
+//   <xsd:element name="footnoteRef" type="CT_Empty" minOccurs="0" />
+//   <xsd:element name="endnoteRef" type="CT_Empty" minOccurs="0" />
+//   <xsd:element name="separator" type="CT_Empty" minOccurs="0" />
+//   <xsd:element name="continuationSeparator" type="CT_Empty" minOccurs="0" />
+//   <xsd:element name="pgNum" type="CT_Empty" minOccurs="0" />
+//   <xsd:element name="cr" type="CT_Empty" minOccurs="0" />
+//   <xsd:element name="tab" type="CT_Empty" minOccurs="0" />
+//   <xsd:element name="lastRenderedPageBreak" type="CT_Empty" minOccurs="0" maxOccurs="1" />
+// </xsd:group>
+
+/**
+ * Represents a non-breaking hyphen character.
+ *
+ * Inserts a hyphen that prevents line breaking at that position.
+ */
+export interface NoBreakHyphen {
+  noBreakHyphen: true;
+}
+
+/**
+ * Represents a soft hyphen (optional hyphen) character.
+ *
+ * Inserts a hyphen that only appears when a word is broken across lines.
+ */
+export interface SoftHyphen {
+  softHyphen: true;
+}
+
+/**
+ * Represents the current day in short format (e.g., "1", "15").
+ *
+ * Inserts a dynamic field showing the day portion of the current date.
+ */
+export interface DayShort {
+  dayShort: true;
+}
+
+/**
+ * Represents the current month in short format (e.g., "1", "12").
+ *
+ * Inserts a dynamic field showing the month portion of the current date.
+ */
+export interface MonthShort {
+  monthShort: true;
+}
+
+/**
+ * Represents the current year in short format (e.g., "24").
+ *
+ * Inserts a dynamic field showing the year portion of the current date in two digits.
+ */
+export interface YearShort {
+  yearShort: true;
+}
+
+/**
+ * Represents the current day in long format (e.g., "01", "15").
+ *
+ * Inserts a dynamic field showing the day portion of the current date with leading zeros.
+ */
+export interface DayLong {
+  dayLong: true;
+}
+
+/**
+ * Represents the current month in long format (e.g., "January", "December").
+ *
+ * Inserts a dynamic field showing the full month name of the current date.
+ */
+export interface MonthLong {
+  monthLong: true;
+}
+
+/**
+ * Represents the current year in long format (e.g., "2024").
+ *
+ * Inserts a dynamic field showing the year portion of the current date in four digits.
+ */
+export interface YearLong {
+  yearLong: true;
+}
+
+/**
+ * Represents a reference to an annotation (comment).
+ *
+ * Used internally within comment ranges to mark comment references.
+ */
+export interface AnnotationReference {
+  annotationRef: true;
+}
+
+/**
+ * Represents a reference to a footnote.
+ *
+ * Used within footnote content to refer back to the footnote marker.
+ */
+export interface FootnoteReferenceElement {
+  footnoteRef: true;
+}
+
+/**
+ * Represents a reference to an endnote.
+ *
+ * Used within endnote content to refer back to the endnote marker.
+ */
+export interface EndnoteReference {
+  endnoteRef: true;
+}
+
+/**
+ * Represents a separator line for footnotes or endnotes.
+ *
+ * Used to create the separator line between document content and footnotes/endnotes.
+ */
+export interface Separator {
+  separator: true;
+}
+
+/**
+ * Represents a continuation separator for footnotes or endnotes.
+ *
+ * Used when footnotes/endnotes continue across multiple pages.
+ */
+export interface ContinuationSeparator {
+  continuationSeparator: true;
+}
+
+/**
+ * Represents a page number field element.
+ *
+ * Inserts the current page number at this position.
+ */
+export interface PageNumberElement {
+  pgNum: true;
+}
+
+/**
+ * Represents a carriage return character.
+ *
+ * Inserts a carriage return, which may be rendered differently than a standard line break.
+ */
+export interface CarriageReturn {
+  carriageReturn: true;
+}
+
+/**
+ * Represents a tab character.
+ *
+ * Inserts a tab stop, advancing to the next tab position in the paragraph.
+ *
+ * @publicApi
+ */
+export interface Tab {
+  tab: true;
+}
+
+/**
+ * Represents the last rendered page break location.
+ *
+ * Used internally by Word to track where page breaks occurred in the last rendering.
+ * This is typically generated by Word and not created manually.
+ */
+export interface LastRenderedPageBreak {
+  lastRenderedPageBreak: true;
+}

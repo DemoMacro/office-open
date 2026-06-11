@@ -9,9 +9,9 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import type { XmlComponent } from "../../xml-components";
-import { xsdBlendMode, xsdEffectContainer } from "../../xsd-mappings";
+import { element } from "@office-open/xml";
+
+import { xsdBlendMode, xsdEffectContainer } from "../../util/mappings";
 import { createSolidFill } from "../color/solid-fill";
 import type { SolidFillOptions } from "../color/solid-fill";
 import { createColorElement } from "../color/solid-fill";
@@ -66,127 +66,127 @@ export const EffectContainerType = {
 /** Alpha bi-level effect — clips alpha to threshold (CT_AlphaBiLevelEffect). */
 export interface AlphaBiLevelEffectOptions {
   /** Alpha threshold (fixed percentage, required) */
-  readonly threshold: number;
+  threshold: number;
 }
 
 /** Alpha inverse effect — inverts alpha, optionally with color (CT_AlphaInverseEffect). */
 export interface AlphaInverseEffectOptions {
   /** Optional color to apply inverse to */
-  readonly color?: SolidFillOptions;
+  color?: SolidFillOptions;
 }
 
 /** Alpha modulate fixed effect (CT_AlphaModulateFixedEffect). */
 export interface AlphaModulateFixedEffectOptions {
   /** Amount percentage (default 100%) */
-  readonly amount?: number;
+  amount?: number;
 }
 
 /** Alpha outset effect (CT_AlphaOutsetEffect). */
 export interface AlphaOutsetEffectOptions {
   /** Outset radius */
-  readonly radius?: number;
+  radius?: number;
 }
 
 /** Alpha replace effect — replaces alpha value (CT_AlphaReplaceEffect). */
 export interface AlphaReplaceEffectOptions {
   /** New alpha value (fixed percentage, required) */
-  readonly alpha: number;
+  alpha: number;
 }
 
 /** Blend effect — blends with nested container (CT_BlendEffect). */
 export interface BlendEffectOptions {
   /** Blend mode (required) */
-  readonly blend: (typeof BlendMode)[keyof typeof BlendMode];
+  blend: (typeof BlendMode)[keyof typeof BlendMode];
   /** Nested effect container */
-  readonly container: EffectDagOptions;
+  container: EffectDagOptions;
 }
 
 /** Color change effect — maps one color to another (CT_ColorChangeEffect). */
 export interface ColorChangeEffectOptions {
   /** Source color to replace */
-  readonly from: SolidFillOptions;
+  from: SolidFillOptions;
   /** Target color */
-  readonly to: SolidFillOptions;
+  to: SolidFillOptions;
   /** Whether to use alpha channel (default true) */
-  readonly useA?: boolean;
+  useA?: boolean;
 }
 
 /** Duotone effect — two-color tone mapping (CT_DuotoneEffect). */
 export interface DuotoneEffectOptions {
   /** First color */
-  readonly color1: SolidFillOptions;
+  color1: SolidFillOptions;
   /** Second color */
-  readonly color2: SolidFillOptions;
+  color2: SolidFillOptions;
 }
 
 /** Fill effect — applies a fill as an effect (CT_FillEffect). */
 export interface FillEffectOptions {
   /** Solid fill */
-  readonly solidFill?: SolidFillOptions;
+  solidFill?: SolidFillOptions;
   /** Gradient fill */
-  readonly gradientFill?: GradientFillOptions;
+  gradientFill?: GradientFillOptions;
   /** Pattern fill */
-  readonly patternFill?: PatternFillOptions;
+  patternFill?: PatternFillOptions;
   /** Group fill (inherit from parent) */
-  readonly groupFill?: boolean;
+  groupFill?: boolean;
   /** No fill */
-  readonly noFill?: boolean;
+  noFill?: boolean;
 }
 
 /** HSL effect — adjusts hue, saturation, luminance (CT_HSLEffect). */
 export interface HSLEffectOptions {
   /** Hue angle in 60,000ths of a degree (default 0) */
-  readonly hue?: number;
+  hue?: number;
   /** Saturation percentage (default 0%) */
-  readonly saturation?: number;
+  saturation?: number;
   /** Luminance percentage (default 0%) */
-  readonly luminance?: number;
+  luminance?: number;
 }
 
 /** Luminance effect — adjusts brightness and contrast (CT_LuminanceEffect). */
 export interface LuminanceEffectOptions {
   /** Brightness percentage (default 0%) */
-  readonly bright?: number;
+  bright?: number;
   /** Contrast percentage (default 0%) */
-  readonly contrast?: number;
+  contrast?: number;
 }
 
 /** Tint effect — applies tint with hue and amount (CT_TintEffect). */
 export interface TintEffectOptions {
   /** Hue angle in 60,000ths of a degree (default 0) */
-  readonly hue?: number;
+  hue?: number;
   /** Tint amount percentage (default 0%) */
-  readonly amount?: number;
+  amount?: number;
 }
 
 /** Relative offset effect (CT_RelativeOffsetEffect). */
 export interface RelativeOffsetEffectOptions {
   /** Horizontal offset percentage (default 0%) */
-  readonly translateX?: number;
+  translateX?: number;
   /** Vertical offset percentage (default 0%) */
-  readonly translateY?: number;
+  translateY?: number;
 }
 
 /** Transform effect — scale, skew, translate (CT_TransformEffect). */
 export interface TransformEffectOptions {
   /** Horizontal scale percentage (default 100%) */
-  readonly scaleX?: number;
+  scaleX?: number;
   /** Vertical scale percentage (default 100%) */
-  readonly scaleY?: number;
+  scaleY?: number;
   /** Horizontal skew angle (default 0) */
-  readonly skewX?: number;
+  skewX?: number;
   /** Vertical skew angle (default 0) */
-  readonly skewY?: number;
+  skewY?: number;
   /** Horizontal translation */
-  readonly translateX?: number;
+  translateX?: number;
   /** Vertical translation */
-  readonly translateY?: number;
+  translateY?: number;
 }
 
 /** Effect reference — references an effect by ID (CT_EffectReference). */
 export interface EffectReferenceOptions {
   /** Reference ID (required) */
-  readonly ref: string;
+  ref: string;
 }
 
 // ─── Effect Container Options ───────────────────────────────────────────────
@@ -207,177 +207,123 @@ export interface EffectReferenceOptions {
  */
 export interface EffectDagOptions {
   /** Container type: "sib" (parallel) or "tree" (sequential) */
-  readonly type?: (typeof EffectContainerType)[keyof typeof EffectContainerType];
+  type?: (typeof EffectContainerType)[keyof typeof EffectContainerType];
   /** Container name */
-  readonly name?: string;
+  name?: string;
 
   // ── Existing effects (also in CT_EffectList) ──
-  readonly blur?: BlurEffectOptions;
-  readonly fillOverlay?: FillOverlayEffectOptions;
-  readonly glow?: GlowEffectOptions;
-  readonly innerShadow?: InnerShadowEffectOptions;
-  readonly outerShadow?: OuterShadowEffectOptions;
-  readonly presetShadow?: PresetShadowEffectOptions;
-  readonly reflection?: ReflectionEffectOptions | true;
-  readonly softEdge?: number;
+  blur?: BlurEffectOptions;
+  fillOverlay?: FillOverlayEffectOptions;
+  glow?: GlowEffectOptions;
+  innerShadow?: InnerShadowEffectOptions;
+  outerShadow?: OuterShadowEffectOptions;
+  presetShadow?: PresetShadowEffectOptions;
+  reflection?: ReflectionEffectOptions | true;
+  softEdge?: number;
 
   // ── New effects for CT_EffectContainer ──
   /** Nested effect containers */
-  readonly containers?: readonly EffectDagOptions[];
+  containers?: readonly EffectDagOptions[];
   /** Effect references */
-  readonly effectRefs?: readonly EffectReferenceOptions[];
+  effectRefs?: readonly EffectReferenceOptions[];
   /** Alpha bi-level effect */
-  readonly alphaBiLevel?: AlphaBiLevelEffectOptions;
+  alphaBiLevel?: AlphaBiLevelEffectOptions;
   /** Alpha ceiling effect (empty element) */
-  readonly alphaCeiling?: boolean;
+  alphaCeiling?: boolean;
   /** Alpha floor effect (empty element) */
-  readonly alphaFloor?: boolean;
+  alphaFloor?: boolean;
   /** Alpha inverse effect */
-  readonly alphaInverse?: AlphaInverseEffectOptions;
+  alphaInverse?: AlphaInverseEffectOptions;
   /** Alpha modulate effect (requires nested container) */
-  readonly alphaModulate?: EffectDagOptions;
+  alphaModulate?: EffectDagOptions;
   /** Alpha modulate fixed effect */
-  readonly alphaModulateFixed?: AlphaModulateFixedEffectOptions;
+  alphaModulateFixed?: AlphaModulateFixedEffectOptions;
   /** Alpha outset effect */
-  readonly alphaOutset?: AlphaOutsetEffectOptions;
+  alphaOutset?: AlphaOutsetEffectOptions;
   /** Alpha replace effect */
-  readonly alphaReplace?: AlphaReplaceEffectOptions;
+  alphaReplace?: AlphaReplaceEffectOptions;
   /** Bi-level effect (threshold) */
-  readonly biLevel?: { readonly threshold: number };
+  biLevel?: { threshold: number };
   /** Blend effect (requires nested container) */
-  readonly blend?: BlendEffectOptions;
+  blend?: BlendEffectOptions;
   /** Color change effect */
-  readonly colorChange?: ColorChangeEffectOptions;
+  colorChange?: ColorChangeEffectOptions;
   /** Color replace effect */
-  readonly colorReplace?: SolidFillOptions;
+  colorReplace?: SolidFillOptions;
   /** Duotone effect */
-  readonly duotone?: DuotoneEffectOptions;
+  duotone?: DuotoneEffectOptions;
   /** Fill effect */
-  readonly fill?: FillEffectOptions;
+  fill?: FillEffectOptions;
   /** Grayscale effect (empty element) */
-  readonly grayscale?: boolean;
+  grayscale?: boolean;
   /** HSL effect */
-  readonly hsl?: HSLEffectOptions;
+  hsl?: HSLEffectOptions;
   /** Luminance effect */
-  readonly luminance?: LuminanceEffectOptions;
+  luminance?: LuminanceEffectOptions;
   /** Tint effect */
-  readonly tint?: TintEffectOptions;
+  tint?: TintEffectOptions;
   /** Relative offset effect */
-  readonly relativeOffset?: RelativeOffsetEffectOptions;
+  relativeOffset?: RelativeOffsetEffectOptions;
   /** Transform effect */
-  readonly transform?: TransformEffectOptions;
+  transform?: TransformEffectOptions;
 }
-
-// ─── Internal Helpers ───────────────────────────────────────────────────────
-
-const buildOptionalAttributes = (
-  options: Record<string, unknown>,
-): Record<string, { readonly key: string; readonly value: string | number }> | undefined => {
-  const attrs: Record<string, { readonly key: string; readonly value: string | number }> = {};
-  for (const [key, value] of Object.entries(options)) {
-    if (value !== undefined) {
-      attrs[key] = { key, value: value as string | number };
-    }
-  }
-  return Object.keys(attrs).length > 0 ? attrs : undefined;
-};
 
 // ─── New Effect Factories ───────────────────────────────────────────────────
 
-const createAlphaBiLevelEffect = (options: AlphaBiLevelEffectOptions): XmlComponent =>
-  new BuilderElement<{ readonly thresh: number }>({
-    name: "a:alphaBiLevel",
-    attributes: { thresh: { key: "thresh", value: options.threshold } },
-  });
+const createAlphaBiLevelEffect = (options: AlphaBiLevelEffectOptions): string =>
+  `<a:alphaBiLevel thresh="${options.threshold}"/>`;
 
-const createAlphaCeilingEffect = (): XmlComponent => new BuilderElement({ name: "a:alphaCeiling" });
+const createAlphaCeilingEffect = (): string => "<a:alphaCeiling/>";
 
-const createAlphaFloorEffect = (): XmlComponent => new BuilderElement({ name: "a:alphaFloor" });
+const createAlphaFloorEffect = (): string => "<a:alphaFloor/>";
 
-const createAlphaInverseEffect = (options?: AlphaInverseEffectOptions): XmlComponent =>
-  new BuilderElement({
-    name: "a:alphaInv",
-    children: options?.color ? [createColorElement(options.color)] : undefined,
-  });
+const createAlphaInverseEffect = (options?: AlphaInverseEffectOptions): string =>
+  element(
+    "a:alphaInv",
+    undefined,
+    options?.color ? [createColorElement(options.color)] : undefined,
+  );
 
-const createAlphaModulateFixedEffect = (
-  options?: AlphaModulateFixedEffectOptions,
-): XmlComponent => {
-  if (options?.amount === undefined) {
-    return new BuilderElement({ name: "a:alphaModFix" });
-  }
-  return new BuilderElement<{ readonly amt: number }>({
-    name: "a:alphaModFix",
-    attributes: { amt: { key: "amt", value: options.amount } },
-  });
-};
+const createAlphaModulateFixedEffect = (options?: AlphaModulateFixedEffectOptions): string =>
+  options?.amount === undefined ? "<a:alphaModFix/>" : `<a:alphaModFix amt="${options.amount}"/>`;
 
-const createAlphaOutsetEffect = (options?: AlphaOutsetEffectOptions): XmlComponent => {
-  if (options?.radius === undefined) {
-    return new BuilderElement({ name: "a:alphaOutset" });
-  }
-  return new BuilderElement<{ readonly rad: number }>({
-    name: "a:alphaOutset",
-    attributes: { rad: { key: "rad", value: options.radius } },
-  });
-};
+const createAlphaOutsetEffect = (options?: AlphaOutsetEffectOptions): string =>
+  options?.radius === undefined ? "<a:alphaOutset/>" : `<a:alphaOutset rad="${options.radius}"/>`;
 
-const createAlphaReplaceEffect = (options: AlphaReplaceEffectOptions): XmlComponent =>
-  new BuilderElement<{ readonly a: number }>({
-    name: "a:alphaRepl",
-    attributes: { a: { key: "a", value: options.alpha } },
-  });
+const createAlphaReplaceEffect = (options: AlphaReplaceEffectOptions): string =>
+  `<a:alphaRepl a="${options.alpha}"/>`;
 
-const createBiLevelEffect = (thresh: number): XmlComponent =>
-  new BuilderElement<{ readonly thresh: number }>({
-    name: "a:biLevel",
-    attributes: { thresh: { key: "thresh", value: thresh } },
-  });
+const createBiLevelEffect = (thresh: number): string => `<a:biLevel thresh="${thresh}"/>`;
 
-const createBlendEffect = (options: BlendEffectOptions): XmlComponent =>
-  new BuilderElement<{ readonly blend: string }>({
-    name: "a:blend",
-    attributes: { blend: { key: "blend", value: xsdBlendMode.to(options.blend) } },
-    children: [createEffectContainer(options.container)],
-  });
+const createBlendEffect = (options: BlendEffectOptions): string =>
+  element("a:blend", { blend: xsdBlendMode.to(options.blend) }, [
+    createEffectContainer(options.container),
+  ]);
 
-const createColorChangeEffect = (options: ColorChangeEffectOptions): XmlComponent => {
-  const children: XmlComponent[] = [
-    new BuilderElement({
-      name: "a:clrFrom",
-      children: [createColorElement(options.from)],
-    }),
-    new BuilderElement({
-      name: "a:clrTo",
-      children: [createColorElement(options.to)],
-    }),
+const createColorChangeEffect = (options: ColorChangeEffectOptions): string => {
+  const children: string[] = [
+    element("a:clrFrom", undefined, [createColorElement(options.from)]),
+    element("a:clrTo", undefined, [createColorElement(options.to)]),
   ];
 
   if (options.useA === false) {
-    return new BuilderElement<{ readonly useA: number }>({
-      name: "a:clrChange",
-      attributes: { useA: { key: "useA", value: 0 } },
-      children,
-    });
+    return element("a:clrChange", { useA: 0 }, children);
   }
 
-  return new BuilderElement({ name: "a:clrChange", children });
+  return element("a:clrChange", undefined, children);
 };
 
-const createColorReplaceEffect = (color: SolidFillOptions): XmlComponent =>
-  new BuilderElement({
-    name: "a:clrRepl",
-    children: [createColorElement(color)],
-  });
+const createColorReplaceEffect = (color: SolidFillOptions): string =>
+  element("a:clrRepl", undefined, [createColorElement(color)]);
 
-const createDuotoneEffect = (options: DuotoneEffectOptions): XmlComponent =>
-  new BuilderElement({
-    name: "a:duotone",
-    children: [createColorElement(options.color1), createColorElement(options.color2)],
-  });
+const createDuotoneEffect = (options: DuotoneEffectOptions): string =>
+  element("a:duotone", undefined, [
+    createColorElement(options.color1),
+    createColorElement(options.color2),
+  ]);
 
-const createFillEffect = (options: FillEffectOptions): XmlComponent => {
-  let fillElement: XmlComponent;
+const createFillEffect = (options: FillEffectOptions): string => {
+  let fillElement: string;
 
   if (options.noFill) {
     fillElement = createNoFill();
@@ -393,102 +339,61 @@ const createFillEffect = (options: FillEffectOptions): XmlComponent => {
     fillElement = createNoFill();
   }
 
-  return new BuilderElement({
-    name: "a:fill",
-    children: [fillElement],
-  });
+  return element("a:fill", undefined, [fillElement]);
 };
 
-const createGrayscaleEffect = (): XmlComponent => new BuilderElement({ name: "a:grayscl" });
+const createGrayscaleEffect = (): string => "<a:grayscl/>";
 
-const createHSLEffect = (options?: HSLEffectOptions): XmlComponent => {
-  const attrs = buildOptionalAttributes({
-    hue: options?.hue,
-    sat: options?.saturation,
-    lum: options?.luminance,
-  });
-  return new BuilderElement({
-    name: "a:hsl",
-    attributes: attrs,
-  });
+const createHSLEffect = (options?: HSLEffectOptions): string => {
+  const attrs: Record<string, number> = {};
+  if (options?.hue !== undefined) attrs.hue = options.hue;
+  if (options?.saturation !== undefined) attrs.sat = options.saturation;
+  if (options?.luminance !== undefined) attrs.lum = options.luminance;
+  return element("a:hsl", Object.keys(attrs).length > 0 ? attrs : undefined);
 };
 
-const createLuminanceEffect = (options?: LuminanceEffectOptions): XmlComponent => {
-  const attrs = buildOptionalAttributes({
-    bright: options?.bright,
-    contrast: options?.contrast,
-  });
-  return new BuilderElement({
-    name: "a:lum",
-    attributes: attrs,
-  });
+const createLuminanceEffect = (options?: LuminanceEffectOptions): string => {
+  const attrs: Record<string, number> = {};
+  if (options?.bright !== undefined) attrs.bright = options.bright;
+  if (options?.contrast !== undefined) attrs.contrast = options.contrast;
+  return element("a:lum", Object.keys(attrs).length > 0 ? attrs : undefined);
 };
 
-const createTintEffect = (options?: TintEffectOptions): XmlComponent => {
-  const attrs = buildOptionalAttributes({
-    hue: options?.hue,
-    amt: options?.amount,
-  });
-  return new BuilderElement({
-    name: "a:tint",
-    attributes: attrs,
-  });
+const createTintEffect = (options?: TintEffectOptions): string => {
+  const attrs: Record<string, number> = {};
+  if (options?.hue !== undefined) attrs.hue = options.hue;
+  if (options?.amount !== undefined) attrs.amt = options.amount;
+  return element("a:tint", Object.keys(attrs).length > 0 ? attrs : undefined);
 };
 
-const createRelativeOffsetEffect = (options?: RelativeOffsetEffectOptions): XmlComponent => {
-  const attrs = buildOptionalAttributes({
-    tx: options?.translateX,
-    ty: options?.translateY,
-  });
-  return new BuilderElement({
-    name: "a:relOff",
-    attributes: attrs,
-  });
+const createRelativeOffsetEffect = (options?: RelativeOffsetEffectOptions): string => {
+  const attrs: Record<string, number> = {};
+  if (options?.translateX !== undefined) attrs.tx = options.translateX;
+  if (options?.translateY !== undefined) attrs.ty = options.translateY;
+  return element("a:relOff", Object.keys(attrs).length > 0 ? attrs : undefined);
 };
 
-const createTransformEffect = (options?: TransformEffectOptions): XmlComponent => {
-  const attrs = buildOptionalAttributes({
-    sx: options?.scaleX,
-    sy: options?.scaleY,
-    kx: options?.skewX,
-    ky: options?.skewY,
-    tx: options?.translateX,
-    ty: options?.translateY,
-  });
-  return new BuilderElement({
-    name: "a:xfrm",
-    attributes: attrs,
-  });
+const createTransformEffect = (options?: TransformEffectOptions): string => {
+  const attrs: Record<string, number> = {};
+  if (options?.scaleX !== undefined) attrs.sx = options.scaleX;
+  if (options?.scaleY !== undefined) attrs.sy = options.scaleY;
+  if (options?.skewX !== undefined) attrs.kx = options.skewX;
+  if (options?.skewY !== undefined) attrs.ky = options.skewY;
+  if (options?.translateX !== undefined) attrs.tx = options.translateX;
+  if (options?.translateY !== undefined) attrs.ty = options.translateY;
+  return element("a:xfrm", Object.keys(attrs).length > 0 ? attrs : undefined);
 };
 
-const createEffectReference = (options: EffectReferenceOptions): XmlComponent =>
-  new BuilderElement<{ readonly ref: string }>({
-    name: "a:effect",
-    attributes: { ref: { key: "ref", value: options.ref } },
-  });
+const createEffectReference = (options: EffectReferenceOptions): string =>
+  `<a:effect ref="${options.ref}"/>`;
 
 // ─── Blur Effect (from effect-list, re-implemented for DAG) ─────────────────
 
-const createBlurEffect = (options: BlurEffectOptions): XmlComponent => {
-  const hasAttributes = options.radius !== undefined || options.grow === false;
-
-  if (!hasAttributes) {
-    return new BuilderElement({ name: "a:blur" });
-  }
-
-  const attributePayload = {
-    ...(options.radius !== undefined && {
-      rad: { key: "rad", value: options.radius },
-    }),
-    ...(options.grow === false && {
-      grow: { key: "grow", value: 0 },
-    }),
-  };
-
-  return new BuilderElement({
-    attributes: attributePayload as never,
-    name: "a:blur",
-  });
+const createBlurEffect = (options: BlurEffectOptions): string => {
+  const attrs: Record<string, number> = {};
+  if (options.radius !== undefined) attrs.rad = options.radius;
+  if (options.grow === false) attrs.grow = 0;
+  return element("a:blur", Object.keys(attrs).length > 0 ? attrs : undefined);
 };
 
 // ─── Effect Container ───────────────────────────────────────────────────────
@@ -509,15 +414,14 @@ const createBlurEffect = (options: BlurEffectOptions): XmlComponent => {
  * ```
  *
  * @param options - Container options with effects
- * @param elementName - Element name, defaults to "a:effectDag" for top-level
+ * @param elementName - Element name, defaults to "a:cont" for top-level
  */
-const createEffectContainer = (options: EffectDagOptions, elementName = "a:cont"): XmlComponent => {
-  const attrs = buildOptionalAttributes({
-    type: options.type ? xsdEffectContainer.to(options.type) : undefined,
-    name: options.name,
-  });
+const createEffectContainer = (options: EffectDagOptions, elementName = "a:cont"): string => {
+  const attrs: Record<string, string | number> = {};
+  if (options.type) attrs.type = xsdEffectContainer.to(options.type);
+  if (options.name) attrs.name = options.name;
 
-  const children: XmlComponent[] = [];
+  const children: string[] = [];
 
   // ── Existing effects (also in CT_EffectList) ──
   if (options.blur) {
@@ -571,12 +475,7 @@ const createEffectContainer = (options: EffectDagOptions, elementName = "a:cont"
     children.push(createAlphaInverseEffect(options.alphaInverse));
   }
   if (options.alphaModulate) {
-    children.push(
-      new BuilderElement({
-        name: "a:alphaMod",
-        children: [createEffectContainer(options.alphaModulate)],
-      }),
-    );
+    children.push(element("a:alphaMod", undefined, [createEffectContainer(options.alphaModulate)]));
   }
   if (options.alphaModulateFixed) {
     children.push(createAlphaModulateFixedEffect(options.alphaModulateFixed));
@@ -624,11 +523,11 @@ const createEffectContainer = (options: EffectDagOptions, elementName = "a:cont"
     children.push(createTransformEffect(options.transform));
   }
 
-  return new BuilderElement({
-    name: elementName,
-    attributes: attrs as never,
-    children: children.length > 0 ? children : undefined,
-  });
+  return element(
+    elementName,
+    Object.keys(attrs).length > 0 ? attrs : undefined,
+    children.length > 0 ? children : undefined,
+  );
 };
 
 /**
@@ -655,5 +554,5 @@ const createEffectContainer = (options: EffectDagOptions, elementName = "a:cont"
  * });
  * ```
  */
-export const createEffectDag = (options: EffectDagOptions): XmlComponent =>
+export const createEffectDag = (options: EffectDagOptions): string =>
   createEffectContainer(options, "a:effectDag");

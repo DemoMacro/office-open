@@ -2,100 +2,95 @@ You are a senior TypeScript developer.
 
 ## Project
 
-**office-open** is a monorepo for generating Office Open XML documents (.docx, .pptx, .xlsx) with JS/TS. Declarative API, works in Node.js and browsers.
+**office-open** is a monorepo for generating and parsing Office Open XML documents (.docx, .pptx, .xlsx) with JS/TS. Declarative API, works in Node.js and browsers. Bidirectional: stringify (JSON → XML) and parse (XML → JSON).
 
-## Structure
+## Monorepo Structure
 
-- `packages/core` - @office-open/core (shared XML components, formatter, chart/smartart, unit converters)
-- `packages/xml` - @office-open/xml (XML parsing/serialization, replacing xml + xml-js)
-- `packages/docx` - @office-open/docx (main DOCX package)
-- `packages/docx-plus` - docx-plus (compat re-export of @office-open/docx)
-- `packages/xlsx` - @office-open/xlsx (TODO)
-- `packages/pptx` - @office-open/pptx (PPTX generation package)
-- `ooxml-schemas/` - OOXML XSD schemas (strict, transitional, microsoft, mce)
+```
+packages/
+  core/   — @office-open/core (descriptor runtime, DrawingML factories, chart/smartart, OPC)
+  xml/    — @office-open/xml (XML parsing/serialization)
+  docx/   — @office-open/docx (DOCX generation & parsing)
+  pptx/   — @office-open/pptx (PPTX generation & parsing)
+  xlsx/   — @office-open/xlsx (XLSX generation & parsing)
+ooxml-schemas/  — OOXML XSD schemas (golden source of truth)
+```
+
+## Package Layout (all format packages follow this pattern)
+
+```
+packages/<format>/src/
+  index.ts        — Public API
+  compiler.ts     — compileDocument/Presentation/Workbook → Zippable
+  context.ts      — XxxWriteContext + XxxReadContext
+  generate.ts     — generateDocument/Presentation/Workbook() entry
+  parse.ts        — parseDocument/Presentation/Workbook() entry
+  patch.ts        — patchDocument/Presentation/Workbook() entry
+  parts/          — One module per OOXML XML part
+                    Simple parts = single file (e.g. settings.ts)
+                    Complex parts = directory (e.g. document/)
+  shared/         — Cross-part shared types (used by 2+ parts)
+  util/           — Helpers
+```
+
+### parts/ — OOXML Part Modules
+
+Each part module exports its types and descriptor together:
+
+```typescript
+// parts/settings.ts — simple part (single file)
+export interface SettingsOptions { ... }
+export const settingsDesc: CustomDescriptor<SettingsOptions> = {
+  kind: "custom",
+  stringify(opts, ctx) { ... },
+  parse(el, ctx) { ... },
+};
+```
+
+Complex parts use a directory with sub-modules (e.g. `parts/document/` contains body.ts, run.ts, paragraph.ts, math.ts, etc.).
+
+### shared/ — Cross-Part Types
+
+Types used by 2+ parts: RunOptions, ParagraphOptions, BorderOptions, Media, etc. Follow the colocation rule: single-use types live in their part module; multi-use types go to shared/.
 
 ## Build & Test
 
-- **Packaging**: `basis build` (per package) or `pnpm build` (all packages)
-- **Testing**: `vp test run` (vite-plus test runner, per package)
-- **Lint**: `pnpm check` (from root, runs vp check across all packages)
+- **Build**: `pnpm build` (all) or `cd packages/<pkg> && pnpm build` (one)
+- **Test**: `vp test run` (per package)
+- **Lint**: `pnpm check` (root, runs vp check across all)
+- **Validate**: `pnpm tsx scripts/validate.ts` (XSD validation)
 
-## OOXML Specification
+## Descriptor System
 
-`ooxml-schemas/` contains OOXML XSD schemas - the **golden source of truth**. Always reference these when implementing XML elements.
+Core infrastructure at `packages/core/src/descriptor/`:
 
-- `strict/` — ISO/IEC 29500 standard schemas (`purl.oclc.org/ooxml/` namespaces)
-- `transitional/` — Transitional OOXML schemas (`schemas.openxmlformats.org/` namespaces, used by all major software)
-- `microsoft/` — Microsoft extension schemas (`schemas.microsoft.com/` namespaces)
-- `mce/` — Markup Compatibility schemas
+- `CustomDescriptor<T>` — `{ kind: "custom", stringify(opts, ctx): string, parse(el, ctx): Partial<T> }`
+- `ElementDescriptor<T>` — declarative attr/child mapping
+- `DescriptorBuilder` — `element<T>(tag).attr(...).child(...).build()`
+- Runtime: `stringify(desc, value, ctx)` and `parse(desc, element, ctx)`
 
-- `wml.xsd` - WordprocessingML (documents)
-- `pml.xsd` - PresentationML (presentations)
-- `sml.xsd` - SpreadsheetML (spreadsheets)
-- `dml-main.xsd` - DrawingML (images/shapes)
-- `shared-math.xsd` - Math
+Naming: `<part>Desc` for descriptors (e.g. `settingsDesc`, `slideDesc`).
+
+## OOXML Schemas
+
+`ooxml-schemas/transitional/` is the primary reference. Key files:
+
+- `wml.xsd` — WordprocessingML, `pml.xsd` — PresentationML
+- `sml.xsd` — SpreadsheetML, `dml-main.xsd` — DrawingML
 
 ## Code Conventions
 
-Full coding standards are in [CONTRIBUTING.md](./CONTRIBUTING.md). Key rules:
+Full standards in [CONTRIBUTING.md](./CONTRIBUTING.md). Quick reference:
 
-- Path aliases in packages/docx: `@file/`, `@export/`, `@util/`
-- Classes extend `XmlComponent` for XML elements
-- Use `Formatter` to convert components to XML tree
-- Use `as const` objects (not `enum`) with SCREAMING_SNAKE_CASE keys
-- Constant values: lowercase full English words; XSD abbreviations map to full words
-- Options interfaces: `*Options` suffix, no `I` prefix, all properties `readonly`
-- Loop patterns: `for...of` by default, `.map()` only when returning a new array
-- Getters/setters: camelCase
-- File names: kebab-case
+- **Naming**: `<part>Desc` descriptors, `<Part>Options` interfaces, `stringify*()` / `parse*()` / `patch*()` helpers
+- **Constants**: `as const` objects, SCREAMING_SNAKE_CASE keys, lowercase values
+- **Files**: kebab-case, no `I` prefix on interfaces, `readonly` on Options properties
+- **Loops**: `for...of` default, `.map()` only when returning new array
+- **XML generation**: string concatenation via template literals, no intermediate object trees
 
 ## Behavioral Guidelines
 
-### Think Before Coding
-
 - State assumptions explicitly. If uncertain, ask before implementing.
-- If multiple interpretations exist, present them — don't pick silently.
-- If a simpler approach exists, say so. Push back when warranted.
-
-### Simplicity First
-
 - No features beyond what was asked. No speculative abstractions.
-- If 200 lines could be 50, rewrite it.
-
-### Surgical Changes
-
 - Touch only what you must. Match existing style.
-- Don't "improve" adjacent code. Don't refactor things that aren't broken.
-- Remove only orphans that YOUR changes created, not pre-existing dead code.
-
-### Goal-Driven Execution
-
-- Transform tasks into verifiable goals. State a brief plan for multi-step tasks.
-- Loop until verified — don't wait for clarification after obvious failures.
-
-## Running Demos
-
-```bash
-# Docx demos (run from packages/docx)
-cd packages/docx && pnpm tsx demo/<demo-file>.ts
-
-# PPTX demos (run from packages/pptx)
-cd packages/pptx && pnpm tsx demo/<demo-file>.ts
-```
-
-## Validation
-
-Validate generated XML against OOXML XSD schemas:
-
-```bash
-# Validate all demos (pptx + docx)
-pnpm tsx scripts/validate.ts
-
-# Validate single package
-pnpm tsx scripts/validate.ts pptx
-pnpm tsx scripts/validate.ts docx
-
-# Validate specific demo file
-pnpm tsx scripts/validate.ts slide "packages/pptx/My Presentation.pptx" [slide-number]
-pnpm tsx scripts/validate.ts docx "packages/docx/My Document.docx"
-```
+- Transform tasks into verifiable goals. Loop until verified.

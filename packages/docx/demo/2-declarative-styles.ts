@@ -1,20 +1,15 @@
+import { writeFileSync } from "node:fs";
 // Example on how to customize the look at feel using Styles
-
-import * as fs from "fs";
 
 import {
   AlignmentType,
-  Document,
   HeadingLevel,
   LevelFormat,
-  Packer,
-  Paragraph,
-  TextRun,
   UnderlineType,
-  convertInchesToTwip,
+  generateDocument,
 } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   creator: "Clippy",
   description: "A brief example of using docx",
   numbering: {
@@ -35,136 +30,162 @@ const doc = new Document({
   sections: [
     {
       children: [
-        new Paragraph({
-          heading: HeadingLevel.HEADING_1,
-          text: "Test heading1, bold and italicized",
-        }),
-        new Paragraph("Some simple content"),
-        new Paragraph({
-          heading: HeadingLevel.HEADING_2,
-          text: "Test heading2 with double red underline",
-        }),
-        new Paragraph({
-          numbering: {
-            level: 0,
-            reference: "my-crazy-numbering",
+        {
+          paragraph: {
+            heading: HeadingLevel.HEADING_1,
+            text: "Test heading1, bold and italicized",
           },
-          style: "aside",
-          text: "Option1",
-        }),
-        new Paragraph({
-          numbering: {
-            level: 0,
-            reference: "my-crazy-numbering",
+        },
+        { paragraph: "Some simple content" },
+        {
+          paragraph: {
+            heading: HeadingLevel.HEADING_2,
+            text: "Test heading2 with double red underline",
           },
-          text: "Option5 -- override 2 to 5",
-        }),
-        new Paragraph({
-          numbering: {
-            level: 0,
-            reference: "my-crazy-numbering",
+        },
+        {
+          paragraph: {
+            numbering: {
+              level: 0,
+              reference: "my-crazy-numbering",
+            },
+            style: "aside",
+            text: "Option1",
           },
-          text: "Option3",
-        }),
-        new Paragraph({
-          children: [
-            new TextRun({
-              font: {
-                name: "Monospace",
+        },
+        {
+          paragraph: {
+            numbering: {
+              level: 0,
+              reference: "my-crazy-numbering",
+            },
+            text: "Option5 -- override 2 to 5",
+          },
+        },
+        {
+          paragraph: {
+            numbering: {
+              level: 0,
+              reference: "my-crazy-numbering",
+            },
+            text: "Option3",
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              {
+                font: {
+                  name: "Monospace",
+                },
+                text: "Some monospaced content",
               },
-              text: "Some monospaced content",
-            }),
-          ],
-        }),
-        new Paragraph({
-          style: "aside",
-          text: "An aside, in light gray italics and indented",
-        }),
-        new Paragraph({
-          style: "wellSpaced",
-          text: "This is normal, but well-spaced text",
-        }),
-        new Paragraph({
-          children: [
-            new TextRun({
-              bold: true,
-              text: "This is a bold run,",
-            }),
-            new TextRun(" switching to normal "),
-            new TextRun({
-              text: "and then underlined ",
-              underline: {},
-            }),
-            new TextRun({
-              emphasisMark: {},
-              text: "and then emphasis-mark ",
-            }),
-            new TextRun({
-              text: "and back to normal.",
-            }),
-            new TextRun({
-              text: "This text will be invisible!",
-              vanish: true,
-            }),
-            new TextRun({
-              specVanish: true,
-              text: "This text will be VERY invisible! Word processors cannot override this!",
-            }),
-          ],
-        }),
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "Strong Style",
-            }),
-            new TextRun({
-              text: " - Very strong.",
-            }),
-          ],
-          style: "Strong",
-        }),
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "Underline and Strike",
-            }),
-            new TextRun({
-              text: " Override Underline ",
-              underline: {
-                type: UnderlineType.NONE,
+            ],
+          },
+        },
+        {
+          paragraph: {
+            style: "aside",
+            text: "An aside, in light gray italics and indented",
+          },
+        },
+        {
+          paragraph: {
+            style: "wellSpaced",
+            text: "This is normal, but well-spaced text",
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              {
+                bold: true,
+                text: "This is a bold run,",
               },
-            }),
-            new TextRun({
-              text: "Strike and Underline",
-            }),
-          ],
-          style: "strikeUnderline",
-        }),
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "Hello World ",
-            }),
-            new TextRun({
-              style: "strikeUnderlineCharacter",
-              text: "Underline and Strike",
-            }),
-            new TextRun({
-              text: " Another Hello World",
-            }),
-            new TextRun({
-              scale: 50,
-              text: " Scaled text",
-            }),
-          ],
-        }),
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "Scaled paragraph",
-            }),
-          ],
-        }),
+              " switching to normal ",
+              {
+                text: "and then underlined ",
+                underline: {},
+              },
+              {
+                emphasisMark: {},
+                text: "and then emphasis-mark ",
+              },
+              {
+                text: "and back to normal.",
+              },
+              {
+                text: "This text will be invisible!",
+                vanish: true,
+              },
+              {
+                specVanish: true,
+                text: "This text will be VERY invisible! Word processors cannot override this!",
+              },
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              {
+                text: "Strong Style",
+              },
+              {
+                text: " - Very strong.",
+              },
+            ],
+            style: "Strong",
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              {
+                text: "Underline and Strike",
+              },
+              {
+                text: " Override Underline ",
+                underline: {
+                  type: UnderlineType.NONE,
+                },
+              },
+              {
+                text: "Strike and Underline",
+              },
+            ],
+            style: "strikeUnderline",
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              {
+                text: "Hello World ",
+              },
+              {
+                style: "strikeUnderlineCharacter",
+                text: "Underline and Strike",
+              },
+              {
+                text: " Another Hello World",
+              },
+              {
+                scale: 50,
+                text: " Scaled text",
+              },
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              {
+                text: "Scaled paragraph",
+              },
+            ],
+          },
+        },
       ],
     },
   ],
@@ -190,7 +211,7 @@ const doc = new Document({
         },
         run: {
           font: "Calibri",
-          size: "11pt",
+          size: 22,
         },
       },
       heading1: {
@@ -236,7 +257,7 @@ const doc = new Document({
         next: "Normal",
         paragraph: {
           indent: {
-            left: convertInchesToTwip(0.5),
+            left: "0.5in",
           },
           spacing: {
             line: 276,
@@ -272,6 +293,4 @@ const doc = new Document({
   },
   title: "Sample Document",
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

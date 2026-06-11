@@ -51,8 +51,8 @@ export type { LineEndOptions } from "./outline/line-end";
 export { LineEndType, LineEndWidth, LineEndLength } from "./outline/line-end";
 
 // Effects
-export { createEffectList } from "./effects/effect-list";
-export type { EffectListOptions, BlurEffectOptions } from "./effects/effect-list";
+export { createEffectList, calculateEffectExtent } from "./effects/effect-list";
+export type { EffectListOptions, BlurEffectOptions, EffectExtent } from "./effects/effect-list";
 export { createEffectDag } from "./effects/effect-dag";
 export type { EffectDagOptions, EffectContainerType } from "./effects/effect-dag";
 export { createGlowEffect } from "./effects/glow";
@@ -89,9 +89,9 @@ export type { BevelOptions } from "./three-d/bevel";
 export { BevelPresetType } from "./three-d/bevel";
 
 // Geometry
-export { PresetGeometry } from "./geometry/preset-geometry";
+export { stringifyPresetGeometry } from "./geometry/preset-geometry";
 export type { PresetGeometryOptions } from "./geometry/preset-geometry";
-export { createAdjustmentValues } from "./geometry/adjustment-values";
+export { stringifyAdjustmentValues } from "./geometry/adjustment-values";
 export type { GeometryGuide } from "./geometry/adjustment-values";
 export { createCustomGeometry } from "./geometry/custom-geometry";
 export type {
@@ -113,7 +113,7 @@ export type { BlipEffectsOptions } from "./blip/blip-effects";
 export { createExtentionList } from "./blip/blip-extentions";
 export { createSourceRectangle } from "./blip/source-rectangle";
 export type { SourceRectangleOptions } from "./blip/source-rectangle";
-export { Stretch } from "./blip/stretch";
+export { stringifyStretch } from "./blip/stretch";
 export { createTileInfo } from "./blip/tile";
 export type { TileOptions } from "./blip/tile";
 export { TileAlignment } from "./blip/tile";
@@ -153,238 +153,6 @@ export {
   type GroupLockingOptions,
   type GraphicFrameLockingOptions,
 } from "./locking";
-
-// Chart Drawing (cdr: elements)
-export {
-  createCdrX,
-  createCdrY,
-  createCdrFrom,
-  createCdrTo,
-  createCdrExt,
-  createCdrCNvPr,
-  createCdrCNvSpPr,
-  createCdrCNvCxnSpPr,
-  createCdrCNvPicPr,
-  createCdrCNvGrpSpPr,
-  createCdrCNvGraphicFramePr,
-  createCdrNvSpPr,
-  createCdrNvCxnSpPr,
-  createCdrNvPicPr,
-  createCdrNvGrpSpPr,
-  createCdrNvGraphicFramePr,
-  createCdrSp,
-  createCdrCxnSp,
-  createCdrPic,
-  createCdrGrpSp,
-  createCdrGraphicFrame,
-  createCdrSpPr,
-  createCdrGrpSpPr,
-  createCdrStyle,
-  createCdrTxBody,
-  createCdrBlipFill,
-  createCdrXfrm,
-  createCdrRelSizeAnchor,
-  createCdrAbsSizeAnchor,
-} from "./chart-drawing";
-
-// Chart (c: elements)
-export {
-  createApplyToEnd,
-  createApplyToFront,
-  createApplyToSides,
-  createAutoUpdate,
-  createBackWall,
-  createBandFmt,
-  createBandFmts,
-  createBaseTimeUnit,
-  createBubble3D,
-  createBubbleScale,
-  createBuiltInUnit,
-  createChartObject,
-  createClrMapOvr,
-  createCrossBetween,
-  createCrossesAt,
-  createCustSplit,
-  createCustUnit,
-  createDLbl,
-  createDPt,
-  createDTable,
-  createData,
-  createDispBlanksAs,
-  createDispUnits,
-  createDispUnitsLbl,
-  createDownBars,
-  createEvenFooter,
-  createEvenHeader,
-  createExplosion,
-  createExt,
-  createExtLst,
-  createExternalData,
-  createFirstFooter,
-  createFirstHeader,
-  createFloor,
-  createFmtId,
-  createFormatting,
-  createGapDepth,
-  createGapWidth,
-  createH,
-  createHMode,
-  createHeaderFooter,
-  createHiLowLines,
-  createHoleSize,
-  createInvertIfNegative,
-  createLayoutTarget,
-  createLblAlgn,
-  createLeaderLines,
-  createLegacyDrawingHF,
-  createLegendEntry,
-  createLogBase,
-  createLvl,
-  createMajorGridlines,
-  createMajorTickMark,
-  createMajorTimeUnit,
-  createMajorUnit,
-  createManualLayout,
-  createMarker,
-  createMax,
-  createMin,
-  createMinorGridlines,
-  createMinorTickMark,
-  createMinorTimeUnit,
-  createMinorUnit,
-  createMinus,
-  createMultiLvlStrCache,
-  createMultiLvlStrRef,
-  createName,
-  createNumLit,
-  createOddFooter,
-  createOddHeader,
-  createOfPieChart,
-  createOfPieType,
-  createOverlap,
-  createPageMargins,
-  createPageSetup,
-  createPictureFormat,
-  createPictureOptions,
-  createPictureStackUnit,
-  createPivotFmt,
-  createPivotFmts,
-  createPivotSource,
-  createPlotVisOnly,
-  createPlus,
-  createPrintSettings,
-  createProtection,
-  createSecondPiePt,
-  createSecondPieSize,
-  createSelection,
-  createSerLines,
-  createShape,
-  createShowDLblsOverMax,
-  createShowHorzBorder,
-  createShowKeys,
-  createShowLeaderLines,
-  createShowNegBubbles,
-  createShowOutline,
-  createShowVertBorder,
-  createSideWall,
-  createSize,
-  createSizeRepresents,
-  createSmooth,
-  createSplitPos,
-  createSplitType,
-  createStrLit,
-  createSurface3DChart,
-  createSymbol,
-  createThickness,
-  createTickLblPos,
-  createTickMarkSkip,
-  createTrendlineLbl,
-  createUpBars,
-  createUpDownBars,
-  createUserInterface,
-  createUserShapes,
-  createW,
-  createWMode,
-  createX,
-  createXMode,
-  createY,
-  createYMode,
-} from "./chart";
-export type { PageMarginsOptions, PageSetupOptions } from "./chart";
-
-// Spreadsheet Drawing (xdr: elements)
-export {
-  createXdrCol,
-  createXdrColOff,
-  createXdrRow,
-  createXdrRowOff,
-  createXdrFrom,
-  createXdrTo,
-  createXdrCNvPr,
-  createXdrCNvSpPr,
-  createXdrCNvCxnSpPr,
-  createXdrCNvPicPr,
-  createXdrCNvGrpSpPr,
-  createXdrNvSpPr,
-  createXdrNvCxnSpPr,
-  createXdrNvPicPr,
-  createXdrNvGrpSpPr,
-  createXdrSp,
-  createXdrCxnSp,
-  createXdrPic,
-  createXdrGrpSp,
-  createXdrSpPr,
-  createXdrGrpSpPr,
-  createXdrStyle,
-  createXdrTxBody,
-  createXdrBlipFill,
-  createXdrContentPart,
-  createXdrTwoCellAnchor,
-  createXdrOneCellAnchor,
-} from "./spreadsheet-drawing";
-export type {
-  XdrMarkerOptions,
-  XdrShapeAttributes,
-  XdrTwoCellAnchorOptions,
-} from "./spreadsheet-drawing";
-
-// Wordprocessing Drawing (wp: elements)
-export {
-  createWpCNvPr,
-  createWpCNvSpPr,
-  createWpCNvCnPr,
-  createWpCNvFrPr,
-  createWpCNvGrpSpPr,
-  createWpCNvContentPartPr,
-  createWpSp,
-  createWpSpPr,
-  createWpGrpSpPr,
-  createWpStyle,
-  createWpXfrm,
-  createWpBodyPr,
-  createWpTxbx,
-  createWpTxbxContent,
-  createWpLinkedTxbx,
-  createWpExtLst,
-  createWpGraphicFrame,
-  createWpContentPart,
-  createWpNvContentPartPr,
-  createWpGrpSp,
-  createWpNestedGrpSp,
-  createWpCanvas,
-  createWpBg,
-  createWpWhole,
-} from "./wordprocessing-drawing";
-export type {
-  WpNonVisualDrawingPropsOptions,
-  WpShapeOptions,
-  WpTextboxOptions,
-  WpLinkedTextboxOptions,
-  WpGraphicFrameOptions,
-  WpContentPartOptions,
-  WpGroupOptions,
-  WpCanvasOptions,
-} from "./wordprocessing-drawing";
 
 // Diagram (SmartArt dgm: elements)
 export {
@@ -429,96 +197,6 @@ export {
   createDiagramTxPr,
 } from "./diagram";
 
-// DrawingML Main elements (a: namespace)
-export {
-  // Shapes
-  createSp,
-  createCxnSp,
-  createGrpSp,
-  createPic,
-  createGraphicFrame,
-  createTxSp,
-  // Non-Visual Properties
-  createCNvSpPr,
-  createCNvCxnSpPr,
-  createCNvGrpSpPr,
-  createCNvGraphicFramePr,
-  createNvSpPr,
-  createNvCxnSpPr,
-  createNvGrpSpPr,
-  createNvGraphicFramePr,
-  createNvPicPr,
-  // Group Shape / Locking
-  createGrpSpPr,
-  createCpLocks,
-  createCxnSpLocks,
-  createUseSpRect,
-  // Table
-  createTableStyleElement,
-  createCell3D,
-  createInsideH,
-  createInsideV,
-  createTop,
-  createBottom,
-  createLeft,
-  createRight,
-  createTl2br,
-  createTr2bl,
-  createLnTlToBr,
-  createLnBlToTr,
-  createRound,
-  // Connector
-  createStart,
-  createEnd,
-  createStCxn,
-  createEndCxn,
-  // Theme
-  createClrMap,
-  createOverrideClrMapping,
-  createExtraClrScheme,
-  createCustClr,
-  createCustClrLst,
-  createThemeManager,
-  createThemeOverride,
-  createFontElement,
-  createSpDef,
-  createLnDef,
-  createTxDef,
-  // Text
-  createBr,
-  createTab,
-  createTabLst,
-  createSym,
-  createHighlight,
-  createBuBlip,
-  createBuClrTx,
-  createBuFontTx,
-  createBuSzPts,
-  createBuSzTx,
-  // Underline
-  createUFill,
-  createUFillTx,
-  createULn,
-  createULnTx,
-  // Media
-  createAudioCd,
-  createQuickTimeFile,
-  createSnd,
-  createWavAudioFile,
-  // Animation Build
-  createBldChart,
-  createBldDgm,
-  // Other
-  createBevelElement,
-  createChart,
-  createDgm,
-  createHeaders,
-  createHeader,
-  createHlinkMouseOver,
-  createSt,
-  createStyleElement,
-} from "./dml-main-elements";
-
 export type {
   AdjOptions,
   AdjLstOptions,
@@ -546,3 +224,16 @@ export type {
   DiagramExtensionOptions,
   DiagramTextPropsOptions,
 } from "./diagram";
+
+// ── Descriptors (declarative XML read/write) ──
+
+export * from "./color/color-descriptors";
+export * from "./fill/fill-descriptors";
+export * from "./outline/outline-descriptors";
+export * from "./effects/effect-descriptors";
+export * from "./locking/locking-descriptors";
+export * from "./geometry/geometry-descriptors";
+export * from "./transform-descriptors";
+export * from "./three-d/three-d-descriptors";
+export * from "./blip/blip-descriptors";
+export * from "./diagram/diagram-descriptors";

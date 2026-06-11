@@ -1,62 +1,70 @@
 // East Asian layout - Need to use an East Asian font
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import { Document, HeadingLevel, Packer, Paragraph, TextRun } from "@office-open/docx";
+import { HeadingLevel, generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Paragraph({
-          heading: HeadingLevel.HEADING_1,
-          text: "East Asian Layout",
-        }),
+        {
+          paragraph: {
+            heading: HeadingLevel.HEADING_1,
+            text: "East Asian Layout",
+          },
+        },
 
         // East Asian layout - combined characters with round brackets
-        new Paragraph({
-          children: [
-            new TextRun("Combined characters (round brackets): "),
-            new TextRun({
-              eastAsianLayout: {
-                combine: true,
-                combineBrackets: "round",
-                id: 1,
+        {
+          paragraph: {
+            children: [
+              "Combined characters (round brackets): ",
+              {
+                eastAsianLayout: {
+                  combine: true,
+                  combineBrackets: "round",
+                  id: 1,
+                },
+                text: "国民",
               },
-              text: "国民",
-            }),
-          ],
-          spacing: { after: 200 },
-        }),
+            ],
+            spacing: { after: 200 },
+          },
+        },
 
         // East Asian layout - combined characters with square brackets
-        new Paragraph({
-          children: [
-            new TextRun("Combined characters (square brackets): "),
-            new TextRun({
-              eastAsianLayout: {
-                combine: true,
-                combineBrackets: "square",
-                id: 2,
+        {
+          paragraph: {
+            children: [
+              "Combined characters (square brackets): ",
+              {
+                eastAsianLayout: {
+                  combine: true,
+                  combineBrackets: "square",
+                  id: 2,
+                },
+                text: "日本語",
               },
-              text: "日本語",
-            }),
-          ],
-          spacing: { after: 200 },
-        }),
+            ],
+            spacing: { after: 200 },
+          },
+        },
 
         // East Asian layout - vertical text
-        new Paragraph({
-          children: [
-            new TextRun("Vertical text: "),
-            new TextRun({
-              eastAsianLayout: {
-                vert: true,
+        {
+          paragraph: {
+            children: [
+              "Vertical text: ",
+              {
+                eastAsianLayout: {
+                  vert: true,
+                },
+                text: "縦書き",
               },
-              text: "縦書き",
-            }),
-          ],
-          spacing: { after: 200 },
-        }),
+            ],
+            spacing: { after: 200 },
+          },
+        },
       ],
     },
   ],
@@ -75,6 +83,4 @@ const doc = new Document({
     ],
   },
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

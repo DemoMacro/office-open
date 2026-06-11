@@ -5,7 +5,6 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "../../xml-components";
 
 // ---------------------------------------------------------------------------
 // dgm:relIds — relationship IDs (CT_RelIds)
@@ -13,13 +12,13 @@ import { BuilderElement, type XmlComponent } from "../../xml-components";
 
 export interface DiagramRelIdsOptions {
   /** Relationship to data model part */
-  readonly dm: string;
+  dm: string;
   /** Relationship to layout definition part */
-  readonly lo: string;
+  lo: string;
   /** Relationship to quick style part */
-  readonly qs: string;
+  qs: string;
   /** Relationship to color transform part */
-  readonly cs: string;
+  cs: string;
 }
 
 /**
@@ -35,13 +34,5 @@ export interface DiagramRelIdsOptions {
  * </xsd:complexType>
  * ```
  */
-export const createDiagramRelIds = (options: DiagramRelIdsOptions): XmlComponent =>
-  new BuilderElement({
-    name: "dgm:relIds",
-    attributes: {
-      "r:dm": { key: "r:dm", value: options.dm },
-      "r:lo": { key: "r:lo", value: options.lo },
-      "r:qs": { key: "r:qs", value: options.qs },
-      "r:cs": { key: "r:cs", value: options.cs },
-    },
-  });
+export const createDiagramRelIds = (options: DiagramRelIdsOptions): string =>
+  `<dgm:relIds r:dm="${options.dm}" r:lo="${options.lo}" r:qs="${options.qs}" r:cs="${options.cs}"/>`;

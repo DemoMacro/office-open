@@ -1,19 +1,9 @@
+import { writeFileSync } from "node:fs";
 // Add text to header and footer
 
-import * as fs from "fs";
+import { AlignmentType, LevelFormat, generateDocument } from "@office-open/docx";
 
-import {
-  AlignmentType,
-  Document,
-  Footer,
-  Header,
-  LevelFormat,
-  Packer,
-  Paragraph,
-  convertInchesToTwip,
-} from "@office-open/docx";
-
-const doc = new Document({
+const buffer = await generateDocument({
   numbering: {
     config: [
       {
@@ -25,8 +15,8 @@ const doc = new Document({
             style: {
               paragraph: {
                 indent: {
-                  hanging: convertInchesToTwip(0.18),
-                  left: convertInchesToTwip(0.5),
+                  hanging: "0.18in",
+                  left: "0.5in",
                 },
               },
             },
@@ -39,43 +29,43 @@ const doc = new Document({
   },
   sections: [
     {
-      children: [new Paragraph("Hello World")],
+      children: [{ paragraph: "Hello World" }],
       footers: {
-        default: new Footer({
-          children: [
-            new Paragraph("This footer contains a numbered list:"),
-            new Paragraph({
+        default: [
+          { paragraph: "This footer contains a numbered list:" },
+          {
+            paragraph: {
               numbering: {
                 level: 0,
                 reference: "footer-numbering",
               },
               text: "First item in the list",
-            }),
-            new Paragraph({
+            },
+          },
+          {
+            paragraph: {
               numbering: {
                 level: 0,
                 reference: "footer-numbering",
               },
               text: "Second item in the list",
-            }),
-            new Paragraph({
+            },
+          },
+          {
+            paragraph: {
               numbering: {
                 level: 0,
                 reference: "footer-numbering",
               },
               text: "Third item in the list",
-            }),
-          ],
-        }),
+            },
+          },
+        ],
       },
       headers: {
-        default: new Header({
-          children: [new Paragraph("Header text")],
-        }),
+        default: [{ paragraph: "Header text" }],
       },
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

@@ -5,9 +5,9 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import type { XmlComponent } from "../../xml-components";
-import { xsdRectAlignment } from "../../xsd-mappings";
+import { element } from "@office-open/xml";
+
+import { xsdRectAlignment } from "../../util/mappings";
 import { createColorElement } from "../color/solid-fill";
 import type { SolidFillOptions } from "../color/solid-fill";
 
@@ -31,25 +31,25 @@ export const RectAlignment = {
  */
 export interface OuterShadowEffectOptions {
   /** Blur radius in EMUs */
-  readonly blurRadius?: number;
+  blurRadius?: number;
   /** Distance from shape in EMUs */
-  readonly distance?: number;
+  distance?: number;
   /** Direction angle in 60,000ths of a degree */
-  readonly direction?: number;
+  direction?: number;
   /** Horizontal scale percentage (e.g., 100000 = 100%) */
-  readonly scaleX?: number;
+  scaleX?: number;
   /** Vertical scale percentage */
-  readonly scaleY?: number;
+  scaleY?: number;
   /** Horizontal skew angle in 60,000ths of a degree */
-  readonly skewX?: number;
+  skewX?: number;
   /** Vertical skew angle */
-  readonly skewY?: number;
+  skewY?: number;
   /** Shadow alignment */
-  readonly alignment?: (typeof RectAlignment)[keyof typeof RectAlignment];
+  alignment?: (typeof RectAlignment)[keyof typeof RectAlignment];
   /** Whether shadow rotates with shape */
-  readonly rotWithShape?: boolean;
+  rotWithShape?: boolean;
   /** Shadow color */
-  readonly color: SolidFillOptions;
+  color: SolidFillOptions;
 }
 
 /**
@@ -73,42 +73,18 @@ export interface OuterShadowEffectOptions {
  * </xsd:complexType>
  * ```
  */
-export const createOuterShadowEffect = (options: OuterShadowEffectOptions): XmlComponent => {
-  const attributes: Record<string, { readonly key: string; readonly value: string | number }> = {};
+export const createOuterShadowEffect = (options: OuterShadowEffectOptions): string => {
+  const attrs: Record<string, string | number> = {};
 
-  if (options.blurRadius !== undefined) {
-    attributes.blurRad = { key: "blurRad", value: options.blurRadius };
-  }
-  if (options.distance !== undefined) {
-    attributes.dist = { key: "dist", value: options.distance };
-  }
-  if (options.direction !== undefined) {
-    attributes.dir = { key: "dir", value: options.direction };
-  }
-  if (options.scaleX !== undefined) {
-    attributes.sx = { key: "sx", value: options.scaleX };
-  }
-  if (options.scaleY !== undefined) {
-    attributes.sy = { key: "sy", value: options.scaleY };
-  }
-  if (options.skewX !== undefined) {
-    attributes.kx = { key: "kx", value: options.skewX };
-  }
-  if (options.skewY !== undefined) {
-    attributes.ky = { key: "ky", value: options.skewY };
-  }
-  if (options.alignment !== undefined) {
-    attributes.algn = { key: "algn", value: xsdRectAlignment.to(options.alignment) };
-  }
-  if (options.rotWithShape === false) {
-    attributes.rotWithShape = { key: "rotWithShape", value: 0 };
-  }
+  if (options.blurRadius !== undefined) attrs.blurRad = options.blurRadius;
+  if (options.distance !== undefined) attrs.dist = options.distance;
+  if (options.direction !== undefined) attrs.dir = options.direction;
+  if (options.scaleX !== undefined) attrs.sx = options.scaleX;
+  if (options.scaleY !== undefined) attrs.sy = options.scaleY;
+  if (options.skewX !== undefined) attrs.kx = options.skewX;
+  if (options.skewY !== undefined) attrs.ky = options.skewY;
+  if (options.alignment !== undefined) attrs.algn = xsdRectAlignment.to(options.alignment);
+  if (options.rotWithShape === false) attrs.rotWithShape = 0;
 
-  const children: XmlComponent[] = [createColorElement(options.color)];
-
-  return new BuilderElement({
-    attributes: attributes as never,
-    children,
-    name: "a:outerShdw",
-  });
+  return element("a:outerShdw", attrs, [createColorElement(options.color)]);
 };

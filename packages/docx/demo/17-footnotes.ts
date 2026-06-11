@@ -1,70 +1,61 @@
+import { readFileSync, writeFileSync } from "node:fs";
 // Footnotes
 
-import * as fs from "fs";
+import { AlignmentType, LevelFormat, generateDocument } from "@office-open/docx";
 
-import {
-  AlignmentType,
-  Document,
-  FootnoteReferenceRun,
-  ImageRun,
-  LevelFormat,
-  Packer,
-  Paragraph,
-  TextRun,
-  convertInchesToTwip,
-} from "@office-open/docx";
-
-const doc = new Document({
+const buffer = await generateDocument({
   footnotes: {
-    1: { children: [new Paragraph("Foo"), new Paragraph("Bar")] },
+    1: { children: ["Foo", "Bar"] },
     2: {
       children: [
-        new Paragraph("This footnote contains a numbered list:"),
-        new Paragraph({
+        "This footnote contains a numbered list:",
+        {
           numbering: {
             level: 0,
             reference: "footnote-numbering",
           },
           text: "First item in the list",
-        }),
-        new Paragraph({
+        },
+        {
           numbering: {
             level: 0,
             reference: "footnote-numbering",
           },
           text: "Second item in the list",
-        }),
-        new Paragraph({
+        },
+        {
           numbering: {
             level: 0,
             reference: "footnote-numbering",
           },
           text: "Third item in the list",
-        }),
+        },
       ],
     },
     3: {
       children: [
-        new Paragraph({
+        {
           children: [
-            new ImageRun({
-              data: fs.readFileSync("./demo/images/cat.jpg"),
-              transformation: {
-                height: 100,
-                width: 100,
+            {
+              image: {
+                data: readFileSync("./demo/images/cat.jpg"),
+                transformation: {
+                  height: 100,
+                  width: 100,
+                },
+                type: "jpg",
               },
-              type: "jpg",
-            }),
-            new TextRun({
+            },
+            {
               text: "It's a cat",
-            }),
+            },
           ],
-        }),
+        },
       ],
     },
-    4: { children: [new Paragraph("Foo1")] },
-    5: { children: [new Paragraph("Test1")] },
-    6: { children: [new Paragraph("My amazing reference1")] },
+    4: { children: ["Foo1"] },
+    5: { children: ["Test1"] },
+    6: { children: ["My amazing reference1"] },
   },
   numbering: {
     config: [
@@ -78,8 +69,8 @@ const doc = new Document({
             style: {
               paragraph: {
                 indent: {
-                  left: convertInchesToTwip(0.5),
-                  hanging: convertInchesToTwip(0.18),
+                  left: "0.5in",
+                  hanging: "0.18in",
                 },
               },
             },
@@ -92,24 +83,28 @@ const doc = new Document({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [
-            new TextRun({
-              children: ["Hello"],
-            }),
-            new FootnoteReferenceRun(1),
-            new TextRun({
-              children: [" World!"],
-            }),
-            new FootnoteReferenceRun(2),
-            new TextRun({
-              children: [" GitHub!"],
-            }),
-          ],
-        }),
-        new Paragraph({
-          children: [new TextRun("Hello World"), new FootnoteReferenceRun(3)],
-        }),
+        {
+          paragraph: {
+            children: [
+              {
+                children: ["Hello"],
+              },
+              { footnoteReference: 1 },
+              {
+                children: [" World!"],
+              },
+              { footnoteReference: 2 },
+              {
+                children: [" GitHub!"],
+              },
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: ["Hello World", { footnoteReference: 3 }],
+          },
+        },
       ],
       properties: {
         footnotePr: {
@@ -120,21 +115,25 @@ const doc = new Document({
     },
     {
       children: [
-        new Paragraph({
-          children: [
-            new TextRun({
-              children: ["Hello"],
-            }),
-            new FootnoteReferenceRun(4),
-            new TextRun({
-              children: [" World!"],
-            }),
-            new FootnoteReferenceRun(5),
-          ],
-        }),
-        new Paragraph({
-          children: [new TextRun("Hello World Again"), new FootnoteReferenceRun(6)],
-        }),
+        {
+          paragraph: {
+            children: [
+              {
+                children: ["Hello"],
+              },
+              { footnoteReference: 4 },
+              {
+                children: [" World!"],
+              },
+              { footnoteReference: 5 },
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: ["Hello World Again", { footnoteReference: 6 }],
+          },
+        },
       ],
       properties: {
         footnotePr: {
@@ -145,6 +144,4 @@ const doc = new Document({
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

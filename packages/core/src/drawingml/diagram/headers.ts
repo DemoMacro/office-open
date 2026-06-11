@@ -7,68 +7,50 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "../../xml-components";
+import { element } from "@office-open/xml";
 
 // ---------------------------------------------------------------------------
 // Shared name/description/category types
 // ---------------------------------------------------------------------------
 
 export interface DiagramNameOptions {
-  readonly lang?: string;
-  readonly val: string;
+  lang?: string;
+  val: string;
 }
 
 export interface DiagramDescriptionOptions {
-  readonly lang?: string;
-  readonly val: string;
+  lang?: string;
+  val: string;
 }
 
 export interface DiagramCategoryOptions {
-  readonly type: string;
-  readonly pri: number;
+  type: string;
+  pri: number;
 }
 
-const createNameEl = (tag: string, options: DiagramNameOptions): XmlComponent => {
+const createNameEl = (tag: string, options: DiagramNameOptions): string => {
   const attrs: Record<string, string> = { val: options.val };
   if (options.lang) attrs.lang = options.lang;
-  return new BuilderElement({
-    name: tag,
-    attributes: {
-      val: { key: "val", value: attrs.val },
-      ...(attrs.lang && { lang: { key: "lang", value: attrs.lang } }),
-    },
-  });
+  return element(tag, attrs);
 };
 
-const createDescEl = (tag: string, options: DiagramDescriptionOptions): XmlComponent => {
+const createDescEl = (tag: string, options: DiagramDescriptionOptions): string => {
   const attrs: Record<string, string> = { val: options.val };
   if (options.lang) attrs.lang = options.lang;
-  return new BuilderElement({
-    name: tag,
-    attributes: {
-      val: { key: "val", value: attrs.val },
-      ...(attrs.lang && { lang: { key: "lang", value: attrs.lang } }),
-    },
-  });
+  return element(tag, attrs);
 };
 
-const createCatEl = (options: DiagramCategoryOptions): XmlComponent =>
-  new BuilderElement({
-    name: "dgm:cat",
-    attributes: {
-      type: { key: "type", value: options.type },
-      pri: { key: "pri", value: options.pri },
-    },
-  });
+const createCatEl = (options: DiagramCategoryOptions): string =>
+  `<dgm:cat type="${options.type}" pri="${options.pri}"/>`;
 
-const createCatLst = (categories?: readonly DiagramCategoryOptions[]): XmlComponent => {
-  const children: XmlComponent[] = [];
+const createCatLst = (categories?: readonly DiagramCategoryOptions[]): string => {
+  const children: string[] = [];
   if (categories) {
     for (const cat of categories) {
       children.push(createCatEl(cat));
     }
   }
-  return new BuilderElement({ name: "dgm:catLst", children });
+  return element("dgm:catLst", undefined, children);
 };
 
 // ---------------------------------------------------------------------------
@@ -76,12 +58,12 @@ const createCatLst = (categories?: readonly DiagramCategoryOptions[]): XmlCompon
 // ---------------------------------------------------------------------------
 
 export interface ColorsDefHdrOptions {
-  readonly uniqueId: string;
-  readonly minVer?: string;
-  readonly resId?: number;
-  readonly title: readonly DiagramNameOptions[];
-  readonly desc: readonly DiagramDescriptionOptions[];
-  readonly categories?: readonly DiagramCategoryOptions[];
+  uniqueId: string;
+  minVer?: string;
+  resId?: number;
+  title: readonly DiagramNameOptions[];
+  desc: readonly DiagramDescriptionOptions[];
+  categories?: readonly DiagramCategoryOptions[];
 }
 
 /**
@@ -102,21 +84,17 @@ export interface ColorsDefHdrOptions {
  * </xsd:complexType>
  * ```
  */
-export const createColorsDefHdr = (options: ColorsDefHdrOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+export const createColorsDefHdr = (options: ColorsDefHdrOptions): string => {
+  const children: string[] = [];
   for (const t of options.title) children.push(createNameEl("dgm:title", t));
   for (const d of options.desc) children.push(createDescEl("dgm:desc", d));
   if (options.categories?.length) children.push(createCatLst(options.categories));
 
-  return new BuilderElement({
-    name: "dgm:colorsDefHdr",
-    attributes: {
-      uniqueId: { key: "uniqueId", value: options.uniqueId },
-      ...(options.minVer !== undefined && { minVer: { key: "minVer", value: options.minVer } }),
-      ...(options.resId !== undefined && { resId: { key: "resId", value: options.resId } }),
-    },
-    children,
-  });
+  const attrs: Record<string, string | number> = { uniqueId: options.uniqueId };
+  if (options.minVer !== undefined) attrs.minVer = options.minVer;
+  if (options.resId !== undefined) attrs.resId = options.resId;
+
+  return element("dgm:colorsDefHdr", attrs, children);
 };
 
 // ---------------------------------------------------------------------------
@@ -124,18 +102,18 @@ export const createColorsDefHdr = (options: ColorsDefHdrOptions): XmlComponent =
 // ---------------------------------------------------------------------------
 
 export interface ColorsDefHdrLstOptions {
-  readonly headers?: readonly ColorsDefHdrOptions[];
+  headers?: readonly ColorsDefHdrOptions[];
 }
 
 /** Creates a dgm:colorsDefHdrLst element. */
-export const createColorsDefHdrLst = (options?: ColorsDefHdrLstOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+export const createColorsDefHdrLst = (options?: ColorsDefHdrLstOptions): string => {
+  const children: string[] = [];
   if (options?.headers) {
     for (const hdr of options.headers) {
       children.push(createColorsDefHdr(hdr));
     }
   }
-  return new BuilderElement({ name: "dgm:colorsDefHdrLst", children });
+  return element("dgm:colorsDefHdrLst", undefined, children);
 };
 
 // ---------------------------------------------------------------------------
@@ -143,13 +121,13 @@ export const createColorsDefHdrLst = (options?: ColorsDefHdrLstOptions): XmlComp
 // ---------------------------------------------------------------------------
 
 export interface LayoutDefHdrOptions {
-  readonly uniqueId: string;
-  readonly minVer?: string;
-  readonly defStyle?: string;
-  readonly resId?: number;
-  readonly title: readonly DiagramNameOptions[];
-  readonly desc: readonly DiagramDescriptionOptions[];
-  readonly categories?: readonly DiagramCategoryOptions[];
+  uniqueId: string;
+  minVer?: string;
+  defStyle?: string;
+  resId?: number;
+  title: readonly DiagramNameOptions[];
+  desc: readonly DiagramDescriptionOptions[];
+  categories?: readonly DiagramCategoryOptions[];
 }
 
 /**
@@ -171,24 +149,18 @@ export interface LayoutDefHdrOptions {
  * </xsd:complexType>
  * ```
  */
-export const createLayoutDefHdr = (options: LayoutDefHdrOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+export const createLayoutDefHdr = (options: LayoutDefHdrOptions): string => {
+  const children: string[] = [];
   for (const t of options.title) children.push(createNameEl("dgm:title", t));
   for (const d of options.desc) children.push(createDescEl("dgm:desc", d));
   if (options.categories?.length) children.push(createCatLst(options.categories));
 
-  return new BuilderElement({
-    name: "dgm:layoutDefHdr",
-    attributes: {
-      uniqueId: { key: "uniqueId", value: options.uniqueId },
-      ...(options.minVer !== undefined && { minVer: { key: "minVer", value: options.minVer } }),
-      ...(options.defStyle !== undefined && {
-        defStyle: { key: "defStyle", value: options.defStyle },
-      }),
-      ...(options.resId !== undefined && { resId: { key: "resId", value: options.resId } }),
-    },
-    children,
-  });
+  const attrs: Record<string, string | number> = { uniqueId: options.uniqueId };
+  if (options.minVer !== undefined) attrs.minVer = options.minVer;
+  if (options.defStyle !== undefined) attrs.defStyle = options.defStyle;
+  if (options.resId !== undefined) attrs.resId = options.resId;
+
+  return element("dgm:layoutDefHdr", attrs, children);
 };
 
 // ---------------------------------------------------------------------------
@@ -196,18 +168,18 @@ export const createLayoutDefHdr = (options: LayoutDefHdrOptions): XmlComponent =
 // ---------------------------------------------------------------------------
 
 export interface LayoutDefHdrLstOptions {
-  readonly headers?: readonly LayoutDefHdrOptions[];
+  headers?: readonly LayoutDefHdrOptions[];
 }
 
 /** Creates a dgm:layoutDefHdrLst element. */
-export const createLayoutDefHdrLst = (options?: LayoutDefHdrLstOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+export const createLayoutDefHdrLst = (options?: LayoutDefHdrLstOptions): string => {
+  const children: string[] = [];
   if (options?.headers) {
     for (const hdr of options.headers) {
       children.push(createLayoutDefHdr(hdr));
     }
   }
-  return new BuilderElement({ name: "dgm:layoutDefHdrLst", children });
+  return element("dgm:layoutDefHdrLst", undefined, children);
 };
 
 // ---------------------------------------------------------------------------
@@ -215,12 +187,12 @@ export const createLayoutDefHdrLst = (options?: LayoutDefHdrLstOptions): XmlComp
 // ---------------------------------------------------------------------------
 
 export interface StyleDefHdrOptions {
-  readonly uniqueId: string;
-  readonly minVer?: string;
-  readonly resId?: number;
-  readonly title: readonly DiagramNameOptions[];
-  readonly desc: readonly DiagramDescriptionOptions[];
-  readonly categories?: readonly DiagramCategoryOptions[];
+  uniqueId: string;
+  minVer?: string;
+  resId?: number;
+  title: readonly DiagramNameOptions[];
+  desc: readonly DiagramDescriptionOptions[];
+  categories?: readonly DiagramCategoryOptions[];
 }
 
 /**
@@ -241,21 +213,17 @@ export interface StyleDefHdrOptions {
  * </xsd:complexType>
  * ```
  */
-export const createStyleDefHdr = (options: StyleDefHdrOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+export const createStyleDefHdr = (options: StyleDefHdrOptions): string => {
+  const children: string[] = [];
   for (const t of options.title) children.push(createNameEl("dgm:title", t));
   for (const d of options.desc) children.push(createDescEl("dgm:desc", d));
   if (options.categories?.length) children.push(createCatLst(options.categories));
 
-  return new BuilderElement({
-    name: "dgm:styleDefHdr",
-    attributes: {
-      uniqueId: { key: "uniqueId", value: options.uniqueId },
-      ...(options.minVer !== undefined && { minVer: { key: "minVer", value: options.minVer } }),
-      ...(options.resId !== undefined && { resId: { key: "resId", value: options.resId } }),
-    },
-    children,
-  });
+  const attrs: Record<string, string | number> = { uniqueId: options.uniqueId };
+  if (options.minVer !== undefined) attrs.minVer = options.minVer;
+  if (options.resId !== undefined) attrs.resId = options.resId;
+
+  return element("dgm:styleDefHdr", attrs, children);
 };
 
 // ---------------------------------------------------------------------------
@@ -263,16 +231,16 @@ export const createStyleDefHdr = (options: StyleDefHdrOptions): XmlComponent => 
 // ---------------------------------------------------------------------------
 
 export interface StyleDefHdrLstOptions {
-  readonly headers?: readonly StyleDefHdrOptions[];
+  headers?: readonly StyleDefHdrOptions[];
 }
 
 /** Creates a dgm:styleDefHdrLst element. */
-export const createStyleDefHdrLst = (options?: StyleDefHdrLstOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+export const createStyleDefHdrLst = (options?: StyleDefHdrLstOptions): string => {
+  const children: string[] = [];
   if (options?.headers) {
     for (const hdr of options.headers) {
       children.push(createStyleDefHdr(hdr));
     }
   }
-  return new BuilderElement({ name: "dgm:styleDefHdrLst", children });
+  return element("dgm:styleDefHdrLst", undefined, children);
 };

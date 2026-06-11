@@ -1,99 +1,113 @@
 // Image click and hover hyperlinks
-import * as fs from "fs";
+import { readFileSync, writeFileSync } from "node:fs";
 
-import { Document, ImageRun, Packer, Paragraph, TextRun } from "@office-open/docx";
+import { generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [
-            new TextRun({
-              bold: true,
-              size: 32,
-              text: "Image Hyperlink Demo",
-            }),
-          ],
-          spacing: { after: 400 },
-        }),
+        {
+          paragraph: {
+            children: [
+              {
+                bold: true,
+                size: 32,
+                text: "Image Hyperlink Demo",
+              },
+            ],
+            spacing: { after: 400 },
+          },
+        },
 
         // 1. Image with click hyperlink
-        new Paragraph({
-          children: [
-            new TextRun({
-              bold: true,
-              text: "1. Image with Click Hyperlink",
-            }),
-          ],
-          spacing: { after: 200 },
-        }),
-        new Paragraph({
-          children: [new TextRun("(Click the image below to open https://example.com)")],
-          spacing: { after: 100 },
-        }),
-        new Paragraph({
-          children: [
-            new ImageRun({
-              altText: {
-                description: "Click me!",
-                hyperlink: { click: "https://example.com" },
-                name: "link-image",
-                title: "Click to visit example.com",
+        {
+          paragraph: {
+            children: [
+              {
+                bold: true,
+                text: "1. Image with Click Hyperlink",
               },
-              data: fs.readFileSync("./demo/images/cat.jpg"),
-              transformation: {
-                height: 150,
-                width: 150,
+            ],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          paragraph: {
+            children: ["(Click the image below to open https://example.com)"],
+            spacing: { after: 100 },
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              {
+                image: {
+                  altText: {
+                    description: "Click me!",
+                    hyperlink: { click: "https://example.com" },
+                    name: "link-image",
+                    title: "Click to visit example.com",
+                  },
+                  data: readFileSync("./demo/images/cat.jpg"),
+                  transformation: {
+                    height: 150,
+                    width: 150,
+                  },
+                  type: "jpg",
+                },
               },
-              type: "jpg",
-            }),
-          ],
-        }),
+            ],
+          },
+        },
 
-        new Paragraph({ children: [new TextRun("")] }),
+        { paragraph: { children: [""] } },
 
         // 2. Image with both click and hover hyperlink
-        new Paragraph({
-          children: [
-            new TextRun({
-              bold: true,
-              text: "2. Image with Click + Hover Hyperlink",
-            }),
-          ],
-          spacing: { after: 200 },
-        }),
-        new Paragraph({
-          children: [
-            new TextRun("(Click opens https://example.com, hover opens https://example.com/hover)"),
-          ],
-          spacing: { after: 100 },
-        }),
-        new Paragraph({
-          children: [
-            new ImageRun({
-              altText: {
-                description: "Click or hover me!",
-                hyperlink: {
-                  click: "https://example.com",
-                  hover: "https://example.com/hover",
+        {
+          paragraph: {
+            children: [
+              {
+                bold: true,
+                text: "2. Image with Click + Hover Hyperlink",
+              },
+            ],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          paragraph: {
+            children: ["(Click opens https://example.com, hover opens https://example.com/hover)"],
+            spacing: { after: 100 },
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              {
+                image: {
+                  altText: {
+                    description: "Click or hover me!",
+                    hyperlink: {
+                      click: "https://example.com",
+                      hover: "https://example.com/hover",
+                    },
+                    name: "dual-link-image",
+                    title: "Dual hyperlink image",
+                  },
+                  data: readFileSync("./demo/images/cat.jpg"),
+                  transformation: {
+                    height: 150,
+                    width: 150,
+                  },
+                  type: "jpg",
                 },
-                name: "dual-link-image",
-                title: "Dual hyperlink image",
               },
-              data: fs.readFileSync("./demo/images/cat.jpg"),
-              transformation: {
-                height: 150,
-                width: 150,
-              },
-              type: "jpg",
-            }),
-          ],
-        }),
+            ],
+          },
+        },
       ],
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

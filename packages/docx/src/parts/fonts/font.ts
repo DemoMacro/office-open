@@ -1,0 +1,215 @@
+/**
+ * Font module for WordprocessingML documents.
+ *
+ * Provides support for font definitions and embedded fonts.
+ *
+ * Reference: http://www.datypic.com/sc/ooxml/e-w_font-1.html
+ *
+ * @module
+ */
+import { element } from "@office-open/xml";
+
+const createStringElement = (name: string, value: string): string =>
+  element(name, { "w:val": value });
+
+/**
+ * Options for a font relationship (embedded font).
+ *
+ * Reference: http://www.datypic.com/sc/ooxml/e-w_embedRegular-1.html
+ *
+ * @property id - Relationship to Part
+ * @property fontKey - Embedded Font Obfuscation Key (GUID)
+ * @property subsetted - Whether the embedded font is subsetted
+ */
+export interface FontRelationshipOptions {
+  /** Relationship to Part */
+  id: string;
+  /** Embedded Font Obfuscation Key (GUID) */
+  fontKey?: string;
+  /** Whether the embedded font is subsetted */
+  subsetted?: boolean;
+}
+
+/**
+ * Character set constants for font definitions.
+ * Maps character set names to their hexadecimal identifiers.
+ *
+ * @publicApi
+ */
+export const CharacterSet = {
+  ANSI: "00",
+  ARABIC: "B2",
+  BALTIC: "BA",
+  CHINESEBIG5: "88",
+  DEFAULT: "01",
+  EASTEUROPE: "EE",
+  GB_2312: "86",
+  GREEK: "A1",
+  HANGUL: "81",
+  HEBREW: "B1",
+  JIS: "80",
+  JOHAB: "82",
+  MAC: "4D",
+  OEM: "FF",
+  RUSSIAN: "CC",
+  SYMBOL: "02",
+  THAI: "DE",
+  TURKISH: "A2",
+  VIETNAMESE: "A3",
+} as const;
+
+/**
+ * Options for defining a font in the document.
+ *
+ * Reference: http://www.datypic.com/sc/ooxml/e-w_font-1.html
+ *
+ * @property name - Font name (required)
+ * @property altName - Alternative font name
+ * @property panose1 - PANOSE-1 classification
+ * @property charset - Character set identifier
+ * @property family - Font family
+ * @property notTrueType - Whether this is not a TrueType font
+ * @property pitch - Font pitch
+ * @property sig - Font signature (Unicode and code page ranges)
+ * @property embedRegular - Embedded regular font relationship
+ * @property embedBold - Embedded bold font relationship
+ * @property embedItalic - Embedded italic font relationship
+ * @property embedBoldItalic - Embedded bold-italic font relationship
+ */
+export interface FontEntry {
+  /** Font name (required) */
+  name: string;
+  /** Alternative font name */
+  altName?: string;
+  /** PANOSE-1 classification */
+  panose1?: string;
+  /** Character set identifier */
+  charset?: (typeof CharacterSet)[keyof typeof CharacterSet];
+  /** Font family */
+  family?: string;
+  /** Whether this is not a TrueType font */
+  notTrueType?: boolean;
+  /** Font pitch */
+  pitch?: string;
+  /** Font signature (Unicode and code page ranges) */
+  sig?: {
+    /** Unicode Subset Bitfield 0 */
+    usb0: string;
+    /** Unicode Subset Bitfield 1 */
+    usb1: string;
+    /** Unicode Subset Bitfield 2 */
+    usb2: string;
+    /** Unicode Subset Bitfield 3 */
+    usb3: string;
+    /** Code Page Bitfield 0 */
+    csb0: string;
+    /** Code Page Bitfield 1 */
+    csb1: string;
+  };
+  /** Embedded regular font relationship */
+  embedRegular?: FontRelationshipOptions;
+  /** Embedded bold font relationship */
+  embedBold?: FontRelationshipOptions;
+  /** Embedded italic font relationship */
+  embedItalic?: FontRelationshipOptions;
+  /** Embedded bold-italic font relationship */
+  embedBoldItalic?: FontRelationshipOptions;
+}
+
+/**
+ * Creates a font relationship element for embedding fonts.
+ */
+const createFontRelationship = (
+  { id, fontKey, subsetted }: FontRelationshipOptions,
+  name: string,
+): string => {
+  const attrs: Record<string, string | undefined> = { "r:id": id };
+  if (fontKey) {
+    attrs["w:fontKey"] = `{${fontKey}}`;
+  }
+  const children = subsetted ? [`<w:subsetted/>`] : undefined;
+  return element(name, attrs, children);
+};
+
+/**
+ * Creates a font element with the specified options.
+ *
+ * This function builds a complete font definition including optional embedded font files,
+ * font signature, character set, and other font properties.
+ *
+ * Reference: http://www.datypic.com/sc/ooxml/e-w_font-1.html
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_Font">
+ *   <xsd:sequence>
+ *     <xsd:element name="altName" type="CT_String" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="panose1" type="CT_Panose" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="charset" type="CT_Charset" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="family" type="CT_FontFamily" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="notTrueType" type="CT_OnOff" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="pitch" type="CT_Pitch" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="sig" type="CT_FontSig" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="embedRegular" type="CT_FontRel" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="embedBold" type="CT_FontRel" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="embedItalic" type="CT_FontRel" minOccurs="0" maxOccurs="1"/>
+ *     <xsd:element name="embedBoldItalic" type="CT_FontRel" minOccurs="0" maxOccurs="1"/>
+ *   </xsd:sequence>
+ *   <xsd:attribute name="name" type="s:ST_String" use="required"/>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * const font = createFont({
+ *   name: "Arial",
+ *   family: "swiss",
+ *   pitch: "variable",
+ *   charset: CharacterSet.ANSI
+ * });
+ * ```
+ */
+export const createFont = ({
+  name,
+  altName,
+  panose1,
+  charset,
+  family,
+  notTrueType,
+  pitch,
+  sig,
+  embedRegular,
+  embedBold,
+  embedItalic,
+  embedBoldItalic,
+}: FontEntry): string => {
+  const children: string[] = [];
+
+  // http://www.datypic.com/sc/ooxml/e-w_altName-1.html
+  if (altName) children.push(createStringElement("w:altName", altName));
+  // http://www.datypic.com/sc/ooxml/e-w_panose1-1.html
+  if (panose1) children.push(createStringElement("w:panose1", panose1));
+  // http://www.datypic.com/sc/ooxml/e-w_charset-1.html
+  if (charset) children.push(createStringElement("w:charset", charset));
+  // http://www.datypic.com/sc/ooxml/e-w_family-1.html
+  if (family) children.push(createStringElement("w:family", family));
+  // http://www.datypic.com/sc/ooxml/e-w_notTrueType-1.html
+  if (notTrueType) children.push(`<w:notTrueType/>`);
+  if (pitch) children.push(createStringElement("w:pitch", pitch));
+  // http://www.datypic.com/sc/ooxml/e-w_sig-1.html
+  if (sig) {
+    children.push(
+      `<w:sig w:csb0="${sig.csb0}" w:csb1="${sig.csb1}" w:usb0="${sig.usb0}" w:usb1="${sig.usb1}" w:usb2="${sig.usb2}" w:usb3="${sig.usb3}"/>`,
+    );
+  }
+  // http://www.datypic.com/sc/ooxml/e-w_embedRegular-1.html
+  if (embedRegular) children.push(createFontRelationship(embedRegular, "w:embedRegular"));
+  // http://www.datypic.com/sc/ooxml/e-w_embedBold-1.html
+  if (embedBold) children.push(createFontRelationship(embedBold, "w:embedBold"));
+  // http://www.datypic.com/sc/ooxml/e-w_embedItalic-1.html
+  if (embedItalic) children.push(createFontRelationship(embedItalic, "w:embedItalic"));
+  // http://www.datypic.com/sc/ooxml/e-w_embedBoldItalic-1.html
+  if (embedBoldItalic) children.push(createFontRelationship(embedBoldItalic, "w:embedBoldItalic"));
+
+  return element("w:font", { "w:name": name }, children);
+};

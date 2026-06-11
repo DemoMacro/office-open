@@ -5,8 +5,8 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import type { XmlComponent } from "../../xml-components";
+import { element } from "@office-open/xml";
+
 import { createColorElement } from "../color/solid-fill";
 import type { SolidFillOptions } from "../color/solid-fill";
 
@@ -15,9 +15,9 @@ import type { SolidFillOptions } from "../color/solid-fill";
  */
 export interface GlowEffectOptions {
   /** Glow radius in EMUs */
-  readonly radius?: number;
+  radius?: number;
   /** Glow color */
-  readonly color: SolidFillOptions;
+  color: SolidFillOptions;
 }
 
 /**
@@ -33,19 +33,11 @@ export interface GlowEffectOptions {
  * </xsd:complexType>
  * ```
  */
-export const createGlowEffect = (options: GlowEffectOptions): XmlComponent => {
+export const createGlowEffect = (options: GlowEffectOptions): string => {
+  const colorChild = createColorElement(options.color);
   if (options.radius === undefined) {
-    return new BuilderElement({
-      children: [createColorElement(options.color)],
-      name: "a:glow",
-    });
+    return element("a:glow", undefined, [colorChild]);
   }
 
-  return new BuilderElement<{ readonly rad: number }>({
-    attributes: {
-      rad: { key: "rad", value: options.radius },
-    },
-    children: [createColorElement(options.color)],
-    name: "a:glow",
-  });
+  return element("a:glow", { rad: options.radius }, [colorChild]);
 };

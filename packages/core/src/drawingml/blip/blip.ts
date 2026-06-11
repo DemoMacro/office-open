@@ -8,8 +8,8 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import type { XmlComponent } from "../../xml-components";
+import { element } from "@office-open/xml";
+
 import { createBlipEffects } from "./blip-effects";
 import type { BlipEffectsOptions } from "./blip-effects";
 import { createExtentionList } from "./blip-extentions";
@@ -19,11 +19,11 @@ import { createExtentionList } from "./blip-extentions";
  */
 export interface BlipOptions {
   /** File name used as placeholder; the packer's ImageReplacer replaces `{referenceId}` with `rId{N}` */
-  readonly referenceId: string;
+  referenceId: string;
   /** Image type for SVG detection */
-  readonly type?: "svg" | string;
+  type?: "svg" | string;
   /** For SVG images, the fallback image file name */
-  readonly fallbackFileName?: string;
+  fallbackFileName?: string;
 }
 
 /**
@@ -68,13 +68,10 @@ export interface BlipOptions {
  *
  * @param options - Blip options including referenceId and type
  * @param blipEffects - Optional blip effects (brightness, contrast, etc.)
- * @returns An XML component representing the blip element
+ * @returns An XML string representing the blip element
  */
-export const createBlip = (
-  options: BlipOptions,
-  blipEffects?: BlipEffectsOptions,
-): XmlComponent => {
-  const children: XmlComponent[] = [];
+export const createBlip = (options: BlipOptions, blipEffects?: BlipEffectsOptions): string => {
+  const children: string[] = [];
 
   if (blipEffects) {
     children.push(...createBlipEffects(blipEffects));
@@ -84,21 +81,12 @@ export const createBlip = (
     children.push(createExtentionList(options.referenceId));
   }
 
-  return new BuilderElement<{
-    readonly embed: string;
-    readonly cstate: string;
-  }>({
-    attributes: {
-      cstate: {
-        key: "cstate",
-        value: "none",
-      },
-      embed: {
-        key: "r:embed",
-        value: `{${options.type === "svg" && options.fallbackFileName ? options.fallbackFileName : options.referenceId}}`,
-      },
+  return element(
+    "a:blip",
+    {
+      cstate: "none",
+      "r:embed": `{${options.type === "svg" && options.fallbackFileName ? options.fallbackFileName : options.referenceId}}`,
     },
-    children,
-    name: "a:blip",
-  });
+    children.length > 0 ? children : undefined,
+  );
 };

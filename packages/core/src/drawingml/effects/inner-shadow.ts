@@ -5,8 +5,8 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import type { XmlComponent } from "../../xml-components";
+import { element } from "@office-open/xml";
+
 import { createColorElement } from "../color/solid-fill";
 import type { SolidFillOptions } from "../color/solid-fill";
 
@@ -15,13 +15,13 @@ import type { SolidFillOptions } from "../color/solid-fill";
  */
 export interface InnerShadowEffectOptions {
   /** Blur radius in EMUs */
-  readonly blurRadius?: number;
+  blurRadius?: number;
   /** Distance from shape edge in EMUs */
-  readonly distance?: number;
+  distance?: number;
   /** Direction angle in 60,000ths of a degree */
-  readonly direction?: number;
+  direction?: number;
   /** Shadow color */
-  readonly color: SolidFillOptions;
+  color: SolidFillOptions;
 }
 
 /**
@@ -39,34 +39,15 @@ export interface InnerShadowEffectOptions {
  * </xsd:complexType>
  * ```
  */
-export const createInnerShadowEffect = (options: InnerShadowEffectOptions): XmlComponent => {
-  const hasAttributes =
-    options.blurRadius !== undefined ||
-    options.distance !== undefined ||
-    options.direction !== undefined;
+export const createInnerShadowEffect = (options: InnerShadowEffectOptions): string => {
+  const colorChild = createColorElement(options.color);
 
-  if (!hasAttributes) {
-    return new BuilderElement({
-      children: [createColorElement(options.color)],
-      name: "a:innerShdw",
-    });
-  }
+  const attrs: Record<string, number> = {};
+  if (options.blurRadius !== undefined) attrs.blurRad = options.blurRadius;
+  if (options.distance !== undefined) attrs.dist = options.distance;
+  if (options.direction !== undefined) attrs.dir = options.direction;
 
-  const attributePayload = {
-    ...(options.blurRadius !== undefined && {
-      blurRad: { key: "blurRad", value: options.blurRadius },
-    }),
-    ...(options.distance !== undefined && {
-      dist: { key: "dist", value: options.distance },
-    }),
-    ...(options.direction !== undefined && {
-      dir: { key: "dir", value: options.direction },
-    }),
-  };
+  const hasAttributes = Object.keys(attrs).length > 0;
 
-  return new BuilderElement({
-    attributes: attributePayload as never,
-    children: [createColorElement(options.color)],
-    name: "a:innerShdw",
-  });
+  return element("a:innerShdw", hasAttributes ? attrs : undefined, [colorChild]);
 };

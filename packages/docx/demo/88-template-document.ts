@@ -1,9 +1,9 @@
 // Patch a document with patches
 
-import * as fs from "fs";
+import { readFileSync, writeFileSync } from "node:fs";
 
 import type { IPatch } from "@office-open/docx";
-import { patchDocument, PatchType, TextRun } from "@office-open/docx";
+import { PatchType, patchDocument } from "@office-open/docx";
 
 export const font = "Trebuchet MS";
 export const getPatches = (fields: Record<string, string>) => {
@@ -11,7 +11,7 @@ export const getPatches = (fields: Record<string, string>) => {
 
   for (const field in fields) {
     patches[field] = {
-      children: [new TextRun({ font, text: fields[field] })],
+      children: [{ font, text: fields[field] }],
       type: PatchType.PARAGRAPH,
     };
   }
@@ -27,8 +27,8 @@ const patches = getPatches({
 });
 
 const doc = await patchDocument({
-  data: fs.readFileSync("demo/assets/simple-template.docx"),
+  data: readFileSync("demo/assets/simple-template.docx"),
   outputType: "nodebuffer",
   patches,
 });
-fs.writeFileSync("My Document.docx", doc);
+writeFileSync("My Document.docx", doc);

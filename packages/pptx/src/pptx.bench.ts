@@ -1,8 +1,8 @@
 import PptxGenJS from "pptxgenjs";
 import { bench, describe } from "vite-plus/test";
 
-import { Packer } from "./export";
-import { Paragraph, Presentation, TextRun, Shape, Table } from "./index";
+import { generatePresentation, generatePresentationSync } from "./generate";
+import type { PresentationOptions, SlideChild } from "./shared";
 
 // Bench modes:
 //   "ours default"  = XML DEFLATE level 1 (SuperFast, MS Office), media STORE — no options passed.
@@ -47,48 +47,51 @@ const TABLE_ROWS = Array.from({ length: 10 }, (_, rowIdx) => ({
 
 // ── Fixture helpers (ours) ──
 
-const buildSimplePres = () =>
-  new Presentation({
-    slides: [
-      {
-        children: [
-          new Shape({
+const buildSimplePres = (): PresentationOptions => ({
+  slides: [
+    {
+      children: [
+        {
+          shape: {
             x: 100,
             y: 100,
             width: 400,
             height: 200,
             textBody: { text: "Hello World" },
-          }),
-          new Shape({
+          },
+        },
+        {
+          shape: {
             x: 200,
             y: 350,
             width: 500,
             height: 100,
             textBody: { text: "Second shape" },
-          }),
-          {
-            picture: {
-              x: 600,
-              y: 100,
-              width: 300,
-              height: 200,
-              data: SMALL_IMAGES[0],
-              type: "jpg" as const,
-            },
           },
-        ],
-      },
-    ],
-  });
+        },
+        {
+          picture: {
+            x: 600,
+            y: 100,
+            width: 300,
+            height: 200,
+            data: SMALL_IMAGES[0],
+            type: "jpg",
+          },
+        },
+      ],
+    },
+  ],
+});
 
-const buildStyledPres = () =>
-  new Presentation({
-    slides: [
-      {
-        children: [
-          ...SHAPE_TEXTS.map(
-            (s) =>
-              new Shape({
+const buildStyledPres = (): PresentationOptions => ({
+  slides: [
+    {
+      children: [
+        ...SHAPE_TEXTS.map(
+          (s) =>
+            ({
+              shape: {
                 x: 100,
                 y: 100,
                 width: 400,
@@ -96,60 +99,62 @@ const buildStyledPres = () =>
                 fill: s.bold ? "4472C4" : undefined,
                 textBody: {
                   children: [
-                    new Paragraph({
+                    {
                       properties: { bullet: { type: "none" } },
                       children: [
-                        new TextRun({
+                        {
                           text: s.text,
                           bold: s.bold,
                           italic: s.italic,
                           fontSize: s.fontSize,
-                        }),
+                        },
                       ],
-                    }),
+                    },
                   ],
                 },
-              }),
-          ),
-          {
-            picture: {
-              x: 600,
-              y: 100,
-              width: 300,
-              height: 200,
-              data: SMALL_IMAGES[1],
-              type: "jpg" as const,
-            },
+              },
+            }) as SlideChild,
+        ),
+        {
+          picture: {
+            x: 600,
+            y: 100,
+            width: 300,
+            height: 200,
+            data: SMALL_IMAGES[1],
+            type: "jpg",
           },
-        ],
-      },
-    ],
-  });
+        },
+      ],
+    },
+  ],
+});
 
-const buildTablePres = () =>
-  new Presentation({
-    slides: [
-      {
-        children: [
-          new Table({
+const buildTablePres = (): PresentationOptions => ({
+  slides: [
+    {
+      children: [
+        {
+          table: {
             rows: TABLE_ROWS.map((row) => ({
               cells: row.cells.map((cell) => ({
                 text: cell.text,
                 fill: cell.fill ? { type: "solid", color: cell.fill } : undefined,
               })),
             })),
-          }),
-        ],
-      },
-    ],
-  });
+          },
+        },
+      ],
+    },
+  ],
+});
 
-const buildFullFeaturedPres = () =>
-  new Presentation({
-    slides: [
-      {
-        children: [
-          new Shape({
+const buildFullFeaturedPres = (): PresentationOptions => ({
+  slides: [
+    {
+      children: [
+        {
+          shape: {
             x: 100,
             y: 50,
             width: 800,
@@ -157,24 +162,26 @@ const buildFullFeaturedPres = () =>
             textBody: {
               text: "Title Slide",
               children: [
-                new Paragraph({
+                {
                   properties: { alignment: "center", bullet: { type: "none" } },
                   children: [
-                    new TextRun({
+                    {
                       text: "Title Slide",
                       fontSize: 28,
                       bold: true,
-                    }),
+                    },
                   ],
-                }),
+                },
               ],
             },
             geometry: "rect",
             fill: "4472C4",
-          }),
-          ...SHAPE_TEXTS.map(
-            (s) =>
-              new Shape({
+          },
+        },
+        ...SHAPE_TEXTS.map(
+          (s) =>
+            ({
+              shape: {
                 x: 100,
                 y: 100,
                 width: 400,
@@ -182,53 +189,56 @@ const buildFullFeaturedPres = () =>
                 fill: s.bold ? "4472C4" : undefined,
                 textBody: {
                   children: [
-                    new Paragraph({
+                    {
                       properties: { bullet: { type: "none" } },
                       children: [
-                        new TextRun({
+                        {
                           text: s.text,
                           bold: s.bold,
                           italic: s.italic,
                           fontSize: s.fontSize,
-                        }),
+                        },
                       ],
-                    }),
+                    },
                   ],
                 },
-              }),
-          ),
-          {
-            picture: {
-              x: 600,
-              y: 100,
-              width: 300,
-              height: 200,
-              data: SMALL_IMAGES[0],
-              type: "jpg" as const,
-            },
+              },
+            }) as SlideChild,
+        ),
+        {
+          picture: {
+            x: 600,
+            y: 100,
+            width: 300,
+            height: 200,
+            data: SMALL_IMAGES[0],
+            type: "jpg",
           },
-          {
-            picture: {
-              x: 600,
-              y: 350,
-              width: 300,
-              height: 200,
-              data: SMALL_IMAGES[2],
-              type: "jpg" as const,
-            },
+        } satisfies SlideChild,
+        {
+          picture: {
+            x: 600,
+            y: 350,
+            width: 300,
+            height: 200,
+            data: SMALL_IMAGES[2],
+            type: "jpg",
           },
-          new Table({
+        } satisfies SlideChild,
+        {
+          table: {
             rows: TABLE_ROWS.map((row) => ({
               cells: row.cells.map((cell) => ({
                 text: cell.text,
                 fill: cell.fill ? { type: "solid", color: cell.fill } : undefined,
               })),
             })),
-          }),
-        ],
-      },
-    ],
-  });
+          },
+        },
+      ],
+    },
+  ],
+});
 
 // ── Benchmarks ──
 
@@ -236,7 +246,7 @@ describe("PPTX: Create + toBuffer", () => {
   bench(
     "ours default sync — simple (2 shapes + 1 img) + toBufferSync",
     () => {
-      Packer.toBufferSync(buildSimplePres());
+      generatePresentationSync(buildSimplePres());
     },
     { iterations: 50 },
   );
@@ -244,7 +254,7 @@ describe("PPTX: Create + toBuffer", () => {
   bench(
     "ours all-store sync — simple (2 shapes + 1 img) + toBuffer",
     () => {
-      Packer.toBufferSync(buildSimplePres(), { compression: { xml: 0 } });
+      generatePresentationSync(buildSimplePres(), { type: "nodebuffer", compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
@@ -252,7 +262,7 @@ describe("PPTX: Create + toBuffer", () => {
   bench(
     "ours default async — simple (2 shapes + 1 img) + toBuffer",
     async () => {
-      await Packer.toBuffer(buildSimplePres());
+      await generatePresentation(buildSimplePres());
     },
     { iterations: 50 },
   );
@@ -260,7 +270,10 @@ describe("PPTX: Create + toBuffer", () => {
   bench(
     "ours all-store async — simple (2 shapes + 1 img) + toBuffer",
     async () => {
-      await Packer.toBuffer(buildSimplePres(), { compression: { xml: 0 } });
+      await generatePresentation(buildSimplePres(), {
+        type: "nodebuffer",
+        compression: { xml: 0 },
+      });
     },
     { iterations: 50 },
   );
@@ -294,7 +307,7 @@ describe("PPTX: Create + toBuffer", () => {
   bench(
     "ours default sync — styled shapes (20) + 1 img + toBufferSync",
     () => {
-      Packer.toBufferSync(buildStyledPres());
+      generatePresentationSync(buildStyledPres());
     },
     { iterations: 50 },
   );
@@ -302,7 +315,7 @@ describe("PPTX: Create + toBuffer", () => {
   bench(
     "ours all-store sync — styled shapes (20) + 1 img + toBuffer",
     () => {
-      Packer.toBufferSync(buildStyledPres(), { compression: { xml: 0 } });
+      generatePresentationSync(buildStyledPres(), { type: "nodebuffer", compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
@@ -310,7 +323,7 @@ describe("PPTX: Create + toBuffer", () => {
   bench(
     "ours default async — styled shapes (20) + 1 img + toBuffer",
     async () => {
-      await Packer.toBuffer(buildStyledPres());
+      await generatePresentation(buildStyledPres());
     },
     { iterations: 50 },
   );
@@ -318,7 +331,10 @@ describe("PPTX: Create + toBuffer", () => {
   bench(
     "ours all-store async — styled shapes (20) + 1 img + toBuffer",
     async () => {
-      await Packer.toBuffer(buildStyledPres(), { compression: { xml: 0 } });
+      await generatePresentation(buildStyledPres(), {
+        type: "nodebuffer",
+        compression: { xml: 0 },
+      });
     },
     { iterations: 50 },
   );
@@ -370,7 +386,7 @@ describe("PPTX: Create + toBuffer", () => {
   bench(
     "ours default sync — table (10x5) + toBufferSync",
     () => {
-      Packer.toBufferSync(buildTablePres());
+      generatePresentationSync(buildTablePres());
     },
     { iterations: 50 },
   );
@@ -378,7 +394,7 @@ describe("PPTX: Create + toBuffer", () => {
   bench(
     "ours all-store sync — table (10x5) + toBuffer",
     () => {
-      Packer.toBufferSync(buildTablePres(), { compression: { xml: 0 } });
+      generatePresentationSync(buildTablePres(), { type: "nodebuffer", compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
@@ -386,7 +402,7 @@ describe("PPTX: Create + toBuffer", () => {
   bench(
     "ours default async — table (10x5) + toBuffer",
     async () => {
-      await Packer.toBuffer(buildTablePres());
+      await generatePresentation(buildTablePres());
     },
     { iterations: 50 },
   );
@@ -394,7 +410,7 @@ describe("PPTX: Create + toBuffer", () => {
   bench(
     "ours all-store async — table (10x5) + toBuffer",
     async () => {
-      await Packer.toBuffer(buildTablePres(), { compression: { xml: 0 } });
+      await generatePresentation(buildTablePres(), { type: "nodebuffer", compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
@@ -440,7 +456,7 @@ describe("PPTX: Create + toBuffer", () => {
   bench(
     "ours default sync — full featured + 2 imgs + toBufferSync",
     () => {
-      Packer.toBufferSync(buildFullFeaturedPres());
+      generatePresentationSync(buildFullFeaturedPres());
     },
     { iterations: 50 },
   );
@@ -448,7 +464,10 @@ describe("PPTX: Create + toBuffer", () => {
   bench(
     "ours all-store sync — full featured + 2 imgs + toBuffer",
     () => {
-      Packer.toBufferSync(buildFullFeaturedPres(), { compression: { xml: 0 } });
+      generatePresentationSync(buildFullFeaturedPres(), {
+        type: "nodebuffer",
+        compression: { xml: 0 },
+      });
     },
     { iterations: 50 },
   );
@@ -456,7 +475,7 @@ describe("PPTX: Create + toBuffer", () => {
   bench(
     "ours default async — full featured + 2 imgs + toBuffer",
     async () => {
-      await Packer.toBuffer(buildFullFeaturedPres());
+      await generatePresentation(buildFullFeaturedPres());
     },
     { iterations: 50 },
   );
@@ -464,7 +483,10 @@ describe("PPTX: Create + toBuffer", () => {
   bench(
     "ours all-store async — full featured + 2 imgs + toBuffer",
     async () => {
-      await Packer.toBuffer(buildFullFeaturedPres(), { compression: { xml: 0 } });
+      await generatePresentation(buildFullFeaturedPres(), {
+        type: "nodebuffer",
+        compression: { xml: 0 },
+      });
     },
     { iterations: 50 },
   );
@@ -559,12 +581,12 @@ const LARGE_TABLE_ROWS = Array.from({ length: 100 }, (_, rowIdx) => ({
   })),
 }));
 
-const build30Slides20Shapes = () =>
-  new Presentation({
-    slides: Array.from({ length: 30 }, (_, si) => ({
-      children: Array.from({ length: 20 }, (_, shi) => {
-        const s = LARGE_SHAPES[(si * 20 + shi) % LARGE_SHAPES.length];
-        return new Shape({
+const build30Slides20Shapes = (): PresentationOptions => ({
+  slides: Array.from({ length: 30 }, (_, si) => ({
+    children: Array.from({ length: 20 }, (_, shi) => {
+      const s = LARGE_SHAPES[(si * 20 + shi) % LARGE_SHAPES.length];
+      return {
+        shape: {
           x: 50 + (shi % 4) * 230,
           y: 50 + Math.floor(shi / 4) * 110,
           width: 200,
@@ -572,47 +594,49 @@ const build30Slides20Shapes = () =>
           fill: s.fill,
           textBody: {
             children: [
-              new Paragraph({
+              {
                 properties: { bullet: { type: "none" } },
                 children: [
-                  new TextRun({
+                  {
                     text: s.text,
                     bold: s.bold,
                     italic: s.italic,
                     fontSize: s.fontSize,
-                  }),
+                  },
                 ],
-              }),
+              },
             ],
           },
-        });
-      }),
-    })),
-  });
+        },
+      };
+    }),
+  })),
+});
 
-const build100x10Table = () =>
-  new Presentation({
-    slides: [
-      {
-        children: [
-          new Table({
+const build100x10Table = (): PresentationOptions => ({
+  slides: [
+    {
+      children: [
+        {
+          table: {
             rows: LARGE_TABLE_ROWS.map((row) => ({
               cells: row.cells.map((cell) => ({
                 text: cell.text,
                 fill: cell.fill ? { type: "solid", color: cell.fill } : undefined,
               })),
             })),
-          }),
-        ],
-      },
-    ],
-  });
+          },
+        },
+      ],
+    },
+  ],
+});
 
-const build50SlidesFull = () =>
-  new Presentation({
-    slides: Array.from({ length: 50 }, (_, si) => ({
-      children: [
-        new Shape({
+const build50SlidesFull = (): PresentationOptions => ({
+  slides: Array.from({ length: 50 }, (_, si) => ({
+    children: [
+      {
+        shape: {
           x: 100,
           y: 50,
           width: 800,
@@ -620,18 +644,18 @@ const build50SlidesFull = () =>
           fill: "4472C4",
           textBody: {
             children: [
-              new Paragraph({
+              {
                 properties: { alignment: "center", bullet: { type: "none" } },
-                children: [
-                  new TextRun({ text: `Slide ${si + 1} Title`, fontSize: 28, bold: true }),
-                ],
-              }),
+                children: [{ text: `Slide ${si + 1} Title`, fontSize: 28, bold: true }],
+              },
             ],
           },
-        }),
-        ...Array.from({ length: 10 }, (_, j) => {
-          const s = LARGE_SHAPES[(si * 10 + j) % LARGE_SHAPES.length];
-          return new Shape({
+        },
+      },
+      ...Array.from({ length: 10 }, (_, j) => {
+        const s = LARGE_SHAPES[(si * 10 + j) % LARGE_SHAPES.length];
+        return {
+          shape: {
             x: 50 + (j % 3) * 300,
             y: 150 + Math.floor(j / 3) * 120,
             width: 270,
@@ -639,48 +663,49 @@ const build50SlidesFull = () =>
             fill: s.fill,
             textBody: {
               children: [
-                new Paragraph({
+                {
                   properties: { bullet: { type: "none" } },
-                  children: [
-                    new TextRun({ text: s.text, bold: s.bold, italic: s.italic, fontSize: 14 }),
-                  ],
-                }),
+                  children: [{ text: s.text, bold: s.bold, italic: s.italic, fontSize: 14 }],
+                },
               ],
             },
-          });
-        }),
-        // 2 images per slide
-        ...Array.from({ length: 2 }, (_, pi) => ({
-          picture: {
-            x: 50 + pi * 400,
-            y: 600,
-            width: 350,
-            height: 250,
-            data: LARGE_IMAGES[(si * 2 + pi) % LARGE_IMAGES.length],
-            type: "jpg" as const,
           },
-        })),
-        // 3×3 table
-        new Table({
+        };
+      }),
+      // 2 images per slide
+      ...Array.from({ length: 2 }, (_, pi) => ({
+        picture: {
+          x: 50 + pi * 400,
+          y: 600,
+          width: 350,
+          height: 250,
+          data: LARGE_IMAGES[(si * 2 + pi) % LARGE_IMAGES.length],
+          type: "jpg",
+        },
+      })),
+      // 3×3 table
+      {
+        table: {
           rows: Array.from({ length: 3 }, (_, rowIdx) => ({
             cells: Array.from({ length: 3 }, (_, colIdx) => ({
               text: `S${si + 1}R${rowIdx + 1}C${colIdx + 1}`,
               fill: rowIdx === 0 ? "4472C4" : undefined,
             })),
           })),
-        }),
-      ],
-    })),
-  });
+        },
+      },
+    ] as SlideChild[],
+  })),
+});
 
-const build30Slides10Images = () =>
-  new Presentation({
-    slides: Array.from({ length: 30 }, (_, si) => ({
-      children: [
-        // 2 shapes per slide
-        ...Array.from({ length: 2 }, (_, shi) => {
-          const s = LARGE_SHAPES[(si * 2 + shi) % LARGE_SHAPES.length];
-          return new Shape({
+const build30Slides10Images = (): PresentationOptions => ({
+  slides: Array.from({ length: 30 }, (_, si) => ({
+    children: [
+      // 2 shapes per slide
+      ...Array.from({ length: 2 }, (_, shi) => {
+        const s = LARGE_SHAPES[(si * 2 + shi) % LARGE_SHAPES.length];
+        return {
+          shape: {
             x: 50 + shi * 400,
             y: 50,
             width: 350,
@@ -688,36 +713,35 @@ const build30Slides10Images = () =>
             fill: s.fill,
             textBody: {
               children: [
-                new Paragraph({
+                {
                   properties: { bullet: { type: "none" } },
-                  children: [
-                    new TextRun({ text: s.text, bold: s.bold, italic: s.italic, fontSize: 14 }),
-                  ],
-                }),
+                  children: [{ text: s.text, bold: s.bold, italic: s.italic, fontSize: 14 }],
+                },
               ],
             },
-          });
-        }),
-        // 10 images per slide (500KB each)
-        ...Array.from({ length: 10 }, (_, pi) => ({
-          picture: {
-            x: 50 + (pi % 5) * 180,
-            y: 200 + Math.floor(pi / 5) * 140,
-            width: 150,
-            height: 110,
-            data: LARGE_IMAGES[(si * 10 + pi) % LARGE_IMAGES.length],
-            type: "jpg" as const,
           },
-        })),
-      ],
-    })),
-  });
+        };
+      }),
+      // 10 images per slide (500KB each)
+      ...Array.from({ length: 10 }, (_, pi) => ({
+        picture: {
+          x: 50 + (pi % 5) * 180,
+          y: 200 + Math.floor(pi / 5) * 140,
+          width: 150,
+          height: 110,
+          data: LARGE_IMAGES[(si * 10 + pi) % LARGE_IMAGES.length],
+          type: "jpg",
+        },
+      })),
+    ] as SlideChild[],
+  })),
+});
 
 describe("PPTX: Large Files — Create + toBuffer", () => {
   bench(
     "ours default sync — 30 slides × 20 shapes + toBufferSync",
     () => {
-      Packer.toBufferSync(build30Slides20Shapes());
+      generatePresentationSync(build30Slides20Shapes());
     },
     { iterations: 10 },
   );
@@ -725,7 +749,10 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store sync — 30 slides × 20 shapes + toBuffer",
     () => {
-      Packer.toBufferSync(build30Slides20Shapes(), { compression: { xml: 0 } });
+      generatePresentationSync(build30Slides20Shapes(), {
+        type: "nodebuffer",
+        compression: { xml: 0 },
+      });
     },
     { iterations: 10 },
   );
@@ -733,7 +760,7 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
   bench(
     "ours default async — 30 slides × 20 shapes + toBuffer",
     async () => {
-      await Packer.toBuffer(build30Slides20Shapes());
+      await generatePresentation(build30Slides20Shapes());
     },
     { iterations: 10 },
   );
@@ -741,7 +768,10 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store async — 30 slides × 20 shapes + toBuffer",
     async () => {
-      await Packer.toBuffer(build30Slides20Shapes(), { compression: { xml: 0 } });
+      await generatePresentation(build30Slides20Shapes(), {
+        type: "nodebuffer",
+        compression: { xml: 0 },
+      });
     },
     { iterations: 10 },
   );
@@ -799,7 +829,7 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
   bench(
     "ours default sync — 30 slides × 10 images + toBufferSync",
     () => {
-      Packer.toBufferSync(build30Slides10Images());
+      generatePresentationSync(build30Slides10Images());
     },
     { iterations: 10 },
   );
@@ -807,7 +837,10 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store sync — 30 slides × 10 images + toBuffer",
     () => {
-      Packer.toBufferSync(build30Slides10Images(), { compression: { xml: 0 } });
+      generatePresentationSync(build30Slides10Images(), {
+        type: "nodebuffer",
+        compression: { xml: 0 },
+      });
     },
     { iterations: 10 },
   );
@@ -815,7 +848,7 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
   bench(
     "ours default async — 30 slides × 10 images + toBuffer",
     async () => {
-      await Packer.toBuffer(build30Slides10Images());
+      await generatePresentation(build30Slides10Images());
     },
     { iterations: 10 },
   );
@@ -823,7 +856,10 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store async — 30 slides × 10 images + toBuffer",
     async () => {
-      await Packer.toBuffer(build30Slides10Images(), { compression: { xml: 0 } });
+      await generatePresentation(build30Slides10Images(), {
+        type: "nodebuffer",
+        compression: { xml: 0 },
+      });
     },
     { iterations: 10 },
   );
@@ -899,7 +935,7 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
   bench(
     "ours default sync — 100x10 table + toBufferSync",
     () => {
-      Packer.toBufferSync(build100x10Table());
+      generatePresentationSync(build100x10Table());
     },
     { iterations: 10 },
   );
@@ -907,7 +943,7 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store sync — 100x10 table + toBuffer",
     () => {
-      Packer.toBufferSync(build100x10Table(), { compression: { xml: 0 } });
+      generatePresentationSync(build100x10Table(), { type: "nodebuffer", compression: { xml: 0 } });
     },
     { iterations: 10 },
   );
@@ -915,7 +951,7 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
   bench(
     "ours default async — 100x10 table + toBuffer",
     async () => {
-      await Packer.toBuffer(build100x10Table());
+      await generatePresentation(build100x10Table());
     },
     { iterations: 10 },
   );
@@ -923,7 +959,10 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store async — 100x10 table + toBuffer",
     async () => {
-      await Packer.toBuffer(build100x10Table(), { compression: { xml: 0 } });
+      await generatePresentation(build100x10Table(), {
+        type: "nodebuffer",
+        compression: { xml: 0 },
+      });
     },
     { iterations: 10 },
   );
@@ -969,7 +1008,7 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
   bench(
     "ours default sync — 50 slides full + toBufferSync",
     () => {
-      Packer.toBufferSync(build50SlidesFull());
+      generatePresentationSync(build50SlidesFull());
     },
     { iterations: 10 },
   );
@@ -977,7 +1016,10 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store sync — 50 slides full + toBuffer",
     () => {
-      Packer.toBufferSync(build50SlidesFull(), { compression: { xml: 0 } });
+      generatePresentationSync(build50SlidesFull(), {
+        type: "nodebuffer",
+        compression: { xml: 0 },
+      });
     },
     { iterations: 10 },
   );
@@ -985,7 +1027,7 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
   bench(
     "ours default async — 50 slides full + toBuffer",
     async () => {
-      await Packer.toBuffer(build50SlidesFull());
+      await generatePresentation(build50SlidesFull());
     },
     { iterations: 10 },
   );
@@ -993,7 +1035,10 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store async — 50 slides full + toBuffer",
     async () => {
-      await Packer.toBuffer(build50SlidesFull(), { compression: { xml: 0 } });
+      await generatePresentation(build50SlidesFull(), {
+        type: "nodebuffer",
+        compression: { xml: 0 },
+      });
     },
     { iterations: 10 },
   );
@@ -1117,14 +1162,14 @@ const MIXED_IMAGES_BASE64 = MIXED_IMAGES.map(
   (img) => `data:image/jpeg;base64,${Buffer.from(img).toString("base64")}`,
 );
 
-const buildMixed100MbPres = () =>
-  new Presentation({
-    slides: Array.from({ length: 40 }, (_, si) => ({
-      children: [
-        // 2 shapes
-        ...Array.from({ length: 2 }, (_, shi) => {
-          const s = LARGE_SHAPES[(si * 2 + shi) % LARGE_SHAPES.length];
-          return new Shape({
+const buildMixed100MbPres = (): PresentationOptions => ({
+  slides: Array.from({ length: 40 }, (_, si) => ({
+    children: [
+      // 2 shapes
+      ...Array.from({ length: 2 }, (_, shi) => {
+        const s = LARGE_SHAPES[(si * 2 + shi) % LARGE_SHAPES.length];
+        return {
+          shape: {
             x: 50 + shi * 380,
             y: 50,
             width: 340,
@@ -1132,50 +1177,53 @@ const buildMixed100MbPres = () =>
             fill: s.fill,
             textBody: {
               children: [
-                new Paragraph({
+                {
                   properties: { bullet: { type: "none" } },
                   children: [
-                    new TextRun({
+                    {
                       text: s.text,
                       bold: s.bold,
                       italic: s.italic,
                       fontSize: s.fontSize,
-                    }),
+                    },
                   ],
-                }),
+                },
               ],
             },
-          });
-        }),
-        // 2 images from mixed pool (cycled across 38 unique images)
-        ...Array.from({ length: 2 }, (_, pi) => ({
-          picture: {
-            x: 50 + pi * 400,
-            y: 200,
-            width: 350,
-            height: 280,
-            data: MIXED_IMAGES[(si * 2 + pi) % MIXED_IMAGES.length],
-            type: "jpg" as const,
           },
-        })),
-        // 3×3 table
-        new Table({
+        };
+      }),
+      // 2 images from mixed pool (cycled across 38 unique images)
+      ...Array.from({ length: 2 }, (_, pi) => ({
+        picture: {
+          x: 50 + pi * 400,
+          y: 200,
+          width: 350,
+          height: 280,
+          data: MIXED_IMAGES[(si * 2 + pi) % MIXED_IMAGES.length],
+          type: "jpg",
+        },
+      })),
+      // 3×3 table
+      {
+        table: {
           rows: Array.from({ length: 3 }, (_, rowIdx) => ({
             cells: Array.from({ length: 3 }, (_, colIdx) => ({
               text: `S${si + 1}R${rowIdx + 1}C${colIdx + 1}`,
               fill: rowIdx === 0 ? "4472C4" : undefined,
             })),
           })),
-        }),
-      ],
-    })),
-  });
+        },
+      },
+    ] as SlideChild[],
+  })),
+});
 
 describe("PPTX: Large File (~100MB) — Mixed + async vs sync", () => {
   bench(
     "ours default sync — mixed (40sl, 38img) + toBufferSync",
     () => {
-      Packer.toBufferSync(buildMixed100MbPres());
+      generatePresentationSync(buildMixed100MbPres());
     },
     { iterations: 3 },
   );
@@ -1183,7 +1231,10 @@ describe("PPTX: Large File (~100MB) — Mixed + async vs sync", () => {
   bench(
     "ours all-store sync — mixed (40sl, 38img) + toBuffer",
     () => {
-      Packer.toBufferSync(buildMixed100MbPres(), { compression: { xml: 0 } });
+      generatePresentationSync(buildMixed100MbPres(), {
+        type: "nodebuffer",
+        compression: { xml: 0 },
+      });
     },
     { iterations: 3 },
   );
@@ -1191,7 +1242,7 @@ describe("PPTX: Large File (~100MB) — Mixed + async vs sync", () => {
   bench(
     "ours default async — mixed (40sl, 38img) + toBuffer",
     async () => {
-      await Packer.toBuffer(buildMixed100MbPres());
+      await generatePresentation(buildMixed100MbPres());
     },
     { iterations: 3 },
   );
@@ -1199,7 +1250,10 @@ describe("PPTX: Large File (~100MB) — Mixed + async vs sync", () => {
   bench(
     "ours all-store async — mixed (40sl, 38img) + toBuffer",
     async () => {
-      await Packer.toBuffer(buildMixed100MbPres(), { compression: { xml: 0 } });
+      await generatePresentation(buildMixed100MbPres(), {
+        type: "nodebuffer",
+        compression: { xml: 0 },
+      });
     },
     { iterations: 3 },
   );

@@ -1,20 +1,20 @@
 // Generate a template document
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import { Document, Packer, Paragraph, TextRun } from "@office-open/docx";
+import { generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [new TextRun("{{template}}")],
-        }),
+        {
+          paragraph: {
+            children: ["{{template}}"],
+          },
+        },
       ],
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

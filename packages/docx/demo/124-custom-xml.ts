@@ -7,78 +7,83 @@
 //
 // Use cases: interoperability with non-Microsoft tools that support custom XML.
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import {
-  CustomXmlBlock,
-  CustomXmlRun,
-  Document,
-  Packer,
-  Paragraph,
-  TextRun,
-} from "@office-open/docx";
+import { generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [
-            new TextRun({
-              bold: true,
-              text: "Custom XML Elements",
-              size: 32,
-            }),
-          ],
-          spacing: { after: 200 },
-        }),
+        {
+          paragraph: {
+            children: [
+              {
+                bold: true,
+                text: "Custom XML Elements",
+                size: 32,
+              },
+            ],
+            spacing: { after: 200 },
+          },
+        },
 
-        new Paragraph({
-          children: [
-            new TextRun("Inline custom XML: Price = "),
-            new CustomXmlRun({
-              element: "price",
-              uri: "http://example.com/ns",
-              children: [new TextRun("99.99")],
-            }),
-          ],
-        }),
-
-        new Paragraph({ children: [new TextRun("")] }),
-
-        new Paragraph({
-          children: [
-            new TextRun({
-              bold: true,
-              text: "Block-level custom XML:",
-              size: 28,
-            }),
-          ],
-          spacing: { after: 200 },
-        }),
-        new CustomXmlBlock({
-          element: "invoiceItems",
-          uri: "http://example.com/ns",
-          customXmlPr: {
-            placeholder: "Invoice items",
-            attributes: [
-              { name: "status", val: "draft" },
-              { name: "version", val: "1.0", uri: "http://example.com/ns" },
+        {
+          paragraph: {
+            children: [
+              "Inline custom XML: Price = ",
+              {
+                customXml: {
+                  element: "price",
+                  uri: "http://example.com/ns",
+                  children: ["99.99"],
+                },
+              },
             ],
           },
-          children: [
-            new Paragraph({
-              children: [new TextRun("Item 1: Widget A - $50.00")],
-            }),
-            new Paragraph({
-              children: [new TextRun("Item 2: Widget B - $49.99")],
-            }),
-          ],
-        }),
+        },
+
+        { paragraph: { children: [""] } },
+
+        {
+          paragraph: {
+            children: [
+              {
+                bold: true,
+                text: "Block-level custom XML:",
+                size: 28,
+              },
+            ],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          customXml: {
+            element: "invoiceItems",
+            uri: "http://example.com/ns",
+            customXmlPr: {
+              placeholder: "Invoice items",
+              attributes: [
+                { name: "status", val: "draft" },
+                { name: "version", val: "1.0", uri: "http://example.com/ns" },
+              ],
+            },
+            children: [
+              {
+                paragraph: {
+                  children: ["Item 1: Widget A - $50.00"],
+                },
+              },
+              {
+                paragraph: {
+                  children: ["Item 2: Widget B - $49.99"],
+                },
+              },
+            ],
+          },
+        },
       ],
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

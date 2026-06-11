@@ -5,9 +5,9 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import type { XmlComponent } from "../../xml-components";
-import { xsdPresetShadow } from "../../xsd-mappings";
+import { element } from "@office-open/xml";
+
+import { xsdPresetShadow } from "../../util/mappings";
 import { createColorElement } from "../color/solid-fill";
 import type { SolidFillOptions } from "../color/solid-fill";
 
@@ -44,13 +44,13 @@ export const PresetShadowVal = {
  */
 export interface PresetShadowEffectOptions {
   /** Preset shadow type (required) */
-  readonly preset: (typeof PresetShadowVal)[keyof typeof PresetShadowVal];
+  preset: (typeof PresetShadowVal)[keyof typeof PresetShadowVal];
   /** Distance from shape in EMUs */
-  readonly distance?: number;
+  distance?: number;
   /** Direction angle in 60,000ths of a degree */
-  readonly direction?: number;
+  direction?: number;
   /** Shadow color */
-  readonly color: SolidFillOptions;
+  color: SolidFillOptions;
 }
 
 /**
@@ -68,21 +68,13 @@ export interface PresetShadowEffectOptions {
  * </xsd:complexType>
  * ```
  */
-export const createPresetShadowEffect = (options: PresetShadowEffectOptions): XmlComponent => {
-  const attributes: Record<string, { readonly key: string; readonly value: string | number }> = {
-    prst: { key: "prst", value: xsdPresetShadow.to(options.preset) },
+export const createPresetShadowEffect = (options: PresetShadowEffectOptions): string => {
+  const attrs: Record<string, string | number> = {
+    prst: xsdPresetShadow.to(options.preset),
   };
 
-  if (options.distance !== undefined) {
-    attributes.dist = { key: "dist", value: options.distance };
-  }
-  if (options.direction !== undefined) {
-    attributes.dir = { key: "dir", value: options.direction };
-  }
+  if (options.distance !== undefined) attrs.dist = options.distance;
+  if (options.direction !== undefined) attrs.dir = options.direction;
 
-  return new BuilderElement({
-    attributes: attributes as never,
-    children: [createColorElement(options.color)],
-    name: "a:prstShdw",
-  });
+  return element("a:prstShdw", attrs, [createColorElement(options.color)]);
 };

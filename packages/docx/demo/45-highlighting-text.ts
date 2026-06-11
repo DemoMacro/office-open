@@ -1,20 +1,20 @@
 // Highlighting text
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import { AlignmentType, Document, Header, Packer, Paragraph, TextRun } from "@office-open/docx";
+import { AlignmentType, generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [],
       headers: {
-        default: new Header({
-          children: [
-            new Paragraph({
+        default: [
+          {
+            paragraph: {
               alignment: AlignmentType.RIGHT,
               children: [
-                new TextRun({
+                {
                   bold: true,
                   color: "FF0000",
                   font: {
@@ -23,15 +23,13 @@ const doc = new Document({
                   highlight: "yellow",
                   size: 24,
                   text: "Hello World",
-                }),
+                },
               ],
-            }),
-          ],
-        }),
+            },
+          },
+        ],
       },
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

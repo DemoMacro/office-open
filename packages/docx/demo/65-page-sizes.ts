@@ -1,44 +1,35 @@
+import { writeFileSync } from "node:fs";
 // Example of how to set the document page sizes
 // Reference from https://papersizes.io/a/a3
 
-import * as fs from "fs";
+import { PageOrientation, generateDocument } from "@office-open/docx";
 
-import {
-  Document,
-  Packer,
-  PageOrientation,
-  Paragraph,
-  convertMillimetersToTwip,
-} from "@office-open/docx";
-
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
-      children: [new Paragraph("Hello World")],
+      children: [{ paragraph: "Hello World" }],
       properties: {
         page: {
           size: {
-            height: convertMillimetersToTwip(210),
+            height: "210mm",
             orientation: PageOrientation.LANDSCAPE,
-            width: convertMillimetersToTwip(148),
+            width: "148mm",
           },
         },
       },
     },
     {
-      children: [new Paragraph("Hello World")],
+      children: [{ paragraph: "Hello World" }],
       properties: {
         page: {
           size: {
-            height: convertMillimetersToTwip(420),
+            height: "420mm",
             orientation: PageOrientation.PORTRAIT,
-            width: convertMillimetersToTwip(297),
+            width: "297mm",
           },
         },
       },
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

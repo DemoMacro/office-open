@@ -1,95 +1,95 @@
 // Add image to table cell in a header and body
 
-import * as fs from "fs";
+import { readFileSync, writeFileSync } from "node:fs";
 
-import {
-  Document,
-  Header,
-  ImageRun,
-  Packer,
-  Paragraph,
-  Table,
-  TableCell,
-  TableRow,
-} from "@office-open/docx";
+import { generateDocument } from "@office-open/docx";
 
-const table = new Table({
-  rows: [
-    new TableRow({
-      cells: [
-        new TableCell({
-          children: [],
-        }),
-        new TableCell({
-          children: [],
-        }),
-        new TableCell({
-          children: [],
-        }),
-        new TableCell({
-          children: [],
-        }),
-      ],
-    }),
-    new TableRow({
-      cells: [
-        new TableCell({
-          children: [],
-        }),
-        new TableCell({
-          children: [
-            new Paragraph({
-              children: [
-                new ImageRun({
-                  data: fs.readFileSync("./demo/images/image1.jpeg"),
-                  transformation: {
-                    height: 100,
-                    width: 100,
-                  },
-                  type: "jpg",
-                }),
-              ],
-            }),
-          ],
-        }),
-      ],
-    }),
-    new TableRow({
-      cells: [
-        new TableCell({
-          children: [],
-        }),
-        new TableCell({
-          children: [],
-        }),
-      ],
-    }),
-    new TableRow({
-      cells: [
-        new TableCell({
-          children: [],
-        }),
-        new TableCell({
-          children: [],
-        }),
-      ],
-    }),
-  ],
-});
+const imageData = readFileSync("./demo/images/image1.jpeg") as Uint8Array;
 
-// Adding same table in the body and in the header
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
-      children: [table],
+      children: [
+        {
+          table: {
+            rows: [
+              {
+                cells: [{ children: [] }, { children: [] }, { children: [] }, { children: [] }],
+              },
+              {
+                cells: [
+                  { children: [] },
+                  {
+                    children: [
+                      {
+                        paragraph: {
+                          children: [
+                            {
+                              image: {
+                                data: imageData,
+                                transformation: { height: 100, width: 100 },
+                                type: "jpg",
+                              },
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                cells: [{ children: [] }, { children: [] }],
+              },
+              {
+                cells: [{ children: [] }, { children: [] }],
+              },
+            ],
+          },
+        },
+      ],
       headers: {
-        default: new Header({
-          children: [table],
-        }),
+        default: [
+          {
+            table: {
+              rows: [
+                {
+                  cells: [{ children: [] }, { children: [] }, { children: [] }, { children: [] }],
+                },
+                {
+                  cells: [
+                    { children: [] },
+                    {
+                      children: [
+                        {
+                          paragraph: {
+                            children: [
+                              {
+                                image: {
+                                  data: imageData,
+                                  transformation: { height: 100, width: 100 },
+                                  type: "jpg",
+                                },
+                              },
+                            ],
+                          },
+                        },
+                      ],
+                    },
+                  ],
+                },
+                {
+                  cells: [{ children: [] }, { children: [] }],
+                },
+                {
+                  cells: [{ children: [] }, { children: [] }],
+                },
+              ],
+            },
+          },
+        ],
       },
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

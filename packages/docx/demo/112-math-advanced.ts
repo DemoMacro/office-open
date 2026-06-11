@@ -1,223 +1,245 @@
 // Demo: Advanced math elements - box, borderBox, eqArr, groupChr, matrix, phantom
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import {
-  Document,
-  Math,
-  MathBorderBox,
-  MathBox,
-  MathEqArr,
-  MathFraction,
-  MathGroupChr,
-  MathMatrix,
-  MathPhant,
-  MathRun,
-  MathSuperScript,
-  Packer,
-  Paragraph,
-  TextRun,
-} from "@office-open/docx";
+import { generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [new TextRun({ text: "Advanced Math Elements Demo", bold: true, size: 32 })],
-          spacing: { after: 400 },
-        }),
+        {
+          paragraph: {
+            children: [{ text: "Advanced Math Elements Demo", bold: true, size: 32 }],
+            spacing: { after: 400 },
+          },
+        },
 
         // 1. MathBox
-        new Paragraph({
-          children: [new TextRun({ bold: true, text: "1. MathBox", size: 28 })],
-          spacing: { after: 200 },
-        }),
-        new Paragraph({
-          children: [
-            new Math({
-              children: [
-                new MathBox({
-                  children: [new MathRun("x + y")],
-                  properties: { opEmu: true },
-                }),
-                new MathRun(" = "),
-                new MathBox({
-                  children: [new MathRun("z")],
-                }),
-              ],
-            }),
-          ],
-        }),
+        {
+          paragraph: {
+            children: [{ bold: true, text: "1. MathBox", size: 28 }],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              {
+                math: {
+                  children: [
+                    { box: { children: ["x + y"], properties: { opEmu: true } } },
+                    " = ",
+                    { box: { children: ["z"] } },
+                  ],
+                },
+              },
+            ],
+          },
+        },
 
-        new Paragraph({ children: [new TextRun("")] }),
+        { paragraph: { children: [""] } },
 
         // 2. MathBorderBox
-        new Paragraph({
-          children: [new TextRun({ bold: true, text: "2. MathBorderBox", size: 28 })],
-          spacing: { after: 200 },
-        }),
-        new Paragraph({
-          children: [
-            new Math({
-              children: [
-                new MathBorderBox({
-                  children: [new MathRun("a")],
-                }),
-                new MathRun(" + "),
-                new MathBorderBox({
-                  children: [new MathRun("b")],
-                  properties: { hideTop: true, hideBottom: true },
-                }),
-              ],
-            }),
-          ],
-        }),
+        {
+          paragraph: {
+            children: [{ bold: true, text: "2. MathBorderBox", size: 28 }],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              {
+                math: {
+                  children: [
+                    { borderBox: { children: ["a"] } },
+                    " + ",
+                    {
+                      borderBox: {
+                        children: ["b"],
+                        properties: { hideTop: true, hideBottom: true },
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
 
-        new Paragraph({ children: [new TextRun("")] }),
+        { paragraph: { children: [""] } },
 
         // 3. Equation Array
-        new Paragraph({
-          children: [new TextRun({ bold: true, text: "3. Equation Array", size: 28 })],
-          spacing: { after: 200 },
-        }),
-        new Paragraph({
-          children: [
-            new Math({
-              children: [
-                new MathEqArr({
-                  rows: [[new MathRun("x + y = 1")], [new MathRun("2x - y = 3")]],
-                }),
-              ],
-            }),
-          ],
-        }),
+        {
+          paragraph: {
+            children: [{ bold: true, text: "3. Equation Array", size: 28 }],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              {
+                math: {
+                  children: [{ eqArr: { rows: [["x + y = 1"], ["2x - y = 3"]] } }],
+                },
+              },
+            ],
+          },
+        },
 
-        new Paragraph({ children: [new TextRun("")] }),
+        { paragraph: { children: [""] } },
 
         // 4. Group Character
-        new Paragraph({
-          children: [new TextRun({ bold: true, text: "4. Group Character (brace)", size: 28 })],
-          spacing: { after: 200 },
-        }),
-        new Paragraph({
-          children: [
-            new Math({
-              children: [
-                new MathGroupChr({
+        {
+          paragraph: {
+            children: [{ bold: true, text: "4. Group Character (brace)", size: 28 }],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              {
+                math: {
                   children: [
-                    new MathEqArr({
-                      rows: [[new MathRun("a")], [new MathRun("b")], [new MathRun("c")]],
-                    }),
+                    {
+                      groupChr: {
+                        children: [{ eqArr: { rows: [["a"], ["b"], ["c"]] } }],
+                        properties: {
+                          chr: "{",
+                          pos: "bot",
+                          vertJc: "top",
+                        },
+                      },
+                    },
                   ],
-                  properties: {
-                    chr: "\u007B",
-                    pos: "bot",
-                    vertJc: "top",
-                  },
-                }),
-              ],
-            }),
-          ],
-        }),
+                },
+              },
+            ],
+          },
+        },
 
-        new Paragraph({ children: [new TextRun("")] }),
+        { paragraph: { children: [""] } },
 
         // 5. Matrix (with column properties: baseJc, plcHide, rSpRule)
-        new Paragraph({
-          children: [new TextRun({ bold: true, text: "5. Matrix", size: 28 })],
-          spacing: { after: 200 },
-        }),
-        new Paragraph({
-          children: [
-            new Math({
-              children: [
-                new MathMatrix({
-                  rows: [
-                    [new MathRun("1"), new MathRun("0")],
-                    [new MathRun("0"), new MathRun("1")],
+        {
+          paragraph: {
+            children: [{ bold: true, text: "5. Matrix", size: 28 }],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              {
+                math: {
+                  children: [
+                    {
+                      matrix: {
+                        rows: [
+                          ["1", "0"],
+                          ["0", "1"],
+                        ],
+                      },
+                    },
                   ],
-                }),
-              ],
-            }),
-          ],
-        }),
-        new Paragraph({
-          children: [
-            new TextRun("With properties: "),
-            new Math({
-              children: [
-                new MathMatrix({
-                  rows: [
-                    [new MathRun("a"), new MathRun("b")],
-                    [new MathRun("c"), new MathRun("d")],
+                },
+              },
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              "With properties: ",
+              {
+                math: {
+                  children: [
+                    {
+                      matrix: {
+                        rows: [
+                          ["a", "b"],
+                          ["c", "d"],
+                        ],
+                        properties: {
+                          baseJc: "center",
+                          plcHide: true,
+                          rSpRule: 2,
+                        },
+                      },
+                    },
                   ],
-                  properties: {
-                    baseJc: "center",
-                    plcHide: true,
-                    rSpRule: 2,
-                  },
-                }),
-              ],
-            }),
-          ],
-        }),
+                },
+              },
+            ],
+          },
+        },
 
-        new Paragraph({ children: [new TextRun("")] }),
+        { paragraph: { children: [""] } },
 
         // 6. Phantom
-        new Paragraph({
-          children: [
-            new TextRun({
-              bold: true,
-              text: "6. Phantom (invisible placeholder)",
-              size: 28,
-            }),
-          ],
-          spacing: { after: 200 },
-        }),
-        new Paragraph({
-          children: [
-            new Math({
-              children: [
-                new MathRun("f(x) = "),
-                new MathFraction({
-                  numerator: [
-                    new MathPhant({
-                      children: [new MathRun("dy")],
-                      properties: { zeroAsc: true, zeroDesc: true },
-                    }),
+        {
+          paragraph: {
+            children: [
+              {
+                bold: true,
+                text: "6. Phantom (invisible placeholder)",
+                size: 28,
+              },
+            ],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              {
+                math: {
+                  children: [
+                    "f(x) = ",
+                    {
+                      fraction: {
+                        numerator: [
+                          {
+                            phant: {
+                              children: ["dy"],
+                              properties: { zeroAsc: true, zeroDesc: true },
+                            },
+                          },
+                        ],
+                        denominator: ["dx"],
+                      },
+                    },
                   ],
-                  denominator: [new MathRun("dx")],
-                }),
-              ],
-            }),
-          ],
-        }),
+                },
+              },
+            ],
+          },
+        },
 
-        new Paragraph({ children: [new TextRun("")] }),
+        { paragraph: { children: [""] } },
 
         // 7. SuperScript
-        new Paragraph({
-          children: [new TextRun({ bold: true, text: "7. SuperScript (E = mc²)", size: 28 })],
-          spacing: { after: 200 },
-        }),
-        new Paragraph({
-          children: [
-            new Math({
-              children: [
-                new MathRun("E = m"),
-                new MathSuperScript({
-                  children: [new MathRun("c")],
-                  superScript: [new MathRun("2")],
-                }),
-              ],
-            }),
-          ],
-        }),
+        {
+          paragraph: {
+            children: [{ bold: true, text: "7. SuperScript (E = mc²)", size: 28 }],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              {
+                math: {
+                  children: ["E = m", { superScript: { children: ["c"], superScript: ["2"] } }],
+                },
+              },
+            ],
+          },
+        },
       ],
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

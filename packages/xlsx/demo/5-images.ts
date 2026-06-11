@@ -1,11 +1,11 @@
 import { readFileSync, writeFileSync } from "node:fs";
 
-import { Workbook, Packer } from "@office-open/xlsx";
+import { generateWorkbook } from "@office-open/xlsx";
 
 const dogPng = readFileSync("./demo/images/dog.png");
 const catJpg = readFileSync("./demo/images/cat.jpg");
 
-const wb = new Workbook({
+const buffer = await generateWorkbook({
   worksheets: [
     {
       name: "Images",
@@ -22,5 +22,4 @@ const wb = new Workbook({
   ],
 });
 
-const buffer = await Packer.toBuffer(wb);
 writeFileSync("My Workbook.xlsx", buffer);

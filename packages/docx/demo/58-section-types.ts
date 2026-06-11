@@ -1,36 +1,40 @@
 // Usage of different Section Types
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import { Document, Packer, Paragraph, SectionType, TextRun } from "@office-open/docx";
+import { SectionType, generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [
-            new TextRun("Hello World"),
-            new TextRun({
-              bold: true,
-              text: "Foo Bar",
-            }),
-          ],
-        }),
+        {
+          paragraph: {
+            children: [
+              "Hello World",
+              {
+                bold: true,
+                text: "Foo Bar",
+              },
+            ],
+          },
+        },
       ],
       properties: {},
     },
     {
       children: [
-        new Paragraph({
-          children: [
-            new TextRun("Hello World"),
-            new TextRun({
-              bold: true,
-              text: "Foo Bar",
-            }),
-          ],
-        }),
+        {
+          paragraph: {
+            children: [
+              "Hello World",
+              {
+                bold: true,
+                text: "Foo Bar",
+              },
+            ],
+          },
+        },
       ],
       properties: {
         type: SectionType.CONTINUOUS,
@@ -38,15 +42,17 @@ const doc = new Document({
     },
     {
       children: [
-        new Paragraph({
-          children: [
-            new TextRun("Hello World"),
-            new TextRun({
-              bold: true,
-              text: "Foo Bar",
-            }),
-          ],
-        }),
+        {
+          paragraph: {
+            children: [
+              "Hello World",
+              {
+                bold: true,
+                text: "Foo Bar",
+              },
+            ],
+          },
+        },
       ],
       properties: {
         type: SectionType.ODD_PAGE,
@@ -54,15 +60,17 @@ const doc = new Document({
     },
     {
       children: [
-        new Paragraph({
-          children: [
-            new TextRun("Hello World"),
-            new TextRun({
-              bold: true,
-              text: "Foo Bar",
-            }),
-          ],
-        }),
+        {
+          paragraph: {
+            children: [
+              "Hello World",
+              {
+                bold: true,
+                text: "Foo Bar",
+              },
+            ],
+          },
+        },
       ],
       properties: {
         type: SectionType.EVEN_PAGE,
@@ -70,15 +78,17 @@ const doc = new Document({
     },
     {
       children: [
-        new Paragraph({
-          children: [
-            new TextRun("Hello World"),
-            new TextRun({
-              bold: true,
-              text: "Foo Bar",
-            }),
-          ],
-        }),
+        {
+          paragraph: {
+            children: [
+              "Hello World",
+              {
+                bold: true,
+                text: "Foo Bar",
+              },
+            ],
+          },
+        },
       ],
       properties: {
         type: SectionType.NEXT_PAGE,
@@ -86,6 +96,4 @@ const doc = new Document({
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

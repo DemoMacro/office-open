@@ -1,52 +1,53 @@
 # Contributing to office-open
 
-Thank you for your interest in contributing! This document describes the coding standards and conventions used in this project.
+Thank you for your interest in contributing! This document describes the coding standards and conventions.
 
 ## Development Setup
 
 ```bash
-# Install dependencies
-pnpm install
-
-# Build all packages
-pnpm build
-
-# Build a specific package
-cd packages/docx && pnpm build
-
-# Run tests for a specific package
-cd packages/docx && vp test run
-
-# Lint all packages
-pnpm check
+pnpm install          # Install dependencies
+pnpm build            # Build all packages
+cd packages/<pkg> && pnpm build   # Build one package
+cd packages/<pkg> && vp test run  # Run tests for one package
+pnpm check            # Lint all packages
 ```
 
 ## Project Structure
 
 ```
 packages/
-  core/   - @office-open/core (shared XML components, formatter, chart/smartart, unit converters)
-  xml/    - @office-open/xml (XML parsing/serialization)
-  docx/   - @office-open/docx (DOCX generation)
-  pptx/   - @office-open/pptx (PPTX generation)
-  xlsx/   - @office-open/xlsx (XLSX generation)
-
-ooxml-schemas/  - OOXML XSD schemas (the golden source of truth)
+  core/   — @office-open/core (descriptor runtime, DrawingML, chart/smartart, OPC)
+  xml/    — @office-open/xml (XML parsing/serialization)
+  docx/   — @office-open/docx (DOCX)
+  pptx/   — @office-open/pptx (PPTX)
+  xlsx/   — @office-open/xlsx (XLSX)
+ooxml-schemas/  — OOXML XSD schemas (golden source of truth)
 ```
 
-## OOXML Specification
+Every format package (docx, pptx, xlsx) follows the same layout:
 
-The `ooxml-schemas/` directory contains OOXML XSD schemas. Always reference these when implementing XML elements.
+```
+src/
+  parts/    — One module per OOXML XML part (types + descriptor co-located)
+  shared/   — Types used by 2+ parts
+  compiler.ts    — compileDocument/Presentation/Workbook()
+  context.ts     — XxxWriteContext + XxxReadContext
+  generate.ts    — generateDocument/Presentation/Workbook() entry
+  parse.ts       — parseDocument/Presentation/Workbook() entry
+  patch.ts       — patchDocument/Presentation/Workbook() entry
+  util/          — Helpers
+  index.ts       — Public API
+```
 
-- `transitional/` - Transitional OOXML schemas (used by all major software)
-- `strict/` - ISO/IEC 29500 standard schemas
-- `microsoft/` - Microsoft extension schemas
+## OOXML Schemas
 
-Key schema files:
+`ooxml-schemas/` contains XSD schemas — the golden source of truth. Always reference these when implementing XML elements.
 
-- `wml.xsd` - WordprocessingML (documents)
-- `pml.xsd` - PresentationML (presentations)
-- `dml-main.xsd` - DrawingML (images/shapes)
+- `transitional/` — Used by all major software (primary reference)
+- `strict/` — ISO/IEC 29500 standard
+- `microsoft/` — Microsoft extensions
+
+Key files: `wml.xsd` (DOCX), `pml.xsd` (PPTX), `sml.xsd` (XLSX), `dml-main.xsd` (DrawingML).
 
 ## Naming Conventions
 
@@ -55,202 +56,161 @@ Key schema files:
 Use **kebab-case** for all file and directory names.
 
 ```
-file/paragraph/formatting/alignment.ts
-file/drawing/floating/floating-position.ts
-parse/numbering.ts
+parts/settings.ts           — simple part (single file)
+parts/document/body.ts      — complex part (directory)
+shared/run.ts               — shared types
 ```
 
-### Classes
+### Descriptors
 
-Use **PascalCase** for class names. Classes extend `XmlComponent` for XML element components.
+Each OOXML part has a `<part>Desc` descriptor with `stringify()` and `parse()`:
 
 ```typescript
-export class Paragraph extends XmlComponent { ... }
-export class Shape extends Xc { ... }
+export const settingsDesc: CustomDescriptor<SettingsOptions> = {
+  kind: "custom",
+  stringify(opts, ctx) {
+    return xml;
+  },
+  parse(el, ctx) {
+    return opts;
+  },
+};
 ```
 
 ### Interfaces
 
-Use **PascalCase** without the `I` prefix. Configuration interfaces use the `Options` suffix.
+**PascalCase** without `I` prefix. Configuration interfaces use `Options` suffix. All properties `readonly`.
 
 ```typescript
-export interface ParagraphOptions { ... }
-export interface ShapeOptions { ... }
-export interface BorderOptions { ... }
+export interface ParagraphOptions {
+  readonly alignment?: string;
+  readonly children?: readonly (RunOptions | string)[];
+}
 ```
-
-All interface properties should use the `readonly` modifier.
 
 ### Functions
 
-Use **camelCase** for function names. Follow the appropriate prefix convention:
+Use **camelCase**. Follow the appropriate prefix convention:
 
-| Prefix    | Purpose                                      | Example                                       |
-| --------- | -------------------------------------------- | --------------------------------------------- |
-| `create*` | Factory functions that build XML elements    | `createBevel()`, `createShape3D()`            |
-| `parse*`  | Functions that parse XML into Options        | `parseSlide()`, `parseNumberingDefinitions()` |
-| `build*`  | Functions that build lookup tables or caches | `buildStyleCache()`, `buildNumberingCache()`  |
+| Prefix       | Purpose                              | Example                                            |
+| ------------ | ------------------------------------ | -------------------------------------------------- |
+| `stringify*` | Generate XML from Options            | `stringifyRunProperties()`, `stringifyParagraph()` |
+| `parse*`     | Parse XML into Options               | `parseBody()`, `parseRun()`                        |
+| `create*`    | Factory functions for XML elements   | `createOutline()`, `createBevel()`                 |
+| `build*`     | Build lookup tables or composite XML | `buildContentTypes()`, `buildTransition()`         |
+| `compile*`   | Top-level compilation entry          | `compileDocument()`, `compilePresentation()`       |
 
 ### Constants (Enumerated Types)
 
 Use `as const` objects (not TypeScript `enum`). Keys use **SCREAMING_SNAKE_CASE**. Values use **lowercase full English words**.
 
 ```typescript
-// When XSD uses full words - use them directly (no mapping needed)
 export const AlignmentType = {
   START: "start", // XSD: "start"
   CENTER: "center", // XSD: "center"
-  END: "end", // XSD: "end"
 } as const;
 
-// When XSD uses abbreviations - map to full words
+// When XSD uses abbreviations — map to full words
 export const TextAlignment = {
   LEFT: "left", // XSD: "l"
   CENTER: "center", // XSD: "ctr"
-  RIGHT: "right", // XSD: "r"
-  JUSTIFY: "justify", // XSD: "just"
 } as const;
-```
-
-Type references use `keyof typeof` or `ValueOf<typeof>`:
-
-```typescript
-type Alignment = keyof typeof AlignmentType;
-type AlignmentValue = (typeof AlignmentType)[keyof typeof AlignmentType];
 ```
 
 ### Property Naming
 
-Interface property names use **full English words** (camelCase), even when the corresponding XML element uses abbreviations:
+Interface properties use **full English words** (camelCase), even when XML uses abbreviations:
 
 ```typescript
-// Property name → XML element
-outline      → a:ln
-gradientFill → a:gradFill
-outerShadow  → a:outerShdw
-solidFill    → a:solidFill
-```
-
-### Getters and Setters
-
-Use **camelCase** for class getters and setters (consistent with method naming):
-
-```typescript
-// Good
-public get shapeId(): number { ... }
-
-// Avoid
-public get ShapeId(): number { ... }
+outline      → a:ln       gradientFill → a:gradFill
+outerShadow  → a:outerShdw  solidFill    → a:solidFill
 ```
 
 ## Options Interface Design
 
-### When to Use Flat vs Nested
+### Flat vs Nested
 
-| Pattern    | When to use                                                                           | Example                                     |
-| ---------- | ------------------------------------------------------------------------------------- | ------------------------------------------- |
-| **Flat**   | Simple, independent properties                                                        | `{ alignment, spacing, indent }`            |
-| **Nested** | Properties form a cohesive domain concept that maps to a single XSD container element | `{ borders: { top, bottom, left, right } }` |
+| Pattern    | When to use                                      | Example                                     |
+| ---------- | ------------------------------------------------ | ------------------------------------------- |
+| **Flat**   | Simple, independent properties                   | `{ alignment, spacing, indent }`            |
+| **Nested** | Properties map to a single XSD container element | `{ borders: { top, bottom, left, right } }` |
 
-Rule of thumb: if 3+ properties share the same prefix (e.g. `textVertical`, `textAnchor`, `textWrap`), nest them under a single property that names the concept and matches the XSD container element (e.g. `textBody: { vertical, anchor, wrap }` for `p:txBody` > `a:bodyPr`).
-
-This aligns with the XSD structure where related attributes are grouped under a single container element (e.g. `a:bodyPr` contains `vert`, `anchor`, `wrap`).
-
-### Parameters: Positional vs Options Object
-
-| Pattern                   | When to use                                                      |
-| ------------------------- | ---------------------------------------------------------------- |
-| **Positional parameters** | All parameters are required and stable (e.g. `attr(el, name)`)   |
-| **Options object**        | 2+ optional parameters, interface may evolve, public API surface |
-
-For internal helper functions with all-required parameters, prefer positional parameters even if there are more than 3.
+Rule: if 3+ properties share the same prefix, nest them under a property that names the concept and matches the XSD container.
 
 ### Container Field Naming
 
-Options interfaces use two patterns for container fields:
+| Pattern       | Field Name  | When to use         | Example                   |
+| ------------- | ----------- | ------------------- | ------------------------- |
+| Heterogeneous | `children`  | Mixed element types | `SectionOptions.children` |
+| Homogeneous   | Domain name | Single element type | `TableOptions.rows`       |
 
-| Pattern           | Field Name  | When to use                           | Example                                                |
-| ----------------- | ----------- | ------------------------------------- | ------------------------------------------------------ |
-| **Heterogeneous** | `children`  | Container holds mixed element types   | `SectionOptions.children` — paragraphs, tables, images |
-| **Homogeneous**   | Domain name | Container holds a single element type | `TableOptions.rows` — TableRow only                    |
+Domain names follow the XSD element: `rows` for `w:tr`/`x:row`, `cells` for `w:tc`/`x:c`.
 
-Domain names follow the XSD element name: `rows` for `w:tr`/`x:row`, `cells` for `w:tc`/`x:c`.
+## Descriptor Pattern
+
+All XML serialization uses the descriptor pattern from `@office-open/core/descriptor`:
+
+- **`CustomDescriptor<T>`** — for complex parts with custom stringify/parse logic
+- **`ElementDescriptor<T>`** — for simple declarative attr/child mapping
+- **`element<T>(tag)`** — builder for `ElementDescriptor`
+
+Each descriptor is **bidirectional**: has both `stringify()` and `parse()`.
+
+## XML Generation
+
+XML is generated via **string concatenation** (template literals), not intermediate object trees. For complex dynamic XML, use `buildXml()` (re-export of `element()` from `@office-open/xml`).
 
 ```typescript
-// Heterogeneous — use "children"
-interface SectionOptions {
-  readonly children: readonly (Paragraph | Table | ImageOptions)[];
-}
+// Simple — inline template
+const xml = `<a:noFill/>`;
+const xml = `<a:off x="${x}" y="${y}/>`;
 
-// Homogeneous — use domain name
-interface TableOptions {
-  readonly rows: readonly TableRow[];
-}
-interface TableRowOptions {
-  readonly cells: readonly TableCell[];
-}
-interface WorksheetOptions {
-  readonly rows: readonly RowOptions[];
-}
+// Dynamic — array push + join
+const parts: string[] = [];
+if (opts.fill) parts.push(stringifyFill(opts.fill));
+return `<p:spPr>${parts.join("")}</p:spPr>`;
 ```
 
 ## Loop Patterns
 
-| Scenario                                                    | Use                 | Reason                                          |
-| ----------------------------------------------------------- | ------------------- | ----------------------------------------------- |
-| Transform data into a new array                             | `.map()`            | Expresses "transform" intent, returns new array |
-| Filter elements                                             | `.filter()`         | Expresses "filter" intent                       |
-| Side-effect iteration, async/await, need `break`/`continue` | `for...of`          | Full control, supports early exit and async     |
-| Performance-sensitive hot paths                             | `for...of` or `for` | ~3x faster than `.forEach()`                    |
+| Scenario                            | Use                 | Reason                            |
+| ----------------------------------- | ------------------- | --------------------------------- |
+| Transform into new array            | `.map()`            | Expresses "transform" intent      |
+| Filter elements                     | `.filter()`         | Expresses "filter" intent         |
+| Side-effect iteration, async, break | `for...of`          | Full control, supports early exit |
+| Performance-sensitive hot paths     | `for...of` or `for` | ~3x faster than `.forEach()`      |
 
-**Avoid `.forEach()`** - `for...of` is a strictly superior replacement (more flexible, faster, supports `async/await` and `break`/`continue`).
+**Avoid `.forEach()`** — `for...of` is strictly superior.
 
 ## XSD Value Mapping
 
-When XSD uses abbreviations that don't match human-readable values, a mapping layer is used. All mappings are centralized in `packages/core/src/xsd-mappings.ts`.
+When XSD uses abbreviations, mapping is centralized in `packages/core/src/xsd-mappings.ts`. The mapping is bidirectional:
 
-The mapping is bidirectional:
+- **Generation** (Options → XML): user-friendly → XSD abbreviated
+- **Parsing** (XML → Options): XSD abbreviated → user-friendly
 
-- **Generation** (Options → XML): user-friendly values → XSD abbreviated values
-- **Parsing** (XML → Options): XSD abbreviated values → user-friendly values
-
-When XSD already uses full English words (e.g. `"center"`, `"start"`), no mapping is needed - use the XSD value directly.
+When XSD uses full words (e.g. `"center"`), no mapping needed.
 
 ## Running Demos
 
 ```bash
-# Docx demos (run from packages/docx)
 cd packages/docx && pnpm tsx demo/<demo-file>.ts
-
-# Pptx demos (run from packages/pptx)
 cd packages/pptx && pnpm tsx demo/<demo-file>.ts
-
-# Xlsx demos (run from packages/xlsx)
 cd packages/xlsx && pnpm tsx demo/<demo-file>.ts
 ```
 
 ## Validation
 
-Validate generated XML against OOXML XSD schemas:
-
 ```bash
-# Validate all demos
-pnpm tsx scripts/validate.ts
-
-# Validate single package
-pnpm tsx scripts/validate.ts pptx
-pnpm tsx scripts/validate.ts docx
-pnpm tsx scripts/validate.ts xlsx
-
-# Validate specific file
-pnpm tsx scripts/validate.ts docx "packages/docx/My Document.docx"
-pnpm tsx scripts/validate.ts xlsx "packages/xlsx/My Workbook.xlsx"
+pnpm tsx scripts/validate.ts                # All demos
+pnpm tsx scripts/validate.ts pptx           # One package
+pnpm tsx scripts/validate.ts docx "path.docx"  # Specific file
 ```
 
 ## Pull Request Process
 
-1. Ensure `pnpm check` passes with no errors
+1. `pnpm check` passes with no errors
 2. Run relevant demos and tests to verify changes
 3. For new XML elements, validate output against XSD schemas
-4. Follow the naming conventions described above
-5. Keep changes minimal and focused - match existing style
+4. Follow naming conventions described above
+5. Keep changes minimal and focused — match existing style

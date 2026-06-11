@@ -8,8 +8,7 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import type { XmlComponent } from "../../xml-components";
+import { element } from "@office-open/xml";
 
 // ── Options ──
 
@@ -33,70 +32,70 @@ export type OnOffStyleType = "on" | "off" | "def";
 
 export interface TablePartStyleOptions {
   /** Cell text style */
-  readonly text?: TableTextStyleOptions;
+  text?: TableTextStyleOptions;
   /** Cell style (fill, borders, 3D) */
-  readonly cell?: TableCellStyleOptions;
+  cell?: TableCellStyleOptions;
 }
 
 export interface TableTextStyleOptions {
   /** Bold style */
-  readonly bold?: OnOffStyleType;
+  bold?: OnOffStyleType;
   /** Italic style */
-  readonly italic?: OnOffStyleType;
+  italic?: OnOffStyleType;
   /** Font reference (themeable) */
-  readonly fontRef?: StyleMatrixReferenceOptions;
+  fontRef?: StyleMatrixReferenceOptions;
   /** Color element */
-  readonly color?: XmlComponent;
+  color?: string;
 }
 
 export interface TableCellStyleOptions {
   /** Cell borders */
-  readonly borders?: TableCellBorderOptions;
+  borders?: TableCellBorderOptions;
   /** Fill reference (themeable) */
-  readonly fillRef?: StyleMatrixReferenceOptions;
+  fillRef?: StyleMatrixReferenceOptions;
   /** Direct fill */
-  readonly fill?: XmlComponent;
+  fill?: string;
 }
 
 export interface TableCellBorderOptions {
-  readonly left?: ThemeableLineStyleOptions;
-  readonly right?: ThemeableLineStyleOptions;
-  readonly top?: ThemeableLineStyleOptions;
-  readonly bottom?: ThemeableLineStyleOptions;
-  readonly insideH?: ThemeableLineStyleOptions;
-  readonly insideV?: ThemeableLineStyleOptions;
+  left?: ThemeableLineStyleOptions;
+  right?: ThemeableLineStyleOptions;
+  top?: ThemeableLineStyleOptions;
+  bottom?: ThemeableLineStyleOptions;
+  insideH?: ThemeableLineStyleOptions;
+  insideV?: ThemeableLineStyleOptions;
 }
 
 export interface ThemeableLineStyleOptions {
   /** Line width in EMUs */
-  readonly width?: number;
+  width?: number;
   /** Fill color component */
-  readonly color?: XmlComponent;
+  color?: string;
   /** Line reference index into theme style matrix */
-  readonly lineRefIdx?: number;
+  lineRefIdx?: number;
 }
 
 export interface StyleMatrixReferenceOptions {
   /** Index into the theme style matrix */
-  readonly idx: number;
+  idx: number;
   /** Color component */
-  readonly color?: XmlComponent;
+  color?: string;
 }
 
 export interface TableStyleOptions {
   /** Unique GUID for this style */
-  readonly styleId: string;
+  styleId: string;
   /** Display name */
-  readonly styleName: string;
+  styleName: string;
   /** Style regions */
-  readonly regions?: Partial<Record<TableStyleRegion, TablePartStyleOptions>>;
+  regions?: Partial<Record<TableStyleRegion, TablePartStyleOptions>>;
 }
 
 export interface TableStyleListOptions {
   /** Default style GUID */
-  readonly defaultStyleId: string;
+  defaultStyleId: string;
   /** Custom table styles */
-  readonly styles?: readonly TableStyleOptions[];
+  styles?: readonly TableStyleOptions[];
 }
 
 // ── Helpers ──
@@ -106,89 +105,76 @@ function onOffAttr(val: OnOffStyleType | undefined): string {
   return val;
 }
 
-/** Create a:a:styleMatrixReference (fillRef, lnRef, effectRef, fontRef) */
-function createStyleMatrixRef(
-  elementName: string,
-  opts: StyleMatrixReferenceOptions,
-): BuilderElement {
-  const children: XmlComponent[] = [];
+/** Pass through a string value (all color/fill factories now return string). */
+function toStr(el: string): string {
+  return el;
+}
+
+/** Create a:styleMatrixReference (fillRef, lnRef, effectRef, fontRef) */
+function createStyleMatrixRef(elementName: string, opts: StyleMatrixReferenceOptions): string {
+  const children: string[] = [];
   if (opts.color) children.push(opts.color);
-  return new BuilderElement({
-    name: `a:${elementName}`,
-    attributes: [{ key: "idx", value: String(opts.idx) }],
-    children: children.length > 0 ? children : undefined,
-  });
+  return element(
+    `a:${elementName}`,
+    { idx: String(opts.idx) },
+    children.length > 0 ? children : undefined,
+  );
 }
 
 /** Create border line element (a:ln with color) or a:lnRef */
-function createThemeableLine(opts: ThemeableLineStyleOptions): BuilderElement {
+function createThemeableLine(opts: ThemeableLineStyleOptions): string {
   if (opts.lineRefIdx !== undefined) {
-    const children: XmlComponent[] = [];
-    if (opts.color) children.push(opts.color);
-    return new BuilderElement({
-      name: "a:lnRef",
-      attributes: [{ key: "idx", value: String(opts.lineRefIdx) }],
-      children: children.length > 0 ? children : undefined,
-    });
+    const children: string[] = [];
+    if (opts.color) children.push(toStr(opts.color));
+    return element(
+      "a:lnRef",
+      { idx: String(opts.lineRefIdx) },
+      children.length > 0 ? children : undefined,
+    );
   }
-  const children: XmlComponent[] = [];
-  if (opts.color) children.push(opts.color);
-  return new BuilderElement({
-    name: "a:ln",
-    attributes: opts.width !== undefined ? [{ key: "w", value: String(opts.width) }] : undefined,
-    children: children.length > 0 ? children : undefined,
-  });
+  const children: string[] = [];
+  if (opts.color) children.push(toStr(opts.color));
+  const attrs: Record<string, string> = {};
+  if (opts.width !== undefined) attrs.w = String(opts.width);
+  return element("a:ln", attrs, children.length > 0 ? children : undefined);
 }
 
 // ── Part builders ──
 
-function buildCellBorders(opts: TableCellBorderOptions): BuilderElement {
-  const children: XmlComponent[] = [];
+function buildCellBorders(opts: TableCellBorderOptions): string {
+  const children: string[] = [];
   if (opts.left) children.push(createThemeableLine(opts.left));
   if (opts.right) children.push(createThemeableLine(opts.right));
   if (opts.top) children.push(createThemeableLine(opts.top));
   if (opts.bottom) children.push(createThemeableLine(opts.bottom));
   if (opts.insideH) children.push(createThemeableLine(opts.insideH));
   if (opts.insideV) children.push(createThemeableLine(opts.insideV));
-  return new BuilderElement({
-    name: "a:tcBdr",
-    children,
-  });
+  return element("a:tcBdr", undefined, children);
 }
 
-function buildTextStyle(opts: TableTextStyleOptions): BuilderElement {
-  const children: XmlComponent[] = [];
+function buildTextStyle(opts: TableTextStyleOptions): string {
+  const children: string[] = [];
   if (opts.fontRef) children.push(createStyleMatrixRef("fontRef", opts.fontRef));
-  if (opts.color) children.push(opts.color);
-  const attrs: Array<{ key: string; value: string }> = [];
-  if (opts.bold && opts.bold !== "def") attrs.push({ key: "b", value: onOffAttr(opts.bold) });
-  if (opts.italic && opts.italic !== "def") attrs.push({ key: "i", value: onOffAttr(opts.italic) });
-  return new BuilderElement({
-    name: "a:tcTxStyle",
-    attributes: attrs.length > 0 ? attrs : undefined,
-    children: children.length > 0 ? children : undefined,
-  });
+  if (opts.color) children.push(toStr(opts.color));
+  const attrs: Record<string, string> = {};
+  if (opts.bold && opts.bold !== "def") attrs.b = onOffAttr(opts.bold);
+  if (opts.italic && opts.italic !== "def") attrs.i = onOffAttr(opts.italic);
+  return element("a:tcTxStyle", attrs, children.length > 0 ? children : undefined);
 }
 
-function buildCellStyle(opts: TableCellStyleOptions): BuilderElement {
-  const children: XmlComponent[] = [];
+function buildCellStyle(opts: TableCellStyleOptions): string {
+  const children: string[] = [];
   if (opts.borders) children.push(buildCellBorders(opts.borders));
   if (opts.fillRef) children.push(createStyleMatrixRef("fillRef", opts.fillRef));
-  else if (opts.fill) children.push(opts.fill);
-  return new BuilderElement({
-    name: "a:tcStyle",
-    children,
-  });
+  else if (opts.fill) children.push(toStr(opts.fill));
+  return element("a:tcStyle", undefined, children);
 }
 
-function buildPartStyle(elementName: string, opts: TablePartStyleOptions): BuilderElement {
-  const children: XmlComponent[] = [];
+function buildPartStyle(elementName: string, opts: TablePartStyleOptions): string {
+  const children: string[] = [];
   if (opts.text) children.push(buildTextStyle(opts.text));
   if (opts.cell) children.push(buildCellStyle(opts.cell));
-  return new BuilderElement({
-    name: elementName,
-    children,
-  });
+  return element(elementName, undefined, children);
 }
 
 // ── Public API ──
@@ -230,40 +216,36 @@ const REGION_ELEMENTS: Record<TableStyleRegion, string> = {
 };
 
 /** Create a single table style (CT_TableStyle) */
-export function createTableStyle(opts: TableStyleOptions): BuilderElement {
-  const children: XmlComponent[] = [];
+export function createTableStyle(opts: TableStyleOptions): string {
+  const children: string[] = [];
   if (opts.regions) {
     for (const region of REGION_ORDER) {
       const part = opts.regions[region];
       if (!part) continue;
-      const partEl = buildPartStyle(REGION_ELEMENTS[region], part);
-      children.push(partEl);
+      children.push(buildPartStyle(REGION_ELEMENTS[region], part));
     }
   }
-  return new BuilderElement({
-    name: "a:tblStyle",
-    attributes: [
-      { key: "styleId", value: opts.styleId },
-      { key: "styleName", value: opts.styleName },
-    ],
-    children: children.length > 0 ? children : undefined,
-  });
+  return element(
+    "a:tblStyle",
+    { styleId: opts.styleId, styleName: opts.styleName },
+    children.length > 0 ? children : undefined,
+  );
 }
 
 /** Create table style list (CT_TableStyleList) */
-export function createTableStyleList(opts: TableStyleListOptions): BuilderElement {
-  const children: XmlComponent[] = [];
+export function createTableStyleList(opts: TableStyleListOptions): string {
+  const children: string[] = [];
   if (opts.styles) {
     for (const style of opts.styles) {
       children.push(createTableStyle(style));
     }
   }
-  return new BuilderElement({
-    name: "a:tblStyleLst",
-    attributes: [
-      { key: "xmlns:a", value: "http://schemas.openxmlformats.org/drawingml/2006/main" },
-      { key: "def", value: opts.defaultStyleId },
-    ],
-    children: children.length > 0 ? children : undefined,
-  });
+  return element(
+    "a:tblStyleLst",
+    {
+      "xmlns:a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+      def: opts.defaultStyleId,
+    },
+    children.length > 0 ? children : undefined,
+  );
 }

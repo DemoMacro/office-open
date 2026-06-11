@@ -8,8 +8,7 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import type { XmlComponent } from "../../xml-components";
+import { element } from "@office-open/xml";
 
 /**
  * Creates an SVG blip element for embedding SVG images.
@@ -18,23 +17,11 @@ import type { XmlComponent } from "../../xml-components";
  * to be referenced within a blip.
  *
  * @param svgReferenceId - The reference ID for the SVG image
- * @returns An XML component representing the SVG blip element
+ * @returns An XML string representing the SVG blip element
  * @internal
  */
-const createSvgBlip = (svgReferenceId: string): XmlComponent =>
-  new BuilderElement({
-    attributes: {
-      asvg: {
-        key: "xmlns:asvg",
-        value: "http://schemas.microsoft.com/office/drawing/2016/SVG/main",
-      },
-      embed: {
-        key: "r:embed",
-        value: `{${svgReferenceId}}`,
-      },
-    },
-    name: "asvg:svgBlip",
-  });
+const createSvgBlip = (svgReferenceId: string): string =>
+  `<asvg:svgBlip xmlns:asvg="http://schemas.microsoft.com/office/drawing/2016/SVG/main" r:embed="{${svgReferenceId}}"/>`;
 
 /**
  * Creates an extension element for SVG support.
@@ -43,20 +30,13 @@ const createSvgBlip = (svgReferenceId: string): XmlComponent =>
  * to identify it as an SVG extension.
  *
  * @param svgReferenceId - The reference ID for the SVG image
- * @returns An XML component representing the extension element
+ * @returns An XML string representing the extension element
  * @internal
  */
-const createExtention = (svgReferenceId: string): XmlComponent =>
-  new BuilderElement({
-    attributes: {
-      uri: {
-        key: "uri",
-        value: "{96DAC541-7B7A-43D3-8B79-37D633B846F1}",
-      },
-    },
-    children: [createSvgBlip(svgReferenceId)],
-    name: "a:ext",
-  });
+const createExtention = (svgReferenceId: string): string =>
+  element("a:ext", { uri: "{96DAC541-7B7A-43D3-8B79-37D633B846F1}" }, [
+    createSvgBlip(svgReferenceId),
+  ]);
 
 /**
  * Creates an extension list for SVG images.
@@ -74,10 +54,7 @@ const createExtention = (svgReferenceId: string): XmlComponent =>
  * ```
  *
  * @param svgReferenceId - The reference ID for the SVG image
- * @returns An XML component representing the extension list
+ * @returns An XML string representing the extension list
  */
-export const createExtentionList = (svgReferenceId: string): XmlComponent =>
-  new BuilderElement({
-    children: [createExtention(svgReferenceId)],
-    name: "a:extLst",
-  });
+export const createExtentionList = (svgReferenceId: string): string =>
+  element("a:extLst", undefined, [createExtention(svgReferenceId)]);

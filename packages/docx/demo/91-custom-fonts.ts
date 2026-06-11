@@ -1,40 +1,40 @@
 // Simple example to add text to a document
 
-import * as fs from "fs";
+import { readFileSync, writeFileSync } from "node:fs";
 
-import { CharacterSet, Document, Packer, Paragraph, Tab, TextRun } from "@office-open/docx";
+import { CharacterSet, generateDocument } from "@office-open/docx";
 
-const font = fs.readFileSync("./demo/assets/Pacifico.ttf");
+const font = readFileSync("./demo/assets/Pacifico.ttf");
 
-const doc = new Document({
+const buffer = await generateDocument({
   fonts: [{ characterSet: CharacterSet.ANSI, data: font, name: "Pacifico" }],
   sections: [
     {
       children: [
-        new Paragraph({
-          run: {
-            font: "Pacifico",
+        {
+          paragraph: {
+            run: {
+              font: "Pacifico",
+            },
+            children: [
+              "Hello World",
+              {
+                text: "Foo Bar",
+                bold: true,
+                size: 40,
+                font: "Pacifico",
+              },
+              {
+                bold: true,
+                font: "Pacifico",
+                children: [{ tab: true }, "Github is the best"],
+              },
+            ],
           },
-          children: [
-            new TextRun("Hello World"),
-            new TextRun({
-              text: "Foo Bar",
-              bold: true,
-              size: 40,
-              font: "Pacifico",
-            }),
-            new TextRun({
-              children: [new Tab(), "Github is the best"],
-              bold: true,
-              font: "Pacifico",
-            }),
-          ],
-        }),
+        },
       ],
       properties: {},
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

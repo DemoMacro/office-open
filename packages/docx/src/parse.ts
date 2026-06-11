@@ -1,19 +1,20 @@
-import type { PropertiesOptions } from "@file/core-properties";
 import type { ParsedArchive } from "@office-open/core";
 import { parseArchive, parseCorePropsElement } from "@office-open/core";
 import type { DataType } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
 import { attr, attrNum } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
+import type { DocumentOptions } from "@parts/core-properties";
+import { customPropertiesDesc } from "@parts/custom-properties";
+import { parseNumberingDefinitions } from "@parts/numbering/numbering";
+import { settingsDesc } from "@parts/settings/descriptor";
+import { buildStyleCache, buildNumberingCache, parseStyleDefinitions } from "@parts/styles/styles";
+import { setTableParseChild } from "@parts/table/descriptor";
+import { webSettingsDesc } from "@parts/web-settings";
 
-import { parseParagraph } from "./file/paragraph/paragraph-parse";
-import { parseBody } from "./parse/body";
-import { ParseContext } from "./parse/context";
-import { parseCustomProperties } from "./parse/custom-properties";
-import { parseNumberingDefinitions } from "./parse/numbering";
-import { parseSettings } from "./parse/settings";
-import { buildStyleCache, buildNumberingCache, parseStyleDefinitions } from "./parse/styles";
-import { parseWebSettings } from "./parse/web-settings";
+import { parseParagraph, parseParagraphProperties } from "./body";
+import { DocxReadContext } from "./context";
+import { parseBody, parseSectionChild } from "./parse/body";
 
 export { parseArchive };
 
@@ -162,7 +163,7 @@ function parseRootRels(doc: ParsedArchive): {
 }
 
 /**
- * Parse a .docx file and convert it into PropertiesOptions.
+ * Parse a .docx file and convert it into DocumentOptions.
  *
  * This is the main public API for parsing DOCX files.
  * The returned options can be passed directly to `new Document(parsed)`
@@ -171,9 +172,17 @@ function parseRootRels(doc: ParsedArchive): {
  * @param data - Raw bytes of a .docx file
  * @returns Document options including sections and metadata
  */
-export function parseDocument(data: DataType): PropertiesOptions {
+export function parseDocument(data: DataType): DocumentOptions {
   const docx = parseDocx(data);
-  const ctx = new ParseContext(docx, buildStyleCache(docx), buildNumberingCache(docx));
+  const ctx = new DocxReadContext(
+    docx,
+    buildStyleCache(docx.styles),
+    buildNumberingCache(docx.numbering),
+  );
+
+  // Register the child parser for table descriptor
+  setTableParseChild(parseSectionChild);
+
   const sections = parseBody(docx.body, ctx);
 
   const opts: Record<string, unknown> = { sections };
@@ -203,12 +212,12 @@ export function parseDocument(data: DataType): PropertiesOptions {
 
   // Settings
   if (docx.settings) {
-    Object.assign(opts, parseSettings(docx.settings));
+    Object.assign(opts, settingsDesc.parse(docx.settings, ctx));
   }
 
   // Web settings
   if (docx.webSettings) {
-    const wsOpts = parseWebSettings(docx.webSettings);
+    const wsOpts = webSettingsDesc.parse(docx.webSettings, ctx);
     if (Object.keys(wsOpts).length > 0) opts.webSettings = wsOpts;
   }
 
@@ -216,9 +225,9 @@ export function parseDocument(data: DataType): PropertiesOptions {
   if (docx.customProps) {
     const customPropsEl = docx.doc.get(docx.customProps);
     if (customPropsEl) {
-      const cpEntries = parseCustomProperties(customPropsEl);
-      if (cpEntries.length > 0) {
-        opts.customProperties = cpEntries;
+      const cpResult = customPropertiesDesc.parse(customPropsEl, ctx);
+      if (cpResult.properties && cpResult.properties.length > 0) {
+        opts.customProperties = cpResult.properties;
       }
     }
   }
@@ -262,7 +271,7 @@ export function parseDocument(data: DataType): PropertiesOptions {
 
   // Styles definitions
   if (docx.styles) {
-    const styleOpts = parseStyleDefinitions(docx.styles, ctx);
+    const styleOpts = parseStyleDefinitions(docx.styles, parseParagraphProperties, ctx);
     if (styleOpts) opts.styles = styleOpts;
   }
 
@@ -272,7 +281,7 @@ export function parseDocument(data: DataType): PropertiesOptions {
     if (numOpts) opts.numbering = numOpts;
   }
 
-  return opts as unknown as PropertiesOptions;
+  return opts as unknown as DocumentOptions;
 }
 
 export function parseDocx(data: DataType): DocxDocument {
@@ -315,7 +324,7 @@ export function parseDocx(data: DataType): DocxDocument {
  */
 function parseComments(
   el: Element,
-  ctx: ParseContext,
+  ctx: DocxReadContext,
 ): { id: number; author?: string; initials?: string; date?: string; children: unknown[] }[] {
   const comments: {
     id: number;
@@ -360,7 +369,7 @@ function parseComments(
 function parseNotesContent(
   el: Element,
   tagName: "w:footnote" | "w:endnote",
-  ctx: ParseContext,
+  ctx: DocxReadContext,
 ): { id: number; type?: string; children: unknown[] }[] {
   const notes: { id: number; type?: string; children: unknown[] }[] = [];
 

@@ -19,7 +19,7 @@ import {
   unsignedDecimalNumber,
   ThemeColor,
   ThemeFont,
-} from "./values";
+} from "./util/values";
 
 describe("decimalNumber", () => {
   it("should floor a positive float", () => {

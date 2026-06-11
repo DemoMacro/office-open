@@ -1,158 +1,103 @@
 // Add custom borders to table cell
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import {
-  BorderStyle,
-  Document,
-  Packer,
-  Paragraph,
-  Table,
-  TableCell,
-  TableRow,
-} from "@office-open/docx";
+import { BorderStyle, generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Table({
-          rows: [
-            new TableRow({
-              cells: [
-                new TableCell({
-                  children: [],
-                }),
-                new TableCell({
-                  children: [],
-                }),
-                new TableCell({
-                  children: [],
-                }),
-                new TableCell({
-                  children: [],
-                }),
-              ],
-            }),
-            new TableRow({
-              cells: [
-                new TableCell({
-                  children: [],
-                }),
-                new TableCell({
-                  borders: {
-                    bottom: {
-                      color: "0000FF",
-                      size: 3,
-                      style: BorderStyle.DOUBLE,
+        {
+          table: {
+            rows: [
+              {
+                cells: [{ children: [] }, { children: [] }, { children: [] }, { children: [] }],
+              },
+              {
+                cells: [
+                  { children: [] },
+                  {
+                    borders: {
+                      bottom: {
+                        color: "0000FF",
+                        size: 3,
+                        style: BorderStyle.DOUBLE,
+                      },
+                      left: {
+                        color: "00FF00",
+                        size: 3,
+                        style: BorderStyle.DASH_DOT_STROKED,
+                      },
+                      right: {
+                        color: "#ff8000",
+                        size: 3,
+                        style: BorderStyle.DASH_DOT_STROKED,
+                      },
+                      top: {
+                        color: "FF0000",
+                        size: 3,
+                        style: BorderStyle.DASH_DOT_STROKED,
+                      },
                     },
-                    left: {
-                      color: "00FF00",
-                      size: 3,
-                      style: BorderStyle.DASH_DOT_STROKED,
-                    },
-                    right: {
-                      color: "#ff8000",
-                      size: 3,
-                      style: BorderStyle.DASH_DOT_STROKED,
-                    },
-                    top: {
-                      color: "FF0000",
-                      size: 3,
-                      style: BorderStyle.DASH_DOT_STROKED,
-                    },
+                    children: [{ paragraph: "Hello" }],
                   },
-                  children: [new Paragraph("Hello")],
-                }),
-                new TableCell({
-                  children: [],
-                }),
-                new TableCell({
-                  children: [],
-                }),
-              ],
-            }),
-            new TableRow({
-              cells: [
-                new TableCell({
-                  children: [],
-                }),
-                new TableCell({
-                  children: [],
-                }),
-                new TableCell({
-                  children: [],
-                }),
-                new TableCell({
-                  children: [],
-                }),
-              ],
-            }),
-            new TableRow({
-              cells: [
-                new TableCell({
-                  children: [],
-                }),
-                new TableCell({
-                  children: [],
-                }),
-                new TableCell({
-                  children: [],
-                }),
-                new TableCell({
-                  children: [],
-                }),
-              ],
-            }),
-            // Row with diagonal cell borders
-            new TableRow({
-              cells: [
-                new TableCell({
-                  borders: {
-                    topLeftToBottomRight: {
-                      color: "000000",
-                      size: 4,
-                      style: BorderStyle.SINGLE,
+                  { children: [] },
+                  { children: [] },
+                ],
+              },
+              {
+                cells: [{ children: [] }, { children: [] }, { children: [] }, { children: [] }],
+              },
+              {
+                cells: [{ children: [] }, { children: [] }, { children: [] }, { children: [] }],
+              },
+              // Row with diagonal cell borders
+              {
+                cells: [
+                  {
+                    borders: {
+                      topLeftToBottomRight: {
+                        color: "000000",
+                        size: 4,
+                        style: BorderStyle.SINGLE,
+                      },
                     },
+                    children: [{ paragraph: "tl2br" }],
                   },
-                  children: [new Paragraph("tl2br")],
-                }),
-                new TableCell({
-                  borders: {
-                    topRightToBottomLeft: {
-                      color: "0000FF",
-                      size: 4,
-                      style: BorderStyle.SINGLE,
+                  {
+                    borders: {
+                      topRightToBottomLeft: {
+                        color: "0000FF",
+                        size: 4,
+                        style: BorderStyle.SINGLE,
+                      },
                     },
+                    children: [{ paragraph: "tr2bl" }],
                   },
-                  children: [new Paragraph("tr2bl")],
-                }),
-                new TableCell({
-                  borders: {
-                    topLeftToBottomRight: {
-                      color: "FF0000",
-                      size: 4,
-                      style: BorderStyle.SINGLE,
+                  {
+                    borders: {
+                      topLeftToBottomRight: {
+                        color: "FF0000",
+                        size: 4,
+                        style: BorderStyle.SINGLE,
+                      },
+                      topRightToBottomLeft: {
+                        color: "0000FF",
+                        size: 4,
+                        style: BorderStyle.SINGLE,
+                      },
                     },
-                    topRightToBottomLeft: {
-                      color: "0000FF",
-                      size: 4,
-                      style: BorderStyle.SINGLE,
-                    },
+                    children: [{ paragraph: "X" }],
                   },
-                  children: [new Paragraph("X")],
-                }),
-                new TableCell({
-                  children: [],
-                }),
-              ],
-            }),
-          ],
-        }),
+                  { children: [] },
+                ],
+              },
+            ],
+          },
+        },
       ],
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

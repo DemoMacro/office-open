@@ -8,8 +8,9 @@
  *
  * @module
  */
-import { BuilderElement } from "../xml-components";
-import type { XmlComponent } from "../xml-components";
+import type { UniversalMeasure } from "@office-open/core";
+import { convertToEmu } from "@office-open/core";
+import { element } from "@office-open/xml";
 
 // <xsd:complexType name="CT_Transform2D">
 //     <xsd:sequence>
@@ -22,13 +23,13 @@ import type { XmlComponent } from "../xml-components";
 // </xsd:complexType>
 
 export interface Transform2DOptions {
-  readonly x?: number;
-  readonly y?: number;
-  readonly width?: number;
-  readonly height?: number;
-  readonly flipHorizontal?: boolean;
-  readonly flipVertical?: boolean;
-  readonly rotation?: number;
+  x?: number | UniversalMeasure;
+  y?: number | UniversalMeasure;
+  width?: number | UniversalMeasure;
+  height?: number | UniversalMeasure;
+  flipHorizontal?: boolean;
+  flipVertical?: boolean;
+  rotation?: number;
 }
 
 // <xsd:complexType name="CT_GroupTransform2D">
@@ -43,22 +44,19 @@ export interface Transform2DOptions {
 // </xsd:complexType>
 
 export interface GroupTransform2DOptions extends Transform2DOptions {
-  readonly childOffsetX?: number;
-  readonly childOffsetY?: number;
-  readonly childExtentWidth?: number;
-  readonly childExtentHeight?: number;
+  childOffsetX?: number | UniversalMeasure;
+  childOffsetY?: number | UniversalMeasure;
+  childExtentWidth?: number | UniversalMeasure;
+  childExtentHeight?: number | UniversalMeasure;
 }
 
-function buildXfrmAttrs(options: Transform2DOptions) {
-  const attrs: Record<
-    string,
-    { readonly key: string; readonly value: string | number | boolean | undefined }
-  > = {};
-  if (options.flipHorizontal !== undefined)
-    attrs.flipH = { key: "flipH", value: options.flipHorizontal };
-  if (options.flipVertical !== undefined)
-    attrs.flipV = { key: "flipV", value: options.flipVertical };
-  if (options.rotation !== undefined) attrs.rot = { key: "rot", value: options.rotation };
+function buildXfrmAttrs(
+  options: Transform2DOptions,
+): Record<string, string | number | boolean> | undefined {
+  const attrs: Record<string, string | number | boolean> = {};
+  if (options.flipHorizontal !== undefined) attrs.flipH = options.flipHorizontal;
+  if (options.flipVertical !== undefined) attrs.flipV = options.flipVertical;
+  if (options.rotation !== undefined) attrs.rot = options.rotation;
   return Object.keys(attrs).length > 0 ? attrs : undefined;
 }
 
@@ -71,38 +69,22 @@ function buildXfrmAttrs(options: Transform2DOptions) {
 export const createTransform2D = (
   options: Transform2DOptions,
   elementName: string = "a:xfrm",
-): XmlComponent => {
-  const children: XmlComponent[] = [];
+): string => {
+  const children: string[] = [];
 
   if (options.x !== undefined || options.y !== undefined) {
-    children.push(
-      new BuilderElement({
-        name: "a:off",
-        attributes: {
-          x: { key: "x", value: options.x ?? 0 },
-          y: { key: "y", value: options.y ?? 0 },
-        },
-      }),
-    );
+    const x = options.x !== undefined ? convertToEmu(options.x) : 0;
+    const y = options.y !== undefined ? convertToEmu(options.y) : 0;
+    children.push(`<a:off x="${x}" y="${y}"/>`);
   }
 
   if (options.width !== undefined || options.height !== undefined) {
-    children.push(
-      new BuilderElement({
-        name: "a:ext",
-        attributes: {
-          cx: { key: "cx", value: options.width ?? 0 },
-          cy: { key: "cy", value: options.height ?? 0 },
-        },
-      }),
-    );
+    const cx = options.width !== undefined ? convertToEmu(options.width) : 0;
+    const cy = options.height !== undefined ? convertToEmu(options.height) : 0;
+    children.push(`<a:ext cx="${cx}" cy="${cy}"/>`);
   }
 
-  return new BuilderElement({
-    name: elementName,
-    attributes: buildXfrmAttrs(options) as never,
-    children: children.length > 0 ? children : undefined,
-  });
+  return element(elementName, buildXfrmAttrs(options), children);
 };
 
 /**
@@ -111,28 +93,30 @@ export const createTransform2D = (
 export const createGroupTransform2D = (
   options: GroupTransform2DOptions,
   elementName: string = "a:xfrm",
-): XmlComponent => {
-  const base = createTransform2D(options, elementName);
+): string => {
+  const children: string[] = [];
 
-  base["root"].push(
-    new BuilderElement({
-      name: "a:chOff",
-      attributes: {
-        x: { key: "x", value: options.childOffsetX ?? 0 },
-        y: { key: "y", value: options.childOffsetY ?? 0 },
-      },
-    }),
-  );
+  if (options.x !== undefined || options.y !== undefined) {
+    const x = options.x !== undefined ? convertToEmu(options.x) : 0;
+    const y = options.y !== undefined ? convertToEmu(options.y) : 0;
+    children.push(`<a:off x="${x}" y="${y}"/>`);
+  }
 
-  base["root"].push(
-    new BuilderElement({
-      name: "a:chExt",
-      attributes: {
-        cx: { key: "cx", value: options.childExtentWidth ?? 0 },
-        cy: { key: "cy", value: options.childExtentHeight ?? 0 },
-      },
-    }),
-  );
+  if (options.width !== undefined || options.height !== undefined) {
+    const cx = options.width !== undefined ? convertToEmu(options.width) : 0;
+    const cy = options.height !== undefined ? convertToEmu(options.height) : 0;
+    children.push(`<a:ext cx="${cx}" cy="${cy}"/>`);
+  }
 
-  return base;
+  const chOffX = options.childOffsetX !== undefined ? convertToEmu(options.childOffsetX) : 0;
+  const chOffY = options.childOffsetY !== undefined ? convertToEmu(options.childOffsetY) : 0;
+  children.push(`<a:chOff x="${chOffX}" y="${chOffY}"/>`);
+
+  const chExtCx =
+    options.childExtentWidth !== undefined ? convertToEmu(options.childExtentWidth) : 0;
+  const chExtCy =
+    options.childExtentHeight !== undefined ? convertToEmu(options.childExtentHeight) : 0;
+  children.push(`<a:chExt cx="${chExtCx}" cy="${chExtCy}"/>`);
+
+  return element(elementName, buildXfrmAttrs(options), children);
 };

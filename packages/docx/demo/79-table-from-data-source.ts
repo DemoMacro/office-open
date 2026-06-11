@@ -1,19 +1,13 @@
 // Example of how you would create a table and add data to it from a data source
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
 import {
-  Document,
   HeadingLevel,
-  Packer,
-  Paragraph,
-  Table,
-  TableCell,
-  TableRow,
   TextDirection,
-  TextRun,
   VerticalAlignTable,
   WidthType,
+  generateDocument,
 } from "@office-open/docx";
 
 interface StockPrice {
@@ -95,99 +89,102 @@ const DATA: StockPrice[] = [
   },
 ];
 
-const generateRows = (prices: StockPrice[]): TableRow[] =>
-  prices.map(
-    ({ date, ticker, price }) =>
-      new TableRow({
-        cells: [
-          new TableCell({
-            children: [new Paragraph(date.toString())],
-            textDirection: TextDirection.LEFT_TO_RIGHT_TOP_TO_BOTTOM,
-            verticalAlign: VerticalAlignTable.CENTER,
-          }),
-          new TableCell({
-            children: [new Paragraph(ticker)],
-            textDirection: TextDirection.LEFT_TO_RIGHT_TOP_TO_BOTTOM,
-            verticalAlign: VerticalAlignTable.CENTER,
-          }),
-          new TableCell({
-            children: [new Paragraph(price.toString())],
-            textDirection: TextDirection.TOP_TO_BOTTOM_RIGHT_TO_LEFT,
-            verticalAlign: VerticalAlignTable.CENTER,
-          }),
-        ],
-      }),
-  );
+const generateRows = (prices: StockPrice[]) =>
+  prices.map(({ date, ticker, price }) => ({
+    cells: [
+      {
+        children: [{ paragraph: date.toString() }],
+        textDirection: TextDirection.LEFT_TO_RIGHT_TOP_TO_BOTTOM,
+        verticalAlign: VerticalAlignTable.CENTER,
+      },
+      {
+        children: [{ paragraph: ticker }],
+        textDirection: TextDirection.LEFT_TO_RIGHT_TOP_TO_BOTTOM,
+        verticalAlign: VerticalAlignTable.CENTER,
+      },
+      {
+        children: [{ paragraph: price.toString() }],
+        textDirection: TextDirection.TOP_TO_BOTTOM_RIGHT_TO_LEFT,
+        verticalAlign: VerticalAlignTable.CENTER,
+      },
+    ],
+  }));
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Table({
-          rows: [
-            new TableRow({
-              cells: [
-                new TableCell({
-                  children: [
-                    new Paragraph({
-                      heading: HeadingLevel.HEADING_2,
-                      children: [
-                        new TextRun({
-                          text: "Date",
-                          bold: true,
-                          size: 40,
-                        }),
-                      ],
-                    }),
-                  ],
-                  textDirection: TextDirection.LEFT_TO_RIGHT_TOP_TO_BOTTOM,
-                  verticalAlign: VerticalAlignTable.CENTER,
-                }),
-                new TableCell({
-                  children: [
-                    new Paragraph({
-                      heading: HeadingLevel.HEADING_2,
-                      children: [
-                        new TextRun({
-                          text: "Ticker",
-                          bold: true,
-                          size: 40,
-                        }),
-                      ],
-                    }),
-                  ],
-                  textDirection: TextDirection.LEFT_TO_RIGHT_TOP_TO_BOTTOM,
-                  verticalAlign: VerticalAlignTable.CENTER,
-                }),
-                new TableCell({
-                  children: [
-                    new Paragraph({
-                      heading: HeadingLevel.HEADING_2,
-                      children: [
-                        new TextRun({
-                          text: "Price",
-                          bold: true,
-                          size: 40,
-                        }),
-                      ],
-                    }),
-                  ],
-                  textDirection: TextDirection.TOP_TO_BOTTOM_RIGHT_TO_LEFT,
-                  verticalAlign: VerticalAlignTable.CENTER,
-                }),
-              ],
-            }),
-            ...generateRows(DATA),
-          ],
-          width: {
-            size: 9070,
-            type: WidthType.DXA,
+        {
+          table: {
+            rows: [
+              {
+                cells: [
+                  {
+                    children: [
+                      {
+                        paragraph: {
+                          heading: HeadingLevel.HEADING_2,
+                          children: [
+                            {
+                              text: "Date",
+                              bold: true,
+                              size: 40,
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                    textDirection: TextDirection.LEFT_TO_RIGHT_TOP_TO_BOTTOM,
+                    verticalAlign: VerticalAlignTable.CENTER,
+                  },
+                  {
+                    children: [
+                      {
+                        paragraph: {
+                          heading: HeadingLevel.HEADING_2,
+                          children: [
+                            {
+                              text: "Ticker",
+                              bold: true,
+                              size: 40,
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                    textDirection: TextDirection.LEFT_TO_RIGHT_TOP_TO_BOTTOM,
+                    verticalAlign: VerticalAlignTable.CENTER,
+                  },
+                  {
+                    children: [
+                      {
+                        paragraph: {
+                          heading: HeadingLevel.HEADING_2,
+                          children: [
+                            {
+                              text: "Price",
+                              bold: true,
+                              size: 40,
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                    textDirection: TextDirection.TOP_TO_BOTTOM_RIGHT_TO_LEFT,
+                    verticalAlign: VerticalAlignTable.CENTER,
+                  },
+                ],
+              },
+              ...generateRows(DATA),
+            ],
+            width: {
+              size: 9070,
+              type: WidthType.DXA,
+            },
           },
-        }),
+        },
       ],
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

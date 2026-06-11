@@ -1,80 +1,96 @@
 // Demo: Ruby annotation (CT_Ruby) - East Asian pronunciation guides
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import { createRuby, Document, Packer, Paragraph, TextRun } from "@office-open/docx";
+import { generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [new TextRun({ text: "Ruby Annotation Demo", bold: true, size: 32 })],
-          spacing: { after: 400 },
-        }),
+        {
+          paragraph: {
+            children: [{ text: "Ruby Annotation Demo", bold: true, size: 32 }],
+            spacing: { after: 400 },
+          },
+        },
 
         // Japanese furigana
-        new Paragraph({
-          children: [new TextRun({ bold: true, text: "Japanese Furigana", size: 28 })],
-          spacing: { after: 200 },
-        }),
-        new Paragraph({
-          children: [
-            new TextRun("Base text with ruby: "),
-            createRuby({
-              text: "かな",
-              base: "漢字",
-              alignment: "center",
-              fontSize: 20,
-              raise: 20,
-              baseFontSize: 40,
-              languageId: "ja-JP",
-            }),
-          ],
-        }),
+        {
+          paragraph: {
+            children: [{ bold: true, text: "Japanese Furigana", size: 28 }],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              "Base text with ruby: ",
+              {
+                ruby: {
+                  text: "かな",
+                  base: "漢字",
+                  alignment: "center",
+                  fontSize: 20,
+                  raise: 20,
+                  baseFontSize: 40,
+                  languageId: "ja-JP",
+                },
+              },
+            ],
+          },
+        },
 
-        new Paragraph({ children: [new TextRun("")] }),
+        { paragraph: { children: [""] } },
 
         // Chinese pinyin
-        new Paragraph({
-          children: [new TextRun({ bold: true, text: "Chinese Pinyin", size: 28 })],
-          spacing: { after: 200 },
-        }),
-        new Paragraph({
-          children: [
-            new TextRun("Pinyin guide: "),
-            createRuby({
-              text: "hàn zì",
-              base: "汉字",
-              alignment: "center",
-              fontSize: 18,
-              raise: 20,
-              baseFontSize: 40,
-              languageId: "zh-CN",
-            }),
-          ],
-        }),
+        {
+          paragraph: {
+            children: [{ bold: true, text: "Chinese Pinyin", size: 28 }],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              "Pinyin guide: ",
+              {
+                ruby: {
+                  text: "hàn zì",
+                  base: "汉字",
+                  alignment: "center",
+                  fontSize: 18,
+                  raise: 20,
+                  baseFontSize: 40,
+                  languageId: "zh-CN",
+                },
+              },
+            ],
+          },
+        },
 
-        new Paragraph({ children: [new TextRun("")] }),
+        { paragraph: { children: [""] } },
 
         // Alignment options
-        new Paragraph({
-          children: [new TextRun({ bold: true, text: "Alignment Options", size: 28 })],
-          spacing: { after: 200 },
-        }),
-        new Paragraph({
-          children: [
-            new TextRun("Left: "),
-            createRuby({ text: "left", base: "Align", alignment: "left" }),
-            new TextRun("  Center: "),
-            createRuby({ text: "center", base: "Align", alignment: "center" }),
-            new TextRun("  Right: "),
-            createRuby({ text: "right", base: "Align", alignment: "right" }),
-          ],
-        }),
+        {
+          paragraph: {
+            children: [{ bold: true, text: "Alignment Options", size: 28 }],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              "Left: ",
+              { ruby: { text: "left", base: "Align", alignment: "left" } },
+              "  Center: ",
+              { ruby: { text: "center", base: "Align", alignment: "center" } },
+              "  Right: ",
+              { ruby: { text: "right", base: "Align", alignment: "right" } },
+            ],
+          },
+        },
       ],
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

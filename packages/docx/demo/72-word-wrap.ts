@@ -1,55 +1,57 @@
 // Example on how to preserve word wrap text. Works with all languages.
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import { Document, Packer, Paragraph, TextRun } from "@office-open/docx";
+import { generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [
-            new TextRun("我今天遛狗去公园"),
-            new TextRun({
-              text: "456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345",
-            }),
-          ],
-          wordWrap: true,
-        }),
-        new Paragraph({
-          children: [
-            new TextRun(
+        {
+          paragraph: {
+            children: [
+              "我今天遛狗去公园",
+              {
+                text: "456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345",
+              },
+            ],
+            wordWrap: true,
+          },
+        },
+        {
+          paragraph: {
+            children: [
               "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua",
-            ),
-            new TextRun({
-              text: "456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345",
-            }),
-          ],
-          wordWrap: true,
-        }),
-        new Paragraph({
-          children: [
-            new TextRun("我今天遛狗去公园"),
-            new TextRun({
-              text: "456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345",
-            }),
-          ],
-        }),
-        new Paragraph({
-          children: [
-            new TextRun(
+              {
+                text: "456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345",
+              },
+            ],
+            wordWrap: true,
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              "我今天遛狗去公园",
+              {
+                text: "456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345",
+              },
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: [
               "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua",
-            ),
-            new TextRun({
-              text: "456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345",
-            }),
-          ],
-        }),
+              {
+                text: "456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345456435234523456435564745673456345",
+              },
+            ],
+          },
+        },
       ],
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

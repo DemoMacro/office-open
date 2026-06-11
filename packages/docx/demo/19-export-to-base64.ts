@@ -1,30 +1,33 @@
 // Export to base64 string - Useful in a browser environment.
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import { Document, Packer, Paragraph, Tab, TextRun } from "@office-open/docx";
+import { generateDocument } from "@office-open/docx";
 
-const doc = new Document({
-  sections: [
-    {
-      children: [
-        new Paragraph({
-          children: [
-            new TextRun("Hello World"),
-            new TextRun({
-              bold: true,
-              text: "Foo",
-            }),
-            new TextRun({
-              bold: true,
-              children: [new Tab(), "Bar"],
-            }),
-          ],
-        }),
-      ],
-    },
-  ],
-});
-
-const str = await Packer.toBase64String(doc);
-fs.writeFileSync("My Document.docx", Buffer.from(str, "base64"));
+const buffer = await generateDocument(
+  {
+    sections: [
+      {
+        children: [
+          {
+            paragraph: {
+              children: [
+                "Hello World",
+                {
+                  bold: true,
+                  text: "Foo",
+                },
+                {
+                  bold: true,
+                  children: [{ tab: true }, "Bar"],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ],
+  },
+  { type: "base64" },
+);
+writeFileSync("My Document.docx", Buffer.from(buffer, "base64"));

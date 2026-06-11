@@ -2,21 +2,21 @@ import type { ParsedArchive } from "@office-open/core";
 import { parseArchive, parseCorePropsElement, convertEmuToPixels } from "@office-open/core";
 import type { DataType } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
+import { themeDesc } from "@office-open/core/theme";
 import type { Element } from "@office-open/xml";
 import { attr, attrNum, findChild, textOf } from "@office-open/xml";
 
-import type { SlideChild } from "./file/slide/slide-child";
-import { ParseContext } from "./parse/context";
-import { parseSlide } from "./parse/slide";
-import { parseSlideChild } from "./parse/slide";
-import { parseBackground } from "./parse/slide";
-import { parseSlideLayoutType } from "./parse/slide-layout";
-import { parseTheme } from "./parse/theme";
+import { PptxReadContext, ParseContext } from "./context";
+import { backgroundDesc } from "./parts/descriptors/background";
+import { parseChild } from "./parts/descriptors/bridge";
+import { slideDesc } from "./parts/descriptors/slide";
+import { slideLayoutDesc } from "./parts/descriptors/slide-layout";
+import type { SlideChild } from "./parts/slide/slide-child";
 
 export { parseArchive };
 
-import type { MasterDefinition, SlideOptions, PresentationOptions } from "./file/file";
-import type { SlideLayoutType } from "./file/slide-layout/slide-layout";
+import type { SlideLayoutType } from "./parts/slide-layout";
+import type { MasterDefinition, SlideOptions, PresentationOptions } from "./shared/file";
 
 /**
  * All part paths extracted from the PPTX package.
@@ -270,7 +270,7 @@ function parseSlideRelMap(doc: ParsedArchive, slidePath: string): Map<string, st
  */
 function resolveRelTargets(
   doc: ParsedArchive,
-  paths: readonly string[],
+  paths: string[],
   predicate: (target: string) => boolean,
 ): Map<string, string> {
   const map = new Map<string, string>();
@@ -360,6 +360,7 @@ export function parsePresentation(data: DataType): PresentationOptions {
   // 5. Parse masters
   const masterCount = pptx.slideMasters.length;
   const masterDefs: MasterDefinition[] = [];
+  const masterReadCtx = new PptxReadContext(new ParseContext(pptx, new Map()));
   for (let mi = 0; mi < masterCount; mi++) {
     const masterPath = pptx.slideMasters[mi];
     const masterEl = pptx.doc.get(masterPath);
@@ -368,19 +369,18 @@ export function parsePresentation(data: DataType): PresentationOptions {
     // Theme
     const themePath = masterThemePaths.get(masterPath);
     const themeEl = themePath ? pptx.doc.get(themePath) : undefined;
-    const themeOptions = themeEl ? parseTheme(themeEl) : undefined;
+    const themeOptions = themeEl ? themeDesc.parse(themeEl, masterReadCtx) : undefined;
 
-    // Background (inline: findChild → parseBackground)
+    // Background (inline: findChild → backgroundDesc.parse)
     const cSld = findChild(masterEl, "p:cSld");
     const bg = cSld ? findChild(cSld, "p:bg") : undefined;
-    const masterBackground = bg ? parseBackground(bg) : undefined;
+    const masterBackground = bg ? backgroundDesc.parse(bg, masterReadCtx) : undefined;
     const hasBackground = masterBackground && Object.keys(masterBackground).length > 0;
 
     // Children: extract non-placeholder shapes from spTree
     const spTree = cSld ? findChild(cSld, "p:spTree") : undefined;
     const masterChildren: SlideChild[] = [];
     if (spTree) {
-      const emptyCtx: ParseContext = { pptx, slideRels: new Map() };
       for (const child of spTree.elements ?? []) {
         // Skip nvGrpSpPr/grpSpPr (tree container structure, not shapes)
         if (child.name === "p:nvGrpSpPr" || child.name === "p:grpSpPr") continue;
@@ -390,7 +390,7 @@ export function parsePresentation(data: DataType): PresentationOptions {
           const nvPr = nvSpPr ? findChild(nvSpPr, "p:nvPr") : undefined;
           if (nvPr && findChild(nvPr, "p:ph")) continue;
         }
-        const parsed = parseSlideChild(child, emptyCtx);
+        const parsed = parseChild(child, masterReadCtx);
         if (parsed !== undefined) masterChildren.push(parsed);
       }
     }
@@ -400,7 +400,10 @@ export function parsePresentation(data: DataType): PresentationOptions {
     for (const layoutPath of pptx.slideLayouts) {
       if (layoutMasterPaths.get(layoutPath) !== masterPath) continue;
       const layoutEl = pptx.doc.get(layoutPath);
-      if (layoutEl) masterLayouts.push({ type: parseSlideLayoutType(layoutEl) as SlideLayoutType });
+      if (layoutEl) {
+        const layoutOpts = slideLayoutDesc.parse(layoutEl, masterReadCtx);
+        masterLayouts.push({ type: (layoutOpts.type ?? "blank") as SlideLayoutType });
+      }
     }
 
     const masterName = themeOptions?.name ?? `master${mi + 1}`;
@@ -444,13 +447,17 @@ export function parsePresentation(data: DataType): PresentationOptions {
 
     const slideRels = parseSlideRelMap(pptx.doc, slidePath);
     const ctx = new ParseContext(pptx, slideRels);
-    const slideOpts = parseSlide(slideEl, ctx) as Record<string, unknown>;
+    const readCtx = new PptxReadContext(ctx);
+    const slideOpts = slideDesc.parse(slideEl, readCtx) as Record<string, unknown>;
 
     // Resolve layout → master
     const layoutPath = slideLayoutPaths.get(slidePath);
     if (layoutPath) {
       const layoutEl = pptx.doc.get(layoutPath);
-      if (layoutEl) slideOpts.layout = parseSlideLayoutType(layoutEl);
+      if (layoutEl) {
+        const layoutOpts = slideLayoutDesc.parse(layoutEl, readCtx);
+        slideOpts.layout = (layoutOpts.type ?? "blank") as SlideLayoutType;
+      }
 
       const resolvedMasterPath = layoutMasterPaths.get(layoutPath);
       if (resolvedMasterPath) {

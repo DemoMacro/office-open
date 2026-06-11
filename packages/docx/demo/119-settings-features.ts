@@ -1,11 +1,11 @@
 // Document settings features: view, zoom, write protection, display background shape,
 // font embedding, document variables
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import { Document, Packer, Paragraph, TextRun } from "@office-open/docx";
+import { generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   background: {
     color: "C45911",
   },
@@ -24,31 +24,35 @@ const doc = new Document({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [new TextRun("Document Settings Demo")],
-        }),
-        new Paragraph({
-          children: [new TextRun("This document opens in Print Layout view at 150% zoom.")],
-        }),
-        new Paragraph({
-          children: [
-            new TextRun(
+        {
+          paragraph: {
+            children: ["Document Settings Demo"],
+          },
+        },
+        {
+          paragraph: {
+            children: ["This document opens in Print Layout view at 150% zoom."],
+          },
+        },
+        {
+          paragraph: {
+            children: [
               "The background color is displayed in print layout because displayBackgroundShape is enabled.",
-            ),
-          ],
-        }),
-        new Paragraph({
-          children: [new TextRun("TrueType fonts are embedded, and only used subsets are saved.")],
-        }),
-        new Paragraph({
-          children: [
-            new TextRun("Document variables (Title, Version, Author) are stored in settings.xml."),
-          ],
-        }),
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: ["TrueType fonts are embedded, and only used subsets are saved."],
+          },
+        },
+        {
+          paragraph: {
+            children: ["Document variables (Title, Version, Author) are stored in settings.xml."],
+          },
+        },
       ],
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

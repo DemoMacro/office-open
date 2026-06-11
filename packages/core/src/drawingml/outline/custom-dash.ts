@@ -9,8 +9,7 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import type { XmlComponent } from "../../xml-components";
+import { element } from "@office-open/xml";
 
 /**
  * A single dash stop in a custom dash pattern.
@@ -34,9 +33,9 @@ import type { XmlComponent } from "../../xml-components";
  */
 export interface DashStop {
   /** Dash length as a percentage of line width (e.g., "500%") */
-  readonly d: string;
+  d: string;
   /** Space length as a percentage of line width (e.g., "200%") */
-  readonly sp: string;
+  sp: string;
 }
 
 /**
@@ -69,23 +68,12 @@ export interface DashStop {
  * ]);
  * ```
  */
-export const createCustomDash = (stops: readonly DashStop[]): XmlComponent => {
-  const children: XmlComponent[] = [];
+export const createCustomDash = (stops: readonly DashStop[]): string => {
+  const children: string[] = [];
 
   for (const stop of stops) {
-    children.push(
-      new BuilderElement<{ readonly d: string; readonly sp: string }>({
-        attributes: {
-          d: { key: "d", value: stop.d },
-          sp: { key: "sp", value: stop.sp },
-        },
-        name: "a:ds",
-      }),
-    );
+    children.push(`<a:ds d="${stop.d}" sp="${stop.sp}"/>`);
   }
 
-  return new BuilderElement({
-    children,
-    name: "a:custDash",
-  });
+  return element("a:custDash", undefined, children);
 };

@@ -1,12 +1,12 @@
 import * as fs from "fs";
 
-import { Presentation, Packer } from "@office-open/pptx";
+import { generatePresentation, type PresentationOptions } from "@office-open/pptx";
 
 // This demo uses the new JSON-friendly API — no `new Shape()`, `new Paragraph()`, etc.
 // All slide children are plain objects keyed by type ({ shape: {...} }, { table: {...} }, etc.).
 // Paragraphs and text runs are also plain objects.
 
-const pres = new Presentation({
+const pres: PresentationOptions = {
   title: "JSON API Demo",
   creator: "Demo",
   slides: [
@@ -441,7 +441,7 @@ const pres = new Presentation({
       ],
     },
   ],
-});
+};
 
-const buffer = await Packer.toBuffer(pres);
+const buffer = await generatePresentation(pres);
 fs.writeFileSync("My Presentation.pptx", buffer);

@@ -7,8 +7,8 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import type { XmlComponent } from "../../xml-components";
+import { element } from "@office-open/xml";
+
 import type { ColorTransformOptions } from "./color-transform";
 import { createColorTransforms } from "./color-transform";
 
@@ -65,15 +65,15 @@ export const SystemColor = {
  */
 export interface SystemColorOptions {
   /** System color value */
-  readonly value: (typeof SystemColor)[keyof typeof SystemColor];
+  value: (typeof SystemColor)[keyof typeof SystemColor];
   /** Last known RGB color value (optional fallback) */
-  readonly lastClr?: string;
+  lastClr?: string;
   /** Optional color transforms */
-  readonly transforms?: ColorTransformOptions;
+  transforms?: ColorTransformOptions;
 }
 
 /**
- * Creates a system color element.
+ * Creates a system color element as an XML string.
  *
  * References a system-defined UI color (e.g., window background, button face).
  *
@@ -88,14 +88,7 @@ export interface SystemColorOptions {
  * </xsd:complexType>
  * ```
  */
-export const createSystemColor = (options: SystemColorOptions): XmlComponent => {
+export const createSystemColor = (options: SystemColorOptions): string => {
   const transforms = options.transforms ? createColorTransforms(options.transforms) : [];
-  return new BuilderElement({
-    attributes: {
-      lastClr: { key: "lastClr", value: options.lastClr },
-      value: { key: "val", value: options.value },
-    },
-    children: transforms,
-    name: "a:sysClr",
-  });
+  return element("a:sysClr", { val: options.value, lastClr: options.lastClr }, transforms);
 };

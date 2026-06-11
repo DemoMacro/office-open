@@ -1,34 +1,34 @@
 // Change background colour of whole document
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import { Document, Packer, Paragraph, Tab, TextRun } from "@office-open/docx";
+import { generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   background: {
     color: "C45911",
   },
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [
-            new TextRun("Hello World"),
-            new TextRun({
-              bold: true,
-              text: "Foo Bar",
-            }),
-            new TextRun({
-              bold: true,
-              children: [new Tab(), "Github is the best"],
-            }),
-          ],
-        }),
+        {
+          paragraph: {
+            children: [
+              "Hello World",
+              {
+                bold: true,
+                text: "Foo Bar",
+              },
+              {
+                bold: true,
+                children: [{ tab: true }, "Github is the best"],
+              },
+            ],
+          },
+        },
       ],
       properties: {},
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

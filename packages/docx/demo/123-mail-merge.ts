@@ -2,11 +2,11 @@
 // Word will show "This document is a merge template" when opened.
 // Use Mailings > Start Mail Merge to preview or complete the merge.
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import { Document, Packer, Paragraph, TextRun } from "@office-open/docx";
+import { generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   mailMerge: {
     mainDocumentType: "formLetters",
     dataType: "spreadsheet",
@@ -31,20 +31,18 @@ const doc = new Document({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [new TextRun("Mail Merge Template")],
-        }),
-        new Paragraph({
-          children: [
-            new TextRun(
-              "This document is configured as a mail merge template linked to data.xlsx.",
-            ),
-          ],
-        }),
+        {
+          paragraph: {
+            children: ["Mail Merge Template"],
+          },
+        },
+        {
+          paragraph: {
+            children: ["This document is configured as a mail merge template linked to data.xlsx."],
+          },
+        },
       ],
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

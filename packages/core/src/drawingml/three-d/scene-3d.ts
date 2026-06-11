@@ -8,8 +8,7 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import type { XmlComponent } from "../../xml-components";
+import { element } from "@office-open/xml";
 
 // ─── Sphere Coordinates ─────────────────────────────────────────────────────
 
@@ -29,22 +28,15 @@ import type { XmlComponent } from "../../xml-components";
  */
 export interface SphereCoords {
   /** Latitude angle (0 to 21600000, in 1/60000 degree units) */
-  readonly lat: number;
+  lat: number;
   /** Longitude angle (0 to 21600000) */
-  readonly lon: number;
+  lon: number;
   /** Revolution angle (0 to 21600000) */
-  readonly rev: number;
+  rev: number;
 }
 
-const createSphereCoords = (coords: SphereCoords): XmlComponent =>
-  new BuilderElement<{ readonly lat: number; readonly lon: number; readonly rev: number }>({
-    name: "a:rot",
-    attributes: {
-      lat: { key: "lat", value: coords.lat },
-      lon: { key: "lon", value: coords.lon },
-      rev: { key: "rev", value: coords.rev },
-    },
-  });
+const createSphereCoords = (coords: SphereCoords): string =>
+  `<a:rot lat="${coords.lat}" lon="${coords.lon}" rev="${coords.rev}"/>`;
 
 // ─── Camera ─────────────────────────────────────────────────────────────────
 
@@ -67,32 +59,26 @@ const createSphereCoords = (coords: SphereCoords): XmlComponent =>
  */
 export interface CameraOptions {
   /** Preset camera type (e.g., "perspectiveFront", "isometricTopUp") */
-  readonly preset: string;
+  preset: string;
   /** Field of view angle (0 to 10800000, in 1/60000 degree units, max 180°) */
-  readonly fov?: number;
+  fov?: number;
   /** Zoom percentage (e.g., "100%") */
-  readonly zoom?: string;
+  zoom?: string;
   /** Camera rotation */
-  readonly rotation?: SphereCoords;
+  rotation?: SphereCoords;
 }
 
-const createCamera = (options: CameraOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+const createCamera = (options: CameraOptions): string => {
+  const children: string[] = [];
   if (options.rotation) {
     children.push(createSphereCoords(options.rotation));
   }
 
-  const attrs: Record<string, { readonly key: string; readonly value: string | number }> = {
-    prst: { key: "prst", value: options.preset },
-  };
-  if (options.fov !== undefined) attrs.fov = { key: "fov", value: options.fov };
-  if (options.zoom !== undefined) attrs.zoom = { key: "zoom", value: options.zoom };
-
-  return new BuilderElement({
-    name: "a:camera",
-    attributes: attrs,
-    children: children.length > 0 ? children : undefined,
-  });
+  return element(
+    "a:camera",
+    { prst: options.preset, fov: options.fov, zoom: options.zoom },
+    children,
+  );
 };
 
 // ─── Light Rig ──────────────────────────────────────────────────────────────
@@ -115,27 +101,20 @@ const createCamera = (options: CameraOptions): XmlComponent => {
  */
 export interface LightRigOptions {
   /** Light rig type (e.g., "threePt", "balanced", "soft") */
-  readonly rig: string;
+  rig: string;
   /** Light direction (e.g., "tl", "t", "tr", "l", "r", "bl", "b", "br") */
-  readonly direction: string;
+  direction: string;
   /** Light rig rotation */
-  readonly rotation?: SphereCoords;
+  rotation?: SphereCoords;
 }
 
-const createLightRig = (options: LightRigOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+const createLightRig = (options: LightRigOptions): string => {
+  const children: string[] = [];
   if (options.rotation) {
     children.push(createSphereCoords(options.rotation));
   }
 
-  return new BuilderElement<{ readonly rig: string; readonly dir: string }>({
-    name: "a:lightRig",
-    attributes: {
-      rig: { key: "rig", value: options.rig },
-      dir: { key: "dir", value: options.direction },
-    },
-    children: children.length > 0 ? children : undefined,
-  });
+  return element("a:lightRig", { rig: options.rig, dir: options.direction }, children);
 };
 
 // ─── Backdrop ───────────────────────────────────────────────────────────────
@@ -144,18 +123,18 @@ const createLightRig = (options: LightRigOptions): XmlComponent => {
  * 3D point (CT_Point3D).
  */
 export interface Point3D {
-  readonly x: number;
-  readonly y: number;
-  readonly z: number;
+  x: number;
+  y: number;
+  z: number;
 }
 
 /**
  * 3D vector (CT_Vector3D).
  */
 export interface Vector3D {
-  readonly dx: number;
-  readonly dy: number;
-  readonly dz: number;
+  dx: number;
+  dy: number;
+  dz: number;
 }
 
 /**
@@ -176,42 +155,25 @@ export interface Vector3D {
  */
 export interface BackdropOptions {
   /** Anchor point */
-  readonly anchor: Point3D;
+  anchor: Point3D;
   /** Normal vector */
-  readonly normal: Vector3D;
+  normal: Vector3D;
   /** Up vector */
-  readonly up: Vector3D;
+  up: Vector3D;
 }
 
-const createPoint3D = (name: string, point: Point3D): XmlComponent =>
-  new BuilderElement<{ readonly x: number; readonly y: number; readonly z: number }>({
-    name,
-    attributes: {
-      x: { key: "x", value: point.x },
-      y: { key: "y", value: point.y },
-      z: { key: "z", value: point.z },
-    },
-  });
+const createPoint3D = (name: string, point: Point3D): string =>
+  `<${name} x="${point.x}" y="${point.y}" z="${point.z}"/>`;
 
-const createVector3D = (name: string, vector: Vector3D): XmlComponent =>
-  new BuilderElement<{ readonly dx: number; readonly dy: number; readonly dz: number }>({
-    name,
-    attributes: {
-      dx: { key: "dx", value: vector.dx },
-      dy: { key: "dy", value: vector.dy },
-      dz: { key: "dz", value: vector.dz },
-    },
-  });
+const createVector3D = (name: string, vector: Vector3D): string =>
+  `<${name} dx="${vector.dx}" dy="${vector.dy}" dz="${vector.dz}"/>`;
 
-const createBackdrop = (options: BackdropOptions): XmlComponent =>
-  new BuilderElement({
-    name: "a:backdrop",
-    children: [
-      createPoint3D("a:anchor", options.anchor),
-      createVector3D("a:norm", options.normal),
-      createVector3D("a:up", options.up),
-    ],
-  });
+const createBackdrop = (options: BackdropOptions): string =>
+  element("a:backdrop", undefined, [
+    createPoint3D("a:anchor", options.anchor),
+    createVector3D("a:norm", options.normal),
+    createVector3D("a:up", options.up),
+  ]);
 
 // ─── Scene 3D ───────────────────────────────────────────────────────────────
 
@@ -241,11 +203,11 @@ const createBackdrop = (options: BackdropOptions): XmlComponent =>
  */
 export interface Scene3DOptions {
   /** Camera settings (required) */
-  readonly camera: CameraOptions;
+  camera: CameraOptions;
   /** Light rig settings (required) */
-  readonly lightRig: LightRigOptions;
+  lightRig: LightRigOptions;
   /** Backdrop settings (optional) */
-  readonly backdrop?: BackdropOptions;
+  backdrop?: BackdropOptions;
 }
 
 /**
@@ -274,12 +236,12 @@ export interface Scene3DOptions {
  * });
  * ```
  */
-export const createScene3D = (options: Scene3DOptions): XmlComponent => {
-  const children: XmlComponent[] = [createCamera(options.camera), createLightRig(options.lightRig)];
+export const createScene3D = (options: Scene3DOptions): string => {
+  const children: string[] = [createCamera(options.camera), createLightRig(options.lightRig)];
 
   if (options.backdrop) {
     children.push(createBackdrop(options.backdrop));
   }
 
-  return new BuilderElement({ name: "a:scene3d", children });
+  return element("a:scene3d", undefined, children);
 };

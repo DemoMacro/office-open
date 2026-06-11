@@ -1,41 +1,35 @@
 // Shading text
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import {
-  AlignmentType,
-  Document,
-  Header,
-  Packer,
-  Paragraph,
-  ShadingType,
-  TextRun,
-} from "@office-open/docx";
+import { AlignmentType, ShadingType, generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [
-            new TextRun({
-              emboss: true,
-              text: "Embossed text - hello world",
-            }),
-            new TextRun({
-              imprint: true,
-              text: "Imprinted text - hello world",
-            }),
-          ],
-        }),
+        {
+          paragraph: {
+            children: [
+              {
+                emboss: true,
+                text: "Embossed text - hello world",
+              },
+              {
+                imprint: true,
+                text: "Imprinted text - hello world",
+              },
+            ],
+          },
+        },
       ],
       headers: {
-        default: new Header({
-          children: [
-            new Paragraph({
+        default: [
+          {
+            paragraph: {
               alignment: AlignmentType.RIGHT,
               children: [
-                new TextRun({
+                {
                   bold: true,
                   color: "FF0000",
                   font: {
@@ -48,27 +42,27 @@ const doc = new Document({
                   },
                   size: 24,
                   text: "Hello World",
-                }),
+                },
               ],
-            }),
-            new Paragraph({
+            },
+          },
+          {
+            paragraph: {
               children: [
-                new TextRun({
+                {
                   text: "Hello World for entire paragraph",
-                }),
+                },
               ],
               shading: {
                 color: "00FFFF",
                 fill: "FF0000",
                 type: ShadingType.DIAGONAL_CROSS,
               },
-            }),
-          ],
-        }),
+            },
+          },
+        ],
       },
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

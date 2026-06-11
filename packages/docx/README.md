@@ -82,9 +82,9 @@ Check the [demo folder](./demo) for 100+ working examples covering every feature
 
 ## Benchmark
 
-Performance comparison against original `docx` (9.6.1) package (higher ops/s is better, Windows 11 / Node 24).
+Performance vs original `docx` (9.6.1) package (higher ops/s is better, Windows 11 / Node 24).
 
-**Default** = XML DEFLATE level 1 (SuperFast, matching MS Office) + media STORE. **All STORE** = no compression (`{ compression: { xml: 0 } }`). **docx** (async) always uses DEFLATE for ALL entries including images (via JSZip, hardcoded, no STORE option).
+**Default** = XML DEFLATE level 1 (SuperFast, matching MS Office) + media STORE. **All STORE** = no compression (`{ compression: { xml: 0 } }`). **docx** (async only) always uses DEFLATE for ALL entries including images (via JSZip, hardcoded, no STORE option).
 
 ```typescript
 // Default (matches MS Office)
@@ -97,29 +97,27 @@ await Packer.toBuffer(doc, { compression: { xml: 0 } });
 
 | Scenario                       | Default sync | Default async | All STORE sync | All STORE async |      docx |
 | ------------------------------ | -----------: | ------------: | -------------: | --------------: | --------: |
-| Simple (2p + 1 img)            |    174 ops/s |     155 ops/s |      202 ops/s |       203 ops/s |  82 ops/s |
-| Styled paragraphs (20) + 1 img |    179 ops/s |     146 ops/s |      198 ops/s |       198 ops/s |  86 ops/s |
-| Table (10x5)                   |    949 ops/s |     565 ops/s |    1,830 ops/s |     1,867 ops/s | 190 ops/s |
-| Full featured + 2 imgs         |     94 ops/s |      89 ops/s |      102 ops/s |       100 ops/s |  57 ops/s |
+| Simple (2p + 1 img)            |    944 ops/s |     477 ops/s |    1,483 ops/s |     1,400 ops/s |  87 ops/s |
+| Styled paragraphs (20) + 1 img |    846 ops/s |     490 ops/s |    1,431 ops/s |     1,603 ops/s | 106 ops/s |
+| Table (10x5)                   |  1,437 ops/s |     651 ops/s |    3,662 ops/s |     3,538 ops/s | 239 ops/s |
+| Full featured + 2 imgs         |    550 ops/s |     372 ops/s |      877 ops/s |       890 ops/s |  55 ops/s |
 
 **Large Files — Create + toBuffer**
 
 | Scenario                       | Default sync | Default async | All STORE sync | All STORE async |       docx |
 | ------------------------------ | -----------: | ------------: | -------------: | --------------: | ---------: |
-| 2000 paragraphs + 20 images    |   4.68 ops/s |    3.13 ops/s |     3.50 ops/s |      3.08 ops/s | 2.07 ops/s |
-| 200x10 table                   |   64.9 ops/s |    62.6 ops/s |     69.7 ops/s |      72.6 ops/s | 19.5 ops/s |
-| 20 sections x 100p + 40 images |   1.58 ops/s |    1.69 ops/s |     1.79 ops/s |      1.65 ops/s | 1.16 ops/s |
+| 2000 paragraphs + 20 images    |   36.0 ops/s |    33.0 ops/s |     31.6 ops/s |      36.0 ops/s |  3.1 ops/s |
+| 200x10 table                   |    298 ops/s |     233 ops/s |      313 ops/s |       317 ops/s | 39.6 ops/s |
+| 20 sections x 100p + 40 images |   15.3 ops/s |    16.0 ops/s |     17.3 ops/s |      19.1 ops/s |  1.8 ops/s |
 
 **Large File (~100MB) — Mixed Content**
 
-500 styled paragraphs + 38 mixed-size images (1-5MB, 100MB total) + 50x10 table. Speedup is vs docx.
+500 styled paragraphs + 38 mixed-size images (1-5MB, 100MB total) + 50x10 table.
 
-| Method    |      Speed |  Speedup |
-| --------- | ---------: | -------: |
-| All STORE | 0.42 ops/s | **1.4x** |
-| Default   | 0.31 ops/s |     1.1x |
-| docx      | 0.29 ops/s |          |
+| Scenario                 | Default sync | Default async | All STORE sync | All STORE async |       docx |
+| ------------------------ | -----------: | ------------: | -------------: | --------------: | ---------: |
+| Mixed (500p+38img+50x10) |    3.9 ops/s |     3.9 ops/s |      4.4 ops/s |       4.0 ops/s | 0.31 ops/s |
 
 ## License
 
-- [MIT](LICENSE) &copy; [Demo Macro](https://imst.xyz/)
+- [MIT](LICENSE) &copy; [Demo Macro](https://www.demomacro.com/)

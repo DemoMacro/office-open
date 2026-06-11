@@ -1,19 +1,21 @@
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import { BorderStyle, Document, Packer, Paragraph, TextRun } from "@office-open/docx";
+import { BorderStyle, generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-            }),
-          ],
-          style: "withSingleBlackBordersAndYellowShading",
-        }),
+        {
+          paragraph: {
+            children: [
+              {
+                text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+              },
+            ],
+            style: "withSingleBlackBordersAndYellowShading",
+          },
+        },
       ],
     },
   ],
@@ -55,6 +57,4 @@ const doc = new Document({
     ],
   },
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

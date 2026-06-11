@@ -7,8 +7,8 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import type { XmlComponent } from "../../xml-components";
+import { element } from "@office-open/xml";
+
 import type { SolidFillOptions } from "../color/solid-fill";
 import { createColorElement } from "../color/solid-fill";
 
@@ -17,9 +17,9 @@ import { createColorElement } from "../color/solid-fill";
  */
 export interface GradientStop {
   /** Position of the color stop (0-100000) */
-  readonly position: number;
+  position: number;
   /** Color at this stop */
-  readonly color: SolidFillOptions;
+  color: SolidFillOptions;
 }
 
 /**
@@ -65,9 +65,9 @@ export const TileFlipMode = {
  */
 export interface LinearShadeOptions {
   /** Angle in 60,000ths of a degree (e.g., 5400000 = 90°) */
-  readonly angle?: number;
+  angle?: number;
   /** Whether the angle scales with the shape */
-  readonly scaled?: boolean;
+  scaled?: boolean;
 }
 
 /**
@@ -85,13 +85,13 @@ export interface LinearShadeOptions {
  */
 export interface RelativeRect {
   /** Left offset percentage (e.g., "0%") */
-  readonly left?: string;
+  left?: string;
   /** Top offset percentage (e.g., "0%") */
-  readonly top?: string;
+  top?: string;
   /** Right offset percentage (e.g., "0%") */
-  readonly right?: string;
+  right?: string;
   /** Bottom offset percentage (e.g., "0%") */
-  readonly bottom?: string;
+  bottom?: string;
 }
 
 /**
@@ -99,13 +99,13 @@ export interface RelativeRect {
  */
 export interface PathShadeOptions {
   /** Path type */
-  readonly path?: (typeof PathShadeType)[keyof typeof PathShadeType];
+  path?: (typeof PathShadeType)[keyof typeof PathShadeType];
   /**
    * Fill-to rectangle for path gradient.
    *
    * Defines the rectangle to which the gradient fills.
    */
-  readonly fillToRect?: RelativeRect;
+  fillToRect?: RelativeRect;
 }
 
 /**
@@ -131,23 +131,23 @@ export type GradientShadeOptions = LinearShadeOptions | PathShadeOptions;
  */
 export interface GradientFillOptions {
   /** Gradient color stops (minimum 2) */
-  readonly stops: readonly GradientStop[];
+  stops: readonly GradientStop[];
   /** Shade type (linear or path) */
-  readonly shade?: GradientShadeOptions;
+  shade?: GradientShadeOptions;
   /**
    * Tile flip mode.
    *
    * Controls how the gradient is flipped when tiled.
    */
-  readonly flip?: (typeof TileFlipMode)[keyof typeof TileFlipMode];
+  flip?: (typeof TileFlipMode)[keyof typeof TileFlipMode];
   /**
    * Tile rectangle for gradient tiling.
    *
    * Defines the rectangle used for gradient tiling.
    */
-  readonly tileRect?: RelativeRect;
+  tileRect?: RelativeRect;
   /** Whether gradient rotates with the shape */
-  readonly rotateWithShape?: boolean;
+  rotateWithShape?: boolean;
 }
 
 /**
@@ -159,64 +159,38 @@ export interface GradientFillOptions {
  * createGradientStop({ position: 100000, color: { value: "0000FF" } });
  * ```
  */
-export const createGradientStop = (stop: GradientStop): XmlComponent =>
-  new BuilderElement<{ readonly pos: number }>({
-    attributes: {
-      pos: { key: "pos", value: stop.position },
-    },
-    children: [createColorElement(stop.color)],
-    name: "a:gs",
-  });
+export const createGradientStop = (stop: GradientStop): string =>
+  element("a:gs", { pos: stop.position }, [createColorElement(stop.color)]);
 
 /**
  * Creates a relative rect element.
  */
-const createRelativeRect = (name: string, rect?: RelativeRect): XmlComponent =>
-  new BuilderElement<{
-    readonly l?: string;
-    readonly t?: string;
-    readonly r?: string;
-    readonly b?: string;
-  }>({
-    attributes: {
-      l: { key: "l", value: rect?.left },
-      t: { key: "t", value: rect?.top },
-      r: { key: "r", value: rect?.right },
-      b: { key: "b", value: rect?.bottom },
-    },
-    name,
+const createRelativeRect = (name: string, rect?: RelativeRect): string =>
+  element(name, {
+    l: rect?.left,
+    t: rect?.top,
+    r: rect?.right,
+    b: rect?.bottom,
   });
 
 /**
  * Creates the shade element (a:lin or a:path).
  */
-const createShadeElement = (shade: GradientShadeOptions): XmlComponent => {
+const createShadeElement = (shade: GradientShadeOptions): string => {
   if ("angle" in shade) {
-    return new BuilderElement<{ readonly ang?: number; readonly scaled?: boolean }>({
-      attributes: {
-        ang: { key: "ang", value: shade.angle },
-        scaled: { key: "scaled", value: shade.scaled },
-      },
-      name: "a:lin",
+    return element("a:lin", {
+      ang: shade.angle,
+      scaled: shade.scaled,
     });
   }
   const pathShade = shade as PathShadeOptions;
-  const children: XmlComponent[] = [];
+  const children: string[] = [];
 
   if (pathShade.fillToRect) {
     children.push(createRelativeRect("a:fillToRect", pathShade.fillToRect));
   }
 
-  return new BuilderElement<{ readonly path?: string }>({
-    attributes: {
-      path: {
-        key: "path",
-        value: pathShade.path,
-      },
-    },
-    children,
-    name: "a:path",
-  });
+  return element("a:path", { path: pathShade.path }, children);
 };
 
 /**
@@ -245,16 +219,12 @@ const createShadeElement = (shade: GradientShadeOptions): XmlComponent => {
  * });
  * ```
  */
-export const createGradientFill = (options: GradientFillOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+export const createGradientFill = (options: GradientFillOptions): string => {
+  const children: string[] = [];
 
   // Gradient stop list
-  children.push(
-    new BuilderElement({
-      children: options.stops.map(createGradientStop),
-      name: "a:gsLst",
-    }),
-  );
+  const stopElements = options.stops.map(createGradientStop);
+  children.push(element("a:gsLst", undefined, stopElements));
 
   // Shade properties (a:lin or a:path)
   if (options.shade) {
@@ -266,18 +236,12 @@ export const createGradientFill = (options: GradientFillOptions): XmlComponent =
     children.push(createRelativeRect("a:tileRect", options.tileRect));
   }
 
-  return new BuilderElement<{
-    readonly flip?: string;
-    readonly rotWithShape?: boolean;
-  }>({
-    attributes: {
-      flip: {
-        key: "flip",
-        value: options.flip,
-      },
-      rotWithShape: { key: "rotWithShape", value: options.rotateWithShape },
+  return element(
+    "a:gradFill",
+    {
+      flip: options.flip,
+      rotWithShape: options.rotateWithShape,
     },
     children,
-    name: "a:gradFill",
-  });
+  );
 };

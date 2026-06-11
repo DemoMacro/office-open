@@ -8,9 +8,9 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import type { XmlComponent } from "../../xml-components";
-import { xsdPattern } from "../../xsd-mappings";
+import { element } from "@office-open/xml";
+
+import { xsdPattern } from "../../util/mappings";
 import type { SolidFillOptions } from "../color/solid-fill";
 import { createColorElement } from "../color/solid-fill";
 
@@ -155,11 +155,11 @@ export const PresetPattern = {
  */
 export interface PatternFillOptions {
   /** Preset pattern type */
-  readonly pattern: (typeof PresetPattern)[keyof typeof PresetPattern];
+  pattern: (typeof PresetPattern)[keyof typeof PresetPattern];
   /** Foreground color */
-  readonly foregroundColor?: SolidFillOptions;
+  foregroundColor?: SolidFillOptions;
   /** Background color */
-  readonly backgroundColor?: SolidFillOptions;
+  backgroundColor?: SolidFillOptions;
 }
 
 /**
@@ -196,32 +196,16 @@ export interface PatternFillOptions {
  * });
  * ```
  */
-export const createPatternFill = (options: PatternFillOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+export const createPatternFill = (options: PatternFillOptions): string => {
+  const children: string[] = [];
 
   if (options.foregroundColor) {
-    children.push(
-      new BuilderElement({
-        children: [createColorElement(options.foregroundColor)],
-        name: "a:fgClr",
-      }),
-    );
+    children.push(element("a:fgClr", undefined, [createColorElement(options.foregroundColor)]));
   }
 
   if (options.backgroundColor) {
-    children.push(
-      new BuilderElement({
-        children: [createColorElement(options.backgroundColor)],
-        name: "a:bgClr",
-      }),
-    );
+    children.push(element("a:bgClr", undefined, [createColorElement(options.backgroundColor)]));
   }
 
-  return new BuilderElement<{ readonly prst?: string }>({
-    attributes: {
-      prst: { key: "prst", value: xsdPattern.to(options.pattern) },
-    },
-    children,
-    name: "a:pattFill",
-  });
+  return element("a:pattFill", { prst: xsdPattern.to(options.pattern) }, children);
 };

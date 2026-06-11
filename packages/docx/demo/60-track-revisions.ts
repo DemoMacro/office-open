@@ -1,21 +1,8 @@
 // Track Revisions aka. "Track Changes"
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import {
-  AlignmentType,
-  DeletedTextRun,
-  Document,
-  Footer,
-  FootnoteReferenceRun,
-  InsertedTextRun,
-  Packer,
-  PageNumber,
-  Paragraph,
-  ShadingType,
-  Tab,
-  TextRun,
-} from "@office-open/docx";
+import { AlignmentType, PageNumber, ShadingType, generateDocument } from "@office-open/docx";
 
 /*
     For reference, see
@@ -30,51 +17,61 @@ import {
     show inserted and deleted text runs when you remove it.
 */
 
-const paragraph = new Paragraph({
-  children: [
-    new TextRun("This is a simple demo "),
-    new TextRun({
-      text: "on how to ",
-    }),
-    new InsertedTextRun({
-      author: "Firstname Lastname",
-      date: "2020-10-06T09:00:00Z",
-      id: 0,
-      text: "mark a text as an insertion ",
-    }),
-    new DeletedTextRun({
-      author: "Firstname Lastname",
-      date: "2020-10-06T09:00:00Z",
-      id: 1,
-      text: "or a deletion.",
-    }),
-  ],
-});
+const paragraph = {
+  paragraph: {
+    children: [
+      "This is a simple demo ",
+      {
+        text: "on how to ",
+      },
+      {
+        insertion: {
+          author: "Firstname Lastname",
+          date: "2020-10-06T09:00:00Z",
+          id: 0,
+          text: "mark a text as an insertion ",
+        },
+      },
+      {
+        deletion: {
+          author: "Firstname Lastname",
+          date: "2020-10-06T09:00:00Z",
+          id: 1,
+          text: "or a deletion.",
+        },
+      },
+    ],
+  },
+};
 
-const doc = new Document({
+const buffer = await generateDocument({
   features: {
     trackRevisions: true,
   },
   footnotes: {
     1: {
       children: [
-        new Paragraph({
+        {
           children: [
-            new TextRun("This is a footnote"),
-            new DeletedTextRun({
-              author: "Firstname Lastname",
-              date: "2020-10-06T09:05:00Z",
-              id: 0,
-              text: " with some extra text which was deleted",
-            }),
-            new InsertedTextRun({
-              author: "Firstname Lastname",
-              date: "2020-10-06T09:05:00Z",
-              id: 1,
-              text: " and new content",
-            }),
+            "This is a footnote",
+            {
+              deletion: {
+                author: "Firstname Lastname",
+                date: "2020-10-06T09:05:00Z",
+                id: 0,
+                text: " with some extra text which was deleted",
+              },
+            },
+            {
+              insertion: {
+                author: "Firstname Lastname",
+                date: "2020-10-06T09:05:00Z",
+                id: 1,
+                text: " and new content",
+              },
+            },
           ],
-        }),
+        },
       ],
     },
   },
@@ -82,84 +79,92 @@ const doc = new Document({
     {
       children: [
         paragraph,
-        new Paragraph({
-          children: [
-            new TextRun("This is a demo "),
-            new DeletedTextRun({
-              break: 1,
-              text: "in order",
-              color: "ff0000",
-              bold: true,
-              size: 24,
-              font: {
-                name: "Garamond",
+        {
+          paragraph: {
+            children: [
+              "This is a demo ",
+              {
+                deletion: {
+                  break: 1,
+                  text: "in order",
+                  color: "ff0000",
+                  bold: true,
+                  size: 24,
+                  font: {
+                    name: "Garamond",
+                  },
+                  shading: {
+                    type: ShadingType.REVERSE_DIAGONAL_STRIPE,
+                    color: "00FFFF",
+                    fill: "FF0000",
+                  },
+                  id: 2,
+                  author: "Firstname Lastname",
+                  date: "2020-10-06T09:00:00Z",
+                },
               },
-              shading: {
-                type: ShadingType.REVERSE_DIAGONAL_STRIPE,
-                color: "00FFFF",
-                fill: "FF0000",
+              {
+                insertion: {
+                  text: "to show how to ",
+                  bold: false,
+                  id: 3,
+                  author: "Firstname Lastname",
+                  date: "2020-10-06T09:05:00Z",
+                },
               },
-              id: 2,
-              author: "Firstname Lastname",
-              date: "2020-10-06T09:00:00Z",
-            }),
-            new InsertedTextRun({
-              text: "to show how to ",
-              bold: false,
-              id: 3,
-              author: "Firstname Lastname",
-              date: "2020-10-06T09:05:00Z",
-            }),
-            new TextRun({
-              bold: true,
-              children: [new Tab(), "use Inserted and Deleted TextRuns."],
-            }),
-            new FootnoteReferenceRun(1),
-            new TextRun({
-              bold: true,
-              text: "And some style changes",
-              revision: {
-                id: 4,
-                author: "Firstname Lastname",
-                date: "2020-10-06T09:05:00Z",
-                bold: false,
+              {
+                bold: true,
+                children: [{ tab: true }, "use Inserted and Deleted TextRuns."],
               },
-            }),
-          ],
-        }),
-      ],
-      footers: {
-        default: new Footer({
-          children: [
-            new Paragraph({
-              alignment: AlignmentType.CENTER,
-              children: [
-                new TextRun("Awesome LLC"),
-                new TextRun({
-                  children: ["Page Number: ", PageNumber.CURRENT],
-                }),
-                new DeletedTextRun({
-                  children: [" to ", PageNumber.TOTAL_PAGES],
+              { footnoteReference: 1 },
+              {
+                bold: true,
+                text: "And some style changes",
+                revision: {
                   id: 4,
                   author: "Firstname Lastname",
                   date: "2020-10-06T09:05:00Z",
-                }),
-                new InsertedTextRun({
-                  children: [" from ", PageNumber.TOTAL_PAGES],
-                  bold: true,
-                  id: 5,
-                  author: "Firstname Lastname",
-                  date: "2020-10-06T09:05:00Z",
-                }),
+                  bold: false,
+                },
+              },
+            ],
+          },
+        },
+      ],
+      footers: {
+        default: [
+          {
+            paragraph: {
+              alignment: AlignmentType.CENTER,
+              children: [
+                "Awesome LLC",
+                {
+                  children: ["Page Number: ", PageNumber.CURRENT],
+                },
+                {
+                  deletion: {
+                    children: [" to ", PageNumber.TOTAL_PAGES],
+                    id: 4,
+                    author: "Firstname Lastname",
+                    date: "2020-10-06T09:05:00Z",
+                  },
+                },
+                {
+                  insertion: {
+                    children: [" from ", PageNumber.TOTAL_PAGES],
+                    bold: true,
+                    id: 5,
+                    author: "Firstname Lastname",
+                    date: "2020-10-06T09:05:00Z",
+                  },
+                },
               ],
-            }),
-          ],
-        }),
+            },
+          },
+        ],
       },
       properties: {},
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

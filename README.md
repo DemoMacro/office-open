@@ -11,7 +11,7 @@
 - 📄 **All-in-One** — Word (.docx), Excel (.xlsx), and PowerPoint (.pptx) in one cohesive API, no Office dependency
 - 📐 **Spec-Compliant** — Output validates against OOXML Transitional XSD schemas (ISO/IEC 29500), compatible with Microsoft Office, WPS Office, LibreOffice, and Google Workspace
 - 🔒 **Fully Typed** — Complete TypeScript definitions with full autocomplete and type safety
-- 🎯 **Declarative API** — Define documents as plain JSON or TypeScript objects, ideal for AI agents
+- 🎯 **Pure JSON API** — Define documents as plain JSON objects, zero class instantiation, ideal for AI agents
 - 🔄 **Parse & Patch** — Read existing .docx, .pptx, .xlsx files for round-trip workflows, or patch templates by placeholder replacement
 - 🎨 **Rich Content** — Paragraphs, tables, images, charts, SmartArt, math equations, effects, animations, and more
 - ⚡ **High Performance** — Optimized for large documents and batch processing with native zlib compression
@@ -47,22 +47,16 @@ bun add @office-open/docx
 ```
 
 ```typescript
-import { Document, Paragraph, TextRun, Packer } from "@office-open/docx";
+import { Packer } from "@office-open/docx";
 import { writeFileSync } from "node:fs";
 
-const doc = new Document({
+const buffer = Packer.toBufferSync({
   sections: [
     {
-      children: [
-        new Paragraph({
-          children: [new TextRun({ text: "Hello World", bold: true })],
-        }),
-      ],
+      children: [{ paragraph: { children: [{ text: "Hello World", bold: true }] } }],
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
 writeFileSync("document.docx", buffer);
 ```
 
@@ -83,27 +77,27 @@ bun add @office-open/pptx
 ```
 
 ```typescript
-import { Presentation, Shape, Packer } from "@office-open/pptx";
+import { Packer } from "@office-open/pptx";
 import { writeFileSync } from "node:fs";
 
-const pres = new Presentation({
+const buffer = Packer.toBufferSync({
   slides: [
     {
       children: [
-        new Shape({
-          textBody: { text: "Hello World" },
-          fill: "4472C4",
-          x: 100,
-          y: 100,
-          width: 600,
-          height: 400,
-        }),
+        {
+          shape: {
+            x: 100,
+            y: 100,
+            width: 600,
+            height: 400,
+            textBody: { text: "Hello World" },
+            fill: "4472C4",
+          },
+        },
       ],
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(pres);
 writeFileSync("presentation.pptx", buffer);
 ```
 
@@ -124,10 +118,10 @@ bun add @office-open/xlsx
 ```
 
 ```typescript
-import { Workbook, Packer } from "@office-open/xlsx";
+import { Packer } from "@office-open/xlsx";
 import { writeFileSync } from "node:fs";
 
-const wb = new Workbook({
+const buffer = Packer.toBufferSync({
   worksheets: [
     {
       name: "Sheet1",
@@ -139,8 +133,6 @@ const wb = new Workbook({
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(wb);
 writeFileSync("workbook.xlsx", buffer);
 ```
 
@@ -167,13 +159,13 @@ import { generate } from "office-open/generate";
 import { writeFileSync } from "node:fs";
 
 const buffer = await generate({
-  type: "xlsx",
+  type: "docx",
   options: {
-    worksheets: [{ rows: [{ cells: [{ value: "Hello" }] }] }],
+    sections: [{ children: [{ paragraph: "Hello from office-open!" }] }],
   },
   outputType: "nodebuffer",
 });
-writeFileSync("output.xlsx", buffer);
+writeFileSync("output.docx", buffer);
 ```
 
 ```bash
@@ -207,21 +199,23 @@ const opts = parseWorkbook(buffer);
 
 ## JSON API
 
-Define documents as plain JSON objects — perfect for AI agents:
+Define documents as plain JSON objects — perfect for AI agents. Zero class instantiation, pure data in and binary out:
 
 ```typescript
-// PPTX via JSON
-const pres = new Presentation({
-  slides: [
+import { Packer } from "@office-open/docx";
+
+const buffer = Packer.toBufferSync({
+  sections: [
     {
       children: [
+        { paragraph: { heading: "Heading1", children: ["Document Title"] } },
+        { paragraph: { children: [{ text: "Body text", italics: true }] } },
         {
-          shape: {
-            x: 100,
-            y: 100,
-            width: 760,
-            height: 340,
-            textBody: { children: [{ text: "Hello, World!", fontSize: 32 }] },
+          table: {
+            rows: [
+              { cells: [{ children: [{ paragraph: "A1" }] }, { children: [{ paragraph: "B1" }] }] },
+              { cells: [{ children: [{ paragraph: "A2" }] }, { children: [{ paragraph: "B2" }] }] },
+            ],
           },
         },
       ],
@@ -232,14 +226,12 @@ const pres = new Presentation({
 
 ## Project Philosophy
 
-This project follows core principles:
-
 1. **OOXML Compliance**: Strict adherence to the ISO/IEC 29500 OOXML specification
 2. **Type Safety**: Full TypeScript support with comprehensive types and autocomplete
-3. **Declarative API**: Simple, intuitive API for document generation — JSON or TypeScript
-4. **Modular Design**: Shared core infrastructure across DOCX, PPTX, and XLSX
-5. **Performance**: Optimized for large documents and batch processing
-6. **Cross-platform**: Works in Node.js and browsers. Export to Buffer, Blob, Base64, stream, or string
+3. **Pure JSON API**: Define documents as plain data objects — zero class instantiation, ideal for AI agents
+4. **Performance First**: Pure string concatenation for XML generation, native zlib compression, no intermediate AST
+5. **Modular Design**: Shared core infrastructure across DOCX, PPTX, and XLSX
+6. **Cross-Platform**: Works in Node.js and browsers. Export to Buffer, Blob, Base64, stream, or string
 
 ## Development
 
@@ -343,4 +335,4 @@ This project is licensed under the MIT License - see the [LICENSE](./LICENSE) fi
 
 ---
 
-Built with ❤️ by [Demo Macro](https://imst.xyz/)
+Built with ❤️ by [Demo Macro](https://www.demomacro.com/)

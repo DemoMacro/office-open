@@ -1,42 +1,44 @@
 // Move + offset header and footer
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import { Document, Footer, Header, Packer, Paragraph } from "@office-open/docx";
+import { generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
-      children: [new Paragraph("Hello World")],
+      children: [{ paragraph: "Hello World" }],
       footers: {
-        default: new Footer({
-          children: [
-            new Paragraph({
+        default: [
+          {
+            paragraph: {
               indent: {
                 left: -400,
               },
               text: "Footer text",
-            }),
-          ],
-        }),
+            },
+          },
+        ],
       },
       headers: {
-        default: new Header({
-          children: [
-            new Paragraph({
+        default: [
+          {
+            paragraph: {
               indent: {
                 left: -400,
               },
               text: "Header text",
-            }),
-            new Paragraph({
+            },
+          },
+          {
+            paragraph: {
               indent: {
                 left: -600,
               },
               text: "Some more header text",
-            }),
-          ],
-        }),
+            },
+          },
+        ],
       },
       properties: {
         page: {
@@ -49,6 +51,4 @@ const doc = new Document({
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

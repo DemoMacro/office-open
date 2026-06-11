@@ -17,7 +17,7 @@
   "author": {
     "name": "Demo Macro",
     "email": "abc@imst.xyz",
-    "url": "https://imst.xyz/"
+    "url": "https://www.demomacro.com/"
   },
   "repository": {
     "type": "git",
@@ -34,9 +34,9 @@
       "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs"
     },
-    "./values": {
-      "types": "./dist/values.d.mts",
-      "import": "./dist/values.mjs"
+    "./util/values": {
+      "types": "./dist/util/values.d.mts",
+      "import": "./dist/util/values.mjs"
     },
     "./smartart": {
       "types": "./dist/smartart/index.d.mts",
@@ -49,6 +49,10 @@
     "./drawingml": {
       "types": "./dist/drawingml/index.d.mts",
       "import": "./dist/drawingml/index.mjs"
+    },
+    "./descriptor": {
+      "types": "./dist/descriptor/index.d.mts",
+      "import": "./dist/descriptor/index.mjs"
     },
     "./patch": {
       "types": "./dist/patch/index.d.mts",

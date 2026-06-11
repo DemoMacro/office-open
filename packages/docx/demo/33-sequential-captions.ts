@@ -1,49 +1,55 @@
 // Sequential Captions
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import { Document, Packer, Paragraph, SequentialIdentifier, TextRun } from "@office-open/docx";
+import { generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [
-            new TextRun("Hello World 1->"),
-            new SequentialIdentifier("Caption"),
-            new TextRun(" text after sequencial caption 2->"),
-            new SequentialIdentifier("Caption"),
-          ],
-        }),
-        new Paragraph({
-          children: [
-            new TextRun("Hello World 1->"),
-            new SequentialIdentifier("Label"),
-            new TextRun(" text after sequencial caption 2->"),
-            new SequentialIdentifier("Label"),
-          ],
-        }),
-        new Paragraph({
-          children: [
-            new TextRun("Hello World 1->"),
-            new SequentialIdentifier("Another"),
-            new TextRun(" text after sequencial caption 3->"),
-            new SequentialIdentifier("Label"),
-          ],
-        }),
-        new Paragraph({
-          children: [
-            new TextRun("Hello World 2->"),
-            new SequentialIdentifier("Another"),
-            new TextRun(" text after sequencial caption 4->"),
-            new SequentialIdentifier("Label"),
-          ],
-        }),
+        {
+          paragraph: {
+            children: [
+              "Hello World 1->",
+              { seqIdentifier: "Caption" },
+              " text after sequencial caption 2->",
+              { seqIdentifier: "Caption" },
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              "Hello World 1->",
+              { seqIdentifier: "Label" },
+              " text after sequencial caption 2->",
+              { seqIdentifier: "Label" },
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              "Hello World 1->",
+              { seqIdentifier: "Another" },
+              " text after sequencial caption 3->",
+              { seqIdentifier: "Label" },
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              "Hello World 2->",
+              { seqIdentifier: "Another" },
+              " text after sequencial caption 4->",
+              { seqIdentifier: "Label" },
+            ],
+          },
+        },
       ],
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

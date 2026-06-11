@@ -1,10 +1,10 @@
-import { hashedId } from "../../id-generators";
-import { BuilderElement, type XmlComponent } from "../../xml-components";
+import { element } from "@office-open/xml";
+
+import { uniqueId } from "../../util/generators";
 import { createBlipEffects } from "../blip/blip-effects";
 import type { BlipEffectsOptions } from "../blip/blip-effects";
 import { createSourceRectangle } from "../blip/source-rectangle";
 import type { SourceRectangleOptions } from "../blip/source-rectangle";
-import { Stretch } from "../blip/stretch";
 import { createTileInfo } from "../blip/tile";
 import type { TileOptions } from "../blip/tile";
 import type { SolidFillOptions } from "../color/solid-fill";
@@ -19,8 +19,8 @@ import { createPatternFill } from "./pattern-fill";
  * Position is 0-100 (percentage), color is a hex string or SolidFillOptions.
  */
 export interface GradientStopOptions {
-  readonly position: number;
-  readonly color: string | SolidFillOptions;
+  position: number;
+  color: string | SolidFillOptions;
 }
 
 /**
@@ -28,28 +28,28 @@ export interface GradientStopOptions {
  */
 export interface BlipFillConfigOptions {
   /** Image data (raw bytes) */
-  readonly data: Uint8Array | ArrayBuffer | Buffer;
+  data: Uint8Array | ArrayBuffer | Buffer;
   /** Image type */
-  readonly imageType: "png" | "jpg" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
+  imageType: "png" | "jpg" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
   /** DPI of the image */
-  readonly dpi?: number;
+  dpi?: number;
   /** Whether the fill rotates with the shape */
-  readonly rotWithShape?: boolean;
+  rotWithShape?: boolean;
   /** Image adjustment effects (brightness, contrast, grayscale, etc.) */
-  readonly blipEffects?: BlipEffectsOptions;
+  blipEffects?: BlipEffectsOptions;
   /** Source rectangle for cropping */
-  readonly srcRect?: SourceRectangleOptions;
+  srcRect?: SourceRectangleOptions;
   /** Tile fill mode (if omitted, defaults to stretch) */
-  readonly tile?: TileOptions;
+  tile?: TileOptions;
 }
 
 /**
  * Media data extracted from a blip fill, for registration with the document's media store.
  */
 export interface BlipFillMediaData {
-  readonly fileName: string;
-  readonly data: Uint8Array;
-  readonly type: string;
+  fileName: string;
+  data: Uint8Array;
+  type: string;
 }
 
 /**
@@ -81,24 +81,24 @@ export interface BlipFillMediaData {
  */
 export type FillOptions =
   | string
-  | { readonly type: "solid"; readonly color: string | SolidFillOptions }
-  | { readonly type: "none" }
+  | { type: "solid"; color: string | SolidFillOptions }
+  | { type: "none" }
   | {
-      readonly type: "gradient";
-      readonly angle?: number;
-      readonly scaled?: boolean;
-      readonly path?: "shape" | "circle" | "rect";
-      readonly stops: readonly GradientStopOptions[];
+      type: "gradient";
+      angle?: number;
+      scaled?: boolean;
+      path?: "shape" | "circle" | "rect";
+      stops: readonly GradientStopOptions[];
     }
-  | { readonly type: "gradient"; readonly options: GradientFillOptions }
-  | ({ readonly type: "blip" } & BlipFillConfigOptions)
+  | { type: "gradient"; options: GradientFillOptions }
+  | ({ type: "blip" } & BlipFillConfigOptions)
   | {
-      readonly type: "pattern";
-      readonly pattern: string;
-      readonly foregroundColor?: string | SolidFillOptions;
-      readonly backgroundColor?: string | SolidFillOptions;
+      type: "pattern";
+      pattern: string;
+      foregroundColor?: string | SolidFillOptions;
+      backgroundColor?: string | SolidFillOptions;
     }
-  | { readonly type: "group" };
+  | { type: "group" };
 
 function normalizeColor(color: string | SolidFillOptions): SolidFillOptions {
   return typeof color === "string" ? { value: color.replace("#", "") } : color;
@@ -118,15 +118,14 @@ function toUint8Array(data: Uint8Array | ArrayBuffer | Buffer): Uint8Array {
 export const extractBlipFillMedia = (fill: FillOptions): BlipFillMediaData | undefined => {
   if (typeof fill === "string" || fill.type !== "blip") return undefined;
   const raw = toUint8Array(fill.data);
-  const hash = hashedId(raw);
-  const fileName = `${hash}.${fill.imageType}`;
+  const fileName = `${uniqueId()}.${fill.imageType}`;
   return { data: raw, fileName, type: fill.imageType };
 };
 
 /**
- * Builds a DrawingML fill XmlComponent from a FillOptions config.
+ * Builds a DrawingML fill XML string from a FillOptions config.
  */
-export const buildFill = (options: FillOptions): XmlComponent => {
+export const buildFill = (options: FillOptions): string => {
   if (typeof options === "string") {
     return createSolidFill({ value: options.replace("#", "") });
   }
@@ -135,7 +134,7 @@ export const buildFill = (options: FillOptions): XmlComponent => {
     case "solid":
       return createSolidFill(normalizeColor(options.color));
     case "none":
-      return new BuilderElement({ name: "a:noFill" });
+      return "<a:noFill/>";
     case "gradient":
       if ("options" in options) {
         return createGradientFill(options.options);
@@ -154,51 +153,32 @@ export const buildFill = (options: FillOptions): XmlComponent => {
         }),
       });
     case "blip": {
-      const raw = toUint8Array(options.data);
-      const hash = hashedId(raw);
-      const fileName = `${hash}.${options.imageType}`;
+      const fileName = `${uniqueId()}.${options.imageType}`;
 
       // Build a:blip with {fileName} placeholder — the packer's ImageReplacer
       // will replace `{fileName}` with `rId{N}` and create the relationship.
       // We do NOT use createBlip here because it prefixes "rId" to the value,
       // which would produce "rIdrId{N}" after replacement.
-      const blipChildren: XmlComponent[] = [];
+      const blipChildren: string[] = [];
       if (options.blipEffects) {
         blipChildren.push(...createBlipEffects(options.blipEffects));
       }
-      const blip = new BuilderElement<{
-        readonly embed: string;
-        readonly cstate: string;
-      }>({
-        attributes: {
-          cstate: { key: "cstate", value: "none" },
-          embed: { key: "r:embed", value: `{${fileName}}` },
-        },
-        children: blipChildren,
-        name: "a:blip",
-      });
+      const blip = element(
+        "a:blip",
+        { cstate: "none", "r:embed": `{${fileName}}` },
+        blipChildren.length > 0 ? blipChildren : undefined,
+      );
 
-      const children: XmlComponent[] = [blip, createSourceRectangle(options.srcRect)];
+      const children: string[] = [blip, createSourceRectangle(options.srcRect)];
       if (options.tile) {
         children.push(createTileInfo(options.tile));
       } else {
-        children.push(new Stretch());
+        children.push("<a:stretch><a:fillRect/></a:stretch>");
       }
-      const attributes: Record<string, { readonly key: string; readonly value: number }> = {};
-      if (options.dpi !== undefined) {
-        attributes.dpi = { key: "dpi", value: options.dpi };
-      }
-      if (options.rotWithShape !== undefined) {
-        attributes.rotWithShape = {
-          key: "rotWithShape",
-          value: options.rotWithShape ? 1 : 0,
-        };
-      }
-      return new BuilderElement({
-        attributes: Object.keys(attributes).length > 0 ? (attributes as never) : undefined,
-        children,
-        name: "a:blipFill",
-      });
+      const attrs: Record<string, string | number | undefined> = {};
+      if (options.dpi !== undefined) attrs.dpi = options.dpi;
+      if (options.rotWithShape !== undefined) attrs.rotWithShape = options.rotWithShape ? 1 : 0;
+      return element("a:blipFill", attrs, children);
     }
     case "pattern": {
       const coreOpts: PatternFillOptions = {
@@ -213,6 +193,6 @@ export const buildFill = (options: FillOptions): XmlComponent => {
       return createPatternFill(coreOpts);
     }
     case "group":
-      return new BuilderElement({ name: "a:grpFill" });
+      return "<a:grpFill/>";
   }
 };

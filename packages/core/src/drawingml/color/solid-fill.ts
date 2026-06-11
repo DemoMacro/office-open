@@ -8,8 +8,8 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import type { XmlComponent } from "../../xml-components";
+import { element } from "@office-open/xml";
+
 import { createHslColor } from "./hsl-color";
 import type { HslColorOptions } from "./hsl-color";
 import { createPresetColor, PresetColor } from "./preset-color";
@@ -44,7 +44,7 @@ const SYSTEM_COLOR_VALUES: ReadonlySet<string> = new Set(Object.values(SystemCol
 const PRESET_COLOR_VALUES: ReadonlySet<string> = new Set(Object.values(PresetColor));
 const SCHEME_COLOR_VALUES: ReadonlySet<string> = new Set(Object.values(SchemeColor));
 
-export const createColorElement = (color: SolidFillOptions): XmlComponent => {
+export const createColorElement = (color: SolidFillOptions): string => {
   if ("hue" in color && "saturation" in color && "luminance" in color) {
     return createHslColor(color);
   }
@@ -66,7 +66,7 @@ export const createColorElement = (color: SolidFillOptions): XmlComponent => {
 };
 
 /**
- * Creates a solid fill element.
+ * Creates a solid fill element as an XML string.
  *
  * Specifies a solid color fill using any supported color type.
  *
@@ -92,8 +92,5 @@ export const createColorElement = (color: SolidFillOptions): XmlComponent => {
  * const hslFill = createSolidFill({ hue: 120000, saturation: 100000, luminance: 50000 });
  * ```
  */
-export const createSolidFill = (options: SolidFillOptions): XmlComponent =>
-  new BuilderElement({
-    children: [createColorElement(options)],
-    name: "a:solidFill",
-  });
+export const createSolidFill = (options: SolidFillOptions): string =>
+  element("a:solidFill", undefined, [createColorElement(options)]);

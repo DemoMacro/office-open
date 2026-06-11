@@ -13,6 +13,15 @@
     "verbatimModuleSyntax": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "paths": {
+      "@office-open/core": ["./packages/core/src/index.ts"],
+      "@office-open/core/*": ["./packages/core/src/*/index.ts"],
+      "@office-open/xml": ["./packages/xml/src/index.ts"],
+      "@office-open/xml/*": ["./packages/xml/src/*/index.ts"],
+      "@office-open/docx": ["./packages/docx/src/index.ts"],
+      "@office-open/pptx": ["./packages/pptx/src/index.ts"],
+      "@office-open/xlsx": ["./packages/xlsx/src/index.ts"]
+    }
   }
 }

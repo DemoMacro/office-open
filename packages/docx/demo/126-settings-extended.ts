@@ -2,11 +2,11 @@
 // decimalSymbol, listSeparator, defaultTableStyle, mathPr, readModeInkLockDown,
 // bookFoldPrinting, captions, and many onOff settings.
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import { Document, Packer, Paragraph, TextRun } from "@office-open/docx";
+import { generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   settings: {
     // Batch A: Boolean onOff settings
     mirrorMargins: true,
@@ -86,26 +86,26 @@ const doc = new Document({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [
-            new TextRun({
-              bold: true,
-              text: "Extended Settings Demo",
-              size: 32,
-            }),
-          ],
-        }),
-        new Paragraph({
-          children: [
-            new TextRun(
+        {
+          paragraph: {
+            children: [
+              {
+                bold: true,
+                text: "Extended Settings Demo",
+                size: 32,
+              },
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: [
               "This document demonstrates extended settings including footnotePr, endnotePr, rsids, mathPr, captions, and more.",
-            ),
-          ],
-        }),
+            ],
+          },
+        },
       ],
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

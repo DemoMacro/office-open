@@ -1,19 +1,10 @@
+import { writeFileSync } from "node:fs";
 // Numbered lists
 // The lists can also be restarted by specifying the instance number
 
-import * as fs from "fs";
+import { AlignmentType, HeadingLevel, LevelFormat, generateDocument } from "@office-open/docx";
 
-import {
-  AlignmentType,
-  Document,
-  HeadingLevel,
-  LevelFormat,
-  Packer,
-  Paragraph,
-  convertInchesToTwip,
-} from "@office-open/docx";
-
-const doc = new Document({
+const buffer = await generateDocument({
   numbering: {
     config: [
       {
@@ -25,8 +16,8 @@ const doc = new Document({
             style: {
               paragraph: {
                 indent: {
-                  hanging: convertInchesToTwip(0.18),
-                  left: convertInchesToTwip(0.5),
+                  hanging: "0.18in",
+                  left: "0.5in",
                 },
               },
             },
@@ -44,8 +35,8 @@ const doc = new Document({
             style: {
               paragraph: {
                 indent: {
-                  hanging: convertInchesToTwip(0.18),
-                  left: convertInchesToTwip(0.5),
+                  hanging: "0.18in",
+                  left: "0.5in",
                 },
               },
             },
@@ -63,8 +54,8 @@ const doc = new Document({
             style: {
               paragraph: {
                 indent: {
-                  hanging: convertInchesToTwip(0.18),
-                  left: convertInchesToTwip(0.5),
+                  hanging: "0.18in",
+                  left: "0.5in",
                 },
               },
             },
@@ -78,225 +69,263 @@ const doc = new Document({
   sections: [
     {
       children: [
-        new Paragraph({
-          contextualSpacing: true,
-          numbering: {
-            level: 0,
-            reference: "my-crazy-reference",
+        {
+          paragraph: {
+            contextualSpacing: true,
+            numbering: {
+              level: 0,
+              reference: "my-crazy-reference",
+            },
+            spacing: {
+              before: 200,
+            },
+            text: "line with contextual spacing",
           },
-          spacing: {
-            before: 200,
+        },
+        {
+          paragraph: {
+            contextualSpacing: true,
+            numbering: {
+              level: 0,
+              reference: "my-crazy-reference",
+            },
+            spacing: {
+              before: 200,
+            },
+            text: "line with contextual spacing",
           },
-          text: "line with contextual spacing",
-        }),
-        new Paragraph({
-          contextualSpacing: true,
-          numbering: {
-            level: 0,
-            reference: "my-crazy-reference",
+        },
+        {
+          paragraph: {
+            contextualSpacing: false,
+            numbering: {
+              level: 0,
+              reference: "my-crazy-reference",
+            },
+            spacing: {
+              before: 200,
+            },
+            text: "line without contextual spacing",
           },
-          spacing: {
-            before: 200,
+        },
+        {
+          paragraph: {
+            contextualSpacing: false,
+            numbering: {
+              level: 0,
+              reference: "my-crazy-reference",
+            },
+            spacing: {
+              before: 200,
+            },
+            text: "line without contextual spacing",
           },
-          text: "line with contextual spacing",
-        }),
-        new Paragraph({
-          contextualSpacing: false,
-          numbering: {
-            level: 0,
-            reference: "my-crazy-reference",
+        },
+        {
+          paragraph: {
+            numbering: {
+              level: 0,
+              reference: "my-number-numbering-reference",
+            },
+            text: "Step 1 - Add sugar",
           },
-          spacing: {
-            before: 200,
+        },
+        {
+          paragraph: {
+            numbering: {
+              level: 0,
+              reference: "my-number-numbering-reference",
+            },
+            text: "Step 2 - Add wheat",
           },
-          text: "line without contextual spacing",
-        }),
-        new Paragraph({
-          contextualSpacing: false,
-          numbering: {
-            level: 0,
-            reference: "my-crazy-reference",
+        },
+        {
+          paragraph: {
+            numbering: {
+              level: 0,
+              reference: "my-number-numbering-reference",
+            },
+            text: "Step 3 - Put in oven",
           },
-          spacing: {
-            before: 200,
+        },
+        {
+          paragraph: {
+            heading: HeadingLevel.HEADING_2,
+            text: "Next",
           },
-          text: "line without contextual spacing",
-        }),
-        new Paragraph({
-          numbering: {
-            level: 0,
-            reference: "my-number-numbering-reference",
+        },
+        {
+          paragraph: {
+            numbering: {
+              instance: 2,
+              level: 0,
+              reference: "padded-numbering-reference",
+            },
+            text: "test",
           },
-          text: "Step 1 - Add sugar",
-        }),
-        new Paragraph({
-          numbering: {
-            level: 0,
-            reference: "my-number-numbering-reference",
+        },
+        {
+          paragraph: {
+            numbering: {
+              instance: 2,
+              level: 0,
+              reference: "padded-numbering-reference",
+            },
+            text: "test",
           },
-          text: "Step 2 - Add wheat",
-        }),
-        new Paragraph({
-          numbering: {
-            level: 0,
-            reference: "my-number-numbering-reference",
+        },
+        {
+          paragraph: {
+            heading: HeadingLevel.HEADING_2,
+            text: "Next",
           },
-          text: "Step 3 - Put in oven",
-        }),
-        new Paragraph({
-          heading: HeadingLevel.HEADING_2,
-          text: "Next",
-        }),
-        new Paragraph({
-          numbering: {
-            instance: 2,
-            level: 0,
-            reference: "padded-numbering-reference",
+        },
+        {
+          paragraph: {
+            numbering: {
+              instance: 3,
+              level: 0,
+              reference: "padded-numbering-reference",
+            },
+            text: "test",
           },
-          text: "test",
-        }),
-        new Paragraph({
-          numbering: {
-            instance: 2,
-            level: 0,
-            reference: "padded-numbering-reference",
+        },
+        {
+          paragraph: {
+            numbering: {
+              instance: 3,
+              level: 0,
+              reference: "padded-numbering-reference",
+            },
+            text: "test",
           },
-          text: "test",
-        }),
-        new Paragraph({
-          heading: HeadingLevel.HEADING_2,
-          text: "Next",
-        }),
-        new Paragraph({
-          numbering: {
-            instance: 3,
-            level: 0,
-            reference: "padded-numbering-reference",
+        },
+        {
+          paragraph: {
+            numbering: {
+              instance: 3,
+              level: 0,
+              reference: "padded-numbering-reference",
+            },
+            text: "test",
           },
-          text: "test",
-        }),
-        new Paragraph({
-          numbering: {
-            instance: 3,
-            level: 0,
-            reference: "padded-numbering-reference",
+        },
+        {
+          paragraph: {
+            heading: HeadingLevel.HEADING_2,
+            text: "Next",
           },
-          text: "test",
-        }),
-        new Paragraph({
-          numbering: {
-            instance: 3,
-            level: 0,
-            reference: "padded-numbering-reference",
+        },
+        {
+          paragraph: {
+            numbering: {
+              level: 0,
+              reference: "padded-numbering-reference",
+            },
+            text: "test",
           },
-          text: "test",
-        }),
-        new Paragraph({
-          heading: HeadingLevel.HEADING_2,
-          text: "Next",
-        }),
-        new Paragraph({
-          numbering: {
-            level: 0,
-            reference: "padded-numbering-reference",
+        },
+        {
+          paragraph: {
+            numbering: {
+              level: 0,
+              reference: "padded-numbering-reference",
+            },
+            text: "test",
           },
-          text: "test",
-        }),
-        new Paragraph({
-          numbering: {
-            level: 0,
-            reference: "padded-numbering-reference",
+        },
+        {
+          paragraph: {
+            numbering: {
+              level: 0,
+              reference: "padded-numbering-reference",
+            },
+            text: "test",
           },
-          text: "test",
-        }),
-        new Paragraph({
-          numbering: {
-            level: 0,
-            reference: "padded-numbering-reference",
+        },
+        {
+          paragraph: {
+            numbering: {
+              level: 0,
+              reference: "padded-numbering-reference",
+            },
+            text: "test",
           },
-          text: "test",
-        }),
-        new Paragraph({
-          numbering: {
-            level: 0,
-            reference: "padded-numbering-reference",
+        },
+        {
+          paragraph: {
+            numbering: {
+              level: 0,
+              reference: "padded-numbering-reference",
+            },
+            text: "test",
           },
-          text: "test",
-        }),
-        new Paragraph({
-          numbering: {
-            level: 0,
-            reference: "padded-numbering-reference",
+        },
+        {
+          paragraph: {
+            numbering: {
+              level: 0,
+              reference: "padded-numbering-reference",
+            },
+            text: "test",
           },
-          text: "test",
-        }),
-        new Paragraph({
-          numbering: {
-            level: 0,
-            reference: "padded-numbering-reference",
+        },
+        {
+          paragraph: {
+            numbering: {
+              level: 0,
+              reference: "padded-numbering-reference",
+            },
+            text: "test",
           },
-          text: "test",
-        }),
-        new Paragraph({
-          numbering: {
-            level: 0,
-            reference: "padded-numbering-reference",
+        },
+        {
+          paragraph: {
+            numbering: {
+              level: 0,
+              reference: "padded-numbering-reference",
+            },
+            text: "test",
           },
-          text: "test",
-        }),
-        new Paragraph({
-          numbering: {
-            level: 0,
-            reference: "padded-numbering-reference",
+        },
+        {
+          paragraph: {
+            numbering: {
+              level: 0,
+              reference: "padded-numbering-reference",
+            },
+            text: "test",
           },
-          text: "test",
-        }),
-        new Paragraph({
-          numbering: {
-            level: 0,
-            reference: "padded-numbering-reference",
+        },
+        {
+          paragraph: {
+            numbering: {
+              level: 0,
+              reference: "padded-numbering-reference",
+            },
+            text: "test",
           },
-          text: "test",
-        }),
-        new Paragraph({
-          numbering: {
-            level: 0,
-            reference: "padded-numbering-reference",
+        },
+        {
+          paragraph: {
+            numbering: {
+              level: 0,
+              reference: "padded-numbering-reference",
+            },
+            text: "test",
           },
-          text: "test",
-        }),
-        new Paragraph({
-          numbering: {
-            level: 0,
-            reference: "padded-numbering-reference",
+        },
+        {
+          paragraph: {
+            numbering: {
+              level: 0,
+              reference: "padded-numbering-reference",
+            },
+            text: "test",
           },
-          text: "test",
-        }),
-        new Paragraph({
-          numbering: {
-            level: 0,
-            reference: "padded-numbering-reference",
-          },
-          text: "test",
-        }),
-        new Paragraph({
-          numbering: {
-            level: 0,
-            reference: "padded-numbering-reference",
-          },
-          text: "test",
-        }),
-        new Paragraph({
-          numbering: {
-            level: 0,
-            reference: "padded-numbering-reference",
-          },
-          text: "test",
-        }),
+        },
       ],
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

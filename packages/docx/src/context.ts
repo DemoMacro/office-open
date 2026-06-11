@@ -1,0 +1,386 @@
+/**
+ * DOCX compilation context.
+ *
+ * DocxWriteContext holds all mutable state needed during document compilation.
+ * generateDocument() creates a DocxWriteContext internally.
+ *
+ * @module
+ */
+
+import { Relationships } from "@office-open/core";
+import { ChartCollection } from "@office-open/core/chart";
+import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
+import { SmartArtCollection } from "@office-open/core/smartart";
+import type { Element } from "@office-open/xml";
+import { AltChunkCollection } from "@parts/alt-chunk/alt-chunk-collection";
+import type { DocumentOptions } from "@parts/core-properties";
+import type { ISectionPropertiesOptions } from "@parts/document/body/section-properties/section-properties";
+import { FontWrapper } from "@parts/fonts/font-wrapper";
+import type { GlossaryDocumentOptions } from "@parts/glossary-document";
+import type { HeaderFooterEntry } from "@parts/header-footer";
+import { Numbering } from "@parts/numbering";
+import type { ParagraphOptions } from "@parts/paragraph/paragraph";
+import type { SettingsOptions } from "@parts/settings/settings";
+import { Styles } from "@parts/styles";
+import { ExternalStylesFactory } from "@parts/styles/external-styles-factory";
+import { DefaultStylesFactory } from "@parts/styles/factory";
+import { SubDocCollection } from "@parts/sub-doc/sub-doc-collection";
+import type { WebSettingsOptions } from "@parts/web-settings";
+import { Media } from "@shared/media";
+import type { SectionOptions } from "@shared/section";
+import type { SectionChild } from "@shared/section";
+
+import type { DocxDocument } from "./parse";
+
+/** Interface for document view wrappers — provides relationships access. */
+export interface ViewWrapper {
+  relationships: Relationships;
+}
+
+// ── BodyContext ──
+
+/**
+ * Context for body-level stringification.
+ *
+ * Pure JSON pipeline context — extends WriteContext for descriptor compatibility.
+ * No dependency on XmlComponent Context (compile/ uses zero toXml calls).
+ */
+export interface BodyContext extends WriteContext {
+  /** The root write context with all mutable document state. */
+  fileData: DocxWriteContext;
+  /** Alias for fileData — some descriptor internals access context.file. */
+  file: DocxWriteContext;
+  /** Current view wrapper for relationship access. */
+  viewWrapper: { relationships: Relationships };
+  /** Stringify a body-level child element — injected to break circular imports. */
+  stringifyChild: (child: SectionChild, ctx: BodyContext) => string;
+}
+
+// ── DocxWriteContext ──
+
+export class DocxWriteContext implements WriteContext {
+  private _currentRelationshipId = 1;
+
+  // --- Accessed by XmlComponent via context.file.* during toXml() ---
+  declare public document: { relationships: Relationships };
+  declare public numbering: Numbering;
+  declare public media: Media;
+  declare public charts: ChartCollection;
+  declare public smartArts: SmartArtCollection;
+  declare public altChunks: AltChunkCollection;
+  declare public subDocs: SubDocCollection;
+  declare public comments: { relationships: Relationships };
+  declare public footNotes: {
+    relationships: Relationships;
+    notes: Map<number, (ParagraphOptions | string)[]>;
+  };
+  declare public endnotes: {
+    relationships: Relationships;
+    notes: Map<number, (ParagraphOptions | string)[]>;
+  };
+
+  // --- Additional state used by the compiler ---
+  declare public fileRelationships: Relationships;
+  declare public _settingsOptions: SettingsOptions;
+  declare public styles: Styles;
+  declare public fontTable: FontWrapper;
+  declare public glossaryOptions: GlossaryDocumentOptions | undefined;
+  declare public webSettings: WebSettingsOptions | undefined;
+
+  // --- Section properties (one per section, raw options for descriptor pipeline) ---
+  private _sectionProperties: ISectionPropertiesOptions[] = [];
+  public get sectionProperties(): readonly ISectionPropertiesOptions[] {
+    return this._sectionProperties;
+  }
+
+  // --- WriteContext interface (core descriptor pipeline) ---
+
+  public addRelationship(_type: string, _target: string, _mode?: string): string {
+    const id = this._currentRelationshipId++;
+    return `rId${id}`;
+  }
+
+  public addMedia(_data: Uint8Array, _type: string): string {
+    // DOCX media registration goes through Media.addImage() in compiler.
+    return "";
+  }
+
+  // --- Internal tracking ---
+  private _headers: HeaderFooterEntry[] = [];
+  private _footers: HeaderFooterEntry[] = [];
+
+  // --- Original input preserved for descriptor usage ---
+  declare public _options: DocumentOptions;
+
+  constructor(options: DocumentOptions) {
+    this._options = options;
+
+    this.numbering = new Numbering(options.numbering ? options.numbering : { config: [] });
+
+    this.comments = { relationships: new Relationships() };
+    this.fileRelationships = new Relationships();
+    this.footNotes = { relationships: new Relationships(), notes: new Map() };
+    this.endnotes = { relationships: new Relationships(), notes: new Map() };
+    this.document = { relationships: new Relationships() };
+    this._settingsOptions = {
+      compatibility: options.compatibility,
+      compatibilityModeVersion: options.compatabilityModeVersion,
+      defaultTabStop: options.defaultTabStop,
+      evenAndOddHeaders: options.evenAndOddHeaderAndFooters ? true : false,
+      characterSpacingControl: options.characterSpacingControl,
+      hyphenation: {
+        autoHyphenation: options.hyphenation?.autoHyphenation,
+        consecutiveHyphenLimit: options.hyphenation?.consecutiveHyphenLimit,
+        doNotHyphenateCaps: options.hyphenation?.doNotHyphenateCaps,
+        hyphenationZone: options.hyphenation?.hyphenationZone,
+      },
+      trackRevisions: options.features?.trackRevisions,
+      updateFields: options.features?.updateFields,
+      documentProtection: options.features?.documentProtection,
+      view: options.view,
+      zoom: options.zoom,
+      writeProtection: options.writeProtection,
+      displayBackgroundShape:
+        options.displayBackgroundShape ?? (options.background?.image ? true : undefined),
+      embedTrueTypeFonts: options.embedTrueTypeFonts,
+      embedSystemFonts: options.embedSystemFonts,
+      saveSubsetFonts: options.saveSubsetFonts,
+      docVars: options.docVars,
+      colorSchemeMapping: options.colorSchemeMapping,
+      mailMerge: options.mailMerge,
+      ...options.settings,
+    };
+
+    this.media = new Media();
+    this.charts = new ChartCollection();
+    this.smartArts = new SmartArtCollection();
+    this.altChunks = new AltChunkCollection();
+    this.subDocs = new SubDocCollection();
+
+    if (options.externalStyles !== undefined) {
+      const defaultFactory = new DefaultStylesFactory();
+      const defaultStyles = defaultFactory.newInstance(options.styles?.default);
+      const externalFactory = new ExternalStylesFactory();
+      const externalStyles = externalFactory.newInstance(options.externalStyles);
+      const defaultStyleElements = defaultStyles.importedStyles!.slice(1);
+      this.styles = new Styles({
+        ...externalStyles,
+        importedStyles: [...externalStyles.importedStyles!, ...defaultStyleElements],
+      });
+    } else if (options.styles) {
+      const stylesFactory = new DefaultStylesFactory();
+      const defaultStyles = stylesFactory.newInstance(options.styles.default);
+      this.styles = new Styles({
+        ...defaultStyles,
+        ...options.styles,
+      });
+    } else {
+      const stylesFactory = new DefaultStylesFactory();
+      this.styles = new Styles(stylesFactory.newInstance());
+    }
+
+    this.addDefaultRelationships();
+
+    for (const section of options.sections) {
+      this.addSection(section);
+    }
+
+    if (options.footnotes) {
+      for (const key in options.footnotes) {
+        this.footNotes.notes.set(parseFloat(key), options.footnotes[key].children);
+      }
+    }
+
+    if (options.endnotes) {
+      for (const key in options.endnotes) {
+        this.endnotes.notes.set(parseFloat(key), options.endnotes[key].children);
+      }
+    }
+
+    this.fontTable = new FontWrapper(options.fonts ?? []);
+    this.glossaryOptions = options.glossary;
+    this.webSettings = options.webSettings ?? undefined;
+
+    if (options.glossary) {
+      this.document.relationships.addRelationship(
+        this._currentRelationshipId++,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/glossaryDocument",
+        "glossary/document.xml",
+      );
+    }
+
+    if (this.webSettings) {
+      this.document.relationships.addRelationship(
+        this._currentRelationshipId++,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/webSettings",
+        "webSettings.xml",
+      );
+    }
+  }
+
+  get headers(): HeaderFooterEntry[] {
+    return this._headers;
+  }
+
+  get footers(): HeaderFooterEntry[] {
+    return this._footers;
+  }
+
+  // --- Private helpers ---
+
+  private addSection({ headers = {}, footers = {}, properties }: SectionOptions): void {
+    const sectPrOptions: ISectionPropertiesOptions = {
+      ...properties,
+      footerWrapperGroup: {
+        default: footers.default ? this.createFooter(footers.default) : undefined,
+        even: footers.even ? this.createFooter(footers.even) : undefined,
+        first: footers.first ? this.createFooter(footers.first) : undefined,
+      },
+      headerWrapperGroup: {
+        default: headers.default ? this.createHeader(headers.default) : undefined,
+        even: headers.even ? this.createHeader(headers.even) : undefined,
+        first: headers.first ? this.createHeader(headers.first) : undefined,
+      },
+    };
+    this._sectionProperties.push(sectPrOptions);
+  }
+
+  private createHeader(header: SectionChild[]): HeaderFooterEntry {
+    const referenceId = this._currentRelationshipId++;
+    const entry: HeaderFooterEntry = {
+      children: header,
+      relationships: new Relationships(),
+      referenceId,
+    };
+    this.addHeaderToDocument(entry);
+    return entry;
+  }
+
+  private createFooter(footer: SectionChild[]): HeaderFooterEntry {
+    const referenceId = this._currentRelationshipId++;
+    const entry: HeaderFooterEntry = {
+      children: footer,
+      relationships: new Relationships(),
+      referenceId,
+    };
+    this.addFooterToDocument(entry);
+    return entry;
+  }
+
+  private addHeaderToDocument(header: HeaderFooterEntry): void {
+    this._headers.push(header);
+    this.document.relationships.addRelationship(
+      header.referenceId,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header",
+      `header${this._headers.length}.xml`,
+    );
+  }
+
+  private addFooterToDocument(footer: HeaderFooterEntry): void {
+    this._footers.push(footer);
+    this.document.relationships.addRelationship(
+      footer.referenceId,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer",
+      `footer${this._footers.length}.xml`,
+    );
+  }
+
+  private addDefaultRelationships(): void {
+    this.fileRelationships.addRelationship(
+      1,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
+      "word/document.xml",
+    );
+    this.fileRelationships.addRelationship(
+      2,
+      "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties",
+      "docProps/core.xml",
+    );
+    this.fileRelationships.addRelationship(
+      3,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties",
+      "docProps/app.xml",
+    );
+    this.fileRelationships.addRelationship(
+      4,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties",
+      "docProps/custom.xml",
+    );
+
+    this.document.relationships.addRelationship(
+      this._currentRelationshipId++,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles",
+      "styles.xml",
+    );
+    this.document.relationships.addRelationship(
+      this._currentRelationshipId++,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering",
+      "numbering.xml",
+    );
+    this.document.relationships.addRelationship(
+      this._currentRelationshipId++,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes",
+      "footnotes.xml",
+    );
+    this.document.relationships.addRelationship(
+      this._currentRelationshipId++,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes",
+      "endnotes.xml",
+    );
+    this.document.relationships.addRelationship(
+      this._currentRelationshipId++,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings",
+      "settings.xml",
+    );
+    this.document.relationships.addRelationship(
+      this._currentRelationshipId++,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
+      "comments.xml",
+    );
+    if (this._options.bibliography) {
+      this.document.relationships.addRelationship(
+        this._currentRelationshipId++,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/bibliography",
+        "bibliography.xml",
+      );
+    }
+  }
+}
+
+// ── DocxReadContext ──
+
+/**
+ * DOCX-specific read context.
+ *
+ * Holds references to the parsed DocxDocument and cached style/numbering data
+ * used throughout the DOCX parsing pipeline. Implements ReadContext for
+ * descriptor pipeline compatibility.
+ */
+export class DocxReadContext implements ReadContext {
+  constructor(
+    public docx: DocxDocument,
+    public styleCache: Map<string, Element>,
+    public numberingCache: Map<string, Element>,
+  ) {}
+
+  resolveRelationship(rId: string): string | undefined {
+    return (
+      this.docx.partRefs.headers.get(rId) ??
+      this.docx.partRefs.footers.get(rId) ??
+      this.docx.partRefs.media.get(rId) ??
+      this.docx.partRefs.charts.get(rId) ??
+      this.docx.partRefs.diagramData.get(rId) ??
+      this.docx.partRefs.afChunks.get(rId) ??
+      this.docx.partRefs.subDocs.get(rId) ??
+      this.docx.partRefs.hyperlinks.get(rId)
+    );
+  }
+
+  getPart(path: string): Element | undefined {
+    return this.docx.doc.get(path);
+  }
+
+  getRaw(path: string): Uint8Array | undefined {
+    return this.docx.doc.getRaw(path);
+  }
+}

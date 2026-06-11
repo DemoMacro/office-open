@@ -1,59 +1,42 @@
 // Example of how you would create a table and add data to it
 
-import * as fs from "fs";
+import { readFileSync, writeFileSync } from "node:fs";
 
-import {
-  Document,
-  Packer,
-  Paragraph,
-  Table,
-  TableCell,
-  TableRow,
-  WidthType,
-} from "@office-open/docx";
+import { WidthType, generateDocument } from "@office-open/docx";
 
-const styles = fs.readFileSync("./demo/assets/custom-styles.xml", "utf8");
+const styles = readFileSync("./demo/assets/custom-styles.xml", "utf8");
 
-// Create a table and pass the XML Style
-const table = new Table({
-  rows: [
-    new TableRow({
-      cells: [
-        new TableCell({
-          children: [new Paragraph("Header Colum 1")],
-        }),
-        new TableCell({
-          children: [new Paragraph("Header Colum 2")],
-        }),
-      ],
-    }),
-    new TableRow({
-      cells: [
-        new TableCell({
-          children: [new Paragraph("Column Content 3")],
-        }),
-        new TableCell({
-          children: [new Paragraph("Column Content 2")],
-        }),
-      ],
-    }),
-  ],
-  style: "MyCustomTableStyle",
-  width: {
-    size: 9070,
-    type: WidthType.DXA,
-  },
-});
-
-const doc = new Document({
+const buffer = await generateDocument({
   externalStyles: styles,
   sections: [
     {
-      children: [table],
+      children: [
+        {
+          table: {
+            rows: [
+              {
+                cells: [
+                  { children: [{ paragraph: "Header Colum 1" }] },
+                  { children: [{ paragraph: "Header Colum 2" }] },
+                ],
+              },
+              {
+                cells: [
+                  { children: [{ paragraph: "Column Content 3" }] },
+                  { children: [{ paragraph: "Column Content 2" }] },
+                ],
+              },
+            ],
+            style: "MyCustomTableStyle",
+            width: {
+              size: 9070,
+              type: WidthType.DXA,
+            },
+          },
+        },
+      ],
     },
   ],
   title: "Title",
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

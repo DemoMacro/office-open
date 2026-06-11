@@ -5,9 +5,9 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import type { XmlComponent } from "../../xml-components";
-import { xsdBlendMode } from "../../xsd-mappings";
+import { element } from "@office-open/xml";
+
+import { xsdBlendMode } from "../../util/mappings";
 import { createSolidFill } from "../color/solid-fill";
 import type { SolidFillOptions } from "../color/solid-fill";
 import { createGradientFill } from "../fill/gradient-fill";
@@ -51,17 +51,17 @@ export const BlendMode = {
  */
 export interface FillOverlayEffectOptions {
   /** Blend mode (required) */
-  readonly blend: (typeof BlendMode)[keyof typeof BlendMode];
+  blend: (typeof BlendMode)[keyof typeof BlendMode];
   /** Solid fill color */
-  readonly solidFill?: SolidFillOptions;
+  solidFill?: SolidFillOptions;
   /** Gradient fill */
-  readonly gradientFill?: GradientFillOptions;
+  gradientFill?: GradientFillOptions;
   /** Pattern fill */
-  readonly patternFill?: PatternFillOptions;
+  patternFill?: PatternFillOptions;
   /** Group fill (inherit from parent) */
-  readonly groupFill?: boolean;
+  groupFill?: boolean;
   /** No fill */
-  readonly noFill?: boolean;
+  noFill?: boolean;
 }
 
 /**
@@ -92,8 +92,8 @@ export interface FillOverlayEffectOptions {
  * });
  * ```
  */
-export const createFillOverlayEffect = (options: FillOverlayEffectOptions): XmlComponent => {
-  let fillElement: XmlComponent;
+export const createFillOverlayEffect = (options: FillOverlayEffectOptions): string => {
+  let fillElement: string;
 
   if (options.noFill) {
     fillElement = createNoFill();
@@ -110,11 +110,5 @@ export const createFillOverlayEffect = (options: FillOverlayEffectOptions): XmlC
     fillElement = createSolidFill({ value: "000000" });
   }
 
-  return new BuilderElement<{ readonly blend: string }>({
-    attributes: {
-      blend: { key: "blend", value: xsdBlendMode.to(options.blend) },
-    },
-    children: [fillElement],
-    name: "a:fillOverlay",
-  });
+  return element("a:fillOverlay", { blend: xsdBlendMode.to(options.blend) }, [fillElement]);
 };

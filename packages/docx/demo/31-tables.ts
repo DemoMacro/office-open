@@ -1,87 +1,90 @@
 // Example of how you would create a table and add data to it
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
 import {
-  Document,
   HeadingLevel,
-  Packer,
-  Paragraph,
-  Table,
-  TableCell,
-  TableRow,
   TextDirection,
   VerticalAlignTable,
+  generateDocument,
 } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Table({
-          rows: [
-            new TableRow({
-              cells: [
-                new TableCell({
-                  children: [new Paragraph({}), new Paragraph({})],
-                  verticalAlign: VerticalAlignTable.CENTER,
-                }),
-                new TableCell({
-                  children: [new Paragraph({}), new Paragraph({})],
-                  verticalAlign: VerticalAlignTable.CENTER,
-                }),
-                new TableCell({
-                  children: [new Paragraph({ text: "bottom to top" }), new Paragraph({})],
-                  textDirection: TextDirection.BOTTOM_TO_TOP_LEFT_TO_RIGHT,
-                }),
-                new TableCell({
-                  children: [new Paragraph({ text: "top to bottom" }), new Paragraph({})],
-                  textDirection: TextDirection.TOP_TO_BOTTOM_RIGHT_TO_LEFT,
-                }),
-              ],
-            }),
-            new TableRow({
-              cells: [
-                new TableCell({
-                  children: [
-                    new Paragraph({
-                      heading: HeadingLevel.HEADING_1,
-                      text: "Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah",
-                    }),
-                  ],
-                }),
-                new TableCell({
-                  children: [
-                    new Paragraph({
-                      text: "This text should be in the middle of the cell",
-                    }),
-                  ],
-                  verticalAlign: VerticalAlignTable.CENTER,
-                }),
-                new TableCell({
-                  children: [
-                    new Paragraph({
-                      text: "Text above should be vertical from bottom to top",
-                    }),
-                  ],
-                  verticalAlign: VerticalAlignTable.CENTER,
-                }),
-                new TableCell({
-                  children: [
-                    new Paragraph({
-                      text: "Text above should be vertical from top to bottom",
-                    }),
-                  ],
-                  verticalAlign: VerticalAlignTable.CENTER,
-                }),
-              ],
-            }),
-          ],
-        }),
+        {
+          table: {
+            rows: [
+              {
+                cells: [
+                  {
+                    children: [{ paragraph: {} }, { paragraph: {} }],
+                    verticalAlign: VerticalAlignTable.CENTER,
+                  },
+                  {
+                    children: [{ paragraph: {} }, { paragraph: {} }],
+                    verticalAlign: VerticalAlignTable.CENTER,
+                  },
+                  {
+                    children: [{ paragraph: { text: "bottom to top" } }, { paragraph: {} }],
+                    textDirection: TextDirection.BOTTOM_TO_TOP_LEFT_TO_RIGHT,
+                  },
+                  {
+                    children: [{ paragraph: { text: "top to bottom" } }, { paragraph: {} }],
+                    textDirection: TextDirection.TOP_TO_BOTTOM_RIGHT_TO_LEFT,
+                  },
+                ],
+              },
+              {
+                cells: [
+                  {
+                    children: [
+                      {
+                        paragraph: {
+                          heading: HeadingLevel.HEADING_1,
+                          text: "Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah Blah",
+                        },
+                      },
+                    ],
+                  },
+                  {
+                    children: [
+                      {
+                        paragraph: {
+                          text: "This text should be in the middle of the cell",
+                        },
+                      },
+                    ],
+                    verticalAlign: VerticalAlignTable.CENTER,
+                  },
+                  {
+                    children: [
+                      {
+                        paragraph: {
+                          text: "Text above should be vertical from bottom to top",
+                        },
+                      },
+                    ],
+                    verticalAlign: VerticalAlignTable.CENTER,
+                  },
+                  {
+                    children: [
+                      {
+                        paragraph: {
+                          text: "Text above should be vertical from top to bottom",
+                        },
+                      },
+                    ],
+                    verticalAlign: VerticalAlignTable.CENTER,
+                  },
+                ],
+              },
+            ],
+          },
+        },
       ],
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

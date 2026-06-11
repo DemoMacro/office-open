@@ -1,18 +1,9 @@
+import { writeFileSync } from "node:fs";
 // Numbered lists - Add parent number in sub number
 
-import * as fs from "fs";
+import { AlignmentType, HeadingLevel, LevelFormat, generateDocument } from "@office-open/docx";
 
-import {
-  AlignmentType,
-  Document,
-  HeadingLevel,
-  LevelFormat,
-  Packer,
-  Paragraph,
-  convertInchesToTwip,
-} from "@office-open/docx";
-
-const doc = new Document({
+const buffer = await generateDocument({
   numbering: {
     config: [
       {
@@ -23,7 +14,7 @@ const doc = new Document({
             level: 0,
             style: {
               paragraph: {
-                indent: { hanging: 260, left: convertInchesToTwip(0.5) },
+                indent: { hanging: 260, left: "0.5in" },
               },
             },
             text: "%1",
@@ -36,7 +27,7 @@ const doc = new Document({
               paragraph: {
                 indent: {
                   hanging: 1.25 * 260,
-                  left: 1.25 * convertInchesToTwip(0.5),
+                  left: 1.25 * 720, // 0.5in = 720 twips
                 },
               },
               run: {
@@ -55,46 +46,56 @@ const doc = new Document({
   sections: [
     {
       children: [
-        new Paragraph({
-          heading: HeadingLevel.HEADING_1,
-          text: "How to make cake",
-        }),
-        new Paragraph({
-          numbering: {
-            level: 0,
-            reference: "my-number-numbering-reference",
+        {
+          paragraph: {
+            heading: HeadingLevel.HEADING_1,
+            text: "How to make cake",
           },
-          text: "Step 1 - Add sugar",
-        }),
-        new Paragraph({
-          numbering: {
-            level: 0,
-            reference: "my-number-numbering-reference",
+        },
+        {
+          paragraph: {
+            numbering: {
+              level: 0,
+              reference: "my-number-numbering-reference",
+            },
+            text: "Step 1 - Add sugar",
           },
-          text: "Step 2 - Add wheat",
-        }),
-        new Paragraph({
-          numbering: {
-            level: 1,
-            reference: "my-number-numbering-reference",
+        },
+        {
+          paragraph: {
+            numbering: {
+              level: 0,
+              reference: "my-number-numbering-reference",
+            },
+            text: "Step 2 - Add wheat",
           },
-          text: "Step 2a - Stir the wheat in a circle",
-        }),
-        new Paragraph({
-          numbering: {
-            level: 0,
-            reference: "my-number-numbering-reference",
+        },
+        {
+          paragraph: {
+            numbering: {
+              level: 1,
+              reference: "my-number-numbering-reference",
+            },
+            text: "Step 2a - Stir the wheat in a circle",
           },
-          text: "Step 3 - Put in oven",
-        }),
-        new Paragraph({
-          heading: HeadingLevel.HEADING_1,
-          text: "How to make cake",
-        }),
+        },
+        {
+          paragraph: {
+            numbering: {
+              level: 0,
+              reference: "my-number-numbering-reference",
+            },
+            text: "Step 3 - Put in oven",
+          },
+        },
+        {
+          paragraph: {
+            heading: HeadingLevel.HEADING_1,
+            text: "How to make cake",
+          },
+        },
       ],
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

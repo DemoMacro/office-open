@@ -1,0 +1,75 @@
+/**
+ * Patch detector for discovering placeholders in document templates.
+ *
+ * @module
+ */
+import { DOCX_NS, createTraverser, strFromU8, toJson, unzipSync } from "@office-open/core";
+import { toUint8Array } from "@office-open/core";
+
+import type { InputDataType } from "./from-docx";
+
+/**
+ * Options for patch detection.
+ *
+ * @property data - The document template to scan for placeholders
+ */
+interface PatchDetectorOptions {
+  data: InputDataType;
+}
+
+/**
+ * Detects all placeholders present in a document template.
+ *
+ * Scans through all XML content in a .docx file to find placeholder text
+ * enclosed in delimiters (default: {{placeholder}}). This is useful for
+ * discovering what patches a template expects before performing replacement.
+ *
+ * @param options - Patch detector configuration
+ * @returns Array of placeholder keys found in the document
+ *
+ * @example
+ * ```typescript
+ * const placeholders = await patchDetector({ data: templateBuffer });
+ * // Returns: ["name", "date", "address"] if template contains {{name}}, {{date}}, {{address}}
+ *
+ * // Use detected placeholders to create patches
+ * const patches = {};
+ * for (const key of placeholders) {
+ *   patches[key] = {
+ *     type: PatchType.PARAGRAPH,
+ *     children: [new TextRun(getUserData(key))],
+ *   };
+ * });
+ * ```
+ */
+export const patchDetector = async ({ data }: PatchDetectorOptions): Promise<string[]> => {
+  const zipContent = unzipSync(toUint8Array(data));
+  const patches = new Set<string>();
+
+  for (const [key, value] of Object.entries(zipContent)) {
+    if (!key.endsWith(".xml") && !key.endsWith(".rels")) {
+      continue;
+    }
+    if (key.startsWith("word/") && !key.endsWith(".xml.rels")) {
+      const json = toJson(strFromU8(value));
+      const { traverse } = createTraverser(DOCX_NS);
+      for (const p of traverse(json)) {
+        for (const patch of findPatchKeys(p.text)) {
+          patches.add(patch);
+        }
+      }
+    }
+  }
+  return [...patches];
+};
+
+/**
+ * Extracts placeholder keys from text using regex pattern.
+ *
+ * @param text - Text to search for placeholders
+ * @returns Array of placeholder keys (without delimiters)
+ */
+const findPatchKeys = (text: string): string[] => {
+  const pattern = /(?<=\{\{).+?(?=\}\})/gs;
+  return text.match(pattern) ?? [];
+};

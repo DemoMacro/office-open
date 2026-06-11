@@ -8,8 +8,7 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import type { XmlComponent } from "../../xml-components";
+import { element } from "@office-open/xml";
 
 /**
  * Creates a group fill element (a:grpFill).
@@ -29,7 +28,4 @@ import type { XmlComponent } from "../../xml-components";
  * createGroupFill();
  * ```
  */
-export const createGroupFill = (): XmlComponent =>
-  new BuilderElement({
-    name: "a:grpFill",
-  });
+export const createGroupFill = (): string => element("a:grpFill");

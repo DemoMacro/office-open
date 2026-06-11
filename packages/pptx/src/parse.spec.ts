@@ -1,13 +1,12 @@
-import { Packer } from "@export/packer/packer";
 import { describe, expect, it } from "vite-plus/test";
 
-import { File as Presentation } from "./file/file";
-import type { MasterDefinition, SlideOptions } from "./file/file";
+import { generatePresentation } from "./generate";
 import { parsePresentation } from "./parse";
+import type { MasterDefinition, PresentationOptions, SlideOptions } from "./shared/file";
 
 describe("parsePresentation", () => {
   it("returns PresentationOptions with slides", async () => {
-    const pres = new Presentation({
+    const options: PresentationOptions = {
       slides: [
         {
           children: [
@@ -24,8 +23,8 @@ describe("parsePresentation", () => {
           ],
         },
       ],
-    });
-    const buffer = await Packer.toBuffer(pres);
+    };
+    const buffer = await generatePresentation(options);
     const result = parsePresentation(buffer);
 
     expect(result.slides).to.exist;
@@ -34,13 +33,13 @@ describe("parsePresentation", () => {
   });
 
   it("parses single master file with undefined masters", async () => {
-    const pres = new Presentation({
+    const options: PresentationOptions = {
       slides: [
         { children: [{ shape: { x: 0, y: 0, width: 200, height: 100, textBody: { text: "A" } } }] },
         { children: [{ shape: { x: 0, y: 0, width: 200, height: 100, textBody: { text: "B" } } }] },
       ],
-    });
-    const buffer = await Packer.toBuffer(pres);
+    };
+    const buffer = await generatePresentation(options);
     const result = parsePresentation(buffer);
 
     expect(result.slides!.length).to.equal(2);
@@ -48,14 +47,14 @@ describe("parsePresentation", () => {
   });
 
   it("parses core properties and size", async () => {
-    const pres = new Presentation({
+    const options: PresentationOptions = {
       title: "Test Title",
       creator: "Test Creator",
       slides: [
         { children: [{ shape: { x: 0, y: 0, width: 200, height: 100, textBody: { text: "A" } } }] },
       ],
-    });
-    const buffer = await Packer.toBuffer(pres);
+    };
+    const buffer = await generatePresentation(options);
     const result = parsePresentation(buffer);
 
     expect(result.title).to.equal("Test Title");
@@ -108,8 +107,7 @@ describe("parsePresentation", () => {
       },
     ];
 
-    const pres = new Presentation({ title: "Multi-master", masters, slides });
-    const buffer = await Packer.toBuffer(pres);
+    const buffer = await generatePresentation({ title: "Multi-master", masters, slides });
     const result = parsePresentation(buffer);
 
     expect(result.slides!.length).to.equal(2);
@@ -140,16 +138,14 @@ describe("parsePresentation", () => {
       },
     ];
 
-    const pres = new Presentation({ masters, slides });
-    const buffer = await Packer.toBuffer(pres);
+    const buffer = await generatePresentation({ masters, slides });
 
     // First parse
     const parsed1 = parsePresentation(buffer);
     expect(parsed1.masters!.length).to.equal(2);
 
     // Re-generate from parsed data
-    const pres2 = new Presentation(parsed1);
-    const buffer2 = await Packer.toBuffer(pres2);
+    const buffer2 = await generatePresentation(parsed1);
 
     // Second parse
     const parsed2 = parsePresentation(buffer2);

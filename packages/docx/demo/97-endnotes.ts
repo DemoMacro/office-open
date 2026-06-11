@@ -1,10 +1,10 @@
 // Endnotes
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import { Document, Packer } from "@office-open/docx";
+import { generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   endnotes: {
     1: { children: ["This is the first endnote with some detailed explanation."] },
     2: {
@@ -108,6 +108,4 @@ const doc = new Document({
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

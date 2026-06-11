@@ -1,8 +1,9 @@
 import * as fs from "fs";
 
-import { Presentation, Shape, Packer } from "@office-open/pptx";
+import { generatePresentation } from "@office-open/pptx";
+import type { PresentationOptions } from "@office-open/pptx";
 
-const pres = new Presentation({
+const options: PresentationOptions = {
   title: "Multi-Master Demo",
   creator: "Demo",
   masters: [
@@ -15,14 +16,16 @@ const pres = new Presentation({
         },
       },
       children: [
-        new Shape({
-          x: 0,
-          y: 695,
-          width: 1280,
-          height: 25,
-          geometry: "rect",
-          fill: "4472C4",
-        }),
+        {
+          shape: {
+            x: 0,
+            y: 695,
+            width: 1280,
+            height: 25,
+            geometry: "rect",
+            fill: "4472C4",
+          },
+        },
       ],
       placeholders: {
         slideNumber: {
@@ -45,14 +48,16 @@ const pres = new Presentation({
         fill: "1B2A4A",
       },
       children: [
-        new Shape({
-          x: 0,
-          y: 695,
-          width: 1280,
-          height: 25,
-          geometry: "rect",
-          fill: "FFC000",
-        }),
+        {
+          shape: {
+            x: 0,
+            y: 695,
+            width: 1280,
+            height: 25,
+            geometry: "rect",
+            fill: "FFC000",
+          },
+        },
       ],
       placeholders: {
         slideNumber: {
@@ -69,60 +74,68 @@ const pres = new Presentation({
       master: "light",
       layout: "title",
       children: [
-        new Shape({
-          x: 100,
-          y: 100,
-          width: 600,
-          height: 200,
-          textBody: { text: "Slide on Light Master" },
-          fill: "4472C4",
-        }),
+        {
+          shape: {
+            x: 100,
+            y: 100,
+            width: 600,
+            height: 200,
+            textBody: { text: "Slide on Light Master" },
+            fill: "4472C4",
+          },
+        },
       ],
     },
     {
       master: "dark",
       layout: "title",
       children: [
-        new Shape({
-          x: 100,
-          y: 100,
-          width: 600,
-          height: 200,
-          textBody: { text: "Slide on Dark Master" },
-          fill: "FFC000",
-        }),
+        {
+          shape: {
+            x: 100,
+            y: 100,
+            width: 600,
+            height: 200,
+            textBody: { text: "Slide on Dark Master" },
+            fill: "FFC000",
+          },
+        },
       ],
     },
     {
       master: "light",
       layout: "blank",
       children: [
-        new Shape({
-          x: 100,
-          y: 200,
-          width: 600,
-          height: 300,
-          textBody: { text: "Blank Layout on Light" },
-          fill: "E8E8E8",
-        }),
+        {
+          shape: {
+            x: 100,
+            y: 200,
+            width: 600,
+            height: 300,
+            textBody: { text: "Blank Layout on Light" },
+            fill: "E8E8E8",
+          },
+        },
       ],
     },
     {
       master: "dark",
       layout: "obj",
       children: [
-        new Shape({
-          x: 100,
-          y: 200,
-          width: 600,
-          height: 300,
-          textBody: { text: "Content Layout on Dark" },
-          fill: "2C3E50",
-        }),
+        {
+          shape: {
+            x: 100,
+            y: 200,
+            width: 600,
+            height: 300,
+            textBody: { text: "Content Layout on Dark" },
+            fill: "2C3E50",
+          },
+        },
       ],
     },
   ],
-});
+};
 
-const buffer = await Packer.toBuffer(pres);
+const buffer = await generatePresentation(options);
 fs.writeFileSync("My Presentation.pptx", buffer);

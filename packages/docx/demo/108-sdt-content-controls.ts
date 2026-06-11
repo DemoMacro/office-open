@@ -1,261 +1,247 @@
 // Demo: Structured Document Tags (SDT) - content controls
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import {
-  Document,
-  Packer,
-  Paragraph,
-  StructuredDocumentTagBlock,
-  StructuredDocumentTagCell,
-  StructuredDocumentTagRow,
-  StructuredDocumentTagRun,
-  Table,
-  TableCell,
-  TableRow,
-  TextRun,
-} from "@office-open/docx";
+import { generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [new TextRun({ text: "SDT Content Controls Demo", bold: true, size: 32 })],
-          spacing: { after: 400 },
-        }),
+        {
+          paragraph: {
+            children: [{ text: "SDT Content Controls Demo", bold: true, size: 32 }],
+            spacing: { after: 400 },
+          },
+        },
 
-        // Plain text SDT
-        new Paragraph({
-          children: [new TextRun({ bold: true, text: "1. Plain Text SDT", size: 28 })],
-          spacing: { after: 200 },
-        }),
-        new Paragraph({
-          children: [
-            new TextRun("Name: "),
-            new StructuredDocumentTagRun({
-              properties: {
-                alias: "Name",
-                text: { multiLine: false },
+        // Plain text SDT (block-level)
+        {
+          paragraph: {
+            children: [{ bold: true, text: "1. Plain Text SDT", size: 28 }],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          sdt: {
+            properties: {
+              alias: "Name",
+              tag: "name",
+              text: { multiLine: false },
+            },
+            children: [{ paragraph: { children: ["John Doe"] } }],
+          },
+        },
+
+        { paragraph: { children: [""] } },
+
+        // Multi-line text SDT (block-level)
+        {
+          paragraph: {
+            children: [{ bold: true, text: "2. Multi-line Text SDT", size: 28 }],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          sdt: {
+            properties: {
+              alias: "Description",
+              tag: "multiline-text",
+              text: { multiLine: true },
+            },
+            children: [{ paragraph: { children: ["This is a multi-line text content control."] } }],
+          },
+        },
+
+        { paragraph: { children: [""] } },
+
+        // ComboBox SDT (block-level)
+        {
+          paragraph: {
+            children: [{ bold: true, text: "3. ComboBox SDT", size: 28 }],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          sdt: {
+            properties: {
+              alias: "Color",
+              tag: "color",
+              comboBox: {
+                items: [
+                  { displayText: "Red", value: "red" },
+                  { displayText: "Blue", value: "blue" },
+                  { displayText: "Green", value: "green" },
+                ],
+                lastValue: "Red",
               },
-              children: [new TextRun("John Doe")],
-            }),
-          ],
-        }),
+            },
+            children: [{ paragraph: { children: ["Red"] } }],
+          },
+        },
 
-        new Paragraph({ children: [new TextRun("")] }),
+        { paragraph: { children: [""] } },
 
-        // Multi-line text SDT
-        new Paragraph({
-          children: [new TextRun({ bold: true, text: "2. Multi-line Text SDT", size: 28 })],
-          spacing: { after: 200 },
-        }),
-        new Paragraph({
-          children: [
-            new StructuredDocumentTagRun({
-              properties: {
-                alias: "Description",
-                tag: "multiline-text",
-                text: { multiLine: true },
+        // DropDownList SDT (block-level)
+        {
+          paragraph: {
+            children: [{ bold: true, text: "4. DropDownList SDT", size: 28 }],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          sdt: {
+            properties: {
+              alias: "Priority",
+              tag: "priority",
+              dropDownList: {
+                items: [{ displayText: "High" }, { displayText: "Medium" }, { displayText: "Low" }],
+                lastValue: "Medium",
               },
-              children: [new TextRun("This is a multi-line text content control.")],
-            }),
-          ],
-        }),
+            },
+            children: [{ paragraph: { children: ["Medium"] } }],
+          },
+        },
 
-        new Paragraph({ children: [new TextRun("")] }),
+        { paragraph: { children: [""] } },
 
-        // ComboBox SDT
-        new Paragraph({
-          children: [new TextRun({ bold: true, text: "3. ComboBox SDT", size: 28 })],
-          spacing: { after: 200 },
-        }),
-        new Paragraph({
-          children: [
-            new TextRun("Color: "),
-            new StructuredDocumentTagRun({
-              properties: {
-                alias: "Color",
-                comboBox: {
-                  items: [
-                    { displayText: "Red", value: "red" },
-                    { displayText: "Blue", value: "blue" },
-                    { displayText: "Green", value: "green" },
-                  ],
-                  lastValue: "Red",
-                },
+        // Date SDT (block-level)
+        {
+          paragraph: {
+            children: [{ bold: true, text: "5. Date SDT", size: 28 }],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          sdt: {
+            properties: {
+              alias: "DueDate",
+              tag: "due-date",
+              date: {
+                dateFormat: "yyyy-MM-dd",
+                languageId: "en-US",
+                fullDate: "2026-04-29T00:00:00",
               },
-              children: [new TextRun("Red")],
-            }),
-          ],
-        }),
+            },
+            children: [{ paragraph: { children: ["2026-04-29"] } }],
+          },
+        },
 
-        new Paragraph({ children: [new TextRun("")] }),
-
-        // DropDownList SDT
-        new Paragraph({
-          children: [new TextRun({ bold: true, text: "4. DropDownList SDT", size: 28 })],
-          spacing: { after: 200 },
-        }),
-        new Paragraph({
-          children: [
-            new TextRun("Priority: "),
-            new StructuredDocumentTagRun({
-              properties: {
-                alias: "Priority",
-                dropDownList: {
-                  items: [
-                    { displayText: "High" },
-                    { displayText: "Medium" },
-                    { displayText: "Low" },
-                  ],
-                  lastValue: "Medium",
-                },
-              },
-              children: [new TextRun("Medium")],
-            }),
-          ],
-        }),
-
-        new Paragraph({ children: [new TextRun("")] }),
-
-        // Date SDT
-        new Paragraph({
-          children: [new TextRun({ bold: true, text: "5. Date SDT", size: 28 })],
-          spacing: { after: 200 },
-        }),
-        new Paragraph({
-          children: [
-            new TextRun("Date: "),
-            new StructuredDocumentTagRun({
-              properties: {
-                alias: "DueDate",
-                date: {
-                  dateFormat: "yyyy-MM-dd",
-                  languageId: "en-US",
-                  fullDate: "2026-04-29T00:00:00",
-                },
-              },
-              children: [new TextRun("2026-04-29")],
-            }),
-          ],
-        }),
-
-        new Paragraph({ children: [new TextRun("")] }),
+        { paragraph: { children: [""] } },
 
         // Block-level SDT (section child)
-        new Paragraph({
-          children: [
-            new TextRun({
-              bold: true,
-              text: "6. Block-level SDT (section child)",
-              size: 28,
-            }),
-          ],
-          spacing: { after: 200 },
-        }),
-        new StructuredDocumentTagBlock({
-          properties: {
-            richText: true,
-            alias: "BlockContent",
-            tag: "block-content",
-          },
-          children: [
-            new Paragraph({
-              children: [new TextRun("This is a block-level content control.")],
-            }),
-            new Paragraph({
-              children: [new TextRun("It can contain multiple paragraphs and tables.")],
-            }),
-          ],
-        }),
-
-        new Paragraph({ children: [new TextRun("")] }),
-
-        // Cell-level SDT (wrapped table cell)
-        new Paragraph({
-          children: [
-            new TextRun({
-              bold: true,
-              text: "7. Cell-level SDT (wrapped table cell)",
-              size: 28,
-            }),
-          ],
-          spacing: { after: 200 },
-        }),
-        new Table({
-          columnWidths: [3000, 3000],
-          rows: [
-            new TableRow({
-              cells: [
-                new TableCell({
-                  children: [new Paragraph("Normal cell")],
-                }),
-                new StructuredDocumentTagCell({
-                  properties: {
-                    alias: "Controlled Cell",
-                    tag: "cell-sdt",
-                  },
-                  children: [
-                    new TableCell({
-                      children: [new Paragraph("This cell is wrapped in a content control.")],
-                    }),
-                  ],
-                }),
-              ],
-            }),
-          ],
-        }),
-
-        new Paragraph({ children: [new TextRun("")] }),
-
-        // Row-level SDT (wrapped table row)
-        new Paragraph({
-          children: [
-            new TextRun({
-              bold: true,
-              text: "8. Row-level SDT (wrapped table row)",
-              size: 28,
-            }),
-          ],
-          spacing: { after: 200 },
-        }),
-        new Table({
-          columnWidths: [3000, 3000],
-          rows: [
-            new TableRow({
-              cells: [
-                new TableCell({
-                  children: [new Paragraph("Normal row - cell 1")],
-                }),
-                new TableCell({
-                  children: [new Paragraph("Normal row - cell 2")],
-                }),
-              ],
-            }),
-            new StructuredDocumentTagRow({
-              properties: {
-                alias: "Controlled Row",
-                tag: "row-sdt",
+        {
+          paragraph: {
+            children: [
+              {
+                bold: true,
+                text: "6. Block-level SDT (section child)",
+                size: 28,
               },
-              children: [
-                new TableRow({
-                  cells: [
-                    new TableCell({
-                      children: [new Paragraph("Controlled row - cell 1")],
-                    }),
-                    new TableCell({
-                      children: [new Paragraph("Controlled row - cell 2")],
-                    }),
+            ],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          sdt: {
+            properties: {
+              richText: true,
+              alias: "BlockContent",
+              tag: "block-content",
+            },
+            children: [
+              { paragraph: { children: ["This is a block-level content control."] } },
+              {
+                paragraph: {
+                  children: ["It can contain multiple paragraphs and tables."],
+                },
+              },
+            ],
+          },
+        },
+
+        { paragraph: { children: [""] } },
+
+        // SDT wrapping a table (block-level)
+        {
+          paragraph: {
+            children: [
+              {
+                bold: true,
+                text: "7. SDT wrapping a table (block-level)",
+                size: 28,
+              },
+            ],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          sdt: {
+            properties: {
+              alias: "Controlled Table",
+              tag: "table-sdt",
+              richText: true,
+            },
+            children: [
+              {
+                table: {
+                  columnWidths: [3000, 3000],
+                  rows: [
+                    {
+                      cells: [
+                        { children: [{ paragraph: "Normal cell" }] },
+                        { children: [{ paragraph: "Controlled cell" }] },
+                      ],
+                    },
                   ],
-                }),
-              ],
-            }),
-          ],
-        }),
+                },
+              },
+            ],
+          },
+        },
+
+        { paragraph: { children: [""] } },
+
+        // SDT wrapping multiple paragraphs (group-like)
+        {
+          paragraph: {
+            children: [
+              {
+                bold: true,
+                text: "8. SDT wrapping multiple blocks",
+                size: 28,
+              },
+            ],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          sdt: {
+            properties: {
+              alias: "Controlled Section",
+              tag: "section-sdt",
+              richText: true,
+            },
+            children: [
+              { paragraph: { children: ["First paragraph in controlled section."] } },
+              {
+                table: {
+                  columnWidths: [3000, 3000],
+                  rows: [
+                    {
+                      cells: [
+                        { children: [{ paragraph: "Controlled row - cell 1" }] },
+                        { children: [{ paragraph: "Controlled row - cell 2" }] },
+                      ],
+                    },
+                  ],
+                },
+              },
+              { paragraph: { children: ["Last paragraph in controlled section."] } },
+            ],
+          },
+        },
       ],
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

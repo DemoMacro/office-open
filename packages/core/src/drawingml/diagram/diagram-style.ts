@@ -6,7 +6,8 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "../../xml-components";
+import { element } from "@office-open/xml";
+
 import { SchemeColor } from "../color/scheme-color";
 import type { SolidFillOptions } from "../color/solid-fill";
 import { createColorElement } from "../color/solid-fill";
@@ -29,13 +30,13 @@ export const FontCollectionIndex = {
 
 export interface DiagramStyleOptions {
   /** Line style matrix reference index */
-  readonly lnIdx?: number;
+  lnIdx?: number;
   /** Fill style matrix reference index */
-  readonly fillIdx?: number;
+  fillIdx?: number;
   /** Effect style matrix reference index */
-  readonly effectIdx?: number;
+  effectIdx?: number;
   /** Font reference collection index */
-  readonly fontIdx?: string;
+  fontIdx?: string;
 }
 
 /**
@@ -53,39 +54,31 @@ export interface DiagramStyleOptions {
  * </xsd:complexType>
  * ```
  */
-export const createDiagramStyle = (options?: DiagramStyleOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+export const createDiagramStyle = (options?: DiagramStyleOptions): string => {
+  const children: string[] = [];
 
   children.push(
-    new BuilderElement({
-      name: "a:lnRef",
-      attributes: { idx: { key: "idx", value: options?.lnIdx ?? 1 } },
-      children: [createColorElement({ value: SchemeColor.ACCENT1 })],
-    }),
+    element("a:lnRef", { idx: options?.lnIdx ?? 1 }, [
+      createColorElement({ value: SchemeColor.ACCENT1 }),
+    ]),
   );
   children.push(
-    new BuilderElement({
-      name: "a:fillRef",
-      attributes: { idx: { key: "idx", value: options?.fillIdx ?? 1 } },
-      children: [createColorElement({ value: SchemeColor.ACCENT1 })],
-    }),
+    element("a:fillRef", { idx: options?.fillIdx ?? 1 }, [
+      createColorElement({ value: SchemeColor.ACCENT1 }),
+    ]),
   );
   children.push(
-    new BuilderElement({
-      name: "a:effectRef",
-      attributes: { idx: { key: "idx", value: options?.effectIdx ?? 0 } },
-      children: [createColorElement({ value: SchemeColor.ACCENT1 })],
-    }),
+    element("a:effectRef", { idx: options?.effectIdx ?? 0 }, [
+      createColorElement({ value: SchemeColor.ACCENT1 }),
+    ]),
   );
   children.push(
-    new BuilderElement({
-      name: "a:fontRef",
-      attributes: { idx: { key: "idx", value: options?.fontIdx ?? "minor" } },
-      children: [createColorElement({ value: SchemeColor.TX1 })],
-    }),
+    element("a:fontRef", { idx: options?.fontIdx ?? "minor" }, [
+      createColorElement({ value: SchemeColor.TX1 }),
+    ]),
   );
 
-  return new BuilderElement({ name: "dgm:style", children });
+  return element("dgm:style", undefined, children);
 };
 
 // ---------------------------------------------------------------------------
@@ -105,16 +98,16 @@ export const HueDirection = {
 
 export interface ColorListOptions {
   /** Color method (default: span) */
-  readonly meth?: (typeof ColorMethod)[keyof typeof ColorMethod];
+  meth?: (typeof ColorMethod)[keyof typeof ColorMethod];
   /** Hue direction (default: cw) */
-  readonly hueDir?: (typeof HueDirection)[keyof typeof HueDirection];
+  hueDir?: (typeof HueDirection)[keyof typeof HueDirection];
   /** Colors (EG_ColorChoice items) */
-  readonly colors?: readonly SolidFillOptions[];
+  colors?: readonly SolidFillOptions[];
 }
 
 /** Creates a generic CT_Colors element with the given tag. */
-const createColorList = (tag: string, options?: ColorListOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+const createColorList = (tag: string, options?: ColorListOptions): string => {
+  const children: string[] = [];
   if (options?.colors) {
     for (const c of options.colors) {
       children.push(createColorElement(c));
@@ -122,41 +115,35 @@ const createColorList = (tag: string, options?: ColorListOptions): XmlComponent 
   }
 
   const hasAttrs = options?.meth !== undefined || options?.hueDir !== undefined;
+  const attrs: Record<string, string> = {};
+  if (options?.meth) attrs.meth = options.meth;
+  if (options?.hueDir) attrs.hueDir = options.hueDir;
 
-  return new BuilderElement({
-    name: tag,
-    attributes: hasAttrs
-      ? {
-          ...(options!.meth && { meth: { key: "meth", value: options!.meth } }),
-          ...(options!.hueDir && { hueDir: { key: "hueDir", value: options!.hueDir } }),
-        }
-      : undefined,
-    children,
-  });
+  return element(tag, hasAttrs ? attrs : undefined, children.length > 0 ? children : undefined);
 };
 
 // ---------------------------------------------------------------------------
 // dgm:fillClrLst / dgm:linClrLst / dgm:effectClrLst (used in CT_CTStyleLabel)
 // ---------------------------------------------------------------------------
 
-export const createFillClrLst = (options?: ColorListOptions): XmlComponent =>
+export const createFillClrLst = (options?: ColorListOptions): string =>
   createColorList("dgm:fillClrLst", options);
-export const createLinClrLst = (options?: ColorListOptions): XmlComponent =>
+export const createLinClrLst = (options?: ColorListOptions): string =>
   createColorList("dgm:linClrLst", options);
-export const createEffectClrLst = (options?: ColorListOptions): XmlComponent =>
+export const createEffectClrLst = (options?: ColorListOptions): string =>
   createColorList("dgm:effectClrLst", options);
 
 // ---------------------------------------------------------------------------
 // dgm:txFillClrLst / dgm:txLinClrLst / dgm:txEffectClrLst (text color lists)
 // ---------------------------------------------------------------------------
 
-export const createTxFillClrLst = (options?: ColorListOptions): XmlComponent =>
+export const createTxFillClrLst = (options?: ColorListOptions): string =>
   createColorList("dgm:txFillClrLst", options);
 
-export const createTxLinClrLst = (options?: ColorListOptions): XmlComponent =>
+export const createTxLinClrLst = (options?: ColorListOptions): string =>
   createColorList("dgm:txLinClrLst", options);
 
-export const createTxEffectClrLst = (options?: ColorListOptions): XmlComponent =>
+export const createTxEffectClrLst = (options?: ColorListOptions): string =>
   createColorList("dgm:txEffectClrLst", options);
 
 // ---------------------------------------------------------------------------
@@ -165,13 +152,13 @@ export const createTxEffectClrLst = (options?: ColorListOptions): XmlComponent =
 
 export interface DiagramStyleLblOptions {
   /** Label name (required) */
-  readonly name: string;
-  readonly fillClrLst?: ColorListOptions;
-  readonly linClrLst?: ColorListOptions;
-  readonly effectClrLst?: ColorListOptions;
-  readonly txFillClrLst?: ColorListOptions;
-  readonly txLinClrLst?: ColorListOptions;
-  readonly txEffectClrLst?: ColorListOptions;
+  name: string;
+  fillClrLst?: ColorListOptions;
+  linClrLst?: ColorListOptions;
+  effectClrLst?: ColorListOptions;
+  txFillClrLst?: ColorListOptions;
+  txLinClrLst?: ColorListOptions;
+  txEffectClrLst?: ColorListOptions;
 }
 
 /**
@@ -207,8 +194,8 @@ export interface DiagramStyleLblOptions {
  * </xsd:complexType>
  * ```
  */
-export const createStyleLbl = (options: DiagramStyleLblOptions): XmlComponent => {
-  const children: XmlComponent[] = [];
+export const createStyleLbl = (options: DiagramStyleLblOptions): string => {
+  const children: string[] = [];
   if (options.fillClrLst) children.push(createFillClrLst(options.fillClrLst));
   if (options.linClrLst) children.push(createLinClrLst(options.linClrLst));
   if (options.effectClrLst) children.push(createEffectClrLst(options.effectClrLst));
@@ -216,9 +203,5 @@ export const createStyleLbl = (options: DiagramStyleLblOptions): XmlComponent =>
   if (options.txLinClrLst) children.push(createTxLinClrLst(options.txLinClrLst));
   if (options.txEffectClrLst) children.push(createTxEffectClrLst(options.txEffectClrLst));
 
-  return new BuilderElement({
-    name: "dgm:styleLbl",
-    attributes: { name: { key: "name", value: options.name } },
-    children,
-  });
+  return element("dgm:styleLbl", { name: options.name }, children);
 };

@@ -1,11 +1,11 @@
 // Web Settings: encoding, optimizeForBrowser, pixelsPerInch, targetScreenSz,
 // frameset layout with splitbar, and div elements with borders.
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import { Document, Packer, Paragraph, TextRun } from "@office-open/docx";
+import { generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   webSettings: {
     encoding: "utf-8",
     optimizeForBrowser: true,
@@ -34,26 +34,26 @@ const doc = new Document({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [
-            new TextRun({
-              bold: true,
-              text: "Web Settings Demo",
-              size: 32,
-            }),
-          ],
-        }),
-        new Paragraph({
-          children: [
-            new TextRun(
+        {
+          paragraph: {
+            children: [
+              {
+                bold: true,
+                text: "Web Settings Demo",
+                size: 32,
+              },
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: [
               "This document includes web settings for browser rendering optimization, encoding, and div formatting.",
-            ),
-          ],
-        }),
+            ],
+          },
+        },
       ],
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

@@ -2,7 +2,7 @@ import { writeXlsx as hucreWriteXlsx } from "hucre";
 import type { WriteSheet as HucreWriteSheet } from "hucre";
 import { bench, describe } from "vite-plus/test";
 
-import { Workbook, Packer } from "./index";
+import { generateWorkbook, generateWorkbookSync } from "./index";
 
 // Bench modes:
 //   "ours default"  = XML DEFLATE level 1 (SuperFast, MS Office), media STORE — no options passed.
@@ -42,38 +42,35 @@ const TABLE_ROWS = Array.from({ length: 10 }, (_, rowIdx) =>
 
 // ── Fixture helpers (ours) ──
 
-const buildSimpleWb = () =>
-  new Workbook({
-    worksheets: [
-      {
-        rows: SIMPLE_ROWS.map((row) => ({
-          cells: row.map((v) => ({ value: v })),
-        })),
-      },
-    ],
-  });
+const SIMPLE_OPTS = {
+  worksheets: [
+    {
+      rows: SIMPLE_ROWS.map((row) => ({
+        cells: row.map((v) => ({ value: v })),
+      })),
+    },
+  ],
+};
 
-const buildStyledWb = () =>
-  new Workbook({
-    worksheets: [
-      {
-        rows: STYLED_ROWS.map((r) => ({
-          cells: [{ value: r.name }, { value: r.score }, { value: r.active }],
-        })),
-      },
-    ],
-  });
+const STYLED_OPTS = {
+  worksheets: [
+    {
+      rows: STYLED_ROWS.map((r) => ({
+        cells: [{ value: r.name }, { value: r.score }, { value: r.active }],
+      })),
+    },
+  ],
+};
 
-const buildTableWb = () =>
-  new Workbook({
-    worksheets: [
-      {
-        rows: TABLE_ROWS.map((row) => ({
-          cells: row.map((v) => ({ value: v })),
-        })),
-      },
-    ],
-  });
+const TABLE_OPTS = {
+  worksheets: [
+    {
+      rows: TABLE_ROWS.map((row) => ({
+        cells: row.map((v) => ({ value: v })),
+      })),
+    },
+  ],
+};
 
 // ── Benchmarks ──
 
@@ -81,7 +78,7 @@ describe("XLSX: Create + toBuffer", () => {
   bench(
     "ours default sync — simple + toBufferSync",
     () => {
-      Packer.toBufferSync(buildSimpleWb());
+      generateWorkbookSync(SIMPLE_OPTS);
     },
     { iterations: 50 },
   );
@@ -89,7 +86,7 @@ describe("XLSX: Create + toBuffer", () => {
   bench(
     "ours all-store sync — simple + toBufferStore",
     () => {
-      Packer.toBufferSync(buildSimpleWb(), { compression: { xml: 0 } });
+      generateWorkbookSync(SIMPLE_OPTS, { compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
@@ -97,7 +94,7 @@ describe("XLSX: Create + toBuffer", () => {
   bench(
     "ours default async — simple + toBuffer",
     async () => {
-      await Packer.toBuffer(buildSimpleWb());
+      await generateWorkbook(SIMPLE_OPTS);
     },
     { iterations: 50 },
   );
@@ -105,7 +102,7 @@ describe("XLSX: Create + toBuffer", () => {
   bench(
     "ours all-store async — simple + toBufferStoreAsync",
     async () => {
-      await Packer.toBuffer(buildSimpleWb(), { compression: { xml: 0 } });
+      await generateWorkbook(SIMPLE_OPTS, { compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
@@ -123,7 +120,7 @@ describe("XLSX: Create + toBuffer", () => {
   bench(
     "ours default sync — styled rows (20) + toBufferSync",
     () => {
-      Packer.toBufferSync(buildStyledWb());
+      generateWorkbookSync(STYLED_OPTS);
     },
     { iterations: 50 },
   );
@@ -131,7 +128,7 @@ describe("XLSX: Create + toBuffer", () => {
   bench(
     "ours all-store sync — styled rows (20) + toBufferStore",
     () => {
-      Packer.toBufferSync(buildStyledWb(), { compression: { xml: 0 } });
+      generateWorkbookSync(STYLED_OPTS, { compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
@@ -139,7 +136,7 @@ describe("XLSX: Create + toBuffer", () => {
   bench(
     "ours default async — styled rows (20) + toBuffer",
     async () => {
-      await Packer.toBuffer(buildStyledWb());
+      await generateWorkbook(STYLED_OPTS);
     },
     { iterations: 50 },
   );
@@ -147,7 +144,7 @@ describe("XLSX: Create + toBuffer", () => {
   bench(
     "ours all-store async — styled rows (20) + toBufferStoreAsync",
     async () => {
-      await Packer.toBuffer(buildStyledWb(), { compression: { xml: 0 } });
+      await generateWorkbook(STYLED_OPTS, { compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
@@ -170,7 +167,7 @@ describe("XLSX: Create + toBuffer", () => {
   bench(
     "ours default sync — table (10x5) + toBufferSync",
     () => {
-      Packer.toBufferSync(buildTableWb());
+      generateWorkbookSync(TABLE_OPTS);
     },
     { iterations: 50 },
   );
@@ -178,7 +175,7 @@ describe("XLSX: Create + toBuffer", () => {
   bench(
     "ours all-store sync — table (10x5) + toBufferStore",
     () => {
-      Packer.toBufferSync(buildTableWb(), { compression: { xml: 0 } });
+      generateWorkbookSync(TABLE_OPTS, { compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
@@ -186,7 +183,7 @@ describe("XLSX: Create + toBuffer", () => {
   bench(
     "ours default async — table (10x5) + toBuffer",
     async () => {
-      await Packer.toBuffer(buildTableWb());
+      await generateWorkbook(TABLE_OPTS);
     },
     { iterations: 50 },
   );
@@ -194,7 +191,7 @@ describe("XLSX: Create + toBuffer", () => {
   bench(
     "ours all-store async — table (10x5) + toBufferStoreAsync",
     async () => {
-      await Packer.toBuffer(buildTableWb(), { compression: { xml: 0 } });
+      await generateWorkbook(TABLE_OPTS, { compression: { xml: 0 } });
     },
     { iterations: 50 },
   );
@@ -223,61 +220,58 @@ const LARGE_TABLE_ROWS = Array.from({ length: 200 }, (_, rowIdx) =>
   Array.from({ length: 10 }, (_, colIdx) => `R${rowIdx + 1}C${colIdx + 1} data content`),
 );
 
-const buildLargeRowsWb = () =>
-  new Workbook({
-    worksheets: [
-      {
-        rows: LARGE_ROWS.map((row) => ({
-          cells: row.map((v) => ({ value: v })),
-        })),
-        images: Array.from({ length: 10 }, (_, i) => ({
-          data: LARGE_IMAGES[i],
-          type: "jpeg" as const,
-          col: 5,
-          row: i * 200,
-        })),
-      },
-    ],
-  });
-
-const buildLargeTableWb = () =>
-  new Workbook({
-    worksheets: [
-      {
-        rows: LARGE_TABLE_ROWS.map((row) => ({
-          cells: row.map((v) => ({ value: v })),
-        })),
-      },
-    ],
-  });
-
-const buildLargeSheetsWb = () =>
-  new Workbook({
-    worksheets: Array.from({ length: 20 }, (_, si) => ({
-      name: `Sheet${si + 1}`,
-      rows: Array.from({ length: 100 }, (_, ri) => ({
-        cells: [
-          { value: `S${si + 1}R${ri + 1}` },
-          { value: ri * 10 + si },
-          { value: `Data for sheet ${si + 1} row ${ri + 1}` },
-        ],
+const LARGE_ROWS_OPTS = {
+  worksheets: [
+    {
+      rows: LARGE_ROWS.map((row) => ({
+        cells: row.map((v) => ({ value: v })),
       })),
-      images: [
-        {
-          data: LARGE_IMAGES[si % LARGE_IMAGES.length],
-          type: "jpeg" as const,
-          col: 3,
-          row: 50,
-        },
+      images: Array.from({ length: 10 }, (_, i) => ({
+        data: LARGE_IMAGES[i],
+        type: "jpeg" as const,
+        col: 5,
+        row: i * 200,
+      })),
+    },
+  ],
+};
+
+const LARGE_TABLE_OPTS = {
+  worksheets: [
+    {
+      rows: LARGE_TABLE_ROWS.map((row) => ({
+        cells: row.map((v) => ({ value: v })),
+      })),
+    },
+  ],
+};
+
+const LARGE_SHEETS_OPTS = {
+  worksheets: Array.from({ length: 20 }, (_, si) => ({
+    name: `Sheet${si + 1}`,
+    rows: Array.from({ length: 100 }, (_, ri) => ({
+      cells: [
+        { value: `S${si + 1}R${ri + 1}` },
+        { value: ri * 10 + si },
+        { value: `Data for sheet ${si + 1} row ${ri + 1}` },
       ],
     })),
-  });
+    images: [
+      {
+        data: LARGE_IMAGES[si % LARGE_IMAGES.length],
+        type: "jpeg" as const,
+        col: 3,
+        row: 50,
+      },
+    ],
+  })),
+};
 
 describe("XLSX: Large Files — Create + toBuffer", () => {
   bench(
     "ours default sync — 2000 rows + 10 img + toBufferSync",
     () => {
-      Packer.toBufferSync(buildLargeRowsWb());
+      generateWorkbookSync(LARGE_ROWS_OPTS);
     },
     { iterations: 10 },
   );
@@ -285,7 +279,7 @@ describe("XLSX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store sync — 2000 rows + 10 img + toBufferStore",
     () => {
-      Packer.toBufferSync(buildLargeRowsWb(), { compression: { xml: 0 } });
+      generateWorkbookSync(LARGE_ROWS_OPTS, { compression: { xml: 0 } });
     },
     { iterations: 10 },
   );
@@ -293,7 +287,7 @@ describe("XLSX: Large Files — Create + toBuffer", () => {
   bench(
     "ours default async — 2000 rows + 10 img + toBuffer",
     async () => {
-      await Packer.toBuffer(buildLargeRowsWb());
+      await generateWorkbook(LARGE_ROWS_OPTS);
     },
     { iterations: 10 },
   );
@@ -301,7 +295,7 @@ describe("XLSX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store async — 2000 rows + 10 img + toBufferStoreAsync",
     async () => {
-      await Packer.toBuffer(buildLargeRowsWb(), { compression: { xml: 0 } });
+      await generateWorkbook(LARGE_ROWS_OPTS, { compression: { xml: 0 } });
     },
     { iterations: 10 },
   );
@@ -330,7 +324,7 @@ describe("XLSX: Large Files — Create + toBuffer", () => {
   bench(
     "ours default sync — 200x10 table + toBufferSync",
     () => {
-      Packer.toBufferSync(buildLargeTableWb());
+      generateWorkbookSync(LARGE_TABLE_OPTS);
     },
     { iterations: 10 },
   );
@@ -338,7 +332,7 @@ describe("XLSX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store sync — 200x10 table + toBufferStore",
     () => {
-      Packer.toBufferSync(buildLargeTableWb(), { compression: { xml: 0 } });
+      generateWorkbookSync(LARGE_TABLE_OPTS, { compression: { xml: 0 } });
     },
     { iterations: 10 },
   );
@@ -346,7 +340,7 @@ describe("XLSX: Large Files — Create + toBuffer", () => {
   bench(
     "ours default async — 200x10 table + toBuffer",
     async () => {
-      await Packer.toBuffer(buildLargeTableWb());
+      await generateWorkbook(LARGE_TABLE_OPTS);
     },
     { iterations: 10 },
   );
@@ -354,7 +348,7 @@ describe("XLSX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store async — 200x10 table + toBufferStoreAsync",
     async () => {
-      await Packer.toBuffer(buildLargeTableWb(), { compression: { xml: 0 } });
+      await generateWorkbook(LARGE_TABLE_OPTS, { compression: { xml: 0 } });
     },
     { iterations: 10 },
   );
@@ -372,7 +366,7 @@ describe("XLSX: Large Files — Create + toBuffer", () => {
   bench(
     "ours default sync — 20 sheets × 100 rows + 20 img + toBufferSync",
     () => {
-      Packer.toBufferSync(buildLargeSheetsWb());
+      generateWorkbookSync(LARGE_SHEETS_OPTS);
     },
     { iterations: 10 },
   );
@@ -380,7 +374,7 @@ describe("XLSX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store sync — 20 sheets × 100 rows + 20 img + toBufferStore",
     () => {
-      Packer.toBufferSync(buildLargeSheetsWb(), { compression: { xml: 0 } });
+      generateWorkbookSync(LARGE_SHEETS_OPTS, { compression: { xml: 0 } });
     },
     { iterations: 10 },
   );
@@ -388,7 +382,7 @@ describe("XLSX: Large Files — Create + toBuffer", () => {
   bench(
     "ours default async — 20 sheets × 100 rows + 20 img + toBuffer",
     async () => {
-      await Packer.toBuffer(buildLargeSheetsWb());
+      await generateWorkbook(LARGE_SHEETS_OPTS);
     },
     { iterations: 10 },
   );
@@ -396,7 +390,7 @@ describe("XLSX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store async — 20 sheets × 100 rows + 20 img + toBufferStoreAsync",
     async () => {
-      await Packer.toBuffer(buildLargeSheetsWb(), { compression: { xml: 0 } });
+      await generateWorkbook(LARGE_SHEETS_OPTS, { compression: { xml: 0 } });
     },
     { iterations: 10 },
   );
@@ -451,22 +445,21 @@ const DATA_100K_ROWS = Array.from({ length: 100_000 }, (_, i) => [
   `Memo for employee ${i + 1} with additional notes`,
 ]);
 
-const buildData100kWb = () =>
-  new Workbook({
-    worksheets: [
-      {
-        rows: DATA_100K_ROWS.map((row) => ({
-          cells: row.map((v) => ({ value: v })),
-        })),
-      },
-    ],
-  });
+const DATA_100K_OPTS = {
+  worksheets: [
+    {
+      rows: DATA_100K_ROWS.map((row) => ({
+        cells: row.map((v) => ({ value: v })),
+      })),
+    },
+  ],
+};
 
 describe("XLSX: Large Data — 100,000 rows × 20 columns", () => {
   bench(
     "ours default sync — 100k×20 data + toBufferSync",
     () => {
-      Packer.toBufferSync(buildData100kWb());
+      generateWorkbookSync(DATA_100K_OPTS);
     },
     { iterations: 3 },
   );
@@ -474,7 +467,7 @@ describe("XLSX: Large Data — 100,000 rows × 20 columns", () => {
   bench(
     "ours all-store sync — 100k×20 data + toBufferStore",
     () => {
-      Packer.toBufferSync(buildData100kWb(), { compression: { xml: 0 } });
+      generateWorkbookSync(DATA_100K_OPTS, { compression: { xml: 0 } });
     },
     { iterations: 3 },
   );
@@ -482,7 +475,7 @@ describe("XLSX: Large Data — 100,000 rows × 20 columns", () => {
   bench(
     "ours default async — 100k×20 data + toBuffer",
     async () => {
-      await Packer.toBuffer(buildData100kWb());
+      await generateWorkbook(DATA_100K_OPTS);
     },
     { iterations: 3 },
   );
@@ -490,7 +483,7 @@ describe("XLSX: Large Data — 100,000 rows × 20 columns", () => {
   bench(
     "ours all-store async — 100k×20 data + toBufferStoreAsync",
     async () => {
-      await Packer.toBuffer(buildData100kWb(), { compression: { xml: 0 } });
+      await generateWorkbook(DATA_100K_OPTS, { compression: { xml: 0 } });
     },
     { iterations: 3 },
   );

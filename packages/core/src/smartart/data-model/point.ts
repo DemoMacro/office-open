@@ -1,4 +1,4 @@
-import { XmlComponent, chartAttr } from "../../xml-components";
+import { escapeXml } from "@office-open/xml";
 
 export interface PointPropertySetOptions {
   readonly presentationAssociationId?: string;
@@ -38,122 +38,93 @@ export interface PointPropertySetOptions {
 }
 
 /**
- * dgm:pt — SmartArt data model point (node).
+ * dgm:pt — SmartArt data model point (node) XML stringifier.
  */
-export class Point extends XmlComponent {
-  public constructor(
-    modelId: string,
-    text: string,
-    type: string = "node",
-    propertySet?: PointPropertySetOptions,
-  ) {
-    super("dgm:pt");
-    this.root.push(chartAttr({ modelId, type }));
-    if (propertySet) {
-      this.root.push(new PropertySet(propertySet));
-    }
-    this.root.push(new PointText(text));
+export function stringifyPoint(
+  modelId: string | number,
+  text: string,
+  type: string = "node",
+  propertySet?: PointPropertySetOptions,
+): string {
+  const parts: string[] = [];
+  parts.push(`<dgm:pt modelId="${escapeXml(String(modelId))}" type="${escapeXml(type)}">`);
+  if (propertySet) {
+    parts.push(stringifyPropertySet(propertySet));
   }
+  parts.push(stringifyPointText(text));
+  parts.push("</dgm:pt>");
+  return parts.join("");
 }
 
 /**
- * dgm:prSet — Property set for a SmartArt data model point.
+ * dgm:pt — transition point (parTrans or sibTrans) XML stringifier.
  */
-class PropertySet extends XmlComponent {
-  public constructor(opts: PointPropertySetOptions) {
-    super("dgm:prSet");
-    const attr: Record<string, string | number> = {};
-    if (opts.presentationAssociationId !== undefined)
-      attr.presAssocID = opts.presentationAssociationId;
-    if (opts.presentationName !== undefined) attr.presName = opts.presentationName;
-    if (opts.presentationStyleLabel !== undefined) attr.presStyleLbl = opts.presentationStyleLabel;
-    if (opts.presentationStyleIndex !== undefined) attr.presStyleIdx = opts.presentationStyleIndex;
-    if (opts.presentationStyleCount !== undefined) attr.presStyleCnt = opts.presentationStyleCount;
-    if (opts.placeholderText !== undefined) attr.phldrT = opts.placeholderText;
-    if (opts.placeholder !== undefined) attr.phldr = opts.placeholder ? "1" : "0";
-    if (opts.customAngle !== undefined) attr.custAng = opts.customAngle;
-    if (opts.customFlipVertical !== undefined)
-      attr.custFlipVert = opts.customFlipVertical ? "1" : "0";
-    if (opts.customFlipHorizontal !== undefined)
-      attr.custFlipHor = opts.customFlipHorizontal ? "1" : "0";
-    if (opts.customSizeX !== undefined) attr.custSzX = opts.customSizeX;
-    if (opts.customSizeY !== undefined) attr.custSzY = opts.customSizeY;
-    if (opts.customScaleX !== undefined) attr.custScaleX = opts.customScaleX;
-    if (opts.customScaleY !== undefined) attr.custScaleY = opts.customScaleY;
-    if (opts.customText !== undefined) attr.custT = opts.customText ? "1" : "0";
-    if (opts.customLinearFactorX !== undefined) attr.custLinFactX = opts.customLinearFactorX;
-    if (opts.customLinearFactorY !== undefined) attr.custLinFactY = opts.customLinearFactorY;
-    if (opts.customLinearFactorNeighborX !== undefined)
-      attr.custLinFactNeighborX = opts.customLinearFactorNeighborX;
-    if (opts.customLinearFactorNeighborY !== undefined)
-      attr.custLinFactNeighborY = opts.customLinearFactorNeighborY;
-    if (opts.customRadialScaleRadius !== undefined)
-      attr.custRadScaleRad = opts.customRadialScaleRadius;
-    if (opts.customRadialScaleIncrement !== undefined)
-      attr.custRadScaleInc = opts.customRadialScaleIncrement;
-    if (opts.coherent3DOffset !== undefined) attr.coherent3DOff = opts.coherent3DOffset ? "1" : "0";
-    if (opts.hideGeometry !== undefined) attr.hideGeom = opts.hideGeometry ? "1" : "0";
-    if (opts.hideLastTransition !== undefined)
-      attr.hideLastTrans = opts.hideLastTransition ? "1" : "0";
-    if (opts.lockTextEntry !== undefined) attr.lkTxEntry = opts.lockTextEntry ? "1" : "0";
-    if (opts.moveWith !== undefined) attr.moveWith = opts.moveWith;
-    if (opts.useDefault !== undefined) attr.useDef = opts.useDefault ? "1" : "0";
-    if (opts.zOrderOffset !== undefined) attr.zOrderOff = opts.zOrderOffset;
-    if (opts.layoutTypeId !== undefined) attr.loTypeId = opts.layoutTypeId;
-    if (opts.layoutCategoryId !== undefined) attr.loCatId = opts.layoutCategoryId;
-    if (opts.quickStyleTypeId !== undefined) attr.qsTypeId = opts.quickStyleTypeId;
-    if (opts.quickStyleCategoryId !== undefined) attr.qsCatId = opts.quickStyleCategoryId;
-    if (opts.colorStyleTypeId !== undefined) attr.csTypeId = opts.colorStyleTypeId;
-    if (opts.colorStyleCategoryId !== undefined) attr.csCatId = opts.colorStyleCategoryId;
-    if (Object.keys(attr).length > 0) this.root.push({ _attr: attr });
-  }
+export function stringifyTransPoint(modelId: string, type: string, cxnId: string): string {
+  return `<dgm:pt modelId="${escapeXml(modelId)}" type="${escapeXml(type)}" cxnId="${escapeXml(cxnId)}"><dgm:spPr/></dgm:pt>`;
 }
 
-/**
- * Transition point (parTrans or sibTrans) — no text body, references a connection.
- */
-export class TransPoint extends XmlComponent {
-  public constructor(modelId: string, type: string, cxnId: string) {
-    super("dgm:pt");
-    this.root.push(chartAttr({ modelId, type, cxnId }));
-    this.root.push(new EmptyElement("dgm:spPr"));
-  }
+function stringifyPropertySet(opts: PointPropertySetOptions): string {
+  const attr: string[] = [];
+  if (opts.presentationAssociationId !== undefined)
+    attr.push(`presAssocID="${escapeXml(opts.presentationAssociationId)}"`);
+  if (opts.presentationName !== undefined)
+    attr.push(`presName="${escapeXml(opts.presentationName)}"`);
+  if (opts.presentationStyleLabel !== undefined)
+    attr.push(`presStyleLbl="${escapeXml(opts.presentationStyleLabel)}"`);
+  if (opts.presentationStyleIndex !== undefined)
+    attr.push(`presStyleIdx="${opts.presentationStyleIndex}"`);
+  if (opts.presentationStyleCount !== undefined)
+    attr.push(`presStyleCnt="${opts.presentationStyleCount}"`);
+  if (opts.placeholderText !== undefined) attr.push(`phldrT="${escapeXml(opts.placeholderText)}"`);
+  if (opts.placeholder !== undefined) attr.push(`phldr="${opts.placeholder ? 1 : 0}"`);
+  if (opts.customAngle !== undefined) attr.push(`custAng="${opts.customAngle}"`);
+  if (opts.customFlipVertical !== undefined)
+    attr.push(`custFlipVert="${opts.customFlipVertical ? 1 : 0}"`);
+  if (opts.customFlipHorizontal !== undefined)
+    attr.push(`custFlipHor="${opts.customFlipHorizontal ? 1 : 0}"`);
+  if (opts.customSizeX !== undefined) attr.push(`custSzX="${opts.customSizeX}"`);
+  if (opts.customSizeY !== undefined) attr.push(`custSzY="${opts.customSizeY}"`);
+  if (opts.customScaleX !== undefined) attr.push(`custScaleX="${opts.customScaleX}"`);
+  if (opts.customScaleY !== undefined) attr.push(`custScaleY="${opts.customScaleY}"`);
+  if (opts.customText !== undefined) attr.push(`custT="${opts.customText ? 1 : 0}"`);
+  if (opts.customLinearFactorX !== undefined)
+    attr.push(`custLinFactX="${opts.customLinearFactorX}"`);
+  if (opts.customLinearFactorY !== undefined)
+    attr.push(`custLinFactY="${opts.customLinearFactorY}"`);
+  if (opts.customLinearFactorNeighborX !== undefined)
+    attr.push(`custLinFactNeighborX="${opts.customLinearFactorNeighborX}"`);
+  if (opts.customLinearFactorNeighborY !== undefined)
+    attr.push(`custLinFactNeighborY="${opts.customLinearFactorNeighborY}"`);
+  if (opts.customRadialScaleRadius !== undefined)
+    attr.push(`custRadScaleRad="${opts.customRadialScaleRadius}"`);
+  if (opts.customRadialScaleIncrement !== undefined)
+    attr.push(`custRadScaleInc="${opts.customRadialScaleIncrement}"`);
+  if (opts.coherent3DOffset !== undefined)
+    attr.push(`coherent3DOff="${opts.coherent3DOffset ? 1 : 0}"`);
+  if (opts.hideGeometry !== undefined) attr.push(`hideGeom="${opts.hideGeometry ? 1 : 0}"`);
+  if (opts.hideLastTransition !== undefined)
+    attr.push(`hideLastTrans="${opts.hideLastTransition ? 1 : 0}"`);
+  if (opts.lockTextEntry !== undefined) attr.push(`lkTxEntry="${opts.lockTextEntry ? 1 : 0}"`);
+  if (opts.moveWith !== undefined) attr.push(`moveWith="${escapeXml(opts.moveWith)}"`);
+  if (opts.useDefault !== undefined) attr.push(`useDef="${opts.useDefault ? 1 : 0}"`);
+  if (opts.zOrderOffset !== undefined) attr.push(`zOrderOff="${opts.zOrderOffset}"`);
+  if (opts.layoutTypeId !== undefined) attr.push(`loTypeId="${escapeXml(opts.layoutTypeId)}"`);
+  if (opts.layoutCategoryId !== undefined)
+    attr.push(`loCatId="${escapeXml(opts.layoutCategoryId)}"`);
+  if (opts.quickStyleTypeId !== undefined)
+    attr.push(`qsTypeId="${escapeXml(opts.quickStyleTypeId)}"`);
+  if (opts.quickStyleCategoryId !== undefined)
+    attr.push(`qsCatId="${escapeXml(opts.quickStyleCategoryId)}"`);
+  if (opts.colorStyleTypeId !== undefined)
+    attr.push(`csTypeId="${escapeXml(opts.colorStyleTypeId)}"`);
+  if (opts.colorStyleCategoryId !== undefined)
+    attr.push(`csCatId="${escapeXml(opts.colorStyleCategoryId)}"`);
+
+  if (attr.length === 0) return "";
+  return `<dgm:prSet ${attr.join(" ")}/>`;
 }
 
-class EmptyElement extends XmlComponent {
-  public constructor(tag: string) {
-    super(tag);
-  }
-}
-
-/**
- * dgm:t — text body within a point.
- */
-class PointText extends XmlComponent {
-  public constructor(text: string) {
-    super("dgm:t");
-
-    this.root.push(new EmptyElement("a:bodyPr"));
-    this.root.push(new EmptyElement("a:lstStyle"));
-
-    const p = new EmptyElement("a:p");
-    if (text) {
-      const t = new (class extends XmlComponent {
-        public constructor() {
-          super("a:t");
-        }
-      })();
-      t["root"].push(text);
-
-      const r = new (class extends XmlComponent {
-        public constructor() {
-          super("a:r");
-        }
-      })();
-      r["root"].push(t);
-
-      p["root"].push(r);
-    }
-    this.root.push(p);
-  }
+function stringifyPointText(text: string): string {
+  const body = text ? `<a:r><a:t>${escapeXml(text)}</a:t></a:r>` : "";
+  return `<dgm:t><a:bodyPr/><a:lstStyle/><a:p>${body}</a:p></dgm:t>`;
 }

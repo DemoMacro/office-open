@@ -3,7 +3,8 @@
  *
  * @module
  */
-export { DefaultTheme } from "./default-theme";
+export { createThemeXml } from "./default-theme";
 export { buildThemeXml } from "./build-theme-xml";
 export { DEFAULT_COLORS } from "./default-colors";
+export { themeDesc } from "./theme-descriptors";
 export type { ColorSchemeOptions, FontSchemeOptions, ThemeOptions } from "./theme-options";

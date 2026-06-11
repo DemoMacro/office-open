@@ -1,26 +1,28 @@
 // Example of making content of section vertically aligned
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import { Document, Packer, Paragraph, Tab, TextRun, VerticalAlignSection } from "@office-open/docx";
+import { VerticalAlignSection, generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [
-            new TextRun("Hello World"),
-            new TextRun({
-              bold: true,
-              text: "Foo Bar",
-            }),
-            new TextRun({
-              bold: true,
-              children: [new Tab(), "Github is the best"],
-            }),
-          ],
-        }),
+        {
+          paragraph: {
+            children: [
+              "Hello World",
+              {
+                bold: true,
+                text: "Foo Bar",
+              },
+              {
+                bold: true,
+                children: [{ tab: true }, "Github is the best"],
+              },
+            ],
+          },
+        },
       ],
       properties: {
         verticalAlign: VerticalAlignSection.CENTER,
@@ -28,6 +30,4 @@ const doc = new Document({
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

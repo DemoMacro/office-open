@@ -1,43 +1,44 @@
 // Use fields to include dynamic text
 
-import * as fs from "fs";
+import { writeFileSync } from "node:fs";
 
-import { Bookmark, Document, Packer, Paragraph, SimpleField, TextRun } from "@office-open/docx";
+import { generateDocument } from "@office-open/docx";
 
-const doc = new Document({
+const buffer = await generateDocument({
   creator: "Me",
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [
-            new TextRun("This document is called "),
-            new SimpleField("FILENAME", "My Document.docx"),
-            new TextRun(", was created on "),
-            new SimpleField(String.raw`CREATEDATE  \@ "d MMMM yyyy"`),
-            new TextRun(" by "),
-            new SimpleField("AUTHOR"),
-          ],
-        }),
-        new Paragraph({
-          children: [
-            new TextRun("The document has "),
-            new SimpleField("NUMWORDS", "34"),
-            new TextRun(" words and if you'd print it "),
-            new Bookmark({
-              children: [new TextRun("42")],
-              id: "TimesPrinted",
-            }),
-            new TextRun(" times two-sided, you would need "),
-            new SimpleField("=INT((TimesPrinted+1)/2)"),
-            new TextRun(" sheets of paper."),
-          ],
-        }),
+        {
+          paragraph: {
+            children: [
+              "This document is called ",
+              { simpleField: { instruction: "FILENAME", cachedValue: "My Document.docx" } },
+              ", was created on ",
+              { simpleField: { instruction: String.raw`CREATEDATE  \@ "d MMMM yyyy"` } },
+              " by ",
+              { simpleField: { instruction: "AUTHOR" } },
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              "The document has ",
+              { simpleField: { instruction: "NUMWORDS", cachedValue: "34" } },
+              " words and if you'd print it ",
+              { bookmarkStart: { id: 0, name: "TimesPrinted" } },
+              "42",
+              { bookmarkEnd: 0 },
+              " times two-sided, you would need ",
+              { simpleField: { instruction: "=INT((TimesPrinted+1)/2)" } },
+              " sheets of paper.",
+            ],
+          },
+        },
       ],
       properties: {},
     },
   ],
 });
-
-const buffer = await Packer.toBuffer(doc);
-fs.writeFileSync("My Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);

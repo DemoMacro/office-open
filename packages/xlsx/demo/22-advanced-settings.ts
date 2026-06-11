@@ -3,9 +3,9 @@
 
 import { writeFileSync } from "node:fs";
 
-import { Workbook, Packer } from "@office-open/xlsx";
+import { generateWorkbook } from "@office-open/xlsx";
 
-const wb = new Workbook({
+const buffer = await generateWorkbook({
   fileSharing: {
     readOnlyRecommended: true,
     userName: "Analyst",
@@ -63,5 +63,4 @@ const wb = new Workbook({
   ],
 });
 
-const buffer = await Packer.toBuffer(wb);
 writeFileSync("My Workbook.xlsx", buffer);

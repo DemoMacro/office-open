@@ -7,8 +7,8 @@
  *
  * @module
  */
-import { BuilderElement } from "../../xml-components";
-import type { XmlComponent } from "../../xml-components";
+import { element } from "@office-open/xml";
+
 import type { ColorTransformOptions } from "./color-transform";
 import { createColorTransforms } from "./color-transform";
 
@@ -17,13 +17,13 @@ import { createColorTransforms } from "./color-transform";
  */
 export interface RgbColorOptions {
   /** Hex color value (e.g., "FF0000" for red) */
-  readonly value: string;
+  value: string;
   /** Optional color transforms */
-  readonly transforms?: ColorTransformOptions;
+  transforms?: ColorTransformOptions;
 }
 
 /**
- * Creates an sRGB color element.
+ * Creates an sRGB color element as an XML string.
  *
  * Specifies a color using RGB hex values.
  *
@@ -44,16 +44,7 @@ export interface RgbColorOptions {
  * const semiRed = createRgbColor({ value: "FF0000", transforms: { alpha: 50000 } });
  * ```
  */
-export const createRgbColor = (options: RgbColorOptions): XmlComponent => {
+export const createRgbColor = (options: RgbColorOptions): string => {
   const transforms = options.transforms ? createColorTransforms(options.transforms) : [];
-  return new BuilderElement<RgbColorOptions>({
-    attributes: {
-      value: {
-        key: "val",
-        value: options.value,
-      },
-    },
-    children: transforms,
-    name: "a:srgbClr",
-  });
+  return element("a:srgbClr", { val: options.value }, transforms);
 };

@@ -1,121 +1,118 @@
 // Exporting the document as a stream
 
-import * as fs from "fs";
+import { createWriteStream } from "node:fs";
 import { Readable } from "stream";
 import type { ReadableStream as WebReadableStream } from "stream/web";
 
-import {
-  Document,
-  Packer,
-  Paragraph,
-  Table,
-  TableBorders,
-  TableCell,
-  TableRow,
-  WidthType,
-} from "@office-open/docx";
+import { TABLE_BORDERS_NONE, WidthType, generateDocumentStream } from "@office-open/docx";
 
-const table1 = new Table({
-  columnWidths: [3505, 5505],
-  rows: [
-    new TableRow({
-      cells: [
-        new TableCell({
-          children: [new Paragraph("Hello")],
-          width: {
-            size: 3505,
-            type: WidthType.DXA,
+const table1 = {
+  table: {
+    columnWidths: [3505, 5505],
+    rows: [
+      {
+        cells: [
+          {
+            children: [{ paragraph: "Hello" }],
+            width: {
+              size: 3505,
+              type: WidthType.DXA,
+            },
           },
-        }),
-        new TableCell({
-          children: [],
-          width: {
-            size: 5505,
-            type: WidthType.DXA,
+          {
+            children: [],
+            width: {
+              size: 5505,
+              type: WidthType.DXA,
+            },
           },
-        }),
-      ],
-    }),
-    new TableRow({
-      cells: [
-        new TableCell({
-          children: [],
-          width: {
-            size: 3505,
-            type: WidthType.DXA,
+        ],
+      },
+      {
+        cells: [
+          {
+            children: [],
+            width: {
+              size: 3505,
+              type: WidthType.DXA,
+            },
           },
-        }),
-        new TableCell({
-          children: [new Paragraph("World")],
-          width: {
-            size: 5505,
-            type: WidthType.DXA,
+          {
+            children: [{ paragraph: "World" }],
+            width: {
+              size: 5505,
+              type: WidthType.DXA,
+            },
           },
-        }),
-      ],
-    }),
-  ],
-});
+        ],
+      },
+    ],
+  },
+};
 
-const table2 = new Table({
-  columnWidths: [3505, 5505],
-  rows: [
-    new TableRow({
-      cells: [
-        new TableCell({
-          children: [new Paragraph("Foo")],
-          width: {
-            size: 3505,
-            type: WidthType.DXA,
+const table2 = {
+  table: {
+    columnWidths: [3505, 5505],
+    rows: [
+      {
+        cells: [
+          {
+            children: [{ paragraph: "Foo" }],
+            width: {
+              size: 3505,
+              type: WidthType.DXA,
+            },
           },
-        }),
-        new TableCell({
-          children: [],
-          width: {
-            size: 5505,
-            type: WidthType.DXA,
+          {
+            children: [],
+            width: {
+              size: 5505,
+              type: WidthType.DXA,
+            },
           },
-        }),
-      ],
-    }),
-    new TableRow({
-      cells: [
-        new TableCell({
-          children: [],
-          width: {
-            size: 3505,
-            type: WidthType.DXA,
+        ],
+      },
+      {
+        cells: [
+          {
+            children: [],
+            width: {
+              size: 3505,
+              type: WidthType.DXA,
+            },
           },
-        }),
-        new TableCell({
-          children: [new Paragraph("Bar")],
-          width: {
-            size: 5505,
-            type: WidthType.DXA,
+          {
+            children: [{ paragraph: "Bar" }],
+            width: {
+              size: 5505,
+              type: WidthType.DXA,
+            },
           },
-        }),
-      ],
-    }),
-  ],
-});
+        ],
+      },
+    ],
+  },
+};
 
-const noBorderTable = new Table({
-  borders: TableBorders.NONE,
-  rows: [
-    new TableRow({
-      cells: [
-        new TableCell({
-          children: [table1],
-        }),
-        new TableCell({
-          children: [table2],
-        }),
-      ],
-    }),
-  ],
-});
+const noBorderTable = {
+  table: {
+    borders: TABLE_BORDERS_NONE,
+    rows: [
+      {
+        cells: [
+          {
+            children: [table1],
+          },
+          {
+            children: [table2],
+          },
+        ],
+      },
+    ],
+  },
+};
 
-const doc = new Document({
+const stream = generateDocumentStream({
   sections: [
     {
       children: [noBorderTable],
@@ -123,8 +120,6 @@ const doc = new Document({
     },
   ],
 });
-
-const stream = Packer.toStream(doc);
 Readable.fromWeb(stream as unknown as WebReadableStream).pipe(
-  fs.createWriteStream("My Document.docx"),
+  createWriteStream("My Document.docx"),
 );

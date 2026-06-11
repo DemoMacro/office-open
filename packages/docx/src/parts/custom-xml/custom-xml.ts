@@ -1,0 +1,89 @@
+import type { TableCellOptions } from "@parts/table/table-cell/table-cell";
+import type { TableRowOptions } from "@parts/table/table-row";
+/**
+ * Custom XML elements for WordprocessingML documents.
+ *
+ * Provides inline (CT_CustomXmlRun), block (CT_CustomXmlBlock),
+ * row (CT_CustomXmlRow) and cell (CT_CustomXmlCell) custom XML
+ * elements that wrap arbitrary content with XML element names and optional
+ * properties.
+ *
+ * Reference: ISO/IEC 29500-4, wml.xsd, CT_CustomXmlRun, CT_CustomXmlBlock,
+ *   CT_CustomXmlRow, CT_CustomXmlCell
+ *
+ * @module
+ */
+import type { SectionChild } from "@shared/section";
+
+// ── Options ──
+
+/** Data binding configuration (CT_DataBinding) */
+export interface CustomXmlDataBindingOptions {
+  /** XPath expression for the data binding */
+  xpath: string;
+  /** Store item ID for the data binding */
+  storeItemID: string;
+  /** Namespace prefix mappings */
+  prefixMappings?: string;
+}
+
+/** Custom attribute (CT_Attr) */
+export interface CustomXmlAttributeOptions {
+  name: string;
+  val: string;
+  uri?: string;
+}
+
+/** Custom XML properties (CT_CustomXmlPr) */
+export interface CustomXmlPrOptions {
+  /** Placeholder text */
+  placeholder?: string;
+  /** Custom attributes */
+  attributes?: CustomXmlAttributeOptions[];
+}
+
+/** Options for inline custom XML (CT_CustomXmlRun) */
+export interface CustomXmlRunOptions {
+  /** XML element name (required) */
+  element: string;
+  /** Namespace URI */
+  uri?: string;
+  /** Properties (placeholder, data binding, attributes) */
+  customXmlPr?: CustomXmlPrOptions;
+}
+
+/** Options for block-level custom XML (CT_CustomXmlBlock) */
+export interface CustomXmlBlockOptions {
+  /** XML element name (required) */
+  element: string;
+  /** Namespace URI */
+  uri?: string;
+  /** Properties (placeholder, data binding, attributes) */
+  customXmlPr?: CustomXmlPrOptions;
+  /** Block content (paragraphs, tables, etc.) */
+  children?: SectionChild[];
+}
+
+/** Options for row-level custom XML (CT_CustomXmlRow) */
+export interface CustomXmlRowOptions {
+  /** XML element name (required) */
+  element: string;
+  /** Namespace URI */
+  uri?: string;
+  /** Properties (placeholder, attributes) */
+  customXmlPr?: CustomXmlPrOptions;
+  /** Row content (TableRow children) */
+  children?: TableRowOptions[];
+}
+
+/** Options for cell-level custom XML (CT_CustomXmlCell) */
+export interface CustomXmlCellOptions {
+  /** XML element name (required) */
+  element: string;
+  /** Namespace URI */
+  uri?: string;
+  /** Properties (placeholder, attributes) */
+  customXmlPr?: CustomXmlPrOptions;
+  /** Cell content (TableCell or SdtCell children) */
+  children?: TableCellOptions[];
+}
