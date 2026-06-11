@@ -26,6 +26,7 @@ packages/<format>/src/
   generate.ts     — generateDocument/Presentation/Workbook() entry
   parse.ts        — parseDocument/Presentation/Workbook() entry
   patch.ts        — patchDocument/Presentation/Workbook() entry
+                    (single file when simple; use patch/ directory if complex)
   parts/          — One module per OOXML XML part
                     Simple parts = single file (e.g. settings.ts)
                     Complex parts = directory (e.g. document/)

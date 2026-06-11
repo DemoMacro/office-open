@@ -35,6 +35,7 @@ src/
   generate.ts    — generateDocument/Presentation/Workbook() entry
   parse.ts       — parseDocument/Presentation/Workbook() entry
   patch.ts       — patchDocument/Presentation/Workbook() entry
+                   (single file when simple; use patch/ directory if complex)
   util/          — Helpers
   index.ts       — Public API
 ```
