@@ -68,7 +68,8 @@
     "build": "vp pack",
     "prepack": "pnpm build",
     "test": "vp test run",
-    "check": "vp check --fix"
+    "check": "vp check --fix",
+    "bench": "vp test bench"
   },
   "dependencies": {
     "@office-open/xml": "workspace:*",

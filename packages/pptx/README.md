@@ -42,27 +42,30 @@ bun add @office-open/pptx
 ## Quick Start
 
 ```typescript
-import { Presentation, Shape, Packer, Paragraph, TextRun } from "@office-open/pptx";
+import { generatePresentation } from "@office-open/pptx";
 import { writeFileSync } from "node:fs";
 
-const pres = new Presentation({
+const buffer = await generatePresentation({
   slides: [
     {
       children: [
-        new Shape({
-          textBody: { children: [new Paragraph({ children: [new TextRun("Hello World")] })] },
-          fill: "4472C4",
-          x: 100,
-          y: 100,
-          width: 600,
-          height: 400,
-        }),
+        {
+          shape: {
+            textBody: {
+              children: [{ paragraph: { children: ["Hello World"] } }],
+            },
+            fill: "4472C4",
+            x: 100,
+            y: 100,
+            width: 600,
+            height: 400,
+          },
+        },
       ],
     },
   ],
 });
 
-const buffer = await Packer.toBuffer(pres);
 writeFileSync("presentation.pptx", buffer);
 ```
 
@@ -71,14 +74,13 @@ writeFileSync("presentation.pptx", buffer);
 Read existing `.pptx` files and re-create them as `PresentationOptions`:
 
 ```typescript
-import { parsePresentation, Presentation, Packer } from "@office-open/pptx";
+import { parsePresentation, generatePresentation } from "@office-open/pptx";
 import { readFileSync, writeFileSync } from "node:fs";
 
 const opts = parsePresentation(new Uint8Array(readFileSync("input.pptx")));
 
 // Modify parsed data, then re-generate
-const pres = new Presentation(opts);
-const buffer = await Packer.toBuffer(pres);
+const buffer = await generatePresentation(opts);
 writeFileSync("output.pptx", buffer);
 ```
 
@@ -90,28 +92,28 @@ Performance vs [PptxGenJS](https://github.com/gitbrent/PptxGenJS) (higher ops/s 
 
 ```typescript
 // Default (matches MS Office)
-await Packer.toBuffer(pres);
+await generatePresentation(options);
 // All STORE (no compression)
-await Packer.toBuffer(pres, { compression: { xml: 0 } });
+await generatePresentation(options, { compression: { xml: 0 } });
 ```
 
 **Create + toBuffer (end-to-end)**
 
 | Scenario           | Default sync | Default async | All STORE sync | All STORE async | PptxGenJS DEFLATE | PptxGenJS STORE |
 | ------------------ | -----------: | ------------: | -------------: | --------------: | ----------------: | --------------: |
-| Simple (2 shapes)  |  1,610 ops/s |     739 ops/s |    5,778 ops/s |     5,350 ops/s |         183 ops/s |       195 ops/s |
-| Styled shapes (20) |  1,556 ops/s |     754 ops/s |    4,899 ops/s |     4,672 ops/s |         183 ops/s |       184 ops/s |
-| Table (10x5)       |  1,561 ops/s |     758 ops/s |    6,590 ops/s |     6,517 ops/s |         837 ops/s |       912 ops/s |
-| Full featured      |  1,484 ops/s |     756 ops/s |    4,650 ops/s |     4,705 ops/s |          98 ops/s |        99 ops/s |
+| Simple (2 shapes)  |  1,754 ops/s |     748 ops/s |    6,289 ops/s |     6,449 ops/s |         194 ops/s |       196 ops/s |
+| Styled shapes (20) |  1,450 ops/s |     731 ops/s |    4,735 ops/s |     5,520 ops/s |         186 ops/s |       182 ops/s |
+| Table (10x5)       |  1,633 ops/s |     773 ops/s |    7,426 ops/s |     6,907 ops/s |         863 ops/s |       909 ops/s |
+| Full featured      |  1,546 ops/s |     767 ops/s |    4,752 ops/s |     4,927 ops/s |         102 ops/s |       104 ops/s |
 
 **Large Files — Create + toBuffer**
 
 | Scenario              | Default sync | Default async | All STORE sync | All STORE async | PptxGenJS DEFLATE | PptxGenJS STORE |
 | --------------------- | -----------: | ------------: | -------------: | --------------: | ----------------: | --------------: |
-| 30 slides x 20 shapes |    249 ops/s |     147 ops/s |      460 ops/s |       455 ops/s |         117 ops/s |       124 ops/s |
-| 30 slides x 10 images |    309 ops/s |     161 ops/s |      796 ops/s |       784 ops/s |        0.32 ops/s |      0.32 ops/s |
-| 100x10 table          |    623 ops/s |     450 ops/s |      907 ops/s |       890 ops/s |         118 ops/s |       120 ops/s |
-| 50 slides full        |    151 ops/s |      90 ops/s |      300 ops/s |       293 ops/s |        0.93 ops/s |      0.93 ops/s |
+| 30 slides x 20 shapes |    259 ops/s |     138 ops/s |      501 ops/s |       508 ops/s |         118 ops/s |       121 ops/s |
+| 30 slides x 10 images |    333 ops/s |     165 ops/s |      840 ops/s |       826 ops/s |        0.34 ops/s |      0.34 ops/s |
+| 100x10 table          |    623 ops/s |     455 ops/s |      980 ops/s |       982 ops/s |         118 ops/s |       124 ops/s |
+| 50 slides full        |    165 ops/s |      95 ops/s |      334 ops/s |       318 ops/s |        1.00 ops/s |      0.95 ops/s |
 
 **Large File (~100MB) — Mixed Content**
 
@@ -119,7 +121,7 @@ await Packer.toBuffer(pres, { compression: { xml: 0 } });
 
 | Scenario        | Default sync | Default async | All STORE sync | All STORE async | PptxGenJS DEFLATE | PptxGenJS STORE |
 | --------------- | -----------: | ------------: | -------------: | --------------: | ----------------: | --------------: |
-| 40 slides mixed |    224 ops/s |     121 ops/s |      630 ops/s |       662 ops/s |        0.21 ops/s |      0.21 ops/s |
+| 40 slides mixed |    221 ops/s |     120 ops/s |      641 ops/s |       688 ops/s |        0.24 ops/s |      0.24 ops/s |
 
 ## Examples
 

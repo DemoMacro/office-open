@@ -51,28 +51,23 @@ bun add @office-open/docx
 ## Quick Start
 
 ```typescript
-import { Document, Paragraph, TextRun, Packer } from "@office-open/docx";
+import { generateDocument } from "@office-open/docx";
 import { writeFileSync } from "node:fs";
 
-const doc = new Document({
+const buffer = await generateDocument({
   sections: [
     {
       children: [
-        new Paragraph({
-          children: [
-            new TextRun("Hello World"),
-            new TextRun({
-              text: " - Bold text",
-              bold: true,
-            }),
-          ],
-        }),
+        {
+          paragraph: {
+            children: ["Hello World", { text: " - Bold text", bold: true }],
+          },
+        },
       ],
     },
   ],
 });
 
-const buffer = await Packer.toBuffer(doc);
 writeFileSync("My Document.docx", buffer);
 ```
 
@@ -88,27 +83,27 @@ Performance vs original `docx` (9.6.1) package (higher ops/s is better, Windows 
 
 ```typescript
 // Default (matches MS Office)
-await Packer.toBuffer(doc);
+await generateDocument(options);
 // All STORE (no compression)
-await Packer.toBuffer(doc, { compression: { xml: 0 } });
+await generateDocument(options, { compression: { xml: 0 } });
 ```
 
 **Create + toBuffer (end-to-end)**
 
 | Scenario                       | Default sync | Default async | All STORE sync | All STORE async |      docx |
 | ------------------------------ | -----------: | ------------: | -------------: | --------------: | --------: |
-| Simple (2p + 1 img)            |    944 ops/s |     477 ops/s |    1,483 ops/s |     1,400 ops/s |  87 ops/s |
-| Styled paragraphs (20) + 1 img |    846 ops/s |     490 ops/s |    1,431 ops/s |     1,603 ops/s | 106 ops/s |
-| Table (10x5)                   |  1,437 ops/s |     651 ops/s |    3,662 ops/s |     3,538 ops/s | 239 ops/s |
-| Full featured + 2 imgs         |    550 ops/s |     372 ops/s |      877 ops/s |       890 ops/s |  55 ops/s |
+| Simple (2p + 1 img)            |    827 ops/s |     493 ops/s |    1,392 ops/s |     1,483 ops/s |  89 ops/s |
+| Styled paragraphs (20) + 1 img |    856 ops/s |     497 ops/s |    1,558 ops/s |     1,574 ops/s |  95 ops/s |
+| Table (10x5)                   |  1,390 ops/s |     647 ops/s |    3,786 ops/s |     3,707 ops/s | 217 ops/s |
+| Full featured + 2 imgs         |    547 ops/s |     364 ops/s |      851 ops/s |       819 ops/s |  56 ops/s |
 
 **Large Files — Create + toBuffer**
 
 | Scenario                       | Default sync | Default async | All STORE sync | All STORE async |       docx |
 | ------------------------------ | -----------: | ------------: | -------------: | --------------: | ---------: |
-| 2000 paragraphs + 20 images    |   36.0 ops/s |    33.0 ops/s |     31.6 ops/s |      36.0 ops/s |  3.1 ops/s |
+| 2000 paragraphs + 20 images    |   29.4 ops/s |    31.5 ops/s |     27.5 ops/s |      32.2 ops/s |  2.7 ops/s |
 | 200x10 table                   |    298 ops/s |     233 ops/s |      313 ops/s |       317 ops/s | 39.6 ops/s |
-| 20 sections x 100p + 40 images |   15.3 ops/s |    16.0 ops/s |     17.3 ops/s |      19.1 ops/s |  1.8 ops/s |
+| 20 sections x 100p + 40 images |   18.1 ops/s |    17.3 ops/s |     17.4 ops/s |      18.4 ops/s |  1.7 ops/s |
 
 **Large File (~100MB) — Mixed Content**
 

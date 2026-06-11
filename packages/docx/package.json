@@ -58,6 +58,7 @@
     "prepack": "pnpm build",
     "test": "vp test run",
     "check": "vp check --fix",
+    "bench": "vp test bench",
     "typedoc": "typedoc src/index.ts --tsconfig tsconfig.typedoc.json",
     "extract": "tsx scripts/extract-document.ts",
     "demos": "tsx scripts/run-all-demos.ts"

@@ -47,10 +47,10 @@ bun add @office-open/docx
 ```
 
 ```typescript
-import { Packer } from "@office-open/docx";
+import { generateDocumentSync } from "@office-open/docx";
 import { writeFileSync } from "node:fs";
 
-const buffer = Packer.toBufferSync({
+const buffer = generateDocumentSync({
   sections: [
     {
       children: [{ paragraph: { children: [{ text: "Hello World", bold: true }] } }],
@@ -77,10 +77,10 @@ bun add @office-open/pptx
 ```
 
 ```typescript
-import { Packer } from "@office-open/pptx";
+import { generatePresentationSync } from "@office-open/pptx";
 import { writeFileSync } from "node:fs";
 
-const buffer = Packer.toBufferSync({
+const buffer = generatePresentationSync({
   slides: [
     {
       children: [
@@ -90,7 +90,7 @@ const buffer = Packer.toBufferSync({
             y: 100,
             width: 600,
             height: 400,
-            textBody: { text: "Hello World" },
+            textBody: { children: [{ paragraph: { children: ["Hello World"] } }] },
             fill: "4472C4",
           },
         },
@@ -118,10 +118,10 @@ bun add @office-open/xlsx
 ```
 
 ```typescript
-import { Packer } from "@office-open/xlsx";
+import { generateWorkbookSync } from "@office-open/xlsx";
 import { writeFileSync } from "node:fs";
 
-const buffer = Packer.toBufferSync({
+const buffer = generateWorkbookSync({
   worksheets: [
     {
       name: "Sheet1",
@@ -202,9 +202,9 @@ const opts = parseWorkbook(buffer);
 Define documents as plain JSON objects — perfect for AI agents. Zero class instantiation, pure data in and binary out:
 
 ```typescript
-import { Packer } from "@office-open/docx";
+import { generateDocumentSync } from "@office-open/docx";
 
-const buffer = Packer.toBufferSync({
+const buffer = generateDocumentSync({
   sections: [
     {
       children: [
@@ -327,7 +327,9 @@ We welcome contributions! Here's how to get started:
 ## Support & Community
 
 - [Report Issues](https://github.com/DemoMacro/office-open/issues)
-- [Export Documentation](./packages/docx/README.md)
+- [DOCX Documentation](./packages/docx/README.md)
+- [PPTX Documentation](./packages/pptx/README.md)
+- [XLSX Documentation](./packages/xlsx/README.md)
 
 ## License
 
