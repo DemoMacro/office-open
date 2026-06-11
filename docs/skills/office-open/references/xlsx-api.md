@@ -1,6 +1,6 @@
 # XLSX API Reference
 
-Complete API reference for `@office-open/xlsx`. All examples show the options JSON structure. Pass these objects to constructors (e.g. `new Workbook({ ... })`).
+Complete API reference for `@office-open/xlsx`. All examples show the options JSON structure. Pass to `generateWorkbook()`.
 
 ## Workbook Structure
 
@@ -358,41 +358,40 @@ Rule operators: `"lessThan"`, `"lessThanOrEqual"`, `"equal"`, `"notEqual"`, `"gr
 ## Export
 
 ```ts
-import { Workbook, Packer } from "@office-open/xlsx";
+import { generateWorkbook } from "@office-open/xlsx";
 
-const wb = new Workbook({ worksheets: [...] });
+const opts = { worksheets: [...] };
 
-// Node.js Buffer
-const buffer = await Packer.toBuffer(wb);
+// Node.js Buffer (default)
+const buffer = await generateWorkbook(opts);
 
 // Browser Blob
-const blob = await Packer.toBlob(wb);
+const blob = await generateWorkbook(opts, { type: "blob" });
 
 // Base64 string
-const base64 = await Packer.toBase64String(wb);
+const base64 = await generateWorkbook(opts, { type: "base64" });
 
 // Uint8Array
-const uint8 = await Packer.toBytes(wb);
+const uint8 = await generateWorkbook(opts, { type: "uint8array" });
 
 // With formatting options
-const pretty = await Packer.toBuffer(wb, { prettify: true });
+const pretty = await generateWorkbook(opts, { prettify: true });
 ```
 
 ## Parsing
 
 ### parseWorkbook (high-level)
 
-Parse a `.xlsx` file into `WorkbookOptions`, suitable for `new Workbook(parsed)`:
+Parse a `.xlsx` file into `WorkbookOptions`, suitable for `generateWorkbook(parsed)`:
 
 ```ts
-import { parseWorkbook } from "@office-open/xlsx";
+import { parseWorkbook, generateWorkbook } from "@office-open/xlsx";
 
 // Accepts Uint8Array, ArrayBuffer, Buffer, number[], base64 string
 const options = parseWorkbook(readFileSync("input.xlsx"));
 // options.title, options.creator, options.worksheets, etc.
 
-const wb = new Workbook(options);
-const buffer = await Packer.toBuffer(wb);
+const buffer = await generateWorkbook(options);
 ```
 
 ### parseXlsx (low-level)

@@ -80,7 +80,7 @@ icon: i-lucide-braces
 JSON & TypeScript
 
 #description{unwrap="p"}
-Create documents with pure JSON objects or TypeScript classes. JSON-first design makes it ideal for AI agents and LLM workflows.
+Create documents with pure JSON objects or the TypeScript functional API. JSON-first design makes it ideal for AI agents and LLM workflows.
 ::::
 
 ::::u-page-feature
@@ -202,10 +202,10 @@ orientation: horizontal
 :::
 
 #title
-Build documents with [JSON]{.text-(--ui-primary)} or TypeScript
+Build documents with [JSON]{.text-(--ui-primary)} or [TypeScript]{.text-(--ui-primary)}
 
 #description
-Define documents as plain JSON objects — perfect for AI agents — or use TypeScript classes for a full IDE experience. Both produce valid OOXML markup.
+Define documents as plain JSON objects — perfect for AI agents — or use the TypeScript functional API for a full IDE experience. Both produce valid OOXML markup.
 
 #features
 :::u-page-feature
@@ -283,7 +283,7 @@ const result = await patchDocument({
   outputType: "nodebuffer",
   data: buffer,
   patches: {
-    name: { type: PatchType.PARAGRAPH, children: [new TextRun("John")] },
+    name: { type: PatchType.PARAGRAPH, children: [{ text: "John" }] },
   },
 });
 ```
@@ -301,7 +301,7 @@ const result = await patchPresentation({
   outputType: "nodebuffer",
   data: buffer,
   patches: {
-    title: { type: PatchType.PARAGRAPH, children: [new TextRun({ text: "Updated", bold: true })] },
+    title: { type: PatchType.PARAGRAPH, children: [{ text: "Updated", bold: true }] },
   },
 });
 ```

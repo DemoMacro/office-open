@@ -1,18 +1,18 @@
 # DOCX API Reference
 
-Complete API reference for `@office-open/docx`. All examples show the options JSON structure. Pass these objects to constructors (e.g. `new TextRun({ ... })`) or as children arrays.
+Complete API reference for `@office-open/docx`. All examples show the options JSON structure. Pass these options objects to `generateDocument()`.
 
 ## Document Structure
 
 ```
-Document
+DocumentOptions
 ├── sections: SectionOptions[]
 │   ├── properties: SectionPropertiesOptionsBase
 │   │   ├── page: { size, margins, columns, borders }
 │   │   └── type: "nextPage" | "continuous" | "evenPage" | "oddPage"
 │   ├── headers: { default, first, even, odd }
 │   ├── footers: { default, first, even, odd }
-│   └── children: (Paragraph | Table | ImageRun | ...)[]
+│   └── children: (ParagraphOptions | TableOptions | ImageOptions | ...)[]
 ```
 
 ## Text Formatting
@@ -455,7 +455,7 @@ Used in TextRun children as a string — displays the page number where the refe
 }
 ```
 
-**Note**: `type: "wps"` is required. `children` contains Paragraph instances. Command types: `"moveTo"`, `"lineTo"`, `"arcTo"` (with `heightRadius`, `widthRadius`, `startAngle`, `sweepAngle`), `"close"`.
+**Note**: `type: "wps"` is required. `children` contains paragraph options. Command types: `"moveTo"`, `"lineTo"`, `"arcTo"` (with `heightRadius`, `widthRadius`, `startAngle`, `sweepAngle`), `"close"`.
 
 ## Comments & Revisions
 
@@ -489,7 +489,7 @@ Used in TextRun children as a string — displays the page number where the refe
 }
 ```
 
-**Note**: In actual code, use `new CommentRangeStart(0)`, `new CommentRangeEnd(0)`, and `new CommentReference(0)` as separate elements in the children array. `CommentReference` goes inside a `TextRun`'s children.
+**Note**: Use `{ "commentRangeStart": 0 }`, `{ "commentRangeEnd": 0 }`, and `{ "children": [{ "commentReference": 0 }] }` as separate elements in the children array. `commentReference` goes inside a TextRun's children.
 
 ## Patching
 
@@ -515,16 +515,16 @@ Modify an existing `.docx` template by replacing placeholders:
 ```
 
 ```ts
-import { patchDocument, PatchType, TextRun } from "@office-open/docx";
+import { patchDocument } from "@office-open/docx";
 
 const result = await patchDocument({
   outputType: "nodebuffer",
   data: templateBuffer,
   patches: {
-    name: { type: PatchType.PARAGRAPH, children: [new TextRun("John Doe")] },
+    name: { type: "paragraph", children: [{ text: "John Doe" }] },
     content: {
-      type: PatchType.DOCUMENT,
-      children: [new Paragraph("First"), new Paragraph("Second")],
+      type: "file",
+      children: [{ children: ["First"] }, { children: ["Second"] }],
     },
   },
   placeholderDelimiters: { start: "{{", end: "}}" },
@@ -533,19 +533,19 @@ const result = await patchDocument({
 });
 ```
 
-| Option                  | Type                          | Default      | Description                                 |
-| ----------------------- | ----------------------------- | ------------ | ------------------------------------------- |
-| `outputType`            | `string`                      | —            | Output format                               |
-| `data`                  | `Buffer \| Uint8Array \| ...` | —            | Input .docx file                            |
-| `patches`               | `Record<string, IPatch>`      | —            | Placeholder name → patch content map        |
-| `keepOriginalStyles`    | `boolean`                     | `true`       | Preserve original run formatting properties |
-| `placeholderDelimiters` | `{ start, end }`              | `{ {{, }} }` | Custom delimiters                           |
-| `recursive`             | `boolean`                     | `true`       | Replace all occurrences                     |
+| Option                  | Type                           | Default      | Description                                 |
+| ----------------------- | ------------------------------ | ------------ | ------------------------------------------- |
+| `outputType`            | `string`                       | —            | Output format                               |
+| `data`                  | `Buffer \| Uint8Array \| ...`  | —            | Input .docx file                            |
+| `patches`               | `Record<string, PatchOptions>` | —            | Placeholder name → patch content map        |
+| `keepOriginalStyles`    | `boolean`                      | `true`       | Preserve original run formatting properties |
+| `placeholderDelimiters` | `{ start, end }`               | `{ {{, }} }` | Custom delimiters                           |
+| `recursive`             | `boolean`                      | `true`       | Replace all occurrences                     |
 
-| PatchType             | Value         | Description                  |
-| --------------------- | ------------- | ---------------------------- |
-| `PatchType.PARAGRAPH` | `"paragraph"` | Inline run-level replacement |
-| `PatchType.DOCUMENT`  | `"file"`      | Block-level replacement      |
+| PatchType     | Value         | Description                  |
+| ------------- | ------------- | ---------------------------- |
+| `"paragraph"` | `"paragraph"` | Inline run-level replacement |
+| `"file"`      | `"file"`      | Block-level replacement      |
 
 ### patchDetector
 

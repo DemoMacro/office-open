@@ -80,7 +80,7 @@ icon: i-lucide-braces
 JSON 与 TypeScript
 
 #description{unwrap="p"}
-使用纯 JSON 对象或 TypeScript 类创建文档。JSON 优先的设计使其成为 AI 代理和 LLM 工作流的理想选择。
+使用纯 JSON 对象或 TypeScript 函数式 API 创建文档。JSON 优先的设计使其成为 AI 代理和 LLM 工作流的理想选择。
 ::::
 
 ::::u-page-feature
@@ -205,7 +205,7 @@ orientation: horizontal
 使用 [JSON]{.text-(--ui-primary)} 或 TypeScript 构建文档
 
 #description
-将文档定义为纯 JSON 对象——非常适合 AI 代理——或使用 TypeScript 类获得完整的 IDE 体验。两者均生成有效的 OOXML 标记。
+将文档定义为纯 JSON 对象——非常适合 AI 代理——或使用 TypeScript 函数式 API 获得完整的 IDE 体验。两者均生成有效的 OOXML 标记。
 
 #features
 :::u-page-feature
@@ -283,7 +283,7 @@ const result = await patchDocument({
   outputType: "nodebuffer",
   data: buffer,
   patches: {
-    name: { type: PatchType.PARAGRAPH, children: [new TextRun("John")] },
+    name: { type: PatchType.PARAGRAPH, children: [{ text: "John" }] },
   },
 });
 ```
@@ -301,7 +301,7 @@ const result = await patchPresentation({
   outputType: "nodebuffer",
   data: buffer,
   patches: {
-    title: { type: PatchType.PARAGRAPH, children: [new TextRun({ text: "已更新", bold: true })] },
+    title: { type: PatchType.PARAGRAPH, children: [{ text: "已更新", bold: true }] },
   },
 });
 ```

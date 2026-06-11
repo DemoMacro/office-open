@@ -592,7 +592,7 @@ Add `class: "exit"`:
 ```json
 // parsePresentation accepts Uint8Array, ArrayBuffer, DataView, number[], base64 string
 parsePresentation(readFileSync("input.pptx"))
-// Returns PresentationOptions — pass to new Presentation(opts) to modify and re-export
+// Returns PresentationOptions — pass to generatePresentation(opts) to modify and re-export
 ```
 
 ## Patching
@@ -609,13 +609,13 @@ Modify an existing `.pptx` template by replacing placeholders:
 ```
 
 ```ts
-import { patchPresentation, PatchType, TextRun } from "@office-open/pptx";
+import { patchPresentation, PatchType } from "@office-open/pptx";
 
 const result = await patchPresentation({
   outputType: "nodebuffer",
   data: templateBuffer,
   patches: {
-    title: { type: PatchType.PARAGRAPH, children: [new TextRun({ text: "Updated", bold: true })] },
+    title: { type: PatchType.PARAGRAPH, children: [{ text: "Updated", bold: true }] },
   },
   placeholderDelimiters: { start: "{{", end: "}}" },
 });
