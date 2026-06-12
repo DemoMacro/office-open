@@ -248,7 +248,7 @@ function stringifyPresentation(opts: PresentationOptions): string {
 
 // ── Parse ──
 
-function parsePresentation(el: XmlElement): Partial<PresentationOptions> {
+function parsePresentation(el: XmlElement): PresentationOptions {
   const result: Record<string, unknown> = {};
 
   if (el.attributes) {
@@ -428,7 +428,7 @@ function parsePresentation(el: XmlElement): Partial<PresentationOptions> {
     result.kinsoku = kinsoku;
   }
 
-  return result as Partial<PresentationOptions>;
+  return result as unknown as PresentationOptions;
 }
 
 // ── Descriptor ──

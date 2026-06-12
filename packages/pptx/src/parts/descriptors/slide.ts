@@ -255,7 +255,7 @@ export const slideDesc: CustomDescriptor<SlideDescriptorOptions> = {
       if (items.length > 0) result.controls = items;
     }
 
-    return result as Partial<SlideDescriptorOptions>;
+    return result as unknown as SlideDescriptorOptions;
   },
 };
 

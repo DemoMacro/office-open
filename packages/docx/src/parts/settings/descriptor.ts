@@ -783,6 +783,247 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       opts.saveSubsetFonts = true;
     }
 
-    return opts as Partial<SettingsOptions>;
+    // removePersonalInformation → w:removePersonalInformation (presence)
+    if (findChild(el, "w:removePersonalInformation")) {
+      opts.removePersonalInformation = true;
+    }
+
+    // removeDateAndTime → w:removeDateAndTime (presence)
+    if (findChild(el, "w:removeDateAndTime")) {
+      opts.removeDateAndTime = true;
+    }
+
+    // hideSpellingErrors → w:hideSpellingErrors (presence)
+    if (findChild(el, "w:hideSpellingErrors")) {
+      opts.hideSpellingErrors = true;
+    }
+
+    // hideGrammaticalErrors → w:hideGrammaticalErrors (presence)
+    if (findChild(el, "w:hideGrammaticalErrors")) {
+      opts.hideGrammaticalErrors = true;
+    }
+
+    // mirrorMargins → w:mirrorMargins (presence)
+    if (findChild(el, "w:mirrorMargins")) {
+      opts.mirrorMargins = true;
+    }
+
+    // saveFormsData → w:saveFormsData (presence)
+    if (findChild(el, "w:saveFormsData")) {
+      opts.saveFormsData = true;
+    }
+
+    // alignBordersAndEdges → w:alignBordersAndEdges (presence)
+    if (findChild(el, "w:alignBordersAndEdges")) {
+      opts.alignBordersAndEdges = true;
+    }
+
+    // bordersDoNotSurroundHeader → w:bordersDoNotSurroundHeader (presence)
+    if (findChild(el, "w:bordersDoNotSurroundHeader")) {
+      opts.bordersDoNotSurroundHeader = true;
+    }
+
+    // bordersDoNotSurroundFooter → w:bordersDoNotSurroundFooter (presence)
+    if (findChild(el, "w:bordersDoNotSurroundFooter")) {
+      opts.bordersDoNotSurroundFooter = true;
+    }
+
+    // gutterAtTop → w:gutterAtTop (presence)
+    if (findChild(el, "w:gutterAtTop")) {
+      opts.gutterAtTop = true;
+    }
+
+    // formsDesign → w:formsDesign (presence)
+    if (findChild(el, "w:formsDesign")) {
+      opts.formsDesign = true;
+    }
+
+    // linkStyles → w:linkStyles (presence)
+    if (findChild(el, "w:linkStyles")) {
+      opts.linkStyles = true;
+    }
+
+    // autoHyphenation → w:autoHyphenation
+    const autoHyphEl = findChild(el, "w:autoHyphenation");
+    if (autoHyphEl) {
+      const hyphenation = (opts.hyphenation as Record<string, unknown>) ?? {};
+      hyphenation.autoHyphenation = true;
+      opts.hyphenation = hyphenation;
+    }
+
+    // doNotHyphenateCaps → w:doNotHyphenateCaps
+    const noHyphCapsEl = findChild(el, "w:doNotHyphenateCaps");
+    if (noHyphCapsEl) {
+      const hyphenation = (opts.hyphenation as Record<string, unknown>) ?? {};
+      hyphenation.doNotHyphenateCaps = true;
+      opts.hyphenation = hyphenation;
+    }
+
+    // consecutiveHyphenLimit → w:consecutiveHyphenLimit/@w:val
+    const consHyphEl = findChild(el, "w:consecutiveHyphenLimit");
+    if (consHyphEl) {
+      const val = attr(consHyphEl, "w:val");
+      if (val) {
+        const hyphenation = (opts.hyphenation as Record<string, unknown>) ?? {};
+        hyphenation.consecutiveHyphenLimit = parseInt(val, 10);
+        opts.hyphenation = hyphenation;
+      }
+    }
+
+    // hyphenationZone → w:hyphenationZone/@w:val
+    const hyphZoneEl = findChild(el, "w:hyphenationZone");
+    if (hyphZoneEl) {
+      const val = attr(hyphZoneEl, "w:val");
+      if (val) {
+        const hyphenation = (opts.hyphenation as Record<string, unknown>) ?? {};
+        hyphenation.hyphenationZone = parseInt(val, 10);
+        opts.hyphenation = hyphenation;
+      }
+    }
+
+    // attachedTemplate → w:attachedTemplate/@r:id
+    const attachedTplEl = findChild(el, "w:attachedTemplate");
+    if (attachedTplEl) {
+      const val = attr(attachedTplEl, "r:id");
+      if (val) opts.attachedTemplate = val;
+    }
+
+    // stylePaneSortMethod → w:stylePaneSortMethod/@w:val
+    const spsmEl = findChild(el, "w:stylePaneSortMethod");
+    if (spsmEl) {
+      const val = attr(spsmEl, "w:val");
+      if (val) opts.stylePaneSortMethod = val;
+    }
+
+    // documentType → w:documentType/@w:val
+    const docTypeEl = findChild(el, "w:documentType");
+    if (docTypeEl) {
+      const val = attr(docTypeEl, "w:val");
+      if (val) opts.documentType = val;
+    }
+
+    // defaultTableStyle → w:defaultTableStyle/@w:val
+    const defTblStyleEl = findChild(el, "w:defaultTableStyle");
+    if (defTblStyleEl) {
+      const val = attr(defTblStyleEl, "w:val");
+      if (val) opts.defaultTableStyle = val;
+    }
+
+    // stylePaneFormatFilter → w:stylePaneFormatFilter (complex attributes)
+    const spffEl = findChild(el, "w:stylePaneFormatFilter");
+    if (spffEl) {
+      const filter: Record<string, boolean> = {};
+      const flags: [string, string][] = [
+        ["allStyles", "w:allStyles"],
+        ["customStyles", "w:customStyles"],
+        ["stylesInUse", "w:stylesInUse"],
+        ["headingStyles", "w:headingStyles"],
+        ["numberingStyles", "w:numberingStyles"],
+        ["tableStyles", "w:tableStyles"],
+        ["directFormattingOnRuns", "w:directFormattingOnRuns"],
+        ["directFormattingOnParagraphs", "w:directFormattingOnParagraphs"],
+        ["directFormattingOnNumbering", "w:directFormattingOnNumbering"],
+        ["directFormattingOnTables", "w:directFormattingOnTables"],
+        ["clearFormatting", "w:clearFormatting"],
+        ["top3HeadingStyles", "w:top3HeadingStyles"],
+        ["visibleStyles", "w:visibleStyles"],
+        ["alternateStyleNames", "w:alternateStyleNames"],
+      ];
+      for (const [prop, xmlKey] of flags) {
+        const v = attr(spffEl, xmlKey);
+        if (v !== undefined) filter[prop] = v !== "0" && v !== "false" && v !== "off";
+      }
+      if (Object.keys(filter).length > 0) opts.stylePaneFormatFilter = filter;
+    }
+
+    // clickAndTypeStyle → w:clickAndTypeStyle/@w:val
+    const catEl = findChild(el, "w:clickAndTypeStyle");
+    if (catEl) {
+      const val = attr(catEl, "w:val");
+      if (val) opts.clickAndTypeStyle = val;
+    }
+
+    // activeWritingStyle → iterate w:activeWritingStyle children
+    const awsList: Array<Record<string, unknown>> = [];
+    for (const child of el.elements ?? []) {
+      if (child.name !== "w:activeWritingStyle") continue;
+      const entry: Record<string, unknown> = {};
+      const lang = attr(child, "w:lang");
+      if (lang) entry.lang = lang;
+      const vendorID = attr(child, "w:vendorID");
+      if (vendorID) entry.vendorID = vendorID;
+      const dllVersion = attr(child, "w:dllVersion");
+      if (dllVersion) entry.dllVersion = dllVersion;
+      const nlCheck = attr(child, "w:nlCheck");
+      if (nlCheck !== undefined) entry.nlCheck = nlCheck !== "0" && nlCheck !== "false";
+      const checkStyle = attr(child, "w:checkStyle");
+      if (checkStyle !== undefined) entry.checkStyle = checkStyle !== "0" && checkStyle !== "false";
+      const appCheck = attr(child, "w:appCheck");
+      if (appCheck) entry.appCheck = appCheck;
+      const appName = attr(child, "w:appName");
+      if (appName) entry.appName = appName;
+      if (Object.keys(entry).length > 0) awsList.push(entry);
+    }
+    if (awsList.length > 0) opts.activeWritingStyle = awsList;
+
+    // proofState → w:proofState/@w:spelling, @w:grammar
+    const proofEl = findChild(el, "w:proofState");
+    if (proofEl) {
+      const proof: Record<string, unknown> = {};
+      const spelling = attr(proofEl, "w:spelling");
+      if (spelling) proof.spelling = spelling;
+      const grammar = attr(proofEl, "w:grammar");
+      if (grammar) proof.grammar = grammar;
+      if (Object.keys(proof).length > 0) opts.proofState = proof;
+    }
+
+    // documentProtection → w:documentProtection
+    const docProtEl = findChild(el, "w:documentProtection");
+    if (docProtEl) {
+      const prot: Record<string, unknown> = {};
+      const edit = attr(docProtEl, "w:edit");
+      if (edit) prot.edit = edit;
+      const enforcement = attr(docProtEl, "w:enforcement");
+      if (enforcement !== undefined) {
+        // Only include documentProtection if enforcement is set
+        const hash = attr(docProtEl, "w:hash");
+        if (hash) prot.hash = hash;
+        const salt = attr(docProtEl, "w:salt");
+        if (salt) prot.salt = salt;
+        const cryptProviderType = attr(docProtEl, "w:cryptProviderType");
+        if (cryptProviderType) prot.cryptoProviderType = cryptProviderType;
+        const cryptAlgorithmClass = attr(docProtEl, "w:cryptAlgorithmClass");
+        if (cryptAlgorithmClass) prot.cryptoAlgorithmClass = cryptAlgorithmClass;
+        const cryptAlgorithmType = attr(docProtEl, "w:cryptAlgorithmType");
+        if (cryptAlgorithmType) prot.cryptoAlgorithmType = cryptAlgorithmType;
+        const cryptAlgorithmSid = attr(docProtEl, "w:cryptAlgorithmSid");
+        if (cryptAlgorithmSid) prot.cryptoAlgorithmSid = parseInt(cryptAlgorithmSid, 10);
+        const cryptSpinCount = attr(docProtEl, "w:cryptSpinCount");
+        if (cryptSpinCount) prot.cryptoSpinCount = parseInt(cryptSpinCount, 10);
+        const hashValue = attr(docProtEl, "w:hashValue");
+        if (hashValue) prot.hashValue = hashValue;
+        const saltValue = attr(docProtEl, "w:saltValue");
+        if (saltValue) prot.saltValue = saltValue;
+        const spinCount = attr(docProtEl, "w:spinCount");
+        if (spinCount) prot.spinCount = parseInt(spinCount, 10);
+        const algorithmName = attr(docProtEl, "w:algorithmName");
+        if (algorithmName) prot.algorithmName = algorithmName;
+        const formatting = attr(docProtEl, "w:formatting");
+        if (formatting !== undefined) prot.formatting = formatting === "1" || formatting === "true";
+      }
+      if (Object.keys(prot).length > 0) opts.documentProtection = prot;
+    }
+
+    // doNotTrackMoves → w:doNotTrackMoves (presence)
+    if (findChild(el, "w:doNotTrackMoves")) {
+      opts.doNotTrackMoves = true;
+    }
+
+    // doNotTrackFormatting → w:doNotTrackFormatting (presence)
+    if (findChild(el, "w:doNotTrackFormatting")) {
+      opts.doNotTrackFormatting = true;
+    }
+
+    return opts as unknown as SettingsOptions;
   },
 };

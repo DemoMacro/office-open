@@ -22,8 +22,8 @@ import type {
 import type { PageBordersOptions } from "@parts/document/body/section-properties/properties/page-borders";
 import type { PageNumberTypeAttributes } from "@parts/document/body/section-properties/properties/page-number";
 import type {
-  ISectionPropertiesChangeOptions,
-  ISectionPropertiesOptions,
+  SectionPropertiesChangeOptions,
+  SectionPropertiesOptions,
 } from "@parts/document/body/section-properties/section-properties";
 import {
   sectionMarginDefaults,
@@ -87,7 +87,7 @@ function verticalAlignXml(val: string): string {
   return `<w:vAlign w:val="${val}"/>`;
 }
 
-function lineNumberXml(opts: NonNullable<ISectionPropertiesOptions["lineNumbers"]>): string {
+function lineNumberXml(opts: NonNullable<SectionPropertiesOptions["lineNumbers"]>): string {
   const attrs: string[] = [];
   if (opts.countBy !== undefined) attrs.push(`w:countBy="${opts.countBy}"`);
   if (opts.start !== undefined) attrs.push(`w:start="${opts.start}"`);
@@ -112,7 +112,7 @@ function docGridXml(linePitch: number, charSpace?: number, type?: string): strin
   return `<w:docGrid ${attrs.join(" ")}/>`;
 }
 
-function columnsXml(opts: NonNullable<ISectionPropertiesOptions["column"]>): string {
+function columnsXml(opts: NonNullable<SectionPropertiesOptions["column"]>): string {
   const attrs: string[] = [];
   if (opts.space !== undefined) attrs.push(`w:space="${twipsMeasureValue(opts.space)}"`);
   if (opts.count !== undefined) attrs.push(`w:num="${opts.count}"`);
@@ -185,7 +185,7 @@ function appendHeaderFooterRefs(
 
 // ── sectPrChange (recursive) ──
 
-function stringifySectionPropertiesChange(opts: ISectionPropertiesChangeOptions): string {
+function stringifySectionPropertiesChange(opts: SectionPropertiesChangeOptions): string {
   const { author, date, id, ...inner } = opts;
   const innerXml = stringifySectionPropertiesInner(inner);
   return `<w:sectPrChange w:author="${author}" w:date="${date}" w:id="${id}"><w:sectPr>${innerXml}</w:sectPr></w:sectPrChange>`;
@@ -193,7 +193,7 @@ function stringifySectionPropertiesChange(opts: ISectionPropertiesChangeOptions)
 
 // ── Core XML builder ──
 
-function stringifySectionPropertiesInner(opts: ISectionPropertiesOptions): string {
+function stringifySectionPropertiesInner(opts: SectionPropertiesOptions): string {
   const parts: string[] = [];
 
   // Header/footer references
@@ -303,7 +303,7 @@ function stringifySectionPropertiesInner(opts: ISectionPropertiesOptions): strin
  * const xml = sectionPropertiesDesc.stringify(sectPrOpts, ctx);
  * ```
  */
-export const sectionPropertiesDesc: CustomDescriptor<ISectionPropertiesOptions, BodyContext> = {
+export const sectionPropertiesDesc: CustomDescriptor<SectionPropertiesOptions, BodyContext> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
@@ -316,7 +316,7 @@ export const sectionPropertiesDesc: CustomDescriptor<ISectionPropertiesOptions, 
 };
 
 /** Standalone stringify — no context needed, pure options → XML. */
-export function stringifySectionPropertiesXml(opts: ISectionPropertiesOptions): string {
+export function stringifySectionPropertiesXml(opts: SectionPropertiesOptions): string {
   const inner = stringifySectionPropertiesInner(opts);
 
   const attrs: string[] = [];
@@ -329,10 +329,10 @@ export function stringifySectionPropertiesXml(opts: ISectionPropertiesOptions): 
   return `<w:sectPr${attrStr}>${inner}</w:sectPr>`;
 }
 
-// ── Parse (Element → ISectionPropertiesOptions) ──
+// ── Parse (Element → SectionPropertiesOptions) ──
 
-/** Parse a w:sectPr element into ISectionPropertiesOptions. */
-export function parseSectionPropertiesEl(el: Element): Partial<ISectionPropertiesOptions> {
+/** Parse a w:sectPr element into SectionPropertiesOptions. */
+export function parseSectionPropertiesEl(el: Element): Partial<SectionPropertiesOptions> {
   const opts: Record<string, unknown> = {};
 
   // rsid attributes on w:sectPr element
@@ -540,7 +540,24 @@ export function parseSectionPropertiesEl(el: Element): Partial<ISectionPropertie
     if (rId) opts.printerSettingsId = rId;
   }
 
-  return opts as Partial<ISectionPropertiesOptions>;
+  // Header/footer references
+  const headerGroup: Record<string, unknown> = {};
+  const footerGroup: Record<string, unknown> = {};
+  for (const child of el.elements ?? []) {
+    if (child.name === "w:headerReference") {
+      const type = attr(child, "w:type");
+      const rId = attr(child, "r:id");
+      if (type && rId) headerGroup[type] = { referenceId: parseInt(rId.replace("rId", ""), 10) };
+    } else if (child.name === "w:footerReference") {
+      const type = attr(child, "w:type");
+      const rId = attr(child, "r:id");
+      if (type && rId) footerGroup[type] = { referenceId: parseInt(rId.replace("rId", ""), 10) };
+    }
+  }
+  if (Object.keys(headerGroup).length > 0) opts.headerWrapperGroup = headerGroup;
+  if (Object.keys(footerGroup).length > 0) opts.footerWrapperGroup = footerGroup;
+
+  return opts as unknown as SectionPropertiesOptions;
 }
 
 function parseNotePropertiesEl(el: Element): Record<string, unknown> {

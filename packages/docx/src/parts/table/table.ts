@@ -14,7 +14,7 @@ import type { TableCellSpacingProperties } from "./table-cell-spacing";
 import type {
   TableBordersOptions,
   TableFloatOptions,
-  ITablePropertiesChangeOptions,
+  TablePropertiesChangeOptions,
 } from "./table-properties";
 import type { TableCellMarginOptions } from "./table-properties/table-cell-margin";
 import type { TableLayoutType } from "./table-properties/table-layout";
@@ -55,5 +55,5 @@ export interface TableOptions {
   styleColBandSize?: number;
   caption?: string;
   description?: string;
-  revision?: ITablePropertiesChangeOptions;
+  revision?: TablePropertiesChangeOptions;
 }

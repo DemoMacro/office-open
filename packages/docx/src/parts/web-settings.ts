@@ -507,6 +507,6 @@ export const webSettingsDesc: CustomDescriptor<WebSettingsInput> = {
       if (val) opts.targetScreenSz = val;
     }
 
-    return opts as Partial<WebSettingsInput>;
+    return opts as unknown as WebSettingsInput;
   },
 };

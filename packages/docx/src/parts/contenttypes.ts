@@ -62,7 +62,7 @@ export const contentTypesDesc: CustomDescriptor<ContentTypesInput> = {
         if (pn && ct) overrides.push({ partName: String(pn), contentType: String(ct) });
       }
     }
-    return { defaults, overrides } as Record<string, unknown>;
+    return { defaults, overrides } as unknown as ContentTypesInput;
   },
 };
 

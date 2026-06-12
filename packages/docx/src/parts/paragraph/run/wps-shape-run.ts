@@ -20,4 +20,4 @@ interface CoreShapeOptions {
 /**
  * @publicApi
  */
-export type IWpsShapeOptions = WpsShapeCoreOptions & { type: "wps" } & CoreShapeOptions;
+export type WpsShapeRunOptions = WpsShapeCoreOptions & { type: "wps" } & CoreShapeOptions;

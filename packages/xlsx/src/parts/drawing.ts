@@ -197,7 +197,7 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
 
     if (images.length > 0) result.images = images;
     if (charts.length > 0) result.charts = charts;
-    return result as Record<string, unknown>;
+    return result as unknown as DrawingOptions;
   },
 };
 

@@ -56,7 +56,7 @@ export const tileDesc: CustomDescriptor<TileOptions> = {
       result.flip = String(el.attributes["flip"]) as TileOptions["flip"];
     if (el.attributes?.["algn"] !== undefined)
       result.align = xsdRectAlignment.from(String(el.attributes["algn"])) as TileOptions["align"];
-    return result;
+    return result as TileOptions;
   },
 };
 
@@ -79,7 +79,7 @@ export const sourceRectangleDesc: CustomDescriptor<SourceRectangleOptions> = {
     if (el.attributes?.["t"] !== undefined) result.top = Number(el.attributes["t"]);
     if (el.attributes?.["r"] !== undefined) result.right = Number(el.attributes["r"]);
     if (el.attributes?.["b"] !== undefined) result.bottom = Number(el.attributes["b"]);
-    return result;
+    return result as SourceRectangleOptions;
   },
 };
 
@@ -104,7 +104,7 @@ export const stretchDesc: CustomDescriptor<SourceRectangleOptions> = {
     if (fillRect.attributes?.["t"] !== undefined) result.top = Number(fillRect.attributes["t"]);
     if (fillRect.attributes?.["r"] !== undefined) result.right = Number(fillRect.attributes["r"]);
     if (fillRect.attributes?.["b"] !== undefined) result.bottom = Number(fillRect.attributes["b"]);
-    return result;
+    return result as SourceRectangleOptions;
   },
 };
 
@@ -369,7 +369,7 @@ export const blipDesc: CustomDescriptor<BlipOptions & { blipEffects?: BlipEffect
     }
     const effects = readBlipEffects(el, ctx);
     if (effects) result.blipEffects = effects;
-    return result;
+    return result as BlipOptions & { blipEffects?: BlipEffectsOptions };
   },
 };
 
@@ -441,6 +441,6 @@ export const blipFillDesc: CustomDescriptor<
     const tile = findChild(el, "a:tile");
     if (tile) result.tile = parse(tileDesc, tile, ctx) as TileOptions;
 
-    return result;
+    return result as BlipFillOptions & { referenceId?: string; blipEffects?: BlipEffectsOptions };
   },
 };

@@ -10,7 +10,7 @@ import { convertPixelsToEmu, convertUniversalMeasureToEmu } from "@office-open/c
  * @module
  */
 import type { MediaDataTransformation } from "./data";
-import type { IMediaData } from "./data";
+import type { MediaData } from "./data";
 
 /**
  * Transformation options for media display.
@@ -103,10 +103,10 @@ export const createTransformation = (options: MediaTransformation): MediaDataTra
  * ```
  */
 export class Media {
-  private map: Map<string, IMediaData>;
+  private map: Map<string, MediaData>;
 
   public constructor() {
-    this.map = new Map<string, IMediaData>();
+    this.map = new Map<string, MediaData>();
   }
 
   /**
@@ -115,7 +115,7 @@ export class Media {
    * @param key - Unique identifier for this image
    * @param mediaData - Complete image data including file name, transformation, and raw data
    */
-  public addImage(key: string, mediaData: IMediaData): void {
+  public addImage(key: string, mediaData: MediaData): void {
     this.map.set(key, mediaData);
   }
 
@@ -124,7 +124,7 @@ export class Media {
    *
    * @returns Read-only array of all media data in the collection
    */
-  public get array(): IMediaData[] {
+  public get array(): MediaData[] {
     return [...this.map.values()];
   }
 }

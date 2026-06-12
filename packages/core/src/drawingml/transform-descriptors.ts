@@ -67,7 +67,7 @@ export const transform2DDesc: CustomDescriptor<Transform2DOptions> = {
       result.height = Number(ext.attributes["cy"] ?? 0);
     }
 
-    return result;
+    return result as Transform2DOptions;
   },
 };
 
@@ -88,7 +88,7 @@ export const groupTransform2DDesc: CustomDescriptor<GroupTransform2DOptions> = {
     return base.replace(/<\/a:xfrm>$/, `${chOff}${chExt}</a:xfrm>`);
   },
   parse(el, ctx) {
-    const result = transform2DDesc.parse(el, ctx) as Partial<GroupTransform2DOptions>;
+    const result = transform2DDesc.parse(el, ctx) as GroupTransform2DOptions;
 
     const chOff = findChild(el, "a:chOff");
     if (chOff?.attributes) {
@@ -102,6 +102,6 @@ export const groupTransform2DDesc: CustomDescriptor<GroupTransform2DOptions> = {
       result.childExtentHeight = Number(chExt.attributes["cy"] ?? 0);
     }
 
-    return result;
+    return result as Transform2DOptions;
   },
 };

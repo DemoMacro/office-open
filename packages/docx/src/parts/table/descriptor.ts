@@ -24,7 +24,7 @@ import {
   stringifyTableProperties,
   stringifyTablePropertyExceptions,
   stringifyTableRowProperties,
-  type ITablePropertiesOptions,
+  type TablePropertiesOptions,
 } from "./stringify";
 
 // ── Table grid ──
@@ -211,7 +211,7 @@ export const tableDesc: CustomDescriptor<TableOptions, BodyContext> = {
     const parts: string[] = [];
 
     // Table properties
-    const tblPrOpts: ITablePropertiesOptions = {
+    const tblPrOpts: TablePropertiesOptions = {
       alignment: opts.alignment,
       borders: opts.borders ?? {},
       caption: opts.caption,
@@ -348,6 +348,50 @@ function parseTablePropertiesEl(el: Element): Record<string, unknown> {
     const val = attr(shd, "w:val");
     if (val) shading.type = val;
     if (Object.keys(shading).length > 0) opts.shading = shading;
+  }
+
+  // description → w:tblDescription/@w:val
+  const tblDesc = findChild(el, "w:tblDescription");
+  if (tblDesc) {
+    const val = attr(tblDesc, "w:val");
+    if (val) opts.description = val;
+  }
+
+  // float → w:tblpPr attributes
+  const tblpPr = findChild(el, "w:tblpPr");
+  if (tblpPr) {
+    const floatOpts: Record<string, unknown> = {};
+    const horzAnchor = attr(tblpPr, "w:horzAnchor");
+    if (horzAnchor) floatOpts.horizontalAnchor = horzAnchor;
+    const vertAnchor = attr(tblpPr, "w:vertAnchor");
+    if (vertAnchor) floatOpts.verticalAnchor = vertAnchor;
+    const tblpX = attrNum(tblpPr, "w:tblpX");
+    if (tblpX !== undefined) floatOpts.absoluteHorizontalPosition = tblpX;
+    const tblpXSpec = attr(tblpPr, "w:tblpXSpec");
+    if (tblpXSpec) floatOpts.relativeHorizontalPosition = tblpXSpec;
+    const tblpY = attrNum(tblpPr, "w:tblpY");
+    if (tblpY !== undefined) floatOpts.absoluteVerticalPosition = tblpY;
+    const tblpYSpec = attr(tblpPr, "w:tblpYSpec");
+    if (tblpYSpec) floatOpts.relativeVerticalPosition = tblpYSpec;
+    const bottomFromText = attrNum(tblpPr, "w:bottomFromText");
+    if (bottomFromText !== undefined) floatOpts.bottomFromText = bottomFromText;
+    const topFromText = attrNum(tblpPr, "w:topFromText");
+    if (topFromText !== undefined) floatOpts.topFromText = topFromText;
+    const leftFromText = attrNum(tblpPr, "w:leftFromText");
+    if (leftFromText !== undefined) floatOpts.leftFromText = leftFromText;
+    const rightFromText = attrNum(tblpPr, "w:rightFromText");
+    if (rightFromText !== undefined) floatOpts.rightFromText = rightFromText;
+    if (Object.keys(floatOpts).length > 0) opts.float = floatOpts;
+  }
+
+  // indent → w:tblInd/@w:w and @w:type
+  const tblInd = findChild(el, "w:tblInd");
+  if (tblInd) {
+    const size = attrNum(tblInd, "w:w");
+    const type = attr(tblInd, "w:type");
+    if (size !== undefined) {
+      opts.indent = { size, ...(type ? { type } : {}) };
+    }
   }
 
   return opts;
@@ -534,10 +578,7 @@ function parseTableRowEl(
   return opts as unknown as TableRowOptions;
 }
 
-function parseTableEl(
-  el: Element,
-  ctx: import("../../context").DocxReadContext,
-): Partial<TableOptions> {
+function parseTableEl(el: Element, ctx: import("../../context").DocxReadContext): TableOptions {
   const opts: Record<string, unknown> = {};
 
   const tblPr = findChild(el, "w:tblPr");
@@ -558,5 +599,5 @@ function parseTableEl(
   }
 
   opts.rows = rows;
-  return opts as Partial<TableOptions>;
+  return opts as unknown as TableOptions;
 }

@@ -12,6 +12,7 @@ import type { CustomDescriptor } from "../../descriptor";
 import { stringify, parse } from "../../descriptor";
 import { solidFillDesc } from "../color/color-descriptors";
 import type { SolidFillOptions } from "../color/solid-fill";
+import { gradientFillDesc } from "../fill/fill-descriptors";
 import type { DashStop } from "./custom-dash";
 import type { LineEndOptions } from "./line-end";
 import type { OutlineOptions } from "./outline";
@@ -34,7 +35,7 @@ function readLineEnd(el: XmlElement): Partial<LineEndOptions> {
   if (el.attributes?.["w"]) result.width = String(el.attributes["w"]) as LineEndOptions["width"];
   if (el.attributes?.["len"])
     result.length = String(el.attributes["len"]) as LineEndOptions["length"];
-  return result;
+  return result as LineEndOptions;
 }
 
 // ── Custom dash helper ──
@@ -65,6 +66,9 @@ export const outlineDesc: CustomDescriptor<OutlineOptions> = {
     } else if (opts.type === "solidFill" && opts.color) {
       const fillXml = stringify(solidFillDesc, opts.color, ctx);
       if (fillXml) parts.push(fillXml);
+    } else if (opts.type === "gradFill" && opts.gradientFill) {
+      const gradXml = stringify(gradientFillDesc, opts.gradientFill, ctx);
+      if (gradXml) parts.push(gradXml);
     }
 
     // Dash
@@ -116,6 +120,8 @@ export const outlineDesc: CustomDescriptor<OutlineOptions> = {
     }
     if (findChild(el, "a:gradFill")) {
       result.type = "gradFill";
+      const gradFill = findChild(el, "a:gradFill")!;
+      result.gradientFill = parse(gradientFillDesc, gradFill, _ctx);
     }
 
     // Dash
@@ -149,6 +155,6 @@ export const outlineDesc: CustomDescriptor<OutlineOptions> = {
     const tailEnd = findChild(el, "a:tailEnd");
     if (tailEnd) result.tailEnd = readLineEnd(tailEnd) as LineEndOptions;
 
-    return result;
+    return result as OutlineOptions;
   },
 };

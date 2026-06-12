@@ -12,7 +12,7 @@ import type { RunOptions } from "./run";
  *
  * @see {@link SymbolRun}
  */
-export type ISymbolRunOptions = {
+export type SymbolRunOptions = {
   /** The Unicode character code for the symbol */
   char: string;
   /** The font to use for the symbol (e.g., "Wingdings", "Symbol") */

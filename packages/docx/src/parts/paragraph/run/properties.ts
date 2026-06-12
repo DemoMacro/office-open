@@ -133,7 +133,7 @@ export interface RunStylePropertiesOptions {
   shading?: ShadingAttributesProperties;
   emboss?: boolean;
   imprint?: boolean;
-  revision?: IRunPropertiesChangeOptions;
+  revision?: RunPropertiesChangeOptions;
   language?: LanguageOptions;
   border?: BorderOptions;
   snapToGrid?: boolean;
@@ -166,9 +166,9 @@ export type RunPropertiesOptions = {
  *
  * Used for revision tracking when run properties have been modified.
  */
-export type IRunPropertiesChangeOptions = {} & RunPropertiesOptions & ChangedAttributesProperties;
+export type RunPropertiesChangeOptions = {} & RunPropertiesOptions & ChangedAttributesProperties;
 
-export type IParagraphRunPropertiesOptions = {
+export type ParagraphRunPropertiesOptions = {
   insertion?: ChangedAttributesProperties;
   deletion?: ChangedAttributesProperties;
 } & RunPropertiesOptions;

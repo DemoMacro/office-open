@@ -10,7 +10,7 @@ import type { Element } from "@office-open/xml";
 import { parseAltChunk } from "@parts/alt-chunk/alt-chunk-parse";
 import { parseCustomXmlBlock } from "@parts/custom-xml/custom-xml-parse";
 import { parseSectionPropertiesEl } from "@parts/document/body/section-properties/descriptor";
-import type { ISectionPropertiesOptions } from "@parts/document/body/section-properties/section-properties";
+import type { SectionPropertiesOptions } from "@parts/document/body/section-properties/section-properties";
 import { parseSdtBlock } from "@parts/sdt/sdt-parse";
 import { parseSubDoc } from "@parts/sub-doc/sub-doc-parse";
 import { parseToc } from "@parts/table-of-contents/toc-parse";
@@ -21,14 +21,15 @@ import type { SectionChild } from "@shared/section";
 
 import { parseParagraph } from "../body";
 import { DocxReadContext } from "../context";
+import { setBodyParseChild } from "../parts";
 
 // ── Section properties parser ────────────────────────────────────────────────
 
 /**
- * Parse w:sectPr element into ISectionPropertiesOptions.
+ * Parse w:sectPr element into SectionPropertiesOptions.
  * Delegates to the section properties descriptor's parse method.
  */
-function parseSectionProperties(el: Element, ctx: DocxReadContext): ISectionPropertiesOptions {
+function parseSectionProperties(el: Element, ctx: DocxReadContext): SectionPropertiesOptions {
   const opts = parseSectionPropertiesEl(el) as Record<string, unknown>;
 
   // Headers/footers - parse from references and store in a separate field
@@ -61,7 +62,7 @@ function parseSectionProperties(el: Element, ctx: DocxReadContext): ISectionProp
     opts.parsedFooters = footerRefs;
   }
 
-  return opts as ISectionPropertiesOptions;
+  return opts as SectionPropertiesOptions;
 }
 
 /**
@@ -156,6 +157,9 @@ function findDeepElement(parent: Element, name: string): Element | undefined {
  * Previous w:sectPr elements appear inside w:pPr elements.
  */
 export function parseBody(body: Element, ctx: DocxReadContext): SectionOptions[] {
+  // Register the body child parser for descriptor parse callbacks
+  setBodyParseChild(parseSectionChild);
+
   // Collect body children and detect section breaks
   interface SectionBoundary {
     index: number;

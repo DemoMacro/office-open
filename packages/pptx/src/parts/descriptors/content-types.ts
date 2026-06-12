@@ -41,9 +41,6 @@ export const contentTypesDesc: CustomDescriptor<ContentTypesDescriptorOptions> =
       }
     }
 
-    return { overrides, defaults } as Record<
-      string,
-      unknown
-    > as Partial<ContentTypesDescriptorOptions>;
+    return { overrides, defaults } as unknown as ContentTypesDescriptorOptions;
   },
 };

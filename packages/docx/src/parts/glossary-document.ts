@@ -107,8 +107,10 @@ export interface GlossaryDocumentOptions {
 // ── Descriptor ──
 
 import type { CustomDescriptor } from "@office-open/core/descriptor";
+import { attr, findChild } from "@office-open/xml";
 
-import type { BodyContext } from "../context";
+import { parseParagraph } from "../body";
+import type { BodyContext, DocxReadContext } from "../context";
 
 const GLOSSARY_NS =
   'xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" ' +
@@ -182,7 +184,95 @@ export const glossaryDesc: CustomDescriptor<GlossaryDocumentOptions, BodyContext
     return `<w:glossaryDocument ${GLOSSARY_NS}><w:docParts>${partsXml}</w:docParts></w:glossaryDocument>`;
   },
 
-  parse(_el, _ctx) {
-    return { parts: [] };
+  parse(el, ctx) {
+    const dctx = ctx as DocxReadContext;
+    const parts: Record<string, unknown>[] = [];
+
+    const docPartsEl = findChild(el, "w:docParts");
+    if (!docPartsEl) return { parts } as unknown as GlossaryDocumentOptions;
+
+    for (const docPart of docPartsEl.elements ?? []) {
+      if (docPart.name !== "w:docPart") continue;
+      const part: Record<string, unknown> = {};
+
+      // Parse w:docPartPr
+      const pr = findChild(docPart, "w:docPartPr");
+      if (pr) {
+        // name
+        const name = findChild(pr, "w:name");
+        if (name) {
+          part.name = attr(name, "w:val") ?? "";
+          const decorated = attr(name, "w:decorated");
+          if (decorated === "1") part.decorated = true;
+        }
+
+        // category
+        const category = findChild(pr, "w:category");
+        if (category) {
+          const catName = findChild(category, "w:name");
+          if (catName) part.category = attr(catName, "w:val");
+          const gallery = findChild(category, "w:gallery");
+          if (gallery) part.gallery = attr(gallery, "w:val");
+        }
+
+        // types
+        const types = findChild(pr, "w:types");
+        if (types) {
+          const typeList: string[] = [];
+          for (const t of types.elements ?? []) {
+            if (t.name === "w:type") {
+              const val = attr(t, "w:val");
+              if (val) typeList.push(val);
+            }
+          }
+          if (typeList.length > 0) part.types = typeList;
+          const allAttr = attr(types, "w:all");
+          if (allAttr === "1") part.allTypes = true;
+        }
+
+        // behaviors
+        const behaviors = findChild(pr, "w:behaviors");
+        if (behaviors) {
+          const behaviorList: string[] = [];
+          for (const b of behaviors.elements ?? []) {
+            if (b.name === "w:behavior") {
+              const val = attr(b, "w:val");
+              if (val) behaviorList.push(val);
+            }
+          }
+          if (behaviorList.length > 0) part.behaviors = behaviorList;
+        }
+
+        // description
+        const desc = findChild(pr, "w:description");
+        if (desc) {
+          const val = attr(desc, "w:val");
+          if (val) part.description = val;
+        }
+
+        // guid
+        const guid = findChild(pr, "w:guid");
+        if (guid) {
+          const val = attr(guid, "w:val");
+          if (val) part.guid = val;
+        }
+      }
+
+      // Parse w:docPartBody children
+      const body = findChild(docPart, "w:docPartBody");
+      if (body) {
+        const childList: unknown[] = [];
+        for (const sub of body.elements ?? []) {
+          if (sub.name === "w:p") {
+            childList.push({ paragraph: parseParagraph(sub, dctx) });
+          }
+        }
+        if (childList.length > 0) part.children = childList;
+      }
+
+      parts.push(part);
+    }
+
+    return { parts } as unknown as GlossaryDocumentOptions;
   },
 };

@@ -18,7 +18,7 @@ import type { VmlShapeStyle } from "./shape/shape";
  *
  * Extends paragraph options while replacing the style property with VML shape styling.
  */
-export type ITextboxOptions = Omit<ParagraphOptions, "style" | "children"> & {
+export type TextboxOptions = Omit<ParagraphOptions, "style" | "children"> & {
   /** VML shape style properties for the textbox (positioning, sizing, wrapping, etc.) */
   style?: VmlShapeStyle;
   /** Array of block-level content elements (paragraphs, tables, etc.) */

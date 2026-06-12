@@ -23,14 +23,14 @@ import type { CnfConditionalOptions } from "@parts/paragraph/formatting/cnf-styl
 import type { IndentAttributesProperties } from "@parts/paragraph/formatting/indent";
 import type { SpacingProperties } from "@parts/paragraph/formatting/spacing";
 import type { TabStopDefinition } from "@parts/paragraph/formatting/tab-stop";
-import type { IFrameOptions } from "@parts/paragraph/frame/frame-properties";
+import type { FrameOptions } from "@parts/paragraph/frame/frame-properties";
 import type { ParagraphPropertiesOptions } from "@parts/paragraph/properties";
 import type { EastAsianLayoutOptions } from "@parts/paragraph/run/east-asian-layout";
 import type { ColorOptions } from "@parts/paragraph/run/formatting";
 import type { LanguageOptions } from "@parts/paragraph/run/language";
 import type {
-  IParagraphRunPropertiesOptions,
-  IRunPropertiesChangeOptions,
+  ParagraphRunPropertiesOptions,
+  RunPropertiesChangeOptions,
   RunPropertiesOptions,
 } from "@parts/paragraph/run/properties";
 import type { FontAttributesProperties } from "@parts/paragraph/run/run-fonts";
@@ -162,7 +162,7 @@ function cnfStyleStr(opts: CnfConditionalOptions): string {
 
 // ── Frame properties ──
 
-function framePrStr(opts: IFrameOptions): string {
+function framePrStr(opts: FrameOptions): string {
   const alignment = (opts as { alignment?: { x?: string; y?: string } }).alignment;
   const position = (opts as { position?: { x?: number; y?: number } }).position;
   const a = attrParts({
@@ -439,7 +439,7 @@ export function stringifyParagraphProperties(
     const inner = stringifyRunPropertiesInner(options.run);
     if (inner !== undefined) {
       const extra: string[] = [];
-      const runOpts = options.run as IParagraphRunPropertiesOptions;
+      const runOpts = options.run as ParagraphRunPropertiesOptions;
       if (runOpts.insertion) {
         const { id, author, date } = runOpts.insertion;
         extra.push(`<w:ins w:id="${id}" w:author="${escapeXml(author)}" w:date="${date}"/>`);
@@ -605,7 +605,7 @@ export function stringifyRunPropertiesInner(opts?: RunPropertiesOptions): string
 
   // Revision (rPrChange)
   if (opts.revision) {
-    const rev = opts.revision as IRunPropertiesChangeOptions;
+    const rev = opts.revision as RunPropertiesChangeOptions;
     const { author: _a, date: _d, id: _i, ...originalProps } = rev;
     const inner = stringifyRunPropertiesInner(originalProps as RunPropertiesOptions);
     parts.push(

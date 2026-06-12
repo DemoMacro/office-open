@@ -15,8 +15,8 @@ import type { IndentAttributesProperties } from "./formatting/indent";
 import type { SpacingProperties } from "./formatting/spacing";
 import type { HeadingLevel } from "./formatting/style";
 import type { TabStopDefinition } from "./formatting/tab-stop";
-import type { IFrameOptions } from "./frame/frame-properties";
-import type { IParagraphRunOptions } from "./run/run";
+import type { FrameOptions } from "./frame/frame-properties";
+import type { ParagraphRunOptions } from "./run/run";
 
 /**
  * Vertical text alignment types for paragraphs.
@@ -95,7 +95,7 @@ export interface LevelParagraphStylePropertiesOptions {
    */
   keepLines?: boolean;
   /** Frame properties for positioning the paragraph */
-  frame?: IFrameOptions;
+  frame?: FrameOptions;
   /** Whether to suppress line numbers for this paragraph */
   suppressLineNumbers?: boolean;
   /** Whether to allow word wrapping */
@@ -143,7 +143,7 @@ export interface LevelParagraphStylePropertiesOptions {
  * These properties are used when defining paragraph styles and include
  * border, shading, and numbering options in addition to level properties.
  */
-export type IParagraphStylePropertiesOptions = {
+export type ParagraphStylePropertiesOptions = {
   /** Border settings for the paragraph */
   border?: BordersOptions;
   /** Background shading/fill color for the paragraph */
@@ -174,7 +174,7 @@ export type IParagraphStylePropertiesOptions = {
     | false;
 } & LevelParagraphStylePropertiesOptions;
 
-export type IParagraphPropertiesOptionsBase = {
+export type ParagraphPropertiesOptionsBase = {
   /** Heading level (Heading1, Heading2, etc.) - applies predefined heading style */
   heading?: (typeof HeadingLevel)[keyof typeof HeadingLevel];
   /** Style ID to apply to this paragraph */
@@ -188,11 +188,11 @@ export type IParagraphPropertiesOptionsBase = {
    * Run properties to apply to all runs in the paragraph.
    * Reference: ECMA-376, 3rd Edition (June, 2011), Fundamentals and Markup Language Reference § 17.3.1.29.
    */
-  run?: IParagraphRunOptions;
-} & IParagraphStylePropertiesOptions;
+  run?: ParagraphRunOptions;
+} & ParagraphStylePropertiesOptions;
 
-export type IParagraphPropertiesChangeOptions = ChangedAttributesProperties &
-  IParagraphPropertiesOptionsBase;
+export type ParagraphPropertiesChangeOptions = ChangedAttributesProperties &
+  ParagraphPropertiesOptionsBase;
 
 /**
  * Options for configuring paragraph properties.
@@ -203,6 +203,6 @@ export type IParagraphPropertiesChangeOptions = ChangedAttributesProperties &
  * Reference: http://officeopenxml.com/WPparagraphProperties.php
  */
 export type ParagraphPropertiesOptions = {
-  revision?: IParagraphPropertiesChangeOptions;
+  revision?: ParagraphPropertiesChangeOptions;
   includeIfEmpty?: boolean;
-} & IParagraphPropertiesOptionsBase;
+} & ParagraphPropertiesOptionsBase;

@@ -190,6 +190,6 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
       if (sv?.attributes?.["zoomToFit"] === "1") result.zoomToFit = true;
     }
 
-    return result as Record<string, unknown>;
+    return result as unknown as ChartsheetDescriptorOptions;
   },
 };

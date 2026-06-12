@@ -29,12 +29,12 @@ export interface CellPatch {
   value: string | number | boolean | Date;
 }
 
-export type IPatch = CellPatch;
+export type Patch = CellPatch;
 
 export interface PatchWorkbookOptions<T extends PatchDocumentOutputType = PatchDocumentOutputType> {
   outputType: T;
   data: InputDataType;
-  patches: Readonly<Record<string, IPatch>>;
+  patches: Readonly<Record<string, Patch>>;
   placeholderDelimiters?: Readonly<{
     start: string;
     end: string;
@@ -71,7 +71,7 @@ export const patchWorkbook = async <T extends PatchDocumentOutputType = PatchDoc
   const { start, end } = placeholderDelimiters;
 
   // Build placeholder → patch map
-  const patchMap = new Map<string, IPatch>();
+  const patchMap = new Map<string, Patch>();
   for (const [key, patch] of Object.entries(patches)) {
     patchMap.set(`${start}${key}${end}`, patch);
   }
@@ -103,7 +103,7 @@ export const patchWorkbook = async <T extends PatchDocumentOutputType = PatchDoc
   return await zipAndConvert(files, outputType, OoxmlMimeType.XLSX);
 };
 
-function patchSharedStrings(sst: Element, patchMap: Map<string, IPatch>): void {
+function patchSharedStrings(sst: Element, patchMap: Map<string, Patch>): void {
   // toJson returns {elements: [{name: "sst", ...}]} — unwrap to actual root
   const root = sst.name ? sst : sst.elements?.[0];
   if (!root) return;
@@ -126,7 +126,7 @@ function patchSharedStrings(sst: Element, patchMap: Map<string, IPatch>): void {
   }
 }
 
-function patchWorksheetInlineStrings(ws: Element, patchMap: Map<string, IPatch>): void {
+function patchWorksheetInlineStrings(ws: Element, patchMap: Map<string, Patch>): void {
   const root = ws.name ? ws : ws.elements?.[0];
   if (!root) return;
 
@@ -148,7 +148,7 @@ function patchWorksheetInlineStrings(ws: Element, patchMap: Map<string, IPatch>)
   }
 }
 
-function patchTextElement(tEl: Element, patchMap: Map<string, IPatch>): void {
+function patchTextElement(tEl: Element, patchMap: Map<string, Patch>): void {
   const text = tEl.elements?.[0]?.text;
   if (typeof text !== "string") return;
 

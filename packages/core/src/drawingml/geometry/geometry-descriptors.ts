@@ -47,7 +47,7 @@ const adjustmentValuesDesc: CustomDescriptor<readonly GeometryGuide[]> = {
         }
       }
     }
-    return result as Partial<readonly GeometryGuide[]>;
+    return result as readonly GeometryGuide[];
   },
 };
 
@@ -77,7 +77,7 @@ export const presetGeometryDesc: CustomDescriptor<PresetGeometryOptions> = {
         result.adjustmentValues = guides as GeometryGuide[];
       }
     }
-    return result;
+    return result as PresetGeometryOptions;
   },
 };
 
@@ -205,7 +205,7 @@ function readPath(el: XmlElement): Partial<PathOptions> {
     }
   }
   if (commands.length > 0) result.commands = commands;
-  return result;
+  return result as PathOptions;
 }
 
 // ── Guide list helper (avLst / gdLst) ──
@@ -449,6 +449,6 @@ export const customGeometryDesc: CustomDescriptor<CustomGeometryOptions> = {
       if (paths.length > 0) result.pathList = paths;
     }
 
-    return result;
+    return result as CustomGeometryOptions;
   },
 };

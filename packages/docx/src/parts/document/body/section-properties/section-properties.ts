@@ -70,11 +70,11 @@ export interface SectionPropertiesOptionsBase {
   printerSettingsId?: string;
 }
 
-export type ISectionPropertiesChangeOptions = ChangedAttributesProperties &
+export type SectionPropertiesChangeOptions = ChangedAttributesProperties &
   SectionPropertiesOptionsBase;
 
-export type ISectionPropertiesOptions = {
-  revision?: ISectionPropertiesChangeOptions;
+export type SectionPropertiesOptions = {
+  revision?: SectionPropertiesChangeOptions;
 } & SectionPropertiesOptionsBase;
 
 export const sectionMarginDefaults = {

@@ -61,7 +61,7 @@ export {
 export { createOutlineCompat, type OutlineOptions } from "./drawingml/outline";
 
 // DrawingML — local types
-export type { ITransform2DOptions } from "./drawingml/transform-2d";
+export type { Transform2DOptions } from "./drawingml/transform-2d";
 export { stringifyPresetGeometry } from "@office-open/core/drawingml";
 export type { ShapePropertiesOptions } from "./drawingml/shape-properties";
 export {
@@ -96,7 +96,7 @@ export type { LineShapeOptions, ConnectorShapeOptions } from "./shape/line-shape
 // Media
 export { Media } from "./media/media";
 export { createTransformation, type MediaTransformation } from "./media/media";
-export type { IMediaData, MediaDataTransformation } from "./media/data";
+export type { MediaData, MediaDataTransformation } from "./media/data";
 export type { VideoFrameOptions, VideoType, PosterType } from "./media/video-frame";
 export type { AudioFrameOptions, AudioType } from "./media/audio-frame";
 

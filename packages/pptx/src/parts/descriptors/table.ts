@@ -162,7 +162,7 @@ export const tableDesc: CustomDescriptor<TableDescriptorOptions> = {
     const graphicData = findChild(el, "a:graphic") ? findChild(el, "a:graphic") : undefined;
     const gd = graphicData ? findChild(graphicData, "a:graphicData") : undefined;
     const tbl = gd ? findChild(gd, "a:tbl") : undefined;
-    if (!tbl) return result as Partial<TableDescriptorOptions>;
+    if (!tbl) return result as unknown as TableDescriptorOptions;
 
     // a:tblPr
     const tblPr = findChild(tbl, "a:tblPr");
@@ -227,7 +227,7 @@ export const tableDesc: CustomDescriptor<TableDescriptorOptions> = {
     }
     result.rows = rows;
 
-    return result as Partial<TableDescriptorOptions>;
+    return result as unknown as TableDescriptorOptions;
   },
 };
 

@@ -133,7 +133,7 @@ export const smartArtDesc: CustomDescriptor<SmartArtDescriptorOptions> = {
       }
     }
 
-    return result as Partial<SmartArtDescriptorOptions>;
+    return result as unknown as SmartArtDescriptorOptions;
   },
 };
 

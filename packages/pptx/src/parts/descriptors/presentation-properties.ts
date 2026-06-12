@@ -35,21 +35,26 @@ export const presPropsDesc: CustomDescriptor<PresPropsDescriptorOptions> = {
 function parsePresProps(el: XmlElement): Partial<PresPropsDescriptorOptions> {
   const result: Record<string, unknown> = {};
 
-  // show (p:show)
-  const show = findChild(el, "p:show");
-  if (show?.attributes) {
+  // show (p:showPr in real PPTX files, or p:show for round-trip compat)
+  const showPr = findChild(el, "p:showPr") ?? findChild(el, "p:show");
+  if (showPr) {
     const showOpts: Record<string, unknown> = {};
-    if (show.attributes["loop"] !== undefined) showOpts.loop = show.attributes["loop"] === "1";
-    if (show.attributes["startSlideNum"] !== undefined)
-      showOpts.startSlideNum = Number(show.attributes["startSlideNum"]);
-    if (show.attributes["showNarration"] !== undefined)
-      showOpts.showNarration = show.attributes["showNarration"] === "1";
-    if (show.attributes["animation"] !== undefined)
-      showOpts.animation = show.attributes["animation"] === "1";
-    if (show.attributes["advanceMode"]) showOpts.advanceMode = show.attributes["advanceMode"];
-    if (show.attributes["present"]) showOpts.present = show.attributes["present"] === "1";
+    if (showPr.attributes?.["loop"] !== undefined)
+      showOpts.loop = showPr.attributes["loop"] === "1";
+    if (showPr.attributes?.["showNarration"] !== undefined)
+      showOpts.showNarration = showPr.attributes["showNarration"] === "1";
+    if (showPr.attributes?.["useTimings"] !== undefined)
+      showOpts.useTimings = showPr.attributes["useTimings"] === "1";
+    // Show type from child elements (kiosk/browse/present)
+    if (findChild(showPr, "p:kiosk")) {
+      showOpts.type = "kiosk";
+    } else if (findChild(showPr, "p:browse")) {
+      showOpts.type = "browse";
+    } else if (findChild(showPr, "p:present")) {
+      showOpts.type = "present";
+    }
     if (Object.keys(showOpts).length > 0) result.show = showOpts;
   }
 
-  return result as Partial<PresPropsDescriptorOptions>;
+  return result as unknown as PresPropsDescriptorOptions;
 }

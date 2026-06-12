@@ -8,7 +8,7 @@ import type { CustomXmlBlockOptions } from "@parts/custom-xml";
  *
  * @module
  */
-import type { ISectionPropertiesOptions } from "@parts/document/body/section-properties";
+import type { SectionPropertiesOptions } from "@parts/document/body/section-properties";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
 import type { SubDocOptions } from "@parts/sub-doc/sub-doc";
 import type { SdtPropertiesOptions } from "@parts/table-of-contents";
@@ -70,6 +70,6 @@ export interface SectionOptions {
     first?: SectionChild[];
     even?: SectionChild[];
   };
-  properties?: ISectionPropertiesOptions;
+  properties?: SectionPropertiesOptions;
   children: SectionChild[];
 }

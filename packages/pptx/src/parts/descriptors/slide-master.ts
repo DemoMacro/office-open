@@ -5,6 +5,7 @@
  */
 
 import type { CustomDescriptor } from "@office-open/core/descriptor";
+import { stringify as xmlStringify } from "@office-open/xml";
 
 // ── Types ──
 
@@ -22,7 +23,9 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions> = {
     return opts.master;
   },
 
-  parse(_el, _ctx) {
-    return {} as Partial<SlideMasterDescriptorOptions>;
+  parse(el, _ctx) {
+    const result: Record<string, unknown> = {};
+    result.master = xmlStringify(el);
+    return result as unknown as SlideMasterDescriptorOptions;
   },
 };

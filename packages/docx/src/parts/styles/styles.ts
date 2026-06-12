@@ -13,8 +13,8 @@ import type { Element } from "@office-open/xml";
 import { parseRunProperties } from "@parts/paragraph/run/run-parse";
 import type {
   DefaultStylesOptions,
-  IBaseParagraphStyleOptions,
-  IBaseCharacterStyleOptions,
+  BaseParagraphStyleOptions,
+  BaseCharacterStyleOptions,
 } from "@parts/styles/factory";
 import { stringifyParagraphStyle, stringifyCharacterStyle } from "@parts/styles/factory";
 
@@ -29,9 +29,9 @@ export interface StylesOptions {
   /** Array of raw XML style elements */
   importedStyles?: { _raw: string }[];
   /** Array of custom paragraph style definitions */
-  paragraphStyles?: (IBaseParagraphStyleOptions & { id: string })[];
+  paragraphStyles?: (BaseParagraphStyleOptions & { id: string })[];
   /** Array of custom character style definitions */
-  characterStyles?: (IBaseCharacterStyleOptions & { id: string })[];
+  characterStyles?: (BaseCharacterStyleOptions & { id: string })[];
 }
 
 /**

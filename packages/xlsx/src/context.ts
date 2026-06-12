@@ -11,7 +11,7 @@ import { ContentTypes } from "@parts/content-types";
 import { Media } from "@parts/media";
 import { SharedStrings } from "@parts/shared-strings";
 import { Styles } from "@parts/styles";
-import type { DxfOptions } from "@parts/styles";
+import type { DxfOptions, StyleOptions } from "@parts/styles";
 import type { PivotCacheReference } from "@parts/workbook";
 
 import type { XlsxDocument } from "./parse";
@@ -65,6 +65,8 @@ export class XlsxWriteContext implements WriteContext {
 export class XlsxReadContext implements ReadContext {
   /** Parsed shared strings for resolving cell values. */
   public readonly sharedStrings: string[];
+  /** Parsed styles (fonts, fills, borders, cellXfs). Set by parseWorkbook(). */
+  public parsedStyles?: Record<string, unknown>;
 
   constructor(
     private xlsx: XlsxDocument,
@@ -87,6 +89,50 @@ export class XlsxReadContext implements ReadContext {
     return undefined;
   }
 
+  /**
+   * Resolve a relationship rId from a worksheet-level rels file.
+   * Worksheet rels paths: `xl/worksheets/sheet1.xml` → `xl/worksheets/_rels/sheet1.xml.rels`
+   */
+  public resolveWorksheetRel(wsPath: string, rId: string): string | undefined {
+    const relsPath = wsPathToRelsPath(wsPath);
+    const rels = this.xlsx.doc.get(relsPath);
+    if (!rels?.elements) return undefined;
+    for (const child of rels.elements) {
+      if (child.name !== "Relationship") continue;
+      if (child.attributes?.["Id"] === rId) {
+        const target = child.attributes["Target"] as string | undefined;
+        if (!target) return undefined;
+        return resolveWsTarget(wsPath, target);
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * Get all relationships from a worksheet rels file matching a type fragment.
+   * e.g. `getWorksheetRelsByType(path, "/comments")` returns all comment relationships.
+   */
+  public getWorksheetRelsByType(
+    wsPath: string,
+    typeFragment: string,
+  ): Array<{ rId: string; target: string }> {
+    const relsPath = wsPathToRelsPath(wsPath);
+    const rels = this.xlsx.doc.get(relsPath);
+    if (!rels?.elements) return [];
+    const result: Array<{ rId: string; target: string }> = [];
+    for (const child of rels.elements) {
+      if (child.name !== "Relationship") continue;
+      const type = child.attributes?.["Type"] as string | undefined;
+      if (!type || !type.includes(typeFragment)) continue;
+      const rId = child.attributes?.["Id"] as string | undefined;
+      const target = child.attributes?.["Target"] as string | undefined;
+      if (rId && target) {
+        result.push({ rId, target: resolveWsTarget(wsPath, target) });
+      }
+    }
+    return result;
+  }
+
   public getPart(path: string): Element | undefined {
     return this.xlsx.doc.get(path);
   }
@@ -94,4 +140,74 @@ export class XlsxReadContext implements ReadContext {
   public getRaw(path: string): Uint8Array | undefined {
     return this.xlsx.doc.getRaw(path);
   }
+
+  /**
+   * Resolve a cell style index to a StyleOptions object by looking up
+   * the parsed cellXfs table and substituting font/fill/border/numFmt indices
+   * with their resolved values.
+   */
+  public resolveStyle(styleIndex: number): StyleOptions | undefined {
+    const ps = this.parsedStyles;
+    if (!ps) return undefined;
+    const cellXfs = ps.cellXfs as Record<string, unknown>[] | undefined;
+    if (!cellXfs || styleIndex >= cellXfs.length) return undefined;
+    const xf = cellXfs[styleIndex] as Record<string, unknown>;
+    const result: Record<string, unknown> = {};
+
+    const fonts = ps.fonts as Record<string, unknown>[] | undefined;
+    const fills = ps.fills as Record<string, unknown>[] | undefined;
+    const borders = ps.borders as Record<string, unknown>[] | undefined;
+    const customNumFmts = ps.customNumFmts as Record<string, number> | undefined;
+
+    const fontIdx = xf.fontIdx as number | undefined;
+    if (fontIdx !== undefined && fonts && fontIdx < fonts.length) result.font = fonts[fontIdx];
+    const fillIdx = xf.fillIdx as number | undefined;
+    if (fillIdx !== undefined && fills && fillIdx < fills.length) result.fill = fills[fillIdx];
+    const borderIdx = xf.borderIdx as number | undefined;
+    if (borderIdx !== undefined && borders && borderIdx < borders.length)
+      result.border = borders[borderIdx];
+    const numFmtIdx = xf.numFmtIdx as number | undefined;
+    if (numFmtIdx !== undefined && customNumFmts) {
+      for (const [code, id] of Object.entries(customNumFmts)) {
+        if (id === numFmtIdx) {
+          result.numFmt = code;
+          break;
+        }
+      }
+    }
+    if (xf.alignment) result.alignment = xf.alignment;
+    if (xf.protection) result.protection = xf.protection;
+    if (xf.quotePrefix) result.quotePrefix = xf.quotePrefix;
+    if (xf.pivotButton) result.pivotButton = xf.pivotButton;
+
+    return result as unknown as StyleOptions;
+  }
+}
+
+// ── Worksheet rels helpers ──
+
+/** Derive rels path from worksheet path. */
+function wsPathToRelsPath(wsPath: string): string {
+  // "xl/worksheets/sheet1.xml" → "xl/worksheets/_rels/sheet1.xml.rels"
+  const idx = wsPath.lastIndexOf("/");
+  const dir = wsPath.substring(0, idx);
+  const file = wsPath.substring(idx + 1);
+  return `${dir}/_rels/${file}.rels`;
+}
+
+/** Resolve a relative target from a worksheet rels file to an absolute archive path. */
+function resolveWsTarget(wsPath: string, target: string): string {
+  if (target.startsWith("/")) return target.slice(1);
+  // Target is relative to the worksheet's directory, e.g. "../comments1.xml" from "xl/worksheets/"
+  const wsDir = wsPath.substring(0, wsPath.lastIndexOf("/"));
+  const parts = target.split("/");
+  const dirParts = wsDir.split("/");
+  for (const part of parts) {
+    if (part === "..") {
+      dirParts.pop();
+    } else {
+      dirParts.push(part);
+    }
+  }
+  return dirParts.join("/");
 }

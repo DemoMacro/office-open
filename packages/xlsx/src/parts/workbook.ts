@@ -423,6 +423,17 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       if (attr(calcPrEl, "fullCalcOnLoad") === "1") calc.fullCalcOnLoad = true;
       if (attr(calcPrEl, "concurrentCalc") === "0") calc.concurrentCalc = false;
       if (attr(calcPrEl, "refMode")) calc.refMode = attr(calcPrEl, "refMode");
+      if (attr(calcPrEl, "calcOnSave") === "0") calc.calcOnSave = false;
+      if (attr(calcPrEl, "forceFullCalc") === "1") calc.forceFullCalc = true;
+      const cmc = attrNum(calcPrEl, "concurrentManualCount");
+      if (cmc !== undefined) calc.concurrentManualCount = cmc;
+      if (attr(calcPrEl, "iterate") === "1") calc.iterate = true;
+      const ic = attrNum(calcPrEl, "iterateCount");
+      if (ic !== undefined) calc.iterateCount = ic;
+      const id = attrNum(calcPrEl, "iterateDelta");
+      if (id !== undefined) calc.iterateDelta = id;
+      if (attr(calcPrEl, "fullPrecision") === "0") calc.fullPrecision = false;
+      if (attr(calcPrEl, "calcCompleted") === "1") calc.calcCompleted = true;
       result.calcPr = calc;
     }
 
@@ -432,13 +443,36 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       const views: CustomWorkbookViewOptions[] = [];
       for (const v of customViewsEl.elements ?? []) {
         if (v.name !== "customWorkbookView") continue;
-        views.push({
+        const view: Record<string, unknown> = {
           name: attr(v, "name") ?? "",
           guid: attr(v, "guid") ?? "",
           windowWidth: attrNum(v, "windowWidth") ?? 0,
           windowHeight: attrNum(v, "windowHeight") ?? 0,
           activeSheetId: attrNum(v, "activeSheetId") ?? 1,
-        });
+        };
+        const xw = attrNum(v, "xWindow");
+        if (xw !== undefined) view.xWindow = xw;
+        const yw = attrNum(v, "yWindow");
+        if (yw !== undefined) view.yWindow = yw;
+        if (attr(v, "showFormulaBar") === "0") view.showFormulaBar = false;
+        if (attr(v, "showStatusbar") === "0") view.showStatusbar = false;
+        if (attr(v, "showHorizontalScroll") === "0") view.showHorizontalScroll = false;
+        if (attr(v, "showVerticalScroll") === "0") view.showVerticalScroll = false;
+        if (attr(v, "showSheetTabs") === "0") view.showSheetTabs = false;
+        const tabRatio = attrNum(v, "tabRatio");
+        if (tabRatio !== undefined) view.tabRatio = tabRatio;
+        if (attr(v, "includeHiddenRowCol") === "0") view.includeHiddenRowCol = false;
+        if (attr(v, "includePrintSettings") === "0") view.includePrintSettings = false;
+        if (attr(v, "personalView") === "1") view.personalView = true;
+        if (attr(v, "maximized") === "1") view.maximized = true;
+        if (attr(v, "minimized") === "1") view.minimized = true;
+        if (attr(v, "autoUpdate") === "1") view.autoUpdate = true;
+        const mi = attrNum(v, "mergeInterval");
+        if (mi !== undefined) view.mergeInterval = mi;
+        if (attr(v, "changesSavedWin") === "1") view.changesSavedWin = true;
+        if (attr(v, "onlySync") === "1") view.onlySync = true;
+        if (attr(v, "showComments")) view.showComments = attr(v, "showComments");
+        views.push(view as unknown as CustomWorkbookViewOptions);
       }
       if (views.length > 0) result.customViews = views;
     }
@@ -451,6 +485,12 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       if (attr(fileSharingEl, "userName")) fs.userName = attr(fileSharingEl, "userName");
       if (attr(fileSharingEl, "reservationPassword"))
         fs.reservationPassword = attr(fileSharingEl, "reservationPassword");
+      if (attr(fileSharingEl, "algorithmName"))
+        fs.algorithmName = attr(fileSharingEl, "algorithmName");
+      if (attr(fileSharingEl, "hashValue")) fs.hashValue = attr(fileSharingEl, "hashValue");
+      if (attr(fileSharingEl, "saltValue")) fs.saltValue = attr(fileSharingEl, "saltValue");
+      const sc = attrNum(fileSharingEl, "spinCount");
+      if (sc !== undefined) fs.spinCount = sc;
       result.fileSharing = fs;
     }
 
@@ -460,12 +500,16 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       const wp: Record<string, unknown> = {};
       if (attr(webPublishingEl, "css") === "0") wp.css = false;
       if (attr(webPublishingEl, "thicket") === "0") wp.thicket = false;
+      if (attr(webPublishingEl, "longFileNames") === "0") wp.longFileNames = false;
       if (attr(webPublishingEl, "vml") === "1") wp.vml = true;
+      if (attr(webPublishingEl, "allowPng") === "1") wp.allowPng = true;
       if (attr(webPublishingEl, "targetScreenSize"))
         wp.targetScreenSize = attr(webPublishingEl, "targetScreenSize");
       if (attrNum(webPublishingEl, "dpi") !== undefined) wp.dpi = attrNum(webPublishingEl, "dpi");
       if (attrNum(webPublishingEl, "codePage") !== undefined)
         wp.codePage = attrNum(webPublishingEl, "codePage");
+      if (attr(webPublishingEl, "characterSet"))
+        wp.characterSet = attr(webPublishingEl, "characterSet");
       result.webPublishing = wp;
     }
 
@@ -480,12 +524,115 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       result.fileRecoveryPr = frp;
     }
 
+    // Workbook properties
+    const wbPrEl = findChild(el, "workbookPr");
+    if (wbPrEl?.attributes) {
+      const wbPr: Record<string, unknown> = {};
+      if (attr(wbPrEl, "date1904") === "1") wbPr.date1904 = true;
+      const dtv = attrNum(wbPrEl, "defaultThemeVersion");
+      if (dtv !== undefined) wbPr.defaultThemeVersion = dtv;
+      if (attr(wbPrEl, "showObjects")) wbPr.showObjects = attr(wbPrEl, "showObjects");
+      if (attr(wbPrEl, "hidePivotFieldList") === "1") wbPr.hidePivotFieldList = true;
+      if (attr(wbPrEl, "allowRefreshQuery") === "1") wbPr.allowRefreshQuery = true;
+      if (attr(wbPrEl, "filterPrivacy") === "1") wbPr.filterPrivacy = true;
+      if (attr(wbPrEl, "backupFile") === "1") wbPr.backupFile = true;
+      if (attr(wbPrEl, "codeName")) wbPr.codeName = attr(wbPrEl, "codeName");
+      if (attr(wbPrEl, "showBorderUnselectedTables") === "1")
+        wbPr.showBorderUnselectedTables = true;
+      if (attr(wbPrEl, "promptedSolutions") === "1") wbPr.promptedSolutions = true;
+      if (attr(wbPrEl, "showInkAnnotation") === "0") wbPr.showInkAnnotation = false;
+      if (attr(wbPrEl, "saveExternalLinkValues") === "0") wbPr.saveExternalLinkValues = false;
+      if (attr(wbPrEl, "updateLinks")) wbPr.updateLinks = attr(wbPrEl, "updateLinks");
+      if (attr(wbPrEl, "showPivotChartFilter") === "1") wbPr.showPivotChartFilter = true;
+      if (attr(wbPrEl, "publishItems") === "1") wbPr.publishItems = true;
+      if (attr(wbPrEl, "checkCompatibility") === "1") wbPr.checkCompatibility = true;
+      if (attr(wbPrEl, "autoCompressPictures") === "0") wbPr.autoCompressPictures = false;
+      if (attr(wbPrEl, "refreshAllConnections") === "1") wbPr.refreshAllConnections = true;
+      result.workbookPr = wbPr;
+    }
+
+    // Function groups
+    const fgEl = findChild(el, "functionGroups");
+    if (fgEl) {
+      const names: string[] = [];
+      for (const fg of fgEl.elements ?? []) {
+        if (fg.name === "functionGroup" && attr(fg, "name")) {
+          names.push(attr(fg, "name")!);
+        }
+      }
+      if (names.length > 0) result.functionGroups = names;
+    }
+
+    // Web publish objects
+    const wpoEl = findChild(el, "webPublishObjects");
+    if (wpoEl) {
+      const objs: WebPublishObjectOptions[] = [];
+      for (const wo of wpoEl.elements ?? []) {
+        if (wo.name !== "webPublishObject") continue;
+        const obj: Record<string, unknown> = {};
+        const rId = wo.attributes?.["r:id"] as string | undefined;
+        if (rId) obj.rId = rId;
+        if (attr(wo, "destinationFile")) obj.destinationFile = attr(wo, "destinationFile");
+        if (attr(wo, "autoRepublish") === "1") obj.autoRepublish = true;
+        if (attr(wo, "title")) obj.title = attr(wo, "title");
+        if (attr(wo, "sourceObject")) obj.sourceObject = attr(wo, "sourceObject");
+        if (attr(wo, "appName")) obj.appName = attr(wo, "appName");
+        objs.push(obj as unknown as WebPublishObjectOptions);
+      }
+      if (objs.length > 0) result.webPublishObjects = objs;
+    }
+
+    // Volatile types (volTypes)
+    const vtEl = findChild(el, "volTypes");
+    if (vtEl) {
+      const volTypes: VolTypeOptions[] = [];
+      for (const vt of vtEl.elements ?? []) {
+        if (vt.name !== "volType") continue;
+        const volType: Record<string, unknown> = {};
+        if (attr(vt, "type")) volType.type = attr(vt, "type") as VolTypeOptions["type"];
+        const mains: VolMainOptions[] = [];
+        for (const m of vt.elements ?? []) {
+          if (m.name !== "main") continue;
+          const main: Record<string, unknown> = {};
+          if (attr(m, "first")) main.first = attr(m, "first")!;
+          const topics: VolTopicOptions[] = [];
+          for (const tp of m.elements ?? []) {
+            if (tp.name !== "tp") continue;
+            const topic: Record<string, unknown> = {};
+            const vEl = findChild(tp, "v");
+            if (vEl) topic.value = vEl.elements?.[0]?.text ?? "";
+            if (attr(tp, "t")) topic.valueType = attr(tp, "t");
+            const stps: string[] = [];
+            const refs: VolTopicRefOptions[] = [];
+            for (const inner of tp.elements ?? []) {
+              if (inner.name === "stp") stps.push(String(inner.elements?.[0]?.text ?? ""));
+              if (inner.name === "tr") {
+                const ref: Record<string, unknown> = {};
+                if (attr(inner, "r")) ref.reference = attr(inner, "r")!;
+                const sIdx = attrNum(inner, "s");
+                if (sIdx !== undefined) ref.sheetIndex = sIdx;
+                refs.push(ref as unknown as VolTopicRefOptions);
+              }
+            }
+            if (stps.length > 0) topic.stringTopics = stps;
+            if (refs.length > 0) topic.refs = refs;
+            topics.push(topic as unknown as VolTopicOptions);
+          }
+          if (topics.length > 0) main.topics = topics;
+          mains.push(main as unknown as VolMainOptions);
+        }
+        if (mains.length > 0) volType.mains = mains;
+        volTypes.push(volType as unknown as VolTypeOptions);
+      }
+      if (volTypes.length > 0) result.volTypes = volTypes;
+    }
+
     // Conformance
     if (el.attributes?.["conformance"]) {
       result.conformance = attr(el, "conformance") as WorkbookConformance;
     }
 
-    return result as Record<string, unknown>;
+    return result as unknown as WorkbookDescriptorOptions;
   },
 };
 

@@ -40,7 +40,7 @@ const ENTR_IDS: Record<AnimationType, number> = {
   checker: 26,
   randomBars: 24,
   wheel: 27,
-  zoom: 10,
+  zoom: 53,
   cover: 28,
   push: 19,
   strips: 23,
@@ -370,6 +370,6 @@ export const timingDesc: CustomDescriptor<TimingDescriptorOptions> = {
     for (const [spid, options] of animMap) {
       entries.push({ spid, options });
     }
-    return { entries } as Partial<TimingDescriptorOptions>;
+    return { entries } as TimingDescriptorOptions;
   },
 };

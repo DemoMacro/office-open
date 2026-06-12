@@ -64,6 +64,6 @@ export const customPropertiesDesc: CustomDescriptor<CustomPropertiesInput> = {
       const value = valueEl ? (textOf(valueEl) ?? "") : "";
       properties.push({ name, value });
     }
-    return { properties } as Record<string, unknown>;
+    return { properties } as unknown as CustomPropertiesInput;
   },
 };

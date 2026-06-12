@@ -8,7 +8,19 @@ import type { ParsedArchive } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
 import type { DataType } from "@office-open/core";
 import type { Element } from "@office-open/xml";
-import { attr, findChild, textOf } from "@office-open/xml";
+import { attr } from "@office-open/xml";
+import { calcChainDesc } from "@parts/calc-chain";
+import { chartsheetDesc } from "@parts/chartsheet";
+import type { ChartsheetOptions } from "@parts/chartsheet";
+import { commentsDesc } from "@parts/comments";
+import { drawingDesc } from "@parts/drawing";
+import { externalLinkDesc } from "@parts/external-link";
+import { pivotCacheDefDesc, pivotCacheRecordsDesc } from "@parts/pivot-cache";
+import { pivotTableDesc } from "@parts/pivot-table";
+import { sharedStringsDesc } from "@parts/shared-strings";
+import { stylesDesc } from "@parts/styles";
+import { tableDesc } from "@parts/table";
+import { workbookDesc } from "@parts/workbook";
 import { worksheetDesc } from "@parts/worksheet";
 import type { WorksheetOptions } from "@parts/worksheet";
 import type { WorkbookOptions } from "@shared/file";
@@ -118,24 +130,20 @@ export function parseXlsx(data: DataType): XlsxDocument {
 
 // ── Shared strings helper ──
 
-function parseSharedStrings(el: Element | undefined): string[] {
-  if (!el) return [];
+/** Extract plain string array from sharedStringsDesc.parse() result. */
+function extractStringsFromEntries(parsed: {
+  entries: (string | Record<string, unknown>)[];
+}): string[] {
   const strings: string[] = [];
-  for (const si of el.elements ?? []) {
-    if (si.name !== "si") continue;
-    // Handle both <si><t>text</t></si> and <si><r><t>text</t></r>...</si>
-    const t = findChild(si, "t");
-    if (t) {
-      strings.push(textOf(t) ?? "");
+  for (const entry of parsed.entries) {
+    if (typeof entry === "string") {
+      strings.push(entry);
     } else {
-      // Rich text: concatenate all <r><t> segments
-      const parts: string[] = [];
-      for (const r of si.elements ?? []) {
-        if (r.name !== "r") continue;
-        const rt = findChild(r, "t");
-        if (rt) parts.push(textOf(rt) ?? "");
+      // Rich text: concatenate run texts
+      const runs = entry.runs as { text: string }[] | undefined;
+      if (runs && runs.length > 0) {
+        strings.push(runs.map((r) => r.text).join(""));
       }
-      strings.push(parts.join(""));
     }
   }
   return strings;
@@ -166,22 +174,50 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
     }
   }
 
-  // Shared strings
-  const strings = parseSharedStrings(xlsx.sharedStrings);
+  // Shared strings — use descriptor.parse() for richer data, then extract strings for lookup
+  let strings: string[] = [];
+  if (xlsx.sharedStrings) {
+    const parsed = sharedStringsDesc.parse(xlsx.sharedStrings, {} as never) as {
+      entries: (string | Record<string, unknown>)[];
+    };
+    strings = extractStringsFromEntries(parsed);
+  }
 
   // Create read context for descriptor pipeline
   const readContext = new XlsxReadContext(xlsx, strings);
 
-  // Sheet names from workbook
-  const sheetNames: string[] = [];
+  // Parse styles (fonts, fills, borders, cellXfs)
+  if (xlsx.styles) {
+    readContext.parsedStyles = stylesDesc.parse(xlsx.styles, readContext) as unknown as Record<
+      string,
+      unknown
+    >;
+  }
+
+  // Parse workbook via descriptor for richer data
+  let sheetNames: string[] = [];
   if (xlsx.workbook) {
-    const sheetsEl = findChild(xlsx.workbook, "sheets");
-    if (sheetsEl) {
-      for (const s of sheetsEl.elements ?? []) {
-        if (s.name !== "sheet") continue;
-        sheetNames.push(attr(s, "name") ?? "");
-      }
-    }
+    const wbData = workbookDesc.parse(xlsx.workbook, readContext) as unknown as Record<
+      string,
+      unknown
+    >;
+    const sheets = wbData.sheets as
+      | { name: string; sheetId: number; rId: string; state?: string }[]
+      | undefined;
+    if (sheets) sheetNames = sheets.map((s) => s.name);
+
+    // Workbook-level properties
+    if (wbData.protection) opts.workbookProtection = wbData.protection;
+    if (wbData.bookView) opts.bookView = wbData.bookView;
+    if (wbData.calcPr) opts.calcPr = wbData.calcPr;
+    if (wbData.customViews) opts.customWorkbookViews = wbData.customViews;
+    if (wbData.fileRecoveryPr) opts.fileRecoveryPr = wbData.fileRecoveryPr;
+    if (wbData.functionGroups) opts.functionGroups = wbData.functionGroups;
+    if (wbData.webPublishing) opts.webPublishing = wbData.webPublishing;
+    if (wbData.fileSharing) opts.fileSharing = wbData.fileSharing;
+    if (wbData.workbookPr) opts.workbookPr = wbData.workbookPr;
+    if (wbData.volTypes) opts.volTypes = wbData.volTypes;
+    if (wbData.webPublishObjects) opts.webPublishObjects = wbData.webPublishObjects;
   }
 
   // Parse worksheets using descriptor pipeline
@@ -193,9 +229,155 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
 
     const wsOpts = worksheetDesc.parse(wsEl, readContext) as Record<string, unknown>;
     if (sheetNames[i]) wsOpts.name = sheetNames[i];
+
+    // ── Resolve sub-parts via worksheet relationships ──
+
+    // Comments
+    const commentRels = readContext.getWorksheetRelsByType(wsPath, "/comments");
+    for (const cr of commentRels) {
+      const commentEl = xlsx.doc.get(cr.target);
+      if (!commentEl) continue;
+      const commentData = commentsDesc.parse(commentEl, readContext) as unknown as Record<
+        string,
+        unknown
+      >;
+      if (commentData.comments) {
+        wsOpts.comments = commentData.comments;
+        break; // one comments file per worksheet
+      }
+    }
+
+    // Drawings (images + charts)
+    const drawingRels = readContext.getWorksheetRelsByType(wsPath, "/drawing");
+    for (const dr of drawingRels) {
+      const drawingEl = xlsx.doc.get(dr.target);
+      if (!drawingEl) continue;
+      const drawingData = drawingDesc.parse(drawingEl, readContext) as Record<string, unknown>;
+      if (drawingData.images) wsOpts.images = drawingData.images;
+      if (drawingData.charts) wsOpts.charts = drawingData.charts;
+      break;
+    }
+
+    // Tables
+    const tableRels = readContext.getWorksheetRelsByType(wsPath, "/table");
+    if (tableRels.length > 0) {
+      const tables: Record<string, unknown>[] = [];
+      for (const tr of tableRels) {
+        const tableEl = xlsx.doc.get(tr.target);
+        if (!tableEl) continue;
+        const tableData = tableDesc.parse(tableEl, readContext) as unknown as Record<
+          string,
+          unknown
+        >;
+        tables.push(tableData);
+      }
+      if (tables.length > 0) wsOpts.tables = tables;
+    }
+
+    // Pivot tables
+    const pivotRels = readContext.getWorksheetRelsByType(wsPath, "/pivotTable");
+    if (pivotRels.length > 0) {
+      const pivotTables: Record<string, unknown>[] = [];
+      for (const pr of pivotRels) {
+        const pivotEl = xlsx.doc.get(pr.target);
+        if (!pivotEl) continue;
+        const pivotData = pivotTableDesc.parse(pivotEl, readContext) as unknown as Record<
+          string,
+          unknown
+        >;
+        pivotTables.push(pivotData);
+      }
+      if (pivotTables.length > 0) wsOpts.pivotTables = pivotTables;
+    }
+
+    // Resolve external hyperlink URLs
+    const hyperlinks = wsOpts.hyperlinks as Record<string, unknown>[] | undefined;
+    if (hyperlinks) {
+      for (const hl of hyperlinks) {
+        const target = hl.target as Record<string, unknown> | undefined;
+        if (target?.type === "external" && typeof target.url === "string") {
+          const resolved = readContext.resolveWorksheetRel(wsPath, target.url);
+          if (resolved) target.url = resolved;
+        }
+      }
+    }
+
     worksheets.push(wsOpts as WorksheetOptions);
   }
 
   opts.worksheets = worksheets;
+
+  // Chartsheets — parse chartsheet parts
+  const chartsheetPaths = xlsx.doc.keys("xl/chartsheets/").filter((k) => k.endsWith(".xml"));
+  if (chartsheetPaths.length > 0) {
+    const chartsheets: ChartsheetOptions[] = [];
+    for (let i = 0; i < chartsheetPaths.length; i++) {
+      const csEl = xlsx.doc.get(chartsheetPaths[i]);
+      if (!csEl) continue;
+      const csData = chartsheetDesc.parse(csEl, readContext) as unknown as Record<string, unknown>;
+      if (sheetNames[worksheets.length + i]) csData.name = sheetNames[worksheets.length + i];
+      chartsheets.push(csData as unknown as ChartsheetOptions);
+    }
+    if (chartsheets.length > 0) opts.chartsheets = chartsheets;
+  }
+
+  // Pivot cache definitions and records
+  const pivotCacheDefPaths = xlsx.doc
+    .keys("xl/pivotCache/")
+    .filter((k) => k.includes("pivotCacheDefinition"));
+  if (pivotCacheDefPaths.length > 0) {
+    const pivotCaches: Record<string, unknown>[] = [];
+    for (const pcdPath of pivotCacheDefPaths) {
+      const pcdEl = xlsx.doc.get(pcdPath);
+      if (!pcdEl) continue;
+      const pcdData = pivotCacheDefDesc.parse(pcdEl, readContext) as unknown as Record<
+        string,
+        unknown
+      >;
+      pivotCaches.push(pcdData);
+    }
+    if (pivotCaches.length > 0) opts.pivotCaches = pivotCaches;
+  }
+
+  const pivotCacheRecPaths = xlsx.doc
+    .keys("xl/pivotCache/")
+    .filter((k) => k.includes("pivotCacheRecords"));
+  if (pivotCacheRecPaths.length > 0) {
+    const pivotCacheRecords: Record<string, unknown>[] = [];
+    for (const pcrPath of pivotCacheRecPaths) {
+      const pcrEl = xlsx.doc.get(pcrPath);
+      if (!pcrEl) continue;
+      const pcrData = pivotCacheRecordsDesc.parse(pcrEl, readContext) as unknown as Record<
+        string,
+        unknown
+      >;
+      pivotCacheRecords.push(pcrData);
+    }
+    if (pivotCacheRecords.length > 0) opts.pivotCacheRecords = pivotCacheRecords;
+  }
+
+  // Calculation chain
+  const calcChainEl = xlsx.doc.get("xl/calcChain.xml");
+  if (calcChainEl) {
+    const calcData = calcChainDesc.parse(calcChainEl, readContext) as unknown as Record<
+      string,
+      unknown
+    >;
+    if (calcData.cells) opts.calcChain = calcData.cells;
+  }
+
+  // External links
+  const extLinkPaths = xlsx.doc.keys("xl/externalLinks/").filter((k) => k.endsWith(".xml"));
+  if (extLinkPaths.length > 0) {
+    const externalLinks: Record<string, unknown>[] = [];
+    for (const elPath of extLinkPaths) {
+      const elEl = xlsx.doc.get(elPath);
+      if (!elEl) continue;
+      const elData = externalLinkDesc.parse(elEl, readContext) as Record<string, unknown>;
+      externalLinks.push(elData);
+    }
+    if (externalLinks.length > 0) opts.externalLinks = externalLinks;
+  }
+
   return opts as WorkbookOptions;
 }

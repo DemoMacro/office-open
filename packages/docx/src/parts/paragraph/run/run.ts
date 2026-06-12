@@ -27,7 +27,7 @@ import type {
   YearLong,
   YearShort,
 } from "./empty-children";
-import type { IParagraphRunPropertiesOptions, RunPropertiesOptions } from "./properties";
+import type { ParagraphRunPropertiesOptions, RunPropertiesOptions } from "./properties";
 
 interface RunOptionsBase {
   children?: (
@@ -72,7 +72,7 @@ export type RunOptions = RunOptionsBase &
     rsidDel?: string;
   };
 
-export type IParagraphRunOptions = RunOptionsBase & IParagraphRunPropertiesOptions;
+export type ParagraphRunOptions = RunOptionsBase & ParagraphRunPropertiesOptions;
 
 /**
  * Constants for page number field types.

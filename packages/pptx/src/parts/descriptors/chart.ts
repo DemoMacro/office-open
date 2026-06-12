@@ -104,7 +104,7 @@ export const chartDesc: CustomDescriptor<ChartDescriptorOptions> = {
       }
     }
 
-    return result as Partial<ChartDescriptorOptions>;
+    return result as unknown as ChartDescriptorOptions;
   },
 };
 

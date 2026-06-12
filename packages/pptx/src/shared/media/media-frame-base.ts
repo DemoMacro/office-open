@@ -1,6 +1,6 @@
 import type { UniversalMeasure } from "@office-open/core";
 import type { AnimationOptions } from "@shared/animation/types";
-import type { IMediaData } from "@shared/media/data";
+import type { MediaData } from "@shared/media/data";
 
 /**
  * Common options for all media frames.
@@ -13,7 +13,7 @@ export interface MediaFrameBaseOptions {
   width?: number | UniversalMeasure;
   height?: number | UniversalMeasure;
   data: Uint8Array;
-  type: IMediaData["type"];
+  type: MediaData["type"];
   name?: string;
   animation?: AnimationOptions;
 }

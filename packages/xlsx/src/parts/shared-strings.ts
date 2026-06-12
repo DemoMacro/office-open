@@ -7,7 +7,8 @@
  * @module
  */
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { escapeXml, findChild, textOf } from "@office-open/xml";
+import { escapeXml, findChild, attr, attrNum, textOf } from "@office-open/xml";
+import type { Element as XmlElement } from "@office-open/xml";
 
 import type { RichTextOptions } from "./worksheet";
 
@@ -178,22 +179,106 @@ export const sharedStringsDesc: CustomDescriptor<SharedStringsDocOptions> = {
       }
 
       // Rich text: <si><r>...</r>...</si>
-      const runs: { text: string }[] = [];
+      const runs: { text: string; properties?: Record<string, unknown> }[] = [];
       for (const r of si.elements ?? []) {
         if (r.name !== "r") continue;
         const rt = findChild(r, "t");
         if (rt) {
-          runs.push({ text: textOf(rt) ?? "" });
+          const rPrEl = findChild(r, "rPr");
+          const run: Record<string, unknown> = { text: textOf(rt) ?? "" };
+          if (rPrEl) run.properties = parseRPr(rPrEl);
+          runs.push(run as (typeof runs)[number]);
         }
       }
+
+      // Phonetics: <rPh sb="..." eb="..."><t>...</t></rPh>
+      const phonetics: { sb: number; eb: number; text: string }[] = [];
+      for (const rPh of si.elements ?? []) {
+        if (rPh.name !== "rPh") continue;
+        const sb = attrNum(rPh, "sb") ?? 0;
+        const eb = attrNum(rPh, "eb") ?? 0;
+        const rPhT = findChild(rPh, "t");
+        phonetics.push({ sb, eb, text: rPhT ? (textOf(rPhT) ?? "") : "" });
+      }
+
       if (runs.length > 0) {
-        entries.push({ runs });
+        const entry: Record<string, unknown> = { runs };
+        if (phonetics.length > 0) entry.phonetics = phonetics;
+        entries.push(entry as RichTextOptions);
       }
     }
 
     return {
       entries,
       uniqueCount: entries.length,
-    } as Record<string, unknown>;
+    } as unknown as SharedStringsDocOptions;
   },
 };
+
+/** Parse CT_RPrElt (run properties inside shared strings r element). */
+function parseRPr(el: XmlElement): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const child of el.elements ?? []) {
+    switch (child.name) {
+      case "rFont":
+        result.font = attr(child, "val") ?? undefined;
+        break;
+      case "charset":
+        result.charset = attrNum(child, "val");
+        break;
+      case "family":
+        result.family = attrNum(child, "val");
+        break;
+      case "b":
+        result.bold = attr(child, "val") !== "0";
+        break;
+      case "i":
+        result.italic = attr(child, "val") !== "0";
+        break;
+      case "strike":
+        result.strike = true;
+        break;
+      case "outline":
+        result.outline = true;
+        break;
+      case "shadow":
+        result.shadow = true;
+        break;
+      case "condense":
+        result.condense = true;
+        break;
+      case "extend":
+        result.extend = true;
+        break;
+      case "color": {
+        const rgb = attr(child, "rgb");
+        if (rgb) {
+          result.color = rgb.length === 8 ? rgb.slice(2) : rgb;
+        } else {
+          const indexed = attrNum(child, "indexed");
+          if (indexed !== undefined) result.color = String(indexed);
+          else {
+            const theme = attr(child, "theme");
+            if (theme !== undefined) result.color = `theme:${theme}`;
+          }
+        }
+        break;
+      }
+      case "sz":
+        result.size = attrNum(child, "val");
+        break;
+      case "u": {
+        const uVal = attr(child, "val");
+        result.underline = uVal ?? true;
+        break;
+      }
+      case "vertAlign":
+        result.vertAlign = attr(child, "val") ?? undefined;
+        break;
+      case "scheme":
+        result.scheme = attr(child, "val") ?? undefined;
+        break;
+    }
+  }
+  return result;
+}

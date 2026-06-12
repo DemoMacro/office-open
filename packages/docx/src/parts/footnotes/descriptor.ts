@@ -12,10 +12,12 @@
  */
 
 import type { CustomDescriptor } from "@office-open/core/descriptor";
+import { attr, attrNum } from "@office-open/xml";
 import { stringifyParagraphInline } from "@parts/inline";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
 
-import type { BodyContext } from "../../context";
+import { parseParagraph } from "../../body";
+import type { BodyContext, DocxReadContext } from "../../context";
 
 // ── Input ──
 
@@ -98,7 +100,24 @@ export const footnotesDesc: CustomDescriptor<FootnotesData, BodyContext> = {
     return parts.join("");
   },
 
-  parse(_el, _ctx) {
-    return {};
+  parse(el, ctx) {
+    const notes = new Map<number, (ParagraphOptions | string)[]>();
+    for (const child of el.elements ?? []) {
+      if (child.name !== "w:footnote") continue;
+      const id = attrNum(child, "w:id");
+      if (id === undefined) continue;
+      // Skip system footnotes (separator id=-1, continuationSeparator id=0)
+      const type = attr(child, "w:type");
+      if (type || id < 1) continue;
+
+      const paragraphs: (ParagraphOptions | string)[] = [];
+      for (const sub of child.elements ?? []) {
+        if (sub.name === "w:p") {
+          paragraphs.push(parseParagraph(sub, ctx as DocxReadContext));
+        }
+      }
+      notes.set(id, paragraphs);
+    }
+    return { notes } as FootnotesData;
   },
 };

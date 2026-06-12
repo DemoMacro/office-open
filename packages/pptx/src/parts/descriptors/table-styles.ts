@@ -30,6 +30,6 @@ export const tableStylesDesc: CustomDescriptor<TableStylesDescriptorOptions> = {
 
   parse(el, _ctx) {
     const defStyle = attr(el, "def") ?? DEFAULT_STYLE_ID;
-    return { defStyle } as Record<string, unknown> as Partial<TableStylesDescriptorOptions>;
+    return { opts: { defaultStyleId: defStyle } } as TableStylesDescriptorOptions;
   },
 };

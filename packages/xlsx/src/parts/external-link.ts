@@ -207,9 +207,91 @@ export const externalLinkDesc: CustomDescriptor<ExternalLinkOptions> = {
         if (names.length > 0) book.sheetNames = names;
       }
 
+      // definedNames
+      const definedNamesEl = findChild(bookEl, "definedNames");
+      if (definedNamesEl) {
+        const dns: Record<string, unknown>[] = [];
+        for (const child of definedNamesEl.elements ?? []) {
+          if (child.name !== "definedName") continue;
+          const dn: Record<string, unknown> = {};
+          if (child.attributes?.["name"]) dn.name = String(child.attributes["name"]);
+          if (child.attributes?.["refersTo"]) dn.refersTo = String(child.attributes["refersTo"]);
+          if (child.attributes?.["sheetId"] !== undefined)
+            dn.sheetId = Number(child.attributes["sheetId"]);
+          if (child.attributes?.["publishToServer"]) dn.publishToServer = true;
+          if (child.attributes?.["vbProcedure"]) dn.vbProcedure = true;
+          if (child.attributes?.["workbookParameter"]) dn.workbookParameter = true;
+          if (child.attributes?.["xlm"]) dn.xlm = true;
+          dns.push(dn);
+        }
+        if (dns.length > 0) book.definedNames = dns;
+      }
+
+      // sheetDataSet
+      const sheetDataSetEl = findChild(bookEl, "sheetDataSet");
+      if (sheetDataSetEl) {
+        const sds: Record<string, unknown>[] = [];
+        for (const sdChild of sheetDataSetEl.elements ?? []) {
+          if (sdChild.name !== "sheetData") continue;
+          const sd: Record<string, unknown> = {};
+          if (sdChild.attributes?.["sheetId"] !== undefined)
+            sd.sheetId = Number(sdChild.attributes["sheetId"]);
+          if (sdChild.attributes?.["refreshError"]) sd.refreshError = true;
+
+          const rows: Record<string, unknown>[] = [];
+          for (const rowChild of sdChild.elements ?? []) {
+            if (rowChild.name !== "row") continue;
+            const row: Record<string, unknown> = {};
+            if (rowChild.attributes?.["r"] !== undefined)
+              row.rowNumber = Number(rowChild.attributes["r"]);
+
+            const cells: Record<string, unknown>[] = [];
+            for (const cellChild of rowChild.elements ?? []) {
+              if (cellChild.name !== "cell") continue;
+              const cell: Record<string, unknown> = {};
+              if (cellChild.attributes?.["r"]) cell.reference = String(cellChild.attributes["r"]);
+              if (cellChild.attributes?.["t"]) cell.type = String(cellChild.attributes["t"]);
+              const vEl = findChild(cellChild, "v");
+              if (vEl && vEl.elements?.[0]?.text !== undefined) {
+                cell.value = String(vEl.elements[0].text);
+              }
+              cells.push(cell);
+            }
+            if (cells.length > 0) row.cells = cells;
+            rows.push(row);
+          }
+          if (rows.length > 0) sd.rows = rows;
+          sds.push(sd);
+        }
+        if (sds.length > 0) book.sheetDataSet = sds;
+      }
+
       result.externalBook = book;
     }
 
-    return result as Record<string, unknown>;
+    // oleLink
+    const oleEl = findChild(el, "oleLink");
+    if (oleEl) {
+      const ole: Record<string, unknown> = {};
+      if (oleEl.attributes?.["r:id"]) result.oleRId = oleEl.attributes["r:id"];
+
+      const oleItemsEl = findChild(oleEl, "oleItems");
+      if (oleItemsEl) {
+        const items: Record<string, unknown>[] = [];
+        for (const child of oleItemsEl.elements ?? []) {
+          if (child.name !== "oleItem") continue;
+          const item: Record<string, unknown> = {};
+          if (child.attributes?.["name"]) item.name = String(child.attributes["name"]);
+          if (child.attributes?.["advise"]) item.advise = true;
+          if (child.attributes?.["prefer"]) item.prefer = true;
+          items.push(item);
+        }
+        if (items.length > 0) ole.oleItems = items;
+      }
+
+      result.oleLink = ole;
+    }
+
+    return result as unknown as ExternalLinkOptions;
   },
 };

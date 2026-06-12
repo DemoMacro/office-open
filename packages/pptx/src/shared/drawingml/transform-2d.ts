@@ -5,4 +5,4 @@
  */
 import type { Transform2DOptions as CoreTransform2DOptions } from "@office-open/core/drawingml";
 
-export type ITransform2DOptions = CoreTransform2DOptions;
+export type Transform2DOptions = CoreTransform2DOptions;

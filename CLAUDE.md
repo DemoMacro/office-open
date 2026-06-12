@@ -65,7 +65,7 @@ Types used by 2+ parts: RunOptions, ParagraphOptions, BorderOptions, Media, etc.
 
 Core infrastructure at `packages/core/src/descriptor/`:
 
-- `CustomDescriptor<T>` — `{ kind: "custom", stringify(opts, ctx): string, parse(el, ctx): Partial<T> }`
+- `CustomDescriptor<T>` — `{ kind: "custom", stringify(opts, ctx): string, parse(el, ctx): T }`
 - `ElementDescriptor<T>` — declarative attr/child mapping
 - `DescriptorBuilder` — `element<T>(tag).attr(...).child(...).build()`
 - Runtime: `stringify(desc, value, ctx)` and `parse(desc, element, ctx)`

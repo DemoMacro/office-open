@@ -13,9 +13,11 @@ import { stringify, parse } from "../../descriptor";
 import { rgbColorDesc, schemeColorDesc } from "../color/color-descriptors";
 import type { SolidFillOptions } from "../color/solid-fill";
 import type { BlurEffectOptions, EffectListOptions } from "./effect-list";
+import type { FillOverlayEffectOptions } from "./fill-overlay";
 import type { GlowEffectOptions } from "./glow";
 import type { InnerShadowEffectOptions } from "./inner-shadow";
 import type { OuterShadowEffectOptions } from "./outer-shadow";
+import type { PresetShadowEffectOptions } from "./preset-shadow";
 import type { ReflectionEffectOptions } from "./reflection";
 
 // ── Helper: stringify a color into an effect element ──
@@ -256,12 +258,75 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
       result.outerShadow = outerOpts as OuterShadowEffectOptions;
     }
 
+    // Fill overlay
+    const fillOverlay = findChild(el, "a:fillOverlay");
+    if (fillOverlay) {
+      const overlayOpts: Partial<FillOverlayEffectOptions> = {};
+      if (fillOverlay.attributes?.["blend"] !== undefined)
+        overlayOpts.blend = String(
+          fillOverlay.attributes["blend"],
+        ) as FillOverlayEffectOptions["blend"];
+      result.fillOverlay = overlayOpts as FillOverlayEffectOptions;
+    }
+
+    // Preset shadow
+    const prstShdw = findChild(el, "a:prstShdw");
+    if (prstShdw) {
+      const prstOpts: Partial<PresetShadowEffectOptions> = {};
+      if (prstShdw.attributes?.["prst"] !== undefined)
+        prstOpts.preset = String(
+          prstShdw.attributes["prst"],
+        ) as PresetShadowEffectOptions["preset"];
+      if (prstShdw.attributes?.["dist"] !== undefined)
+        prstOpts.distance = Number(prstShdw.attributes["dist"]);
+      if (prstShdw.attributes?.["dir"] !== undefined)
+        prstOpts.direction = Number(prstShdw.attributes["dir"]);
+      const color = readColorFromElement(prstShdw, ctx);
+      if (color) prstOpts.color = color;
+      result.presetShadow = prstOpts as PresetShadowEffectOptions;
+    }
+
+    // Reflection
+    const reflection = findChild(el, "a:reflection");
+    if (reflection) {
+      const refOpts: Partial<ReflectionEffectOptions> = {};
+      if (reflection.attributes?.["blurRad"] !== undefined)
+        refOpts.blurRadius = Number(reflection.attributes["blurRad"]);
+      if (reflection.attributes?.["stA"] !== undefined)
+        refOpts.startAlpha = Number(reflection.attributes["stA"]);
+      if (reflection.attributes?.["stPos"] !== undefined)
+        refOpts.startPosition = Number(reflection.attributes["stPos"]);
+      if (reflection.attributes?.["endA"] !== undefined)
+        refOpts.endAlpha = Number(reflection.attributes["endA"]);
+      if (reflection.attributes?.["endPos"] !== undefined)
+        refOpts.endPosition = Number(reflection.attributes["endPos"]);
+      if (reflection.attributes?.["dist"] !== undefined)
+        refOpts.distance = Number(reflection.attributes["dist"]);
+      if (reflection.attributes?.["dir"] !== undefined)
+        refOpts.direction = Number(reflection.attributes["dir"]);
+      if (reflection.attributes?.["fadeDir"] !== undefined)
+        refOpts.fadeDirection = Number(reflection.attributes["fadeDir"]);
+      if (reflection.attributes?.["sx"] !== undefined)
+        refOpts.scaleX = Number(reflection.attributes["sx"]);
+      if (reflection.attributes?.["sy"] !== undefined)
+        refOpts.scaleY = Number(reflection.attributes["sy"]);
+      if (reflection.attributes?.["kx"] !== undefined)
+        refOpts.skewX = Number(reflection.attributes["kx"]);
+      if (reflection.attributes?.["ky"] !== undefined)
+        refOpts.skewY = Number(reflection.attributes["ky"]);
+      if (reflection.attributes?.["algn"] !== undefined)
+        refOpts.alignment = String(reflection.attributes["algn"]);
+      if (reflection.attributes?.["rotWithShape"] !== undefined)
+        refOpts.rotWithShape = reflection.attributes["rotWithShape"] !== "0";
+      result.reflection = refOpts as ReflectionEffectOptions;
+    }
+
     // Soft edge
     const softEdge = findChild(el, "a:softEdge");
     if (softEdge?.attributes?.["rad"] !== undefined) {
       result.softEdge = Number(softEdge.attributes["rad"]);
     }
 
-    return result;
+    return result as EffectListOptions;
   },
 };

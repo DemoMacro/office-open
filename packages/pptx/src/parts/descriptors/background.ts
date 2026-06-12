@@ -88,5 +88,5 @@ function parseBackground(el: XmlElement, ctx: ReadContext): Partial<BackgroundDe
     }
   }
 
-  return result as Partial<BackgroundDescriptorOptions>;
+  return result as unknown as BackgroundDescriptorOptions;
 }

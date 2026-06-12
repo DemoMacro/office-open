@@ -79,7 +79,7 @@ export const commentsDesc: CustomDescriptor<CommentsDocOptions> = {
       }
     }
 
-    return { comments } as Record<string, unknown>;
+    return { comments } as CommentsDocOptions;
   },
 };
 
@@ -129,7 +129,7 @@ export const vmlNotesDesc: CustomDescriptor<CommentsDocOptions> = {
 
   parse(_el, _ctx) {
     // VML parsing is not commonly needed — return empty
-    return { comments: [] } as Record<string, unknown>;
+    return { comments: [] } as CommentsDocOptions;
   },
 };
 

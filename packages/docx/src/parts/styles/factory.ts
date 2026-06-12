@@ -8,7 +8,7 @@
  *
  * @module
  */
-import type { IParagraphStylePropertiesOptions } from "@parts/paragraph/properties";
+import type { ParagraphStylePropertiesOptions } from "@parts/paragraph/properties";
 import type { RunStylePropertiesOptions } from "@parts/paragraph/run/properties";
 
 import { stringifyParagraphProperties, stringifyRunProperties } from "../paragraph/stringify";
@@ -18,33 +18,33 @@ import type { StylesOptions } from "./styles";
 
 export interface DefaultStylesOptions {
   document?: DocumentDefaultsOptions;
-  title?: IBaseParagraphStyleOptions;
-  subtitle?: IBaseParagraphStyleOptions;
-  heading1?: IBaseParagraphStyleOptions;
-  heading2?: IBaseParagraphStyleOptions;
-  heading3?: IBaseParagraphStyleOptions;
-  heading4?: IBaseParagraphStyleOptions;
-  heading5?: IBaseParagraphStyleOptions;
-  heading6?: IBaseParagraphStyleOptions;
-  heading7?: IBaseParagraphStyleOptions;
-  heading8?: IBaseParagraphStyleOptions;
-  heading9?: IBaseParagraphStyleOptions;
-  strong?: IBaseParagraphStyleOptions;
-  emphasis?: IBaseParagraphStyleOptions;
-  listParagraph?: IBaseParagraphStyleOptions;
-  quote?: IBaseParagraphStyleOptions;
-  intenseQuote?: IBaseParagraphStyleOptions;
-  hyperlink?: IBaseCharacterStyleOptions;
-  footnoteReference?: IBaseCharacterStyleOptions;
-  footnoteText?: IBaseParagraphStyleOptions;
-  footnoteTextChar?: IBaseCharacterStyleOptions;
-  endnoteReference?: IBaseCharacterStyleOptions;
-  endnoteText?: IBaseParagraphStyleOptions;
-  endnoteTextChar?: IBaseCharacterStyleOptions;
+  title?: BaseParagraphStyleOptions;
+  subtitle?: BaseParagraphStyleOptions;
+  heading1?: BaseParagraphStyleOptions;
+  heading2?: BaseParagraphStyleOptions;
+  heading3?: BaseParagraphStyleOptions;
+  heading4?: BaseParagraphStyleOptions;
+  heading5?: BaseParagraphStyleOptions;
+  heading6?: BaseParagraphStyleOptions;
+  heading7?: BaseParagraphStyleOptions;
+  heading8?: BaseParagraphStyleOptions;
+  heading9?: BaseParagraphStyleOptions;
+  strong?: BaseParagraphStyleOptions;
+  emphasis?: BaseParagraphStyleOptions;
+  listParagraph?: BaseParagraphStyleOptions;
+  quote?: BaseParagraphStyleOptions;
+  intenseQuote?: BaseParagraphStyleOptions;
+  hyperlink?: BaseCharacterStyleOptions;
+  footnoteReference?: BaseCharacterStyleOptions;
+  footnoteText?: BaseParagraphStyleOptions;
+  footnoteTextChar?: BaseCharacterStyleOptions;
+  endnoteReference?: BaseCharacterStyleOptions;
+  endnoteText?: BaseParagraphStyleOptions;
+  endnoteTextChar?: BaseCharacterStyleOptions;
 }
 
 export interface DocumentDefaultsOptions {
-  paragraph?: IParagraphStylePropertiesOptions;
+  paragraph?: ParagraphStylePropertiesOptions;
   run?: RunStylePropertiesOptions;
 }
 
@@ -65,12 +65,12 @@ interface StyleOptions {
   personalReply?: boolean;
 }
 
-export type IBaseParagraphStyleOptions = {
-  paragraph?: IParagraphStylePropertiesOptions;
+export type BaseParagraphStyleOptions = {
+  paragraph?: ParagraphStylePropertiesOptions;
   run?: RunStylePropertiesOptions;
 } & StyleOptions & { id?: string };
 
-export type IBaseCharacterStyleOptions = {
+export type BaseCharacterStyleOptions = {
   run?: RunStylePropertiesOptions;
 } & StyleOptions & { id?: string };
 
@@ -89,7 +89,7 @@ function esc(s: string): string {
 export function stringifyParagraphStyle(
   opts: StyleOptions & {
     id: string;
-    paragraph?: IParagraphStylePropertiesOptions;
+    paragraph?: ParagraphStylePropertiesOptions;
     run?: RunStylePropertiesOptions;
   },
 ): string {

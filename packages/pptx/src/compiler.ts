@@ -44,7 +44,7 @@ import {
   type SlideSize,
 } from "@shared/file";
 import { HyperlinkCollection } from "@shared/hyperlink-collection";
-import type { IMediaData } from "@shared/media/data";
+import type { MediaData } from "@shared/media/data";
 import { Media } from "@shared/media/media";
 import { createThemeXml } from "@shared/theme";
 import { buildTransition } from "@shared/transition";
@@ -1104,7 +1104,7 @@ export function compilePresentation(
     ];
     if (image.type === "svg" && "fallback" in image) {
       const fallback = (
-        image as IMediaData & {
+        image as MediaData & {
           fallback: { fileName: string; data: Uint8Array };
         }
       ).fallback;

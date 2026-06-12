@@ -12,7 +12,7 @@ import type { FillOptions } from "@office-open/core/drawingml";
 import type { DocPropertiesOptions } from "@parts/drawing/doc-properties/doc-properties";
 import type { MediaTransformation } from "@shared/media";
 import { createTransformation } from "@shared/media";
-import type { IMediaData } from "@shared/media/data";
+import type { MediaData } from "@shared/media/data";
 
 import type { BlipEffectsOptions } from "../../drawing/inline/graphic/graphic-data/pic/blip/blip-effects";
 import type { SourceRectangleOptions } from "../../drawing/inline/graphic/graphic-data/pic/blip/source-rectangle";
@@ -54,14 +54,14 @@ interface SvgMediaOptions {
  *
  * @see {@link ImageRun}
  */
-export type IImageOptions = (RegularImageOptions | SvgMediaOptions) & CoreImageOptions;
+export type ImageOptions = (RegularImageOptions | SvgMediaOptions) & CoreImageOptions;
 
 export const createImageData = (
   data: Uint8Array,
   transformation: MediaTransformation,
   key: string,
   srcRect?: SourceRectangleOptions,
-): Pick<IMediaData, "data" | "fileName" | "transformation" | "srcRect"> => ({
+): Pick<MediaData, "data" | "fileName" | "transformation" | "srcRect"> => ({
   data,
   fileName: key,
   srcRect,

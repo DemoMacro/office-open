@@ -9,13 +9,22 @@
 
 import { uniqueId } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
+import {
+  attr,
+  attrBool,
+  attrNum,
+  children as xmlChildren,
+  findChild,
+  textOf,
+} from "@office-open/xml";
+import type { Element } from "@office-open/xml";
 import type { AltChunkOptions } from "@parts/alt-chunk/alt-chunk";
 import type { CustomXmlPrOptions } from "@parts/custom-xml/custom-xml";
 import type { SubDocOptions } from "@parts/sub-doc/sub-doc";
 import type { SdtPropertiesOptions } from "@parts/table-of-contents";
 import type { SectionChild } from "@shared/section";
 
-import type { BodyContext } from "../context";
+import type { BodyContext, DocxReadContext } from "../context";
 
 // ── XML helpers ──
 
@@ -68,8 +77,44 @@ export const altChunkDesc: CustomDescriptor<AltChunkOptions, BodyContext> = {
     return `<w:altChunk r:id="${rId}"/>`;
   },
 
-  parse() {
-    return {};
+  parse(el, ctx) {
+    const rId = attr(el, "r:id");
+    const opts: Record<string, unknown> = {};
+
+    // Check for matchSrc
+    const altChunkPr = findChild(el, "w:altChunkPr");
+    if (altChunkPr && findChild(altChunkPr, "w:matchSrc")) {
+      opts.matchSrc = true;
+    }
+
+    // Resolve the altChunk data from relationships
+    const dctx = ctx as DocxReadContext;
+    if (rId) {
+      const path = dctx.resolveRelationship(rId);
+      if (path) {
+        const data = dctx.getRaw(path);
+        if (data) {
+          opts.data = data;
+          const ext = path.split(".").pop() ?? "txt";
+          switch (ext) {
+            case "html":
+              opts.contentType = "text/html";
+              opts.extension = "html";
+              break;
+            case "rtf":
+              opts.contentType = "application/rtf";
+              opts.extension = "rtf";
+              break;
+            default:
+              opts.contentType = "text/plain";
+              opts.extension = "txt";
+              break;
+          }
+        }
+      }
+    }
+
+    return opts as unknown as AltChunkOptions;
   },
 };
 
@@ -95,8 +140,19 @@ export const subDocDesc: CustomDescriptor<SubDocOptions, BodyContext> = {
     return `<w:subDoc r:id="rId${relId}"/>`;
   },
 
-  parse() {
-    return {};
+  parse(el, ctx) {
+    const rId = attr(el, "r:id");
+    const dctx = ctx as DocxReadContext;
+    if (rId) {
+      const path = dctx.resolveRelationship(rId);
+      if (path) {
+        const data = dctx.getRaw(path);
+        if (data) {
+          return { data } as SubDocOptions;
+        }
+      }
+    }
+    return { data: new Uint8Array(0) } as SubDocOptions;
   },
 };
 
@@ -247,6 +303,177 @@ function stringifySdtPr(opts: SdtPropertiesOptions): string {
   return parts.length ? `<w:sdtPr>${parts.join("")}</w:sdtPr>` : "<w:sdtPr/>";
 }
 
+// ── SDT parse helpers ──
+
+/** Parse w:sdtPr element into SdtPropertiesOptions. */
+function parseSdtPr(el: Element): SdtPropertiesOptions {
+  const opts: Record<string, unknown> = {};
+
+  const alias = findChild(el, "w:alias");
+  if (alias) opts.alias = attr(alias, "w:val");
+
+  const tag = findChild(el, "w:tag");
+  if (tag) {
+    const val = attr(tag, "w:val");
+    if (val) opts.tag = val;
+  }
+
+  const id = findChild(el, "w:id");
+  if (id) {
+    const val = attrNum(id, "w:val");
+    if (val !== undefined) opts.id = val;
+  }
+
+  const lock = findChild(el, "w:lock");
+  if (lock) {
+    const val = attr(lock, "w:val");
+    if (val) opts.lock = val as SdtPropertiesOptions["lock"];
+  }
+
+  const temporary = findChild(el, "w:temporary");
+  if (temporary) opts.temporary = attrBool(temporary, "w:val") ?? true;
+
+  const showingPlcHdr = findChild(el, "w:showingPlcHdr");
+  if (showingPlcHdr) opts.showingPlaceholder = attrBool(showingPlcHdr, "w:val") ?? true;
+
+  const label = findChild(el, "w:label");
+  if (label) {
+    const val = attrNum(label, "w:val");
+    if (val !== undefined) opts.label = val;
+  }
+
+  const tabIndex = findChild(el, "w:tabIndex");
+  if (tabIndex) {
+    const val = attrNum(tabIndex, "w:val");
+    if (val !== undefined) opts.tabIndex = val;
+  }
+
+  // Data binding
+  const dataBinding = findChild(el, "w:dataBinding");
+  if (dataBinding) {
+    opts.dataBinding = {
+      xpath: attr(dataBinding, "w:xpath") ?? "",
+      storeItemID: attr(dataBinding, "w:storeItemID") ?? "",
+      prefixMappings: attr(dataBinding, "w:prefixMappings"),
+    };
+  }
+
+  // Type discriminators (xsd:choice)
+  if (findChild(el, "w:equation")) {
+    opts.equation = true;
+  } else if (findChild(el, "w:comboBox")) {
+    const comboBox = findChild(el, "w:comboBox")!;
+    const items: { displayText?: string; value?: string }[] = [];
+    for (const li of xmlChildren(comboBox, "w:listItem")) {
+      items.push({ displayText: attr(li, "w:displayText"), value: attr(li, "w:value") });
+    }
+    opts.comboBox = {
+      items: items.length > 0 ? items : undefined,
+      lastValue: attr(comboBox, "w:lastValue"),
+    };
+  } else if (findChild(el, "w:date")) {
+    const date = findChild(el, "w:date")!;
+    const dateOpts: Record<string, unknown> = {};
+    const dateFormat = findChild(date, "w:dateFormat");
+    if (dateFormat) dateOpts.dateFormat = textOf(dateFormat);
+    const lid = findChild(date, "w:lid");
+    if (lid) dateOpts.languageId = textOf(lid);
+    const storeMapped = findChild(date, "w:storeMappedDataAs");
+    if (storeMapped) dateOpts.storeMappedDataAs = attr(storeMapped, "w:val");
+    const calendar = findChild(date, "w:calendar");
+    if (calendar) dateOpts.calendar = attr(calendar, "w:val");
+    const fullDate = attr(date, "w:fullDate");
+    if (fullDate) dateOpts.fullDate = fullDate;
+    opts.date = dateOpts;
+  } else if (findChild(el, "w:docPartObj")) {
+    const dp = findChild(el, "w:docPartObj")!;
+    const dpObj: Record<string, unknown> = {};
+    const gallery = findChild(dp, "w:docPartGallery");
+    if (gallery) dpObj.gallery = attr(gallery, "w:val");
+    const category = findChild(dp, "w:docPartCategory");
+    if (category) dpObj.category = attr(category, "w:val");
+    if (findChild(dp, "w:docPartUnique")) dpObj.unique = true;
+    opts.docPartObj = dpObj;
+  } else if (findChild(el, "w:docPartList")) {
+    const dp = findChild(el, "w:docPartList")!;
+    const dpObj: Record<string, unknown> = {};
+    const gallery = findChild(dp, "w:docPartGallery");
+    if (gallery) dpObj.gallery = attr(gallery, "w:val");
+    const category = findChild(dp, "w:docPartCategory");
+    if (category) dpObj.category = attr(category, "w:val");
+    if (findChild(dp, "w:docPartUnique")) dpObj.unique = true;
+    opts.docPartList = dpObj;
+  } else if (findChild(el, "w:dropDownList")) {
+    const ddl = findChild(el, "w:dropDownList")!;
+    const items: { displayText?: string; value?: string }[] = [];
+    for (const li of xmlChildren(ddl, "w:listItem")) {
+      items.push({ displayText: attr(li, "w:displayText"), value: attr(li, "w:value") });
+    }
+    opts.dropDownList = {
+      items: items.length > 0 ? items : undefined,
+      lastValue: attr(ddl, "w:lastValue"),
+    };
+  } else if (findChild(el, "w:picture")) {
+    opts.picture = true;
+  } else if (findChild(el, "w:richText")) {
+    opts.richText = true;
+  } else if (findChild(el, "w:text")) {
+    const text = findChild(el, "w:text")!;
+    opts.text = { multiLine: attrBool(text, "w:multiLine") };
+  } else if (findChild(el, "w:citation")) {
+    opts.citation = true;
+  } else if (findChild(el, "w:group")) {
+    opts.group = true;
+  } else if (findChild(el, "w:bibliography")) {
+    opts.bibliography = true;
+  }
+
+  return opts as SdtPropertiesOptions;
+}
+
+/** Parse w:customXmlPr element into CustomXmlPrOptions. */
+function parseCustomXmlPr(el: Element): CustomXmlPrOptions {
+  const opts: Record<string, unknown> = {};
+  const placeholder = findChild(el, "w:placeholder");
+  if (placeholder) {
+    const val = attr(placeholder, "w:val");
+    if (val) opts.placeholder = val;
+  }
+  const attributes: { name: string; val: string; uri?: string }[] = [];
+  for (const child of el.elements ?? []) {
+    if (child.name !== "w:attr") continue;
+    const name = attr(child, "w:name");
+    const val = attr(child, "w:val");
+    if (name && val) {
+      const attrOpts: { name: string; val: string; uri?: string } = { name, val };
+      const uriVal = attr(child, "w:uri");
+      if (uriVal) attrOpts.uri = uriVal;
+      attributes.push(attrOpts);
+    }
+  }
+  if (attributes.length > 0) opts.attributes = attributes;
+  return opts as unknown as CustomXmlPrOptions;
+}
+
+/** Body child element parsing callback for SDT/customXml content. */
+let _parseBodyChild: ((el: Element, ctx: DocxReadContext) => SectionChild) | undefined;
+
+/** Register the body child parser (called from parse/body.ts to break circular dependency). */
+export function setBodyParseChild(
+  parser: (el: Element, ctx: DocxReadContext) => SectionChild,
+): void {
+  _parseBodyChild = parser;
+}
+
+function parseBodyChildren(elements: Element[], ctx: DocxReadContext): SectionChild[] {
+  if (!_parseBodyChild) return [];
+  const result: SectionChild[] = [];
+  for (const el of elements) {
+    result.push(_parseBodyChild(el, ctx));
+  }
+  return result;
+}
+
 export const sdtBlockDesc: CustomDescriptor<SdtChildOptions, BodyContext> = {
   kind: "custom",
 
@@ -273,8 +500,22 @@ export const sdtBlockDesc: CustomDescriptor<SdtChildOptions, BodyContext> = {
     return parts.join("");
   },
 
-  parse() {
-    return {};
+  parse(el, ctx) {
+    const dctx = ctx as DocxReadContext;
+
+    // Parse sdtPr
+    const sdtPr = findChild(el, "w:sdtPr");
+    const properties = sdtPr ? parseSdtPr(sdtPr) : {};
+
+    // Parse sdtContent children
+    const sdtContent = findChild(el, "w:sdtContent");
+    let childList: SectionChild[] | undefined;
+    if (sdtContent && sdtContent.elements?.length) {
+      childList = parseBodyChildren(sdtContent.elements, dctx);
+      if (childList.length === 0) childList = undefined;
+    }
+
+    return { properties, children: childList } as SdtChildOptions;
   },
 };
 
@@ -328,7 +569,32 @@ export const customXmlBlockDesc: CustomDescriptor<CustomXmlBlockDescriptorOption
     return parts.join("");
   },
 
-  parse() {
-    return {};
+  parse(el, ctx) {
+    const dctx = ctx as DocxReadContext;
+    const opts: Record<string, unknown> = {};
+
+    const element = attr(el, "w:element");
+    if (element) opts.element = element;
+
+    const uri = attr(el, "w:uri");
+    if (uri) opts.uri = uri;
+
+    // Parse w:customXmlPr
+    const xmlPr = findChild(el, "w:customXmlPr");
+    if (xmlPr) {
+      opts.customXmlPr = parseCustomXmlPr(xmlPr);
+    }
+
+    // Parse block-level children
+    const childList: SectionChild[] = [];
+    for (const child of el.elements ?? []) {
+      if (child.name === "w:customXmlPr") continue;
+      if (_parseBodyChild) {
+        childList.push(_parseBodyChild(child, dctx));
+      }
+    }
+    if (childList.length > 0) opts.children = childList;
+
+    return opts as unknown as CustomXmlBlockDescriptorOptions;
   },
 };

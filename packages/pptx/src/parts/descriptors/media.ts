@@ -148,7 +148,7 @@ export const videoDesc: CustomDescriptor<VideoDescriptorOptions> = {
       }
     }
 
-    return result as Partial<VideoDescriptorOptions>;
+    return result as unknown as VideoDescriptorOptions;
   },
 };
 
@@ -225,7 +225,7 @@ export const audioDesc: CustomDescriptor<AudioDescriptorOptions> = {
       }
     }
 
-    return result as Partial<AudioDescriptorOptions>;
+    return result as unknown as AudioDescriptorOptions;
   },
 };
 

@@ -58,5 +58,5 @@ function parseViewProperties(el: XmlElement): Partial<ViewPropertiesDescriptorOp
     }
   }
 
-  return result as Partial<ViewPropertiesDescriptorOptions>;
+  return result as unknown as ViewPropertiesDescriptorOptions;
 }

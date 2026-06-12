@@ -8,7 +8,7 @@
 
 import type { SectionChild } from "@shared/section";
 
-import type { ITableCellPropertiesOptions } from "./table-cell-properties";
+import type { TableCellPropertiesOptions } from "./table-cell-properties";
 
 /**
  * Options for creating a TableCell element.
@@ -18,4 +18,4 @@ import type { ITableCellPropertiesOptions } from "./table-cell-properties";
 export type TableCellOptions = {
   /** Array of Paragraph, Table, or plain objects that make up the cell content */
   children: SectionChild[];
-} & ITableCellPropertiesOptions;
+} & TableCellPropertiesOptions;

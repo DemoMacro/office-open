@@ -27,7 +27,7 @@ export const diagramRelIdsDesc: CustomDescriptor<DiagramRelIdsOptions> = {
       if (el.attributes["r:qs"] !== undefined) result.qs = String(el.attributes["r:qs"]);
       if (el.attributes["r:cs"] !== undefined) result.cs = String(el.attributes["r:cs"]);
     }
-    return result;
+    return result as DiagramRelIdsOptions;
   },
 };
 
@@ -68,7 +68,7 @@ export const diagramStyleDesc: CustomDescriptor<DiagramStyleOptions> = {
     if (fontRef?.attributes?.["idx"] !== undefined)
       result.fontIdx = String(fontRef.attributes["idx"]);
 
-    return result;
+    return result as DiagramStyleOptions;
   },
 };
 
@@ -145,7 +145,7 @@ export const presLayoutVarsDesc: CustomDescriptor<PresLayoutVarsOptions> = {
           : never,
       };
 
-    return result;
+    return result as PresLayoutVarsOptions;
   },
 };
 
@@ -170,6 +170,6 @@ export const diagramExtLstDesc: CustomDescriptor<DiagramExtLstOptions> = {
       if (extensions.length) result.extensions = extensions;
     }
 
-    return result;
+    return result as DiagramExtLstOptions;
   },
 };

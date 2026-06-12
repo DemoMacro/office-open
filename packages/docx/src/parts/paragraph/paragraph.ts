@@ -12,10 +12,10 @@ import type { MathInput } from "./math";
 import type { ParagraphPropertiesOptions } from "./properties";
 import type { RunOptions } from "./run";
 import type { ChartOptions } from "./run/chart-run";
-import type { IImageOptions } from "./run/image-run";
+import type { ImageOptions } from "./run/image-run";
 import type { RubyOptions } from "./run/ruby";
-import type { ISymbolRunOptions } from "./run/symbol-run";
-import type { IWpsShapeOptions } from "./run/wps-shape-run";
+import type { SymbolRunOptions } from "./run/symbol-run";
+import type { WpsShapeRunOptions } from "./run/wps-shape-run";
 
 // ── JSON child wrappers ──
 
@@ -31,7 +31,7 @@ export interface SmartArtChild {
 
 /** JSON-friendly wrapper for ImageRun options in paragraph children. */
 export interface ImageChild {
-  image: IImageOptions;
+  image: ImageOptions;
 }
 
 /** JSON-friendly wrapper for Math options in paragraph children. */
@@ -42,12 +42,12 @@ export interface MathChild {
 }
 
 /** JSON-friendly wrappers for simple paragraph child types (JSON API). */
-export type IParagraphJsonChild =
+export type ParagraphJsonChild =
   | ChartChild
   | SmartArtChild
   | ImageChild
   | MathChild
-  | { symbolRun: ISymbolRunOptions }
+  | { symbolRun: SymbolRunOptions }
   | { footnoteReference: number }
   | { endnoteReference: number }
   | { pageBreak: true }
@@ -67,7 +67,7 @@ export type IParagraphJsonChild =
     }
   | { bookmarkStart: { id: number; name: string } }
   | { bookmarkEnd: number }
-  | { wpsShape: Omit<IWpsShapeOptions, "type"> }
+  | { wpsShape: Omit<WpsShapeRunOptions, "type"> }
   // Proof error markers
   | { proofErr: "spellStart" | "spellEnd" | "gramStart" | "gramEnd" }
   // Positional tab
@@ -129,7 +129,7 @@ export type IParagraphJsonChild =
           placeholder?: string;
           attrs?: Array<{ name: string; val: string; uri?: string }>;
         };
-        children?: (RunOptions | IParagraphJsonChild | string)[];
+        children?: (RunOptions | ParagraphJsonChild | string)[];
       };
     };
 
@@ -142,7 +142,7 @@ export type ParagraphOptions = {
   /** Simple text content for the paragraph. Creates a single TextRun. */
   text?: string;
   /** Array of child elements. */
-  children?: (RunOptions | IParagraphJsonChild | string)[];
+  children?: (RunOptions | ParagraphJsonChild | string)[];
   /** Revision save ID for the paragraph mark. */
   rsidR?: string;
   /** Revision save ID for the paragraph properties. */

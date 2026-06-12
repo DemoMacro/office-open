@@ -20,7 +20,7 @@ export const VerticalMergeRevisionType = {
   RESTART: "restart",
 } as const;
 
-export type ICellMergeAttributes = ChangedAttributesProperties & {
+export type CellMergeAttributes = ChangedAttributesProperties & {
   verticalMerge?: (typeof VerticalMergeRevisionType)[keyof typeof VerticalMergeRevisionType];
   verticalMergeOriginal?: (typeof VerticalMergeRevisionType)[keyof typeof VerticalMergeRevisionType];
 };

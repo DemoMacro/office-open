@@ -440,7 +440,7 @@ export const pictureDesc: CustomDescriptor<PictureDescriptorOptions> = {
     if (!result.data) result.data = new Uint8Array(0);
     if (!result.type) result.type = "png";
 
-    return result;
+    return result as PictureDescriptorOptions;
   },
 };
 
@@ -490,7 +490,7 @@ function buildLockAttrs(opts: ShapeLockingOptions): string[] {
   ] as const;
   for (const key of keys) {
     const val = opts[key];
-    if (val !== undefined) attrs.push(`${key}="${val ? 1 : 0}"`);
+    if (val !== undefined) attrs.push(`a:${key}="${val ? 1 : 0}"`);
   }
   return attrs;
 }
@@ -894,31 +894,28 @@ function readTxBody(txBody: XmlElement, ctx: ReadContext): TextBodyDescriptorOpt
 
   // a:bodyPr
   const bodyPr = findChild(txBody, "a:bodyPr");
-  if (bodyPr?.attributes) {
-    if (bodyPr.attributes["vert"] !== undefined)
-      result.vertical = String(bodyPr.attributes["vert"]) as TextBodyDescriptorOptions["vertical"];
-    if (bodyPr.attributes["anchor"] !== undefined)
+  if (bodyPr) {
+    const attrs = bodyPr.attributes ?? {};
+    if (attrs["vert"] !== undefined)
+      result.vertical = String(attrs["vert"]) as TextBodyDescriptorOptions["vertical"];
+    if (attrs["anchor"] !== undefined)
       result.anchor = xsdTextAnchor.from(
-        String(bodyPr.attributes["anchor"]),
+        String(attrs["anchor"]),
       ) as TextBodyDescriptorOptions["anchor"];
-    if (bodyPr.attributes["wrap"] !== undefined)
-      result.wrap = String(bodyPr.attributes["wrap"]) as TextBodyDescriptorOptions["wrap"];
-    if (bodyPr.attributes["tIns"] !== undefined)
-      result.margins = { ...result.margins, top: Number(bodyPr.attributes["tIns"]) };
-    if (bodyPr.attributes["bIns"] !== undefined)
-      result.margins = { ...result.margins, bottom: Number(bodyPr.attributes["bIns"]) };
-    if (bodyPr.attributes["lIns"] !== undefined)
-      result.margins = { ...result.margins, left: Number(bodyPr.attributes["lIns"]) };
-    if (bodyPr.attributes["rIns"] !== undefined)
-      result.margins = { ...result.margins, right: Number(bodyPr.attributes["rIns"]) };
-    if (bodyPr.attributes["numCol"] !== undefined)
-      result.columns = Number(bodyPr.attributes["numCol"]);
-    if (bodyPr.attributes["spcCol"] !== undefined)
-      result.columnSpacing = Number(bodyPr.attributes["spcCol"]) / 100;
-    if (bodyPr.attributes["marT"] !== undefined)
-      result.marginTop = Number(bodyPr.attributes["marT"]);
-    if (bodyPr.attributes["marB"] !== undefined)
-      result.marginBottom = Number(bodyPr.attributes["marB"]);
+    if (attrs["wrap"] !== undefined)
+      result.wrap = String(attrs["wrap"]) as TextBodyDescriptorOptions["wrap"];
+    if (attrs["tIns"] !== undefined)
+      result.margins = { ...result.margins, top: Number(attrs["tIns"]) };
+    if (attrs["bIns"] !== undefined)
+      result.margins = { ...result.margins, bottom: Number(attrs["bIns"]) };
+    if (attrs["lIns"] !== undefined)
+      result.margins = { ...result.margins, left: Number(attrs["lIns"]) };
+    if (attrs["rIns"] !== undefined)
+      result.margins = { ...result.margins, right: Number(attrs["rIns"]) };
+    if (attrs["numCol"] !== undefined) result.columns = Number(attrs["numCol"]);
+    if (attrs["spcCol"] !== undefined) result.columnSpacing = Number(attrs["spcCol"]) / 100;
+    if (attrs["marT"] !== undefined) result.marginTop = Number(attrs["marT"]);
+    if (attrs["marB"] !== undefined) result.marginBottom = Number(attrs["marB"]);
 
     if (findChild(bodyPr, "a:normAutofit")) result.autoFit = "normal";
     else if (findChild(bodyPr, "a:spAutoFit")) result.autoFit = "shape";

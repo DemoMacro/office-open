@@ -9,7 +9,7 @@ import type { ShadingAttributesProperties } from "@shared/shading";
  *
  * @module
  */
-import type { ICellMergeAttributes } from "@shared/track-revision";
+import type { CellMergeAttributes } from "@shared/track-revision";
 import type { ChangedAttributesProperties } from "@shared/track-revision/track-revision";
 import type { TableVerticalAlign } from "@shared/vertical-align";
 
@@ -51,7 +51,7 @@ export interface TableCellPropertiesOptionsBase {
   headers?: string[];
   insertion?: ChangedAttributesProperties;
   deletion?: ChangedAttributesProperties;
-  cellMerge?: ICellMergeAttributes;
+  cellMerge?: CellMergeAttributes;
 }
 
 /**
@@ -59,10 +59,10 @@ export interface TableCellPropertiesOptionsBase {
  *
  * @see {@link TableCellProperties}
  */
-export type ITableCellPropertiesOptions = {
-  revision?: ITableCellPropertiesChangeOptions;
+export type TableCellPropertiesOptions = {
+  revision?: TableCellPropertiesChangeOptions;
   includeIfEmpty?: boolean;
 } & TableCellPropertiesOptionsBase;
 
-export type ITableCellPropertiesChangeOptions = TableCellPropertiesOptionsBase &
+export type TableCellPropertiesChangeOptions = TableCellPropertiesOptionsBase &
   ChangedAttributesProperties;

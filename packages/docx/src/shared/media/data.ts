@@ -89,12 +89,12 @@ export interface WpgCommonMediaData {
   fill?: FillOptions;
 }
 
-export type IGroupChildMediaData = (WpsMediaData | IMediaData) & WpgCommonMediaData;
+export type GroupChildMediaData = (WpsMediaData | MediaData) & WpgCommonMediaData;
 
 export interface WpgMediaData {
   type: "wpg";
   transformation: MediaDataTransformation;
-  children: IGroupChildMediaData[];
+  children: GroupChildMediaData[];
   /** Child coordinate offset */
   chOff?: ChildOffset;
   /** Child coordinate extent */
@@ -123,14 +123,14 @@ export interface SmartArtMediaData {
   smartArtKey: string;
 }
 
-export type IExtendedMediaData =
-  | IMediaData
+export type ExtendedMediaData =
+  | MediaData
   | WpsMediaData
   | WpgMediaData
   | ChartMediaData
   | SmartArtMediaData;
 
-export type IMediaData = (RegularMediaData | SvgMediaData) & CoreMediaData;
+export type MediaData = (RegularMediaData | SvgMediaData) & CoreMediaData;
 
 // Needed because of: https://github.com/s-panferov/awesome-typescript-loader/issues/432
 /**

@@ -147,7 +147,7 @@ export const gradientFillDesc: CustomDescriptor<GradientFillOptions> = {
     const tileRect = findChild(el, "a:tileRect");
     if (tileRect) result.tileRect = readRelativeRect(tileRect);
 
-    return result;
+    return result as GradientFillOptions;
   },
 };
 
@@ -190,7 +190,7 @@ export const patternFillDesc: CustomDescriptor<PatternFillOptions> = {
       result.backgroundColor = readDirectColor(bgClr, ctx);
     }
 
-    return result;
+    return result as PatternFillOptions;
   },
 };
 
@@ -268,34 +268,39 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
     }
   },
   parse(el, ctx) {
-    // Check which fill child element exists
-    if (findChild(el, "a:noFill")) {
-      return { type: "none" };
+    // Resolve fill element — either el itself or a child
+    const resolve = (tag: string): XmlElement | undefined =>
+      el.name === tag ? el : findChild(el, tag);
+
+    const noFill = resolve("a:noFill");
+    if (noFill) {
+      return { type: "none" } as FillOptions;
     }
 
-    const solidFill = findChild(el, "a:solidFill");
+    const solidFill = resolve("a:solidFill");
     if (solidFill) {
       const color = parse(solidFillDesc, solidFill, ctx) as SolidFillOptions;
-      return { type: "solid", color };
+      return { type: "solid", color } as FillOptions;
     }
 
-    const gradFill = findChild(el, "a:gradFill");
+    const gradFill = resolve("a:gradFill");
     if (gradFill) {
       const gradOpts = parse(gradientFillDesc, gradFill, ctx);
-      return { type: "gradient", options: gradOpts as GradientFillOptions };
+      return { type: "gradient", options: gradOpts as GradientFillOptions } as FillOptions;
     }
 
-    const pattFill = findChild(el, "a:pattFill");
+    const pattFill = resolve("a:pattFill");
     if (pattFill) {
       const pattOpts = parse(patternFillDesc, pattFill, ctx);
-      return { type: "pattern", ...(pattOpts as PatternFillOptions) };
+      return { type: "pattern", ...(pattOpts as PatternFillOptions) } as FillOptions;
     }
 
-    if (findChild(el, "a:grpFill")) {
-      return { type: "group" };
+    const grpFill = resolve("a:grpFill");
+    if (grpFill) {
+      return { type: "group" } as FillOptions;
     }
 
-    return {};
+    return { type: "none" } as FillOptions;
   },
 };
 

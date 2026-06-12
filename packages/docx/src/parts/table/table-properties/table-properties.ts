@@ -78,14 +78,14 @@ export interface TablePropertiesOptionsBase {
   description?: string;
 }
 
-export type ITablePropertiesChangeOptions = ITablePropertiesOptions & ChangedAttributesProperties;
+export type TablePropertiesChangeOptions = TablePropertiesOptions & ChangedAttributesProperties;
 
 /**
  * Options for configuring table properties.
  *
  * @see {@link TableProperties}
  */
-export type ITablePropertiesOptions = {
-  revision?: ITablePropertiesChangeOptions;
+export type TablePropertiesOptions = {
+  revision?: TablePropertiesChangeOptions;
   includeIfEmpty?: boolean;
 } & TablePropertiesOptionsBase;

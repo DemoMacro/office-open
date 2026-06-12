@@ -110,6 +110,6 @@ export const groupShapeDesc: CustomDescriptor<GroupShapeDescriptorOptions> = {
     }
     if (groupChildren.length > 0) result.children = groupChildren;
 
-    return result as Partial<GroupShapeDescriptorOptions>;
+    return result as unknown as GroupShapeDescriptorOptions;
   },
 };

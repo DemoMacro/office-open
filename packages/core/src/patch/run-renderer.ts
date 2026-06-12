@@ -15,7 +15,7 @@ export interface ElementWrapper {
 
 export interface RenderedParagraphNode {
   readonly text: string;
-  readonly runs: readonly IRenderedRunNode[];
+  readonly runs: readonly RenderedRunNode[];
   readonly index: number;
   readonly pathToParagraph: readonly number[];
 }
@@ -30,7 +30,7 @@ type IParts = {
   readonly index: number;
 } & StartAndEnd;
 
-export type IRenderedRunNode = {
+export type RenderedRunNode = {
   readonly text: string;
   readonly parts: readonly IParts[];
   readonly index: number;
@@ -53,7 +53,7 @@ export function createRunRenderer(ns: XmlNamespaceConfig) {
 
     let currentRunStringLength = 0;
 
-    const runs: IRenderedRunNode[] = [];
+    const runs: RenderedRunNode[] = [];
     for (let i = 0; i < node.element.elements.length; i++) {
       const element = node.element.elements[i];
       if (element.name === ns.run) {
@@ -77,7 +77,7 @@ export function createRunRenderer(ns: XmlNamespaceConfig) {
     node: Element,
     index: number,
     currentRunStringIndex: number,
-  ): IRenderedRunNode => {
+  ): RenderedRunNode => {
     if (!node.elements) {
       return {
         end: currentRunStringIndex,

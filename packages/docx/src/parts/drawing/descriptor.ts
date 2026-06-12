@@ -37,9 +37,9 @@ import { escapeXml } from "@office-open/xml";
 import { stringifyParagraphInline } from "@parts/inline";
 import type {
   ChartMediaData,
-  IExtendedMediaData,
-  IGroupChildMediaData,
-  IMediaData,
+  ExtendedMediaData,
+  GroupChildMediaData,
+  MediaData,
   MediaDataTransformation,
   SmartArtMediaData,
   WpgMediaData,
@@ -80,7 +80,7 @@ const NOOP_CTX: WriteContext = {
  */
 export interface DrawingDescriptorOptions {
   /** Media data (image, chart, smartart, wps, wpg) */
-  mediaData: IExtendedMediaData;
+  mediaData: ExtendedMediaData;
   /** Non-visual document properties (name, description, hyperlinks) */
   docProperties?: DocPropertiesOptions;
   /** Floating/anchored positioning (omit for inline) */
@@ -183,7 +183,7 @@ function stringifyDocPr(opts: DocPropertiesOptions | undefined, hlIds: Hyperlink
 // ── BlipFill (image data reference) ──
 
 function stringifyBlipFill(
-  mediaData: IMediaData,
+  mediaData: MediaData,
   blipEffects?: BlipEffectsOptions,
   tile?: TileOptions,
 ): string {
@@ -428,7 +428,7 @@ function stringifyBodyPr(opts?: BodyPropertiesOptions): string {
 
 function stringifyWpgGroup(
   opts: {
-    readonly children: readonly IGroupChildMediaData[];
+    readonly children: readonly GroupChildMediaData[];
     readonly transformation: MediaDataTransformation;
     readonly chOff?: ChildOffset;
     readonly chExt?: ChildExtent;
@@ -458,8 +458,8 @@ function stringifyWpgGroup(
           ctx,
         );
       }
-      // pic child (IMediaData)
-      const picData = child as IMediaData;
+      // pic child (MediaData)
+      const picData = child as MediaData;
       const picParts: string[] = [];
       picParts.push(
         '<pic:nvPicPr><pic:cNvPr id="0" name="" descr=""/><pic:cNvPicPr preferRelativeResize="1"><a:picLocks noChangeAspect="1"/></pic:cNvPicPr></pic:nvPicPr>',
@@ -496,7 +496,7 @@ function stringifyWpgGroup(
 // ── Graphic data content ──
 
 function stringifyGraphicDataContent(
-  mediaData: IExtendedMediaData,
+  mediaData: ExtendedMediaData,
   opts: DrawingDescriptorOptions,
   hlIds: HyperlinkIds,
   ctx: BodyContext,
@@ -553,7 +553,7 @@ function stringifyGraphicDataContent(
   }
 
   // Default: image (pic:pic)
-  const md = mediaData as IMediaData;
+  const md = mediaData as MediaData;
   return (
     `<a:graphicData uri="${PIC_URI}">` +
     `<pic:pic xmlns:pic="${PIC_URI}">` +
@@ -785,6 +785,6 @@ export const drawingDesc: CustomDescriptor<DrawingDescriptorOptions, BodyContext
 
   parse(el, ctx) {
     const result = parseDrawingRun(el, ctx as import("../../context").DocxReadContext);
-    return result ?? {};
+    return (result ?? {}) as unknown as DrawingDescriptorOptions;
   },
 };

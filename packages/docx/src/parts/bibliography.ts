@@ -65,6 +65,7 @@ export interface BibliographyOptions {
 // ── Descriptor ──
 
 import type { CustomDescriptor } from "@office-open/core/descriptor";
+import { findChild, textOf } from "@office-open/xml";
 
 function escapeXml(s: string): string {
   return s
@@ -121,7 +122,29 @@ export const bibliographyDesc: CustomDescriptor<BibliographyOptions> = {
     return parts.join("");
   },
 
-  parse() {
-    return { sources: [] };
+  parse(el, _ctx) {
+    const opts: Record<string, unknown> = {};
+
+    // StyleName attribute
+    const styleName = el.attributes?.["StyleName"];
+    if (styleName) opts.styleName = styleName;
+
+    // Parse b:Source children
+    const sources: Record<string, unknown>[] = [];
+    for (const child of el.elements ?? []) {
+      if (child.name !== "b:Source") continue;
+      const source: Record<string, unknown> = {};
+      for (const [, key] of SOURCE_FIELDS) {
+        const xmlChild = findChild(child, `b:${SOURCE_FIELDS.find((f) => f[1] === key)![0]}`);
+        if (xmlChild) {
+          const val = textOf(xmlChild);
+          if (val) source[key] = val;
+        }
+      }
+      sources.push(source);
+    }
+    opts.sources = sources;
+
+    return opts as unknown as BibliographyOptions;
   },
 };

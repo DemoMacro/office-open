@@ -57,7 +57,7 @@ export const bevelDesc: CustomDescriptor<BevelOptions> = {
     if (el.attributes?.["h"] !== undefined) result.h = Number(el.attributes["h"]);
     if (el.attributes?.["prst"] !== undefined)
       result.prst = String(el.attributes["prst"]) as BevelOptions["prst"];
-    return result;
+    return result as BevelOptions;
   },
 };
 
@@ -136,7 +136,7 @@ export const shape3DDesc: CustomDescriptor<Shape3DOptions> = {
       if (solidFill) result.contourColor = parse(solidFillDesc, solidFill, ctx) as SolidFillOptions;
     }
 
-    return result;
+    return result as Shape3DOptions;
   },
 };
 
@@ -165,7 +165,7 @@ const cameraDesc: CustomDescriptor<CameraOptions> = {
     if (el.attributes?.["zoom"] !== undefined) result.zoom = String(el.attributes["zoom"]);
     const rot = findChild(el, "a:rot");
     if (rot) result.rotation = readSphereCoords(rot);
-    return result;
+    return result as CameraOptions;
   },
 };
 
@@ -192,7 +192,7 @@ const lightRigDesc: CustomDescriptor<LightRigOptions> = {
     if (el.attributes?.["dir"] !== undefined) result.direction = String(el.attributes["dir"]);
     const rot = findChild(el, "a:rot");
     if (rot) result.rotation = readSphereCoords(rot);
-    return result;
+    return result as LightRigOptions;
   },
 };
 
@@ -232,7 +232,7 @@ export const scene3DDesc: CustomDescriptor<Scene3DOptions> = {
     const backdrop = findChild(el, "a:backdrop");
     if (backdrop) result.backdrop = readBackdrop(backdrop);
 
-    return result;
+    return result as Scene3DOptions;
   },
 };
 

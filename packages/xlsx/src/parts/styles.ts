@@ -860,6 +860,26 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions> = {
       result.borders = borders;
     }
 
+    // cellStyleXfs
+    const cellStyleXfsEl = findChild(el, "cellStyleXfs");
+    if (cellStyleXfsEl) {
+      const xfs: Record<string, unknown>[] = [];
+      for (const xf of cellStyleXfsEl.elements ?? []) {
+        if (xf.name !== "xf") continue;
+        const style: Record<string, unknown> = {};
+        const fontId = attrNum(xf, "fontId");
+        const fillId = attrNum(xf, "fillId");
+        const borderId = attrNum(xf, "borderId");
+        const numFmtId = attrNum(xf, "numFmtId");
+        if (fontId !== undefined) style.fontIdx = fontId;
+        if (fillId !== undefined) style.fillIdx = fillId;
+        if (borderId !== undefined) style.borderIdx = borderId;
+        if (numFmtId !== undefined) style.numFmtIdx = numFmtId;
+        xfs.push(style);
+      }
+      result.cellStyleXfs = xfs;
+    }
+
     // cellXfs
     const cellXfsEl = findChild(el, "cellXfs");
     if (cellXfsEl) {
@@ -892,7 +912,130 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions> = {
       result.cellXfs = xfs;
     }
 
-    return result as Record<string, unknown>;
+    // cellStyles
+    const cellStylesEl = findChild(el, "cellStyles");
+    if (cellStylesEl) {
+      const styles: CustomCellStyleOptions[] = [];
+      for (const cs of cellStylesEl.elements ?? []) {
+        if (cs.name !== "cellStyle") continue;
+        const style: Record<string, unknown> = {};
+        if (attr(cs, "name")) style.name = attr(cs, "name");
+        const xfId = attrNum(cs, "xfId");
+        if (xfId !== undefined) style.xfId = xfId;
+        const builtinId = attrNum(cs, "builtinId");
+        if (builtinId !== undefined) style.builtinId = builtinId;
+        if (attr(cs, "customBuiltin") === "1") style.customBuiltin = true;
+        if (attr(cs, "hidden") === "1") style.hidden = true;
+        const iLevel = attrNum(cs, "iLevel");
+        if (iLevel !== undefined) style.iLevel = iLevel;
+        styles.push(style as unknown as CustomCellStyleOptions);
+      }
+      result.customCellStyles = styles;
+    }
+
+    // dxfs
+    const dxfsEl = findChild(el, "dxfs");
+    if (dxfsEl) {
+      const dxfs: DxfOptions[] = [];
+      for (const dxf of dxfsEl.elements ?? []) {
+        if (dxf.name !== "dxf") continue;
+        const d: Record<string, unknown> = {};
+        const fontEl = findChild(dxf, "font");
+        if (fontEl) d.font = parseFont(fontEl);
+        const fillEl = findChild(dxf, "fill");
+        if (fillEl) d.fill = parseFill(fillEl);
+        const borderEl = findChild(dxf, "border");
+        if (borderEl) d.border = parseBorder(borderEl);
+        const numFmtEl = findChild(dxf, "numFmt");
+        if (numFmtEl && attr(numFmtEl, "formatCode")) d.numFmt = attr(numFmtEl, "formatCode");
+        dxfs.push(d as DxfOptions);
+      }
+      result.dxfs = dxfs;
+    }
+
+    // tableStyles
+    const tableStylesEl = findChild(el, "tableStyles");
+    if (tableStylesEl?.attributes) {
+      const ts: Record<string, unknown> = {};
+      if (attr(tableStylesEl, "count") !== undefined)
+        ts.count = attrNum(tableStylesEl, "count") ?? 0;
+      if (attr(tableStylesEl, "defaultTableStyle"))
+        ts.defaultTableStyle = attr(tableStylesEl, "defaultTableStyle");
+      if (attr(tableStylesEl, "defaultPivotStyle"))
+        ts.defaultPivotStyle = attr(tableStylesEl, "defaultPivotStyle");
+      const customStyles: CustomTableStyleOptions[] = [];
+      for (const tse of tableStylesEl.elements ?? []) {
+        if (tse.name !== "tableStyle") continue;
+        const style: Record<string, unknown> = {};
+        if (attr(tse, "name")) style.name = attr(tse, "name");
+        if (attr(tse, "pivot") === "1") style.pivot = true;
+        const elements: TableStyleElementOptions[] = [];
+        for (const tsee of tse.elements ?? []) {
+          if (tsee.name !== "tableStyleElement") continue;
+          const elOpts: Record<string, unknown> = {};
+          if (attr(tsee, "type")) elOpts.type = attr(tsee, "type") as TableStyleElementType;
+          const dxfId = attrNum(tsee, "dxfId");
+          if (dxfId !== undefined) elOpts.dxfId = dxfId;
+          if (attr(tsee, "button") === "1") elOpts.button = true;
+          elements.push(elOpts as unknown as TableStyleElementOptions);
+        }
+        if (elements.length > 0) style.elements = elements;
+        customStyles.push(style as unknown as CustomTableStyleOptions);
+      }
+      if (customStyles.length > 0) ts.tableStyles = customStyles;
+      result.tableStylesInfo = ts;
+    }
+
+    // colors
+    const colorsEl = findChild(el, "colors");
+    if (colorsEl) {
+      const colors: Record<string, unknown> = {};
+      const icEl = findChild(colorsEl, "indexedColors");
+      if (icEl) {
+        const indexed: IndexedColorOptions[] = [];
+        for (const rgb of icEl.elements ?? []) {
+          if (rgb.name === "rgbColor" && attr(rgb, "rgb")) {
+            indexed.push({ rgb: attr(rgb, "rgb")! });
+          }
+        }
+        colors.indexedColors = indexed;
+      }
+      const mruEl = findChild(colorsEl, "mruColors");
+      if (mruEl) {
+        const mru: string[] = [];
+        for (const c of mruEl.elements ?? []) {
+          if (c.name === "color") {
+            const rgb = attr(c, "rgb");
+            if (rgb) mru.push(rgb.length === 8 ? rgb.slice(2) : rgb);
+          }
+        }
+        colors.mruColors = mru;
+      }
+      result.colors = colors;
+    }
+
+    // styleExtensions (extLst)
+    const extLstEl = findChild(el, "extLst");
+    if (extLstEl) {
+      const exts: StyleExtensionOptions[] = [];
+      for (const ext of extLstEl.elements ?? []) {
+        if (ext.name !== "ext") continue;
+        const uri = attr(ext, "uri");
+        if (uri) {
+          // Serialize child elements back as raw XML content
+          const content = (ext.elements ?? [])
+            .map((e) => {
+              // Simple reconstruction for extension content
+              return JSON.stringify(e);
+            })
+            .join("");
+          exts.push({ uri, content: content || undefined });
+        }
+      }
+      result.styleExtensions = exts;
+    }
+
+    return result as unknown as StylesDocOptions;
   },
 };
 
@@ -949,7 +1092,7 @@ function parseFont(el: XmlElement): FontOptions {
         break;
     }
   }
-  return result as FontOptions;
+  return result as unknown as FontOptions;
 }
 
 function parseFill(el: XmlElement): FillOptions {
@@ -963,7 +1106,7 @@ function parseFill(el: XmlElement): FillOptions {
     if (bg) result.bgColor = parseColorHex(bg);
     const indexed = fg ? attrNum(fg, "indexed") : undefined;
     if (indexed !== undefined) result.colorIndexed = indexed;
-    return result as FillOptions;
+    return result as unknown as FillOptions;
   }
 
   const gradientFill = findChild(el, "gradientFill");
@@ -983,10 +1126,10 @@ function parseFill(el: XmlElement): FillOptions {
       }
     }
     if (stops.length > 0) result.stops = stops;
-    return result as FillOptions;
+    return result as unknown as FillOptions;
   }
 
-  return {} as FillOptions;
+  return {} as unknown as FillOptions;
 }
 
 function parseBorder(el: XmlElement): BorderSideOptions {
@@ -994,7 +1137,17 @@ function parseBorder(el: XmlElement): BorderSideOptions {
   if (attr(el, "diagonalUp") === "1") result.diagonalUp = true;
   if (attr(el, "diagonalDown") === "1") result.diagonalDown = true;
 
-  for (const side of ["left", "right", "top", "bottom", "diagonal"] as const) {
+  for (const side of [
+    "left",
+    "right",
+    "top",
+    "bottom",
+    "diagonal",
+    "start",
+    "end",
+    "vertical",
+    "horizontal",
+  ] as const) {
     const sideEl = findChild(el, side);
     if (sideEl) {
       const opts: Record<string, unknown> = {};
@@ -1006,7 +1159,7 @@ function parseBorder(el: XmlElement): BorderSideOptions {
     }
   }
 
-  return result as BorderSideOptions;
+  return result as unknown as BorderSideOptions;
 }
 
 function parseAlignment(el: XmlElement): AlignmentOptions {
@@ -1020,7 +1173,7 @@ function parseAlignment(el: XmlElement): AlignmentOptions {
   if (rotation !== undefined) result.textRotation = rotation;
   const indent = attrNum(el, "indent");
   if (indent !== undefined) result.indent = indent;
-  return result as AlignmentOptions;
+  return result as unknown as AlignmentOptions;
 }
 
 function parseProtection(el: XmlElement): CellProtectionOptions {
@@ -1029,7 +1182,7 @@ function parseProtection(el: XmlElement): CellProtectionOptions {
   if (locked !== undefined) result.locked = locked !== "0";
   const hidden = attr(el, "hidden");
   if (hidden !== undefined) result.hidden = hidden !== "0";
-  return result as CellProtectionOptions;
+  return result as unknown as CellProtectionOptions;
 }
 
 function parseColorHex(el: XmlElement): string | undefined {

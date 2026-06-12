@@ -1709,6 +1709,22 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
             cell.value = isNaN(num) ? raw : num;
           }
 
+          // Formula
+          const fEl = findChild(cellEl, "f");
+          if (fEl) {
+            const formula: Record<string, unknown> = { formula: textOf(fEl) ?? "" };
+            const ft = attr(fEl, "t");
+            if (ft && ft !== "normal") formula.type = ft;
+            const fRef = attr(fEl, "ref");
+            if (fRef) formula.reference = fRef;
+            const fSi = attrNum(fEl, "si");
+            if (fSi !== undefined) formula.sharedIndex = fSi;
+            if (attr(fEl, "aca") === "1") formula.aca = true;
+            if (attr(fEl, "ca") === "1") formula.ca = true;
+            if (attr(fEl, "bx") === "1") formula.bx = true;
+            cell.formula = formula as unknown as FormulaOptions;
+          }
+
           cells.push(cell);
         }
 
@@ -1718,7 +1734,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       if (rows.length > 0) result.rows = rows;
     }
 
-    return result as Record<string, unknown>;
+    return result as unknown as WorksheetOptions;
   },
 };
 

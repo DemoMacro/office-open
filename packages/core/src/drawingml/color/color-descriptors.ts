@@ -101,7 +101,7 @@ export const rgbColorDesc: CustomDescriptor<RgbColorOptions> = {
     result.value = String(el.attributes?.["val"] ?? "");
     const transforms = readTransforms(el);
     if (transforms) result.transforms = transforms;
-    return result;
+    return result as RgbColorOptions;
   },
 };
 
@@ -121,7 +121,7 @@ export const schemeColorDesc: CustomDescriptor<SchemeColorOptions> = {
     result.value = String(el.attributes?.["val"] ?? "") as SchemeColorOptions["value"];
     const transforms = readTransforms(el);
     if (transforms) result.transforms = transforms;
-    return result;
+    return result as SchemeColorOptions;
   },
 };
 
@@ -143,7 +143,7 @@ export const hslColorDesc: CustomDescriptor<HslColorOptions> = {
     result.luminance = Number(el.attributes?.["lum"] ?? 0);
     const transforms = readTransforms(el);
     if (transforms) result.transforms = transforms;
-    return result;
+    return result as HslColorOptions;
   },
 };
 
@@ -168,7 +168,7 @@ export const systemColorDesc: CustomDescriptor<SystemColorOptions> = {
     if (lastClr) result.lastClr = String(lastClr);
     const transforms = readTransforms(el);
     if (transforms) result.transforms = transforms;
-    return result;
+    return result as SystemColorOptions;
   },
 };
 
@@ -188,7 +188,7 @@ export const presetColorDesc: CustomDescriptor<PresetColorOptions> = {
     result.value = String(el.attributes?.["val"] ?? "") as PresetColorOptions["value"];
     const transforms = readTransforms(el);
     if (transforms) result.transforms = transforms;
-    return result;
+    return result as PresetColorOptions;
   },
 };
 
@@ -210,7 +210,7 @@ export const scRgbColorDesc: CustomDescriptor<ScRgbColorOptions> = {
     result.b = String(el.attributes?.["b"] ?? "");
     const transforms = readTransforms(el);
     if (transforms) result.transforms = transforms;
-    return result;
+    return result as ScRgbColorOptions;
   },
 };
 
@@ -241,7 +241,7 @@ export const solidFillDesc: CustomDescriptor<SolidFillOptions> = {
     return `<a:solidFill>${inner}</a:solidFill>`;
   },
   parse(el, _ctx) {
-    if (!el.elements) return {};
+    if (!el.elements) return {} as SolidFillOptions;
     for (const child of el.elements) {
       switch (child.name) {
         case "a:srgbClr":
@@ -258,6 +258,6 @@ export const solidFillDesc: CustomDescriptor<SolidFillOptions> = {
           return scRgbColorDesc.parse(child, _ctx);
       }
     }
-    return {};
+    return {} as SolidFillOptions;
   },
 };

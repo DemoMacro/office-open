@@ -8,10 +8,13 @@
  */
 
 import type { CustomDescriptor } from "@office-open/core/descriptor";
+import { attr, attrNum } from "@office-open/xml";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
 import type { CommentsOptions, CommentOptions } from "@parts/paragraph/run/comment-run";
 
+import { parseParagraph } from "../body";
 import type { BodyContext } from "../context";
+import type { DocxReadContext } from "../context";
 import { stringifyParagraphInline } from "./inline";
 
 // ── XML helpers ──
@@ -90,7 +93,29 @@ export const commentsDesc: CustomDescriptor<CommentsOptions, BodyContext> = {
     return parts.join("");
   },
 
-  parse() {
-    return {};
+  parse(el, ctx) {
+    const comments: Record<string, unknown>[] = [];
+    for (const child of el.elements ?? []) {
+      if (child.name !== "w:comment") continue;
+      const id = attrNum(child, "w:id");
+      if (id === undefined) continue;
+      const comment: Record<string, unknown> = { id };
+      const date = attr(child, "w:date");
+      if (date) comment.date = date;
+      const author = attr(child, "w:author");
+      if (author) comment.author = author;
+      const initials = attr(child, "w:initials");
+      if (initials) comment.initials = initials;
+
+      const children: unknown[] = [];
+      for (const sub of child.elements ?? []) {
+        if (sub.name === "w:p") {
+          children.push(parseParagraph(sub, ctx as DocxReadContext));
+        }
+      }
+      comment.children = children;
+      comments.push(comment);
+    }
+    return { children: comments } as unknown as CommentsOptions;
   },
 };

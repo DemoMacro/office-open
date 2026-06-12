@@ -16,7 +16,7 @@ export { parseXlsx, parseWorkbook } from "./parse";
 export type { XlsxDocument, XlsxPartRefs } from "./parse";
 export { patchWorkbook, PatchType } from "./patch";
 export type {
-  IPatch,
+  Patch,
   CellPatch,
   PatchWorkbookOptions,
   PatchDocumentOutputType,

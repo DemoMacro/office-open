@@ -168,14 +168,14 @@ function stringifyCustom<T>(
 // ── Read path ──
 
 /**
- * Parse an XML Element into a partial Options object using its descriptor.
+ * Parse an XML Element into an Options object using its descriptor.
  */
-export function parse<T>(desc: Descriptor<T>, el: XmlElement, ctx: ReadContext): Partial<T> {
+export function parse<T>(desc: Descriptor<T>, el: XmlElement, ctx: ReadContext): T {
   if (desc.kind === "custom") return desc.parse(el, ctx);
   return parseElement(desc, el, ctx);
 }
 
-function parseElement<T>(desc: ElementDescriptor<T>, el: XmlElement, ctx: ReadContext): Partial<T> {
+function parseElement<T>(desc: ElementDescriptor<T>, el: XmlElement, ctx: ReadContext): T {
   const result: Record<string, unknown> = {};
 
   // Read attributes
@@ -197,7 +197,7 @@ function parseElement<T>(desc: ElementDescriptor<T>, el: XmlElement, ctx: ReadCo
     }
   }
 
-  return result as Partial<T>;
+  return result as T;
 }
 
 function parseContentSpec<T>(

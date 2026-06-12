@@ -55,6 +55,6 @@ export const relationshipsDesc: CustomDescriptor<RelationshipsInput> = {
         });
       }
     }
-    return { relationships } as Record<string, unknown>;
+    return { relationships } as unknown as RelationshipsInput;
   },
 };

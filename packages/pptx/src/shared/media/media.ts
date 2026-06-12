@@ -6,7 +6,7 @@
 import { convertPixelsToEmu } from "@office-open/core";
 
 import type { MediaDataTransformation } from "./data";
-import type { IMediaData } from "./data";
+import type { MediaData } from "./data";
 
 export interface MediaTransformation {
   offset?: {
@@ -36,21 +36,21 @@ export const createTransformation = (options: MediaTransformation): MediaDataTra
 });
 
 export class Media {
-  private map: Map<string, IMediaData>;
+  private map: Map<string, MediaData>;
 
   public constructor() {
-    this.map = new Map<string, IMediaData>();
+    this.map = new Map<string, MediaData>();
   }
 
-  public addImage(key: string, mediaData: IMediaData): void {
+  public addImage(key: string, mediaData: MediaData): void {
     this.map.set(key, mediaData);
   }
 
-  public addMedia(key: string, mediaData: IMediaData): void {
+  public addMedia(key: string, mediaData: MediaData): void {
     this.map.set(key, mediaData);
   }
 
-  public get array(): IMediaData[] {
+  public get array(): MediaData[] {
     return [...this.map.values()];
   }
 }

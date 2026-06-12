@@ -109,12 +109,12 @@ export interface TableRowPropertiesOptionsBase {
  *
  * @see {@link TableRowProperties}
  */
-export type ITableRowPropertiesOptions = TableRowPropertiesOptionsBase & {
+export type TableRowPropertiesOptions = TableRowPropertiesOptionsBase & {
   insertion?: ChangedAttributesProperties;
   deletion?: ChangedAttributesProperties;
-  revision?: ITableRowPropertiesChangeOptions;
+  revision?: TableRowPropertiesChangeOptions;
   includeIfEmpty?: boolean;
 };
 
-export type ITableRowPropertiesChangeOptions = TableRowPropertiesOptionsBase &
+export type TableRowPropertiesChangeOptions = TableRowPropertiesOptionsBase &
   ChangedAttributesProperties;

@@ -14,7 +14,7 @@ import { SmartArtCollection } from "@office-open/core/smartart";
 import type { Element } from "@office-open/xml";
 import { AltChunkCollection } from "@parts/alt-chunk/alt-chunk-collection";
 import type { DocumentOptions } from "@parts/core-properties";
-import type { ISectionPropertiesOptions } from "@parts/document/body/section-properties/section-properties";
+import type { SectionPropertiesOptions } from "@parts/document/body/section-properties/section-properties";
 import { FontWrapper } from "@parts/fonts/font-wrapper";
 import type { GlossaryDocumentOptions } from "@parts/glossary-document";
 import type { HeaderFooterEntry } from "@parts/header-footer";
@@ -88,8 +88,8 @@ export class DocxWriteContext implements WriteContext {
   declare public webSettings: WebSettingsOptions | undefined;
 
   // --- Section properties (one per section, raw options for descriptor pipeline) ---
-  private _sectionProperties: ISectionPropertiesOptions[] = [];
-  public get sectionProperties(): readonly ISectionPropertiesOptions[] {
+  private _sectionProperties: SectionPropertiesOptions[] = [];
+  public get sectionProperties(): readonly SectionPropertiesOptions[] {
     return this._sectionProperties;
   }
 
@@ -243,7 +243,7 @@ export class DocxWriteContext implements WriteContext {
   // --- Private helpers ---
 
   private addSection({ headers = {}, footers = {}, properties }: SectionOptions): void {
-    const sectPrOptions: ISectionPropertiesOptions = {
+    const sectPrOptions: SectionPropertiesOptions = {
       ...properties,
       footerWrapperGroup: {
         default: footers.default ? this.createFooter(footers.default) : undefined,

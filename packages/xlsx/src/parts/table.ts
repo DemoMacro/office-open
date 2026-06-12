@@ -298,8 +298,16 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
         if (attr(colEl, "totalsRowFunction"))
           col.totalsRowFunction = attr(colEl, "totalsRowFunction");
         if (attr(colEl, "totalsRowLabel")) col.totalsRowLabel = attr(colEl, "totalsRowLabel");
-        const trfEl = findChild(colEl, "calculatedColumnFormula");
-        if (trfEl) col.calculatedColumnFormula = textOf(trfEl);
+        const ccfEl = findChild(colEl, "calculatedColumnFormula");
+        if (ccfEl) {
+          col.calculatedColumnFormula = textOf(ccfEl);
+          if (attr(ccfEl, "array") === "1") col.calculatedColumnFormulaArray = true;
+        }
+        const trfEl = findChild(colEl, "totalsRowFormula");
+        if (trfEl) {
+          col.totalsRowFormula = textOf(trfEl);
+          if (attr(trfEl, "array") === "1") col.totalsRowFormulaArray = true;
+        }
         if (attr(colEl, "uniqueName")) col.uniqueName = attr(colEl, "uniqueName");
         const qtfId = attrNum(colEl, "queryTableFieldId");
         if (qtfId !== undefined) col.queryTableFieldId = qtfId;
@@ -348,6 +356,6 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
     if (attr(el, "dataCellStyle")) result.dataCellStyle = attr(el, "dataCellStyle");
     if (attr(el, "totalsRowCellStyle")) result.totalsRowCellStyle = attr(el, "totalsRowCellStyle");
 
-    return result as Record<string, unknown>;
+    return result as unknown as TableOptions;
   },
 };

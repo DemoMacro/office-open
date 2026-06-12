@@ -159,7 +159,7 @@ export const lineShapeDesc: CustomDescriptor<LineShapeDescriptorOptions> = {
       if (ln) result.outline = readOutlineCompat(ln);
     }
 
-    return result as Partial<LineShapeDescriptorOptions>;
+    return result as unknown as LineShapeDescriptorOptions;
   },
 };
 
@@ -316,6 +316,6 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorShapeDescriptorOption
       }
     }
 
-    return result as Partial<ConnectorShapeDescriptorOptions>;
+    return result as unknown as ConnectorShapeDescriptorOptions;
   },
 };

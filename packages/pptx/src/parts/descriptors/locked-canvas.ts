@@ -6,9 +6,9 @@
  * @module
  */
 
-import { convertPixelsToEmu } from "@office-open/core";
+import { convertEmuToPixels, convertPixelsToEmu } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { escapeXml } from "@office-open/xml";
+import { attr, attrNum, escapeXml, findChild } from "@office-open/xml";
 
 // ── Types ──
 
@@ -80,8 +80,105 @@ export const lockedCanvasDesc: CustomDescriptor<LockedCanvasDescriptorOptions> =
     return `<p:graphicFrame>${parts.join("")}</p:graphicFrame>`;
   },
 
-  parse(_el, _ctx) {
-    return {};
+  parse(el, _ctx) {
+    const result: Record<string, unknown> = {};
+
+    // id, name from p:nvGraphicFramePr/p:cNvPr
+    const nvGrFrm = findChild(el, "p:nvGraphicFramePr");
+    if (nvGrFrm) {
+      const cnvPr = findChild(nvGrFrm, "p:cNvPr");
+      if (cnvPr) {
+        const id = attrNum(cnvPr, "id");
+        if (id !== undefined) result.id = id;
+        const name = attr(cnvPr, "name");
+        if (name !== undefined) result.name = name;
+      }
+    }
+
+    // x, y, width, height from p:xfrm
+    const xfrm = findChild(el, "p:xfrm");
+    if (xfrm) {
+      const off = findChild(xfrm, "a:off");
+      if (off) {
+        const x = attrNum(off, "x");
+        if (x !== undefined) result.x = convertEmuToPixels(x);
+        const y = attrNum(off, "y");
+        if (y !== undefined) result.y = convertEmuToPixels(y);
+      }
+      const ext = findChild(xfrm, "a:ext");
+      if (ext) {
+        const cx = attrNum(ext, "cx");
+        if (cx !== undefined) result.width = convertEmuToPixels(cx);
+        const cy = attrNum(ext, "cy");
+        if (cy !== undefined) result.height = convertEmuToPixels(cy);
+      }
+    }
+
+    // Navigate to a:graphic/a:graphicData/lc:lockedCanvas
+    const graphic = findChild(el, "a:graphic");
+    const graphicData = graphic ? findChild(graphic, "a:graphicData") : undefined;
+    const lockedCanvas = graphicData ? findChild(graphicData, "lc:lockedCanvas") : undefined;
+
+    if (lockedCanvas) {
+      const children: LockedCanvasShapeDescriptorOptions[] = [];
+      for (const child of lockedCanvas.elements ?? []) {
+        if (child.name !== "a:sp") continue;
+        const shape: Record<string, unknown> = {};
+
+        const spPr = findChild(child, "a:spPr");
+        if (spPr) {
+          const spXfrm = findChild(spPr, "a:xfrm");
+          if (spXfrm) {
+            const off = findChild(spXfrm, "a:off");
+            if (off) {
+              const x = attrNum(off, "x");
+              if (x !== undefined) shape.x = convertEmuToPixels(x);
+              const y = attrNum(off, "y");
+              if (y !== undefined) shape.y = convertEmuToPixels(y);
+            }
+            const ext = findChild(spXfrm, "a:ext");
+            if (ext) {
+              const cx = attrNum(ext, "cx");
+              if (cx !== undefined) shape.width = convertEmuToPixels(cx);
+              const cy = attrNum(ext, "cy");
+              if (cy !== undefined) shape.height = convertEmuToPixels(cy);
+            }
+          }
+
+          // geometry from a:prstGeom/@prst
+          const prstGeom = findChild(spPr, "a:prstGeom");
+          if (prstGeom) {
+            const prst = attr(prstGeom, "prst");
+            if (prst !== undefined) shape.geometry = prst;
+          }
+
+          // fill from a:solidFill/a:srgbClr/@val
+          const solidFill = findChild(spPr, "a:solidFill");
+          if (solidFill) {
+            const srgbClr = findChild(solidFill, "a:srgbClr");
+            if (srgbClr) {
+              const val = attr(srgbClr, "val");
+              if (val !== undefined) shape.fill = val;
+            }
+          }
+        }
+
+        // textBody from a:txSp/a:txBody/a:p/a:r/a:t
+        const txSp = findChild(child, "a:txSp");
+        if (txSp) {
+          const txBody = findChild(txSp, "a:txBody");
+          if (txBody) {
+            const txt = collectRunText(txBody);
+            if (txt) shape.textBody = txt;
+          }
+        }
+
+        children.push(shape as LockedCanvasShapeDescriptorOptions);
+      }
+      if (children.length > 0) result.children = children;
+    }
+
+    return result as unknown as LockedCanvasDescriptorOptions;
   },
 };
 
@@ -119,5 +216,28 @@ function buildCanvasChildren(children: LockedCanvasShapeDescriptorOptions[] | un
     parts.push(`<a:sp>${spParts.join("")}</a:sp>`);
   }
 
+  return parts.join("");
+}
+
+/** Collect text from a:r/a:t children within a txBody element. */
+function collectRunText(el: {
+  elements?: Array<{ name?: string; text?: string | number | boolean; elements?: Array<unknown> }>;
+}): string {
+  const parts: string[] = [];
+  for (const child of el.elements ?? []) {
+    if (child.name === "a:r") {
+      // Look for a:t child
+      for (const sub of (child.elements ?? []) as Array<{
+        name?: string;
+        text?: string | number | boolean;
+      }>) {
+        if (sub.name === "a:t" && sub.text !== undefined) {
+          parts.push(String(sub.text));
+        }
+      }
+    } else if (child.name === "a:p") {
+      parts.push(collectRunText(child as Parameters<typeof collectRunText>[0]));
+    }
+  }
   return parts.join("");
 }

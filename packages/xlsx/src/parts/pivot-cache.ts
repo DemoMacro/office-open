@@ -47,6 +47,25 @@ export const pivotCacheDefDesc: CustomDescriptor<PivotCacheDefDescriptorOptions>
 
   parse(el, _ctx) {
     const result: Record<string, unknown> = {};
+
+    // Root element attributes
+    if (attr(el, "invalid") === "1") result.invalid = true;
+    if (attr(el, "saveData") === "0") result.saveData = false;
+    if (attr(el, "optimizeMemory") === "1") result.optimizeMemory = true;
+    if (attr(el, "enableRefresh") === "0") result.enableRefresh = false;
+    if (attr(el, "refreshedBy")) result.refreshedBy = attr(el, "refreshedBy");
+    const rd = attrNum(el, "refreshedDate");
+    if (rd !== undefined) result.refreshedDate = rd;
+    if (attr(el, "refreshedDateIso")) result.refreshedDateIso = attr(el, "refreshedDateIso");
+    if (attr(el, "backgroundQuery") === "1") result.backgroundQuery = true;
+    const mil = attrNum(el, "missingItemsLimit");
+    if (mil !== undefined) result.missingItemsLimit = mil;
+    if (attr(el, "upgradeOnRefresh") === "1") result.upgradeOnRefresh = true;
+    if (attr(el, "supportSubquery") === "1") result.supportSubquery = true;
+    if (attr(el, "supportAdvancedDrill") === "1") result.supportAdvancedDrill = true;
+    const recordCount = attrNum(el, "recordCount");
+    if (recordCount !== undefined) result.recordCount = recordCount;
+
     const csEl = findChild(el, "cacheSource");
     if (csEl) {
       result.sourceType = attr(csEl, "type");
@@ -79,7 +98,7 @@ export const pivotCacheDefDesc: CustomDescriptor<PivotCacheDefDescriptorOptions>
       }
       result.cacheFields = fields;
     }
-    return result as Record<string, unknown>;
+    return result as unknown as PivotCacheDefDescriptorOptions;
   },
 };
 
@@ -114,7 +133,7 @@ export const pivotCacheRecordsDesc: CustomDescriptor<PivotCacheRecordsDescriptor
       }
       records.push(record);
     }
-    return { records } as Record<string, unknown>;
+    return { records } as unknown as PivotCacheDefDescriptorOptions;
   },
 };
 
@@ -246,9 +265,14 @@ function stringifyPivotCacheDef(
         `<cacheField name="${escapeXml(fieldName)}" ${cfExtraAttrs.length ? cfExtraAttrs.join(" ") + " " : ""}numFmtId="0">` +
           `<sharedItems containsSemiMixedTypes="0" containsString="0"` +
           ` containsNumber="1" containsInteger="${allInteger ? "1" : "0"}"` +
-          ` minValue="${min}" maxValue="${max}" count="${uniqueVals.length}"${siExtraAttrs.length ? " " + siExtraAttrs.join(" ") : ""}/>` +
-          `</cacheField>`,
+          ` minValue="${min}" maxValue="${max}" count="${uniqueVals.length}"${siExtraAttrs.length ? " " + siExtraAttrs.join(" ") : ""}>`,
       );
+      for (const v of uniqueVals) {
+        if (v === null) p.push("<m/>");
+        else if (v instanceof Date) p.push(`<d v="${v.toISOString().replace(/\.\d{3}Z$/, "Z")}"/>`);
+        else p.push(`<n v="${v}"/>`);
+      }
+      p.push("</sharedItems></cacheField>");
     } else {
       let hasDate = false,
         hasMissing = false;

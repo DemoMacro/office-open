@@ -358,7 +358,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     return parts.join("");
   },
 
-  parse(el: XmlElement, _ctx: ReadContext): Partial<ChartSpaceOptions> {
+  parse(el: XmlElement, _ctx: ReadContext) {
     const result: MutableChartSpaceResult = {};
 
     // Style
@@ -369,7 +369,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
 
     // Chart container
     const chart = findChild(el, "c:chart");
-    if (!chart) return result;
+    if (!chart) return result as ChartSpaceOptions;
 
     // Title
     const titleEl = findChild(chart, "c:title");
@@ -449,6 +449,6 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
       result.showLegend = false;
     }
 
-    return result;
+    return result as ChartSpaceOptions;
   },
 };

@@ -9,6 +9,7 @@ import type { BibliographyOptions } from "@parts/bibliography";
  *
  * @module
  */
+import type { ContentTypesInput } from "@parts/contenttypes";
 import type { EmbeddedFontOptions } from "@parts/fonts/font-table";
 import type { GlossaryDocumentOptions } from "@parts/glossary-document";
 import type { CommentsOptions } from "@parts/paragraph/run/comment-run";
@@ -129,6 +130,8 @@ export interface DocumentOptions {
   settings?: SettingsOptions;
   /** Web settings for browser rendering (word/webSettings.xml) */
   webSettings?: WebSettingsOptions;
+  /** Content types from [Content_Types].xml (parse path only) */
+  contentTypes?: ContentTypesInput;
 }
 
 // ── Descriptor ──

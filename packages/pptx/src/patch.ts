@@ -29,14 +29,14 @@ interface ParagraphPatch {
   children: unknown[];
 }
 
-export type IPatch = ParagraphPatch;
+export type Patch = ParagraphPatch;
 
 export interface PatchPresentationOptions<
   T extends PatchDocumentOutputType = PatchDocumentOutputType,
 > {
   outputType: T;
   data: InputDataType;
-  patches: Readonly<Record<string, IPatch>>;
+  patches: Readonly<Record<string, Patch>>;
   keepOriginalStyles?: boolean;
   placeholderDelimiters?: Readonly<{
     start: string;

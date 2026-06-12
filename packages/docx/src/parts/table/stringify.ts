@@ -35,7 +35,7 @@ import { WidthType } from "@parts/table/table-width";
 import type { BorderOptions } from "@shared/border";
 import { BorderStyle } from "@shared/border";
 import type { ShadingAttributesProperties } from "@shared/shading";
-import type { ICellMergeAttributes } from "@shared/track-revision";
+import type { CellMergeAttributes } from "@shared/track-revision";
 import type { ChangedAttributesProperties } from "@shared/track-revision/track-revision";
 import type { TableVerticalAlign } from "@shared/vertical-align";
 
@@ -162,7 +162,7 @@ function changeAttrStr(tag: string, opts: ChangedAttributesProperties): string {
 
 // ── Cell merge revision string ──
 
-function cellMergeStr(opts: ICellMergeAttributes): string {
+function cellMergeStr(opts: CellMergeAttributes): string {
   const attrs: Record<string, string | number | boolean | undefined> = {
     "w:author": opts.author,
     "w:date": opts.date,
@@ -209,16 +209,16 @@ export interface TablePropertiesOptionsBase {
   description?: string;
 }
 
-export type ITablePropertiesChangeOptions = ITablePropertiesOptions & ChangedAttributesProperties;
+export type TablePropertiesChangeOptions = TablePropertiesOptions & ChangedAttributesProperties;
 
-export type ITablePropertiesOptions = {
-  revision?: ITablePropertiesChangeOptions;
+export type TablePropertiesOptions = {
+  revision?: TablePropertiesChangeOptions;
   includeIfEmpty?: boolean;
 } & TablePropertiesOptionsBase;
 
 // ── Table properties change (w:tblPrChange) ──
 
-function stringifyTablePropertiesChangeInner(options: ITablePropertiesChangeOptions): string {
+function stringifyTablePropertiesChangeInner(options: TablePropertiesChangeOptions): string {
   const inner = stringifyTablePropertiesInner({ ...options, includeIfEmpty: true });
   const a = attrParts({ "w:author": options.author, "w:date": options.date, "w:id": options.id });
   return `<w:tblPrChange ${a}><w:tblPr>${inner}</w:tblPr></w:tblPrChange>`;
@@ -226,7 +226,7 @@ function stringifyTablePropertiesChangeInner(options: ITablePropertiesChangeOpti
 
 // ── Table properties (w:tblPr) ──
 
-function stringifyTablePropertiesInner(options: ITablePropertiesOptions): string {
+function stringifyTablePropertiesInner(options: TablePropertiesOptions): string {
   const parts: string[] = [];
 
   if (options.style) {
@@ -304,7 +304,7 @@ function stringifyTablePropertiesInner(options: ITablePropertiesOptions): string
   return parts.join("");
 }
 
-export function stringifyTableProperties(options: ITablePropertiesOptions): string | undefined {
+export function stringifyTableProperties(options: TablePropertiesOptions): string | undefined {
   const inner = stringifyTablePropertiesInner(options);
   if (options.includeIfEmpty || inner) {
     return `<w:tblPr>${inner}</w:tblPr>`;
@@ -314,19 +314,19 @@ export function stringifyTableProperties(options: ITablePropertiesOptions): stri
 
 // ── Row properties types ──
 
-export type ITableRowPropertiesChangeOptions = TableRowPropertiesOptionsBase &
+export type TableRowPropertiesChangeOptions = TableRowPropertiesOptionsBase &
   ChangedAttributesProperties;
 
-export type ITableRowPropertiesOptions = TableRowPropertiesOptionsBase & {
+export type TableRowPropertiesOptions = TableRowPropertiesOptionsBase & {
   insertion?: ChangedAttributesProperties;
   deletion?: ChangedAttributesProperties;
-  revision?: ITableRowPropertiesChangeOptions;
+  revision?: TableRowPropertiesChangeOptions;
   includeIfEmpty?: boolean;
 };
 
 // ── Row properties change (w:trPrChange) ──
 
-function stringifyTableRowPropertiesChangeInner(options: ITableRowPropertiesChangeOptions): string {
+function stringifyTableRowPropertiesChangeInner(options: TableRowPropertiesChangeOptions): string {
   const inner = stringifyTableRowPropertiesInner({ ...options, includeIfEmpty: true });
   const a = attrParts({ "w:author": options.author, "w:date": options.date, "w:id": options.id });
   return `<w:trPrChange ${a}><w:trPr>${inner}</w:trPr></w:trPrChange>`;
@@ -334,7 +334,7 @@ function stringifyTableRowPropertiesChangeInner(options: ITableRowPropertiesChan
 
 // ── Row properties (w:trPr) ──
 
-function stringifyTableRowPropertiesInner(options: ITableRowPropertiesOptions): string {
+function stringifyTableRowPropertiesInner(options: TableRowPropertiesOptions): string {
   const parts: string[] = [];
 
   if (options.cnfStyle !== undefined) {
@@ -406,7 +406,7 @@ function stringifyTableRowPropertiesInner(options: ITableRowPropertiesOptions): 
 }
 
 export function stringifyTableRowProperties(
-  options: ITableRowPropertiesOptions,
+  options: TableRowPropertiesOptions,
 ): string | undefined {
   const inner = stringifyTableRowPropertiesInner(options);
   if (options.includeIfEmpty || inner) {
@@ -435,21 +435,21 @@ export interface TableCellPropertiesOptionsBase {
   headers?: string[];
   insertion?: ChangedAttributesProperties;
   deletion?: ChangedAttributesProperties;
-  cellMerge?: ICellMergeAttributes;
+  cellMerge?: CellMergeAttributes;
 }
 
-export type ITableCellPropertiesChangeOptions = TableCellPropertiesOptionsBase &
+export type TableCellPropertiesChangeOptions = TableCellPropertiesOptionsBase &
   ChangedAttributesProperties;
 
-export type ITableCellPropertiesOptions = {
-  revision?: ITableCellPropertiesChangeOptions;
+export type TableCellPropertiesOptions = {
+  revision?: TableCellPropertiesChangeOptions;
   includeIfEmpty?: boolean;
 } & TableCellPropertiesOptionsBase;
 
 // ── Cell properties change (w:tcPrChange) ──
 
 function stringifyTableCellPropertiesChangeInner(
-  options: ITableCellPropertiesChangeOptions,
+  options: TableCellPropertiesChangeOptions,
 ): string {
   const inner = stringifyTableCellPropertiesInner({ ...options, includeIfEmpty: true });
   const a = attrParts({ "w:author": options.author, "w:date": options.date, "w:id": options.id });
@@ -458,7 +458,7 @@ function stringifyTableCellPropertiesChangeInner(
 
 // ── Cell properties (w:tcPr) ──
 
-function stringifyTableCellPropertiesInner(options: ITableCellPropertiesOptions): string {
+function stringifyTableCellPropertiesInner(options: TableCellPropertiesOptions): string {
   const parts: string[] = [];
 
   if (options.cnfStyle !== undefined) {
@@ -547,7 +547,7 @@ function stringifyTableCellPropertiesInner(options: ITableCellPropertiesOptions)
 }
 
 export function stringifyTableCellProperties(
-  options: ITableCellPropertiesOptions,
+  options: TableCellPropertiesOptions,
 ): string | undefined {
   const inner = stringifyTableCellPropertiesInner(options);
   if (options.includeIfEmpty || inner) {

@@ -142,14 +142,14 @@ interface HyperlinkRelationshipAddition {
   hyperlink: { id: string; link: string };
 }
 
-export type IPatch = ParagraphPatch | FilePatch;
+export type Patch = ParagraphPatch | FilePatch;
 
 export type PatchDocumentOutputType = OutputType;
 
 export interface PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocumentOutputType> {
   outputType: T;
   data: InputDataType;
-  patches: Readonly<Record<string, IPatch>>;
+  patches: Readonly<Record<string, Patch>>;
   keepOriginalStyles?: boolean;
   placeholderDelimiters?: Readonly<{
     start: string;

@@ -4,14 +4,14 @@
  * @module
  */
 import type { DocPropertiesOptions } from "@parts/drawing/doc-properties/doc-properties";
-import type { IGroupChildMediaData, MediaTransformation } from "@shared/media";
+import type { GroupChildMediaData, MediaTransformation } from "@shared/media";
 
 import type { Floating } from "../../drawing";
 
 export * from "@parts/drawing/inline/graphic/graphic-data/wps/body-properties";
 
 interface CoreGroupOptions {
-  children: IGroupChildMediaData[];
+  children: GroupChildMediaData[];
   transformation: MediaTransformation;
   floating?: Floating;
   altText?: DocPropertiesOptions;
@@ -20,4 +20,4 @@ interface CoreGroupOptions {
 /**
  * @publicApi
  */
-export type IWpgGroupOptions = { type: "wpg" } & CoreGroupOptions;
+export type WpgGroupRunOptions = { type: "wpg" } & CoreGroupOptions;

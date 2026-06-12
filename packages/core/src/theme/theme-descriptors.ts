@@ -50,7 +50,7 @@ export const themeDesc: CustomDescriptor<ThemeOptions> = {
     return buildThemeXml(opts);
   },
 
-  parse(el: XmlElement, _ctx: ReadContext): Partial<ThemeOptions> {
+  parse(el: XmlElement, _ctx: ReadContext) {
     const result: Mutable<ThemeOptions> = {};
 
     // Theme name
@@ -69,7 +69,7 @@ export const themeDesc: CustomDescriptor<ThemeOptions> = {
         if (value) colors[key] = value;
       }
       if (Object.keys(colors).length > 0) {
-        result.colors = colors as Partial<ColorSchemeOptions>;
+        result.colors = colors as ColorSchemeOptions;
       }
     }
 
@@ -88,10 +88,10 @@ export const themeDesc: CustomDescriptor<ThemeOptions> = {
         const fonts: Mutable<FontSchemeOptions> = {};
         if (majorTypeface) fonts.majorFont = String(majorTypeface);
         if (minorTypeface) fonts.minorFont = String(minorTypeface);
-        result.fonts = fonts as Partial<FontSchemeOptions>;
+        result.fonts = fonts as FontSchemeOptions;
       }
     }
 
-    return result;
+    return result as ThemeOptions;
   },
 };

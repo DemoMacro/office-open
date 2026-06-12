@@ -4,13 +4,18 @@ import type { DataType } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
 import { themeDesc } from "@office-open/core/theme";
 import type { Element } from "@office-open/xml";
-import { attr, attrNum, findChild, textOf } from "@office-open/xml";
+import { attr, attrNum, findChild } from "@office-open/xml";
 
 import { PptxReadContext, ParseContext } from "./context";
 import { backgroundDesc } from "./parts/descriptors/background";
 import { parseChild } from "./parts/descriptors/bridge";
+import { commentAuthorsDesc, slideCommentsDesc } from "./parts/descriptors/comments";
+import { notesMasterDesc } from "./parts/descriptors/notes-master";
+import { notesSlideDesc } from "./parts/descriptors/notes-slide";
+import { presPropsDesc } from "./parts/descriptors/presentation-properties";
 import { slideDesc } from "./parts/descriptors/slide";
 import { slideLayoutDesc } from "./parts/descriptors/slide-layout";
+import { viewPropsDesc } from "./parts/descriptors/view-properties";
 import type { SlideChild } from "./parts/slide/slide-child";
 
 export { parseArchive };
@@ -331,17 +336,18 @@ export function parsePresentation(data: DataType): PresentationOptions {
   if (pptx.presProps) {
     const presPropsEl = pptx.doc.get(pptx.presProps);
     if (presPropsEl) {
-      const showPr = findChild(presPropsEl, "p:showPr");
-      if (showPr) {
-        const show: Record<string, unknown> = {};
-        if (attr(showPr, "loop") === "1") show.loop = true;
-        // kiosk is a child element per XSD EG_ShowType, not an attribute
-        if (findChild(showPr, "p:kiosk")) show.kiosk = true;
-        const showNarrationVal = attr(showPr, "showNarration");
-        if (showNarrationVal === "0") show.showNarration = false;
-        else if (showNarrationVal !== undefined) show.showNarration = true;
-        if (attr(showPr, "useTimings") === "1") show.useTimings = true;
-        if (Object.keys(show).length > 0) opts.show = show;
+      const presPropsOpts = presPropsDesc.parse(presPropsEl, {} as any);
+      if (presPropsOpts.show) opts.show = presPropsOpts.show;
+    }
+  }
+
+  // 3b. Parse view properties
+  if (pptx.viewProps) {
+    const viewPropsEl = pptx.doc.get(pptx.viewProps);
+    if (viewPropsEl) {
+      const viewOpts = viewPropsDesc.parse(viewPropsEl, {} as any);
+      if (viewOpts.lastView || viewOpts.showComments !== undefined || viewOpts.gridSpacing) {
+        opts.view = viewOpts;
       }
     }
   }
@@ -402,7 +408,11 @@ export function parsePresentation(data: DataType): PresentationOptions {
       const layoutEl = pptx.doc.get(layoutPath);
       if (layoutEl) {
         const layoutOpts = slideLayoutDesc.parse(layoutEl, masterReadCtx);
-        masterLayouts.push({ type: (layoutOpts.type ?? "blank") as SlideLayoutType });
+        const layoutDef: Record<string, unknown> = {
+          type: (layoutOpts.type ?? "blank") as SlideLayoutType,
+        };
+        if (layoutOpts.placeholders) layoutDef.placeholders = layoutOpts.placeholders;
+        masterLayouts.push(layoutDef as NonNullable<MasterDefinition["layouts"]>[number]);
       }
     }
 
@@ -421,19 +431,27 @@ export function parsePresentation(data: DataType): PresentationOptions {
     opts.masters = masterDefs;
   }
 
+  // 5b. Parse notes masters
+  for (const nmPath of pptx.partRefs.notesMasters) {
+    const nmEl = pptx.doc.get(nmPath);
+    if (nmEl) {
+      const nmOpts = notesMasterDesc.parse(nmEl, masterReadCtx);
+      if (nmOpts.options) opts.includeNotesMaster = true;
+      if (nmOpts.options) Object.assign(opts, { notesMasterOptions: nmOpts.options });
+    }
+  }
+
+  // 5c. Parse handout masters (no separate handling needed, just mark inclusion)
+  // Handout masters are referenced from presentation.xml rels but not stored in PptxDocument currently
+
   // 6. Parse comment authors
   const commentAuthors = new Map<number, { name: string; initials: string }>();
   if (pptx.partRefs.commentAuthors) {
     const authorsEl = pptx.doc.get(pptx.partRefs.commentAuthors);
     if (authorsEl) {
-      for (const child of authorsEl.elements ?? []) {
-        if (child.name !== "p:cmAuthor") continue;
-        const id = attrNum(child, "id");
-        const name = attr(child, "name");
-        const initials = attr(child, "initials");
-        if (id !== undefined) {
-          commentAuthors.set(id, { name: name ?? "", initials: initials ?? "" });
-        }
+      const authors = commentAuthorsDesc.parse(authorsEl, {} as any);
+      for (const a of authors) {
+        commentAuthors.set(a.id, { name: a.name, initials: a.initials });
       }
     }
   }
@@ -474,36 +492,33 @@ export function parsePresentation(data: DataType): PresentationOptions {
       const commentsEl = pptx.doc.get(relPath);
       if (!commentsEl) continue;
 
-      const comments: Record<string, unknown>[] = [];
-      for (const cm of commentsEl.elements ?? []) {
-        if (cm.name !== "p:cm") continue;
-        const authorId = attrNum(cm, "authorId");
-        const dt = attr(cm, "dt");
-        const idx = attrNum(cm, "idx");
-
-        const author = authorId !== undefined ? commentAuthors.get(authorId) : undefined;
-        const pos = findChild(cm, "p:pos");
-        const x = pos ? attrNum(pos, "x") : undefined;
-        const y = pos ? attrNum(pos, "y") : undefined;
-
-        // Extract text from p:text or p:txBody
-        const textEl = findChild(cm, "p:text");
-        const txBody = findChild(cm, "p:txBody");
-        const text = textEl ? (textOf(textEl) ?? "") : txBody ? extractCommentText(txBody) : "";
-
-        const commentEntry: Record<string, unknown> = {};
-        if (authorId !== undefined) commentEntry.authorId = authorId;
-        if (author) commentEntry.author = author.name;
-        if (idx !== undefined) commentEntry.idx = idx;
-        if (dt) commentEntry.date = dt;
-        if (x !== undefined) commentEntry.x = x;
-        if (y !== undefined) commentEntry.y = y;
-        if (text) commentEntry.text = text;
-
-        comments.push(commentEntry);
+      const parsedComments = slideCommentsDesc.parse(commentsEl, {} as any);
+      if (parsedComments.length > 0) {
+        const comments: Record<string, unknown>[] = [];
+        for (const cm of parsedComments) {
+          const entry: Record<string, unknown> = {};
+          entry.authorId = cm.authorId;
+          entry.idx = cm.idx;
+          entry.x = cm.x;
+          entry.y = cm.y;
+          if (cm.text) entry.text = cm.text;
+          if (cm.date) entry.date = cm.date;
+          const author = commentAuthors.get(cm.authorId);
+          if (author) entry.author = author.name;
+          comments.push(entry);
+        }
+        if (comments.length > 0) slideOpts.comments = comments;
       }
+      break;
+    }
 
-      if (comments.length > 0) slideOpts.comments = comments;
+    // Notes slide via slide rels
+    for (const [, relPath] of slideRels) {
+      if (!relPath.includes("/notesSlides/")) continue;
+      const notesEl = pptx.doc.get(relPath);
+      if (!notesEl) continue;
+      const notesData = notesSlideDesc.parse(notesEl, readCtx);
+      if (notesData.text) slideOpts.notes = notesData.text;
       break;
     }
 
@@ -512,24 +527,4 @@ export function parsePresentation(data: DataType): PresentationOptions {
 
   opts.slides = result;
   return opts as PresentationOptions;
-}
-
-/**
- * Extract plain text from a p:txBody in a comment element.
- */
-function extractCommentText(txBody: Element): string {
-  const parts: string[] = [];
-  for (const p of txBody.elements ?? []) {
-    if (p.name !== "a:p") continue;
-    for (const r of p.elements ?? []) {
-      if (r.name !== "a:r") continue;
-      for (const t of r.elements ?? []) {
-        if (t.name === "a:t") {
-          const text = textOf(t);
-          if (text) parts.push(text);
-        }
-      }
-    }
-  }
-  return parts.join("");
 }

@@ -8,7 +8,7 @@
 
 import type { TableCellOptions } from "../table-cell";
 import type { TablePropertyExOptions } from "../table-properties/table-property-exceptions";
-import type { ITableRowPropertiesOptions } from "./table-row-properties";
+import type { TableRowPropertiesOptions } from "./table-row-properties";
 
 /**
  * Options for creating a TableRow element.
@@ -28,4 +28,4 @@ export type TableRowOptions = {
   rsidDel?: string;
   /** Revision save ID for table row (hex string). */
   rsidTr?: string;
-} & ITableRowPropertiesOptions;
+} & TableRowPropertiesOptions;

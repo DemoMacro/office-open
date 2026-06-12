@@ -224,7 +224,7 @@ export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
     const rtl = findChild(el, "a:rtl");
     if (rtl) result.rightToLeft = rtl.attributes?.["val"] === "1";
 
-    return result;
+    return result as RunPropertiesOptions;
   },
 };
 
@@ -258,7 +258,7 @@ export const textRunDesc: CustomDescriptor<RunOptions> = {
         .join("");
     }
 
-    return result;
+    return result as RunOptions;
   },
 };
 
@@ -412,7 +412,7 @@ function readParagraphProperties(el: XmlElement): Mutable<ParagraphPropertiesOpt
     }
   }
 
-  return result;
+  return result as ParagraphPropertiesOptions;
 }
 
 // ── Paragraph (a:p) ──
@@ -472,6 +472,6 @@ export const paragraphDesc: CustomDescriptor<ParagraphDescriptorOptions> = {
       result.children = runs;
     }
 
-    return result;
+    return result as ParagraphDescriptorOptions;
   },
 };

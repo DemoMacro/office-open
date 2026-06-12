@@ -9,14 +9,14 @@ import { convertEmuToPixels } from "@office-open/core";
 import { attr, attrBool, attrNum, findChild, findDeep, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type { ChartOptions } from "@parts/paragraph/run/chart-run";
-import type { IImageOptions } from "@parts/paragraph/run/image-run";
+import type { ImageOptions } from "@parts/paragraph/run/image-run";
 import type { SmartArtOptions } from "@parts/paragraph/run/smartart-run";
 
 import type { DocxReadContext } from "../../context";
 
 /** Union type for parsed drawing child wrappers. */
 export type DrawingChild =
-  | { image: IImageOptions }
+  | { image: ImageOptions }
   | { chart: ChartOptions }
   | { smartArt: SmartArtOptions };
 
@@ -76,7 +76,7 @@ function imageTypeFromPath(
 export function parseImageRun(
   el: Element,
   ctx: DocxReadContext,
-): { image: IImageOptions } | undefined {
+): { image: ImageOptions } | undefined {
   // Try inline first, then anchor
   const inline = findDeep(el, "wp:inline")[0];
   const anchor = inline ? undefined : findDeep(el, "wp:anchor")[0];
@@ -176,7 +176,7 @@ export function parseImageRun(
     }
   }
 
-  return { image: imageOpts as unknown as IImageOptions };
+  return { image: imageOpts as unknown as ImageOptions };
 }
 
 // ── Common helpers ──────────────────────────────────────────────────────────

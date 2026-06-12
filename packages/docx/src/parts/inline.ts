@@ -3,7 +3,7 @@
  *
  * Used by table.ts, comments.ts, body.ts, and other descriptors that need to
  * serialize paragraph/run content. Includes JSON child dispatch for all
- * IParagraphJsonChild variants (image, chart, hyperlink, etc.).
+ * ParagraphJsonChild variants (image, chart, hyperlink, etc.).
  *
  * Pure string concatenation — zero IXmlableObject, zero BaseXmlComponent.
  *
@@ -17,11 +17,11 @@ import { chartSpaceDesc } from "@office-open/core/chart";
 import type { SourceRectangleOptions } from "@office-open/core/drawingml";
 import { createDataModel } from "@office-open/core/smartart";
 import { escapeXml } from "@office-open/xml";
-import type { IParagraphJsonChild, ParagraphOptions } from "@parts/paragraph/paragraph";
-import type { IImageOptions } from "@parts/paragraph/run/image-run";
+import type { ParagraphJsonChild, ParagraphOptions } from "@parts/paragraph/paragraph";
+import type { ImageOptions } from "@parts/paragraph/run/image-run";
 import type { RunOptions } from "@parts/paragraph/run/run";
 import type { SmartArtOptions } from "@parts/paragraph/run/smartart-run";
-import type { ChartMediaData, IMediaData, SmartArtMediaData, WpsMediaData } from "@shared/media";
+import type { ChartMediaData, MediaData, SmartArtMediaData, WpsMediaData } from "@shared/media";
 import { createTransformation } from "@shared/media";
 
 import type { BodyContext } from "../context";
@@ -76,10 +76,10 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
 
 function createImageData(
   data: Uint8Array,
-  transformation: IImageOptions["transformation"],
+  transformation: ImageOptions["transformation"],
   key: string,
   srcRect?: SourceRectangleOptions,
-): Pick<IMediaData, "data" | "fileName" | "transformation" | "srcRect"> {
+): Pick<MediaData, "data" | "fileName" | "transformation" | "srcRect"> {
   return {
     data,
     fileName: key,
@@ -93,7 +93,7 @@ let nextChartId = 1;
 // ── JSON child dispatch ──
 
 /**
- * Stringify an IParagraphJsonChild into one or more XML strings.
+ * Stringify an ParagraphJsonChild into one or more XML strings.
  *
  * Handles side effects (media, chart, smartArt, relationship registration)
  * directly without creating temporary class instances.
@@ -104,7 +104,7 @@ let nextChartId = 1;
  * Type for children that may be a JSON child or a RunOptions.
  * Used by stringifyParagraphInline to attempt JSON dispatch before RunOptions.
  */
-export type ParagraphChild = IParagraphJsonChild | RunOptions;
+export type ParagraphChild = ParagraphJsonChild | RunOptions;
 
 export function stringifyJsonChild(
   child: ParagraphChild,
@@ -151,7 +151,7 @@ export function stringifyJsonChild(
     const key = `${uniqueId()}.${opts.type}`;
     const rawData = toUint8Array(opts.data) as Uint8Array;
 
-    let mediaData: IMediaData;
+    let mediaData: MediaData;
     if (opts.type === "svg") {
       const fallbackData = toUint8Array(opts.fallback.data) as Uint8Array;
       mediaData = {
@@ -165,12 +165,12 @@ export function stringifyJsonChild(
             `${uniqueId()}.${opts.fallback.type}`,
           ),
         },
-      } as IMediaData;
+      } as MediaData;
     } else {
       mediaData = {
         type: opts.type,
         ...createImageData(rawData, opts.transformation, key, opts.srcRect),
-      } as IMediaData;
+      } as MediaData;
     }
 
     // Register media

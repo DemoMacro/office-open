@@ -90,7 +90,7 @@ interface BaseFrameOptions {
 /**
  * Options for frames positioned using absolute X/Y coordinates.
  */
-export type IXYFrameOptions = {
+export type XYFrameOptions = {
   /** Must be "absolute" for coordinate-based positioning */
   type: "absolute";
   /** Absolute X and Y coordinates in twips */
@@ -105,7 +105,7 @@ export type IXYFrameOptions = {
 /**
  * Options for frames positioned using alignment values.
  */
-export type IAlignmentFrameOptions = {
+export type AlignmentFrameOptions = {
   /** Must be "alignment" for alignment-based positioning */
   type: "alignment";
   /** Horizontal and vertical alignment values */
@@ -120,4 +120,4 @@ export type IAlignmentFrameOptions = {
 /**
  * Union type for all frame positioning options.
  */
-export type IFrameOptions = IXYFrameOptions | IAlignmentFrameOptions;
+export type FrameOptions = XYFrameOptions | AlignmentFrameOptions;

@@ -26,7 +26,7 @@ export interface ElementDescriptor<T> {
 export interface CustomDescriptor<T, Ctx = WriteContext> {
   readonly kind: "custom";
   stringify(value: T, ctx: Ctx): string | undefined;
-  parse(el: XmlElement, ctx: ReadContext): Partial<T>;
+  parse(el: XmlElement, ctx: ReadContext): T;
 }
 
 /** Union type for all descriptors. */

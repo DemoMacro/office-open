@@ -7,7 +7,7 @@
  */
 
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { escapeXml } from "@office-open/xml";
+import { attr, escapeXml, findChild } from "@office-open/xml";
 import type { EmbeddedFontOptionsWithKey } from "@parts/fonts/font-wrapper";
 
 // ── Input ──
@@ -81,9 +81,62 @@ export const fontTableDesc: CustomDescriptor<FontTableInput> = {
     const fonts: Record<string, unknown>[] = [];
     for (const child of el.elements ?? []) {
       if (child.name !== "w:font") continue;
+      const font: Record<string, unknown> = {};
       const name = child.attributes?.["w:name"];
-      if (name) fonts.push({ name: String(name) });
+      if (name) font.name = String(name);
+
+      // charset → w:charset/@w:val
+      const charsetEl = findChild(child, "w:charset");
+      if (charsetEl) {
+        const val = attr(charsetEl, "w:val");
+        if (val) font.characterSet = val;
+      }
+
+      // family → w:family/@w:val
+      const familyEl = findChild(child, "w:family");
+      if (familyEl) {
+        const val = attr(familyEl, "w:val");
+        if (val) font.family = val;
+      }
+
+      // pitch → w:pitch/@w:val
+      const pitchEl = findChild(child, "w:pitch");
+      if (pitchEl) {
+        const val = attr(pitchEl, "w:val");
+        if (val) font.pitch = val;
+      }
+
+      // sig → w:sig attributes
+      const sigEl = findChild(child, "w:sig");
+      if (sigEl) {
+        const sig: Record<string, string> = {};
+        for (const key of ["usb0", "usb1", "usb2", "usb3", "csb0", "csb1"] as const) {
+          const val = attr(sigEl, `w:${key}`);
+          if (val) sig[key] = val;
+        }
+        if (Object.keys(sig).length > 0) font.sig = sig;
+      }
+
+      // fontKey → w:embedRegular/@w:fontKey (strip curly braces)
+      for (const embedTag of [
+        "w:embedRegular",
+        "w:embedBold",
+        "w:embedItalic",
+        "w:embedBoldItalic",
+      ] as const) {
+        const embedEl = findChild(child, embedTag);
+        if (embedEl) {
+          const rawKey = attr(embedEl, "w:fontKey");
+          if (rawKey) {
+            // Strip wrapping curly braces: {{...}} → ...
+            font.fontKey = rawKey.replace(/^\{\{|\}\}$/g, "").replace(/^\{|\}$/g, "");
+          }
+          break; // Use first embed element found
+        }
+      }
+
+      fonts.push(font);
     }
-    return { fonts } as Record<string, unknown>;
+    return { fonts } as unknown as FontTableInput;
   },
 };

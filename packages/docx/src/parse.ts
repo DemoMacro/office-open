@@ -1,18 +1,27 @@
 import type { ParsedArchive } from "@office-open/core";
-import { parseArchive, parseCorePropsElement } from "@office-open/core";
+import { parseArchive } from "@office-open/core";
 import type { DataType } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
-import { attr, attrNum } from "@office-open/xml";
+import { attr } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
+import { bibliographyDesc } from "@parts/bibliography";
+import { setBodyParseChild } from "@parts/bodychildren";
+import { commentsDesc } from "@parts/comments";
+import { contentTypesDesc } from "@parts/contenttypes";
+import { corePropertiesDesc } from "@parts/core-properties";
 import type { DocumentOptions } from "@parts/core-properties";
 import { customPropertiesDesc } from "@parts/custom-properties";
+import { endnotesDesc } from "@parts/endnotes/descriptor";
+import { fontTableDesc } from "@parts/fonts/descriptor";
+import { footnotesDesc } from "@parts/footnotes/descriptor";
+import { glossaryDesc } from "@parts/glossary-document";
 import { parseNumberingDefinitions } from "@parts/numbering/numbering";
 import { settingsDesc } from "@parts/settings/descriptor";
 import { buildStyleCache, buildNumberingCache, parseStyleDefinitions } from "@parts/styles/styles";
 import { setTableParseChild } from "@parts/table/descriptor";
 import { webSettingsDesc } from "@parts/web-settings";
 
-import { parseParagraph, parseParagraphProperties } from "./body";
+import { parseParagraphProperties } from "./body";
 import { DocxReadContext } from "./context";
 import { parseBody, parseSectionChild } from "./parse/body";
 
@@ -45,6 +54,10 @@ export interface DocxPartRefs {
   afChunks: Map<string, string>;
   /** Sub-documents (word/subdocs/subdocN.docx) keyed by rId */
   subDocs: Map<string, string>;
+  /** word/bibliography.xml */
+  bibliography?: string;
+  /** word/glossary/document.xml */
+  glossary?: string;
 }
 
 export interface DocxDocument {
@@ -70,6 +83,8 @@ export interface DocxDocument {
   appProps?: string;
   /** docProps/custom.xml */
   customProps?: string;
+  /** [Content_Types].xml */
+  contentTypes?: Element;
 }
 
 function resolveRelsPath(target: string): string {
@@ -122,6 +137,10 @@ function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
       refs.afChunks.set(id, path);
     } else if (type.includes("/subDocument")) {
       refs.subDocs.set(id, path);
+    } else if (type.includes("/bibliography")) {
+      refs.bibliography = path;
+    } else if (type.includes("/glossaryDocument")) {
+      refs.glossary = path;
     } else if (type.includes("/hyperlink")) {
       refs.hyperlinks.set(id, target);
     }
@@ -180,8 +199,9 @@ export function parseDocument(data: DataType): DocumentOptions {
     buildNumberingCache(docx.numbering),
   );
 
-  // Register the child parser for table descriptor
+  // Register the child parser for table and body child descriptors
   setTableParseChild(parseSectionChild);
+  setBodyParseChild(parseSectionChild);
 
   const sections = parseBody(docx.body, ctx);
 
@@ -199,14 +219,14 @@ export function parseDocument(data: DataType): DocumentOptions {
   if (docx.coreProps) {
     const corePropsEl = docx.doc.get(docx.coreProps);
     if (corePropsEl) {
-      const cp = parseCorePropsElement(corePropsEl);
+      const cp = corePropertiesDesc.parse(corePropsEl, ctx);
       if (cp.title) opts.title = cp.title;
       if (cp.subject) opts.subject = cp.subject;
       if (cp.creator) opts.creator = cp.creator;
       if (cp.keywords) opts.keywords = cp.keywords;
       if (cp.description) opts.description = cp.description;
       if (cp.lastModifiedBy) opts.lastModifiedBy = cp.lastModifiedBy;
-      if (cp.revision) opts.revision = parseInt(cp.revision, 10);
+      if (cp.revision) opts.revision = cp.revision;
     }
   }
 
@@ -236,9 +256,10 @@ export function parseDocument(data: DataType): DocumentOptions {
   if (docx.partRefs.comments) {
     const commentsEl = docx.doc.get(docx.partRefs.comments);
     if (commentsEl) {
-      const comments = parseComments(commentsEl, ctx);
-      if (comments.length > 0) {
-        opts.comments = { children: comments };
+      const commentsResult = commentsDesc.parse(commentsEl, ctx);
+      const children = commentsResult.children;
+      if (children && children.length > 0) {
+        opts.comments = { children } as unknown as DocumentOptions["comments"];
       }
     }
   }
@@ -247,10 +268,10 @@ export function parseDocument(data: DataType): DocumentOptions {
   if (docx.partRefs.footnotes) {
     const footnotesEl = docx.doc.get(docx.partRefs.footnotes);
     if (footnotesEl) {
-      const footnotes = parseNotesContent(footnotesEl, "w:footnote", ctx);
+      const fnResult = footnotesDesc.parse(footnotesEl, ctx);
       const footnotesMap: Record<string, { children: unknown[] }> = {};
-      for (const fn of footnotes) {
-        footnotesMap[String(fn.id)] = { children: fn.children };
+      for (const [id, paragraphs] of fnResult.notes) {
+        footnotesMap[String(id)] = { children: paragraphs };
       }
       if (Object.keys(footnotesMap).length > 0) opts.footnotes = footnotesMap;
     }
@@ -260,10 +281,10 @@ export function parseDocument(data: DataType): DocumentOptions {
   if (docx.partRefs.endnotes) {
     const endnotesEl = docx.doc.get(docx.partRefs.endnotes);
     if (endnotesEl) {
-      const endnotes = parseNotesContent(endnotesEl, "w:endnote", ctx);
+      const enResult = endnotesDesc.parse(endnotesEl, ctx);
       const endnotesMap: Record<string, { children: unknown[] }> = {};
-      for (const en of endnotes) {
-        endnotesMap[String(en.id)] = { children: en.children };
+      for (const [id, paragraphs] of enResult.notes) {
+        endnotesMap[String(id)] = { children: paragraphs };
       }
       if (Object.keys(endnotesMap).length > 0) opts.endnotes = endnotesMap;
     }
@@ -279,6 +300,36 @@ export function parseDocument(data: DataType): DocumentOptions {
   if (docx.numbering) {
     const numOpts = parseNumberingDefinitions(docx.numbering);
     if (numOpts) opts.numbering = numOpts;
+  }
+
+  // Font table
+  if (docx.fontTable) {
+    const ftResult = fontTableDesc.parse(docx.fontTable, ctx);
+    if (ftResult.fonts && ftResult.fonts.length > 0) opts.fonts = ftResult.fonts;
+  }
+
+  // Bibliography
+  if (docx.partRefs.bibliography) {
+    const bibEl = docx.doc.get(docx.partRefs.bibliography);
+    if (bibEl) {
+      const bibResult = bibliographyDesc.parse(bibEl, ctx);
+      if (bibResult.sources && bibResult.sources.length > 0) opts.bibliography = bibResult;
+    }
+  }
+
+  // Glossary document
+  if (docx.partRefs.glossary) {
+    const glossaryEl = docx.doc.get(docx.partRefs.glossary);
+    if (glossaryEl) {
+      const glossaryResult = glossaryDesc.parse(glossaryEl, ctx);
+      if (glossaryResult.parts && glossaryResult.parts.length > 0) opts.glossary = glossaryResult;
+    }
+  }
+
+  // Content types
+  if (docx.contentTypes) {
+    const ctResult = contentTypesDesc.parse(docx.contentTypes, ctx);
+    if (ctResult) opts.contentTypes = ctResult;
   }
 
   return opts as unknown as DocumentOptions;
@@ -303,6 +354,8 @@ export function parseDocx(data: DataType): DocxDocument {
   const partRefs = parseDocPartRefs(doc);
   const { coreProps, appProps, customProps } = parseRootRels(doc);
 
+  const contentTypes = doc.get("[Content_Types].xml");
+
   return {
     doc,
     body,
@@ -316,82 +369,6 @@ export function parseDocx(data: DataType): DocxDocument {
     coreProps,
     appProps,
     customProps,
+    contentTypes,
   };
-}
-
-/**
- * Parse w:comments element into CommentOptions array.
- */
-function parseComments(
-  el: Element,
-  ctx: DocxReadContext,
-): { id: number; author?: string; initials?: string; date?: string; children: unknown[] }[] {
-  const comments: {
-    id: number;
-    author?: string;
-    initials?: string;
-    date?: string;
-    children: unknown[];
-  }[] = [];
-
-  for (const child of el.elements ?? []) {
-    if (child.name !== "w:comment") continue;
-    const id = attrNum(child, "w:id");
-    if (id === undefined) continue;
-
-    const author = attr(child, "w:author");
-    const initials = attr(child, "w:initials");
-    const date = attr(child, "w:date");
-
-    const children: unknown[] = [];
-    for (const sub of child.elements ?? []) {
-      if (sub.name === "w:p") {
-        children.push(parseParagraph(sub, ctx));
-      }
-    }
-
-    comments.push({
-      id,
-      author: author || undefined,
-      initials: initials || undefined,
-      date: date || undefined,
-      children,
-    });
-  }
-
-  return comments;
-}
-
-/**
- * Parse footnotes or endnotes content into {id, children} array.
- * Skips system notes (id=-1 for separator, id=0 for continuation separator).
- */
-function parseNotesContent(
-  el: Element,
-  tagName: "w:footnote" | "w:endnote",
-  ctx: DocxReadContext,
-): { id: number; type?: string; children: unknown[] }[] {
-  const notes: { id: number; type?: string; children: unknown[] }[] = [];
-
-  for (const child of el.elements ?? []) {
-    if (child.name !== tagName) continue;
-    const id = attrNum(child, "w:id");
-    if (id === undefined) continue;
-
-    // Skip system footnotes/endnotes (separator and continuation)
-    if (id < 1) continue;
-
-    const type = attr(child, "w:type");
-
-    const children: unknown[] = [];
-    for (const sub of child.elements ?? []) {
-      if (sub.name === "w:p") {
-        children.push(parseParagraph(sub, ctx));
-      }
-    }
-
-    notes.push({ id, type: type || undefined, children });
-  }
-
-  return notes;
 }
