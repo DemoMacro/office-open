@@ -5,17 +5,19 @@ export default defineNuxtConfig({
   vite: {
     optimizeDeps: {
       include: [
+        "@ai-sdk/vue",
+        "@noble/hashes/legacy.js",
+        "@noble/hashes/sha2.js",
+        "@noble/hashes/utils.js",
         "@office-open/docx > @office-open/core",
         "@office-open/pptx > @office-open/core",
         "@office-open/xlsx > @office-open/core",
         "@vue/devtools-core",
         "@vue/devtools-kit",
-        "@noble/hashes/legacy.js",
-        "@noble/hashes/utils.js",
-        "@noble/hashes/sha2.js",
+        "@vueuse/core",
+        "ai",
         "remark-emoji",
         "remark-mdc",
-        "undio",
       ],
     },
   },
