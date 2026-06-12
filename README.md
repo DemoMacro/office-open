@@ -209,7 +209,7 @@ const buffer = generateDocumentSync({
     {
       children: [
         { paragraph: { heading: "Heading1", children: ["Document Title"] } },
-        { paragraph: { children: [{ text: "Body text", italics: true }] } },
+        { paragraph: { children: [{ text: "Body text", italic: true }] } },
         {
           table: {
             rows: [

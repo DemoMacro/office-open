@@ -1,6 +1,6 @@
 {
   "name": "@office-open/pptx",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "description": "Generate, parse, and patch .pptx presentations with a declarative TypeScript API",
   "keywords": [
     "office-open",
