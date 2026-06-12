@@ -36,6 +36,33 @@ export type { BodyContext } from "./context";
 // ── Run ──
 
 /**
+ * Mapping from empty child property name to self-closing XML element.
+ *
+ * These are single-key objects like `{ noBreakHyphen: true }` that map to
+ * self-closing XML elements with no attributes.
+ *
+ * XSD reference: EG_RunInnerContent group in wml.xsd.
+ */
+const EMPTY_RUN_ELEMENTS: Record<string, string> = {
+  noBreakHyphen: "<w:noBreakHyphen/>",
+  softHyphen: "<w:softHyphen/>",
+  dayShort: "<w:dayShort/>",
+  monthShort: "<w:monthShort/>",
+  yearShort: "<w:yearShort/>",
+  dayLong: "<w:dayLong/>",
+  monthLong: "<w:monthLong/>",
+  yearLong: "<w:yearLong/>",
+  annotationRef: "<w:annotationRef/>",
+  footnoteRef: "<w:footnoteRef/>",
+  endnoteRef: "<w:endnoteRef/>",
+  separator: "<w:separator/>",
+  continuationSeparator: "<w:continuationSeparator/>",
+  pgNum: "<w:pgNum/>",
+  carriageReturn: "<w:cr/>",
+  lastRenderedPageBreak: "<w:lastRenderedPageBreak/>",
+};
+
+/**
  * Stringify a run (w:r) from pure JSON options.
  *
  * Handles text, children, breaks, and run properties.
@@ -88,6 +115,14 @@ export function stringifyRun(opts: RunOptions, ctx: BodyContext): string {
         }
         if ("commentReference" in child) {
           parts.push(`<w:commentReference w:id="${Number(child.commentReference)}"/>`);
+          continue;
+        }
+
+        // Empty run elements — self-closing XML with no attributes
+        // { noBreakHyphen: true } → <w:noBreakHyphen/>, etc.
+        const emptyXml = EMPTY_RUN_ELEMENTS[Object.keys(child)[0]];
+        if (emptyXml) {
+          parts.push(emptyXml);
           continue;
         }
 

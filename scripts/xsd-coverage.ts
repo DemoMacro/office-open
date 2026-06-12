@@ -4,8 +4,9 @@
  * Parses OOXML Transitional XSD schemas, extracts all element/attribute declarations,
  * scans the codebase for implementations, and generates a coverage report.
  *
- * Strategy: reads source files directly with Node.js fs and uses regex to find
- * all used element/attribute names. Pure JS — no external process spawning.
+ * Detection strategy: strips comments, then uses targeted regex patterns to find
+ * element/attribute names in specific XML construction and parsing contexts.
+ * No broad heuristics — only matches names in provable implementation patterns.
  *
  * Usage:
  *   pnpm tsx scripts/xsd-coverage.ts              # full report
@@ -179,7 +180,7 @@ const XSD_CONFIGS: XsdConfig[] = [
 
 // ── File reading utilities ──
 
-/** Recursively collect all .ts files in a directory (non-spec files) */
+/** Recursively collect all .ts files in a directory (non-spec, non-bench) */
 function collectTsFiles(dir: string): string[] {
   const results: string[] = [];
   if (!fs.existsSync(dir)) return results;
@@ -193,7 +194,8 @@ function collectTsFiles(dir: string): string[] {
       entry.isFile() &&
       entry.name.endsWith(".ts") &&
       !entry.name.endsWith(".spec.ts") &&
-      !entry.name.endsWith(".bench.ts")
+      !entry.name.endsWith(".bench.ts") &&
+      !entry.name.endsWith(".d.ts")
     ) {
       results.push(fullPath);
     }
@@ -201,31 +203,113 @@ function collectTsFiles(dir: string): string[] {
   return results;
 }
 
-/** Cache for file contents: absolute path → content */
-const fileCache = new Map<string, string>();
+/** Cache for stripped file contents: absolute path → comment-free content */
+const strippedCache = new Map<string, string>();
 
-function readFileCached(filePath: string): string {
-  const cached = fileCache.get(filePath);
+/**
+ * Strip JS/TS comments from source code while preserving string literals.
+ * Handles: // line comments, /* block comments *​/, template literals.
+ */
+function stripComments(content: string): string {
+  const len = content.length;
+  const out: string[] = [];
+  let i = 0;
+
+  while (i < len) {
+    const ch = content[i];
+
+    // String literal — skip through intact
+    if (ch === '"' || ch === "'") {
+      const quote = ch;
+      out.push(ch);
+      i++;
+      while (i < len && content[i] !== quote) {
+        if (content[i] === "\\") {
+          out.push(content[i++]);
+        }
+        if (i < len) out.push(content[i++]);
+      }
+      if (i < len) out.push(content[i++]); // closing quote
+      continue;
+    }
+
+    // Template literal — skip through, handle nested ${...}
+    if (ch === "`") {
+      out.push(ch);
+      i++;
+      let depth = 0;
+      while (i < len) {
+        if (content[i] === "\\") {
+          out.push(content[i++]);
+          if (i < len) out.push(content[i++]);
+          continue;
+        }
+        if (content[i] === "`" && depth === 0) {
+          out.push(content[i++]);
+          break;
+        }
+        if (content[i] === "$" && content[i + 1] === "{") {
+          depth++;
+          out.push(content[i++], content[i++]);
+          continue;
+        }
+        if (content[i] === "}" && depth > 0) {
+          depth--;
+          out.push(content[i++]);
+          continue;
+        }
+        out.push(content[i++]);
+      }
+      continue;
+    }
+
+    // Line comment
+    if (ch === "/" && content[i + 1] === "/") {
+      // Replace with spaces to preserve positions
+      while (i < len && content[i] !== "\n") {
+        out.push(" ");
+        i++;
+      }
+      continue;
+    }
+
+    // Block comment
+    if (ch === "/" && content[i + 1] === "*") {
+      out.push(" ", " ");
+      i += 2;
+      while (i < len && !(content[i] === "*" && content[i + 1] === "/")) {
+        out.push(content[i] === "\n" ? "\n" : " ");
+        i++;
+      }
+      if (i < len) {
+        out.push(" ", " "); // */
+        i += 2;
+      }
+      continue;
+    }
+
+    out.push(ch);
+    i++;
+  }
+
+  return out.join("");
+}
+
+function readFileStripped(filePath: string): string {
+  const cached = strippedCache.get(filePath);
   if (cached !== undefined) return cached;
 
-  const content = fs.readFileSync(filePath, "utf-8");
-  fileCache.set(filePath, content);
-  return content;
+  const raw = fs.readFileSync(filePath, "utf-8");
+  const stripped = stripComments(raw);
+  strippedCache.set(filePath, stripped);
+  return stripped;
 }
 
 // ── XSD Parsing ──
 
 /**
  * Deprecated/removed OOXML elements to exclude from coverage analysis.
- * These are features Microsoft has removed from Office or disabled by default:
- *
- * Smart Tags: Removed from Office 2010. Recognized data types and offered
- * contextual actions. UI completely removed, elements retained in XSD for
- * backward compatibility only.
- *
- * DDE (Dynamic Data Exchange): Disabled by default since 2017 due to security
- * risks (malicious document attacks). Microsoft recommends disabling entirely.
- * These elements model DDE links in external workbooks.
+ * These are features Microsoft has removed from Office or disabled by default.
  */
 const DEPRECATED_ELEMENTS = new Set([
   // Smart Tags (removed Office 2010)
@@ -244,34 +328,93 @@ const DEPRECATED_ELEMENTS = new Set([
   "val", // CT_DdeValue — DDE-specific element (not attribute)
 ]);
 
+/** Elements only deprecated in SML (val appears in dml-chart, pml too) */
+const DEPRECATED_ELEMENTS_SML_ONLY = new Set(["val"]);
+
 /**
  * Deprecated/removed OOXML attributes to exclude from coverage analysis.
- * These are attributes on deprecated elements (Smart Tags, DDE) that
- * should not count against coverage.
  */
 const DEPRECATED_ATTRIBUTES = new Set([
   // Smart Tags (removed Office 2010)
-  "xmlBased", // cellSmartTag
-  "namespaceUri", // smartTagType
+  "xmlBased",
+  "namespaceUri",
   // DDE (disabled by default, security risk)
-  "ddeService", // ddeLink
-  "ddeTopic", // ddeLink
-  "ole", // ddeItem (DDE-specific)
-  "preferPic", // ddeItem + oleItem (OLE/DDE cross)
-  // OLAP-only attributes (CT_Missing/CT_Number/CT_String/CT_MdxTuple)
-  // These formatting attributes only appear in OLAP pivot cache shared items
-  // and MDX tuple metadata. A non-OLAP spreadsheet library will never generate these.
-  "bc", // background color (OLAP shared item format)
-  "fc", // foreground color (OLAP shared item format)
-  "in", // indent level (OLAP shared item format)
-  "st", // strikethrough (OLAP shared item format)
-  "un", // underline (OLAP shared item format)
-  "ct", // culture name (CT_MdxTuple, OLAP only)
-  "fi", // font index (CT_MdxTuple, OLAP only)
+  "ddeService",
+  "ddeTopic",
+  "ole",
+  "preferPic",
+  // OLAP-only attributes
+  "bc",
+  "fc",
+  "in",
+  "st",
+  "un",
+  "ct",
+  "fi",
 ]);
 
-/** Elements only deprecated in SML (val appears in dml-chart, pml too) */
-const DEPRECATED_ELEMENTS_SML_ONLY = new Set(["val"]);
+/**
+ * Attribute names too generic to reliably track in source code.
+ * These are excluded from the coverage denominator — they don't count
+ * as "implemented" OR "missing", they're simply unmeasurable.
+ */
+const UNTRACKABLE_ATTRS = new Set([
+  // Ultra-common in both XML and JS contexts
+  "val",
+  "type",
+  "name",
+  "id",
+  "value",
+  "text",
+  "count",
+  "index",
+  "style",
+  "title",
+  "lang",
+  "class",
+  "width",
+  "height",
+  "src",
+  "href",
+  "path",
+  "format",
+  "uri",
+  "url",
+  "ref",
+  "min",
+  "max",
+  "size",
+  "length",
+  "step",
+  "scheme",
+  "port",
+  "host",
+  "xmlns",
+  // Single-character names — impossible to attribute
+  "a",
+  "b",
+  "c",
+  "d",
+  "e",
+  "f",
+  "g",
+  "h",
+  "i",
+  "k",
+  "m",
+  "n",
+  "o",
+  "p",
+  "r",
+  "s",
+  "t",
+  "u",
+  "v",
+  "w",
+  "x",
+  "y",
+  "z",
+]);
 
 function parseXsd(xsdPath: string): { elements: Set<string>; attributes: Set<string> } {
   const content = fs.readFileSync(xsdPath, "utf-8");
@@ -279,10 +422,9 @@ function parseXsd(xsdPath: string): { elements: Set<string>; attributes: Set<str
   const attributes = new Set<string>();
 
   const isSml = xsdPath.includes("sml.xsd");
-  const globalDeprecated = DEPRECATED_ELEMENTS;
   const deprecated = isSml
     ? new Set([...DEPRECATED_ELEMENTS, ...DEPRECATED_ELEMENTS_SML_ONLY])
-    : globalDeprecated;
+    : DEPRECATED_ELEMENTS;
 
   const elementRe = /<xsd:element\s+name="([^"]+)"/g;
   let match: RegExpExecArray | null;
@@ -300,80 +442,98 @@ function parseXsd(xsdPath: string): { elements: Set<string>; attributes: Set<str
   return { elements, attributes };
 }
 
-// ── Code scanning (pure JS, no shell) ──
+// ── Code scanning ──
 
 /**
- * Scan source directories and extract all element/attribute names used in code.
- * For prefix mode: extracts names matching "prefix:word" patterns in source files.
- * Returns a Set of bare element names (without prefix).
+ * Extract element names found in XML construction and parsing code.
+ * Uses targeted patterns — no broad property/key heuristics.
  */
-function extractUsedNamesFromCode(config: XsdConfig): Set<string> {
+function extractUsedElements(config: XsdConfig): Set<string> {
   const found = new Set<string>();
-  const prefixStr = config.prefix;
 
   for (const dir of config.searchDirs) {
     const absDir = path.resolve(ROOT_DIR, dir);
     const files = collectTsFiles(absDir);
 
     for (const file of files) {
-      const content = readFileCached(file);
+      const src = readFileStripped(file);
+      let m: RegExpExecArray | null;
 
-      if (config.searchMode === "prefix" && prefixStr) {
-        // Pattern 1: literal "prefix:word" strings (e.g., "w:p", "a:solidFill")
-        const re = new RegExp(`${escapeRegExp(prefixStr)}[a-zA-Z][a-zA-Z0-9]*`, "g");
-        let m: RegExpExecArray | null;
-        while ((m = re.exec(content)) !== null) {
-          const bareName = m[0].slice(prefixStr.length);
-          if (bareName) found.add(bareName);
-        }
+      // Pattern 1: XML tags in template literals — `<prefix:name` or `<name`
+      // Catches stringify: `<w:p>`, `<a:solidFill`, `</c:chart>`
+      // Also matches `<name${...}` (bare element followed by interpolation)
+      const tagRe = /<\/?([a-z]+:)?([a-zA-Z][a-zA-Z0-9]*)[\s>\/"$]/g;
+      while ((m = tagRe.exec(src)) !== null) {
+        found.add(m[2]);
+      }
 
-        // Pattern 2: template string dynamic prefix like `${element}:spPr`
-        // Matches `}:word` which indicates dynamic prefix + static suffix
-        const tmplRe = /\}(:[a-zA-Z][a-zA-Z0-9]*)/g;
-        while ((m = tmplRe.exec(content)) !== null) {
-          // m[1] is like ":spPr" — the suffix
-          const suffix = m[1].slice(1);
-          if (suffix) found.add(suffix);
-        }
+      // Pattern 2: findChild(el, "prefix:name") — parse path
+      const findChildRe = /findChild\([^,]+,\s*"([a-z]+:)?([a-zA-Z][a-zA-Z0-9]+)"/g;
+      while ((m = findChildRe.exec(src)) !== null) {
+        found.add(m[2]);
+      }
 
-        // Pattern 3: template string prefix + variable like `<p:${type}/>`
-        // When found, extract string literal values from the same file that
-        // could be the variable's value (union type members, as const values).
-        const dynamicElemRe = new RegExp(
-          `<${escapeRegExp(prefixStr)}\\$\\{[a-zA-Z][a-zA-Z0-9]*\\}`,
-          "g",
-        );
-        if (dynamicElemRe.test(content)) {
-          // Extract quoted string values like "word" that could be element names
-          const strLitRe = /"([a-zA-Z][a-zA-Z0-9]+)"/g;
-          while ((m = strLitRe.exec(content)) !== null) {
-            found.add(m[1]);
-          }
-        }
+      // Pattern 3: el.name === "prefix:name" or child.name === "prefix:name" — parse path
+      const nameCmpRe = /\.name\s*[!=]==?\s*"([a-z]+:)?([a-zA-Z][a-zA-Z0-9]+)"/g;
+      while ((m = nameCmpRe.exec(src)) !== null) {
+        found.add(m[2]);
+      }
 
-        // Pattern 4: descriptor builder — element("prefix:name"), .child(k, "prefix:name")
-        // The tag string is a literal "prefix:name" already caught by Pattern 1,
-        // but this also captures tags in builder chain calls where the prefix may
-        // differ from the primary search prefix (cross-namespace references).
-        const builderRe =
-          /(?:element|\.child|\.children)\([^)]*"([a-z]+:)?([a-zA-Z][a-zA-Z0-9]+)"/g;
-        while ((m = builderRe.exec(content)) !== null) {
-          found.add(m[2]);
-        }
-      } else {
-        // bare mode (xlsx/sml): match "word" in string literals and <word in XML strings
-        // SML has many single-char elements (b, c, d, e, f, i, k, m, n, p, r, s, t, u, v, x)
-        // so the regex allows single-char names in XML tag context only (not quoted strings,
-        // where single-char matches would produce too many false positives).
-        const quotedRe = /"([a-zA-Z][a-zA-Z0-9]+)"/g;
-        let m: RegExpExecArray | null;
-        while ((m = quotedRe.exec(content)) !== null) {
-          found.add(m[1]);
-        }
-        const tagRe = /<([a-zA-Z][a-zA-Z0-9]*)[\s>\/"$]/g;
-        while ((m = tagRe.exec(content)) !== null) {
-          found.add(m[1]);
-        }
+      // Pattern 4: case "prefix:name": — switch in parse path
+      const caseRe = /case\s+"([a-z]+:)?([a-zA-Z][a-zA-Z0-9]+)"/g;
+      while ((m = caseRe.exec(src)) !== null) {
+        found.add(m[2]);
+      }
+
+      // Pattern 5: element("prefix:name", ...) — descriptor builder / xml helper
+      // Also catches selfCloseElement("name", ...), openElement("name", ...), closeElement("name")
+      const elementCallRe =
+        /(?:^|[.\s(])(?:selfClose|open|close)?Element\(\s*"([a-z]+:)?([a-zA-Z][a-zA-Z0-9]+)"/gm;
+      while ((m = elementCallRe.exec(src)) !== null) {
+        found.add(m[2]);
+      }
+
+      // Pattern 6: .child(k, "prefix:name", ...) / .children(k, "prefix:name", ...)
+      const childCallRe = /\.child(?:ren)?\([^,]+,\s*"([a-z]+:)?([a-zA-Z][a-zA-Z0-9]+)"/g;
+      while ((m = childCallRe.exec(src)) !== null) {
+        found.add(m[2]);
+      }
+
+      // Pattern 7: valEl("prefix:name", ...) helper
+      const valElRe = /valEl\(\s*"([a-z]+:)?([a-zA-Z][a-zA-Z0-9]+)"/g;
+      while ((m = valElRe.exec(src)) !== null) {
+        found.add(m[2]);
+      }
+    }
+  }
+
+  // ── Dynamic template tracking ──
+  // When a file uses `<prefix:${var}>` to generate XML elements dynamically,
+  // extract string literal values from the same file that could be the variable's value.
+  // This catches patterns like `<p:${type}/>` where type is a union of string literals.
+
+  // Collect files that have dynamic element patterns
+  const dynamicFiles = new Set<string>();
+  for (const dir of config.searchDirs) {
+    const absDir = path.resolve(ROOT_DIR, dir);
+    const files = collectTsFiles(absDir);
+    for (const file of files) {
+      const src = readFileStripped(file);
+      if (/<[a-z]+:\$\{[a-zA-Z]/.test(src) || /<\$\{[a-zA-Z]/.test(src)) {
+        dynamicFiles.add(file);
+      }
+    }
+  }
+
+  // For each dynamic file, extract string literal values that could be element names
+  if (dynamicFiles.size > 0) {
+    const strLitRe = /"([a-zA-Z][a-zA-Z0-9]+)"/g;
+    for (const file of dynamicFiles) {
+      const src = readFileStripped(file);
+      let m: RegExpExecArray | null;
+      while ((m = strLitRe.exec(src)) !== null) {
+        // Only add names that look like XML element names (not JS identifiers like "string", "number")
+        found.add(m[1]);
       }
     }
   }
@@ -382,11 +542,72 @@ function extractUsedNamesFromCode(config: XsdConfig): Set<string> {
 }
 
 /**
- * Cross-namespace fallback: some elements defined in one XSD namespace (e.g. a:cNvPicPr)
- * appear in code under a different prefix (e.g. p:cNvPicPr, pic:cNvPicPr, xdr:cNvPicPr).
- *
- * This function checks if a bare element name appears under ANY namespace prefix
- * in the source directories, and returns the subset of names that are found.
+ * Extract attribute names found in XML construction and parsing code.
+ * Only matches attributes in provable XML/parsing contexts.
+ */
+function extractUsedAttributes(config: XsdConfig): Set<string> {
+  const found = new Set<string>();
+
+  for (const dir of config.searchDirs) {
+    const absDir = path.resolve(ROOT_DIR, dir);
+    const files = collectTsFiles(absDir);
+
+    for (const file of files) {
+      const src = readFileStripped(file);
+      let m: RegExpExecArray | null;
+
+      // Pattern 1: XML attribute in template — name=, name="${, name='
+      // e.g. w:val="${v}", sz="1200", xmlns:w="..."
+      const xmlAttrRe = /\b([a-zA-Z][a-zA-Z0-9]+)=["'`]/g;
+      while ((m = xmlAttrRe.exec(src)) !== null) {
+        found.add(m[1]);
+      }
+
+      // Pattern 2: el.attributes["name"] or el.attributes["prefix:name"] — parse path
+      const attrAccessRe = /\.attributes\[\s*["']([a-zA-Z][a-zA-Z0-9]+)["']\s*\]/g;
+      while ((m = attrAccessRe.exec(src)) !== null) {
+        found.add(m[1]);
+      }
+
+      // Pattern 3: bracket access with prefix — attrs["w:val"], result["w:spacing"], etc.
+      // This catches stringify (attrs["w:name"]) and parse (result["w:name"]) patterns
+      const bracketPrefixRe = /\[\s*["'][a-z]+:([a-zA-Z][a-zA-Z0-9]+)["']\s*\]/g;
+      while ((m = bracketPrefixRe.exec(src)) !== null) {
+        found.add(m[1]);
+      }
+
+      // Pattern 3: .attr(key, "xmlName") — descriptor builder
+      const builderAttrRe = /\.attr\([^,]+,\s*["']([a-zA-Z][a-zA-Z0-9]+)["']/g;
+      while ((m = builderAttrRe.exec(src)) !== null) {
+        found.add(m[1]);
+      }
+
+      // Pattern 4: attr(el, "name") — parse helper from @office-open/xml
+      const attrHelperRe = /\battr\([^,]+,\s*["']([a-zA-Z][a-zA-Z0-9]+)["']/g;
+      while ((m = attrHelperRe.exec(src)) !== null) {
+        found.add(m[1]);
+      }
+
+      // Pattern 5: attr(el, "prefix:name") — prefixed version
+      const prefixedHelperRe = /\battr\([^,]+,\s*["'][a-z]+:([a-zA-Z][a-zA-Z0-9]+)["']/g;
+      while ((m = prefixedHelperRe.exec(src)) !== null) {
+        found.add(m[1]);
+      }
+
+      // Pattern 6: Dynamic template patterns — `}:name` (template interpolation suffix)
+      const tmplSuffixRe = /\}:([a-zA-Z][a-zA-Z0-9]+)/g;
+      while ((m = tmplSuffixRe.exec(src)) !== null) {
+        found.add(m[1]);
+      }
+    }
+  }
+
+  return found;
+}
+
+/**
+ * Cross-namespace fallback: some elements defined in one XSD namespace appear
+ * in code under a different prefix (e.g. a:cNvPicPr → p:cNvPicPr).
  */
 function findCrossNamespace(
   bareNames: readonly string[],
@@ -395,16 +616,15 @@ function findCrossNamespace(
   if (bareNames.length === 0) return new Set();
   const found = new Set<string>();
   const nameSet = new Set(bareNames);
-  // Match any "prefix:name" where name is in our target set
   const re = /[a-z]+:([a-zA-Z][a-zA-Z0-9]+)/g;
 
   for (const dir of searchDirs) {
     const absDir = path.resolve(ROOT_DIR, dir);
     const files = collectTsFiles(absDir);
     for (const file of files) {
-      const content = readFileCached(file);
+      const src = readFileStripped(file);
       let m: RegExpExecArray | null;
-      while ((m = re.exec(content)) !== null) {
+      while ((m = re.exec(src)) !== null) {
         if (nameSet.has(m[1])) {
           found.add(m[1]);
         }
@@ -412,10 +632,6 @@ function findCrossNamespace(
     }
   }
   return found;
-}
-
-function escapeRegExp(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 // ── Report generation ──
@@ -428,6 +644,7 @@ interface CoverageResult {
   totalAttributes: number;
   implementedAttributes: number;
   missingAttributes: string[];
+  untrackableAttributes: number;
 }
 
 function analyzeXsd(config: XsdConfig): CoverageResult {
@@ -442,18 +659,18 @@ function analyzeXsd(config: XsdConfig): CoverageResult {
       totalAttributes: 0,
       implementedAttributes: 0,
       missingAttributes: [],
+      untrackableAttributes: 0,
     };
   }
 
   const { elements, attributes } = parseXsd(xsdPath);
-  const usedNames = extractUsedNamesFromCode(config);
 
-  // Elements: a name is "implemented" if it appears anywhere in source
+  // ── Element coverage ──
+  const usedElements = extractUsedElements(config);
   const elementNames = [...elements].sort();
-  let missingElements = elementNames.filter((e) => !usedNames.has(e));
+  let missingElements = elementNames.filter((e) => !usedElements.has(e));
 
-  // Cross-namespace fallback: check if missing elements appear under a different prefix
-  // (e.g. a:cNvPicPr → p:cNvPicPr, pic:cNvPicPr)
+  // Cross-namespace fallback
   if (missingElements.length > 0 && config.searchMode === "prefix") {
     const crossNs = findCrossNamespace(missingElements, config.searchDirs);
     if (crossNs.size > 0) {
@@ -461,145 +678,36 @@ function analyzeXsd(config: XsdConfig): CoverageResult {
     }
   }
 
-  // Attributes: search for bare attribute names using diverse code patterns.
-  // Unlike elements (which consistently appear as "prefix:name" strings),
-  // attributes appear as bare object keys, property accesses, template attrs, etc.
+  // ── Attribute coverage ──
+  const usedAttributes = extractUsedAttributes(config);
   const attrNames = [...attributes].sort();
-  const usedAttrNames = new Set(usedNames);
 
-  for (const dir of config.searchDirs) {
-    const absDir = path.resolve(ROOT_DIR, dir);
-    const files = collectTsFiles(absDir);
-    for (const file of files) {
-      const content = readFileCached(file);
-      let m: RegExpExecArray | null;
-
-      // Object key: allowOverlap: "1", showGridLines: false
-      // Also matches TypeScript optional property syntax: noSelect?:
-      const objKeyRe = /\b([a-zA-Z][a-zA-Z0-9]{1,})\??\s*:/g;
-      while ((m = objKeyRe.exec(content)) !== null) {
-        usedAttrNames.add(m[1]);
-      }
-
-      // Property access: svMap.showGridLines, obj.applyFont
-      const propRe = /\.([a-zA-Z][a-zA-Z0-9]{1,})/g;
-      while ((m = propRe.exec(content)) !== null) {
-        usedAttrNames.add(m[1]);
-      }
-
-      // XML attribute in template literal: showGridLines="${...}"
-      const xmlAttrRe = /\b([a-zA-Z][a-zA-Z0-9]+)=["`]/g;
-      while ((m = xmlAttrRe.exec(content)) !== null) {
-        usedAttrNames.add(m[1]);
-      }
-
-      // BuilderElement key mapping: key: "bld", key: "prevAc", etc.
-      // This catches XSD attribute names used as XML key values in BuilderElement attributes.
-      const keyValueRe = /key:\s*["']([a-zA-Z][a-zA-Z0-9]+)["']/g;
-      while ((m = keyValueRe.exec(content)) !== null) {
-        usedAttrNames.add(m[1]);
-      }
-
-      // xmlKey mapping in lookup arrays: xmlKey: "verticies", xmlKey: "adjusthandles", etc.
-      // Used by OLock boolMap and similar patterns where key values are indirect.
-      const xmlKeyRe = /xmlKey:\s*["']([a-zA-Z][a-zA-Z0-9]+)["']/g;
-      while ((m = xmlKeyRe.exec(content)) !== null) {
-        usedAttrNames.add(m[1]);
-      }
-
-      // For prefix mode: "prefix:name" in attribute objects (e.g., { _attr: { "w:val": ... } })
-      if (config.searchMode === "prefix" && config.prefix) {
-        const prefixAttrRe = new RegExp(
-          `["']${escapeRegExp(config.prefix)}([a-zA-Z][a-zA-Z0-9]+)["']`,
-          "g",
-        );
-        while ((m = prefixAttrRe.exec(content)) !== null) {
-          usedAttrNames.add(m[1]);
-        }
-      }
-
-      // Descriptor builder .attr(key, "xmlName") — second arg is the XML attribute name
-      const builderAttrRe = /\.attr\([^,]+,\s*["']([a-zA-Z][a-zA-Z0-9]+)["']/g;
-      while ((m = builderAttrRe.exec(content)) !== null) {
-        usedAttrNames.add(m[1]);
-      }
+  let untrackableCount = 0;
+  let deprecatedCount = 0;
+  const trackableAttrs = attrNames.filter((a) => {
+    if (DEPRECATED_ATTRIBUTES.has(a)) {
+      deprecatedCount++;
+      return false;
     }
-  }
-
-  // Generic attribute names that are almost certainly handled somewhere
-  const genericAttrs = new Set([
-    "val",
-    "type",
-    "name",
-    "id",
-    "value",
-    "count",
-    "index",
-    "text",
-    "l",
-    "b",
-    "style",
-    "title",
-    "lang",
-    "class",
-    "width",
-    "height",
-    "src",
-    "href",
-    "xmlns",
-    "scheme",
-    "port",
-    "host",
-    "path",
-    "format",
-    "uri",
-    "url",
-    "r",
-    "c",
-    "t",
-    "s",
-    "d",
-    "g",
-    "h",
-    "i",
-    "n",
-    "u",
-    "w",
-    "x",
-    "y",
-    "z",
-    "ref",
-    "min",
-    "max",
-    "step",
-    "size",
-    "length",
-    "numFmtId",
-    "fontId",
-    "fillId",
-    "borderId",
-    "xfId",
-    "v",
-    "UpdateMode",
-    "a",
-    "o",
-  ]);
-
-  const missingAttributes = attrNames.filter((a) => {
-    if (usedAttrNames.has(a)) return false;
-    if (genericAttrs.has(a)) return false;
-    if (DEPRECATED_ATTRIBUTES.has(a)) return false;
+    if (UNTRACKABLE_ATTRS.has(a)) {
+      untrackableCount++;
+      return false;
+    }
     return true;
   });
+
+  const missingAttributes = trackableAttrs.filter((a) => !usedAttributes.has(a));
+  const totalTrackable = trackableAttrs.length;
 
   return {
     config,
     totalElements: elementNames.length,
     implementedElements: elementNames.length - missingElements.length,
     missingElements,
-    totalAttributes: attrNames.length,
-    implementedAttributes: attrNames.length - missingAttributes.length,
+    totalAttributes: totalTrackable,
+    implementedAttributes: totalTrackable - missingAttributes.length,
     missingAttributes,
+    untrackableAttributes: untrackableCount,
   };
 }
 
@@ -612,6 +720,7 @@ function formatReport(result: CoverageResult, showMissing: boolean): string {
     totalAttributes,
     implementedAttributes,
     missingAttributes,
+    untrackableAttributes,
   } = result;
 
   const elPct =
@@ -621,7 +730,7 @@ function formatReport(result: CoverageResult, showMissing: boolean): string {
 
   const lines: string[] = [];
   lines.push(`=== ${config.xsdFile} (${config.description}) ===`);
-  lines.push(`Elements: ${totalElements} total, ${implementedElements} implemented (${elPct}%)`);
+  lines.push(`Elements: ${implementedElements}/${totalElements} implemented (${elPct}%)`);
 
   if (showMissing && missingElements.length > 0) {
     lines.push(`Missing elements (${missingElements.length}):`);
@@ -632,7 +741,8 @@ function formatReport(result: CoverageResult, showMissing: boolean): string {
   }
 
   lines.push(
-    `Attributes: ${totalAttributes} total, ${implementedAttributes} implemented (${attrPct}%)`,
+    `Attributes: ${implementedAttributes}/${totalAttributes} implemented (${attrPct}%)` +
+      (untrackableAttributes > 0 ? ` (${untrackableAttributes} untrackable)` : ""),
   );
 
   if (showMissing && missingAttributes.length > 0) {
@@ -650,8 +760,8 @@ function formatReport(result: CoverageResult, showMissing: boolean): string {
 }
 
 function formatSummaryTable(results: CoverageResult[]): string {
-  const header = "| XSD | Elements | % | Attributes | % |";
-  const separator = "|-----|----------|---|------------|---|";
+  const header = "| XSD | Elements | El% | Attributes | Attr% | Untrackable |";
+  const separator = "|-----|----------|-----|------------|-------|-------------|";
   const rows = results.map((r) => {
     const elPct =
       r.totalElements > 0 ? ((r.implementedElements / r.totalElements) * 100).toFixed(1) : "0.0";
@@ -659,19 +769,21 @@ function formatSummaryTable(results: CoverageResult[]): string {
       r.totalAttributes > 0
         ? ((r.implementedAttributes / r.totalAttributes) * 100).toFixed(1)
         : "0.0";
-    return `| ${r.config.label} | ${r.implementedElements}/${r.totalElements} | ${elPct}% | ${r.implementedAttributes}/${r.totalAttributes} | ${attrPct}% |`;
+    const untr = r.untrackableAttributes > 0 ? String(r.untrackableAttributes) : "-";
+    return `| ${r.config.label} | ${r.implementedElements}/${r.totalElements} | ${elPct}% | ${r.implementedAttributes}/${r.totalAttributes} | ${attrPct}% | ${untr} |`;
   });
 
   const totalEl = results.reduce((s, r) => s + r.totalElements, 0);
   const implEl = results.reduce((s, r) => s + r.implementedElements, 0);
   const totalAttr = results.reduce((s, r) => s + r.totalAttributes, 0);
   const implAttr = results.reduce((s, r) => s + r.implementedAttributes, 0);
+  const totalUntr = results.reduce((s, r) => s + r.untrackableAttributes, 0);
   const totalElPct = totalEl > 0 ? ((implEl / totalEl) * 100).toFixed(1) : "0.0";
   const totalAttrPct = totalAttr > 0 ? ((implAttr / totalAttr) * 100).toFixed(1) : "0.0";
 
   rows.push(separator);
   rows.push(
-    `| **TOTAL** | **${implEl}/${totalEl}** | **${totalElPct}%** | **${implAttr}/${totalAttr}** | **${totalAttrPct}%** |`,
+    `| **TOTAL** | **${implEl}/${totalEl}** | **${totalElPct}%** | **${implAttr}/${totalAttr}** | **${totalAttrPct}%** | **${totalUntr}** |`,
   );
 
   return [header, separator, ...rows].join("\n");
@@ -727,6 +839,7 @@ function main() {
       attributes: {
         total: r.totalAttributes,
         implemented: r.implementedAttributes,
+        untrackable: r.untrackableAttributes,
         coverage:
           r.totalAttributes > 0
             ? +((r.implementedAttributes / r.totalAttributes) * 100).toFixed(1)
@@ -742,9 +855,9 @@ function main() {
     console.log(formatReport(result, showMissing));
   }
 
-  console.log("=".repeat(60));
+  console.log("=".repeat(70));
   console.log("SUMMARY");
-  console.log("=".repeat(60));
+  console.log("=".repeat(70));
   console.log(formatSummaryTable(results));
 }
 

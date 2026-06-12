@@ -172,6 +172,12 @@ function stringifyPresentation(opts: PresentationOptions): string {
     if (opts.customerData.tags) {
       cdParts.push(`<p:tags r:id="${opts.customerData.tags.rId}"/>`);
     }
+    if (opts.customerData.tagList) {
+      const tagParts = opts.customerData.tagList
+        .map((t) => `<p:tag name="${t.name}" val="${t.val}"/>`)
+        .join("");
+      cdParts.push(`<p:tagLst>${tagParts}</p:tagLst>`);
+    }
     if (cdParts.length > 0) {
       parts.push(`<p:custDataLst>${cdParts.join("")}</p:custDataLst>`);
     }

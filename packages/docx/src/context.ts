@@ -162,7 +162,9 @@ export class DocxWriteContext implements WriteContext {
       const defaultStyles = defaultFactory.newInstance(options.styles?.default);
       const externalFactory = new ExternalStylesFactory();
       const externalStyles = externalFactory.newInstance(options.externalStyles);
-      const defaultStyleElements = defaultStyles.importedStyles!.slice(1);
+      // Skip docDefaults AND latentStyles from default factory —
+      // external styles already provide them; XSD requires docDefaults → latentStyles → style sequence
+      const defaultStyleElements = defaultStyles.importedStyles!.slice(2);
       this.styles = new Styles({
         ...externalStyles,
         importedStyles: [...externalStyles.importedStyles!, ...defaultStyleElements],
@@ -177,6 +179,18 @@ export class DocxWriteContext implements WriteContext {
     } else {
       const stylesFactory = new DefaultStylesFactory();
       this.styles = new Styles(stylesFactory.newInstance());
+    }
+
+    // Register numbering references from custom paragraph/character styles.
+    // Style definitions may contain numbering properties whose concrete instances
+    // are never created through the body paragraph processing path.
+    if (options.styles?.paragraphStyles) {
+      for (const style of options.styles.paragraphStyles) {
+        const num = style.paragraph?.numbering;
+        if (num) {
+          this.numbering.createConcreteNumberingInstance(num.reference, num.instance ?? 0);
+        }
+      }
     }
 
     this.addDefaultRelationships();

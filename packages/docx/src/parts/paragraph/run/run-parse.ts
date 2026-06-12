@@ -244,6 +244,28 @@ export const PARSED_SOFT_HYPHEN = Symbol("SoftHyphen");
 export const PARSED_FOOTNOTE_REF = Symbol("FootnoteRef");
 /** Matches w:br[@w:type="column"] */
 export const PARSED_COLUMN_BREAK = Symbol("ColumnBreak");
+/** Matches w:dayShort */
+export const PARSED_DAY_SHORT = Symbol("DayShort");
+/** Matches w:monthShort */
+export const PARSED_MONTH_SHORT = Symbol("MonthShort");
+/** Matches w:yearShort */
+export const PARSED_YEAR_SHORT = Symbol("YearShort");
+/** Matches w:dayLong */
+export const PARSED_DAY_LONG = Symbol("DayLong");
+/** Matches w:monthLong */
+export const PARSED_MONTH_LONG = Symbol("MonthLong");
+/** Matches w:yearLong */
+export const PARSED_YEAR_LONG = Symbol("YearLong");
+/** Matches w:annotationRef */
+export const PARSED_ANNOTATION_REF = Symbol("AnnotationRef");
+/** Matches w:separator */
+export const PARSED_SEPARATOR = Symbol("Separator");
+/** Matches w:continuationSeparator */
+export const PARSED_CONTINUATION_SEPARATOR = Symbol("ContinuationSeparator");
+/** Matches w:pgNum */
+export const PARSED_PG_NUM = Symbol("PgNum");
+/** Matches w:lastRenderedPageBreak */
+export const PARSED_LAST_RENDERED_PAGE_BREAK = Symbol("LastRenderedPageBreak");
 
 export type ParsedRunChild =
   | string
@@ -255,6 +277,17 @@ export type ParsedRunChild =
   | typeof PARSED_SOFT_HYPHEN
   | typeof PARSED_FOOTNOTE_REF
   | typeof PARSED_COLUMN_BREAK
+  | typeof PARSED_DAY_SHORT
+  | typeof PARSED_MONTH_SHORT
+  | typeof PARSED_YEAR_SHORT
+  | typeof PARSED_DAY_LONG
+  | typeof PARSED_MONTH_LONG
+  | typeof PARSED_YEAR_LONG
+  | typeof PARSED_ANNOTATION_REF
+  | typeof PARSED_SEPARATOR
+  | typeof PARSED_CONTINUATION_SEPARATOR
+  | typeof PARSED_PG_NUM
+  | typeof PARSED_LAST_RENDERED_PAGE_BREAK
   | { commentReference: number };
 
 /**
@@ -354,6 +387,41 @@ export function parseRun(
       case "w:endnoteRef":
         children.push(PARSED_FOOTNOTE_REF);
         break;
+      // Date/time field elements
+      case "w:dayShort":
+        children.push(PARSED_DAY_SHORT);
+        break;
+      case "w:monthShort":
+        children.push(PARSED_MONTH_SHORT);
+        break;
+      case "w:yearShort":
+        children.push(PARSED_YEAR_SHORT);
+        break;
+      case "w:dayLong":
+        children.push(PARSED_DAY_LONG);
+        break;
+      case "w:monthLong":
+        children.push(PARSED_MONTH_LONG);
+        break;
+      case "w:yearLong":
+        children.push(PARSED_YEAR_LONG);
+        break;
+      // Other empty run elements
+      case "w:annotationRef":
+        children.push(PARSED_ANNOTATION_REF);
+        break;
+      case "w:separator":
+        children.push(PARSED_SEPARATOR);
+        break;
+      case "w:continuationSeparator":
+        children.push(PARSED_CONTINUATION_SEPARATOR);
+        break;
+      case "w:pgNum":
+        children.push(PARSED_PG_NUM);
+        break;
+      case "w:lastRenderedPageBreak":
+        children.push(PARSED_LAST_RENDERED_PAGE_BREAK);
+        break;
       default:
         break;
     }
@@ -367,7 +435,30 @@ export function parseRun(
  * Simplifies the parsed children into text + break format.
  * If the run contains only a commentReference, returns { commentReference: id } instead.
  * If the run only contains footnoteRef/endnoteRef (auto-generated), returns empty options.
+ *
+ * When empty run elements (tab, noBreakHyphen, date fields, etc.) are present,
+ * uses children[] format to preserve them for round-trip fidelity.
  */
+
+/** Mapping from parse symbols to RunOptions child objects for empty elements. */
+const SYMBOL_TO_CHILD = new Map<symbol, Record<string, true>>([
+  [PARSED_TAB, { tab: true }],
+  [PARSED_CR, { carriageReturn: true }],
+  [PARSED_NO_BREAK_HYPHEN, { noBreakHyphen: true }],
+  [PARSED_SOFT_HYPHEN, { softHyphen: true }],
+  [PARSED_DAY_SHORT, { dayShort: true }],
+  [PARSED_MONTH_SHORT, { monthShort: true }],
+  [PARSED_YEAR_SHORT, { yearShort: true }],
+  [PARSED_DAY_LONG, { dayLong: true }],
+  [PARSED_MONTH_LONG, { monthLong: true }],
+  [PARSED_YEAR_LONG, { yearLong: true }],
+  [PARSED_ANNOTATION_REF, { annotationRef: true }],
+  [PARSED_SEPARATOR, { separator: true }],
+  [PARSED_CONTINUATION_SEPARATOR, { continuationSeparator: true }],
+  [PARSED_PG_NUM, { pgNum: true }],
+  [PARSED_LAST_RENDERED_PAGE_BREAK, { lastRenderedPageBreak: true }],
+]);
+
 export function parsedRunToOptions(
   parsed: ReturnType<typeof parseRun>,
 ): RunOptions | { commentReference: number } | null {
@@ -412,6 +503,7 @@ export function parsedRunToOptions(
   let breakCount = 0;
   let hasPageBreak = false;
   let hasColumnBreak = false;
+  const extraChildren: Record<string, true>[] = [];
 
   for (const child of nonRefChildren) {
     if (typeof child === "string") {
@@ -422,21 +514,44 @@ export function parsedRunToOptions(
       hasPageBreak = true;
     } else if (child === PARSED_COLUMN_BREAK) {
       hasColumnBreak = true;
+    } else {
+      // Empty run elements (tab, noBreakHyphen, date fields, etc.)
+      const mapped = SYMBOL_TO_CHILD.get(child as symbol);
+      if (mapped) extraChildren.push(mapped);
     }
-    // Other symbols (tab, etc.) are dropped in simplified mode
   }
 
-  if (textParts.length > 0) {
-    opts.text = textParts.join("");
-  }
-  if (breakCount > 0) {
-    opts.break = breakCount;
-  }
-  if (hasPageBreak) {
-    opts.pageBreak = true;
-  }
-  if (hasColumnBreak) {
-    opts.columnBreak = true;
+  // When empty elements are present, use children[] format for round-trip fidelity
+  if (extraChildren.length > 0) {
+    const children: (string | Record<string, unknown>)[] = [];
+    for (const child of nonRefChildren) {
+      if (typeof child === "string") {
+        children.push(child);
+      } else if (child === PARSED_LINE_BREAK) {
+        children.push({ break: 1 });
+      } else if (child === PARSED_PAGE_BREAK) {
+        children.push({ pageBreak: true });
+      } else if (child === PARSED_COLUMN_BREAK) {
+        children.push({ columnBreak: true });
+      } else {
+        const mapped = SYMBOL_TO_CHILD.get(child as symbol);
+        if (mapped) children.push(mapped);
+      }
+    }
+    opts.children = children;
+  } else {
+    if (textParts.length > 0) {
+      opts.text = textParts.join("");
+    }
+    if (breakCount > 0) {
+      opts.break = breakCount;
+    }
+    if (hasPageBreak) {
+      opts.pageBreak = true;
+    }
+    if (hasColumnBreak) {
+      opts.columnBreak = true;
+    }
   }
 
   // If the run has no content and no properties (e.g., a pure drawing run),
@@ -446,7 +561,8 @@ export function parsedRunToOptions(
     textParts.length === 0 &&
     breakCount === 0 &&
     !hasPageBreak &&
-    !hasColumnBreak
+    !hasColumnBreak &&
+    extraChildren.length === 0
   ) {
     return null;
   }

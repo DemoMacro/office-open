@@ -256,6 +256,9 @@ export const sdtBlockDesc: CustomDescriptor<SdtChildOptions, BodyContext> = {
     // sdtPr
     parts.push(stringifySdtPr(opts.properties));
 
+    // sdtEndPr — typically empty, included for round-trip fidelity with Word
+    parts.push("<w:sdtEndPr/>");
+
     // sdtContent — serialize children directly (no coerce needed)
     if (opts.children && opts.children.length > 0) {
       const contentParts: string[] = [];

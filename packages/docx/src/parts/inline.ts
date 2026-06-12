@@ -645,6 +645,14 @@ export function stringifyParagraphInline(
   const props = stringifyParagraphProperties(resolved);
   if (props.xml) parts.push(props.xml);
 
+  // Register numbering references from inline paragraphs (footnotes, endnotes, etc.)
+  // so that concrete numbering instances are created and placeholders get resolved.
+  if (props.numberingReferences.length > 0) {
+    for (const ref of props.numberingReferences) {
+      ctx.file.numbering.createConcreteNumberingInstance(ref.reference, ref.instance);
+    }
+  }
+
   if (resolved.text !== undefined) {
     parts.push(stringifyRunInline({ text: resolved.text }, ctx));
   }

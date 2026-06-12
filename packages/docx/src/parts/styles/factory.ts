@@ -50,13 +50,19 @@ export interface DocumentDefaultsOptions {
 
 interface StyleOptions {
   name?: string;
+  aliases?: string;
   basedOn?: string;
   next?: string;
   link?: string;
+  autoRedefine?: boolean;
   uiPriority?: number;
   semiHidden?: boolean;
   unhideWhenUsed?: boolean;
   quickFormat?: boolean;
+  locked?: boolean;
+  personal?: boolean;
+  personalCompose?: boolean;
+  personalReply?: boolean;
 }
 
 export type IBaseParagraphStyleOptions = {
@@ -80,29 +86,29 @@ function esc(s: string): string {
 }
 
 /** Build `<w:style>` XML for a paragraph style. */
-export function stringifyParagraphStyle(opts: {
-  id: string;
-  name: string;
-  basedOn?: string;
-  next?: string;
-  link?: string;
-  quickFormat?: boolean;
-  semiHidden?: boolean;
-  uiPriority?: number;
-  unhideWhenUsed?: boolean;
-  paragraph?: IParagraphStylePropertiesOptions;
-  run?: RunStylePropertiesOptions;
-}): string {
+export function stringifyParagraphStyle(
+  opts: StyleOptions & {
+    id: string;
+    paragraph?: IParagraphStylePropertiesOptions;
+    run?: RunStylePropertiesOptions;
+  },
+): string {
   const children: string[] = [];
 
-  children.push(`<w:name w:val="${esc(opts.name)}"/>`);
+  children.push(`<w:name w:val="${esc(opts.name ?? opts.id)}"/>`);
+  if (opts.aliases) children.push(`<w:aliases w:val="${esc(opts.aliases)}"/>`);
   if (opts.basedOn) children.push(`<w:basedOn w:val="${esc(opts.basedOn)}"/>`);
   if (opts.next) children.push(`<w:next w:val="${esc(opts.next)}"/>`);
   if (opts.link) children.push(`<w:link w:val="${esc(opts.link)}"/>`);
+  if (opts.autoRedefine) children.push("<w:autoRedefine/>");
   if (opts.uiPriority !== undefined) children.push(`<w:uiPriority w:val="${opts.uiPriority}"/>`);
   if (opts.semiHidden) children.push("<w:semiHidden/>");
   if (opts.unhideWhenUsed) children.push("<w:unhideWhenUsed/>");
   if (opts.quickFormat) children.push("<w:qFormat/>");
+  if (opts.locked) children.push("<w:locked/>");
+  if (opts.personal) children.push("<w:personal/>");
+  if (opts.personalCompose) children.push("<w:personalCompose/>");
+  if (opts.personalReply) children.push("<w:personalReply/>");
 
   const pPr = stringifyParagraphProperties(opts.paragraph).xml;
   if (pPr) children.push(pPr);
@@ -113,24 +119,26 @@ export function stringifyParagraphStyle(opts: {
 }
 
 /** Build `<w:style>` XML for a character style. */
-export function stringifyCharacterStyle(opts: {
-  id: string;
-  name: string;
-  basedOn?: string;
-  link?: string;
-  semiHidden?: boolean;
-  uiPriority?: number;
-  unhideWhenUsed?: boolean;
-  run?: RunStylePropertiesOptions;
-}): string {
+export function stringifyCharacterStyle(
+  opts: StyleOptions & {
+    id: string;
+    run?: RunStylePropertiesOptions;
+  },
+): string {
   const children: string[] = [];
 
-  children.push(`<w:name w:val="${esc(opts.name)}"/>`);
+  children.push(`<w:name w:val="${esc(opts.name ?? opts.id)}"/>`);
+  if (opts.aliases) children.push(`<w:aliases w:val="${esc(opts.aliases)}"/>`);
   if (opts.basedOn) children.push(`<w:basedOn w:val="${esc(opts.basedOn)}"/>`);
   if (opts.link) children.push(`<w:link w:val="${esc(opts.link)}"/>`);
+  if (opts.autoRedefine) children.push("<w:autoRedefine/>");
   if (opts.uiPriority !== undefined) children.push(`<w:uiPriority w:val="${opts.uiPriority}"/>`);
   if (opts.semiHidden) children.push("<w:semiHidden/>");
   if (opts.unhideWhenUsed) children.push("<w:unhideWhenUsed/>");
+  if (opts.locked) children.push("<w:locked/>");
+  if (opts.personal) children.push("<w:personal/>");
+  if (opts.personalCompose) children.push("<w:personalCompose/>");
+  if (opts.personalReply) children.push("<w:personalReply/>");
 
   const rPr = stringifyRunProperties(opts.run);
   if (rPr) children.push(rPr);

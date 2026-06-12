@@ -61,13 +61,19 @@ export class Styles {
           stringifyParagraphStyle({
             id: style.id,
             name: style.name ?? style.id,
+            aliases: style.aliases,
             basedOn: style.basedOn,
             next: style.next,
             link: style.link,
+            autoRedefine: style.autoRedefine,
             quickFormat: style.quickFormat,
             semiHidden: style.semiHidden,
             uiPriority: style.uiPriority,
             unhideWhenUsed: style.unhideWhenUsed,
+            locked: style.locked,
+            personal: style.personal,
+            personalCompose: style.personalCompose,
+            personalReply: style.personalReply,
             paragraph: style.paragraph,
             run: style.run,
           }),
@@ -81,11 +87,17 @@ export class Styles {
           stringifyCharacterStyle({
             id: style.id,
             name: style.name ?? style.id,
+            aliases: style.aliases,
             basedOn: style.basedOn,
             link: style.link,
+            autoRedefine: style.autoRedefine,
             semiHidden: style.semiHidden,
             uiPriority: style.uiPriority,
             unhideWhenUsed: style.unhideWhenUsed,
+            locked: style.locked,
+            personal: style.personal,
+            personalCompose: style.personalCompose,
+            personalReply: style.personalReply,
             run: style.run,
           }),
         );
@@ -298,6 +310,17 @@ function parseStyleElement(
   if (findChild(el, "w:qFormat")) opts.quickFormat = true;
   if (findChild(el, "w:semiHidden")) opts.semiHidden = true;
   if (findChild(el, "w:unhideWhenUsed")) opts.unhideWhenUsed = true;
+  if (findChild(el, "w:autoRedefine")) opts.autoRedefine = true;
+  if (findChild(el, "w:locked")) opts.locked = true;
+  if (findChild(el, "w:personal")) opts.personal = true;
+  if (findChild(el, "w:personalCompose")) opts.personalCompose = true;
+  if (findChild(el, "w:personalReply")) opts.personalReply = true;
+
+  const aliases = findChild(el, "w:aliases");
+  if (aliases) {
+    const val = attr(aliases, "w:val");
+    if (val) opts.aliases = val;
+  }
 
   const pPr = findChild(el, "w:pPr");
   if (pPr) {
