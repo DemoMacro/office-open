@@ -77,7 +77,7 @@ function toFlatAttrs(opts: Readonly<Record<string, boolean | undefined>>): Recor
   const result: Record<string, boolean> = {};
   for (const key of Object.keys(opts)) {
     if (opts[key] !== undefined) {
-      result[`a:${key}`] = opts[key]!;
+      result[key] = opts[key]!;
     }
   }
   return result;

@@ -44,7 +44,7 @@ function stringifyLockingAttrs(
   const parts: string[] = [];
   for (const key of keys) {
     if (opts[key] !== undefined) {
-      parts.push(`a:${key}="${opts[key] ? 1 : 0}"`);
+      parts.push(`${key}="${opts[key] ? 1 : 0}"`);
     }
   }
   return parts.length ? " " + parts.join(" ") : "";
@@ -54,7 +54,7 @@ function readLockingAttrs(el: XmlElement, keys: readonly string[]): Record<strin
   const result: Record<string, boolean> = {};
   if (!el.attributes) return result;
   for (const key of keys) {
-    const val = el.attributes[`a:${key}`];
+    const val = el.attributes[key];
     if (val !== undefined) result[key] = val === "1" || val === 1 || val === "true";
   }
   return result;

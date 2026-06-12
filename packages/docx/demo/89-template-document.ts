@@ -2,12 +2,12 @@
 
 import { readFileSync, writeFileSync } from "node:fs";
 
-import type { IPatch } from "@office-open/docx";
+import type { Patch } from "@office-open/docx";
 import { PatchType, patchDocument } from "@office-open/docx";
 
 export const font = "Trebuchet MS";
 export const getPatches = (fields: Record<string, string>) => {
-  const patches: Record<string, IPatch> = {};
+  const patches: Record<string, Patch> = {};
 
   for (const field in fields) {
     patches[field] = {

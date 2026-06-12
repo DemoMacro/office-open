@@ -490,7 +490,7 @@ function buildLockAttrs(opts: ShapeLockingOptions): string[] {
   ] as const;
   for (const key of keys) {
     const val = opts[key];
-    if (val !== undefined) attrs.push(`a:${key}="${val ? 1 : 0}"`);
+    if (val !== undefined) attrs.push(`${key}="${val ? 1 : 0}"`);
   }
   return attrs;
 }

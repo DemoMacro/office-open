@@ -9,9 +9,9 @@ import {
 } from "ai";
 import type { UIMessageStreamWriter, ToolSet } from "ai";
 import type { H3Event } from "h3";
+import { formatToolError } from "office-open/ai";
 import { generate } from "office-open/generate";
 import type { GenerateType } from "office-open/generate";
-import { validateDocumentInput } from "office-open/schemas";
 import { z } from "zod";
 
 const MIME_TYPES = {
@@ -21,14 +21,17 @@ const MIME_TYPES = {
 } as const;
 
 async function generateDocument(type: GenerateType, options: Record<string, unknown>) {
-  const validated = validateDocumentInput(type, options);
-  const base64 = (await generate({ type, options: validated, outputType: "base64" })) as string;
-  return {
-    filename: `${(options.title as string) || "generated"}.${type}`,
-    base64,
-    mimeType: MIME_TYPES[type],
-    size: Math.ceil((base64.length * 3) / 4),
-  };
+  try {
+    const base64 = (await generate({ type, options, outputType: "base64" })) as string;
+    return {
+      filename: `${(options.title as string) || "generated"}.${type}`,
+      base64,
+      mimeType: MIME_TYPES[type],
+      size: Math.ceil((base64.length * 3) / 4),
+    };
+  } catch (error) {
+    throw new Error(formatToolError(type, error));
+  }
 }
 
 const generateDocumentTool = tool({
@@ -36,6 +39,10 @@ const generateDocumentTool = tool({
     "Generate a downloadable Office document (.docx, .pptx, or .xlsx). " +
     "Pass type and options as separate parameters. " +
     "options is a JSON object (NOT a string) containing the document structure directly. " +
+    "IMPORTANT: " +
+    "Section/slide children must use wrapper keys: { paragraph: {...} }, { table: {...} }, { shape: {...} }, etc. " +
+    "Text runs MUST have a 'text' key: { text: '...', bold?: true }. " +
+    "Colors are hex WITHOUT '#': 'FF0000', not '#FF0000'. " +
     "For docx, options must include 'sections'. For pptx, options must include 'slides'. For xlsx, options must include 'worksheets'.",
   inputSchema: z.object({
     type: z.enum(["docx", "pptx", "xlsx"]).describe("Document type to generate"),
@@ -129,9 +136,13 @@ function getSystemPrompt(siteName: string) {
 - Use get-page to read the docx/pptx/xlsx documentation before calling generate-document
 - Call generate-document with two parameters: type ("docx"/"pptx"/"xlsx") and options (a JSON object, NOT a string)
 - The entire options object is the document definition — pass it directly as an object with proper nesting
-- For docx: { type: "docx", options: { sections: [{ properties: {}, children: [...] }] } }
-- For pptx: { type: "pptx", options: { title: "...", slides: [{ children: [...]] } }
-- For xlsx: { type: "xlsx", options: { worksheets: [{ rows: [{ cells: [...] }] }] } }
+- CRITICAL STRUCTURE RULES:
+  - Section/slide children MUST use wrapper keys: { paragraph: {...} }, { table: {...} }, NOT bare objects
+  - Text runs MUST have a "text" key: { text: "Hello", bold?: true }, NOT { bold: true } alone
+  - Colors are hex WITHOUT "#": "FF0000", not "#FF0000"
+- For docx: { type: "docx", options: { sections: [{ properties: {}, children: [{ paragraph: { children: [{ text: "..." }] } }] }] }] } }
+- For pptx: { type: "pptx", options: { title: "...", slides: [{ children: [{ shape: { x: 100, y: 100, width: 600, height: 60, textBody: { text: "..." } } }] }] } }
+- For xlsx: { type: "xlsx", options: { worksheets: [{ rows: [{ cells: [{ value: "Name" }] }] }] } }
 - Set the "title" field in options to customize the download filename without extension (e.g. "My Report")
 - Call generate-document exactly ONCE — never retry or call it multiple times for the same request
 - ALWAYS describe what you generated after the tool completes
