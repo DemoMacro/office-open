@@ -10,7 +10,7 @@
 import { derivePasswordHash } from "@office-open/core";
 import type { ChartSpaceOptions } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attrs, escapeXml, selfCloseElement } from "@office-open/xml";
+import { attrs, attrsRaw, escapeXml, selfCloseElement } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { findChild, attr, attrNum, textOf } from "@office-open/xml";
 
@@ -1944,16 +1944,16 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     if (rowOpts.ph) rowAttrs.ph = 1;
 
     if (rowOpts.cells) {
-      const rowParts: string[] = [];
+      p.push(`<row${attrsRaw(rowAttrs)}>`);
       for (let j = 0; j < rowOpts.cells.length; j++) {
         const cell = rowOpts.cells[j];
         const ref = cell.reference ?? defaultCellRef(rowNumber, j + 1);
         const cellStr = buildCellString(ref, cell, sharedStrings, styles);
-        if (cellStr) rowParts.push(cellStr);
+        if (cellStr) p.push(cellStr);
       }
-      p.push(`<row${attrs(rowAttrs)}>`, ...rowParts, "</row>");
+      p.push("</row>");
     } else {
-      p.push(`<row${attrs(rowAttrs)}/>`);
+      p.push(`<row${attrsRaw(rowAttrs)}/>`);
     }
   }
   p.push("</sheetData>");
@@ -2761,7 +2761,7 @@ function buildCellString(
     const fStr = buildFormulaString(cell.formula);
     let vStr = "";
     if (value === null || value === undefined) {
-      return `<c${attrs(cellAttrs)}>${fStr}</c>`;
+      return `<c${attrsRaw(cellAttrs)}>${fStr}</c>`;
     }
     if (typeof value === "number") {
       vStr = `<v>${value}</v>`;
@@ -2775,14 +2775,14 @@ function buildCellString(
       vStr = `<v>${dateToSerialNumber(value)}</v>`;
     }
     if (vStr) {
-      return `<c${attrs(cellAttrs)}>${fStr}${vStr}</c>`;
+      return `<c${attrsRaw(cellAttrs)}>${fStr}${vStr}</c>`;
     }
-    return `<c${attrs(cellAttrs)}>${fStr}</c>`;
+    return `<c${attrsRaw(cellAttrs)}>${fStr}</c>`;
   }
 
   if (value === null || value === undefined) {
     if (cell.styleIndex !== undefined) {
-      return selfCloseElement("c", attrs(cellAttrs));
+      return selfCloseElement("c", attrsRaw(cellAttrs));
     }
     return "";
   }
@@ -2792,34 +2792,34 @@ function buildCellString(
     if (sharedStrings) {
       cellAttrs.t = "s";
       const idx = sharedStrings.registerRich(value);
-      return `<c${attrs(cellAttrs)}><v>${idx}</v></c>`;
+      return `<c${attrsRaw(cellAttrs)}><v>${idx}</v></c>`;
     }
     cellAttrs.t = "inlineStr";
-    return `<c${attrs(cellAttrs)}><is>${buildRstXml(value)}</is></c>`;
+    return `<c${attrsRaw(cellAttrs)}><is>${buildRstXml(value)}</is></c>`;
   }
 
   if (typeof value === "string") {
     if (sharedStrings) {
       cellAttrs.t = "s";
       const idx = sharedStrings.register(value);
-      return `<c${attrs(cellAttrs)}><v>${idx}</v></c>`;
+      return `<c${attrsRaw(cellAttrs)}><v>${idx}</v></c>`;
     }
     cellAttrs.t = "inlineStr";
-    return `<c${attrs(cellAttrs)}><is><t>${escapeXml(value)}</t></is></c>`;
+    return `<c${attrsRaw(cellAttrs)}><is><t>${escapeXml(value)}</t></is></c>`;
   }
 
   if (typeof value === "number") {
-    return `<c${attrs(cellAttrs)}><v>${value}</v></c>`;
+    return `<c${attrsRaw(cellAttrs)}><v>${value}</v></c>`;
   }
 
   if (typeof value === "boolean") {
     cellAttrs.t = "b";
-    return `<c${attrs(cellAttrs)}><v>${value ? 1 : 0}</v></c>`;
+    return `<c${attrsRaw(cellAttrs)}><v>${value ? 1 : 0}</v></c>`;
   }
 
   if (value instanceof Date) {
     const serial = dateToSerialNumber(value);
-    return `<c${attrs(cellAttrs)}><v>${serial}</v></c>`;
+    return `<c${attrsRaw(cellAttrs)}><v>${serial}</v></c>`;
   }
 
   return "";

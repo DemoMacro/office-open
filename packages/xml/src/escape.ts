@@ -57,6 +57,28 @@ export function attrs(record: Record<string, string | number | boolean | undefin
 }
 
 /**
+ * Build an XML attribute string without escaping.
+ *
+ * Same as `attrs()` but skips `typeof` checks and `escapeXml` — use only when
+ * all values are known-safe (numbers, booleans, or strings free of `& " ' < >`).
+ * Avoids per-call array and `Object.keys()` allocation in hot loops.
+ *
+ * @example
+ * attrsRaw({ r: "A1", s: 5 })
+ * // => ' r="A1" s="5"'
+ */
+export function attrsRaw(record: Record<string, string | number | boolean | undefined>): string {
+  let s = "";
+  for (const key in record) {
+    const v = record[key];
+    if (v !== undefined) {
+      s += ` ${key}="${v}"`;
+    }
+  }
+  return s;
+}
+
+/**
  * Build a self-closing XML element: `<tag attrStr/>`.
  * `attrStr` is a pre-serialized attribute string (from `attrs()`) or undefined.
  */
