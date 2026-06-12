@@ -14,6 +14,7 @@ import type { RunOptions } from "./run";
 import type { ChartOptions } from "./run/chart-run";
 import type { ImageOptions } from "./run/image-run";
 import type { RubyOptions } from "./run/ruby";
+import type { SmartArtOptions } from "./run/smartart-run";
 import type { SymbolRunOptions } from "./run/symbol-run";
 import type { WpsShapeRunOptions } from "./run/wps-shape-run";
 
@@ -26,7 +27,7 @@ export interface ChartChild {
 
 /** JSON-friendly wrapper for SmartArtRun options in paragraph children. */
 export interface SmartArtChild {
-  smartArt: import("./run/smartart-run").SmartArtOptions;
+  smartArt: SmartArtOptions;
 }
 
 /** JSON-friendly wrapper for ImageRun options in paragraph children. */
@@ -41,8 +42,8 @@ export interface MathChild {
   };
 }
 
-/** JSON-friendly wrappers for simple paragraph child types (JSON API). */
-export type ParagraphJsonChild =
+/** Discriminated union of all paragraph child types (inline elements, runs, etc.). */
+export type ParagraphChild =
   | ChartChild
   | SmartArtChild
   | ImageChild
@@ -129,9 +130,11 @@ export type ParagraphJsonChild =
           placeholder?: string;
           attrs?: Array<{ name: string; val: string; uri?: string }>;
         };
-        children?: (RunOptions | ParagraphJsonChild | string)[];
+        children?: (ParagraphChild | string)[];
       };
-    };
+    }
+  // Text run
+  | RunOptions;
 
 // ── ParagraphOptions ──
 
@@ -142,7 +145,7 @@ export type ParagraphOptions = {
   /** Simple text content for the paragraph. Creates a single TextRun. */
   text?: string;
   /** Array of child elements. */
-  children?: (RunOptions | ParagraphJsonChild | string)[];
+  children?: (ParagraphChild | string)[];
   /** Revision save ID for the paragraph mark. */
   rsidR?: string;
   /** Revision save ID for the paragraph properties. */

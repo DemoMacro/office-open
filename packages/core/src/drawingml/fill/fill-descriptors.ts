@@ -22,6 +22,7 @@ import type { FillOptions } from "./fill-options";
 import type {
   GradientFillOptions,
   GradientShadeOptions,
+  LinearShadeOptions,
   PathShadeOptions,
   RelativeRect,
 } from "./gradient-fill";
@@ -117,18 +118,16 @@ export const gradientFillDesc: CustomDescriptor<GradientFillOptions> = {
     // Shade (a:lin or a:path)
     const lin = findChild(el, "a:lin");
     if (lin) {
-      const shade: Partial<import("./gradient-fill").LinearShadeOptions> = {};
+      const shade: Partial<LinearShadeOptions> = {};
       if (lin.attributes?.["ang"] !== undefined) shade.angle = Number(lin.attributes["ang"]);
       if (lin.attributes?.["scaled"] !== undefined) shade.scaled = lin.attributes["scaled"] !== "0";
       result.shade = shade as GradientShadeOptions;
     } else {
       const path = findChild(el, "a:path");
       if (path) {
-        const shade: Partial<import("./gradient-fill").PathShadeOptions> = {};
+        const shade: Partial<PathShadeOptions> = {};
         if (path.attributes?.["path"] !== undefined)
-          shade.path = String(
-            path.attributes["path"],
-          ) as import("./gradient-fill").PathShadeOptions["path"];
+          shade.path = String(path.attributes["path"]) as PathShadeOptions["path"];
         const fillToRect = findChild(path, "a:fillToRect");
         if (fillToRect) shade.fillToRect = readRelativeRect(fillToRect);
         result.shade = shade as GradientShadeOptions;

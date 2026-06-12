@@ -19,6 +19,7 @@ import type {
   PivotHierarchyOptions,
   PivotAreaOptions,
   PivotFieldOverrideOptions,
+  PivotAreaReferenceOptions,
 } from "./pivot/pivot-utils";
 import { collectUniqueValues } from "./pivot/pivot-utils";
 
@@ -866,9 +867,7 @@ function buildPivotAreaXml(area: PivotAreaOptions): string {
   return `<pivotArea ${aAttrs.join(" ")}/>`;
 }
 
-function buildPivotAreaReferences(
-  refs: import("./pivot/pivot-utils").PivotAreaReferenceOptions[],
-): string {
+function buildPivotAreaReferences(refs: PivotAreaReferenceOptions[]): string {
   const parts: string[] = [`<references count="${refs.length}">`];
   for (const ref of refs) {
     const rAttrs: string[] = [];

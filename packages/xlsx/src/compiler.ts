@@ -30,12 +30,14 @@ import type { PivotSourceData, PivotTableOptions } from "@parts/pivot";
 import { pivotCacheDefDesc, pivotCacheRecordsDesc } from "@parts/pivot-cache";
 import { pivotTableDesc } from "@parts/pivot-table";
 import { sharedStringsDesc } from "@parts/shared-strings";
+import type { SharedStrings } from "@parts/shared-strings";
 import { stylesDesc } from "@parts/styles";
 import { tableDesc } from "@parts/table";
 import { createThemeXml } from "@parts/theme";
-import type { TablePartReference } from "@parts/workbook";
+import type { TablePartReference, SheetDefinition } from "@parts/workbook";
 import { workbookDesc, buildTablePartsXml, buildExternalReferencesXml } from "@parts/workbook";
 import { buildWorksheetXml, type WorksheetContext } from "@parts/worksheet";
+import type { RowOptions, WorksheetOptions } from "@parts/worksheet";
 
 import { XlsxWriteContext } from "./context";
 
@@ -91,7 +93,7 @@ export function compileWorkbook(
   buildWorkbookRelationships(ctx.workbookRels, worksheetConfigs.length, chartsheetConfigs.length);
 
   // Build sheet definitions for workbook XML
-  const sheets: import("@parts/workbook").SheetDefinition[] = [];
+  const sheets: SheetDefinition[] = [];
   let sheetId = 1;
   let rId = 1;
   for (const ws of worksheetConfigs) {
@@ -809,10 +811,7 @@ function buildWorkbookRelationships(rels: Relationships, wsCount: number, csCoun
   );
 }
 
-function extractPivotSourceData(
-  rows: import("@parts/worksheet").RowOptions[],
-  sourceRef: string,
-): PivotSourceData {
+function extractPivotSourceData(rows: RowOptions[], sourceRef: string): PivotSourceData {
   const parts = sourceRef.split(":");
   const startMatch = parts[0]?.match(/^([A-Z]+)(\d+)$/);
   const endMatch = parts[1]?.match(/^([A-Z]+)(\d+)$/);
@@ -876,8 +875,8 @@ function colLetterToIndex(letters: string): number {
 
 function renderPivotSheetData(
   pivotOpts: PivotTableOptions[],
-  worksheetConfigs: import("@parts/worksheet").WorksheetOptions[],
-  sharedStrings: import("@parts/shared-strings").SharedStrings,
+  worksheetConfigs: WorksheetOptions[],
+  sharedStrings: SharedStrings,
   currentSheetName: string,
 ): { sheetData: string; dimensionRef: string } {
   const rowCells = new Map<number, string[]>();

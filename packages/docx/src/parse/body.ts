@@ -15,6 +15,7 @@ import { parseSdtBlock } from "@parts/sdt/sdt-parse";
 import { parseSubDoc } from "@parts/sub-doc/sub-doc-parse";
 import { parseToc } from "@parts/table-of-contents/toc-parse";
 import { tableDesc } from "@parts/table/descriptor";
+import type { TableOptions } from "@parts/table/table";
 import { parseTextbox } from "@parts/textbox/textbox-parse";
 import type { SectionOptions } from "@shared/section";
 import type { SectionChild } from "@shared/section";
@@ -108,7 +109,7 @@ export function parseSectionChild(el: Element, ctx: DocxReadContext): SectionChi
       return { paragraph: parseParagraph(el, ctx) };
     }
     case "w:tbl":
-      return { table: tableDesc.parse(el, ctx) as import("@parts/table/table").TableOptions };
+      return { table: tableDesc.parse(el, ctx) as TableOptions };
     case "w:sdt": {
       // Try TOC first
       const tocResult = parseToc(el, ctx);

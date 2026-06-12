@@ -27,8 +27,9 @@ import type { SectionChild } from "@shared/section";
 
 import type { DocxReadContext, DocxWriteContext, BodyContext } from "./context";
 import { tableDesc, altChunkDesc, subDocDesc, sdtBlockDesc, customXmlBlockDesc } from "./parts";
-import { stringifyJsonChild } from "./parts/inline";
+import { stringifyChildDispatch } from "./parts/inline";
 import { parseMathChildren } from "./parts/paragraph/math/stringify";
+import type { ParagraphChild } from "./parts/paragraph/paragraph";
 import { stringifyParagraphProperties, stringifyRunProperties } from "./parts/paragraph/stringify";
 
 export type { BodyContext } from "./context";
@@ -127,7 +128,7 @@ export function stringifyRun(opts: RunOptions, ctx: BodyContext): string {
         }
 
         // JSON child dispatch (images, charts, etc.)
-        const jsonResult = stringifyJsonChild(child as import("@parts/inline").ParagraphChild, ctx);
+        const jsonResult = stringifyChildDispatch(child as ParagraphChild, ctx);
         if (jsonResult !== undefined) {
           if (Array.isArray(jsonResult)) {
             parts.push(...jsonResult);
@@ -204,7 +205,7 @@ export function stringifyParagraph(
         parts.push(stringifyRun({ text: child }, ctx));
       } else if (typeof child === "object" && child !== null) {
         // Try JSON child dispatch first (image, chart, pageBreak, etc.)
-        const jsonResult = stringifyJsonChild(child as import("@parts/inline").ParagraphChild, ctx);
+        const jsonResult = stringifyChildDispatch(child as ParagraphChild, ctx);
         if (jsonResult !== undefined) {
           if (Array.isArray(jsonResult)) {
             parts.push(...jsonResult);

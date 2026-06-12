@@ -13,6 +13,9 @@ import type {
   FileRecoveryPrOptions,
   WebPublishingOptions,
   FileSharingOptions,
+  CustomWorkbookViewOptions,
+  VolTypeOptions,
+  WebPublishObjectOptions,
 } from "@parts/workbook";
 import type { WorksheetOptions } from "@parts/worksheet";
 
@@ -27,7 +30,7 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   /** External link definitions */
   externalLinks?: ExternalLinkOptions[];
   /** Custom workbook views */
-  customWorkbookViews?: import("@parts/workbook").CustomWorkbookViewOptions[];
+  customWorkbookViews?: CustomWorkbookViewOptions[];
   /** File recovery properties */
   fileRecoveryPr?: FileRecoveryPrOptions;
   /** Custom VBA function group names */
@@ -37,7 +40,7 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   /** File sharing / read-only recommendation */
   fileSharing?: FileSharingOptions;
   /** Volatile dependencies (CT_VolTypes) */
-  volTypes?: import("@parts/workbook").VolTypeOptions[];
+  volTypes?: VolTypeOptions[];
   /** Web publish objects (CT_WebPublishItems) */
-  webPublishObjects?: import("@parts/workbook").WebPublishObjectOptions[];
+  webPublishObjects?: WebPublishObjectOptions[];
 }

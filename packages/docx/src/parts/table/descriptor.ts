@@ -18,7 +18,7 @@ import { VerticalMergeType } from "@parts/table/table-cell/table-cell-components
 import type { TableRowOptions } from "@parts/table/table-row/table-row";
 import type { SectionChild } from "@shared/section";
 
-import type { BodyContext } from "../../context";
+import type { BodyContext, DocxReadContext } from "../../context";
 import {
   stringifyTableCellProperties,
   stringifyTableProperties,
@@ -251,16 +251,13 @@ export const tableDesc: CustomDescriptor<TableOptions, BodyContext> = {
   },
 
   parse(el, ctx) {
-    return parseTableEl(el, ctx as import("../../context").DocxReadContext);
+    return parseTableEl(el, ctx as DocxReadContext);
   },
 };
 
 // ── Parse (Element → TableOptions) ──
 
-type ParseChildFn = (
-  el: Element,
-  ctx: import("../../context").DocxReadContext,
-) => import("@shared/section").SectionChild;
+type ParseChildFn = (el: Element, ctx: DocxReadContext) => SectionChild;
 
 /** Callback used by table parser to parse body children. */
 let _parseChild: ParseChildFn | undefined;
@@ -527,10 +524,7 @@ function parseTableCellPropertiesEl(el: Element): Record<string, unknown> {
   return opts;
 }
 
-function parseTableCellEl(
-  el: Element,
-  ctx: import("../../context").DocxReadContext,
-): TableCellOptions {
+function parseTableCellEl(el: Element, ctx: DocxReadContext): TableCellOptions {
   const opts: Record<string, unknown> = {};
 
   const tcPr = findChild(el, "w:tcPr");
@@ -538,7 +532,7 @@ function parseTableCellEl(
     Object.assign(opts, parseTableCellPropertiesEl(tcPr));
   }
 
-  const childElements: import("@shared/section").SectionChild[] = [];
+  const childElements: SectionChild[] = [];
   for (const child of el.elements ?? []) {
     switch (child.name) {
       case "w:tcPr":
@@ -556,10 +550,7 @@ function parseTableCellEl(
   return opts as unknown as TableCellOptions;
 }
 
-function parseTableRowEl(
-  el: Element,
-  ctx: import("../../context").DocxReadContext,
-): TableRowOptions {
+function parseTableRowEl(el: Element, ctx: DocxReadContext): TableRowOptions {
   const opts: Record<string, unknown> = {};
 
   const trPr = findChild(el, "w:trPr");
@@ -578,7 +569,7 @@ function parseTableRowEl(
   return opts as unknown as TableRowOptions;
 }
 
-function parseTableEl(el: Element, ctx: import("../../context").DocxReadContext): TableOptions {
+function parseTableEl(el: Element, ctx: DocxReadContext): TableOptions {
   const opts: Record<string, unknown> = {};
 
   const tblPr = findChild(el, "w:tblPr");

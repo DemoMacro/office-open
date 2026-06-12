@@ -92,6 +92,7 @@ export interface WebSettingsOptions {
 
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrBool, attrNum, findChild } from "@office-open/xml";
+import type { Element } from "@office-open/xml";
 import type { FrameOptions, FramesetSplitbarOptions } from "@parts/frameset";
 
 /** Subset of WebSettingsOptions for descriptor stringify. */
@@ -139,7 +140,7 @@ function wsEscapeAttr(s: string): string {
 
 // ── Parse helpers (for descriptor parse path) ──
 
-function parseFramesetEl(el: import("@office-open/xml").Element): FramesetOptions {
+function parseFramesetEl(el: Element): FramesetOptions {
   const opts: Record<string, unknown> = {};
 
   const sz = findChild(el, "w:sz");
@@ -176,7 +177,7 @@ function parseFramesetEl(el: import("@office-open/xml").Element): FramesetOption
   return opts as unknown as FramesetOptions;
 }
 
-function parseSplitbarEl(el: import("@office-open/xml").Element): FramesetSplitbarOptions {
+function parseSplitbarEl(el: Element): FramesetSplitbarOptions {
   const opts: Record<string, unknown> = {};
 
   const w = findChild(el, "w:w");
@@ -197,7 +198,7 @@ function parseSplitbarEl(el: import("@office-open/xml").Element): FramesetSplitb
   return opts as unknown as FramesetSplitbarOptions;
 }
 
-function parseFrameEl(el: import("@office-open/xml").Element): FrameOptions {
+function parseFrameEl(el: Element): FrameOptions {
   const opts: Record<string, unknown> = {};
 
   const sz = findChild(el, "w:sz");
@@ -254,7 +255,7 @@ function parseFrameEl(el: import("@office-open/xml").Element): FrameOptions {
   return opts as unknown as FrameOptions;
 }
 
-function parseDivsEl(el: import("@office-open/xml").Element): DivOptions[] {
+function parseDivsEl(el: Element): DivOptions[] {
   const result: DivOptions[] = [];
   for (const child of el.elements ?? []) {
     if (child.name === "w:div") {
@@ -264,7 +265,7 @@ function parseDivsEl(el: import("@office-open/xml").Element): DivOptions[] {
   return result;
 }
 
-function parseDivEl(el: import("@office-open/xml").Element): DivOptions {
+function parseDivEl(el: Element): DivOptions {
   const id = attrNum(el, "w:id") ?? 0;
   const opts: Record<string, unknown> = { id };
 
@@ -318,7 +319,7 @@ function parseDivEl(el: import("@office-open/xml").Element): DivOptions {
   return opts as unknown as DivOptions;
 }
 
-function parseDivBorderEl(el: import("@office-open/xml").Element): DivBorderOptions {
+function parseDivBorderEl(el: Element): DivBorderOptions {
   const opts: Record<string, unknown> = {};
 
   for (const side of ["top", "left", "bottom", "right"] as const) {

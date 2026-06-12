@@ -35,6 +35,7 @@ import {
 } from "@office-open/core/drawingml";
 import { escapeXml } from "@office-open/xml";
 import { stringifyParagraphInline } from "@parts/inline";
+import type { ParagraphOptions } from "@parts/paragraph/paragraph";
 import type {
   ChartMediaData,
   ExtendedMediaData,
@@ -46,7 +47,7 @@ import type {
   WpsMediaData,
 } from "@shared/media";
 
-import type { BodyContext } from "../../context";
+import type { BodyContext, DocxReadContext } from "../../context";
 import type { DocPropertiesOptions, HyperlinkOptions } from "./doc-properties/doc-properties";
 // Import parse function from drawing-parse.ts (parse path)
 import { parseDrawingRun } from "./drawing-parse";
@@ -373,12 +374,7 @@ function stringifyWpsShape(opts: WpsStringifyOptions, ctx: BodyContext): string 
   // Paragraph children — pure JSON stringification
   const childXml =
     opts.children
-      ?.map((c) =>
-        stringifyParagraphInline(
-          c as import("@parts/paragraph/paragraph").ParagraphOptions | string,
-          ctx,
-        ),
-      )
+      ?.map((c) => stringifyParagraphInline(c as ParagraphOptions | string, ctx))
       .join("") ?? "";
 
   return (
@@ -784,7 +780,7 @@ export const drawingDesc: CustomDescriptor<DrawingDescriptorOptions, BodyContext
   },
 
   parse(el, ctx) {
-    const result = parseDrawingRun(el, ctx as import("../../context").DocxReadContext);
+    const result = parseDrawingRun(el, ctx as DocxReadContext);
     return (result ?? {}) as unknown as DrawingDescriptorOptions;
   },
 };

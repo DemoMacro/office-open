@@ -3,7 +3,7 @@
  *
  * Used by table.ts, comments.ts, body.ts, and other descriptors that need to
  * serialize paragraph/run content. Includes JSON child dispatch for all
- * ParagraphJsonChild variants (image, chart, hyperlink, etc.).
+ * ParagraphChild variants (image, chart, hyperlink, etc.).
  *
  * Pure string concatenation — zero IXmlableObject, zero BaseXmlComponent.
  *
@@ -17,8 +17,9 @@ import { chartSpaceDesc } from "@office-open/core/chart";
 import type { SourceRectangleOptions } from "@office-open/core/drawingml";
 import { createDataModel } from "@office-open/core/smartart";
 import { escapeXml } from "@office-open/xml";
-import type { ParagraphJsonChild, ParagraphOptions } from "@parts/paragraph/paragraph";
+import type { ParagraphChild, ParagraphOptions } from "@parts/paragraph/paragraph";
 import type { ImageOptions } from "@parts/paragraph/run/image-run";
+import type { RubyOptions } from "@parts/paragraph/run/ruby";
 import type { RunOptions } from "@parts/paragraph/run/run";
 import type { SmartArtOptions } from "@parts/paragraph/run/smartart-run";
 import type { ChartMediaData, MediaData, SmartArtMediaData, WpsMediaData } from "@shared/media";
@@ -47,7 +48,7 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
         parts.push(`<w:t xml:space="preserve">${escapeXml(child)}</w:t>`);
       } else {
         // JSON child dispatch
-        const jsonResult = stringifyJsonChild(child as ParagraphChild, ctx);
+        const jsonResult = stringifyChildDispatch(child as ParagraphChild, ctx);
         if (jsonResult !== undefined) {
           if (Array.isArray(jsonResult)) {
             parts.push(...jsonResult);
@@ -93,20 +94,14 @@ let nextChartId = 1;
 // ── JSON child dispatch ──
 
 /**
- * Stringify an ParagraphJsonChild into one or more XML strings.
+ * Stringify a ParagraphChild into one or more XML strings.
  *
  * Handles side effects (media, chart, smartArt, relationship registration)
  * directly without creating temporary class instances.
  *
  * Returns `undefined` if the child is not a recognized JSON wrapper.
  */
-/**
- * Type for children that may be a JSON child or a RunOptions.
- * Used by stringifyParagraphInline to attempt JSON dispatch before RunOptions.
- */
-export type ParagraphChild = ParagraphJsonChild | RunOptions;
-
-export function stringifyJsonChild(
+export function stringifyChildDispatch(
   child: ParagraphChild,
   ctx: BodyContext,
 ): string | string[] | undefined {
@@ -290,7 +285,7 @@ export function stringifyJsonChild(
 
   // Ruby annotation — pure string concatenation
   if ("ruby" in child && typeof child.ruby === "object" && child.ruby !== null) {
-    const r = child.ruby as import("@parts/paragraph/run/ruby").RubyOptions;
+    const r = child.ruby as RubyOptions;
     const align = r.alignment ?? "center";
     const hps = (r.fontSize ?? 10) * 2;
     const hpsRaise = (r.raise ?? 10) * 2;
@@ -590,7 +585,7 @@ export function stringifyJsonChild(
         if (typeof c === "string") {
           parts.push(stringifyRunInline({ text: c }, ctx));
         } else {
-          const jr = stringifyJsonChild(c as ParagraphChild, ctx);
+          const jr = stringifyChildDispatch(c as ParagraphChild, ctx);
           if (jr !== undefined) {
             parts.push(Array.isArray(jr) ? jr.join("") : jr);
           } else {
@@ -663,7 +658,7 @@ export function stringifyParagraphInline(
         parts.push(stringifyRunInline({ text: child }, ctx));
       } else if (typeof child === "object" && child !== null) {
         // Try JSON child dispatch first (image, chart, hyperlink, etc.)
-        const jsonResult = stringifyJsonChild(child as ParagraphChild, ctx);
+        const jsonResult = stringifyChildDispatch(child as ParagraphChild, ctx);
         if (jsonResult !== undefined) {
           if (Array.isArray(jsonResult)) {
             parts.push(...jsonResult);

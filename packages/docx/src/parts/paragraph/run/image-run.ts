@@ -14,6 +14,7 @@ import type { MediaTransformation } from "@shared/media";
 import { createTransformation } from "@shared/media";
 import type { MediaData } from "@shared/media/data";
 
+import type { Floating } from "../../drawing";
 import type { BlipEffectsOptions } from "../../drawing/inline/graphic/graphic-data/pic/blip/blip-effects";
 import type { SourceRectangleOptions } from "../../drawing/inline/graphic/graphic-data/pic/blip/source-rectangle";
 import type { TileOptions } from "../../drawing/inline/graphic/graphic-data/pic/blip/tile";
@@ -25,7 +26,7 @@ import type { OutlineOptions } from "../../drawing/inline/graphic/graphic-data/p
  */
 interface CoreImageOptions {
   transformation: MediaTransformation;
-  floating?: import("../../drawing").Floating;
+  floating?: Floating;
   altText?: DocPropertiesOptions;
   outline?: OutlineOptions;
   fill?: FillOptions;

@@ -18,8 +18,12 @@ import { toUint8Array } from "@office-open/core";
 import { escapeXml, js2xml, xml2js } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { DocumentAttributeNamespaces } from "@parts/document";
-import { stringifyJsonChild, stringifyParagraphInline, stringifyRunInline } from "@parts/inline";
-import type { ParagraphChild } from "@parts/inline";
+import {
+  stringifyChildDispatch,
+  stringifyParagraphInline,
+  stringifyRunInline,
+} from "@parts/inline";
+import type { ParagraphChild } from "@parts/paragraph/paragraph";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
 import type { RunOptions } from "@parts/paragraph/run/run";
 import { tableDesc } from "@parts/table/descriptor";
@@ -87,7 +91,7 @@ const docxReplacer = createReplacer({
       } else {
         // ParagraphChild level — for PARAGRAPH patches
         // Try compile-path JSON child dispatch first
-        const jr = stringifyJsonChild(child as ParagraphChild, currentPatchCtx);
+        const jr = stringifyChildDispatch(child as ParagraphChild, currentPatchCtx);
         if (jr !== undefined) {
           xmlStr = Array.isArray(jr) ? jr.join("") : jr;
         } else {

@@ -21,10 +21,14 @@ import {
   scene3DDesc,
   shape3DDesc,
 } from "@office-open/core/drawingml";
-import type { Transform2DOptions } from "@office-open/core/drawingml";
+import type {
+  Transform2DOptions,
+  FillOptions as CoreFillOptions,
+  OutlineOptions as CoreOutlineOptions,
+} from "@office-open/core/drawingml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { findChild, findDeep, escapeXml, attrNum, attr } from "@office-open/xml";
-import type { EffectsOptions } from "@shared/drawingml/effects";
+import type { EffectsOptions, ReflectionOptions } from "@shared/drawingml/effects";
 import type { OutlineOptions } from "@shared/drawingml/outline";
 import type { ParagraphOptions } from "@shared/shape/paragraph/paragraph";
 
@@ -69,7 +73,7 @@ export interface ShapeDescriptorOptions {
   width?: number;
   height?: number;
   geometry?: string;
-  fill?: import("@office-open/core/drawingml").FillOptions;
+  fill?: CoreFillOptions;
   outline?: OutlineOptions;
   effects?: EffectsOptions;
   flipHorizontal?: boolean;
@@ -171,7 +175,7 @@ function toEffectListOptions(opts: EffectsOptions): EffectListOptions | undefine
   };
 }
 
-function toReflectionCore(opts: import("@shared/drawingml/effects").ReflectionOptions) {
+function toReflectionCore(opts: ReflectionOptions) {
   const result: Record<string, number | string> = {};
   if (opts.blurRadius !== undefined) result.blurRadius = opts.blurRadius;
   if (opts.distance !== undefined) result.distance = opts.distance;
@@ -242,10 +246,8 @@ const DASH_STYLE_MAP = {
   sysDash: "sysDash",
 } as const;
 
-export function toCoreOutlineOptions(
-  opts: OutlineOptions,
-): import("@office-open/core/drawingml").OutlineOptions {
-  const result: import("@office-open/core/drawingml").OutlineOptions = {
+export function toCoreOutlineOptions(opts: OutlineOptions): CoreOutlineOptions {
+  const result: CoreOutlineOptions = {
     width: opts.width,
   };
   if (opts.color) {
