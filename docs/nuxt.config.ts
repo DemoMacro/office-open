@@ -10,8 +10,9 @@ export default defineNuxtConfig({
         "@office-open/xlsx > @office-open/core",
         "@vue/devtools-core",
         "@vue/devtools-kit",
-        "hash.js", // CJS
-        "nanoid/non-secure",
+        "@noble/hashes/legacy.js",
+        "@noble/hashes/utils.js",
+        "@noble/hashes/sha2.js",
         "remark-emoji",
         "remark-mdc",
         "undio",

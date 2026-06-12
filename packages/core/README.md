@@ -15,7 +15,7 @@
 - **OPC (Open Packaging)** — Content types, relationships, and ZIP packaging
 - **Value Validators** — Runtime validation for OOXML spec types (ST_HexColor, ST_OnOff, ST_DecimalNumber, etc.)
 - **Unit Converters** — TWIP and EMU conversions (mm/in/pt/px)
-- **ID Generators** — Sequential numeric IDs, nanoid, SHA-1 hash, UUID v4
+- **ID Generators** — Sequential numeric IDs, random IDs, SHA-1 hash, UUID v4
 - **Template Patching** — Placeholder replacement, XML traverser, and token replacer
 - **OOXML Compliance** — All types verified against ISO/IEC 29500-4 XSD schemas
 
