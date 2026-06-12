@@ -4,38 +4,32 @@
  * Implements ECMA-376 Agile Encryption password derivation.
  * Passwords are encoded as UTF-16LE per the OOXML specification.
  *
- * In Node.js: uses `node:crypto` for SHA-512 (~11× faster than hash.js).
- * In browsers: falls back to hash.js.
+ * Uses @noble/hashes for SHA-512 — audited, cross-platform,
+ * and comparable in speed to node:crypto for this workload.
  *
  * @module
  */
 
-import hash from "hash.js";
+import { sha512 } from "@noble/hashes/sha2.js";
 
-// ── Native crypto detection (Node.js ESM) ──
+// ── Fast base64 encoding ──
 
-type Hasher = { update(data: Uint8Array): Hasher; digest(): Uint8Array };
-type CreateHashFn = (algo: string) => Hasher;
-
-let _createHash: CreateHashFn | undefined;
+// Node.js: Buffer.from(bytes).toString("base64") is ~7.6× faster than btoa
+let _bufToBase64: ((bytes: Uint8Array) => string) | undefined;
 
 try {
-  // top-level await — ESM standard.
-  // In Node.js: resolves to crypto module with createHash.
-  // In browsers: import("node:crypto") throws — falls back to hash.js.
-  const nodeCrypto = await import("node:crypto");
-  if (typeof nodeCrypto.createHash !== "function") throw new Error("no native crypto");
-  _createHash = nodeCrypto.createHash;
+  const { Buffer: Buf } = await import("node:buffer");
+  _bufToBase64 = (bytes) => Buf.from(bytes).toString("base64");
 } catch {
-  // Browser — hash.js fallback
+  // Browser — will use btoa fallback
+}
+
+function toBase64(bytes: Uint8Array): string {
+  if (_bufToBase64) return _bufToBase64(bytes);
+  return btoa(String.fromCharCode(...bytes));
 }
 
 // ── Helpers ──
-
-function toBase64(bytes: Uint8Array): string {
-  const binary = String.fromCharCode(...bytes);
-  return btoa(binary);
-}
 
 function utf16leEncode(str: string): Uint8Array {
   const bytes = new Uint8Array(str.length * 2);
@@ -76,31 +70,15 @@ export function hashPasswordAgile(password: string, salt: Uint8Array, spinCount:
   initial.set(salt, 0);
   initial.set(pwBytes, salt.length);
 
-  let h: Uint8Array;
-
-  if (_createHash) {
-    // Node.js fast path (~11× faster)
-    h = _createHash("sha512").update(initial).digest();
-    for (let i = 0; i < spinCount; i++) {
-      const buf = new Uint8Array(h.length + 4);
-      buf.set(h, 0);
-      buf[h.length] = i & 0xff;
-      buf[h.length + 1] = (i >> 8) & 0xff;
-      buf[h.length + 2] = (i >> 16) & 0xff;
-      buf[h.length + 3] = (i >> 24) & 0xff;
-      h = _createHash("sha512").update(buf).digest();
-    }
-  } else {
-    // Browser fallback (hash.js)
-    h = hash.sha512().update(initial).digest() as unknown as Uint8Array;
-    for (let i = 0; i < spinCount; i++) {
-      const counter = new Uint8Array(4);
-      new DataView(counter.buffer).setUint32(0, i, true);
-      const buf = new Uint8Array(h.length + 4);
-      buf.set(h, 0);
-      buf.set(counter, h.length);
-      h = hash.sha512().update(buf).digest() as unknown as Uint8Array;
-    }
+  let h = sha512(initial);
+  for (let i = 0; i < spinCount; i++) {
+    const buf = new Uint8Array(h.length + 4);
+    buf.set(h, 0);
+    buf[h.length] = i & 0xff;
+    buf[h.length + 1] = (i >> 8) & 0xff;
+    buf[h.length + 2] = (i >> 16) & 0xff;
+    buf[h.length + 3] = (i >> 24) & 0xff;
+    h = sha512(buf);
   }
 
   return toBase64(new Uint8Array(h));

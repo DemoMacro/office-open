@@ -21,8 +21,30 @@ import type { OutputByType, OutputType } from "./output";
 
 export type { Zippable, ZipOptions } from "fflate";
 export { strFromU8, unzipSync } from "fflate";
-export { toUint8Array } from "undio";
-export type { DataType } from "undio";
+
+// ── Inline toUint8Array (replaces undio dependency) ──
+
+export type DataType =
+  | ArrayBufferLike
+  | Blob
+  | DataView
+  | number[]
+  | ReadableStream
+  | string
+  | Uint8Array;
+
+export function toUint8Array(data: DataType): Uint8Array {
+  if (data instanceof Uint8Array) return data;
+  if (data instanceof ArrayBuffer || data instanceof SharedArrayBuffer) return new Uint8Array(data);
+  if (data instanceof DataView)
+    return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+  if (typeof data === "string") return new TextEncoder().encode(data);
+  if (Array.isArray(data)) return new Uint8Array(data);
+  if (data instanceof Blob) throw new TypeError("Blob input requires async processing");
+  if (data instanceof ReadableStream)
+    throw new TypeError("ReadableStream input requires async processing");
+  throw new TypeError(`Unsupported data type: ${typeof data}`);
+}
 
 export interface XmlifyedFile {
   path: string;
@@ -194,9 +216,9 @@ export interface Packer<TFile> {
   toBufferSync(file: TFile, options?: PackerOptions): Buffer;
 
   /** Async → `Promise<string>` (base64-encoded). */
-  toBase64String(file: TFile, options?: PackerOptions): Promise<string>;
+  toBase64(file: TFile, options?: PackerOptions): Promise<string>;
   /** Sync → `string` (base64-encoded). */
-  toBase64StringSync(file: TFile, options?: PackerOptions): string;
+  toBase64Sync(file: TFile, options?: PackerOptions): string;
 
   /** Async → `Promise<Blob>` (browser). */
   toBlob(file: TFile, options?: PackerOptions): Promise<Blob>;
@@ -243,8 +265,7 @@ export const createPacker = <TFile>(options: {
   const toString = (file: TFile, opts?: PackerOptions) => pack(file, { ...opts, type: "string" });
   const toBuffer = (file: TFile, opts?: PackerOptions) =>
     pack(file, { ...opts, type: "nodebuffer" });
-  const toBase64String = (file: TFile, opts?: PackerOptions) =>
-    pack(file, { ...opts, type: "base64" });
+  const toBase64 = (file: TFile, opts?: PackerOptions) => pack(file, { ...opts, type: "base64" });
   const toBlob = (file: TFile, opts?: PackerOptions) => pack(file, { ...opts, type: "blob" });
   const toArrayBuffer = (file: TFile, opts?: PackerOptions) =>
     pack(file, { ...opts, type: "arraybuffer" });
@@ -270,7 +291,7 @@ export const createPacker = <TFile>(options: {
     packSync(file, { ...opts, type: "string" });
   const toBufferSync = (file: TFile, opts?: PackerOptions) =>
     packSync(file, { ...opts, type: "nodebuffer" });
-  const toBase64StringSync = (file: TFile, opts?: PackerOptions) =>
+  const toBase64Sync = (file: TFile, opts?: PackerOptions) =>
     packSync(file, { ...opts, type: "base64" });
   const toBlobSync = (file: TFile, opts?: PackerOptions) =>
     packSync(file, { ...opts, type: "blob" });
@@ -304,8 +325,8 @@ export const createPacker = <TFile>(options: {
     toStringSync,
     toBuffer,
     toBufferSync,
-    toBase64String,
-    toBase64StringSync,
+    toBase64,
+    toBase64Sync,
     toBlob,
     toBlobSync,
     toArrayBuffer,

@@ -72,10 +72,8 @@
     "bench": "vp test bench"
   },
   "dependencies": {
+    "@noble/hashes": "2.2.0",
     "@office-open/xml": "workspace:*",
-    "fflate": "0.8.3",
-    "hash.js": "1.1.7",
-    "nanoid": "5.1.11",
-    "undio": "0.2.0"
+    "fflate": "0.8.3"
   }
 }

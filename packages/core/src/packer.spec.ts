@@ -107,9 +107,9 @@ describe("createPacker", () => {
     });
   });
 
-  describe("#toBase64String()", () => {
+  describe("#toBase64()", () => {
     it("should return a base64 string", async () => {
-      const result = await Packer.toBase64String(mockFile);
+      const result = await Packer.toBase64(mockFile);
       expect(result).toBeDefined();
       expect(result.length).toBeGreaterThan(0);
     });
@@ -181,9 +181,9 @@ describe("createPacker", () => {
     });
   });
 
-  describe("#toBase64StringSync()", () => {
+  describe("#toBase64Sync()", () => {
     it("should return a base64 string synchronously", () => {
-      const result = Packer.toBase64StringSync(mockFile);
+      const result = Packer.toBase64Sync(mockFile);
       expect(result.length).toBeGreaterThan(0);
     });
   });

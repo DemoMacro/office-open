@@ -73,21 +73,15 @@ importers:
 
   packages/core:
     dependencies:
+      '@noble/hashes':
+        specifier: 2.2.0
+        version: 2.2.0
       '@office-open/xml':
         specifier: workspace:*
         version: link:../xml
       fflate:
         specifier: 0.8.3
         version: 0.8.3
-      hash.js:
-        specifier: 1.1.7
-        version: 1.1.7
-      nanoid:
-        specifier: 5.1.11
-        version: 5.1.11
-      undio:
-        specifier: 0.2.0
-        version: 0.2.0
 
   packages/docx:
     dependencies:
@@ -97,12 +91,6 @@ importers:
       '@office-open/xml':
         specifier: workspace:*
         version: link:../xml
-
-  packages/docx-plus:
-    dependencies:
-      '@office-open/docx':
-        specifier: workspace:*
-        version: link:../docx
 
   packages/office-open:
     dependencies:
@@ -1430,6 +1418,10 @@ packages:
     peerDependencies:
       '@emnapi/core': ^1.7.1
       '@emnapi/runtime': ^1.7.1
+
+  '@noble/hashes@2.2.0':
+    resolution: {integrity: sha512-IYqDGiTXab6FniAgnSdZwgWbomxpy9FtYvLKs7wCUs2a8RkITG+DFGO1DM9cr+E3/RgADRpFjrKVaJ1z6sjtEg==}
+    engines: {node: '>= 20.19.0'}
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -7594,9 +7586,6 @@ packages:
   undici-types@7.24.6:
     resolution: {integrity: sha512-WRNW+sJgj5OBN4/0JpHFqtqzhpbnV0GuB+OozA9gCL7a993SmU+1JBZCzLNxYsbMfIeDL+lTsphD5jN5N+n0zg==}
 
-  undio@0.2.0:
-    resolution: {integrity: sha512-1LH824ipsUNqX1qsO6qpcusv0oGPlfFWVykwWq5jJB0Mq6x4kEHO/izSq2KLjGZvOosEd91+HXoxYUSoVI0zPg==}
-
   unenv@2.0.0-rc.24:
     resolution: {integrity: sha512-i7qRCmY42zmCwnYlh9H2SvLEypEFGye5iRmEMKjcGi7zk9UquigRjFtTLz0TYqr0ZGLZhaMHl/foy1bZR+Cwlw==}
 
@@ -9326,6 +9315,8 @@ snapshots:
       '@emnapi/runtime': 1.10.0
       '@tybys/wasm-util': 0.10.2
     optional: true
+
+  '@noble/hashes@2.2.0': {}
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
@@ -16412,8 +16403,6 @@ snapshots:
   undici-types@6.21.0: {}
 
   undici-types@7.24.6: {}
-
-  undio@0.2.0: {}
 
   unenv@2.0.0-rc.24:
     dependencies:
