@@ -108,6 +108,10 @@ export type ParagraphChild =
   | { simpleField: { instruction: string; cachedValue?: string } }
   // Form field (checkbox, dropdown list, text input)
   | { formField: FormFieldOptions }
+  // Complex field (PAGE/DATE/TOC/HYPERLINK... — any fldChar field without
+  // w:ffData). `instruction` is the raw field code (incl. surrounding spaces);
+  // `result` is the cached result-run text, if any.
+  | { complexField: { instruction: string; result?: string } }
   // Sequential identifier (SEQ field)
   | { seqIdentifier: string }
   // Page reference (PAGEREF field)

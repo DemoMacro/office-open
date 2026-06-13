@@ -840,12 +840,18 @@ export function parseParagraph(el: Element, ctx: DocxReadContext): ParagraphOpti
   // Parse children
   const childList: unknown[] = [];
 
-  // Form field accumulator: a w:checkBox/ddList/textInput field spans several
-  // w:r elements (begin fldChar → instrText → separate → result → end). The
-  // definition lives in w:ffData inside the begin fldChar; the result runs
-  // (separate→end) are captured for textInput only — checkbox/dropdown state
-  // already lives in w:ffData — and the whole field collapses to one child.
+  // Field accumulator: a field (form field OR plain complex field) spans
+  // several w:r elements (begin fldChar → instrText → separate → result → end).
+  // - Form fields (checkBox/ddList/textInput) carry w:ffData on the begin
+  //   fldChar; their state lives there, and only a textInput's result is
+  //   captured (as `value`).
+  // - Plain complex fields (PAGE/DATE/TOC/HYPERLINK...) have no ffData; their
+  //   instrText + result are captured as a complexField child for round-trip.
+  // The whole field collapses to a single child.
+  let fieldKind: "form" | "complex" | null = null;
   let pendingFormField: FormFieldOptions | null = null;
+  let pendingInstruction = "";
+  let pendingResult = "";
   // True once the `separate` fldChar is seen: subsequent runs (up to `end`)
   // are the field's result.
   let collectingResult = false;
@@ -855,37 +861,58 @@ export function parseParagraph(el: Element, ctx: DocxReadContext): ParagraphOpti
       case "w:pPr":
         break;
       case "w:r": {
-        // Form field: fldChar markers + the instrText/result runs between them.
+        // Field: fldChar markers + the instrText/result runs between them.
         const fldCharEl = findChild(child, "w:fldChar");
         if (fldCharEl) {
           const fctype = attr(fldCharEl, "w:fldCharType");
           if (fctype === "begin") {
-            // Only form fields carry w:ffData on the begin fldChar. A plain
-            // complex field (PAGE/DATE/TOC) has none and must not be collected
-            // as a form field — otherwise it collapses to an empty {formField:{}}.
             const ffDataEl = findChild(fldCharEl, "w:ffData");
-            if (ffDataEl) pendingFormField = parseFormFieldData(ffDataEl);
+            if (ffDataEl) {
+              fieldKind = "form";
+              pendingFormField = parseFormFieldData(ffDataEl);
+            } else {
+              fieldKind = "complex";
+              pendingInstruction = "";
+              pendingResult = "";
+            }
+            collectingResult = false;
           } else if (fctype === "separate") {
             collectingResult = true;
-          } else if (fctype === "end" && pendingFormField) {
-            childList.push({ formField: pendingFormField });
+          } else if (fctype === "end" && fieldKind) {
+            if (fieldKind === "form" && pendingFormField) {
+              childList.push({ formField: pendingFormField });
+            } else if (fieldKind === "complex") {
+              const cf: { instruction: string; result?: string } = {
+                instruction: pendingInstruction,
+              };
+              if (pendingResult) cf.result = pendingResult;
+              childList.push({ complexField: cf });
+            }
+            fieldKind = null;
             pendingFormField = null;
             collectingResult = false;
           }
           break;
         }
-        if (pendingFormField) {
-          // separate→end runs are the field result. Capture a textInput's
-          // current (user-entered) value for round-trip fidelity; checkbox
-          // and dropdown results are discarded (their state is in w:ffData).
-          if (collectingResult && pendingFormField.textInput) {
+        if (fieldKind) {
+          if (fieldKind === "complex") {
+            // Collect instrText (begin→separate) and result text (separate→end).
+            if (collectingResult) {
+              pendingResult += collectRunText(child);
+            } else {
+              const instrEl = findChild(child, "w:instrText");
+              if (instrEl) pendingInstruction += textOf(instrEl);
+            }
+          } else if (collectingResult && pendingFormField?.textInput) {
+            // Capture a textInput's current value; checkbox/dropdown results
+            // are discarded (their state is in w:ffData).
             const text = collectRunText(child);
             if (text) {
               const ti = pendingFormField.textInput;
               ti.value = (ti.value ?? "") + text;
             }
           }
-          break; // instrText / result — state lives in ffData
+          break; // instrText / result — handled by field state above
         }
 
         const drawingEl = findChild(child, "w:drawing");

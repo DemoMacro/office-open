@@ -81,9 +81,8 @@ describe("form field parse", () => {
         "<w:r><w:t>1</w:t></w:r>" +
         '<w:r><w:fldChar w:fldCharType="end"/></w:r>',
     );
-    // A plain complex field has no w:ffData, so it must NOT be collected as a
-    // form field; the field markers/instrText are skipped and the result text
-    // ("1") survives as a normal run instead of being swallowed.
+    // A plain complex field has no w:ffData, so it is NOT a form field — it is
+    // collected as a complexField instead (see complex-field.spec.ts).
     expect(findFormField(opts)).toBeUndefined();
   });
 

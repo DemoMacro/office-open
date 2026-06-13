@@ -525,6 +525,24 @@ export function stringifyChildDispatch(
     return `<w:fldSimple w:instr="${escapeXml(sf.instruction)}"/>`;
   }
 
+  // ── Complex field (PAGE/DATE/TOC/... — fldChar field without w:ffData) ──
+  if ("complexField" in child) {
+    const cf = child.complexField;
+    // `separate` + the result run are emitted only when there is a cached
+    // result; a result-less field round-trips as begin/instrText/end.
+    const resultXml =
+      cf.result !== undefined
+        ? '<w:r><w:fldChar w:fldCharType="separate"/></w:r>' +
+          `<w:r><w:t xml:space="preserve">${escapeXml(cf.result)}</w:t></w:r>`
+        : "";
+    return (
+      '<w:r><w:fldChar w:fldCharType="begin"/></w:r>' +
+      `<w:r><w:instrText xml:space="preserve">${escapeXml(cf.instruction)}</w:instrText></w:r>` +
+      resultXml +
+      '<w:r><w:fldChar w:fldCharType="end"/></w:r>'
+    );
+  }
+
   // ── Sequential identifier (SEQ field) ──
   if ("seqIdentifier" in child) {
     const id = child.seqIdentifier;
