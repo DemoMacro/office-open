@@ -12,6 +12,7 @@ import type { MathInput } from "./math";
 import type { ParagraphPropertiesOptions } from "./properties";
 import type { RunOptions } from "./run";
 import type { ChartOptions } from "./run/chart-run";
+import type { FormFieldOptions } from "./run/form-field";
 import type { ImageOptions } from "./run/image-run";
 import type { RubyOptions } from "./run/ruby";
 import type { SmartArtOptions } from "./run/smartart-run";
@@ -105,6 +106,8 @@ export type ParagraphChild =
   | { ruby: RubyOptions }
   // Simple field
   | { simpleField: { instruction: string; cachedValue?: string } }
+  // Form field (checkbox, dropdown list, text input)
+  | { formField: FormFieldOptions }
   // Sequential identifier (SEQ field)
   | { seqIdentifier: string }
   // Page reference (PAGEREF field)

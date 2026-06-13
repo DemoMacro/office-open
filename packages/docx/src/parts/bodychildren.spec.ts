@@ -215,6 +215,30 @@ describe("sdtBlockDesc round-trip", () => {
     expect(result.properties.lock).toBe("contentLocked");
     expect(result.properties.temporary).toBe(true);
   });
+
+  it("round-trips SDT with checkbox (default symbols)", () => {
+    const result = roundTripSdt({
+      properties: { alias: "Agree", checkbox: { checked: true } },
+    });
+    expect(result.properties.checkbox?.checked).toBe(true);
+    expect(result.properties.checkbox?.checkedState?.val).toBe("2612");
+    expect(result.properties.checkbox?.uncheckedState?.val).toBe("2610");
+  });
+
+  it("round-trips SDT with checkbox unchecked + custom symbols", () => {
+    const result = roundTripSdt({
+      properties: {
+        checkbox: {
+          checked: false,
+          checkedState: { val: "2714", font: "MS Gothic" },
+          uncheckedState: { val: "2715", font: "MS Gothic" },
+        },
+      },
+    });
+    expect(result.properties.checkbox?.checked).toBe(false);
+    expect(result.properties.checkbox?.checkedState?.val).toBe("2714");
+    expect(result.properties.checkbox?.uncheckedState?.val).toBe("2715");
+  });
 });
 
 // ── customXmlBlockDesc ──

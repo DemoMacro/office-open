@@ -93,6 +93,34 @@ export interface SdtTextOptions {
 }
 
 /**
+ * Symbol for a checkbox content control state (CT_SdtCheckboxSymbol).
+ *
+ * `val` is a hex Unicode code point (e.g., "2612" for ☒); `font` defaults to
+ * "MS Gothic" per the OOXML specification.
+ */
+export interface SdtCheckboxSymbol {
+  /** Hex Unicode code point of the symbol (e.g., "2612") */
+  val: string;
+  /** Font face; defaults to "MS Gothic" */
+  font?: string;
+}
+
+/**
+ * Options for a checkbox content control (CT_SdtCheckbox, w14:checkbox).
+ *
+ * Word 2010+ content control checkbox. When present, the SDT renders the
+ * current state symbol instead of its declared children.
+ */
+export interface SdtCheckboxOptions {
+  /** Whether the checkbox is checked (default: false) */
+  checked?: boolean;
+  /** Symbol for the checked state (default: ☒ 0x2612, MS Gothic) */
+  checkedState?: SdtCheckboxSymbol;
+  /** Symbol for the unchecked state (default: ☐ 0x2610, MS Gothic) */
+  uncheckedState?: SdtCheckboxSymbol;
+}
+
+/**
  * Data binding options (CT_DataBinding).
  */
 export interface SdtDataBindingOptions {
@@ -161,4 +189,6 @@ export interface SdtPropertiesOptions {
   group?: boolean;
   /** Bibliography SDT */
   bibliography?: boolean;
+  /** Checkbox content control SDT (Word 2010+, w14:checkbox) */
+  checkbox?: SdtCheckboxOptions;
 }

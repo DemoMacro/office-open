@@ -21,7 +21,7 @@ import type { Element } from "@office-open/xml";
 import type { AltChunkOptions } from "@parts/alt-chunk/alt-chunk";
 import type { CustomXmlPrOptions } from "@parts/custom-xml/custom-xml";
 import type { SubDocOptions } from "@parts/sub-doc/sub-doc";
-import type { SdtPropertiesOptions } from "@parts/table-of-contents";
+import type { SdtCheckboxOptions, SdtPropertiesOptions } from "@parts/table-of-contents";
 import type { SectionChild } from "@shared/section";
 
 import type { BodyContext, DocxReadContext } from "../context";
@@ -251,6 +251,30 @@ function onOffAttr(name: string, val: boolean): string {
   return val ? `<${name}/>` : `<${name} w:val="0"/>`;
 }
 
+const W14_NS = 'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"';
+
+/** Default symbol font for checkbox content controls (CT_SdtCheckboxSymbol). */
+const CHECKBOX_FONT = "MS Gothic";
+
+const DEFAULT_CHECKED: { val: string; font: string } = { val: "2612", font: CHECKBOX_FONT };
+const DEFAULT_UNCHECKED: { val: string; font: string } = { val: "2610", font: CHECKBOX_FONT };
+
+/**
+ * Build a w14:checkbox element (Word 2010+ content control checkbox).
+ *
+ * Lives in the w14 extension namespace; emitted with an inline xmlns:w14 so it
+ * is valid wherever w:sdtPr appears. validate.ts tolerates the w14 namespace.
+ */
+function sdtCheckboxXml(opts: SdtCheckboxOptions): string {
+  const checked = opts.checkedState ?? DEFAULT_CHECKED;
+  const unchecked = opts.uncheckedState ?? DEFAULT_UNCHECKED;
+  const inner =
+    (opts.checked ? "<w14:checked/>" : '<w14:checked w14:val="0"/>') +
+    `<w14:checkedState w14:val="${escapeXml(checked.val)}" w14:font="${escapeXml(checked.font ?? CHECKBOX_FONT)}"/>` +
+    `<w14:uncheckedState w14:val="${escapeXml(unchecked.val)}" w14:font="${escapeXml(unchecked.font ?? CHECKBOX_FONT)}"/>`;
+  return `<w14:checkbox ${W14_NS}>${inner}</w14:checkbox>`;
+}
+
 function stringifySdtPr(opts: SdtPropertiesOptions): string {
   const parts: string[] = [];
 
@@ -298,6 +322,8 @@ function stringifySdtPr(opts: SdtPropertiesOptions): string {
     parts.push("<w:group/>");
   } else if (opts.bibliography) {
     parts.push("<w:bibliography/>");
+  } else if (opts.checkbox) {
+    parts.push(sdtCheckboxXml(opts.checkbox));
   }
 
   return parts.length ? `<w:sdtPr>${parts.join("")}</w:sdtPr>` : "<w:sdtPr/>";
@@ -426,6 +452,24 @@ function parseSdtPr(el: Element): SdtPropertiesOptions {
     opts.group = true;
   } else if (findChild(el, "w:bibliography")) {
     opts.bibliography = true;
+  } else if (findChild(el, "w14:checkbox")) {
+    const cb = findChild(el, "w14:checkbox")!;
+    const cbObj: Record<string, unknown> = {};
+    const checked = findChild(cb, "w14:checked");
+    if (checked) cbObj.checked = attrBool(checked, "w14:val") ?? true;
+    const checkedState = findChild(cb, "w14:checkedState");
+    if (checkedState)
+      cbObj.checkedState = {
+        val: attr(checkedState, "w14:val") ?? "",
+        font: attr(checkedState, "w14:font"),
+      };
+    const uncheckedState = findChild(cb, "w14:uncheckedState");
+    if (uncheckedState)
+      cbObj.uncheckedState = {
+        val: attr(uncheckedState, "w14:val") ?? "",
+        font: attr(uncheckedState, "w14:font"),
+      };
+    opts.checkbox = cbObj;
   }
 
   return opts as SdtPropertiesOptions;
@@ -486,8 +530,19 @@ export const sdtBlockDesc: CustomDescriptor<SdtChildOptions, BodyContext> = {
     // sdtEndPr — typically empty, included for round-trip fidelity with Word
     parts.push("<w:sdtEndPr/>");
 
-    // sdtContent — serialize children directly (no coerce needed)
-    if (opts.children && opts.children.length > 0) {
+    // sdtContent — checkbox renders its current state symbol; otherwise serialize children
+    if (opts.properties.checkbox) {
+      const cb = opts.properties.checkbox;
+      const symbol =
+        (cb.checked ?? false)
+          ? (cb.checkedState ?? DEFAULT_CHECKED)
+          : (cb.uncheckedState ?? DEFAULT_UNCHECKED);
+      const font = escapeXml(symbol.font ?? CHECKBOX_FONT);
+      const char = escapeXml(String.fromCodePoint(parseInt(symbol.val, 16)));
+      parts.push(
+        `<w:sdtContent><w:p><w:r><w:rPr><w:rFonts w:ascii="${font}" w:hAnsi="${font}"/></w:rPr><w:t>${char}</w:t></w:r></w:p></w:sdtContent>`,
+      );
+    } else if (opts.children && opts.children.length > 0) {
       const contentParts: string[] = [];
       for (const child of opts.children) {
         contentParts.push(ctx.stringifyChild(child, ctx));

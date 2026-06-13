@@ -161,11 +161,14 @@ const createCheckBox = (options: CheckBoxOptions): string => {
     children.push(`<w:sizeAuto/>`);
   }
 
-  if (options.default !== undefined) {
-    children.push(`<w:default/>`);
+  // <w:default> is the reset/initial state Word renders the box in. Word will
+  // not render the box without it, so derive it from `checked` when omitted.
+  const defaultVal = options.default ?? options.checked;
+  if (defaultVal !== undefined) {
+    children.push(defaultVal ? `<w:default/>` : `<w:default w:val="0"/>`);
   }
   if (options.checked !== undefined) {
-    children.push(`<w:checked/>`);
+    children.push(options.checked ? `<w:checked/>` : `<w:checked w:val="0"/>`);
   }
 
   return element("w:checkBox", undefined, children);
@@ -273,12 +276,13 @@ export const createFormFieldData = (options: FormFieldOptions): string => {
   if (options.tabIndex !== undefined) {
     children.push(valElement("w:tabIndex", options.tabIndex));
   }
-  if (options.enabled !== undefined) {
-    children.push(`<w:enabled/>`);
-  }
-  if (options.calcOnExit !== undefined) {
-    children.push(`<w:calcOnExit/>`);
-  }
+  // Word requires an explicit <w:enabled/> to render the field; default true.
+  // (Previously emitted a val-less tag even for enabled:false, which is "true".)
+  const enabled = options.enabled ?? true;
+  children.push(enabled ? `<w:enabled/>` : `<w:enabled w:val="0"/>`);
+  // <w:calcOnExit> defaults to false (Word's standard).
+  const calcOnExit = options.calcOnExit ?? false;
+  children.push(calcOnExit ? `<w:calcOnExit/>` : `<w:calcOnExit w:val="0"/>`);
   if (options.entryMacro !== undefined) {
     children.push(valElement("w:entryMacro", options.entryMacro));
   }

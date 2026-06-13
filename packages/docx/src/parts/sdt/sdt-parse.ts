@@ -145,6 +145,24 @@ function parseSdtProperties(el: Element): SdtPropertiesOptions {
     if (gallery) (opts.docPartList as Record<string, unknown>).gallery = attr(gallery, "w:val");
     const category = findChild(dp, "w:docPartCategory");
     if (category) (opts.docPartList as Record<string, unknown>).category = attr(category, "w:val");
+  } else if (findChild(el, "w14:checkbox")) {
+    const cb = findChild(el, "w14:checkbox")!;
+    const cbObj: Record<string, unknown> = {};
+    const checked = findChild(cb, "w14:checked");
+    if (checked) cbObj.checked = attrBool(checked, "w14:val") ?? true;
+    const checkedState = findChild(cb, "w14:checkedState");
+    if (checkedState)
+      cbObj.checkedState = {
+        val: attr(checkedState, "w14:val") ?? "",
+        font: attr(checkedState, "w14:font"),
+      };
+    const uncheckedState = findChild(cb, "w14:uncheckedState");
+    if (uncheckedState)
+      cbObj.uncheckedState = {
+        val: attr(uncheckedState, "w14:val") ?? "",
+        font: attr(uncheckedState, "w14:font"),
+      };
+    opts.checkbox = cbObj;
   }
 
   return opts as SdtPropertiesOptions;

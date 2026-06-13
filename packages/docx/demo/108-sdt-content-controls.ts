@@ -240,6 +240,31 @@ const buffer = await generateDocument({
             ],
           },
         },
+
+        { paragraph: { children: [""] } },
+
+        // Checkbox SDT (Word 2010+ content control, w14:checkbox)
+        // Click to toggle directly — no document protection required.
+        {
+          paragraph: {
+            children: [{ bold: true, text: "9. Checkbox SDT", size: 14 }],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          sdt: {
+            properties: {
+              alias: "Subscribe",
+              tag: "subscribe-checkbox",
+              checkbox: { checked: false },
+            },
+          },
+        },
+        {
+          sdt: {
+            properties: { alias: "Accept Terms", tag: "accept-terms", checkbox: { checked: true } },
+          },
+        },
       ],
     },
   ],

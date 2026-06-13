@@ -28,6 +28,7 @@ import { createTransformation } from "@shared/media";
 import type { BodyContext } from "../context";
 import { drawingDesc } from "./drawing";
 import { stringifyMath } from "./paragraph/math/stringify";
+import { createBegin, createSeparate, createEnd } from "./paragraph/run/field";
 import { stringifyParagraphProperties, stringifyRunProperties } from "./paragraph/stringify";
 
 // ── Run ──
@@ -128,15 +129,46 @@ export function stringifyChildDispatch(
     return `<w:bookmarkStart w:id="${child.bookmarkStart.id}" w:name="${child.bookmarkStart.name}"/>`;
   if ("bookmarkEnd" in child) return `<w:bookmarkEnd w:id="${child.bookmarkEnd}"/>`;
 
-  // Symbol run — direct XML output
+  // Symbol run — direct XML output.
+  // <w:sym> is a self-closing element, not text: emit it directly so it is
+  // not escaped into a <w:t> by the run children path.
   if ("symbolRun" in child) {
     const opts = child.symbolRun;
-    return stringifyRunInline(
-      {
-        ...opts,
-        children: [`<w:sym w:char="${opts.char}" w:font="${opts.symbolfont ?? "Wingdings"}"/>`],
-      },
-      ctx,
+    const rPr = stringifyRunProperties(opts) ?? "";
+    return `<w:r>${rPr}<w:sym w:char="${opts.char}" w:font="${opts.symbolfont ?? "Wingdings"}"/></w:r>`;
+  }
+
+  // Form field (checkbox / dropdown list / text input) — fldChar sequence.
+  // Word needs the field code (instrText) between begin and separate to
+  // recognize the field type and render its result.
+  if ("formField" in child) {
+    const ff = child.formField;
+    let result = "";
+    let instrCode = "";
+    let symbolFont = false;
+    if (ff.checkBox) {
+      result = ff.checkBox.checked ? "☒" : "☐";
+      instrCode = "FORMCHECKBOX";
+      // U+2610/U+2612 are absent from common body fonts (Calibri/Times);
+      // MS Gothic holds them and matches the SDT w14:checkbox default.
+      symbolFont = true;
+    } else if (ff.dropDownList) {
+      const idx = ff.dropDownList.result ?? ff.dropDownList.default;
+      result = idx !== undefined ? (ff.dropDownList.entries[idx] ?? "") : "";
+      instrCode = "FORMDROPDOWN";
+    } else if (ff.textInput) {
+      result = ff.textInput.default ?? "";
+      instrCode = "FORMTEXT";
+    }
+    const rPr = symbolFont
+      ? '<w:rPr><w:rFonts w:ascii="MS Gothic" w:hAnsi="MS Gothic"/></w:rPr>'
+      : "";
+    return (
+      `<w:r>${createBegin(false, ff)}</w:r>` +
+      `<w:r><w:instrText xml:space="preserve"> ${instrCode} </w:instrText></w:r>` +
+      `<w:r>${createSeparate()}</w:r>` +
+      `<w:r>${rPr}<w:t xml:space="preserve">${escapeXml(result)}</w:t></w:r>` +
+      `<w:r>${createEnd()}</w:r>`
     );
   }
 
