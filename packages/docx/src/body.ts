@@ -693,6 +693,101 @@ function collectRunText(el: Element): string {
 }
 
 /**
+ * Parse the inline children of a smartTag/customXml container (recursive).
+ *
+ * Handles runs and nested smartTag/customXml. Form fields, hyperlinks and
+ * other paragraph-level constructs are rare inside these containers and are
+ * not handled here.
+ */
+function parseContainerChildren(el: Element, ctx: DocxReadContext): unknown[] {
+  const children: unknown[] = [];
+  for (const sub of el.elements ?? []) {
+    switch (sub.name) {
+      case "w:r": {
+        const parsed = parseRun(sub, ctx);
+        const runOpts = parsedRunToOptions(parsed);
+        if (runOpts !== null) children.push(runOpts);
+        break;
+      }
+      case "w:smartTag":
+        children.push({ smartTag: parseSmartTagInline(sub, ctx) });
+        break;
+      case "w:customXml":
+        children.push({ customXml: parseCustomXmlInline(sub, ctx) });
+        break;
+      default:
+        break;
+    }
+  }
+  return children;
+}
+
+/** Parse a w:smartTag element into its ParagraphChild form. */
+function parseSmartTagInline(el: Element, ctx: DocxReadContext): Record<string, unknown> {
+  const st: Record<string, unknown> = {};
+  const element = attr(el, "w:element");
+  if (element) st.element = element;
+  const uri = attr(el, "w:uri");
+  if (uri) st.uri = uri;
+  const pr = findChild(el, "w:smartTagPr");
+  if (pr) {
+    const props: Array<{ uri?: string; name: string; val: string }> = [];
+    for (const a of pr.elements ?? []) {
+      if (a.name !== "w:attr") continue;
+      const prop: { uri?: string; name: string; val: string } = {
+        name: attr(a, "w:name") ?? "",
+        val: attr(a, "w:val") ?? "",
+      };
+      const auri = attr(a, "w:uri");
+      if (auri) prop.uri = auri;
+      props.push(prop);
+    }
+    if (props.length > 0) st.properties = props;
+  }
+  const content = parseContainerChildren(el, ctx);
+  if (content.length > 0) st.children = content;
+  return st;
+}
+
+/** Parse an inline w:customXml element into its ParagraphChild form. */
+function parseCustomXmlInline(el: Element, ctx: DocxReadContext): Record<string, unknown> {
+  const cx: Record<string, unknown> = {};
+  const element = attr(el, "w:element");
+  if (element) cx.element = element;
+  const uri = attr(el, "w:uri");
+  if (uri) cx.uri = uri;
+  const pr = findChild(el, "w:customXmlPr");
+  if (pr) {
+    const cxPr: {
+      placeholder?: string;
+      attrs?: Array<{ name: string; val: string; uri?: string }>;
+    } = {};
+    const placeholder = findChild(pr, "w:placeholder");
+    if (placeholder) {
+      const pval = attr(placeholder, "w:val");
+      if (pval) cxPr.placeholder = pval;
+    }
+    const attrsList: Array<{ name: string; val: string; uri?: string }> = [];
+    for (const a of pr.elements ?? []) {
+      if (a.name !== "w:attr") continue;
+      const name = attr(a, "w:name");
+      const val = attr(a, "w:val");
+      if (name && val) {
+        const ao: { name: string; val: string; uri?: string } = { name, val };
+        const auri = attr(a, "w:uri");
+        if (auri) ao.uri = auri;
+        attrsList.push(ao);
+      }
+    }
+    if (attrsList.length > 0) cxPr.attrs = attrsList;
+    if (cxPr.placeholder !== undefined || cxPr.attrs !== undefined) cx.customXmlPr = cxPr;
+  }
+  const content = parseContainerChildren(el, ctx);
+  if (content.length > 0) cx.children = content;
+  return cx;
+}
+
+/**
  * Parse a w:p element into ParagraphOptions.
  */
 export function parseParagraph(el: Element, ctx: DocxReadContext): ParagraphOptions {
@@ -860,6 +955,31 @@ export function parseParagraph(el: Element, ctx: DocxReadContext): ParagraphOpti
             });
           }
         }
+        break;
+      }
+      case "w:fldSimple": {
+        const instruction = attr(child, "w:instr");
+        if (instruction) {
+          const sf: { instruction: string; cachedValue?: string } = { instruction };
+          // cachedValue: concatenate the result-run <w:t> text (one or more
+          // <w:r> children between the fldSimple tags).
+          let cachedValue = "";
+          for (const sub of child.elements ?? []) {
+            if (sub.name === "w:r") cachedValue += collectRunText(sub);
+          }
+          if (cachedValue) sf.cachedValue = cachedValue;
+          childList.push({ simpleField: sf });
+        }
+        break;
+      }
+      case "w:smartTag": {
+        const st = parseSmartTagInline(child, ctx);
+        if (st.element) childList.push({ smartTag: st });
+        break;
+      }
+      case "w:customXml": {
+        const cx = parseCustomXmlInline(child, ctx);
+        if (cx.element) childList.push({ customXml: cx });
         break;
       }
       default:
