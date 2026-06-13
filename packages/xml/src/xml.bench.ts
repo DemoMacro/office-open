@@ -1,4 +1,4 @@
-import { bench, describe } from "vitest";
+import { bench, describe } from "vite-plus/test";
 import xmlOriginal from "xml";
 import { xml2js as xml2jsOriginal, js2xml as js2xmlOriginal } from "xml-js";
 
