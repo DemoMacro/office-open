@@ -987,6 +987,42 @@ export function parseParagraph(el: Element, ctx: DocxReadContext): ParagraphOpti
         }
         break;
       }
+      case "w:moveFrom": {
+        const runEl = findChild(child, "w:r");
+        if (runEl) {
+          const parsed = parseRun(runEl, ctx);
+          const runOpts = parsedRunToOptions(parsed);
+          if (runOpts !== null && typeof runOpts === "object" && !("commentReference" in runOpts)) {
+            childList.push({
+              movedFrom: {
+                id: attrNum(child, "w:id") ?? 0,
+                author: attr(child, "w:author") ?? "",
+                date: attr(child, "w:date") ?? "",
+                ...(runOpts as Record<string, unknown>),
+              },
+            });
+          }
+        }
+        break;
+      }
+      case "w:moveTo": {
+        const runEl = findChild(child, "w:r");
+        if (runEl) {
+          const parsed = parseRun(runEl, ctx);
+          const runOpts = parsedRunToOptions(parsed);
+          if (runOpts !== null && typeof runOpts === "object" && !("commentReference" in runOpts)) {
+            childList.push({
+              movedTo: {
+                id: attrNum(child, "w:id") ?? 0,
+                author: attr(child, "w:author") ?? "",
+                date: attr(child, "w:date") ?? "",
+                ...(runOpts as Record<string, unknown>),
+              },
+            });
+          }
+        }
+        break;
+      }
       case "w:fldSimple": {
         const instruction = attr(child, "w:instr");
         if (instruction) {

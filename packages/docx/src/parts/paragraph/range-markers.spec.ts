@@ -92,3 +92,23 @@ describe("range markers parse", () => {
     expect(cs).toHaveLength(0);
   });
 });
+
+describe("move revision runs parse", () => {
+  it("parses movedFrom (w:moveFrom wrapping a run)", () => {
+    const cs = childrenOf(
+      parseParagraphXml(
+        `<w:moveFrom w:id="1" w:author="A" w:date="2020"><w:r><w:t>moved text</w:t></w:r></w:moveFrom>`,
+      ),
+    );
+    expect(cs[0].movedFrom).toMatchObject({ id: 1, author: "A", date: "2020", text: "moved text" });
+  });
+
+  it("parses movedTo (w:moveTo wrapping a run)", () => {
+    const cs = childrenOf(
+      parseParagraphXml(
+        `<w:moveTo w:id="2" w:author="B" w:date="2021"><w:r><w:t>target</w:t></w:r></w:moveTo>`,
+      ),
+    );
+    expect(cs[0].movedTo).toMatchObject({ id: 2, author: "B", date: "2021", text: "target" });
+  });
+});
