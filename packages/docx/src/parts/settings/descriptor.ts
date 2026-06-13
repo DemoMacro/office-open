@@ -10,8 +10,9 @@
 
 import { derivePasswordHash } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, findChild } from "@office-open/xml";
+import { attr, attrBool, findChild } from "@office-open/xml";
 
+import type { FeaturesOptions } from "../core-properties";
 import type {
   SettingsOptions,
   DocumentProtectionOptions,
@@ -95,6 +96,9 @@ function maybeDerive(
 }
 
 // ── Complex sub-elements ──
+
+/** Valid w:documentProtection/@w:edit values (ST_DocProtect). */
+const DOC_PROTECT_EDITS = ["none", "readOnly", "comments", "trackedChanges", "forms"] as const;
 
 function stringifyDocProtect(opts: DocumentProtectionOptions): string {
   const derived = maybeDerive(opts.password, opts.hashValue);
@@ -714,17 +718,19 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       if (val) opts.defaultTabStop = parseInt(val, 10);
     }
 
-    // features.trackRevisions → w:trackRevisions (presence)
-    if (findChild(el, "w:trackRevisions")) {
-      const features = (opts.features as Record<string, unknown>) ?? {};
-      features.trackRevisions = true;
+    // features.trackRevisions → w:trackRevisions (onOff: read w:val)
+    const trackRevEl = findChild(el, "w:trackRevisions");
+    if (trackRevEl) {
+      const features: FeaturesOptions = (opts.features as FeaturesOptions | undefined) ?? {};
+      features.trackRevisions = attrBool(trackRevEl, "w:val") ?? true;
       opts.features = features;
     }
 
-    // features.updateFields → w:updateFields (presence)
-    if (findChild(el, "w:updateFields")) {
-      const features = (opts.features as Record<string, unknown>) ?? {};
-      features.updateFields = true;
+    // features.updateFields → w:updateFields (onOff: read w:val)
+    const updateFieldsEl = findChild(el, "w:updateFields");
+    if (updateFieldsEl) {
+      const features: FeaturesOptions = (opts.features as FeaturesOptions | undefined) ?? {};
+      features.updateFields = attrBool(updateFieldsEl, "w:val") ?? true;
       opts.features = features;
     }
 
@@ -977,12 +983,14 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       if (Object.keys(proof).length > 0) opts.proofState = proof;
     }
 
-    // documentProtection → w:documentProtection
+    // documentProtection → w:documentProtection (written under features)
     const docProtEl = findChild(el, "w:documentProtection");
     if (docProtEl) {
-      const prot: Record<string, unknown> = {};
+      const prot: DocumentProtectionOptions = {};
       const edit = attr(docProtEl, "w:edit");
-      if (edit) prot.edit = edit;
+      if (edit && (DOC_PROTECT_EDITS as readonly string[]).includes(edit)) {
+        prot.edit = edit as DocumentProtectionOptions["edit"];
+      }
       const enforcement = attr(docProtEl, "w:enforcement");
       if (enforcement !== undefined) {
         // Only include documentProtection if enforcement is set
@@ -1011,18 +1019,20 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
         const formatting = attr(docProtEl, "w:formatting");
         if (formatting !== undefined) prot.formatting = formatting === "1" || formatting === "true";
       }
-      if (Object.keys(prot).length > 0) opts.documentProtection = prot;
+      if (Object.keys(prot).length > 0) {
+        const features: FeaturesOptions = (opts.features as FeaturesOptions | undefined) ?? {};
+        features.documentProtection = prot;
+        opts.features = features;
+      }
     }
 
-    // doNotTrackMoves → w:doNotTrackMoves (presence)
-    if (findChild(el, "w:doNotTrackMoves")) {
-      opts.doNotTrackMoves = true;
-    }
+    // doNotTrackMoves → w:doNotTrackMoves (onOff: read w:val)
+    const noMovesEl = findChild(el, "w:doNotTrackMoves");
+    if (noMovesEl) opts.doNotTrackMoves = attrBool(noMovesEl, "w:val") ?? true;
 
-    // doNotTrackFormatting → w:doNotTrackFormatting (presence)
-    if (findChild(el, "w:doNotTrackFormatting")) {
-      opts.doNotTrackFormatting = true;
-    }
+    // doNotTrackFormatting → w:doNotTrackFormatting (onOff: read w:val)
+    const noFmtEl = findChild(el, "w:doNotTrackFormatting");
+    if (noFmtEl) opts.doNotTrackFormatting = attrBool(noFmtEl, "w:val") ?? true;
 
     return opts as unknown as SettingsOptions;
   },

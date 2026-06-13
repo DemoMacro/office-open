@@ -30,6 +30,19 @@ import type { StylesOptions } from "./styles";
 import type { WebSettingsOptions } from "./web-settings";
 
 /**
+ * Document-level feature toggles parsed from settings.xml.
+ *
+ * @property trackRevisions - Track changes
+ * @property updateFields - Update fields on open
+ * @property documentProtection - Document write protection
+ */
+export interface FeaturesOptions {
+  trackRevisions?: boolean;
+  updateFields?: boolean;
+  documentProtection?: DocumentProtectionOptions;
+}
+
+/**
  * Options for configuring document properties.
  *
  * @property sections - Document section configurations
@@ -87,11 +100,7 @@ export interface DocumentOptions {
     >
   >;
   background?: DocumentBackgroundOptions;
-  features?: {
-    trackRevisions?: boolean;
-    updateFields?: boolean;
-    documentProtection?: DocumentProtectionOptions;
-  };
+  features?: FeaturesOptions;
   compatabilityModeVersion?: number;
   compatibility?: CompatibilityOptions;
   customProperties?: CustomPropertyOptions[];

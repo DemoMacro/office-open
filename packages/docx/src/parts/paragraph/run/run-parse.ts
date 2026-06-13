@@ -10,6 +10,7 @@ import type { Element } from "@office-open/xml";
 import type { RunPropertiesOptions, RunOptions } from "@parts/paragraph/run";
 
 import type { DocxReadContext } from "../../../context";
+import type { LanguageOptions } from "./language";
 
 /**
  * Parse a w:rPr element into RunPropertiesOptions.
@@ -80,7 +81,7 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
     ["w:rtl", "rightToLeft"],
     ["w:cs", "complexScript"],
     ["w:specVanish", "specVanish"],
-    ["w:math", "math"],
+    ["w:oMath", "math"],
   ] as const) {
     const child = findChild(el, name);
     if (child) opts[optKey] = attrBool(child, "w:val") ?? true;
@@ -167,13 +168,13 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
 
   const lang = findChild(el, "w:lang");
   if (lang) {
-    const langObj: Record<string, string | undefined> = {};
+    const langObj: LanguageOptions = {};
     const val = attr(lang, "w:val");
-    if (val) langObj.val = val;
+    if (val) langObj.value = val;
     const eastAsia = attr(lang, "w:eastAsia");
     if (eastAsia) langObj.eastAsia = eastAsia;
     const bidi = attr(lang, "w:bidi");
-    if (bidi) langObj.bidi = bidi;
+    if (bidi) langObj.bidirectional = bidi;
     if (Object.keys(langObj).length > 0) opts.language = langObj;
   }
 
