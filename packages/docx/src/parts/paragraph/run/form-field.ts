@@ -92,8 +92,20 @@ export interface DropDownListOptions {
 export interface TextInputOptions {
   /** Text input type */
   type?: (typeof FormFieldTextType)[keyof typeof FormFieldTextType];
-  /** Default text value */
+  /**
+   * Default text value (placeholder / initial state, serialized as `w:default`
+   * inside `w:ffData`).
+   */
   default?: string;
+  /**
+   * Current value the user typed into the field (the result-run text between
+   * the `separate` and `end` fldChars).
+   *
+   * Unlike {@link default} this is NOT stored in `w:ffData`; it is captured on
+   * parse for round-trip fidelity. On stringify it is rendered as the field
+   * result, falling back to {@link default} when unset.
+   */
+  value?: string;
   /** Maximum character length */
   maxLength?: number;
   /** Format string */

@@ -10,7 +10,7 @@
 import { toUint8Array } from "@office-open/core";
 import { uniqueId } from "@office-open/core";
 import { hexColorValue, uCharHexNumber } from "@office-open/core";
-import { attr, attrBool, attrNum, escapeXml, findChild } from "@office-open/xml";
+import { attr, attrBool, attrNum, escapeXml, findChild, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { sectionPropertiesDesc } from "@parts/document/body/section-properties/descriptor";
 import type { DocumentBackgroundOptions } from "@parts/document/document-background";
@@ -678,6 +678,21 @@ export function parseParagraphProperties(
 }
 
 /**
+ * Concatenate `<w:t>` text in a run element.
+ *
+ * Used to capture a textInput form field's current value from the result run
+ * (the runs between the `separate` and `end` fldChars). Only `<w:t>` is read —
+ * `<w:tab>`/`<w:br>` in results are ignored as rare for user-entered text.
+ */
+function collectRunText(el: Element): string {
+  let text = "";
+  for (const c of el.elements ?? []) {
+    if (c.name === "w:t") text += textOf(c);
+  }
+  return text;
+}
+
+/**
  * Parse a w:p element into ParagraphOptions.
  */
 export function parseParagraph(el: Element, ctx: DocxReadContext): ParagraphOptions {
@@ -693,9 +708,13 @@ export function parseParagraph(el: Element, ctx: DocxReadContext): ParagraphOpti
 
   // Form field accumulator: a w:checkBox/ddList/textInput field spans several
   // w:r elements (begin fldChar → instrText → separate → result → end). The
-  // definition lives in w:ffData inside the begin fldChar; intermediate and
-  // result runs are skipped, collapsing the field to a single child.
+  // definition lives in w:ffData inside the begin fldChar; the result runs
+  // (separate→end) are captured for textInput only — checkbox/dropdown state
+  // already lives in w:ffData — and the whole field collapses to one child.
   let pendingFormField: FormFieldOptions | null = null;
+  // True once the `separate` fldChar is seen: subsequent runs (up to `end`)
+  // are the field's result.
+  let collectingResult = false;
 
   for (const child of el.elements ?? []) {
     switch (child.name) {
@@ -712,13 +731,28 @@ export function parseParagraph(el: Element, ctx: DocxReadContext): ParagraphOpti
             // as a form field — otherwise it collapses to an empty {formField:{}}.
             const ffDataEl = findChild(fldCharEl, "w:ffData");
             if (ffDataEl) pendingFormField = parseFormFieldData(ffDataEl);
+          } else if (fctype === "separate") {
+            collectingResult = true;
           } else if (fctype === "end" && pendingFormField) {
             childList.push({ formField: pendingFormField });
             pendingFormField = null;
+            collectingResult = false;
           }
           break;
         }
-        if (pendingFormField) break; // instrText / result — state lives in ffData
+        if (pendingFormField) {
+          // separate→end runs are the field result. Capture a textInput's
+          // current (user-entered) value for round-trip fidelity; checkbox
+          // and dropdown results are discarded (their state is in w:ffData).
+          if (collectingResult && pendingFormField.textInput) {
+            const text = collectRunText(child);
+            if (text) {
+              const ti = pendingFormField.textInput;
+              ti.value = (ti.value ?? "") + text;
+            }
+          }
+          break; // instrText / result — state lives in ffData
+        }
 
         const drawingEl = findChild(child, "w:drawing");
         if (drawingEl) {

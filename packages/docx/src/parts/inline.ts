@@ -157,7 +157,8 @@ export function stringifyChildDispatch(
       result = idx !== undefined ? (ff.dropDownList.entries[idx] ?? "") : "";
       instrCode = "FORMDROPDOWN";
     } else if (ff.textInput) {
-      result = ff.textInput.default ?? "";
+      // Prefer the user-entered value (result run) over the placeholder default.
+      result = ff.textInput.value ?? ff.textInput.default ?? "";
       instrCode = "FORMTEXT";
     }
     const rPr = symbolFont

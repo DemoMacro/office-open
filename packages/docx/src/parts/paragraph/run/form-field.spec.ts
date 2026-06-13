@@ -86,4 +86,51 @@ describe("form field parse", () => {
     // ("1") survives as a normal run instead of being swallowed.
     expect(findFormField(opts)).toBeUndefined();
   });
+
+  it("parses a text input form field with its current (filled-in) value", () => {
+    const opts = parseParagraphXml(
+      '<w:r><w:fldChar w:fldCharType="begin"><w:ffData><w:name w:val="Text1"/><w:enabled/><w:textInput><w:type w:val="regular"/><w:default w:val="Placeholder"/></w:textInput></w:ffData></w:fldChar></w:r>' +
+        '<w:r><w:instrText xml:space="preserve"> FORMTEXT </w:instrText></w:r>' +
+        '<w:r><w:fldChar w:fldCharType="separate"/></w:r>' +
+        '<w:r><w:t xml:space="preserve">Hello World</w:t></w:r>' +
+        '<w:r><w:fldChar w:fldCharType="end"/></w:r>',
+    );
+
+    const found = findFormField(opts);
+    expect(found).toBeDefined();
+    expect(found!.formField.textInput).toMatchObject({
+      type: "regular",
+      default: "Placeholder",
+      value: "Hello World",
+    });
+  });
+
+  it("concatenates result text split across multiple runs into value", () => {
+    const opts = parseParagraphXml(
+      '<w:r><w:fldChar w:fldCharType="begin"><w:ffData><w:name w:val="Text2"/><w:textInput/></w:ffData></w:fldChar></w:r>' +
+        '<w:r><w:instrText xml:space="preserve"> FORMTEXT </w:instrText></w:r>' +
+        '<w:r><w:fldChar w:fldCharType="separate"/></w:r>' +
+        "<w:r><w:t>foo</w:t></w:r>" +
+        "<w:r><w:t>bar</w:t></w:r>" +
+        '<w:r><w:fldChar w:fldCharType="end"/></w:r>',
+    );
+
+    const found = findFormField(opts);
+    const ti = found!.formField.textInput as { value?: string };
+    expect(ti.value).toBe("foobar");
+  });
+
+  it("leaves value unset when the textInput result run is empty", () => {
+    const opts = parseParagraphXml(
+      '<w:r><w:fldChar w:fldCharType="begin"><w:ffData><w:name w:val="Text3"/><w:textInput><w:default w:val="Placeholder"/></w:textInput></w:ffData></w:fldChar></w:r>' +
+        '<w:r><w:instrText xml:space="preserve"> FORMTEXT </w:instrText></w:r>' +
+        '<w:r><w:fldChar w:fldCharType="separate"/></w:r>' +
+        '<w:r><w:fldChar w:fldCharType="end"/></w:r>',
+    );
+
+    const found = findFormField(opts);
+    const ti = found!.formField.textInput as { value?: string; default?: string };
+    expect(ti.value).toBeUndefined();
+    expect(ti.default).toBe("Placeholder");
+  });
 });
