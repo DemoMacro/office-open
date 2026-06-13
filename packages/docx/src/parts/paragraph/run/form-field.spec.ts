@@ -72,4 +72,18 @@ describe("form field parse", () => {
     expect(opts.children).toHaveLength(1);
     expect("formField" in (opts.children![0] as Record<string, unknown>)).toBe(true);
   });
+
+  it("does not treat a plain complex field (no ffData, e.g. PAGE) as a form field", () => {
+    const opts = parseParagraphXml(
+      '<w:r><w:fldChar w:fldCharType="begin"/></w:r>' +
+        '<w:r><w:instrText xml:space="preserve"> PAGE </w:instrText></w:r>' +
+        '<w:r><w:fldChar w:fldCharType="separate"/></w:r>' +
+        "<w:r><w:t>1</w:t></w:r>" +
+        '<w:r><w:fldChar w:fldCharType="end"/></w:r>',
+    );
+    // A plain complex field has no w:ffData, so it must NOT be collected as a
+    // form field; the field markers/instrText are skipped and the result text
+    // ("1") survives as a normal run instead of being swallowed.
+    expect(findFormField(opts)).toBeUndefined();
+  });
 });

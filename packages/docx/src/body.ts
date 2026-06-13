@@ -707,8 +707,11 @@ export function parseParagraph(el: Element, ctx: DocxReadContext): ParagraphOpti
         if (fldCharEl) {
           const fctype = attr(fldCharEl, "w:fldCharType");
           if (fctype === "begin") {
+            // Only form fields carry w:ffData on the begin fldChar. A plain
+            // complex field (PAGE/DATE/TOC) has none and must not be collected
+            // as a form field — otherwise it collapses to an empty {formField:{}}.
             const ffDataEl = findChild(fldCharEl, "w:ffData");
-            pendingFormField = ffDataEl ? parseFormFieldData(ffDataEl) : {};
+            if (ffDataEl) pendingFormField = parseFormFieldData(ffDataEl);
           } else if (fctype === "end" && pendingFormField) {
             childList.push({ formField: pendingFormField });
             pendingFormField = null;
