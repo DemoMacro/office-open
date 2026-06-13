@@ -7,10 +7,19 @@ const ENTITY_MAP: Record<string, string> = {
   "&quot;": '"',
   "&apos;": "'",
 };
-const ENTITY_PATTERN = /&(amp|lt|gt|quot|apos);/g;
+// Matches the five named entities plus numeric character references
+// (&#65; decimal, &#x42; hex).
+const ENTITY_PATTERN = /&(?:amp|lt|gt|quot|apos|#x[0-9a-fA-F]+|#[0-9]+);/g;
 
 export function unescapeXml(str: string): string {
-  return str.replace(ENTITY_PATTERN, (match) => ENTITY_MAP[match]);
+  return str.replace(ENTITY_PATTERN, (match) => {
+    if (ENTITY_MAP[match] !== undefined) return ENTITY_MAP[match];
+    // Numeric character reference: strip "&#" prefix and ";" suffix.
+    const body = match.slice(2, -1);
+    const code =
+      body[0] === "x" || body[0] === "X" ? parseInt(body.slice(1), 16) : parseInt(body, 10);
+    return Number.isFinite(code) && code >= 0 ? String.fromCodePoint(code) : match;
+  });
 }
 
 export function nativeTypeValue(value: string): string | number | boolean {
@@ -50,7 +59,7 @@ export function parse(xmlString: string, options?: Xml2JsOptions): Element {
       if (trim) text = text.trim();
       if (ignoreText) continue;
       if (text.length > 0) {
-        if (captureSpaces || text.trim().length > 0) {
+        if (captureSpaces || text.trim().length > 0 || isPreserveContext(stack)) {
           addField(stack[stack.length - 1], "text", text);
         }
       }
@@ -224,7 +233,7 @@ function parseAttributesFromXml(
     i++;
     const valueStart = i;
     while (i < len && str.charCodeAt(i) !== quote) i++;
-    attrs[name] = str.slice(valueStart, i);
+    attrs[name] = unescapeXml(str.slice(valueStart, i));
     i++;
   }
 
@@ -261,10 +270,9 @@ export function parseAttributes(str: string): Record<string, string> {
     i++;
     const valueStart = i;
     while (i < len && str.charCodeAt(i) !== quote) i++;
-    result[name] = str.slice(valueStart, i);
+    result[name] = unescapeXml(str.slice(valueStart, i));
     i++;
   }
-
   return result;
 }
 
@@ -272,9 +280,29 @@ function addField(parent: Element, type: string, value: string) {
   if (!parent.elements) {
     parent.elements = [];
   }
+  // Merge adjacent text/cdata nodes: a CDATA section containing the literal
+  // `]]>` is serialized as two adjacent CDATA sections and must reassemble
+  // into a single node on parse. Adjacent text nodes likewise merge.
+  if (type === "text" || type === "cdata") {
+    const last = parent.elements[parent.elements.length - 1];
+    if (last && last.type === type) {
+      const key = type as "text" | "cdata";
+      last[key] = (last[key] as unknown as string) + value;
+      return;
+    }
+  }
   const element: Element = { type };
   (element as Record<string, unknown>)[type] = value;
   parent.elements.push(element);
+}
+
+/** True when the nearest ancestor with an explicit xml:space sets "preserve". */
+function isPreserveContext(stack: Element[]): boolean {
+  for (let i = stack.length - 1; i >= 0; i--) {
+    const space = stack[i].attributes?.["xml:space"];
+    if (space !== undefined) return space === "preserve";
+  }
+  return false;
 }
 
 function isWhitespace(ch: number): boolean {

@@ -126,4 +126,27 @@ describe("parse (custom)", () => {
     const children = result.elements?.[0].elements ?? [];
     expect(children.some((e) => e.type === "text")).toBe(true);
   });
+
+  it("unescapes attribute values (& < > \" ')", () => {
+    const result = parse('<r a="x&lt;y&amp;z&quot;q&apos;w"/>');
+    expect(result.elements?.[0].attributes?.a).toBe("x<y&z\"q'w");
+  });
+
+  it("decodes decimal and hex numeric character references", () => {
+    const result = parse("<r>a&#65;b&#x42;c</r>");
+    expect(result.elements?.[0].elements?.[0]).toEqual({ type: "text", text: "aAbBc" });
+  });
+
+  it("reassembles a CDATA section split on `]]>` into a single node", () => {
+    // writeCdata serializes `a]]>b` as two adjacent CDATA sections.
+    const result = parse("<r><![CDATA[a]]]]><![CDATA[>b]]></r>");
+    const cdatas = (result.elements?.[0].elements ?? []).filter((e) => e.type === "cdata");
+    expect(cdatas).toHaveLength(1);
+    expect((cdatas[0] as { cdata?: string }).cdata).toBe("a]]>b");
+  });
+
+  it("preserves a whitespace-only text node under xml:space=preserve", () => {
+    const result = parse('<w:t xml:space="preserve"> </w:t>');
+    expect(result.elements?.[0].elements?.[0]).toEqual({ type: "text", text: " " });
+  });
 });

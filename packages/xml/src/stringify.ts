@@ -1,3 +1,4 @@
+import { escapeXml } from "./escape";
 import type { Element, Js2XmlOptions } from "./types";
 
 export function stringify(js: Element, options?: Js2XmlOptions): string {
@@ -91,10 +92,12 @@ function writeAttributes(
     const value = attributes[key];
     if (value === null || value === undefined) continue;
 
-    let attr = String(value).replace(/"/g, "&quot;");
-    if (attributeValueFn) {
-      attr = attributeValueFn(attr, key, elementName, element);
-    }
+    // attributeValueFn (xml-js hook) owns escaping when provided; otherwise
+    // we escape all XML-special characters ourselves.
+    const raw = String(value);
+    const attr = attributeValueFn
+      ? attributeValueFn(raw, key, elementName, element)
+      : escapeXml(raw);
     parts.push(` ${key}="${attr}"`);
   }
   return parts.join("");
