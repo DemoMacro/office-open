@@ -787,6 +787,36 @@ function parseCustomXmlInline(el: Element, ctx: DocxReadContext): Record<string,
   return cx;
 }
 
+/** Parse a move-revision range start (w:moveFromRangeStart / w:moveToRangeStart). */
+function parseMoveRangeStart(
+  el: Element,
+): { id: number; name?: string; author?: string; date?: string } | null {
+  const id = attrNum(el, "w:id");
+  if (id === undefined) return null;
+  const m: { id: number; name?: string; author?: string; date?: string } = { id };
+  const name = attr(el, "w:name");
+  if (name !== undefined) m.name = name;
+  const author = attr(el, "w:author");
+  if (author !== undefined) m.author = author;
+  const date = attr(el, "w:date");
+  if (date !== undefined) m.date = date;
+  return m;
+}
+
+/** Parse a customXml range start (Ins/Del/MoveFrom/MoveTo). */
+function parseCustomXmlRangeStart(
+  el: Element,
+): { id: number; author?: string; date?: string } | null {
+  const id = attrNum(el, "w:id");
+  if (id === undefined) return null;
+  const m: { id: number; author?: string; date?: string } = { id };
+  const author = attr(el, "w:author");
+  if (author !== undefined) m.author = author;
+  const date = attr(el, "w:date");
+  if (date !== undefined) m.date = date;
+  return m;
+}
+
 /**
  * Parse a w:p element into ParagraphOptions.
  */
@@ -980,6 +1010,102 @@ export function parseParagraph(el: Element, ctx: DocxReadContext): ParagraphOpti
       case "w:customXml": {
         const cx = parseCustomXmlInline(child, ctx);
         if (cx.element) childList.push({ customXml: cx });
+        break;
+      }
+      // ── Range markers: proof errors, positional tabs, permissions, revisions ──
+      case "w:proofErr": {
+        const type = attr(child, "w:type");
+        if (type) childList.push({ proofErr: type });
+        break;
+      }
+      case "w:ptab": {
+        const alignment = attr(child, "w:alignment");
+        const leader = attr(child, "w:leader");
+        const relativeTo = attr(child, "w:relativeTo");
+        if (alignment !== undefined && leader !== undefined && relativeTo !== undefined) {
+          childList.push({ positionalTab: { alignment, leader, relativeTo } });
+        }
+        break;
+      }
+      case "w:permStart": {
+        const id = attr(child, "w:id");
+        if (id !== undefined) {
+          const ps: Record<string, unknown> = { id };
+          const ed = attr(child, "w:ed");
+          if (ed !== undefined) ps.ed = ed;
+          const editGroup = attr(child, "w:edGrp");
+          if (editGroup !== undefined) ps.editGroup = editGroup;
+          const colFirst = attrNum(child, "w:colFirst");
+          if (colFirst !== undefined) ps.colFirst = colFirst;
+          const colLast = attrNum(child, "w:colLast");
+          if (colLast !== undefined) ps.colLast = colLast;
+          childList.push({ permStart: ps });
+        }
+        break;
+      }
+      case "w:permEnd": {
+        const id = attr(child, "w:id");
+        if (id !== undefined) childList.push({ permEnd: id });
+        break;
+      }
+      case "w:moveFromRangeStart": {
+        const m = parseMoveRangeStart(child);
+        if (m) childList.push({ moveFromRangeStart: m });
+        break;
+      }
+      case "w:moveFromRangeEnd": {
+        const id = attrNum(child, "w:id");
+        if (id !== undefined) childList.push({ moveFromRangeEnd: id });
+        break;
+      }
+      case "w:moveToRangeStart": {
+        const m = parseMoveRangeStart(child);
+        if (m) childList.push({ moveToRangeStart: m });
+        break;
+      }
+      case "w:moveToRangeEnd": {
+        const id = attrNum(child, "w:id");
+        if (id !== undefined) childList.push({ moveToRangeEnd: id });
+        break;
+      }
+      case "w:customXmlInsRangeStart": {
+        const m = parseCustomXmlRangeStart(child);
+        if (m) childList.push({ customXmlInsRangeStart: m });
+        break;
+      }
+      case "w:customXmlInsRangeEnd": {
+        const id = attrNum(child, "w:id");
+        if (id !== undefined) childList.push({ customXmlInsRangeEnd: id });
+        break;
+      }
+      case "w:customXmlDelRangeStart": {
+        const m = parseCustomXmlRangeStart(child);
+        if (m) childList.push({ customXmlDelRangeStart: m });
+        break;
+      }
+      case "w:customXmlDelRangeEnd": {
+        const id = attrNum(child, "w:id");
+        if (id !== undefined) childList.push({ customXmlDelRangeEnd: id });
+        break;
+      }
+      case "w:customXmlMoveFromRangeStart": {
+        const m = parseCustomXmlRangeStart(child);
+        if (m) childList.push({ customXmlMoveFromRangeStart: m });
+        break;
+      }
+      case "w:customXmlMoveFromRangeEnd": {
+        const id = attrNum(child, "w:id");
+        if (id !== undefined) childList.push({ customXmlMoveFromRangeEnd: id });
+        break;
+      }
+      case "w:customXmlMoveToRangeStart": {
+        const m = parseCustomXmlRangeStart(child);
+        if (m) childList.push({ customXmlMoveToRangeStart: m });
+        break;
+      }
+      case "w:customXmlMoveToRangeEnd": {
+        const id = attrNum(child, "w:id");
+        if (id !== undefined) childList.push({ customXmlMoveToRangeEnd: id });
         break;
       }
       default:
