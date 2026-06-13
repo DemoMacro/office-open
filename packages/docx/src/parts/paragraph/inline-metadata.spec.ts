@@ -107,3 +107,20 @@ describe("inline metadata parse", () => {
     expect(findChildByKey(opts, "smartTag")).toBeUndefined();
   });
 });
+
+describe("bidirectional containers parse", () => {
+  it("parses dir (w:dir with val and children)", () => {
+    const opts = parseParagraphXml(`<w:dir w:val="rtl"><w:r><w:t>RTL text</w:t></w:r></w:dir>`);
+    const d = findChildByKey(opts, "dir");
+    expect(d).toBeDefined();
+    expect(d!.dir).toMatchObject({ val: "rtl" });
+    expect((d!.dir as Record<string, unknown>).children).toEqual([{ text: "RTL text" }]);
+  });
+
+  it("parses bdo (w:bdo with val and children)", () => {
+    const opts = parseParagraphXml(`<w:bdo w:val="ltr"><w:r><w:t>text</w:t></w:r></w:bdo>`);
+    const b = findChildByKey(opts, "bdo");
+    expect(b!.bdo).toMatchObject({ val: "ltr" });
+    expect((b!.bdo as Record<string, unknown>).children).toEqual([{ text: "text" }]);
+  });
+});

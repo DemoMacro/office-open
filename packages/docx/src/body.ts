@@ -1048,6 +1048,27 @@ export function parseParagraph(el: Element, ctx: DocxReadContext): ParagraphOpti
         if (cx.element) childList.push({ customXml: cx });
         break;
       }
+      // ── Bidirectional containers (reuse the smartTag/customXml child parser) ──
+      case "w:dir": {
+        const val = attr(child, "w:val");
+        if (val) {
+          const dir: Record<string, unknown> = { val };
+          const content = parseContainerChildren(child, ctx);
+          if (content.length > 0) dir.children = content;
+          childList.push({ dir });
+        }
+        break;
+      }
+      case "w:bdo": {
+        const val = attr(child, "w:val");
+        if (val) {
+          const bdo: Record<string, unknown> = { val };
+          const content = parseContainerChildren(child, ctx);
+          if (content.length > 0) bdo.children = content;
+          childList.push({ bdo });
+        }
+        break;
+      }
       // ── Range markers: proof errors, positional tabs, permissions, revisions ──
       case "w:proofErr": {
         const type = attr(child, "w:type");
