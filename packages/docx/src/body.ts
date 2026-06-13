@@ -18,6 +18,8 @@ import { parseDrawingRun } from "@parts/drawing/drawing-parse";
 import { FontWrapper } from "@parts/fonts/font-wrapper";
 import { HeadingLevel } from "@parts/paragraph/formatting/style";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
+import { parseFormFieldData } from "@parts/paragraph/run/form-field";
+import type { FormFieldOptions } from "@parts/paragraph/run/form-field";
 import type { RunOptions } from "@parts/paragraph/run/run";
 import { parseRun, parseRunProperties, parsedRunToOptions } from "@parts/paragraph/run/run-parse";
 import { stringifyTableOfContents } from "@parts/table-of-contents/descriptor";
@@ -689,11 +691,32 @@ export function parseParagraph(el: Element, ctx: DocxReadContext): ParagraphOpti
   // Parse children
   const childList: unknown[] = [];
 
+  // Form field accumulator: a w:checkBox/ddList/textInput field spans several
+  // w:r elements (begin fldChar → instrText → separate → result → end). The
+  // definition lives in w:ffData inside the begin fldChar; intermediate and
+  // result runs are skipped, collapsing the field to a single child.
+  let pendingFormField: FormFieldOptions | null = null;
+
   for (const child of el.elements ?? []) {
     switch (child.name) {
       case "w:pPr":
         break;
       case "w:r": {
+        // Form field: fldChar markers + the instrText/result runs between them.
+        const fldCharEl = findChild(child, "w:fldChar");
+        if (fldCharEl) {
+          const fctype = attr(fldCharEl, "w:fldCharType");
+          if (fctype === "begin") {
+            const ffDataEl = findChild(fldCharEl, "w:ffData");
+            pendingFormField = ffDataEl ? parseFormFieldData(ffDataEl) : {};
+          } else if (fctype === "end" && pendingFormField) {
+            childList.push({ formField: pendingFormField });
+            pendingFormField = null;
+          }
+          break;
+        }
+        if (pendingFormField) break; // instrText / result — state lives in ffData
+
         const drawingEl = findChild(child, "w:drawing");
         if (drawingEl) {
           const drawingChild = parseDrawingRun(drawingEl, ctx);

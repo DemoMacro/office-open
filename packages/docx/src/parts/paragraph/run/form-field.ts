@@ -10,7 +10,15 @@
  *
  * @module
  */
-import { element } from "@office-open/xml";
+import {
+  attr,
+  attrBool,
+  attrNum,
+  children as xmlChildren,
+  element,
+  findChild,
+} from "@office-open/xml";
+import type { Element } from "@office-open/xml";
 
 /**
  * Text input field type (ST_FFTextType).
@@ -307,3 +315,86 @@ export const createFormFieldData = (options: FormFieldOptions): string => {
 
   return element("w:ffData", undefined, children);
 };
+
+/**
+ * Parse a w:ffData element back into FormFieldOptions.
+ *
+ * Inverse of {@link createFormFieldData}. Reads the common form-field metadata
+ * (name, label, tabIndex, enabled, calcOnExit) and exactly one of
+ * checkBox / dropDownList / textInput.
+ */
+export function parseFormFieldData(el: Element): FormFieldOptions {
+  const opts: Partial<FormFieldOptions> = {};
+
+  const name = findChild(el, "w:name");
+  if (name) opts.name = attr(name, "w:val");
+  const label = findChild(el, "w:label");
+  if (label) {
+    const v = attrNum(label, "w:val");
+    if (v !== undefined) opts.label = v;
+  }
+  const tabIndex = findChild(el, "w:tabIndex");
+  if (tabIndex) {
+    const v = attrNum(tabIndex, "w:val");
+    if (v !== undefined) opts.tabIndex = v;
+  }
+  const enabled = findChild(el, "w:enabled");
+  if (enabled) opts.enabled = attrBool(enabled, "w:val") ?? true;
+  const calcOnExit = findChild(el, "w:calcOnExit");
+  if (calcOnExit) opts.calcOnExit = attrBool(calcOnExit, "w:val") ?? true;
+
+  const checkBox = findChild(el, "w:checkBox");
+  if (checkBox) {
+    const cb: Partial<CheckBoxOptions> = {};
+    if (findChild(checkBox, "w:sizeAuto")) cb.sizeAuto = true;
+    const size = findChild(checkBox, "w:size");
+    if (size) {
+      const v = attrNum(size, "w:val");
+      if (v !== undefined) cb.size = v;
+    }
+    const def = findChild(checkBox, "w:default");
+    if (def) cb.default = attrBool(def, "w:val") ?? true;
+    const checked = findChild(checkBox, "w:checked");
+    if (checked) cb.checked = attrBool(checked, "w:val") ?? true;
+    opts.checkBox = cb as CheckBoxOptions;
+  } else {
+    const ddList = findChild(el, "w:ddList");
+    if (ddList) {
+      const entries: string[] = [];
+      for (const li of xmlChildren(ddList, "w:listEntry")) {
+        entries.push(attr(li, "w:val") ?? "");
+      }
+      const ddl: Partial<DropDownListOptions> = { entries };
+      const result = findChild(ddList, "w:result");
+      if (result) {
+        const v = attrNum(result, "w:val");
+        if (v !== undefined) ddl.result = v;
+      }
+      const def = findChild(ddList, "w:default");
+      if (def) {
+        const v = attrNum(def, "w:val");
+        if (v !== undefined) ddl.default = v;
+      }
+      opts.dropDownList = ddl as DropDownListOptions;
+    } else {
+      const textInput = findChild(el, "w:textInput");
+      if (textInput) {
+        const ti: Partial<TextInputOptions> = {};
+        const type = findChild(textInput, "w:type");
+        if (type) ti.type = attr(type, "w:val") as TextInputOptions["type"];
+        const def = findChild(textInput, "w:default");
+        if (def) ti.default = attr(def, "w:val");
+        const maxLength = findChild(textInput, "w:maxLength");
+        if (maxLength) {
+          const v = attrNum(maxLength, "w:val");
+          if (v !== undefined) ti.maxLength = v;
+        }
+        const format = findChild(textInput, "w:format");
+        if (format) ti.format = attr(format, "w:val");
+        opts.textInput = ti as TextInputOptions;
+      }
+    }
+  }
+
+  return opts as FormFieldOptions;
+}
