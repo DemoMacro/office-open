@@ -124,3 +124,29 @@ describe("bidirectional containers parse", () => {
     expect((b!.bdo as Record<string, unknown>).children).toEqual([{ text: "text" }]);
   });
 });
+
+describe("ruby annotation parse", () => {
+  it("parses ruby with properties, rt and rubyBase (half-points -> points)", () => {
+    const opts = parseParagraphXml(
+      `<w:ruby><w:rubyPr>` +
+        `<w:rubyAlign w:val="center"/><w:hps w:val="20"/><w:hpsRaise w:val="20"/>` +
+        `<w:hpsBaseText w:val="40"/><w:lid w:val="ja-JP"/><w:dirty/>` +
+        `</w:rubyPr>` +
+        `<w:rt><w:r><w:t>furi</w:t></w:r></w:rt>` +
+        `<w:rubyBase><w:r><w:t>base</w:t></w:r></w:rubyBase>` +
+        `</w:ruby>`,
+    );
+    const r = findChildByKey(opts, "ruby");
+    expect(r).toBeDefined();
+    expect(r!.ruby).toMatchObject({
+      text: "furi",
+      base: "base",
+      alignment: "center",
+      fontSize: 10, // hps 20 / 2
+      raise: 10, // hpsRaise 20 / 2
+      baseFontSize: 20, // hpsBaseText 40 / 2
+      languageId: "ja-JP",
+      dirty: true,
+    });
+  });
+});
