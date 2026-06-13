@@ -40,11 +40,9 @@ export function parse(xmlString: string, options?: Xml2JsOptions): Element {
   const len = xmlString.length;
 
   while (i < len) {
-    if (!captureSpaces && isWhitespace(xmlString.charCodeAt(i))) {
-      i++;
-      continue;
-    }
-
+    // Text node: read up to the next '<'. Pure-whitespace nodes (indentation)
+    // are dropped below unless captureSpaces is on, but leading/trailing
+    // spaces of nodes that have content are preserved.
     if (xmlString.charCodeAt(i) !== 0x3c /* < */) {
       const start = i;
       while (i < len && xmlString.charCodeAt(i) !== 0x3c) i++;

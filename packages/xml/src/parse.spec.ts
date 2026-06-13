@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { xml2js } from "../src/parse";
+import { parse, xml2js } from "../src/parse";
 
 describe("xml2js (parse)", () => {
   it("parses a simple element", () => {
@@ -104,5 +104,26 @@ describe("xml2js (parse)", () => {
     expect(result.elements?.[0].name).toBe("w:p");
     expect(result.elements?.[0].attributes?.["w:val"]).toBe("1");
     expect(result.elements?.[0].attributes?.["xml:space"]).toBe("preserve");
+  });
+});
+
+describe("parse (custom)", () => {
+  it("preserves leading/trailing spaces in text nodes that have content", () => {
+    const result = parse('<w:instrText xml:space="preserve"> PAGE </w:instrText>');
+    expect(result.elements?.[0].elements?.[0]).toEqual({ type: "text", text: " PAGE " });
+  });
+
+  it("drops pure-whitespace text nodes (indentation) by default", () => {
+    const result = parse("<root>\n  <a>1</a>\n</root>");
+    const children = result.elements?.[0].elements ?? [];
+    expect(children.every((e) => e.type === "element")).toBe(true);
+  });
+
+  it("keeps pure-whitespace nodes when captureSpaces is on", () => {
+    const result = parse("<root>\n  <a>1</a>\n</root>", {
+      captureSpacesBetweenElements: true,
+    });
+    const children = result.elements?.[0].elements ?? [];
+    expect(children.some((e) => e.type === "text")).toBe(true);
   });
 });
