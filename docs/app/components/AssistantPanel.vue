@@ -1,31 +1,34 @@
 <script setup lang="ts">
 import { Chat } from "@ai-sdk/vue";
-import { createReusableTemplate } from "@vueuse/core";
-import type { UIMessage } from "ai";
-import { DefaultChatTransport } from "ai";
+import { isPartStreaming, isToolStreaming } from "@nuxt/ui/utils/ai";
+import type { ToolUIPart, DynamicToolUIPart } from "ai";
+import {
+  DefaultChatTransport,
+  isToolUIPart,
+  isReasoningUIPart,
+  isTextUIPart,
+  getToolName,
+} from "ai";
 
-const [DefineChatContent, ReuseChatContent] = createReusableTemplate<{
-  showExpandButton?: boolean;
-}>();
-
-const {
-  isOpen,
-  isExpanded,
-  isMobile,
-  panelWidth,
-  toggleExpanded,
-  messages,
-  pendingMessage,
-  clearPending,
-  faqQuestions,
-} = useAssistant();
+const { isOpen, isStudioExpanded, messages, faqQuestions } = useAssistant();
 const config = useRuntimeConfig();
 const toast = useToast();
 const { t } = useDocusI18n();
 const input = ref("");
 
+const open = computed({
+  get: () => isOpen.value && !isStudioExpanded.value,
+  set: (value) => {
+    if (!isStudioExpanded.value) {
+      isOpen.value = value;
+    }
+  },
+});
+
 const displayTitle = computed(() => t("assistant.title"));
 const displayPlaceholder = computed(() => t("assistant.placeholder"));
+
+let _skipSync = false;
 
 const chat = new Chat({
   messages: messages.value,
@@ -33,14 +36,14 @@ const chat = new Chat({
     api: (config.app?.baseURL.replace(/\/$/, "") || "") + config.public.assistant.apiPath,
   }),
   onError: (error: Error) => {
-    const message = (() => {
+    let message = error.message;
+    if (typeof message === "string" && message[0] === "{") {
       try {
-        const parsed = JSON.parse(error.message);
-        return parsed?.message || error.message;
+        message = JSON.parse(message).message || message;
       } catch {
-        return error.message;
+        // keep original on malformed JSON
       }
-    })();
+    }
 
     toast.add({
       description: message,
@@ -50,290 +53,304 @@ const chat = new Chat({
     });
   },
   onFinish: () => {
-    messages.value = chat.messages;
+    _skipSync = true;
+    messages.value = [...chat.messages];
+    nextTick(() => {
+      _skipSync = false;
+    });
   },
 });
 
-watch(
-  pendingMessage,
-  (message: string | undefined) => {
-    if (message) {
-      if (messages.value.length === 0 && chat.messages.length > 0) {
-        chat.messages.length = 0;
-      }
-      chat.sendMessage({
-        text: message,
-      });
-      clearPending();
-    }
-  },
-  { immediate: true },
-);
+watch(messages, (newMessages) => {
+  if (_skipSync) return;
 
-watch(
-  messages,
-  (newMessages: UIMessage[]) => {
-    if (newMessages.length === 0 && chat.messages.length > 0) {
-      chat.messages.length = 0;
-    }
-  },
-  { deep: true },
-);
+  chat.messages = newMessages;
+  if (chat.lastMessage?.role === "user" && chat.status !== "streaming") {
+    chat.regenerate();
+  }
+});
 
-const lastMessage = computed(() => chat.messages.at(-1));
-const showThinking = computed(
-  () =>
-    chat.status === "streaming" &&
-    lastMessage.value?.role === "assistant" &&
-    !lastMessage.value?.parts?.some((p: { type: string }) => p.type === "text"),
-);
+const canClear = computed(() => messages.value.length > 0);
 
-function getMessageToolCalls(message: any) {
-  if (!message?.parts) return [];
-  return message.parts
-    .filter((p: any) => p.type === "data-tool-calls")
-    .flatMap((p: any) => p.data?.tools || []);
+type ToolPart = ToolUIPart | DynamicToolUIPart;
+type ToolState = ToolPart["state"];
+
+function getToolMessage(
+  state: ToolState,
+  toolName: string,
+  input: Record<string, string | undefined>,
+) {
+  const searchVerb = state === "output-available" ? "Searched" : "Searching";
+  const readVerb = state === "output-available" ? "Read" : "Reading";
+
+  return (
+    {
+      "list-pages": `${searchVerb} pages`,
+      "get-page": `${readVerb} ${input.path || "..."}`,
+    }[toolName] || `${searchVerb} ${toolName}`
+  );
 }
 
-function handleSubmit(event?: Event) {
-  event?.preventDefault();
+function getToolText(part: ToolPart) {
+  return getToolMessage(
+    part.state,
+    getToolName(part),
+    (part.input || {}) as Record<string, string | undefined>,
+  );
+}
 
-  if (!input.value.trim()) {
-    return;
+function getToolIcon(part: ToolPart): string {
+  const toolName = getToolName(part);
+
+  return (
+    {
+      "get-page": "i-lucide-file-text",
+    }[toolName] || "i-lucide-search"
+  );
+}
+
+function getToolOutput(part: ToolPart): string | undefined {
+  if (part.state !== "output-available" || !part.output) return undefined;
+
+  const output = part.output as Record<string, unknown>;
+
+  if (getToolName(part) === "list-pages") {
+    const content = (output.content ?? output) as Array<{ text?: string }> | string;
+    if (typeof content === "string") return content;
+    return (
+      content
+        ?.map((c) => c.text)
+        .filter(Boolean)
+        .join("\n") || undefined
+    );
   }
 
-  chat.sendMessage({
-    text: input.value,
-  });
+  if (getToolName(part) === "get-page") {
+    const content = (output.content ?? output) as Array<{ text?: string }> | string;
+    if (typeof content === "string") {
+      return content.length > 500 ? `${content.slice(0, 500)}…` : content;
+    }
+    const text =
+      content
+        ?.map((c) => c.text)
+        .filter(Boolean)
+        .join("\n") || "";
+    return text.length > 500 ? `${text.slice(0, 500)}…` : text || undefined;
+  }
 
+  return JSON.stringify(output, null, 2).slice(0, 500);
+}
+
+interface DocumentPartData {
+  filename: string;
+  base64: string;
+  mimeType: string;
+  size: number;
+}
+
+// data-document parts are emitted by the custom search API (office-open/generate),
+// not part of the AI SDK's typed UIMessage parts, so the payload is typed here.
+function getDocumentData(part: { type: string; data?: unknown }): DocumentPartData {
+  return part.data as DocumentPartData;
+}
+
+function onSubmit() {
+  if (!input.value.trim()) return;
+
+  chat.sendMessage({ text: input.value });
   input.value = "";
 }
 
 function askQuestion(question: string) {
-  chat.sendMessage({
-    text: question,
-  });
+  input.value = question;
+  onSubmit();
 }
 
-function resetChat() {
-  chat.stop();
-  messages.value = [];
-  chat.messages.length = 0;
-}
-
-onMounted(() => {
-  if (pendingMessage.value) {
-    chat.sendMessage({
-      text: pendingMessage.value,
-    });
-    clearPending();
-  } else if (chat.lastMessage?.role === "user") {
-    chat.regenerate();
+function clearMessages() {
+  if (chat.status === "streaming") {
+    chat.stop();
   }
+  messages.value = [];
+  chat.messages = [];
+}
+
+defineShortcuts({
+  meta_i: {
+    handler: () => {
+      open.value = !open.value;
+    },
+    usingInput: true,
+  },
 });
 </script>
 
 <template>
-  <DefineChatContent v-slot="{ showExpandButton = true }">
-    <div class="flex h-full flex-col">
-      <div class="border-default flex h-16 shrink-0 items-center justify-between border-b px-4">
-        <span class="text-highlighted font-medium">{{ displayTitle }}</span>
-        <div class="flex items-center gap-1">
-          <UTooltip
-            v-if="showExpandButton"
-            :text="isExpanded ? t('assistant.collapse') : t('assistant.expand')"
-          >
-            <UButton
-              :icon="isExpanded ? 'i-lucide-minimize-2' : 'i-lucide-maximize-2'"
-              color="neutral"
-              variant="ghost"
-              size="sm"
-              class="text-muted hover:text-highlighted"
-              @click="toggleExpanded"
-            />
-          </UTooltip>
-          <UTooltip v-if="chat.messages.length > 0" :text="t('assistant.clearChat')">
-            <UButton
-              icon="i-lucide-trash-2"
-              color="neutral"
-              variant="ghost"
-              size="sm"
-              class="text-muted hover:text-highlighted"
-              @click="resetChat"
-            />
-          </UTooltip>
-          <UTooltip :text="t('assistant.close')">
-            <UButton
-              icon="i-lucide-x"
-              color="neutral"
-              variant="ghost"
-              size="sm"
-              class="text-muted hover:text-highlighted"
-              @click="isOpen = false"
-            />
-          </UTooltip>
-        </div>
-      </div>
+  <USidebar
+    v-model:open="open"
+    side="right"
+    :title="displayTitle"
+    rail
+    :style="{ '--sidebar-width': '24rem' }"
+    :ui="{ footer: 'p-0', actions: 'gap-0.5', container: '!left-auto' }"
+  >
+    <template #actions>
+      <UTooltip v-if="canClear" :text="t('assistant.clearChat')">
+        <UButton icon="i-lucide-list-x" color="neutral" variant="ghost" @click="clearMessages" />
+      </UTooltip>
+    </template>
 
-      <div class="min-h-0 flex-1 overflow-y-auto">
-        <UChatMessages
-          v-if="chat.messages.length > 0"
-          :messages="chat.messages"
-          compact
-          :status="chat.status"
-          :user="{ ui: { content: 'text-sm' } }"
-          :ui="{ indicator: '*:bg-accented', root: 'h-auto!' }"
-          class="px-4 py-4"
-        >
-          <template #content="{ message }">
-            <div class="flex flex-col gap-2">
-              <AssistantLoading
-                v-if="
-                  message.role === 'assistant' &&
-                  (getMessageToolCalls(message).length > 0 ||
-                    (showThinking && message.id === lastMessage?.id))
-                "
-                :tool-calls="getMessageToolCalls(message)"
-                :is-loading="showThinking && message.id === lastMessage?.id"
+    <template #close>
+      <UTooltip :text="t('assistant.close')" :kbds="['meta', 'i']">
+        <UButton
+          icon="i-lucide-panel-right-close"
+          color="neutral"
+          variant="ghost"
+          aria-label="Close"
+          @click="open = false"
+        />
+      </UTooltip>
+    </template>
+
+    <UTheme
+      :ui="{
+        prose: {
+          p: { base: 'my-2 text-sm/6' },
+          li: { base: 'my-0.5 text-sm/6' },
+          ul: { base: 'my-2' },
+          ol: { base: 'my-2' },
+          h1: { base: 'text-xl mb-4' },
+          h2: { base: 'text-lg mt-6 mb-3' },
+          h3: { base: 'text-base mt-4 mb-2' },
+          h4: { base: 'text-sm mt-3 mb-1.5' },
+          code: { base: 'text-xs' },
+          pre: { root: 'my-2', base: 'text-xs/5' },
+          table: { root: 'my-2' },
+          hr: { base: 'my-4' },
+        },
+      }"
+    >
+      <UChatMessages
+        v-if="chat.messages.length"
+        should-auto-scroll
+        :messages="chat.messages"
+        :status="chat.status"
+        compact
+        class="gap-2 px-0"
+        :user="{ ui: { container: 'max-w-full' } }"
+      >
+        <template #content="{ message }">
+          <template
+            v-for="(part, index) in message.parts"
+            :key="`${message.id}-${part.type}-${index}`"
+          >
+            <!-- Generated Office document download card -->
+            <UChatTool
+              v-if="part.type === 'data-document' && part.data"
+              text="Document Generated"
+              icon="i-lucide-file"
+              variant="card"
+              chevron="trailing"
+              default-open
+            >
+              <DocumentCard v-bind="getDocumentData(part)" />
+            </UChatTool>
+
+            <UChatReasoning
+              v-else-if="isReasoningUIPart(part)"
+              :text="part.text"
+              :streaming="isPartStreaming(part)"
+              icon="i-lucide-brain"
+            >
+              <AssistantComark :markdown="part.text" :streaming="isPartStreaming(part)" />
+            </UChatReasoning>
+
+            <template v-else-if="isTextUIPart(part) && part.text.length > 0">
+              <AssistantComark
+                v-if="message.role === 'assistant'"
+                :markdown="part.text"
+                :streaming="isPartStreaming(part)"
               />
-              <template
-                v-for="(part, index) in message.parts"
-                :key="`${message.id}-${part.type}-${index}${'state' in part ? `-${part.state}` : ''}`"
-              >
-                <MDCCached
-                  v-if="part.type === 'text' && part.text"
-                  :value="part.text"
-                  :cache-key="`${message.id}-${index}`"
-                  :parser-options="{ highlight: false }"
-                  class="*:first:mt-0 *:last:mb-0"
-                />
-                <UChatTool
-                  v-else-if="part.type === 'data-document' && part.data"
-                  text="Document Generated"
-                  icon="i-lucide-file"
-                  variant="card"
-                  chevron="trailing"
-                  default-open
-                >
-                  <DocumentCard
-                    :filename="part.data.filename"
-                    :base64="part.data.base64"
-                    :mime-type="part.data.mimeType"
-                    :size="part.data.size"
-                  />
-                </UChatTool>
-              </template>
-            </div>
-          </template>
-        </UChatMessages>
+              <p v-else-if="message.role === 'user'" class="text-sm/6 whitespace-pre-wrap">
+                {{ part.text }}
+              </p>
+            </template>
 
-        <div v-else class="p-4">
-          <div
-            v-if="!faqQuestions?.length"
-            class="flex h-full flex-col items-center justify-center py-12 text-center"
-          >
-            <div class="bg-primary/10 mb-4 flex size-12 items-center justify-center rounded-full">
-              <UIcon name="i-lucide-message-circle-question" class="text-primary size-6" />
-            </div>
-            <h3 class="text-highlighted mb-2 text-base font-medium">
-              {{ t("assistant.askMeAnything") }}
-            </h3>
-            <p class="text-muted max-w-xs text-sm">
-              {{ t("assistant.askMeAnythingDescription") }}
-            </p>
+            <UChatTool
+              v-else-if="isToolUIPart(part)"
+              :text="getToolText(part)"
+              :icon="getToolIcon(part)"
+              :streaming="isToolStreaming(part)"
+              chevron="leading"
+            >
+              <pre
+                v-if="getToolOutput(part)"
+                class="text-dimmed text-xs whitespace-pre-wrap"
+                v-text="getToolOutput(part)"
+              />
+            </UChatTool>
+          </template>
+        </template>
+      </UChatMessages>
+
+      <div v-else>
+        <div
+          v-if="!faqQuestions?.length"
+          class="flex h-full flex-col items-center justify-center py-12 text-center"
+        >
+          <div class="bg-primary/10 mb-4 flex size-12 items-center justify-center rounded-full">
+            <UIcon name="i-lucide-message-circle-question" class="text-primary size-6" />
+          </div>
+          <h3 class="text-highlighted mb-2 text-base font-medium">
+            {{ t("assistant.askMeAnything") }}
+          </h3>
+          <p class="text-muted max-w-xs text-sm">
+            {{ t("assistant.askMeAnythingDescription") }}
+          </p>
+        </div>
+
+        <template v-else>
+          <div class="flex flex-col gap-6">
+            <UPageLinks
+              v-for="category in faqQuestions"
+              :key="category.category"
+              :title="category.category"
+              :links="
+                category.items.map((item) => ({ label: item, onClick: () => askQuestion(item) }))
+              "
+            />
+          </div>
+        </template>
+      </div>
+    </UTheme>
+
+    <template #footer>
+      <UChatPrompt
+        v-model="input"
+        :error="chat.error"
+        :placeholder="displayPlaceholder"
+        variant="naked"
+        size="sm"
+        autofocus
+        :ui="{ base: 'px-0' }"
+        class="px-4"
+        @submit="onSubmit"
+      >
+        <template #footer>
+          <div class="text-dimmed flex items-center gap-1.5 text-xs">
+            <span>{{ t("assistant.lineBreak") }}</span>
+            <UKbd size="sm" value="shift" />
+            <UKbd size="sm" value="enter" />
           </div>
 
-          <template v-else>
-            <p class="text-muted mb-4 text-sm font-medium">
-              {{ t("assistant.faq") }}
-            </p>
-
-            <div class="flex flex-col gap-5">
-              <div
-                v-for="category in faqQuestions"
-                :key="category.category"
-                class="flex flex-col gap-1.5"
-              >
-                <h4 class="text-dimmed text-xs font-medium tracking-wide uppercase">
-                  {{ category.category }}
-                </h4>
-                <div class="flex flex-col">
-                  <button
-                    v-for="question in category.items"
-                    :key="question"
-                    class="text-muted hover:text-highlighted py-1.5 text-left text-sm transition-colors"
-                    @click="askQuestion(question)"
-                  >
-                    {{ question }}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </template>
-        </div>
-      </div>
-
-      <div class="w-full shrink-0 p-3">
-        <UChatPrompt
-          v-model="input"
-          :rows="2"
-          :placeholder="displayPlaceholder"
-          maxlength="1000"
-          :ui="{
-            root: 'shadow-none!',
-            body: '*:p-0! *:rounded-none! *:text-base!',
-          }"
-          @submit="handleSubmit"
-        >
-          <template #footer>
-            <div class="text-muted flex items-center gap-1 text-xs">
-              <span>{{ t("assistant.lineBreak") }}</span>
-              <UKbd size="sm" value="shift" />
-              <UKbd size="sm" value="enter" />
-            </div>
-            <UChatPromptSubmit
-              class="ml-auto"
-              size="xs"
-              :status="chat.status"
-              @stop="chat.stop()"
-              @reload="chat.regenerate()"
-            />
-          </template>
-        </UChatPrompt>
-        <div class="text-dimmed mt-1 flex items-center justify-between text-xs">
-          <span>{{ t("assistant.chatCleared") }}</span>
-          <span> {{ input.length }}/1000 </span>
-        </div>
-      </div>
-    </div>
-  </DefineChatContent>
-
-  <aside
-    v-if="!isMobile"
-    class="border-default bg-default/95 fixed top-0 left-auto! z-50 h-dvh overflow-hidden border-l backdrop-blur-xl transition-[right,width] duration-200 ease-linear will-change-[right,width]"
-    :style="{
-      width: `${panelWidth}px`,
-      right: isOpen ? '0' : `-${panelWidth}px`,
-    }"
-  >
-    <div
-      class="h-full transition-[width] duration-200 ease-linear"
-      :style="{ width: `${panelWidth}px` }"
-    >
-      <ReuseChatContent :show-expand-button="true" />
-    </div>
-  </aside>
-
-  <USlideover
-    v-else
-    v-model:open="isOpen"
-    side="right"
-    :ui="{
-      content: 'ring-0 bg-default',
-    }"
-  >
-    <template #content>
-      <ReuseChatContent :show-expand-button="false" />
+          <UChatPromptSubmit
+            size="sm"
+            :status="chat.status"
+            :disabled="chat.status === 'ready' && !input.trim()"
+            @stop="chat.stop()"
+            @reload="chat.regenerate()"
+          />
+        </template>
+      </UChatPrompt>
     </template>
-  </USlideover>
+  </USidebar>
 </template>
