@@ -8,7 +8,7 @@
 
 ## Features
 
-- **Descriptor Runtime** — `CustomDescriptor<T>` and `ElementDescriptor<T>` for bidirectional XML stringify/parse
+- **Descriptor Runtime** — `CustomDescriptor<T>` for bidirectional XML stringify/parse
 - **DrawingML** — Fills, outlines, effects, geometry, text body, scene 3D, and more
 - **Chart Components** — Shared chart types (bar, line, pie, area, scatter) and chart collection
 - **SmartArt Components** — Data model, tree-to-model converter, layout/style/color definitions

@@ -151,9 +151,7 @@ Domain names follow the XSD element: `rows` for `w:tr`/`x:row`, `cells` for `w:t
 
 All XML serialization uses the descriptor pattern from `@office-open/core/descriptor`:
 
-- **`CustomDescriptor<T>`** — for complex parts with custom stringify/parse logic
-- **`ElementDescriptor<T>`** — for simple declarative attr/child mapping
-- **`element<T>(tag)`** — builder for `ElementDescriptor`
+- **`CustomDescriptor<T>`** — every descriptor is custom: hand-written `stringify()` + `parse()` for the part
 
 Each descriptor is **bidirectional**: has both `stringify()` and `parse()`.
 

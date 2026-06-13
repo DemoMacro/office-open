@@ -1,25 +1,11 @@
 /**
- * Descriptor system — declarative XML mapping for OOXML elements.
+ * Descriptor system — bidirectional XML mapping for OOXML parts.
  *
  * @module
  */
 
 // Types
-export type {
-  AttrSpec,
-  ChildrenSpec,
-  ChildSpec,
-  ContentSpec,
-  CustomDescriptor,
-  ElementDescriptor,
-  Descriptor,
-  TextSpec,
-  UnionSpec,
-  UnionVariant,
-} from "./types";
-
-// Builder
-export { DescriptorBuilder, element } from "./builder";
+export type { CustomDescriptor, Descriptor } from "./types";
 
 // Runtime
 export { parse, stringify } from "./runtime";
