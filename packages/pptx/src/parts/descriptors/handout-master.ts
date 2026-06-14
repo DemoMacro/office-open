@@ -7,7 +7,11 @@
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, findChild } from "@office-open/xml";
 import { buildHandoutMasterXml } from "@parts/handout-master";
-import type { HandoutMasterOptions, ColorMapOptions } from "@parts/handout-master";
+import type {
+  ColorMapOptions,
+  HandoutMasterOptions,
+  HeaderFooterOptions,
+} from "@parts/handout-master";
 
 // ── Types ──
 
@@ -40,13 +44,12 @@ export const handoutMasterDesc: CustomDescriptor<HandoutMasterDescriptorOptions>
   },
 
   parse(el, _ctx) {
-    const result: Record<string, unknown> = {};
-    const options: Record<string, unknown> = {};
+    const options: HandoutMasterOptions = {};
 
     // colorMap
     const clrMap = findChild(el, "p:clrMap");
     if (clrMap) {
-      const colorMap: Record<string, string> = {};
+      const colorMap: ColorMapOptions = {};
       for (const key of COLOR_MAP_KEYS) {
         const v = attr(clrMap, key);
         if (v !== undefined) colorMap[key] = v;
@@ -57,7 +60,7 @@ export const handoutMasterDesc: CustomDescriptor<HandoutMasterDescriptorOptions>
     // headerFooter
     const hf = findChild(el, "p:hf");
     if (hf) {
-      const headerFooter: Record<string, boolean> = {};
+      const headerFooter: HeaderFooterOptions = {};
       const dt = attr(hf, "dt");
       if (dt !== undefined) headerFooter.date = dt === "1";
       const hdr = attr(hf, "hdr");
@@ -69,7 +72,6 @@ export const handoutMasterDesc: CustomDescriptor<HandoutMasterDescriptorOptions>
       if (Object.keys(headerFooter).length > 0) options.headerFooter = headerFooter;
     }
 
-    if (Object.keys(options).length > 0) result.options = options;
-    return result as unknown as HandoutMasterDescriptorOptions;
+    return Object.keys(options).length > 0 ? { options } : {};
   },
 };
