@@ -652,9 +652,15 @@ export class Styles {
 
     // cellStyles
     if (this.customCellStyles && this.customCellStyles.length > 0) {
-      const csAttrs: string[] = [`count="${this.customCellStyles.length + 1}"`];
+      // Normal (builtinId=0) is the implicit default; only auto-add it when the
+      // caller's list doesn't already include it, so a parsed list containing
+      // Normal round-trips instead of producing a duplicate.
+      const hasNormal = this.customCellStyles.some(
+        (cs) => cs.builtinId === 0 && cs.name === "Normal",
+      );
+      const csAttrs: string[] = [`count="${this.customCellStyles.length + (hasNormal ? 0 : 1)}"`];
       const csParts: string[] = [`<cellStyles ${csAttrs.join(" ")}>`];
-      csParts.push('<cellStyle name="Normal" xfId="0" builtinId="0"/>');
+      if (!hasNormal) csParts.push('<cellStyle name="Normal" xfId="0" builtinId="0"/>');
       for (const cs of this.customCellStyles) {
         const attrs: string[] = [`name="${escapeXml(cs.name)}"`, `xfId="${cs.xfId}"`];
         if (cs.builtinId !== undefined) attrs.push(`builtinId="${cs.builtinId}"`);

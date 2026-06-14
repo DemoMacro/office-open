@@ -5,7 +5,13 @@
  */
 
 import type { CorePropertiesOptions } from "@parts/core-properties";
-import type { DxfOptions } from "@parts/styles";
+import type {
+  ColorsOptions,
+  CustomCellStyleOptions,
+  CustomTableStyleOptions,
+  DxfOptions,
+  StyleExtensionOptions,
+} from "@parts/styles";
 import type {
   WorkbookProtectionOptions,
   FileRecoveryPrOptions,
@@ -26,6 +32,14 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   chartsheets?: ChartsheetOptions[];
   /** Pre-defined differential formats for conditional formatting */
   dxfs?: DxfOptions[];
+  /** Custom color palette (CT_Colors) */
+  colors?: ColorsOptions;
+  /** Custom table/pivot table styles (CT_TableStyles) */
+  tableStyles?: CustomTableStyleOptions[];
+  /** Custom named cell styles (CT_CellStyles) */
+  cellStyles?: CustomCellStyleOptions[];
+  /** Style sheet extensions (CT_ExtensionList on styleSheet) */
+  styleExtensions?: StyleExtensionOptions[];
   /** Workbook-level protection */
   workbookProtection?: WorkbookProtectionOptions;
   /** External link definitions */

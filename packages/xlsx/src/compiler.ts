@@ -89,6 +89,13 @@ export function compileWorkbook(
     ctx.registerDxf(dxf);
   }
 
+  // Re-apply parsed style sections so a declarative round-trip preserves
+  // them (colors, table/cell styles, extensions) alongside DXFs.
+  if (options.colors) ctx.styles.setColors(options.colors);
+  if (options.tableStyles) ctx.styles.setTableStyles(options.tableStyles);
+  if (options.cellStyles) ctx.styles.setCustomCellStyles(options.cellStyles);
+  if (options.styleExtensions) ctx.styles.setExtensions(options.styleExtensions);
+
   // Build workbook relationships
   buildWorkbookRelationships(ctx.workbookRels, worksheetConfigs.length, chartsheetConfigs.length);
 

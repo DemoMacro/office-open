@@ -15,6 +15,7 @@ import type { ChartsheetOptions } from "@parts/chartsheet";
 import { commentsDesc } from "@parts/comments";
 import { drawingDesc } from "@parts/drawing";
 import { externalLinkDesc } from "@parts/external-link";
+import type { WorkbookOptions } from "@parts/file";
 import { pivotCacheDefDesc, pivotCacheRecordsDesc } from "@parts/pivot-cache";
 import { pivotTableDesc } from "@parts/pivot-table";
 import { sharedStringsDesc } from "@parts/shared-strings";
@@ -23,7 +24,6 @@ import { tableDesc } from "@parts/table";
 import { workbookDesc } from "@parts/workbook";
 import { worksheetDesc } from "@parts/worksheet";
 import type { WorksheetOptions } from "@parts/worksheet";
-import type { WorkbookOptions } from "@shared/file";
 
 import { XlsxReadContext } from "./context";
 
@@ -61,6 +61,16 @@ function sortByNumber(paths: string[]): string[] {
     const numB = parseInt(b.match(/(\d+)/)?.[1] ?? "0", 10);
     return numA - numB;
   });
+}
+
+/** Derive the sibling rels path for an external link part.
+ * "xl/externalLinks/externalLink1.xml" → "xl/externalLinks/_rels/externalLink1.xml.rels"
+ */
+function externalLinkRelsPath(elPath: string): string {
+  const idx = elPath.lastIndexOf("/");
+  const dir = elPath.substring(0, idx);
+  const file = elPath.substring(idx + 1);
+  return `${dir}/_rels/${file}.rels`;
 }
 
 /**
@@ -188,10 +198,22 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
 
   // Parse styles (fonts, fills, borders, cellXfs)
   if (xlsx.styles) {
-    readContext.parsedStyles = stylesDesc.parse(xlsx.styles, readContext) as unknown as Record<
+    const parsedStyles = stylesDesc.parse(xlsx.styles, readContext) as unknown as Record<
       string,
       unknown
     >;
+    readContext.parsedStyles = parsedStyles;
+
+    // Expose styles sections onto the returned opts for round-trip. compiler.ts
+    // re-emits dxfs from options; colors/tableStyles/cellStyles/styleExtensions
+    // are surfaced here even though the compiler currently only consumes dxfs,
+    // so callers retain the parsed data and the fields stay documented.
+    if (parsedStyles.dxfs) opts.dxfs = parsedStyles.dxfs;
+    if (parsedStyles.colors) opts.colors = parsedStyles.colors;
+    if (parsedStyles.customCellStyles) opts.cellStyles = parsedStyles.customCellStyles;
+    if (parsedStyles.styleExtensions) opts.styleExtensions = parsedStyles.styleExtensions;
+    const tableStylesInfo = parsedStyles.tableStylesInfo as { tableStyles?: unknown[] } | undefined;
+    if (tableStylesInfo?.tableStyles) opts.tableStyles = tableStylesInfo.tableStyles;
   }
 
   // Parse workbook via descriptor for richer data
@@ -374,6 +396,27 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
       const elEl = xlsx.doc.get(elPath);
       if (!elEl) continue;
       const elData = externalLinkDesc.parse(elEl, readContext) as Record<string, unknown>;
+
+      // Resolve the external book target from the sibling rels file
+      // (xl/externalLinks/_rels/externalLinkN.xml.rels), which compiler.ts writes.
+      const elData2 = elData as { externalBook?: { target?: string } };
+      if (elData2.externalBook) {
+        const relsPath = externalLinkRelsPath(elPath);
+        const relsEl = xlsx.doc.get(relsPath);
+        if (relsEl) {
+          for (const child of relsEl.elements ?? []) {
+            if (child.name !== "Relationship") continue;
+            const type = attr(child, "Type") ?? "";
+            if (!type.includes("/externalLinkPath")) continue;
+            const target = attr(child, "Target");
+            if (target) {
+              elData2.externalBook.target = target;
+              break;
+            }
+          }
+        }
+      }
+
       externalLinks.push(elData);
     }
     if (externalLinks.length > 0) opts.externalLinks = externalLinks;

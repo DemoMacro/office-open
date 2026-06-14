@@ -1726,7 +1726,20 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           if (ref) cell.reference = ref;
           const type = attr(cellEl, "t");
           const styleIdx = attrNum(cellEl, "s");
-          if (styleIdx !== undefined) cell.styleIndex = styleIdx;
+          if (styleIdx !== undefined) {
+            // Resolve to a concrete StyleOptions so re-stringify registers it in
+            // the fresh Styles table (whose indices may differ). Keep styleIndex
+            // as a fallback when the styles table cannot be resolved.
+            const resolved =
+              ctx && "resolveStyle" in ctx
+                ? (ctx as XlsxReadContext).resolveStyle(styleIdx)
+                : undefined;
+            if (resolved) {
+              cell.style = resolved;
+            } else {
+              cell.styleIndex = styleIdx;
+            }
+          }
 
           // Cell value
           const vEl = findChild(cellEl, "v");
