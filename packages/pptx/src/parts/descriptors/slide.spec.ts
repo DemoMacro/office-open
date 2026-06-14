@@ -115,8 +115,20 @@ describe("slideDesc round-trip", () => {
     expect(result.transition!.advanceOnClick).toBe(true);
   });
 
-  // Note: headerFooter, customerData, controls are lossy in round-trip.
-  // - headerFooter: stringify does not emit p:hf element
+  it("round-trips headerFooter (p:hf)", () => {
+    const opts: SlideDescriptorOptions = {
+      headerFooter: { slideNumber: true, footer: true, header: true, dateTime: true },
+    };
+    const result = roundTrip(opts);
+
+    expect(result.headerFooter).toBeDefined();
+    expect(result.headerFooter!.slideNumber).toBe(true);
+    expect(result.headerFooter!.footer).toBe(true);
+    expect(result.headerFooter!.header).toBe(true);
+    expect(result.headerFooter!.dateTime).toBe(true);
+  });
+
+  // Note: customerData/controls are lossy in round-trip.
   // - customerData/controls: stringify places them inside p:cSld,
   //   but parse searches from p:sld root via findChild (direct children only)
 });

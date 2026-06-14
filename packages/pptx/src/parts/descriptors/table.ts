@@ -10,7 +10,7 @@ import { parse, stringify } from "@office-open/core/descriptor";
 import type { ReadContext } from "@office-open/core/descriptor";
 import { fillDesc } from "@office-open/core/drawingml";
 import type { FillOptions } from "@office-open/core/drawingml";
-import { attr, attrBool, attrNum, children, findChild } from "@office-open/xml";
+import { attr, attrBool, attrNum, children, findChild, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { escapeXml } from "@office-open/xml";
 
@@ -173,6 +173,12 @@ export const tableDesc: CustomDescriptor<TableDescriptorOptions> = {
       if (attrBool(tblPr, "firstCol")) result.firstCol = true;
       if (attrBool(tblPr, "lastCol")) result.lastCol = true;
       if (attrBool(tblPr, "bandCol")) result.bandCol = true;
+
+      const tableStyleIdEl = findChild(tblPr, "a:tableStyleId");
+      if (tableStyleIdEl) {
+        const styleId = textOf(tableStyleIdEl);
+        if (styleId) result.tableStyleId = styleId;
+      }
 
       // Table-level borders
       const borders: Record<string, unknown> = {};

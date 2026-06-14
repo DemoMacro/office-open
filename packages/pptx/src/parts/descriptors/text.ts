@@ -465,8 +465,13 @@ export const paragraphDesc: CustomDescriptor<ParagraphDescriptorOptions> = {
       }
     }
 
-    if (runs.length === 1 && !result.properties) {
-      // Single run with no paragraph properties -> use text shorthand
+    if (
+      runs.length === 1 &&
+      !result.properties &&
+      runs[0].text !== undefined &&
+      Object.keys(runs[0]).length === 1
+    ) {
+      // Single run with no paragraph properties and only text -> use text shorthand
       result.text = runs[0].text;
     } else if (runs.length > 0) {
       result.children = runs;

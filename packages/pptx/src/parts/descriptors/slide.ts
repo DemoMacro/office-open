@@ -142,6 +142,17 @@ export const slideDesc: CustomDescriptor<SlideDescriptorOptions> = {
       parts.push(`<p:controls>${ctrlItems}</p:controls>`);
     }
 
+    // Header/Footer (p:hf)
+    if (opts.headerFooter) {
+      const hf = opts.headerFooter;
+      const hfChildren: string[] = [];
+      if (hf.slideNumber) hfChildren.push("<p:sldNum/>");
+      if (hf.dateTime) hfChildren.push("<p:dt/>");
+      if (hf.footer) hfChildren.push("<p:ftr/>");
+      if (hf.header) hfChildren.push("<p:hdr/>");
+      if (hfChildren.length > 0) parts.push(`<p:hf>${hfChildren.join("")}</p:hf>`);
+    }
+
     parts.push("</p:cSld>");
 
     // p:clrMapOvr

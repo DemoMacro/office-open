@@ -303,4 +303,16 @@ describe("paragraphDesc round-trip", () => {
     const children = result.children!;
     expect(children[0].text).toBe("Right-aligned run");
   });
+
+  it("round-trips single run with run properties", () => {
+    // Single run with formatting must not collapse to text shorthand
+    // (which would drop bold/italic/etc.)
+    const result = roundTrip({
+      children: [{ text: "Bold", bold: true }],
+    });
+    const children = result.children!;
+    expect(children).toHaveLength(1);
+    expect(children[0].text).toBe("Bold");
+    expect(children[0].bold).toBe(true);
+  });
 });

@@ -95,4 +95,21 @@ describe("backgroundDesc round-trip", () => {
 
     expect(fill.type).toBe("pattern");
   });
+
+  it("round-trips effects (a:effectLst outerShadow)", () => {
+    const opts: BackgroundDescriptorOptions = {
+      fill: { type: "solid", color: "FF0000" },
+      effects: {
+        outerShadow: { color: "000000", blur: 50000, distance: 30000, direction: 2700000 },
+      },
+    };
+    const result = roundTrip(opts);
+    const effects = result.effects!;
+    const shadow = effects.outerShadow!;
+
+    expect(shadow.color).toBe("000000");
+    expect(shadow.blur).toBe(50000);
+    expect(shadow.distance).toBe(30000);
+    expect(shadow.direction).toBe(2700000);
+  });
 });

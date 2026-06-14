@@ -221,4 +221,14 @@ describe("tableDesc round-trip", () => {
     expect(margins.left).toBe(3000);
     expect(margins.right).toBe(4000);
   });
+
+  it("round-trips tableStyleId (a:tableStyleId)", () => {
+    const opts: TableDescriptorOptions = {
+      rows: [{ cells: [{ text: "A1" }] }],
+      tableStyleId: "{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}",
+    };
+    const result = roundTrip(opts);
+
+    expect(result.tableStyleId).toBe("{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}");
+  });
 });

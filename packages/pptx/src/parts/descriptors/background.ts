@@ -14,6 +14,8 @@ import type { EffectsOptions } from "@shared/drawingml/effects";
 import { buildFill } from "@shared/drawingml/fill";
 import type { FillOptions } from "@shared/drawingml/fill";
 
+import { readEffectList } from "./shape";
+
 // ── Types ──
 
 export interface BackgroundDescriptorOptions {
@@ -85,6 +87,13 @@ function parseBackground(el: XmlElement, ctx: ReadContext): Partial<BackgroundDe
     const fillResult = coreParse(fillDesc, bgPr, ctx);
     if (fillResult && Object.keys(fillResult).length > 0) {
       result.fill = fillResult;
+    }
+
+    // Effects (a:effectLst)
+    const effectLst = findChild(bgPr, "a:effectLst");
+    if (effectLst) {
+      const effects = readEffectList(effectLst);
+      if (effects) result.effects = effects;
     }
   }
 

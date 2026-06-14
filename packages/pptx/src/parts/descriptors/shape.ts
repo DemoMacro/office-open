@@ -996,6 +996,102 @@ function extractColorFromElement(el: XmlElement): { color?: string; alpha?: numb
   return undefined;
 }
 
+/** Parse 2D effects (a:effectLst) into PPTX EffectsOptions fields. */
+export function readEffectList(effectLst: XmlElement): Record<string, unknown> | undefined {
+  const opts: Record<string, unknown> = {};
+  for (const child of effectLst.elements ?? []) {
+    if (!child.name) continue;
+    switch (child.name) {
+      case "a:outerShdw": {
+        const shadow: Record<string, unknown> = {};
+        const blurRad = attrNum(child, "blurRad");
+        if (blurRad !== undefined) shadow.blur = blurRad;
+        const dist = attrNum(child, "dist");
+        if (dist !== undefined) shadow.distance = dist;
+        const dir = attrNum(child, "dir");
+        if (dir !== undefined) shadow.direction = dir;
+        const color = extractColorFromElement(child);
+        if (color) {
+          if (color.color) shadow.color = color.color;
+          if (color.alpha !== undefined) shadow.alpha = color.alpha;
+        }
+        opts.outerShadow = shadow;
+        break;
+      }
+      case "a:innerShdw": {
+        const shadow: Record<string, unknown> = {};
+        const blurRad = attrNum(child, "blurRad");
+        if (blurRad !== undefined) shadow.blur = blurRad;
+        const dist = attrNum(child, "dist");
+        if (dist !== undefined) shadow.distance = dist;
+        const dir = attrNum(child, "dir");
+        if (dir !== undefined) shadow.direction = dir;
+        const color = extractColorFromElement(child);
+        if (color) {
+          if (color.color) shadow.color = color.color;
+          if (color.alpha !== undefined) shadow.alpha = color.alpha;
+        }
+        opts.innerShadow = shadow;
+        break;
+      }
+      case "a:glow": {
+        const glow: Record<string, unknown> = {};
+        const rad = attrNum(child, "rad");
+        if (rad !== undefined) glow.radius = rad;
+        const color = extractColorFromElement(child);
+        if (color) {
+          if (color.color) glow.color = color.color;
+          if (color.alpha !== undefined) glow.alpha = color.alpha;
+        }
+        opts.glow = glow;
+        break;
+      }
+      case "a:reflection": {
+        // CT_ReflectionEffect has 14 attrs; toReflectionCore writes them all
+        // (with unit scaling). Invert each scale on read.
+        const reflection: Partial<ReflectionOptions> = {};
+        const blurRad = attrNum(child, "blurRad");
+        if (blurRad !== undefined) reflection.blurRadius = blurRad;
+        const dist = attrNum(child, "dist");
+        if (dist !== undefined) reflection.distance = dist;
+        const dir = attrNum(child, "dir");
+        if (dir !== undefined) reflection.direction = dir;
+        const stA = attrNum(child, "stA");
+        if (stA !== undefined) reflection.startAlpha = stA / 1000;
+        const stPos = attrNum(child, "stPos");
+        if (stPos !== undefined) reflection.startPosition = stPos / 1000;
+        const endA = attrNum(child, "endA");
+        if (endA !== undefined) reflection.endAlpha = endA / 1000;
+        const endPos = attrNum(child, "endPos");
+        if (endPos !== undefined) reflection.endPosition = endPos / 1000;
+        const fadeDir = attrNum(child, "fadeDir");
+        if (fadeDir !== undefined) reflection.fadeDirection = fadeDir / 60000;
+        const sx = attrNum(child, "sx");
+        if (sx !== undefined) reflection.scaleX = sx / 1000;
+        const sy = attrNum(child, "sy");
+        if (sy !== undefined) reflection.scaleY = sy / 1000;
+        const kx = attrNum(child, "kx");
+        if (kx !== undefined) reflection.skewX = kx / 60000;
+        const ky = attrNum(child, "ky");
+        if (ky !== undefined) reflection.skewY = ky / 60000;
+        const algn = attr(child, "algn");
+        if (algn)
+          reflection.alignment = xsdRectAlignment.from(algn) as ReflectionOptions["alignment"];
+        const rotWithShape = attr(child, "rotWithShape");
+        if (rotWithShape !== undefined) reflection.rotateWithShape = rotWithShape !== "0";
+        opts.reflection = reflection;
+        break;
+      }
+      case "a:softEdge": {
+        const rad = attrNum(child, "rad");
+        if (rad !== undefined) opts.softEdge = { radius: rad };
+        break;
+      }
+    }
+  }
+  return Object.keys(opts).length > 0 ? opts : undefined;
+}
+
 /** Parse effects from p:spPr (2D effects, 3D scene, 3D shape props). */
 function readEffectsFromSpPr(spPr: XmlElement): Record<string, unknown> | undefined {
   const opts: Record<string, unknown> = {};
@@ -1003,96 +1099,8 @@ function readEffectsFromSpPr(spPr: XmlElement): Record<string, unknown> | undefi
   // 2D effects from a:effectLst
   const effectLst = findChild(spPr, "a:effectLst");
   if (effectLst) {
-    for (const child of effectLst.elements ?? []) {
-      if (!child.name) continue;
-      switch (child.name) {
-        case "a:outerShdw": {
-          const shadow: Record<string, unknown> = {};
-          const blurRad = attrNum(child, "blurRad");
-          if (blurRad !== undefined) shadow.blur = blurRad;
-          const dist = attrNum(child, "dist");
-          if (dist !== undefined) shadow.distance = dist;
-          const dir = attrNum(child, "dir");
-          if (dir !== undefined) shadow.direction = dir;
-          const color = extractColorFromElement(child);
-          if (color) {
-            if (color.color) shadow.color = color.color;
-            if (color.alpha !== undefined) shadow.alpha = color.alpha;
-          }
-          opts.outerShadow = shadow;
-          break;
-        }
-        case "a:innerShdw": {
-          const shadow: Record<string, unknown> = {};
-          const blurRad = attrNum(child, "blurRad");
-          if (blurRad !== undefined) shadow.blur = blurRad;
-          const dist = attrNum(child, "dist");
-          if (dist !== undefined) shadow.distance = dist;
-          const dir = attrNum(child, "dir");
-          if (dir !== undefined) shadow.direction = dir;
-          const color = extractColorFromElement(child);
-          if (color) {
-            if (color.color) shadow.color = color.color;
-            if (color.alpha !== undefined) shadow.alpha = color.alpha;
-          }
-          opts.innerShadow = shadow;
-          break;
-        }
-        case "a:glow": {
-          const glow: Record<string, unknown> = {};
-          const rad = attrNum(child, "rad");
-          if (rad !== undefined) glow.radius = rad;
-          const color = extractColorFromElement(child);
-          if (color) {
-            if (color.color) glow.color = color.color;
-            if (color.alpha !== undefined) glow.alpha = color.alpha;
-          }
-          opts.glow = glow;
-          break;
-        }
-        case "a:reflection": {
-          // CT_ReflectionEffect has 14 attrs; toReflectionCore writes them all
-          // (with unit scaling). Invert each scale on read.
-          const reflection: Partial<ReflectionOptions> = {};
-          const blurRad = attrNum(child, "blurRad");
-          if (blurRad !== undefined) reflection.blurRadius = blurRad;
-          const dist = attrNum(child, "dist");
-          if (dist !== undefined) reflection.distance = dist;
-          const dir = attrNum(child, "dir");
-          if (dir !== undefined) reflection.direction = dir;
-          const stA = attrNum(child, "stA");
-          if (stA !== undefined) reflection.startAlpha = stA / 1000;
-          const stPos = attrNum(child, "stPos");
-          if (stPos !== undefined) reflection.startPosition = stPos / 1000;
-          const endA = attrNum(child, "endA");
-          if (endA !== undefined) reflection.endAlpha = endA / 1000;
-          const endPos = attrNum(child, "endPos");
-          if (endPos !== undefined) reflection.endPosition = endPos / 1000;
-          const fadeDir = attrNum(child, "fadeDir");
-          if (fadeDir !== undefined) reflection.fadeDirection = fadeDir / 60000;
-          const sx = attrNum(child, "sx");
-          if (sx !== undefined) reflection.scaleX = sx / 1000;
-          const sy = attrNum(child, "sy");
-          if (sy !== undefined) reflection.scaleY = sy / 1000;
-          const kx = attrNum(child, "kx");
-          if (kx !== undefined) reflection.skewX = kx / 60000;
-          const ky = attrNum(child, "ky");
-          if (ky !== undefined) reflection.skewY = ky / 60000;
-          const algn = attr(child, "algn");
-          if (algn)
-            reflection.alignment = xsdRectAlignment.from(algn) as ReflectionOptions["alignment"];
-          const rotWithShape = attr(child, "rotWithShape");
-          if (rotWithShape !== undefined) reflection.rotateWithShape = rotWithShape !== "0";
-          opts.reflection = reflection;
-          break;
-        }
-        case "a:softEdge": {
-          const rad = attrNum(child, "rad");
-          if (rad !== undefined) opts.softEdge = { radius: rad };
-          break;
-        }
-      }
-    }
+    const effectOpts = readEffectList(effectLst);
+    if (effectOpts) Object.assign(opts, effectOpts);
   }
 
   // 3D scene (rotation3D, lighting) from a:scene3d
