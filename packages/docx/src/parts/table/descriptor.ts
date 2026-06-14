@@ -7,6 +7,7 @@
  * @module
  */
 
+import { ThemeColor } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrBool, attrNum, children, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
@@ -15,8 +16,11 @@ import type { TableGridChangeOptions } from "@parts/table/grid";
 import type { TableOptions } from "@parts/table/table";
 import type { TableCellOptions } from "@parts/table/table-cell/table-cell";
 import { VerticalMergeType } from "@parts/table/table-cell/table-cell-components";
+import type { TableBordersOptions } from "@parts/table/table-properties/table-borders";
 import type { TableLookOptions } from "@parts/table/table-properties/table-look";
 import type { TableRowOptions } from "@parts/table/table-row/table-row";
+import { BorderStyle } from "@shared/border";
+import type { BorderOptions } from "@shared/border";
 import type { SectionChild } from "@shared/section";
 
 import type { BodyContext, DocxReadContext } from "../../context";
@@ -27,6 +31,10 @@ import {
   stringifyTableRowProperties,
   type TablePropertiesOptions,
 } from "./stringify";
+
+// Valid border @w:val (ST_Border / BorderStyle) and @w:themeColor (ST_ThemeColor) values.
+const BORDER_STYLES = Object.values(BorderStyle) as readonly string[];
+const THEME_COLORS = Object.values(ThemeColor) as readonly string[];
 
 // ── Table grid ──
 
@@ -303,21 +311,43 @@ function parseTablePropertiesEl(el: Element): Record<string, unknown> {
 
   const tblBorders = findChild(el, "w:tblBorders");
   if (tblBorders) {
-    const borders: Record<string, unknown> = {};
-    for (const side of ["top", "bottom", "left", "right", "insideH", "insideV"] as const) {
-      const sideEl = findChild(tblBorders, `w:${side}`);
-      if (sideEl) {
-        const b: Record<string, unknown> = {};
-        const val = attr(sideEl, "w:val");
-        if (val) b.style = val;
-        const color = attr(sideEl, "w:color");
-        if (color) b.color = color;
-        const sz = attrNum(sideEl, "w:sz");
-        if (sz !== undefined) b.size = sz;
-        const space = attrNum(sideEl, "w:space");
-        if (space !== undefined) b.space = space;
-        borders[side] = b;
+    // XML side names → TableBordersOptions keys (insideH/insideV map to
+    // insideHorizontal/insideVertical); all 6 sides are CT_TblBorders-optional.
+    const SIDE_KEYS: ReadonlyArray<[string, keyof TableBordersOptions]> = [
+      ["top", "top"],
+      ["left", "left"],
+      ["bottom", "bottom"],
+      ["right", "right"],
+      ["insideH", "insideHorizontal"],
+      ["insideV", "insideVertical"],
+    ];
+    const borders: Partial<TableBordersOptions> = {};
+    for (const [xmlSide, key] of SIDE_KEYS) {
+      const sideEl = findChild(tblBorders, `w:${xmlSide}`);
+      if (!sideEl) continue;
+      // CT_Border requires w:val (style); skip malformed sides
+      const style = attr(sideEl, "w:val");
+      if (!style || !BORDER_STYLES.includes(style)) continue;
+      const sideOpts: BorderOptions = { style: style as BorderOptions["style"] };
+      const color = attr(sideEl, "w:color");
+      if (color) sideOpts.color = color;
+      const size = attrNum(sideEl, "w:sz");
+      if (size !== undefined) sideOpts.size = size;
+      const space = attrNum(sideEl, "w:space");
+      if (space !== undefined) sideOpts.space = space;
+      const themeColor = attr(sideEl, "w:themeColor");
+      if (themeColor && THEME_COLORS.includes(themeColor)) {
+        sideOpts.themeColor = themeColor as BorderOptions["themeColor"];
       }
+      const themeTint = attr(sideEl, "w:themeTint");
+      if (themeTint) sideOpts.themeTint = themeTint;
+      const themeShade = attr(sideEl, "w:themeShade");
+      if (themeShade) sideOpts.themeShade = themeShade;
+      const shadow = attrBool(sideEl, "w:shadow");
+      if (shadow !== undefined) sideOpts.shadow = shadow;
+      const frame = attrBool(sideEl, "w:frame");
+      if (frame !== undefined) sideOpts.frame = frame;
+      borders[key] = sideOpts;
     }
     if (Object.keys(borders).length > 0) opts.borders = borders;
   }

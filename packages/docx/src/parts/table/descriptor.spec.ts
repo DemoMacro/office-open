@@ -80,6 +80,47 @@ describe("tableDesc round-trip", () => {
     expect(result.borders!.top!.size).toBe(4);
   });
 
+  it("does not inflate unspecified border sides", () => {
+    // CT_TblBorders sides are all optional — setting only top must not invent
+    // the other five sides (faithful round-trip: no inflation).
+    const result = roundTrip({
+      borders: { top: { style: "single" } },
+      rows: [{ cells: [{ children: [] }] }],
+    });
+    expect(result.borders!.top).toBeDefined();
+    expect(result.borders!.bottom).toBeUndefined();
+    expect(result.borders!.left).toBeUndefined();
+    expect(result.borders!.insideHorizontal).toBeUndefined();
+    expect(result.borders!.insideVertical).toBeUndefined();
+  });
+
+  it("round-trips inside borders", () => {
+    // insideH/insideV XML names must map to insideHorizontal/insideVertical keys.
+    const result = roundTrip({
+      borders: {
+        insideHorizontal: { style: "single", color: "0000FF" },
+        insideVertical: { style: "single", color: "00FF00" },
+      },
+      rows: [
+        { cells: [{ children: [] }, { children: [] }] },
+        { cells: [{ children: [] }, { children: [] }] },
+      ],
+    });
+    expect(result.borders!.insideHorizontal).toBeDefined();
+    expect(result.borders!.insideHorizontal!.color).toBe("0000FF");
+    expect(result.borders!.insideVertical).toBeDefined();
+    expect(result.borders!.insideVertical!.color).toBe("00FF00");
+  });
+
+  it("round-trips border themeColor and shadow", () => {
+    const result = roundTrip({
+      borders: { top: { style: "single", themeColor: "text1", shadow: true } },
+      rows: [{ cells: [{ children: [] }] }],
+    });
+    expect(result.borders!.top!.themeColor).toBe("text1");
+    expect(result.borders!.top!.shadow).toBe(true);
+  });
+
   it("round-trips table layout", () => {
     const result = roundTrip({
       layout: "fixed",

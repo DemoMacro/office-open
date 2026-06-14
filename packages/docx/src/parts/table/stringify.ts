@@ -32,8 +32,6 @@ import type {
 } from "@parts/table/table-row/table-row-properties";
 import type { TableWidthProperties } from "@parts/table/table-width";
 import { WidthType } from "@parts/table/table-width";
-import type { BorderOptions } from "@shared/border";
-import { BorderStyle } from "@shared/border";
 import type { ShadingAttributesProperties } from "@shared/shading";
 import type { CellMergeAttributes } from "@shared/track-revision";
 import type { ChangedAttributesProperties } from "@shared/track-revision/track-revision";
@@ -79,21 +77,16 @@ function cellMarginStr(tag: string, opts: TableCellMarginOptions): string | unde
 
 // ── Table borders string ──
 
-const DEFAULT_BORDER: BorderOptions = {
-  color: "auto",
-  size: 4,
-  style: BorderStyle.SINGLE,
-};
-
-function tableBordersStr(opts: TableBordersOptions): string {
+// CT_TblBorders — all 6 sides are optional (minOccurs=0); emit only those set.
+function tableBordersStr(opts: TableBordersOptions): string | undefined {
   const parts: string[] = [];
-  parts.push(borderStr("w:top", opts.top ?? DEFAULT_BORDER));
-  parts.push(borderStr("w:left", opts.left ?? DEFAULT_BORDER));
-  parts.push(borderStr("w:bottom", opts.bottom ?? DEFAULT_BORDER));
-  parts.push(borderStr("w:right", opts.right ?? DEFAULT_BORDER));
-  parts.push(borderStr("w:insideH", opts.insideHorizontal ?? DEFAULT_BORDER));
-  parts.push(borderStr("w:insideV", opts.insideVertical ?? DEFAULT_BORDER));
-  return `<w:tblBorders>${parts.join("")}</w:tblBorders>`;
+  if (opts.top) parts.push(borderStr("w:top", opts.top));
+  if (opts.left) parts.push(borderStr("w:left", opts.left));
+  if (opts.bottom) parts.push(borderStr("w:bottom", opts.bottom));
+  if (opts.right) parts.push(borderStr("w:right", opts.right));
+  if (opts.insideHorizontal) parts.push(borderStr("w:insideH", opts.insideHorizontal));
+  if (opts.insideVertical) parts.push(borderStr("w:insideV", opts.insideVertical));
+  return parts.length > 0 ? `<w:tblBorders>${parts.join("")}</w:tblBorders>` : undefined;
 }
 
 // ── Cell borders string ──
@@ -265,7 +258,8 @@ function stringifyTablePropertiesInner(options: TablePropertiesOptions): string 
   }
 
   if (options.borders) {
-    parts.push(tableBordersStr(options.borders));
+    const bs = tableBordersStr(options.borders);
+    if (bs) parts.push(bs);
   }
 
   if (options.shading) {
@@ -591,7 +585,8 @@ export function stringifyTablePropertyExceptions(options: TablePropertyExOptions
   }
 
   if (options.borders) {
-    parts.push(tableBordersStr(options.borders));
+    const bs = tableBordersStr(options.borders);
+    if (bs) parts.push(bs);
   }
 
   if (options.shading) {
