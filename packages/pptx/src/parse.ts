@@ -2,6 +2,7 @@ import type { ParsedArchive } from "@office-open/core";
 import { parseArchive, parseCorePropsElement, convertEmuToPixels } from "@office-open/core";
 import type { DataType } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
+import type { ReadContext } from "@office-open/core/descriptor";
 import { themeDesc } from "@office-open/core/theme";
 import type { Element } from "@office-open/xml";
 import { attr, attrNum, findChild } from "@office-open/xml";
@@ -336,7 +337,7 @@ export function parsePresentation(data: DataType): PresentationOptions {
   if (pptx.presProps) {
     const presPropsEl = pptx.doc.get(pptx.presProps);
     if (presPropsEl) {
-      const presPropsOpts = presPropsDesc.parse(presPropsEl, {} as any);
+      const presPropsOpts = presPropsDesc.parse(presPropsEl, {} as ReadContext);
       if (presPropsOpts.show) opts.show = presPropsOpts.show;
     }
   }
@@ -345,7 +346,7 @@ export function parsePresentation(data: DataType): PresentationOptions {
   if (pptx.viewProps) {
     const viewPropsEl = pptx.doc.get(pptx.viewProps);
     if (viewPropsEl) {
-      const viewOpts = viewPropsDesc.parse(viewPropsEl, {} as any);
+      const viewOpts = viewPropsDesc.parse(viewPropsEl, {} as ReadContext);
       if (viewOpts.lastView || viewOpts.showComments !== undefined || viewOpts.gridSpacing) {
         opts.view = viewOpts;
       }
@@ -449,7 +450,7 @@ export function parsePresentation(data: DataType): PresentationOptions {
   if (pptx.partRefs.commentAuthors) {
     const authorsEl = pptx.doc.get(pptx.partRefs.commentAuthors);
     if (authorsEl) {
-      const authors = commentAuthorsDesc.parse(authorsEl, {} as any);
+      const authors = commentAuthorsDesc.parse(authorsEl, masterReadCtx);
       for (const a of authors) {
         commentAuthors.set(a.id, { name: a.name, initials: a.initials });
       }
@@ -492,7 +493,7 @@ export function parsePresentation(data: DataType): PresentationOptions {
       const commentsEl = pptx.doc.get(relPath);
       if (!commentsEl) continue;
 
-      const parsedComments = slideCommentsDesc.parse(commentsEl, {} as any);
+      const parsedComments = slideCommentsDesc.parse(commentsEl, readCtx);
       if (parsedComments.length > 0) {
         const comments: Record<string, unknown>[] = [];
         for (const cm of parsedComments) {

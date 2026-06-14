@@ -97,7 +97,7 @@ export function createReplacer(config: ReplacerConfig) {
               if (
                 e.type !== "element" ||
                 e.name !== ns.run ||
-                e.elements?.some((c: any) => c.type === "element" && c.name === ns.runProperties)
+                e.elements?.some((c) => c.type === "element" && c.name === ns.runProperties)
               ) {
                 return e;
               }

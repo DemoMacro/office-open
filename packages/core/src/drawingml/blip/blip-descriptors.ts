@@ -8,7 +8,7 @@ import { escapeXml } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { findChild } from "@office-open/xml";
 
-import type { CustomDescriptor } from "../../descriptor";
+import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
 import { stringify, parse } from "../../descriptor";
 import { xsdRectAlignment } from "../../util/mappings";
 import { solidFillDesc } from "../color/color-descriptors";
@@ -110,7 +110,7 @@ export const stretchDesc: CustomDescriptor<SourceRectangleOptions> = {
 
 // ── Blip effects helpers ──
 
-function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: any): string {
+function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): string {
   const parts: string[] = [];
 
   if (opts.grayscale) {
@@ -210,7 +210,7 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: any): string {
   return parts.join("");
 }
 
-function readBlipEffects(el: XmlElement, ctx: any): BlipEffectsOptions | undefined {
+function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions | undefined {
   const result: Partial<BlipEffectsOptions> = {};
 
   if (findChild(el, "a:grayscl")) result.grayscale = true;

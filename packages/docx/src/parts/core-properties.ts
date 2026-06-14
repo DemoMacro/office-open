@@ -186,7 +186,7 @@ export const corePropertiesDesc: CustomDescriptor<CorePropertiesInput> = {
   },
 
   parse(el, _ctx) {
-    const result: Record<string, unknown> = {};
+    const result: CorePropertiesInput = {};
     for (const child of el.elements ?? []) {
       if (typeof child.name !== "string") continue;
       const text = child.elements?.[0]?.text;
@@ -215,6 +215,6 @@ export const corePropertiesDesc: CustomDescriptor<CorePropertiesInput> = {
           break;
       }
     }
-    return result as Record<string, unknown>;
+    return result;
   },
 };

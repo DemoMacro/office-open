@@ -35,7 +35,7 @@ export const groupShapeDesc: CustomDescriptor<GroupShapeDescriptorOptions> = {
   kind: "custom",
 
   stringify(opts, ctx) {
-    const descCtx = ctx as unknown as PptxWriteContext;
+    const descCtx = ctx as PptxWriteContext;
     const id = _nextGroupId++;
     const name = "Group";
 

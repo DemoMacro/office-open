@@ -358,7 +358,7 @@ export const pictureDesc: CustomDescriptor<PictureDescriptorOptions> = {
   kind: "custom",
 
   stringify(opts, ctx) {
-    const pptx = ctx as unknown as PptxWriteContext;
+    const pptx = ctx as PptxWriteContext;
     const id = opts.id ?? _nextPictureId++;
     const name = opts.name ?? `Picture ${id}`;
     const fileName = `${name.replace(/\s+/g, "_")}.${opts.type}`;
@@ -512,7 +512,7 @@ function toEmu(val: number | string | undefined): number | undefined {
 }
 
 function stringifySpPr(opts: ShapeDescriptorOptions, ctx: WriteContext): string {
-  const pptx = ctx as unknown as PptxWriteContext;
+  const pptx = ctx as PptxWriteContext;
   const parts: string[] = [];
 
   // Transform2D
@@ -545,7 +545,7 @@ function stringifySpPr(opts: ShapeDescriptorOptions, ctx: WriteContext): string 
   if (opts.fill) {
     const fillType = typeof opts.fill === "string" ? "solid" : opts.fill.type;
     if (fillType === "blip") {
-      const blipFill = opts.fill as any;
+      const blipFill = opts.fill as Extract<CoreFillOptions, { type: "blip" }>;
       if (blipFill.data) {
         const raw =
           blipFill.data instanceof Uint8Array

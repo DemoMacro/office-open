@@ -88,7 +88,7 @@ export const tableDesc: CustomDescriptor<TableDescriptorOptions> = {
   kind: "custom",
 
   stringify(opts, ctx) {
-    const pptxCtx = ctx as unknown as PptxWriteContext;
+    const pptxCtx = ctx as PptxWriteContext;
     const id = opts.id ?? _nextTableId++;
     const name = opts.name ?? `Table ${id}`;
 

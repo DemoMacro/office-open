@@ -72,9 +72,9 @@ export const presetGeometryDesc: CustomDescriptor<PresetGeometryOptions> = {
     }
     const avLst = findChild(el, "a:avLst");
     if (avLst) {
-      const guides = parse(adjustmentValuesDesc, avLst, ctx) as unknown;
-      if (Array.isArray(guides) && guides.length > 0) {
-        result.adjustmentValues = guides as GeometryGuide[];
+      const guides = parse(adjustmentValuesDesc, avLst, ctx);
+      if (guides.length > 0) {
+        result.adjustmentValues = guides;
       }
     }
     return result as PresetGeometryOptions;

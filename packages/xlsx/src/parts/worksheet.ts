@@ -14,6 +14,7 @@ import { attrs, attrsRaw, escapeXml, selfCloseElement } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { findChild, attr, attrNum, textOf } from "@office-open/xml";
 
+import type { XlsxReadContext } from "../context";
 import type { PivotTableOptions } from "./pivot";
 import { buildRstXml } from "./shared-strings";
 import type { SharedStrings } from "./shared-strings";
@@ -1263,7 +1264,8 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     let pageSetUpPrCache: Record<string, unknown> | undefined;
 
     // Resolve shared strings from context (XlsxReadContext)
-    const strings: string[] = ctx && "sharedStrings" in ctx ? (ctx as any).sharedStrings : [];
+    const strings: string[] =
+      ctx && "sharedStrings" in ctx ? (ctx as XlsxReadContext).sharedStrings : [];
 
     // Sheet properties
     const sheetPrEl = findChild(el, "sheetPr");

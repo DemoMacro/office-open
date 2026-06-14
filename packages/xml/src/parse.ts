@@ -287,7 +287,7 @@ function addField(parent: Element, type: string, value: string) {
     const last = parent.elements[parent.elements.length - 1];
     if (last && last.type === type) {
       const key = type as "text" | "cdata";
-      last[key] = (last[key] as unknown as string) + value;
+      last[key] = (last[key] as string) + value;
       return;
     }
   }

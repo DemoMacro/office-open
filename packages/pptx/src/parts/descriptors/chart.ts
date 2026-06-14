@@ -43,7 +43,7 @@ export const chartDesc: CustomDescriptor<ChartDescriptorOptions> = {
   kind: "custom",
 
   stringify(opts, ctx) {
-    const pptxCtx = ctx as unknown as PptxWriteContext;
+    const pptxCtx = ctx as PptxWriteContext;
     const id = opts.id ?? _nextChartId++;
     const name = opts.name ?? `Chart ${id}`;
     const chartKey = opts.chartKey ?? pptxCtx.nextChartKey();

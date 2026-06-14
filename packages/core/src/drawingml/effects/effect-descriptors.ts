@@ -8,7 +8,7 @@ import { escapeXml } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { findChild } from "@office-open/xml";
 
-import type { CustomDescriptor } from "../../descriptor";
+import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
 import { stringify, parse } from "../../descriptor";
 import { rgbColorDesc, schemeColorDesc } from "../color/color-descriptors";
 import type { SolidFillOptions } from "../color/solid-fill";
@@ -22,7 +22,10 @@ import type { ReflectionEffectOptions } from "./reflection";
 
 // ── Helper: stringify a color into an effect element ──
 
-function stringifyEffectColor(color: SolidFillOptions | undefined, ctx: any): string | undefined {
+function stringifyEffectColor(
+  color: SolidFillOptions | undefined,
+  ctx: WriteContext,
+): string | undefined {
   if (!color) return undefined;
   // Effect elements expect EG_ColorChoice (direct color), NOT wrapped in solidFill
   const desc = getColorDesc(color);
@@ -49,7 +52,7 @@ function stringifyColorEffect(
   tag: string,
   attrs: Record<string, string | number | undefined>,
   color: SolidFillOptions | undefined,
-  ctx: any,
+  ctx: WriteContext,
 ): string | undefined {
   const attrParts: string[] = [];
   for (const [key, val] of Object.entries(attrs)) {
@@ -64,7 +67,7 @@ function stringifyColorEffect(
   return `<${tag}${attrStr}>${colorXml}</${tag}>`;
 }
 
-function readColorFromElement(el: XmlElement, ctx: any): SolidFillOptions | undefined {
+function readColorFromElement(el: XmlElement, ctx: ReadContext): SolidFillOptions | undefined {
   // Effect elements contain EG_ColorChoice directly (not wrapped in solidFill)
   for (const child of el.elements ?? []) {
     switch (child.name) {

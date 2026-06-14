@@ -151,7 +151,7 @@ export class Numbering {
       overrideLevels?: { num: number; start?: number }[];
     }
   >();
-  private referenceConfigMap = new Map<string, Record<string, any>>();
+  private referenceConfigMap = new Map<string, LevelsOptions[]>();
   private abstractNumUniqueNumericId = uniqueNumericIdCreator();
   private concreteNumUniqueNumericId = uniqueNumericIdCreator(1);
   private _numIdMacAtCleanup?: number;
@@ -249,7 +249,7 @@ export class Numbering {
   }
 
   /** Gets all reference configurations. */
-  public get referenceConfig(): Record<string, any>[] {
+  public get referenceConfig(): LevelsOptions[][] {
     return [...this.referenceConfigMap.values()];
   }
 }
