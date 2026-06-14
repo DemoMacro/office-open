@@ -36,6 +36,7 @@ const buffer = await generateDocument({
                 customXml: {
                   element: "price",
                   uri: "http://example.com/ns",
+                  customXmlPr: { attributes: [{ name: "currency", val: "USD" }] },
                   children: ["99.99"],
                 },
               },
@@ -77,6 +78,73 @@ const buffer = await generateDocument({
               {
                 paragraph: {
                   children: ["Item 2: Widget B - $49.99"],
+                },
+              },
+            ],
+          },
+        },
+
+        { paragraph: { children: [""] } },
+
+        // Cell-level custom XML (CT_CustomXmlCell — wraps a table cell)
+        {
+          paragraph: {
+            children: [{ bold: true, text: "Cell-level custom XML:", size: 14 }],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          table: {
+            columnWidths: [3000, 3000],
+            rows: [
+              {
+                cells: [
+                  { children: [{ paragraph: "Normal cell" }] },
+                  {
+                    customXml: {
+                      element: "taggedCell",
+                      uri: "http://example.com/ns",
+                      customXmlPr: { attributes: [{ name: "locked", val: "true" }] },
+                      children: [{ children: [{ paragraph: "Cell wrapped by custom XML" }] }],
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        },
+
+        { paragraph: { children: [""] } },
+
+        // Row-level custom XML (CT_CustomXmlRow — wraps an entire table row)
+        {
+          paragraph: {
+            children: [{ bold: true, text: "Row-level custom XML:", size: 14 }],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          table: {
+            columnWidths: [3000, 3000],
+            rows: [
+              {
+                cells: [
+                  { children: [{ paragraph: "Header A" }] },
+                  { children: [{ paragraph: "Header B" }] },
+                ],
+              },
+              {
+                customXml: {
+                  element: "taggedRow",
+                  uri: "http://example.com/ns",
+                  children: [
+                    {
+                      cells: [
+                        { children: [{ paragraph: "Row wrapped - A" }] },
+                        { children: [{ paragraph: "Row wrapped - B" }] },
+                      ],
+                    },
+                  ],
                 },
               },
             ],

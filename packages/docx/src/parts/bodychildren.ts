@@ -507,7 +507,7 @@ function parseSdtPr(el: Element): SdtPropertiesOptions {
 }
 
 /** Parse w:customXmlPr element into CustomXmlPrOptions. */
-function parseCustomXmlPr(el: Element): CustomXmlPrOptions {
+export function parseCustomXmlPr(el: Element): CustomXmlPrOptions {
   const opts: Record<string, unknown> = {};
   const placeholder = findChild(el, "w:placeholder");
   if (placeholder) {
@@ -636,26 +636,31 @@ function buildCustomXmlPrXml(pr: CustomXmlPrOptions): string {
   return parts.join("");
 }
 
+/**
+ * Serialize the common customXml shell (element/uri/customXmlPr) wrapping
+ * arbitrary content. Shared by all four customXml levels (block/run/row/cell).
+ */
+export function stringifyCustomXmlShell(
+  opts: { element: string; uri?: string; customXmlPr?: CustomXmlPrOptions },
+  contentXml: string,
+): string {
+  const attrs: string[] = [`w:element="${escapeAttr(opts.element)}"`];
+  if (opts.uri !== undefined) attrs.push(`w:uri="${escapeAttr(opts.uri)}"`);
+  const prXml = opts.customXmlPr ? buildCustomXmlPrXml(opts.customXmlPr) : "";
+  return `<w:customXml ${attrs.join(" ")}>${prXml}${contentXml}</w:customXml>`;
+}
+
 export const customXmlBlockDesc: CustomDescriptor<CustomXmlBlockDescriptorOptions, BodyContext> = {
   kind: "custom",
 
   stringify(opts, ctx) {
-    const attrs: string[] = [`w:element="${escapeAttr(opts.element)}"`];
-    if (opts.uri !== undefined) attrs.push(`w:uri="${escapeAttr(opts.uri)}"`);
-    const parts: string[] = [`<w:customXml ${attrs.join(" ")}>`];
-
-    if (opts.customXmlPr) {
-      parts.push(buildCustomXmlPrXml(opts.customXmlPr));
-    }
-
+    const contentParts: string[] = [];
     if (opts.children) {
       for (const child of opts.children) {
-        parts.push(ctx.stringifyChild(child, ctx));
+        contentParts.push(ctx.stringifyChild(child, ctx));
       }
     }
-
-    parts.push("</w:customXml>");
-    return parts.join("");
+    return stringifyCustomXmlShell(opts, contentParts.join(""));
   },
 
   parse(el, ctx) {

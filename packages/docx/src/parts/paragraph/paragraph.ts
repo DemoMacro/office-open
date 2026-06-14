@@ -6,6 +6,7 @@
  * @module
  */
 
+import type { CustomXmlRunOptions } from "@parts/custom-xml";
 import type { SdtPropertiesOptions } from "@parts/table-of-contents";
 import type { ChangedAttributesProperties } from "@shared/track-revision/track-revision";
 
@@ -137,15 +138,9 @@ export type ParagraphChild =
         children?: (RunOptions | string)[];
       };
     }
-  // Custom XML run
+  // Custom XML run (CT_CustomXmlRun)
   | {
-      customXml: {
-        element: string;
-        uri?: string;
-        customXmlPr?: {
-          placeholder?: string;
-          attrs?: Array<{ name: string; val: string; uri?: string }>;
-        };
+      customXml: CustomXmlRunOptions & {
         children?: (ParagraphChild | string)[];
       };
     }

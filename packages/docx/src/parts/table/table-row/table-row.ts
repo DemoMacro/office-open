@@ -6,6 +6,7 @@
  * @module
  */
 
+import type { CustomXmlCellOptions } from "@parts/custom-xml";
 import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
 import type { SdtPropertiesOptions } from "@parts/table-of-contents";
 
@@ -29,7 +30,7 @@ export interface SdtRowOptions {
 
 export type TableRowOptions = {
   /** Array of TableCell options (or cell-level SDTs) that make up the row */
-  cells: (TableCellOptions | { sdt: SdtCellOptions })[];
+  cells: (TableCellOptions | { sdt: SdtCellOptions } | { customXml: CustomXmlCellOptions })[];
   /** Table property exceptions for this row (override table-level properties) */
   propertyExceptions?: TablePropertyExOptions;
   /** Revision save ID for row properties (hex string, e.g. "00123456"). */

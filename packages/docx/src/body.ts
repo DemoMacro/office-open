@@ -37,6 +37,7 @@ import type { SectionChild } from "@shared/section";
 
 import type { DocxReadContext, DocxWriteContext, BodyContext } from "./context";
 import { tableDesc, altChunkDesc, subDocDesc, sdtBlockDesc, customXmlBlockDesc } from "./parts";
+import { parseCustomXmlPr } from "./parts/bodychildren";
 import { stringifyChildDispatch } from "./parts/inline";
 import { parseMathChildren } from "./parts/paragraph/math/stringify";
 import type { ParagraphChild } from "./parts/paragraph/paragraph";
@@ -844,29 +845,10 @@ function parseCustomXmlInline(el: Element, ctx: DocxReadContext): Record<string,
   if (uri) cx.uri = uri;
   const pr = findChild(el, "w:customXmlPr");
   if (pr) {
-    const cxPr: {
-      placeholder?: string;
-      attrs?: Array<{ name: string; val: string; uri?: string }>;
-    } = {};
-    const placeholder = findChild(pr, "w:placeholder");
-    if (placeholder) {
-      const pval = attr(placeholder, "w:val");
-      if (pval) cxPr.placeholder = pval;
+    const parsed = parseCustomXmlPr(pr);
+    if (parsed.placeholder !== undefined || parsed.attributes !== undefined) {
+      cx.customXmlPr = parsed;
     }
-    const attrsList: Array<{ name: string; val: string; uri?: string }> = [];
-    for (const a of pr.elements ?? []) {
-      if (a.name !== "w:attr") continue;
-      const name = attr(a, "w:name");
-      const val = attr(a, "w:val");
-      if (name && val) {
-        const ao: { name: string; val: string; uri?: string } = { name, val };
-        const auri = attr(a, "w:uri");
-        if (auri) ao.uri = auri;
-        attrsList.push(ao);
-      }
-    }
-    if (attrsList.length > 0) cxPr.attrs = attrsList;
-    if (cxPr.placeholder !== undefined || cxPr.attrs !== undefined) cx.customXmlPr = cxPr;
   }
   const content = parseContainerChildren(el, ctx);
   if (content.length > 0) cx.children = content;

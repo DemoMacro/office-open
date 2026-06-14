@@ -42,7 +42,12 @@ export interface CustomXmlPrOptions {
   attributes?: CustomXmlAttributeOptions[];
 }
 
-/** Options for inline custom XML (CT_CustomXmlRun) */
+/**
+ * Base shape shared by all four custom XML levels
+ * (CT_CustomXmlRun / CT_CustomXmlBlock / CT_CustomXmlRow / CT_CustomXmlCell):
+ * the w:customXml element name + optional namespace URI + optional properties.
+ * Each level extends this with its own `children` content type.
+ */
 export interface CustomXmlRunOptions {
   /** XML element name (required) */
   element: string;
@@ -52,38 +57,29 @@ export interface CustomXmlRunOptions {
   customXmlPr?: CustomXmlPrOptions;
 }
 
-/** Options for block-level custom XML (CT_CustomXmlBlock) */
-export interface CustomXmlBlockOptions {
-  /** XML element name (required) */
-  element: string;
-  /** Namespace URI */
-  uri?: string;
-  /** Properties (placeholder, data binding, attributes) */
-  customXmlPr?: CustomXmlPrOptions;
+/**
+ * Options for block-level custom XML (CT_CustomXmlBlock).
+ * Wraps block content (paragraphs, tables, …); lives in EG_BlockLevelElts.
+ */
+export type CustomXmlBlockOptions = CustomXmlRunOptions & {
   /** Block content (paragraphs, tables, etc.) */
   children?: SectionChild[];
-}
+};
 
-/** Options for row-level custom XML (CT_CustomXmlRow) */
-export interface CustomXmlRowOptions {
-  /** XML element name (required) */
-  element: string;
-  /** Namespace URI */
-  uri?: string;
-  /** Properties (placeholder, attributes) */
-  customXmlPr?: CustomXmlPrOptions;
+/**
+ * Options for row-level custom XML (CT_CustomXmlRow).
+ * Wraps one or more table rows; lives in EG_ContentRowContent alongside w:tr.
+ */
+export type CustomXmlRowOptions = CustomXmlRunOptions & {
   /** Row content (TableRow children) */
   children?: TableRowOptions[];
-}
+};
 
-/** Options for cell-level custom XML (CT_CustomXmlCell) */
-export interface CustomXmlCellOptions {
-  /** XML element name (required) */
-  element: string;
-  /** Namespace URI */
-  uri?: string;
-  /** Properties (placeholder, attributes) */
-  customXmlPr?: CustomXmlPrOptions;
-  /** Cell content (TableCell or SdtCell children) */
+/**
+ * Options for cell-level custom XML (CT_CustomXmlCell).
+ * Wraps one or more table cells; lives in EG_ContentCellContent alongside w:tc.
+ */
+export type CustomXmlCellOptions = CustomXmlRunOptions & {
+  /** Cell content (TableCell children) */
   children?: TableCellOptions[];
-}
+};

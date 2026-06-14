@@ -47,11 +47,7 @@ export type SectionChild =
     }
   | { altChunk: AltChunkOptions }
   | { subDoc: SubDocOptions }
-  | {
-      customXml: Omit<CustomXmlBlockOptions, "children"> & {
-        children?: SectionChild[];
-      };
-    }
+  | { customXml: CustomXmlBlockOptions }
   | { rawXml: string };
 
 /**

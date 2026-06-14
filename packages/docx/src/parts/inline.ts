@@ -26,7 +26,7 @@ import type { ChartMediaData, MediaData, SmartArtMediaData, WpsMediaData } from 
 import { createTransformation } from "@shared/media";
 
 import type { BodyContext } from "../context";
-import { checkboxSymbolRunInner, stringifySdtShell } from "./bodychildren";
+import { checkboxSymbolRunInner, stringifyCustomXmlShell, stringifySdtShell } from "./bodychildren";
 import { drawingDesc } from "./drawing";
 import { stringifyMath } from "./paragraph/math/stringify";
 import { createBegin, createSeparate, createEnd } from "./paragraph/run/field";
@@ -612,41 +612,25 @@ export function stringifyChildDispatch(
     return `<w:smartTag ${attrs.join(" ")}>${parts.join("")}</w:smartTag>`;
   }
 
-  // ── Custom XML run ──
+  // ── Custom XML run (CT_CustomXmlRun) ──
   if ("customXml" in child) {
     const cx = child.customXml;
-    const attrs: string[] = [`w:element="${escapeXml(cx.element)}"`];
-    if (cx.uri) attrs.push(`w:uri="${escapeXml(cx.uri)}"`);
-
-    const parts: string[] = [];
-    if (cx.customXmlPr) {
-      const prParts: string[] = [];
-      if (cx.customXmlPr.placeholder)
-        prParts.push(`<w:placeholder w:val="${escapeXml(cx.customXmlPr.placeholder)}"/>`);
-      if (cx.customXmlPr.attrs?.length) {
-        for (const a of cx.customXmlPr.attrs) {
-          const aa: string[] = [`w:name="${escapeXml(a.name)}"`, `w:val="${escapeXml(a.val)}"`];
-          if (a.uri) aa.push(`w:uri="${escapeXml(a.uri)}"`);
-          prParts.push(`<w:attr ${aa.join(" ")}/>`);
-        }
-      }
-      if (prParts.length) parts.push(`<w:customXmlPr>${prParts.join("")}</w:customXmlPr>`);
-    }
+    const contentParts: string[] = [];
     if (cx.children) {
       for (const c of cx.children) {
         if (typeof c === "string") {
-          parts.push(stringifyRunInline({ text: c }, ctx));
+          contentParts.push(stringifyRunInline({ text: c }, ctx));
         } else {
           const jr = stringifyChildDispatch(c as ParagraphChild, ctx);
           if (jr !== undefined) {
-            parts.push(Array.isArray(jr) ? jr.join("") : jr);
+            contentParts.push(Array.isArray(jr) ? jr.join("") : jr);
           } else {
-            parts.push(stringifyRunInline(c as RunOptions, ctx));
+            contentParts.push(stringifyRunInline(c as RunOptions, ctx));
           }
         }
       }
     }
-    return `<w:customXml ${attrs.join(" ")}>${parts.join("")}</w:customXml>`;
+    return stringifyCustomXmlShell(cx, contentParts.join(""));
   }
 
   // ── Inline structured document tag (CT_SdtRun) ──

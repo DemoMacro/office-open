@@ -12,7 +12,8 @@ import { xsdVerticalMergeRev } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrBool, attrNum, children, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
-import { stringifySdtShell } from "@parts/bodychildren";
+import { parseCustomXmlPr, stringifyCustomXmlShell, stringifySdtShell } from "@parts/bodychildren";
+import type { CustomXmlCellOptions, CustomXmlRowOptions } from "@parts/custom-xml";
 import { stringifyParagraphInline } from "@parts/inline";
 import { parseRunProperties } from "@parts/paragraph/run/run-parse";
 import { parseSdtProperties } from "@parts/sdt/sdt-parse";
@@ -145,12 +146,16 @@ function stringifyTableRow(
 
   const prefixCount = parts.length;
 
-  // Cells (a cell may itself be wrapped by a cell-level SDT)
+  // Cells (a cell may be wrapped by a cell-level SDT or customXml)
   for (const cell of row.cells) {
     if ("sdt" in cell) {
       const s = cell.sdt;
       const contentXml = (s.cells ?? []).map((c) => stringifyTableCell(c, ctx)).join("");
       parts.push(stringifySdtShell(s.properties, s.endProperties, contentXml));
+    } else if ("customXml" in cell) {
+      const cx = cell.customXml;
+      const contentXml = (cx.children ?? []).map((c) => stringifyTableCell(c, ctx)).join("");
+      parts.push(stringifyCustomXmlShell(cx, contentXml));
     } else {
       parts.push(stringifyTableCell(cell, ctx));
     }
@@ -178,6 +183,20 @@ function stringifyTableRow(
 
 // ── Row options type ──
 
+/** Type guard: a plain row (not SDT/customXml-wrapped). */
+function isPlainRow(
+  r: TableRowOptions | { sdt: SdtRowOptions } | { customXml: CustomXmlRowOptions },
+): r is TableRowOptions {
+  return !("sdt" in r) && !("customXml" in r);
+}
+
+/** Type guard: a plain cell (not SDT/customXml-wrapped). */
+function isPlainCell(
+  c: TableCellOptions | { sdt: SdtCellOptions } | { customXml: CustomXmlCellOptions },
+): c is TableCellOptions {
+  return !("sdt" in c) && !("customXml" in c);
+}
+
 function findInsertIndex(
   cells: TableRowOptions["cells"],
   columnIndex: number,
@@ -186,7 +205,7 @@ function findInsertIndex(
   let colIdx = 0;
   for (let i = 0; i < cells.length; i++) {
     const c = cells[i];
-    if ("sdt" in c) continue; // SDT-wrapped cells don't occupy grid columns here
+    if (!isPlainCell(c)) continue; // SDT/customXml-wrapped cells don't occupy grid columns
     const { columnSpan } = getCellSpans(c);
     colIdx += columnSpan;
     if (colIdx > columnIndex) {
@@ -202,17 +221,17 @@ function findInsertIndex(
  * Pre-process rows to compute CONTINUE cells for vertical merge.
  */
 function computeVerticalMergeCells(
-  rows: (TableRowOptions | { sdt: SdtRowOptions })[],
+  rows: TableOptions["rows"],
 ): Map<number, { cell: TableCellOptions; columnIndex: number }[]> {
   const extraMap = new Map<number, { cell: TableCellOptions; columnIndex: number }[]>();
   for (let ri = 0; ri < rows.length - 1; ri++) {
     const row = rows[ri];
-    if ("sdt" in row) continue; // SDT-wrapped rows don't participate in merge
+    if (!isPlainRow(row)) continue; // SDT/customXml-wrapped rows don't participate in merge
     const cells = row.cells;
     let colIdx = 0;
 
     for (const cell of cells) {
-      if ("sdt" in cell) continue; // SDT-wrapped cells don't participate in merge
+      if (!isPlainCell(cell)) continue; // SDT/customXml-wrapped cells don't participate in merge
       const typedCell = cell;
       const { columnSpan, rowSpan } = getCellSpans(typedCell);
 
@@ -273,7 +292,7 @@ export const tableDesc: CustomDescriptor<TableOptions, BodyContext> = {
     // Table grid
     const columnWidths =
       opts.columnWidths ??
-      Array(Math.max(1, ...opts.rows.map((r) => ("sdt" in r ? 0 : r.cells.length)))).fill(100);
+      Array(Math.max(1, ...opts.rows.map((r) => (isPlainRow(r) ? r.cells.length : 0)))).fill(100);
     parts.push(buildTableGridXml(columnWidths, opts.columnWidthsRevision));
 
     // Compute vertical merge CONTINUE cells
@@ -286,6 +305,10 @@ export const tableDesc: CustomDescriptor<TableOptions, BodyContext> = {
         const sdt = r.sdt;
         const contentXml = (sdt.rows ?? []).map((rr) => stringifyTableRow(rr, ctx)).join("");
         parts.push(stringifySdtShell(sdt.properties, sdt.endProperties, contentXml));
+      } else if ("customXml" in r) {
+        const cx = r.customXml;
+        const contentXml = (cx.children ?? []).map((rr) => stringifyTableRow(rr, ctx)).join("");
+        parts.push(stringifyCustomXmlShell(cx, contentXml));
       } else {
         const extras = extraCells.get(ri);
         parts.push(stringifyTableRow(r, ctx, extras));
@@ -866,7 +889,11 @@ function parseTableRowEl(el: Element, ctx: DocxReadContext): TableRowOptions {
     if (val) opts[optKey] = val;
   }
 
-  const childCells: (TableCellOptions | { sdt: SdtCellOptions })[] = [];
+  const childCells: (
+    | TableCellOptions
+    | { sdt: SdtCellOptions }
+    | { customXml: CustomXmlCellOptions }
+  )[] = [];
   for (const child of el.elements ?? []) {
     if (child.name === "w:tc") {
       childCells.push(parseTableCellEl(child, ctx));
@@ -888,6 +915,23 @@ function parseTableRowEl(el: Element, ctx: DocxReadContext): TableRowOptions {
       if (sdtCells.length > 0) sdt.cells = sdtCells;
       if (endProperties) sdt.endProperties = endProperties;
       childCells.push({ sdt });
+    } else if (child.name === "w:customXml") {
+      const element = attr(child, "w:element") ?? "";
+      const cx: CustomXmlCellOptions = { element };
+      const cxUri = attr(child, "w:uri");
+      if (cxUri) cx.uri = cxUri;
+      const xmlPr = findChild(child, "w:customXmlPr");
+      if (xmlPr) {
+        const parsed = parseCustomXmlPr(xmlPr);
+        if (parsed.placeholder !== undefined || parsed.attributes !== undefined)
+          cx.customXmlPr = parsed;
+      }
+      const cxCells: TableCellOptions[] = [];
+      for (const sub of child.elements ?? []) {
+        if (sub.name === "w:tc") cxCells.push(parseTableCellEl(sub, ctx));
+      }
+      if (cxCells.length > 0) cx.children = cxCells;
+      childCells.push({ customXml: cx });
     }
   }
 
@@ -908,7 +952,8 @@ function parseTableEl(el: Element, ctx: DocxReadContext): TableOptions {
     opts.columnWidths = colWidths;
   }
 
-  const rows: (TableRowOptions | { sdt: SdtRowOptions })[] = [];
+  const rows: (TableRowOptions | { sdt: SdtRowOptions } | { customXml: CustomXmlRowOptions })[] =
+    [];
   for (const child of el.elements ?? []) {
     if (child.name === "w:tr") {
       rows.push(parseTableRowEl(child, ctx));
@@ -930,6 +975,23 @@ function parseTableEl(el: Element, ctx: DocxReadContext): TableOptions {
       if (sdtRows.length > 0) sdt.rows = sdtRows;
       if (endProperties) sdt.endProperties = endProperties;
       rows.push({ sdt });
+    } else if (child.name === "w:customXml") {
+      const element = attr(child, "w:element") ?? "";
+      const cx: CustomXmlRowOptions = { element };
+      const cxUri = attr(child, "w:uri");
+      if (cxUri) cx.uri = cxUri;
+      const xmlPr = findChild(child, "w:customXmlPr");
+      if (xmlPr) {
+        const parsed = parseCustomXmlPr(xmlPr);
+        if (parsed.placeholder !== undefined || parsed.attributes !== undefined)
+          cx.customXmlPr = parsed;
+      }
+      const cxRows: TableRowOptions[] = [];
+      for (const sub of child.elements ?? []) {
+        if (sub.name === "w:tr") cxRows.push(parseTableRowEl(sub, ctx));
+      }
+      if (cxRows.length > 0) cx.children = cxRows;
+      rows.push({ customXml: cx });
     }
   }
 

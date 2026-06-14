@@ -7,6 +7,7 @@
  */
 
 import type { PositiveUniversalMeasure } from "@office-open/core";
+import type { CustomXmlRowOptions } from "@parts/custom-xml";
 
 import type { AlignmentType } from "../paragraph";
 import type { TableGridChangeOptions } from "./grid";
@@ -37,7 +38,7 @@ import type { TableWidthProperties } from "./table-width";
  * @see {@link Table}
  */
 export interface TableOptions {
-  rows: (TableRowOptions | { sdt: SdtRowOptions })[];
+  rows: (TableRowOptions | { sdt: SdtRowOptions } | { customXml: CustomXmlRowOptions })[];
   width?: TableWidthProperties;
   columnWidths?: number[] | PositiveUniversalMeasure[];
   columnWidthsRevision?: TableGridChangeOptions;

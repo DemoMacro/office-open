@@ -462,4 +462,53 @@ describe("tableDesc round-trip", () => {
       expect(result.rows[1].sdt.rows).toHaveLength(1);
     }
   });
+
+  it("round-trips a cell-level customXml (CT_CustomXmlCell wrapping a cell)", () => {
+    const result = roundTrip({
+      rows: [
+        {
+          cells: [
+            { children: [{ paragraph: "normal" }] },
+            {
+              customXml: {
+                element: "taggedCell",
+                uri: "http://ns",
+                customXmlPr: { attributes: [{ name: "k", val: "v" }] },
+                children: [{ children: [{ paragraph: "wrapped" }] }],
+              },
+            },
+          ],
+        },
+      ],
+    });
+    const cells = (result.rows[0] as TableRowOptions).cells;
+    expect(cells).toHaveLength(2);
+    expect("customXml" in cells[1]).toBe(true);
+    if ("customXml" in cells[1]) {
+      expect(cells[1].customXml.element).toBe("taggedCell");
+      expect(cells[1].customXml.uri).toBe("http://ns");
+      expect(cells[1].customXml.customXmlPr?.attributes).toEqual([{ name: "k", val: "v" }]);
+      expect(cells[1].customXml.children).toHaveLength(1);
+    }
+  });
+
+  it("round-trips a row-level customXml (CT_CustomXmlRow wrapping a row)", () => {
+    const result = roundTrip({
+      rows: [
+        { cells: [{ children: [{ paragraph: "header" }] }] },
+        {
+          customXml: {
+            element: "taggedRow",
+            children: [{ cells: [{ children: [{ paragraph: "wrapped row" }] }] }],
+          },
+        },
+      ],
+    });
+    expect(result.rows).toHaveLength(2);
+    expect("customXml" in result.rows[1]).toBe(true);
+    if ("customXml" in result.rows[1]) {
+      expect(result.rows[1].customXml.element).toBe("taggedRow");
+      expect(result.rows[1].customXml.children).toHaveLength(1);
+    }
+  });
 });

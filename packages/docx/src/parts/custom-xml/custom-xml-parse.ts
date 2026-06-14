@@ -8,7 +8,8 @@ import type { Element } from "@office-open/xml";
 import type { SectionChild } from "@shared/section";
 
 import type { DocxReadContext } from "../../context";
-import type { CustomXmlBlockOptions, CustomXmlPrOptions } from "./custom-xml";
+import { parseCustomXmlPr } from "../bodychildren";
+import type { CustomXmlBlockOptions } from "./custom-xml";
 
 /**
  * Parse w:customXml element into CustomXmlBlockOptions.
@@ -47,30 +48,4 @@ export function parseCustomXmlBlock(
   if (children.length > 0) opts.children = children;
 
   return opts as unknown as CustomXmlBlockOptions;
-}
-
-function parseCustomXmlPr(el: Element): CustomXmlPrOptions {
-  const opts: Record<string, unknown> = {};
-
-  const placeholder = findChild(el, "w:placeholder");
-  if (placeholder) {
-    const val = attr(placeholder, "w:val");
-    if (val) opts.placeholder = val;
-  }
-
-  const attributes: { name: string; val: string; uri?: string }[] = [];
-  for (const child of el.elements ?? []) {
-    if (child.name !== "w:attr") continue;
-    const name = attr(child, "w:name");
-    const val = attr(child, "w:val");
-    if (name && val) {
-      const attrOpts: { name: string; val: string; uri?: string } = { name, val };
-      const uriVal = attr(child, "w:uri");
-      if (uriVal) attrOpts.uri = uriVal;
-      attributes.push(attrOpts);
-    }
-  }
-  if (attributes.length > 0) opts.attributes = attributes;
-
-  return opts as unknown as CustomXmlPrOptions;
 }

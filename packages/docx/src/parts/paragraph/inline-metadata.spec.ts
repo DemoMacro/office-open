@@ -80,7 +80,7 @@ describe("inline metadata parse", () => {
     const cxOpts = cx!.customXml as Record<string, unknown>;
     expect(cxOpts.customXmlPr).toEqual({
       placeholder: "Enter customer",
-      attrs: [{ name: "id", val: "42" }],
+      attributes: [{ name: "id", val: "42" }],
     });
     expect(cxOpts.children).toEqual([{ text: "Acme" }]);
   });
