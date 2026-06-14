@@ -33,4 +33,5 @@ export * from "./relationships";
 export * from "./bodychildren";
 export * from "./core-properties";
 export * from "./custom-properties";
+export * from "./app-properties";
 export * from "./web-settings";

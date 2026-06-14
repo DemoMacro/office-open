@@ -22,6 +22,7 @@ import type {
 } from "@parts/settings/settings";
 import type { SectionOptions } from "@shared/section";
 
+import type { AppPropertiesOptions } from "./app-properties";
 import type { CustomPropertyOptions } from "./custom-properties";
 import type { DocumentBackgroundOptions } from "./document";
 import type { NumberingOptions } from "./numbering";
@@ -141,6 +142,8 @@ export interface DocumentOptions {
   webSettings?: WebSettingsOptions;
   /** Content types from [Content_Types].xml (parse path only) */
   contentTypes?: ContentTypesInput;
+  /** Extended properties (docProps/app.xml) */
+  appProperties?: AppPropertiesOptions;
 }
 
 // ── Descriptor ──

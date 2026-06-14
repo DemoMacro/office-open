@@ -34,6 +34,7 @@ import { DocxWriteContext } from "./context";
 import {
   corePropertiesDesc,
   customPropertiesDesc,
+  appPropertiesDesc,
   contentTypesDesc,
   buildContentTypes,
   fontTableDesc,
@@ -212,7 +213,11 @@ function xmlifyContext(
 
   return {
     AppProperties: {
-      data: XML_DECL + APP_PROPS_XML,
+      data:
+        XML_DECL +
+        (ctx._options.appProperties
+          ? (appPropertiesDesc.stringify(ctx._options.appProperties, ctx) ?? APP_PROPS_XML)
+          : APP_PROPS_XML),
       path: "docProps/app.xml",
     },
     Comments: {

@@ -4,6 +4,7 @@ import type { DataType } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
 import { attr } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
+import { appPropertiesDesc } from "@parts/app-properties";
 import { bibliographyDesc } from "@parts/bibliography";
 import { setBodyParseChild } from "@parts/bodychildren";
 import { commentsDesc } from "@parts/comments";
@@ -233,6 +234,15 @@ export function parseDocument(data: DataType): DocumentOptions {
       if (cp.description) opts.description = cp.description;
       if (cp.lastModifiedBy) opts.lastModifiedBy = cp.lastModifiedBy;
       if (cp.revision) opts.revision = cp.revision;
+    }
+  }
+
+  // App (extended) properties
+  if (docx.appProps) {
+    const appPropsEl = docx.doc.get(docx.appProps);
+    if (appPropsEl) {
+      const ap = appPropertiesDesc.parse(appPropsEl, ctx);
+      if (Object.keys(ap).length > 0) opts.appProperties = ap;
     }
   }
 
