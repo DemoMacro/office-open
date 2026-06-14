@@ -7,7 +7,10 @@
  */
 import { attr, children, findChild, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
-import type { TableOfContentsOptions } from "@parts/table-of-contents/table-of-contents-properties";
+import type {
+  StyleLevel,
+  TableOfContentsOptions,
+} from "@parts/table-of-contents/table-of-contents-properties";
 
 import type { DocxReadContext } from "../../context";
 
@@ -113,6 +116,17 @@ function parseTocFieldInstruction(instruction: string, opts: Record<string, unkn
   if (switches["o"]) opts.headingStyleRange = switches["o"];
   if (switches["p"]) opts.entryAndPageNumberSeparator = switches["p"];
   if (switches["s"]) opts.seqFieldIdentifierForPrefix = switches["s"];
+  if (switches["t"]) {
+    // \t "Style1,1,Style2,2" -> stylesWithLevels pairs
+    const parts = switches["t"]!.split(",");
+    const stylesWithLevels: StyleLevel[] = [];
+    for (let i = 0; i + 1 < parts.length; i += 2) {
+      const styleName = parts[i];
+      const level = parseInt(parts[i + 1], 10);
+      if (styleName && !Number.isNaN(level)) stylesWithLevels.push({ styleName, level });
+    }
+    if (stylesWithLevels.length > 0) opts.stylesWithLevels = stylesWithLevels;
+  }
   if ("u" in switches) opts.useAppliedParagraphOutlineLevel = true;
   if ("w" in switches) opts.preserveTabInEntries = true;
   if ("x" in switches) opts.preserveNewLineInEntries = true;
