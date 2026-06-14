@@ -7,7 +7,12 @@
  * @module
  */
 
-import { convertPixelsToEmu, convertToEmu, xsdTextAnchor } from "@office-open/core";
+import {
+  convertPixelsToEmu,
+  convertToEmu,
+  xsdRectAlignment,
+  xsdTextAnchor,
+} from "@office-open/core";
 import type { ShapeLockingOptions } from "@office-open/core";
 import type { CustomDescriptor, WriteContext, ReadContext } from "@office-open/core/descriptor";
 import { stringify, parse } from "@office-open/core/descriptor";
@@ -1046,7 +1051,9 @@ function readEffectsFromSpPr(spPr: XmlElement): Record<string, unknown> | undefi
           break;
         }
         case "a:reflection": {
-          const reflection: Record<string, unknown> = {};
+          // CT_ReflectionEffect has 14 attrs; toReflectionCore writes them all
+          // (with unit scaling). Invert each scale on read.
+          const reflection: Partial<ReflectionOptions> = {};
           const blurRad = attrNum(child, "blurRad");
           if (blurRad !== undefined) reflection.blurRadius = blurRad;
           const dist = attrNum(child, "dist");
@@ -1055,8 +1062,27 @@ function readEffectsFromSpPr(spPr: XmlElement): Record<string, unknown> | undefi
           if (dir !== undefined) reflection.direction = dir;
           const stA = attrNum(child, "stA");
           if (stA !== undefined) reflection.startAlpha = stA / 1000;
+          const stPos = attrNum(child, "stPos");
+          if (stPos !== undefined) reflection.startPosition = stPos / 1000;
           const endA = attrNum(child, "endA");
           if (endA !== undefined) reflection.endAlpha = endA / 1000;
+          const endPos = attrNum(child, "endPos");
+          if (endPos !== undefined) reflection.endPosition = endPos / 1000;
+          const fadeDir = attrNum(child, "fadeDir");
+          if (fadeDir !== undefined) reflection.fadeDirection = fadeDir / 60000;
+          const sx = attrNum(child, "sx");
+          if (sx !== undefined) reflection.scaleX = sx / 1000;
+          const sy = attrNum(child, "sy");
+          if (sy !== undefined) reflection.scaleY = sy / 1000;
+          const kx = attrNum(child, "kx");
+          if (kx !== undefined) reflection.skewX = kx / 60000;
+          const ky = attrNum(child, "ky");
+          if (ky !== undefined) reflection.skewY = ky / 60000;
+          const algn = attr(child, "algn");
+          if (algn)
+            reflection.alignment = xsdRectAlignment.from(algn) as ReflectionOptions["alignment"];
+          const rotWithShape = attr(child, "rotWithShape");
+          if (rotWithShape !== undefined) reflection.rotateWithShape = rotWithShape !== "0";
           opts.reflection = reflection;
           break;
         }

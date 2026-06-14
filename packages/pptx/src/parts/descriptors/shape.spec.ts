@@ -307,4 +307,49 @@ describe("shapeDesc round-trip", () => {
     expect(margins.left).toBe(3000);
     expect(margins.right).toBe(4000);
   });
+
+  it("round-trips shape reflection effect with all fields", () => {
+    // CT_ReflectionEffect has 14 attrs; parse must read all (was dropping
+    // stPos/endPos/fadeDir/sx/sy/kx/ky/algn/rotWithShape) and invert the
+    // unit scaling applied by toReflectionCore.
+    const result = roundTrip({
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 100,
+      effects: {
+        reflection: {
+          blurRadius: 12700,
+          distance: 50000,
+          direction: 5400000,
+          startAlpha: 60,
+          startPosition: 10,
+          endAlpha: 0,
+          endPosition: 90,
+          fadeDirection: 90,
+          scaleX: 50,
+          scaleY: 75,
+          skewX: 45,
+          skewY: 30,
+          alignment: "bottomLeft",
+          rotateWithShape: false,
+        },
+      },
+    });
+    const reflection = result.effects!.reflection!;
+    expect(reflection.blurRadius).toBe(12700);
+    expect(reflection.distance).toBe(50000);
+    expect(reflection.direction).toBe(5400000);
+    expect(reflection.startAlpha).toBe(60);
+    expect(reflection.startPosition).toBe(10);
+    expect(reflection.endAlpha).toBe(0);
+    expect(reflection.endPosition).toBe(90);
+    expect(reflection.fadeDirection).toBe(90);
+    expect(reflection.scaleX).toBe(50);
+    expect(reflection.scaleY).toBe(75);
+    expect(reflection.skewX).toBe(45);
+    expect(reflection.skewY).toBe(30);
+    expect(reflection.alignment).toBe("bottomLeft");
+    expect(reflection.rotateWithShape).toBe(false);
+  });
 });
