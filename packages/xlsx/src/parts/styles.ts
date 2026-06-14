@@ -305,6 +305,45 @@ export interface StylesState {
   styleExtensions?: StyleExtensionOptions[];
 }
 
+/**
+ * Indexed XF reference produced by {@link stylesDesc}.parse — index-based
+ * (fontIdx/fillIdx/…) rather than resolved objects, consumed by callers that
+ * resolve indices into fonts/fills/borders arrays.
+ */
+export interface IndexedXfEntry {
+  fontIdx?: number;
+  fillIdx?: number;
+  borderIdx?: number;
+  numFmtIdx?: number;
+  alignment?: AlignmentOptions;
+  protection?: CellProtectionOptions;
+  quotePrefix?: boolean;
+  pivotButton?: boolean;
+}
+
+/** Table styles block (CT_TableStyles) produced by {@link stylesDesc}.parse. */
+export interface TableStylesInfo {
+  count?: number;
+  defaultTableStyle?: string;
+  defaultPivotStyle?: string;
+  tableStyles?: CustomTableStyleOptions[];
+}
+
+/** Result of {@link stylesDesc}.parse (xl/styles.xml → structured data). */
+export interface StylesParseResult {
+  customNumFmts?: Record<string, number>;
+  fonts?: FontOptions[];
+  fills?: FillOptions[];
+  borders?: BorderSideOptions[];
+  cellStyleXfs?: IndexedXfEntry[];
+  cellXfs?: IndexedXfEntry[];
+  customCellStyles?: CustomCellStyleOptions[];
+  dxfs?: DxfOptions[];
+  tableStylesInfo?: TableStylesInfo;
+  colors?: ColorsOptions;
+  styleExtensions?: StyleExtensionOptions[];
+}
+
 export class Styles {
   private fonts: FontOptions[] = [
     { size: 11, font: "Calibri" }, // default font (index 0)
@@ -812,7 +851,7 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions> = {
   },
 
   parse(el, _ctx) {
-    const result: Record<string, unknown> = {};
+    const result: StylesParseResult = {};
 
     // numFmts
     const numFmtsEl = findChild(el, "numFmts");
@@ -863,10 +902,10 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions> = {
     // cellStyleXfs
     const cellStyleXfsEl = findChild(el, "cellStyleXfs");
     if (cellStyleXfsEl) {
-      const xfs: Record<string, unknown>[] = [];
+      const xfs: IndexedXfEntry[] = [];
       for (const xf of cellStyleXfsEl.elements ?? []) {
         if (xf.name !== "xf") continue;
-        const style: Record<string, unknown> = {};
+        const style: IndexedXfEntry = {};
         const fontId = attrNum(xf, "fontId");
         const fillId = attrNum(xf, "fillId");
         const borderId = attrNum(xf, "borderId");
@@ -883,7 +922,7 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions> = {
     // cellXfs
     const cellXfsEl = findChild(el, "cellXfs");
     if (cellXfsEl) {
-      const xfs: StyleOptions[] = [];
+      const xfs: IndexedXfEntry[] = [];
       for (const xf of cellXfsEl.elements ?? []) {
         if (xf.name !== "xf") continue;
         const fontId = attrNum(xf, "fontId") ?? 0;
@@ -897,7 +936,7 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions> = {
         const protectionEl = findChild(xf, "protection");
         const protection = protectionEl ? parseProtection(protectionEl) : undefined;
 
-        const style: Record<string, unknown> = {};
+        const style: IndexedXfEntry = {};
         if (fontId > 0) style.fontIdx = fontId;
         if (fillId > 0) style.fillIdx = fillId;
         if (borderId > 0) style.borderIdx = borderId;
@@ -907,7 +946,7 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions> = {
         if (attr(xf, "quotePrefix") === "1") style.quotePrefix = true;
         if (attr(xf, "pivotButton") === "1") style.pivotButton = true;
 
-        xfs.push(style as StyleOptions);
+        xfs.push(style);
       }
       result.cellXfs = xfs;
     }
@@ -918,7 +957,7 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions> = {
       const styles: CustomCellStyleOptions[] = [];
       for (const cs of cellStylesEl.elements ?? []) {
         if (cs.name !== "cellStyle") continue;
-        const style: Record<string, unknown> = {};
+        const style: Partial<CustomCellStyleOptions> = {};
         if (attr(cs, "name")) style.name = attr(cs, "name");
         const xfId = attrNum(cs, "xfId");
         if (xfId !== undefined) style.xfId = xfId;
@@ -928,7 +967,7 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions> = {
         if (attr(cs, "hidden") === "1") style.hidden = true;
         const iLevel = attrNum(cs, "iLevel");
         if (iLevel !== undefined) style.iLevel = iLevel;
-        styles.push(style as unknown as CustomCellStyleOptions);
+        styles.push(style as CustomCellStyleOptions);
       }
       result.customCellStyles = styles;
     }
@@ -939,7 +978,7 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions> = {
       const dxfs: DxfOptions[] = [];
       for (const dxf of dxfsEl.elements ?? []) {
         if (dxf.name !== "dxf") continue;
-        const d: Record<string, unknown> = {};
+        const d: DxfOptions = {};
         const fontEl = findChild(dxf, "font");
         if (fontEl) d.font = parseFont(fontEl);
         const fillEl = findChild(dxf, "fill");
@@ -948,7 +987,7 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions> = {
         if (borderEl) d.border = parseBorder(borderEl);
         const numFmtEl = findChild(dxf, "numFmt");
         if (numFmtEl && attr(numFmtEl, "formatCode")) d.numFmt = attr(numFmtEl, "formatCode");
-        dxfs.push(d as DxfOptions);
+        dxfs.push(d);
       }
       result.dxfs = dxfs;
     }
@@ -956,7 +995,7 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions> = {
     // tableStyles
     const tableStylesEl = findChild(el, "tableStyles");
     if (tableStylesEl?.attributes) {
-      const ts: Record<string, unknown> = {};
+      const ts: TableStylesInfo = {};
       if (attr(tableStylesEl, "count") !== undefined)
         ts.count = attrNum(tableStylesEl, "count") ?? 0;
       if (attr(tableStylesEl, "defaultTableStyle"))
@@ -966,21 +1005,21 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions> = {
       const customStyles: CustomTableStyleOptions[] = [];
       for (const tse of tableStylesEl.elements ?? []) {
         if (tse.name !== "tableStyle") continue;
-        const style: Record<string, unknown> = {};
+        const style: Partial<CustomTableStyleOptions> = {};
         if (attr(tse, "name")) style.name = attr(tse, "name");
         if (attr(tse, "pivot") === "1") style.pivot = true;
         const elements: TableStyleElementOptions[] = [];
         for (const tsee of tse.elements ?? []) {
           if (tsee.name !== "tableStyleElement") continue;
-          const elOpts: Record<string, unknown> = {};
+          const elOpts: Partial<TableStyleElementOptions> = {};
           if (attr(tsee, "type")) elOpts.type = attr(tsee, "type") as TableStyleElementType;
           const dxfId = attrNum(tsee, "dxfId");
           if (dxfId !== undefined) elOpts.dxfId = dxfId;
           if (attr(tsee, "button") === "1") elOpts.button = true;
-          elements.push(elOpts as unknown as TableStyleElementOptions);
+          elements.push(elOpts as TableStyleElementOptions);
         }
         if (elements.length > 0) style.elements = elements;
-        customStyles.push(style as unknown as CustomTableStyleOptions);
+        customStyles.push(style as CustomTableStyleOptions);
       }
       if (customStyles.length > 0) ts.tableStyles = customStyles;
       result.tableStylesInfo = ts;
@@ -989,7 +1028,7 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions> = {
     // colors
     const colorsEl = findChild(el, "colors");
     if (colorsEl) {
-      const colors: Record<string, unknown> = {};
+      const colors: ColorsOptions = {};
       const icEl = findChild(colorsEl, "indexedColors");
       if (icEl) {
         const indexed: IndexedColorOptions[] = [];
@@ -1093,25 +1132,34 @@ function parseFont(el: XmlElement): FontOptions {
 function parseFill(el: XmlElement): FillOptions {
   const patternFill = findChild(el, "patternFill");
   if (patternFill) {
-    const result: Record<string, unknown> = {};
-    result.patternType = attr(patternFill, "patternType") ?? undefined;
+    const result: FillOptions = {};
+    const patternType = attr(patternFill, "patternType");
+    if (patternType) result.patternType = patternType;
     const fg = findChild(patternFill, "fgColor");
     if (fg) result.color = parseColorHex(fg);
     const bg = findChild(patternFill, "bgColor");
     if (bg) result.bgColor = parseColorHex(bg);
     const indexed = fg ? attrNum(fg, "indexed") : undefined;
     if (indexed !== undefined) result.colorIndexed = indexed;
-    return result as unknown as FillOptions;
+    return result;
   }
 
   const gradientFill = findChild(el, "gradientFill");
   if (gradientFill) {
-    const result: Record<string, unknown> = { type: "gradient" };
+    const result: FillOptions = { type: "gradient" };
     const gType = attr(gradientFill, "type");
     if (gType) result.gradientType = gType as FillOptions["gradientType"];
     const degree = attrNum(gradientFill, "degree");
     if (degree !== undefined) result.gradientDegree = degree;
-    const stops: { position: number; color: string }[] = [];
+    const left = attrNum(gradientFill, "left");
+    if (left !== undefined) result.gradientLeft = left;
+    const right = attrNum(gradientFill, "right");
+    if (right !== undefined) result.gradientRight = right;
+    const top = attrNum(gradientFill, "top");
+    if (top !== undefined) result.gradientTop = top;
+    const bottom = attrNum(gradientFill, "bottom");
+    if (bottom !== undefined) result.gradientBottom = bottom;
+    const stops: GradientStopOptions[] = [];
     for (const s of gradientFill.elements ?? []) {
       if (s.name !== "stop") continue;
       const pos = attrNum(s, "position");
@@ -1121,10 +1169,10 @@ function parseFill(el: XmlElement): FillOptions {
       }
     }
     if (stops.length > 0) result.stops = stops;
-    return result as unknown as FillOptions;
+    return result;
   }
 
-  return {} as unknown as FillOptions;
+  return {};
 }
 
 function parseBorder(el: XmlElement): BorderSideOptions {
@@ -1158,7 +1206,7 @@ function parseBorder(el: XmlElement): BorderSideOptions {
 }
 
 function parseAlignment(el: XmlElement): AlignmentOptions {
-  const result: Record<string, unknown> = {};
+  const result: AlignmentOptions = {};
   const h = attr(el, "horizontal");
   if (h) result.horizontal = h as AlignmentOptions["horizontal"];
   const v = attr(el, "vertical");
@@ -1168,7 +1216,13 @@ function parseAlignment(el: XmlElement): AlignmentOptions {
   if (rotation !== undefined) result.textRotation = rotation;
   const indent = attrNum(el, "indent");
   if (indent !== undefined) result.indent = indent;
-  return result as unknown as AlignmentOptions;
+  const relativeIndent = attrNum(el, "relativeIndent");
+  if (relativeIndent !== undefined) result.relativeIndent = relativeIndent;
+  if (attr(el, "justifyLastLine") === "1") result.justifyLastLine = true;
+  if (attr(el, "shrinkToFit") === "1") result.shrinkToFit = true;
+  const readingOrder = attrNum(el, "readingOrder");
+  if (readingOrder !== undefined) result.readingOrder = readingOrder;
+  return result;
 }
 
 function parseProtection(el: XmlElement): CellProtectionOptions {

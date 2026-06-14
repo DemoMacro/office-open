@@ -1,6 +1,9 @@
+import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
+import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
-import { Styles } from "./styles";
+import { Styles, stylesDesc } from "./styles";
+import type { StylesParseResult } from "./styles";
 
 describe("Styles", () => {
   // ── register() deduplication ──
@@ -143,6 +146,69 @@ describe("Styles", () => {
       styles.registerDxf({ numFmt: "0.00" });
       const xml = styles.serialize();
       expect(xml).toContain('formatCode="0.00"');
+    });
+  });
+
+  // ── stylesDesc round-trip (stringify → parse) ──
+
+  describe("stylesDesc round-trip", () => {
+    function roundTripStyles(styles: Styles): StylesParseResult {
+      const xml = stylesDesc.stringify({ styles }, undefined as unknown as WriteContext)!;
+      const doc = parseXml(xml);
+      const el = doc.elements![0];
+      return stylesDesc.parse(
+        el,
+        undefined as unknown as ReadContext,
+      ) as unknown as StylesParseResult;
+    }
+
+    it("round-trips alignment with relativeIndent/shrinkToFit/readingOrder/justifyLastLine", () => {
+      const styles = new Styles();
+      styles.register({
+        alignment: {
+          horizontal: "center",
+          relativeIndent: 3,
+          shrinkToFit: true,
+          readingOrder: 2,
+          justifyLastLine: true,
+        },
+      });
+      const result = roundTripStyles(styles);
+      const xf = result.cellXfs!.find((x) => x.alignment);
+      expect(xf?.alignment?.horizontal).toBe("center");
+      expect(xf?.alignment?.relativeIndent).toBe(3);
+      expect(xf?.alignment?.shrinkToFit).toBe(true);
+      expect(xf?.alignment?.readingOrder).toBe(2);
+      expect(xf?.alignment?.justifyLastLine).toBe(true);
+    });
+
+    it("round-trips gradient fill with left/right/top/bottom positions", () => {
+      const styles = new Styles();
+      styles.register({
+        fill: {
+          type: "gradient",
+          gradientType: "path",
+          gradientLeft: 10,
+          gradientRight: 90,
+          gradientTop: 20,
+          gradientBottom: 80,
+          stops: [
+            { position: 0, color: "FF0000" },
+            { position: 1, color: "0000FF" },
+          ],
+        },
+      });
+      const result = roundTripStyles(styles);
+      const grad = result.fills!.find((f) => f.type === "gradient");
+      expect(grad).toBeDefined();
+      expect(grad!.gradientType).toBe("path");
+      expect(grad!.gradientLeft).toBe(10);
+      expect(grad!.gradientRight).toBe(90);
+      expect(grad!.gradientTop).toBe(20);
+      expect(grad!.gradientBottom).toBe(80);
+      expect(grad!.stops).toHaveLength(2);
+      expect(grad!.stops![0].color).toBe("FF0000");
+      expect(grad!.stops![1].color).toBe("0000FF");
     });
   });
 });
