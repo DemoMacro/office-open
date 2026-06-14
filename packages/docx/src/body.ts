@@ -10,12 +10,17 @@
 import { toUint8Array } from "@office-open/core";
 import { uniqueId } from "@office-open/core";
 import { hexColorValue, uCharHexNumber } from "@office-open/core";
+import { ThemeColor } from "@office-open/core";
 import { attr, attrBool, attrNum, escapeXml, findChild, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { sectionPropertiesDesc } from "@parts/document/body/section-properties/descriptor";
 import type { DocumentBackgroundOptions } from "@parts/document/document-background";
 import { parseDrawingRun } from "@parts/drawing/drawing-parse";
 import { FontWrapper } from "@parts/fonts/font-wrapper";
+import type { BordersOptions } from "@parts/paragraph/formatting/border";
+import type { IndentAttributesProperties } from "@parts/paragraph/formatting/indent";
+import { LineRuleType } from "@parts/paragraph/formatting/spacing";
+import type { SpacingProperties } from "@parts/paragraph/formatting/spacing";
 import { HeadingLevel } from "@parts/paragraph/formatting/style";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
 import { parseFormFieldData } from "@parts/paragraph/run/form-field";
@@ -25,6 +30,8 @@ import { parseRun, parseRunProperties, parsedRunToOptions } from "@parts/paragra
 import { stringifyTableOfContents } from "@parts/table-of-contents/descriptor";
 import type { VmlShapeStyle } from "@parts/textbox/shape/shape";
 import { styleToKeyMap } from "@parts/textbox/shape/shape";
+import type { BorderOptions } from "@shared/border";
+import { BorderStyle } from "@shared/border";
 import type { SectionChild } from "@shared/section";
 
 import type { DocxReadContext, DocxWriteContext, BodyContext } from "./context";
@@ -451,6 +458,13 @@ const HEADING_MAP: Record<string, string> = {
   Title: HeadingLevel.TITLE,
 };
 
+/** Valid w:spacing/@w:lineRule values (ST_LineSpacingRule). */
+const LINE_RULES = Object.values(LineRuleType) as readonly string[];
+/** Valid border @w:val values (ST_Border). */
+const BORDER_STYLES = Object.values(BorderStyle) as readonly string[];
+/** Valid border @w:themeColor values (ST_ThemeColor). */
+const THEME_COLORS = Object.values(ThemeColor) as readonly string[];
+
 /**
  * Parse w:pPr element into paragraph properties (without children).
  */
@@ -483,7 +497,7 @@ export function parseParagraphProperties(
   // Spacing
   const spacing = findChild(el, "w:spacing");
   if (spacing) {
-    const sp: Record<string, unknown> = {};
+    const sp: SpacingProperties = {};
     const before = attrNum(spacing, "w:before");
     if (before !== undefined) sp.before = before;
     const after = attrNum(spacing, "w:after");
@@ -491,31 +505,48 @@ export function parseParagraphProperties(
     const line = attrNum(spacing, "w:line");
     if (line !== undefined) sp.line = line;
     const lineRule = attr(spacing, "w:lineRule");
-    if (lineRule) sp.lineRule = lineRule;
-    const beforeAuto =
-      attrBool(spacing, "w:beforeAutospacing") ?? attrBool(spacing, "w:beforeLines");
-    if (beforeAuto !== undefined) sp.beforeAutoSpacing = beforeAuto;
-    const afterAuto = attrBool(spacing, "w:afterAutospacing") ?? attrBool(spacing, "w:afterLines");
-    if (afterAuto !== undefined) sp.afterAutoSpacing = afterAuto;
+    if (lineRule && (LINE_RULES as readonly string[]).includes(lineRule)) {
+      sp.lineRule = lineRule as SpacingProperties["lineRule"];
+    }
+    const beforeAutoSpacing = attrBool(spacing, "w:beforeAutospacing");
+    if (beforeAutoSpacing !== undefined) sp.beforeAutoSpacing = beforeAutoSpacing;
+    const afterAutoSpacing = attrBool(spacing, "w:afterAutospacing");
+    if (afterAutoSpacing !== undefined) sp.afterAutoSpacing = afterAutoSpacing;
+    const beforeLines = attrNum(spacing, "w:beforeLines");
+    if (beforeLines !== undefined) sp.beforeLines = beforeLines;
+    const afterLines = attrNum(spacing, "w:afterLines");
+    if (afterLines !== undefined) sp.afterLines = afterLines;
     if (Object.keys(sp).length > 0) opts.spacing = sp;
   }
 
   // Indent
   const ind = findChild(el, "w:ind");
   if (ind) {
-    const indentObj: Record<string, unknown> = {};
+    const indentObj: IndentAttributesProperties = {};
     const left = attrNum(ind, "w:left");
     if (left !== undefined) indentObj.left = left;
+    const leftChars = attrNum(ind, "w:leftChars");
+    if (leftChars !== undefined) indentObj.leftChars = leftChars;
     const right = attrNum(ind, "w:right");
     if (right !== undefined) indentObj.right = right;
+    const rightChars = attrNum(ind, "w:rightChars");
+    if (rightChars !== undefined) indentObj.rightChars = rightChars;
     const start = attrNum(ind, "w:start");
     if (start !== undefined) indentObj.start = start;
+    const startChars = attrNum(ind, "w:startChars");
+    if (startChars !== undefined) indentObj.startChars = startChars;
     const end = attrNum(ind, "w:end");
     if (end !== undefined) indentObj.end = end;
+    const endChars = attrNum(ind, "w:endChars");
+    if (endChars !== undefined) indentObj.endChars = endChars;
     const hanging = attrNum(ind, "w:hanging");
     if (hanging !== undefined) indentObj.hanging = hanging;
+    const hangingChars = attrNum(ind, "w:hangingChars");
+    if (hangingChars !== undefined) indentObj.hangingChars = hangingChars;
     const firstLine = attrNum(ind, "w:firstLine");
     if (firstLine !== undefined) indentObj.firstLine = firstLine;
+    const firstLineChars = attrNum(ind, "w:firstLineChars");
+    if (firstLineChars !== undefined) indentObj.firstLineChars = firstLineChars;
     if (Object.keys(indentObj).length > 0) opts.indent = indentObj;
   }
 
@@ -596,21 +627,33 @@ export function parseParagraphProperties(
   // Thematic break
   const pBdr = findChild(el, "w:pBdr");
   if (pBdr) {
-    const border: Record<string, unknown> = {};
-    for (const side of ["top", "bottom", "left", "right"] as const) {
+    const border: BordersOptions = {};
+    for (const side of ["top", "bottom", "left", "right", "between", "bar"] as const) {
       const sideEl = findChild(pBdr, `w:${side}`);
-      if (sideEl) {
-        const sideOpts: Record<string, unknown> = {};
-        const style = attr(sideEl, "w:val");
-        if (style) sideOpts.style = style;
-        const color = attr(sideEl, "w:color");
-        if (color) sideOpts.color = color;
-        const size = attrNum(sideEl, "w:sz");
-        if (size !== undefined) sideOpts.size = size;
-        const space = attrNum(sideEl, "w:space");
-        if (space !== undefined) sideOpts.space = space;
-        border[side] = sideOpts;
+      if (!sideEl) continue;
+      // CT_Border requires w:val (style); skip malformed sides
+      const style = attr(sideEl, "w:val");
+      if (!style || !BORDER_STYLES.includes(style)) continue;
+      const sideOpts: BorderOptions = { style: style as BorderOptions["style"] };
+      const color = attr(sideEl, "w:color");
+      if (color) sideOpts.color = color;
+      const size = attrNum(sideEl, "w:sz");
+      if (size !== undefined) sideOpts.size = size;
+      const space = attrNum(sideEl, "w:space");
+      if (space !== undefined) sideOpts.space = space;
+      const themeColor = attr(sideEl, "w:themeColor");
+      if (themeColor && THEME_COLORS.includes(themeColor)) {
+        sideOpts.themeColor = themeColor as BorderOptions["themeColor"];
       }
+      const themeTint = attr(sideEl, "w:themeTint");
+      if (themeTint) sideOpts.themeTint = themeTint;
+      const themeShade = attr(sideEl, "w:themeShade");
+      if (themeShade) sideOpts.themeShade = themeShade;
+      const shadow = attrBool(sideEl, "w:shadow");
+      if (shadow !== undefined) sideOpts.shadow = shadow;
+      const frame = attrBool(sideEl, "w:frame");
+      if (frame !== undefined) sideOpts.frame = frame;
+      border[side] = sideOpts;
     }
     if (Object.keys(border).length > 0) opts.border = border;
   }
