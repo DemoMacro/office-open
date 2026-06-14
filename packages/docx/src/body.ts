@@ -617,6 +617,7 @@ export function parseParagraphProperties(
     ["w:kinsoku", "kinsoku"],
     ["w:topLinePunct", "topLinePunct"],
     ["w:autoSpaceDE", "autoSpaceDE"],
+    ["w:autoSpaceDN", "autoSpaceEastAsianText"],
     ["w:overflowPunct", "overflowPunctuation"],
     ["w:suppressOverlap", "suppressOverlap"],
   ] as const) {

@@ -15,6 +15,7 @@ import type { TableGridChangeOptions } from "@parts/table/grid";
 import type { TableOptions } from "@parts/table/table";
 import type { TableCellOptions } from "@parts/table/table-cell/table-cell";
 import { VerticalMergeType } from "@parts/table/table-cell/table-cell-components";
+import type { TableLookOptions } from "@parts/table/table-properties/table-look";
 import type { TableRowOptions } from "@parts/table/table-row/table-row";
 import type { SectionChild } from "@shared/section";
 
@@ -429,6 +430,25 @@ function parseTableRowPropertiesEl(el: Element): Record<string, unknown> {
     opts.cantSplit = attrBool(cantSplit, "w:val") ?? true;
   }
 
+  // tblLook — conditional formatting flags (CT_TblLook)
+  const tblLook = findChild(el, "w:tblLook");
+  if (tblLook) {
+    const look: TableLookOptions = {};
+    const firstRow = attrBool(tblLook, "w:firstRow");
+    if (firstRow !== undefined) look.firstRow = firstRow;
+    const lastRow = attrBool(tblLook, "w:lastRow");
+    if (lastRow !== undefined) look.lastRow = lastRow;
+    const firstColumn = attrBool(tblLook, "w:firstColumn");
+    if (firstColumn !== undefined) look.firstColumn = firstColumn;
+    const lastColumn = attrBool(tblLook, "w:lastColumn");
+    if (lastColumn !== undefined) look.lastColumn = lastColumn;
+    const noHBand = attrBool(tblLook, "w:noHBand");
+    if (noHBand !== undefined) look.noHBand = noHBand;
+    const noVBand = attrBool(tblLook, "w:noVBand");
+    if (noVBand !== undefined) look.noVBand = noVBand;
+    if (Object.keys(look).length > 0) opts.tableLook = look;
+  }
+
   return opts;
 }
 
@@ -494,7 +514,7 @@ function parseTableCellPropertiesEl(el: Element): Record<string, unknown> {
   }
 
   const noWrap = findChild(el, "w:noWrap");
-  if (noWrap) opts.noWrap = true;
+  if (noWrap) opts.noWrap = attrBool(noWrap, "w:val") ?? true;
 
   const tcMar = findChild(el, "w:tcMar");
   if (tcMar) {
