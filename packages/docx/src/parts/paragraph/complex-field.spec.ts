@@ -59,4 +59,22 @@ describe("complex field parse", () => {
     const cf = findComplexField(opts);
     expect(cf!.complexField).toMatchObject({ instruction: " HYPERLINK ", result: "click" });
   });
+
+  it("parses a deleted page-number field (w:delInstrText) as a deletion placeholder", () => {
+    // Deleted page-number fields use w:delInstrText; parse reverses inline.ts's
+    // field map so they round-trip as a PageNumber children placeholder.
+    const opts = parseParagraphXml(
+      '<w:del w:id="1" w:author="Alice" w:date="2020-01-01T00:00:00Z">' +
+        '<w:r><w:fldChar w:fldCharType="begin"/></w:r>' +
+        '<w:r><w:delInstrText xml:space="preserve">PAGE</w:delInstrText></w:r>' +
+        '<w:r><w:fldChar w:fldCharType="separate"/></w:r>' +
+        '<w:r><w:fldChar w:fldCharType="end"/></w:r>' +
+        "</w:del>",
+    );
+    const del = opts.children?.find(
+      (c) => c !== null && typeof c === "object" && "deletion" in (c as Record<string, unknown>),
+    ) as Record<string, unknown> | undefined;
+    expect(del).toBeDefined();
+    expect(del!.deletion).toMatchObject({ id: 1, author: "Alice", children: ["CURRENT"] });
+  });
 });

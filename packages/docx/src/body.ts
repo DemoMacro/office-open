@@ -466,6 +466,17 @@ const BORDER_STYLES = Object.values(BorderStyle) as readonly string[];
 const THEME_COLORS = Object.values(ThemeColor) as readonly string[];
 
 /**
+ * Reverse of inline.ts's deleted-page-number field map: maps a w:delInstrText
+ * field code to the PageNumber placeholder a deletion run uses on the stringify
+ * side, so deleted page-number fields round-trip instead of being dropped.
+ */
+const DELETED_PAGE_FIELD: Record<string, string> = {
+  PAGE: "CURRENT",
+  NUMPAGES: "TOTAL_PAGES",
+  SECTIONPAGES: "TOTAL_PAGES_IN_SECTION",
+};
+
+/**
  * Parse w:pPr element into paragraph properties (without children).
  */
 export function parseParagraphProperties(
@@ -1050,6 +1061,29 @@ export function parseParagraph(el: Element, ctx: DocxReadContext): ParagraphOpti
         break;
       }
       case "w:del": {
+        // Deleted page-number fields emit w:delInstrText (not w:instrText);
+        // reverse inline.ts's field map so they round-trip as a children
+        // placeholder instead of being dropped.
+        let delFieldPlaceholder: string | undefined;
+        for (const sub of child.elements ?? []) {
+          if (sub.name !== "w:r") continue;
+          const delInstrEl = findChild(sub, "w:delInstrText");
+          if (delInstrEl) {
+            delFieldPlaceholder = DELETED_PAGE_FIELD[(textOf(delInstrEl) ?? "").trim()];
+            if (delFieldPlaceholder) break;
+          }
+        }
+        if (delFieldPlaceholder) {
+          childList.push({
+            deletion: {
+              id: attrNum(child, "w:id") ?? 0,
+              author: attr(child, "w:author") ?? "",
+              date: attr(child, "w:date") ?? "",
+              children: [delFieldPlaceholder],
+            },
+          });
+          break;
+        }
         const delRun = findChild(child, "w:r");
         if (delRun) {
           const parsed = parseRun(delRun, ctx);
