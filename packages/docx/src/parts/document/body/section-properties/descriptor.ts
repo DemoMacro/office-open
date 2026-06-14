@@ -15,11 +15,13 @@ import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrBool, attrNum, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type { ColumnAttributes } from "@parts/document/body/section-properties/properties/column";
+import type { ColumnsAttributes } from "@parts/document/body/section-properties/properties/columns";
 import type {
   EndnotePropertiesOptions,
   FootnotePropertiesOptions,
 } from "@parts/document/body/section-properties/properties/footnote-endnote-properties";
 import type { PageBordersOptions } from "@parts/document/body/section-properties/properties/page-borders";
+import { PageNumberSeparator } from "@parts/document/body/section-properties/properties/page-number";
 import type { PageNumberTypeAttributes } from "@parts/document/body/section-properties/properties/page-number";
 import type {
   SectionPropertiesChangeOptions,
@@ -31,7 +33,13 @@ import {
 } from "@parts/document/body/section-properties/section-properties";
 import type { HeaderFooterEntry } from "@parts/header-footer";
 import type { BorderOptions } from "@shared/border";
+import { NumberFormat } from "@shared/constants";
 import type { BodyContext } from "@shared/index";
+
+/** Valid page-number @w:fmt values (ST_NumberFormat). */
+const PAGE_NUMBER_FORMATS = Object.values(NumberFormat) as readonly string[];
+/** Valid page-number @w:chapSep values (ST_ChapterSep). */
+const PAGE_NUMBER_SEPARATORS = Object.values(PageNumberSeparator) as readonly string[];
 
 // ── Border XML helper ──
 
@@ -386,11 +394,19 @@ export function parseSectionPropertiesEl(el: Element): Partial<SectionProperties
     // Page number type
     const pgNumType = findChild(el, "w:pgNumType");
     if (pgNumType) {
-      const pageNumbers: Record<string, unknown> = {};
+      const pageNumbers: PageNumberTypeAttributes = {};
       const start = attrNum(pgNumType, "w:start");
       if (start !== undefined) pageNumbers.start = start;
       const fmt = attr(pgNumType, "w:fmt");
-      if (fmt) pageNumbers.formatType = fmt;
+      if (fmt && PAGE_NUMBER_FORMATS.includes(fmt)) {
+        pageNumbers.formatType = fmt as PageNumberTypeAttributes["formatType"];
+      }
+      const chapSep = attr(pgNumType, "w:chapSep");
+      if (chapSep && PAGE_NUMBER_SEPARATORS.includes(chapSep)) {
+        pageNumbers.separator = chapSep as PageNumberTypeAttributes["separator"];
+      }
+      const chapStyle = attrNum(pgNumType, "w:chapStyle");
+      if (chapStyle !== undefined) pageNumbers.chapStyle = chapStyle;
       if (Object.keys(pageNumbers).length > 0) page.pageNumbers = pageNumbers;
     }
 
@@ -400,13 +416,26 @@ export function parseSectionPropertiesEl(el: Element): Partial<SectionProperties
   // Columns
   const cols = findChild(el, "w:cols");
   if (cols) {
-    const column: Record<string, unknown> = {};
+    const column: ColumnsAttributes = {};
     const count = attrNum(cols, "w:num");
     if (count !== undefined) column.count = count;
     const space = attrNum(cols, "w:space");
     if (space !== undefined) column.space = space;
-    const sep = attrBool(cols, "w:sep");
-    if (sep) column.separator = true;
+    const separate = attrBool(cols, "w:sep");
+    if (separate !== undefined) column.separate = separate;
+    const equalWidth = attrBool(cols, "w:equalWidth");
+    if (equalWidth !== undefined) column.equalWidth = equalWidth;
+    const colChildren: ColumnAttributes[] = [];
+    for (const colEl of cols.elements ?? []) {
+      if (colEl.name !== "w:col") continue;
+      const width = attrNum(colEl, "w:w");
+      if (width === undefined) continue;
+      const colAttr: ColumnAttributes = { width };
+      const colSpace = attrNum(colEl, "w:space");
+      if (colSpace !== undefined) colAttr.space = colSpace;
+      colChildren.push(colAttr);
+    }
+    if (colChildren.length > 0) column.children = colChildren;
     if (Object.keys(column).length > 0) opts.column = column;
   }
 
