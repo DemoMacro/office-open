@@ -37,15 +37,21 @@ export class FontWrapper implements ViewWrapper {
   public fontOptionsWithKey: EmbeddedFontOptionsWithKey[] = [];
 
   public constructor(public options: EmbeddedFontOptions[]) {
-    this.fontOptionsWithKey = options.map((o) => ({ ...o, fontKey: uniqueUuid() }));
+    // Only fonts carrying binary data are actually embedded (obfuscated +
+    // related). Metadata-only declarations — e.g. a font table round-tripped
+    // from a parsed document, which carries font names/keys but no font bytes —
+    // have nothing to embed and are skipped.
+    this.fontOptionsWithKey = options
+      .filter((o) => o.data !== undefined)
+      .map((o) => ({ ...o, fontKey: uniqueUuid() }));
     this.relationships = new Relationships();
 
-    for (let i = 0; i < options.length; i++) {
+    this.fontOptionsWithKey.forEach((font, i) => {
       this.relationships.addRelationship(
         i + 1,
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/font",
-        `fonts/${options[i].name}.odttf`,
+        `fonts/${font.name}.odttf`,
       );
-    }
+    });
   }
 }

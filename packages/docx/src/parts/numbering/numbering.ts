@@ -405,8 +405,6 @@ export function parseNumberingDefinitions(
       if (levelOpts) levels.push(levelOpts);
     }
 
-    if (levels.length > 0 && levels.every((l) => l.format === LevelFormat.BULLET)) continue;
-
     if (levels.length > 0) {
       configs.push({ reference: `list_${numId}`, levels });
     }

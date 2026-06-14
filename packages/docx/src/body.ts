@@ -223,11 +223,10 @@ export function stringifyParagraph(
           } else {
             parts.push(jsonResult);
           }
-        } else if ("text" in child || "children" in child || "break" in child) {
-          // RunOptions-like plain object
-          parts.push(stringifyRun(child, ctx));
         } else {
-          throw new Error(`Unsupported paragraph child type: ${Object.keys(child).join(", ")}`);
+          // RunOptions-like plain object — may be an empty run carrying only
+          // run properties (round-tripped from <w:r><w:rPr>…</w:rPr></w:r>).
+          parts.push(stringifyRun(child as RunOptions, ctx));
         }
       }
     }

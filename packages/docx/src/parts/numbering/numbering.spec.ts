@@ -151,9 +151,13 @@ describe("parseNumberingDefinitions (round-trip)", () => {
     const opts = parseNumberingDefinitions(el, parseParagraphProperties, ctx);
 
     expect(opts).toBeDefined();
-    // default-bullet-numbering levels are all bullet format and skipped by
-    // parse, so only the decimal config survives.
-    const lvl = opts!.config[0].levels[0];
+    // serialize() always emits the built-in default-bullet-numbering (bullet
+    // levels), so after round-trip the parsed config holds it alongside the
+    // decimal config. The parsed reference is derived from numId (list_N), not
+    // the original config name, so locate the decimal entry by its level format.
+    const decimalConfig = opts!.config.find((c) => c.levels[0]?.format === LevelFormat.DECIMAL);
+    expect(decimalConfig).toBeDefined();
+    const lvl = decimalConfig!.levels[0];
     expect(lvl.start).toBe(5);
     expect(lvl.format).toBe(LevelFormat.DECIMAL);
     expect(lvl.text).toBe("%1.");

@@ -320,17 +320,19 @@ export function stringifyParagraphProperties(
     parts.push(`<w:pStyle w:val="${escapeXml(options.style)}"/>`);
   }
 
-  // On/off properties
+  // CT_PPrBase element order per XSD (wml.xsd) — strictly ordered sequence.
+  // 1-4: keepNext, keepLines, pageBreakBefore
   if (options.keepNext !== undefined) parts.push(onOff("w:keepNext", options.keepNext));
   if (options.keepLines !== undefined) parts.push(onOff("w:keepLines", options.keepLines));
   if (options.pageBreakBefore) parts.push("<w:pageBreakBefore/>");
 
-  // Frame
+  // 5: framePr
   if (options.frame) parts.push(framePrStr(options.frame));
 
+  // 6: widowControl
   if (options.widowControl !== undefined) parts.push(onOff("w:widowControl", options.widowControl));
 
-  // Numbering
+  // 7: numPr
   if (options.bullet) {
     parts.push(
       `<w:numPr><w:ilvl w:val="${Math.min(options.bullet.level, 9)}"/><w:numId w:val="1"/></w:numPr>`,
@@ -349,7 +351,11 @@ export function stringifyParagraphProperties(
     parts.push(numPrStr(0, 0));
   }
 
-  // Border
+  // 8: suppressLineNumbers
+  if (options.suppressLineNumbers !== undefined)
+    parts.push(onOff("w:suppressLineNumbers", options.suppressLineNumbers));
+
+  // 9: pBdr
   if (options.border) {
     const bParts: string[] = [];
     if (options.border.top) bParts.push(borderStr("w:top", options.border.top));
@@ -361,23 +367,16 @@ export function stringifyParagraphProperties(
     if (bParts.length) parts.push(`<w:pBdr>${bParts.join("")}</w:pBdr>`);
   }
 
-  // Thematic break
   if (options.thematicBreak) {
     parts.push(
       `<w:pBdr>${borderStr("w:bottom", { color: "auto", size: 6, space: 1, style: BorderStyle.SINGLE })}</w:pBdr>`,
     );
   }
 
-  // Shading
+  // 10: shd
   if (options.shading) parts.push(shadingStr(options.shading));
 
-  // Word wrap
-  if (options.wordWrap) parts.push('<w:wordWrap w:val="0"/>');
-
-  if (options.overflowPunctuation)
-    parts.push(onOff("w:overflowPunct", options.overflowPunctuation));
-
-  // Tab stops
+  // 11: tabs
   const tabDefs: TabStopDefinition[] = [
     ...(options.rightTabStop !== undefined
       ? [{ position: options.rightTabStop, type: "right" as const }]
@@ -389,50 +388,54 @@ export function stringifyParagraphProperties(
   ];
   if (tabDefs.length > 0) parts.push(tabStopsStr(tabDefs));
 
-  if (options.bidirectional !== undefined) parts.push(onOff("w:bidi", options.bidirectional));
-
-  // Spacing
-  if (options.spacing) parts.push(spacingStr(options.spacing));
-
-  // Indent
-  if (options.indent) parts.push(indentStr(options.indent));
-
-  if (options.contextualSpacing !== undefined)
-    parts.push(onOff("w:contextualSpacing", options.contextualSpacing));
-
-  // Alignment
-  if (options.alignment) parts.push(`<w:jc w:val="${options.alignment}"/>`);
-
-  if (options.outlineLevel !== undefined)
-    parts.push(`<w:outlineLvl w:val="${options.outlineLevel}"/>`);
-  if (options.divId !== undefined) parts.push(`<w:divId w:val="${options.divId}"/>`);
-
-  if (options.cnfStyle) parts.push(cnfStyleStr(options.cnfStyle));
-
-  // More on/off properties
-  if (options.suppressLineNumbers !== undefined)
-    parts.push(onOff("w:suppressLineNumbers", options.suppressLineNumbers));
-  if (options.autoSpaceEastAsianText !== undefined)
-    parts.push(onOff("w:autoSpaceDN", options.autoSpaceEastAsianText));
+  // 12-18: suppressAutoHyphens, kinsoku, wordWrap, overflowPunct, topLinePunct, autoSpaceDE, autoSpaceDN
   if (options.suppressAutoHyphens !== undefined)
     parts.push(onOff("w:suppressAutoHyphens", options.suppressAutoHyphens));
+  if (options.kinsoku !== undefined) parts.push(onOff("w:kinsoku", options.kinsoku));
+  if (options.wordWrap) parts.push('<w:wordWrap w:val="0"/>');
+  if (options.overflowPunctuation)
+    parts.push(onOff("w:overflowPunct", options.overflowPunctuation));
+  if (options.topLinePunct !== undefined) parts.push(onOff("w:topLinePunct", options.topLinePunct));
+  if (options.autoSpaceDE !== undefined) parts.push(onOff("w:autoSpaceDE", options.autoSpaceDE));
+  if (options.autoSpaceEastAsianText !== undefined)
+    parts.push(onOff("w:autoSpaceDN", options.autoSpaceEastAsianText));
+
+  // 19: bidi
+  if (options.bidirectional !== undefined) parts.push(onOff("w:bidi", options.bidirectional));
+
+  // 20-21: adjustRightInd, snapToGrid
   if (options.adjustRightInd !== undefined)
     parts.push(onOff("w:adjustRightInd", options.adjustRightInd));
   if (options.snapToGrid !== undefined) parts.push(onOff("w:snapToGrid", options.snapToGrid));
+
+  // 22-24: spacing, ind, contextualSpacing
+  if (options.spacing) parts.push(spacingStr(options.spacing));
+  if (options.indent) parts.push(indentStr(options.indent));
+  if (options.contextualSpacing !== undefined)
+    parts.push(onOff("w:contextualSpacing", options.contextualSpacing));
+
+  // 25-26: mirrorIndents, suppressOverlap
   if (options.mirrorIndents !== undefined)
     parts.push(onOff("w:mirrorIndents", options.mirrorIndents));
-  if (options.kinsoku !== undefined) parts.push(onOff("w:kinsoku", options.kinsoku));
-  if (options.topLinePunct !== undefined) parts.push(onOff("w:topLinePunct", options.topLinePunct));
-  if (options.autoSpaceDE !== undefined) parts.push(onOff("w:autoSpaceDE", options.autoSpaceDE));
+  if (options.suppressOverlap !== undefined)
+    parts.push(onOff("w:suppressOverlap", options.suppressOverlap));
 
+  // 27: jc
+  if (options.alignment) parts.push(`<w:jc w:val="${options.alignment}"/>`);
+
+  // 28-30: textDirection, textAlignment, textboxTightWrap
+  if (options.textDirection !== undefined)
+    parts.push(`<w:textDirection w:val="${options.textDirection}"/>`);
   if (options.textAlignment !== undefined)
     parts.push(`<w:textAlignment w:val="${options.textAlignment}"/>`);
   if (options.textboxTightWrap !== undefined)
     parts.push(`<w:textboxTightWrap w:val="${options.textboxTightWrap}"/>`);
-  if (options.textDirection !== undefined)
-    parts.push(`<w:textDirection w:val="${options.textDirection}"/>`);
-  if (options.suppressOverlap !== undefined)
-    parts.push(onOff("w:suppressOverlap", options.suppressOverlap));
+
+  // 31-33: outlineLvl, divId, cnfStyle
+  if (options.outlineLevel !== undefined)
+    parts.push(`<w:outlineLvl w:val="${options.outlineLevel}"/>`);
+  if (options.divId !== undefined) parts.push(`<w:divId w:val="${options.divId}"/>`);
+  if (options.cnfStyle) parts.push(cnfStyleStr(options.cnfStyle));
 
   // Embedded run properties (w:rPr inside w:pPr)
   if (options.run) {
