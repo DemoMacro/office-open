@@ -61,7 +61,7 @@ export const ZIP_STORED_LEVEL = 0;
 export interface CompressionOptions {
   /** DEFLATE level for XML files. Default: 1 (SuperFast, matching MS Office). */
   xml?: number;
-  /** DEFLATE level for media files. Default: 0 (STORE, no compression). */
+  /** DEFLATE level for media files. Default: 1 (SuperFast DEFLATE, matching MS Office). */
   media?: number;
 }
 
@@ -79,8 +79,9 @@ export interface PackerOptions<T extends OutputType = "nodebuffer"> {
  * Asynchronously compress files and convert to the requested output format.
  *
  * Uses fflate Web Workers for non-blocking DEFLATE compression.
- * XML entries use DEFLATE by default; media entries should explicitly set
- * `{ level: ZIP_STORED_LEVEL }` to avoid redundant compression.
+ * XML and media entries both use DEFLATE level 1 (SuperFast) by default,
+ * matching MS Office behavior. Set `{ media: ZIP_STORED_LEVEL }` to opt out
+ * of media compression (e.g. for already-compressed assets where CPU matters).
  */
 export const zipAndConvert = async <T extends OutputType>(
   files: Zippable,
@@ -255,7 +256,7 @@ export const createPacker = <TFile>(options: {
     const files = compile(
       file,
       opts?.overrides ?? [],
-      opts?.compression?.media ?? ZIP_STORED_LEVEL,
+      opts?.compression?.media ?? ZIP_DEFLATE_LEVEL,
     );
     return zipAndConvert(files, type, mimeType, opts?.compression?.xml ?? ZIP_DEFLATE_LEVEL);
   };
@@ -280,7 +281,7 @@ export const createPacker = <TFile>(options: {
     const files = compile(
       file,
       opts?.overrides ?? [],
-      opts?.compression?.media ?? ZIP_STORED_LEVEL,
+      opts?.compression?.media ?? ZIP_DEFLATE_LEVEL,
     );
     return zipSyncAndConvert(files, type, mimeType, opts?.compression?.xml ?? ZIP_DEFLATE_LEVEL);
   };
@@ -301,7 +302,7 @@ export const createPacker = <TFile>(options: {
   // ── Stream ──
 
   const toStream = (file: TFile, opts?: PackerOptions) => {
-    const mediaLevel = opts?.compression?.media ?? ZIP_STORED_LEVEL;
+    const mediaLevel = opts?.compression?.media ?? ZIP_DEFLATE_LEVEL;
     let files: Zippable;
     try {
       files = compile(file, opts?.overrides ?? [], mediaLevel);
