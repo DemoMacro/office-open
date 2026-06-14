@@ -22,33 +22,27 @@
  *
  * @module
  */
-import type { PositiveUniversalMeasure } from "@office-open/core";
-import { WidthType } from "@parts/table";
+import type { TableWidthProperties } from "@parts/table/table-width";
 
 /**
- * Options for configuring table cell margins.
+ * Options for configuring table cell margins (CT_TblCellMar).
  *
- * All margin values are specified in the units defined by `marginUnitType`.
- * If `marginUnitType` is not specified, values are in DXA (twentieths of a point).
+ * Each side is an independent CT_TblWidth ({ size, type }), mirroring
+ * TableWidthProperties / TableCellSpacingProperties. This is faithful to the
+ * XSD, which models CT_TblCellMar as a sequence of six CT_TblWidth elements —
+ * every side carries its own width and unit type (no shared `marginUnitType`).
  */
 export interface TableCellMarginOptions {
-  /**
-   * The unit type for margin values.
-   * Defaults to DXA (twentieths of a point) if not specified.
-   *
-   * @default WidthType.DXA
-   */
-  marginUnitType?: (typeof WidthType)[keyof typeof WidthType];
-
-  /** Top margin (padding above cell content). */
-  top?: number | PositiveUniversalMeasure;
-
-  /** Bottom margin (padding below cell content). */
-  bottom?: number | PositiveUniversalMeasure;
-
-  /** Left margin (padding to the left of cell content). */
-  left?: number | PositiveUniversalMeasure;
-
-  /** Right margin (padding to the right of cell content). */
-  right?: number | PositiveUniversalMeasure;
+  /** Top cell margin. */
+  top?: TableWidthProperties;
+  /** Start cell margin (logical side; mirrors `left` in LTR, `right` in RTL). */
+  start?: TableWidthProperties;
+  /** Left cell margin (physical side). */
+  left?: TableWidthProperties;
+  /** Bottom cell margin. */
+  bottom?: TableWidthProperties;
+  /** End cell margin (logical side; mirrors `right` in LTR, `left` in RTL). */
+  end?: TableWidthProperties;
+  /** Right cell margin (physical side). */
+  right?: TableWidthProperties;
 }

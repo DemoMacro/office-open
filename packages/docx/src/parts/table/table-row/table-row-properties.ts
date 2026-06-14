@@ -57,19 +57,43 @@ import type { HeightRule } from "./table-row-height";
 /**
  * Options for CT_Cnf — conditional formatting style.
  *
+ * Each boolean attribute mirrors one of the 12 positions in the conditional-
+ * format bit string; val is the canonical 12-char ST_Cnf pattern ([01]*).
+ *
  * ## XSD Schema
  * ```xml
  * <xsd:complexType name="CT_Cnf">
- *   <xsd:attribute name="val" type="s:ST_String" use="required"/>
- *   <xsd:attribute name="changed" type="s:ST_OnOff"/>
+ *   <xsd:attribute name="val" type="ST_Cnf"/>
+ *   <xsd:attribute name="firstRow" type="s:ST_OnOff"/>
+ *   <xsd:attribute name="lastRow" type="s:ST_OnOff"/>
+ *   <xsd:attribute name="firstColumn" type="s:ST_OnOff"/>
+ *   <xsd:attribute name="lastColumn" type="s:ST_OnOff"/>
+ *   <xsd:attribute name="oddVBand" type="s:ST_OnOff"/>
+ *   <xsd:attribute name="evenVBand" type="s:ST_OnOff"/>
+ *   <xsd:attribute name="oddHBand" type="s:ST_OnOff"/>
+ *   <xsd:attribute name="evenHBand" type="s:ST_OnOff"/>
+ *   <xsd:attribute name="firstRowFirstColumn" type="s:ST_OnOff"/>
+ *   <xsd:attribute name="firstRowLastColumn" type="s:ST_OnOff"/>
+ *   <xsd:attribute name="lastRowFirstColumn" type="s:ST_OnOff"/>
+ *   <xsd:attribute name="lastRowLastColumn" type="s:ST_OnOff"/>
  * </xsd:complexType>
  * ```
  */
 export interface CnfStyleOptions {
-  /** Conditional format string (required) */
-  val: string;
-  /** Whether the property was changed */
-  changed?: boolean;
+  /** Conditional-format bit string (ST_Cnf: 12-char [01]*) */
+  val?: string;
+  firstRow?: boolean;
+  lastRow?: boolean;
+  firstColumn?: boolean;
+  lastColumn?: boolean;
+  oddVBand?: boolean;
+  evenVBand?: boolean;
+  oddHBand?: boolean;
+  evenHBand?: boolean;
+  firstRowFirstColumn?: boolean;
+  firstRowLastColumn?: boolean;
+  lastRowFirstColumn?: boolean;
+  lastRowLastColumn?: boolean;
 }
 
 export interface TableRowPropertiesOptionsBase {
@@ -83,8 +107,8 @@ export interface TableRowPropertiesOptionsBase {
   height?: {
     /** Height value in twips or as a PositiveUniversalMeasure */
     value: number;
-    /** Height rule determining how the height value is applied */
-    rule: (typeof HeightRule)[keyof typeof HeightRule];
+    /** Height rule determining how the height value is applied (ST_HeightRule) */
+    rule?: (typeof HeightRule)[keyof typeof HeightRule];
   };
   /** Spacing between cells in the row (tblCellSpacing) */
   cellSpacing?: TableCellSpacingProperties;

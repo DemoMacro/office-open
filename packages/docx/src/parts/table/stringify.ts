@@ -26,6 +26,7 @@ import type { TableCellMarginOptions } from "@parts/table/table-properties/table
 import type { TableFloatOptions } from "@parts/table/table-properties/table-float-properties";
 import type { TableLayoutType } from "@parts/table/table-properties/table-layout";
 import type { TableLookOptions } from "@parts/table/table-properties/table-look";
+import type { TablePropertyExOptions } from "@parts/table/table-properties/table-property-exceptions";
 import type {
   CnfStyleOptions,
   TableRowPropertiesOptionsBase,
@@ -57,16 +58,19 @@ function tableWidthStr(name: string, opts: TableWidthProperties): string {
 // ── Cell margin string ──
 
 function cellMarginChildrenStr(opts: TableCellMarginOptions): string {
-  const unitType = opts.marginUnitType ?? WidthType.DXA;
+  // CT_TblCellMar sequence order: top, start, left, bottom, end, right.
+  // Each side is an independent CT_TblWidth; margins default to DXA.
   const parts: string[] = [];
-  if (opts.top !== undefined)
-    parts.push(tableWidthStr("w:top", { size: opts.top, type: unitType }));
-  if (opts.left !== undefined)
-    parts.push(tableWidthStr("w:left", { size: opts.left, type: unitType }));
-  if (opts.bottom !== undefined)
-    parts.push(tableWidthStr("w:bottom", { size: opts.bottom, type: unitType }));
-  if (opts.right !== undefined)
-    parts.push(tableWidthStr("w:right", { size: opts.right, type: unitType }));
+  const side = (name: string, w: TableWidthProperties | undefined): void => {
+    if (w === undefined) return;
+    parts.push(tableWidthStr(name, { size: w.size, type: w.type ?? WidthType.DXA }));
+  };
+  side("w:top", opts.top);
+  side("w:start", opts.start);
+  side("w:left", opts.left);
+  side("w:bottom", opts.bottom);
+  side("w:end", opts.end);
+  side("w:right", opts.right);
   return parts.join("");
 }
 
@@ -92,6 +96,7 @@ function tableBordersStr(opts: TableBordersOptions): string | undefined {
 // ── Cell borders string ──
 
 function cellBordersStr(opts: TableCellBordersOptions): string | undefined {
+  // CT_TcBorders sequence: top, start, left, bottom, end, right, insideH, insideV, tl2br, tr2bl.
   const parts: string[] = [];
   if (opts.top) parts.push(borderStr("w:top", opts.top));
   if (opts.start) parts.push(borderStr("w:start", opts.start));
@@ -99,6 +104,8 @@ function cellBordersStr(opts: TableCellBordersOptions): string | undefined {
   if (opts.bottom) parts.push(borderStr("w:bottom", opts.bottom));
   if (opts.end) parts.push(borderStr("w:end", opts.end));
   if (opts.right) parts.push(borderStr("w:right", opts.right));
+  if (opts.insideHorizontal) parts.push(borderStr("w:insideH", opts.insideHorizontal));
+  if (opts.insideVertical) parts.push(borderStr("w:insideV", opts.insideVertical));
   if (opts.topLeftToBottomRight) parts.push(borderStr("w:tl2br", opts.topLeftToBottomRight));
   if (opts.topRightToBottomLeft) parts.push(borderStr("w:tr2bl", opts.topRightToBottomLeft));
   return parts.length > 0 ? `<w:tcBorders>${parts.join("")}</w:tcBorders>` : undefined;
@@ -146,6 +153,27 @@ function tableLookStr(opts: TableLookOptions): string {
   return `<w:tblLook ${a}/>`;
 }
 
+// ── Conditional format style string (CT_Cnf) ──
+
+function cnfStyleStr(opts: CnfStyleOptions): string {
+  const a = attrParts({
+    "w:val": opts.val,
+    "w:firstRow": opts.firstRow,
+    "w:lastRow": opts.lastRow,
+    "w:firstColumn": opts.firstColumn,
+    "w:lastColumn": opts.lastColumn,
+    "w:oddVBand": opts.oddVBand,
+    "w:evenVBand": opts.evenVBand,
+    "w:oddHBand": opts.oddHBand,
+    "w:evenHBand": opts.evenHBand,
+    "w:firstRowFirstColumn": opts.firstRowFirstColumn,
+    "w:firstRowLastColumn": opts.firstRowLastColumn,
+    "w:lastRowFirstColumn": opts.lastRowFirstColumn,
+    "w:lastRowLastColumn": opts.lastRowLastColumn,
+  });
+  return `<w:cnfStyle ${a}/>`;
+}
+
 // ── Change/revision attribute string ──
 
 function changeAttrStr(tag: string, opts: ChangedAttributesProperties): string {
@@ -176,7 +204,7 @@ function cellMergeStr(opts: CellMergeAttributes): string {
 function cellSpacingStr(opts: TableCellSpacingProperties): string {
   const a = attrParts({
     "w:type": opts.type,
-    "w:w": measurementOrPercentValue(opts.value),
+    "w:w": measurementOrPercentValue(opts.size),
   });
   return `<w:tblCellSpacing ${a}/>`;
 }
@@ -253,6 +281,10 @@ function stringifyTablePropertiesInner(options: TablePropertiesOptions): string 
     parts.push(`<w:jc w:val="${options.alignment}"/>`);
   }
 
+  if (options.cellSpacing) {
+    parts.push(cellSpacingStr(options.cellSpacing));
+  }
+
   if (options.indent) {
     parts.push(tableWidthStr("w:tblInd", options.indent));
   }
@@ -277,10 +309,6 @@ function stringifyTablePropertiesInner(options: TablePropertiesOptions): string 
 
   if (options.tableLook) {
     parts.push(tableLookStr(options.tableLook));
-  }
-
-  if (options.cellSpacing) {
-    parts.push(cellSpacingStr(options.cellSpacing));
   }
 
   if (options.caption !== undefined) {
@@ -332,8 +360,7 @@ function stringifyTableRowPropertiesInner(options: TableRowPropertiesOptions): s
   const parts: string[] = [];
 
   if (options.cnfStyle !== undefined) {
-    const a = attrParts({ "w:val": options.cnfStyle.val, "w:changed": options.cnfStyle.changed });
-    parts.push(`<w:cnfStyle ${a}/>`);
+    parts.push(cnfStyleStr(options.cnfStyle));
   }
 
   if (options.divId !== undefined) {
@@ -453,11 +480,13 @@ function stringifyTableCellPropertiesChangeInner(
 // ── Cell properties (w:tcPr) ──
 
 function stringifyTableCellPropertiesInner(options: TableCellPropertiesOptions): string {
+  // CT_TcPrBase sequence: cnfStyle, tcW, gridSpan, hMerge, vMerge, tcBorders, shd,
+  // noWrap, tcMar, textDirection, tcFitText, vAlign, hideMark, headers;
+  // then EG_CellMarkupElements (cellIns/cellDel/cellMerge), then tcPrChange.
   const parts: string[] = [];
 
   if (options.cnfStyle !== undefined) {
-    const a = attrParts({ "w:val": options.cnfStyle.val, "w:changed": options.cnfStyle.changed });
-    parts.push(`<w:cnfStyle ${a}/>`);
+    parts.push(cnfStyleStr(options.cnfStyle));
   }
 
   if (options.width) {
@@ -466,6 +495,14 @@ function stringifyTableCellPropertiesInner(options: TableCellPropertiesOptions):
 
   if (options.columnSpan) {
     parts.push(`<w:gridSpan w:val="${options.columnSpan}"/>`);
+  }
+
+  if (options.horizontalMerge !== undefined) {
+    if (options.horizontalMerge === "restart") {
+      parts.push(`<w:hMerge w:val="restart"/>`);
+    } else {
+      parts.push(`<w:hMerge/>`);
+    }
   }
 
   if (options.verticalMerge) {
@@ -483,6 +520,10 @@ function stringifyTableCellPropertiesInner(options: TableCellPropertiesOptions):
     parts.push(shadingStr(options.shading));
   }
 
+  if (options.noWrap !== undefined) {
+    parts.push(onOff("w:noWrap", options.noWrap));
+  }
+
   if (options.margins) {
     const cm = cellMarginStr("w:tcMar", options.margins);
     if (cm) parts.push(cm);
@@ -492,24 +533,12 @@ function stringifyTableCellPropertiesInner(options: TableCellPropertiesOptions):
     parts.push(`<w:textDirection w:val="${options.textDirection}"/>`);
   }
 
-  if (options.verticalAlign) {
-    parts.push(`<w:vAlign w:val="${options.verticalAlign}"/>`);
-  }
-
-  if (options.horizontalMerge !== undefined) {
-    if (options.horizontalMerge === "restart") {
-      parts.push(`<w:hMerge w:val="restart"/>`);
-    } else {
-      parts.push(`<w:hMerge/>`);
-    }
-  }
-
-  if (options.noWrap !== undefined) {
-    parts.push(onOff("w:noWrap", options.noWrap));
-  }
-
   if (options.fitText !== undefined) {
     parts.push(onOff("w:tcFitText", options.fitText));
+  }
+
+  if (options.verticalAlign) {
+    parts.push(`<w:vAlign w:val="${options.verticalAlign}"/>`);
   }
 
   if (options.hideMark !== undefined) {
@@ -529,12 +558,12 @@ function stringifyTableCellPropertiesInner(options: TableCellPropertiesOptions):
     parts.push(changeAttrStr("w:cellDel", options.deletion));
   }
 
-  if (options.revision) {
-    parts.push(stringifyTableCellPropertiesChangeInner(options.revision));
-  }
-
   if (options.cellMerge) {
     parts.push(cellMergeStr(options.cellMerge));
+  }
+
+  if (options.revision) {
+    parts.push(stringifyTableCellPropertiesChangeInner(options.revision));
   }
 
   return parts.join("");
@@ -552,20 +581,7 @@ export function stringifyTableCellProperties(
 
 // ── Table property exceptions (w:tblPrEx) ──
 
-export interface TablePropertyExOptions {
-  width?: TableWidthProperties;
-  indent?: TableWidthProperties;
-  layout?: (typeof TableLayoutType)[keyof typeof TableLayoutType];
-  borders?: TableBordersOptions;
-  shading?: ShadingAttributesProperties;
-  alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
-  cellMargin?: TableCellMarginOptions;
-  tableLook?: TableLookOptions;
-  cellSpacing?: TableCellSpacingProperties;
-  tblPrExChange?: { author: string; date?: string; id: string };
-}
-
-export function stringifyTablePropertyExceptions(options: TablePropertyExOptions): string {
+function stringifyTablePropertyExceptionsInner(options: TablePropertyExOptions): string {
   const parts: string[] = [];
 
   if (options.width) {
@@ -608,14 +624,15 @@ export function stringifyTablePropertyExceptions(options: TablePropertyExOptions
 
   if (options.tblPrExChange) {
     const change = options.tblPrExChange;
-    const attrs: Record<string, string | number | boolean | undefined> = {
-      "w:author": change.author,
-      "w:id": change.id,
-    };
-    if (change.date !== undefined) attrs["w:date"] = change.date;
-    const a = attrParts(attrs);
-    parts.push(`<w:tblPrExChange ${a}/>`);
+    const a = attrParts({ "w:author": change.author, "w:date": change.date, "w:id": change.id });
+    // CT_TblPrExChange requires a tblPrEx child holding the previous (pre-change) values.
+    const revInner = stringifyTablePropertyExceptionsInner(change);
+    parts.push(`<w:tblPrExChange ${a}><w:tblPrEx>${revInner}</w:tblPrEx></w:tblPrExChange>`);
   }
 
-  return `<w:tblPrEx>${parts.join("")}</w:tblPrEx>`;
+  return parts.join("");
+}
+
+export function stringifyTablePropertyExceptions(options: TablePropertyExOptions): string {
+  return `<w:tblPrEx>${stringifyTablePropertyExceptionsInner(options)}</w:tblPrEx>`;
 }

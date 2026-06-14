@@ -49,10 +49,10 @@ const buffer = await generateDocument({
                     children: [{ paragraph: "World" }],
                     columnSpan: 3,
                     margins: {
-                      bottom: "0.69in",
-                      left: "0.69in",
-                      right: "0.69in",
-                      top: "0.69in",
+                      bottom: { size: "0.69in" },
+                      left: { size: "0.69in" },
+                      right: { size: "0.69in" },
+                      top: { size: "0.69in" },
                     },
                   },
                 ],
@@ -77,10 +77,10 @@ const buffer = await generateDocument({
           table: {
             alignment: AlignmentType.CENTER,
             margins: {
-              bottom: "0.27in",
-              left: "0.27in",
-              right: "0.27in",
-              top: "0.27in",
+              bottom: { size: "0.27in" },
+              left: { size: "0.27in" },
+              right: { size: "0.27in" },
+              top: { size: "0.27in" },
             },
             rows: [
               {

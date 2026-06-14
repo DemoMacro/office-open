@@ -705,7 +705,12 @@ async function main() {
                     children: [{ paragraph: "RowSpan 2" }],
                     rowSpan: 2,
                     verticalAlign: "center",
-                    margins: { top: 200, bottom: 200, left: 200, right: 200 },
+                    margins: {
+                      top: { size: 200 },
+                      bottom: { size: 200 },
+                      left: { size: 200 },
+                      right: { size: 200 },
+                    },
                   },
                   {
                     children: [{ paragraph: "Cell B1" }],

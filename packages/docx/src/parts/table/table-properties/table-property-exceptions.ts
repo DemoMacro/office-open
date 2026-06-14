@@ -9,6 +9,7 @@
  */
 
 import type { ShadingAttributesProperties } from "@shared/shading";
+import type { ChangedAttributesProperties } from "@shared/track-revision/track-revision";
 
 import type { AlignmentType } from "../../paragraph";
 import type { TableCellSpacingProperties } from "../table-cell-spacing";
@@ -34,6 +35,10 @@ export interface TablePropertyExOptions {
   cellMargin?: TableCellMarginOptions;
   tableLook?: TableLookOptions;
   cellSpacing?: TableCellSpacingProperties;
-  /** Table property exceptions change tracking */
-  tblPrExChange?: { author: string; date?: string; id: string };
+  /** Table property exceptions change tracking (CT_TblPrExChange) */
+  tblPrExChange?: TablePropertyExChangeOptions;
 }
+
+// CT_TblPrExChange = CT_TrackChange + tblPrEx (CT_TblPrExBase, minOccurs=1).
+export type TablePropertyExChangeOptions = Omit<TablePropertyExOptions, "tblPrExChange"> &
+  ChangedAttributesProperties;

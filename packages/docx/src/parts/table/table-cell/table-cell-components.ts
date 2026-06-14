@@ -28,6 +28,10 @@ export interface TableCellBordersOptions {
   end?: BorderOptions;
   /** Border for the right edge of the cell */
   right?: BorderOptions;
+  /** Inside horizontal border (CT_TcBorders/insideH) */
+  insideHorizontal?: BorderOptions;
+  /** Inside vertical border (CT_TcBorders/insideV) */
+  insideVertical?: BorderOptions;
   /** Diagonal border from top-left to bottom-right */
   topLeftToBottomRight?: BorderOptions;
   /** Diagonal border from top-right to bottom-left */

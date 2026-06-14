@@ -244,11 +244,11 @@ describe("tableDesc round-trip", () => {
 
   it("round-trips cellSpacing (tblCellSpacing)", () => {
     const result = roundTrip({
-      cellSpacing: { value: 108, type: "dxa" },
+      cellSpacing: { size: 108, type: "dxa" },
       rows: [{ cells: [{ children: [] }] }],
     });
     expect(result.cellSpacing).toBeDefined();
-    expect(result.cellSpacing!.value).toBe(108);
+    expect(result.cellSpacing!.size).toBe(108);
   });
 
   it("round-trips tblPrChange revision", () => {
@@ -510,5 +510,295 @@ describe("tableDesc round-trip", () => {
       expect(result.rows[1].customXml.element).toBe("taggedRow");
       expect(result.rows[1].customXml.children).toHaveLength(1);
     }
+  });
+
+  it("round-trips table cell margins (w:tblCellMar) as per-side TableWidthProperties", () => {
+    const result = roundTrip({
+      margins: {
+        top: { size: 100, type: "dxa" },
+        left: { size: 50, type: "nil" },
+      },
+      rows: [{ cells: [{ children: [] }] }],
+    });
+    expect(result.margins).toBeDefined();
+    expect(result.margins!.top).toEqual({ size: 100, type: "dxa" });
+    expect(result.margins!.left).toEqual({ size: 50, type: "nil" });
+  });
+
+  it("round-trips cell-level margins (w:tcMar), defaulting omitted type to DXA", () => {
+    const result = roundTrip({
+      rows: [
+        {
+          cells: [
+            {
+              children: [],
+              margins: {
+                top: { size: 80, type: "dxa" },
+                left: { size: 40 },
+              },
+            },
+          ],
+        },
+      ],
+    });
+    const cell = (result.rows[0] as TableRowOptions).cells[0] as TableCellOptions;
+    expect(cell.margins).toBeDefined();
+    expect(cell.margins!.top).toEqual({ size: 80, type: "dxa" });
+    expect(cell.margins!.left).toEqual({ size: 40, type: "dxa" });
+  });
+
+  it("round-trips cell borders with full CT_Border attributes", () => {
+    const result = roundTrip({
+      rows: [
+        {
+          cells: [
+            {
+              children: [],
+              borders: {
+                top: {
+                  style: "single",
+                  color: "FF0000",
+                  size: 4,
+                  space: 8,
+                  themeColor: "text1",
+                  themeTint: "99",
+                  themeShade: "80",
+                  shadow: true,
+                  frame: true,
+                },
+              },
+            },
+          ],
+        },
+      ],
+    });
+    const cell = (result.rows[0] as TableRowOptions).cells[0] as TableCellOptions;
+    expect(cell.borders!.top).toMatchObject({
+      style: "single",
+      color: "FF0000",
+      size: 4,
+      space: 8,
+      themeColor: "text1",
+      themeTint: "99",
+      themeShade: "80",
+      shadow: true,
+      frame: true,
+    });
+  });
+
+  it("round-trips table shading with theme fill attributes", () => {
+    const result = roundTrip({
+      shading: { type: "solid", fill: "FF0000", themeFill: "accent1", themeFillShade: "80" },
+      rows: [{ cells: [{ children: [] }] }],
+    });
+    expect(result.shading).toMatchObject({
+      type: "solid",
+      fill: "FF0000",
+      themeFill: "accent1",
+      themeFillShade: "80",
+    });
+  });
+
+  it("round-trips cell shading with theme color attributes", () => {
+    const result = roundTrip({
+      rows: [
+        {
+          cells: [
+            {
+              children: [],
+              shading: { type: "clear", color: "000000", themeColor: "text1", themeTint: "99" },
+            },
+          ],
+        },
+      ],
+    });
+    const cell = (result.rows[0] as TableRowOptions).cells[0] as TableCellOptions;
+    expect(cell.shading).toMatchObject({
+      type: "clear",
+      color: "000000",
+      themeColor: "text1",
+      themeTint: "99",
+    });
+  });
+
+  it("round-trips float.overlap (w:tblOverlap)", () => {
+    const result = roundTrip({
+      float: { horizontalAnchor: "margin", overlap: "never" },
+      rows: [{ cells: [{ children: [] }] }],
+    });
+    expect(result.float).toBeDefined();
+    expect(result.float!.overlap).toBe("never");
+  });
+
+  it("round-trips table-level tableLook (CT_TblLook)", () => {
+    const result = roundTrip({
+      tableLook: { firstRow: true, lastColumn: true, noHBand: false },
+      rows: [{ cells: [{ children: [] }] }],
+    });
+    expect(result.tableLook).toBeDefined();
+    expect(result.tableLook!.firstRow).toBe(true);
+    expect(result.tableLook!.lastColumn).toBe(true);
+    expect(result.tableLook!.noHBand).toBe(false);
+  });
+
+  it("round-trips columnWidthsRevision (w:tblGridChange)", () => {
+    const result = roundTrip({
+      columnWidths: [1000, 2000],
+      columnWidthsRevision: { id: 7, columnWidths: [500, 600] },
+      rows: [{ cells: [{ children: [] }, { children: [] }] }],
+    });
+    expect(result.columnWidths).toEqual([1000, 2000]);
+    expect(result.columnWidthsRevision).toBeDefined();
+    expect(result.columnWidthsRevision!.id).toBe(7);
+    expect(result.columnWidthsRevision!.columnWidths).toEqual([500, 600]);
+  });
+
+  it("round-trips row propertyExceptions (w:tblPrEx) with nested tblPrExChange", () => {
+    const result = roundTrip({
+      rows: [
+        {
+          propertyExceptions: {
+            width: { size: 100, type: "dxa" },
+            alignment: "center",
+            cellSpacing: { size: 20, type: "dxa" },
+            tblPrExChange: {
+              id: 3,
+              author: "E",
+              date: "2024-05-05T00:00:00Z",
+              width: { size: 50, type: "dxa" },
+            },
+          },
+          cells: [{ children: [] }],
+        },
+      ],
+    });
+    const row = result.rows[0] as TableRowOptions;
+    expect(row.propertyExceptions).toBeDefined();
+    expect(row.propertyExceptions!.width).toEqual({ size: 100, type: "dxa" });
+    expect(row.propertyExceptions!.alignment).toBe("center");
+    expect(row.propertyExceptions!.tblPrExChange).toBeDefined();
+    expect(row.propertyExceptions!.tblPrExChange!.id).toBe(3);
+    expect(row.propertyExceptions!.tblPrExChange!.author).toBe("E");
+    expect(row.propertyExceptions!.tblPrExChange!.width).toEqual({ size: 50, type: "dxa" });
+  });
+
+  it("round-trips tcPr with co-occurring hMerge/noWrap/fitText/verticalAlign (CT_TcPrBase order)", () => {
+    const result = roundTrip({
+      rows: [
+        {
+          cells: [
+            {
+              children: [],
+              horizontalMerge: "restart",
+              noWrap: true,
+              fitText: true,
+              verticalAlign: "center",
+              borders: { top: { style: "single" } },
+            },
+          ],
+        },
+      ],
+    });
+    const cell = (result.rows[0] as TableRowOptions).cells[0] as TableCellOptions;
+    expect(cell.horizontalMerge).toBe("restart");
+    expect(cell.noWrap).toBe(true);
+    expect(cell.fitText).toBe(true);
+    expect(cell.verticalAlign).toBe("center");
+    expect(cell.borders!.top!.style).toBe("single");
+  });
+
+  it("round-trips tblPr with cellSpacing between jc and tblInd (CT_TblPrBase order)", () => {
+    const result = roundTrip({
+      width: { size: 5000, type: "dxa" },
+      alignment: "center",
+      cellSpacing: { size: 30, type: "dxa" },
+      indent: { size: 200, type: "dxa" },
+      rows: [{ cells: [{ children: [] }] }],
+    });
+    expect(result.alignment).toBe("center");
+    expect(result.cellSpacing).toEqual({ size: 30, type: "dxa" });
+    expect(result.indent).toEqual({ size: 200, type: "dxa" });
+  });
+
+  it("round-trips cell insideH/insideV borders (CT_TcBorders)", () => {
+    const result = roundTrip({
+      rows: [
+        {
+          cells: [
+            {
+              children: [],
+              borders: {
+                insideHorizontal: { style: "single", color: "0000FF" },
+                insideVertical: { style: "single", color: "00FF00" },
+              },
+            },
+          ],
+        },
+      ],
+    });
+    const cell = (result.rows[0] as TableRowOptions).cells[0] as TableCellOptions;
+    expect(cell.borders!.insideHorizontal).toBeDefined();
+    expect(cell.borders!.insideHorizontal!.color).toBe("0000FF");
+    expect(cell.borders!.insideVertical).toBeDefined();
+    expect(cell.borders!.insideVertical!.color).toBe("00FF00");
+  });
+
+  it("round-trips row cnfStyle with full CT_Cnf position attrs (no invented 'changed')", () => {
+    const result = roundTrip({
+      rows: [
+        {
+          cnfStyle: {
+            val: "100000000000",
+            firstRow: true,
+            firstColumn: true,
+            evenHBand: true,
+            firstRowLastColumn: true,
+          },
+          cells: [{ children: [] }],
+        },
+      ],
+    });
+    const row = result.rows[0] as TableRowOptions;
+    expect(row.cnfStyle).toBeDefined();
+    expect(row.cnfStyle!.val).toBe("100000000000");
+    expect(row.cnfStyle!.firstRow).toBe(true);
+    expect(row.cnfStyle!.firstColumn).toBe(true);
+    expect(row.cnfStyle!.evenHBand).toBe(true);
+    expect(row.cnfStyle!.firstRowLastColumn).toBe(true);
+    expect(row.cnfStyle).not.toHaveProperty("changed");
+  });
+
+  it("round-trips cell-level cnfStyle (CT_TcPr/cnfStyle)", () => {
+    const result = roundTrip({
+      rows: [
+        {
+          cells: [{ children: [], cnfStyle: { val: "000000000001", lastColumn: true } }],
+        },
+      ],
+    });
+    const cell = (result.rows[0] as TableRowOptions).cells[0] as TableCellOptions;
+    expect(cell.cnfStyle).toBeDefined();
+    expect(cell.cnfStyle!.val).toBe("000000000001");
+    expect(cell.cnfStyle!.lastColumn).toBe(true);
+  });
+
+  it("does not inflate trHeight hRule when not specified", () => {
+    const result = roundTrip({
+      rows: [{ height: { value: 400 }, cells: [{ children: [] }] }],
+    });
+    const row = result.rows[0] as TableRowOptions;
+    expect(row.height).toBeDefined();
+    expect(row.height!.value).toBe(400);
+    expect(row.height!.rule).toBeUndefined();
+  });
+
+  it("echoes stringify default tcW type rather than inflating to dxa", () => {
+    const result = roundTrip({
+      rows: [{ cells: [{ children: [], width: { size: 1000 } }] }],
+    });
+    const cell = (result.rows[0] as TableRowOptions).cells[0] as TableCellOptions;
+    // stringify injects type=auto (ST_TblWidthType default); parse echoes it,
+    // not the old hard-coded "dxa".
+    expect(cell.width).toEqual({ size: 1000, type: "auto" });
   });
 });

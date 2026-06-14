@@ -19,14 +19,24 @@ import { parseRunProperties } from "@parts/paragraph/run/run-parse";
 import { parseSdtProperties } from "@parts/sdt/sdt-parse";
 import type { TableGridChangeOptions } from "@parts/table/grid";
 import type { TableOptions } from "@parts/table/table";
+import type { TableCellSpacingProperties } from "@parts/table/table-cell-spacing";
 import type { SdtCellOptions, TableCellOptions } from "@parts/table/table-cell/table-cell";
+import type { TableCellBordersOptions } from "@parts/table/table-cell/table-cell-components";
 import { VerticalMergeType } from "@parts/table/table-cell/table-cell-components";
 import type { TableBordersOptions } from "@parts/table/table-properties/table-borders";
+import type { TableCellMarginOptions } from "@parts/table/table-properties/table-cell-margin";
 import type { TableLookOptions } from "@parts/table/table-properties/table-look";
+import type {
+  TablePropertyExChangeOptions,
+  TablePropertyExOptions,
+} from "@parts/table/table-properties/table-property-exceptions";
 import type { SdtRowOptions, TableRowOptions } from "@parts/table/table-row/table-row";
+import type { CnfStyleOptions } from "@parts/table/table-row/table-row-properties";
+import type { TableWidthProperties } from "@parts/table/table-width";
 import { BorderStyle } from "@shared/border";
 import type { BorderOptions } from "@shared/border";
 import type { SectionChild } from "@shared/section";
+import type { ShadingAttributesProperties } from "@shared/shading";
 
 import type { BodyContext, DocxReadContext } from "../../context";
 import {
@@ -257,6 +267,143 @@ function computeVerticalMergeCells(
   return extraMap;
 }
 
+/** Parse a w:tblCellMar / w:tcMar container into TableCellMarginOptions. */
+function parseCellMargins(marginEl: Element): TableCellMarginOptions | undefined {
+  const margins: Partial<TableCellMarginOptions> = {};
+  // CT_TblCellMar sides: top, start, left, bottom, end, right — each an
+  // independent CT_TblWidth ({ size, type }). Parse faithfully: omit type
+  // when the XML has none (stringify defaults it to DXA on the way back).
+  for (const side of ["top", "start", "left", "bottom", "end", "right"] as const) {
+    const sideEl = findChild(marginEl, `w:${side}`);
+    if (sideEl) {
+      const size = attrNum(sideEl, "w:w");
+      if (size !== undefined) {
+        const type = attr(sideEl, "w:type");
+        margins[side] = type ? { size, type: type as TableWidthProperties["type"] } : { size };
+      }
+    }
+  }
+  if (Object.keys(margins).length === 0) return undefined;
+  return margins as TableCellMarginOptions;
+}
+
+/** Parse a w:shd (CT_Shd) element into ShadingAttributesProperties. */
+function parseShading(shd: Element): ShadingAttributesProperties | undefined {
+  const shading: Partial<ShadingAttributesProperties> = {};
+  const fill = attr(shd, "w:fill");
+  if (fill) shading.fill = fill;
+  const color = attr(shd, "w:color");
+  if (color) shading.color = color;
+  const val = attr(shd, "w:val");
+  if (val) shading.type = val as ShadingAttributesProperties["type"];
+  const themeColor = attr(shd, "w:themeColor");
+  if (themeColor && THEME_COLORS.includes(themeColor)) {
+    shading.themeColor = themeColor as ShadingAttributesProperties["themeColor"];
+  }
+  const themeTint = attr(shd, "w:themeTint");
+  if (themeTint) shading.themeTint = themeTint;
+  const themeShade = attr(shd, "w:themeShade");
+  if (themeShade) shading.themeShade = themeShade;
+  const themeFill = attr(shd, "w:themeFill");
+  if (themeFill && THEME_COLORS.includes(themeFill)) {
+    shading.themeFill = themeFill as ShadingAttributesProperties["themeFill"];
+  }
+  const themeFillTint = attr(shd, "w:themeFillTint");
+  if (themeFillTint) shading.themeFillTint = themeFillTint;
+  const themeFillShade = attr(shd, "w:themeFillShade");
+  if (themeFillShade) shading.themeFillShade = themeFillShade;
+  if (Object.keys(shading).length === 0) return undefined;
+  return shading as ShadingAttributesProperties;
+}
+
+/** Parse a w:cnfStyle (CT_Cnf) element into CnfStyleOptions. */
+function parseCnfStyle(cnfEl: Element): CnfStyleOptions | undefined {
+  const cnf: Partial<CnfStyleOptions> = {};
+  const val = attr(cnfEl, "w:val");
+  if (val) cnf.val = val;
+  const firstRow = attrBool(cnfEl, "w:firstRow");
+  if (firstRow !== undefined) cnf.firstRow = firstRow;
+  const lastRow = attrBool(cnfEl, "w:lastRow");
+  if (lastRow !== undefined) cnf.lastRow = lastRow;
+  const firstColumn = attrBool(cnfEl, "w:firstColumn");
+  if (firstColumn !== undefined) cnf.firstColumn = firstColumn;
+  const lastColumn = attrBool(cnfEl, "w:lastColumn");
+  if (lastColumn !== undefined) cnf.lastColumn = lastColumn;
+  const oddVBand = attrBool(cnfEl, "w:oddVBand");
+  if (oddVBand !== undefined) cnf.oddVBand = oddVBand;
+  const evenVBand = attrBool(cnfEl, "w:evenVBand");
+  if (evenVBand !== undefined) cnf.evenVBand = evenVBand;
+  const oddHBand = attrBool(cnfEl, "w:oddHBand");
+  if (oddHBand !== undefined) cnf.oddHBand = oddHBand;
+  const evenHBand = attrBool(cnfEl, "w:evenHBand");
+  if (evenHBand !== undefined) cnf.evenHBand = evenHBand;
+  const firstRowFirstColumn = attrBool(cnfEl, "w:firstRowFirstColumn");
+  if (firstRowFirstColumn !== undefined) cnf.firstRowFirstColumn = firstRowFirstColumn;
+  const firstRowLastColumn = attrBool(cnfEl, "w:firstRowLastColumn");
+  if (firstRowLastColumn !== undefined) cnf.firstRowLastColumn = firstRowLastColumn;
+  const lastRowFirstColumn = attrBool(cnfEl, "w:lastRowFirstColumn");
+  if (lastRowFirstColumn !== undefined) cnf.lastRowFirstColumn = lastRowFirstColumn;
+  const lastRowLastColumn = attrBool(cnfEl, "w:lastRowLastColumn");
+  if (lastRowLastColumn !== undefined) cnf.lastRowLastColumn = lastRowLastColumn;
+  if (Object.keys(cnf).length === 0) return undefined;
+  return cnf as CnfStyleOptions;
+}
+
+/**
+ * Parse a w:tblPrEx (CT_TblPrEx) element into TablePropertyExOptions.
+ * CT_TblPrExBase shares its child elements with CT_TblPrBase, so this reuses
+ * parseTablePropertiesEl and maps the table-level margins field to cellMargin.
+ */
+function parseTablePropertyExceptions(el: Element): TablePropertyExOptions {
+  const base = parseTablePropertiesEl(el);
+  const opts: Partial<TablePropertyExOptions> = {};
+  if (base.width !== undefined) opts.width = base.width as TableWidthProperties;
+  if (base.indent !== undefined) opts.indent = base.indent as TableWidthProperties;
+  if (base.layout !== undefined) opts.layout = base.layout as TablePropertyExOptions["layout"];
+  if (base.borders !== undefined) opts.borders = base.borders as TableBordersOptions;
+  if (base.shading !== undefined) opts.shading = base.shading as ShadingAttributesProperties;
+  if (base.alignment !== undefined) {
+    opts.alignment = base.alignment as TablePropertyExOptions["alignment"];
+  }
+  if (base.margins !== undefined) opts.cellMargin = base.margins as TableCellMarginOptions;
+  if (base.tableLook !== undefined) opts.tableLook = base.tableLook as TableLookOptions;
+  if (base.cellSpacing !== undefined) {
+    opts.cellSpacing = base.cellSpacing as TableCellSpacingProperties;
+  }
+  const tblPrExChange = findChild(el, "w:tblPrExChange");
+  if (tblPrExChange) {
+    const change = parseTablePropertyExChange(tblPrExChange);
+    if (change) opts.tblPrExChange = change;
+  }
+  return opts as TablePropertyExOptions;
+}
+
+/** Parse a w:tblPrExChange (CT_TblPrExChange) — track-change wrapper around the previous tblPrEx. */
+function parseTablePropertyExChange(el: Element): TablePropertyExChangeOptions | undefined {
+  const change: Partial<TablePropertyExChangeOptions> = {};
+  const id = attrNum(el, "w:id");
+  if (id !== undefined) change.id = id;
+  const author = attr(el, "w:author");
+  if (author) change.author = author;
+  const date = attr(el, "w:date");
+  if (date) change.date = date;
+  const innerTblPrEx = findChild(el, "w:tblPrEx");
+  if (innerTblPrEx) {
+    const inner = parseTablePropertyExceptions(innerTblPrEx);
+    if (inner.width !== undefined) change.width = inner.width;
+    if (inner.indent !== undefined) change.indent = inner.indent;
+    if (inner.layout !== undefined) change.layout = inner.layout;
+    if (inner.borders !== undefined) change.borders = inner.borders;
+    if (inner.shading !== undefined) change.shading = inner.shading;
+    if (inner.alignment !== undefined) change.alignment = inner.alignment;
+    if (inner.cellMargin !== undefined) change.cellMargin = inner.cellMargin;
+    if (inner.tableLook !== undefined) change.tableLook = inner.tableLook;
+    if (inner.cellSpacing !== undefined) change.cellSpacing = inner.cellSpacing;
+  }
+  if (change.id === undefined || change.author === undefined) return undefined;
+  return change as TablePropertyExChangeOptions;
+}
+
 // ── Descriptor ──
 
 export const tableDesc: CustomDescriptor<TableOptions, BodyContext> = {
@@ -279,6 +426,7 @@ export const tableDesc: CustomDescriptor<TableOptions, BodyContext> = {
       indent: opts.indent,
       layout: opts.layout,
       revision: opts.revision,
+      shading: opts.shading,
       style: opts.style,
       styleColBandSize: opts.styleColBandSize,
       styleRowBandSize: opts.styleRowBandSize,
@@ -411,30 +559,14 @@ function parseTablePropertiesEl(el: Element): Record<string, unknown> {
 
   const tblCellMar = findChild(el, "w:tblCellMar");
   if (tblCellMar) {
-    const margins: Record<string, unknown> = {};
-    for (const side of ["top", "bottom", "left", "right"] as const) {
-      const sideEl = findChild(tblCellMar, `w:${side}`);
-      if (sideEl) {
-        const size = attrNum(sideEl, "w:w");
-        const type = attr(sideEl, "w:type");
-        if (size !== undefined) {
-          margins[side] = { size, type: type ?? "dxa" };
-        }
-      }
-    }
-    if (Object.keys(margins).length > 0) opts.margins = margins;
+    const margins = parseCellMargins(tblCellMar);
+    if (margins) opts.margins = margins;
   }
 
   const shd = findChild(el, "w:shd");
   if (shd) {
-    const shading: Record<string, unknown> = {};
-    const fill = attr(shd, "w:fill");
-    if (fill) shading.fill = fill;
-    const color = attr(shd, "w:color");
-    if (color) shading.color = color;
-    const val = attr(shd, "w:val");
-    if (val) shading.type = val;
-    if (Object.keys(shading).length > 0) opts.shading = shading;
+    const shading = parseShading(shd);
+    if (shading) opts.shading = shading;
   }
 
   // description → w:tblDescription/@w:val
@@ -444,30 +576,37 @@ function parseTablePropertiesEl(el: Element): Record<string, unknown> {
     if (val) opts.description = val;
   }
 
-  // float → w:tblpPr attributes
+  // float → w:tblpPr attributes + w:tblOverlap (sibling element in CT_TblPrBase)
   const tblpPr = findChild(el, "w:tblpPr");
-  if (tblpPr) {
+  const tblOverlap = findChild(el, "w:tblOverlap");
+  if (tblpPr || tblOverlap) {
     const floatOpts: Record<string, unknown> = {};
-    const horzAnchor = attr(tblpPr, "w:horzAnchor");
-    if (horzAnchor) floatOpts.horizontalAnchor = horzAnchor;
-    const vertAnchor = attr(tblpPr, "w:vertAnchor");
-    if (vertAnchor) floatOpts.verticalAnchor = vertAnchor;
-    const tblpX = attrNum(tblpPr, "w:tblpX");
-    if (tblpX !== undefined) floatOpts.absoluteHorizontalPosition = tblpX;
-    const tblpXSpec = attr(tblpPr, "w:tblpXSpec");
-    if (tblpXSpec) floatOpts.relativeHorizontalPosition = tblpXSpec;
-    const tblpY = attrNum(tblpPr, "w:tblpY");
-    if (tblpY !== undefined) floatOpts.absoluteVerticalPosition = tblpY;
-    const tblpYSpec = attr(tblpPr, "w:tblpYSpec");
-    if (tblpYSpec) floatOpts.relativeVerticalPosition = tblpYSpec;
-    const bottomFromText = attrNum(tblpPr, "w:bottomFromText");
-    if (bottomFromText !== undefined) floatOpts.bottomFromText = bottomFromText;
-    const topFromText = attrNum(tblpPr, "w:topFromText");
-    if (topFromText !== undefined) floatOpts.topFromText = topFromText;
-    const leftFromText = attrNum(tblpPr, "w:leftFromText");
-    if (leftFromText !== undefined) floatOpts.leftFromText = leftFromText;
-    const rightFromText = attrNum(tblpPr, "w:rightFromText");
-    if (rightFromText !== undefined) floatOpts.rightFromText = rightFromText;
+    if (tblpPr) {
+      const horzAnchor = attr(tblpPr, "w:horzAnchor");
+      if (horzAnchor) floatOpts.horizontalAnchor = horzAnchor;
+      const vertAnchor = attr(tblpPr, "w:vertAnchor");
+      if (vertAnchor) floatOpts.verticalAnchor = vertAnchor;
+      const tblpX = attrNum(tblpPr, "w:tblpX");
+      if (tblpX !== undefined) floatOpts.absoluteHorizontalPosition = tblpX;
+      const tblpXSpec = attr(tblpPr, "w:tblpXSpec");
+      if (tblpXSpec) floatOpts.relativeHorizontalPosition = tblpXSpec;
+      const tblpY = attrNum(tblpPr, "w:tblpY");
+      if (tblpY !== undefined) floatOpts.absoluteVerticalPosition = tblpY;
+      const tblpYSpec = attr(tblpPr, "w:tblpYSpec");
+      if (tblpYSpec) floatOpts.relativeVerticalPosition = tblpYSpec;
+      const bottomFromText = attrNum(tblpPr, "w:bottomFromText");
+      if (bottomFromText !== undefined) floatOpts.bottomFromText = bottomFromText;
+      const topFromText = attrNum(tblpPr, "w:topFromText");
+      if (topFromText !== undefined) floatOpts.topFromText = topFromText;
+      const leftFromText = attrNum(tblpPr, "w:leftFromText");
+      if (leftFromText !== undefined) floatOpts.leftFromText = leftFromText;
+      const rightFromText = attrNum(tblpPr, "w:rightFromText");
+      if (rightFromText !== undefined) floatOpts.rightFromText = rightFromText;
+    }
+    if (tblOverlap) {
+      const overlap = attr(tblOverlap, "w:val");
+      if (overlap) floatOpts.overlap = overlap;
+    }
     if (Object.keys(floatOpts).length > 0) opts.float = floatOpts;
   }
 
@@ -509,7 +648,7 @@ function parseTablePropertiesEl(el: Element): Record<string, unknown> {
   if (tblCellSpacing) {
     const type = attr(tblCellSpacing, "w:type");
     const w = attrNum(tblCellSpacing, "w:w");
-    if (w !== undefined) opts.cellSpacing = { value: w, ...(type ? { type } : {}) };
+    if (w !== undefined) opts.cellSpacing = { size: w, ...(type ? { type } : {}) };
   }
 
   // Revision (w:tblPrChange)
@@ -529,20 +668,59 @@ function parseTablePropertiesEl(el: Element): Record<string, unknown> {
     if (Object.keys(rev).length > 0) opts.revision = rev;
   }
 
+  // tblLook — conditional formatting flags (CT_TblLook)
+  const tblLook = findChild(el, "w:tblLook");
+  if (tblLook) {
+    const look: TableLookOptions = {};
+    const firstRow = attrBool(tblLook, "w:firstRow");
+    if (firstRow !== undefined) look.firstRow = firstRow;
+    const lastRow = attrBool(tblLook, "w:lastRow");
+    if (lastRow !== undefined) look.lastRow = lastRow;
+    const firstColumn = attrBool(tblLook, "w:firstColumn");
+    if (firstColumn !== undefined) look.firstColumn = firstColumn;
+    const lastColumn = attrBool(tblLook, "w:lastColumn");
+    if (lastColumn !== undefined) look.lastColumn = lastColumn;
+    const noHBand = attrBool(tblLook, "w:noHBand");
+    if (noHBand !== undefined) look.noHBand = noHBand;
+    const noVBand = attrBool(tblLook, "w:noVBand");
+    if (noVBand !== undefined) look.noVBand = noVBand;
+    if (Object.keys(look).length > 0) opts.tableLook = look;
+  }
+
   return opts;
 }
 
-function parseColumnWidthsEl(el: Element): number[] {
-  const cols: number[] = [];
+function parseColumnWidthsEl(el: Element): {
+  widths: number[];
+  revision?: TableGridChangeOptions;
+} {
+  const widths: number[] = [];
   const tblGrid = findChild(el, "w:tblGrid");
-  if (!tblGrid) return cols;
+  if (!tblGrid) return { widths };
 
   for (const col of children(tblGrid, "w:gridCol")) {
     const w = attrNum(col, "w:w");
-    cols.push(w ?? 100);
+    widths.push(w ?? 100);
   }
 
-  return cols;
+  // CT_TblGrid may carry a tblGridChange (CT_TblGridChange = CT_Markup + tblGrid).
+  const tblGridChange = findChild(tblGrid, "w:tblGridChange");
+  if (tblGridChange) {
+    const id = attrNum(tblGridChange, "w:id");
+    const innerGrid = findChild(tblGridChange, "w:tblGrid");
+    const revWidths: number[] = [];
+    if (innerGrid) {
+      for (const col of children(innerGrid, "w:gridCol")) {
+        const w = attrNum(col, "w:w");
+        revWidths.push(w ?? 100);
+      }
+    }
+    if (id !== undefined) {
+      return { widths, revision: { id, columnWidths: revWidths } };
+    }
+  }
+
+  return { widths };
 }
 
 function parseTableRowPropertiesEl(el: Element): Record<string, unknown> {
@@ -553,20 +731,15 @@ function parseTableRowPropertiesEl(el: Element): Record<string, unknown> {
     const val = attrNum(trHeight, "w:val");
     const rule = attr(trHeight, "w:hRule");
     if (val !== undefined) {
-      opts.height = { value: val, rule: rule ?? "atLeast" };
+      opts.height = { value: val, ...(rule ? { rule } : {}) };
     }
   }
 
-  // cnfStyle → w:cnfStyle/@w:val (+ @w:changed)
+  // cnfStyle → w:cnfStyle (CT_Cnf)
   const cnfStyle = findChild(el, "w:cnfStyle");
   if (cnfStyle) {
-    const val = attr(cnfStyle, "w:val");
-    if (val) {
-      const cnf: Record<string, unknown> = { val };
-      const changed = attrBool(cnfStyle, "w:changed");
-      if (changed !== undefined) cnf.changed = changed;
-      opts.cnfStyle = cnf;
-    }
+    const cnf = parseCnfStyle(cnfStyle);
+    if (cnf) opts.cnfStyle = cnf;
   }
 
   // divId → w:divId/@w:val
@@ -620,7 +793,7 @@ function parseTableRowPropertiesEl(el: Element): Record<string, unknown> {
   if (tblCellSpacing) {
     const type = attr(tblCellSpacing, "w:type");
     const w = attrNum(tblCellSpacing, "w:w");
-    if (w !== undefined) opts.cellSpacing = { value: w, ...(type ? { type } : {}) };
+    if (w !== undefined) opts.cellSpacing = { size: w, ...(type ? { type } : {}) };
   }
 
   // insertion / deletion (track changes)
@@ -656,37 +829,24 @@ function parseTableRowPropertiesEl(el: Element): Record<string, unknown> {
     opts.cantSplit = attrBool(cantSplit, "w:val") ?? true;
   }
 
-  // tblLook — conditional formatting flags (CT_TblLook)
-  const tblLook = findChild(el, "w:tblLook");
-  if (tblLook) {
-    const look: TableLookOptions = {};
-    const firstRow = attrBool(tblLook, "w:firstRow");
-    if (firstRow !== undefined) look.firstRow = firstRow;
-    const lastRow = attrBool(tblLook, "w:lastRow");
-    if (lastRow !== undefined) look.lastRow = lastRow;
-    const firstColumn = attrBool(tblLook, "w:firstColumn");
-    if (firstColumn !== undefined) look.firstColumn = firstColumn;
-    const lastColumn = attrBool(tblLook, "w:lastColumn");
-    if (lastColumn !== undefined) look.lastColumn = lastColumn;
-    const noHBand = attrBool(tblLook, "w:noHBand");
-    if (noHBand !== undefined) look.noHBand = noHBand;
-    const noVBand = attrBool(tblLook, "w:noVBand");
-    if (noVBand !== undefined) look.noVBand = noVBand;
-    if (Object.keys(look).length > 0) opts.tableLook = look;
-  }
-
   return opts;
 }
 
 function parseTableCellPropertiesEl(el: Element): Record<string, unknown> {
   const opts: Record<string, unknown> = {};
 
+  const cnfStyle = findChild(el, "w:cnfStyle");
+  if (cnfStyle) {
+    const cnf = parseCnfStyle(cnfStyle);
+    if (cnf) opts.cnfStyle = cnf;
+  }
+
   const tcW = findChild(el, "w:tcW");
   if (tcW) {
     const size = attrNum(tcW, "w:w");
     const type = attr(tcW, "w:type");
     if (size !== undefined) {
-      opts.width = { size, type: type ?? "dxa" };
+      opts.width = { size, ...(type ? { type } : {}) };
     }
   }
 
@@ -710,42 +870,53 @@ function parseTableCellPropertiesEl(el: Element): Record<string, unknown> {
 
   const shd = findChild(el, "w:shd");
   if (shd) {
-    const shading: Record<string, unknown> = {};
-    const fill = attr(shd, "w:fill");
-    if (fill) shading.fill = fill;
-    const color = attr(shd, "w:color");
-    if (color) shading.color = color;
-    const val = attr(shd, "w:val");
-    if (val) shading.type = val;
-    if (Object.keys(shading).length > 0) opts.shading = shading;
+    const shading = parseShading(shd);
+    if (shading) opts.shading = shading;
   }
 
   const tcBorders = findChild(el, "w:tcBorders");
   if (tcBorders) {
-    const borders: Record<string, unknown> = {};
-    // XML side name → TableCellBordersOptions key (incl. start/end + diagonals)
-    const SIDE_KEYS: ReadonlyArray<[string, string]> = [
+    // XML side name → TableCellBordersOptions key (incl. start/end + diagonals);
+    // all sides are CT_TcBorders-optional. Mirrors table-level borders parse.
+    const SIDE_KEYS: ReadonlyArray<[string, keyof TableCellBordersOptions]> = [
       ["top", "top"],
       ["start", "start"],
       ["left", "left"],
       ["bottom", "bottom"],
       ["end", "end"],
       ["right", "right"],
+      ["insideH", "insideHorizontal"],
+      ["insideV", "insideVertical"],
       ["tl2br", "topLeftToBottomRight"],
       ["tr2bl", "topRightToBottomLeft"],
     ];
+    const borders: Partial<TableCellBordersOptions> = {};
     for (const [xmlSide, key] of SIDE_KEYS) {
       const sideEl = findChild(tcBorders, `w:${xmlSide}`);
-      if (sideEl) {
-        const b: Record<string, unknown> = {};
-        const val = attr(sideEl, "w:val");
-        if (val) b.style = val;
-        const color = attr(sideEl, "w:color");
-        if (color) b.color = color;
-        const sz = attrNum(sideEl, "w:sz");
-        if (sz !== undefined) b.size = sz;
-        borders[key] = b;
+      if (!sideEl) continue;
+      // CT_Border requires w:val (style); skip malformed sides
+      const style = attr(sideEl, "w:val");
+      if (!style || !BORDER_STYLES.includes(style)) continue;
+      const sideOpts: BorderOptions = { style: style as BorderOptions["style"] };
+      const color = attr(sideEl, "w:color");
+      if (color) sideOpts.color = color;
+      const size = attrNum(sideEl, "w:sz");
+      if (size !== undefined) sideOpts.size = size;
+      const space = attrNum(sideEl, "w:space");
+      if (space !== undefined) sideOpts.space = space;
+      const themeColor = attr(sideEl, "w:themeColor");
+      if (themeColor && THEME_COLORS.includes(themeColor)) {
+        sideOpts.themeColor = themeColor as BorderOptions["themeColor"];
       }
+      const themeTint = attr(sideEl, "w:themeTint");
+      if (themeTint) sideOpts.themeTint = themeTint;
+      const themeShade = attr(sideEl, "w:themeShade");
+      if (themeShade) sideOpts.themeShade = themeShade;
+      const shadow = attrBool(sideEl, "w:shadow");
+      if (shadow !== undefined) sideOpts.shadow = shadow;
+      const frame = attrBool(sideEl, "w:frame");
+      if (frame !== undefined) sideOpts.frame = frame;
+      borders[key] = sideOpts;
     }
     if (Object.keys(borders).length > 0) opts.borders = borders;
   }
@@ -755,21 +926,8 @@ function parseTableCellPropertiesEl(el: Element): Record<string, unknown> {
 
   const tcMar = findChild(el, "w:tcMar");
   if (tcMar) {
-    const margins: Record<string, unknown> = {};
-    let marginUnitType: string | undefined;
-    for (const side of ["top", "bottom", "left", "right"] as const) {
-      const sideEl = findChild(tcMar, `w:${side}`);
-      if (sideEl) {
-        const size = attrNum(sideEl, "w:w");
-        const type = attr(sideEl, "w:type");
-        if (size !== undefined) {
-          margins[side] = size;
-          if (type && !marginUnitType) marginUnitType = type;
-        }
-      }
-    }
-    if (marginUnitType) margins.marginUnitType = marginUnitType;
-    if (Object.keys(margins).length > 0) opts.margins = margins;
+    const margins = parseCellMargins(tcMar);
+    if (margins) opts.margins = margins;
   }
 
   const textDirection = findChild(el, "w:textDirection");
@@ -878,6 +1036,13 @@ function parseTableRowEl(el: Element, ctx: DocxReadContext): TableRowOptions {
     Object.assign(opts, parseTableRowPropertiesEl(trPr));
   }
 
+  // w:tblPrEx (CT_TblPrEx) — per-row table-property exceptions
+  const tblPrEx = findChild(el, "w:tblPrEx");
+  if (tblPrEx) {
+    const exceptions = parseTablePropertyExceptions(tblPrEx);
+    if (Object.keys(exceptions).length > 0) opts.propertyExceptions = exceptions;
+  }
+
   // rsid attributes on w:tr element
   for (const [attrName, optKey] of [
     ["w:rsidRPr", "rsidRPr"],
@@ -947,9 +1112,12 @@ function parseTableEl(el: Element, ctx: DocxReadContext): TableOptions {
     Object.assign(opts, parseTablePropertiesEl(tblPr));
   }
 
-  const colWidths = parseColumnWidthsEl(el);
-  if (colWidths.length > 0) {
-    opts.columnWidths = colWidths;
+  const grid = parseColumnWidthsEl(el);
+  if (grid.widths.length > 0) {
+    opts.columnWidths = grid.widths;
+  }
+  if (grid.revision) {
+    opts.columnWidthsRevision = grid.revision;
   }
 
   const rows: (TableRowOptions | { sdt: SdtRowOptions } | { customXml: CustomXmlRowOptions })[] =

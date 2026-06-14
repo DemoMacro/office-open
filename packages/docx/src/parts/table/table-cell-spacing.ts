@@ -13,18 +13,11 @@ import type { Percentage, UniversalMeasure } from "@office-open/core";
 /**
  * Cell spacing measurement types.
  *
- * ## XSD Schema
- * ```xml
- * <xsd:simpleType name="ST_TblCellSpacing">
- *   <xsd:restriction base="xsd:string">
- *     <xsd:enumeration value="nil"/>
- *     <xsd:enumeration value="dxa"/>
- *   </xsd:restriction>
- * </xsd:simpleType>
- * ```
+ * w:tblCellSpacing is a CT_TblWidth whose @w:type is ST_TblWidthType; cell
+ * spacing only ever uses the nil/dxa subset of that union.
  */
 export const CellSpacingType = {
-  /** Value is in twentieths of a point */
+  /** Value is in twentieths of a point (dxa) */
   DXA: "dxa",
   /** No (empty) value. */
   NIL: "nil",
@@ -35,7 +28,7 @@ export const CellSpacingType = {
  */
 export interface TableCellSpacingProperties {
   /** The spacing value (in twips, percentage, or universal measure) */
-  value: number | Percentage | UniversalMeasure;
+  size: number | Percentage | UniversalMeasure;
   /** The type of measurement (defaults to DXA/twips) */
   type?: (typeof CellSpacingType)[keyof typeof CellSpacingType];
 }
