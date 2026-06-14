@@ -127,7 +127,7 @@ export function findDeep(parent: Element | undefined, name: string): Element[] {
   if (!parent) return result;
   for (const child of parent.elements ?? []) {
     if (child.name === name) result.push(child);
-    result.push(...findDeep(child, name));
+    for (const found of findDeep(child, name)) result.push(found);
   }
   return result;
 }

@@ -900,9 +900,12 @@ export function aggregate(values: number[], func: ConsolidateFunction): number {
     case "average":
       return values.reduce((a, b) => a + b, 0) / values.length;
     case "max":
-      return Math.max(...values);
+      // Two-arg reduce: Math.max is associative, so Math.max(a,b,c) ===
+      // Math.max(Math.max(a,b),c) for all values incl. NaN/Infinity — fully
+      // equivalent to Math.max(...values) without spreading onto the stack.
+      return values.reduce((a, b) => Math.max(a, b));
     case "min":
-      return Math.min(...values);
+      return values.reduce((a, b) => Math.min(a, b));
     case "product":
       return values.reduce((a, b) => a * b, 1);
     case "var":

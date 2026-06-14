@@ -952,7 +952,7 @@ function renderPivotSheetData(
         arr = [];
         rowCells.set(rowIdx, arr);
       }
-      arr.push(...cells);
+      for (const c of cells) arr.push(c);
       minRow = Math.min(minRow, rowIdx);
       maxRow = Math.max(maxRow, rowIdx);
     };
@@ -1163,7 +1163,7 @@ function renderPivotSheetData(
   const sortedRows = [...rowCells.entries()].sort((a, b) => a[0] - b[0]);
   for (const [rowIdx, cells] of sortedRows) {
     parts.push(`<row r="${rowIdx}" x14ac:dyDescent="0.25">`);
-    parts.push(...cells);
+    for (const c of cells) parts.push(c);
     parts.push("</row>");
   }
   parts.push("</sheetData>");

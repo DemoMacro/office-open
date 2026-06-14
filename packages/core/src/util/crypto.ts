@@ -26,7 +26,14 @@ try {
 
 function toBase64(bytes: Uint8Array): string {
   if (_bufToBase64) return _bufToBase64(bytes);
-  return btoa(String.fromCharCode(...bytes));
+  // Build the binary string byte-by-byte: String.fromCharCode(...bytes)
+  // spreads every element onto the call stack and overflows for large
+  // buffers (V8 caps function arguments near ~65k).
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
 }
 
 // ── Helpers ──
