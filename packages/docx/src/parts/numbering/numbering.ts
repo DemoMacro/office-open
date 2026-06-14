@@ -10,10 +10,13 @@ import { decimalNumber } from "@office-open/core";
  *
  * @module
  */
-import { attr, attrNum, findChild } from "@office-open/xml";
+import { attr, attrBool, attrNum, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { AlignmentType } from "@parts/paragraph";
+import type { LevelParagraphStylePropertiesOptions } from "@parts/paragraph/properties";
+import { parseRunProperties } from "@parts/paragraph/run/run-parse";
 
+import type { DocxReadContext } from "../../context";
 import { stringifyParagraphProperties, stringifyRunProperties } from "../paragraph/stringify";
 import { LevelFormat } from "./level";
 import type { LevelsOptions } from "./level";
@@ -366,7 +369,11 @@ function stringifyLevel(opts: LevelsOptions): string {
 /**
  * Parse w:numbering element into NumberingOptions.
  */
-export function parseNumberingDefinitions(el: Element): NumberingOptions | undefined {
+export function parseNumberingDefinitions(
+  el: Element,
+  parseParagraphProperties: (el: Element, ctx: DocxReadContext) => Record<string, unknown>,
+  ctx: DocxReadContext,
+): NumberingOptions | undefined {
   const abstractNums = new Map<string, Element>();
   for (const child of el.elements ?? []) {
     if (child.name !== "w:abstractNum") continue;
@@ -394,7 +401,7 @@ export function parseNumberingDefinitions(el: Element): NumberingOptions | undef
     const levels: LevelsOptions[] = [];
     for (const child of abstractEl.elements ?? []) {
       if (child.name !== "w:lvl") continue;
-      const levelOpts = parseLevelEl(child);
+      const levelOpts = parseLevelEl(child, parseParagraphProperties, ctx);
       if (levelOpts) levels.push(levelOpts);
     }
 
@@ -409,8 +416,12 @@ export function parseNumberingDefinitions(el: Element): NumberingOptions | undef
   return { config: configs };
 }
 
-function parseLevelEl(el: Element): LevelsOptions | undefined {
-  const opts: Record<string, unknown> = {};
+function parseLevelEl(
+  el: Element,
+  parseParagraphProperties: (el: Element, ctx: DocxReadContext) => Record<string, unknown>,
+  ctx: DocxReadContext,
+): LevelsOptions | undefined {
+  const opts: Partial<LevelsOptions> = {};
 
   const level = attrNum(el, "w:ilvl");
   if (level !== undefined) opts.level = level;
@@ -421,11 +432,25 @@ function parseLevelEl(el: Element): LevelsOptions | undefined {
     if (val !== undefined) opts.start = val;
   }
 
+  const lvlRestart = findChild(el, "w:lvlRestart");
+  if (lvlRestart) {
+    const val = attrNum(lvlRestart, "w:val");
+    if (val !== undefined) opts.lvlRestart = val;
+  }
+
   const numFmt = findChild(el, "w:numFmt");
   if (numFmt) {
     const val = attr(numFmt, "w:val");
-    if (val) opts.format = val;
+    if (val) opts.format = val as LevelsOptions["format"];
   }
+
+  const suff = findChild(el, "w:suff");
+  if (suff) {
+    const val = attr(suff, "w:val");
+    if (val) opts.suffix = val as LevelsOptions["suffix"];
+  }
+
+  if (findChild(el, "w:isLgl")) opts.isLegalNumberingStyle = true;
 
   const lvlText = findChild(el, "w:lvlText");
   if (lvlText) {
@@ -433,61 +458,10 @@ function parseLevelEl(el: Element): LevelsOptions | undefined {
     if (val) opts.text = val;
   }
 
-  const lvlJc = findChild(el, "w:lvlJc");
-  if (lvlJc) {
-    const val = attr(lvlJc, "w:val");
-    if (val) opts.alignment = val;
-  }
-
-  const suff = findChild(el, "w:suff");
-  if (suff) {
-    const val = attr(suff, "w:val");
-    if (val) opts.suffix = val;
-  }
-
-  if (findChild(el, "w:isLgl")) opts.isLegalNumberingStyle = true;
-
-  const rPr = findChild(el, "w:rPr");
-  if (rPr) {
-    const style: Record<string, unknown> = {};
-    const sz = findChild(rPr, "w:sz");
-    if (sz) {
-      const val = attrNum(sz, "w:val");
-      if (val !== undefined) {
-        if (!style.run) style.run = {};
-        (style.run as Record<string, unknown>).size = val;
-      }
-    }
-    const rFonts = findChild(rPr, "w:rFonts");
-    if (rFonts) {
-      const ascii = attr(rFonts, "w:ascii");
-      if (ascii) {
-        if (!style.run) style.run = {};
-        (style.run as Record<string, unknown>).font = ascii;
-      }
-    }
-    if (Object.keys(style).length > 0) opts.style = style;
-  }
-
-  const pPr = findChild(el, "w:pPr");
-  if (pPr) {
-    const style = (opts.style as Record<string, unknown>) ?? {};
-    const paraStyle: Record<string, unknown> = {};
-
-    const ind = findChild(pPr, "w:ind");
-    if (ind) {
-      const indent: Record<string, unknown> = {};
-      const left = attrNum(ind, "w:left");
-      if (left !== undefined) indent.left = left;
-      const hanging = attrNum(ind, "w:hanging");
-      if (hanging !== undefined) indent.hanging = hanging;
-      if (Object.keys(indent).length > 0) paraStyle.indent = indent;
-    }
-
-    if (Object.keys(paraStyle).length > 0) {
-      style.paragraph = paraStyle;
-      opts.style = style;
-    }
+  const lvlPicBulletId = findChild(el, "w:lvlPicBulletId");
+  if (lvlPicBulletId) {
+    const val = attrNum(lvlPicBulletId, "w:val");
+    if (val !== undefined) opts.lvlPicBulletId = val;
   }
 
   // Legacy spacing (w:legacy/@w:legacySpace, @w:legacyIndent)
@@ -501,5 +475,36 @@ function parseLevelEl(el: Element): LevelsOptions | undefined {
     if (Object.keys(legacy).length > 0) opts.legacy = legacy;
   }
 
-  return Object.keys(opts).length > 0 ? (opts as unknown as LevelsOptions) : undefined;
+  const lvlJc = findChild(el, "w:lvlJc");
+  if (lvlJc) {
+    const val = attr(lvlJc, "w:val");
+    if (val) opts.alignment = val as LevelsOptions["alignment"];
+  }
+
+  // Level attributes (w:tplc templateCode; w:tentative — note stringify also
+  // emits a fixed w15:tentative="1" which we don't round-trip as it's constant)
+  const tplc = attr(el, "w:tplc");
+  if (tplc) opts.templateCode = tplc;
+  const tentative = attrBool(el, "w:tentative");
+  if (tentative !== undefined) opts.tentative = tentative;
+
+  // Run + paragraph properties — reuse the complete parse helpers for full
+  // fidelity (stringifyLevel delegates to stringifyRunProperties /
+  // stringifyParagraphProperties, so parse must use the matching readers).
+  const style: NonNullable<LevelsOptions["style"]> = {};
+  const rPr = findChild(el, "w:rPr");
+  if (rPr) {
+    const runOpts = parseRunProperties(rPr);
+    if (Object.keys(runOpts).length > 0) style.run = runOpts;
+  }
+  const pPr = findChild(el, "w:pPr");
+  if (pPr) {
+    const paraOpts = parseParagraphProperties(pPr, ctx);
+    if (Object.keys(paraOpts).length > 0) {
+      style.paragraph = paraOpts as unknown as LevelParagraphStylePropertiesOptions;
+    }
+  }
+  if (Object.keys(style).length > 0) opts.style = style;
+
+  return Object.keys(opts).length > 0 ? (opts as LevelsOptions) : undefined;
 }

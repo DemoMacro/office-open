@@ -1,6 +1,11 @@
+import { parse as parseXml } from "@office-open/xml";
+import { AlignmentType } from "@parts/paragraph";
 import { describe, expect, it } from "vite-plus/test";
 
-import { Numbering } from "./numbering";
+import { parseParagraphProperties } from "../../body";
+import type { DocxReadContext } from "../../context";
+import { LevelFormat, LevelSuffix } from "./level";
+import { Numbering, parseNumberingDefinitions } from "./numbering";
 
 describe("Numbering", () => {
   describe("#constructor", () => {
@@ -103,5 +108,67 @@ describe("Numbering", () => {
         expect(zeroLevelConfig.start).to.be.equal(10);
       });
     });
+  });
+});
+
+describe("parseNumberingDefinitions (round-trip)", () => {
+  // Numbering level pPr carries indent/spacing, never numPr, so an empty read
+  // context suffices for parseParagraphProperties.
+  const ctx = {} as unknown as DocxReadContext;
+
+  it("reads back every level field the serializer writes", () => {
+    const numbering = new Numbering({
+      config: [
+        {
+          reference: "decimal-list",
+          levels: [
+            {
+              level: 0,
+              start: 5,
+              format: LevelFormat.DECIMAL,
+              text: "%1.",
+              alignment: AlignmentType.LEFT,
+              suffix: LevelSuffix.TAB,
+              lvlRestart: 0,
+              templateCode: "0409000F",
+              isLegalNumberingStyle: true,
+              legacy: { space: 0, indent: 0 },
+              style: {
+                run: { font: "Arial", bold: true },
+                paragraph: { indent: { left: 720, hanging: 360 } },
+              },
+            },
+          ],
+        },
+      ],
+    });
+    // Numbering only auto-creates the abstract definition from config; the
+    // concrete w:num instance (what parse iterates) needs an explicit instance.
+    numbering.createConcreteNumberingInstance("decimal-list", 0);
+
+    const xml = numbering.serialize();
+    const el = parseXml(xml).elements![0];
+    const opts = parseNumberingDefinitions(el, parseParagraphProperties, ctx);
+
+    expect(opts).toBeDefined();
+    // default-bullet-numbering levels are all bullet format and skipped by
+    // parse, so only the decimal config survives.
+    const lvl = opts!.config[0].levels[0];
+    expect(lvl.start).toBe(5);
+    expect(lvl.format).toBe(LevelFormat.DECIMAL);
+    expect(lvl.text).toBe("%1.");
+    expect(lvl.alignment).toBe(AlignmentType.LEFT);
+    expect(lvl.suffix).toBe(LevelSuffix.TAB);
+    expect(lvl.lvlRestart).toBe(0);
+    expect(lvl.templateCode).toBe("0409000F");
+    expect(lvl.isLegalNumberingStyle).toBe(true);
+    expect(lvl.legacy).toEqual({ space: 0, indent: 0 });
+    expect(lvl.style?.run?.bold).toBe(true);
+    // font:"Arial" serializes as w:rFonts ascii+hAnsi (Word convention: hAnsi
+    // defaults to the ascii font), so it round-trips as a multi-field object —
+    // assert the ascii facet survives.
+    const runFont = lvl.style?.run?.font as { ascii?: string } | string | undefined;
+    expect(typeof runFont === "string" ? runFont : runFont?.ascii).toBe("Arial");
+    expect(lvl.style?.paragraph?.indent).toEqual({ left: 720, hanging: 360 });
   });
 });

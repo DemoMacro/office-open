@@ -298,7 +298,7 @@ export function parseDocument(data: DataType): DocumentOptions {
 
   // Numbering definitions
   if (docx.numbering) {
-    const numOpts = parseNumberingDefinitions(docx.numbering);
+    const numOpts = parseNumberingDefinitions(docx.numbering, parseParagraphProperties, ctx);
     if (numOpts) opts.numbering = numOpts;
   }
 
