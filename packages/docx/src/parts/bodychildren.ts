@@ -20,6 +20,9 @@ import {
 import type { Element } from "@office-open/xml";
 import type { AltChunkOptions } from "@parts/alt-chunk/alt-chunk";
 import type { CustomXmlPrOptions } from "@parts/custom-xml/custom-xml";
+import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
+import { parseRunProperties } from "@parts/paragraph/run/run-parse";
+import { stringifyRunPropertiesInner } from "@parts/paragraph/stringify";
 import type { SubDocOptions } from "@parts/sub-doc/sub-doc";
 import type { SdtCheckboxOptions, SdtPropertiesOptions } from "@parts/table-of-contents";
 import type { SectionChild } from "@shared/section";
@@ -161,6 +164,8 @@ export const subDocDesc: CustomDescriptor<SubDocOptions, BodyContext> = {
 export interface SdtChildOptions {
   properties: SdtPropertiesOptions;
   children?: SectionChild[];
+  /** Run properties for the SDT end mark (w:sdtEndPr). */
+  endProperties?: RunPropertiesOptions;
 }
 
 function escapeXml(s: string): string {
@@ -528,7 +533,10 @@ export const sdtBlockDesc: CustomDescriptor<SdtChildOptions, BodyContext> = {
     parts.push(stringifySdtPr(opts.properties));
 
     // sdtEndPr — typically empty, included for round-trip fidelity with Word
-    parts.push("<w:sdtEndPr/>");
+    const endPrInner = opts.endProperties
+      ? stringifyRunPropertiesInner(opts.endProperties)
+      : undefined;
+    parts.push(endPrInner ? `<w:sdtEndPr>${endPrInner}</w:sdtEndPr>` : "<w:sdtEndPr/>");
 
     // sdtContent — checkbox renders its current state symbol; otherwise serialize children
     if (opts.properties.checkbox) {
@@ -562,6 +570,13 @@ export const sdtBlockDesc: CustomDescriptor<SdtChildOptions, BodyContext> = {
     const sdtPr = findChild(el, "w:sdtPr");
     const properties = sdtPr ? parseSdtPr(sdtPr) : {};
 
+    // Parse sdtEndPr (CT_RPr content at the end mark — run properties, no w:rPr wrapper)
+    let endProperties: RunPropertiesOptions | undefined;
+    const sdtEndPr = findChild(el, "w:sdtEndPr");
+    if (sdtEndPr) {
+      endProperties = parseRunProperties(sdtEndPr);
+    }
+
     // Parse sdtContent children
     const sdtContent = findChild(el, "w:sdtContent");
     let childList: SectionChild[] | undefined;
@@ -570,7 +585,7 @@ export const sdtBlockDesc: CustomDescriptor<SdtChildOptions, BodyContext> = {
       if (childList.length === 0) childList = undefined;
     }
 
-    return { properties, children: childList } as SdtChildOptions;
+    return { properties, children: childList, endProperties } as SdtChildOptions;
   },
 };
 

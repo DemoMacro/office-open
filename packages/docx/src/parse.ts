@@ -212,6 +212,12 @@ export function parseDocument(data: DataType): DocumentOptions {
     const bg: Record<string, unknown> = {};
     const color = attr(docx.background, "w:color");
     if (color) bg.color = color;
+    const themeColor = attr(docx.background, "w:themeColor");
+    if (themeColor) bg.themeColor = themeColor;
+    const themeShade = attr(docx.background, "w:themeShade");
+    if (themeShade) bg.themeShade = themeShade;
+    const themeTint = attr(docx.background, "w:themeTint");
+    if (themeTint) bg.themeTint = themeTint;
     if (Object.keys(bg).length > 0) opts.background = bg;
   }
 

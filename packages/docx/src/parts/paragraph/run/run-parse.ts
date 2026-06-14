@@ -90,7 +90,19 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
   const color = findChild(el, "w:color");
   if (color) {
     const c = colorAttr(color, "w:val");
-    if (c) opts.color = c;
+    const themeColor = attr(color, "w:themeColor");
+    const themeTint = attr(color, "w:themeTint");
+    const themeShade = attr(color, "w:themeShade");
+    if (themeColor || themeTint || themeShade) {
+      const colorObj: Record<string, string | undefined> = {};
+      if (c) colorObj.val = c;
+      if (themeColor) colorObj.themeColor = themeColor;
+      if (themeTint) colorObj.themeTint = themeTint;
+      if (themeShade) colorObj.themeShade = themeShade;
+      opts.color = colorObj;
+    } else if (c) {
+      opts.color = c;
+    }
   }
 
   const sz = findChild(el, "w:sz");
@@ -190,6 +202,36 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
     opts.shading = parseShading(shd);
   }
 
+  // East Asian layout (w:eastAsianLayout)
+  const eastAsianLayout = findChild(el, "w:eastAsianLayout");
+  if (eastAsianLayout) {
+    opts.eastAsianLayout = parseEastAsianLayout(eastAsianLayout);
+  }
+
+  // Content part (w:contentPart)
+  const contentPart = findChild(el, "w:contentPart");
+  if (contentPart) {
+    const rId = attr(contentPart, "r:id");
+    if (rId) opts.contentPartRId = rId;
+  }
+
+  // Revision (w:rPrChange)
+  const rPrChange = findChild(el, "w:rPrChange");
+  if (rPrChange) {
+    const rev: Record<string, unknown> = {};
+    const author = attr(rPrChange, "w:author");
+    if (author) rev.author = author;
+    const date = attr(rPrChange, "w:date");
+    if (date) rev.date = date;
+    const id = attrNum(rPrChange, "w:id");
+    if (id !== undefined) rev.id = id;
+    const innerRPr = findChild(rPrChange, "w:rPr");
+    if (innerRPr) {
+      Object.assign(rev, parseRunProperties(innerRPr));
+    }
+    if (Object.keys(rev).length > 0) opts.revision = rev;
+  }
+
   return opts as RunPropertiesOptions;
 }
 
@@ -224,6 +266,24 @@ export function parseShading(el: Element): Record<string, unknown> {
   if (color) opts.color = color;
   const type = attr(el, "w:val");
   if (type) opts.type = type;
+  return opts;
+}
+
+/**
+ * Parse a w:eastAsianLayout element into EastAsianLayoutOptions.
+ */
+export function parseEastAsianLayout(el: Element): Record<string, unknown> {
+  const opts: Record<string, unknown> = {};
+  const id = attrNum(el, "w:id");
+  if (id !== undefined) opts.id = id;
+  const combine = attrBool(el, "w:combine");
+  if (combine !== undefined) opts.combine = combine;
+  const combineBrackets = attr(el, "w:combineBrackets");
+  if (combineBrackets) opts.combineBrackets = combineBrackets;
+  const vert = attrBool(el, "w:vert");
+  if (vert !== undefined) opts.vert = vert;
+  const vertCompress = attrBool(el, "w:vertCompress");
+  if (vertCompress !== undefined) opts.vertCompress = vertCompress;
   return opts;
 }
 

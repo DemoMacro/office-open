@@ -47,6 +47,13 @@ describe("sectionPropertiesDesc round-trip", () => {
     expect(result.page!.size!.orientation).toBe("landscape");
   });
 
+  it("round-trips page size code (printer paper code)", () => {
+    const result = roundTrip({
+      page: { size: { width: 12240, height: 15840, code: 1 } },
+    });
+    expect(result.page!.size!.code).toBe(1);
+  });
+
   it("round-trips page margins", () => {
     const result = roundTrip({
       page: {

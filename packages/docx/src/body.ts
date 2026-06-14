@@ -722,6 +722,27 @@ export function parseParagraphProperties(
       const val = attr(framePr, attrName);
       if (val !== undefined) frame[optName] = val;
     }
+    // Alignment (xAlign/yAlign)
+    const xAlign = attr(framePr, "w:xAlign");
+    const yAlign = attr(framePr, "w:yAlign");
+    if (xAlign || yAlign) {
+      const alignment: Record<string, unknown> = {};
+      if (xAlign) alignment.x = xAlign;
+      if (yAlign) alignment.y = yAlign;
+      frame.alignment = alignment;
+    }
+    // Anchor (hAnchor/vAnchor)
+    const hAnchor = attr(framePr, "w:hAnchor");
+    const vAnchor = attr(framePr, "w:vAnchor");
+    if (hAnchor || vAnchor) {
+      const anchor: Record<string, unknown> = {};
+      if (hAnchor) anchor.horizontal = hAnchor;
+      if (vAnchor) anchor.vertical = vAnchor;
+      frame.anchor = anchor;
+    }
+    // Anchor lock
+    const anchorLock = attrBool(framePr, "w:anchorLock");
+    if (anchorLock !== undefined) frame.anchorLock = anchorLock;
     const w = attrNum(framePr, "w:w");
     if (w !== undefined) frame.width = w;
     const h = attrNum(framePr, "w:h");

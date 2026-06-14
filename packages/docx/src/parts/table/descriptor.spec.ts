@@ -212,4 +212,204 @@ describe("tableDesc round-trip", () => {
     });
     expect(result.rows[0].cells).toHaveLength(3);
   });
+
+  it("round-trips visuallyRightToLeft (bidiVisual)", () => {
+    const result = roundTrip({
+      visuallyRightToLeft: true,
+      rows: [{ cells: [{ children: [] }] }],
+    });
+    expect(result.visuallyRightToLeft).toBe(true);
+  });
+
+  it("round-trips styleRowBandSize / styleColBandSize", () => {
+    const result = roundTrip({
+      styleRowBandSize: 2,
+      styleColBandSize: 3,
+      rows: [{ cells: [{ children: [] }] }],
+    });
+    expect(result.styleRowBandSize).toBe(2);
+    expect(result.styleColBandSize).toBe(3);
+  });
+
+  it("round-trips caption (tblCaption)", () => {
+    const result = roundTrip({
+      caption: "My Caption",
+      rows: [{ cells: [{ children: [] }] }],
+    });
+    expect(result.caption).toBe("My Caption");
+  });
+
+  it("round-trips cellSpacing (tblCellSpacing)", () => {
+    const result = roundTrip({
+      cellSpacing: { value: 108, type: "dxa" },
+      rows: [{ cells: [{ children: [] }] }],
+    });
+    expect(result.cellSpacing).toBeDefined();
+    expect(result.cellSpacing!.value).toBe(108);
+  });
+
+  it("round-trips tblPrChange revision", () => {
+    const result = roundTrip({
+      revision: { id: 1, author: "A", date: "2024-01-01T00:00:00Z", style: "TableGrid" },
+      rows: [{ cells: [{ children: [] }] }],
+    });
+    expect(result.revision).toBeDefined();
+    expect(result.revision!.id).toBe(1);
+    expect(result.revision!.author).toBe("A");
+  });
+
+  it("round-trips row rsid attributes", () => {
+    const result = roundTrip({
+      rows: [
+        {
+          rsidRPr: "00112233",
+          rsidR: "00AABBCC",
+          rsidDel: "00DDEEFF",
+          rsidTr: "00445566",
+          cells: [{ children: [] }],
+        },
+      ],
+    });
+    expect(result.rows[0].rsidRPr).toBe("00112233");
+    expect(result.rows[0].rsidR).toBe("00AABBCC");
+    expect(result.rows[0].rsidDel).toBe("00DDEEFF");
+    expect(result.rows[0].rsidTr).toBe("00445566");
+  });
+
+  it("round-trips row trPr fields (cnfStyle/divId/grid/gridBefore/gridAfter/wBefore/wAfter/jc/hidden)", () => {
+    const result = roundTrip({
+      rows: [
+        {
+          cnfStyle: { val: "000000010000" },
+          divId: 5,
+          gridBefore: 1,
+          gridAfter: 2,
+          widthBefore: { size: 100, type: "dxa" },
+          widthAfter: { size: 200, type: "dxa" },
+          rowAlignment: "center",
+          hidden: true,
+          cells: [{ children: [] }],
+        },
+      ],
+    });
+    const row = result.rows[0];
+    expect(row.cnfStyle?.val).toBe("000000010000");
+    expect(row.divId).toBe(5);
+    expect(row.gridBefore).toBe(1);
+    expect(row.gridAfter).toBe(2);
+    expect(row.widthBefore?.size).toBe(100);
+    expect(row.widthAfter?.size).toBe(200);
+    expect(row.rowAlignment).toBe("center");
+    expect(row.hidden).toBe(true);
+  });
+
+  it("round-trips row trPrChange revision", () => {
+    const result = roundTrip({
+      rows: [
+        {
+          revision: { id: 2, author: "B", date: "2024-02-02T00:00:00Z", hidden: true },
+          cells: [{ children: [] }],
+        },
+      ],
+    });
+    expect(result.rows[0].revision).toBeDefined();
+    expect(result.rows[0].revision!.id).toBe(2);
+    expect(result.rows[0].revision!.hidden).toBe(true);
+  });
+
+  it("round-trips cell diagonal borders (tl2br/tr2bl) and start/end", () => {
+    const result = roundTrip({
+      rows: [
+        {
+          cells: [
+            {
+              children: [],
+              borders: {
+                start: { style: "single", color: "FF0000" },
+                end: { style: "single", color: "00FF00" },
+                topLeftToBottomRight: { style: "single", color: "0000FF" },
+                topRightToBottomLeft: { style: "single", color: "FFFF00" },
+              },
+            },
+          ],
+        },
+      ],
+    });
+    const cell = result.rows[0].cells[0];
+    expect(cell.borders!.start!.color).toBe("FF0000");
+    expect(cell.borders!.end!.color).toBe("00FF00");
+    expect(cell.borders!.topLeftToBottomRight!.color).toBe("0000FF");
+    expect(cell.borders!.topRightToBottomLeft!.color).toBe("FFFF00");
+  });
+
+  it("round-trips cell hMerge/tcFitText/hideMark/headers", () => {
+    const result = roundTrip({
+      rows: [
+        {
+          cells: [
+            {
+              children: [],
+              horizontalMerge: "restart",
+              fitText: true,
+              hideMark: true,
+              headers: ["h1", "h2"],
+            },
+          ],
+        },
+      ],
+    });
+    const cell = result.rows[0].cells[0];
+    expect(cell.horizontalMerge).toBe("restart");
+    expect(cell.fitText).toBe(true);
+    expect(cell.hideMark).toBe(true);
+    expect(cell.headers).toEqual(["h1", "h2"]);
+  });
+
+  it("round-trips cell cellIns/cellDel and tcPrChange revision", () => {
+    const result = roundTrip({
+      rows: [
+        {
+          cells: [
+            {
+              children: [],
+              insertion: { id: 1, author: "A", date: "2024-01-01T00:00:00Z" },
+              deletion: { id: 2, author: "B", date: "2024-02-02T00:00:00Z" },
+              revision: { id: 3, author: "C", date: "2024-03-03T00:00:00Z", hideMark: true },
+            },
+          ],
+        },
+      ],
+    });
+    const cell = result.rows[0].cells[0];
+    expect(cell.insertion?.id).toBe(1);
+    expect(cell.insertion?.author).toBe("A");
+    expect(cell.deletion?.id).toBe(2);
+    expect(cell.revision?.id).toBe(3);
+    expect(cell.revision?.hideMark).toBe(true);
+  });
+
+  it("round-trips cell cellMerge (vMerge/vMergeOrig)", () => {
+    const result = roundTrip({
+      rows: [
+        {
+          cells: [
+            {
+              children: [],
+              cellMerge: {
+                id: 4,
+                author: "D",
+                date: "2024-04-04T00:00:00Z",
+                verticalMerge: "restart",
+                verticalMergeOriginal: "continue",
+              },
+            },
+          ],
+        },
+      ],
+    });
+    const cell = result.rows[0].cells[0];
+    expect(cell.cellMerge?.id).toBe(4);
+    expect(cell.cellMerge?.verticalMerge).toBe("restart");
+    expect(cell.cellMerge?.verticalMergeOriginal).toBe("continue");
+  });
 });

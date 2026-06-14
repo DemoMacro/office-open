@@ -214,6 +214,7 @@ function stringifySectionPropertiesInner(opts: SectionPropertiesOptions): string
       width = sectionPageSizeDefaults.WIDTH,
       height = sectionPageSizeDefaults.HEIGHT,
       orientation = sectionPageSizeDefaults.ORIENTATION,
+      code,
     } = {},
     margin: {
       top = sectionMarginDefaults.TOP,
@@ -241,7 +242,7 @@ function stringifySectionPropertiesInner(opts: SectionPropertiesOptions): string
   // Page size — swap w/h when landscape
   const pgW = orientation === "landscape" ? convertToTwip(height) : width;
   const pgH = orientation === "landscape" ? convertToTwip(width) : height;
-  parts.push(pageSizeXml(pgW, pgH, orientation));
+  parts.push(pageSizeXml(pgW, pgH, orientation, code));
 
   // Page margin (always present)
   parts.push(pageMarginXml(top, right, bottom, left, header, footer, gutter));
@@ -370,6 +371,8 @@ export function parseSectionPropertiesEl(el: Element): Partial<SectionProperties
       if (h !== undefined) size.height = h;
     }
     if (orient) size.orientation = orient;
+    const code = attrNum(pgSz, "w:code");
+    if (code !== undefined) size.code = code;
     if (Object.keys(size).length > 0) page.size = size;
 
     // Page margins

@@ -239,6 +239,16 @@ describe("sdtBlockDesc round-trip", () => {
     expect(result.properties.checkbox?.checkedState?.val).toBe("2714");
     expect(result.properties.checkbox?.uncheckedState?.val).toBe("2715");
   });
+
+  it("round-trips SDT sdtEndPr run properties", () => {
+    const result = roundTripSdt({
+      properties: { alias: "EndPr" },
+      endProperties: { bold: true, size: 24 },
+    });
+    expect(result.endProperties).toBeDefined();
+    expect(result.endProperties!.bold).toBe(true);
+    expect(result.endProperties!.size).toBe(24);
+  });
 });
 
 // ── customXmlBlockDesc ──
@@ -313,6 +323,16 @@ describe("altChunkDesc stringify", () => {
       writeCtx,
     )!;
     expect(xml).toContain("<w:matchSrc/>");
+  });
+
+  it("parses matchSrc back from w:altChunkPr", () => {
+    const xml = `<w:altChunk xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" r:id="rId1" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:altChunkPr><w:matchSrc/></w:altChunkPr></w:altChunk>`;
+    const doc = parseXml(xml);
+    const result = altChunkDesc.parse(doc.elements![0], readCtx) as unknown as Record<
+      string,
+      unknown
+    >;
+    expect(result.matchSrc).toBe(true);
   });
 });
 
