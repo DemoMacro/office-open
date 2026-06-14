@@ -13,6 +13,14 @@ import type { ImageOptions } from "@parts/paragraph/run/image-run";
 import type { SmartArtOptions } from "@parts/paragraph/run/smartart-run";
 
 import type { DocxReadContext } from "../../context";
+import type {
+  Floating,
+  HorizontalPositionOptions,
+  Margins,
+  VerticalPositionOptions,
+} from "./floating";
+import { TextWrappingType } from "./text-wrap";
+import type { TextWrapping } from "./text-wrap";
 
 /** Union type for parsed drawing child wrappers. */
 export type DrawingChild =
@@ -137,39 +145,47 @@ export function parseImageRun(
 
   // For anchor, extract floating properties
   if (anchor && !inline) {
-    const floating: Record<string, unknown> = {};
-    // Position
+    const floating: Partial<Floating> = {};
+
+    // Margins (distT/distB/distL/distR on wp:anchor)
+    const margins: Margins = {};
+    const distT = attrNum(anchor, "distT");
+    if (distT !== undefined) margins.top = distT;
+    const distB = attrNum(anchor, "distB");
+    if (distB !== undefined) margins.bottom = distB;
+    const distL = attrNum(anchor, "distL");
+    if (distL !== undefined) margins.left = distL;
+    const distR = attrNum(anchor, "distR");
+    if (distR !== undefined) margins.right = distR;
+    if (Object.keys(margins).length > 0) floating.margins = margins;
+
+    // Position H/V (relativeFrom + align/posOffset)
     const posH = findChild(anchor, "wp:positionH");
     if (posH) {
-      const align = findChild(posH, "wp:align");
-      const posOffset = findChild(posH, "wp:posOffset");
-      if (align) floating.horizontalPosition = { align: textOf(align) };
-      else if (posOffset) {
-        const val = Number(textOf(posOffset));
-        if (!isNaN(val)) floating.horizontalPosition = { offset: val };
-      }
+      const hp = readPosition(posH);
+      if (hp) floating.horizontalPosition = hp as HorizontalPositionOptions;
     }
     const posV = findChild(anchor, "wp:positionV");
     if (posV) {
-      const align = findChild(posV, "wp:align");
-      const posOffset = findChild(posV, "wp:posOffset");
-      if (align) floating.verticalPosition = { align: textOf(align) };
-      else if (posOffset) {
-        const val = Number(textOf(posOffset));
-        if (!isNaN(val)) floating.verticalPosition = { offset: val };
-      }
+      const vp = readPosition(posV);
+      if (vp) floating.verticalPosition = vp as VerticalPositionOptions;
     }
-    // Wrap
-    for (const wrapType of ["wrapSquare", "wrapTight", "wrapTopAndBottom", "wrapNone"]) {
-      const wrapEl = findChild(anchor, `wp:${wrapType}`);
-      if (wrapEl) {
-        floating.wrap = wrapType;
-        break;
-      }
-    }
-    // Behind text
+
+    // Wrap (element name → TextWrappingType number) + optional side
+    const wrap = readWrap(anchor);
+    if (wrap) floating.wrap = wrap;
+
+    // Anchor-level flags (stringifyAnchor writes all of these)
+    const allowOverlap = attrBool(anchor, "allowOverlap");
+    if (allowOverlap !== undefined) floating.allowOverlap = allowOverlap;
     const behindDoc = attrBool(anchor, "behindDoc");
-    if (behindDoc) floating.behindDocument = true;
+    if (behindDoc !== undefined) floating.behindDocument = behindDoc;
+    const locked = attrBool(anchor, "locked");
+    if (locked !== undefined) floating.lockAnchor = locked;
+    const layoutInCell = attrBool(anchor, "layoutInCell");
+    if (layoutInCell !== undefined) floating.layoutInCell = layoutInCell;
+    const relativeHeight = attrNum(anchor, "relativeHeight");
+    if (relativeHeight !== undefined) floating.zIndex = relativeHeight;
 
     if (Object.keys(floating).length > 0) {
       imageOpts.floating = floating;
@@ -177,6 +193,49 @@ export function parseImageRun(
   }
 
   return { image: imageOpts as unknown as ImageOptions };
+}
+
+// ── Floating (anchor) parse helpers ─────────────────────────────────────────
+
+/** Map wp:positionH/V children + relativeFrom into a position-options object. */
+function readPosition(
+  posEl: Element,
+): HorizontalPositionOptions | VerticalPositionOptions | undefined {
+  const relative = attr(posEl, "relativeFrom");
+  const alignEl = findChild(posEl, "wp:align");
+  const posOffset = findChild(posEl, "wp:posOffset");
+  const result: { relative?: string; align?: string; offset?: number } = {};
+  if (relative) result.relative = relative;
+  if (alignEl) {
+    const a = textOf(alignEl);
+    if (a) result.align = a;
+  } else if (posOffset) {
+    const val = Number(textOf(posOffset));
+    if (!isNaN(val)) result.offset = val;
+  }
+  return Object.keys(result).length > 0
+    ? (result as HorizontalPositionOptions | VerticalPositionOptions)
+    : undefined;
+}
+
+/** Map the wp:anchor wrap child element into a TextWrapping ({ type, side? }). */
+function readWrap(anchor: Element): TextWrapping | undefined {
+  const WRAP_TYPE: ReadonlyArray<[string, TextWrapping["type"]]> = [
+    ["wrapNone", TextWrappingType.NONE],
+    ["wrapSquare", TextWrappingType.SQUARE],
+    ["wrapTight", TextWrappingType.TIGHT],
+    ["wrapTopAndBottom", TextWrappingType.TOP_AND_BOTTOM],
+    ["wrapThrough", TextWrappingType.THROUGH],
+  ];
+  for (const [name, type] of WRAP_TYPE) {
+    const el = findChild(anchor, `wp:${name}`);
+    if (!el) continue;
+    const wrap: TextWrapping = { type };
+    const side = attr(el, "wrapText");
+    if (side) wrap.side = side as TextWrapping["side"];
+    return wrap;
+  }
+  return undefined;
 }
 
 // ── Common helpers ──────────────────────────────────────────────────────────

@@ -5,6 +5,8 @@ import { describe, expect, it } from "vite-plus/test";
 import type { BodyContext } from "../../context";
 import { drawingDesc, resetDrawingIdGen } from "./descriptor";
 import type { DrawingDescriptorOptions } from "./descriptor";
+import type { Floating } from "./floating";
+import { TextWrappingType } from "./text-wrap";
 
 const writeCtx = {
   addRelationship: () => "rId1",
@@ -51,6 +53,25 @@ function makeImageMediaData() {
     },
   };
 }
+
+// readCtx with media wired so parseImageRun can resolve the blip embed
+// ({fileName} placeholder) and read image bytes.
+const mediaReadCtx = {
+  resolveRelationship: () => undefined,
+  getPart: () => undefined,
+  getRaw: () => undefined,
+  docx: {
+    partRefs: {
+      media: new Map([["{image1.png}", "word/media/image1.png"]]),
+      charts: new Map(),
+      diagramData: new Map(),
+    },
+    doc: {
+      get: () => undefined,
+      getRaw: () => new Uint8Array([1, 2, 3]),
+    },
+  },
+} as unknown as ReadContext;
 
 function stringify(opts: DrawingDescriptorOptions) {
   resetDrawingIdGen();
@@ -168,5 +189,42 @@ describe("drawingDesc round-trip", () => {
     });
     expect(xml).toContain('prst="rect"');
     expect(xml).toContain("<pic:spPr");
+  });
+
+  it("round-trips floating image margins/flags/relativeFrom/wrap", () => {
+    // parseImageRun must read all Floating fields the anchor stringify writes:
+    // margins (distT-D), relativeFrom, allowOverlap/behindDoc/locked/
+    // layoutInCell/relativeHeight, and wrap (type number + side).
+    const xml = stringify({
+      mediaData: makeImageMediaData(),
+      floating: {
+        horizontalPosition: { relative: "column", align: "center" },
+        verticalPosition: { relative: "page", offset: 100000 },
+        margins: { top: 50000, bottom: 60000, left: 70000, right: 80000 },
+        allowOverlap: false,
+        behindDocument: true,
+        layoutInCell: false,
+        lockAnchor: true,
+        zIndex: 200000,
+        wrap: { type: TextWrappingType.SQUARE, side: "left" },
+      },
+    });
+    const doc = parseXml(xml);
+    const el = doc.elements![0];
+    const result = drawingDesc.parse(el, mediaReadCtx) as { image?: { floating?: Floating } };
+    const floating = result.image?.floating;
+    expect(floating).toBeDefined();
+    expect(floating!.margins).toEqual({ top: 50000, bottom: 60000, left: 70000, right: 80000 });
+    expect(floating!.horizontalPosition.relative).toBe("column");
+    expect(floating!.horizontalPosition.align).toBe("center");
+    expect(floating!.verticalPosition.relative).toBe("page");
+    expect(floating!.verticalPosition.offset).toBe(100000);
+    expect(floating!.allowOverlap).toBe(false);
+    expect(floating!.behindDocument).toBe(true);
+    expect(floating!.layoutInCell).toBe(false);
+    expect(floating!.lockAnchor).toBe(true);
+    expect(floating!.zIndex).toBe(200000);
+    expect(floating!.wrap?.type).toBe(TextWrappingType.SQUARE);
+    expect(floating!.wrap?.side).toBe("left");
   });
 });
