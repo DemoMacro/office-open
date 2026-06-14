@@ -490,5 +490,16 @@ function parseLevelEl(el: Element): LevelsOptions | undefined {
     }
   }
 
+  // Legacy spacing (w:legacy/@w:legacySpace, @w:legacyIndent)
+  const legacyEl = findChild(el, "w:legacy");
+  if (legacyEl) {
+    const legacy: NonNullable<LevelsOptions["legacy"]> = {};
+    const space = attrNum(legacyEl, "w:legacySpace");
+    if (space !== undefined) legacy.space = space;
+    const indent = attrNum(legacyEl, "w:legacyIndent");
+    if (indent !== undefined) legacy.indent = indent;
+    if (Object.keys(legacy).length > 0) opts.legacy = legacy;
+  }
+
   return Object.keys(opts).length > 0 ? (opts as unknown as LevelsOptions) : undefined;
 }
