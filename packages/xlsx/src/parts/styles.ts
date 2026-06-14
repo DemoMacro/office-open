@@ -7,7 +7,7 @@
  * @module
  */
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attrs, escapeXml, findChild, attr, attrNum } from "@office-open/xml";
+import { attrs, escapeXml, findChild, attr, attrNum, stringify } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
 // ── Sub-style option interfaces ──
@@ -1022,13 +1022,8 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions> = {
         if (ext.name !== "ext") continue;
         const uri = attr(ext, "uri");
         if (uri) {
-          // Serialize child elements back as raw XML content
-          const content = (ext.elements ?? [])
-            .map((e) => {
-              // Simple reconstruction for extension content
-              return JSON.stringify(e);
-            })
-            .join("");
+          // Reconstruct the inner XML of the <ext> element verbatim
+          const content = (ext.elements ?? []).map((e) => stringify(e)).join("");
           exts.push({ uri, content: content || undefined });
         }
       }
