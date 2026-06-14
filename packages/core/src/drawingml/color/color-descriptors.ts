@@ -7,7 +7,7 @@
 import { escapeXml } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
-import type { CustomDescriptor } from "../../descriptor";
+import type { CustomDescriptor, ReadContext } from "../../descriptor";
 import { stringify } from "../../descriptor";
 import type { ColorTransformOptions } from "./color-transform";
 import type { HslColorOptions } from "./hsl-color";
@@ -230,6 +230,33 @@ export function getColorDescriptor(color: SolidFillOptions): CustomDescriptor<an
   return rgbColorDesc;
 }
 
+/**
+ * Parse an EG_ColorChoice from an element's direct children. Handles all six
+ * color element kinds (srgbClr/schemeClr/hslClr/sysClr/prstClr/scrgbClr) —
+ * used both by {@link solidFillDesc} (under a:solidFill) and by fill
+ * descriptors reading direct colors under a:gs / a:fgClr / a:bgClr.
+ */
+export function parseColorChoice(el: XmlElement, ctx: ReadContext): SolidFillOptions {
+  if (!el.elements) return {} as SolidFillOptions;
+  for (const child of el.elements) {
+    switch (child.name) {
+      case "a:srgbClr":
+        return rgbColorDesc.parse(child, ctx);
+      case "a:schemeClr":
+        return schemeColorDesc.parse(child, ctx);
+      case "a:hslClr":
+        return hslColorDesc.parse(child, ctx);
+      case "a:sysClr":
+        return systemColorDesc.parse(child, ctx);
+      case "a:prstClr":
+        return presetColorDesc.parse(child, ctx);
+      case "a:scrgbClr":
+        return scRgbColorDesc.parse(child, ctx);
+    }
+  }
+  return {} as SolidFillOptions;
+}
+
 // ── SolidFill descriptor ──
 
 export const solidFillDesc: CustomDescriptor<SolidFillOptions> = {
@@ -241,23 +268,6 @@ export const solidFillDesc: CustomDescriptor<SolidFillOptions> = {
     return `<a:solidFill>${inner}</a:solidFill>`;
   },
   parse(el, _ctx) {
-    if (!el.elements) return {} as SolidFillOptions;
-    for (const child of el.elements) {
-      switch (child.name) {
-        case "a:srgbClr":
-          return rgbColorDesc.parse(child, _ctx);
-        case "a:schemeClr":
-          return schemeColorDesc.parse(child, _ctx);
-        case "a:hslClr":
-          return hslColorDesc.parse(child, _ctx);
-        case "a:sysClr":
-          return systemColorDesc.parse(child, _ctx);
-        case "a:prstClr":
-          return presetColorDesc.parse(child, _ctx);
-        case "a:scrgbClr":
-          return scRgbColorDesc.parse(child, _ctx);
-      }
-    }
-    return {} as SolidFillOptions;
+    return parseColorChoice(el, _ctx);
   },
 };

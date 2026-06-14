@@ -140,6 +140,24 @@ describe("gradientFillDesc", () => {
       expect(result.shade.fillToRect).toBeDefined();
     }
   });
+
+  it("round-trips gradient stop with non-rgb color (HSL)", () => {
+    // a:gs holds EG_ColorChoice directly; readDirectColor must handle all six
+    // color kinds, not just srgbClr/schemeClr (otherwise HSL/sys/prst/scRgb drop).
+    const opts: GradientFillOptions = {
+      stops: [
+        { position: 0, color: { hue: 120000, saturation: 100000, luminance: 50000 } },
+        { position: 100000, color: { value: "4472C4" } },
+      ],
+    };
+    const result = roundTripGradient(opts);
+    expect(result.stops).toHaveLength(2);
+    expect(result.stops[0].color).toEqual({
+      hue: 120000,
+      saturation: 100000,
+      luminance: 50000,
+    });
+  });
 });
 
 describe("patternFillDesc", () => {
@@ -152,5 +170,14 @@ describe("patternFillDesc", () => {
     const result = roundTripPattern(opts);
     expect(result.foregroundColor).toEqual({ value: "333333" });
     expect(result.backgroundColor).toEqual({ value: "CCCCCC" });
+  });
+
+  it("round-trips pattern with non-rgb foreground color (HSL)", () => {
+    const opts: PatternFillOptions = {
+      pattern: "cross",
+      foregroundColor: { hue: 0, saturation: 100000, luminance: 50000 },
+    };
+    const result = roundTripPattern(opts);
+    expect(result.foregroundColor).toEqual({ hue: 0, saturation: 100000, luminance: 50000 });
   });
 });

@@ -8,15 +8,10 @@ import { escapeXml } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { findChild } from "@office-open/xml";
 
-import type { CustomDescriptor } from "../../descriptor";
+import type { CustomDescriptor, ReadContext } from "../../descriptor";
 import { stringify, parse } from "../../descriptor";
 import { xsdPattern } from "../../util/mappings";
-import {
-  solidFillDesc,
-  getColorDescriptor,
-  rgbColorDesc,
-  schemeColorDesc,
-} from "../color/color-descriptors";
+import { solidFillDesc, getColorDescriptor, parseColorChoice } from "../color/color-descriptors";
 import type { SolidFillOptions } from "../color/solid-fill";
 import type { FillOptions } from "./fill-options";
 import type {
@@ -305,15 +300,10 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
 
 // ── Helper: read EG_ColorChoice directly from an element ──
 
-function readDirectColor(el: XmlElement, ctx: any): SolidFillOptions {
-  for (const child of el.elements ?? []) {
-    switch (child.name) {
-      case "a:srgbClr":
-        return rgbColorDesc.parse(child, ctx) as SolidFillOptions;
-      case "a:schemeClr":
-        return schemeColorDesc.parse(child, ctx) as SolidFillOptions;
-    }
-  }
+function readDirectColor(el: XmlElement, ctx: ReadContext): SolidFillOptions {
+  // Handles all six color kinds (srgbClr/schemeClr/hslClr/sysClr/prstClr/scrgbClr).
+  const color = parseColorChoice(el, ctx);
+  if (Object.keys(color).length > 0) return color;
   // Fallback: try solidFill wrapper (for backward compat with old-generated XML)
   const solidFill = findChild(el, "a:solidFill");
   if (solidFill) return parse(solidFillDesc, solidFill, ctx) as SolidFillOptions;
