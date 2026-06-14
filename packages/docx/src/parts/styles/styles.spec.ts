@@ -1,0 +1,106 @@
+import { parse as parseXml } from "@office-open/xml";
+import { AlignmentType } from "@parts/paragraph";
+import { describe, expect, it } from "vite-plus/test";
+
+import { parseParagraphProperties } from "../../body";
+import type { DocxReadContext } from "../../context";
+import { parseStyleDefinitions, Styles } from "./styles";
+
+// Style pPr and docDefaults pPr carry no numPr, so an empty read context
+// suffices for parseParagraphProperties.
+const ctx = {} as unknown as DocxReadContext;
+
+describe("parseStyleDefinitions (round-trip)", () => {
+  it("reads back custom paragraph style fields", () => {
+    const styles = new Styles({
+      paragraphStyles: [
+        {
+          id: "MyPara",
+          name: "My Para",
+          basedOn: "Normal",
+          next: "Normal",
+          link: "MyParaChar",
+          quickFormat: true,
+          semiHidden: true,
+          unhideWhenUsed: true,
+          uiPriority: 10,
+          paragraph: { alignment: AlignmentType.CENTER, spacing: { after: 120 } },
+          run: { bold: true },
+        },
+      ],
+    });
+
+    const xml = styles.serialize();
+    const el = parseXml(xml).elements![0];
+    const opts = parseStyleDefinitions(el, parseParagraphProperties, ctx);
+
+    const para = opts?.paragraphStyles?.[0];
+    expect(para).toBeDefined();
+    expect(para!.id).toBe("MyPara");
+    expect(para!.name).toBe("My Para");
+    expect(para!.basedOn).toBe("Normal");
+    expect(para!.next).toBe("Normal");
+    expect(para!.link).toBe("MyParaChar");
+    expect(para!.quickFormat).toBe(true);
+    expect(para!.semiHidden).toBe(true);
+    expect(para!.unhideWhenUsed).toBe(true);
+    expect(para!.uiPriority).toBe(10);
+    expect(para!.paragraph?.alignment).toBe(AlignmentType.CENTER);
+    expect(para!.paragraph?.spacing?.after).toBe(120);
+    expect(para!.run?.bold).toBe(true);
+  });
+
+  it("reads back custom character style", () => {
+    const styles = new Styles({
+      characterStyles: [
+        {
+          id: "MyChar",
+          name: "My Char",
+          basedOn: "DefaultParagraphFont",
+          link: "MyPara",
+          run: { bold: true },
+        },
+      ],
+    });
+
+    const xml = styles.serialize();
+    const el = parseXml(xml).elements![0];
+    const opts = parseStyleDefinitions(el, parseParagraphProperties, ctx);
+
+    const char = opts?.characterStyles?.[0];
+    expect(char).toBeDefined();
+    expect(char!.id).toBe("MyChar");
+    expect(char!.name).toBe("My Char");
+    expect(char!.basedOn).toBe("DefaultParagraphFont");
+    expect(char!.link).toBe("MyPara");
+    expect(char!.run?.bold).toBe(true);
+  });
+
+  it("skips built-in style ids that DefaultStylesFactory generates", () => {
+    const xml =
+      '<?xml version="1.0"?><w:styles>' +
+      '<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/></w:style>' +
+      '<w:style w:type="paragraph" w:styleId="Custom1"><w:name w:val="Custom1"/></w:style>' +
+      "</w:styles>";
+    const el = parseXml(xml).elements![0];
+    const opts = parseStyleDefinitions(el, parseParagraphProperties, ctx);
+    expect(opts?.paragraphStyles?.map((s) => s.id)).toEqual(["Custom1"]);
+  });
+
+  it("reads document defaults with full paragraph properties (not just spacing)", () => {
+    // Previously parseDocDefaults only read w:spacing; it now reuses
+    // parseParagraphProperties so jc/ind round-trip too.
+    const xml =
+      '<?xml version="1.0"?><w:styles><w:docDefaults>' +
+      "<w:rPrDefault><w:rPr><w:b/></w:rPr></w:rPrDefault>" +
+      '<w:pPrDefault><w:pPr><w:spacing w:after="160" w:line="278"/><w:jc w:val="center"/></w:pPr></w:pPrDefault>' +
+      "</w:docDefaults></w:styles>";
+    const el = parseXml(xml).elements![0];
+    const opts = parseStyleDefinitions(el, parseParagraphProperties, ctx);
+    const doc = opts?.default?.document;
+    expect(doc?.run?.bold).toBe(true);
+    expect(doc?.paragraph?.spacing?.after).toBe(160);
+    expect(doc?.paragraph?.spacing?.line).toBe(278);
+    expect(doc?.paragraph?.alignment).toBe(AlignmentType.CENTER);
+  });
+});

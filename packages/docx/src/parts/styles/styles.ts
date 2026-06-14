@@ -10,13 +10,18 @@
  */
 import { attr, attrBool, attrNum, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
+import type { ParagraphStylePropertiesOptions } from "@parts/paragraph/properties";
+import type { RunStylePropertiesOptions } from "@parts/paragraph/run/properties";
 import { parseRunProperties } from "@parts/paragraph/run/run-parse";
 import type {
-  DefaultStylesOptions,
-  BaseParagraphStyleOptions,
   BaseCharacterStyleOptions,
+  BaseParagraphStyleOptions,
+  DefaultStylesOptions,
+  DocumentDefaultsOptions,
 } from "@parts/styles/factory";
-import { stringifyParagraphStyle, stringifyCharacterStyle } from "@parts/styles/factory";
+import { stringifyCharacterStyle, stringifyParagraphStyle } from "@parts/styles/factory";
+
+import type { DocxReadContext } from "../../context";
 
 /**
  * Options for configuring document styles.
@@ -178,39 +183,62 @@ export function buildNumberingCache(numberingEl: Element | undefined): Map<strin
   return cache;
 }
 
+/** Parsed style — concrete shape (not Record) with a transient _type marker. */
+interface ParsedStyle {
+  _type?: string;
+  id?: string;
+  default?: boolean;
+  customStyle?: string;
+  name?: string;
+  aliases?: string;
+  basedOn?: string;
+  next?: string;
+  link?: string;
+  uiPriority?: number;
+  quickFormat?: boolean;
+  semiHidden?: boolean;
+  unhideWhenUsed?: boolean;
+  autoRedefine?: boolean;
+  locked?: boolean;
+  personal?: boolean;
+  personalCompose?: boolean;
+  personalReply?: boolean;
+  paragraph?: ParagraphStylePropertiesOptions;
+  run?: RunStylePropertiesOptions;
+}
+
 /**
- * Parse w:styles element into StylesOptions-like structure.
+ * Parse w:styles element into StylesOptions.
  *
  * Skips built-in styles that DefaultStylesFactory already generates,
  * keeping only user-defined custom styles for round-trip fidelity.
  */
 export function parseStyleDefinitions(
   el: Element,
-  parseParagraphProperties: (el: Element, ctx: any) => Record<string, unknown>,
-  ctx: any,
-): Record<string, unknown> | undefined {
-  const opts: Record<string, unknown> = {};
-  const paragraphStyles: Record<string, unknown>[] = [];
-  const characterStyles: Record<string, unknown>[] = [];
+  parseParagraphProperties: (el: Element, ctx: DocxReadContext) => Record<string, unknown>,
+  ctx: DocxReadContext,
+): StylesOptions | undefined {
+  const opts: StylesOptions = {};
+  const paragraphStyles: (BaseParagraphStyleOptions & { id: string })[] = [];
+  const characterStyles: (BaseCharacterStyleOptions & { id: string })[] = [];
 
   for (const child of el.elements ?? []) {
     if (child.name === "w:docDefaults") {
-      const defOpts = parseDocDefaults(child);
+      const defOpts = parseDocDefaults(child, parseParagraphProperties, ctx);
       if (defOpts) opts.default = defOpts;
     } else if (child.name === "w:style") {
       const styleOpts = parseStyleElement(child, parseParagraphProperties, ctx);
-      if (!styleOpts) continue;
+      // Skip styles without a type or styleId — both are required to be useful.
+      if (!styleOpts?._type || !styleOpts.id) continue;
+      if (BUILTIN_STYLE_IDS.has(styleOpts.id)) continue;
 
-      const styleId = styleOpts.id as string | undefined;
-      if (styleId && BUILTIN_STYLE_IDS.has(styleId)) continue;
-
-      const type = styleOpts._type as string | undefined;
+      const type = styleOpts._type;
       delete styleOpts._type;
 
       if (type === "paragraph") {
-        paragraphStyles.push(styleOpts);
+        paragraphStyles.push(styleOpts as BaseParagraphStyleOptions & { id: string });
       } else if (type === "character") {
-        characterStyles.push(styleOpts);
+        characterStyles.push(styleOpts as BaseCharacterStyleOptions & { id: string });
       }
     }
   }
@@ -221,16 +249,19 @@ export function parseStyleDefinitions(
   return Object.keys(opts).length > 0 ? opts : undefined;
 }
 
-function parseDocDefaults(el: Element): Record<string, unknown> | undefined {
-  const result: Record<string, unknown> = {};
-  const docDefaults: Record<string, unknown> = {};
+function parseDocDefaults(
+  el: Element,
+  parseParagraphProperties: (el: Element, ctx: DocxReadContext) => Record<string, unknown>,
+  ctx: DocxReadContext,
+): DefaultStylesOptions | undefined {
+  const document: DocumentDefaultsOptions = {};
 
   const rPrDefault = findChild(el, "w:rPrDefault");
   if (rPrDefault) {
     const rPr = findChild(rPrDefault, "w:rPr");
     if (rPr) {
       const runDefaults = parseRunProperties(rPr);
-      if (Object.keys(runDefaults).length > 0) docDefaults.run = runDefaults;
+      if (Object.keys(runDefaults).length > 0) document.run = runDefaults;
     }
   }
 
@@ -238,32 +269,25 @@ function parseDocDefaults(el: Element): Record<string, unknown> | undefined {
   if (pPrDefault) {
     const pPr = findChild(pPrDefault, "w:pPr");
     if (pPr) {
-      const paraDefaults: Record<string, unknown> = {};
-      const spacing = findChild(pPr, "w:spacing");
-      if (spacing) {
-        const sp: Record<string, unknown> = {};
-        const before = attrNum(spacing, "w:before");
-        if (before !== undefined) sp.before = before;
-        const after = attrNum(spacing, "w:after");
-        if (after !== undefined) sp.after = after;
-        const line = attrNum(spacing, "w:line");
-        if (line !== undefined) sp.line = line;
-        if (Object.keys(sp).length > 0) paraDefaults.spacing = sp;
+      // Reuse the full paragraph-properties reader (stringifyDocDefaults uses
+      // stringifyParagraphProperties) instead of only reading spacing, so jc/
+      // ind/etc. round-trip too.
+      const paraDefaults = parseParagraphProperties(pPr, ctx);
+      if (Object.keys(paraDefaults).length > 0) {
+        document.paragraph = paraDefaults as unknown as ParagraphStylePropertiesOptions;
       }
-      if (Object.keys(paraDefaults).length > 0) docDefaults.paragraph = paraDefaults;
     }
   }
 
-  if (Object.keys(docDefaults).length > 0) result.document = docDefaults;
-  return Object.keys(result).length > 0 ? result : undefined;
+  return Object.keys(document).length > 0 ? { document } : undefined;
 }
 
 function parseStyleElement(
   el: Element,
-  parseParagraphProperties: (el: Element, ctx: unknown) => Record<string, unknown>,
-  ctx: unknown,
-): (Record<string, unknown> & { _type?: string }) | undefined {
-  const opts: Record<string, unknown> & { _type?: string } = {};
+  parseParagraphProperties: (el: Element, ctx: DocxReadContext) => Record<string, unknown>,
+  ctx: DocxReadContext,
+): ParsedStyle | undefined {
+  const opts: ParsedStyle = {};
 
   const type = attr(el, "w:type");
   if (type) opts._type = type;
@@ -271,11 +295,8 @@ function parseStyleElement(
   const id = attr(el, "w:styleId");
   if (id) opts.id = id;
 
-  const isDefault = attrBool(el, "w:default");
-  if (isDefault) opts.default = true;
-
-  const customStyle = attrBool(el, "w:customStyle");
-  if (customStyle) opts.customStyle = "1";
+  if (attrBool(el, "w:default")) opts.default = true;
+  if (attrBool(el, "w:customStyle")) opts.customStyle = "1";
 
   const nameEl = findChild(el, "w:name");
   if (nameEl) {
@@ -325,7 +346,9 @@ function parseStyleElement(
   const pPr = findChild(el, "w:pPr");
   if (pPr) {
     const paraOpts = parseParagraphProperties(pPr, ctx);
-    if (Object.keys(paraOpts).length > 0) opts.paragraph = paraOpts;
+    if (Object.keys(paraOpts).length > 0) {
+      opts.paragraph = paraOpts as unknown as ParagraphStylePropertiesOptions;
+    }
   }
 
   const rPr = findChild(el, "w:rPr");
