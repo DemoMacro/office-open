@@ -6,7 +6,7 @@
 
 import { escapeXml } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
-import { findChild, children } from "@office-open/xml";
+import { attr, findChild, children } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext, WriteContext } from "../descriptor";
 import type { ChartSpaceOptions, BubbleSeriesData, ChartSeriesData, ChartType } from "./types";
@@ -390,6 +390,13 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
         if (mapping) {
           detectedType = mapping.type;
           threeD = mapping.threeD ?? false;
+          // bar/column share the c:barChart tag; distinguish via c:barDir
+          if (child.name === "c:barChart" || child.name === "c:bar3DChart") {
+            const barDir = findChild(child, "c:barDir");
+            const barDirVal = barDir ? attr(barDir, "val") : undefined;
+            if (barDirVal === "bar") detectedType = "bar";
+            else if (barDirVal === "col") detectedType = "column";
+          }
           break;
         }
       }

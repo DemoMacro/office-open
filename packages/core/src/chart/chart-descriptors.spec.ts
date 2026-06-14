@@ -59,7 +59,7 @@ describe("chartSpaceDesc", () => {
     expect(result.type).toBe("scatter");
   });
 
-  it("round-trips bar chart type (detected as column due to shared c:barChart tag)", () => {
+  it("round-trips bar chart type (distinguished from column via c:barDir)", () => {
     const opts: ChartSpaceOptions = {
       type: "bar",
       style: 2,
@@ -67,9 +67,19 @@ describe("chartSpaceDesc", () => {
       series: [{ name: "S", values: [1] }],
     };
     const result = roundTrip(opts);
-    // bar and column share c:barChart XML tag; parse detects as "column"
-    expect(result.type).toBe("column");
+    // bar/column share c:barChart; c:barDir="bar" => horizontal bar
+    expect(result.type).toBe("bar");
     expect(result.style).toBe(2);
+  });
+
+  it("round-trips column chart type (c:barDir=col)", () => {
+    const opts: ChartSpaceOptions = {
+      type: "column",
+      categories: ["X"],
+      series: [{ name: "S", values: [1] }],
+    };
+    const result = roundTrip(opts);
+    expect(result.type).toBe("column");
   });
 
   it("round-trips area chart type", () => {
