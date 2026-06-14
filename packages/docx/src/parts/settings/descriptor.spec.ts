@@ -153,9 +153,8 @@ describe("settingsDesc round-trip", () => {
 
   it("round-trips empty settings", () => {
     const result = roundTrip({});
-    // defaultTabStop always present (default 420)
-    expect(result.defaultTabStop).toBe(420);
-    // characterSpacingControl always present (default "compressPunctuation")
-    expect(result.characterSpacingControl).toBe("compressPunctuation");
+    // optional elements must not be invented when absent (faithful round-trip)
+    expect(result.defaultTabStop).toBeUndefined();
+    expect(result.characterSpacingControl).toBeUndefined();
   });
 });

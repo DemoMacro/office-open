@@ -212,9 +212,11 @@ export const tableDesc: CustomDescriptor<TableOptions, BodyContext> = {
     const parts: string[] = [];
 
     // Table properties
+    // tblPr is required in CT_Tbl (minOccurs defaults to 1) — always emit it,
+    // even when empty; do not inject optional defaults (width/borders are XSD-optional).
     const tblPrOpts: TablePropertiesOptions = {
       alignment: opts.alignment,
-      borders: opts.borders ?? {},
+      borders: opts.borders,
       caption: opts.caption,
       cellMargin: opts.margins,
       cellSpacing: opts.cellSpacing,
@@ -228,10 +230,10 @@ export const tableDesc: CustomDescriptor<TableOptions, BodyContext> = {
       styleRowBandSize: opts.styleRowBandSize,
       tableLook: opts.tableLook,
       visuallyRightToLeft: opts.visuallyRightToLeft,
-      width: opts.width ?? { size: 100 },
+      width: opts.width,
+      includeIfEmpty: true,
     };
-    const tblPr = stringifyTableProperties(tblPrOpts);
-    if (tblPr) parts.push(tblPr);
+    parts.push(stringifyTableProperties(tblPrOpts)!);
 
     // Table grid
     const columnWidths =

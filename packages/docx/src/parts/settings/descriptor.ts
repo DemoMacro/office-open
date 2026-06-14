@@ -540,8 +540,8 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     p.push(onOff("w:styleLockTheme", opts.styleLockTheme));
     p.push(onOff("w:styleLockQFSet", opts.styleLockQFSet));
 
-    // defaultTabStop — always present with default
-    p.push(numVal("w:defaultTabStop", opts.defaultTabStop ?? 420)!);
+    // defaultTabStop — optional (CT_Settings minOccurs=0); emit only when set
+    if (opts.defaultTabStop !== undefined) p.push(numVal("w:defaultTabStop", opts.defaultTabStop)!);
 
     // hyphenation
     p.push(onOff("w:autoHyphenation", opts.hyphenation?.autoHyphenation));
@@ -568,10 +568,10 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     );
     p.push(onOff("w:doNotShadeFormData", opts.doNotShadeFormData));
 
-    // characterSpacingControl — always present with default
-    p.push(
-      strVal("w:characterSpacingControl", opts.characterSpacingControl ?? "compressPunctuation")!,
-    );
+    // characterSpacingControl — optional (CT_Settings minOccurs=0); emit only when set
+    if (opts.characterSpacingControl !== undefined) {
+      p.push(strVal("w:characterSpacingControl", opts.characterSpacingControl)!);
+    }
 
     p.push(onOff("w:noPunctuationKerning", opts.noPunctuationKerning));
     p.push(onOff("w:printTwoOnOne", opts.printTwoOnOne));
@@ -617,25 +617,12 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     if (opts.footnotePr !== undefined) p.push(stringifyFootnotePr(opts.footnotePr));
     if (opts.endnotePr !== undefined) p.push(stringifyEndnotePr(opts.endnotePr));
 
-    // Compatibility — always present with defaults
-    p.push(
-      stringifyCompatibility({
-        ...opts.compatibility,
-        version: opts.compatibility?.version ?? opts.compatibilityModeVersion ?? 15,
-        spaceForUnderline: opts.compatibility?.spaceForUnderline ?? true,
-        balanceSingleByteDoubleByteWidth:
-          opts.compatibility?.balanceSingleByteDoubleByteWidth ?? true,
-        doNotLeaveBackslashAlone: opts.compatibility?.doNotLeaveBackslashAlone ?? true,
-        underlineTrailingSpaces: opts.compatibility?.underlineTrailingSpaces ?? true,
-        doNotExpandShiftReturn: opts.compatibility?.doNotExpandShiftReturn ?? true,
-        adjustLineHeightInTable: opts.compatibility?.adjustLineHeightInTable ?? true,
-        useFELayout: opts.compatibility?.useFELayout ?? true,
-        overrideTableStyleFontSizeAndJustification:
-          opts.compatibility?.overrideTableStyleFontSizeAndJustification ?? true,
-        enableOpenTypeFeatures: opts.compatibility?.enableOpenTypeFeatures ?? true,
-        doNotFlipMirrorIndents: opts.compatibility?.doNotFlipMirrorIndents ?? true,
-      }),
-    );
+    // Compatibility — optional (CT_Settings minOccurs=0); emit only when configured
+    const compatXml = stringifyCompatibility({
+      ...opts.compatibility,
+      version: opts.compatibility?.version ?? opts.compatibilityModeVersion,
+    });
+    if (compatXml) p.push(compatXml);
 
     // docVars
     if (opts.docVars?.length) {
