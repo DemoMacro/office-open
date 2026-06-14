@@ -122,6 +122,48 @@ describe("parsePresentation", () => {
     expect(result.masters![1].theme?.name).to.equal("Dark");
   });
 
+  it("parses table styles (default id always present)", async () => {
+    const options: PresentationOptions = {
+      slides: [
+        { children: [{ shape: { x: 0, y: 0, width: 200, height: 100, textBody: { text: "A" } } }] },
+      ],
+    };
+    const buffer = await generatePresentation(options);
+    const result = parsePresentation(buffer);
+
+    expect(result.tableStyles).to.exist;
+    expect(result.tableStyles!.defaultStyleId).toBe("{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}");
+  });
+
+  it("round-trips custom table styles end-to-end", async () => {
+    const defaultStyleId = "{CUSTOM-TABLE-STYLE}";
+    const options: PresentationOptions = {
+      tableStyles: {
+        defaultStyleId,
+        styles: [
+          {
+            styleId: defaultStyleId,
+            styleName: "Custom Style",
+            regions: {
+              wholeTbl: { cell: { fillRef: { idx: 1, color: '<a:srgbClr val="4472C4"/>' } } },
+            },
+          },
+        ],
+      },
+      slides: [
+        { children: [{ shape: { x: 0, y: 0, width: 200, height: 100, textBody: { text: "A" } } }] },
+      ],
+    };
+    const buffer = await generatePresentation(options);
+    const parsed = parsePresentation(buffer);
+
+    expect(parsed.tableStyles).to.exist;
+    expect(parsed.tableStyles!.defaultStyleId).toBe(defaultStyleId);
+    expect(parsed.tableStyles!.styles).toHaveLength(1);
+    expect(parsed.tableStyles!.styles![0].styleId).toBe(defaultStyleId);
+    expect(parsed.tableStyles!.styles![0].styleName).toBe("Custom Style");
+  });
+
   it("round-trips multi-master structure", async () => {
     const masters: MasterDefinition[] = [
       { name: "m1", theme: { name: "Theme One" } },

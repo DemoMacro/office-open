@@ -16,6 +16,7 @@ import { notesSlideDesc } from "./parts/descriptors/notes-slide";
 import { presPropsDesc } from "./parts/descriptors/presentation-properties";
 import { slideDesc } from "./parts/descriptors/slide";
 import { slideLayoutDesc } from "./parts/descriptors/slide-layout";
+import { tableStylesDesc } from "./parts/descriptors/table-styles";
 import { viewPropsDesc } from "./parts/descriptors/view-properties";
 import type { SlideChild } from "./parts/slide/slide-child";
 
@@ -350,6 +351,15 @@ export function parsePresentation(data: DataType): PresentationOptions {
       if (viewOpts.lastView || viewOpts.showComments !== undefined || viewOpts.gridSpacing) {
         opts.view = viewOpts;
       }
+    }
+  }
+
+  // 3c. Parse table styles
+  if (pptx.tableStyles) {
+    const tableStylesEl = pptx.doc.get(pptx.tableStyles);
+    if (tableStylesEl) {
+      const tableStylesResult = tableStylesDesc.parse(tableStylesEl, {} as ReadContext);
+      if (tableStylesResult.opts) opts.tableStyles = tableStylesResult.opts;
     }
   }
 
