@@ -12,14 +12,17 @@ import { xsdVerticalMergeRev } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrBool, attrNum, children, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
+import { stringifySdtShell } from "@parts/bodychildren";
 import { stringifyParagraphInline } from "@parts/inline";
+import { parseRunProperties } from "@parts/paragraph/run/run-parse";
+import { parseSdtProperties } from "@parts/sdt/sdt-parse";
 import type { TableGridChangeOptions } from "@parts/table/grid";
 import type { TableOptions } from "@parts/table/table";
-import type { TableCellOptions } from "@parts/table/table-cell/table-cell";
+import type { SdtCellOptions, TableCellOptions } from "@parts/table/table-cell/table-cell";
 import { VerticalMergeType } from "@parts/table/table-cell/table-cell-components";
 import type { TableBordersOptions } from "@parts/table/table-properties/table-borders";
 import type { TableLookOptions } from "@parts/table/table-properties/table-look";
-import type { TableRowOptions } from "@parts/table/table-row/table-row";
+import type { SdtRowOptions, TableRowOptions } from "@parts/table/table-row/table-row";
 import { BorderStyle } from "@shared/border";
 import type { BorderOptions } from "@shared/border";
 import type { SectionChild } from "@shared/section";
@@ -142,9 +145,15 @@ function stringifyTableRow(
 
   const prefixCount = parts.length;
 
-  // Cells
+  // Cells (a cell may itself be wrapped by a cell-level SDT)
   for (const cell of row.cells) {
-    parts.push(stringifyTableCell(cell as TableCellOptions, ctx));
+    if ("sdt" in cell) {
+      const s = cell.sdt;
+      const contentXml = (s.cells ?? []).map((c) => stringifyTableCell(c, ctx)).join("");
+      parts.push(stringifySdtShell(s.properties, s.endProperties, contentXml));
+    } else {
+      parts.push(stringifyTableCell(cell, ctx));
+    }
   }
 
   // Insert extra CONTINUE cells at correct positions
@@ -176,7 +185,9 @@ function findInsertIndex(
 ): number {
   let colIdx = 0;
   for (let i = 0; i < cells.length; i++) {
-    const { columnSpan } = getCellSpans(cells[i] as TableCellOptions);
+    const c = cells[i];
+    if ("sdt" in c) continue; // SDT-wrapped cells don't occupy grid columns here
+    const { columnSpan } = getCellSpans(c);
     colIdx += columnSpan;
     if (colIdx > columnIndex) {
       return i + prefixCount;
@@ -191,15 +202,18 @@ function findInsertIndex(
  * Pre-process rows to compute CONTINUE cells for vertical merge.
  */
 function computeVerticalMergeCells(
-  rows: TableRowOptions[],
+  rows: (TableRowOptions | { sdt: SdtRowOptions })[],
 ): Map<number, { cell: TableCellOptions; columnIndex: number }[]> {
   const extraMap = new Map<number, { cell: TableCellOptions; columnIndex: number }[]>();
   for (let ri = 0; ri < rows.length - 1; ri++) {
-    const cells = rows[ri].cells;
+    const row = rows[ri];
+    if ("sdt" in row) continue; // SDT-wrapped rows don't participate in merge
+    const cells = row.cells;
     let colIdx = 0;
 
     for (const cell of cells) {
-      const typedCell = cell as TableCellOptions;
+      if ("sdt" in cell) continue; // SDT-wrapped cells don't participate in merge
+      const typedCell = cell;
       const { columnSpan, rowSpan } = getCellSpans(typedCell);
 
       if (rowSpan > 1) {
@@ -258,17 +272,24 @@ export const tableDesc: CustomDescriptor<TableOptions, BodyContext> = {
 
     // Table grid
     const columnWidths =
-      opts.columnWidths ?? Array(Math.max(...opts.rows.map((r) => r.cells.length))).fill(100);
+      opts.columnWidths ??
+      Array(Math.max(1, ...opts.rows.map((r) => ("sdt" in r ? 0 : r.cells.length)))).fill(100);
     parts.push(buildTableGridXml(columnWidths, opts.columnWidthsRevision));
 
     // Compute vertical merge CONTINUE cells
-    const extraCells = computeVerticalMergeCells(opts.rows as TableRowOptions[]);
+    const extraCells = computeVerticalMergeCells(opts.rows);
 
-    // Rows
+    // Rows (a row may be wrapped by a row-level SDT)
     for (let ri = 0; ri < opts.rows.length; ri++) {
-      const row = opts.rows[ri] as TableRowOptions;
-      const extras = extraCells.get(ri);
-      parts.push(stringifyTableRow(row, ctx, extras));
+      const r = opts.rows[ri];
+      if ("sdt" in r) {
+        const sdt = r.sdt;
+        const contentXml = (sdt.rows ?? []).map((rr) => stringifyTableRow(rr, ctx)).join("");
+        parts.push(stringifySdtShell(sdt.properties, sdt.endProperties, contentXml));
+      } else {
+        const extras = extraCells.get(ri);
+        parts.push(stringifyTableRow(r, ctx, extras));
+      }
     }
 
     return `<w:tbl>${parts.join("")}</w:tbl>`;
@@ -845,10 +866,28 @@ function parseTableRowEl(el: Element, ctx: DocxReadContext): TableRowOptions {
     if (val) opts[optKey] = val;
   }
 
-  const childCells: TableCellOptions[] = [];
+  const childCells: (TableCellOptions | { sdt: SdtCellOptions })[] = [];
   for (const child of el.elements ?? []) {
     if (child.name === "w:tc") {
       childCells.push(parseTableCellEl(child, ctx));
+    } else if (child.name === "w:sdt") {
+      const sdtPr = findChild(child, "w:sdtPr");
+      const properties = sdtPr ? parseSdtProperties(sdtPr) : {};
+      const sdtEndPr = findChild(child, "w:sdtEndPr");
+      const endProperties = sdtEndPr ? parseRunProperties(sdtEndPr) : undefined;
+      const sdtContent = findChild(child, "w:sdtContent");
+      const sdtCells: TableCellOptions[] = [];
+      if (sdtContent) {
+        for (const sub of sdtContent.elements ?? []) {
+          if (sub.name === "w:tc") sdtCells.push(parseTableCellEl(sub, ctx));
+        }
+      }
+      const sdt: SdtCellOptions = {
+        properties,
+      };
+      if (sdtCells.length > 0) sdt.cells = sdtCells;
+      if (endProperties) sdt.endProperties = endProperties;
+      childCells.push({ sdt });
     }
   }
 
@@ -869,10 +908,28 @@ function parseTableEl(el: Element, ctx: DocxReadContext): TableOptions {
     opts.columnWidths = colWidths;
   }
 
-  const rows: TableRowOptions[] = [];
+  const rows: (TableRowOptions | { sdt: SdtRowOptions })[] = [];
   for (const child of el.elements ?? []) {
     if (child.name === "w:tr") {
       rows.push(parseTableRowEl(child, ctx));
+    } else if (child.name === "w:sdt") {
+      const sdtPr = findChild(child, "w:sdtPr");
+      const properties = sdtPr ? parseSdtProperties(sdtPr) : {};
+      const sdtEndPr = findChild(child, "w:sdtEndPr");
+      const endProperties = sdtEndPr ? parseRunProperties(sdtEndPr) : undefined;
+      const sdtContent = findChild(child, "w:sdtContent");
+      const sdtRows: TableRowOptions[] = [];
+      if (sdtContent) {
+        for (const sub of sdtContent.elements ?? []) {
+          if (sub.name === "w:tr") sdtRows.push(parseTableRowEl(sub, ctx));
+        }
+      }
+      const sdt: SdtRowOptions = {
+        properties,
+      };
+      if (sdtRows.length > 0) sdt.rows = sdtRows;
+      if (endProperties) sdt.endProperties = endProperties;
+      rows.push({ sdt });
     }
   }
 

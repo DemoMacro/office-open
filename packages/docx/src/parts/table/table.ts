@@ -19,7 +19,7 @@ import type {
 import type { TableCellMarginOptions } from "./table-properties/table-cell-margin";
 import type { TableLayoutType } from "./table-properties/table-layout";
 import type { TableLookOptions } from "./table-properties/table-look";
-import type { TableRowOptions } from "./table-row";
+import type { SdtRowOptions, TableRowOptions } from "./table-row";
 import type { TableWidthProperties } from "./table-width";
 
 /**
@@ -37,7 +37,7 @@ import type { TableWidthProperties } from "./table-width";
  * @see {@link Table}
  */
 export interface TableOptions {
-  rows: TableRowOptions[];
+  rows: (TableRowOptions | { sdt: SdtRowOptions })[];
   width?: TableWidthProperties;
   columnWidths?: number[] | PositiveUniversalMeasure[];
   columnWidthsRevision?: TableGridChangeOptions;

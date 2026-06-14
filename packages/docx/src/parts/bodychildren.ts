@@ -280,7 +280,18 @@ function sdtCheckboxXml(opts: SdtCheckboxOptions): string {
   return `<w14:checkbox ${W14_NS}>${inner}</w14:checkbox>`;
 }
 
-function stringifySdtPr(opts: SdtPropertiesOptions): string {
+/** Build the run that renders a checkbox content control's current state symbol. */
+export function checkboxSymbolRunInner(cb: SdtCheckboxOptions): string {
+  const symbol =
+    (cb.checked ?? false)
+      ? (cb.checkedState ?? DEFAULT_CHECKED)
+      : (cb.uncheckedState ?? DEFAULT_UNCHECKED);
+  const font = escapeXml(symbol.font ?? CHECKBOX_FONT);
+  const char = escapeXml(String.fromCodePoint(parseInt(symbol.val, 16)));
+  return `<w:r><w:rPr><w:rFonts w:ascii="${font}" w:hAnsi="${font}"/></w:rPr><w:t>${char}</w:t></w:r>`;
+}
+
+export function stringifySdtPr(opts: SdtPropertiesOptions): string {
   const parts: string[] = [];
 
   // rPr is not supported in pure JSON path — skip
@@ -332,6 +343,21 @@ function stringifySdtPr(opts: SdtPropertiesOptions): string {
   }
 
   return parts.length ? `<w:sdtPr>${parts.join("")}</w:sdtPr>` : "<w:sdtPr/>";
+}
+
+/**
+ * Build the <w:sdt> shell shared by all four SDT levels (block/run/cell/row).
+ * The caller supplies the sdtContent body; sdtPr/sdtEndPr are handled uniformly.
+ */
+export function stringifySdtShell(
+  properties: SdtPropertiesOptions,
+  endProperties: RunPropertiesOptions | undefined,
+  contentXml: string,
+): string {
+  const endPrInner = endProperties ? stringifyRunPropertiesInner(endProperties) : undefined;
+  const endPr = endPrInner ? `<w:sdtEndPr>${endPrInner}</w:sdtEndPr>` : "<w:sdtEndPr/>";
+  const content = contentXml ? `<w:sdtContent>${contentXml}</w:sdtContent>` : "<w:sdtContent/>";
+  return `<w:sdt>${stringifySdtPr(properties)}${endPr}${content}</w:sdt>`;
 }
 
 // ── SDT parse helpers ──
@@ -540,15 +566,8 @@ export const sdtBlockDesc: CustomDescriptor<SdtChildOptions, BodyContext> = {
 
     // sdtContent — checkbox renders its current state symbol; otherwise serialize children
     if (opts.properties.checkbox) {
-      const cb = opts.properties.checkbox;
-      const symbol =
-        (cb.checked ?? false)
-          ? (cb.checkedState ?? DEFAULT_CHECKED)
-          : (cb.uncheckedState ?? DEFAULT_UNCHECKED);
-      const font = escapeXml(symbol.font ?? CHECKBOX_FONT);
-      const char = escapeXml(String.fromCodePoint(parseInt(symbol.val, 16)));
       parts.push(
-        `<w:sdtContent><w:p><w:r><w:rPr><w:rFonts w:ascii="${font}" w:hAnsi="${font}"/></w:rPr><w:t>${char}</w:t></w:r></w:p></w:sdtContent>`,
+        `<w:sdtContent><w:p>${checkboxSymbolRunInner(opts.properties.checkbox)}</w:p></w:sdtContent>`,
       );
     } else if (opts.children && opts.children.length > 0) {
       const contentParts: string[] = [];

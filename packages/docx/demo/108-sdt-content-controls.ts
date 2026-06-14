@@ -265,6 +265,101 @@ const buffer = await generateDocument({
             properties: { alias: "Accept Terms", tag: "accept-terms", checkbox: { checked: true } },
           },
         },
+
+        { paragraph: { children: [""] } },
+
+        // 10. Inline (run-level) SDT — CT_SdtRun
+        //     Content controls embedded inline in a paragraph run, mixed with text.
+        {
+          paragraph: {
+            children: [{ bold: true, text: "10. Inline (run-level) SDT", size: 14 }],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              "Signed by: ",
+              {
+                sdt: {
+                  properties: { alias: "InlineName", tag: "inline-name", text: {} },
+                  children: ["Jane Doe"],
+                },
+              },
+              "   Status: ",
+              {
+                sdt: {
+                  properties: { alias: "InlineStatus", tag: "inline-status", richText: true },
+                  children: [{ text: "Approved", bold: true, color: "008000" }],
+                },
+              },
+            ],
+          },
+        },
+
+        { paragraph: { children: [""] } },
+
+        // 11. Cell-level SDT — CT_SdtCell (wraps a single table cell)
+        {
+          paragraph: {
+            children: [{ bold: true, text: "11. Cell-level SDT", size: 14 }],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          table: {
+            columnWidths: [3000, 3000],
+            rows: [
+              {
+                cells: [
+                  { children: [{ paragraph: "Normal cell" }] },
+                  {
+                    sdt: {
+                      properties: { alias: "CellControl", tag: "cell-control", text: {} },
+                      cells: [{ children: [{ paragraph: "Controlled cell" }] }],
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        },
+
+        { paragraph: { children: [""] } },
+
+        // 12. Row-level SDT — CT_SdtRow (wraps an entire table row)
+        {
+          paragraph: {
+            children: [{ bold: true, text: "12. Row-level SDT", size: 14 }],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          table: {
+            columnWidths: [3000, 3000],
+            rows: [
+              {
+                cells: [
+                  { children: [{ paragraph: "Header A" }] },
+                  { children: [{ paragraph: "Header B" }] },
+                ],
+              },
+              {
+                sdt: {
+                  properties: { alias: "RowControl", tag: "row-control", richText: true },
+                  rows: [
+                    {
+                      cells: [
+                        { children: [{ paragraph: "Controlled row - A" }] },
+                        { children: [{ paragraph: "Controlled row - B" }] },
+                      ],
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
       ],
     },
   ],

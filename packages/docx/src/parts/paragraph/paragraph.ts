@@ -6,11 +6,12 @@
  * @module
  */
 
+import type { SdtPropertiesOptions } from "@parts/table-of-contents";
 import type { ChangedAttributesProperties } from "@shared/track-revision/track-revision";
 
 import type { MathInput } from "./math";
 import type { ParagraphPropertiesOptions } from "./properties";
-import type { RunOptions } from "./run";
+import type { RunOptions, RunPropertiesOptions } from "./run";
 import type { ChartOptions } from "./run/chart-run";
 import type { FormFieldOptions } from "./run/form-field";
 import type { ImageOptions } from "./run/image-run";
@@ -41,6 +42,14 @@ export interface MathChild {
   math: {
     children?: MathInput[];
   };
+}
+
+/** Options for an inline (run-level) structured document tag (CT_SdtRun). */
+export interface SdtRunOptions {
+  properties: SdtPropertiesOptions;
+  children?: (ParagraphChild | string)[];
+  /** Run properties for the SDT end mark (w:sdtEndPr). */
+  endProperties?: RunPropertiesOptions;
 }
 
 /** Discriminated union of all paragraph child types (inline elements, runs, etc.). */
@@ -140,6 +149,8 @@ export type ParagraphChild =
         children?: (ParagraphChild | string)[];
       };
     }
+  // Inline structured document tag (CT_SdtRun)
+  | { sdt: SdtRunOptions }
   // Text run
   | RunOptions;
 

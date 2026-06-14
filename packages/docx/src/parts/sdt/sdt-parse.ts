@@ -21,7 +21,7 @@ import type { DocxReadContext } from "../../context";
 /**
  * Parse w:sdtPr element into SdtPropertiesOptions.
  */
-function parseSdtProperties(el: Element): SdtPropertiesOptions {
+export function parseSdtProperties(el: Element): SdtPropertiesOptions {
   const opts: Record<string, unknown> = {};
 
   const alias = findChild(el, "w:alias");

@@ -27,6 +27,7 @@ import { parseFormFieldData } from "@parts/paragraph/run/form-field";
 import type { FormFieldOptions } from "@parts/paragraph/run/form-field";
 import type { RunOptions } from "@parts/paragraph/run/run";
 import { parseRun, parseRunProperties, parsedRunToOptions } from "@parts/paragraph/run/run-parse";
+import { parseSdtProperties } from "@parts/sdt/sdt-parse";
 import { stringifyTableOfContents } from "@parts/table-of-contents/descriptor";
 import type { VmlShapeStyle } from "@parts/textbox/shape/shape";
 import { styleToKeyMap } from "@parts/textbox/shape/shape";
@@ -905,15 +906,12 @@ function parseCustomXmlRangeStart(
 /**
  * Parse a w:p element into ParagraphOptions.
  */
-export function parseParagraph(el: Element, ctx: DocxReadContext): ParagraphOptions {
-  const opts: Record<string, unknown> = {};
-
-  const pPr = findChild(el, "w:pPr");
-  if (pPr) {
-    Object.assign(opts, parseParagraphProperties(pPr, ctx));
-  }
-
-  // Parse children
+/**
+ * Parse run-level children shared by paragraphs and inline-SDT content.
+ * Includes the field accumulator that collapses form/complex fields spanning
+ * multiple w:r runs into a single child.
+ */
+function parseRunLevelChildren(elements: Element[] | undefined, ctx: DocxReadContext): unknown[] {
   const childList: unknown[] = [];
 
   // Field accumulator: a field (form field OR plain complex field) spans
@@ -932,7 +930,7 @@ export function parseParagraph(el: Element, ctx: DocxReadContext): ParagraphOpti
   // are the field's result.
   let collectingResult = false;
 
-  for (const child of el.elements ?? []) {
+  for (const child of elements ?? []) {
     switch (child.name) {
       case "w:pPr":
         break;
@@ -1343,10 +1341,38 @@ export function parseParagraph(el: Element, ctx: DocxReadContext): ParagraphOpti
         if (id !== undefined) childList.push({ customXmlMoveToRangeEnd: id });
         break;
       }
+      case "w:sdt": {
+        const sdtPr = findChild(child, "w:sdtPr");
+        const properties = sdtPr ? parseSdtProperties(sdtPr) : {};
+        const sdtEndPr = findChild(child, "w:sdtEndPr");
+        const endProperties = sdtEndPr ? parseRunProperties(sdtEndPr) : undefined;
+        const sdtContent = findChild(child, "w:sdtContent");
+        const sdtChildren = parseRunLevelChildren(sdtContent?.elements, ctx);
+        const sdt: { properties: unknown; children?: unknown[]; endProperties?: unknown } = {
+          properties,
+        };
+        if (sdtChildren.length > 0) sdt.children = sdtChildren;
+        if (endProperties) sdt.endProperties = endProperties;
+        childList.push({ sdt });
+        break;
+      }
       default:
         break;
     }
   }
+
+  return childList;
+}
+
+export function parseParagraph(el: Element, ctx: DocxReadContext): ParagraphOptions {
+  const opts: Record<string, unknown> = {};
+
+  const pPr = findChild(el, "w:pPr");
+  if (pPr) {
+    Object.assign(opts, parseParagraphProperties(pPr, ctx));
+  }
+
+  const childList = parseRunLevelChildren(el.elements, ctx);
 
   // Simple text optimization
   if (childList.length > 0) {

@@ -26,6 +26,7 @@ import type { ChartMediaData, MediaData, SmartArtMediaData, WpsMediaData } from 
 import { createTransformation } from "@shared/media";
 
 import type { BodyContext } from "../context";
+import { checkboxSymbolRunInner, stringifySdtShell } from "./bodychildren";
 import { drawingDesc } from "./drawing";
 import { stringifyMath } from "./paragraph/math/stringify";
 import { createBegin, createSeparate, createEnd } from "./paragraph/run/field";
@@ -646,6 +647,32 @@ export function stringifyChildDispatch(
       }
     }
     return `<w:customXml ${attrs.join(" ")}>${parts.join("")}</w:customXml>`;
+  }
+
+  // ── Inline structured document tag (CT_SdtRun) ──
+  if ("sdt" in child) {
+    const s = child.sdt;
+    let contentXml = "";
+    if (s.properties.checkbox) {
+      // Inline checkbox: render the state symbol as a run (no <w:p> wrapper).
+      contentXml = checkboxSymbolRunInner(s.properties.checkbox);
+    } else if (s.children && s.children.length > 0) {
+      const cparts: string[] = [];
+      for (const c of s.children) {
+        if (typeof c === "string") {
+          cparts.push(stringifyRunInline({ text: c }, ctx));
+        } else {
+          const jr = stringifyChildDispatch(c as ParagraphChild, ctx);
+          if (jr !== undefined) {
+            cparts.push(Array.isArray(jr) ? jr.join("") : jr);
+          } else if ("text" in c || "children" in c || "break" in c) {
+            cparts.push(stringifyRunInline(c as RunOptions, ctx));
+          }
+        }
+      }
+      contentXml = cparts.join("");
+    }
+    return stringifySdtShell(s.properties, s.endProperties, contentXml);
   }
 
   return undefined;

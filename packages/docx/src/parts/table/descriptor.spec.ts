@@ -5,6 +5,8 @@ import { describe, expect, it } from "vite-plus/test";
 import type { BodyContext } from "../../context";
 import { setTableParseChild, tableDesc } from "./descriptor";
 import type { TableOptions } from "./table";
+import type { TableCellOptions } from "./table-cell";
+import type { TableRowOptions } from "./table-row";
 
 // Register a minimal child parser for table cells
 setTableParseChild((_el, _ctx) => {
@@ -38,7 +40,7 @@ describe("tableDesc round-trip", () => {
       rows: [{ cells: [{ children: [{ paragraph: "cell1" }] }] }],
     });
     expect(result.rows).toHaveLength(1);
-    expect(result.rows[0].cells).toHaveLength(1);
+    expect((result.rows[0] as TableRowOptions).cells).toHaveLength(1);
   });
 
   it("round-trips table style", () => {
@@ -165,8 +167,9 @@ describe("tableDesc round-trip", () => {
         },
       ],
     });
-    expect(result.rows[0].height).toBeDefined();
-    expect(result.rows[0].height!.value).toBe(500);
+    const row = result.rows[0] as TableRowOptions;
+    expect(row.height).toBeDefined();
+    expect(row.height!.value).toBe(500);
   });
 
   it("round-trips cell with column span", () => {
@@ -177,7 +180,7 @@ describe("tableDesc round-trip", () => {
         },
       ],
     });
-    expect(result.rows[0].cells[0].columnSpan).toBe(2);
+    expect(((result.rows[0] as TableRowOptions).cells[0] as TableCellOptions).columnSpan).toBe(2);
   });
 
   it("round-trips cell shading", () => {
@@ -193,7 +196,7 @@ describe("tableDesc round-trip", () => {
         },
       ],
     });
-    const cell = result.rows[0].cells[0];
+    const cell = (result.rows[0] as TableRowOptions).cells[0] as TableCellOptions;
     expect(cell.shading).toBeDefined();
     expect(cell.shading!.fill).toBe("FFFF00");
   });
@@ -210,7 +213,7 @@ describe("tableDesc round-trip", () => {
         },
       ],
     });
-    expect(result.rows[0].cells).toHaveLength(3);
+    expect((result.rows[0] as TableRowOptions).cells).toHaveLength(3);
   });
 
   it("round-trips visuallyRightToLeft (bidiVisual)", () => {
@@ -270,10 +273,11 @@ describe("tableDesc round-trip", () => {
         },
       ],
     });
-    expect(result.rows[0].rsidRPr).toBe("00112233");
-    expect(result.rows[0].rsidR).toBe("00AABBCC");
-    expect(result.rows[0].rsidDel).toBe("00DDEEFF");
-    expect(result.rows[0].rsidTr).toBe("00445566");
+    const row = result.rows[0] as TableRowOptions;
+    expect(row.rsidRPr).toBe("00112233");
+    expect(row.rsidR).toBe("00AABBCC");
+    expect(row.rsidDel).toBe("00DDEEFF");
+    expect(row.rsidTr).toBe("00445566");
   });
 
   it("round-trips row trPr fields (cnfStyle/divId/grid/gridBefore/gridAfter/wBefore/wAfter/jc/hidden)", () => {
@@ -292,7 +296,7 @@ describe("tableDesc round-trip", () => {
         },
       ],
     });
-    const row = result.rows[0];
+    const row = result.rows[0] as TableRowOptions;
     expect(row.cnfStyle?.val).toBe("000000010000");
     expect(row.divId).toBe(5);
     expect(row.gridBefore).toBe(1);
@@ -312,9 +316,10 @@ describe("tableDesc round-trip", () => {
         },
       ],
     });
-    expect(result.rows[0].revision).toBeDefined();
-    expect(result.rows[0].revision!.id).toBe(2);
-    expect(result.rows[0].revision!.hidden).toBe(true);
+    const row = result.rows[0] as TableRowOptions;
+    expect(row.revision).toBeDefined();
+    expect(row.revision!.id).toBe(2);
+    expect(row.revision!.hidden).toBe(true);
   });
 
   it("round-trips cell diagonal borders (tl2br/tr2bl) and start/end", () => {
@@ -335,7 +340,7 @@ describe("tableDesc round-trip", () => {
         },
       ],
     });
-    const cell = result.rows[0].cells[0];
+    const cell = (result.rows[0] as TableRowOptions).cells[0] as TableCellOptions;
     expect(cell.borders!.start!.color).toBe("FF0000");
     expect(cell.borders!.end!.color).toBe("00FF00");
     expect(cell.borders!.topLeftToBottomRight!.color).toBe("0000FF");
@@ -358,7 +363,7 @@ describe("tableDesc round-trip", () => {
         },
       ],
     });
-    const cell = result.rows[0].cells[0];
+    const cell = (result.rows[0] as TableRowOptions).cells[0] as TableCellOptions;
     expect(cell.horizontalMerge).toBe("restart");
     expect(cell.fitText).toBe(true);
     expect(cell.hideMark).toBe(true);
@@ -380,7 +385,7 @@ describe("tableDesc round-trip", () => {
         },
       ],
     });
-    const cell = result.rows[0].cells[0];
+    const cell = (result.rows[0] as TableRowOptions).cells[0] as TableCellOptions;
     expect(cell.insertion?.id).toBe(1);
     expect(cell.insertion?.author).toBe("A");
     expect(cell.deletion?.id).toBe(2);
@@ -407,9 +412,54 @@ describe("tableDesc round-trip", () => {
         },
       ],
     });
-    const cell = result.rows[0].cells[0];
+    const cell = (result.rows[0] as TableRowOptions).cells[0] as TableCellOptions;
     expect(cell.cellMerge?.id).toBe(4);
     expect(cell.cellMerge?.verticalMerge).toBe("restart");
     expect(cell.cellMerge?.verticalMergeOriginal).toBe("continue");
+  });
+
+  it("round-trips a cell-level SDT (CT_SdtCell wrapping a cell)", () => {
+    const result = roundTrip({
+      rows: [
+        {
+          cells: [
+            { children: [{ paragraph: "normal" }] },
+            {
+              sdt: {
+                properties: { alias: "CellCtrl", tag: "cell-ctrl", text: {} },
+                cells: [{ children: [{ paragraph: "controlled" }] }],
+              },
+            },
+          ],
+        },
+      ],
+    });
+    const cells = (result.rows[0] as TableRowOptions).cells;
+    expect(cells).toHaveLength(2);
+    expect("sdt" in cells[1]).toBe(true);
+    if ("sdt" in cells[1]) {
+      expect(cells[1].sdt.properties).toMatchObject({ alias: "CellCtrl", tag: "cell-ctrl" });
+      expect(cells[1].sdt.cells).toHaveLength(1);
+    }
+  });
+
+  it("round-trips a row-level SDT (CT_SdtRow wrapping a row)", () => {
+    const result = roundTrip({
+      rows: [
+        { cells: [{ children: [{ paragraph: "header" }] }] },
+        {
+          sdt: {
+            properties: { alias: "RowCtrl", tag: "row-ctrl", richText: true },
+            rows: [{ cells: [{ children: [{ paragraph: "controlled row" }] }] }],
+          },
+        },
+      ],
+    });
+    expect(result.rows).toHaveLength(2);
+    expect("sdt" in result.rows[1]).toBe(true);
+    if ("sdt" in result.rows[1]) {
+      expect(result.rows[1].sdt.properties).toMatchObject({ alias: "RowCtrl", tag: "row-ctrl" });
+      expect(result.rows[1].sdt.rows).toHaveLength(1);
+    }
   });
 });

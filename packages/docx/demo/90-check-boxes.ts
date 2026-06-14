@@ -103,6 +103,43 @@ const buffer = await generateDocument({
             },
           },
         },
+
+        { paragraph: { children: [""] } },
+
+        // 5. Inline checkboxes (run-level SDT — CT_SdtRun)
+        //    Unlike 3/4 (block-level, each on its own line), these content-control
+        //    checkboxes sit inline in a paragraph run, mixed with text and other runs.
+        {
+          paragraph: {
+            children: [{ bold: true, text: "5. Inline checkboxes", size: 14 }],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              "Choose: ",
+              {
+                sdt: {
+                  properties: { alias: "InlineA", tag: "inline-a", checkbox: { checked: true } },
+                },
+              },
+              " A   ",
+              {
+                sdt: {
+                  properties: { alias: "InlineB", tag: "inline-b", checkbox: { checked: false } },
+                },
+              },
+              " B   ",
+              {
+                sdt: {
+                  properties: { alias: "InlineC", tag: "inline-c", checkbox: { checked: true } },
+                },
+              },
+              " C",
+            ],
+          },
+        },
       ],
     },
   ],
