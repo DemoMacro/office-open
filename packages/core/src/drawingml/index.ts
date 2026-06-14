@@ -130,6 +130,7 @@ export type { MediaTransformation, MediaDataTransformation } from "./media/trans
 export {
   createTableStyle,
   createTableStyleList,
+  parseTableStyleList,
   type TableStyleOptions,
   type TableStyleListOptions,
   type TablePartStyleOptions,

@@ -8,7 +8,8 @@
  *
  * @module
  */
-import { element } from "@office-open/xml";
+import { attr, attrNum, element, findChild, stringify } from "@office-open/xml";
+import type { Element } from "@office-open/xml";
 
 // ── Options ──
 
@@ -141,14 +142,23 @@ function createThemeableLine(opts: ThemeableLineStyleOptions): string {
 
 // ── Part builders ──
 
+/** Each cell-border side: Options key → a:tcBdr child element name. */
+const BORDER_SIDES: ReadonlyArray<[keyof TableCellBorderOptions, string]> = [
+  ["left", "a:left"],
+  ["right", "a:right"],
+  ["top", "a:top"],
+  ["bottom", "a:bottom"],
+  ["insideH", "a:insideH"],
+  ["insideV", "a:insideV"],
+];
+
+/** CT_TableCellBorderStyle: each side wraps an EG_ThemeableLineStyle choice. */
 function buildCellBorders(opts: TableCellBorderOptions): string {
   const children: string[] = [];
-  if (opts.left) children.push(createThemeableLine(opts.left));
-  if (opts.right) children.push(createThemeableLine(opts.right));
-  if (opts.top) children.push(createThemeableLine(opts.top));
-  if (opts.bottom) children.push(createThemeableLine(opts.bottom));
-  if (opts.insideH) children.push(createThemeableLine(opts.insideH));
-  if (opts.insideV) children.push(createThemeableLine(opts.insideV));
+  for (const [key, name] of BORDER_SIDES) {
+    const line = opts[key];
+    if (line) children.push(element(name, undefined, [createThemeableLine(line)]));
+  }
   return element("a:tcBdr", undefined, children);
 }
 
@@ -248,4 +258,142 @@ export function createTableStyleList(opts: TableStyleListOptions): string {
     },
     children.length > 0 ? children : undefined,
   );
+}
+
+// ── Parse (Element → TableStyleListOptions) ──
+
+/**
+ * Serialize a single parsed element. `stringify` treats its argument as a
+ * document root and serializes the `elements` array, so wrap the child to
+ * serialize the child itself (round-trips raw color/fill child elements).
+ */
+function serializeChild(child: Element): string {
+  return stringify({ elements: [child] });
+}
+
+/** Reverse of REGION_ELEMENTS: XML element name → region key. */
+const ELEMENT_TO_REGION = Object.fromEntries(
+  Object.entries(REGION_ELEMENTS).map(([region, name]) => [name, region]),
+) as Record<string, TableStyleRegion>;
+
+/** Parse a:tblStyleLst → TableStyleListOptions (reverse of createTableStyleList). */
+export function parseTableStyleList(el: Element): TableStyleListOptions {
+  const defaultStyleId = attr(el, "def") ?? "";
+  const styles: TableStyleOptions[] = [];
+  for (const child of el.elements ?? []) {
+    if (child.name !== "a:tblStyle") continue;
+    const style = parseTableStyle(child);
+    if (style) styles.push(style);
+  }
+  return { defaultStyleId, ...(styles.length > 0 ? { styles } : {}) };
+}
+
+function parseTableStyle(el: Element): TableStyleOptions | undefined {
+  const styleId = attr(el, "styleId");
+  const styleName = attr(el, "styleName");
+  if (styleId === undefined || styleName === undefined) return undefined;
+  const regions: Partial<Record<TableStyleRegion, TablePartStyleOptions>> = {};
+  for (const child of el.elements ?? []) {
+    if (!child.name) continue;
+    const region = ELEMENT_TO_REGION[child.name];
+    if (!region) continue;
+    const part = parsePartStyle(child);
+    if (part) regions[region] = part;
+  }
+  return { styleId, styleName, ...(Object.keys(regions).length > 0 ? { regions } : {}) };
+}
+
+function parsePartStyle(el: Element): TablePartStyleOptions | undefined {
+  const part: TablePartStyleOptions = {};
+  const txStyle = findChild(el, "a:tcTxStyle");
+  if (txStyle) {
+    const text = parseTableTextStyle(txStyle);
+    if (text) part.text = text;
+  }
+  const cellStyle = findChild(el, "a:tcStyle");
+  if (cellStyle) {
+    const cell = parseTableCellStyle(cellStyle);
+    if (cell) part.cell = cell;
+  }
+  return Object.keys(part).length > 0 ? part : undefined;
+}
+
+function parseTableTextStyle(el: Element): TableTextStyleOptions | undefined {
+  const opts: TableTextStyleOptions = {};
+  const b = attr(el, "b");
+  if (b === "on" || b === "off") opts.bold = b;
+  const i = attr(el, "i");
+  if (i === "on" || i === "off") opts.italic = i;
+  const fontRefEl = findChild(el, "a:fontRef");
+  if (fontRefEl) opts.fontRef = parseStyleMatrixRef(fontRefEl);
+  // color: first non-fontRef child element, serialized back to the raw string
+  // buildTextStyle stores (it pushes opts.color verbatim).
+  for (const child of el.elements ?? []) {
+    if (child.name === "a:fontRef") continue;
+    opts.color = serializeChild(child);
+    break;
+  }
+  return Object.keys(opts).length > 0 ? opts : undefined;
+}
+
+function parseTableCellStyle(el: Element): TableCellStyleOptions | undefined {
+  const opts: TableCellStyleOptions = {};
+  const tcBdr = findChild(el, "a:tcBdr");
+  if (tcBdr) {
+    const borders = parseCellBorders(tcBdr);
+    if (borders) opts.borders = borders;
+  }
+  const fillRefEl = findChild(el, "a:fillRef");
+  if (fillRefEl) {
+    opts.fillRef = parseStyleMatrixRef(fillRefEl);
+  } else {
+    // fill: first non-tcBdr child element, serialized (buildCellStyle pushes
+    // opts.fill verbatim).
+    for (const child of el.elements ?? []) {
+      if (child.name === "a:tcBdr") continue;
+      opts.fill = serializeChild(child);
+      break;
+    }
+  }
+  return Object.keys(opts).length > 0 ? opts : undefined;
+}
+
+function parseCellBorders(el: Element): TableCellBorderOptions | undefined {
+  const borders: TableCellBorderOptions = {};
+  for (const [key, name] of BORDER_SIDES) {
+    const borderEl = findChild(el, name);
+    if (!borderEl) continue;
+    // Each side wraps an EG_ThemeableLineStyle choice (a:ln or a:lnRef).
+    const lineEl = borderEl.elements?.find((c) => c.type === "element");
+    if (!lineEl) continue;
+    const line = parseThemeableLine(lineEl);
+    if (line) borders[key] = line;
+  }
+  return Object.keys(borders).length > 0 ? borders : undefined;
+}
+
+function parseThemeableLine(el: Element): ThemeableLineStyleOptions | undefined {
+  const opts: ThemeableLineStyleOptions = {};
+  if (el.name === "a:lnRef") {
+    const idx = attrNum(el, "idx");
+    if (idx !== undefined) opts.lineRefIdx = idx;
+  } else {
+    const w = attrNum(el, "w");
+    if (w !== undefined) opts.width = w;
+  }
+  for (const child of el.elements ?? []) {
+    opts.color = serializeChild(child);
+    break;
+  }
+  return Object.keys(opts).length > 0 ? opts : undefined;
+}
+
+function parseStyleMatrixRef(el: Element): StyleMatrixReferenceOptions {
+  const idx = attrNum(el, "idx") ?? 0;
+  const opts: StyleMatrixReferenceOptions = { idx };
+  for (const child of el.elements ?? []) {
+    opts.color = serializeChild(child);
+    break;
+  }
+  return opts;
 }

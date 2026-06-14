@@ -4,9 +4,12 @@
  * @module
  */
 
-import { createTableStyleList, type TableStyleListOptions } from "@office-open/core";
+import {
+  createTableStyleList,
+  parseTableStyleList,
+  type TableStyleListOptions,
+} from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr } from "@office-open/xml";
 
 // ── Types ──
 
@@ -29,7 +32,6 @@ export const tableStylesDesc: CustomDescriptor<TableStylesDescriptorOptions> = {
   },
 
   parse(el, _ctx) {
-    const defStyle = attr(el, "def") ?? DEFAULT_STYLE_ID;
-    return { opts: { defaultStyleId: defStyle } } as TableStylesDescriptorOptions;
+    return { opts: parseTableStyleList(el) };
   },
 };
