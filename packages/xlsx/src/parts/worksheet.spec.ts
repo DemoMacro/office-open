@@ -1,6 +1,10 @@
+import type { ReadContext } from "@office-open/core/descriptor";
+import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
 import { buildWorksheetXml } from "./worksheet";
+import { worksheetDesc } from "./worksheet";
+import type { WorksheetOptions } from "./worksheet";
 
 describe("Worksheet", () => {
   describe("sheetProtection", () => {
@@ -398,6 +402,92 @@ describe("Worksheet", () => {
       expect(xml).toContain('<sortState ref="A1:D10">');
       expect(xml).toContain('ref="B1"');
       expect(xml).toContain('descending="1"');
+    });
+  });
+
+  describe("sheetView round-trip", () => {
+    const readCtx = {
+      resolveRelationship: () => undefined,
+      getPart: () => undefined,
+      getRaw: () => undefined,
+      sharedStrings: [],
+    } as unknown as ReadContext;
+
+    function roundTrip(opts: WorksheetOptions) {
+      const xml = buildWorksheetXml(opts, {});
+      const doc = parseXml(xml);
+      const el = doc.elements![0];
+      return worksheetDesc.parse(el, readCtx) as unknown as WorksheetOptions;
+    }
+
+    it("round-trips sheetView display + zoom fields", () => {
+      const opts: WorksheetOptions = {
+        rows: [{ cells: [{ value: "A" }] }],
+        sheetView: {
+          windowProtection: true,
+          showFormulas: true,
+          showRuler: false,
+          showOutlineSymbols: false,
+          defaultGridColor: false,
+          showWhiteSpace: false,
+          colorId: 5,
+          zoomScaleNormal: 80,
+          zoomScaleSheetLayoutView: 70,
+          zoomScalePageLayoutView: 60,
+        },
+      };
+      const result = roundTrip(opts);
+      const sv = result.sheetView!;
+
+      expect(sv.windowProtection).toBe(true);
+      expect(sv.showFormulas).toBe(true);
+      expect(sv.showRuler).toBe(false);
+      expect(sv.showOutlineSymbols).toBe(false);
+      expect(sv.defaultGridColor).toBe(false);
+      expect(sv.showWhiteSpace).toBe(false);
+      expect(sv.colorId).toBe(5);
+      expect(sv.zoomScaleNormal).toBe(80);
+      expect(sv.zoomScaleSheetLayoutView).toBe(70);
+      expect(sv.zoomScalePageLayoutView).toBe(60);
+    });
+  });
+
+  describe("sheetPr round-trip", () => {
+    const readCtx = {
+      resolveRelationship: () => undefined,
+      getPart: () => undefined,
+      getRaw: () => undefined,
+      sharedStrings: [],
+    } as unknown as ReadContext;
+
+    function roundTrip(opts: WorksheetOptions) {
+      const xml = buildWorksheetXml(opts, {});
+      const doc = parseXml(xml);
+      const el = doc.elements![0];
+      return worksheetDesc.parse(el, readCtx) as unknown as WorksheetOptions;
+    }
+
+    it("round-trips outlinePr summaryBelow/summaryRight", () => {
+      const opts: WorksheetOptions = {
+        rows: [{ cells: [{ value: "A" }] }],
+        columns: [{ min: 1, max: 1, outlineLevel: 1 }],
+        sheetPr: { outlineSummaryBelow: false, outlineSummaryRight: false },
+      };
+      const result = roundTrip(opts);
+      const sp = result.sheetPr!;
+
+      expect(sp.outlineSummaryBelow).toBe(false);
+      expect(sp.outlineSummaryRight).toBe(false);
+    });
+
+    it("round-trips pageSetUpPr fitToPage", () => {
+      const opts: WorksheetOptions = {
+        rows: [{ cells: [{ value: "A" }] }],
+        pageSetup: { fitToWidth: 1, fitToHeight: 1 },
+      };
+      const result = roundTrip(opts);
+
+      expect(result.pageSetup?.fitToPage).toBe(true);
     });
   });
 });

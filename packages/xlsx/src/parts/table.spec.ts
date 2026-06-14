@@ -121,6 +121,18 @@ describe("tableDesc round-trip", () => {
     expect(style.showRowStripes).toBe(true);
   });
 
+  it("round-trips styleless table as style=undefined", () => {
+    const opts: TableOptions = {
+      id: 1,
+      displayName: "T1",
+      ref: "A1:B5",
+      columns: [{ name: "X" }],
+    };
+    const result = roundTrip(opts);
+
+    expect(result.style).toBeUndefined();
+  });
+
   it("round-trips headerRowCount and totalsRowCount", () => {
     const opts: TableOptions = {
       id: 1,

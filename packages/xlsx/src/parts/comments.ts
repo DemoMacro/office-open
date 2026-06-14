@@ -12,7 +12,12 @@ import { findChild, attr, textOf } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { escapeXml } from "@office-open/xml";
 
-import type { CommentOptions, RichTextOptions } from "./worksheet";
+import type {
+  CommentOptions,
+  RichTextOptions,
+  RichTextRunOptions,
+  RichTextRunPrOptions,
+} from "./worksheet";
 
 // ── Comments descriptor (xl/comments{n}.xml) ──
 
@@ -171,16 +176,41 @@ function buildRstXml(rst: RichTextOptions): string {
   return parts.join("");
 }
 
-/** Parse rich text element into a simple string. */
-function parseRst(textEl: XmlElement): string {
+/** Parse rich text element into a plain string or rich runs. */
+function parseRst(textEl: XmlElement): string | RichTextOptions {
+  const runs: RichTextRunOptions[] = [];
   const parts: string[] = [];
+  let hasRuns = false;
   for (const child of textEl.elements ?? []) {
     if (child.name === "t") {
       parts.push(textOf(child) ?? "");
     } else if (child.name === "r") {
+      hasRuns = true;
       const t = findChild(child, "t");
-      if (t) parts.push(textOf(t) ?? "");
+      const run: RichTextRunOptions = { text: t ? (textOf(t) ?? "") : "" };
+      const rPr = findChild(child, "rPr");
+      if (rPr) {
+        const props: RichTextRunPrOptions = {};
+        if (findChild(rPr, "b")) props.bold = true;
+        if (findChild(rPr, "i")) props.italic = true;
+        const uEl = findChild(rPr, "u");
+        if (uEl)
+          props.underline = (attr(uEl, "val") as RichTextRunPrOptions["underline"]) ?? "single";
+        if (findChild(rPr, "strike")) props.strike = true;
+        const szEl = findChild(rPr, "sz");
+        if (szEl) {
+          const sz = Number(attr(szEl, "val"));
+          if (!Number.isNaN(sz)) props.size = sz;
+        }
+        const colorEl = findChild(rPr, "color");
+        if (colorEl && attr(colorEl, "rgb")) props.color = attr(colorEl, "rgb");
+        const rFontEl = findChild(rPr, "rFont");
+        if (rFontEl && attr(rFontEl, "val")) props.font = attr(rFontEl, "val");
+        run.properties = props;
+      }
+      runs.push(run);
     }
   }
+  if (hasRuns) return { runs };
   return parts.join("");
 }

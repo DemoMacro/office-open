@@ -252,11 +252,6 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
       if (s.showRowStripes !== false) styleAttrs.showRowStripes = 1;
       if (s.showColumnStripes) styleAttrs.showColumnStripes = 1;
       p.push(`<tableStyleInfo${buildAttrs(styleAttrs)}/>`);
-    } else {
-      // Default style
-      p.push(
-        '<tableStyleInfo name="TableStyleMedium9" showFirstColumn="0" showLastColumn="0" showRowStripes="1" showColumnStripes="0"/>',
-      );
     }
 
     p.push("</table>");

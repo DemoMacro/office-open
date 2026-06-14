@@ -406,9 +406,14 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
         if (wh !== undefined) bv.windowHeight = wh;
         const at = attrNum(bvEl, "activeTab");
         if (at !== undefined) bv.activeTab = at;
+        if (attr(bvEl, "autoFilterDateGrouping") === "0") bv.autoFilterDateGrouping = false;
+        const fs = attrNum(bvEl, "firstSheet");
+        if (fs !== undefined) bv.firstSheet = fs;
         if (attr(bvEl, "showHorizontalScroll") === "0") bv.showHorizontalScroll = false;
         if (attr(bvEl, "showVerticalScroll") === "0") bv.showVerticalScroll = false;
         if (attr(bvEl, "showSheetTabs") === "0") bv.showSheetTabs = false;
+        const tr = attrNum(bvEl, "tabRatio");
+        if (tr !== undefined) bv.tabRatio = tr;
         result.bookView = bv;
       }
     }

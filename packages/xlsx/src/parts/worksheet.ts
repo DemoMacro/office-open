@@ -409,6 +409,8 @@ export interface PageSetupOptions {
   errors?: "displayed" | "blank" | "dash" | "NA";
   /** Auto page breaks (CT_PageSetUpPr @autoPageBreaks) */
   autoPageBreaks?: boolean;
+  /** Fit to page (CT_PageSetUpPr @fitToPage) */
+  fitToPage?: boolean;
 }
 
 export interface TabColorOptions {
@@ -885,6 +887,10 @@ export interface SheetPrOptions {
   outlineApplyStyles?: boolean;
   /** Outline show symbols (CT_OutlinePr @showOutlineSymbols) */
   outlineShowSymbols?: boolean;
+  /** Outline summary rows below detail (CT_OutlinePr @summaryBelow) */
+  outlineSummaryBelow?: boolean;
+  /** Outline summary columns right of detail (CT_OutlinePr @summaryRight) */
+  outlineSummaryRight?: boolean;
 }
 
 /** An ignored error entry — suppresses specific Excel error checks for a range. */
@@ -1254,6 +1260,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
 
   parse(el, ctx) {
     const result: Record<string, unknown> = {};
+    let pageSetUpPrCache: Record<string, unknown> | undefined;
 
     // Resolve shared strings from context (XlsxReadContext)
     const strings: string[] = ctx && "sharedStrings" in ctx ? (ctx as any).sharedStrings : [];
@@ -1276,6 +1283,18 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       if (outlinePr) {
         if (attr(outlinePr, "applyStyles") === "1") sp.outlineApplyStyles = true;
         if (attr(outlinePr, "showOutlineSymbols") === "0") sp.outlineShowSymbols = false;
+        if (attr(outlinePr, "summaryBelow") === "0") sp.outlineSummaryBelow = false;
+        if (attr(outlinePr, "summaryRight") === "0") sp.outlineSummaryRight = false;
+      }
+
+      // pageSetUpPr (inside sheetPr) — stash on result.pageSetup; merged into
+      // the <pageSetup> parse below, which owns result.pageSetup.
+      const pageSetUpPr = findChild(sheetPrEl, "pageSetUpPr");
+      if (pageSetUpPr) {
+        const psup: Record<string, unknown> = {};
+        if (attr(pageSetUpPr, "fitToPage") === "1") psup.fitToPage = true;
+        if (attr(pageSetUpPr, "autoPageBreaks") === "1") psup.autoPageBreaks = true;
+        if (Object.keys(psup).length > 0) pageSetUpPrCache = psup;
       }
       if (Object.keys(sp).length > 0) result.sheetPr = sp;
 
@@ -1306,7 +1325,21 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         if (attr(svEl, "tabSelected") !== undefined)
           sv.tabSelected = attr(svEl, "tabSelected") !== "0";
         if (attr(svEl, "rightToLeft") === "1") sv.rightToLeft = true;
+        if (attr(svEl, "windowProtection") === "1") sv.windowProtection = true;
+        if (attr(svEl, "showFormulas") === "1") sv.showFormulas = true;
+        if (attr(svEl, "showRuler") === "0") sv.showRuler = false;
+        if (attr(svEl, "showOutlineSymbols") === "0") sv.showOutlineSymbols = false;
+        if (attr(svEl, "defaultGridColor") === "0") sv.defaultGridColor = false;
+        if (attr(svEl, "showWhiteSpace") === "0") sv.showWhiteSpace = false;
         if (attr(svEl, "view")) sv.view = attr(svEl, "view");
+        const colorId = attrNum(svEl, "colorId");
+        if (colorId !== undefined) sv.colorId = colorId;
+        const zsn = attrNum(svEl, "zoomScaleNormal");
+        if (zsn !== undefined) sv.zoomScaleNormal = zsn;
+        const zssl = attrNum(svEl, "zoomScaleSheetLayoutView");
+        if (zssl !== undefined) sv.zoomScaleSheetLayoutView = zssl;
+        const zspl = attrNum(svEl, "zoomScalePageLayoutView");
+        if (zspl !== undefined) sv.zoomScalePageLayoutView = zspl;
         result.sheetView = sv;
 
         // Freeze pane
@@ -1596,7 +1629,10 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       if (attr(psEl, "useFirstPageNumber") === "1") ps.useFirstPageNumber = true;
       const fpn = attrNum(psEl, "firstPageNumber");
       if (fpn !== undefined) ps.firstPageNumber = fpn;
+      if (pageSetUpPrCache) Object.assign(ps, pageSetUpPrCache);
       result.pageSetup = ps;
+    } else if (pageSetUpPrCache) {
+      result.pageSetup = pageSetUpPrCache;
     }
 
     // Header/footer
@@ -1789,7 +1825,11 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       sp.published ||
       sp.filterMode ||
       sp.enableFormatConditionsCalculation);
-  if (hasTabColor || hasOutline || hasSheetPrAttrs) {
+  const hasPageSetUpPr =
+    !!opts.pageSetup?.fitToWidth ||
+    !!opts.pageSetup?.fitToHeight ||
+    !!opts.pageSetup?.autoPageBreaks;
+  if (hasTabColor || hasOutline || hasSheetPrAttrs || hasPageSetUpPr) {
     const prParts: string[] = [];
     const prAttrs: Record<string, string | number | boolean | undefined> = {};
     if (sp?.syncHorizontal) prAttrs.syncHorizontal = 1;
@@ -1814,6 +1854,8 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
         summaryBelow: 1,
         summaryRight: 1,
       };
+      if (sp?.outlineSummaryBelow === false) outAttrs.summaryBelow = 0;
+      if (sp?.outlineSummaryRight === false) outAttrs.summaryRight = 0;
       if (sp?.outlineApplyStyles) outAttrs.applyStyles = 1;
       if (sp?.outlineShowSymbols === false) outAttrs.showOutlineSymbols = 0;
       prParts.push(`<outlinePr${attrs(outAttrs)}/>`);

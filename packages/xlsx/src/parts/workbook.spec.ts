@@ -73,6 +73,9 @@ describe("workbookDesc round-trip", () => {
         yWindow: 200,
         windowWidth: 28800,
         windowHeight: 12300,
+        autoFilterDateGrouping: false,
+        firstSheet: 3,
+        tabRatio: 400,
       },
     };
     const result = roundTrip(opts);
@@ -80,6 +83,9 @@ describe("workbookDesc round-trip", () => {
     expect(result.bookView?.activeTab).toBe(1);
     expect(result.bookView?.xWindow).toBe(100);
     expect(result.bookView?.yWindow).toBe(200);
+    expect(result.bookView?.autoFilterDateGrouping).toBe(false);
+    expect(result.bookView?.firstSheet).toBe(3);
+    expect(result.bookView?.tabRatio).toBe(400);
   });
 
   it("round-trips calc properties", () => {

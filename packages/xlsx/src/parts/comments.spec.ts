@@ -91,4 +91,52 @@ describe("commentsDesc round-trip", () => {
     expect(comments[0].cell).toBe("C3");
     expect(comments[0].author).toBe("Empty");
   });
+
+  it("round-trips rich text runs with per-run formatting", () => {
+    const opts: CommentsDocOptions = {
+      comments: [
+        {
+          cell: "A1",
+          author: "Alice",
+          text: {
+            runs: [
+              {
+                text: "bold ",
+                properties: {
+                  bold: true,
+                  italic: false,
+                  size: 12,
+                  color: "FF0000",
+                  font: "Calibri",
+                },
+              },
+              {
+                text: "italic",
+                properties: {
+                  underline: "single",
+                  strike: true,
+                },
+              },
+            ],
+          },
+        },
+      ],
+    };
+    const result = roundTrip(opts);
+    const text = result.comments![0].text;
+
+    expect(typeof text).toBe("object");
+    expect(text).not.toBeNull();
+    const runs = (text as { runs: unknown[] }).runs;
+    expect(runs).toHaveLength(2);
+    expect((runs[0] as { text: string }).text).toBe("bold ");
+    const props0 = (runs[0] as { properties: Record<string, unknown> }).properties;
+    expect(props0.bold).toBe(true);
+    expect(props0.size).toBe(12);
+    expect(props0.color).toBe("FF0000");
+    expect(props0.font).toBe("Calibri");
+    const props1 = (runs[1] as { properties: Record<string, unknown> }).properties;
+    expect(props1.underline).toBe("single");
+    expect(props1.strike).toBe(true);
+  });
 });
