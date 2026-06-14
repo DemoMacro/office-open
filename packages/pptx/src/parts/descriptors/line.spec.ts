@@ -120,9 +120,9 @@ describe("connectorShapeDesc round-trip", () => {
     };
     const result = roundTripConnector(opts);
 
-    // Arrowhead mapping: "open" -> "arrow" in stringify, but parsed back as raw XML type
-    expect(result.endArrowhead).toBeDefined();
-    expect(result.beginArrowhead).toBeDefined();
+    // "triangle" maps identity; "open" -> "arrow" in XML, reversed back to "open" on parse
+    expect(result.endArrowhead).toBe("triangle");
+    expect(result.beginArrowhead).toBe("open");
   });
 
   it("round-trips connector with outline", () => {

@@ -174,6 +174,16 @@ const ARROWHEAD_MAP: Record<string, string> = {
   none: "none",
 };
 
+/** Reverse map: OOXML ST_LineEndType -> library ArrowheadType. */
+const XML_TO_ARROWHEAD: Record<string, ArrowheadType> = {
+  triangle: "triangle",
+  stealth: "stealth",
+  diamond: "diamond",
+  oval: "oval",
+  arrow: "open",
+  none: "none",
+};
+
 // ── ConnectorShape (p:cxnSp) descriptor ──
 
 export const connectorShapeDesc: CustomDescriptor<ConnectorShapeDescriptorOptions> = {
@@ -301,7 +311,7 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorShapeDescriptorOption
         const headEnd = findChild(ln, "a:headEnd");
         if (headEnd) {
           const type = attr(headEnd, "type");
-          if (type) result.endArrowhead = type as ArrowheadType;
+          if (type) result.endArrowhead = XML_TO_ARROWHEAD[type] ?? (type as ArrowheadType);
           const w = attr(headEnd, "w");
           if (w) result.arrowheadWidth = xsdLineEndSize.from(w) as "small" | "medium" | "large";
           const len = attr(headEnd, "len");
@@ -311,7 +321,13 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorShapeDescriptorOption
         const tailEnd = findChild(ln, "a:tailEnd");
         if (tailEnd) {
           const type = attr(tailEnd, "type");
-          if (type) result.beginArrowhead = type as ArrowheadType;
+          if (type) result.beginArrowhead = XML_TO_ARROWHEAD[type] ?? (type as ArrowheadType);
+          const w = attr(tailEnd, "w");
+          if (w && result.arrowheadWidth === undefined)
+            result.arrowheadWidth = xsdLineEndSize.from(w) as "small" | "medium" | "large";
+          const len = attr(tailEnd, "len");
+          if (len && result.arrowheadLength === undefined)
+            result.arrowheadLength = xsdLineEndSize.from(len) as "small" | "medium" | "large";
         }
       }
     }
