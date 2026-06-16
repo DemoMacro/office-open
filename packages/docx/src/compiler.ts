@@ -37,7 +37,7 @@ import {
   customPropertiesDesc,
   appPropertiesDesc,
   contentTypesDesc,
-  buildContentTypes,
+  buildContentTypesFromRegistry,
   withAltChunkOverrides,
   withMediaDefaults,
   fontTableDesc,
@@ -286,18 +286,23 @@ function xmlifyContext(
               // Overrides to the freshly written parts (else O5/O6).
               return ctx._options.contentTypes
                 ? withAltChunkOverrides(ctx._options.contentTypes, altChunks)
-                : buildContentTypes({
-                    headerCount: ctx.headers.length,
-                    footerCount: ctx.footers.length,
-                    chartCount: ctx.charts.array.length,
-                    smartArtCount: ctx.smartArts.array.length,
-                    hasBibliography: !!ctx._options.bibliography,
-                    hasComments,
-                    hasGlossary: !!ctx.glossaryOptions,
-                    hasWebSettings: !!ctx.webSettings,
-                    altChunks,
-                    subDocs: ctx.subDocs.array.map((sd) => ({ path: `/word/${sd.path}` })),
-                  });
+                : buildContentTypesFromRegistry(
+                    new Map<string, boolean | number>([
+                      ["freshCompile", true],
+                      ["hasComments", hasComments],
+                      ["hasBibliography", !!ctx._options.bibliography],
+                      ["hasGlossary", !!ctx.glossaryOptions],
+                      ["hasWebSettings", !!ctx.webSettings],
+                      ["headerCount", ctx.headers.length],
+                      ["footerCount", ctx.footers.length],
+                      ["chartCount", ctx.charts.array.length],
+                      ["smartArtCount", ctx.smartArts.array.length],
+                    ]),
+                    {
+                      altChunks,
+                      subDocs: ctx.subDocs.array.map((sd) => ({ path: `/word/${sd.path}` })),
+                    },
+                  );
             })(),
             ctx.media.array.map((m) => m.fileName),
           ),

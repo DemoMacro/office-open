@@ -87,52 +87,56 @@ export const DOCX_PARTS = {
     {
       path: "word/styles.xml",
       contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml",
-      presence: { kind: "conditional", flag: "fresh compile" },
+      presence: { kind: "conditional", flag: "freshCompile" },
     },
     {
       path: "word/numbering.xml",
       contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml",
-      presence: { kind: "conditional", flag: "fresh compile" },
+      presence: { kind: "conditional", flag: "freshCompile" },
     },
     {
       path: "word/footnotes.xml",
       contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml",
-      presence: { kind: "conditional", flag: "fresh compile" },
+      presence: { kind: "conditional", flag: "freshCompile" },
     },
     {
       path: "word/endnotes.xml",
       contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml",
-      presence: { kind: "conditional", flag: "fresh compile" },
+      presence: { kind: "conditional", flag: "freshCompile" },
     },
     {
       path: "word/settings.xml",
       contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml",
-      presence: { kind: "conditional", flag: "fresh compile" },
+      presence: { kind: "conditional", flag: "freshCompile" },
     },
     {
       path: "word/fontTable.xml",
       contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml",
-      presence: { kind: "conditional", flag: "fresh compile" },
+      presence: { kind: "conditional", flag: "freshCompile" },
     },
     {
       path: "docProps/core.xml",
       contentType: "application/vnd.openxmlformats-package.core-properties+xml",
-      presence: { kind: "conditional", flag: "fresh compile" },
+      presence: { kind: "conditional", flag: "freshCompile" },
     },
     {
       path: "docProps/app.xml",
       contentType: "application/vnd.openxmlformats-officedocument.extended-properties+xml",
-      presence: { kind: "conditional", flag: "fresh compile" },
+      presence: { kind: "conditional", flag: "freshCompile" },
     },
     {
+      // The compiler writes docProps/custom.xml unconditionally (even with an
+      // empty customProperties list), so its Override is unconditional too —
+      // gated on freshCompile to match the always-write behaviour. Gate it on
+      // hasCustomProperties and the part would ship with no content-type.
       path: "docProps/custom.xml",
       contentType: "application/vnd.openxmlformats-officedocument.custom-properties+xml",
-      presence: { kind: "conditional", flag: "customProperties" },
+      presence: { kind: "conditional", flag: "freshCompile" },
     },
     {
       path: "word/comments.xml",
       contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml",
-      presence: { kind: "conditional", flag: "comments.children.length > 0" },
+      presence: { kind: "conditional", flag: "hasComments" },
     },
     {
       path: "word/header${i}.xml",
@@ -178,17 +182,17 @@ export const DOCX_PARTS = {
       path: "word/bibliography.xml",
       contentType:
         "application/vnd.openxmlformats-officedocument.wordprocessingml.bibliography+xml",
-      presence: { kind: "conditional", flag: "bibliography" },
+      presence: { kind: "conditional", flag: "hasBibliography" },
     },
     {
       path: "word/glossary/document.xml",
       contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.glossary+xml",
-      presence: { kind: "conditional", flag: "glossary" },
+      presence: { kind: "conditional", flag: "hasGlossary" },
     },
     {
       path: "word/webSettings.xml",
       contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.webSettings+xml",
-      presence: { kind: "conditional", flag: "webSettings" },
+      presence: { kind: "conditional", flag: "hasWebSettings" },
     },
     // docx theme is raw-part passthrough — no fixed Override; relies on the
     // `xml` Default. contentType intentionally omitted.
@@ -227,12 +231,12 @@ export const PPTX_PARTS = {
     {
       path: "docProps/core.xml",
       contentType: "application/vnd.openxmlformats-package.core-properties+xml",
-      presence: { kind: "conditional", flag: "fresh compile" },
+      presence: { kind: "conditional", flag: "freshCompile" },
     },
     {
       path: "docProps/app.xml",
       contentType: "application/vnd.openxmlformats-officedocument.extended-properties+xml",
-      presence: { kind: "conditional", flag: "fresh compile" },
+      presence: { kind: "conditional", flag: "freshCompile" },
     },
     {
       // theme1 backs the slide master (static); theme2/theme3 back the
@@ -244,17 +248,17 @@ export const PPTX_PARTS = {
     {
       path: "ppt/presProps.xml",
       contentType: "application/vnd.openxmlformats-officedocument.presentationml.presProps+xml",
-      presence: { kind: "conditional", flag: "fresh compile" },
+      presence: { kind: "conditional", flag: "freshCompile" },
     },
     {
       path: "ppt/viewProps.xml",
       contentType: "application/vnd.openxmlformats-officedocument.presentationml.viewProps+xml",
-      presence: { kind: "conditional", flag: "fresh compile" },
+      presence: { kind: "conditional", flag: "freshCompile" },
     },
     {
       path: "ppt/tableStyles.xml",
       contentType: "application/vnd.openxmlformats-officedocument.presentationml.tableStyles+xml",
-      presence: { kind: "conditional", flag: "fresh compile" },
+      presence: { kind: "conditional", flag: "freshCompile" },
     },
     {
       path: "ppt/slideMasters/slideMaster${i}.xml",
@@ -365,22 +369,22 @@ export const XLSX_PARTS = {
     {
       path: "docProps/core.xml",
       contentType: "application/vnd.openxmlformats-package.core-properties+xml",
-      presence: { kind: "conditional", flag: "fresh compile" },
+      presence: { kind: "conditional", flag: "freshCompile" },
     },
     {
       path: "docProps/app.xml",
       contentType: "application/vnd.openxmlformats-officedocument.extended-properties+xml",
-      presence: { kind: "conditional", flag: "fresh compile" },
+      presence: { kind: "conditional", flag: "freshCompile" },
     },
     {
       path: "xl/styles.xml",
       contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml",
-      presence: { kind: "conditional", flag: "fresh compile" },
+      presence: { kind: "conditional", flag: "freshCompile" },
     },
     {
       path: "xl/theme/theme1.xml",
       contentType: "application/vnd.openxmlformats-officedocument.theme+xml",
-      presence: { kind: "conditional", flag: "fresh compile" },
+      presence: { kind: "conditional", flag: "freshCompile" },
     },
     {
       // Override is emitted unconditionally; the part file is only written

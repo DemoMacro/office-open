@@ -55,3 +55,4 @@ export {
   type PartPresence,
   type PackagePartRegistry,
 } from "./part-registry";
+export { buildContentTypeOverrides, type ContentTypeOverrideEntry } from "./content-type-overrides";

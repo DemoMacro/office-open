@@ -6,6 +6,7 @@
  * @module
  */
 
+import { buildContentTypeOverrides, DOCX_PARTS } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 
 export interface ContentTypeDefault {
@@ -152,150 +153,37 @@ export function withAltChunkOverrides(
   return { defaults, overrides };
 }
 
-/** Helper to build the standard DOCX content types with dynamic overrides. */
-export function buildContentTypes(
-  extras: {
-    headerCount?: number;
-    footerCount?: number;
-    chartCount?: number;
-    smartArtCount?: number;
-    hasBibliography?: boolean;
-    hasComments?: boolean;
-    hasGlossary?: boolean;
-    hasWebSettings?: boolean;
-    altChunks?: { path: string; contentType: string }[];
-    subDocs?: { path: string }[];
+/**
+ * Build [Content_Types].xml for a fresh DOCX compile, driven by the part
+ * registry. Static parts (document/styles/…/comments/headers/…) come from
+ * {@link buildContentTypeOverrides} over {@link DOCX_PARTS}; dynamic parts whose
+ * path or count is runtime-determined (altChunks, sub-documents) are appended
+ * here — they are not enumerable in the registry.
+ *
+ * `facts` keys mirror the registry's `flag` / `countFrom` tokens. The Override
+ * set (order-independent) matches the former hand-written builder, so the OPC
+ * consistency validator stays green.
+ */
+export function buildContentTypesFromRegistry(
+  facts: ReadonlyMap<string, boolean | number>,
+  dynamic: {
+    altChunks?: ReadonlyArray<{ path: string; contentType: string }>;
+    subDocs?: ReadonlyArray<{ path: string }>;
   } = {},
 ): ContentTypesInput {
-  const defaults: ContentTypeDefault[] = [...STANDARD_DEFAULTS];
-
-  const overrides: ContentTypeOverride[] = [
-    {
-      partName: "/word/document.xml",
-      contentType:
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml",
-    },
-    {
-      partName: "/word/styles.xml",
-      contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml",
-    },
-    {
-      partName: "/docProps/core.xml",
-      contentType: "application/vnd.openxmlformats-package.core-properties+xml",
-    },
-    {
-      partName: "/docProps/custom.xml",
-      contentType: "application/vnd.openxmlformats-officedocument.custom-properties+xml",
-    },
-    {
-      partName: "/docProps/app.xml",
-      contentType: "application/vnd.openxmlformats-officedocument.extended-properties+xml",
-    },
-    {
-      partName: "/word/numbering.xml",
-      contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml",
-    },
-    {
-      partName: "/word/footnotes.xml",
-      contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml",
-    },
-    {
-      partName: "/word/endnotes.xml",
-      contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml",
-    },
-    {
-      partName: "/word/settings.xml",
-      contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml",
-    },
-    // Comments Override is conditional — declaring it without a comments.xml
-    // part (or vice versa) is an OPC mismatch. See hasComments gate.
-    ...(extras.hasComments
-      ? [
-          {
-            partName: "/word/comments.xml",
-            contentType:
-              "application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml",
-          },
-        ]
-      : []),
-    {
-      partName: "/word/fontTable.xml",
-      contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml",
-    },
-  ];
-
-  for (let i = 1; i <= (extras.headerCount ?? 0); i++) {
-    overrides.push({
-      partName: `/word/header${i}.xml`,
-      contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml",
-    });
-  }
-  for (let i = 1; i <= (extras.footerCount ?? 0); i++) {
-    overrides.push({
-      partName: `/word/footer${i}.xml`,
-      contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml",
-    });
-  }
-  for (let i = 1; i <= (extras.chartCount ?? 0); i++) {
-    overrides.push({
-      partName: `/word/charts/chart${i}.xml`,
-      contentType: "application/vnd.openxmlformats-officedocument.drawingml.chart+xml",
-    });
-  }
-  for (let i = 1; i <= (extras.smartArtCount ?? 0); i++) {
-    overrides.push({
-      partName: `/word/diagrams/data${i}.xml`,
-      contentType: "application/vnd.openxmlformats-officedocument.drawingml.diagramData+xml",
-    });
-    overrides.push({
-      partName: `/word/diagrams/layout${i}.xml`,
-      contentType: "application/vnd.openxmlformats-officedocument.drawingml.diagramLayout+xml",
-    });
-    overrides.push({
-      partName: `/word/diagrams/quickStyle${i}.xml`,
-      contentType: "application/vnd.openxmlformats-officedocument.drawingml.diagramStyle+xml",
-    });
-    overrides.push({
-      partName: `/word/diagrams/colors${i}.xml`,
-      contentType: "application/vnd.openxmlformats-officedocument.drawingml.diagramColors+xml",
-    });
-    overrides.push({
-      partName: `/word/diagrams/drawing${i}.xml`,
-      contentType: "application/vnd.ms-office.drawingml.diagramDrawing+xml",
-    });
-  }
-  if (extras.hasBibliography) {
-    overrides.push({
-      partName: "/word/bibliography.xml",
-      contentType:
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.bibliography+xml",
-    });
-  }
-  if (extras.hasGlossary) {
-    overrides.push({
-      partName: "/word/glossary/document.xml",
-      contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.glossary+xml",
-    });
-  }
-  if (extras.hasWebSettings) {
-    overrides.push({
-      partName: "/word/webSettings.xml",
-      contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.webSettings+xml",
-    });
-  }
-  for (const ac of extras.altChunks ?? []) {
+  const overrides: ContentTypeOverride[] = buildContentTypeOverrides(DOCX_PARTS, facts);
+  for (const ac of dynamic.altChunks ?? []) {
     overrides.push({
       partName: ac.path.startsWith("/") ? ac.path : `/${ac.path}`,
       contentType: ac.contentType,
     });
   }
-  for (const sd of extras.subDocs ?? []) {
+  for (const sd of dynamic.subDocs ?? []) {
     overrides.push({
       partName: sd.path.startsWith("/") ? sd.path : `/${sd.path}`,
       contentType:
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml",
     });
   }
-
-  return { defaults, overrides };
+  return { defaults: [...STANDARD_DEFAULTS], overrides };
 }
