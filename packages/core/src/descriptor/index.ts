@@ -18,3 +18,9 @@ export { boolDecode, boolEncode, enumDecode, enumEncode } from "./helpers";
 
 // Registry
 export { DescriptorRegistry } from "./registry";
+
+// Field consistency auditing — declared field sets + round-trip drift diff.
+export { checkOrder, diffTagSets, roundTripFields } from "./field-consistency";
+export type { FieldConsistencyReport, OrderViolation, RoundTripResult } from "./field-consistency";
+export { FIELD_SPECS, findFieldSpec } from "./field-spec";
+export type { DescriptorFieldSpec } from "./field-spec";
