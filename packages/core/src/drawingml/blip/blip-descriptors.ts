@@ -119,9 +119,9 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
 
   if (opts.luminance) {
     const attrParts: string[] = [];
-    if (opts.luminance.bright !== undefined) attrParts.push(`bright="${opts.luminance.bright}%"`);
+    if (opts.luminance.bright !== undefined) attrParts.push(`bright="${opts.luminance.bright}"`);
     if (opts.luminance.contrast !== undefined)
-      attrParts.push(`contrast="${opts.luminance.contrast}%"`);
+      attrParts.push(`contrast="${opts.luminance.contrast}"`);
     const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
     parts.push(`<a:lum${attrStr}/>`);
   }
@@ -129,8 +129,8 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
   if (opts.hsl) {
     const attrParts: string[] = [];
     if (opts.hsl.hue !== undefined) attrParts.push(`hue="${opts.hsl.hue}"`);
-    if (opts.hsl.saturation !== undefined) attrParts.push(`sat="${opts.hsl.saturation}%"`);
-    if (opts.hsl.luminance !== undefined) attrParts.push(`lum="${opts.hsl.luminance}%"`);
+    if (opts.hsl.saturation !== undefined) attrParts.push(`sat="${opts.hsl.saturation}"`);
+    if (opts.hsl.luminance !== undefined) attrParts.push(`lum="${opts.hsl.luminance}"`);
     const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
     parts.push(`<a:hsl${attrStr}/>`);
   }
@@ -138,7 +138,7 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
   if (opts.tint) {
     const attrParts: string[] = [];
     if (opts.tint.hue !== undefined) attrParts.push(`hue="${opts.tint.hue}"`);
-    if (opts.tint.amount !== undefined) attrParts.push(`amt="${opts.tint.amount}%"`);
+    if (opts.tint.amount !== undefined) attrParts.push(`amt="${opts.tint.amount}"`);
     const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
     parts.push(`<a:tint${attrStr}/>`);
   }
@@ -150,7 +150,7 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
   }
 
   if (opts.biLevel) {
-    parts.push(`<a:biLevel thresh="${opts.biLevel.threshold}%"/>`);
+    parts.push(`<a:biLevel thresh="${opts.biLevel.threshold}"/>`);
   }
 
   if (opts.alphaCeiling) {
@@ -172,15 +172,15 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
 
   if (opts.alphaModFix) {
     const amt = opts.alphaModFix.amount ?? 100;
-    parts.push(`<a:alphaModFix amt="${amt}%"/>`);
+    parts.push(`<a:alphaModFix amt="${amt}"/>`);
   }
 
   if (opts.alphaRepl) {
-    parts.push(`<a:alphaRepl a="${opts.alphaRepl.amount}%"/>`);
+    parts.push(`<a:alphaRepl a="${opts.alphaRepl.amount}"/>`);
   }
 
   if (opts.alphaBiLevel) {
-    parts.push(`<a:alphaBiLevel thresh="${opts.alphaBiLevel.threshold}%"/>`);
+    parts.push(`<a:alphaBiLevel thresh="${opts.alphaBiLevel.threshold}"/>`);
   }
 
   if (opts.colorChange) {

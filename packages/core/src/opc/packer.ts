@@ -57,11 +57,36 @@ export const ZIP_DEFLATE_LEVEL = 1;
 /** Default level for media entries (STORE — no compression). */
 export const ZIP_STORED_LEVEL = 0;
 
+/**
+ * Media formats already compressed internally (DEFLATE for PNG, DCT for JPEG,
+ * LZW for GIF). Re-compressing via zip DEFLATE wastes CPU and often inflates
+ * the data, so MS Office STORE-s these (CompressionOption.NotCompressed → zip
+ * method 0). Everything else (EMF/WMF/BMP/TIFF/SVG/…) is compressible → DEFLATE.
+ */
+const PRECOMPRESSED_MEDIA_EXT = new Set(["jpg", "jpeg", "png", "gif"]);
+
+/**
+ * Resolve the ZIP level for a media entry by file-name extension, matching MS
+ * Office: already-compressed raster formats → STORE (0), everything else →
+ * DEFLATE (`mediaLevel`, default SuperFast). A `compression.media` override
+ * therefore applies only to compressible formats, never forcing DEFLATE onto
+ * pre-compressed assets.
+ */
+export const levelForMediaName = (fileName: string, mediaLevel: number): number => {
+  const dot = fileName.lastIndexOf(".");
+  const ext = dot < 0 ? "" : fileName.slice(dot + 1).toLowerCase();
+  return PRECOMPRESSED_MEDIA_EXT.has(ext) ? ZIP_STORED_LEVEL : mediaLevel;
+};
+
 /** Compression options for ZIP output (zlib levels 0-9, matching fflate). */
 export interface CompressionOptions {
   /** DEFLATE level for XML files. Default: 1 (SuperFast, matching MS Office). */
   xml?: number;
-  /** DEFLATE level for media files. Default: 1 (SuperFast DEFLATE, matching MS Office). */
+  /**
+   * DEFLATE level for compressible media (EMF/WMF/BMP/TIFF/…). Already-compressed
+   * formats (PNG/JPEG/GIF) are always STOREd regardless, matching MS Office.
+   * Default: 1 (SuperFast).
+   */
   media?: number;
 }
 
@@ -79,9 +104,10 @@ export interface PackerOptions<T extends OutputType = "nodebuffer"> {
  * Asynchronously compress files and convert to the requested output format.
  *
  * Uses fflate Web Workers for non-blocking DEFLATE compression.
- * XML and media entries both use DEFLATE level 1 (SuperFast) by default,
- * matching MS Office behavior. Set `{ media: ZIP_STORED_LEVEL }` to opt out
- * of media compression (e.g. for already-compressed assets where CPU matters).
+ * XML entries use DEFLATE level 1 (SuperFast) by default. Media entries are
+ * split by type, matching MS Office: already-compressed formats (PNG/JPEG/GIF)
+ * are STOREd, everything else uses the `media` level (default SuperFast).
+ * Set `{ media: ZIP_STORED_LEVEL }` to STORE all compressible media too.
  */
 export const zipAndConvert = async <T extends OutputType>(
   files: Zippable,

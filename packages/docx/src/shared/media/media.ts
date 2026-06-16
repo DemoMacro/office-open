@@ -36,6 +36,8 @@ export interface MediaTransformation {
   };
   /** Optional rotation angle in degrees */
   rotation?: number;
+  /** Effect extent (wp:effectExtent) in raw EMUs — passed through verbatim. */
+  effectExtent?: { l: number; t: number; r: number; b: number };
 }
 
 /**
@@ -78,6 +80,7 @@ export const createTransformation = (options: MediaTransformation): MediaDataTra
     y: typeof options.height === "number" ? Math.round(options.height) : 0,
   },
   rotation: options.rotation ? options.rotation * 60_000 : undefined,
+  ...(options.effectExtent ? { effectExtent: options.effectExtent } : {}),
 });
 
 /**

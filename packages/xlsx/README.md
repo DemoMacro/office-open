@@ -71,36 +71,36 @@ Check the [demo folder](./demo) for working examples covering every feature.
 
 Performance comparison against [hucre](https://github.com/nicolo-ribaudo/hucre) (higher ops/s is better, Windows 11 / Node 24).
 
-**Default** = XML DEFLATE level 1 (SuperFast, matching MS Office) + media STORE. **All STORE** = no compression (`{ compression: { xml: 0 } }`). **hucre** (async only) uses `CompressionStream("deflate-raw")` when available, falls back to STORE per-entry when compression doesn't reduce size.
+**Default** = XML DEFLATE level 1 (SuperFast); media is split by type, matching MS Office Excel — already-compressed formats (PNG/JPEG/GIF) are STOREd, the rest (EMF/WMF/BMP/TIFF/…) use DEFLATE level 1 (verified on a real MS Office file). **All STORE** = no compression (`{ compression: { xml: 0, media: 0 } }`). **hucre** (async only) uses `CompressionStream("deflate-raw")` when available, falls back to STORE per-entry when compression doesn't reduce size.
 
 ```typescript
 // Default (matches MS Office)
 await generateWorkbook(options);
 // All STORE (no compression)
-await generateWorkbook(options, { compression: { xml: 0 } });
+await generateWorkbook(options, { compression: { xml: 0, media: 0 } });
 ```
 
 **Create + toBuffer (end-to-end)**
 
 | Scenario         | Default sync | Default async | All STORE sync | All STORE async |       hucre |
 | ---------------- | -----------: | ------------: | -------------: | --------------: | ----------: |
-| Simple (3 rows)  |  2,385 ops/s |   1,142 ops/s |   14,583 ops/s |    15,943 ops/s |   951 ops/s |
-| Styled rows (20) |  2,355 ops/s |   1,195 ops/s |   16,765 ops/s |    12,852 ops/s | 1,083 ops/s |
-| Table (10x5)     |  2,357 ops/s |   1,177 ops/s |   16,480 ops/s |    13,716 ops/s | 1,049 ops/s |
+| Simple (3 rows)  |  2,416 ops/s |   1,160 ops/s |   14,593 ops/s |    17,853 ops/s | 1,062 ops/s |
+| Styled rows (20) |  2,446 ops/s |   1,128 ops/s |   15,780 ops/s |    15,544 ops/s | 1,075 ops/s |
+| Table (10x5)     |  2,361 ops/s |   1,195 ops/s |   16,784 ops/s |    16,723 ops/s |   907 ops/s |
 
 **Large Files — Create + toBuffer**
 
 | Scenario                      | Default sync | Default async | All STORE sync | All STORE async |     hucre |
 | ----------------------------- | -----------: | ------------: | -------------: | --------------: | --------: |
-| 2000 rows + 10 images         |     79 ops/s |      75 ops/s |       89 ops/s |        93 ops/s |  44 ops/s |
-| 200x10 table                  |    847 ops/s |     610 ops/s |    1,118 ops/s |     1,011 ops/s | 261 ops/s |
-| 20 sheets × 100 rows + 20 img |     49 ops/s |      39 ops/s |       60 ops/s |        62 ops/s |  26 ops/s |
+| 2000 rows + 10 images         |    110 ops/s |      92 ops/s |       86 ops/s |        91 ops/s |  44 ops/s |
+| 200x10 table                  |    853 ops/s |     614 ops/s |    1,142 ops/s |     1,122 ops/s | 258 ops/s |
+| 20 sheets × 100 rows + 20 img |     72 ops/s |      50 ops/s |       63 ops/s |        62 ops/s |  25 ops/s |
 
 **Large Data — 100,000 rows × 20 columns (2M cells)**
 
 | Scenario  | Default sync | Default async | All STORE sync | All STORE async |      hucre |
 | --------- | -----------: | ------------: | -------------: | --------------: | ---------: |
-| 100k × 20 |   0.84 ops/s |    0.83 ops/s |     0.90 ops/s |      0.94 ops/s | 0.39 ops/s |
+| 100k × 20 |   0.87 ops/s |    0.81 ops/s |     1.02 ops/s |      0.96 ops/s | 0.39 ops/s |
 
 ## License
 

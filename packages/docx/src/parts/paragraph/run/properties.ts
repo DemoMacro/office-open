@@ -149,6 +149,13 @@ export interface RunStylePropertiesOptions {
   eastAsianLayout?: EastAsianLayoutOptions;
   /** Relationship ID for a content part (w:contentPart with r:id) */
   contentPartRId?: string;
+  /**
+   * Raw XML for w14:* text-effect children (glow/shadow/reflection/props3d/...)
+   * located in the EG_RPrBase extension slot at the end of rPr. Low-frequency
+   * complex subtrees kept verbatim for round-trip fidelity; the rPr backbone
+   * stays structured and editable.
+   */
+  w14RawXml?: string;
 }
 
 /**

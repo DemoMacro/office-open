@@ -5,8 +5,9 @@ import { bench, describe } from "vite-plus/test";
 import { generateWorkbook, generateWorkbookSync } from "./index";
 
 // Bench modes:
-//   "ours default"  = XML DEFLATE level 1 (SuperFast, MS Office), media STORE — no options passed.
-//   "ours all-store" = all entries STORE — { compression: { xml: 0 } }.
+//   "ours default"  = XML DEFLATE level 1 (SuperFast); media split by type
+//     (PNG/JPEG/GIF → STORE, EMF/WMF/BMP/TIFF/… → DEFLATE 1), matching MS Office.
+//   "ours all-store" = all entries STORE (no compression) — { compression: { xml: 0, media: 0 } }.
 //
 // hucre: async only (writeXlsx). Per-entry compression:
 // XML → DEFLATE (auto fallback to STORE), images → STORE (explicit compress: false).
@@ -86,7 +87,7 @@ describe("XLSX: Create + toBuffer", () => {
   bench(
     "ours all-store sync — simple + toBufferStore",
     () => {
-      generateWorkbookSync(SIMPLE_OPTS, { compression: { xml: 0 } });
+      generateWorkbookSync(SIMPLE_OPTS, { compression: { xml: 0, media: 0 } });
     },
     { iterations: 50 },
   );
@@ -102,7 +103,7 @@ describe("XLSX: Create + toBuffer", () => {
   bench(
     "ours all-store async — simple + toBufferStoreAsync",
     async () => {
-      await generateWorkbook(SIMPLE_OPTS, { compression: { xml: 0 } });
+      await generateWorkbook(SIMPLE_OPTS, { compression: { xml: 0, media: 0 } });
     },
     { iterations: 50 },
   );
@@ -128,7 +129,7 @@ describe("XLSX: Create + toBuffer", () => {
   bench(
     "ours all-store sync — styled rows (20) + toBufferStore",
     () => {
-      generateWorkbookSync(STYLED_OPTS, { compression: { xml: 0 } });
+      generateWorkbookSync(STYLED_OPTS, { compression: { xml: 0, media: 0 } });
     },
     { iterations: 50 },
   );
@@ -144,7 +145,7 @@ describe("XLSX: Create + toBuffer", () => {
   bench(
     "ours all-store async — styled rows (20) + toBufferStoreAsync",
     async () => {
-      await generateWorkbook(STYLED_OPTS, { compression: { xml: 0 } });
+      await generateWorkbook(STYLED_OPTS, { compression: { xml: 0, media: 0 } });
     },
     { iterations: 50 },
   );
@@ -175,7 +176,7 @@ describe("XLSX: Create + toBuffer", () => {
   bench(
     "ours all-store sync — table (10x5) + toBufferStore",
     () => {
-      generateWorkbookSync(TABLE_OPTS, { compression: { xml: 0 } });
+      generateWorkbookSync(TABLE_OPTS, { compression: { xml: 0, media: 0 } });
     },
     { iterations: 50 },
   );
@@ -191,7 +192,7 @@ describe("XLSX: Create + toBuffer", () => {
   bench(
     "ours all-store async — table (10x5) + toBufferStoreAsync",
     async () => {
-      await generateWorkbook(TABLE_OPTS, { compression: { xml: 0 } });
+      await generateWorkbook(TABLE_OPTS, { compression: { xml: 0, media: 0 } });
     },
     { iterations: 50 },
   );
@@ -228,7 +229,7 @@ const LARGE_ROWS_OPTS = {
       })),
       images: Array.from({ length: 10 }, (_, i) => ({
         data: LARGE_IMAGES[i],
-        type: "jpeg" as const,
+        type: "jpg" as const,
         col: 5,
         row: i * 200,
       })),
@@ -259,7 +260,7 @@ const LARGE_SHEETS_OPTS = {
     images: [
       {
         data: LARGE_IMAGES[si % LARGE_IMAGES.length],
-        type: "jpeg" as const,
+        type: "jpg" as const,
         col: 3,
         row: 50,
       },
@@ -279,7 +280,7 @@ describe("XLSX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store sync — 2000 rows + 10 img + toBufferStore",
     () => {
-      generateWorkbookSync(LARGE_ROWS_OPTS, { compression: { xml: 0 } });
+      generateWorkbookSync(LARGE_ROWS_OPTS, { compression: { xml: 0, media: 0 } });
     },
     { iterations: 10 },
   );
@@ -295,7 +296,7 @@ describe("XLSX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store async — 2000 rows + 10 img + toBufferStoreAsync",
     async () => {
-      await generateWorkbook(LARGE_ROWS_OPTS, { compression: { xml: 0 } });
+      await generateWorkbook(LARGE_ROWS_OPTS, { compression: { xml: 0, media: 0 } });
     },
     { iterations: 10 },
   );
@@ -332,7 +333,7 @@ describe("XLSX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store sync — 200x10 table + toBufferStore",
     () => {
-      generateWorkbookSync(LARGE_TABLE_OPTS, { compression: { xml: 0 } });
+      generateWorkbookSync(LARGE_TABLE_OPTS, { compression: { xml: 0, media: 0 } });
     },
     { iterations: 10 },
   );
@@ -348,7 +349,7 @@ describe("XLSX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store async — 200x10 table + toBufferStoreAsync",
     async () => {
-      await generateWorkbook(LARGE_TABLE_OPTS, { compression: { xml: 0 } });
+      await generateWorkbook(LARGE_TABLE_OPTS, { compression: { xml: 0, media: 0 } });
     },
     { iterations: 10 },
   );
@@ -374,7 +375,7 @@ describe("XLSX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store sync — 20 sheets × 100 rows + 20 img + toBufferStore",
     () => {
-      generateWorkbookSync(LARGE_SHEETS_OPTS, { compression: { xml: 0 } });
+      generateWorkbookSync(LARGE_SHEETS_OPTS, { compression: { xml: 0, media: 0 } });
     },
     { iterations: 10 },
   );
@@ -390,7 +391,7 @@ describe("XLSX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store async — 20 sheets × 100 rows + 20 img + toBufferStoreAsync",
     async () => {
-      await generateWorkbook(LARGE_SHEETS_OPTS, { compression: { xml: 0 } });
+      await generateWorkbook(LARGE_SHEETS_OPTS, { compression: { xml: 0, media: 0 } });
     },
     { iterations: 10 },
   );
@@ -467,7 +468,7 @@ describe("XLSX: Large Data — 100,000 rows × 20 columns", () => {
   bench(
     "ours all-store sync — 100k×20 data + toBufferStore",
     () => {
-      generateWorkbookSync(DATA_100K_OPTS, { compression: { xml: 0 } });
+      generateWorkbookSync(DATA_100K_OPTS, { compression: { xml: 0, media: 0 } });
     },
     { iterations: 3 },
   );
@@ -483,7 +484,7 @@ describe("XLSX: Large Data — 100,000 rows × 20 columns", () => {
   bench(
     "ours all-store async — 100k×20 data + toBufferStoreAsync",
     async () => {
-      await generateWorkbook(DATA_100K_OPTS, { compression: { xml: 0 } });
+      await generateWorkbook(DATA_100K_OPTS, { compression: { xml: 0, media: 0 } });
     },
     { iterations: 3 },
   );

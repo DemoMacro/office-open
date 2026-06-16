@@ -19,16 +19,53 @@ import type { EmbeddedFontOptionsWithKey } from "./font-wrapper";
 //     </xsd:sequence>
 // </xsd:complexType>
 
+/** Font signature bitfields (Unicode subset + code-page ranges). */
+export interface FontSignature {
+  usb0: string;
+  usb1: string;
+  usb2: string;
+  usb3: string;
+  csb0: string;
+  csb1: string;
+}
+
 /**
  * Options for embedding a font in the document.
+ *
+ * `data` is optional: a parsed font table carries metadata-only declarations
+ * (name/family/pitch/sig/...) for non-embedded fonts, which have no bytes to
+ * embed and must still round-trip into fontTable.xml.
  */
 export interface EmbeddedFontOptions {
   /** Font family name */
   name: string;
-  /** Font file data (TTF, OTF, etc.) */
-  data: Buffer;
+  /** Font file data (TTF, OTF). Undefined for non-embedded font declarations. */
+  data?: Buffer;
   /** Character set/encoding for the font */
   characterSet?: (typeof CharacterSet)[keyof typeof CharacterSet];
+  /** Font family classification (e.g. "auto", "roman", "swiss") */
+  family?: string;
+  /** Font pitch (e.g. "fixed", "variable") */
+  pitch?: string;
+  /** PANOSE-1 classification (10-digit hex string) */
+  panose1?: string;
+  /** Alternative font name */
+  altName?: string;
+  /** Font signature (Unicode/code-page bitfields) */
+  sig?: FontSignature;
+  /**
+   * Internal round-trip flag: when set, `data` holds already-obfuscated
+   * .odttf bytes that must be copied verbatim instead of re-obfuscated.
+   */
+  rawOdttf?: boolean;
+  /** Internal: original .odttf part path (round-trip); preserves source file name. */
+  odttfPath?: string;
+  /**
+   * Internal round-trip: the obfuscation GUID (`w:fontKey`) read back from
+   * fontTable.xml, preserved verbatim so re-generated tables keep the same key.
+   * Undefined on authoring — a fresh key is generated for embedded fonts.
+   */
+  fontKey?: string;
 }
 
 /**

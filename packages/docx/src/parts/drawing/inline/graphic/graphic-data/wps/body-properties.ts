@@ -10,7 +10,8 @@
  */
 import type { UniversalMeasure } from "@office-open/core";
 import { convertToEmu } from "@office-open/core";
-import { element } from "@office-open/xml";
+import { attr, attrBool, attrNum, element, findChild } from "@office-open/xml";
+import type { Element } from "@office-open/xml";
 
 import type { Scene3DOptions } from "../pic/three-d/scene-3d";
 import { createScene3D } from "../pic/three-d/scene-3d";
@@ -346,4 +347,77 @@ export const createBodyProperties = (options: BodyPropertiesOptions = {}): strin
   }
 
   return element("wps:bodyPr", attrs, children.length > 0 ? children : undefined);
+};
+
+// ─── Parse ──────────────────────────────────────────────────────────────────
+
+/**
+ * Parse a `wps:bodyPr` element into {@link BodyPropertiesOptions}.
+ *
+ * Reads the CT_TextBodyProperties attributes and the EG_TextAutofit child
+ * (noAutofit/normAutofit/spAutoFit). prstTxWarp/scene3d/text-3D are not yet
+ * parsed (later phase).
+ */
+export const parseBodyProperties = (el: Element): BodyPropertiesOptions => {
+  const result: Partial<BodyPropertiesOptions> = {};
+
+  const rotation = attrNum(el, "rot");
+  if (rotation !== undefined) result.rotation = rotation;
+  const spcFirstLastPara = attrBool(el, "spcFirstLastPara");
+  if (spcFirstLastPara !== undefined) result.spcFirstLastPara = spcFirstLastPara;
+  const vertOverflow = attr(el, "vertOverflow");
+  if (vertOverflow !== undefined)
+    result.vertOverflow = vertOverflow as BodyPropertiesOptions["vertOverflow"];
+  const horzOverflow = attr(el, "horzOverflow");
+  if (horzOverflow !== undefined)
+    result.horzOverflow = horzOverflow as BodyPropertiesOptions["horzOverflow"];
+  const vert = attr(el, "vert");
+  if (vert !== undefined) result.vert = vert as BodyPropertiesOptions["vert"];
+  const wrap = attr(el, "wrap");
+  if (wrap !== undefined) result.wrap = wrap as BodyPropertiesOptions["wrap"];
+  const lIns = attrNum(el, "lIns");
+  if (lIns !== undefined) result.lIns = lIns;
+  const tIns = attrNum(el, "tIns");
+  if (tIns !== undefined) result.tIns = tIns;
+  const rIns = attrNum(el, "rIns");
+  if (rIns !== undefined) result.rIns = rIns;
+  const bIns = attrNum(el, "bIns");
+  if (bIns !== undefined) result.bIns = bIns;
+  const numCol = attrNum(el, "numCol");
+  if (numCol !== undefined) result.numCol = numCol;
+  const spcCol = attrNum(el, "spcCol");
+  if (spcCol !== undefined) result.spcCol = spcCol;
+  const rtlCol = attrBool(el, "rtlCol");
+  if (rtlCol !== undefined) result.rtlCol = rtlCol;
+  const fromWordArt = attrBool(el, "fromWordArt");
+  if (fromWordArt !== undefined) result.fromWordArt = fromWordArt;
+  const anchor = attr(el, "anchor");
+  if (anchor !== undefined) result.anchor = anchor as BodyPropertiesOptions["anchor"];
+  const anchorCtr = attrBool(el, "anchorCtr");
+  if (anchorCtr !== undefined) result.anchorCtr = anchorCtr;
+  const forceAA = attrBool(el, "forceAA");
+  if (forceAA !== undefined) result.forceAA = forceAA;
+  const upright = attrBool(el, "upright");
+  if (upright !== undefined) result.upright = upright;
+  const compatLnSpc = attrBool(el, "compatLnSpc");
+  if (compatLnSpc !== undefined) result.compatLnSpc = compatLnSpc;
+
+  // EG_TextAutofit (mutually exclusive)
+  if (findChild(el, "a:noAutofit")) {
+    result.noAutoFit = true;
+  } else {
+    const norm = findChild(el, "a:normAutofit");
+    if (norm) {
+      const normOpts: NormalAutofitOptions = {};
+      const fontScale = attrNum(norm, "fontScale");
+      if (fontScale !== undefined) normOpts.fontScale = fontScale;
+      const lnSpcReduction = attrNum(norm, "lnSpcReduction");
+      if (lnSpcReduction !== undefined) normOpts.lnSpcReduction = lnSpcReduction;
+      result.normAutofit = normOpts;
+    } else if (findChild(el, "a:spAutoFit")) {
+      result.spAutoFit = true;
+    }
+  }
+
+  return result as BodyPropertiesOptions;
 };

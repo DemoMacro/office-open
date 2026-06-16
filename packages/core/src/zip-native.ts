@@ -1,10 +1,11 @@
 /**
  * Native ZIP writer with automatic fallback to fflate.
  *
- * In Node.js: uses `node:zlib` for DEFLATE compression and CRC-32,
- * providing ~2-3x faster DEFLATE than fflate's pure-JS implementation.
- * In browsers: falls back to fflate (deflate-raw in CompressionStream
- * is only available in Chromium, not Firefox/Safari).
+ * In Node.js: uses `node:zlib` (`deflateRawSync` / `deflateRaw`) for DEFLATE
+ * and `zlib.crc32` for CRC-32 — ~2-3x faster than fflate's pure-JS deflate.
+ * `import("node:zlib")` resolves only in Node; in browsers (or runtimes that
+ * lack it) the import throws, so we fall back to fflate for both DEFLATE and
+ * CRC-32.
  *
  * @module
  */

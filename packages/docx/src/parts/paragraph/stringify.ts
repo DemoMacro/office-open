@@ -324,7 +324,8 @@ export function stringifyParagraphProperties(
   // 1-4: keepNext, keepLines, pageBreakBefore
   if (options.keepNext !== undefined) parts.push(onOff("w:keepNext", options.keepNext));
   if (options.keepLines !== undefined) parts.push(onOff("w:keepLines", options.keepLines));
-  if (options.pageBreakBefore) parts.push("<w:pageBreakBefore/>");
+  if (options.pageBreakBefore !== undefined)
+    parts.push(onOff("w:pageBreakBefore", options.pageBreakBefore));
 
   // 5: framePr
   if (options.frame) parts.push(framePrStr(options.frame));
@@ -392,7 +393,7 @@ export function stringifyParagraphProperties(
   if (options.suppressAutoHyphens !== undefined)
     parts.push(onOff("w:suppressAutoHyphens", options.suppressAutoHyphens));
   if (options.kinsoku !== undefined) parts.push(onOff("w:kinsoku", options.kinsoku));
-  if (options.wordWrap) parts.push('<w:wordWrap w:val="0"/>');
+  if (options.wordWrap !== undefined) parts.push(onOff("w:wordWrap", options.wordWrap));
   if (options.overflowPunctuation)
     parts.push(onOff("w:overflowPunct", options.overflowPunctuation));
   if (options.topLinePunct !== undefined) parts.push(onOff("w:topLinePunct", options.topLinePunct));
@@ -541,8 +542,9 @@ export function stringifyRunPropertiesInner(opts?: RunPropertiesOptions): string
   // Scale
   if (opts.scale !== undefined) parts.push(`<w:w w:val="${opts.scale}"/>`);
 
-  // Kern
-  if (opts.kern) parts.push(`<w:kern w:val="${hpsMeasureValue(opts.kern)}"/>`);
+  // Kern — w:val="0" is meaningful (explicitly disables kerning), so emit
+  // whenever the field is set rather than truthy-checking it.
+  if (opts.kern !== undefined) parts.push(`<w:kern w:val="${hpsMeasureValue(opts.kern)}"/>`);
 
   // Position
   if (opts.position) parts.push(`<w:position w:val="${opts.position}"/>`);
@@ -615,6 +617,9 @@ export function stringifyRunPropertiesInner(opts?: RunPropertiesOptions): string
       `<w:rPrChange w:author="${escapeXml(rev.author)}" w:date="${rev.date}" w:id="${rev.id}"><w:rPr>${inner ?? ""}</w:rPr></w:rPrChange>`,
     );
   }
+
+  // w14:* text effects — raw passthrough, emitted last (EG_RPrBase extension slot)
+  if (opts.w14RawXml) parts.push(opts.w14RawXml);
 
   return parts.length > 0 ? parts.join("") : undefined;
 }

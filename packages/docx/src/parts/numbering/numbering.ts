@@ -29,6 +29,7 @@ export interface NumberingOptions {
   config: {
     levels: LevelsOptions[];
     reference: string;
+    extraOptions?: AbstractNumberingExtraOptions;
   }[];
   /** Numbering cleanup ID (w:numIdMacAtCleanup) */
   numIdMacAtCleanup?: number;
@@ -161,25 +162,29 @@ export class Numbering {
     this._numIdMacAtCleanup = options.numIdMacAtCleanup;
     this._numPicBullets = options.numPicBullets;
 
-    const defaultAbstractId = this.abstractNumUniqueNumericId();
-
-    this.abstractNumberingData.set("default-bullet-numbering", {
-      id: defaultAbstractId,
-      levels: DEFAULT_BULLET_LEVELS,
-    });
-
-    this.concreteNumberingData.set("default-bullet-numbering", {
-      abstractNumId: defaultAbstractId,
-      instance: 0,
-      numId: 1,
-      overrideLevels: [{ num: 0, start: 1 }],
-      reference: "default-bullet-numbering",
-    });
+    // Only inject the default bullet numbering when the caller supplied no
+    // numbering definitions. Round-tripped documents carry their own, so
+    // injecting a default would inflate the part (extra abstractNum + 9 levels).
+    if (options.config.length === 0) {
+      const defaultAbstractId = this.abstractNumUniqueNumericId();
+      this.abstractNumberingData.set("default-bullet-numbering", {
+        id: defaultAbstractId,
+        levels: DEFAULT_BULLET_LEVELS,
+      });
+      this.concreteNumberingData.set("default-bullet-numbering", {
+        abstractNumId: defaultAbstractId,
+        instance: 0,
+        numId: 1,
+        overrideLevels: [{ num: 0, start: 1 }],
+        reference: "default-bullet-numbering",
+      });
+    }
 
     for (const con of options.config) {
       this.abstractNumberingData.set(con.reference, {
         id: this.abstractNumUniqueNumericId(),
         levels: con.levels,
+        extraOptions: con.extraOptions,
       });
       this.referenceConfigMap.set(con.reference, con.levels);
     }
@@ -228,17 +233,22 @@ export class Numbering {
     if (this.concreteNumberingData.has(fullReference)) return;
 
     const referenceConfigLevels = this.referenceConfigMap.get(reference);
-    const firstLevelStartNumber = referenceConfigLevels && referenceConfigLevels[0].start;
+    const firstLevelStartNumber = referenceConfigLevels?.[0]?.start;
+
+    // Only emit a lvlOverride when the instance's start differs from the
+    // abstract default (1) — otherwise it is redundant and inflates the part.
+    const overrideLevels =
+      typeof firstLevelStartNumber === "number" &&
+      Number.isInteger(firstLevelStartNumber) &&
+      firstLevelStartNumber !== 1
+        ? [{ num: 0, start: firstLevelStartNumber }]
+        : undefined;
 
     this.concreteNumberingData.set(fullReference, {
       abstractNumId: abstractNumbering.id,
       instance,
       numId: this.concreteNumUniqueNumericId(),
-      overrideLevels: [
-        typeof firstLevelStartNumber === "number" && Number.isInteger(firstLevelStartNumber)
-          ? { num: 0, start: firstLevelStartNumber }
-          : { num: 0, start: 1 },
-      ],
+      overrideLevels,
       reference,
     });
   }
@@ -406,7 +416,18 @@ export function parseNumberingDefinitions(
     }
 
     if (levels.length > 0) {
-      configs.push({ reference: `list_${numId}`, levels });
+      const extraOptions: AbstractNumberingExtraOptions = {};
+      const nsidEl = findChild(abstractEl, "w:nsid");
+      if (nsidEl) {
+        const v = attr(nsidEl, "w:val");
+        if (v) extraOptions.nsid = v;
+      }
+      const tmplEl = findChild(abstractEl, "w:tmpl");
+      if (tmplEl) {
+        const v = attr(tmplEl, "w:val");
+        if (v) extraOptions.tmpl = v;
+      }
+      configs.push({ reference: `list_${numId}`, levels, extraOptions });
     }
   }
 

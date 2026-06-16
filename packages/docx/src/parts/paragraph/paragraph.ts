@@ -19,6 +19,7 @@ import type { ImageOptions } from "./run/image-run";
 import type { RubyOptions } from "./run/ruby";
 import type { SmartArtOptions } from "./run/smartart-run";
 import type { SymbolRunOptions } from "./run/symbol-run";
+import type { WpgGroupRunOptions } from "./run/wpg-group-run";
 import type { WpsShapeRunOptions } from "./run/wps-shape-run";
 
 // ── JSON child wrappers ──
@@ -79,7 +80,8 @@ export type ParagraphChild =
     }
   | { bookmarkStart: { id: number; name: string } }
   | { bookmarkEnd: number }
-  | { wpsShape: Omit<WpsShapeRunOptions, "type"> }
+  | { wpsShape: WpsShapeRunOptions }
+  | { wpgGroup: WpgGroupRunOptions }
   // Proof error markers
   | { proofErr: "spellStart" | "spellEnd" | "gramStart" | "gramEnd" }
   // Positional tab
@@ -120,8 +122,18 @@ export type ParagraphChild =
   | { formField: FormFieldOptions }
   // Complex field (PAGE/DATE/TOC/HYPERLINK... — any fldChar field without
   // w:ffData). `instruction` is the raw field code (incl. surrounding spaces);
-  // `result` is the cached result-run text, if any.
-  | { complexField: { instruction: string; result?: string } }
+  // `result` is the cached result-run text, if any. `rPrXml` is the verbatim
+  // run-properties of the control runs (begin/instrText/separate/end);
+  // `resultRPrXml` is that of the result run(s) — carried so field formatting
+  // survives round-trip (Word writes the same rPr across a field's runs).
+  | {
+      complexField: {
+        instruction: string;
+        result?: string;
+        rPrXml?: string;
+        resultRPrXml?: string;
+      };
+    }
   // Sequential identifier (SEQ field)
   | { seqIdentifier: string }
   // Page reference (PAGEREF field)

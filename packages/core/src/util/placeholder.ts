@@ -88,10 +88,10 @@ export function findAndReplaceImagePlaceholders(
   if (mediaArray.length === 0 || !hasPlaceholders(xml)) {
     return { xml, referenced: [] };
   }
-  // Build fileName → { index, mediaItem } lookup
-  const indexMap = new Map<string, { idx: number; item: { fileName: string } }>();
+  // Build fileName → mediaItem lookup
+  const itemMap = new Map<string, { fileName: string }>();
   for (let i = 0; i < mediaArray.length; i++) {
-    indexMap.set(mediaArray[i].fileName, { idx: i, item: mediaArray[i] });
+    itemMap.set(mediaArray[i].fileName, mediaArray[i]);
   }
 
   const referenced: { fileName: string }[] = [];
@@ -101,11 +101,16 @@ export function findAndReplaceImagePlaceholders(
 
   for (const m of xml.matchAll(PLACEHOLDER_RE)) {
     const key = m[1];
-    const entry = indexMap.get(key);
-    if (entry !== undefined) {
+    const item = itemMap.get(key);
+    if (item !== undefined) {
       if (!replaceMap.has(key)) {
-        replaceMap.set(key, formatId(offset, entry.idx, idFormat));
-        referenced.push(entry.item);
+        // Use the referenced-local position (not the global media index) so the
+        // generated IDs align with the caller's per-part addRelationship(offset+i)
+        // loop. Using the global index desyncs the body's r:embed from the part's
+        // .rels when a part references only a subset of the global media array
+        // (e.g. headers/footers, whose images sit at high global indices).
+        replaceMap.set(key, formatId(offset, referenced.length, idFormat));
+        referenced.push(item);
       }
       parts.push(xml.substring(last, m.index!), replaceMap.get(key)!);
       last = m.index! + m[0].length;

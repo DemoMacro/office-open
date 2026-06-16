@@ -14,6 +14,7 @@ import type { DocumentOptions } from "@parts/core-properties";
 import { customPropertiesDesc } from "@parts/custom-properties";
 import { endnotesDesc } from "@parts/endnotes/descriptor";
 import { fontTableDesc } from "@parts/fonts/descriptor";
+import type { EmbeddedFontOptionsWithKey } from "@parts/fonts/font-wrapper";
 import { footnotesDesc } from "@parts/footnotes/descriptor";
 import { glossaryDesc } from "@parts/glossary-document";
 import { parseNumberingDefinitions } from "@parts/numbering/numbering";
@@ -25,6 +26,8 @@ import { webSettingsDesc } from "@parts/web-settings";
 import { parseParagraphProperties } from "./body";
 import { DocxReadContext } from "./context";
 import { parseBody, parseSectionChild } from "./parse/body";
+import { replaceRelsWithPlaceholders } from "./util/replace-media-placeholders";
+import { stringifyElement } from "./util/stringify-element";
 
 export { parseArchive };
 
@@ -49,8 +52,15 @@ export interface DocxPartRefs {
   charts: Map<string, string>;
   /** word/diagrams/dataN.xml keyed by rId */
   diagramData: Map<string, string>;
-  /** word/media/* keyed by rId */
+  /** word/media/* keyed by rId (from document.xml.rels) */
   media: Map<string, string>;
+  /**
+   * Per-part image/media relationships. Each part (document, headers, footers,
+   * footnotes, …) has its own .rels with independent rId numbering, so drawings
+   * inside a part must resolve images against that part's rels. Maps
+   * partPath → (rId → mediaPath).
+   */
+  partMedia: Map<string, Map<string, string>>;
   /** Alternative format chunks (word/afchunkN.*) keyed by rId */
   afChunks: Map<string, string>;
   /** Sub-documents (word/subdocs/subdocN.docx) keyed by rId */
@@ -94,6 +104,36 @@ function resolveRelsPath(target: string): string {
   return `word/${target}`;
 }
 
+/**
+ * Resolve each embedded font's .odttf bytes through fontTable.xml.rels.
+ * Reads the binary verbatim and flags it raw so the compiler copies it as-is
+ * instead of re-obfuscating (the fontKey already matches the bytes).
+ */
+function resolveEmbeddedFontData(fonts: EmbeddedFontOptionsWithKey[], doc: ParsedArchive): void {
+  const relsEl = doc.get("word/_rels/fontTable.xml.rels");
+  if (!relsEl) return;
+  const ridToPath = new Map<string, string>();
+  for (const child of relsEl.elements ?? []) {
+    if (child.name !== "Relationship") continue;
+    const type = attr(child, "Type") ?? "";
+    if (!type.includes("/font")) continue;
+    const id = attr(child, "Id") ?? "";
+    const target = attr(child, "Target") ?? "";
+    if (id && target) ridToPath.set(id, resolveRelsPath(target));
+  }
+  for (const font of fonts) {
+    if (!font.embedRid) continue;
+    const odttfPath = ridToPath.get(font.embedRid);
+    if (!odttfPath) continue;
+    const bytes = doc.getRaw(odttfPath);
+    if (bytes) {
+      font.data = Buffer.from(bytes);
+      font.rawOdttf = true;
+      font.odttfPath = odttfPath;
+    }
+  }
+}
+
 function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
   const refs: DocxPartRefs = {
     headers: new Map(),
@@ -102,6 +142,7 @@ function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
     charts: new Map(),
     diagramData: new Map(),
     media: new Map(),
+    partMedia: new Map(),
     afChunks: new Map(),
     subDocs: new Map(),
   };
@@ -144,6 +185,31 @@ function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
       refs.glossary = path;
     } else if (type.includes("/hyperlink")) {
       refs.hyperlinks.set(id, target);
+    }
+  }
+
+  // Per-part image relationships. Each part carries its own .rels with
+  // independent rId numbering (document rId1 ≠ header rId1), so collect them
+  // keyed by part path; drawings inside a part resolve images through its
+  // own rels. Covers document, headers, footers, footnotes, endnotes, comments.
+  for (const relsPath of doc.keys("word/_rels/")) {
+    if (!relsPath.endsWith(".rels")) continue;
+    const relsEl = doc.get(relsPath);
+    if (!relsEl) continue;
+    const partPath = "word/" + relsPath.slice("word/_rels/".length, -".rels".length);
+    for (const rel of relsEl.elements ?? []) {
+      if (rel.name !== "Relationship") continue;
+      const type = attr(rel, "Type") ?? "";
+      if (!type.includes("/image") && !type.includes("/media")) continue;
+      const id = attr(rel, "Id") ?? "";
+      const target = attr(rel, "Target") ?? "";
+      if (!id || !target) continue;
+      let partMap = refs.partMedia.get(partPath);
+      if (!partMap) {
+        partMap = new Map();
+        refs.partMedia.set(partPath, partMap);
+      }
+      partMap.set(id, resolveRelsPath(target));
     }
   }
 
@@ -210,16 +276,30 @@ export function parseDocument(data: DataType): DocumentOptions {
 
   // Background (w:background in document.xml)
   if (docx.background) {
-    const bg: Record<string, unknown> = {};
-    const color = attr(docx.background, "w:color");
-    if (color) bg.color = color;
-    const themeColor = attr(docx.background, "w:themeColor");
-    if (themeColor) bg.themeColor = themeColor;
-    const themeShade = attr(docx.background, "w:themeShade");
-    if (themeShade) bg.themeShade = themeShade;
-    const themeTint = attr(docx.background, "w:themeTint");
-    if (themeTint) bg.themeTint = themeTint;
-    if (Object.keys(bg).length > 0) opts.background = bg;
+    const hasChildren = (docx.background.elements ?? []).some((e) => e.type === "element");
+    if (hasChildren) {
+      // VML/structured background (e.g. v:background/v:fill pattern with a
+      // texture image) that doesn't fit the color/theme model: carry the
+      // element verbatim, rewriting relationship refs to {fileName} placeholders
+      // so the media round-trips via the compiler's placeholder pass.
+      const { rawXml, rawMedia } = replaceRelsWithPlaceholders(
+        stringifyElement(docx.background),
+        ctx,
+        "background",
+      );
+      opts.background = rawMedia.length > 0 ? { rawXml, rawMedia } : { rawXml };
+    } else {
+      const bg: Record<string, unknown> = {};
+      const color = attr(docx.background, "w:color");
+      if (color) bg.color = color;
+      const themeColor = attr(docx.background, "w:themeColor");
+      if (themeColor) bg.themeColor = themeColor;
+      const themeShade = attr(docx.background, "w:themeShade");
+      if (themeShade) bg.themeShade = themeShade;
+      const themeTint = attr(docx.background, "w:themeTint");
+      if (themeTint) bg.themeTint = themeTint;
+      if (Object.keys(bg).length > 0) opts.background = bg;
+    }
   }
 
   // Core properties
@@ -234,6 +314,7 @@ export function parseDocument(data: DataType): DocumentOptions {
       if (cp.description) opts.description = cp.description;
       if (cp.lastModifiedBy) opts.lastModifiedBy = cp.lastModifiedBy;
       if (cp.revision) opts.revision = cp.revision;
+      if (cp.lastPrinted) opts.lastPrinted = cp.lastPrinted;
     }
   }
 
@@ -248,7 +329,17 @@ export function parseDocument(data: DataType): DocumentOptions {
 
   // Settings
   if (docx.settings) {
-    Object.assign(opts, settingsDesc.parse(docx.settings, ctx));
+    const settingsOpts = settingsDesc.parse(docx.settings, ctx);
+    Object.assign(opts, settingsOpts);
+    // Surface the verbatim capture (rootAttributes + rawXml) onto
+    // DocumentOptions.settings so context.ts spreads it into _settingsOptions
+    // (the descriptor's stringify input).
+    if (settingsOpts.rawXml !== undefined) {
+      opts.settings = {
+        rawXml: settingsOpts.rawXml,
+        rootAttributes: settingsOpts.rootAttributes,
+      };
+    }
   }
 
   // Web settings
@@ -272,7 +363,9 @@ export function parseDocument(data: DataType): DocumentOptions {
   if (docx.partRefs.comments) {
     const commentsEl = docx.doc.get(docx.partRefs.comments);
     if (commentsEl) {
-      const commentsResult = commentsDesc.parse(commentsEl, ctx);
+      const commentsResult = ctx.withPart(docx.partRefs.comments, () =>
+        commentsDesc.parse(commentsEl, ctx),
+      );
       const children = commentsResult.children;
       if (children && children.length > 0) {
         opts.comments = { children } as unknown as DocumentOptions["comments"];
@@ -284,7 +377,9 @@ export function parseDocument(data: DataType): DocumentOptions {
   if (docx.partRefs.footnotes) {
     const footnotesEl = docx.doc.get(docx.partRefs.footnotes);
     if (footnotesEl) {
-      const fnResult = footnotesDesc.parse(footnotesEl, ctx);
+      const fnResult = ctx.withPart(docx.partRefs.footnotes, () =>
+        footnotesDesc.parse(footnotesEl, ctx),
+      );
       const footnotesMap: Record<string, { children: unknown[] }> = {};
       for (const [id, paragraphs] of fnResult.notes) {
         footnotesMap[String(id)] = { children: paragraphs };
@@ -297,7 +392,9 @@ export function parseDocument(data: DataType): DocumentOptions {
   if (docx.partRefs.endnotes) {
     const endnotesEl = docx.doc.get(docx.partRefs.endnotes);
     if (endnotesEl) {
-      const enResult = endnotesDesc.parse(endnotesEl, ctx);
+      const enResult = ctx.withPart(docx.partRefs.endnotes, () =>
+        endnotesDesc.parse(endnotesEl, ctx),
+      );
       const endnotesMap: Record<string, { children: unknown[] }> = {};
       for (const [id, paragraphs] of enResult.notes) {
         endnotesMap[String(id)] = { children: paragraphs };
@@ -321,7 +418,10 @@ export function parseDocument(data: DataType): DocumentOptions {
   // Font table
   if (docx.fontTable) {
     const ftResult = fontTableDesc.parse(docx.fontTable, ctx);
-    if (ftResult.fonts && ftResult.fonts.length > 0) opts.fonts = ftResult.fonts;
+    if (ftResult.fonts && ftResult.fonts.length > 0) {
+      resolveEmbeddedFontData(ftResult.fonts, docx.doc);
+      opts.fonts = ftResult.fonts;
+    }
   }
 
   // Bibliography
@@ -337,7 +437,9 @@ export function parseDocument(data: DataType): DocumentOptions {
   if (docx.partRefs.glossary) {
     const glossaryEl = docx.doc.get(docx.partRefs.glossary);
     if (glossaryEl) {
-      const glossaryResult = glossaryDesc.parse(glossaryEl, ctx);
+      const glossaryResult = ctx.withPart(docx.partRefs.glossary, () =>
+        glossaryDesc.parse(glossaryEl, ctx),
+      );
       if (glossaryResult.parts && glossaryResult.parts.length > 0) opts.glossary = glossaryResult;
     }
   }
@@ -347,6 +449,20 @@ export function parseDocument(data: DataType): DocumentOptions {
     const ctResult = contentTypesDesc.parse(docx.contentTypes, ctx);
     if (ctResult) opts.contentTypes = ctResult;
   }
+
+  // Raw passthrough: parts generate() doesn't rebuild (word/theme/*, customXml/*).
+  // Carried verbatim so their [Content_Types] declarations stay valid and the
+  // package opens in Word. (Media/fonts/headers/etc. are rebuilt by the compiler
+  // and must NOT be passed through — they'd otherwise duplicate under renamed paths.)
+  const rawParts: { path: string; data: Uint8Array }[] = [];
+  for (const prefix of ["word/theme/", "customXml/"]) {
+    for (const p of docx.doc.keys(prefix)) {
+      if (p.endsWith("/")) continue;
+      const data = docx.doc.getRaw(p);
+      if (data) rawParts.push({ path: p, data });
+    }
+  }
+  if (rawParts.length > 0) opts.rawParts = rawParts;
 
   return opts as unknown as DocumentOptions;
 }

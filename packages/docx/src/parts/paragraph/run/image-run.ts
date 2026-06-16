@@ -12,9 +12,10 @@ import type { FillOptions } from "@office-open/core/drawingml";
 import type { DocPropertiesOptions } from "@parts/drawing/doc-properties/doc-properties";
 import type { MediaTransformation } from "@shared/media";
 import { createTransformation } from "@shared/media";
-import type { MediaData } from "@shared/media/data";
+import type { MediaData, PicCnvPrOptions } from "@shared/media/data";
 
 import type { Floating } from "../../drawing";
+import type { GraphicFrameLocksOptions } from "../../drawing/descriptor";
 import type { BlipEffectsOptions } from "../../drawing/inline/graphic/graphic-data/pic/blip/blip-effects";
 import type { SourceRectangleOptions } from "../../drawing/inline/graphic/graphic-data/pic/blip/source-rectangle";
 import type { TileOptions } from "../../drawing/inline/graphic/graphic-data/pic/blip/tile";
@@ -34,6 +35,14 @@ interface CoreImageOptions {
   blipEffects?: BlipEffectsOptions;
   srcRect?: SourceRectangleOptions;
   tile?: TileOptions;
+  /** Picture non-visual properties (pic:cNvPr) — populated by parse */
+  cNvPr?: PicCnvPrOptions;
+  /** Raw XML of the wrapping w:r's rPr (round-trip) — emitted before the drawing. */
+  runPropertiesRawXml?: string;
+  /** Graphic frame locks (wp:cNvGraphicFramePr) for round-trip. */
+  graphicFrameLocks?: GraphicFrameLocksOptions | null;
+  /** Blip rendering hint `a14:useLocalDpi` (round-trip). */
+  useLocalDpi?: boolean;
 }
 
 interface RegularImageOptions {
@@ -62,9 +71,11 @@ export const createImageData = (
   transformation: MediaTransformation,
   key: string,
   srcRect?: SourceRectangleOptions,
-): Pick<MediaData, "data" | "fileName" | "transformation" | "srcRect"> => ({
+  cNvPr?: PicCnvPrOptions,
+): Pick<MediaData, "data" | "fileName" | "transformation" | "srcRect" | "cNvPr"> => ({
   data,
   fileName: key,
   srcRect,
+  cNvPr,
   transformation: createTransformation(transformation),
 });

@@ -31,8 +31,14 @@ export const convertPixelsToEmu = (pixels: number): number => Math.round(pixels 
 
 /**
  * Converts EMU to pixels (96 DPI).
+ *
+ * Returns a possibly fractional (sub-pixel) value. The integer rounding that
+ * lived here before permanently discarded sub-pixel precision, which made an
+ * EMU → pixel → EMU round-trip lossy (e.g. 5521960 EMU → 580 px → 5524500 EMU).
+ * Keeping the fraction lets convertPixelsToEmu restore the exact original EMU.
+ * Callers needing an integer pixel for display should Math.round the result.
  */
-export const convertEmuToPixels = (emus: number): number => Math.round(emus / 9525);
+export const convertEmuToPixels = (emus: number): number => emus / 9525;
 
 /**
  * Converts inches to EMU.

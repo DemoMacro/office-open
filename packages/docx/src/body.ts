@@ -14,7 +14,10 @@ import { ThemeColor } from "@office-open/core";
 import { attr, attrBool, attrNum, escapeXml, findChild, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { sectionPropertiesDesc } from "@parts/document/body/section-properties/descriptor";
-import type { DocumentBackgroundOptions } from "@parts/document/document-background";
+import type {
+  BackgroundRawMediaOptions,
+  DocumentBackgroundOptions,
+} from "@parts/document/document-background";
 import { parseDrawingRun } from "@parts/drawing/drawing-parse";
 import { FontWrapper } from "@parts/fonts/font-wrapper";
 import type { BordersOptions } from "@parts/paragraph/formatting/border";
@@ -42,6 +45,8 @@ import { stringifyChildDispatch } from "./parts/inline";
 import { parseMathChildren } from "./parts/paragraph/math/stringify";
 import type { ParagraphChild } from "./parts/paragraph/paragraph";
 import { stringifyParagraphProperties, stringifyRunProperties } from "./parts/paragraph/stringify";
+import { replaceRelsWithPlaceholders } from "./util/replace-media-placeholders";
+import { stringifyElement } from "./util/stringify-element";
 
 export type { BodyContext } from "./context";
 
@@ -95,7 +100,9 @@ export function stringifyRun(opts: RunOptions, ctx: BodyContext): string {
 
   // Run properties — inject CommentReference style if needed
   const runOpts = commentRefStyle ? { ...opts, style: "CommentReference" as const } : opts;
-  const rPr = stringifyRunProperties(runOpts);
+  // Prefer the raw rPr carried from parse (verbatim round-trip) over
+  // regenerating from structured fields (avoids b/bCs, sz/szCs pairing).
+  const rPr = (runOpts as { rPrRawXml?: string }).rPrRawXml ?? stringifyRunProperties(runOpts);
   if (rPr) parts.push(rPr);
 
   // Breaks
@@ -271,6 +278,12 @@ export function stringifyBodyChild(child: SectionChild, ctx: BodyContext): strin
   if ("customXml" in child) {
     return customXmlBlockDesc.stringify(child.customXml, ctx) ?? "";
   }
+  if ("bookmarkStart" in child) {
+    return `<w:bookmarkStart w:id="${child.bookmarkStart.id}" w:name="${child.bookmarkStart.name}"/>`;
+  }
+  if ("bookmarkEnd" in child) {
+    return `<w:bookmarkEnd w:id="${child.bookmarkEnd}"/>`;
+  }
   if ("rawXml" in child) {
     return child.rawXml;
   }
@@ -284,6 +297,23 @@ export function stringifyBodyChild(child: SectionChild, ctx: BodyContext): strin
 const vmlStyleMap = styleToKeyMap;
 
 function stringifyDocumentBackground(opts: DocumentBackgroundOptions, ctx: BodyContext): string {
+  // Raw-XML passthrough for backgrounds that don't fit the structured model
+  // (VML pattern fills, texture images). Register each referenced media item
+  // so the compiler resolves the `{fileName}` placeholders into rIds.
+  if (opts.rawXml) {
+    if (opts.rawMedia) {
+      for (const m of opts.rawMedia) {
+        ctx.file.media.addImage(m.fileName, {
+          type: m.type,
+          data: m.data,
+          fileName: m.fileName,
+          transformation: { emus: { x: 0, y: 0 }, pixels: { x: 0, y: 0 } },
+        });
+      }
+    }
+    return opts.rawXml;
+  }
+
   const attrs: string[] = [];
   if (opts.color !== undefined) attrs.push(`w:color="${hexColorValue(opts.color)}"`);
   if (opts.themeColor !== undefined) attrs.push(`w:themeColor="${opts.themeColor}"`);
@@ -892,6 +922,12 @@ function parseCustomXmlRangeStart(
  * Includes the field accumulator that collapses form/complex fields spanning
  * multiple w:r runs into a single child.
  */
+/** Serialize a w:r's w:rPr child verbatim (or undefined when the run has none). */
+function runRPrXml(run: Element): string | undefined {
+  const rPr = findChild(run, "w:rPr");
+  return rPr ? stringifyElement(rPr) : undefined;
+}
+
 function parseRunLevelChildren(elements: Element[] | undefined, ctx: DocxReadContext): unknown[] {
   const childList: unknown[] = [];
 
@@ -907,6 +943,11 @@ function parseRunLevelChildren(elements: Element[] | undefined, ctx: DocxReadCon
   let pendingFormField: FormFieldOptions | null = null;
   let pendingInstruction = "";
   let pendingResult = "";
+  // Verbatim rPr of the field's control runs (begin/instrText/separate/end)
+  // and result run(s) — Word writes identical rPr across a field's runs, so
+  // capturing it preserves field formatting (font/size) through round-trip.
+  let pendingControlRPr: string | undefined;
+  let pendingResultRPr: string | undefined;
   // True once the `separate` fldChar is seen: subsequent runs (up to `end`)
   // are the field's result.
   let collectingResult = false;
@@ -930,6 +971,9 @@ function parseRunLevelChildren(elements: Element[] | undefined, ctx: DocxReadCon
               pendingInstruction = "";
               pendingResult = "";
             }
+            // Capture the begin run's rPr as the field's control-run rPr.
+            pendingControlRPr = runRPrXml(child);
+            pendingResultRPr = undefined;
             collectingResult = false;
           } else if (fctype === "separate") {
             collectingResult = true;
@@ -937,10 +981,15 @@ function parseRunLevelChildren(elements: Element[] | undefined, ctx: DocxReadCon
             if (fieldKind === "form" && pendingFormField) {
               childList.push({ formField: pendingFormField });
             } else if (fieldKind === "complex") {
-              const cf: { instruction: string; result?: string } = {
-                instruction: pendingInstruction,
-              };
+              const cf: {
+                instruction: string;
+                result?: string;
+                rPrXml?: string;
+                resultRPrXml?: string;
+              } = { instruction: pendingInstruction };
               if (pendingResult) cf.result = pendingResult;
+              if (pendingControlRPr) cf.rPrXml = pendingControlRPr;
+              if (pendingResultRPr) cf.resultRPrXml = pendingResultRPr;
               childList.push({ complexField: cf });
             }
             fieldKind = null;
@@ -953,6 +1002,8 @@ function parseRunLevelChildren(elements: Element[] | undefined, ctx: DocxReadCon
           if (fieldKind === "complex") {
             // Collect instrText (begin→separate) and result text (separate→end).
             if (collectingResult) {
+              // Capture the first result run's rPr for round-trip.
+              if (pendingResultRPr === undefined) pendingResultRPr = runRPrXml(child);
               pendingResult += collectRunText(child);
             } else {
               const instrEl = findChild(child, "w:instrText");
@@ -970,10 +1021,63 @@ function parseRunLevelChildren(elements: Element[] | undefined, ctx: DocxReadCon
           break; // instrText / result — handled by field state above
         }
 
-        const drawingEl = findChild(child, "w:drawing");
+        // Drawing may be a direct w:drawing child OR wrapped in
+        // mc:AlternateContent > mc:Choice (DrawingML shapes wpg/wps use this
+        // wrapper; the Fallback holds the VML equivalent). Resolve either and,
+        // when an AlternateContent wrapper is present, carry the Fallback as
+        // raw XML so the full mc:AlternateContent round-trips verbatim.
+        let drawingEl = findChild(child, "w:drawing");
+        let altFallback: string | undefined;
+        let altFallbackMedia: BackgroundRawMediaOptions[] | undefined;
+        let altRequires: string | undefined;
+        if (!drawingEl) {
+          const alt = findChild(child, "mc:AlternateContent");
+          if (alt) {
+            const choice = findChild(alt, "mc:Choice");
+            if (choice) {
+              drawingEl = findChild(choice, "w:drawing");
+              altRequires = attr(choice, "Requires");
+            }
+            const fallback = findChild(alt, "mc:Fallback");
+            if (fallback) {
+              // Replace the VML fallback's r:id/r:embed/r:link refs with {fileName}
+              // placeholders and collect the media; otherwise the carried source
+              // rIds dangle (not defined in the generated rels).
+              const replaced = replaceRelsWithPlaceholders(stringifyElement(fallback), ctx, "vml");
+              altFallback = replaced.rawXml;
+              altFallbackMedia = replaced.rawMedia.length > 0 ? replaced.rawMedia : undefined;
+            }
+          }
+        }
         if (drawingEl) {
           const drawingChild = parseDrawingRun(drawingEl, ctx);
           if (drawingChild) {
+            // Carry the wrapping run's rPr verbatim so round-trip preserves it
+            // (drawings/shapes can be wrapped in <w:r><w:rPr>…</w:rPr>…).
+            const rPrEl = findChild(child, "w:rPr");
+            const runPropertiesRawXml = rPrEl ? stringifyElement(rPrEl) : undefined;
+            // Attach the VML fallback + Choice Requires so stringify can rebuild
+            // the mc:AlternateContent wrapper (Choice structured + Fallback raw).
+            if (altFallback) {
+              if ("wpsShape" in drawingChild) {
+                drawingChild.wpsShape.vmlFallback = altFallback;
+                drawingChild.wpsShape.vmlFallbackMedia = altFallbackMedia;
+                if (altRequires) drawingChild.wpsShape.mcChoiceRequires = altRequires;
+              } else if ("wpgGroup" in drawingChild) {
+                drawingChild.wpgGroup.vmlFallback = altFallback;
+                drawingChild.wpgGroup.vmlFallbackMedia = altFallbackMedia;
+                if (altRequires) drawingChild.wpgGroup.mcChoiceRequires = altRequires;
+              }
+            }
+            if (runPropertiesRawXml) {
+              if ("image" in drawingChild) {
+                drawingChild.image.runPropertiesRawXml = runPropertiesRawXml;
+              } else if ("wpsShape" in drawingChild) {
+                drawingChild.wpsShape.runPropertiesRawXml = runPropertiesRawXml;
+              } else if ("wpgGroup" in drawingChild) {
+                drawingChild.wpgGroup.runPropertiesRawXml = runPropertiesRawXml;
+              }
+            }
             childList.push(drawingChild);
             break;
           }

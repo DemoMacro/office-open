@@ -235,10 +235,10 @@ export const createBlipEffects = (options: BlipEffectsOptions): string[] => {
   if (options.luminance) {
     const attrs: Record<string, string | number | undefined> = {};
     if (options.luminance.bright !== undefined) {
-      attrs.bright = `${options.luminance.bright}%`;
+      attrs.bright = `${options.luminance.bright}`;
     }
     if (options.luminance.contrast !== undefined) {
-      attrs.contrast = `${options.luminance.contrast}%`;
+      attrs.contrast = `${options.luminance.contrast}`;
     }
     children.push(element("a:lum", attrs));
   }
@@ -249,10 +249,10 @@ export const createBlipEffects = (options: BlipEffectsOptions): string[] => {
       attrs.hue = String(options.hsl.hue);
     }
     if (options.hsl.saturation !== undefined) {
-      attrs.sat = `${options.hsl.saturation}%`;
+      attrs.sat = `${options.hsl.saturation}`;
     }
     if (options.hsl.luminance !== undefined) {
-      attrs.lum = `${options.hsl.luminance}%`;
+      attrs.lum = `${options.hsl.luminance}`;
     }
     children.push(element("a:hsl", attrs));
   }
@@ -263,7 +263,7 @@ export const createBlipEffects = (options: BlipEffectsOptions): string[] => {
       attrs.hue = String(options.tint.hue);
     }
     if (options.tint.amount !== undefined) {
-      attrs.amt = `${options.tint.amount}%`;
+      attrs.amt = `${options.tint.amount}`;
     }
     children.push(element("a:tint", attrs));
   }
@@ -278,7 +278,7 @@ export const createBlipEffects = (options: BlipEffectsOptions): string[] => {
   }
 
   if (options.biLevel) {
-    children.push(`<a:biLevel thresh="${options.biLevel.threshold}%"/>`);
+    children.push(`<a:biLevel thresh="${options.biLevel.threshold}"/>`);
   }
 
   if (options.alphaCeiling) {
@@ -299,15 +299,15 @@ export const createBlipEffects = (options: BlipEffectsOptions): string[] => {
 
   if (options.alphaModFix) {
     const amt = options.alphaModFix.amount ?? 100;
-    children.push(`<a:alphaModFix amt="${amt}%"/>`);
+    children.push(`<a:alphaModFix amt="${amt}"/>`);
   }
 
   if (options.alphaRepl) {
-    children.push(`<a:alphaRepl a="${options.alphaRepl.amount}%"/>`);
+    children.push(`<a:alphaRepl a="${options.alphaRepl.amount}"/>`);
   }
 
   if (options.alphaBiLevel) {
-    children.push(`<a:alphaBiLevel thresh="${options.alphaBiLevel.threshold}%"/>`);
+    children.push(`<a:alphaBiLevel thresh="${options.alphaBiLevel.threshold}"/>`);
   }
 
   if (options.colorChange) {

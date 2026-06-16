@@ -25,7 +25,10 @@ export function unescapeXml(str: string): string {
 export function nativeTypeValue(value: string): string | number | boolean {
   if (value === "") return value;
   const n = Number(value);
-  if (!isNaN(n)) return n;
+  // Only coerce when lossless: leading zeros ("00992297"), exponential
+  // notation ("1e5"), and a leading sign ("+5") must stay strings so hex-like
+  // values (rsid, color) survive parse → stringify round-trips byte-exact.
+  if (!isNaN(n) && String(n) === value) return n;
   const lower = value.toLowerCase();
   if (lower === "true") return true;
   if (lower === "false") return false;

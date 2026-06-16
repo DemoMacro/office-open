@@ -14,6 +14,7 @@ import {
   findAndReplaceImagePlaceholders,
   formatId,
   hasPlaceholders,
+  levelForMediaName,
   replaceAllPlaceholders,
   replaceNumberingPlaceholders,
 } from "@office-open/core";
@@ -37,6 +38,7 @@ import {
   appPropertiesDesc,
   contentTypesDesc,
   buildContentTypes,
+  withMediaDefaults,
   fontTableDesc,
   webSettingsDesc,
   commentsDesc,
@@ -104,20 +106,32 @@ export function compileDocument(
   for (const mediaData of mediaArray) {
     files[`word/media/${mediaData.fileName}`] = [
       mediaData.data as Uint8Array,
-      { level: mediaLevel as ZipOptions["level"] },
+      { level: levelForMediaName(mediaData.fileName, mediaLevel) as ZipOptions["level"] },
     ];
     if (mediaData.type === "svg") {
       files[`word/media/${mediaData.fallback.fileName}`] = [
         mediaData.fallback.data as Uint8Array,
-        { level: mediaLevel as ZipOptions["level"] },
+        {
+          level: levelForMediaName(mediaData.fallback.fileName, mediaLevel) as ZipOptions["level"],
+        },
       ];
     }
   }
 
-  // Font files
-  for (const { data: buffer, name, fontKey } of ctx.fontTable.fontOptionsWithKey) {
-    const [nameWithoutExtension] = name.split(".");
-    files[`word/fonts/${nameWithoutExtension}.odttf`] = obfuscate(buffer, fontKey);
+  // Font files — only fonts carrying binary data produce a .odttf part.
+  // Round-tripped fonts (rawOdttf) keep their original obfuscated bytes.
+  for (const font of ctx.fontTable.fontOptionsWithKey) {
+    if (font.data === undefined) continue;
+    const [nameWithoutExtension] = font.name.split(".");
+    const filePath = font.odttfPath ?? `word/fonts/${nameWithoutExtension}.odttf`;
+    files[filePath] = font.rawOdttf ? font.data : obfuscate(font.data, font.fontKey);
+  }
+
+  // Raw passthrough parts (word/theme/*, customXml/*, …) — generate doesn't
+  // rebuild these, so copy their original bytes verbatim to keep [Content_Types]
+  // declarations valid and the package openable in Word.
+  for (const part of ctx._options.rawParts ?? []) {
+    files[part.path] = part.data;
   }
 
   return files;
@@ -180,13 +194,26 @@ function xmlifyContext(
   });
 
   const documentRelationshipCount = ctx.document.relationships.relationshipCount + 1;
+  // Per-part media-replacement results shared between the .rels pass and the
+  // body-XML pass so both use identical rId offsets. Each header/footer part
+  // has its own relationship numbering (independent of the document part).
+  const footerMediaResults = new Map<number, { xml: string; referenced: { fileName: string }[] }>();
+  const headerMediaResults = new Map<number, { xml: string; referenced: { fileName: string }[] }>();
   const docCtx = mkCtx(ctx.document);
   const documentXmlData = XML_DECL + stringifyDocumentXml(ctx, docCtx);
 
-  const commentRelationshipCount = ctx.comments.relationships.relationshipCount + 1;
-  const commentCtx = mkCtx({ relationships: ctx.comments.relationships });
-  const commentXmlData =
-    XML_DECL + commentsDesc.stringify(ctx._options.comments ?? { children: [] }, commentCtx);
+  // Comments is an optional part — skip it entirely (no comments.xml, no
+  // comments rels, no [Content_Types] Override) when the document carries none.
+  // Emitting an empty comments.xml with a dangling relationship is the OPC
+  // violation that makes Word reject the package on open.
+  const hasComments = !!ctx._options.comments?.children?.length;
+  const commentRelationshipCount = hasComments
+    ? ctx.comments.relationships.relationshipCount + 1
+    : 0;
+  const commentCtx = hasComments ? mkCtx({ relationships: ctx.comments.relationships }) : null;
+  const commentXmlData = commentCtx
+    ? XML_DECL + commentsDesc.stringify(ctx._options.comments!, commentCtx)
+    : "";
 
   const footnoteRelationshipCount = ctx.footNotes.relationships.relationshipCount + 1;
   const footnoteCtx = mkCtx({
@@ -200,11 +227,9 @@ function xmlifyContext(
     ctx.media.array,
     documentRelationshipCount,
   );
-  const commentMedia = findAndReplaceImagePlaceholders(
-    commentXmlData,
-    ctx.media.array,
-    commentRelationshipCount,
-  );
+  const commentMedia = hasComments
+    ? findAndReplaceImagePlaceholders(commentXmlData, ctx.media.array, commentRelationshipCount)
+    : { xml: "", referenced: [] as { fileName: string }[] };
   const footnoteMedia = findAndReplaceImagePlaceholders(
     footnoteXmlData,
     ctx.media.array,
@@ -220,44 +245,54 @@ function xmlifyContext(
           : APP_PROPS_XML),
       path: "docProps/app.xml",
     },
-    Comments: {
-      data: (() => {
-        const xmlData = commentMedia.referenced.length > 0 ? commentMedia.xml : commentXmlData;
-        return replaceNumberingPlaceholders(xmlData, ctx.numbering.concreteNumbering);
-      })(),
-      path: "word/comments.xml",
-    },
-    CommentsRelationships: {
-      data: (() => {
-        for (let i = 0; i < commentMedia.referenced.length; i++) {
-          ctx.comments.relationships.addRelationship(
-            commentRelationshipCount + i,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-            `media/${commentMedia.referenced[i].fileName}`,
-          );
+    ...(hasComments
+      ? {
+          Comments: {
+            data: (() => {
+              const xmlData =
+                commentMedia.referenced.length > 0 ? commentMedia.xml : commentXmlData;
+              return replaceNumberingPlaceholders(xmlData, ctx.numbering.concreteNumbering);
+            })(),
+            path: "word/comments.xml",
+          },
+          CommentsRelationships: {
+            data: (() => {
+              for (let i = 0; i < commentMedia.referenced.length; i++) {
+                ctx.comments.relationships.addRelationship(
+                  commentRelationshipCount + i,
+                  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+                  `media/${commentMedia.referenced[i].fileName}`,
+                );
+              }
+              return XML_DECL + ctx.comments.relationships.serialize();
+            })(),
+            path: "word/_rels/comments.xml.rels",
+          },
         }
-        return XML_DECL + ctx.comments.relationships.serialize();
-      })(),
-      path: "word/_rels/comments.xml.rels",
-    },
+      : {}),
     ContentTypes: {
       data:
         XML_DECL +
         (contentTypesDesc.stringify(
-          buildContentTypes({
-            headerCount: ctx.headers.length,
-            footerCount: ctx.footers.length,
-            chartCount: ctx.charts.array.length,
-            smartArtCount: ctx.smartArts.array.length,
-            hasBibliography: !!ctx._options.bibliography,
-            hasGlossary: !!ctx.glossaryOptions,
-            hasWebSettings: !!ctx.webSettings,
-            altChunks: ctx.altChunks.array.map((ac) => ({
-              path: `/word/${ac.path}`,
-              contentType: ac.contentType ?? "application/xhtml+xml",
-            })),
-            subDocs: ctx.subDocs.array.map((sd) => ({ path: `/word/${sd.path}` })),
-          }),
+          withMediaDefaults(
+            ctx._options.contentTypes ??
+              buildContentTypes({
+                headerCount: ctx.headers.length,
+                footerCount: ctx.footers.length,
+                chartCount: ctx.charts.array.length,
+                smartArtCount: ctx.smartArts.array.length,
+                hasBibliography: !!ctx._options.bibliography,
+                hasComments,
+                hasGlossary: !!ctx.glossaryOptions,
+                hasWebSettings: !!ctx.webSettings,
+                altChunks: ctx.altChunks.array.map((ac) => ({
+                  path: `/word/${ac.path}`,
+                  contentType: ac.contentType ?? "application/xhtml+xml",
+                })),
+                subDocs: ctx.subDocs.array.map((sd) => ({ path: `/word/${sd.path}` })),
+              }),
+            ctx.media.array.map((m) => m.fileName),
+          ),
           ctx,
         ) ?? ""),
       path: "[Content_Types].xml",
@@ -379,11 +414,16 @@ function xmlifyContext(
       const xmlData =
         XML_DECL + stringifyHeaderFooter("w:ftr", FOOTER_NAMESPACES, entry.children, footerCtx);
       footerFormattedViews.set(index, xmlData);
-      const footerMedia = findAndReplaceImagePlaceholders(xmlData, ctx.media.array, 0);
+      // Footer images get per-part relationship IDs starting at
+      // relationshipCount+1, mirroring the document part. The placeholder pass
+      // uses referenced-local positions, so body r:embed and .rels stay aligned.
+      const footerRelCount = entry.relationships.relationshipCount + 1;
+      const footerMedia = findAndReplaceImagePlaceholders(xmlData, ctx.media.array, footerRelCount);
+      footerMediaResults.set(index, footerMedia);
 
       for (let i = 0; i < footerMedia.referenced.length; i++) {
         entry.relationships.addRelationship(
-          i,
+          footerRelCount + i,
           "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
           `media/${footerMedia.referenced[i].fileName}`,
         );
@@ -395,8 +435,8 @@ function xmlifyContext(
       };
     }),
     Footers: ctx.footers.map((_entry, index) => {
+      const footerMedia = footerMediaResults.get(index)!;
       const tempXmlData = footerFormattedViews.get(index)!;
-      const footerMedia = findAndReplaceImagePlaceholders(tempXmlData, ctx.media.array, 0);
       const xmlData = footerMedia.referenced.length > 0 ? footerMedia.xml : tempXmlData;
 
       return {
@@ -409,11 +449,16 @@ function xmlifyContext(
       const xmlData =
         XML_DECL + stringifyHeaderFooter("w:hdr", HEADER_NAMESPACES, entry.children, headerCtx);
       headerFormattedViews.set(index, xmlData);
-      const headerMedia = findAndReplaceImagePlaceholders(xmlData, ctx.media.array, 0);
+      // Header images get per-part relationship IDs starting at
+      // relationshipCount+1, mirroring the document part. The placeholder pass
+      // uses referenced-local positions, so body r:embed and .rels stay aligned.
+      const headerRelCount = entry.relationships.relationshipCount + 1;
+      const headerMedia = findAndReplaceImagePlaceholders(xmlData, ctx.media.array, headerRelCount);
+      headerMediaResults.set(index, headerMedia);
 
       for (let i = 0; i < headerMedia.referenced.length; i++) {
         entry.relationships.addRelationship(
-          i,
+          headerRelCount + i,
           "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
           `media/${headerMedia.referenced[i].fileName}`,
         );
@@ -425,8 +470,8 @@ function xmlifyContext(
       };
     }),
     Headers: ctx.headers.map((_entry, index) => {
+      const headerMedia = headerMediaResults.get(index)!;
       const tempXmlData = headerFormattedViews.get(index)!;
-      const headerMedia = findAndReplaceImagePlaceholders(tempXmlData, ctx.media.array, 0);
       const xmlData = headerMedia.referenced.length > 0 ? headerMedia.xml : tempXmlData;
 
       return {

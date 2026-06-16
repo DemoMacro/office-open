@@ -157,4 +157,36 @@ describe("settingsDesc round-trip", () => {
     expect(result.defaultTabStop).toBeUndefined();
     expect(result.characterSpacingControl).toBeUndefined();
   });
+
+  it("captures the full settings part verbatim with source namespaces", () => {
+    // CT_Settings has ~100 element types; the verbatim rawXml capture preserves
+    // all of them (including non-standard namespaces like WPS's wpsCustomData)
+    // for byte-exact round-trip, while structured reads still run in parallel.
+    const src =
+      '<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+      'xmlns:wpsCustomData="http://www.wps.cn/officeDocument/2013/wpsCustomData">' +
+      '<w:defaultTabStop w:val="720"/>' +
+      '<wpsCustomData:typoFeatureVersion wpsCustomData:val="1"/>' +
+      "</w:settings>";
+    const el = parseXml(src).elements![0];
+    const parsed = settingsDesc.parse(el, readCtx) as unknown as SettingsParseResult;
+
+    // Structured read still works alongside verbatim capture.
+    expect(parsed.defaultTabStop).toBe(720);
+    // Verbatim inner content + root attributes captured.
+    expect(parsed.rawXml).toContain("wpsCustomData:typoFeatureVersion");
+    expect(parsed.rootAttributes?.["xmlns:wpsCustomData"]).toBe(
+      "http://www.wps.cn/officeDocument/2013/wpsCustomData",
+    );
+
+    // Re-emit verbatim: source namespace + custom element preserved.
+    const xml = settingsDesc.stringify(parsed as unknown as SettingsOptions, writeCtx)!;
+    expect(xml).toContain("xmlns:wpsCustomData");
+    expect(xml).toContain("wpsCustomData:typoFeatureVersion");
+  });
+
+  it("uses structured generation when rawXml is absent", () => {
+    const xml = settingsDesc.stringify({ defaultTabStop: 720 }, writeCtx)!;
+    expect(xml).toContain('<w:defaultTabStop w:val="720"/>');
+  });
 });

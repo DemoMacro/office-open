@@ -9,8 +9,8 @@ import type { Element as XmlElement } from "@office-open/xml";
 import { findChild } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
-import { stringify, parse } from "../../descriptor";
-import { rgbColorDesc, schemeColorDesc } from "../color/color-descriptors";
+import { stringify } from "../../descriptor";
+import { getColorDescriptor, parseColorChoice } from "../color/color-descriptors";
 import type { SolidFillOptions } from "../color/solid-fill";
 import type { BlurEffectOptions, EffectListOptions } from "./effect-list";
 import type { FillOverlayEffectOptions } from "./fill-overlay";
@@ -28,24 +28,8 @@ function stringifyEffectColor(
 ): string | undefined {
   if (!color) return undefined;
   // Effect elements expect EG_ColorChoice (direct color), NOT wrapped in solidFill
-  const desc = getColorDesc(color);
+  const desc = getColorDescriptor(color);
   return stringify(desc, color, ctx);
-}
-
-function getColorDesc(color: SolidFillOptions): CustomDescriptor<any> {
-  if ("hue" in color && "saturation" in color && "luminance" in color) {
-    // HSL — not imported here but rare in effects; fall through to rgbColorDesc
-  }
-  if ("r" in color && "g" in color && "b" in color) {
-    // scRGB — fall through to rgbColorDesc for simplicity
-  }
-  // Check if it looks like a scheme color
-  const val = (color as { value: string }).value;
-  if (val && !/^[0-9a-fA-F]{6}$/.test(val)) {
-    // Not a hex RGB — likely scheme/system/preset color
-    return schemeColorDesc;
-  }
-  return rgbColorDesc;
 }
 
 function stringifyColorEffect(
@@ -68,16 +52,11 @@ function stringifyColorEffect(
 }
 
 function readColorFromElement(el: XmlElement, ctx: ReadContext): SolidFillOptions | undefined {
-  // Effect elements contain EG_ColorChoice directly (not wrapped in solidFill)
-  for (const child of el.elements ?? []) {
-    switch (child.name) {
-      case "a:srgbClr":
-        return rgbColorDesc.parse(child, ctx) as SolidFillOptions;
-      case "a:schemeClr":
-        return parse(schemeColorDesc, child, ctx) as SolidFillOptions;
-    }
-  }
-  return undefined;
+  // Effect elements contain EG_ColorChoice directly (not wrapped in solidFill).
+  // Reuse parseColorChoice for full coverage (srgb/scheme/hsl/sys/prst/scrgb + transforms).
+  const color = parseColorChoice(el, ctx);
+  if (!color || Object.keys(color).length === 0) return undefined;
+  return color;
 }
 
 // ── EffectList descriptor ──

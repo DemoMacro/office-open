@@ -172,10 +172,40 @@ export class DocxWriteContext implements WriteContext {
     } else if (options.styles) {
       const stylesFactory = new DefaultStylesFactory();
       const defaultStyles = stylesFactory.newInstance(options.styles.default);
-      this.styles = new Styles({
-        ...defaultStyles,
-        ...options.styles,
-      });
+      // importedStyles[0]=docDefaults, [1]=latentStyles, [2+]=builtin styles.
+      // paragraphStyles/characterStyles stay available for numbering registration
+      // below but are NOT emitted when round-tripping (the raw importedStyles
+      // already carry every source style — emitting both would duplicate them).
+      const {
+        importedStyles: parsedStyles,
+        paragraphStyles,
+        characterStyles,
+        ...restStyles
+      } = options.styles;
+      const merged = defaultStyles.importedStyles ? [...defaultStyles.importedStyles] : [];
+      if (restStyles.docDefaultsXml) {
+        const ddIdx = merged.findIndex((s) => s._raw.startsWith("<w:docDefaults"));
+        if (ddIdx >= 0) merged[ddIdx] = { _raw: restStyles.docDefaultsXml };
+      }
+      if (restStyles.latentStylesXml) {
+        const latentIdx = merged.findIndex((s) => s._raw.startsWith("<w:latentStyles"));
+        if (latentIdx >= 0) merged[latentIdx] = { _raw: restStyles.latentStylesXml };
+      }
+      if (parsedStyles && parsedStyles.length > 0) {
+        // Round-trip: emit verbatim source styles (suppress factory builtins
+        // and structured re-emission).
+        merged.splice(2);
+        merged.push(...parsedStyles);
+        this.styles = new Styles({ ...defaultStyles, importedStyles: merged, ...restStyles });
+      } else {
+        // Generation: factory builtins + structured custom styles.
+        this.styles = new Styles({
+          ...defaultStyles,
+          paragraphStyles,
+          characterStyles,
+          ...restStyles,
+        });
+      }
     } else {
       const stylesFactory = new DefaultStylesFactory();
       this.styles = new Styles(stylesFactory.newInstance());
@@ -346,17 +376,54 @@ export class DocxWriteContext implements WriteContext {
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings",
       "settings.xml",
     );
-    this.document.relationships.addRelationship(
-      this._currentRelationshipId++,
-      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
-      "comments.xml",
-    );
+    // Comments is an optional part — only wire the document→comments relationship
+    // when the document actually carries comments. Emitting it unconditionally
+    // produces an orphan comments.xml that Word rejects as an OPC violation
+    // (empty part with no [Content_Types] Override when content types are
+    // passed through from the source on round-trip).
+    if (this._options.comments?.children?.length) {
+      this.document.relationships.addRelationship(
+        this._currentRelationshipId++,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
+        "comments.xml",
+      );
+    }
     if (this._options.bibliography) {
       this.document.relationships.addRelationship(
         this._currentRelationshipId++,
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/bibliography",
         "bibliography.xml",
       );
+    }
+
+    // Theme — a raw-passthrough part. Only declare the document→theme
+    // relationship when the source carried one, so Word can resolve theme
+    // colors/fonts. Without it theme1.xml is an orphan part Word may reject.
+    const themePart = this._options.rawParts?.find((p) => p.path.startsWith("word/theme/"));
+    if (themePart) {
+      this.document.relationships.addRelationship(
+        this._currentRelationshipId++,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
+        themePart.path.replace(/^word\//, ""),
+      );
+    }
+
+    // customXml storage — raw-passthrough parts. Declare the document→customXml
+    // relationship for each item (itemProps are linked via the item's own .rels,
+    // not directly by the document) so Word can bind cover-page metadata, etc.
+    for (const part of this._options.rawParts ?? []) {
+      if (
+        part.path.startsWith("customXml/") &&
+        part.path.endsWith(".xml") &&
+        !part.path.includes("/_rels/") &&
+        !part.path.includes("itemProps")
+      ) {
+        this.document.relationships.addRelationship(
+          this._currentRelationshipId++,
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml",
+          `../${part.path}`,
+        );
+      }
     }
   }
 }
@@ -371,6 +438,13 @@ export class DocxWriteContext implements WriteContext {
  * descriptor pipeline compatibility.
  */
 export class DocxReadContext implements ReadContext {
+  /**
+   * Path of the part currently being parsed. Each part carries its own .rels
+   * with independent rId numbering, so drawings inside a part must resolve
+   * image relationships against that part's rels. Defaults to the document body.
+   */
+  public currentPart = "word/document.xml";
+
   constructor(
     public docx: DocxDocument,
     public styleCache: Map<string, Element>,
@@ -378,6 +452,11 @@ export class DocxReadContext implements ReadContext {
   ) {}
 
   resolveRelationship(rId: string): string | undefined {
+    const partMedia = this.docx.partRefs.partMedia.get(this.currentPart);
+    if (partMedia) {
+      const media = partMedia.get(rId);
+      if (media) return media;
+    }
     return (
       this.docx.partRefs.headers.get(rId) ??
       this.docx.partRefs.footers.get(rId) ??
@@ -388,6 +467,21 @@ export class DocxReadContext implements ReadContext {
       this.docx.partRefs.subDocs.get(rId) ??
       this.docx.partRefs.hyperlinks.get(rId)
     );
+  }
+
+  /**
+   * Run `fn` with `currentPart` temporarily set to `partPath`, restoring the
+   * previous value afterwards. Use when parsing a sub-document part (header,
+   * footer, footnotes, …) so its drawings resolve images from its own rels.
+   */
+  withPart<T>(partPath: string, fn: () => T): T {
+    const prev = this.currentPart;
+    this.currentPart = partPath;
+    try {
+      return fn();
+    } finally {
+      this.currentPart = prev;
+    }
   }
 
   getPart(path: string): Element | undefined {

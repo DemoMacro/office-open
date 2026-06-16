@@ -8,6 +8,7 @@
 
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, escapeXml, findChild } from "@office-open/xml";
+import type { FontSignature } from "@parts/fonts/font-table";
 import type { EmbeddedFontOptionsWithKey } from "@parts/fonts/font-wrapper";
 
 // ── Input ──
@@ -31,7 +32,7 @@ const NS =
   'xmlns:w16se="http://schemas.microsoft.com/office/word/2015/wordml/symex"';
 
 /** Default font signature for regular embedded fonts. */
-const DEFAULT_SIG = {
+const DEFAULT_SIG: FontSignature = {
   usb0: "E0002AFF",
   usb1: "C000247B",
   usb2: "00000009",
@@ -40,22 +41,32 @@ const DEFAULT_SIG = {
   csb1: "00000000",
 };
 
-function fontXml(font: EmbeddedFontOptionsWithKey, index: number): string {
+function fontXml(font: EmbeddedFontOptionsWithKey): string {
   const parts: string[] = [`<w:font w:name="${escapeXml(font.name)}">`];
 
-  // Default charset, family, pitch, sig for regular embedded font
+  // CT_Font child order (wml.xsd): altName, panose1, charset, family,
+  // notTrueType, pitch, sig, embed*. Embedded fonts (carrying data) fall back
+  // to defaults when the parsed value is absent; metadata-only fonts emit only
+  // what was parsed.
+  if (font.altName) parts.push(`<w:altName w:val="${escapeXml(font.altName)}"/>`);
+  if (font.panose1) parts.push(`<w:panose1 w:val="${escapeXml(font.panose1)}"/>`);
   if (font.characterSet) {
     parts.push(`<w:charset w:val="${escapeXml(font.characterSet)}"/>`);
   }
-  parts.push(`<w:family w:val="auto"/>`);
-  parts.push(`<w:pitch w:val="variable"/>`);
-  parts.push(
-    `<w:sig w:usb0="${DEFAULT_SIG.usb0}" w:usb1="${DEFAULT_SIG.usb1}" ` +
-      `w:usb2="${DEFAULT_SIG.usb2}" w:usb3="${DEFAULT_SIG.usb3}" ` +
-      `w:csb0="${DEFAULT_SIG.csb0}" w:csb1="${DEFAULT_SIG.csb1}"/>`,
-  );
-  // Embedded regular font
-  parts.push(`<w:embedRegular r:id="rId${index + 1}" w:fontKey="{${font.fontKey}}"/>`);
+  const family = font.family ?? (font.embedRid ? "auto" : undefined);
+  if (family) parts.push(`<w:family w:val="${escapeXml(family)}"/>`);
+  const pitch = font.pitch ?? (font.embedRid ? "variable" : undefined);
+  if (pitch) parts.push(`<w:pitch w:val="${escapeXml(pitch)}"/>`);
+  const sig = font.sig ?? (font.embedRid ? DEFAULT_SIG : undefined);
+  if (sig) {
+    parts.push(
+      `<w:sig w:usb0="${sig.usb0}" w:usb1="${sig.usb1}" w:usb2="${sig.usb2}" ` +
+        `w:usb3="${sig.usb3}" w:csb0="${sig.csb0}" w:csb1="${sig.csb1}"/>`,
+    );
+  }
+  if (font.embedRid) {
+    parts.push(`<w:embedRegular r:id="${font.embedRid}" w:fontKey="{${font.fontKey}}"/>`);
+  }
 
   parts.push("</w:font>");
   return parts.join("");
@@ -70,73 +81,82 @@ export const fontTableDesc: CustomDescriptor<FontTableInput> = {
     const parts: string[] = [
       `<w:fonts ${NS} mc:Ignorable="w14 w15 w16se w16cid w16 w16cex w16sdtdh">`,
     ];
-    for (let i = 0; i < opts.fonts.length; i++) {
-      parts.push(fontXml(opts.fonts[i], i));
+    for (const font of opts.fonts) {
+      parts.push(fontXml(font));
     }
     parts.push("</w:fonts>");
     return parts.join("");
   },
 
   parse(el, _ctx) {
-    const fonts: Record<string, unknown>[] = [];
+    const fonts: EmbeddedFontOptionsWithKey[] = [];
     for (const child of el.elements ?? []) {
       if (child.name !== "w:font") continue;
-      const font: Record<string, unknown> = {};
+      const font: Partial<EmbeddedFontOptionsWithKey> = { fontKey: "" };
       const name = child.attributes?.["w:name"];
       if (name) font.name = String(name);
 
-      // charset → w:charset/@w:val
+      const altNameEl = findChild(child, "w:altName");
+      if (altNameEl) {
+        const val = attr(altNameEl, "w:val");
+        if (val) font.altName = val;
+      }
+
+      const panose1El = findChild(child, "w:panose1");
+      if (panose1El) {
+        const val = attr(panose1El, "w:val");
+        if (val) font.panose1 = val;
+      }
+
       const charsetEl = findChild(child, "w:charset");
       if (charsetEl) {
         const val = attr(charsetEl, "w:val");
-        if (val) font.characterSet = val;
+        if (val) font.characterSet = val as EmbeddedFontOptionsWithKey["characterSet"];
       }
 
-      // family → w:family/@w:val
       const familyEl = findChild(child, "w:family");
       if (familyEl) {
         const val = attr(familyEl, "w:val");
         if (val) font.family = val;
       }
 
-      // pitch → w:pitch/@w:val
       const pitchEl = findChild(child, "w:pitch");
       if (pitchEl) {
         const val = attr(pitchEl, "w:val");
         if (val) font.pitch = val;
       }
 
-      // sig → w:sig attributes
       const sigEl = findChild(child, "w:sig");
       if (sigEl) {
-        const sig: Record<string, string> = {};
+        const sig: FontSignature = {
+          usb0: "",
+          usb1: "",
+          usb2: "",
+          usb3: "",
+          csb0: "",
+          csb1: "",
+        };
         for (const key of ["usb0", "usb1", "usb2", "usb3", "csb0", "csb1"] as const) {
           const val = attr(sigEl, `w:${key}`);
           if (val) sig[key] = val;
         }
-        if (Object.keys(sig).length > 0) font.sig = sig;
+        if (Object.values(sig).some(Boolean)) font.sig = sig;
       }
 
-      // fontKey → w:embedRegular/@w:fontKey (strip curly braces)
-      for (const embedTag of [
-        "w:embedRegular",
-        "w:embedBold",
-        "w:embedItalic",
-        "w:embedBoldItalic",
-      ] as const) {
-        const embedEl = findChild(child, embedTag);
-        if (embedEl) {
-          const rawKey = attr(embedEl, "w:fontKey");
-          if (rawKey) {
-            // Strip wrapping curly braces: {{...}} → ...
-            font.fontKey = rawKey.replace(/^\{\{|\}\}$/g, "").replace(/^\{|\}$/g, "");
-          }
-          break; // Use first embed element found
+      // Obfuscation key + relationship id from embedRegular (the .odttf bytes
+      // are resolved separately by parse.ts via fontTable.xml.rels).
+      const embedEl = findChild(child, "w:embedRegular");
+      if (embedEl) {
+        const rawKey = attr(embedEl, "w:fontKey");
+        if (rawKey) {
+          font.fontKey = rawKey.replace(/^\{\{|\}\}$/g, "").replace(/^\{|\}$/g, "");
         }
+        const rid = attr(embedEl, "r:id");
+        if (rid) font.embedRid = rid;
       }
 
-      fonts.push(font);
+      fonts.push(font as EmbeddedFontOptionsWithKey);
     }
-    return { fonts } as unknown as FontTableInput;
+    return { fonts };
   },
 };

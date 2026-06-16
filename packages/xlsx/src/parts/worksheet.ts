@@ -270,7 +270,7 @@ export interface FreezePaneOptions {
 
 export interface WorksheetImageOptions {
   data: Uint8Array;
-  type: "png" | "jpeg" | "jpg";
+  type: "png" | "jpg";
   col: number;
   row: number;
 }
@@ -922,7 +922,7 @@ export interface PhoneticPrOptions {
 /** Background image for a worksheet */
 export interface SheetBackgroundImageOptions {
   data: Uint8Array;
-  type: "png" | "jpeg" | "jpg";
+  type: "png" | "jpg";
 }
 
 /** Page break entry (CT_Break) */

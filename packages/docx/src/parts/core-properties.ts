@@ -54,6 +54,7 @@ export interface FeaturesOptions {
  * @property description - Document description
  * @property lastModifiedBy - User who last modified the document
  * @property revision - Revision number
+ * @property lastPrinted - Last printed timestamp (W3CDTF), round-tripped from cp:lastPrinted
  * @property externalStyles - External stylesheet reference
  * @property styles - Document styles configuration
  * @property numbering - Numbering configuration
@@ -79,6 +80,7 @@ export interface DocumentOptions {
   description?: string;
   lastModifiedBy?: string;
   revision?: number;
+  lastPrinted?: string;
   externalStyles?: string;
   styles?: StylesOptions;
   numbering?: NumberingOptions;
@@ -142,6 +144,13 @@ export interface DocumentOptions {
   webSettings?: WebSettingsOptions;
   /** Content types from [Content_Types].xml (parse path only) */
   contentTypes?: ContentTypesInput;
+  /**
+   * Parts carried verbatim from the source that generate() does not rebuild
+   * (e.g. word/theme/*, customXml/*). Kept as raw bytes so their [Content_Types]
+   * declarations stay valid and the package opens in Word. Media/fonts/headers
+   * are rebuilt by the compiler and must NOT be listed here.
+   */
+  rawParts?: { path: string; data: Uint8Array }[];
   /** Extended properties (docProps/app.xml) */
   appProperties?: AppPropertiesOptions;
 }
@@ -160,6 +169,7 @@ export interface CorePropertiesInput {
   description?: string;
   lastModifiedBy?: string;
   revision?: number;
+  lastPrinted?: string;
 }
 
 export const corePropertiesDesc: CustomDescriptor<CorePropertiesInput> = {
@@ -182,6 +192,7 @@ export const corePropertiesDesc: CustomDescriptor<CorePropertiesInput> = {
     if (opts.lastModifiedBy)
       p.push(`<cp:lastModifiedBy>${escapeXml(opts.lastModifiedBy)}</cp:lastModifiedBy>`);
     if (opts.revision !== undefined) p.push(`<cp:revision>${opts.revision}</cp:revision>`);
+    if (opts.lastPrinted) p.push(`<cp:lastPrinted>${escapeXml(opts.lastPrinted)}</cp:lastPrinted>`);
     p.push(`<dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created>`);
     p.push(`<dcterms:modified xsi:type="dcterms:W3CDTF">${now}</dcterms:modified>`);
     p.push("</cp:coreProperties>");
@@ -215,6 +226,9 @@ export const corePropertiesDesc: CustomDescriptor<CorePropertiesInput> = {
           break;
         case "cp:revision":
           result.revision = Number(text);
+          break;
+        case "cp:lastPrinted":
+          result.lastPrinted = text;
           break;
       }
     }

@@ -199,7 +199,7 @@ export function compileWorkbook(
       // Process images
       for (const img of imgOpts) {
         const mediaKey = `image_${globalMediaIdx}`;
-        const ext = img.type === "jpeg" || img.type === "jpg" ? "jpeg" : "png";
+        const ext = img.type === "jpg" ? "jpeg" : "png";
         ctx.media.addImage(mediaKey, {
           fileName: `image${globalMediaIdx + 1}.${ext}`,
           type: ext,

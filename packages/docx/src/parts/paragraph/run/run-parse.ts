@@ -10,6 +10,7 @@ import type { Element } from "@office-open/xml";
 import type { RunPropertiesOptions, RunOptions } from "@parts/paragraph/run";
 
 import type { DocxReadContext } from "../../../context";
+import { stringifyElement } from "../../../util/stringify-element";
 import type { LanguageOptions } from "./language";
 
 /**
@@ -232,6 +233,15 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
     if (Object.keys(rev).length > 0) opts.revision = rev;
   }
 
+  // w14:* text effects (glow/shadow/reflection/props3d) occupy the EG_RPrBase
+  // extension slot at the end of rPr. Low-frequency complex subtrees — kept
+  // verbatim as raw XML for fidelity while the rPr backbone stays editable.
+  const w14Parts: string[] = [];
+  for (const child of el.elements ?? []) {
+    if (child.name?.startsWith("w14:")) w14Parts.push(stringifyElement(child));
+  }
+  if (w14Parts.length > 0) opts.w14RawXml = w14Parts.join("");
+
   return opts as RunPropertiesOptions;
 }
 
@@ -360,10 +370,14 @@ export function parseRun(
   _ctx: DocxReadContext,
 ): {
   properties: RunPropertiesOptions | undefined;
+  rPrRawXml?: string;
   children: ParsedRunChild[];
 } {
   const rPr = findChild(el, "w:rPr");
   const properties = rPr ? parseRunProperties(rPr) : undefined;
+  // Preserve the raw rPr so break/tab/pageBreak runs re-emit it verbatim,
+  // avoiding authoring-style b/bCs, sz/szCs pairing inflation on round-trip.
+  const rPrRawXml = rPr ? stringifyElement(rPr) : undefined;
   const children: ParsedRunChild[] = [];
 
   for (const child of el.elements ?? []) {
@@ -488,7 +502,7 @@ export function parseRun(
     }
   }
 
-  return { properties, children };
+  return { properties, rPrRawXml, children };
 }
 
 /**
@@ -535,6 +549,7 @@ export function parsedRunToOptions(
   }
 
   const opts: Record<string, unknown> = { ...parsed.properties };
+  if (parsed.rPrRawXml) opts.rPrRawXml = parsed.rPrRawXml;
 
   // Check if this run is a pure reference run (commentReference, footnoteReference, endnoteReference)
   const isRefChild = (c: unknown): c is Record<string, number> =>

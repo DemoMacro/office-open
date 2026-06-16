@@ -105,7 +105,9 @@ export const calculateEffectExtent = (options?: EffectListOptions): EffectExtent
     b = Math.max(b, options.softEdge);
   }
 
-  return { l, t, r, b };
+  // EMU coordinates must be integers (ST_Coordinate); the cos/sin projections
+  // above produce floats, so round before emitting.
+  return { l: Math.round(l), t: Math.round(t), r: Math.round(r), b: Math.round(b) };
 };
 
 /**

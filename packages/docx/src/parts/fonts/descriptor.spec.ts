@@ -22,7 +22,7 @@ function roundTrip(opts: FontTableInput) {
 describe("fontTableDesc round-trip", () => {
   it("round-trips a single font", () => {
     const result = roundTrip({
-      fonts: [{ name: "Arial", fontKey: "abc-123", data: Buffer.from([]) }],
+      fonts: [{ name: "Arial", fontKey: "abc-123", data: Buffer.from([]), embedRid: "rId1" }],
     });
     expect(result.fonts).toHaveLength(1);
     expect(result.fonts[0].name).toBe("Arial");
@@ -52,7 +52,9 @@ describe("fontTableDesc round-trip", () => {
 
   it("round-trips font key stripping braces", () => {
     const result = roundTrip({
-      fonts: [{ name: "TestFont", fontKey: "some-key-value", data: Buffer.from([]) }],
+      fonts: [
+        { name: "TestFont", fontKey: "some-key-value", data: Buffer.from([]), embedRid: "rId1" },
+      ],
     });
     expect(result.fonts[0].fontKey).toBe("some-key-value");
   });

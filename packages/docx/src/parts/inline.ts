@@ -17,13 +17,22 @@ import { chartSpaceDesc } from "@office-open/core/chart";
 import type { SourceRectangleOptions } from "@office-open/core/drawingml";
 import { createDataModel } from "@office-open/core/smartart";
 import { escapeXml } from "@office-open/xml";
+import type { BackgroundRawMediaOptions } from "@parts/document/document-background/document-background";
 import type { ParagraphChild, ParagraphOptions } from "@parts/paragraph/paragraph";
 import type { ImageOptions } from "@parts/paragraph/run/image-run";
 import type { RubyOptions } from "@parts/paragraph/run/ruby";
 import type { RunOptions } from "@parts/paragraph/run/run";
 import type { SmartArtOptions } from "@parts/paragraph/run/smartart-run";
-import type { ChartMediaData, MediaData, SmartArtMediaData, WpsMediaData } from "@shared/media";
+import type {
+  ChartMediaData,
+  GroupChildMediaData,
+  MediaData,
+  SmartArtMediaData,
+  WpgMediaData,
+  WpsMediaData,
+} from "@shared/media";
 import { createTransformation } from "@shared/media";
+import type { PicCnvPrOptions } from "@shared/media/data";
 
 import type { BodyContext } from "../context";
 import { checkboxSymbolRunInner, stringifyCustomXmlShell, stringifySdtShell } from "./bodychildren";
@@ -82,11 +91,13 @@ function createImageData(
   transformation: ImageOptions["transformation"],
   key: string,
   srcRect?: SourceRectangleOptions,
-): Pick<MediaData, "data" | "fileName" | "transformation" | "srcRect"> {
+  cNvPr?: PicCnvPrOptions,
+): Pick<MediaData, "data" | "fileName" | "transformation" | "srcRect" | "cNvPr"> {
   return {
     data,
     fileName: key,
     srcRect,
+    cNvPr,
     transformation: createTransformation(transformation),
   };
 }
@@ -103,14 +114,71 @@ let nextChartId = 1;
  *
  * Returns `undefined` if the child is not a recognized JSON wrapper.
  */
+/**
+ * Wrap a `<w:drawing>` run, rebuilding an mc:AlternateContent wrapper when a
+ * VML fallback was carried from parse (Choice stays structured/editable,
+ * Fallback round-trips as raw XML for fidelity).
+ */
+function wrapDrawingRun(
+  drawingXml: string | undefined,
+  opts: { vmlFallback?: string; mcChoiceRequires?: string; runPropertiesRawXml?: string },
+): string {
+  const xml = drawingXml ?? "";
+  const rPr = opts.runPropertiesRawXml ?? "";
+  if (opts.vmlFallback) {
+    const requires = opts.mcChoiceRequires ?? "wps";
+    // opts.vmlFallback is the serialized <mc:Fallback>…</mc:Fallback> element,
+    // so splice it in directly (no extra wrapper).
+    return `<w:r>${rPr}<mc:AlternateContent><mc:Choice Requires="${requires}">${xml}</mc:Choice>${opts.vmlFallback}</mc:AlternateContent></w:r>`;
+  }
+  return `<w:r>${rPr}${xml}</w:r>`;
+}
+
+/**
+ * Register media carried by a VML fallback (mc:AlternateContent Fallback) so the
+ * compiler resolves the fallback's `{fileName}` placeholders into rIds.
+ */
+function registerVmlFallbackMedia(
+  opts: { vmlFallbackMedia?: BackgroundRawMediaOptions[] },
+  ctx: BodyContext,
+): void {
+  if (!opts.vmlFallbackMedia) return;
+  for (const m of opts.vmlFallbackMedia) {
+    ctx.file.media.addImage(m.fileName, {
+      type: m.type,
+      data: m.data,
+      fileName: m.fileName,
+      transformation: { emus: { x: 0, y: 0 }, pixels: { x: 0, y: 0 } },
+    });
+  }
+}
+
+/**
+ * Resolve a break/tab run's rPr: prefer the raw rPr carried from parse (verbatim,
+ * no b/bCs, sz/szCs pairing), else regenerate from the structured fields.
+ */
+function runPrOrRaw(child: ParagraphChild): string {
+  const raw = (child as { rPrRawXml?: string }).rPrRawXml;
+  if (raw) return raw;
+  return stringifyRunProperties(child as RunOptions) ?? "";
+}
+
 export function stringifyChildDispatch(
   child: ParagraphChild,
   ctx: BodyContext,
 ): string | string[] | undefined {
-  // Simple break types — pure XML, no side effects
-  if ("pageBreak" in child) return '<w:r><w:br w:type="page"/></w:r>';
-  if ("columnBreak" in child) return '<w:r><w:br w:type="column"/></w:r>';
-  if ("tab" in child) return "<w:r><w:tab/></w:r>";
+  // Simple break types — pure XML, no side effects. A break run may carry run
+  // properties (round-tripped from <w:r><w:rPr>…</w:rPr><w:br…/></w:r>); prefer
+  // the raw rPr when present to avoid b/bCs, sz/szCs pairing inflation.
+  if ("pageBreak" in child) {
+    return `<w:r>${runPrOrRaw(child)}<w:br w:type="page"/></w:r>`;
+  }
+  if ("columnBreak" in child) {
+    return `<w:r>${runPrOrRaw(child)}<w:br w:type="column"/></w:r>`;
+  }
+  if ("tab" in child) {
+    return `<w:r>${runPrOrRaw(child)}<w:tab/></w:r>`;
+  }
 
   // Reference types — pure XML, no side effects
   if ("footnoteReference" in child)
@@ -185,7 +253,8 @@ export function stringifyChildDispatch(
       const fallbackData = toUint8Array(opts.fallback.data) as Uint8Array;
       mediaData = {
         type: "svg",
-        ...createImageData(rawData, opts.transformation, key, opts.srcRect),
+        ...createImageData(rawData, opts.transformation, key, opts.srcRect, opts.cNvPr),
+        useLocalDpi: opts.useLocalDpi,
         fallback: {
           type: opts.fallback.type,
           ...createImageData(
@@ -198,7 +267,8 @@ export function stringifyChildDispatch(
     } else {
       mediaData = {
         type: opts.type,
-        ...createImageData(rawData, opts.transformation, key, opts.srcRect),
+        ...createImageData(rawData, opts.transformation, key, opts.srcRect, opts.cNvPr),
+        useLocalDpi: opts.useLocalDpi,
       } as MediaData;
     }
 
@@ -214,10 +284,16 @@ export function stringifyChildDispatch(
         mediaData,
         docProperties: opts.altText,
         floating: opts.floating,
+        outline: opts.outline,
+        fill: opts.fill,
+        effects: opts.effects,
+        blipEffects: opts.blipEffects,
+        tile: opts.tile,
+        graphicFrameLocks: opts.graphicFrameLocks,
       },
       ctx,
     );
-    return `<w:r>${drawingXml}</w:r>`;
+    return wrapDrawingRun(drawingXml, opts);
   }
 
   // Chart — side effect: chart registration
@@ -311,10 +387,53 @@ export function stringifyChildDispatch(
         floating: opts.floating,
         outline: opts.outline,
         fill: opts.fill,
+        graphicFrameLocks: opts.graphicFrameLocks,
       },
       ctx,
     );
-    return `<w:r>${drawingXml}</w:r>`;
+    registerVmlFallbackMedia(opts, ctx);
+    return wrapDrawingRun(drawingXml, opts);
+  }
+
+  // WPG Group (WordProcessing Group) — group of shapes/pictures
+  if ("wpgGroup" in child) {
+    const opts = child.wpgGroup;
+    const mediaData: WpgMediaData = {
+      children: opts.children,
+      transformation: createTransformation(opts.transformation),
+      chOff: opts.chOff,
+      chExt: opts.chExt,
+      fill: opts.fill,
+      effects: opts.effects,
+      grpSpLocks: opts.grpSpLocks,
+      type: "wpg",
+    };
+
+    // Register pic children media so {fileName} placeholders resolve, recursing
+    // into nested wpg groups. wps children carry shape data, not media.
+    const registerMedia = (children: readonly GroupChildMediaData[]): void => {
+      for (const c of children) {
+        if (c.type === "wps") continue;
+        if (c.type === "wpg") {
+          registerMedia(c.children);
+          continue;
+        }
+        ctx.file.media.addImage(c.fileName, c);
+      }
+    };
+    registerMedia(opts.children);
+
+    const drawingXml = drawingDesc.stringify(
+      {
+        mediaData,
+        docProperties: opts.altText,
+        floating: opts.floating,
+        graphicFrameLocks: opts.graphicFrameLocks,
+      },
+      ctx,
+    );
+    registerVmlFallbackMedia(opts, ctx);
+    return wrapDrawingRun(drawingXml, opts);
   }
 
   // Ruby annotation — pure string concatenation
@@ -529,18 +648,26 @@ export function stringifyChildDispatch(
   // ── Complex field (PAGE/DATE/TOC/... — fldChar field without w:ffData) ──
   if ("complexField" in child) {
     const cf = child.complexField;
+    // Run-properties: Word writes identical rPr across a field's runs. Apply
+    // the captured control-run rPr to begin/instrText/separate/end and the
+    // result-run rPr to the result (defaults to the control rPr when the
+    // result had none, matching Word's uniform behavior).
+    const ctrl = cf.rPrXml ?? "";
+    const res = cf.resultRPrXml ?? ctrl;
     // `separate` + the result run are emitted only when there is a cached
     // result; a result-less field round-trips as begin/instrText/end.
     const resultXml =
       cf.result !== undefined
-        ? '<w:r><w:fldChar w:fldCharType="separate"/></w:r>' +
-          `<w:r><w:t xml:space="preserve">${escapeXml(cf.result)}</w:t></w:r>`
+        ? `<w:r>${ctrl}<w:fldChar w:fldCharType="separate"/></w:r>` +
+          `<w:r>${res}<w:t xml:space="preserve">${escapeXml(cf.result)}</w:t></w:r>`
         : "";
     return (
-      '<w:r><w:fldChar w:fldCharType="begin"/></w:r>' +
-      `<w:r><w:instrText xml:space="preserve">${escapeXml(cf.instruction)}</w:instrText></w:r>` +
+      `<w:r>${ctrl}<w:fldChar w:fldCharType="begin"/></w:r>` +
+      `<w:r>${ctrl}<w:instrText xml:space="preserve">${escapeXml(
+        cf.instruction,
+      )}</w:instrText></w:r>` +
       resultXml +
-      '<w:r><w:fldChar w:fldCharType="end"/></w:r>'
+      `<w:r>${ctrl}<w:fldChar w:fldCharType="end"/></w:r>`
     );
   }
 

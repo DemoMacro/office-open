@@ -4,6 +4,7 @@
  * @module
  */
 
+import { levelForMediaName } from "../opc/packer";
 import type { XmlifyedFile, ZipOptions, Zippable } from "../opc/packer";
 
 /** Reusable TextEncoder instance (stateless, safe to share). */
@@ -31,7 +32,12 @@ export function compileMapping(
   }
   if (media) {
     for (const m of media) {
-      files[m.path] = [m.data, { level: mediaLevel as ZipOptions["level"] }];
+      // Already-compressed formats (PNG/JPEG/GIF) → STORE, else the media level.
+      // Matches MS Office, which STORE-s pre-compressed assets and DEFLATE-s the rest.
+      files[m.path] = [
+        m.data,
+        { level: levelForMediaName(m.path, mediaLevel) as ZipOptions["level"] },
+      ];
     }
   }
   return files;

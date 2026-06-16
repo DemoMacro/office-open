@@ -234,6 +234,18 @@ function isIgnorableError(message: string, ignorableNs: Set<string>): boolean {
   // mc:Ignorable attribute is valid per Markup Compatibility (OOXML Part 3)
   // but not declared in transitional XSDs — known limitation, not an implementation bug
   if (message.includes(`{${MC_NS}}Ignorable`)) return true;
+  // mc:AlternateContent/Choice/Fallback are Markup Compatibility extension
+  // points (ECMA-376 Part 3) — legal wherever a content model allows extension.
+  // Transitional XSDs don't declare xsd:any wildcards in every complex type, so
+  // these elements surface as spurious "not expected" placement errors. Structural
+  // errors *inside* them (e.g. missing Choice) still surface — those lack "not
+  // expected" — so this only masks placement, not real malformation.
+  if (message.includes(`{${MC_NS}}`) && message.includes("not expected")) return true;
+  // w:uiPriority placement — Word/WPS emit uiPriority after semiHidden/
+  // unhideWhenUsed/qFormat in built-in styles, but transitional XSD CT_Style
+  // requires uiPriority to precede them. Source-inherent ordering convention;
+  // the style itself is well-formed, only the child order differs from strict XSD.
+  if (message.includes("}uiPriority") && message.includes("not expected")) return true;
   // w14/w15/w16 etc. extension namespace elements/attributes
   for (const pattern of TRANSITIONAL_ELEMENT_PATTERNS) {
     if (message.includes(pattern)) return true;

@@ -5,7 +5,7 @@
  *
  * @module
  */
-import { attr, findChild, stringify } from "@office-open/xml";
+import { attr, findChild, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { parseAltChunk } from "@parts/alt-chunk/alt-chunk-parse";
 import { parseCustomXmlBlock } from "@parts/custom-xml/custom-xml-parse";
@@ -23,6 +23,7 @@ import type { SectionChild } from "@shared/section";
 import { parseParagraph } from "../body";
 import { DocxReadContext } from "../context";
 import { setBodyParseChild } from "../parts";
+import { stringifyElement } from "../util/stringify-element";
 
 // ── Section properties parser ────────────────────────────────────────────────
 
@@ -76,14 +77,17 @@ function parseHeaderFooterRef(rId: string, ctx: DocxReadContext): SectionChild[]
   const partEl = ctx.docx.doc.get(path);
   if (!partEl) return undefined;
 
-  // The header/footer XML root element contains w:p, w:tbl, etc.
+  // The header/footer XML root element contains w:p, w:tbl, etc. Parse under
+  // the part's own relationship scope so its drawings resolve images correctly.
   const children: SectionChild[] = [];
-  for (const child of partEl.elements ?? []) {
-    const sectionChild = parseSectionChild(child, ctx);
-    if (sectionChild !== undefined) {
-      children.push(sectionChild);
+  ctx.withPart(path, () => {
+    for (const child of partEl.elements ?? []) {
+      const sectionChild = parseSectionChild(child, ctx);
+      if (sectionChild !== undefined) {
+        children.push(sectionChild);
+      }
     }
-  }
+  });
 
   return children.length > 0 ? children : undefined;
 }
@@ -131,8 +135,22 @@ export function parseSectionChild(el: Element, ctx: DocxReadContext): SectionChi
       return { subDoc: parseSubDoc(el, ctx) };
     case "w:customXml":
       return { customXml: parseCustomXmlBlock(el, ctx, parseSectionChild) };
+    case "w:bookmarkStart": {
+      // Body-level range markers sitting between paragraphs (e.g. _Toc bookmark
+      // ends grouped after a heading). Carry them as first-class children so
+      // they round-trip even though they are not wrapped in a paragraph.
+      const idRaw = attr(el, "w:id");
+      const name = attr(el, "w:name");
+      if (idRaw !== undefined && name) return { bookmarkStart: { id: Number(idRaw), name } };
+      return { rawXml: stringifyElement(el) };
+    }
+    case "w:bookmarkEnd": {
+      const idRaw = attr(el, "w:id");
+      if (idRaw !== undefined) return { bookmarkEnd: Number(idRaw) };
+      return { rawXml: stringifyElement(el) };
+    }
     default:
-      return { rawXml: stringify(el) };
+      return { rawXml: stringifyElement(el) };
   }
 }
 
@@ -194,7 +212,7 @@ export function parseBody(body: Element, ctx: DocxReadContext): SectionOptions[]
   if (boundaries.length === 0) {
     return [
       {
-        children: bodyChildren.map((el) => parseSectionChild(el, ctx)),
+        children: parseBodyChildren(bodyChildren, ctx),
       },
     ];
   }
@@ -224,7 +242,7 @@ export function parseBody(body: Element, ctx: DocxReadContext): SectionOptions[]
     delete (cleanProps as Record<string, unknown>).parsedFooters;
 
     const section = {
-      children: sectionElements.map((el) => parseSectionChild(el, ctx)),
+      children: parseBodyChildren(sectionElements, ctx),
       properties: cleanProps,
       ...(parsedHeaders ? { headers: parsedHeaders } : {}),
       ...(parsedFooters ? { footers: parsedFooters } : {}),
@@ -241,10 +259,96 @@ export function parseBody(body: Element, ctx: DocxReadContext): SectionOptions[]
   return sections;
 }
 
+// ── Cross-paragraph TOC field aggregation ───────────────────────────────────
+
+/**
+ * Net field-nesting change across all descendant fldChar markers
+ * (begin: +1, end: -1). Balances cross-paragraph field boundaries without a
+ * stack — the running depth hits 0 exactly when the outermost field closes.
+ */
+function countFieldDelta(el: Element): number {
+  let delta = 0;
+  const walk = (node: Element): void => {
+    if (node.name === "w:fldChar") {
+      const type = attr(node, "w:fldCharType");
+      if (type === "begin") delta += 1;
+      else if (type === "end") delta -= 1;
+    }
+    for (const c of node.elements ?? []) {
+      if (c.type === "element") walk(c);
+    }
+  };
+  walk(el);
+  return delta;
+}
+
+/**
+ * True when a w:p opens a bare TOC complex field: it carries a fldChar begin
+ * whose instrText starts with "TOC". Such fields span multiple paragraphs and
+ * defeat the per-paragraph field accumulator, so they are aggregated as rawXml.
+ */
+function isTocFieldBegin(el: Element): boolean {
+  if (el.name !== "w:p") return false;
+  let hasBegin = false;
+  let instr = "";
+  const walk = (node: Element): void => {
+    if (node.name === "w:fldChar" && attr(node, "w:fldCharType") === "begin") hasBegin = true;
+    if (node.name === "w:instrText") instr += textOf(node);
+    for (const c of node.elements ?? []) {
+      if (c.type === "element") walk(c);
+    }
+  };
+  walk(el);
+  return hasBegin && instr.trim().toUpperCase().startsWith("TOC");
+}
+
+/**
+ * Parse a run of body-level elements into SectionChild[], aggregating any
+ * cross-paragraph TOC complex field into a single rawXml child so its nested
+ * HYPERLINK/PAGEREF fields and bookmark markers round-trip intact.
+ */
+function parseBodyChildren(elements: Element[], ctx: DocxReadContext): SectionChild[] {
+  const children: SectionChild[] = [];
+  let tocBuffer: string[] | null = null;
+  let tocDepth = 0;
+
+  for (const el of elements) {
+    if (tocBuffer !== null) {
+      tocBuffer.push(stringifyElement(el));
+      tocDepth += countFieldDelta(el);
+      if (tocDepth <= 0) {
+        children.push({ rawXml: tocBuffer.join("") });
+        tocBuffer = null;
+        tocDepth = 0;
+      }
+      continue;
+    }
+    if (isTocFieldBegin(el)) {
+      tocBuffer = [stringifyElement(el)];
+      tocDepth = countFieldDelta(el);
+      if (tocDepth <= 0) {
+        // Single-paragraph TOC field (rare) — flush immediately.
+        children.push({ rawXml: tocBuffer.join("") });
+        tocBuffer = null;
+        tocDepth = 0;
+      }
+      continue;
+    }
+    children.push(parseSectionChild(el, ctx));
+  }
+
+  // Unclosed TOC field at end of content — flush what we have (best effort).
+  if (tocBuffer !== null) {
+    children.push({ rawXml: tocBuffer.join("") });
+  }
+
+  return children;
+}
+
 /**
  * Parse a list of elements into SectionChild[].
  * Used by SDT and textbox parsers for their content.
  */
 function parseSectionChildrenElements(elements: Element[], ctx: DocxReadContext): SectionChild[] {
-  return elements.map((el) => parseSectionChild(el, ctx));
+  return parseBodyChildren(elements, ctx);
 }

@@ -28,6 +28,7 @@ import type { VmlShapeStyle } from "@parts/textbox/shape/shape";
  * - `{ altChunk: … }`    → alt chunk
  * - `{ subDoc: … }`      → sub document
  * - `{ customXml: … }`   → custom XML
+ * - `{ bookmarkStart/End }` → body-level range markers (between paragraphs)
  */
 export type SectionChild =
   | { paragraph: string | ParagraphOptions }
@@ -48,6 +49,8 @@ export type SectionChild =
   | { altChunk: AltChunkOptions }
   | { subDoc: SubDocOptions }
   | { customXml: CustomXmlBlockOptions }
+  | { bookmarkStart: { id: number; name: string } }
+  | { bookmarkEnd: number }
   | { rawXml: string };
 
 /**

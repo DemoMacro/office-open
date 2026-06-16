@@ -66,6 +66,56 @@ export const contentTypesDesc: CustomDescriptor<ContentTypesInput> = {
   },
 };
 
+/** Standard extension → content-type defaults covering every media type emitted. */
+const STANDARD_DEFAULTS: ContentTypeDefault[] = [
+  { extension: "png", contentType: "image/png" },
+  { extension: "jpeg", contentType: "image/jpeg" },
+  { extension: "jpg", contentType: "image/jpeg" },
+  { extension: "bmp", contentType: "image/bmp" },
+  { extension: "gif", contentType: "image/gif" },
+  { extension: "tif", contentType: "image/tiff" },
+  { extension: "tiff", contentType: "image/tiff" },
+  { extension: "emf", contentType: "image/x-emf" },
+  { extension: "wmf", contentType: "image/x-wmf" },
+  { extension: "ico", contentType: "image/x-icon" },
+  { extension: "svg", contentType: "image/svg+xml" },
+  { extension: "rels", contentType: "application/vnd.openxmlformats-package.relationships+xml" },
+  { extension: "xml", contentType: "application/xml" },
+  {
+    extension: "odttf",
+    contentType: "application/vnd.openxmlformats-officedocument.obfuscatedFont",
+  },
+];
+
+/**
+ * Ensure every media part in the package has a resolvable content-type Default.
+ *
+ * Round-tripped packages pass through the source's [Content_Types], which may
+ * declare an uppercase extension (e.g. `JPG`) while the media is named `.jpg`.
+ * OPC extension matching is case-sensitive, so the media ends up with no
+ * content type and Word rejects it as unreadable content. This backfills any
+ * missing defaults from the standard set, preserving the case actually used in
+ * the media filenames.
+ */
+export function withMediaDefaults(
+  input: ContentTypesInput,
+  mediaFileNames: string[],
+): ContentTypesInput {
+  const have = new Set(input.defaults.map((d) => d.extension));
+  const standard = new Map(STANDARD_DEFAULTS.map((d) => [d.extension, d.contentType]));
+  const defaults = [...input.defaults];
+  for (const fileName of mediaFileNames) {
+    const ext = fileName.slice(fileName.lastIndexOf(".") + 1);
+    if (!ext || have.has(ext)) continue;
+    const contentType = standard.get(ext) ?? standard.get(ext.toLowerCase());
+    if (contentType) {
+      defaults.push({ extension: ext, contentType });
+      have.add(ext);
+    }
+  }
+  return { defaults, overrides: input.overrides };
+}
+
 /** Helper to build the standard DOCX content types with dynamic overrides. */
 export function buildContentTypes(
   extras: {
@@ -74,31 +124,14 @@ export function buildContentTypes(
     chartCount?: number;
     smartArtCount?: number;
     hasBibliography?: boolean;
+    hasComments?: boolean;
     hasGlossary?: boolean;
     hasWebSettings?: boolean;
     altChunks?: { path: string; contentType: string }[];
     subDocs?: { path: string }[];
   } = {},
 ): ContentTypesInput {
-  const defaults: ContentTypeDefault[] = [
-    { extension: "png", contentType: "image/png" },
-    { extension: "jpeg", contentType: "image/jpeg" },
-    { extension: "jpg", contentType: "image/jpeg" },
-    { extension: "bmp", contentType: "image/bmp" },
-    { extension: "gif", contentType: "image/gif" },
-    { extension: "tif", contentType: "image/tiff" },
-    { extension: "tiff", contentType: "image/tiff" },
-    { extension: "emf", contentType: "image/x-emf" },
-    { extension: "wmf", contentType: "image/x-wmf" },
-    { extension: "ico", contentType: "image/x-icon" },
-    { extension: "svg", contentType: "image/svg+xml" },
-    { extension: "rels", contentType: "application/vnd.openxmlformats-package.relationships+xml" },
-    { extension: "xml", contentType: "application/xml" },
-    {
-      extension: "odttf",
-      contentType: "application/vnd.openxmlformats-officedocument.obfuscatedFont",
-    },
-  ];
+  const defaults: ContentTypeDefault[] = [...STANDARD_DEFAULTS];
 
   const overrides: ContentTypeOverride[] = [
     {
@@ -138,10 +171,17 @@ export function buildContentTypes(
       partName: "/word/settings.xml",
       contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml",
     },
-    {
-      partName: "/word/comments.xml",
-      contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml",
-    },
+    // Comments Override is conditional — declaring it without a comments.xml
+    // part (or vice versa) is an OPC mismatch. See hasComments gate.
+    ...(extras.hasComments
+      ? [
+          {
+            partName: "/word/comments.xml",
+            contentType:
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml",
+          },
+        ]
+      : []),
     {
       partName: "/word/fontTable.xml",
       contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml",

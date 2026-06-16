@@ -10,7 +10,7 @@
 
 import { derivePasswordHash } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, attrBool, findChild } from "@office-open/xml";
+import { attr, attrBool, findChild, stringify } from "@office-open/xml";
 
 import type { FeaturesOptions } from "../core-properties";
 import type {
@@ -444,6 +444,15 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
+    // Round-trip: when parse captured the settings part verbatim, re-emit it
+    // as-is (the structured path below only covers a subset of CT_Settings).
+    // Use captured root attributes (xmlns:* + mc:Ignorable) so source-specific
+    // namespaces (xmlns:sl, xmlns:wpsCustomData, …) are preserved.
+    if (opts.rawXml !== undefined) {
+      const ns = opts.rootAttributes ? attrStr(opts.rootAttributes) : SETTINGS_NS;
+      return `<w:settings ${ns}>${opts.rawXml}</w:settings>`;
+    }
+
     const p: string[] = [];
 
     // XSD CT_Settings sequence order
@@ -1020,6 +1029,16 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     // doNotTrackFormatting → w:doNotTrackFormatting (onOff: read w:val)
     const noFmtEl = findChild(el, "w:doNotTrackFormatting");
     if (noFmtEl) opts.doNotTrackFormatting = attrBool(noFmtEl, "w:val") ?? true;
+
+    // Capture the full settings part verbatim (child elements only — the root
+    // <w:settings> tag + namespaces are supplied by stringify). CT_Settings has
+    // ~100 element types (compat flags, m:mathPr, w:rsids, o:shapelayout,
+    // footnote/endnote properties, etc.); the structured reads above cover only
+    // a subset. This guarantees byte-exact round-trip; stringify emits it as-is
+    // when present. The structured fields above remain for generation-from-scratch
+    // and for callers that delete rawXml to edit individual settings.
+    opts.rawXml = stringify(el);
+    if (el.attributes) opts.rootAttributes = { ...el.attributes };
 
     return opts as unknown as SettingsOptions;
   },

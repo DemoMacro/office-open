@@ -16,7 +16,7 @@ const buffer = await generateWorkbook({
       ],
       images: [
         { data: dogPng, type: "png", col: 3, row: 1 },
-        { data: catJpg, type: "jpeg", col: 3, row: 3 },
+        { data: catJpg, type: "jpg", col: 3, row: 3 },
       ],
     },
   ],

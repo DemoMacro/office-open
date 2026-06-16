@@ -1,4 +1,5 @@
 import type { FillOptions } from "@office-open/core/drawingml";
+import type { GroupShapeLocksOptions } from "@parts/drawing/descriptor";
 import type { SourceRectangleOptions } from "@parts/drawing/inline/graphic/graphic-data/pic/blip/source-rectangle";
 import type { EffectListOptions } from "@parts/drawing/inline/graphic/graphic-data/pic/effects/effect-list";
 import type { OutlineOptions } from "@parts/drawing/inline/graphic/graphic-data/pic/outline/outline";
@@ -41,6 +42,29 @@ export interface MediaDataTransformation {
   };
   /** Optional rotation angle in degrees */
   rotation?: number;
+  /**
+   * Effect extent (wp:effectExtent) in raw EMUs — round-tripped verbatim from
+   * the source wrapper. When absent (generation path), the descriptor computes
+   * it from the shape's effects.
+   */
+  effectExtent?: { l: number; t: number; r: number; b: number };
+}
+
+/**
+ * Round-trip of `pic:cNvPr` — the picture non-visual id/name/description.
+ * All fields optional to mirror the source element: `descr` is omitted when
+ * absent rather than emitted as an empty attribute (Word never writes it empty).
+ */
+export interface PicCnvPrOptions {
+  id?: number;
+  name?: string;
+  descr?: string;
+  /**
+   * From the sibling pic:cNvPicPr. Omitted = Word's default (true); only
+   * `false` is emitted as preferRelativeResize="0" because Word never writes
+   * the default value explicitly.
+   */
+  preferRelativeResize?: boolean;
 }
 
 /**
@@ -55,6 +79,14 @@ interface CoreMediaData {
   data: Uint8Array;
   /** Source rectangle for image cropping */
   srcRect?: SourceRectangleOptions;
+  /** Picture non-visual properties (pic:cNvPr) for round-trip fidelity */
+  cNvPr?: PicCnvPrOptions;
+  /**
+   * Blip extension `a14:useLocalDpi` (val="0" = use document DPI, not a local
+   * override). Word emits this as a rendering hint on a:blip; carried verbatim
+   * for round-trip fidelity. Omitted when absent (Word's default behavior).
+   */
+  useLocalDpi?: boolean;
 }
 
 /**
@@ -89,7 +121,7 @@ export interface WpgCommonMediaData {
   fill?: FillOptions;
 }
 
-export type GroupChildMediaData = (WpsMediaData | MediaData) & WpgCommonMediaData;
+export type GroupChildMediaData = (WpsMediaData | MediaData | WpgMediaData) & WpgCommonMediaData;
 
 export interface WpgMediaData {
   type: "wpg";
@@ -103,6 +135,8 @@ export interface WpgMediaData {
   fill?: FillOptions;
   /** Group effects */
   effects?: EffectListOptions;
+  /** Group shape locks (wpg:cNvGrpSpPr/a:grpSpLocks) for round-trip. */
+  grpSpLocks?: GroupShapeLocksOptions;
 }
 
 /**

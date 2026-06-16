@@ -18,6 +18,7 @@ import {
   getMediaRefs,
   getVideoRefs,
   hasPlaceholders,
+  levelForMediaName,
   replaceChartPlaceholders,
   replaceHyperlinkPlaceholders,
   replaceImagePlaceholders,
@@ -1100,7 +1101,7 @@ export function compilePresentation(
   for (const image of media.array) {
     files[`ppt/media/${image.fileName}`] = [
       image.data,
-      { level: mediaLevel as ZipOptions["level"] },
+      { level: levelForMediaName(image.fileName, mediaLevel) as ZipOptions["level"] },
     ];
     if (image.type === "svg" && "fallback" in image) {
       const fallback = (
@@ -1110,7 +1111,7 @@ export function compilePresentation(
       ).fallback;
       files[`ppt/media/${fallback.fileName}`] = [
         fallback.data,
-        { level: mediaLevel as ZipOptions["level"] },
+        { level: levelForMediaName(fallback.fileName, mediaLevel) as ZipOptions["level"] },
       ];
     }
   }

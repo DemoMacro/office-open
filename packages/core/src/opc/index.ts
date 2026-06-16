@@ -23,6 +23,7 @@ export {
   zipSyncAndConvert,
   ZIP_DEFLATE_LEVEL,
   ZIP_STORED_LEVEL,
+  levelForMediaName,
   type CompileFn,
   type CompressionOptions,
   type Packer,

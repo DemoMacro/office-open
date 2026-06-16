@@ -23,6 +23,7 @@ import type { CustomDescriptor, WriteContext } from "@office-open/core/descripto
 import type { FillOptions } from "@office-open/core/drawingml";
 import {
   calculateEffectExtent,
+  createColorElement,
   createEffectDag,
   customGeometryDesc,
   effectListDesc,
@@ -46,6 +47,7 @@ import type {
   WpgMediaData,
   WpsMediaData,
 } from "@shared/media";
+import type { PicCnvPrOptions } from "@shared/media/data";
 
 import type { BodyContext, DocxReadContext } from "../../context";
 import type { DocPropertiesOptions, HyperlinkOptions } from "./doc-properties/doc-properties";
@@ -55,14 +57,22 @@ import type { Floating, HorizontalPositionOptions, VerticalPositionOptions } fro
 import type { Margins } from "./floating";
 import { HorizontalPositionRelativeFrom, VerticalPositionRelativeFrom } from "./floating";
 import type { BlipEffectsOptions } from "./inline/graphic/graphic-data/pic/blip/blip-effects";
+import type { SourceRectangleOptions } from "./inline/graphic/graphic-data/pic/blip/source-rectangle";
 import type { TileOptions } from "./inline/graphic/graphic-data/pic/blip/tile";
 import type { EffectListOptions } from "./inline/graphic/graphic-data/pic/effects/effect-list";
 import type { OutlineOptions } from "./inline/graphic/graphic-data/pic/outline/outline";
 import type { ChildOffset, ChildExtent } from "./inline/graphic/graphic-data/wpg/wpg-group";
 // wpg/wps types only
-import type { BodyPropertiesOptions } from "./inline/graphic/graphic-data/wps/body-properties";
+import {
+  createBodyProperties,
+  type BodyPropertiesOptions,
+} from "./inline/graphic/graphic-data/wps/body-properties";
 import type { NonVisualShapePropertiesOptions } from "./inline/graphic/graphic-data/wps/non-visual-shape-properties";
-import type { WpsShapeCoreOptions } from "./inline/graphic/graphic-data/wps/wps-shape";
+import type {
+  ShapeStyleOptions,
+  StyleMatrixReferenceOptions,
+  WpsShapeCoreOptions,
+} from "./inline/graphic/graphic-data/wps/wps-shape";
 import { TextWrappingSide, TextWrappingType } from "./text-wrap";
 import type { TextWrapping } from "./text-wrap";
 
@@ -79,6 +89,31 @@ const NOOP_CTX: WriteContext = {
  *
  * Combines media data with optional visual properties.
  */
+
+/** Locking flags for wp:cNvGraphicFramePr (CT_GraphicalObjectFrameLocking). */
+export interface GraphicFrameLocksOptions {
+  noGrp?: boolean;
+  noDrilldown?: boolean;
+  noSelect?: boolean;
+  noChangeAspect?: boolean;
+  noMove?: boolean;
+  noResize?: boolean;
+}
+
+/**
+ * Group shape locks (CT_GroupLocking) carried inside wpg:cNvGrpSpPr.
+ * Distinct from GraphicFrameLocksOptions: groups use noUngrp/noRot instead of noDrilldown.
+ */
+export interface GroupShapeLocksOptions {
+  noGrp?: boolean;
+  noUngrp?: boolean;
+  noSelect?: boolean;
+  noRot?: boolean;
+  noChangeAspect?: boolean;
+  noMove?: boolean;
+  noResize?: boolean;
+}
+
 export interface DrawingDescriptorOptions {
   /** Media data (image, chart, smartart, wps, wpg) */
   mediaData: ExtendedMediaData;
@@ -96,6 +131,8 @@ export interface DrawingDescriptorOptions {
   blipEffects?: BlipEffectsOptions;
   /** Image tile fill mode */
   tile?: TileOptions;
+  /** Graphic frame locks (wp:cNvGraphicFramePr). `{}` → empty element; omit → authoring default. */
+  graphicFrameLocks?: GraphicFrameLocksOptions | null;
 }
 
 // ── ID generation ──
@@ -117,6 +154,22 @@ const WPS_URI = "http://schemas.microsoft.com/office/word/2010/wordprocessingSha
 const WPG_URI = "http://schemas.microsoft.com/office/word/2010/wordprocessingGroup";
 const HYPERLINK_REL =
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink";
+// Blip extension URIs (a:extLst under a:blip).
+const SVG_BLIP_EXT_URI = "{96DAC541-7B7A-43D3-8B79-37D633B846F1}";
+const USE_LOCAL_DPI_EXT_URI = "{28A0092B-C50C-407E-A947-70E740481C1C}";
+const A14_NS = "http://schemas.microsoft.com/office/drawing/2010/main";
+
+/**
+ * Build the `a14:useLocalDpi` blip extension. Returns "" when the hint is
+ * absent (undefined) — Word's default. val="0" (useLocalDpi=false) is the
+ * common Word emission; val="1" only when explicitly set.
+ */
+function buildUseLocalDpiExt(useLocalDpi?: boolean): string {
+  if (useLocalDpi === undefined) return "";
+  return `<a:ext uri="${USE_LOCAL_DPI_EXT_URI}"><a14:useLocalDpi xmlns:a14="${A14_NS}" val="${
+    useLocalDpi ? "1" : "0"
+  }"/></a:ext>`;
+}
 
 // ── Hyperlink handling ──
 
@@ -183,6 +236,17 @@ function stringifyDocPr(opts: DocPropertiesOptions | undefined, hlIds: Hyperlink
 
 // ── BlipFill (image data reference) ──
 
+/** Build `<a:srcRect .../>` from a crop spec, or "" when there is no crop. */
+function buildSrcRectXml(srcRect: SourceRectangleOptions | undefined): string {
+  if (!srcRect) return "";
+  const srAttrs: string[] = [];
+  if (srcRect.left !== undefined) srAttrs.push(`l="${srcRect.left}"`);
+  if (srcRect.top !== undefined) srAttrs.push(`t="${srcRect.top}"`);
+  if (srcRect.right !== undefined) srAttrs.push(`r="${srcRect.right}"`);
+  if (srcRect.bottom !== undefined) srAttrs.push(`b="${srcRect.bottom}"`);
+  return srAttrs.length ? `<a:srcRect ${srAttrs.join(" ")}/>` : "<a:srcRect/>";
+}
+
 function stringifyBlipFill(
   mediaData: MediaData,
   blipEffects?: BlipEffectsOptions,
@@ -195,36 +259,38 @@ function stringifyBlipFill(
 
   const parts: string[] = [];
 
-  // a:blip
-  const blipAttrs: string[] = [`r:embed="{${escapeXml(fileName)}}"`, 'cstate="none"'];
+  // a:blip — cstate omitted unless set; Word's default is "none", so emitting
+  // it unconditionally inflates round-trip output that originally had none.
+  const blipAttrs: string[] = [`r:embed="{${escapeXml(fileName)}}"`];
 
-  // SVG extension list
-  const svgExtXml =
-    mediaData.type === "svg"
-      ? `<a:extLst><a:ext uri="{96DAC541-7B7A-43D3-8B79-37D633B846F1}"><asvg:svgBlip xmlns:asvg="http://schemas.microsoft.com/office/drawing/2016/SVG/main" r:embed="{${escapeXml(mediaData.fileName)}}"/></a:ext></a:extLst>`
-      : "";
+  // Blip extension list: useLocalDpi (rendering hint) + SVG blip reference.
+  // Both live in a single shared a:extLst; emitted only when at least one ext
+  // is present so blips without extensions stay self-closing.
+  const extParts: string[] = [];
+  const useLocalDpiExt = buildUseLocalDpiExt(mediaData.useLocalDpi);
+  if (useLocalDpiExt) extParts.push(useLocalDpiExt);
+  if (mediaData.type === "svg") {
+    extParts.push(
+      `<a:ext uri="${SVG_BLIP_EXT_URI}"><asvg:svgBlip xmlns:asvg="http://schemas.microsoft.com/office/drawing/2016/SVG/main" r:embed="{${escapeXml(
+        mediaData.fileName,
+      )}}"/></a:ext>`,
+    );
+  }
+  const extLstXml = extParts.length > 0 ? `<a:extLst>${extParts.join("")}</a:extLst>` : "";
 
   // Blip effects
   const blipEffectsXml = blipEffects ? buildBlipEffectsXml(blipEffects) : "";
 
-  const blipContent = svgExtXml + blipEffectsXml;
+  const blipContent = extLstXml + blipEffectsXml;
   if (blipContent) {
     parts.push(`<a:blip ${blipAttrs.join(" ")}>${blipContent}</a:blip>`);
   } else {
     parts.push(`<a:blip ${blipAttrs.join(" ")}/>`);
   }
 
-  // Source rectangle
-  if (mediaData.srcRect) {
-    const srAttrs: string[] = [];
-    if (mediaData.srcRect.left !== undefined) srAttrs.push(`l="${mediaData.srcRect.left}"`);
-    if (mediaData.srcRect.top !== undefined) srAttrs.push(`t="${mediaData.srcRect.top}"`);
-    if (mediaData.srcRect.right !== undefined) srAttrs.push(`r="${mediaData.srcRect.right}"`);
-    if (mediaData.srcRect.bottom !== undefined) srAttrs.push(`b="${mediaData.srcRect.bottom}"`);
-    if (srAttrs.length) {
-      parts.push(`<a:srcRect ${srAttrs.join(" ")}/>`);
-    }
-  }
+  // Source rectangle (blip crop)
+  const srcRectXml = buildSrcRectXml(mediaData.srcRect);
+  if (srcRectXml) parts.push(srcRectXml);
 
   // Tile or stretch
   if (tile) {
@@ -247,11 +313,11 @@ function buildBlipEffectsXml(opts: BlipEffectsOptions): string {
   if (opts.grayscale) parts.push("<a:grayscl/>");
   if (opts.luminance) {
     const a: string[] = [];
-    if (opts.luminance.bright !== undefined) a.push(`bright="${opts.luminance.bright}%"`);
-    if (opts.luminance.contrast !== undefined) a.push(`contrast="${opts.luminance.contrast}%"`);
+    if (opts.luminance.bright !== undefined) a.push(`bright="${opts.luminance.bright}"`);
+    if (opts.luminance.contrast !== undefined) a.push(`contrast="${opts.luminance.contrast}"`);
     parts.push(`<a:lum${a.length ? " " + a.join(" ") : ""}/>`);
   }
-  if (opts.biLevel) parts.push(`<a:biLevel thresh="${opts.biLevel.threshold}%"/>`);
+  if (opts.biLevel) parts.push(`<a:biLevel thresh="${opts.biLevel.threshold}"/>`);
   if (opts.blur) {
     const a: string[] = [];
     if (opts.blur.radius !== undefined) a.push(`rad="${opts.blur.radius}"`);
@@ -299,12 +365,18 @@ function stringifyShapeProps(
 
 // ── Non-visual picture properties (pic:nvPicPr) ──
 
-function stringifyNvPicPr(hlIds: HyperlinkIds): string {
+function stringifyNvPicPr(hlIds: HyperlinkIds, cNvPr?: PicCnvPrOptions): string {
   const hlXml = buildHyperlinkChildren(hlIds);
+  const id = cNvPr?.id ?? 0;
+  const name = escapeXml(cNvPr?.name ?? "");
+  // descr omitted when absent — Word never writes an empty descr attribute.
+  const descrAttr = cNvPr?.descr ? ` descr="${escapeXml(cNvPr.descr)}"` : "";
+  // preferRelativeResize defaults to true; only an explicit false is written.
+  const cNvPicPrAttr = cNvPr?.preferRelativeResize === false ? ' preferRelativeResize="0"' : "";
   const cNvPrClose = hlXml ? `>${hlXml}</pic:cNvPr>` : "/>";
   return (
-    `<pic:nvPicPr><pic:cNvPr id="0" name="" descr=""${cNvPrClose}` +
-    `<pic:cNvPicPr preferRelativeResize="1"><a:picLocks noChangeArrowheads="1" noChangeAspect="1"/></pic:cNvPicPr></pic:nvPicPr>`
+    `<pic:nvPicPr><pic:cNvPr id="${id}" name="${name}"${descrAttr}${cNvPrClose}` +
+    `<pic:cNvPicPr${cNvPicPrAttr}><a:picLocks noChangeAspect="1"/></pic:cNvPicPr></pic:nvPicPr>`
   );
 }
 
@@ -377,47 +449,70 @@ function stringifyWpsShape(opts: WpsStringifyOptions, ctx: BodyContext): string 
       ?.map((c) => stringifyParagraphInline(c as ParagraphOptions | string, ctx))
       .join("") ?? "";
 
+  // Shape style (wps:style) — theme references, emitted after spPr (XSD order)
+  const styleXml = opts.style ? stringifyShapeStyle(opts.style) : "";
+  // wps:txbx — only emit when the shape carries text (text boxes). Pure
+  // geometry shapes (no paragraphs) omit txbx in the source.
+  const txbxXml = childXml ? `<wps:txbx><w:txbxContent>${childXml}</w:txbxContent></wps:txbx>` : "";
+
   return (
     "<wps:wsp>" +
     cNvSpPr +
     `<wps:spPr bwMode="auto">${spPrParts.join("")}</wps:spPr>` +
-    `<wps:txbx><wps:txbxContent>${childXml}</wps:txbxContent></wps:txbx>` +
+    styleXml +
+    txbxXml +
     stringifyBodyPr(opts.bodyProperties) +
     "</wps:wsp>"
   );
 }
 
 function stringifyNonVisualShapeProperties(opts: NonVisualShapePropertiesOptions): string {
-  if (!opts.txBox) return "<wps:cNvSpPr/>";
-  return `<wps:cNvSpPr txBox="${opts.txBox}"/>`;
+  let xml = "";
+  // wps:cNvPr — id/name/descr/title (XSD CT_NonVisualDrawingProps)
+  if (opts.id !== undefined || opts.name !== undefined) {
+    const attrs: string[] = [];
+    if (opts.id !== undefined) attrs.push(`id="${opts.id}"`);
+    if (opts.name !== undefined) attrs.push(`name="${escapeXml(opts.name)}"`);
+    if (opts.description !== undefined) attrs.push(`descr="${escapeXml(opts.description)}"`);
+    if (opts.title !== undefined) attrs.push(`title="${escapeXml(opts.title)}"`);
+    xml += `<wps:cNvPr ${attrs.join(" ")}/>`;
+  }
+  // CT_WordprocessingShape choice: wps:cNvSpPr (text box/autoshape) or
+  // wps:cNvCnPr (connector). Connectors carry empty cNvCnPr.
+  if (opts.connector) {
+    xml += "<wps:cNvCnPr/>";
+  } else if (opts.txBox !== undefined) {
+    xml += `<wps:cNvSpPr txBox="${opts.txBox}"/>`;
+  } else {
+    xml += "<wps:cNvSpPr/>";
+  }
+  return xml;
+}
+
+/** Stringify a single style-matrix reference (a:lnRef/a:fillRef/...). */
+function stringifyStyleRef(name: string, ref: StyleMatrixReferenceOptions | undefined): string {
+  if (!ref) return "";
+  const idx = escapeXml(ref.idx);
+  const colorXml = ref.color ? createColorElement(ref.color) : "";
+  if (colorXml) return `<${name} idx="${idx}">${colorXml}</${name}>`;
+  return `<${name} idx="${idx}"/>`;
+}
+
+/** Stringify a wps:style (CT_ShapeStyle): lnRef/fillRef/effectRef/fontRef. */
+function stringifyShapeStyle(opts: ShapeStyleOptions): string {
+  const inner =
+    stringifyStyleRef("a:lnRef", opts.lineReference) +
+    stringifyStyleRef("a:fillRef", opts.fillReference) +
+    stringifyStyleRef("a:effectRef", opts.effectReference) +
+    stringifyStyleRef("a:fontRef", opts.fontReference);
+  return inner ? `<wps:style>${inner}</wps:style>` : "";
 }
 
 function stringifyBodyPr(opts?: BodyPropertiesOptions): string {
-  if (!opts) return "<wps:bodyPr/>";
-  const attrs: string[] = [];
-  if (opts.anchor !== undefined) attrs.push(`anchor="${opts.anchor}"`);
-  if (opts.vert !== undefined) attrs.push(`vert="${opts.vert}"`);
-  if (opts.wrap !== undefined) attrs.push(`wrap="${opts.wrap}"`);
-  if (opts.lIns !== undefined) attrs.push(`lIns="${opts.lIns}"`);
-  if (opts.tIns !== undefined) attrs.push(`tIns="${opts.tIns}"`);
-  if (opts.rIns !== undefined) attrs.push(`rIns="${opts.rIns}"`);
-  if (opts.bIns !== undefined) attrs.push(`bIns="${opts.bIns}"`);
-  if (opts.numCol !== undefined) attrs.push(`numCol="${opts.numCol}"`);
-  if (opts.rotation !== undefined) attrs.push(`rot="${opts.rotation}"`);
-  const attrStr = attrs.length ? " " + attrs.join(" ") : "";
-
-  // Sub-elements
-  const parts: string[] = [];
-  if (opts.normAutofit) {
-    const afAttrs: string[] = [];
-    if (opts.normAutofit.fontScale !== undefined)
-      afAttrs.push(`fontScale="${opts.normAutofit.fontScale}"`);
-    if (opts.normAutofit.lnSpcReduction !== undefined)
-      afAttrs.push(`lnSpcReduction="${opts.normAutofit.lnSpcReduction}"`);
-    parts.push(`<a:normAutofit ${afAttrs.join(" ")}/>`);
-  }
-  const body = parts.join("");
-  return body ? `<wps:bodyPr${attrStr}>${body}</wps:bodyPr>` : `<wps:bodyPr${attrStr}/>`;
+  // Delegate to the shared createBodyProperties so attributes + EG_TextAutofit
+  // (noAutofit/normAutofit/spAutoFit) + prstTxWarp/3D all round-trip. The old
+  // inline copy dropped noAutoFit/spAutoFit and most CT_TextBodyProperties attrs.
+  return createBodyProperties(opts ?? {});
 }
 
 // ── WPG group (pure string, no class instances) ──
@@ -430,6 +525,7 @@ function stringifyWpgGroup(
     readonly chExt?: ChildExtent;
     readonly fill?: FillOptions;
     readonly effects?: EffectListOptions;
+    readonly grpSpLocks?: GroupShapeLocksOptions | null;
   },
   ctx: BodyContext,
 ): string {
@@ -439,53 +535,76 @@ function stringifyWpgGroup(
   if (opts.fill) grpSpPrParts.push(fillDesc.stringify(opts.fill, NOOP_CTX) ?? "");
   if (opts.effects) grpSpPrParts.push(effectListDesc.stringify(opts.effects, NOOP_CTX) ?? "");
 
-  // Children — wps shapes or pic elements
-  const childXml = opts.children
-    .map((child) => {
-      if (child.type === "wps") {
-        const wpsData = child as WpsMediaData & { outline?: OutlineOptions; fill?: FillOptions };
-        return stringifyWpsShape(
-          {
-            ...wpsData.data,
-            outline: wpsData.outline ?? wpsData.data.outline,
-            fill: wpsData.fill ?? wpsData.data.fill,
-            transformation: wpsData.transformation,
-          },
-          ctx,
-        );
-      }
-      // pic child (MediaData)
-      const picData = child as MediaData;
-      const picParts: string[] = [];
-      picParts.push(
-        '<pic:nvPicPr><pic:cNvPr id="0" name="" descr=""/><pic:cNvPicPr preferRelativeResize="1"><a:picLocks noChangeAspect="1"/></pic:cNvPicPr></pic:nvPicPr>',
-      );
-      picParts.push(
-        `<pic:blipFill><a:blip r:embed="{${picData.fileName}}" cstate="none"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>`,
-      );
-      picParts.push(
-        `<pic:spPr bwMode="auto">${
-          transform2DDesc.stringify(
-            {
-              x: picData.transformation.offset?.emus?.x ?? 0,
-              y: picData.transformation.offset?.emus?.y ?? 0,
-              width: picData.transformation.emus.x,
-              height: picData.transformation.emus.y,
-            },
-            NOOP_CTX,
-          ) ?? "<a:xfrm/>"
-        }<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>`,
-      );
-      return `<pic:pic xmlns:pic="${PIC_URI}">${picParts.join("")}</pic:pic>`;
-    })
-    .join("");
+  // Children — wps shapes, nested wpg groups, or pic elements
+  const childXml = opts.children.map((child) => stringifyGroupChild(child, ctx)).join("");
 
   return (
     "<wpg:wgp>" +
-    "<wpg:cNvGrpSpPr/>" +
+    stringifyCnvGrpSpPr(opts.grpSpLocks) +
     `<wpg:grpSpPr>${grpSpPrParts.join("")}</wpg:grpSpPr>` +
     childXml +
     "</wpg:wgp>"
+  );
+}
+
+/**
+ * Stringify one group child: a wps shape, a nested wpg group, or a picture.
+ * Shared by the top-level wpg:wgp and nested wpg:grpSp.
+ */
+function stringifyGroupChild(child: GroupChildMediaData, ctx: BodyContext): string {
+  if (child.type === "wps") {
+    const wpsData = child as WpsMediaData & { outline?: OutlineOptions; fill?: FillOptions };
+    return stringifyWpsShape(
+      {
+        ...wpsData.data,
+        outline: wpsData.outline ?? wpsData.data.outline,
+        fill: wpsData.fill ?? wpsData.data.fill,
+        transformation: wpsData.transformation,
+      },
+      ctx,
+    );
+  }
+  if (child.type === "wpg") {
+    return stringifyNestedGroup(child as WpgMediaData, ctx);
+  }
+  // pic child (MediaData) — fill/outline ride on the group-child extension
+  // (WpgCommonMediaData) so a grouped picture's spPr round-trips verbatim.
+  const picData = child as MediaData & { outline?: OutlineOptions; fill?: FillOptions };
+  const picParts: string[] = [];
+  picParts.push(stringifyNvPicPr({}, picData.cNvPr));
+  const groupBlipParts: string[] = [];
+  const useLocalDpiExt = buildUseLocalDpiExt(picData.useLocalDpi);
+  groupBlipParts.push(
+    useLocalDpiExt
+      ? `<a:blip r:embed="{${escapeXml(
+          picData.fileName,
+        )}}"><a:extLst>${useLocalDpiExt}</a:extLst></a:blip>`
+      : `<a:blip r:embed="{${escapeXml(picData.fileName)}}"/>`,
+  );
+  const groupSrcRectXml = buildSrcRectXml(picData.srcRect);
+  if (groupSrcRectXml) groupBlipParts.push(groupSrcRectXml);
+  groupBlipParts.push("<a:stretch><a:fillRect/></a:stretch>");
+  picParts.push(`<pic:blipFill>${groupBlipParts.join("")}</pic:blipFill>`);
+  picParts.push(stringifyShapeProps(picData.transformation, picData.outline, picData.fill));
+  return `<pic:pic xmlns:pic="${PIC_URI}">${picParts.join("")}</pic:pic>`;
+}
+
+/**
+ * Stringify a nested wpg:grpSp (CT_WordprocessingGroup) group child. Same
+ * structure as the top-level group, wrapped in wpg:grpSp with a cNvPr id/name.
+ */
+function stringifyNestedGroup(grp: WpgMediaData, ctx: BodyContext): string {
+  const grpSpPrParts: string[] = [];
+  grpSpPrParts.push(stringifyGroupTransform2D(grp.transformation, grp.chOff, grp.chExt));
+  if (grp.fill) grpSpPrParts.push(fillDesc.stringify(grp.fill, NOOP_CTX) ?? "");
+  if (grp.effects) grpSpPrParts.push(effectListDesc.stringify(grp.effects, NOOP_CTX) ?? "");
+  return (
+    "<wpg:grpSp>" +
+    '<wpg:cNvPr id="0" name=""/>' +
+    stringifyCnvGrpSpPr(grp.grpSpLocks) +
+    `<wpg:grpSpPr>${grpSpPrParts.join("")}</wpg:grpSpPr>` +
+    grp.children.map((c) => stringifyGroupChild(c, ctx)).join("") +
+    "</wpg:grpSp>"
   );
 }
 
@@ -542,6 +661,7 @@ function stringifyGraphicDataContent(
         chExt: md.chExt,
         fill: md.fill,
         effects: md.effects,
+        grpSpLocks: md.grpSpLocks,
       },
       ctx,
     );
@@ -553,7 +673,7 @@ function stringifyGraphicDataContent(
   return (
     `<a:graphicData uri="${PIC_URI}">` +
     `<pic:pic xmlns:pic="${PIC_URI}">` +
-    stringifyNvPicPr(hlIds) +
+    stringifyNvPicPr(hlIds, md.cNvPr) +
     stringifyBlipFill(md, blipEffects, tile) +
     stringifyShapeProps(transform, outline, fill, effects) +
     `</pic:pic></a:graphicData>`
@@ -646,6 +766,43 @@ function wrapTopAndBottomStr(margins?: Margins): string {
 
 // ── Inline wrapper ──
 
+/** Render wp:cNvGraphicFramePr. Undefined → authoring default (noChangeAspect=1);
+ *  `{}` → empty element; otherwise the given lock flags. */
+function stringifyCnvGraphicFramePr(locks?: GraphicFrameLocksOptions | null): string {
+  const resolved = locks ?? { noChangeAspect: true };
+  const attrParts: string[] = [];
+  if (resolved.noGrp) attrParts.push('noGrp="1"');
+  if (resolved.noDrilldown) attrParts.push('noDrilldown="1"');
+  if (resolved.noSelect) attrParts.push('noSelect="1"');
+  if (resolved.noChangeAspect) attrParts.push('noChangeAspect="1"');
+  if (resolved.noMove) attrParts.push('noMove="1"');
+  if (resolved.noResize) attrParts.push('noResize="1"');
+  if (attrParts.length === 0) return "<wp:cNvGraphicFramePr/>";
+  const attrStr = " " + attrParts.join(" ");
+  return `<wp:cNvGraphicFramePr><a:graphicFrameLocks${attrStr} xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"/></wp:cNvGraphicFramePr>`;
+}
+
+/**
+ * Stringify wpg:cNvGrpSpPr (CT_NonVisualGroupShapeDrawingProperties): contains
+ * an optional a:grpSpLocks (CT_GroupLocking). When no locks are present (the
+ * Word default for groups) the element stays empty — groups do NOT inject a
+ * default lock, unlike wp:cNvGraphicFramePr.
+ */
+function stringifyCnvGrpSpPr(locks?: GroupShapeLocksOptions | null): string {
+  if (!locks) return "<wpg:cNvGrpSpPr/>";
+  const attrParts: string[] = [];
+  if (locks.noGrp) attrParts.push('noGrp="1"');
+  if (locks.noUngrp) attrParts.push('noUngrp="1"');
+  if (locks.noSelect) attrParts.push('noSelect="1"');
+  if (locks.noRot) attrParts.push('noRot="1"');
+  if (locks.noChangeAspect) attrParts.push('noChangeAspect="1"');
+  if (locks.noMove) attrParts.push('noMove="1"');
+  if (locks.noResize) attrParts.push('noResize="1"');
+  if (attrParts.length === 0) return "<wpg:cNvGrpSpPr/>";
+  const attrStr = " " + attrParts.join(" ");
+  return `<wpg:cNvGrpSpPr><a:grpSpLocks${attrStr} xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"/></wpg:cNvGrpSpPr>`;
+}
+
 function stringifyInline(
   opts: DrawingDescriptorOptions,
   hlIds: HyperlinkIds,
@@ -655,8 +812,9 @@ function stringifyInline(
   const cx = mediaData.transformation.emus.x;
   const cy = mediaData.transformation.emus.y;
 
-  // Calculate effectExtent based on actual effects (shadow, glow, reflection, softEdge)
-  const effectExtent = calculateEffectExtent(effects);
+  // Prefer the verbatim source effectExtent (round-trip); fall back to
+  // computing it from the shape's effects on the generation path.
+  const effectExtent = mediaData.transformation.effectExtent ?? calculateEffectExtent(effects);
   const graphicDataXml = stringifyGraphicDataContent(mediaData, opts, hlIds, ctx);
 
   return (
@@ -664,7 +822,7 @@ function stringifyInline(
     `<wp:extent cx="${cx}" cy="${cy}"/>` +
     `<wp:effectExtent l="${effectExtent.l}" t="${effectExtent.t}" r="${effectExtent.r}" b="${effectExtent.b}"/>` +
     stringifyDocPr(docProperties, hlIds) +
-    `<wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"/></wp:cNvGraphicFramePr>` +
+    stringifyCnvGraphicFramePr(opts.graphicFrameLocks) +
     `<a:graphic ${GRAPHIC_NS}>${graphicDataXml}</a:graphic>` +
     `</wp:inline></w:drawing>`
   );
@@ -724,16 +882,22 @@ function stringifyAnchor(
 
   const graphicDataXml = stringifyGraphicDataContent(mediaData, opts, hlIds, ctx);
 
+  // Prefer the verbatim source effectExtent (round-trip); default to zero.
+  const ee = mediaData.transformation.effectExtent;
+  const effectExtentXml = ee
+    ? `<wp:effectExtent l="${ee.l}" t="${ee.t}" r="${ee.r}" b="${ee.b}"/>`
+    : '<wp:effectExtent l="0" t="0" r="0" b="0"/>';
+
   return (
     `<w:drawing><wp:anchor ${attrParts.join(" ")}>` +
     '<wp:simplePos x="0" y="0"/>' +
     stringifyPositionH(floating.horizontalPosition) +
     stringifyPositionV(floating.verticalPosition) +
     `<wp:extent cx="${cx}" cy="${cy}"/>` +
-    '<wp:effectExtent l="0" t="0" r="0" b="0"/>' +
+    effectExtentXml +
     wrapXml +
     stringifyDocPr(docProperties, hlIds) +
-    '<wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"/></wp:cNvGraphicFramePr>' +
+    stringifyCnvGraphicFramePr(opts.graphicFrameLocks) +
     `<a:graphic ${GRAPHIC_NS}>${graphicDataXml}</a:graphic>` +
     `</wp:anchor></w:drawing>`
   );

@@ -1,3 +1,4 @@
+import type { BackgroundRawMediaOptions } from "@parts/document/document-background/document-background";
 /**
  * WPS shape run types for WordprocessingML documents.
  *
@@ -8,6 +9,7 @@ import type { WpsShapeCoreOptions } from "@parts/drawing/inline/graphic/graphic-
 import type { MediaTransformation } from "@shared/media";
 
 import type { Floating } from "../../drawing";
+import type { GraphicFrameLocksOptions } from "../../drawing/descriptor";
 
 export * from "@parts/drawing/inline/graphic/graphic-data/wps/body-properties";
 
@@ -15,9 +17,19 @@ interface CoreShapeOptions {
   transformation: MediaTransformation;
   floating?: Floating;
   altText?: DocPropertiesOptions;
+  /** Raw XML of the mc:Fallback (VML equivalent) — carried verbatim so the full mc:AlternateContent round-trips. */
+  vmlFallback?: string;
+  /** Media referenced by {@link vmlFallback} `{fileName}` placeholders, registered on generate. */
+  vmlFallbackMedia?: BackgroundRawMediaOptions[];
+  /** mc:Choice Requires attribute (e.g. "wps") used to regenerate the AlternateContent wrapper. */
+  mcChoiceRequires?: string;
+  /** Raw XML of the wrapping w:r's rPr (round-trip) — emitted before the drawing. */
+  runPropertiesRawXml?: string;
+  /** Graphic frame locks (wp:cNvGraphicFramePr) for round-trip. */
+  graphicFrameLocks?: GraphicFrameLocksOptions | null;
 }
 
 /**
  * @publicApi
  */
-export type WpsShapeRunOptions = WpsShapeCoreOptions & { type: "wps" } & CoreShapeOptions;
+export type WpsShapeRunOptions = WpsShapeCoreOptions & CoreShapeOptions;

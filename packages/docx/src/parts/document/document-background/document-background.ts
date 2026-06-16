@@ -38,4 +38,23 @@ export interface DocumentBackgroundOptions {
   themeTint?: string;
   /** Background image rendered as a full-page VML fill */
   image?: BackgroundImageOptions;
+  /**
+   * Verbatim `<w:background>` XML for backgrounds that don't fit the structured
+   * model (e.g. VML pattern fills with texture images). `r:id` references are
+   * rewritten to `{fileName}` placeholders resolved by the compiler; the
+   * referenced media is carried in {@link rawMedia} for registration.
+   */
+  rawXml?: string;
+  /** Media referenced by {@link rawXml} placeholders, registered on generate. */
+  rawMedia?: BackgroundRawMediaOptions[];
+}
+
+/** Media item referenced by a raw-XML document background. */
+export interface BackgroundRawMediaOptions {
+  /** Placeholder key matching the `{fileName}` token in {@link rawXml}. */
+  fileName: string;
+  /** Raw image bytes. */
+  data: Uint8Array;
+  /** Image format type. */
+  type: "jpg" | "png" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
 }

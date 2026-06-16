@@ -110,7 +110,8 @@ function pageNumberXml(opts: NonNullable<PageNumberTypeAttributes>): string {
   if (opts.formatType !== undefined) attrs.push(`w:fmt="${opts.formatType}"`);
   if (opts.separator !== undefined) attrs.push(`w:chapSep="${opts.separator}"`);
   if (opts.chapStyle !== undefined) attrs.push(`w:chapStyle="${opts.chapStyle}"`);
-  return attrs.length ? `<w:pgNumType ${attrs.join(" ")}/>` : "<w:pgNumType/>";
+  // No attributes → omit pgNumType (never fabricate an empty element).
+  return attrs.length ? `<w:pgNumType ${attrs.join(" ")}/>` : "";
 }
 
 function docGridXml(linePitch: number, charSpace?: number, type?: string): string {

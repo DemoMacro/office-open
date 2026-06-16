@@ -56,13 +56,16 @@ function makeImageMediaData() {
 
 // readCtx with media wired so parseImageRun can resolve the blip embed
 // ({fileName} placeholder) and read image bytes.
+const mediaMap = new Map([["{image1.png}", "word/media/image1.png"]]);
 const mediaReadCtx = {
-  resolveRelationship: () => undefined,
+  // parseImageRun resolves the blip embed via resolveRelationship (per-part
+  // rels, falling back to partRefs.media) — mirror that here.
+  resolveRelationship: (rId: string) => mediaMap.get(rId),
   getPart: () => undefined,
   getRaw: () => undefined,
   docx: {
     partRefs: {
-      media: new Map([["{image1.png}", "word/media/image1.png"]]),
+      media: mediaMap,
       charts: new Map(),
       diagramData: new Map(),
     },

@@ -28,8 +28,9 @@ import {
 import type { DocumentOptions, SectionChild } from "./index";
 
 // Bench modes:
-//   "ours default"  = XML DEFLATE level 1 (SuperFast, MS Office), media STORE — no options passed.
-//   "ours all-store" = all entries STORE — { compression: { xml: 0 } }.
+//   "ours default"  = XML DEFLATE level 1 (SuperFast); media split by type
+//     (PNG/JPEG/GIF → STORE, EMF/WMF/BMP/TIFF/… → DEFLATE 1), matching MS Office Word.
+//   "ours all-store" = all entries STORE (no compression) — { compression: { xml: 0, media: 0 } }.
 //
 // docx (JSZip): async (Packer.toBuffer). Hardcoded global DEFLATE for ALL entries,
 // including images (redundant compression). No STORE option.
@@ -385,7 +386,7 @@ describe("DOCX: Create + toBuffer", () => {
   bench(
     "ours all-store sync — simple (2p + 1 img) + toBufferStore",
     () => {
-      generateDocumentSync(buildSimpleDoc(), { compression: { xml: 0 } });
+      generateDocumentSync(buildSimpleDoc(), { compression: { xml: 0, media: 0 } });
     },
     { iterations: 50 },
   );
@@ -401,7 +402,7 @@ describe("DOCX: Create + toBuffer", () => {
   bench(
     "ours all-store async — simple (2p + 1 img) + toBufferStoreAsync",
     async () => {
-      await generateDocument(buildSimpleDoc(), { compression: { xml: 0 } });
+      await generateDocument(buildSimpleDoc(), { compression: { xml: 0, media: 0 } });
     },
     { iterations: 50 },
   );
@@ -425,7 +426,7 @@ describe("DOCX: Create + toBuffer", () => {
   bench(
     "ours all-store sync — styled paragraphs (20) + 1 img + toBufferStore",
     () => {
-      generateDocumentSync(buildStyledDoc(), { compression: { xml: 0 } });
+      generateDocumentSync(buildStyledDoc(), { compression: { xml: 0, media: 0 } });
     },
     { iterations: 50 },
   );
@@ -441,7 +442,7 @@ describe("DOCX: Create + toBuffer", () => {
   bench(
     "ours all-store async — styled paragraphs (20) + 1 img + toBufferStoreAsync",
     async () => {
-      await generateDocument(buildStyledDoc(), { compression: { xml: 0 } });
+      await generateDocument(buildStyledDoc(), { compression: { xml: 0, media: 0 } });
     },
     { iterations: 50 },
   );
@@ -465,7 +466,7 @@ describe("DOCX: Create + toBuffer", () => {
   bench(
     "ours all-store sync — table (10x5) + toBufferStore",
     () => {
-      generateDocumentSync(buildTableDoc(), { compression: { xml: 0 } });
+      generateDocumentSync(buildTableDoc(), { compression: { xml: 0, media: 0 } });
     },
     { iterations: 50 },
   );
@@ -481,7 +482,7 @@ describe("DOCX: Create + toBuffer", () => {
   bench(
     "ours all-store async — table (10x5) + toBufferStoreAsync",
     async () => {
-      await generateDocument(buildTableDoc(), { compression: { xml: 0 } });
+      await generateDocument(buildTableDoc(), { compression: { xml: 0, media: 0 } });
     },
     { iterations: 50 },
   );
@@ -505,7 +506,7 @@ describe("DOCX: Create + toBuffer", () => {
   bench(
     "ours all-store sync — full featured + 2 imgs + toBufferStore",
     () => {
-      generateDocumentSync(buildFullFeaturedDoc(), { compression: { xml: 0 } });
+      generateDocumentSync(buildFullFeaturedDoc(), { compression: { xml: 0, media: 0 } });
     },
     { iterations: 50 },
   );
@@ -521,7 +522,7 @@ describe("DOCX: Create + toBuffer", () => {
   bench(
     "ours all-store async — full featured + 2 imgs + toBufferStoreAsync",
     async () => {
-      await generateDocument(buildFullFeaturedDoc(), { compression: { xml: 0 } });
+      await generateDocument(buildFullFeaturedDoc(), { compression: { xml: 0, media: 0 } });
     },
     { iterations: 50 },
   );
@@ -825,7 +826,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store sync — 2000p + 20 img + toBufferStore",
     () => {
-      generateDocumentSync(buildLargeParagraphsDoc(), { compression: { xml: 0 } });
+      generateDocumentSync(buildLargeParagraphsDoc(), { compression: { xml: 0, media: 0 } });
     },
     { iterations: 10 },
   );
@@ -841,7 +842,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store async — 2000p + 20 img + toBufferStoreAsync",
     async () => {
-      await generateDocument(buildLargeParagraphsDoc(), { compression: { xml: 0 } });
+      await generateDocument(buildLargeParagraphsDoc(), { compression: { xml: 0, media: 0 } });
     },
     { iterations: 10 },
   );
@@ -865,7 +866,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store sync — 200x10 table + toBufferStore",
     () => {
-      generateDocumentSync(buildLargeTableDoc(), { compression: { xml: 0 } });
+      generateDocumentSync(buildLargeTableDoc(), { compression: { xml: 0, media: 0 } });
     },
     { iterations: 10 },
   );
@@ -881,7 +882,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store async — 200x10 table + toBufferStoreAsync",
     async () => {
-      await generateDocument(buildLargeTableDoc(), { compression: { xml: 0 } });
+      await generateDocument(buildLargeTableDoc(), { compression: { xml: 0, media: 0 } });
     },
     { iterations: 10 },
   );
@@ -905,7 +906,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store sync — 20 sec × 100p + 40 img + toBufferStore",
     () => {
-      generateDocumentSync(buildLargeSectionsDoc(), { compression: { xml: 0 } });
+      generateDocumentSync(buildLargeSectionsDoc(), { compression: { xml: 0, media: 0 } });
     },
     { iterations: 10 },
   );
@@ -921,7 +922,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   bench(
     "ours all-store async — 20 sec × 100p + 40 img + toBufferStoreAsync",
     async () => {
-      await generateDocument(buildLargeSectionsDoc(), { compression: { xml: 0 } });
+      await generateDocument(buildLargeSectionsDoc(), { compression: { xml: 0, media: 0 } });
     },
     { iterations: 10 },
   );
@@ -999,7 +1000,7 @@ describe("DOCX: Large File (~100MB) — Mixed + async vs sync", () => {
   bench(
     "ours all-store sync — mixed (500p, 38img, 50x10) + toBufferStore",
     () => {
-      generateDocumentSync(buildMixed100MbDoc(), { compression: { xml: 0 } });
+      generateDocumentSync(buildMixed100MbDoc(), { compression: { xml: 0, media: 0 } });
     },
     { iterations: 3 },
   );
@@ -1015,7 +1016,7 @@ describe("DOCX: Large File (~100MB) — Mixed + async vs sync", () => {
   bench(
     "ours all-store async — mixed (500p, 38img, 50x10) + toBufferStoreAsync",
     async () => {
-      await generateDocument(buildMixed100MbDoc(), { compression: { xml: 0 } });
+      await generateDocument(buildMixed100MbDoc(), { compression: { xml: 0, media: 0 } });
     },
     { iterations: 3 },
   );
