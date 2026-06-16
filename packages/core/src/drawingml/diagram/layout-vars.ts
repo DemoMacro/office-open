@@ -12,7 +12,7 @@ import { element } from "@office-open/xml";
 // dgm:adj — adjustment handle (CT_Adj)
 // ---------------------------------------------------------------------------
 
-export interface AdjOptions {
+export interface AdjustOptions {
   /** 1-based index (required) */
   idx: number;
   /** Adjustment value (required) */
@@ -20,67 +20,67 @@ export interface AdjOptions {
 }
 
 /** Creates a dgm:adj element. */
-export const createAdj = (options: AdjOptions): string =>
+export const createAdjust = (options: AdjustOptions): string =>
   `<dgm:adj idx="${options.idx}" val="${options.val}"/>`;
 
 // ---------------------------------------------------------------------------
 // dgm:animLvl — animation level (CT_AnimLvl)
 // ---------------------------------------------------------------------------
 
-export const AnimLevelValue = {
+export const AnimationLevelValue = {
   NONE: "none",
   LEVEL: "lvl",
   CENTER: "ctr",
 } as const;
 
-export interface AnimLvlOptions {
-  val?: (typeof AnimLevelValue)[keyof typeof AnimLevelValue];
+export interface AnimationLevelOptions {
+  val?: (typeof AnimationLevelValue)[keyof typeof AnimationLevelValue];
 }
 
 /** Creates a dgm:animLvl element. */
-export const createAnimLvl = (options?: AnimLvlOptions): string =>
+export const createAnimationLevel = (options?: AnimationLevelOptions): string =>
   options?.val !== undefined ? `<dgm:animLvl val="${options.val}"/>` : "<dgm:animLvl/>";
 
 // ---------------------------------------------------------------------------
 // dgm:animOne — animation one-by-one (CT_AnimOne)
 // ---------------------------------------------------------------------------
 
-export const AnimOneValue = {
+export const AnimateOneByOneValue = {
   NONE: "none",
   ONE: "one",
   BRANCH: "branch",
 } as const;
 
-export interface AnimOneOptions {
-  val?: (typeof AnimOneValue)[keyof typeof AnimOneValue];
+export interface AnimateOneByOneOptions {
+  val?: (typeof AnimateOneByOneValue)[keyof typeof AnimateOneByOneValue];
 }
 
 /** Creates a dgm:animOne element. */
-export const createAnimOne = (options?: AnimOneOptions): string =>
+export const createAnimateOneByOne = (options?: AnimateOneByOneOptions): string =>
   options?.val !== undefined ? `<dgm:animOne val="${options.val}"/>` : "<dgm:animOne/>";
 
 // ---------------------------------------------------------------------------
 // dgm:chMax — max children constraint (CT_ChildMax)
 // ---------------------------------------------------------------------------
 
-export interface ChMaxOptions {
+export interface MaxChildrenOptions {
   val?: number;
 }
 
 /** Creates a dgm:chMax element. */
-export const createChMax = (options?: ChMaxOptions): string =>
+export const createMaxChildren = (options?: MaxChildrenOptions): string =>
   options?.val !== undefined ? `<dgm:chMax val="${options.val}"/>` : "<dgm:chMax/>";
 
 // ---------------------------------------------------------------------------
 // dgm:chPref — preferred children count (CT_ChildPref)
 // ---------------------------------------------------------------------------
 
-export interface ChPrefOptions {
+export interface PreferredChildrenOptions {
   val?: number;
 }
 
 /** Creates a dgm:chPref element. */
-export const createChPref = (options?: ChPrefOptions): string =>
+export const createPreferredChildren = (options?: PreferredChildrenOptions): string =>
   options?.val !== undefined ? `<dgm:chPref val="${options.val}"/>` : "<dgm:chPref/>";
 
 // ---------------------------------------------------------------------------
@@ -119,12 +119,12 @@ export const createHierBranch = (options?: HierBranchOptions): string =>
 // dgm:presLayoutVars — presentation layout variables (CT_LayoutVariablePropertySet)
 // ---------------------------------------------------------------------------
 
-export interface PresLayoutVarsOptions {
+export interface PresentationLayoutVariablesOptions {
   orgChart?: OrgChartOptions;
-  chMax?: ChMaxOptions;
-  chPref?: ChPrefOptions;
-  animOne?: AnimOneOptions;
-  animLvl?: AnimLvlOptions;
+  maxChildren?: MaxChildrenOptions;
+  preferredChildren?: PreferredChildrenOptions;
+  animateOneByOne?: AnimateOneByOneOptions;
+  animationLevel?: AnimationLevelOptions;
   hierBranch?: HierBranchOptions;
 }
 
@@ -148,13 +148,15 @@ export interface PresLayoutVarsOptions {
  * </xsd:complexType>
  * ```
  */
-export const createPresLayoutVars = (options?: PresLayoutVarsOptions): string => {
+export const createPresentationLayoutVariables = (
+  options?: PresentationLayoutVariablesOptions,
+): string => {
   const children: string[] = [];
   if (options?.orgChart) children.push(createOrgChart(options.orgChart));
-  if (options?.chMax) children.push(createChMax(options.chMax));
-  if (options?.chPref) children.push(createChPref(options.chPref));
-  if (options?.animOne) children.push(createAnimOne(options.animOne));
-  if (options?.animLvl) children.push(createAnimLvl(options.animLvl));
+  if (options?.maxChildren) children.push(createMaxChildren(options.maxChildren));
+  if (options?.preferredChildren) children.push(createPreferredChildren(options.preferredChildren));
+  if (options?.animateOneByOne) children.push(createAnimateOneByOne(options.animateOneByOne));
+  if (options?.animationLevel) children.push(createAnimationLevel(options.animationLevel));
   if (options?.hierBranch) children.push(createHierBranch(options.hierBranch));
 
   return element("dgm:presLayoutVars", undefined, children);
@@ -164,16 +166,16 @@ export const createPresLayoutVars = (options?: PresLayoutVarsOptions): string =>
 // dgm:adjLst — adjustment list (CT_AdjLst)
 // ---------------------------------------------------------------------------
 
-export interface AdjLstOptions {
-  adj?: readonly AdjOptions[];
+export interface AdjustListOptions {
+  adjustments?: readonly AdjustOptions[];
 }
 
 /** Creates a dgm:adjLst element containing dgm:adj children. */
-export const createAdjLst = (options?: AdjLstOptions): string => {
+export const createAdjustList = (options?: AdjustListOptions): string => {
   const children: string[] = [];
-  if (options?.adj) {
-    for (const a of options.adj) {
-      children.push(createAdj(a));
+  if (options?.adjustments) {
+    for (const a of options.adjustments) {
+      children.push(createAdjust(a));
     }
   }
   return element("dgm:adjLst", undefined, children);

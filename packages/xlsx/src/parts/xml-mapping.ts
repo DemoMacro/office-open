@@ -76,7 +76,7 @@ export interface MapInfoOptions {
   maps: MapOptions[];
 }
 
-export interface XmlPrOptions {
+export interface XmlPropertiesOptions {
   /** XML element name */
   xmlElement?: string;
   /** Associated map ID (required) */
@@ -87,13 +87,13 @@ export interface XmlPrOptions {
   xmlDataType: string;
 }
 
-export interface XmlCellPrOptions {
+export interface XmlCellPropertiesOptions {
   /** Cell ID (required) */
   id: number;
   /** Unique name */
   uniqueName?: string;
   /** XML properties */
-  xmlPr: XmlPrOptions;
+  xmlPr: XmlPropertiesOptions;
 }
 
 export interface SingleXmlCellOptions {
@@ -104,10 +104,10 @@ export interface SingleXmlCellOptions {
   /** Connection ID (required) */
   connectionId: number;
   /** XML cell properties */
-  xmlCellPr: XmlCellPrOptions;
+  xmlCellPr: XmlCellPropertiesOptions;
 }
 
-export interface XmlColumnPrOptions {
+export interface XmlColumnPropertiesOptions {
   /** XPath expression (required) */
   xpath: string;
   /** XML data type (required) */

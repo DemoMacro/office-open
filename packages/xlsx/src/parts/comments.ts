@@ -16,7 +16,7 @@ import type {
   CommentOptions,
   RichTextOptions,
   RichTextRunOptions,
-  RichTextRunPrOptions,
+  RichTextRunPropertiesOptions,
 } from "./worksheet";
 
 // ── Comments descriptor (xl/comments{n}.xml) ──
@@ -190,12 +190,13 @@ function parseRst(textEl: XmlElement): string | RichTextOptions {
       const run: RichTextRunOptions = { text: t ? (textOf(t) ?? "") : "" };
       const rPr = findChild(child, "rPr");
       if (rPr) {
-        const props: RichTextRunPrOptions = {};
+        const props: RichTextRunPropertiesOptions = {};
         if (findChild(rPr, "b")) props.bold = true;
         if (findChild(rPr, "i")) props.italic = true;
         const uEl = findChild(rPr, "u");
         if (uEl)
-          props.underline = (attr(uEl, "val") as RichTextRunPrOptions["underline"]) ?? "single";
+          props.underline =
+            (attr(uEl, "val") as RichTextRunPropertiesOptions["underline"]) ?? "single";
         if (findChild(rPr, "strike")) props.strike = true;
         const szEl = findChild(rPr, "sz");
         if (szEl) {

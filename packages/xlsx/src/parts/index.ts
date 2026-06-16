@@ -38,7 +38,7 @@ export type {
   ScenarioDefinition,
   ScenarioCellOptions,
   IgnoredErrorOptions,
-  PhoneticPrOptions,
+  PhoneticPropertiesOptions,
   SheetBackgroundImageOptions,
 } from "./worksheet";
 export type { IconSetType, CfvoType } from "./worksheet";
@@ -74,7 +74,7 @@ export { workbookDesc, buildTablePartsXml, buildExternalReferencesXml } from "./
 export type {
   WorkbookProtectionOptions,
   CustomWorkbookViewOptions,
-  FileRecoveryPrOptions,
+  FileRecoveryPropertiesOptions,
   WebPublishingOptions,
   FileSharingOptions,
 } from "./workbook";
@@ -116,14 +116,19 @@ export type {
   RevisionDefinedNameOptions,
   RevisionLogOptions,
 } from "./revision-log";
-export type { ConnectionOptions, DbPrOptions, WebPrOptions, ParameterOptions } from "./connection";
+export type {
+  ConnectionOptions,
+  DatabasePropertiesOptions,
+  WebPropertiesOptions,
+  ParameterOptions,
+} from "./connection";
 export type {
   MapInfoOptions,
   SchemaOptions,
   MapOptions,
   DataBindingOptions,
-  XmlPrOptions,
-  XmlCellPrOptions,
+  XmlPropertiesOptions,
+  XmlCellPropertiesOptions,
   SingleXmlCellOptions,
-  XmlColumnPrOptions,
+  XmlColumnPropertiesOptions,
 } from "./xml-mapping";

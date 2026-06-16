@@ -55,7 +55,7 @@ export interface RowOptions {
 }
 
 /** Rich text run properties (CT_RPrElt). */
-export interface RichTextRunPrOptions {
+export interface RichTextRunPropertiesOptions {
   /** Font name (CT_FontName → rFont) */
   font?: string;
   /** Character set (CT_IntProperty) */
@@ -91,7 +91,7 @@ export interface RichTextRunPrOptions {
 /** A single rich text run (CT_RElt). */
 export interface RichTextRunOptions {
   /** Run properties (optional = inherits from parent) */
-  properties?: RichTextRunPrOptions;
+  properties?: RichTextRunPropertiesOptions;
   /** Run text content */
   text: string;
 }
@@ -434,7 +434,7 @@ export interface ObjectAnchorOptions {
 }
 
 /** Comment property (CT_CommentPr). */
-export interface CommentPrOptions {
+export interface CommentPropertiesOptions {
   /** Locked */
   locked?: boolean;
   /** Default size */
@@ -471,7 +471,7 @@ export interface CommentOptions {
   /** Comment text (plain string or rich text) */
   text: string | RichTextOptions;
   /** Comment properties (CT_CommentPr) */
-  commentPr?: CommentPrOptions;
+  commentPr?: CommentPropertiesOptions;
 }
 
 export type DataValidationType =
@@ -847,7 +847,7 @@ export interface PrintOptions {
 }
 
 /** Sheet format properties (CT_SheetFormatPr) */
-export interface SheetFormatPrOptions {
+export interface SheetFormatPropertiesOptions {
   /** Base column width (CT_SheetFormatPr @baseColWidth) */
   baseColWidth?: number;
   /** Default column width (CT_SheetFormatPr @defaultColWidth) */
@@ -867,7 +867,7 @@ export interface SheetFormatPrOptions {
 }
 
 /** Sheet properties extended options (CT_SheetPr attributes) */
-export interface SheetPrOptions {
+export interface SheetPropertiesOptions {
   /** Sync horizontal scroll (CT_SheetPr @syncHorizontal) */
   syncHorizontal?: boolean;
   /** Sync vertical scroll (CT_SheetPr @syncVertical) */
@@ -910,7 +910,7 @@ export interface IgnoredErrorOptions {
 }
 
 /** Phonetic properties for CJK text (CT_PhoneticPr) */
-export interface PhoneticPrOptions {
+export interface PhoneticPropertiesOptions {
   /** Font ID from the styles table (required) */
   fontId: number;
   /** Phonetic type (default: "fullwidthKatakana") */
@@ -1077,15 +1077,15 @@ export interface WorksheetOptions {
   /** Ignored errors — suppress specific Excel error checks for cell ranges */
   ignoredErrors?: IgnoredErrorOptions[];
   /** Phonetic properties for CJK text */
-  phoneticPr?: PhoneticPrOptions;
+  phoneticPr?: PhoneticPropertiesOptions;
   /** Background image for the worksheet */
   backgroundImage?: SheetBackgroundImageOptions;
   /** Print options (CT_PrintOptions) */
   printOptions?: PrintOptions;
   /** Sheet format properties (CT_SheetFormatPr) */
-  sheetFormatPr?: SheetFormatPrOptions;
+  sheetFormatPr?: SheetFormatPropertiesOptions;
   /** Sheet extended properties (CT_SheetPr attributes) */
-  sheetPr?: SheetPrOptions;
+  sheetPr?: SheetPropertiesOptions;
   /** Row page breaks (CT_PageBreaks) */
   rowBreaks?: PageBreakOptions[];
   /** Column page breaks (CT_PageBreaks) */
@@ -1105,7 +1105,7 @@ export interface WorksheetOptions {
   /** Selection in sheet view (CT_Selection) */
   selection?: SelectionOptions;
   /** Sheet calc properties (CT_SheetCalcPr) */
-  sheetCalcPr?: SheetCalcPrOptions;
+  sheetCalcPr?: SheetCalculationPropertiesOptions;
   /** Extension list (extLst) */
   ext?: string;
   /** Control objects (CT_Controls) */
@@ -1119,7 +1119,7 @@ export interface WorksheetOptions {
 }
 
 /** Sheet calc properties (CT_SheetCalcPr) */
-export interface SheetCalcPrOptions {
+export interface SheetCalculationPropertiesOptions {
   /** Full calc on load (CT_SheetCalcPr @fullCalcOnLoad) */
   fullCalcOnLoad?: boolean;
 }
@@ -1171,11 +1171,11 @@ export interface OleObjectOptions {
   /** Relationship ID (CT_OleObject @r:id) */
   rId?: string;
   /** Object properties (CT_ObjectPr) */
-  objectPr?: OleObjectPrOptions;
+  objectPr?: OleObjectPropertiesOptions;
 }
 
 /** OLE object properties (CT_ObjectPr) */
-export interface OleObjectPrOptions {
+export interface OleObjectPropertiesOptions {
   /** Locked */
   locked?: boolean;
   /** Default size */

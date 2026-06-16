@@ -57,7 +57,7 @@ const createCatLst = (categories?: readonly DiagramCategoryOptions[]): string =>
 // dgm:colorsDefHdr — color definition header (CT_ColorTransformHeader)
 // ---------------------------------------------------------------------------
 
-export interface ColorsDefHdrOptions {
+export interface ColorsDefinitionHeaderOptions {
   uniqueId: string;
   minVer?: string;
   resId?: number;
@@ -84,7 +84,7 @@ export interface ColorsDefHdrOptions {
  * </xsd:complexType>
  * ```
  */
-export const createColorsDefHdr = (options: ColorsDefHdrOptions): string => {
+export const createColorsDefinitionHeader = (options: ColorsDefinitionHeaderOptions): string => {
   const children: string[] = [];
   for (const t of options.title) children.push(createNameEl("dgm:title", t));
   for (const d of options.desc) children.push(createDescEl("dgm:desc", d));
@@ -101,16 +101,18 @@ export const createColorsDefHdr = (options: ColorsDefHdrOptions): string => {
 // dgm:colorsDefHdrLst — list of color definition headers (CT_ColorTransformHeaderLst)
 // ---------------------------------------------------------------------------
 
-export interface ColorsDefHdrLstOptions {
-  headers?: readonly ColorsDefHdrOptions[];
+export interface ColorsDefinitionHeaderListOptions {
+  headers?: readonly ColorsDefinitionHeaderOptions[];
 }
 
 /** Creates a dgm:colorsDefHdrLst element. */
-export const createColorsDefHdrLst = (options?: ColorsDefHdrLstOptions): string => {
+export const createColorsDefinitionHeaderList = (
+  options?: ColorsDefinitionHeaderListOptions,
+): string => {
   const children: string[] = [];
   if (options?.headers) {
     for (const hdr of options.headers) {
-      children.push(createColorsDefHdr(hdr));
+      children.push(createColorsDefinitionHeader(hdr));
     }
   }
   return element("dgm:colorsDefHdrLst", undefined, children);
@@ -120,7 +122,7 @@ export const createColorsDefHdrLst = (options?: ColorsDefHdrLstOptions): string 
 // dgm:layoutDefHdr — layout definition header (CT_DiagramDefinitionHeader)
 // ---------------------------------------------------------------------------
 
-export interface LayoutDefHdrOptions {
+export interface LayoutDefinitionHeaderOptions {
   uniqueId: string;
   minVer?: string;
   defStyle?: string;
@@ -149,7 +151,7 @@ export interface LayoutDefHdrOptions {
  * </xsd:complexType>
  * ```
  */
-export const createLayoutDefHdr = (options: LayoutDefHdrOptions): string => {
+export const createLayoutDefinitionHeader = (options: LayoutDefinitionHeaderOptions): string => {
   const children: string[] = [];
   for (const t of options.title) children.push(createNameEl("dgm:title", t));
   for (const d of options.desc) children.push(createDescEl("dgm:desc", d));
@@ -167,16 +169,18 @@ export const createLayoutDefHdr = (options: LayoutDefHdrOptions): string => {
 // dgm:layoutDefHdrLst — list of layout definition headers (CT_DiagramDefinitionHeaderLst)
 // ---------------------------------------------------------------------------
 
-export interface LayoutDefHdrLstOptions {
-  headers?: readonly LayoutDefHdrOptions[];
+export interface LayoutDefinitionHeaderListOptions {
+  headers?: readonly LayoutDefinitionHeaderOptions[];
 }
 
 /** Creates a dgm:layoutDefHdrLst element. */
-export const createLayoutDefHdrLst = (options?: LayoutDefHdrLstOptions): string => {
+export const createLayoutDefinitionHeaderList = (
+  options?: LayoutDefinitionHeaderListOptions,
+): string => {
   const children: string[] = [];
   if (options?.headers) {
     for (const hdr of options.headers) {
-      children.push(createLayoutDefHdr(hdr));
+      children.push(createLayoutDefinitionHeader(hdr));
     }
   }
   return element("dgm:layoutDefHdrLst", undefined, children);
@@ -186,7 +190,7 @@ export const createLayoutDefHdrLst = (options?: LayoutDefHdrLstOptions): string 
 // dgm:styleDefHdr — style definition header (CT_StyleDefinitionHeader)
 // ---------------------------------------------------------------------------
 
-export interface StyleDefHdrOptions {
+export interface StyleDefinitionHeaderOptions {
   uniqueId: string;
   minVer?: string;
   resId?: number;
@@ -213,7 +217,7 @@ export interface StyleDefHdrOptions {
  * </xsd:complexType>
  * ```
  */
-export const createStyleDefHdr = (options: StyleDefHdrOptions): string => {
+export const createStyleDefinitionHeader = (options: StyleDefinitionHeaderOptions): string => {
   const children: string[] = [];
   for (const t of options.title) children.push(createNameEl("dgm:title", t));
   for (const d of options.desc) children.push(createDescEl("dgm:desc", d));
@@ -230,16 +234,18 @@ export const createStyleDefHdr = (options: StyleDefHdrOptions): string => {
 // dgm:styleDefHdrLst — list of style definition headers (CT_StyleDefinitionHeaderLst)
 // ---------------------------------------------------------------------------
 
-export interface StyleDefHdrLstOptions {
-  headers?: readonly StyleDefHdrOptions[];
+export interface StyleDefinitionHeaderListOptions {
+  headers?: readonly StyleDefinitionHeaderOptions[];
 }
 
 /** Creates a dgm:styleDefHdrLst element. */
-export const createStyleDefHdrLst = (options?: StyleDefHdrLstOptions): string => {
+export const createStyleDefinitionHeaderList = (
+  options?: StyleDefinitionHeaderListOptions,
+): string => {
   const children: string[] = [];
   if (options?.headers) {
     for (const hdr of options.headers) {
-      children.push(createStyleDefHdr(hdr));
+      children.push(createStyleDefinitionHeader(hdr));
     }
   }
   return element("dgm:styleDefHdrLst", undefined, children);

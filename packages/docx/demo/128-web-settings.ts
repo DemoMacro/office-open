@@ -1,4 +1,4 @@
-// Web Settings: encoding, optimizeForBrowser, pixelsPerInch, targetScreenSz,
+// Web Settings: encoding, optimizeForBrowser, pixelsPerInch, targetScreenSize,
 // frameset layout with splitbar, and div elements with borders.
 
 import { writeFileSync } from "node:fs";
@@ -12,7 +12,7 @@ const buffer = await generateDocument({
     pixelsPerInch: 96,
     allowPNG: true,
     doNotRelyOnCSS: false,
-    targetScreenSz: "1024x768",
+    targetScreenSize: "1024x768",
     divs: [
       {
         id: 100,

@@ -649,7 +649,7 @@ export interface FieldGroupOptions {
   /** Base field index */
   base?: number;
   /** Range properties */
-  rangePr?: RangePrOptions;
+  rangePr?: RangePropertiesOptions;
   /** Discrete properties */
   discretePr?: number[];
   /** Group items names */
@@ -657,7 +657,7 @@ export interface FieldGroupOptions {
 }
 
 /** Range properties for field grouping (CT_RangePr) */
-export interface RangePrOptions {
+export interface RangePropertiesOptions {
   /** Auto start (default: true) */
   autoStart?: boolean;
   /** Auto end (default: true) */
@@ -823,7 +823,7 @@ export interface MeasureDimensionMapOptions {
 }
 
 /** OLAP properties for pivot cache (CT_OlapPr) */
-export interface OlapPrOptions {
+export interface OLAPPropertiesOptions {
   /** Local cube connection string */
   local?: string;
   /** Local connection string */
@@ -1013,5 +1013,5 @@ export interface PivotCacheDefinitionOptions {
   /** Per-field cache field overrides (mapped by field index) */
   cacheFieldOverrides?: ReadonlyMap<number, CacheFieldExtraAttrs>;
   /** OLAP properties (CT_OlapPr) */
-  olapPr?: OlapPrOptions;
+  olapPr?: OLAPPropertiesOptions;
 }

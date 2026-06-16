@@ -19,7 +19,7 @@ import {
 } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type { AltChunkOptions } from "@parts/alt-chunk/alt-chunk";
-import type { CustomXmlPrOptions } from "@parts/custom-xml/custom-xml";
+import type { CustomXmlPropertiesOptions } from "@parts/custom-xml/custom-xml";
 import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
 import { parseRunProperties } from "@parts/paragraph/run/run-parse";
 import { stringifyRunPropertiesInner } from "@parts/paragraph/stringify";
@@ -506,8 +506,8 @@ function parseSdtPr(el: Element): SdtPropertiesOptions {
   return opts as SdtPropertiesOptions;
 }
 
-/** Parse w:customXmlPr element into CustomXmlPrOptions. */
-export function parseCustomXmlPr(el: Element): CustomXmlPrOptions {
+/** Parse w:customXmlPr element into CustomXmlPropertiesOptions. */
+export function parseCustomXmlProperties(el: Element): CustomXmlPropertiesOptions {
   const opts: Record<string, unknown> = {};
   const placeholder = findChild(el, "w:placeholder");
   if (placeholder) {
@@ -527,7 +527,7 @@ export function parseCustomXmlPr(el: Element): CustomXmlPrOptions {
     }
   }
   if (attributes.length > 0) opts.attributes = attributes;
-  return opts as unknown as CustomXmlPrOptions;
+  return opts as unknown as CustomXmlPropertiesOptions;
 }
 
 /** Body child element parsing callback for SDT/customXml content. */
@@ -613,11 +613,11 @@ export const sdtBlockDesc: CustomDescriptor<SdtChildOptions, BodyContext> = {
 export interface CustomXmlBlockDescriptorOptions {
   element: string;
   uri?: string;
-  customXmlPr?: CustomXmlPrOptions;
+  customXmlPr?: CustomXmlPropertiesOptions;
   children?: SectionChild[];
 }
 
-function buildCustomXmlPrXml(pr: CustomXmlPrOptions): string {
+function buildCustomXmlPropertiesXml(pr: CustomXmlPropertiesOptions): string {
   const parts: string[] = ["<w:customXmlPr>"];
   if (pr.placeholder !== undefined) {
     parts.push(`<w:placeholder w:val="${escapeAttr(pr.placeholder)}"/>`);
@@ -641,12 +641,12 @@ function buildCustomXmlPrXml(pr: CustomXmlPrOptions): string {
  * arbitrary content. Shared by all four customXml levels (block/run/row/cell).
  */
 export function stringifyCustomXmlShell(
-  opts: { element: string; uri?: string; customXmlPr?: CustomXmlPrOptions },
+  opts: { element: string; uri?: string; customXmlPr?: CustomXmlPropertiesOptions },
   contentXml: string,
 ): string {
   const attrs: string[] = [`w:element="${escapeAttr(opts.element)}"`];
   if (opts.uri !== undefined) attrs.push(`w:uri="${escapeAttr(opts.uri)}"`);
-  const prXml = opts.customXmlPr ? buildCustomXmlPrXml(opts.customXmlPr) : "";
+  const prXml = opts.customXmlPr ? buildCustomXmlPropertiesXml(opts.customXmlPr) : "";
   return `<w:customXml ${attrs.join(" ")}>${prXml}${contentXml}</w:customXml>`;
 }
 
@@ -676,7 +676,7 @@ export const customXmlBlockDesc: CustomDescriptor<CustomXmlBlockDescriptorOption
     // Parse w:customXmlPr
     const xmlPr = findChild(el, "w:customXmlPr");
     if (xmlPr) {
-      opts.customXmlPr = parseCustomXmlPr(xmlPr);
+      opts.customXmlPr = parseCustomXmlProperties(xmlPr);
     }
 
     // Parse block-level children

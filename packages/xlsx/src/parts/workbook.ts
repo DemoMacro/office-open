@@ -111,7 +111,7 @@ export interface WorkbookProtectionOptions {
 export type WorkbookConformance = "strict" | "transitional";
 
 /** File recovery properties (CT_FileRecoveryPr) */
-export interface FileRecoveryPrOptions {
+export interface FileRecoveryPropertiesOptions {
   /** Enable auto-recover (default true) */
   autoRecover?: boolean;
   /** Crash save (default false) */
@@ -163,7 +163,7 @@ export interface FileSharingOptions {
 }
 
 /** Workbook properties (CT_WorkbookPr) */
-export interface WorkbookPrOptions {
+export interface WorkbookPropertiesOptions {
   /** Use 1904 date system (default false) */
   date1904?: boolean;
   /** Default theme version */
@@ -255,7 +255,7 @@ export interface WebPublishObjectOptions {
 }
 
 /** Calculation properties (CT_CalcPr) */
-export interface CalcPrOptions {
+export interface CalculationPropertiesOptions {
   /** Calculation mode: "manual" | "auto" | "autoNoTable" */
   calcMode?: string;
   /** Calc ID (default 162913) */
@@ -317,12 +317,12 @@ export interface WorkbookDescriptorOptions {
   pivotCaches?: PivotCacheReference[];
   protection?: WorkbookProtectionOptions;
   customViews?: CustomWorkbookViewOptions[];
-  fileRecoveryPr?: FileRecoveryPrOptions;
+  fileRecoveryPr?: FileRecoveryPropertiesOptions;
   functionGroups?: string[];
   webPublishing?: WebPublishingOptions;
   fileSharing?: FileSharingOptions;
-  workbookPr?: WorkbookPrOptions;
-  calcPr?: CalcPrOptions;
+  workbookPr?: WorkbookPropertiesOptions;
+  calcPr?: CalculationPropertiesOptions;
   bookView?: WorkbookViewOptions;
   volTypes?: VolTypeOptions[];
   webPublishObjects?: WebPublishObjectOptions[];

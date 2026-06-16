@@ -36,9 +36,9 @@ describe("webSettingsDesc round-trip", () => {
     expect(result.encoding).toBe("utf-8");
   });
 
-  it("round-trips targetScreenSz", () => {
-    const result = roundTrip({ targetScreenSz: "1024x768" });
-    expect(result.targetScreenSz).toBe("1024x768");
+  it("round-trips targetScreenSize", () => {
+    const result = roundTrip({ targetScreenSize: "1024x768" });
+    expect(result.targetScreenSize).toBe("1024x768");
   });
 
   it("round-trips divs with margins and borders", () => {

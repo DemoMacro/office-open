@@ -138,39 +138,39 @@ const createColorList = (tag: string, options?: ColorListOptions): string => {
 // dgm:fillClrLst / dgm:linClrLst / dgm:effectClrLst (used in CT_CTStyleLabel)
 // ---------------------------------------------------------------------------
 
-export const createFillClrLst = (options?: ColorListOptions): string =>
+export const createFillColorList = (options?: ColorListOptions): string =>
   createColorList("dgm:fillClrLst", options);
-export const createLinClrLst = (options?: ColorListOptions): string =>
+export const createLineColorList = (options?: ColorListOptions): string =>
   createColorList("dgm:linClrLst", options);
-export const createEffectClrLst = (options?: ColorListOptions): string =>
+export const createEffectColorList = (options?: ColorListOptions): string =>
   createColorList("dgm:effectClrLst", options);
 
 // ---------------------------------------------------------------------------
 // dgm:txFillClrLst / dgm:txLinClrLst / dgm:txEffectClrLst (text color lists)
 // ---------------------------------------------------------------------------
 
-export const createTxFillClrLst = (options?: ColorListOptions): string =>
+export const createTextFillColorList = (options?: ColorListOptions): string =>
   createColorList("dgm:txFillClrLst", options);
 
-export const createTxLinClrLst = (options?: ColorListOptions): string =>
+export const createTextLineColorList = (options?: ColorListOptions): string =>
   createColorList("dgm:txLinClrLst", options);
 
-export const createTxEffectClrLst = (options?: ColorListOptions): string =>
+export const createTextEffectColorList = (options?: ColorListOptions): string =>
   createColorList("dgm:txEffectClrLst", options);
 
 // ---------------------------------------------------------------------------
 // dgm:styleLbl — style label (CT_StyleLabel)
 // ---------------------------------------------------------------------------
 
-export interface DiagramStyleLblOptions {
+export interface DiagramStyleLabelOptions {
   /** Label name (required) */
   name: string;
-  fillClrLst?: ColorListOptions;
-  linClrLst?: ColorListOptions;
-  effectClrLst?: ColorListOptions;
-  txFillClrLst?: ColorListOptions;
-  txLinClrLst?: ColorListOptions;
-  txEffectClrLst?: ColorListOptions;
+  fillColorList?: ColorListOptions;
+  lineColorList?: ColorListOptions;
+  effectColorList?: ColorListOptions;
+  textFillColorList?: ColorListOptions;
+  textLineColorList?: ColorListOptions;
+  textEffectColorList?: ColorListOptions;
 }
 
 /**
@@ -206,14 +206,15 @@ export interface DiagramStyleLblOptions {
  * </xsd:complexType>
  * ```
  */
-export const createStyleLbl = (options: DiagramStyleLblOptions): string => {
+export const createStyleLabel = (options: DiagramStyleLabelOptions): string => {
   const children: string[] = [];
-  if (options.fillClrLst) children.push(createFillClrLst(options.fillClrLst));
-  if (options.linClrLst) children.push(createLinClrLst(options.linClrLst));
-  if (options.effectClrLst) children.push(createEffectClrLst(options.effectClrLst));
-  if (options.txFillClrLst) children.push(createTxFillClrLst(options.txFillClrLst));
-  if (options.txLinClrLst) children.push(createTxLinClrLst(options.txLinClrLst));
-  if (options.txEffectClrLst) children.push(createTxEffectClrLst(options.txEffectClrLst));
+  if (options.fillColorList) children.push(createFillColorList(options.fillColorList));
+  if (options.lineColorList) children.push(createLineColorList(options.lineColorList));
+  if (options.effectColorList) children.push(createEffectColorList(options.effectColorList));
+  if (options.textFillColorList) children.push(createTextFillColorList(options.textFillColorList));
+  if (options.textLineColorList) children.push(createTextLineColorList(options.textLineColorList));
+  if (options.textEffectColorList)
+    children.push(createTextEffectColorList(options.textEffectColorList));
 
   return element("dgm:styleLbl", { name: options.name }, children);
 };

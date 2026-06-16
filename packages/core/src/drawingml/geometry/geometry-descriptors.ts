@@ -14,7 +14,7 @@ import type {
   CustomGeometryOptions,
   PathOptions,
   PathCommand,
-  AdjPoint,
+  AdjustPoint,
   AdjustHandle,
   XYAdjustHandle,
   PolarAdjustHandle,
@@ -83,27 +83,27 @@ export const presetGeometryDesc: CustomDescriptor<PresetGeometryOptions> = {
 
 // ── Path command helpers ──
 
-function stringifyAdjPoint(pt: AdjPoint): string {
+function stringifyAdjustPoint(pt: AdjustPoint): string {
   return `<a:pt x="${escapeXml(pt.x)}" y="${escapeXml(pt.y)}"/>`;
 }
 
 function stringifyPathCommand(cmd: PathCommand): string {
   switch (cmd.command) {
     case "moveTo":
-      return `<a:moveTo>${stringifyAdjPoint(cmd.point)}</a:moveTo>`;
+      return `<a:moveTo>${stringifyAdjustPoint(cmd.point)}</a:moveTo>`;
     case "lineTo":
-      return `<a:lnTo>${stringifyAdjPoint(cmd.point)}</a:lnTo>`;
+      return `<a:lnTo>${stringifyAdjustPoint(cmd.point)}</a:lnTo>`;
     case "arcTo":
       return (
         `<a:arcTo wR="${escapeXml(cmd.widthRadius)}" hR="${escapeXml(cmd.heightRadius)}"` +
         ` stAng="${escapeXml(cmd.startAngle)}" swAng="${escapeXml(cmd.sweepAngle)}"/>`
       );
     case "quadBezTo": {
-      const pts = cmd.points.map(stringifyAdjPoint).join("");
+      const pts = cmd.points.map(stringifyAdjustPoint).join("");
       return `<a:quadBezTo>${pts}</a:quadBezTo>`;
     }
     case "cubicBezTo": {
-      const pts = cmd.points.map(stringifyAdjPoint).join("");
+      const pts = cmd.points.map(stringifyAdjustPoint).join("");
       return `<a:cubicBezTo>${pts}</a:cubicBezTo>`;
     }
     case "close":
@@ -124,7 +124,7 @@ function stringifyPath(path: PathOptions): string {
   return `<a:path${attrStr}>${cmds}</a:path>`;
 }
 
-function readAdjPoint(el: XmlElement): AdjPoint | undefined {
+function readAdjustPoint(el: XmlElement): AdjustPoint | undefined {
   if (!el.attributes) return undefined;
   const x = el.attributes["x"];
   const y = el.attributes["y"];
@@ -137,14 +137,14 @@ function readPathCommand(tag: string, el: XmlElement): PathCommand | undefined {
     case "a:moveTo": {
       const pt = el.elements?.find((c) => c.name === "a:pt");
       if (!pt) return undefined;
-      const point = readAdjPoint(pt);
+      const point = readAdjustPoint(pt);
       if (!point) return undefined;
       return { command: "moveTo", point };
     }
     case "a:lnTo": {
       const pt = el.elements?.find((c) => c.name === "a:pt");
       if (!pt) return undefined;
-      const point = readAdjPoint(pt);
+      const point = readAdjustPoint(pt);
       if (!point) return undefined;
       return { command: "lineTo", point };
     }
@@ -162,16 +162,16 @@ function readPathCommand(tag: string, el: XmlElement): PathCommand | undefined {
     case "a:quadBezTo": {
       const points = (el.elements ?? [])
         .filter((c) => c.name === "a:pt")
-        .map(readAdjPoint)
-        .filter((p): p is AdjPoint => p !== undefined);
+        .map(readAdjustPoint)
+        .filter((p): p is AdjustPoint => p !== undefined);
       if (points.length < 2) return undefined;
       return { command: "quadBezTo", points: [points[0], points[1]] };
     }
     case "a:cubicBezTo": {
       const points = (el.elements ?? [])
         .filter((c) => c.name === "a:pt")
-        .map(readAdjPoint)
-        .filter((p): p is AdjPoint => p !== undefined);
+        .map(readAdjustPoint)
+        .filter((p): p is AdjustPoint => p !== undefined);
       if (points.length < 3) return undefined;
       return { command: "cubicBezTo", points: [points[0], points[1], points[2]] };
     }

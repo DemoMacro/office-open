@@ -8,7 +8,7 @@
 
 // ── Options ──
 
-export interface DbPrOptions {
+export interface DatabasePropertiesOptions {
   /** OLE DB connection string (required) */
   connection: string;
   /** Command text */
@@ -19,7 +19,7 @@ export interface DbPrOptions {
   serverCommand?: string;
 }
 
-export interface WebPrOptions {
+export interface WebPropertiesOptions {
   /** URL (required) */
   url: string;
   /** Source data from: "csv" | "html" | ... */
@@ -50,7 +50,7 @@ export interface WebPrOptions {
   textFields?: TextFieldOptions[];
 }
 
-export interface TextPrOptions {
+export interface TextPropertiesOptions {
   /** Text fields */
   textFields?: TextFieldOptions[];
   /** Code page */
@@ -155,11 +155,11 @@ export interface ConnectionOptions {
   /** Single sign-on ID (CT_Connection @singleSignOnId) */
   singleSignOnId?: string;
   /** OLE DB properties */
-  dbPr?: DbPrOptions;
+  dbPr?: DatabasePropertiesOptions;
   /** Web query properties */
-  webPr?: WebPrOptions;
+  webPr?: WebPropertiesOptions;
   /** Text import properties */
-  textPr?: TextPrOptions;
+  textPr?: TextPropertiesOptions;
   /** Parameters */
   parameters?: ParameterOptions[];
 }

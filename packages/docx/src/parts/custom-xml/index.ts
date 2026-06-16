@@ -2,7 +2,7 @@ export {
   type CustomXmlBlockOptions,
   type CustomXmlCellOptions,
   type CustomXmlDataBindingOptions,
-  type CustomXmlPrOptions,
+  type CustomXmlPropertiesOptions,
   type CustomXmlRowOptions,
   type CustomXmlRunOptions,
   type CustomXmlAttributeOptions,

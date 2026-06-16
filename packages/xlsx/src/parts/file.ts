@@ -14,7 +14,7 @@ import type {
 } from "@parts/styles";
 import type {
   WorkbookProtectionOptions,
-  FileRecoveryPrOptions,
+  FileRecoveryPropertiesOptions,
   WebPublishingOptions,
   FileSharingOptions,
   CustomWorkbookViewOptions,
@@ -47,7 +47,7 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   /** Custom workbook views */
   customWorkbookViews?: CustomWorkbookViewOptions[];
   /** File recovery properties */
-  fileRecoveryPr?: FileRecoveryPrOptions;
+  fileRecoveryPr?: FileRecoveryPropertiesOptions;
   /** Custom VBA function group names */
   functionGroups?: string[];
   /** Web publishing properties */

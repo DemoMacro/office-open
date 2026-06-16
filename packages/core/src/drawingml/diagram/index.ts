@@ -8,62 +8,62 @@
 
 // Layout variable property set elements
 export {
-  createAdj,
-  createAdjLst,
-  createAnimLvl,
-  createAnimOne,
-  createChMax,
-  createChPref,
+  createAdjust,
+  createAdjustList,
+  createAnimationLevel,
+  createAnimateOneByOne,
+  createMaxChildren,
+  createPreferredChildren,
   createOrgChart,
   createHierBranch,
-  createPresLayoutVars,
-  AnimLevelValue,
-  AnimOneValue,
+  createPresentationLayoutVariables,
+  AnimationLevelValue,
+  AnimateOneByOneValue,
   HierBranchStyle,
 } from "./layout-vars";
 export type {
-  AdjOptions,
-  AdjLstOptions,
-  AnimLvlOptions,
-  AnimOneOptions,
-  ChMaxOptions,
-  ChPrefOptions,
+  AdjustOptions,
+  AdjustListOptions,
+  AnimationLevelOptions,
+  AnimateOneByOneOptions,
+  MaxChildrenOptions,
+  PreferredChildrenOptions,
   OrgChartOptions,
   HierBranchOptions,
-  PresLayoutVarsOptions,
+  PresentationLayoutVariablesOptions,
 } from "./layout-vars";
 
 // Definition headers and lists
 export {
-  createColorsDefHdr,
-  createColorsDefHdrLst,
-  createLayoutDefHdr,
-  createLayoutDefHdrLst,
-  createStyleDefHdr,
-  createStyleDefHdrLst,
+  createColorsDefinitionHeader,
+  createColorsDefinitionHeaderList,
+  createLayoutDefinitionHeader,
+  createLayoutDefinitionHeaderList,
+  createStyleDefinitionHeader,
+  createStyleDefinitionHeaderList,
 } from "./headers";
 export type {
   DiagramNameOptions,
   DiagramDescriptionOptions,
   DiagramCategoryOptions,
-  ColorsDefHdrOptions,
-  ColorsDefHdrLstOptions,
-  LayoutDefHdrOptions,
-  LayoutDefHdrLstOptions,
-  StyleDefHdrOptions,
-  StyleDefHdrLstOptions,
+  ColorsDefinitionHeaderOptions,
+  ColorsDefinitionHeaderListOptions,
+  LayoutDefinitionHeaderOptions,
+  LayoutDefinitionHeaderListOptions,
+  StyleDefinitionHeaderOptions,
+  StyleDefinitionHeaderListOptions,
 } from "./headers";
 
 // Style, color lists, style label
 export {
   createDiagramStyle,
-  createFillClrLst,
-  createLinClrLst,
-  createEffectClrLst,
-  createTxFillClrLst,
-  createTxLinClrLst,
-  createTxEffectClrLst,
-  createStyleLbl,
+  createFillColorList,
+  createLineColorList,
+  createEffectColorList,
+  createTextFillColorList,
+  createTextLineColorList,
+  createTextEffectColorList,
+  createStyleLabel,
   ColorMethod,
   HueDirection,
   StyleMatrixIndex,
@@ -72,17 +72,21 @@ export {
 export type {
   DiagramStyleOptions,
   ColorListOptions,
-  DiagramStyleLblOptions,
+  DiagramStyleLabelOptions,
 } from "./diagram-style";
 
 // Relationship IDs
-export { createDiagramRelIds } from "./diagram-rel";
-export type { DiagramRelIdsOptions } from "./diagram-rel";
+export { createDiagramRelationshipIds } from "./diagram-rel";
+export type { DiagramRelationshipIdsOptions } from "./diagram-rel";
 
-// Extension list, sp3d, txPr
-export { createDiagramExtLst, createDiagramSp3d, createDiagramTxPr } from "./diagram-props";
+// Extension list, shape3D, text properties
+export {
+  createDiagramExtensionList,
+  createDiagramShape3D,
+  createDiagramTextProperties,
+} from "./diagram-props";
 export type {
-  DiagramExtLstOptions,
+  DiagramExtensionListOptions,
   DiagramExtensionOptions,
-  DiagramTextPropsOptions,
+  DiagramTextPropertiesOptions,
 } from "./diagram-props";

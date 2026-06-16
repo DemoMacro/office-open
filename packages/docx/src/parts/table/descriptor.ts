@@ -12,7 +12,11 @@ import { xsdVerticalMergeRev } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrBool, attrNum, children, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
-import { parseCustomXmlPr, stringifyCustomXmlShell, stringifySdtShell } from "@parts/bodychildren";
+import {
+  parseCustomXmlProperties,
+  stringifyCustomXmlShell,
+  stringifySdtShell,
+} from "@parts/bodychildren";
 import type { CustomXmlCellOptions, CustomXmlRowOptions } from "@parts/custom-xml";
 import { stringifyParagraphInline } from "@parts/inline";
 import { parseRunProperties } from "@parts/paragraph/run/run-parse";
@@ -1087,7 +1091,7 @@ function parseTableRowEl(el: Element, ctx: DocxReadContext): TableRowOptions {
       if (cxUri) cx.uri = cxUri;
       const xmlPr = findChild(child, "w:customXmlPr");
       if (xmlPr) {
-        const parsed = parseCustomXmlPr(xmlPr);
+        const parsed = parseCustomXmlProperties(xmlPr);
         if (parsed.placeholder !== undefined || parsed.attributes !== undefined)
           cx.customXmlPr = parsed;
       }
@@ -1150,7 +1154,7 @@ function parseTableEl(el: Element, ctx: DocxReadContext): TableOptions {
       if (cxUri) cx.uri = cxUri;
       const xmlPr = findChild(child, "w:customXmlPr");
       if (xmlPr) {
-        const parsed = parseCustomXmlPr(xmlPr);
+        const parsed = parseCustomXmlProperties(xmlPr);
         if (parsed.placeholder !== undefined || parsed.attributes !== undefined)
           cx.customXmlPr = parsed;
       }

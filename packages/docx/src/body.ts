@@ -40,7 +40,7 @@ import type { SectionChild } from "@shared/section";
 
 import type { DocxReadContext, DocxWriteContext, BodyContext } from "./context";
 import { tableDesc, altChunkDesc, subDocDesc, sdtBlockDesc, customXmlBlockDesc } from "./parts";
-import { parseCustomXmlPr } from "./parts/bodychildren";
+import { parseCustomXmlProperties } from "./parts/bodychildren";
 import { stringifyChildDispatch } from "./parts/inline";
 import { parseMathChildren } from "./parts/paragraph/math/stringify";
 import type { ParagraphChild } from "./parts/paragraph/paragraph";
@@ -874,7 +874,7 @@ function parseCustomXmlInline(el: Element, ctx: DocxReadContext): Record<string,
   if (uri) cx.uri = uri;
   const pr = findChild(el, "w:customXmlPr");
   if (pr) {
-    const parsed = parseCustomXmlPr(pr);
+    const parsed = parseCustomXmlProperties(pr);
     if (parsed.placeholder !== undefined || parsed.attributes !== undefined) {
       cx.customXmlPr = parsed;
     }

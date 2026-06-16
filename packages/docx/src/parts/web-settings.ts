@@ -83,7 +83,7 @@ export interface WebSettingsOptions {
   /** Pixels per inch for web output */
   pixelsPerInch?: number;
   /** Target screen size */
-  targetScreenSz?: (typeof TargetScreenSize)[keyof typeof TargetScreenSize] | string;
+  targetScreenSize?: (typeof TargetScreenSize)[keyof typeof TargetScreenSize] | string;
   /** Save smart tags as XML */
   saveSmartTagsAsXml?: boolean;
 }
@@ -108,7 +108,7 @@ export interface WebSettingsInput {
   doNotOrganizeInFolder?: boolean;
   doNotUseLongFileNames?: boolean;
   pixelsPerInch?: number;
-  targetScreenSz?: string;
+  targetScreenSize?: string;
   saveSmartTagsAsXml?: boolean;
 }
 
@@ -447,8 +447,8 @@ export const webSettingsDesc: CustomDescriptor<WebSettingsInput> = {
     if (opts.doNotUseLongFileNames !== undefined)
       p.push(wsOnOff("w:doNotUseLongFileNames", opts.doNotUseLongFileNames));
     if (opts.pixelsPerInch !== undefined) p.push(wsNumVal("w:pixelsPerInch", opts.pixelsPerInch));
-    if (opts.targetScreenSz !== undefined)
-      p.push(wsStringVal("w:targetScreenSz", opts.targetScreenSz));
+    if (opts.targetScreenSize !== undefined)
+      p.push(wsStringVal("w:targetScreenSz", opts.targetScreenSize));
     if (opts.saveSmartTagsAsXml !== undefined)
       p.push(wsOnOff("w:saveSmartTagsAsXml", opts.saveSmartTagsAsXml));
 
@@ -502,10 +502,10 @@ export const webSettingsDesc: CustomDescriptor<WebSettingsInput> = {
     }
 
     // Target screen size
-    const targetSz = findChild(el, "w:targetScreenSz");
-    if (targetSz) {
-      const val = attr(targetSz, "w:val");
-      if (val) opts.targetScreenSz = val;
+    const targetScreenSize = findChild(el, "w:targetScreenSz");
+    if (targetScreenSize) {
+      const val = attr(targetScreenSize, "w:val");
+      if (val) opts.targetScreenSize = val;
     }
 
     return opts as unknown as WebSettingsInput;

@@ -34,8 +34,8 @@ export interface CustomXmlAttributeOptions {
   uri?: string;
 }
 
-/** Custom XML properties (CT_CustomXmlPr) */
-export interface CustomXmlPrOptions {
+/** Custom XML properties (CT_CustomXmlProperties) */
+export interface CustomXmlPropertiesOptions {
   /** Placeholder text */
   placeholder?: string;
   /** Custom attributes */
@@ -54,7 +54,7 @@ export interface CustomXmlRunOptions {
   /** Namespace URI */
   uri?: string;
   /** Properties (placeholder, data binding, attributes) */
-  customXmlPr?: CustomXmlPrOptions;
+  customXmlPr?: CustomXmlPropertiesOptions;
 }
 
 /**

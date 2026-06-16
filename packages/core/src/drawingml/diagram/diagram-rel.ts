@@ -10,7 +10,7 @@
 // dgm:relIds — relationship IDs (CT_RelIds)
 // ---------------------------------------------------------------------------
 
-export interface DiagramRelIdsOptions {
+export interface DiagramRelationshipIdsOptions {
   /** Relationship to data model part */
   dm: string;
   /** Relationship to layout definition part */
@@ -34,5 +34,5 @@ export interface DiagramRelIdsOptions {
  * </xsd:complexType>
  * ```
  */
-export const createDiagramRelIds = (options: DiagramRelIdsOptions): string =>
+export const createDiagramRelationshipIds = (options: DiagramRelationshipIdsOptions): string =>
   `<dgm:relIds r:dm="${options.dm}" r:lo="${options.lo}" r:qs="${options.qs}" r:cs="${options.cs}"/>`;

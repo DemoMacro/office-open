@@ -8,7 +8,7 @@ import type { Element } from "@office-open/xml";
 import type { SectionChild } from "@shared/section";
 
 import type { DocxReadContext } from "../../context";
-import { parseCustomXmlPr } from "../bodychildren";
+import { parseCustomXmlProperties } from "../bodychildren";
 import type { CustomXmlBlockOptions } from "./custom-xml";
 
 /**
@@ -35,7 +35,7 @@ export function parseCustomXmlBlock(
   // Parse w:customXmlPr
   const xmlPr = findChild(el, "w:customXmlPr");
   if (xmlPr) {
-    opts.customXmlPr = parseCustomXmlPr(xmlPr);
+    opts.customXmlPr = parseCustomXmlProperties(xmlPr);
   }
 
   // Parse block-level children

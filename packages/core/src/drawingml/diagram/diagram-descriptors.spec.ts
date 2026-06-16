@@ -3,15 +3,15 @@ import { describe, it, expect } from "vite-plus/test";
 
 import { stringify, parse } from "../../descriptor";
 import {
-  diagramRelIdsDesc,
+  diagramRelationshipIdsDesc,
   diagramStyleDesc,
-  presLayoutVarsDesc,
-  diagramExtLstDesc,
+  presentationLayoutVariablesDesc,
+  diagramExtensionListDesc,
 } from "./diagram-descriptors";
-import type { DiagramExtLstOptions } from "./diagram-props";
-import type { DiagramRelIdsOptions } from "./diagram-rel";
+import type { DiagramExtensionListOptions } from "./diagram-props";
+import type { DiagramRelationshipIdsOptions } from "./diagram-rel";
 import type { DiagramStyleOptions } from "./diagram-style";
-import type { PresLayoutVarsOptions } from "./layout-vars";
+import type { PresentationLayoutVariablesOptions } from "./layout-vars";
 
 function roundTrip<T>(desc: any, opts: T): T {
   const xml = stringify(desc, opts, {} as any);
@@ -21,15 +21,15 @@ function roundTrip<T>(desc: any, opts: T): T {
   return parse(desc, el, {} as any);
 }
 
-describe("diagramRelIdsDesc", () => {
+describe("diagramRelationshipIdsDesc", () => {
   it("round-trips all relationship IDs", () => {
-    const opts: DiagramRelIdsOptions = {
+    const opts: DiagramRelationshipIdsOptions = {
       dm: "rId1",
       lo: "rId2",
       qs: "rId3",
       cs: "rId4",
     };
-    const result = roundTrip(diagramRelIdsDesc, opts);
+    const result = roundTrip(diagramRelationshipIdsDesc, opts);
     expect(result.dm).toBe("rId1");
     expect(result.lo).toBe("rId2");
     expect(result.qs).toBe("rId3");
@@ -63,52 +63,52 @@ describe("diagramStyleDesc", () => {
   });
 });
 
-describe("presLayoutVarsDesc", () => {
+describe("presentationLayoutVariablesDesc", () => {
   it("round-trips org chart flag", () => {
-    const opts: PresLayoutVarsOptions = {
+    const opts: PresentationLayoutVariablesOptions = {
       orgChart: { val: true },
     };
-    const result = roundTrip(presLayoutVarsDesc, opts);
+    const result = roundTrip(presentationLayoutVariablesDesc, opts);
     expect(result.orgChart?.val).toBe(true);
   });
 
   it("round-trips hierarchy branch", () => {
-    const opts: PresLayoutVarsOptions = {
+    const opts: PresentationLayoutVariablesOptions = {
       hierBranch: { val: "hang" },
-      chMax: { val: 4 },
-      chPref: { val: 2 },
+      maxChildren: { val: 4 },
+      preferredChildren: { val: 2 },
     };
-    const result = roundTrip(presLayoutVarsDesc, opts);
+    const result = roundTrip(presentationLayoutVariablesDesc, opts);
     expect(result.hierBranch?.val).toBe("hang");
-    expect(result.chMax?.val).toBe(4);
-    expect(result.chPref?.val).toBe(2);
+    expect(result.maxChildren?.val).toBe(4);
+    expect(result.preferredChildren?.val).toBe(2);
   });
 
   it("round-trips animation options", () => {
-    const opts: PresLayoutVarsOptions = {
-      animOne: { val: "one" },
-      animLvl: { val: "lvl" },
+    const opts: PresentationLayoutVariablesOptions = {
+      animateOneByOne: { val: "one" },
+      animationLevel: { val: "lvl" },
     };
-    const result = roundTrip(presLayoutVarsDesc, opts);
-    expect(result.animOne?.val).toBe("one");
-    expect(result.animLvl?.val).toBe("lvl");
+    const result = roundTrip(presentationLayoutVariablesDesc, opts);
+    expect(result.animateOneByOne?.val).toBe("one");
+    expect(result.animationLevel?.val).toBe("lvl");
   });
 });
 
-describe("diagramExtLstDesc", () => {
+describe("diagramExtensionListDesc", () => {
   it("round-trips extensions", () => {
-    const opts: DiagramExtLstOptions = {
+    const opts: DiagramExtensionListOptions = {
       extensions: [{ uri: "ext1" }, { uri: "ext2" }],
     };
-    const result = roundTrip(diagramExtLstDesc, opts);
+    const result = roundTrip(diagramExtensionListDesc, opts);
     expect(result.extensions).toHaveLength(2);
     expect(result.extensions?.[0].uri).toBe("ext1");
     expect(result.extensions?.[1].uri).toBe("ext2");
   });
 
   it("returns undefined extensions when empty", () => {
-    const opts: DiagramExtLstOptions = {};
-    const xml = stringify(diagramExtLstDesc, opts, {} as any);
+    const opts: DiagramExtensionListOptions = {};
+    const xml = stringify(diagramExtensionListDesc, opts, {} as any);
     expect(xml).toBeUndefined();
   });
 });

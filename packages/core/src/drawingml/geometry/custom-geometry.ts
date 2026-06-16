@@ -59,14 +59,14 @@ export const PathFillMode = {
  *
  * Coordinates can be absolute values or references to geometry guide names.
  */
-export interface AdjPoint {
+export interface AdjustPoint {
   /** X coordinate (absolute value or guide name) */
   x: string;
   /** Y coordinate (absolute value or guide name) */
   y: string;
 }
 
-const createAdjPoint = (name: string, point: AdjPoint): string =>
+const createAdjustPoint = (name: string, point: AdjustPoint): string =>
   element(name, undefined, [`<a:pt x="${point.x}" y="${point.y}"/>`]);
 
 // ─── Path Commands ──────────────────────────────────────────────────────────
@@ -74,13 +74,13 @@ const createAdjPoint = (name: string, point: AdjPoint): string =>
 /** Move-to path command (CT_Path2DMoveTo). */
 export interface PathMoveTo {
   command: "moveTo";
-  point: AdjPoint;
+  point: AdjustPoint;
 }
 
 /** Line-to path command (CT_Path2DLineTo). */
 export interface PathLineTo {
   command: "lineTo";
-  point: AdjPoint;
+  point: AdjustPoint;
 }
 
 /** Arc-to path command (CT_Path2DArcTo). */
@@ -95,13 +95,13 @@ export interface PathArcTo {
 /** Quadratic Bezier-to path command (CT_Path2DQuadBezierTo). */
 export interface PathQuadBezTo {
   command: "quadBezTo";
-  points: readonly [AdjPoint, AdjPoint];
+  points: readonly [AdjustPoint, AdjustPoint];
 }
 
 /** Cubic Bezier-to path command (CT_Path2DCubicBezierTo). */
 export interface PathCubicBezTo {
   command: "cubicBezTo";
-  points: readonly [AdjPoint, AdjPoint, AdjPoint];
+  points: readonly [AdjustPoint, AdjustPoint, AdjustPoint];
 }
 
 /** Close path command (CT_Path2DClose). */
@@ -121,9 +121,9 @@ export type PathCommand =
 const createPathCommand = (cmd: PathCommand): string => {
   switch (cmd.command) {
     case "moveTo":
-      return createAdjPoint("a:moveTo", cmd.point);
+      return createAdjustPoint("a:moveTo", cmd.point);
     case "lineTo":
-      return createAdjPoint("a:lnTo", cmd.point);
+      return createAdjustPoint("a:lnTo", cmd.point);
     case "arcTo":
       return `<a:arcTo wR="${cmd.widthRadius}" hR="${cmd.heightRadius}" stAng="${cmd.startAngle}" swAng="${cmd.sweepAngle}"/>`;
     case "quadBezTo":

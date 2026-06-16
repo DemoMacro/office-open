@@ -7,27 +7,27 @@
 import { escapeXml, findChild } from "@office-open/xml";
 
 import type { CustomDescriptor } from "../../descriptor";
-import type { DiagramExtLstOptions } from "./diagram-props";
-import type { DiagramRelIdsOptions } from "./diagram-rel";
+import type { DiagramExtensionListOptions } from "./diagram-props";
+import type { DiagramRelationshipIdsOptions } from "./diagram-rel";
 import type { DiagramStyleOptions } from "./diagram-style";
-import type { PresLayoutVarsOptions } from "./layout-vars";
+import type { PresentationLayoutVariablesOptions } from "./layout-vars";
 
 // ── dgm:relIds descriptor ──
 
-export const diagramRelIdsDesc: CustomDescriptor<DiagramRelIdsOptions> = {
+export const diagramRelationshipIdsDesc: CustomDescriptor<DiagramRelationshipIdsOptions> = {
   kind: "custom",
   stringify(opts, _ctx) {
     return `<dgm:relIds r:dm="${escapeXml(opts.dm)}" r:lo="${escapeXml(opts.lo)}" r:qs="${escapeXml(opts.qs)}" r:cs="${escapeXml(opts.cs)}"/>`;
   },
   parse(el, _ctx) {
-    const result: Partial<DiagramRelIdsOptions> = {};
+    const result: Partial<DiagramRelationshipIdsOptions> = {};
     if (el.attributes) {
       if (el.attributes["r:dm"] !== undefined) result.dm = String(el.attributes["r:dm"]);
       if (el.attributes["r:lo"] !== undefined) result.lo = String(el.attributes["r:lo"]);
       if (el.attributes["r:qs"] !== undefined) result.qs = String(el.attributes["r:qs"]);
       if (el.attributes["r:cs"] !== undefined) result.cs = String(el.attributes["r:cs"]);
     }
-    return result as DiagramRelIdsOptions;
+    return result as DiagramRelationshipIdsOptions;
   },
 };
 
@@ -75,84 +75,93 @@ export const diagramStyleDesc: CustomDescriptor<DiagramStyleOptions> = {
 
 // ── dgm:presLayoutVars descriptor ──
 
-export const presLayoutVarsDesc: CustomDescriptor<PresLayoutVarsOptions> = {
-  kind: "custom",
-  stringify(opts, _ctx) {
-    const parts: string[] = [];
+export const presentationLayoutVariablesDesc: CustomDescriptor<PresentationLayoutVariablesOptions> =
+  {
+    kind: "custom",
+    stringify(opts, _ctx) {
+      const parts: string[] = [];
 
-    if (opts.orgChart?.val !== undefined)
-      parts.push(`<dgm:orgChart val="${opts.orgChart.val ? 1 : 0}"/>`);
+      if (opts.orgChart?.val !== undefined)
+        parts.push(`<dgm:orgChart val="${opts.orgChart.val ? 1 : 0}"/>`);
 
-    if (opts.chMax?.val !== undefined) parts.push(`<dgm:chMax val="${opts.chMax.val}"/>`);
+      if (opts.maxChildren?.val !== undefined)
+        parts.push(`<dgm:chMax val="${opts.maxChildren.val}"/>`);
 
-    if (opts.chPref?.val !== undefined) parts.push(`<dgm:chPref val="${opts.chPref.val}"/>`);
+      if (opts.preferredChildren?.val !== undefined)
+        parts.push(`<dgm:chPref val="${opts.preferredChildren.val}"/>`);
 
-    if (opts.animOne?.val !== undefined)
-      parts.push(`<dgm:animOne val="${escapeXml(opts.animOne.val)}"/>`);
+      if (opts.animateOneByOne?.val !== undefined)
+        parts.push(`<dgm:animOne val="${escapeXml(opts.animateOneByOne.val)}"/>`);
 
-    if (opts.animLvl?.val !== undefined)
-      parts.push(`<dgm:animLvl val="${escapeXml(opts.animLvl.val)}"/>`);
+      if (opts.animationLevel?.val !== undefined)
+        parts.push(`<dgm:animLvl val="${escapeXml(opts.animationLevel.val)}"/>`);
 
-    if (opts.hierBranch?.val !== undefined)
-      parts.push(`<dgm:hierBranch val="${escapeXml(opts.hierBranch.val)}"/>`);
+      if (opts.hierBranch?.val !== undefined)
+        parts.push(`<dgm:hierBranch val="${escapeXml(opts.hierBranch.val)}"/>`);
 
-    if (parts.length === 0) return `<dgm:presLayoutVars/>`;
-    return `<dgm:presLayoutVars>${parts.join("")}</dgm:presLayoutVars>`;
-  },
-  parse(el, _ctx) {
-    const result: Partial<PresLayoutVarsOptions> = {};
+      if (parts.length === 0) return `<dgm:presLayoutVars/>`;
+      return `<dgm:presLayoutVars>${parts.join("")}</dgm:presLayoutVars>`;
+    },
+    parse(el, _ctx) {
+      const result: Partial<PresentationLayoutVariablesOptions> = {};
 
-    const orgChart = findChild(el, "dgm:orgChart");
-    if (orgChart?.attributes?.["val"] !== undefined)
-      result.orgChart = {
-        val: orgChart.attributes["val"] === 1 || orgChart.attributes["val"] === "1",
-      };
+      const orgChart = findChild(el, "dgm:orgChart");
+      if (orgChart?.attributes?.["val"] !== undefined)
+        result.orgChart = {
+          val: orgChart.attributes["val"] === 1 || orgChart.attributes["val"] === "1",
+        };
 
-    const chMax = findChild(el, "dgm:chMax");
-    if (chMax?.attributes?.["val"] !== undefined)
-      result.chMax = { val: Number(chMax.attributes["val"]) };
+      const chMax = findChild(el, "dgm:chMax");
+      if (chMax?.attributes?.["val"] !== undefined)
+        result.maxChildren = { val: Number(chMax.attributes["val"]) };
 
-    const chPref = findChild(el, "dgm:chPref");
-    if (chPref?.attributes?.["val"] !== undefined)
-      result.chPref = { val: Number(chPref.attributes["val"]) };
+      const chPref = findChild(el, "dgm:chPref");
+      if (chPref?.attributes?.["val"] !== undefined)
+        result.preferredChildren = { val: Number(chPref.attributes["val"]) };
 
-    const animOne = findChild(el, "dgm:animOne");
-    if (animOne?.attributes?.["val"] !== undefined)
-      result.animOne = {
-        val: String(animOne.attributes["val"]) as PresLayoutVarsOptions["animOne"] extends
-          | { val?: infer V }
-          | undefined
-          ? V
-          : never,
-      };
+      const animOne = findChild(el, "dgm:animOne");
+      if (animOne?.attributes?.["val"] !== undefined)
+        result.animateOneByOne = {
+          val: String(
+            animOne.attributes["val"],
+          ) as PresentationLayoutVariablesOptions["animateOneByOne"] extends
+            | { val?: infer V }
+            | undefined
+            ? V
+            : never,
+        };
 
-    const animLvl = findChild(el, "dgm:animLvl");
-    if (animLvl?.attributes?.["val"] !== undefined)
-      result.animLvl = {
-        val: String(animLvl.attributes["val"]) as PresLayoutVarsOptions["animLvl"] extends
-          | { val?: infer V }
-          | undefined
-          ? V
-          : never,
-      };
+      const animLvl = findChild(el, "dgm:animLvl");
+      if (animLvl?.attributes?.["val"] !== undefined)
+        result.animationLevel = {
+          val: String(
+            animLvl.attributes["val"],
+          ) as PresentationLayoutVariablesOptions["animationLevel"] extends
+            | { val?: infer V }
+            | undefined
+            ? V
+            : never,
+        };
 
-    const hierBranch = findChild(el, "dgm:hierBranch");
-    if (hierBranch?.attributes?.["val"] !== undefined)
-      result.hierBranch = {
-        val: String(hierBranch.attributes["val"]) as PresLayoutVarsOptions["hierBranch"] extends
-          | { val?: infer V }
-          | undefined
-          ? V
-          : never,
-      };
+      const hierBranch = findChild(el, "dgm:hierBranch");
+      if (hierBranch?.attributes?.["val"] !== undefined)
+        result.hierBranch = {
+          val: String(
+            hierBranch.attributes["val"],
+          ) as PresentationLayoutVariablesOptions["hierBranch"] extends
+            | { val?: infer V }
+            | undefined
+            ? V
+            : never,
+        };
 
-    return result as PresLayoutVarsOptions;
-  },
-};
+      return result as PresentationLayoutVariablesOptions;
+    },
+  };
 
 // ── dgm:extLst descriptor ──
 
-export const diagramExtLstDesc: CustomDescriptor<DiagramExtLstOptions> = {
+export const diagramExtensionListDesc: CustomDescriptor<DiagramExtensionListOptions> = {
   kind: "custom",
   stringify(opts, _ctx) {
     if (!opts.extensions?.length) return undefined;
@@ -162,7 +171,7 @@ export const diagramExtLstDesc: CustomDescriptor<DiagramExtLstOptions> = {
     return `<dgm:extLst>${inner}</dgm:extLst>`;
   },
   parse(el, _ctx) {
-    const result: Partial<DiagramExtLstOptions> = {};
+    const result: Partial<DiagramExtensionListOptions> = {};
 
     if (el.elements) {
       const extensions = el.elements
@@ -171,6 +180,6 @@ export const diagramExtLstDesc: CustomDescriptor<DiagramExtLstOptions> = {
       if (extensions.length) result.extensions = extensions;
     }
 
-    return result as DiagramExtLstOptions;
+    return result as DiagramExtensionListOptions;
   },
 };

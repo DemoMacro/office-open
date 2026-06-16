@@ -14,7 +14,7 @@ import { createShape3D } from "../three-d/shape-3d";
 // dgm:extLst — extension list (a:CT_OfficeArtExtensionList)
 // ---------------------------------------------------------------------------
 
-export interface DiagramExtLstOptions {
+export interface DiagramExtensionListOptions {
   /** Extension URIs */
   extensions?: readonly DiagramExtensionOptions[];
 }
@@ -29,7 +29,7 @@ export interface DiagramExtensionOptions {
  *
  * Generic extension list pattern used across OOXML.
  */
-export const createDiagramExtLst = (options?: DiagramExtLstOptions): string => {
+export const createDiagramExtensionList = (options?: DiagramExtensionListOptions): string => {
   const children: string[] = [];
   if (options?.extensions) {
     for (const ext of options.extensions) {
@@ -48,13 +48,13 @@ export const createDiagramExtLst = (options?: DiagramExtLstOptions): string => {
  *
  * Delegates to the shared createShape3D factory but wraps in dgm: namespace context.
  */
-export const createDiagramSp3d = (options: Shape3DOptions): string => createShape3D(options);
+export const createDiagramShape3D = (options: Shape3DOptions): string => createShape3D(options);
 
 // ---------------------------------------------------------------------------
 // dgm:txPr — text properties (CT_TextProps)
 // ---------------------------------------------------------------------------
 
-export interface DiagramTextPropsOptions {
+export interface DiagramTextPropertiesOptions {
   /** 3D text properties (flat text, no 3D) — empty element */
   flat?: boolean;
 }
@@ -71,4 +71,5 @@ export interface DiagramTextPropsOptions {
  * </xsd:complexType>
  * ```
  */
-export const createDiagramTxPr = (_options?: DiagramTextPropsOptions): string => "<dgm:txPr/>";
+export const createDiagramTextProperties = (_options?: DiagramTextPropertiesOptions): string =>
+  "<dgm:txPr/>";

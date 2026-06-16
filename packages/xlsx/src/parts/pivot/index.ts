@@ -14,7 +14,7 @@ export type {
   ConsolidateFunction,
   PivotFilterOptions,
   PivotFilterType,
-  OlapPrOptions,
+  OLAPPropertiesOptions,
 } from "./pivot-utils";
 export {
   ConsolidateFunction as ConsolidateFunctionType,
