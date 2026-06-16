@@ -64,7 +64,7 @@ const buffer = await generateDocument({
                   outline: {
                     color: { value: "0000FF" },
                     type: "solidFill",
-                    width: "600mm",
+                    width: "6mm",
                   },
                   transformation: {
                     flip: {

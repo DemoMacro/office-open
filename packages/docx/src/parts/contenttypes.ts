@@ -116,6 +116,42 @@ export function withMediaDefaults(
   return { defaults, overrides: input.overrides };
 }
 
+/** Default content types for altChunk part extensions. */
+const ALTCHUNK_DEFAULTS: Record<string, string> = {
+  html: "text/html",
+  rtf: "application/rtf",
+  txt: "text/plain",
+};
+
+/**
+ * Realign [Content_Types] Overrides for altChunk parts on a round-tripped
+ * package. The pass-through content types carry Override PartNames from the
+ * source, but the compiler regenerates altChunk part paths (uniqueId), so the
+ * Override and the written part drift apart (O5/O6). This drops the stale
+ * afchunk Overrides and appends ones matching the freshly generated paths,
+ * backfilling the extension Default so the part is resolvable either way.
+ */
+export function withAltChunkOverrides(
+  input: ContentTypesInput,
+  altChunks: readonly { path: string; contentType: string }[],
+): ContentTypesInput {
+  const defaults = [...input.defaults];
+  const haveExt = new Set(defaults.map((d) => d.extension));
+  for (const ac of altChunks) {
+    const ext = (ac.path.split(".").pop() ?? "").toLowerCase();
+    if (ext && !haveExt.has(ext) && ALTCHUNK_DEFAULTS[ext]) {
+      defaults.push({ extension: ext, contentType: ALTCHUNK_DEFAULTS[ext] });
+      haveExt.add(ext);
+    }
+  }
+  const overrides = input.overrides.filter((o) => !o.partName.startsWith("/word/afchunks/"));
+  for (const ac of altChunks) {
+    const partName = ac.path.startsWith("/") ? ac.path : `/${ac.path}`;
+    overrides.push({ partName, contentType: ac.contentType });
+  }
+  return { defaults, overrides };
+}
+
 /** Helper to build the standard DOCX content types with dynamic overrides. */
 export function buildContentTypes(
   extras: {

@@ -10,6 +10,7 @@ import { findChild } from "@office-open/xml";
 
 import type { CustomDescriptor } from "../../descriptor";
 import { stringify, parse } from "../../descriptor";
+import { convertToEmu } from "../../util/converters";
 import { solidFillDesc } from "../color/color-descriptors";
 import type { SolidFillOptions } from "../color/solid-fill";
 import { gradientFillDesc } from "../fill/fill-descriptors";
@@ -54,7 +55,9 @@ export const outlineDesc: CustomDescriptor<OutlineOptions> = {
 
     // Attributes
     const attrParts: string[] = [];
-    if (opts.width !== undefined) attrParts.push(`w="${opts.width}"`);
+    // ST_LineWidth is EMU (integer) or a universal measure; normalize so the
+    // descriptor path matches createOutline (outline.ts) and stays XSD-valid.
+    if (opts.width !== undefined) attrParts.push(`w="${convertToEmu(opts.width)}"`);
     if (opts.cap !== undefined) attrParts.push(`cap="${escapeXml(opts.cap)}"`);
     if (opts.compoundLine !== undefined) attrParts.push(`cmpd="${escapeXml(opts.compoundLine)}"`);
     if (opts.align !== undefined) attrParts.push(`algn="${escapeXml(opts.align)}"`);
