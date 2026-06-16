@@ -8,7 +8,7 @@ export interface NonVisualShapePropertiesOptions {
   /** Alt-text title (wps:cNvPr @title). */
   title?: string;
   /** Shape type marker (wps:cNvSpPr @txBox) — "1" marks a text box. */
-  txBox?: string;
+  textBox?: string;
   /**
    * Connector shape marker — when true the shape emits wps:cNvCnPr (connector
    * non-visual properties) instead of wps:cNvSpPr. Per the CT_WordprocessingShape
@@ -18,5 +18,5 @@ export interface NonVisualShapePropertiesOptions {
 }
 
 export const createNonVisualShapeProperties = (
-  options: NonVisualShapePropertiesOptions = { txBox: "1" },
-): string => `<wps:cNvSpPr txBox="${options.txBox ?? "1"}"/>`;
+  options: NonVisualShapePropertiesOptions = { textBox: "1" },
+): string => `<wps:cNvSpPr txBox="${options.textBox ?? "1"}"/>`;

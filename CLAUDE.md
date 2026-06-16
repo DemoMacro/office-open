@@ -82,6 +82,7 @@ Naming: `<part>Desc` for descriptors (e.g. `settingsDesc`, `slideDesc`).
 Full standards in [CONTRIBUTING.md](./CONTRIBUTING.md). Quick reference:
 
 - **Naming**: `<part>Desc` descriptors, `<Part>Options` interfaces, `stringify*()` / `parse*()` / `patch*()` helpers
+- **Properties**: full English words (camelCase); reference elements → `*Reference`; OOXML attribute tokens (`id`/`idx`/`numFmt`/`fontId`/…) preserved verbatim; never compound abbreviations like `lnIdx` → `lineReferenceIndex` — see [CONTRIBUTING.md](./CONTRIBUTING.md#property-naming)
 - **Constants**: `as const` objects, SCREAMING_SNAKE_CASE keys, lowercase values
 - **Files**: kebab-case, no `I` prefix on interfaces, `readonly` on Options properties
 - **Loops**: `for...of` default, `.map()` only when returning new array

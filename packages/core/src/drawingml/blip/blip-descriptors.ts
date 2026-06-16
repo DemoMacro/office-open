@@ -396,8 +396,8 @@ export const blipFillDesc: CustomDescriptor<
     }
 
     // Source rectangle
-    if (opts.srcRect) {
-      const srcRectXml = stringify(sourceRectangleDesc, opts.srcRect, ctx);
+    if (opts.sourceRectangle) {
+      const srcRectXml = stringify(sourceRectangleDesc, opts.sourceRectangle, ctx);
       if (srcRectXml) parts.push(srcRectXml);
     }
 
@@ -435,7 +435,7 @@ export const blipFillDesc: CustomDescriptor<
     // Source rectangle
     const srcRect = findChild(el, "a:srcRect");
     if (srcRect)
-      result.srcRect = parse(sourceRectangleDesc, srcRect, ctx) as SourceRectangleOptions;
+      result.sourceRectangle = parse(sourceRectangleDesc, srcRect, ctx) as SourceRectangleOptions;
 
     // Tile
     const tile = findChild(el, "a:tile");

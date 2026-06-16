@@ -29,7 +29,7 @@ import type {
   WpgMediaData,
   WpsMediaData,
 } from "@shared/media";
-import type { PicCnvPrOptions } from "@shared/media/data";
+import type { NonVisualPropertiesOptions } from "@shared/media/data";
 
 import { parseParagraph } from "../../body";
 import type { DocxReadContext } from "../../context";
@@ -315,12 +315,12 @@ export function parseImageRun(
   const blipFill = findDeep(el, "pic:blipFill")[0];
   if (blipFill) {
     const srcRect = readSourceRectangle(blipFill);
-    if (srcRect) imageOpts.srcRect = srcRect;
+    if (srcRect) imageOpts.sourceRectangle = srcRect;
   }
 
   // Picture non-visual properties (pic:nvPicPr/pic:cNvPr)
   const cNvPr = readPicCnvPr(el);
-  if (cNvPr) imageOpts.cNvPr = cNvPr;
+  if (cNvPr) imageOpts.nonVisualProperties = cNvPr;
 
   // Picture shape properties (pic:spPr): outline + fill + effects round-trip
   // via the shared core descriptors (bidirectional).
@@ -391,10 +391,10 @@ function readSourceRectangle(parent: Element): SourceRectangleOptions | undefine
  * Read pic:cNvPr (id/name/descr) from a drawing's pic:nvPicPr. Returns
  * undefined when there is no non-visual properties block.
  */
-function readPicCnvPr(el: Element): PicCnvPrOptions | undefined {
+function readPicCnvPr(el: Element): NonVisualPropertiesOptions | undefined {
   const nvPicPr = findDeep(el, "pic:nvPicPr")[0];
   if (!nvPicPr) return undefined;
-  const result: PicCnvPrOptions = {};
+  const result: NonVisualPropertiesOptions = {};
   const cNvPr = findChild(nvPicPr, "pic:cNvPr");
   if (cNvPr) {
     const id = attrNum(cNvPr, "id");
@@ -402,7 +402,7 @@ function readPicCnvPr(el: Element): PicCnvPrOptions | undefined {
     const descr = attr(cNvPr, "descr");
     if (id !== undefined) result.id = id;
     if (name) result.name = name;
-    if (descr) result.descr = descr;
+    if (descr) result.description = descr;
   }
   // pic:cNvPicPr sibling — only preferRelativeResize is tracked (Word omits
   // the default true; an explicit false round-trips as "0").
@@ -499,7 +499,7 @@ function parseWpsShapeCore(wspEl: Element, ctx: DocxReadContext): WpsShapeCoreOp
       if (title) nvp.title = title;
     }
     if (cNvCnPr) nvp.connector = true;
-    else if (txBox !== undefined) nvp.txBox = txBox;
+    else if (txBox !== undefined) nvp.textBox = txBox;
     result.nonVisualProperties = nvp as NonVisualShapePropertiesOptions;
   }
 
@@ -614,10 +614,10 @@ function parsePicChildMediaData(picEl: Element, ctx: DocxReadContext): MediaData
   const blipFill = findChild(picEl, "pic:blipFill");
   if (blipFill) {
     const srcRect = readSourceRectangle(blipFill);
-    if (srcRect) result.srcRect = srcRect;
+    if (srcRect) result.sourceRectangle = srcRect;
   }
   const cNvPr = readPicCnvPr(picEl);
-  if (cNvPr) result.cNvPr = cNvPr;
+  if (cNvPr) result.nonVisualProperties = cNvPr;
   // Grouped picture spPr (fill/outline) rides on WpgCommonMediaData so it
   // round-trips through stringifyGroupChild → stringifyShapeProps.
   if (spPr) {
@@ -668,7 +668,7 @@ function parseWpgGroupDrawing(
 
   const info = parseAnchorOrInline(el) ?? {};
   const grpSpPr = findChild(wgp, "wpg:grpSpPr");
-  const { chOff, chExt } = readGroupCoords(grpSpPr);
+  const { childOffset, childExtent } = readGroupCoords(grpSpPr);
 
   const group: Partial<WpgGroupRunOptions> = {
     children: parseGroupChildren(wgp, ctx),
@@ -677,13 +677,13 @@ function parseWpgGroupDrawing(
       height: info.height ?? 0,
     },
   };
-  if (chOff) group.chOff = chOff;
-  if (chExt) group.chExt = chExt;
+  if (childOffset) group.childOffset = childOffset;
+  if (childExtent) group.childExtent = childExtent;
   if (info.floating) group.floating = info.floating;
   if (info.altText) group.altText = info.altText;
   if (info.graphicFrameLocks !== undefined) group.graphicFrameLocks = info.graphicFrameLocks;
   const grpSpLocks = readGrpSpLocks(findChild(wgp, "wpg:cNvGrpSpPr"));
-  if (grpSpLocks) group.grpSpLocks = grpSpLocks;
+  if (grpSpLocks) group.groupShapeLocks = grpSpLocks;
   // Group shape props (grpSpPr): fill + effects round-trip via shared descriptors.
   if (grpSpPr) {
     const fill = readShapeFill(grpSpPr, ctx);
@@ -700,23 +700,23 @@ function parseWpgGroupDrawing(
  * Shared by the top-level wpg:wgp and nested wpg:grpSp.
  */
 function readGroupCoords(grpSpPr: Element | undefined): {
-  chOff?: ChildOffset;
-  chExt?: ChildExtent;
+  childOffset?: ChildOffset;
+  childExtent?: ChildExtent;
 } {
   if (!grpSpPr) return {};
   const xfrm = findChild(grpSpPr, "a:xfrm");
   if (!xfrm) return {};
-  let chOff: ChildOffset | undefined;
-  let chExt: ChildExtent | undefined;
+  let childOffset: ChildOffset | undefined;
+  let childExtent: ChildExtent | undefined;
   const off = findChild(xfrm, "a:chOff");
   if (off?.attributes) {
-    chOff = { x: Number(off.attributes["x"] ?? 0), y: Number(off.attributes["y"] ?? 0) };
+    childOffset = { x: Number(off.attributes["x"] ?? 0), y: Number(off.attributes["y"] ?? 0) };
   }
   const ext = findChild(xfrm, "a:chExt");
   if (ext?.attributes) {
-    chExt = { cx: Number(ext.attributes["cx"] ?? 0), cy: Number(ext.attributes["cy"] ?? 0) };
+    childExtent = { cx: Number(ext.attributes["cx"] ?? 0), cy: Number(ext.attributes["cy"] ?? 0) };
   }
-  return { chOff, chExt };
+  return { childOffset, childExtent };
 }
 
 /**
@@ -749,16 +749,16 @@ function parseGroupChild(el: Element, ctx: DocxReadContext): GroupChildMediaData
  */
 function parseNestedGroup(grpSpEl: Element, ctx: DocxReadContext): WpgMediaData {
   const grpSpPr = findChild(grpSpEl, "wpg:grpSpPr");
-  const { chOff, chExt } = readGroupCoords(grpSpPr);
+  const { childOffset, childExtent } = readGroupCoords(grpSpPr);
   const result: WpgMediaData = {
     type: "wpg",
     transformation: readChildTransformation(grpSpPr),
     children: parseGroupChildren(grpSpEl, ctx),
   };
-  if (chOff) result.chOff = chOff;
-  if (chExt) result.chExt = chExt;
+  if (childOffset) result.childOffset = childOffset;
+  if (childExtent) result.childExtent = childExtent;
   const grpSpLocks = readGrpSpLocks(findChild(grpSpEl, "wpg:cNvGrpSpPr"));
-  if (grpSpLocks) result.grpSpLocks = grpSpLocks;
+  if (grpSpLocks) result.groupShapeLocks = grpSpLocks;
   if (grpSpPr) {
     const fill = readShapeFill(grpSpPr, ctx);
     if (fill) result.fill = fill;

@@ -47,7 +47,7 @@ import type {
   WpgMediaData,
   WpsMediaData,
 } from "@shared/media";
-import type { PicCnvPrOptions } from "@shared/media/data";
+import type { NonVisualPropertiesOptions } from "@shared/media/data";
 
 import type { BodyContext, DocxReadContext } from "../../context";
 import type { DocPropertiesOptions, HyperlinkOptions } from "./doc-properties/doc-properties";
@@ -289,7 +289,7 @@ function stringifyBlipFill(
   }
 
   // Source rectangle (blip crop)
-  const srcRectXml = buildSrcRectXml(mediaData.srcRect);
+  const srcRectXml = buildSrcRectXml(mediaData.sourceRectangle);
   if (srcRectXml) parts.push(srcRectXml);
 
   // Tile or stretch
@@ -365,12 +365,12 @@ function stringifyShapeProps(
 
 // ── Non-visual picture properties (pic:nvPicPr) ──
 
-function stringifyNvPicPr(hlIds: HyperlinkIds, cNvPr?: PicCnvPrOptions): string {
+function stringifyNvPicPr(hlIds: HyperlinkIds, cNvPr?: NonVisualPropertiesOptions): string {
   const hlXml = buildHyperlinkChildren(hlIds);
   const id = cNvPr?.id ?? 0;
   const name = escapeXml(cNvPr?.name ?? "");
   // descr omitted when absent — Word never writes an empty descr attribute.
-  const descrAttr = cNvPr?.descr ? ` descr="${escapeXml(cNvPr.descr)}"` : "";
+  const descrAttr = cNvPr?.description ? ` descr="${escapeXml(cNvPr.description)}"` : "";
   // preferRelativeResize defaults to true; only an explicit false is written.
   const cNvPicPrAttr = cNvPr?.preferRelativeResize === false ? ' preferRelativeResize="0"' : "";
   const cNvPrClose = hlXml ? `>${hlXml}</pic:cNvPr>` : "/>";
@@ -384,8 +384,8 @@ function stringifyNvPicPr(hlIds: HyperlinkIds, cNvPr?: PicCnvPrOptions): string 
 
 function stringifyGroupTransform2D(
   transform: MediaDataTransformation,
-  chOff?: ChildOffset,
-  chExt?: ChildExtent,
+  childOffset?: ChildOffset,
+  childExtent?: ChildExtent,
 ): string {
   const attrs: string[] = [];
   if (transform.flip?.horizontal !== undefined) attrs.push(`flipH="${transform.flip.horizontal}"`);
@@ -395,10 +395,12 @@ function stringifyGroupTransform2D(
 
   const off = `<a:off x="${transform.offset?.emus?.x ?? 0}" y="${transform.offset?.emus?.y ?? 0}"/>`;
   const ext = `<a:ext cx="${transform.emus.x}" cy="${transform.emus.y}"/>`;
-  const chOffXml = chOff ? `<a:chOff x="${chOff.x}" y="${chOff.y}"/>` : "";
-  const chExtXml = chExt ? `<a:chExt cx="${chExt.cx}" cy="${chExt.cy}"/>` : "";
+  const childOffsetXml = childOffset ? `<a:chOff x="${childOffset.x}" y="${childOffset.y}"/>` : "";
+  const childExtentXml = childExtent
+    ? `<a:chExt cx="${childExtent.cx}" cy="${childExtent.cy}"/>`
+    : "";
 
-  return `<a:xfrm${attrStr}>${off}${ext}${chOffXml}${chExtXml}</a:xfrm>`;
+  return `<a:xfrm${attrStr}>${off}${ext}${childOffsetXml}${childExtentXml}</a:xfrm>`;
 }
 
 /** WpsShape options for stringification (extends WpsShapeCoreOptions with transformation). */
@@ -481,8 +483,8 @@ function stringifyNonVisualShapeProperties(opts: NonVisualShapePropertiesOptions
   // wps:cNvCnPr (connector). Connectors carry empty cNvCnPr.
   if (opts.connector) {
     xml += "<wps:cNvCnPr/>";
-  } else if (opts.txBox !== undefined) {
-    xml += `<wps:cNvSpPr txBox="${opts.txBox}"/>`;
+  } else if (opts.textBox !== undefined) {
+    xml += `<wps:cNvSpPr txBox="${opts.textBox}"/>`;
   } else {
     xml += "<wps:cNvSpPr/>";
   }
@@ -521,17 +523,17 @@ function stringifyWpgGroup(
   opts: {
     readonly children: readonly GroupChildMediaData[];
     readonly transformation: MediaDataTransformation;
-    readonly chOff?: ChildOffset;
-    readonly chExt?: ChildExtent;
+    readonly childOffset?: ChildOffset;
+    readonly childExtent?: ChildExtent;
     readonly fill?: FillOptions;
     readonly effects?: EffectListOptions;
-    readonly grpSpLocks?: GroupShapeLocksOptions | null;
+    readonly groupShapeLocks?: GroupShapeLocksOptions | null;
   },
   ctx: BodyContext,
 ): string {
   const transform = opts.transformation;
   const grpSpPrParts: string[] = [];
-  grpSpPrParts.push(stringifyGroupTransform2D(transform, opts.chOff, opts.chExt));
+  grpSpPrParts.push(stringifyGroupTransform2D(transform, opts.childOffset, opts.childExtent));
   if (opts.fill) grpSpPrParts.push(fillDesc.stringify(opts.fill, NOOP_CTX) ?? "");
   if (opts.effects) grpSpPrParts.push(effectListDesc.stringify(opts.effects, NOOP_CTX) ?? "");
 
@@ -540,7 +542,7 @@ function stringifyWpgGroup(
 
   return (
     "<wpg:wgp>" +
-    stringifyCnvGrpSpPr(opts.grpSpLocks) +
+    stringifyCnvGrpSpPr(opts.groupShapeLocks) +
     `<wpg:grpSpPr>${grpSpPrParts.join("")}</wpg:grpSpPr>` +
     childXml +
     "</wpg:wgp>"
@@ -571,7 +573,7 @@ function stringifyGroupChild(child: GroupChildMediaData, ctx: BodyContext): stri
   // (WpgCommonMediaData) so a grouped picture's spPr round-trips verbatim.
   const picData = child as MediaData & { outline?: OutlineOptions; fill?: FillOptions };
   const picParts: string[] = [];
-  picParts.push(stringifyNvPicPr({}, picData.cNvPr));
+  picParts.push(stringifyNvPicPr({}, picData.nonVisualProperties));
   const groupBlipParts: string[] = [];
   const useLocalDpiExt = buildUseLocalDpiExt(picData.useLocalDpi);
   groupBlipParts.push(
@@ -581,7 +583,7 @@ function stringifyGroupChild(child: GroupChildMediaData, ctx: BodyContext): stri
         )}}"><a:extLst>${useLocalDpiExt}</a:extLst></a:blip>`
       : `<a:blip r:embed="{${escapeXml(picData.fileName)}}"/>`,
   );
-  const groupSrcRectXml = buildSrcRectXml(picData.srcRect);
+  const groupSrcRectXml = buildSrcRectXml(picData.sourceRectangle);
   if (groupSrcRectXml) groupBlipParts.push(groupSrcRectXml);
   groupBlipParts.push("<a:stretch><a:fillRect/></a:stretch>");
   picParts.push(`<pic:blipFill>${groupBlipParts.join("")}</pic:blipFill>`);
@@ -595,13 +597,15 @@ function stringifyGroupChild(child: GroupChildMediaData, ctx: BodyContext): stri
  */
 function stringifyNestedGroup(grp: WpgMediaData, ctx: BodyContext): string {
   const grpSpPrParts: string[] = [];
-  grpSpPrParts.push(stringifyGroupTransform2D(grp.transformation, grp.chOff, grp.chExt));
+  grpSpPrParts.push(
+    stringifyGroupTransform2D(grp.transformation, grp.childOffset, grp.childExtent),
+  );
   if (grp.fill) grpSpPrParts.push(fillDesc.stringify(grp.fill, NOOP_CTX) ?? "");
   if (grp.effects) grpSpPrParts.push(effectListDesc.stringify(grp.effects, NOOP_CTX) ?? "");
   return (
     "<wpg:grpSp>" +
     '<wpg:cNvPr id="0" name=""/>' +
-    stringifyCnvGrpSpPr(grp.grpSpLocks) +
+    stringifyCnvGrpSpPr(grp.groupShapeLocks) +
     `<wpg:grpSpPr>${grpSpPrParts.join("")}</wpg:grpSpPr>` +
     grp.children.map((c) => stringifyGroupChild(c, ctx)).join("") +
     "</wpg:grpSp>"
@@ -657,11 +661,11 @@ function stringifyGraphicDataContent(
       {
         children: md.children,
         transformation: transform,
-        chOff: md.chOff,
-        chExt: md.chExt,
+        childOffset: md.childOffset,
+        childExtent: md.childExtent,
         fill: md.fill,
         effects: md.effects,
-        grpSpLocks: md.grpSpLocks,
+        groupShapeLocks: md.groupShapeLocks,
       },
       ctx,
     );
@@ -673,7 +677,7 @@ function stringifyGraphicDataContent(
   return (
     `<a:graphicData uri="${PIC_URI}">` +
     `<pic:pic xmlns:pic="${PIC_URI}">` +
-    stringifyNvPicPr(hlIds, md.cNvPr) +
+    stringifyNvPicPr(hlIds, md.nonVisualProperties) +
     stringifyBlipFill(md, blipEffects, tile) +
     stringifyShapeProps(transform, outline, fill, effects) +
     `</pic:pic></a:graphicData>`

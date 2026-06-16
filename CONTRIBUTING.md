@@ -120,12 +120,23 @@ export const TextAlignment = {
 
 ### Property Naming
 
-Interface properties use **full English words** (camelCase), even when XML uses abbreviations:
+Interface properties use **full English words** (camelCase), even when XML uses abbreviations. Do **not** abbreviate by deleting letters within a word — write `index`, not `idx` (aligns with the Google TypeScript Style Guide). Reference elements map to `*Reference`, matching the Open XML SDK (`LineReference`, `FillReference`, …).
 
 ```typescript
-outline      → a:ln       gradientFill → a:gradFill
-outerShadow  → a:outerShdw  solidFill    → a:solidFill
+// Element names → semantic full words
+outline         → a:ln         gradientFill  → a:gradFill
+outerShadow     → a:outerShdw  solidFill     → a:solidFill
+
+// Reference elements → *Reference (Open XML SDK alignment)
+lineReference   → a:lnRef      fillReference    → a:fillRef
+effectReference → a:effectRef  fontReference    → a:fontRef
 ```
+
+**OOXML standard attribute tokens are preserved verbatim** — a 1:1 mapping with the XSD attribute name, exactly like `@id` → `id`. Keep these as-is: `id`, `idx`, `numFmt`, `numId`, `fontId`, `fillId`, `borderId`, `clrIdx`, `lastIdx`.
+
+**Never invent compound abbreviations** by concatenating an element abbreviation with an attribute. The `@idx` of `a:lnRef` is `lineReferenceIndex`, never `lnIdx` (`ln` + `idx`).
+
+**Read/write symmetry:** the same OOXML concept uses the same property name on both the write `Options` and the parse output — `fontId` on both `CellXfEntry` and `IndexedXfEntry`, never `fontId` on one and `fontIdx` on the other.
 
 ## Options Interface Design
 

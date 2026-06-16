@@ -307,14 +307,14 @@ export interface StylesState {
 
 /**
  * Indexed XF reference produced by {@link stylesDesc}.parse — index-based
- * (fontIdx/fillIdx/…) rather than resolved objects, consumed by callers that
+ * (fontId/fillId/…) rather than resolved objects, consumed by callers that
  * resolve indices into fonts/fills/borders arrays.
  */
 export interface IndexedXfEntry {
-  fontIdx?: number;
-  fillIdx?: number;
-  borderIdx?: number;
-  numFmtIdx?: number;
+  fontId?: number;
+  fillId?: number;
+  borderId?: number;
+  numFmtId?: number;
   alignment?: AlignmentOptions;
   protection?: CellProtectionOptions;
   quotePrefix?: boolean;
@@ -916,10 +916,10 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions> = {
         const fillId = attrNum(xf, "fillId");
         const borderId = attrNum(xf, "borderId");
         const numFmtId = attrNum(xf, "numFmtId");
-        if (fontId !== undefined) style.fontIdx = fontId;
-        if (fillId !== undefined) style.fillIdx = fillId;
-        if (borderId !== undefined) style.borderIdx = borderId;
-        if (numFmtId !== undefined) style.numFmtIdx = numFmtId;
+        if (fontId !== undefined) style.fontId = fontId;
+        if (fillId !== undefined) style.fillId = fillId;
+        if (borderId !== undefined) style.borderId = borderId;
+        if (numFmtId !== undefined) style.numFmtId = numFmtId;
         xfs.push(style);
       }
       result.cellStyleXfs = xfs;
@@ -943,10 +943,10 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions> = {
         const protection = protectionEl ? parseProtection(protectionEl) : undefined;
 
         const style: IndexedXfEntry = {};
-        if (fontId > 0) style.fontIdx = fontId;
-        if (fillId > 0) style.fillIdx = fillId;
-        if (borderId > 0) style.borderIdx = borderId;
-        if (numFmtId > 0) style.numFmtIdx = numFmtId;
+        if (fontId > 0) style.fontId = fontId;
+        if (fillId > 0) style.fillId = fillId;
+        if (borderId > 0) style.borderId = borderId;
+        if (numFmtId > 0) style.numFmtId = numFmtId;
         if (alignment) style.alignment = alignment;
         if (protection) style.protection = protection;
         if (attr(xf, "quotePrefix") === "1") style.quotePrefix = true;

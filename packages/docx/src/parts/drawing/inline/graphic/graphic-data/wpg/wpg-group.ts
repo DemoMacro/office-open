@@ -35,9 +35,9 @@ export interface WpgGroupCoreOptions {
 export type WpgGroupOptions = WpgGroupCoreOptions & {
   transformation: MediaDataTransformation;
   /** Child coordinate offset (chOff) */
-  chOff?: ChildOffset;
+  childOffset?: ChildOffset;
   /** Child coordinate extent (chExt) */
-  chExt?: ChildExtent;
+  childExtent?: ChildExtent;
   /** Group fill */
   fill?: FillOptions;
   /** Group effects */

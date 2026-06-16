@@ -44,7 +44,7 @@ export interface TableTextStyleOptions {
   /** Italic style */
   italic?: OnOffStyleType;
   /** Font reference (themeable) */
-  fontRef?: StyleMatrixReferenceOptions;
+  fontReference?: StyleMatrixReferenceOptions;
   /** Color element */
   color?: string;
 }
@@ -53,7 +53,7 @@ export interface TableCellStyleOptions {
   /** Cell borders */
   borders?: TableCellBorderOptions;
   /** Fill reference (themeable) */
-  fillRef?: StyleMatrixReferenceOptions;
+  fillReference?: StyleMatrixReferenceOptions;
   /** Direct fill */
   fill?: string;
 }
@@ -72,8 +72,8 @@ export interface ThemeableLineStyleOptions {
   width?: number;
   /** Fill color component */
   color?: string;
-  /** Line reference index into theme style matrix */
-  lineRefIdx?: number;
+  /** Line reference (a:lnRef) into the theme style matrix */
+  lineReference?: StyleMatrixReferenceOptions;
 }
 
 export interface StyleMatrixReferenceOptions {
@@ -124,12 +124,12 @@ function createStyleMatrixRef(elementName: string, opts: StyleMatrixReferenceOpt
 
 /** Create border line element (a:ln with color) or a:lnRef */
 function createThemeableLine(opts: ThemeableLineStyleOptions): string {
-  if (opts.lineRefIdx !== undefined) {
+  if (opts.lineReference !== undefined) {
     const children: string[] = [];
     if (opts.color) children.push(toStr(opts.color));
     return element(
       "a:lnRef",
-      { idx: String(opts.lineRefIdx) },
+      { idx: String(opts.lineReference.idx) },
       children.length > 0 ? children : undefined,
     );
   }
@@ -164,7 +164,7 @@ function buildCellBorders(opts: TableCellBorderOptions): string {
 
 function buildTextStyle(opts: TableTextStyleOptions): string {
   const children: string[] = [];
-  if (opts.fontRef) children.push(createStyleMatrixRef("fontRef", opts.fontRef));
+  if (opts.fontReference) children.push(createStyleMatrixRef("fontRef", opts.fontReference));
   if (opts.color) children.push(toStr(opts.color));
   const attrs: Record<string, string> = {};
   if (opts.bold && opts.bold !== "def") attrs.b = onOffAttr(opts.bold);
@@ -175,7 +175,7 @@ function buildTextStyle(opts: TableTextStyleOptions): string {
 function buildCellStyle(opts: TableCellStyleOptions): string {
   const children: string[] = [];
   if (opts.borders) children.push(buildCellBorders(opts.borders));
-  if (opts.fillRef) children.push(createStyleMatrixRef("fillRef", opts.fillRef));
+  if (opts.fillReference) children.push(createStyleMatrixRef("fillRef", opts.fillReference));
   else if (opts.fill) children.push(toStr(opts.fill));
   return element("a:tcStyle", undefined, children);
 }
@@ -325,7 +325,7 @@ function parseTableTextStyle(el: Element): TableTextStyleOptions | undefined {
   const i = attr(el, "i");
   if (i === "on" || i === "off") opts.italic = i;
   const fontRefEl = findChild(el, "a:fontRef");
-  if (fontRefEl) opts.fontRef = parseStyleMatrixRef(fontRefEl);
+  if (fontRefEl) opts.fontReference = parseStyleMatrixRef(fontRefEl);
   // color: first non-fontRef child element, serialized back to the raw string
   // buildTextStyle stores (it pushes opts.color verbatim).
   for (const child of el.elements ?? []) {
@@ -345,7 +345,7 @@ function parseTableCellStyle(el: Element): TableCellStyleOptions | undefined {
   }
   const fillRefEl = findChild(el, "a:fillRef");
   if (fillRefEl) {
-    opts.fillRef = parseStyleMatrixRef(fillRefEl);
+    opts.fillReference = parseStyleMatrixRef(fillRefEl);
   } else {
     // fill: first non-tcBdr child element, serialized (buildCellStyle pushes
     // opts.fill verbatim).
@@ -376,7 +376,7 @@ function parseThemeableLine(el: Element): ThemeableLineStyleOptions | undefined 
   const opts: ThemeableLineStyleOptions = {};
   if (el.name === "a:lnRef") {
     const idx = attrNum(el, "idx");
-    if (idx !== undefined) opts.lineRefIdx = idx;
+    if (idx !== undefined) opts.lineReference = { idx };
   } else {
     const w = attrNum(el, "w");
     if (w !== undefined) opts.width = w;

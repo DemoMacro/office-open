@@ -22,9 +22,9 @@ interface CoreGroupOptions {
   children: GroupChildMediaData[];
   transformation: MediaTransformation;
   /** Child coordinate offset (chOff) */
-  chOff?: ChildOffset;
+  childOffset?: ChildOffset;
   /** Child coordinate extent (chExt) */
-  chExt?: ChildExtent;
+  childExtent?: ChildExtent;
   /** Group fill */
   fill?: FillOptions;
   /** Group effects */
@@ -42,7 +42,7 @@ interface CoreGroupOptions {
   /** Graphic frame locks (wp:cNvGraphicFramePr) for round-trip. */
   graphicFrameLocks?: GraphicFrameLocksOptions | null;
   /** Group shape locks (wpg:cNvGrpSpPr/a:grpSpLocks) for round-trip. */
-  grpSpLocks?: GroupShapeLocksOptions;
+  groupShapeLocks?: GroupShapeLocksOptions;
 }
 
 /**

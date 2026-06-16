@@ -113,7 +113,7 @@ describe("blipFillDesc", () => {
       blipEffects?: any;
       dpi?: number;
       rotWithShape?: boolean;
-      srcRect?: SourceRectangleOptions;
+      sourceRectangle?: SourceRectangleOptions;
       tile?: TileOptions;
     };
     const opts: BlipFillFull = {
@@ -131,17 +131,17 @@ describe("blipFillDesc", () => {
     type BlipFillFull = {
       referenceId?: string;
       blipEffects?: any;
-      srcRect?: SourceRectangleOptions;
+      sourceRectangle?: SourceRectangleOptions;
       tile?: TileOptions;
     };
     const opts: BlipFillFull = {
       referenceId: "img.png",
-      srcRect: { left: 10, top: 20, right: 30, bottom: 40 },
+      sourceRectangle: { left: 10, top: 20, right: 30, bottom: 40 },
     };
     const result = roundTrip(blipFillDesc, opts);
-    expect(result.srcRect).toBeDefined();
-    expect(result.srcRect!.left).toBe(10);
-    expect(result.srcRect!.top).toBe(20);
+    expect(result.sourceRectangle).toBeDefined();
+    expect(result.sourceRectangle!.left).toBe(10);
+    expect(result.sourceRectangle!.top).toBe(20);
   });
 
   it("round-trips blip fill with tile", () => {

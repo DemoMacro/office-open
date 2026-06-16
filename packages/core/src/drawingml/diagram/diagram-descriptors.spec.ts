@@ -40,26 +40,26 @@ describe("diagramRelIdsDesc", () => {
 describe("diagramStyleDesc", () => {
   it("round-trips style indices", () => {
     const opts: DiagramStyleOptions = {
-      lnIdx: 2,
-      fillIdx: 3,
-      effectIdx: 1,
-      fontIdx: "major",
+      lineReference: { idx: 2 },
+      fillReference: { idx: 3 },
+      effectReference: { idx: 1 },
+      fontReference: { idx: "major" },
     };
     const result = roundTrip(diagramStyleDesc, opts);
-    expect(result.lnIdx).toBe(2);
-    expect(result.fillIdx).toBe(3);
-    expect(result.effectIdx).toBe(1);
-    expect(result.fontIdx).toBe("major");
+    expect(result.lineReference?.idx).toBe(2);
+    expect(result.fillReference?.idx).toBe(3);
+    expect(result.effectReference?.idx).toBe(1);
+    expect(result.fontReference?.idx).toBe("major");
   });
 
   it("round-trips with defaults", () => {
     const opts: DiagramStyleOptions = {};
     const result = roundTrip(diagramStyleDesc, opts);
     // Default values from stringify
-    expect(result.lnIdx).toBe(1);
-    expect(result.fillIdx).toBe(1);
-    expect(result.effectIdx).toBe(0);
-    expect(result.fontIdx).toBe("minor");
+    expect(result.lineReference?.idx).toBe(1);
+    expect(result.fillReference?.idx).toBe(1);
+    expect(result.effectReference?.idx).toBe(0);
+    expect(result.fontReference?.idx).toBe("minor");
   });
 });
 

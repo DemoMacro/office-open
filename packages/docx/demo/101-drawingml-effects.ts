@@ -66,7 +66,7 @@ const buffer = await generateDocument({
               {
                 image: {
                   data: readFileSync("./demo/images/cat.jpg"),
-                  srcRect: { left: 25000, right: 25000 },
+                  sourceRectangle: { left: 25000, right: 25000 },
                   transformation: {
                     height: 150,
                     width: 150,

@@ -32,7 +32,7 @@ import type {
   WpsMediaData,
 } from "@shared/media";
 import { createTransformation } from "@shared/media";
-import type { PicCnvPrOptions } from "@shared/media/data";
+import type { NonVisualPropertiesOptions } from "@shared/media/data";
 
 import type { BodyContext } from "../context";
 import { checkboxSymbolRunInner, stringifyCustomXmlShell, stringifySdtShell } from "./bodychildren";
@@ -90,14 +90,17 @@ function createImageData(
   data: Uint8Array,
   transformation: ImageOptions["transformation"],
   key: string,
-  srcRect?: SourceRectangleOptions,
-  cNvPr?: PicCnvPrOptions,
-): Pick<MediaData, "data" | "fileName" | "transformation" | "srcRect" | "cNvPr"> {
+  sourceRectangle?: SourceRectangleOptions,
+  nonVisualProperties?: NonVisualPropertiesOptions,
+): Pick<
+  MediaData,
+  "data" | "fileName" | "transformation" | "sourceRectangle" | "nonVisualProperties"
+> {
   return {
     data,
     fileName: key,
-    srcRect,
-    cNvPr,
+    sourceRectangle,
+    nonVisualProperties,
     transformation: createTransformation(transformation),
   };
 }
@@ -253,7 +256,13 @@ export function stringifyChildDispatch(
       const fallbackData = toUint8Array(opts.fallback.data) as Uint8Array;
       mediaData = {
         type: "svg",
-        ...createImageData(rawData, opts.transformation, key, opts.srcRect, opts.cNvPr),
+        ...createImageData(
+          rawData,
+          opts.transformation,
+          key,
+          opts.sourceRectangle,
+          opts.nonVisualProperties,
+        ),
         useLocalDpi: opts.useLocalDpi,
         fallback: {
           type: opts.fallback.type,
@@ -267,7 +276,13 @@ export function stringifyChildDispatch(
     } else {
       mediaData = {
         type: opts.type,
-        ...createImageData(rawData, opts.transformation, key, opts.srcRect, opts.cNvPr),
+        ...createImageData(
+          rawData,
+          opts.transformation,
+          key,
+          opts.sourceRectangle,
+          opts.nonVisualProperties,
+        ),
         useLocalDpi: opts.useLocalDpi,
       } as MediaData;
     }
@@ -401,11 +416,11 @@ export function stringifyChildDispatch(
     const mediaData: WpgMediaData = {
       children: opts.children,
       transformation: createTransformation(opts.transformation),
-      chOff: opts.chOff,
-      chExt: opts.chExt,
+      childOffset: opts.childOffset,
+      childExtent: opts.childExtent,
       fill: opts.fill,
       effects: opts.effects,
-      grpSpLocks: opts.grpSpLocks,
+      groupShapeLocks: opts.groupShapeLocks,
       type: "wpg",
     };
 

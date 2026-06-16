@@ -38,7 +38,7 @@ export interface BlipFillConfigOptions {
   /** Image adjustment effects (brightness, contrast, grayscale, etc.) */
   blipEffects?: BlipEffectsOptions;
   /** Source rectangle for cropping */
-  srcRect?: SourceRectangleOptions;
+  sourceRectangle?: SourceRectangleOptions;
   /** Tile fill mode (if omitted, defaults to stretch) */
   tile?: TileOptions;
 }
@@ -169,7 +169,7 @@ export const buildFill = (options: FillOptions): string => {
         blipChildren.length > 0 ? blipChildren : undefined,
       );
 
-      const children: string[] = [blip, createSourceRectangle(options.srcRect)];
+      const children: string[] = [blip, createSourceRectangle(options.sourceRectangle)];
       if (options.tile) {
         children.push(createTileInfo(options.tile));
       } else {

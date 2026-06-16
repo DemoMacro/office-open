@@ -28,15 +28,27 @@ export const FontCollectionIndex = {
   NONE: "none",
 } as const;
 
+/** Reference into the theme style matrix (a:lnRef/fillRef/effectRef). */
+export interface DiagramStyleReferenceOptions {
+  /** Index into the theme style matrix (a:*Ref @idx) */
+  idx: number;
+}
+
+/** Font reference (a:fontRef) — idx is a FontCollectionIndex (major/minor/none). */
+export interface DiagramFontReferenceOptions {
+  /** Font collection index (FontCollectionIndex.MAJOR/MINOR/NONE) */
+  idx: string;
+}
+
 export interface DiagramStyleOptions {
-  /** Line style matrix reference index */
-  lnIdx?: number;
-  /** Fill style matrix reference index */
-  fillIdx?: number;
-  /** Effect style matrix reference index */
-  effectIdx?: number;
-  /** Font reference collection index */
-  fontIdx?: string;
+  /** Line reference (a:lnRef) */
+  lineReference?: DiagramStyleReferenceOptions;
+  /** Fill reference (a:fillRef) */
+  fillReference?: DiagramStyleReferenceOptions;
+  /** Effect reference (a:effectRef) */
+  effectReference?: DiagramStyleReferenceOptions;
+  /** Font reference (a:fontRef) */
+  fontReference?: DiagramFontReferenceOptions;
 }
 
 /**
@@ -58,22 +70,22 @@ export const createDiagramStyle = (options?: DiagramStyleOptions): string => {
   const children: string[] = [];
 
   children.push(
-    element("a:lnRef", { idx: options?.lnIdx ?? 1 }, [
+    element("a:lnRef", { idx: options?.lineReference?.idx ?? 1 }, [
       createColorElement({ value: SchemeColor.ACCENT1 }),
     ]),
   );
   children.push(
-    element("a:fillRef", { idx: options?.fillIdx ?? 1 }, [
+    element("a:fillRef", { idx: options?.fillReference?.idx ?? 1 }, [
       createColorElement({ value: SchemeColor.ACCENT1 }),
     ]),
   );
   children.push(
-    element("a:effectRef", { idx: options?.effectIdx ?? 0 }, [
+    element("a:effectRef", { idx: options?.effectReference?.idx ?? 0 }, [
       createColorElement({ value: SchemeColor.ACCENT1 }),
     ]),
   );
   children.push(
-    element("a:fontRef", { idx: options?.fontIdx ?? "minor" }, [
+    element("a:fontRef", { idx: options?.fontReference?.idx ?? "minor" }, [
       createColorElement({ value: SchemeColor.TX1 }),
     ]),
   );

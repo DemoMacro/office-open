@@ -43,7 +43,7 @@ describe("tableStylesDesc round-trip", () => {
     expect(xml).toContain("tblStyleLst");
   });
 
-  it("round-trips a full table style: regions, text, cell, borders, fillRef", () => {
+  it("round-trips a full table style: regions, text, cell, borders, fillReference", () => {
     const opts: TableStylesDescriptorOptions = {
       opts: {
         defaultStyleId: "{TEST-ID}",
@@ -56,14 +56,14 @@ describe("tableStylesDesc round-trip", () => {
                 text: {
                   bold: "on",
                   italic: "off",
-                  fontRef: { idx: 0, color: color("000000") },
+                  fontReference: { idx: 0, color: color("000000") },
                 },
                 cell: {
                   borders: {
                     left: { width: 9525, color: color("333333") },
-                    top: { lineRefIdx: 2, color: color("666666") },
+                    top: { lineReference: { idx: 2 }, color: color("666666") },
                   },
-                  fillRef: { idx: 1, color: color("4472C4") },
+                  fillReference: { idx: 1, color: color("4472C4") },
                 },
               },
               firstRow: {
@@ -86,17 +86,17 @@ describe("tableStylesDesc round-trip", () => {
     const wt = s.regions!.wholeTbl!.text!;
     expect(wt.bold).toBe("on");
     expect(wt.italic).toBe("off");
-    expect(wt.fontRef?.idx).toBe(0);
-    expect(wt.fontRef?.color).toContain('val="000000"');
+    expect(wt.fontReference?.idx).toBe(0);
+    expect(wt.fontReference?.color).toContain('val="000000"');
 
-    // wholeTbl — cell style (borders + fillRef)
+    // wholeTbl — cell style (borders + fillReference)
     const wc = s.regions!.wholeTbl!.cell!;
     expect(wc.borders?.left?.width).toBe(9525);
     expect(wc.borders?.left?.color).toContain('val="333333"');
-    expect(wc.borders?.top?.lineRefIdx).toBe(2);
+    expect(wc.borders?.top?.lineReference?.idx).toBe(2);
     expect(wc.borders?.top?.color).toContain('val="666666"');
-    expect(wc.fillRef?.idx).toBe(1);
-    expect(wc.fillRef?.color).toContain('val="4472C4"');
+    expect(wc.fillReference?.idx).toBe(1);
+    expect(wc.fillReference?.color).toContain('val="4472C4"');
 
     // firstRow — standalone color text style
     expect(s.regions!.firstRow?.text?.color).toContain('val="FFFFFF"');

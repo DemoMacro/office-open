@@ -52,13 +52,13 @@ export interface MediaDataTransformation {
 
 /**
  * Round-trip of `pic:cNvPr` — the picture non-visual id/name/description.
- * All fields optional to mirror the source element: `descr` is omitted when
+ * All fields optional to mirror the source element: `description` is omitted when
  * absent rather than emitted as an empty attribute (Word never writes it empty).
  */
-export interface PicCnvPrOptions {
+export interface NonVisualPropertiesOptions {
   id?: number;
   name?: string;
-  descr?: string;
+  description?: string;
   /**
    * From the sibling pic:cNvPicPr. Omitted = Word's default (true); only
    * `false` is emitted as preferRelativeResize="0" because Word never writes
@@ -78,9 +78,9 @@ interface CoreMediaData {
   /** Raw image data */
   data: Uint8Array;
   /** Source rectangle for image cropping */
-  srcRect?: SourceRectangleOptions;
+  sourceRectangle?: SourceRectangleOptions;
   /** Picture non-visual properties (pic:cNvPr) for round-trip fidelity */
-  cNvPr?: PicCnvPrOptions;
+  nonVisualProperties?: NonVisualPropertiesOptions;
   /**
    * Blip extension `a14:useLocalDpi` (val="0" = use document DPI, not a local
    * override). Word emits this as a rendering hint on a:blip; carried verbatim
@@ -128,15 +128,15 @@ export interface WpgMediaData {
   transformation: MediaDataTransformation;
   children: GroupChildMediaData[];
   /** Child coordinate offset */
-  chOff?: ChildOffset;
+  childOffset?: ChildOffset;
   /** Child coordinate extent */
-  chExt?: ChildExtent;
+  childExtent?: ChildExtent;
   /** Group fill */
   fill?: FillOptions;
   /** Group effects */
   effects?: EffectListOptions;
   /** Group shape locks (wpg:cNvGrpSpPr/a:grpSpLocks) for round-trip. */
-  grpSpLocks?: GroupShapeLocksOptions;
+  groupShapeLocks?: GroupShapeLocksOptions;
 }
 
 /**

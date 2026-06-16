@@ -11,7 +11,7 @@ import { ContentTypes } from "@parts/content-types";
 import { Media } from "@parts/media";
 import { SharedStrings } from "@parts/shared-strings";
 import { Styles } from "@parts/styles";
-import type { DxfOptions, StyleOptions } from "@parts/styles";
+import type { DxfOptions, StyleOptions, StylesParseResult } from "@parts/styles";
 import type { PivotCacheReference } from "@parts/workbook";
 
 import type { XlsxDocument } from "./parse";
@@ -66,7 +66,7 @@ export class XlsxReadContext implements ReadContext {
   /** Parsed shared strings for resolving cell values. */
   public readonly sharedStrings: string[];
   /** Parsed styles (fonts, fills, borders, cellXfs). Set by parseWorkbook(). */
-  public parsedStyles?: Record<string, unknown>;
+  public parsedStyles?: StylesParseResult;
 
   constructor(
     private xlsx: XlsxDocument,
@@ -149,27 +149,22 @@ export class XlsxReadContext implements ReadContext {
   public resolveStyle(styleIndex: number): StyleOptions | undefined {
     const ps = this.parsedStyles;
     if (!ps) return undefined;
-    const cellXfs = ps.cellXfs as Record<string, unknown>[] | undefined;
+    const { cellXfs, fonts, fills, borders, customNumFmts } = ps;
     if (!cellXfs || styleIndex >= cellXfs.length) return undefined;
-    const xf = cellXfs[styleIndex] as Record<string, unknown>;
-    const result: Record<string, unknown> = {};
+    const xf = cellXfs[styleIndex];
+    const result: Partial<StyleOptions> = {};
 
-    const fonts = ps.fonts as Record<string, unknown>[] | undefined;
-    const fills = ps.fills as Record<string, unknown>[] | undefined;
-    const borders = ps.borders as Record<string, unknown>[] | undefined;
-    const customNumFmts = ps.customNumFmts as Record<string, number> | undefined;
-
-    const fontIdx = xf.fontIdx as number | undefined;
-    if (fontIdx !== undefined && fonts && fontIdx < fonts.length) result.font = fonts[fontIdx];
-    const fillIdx = xf.fillIdx as number | undefined;
-    if (fillIdx !== undefined && fills && fillIdx < fills.length) result.fill = fills[fillIdx];
-    const borderIdx = xf.borderIdx as number | undefined;
-    if (borderIdx !== undefined && borders && borderIdx < borders.length)
-      result.border = borders[borderIdx];
-    const numFmtIdx = xf.numFmtIdx as number | undefined;
-    if (numFmtIdx !== undefined && customNumFmts) {
+    const fontId = xf.fontId;
+    if (fontId !== undefined && fonts && fontId < fonts.length) result.font = fonts[fontId];
+    const fillId = xf.fillId;
+    if (fillId !== undefined && fills && fillId < fills.length) result.fill = fills[fillId];
+    const borderId = xf.borderId;
+    if (borderId !== undefined && borders && borderId < borders.length)
+      result.border = borders[borderId];
+    const numFmtId = xf.numFmtId;
+    if (numFmtId !== undefined && customNumFmts) {
       for (const [code, id] of Object.entries(customNumFmts)) {
-        if (id === numFmtIdx) {
+        if (id === numFmtId) {
           result.numFmt = code;
           break;
         }
@@ -180,7 +175,7 @@ export class XlsxReadContext implements ReadContext {
     if (xf.quotePrefix) result.quotePrefix = xf.quotePrefix;
     if (xf.pivotButton) result.pivotButton = xf.pivotButton;
 
-    return result as unknown as StyleOptions;
+    return result as StyleOptions;
   }
 }
 

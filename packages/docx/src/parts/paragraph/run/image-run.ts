@@ -12,7 +12,7 @@ import type { FillOptions } from "@office-open/core/drawingml";
 import type { DocPropertiesOptions } from "@parts/drawing/doc-properties/doc-properties";
 import type { MediaTransformation } from "@shared/media";
 import { createTransformation } from "@shared/media";
-import type { MediaData, PicCnvPrOptions } from "@shared/media/data";
+import type { MediaData, NonVisualPropertiesOptions } from "@shared/media/data";
 
 import type { Floating } from "../../drawing";
 import type { GraphicFrameLocksOptions } from "../../drawing/descriptor";
@@ -33,10 +33,10 @@ interface CoreImageOptions {
   fill?: FillOptions;
   effects?: EffectListOptions;
   blipEffects?: BlipEffectsOptions;
-  srcRect?: SourceRectangleOptions;
+  sourceRectangle?: SourceRectangleOptions;
   tile?: TileOptions;
   /** Picture non-visual properties (pic:cNvPr) — populated by parse */
-  cNvPr?: PicCnvPrOptions;
+  nonVisualProperties?: NonVisualPropertiesOptions;
   /** Raw XML of the wrapping w:r's rPr (round-trip) — emitted before the drawing. */
   runPropertiesRawXml?: string;
   /** Graphic frame locks (wp:cNvGraphicFramePr) for round-trip. */
@@ -70,12 +70,15 @@ export const createImageData = (
   data: Uint8Array,
   transformation: MediaTransformation,
   key: string,
-  srcRect?: SourceRectangleOptions,
-  cNvPr?: PicCnvPrOptions,
-): Pick<MediaData, "data" | "fileName" | "transformation" | "srcRect" | "cNvPr"> => ({
+  sourceRectangle?: SourceRectangleOptions,
+  nonVisualProperties?: NonVisualPropertiesOptions,
+): Pick<
+  MediaData,
+  "data" | "fileName" | "transformation" | "sourceRectangle" | "nonVisualProperties"
+> => ({
   data,
   fileName: key,
-  srcRect,
-  cNvPr,
+  sourceRectangle,
+  nonVisualProperties,
   transformation: createTransformation(transformation),
 });

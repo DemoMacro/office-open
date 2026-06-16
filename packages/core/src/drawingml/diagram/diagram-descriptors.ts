@@ -36,14 +36,14 @@ export const diagramRelIdsDesc: CustomDescriptor<DiagramRelIdsOptions> = {
 export const diagramStyleDesc: CustomDescriptor<DiagramStyleOptions> = {
   kind: "custom",
   stringify(opts, _ctx) {
-    const lnIdx = opts.lnIdx ?? 1;
-    const fillIdx = opts.fillIdx ?? 1;
-    const effectIdx = opts.effectIdx ?? 0;
-    const fontIdx = opts.fontIdx ?? "minor";
+    const lineIdx = opts.lineReference?.idx ?? 1;
+    const fillIdx = opts.fillReference?.idx ?? 1;
+    const effectIdx = opts.effectReference?.idx ?? 0;
+    const fontIdx = opts.fontReference?.idx ?? "minor";
 
     return (
       `<dgm:style>` +
-      `<a:lnRef idx="${lnIdx}"><a:schemeClr val="accent1"/></a:lnRef>` +
+      `<a:lnRef idx="${lineIdx}"><a:schemeClr val="accent1"/></a:lnRef>` +
       `<a:fillRef idx="${fillIdx}"><a:schemeClr val="accent1"/></a:fillRef>` +
       `<a:effectRef idx="${effectIdx}"><a:schemeClr val="accent1"/></a:effectRef>` +
       `<a:fontRef idx="${escapeXml(fontIdx)}"><a:schemeClr val="tx1"/></a:fontRef>` +
@@ -54,19 +54,20 @@ export const diagramStyleDesc: CustomDescriptor<DiagramStyleOptions> = {
     const result: Partial<DiagramStyleOptions> = {};
 
     const lnRef = findChild(el, "a:lnRef");
-    if (lnRef?.attributes?.["idx"] !== undefined) result.lnIdx = Number(lnRef.attributes["idx"]);
+    if (lnRef?.attributes?.["idx"] !== undefined)
+      result.lineReference = { idx: Number(lnRef.attributes["idx"]) };
 
     const fillRef = findChild(el, "a:fillRef");
     if (fillRef?.attributes?.["idx"] !== undefined)
-      result.fillIdx = Number(fillRef.attributes["idx"]);
+      result.fillReference = { idx: Number(fillRef.attributes["idx"]) };
 
     const effectRef = findChild(el, "a:effectRef");
     if (effectRef?.attributes?.["idx"] !== undefined)
-      result.effectIdx = Number(effectRef.attributes["idx"]);
+      result.effectReference = { idx: Number(effectRef.attributes["idx"]) };
 
     const fontRef = findChild(el, "a:fontRef");
     if (fontRef?.attributes?.["idx"] !== undefined)
-      result.fontIdx = String(fontRef.attributes["idx"]);
+      result.fontReference = { idx: String(fontRef.attributes["idx"]) };
 
     return result as DiagramStyleOptions;
   },
