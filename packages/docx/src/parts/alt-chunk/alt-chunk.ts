@@ -20,6 +20,6 @@ export interface AltChunkOptions {
   contentType: "text/html" | "application/rtf" | "text/plain";
   /** File extension for the part */
   extension: "html" | "rtf" | "txt";
-  /** Whether to match source formatting */
-  matchSrc?: boolean;
+  /** Whether to match source formatting (w:matchSrc) */
+  matchSource?: boolean;
 }

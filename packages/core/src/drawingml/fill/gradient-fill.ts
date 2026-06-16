@@ -105,7 +105,7 @@ export interface PathShadeOptions {
    *
    * Defines the rectangle to which the gradient fills.
    */
-  fillToRect?: RelativeRect;
+  fillToRectangle?: RelativeRect;
 }
 
 /**
@@ -145,7 +145,7 @@ export interface GradientFillOptions {
    *
    * Defines the rectangle used for gradient tiling.
    */
-  tileRect?: RelativeRect;
+  tileRectangle?: RelativeRect;
   /** Whether gradient rotates with the shape */
   rotateWithShape?: boolean;
 }
@@ -186,8 +186,8 @@ const createShadeElement = (shade: GradientShadeOptions): string => {
   const pathShade = shade as PathShadeOptions;
   const children: string[] = [];
 
-  if (pathShade.fillToRect) {
-    children.push(createRelativeRect("a:fillToRect", pathShade.fillToRect));
+  if (pathShade.fillToRectangle) {
+    children.push(createRelativeRect("a:fillToRect", pathShade.fillToRectangle));
   }
 
   return element("a:path", { path: pathShade.path }, children);
@@ -232,8 +232,8 @@ export const createGradientFill = (options: GradientFillOptions): string => {
   }
 
   // Tile rectangle
-  if (options.tileRect) {
-    children.push(createRelativeRect("a:tileRect", options.tileRect));
+  if (options.tileRectangle) {
+    children.push(createRelativeRect("a:tileRect", options.tileRectangle));
   }
 
   return element(

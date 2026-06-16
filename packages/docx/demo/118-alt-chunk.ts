@@ -78,7 +78,7 @@ const buffer = await generateDocument({
 </table>`,
             contentType: "text/html",
             extension: "html",
-            matchSrc: true,
+            matchSource: true,
           },
         },
 

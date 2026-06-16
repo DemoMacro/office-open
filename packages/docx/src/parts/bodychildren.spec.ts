@@ -1,5 +1,6 @@
 import type { ReadContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
+import type { AltChunkOptions } from "@parts/alt-chunk/alt-chunk";
 import { describe, expect, it } from "vite-plus/test";
 
 import type { BodyContext } from "../context";
@@ -318,7 +319,7 @@ describe("altChunkDesc stringify", () => {
         data: "<p>Hello</p>",
         extension: "html",
         contentType: "text/html",
-        matchSrc: true,
+        matchSource: true,
       },
       writeCtx,
     )!;
@@ -328,11 +329,8 @@ describe("altChunkDesc stringify", () => {
   it("parses matchSrc back from w:altChunkPr", () => {
     const xml = `<w:altChunk xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" r:id="rId1" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:altChunkPr><w:matchSrc/></w:altChunkPr></w:altChunk>`;
     const doc = parseXml(xml);
-    const result = altChunkDesc.parse(doc.elements![0], readCtx) as unknown as Record<
-      string,
-      unknown
-    >;
-    expect(result.matchSrc).toBe(true);
+    const result = altChunkDesc.parse(doc.elements![0], readCtx) as AltChunkOptions;
+    expect(result.matchSource).toBe(true);
   });
 });
 

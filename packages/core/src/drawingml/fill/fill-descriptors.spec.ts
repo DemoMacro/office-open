@@ -125,19 +125,19 @@ describe("gradientFillDesc", () => {
     expect(result.rotateWithShape).toBe(true);
   });
 
-  it("round-trips path gradient with fillToRect", () => {
+  it("round-trips path gradient with fillToRectangle", () => {
     const opts: GradientFillOptions = {
       stops: [
         { position: 0, color: { value: "FFFFFF" } },
         { position: 100000, color: { value: "4472C4" } },
       ],
-      shade: { path: "circle", fillToRect: { left: "50000", top: "50000" } },
+      shade: { path: "circle", fillToRectangle: { left: "50000", top: "50000" } },
     };
     const result = roundTripGradient(opts);
     expect(result.shade).toBeDefined();
     if (result.shade && "path" in result.shade) {
       expect(result.shade.path).toBe("circle");
-      expect(result.shade.fillToRect).toBeDefined();
+      expect(result.shade.fillToRectangle).toBeDefined();
     }
   });
 

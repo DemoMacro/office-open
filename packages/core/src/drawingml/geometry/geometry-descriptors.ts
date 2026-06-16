@@ -371,8 +371,8 @@ export const customGeometryDesc: CustomDescriptor<CustomGeometryOptions> = {
     }
 
     // a:rect
-    if (opts.textRect) {
-      parts.push(stringifyGeomRect(opts.textRect));
+    if (opts.textRectangle) {
+      parts.push(stringifyGeomRect(opts.textRectangle));
     }
 
     // a:pathLst (required)
@@ -430,8 +430,8 @@ export const customGeometryDesc: CustomDescriptor<CustomGeometryOptions> = {
     // a:rect
     const rect = findChild(el, "a:rect");
     if (rect) {
-      const textRect = readGeomRect(rect);
-      if (textRect) result.textRect = textRect;
+      const textRectangle = readGeomRect(rect);
+      if (textRectangle) result.textRectangle = textRectangle;
     }
 
     // a:pathLst (required)

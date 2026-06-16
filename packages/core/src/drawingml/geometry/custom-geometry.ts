@@ -346,7 +346,7 @@ export interface CustomGeometryOptions {
   /** Connection sites (a:cxnLst) */
   connectionSites?: readonly ConnectionSite[];
   /** Text insertion rectangle (a:rect) */
-  textRect?: GeomRect;
+  textRectangle?: GeomRect;
   /** Path definitions (a:pathLst) — required */
   pathList: readonly PathOptions[];
 }
@@ -367,7 +367,7 @@ export interface CustomGeometryOptions {
  *       { command: "close" },
  *     ],
  *   }],
- *   textRect: { left: "2000000", top: "2000000", right: "8000000", bottom: "8000000" },
+ *   textRectangle: { left: "2000000", top: "2000000", right: "8000000", bottom: "8000000" },
  * });
  * ```
  */
@@ -405,8 +405,8 @@ export const createCustomGeometry = (options: CustomGeometryOptions): string => 
   }
 
   // a:rect
-  if (options.textRect) {
-    children.push(createGeomRect(options.textRect));
+  if (options.textRectangle) {
+    children.push(createGeomRect(options.textRectangle));
   }
 
   // a:pathLst (required)

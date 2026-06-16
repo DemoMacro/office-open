@@ -56,8 +56,8 @@ function stringifyShade(shade: GradientShadeOptions): string {
   const parts: string[] = [];
   if (pathShade.path) parts.push(`path="${escapeXml(pathShade.path)}"`);
   const attrStr = parts.length ? " " + parts.join(" ") : "";
-  if (pathShade.fillToRect) {
-    return `<a:path${attrStr}>${stringifyRelativeRect("a:fillToRect", pathShade.fillToRect)}</a:path>`;
+  if (pathShade.fillToRectangle) {
+    return `<a:path${attrStr}>${stringifyRelativeRect("a:fillToRect", pathShade.fillToRectangle)}</a:path>`;
   }
   return `<a:path${attrStr}/>`;
 }
@@ -84,7 +84,7 @@ export const gradientFillDesc: CustomDescriptor<GradientFillOptions> = {
     if (opts.shade) parts.push(stringifyShade(opts.shade));
 
     // Tile rect
-    if (opts.tileRect) parts.push(stringifyRelativeRect("a:tileRect", opts.tileRect));
+    if (opts.tileRectangle) parts.push(stringifyRelativeRect("a:tileRect", opts.tileRectangle));
 
     // Attributes
     const attrParts: string[] = [];
@@ -123,8 +123,8 @@ export const gradientFillDesc: CustomDescriptor<GradientFillOptions> = {
         const shade: Partial<PathShadeOptions> = {};
         if (path.attributes?.["path"] !== undefined)
           shade.path = String(path.attributes["path"]) as PathShadeOptions["path"];
-        const fillToRect = findChild(path, "a:fillToRect");
-        if (fillToRect) shade.fillToRect = readRelativeRect(fillToRect);
+        const fillToRectangle = findChild(path, "a:fillToRect");
+        if (fillToRectangle) shade.fillToRectangle = readRelativeRect(fillToRectangle);
         result.shade = shade as GradientShadeOptions;
       }
     }
@@ -138,8 +138,8 @@ export const gradientFillDesc: CustomDescriptor<GradientFillOptions> = {
       result.rotateWithShape = el.attributes["rotWithShape"] !== "0";
 
     // Tile rect
-    const tileRect = findChild(el, "a:tileRect");
-    if (tileRect) result.tileRect = readRelativeRect(tileRect);
+    const tileRectangle = findChild(el, "a:tileRect");
+    if (tileRectangle) result.tileRectangle = readRelativeRect(tileRectangle);
 
     return result as GradientFillOptions;
   },

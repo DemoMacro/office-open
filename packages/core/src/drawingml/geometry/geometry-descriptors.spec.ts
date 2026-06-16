@@ -85,7 +85,7 @@ describe("customGeometryDesc", () => {
         },
       ],
       connectionSites: [{ angle: "0", position: { x: "50000", y: "0" } }],
-      textRect: { left: "10000", top: "10000", right: "90000", bottom: "90000" },
+      textRectangle: { left: "10000", top: "10000", right: "90000", bottom: "90000" },
       pathList: [
         {
           w: 100000,
@@ -108,7 +108,7 @@ describe("customGeometryDesc", () => {
     expect(result.adjustHandles).toHaveLength(1);
     expect(result.adjustHandles![0].type).toBe("xy");
     expect(result.connectionSites).toHaveLength(1);
-    expect(result.textRect).toEqual({
+    expect(result.textRectangle).toEqual({
       left: "10000",
       top: "10000",
       right: "90000",

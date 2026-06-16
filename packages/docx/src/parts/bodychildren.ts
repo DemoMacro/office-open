@@ -74,7 +74,7 @@ export const altChunkDesc: CustomDescriptor<AltChunkOptions, BodyContext> = {
     });
 
     const rId = `rId${relId}`;
-    if (opts.matchSrc) {
+    if (opts.matchSource) {
       return `<w:altChunk r:id="${rId}"><w:altChunkPr><w:matchSrc/></w:altChunkPr></w:altChunk>`;
     }
     return `<w:altChunk r:id="${rId}"/>`;
@@ -82,12 +82,12 @@ export const altChunkDesc: CustomDescriptor<AltChunkOptions, BodyContext> = {
 
   parse(el, ctx) {
     const rId = attr(el, "r:id");
-    const opts: Record<string, unknown> = {};
+    const opts: Partial<AltChunkOptions> = {};
 
-    // Check for matchSrc
+    // Check for matchSource
     const altChunkPr = findChild(el, "w:altChunkPr");
     if (altChunkPr && findChild(altChunkPr, "w:matchSrc")) {
-      opts.matchSrc = true;
+      opts.matchSource = true;
     }
 
     // Resolve the altChunk data from relationships
@@ -117,7 +117,7 @@ export const altChunkDesc: CustomDescriptor<AltChunkOptions, BodyContext> = {
       }
     }
 
-    return opts as unknown as AltChunkOptions;
+    return opts as AltChunkOptions;
   },
 };
 
