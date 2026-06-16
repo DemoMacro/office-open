@@ -32,6 +32,14 @@ export interface DescriptorFieldSpec {
   readonly order?: readonly string[];
   /** Sample exercising the interface fields, for F4 round-trip deep-equality. */
   readonly sampleOptions: unknown;
+  /**
+   * Interface fields excluded from the contract comparison — input-side sugar
+   * (thematicBreak→border, rightTabStop→tabStops) and control flags
+   * (includeIfEmpty) that map field→XML but XML→a different field, breaking the
+   * 1:1 round-trip assumption. The interface-drift test asserts
+   * `interfaceFields === (live interface fields − excludeFields)`.
+   */
+  readonly excludeFields?: readonly string[];
   readonly notes?: string;
 }
 
@@ -264,6 +272,7 @@ export const FIELD_SPECS: readonly DescriptorFieldSpec[] = [
       outlineLevel: 1,
       textAlignment: "center",
     },
+    excludeFields: ["thematicBreak", "rightTabStop", "leftTabStop", "includeIfEmpty"],
     notes:
       "F3 parse-loss: textDirection, textboxTightWrap, divId, cnfStyle, revision written but never parsed. " +
       "Input-side sugar excluded from the field sets: thematicBreak (→pBdr/border), " +
