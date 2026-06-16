@@ -37,3 +37,21 @@ export type { DataType } from "./packer";
 
 // Archive parser
 export { parseArchive, ParsedArchive } from "./parser";
+
+// OPC consistency validation
+export {
+  validateOpcConsistency,
+  summarizeOpcIssues,
+  type OpcIssue,
+  type OpcCode,
+  type OpcSeverity,
+} from "./opc-consistency";
+export {
+  DOCX_PARTS,
+  PPTX_PARTS,
+  XLSX_PARTS,
+  PART_REGISTRIES,
+  type PartDef,
+  type PartPresence,
+  type PackagePartRegistry,
+} from "./part-registry";

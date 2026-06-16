@@ -30,6 +30,10 @@ import { unzipSync } from "fflate";
 import { XmlDocument, XsdValidator } from "libxml2-wasm";
 import { xmlRegisterFsInputProviders } from "libxml2-wasm/lib/nodejs.mjs";
 
+// Relative source import so tsx always sees the latest OPC validator without
+// depending on a prior @office-open/core dist build.
+import { validateOpcConsistency, PART_REGISTRIES } from "../packages/core/src/opc";
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.resolve(__dirname, "..");
 const XSD_DIR = path.resolve(__dirname, "../ooxml-schemas/transitional");
@@ -53,6 +57,38 @@ function getZipEntries(zipPath: string): string[] {
   const buf = fs.readFileSync(zipPath);
   const files = unzipSync(buf);
   return Object.keys(files);
+}
+
+/** Unzip the whole package into a path → text map for the OPC validator. */
+function extractAllEntries(zipPath: string): Map<string, string> {
+  const buf = fs.readFileSync(zipPath);
+  const files = unzipSync(buf);
+  const decoder = new TextDecoder();
+  const entries = new Map<string, string>();
+  for (const [name, data] of Object.entries(files)) {
+    // Binary parts (media/fonts) decode as best-effort — only presence is used.
+    entries.set(name, decoder.decode(data));
+  }
+  return entries;
+}
+
+/**
+ * Run the OPC relationship/content-type/structural consistency checks and
+ * return human-readable failure lines (empty when consistent).
+ */
+function validateOpcPhase(
+  zipPath: string,
+  format: "docx" | "pptx" | "xlsx",
+  label: string,
+): string[] {
+  const entries = extractAllEntries(zipPath);
+  const issues = validateOpcConsistency(entries, PART_REGISTRIES[format]);
+  const failures: string[] = [];
+  for (const issue of issues) {
+    const tag = issue.severity === "error" ? "OPC-ERR" : "OPC-WARN";
+    failures.push(`${label} ${tag} ${issue.code} ${issue.part}: ${issue.message}`);
+  }
+  return failures;
 }
 
 // ── Validator cache (one XSD → one validator, reused across demos) ──
@@ -283,6 +319,7 @@ function validateXml(validator: XsdValidator, xml: string): { pass: boolean; err
 
 interface PackageConfig {
   name: string;
+  format: "docx" | "pptx" | "xlsx";
   dir: string;
   outputFile: string;
   buildCmd: string;
@@ -291,18 +328,21 @@ interface PackageConfig {
 const PACKAGES: Record<string, PackageConfig> = {
   pptx: {
     name: "PPTX",
+    format: "pptx",
     dir: path.resolve(ROOT_DIR, "packages/pptx"),
     outputFile: "My Presentation.pptx",
     buildCmd: "pnpm -F @office-open/pptx build",
   },
   docx: {
     name: "DOCX",
+    format: "docx",
     dir: path.resolve(ROOT_DIR, "packages/docx"),
     outputFile: "My Document.docx",
     buildCmd: "pnpm -F @office-open/docx build",
   },
   xlsx: {
     name: "XLSX",
+    format: "xlsx",
     dir: path.resolve(ROOT_DIR, "packages/xlsx"),
     outputFile: "My Workbook.xlsx",
     buildCmd: "pnpm -F @office-open/xlsx build",
@@ -377,15 +417,20 @@ function validatePackage(pkg: PackageConfig) {
       const tmpFile = path.join(pkg.dir, `__validate_tmp__${path.basename(candidate)}`);
       fs.renameSync(candidate, tmpFile);
 
+      const partLabel = candidate === outputPath ? "" : " [round-trip]";
       try {
         const result = validateAllXmlParts(tmpFile, demo);
-        const status = result.fail === 0 ? "PASS" : `FAIL (${result.fail})`;
-        const partLabel = candidate === outputPath ? "" : " [round-trip]";
+        const opcFailures = validateOpcPhase(tmpFile, pkg.format, `${demo}${partLabel}`);
+        const opcErrors = opcFailures.filter((f) => f.includes("OPC-ERR")).length;
+        const status =
+          result.fail === 0 && opcErrors === 0
+            ? "PASS"
+            : `FAIL (${result.fail} xsd, ${opcErrors} opc)`;
         const entryCount = result.pass + result.fail;
         console.log(`  ${status}  ${demo}${partLabel} (${entryCount} parts)`);
         totalPass += result.pass;
-        totalFail += result.fail;
-        allFailures.push(...result.failures);
+        totalFail += result.fail + opcErrors;
+        allFailures.push(...result.failures, ...opcFailures);
       } catch {
         console.error(`  ZIP FAIL: ${demo}`);
       }
@@ -400,7 +445,7 @@ function validatePackage(pkg: PackageConfig) {
 
 // ── Single-file validation ──
 
-function validateSingleFile(filePath: string) {
+function validateSingleFile(filePath: string, format: "docx" | "pptx" | "xlsx") {
   xmlRegisterFsInputProviders();
   const absPath = path.resolve(filePath);
   const tmpFile = absPath + ".__validate_tmp__";
@@ -408,11 +453,16 @@ function validateSingleFile(filePath: string) {
 
   try {
     const result = validateAllXmlParts(tmpFile, path.basename(absPath));
-    for (const f of result.failures) {
+    const opcFailures = validateOpcPhase(tmpFile, format, path.basename(absPath));
+    for (const f of [...result.failures, ...opcFailures]) {
       console.error(`  FAIL: ${f}`);
     }
-    if (result.fail > 0) process.exitCode = 1;
-    console.log(`${result.pass} passed, ${result.fail} failed`);
+    if (result.fail > 0 || opcFailures.some((f) => f.includes("OPC-ERR"))) {
+      process.exitCode = 1;
+    }
+    console.log(
+      `${result.pass} passed, ${result.fail} xsd failed, ${opcFailures.length} opc issues`,
+    );
   } finally {
     fs.unlinkSync(tmpFile);
   }
@@ -424,8 +474,9 @@ function main() {
   // Single file validation mode
   if (args[0] === "slide" || args[0] === "docx" || args[0] === "xlsx") {
     if (args[1]) {
+      const format = args[0] === "slide" ? "pptx" : (args[0] as "docx" | "xlsx");
       xmlRegisterFsInputProviders();
-      validateSingleFile(args[1]);
+      validateSingleFile(args[1], format);
       disposeAllValidators();
       return;
     }
