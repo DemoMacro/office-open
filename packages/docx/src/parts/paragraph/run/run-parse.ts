@@ -306,7 +306,7 @@ export const PARSED_LINE_BREAK = Symbol("LineBreak");
 /** Matches w:tab */
 export const PARSED_TAB = Symbol("Tab");
 /** Matches w:cr */
-export const PARSED_CR = Symbol("CarriageReturn");
+export const PARSED_CARRIAGE_RETURN = Symbol("CarriageReturn");
 /** Matches w:noBreakHyphen */
 export const PARSED_NO_BREAK_HYPHEN = Symbol("NoBreakHyphen");
 /** Matches w:softHyphen */
@@ -334,7 +334,7 @@ export const PARSED_SEPARATOR = Symbol("Separator");
 /** Matches w:continuationSeparator */
 export const PARSED_CONTINUATION_SEPARATOR = Symbol("ContinuationSeparator");
 /** Matches w:pgNum */
-export const PARSED_PG_NUM = Symbol("PgNum");
+export const PARSED_PAGE_NUMBER = Symbol("PageNumber");
 /** Matches w:lastRenderedPageBreak */
 export const PARSED_LAST_RENDERED_PAGE_BREAK = Symbol("LastRenderedPageBreak");
 
@@ -343,7 +343,7 @@ export type ParsedRunChild =
   | typeof PARSED_PAGE_BREAK
   | typeof PARSED_LINE_BREAK
   | typeof PARSED_TAB
-  | typeof PARSED_CR
+  | typeof PARSED_CARRIAGE_RETURN
   | typeof PARSED_NO_BREAK_HYPHEN
   | typeof PARSED_SOFT_HYPHEN
   | typeof PARSED_FOOTNOTE_REF
@@ -357,7 +357,7 @@ export type ParsedRunChild =
   | typeof PARSED_ANNOTATION_REF
   | typeof PARSED_SEPARATOR
   | typeof PARSED_CONTINUATION_SEPARATOR
-  | typeof PARSED_PG_NUM
+  | typeof PARSED_PAGE_NUMBER
   | typeof PARSED_LAST_RENDERED_PAGE_BREAK
   | { commentReference: number };
 
@@ -416,7 +416,7 @@ export function parseRun(
         children.push(PARSED_TAB);
         break;
       case "w:cr":
-        children.push(PARSED_CR);
+        children.push(PARSED_CARRIAGE_RETURN);
         break;
       case "w:noBreakHyphen":
         children.push(PARSED_NO_BREAK_HYPHEN);
@@ -492,7 +492,7 @@ export function parseRun(
         children.push(PARSED_CONTINUATION_SEPARATOR);
         break;
       case "w:pgNum":
-        children.push(PARSED_PG_NUM);
+        children.push(PARSED_PAGE_NUMBER);
         break;
       case "w:lastRenderedPageBreak":
         children.push(PARSED_LAST_RENDERED_PAGE_BREAK);
@@ -518,7 +518,7 @@ export function parseRun(
 /** Mapping from parse symbols to RunOptions child objects for empty elements. */
 const SYMBOL_TO_CHILD = new Map<symbol, Record<string, true>>([
   [PARSED_TAB, { tab: true }],
-  [PARSED_CR, { carriageReturn: true }],
+  [PARSED_CARRIAGE_RETURN, { carriageReturn: true }],
   [PARSED_NO_BREAK_HYPHEN, { noBreakHyphen: true }],
   [PARSED_SOFT_HYPHEN, { softHyphen: true }],
   [PARSED_DAY_SHORT, { dayShort: true }],
@@ -530,7 +530,7 @@ const SYMBOL_TO_CHILD = new Map<symbol, Record<string, true>>([
   [PARSED_ANNOTATION_REF, { annotationRef: true }],
   [PARSED_SEPARATOR, { separator: true }],
   [PARSED_CONTINUATION_SEPARATOR, { continuationSeparator: true }],
-  [PARSED_PG_NUM, { pgNum: true }],
+  [PARSED_PAGE_NUMBER, { pgNum: true }],
   [PARSED_LAST_RENDERED_PAGE_BREAK, { lastRenderedPageBreak: true }],
 ]);
 
